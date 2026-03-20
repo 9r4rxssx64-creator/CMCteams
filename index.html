@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="fr">
-<head>
+<html lang="fr"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -150,44 +149,44 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 }
 
 </style>
-</head>
-<body>
-<div id="app"></div>
-<div id="toast"></div>
-<div id="pk"></div>
-<div id="ov" onclick="closePicker()"></div>
-<script>
-var MFR=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-var DS=["D","L","M","M","J","V","S"];
-var AID="U11804";
+</head><body>
+<div id="app"><div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="color:#c9a227;font-size:48px;text-align:center">♦</div></div></div>
+<div id="toast"></div><div id="pk"></div><div id="ov" onclick="closePicker()"></div>
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script src="app3.js"></script>
+</body></html>
+var MFR=[“Janvier”,“Février”,“Mars”,“Avril”,“Mai”,“Juin”,“Juillet”,“Août”,“Septembre”,“Octobre”,“Novembre”,“Décembre”];
+var DS=[“D”,“L”,“M”,“M”,“J”,“V”,“S”];
+var AID=“U11804”;
 var CODES={
-  "22/6"  :{l:"22h–6h",  bg:"#03101c",c:"#4a6888",b:"#07182e",cdp:false},
-  "19/4"  :{l:"19h–4h",  bg:"#04061a",c:"#405078",b:"#080c2a",cdp:false},
-  "16/3"  :{l:"16h–3h",  bg:"#020d07",c:"#2d5e3c",b:"#051408",cdp:false},
-  "14/19" :{l:"14h–19h", bg:"#070d03",c:"#465828",b:"#0c1606",cdp:false},
-  "20/5"  :{l:"20h–5h",  bg:"#060314",c:"#504888",b:"#0e0826",cdp:false},
-  "16/22" :{l:"16h–22h", bg:"#0c0900",c:"#786810",b:"#160f00",cdp:false},
-  "20/5*" :{l:"20h–5h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4*" :{l:"19h–4h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/3*" :{l:"16h–3h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/22*":{l:"16h–22h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4'" :{l:"Convention",bg:"#0e0303",c:"#684038",b:"#180606",cdp:false},
-  "RH"    :{l:"Repos Hebdo",bg:"#070716",c:"#303058",b:"#0e0e1e",cdp:false},
-  "R"     :{l:"Repos",    bg:"#070707",c:"#303030",b:"#0e0e0e",cdp:false},
-  "CP"    :{l:"Congé",    bg:"#0e050e",c:"#684060",b:"#180a16",cdp:false},
-  "AF"    :{l:"Formation",bg:"#020d05",c:"#206038",b:"#041006",cdp:false},
-  "M"     :{l:"Maladie",  bg:"#0e0300",c:"#783840",b:"#180606",cdp:false},
-  "RRT"   :{l:"Récup RRT",bg:"#020a14",c:"#205060",b:"#04101c",cdp:false},
-  "HC"    :{l:"H.Comp.",  bg:"#070d02",c:"#506818",b:"#0c1604",cdp:false}
+“22/6”  :{l:“22h–6h”,  bg:”#03101c”,c:”#4a6888”,b:”#07182e”,cdp:false},
+“19/4”  :{l:“19h–4h”,  bg:”#04061a”,c:”#405078”,b:”#080c2a”,cdp:false},
+“16/3”  :{l:“16h–3h”,  bg:”#020d07”,c:”#2d5e3c”,b:”#051408”,cdp:false},
+“14/19” :{l:“14h–19h”, bg:”#070d03”,c:”#465828”,b:”#0c1606”,cdp:false},
+“20/5”  :{l:“20h–5h”,  bg:”#060314”,c:”#504888”,b:”#0e0826”,cdp:false},
+“16/22” :{l:“16h–22h”, bg:”#0c0900”,c:”#786810”,b:”#160f00”,cdp:false},
+“20/5*” :{l:“20h–5h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“19/4*” :{l:“19h–4h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/3*” :{l:“16h–3h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/22*”:{l:“16h–22h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“19/4’” :{l:“Convention”,bg:”#0e0303”,c:”#684038”,b:”#180606”,cdp:false},
+“RH”    :{l:“Repos Hebdo”,bg:”#070716”,c:”#303058”,b:”#0e0e1e”,cdp:false},
+“R”     :{l:“Repos”,    bg:”#070707”,c:”#303030”,b:”#0e0e0e”,cdp:false},
+“CP”    :{l:“Congé”,    bg:”#0e050e”,c:”#684060”,b:”#180a16”,cdp:false},
+“AF”    :{l:“Formation”,bg:”#020d05”,c:”#206038”,b:”#041006”,cdp:false},
+“M”     :{l:“Maladie”,  bg:”#0e0300”,c:”#783840”,b:”#180606”,cdp:false},
+“RRT”   :{l:“Récup RRT”,bg:”#020a14”,c:”#205060”,b:”#04101c”,cdp:false},
+“HC”    :{l:“H.Comp.”,  bg:”#070d02”,c:”#506818”,b:”#0c1604”,cdp:false}
 };
 var CK=Object.keys(CODES);
-var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
+var TC={“1”:”#c9a227”,“2”:”#4a72a8”,“3”:”#3a8a50”,“4”:”#a84868”,“5”:”#c07830”};
 var DEF_TEAMS=[
-  {id:"1",name:"Équipe 1",mirrorTeamId:"4",departureOrder:1,color:"#c9a227"},
-  {id:"2",name:"Équipe 2",mirrorTeamId:"5",departureOrder:2,color:"#4a72a8"},
-  {id:"3",name:"Équipe 3",mirrorTeamId:null,departureOrder:3,color:"#3a8a50"},
-  {id:"4",name:"Équipe 4",mirrorTeamId:"1",departureOrder:4,color:"#a84868"},
-  {id:"5",name:"Équipe 5",mirrorTeamId:"2",departureOrder:5,color:"#c07830"}
+{id:“1”,name:“Équipe 1”,mirrorTeamId:“4”,departureOrder:1,color:”#c9a227”},
+{id:“2”,name:“Équipe 2”,mirrorTeamId:“5”,departureOrder:2,color:”#4a72a8”},
+{id:“3”,name:“Équipe 3”,mirrorTeamId:null,departureOrder:3,color:”#3a8a50”},
+{id:“4”,name:“Équipe 4”,mirrorTeamId:“1”,departureOrder:4,color:”#a84868”},
+{id:“5”,name:“Équipe 5”,mirrorTeamId:“2”,departureOrder:5,color:”#c07830”}
 ];
 
 var DEF_EMP=[
@@ -787,67 +786,25 @@ var h=`<div class="page">
     </div>
     <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">›</button>
   </div>
-  ${isAdm?`<button onclick="sv('teams')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">👑 Gérer les chefs d'équipe →</button>`:""}`;
-  show.forEach(tid=>{
-    var team=A.teams.find(t=>t.id===tid);if(!team)return;
-    var tcc=team.color||TC[tid]||"#888";
-    var chefNames=CHEFS_T[tid]||[];
-    var chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
-    if(!chefEmps.length)return;
-    var sl=chefEmps.length;
-    var SEQ=getSeqForSize(sl); // séquence adaptée au nombre de chefs
-    var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||"")));
-    h+=`<div style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
-      <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
-      <span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
-      <span style="font-size:9px;color:#243020">${sl} chefs · cycle ${SEQ5.join("→")}</span>
-      ${isAdm?`<button onclick="showCI('${tid}')" style="margin-left:auto;background:${openCITeam===tid?tcc+'20':'transparent'};border:1px solid ${openCITeam===tid?tcc+'50':'#1e3020'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:'#3a5030'};cursor:pointer;font-weight:700">⚙️ Positions</button>`:""}
-    </div>
-    <div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <table style="border-collapse:collapse;width:100%"><thead><tr>
-    <th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`;
-    workDays.forEach(d=>{
-      var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
-      h+=`<th style="padding:3px 1px;min-width:32px;background:${we?"#16281a":"#16281a"};text-align:center">
-        <div style="font-weight:700;color:${we?"#4a6888":"#3a4a38"};font-size:9px">${d}</div>
-        <div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
-    });
-    h+=`</tr></thead><tbody>`;
-    chefEmps.forEach((emp,ei)=>{
-      var isMe=emp.id===A.user.id;
-      var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
-      h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
-      <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
-        ${isMe?"▶ ":""}${esc(emp.name)}</td>`;
-      var wb=0;
-      workDays.forEach(d=>{
-        var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
-        if(works){
-          // Roulement: chaque groupe de 4j travaillés décale d'un cran
-          // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5
-          var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
-          var pos=SEQ[rotIdx];
-          var col=DCOL[pos-1]||"#888";
-          var ci=CODES[code]||{c:"#6b7280"};
-          h+=`<td style="text-align:center;padding:2px 1px;background:${col}07">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-              <div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
-              <div style="font-size:6px;color:${ci.c}">${code}</div>
-            </div></td>`;
-          wb++;
-        } else {
-          var ci=CODES[code]||{c:"#1e2e1e"};
-          h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"·"}</span></td>`;
-        }
-      });
-      h+=`</tr>`;
-    });
-    h+=`</tbody></table></div></div></div>`;
-    if(openCITeam===tid) h+=renderCIPanel(tid);
-  });
-  return h+`</div>`;
+  ${isAdm?`<button onclick="sv('teams')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">👑 Gérer les chefs d'équipe →</button>`:””}`; show.forEach(tid=>{ var team=A.teams.find(t=>t.id===tid);if(!team)return; var tcc=team.color||TC[tid]||"#888"; var chefNames=CHEFS_T[tid]||[]; var chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean); if(!chefEmps.length)return; var sl=chefEmps.length; var SEQ=getSeqForSize(sl); // séquence adaptée au nombre de chefs var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||""))); h+=`<div style="margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
+<div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
+<span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
+<span style="font-size:9px;color:#243020">${sl} chefs · cycle ${SEQ5.join(“→”)}</span>
+${isAdm?`<button onclick="showCI('${tid}')" style="margin-left:auto;background:${openCITeam===tid?tcc+'20':'transparent'};border:1px solid ${openCITeam===tid?tcc+'50':'#1e3020'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:'#3a5030'};cursor:pointer;font-weight:700">⚙️ Positions</button>`:””}
+</div>
+<div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+<table style="border-collapse:collapse;width:100%"><thead><tr>
+<th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`; workDays.forEach(d=>{ var dow=getDow(A.year,A.month,d),we=dow===0||dow===6; h+=`<th style=“padding:3px 1px;min-width:32px;background:${we?”#16281a”:”#16281a”};text-align:center”>
+<div style=“font-weight:700;color:${we?”#4a6888”:”#3a4a38”};font-size:9px”>${d}</div>
+<div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`; }); h+=`</tr></thead><tbody>`; chefEmps.forEach((emp,ei)=>{ var isMe=emp.id===A.user.id; var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl); h+=`<tr style=”${ei>0?“border-top:1px solid #0c160a”:””}${isMe?”;background:rgba(201,162,39,.05)”:””}”>
+<td style=“padding:5px 10px;background:${isMe?“rgba(201,162,39,.05)”:”#162818”};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?”#c9a227”:”#7a8a68”};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3”>
+${isMe?“▶ “:””}${esc(emp.name)}</td>`; var wb=0; workDays.forEach(d=>{ var code=(pl[emp.id]||{})[d]||"",works=isWork(code); if(works){ // Roulement: chaque groupe de 4j travaillés décale d'un cran // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5 var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl; var pos=SEQ[rotIdx]; var col=DCOL[pos-1]||"#888"; var ci=CODES[code]||{c:"#6b7280"}; h+=`<td style="text-align:center;padding:2px 1px;background:${col}07">
+<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+<div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
+<div style="font-size:6px;color:${ci.c}">${code}</div>
+</div></td>`; wb++; } else { var ci=CODES[code]||{c:"#1e2e1e"}; h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||”·”}</span></td>`; } }); h+=`</tr>`; }); h+=`</tbody></table></div></div></div>`; if(openCITeam===tid) h+=renderCIPanel(tid); }); return h+`</div>`;
 }
 
 function showCI(tid){
@@ -1411,8 +1368,7 @@ if(bestEmp) planning[bestEmp][day]=code;
 // ── 5. Construire CSV ──
 var found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
 if(!found.length) return buildDebugCSV(allItems,“Codes trouvés mais pas associés. DayPos: “+JSON.stringify(dayPos).slice(0,100));
-
-var header=“NOM,”+(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days).join(”,”);
+    var header=“NOM,”+(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days).join(”,”);
 return [header,…found.map(name=>[name,…Array.from({length:days},(_,i)=>planning[name][i+1]||””)].join(”,”))].join(”\n”);
 }
 
@@ -1994,7 +1950,6 @@ render();
 document.body.style.background=”#000”;
 document.body.innerHTML=”<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: “+e.message+”<br>Stack: “+(e.stack||””).replace(/</g,”<”).substr(0,500)+”</div>”;
 }
-</script>
 
-</body>
-</html>
+render();
+  
