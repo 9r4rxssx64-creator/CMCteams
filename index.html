@@ -152,10 +152,8 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 </head><body>
 <div id="app"><div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="color:#c9a227;font-size:48px;text-align:center">♦</div></div></div>
 <div id="toast"></div><div id="pk"></div><div id="ov" onclick="closePicker()"></div>
-<script src="app1.js"></script>
-<script src="app2.js"></script>
-<script src="app3.js"></script>
-</body></html>
+<script>
+
 var MFR=[“Janvier”,“Février”,“Mars”,“Avril”,“Mai”,“Juin”,“Juillet”,“Août”,“Septembre”,“Octobre”,“Novembre”,“Décembre”];
 var DS=[“D”,“L”,“M”,“M”,“J”,“V”,“S”];
 var AID=“U11804”;
@@ -770,14 +768,15 @@ var DCOL=[”#c9a227”,”#4a72a8”,”#3a8a50”,”#a84868”,”#c07830”,
 function gCI(y,m){return lg(`cmc_ci_${y}_${m}`,JSON.parse(JSON.stringify(DEF_CI)));}
 function sCI(y,m,o){ls(`cmc_ci_${y}_${m}`,o);}
 
+</script>
+<script>
 function vDeparts(){
-var isAdm=A.user&&A.user.id===AID;
-var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
-var CI=gCI(A.year,A.month);
-var myTeam=A.user?A.user.team:null;
-var show=isAdm?A.teams.map(t=>t.id):[myTeam];
-var h=`<div class="page">
-
+  var isAdm=A.user&&A.user.id===AID;
+  var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
+  var CI=gCI(A.year,A.month);
+  var myTeam=A.user?A.user.team:null;
+  var show=isAdm?A.teams.map(t=>t.id):[myTeam];
+  var h=`<div class="page">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">‹</button>
     <div style="flex:1;text-align:center">
@@ -786,25 +785,67 @@ var h=`<div class="page">
     </div>
     <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">›</button>
   </div>
-  ${isAdm?`<button onclick="sv('teams')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">👑 Gérer les chefs d'équipe →</button>`:””}`; show.forEach(tid=>{ var team=A.teams.find(t=>t.id===tid);if(!team)return; var tcc=team.color||TC[tid]||"#888"; var chefNames=CHEFS_T[tid]||[]; var chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean); if(!chefEmps.length)return; var sl=chefEmps.length; var SEQ=getSeqForSize(sl); // séquence adaptée au nombre de chefs var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||""))); h+=`<div style="margin-bottom:16px">
-<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
-<div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
-<span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
-<span style="font-size:9px;color:#243020">${sl} chefs · cycle ${SEQ5.join(“→”)}</span>
-${isAdm?`<button onclick="showCI('${tid}')" style="margin-left:auto;background:${openCITeam===tid?tcc+'20':'transparent'};border:1px solid ${openCITeam===tid?tcc+'50':'#1e3020'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:'#3a5030'};cursor:pointer;font-weight:700">⚙️ Positions</button>`:””}
-</div>
-<div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
-<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-<table style="border-collapse:collapse;width:100%"><thead><tr>
-<th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`; workDays.forEach(d=>{ var dow=getDow(A.year,A.month,d),we=dow===0||dow===6; h+=`<th style=“padding:3px 1px;min-width:32px;background:${we?”#16281a”:”#16281a”};text-align:center”>
-<div style=“font-weight:700;color:${we?”#4a6888”:”#3a4a38”};font-size:9px”>${d}</div>
-<div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`; }); h+=`</tr></thead><tbody>`; chefEmps.forEach((emp,ei)=>{ var isMe=emp.id===A.user.id; var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl); h+=`<tr style=”${ei>0?“border-top:1px solid #0c160a”:””}${isMe?”;background:rgba(201,162,39,.05)”:””}”>
-<td style=“padding:5px 10px;background:${isMe?“rgba(201,162,39,.05)”:”#162818”};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?”#c9a227”:”#7a8a68”};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3”>
-${isMe?“▶ “:””}${esc(emp.name)}</td>`; var wb=0; workDays.forEach(d=>{ var code=(pl[emp.id]||{})[d]||"",works=isWork(code); if(works){ // Roulement: chaque groupe de 4j travaillés décale d'un cran // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5 var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl; var pos=SEQ[rotIdx]; var col=DCOL[pos-1]||"#888"; var ci=CODES[code]||{c:"#6b7280"}; h+=`<td style="text-align:center;padding:2px 1px;background:${col}07">
-<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-<div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
-<div style="font-size:6px;color:${ci.c}">${code}</div>
-</div></td>`; wb++; } else { var ci=CODES[code]||{c:"#1e2e1e"}; h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||”·”}</span></td>`; } }); h+=`</tr>`; }); h+=`</tbody></table></div></div></div>`; if(openCITeam===tid) h+=renderCIPanel(tid); }); return h+`</div>`;
+  ${isAdm?`<button onclick="sv('teams')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">👑 Gérer les chefs d'équipe →</button>`:""}`;
+  show.forEach(tid=>{
+    var team=A.teams.find(t=>t.id===tid);if(!team)return;
+    var tcc=team.color||TC[tid]||"#888";
+    var chefNames=CHEFS_T[tid]||[];
+    var chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
+    if(!chefEmps.length)return;
+    var sl=chefEmps.length;
+    var SEQ=getSeqForSize(sl); // séquence adaptée au nombre de chefs
+    var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||"")));
+    h+=`<div style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
+      <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
+      <span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
+      <span style="font-size:9px;color:#243020">${sl} chefs · cycle ${SEQ5.join("→")}</span>
+      ${isAdm?`<button onclick="showCI('${tid}')" style="margin-left:auto;background:${openCITeam===tid?tcc+'20':'transparent'};border:1px solid ${openCITeam===tid?tcc+'50':'#1e3020'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:'#3a5030'};cursor:pointer;font-weight:700">⚙️ Positions</button>`:""}
+    </div>
+    <div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table style="border-collapse:collapse;width:100%"><thead><tr>
+    <th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`;
+    workDays.forEach(d=>{
+      var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
+      h+=`<th style="padding:3px 1px;min-width:32px;background:${we?"#16281a":"#16281a"};text-align:center">
+        <div style="font-weight:700;color:${we?"#4a6888":"#3a4a38"};font-size:9px">${d}</div>
+        <div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
+    });
+    h+=`</tr></thead><tbody>`;
+    chefEmps.forEach((emp,ei)=>{
+      var isMe=emp.id===A.user.id;
+      var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
+      h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
+      <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
+        ${isMe?"▶ ":""}${esc(emp.name)}</td>`;
+      var wb=0;
+      workDays.forEach(d=>{
+        var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
+        if(works){
+          // Roulement: chaque groupe de 4j travaillés décale d'un cran
+          // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5
+          var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
+          var pos=SEQ[rotIdx];
+          var col=DCOL[pos-1]||"#888";
+          var ci=CODES[code]||{c:"#6b7280"};
+          h+=`<td style="text-align:center;padding:2px 1px;background:${col}07">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+              <div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
+              <div style="font-size:6px;color:${ci.c}">${code}</div>
+            </div></td>`;
+          wb++;
+        } else {
+          var ci=CODES[code]||{c:"#1e2e1e"};
+          h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"·"}</span></td>`;
+        }
+      });
+      h+=`</tr>`;
+    });
+    h+=`</tbody></table></div></div></div>`;
+    if(openCITeam===tid) h+=renderCIPanel(tid);
+  });
+  return h+`</div>`;
 }
 
 function showCI(tid){
@@ -1368,211 +1409,215 @@ if(bestEmp) planning[bestEmp][day]=code;
 // ── 5. Construire CSV ──
 var found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
 if(!found.length) return buildDebugCSV(allItems,“Codes trouvés mais pas associés. DayPos: “+JSON.stringify(dayPos).slice(0,100));
-    var header=“NOM,”+(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days).join(”,”);
+
+var header=“NOM,”+(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days).join(”,”);
 return [header,…found.map(name=>[name,…Array.from({length:days},(_,i)=>planning[name][i+1]||””)].join(”,”))].join(”\n”);
 }
 
 // Compat ancien appel
+</script>
+
+<script>
 function parseCMCPlanningFromRows(rows,year,month){
-var allItems=rows.flat();
-return parseCMCPlanningFromItems(allItems,year,month);
+  var allItems=rows.flat();
+  return parseCMCPlanningFromItems(allItems,year,month);
 }
 
 function buildDebugCSV(items,reason){
-var lines=[”# DEBUG: “+reason];
-// Afficher les 40 premiers items distincts
-var seen=new Set();
-items.slice(0,200).forEach(i=>{if(!seen.has(i.txt)&&i.txt.length<20){seen.add(i.txt);lines.push(“x=”+i.x+”,y=”+i.y+”,txt=”+i.txt);}});
-return lines.join(”\n”);
+  var lines=["# DEBUG: "+reason];
+  // Afficher les 40 premiers items distincts
+  var seen=new Set();
+  items.slice(0,200).forEach(i=>{if(!seen.has(i.txt)&&i.txt.length<20){seen.add(i.txt);lines.push("x="+i.x+",y="+i.y+",txt="+i.txt);}});
+  return lines.join("\n");
 }
 
 function detectMonthFromName(fname){
-var s=fname.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
-var MOIS={“janvier”:0,“fevrier”:1,“mars”:2,“avril”:3,“mai”:4,“juin”:5,“juillet”:6,“aout”:7,“septembre”:8,“octobre”:9,“novembre”:10,“decembre”:11};
-var month=-1,year=-1;
-Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)month=MOIS[m];});
-var ym=s.match(/20(2[0-9]|3[0-9])/);
-if(ym)year=parseInt(ym[0]);
-return {month:month,year:year};
+  var s=fname.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  var MOIS={"janvier":0,"fevrier":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11};
+  var month=-1,year=-1;
+  Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)month=MOIS[m];});
+  var ym=s.match(/20(2[0-9]|3[0-9])/);
+  if(ym)year=parseInt(ym[0]);
+  return {month:month,year:year};
 }
 function handleFileImport(input){
-if(!input.files||!input.files[0]) return;
-var file=input.files[0];
-var info=document.getElementById(“fileInfo”);
-if(info) info.innerHTML=’<span style="color:#c9a227">⏳ Lecture de ‘+file.name+’…</span>’;
+  if(!input.files||!input.files[0]) return;
+  var file=input.files[0];
+  var info=document.getElementById("fileInfo");
+  if(info) info.innerHTML='<span style="color:#c9a227">⏳ Lecture de '+file.name+'...</span>';
 
-// Détecter mois/année depuis le nom
-var s=file.name.toLowerCase().normalize(“NFD”).replace(/[̀-ͯ]/g,””);
-var MOIS={“janvier”:0,“fevrier”:1,“mars”:2,“avril”:3,“mai”:4,“juin”:5,“juillet”:6,“aout”:7,“septembre”:8,“octobre”:9,“novembre”:10,“decembre”:11};
-var detM=-1,detY=-1;
-Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
-var ym=s.match(/20(2[0-9]|3[0-9])/);
-if(ym) detY=parseInt(ym[0]);
-if(detM>=0){var sm=document.getElementById(“impM”);if(sm)sm.value=String(detM);}
-if(detY>0){var sy=document.getElementById(“impY”);if(sy)sy.value=String(detY);}
+  // Détecter mois/année depuis le nom
+  var s=file.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  var MOIS={"janvier":0,"fevrier":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11};
+  var detM=-1,detY=-1;
+  Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
+  var ym=s.match(/20(2[0-9]|3[0-9])/);
+  if(ym) detY=parseInt(ym[0]);
+  if(detM>=0){var sm=document.getElementById("impM");if(sm)sm.value=String(detM);}
+  if(detY>0){var sy=document.getElementById("impY");if(sy)sy.value=String(detY);}
 
-var r=new FileReader();
-r.onload=function(e){
-var txt=e.target.result;
-if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
-var ta=document.getElementById(“impTxt”);
-if(ta) ta.value=txt;
-var n=txt.split(”\n”).filter(function(l){return l.trim();}).length;
-if(info) info.innerHTML=’<span style="color:#3a8a50">✅ ‘+file.name+’ — ‘+n+’ lignes</span>’;
-setTimeout(function(){doImport();},100);
-};
-r.onerror=function(){
-if(info) info.innerHTML=’<span style="color:#c04040">❌ Erreur lecture — ce format nest pas supporté directement</span>’;
-};
-r.readAsText(file,“UTF-8”);
+  var r=new FileReader();
+  r.onload=function(e){
+    var txt=e.target.result;
+    if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+    var ta=document.getElementById("impTxt");
+    if(ta) ta.value=txt;
+    var n=txt.split("\n").filter(function(l){return l.trim();}).length;
+    if(info) info.innerHTML='<span style="color:#3a8a50">✅ '+file.name+' — '+n+' lignes</span>';
+    setTimeout(function(){doImport();},100);
+  };
+  r.onerror=function(){
+    if(info) info.innerHTML='<span style="color:#c04040">❌ Erreur lecture — ce format nest pas supporté directement</span>';
+  };
+  r.readAsText(file,"UTF-8");
 }
+
 
 function doImport(){
-if(!A.user||A.user.id!==AID)return;
-var txt=(document.getElementById(“impTxt”)||{}).value||””;
-var iy=parseInt((document.getElementById(“impY”)||{}).value||A.year);
-var im=parseInt((document.getElementById(“impM”)||{}).value||A.month);
-if(!txt){toast(“Aucun contenu”,“err”);return;}
-var lines=txt.split(”\n”).map(l=>l.trim()).filter(Boolean);
-if(lines.length<2){toast(“Format invalide”,“err”);return;}
-var sep=lines[0].includes(”\t”)?”\t”:”,”;
-var key=`${iy}-${im}`;
-if(!A.overrides[key])A.overrides[key]={};
-// Stocker la référence brute pour vérification ultérieure
-var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
-var ok=0,err=0,errLines=[];
-for(var li=1;li<lines.length;li++){
-var parts=lines[li].split(sep);
-var name=parts[0].trim().toUpperCase();
-var emp=A.employees.find(e=>e.name===name);
-if(!emp){err++;errLines.push(“Inconnu: “+name);continue;}
-refData.rows[emp.id]={};
-for(var di=1;di<parts.length;di++){
-var code=parts[di].trim().toUpperCase();
-if(!code||code===“0”||code===”-”)continue;
-if(code&&!CODES[code]){err++;errLines.push(name+” j”+di+”:code inconnu ‘”+code+”’”);continue;}
-if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
-A.overrides[key][emp.id][di]=code;
-refData.rows[emp.id][di]=code;
-ok++;
-}
-}
-ls(“cmc_ov”,A.overrides);
-// Sauver la référence d’import pour vérification
-ls(“cmc_ref_”+key,refData);
-A.lastImportKey=key;
-// Lancer la vérification automatique
-var verif=runVerification(iy,im,refData);
-A.lastVerif=verif;
-ls(“cmc_verif_”+key,verif);
-var r=document.getElementById(“impRes”);
-var verifTxt=verif.errors.length>0
-?` ⚠️ ${verif.errors.length} ERREUR(S) DÉTECTÉE(S) — voir onglet Aide`
-:` ✅ Vérification OK — tous les horaires correspondent`;
-if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules importées${err?" · <span style='color:#c9a227'>"+err+" ignorée(s)</span>":""} → ${MFR[im]} ${iy}</div>`+
-`<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
-(verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" · ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:””);
-toast(verif.errors.length?`⚠️ ${verif.errors.length} erreur(s) détectée(s)`:`✅ Import vérifié — ${ok} cellules`);
-if(errLines.length>0) errLines.forEach(e=>console.warn(“Import:”,e));
+  if(!A.user||A.user.id!==AID)return;
+  var txt=(document.getElementById("impTxt")||{}).value||"";
+  var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
+  var im=parseInt((document.getElementById("impM")||{}).value||A.month);
+  if(!txt){toast("Aucun contenu","err");return;}
+  var lines=txt.split("\n").map(l=>l.trim()).filter(Boolean);
+  if(lines.length<2){toast("Format invalide","err");return;}
+  var sep=lines[0].includes("\t")?"\t":",";
+  var key=`${iy}-${im}`;
+  if(!A.overrides[key])A.overrides[key]={};
+  // Stocker la référence brute pour vérification ultérieure
+  var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
+  var ok=0,err=0,errLines=[];
+  for(var li=1;li<lines.length;li++){
+    var parts=lines[li].split(sep);
+    var name=parts[0].trim().toUpperCase();
+    var emp=A.employees.find(e=>e.name===name);
+    if(!emp){err++;errLines.push("Inconnu: "+name);continue;}
+    refData.rows[emp.id]={};
+    for(var di=1;di<parts.length;di++){
+      var code=parts[di].trim().toUpperCase();
+      if(!code||code==="0"||code==="-")continue;
+      if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
+      if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
+      A.overrides[key][emp.id][di]=code;
+      refData.rows[emp.id][di]=code;
+      ok++;
+    }
+  }
+  ls("cmc_ov",A.overrides);
+  // Sauver la référence d'import pour vérification
+  ls("cmc_ref_"+key,refData);
+  A.lastImportKey=key;
+  // Lancer la vérification automatique
+  var verif=runVerification(iy,im,refData);
+  A.lastVerif=verif;
+  ls("cmc_verif_"+key,verif);
+  var r=document.getElementById("impRes");
+  var verifTxt=verif.errors.length>0
+    ?` ⚠️ ${verif.errors.length} ERREUR(S) DÉTECTÉE(S) — voir onglet Aide`
+    :` ✅ Vérification OK — tous les horaires correspondent`;
+  if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules importées${err?" · <span style='color:#c9a227'>"+err+" ignorée(s)</span>":""} → ${MFR[im]} ${iy}</div>`+
+    `<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
+    (verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" · ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:"");
+  toast(verif.errors.length?`⚠️ ${verif.errors.length} erreur(s) détectée(s)`:`✅ Import vérifié — ${ok} cellules`);
+  if(errLines.length>0) errLines.forEach(e=>console.warn("Import:",e));
 }
 
 // ── MOTEUR DE VÉRIFICATION ─────────────────────────
 function runVerification(year,month,refData){
-var pl=gpl(); // planning tel qu’affiché dans l’app
-var ref=refData||lg(“cmc_ref_”+year+”-”+month,null);
-var result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
-if(!ref||!ref.rows){result.warnings.push({msg:“Aucune référence d’import pour ce mois”});return result;}
-var days=getDays(year,month);
-// Pour chaque employé dans la référence
-Object.keys(ref.rows).forEach(empId=>{
-var emp=A.employees.find(e=>e.id===empId);
-if(!emp){result.warnings.push({msg:“Employé “+empId+” introuvable dans la liste”});return;}
-var refRow=ref.rows[empId];
-var plRow=pl[empId]||{};
-Object.keys(refRow).forEach(d=>{
-var refCode=refRow[d];
-var plCode=plRow[parseInt(d)]||””;
-if(refCode!==plCode){
-result.errors.push({
-empId,empName:emp.name,day:parseInt(d),
-refCode,plCode,
-msg:`${emp.name} j${d}: planning="${plCode||"vide"}" ≠ référence="${refCode}"`
-});
-} else {
-result.ok.push({empId,day:d,code:refCode});
-}
-});
-// Vérifier les jours du planning non couverts par la référence
-Object.keys(plRow).forEach(d=>{
-if(!refRow[d]&&plRow[d]&&plRow[d]!==“RH”&&plRow[d]!==“R”){
-// Jour travaillé dans le planning mais absent de la référence
-// C’est normal si la référence ne couvre pas tous les jours
-}
-});
-});
-result.summary={
-total:result.ok.length+result.errors.length,
-correct:result.ok.length,
-errors:result.errors.length,
-coverage:Math.round(result.ok.length/(result.ok.length+result.errors.length+.001)*100)
-};
-return result;
+  var pl=gpl(); // planning tel qu'affiché dans l'app
+  var ref=refData||lg("cmc_ref_"+year+"-"+month,null);
+  var result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
+  if(!ref||!ref.rows){result.warnings.push({msg:"Aucune référence d'import pour ce mois"});return result;}
+  var days=getDays(year,month);
+  // Pour chaque employé dans la référence
+  Object.keys(ref.rows).forEach(empId=>{
+    var emp=A.employees.find(e=>e.id===empId);
+    if(!emp){result.warnings.push({msg:"Employé "+empId+" introuvable dans la liste"});return;}
+    var refRow=ref.rows[empId];
+    var plRow=pl[empId]||{};
+    Object.keys(refRow).forEach(d=>{
+      var refCode=refRow[d];
+      var plCode=plRow[parseInt(d)]||"";
+      if(refCode!==plCode){
+        result.errors.push({
+          empId,empName:emp.name,day:parseInt(d),
+          refCode,plCode,
+          msg:`${emp.name} j${d}: planning="${plCode||"vide"}" ≠ référence="${refCode}"`
+        });
+      } else {
+        result.ok.push({empId,day:d,code:refCode});
+      }
+    });
+    // Vérifier les jours du planning non couverts par la référence
+    Object.keys(plRow).forEach(d=>{
+      if(!refRow[d]&&plRow[d]&&plRow[d]!=="RH"&&plRow[d]!=="R"){
+        // Jour travaillé dans le planning mais absent de la référence
+        // C'est normal si la référence ne couvre pas tous les jours
+      }
+    });
+  });
+  result.summary={
+    total:result.ok.length+result.errors.length,
+    correct:result.ok.length,
+    errors:result.errors.length,
+    coverage:Math.round(result.ok.length/(result.ok.length+result.errors.length+.001)*100)
+  };
+  return result;
 }
 
 function verifyCurrentMonth(){
-var key=A.year+”-”+A.month;
-var ref=lg(“cmc_ref_”+key,null);
-if(!ref){return null;}
-var v=runVerification(A.year,A.month,ref);
-A.lastVerif=v;
-ls(“cmc_verif_”+key,v);
-return v;
+  var key=A.year+"-"+A.month;
+  var ref=lg("cmc_ref_"+key,null);
+  if(!ref){return null;}
+  var v=runVerification(A.year,A.month,ref);
+  A.lastVerif=v;
+  ls("cmc_verif_"+key,v);
+  return v;
 }
 
 function openPicker(eid,day,el){
-if(!A.user||A.user.id!==AID)return;
-A.pt={eid,day};
-var pl=gpl(),cur=(pl[eid]||{})[day]||””;
-var pk=document.getElementById(“pk”);
-pk.innerHTML=CK.map(c=>{
-var ci=CODES[c];
-return `<div class="pb${c===cur?" cur":""}" style="color:${ci.c};border-color:${c===cur?"#c9a227":ci.b}" onclick="pc('${c}')">${c}</div>`;
-}).join(””)+`<div class="pclr" onclick="pc('')">✕ Effacer</div>`;
-var rect=el.getBoundingClientRect();
-var left=rect.left+rect.width/2-84,top=rect.bottom+5;
-if(left<4)left=4;if(left+168>window.innerWidth-4)left=window.innerWidth-172;
-if(top+230>window.innerHeight-75)top=rect.top-235;
-pk.style.cssText=`display:flex;left:${left}px;top:${top}px`;
-document.getElementById(“ov”).style.display=“block”;
+  if(!A.user||A.user.id!==AID)return;
+  A.pt={eid,day};
+  var pl=gpl(),cur=(pl[eid]||{})[day]||"";
+  var pk=document.getElementById("pk");
+  pk.innerHTML=CK.map(c=>{
+    var ci=CODES[c];
+    return `<div class="pb${c===cur?" cur":""}" style="color:${ci.c};border-color:${c===cur?"#c9a227":ci.b}" onclick="pc('${c}')">${c}</div>`;
+  }).join("")+`<div class="pclr" onclick="pc('')">✕ Effacer</div>`;
+  var rect=el.getBoundingClientRect();
+  var left=rect.left+rect.width/2-84,top=rect.bottom+5;
+  if(left<4)left=4;if(left+168>window.innerWidth-4)left=window.innerWidth-172;
+  if(top+230>window.innerHeight-75)top=rect.top-235;
+  pk.style.cssText=`display:flex;left:${left}px;top:${top}px`;
+  document.getElementById("ov").style.display="block";
 }
-function closePicker(){document.getElementById(“pk”).style.display=“none”;document.getElementById(“ov”).style.display=“none”;A.pt=null;}
+function closePicker(){document.getElementById("pk").style.display="none";document.getElementById("ov").style.display="none";A.pt=null;}
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
-function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls(“cmc_t”,A.teams);}}
+function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls("cmc_t",A.teams);}}
 function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(x=>x.id===id);if(e){e.team=team;sav();}}
-function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast(“Employé supprimé”);dc();}
+function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast("Employé supprimé");dc();}
 function addEmp(){
-if(!A.user||A.user.id!==AID)return;
-var id=(document.getElementById(“nid”)||{}).value||””;
-var name=(document.getElementById(“nname”)||{}).value||””;
-var team=(document.getElementById(“nteam”)||{}).value||“1”;
-var post=(document.getElementById(“npost”)||{}).value||””;
-var chef=document.getElementById(“nchef”)?document.getElementById(“nchef”).checked:false;
-if(!id||!name){toast(“Remplissez tous les champs”,“err”);return;}
-id=id.trim().toUpperCase();
-if(A.employees.find(e=>e.id===id)){toast(“Matricule déjà existant”,“err”);return;}
-A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
-sav();toast(“Employé ajouté !”);showAddF=false;dc();
+  if(!A.user||A.user.id!==AID)return;
+  var id=(document.getElementById("nid")||{}).value||"";
+  var name=(document.getElementById("nname")||{}).value||"";
+  var team=(document.getElementById("nteam")||{}).value||"1";
+  var post=(document.getElementById("npost")||{}).value||"";
+  var chef=document.getElementById("nchef")?document.getElementById("nchef").checked:false;
+  if(!id||!name){toast("Remplissez tous les champs","err");return;}
+  id=id.trim().toUpperCase();
+  if(A.employees.find(e=>e.id===id)){toast("Matricule déjà existant","err");return;}
+  A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
+  sav();toast("Employé ajouté !");showAddF=false;dc();
 }
 
 /* ═══════════════════════════════════════════
-ASSISTANT IA CMC — moteur de réponses
+   ASSISTANT IA CMC — moteur de réponses
 ═══════════════════════════════════════════ */
 var iaHistory=[];
 
 function vIA(){
-var isAdm=A.user&&A.user.id===AID;
-var h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
-
+  var isAdm=A.user&&A.user.id===AID;
+  var h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
   <div style="padding:10px 14px;border-bottom:1px solid #1e3020;flex-shrink:0;background:#0a180c">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
@@ -1586,20 +1631,36 @@ var h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)
   </div>
   <div id="iaMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px">`;
 
-if(!iaHistory.length){
-h+=`<div style="text-align:center;padding:20px 10px"> <div style="font-size:28px;margin-bottom:8px">♦</div> <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employés,<br>équipes, codes horaires et le planning.</div> <div style="display:flex;flex-direction:column;gap:6px"> ${["Qui travaille ce soir en équipe 3 ?", "Vérifie le planning du mois", "Quels sont les horaires 22/6 ?", "Qui est chef de l'équipe 1 ?", "Montre-moi le planning de DESSI F", "Erreurs dans le planning ?" ].map(q=>`<button onclick=“iaSend(’${q.replace(/’/g,”\’”)}’)” style=“background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left”>${q}</button>`).join("")} </div> </div>`;
-}
+  if(!iaHistory.length){
+    h+=`<div style="text-align:center;padding:20px 10px">
+      <div style="font-size:28px;margin-bottom:8px">♦</div>
+      <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employés,<br>équipes, codes horaires et le planning.</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${["Qui travaille ce soir en équipe 3 ?",
+           "Vérifie le planning du mois",
+           "Quels sont les horaires 22/6 ?",
+           "Qui est chef de l'équipe 1 ?",
+           "Montre-moi le planning de DESSI F",
+           "Erreurs dans le planning ?"
+          ].map(q=>`<button onclick="iaSend('${q.replace(/'/g,"\\'")}')" style="background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left">${q}</button>`).join("")}
+      </div>
+    </div>`;
+  }
 
-iaHistory.forEach(msg=>{
-if(msg.role===“user”){
-h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%"> <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div> </div>`;
-} else {
-h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%"> <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">🤖 Assistant CMC</div> <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div> </div>`;
-}
-});
+  iaHistory.forEach(msg=>{
+    if(msg.role==="user"){
+      h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%">
+        <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div>
+      </div>`;
+    } else {
+      h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%">
+        <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">🤖 Assistant CMC</div>
+        <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div>
+      </div>`;
+    }
+  });
 
-h+=`</div>
-
+  h+=`</div>
   <div style="padding:9px 14px;border-top:1px solid #1e3020;display:flex;gap:8px;background:#0a180c;flex-shrink:0">
     <input id="iaIn" class="inp" style="flex:1;padding:9px 12px;font-size:13px;background:#0c1e0e"
       placeholder="Posez votre question..."
@@ -1611,26 +1672,35 @@ h+=`</div>
 }
 
 function iaCheckNow(){
-var v=verifyCurrentMonth();
-if(!v){
-iaHistory.push({role:“user”,text:“Vérifier le planning “+MFR[A.month]+” “+A.year});
-iaHistory.push({role:“bot”,html:`<span style="color:#c9a227">⚠️ Aucun planning importé pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin → Import planning</strong> pour importer un planning CSV, puis je le vérifierai automatiquement.`});
-dc();setTimeout(()=>{var m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
-return;
-}
-iaHistory.push({role:“user”,text:“Vérifier le planning “+MFR[A.month]+” “+A.year});
-iaHistory.push({role:“bot”,html:formatVerifReport(v)});
-sv(“ia”);
-setTimeout(()=>{var m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},80);
+  var v=verifyCurrentMonth();
+  if(!v){
+    iaHistory.push({role:"user",text:"Vérifier le planning "+MFR[A.month]+" "+A.year});
+    iaHistory.push({role:"bot",html:`<span style="color:#c9a227">⚠️ Aucun planning importé pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin → Import planning</strong> pour importer un planning CSV, puis je le vérifierai automatiquement.`});
+    dc();setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+    return;
+  }
+  iaHistory.push({role:"user",text:"Vérifier le planning "+MFR[A.month]+" "+A.year});
+  iaHistory.push({role:"bot",html:formatVerifReport(v)});
+  sv("ia");
+  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},80);
 }
 
 function formatVerifReport(v){
-if(!v) return “Aucune vérification disponible.”;
-var pct=v.summary?v.summary.coverage:0;
-var barColor=pct>=95?”#3a8a50”:pct>=80?”#c9a227”:”#c04040”;
-var h=`<div style="margin-bottom:8px"> <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">🔍 Vérification planning — ${MFR[v.month]} ${v.year}</div> <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"> <div style="flex:1;height:6px;background:#0c1e0e;border-radius:3px;overflow:hidden"> <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div> </div> <span style="font-size:10px;font-weight:700;color:${barColor}">${pct}%</span> </div> <div style="font-size:10px;color:#6a8a68"> ✅ ${v.summary?v.summary.correct:0} cellules correctes &nbsp;·&nbsp; ${v.errors.length>0?`<span style="color:#c9a227">⚠️ ${v.errors.length} erreur(s)</span>`:`<span style="color:#3a8a50">✅ 0 erreur</span>`}
-</div>
-
+  if(!v) return "Aucune vérification disponible.";
+  var pct=v.summary?v.summary.coverage:0;
+  var barColor=pct>=95?"#3a8a50":pct>=80?"#c9a227":"#c04040";
+  var h=`<div style="margin-bottom:8px">
+    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">🔍 Vérification planning — ${MFR[v.month]} ${v.year}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="flex:1;height:6px;background:#0c1e0e;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:${barColor}">${pct}%</span>
+    </div>
+    <div style="font-size:10px;color:#6a8a68">
+      ✅ ${v.summary?v.summary.correct:0} cellules correctes &nbsp;·&nbsp;
+      ${v.errors.length>0?`<span style="color:#c9a227">⚠️ ${v.errors.length} erreur(s)</span>`:`<span style="color:#3a8a50">✅ 0 erreur</span>`}
+    </div>
   </div>`;
   if(v.errors.length===0){
     h+=`<div style="padding:8px;background:#061c0a;border:1px solid #1a4020;border-radius:7px;font-size:11px;color:#3a8a50;font-weight:700">
@@ -1674,24 +1744,23 @@ var h=`<div style="margin-bottom:8px"> <div style="font-size:11px;font-weight:70
 var pendingFix=null;
 
 function iaAskCorrect(){
-if(!A.lastVerif||!A.lastVerif.errors.length) return;
-pendingFix=A.lastVerif;
-var n=pendingFix.errors.length;
-// Résumé des corrections à faire
-var byEmp={};
-pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
-var summary=Object.keys(byEmp).slice(0,5).map(n=>n+” (”+byEmp[n]+“j)”).join(”, “);
-var h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
-<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">🔧 Corriger ${n} erreur(s) ?</div>
-<div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
-Je vais remplacer les codes incorrects dans le planning par ceux du fichier importé :<br>
-<strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?” …”:””}</strong>
-</div>
-<div style="display:flex;gap:6px">
-<button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:#1a3a1e;border:1px solid #2a6030;border-radius:8px;font-size:11px;color:#3a8a50;font-weight:700;cursor:pointer">✅ Oui, corriger</button>
-<button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#3a5030;cursor:pointer">✕ Annuler</button>
-</div>
-
+  if(!A.lastVerif||!A.lastVerif.errors.length) return;
+  pendingFix=A.lastVerif;
+  var n=pendingFix.errors.length;
+  // Résumé des corrections à faire
+  var byEmp={};
+  pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
+  var summary=Object.keys(byEmp).slice(0,5).map(n=>n+" ("+byEmp[n]+"j)").join(", ");
+  var h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
+    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">🔧 Corriger ${n} erreur(s) ?</div>
+    <div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
+      Je vais remplacer les codes incorrects dans le planning par ceux du fichier importé :<br>
+      <strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?" ...":""}</strong>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:#1a3a1e;border:1px solid #2a6030;border-radius:8px;font-size:11px;color:#3a8a50;font-weight:700;cursor:pointer">✅ Oui, corriger</button>
+      <button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#3a5030;cursor:pointer">✕ Annuler</button>
+    </div>
   </div>`;
   iaHistory.push({role:"user",text:"Corriger les erreurs du planning"});
   iaHistory.push({role:"bot",html:h});
@@ -1700,256 +1769,274 @@ Je vais remplacer les codes incorrects dans le planning par ceux du fichier impo
 }
 
 function iaCancelFix(){
-pendingFix=null;
-iaHistory.push({role:“bot”,html:”<span style='color:#3a5030'>Correction annulée — aucune modification effectuée.</span>”});
-dc();
-setTimeout(()=>{var m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
+  pendingFix=null;
+  iaHistory.push({role:"bot",html:"<span style='color:#3a5030'>Correction annulée — aucune modification effectuée.</span>"});
+  dc();
+  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaConfirmCorrect(){
-if(!A.user||A.user.id!==AID){toast(“Action réservée à l’admin”,“err”);return;}
-if(!pendingFix||!pendingFix.errors.length){
-iaHistory.push({role:“bot”,html:“Aucune erreur à corriger.”});
-dc();return;
-}
-var errors=pendingFix.errors;
-var fixed=0,skipped=0;
-var details=[];
-errors.forEach(e=>{
-if(!e.refCode||!CODES[e.refCode]){skipped++;return;}
-saveOv(e.empId,e.day,e.refCode);
-fixed++;
-details.push({name:e.empName,day:e.day,old:e.plCode,new:e.refCode});
-});
-// Re-vérifier après correction
-var key=pendingFix.year+”-”+pendingFix.month;
-var ref=lg(“cmc_ref_”+key,null);
-var recheck=ref?runVerification(pendingFix.year,pendingFix.month,ref):null;
-A.lastVerif=recheck;
-pendingFix=null;
-// Résumé
-var h=`<div> <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">✅ ${fixed} correction(s) appliquée(s)</div>`;
-if(details.length>0){
-h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
-details.slice(0,8).forEach(d=>{
-var ciO=CODES[d.old]||{c:”#c04040”};
-var ciN=CODES[d.new]||{c:”#3a8a50”};
-h+=`<div style="font-size:9px;color:#6a8a68"> ${esc(d.name)} j${d.day} : <span style="color:${ciO.c};text-decoration:line-through">${d.old||"vide"}</span> → <span style="color:${ciN.c};font-weight:700">${d.new}</span> </div>`;
-});
-if(details.length>8) h+=`<div style="font-size:9px;color:#2a4028">...et ${details.length-8} autre(s)</div>`;
-h+=`</div>`;
-}
-if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">⚠️ ${skipped} cellule(s) non corrigée(s) — code invalide</div>`;
-if(recheck){
-h+=recheck.errors.length===0
-?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">✅ Vérification après correction : aucune erreur restante !</div>`
-:`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">⚠️ ${recheck.errors.length} erreur(s) encore présente(s) — relancez la vérification pour les voir.</div>`;
-}
-h+=`</div>`;
-iaHistory.push({role:“bot”,html:h});
-dc();
-setTimeout(()=>{var m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
-toast(“✅ “+fixed+” correction(s) appliquée(s)”);
+  if(!A.user||A.user.id!==AID){toast("Action réservée à l'admin","err");return;}
+  if(!pendingFix||!pendingFix.errors.length){
+    iaHistory.push({role:"bot",html:"Aucune erreur à corriger."});
+    dc();return;
+  }
+  var errors=pendingFix.errors;
+  var fixed=0,skipped=0;
+  var details=[];
+  errors.forEach(e=>{
+    if(!e.refCode||!CODES[e.refCode]){skipped++;return;}
+    saveOv(e.empId,e.day,e.refCode);
+    fixed++;
+    details.push({name:e.empName,day:e.day,old:e.plCode,new:e.refCode});
+  });
+  // Re-vérifier après correction
+  var key=pendingFix.year+"-"+pendingFix.month;
+  var ref=lg("cmc_ref_"+key,null);
+  var recheck=ref?runVerification(pendingFix.year,pendingFix.month,ref):null;
+  A.lastVerif=recheck;
+  pendingFix=null;
+  // Résumé
+  var h=`<div>
+    <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">✅ ${fixed} correction(s) appliquée(s)</div>`;
+  if(details.length>0){
+    h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
+    details.slice(0,8).forEach(d=>{
+      var ciO=CODES[d.old]||{c:"#c04040"};
+      var ciN=CODES[d.new]||{c:"#3a8a50"};
+      h+=`<div style="font-size:9px;color:#6a8a68">
+        ${esc(d.name)} j${d.day} :
+        <span style="color:${ciO.c};text-decoration:line-through">${d.old||"vide"}</span>
+        → <span style="color:${ciN.c};font-weight:700">${d.new}</span>
+      </div>`;
+    });
+    if(details.length>8) h+=`<div style="font-size:9px;color:#2a4028">...et ${details.length-8} autre(s)</div>`;
+    h+=`</div>`;
+  }
+  if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">⚠️ ${skipped} cellule(s) non corrigée(s) — code invalide</div>`;
+  if(recheck){
+    h+=recheck.errors.length===0
+      ?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">✅ Vérification après correction : aucune erreur restante !</div>`
+      :`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">⚠️ ${recheck.errors.length} erreur(s) encore présente(s) — relancez la vérification pour les voir.</div>`;
+  }
+  h+=`</div>`;
+  iaHistory.push({role:"bot",html:h});
+  dc();
+  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  toast("✅ "+fixed+" correction(s) appliquée(s)");
 }
 
 function iaSend(preset){
-var inp=document.getElementById(“iaIn”);
-var text=preset||(inp?inp.value.trim():””);
-if(!text)return;
-if(inp)inp.value=””;
-iaHistory.push({role:“user”,text});
-var reply=iaRespond(text);
-if(reply!==null) iaHistory.push({role:“bot”,html:reply});
-dc();
-setTimeout(()=>{var m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
+  var inp=document.getElementById("iaIn");
+  var text=preset||(inp?inp.value.trim():"");
+  if(!text)return;
+  if(inp)inp.value="";
+  iaHistory.push({role:"user",text});
+  var reply=iaRespond(text);
+  if(reply!==null) iaHistory.push({role:"bot",html:reply});
+  dc();
+  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaClearHistory(){iaHistory=[];dc();}
 
 function iaRespond(q){
-var ql=q.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
-var pl=gpl();
-var isAdm=A.user&&A.user.id===AID;
+  var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  var pl=gpl();
+  var isAdm=A.user&&A.user.id===AID;
 
-// ── Planning d’un employé ──
-var empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””)));
-if(empMatch&&(ql.includes(“planning”)||ql.includes(“horaire”)||ql.includes(“mois”)||ql.includes(“travail”))){
-var p=pl[empMatch.id]||{};
-var days=getDays(A.year,A.month);
-var rows=””;
-for(var d=1;d<=days;d++){
-var code=p[d]||”—”;
-var ci=CODES[code];
-if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
-}
-var trav=Object.values(p).filter(v=>v&&v!==“RH”&&v!==“R”).length;
-var team=gt(empMatch.team);
-return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> — ${esc(team?team.name:"")} — ${trav}j travaillés en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouvé"}`;
-}
+  // ── Planning d'un employé ──
+  var empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
+  if(empMatch&&(ql.includes("planning")||ql.includes("horaire")||ql.includes("mois")||ql.includes("travail"))){
+    var p=pl[empMatch.id]||{};
+    var days=getDays(A.year,A.month);
+    var rows="";
+    for(var d=1;d<=days;d++){
+      var code=p[d]||"—";
+      var ci=CODES[code];
+      if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
+    }
+    var trav=Object.values(p).filter(v=>v&&v!=="RH"&&v!=="R").length;
+    var team=gt(empMatch.team);
+    return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> — ${esc(team?team.name:"")} — ${trav}j travaillés en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouvé"}`;
+  }
 
-// ── Qui travaille ce soir / aujourd’hui ──
-if(ql.includes(“travaille”)||ql.includes(“travail”)||ql.includes(“service”)||ql.includes(“soir”)||ql.includes(“nuit”)||ql.includes(“aujourd”)){
-var today=new Date().getDate();
-var tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
-if(tYear===A.year&&tMonth===A.month){
-var workers=A.employees.filter(e=>{
-var code=(pl[e.id]||{})[today]||””;
-return isWork(code);
-});
-if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
-var byTeam={};
-workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
-var r=`<strong>${workers.length} employé(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
-Object.keys(byTeam).forEach(tid=>{
-var tcc=tc(tid),team=gt(tid);
-r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"Éq."+tid)}</span> : `;
-r+=byTeam[tid].map(e=>{
-var code=(pl[e.id]||{})[today]||””;
-var ci=CODES[code]||{c:”#888”};
-return `${esc(e.name)} <span style="color:${ci.c};font-size:10px">(${code})</span>`;
-}).join(”, “)+”<br>”;
-});
-return r;
-}
-}
+  // ── Qui travaille ce soir / aujourd'hui ──
+  if(ql.includes("travaille")||ql.includes("travail")||ql.includes("service")||ql.includes("soir")||ql.includes("nuit")||ql.includes("aujourd")){
+    var today=new Date().getDate();
+    var tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
+    if(tYear===A.year&&tMonth===A.month){
+      var workers=A.employees.filter(e=>{
+        var code=(pl[e.id]||{})[today]||"";
+        return isWork(code);
+      });
+      if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
+      var byTeam={};
+      workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
+      var r=`<strong>${workers.length} employé(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
+      Object.keys(byTeam).forEach(tid=>{
+        var tcc=tc(tid),team=gt(tid);
+        r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"Éq."+tid)}</span> : `;
+        r+=byTeam[tid].map(e=>{
+          var code=(pl[e.id]||{})[today]||"";
+          var ci=CODES[code]||{c:"#888"};
+          return `${esc(e.name)} <span style="color:${ci.c};font-size:10px">(${code})</span>`;
+        }).join(", ")+"<br>";
+      });
+      return r;
+    }
+  }
 
-// ── Effectif d’une équipe ──
-var teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””))||ql.includes(“equipe “+t.id)||ql.includes(“équipe “+t.id)||ql.includes(“team “+t.id));
-if(teamMatch){
-var emps=A.employees.filter(e=>e.team===teamMatch.id);
-var chefs=emps.filter(e=>e.chef);
-var mir=gm(teamMatch.id);
-var r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> — ${emps.length} employé(s)<br>`;
-if(chefs.length) r+=`<br>👑 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
-if(mir) r+=`⇌ Miroir : ${esc(mir.name)}<br>`;
-r+=`<br>Membres :<br>${emps.map(e=>`• ${esc(e.name)}${e.chef?” 👑”:””} <span style="font-size:10px;color:#3a5030">${esc(e.post||””)}</span>`).join("<br>")}`;
-return r;
-}
+  // ── Effectif d'une équipe ──
+  var teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes("equipe "+t.id)||ql.includes("équipe "+t.id)||ql.includes("team "+t.id));
+  if(teamMatch){
+    var emps=A.employees.filter(e=>e.team===teamMatch.id);
+    var chefs=emps.filter(e=>e.chef);
+    var mir=gm(teamMatch.id);
+    var r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> — ${emps.length} employé(s)<br>`;
+    if(chefs.length) r+=`<br>👑 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
+    if(mir) r+=`⇌ Miroir : ${esc(mir.name)}<br>`;
+    r+=`<br>Membres :<br>${emps.map(e=>`• ${esc(e.name)}${e.chef?" 👑":""} <span style="font-size:10px;color:#3a5030">${esc(e.post||"")}</span>`).join("<br>")}`;
+    return r;
+  }
 
-// ── Code horaire ──
-var codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*’]/g,””).includes(c.toLowerCase().replace(/[^a-z0-9/*’]/g,””)));
-if(codeMatch&&(ql.includes(“horaire”)||ql.includes(“heure”)||ql.includes(“signifie”)||ql.includes(“veut dire”)||ql.includes(“quoi”)||ql.includes(“c’est”)||ql.includes(“code”))){
-var ci=CODES[codeMatch];
-return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Café de Paris)":""}`;
-}
+  // ── Code horaire ──
+  var codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*']/g,"").includes(c.toLowerCase().replace(/[^a-z0-9/*']/g,"")));
+  if(codeMatch&&(ql.includes("horaire")||ql.includes("heure")||ql.includes("signifie")||ql.includes("veut dire")||ql.includes("quoi")||ql.includes("c'est")||ql.includes("code"))){
+    var ci=CODES[codeMatch];
+    return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Café de Paris)":""}`;
+  }
 
-// ── Tous les codes ──
-if(ql.includes(“codes”)||ql.includes(“liste des horaires”)||ql.includes(“tous les horaires”)){
-var r=”<strong>Codes horaires CMC :</strong><br><br>”;
-CK.forEach(c=>{
-var ci=CODES[c];
-r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">${c}</span> ${ci.l}${ci.cdp?" ★":""}<br>`;
-});
-return r;
-}
+  // ── Tous les codes ──
+  if(ql.includes("codes")||ql.includes("liste des horaires")||ql.includes("tous les horaires")){
+    var r="<strong>Codes horaires CMC :</strong><br><br>";
+    CK.forEach(c=>{
+      var ci=CODES[c];
+      r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">${c}</span> ${ci.l}${ci.cdp?" ★":""}<br>`;
+    });
+    return r;
+  }
 
-// ── Chefs d’une équipe ──
-if(ql.includes(“chef”)){
-if(teamMatch){
-var chef=CHEF_EQ[teamMatch.id]||“Non défini”;
-return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
-}
-var r=”<strong>Chefs d’équipe :</strong><br><br>”;
-A.teams.forEach(t=>{
-var chef=CHEF_EQ[t.id]||”—”;
-r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
-});
-return r;
-}
+  // ── Chefs d'une équipe ──
+  if(ql.includes("chef")){
+    if(teamMatch){
+      var chef=CHEF_EQ[teamMatch.id]||"Non défini";
+      return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
+    }
+    var r="<strong>Chefs d'équipe :</strong><br><br>";
+    A.teams.forEach(t=>{
+      var chef=CHEF_EQ[t.id]||"—";
+      r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
+    });
+    return r;
+  }
 
-// ── Absents / repos ──
-if(ql.includes(“absent”)||ql.includes(“repos”)||ql.includes(“conge”)||ql.includes(“rh”)){
-var today=new Date().getDate();
-if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
-var absents=A.employees.filter(e=>{var c=(pl[e.id]||{})[today]||””;return c===“RH”||c===“R”||c===“CP”||c===“M”||c===“AF”;});
-if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
-return `<strong>${absents.length} employé(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{var c=(pl[e.id]||{})[today]||"";var ci=CODES[c]||{c:"#888"};return `• ${esc(e.name)} — <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
-}
-}
+  // ── Absents / repos ──
+  if(ql.includes("absent")||ql.includes("repos")||ql.includes("conge")||ql.includes("rh")){
+    var today=new Date().getDate();
+    if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
+      var absents=A.employees.filter(e=>{var c=(pl[e.id]||{})[today]||"";return c==="RH"||c==="R"||c==="CP"||c==="M"||c==="AF";});
+      if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
+      return `<strong>${absents.length} employé(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{var c=(pl[e.id]||{})[today]||"";var ci=CODES[c]||{c:"#888"};return `• ${esc(e.name)} — <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
+    }
+  }
 
-// ── CDP ce mois ──
-if(ql.includes(“cdp”)||ql.includes(“cafe de paris”)||ql.includes(“café de paris”)){
-var days=getDays(A.year,A.month);
-var cdpEmps=A.employees.filter(e=>{
-for(var d=1;d<=days;d++){var c=(pl[e.id]||{})[d]||””;if(CODES[c]&&CODES[c].cdp)return true;}
-return false;
-});
-if(!cdpEmps.length) return `Aucun employé avec shifts CDP en ${MFR[A.month]}.`;
-return `<strong>${cdpEmps.length} employé(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
-}
+  // ── CDP ce mois ──
+  if(ql.includes("cdp")||ql.includes("cafe de paris")||ql.includes("café de paris")){
+    var days=getDays(A.year,A.month);
+    var cdpEmps=A.employees.filter(e=>{
+      for(var d=1;d<=days;d++){var c=(pl[e.id]||{})[d]||"";if(CODES[c]&&CODES[c].cdp)return true;}
+      return false;
+    });
+    if(!cdpEmps.length) return `Aucun employé avec shifts CDP en ${MFR[A.month]}.`;
+    return `<strong>${cdpEmps.length} employé(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
+  }
 
-// ── Stats globales ──
-if(ql.includes(“stat”)||ql.includes(“combien”)||ql.includes(“effectif”)||ql.includes(“total”)){
-var r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
-r+=`👥 Total : <strong>${A.employees.length}</strong> employés<br>`;
-A.teams.forEach(t=>{
-var n=A.employees.filter(e=>e.team===t.id).length;
-r+=`<span style="color:${t.color}">●</span> ${esc(t.name)} : ${n} personnes<br>`;
-});
-return r;
-}
+  // ── Stats globales ──
+  if(ql.includes("stat")||ql.includes("combien")||ql.includes("effectif")||ql.includes("total")){
+    var r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
+    r+=`👥 Total : <strong>${A.employees.length}</strong> employés<br>`;
+    A.teams.forEach(t=>{
+      var n=A.employees.filter(e=>e.team===t.id).length;
+      r+=`<span style="color:${t.color}">●</span> ${esc(t.name)} : ${n} personnes<br>`;
+    });
+    return r;
+  }
 
-// ── Aide / que sais-tu ──
-if(ql.includes(“aide”)||ql.includes(“help”)||ql.includes(“peux-tu”)||ql.includes(“peux tu”)||ql.includes(“sais-tu”)||ql.includes(“sais tu”)||ql.includes(“quoi faire”)){
-return `Je peux vous aider avec :<br><br> 📅 <strong>Planning</strong> — "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br> 👥 <strong>Équipes</strong> — "Combien dans l'équipe 3 ?", "Chefs de l'équipe 2"<br> ⏰ <strong>Horaires</strong> — "Que signifie 22/6 ?", "Liste des codes"<br> 📊 <strong>Stats</strong> — "Combien d'employés total ?", "Qui a CDP ce mois ?"<br> 🔍 <strong>Absences</strong> — "Qui est absent aujourd'hui ?"<br><br> Posez votre question librement !`;
-}
+  // ── Aide / que sais-tu ──
+  if(ql.includes("aide")||ql.includes("help")||ql.includes("peux-tu")||ql.includes("peux tu")||ql.includes("sais-tu")||ql.includes("sais tu")||ql.includes("quoi faire")){
+    return `Je peux vous aider avec :<br><br>
+📅 <strong>Planning</strong> — "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br>
+👥 <strong>Équipes</strong> — "Combien dans l'équipe 3 ?", "Chefs de l'équipe 2"<br>
+⏰ <strong>Horaires</strong> — "Que signifie 22/6 ?", "Liste des codes"<br>
+📊 <strong>Stats</strong> — "Combien d'employés total ?", "Qui a CDP ce mois ?"<br>
+🔍 <strong>Absences</strong> — "Qui est absent aujourd'hui ?"<br><br>
+Posez votre question librement !`;
+  }
 
-// ── Vérification planning ──
-if(ql.includes(“verif”)||ql.includes(“erreur”)||ql.includes(“correct”)||ql.includes(“check”)||ql.includes(“bon horaire”)||ql.includes(“correspond”)||ql.includes(“juste”)){
-if(!isAdm) return “La vérification du planning est réservée à l’administrateur.”;
-var key=A.year+”-”+A.month;
-var ref=lg(“cmc_ref_”+key,null);
-if(!ref) return `<span style="color:#c9a227">Aucun planning importé pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin → Import planning</strong>, je le vérifierai automatiquement.`;
-var v=runVerification(A.year,A.month,ref);
-A.lastVerif=v;
-return formatVerifReport(v);
-}
+  // ── Vérification planning ──
+  if(ql.includes("verif")||ql.includes("erreur")||ql.includes("correct")||ql.includes("check")||ql.includes("bon horaire")||ql.includes("correspond")||ql.includes("juste")){
+    if(!isAdm) return "La vérification du planning est réservée à l'administrateur.";
+    var key=A.year+"-"+A.month;
+    var ref=lg("cmc_ref_"+key,null);
+    if(!ref) return `<span style="color:#c9a227">Aucun planning importé pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin → Import planning</strong>, je le vérifierai automatiquement.`;
+    var v=runVerification(A.year,A.month,ref);
+    A.lastVerif=v;
+    return formatVerifReport(v);
+  }
 
-// ── Rapport dernière vérification ──
-if(ql.includes(“rapport”)||ql.includes(“dernier”)||ql.includes(“résultat”)){
-if(A.lastVerif) return formatVerifReport(A.lastVerif);
-return “Aucune vérification effectuée. Importez un planning ou cliquez sur 🔍 Vérifier.”;
-}
+  // ── Rapport dernière vérification ──
+  if(ql.includes("rapport")||ql.includes("dernier")||ql.includes("résultat")){
+    if(A.lastVerif) return formatVerifReport(A.lastVerif);
+    return "Aucune vérification effectuée. Importez un planning ou cliquez sur 🔍 Vérifier.";
+  }
 
-// ── Erreurs d’un employé spécifique ──
-if(empMatch&&(ql.includes(“erreur”)||ql.includes(“verif”)||ql.includes(“correct”)||ql.includes(“horaire”))){
-var key=A.year+”-”+A.month;
-var ref=lg(“cmc_ref_”+key,null);
-if(!ref) return `Pas de référence d'import pour ${MFR[A.month]} ${A.year}.`;
-var v=runVerification(A.year,A.month,ref);
-var empErrs=v.errors.filter(e=>e.empId===empMatch.id);
-if(!empErrs.length) return `✅ <strong>${esc(empMatch.name)}</strong> — aucune erreur détectée, tous les horaires correspondent.`;
-var r=`⚠️ <strong>${esc(empMatch.name)}</strong> — ${empErrs.length} erreur(s) :<br><br>`;
-empErrs.forEach(e=>{
-var ciR=CODES[e.refCode]||{c:”#c9a227”};
-var ciP=CODES[e.plCode]||{c:”#6a8a68”};
-r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> → devrait être <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
-});
-return r;
-}
+  // ── Erreurs d'un employé spécifique ──
+  if(empMatch&&(ql.includes("erreur")||ql.includes("verif")||ql.includes("correct")||ql.includes("horaire"))){
+    var key=A.year+"-"+A.month;
+    var ref=lg("cmc_ref_"+key,null);
+    if(!ref) return `Pas de référence d'import pour ${MFR[A.month]} ${A.year}.`;
+    var v=runVerification(A.year,A.month,ref);
+    var empErrs=v.errors.filter(e=>e.empId===empMatch.id);
+    if(!empErrs.length) return `✅ <strong>${esc(empMatch.name)}</strong> — aucune erreur détectée, tous les horaires correspondent.`;
+    var r=`⚠️ <strong>${esc(empMatch.name)}</strong> — ${empErrs.length} erreur(s) :<br><br>`;
+    empErrs.forEach(e=>{
+      var ciR=CODES[e.refCode]||{c:"#c9a227"};
+      var ciP=CODES[e.plCode]||{c:"#6a8a68"};
+      r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> → devrait être <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
+    });
+    return r;
+  }
 
-// ── Corriger les erreurs ──
-if(ql.includes(“corrig”)||ql.includes(“fix”)||ql.includes(“répare”)||ql.includes(“modifie”)||ql.includes(“appliqu”)){
-if(!isAdm) return “La correction du planning est réservée à l’administrateur.”;
-if(!A.lastVerif||!A.lastVerif.errors.length){
-var v=verifyCurrentMonth();
-if(!v) return “Aucune référence d’import disponible. Importez d’abord un planning.”;
-if(!v.errors.length) return “✅ Aucune erreur à corriger — le planning est correct !”;
-}
-iaAskCorrect();
-return null; // iaAskCorrect gère l’affichage
-}
+  // ── Corriger les erreurs ──
+  if(ql.includes("corrig")||ql.includes("fix")||ql.includes("répare")||ql.includes("modifie")||ql.includes("appliqu")){
+    if(!isAdm) return "La correction du planning est réservée à l'administrateur.";
+    if(!A.lastVerif||!A.lastVerif.errors.length){
+      var v=verifyCurrentMonth();
+      if(!v) return "Aucune référence d'import disponible. Importez d'abord un planning.";
+      if(!v.errors.length) return "✅ Aucune erreur à corriger — le planning est correct !";
+    }
+    iaAskCorrect();
+    return null; // iaAskCorrect gère l'affichage
+  }
 
-// ── Réponse par défaut ──
-return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> • "Planning de [NOM]"<br> • "Qui travaille aujourd'hui ?"<br> • "Combien dans l'équipe 3 ?"<br> • "Que signifie le code 22/6 ?"<br> • "Qui est chef de l'équipe 1 ?"`;
+  // ── Réponse par défaut ──
+  return `Je n'ai pas compris votre question. Essayez par exemple :<br><br>
+• "Planning de [NOM]"<br>
+• "Qui travaille aujourd'hui ?"<br>
+• "Combien dans l'équipe 3 ?"<br>
+• "Que signifie le code 22/6 ?"<br>
+• "Qui est chef de l'équipe 1 ?"`;
 }
 
 try{
-render();
+  render();
 }catch(e){
-document.body.style.background=”#000”;
-document.body.innerHTML=”<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: “+e.message+”<br>Stack: “+(e.stack||””).replace(/</g,”<”).substr(0,500)+”</div>”;
+  document.body.style.background="#000";
+  document.body.innerHTML="<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: "+e.message+"<br>Stack: "+(e.stack||"").replace(/</g,"&lt;").substr(0,500)+"</div>";
 }
 
 render();
-  
+</script>
+
+</body></html>
