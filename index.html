@@ -1988,7 +1988,12 @@ return null; // iaAskCorrect gère l’affichage
 return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> • "Planning de [NOM]"<br> • "Qui travaille aujourd'hui ?"<br> • "Combien dans l'équipe 3 ?"<br> • "Que signifie le code 22/6 ?"<br> • "Qui est chef de l'équipe 1 ?"`;
 }
 
+try{
 render();
+}catch(e){
+document.body.style.background=”#000”;
+document.body.innerHTML=”<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: “+e.message+”<br>Stack: “+(e.stack||””).replace(/</g,”<”).substr(0,500)+”</div>”;
+}
 </script>
 
 </body>
