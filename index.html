@@ -153,10 +153,6 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 
 <!-- Firebase SDK -->
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js" defer></script>
-
 <script>
 // ═══════════════════════════════════════════
 // FIREBASE CONFIG — coller votre config ici
@@ -189,8 +185,13 @@ var FB_LISTENERS = {};
 
 function fbInit(){
   if(!FIREBASE_CONFIG) return;
+  if(typeof firebase === "undefined") {
+    // Firebase SDK pas encore chargé, réessayer
+    setTimeout(fbInit, 500);
+    return;
+  }
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     FB_DB = firebase.database();
     FB_READY = true;
     console.log("✅ Firebase connecté");
@@ -203,7 +204,7 @@ function fbInit(){
 // Écrire dans Firebase + localStorage
 function fbSet(path, val){
   try { localStorage.setItem(path, JSON.stringify(val)); } catch(e){}
-  if(FB_READY) FB_DB.ref(path).set(val);
+  try { if(FB_READY && FB_DB) FB_DB.ref(path).set(val); } catch(e){}
 }
 
 // Lire depuis localStorage (Firebase met à jour en arrière-plan)
@@ -2203,6 +2204,10 @@ return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> • "P
 render();
 window.addEventListener(“load”,function(){if(typeof fbInit===“function”)fbInit();});
 </script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 </body>
 </html>
