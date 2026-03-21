@@ -224,6 +224,7 @@ function fbListen(path, callback){
   FB_LISTENERS[path] = handler;
 }
 
+
 function fbStartListeners(){
   // Sync planning overrides
   fbListen('cmc_ov', function(val){
@@ -883,13 +884,12 @@ var DEF_CI={
   "GARCIA A":0,"GARRO S":1,"GIORSETTI S":2,"SIRIO J":3,"FAUTRIER M":4
 };
 var DCOL=["#c9a227","#4a72a8","#3a8a50","#a84868","#c07830","#38bdf8","#a3e635","#f87171","#c084fc"];
-function gCI(y,m){return lg(`cmc_ci_${y}_${m}`,JSON.parse(JSON.stringify(DEF_CI)));}
-function sCI(y,m,o){ls(`cmc_ci_${y}_${m}`,o);}
+function gCI(y,m){return lg("cmc_ci_"+y+"_"+m,JSON.parse(JSON.stringify(DEF_CI)));}
+function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);fbSet("cmc_ci_"+y+"_"+m,o);}
 
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
-  var CI=gCI(A.year,A.month);
   var myTeam=A.user?A.user.team:null;
   var show=isAdm?A.teams.map(t=>t.id):[myTeam];
   var h=`<div class="page">
@@ -936,9 +936,10 @@ function vDeparts(){
         <div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
     });
     h+=`</tr></thead><tbody>`;
+    var CI=gCI(A.year,A.month);
     chefEmps.forEach((emp,ei)=>{
       var isMe=emp.id===A.user.id;
-      var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
+      var base=CI[emp.name]!==undefined?CI[emp.name]:ei;
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
         ${isMe?"▶ ":""}${esc(emp.name)}</td>`;
@@ -974,17 +975,18 @@ function showCI(tid){
   openCITeam=(openCITeam===tid)?null:tid;
   dc();
 }
-function setCI(name,newBase,tid){
+function setCI(name,si,tid){
+  // name = nom du chef
+  // si = nouvel index de séquence souhaité pour ce chef
+  // → tous les autres chefs décalent du même delta pour garder le cycle
   if(!A.user||A.user.id!==AID)return;
-  var CI=gCI(A.year,A.month);
   var names=CHEFS_T[tid]||[];
   var sl=names.length;
-  if(sl===0){CI[name]=newBase;sCI(A.year,A.month,CI);dc();return;}
-  // Calcul du delta : décalage appliqué à TOUTE l'équipe
-  // pour que le cycle reste cohérent (bases tous distincts)
+  if(!sl)return;
+  var CI=gCI(A.year,A.month);
   var oldBase=CI[name]!==undefined?CI[name]:0;
-  var delta=((newBase-oldBase)%sl+sl)%sl;
-  // Appliquer le même delta à tous les chefs de l'équipe
+  var delta=((si-oldBase)%sl+sl)%sl;
+  // Décaler TOUTE l'équipe du même delta → cycle conservé, 0 doublon
   names.forEach(function(n){
     var cur=CI[n]!==undefined?CI[n]:0;
     CI[n]=((cur+delta)%sl+sl)%sl;
@@ -993,16 +995,16 @@ function setCI(name,newBase,tid){
   dc();
 }
 function renderCIPanel(tid){
-  var CI=gCI(A.year,A.month);
   var names=CHEFS_T[tid]||[];
   var emps=names.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
   var team=A.teams.find(t=>t.id===tid),tcc=team?team.color:"#888";
   var SEQCI=getSeqForSize(emps.length);
+  var CI2=gCI(A.year,A.month);
   var h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px">
     <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">⚙️ Positions de départ — ${esc(team?team.name:tid)}</div>`;
   if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef défini. Allez dans Admin → Équipes pour en ajouter.</div>`;}
-  emps.forEach(emp=>{
-    var cur=CI[emp.name]!==undefined?CI[emp.name]:0;
+  emps.forEach((emp,ei)=>{
+    var cur=CI2[emp.name]!==undefined?CI2[emp.name]:ei;
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span>
       <div style="display:flex;gap:4px">`;
