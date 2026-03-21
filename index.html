@@ -151,6 +151,116 @@ select.inp{-webkit-appearance:none}
 
 
 </style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// FIREBASE CONFIG — coller votre config ici
+// ═══════════════════════════════════════════
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs",
+  authDomain: "cmcteams-c16ab.firebaseapp.com",
+  databaseURL: "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cmcteams-c16ab",
+  storageBucket: "cmcteams-c16ab.firebasestorage.app",
+  messagingSenderId: "412556114638",
+  appId: "1:412556114638:web:273b49e9e46835c8916e9f"
+};
+
+// Exemple:
+// var FIREBASE_CONFIG = {
+//   apiKey: "AIza...",
+//   authDomain: "cmcteams-xxx.firebaseapp.com",
+//   databaseURL: "https://cmcteams-xxx-default-rtdb.europe-west1.firebasedatabase.app",
+//   projectId: "cmcteams-xxx",
+//   storageBucket: "cmcteams-xxx.appspot.com",
+//   messagingSenderId: "123456789",
+//   appId: "1:123456789:web:abc123"
+// };
+
+var FB = null;
+var FB_DB = null;
+var FB_READY = false;
+var FB_LISTENERS = {};
+
+function fbInit(){
+  if(!FIREBASE_CONFIG) return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    FB_DB = firebase.database();
+    FB_READY = true;
+    console.log("✅ Firebase connecté");
+    fbStartListeners();
+  } catch(e) {
+    console.warn("Firebase init error:", e);
+  }
+}
+
+// Écrire dans Firebase + localStorage
+function fbSet(path, val){
+  try { localStorage.setItem(path, JSON.stringify(val)); } catch(e){}
+  if(FB_READY) FB_DB.ref(path).set(val);
+}
+
+// Lire depuis localStorage (Firebase met à jour en arrière-plan)
+function fbGet(path, fallback){
+  try { var v=localStorage.getItem(path); if(v) return JSON.parse(v); } catch(e){}
+  return fallback;
+}
+
+// Listener temps réel Firebase → met à jour l'app
+function fbListen(path, callback){
+  if(!FB_READY) return;
+  if(FB_LISTENERS[path]) FB_DB.ref(path).off('value', FB_LISTENERS[path]);
+  var handler = FB_DB.ref(path).on('value', function(snap){
+    var val = snap.val();
+    if(val !== null){
+      try { localStorage.setItem(path, JSON.stringify(val)); } catch(e){}
+      callback(val);
+    }
+  });
+  FB_LISTENERS[path] = handler;
+}
+
+function fbStartListeners(){
+  // Sync planning overrides
+  fbListen('cmc_ov', function(val){
+    A.overrides = val || {};
+    if(A.user && A.view==='planning') dc();
+    if(A.user && A.view==='departs') dc();
+  });
+  // Sync employés
+  fbListen('cmc_e', function(val){
+    if(val && Array.isArray(val)){
+      A.employees = val;
+      if(A.user) dc();
+    }
+  });
+  // Sync équipes
+  fbListen('cmc_t', function(val){
+    if(val && Array.isArray(val)){
+      A.teams = val;
+      if(A.user) dc();
+    }
+  });
+  // Sync chat
+  fbListen('cmc_chat', function(val){
+    var msgs = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+    A.chatMsgs = msgs;
+    if(A.user && A.view==='chat'){
+      var m=document.getElementById('chatMsgs');
+      if(m){ m.innerHTML=vChatMsgs(); m.scrollTop=m.scrollHeight; }
+      var badgeEl=document.getElementById('chatBadge');
+      if(badgeEl) badgeEl.style.display='none';
+    } else if(A.user && A.view!=='chat'){
+      // Badge nouveaux messages
+      dc();
+    }
+  });
+}
+</script>
 </head>
 <body>
 <div id="app"></div>
@@ -394,7 +504,7 @@ var A={
   lastCsv:"",
   lastCsvName:""
 };
-function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
+function sav(){fbSet("cmc_e",A.employees);fbSet("cmc_t",A.teams);fbSet("cmc_ov",A.overrides);}
 
 function genBase(y,m){
   var days=getDays(y,m),mo=moOff(y,m),p={};
@@ -436,7 +546,7 @@ function saveOv(eid,day,code){
   if(!A.overrides[key])A.overrides[key]={};
   if(!A.overrides[key][eid])A.overrides[key][eid]={};
   if(code==="")delete A.overrides[key][eid][day]; else A.overrides[key][eid][day]=code;
-  ls("cmc_ov",A.overrides);
+  fbSet("cmc_ov",A.overrides);
 }
 var isWork=c=>c&&c!=="RH"&&c!=="R"&&c!=="CP"&&c!=="M"&&c!=="AF";
 
@@ -545,6 +655,7 @@ function stepPin(){
   }
   var emp=A.employees.find(e=>e.id===AID);
   A.user=emp;loginStep=0;render();
+if(typeof fbInit==="function")fbInit();
 }
 function step1(){
   var el=document.getElementById("li");if(!el)return;
@@ -553,11 +664,14 @@ function step1(){
   if(!emp){var er=document.getElementById("lerr");if(er)er.textContent="Matricule non reconnu.";return;}
   if(uid===AID){
     var pin=lg("cmc_admin_pin",null);
-    if(pin){loginUid=uid;loginStep=2;render();}
-    else{A.user=emp;loginStep=0;render();}
+    if(pin){loginUid=uid;loginStep=2;render();
+if(typeof fbInit==="function")fbInit();}
+    else{A.user=emp;loginStep=0;render();
+if(typeof fbInit==="function")fbInit();}
     return;
   }
   loginUid=uid;loginStep=1;render();
+if(typeof fbInit==="function")fbInit();
 }
 
 function step2(){
@@ -572,7 +686,8 @@ function step2(){
     var pw2=(document.getElementById("fp2")||{}).value||"";
     if(pw1!==pw2){if(errEl)errEl.textContent="Les mots de passe ne correspondent pas";return;}
     A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls("cmc_pw",A.passwords);
-    A.user=emp;loginStep=0;render();toast("Bienvenue "+emp.name.split(" ")[0]+" !");
+    A.user=emp;loginStep=0;render();
+if(typeof fbInit==="function")fbInit();toast("Bienvenue "+emp.name.split(" ")[0]+" !");
   } else {
     var stored=A.passwords[loginUid];
     var valid=(typeof stored==="string"&&hashPw(pw1)===stored)||(stored&&stored.h&&hashPw(pw1)===stored.h);
@@ -580,10 +695,12 @@ function step2(){
     // Migrer vers nouveau format si ancien
     if(typeof stored==="string"){A.passwords[loginUid]={h:stored,p:pw1};ls("cmc_pw",A.passwords);}
     A.user=emp;loginStep=0;render();
+if(typeof fbInit==="function")fbInit();
   }
 }
 
-function doLogout(){A.user=null;render();}
+function doLogout(){A.user=null;render();
+if(typeof fbInit==="function")fbInit();}
 
 function vTopbar(){
   var u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:"1"),t=gt(u?u.team:"");
@@ -944,7 +1061,7 @@ function sendMsg(){
   inp.value="";
   A.chatMsgs.push({text,uid:A.user.id,name:A.user.name,team:A.user.team,ts:now()});
   if(A.chatMsgs.length>200)A.chatMsgs=A.chatMsgs.slice(-200);
-  ls("cmc_chat",A.chatMsgs);
+  fbSet("cmc_chat",A.chatMsgs);
   var c=document.getElementById("chatMsgs");
   if(c){
     var div=document.createElement("div");div.className="msg-me";
@@ -1026,7 +1143,7 @@ function doResetPw(){
 function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
   var key=`${A.year}-${A.month}`;
-  delete A.overrides[key];ls("cmc_ov",A.overrides);
+  delete A.overrides[key];fbSet("cmc_ov",A.overrides);
   toast("Planning du mois réinitialisé");dc();
 }
 
@@ -1506,7 +1623,7 @@ function doImport(){
       ok++;
     }
   }
-  ls("cmc_ov",A.overrides);
+  fbSet("cmc_ov",A.overrides);
   ls("cmc_ref_"+key,refData);
   A.lastImportKey=key;
   // Naviguer vers le mois importé pour que gpl() soit cohérent
@@ -1603,7 +1720,7 @@ function openPicker(eid,day,el){
 }
 function closePicker(){document.getElementById("pk").style.display="none";document.getElementById("ov").style.display="none";A.pt=null;}
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
-function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls("cmc_t",A.teams);}}
+function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(x=>x.id===id);if(t){t[f]=v;fbSet("cmc_t",A.teams);}}
 function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(x=>x.id===id);if(e){e.team=team;sav();}}
 function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast("Employé supprimé");dc();}
 function addEmp(){
@@ -2040,6 +2157,7 @@ Posez votre question librement !`;
 }
 
 render();
+if(typeof fbInit==="function")fbInit();
 </script>
 </body>
 </html>
