@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<title>CMC Teams v1774127522833</title>
+<title>CMC Teams</title>
 <style>
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -28,9 +28,9 @@ repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,162,39,.02
 repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(201,162,39,.022) 24px,rgba(201,162,39,.022) 26px),
 radial-gradient(ellipse at 50% 0%,#223d24 0%,#1a2e1c 60%);
 }
-/* Symboles cartes en fond d\0000e9coratif */
+/* Symboles cartes en fond décoratif */
 body::after{
-content:”\002660  \002663  \002665  \002666  \002660  \002663  \002665  \002666  \002660  \002663  \002665  \002666”;
+content:“♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦”;
 position:fixed;bottom:90px;left:0;right:0;
 font-size:18px;letter-spacing:8px;
 color:rgba(201,162,39,.04);
@@ -114,14 +114,14 @@ select.inp{-webkit-appearance:none}
 .msg-ts{font-size:8px;color:#1e2e1e;margin-top:2px;text-align:right}
 .chat-bar{padding:9px 14px;border-top:1px solid #182818;display:flex;gap:8px;background:#16281a;flex-shrink:0}
 
-/* === PR\0000c9SENCE DOT === */
+/* === PRÉSENCE DOT === */
 .odot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
 .odot.on{background:#3a8a40}.odot.off{background:#1e2e1e}
 .emp-row{display:flex;align-items:center;gap:9px;padding:10px 14px}
 .chef-badge{background:rgba(201,162,39,.1);color:#c9a227;border:1px solid rgba(201,162,39,.22);border-radius:3px;padding:1px 5px;font-size:8px;font-weight:700}
 .step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#c9a227;color:#040c04;font-size:10px;font-weight:800;margin-right:6px}
 
-/* === \0000c9CRAN LOGIN === */
+/* === ÉCRAN LOGIN === */
 .login-bg{
 min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
 background:
@@ -138,9 +138,9 @@ box-shadow:0 0 80px rgba(0,0,0,.85),0 0 0 1px rgba(201,162,39,.06),inset 0 1px 0
 position:relative;overflow:hidden;
 }
 /* Coins de carte */
-.login-card::before{content:”\002666”;position:absolute;top:12px;left:16px;font-size:14px;color:rgba(201,162,39,.22)}
-.login-card::after{content:”\002666”;position:absolute;bottom:12px;right:16px;font-size:14px;color:rgba(201,162,39,.22);transform:rotate(180deg)}
-/* Bande d\0000e9co haut */
+.login-card::before{content:“♦”;position:absolute;top:12px;left:16px;font-size:14px;color:rgba(201,162,39,.22)}
+.login-card::after{content:“♦”;position:absolute;bottom:12px;right:16px;font-size:14px;color:rgba(201,162,39,.22);transform:rotate(180deg)}
+/* Bande déco haut */
 .login-banner{
 background:linear-gradient(90deg,transparent,rgba(201,162,39,.08),transparent);
 border-top:1px solid rgba(201,162,39,.2);
@@ -158,44 +158,44 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 <div id="ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500"></div>
 <script>
 window.onerror=function(msg,src,line,col,err){
-  var s='<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0a1a0c;padding:20px;color:#c9a227;font-family:monospace;font-size:13px;z-index:9999">'
-    +'<b>ERR JS</b><br><br>'+msg+'<br><br>L'+line+' C'+col+'</div>';
+  var s='<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0a1a0c;padding:20px;color:#c9a227;font-family:monospace;font-size:12px;z-index:9999">'
+    +'<b>ERR JS</b><br>'+msg+'<br>L'+line+' C'+col+'</div>';
   if(document.body)document.body.innerHTML=s;
   return false;
 };
 </script><script>
 
-var MFR=[“Janvier”,“F\u00E9vrier”,“Mars”,“Avril”,“Mai”,“Juin”,“Juillet”,“Ao\u00FBt”,“Septembre”,“Octobre”,“Novembre”,“D\u00E9cembre”];
+var MFR=[“Janvier”,“F\u00e9vrier”,“Mars”,“Avril”,“Mai”,“Juin”,“Juillet”,“Ao\u00fbt”,“Septembre”,“Octobre”,“Novembre”,“D\u00e9cembre”];
 var DS=[“D”,“L”,“M”,“M”,“J”,“V”,“S”];
 var AID=“U11804”;
 var CODES={
-“22/6”  :{l:“22h-6h”,  bg:”#03101c”,c:”#4a6888”,b:”#07182e”,cdp:false},
-“19/4”  :{l:“19h-4h”,  bg:”#04061a”,c:”#405078”,b:”#080c2a”,cdp:false},
-“16/3”  :{l:“16h-3h”,  bg:”#020d07”,c:”#2d5e3c”,b:”#051408”,cdp:false},
-“14/19” :{l:“14h-19h”, bg:”#070d03”,c:”#465828”,b:”#0c1606”,cdp:false},
-“20/5”  :{l:“20h-5h”,  bg:”#060314”,c:”#504888”,b:”#0e0826”,cdp:false},
-“16/22” :{l:“16h-22h”, bg:”#0c0900”,c:”#786810”,b:”#160f00”,cdp:false},
-“20/5*” :{l:“20h-5h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
-“19/4*” :{l:“19h-4h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
-“16/3*” :{l:“16h-3h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
-“16/22*”:{l:“16h-22h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“22/6”  :{l:“22h\u20136h”,  bg:”#03101c”,c:”#4a6888”,b:”#07182e”,cdp:false},
+“19/4”  :{l:“19h\u20134h”,  bg:”#04061a”,c:”#405078”,b:”#080c2a”,cdp:false},
+“16/3”  :{l:“16h\u20133h”,  bg:”#020d07”,c:”#2d5e3c”,b:”#051408”,cdp:false},
+“14/19” :{l:“14h\u201319h”, bg:”#070d03”,c:”#465828”,b:”#0c1606”,cdp:false},
+“20/5”  :{l:“20h\u20135h”,  bg:”#060314”,c:”#504888”,b:”#0e0826”,cdp:false},
+“16/22” :{l:“16h\u201322h”, bg:”#0c0900”,c:”#786810”,b:”#160f00”,cdp:false},
+“20/5*” :{l:“20h\u20135h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“19/4*” :{l:“19h\u20134h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/3*” :{l:“16h\u20133h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/22*”:{l:“16h\u201322h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
 “19/4’” :{l:“Convention”,bg:”#0e0303”,c:”#684038”,b:”#180606”,cdp:false},
 “RH”    :{l:“Repos Hebdo”,bg:”#070716”,c:”#303058”,b:”#0e0e1e”,cdp:false},
 “R”     :{l:“Repos”,    bg:”#070707”,c:”#303030”,b:”#0e0e0e”,cdp:false},
-“CP”    :{l:“Cong\u00E9”,    bg:”#0e050e”,c:”#684060”,b:”#180a16”,cdp:false},
+“CP”    :{l:“Cong\u00e9”,    bg:”#0e050e”,c:”#684060”,b:”#180a16”,cdp:false},
 “AF”    :{l:“Formation”,bg:”#020d05”,c:”#206038”,b:”#041006”,cdp:false},
 “M”     :{l:“Maladie”,  bg:”#0e0300”,c:”#783840”,b:”#180606”,cdp:false},
-“RRT”   :{l:“R\u00E9cup RRT”,bg:”#020a14”,c:”#205060”,b:”#04101c”,cdp:false},
+“RRT”   :{l:“R\u00e9cup RRT”,bg:”#020a14”,c:”#205060”,b:”#04101c”,cdp:false},
 “HC”    :{l:“H.Comp.”,  bg:”#070d02”,c:”#506818”,b:”#0c1604”,cdp:false}
 };
 var CK=Object.keys(CODES);
 var TC={“1”:”#c9a227”,“2”:”#4a72a8”,“3”:”#3a8a50”,“4”:”#a84868”,“5”:”#c07830”};
 var DEF_TEAMS=[
-{id:“1”,name:”\u00C9quipe 1”,mirrorTeamId:“4”,departureOrder:1,color:”#c9a227”},
-{id:“2”,name:”\u00C9quipe 2”,mirrorTeamId:“5”,departureOrder:2,color:”#4a72a8”},
-{id:“3”,name:”\u00C9quipe 3”,mirrorTeamId:null,departureOrder:3,color:”#3a8a50”},
-{id:“4”,name:”\u00C9quipe 4”,mirrorTeamId:“1”,departureOrder:4,color:”#a84868”},
-{id:“5”,name:”\u00C9quipe 5”,mirrorTeamId:“2”,departureOrder:5,color:”#c07830”}
+{id:“1”,name:”\u00c9quipe 1”,mirrorTeamId:“4”,departureOrder:1,color:”#c9a227”},
+{id:“2”,name:”\u00c9quipe 2”,mirrorTeamId:“5”,departureOrder:2,color:”#4a72a8”},
+{id:“3”,name:”\u00c9quipe 3”,mirrorTeamId:null,departureOrder:3,color:”#3a8a50”},
+{id:“4”,name:”\u00c9quipe 4”,mirrorTeamId:“1”,departureOrder:4,color:”#a84868”},
+{id:“5”,name:”\u00c9quipe 5”,mirrorTeamId:“2”,departureOrder:5,color:”#c07830”}
 ];
 
 var DEF_EMP=[
@@ -381,7 +381,7 @@ for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}
 return String(h>>>0);
 }
 
-// \u00C9tat
+// \u00c9tat
 var A={
 user:null,
 view:“planning”,
@@ -445,7 +445,7 @@ var isWork=c=>c&&c!==“RH”&&c!==“R”&&c!==“CP”&&c!==“M”&&c!==“AF
 var tT=null;
 function toast(msg,type=“ok”){
 const el=document.getElementById(“toast”);
-el.textContent=(type===“err”?”\u26A0 “:”\u2713 “)+msg;
+el.textContent=(type===“err”?”\u26a0 “:”\u2713 “)+msg;
 el.style.cssText=`display:block;background:${type==="err"?"#200600":"#03100a"};border:1px solid ${type==="err"?"#481010":"#0a2810"}`;
 if(tT)clearTimeout(tT);tT=setTimeout(()=>el.style.display=“none”,3200);
 }
@@ -485,7 +485,7 @@ return `<div class="login-bg">
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:54px;color:#c9a227;text-shadow:0 0 30px rgba(201,162,39,.5),0 0 60px rgba(201,162,39,.18);line-height:1;display:block">\u2666</div>
       <div style="font-size:26px;font-weight:800;letter-spacing:4px;margin-top:10px;color:#f0e8d0;text-shadow:0 1px 6px rgba(0,0,0,.6)">CMC Teams</div>
-      <div style="font-size:9px;color:#3a5030;letter-spacing:4px;text-transform:uppercase;margin-top:7px">Black Jack \u00B7 Casino de Monaco</div>
+      <div style="font-size:9px;color:#3a5030;letter-spacing:4px;text-transform:uppercase;margin-top:7px">Black Jack \u00b7 Casino de Monaco</div>
     </div>
     <div style="font-size:9px;color:#3a5030;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Matricule SBM</div>
     <input id="li" class="inp" type="text" placeholder="ex. U11804"
@@ -494,7 +494,7 @@ return `<div class="login-bg">
     <div id="lerr" style="color:#a04040;font-size:11px;min-height:16px;margin-bottom:8px"></div>
     <button class="btn gold" onclick="step1()" style="width:100%;padding:14px;font-size:15px;justify-content:center;border-radius:10px">Continuer &nbsp;\u2192</button>
     <div style="margin-top:18px;text-align:center;font-size:9px;color:#1a2818;border-top:1px solid rgba(201,162,39,.08);padding-top:14px;line-height:1.8">
-      \u2666 &nbsp; Premi\u00E8re connexion : cr\u00E9ation de votre mot de passe &nbsp; \u2666
+      \u2666 &nbsp; Premi\u00e8re connexion : cr\u00e9ation de votre mot de passe &nbsp; \u2666
     </div>
   </div></div>`;
 }
@@ -507,19 +507,19 @@ return `<div class="login-bg">
   <div class="login-card">
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
-      <div style="font-size:36px;line-height:1">${isNew?"\uD83D\uDD10":"\uD83C\uDCCF"}</div>
-      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">${isNew?"Cr\u00E9ation du mot de passe":"Connexion"}</div>
+      <div style="font-size:36px;line-height:1">${isNew?"\ud83d\udd10":"\ud83c\udccf"}</div>
+      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">${isNew?"Cr\u00e9ation du mot de passe":"Connexion"}</div>
       <div style="font-size:12px;color:#3a5030;margin-top:5px">Bienvenue, <strong style="color:#c9a227">${esc(emp.name||"")}</strong></div>
     </div>
     ${isNew?`
-    <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Votre nom en majuscules (v\u00E9rification)</div>
+    <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Votre nom en majuscules (v\u00e9rification)</div>
     <input id="fn" class="inp" type="text" placeholder="${esc(emp.name||"")}" autocapitalize="characters" style="text-transform:uppercase;margin-bottom:10px">
     `:""}
     <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${isNew?"Choisir un mot de passe (min. 6 car.)":"Mot de passe"}</div>
     <input id="fp1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:8px">
     ${isNew?'<input id="fp2" class="inp" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom:10px">':""}
     <div id="fperr" style="color:#a04040;font-size:11px;min-height:16px;margin-bottom:8px"></div>
-    <button class="btn gold" onclick="step2()" style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:10px">${isNew?"Cr\u00E9er mon acc\u00E8s":"Se connecter"}</button>
+    <button class="btn gold" onclick="step2()" style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:10px">${isNew?"Cr\u00e9er mon acc\u00e8s":"Se connecter"}</button>
     <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:12px;justify-content:center;margin-top:8px">\u2190 Retour</button>
   </div></div>`;
 }
@@ -530,15 +530,15 @@ return `<div class="login-bg">
   <div class="login-card">
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:40px;line-height:1">\uD83D\uDD12</div>
-      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00E8s admin</div>
+      <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
+      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
     </div>
     <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Code PIN</div>
     <input id="pinIn" class="inp" type="password" inputmode="numeric" placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
       style="font-size:22px;letter-spacing:8px;text-align:center;margin-bottom:10px"
       onkeydown="if(event.key==='Enter')stepPin()">
     <div id="pinerr" style="color:#a04040;font-size:11px;min-height:16px;margin-bottom:8px"></div>
-    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:14px;justify-content:center;border-radius:10px">Acc\u00E9der \u2192</button>
+    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:14px;justify-content:center;border-radius:10px">Acc\u00e9der \u2192</button>
     <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:12px;justify-content:center;margin-top:8px">\u2190 Retour</button>
   </div></div>`;
 }
@@ -572,8 +572,8 @@ const errEl=document.getElementById(“fperr”);
 const pw1=(document.getElementById(“fp1”)||{}).value||””;
 if(isNew){
 const fn=(document.getElementById(“fn”)||{}).value.trim().toUpperCase();
-if(fn!==emp.name){if(errEl)errEl.textContent=“Nom incorrect - saisissez exactement : “+emp.name;return;}
-if(pw1.length<6){if(errEl)errEl.textContent=“Mot de passe trop court (min. 6 caract\u00E8res)”;return;}
+if(fn!==emp.name){if(errEl)errEl.textContent=“Nom incorrect \u2014 saisissez exactement : “+emp.name;return;}
+if(pw1.length<6){if(errEl)errEl.textContent=“Mot de passe trop court (min. 6 caract\u00e8res)”;return;}
 const pw2=(document.getElementById(“fp2”)||{}).value||””;
 if(pw1!==pw2){if(errEl)errEl.textContent=“Les mots de passe ne correspondent pas”;return;}
 A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls(“cmc_pw”,A.passwords);
@@ -615,14 +615,14 @@ return `
 function vNav(){
 const isAdm=A.user&&A.user.id===AID;
 const tabs=[
-{id:“planning”,ic:”\uD83D\uDCC5”,lb:“Planning”},
-{id:“departs”,ic:”\uD83C\uDFAF”,lb:“D\u00E9parts”},
-{id:“chat”,ic:”\uD83D\uDCAC”,lb:“Chat”},
-{id:“ia”,ic:”\uD83E\uDD16”,lb:“Aide”}
+{id:“planning”,ic:”\ud83d\udcc5”,lb:“Planning”},
+{id:“departs”,ic:”\ud83c\udfaf”,lb:“D\u00e9parts”},
+{id:“chat”,ic:”\ud83d\udcac”,lb:“Chat”},
+{id:“ia”,ic:”\ud83e\udd16”,lb:“Aide”}
 ];
 if(isAdm){
-tabs.splice(2,0,{id:“stats”,ic:”\uD83D\uDCCA”,lb:“Stats”});
-tabs.push({id:“admin”,ic:”\u2699\uFE0F”,lb:“Admin”});
+tabs.splice(2,0,{id:“stats”,ic:”\ud83d\udcca”,lb:“Stats”});
+tabs.push({id:“admin”,ic:”\u2699\ufe0f”,lb:“Admin”});
 }
 const unread=A.chatMsgs.filter(m=>m.uid!==A.user.id&&m.ts>(lg(“cmc_lastread”,0))).length;
 return `<div id="bnav">${tabs.map(t=>{ const badge=t.id==="chat"&&unread>0?`<span id="chatBadge" class="nbadge" style="display:block">${unread}</span>`:`<span id="chatBadge" class="nbadge"></span>`; return `<button class=“nt${A.view===t.id?” on”:””}” onclick=“sv(’${t.id}’)” style=“font-size:7px”><em>${t.ic}</em>${badge}${t.lb}</button>`; }).join("")}</div>`;
@@ -672,17 +672,17 @@ let h=`<div class="page">
       <div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}</div>
       <div style="font-size:10px;color:#243020">${A.year}</div>
     </div>
-    <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203A</button>
+    <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button>
   </div>`;
   if(!isAdm&&utid){
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:${utc}0c;border:1px solid ${utc}20;border-radius:8px">
       <span style="color:${utc};font-weight:700;font-size:12px">${esc(gt(utid)?gt(utid).name:"")}</span>
-      ${mirT?'<span style="font-size:9px;color:#243020">\u21CC '+esc(mirT.name)+'</span>':""}
+      ${mirT?'<span style="font-size:9px;color:#243020">\u21cc '+esc(mirT.name)+'</span>':""}
     </div>`;
   }
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    ${isAdm?`<button onclick="sv('admin')" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:10px;color:#c9a227;cursor:pointer;font-weight:700">\u2699\uFE0F Admin</button>`:`<div></div>`}
-    <button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:9px">${A.showLeg?"\u25B2 L\u00E9gende":"\u25BC L\u00E9gende"}</button>
+    ${isAdm?`<button onclick="sv('admin')" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:10px;color:#c9a227;cursor:pointer;font-weight:700">\u2699\ufe0f Admin</button>`:`<div></div>`}
+    <button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:9px">${A.showLeg?"\u25b2 L\u00e9gende":"\u25bc L\u00e9gende"}</button>
   </div>`;
   if(A.showLeg){
     h+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">`;
@@ -690,7 +690,7 @@ let h=`<div class="page">
     h+=`</div>`;
   }
   h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;width:100%"><thead><tr>
-    <th class="sth">Employ\u00E9</th>`;
+    <th class="sth">Employ\u00e9</th>`;
   da.forEach(d=>{
     const dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
     h+=`<th class="dth" style="background:${we?"#162818":"#16281a"}"><div style="font-weight:700;color:${we?"#4a6888":"#3a4a38"}">${d}</div><div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
@@ -699,8 +699,8 @@ let h=`<div class="page">
   tOrd.forEach(tid=>{
     const te=byT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
     h+=`<tr><td colspan="${days+3}" class="steptd" style="border-left:2px solid ${tcc}50">
-      <span style="color:${tcc};font-size:11px;font-weight:700">${esc(team?team.name:"\u00C9q."+tid)}</span>
-      ${mir?'<span style="color:#1e2e1e;font-size:9px"> \u21CC '+esc(mir.name)+'</span>':""}
+      <span style="color:${tcc};font-size:11px;font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span>
+      ${mir?'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':""}
     </td></tr>`;
     te.forEach(emp=>{
       const p=pl[emp.id]||{};
@@ -711,7 +711,7 @@ let h=`<div class="page">
       const ncol=isMe?tcc:"#8a9a78";
       h+=`<tr style="border-bottom:1px solid #0c160a;background:${nbg}">
         <td class="ntd" style="background:${nbg};color:${ncol};font-weight:${isMe?700:400}">
-          ${isMe?"\u25B6 ":""}${esc(emp.name)}
+          ${isMe?"\u25b6 ":""}${esc(emp.name)}
           ${emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':""}
 
 ```
@@ -722,7 +722,7 @@ let h=`<div class="page">
     h+=`<td class="ctd" style="background:${ci.bg};border:1px solid ${ci.b}${ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":""}"${click}>
       ${ci.cdp
         ?`<div style="display:flex;flex-direction:column;align-items:center"><span style="color:${ci.c};font-size:8px;font-weight:800">${code.replace("*","")}</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>`
-        :`<span style="color:${ci.c}">${code||"\u00B7"}</span>`}
+        :`<span style="color:${ci.c}">${code||"\u00b7"}</span>`}
     </td>`;
   });
   h+=`<td class="stattd">${repos}</td><td class="stattd">${trav}</td></tr>`;
@@ -733,7 +733,7 @@ let h=`<div class="page">
 return h+`</tbody></table></div></div>`;
 }
 
-// S\u00E9quences de d\u00E9part par taille d’\u00E9quipe
+// S\u00e9quences de d\u00e9part par taille d’\u00e9quipe
 var SEQS={
 5:[1,4,2,3,5],
 6:[1,6,4,2,3,5],
@@ -753,7 +753,7 @@ const teamEmps=A.employees.filter(e=>e.team===tid);
 const emp=teamEmps[idx];
 if(!emp)return;
 CHEF_EQ[tid]=emp.name;saveChefEq();editChefSlot=null;dc();
-toast(“Chef d’\u00E9quipe : “+emp.name);
+toast(“Chef d’\u00e9quipe : “+emp.name);
 }
 // Ordre de depart (tous les chefs de partie)
 var DEF_CHEFS_T={
@@ -790,12 +790,12 @@ let h=`<div class="page">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>
     <div style="flex:1;text-align:center">
-      <div style="font-size:17px;font-weight:800;color:#d8cc9a">${MFR[A.month]} - D\u00E9parts</div>
-      <div style="font-size:9px;color:#243020">Rotation par \u00E9quipe</div>
+      <div style="font-size:17px;font-weight:800;color:#d8cc9a">${MFR[A.month]} \u2014 D\u00e9parts</div>
+      <div style="font-size:9px;color:#243020">Rotation par \u00e9quipe</div>
     </div>
-    <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203A</button>
+    <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>
   </div>
-  ${isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\uD83D\uDC51 G\u00E9rer les chefs d\'\u00E9quipe \u2192</button>':""}`;
+  ${isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\'\u00e9quipe \u2192</button>':""}`;
   show.forEach(tid=>{
     const team=A.teams.find(t=>t.id===tid);if(!team)return;
     const tcc=team.color||TC[tid]||"#888";
@@ -803,14 +803,14 @@ let h=`<div class="page">
     const chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
     if(!chefEmps.length)return;
     const sl=chefEmps.length;
-    const SEQ=getSeqForSize(sl); // s\u00E9quence adapt\u00E9e au nombre de chefs
+    const SEQ=getSeqForSize(sl); // s\u00e9quence adapt\u00e9e au nombre de chefs
     const workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||"")));
     h+=`<div style="margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
       <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
       <span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
-      <span style="font-size:9px;color:#243020">${sl} chefs \u00B7 cycle ${SEQ5.join("\u2192")}</span>
-      ${isAdm?'<button onclick="showCI(\'${tid}\')" style="margin-left:auto;background:${openCITeam===tid?tcc+\'20\':\'transparent\'};border:1px solid ${openCITeam===tid?tcc+\'50\':\'#1e3020\'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:\'#3a5030\'};cursor:pointer;font-weight:700">\u2699\uFE0F Positions</button>':""}
+      <span style="font-size:9px;color:#243020">${sl} chefs \u00b7 cycle ${SEQ5.join("\u2192")}</span>
+      ${isAdm?'<button onclick="showCI(\'${tid}\')" style="margin-left:auto;background:${openCITeam===tid?tcc+\'20\':\'transparent\'};border:1px solid ${openCITeam===tid?tcc+\'50\':\'#1e3020\'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:\'#3a5030\'};cursor:pointer;font-weight:700">\u2699\ufe0f Positions</button>':""}
     </div>
     <div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -828,12 +828,12 @@ let h=`<div class="page">
       const base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
-        ${isMe?"\u25B6 ":""}${esc(emp.name)}</td>`;
+        ${isMe?"\u25b6 ":""}${esc(emp.name)}</td>`;
       let wb=0;
       workDays.forEach(d=>{
         const code=(pl[emp.id]||{})[d]||"",works=isWork(code);
         if(works){
-          // Roulement: chaque groupe de 4j travaill\u00E9s d\u00E9cale d'un cran
+          // Roulement: chaque groupe de 4j travaill\u00e9s d\u00e9cale d'un cran
           // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5
           const rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
           const pos=SEQ[rotIdx];
@@ -847,7 +847,7 @@ let h=`<div class="page">
           wb++;
         } else {
           const ci=CODES[code]||{c:"#1e2e1e"};
-          h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"\u00B7"}</span></td>`;
+          h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"\u00b7"}</span></td>`;
         }
       });
       h+=`</tr>`;
@@ -874,8 +874,8 @@ const names=CHEFS_T[tid]||[];
 const emps=names.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
 const team=A.teams.find(t=>t.id===tid),tcc=team?team.color:”#888”;
 const SEQCI=getSeqForSize(emps.length);
-let h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px"> <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\uFE0F Positions de d\u00E9part - ${esc(team?team.name:tid)}</div>`;
-if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00E9fini. Allez dans Admin \u2192 \u00C9quipes pour en ajouter.</div>`;}
+let h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px"> <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
+if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
 emps.forEach(emp=>{
 const cur=CI[emp.name]!==undefined?CI[emp.name]:0;
 h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"> <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span> <div style="display:flex;gap:4px">`;
@@ -919,7 +919,7 @@ let h=`<div class="page"><div style="margin-bottom:12px"><div class="sec-title">
         <span style="font-size:9px;color:#243020;width:12px;text-align:right">${cnts[c]}</span>
       </div>`;
     });
-    h+=`</div><div style="margin-top:6px;padding-top:6px;border-top:1px solid #0c180e;font-size:11px;color:#c9a227;font-weight:700">${trav} jours travaill\u00E9s</div>
+    h+=`</div><div style="margin-top:6px;padding-top:6px;border-top:1px solid #0c180e;font-size:11px;color:#c9a227;font-weight:700">${trav} jours travaill\u00e9s</div>
     </div>`;
   });
   return h+`</div></div>`;
@@ -931,14 +931,14 @@ const msgs=A.chatMsgs;
 let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
 
   <div style="padding:8px 14px;border-bottom:1px solid #182818;font-size:9px;color:#243020;flex-shrink:0">
-    \u2666 Chat interne \u00B7 ${A.employees.length} membres \u00B7 messages locaux
+    \u2666 Chat interne \u00b7 ${A.employees.length} membres \u00b7 messages locaux
   </div>
   <div id="chatMsgs" class="chat-msgs">`;
   msgs.forEach(msg=>{
     const isMe=msg.uid===A.user.id;
     const col=tc(msg.team)||"#c9a227";
     h+=`<div class="${isMe?"msg-me":"msg-ot"}">
-      ${isMe?"":('<div class="msg-name" style="color:'+col+'">'+esc(msg.name)+'</div>')}
+      ${isMe?"":('<div class="msg-name" style="color:${col}">${esc(msg.name)}</div>')}
       <div class="msg-text">${esc(msg.text)}</div>
       <div class="msg-ts">${fmtTs(msg.ts)}</div>
     </div>`;
@@ -969,31 +969,31 @@ function sendMsg(){
 function vAdmin(){
 const pinSet=lg(“cmc_admin_pin”,null);
 const items=[
-{ic:”\uD83D\uDC51”,lb:“Chefs & ordres de d\u00E9part”,fn:“sv(‘teams’)”},
-{ic:”\uD83D\uDC65”,lb:“Employ\u00E9s”,fn:“sv(‘employees’)”},
-{ic:”\uD83D\uDCE5”,lb:“Import planning”,fn:“sv(‘import’)”},
-{ic:”\uD83D\uDD11”,lb:“R\u00E9initialiser un mot de passe”,fn:“resetPw()”},
-{ic:”\uD83D\uDDD1”,lb:“Effacer planning du mois”,fn:“clearMonth()”},
-{ic:pinSet?”\uD83D\uDD10”:”\uD83D\uDD13”,lb:pinSet?“Modifier le code PIN admin”:“Activer un code PIN admin”,fn:“showPinSetup()”}
+{ic:”\ud83d\udc51”,lb:“Chefs & ordres de d\u00e9part”,fn:“sv(‘teams’)”},
+{ic:”\ud83d\udc65”,lb:“Employ\u00e9s”,fn:“sv(‘employees’)”},
+{ic:”\ud83d\udce5”,lb:“Import planning”,fn:“sv(‘import’)”},
+{ic:”\ud83d\udd11”,lb:“R\u00e9initialiser un mot de passe”,fn:“resetPw()”},
+{ic:”\ud83d\uddd1”,lb:“Effacer planning du mois”,fn:“clearMonth()”},
+{ic:pinSet?”\ud83d\udd10”:”\ud83d\udd13”,lb:pinSet?“Modifier le code PIN admin”:“Activer un code PIN admin”,fn:“showPinSetup()”}
 ];
 return `<div class="page">
 
   <div style="margin-bottom:14px"><div class="sec-title">Administration</div>
-  <div class="sec-sub">Acc\u00E8s r\u00E9serv\u00E9</div></div>
+  <div class="sec-sub">Acc\u00e8s r\u00e9serv\u00e9</div></div>
   <div style="display:flex;flex-direction:column;gap:8px">
-  ${items.map(function(it){return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:13px;gap:10px;color:#8a9a78">'+it.ic+' '+it.lb+'</button>';}).join("")}
+  ${items.map(function(it){return '<button class="btn ghost" onclick="${it.fn}" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:13px;gap:10px;color:#8a9a78">${it.ic} ${it.lb}</button>';}).join("")}
   </div>
   <div id="resetBox" style="display:none;margin-top:12px;padding:14px;background:#06100a;border:1px solid rgba(201,162,39,.18);border-radius:10px">
-    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\uD83D\uDD11 R\u00E9initialiser un mot de passe</div>
+    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd11 R\u00e9initialiser un mot de passe</div>
     <select id="resetUid" class="inp" style="margin-bottom:8px">
       ${A.employees.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+' ('+e.id+')</option>';}).join("")}
     </select>
-    <button class="btn gold" onclick="doResetPw()" style="width:100%;justify-content:center">R\u00E9initialiser</button>
+    <button class="btn gold" onclick="doResetPw()" style="width:100%;justify-content:center">R\u00e9initialiser</button>
     <button class="btn ghost" onclick="document.getElementById('resetBox').style.display='none'" style="width:100%;justify-content:center;margin-top:8px">Annuler</button>
   </div>
   <div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:#06100a;border:1px solid rgba(201,162,39,.18);border-radius:10px">
-    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:10px">\uD83D\uDD10 Code PIN admin</div>
-    <div style="font-size:10px;color:#3a5030;margin-bottom:10px">Si activ\u00E9, ce code sera demand\u00E9 \u00E0 chaque connexion admin (en plus du matricule).</div>
+    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>
+    <div style="font-size:10px;color:#3a5030;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <input id="pin1" class="inp" type="password" inputmode="numeric" placeholder="Nouveau code (min. 4 chiffres)" style="letter-spacing:4px;font-size:15px">
       <input id="pin2" class="inp" type="password" inputmode="numeric" placeholder="Confirmer le code" style="letter-spacing:4px;font-size:15px">
@@ -1008,7 +1008,7 @@ function resetPw(){document.getElementById("resetBox").style.display="block";}
 function doResetPwDirect(uid){
   if(!uid)return;
   delete A.passwords[uid];ls("cmc_pw",A.passwords);
-  toast("Mot de passe r\u00E9initialis\u00E9 pour "+uid);dc();
+  toast("Mot de passe r\u00e9initialis\u00e9 pour "+uid);dc();
 }
 function showPinSetup(){
   const box=document.getElementById("pinBox");
@@ -1020,13 +1020,13 @@ function savePinCode(){
   if(p1.length<4){toast("Code trop court (min. 4 chiffres)","err");return;}
   if(p1!==p2){toast("Les codes ne correspondent pas","err");return;}
   ls("cmc_admin_pin",hashPw(p1));
-  toast("Code PIN activ\u00E9 !");
+  toast("Code PIN activ\u00e9 !");
   const box=document.getElementById("pinBox");if(box)box.style.display="none";
   dc();
 }
 function removePinCode(){
   localStorage.removeItem("cmc_admin_pin");
-  toast("Code PIN supprim\u00E9");
+  toast("Code PIN supprim\u00e9");
   const box=document.getElementById("pinBox");if(box)box.style.display="none";
   dc();
 }
@@ -1034,14 +1034,14 @@ function doResetPw(){
   const uid=(document.getElementById("resetUid")||{}).value||"";
   if(!uid)return;
   delete A.passwords[uid];ls("cmc_pw",A.passwords);
-  toast("Mot de passe r\u00E9initialis\u00E9 pour "+uid);
+  toast("Mot de passe r\u00e9initialis\u00e9 pour "+uid);
   document.getElementById("resetBox").style.display="none";
 }
 function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
   const key=`${A.year}-${A.month}`;
   delete A.overrides[key];ls("cmc_ov",A.overrides);
-  toast("Planning du mois r\u00E9initialis\u00E9");dc();
+  toast("Planning du mois r\u00e9initialis\u00e9");dc();
 }
 
 function vTeams(){
@@ -1049,8 +1049,8 @@ const sorted=[…A.teams].sort((a,b)=>a.departureOrder-b.departureOrder);
 let h=`<div class="page">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div><div class="sec-title">\u00C9quipes</div><div class="sec-sub">${A.employees.length} employ\u00E9s</div></div>
-    <button class="btn gold" onclick="sv('employees')" style="font-size:11px;padding:8px 11px">\uD83D\uDC65 Employ\u00E9s</button>
+    <div><div class="sec-title">\u00c9quipes</div><div class="sec-sub">${A.employees.length} employ\u00e9s</div></div>
+    <button class="btn gold" onclick="sv('employees')" style="font-size:11px;padding:8px 11px">\ud83d\udc65 Employ\u00e9s</button>
   </div>`;
   sorted.forEach(team=>{
     const tcc=team.color||"#888";
@@ -1064,7 +1064,7 @@ let h=`<div class="page">
         <input class="inp" style="flex:1;padding:7px 10px;font-size:12px;font-weight:600" value="${esc(team.name)}" onchange="uT('${team.id}','name',this.value)">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><div style="font-size:8px;color:#243020;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ordre d\u00E9part</div>
+        <div><div style="font-size:8px;color:#243020;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ordre d\u00e9part</div>
         <input type="number" class="inp" style="padding:7px 10px;font-size:12px" value="${esc(team.departureOrder)}" min="1" onchange="uT('${team.id}','departureOrder',parseInt(this.value))"></div>
         <div><div style="font-size:8px;color:#243020;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Couleur</div>
         <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #182818;background:#06110a;cursor:pointer;padding:2px"></div>
@@ -1072,19 +1072,19 @@ let h=`<div class="page">
 
 ```
   <div style="margin-bottom:10px">
-    <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\uD83D\uDC51 Chef d'\u00E9quipe</div>
+    <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udc51 Chef d'\u00e9quipe</div>
     ${(()=>{
       const chef=CHEF_EQ[team.id]||"";
       const isEditing=editChefSlot&&editChefSlot.tid===team.id;
       let r=`<div style="border:1px solid ${tcc}30;border-radius:8px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${tcc}08">
-          <span style="font-size:18px">\uD83D\uDC51</span>
-          <span style="font-size:12px;font-weight:700;color:#d0cca0;flex:1">${esc(chef||"- Non d\u00E9fini -")}</span>
-          <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?tcc+'20':'transparent'};border:1px solid ${isEditing?tcc+'50':'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270F\uFE0F Changer</button>
+          <span style="font-size:18px">\ud83d\udc51</span>
+          <span style="font-size:12px;font-weight:700;color:#d0cca0;flex:1">${esc(chef||"\u2014 Non d\u00e9fini \u2014")}</span>
+          <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?tcc+'20':'transparent'};border:1px solid ${isEditing?tcc+'50':'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
         </div>`;
       if(isEditing){
         r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${tcc}20">
-          <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00E9quipe</div>
+          <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
           <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
             ${teamEmps.map((e,ei)=>`<button onclick="pickChef('${team.id}',${ei})" style="text-align:left;padding:9px 12px;background:${chef===e.name?'rgba(201,162,39,.15)':'#0c1e0e'};border:1px solid ${chef===e.name?'rgba(201,162,39,.4)':'#1e3020'};border-radius:7px;font-size:12px;color:${chef===e.name?'#c9a227':'#90a878'};cursor:pointer;font-weight:${chef===e.name?700:400}">${esc(e.name)}${chef===e.name?' \u2713':''}</button>`).join('')}
           </div>
@@ -1113,7 +1113,7 @@ saveChefsT();dc();
 function addChef(tid){
 if(!A.user||A.user.id!==AID)return;
 if(!CHEFS_T[tid])CHEFS_T[tid]=[];
-// Ajouter le premier employ\u00E9 de l’\u00E9quipe pas encore dans la liste
+// Ajouter le premier employ\u00e9 de l’\u00e9quipe pas encore dans la liste
 const teamEmps=A.employees.filter(e=>e.team===tid);
 const next=teamEmps.find(e=>!CHEFS_T[tid].includes(e.name));
 CHEFS_T[tid].push(next?next.name:teamEmps[0]?teamEmps[0].name:””);
@@ -1135,13 +1135,13 @@ return e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q);
 let h=`<div class="page">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div><div class="sec-title">Employ\u00E9s</div><div class="sec-sub">${A.employees.length} enregistr\u00E9s</div></div>
+    <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s</div></div>
     <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:11px;flex-shrink:0">+ Ajouter</button>
   </div>
   <input class="inp" style="margin-bottom:10px" placeholder="Rechercher..." value="${esc(A.empQ)}" oninput="A.empQ=this.value;dc()">`;
 
 if(showAddF){
-h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px"> <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">Nouvel employ\u00E9</div> <div style="display:flex;flex-direction:column;gap:7px"> <input id="nid" class="inp" placeholder="Matricule (U00073)" autocapitalize="characters" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase"> <input id="nname" class="inp" placeholder="NOM Pr\u00E9nom (MAJUSCULES)"> <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"> <select id="nteam" class="inp" style="padding:9px 10px;font-size:12px">${A.teams.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join("")}</select> <input id="npost" class="inp" placeholder="Poste (ex: BRTCK)"> </div> <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6040;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00E9part)</label> <div style="display:flex;gap:8px"> <button class="btn gold" onclick="addEmp()" style="flex:1;justify-content:center">Ajouter</button> <button class="btn ghost" onclick="showAddF=false;dc()" style="flex:1;justify-content:center">Annuler</button> </div> </div> </div>`;
+h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px"> <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">Nouvel employ\u00e9</div> <div style="display:flex;flex-direction:column;gap:7px"> <input id="nid" class="inp" placeholder="Matricule (U00073)" autocapitalize="characters" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase"> <input id="nname" class="inp" placeholder="NOM Pr\u00e9nom (MAJUSCULES)"> <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"> <select id="nteam" class="inp" style="padding:9px 10px;font-size:12px">${A.teams.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join("")}</select> <input id="npost" class="inp" placeholder="Poste (ex: BRTCK)"> </div> <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6040;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00e9part)</label> <div style="display:flex;gap:8px"> <button class="btn gold" onclick="addEmp()" style="flex:1;justify-content:center">Ajouter</button> <button class="btn ghost" onclick="showAddF=false;dc()" style="flex:1;justify-content:center">Annuler</button> </div> </div> </div>`;
 }
 
 h+=`<div class="card">`;
@@ -1152,12 +1152,12 @@ h+=`<div style="${i>0?"border-top:1px solid #0a160a":""}">`;
 
 ```
 if(isEdit){
-  // Panneau d'\u00E9dition inline
+  // Panneau d'\u00e9dition inline
   h+=`<div style="padding:12px;background:${tcc}08;border-left:2px solid ${tcc}50">
-    <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270F\uFE0F ${esc(emp.name)}</div>
+    <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270f\ufe0f ${esc(emp.name)}</div>
     <div style="display:flex;flex-direction:column;gap:8px">
 
-      <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00C9quipe</div>
+      <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00c9quipe</div>
       <select class="inp" style="padding:8px 10px;font-size:12px" onchange="chTeam('${emp.id}',this.value)">
         ${A.teams.map(function(t){return '<option value="'+t.id+'"'+(emp.team===t.id?' selected':'')+'>'+esc(t.name)+'</option>';}).join("")}
       </select></div>
@@ -1179,7 +1179,7 @@ if(isEdit){
 
       ${A.user&&A.user.id===AID?`
       <div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
-        <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\uD83D\uDD11 Infos connexion (visible admin uniquement)</div>
+        <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
           <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Matricule</span>
           <span style="font-size:11px;font-family:monospace;color:#c9a227;letter-spacing:2px;background:rgba(201,162,39,.08);padding:3px 8px;border-radius:5px">${esc(emp.id)}</span>
@@ -1188,8 +1188,8 @@ if(isEdit){
           <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Mot de passe</span>
           ${A.passwords[emp.id]
             ?`<span style="font-size:11px;font-family:monospace;color:#a0b890;background:#0c1e0e;padding:3px 8px;border-radius:5px;border:1px solid #1e3020">${esc(typeof A.passwords[emp.id]==="object"?A.passwords[emp.id].p:"(ancien format)")}</span>
-              <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:9px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00E9init.</button>`
-            :`<span style="font-size:10px;color:#243020;font-style:italic">Pas encore cr\u00E9\u00E9</span>`}
+              <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:9px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>`
+            :`<span style="font-size:10px;color:#243020;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
         </div>
       </div>`:""}
       <div style="display:flex;gap:8px;margin-top:8px">
@@ -1207,9 +1207,9 @@ if(isEdit){
         ${isAdm?'<span class="chef-badge" style="margin-left:4px">ADMIN</span>':""}
         ${emp.chef&&!isAdm?'<span class="chef-badge" style="margin-left:4px">CHEF</span>':""}
       </div>
-      <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00B7 ${esc(emp.post||"")} \u00B7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span></div>
+      <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span></div>
     </div>
-    <span style="font-size:14px;color:#243020;flex-shrink:0">\u203A</span>
+    <span style="font-size:14px;color:#243020;flex-shrink:0">\u203a</span>
   </div>`;
 }
 h+=`</div>`;
@@ -1232,10 +1232,10 @@ function updCDP(id,enabled){
 if(!A.user||A.user.id!==AID)return;
 const e=A.employees.find(x=>x.id===id);
 if(!e)return;
-// Activer ou d\u00E9sactiver les shifts CDP selon le profil de l’employ\u00E9
+// Activer ou d\u00e9sactiver les shifts CDP selon le profil de l’employ\u00e9
 const prof=EP[e.name];
 if(enabled){
-// CDP par d\u00E9faut selon le profil
+// CDP par d\u00e9faut selon le profil
 const cdpBase=[“16/3”,“20/5”];
 e.cdpShifts=prof?prof.d.length?prof.d:cdpBase:cdpBase;
 } else {
@@ -1257,7 +1257,7 @@ return `<div class="page">
     <div class="sec-sub">${MFR[im]} ${iy}</div>
   </div>
 
-  <!-- S\u00E9lection mois -->
+  <!-- S\u00e9lection mois -->
 
   <div class="card" style="padding:12px;margin-bottom:10px">
     <div style="font-size:9px;color:#c9a227;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Mois</div>
@@ -1270,14 +1270,14 @@ return `<div class="page">
   <!-- Import fichier CSV -->
 
   <div class="card" style="padding:14px;margin-bottom:10px;border-left:3px solid rgba(201,162,39,.5)">
-    <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">\uD83D\uDCC2 Fichier CSV</div>
+    <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcc2 Fichier CSV</div>
     <div style="font-size:10px;color:#4a6040;margin-bottom:10px;line-height:1.7">
       Format : NOM, J1, J2, ... J31<br>
-      Codes : 22/6 \u00B7 19/4 \u00B7 16/3 \u00B7 RH \u00B7 CP \u00B7 R \u00B7 AF
+      Codes : 22/6 \u00b7 19/4 \u00b7 16/3 \u00b7 RH \u00b7 CP \u00b7 R \u00b7 AF
     </div>
     <input type="file" id="impFile" accept=".csv,.txt,.tsv" style="display:none" onchange="handleFileImport(this)">
     <button onclick="document.getElementById('impFile').click()" style="width:100%;padding:14px;background:rgba(201,162,39,.12);border:2px dashed rgba(201,162,39,.4);border-radius:10px;font-size:14px;color:#c9a227;font-weight:700;cursor:pointer">
-      \uD83D\uDCC2 Choisir un fichier CSV
+      \ud83d\udcc2 Choisir un fichier CSV
     </button>
     <div id="fileInfo" style="margin-top:8px;font-size:10px;color:#3a5030;min-height:16px"></div>
   </div>
@@ -1285,13 +1285,13 @@ return `<div class="page">
   <!-- Saisie rapide -->
 
   <div class="card" style="padding:14px;margin-bottom:10px">
-    <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:4px">\u270F\uFE0F Coller ou saisir</div>
+    <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:4px">\u270f\ufe0f Coller ou saisir</div>
     <div style="font-size:9px;color:#3a5030;margin-bottom:8px">Collez depuis Numbers/Excel ou tapez directement</div>
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:10px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(()=>doImport(),300)"></textarea>
     <button class="btn gold" onclick="doImport()" style="width:100%;justify-content:center;margin-top:10px;padding:13px;font-size:13px;border-radius:10px">
-      \u2705 Importer et v\u00E9rifier
+      \u2705 Importer et v\u00e9rifier
     </button>
     <div id="impRes" style="margin-top:10px;font-size:10px"></div>
   </div>
@@ -1299,24 +1299,24 @@ return `<div class="page">
   <!-- Guide PDF -->
 
   <div class="card" style="padding:14px;opacity:.8">
-    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\uD83D\uDCC4 Depuis un PDF</div>
+    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcc4 Depuis un PDF</div>
     <div style="font-size:10px;color:#6a8a68;line-height:1.9">
       <strong style="color:#c0cca8;display:block;margin-bottom:4px">Sur Mac (meilleure solution) :</strong>
       Ouvrez le PDF dans Excel ou Numbers \u2192 Fichier \u2192 Exporter en CSV \u2192 envoyez le CSV sur iPhone \u2192 importez ici en 1 clic.<br><br>
       <strong style="color:#c0cca8;display:block;margin-bottom:4px">Sur iPhone :</strong>
-      Ouvrez le PDF \u2192 appuyez longuement \u2192 S\u00E9lectionner tout \u2192 Copier \u2192 collez dans la zone texte ci-dessus.
+      Ouvrez le PDF \u2192 appuyez longuement \u2192 S\u00e9lectionner tout \u2192 Copier \u2192 collez dans la zone texte ci-dessus.
     </div>
   </div>
 
   </div>`;
 }
 
-// — Parser planning CMC (items avec coordonn\u00E9es X,Y) -
+// \u2500\u2500 Parser planning CMC (items avec coordonn\u00e9es X,Y) \u2500\u2500\u2500\u2500\u2500
 function parseCMCPlanningFromItems(allItems, year, month){
 const days=getDays(year,month);
 const validCodes=new Set(Object.keys(CODES));
 
-// — 1. Grouper les items par ligne Y (tol\u00E9rance \u00B15px) -
+// \u2500\u2500 1. Grouper les items par ligne Y (tol\u00e9rance \u00b15px) \u2500\u2500
 const sorted=[…allItems].sort((a,b)=>a.y-b.y||a.x-b.x);
 const rows=[];
 let curY=null;
@@ -1327,11 +1327,11 @@ rows.push([]);curY=item.y;
 rows[rows.length-1].push(item);
 });
 
-// — 2. Trouver la ligne des jours (1-31) -
+// \u2500\u2500 2. Trouver la ligne des jours (1-31) \u2500\u2500
 let dayRow=null;
 rows.forEach(row=>{
 const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
-if(nums.length>=20) dayRow=nums; // au moins 20 jours trouv\u00E9s sur une ligne
+if(nums.length>=20) dayRow=nums; // au moins 20 jours trouv\u00e9s sur une ligne
 });
 // Fallback: prendre la ligne avec le plus de chiffres 1-31
 if(!dayRow){
@@ -1341,13 +1341,13 @@ const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&
 if(nums.length>best){best=nums.length;dayRow=nums;}
 });
 }
-if(!dayRow||dayRow.length<5) return buildDebugCSV(allItems,“Ligne jours non trouv\u00E9e”);
+if(!dayRow||dayRow.length<5) return buildDebugCSV(allItems,“Ligne jours non trouv\u00e9e”);
 
 // Position X de chaque jour
 const dayPos={};
 dayRow.forEach(i=>dayPos[parseInt(i.txt)]=i.x);
 
-// Tol\u00E9rance X = moiti\u00E9 espacement entre jours cons\u00E9cutifs
+// Tol\u00e9rance X = moiti\u00e9 espacement entre jours cons\u00e9cutifs
 const dNums=Object.keys(dayPos).map(Number).sort((a,b)=>a-b);
 let xTol=15;
 if(dNums.length>=2){
@@ -1368,15 +1368,15 @@ if(dist<bestDist){bestDist=dist;best=d;}
 return best;
 }
 
-// — 3. Trouver les lignes d’employ\u00E9s -
-// Chaque employ\u00E9 appara\u00EEt comme NOM + PRENOM sur une ligne
+// \u2500\u2500 3. Trouver les lignes d’employ\u00e9s \u2500\u2500
+// Chaque employ\u00e9 appara\u00eet comme NOM + PRENOM sur une ligne
 const empLines=[]; // {empName, y, rowIdx}
 rows.forEach((row,ri)=>{
-const lineText=row.map(i=>i.txt).join(” “).toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036F]/g,””);
+const lineText=row.map(i=>i.txt).join(” “).toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
 A.employees.forEach(emp=>{
-const eName=emp.name.toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036F]/g,””);
+const eName=emp.name.toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
 const parts=eName.split(” “);
-// Match si le NOM de famille appara\u00EEt dans cette ligne
+// Match si le NOM de famille appara\u00eet dans cette ligne
 const nomMatch=parts[0]&&lineText.includes(parts[0]);
 const prenomMatch=parts.length>1&&parts[1]&&lineText.includes(parts[1][0]);
 if(nomMatch&&(parts.length===1||prenomMatch)){
@@ -1386,13 +1386,13 @@ if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
 });
 });
 
-if(empLines.length===0) return buildDebugCSV(allItems,“Aucun employ\u00E9 trouv\u00E9. Noms dans le PDF: “+allItems.slice(0,20).map(i=>i.txt).join(”,”));
+if(empLines.length===0) return buildDebugCSV(allItems,“Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: “+allItems.slice(0,20).map(i=>i.txt).join(”,”));
 
-// — 4. Pour chaque item avec un code valide, trouver employ\u00E9+jour -
+// \u2500\u2500 4. Pour chaque item avec un code valide, trouver employ\u00e9+jour \u2500\u2500
 const planning={}; // {empName:{day:code}}
 empLines.forEach(e=>{if(!planning[e.empName])planning[e.empName]={};});
 
-// Construire une liste tri\u00E9e des Y d’employ\u00E9s
+// Construire une liste tri\u00e9e des Y d’employ\u00e9s
 const empYs=empLines.map(e=>e.y).sort((a,b)=>a-b);
 
 allItems.forEach(item=>{
@@ -1405,7 +1405,7 @@ if(!validCodes.has(code)) return;
 const day=xToDay(item.x);
 if(!day||day<1||day>days) return;
 
-// Trouver l'employ\u00E9 le plus proche en Y
+// Trouver l'employ\u00e9 le plus proche en Y
 let bestEmp=null,bestDist=30;
 empLines.forEach(el=>{
   const d=Math.abs(el.y-item.y);
@@ -1416,9 +1416,9 @@ if(bestEmp) planning[bestEmp][day]=code;
 
 });
 
-// — 5. Construire CSV -
+// \u2500\u2500 5. Construire CSV \u2500\u2500
 const found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
-if(!found.length) return buildDebugCSV(allItems,“Codes trouv\u00E9s mais pas associ\u00E9s. DayPos: “+JSON.stringify(dayPos).slice(0,100));
+if(!found.length) return buildDebugCSV(allItems,“Codes trouv\u00e9s mais pas associ\u00e9s. DayPos: “+JSON.stringify(dayPos).slice(0,100));
 
 const header=“NOM,”+Array.from({length:days},(*,i)=>i+1).join(”,”);
 return [header,…found.map(name=>[name,…Array.from({length:days},(*,i)=>planning[name][i+1]||””)].join(”,”))].join(”\n”);
@@ -1442,10 +1442,10 @@ function handleFileImport(input){
 if(!input.files||!input.files[0]) return;
 var file=input.files[0];
 var info=document.getElementById(“fileInfo”);
-if(info) info.innerHTML=’<span style="color:#c9a227">\u23F3 Lecture de ‘+file.name+’…</span>’;
+if(info) info.innerHTML=’<span style="color:#c9a227">\u23f3 Lecture de ‘+file.name+’…</span>’;
 
-// D\u00E9tecter mois/ann\u00E9e depuis le nom
-var s=file.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036F]/g,””);
+// D\u00e9tecter mois/ann\u00e9e depuis le nom
+var s=file.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
 var MOIS={“janvier”:0,“fevrier”:1,“mars”:2,“avril”:3,“mai”:4,“juin”:5,“juillet”:6,“aout”:7,“septembre”:8,“octobre”:9,“novembre”:10,“decembre”:11};
 var detM=-1,detY=-1;
 Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
@@ -1461,11 +1461,11 @@ if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
 var ta=document.getElementById(“impTxt”);
 if(ta) ta.value=txt;
 var n=txt.split(”\n”).filter(function(l){return l.trim();}).length;
-if(info) info.innerHTML=’<span style="color:#3a8a50">\u2705 ‘+file.name+’ - ‘+n+’ lignes</span>’;
+if(info) info.innerHTML=’<span style="color:#3a8a50">\u2705 ‘+file.name+’ \u2014 ‘+n+’ lignes</span>’;
 setTimeout(function(){doImport();},100);
 };
 r.onerror=function(){
-if(info) info.innerHTML=’<span style="color:#c04040">\u274C Erreur lecture - ce format nest pas support\u00E9 directement</span>’;
+if(info) info.innerHTML=’<span style="color:#c04040">\u274c Erreur lecture \u2014 ce format nest pas support\u00e9 directement</span>’;
 };
 r.readAsText(file,“UTF-8”);
 }
@@ -1481,7 +1481,7 @@ if(lines.length<2){toast(“Format invalide”,“err”);return;}
 const sep=lines[0].includes(”\t”)?”\t”:”,”;
 const key=`${iy}-${im}`;
 if(!A.overrides[key])A.overrides[key]={};
-// Stocker la r\u00E9f\u00E9rence brute pour v\u00E9rification ult\u00E9rieure
+// Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
 const refData={year:iy,month:im,rows:{},importedAt:Date.now()};
 let ok=0,err=0,errLines=[];
 for(let li=1;li<lines.length;li++){
@@ -1501,35 +1501,35 @@ ok++;
 }
 }
 ls(“cmc_ov”,A.overrides);
-// Sauver la r\u00E9f\u00E9rence d’import pour v\u00E9rification
+// Sauver la r\u00e9f\u00e9rence d’import pour v\u00e9rification
 ls(“cmc_ref_”+key,refData);
 A.lastImportKey=key;
-// Lancer la v\u00E9rification automatique
+// Lancer la v\u00e9rification automatique
 const verif=runVerification(iy,im,refData);
 A.lastVerif=verif;
 ls(“cmc_verif_”+key,verif);
 const r=document.getElementById(“impRes”);
 const verifTxt=verif.errors.length>0
-?` \u26A0\uFE0F ${verif.errors.length} ERREUR(S) D\u00C9TECT\u00C9E(S) - voir onglet Aide`
-:` \u2705 V\u00E9rification OK - tous les horaires correspondent`;
-if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules import\u00E9es${err?" \u00B7 <span style='color:#c9a227'>"+err+" ignor\u00E9e(s)</span>":""} \u2192 ${MFR[im]} ${iy}</div>`+
+?` \u26a0\ufe0f ${verif.errors.length} ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide`
+:` \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent`;
+if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules import\u00e9es${err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":""} \u2192 ${MFR[im]} ${iy}</div>`+
 `<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
-(verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" \u00B7 ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:””);
-toast(verif.errors.length?’\u26A0\uFE0F ‘+verif.errors.length+’ erreur(s) d\u00E9tect\u00E9e(s)’:’\u2705 Import v\u00E9rifi\u00E9 - ‘+ok+’ cellules’);
+(verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" \u00b7 ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:””);
+toast(verif.errors.length?’\u26a0\ufe0f ‘+verif.errors.length+’ erreur(s) d\u00e9tect\u00e9e(s)’:’\u2705 Import v\u00e9rifi\u00e9 \u2014 ‘+ok+’ cellules’);
 if(errLines.length>0) errLines.forEach(e=>console.warn(“Import:”,e));
 }
 
-// — MOTEUR DE V\u00C9RIFICATION -
+// \u2500\u2500 MOTEUR DE V\u00c9RIFICATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function runVerification(year,month,refData){
-const pl=gpl(); // planning tel qu’affich\u00E9 dans l’app
+const pl=gpl(); // planning tel qu’affich\u00e9 dans l’app
 const ref=refData||lg(“cmc_ref_”+year+”-”+month,null);
 const result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
-if(!ref||!ref.rows){result.warnings.push({msg:“Aucune r\u00E9f\u00E9rence d’import pour ce mois”});return result;}
+if(!ref||!ref.rows){result.warnings.push({msg:“Aucune r\u00e9f\u00e9rence d’import pour ce mois”});return result;}
 const days=getDays(year,month);
-// Pour chaque employ\u00E9 dans la r\u00E9f\u00E9rence
+// Pour chaque employ\u00e9 dans la r\u00e9f\u00e9rence
 Object.keys(ref.rows).forEach(empId=>{
 const emp=A.employees.find(e=>e.id===empId);
-if(!emp){result.warnings.push({msg:“Employ\u00E9 “+empId+” introuvable dans la liste”});return;}
+if(!emp){result.warnings.push({msg:“Employ\u00e9 “+empId+” introuvable dans la liste”});return;}
 const refRow=ref.rows[empId];
 const plRow=pl[empId]||{};
 Object.keys(refRow).forEach(d=>{
@@ -1539,17 +1539,17 @@ if(refCode!==plCode){
 result.errors.push({
 empId,empName:emp.name,day:parseInt(d),
 refCode,plCode,
-msg:`${emp.name} j${d}: planning="${plCode||"vide"}" \u2260 r\u00E9f\u00E9rence="${refCode}"`
+msg:`${emp.name} j${d}: planning="${plCode||"vide"}" \u2260 r\u00e9f\u00e9rence="${refCode}"`
 });
 } else {
 result.ok.push({empId,day:d,code:refCode});
 }
 });
-// V\u00E9rifier les jours du planning non couverts par la r\u00E9f\u00E9rence
+// V\u00e9rifier les jours du planning non couverts par la r\u00e9f\u00e9rence
 Object.keys(plRow).forEach(d=>{
 if(!refRow[d]&&plRow[d]&&plRow[d]!==“RH”&&plRow[d]!==“R”){
-// Jour travaill\u00E9 dans le planning mais absent de la r\u00E9f\u00E9rence
-// C’est normal si la r\u00E9f\u00E9rence ne couvre pas tous les jours
+// Jour travaill\u00e9 dans le planning mais absent de la r\u00e9f\u00e9rence
+// C’est normal si la r\u00e9f\u00e9rence ne couvre pas tous les jours
 }
 });
 });
@@ -1592,7 +1592,7 @@ function closePicker(){document.getElementById(“pk”).style.display=“none�
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
 function uT(id,f,v){if(!A.user||A.user.id!==AID)return;const t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls(“cmc_t”,A.teams);}}
 function chTeam(id,team){if(!A.user||A.user.id!==AID)return;const e=A.employees.find(x=>x.id===id);if(e){e.team=team;sav();}}
-function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast(“Employ\u00E9 supprim\u00E9”);dc();}
+function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast(“Employ\u00e9 supprim\u00e9”);dc();}
 function addEmp(){
 if(!A.user||A.user.id!==AID)return;
 let id=(document.getElementById(“nid”)||{}).value||””;
@@ -1602,14 +1602,14 @@ const post=(document.getElementById(“npost”)||{}).value||””;
 const chef=document.getElementById(“nchef”)?document.getElementById(“nchef”).checked:false;
 if(!id||!name){toast(“Remplissez tous les champs”,“err”);return;}
 id=id.trim().toUpperCase();
-if(A.employees.find(e=>e.id===id)){toast(“Matricule d\u00E9j\u00E0 existant”,“err”);return;}
+if(A.employees.find(e=>e.id===id)){toast(“Matricule d\u00e9j\u00e0 existant”,“err”);return;}
 A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
-sav();toast(“Employ\u00E9 ajout\u00E9 !”);showAddF=false;dc();
+sav();toast(“Employ\u00e9 ajout\u00e9 !”);showAddF=false;dc();
 }
 
-/* —
-ASSISTANT IA CMC - moteur de r\u00E9ponses
-— */
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+ASSISTANT IA CMC \u2014 moteur de r\u00e9ponses
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 var iaHistory=[];
 
 function vIA(){
@@ -1618,26 +1618,26 @@ let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)
 
   <div style="padding:10px 14px;border-bottom:1px solid #1e3020;flex-shrink:0;background:#0a180c">
     <div style="display:flex;align-items:center;gap:8px">
-      <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\uD83E\uDD16</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:#c9a227">Assistant CMC</div>
-        <div style="font-size:9px;color:#3a5030">Planning \u00B7 V\u00E9rification \u00B7 \u00C9quipes \u00B7 Horaires</div>
+        <div style="font-size:9px;color:#3a5030">Planning \u00b7 V\u00e9rification \u00b7 \u00c9quipes \u00b7 Horaires</div>
       </div>
-      ${isAdm?'<button onclick="iaCheckNow()" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:9px;cursor:pointer;font-weight:700">\uD83D\uDD0D V\u00E9rifier</button>':""}
+      ${isAdm?'<button onclick="iaCheckNow()" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:9px;cursor:pointer;font-weight:700">\ud83d\udd0d V\u00e9rifier</button>':""}
       ${isAdm?'<button onclick="iaClearHistory()" style="background:transparent;border:1px solid #1e3020;border-radius:6px;padding:4px 8px;color:#3a5030;font-size:9px;cursor:pointer">\u2715</button>':""}
     </div>
   </div>
   <div id="iaMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px">`;
 
 if(!iaHistory.length){
-h+=`<div style="text-align:center;padding:20px 10px"> <div style="font-size:28px;margin-bottom:8px">\u2666</div> <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00E9s,<br>\u00E9quipes, codes horaires et le planning.</div> <div style="display:flex;flex-direction:column;gap:6px"> ${["Qui travaille ce soir en \u00E9quipe 3 ?", "V\u00E9rifie le planning du mois", "Quels sont les horaires 22/6 ?", "Qui est chef de l'\u00E9quipe 1 ?", "Montre-moi le planning de DESSI F", "Erreurs dans le planning ?" ].map(q=>`<button onclick=“iaSend(’${q.replace(/’/g,”\’”)}’)” style=“background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left”>${q}</button>`).join("")} </div> </div>`;
+h+=`<div style="text-align:center;padding:20px 10px"> <div style="font-size:28px;margin-bottom:8px">\u2666</div> <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00e9s,<br>\u00e9quipes, codes horaires et le planning.</div> <div style="display:flex;flex-direction:column;gap:6px"> ${["Qui travaille ce soir en \u00e9quipe 3 ?", "V\u00e9rifie le planning du mois", "Quels sont les horaires 22/6 ?", "Qui est chef de l'\u00e9quipe 1 ?", "Montre-moi le planning de DESSI F", "Erreurs dans le planning ?" ].map(q=>`<button onclick=“iaSend(’${q.replace(/’/g,”\’”)}’)” style=“background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left”>${q}</button>`).join("")} </div> </div>`;
 }
 
 iaHistory.forEach(msg=>{
 if(msg.role===“user”){
 h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%"> <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div> </div>`;
 } else {
-h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%"> <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">\uD83E\uDD16 Assistant CMC</div> <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div> </div>`;
+h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%"> <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">\ud83e\udd16 Assistant CMC</div> <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div> </div>`;
 }
 });
 
@@ -1656,23 +1656,23 @@ h+=`</div>
 function iaCheckNow(){
 const v=verifyCurrentMonth();
 if(!v){
-iaHistory.push({role:“user”,text:“V\u00E9rifier le planning “+MFR[A.month]+” “+A.year});
-iaHistory.push({role:“bot”,html:`<span style="color:#c9a227">\u26A0\uFE0F Aucun planning import\u00E9 pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin \u2192 Import planning</strong> pour importer un planning CSV, puis je le v\u00E9rifierai automatiquement.`});
+iaHistory.push({role:“user”,text:“V\u00e9rifier le planning “+MFR[A.month]+” “+A.year});
+iaHistory.push({role:“bot”,html:`<span style="color:#c9a227">\u26a0\ufe0f Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin \u2192 Import planning</strong> pour importer un planning CSV, puis je le v\u00e9rifierai automatiquement.`});
 dc();setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
 return;
 }
-iaHistory.push({role:“user”,text:“V\u00E9rifier le planning “+MFR[A.month]+” “+A.year});
+iaHistory.push({role:“user”,text:“V\u00e9rifier le planning “+MFR[A.month]+” “+A.year});
 iaHistory.push({role:“bot”,html:formatVerifReport(v)});
 sv(“ia”);
 setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},80);
 }
 
 function formatVerifReport(v){
-if(!v) return “Aucune v\u00E9rification disponible.”;
+if(!v) return “Aucune v\u00e9rification disponible.”;
 const pct=v.summary?v.summary.coverage:0;
 const barColor=pct>=95?”#3a8a50”:pct>=80?”#c9a227”:”#c04040”;
 let h=`<div style="margin-bottom:8px">
-<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">\uD83D\uDD0D V\u00E9rification planning - ${MFR[v.month]} ${v.year}</div>
+<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">\ud83d\udd0d V\u00e9rification planning \u2014 ${MFR[v.month]} ${v.year}</div>
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
 <div style="flex:1;height:6px;background:#0c1e0e;border-radius:3px;overflow:hidden">
 <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
@@ -1680,64 +1680,64 @@ let h=`<div style="margin-bottom:8px">
 <span style="font-size:10px;font-weight:700;color:${barColor}">${pct}%</span>
 </div>
 <div style="font-size:10px;color:#6a8a68">
-\u2705 ${v.summary?v.summary.correct:0} cellules correctes  \u00B7 
-${v.errors.length>0?(’<span style="color:#c9a227">\u26A0\uFE0F ‘+v.errors.length+’ erreur(s)</span>’):’<span style="color:#3a8a50">\u2705 0 erreur</span>’}
+\u2705 ${v.summary?v.summary.correct:0} cellules correctes  \u00b7 
+${v.errors.length>0?’<span style="color:#c9a227">\u26a0\ufe0f ‘+v.errors.length+’ erreur(s)</span>’:’<span style="color:#3a8a50">\u2705 0 erreur</span>’}
 </div>
 
   </div>`;
   if(v.errors.length===0){
     h+=`<div style="padding:8px;background:#061c0a;border:1px solid #1a4020;border-radius:7px;font-size:11px;color:#3a8a50;font-weight:700">
-      \u2705 Parfait - tous les horaires correspondent au planning import\u00E9.
+      \u2705 Parfait \u2014 tous les horaires correspondent au planning import\u00e9.
     </div>`;
   } else {
-    h+=`<div style="font-size:10px;font-weight:700;color:#c9a227;margin-bottom:6px">\u26A0\uFE0F Erreurs d\u00E9tect\u00E9es :</div>`;
-    // Grouper par employ\u00E9
+    h+=`<div style="font-size:10px;font-weight:700;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f Erreurs d\u00e9tect\u00e9es :</div>`;
+    // Grouper par employ\u00e9
     const byEmp={};
     v.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=[];byEmp[e.empName].push(e);});
     Object.keys(byEmp).forEach(name=>{
       const errs=byEmp[name];
       h+=`<div style="padding:7px 10px;background:#0e1c0e;border:1px solid #c9a22730;border-radius:7px;margin-bottom:5px">
-        <div style="font-size:10px;font-weight:700;color:#d0cca0;margin-bottom:4px">\uD83D\uDC64 ${esc(name)} - ${errs.length} erreur(s)</div>`;
+        <div style="font-size:10px;font-weight:700;color:#d0cca0;margin-bottom:4px">\ud83d\udc64 ${esc(name)} \u2014 ${errs.length} erreur(s)</div>`;
       errs.slice(0,5).forEach(e=>{
         const ciRef=CODES[e.refCode]||{c:"#c9a227"};
         const ciPl=CODES[e.plCode]||{c:"#6a8a68"};
         h+=`<div style="font-size:9px;color:#6a8a68;margin-bottom:2px">
           Jour ${e.day} : planning=<span style="color:${ciPl.c};font-weight:700">${e.plCode||"vide"}</span>
-          \u2192 devrait \u00EAtre <span style="color:${ciRef.c};font-weight:700">${e.refCode}</span>
+          \u2192 devrait \u00eatre <span style="color:${ciRef.c};font-weight:700">${e.refCode}</span>
         </div>`;
       });
       if(errs.length>5) h+=`<div style="font-size:9px;color:#3a5030">...et ${errs.length-5} autre(s)</div>`;
       h+=`</div>`;
     });
     h+=`<div style="margin-top:8px;padding:7px;background:#0c1810;border-radius:7px;font-size:9px;color:#3a5030">
-      \uD83D\uDCA1 Pour corriger : allez dans Planning et modifiez les cellules incorrectes, ou r\u00E9-importez le bon fichier.
+      \ud83d\udca1 Pour corriger : allez dans Planning et modifiez les cellules incorrectes, ou r\u00e9-importez le bon fichier.
     </div>`;
   }
   if(v.errors.length>0){
     h+=`<div style="margin-top:10px;display:flex;gap:6px">
-      <button onclick="iaAskCorrect()" style="flex:1;padding:9px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:8px;font-size:11px;color:#c9a227;font-weight:700;cursor:pointer">\uD83D\uDD27 Corriger les erreurs</button>
+      <button onclick="iaAskCorrect()" style="flex:1;padding:9px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:8px;font-size:11px;color:#c9a227;font-weight:700;cursor:pointer">\ud83d\udd27 Corriger les erreurs</button>
     </div>`;
   }
   const d=new Date(v.checkedAt);
-  h+=`<div style="margin-top:6px;font-size:8px;color:#2a4028">V\u00E9rifi\u00E9 le ${d.toLocaleDateString("fr-FR")} \u00E0 ${String(d.getHours()).padStart(2,"0")}h${String(d.getMinutes()).padStart(2,"0")}</div>`;
+  h+=`<div style="margin-top:6px;font-size:8px;color:#2a4028">V\u00e9rifi\u00e9 le ${d.toLocaleDateString("fr-FR")} \u00e0 ${String(d.getHours()).padStart(2,"0")}h${String(d.getMinutes()).padStart(2,"0")}</div>`;
   return h;
 }
 
-// — \u00C9tat de confirmation de correction -
+// \u2500\u2500 \u00c9tat de confirmation de correction \u2500\u2500
 var pendingFix=null;
 
 function iaAskCorrect(){
 if(!A.lastVerif||!A.lastVerif.errors.length) return;
 pendingFix=A.lastVerif;
 const n=pendingFix.errors.length;
-// R\u00E9sum\u00E9 des corrections \u00E0 faire
+// R\u00e9sum\u00e9 des corrections \u00e0 faire
 const byEmp={};
 pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
 const summary=Object.keys(byEmp).slice(0,5).map(n=>n+” (”+byEmp[n]+“j)”).join(”, “);
 let h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
-<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\uD83D\uDD27 Corriger ${n} erreur(s) ?</div>
+<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
 <div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
-Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00E9 :<br>
+Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00e9 :<br>
 <strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?” …”:””}</strong>
 </div>
 <div style="display:flex;gap:6px">
@@ -1754,15 +1754,15 @@ Je vais remplacer les codes incorrects dans le planning par ceux du fichier impo
 
 function iaCancelFix(){
 pendingFix=null;
-iaHistory.push({role:“bot”,html:”<span style='color:#3a5030'>Correction annul\u00E9e - aucune modification effectu\u00E9e.</span>”});
+iaHistory.push({role:“bot”,html:”<span style='color:#3a5030'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>”});
 dc();
 setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaConfirmCorrect(){
-if(!A.user||A.user.id!==AID){toast(“Action r\u00E9serv\u00E9e \u00E0 l’admin”,“err”);return;}
+if(!A.user||A.user.id!==AID){toast(“Action r\u00e9serv\u00e9e \u00e0 l’admin”,“err”);return;}
 if(!pendingFix||!pendingFix.errors.length){
-iaHistory.push({role:“bot”,html:“Aucune erreur \u00E0 corriger.”});
+iaHistory.push({role:“bot”,html:“Aucune erreur \u00e0 corriger.”});
 dc();return;
 }
 const errors=pendingFix.errors;
@@ -1774,14 +1774,14 @@ saveOv(e.empId,e.day,e.refCode);
 fixed++;
 details.push({name:e.empName,day:e.day,old:e.plCode,new:e.refCode});
 });
-// Re-v\u00E9rifier apr\u00E8s correction
+// Re-v\u00e9rifier apr\u00e8s correction
 const key=pendingFix.year+”-”+pendingFix.month;
 const ref=lg(“cmc_ref_”+key,null);
 const recheck=ref?runVerification(pendingFix.year,pendingFix.month,ref):null;
 A.lastVerif=recheck;
 pendingFix=null;
-// R\u00E9sum\u00E9
-let h=`<div> <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">\u2705 ${fixed} correction(s) appliqu\u00E9e(s)</div>`;
+// R\u00e9sum\u00e9
+let h=`<div> <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">\u2705 ${fixed} correction(s) appliqu\u00e9e(s)</div>`;
 if(details.length>0){
 h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
 details.slice(0,8).forEach(d=>{
@@ -1792,17 +1792,17 @@ h+=`<div style="font-size:9px;color:#6a8a68"> ${esc(d.name)} j${d.day} : <span s
 if(details.length>8) h+=`<div style="font-size:9px;color:#2a4028">...et ${details.length-8} autre(s)</div>`;
 h+=`</div>`;
 }
-if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">\u26A0\uFE0F ${skipped} cellule(s) non corrig\u00E9e(s) - code invalide</div>`;
+if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f ${skipped} cellule(s) non corrig\u00e9e(s) \u2014 code invalide</div>`;
 if(recheck){
 h+=recheck.errors.length===0
-?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">\u2705 V\u00E9rification apr\u00E8s correction : aucune erreur restante !</div>`
-:`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">\u26A0\uFE0F ${recheck.errors.length} erreur(s) encore pr\u00E9sente(s) - relancez la v\u00E9rification pour les voir.</div>`;
+?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">\u2705 V\u00e9rification apr\u00e8s correction : aucune erreur restante !</div>`
+:`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">\u26a0\ufe0f ${recheck.errors.length} erreur(s) encore pr\u00e9sente(s) \u2014 relancez la v\u00e9rification pour les voir.</div>`;
 }
 h+=`</div>`;
 iaHistory.push({role:“bot”,html:h});
 dc();
 setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
-toast(”\u2705 “+fixed+” correction(s) appliqu\u00E9e(s)”);
+toast(”\u2705 “+fixed+” correction(s) appliqu\u00e9e(s)”);
 }
 
 function iaSend(preset){
@@ -1824,23 +1824,23 @@ const ql=q.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””)
 const pl=gpl();
 const isAdm=A.user&&A.user.id===AID;
 
-// — Planning d’un employ\u00E9 -
+// \u2500\u2500 Planning d’un employ\u00e9 \u2500\u2500
 const empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””)));
 if(empMatch&&(ql.includes(“planning”)||ql.includes(“horaire”)||ql.includes(“mois”)||ql.includes(“travail”))){
 const p=pl[empMatch.id]||{};
 const days=getDays(A.year,A.month);
 let rows=””;
 for(let d=1;d<=days;d++){
-const code=p[d]||”-”;
+const code=p[d]||”\u2014”;
 const ci=CODES[code];
 if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
 }
 const trav=Object.values(p).filter(v=>v&&v!==“RH”&&v!==“R”).length;
 const team=gt(empMatch.team);
-return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> - ${esc(team?team.name:"")} - ${trav}j travaill\u00E9s en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouv\u00E9"}`;
+return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> \u2014 ${esc(team?team.name:"")} \u2014 ${trav}j travaill\u00e9s en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouv\u00e9"}`;
 }
 
-// — Qui travaille ce soir / aujourd’hui -
+// \u2500\u2500 Qui travaille ce soir / aujourd’hui \u2500\u2500
 if(ql.includes(“travaille”)||ql.includes(“travail”)||ql.includes(“service”)||ql.includes(“soir”)||ql.includes(“nuit”)||ql.includes(“aujourd”)){
 const today=new Date().getDate();
 const tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
@@ -1852,10 +1852,10 @@ return isWork(code);
 if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
 const byTeam={};
 workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
-let r=`<strong>${workers.length} employ\u00E9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
+let r=`<strong>${workers.length} employ\u00e9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
 Object.keys(byTeam).forEach(tid=>{
 const tcc=tc(tid),team=gt(tid);
-r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"\u00C9q."+tid)}</span> : `;
+r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span> : `;
 r+=byTeam[tid].map(e=>{
 const code=(pl[e.id]||{})[today]||””;
 const ci=CODES[code]||{c:”#888”};
@@ -1866,27 +1866,27 @@ return r;
 }
 }
 
-// — Effectif d’une \u00E9quipe -
-const teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””))||ql.includes(“equipe “+t.id)||ql.includes(”\u00E9quipe “+t.id)||ql.includes(“team “+t.id));
+// \u2500\u2500 Effectif d’une \u00e9quipe \u2500\u2500
+const teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””))||ql.includes(“equipe “+t.id)||ql.includes(”\u00e9quipe “+t.id)||ql.includes(“team “+t.id));
 if(teamMatch){
 const emps=A.employees.filter(e=>e.team===teamMatch.id);
 const chefs=emps.filter(e=>e.chef);
 const mir=gm(teamMatch.id);
-let r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> - ${emps.length} employ\u00E9(s)<br>`;
-if(chefs.length) r+=`<br>\uD83D\uDC51 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
-if(mir) r+=`\u21CC Miroir : ${esc(mir.name)}<br>`;
-r+=`<br>Membres :<br>${emps.map(function(e){return '\u2022 '+esc(e.name)+(e.chef?' \uD83D\uDC51':'')+' <span style="font-size:10px;color:#3a5030">'+esc(e.post||'')+'</span>';}).join("<br>")}`;
+let r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
+if(chefs.length) r+=`<br>\ud83d\udc51 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
+if(mir) r+=`\u21cc Miroir : ${esc(mir.name)}<br>`;
+r+=`<br>Membres :<br>${emps.map(function(e){return '\u2022 '+esc(e.name)+(e.chef?' \ud83d\udc51':'')+' <span style="font-size:10px;color:#3a5030">'+esc(e.post||'')+'</span>';}).join("<br>")}`;
 return r;
 }
 
-// — Code horaire -
+// \u2500\u2500 Code horaire \u2500\u2500
 const codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*’]/g,””).includes(c.toLowerCase().replace(/[^a-z0-9/*’]/g,””)));
 if(codeMatch&&(ql.includes(“horaire”)||ql.includes(“heure”)||ql.includes(“signifie”)||ql.includes(“veut dire”)||ql.includes(“quoi”)||ql.includes(“c’est”)||ql.includes(“code”))){
 const ci=CODES[codeMatch];
-return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Caf\u00E9 de Paris)":""}`;
+return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Caf\u00e9 de Paris)":""}`;
 }
 
-// — Tous les codes -
+// \u2500\u2500 Tous les codes \u2500\u2500
 if(ql.includes(“codes”)||ql.includes(“liste des horaires”)||ql.includes(“tous les horaires”)){
 let r=”<strong>Codes horaires CMC :</strong><br><br>”;
 CK.forEach(c=>{
@@ -1896,105 +1896,105 @@ r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1
 return r;
 }
 
-// — Chefs d’une \u00E9quipe -
+// \u2500\u2500 Chefs d’une \u00e9quipe \u2500\u2500
 if(ql.includes(“chef”)){
 if(teamMatch){
-const chef=CHEF_EQ[teamMatch.id]||“Non d\u00E9fini”;
+const chef=CHEF_EQ[teamMatch.id]||“Non d\u00e9fini”;
 return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
 }
-let r=”<strong>Chefs d’\u00E9quipe :</strong><br><br>”;
+let r=”<strong>Chefs d’\u00e9quipe :</strong><br><br>”;
 A.teams.forEach(t=>{
-const chef=CHEF_EQ[t.id]||”-”;
+const chef=CHEF_EQ[t.id]||”\u2014”;
 r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
 });
 return r;
 }
 
-// — Absents / repos -
+// \u2500\u2500 Absents / repos \u2500\u2500
 if(ql.includes(“absent”)||ql.includes(“repos”)||ql.includes(“conge”)||ql.includes(“rh”)){
 const today=new Date().getDate();
 if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
 const absents=A.employees.filter(e=>{const c=(pl[e.id]||{})[today]||””;return c===“RH”||c===“R”||c===“CP”||c===“M”||c===“AF”;});
 if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
-return `<strong>${absents.length} employ\u00E9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{const c=(pl[e.id]||{})[today]||"";const ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} - <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
+return `<strong>${absents.length} employ\u00e9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{const c=(pl[e.id]||{})[today]||"";const ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} \u2014 <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
 }
 }
 
-// — CDP ce mois -
-if(ql.includes(“cdp”)||ql.includes(“cafe de paris”)||ql.includes(“caf\u00E9 de paris”)){
+// \u2500\u2500 CDP ce mois \u2500\u2500
+if(ql.includes(“cdp”)||ql.includes(“cafe de paris”)||ql.includes(“caf\u00e9 de paris”)){
 const days=getDays(A.year,A.month);
 const cdpEmps=A.employees.filter(e=>{
 for(let d=1;d<=days;d++){const c=(pl[e.id]||{})[d]||””;if(CODES[c]&&CODES[c].cdp)return true;}
 return false;
 });
-if(!cdpEmps.length) return `Aucun employ\u00E9 avec shifts CDP en ${MFR[A.month]}.`;
-return `<strong>${cdpEmps.length} employ\u00E9(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
+if(!cdpEmps.length) return `Aucun employ\u00e9 avec shifts CDP en ${MFR[A.month]}.`;
+return `<strong>${cdpEmps.length} employ\u00e9(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
 }
 
-// — Stats globales -
+// \u2500\u2500 Stats globales \u2500\u2500
 if(ql.includes(“stat”)||ql.includes(“combien”)||ql.includes(“effectif”)||ql.includes(“total”)){
 let r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
-r+=`\uD83D\uDC65 Total : <strong>${A.employees.length}</strong> employ\u00E9s<br>`;
+r+=`\ud83d\udc65 Total : <strong>${A.employees.length}</strong> employ\u00e9s<br>`;
 A.teams.forEach(t=>{
 const n=A.employees.filter(e=>e.team===t.id).length;
-r+=`<span style="color:${t.color}">\u25CF</span> ${esc(t.name)} : ${n} personnes<br>`;
+r+=`<span style="color:${t.color}">\u25cf</span> ${esc(t.name)} : ${n} personnes<br>`;
 });
 return r;
 }
 
-// — Aide / que sais-tu -
+// \u2500\u2500 Aide / que sais-tu \u2500\u2500
 if(ql.includes(“aide”)||ql.includes(“help”)||ql.includes(“peux-tu”)||ql.includes(“peux tu”)||ql.includes(“sais-tu”)||ql.includes(“sais tu”)||ql.includes(“quoi faire”)){
-return `Je peux vous aider avec :<br><br> \uD83D\uDCC5 <strong>Planning</strong> - "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br> \uD83D\uDC65 <strong>\u00C9quipes</strong> - "Combien dans l'\u00E9quipe 3 ?", "Chefs de l'\u00E9quipe 2"<br> \u23F0 <strong>Horaires</strong> - "Que signifie 22/6 ?", "Liste des codes"<br> \uD83D\uDCCA <strong>Stats</strong> - "Combien d'employ\u00E9s total ?", "Qui a CDP ce mois ?"<br> \uD83D\uDD0D <strong>Absences</strong> - "Qui est absent aujourd'hui ?"<br><br> Posez votre question librement !`;
+return `Je peux vous aider avec :<br><br> \ud83d\udcc5 <strong>Planning</strong> \u2014 "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br> \ud83d\udc65 <strong>\u00c9quipes</strong> \u2014 "Combien dans l'\u00e9quipe 3 ?", "Chefs de l'\u00e9quipe 2"<br> \u23f0 <strong>Horaires</strong> \u2014 "Que signifie 22/6 ?", "Liste des codes"<br> \ud83d\udcca <strong>Stats</strong> \u2014 "Combien d'employ\u00e9s total ?", "Qui a CDP ce mois ?"<br> \ud83d\udd0d <strong>Absences</strong> \u2014 "Qui est absent aujourd'hui ?"<br><br> Posez votre question librement !`;
 }
 
-// — V\u00E9rification planning -
+// \u2500\u2500 V\u00e9rification planning \u2500\u2500
 if(ql.includes(“verif”)||ql.includes(“erreur”)||ql.includes(“correct”)||ql.includes(“check”)||ql.includes(“bon horaire”)||ql.includes(“correspond”)||ql.includes(“juste”)){
-if(!isAdm) return “La v\u00E9rification du planning est r\u00E9serv\u00E9e \u00E0 l’administrateur.”;
+if(!isAdm) return “La v\u00e9rification du planning est r\u00e9serv\u00e9e \u00e0 l’administrateur.”;
 const key=A.year+”-”+A.month;
 const ref=lg(“cmc_ref_”+key,null);
-if(!ref) return `<span style="color:#c9a227">Aucun planning import\u00E9 pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin \u2192 Import planning</strong>, je le v\u00E9rifierai automatiquement.`;
+if(!ref) return `<span style="color:#c9a227">Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin \u2192 Import planning</strong>, je le v\u00e9rifierai automatiquement.`;
 const v=runVerification(A.year,A.month,ref);
 A.lastVerif=v;
 return formatVerifReport(v);
 }
 
-// — Rapport derni\u00E8re v\u00E9rification -
-if(ql.includes(“rapport”)||ql.includes(“dernier”)||ql.includes(“r\u00E9sultat”)){
+// \u2500\u2500 Rapport derni\u00e8re v\u00e9rification \u2500\u2500
+if(ql.includes(“rapport”)||ql.includes(“dernier”)||ql.includes(“r\u00e9sultat”)){
 if(A.lastVerif) return formatVerifReport(A.lastVerif);
-return “Aucune v\u00E9rification effectu\u00E9e. Importez un planning ou cliquez sur \uD83D\uDD0D V\u00E9rifier.”;
+return “Aucune v\u00e9rification effectu\u00e9e. Importez un planning ou cliquez sur \ud83d\udd0d V\u00e9rifier.”;
 }
 
-// — Erreurs d’un employ\u00E9 sp\u00E9cifique -
+// \u2500\u2500 Erreurs d’un employ\u00e9 sp\u00e9cifique \u2500\u2500
 if(empMatch&&(ql.includes(“erreur”)||ql.includes(“verif”)||ql.includes(“correct”)||ql.includes(“horaire”))){
 const key=A.year+”-”+A.month;
 const ref=lg(“cmc_ref_”+key,null);
-if(!ref) return `Pas de r\u00E9f\u00E9rence d'import pour ${MFR[A.month]} ${A.year}.`;
+if(!ref) return `Pas de r\u00e9f\u00e9rence d'import pour ${MFR[A.month]} ${A.year}.`;
 const v=runVerification(A.year,A.month,ref);
 const empErrs=v.errors.filter(e=>e.empId===empMatch.id);
-if(!empErrs.length) return `\u2705 <strong>${esc(empMatch.name)}</strong> - aucune erreur d\u00E9tect\u00E9e, tous les horaires correspondent.`;
-let r=`\u26A0\uFE0F <strong>${esc(empMatch.name)}</strong> - ${empErrs.length} erreur(s) :<br><br>`;
+if(!empErrs.length) return `\u2705 <strong>${esc(empMatch.name)}</strong> \u2014 aucune erreur d\u00e9tect\u00e9e, tous les horaires correspondent.`;
+let r=`\u26a0\ufe0f <strong>${esc(empMatch.name)}</strong> \u2014 ${empErrs.length} erreur(s) :<br><br>`;
 empErrs.forEach(e=>{
 const ciR=CODES[e.refCode]||{c:”#c9a227”};
 const ciP=CODES[e.plCode]||{c:”#6a8a68”};
-r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> \u2192 devrait \u00EAtre <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
+r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> \u2192 devrait \u00eatre <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
 });
 return r;
 }
 
-// — Corriger les erreurs -
-if(ql.includes(“corrig”)||ql.includes(“fix”)||ql.includes(“r\u00E9pare”)||ql.includes(“modifie”)||ql.includes(“appliqu”)){
-if(!isAdm) return “La correction du planning est r\u00E9serv\u00E9e \u00E0 l’administrateur.”;
+// \u2500\u2500 Corriger les erreurs \u2500\u2500
+if(ql.includes(“corrig”)||ql.includes(“fix”)||ql.includes(“r\u00e9pare”)||ql.includes(“modifie”)||ql.includes(“appliqu”)){
+if(!isAdm) return “La correction du planning est r\u00e9serv\u00e9e \u00e0 l’administrateur.”;
 if(!A.lastVerif||!A.lastVerif.errors.length){
 const v=verifyCurrentMonth();
-if(!v) return “Aucune r\u00E9f\u00E9rence d’import disponible. Importez d’abord un planning.”;
-if(!v.errors.length) return “\u2705 Aucune erreur \u00E0 corriger - le planning est correct !”;
+if(!v) return “Aucune r\u00e9f\u00e9rence d’import disponible. Importez d’abord un planning.”;
+if(!v.errors.length) return “\u2705 Aucune erreur \u00e0 corriger \u2014 le planning est correct !”;
 }
 iaAskCorrect();
-return null; // iaAskCorrect g\u00E8re l’affichage
+return null; // iaAskCorrect g\u00e8re l’affichage
 }
 
-// — R\u00E9ponse par d\u00E9faut -
-return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> \u2022 "Planning de [NOM]"<br> \u2022 "Qui travaille aujourd'hui ?"<br> \u2022 "Combien dans l'\u00E9quipe 3 ?"<br> \u2022 "Que signifie le code 22/6 ?"<br> \u2022 "Qui est chef de l'\u00E9quipe 1 ?"`;
+// \u2500\u2500 R\u00e9ponse par d\u00e9faut \u2500\u2500
+return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> \u2022 "Planning de [NOM]"<br> \u2022 "Qui travaille aujourd'hui ?"<br> \u2022 "Combien dans l'\u00e9quipe 3 ?"<br> \u2022 "Que signifie le code 22/6 ?"<br> \u2022 "Qui est chef de l'\u00e9quipe 1 ?"`;
 }
 
 render();
