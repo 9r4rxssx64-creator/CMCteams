@@ -976,21 +976,16 @@ function showCI(tid){
   dc();
 }
 function setCI(name,si,tid){
-  // name = nom du chef
-  // si = nouvel index de séquence souhaité pour ce chef
-  // → tous les autres chefs décalent du même delta pour garder le cycle
   if(!A.user||A.user.id!==AID)return;
   var names=CHEFS_T[tid]||[];
-  var sl=names.length;
-  if(!sl)return;
+  if(!names.length)return;
   var CI=gCI(A.year,A.month);
-  var oldBase=CI[name]!==undefined?CI[name]:0;
-  var delta=((si-oldBase)%sl+sl)%sl;
-  // Décaler TOUTE l'équipe du même delta → cycle conservé, 0 doublon
-  names.forEach(function(n){
-    var cur=CI[n]!==undefined?CI[n]:0;
-    CI[n]=((cur+delta)%sl+sl)%sl;
-  });
+  var myOld=CI[name]!==undefined?CI[name]:0;
+  if(myOld===si){dc();return;}
+  // Trouver qui a déjà le numéro si et échanger avec lui
+  var other=names.find(function(n){return n!==name&&CI[n]===si;});
+  if(other) CI[other]=myOld; // l'autre prend mon ancien numéro
+  CI[name]=si;               // moi je prends le nouveau
   sCI(A.year,A.month,CI);
   dc();
 }
