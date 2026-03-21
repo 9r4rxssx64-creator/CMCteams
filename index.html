@@ -153,9 +153,9 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 
 <!-- Firebase SDK -->
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js" defer></script>
 
 <script>
 // ═══════════════════════════════════════════
@@ -672,7 +672,6 @@ function stepPin(){
   }
   var emp=A.employees.find(e=>e.id===AID);
   A.user=emp;loginStep=0;render();
-if(typeof fbInit==="function")fbInit();
 }
 function step1(){
   var el=document.getElementById("li");if(!el)return;
@@ -681,14 +680,11 @@ function step1(){
   if(!emp){var er=document.getElementById("lerr");if(er)er.textContent="Matricule non reconnu.";return;}
   if(uid===AID){
     var pin=lg("cmc_admin_pin",null);
-    if(pin){loginUid=uid;loginStep=2;render();
-if(typeof fbInit==="function")fbInit();}
-    else{A.user=emp;loginStep=0;render();
-if(typeof fbInit==="function")fbInit();}
+    if(pin){loginUid=uid;loginStep=2;render();}
+    else{A.user=emp;loginStep=0;render();}
     return;
   }
   loginUid=uid;loginStep=1;render();
-if(typeof fbInit==="function")fbInit();
 }
 
 function step2(){
@@ -703,8 +699,7 @@ if(pw1.length<6){if(errEl)errEl.textContent=“Mot de passe trop court (min. 6 c
 var pw2=(document.getElementById(“fp2”)||{}).value||””;
 if(pw1!==pw2){if(errEl)errEl.textContent=“Les mots de passe ne correspondent pas”;return;}
 A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls(“cmc_pw”,A.passwords);
-A.user=emp;loginStep=0;render();
-if(typeof fbInit===“function”)fbInit();toast(“Bienvenue “+emp.name.split(” “)[0]+” !”);
+A.user=emp;loginStep=0;render();toast(“Bienvenue “+emp.name.split(” “)[0]+” !”);
 } else {
 var stored=A.passwords[loginUid];
 var valid=(typeof stored===“string”&&hashPw(pw1)===stored)||(stored&&stored.h&&hashPw(pw1)===stored.h);
@@ -712,12 +707,10 @@ if(!valid){if(errEl)errEl.textContent=“Mot de passe incorrect”;return;}
 // Migrer vers nouveau format si ancien
 if(typeof stored===“string”){A.passwords[loginUid]={h:stored,p:pw1};ls(“cmc_pw”,A.passwords);}
 A.user=emp;loginStep=0;render();
-if(typeof fbInit===“function”)fbInit();
 }
 }
 
-function doLogout(){A.user=null;render();
-if(typeof fbInit===“function”)fbInit();}
+function doLogout(){A.user=null;render();}
 
 function vTopbar(){
 var u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:“1”),t=gt(u?u.team:””);
@@ -980,12 +973,12 @@ var h=`<div class="page">
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
         ${isMe?"▶ ":""}${esc(emp.name)}</td>`;
+      var wb=0;
       workDays.forEach((d,wi)=>{
         var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
         if(works){
-          // Compteur partagé wi (index du jour dans workDays) = même pour tous les chefs
-          // Garantit qu'aucun doublon de position sur un même jour
-          var rotIdx=(wi+base)%sl;
+          // Algo original : wb%4 + floor(wb/4) produit le cycle 1423-4235-2351...
+          var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
           var pos=SEQ[rotIdx];
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
@@ -994,6 +987,7 @@ var h=`<div class="page">
               <div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
               <div style="font-size:6px;color:${ci.c}">${code}</div>
             </div></td>`;
+          wb++;
         } else {
           var ci=CODES[code]||{c:"#1e2e1e"};
           h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"·"}</span></td>`;
@@ -2207,7 +2201,7 @@ return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> • "P
 }
 
 render();
-if(typeof fbInit===“function”)fbInit();
+window.addEventListener(“load”,function(){if(typeof fbInit===“function”)fbInit();});
 </script>
 
 </body>
