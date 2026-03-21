@@ -884,7 +884,22 @@ var DEF_CI={
   "GARCIA A":0,"GARRO S":1,"GIORSETTI S":2,"SIRIO J":3,"FAUTRIER M":4
 };
 var DCOL=["#c9a227","#4a72a8","#3a8a50","#a84868","#c07830","#38bdf8","#a3e635","#f87171","#c084fc"];
-function gCI(y,m){return lg("cmc_ci_"+y+"_"+m,JSON.parse(JSON.stringify(DEF_CI)));}
+function gCI(y,m){
+  var ci=lg("cmc_ci_"+y+"_"+m,JSON.parse(JSON.stringify(DEF_CI)));
+  // Auto-corriger les doublons éventuels par équipe
+  Object.keys(CHEFS_T).forEach(function(tid){
+    var names=CHEFS_T[tid]||[];
+    var sl=names.length; if(!sl)return;
+    var vals=names.map(function(n){return ci[n]!==undefined?ci[n]:0;});
+    var seen=[];var hasDup=false;
+    vals.forEach(function(v){if(seen.indexOf(v)>=0)hasDup=true;else seen.push(v);});
+    if(hasDup){
+      // Reset cette équipe aux valeurs par défaut
+      names.forEach(function(n,i){ci[n]=i;});
+    }
+  });
+  return ci;
+}
 function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);fbSet("cmc_ci_"+y+"_"+m,o);}
 
 function vDeparts(){
@@ -975,6 +990,14 @@ function showCI(tid){
   openCITeam=(openCITeam===tid)?null:tid;
   dc();
 }
+function resetCI(tid){
+  if(!A.user||A.user.id!==AID)return;
+  var names=CHEFS_T[tid]||[];
+  var CI=gCI(A.year,A.month);
+  names.forEach(function(n,i){CI[n]=i;});
+  sCI(A.year,A.month,CI);
+  dc();
+}
 function setCI(name,si,tid){
   if(!A.user||A.user.id!==AID)return;
   var names=CHEFS_T[tid]||[];
@@ -1009,7 +1032,10 @@ function renderCIPanel(tid){
     }
     h+=`</div></div>`;
   });
-  h+=`<button onclick="openCITeam=null;dc()" style="margin-top:4px;background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#3a5030;font-size:11px;cursor:pointer">Fermer</button>
+  h+=`<div style="display:flex;gap:8px;margin-top:8px">
+  <button onclick="resetCI('${tid}')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:7px;padding:6px 14px;color:#c9a227;font-size:11px;cursor:pointer;font-weight:700">↺ Réinitialiser</button>
+  <button onclick="openCITeam=null;dc()" style="background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#3a5030;font-size:11px;cursor:pointer">Fermer</button>
+</div>
   </div>`;
   return h;
 }
