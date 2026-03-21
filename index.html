@@ -1255,8 +1255,8 @@ function vImport(){
   <div class="card" style="padding:12px;margin-bottom:10px">
     <div style="font-size:9px;color:#c9a227;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Mois</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <select id="impY" class="inp" style="font-size:13px;padding:10px" onchange="dc()">${[2025,2026,2027].map(y=>`<option value="${y}"${y===A.year?" selected":""}>${y}</option>`).join("")}</select>
-      <select id="impM" class="inp" style="font-size:13px;padding:10px" onchange="dc()">${MFR.map((m,i)=>`<option value="${i}"${i===A.month?" selected":""}>${m}</option>`).join("")}</select>
+      <select id="impY" class="inp" style="font-size:13px;padding:10px" onchange="A.year=parseInt(this.value)">${[2025,2026,2027].map(y=>`<option value="${y}"${y===A.year?" selected":""}>${y}</option>`).join("")}</select>
+      <select id="impM" class="inp" style="font-size:13px;padding:10px" onchange="A.month=parseInt(this.value)">${MFR.map((m,i)=>`<option value="${i}"${i===A.month?" selected":""}>${m}</option>`).join("")}</select>
     </div>
   </div>
 
@@ -1474,7 +1474,11 @@ function doImport(){
   var ta=document.getElementById("impTxt"); var txt=(ta&&ta.value)||A.lastCsv||"";
   var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
-  if(!txt){toast("Aucun contenu","err");return;}
+  if(!txt){
+    if(A.lastCsvName) toast("Re-choisissez le fichier "+A.lastCsvName,"err");
+    else toast("Choisissez d abord un fichier CSV","err");
+    return;
+  }
   var lines=txt.split("\n").map(l=>l.trim()).filter(Boolean);
   if(lines.length<2){toast("Format invalide","err");return;}
   var sep=lines[0].includes("\t")?"\t":",";
@@ -1524,6 +1528,8 @@ function doImport(){
     (err?`<div style="color:#c9a227;font-size:10px">${err} ligne(s) ignorée(s) — noms non reconnus</div>`:"")+
     `<div style="margin-top:6px;font-size:10px;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`;
   toast(`✅ ${MFR[im]} ${iy} importé — ${ok} cellules`);
+  // Basculer vers le planning pour voir le résultat immédiatement
+  A.view="planning";
   dc();
   if(errLines.length>0) errLines.forEach(e=>console.warn("Import:",e));
 }
