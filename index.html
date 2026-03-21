@@ -818,13 +818,12 @@ function vDeparts(){
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
         ${isMe?"▶ ":""}${esc(emp.name)}</td>`;
-      var wb=0;
-      workDays.forEach(d=>{
+      workDays.forEach((d,wi)=>{
         var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
         if(works){
-          // Roulement: chaque groupe de 4j travaillés décale d'un cran
-          // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5
-          var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
+          // Compteur partagé wi (index du jour dans workDays) = même pour tous les chefs
+          // Garantit qu'aucun doublon de position sur un même jour
+          var rotIdx=(wi+base)%sl;
           var pos=SEQ[rotIdx];
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
@@ -833,7 +832,6 @@ function vDeparts(){
               <div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
               <div style="font-size:6px;color:${ci.c}">${code}</div>
             </div></td>`;
-          wb++;
         } else {
           var ci=CODES[code]||{c:"#1e2e1e"};
           h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"·"}</span></td>`;
