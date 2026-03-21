@@ -375,11 +375,12 @@ function hashPw(pw){
 }
 
 // État
+var _savedYM=lg("cmc_ym",{year:new Date().getFullYear(),month:new Date().getMonth()});
 var A={
   user:null,
   view:"planning",
-  year:new Date().getFullYear(),
-  month:new Date().getMonth(),
+  year:_savedYM.year||new Date().getFullYear(),
+  month:_savedYM.month!==undefined?_savedYM.month:new Date().getMonth(),
   employees:lg("cmc_e",DEF_EMP),
   teams:lg("cmc_t",DEF_TEAMS),
   overrides:lg("cmc_ov",{}),
@@ -387,7 +388,11 @@ var A={
   showLeg:false,
   chatMsgs:lg("cmc_chat",[]),
   empQ:"",
-  pt:null
+  pt:null,
+  lastImportKey:null,
+  lastVerif:null,
+  lastCsv:"",
+  lastCsvName:""
 };
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
@@ -1449,11 +1454,13 @@ function handleFileImport(input){
   r.onload=function(e){
     var txt=e.target.result;
     if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+    A.lastCsv=txt;
+    A.lastCsvName=file.name;
     var ta=document.getElementById("impTxt");
     if(ta) ta.value=txt;
     var n=txt.split("\n").filter(function(l){return l.trim();}).length;
-    if(info) info.innerHTML='<span style="color:#3a8a50">✅ '+file.name+' — '+n+' lignes</span>';
-    setTimeout(function(){doImport();},100);
+    if(info) info.innerHTML='<span style="color:#3a8a50">✅ '+file.name+' — '+n+' lignes — import en cours...</span>';
+    setTimeout(function(){doImport();},200);
   };
   r.onerror=function(){
     if(info) info.innerHTML='<span style="color:#c04040">❌ Erreur lecture — ce format nest pas supporté directement</span>';
@@ -1464,7 +1471,7 @@ function handleFileImport(input){
 
 function doImport(){
   if(!A.user||A.user.id!==AID)return;
-  var txt=(document.getElementById("impTxt")||{}).value||"";
+  var ta=document.getElementById("impTxt"); var txt=(ta&&ta.value)||A.lastCsv||"";
   var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
   if(!txt){toast("Aucun contenu","err");return;}
@@ -1485,7 +1492,12 @@ function doImport(){
     for(var di=1;di<parts.length;di++){
       var code=parts[di].trim().toUpperCase();
       if(!code||code==="0"||code==="-")continue;
-      if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
+      // Normaliser : supprimer les suffixes ', ", c, * sauf pour les codes CDP (*) et Convention (')
+      var codeClean=code.replace(/["""c]+$/g,"").replace(/'+$/g,"");
+      // Garder les codes CDP comme 20/5* et convention 19/4'
+      if(CODES[code]) codeClean=code;
+      else if(CODES[codeClean]) code=codeClean;
+      else {err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][di]=code;
       refData.rows[emp.id][di]=code;
