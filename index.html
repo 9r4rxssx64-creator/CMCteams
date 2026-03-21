@@ -150,8 +150,28 @@ color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 }
 
 </style>
+</head>
+<body>
+<div id="app" style="min-height:100vh;background:#1a2e1c"></div>
+<div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#1e3820;border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:13px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.8)"></div>
+<div id="pk" style="display:none"></div>
+<div id="ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500"></div>
 
 <!-- Firebase SDK -->
+
+<script>
+window.onerror=function(msg,src,line,col,err){
+  var s='<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0a1a0c;padding:20px;color:#c9a227;font-family:monospace;font-size:13px;z-index:9999;overflow:auto">'
+    +'<div style="font-size:18px;margin-bottom:16px">ERR JS</div>'
+    +'<div style="color:#fff;word-break:break-all">'+msg+'</div>'
+    +'<div style="color:#888;margin-top:8px">L'+line+' C'+col+'</div>'
+    +'</div>';
+  var app=document.getElementById('app');
+  if(app){app.innerHTML=s;}
+  else if(document.body){document.body.innerHTML=s;}
+  return false;
+};
+</script>
 
 <script>
 function ifChef(emp){return emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':'';}
@@ -172,17 +192,6 @@ function ifMirT(mirT){return mirT?'<span style="font-size:9px;color:#243020">\u2
 function ifMir(mir){return mir?'<span style="color:#1e2e1e;font-size:9px"> \u21c9 '+esc(mir.name)+'</span>':'';}
 function ifNew(isNew){return isNew?'<input id="fp2" class="inp" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom:10px">':'';}
 
-window.onerror=function(msg,src,line,col,err){
-  var app=document.getElementById("app");
-  if(app&&!app.innerHTML.trim()){
-    app.innerHTML='<div style="padding:20px;color:#c9a227;font-family:monospace;font-size:12px">'+
-    '<div style="font-size:16px;margin-bottom:10px">⚠️ Erreur JS</div>'+
-    '<div>'+msg+'</div>'+
-    '<div style="color:#888;margin-top:6px">Ligne '+line+'</div>'+
-    '</div>';
-  }
-  return false;
-};
 // Firebase désactivé temporairement
 var FB_READY = false;
 var FB_DB = null;
