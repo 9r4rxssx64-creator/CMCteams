@@ -910,7 +910,14 @@ function vDeparts(){
     if(!chefEmps.length)return;
     var sl=chefEmps.length;
     var SEQ=getSeqForSize(sl); // séquence adaptée au nombre de chefs
-    var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||"")));
+    // workDays basé sur le cycle THÉORIQUE de l'équipe (indépendant du planning individuel)
+    // Ainsi un chef en CP n'affecte pas les positions des autres
+    var teamPat=REPOS[tid]||[];
+    var mo=moOff(A.year,A.month);
+    var workDays=da.filter(function(d){
+      var ad=mo*30+(d-1),cp=((ad%30)+30)%30+1;
+      return teamPat.indexOf(cp)<0;
+    });
     h+=`<div style="margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
       <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
@@ -967,9 +974,22 @@ function showCI(tid){
   openCITeam=(openCITeam===tid)?null:tid;
   dc();
 }
-function setCI(name,idx){
+function setCI(name,newBase,tid){
   if(!A.user||A.user.id!==AID)return;
-  var CI=gCI(A.year,A.month);CI[name]=idx;sCI(A.year,A.month,CI);
+  var CI=gCI(A.year,A.month);
+  var names=CHEFS_T[tid]||[];
+  var sl=names.length;
+  if(sl===0){CI[name]=newBase;sCI(A.year,A.month,CI);dc();return;}
+  // Calcul du delta : décalage appliqué à TOUTE l'équipe
+  // pour que le cycle reste cohérent (bases tous distincts)
+  var oldBase=CI[name]!==undefined?CI[name]:0;
+  var delta=((newBase-oldBase)%sl+sl)%sl;
+  // Appliquer le même delta à tous les chefs de l'équipe
+  names.forEach(function(n){
+    var cur=CI[n]!==undefined?CI[n]:0;
+    CI[n]=((cur+delta)%sl+sl)%sl;
+  });
+  sCI(A.year,A.month,CI);
   dc();
 }
 function renderCIPanel(tid){
@@ -988,7 +1008,7 @@ function renderCIPanel(tid){
       <div style="display:flex;gap:4px">`;
     for(var si=0;si<emps.length;si++){
       var pos=SEQCI[si],col=DCOL[pos-1],sel=cur===si;
-      h+=`<div onclick="setCI('${emp.name}',${si})" style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
+      h+=`<div onclick="setCI('${emp.name}',${si},'${tid}')" style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
     }
     h+=`</div></div>`;
   });
