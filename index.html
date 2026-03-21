@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="fr"><head>
+<html lang="fr">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <title>CMC Teams</title>
 <style>
-
 
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -149,13 +150,14 @@ select.inp{-webkit-appearance:none}
 }
 
 
-
 </style>
-</head><body>
-<div id="app"><div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="color:#c9a227;font-size:48px">♦</div></div></div>
-<div id="toast"></div><div id="pk"></div><div id="ov" onclick="closePicker()"></div>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<div id="pk"></div>
+<div id="ov" onclick="closePicker()"></div>
 <script>
-
 var MFR=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 var DS=["D","L","M","M","J","V","S"];
 var AID="U11804";
@@ -441,8 +443,6 @@ function toast(msg,type="ok"){
   if(tT)clearTimeout(tT);tT=setTimeout(()=>el.style.display="none",3200);
 }
 
-</script>
-<script>
 function render(){
   var app=document.getElementById("app");
   if(!A.user){app.innerHTML=vLogin();setTimeout(()=>{var e=document.getElementById("li");if(e)e.onkeydown=ev=>{if(ev.key==="Enter")step1();};},40);return;}
@@ -480,7 +480,7 @@ function vLoginStep0(){
       <div style="font-size:9px;color:#3a5030;letter-spacing:4px;text-transform:uppercase;margin-top:7px">Black Jack · Casino de Monaco</div>
     </div>
     <div style="font-size:9px;color:#3a5030;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Matricule SBM</div>
-    <input id="li" class="inp" type="text" placeholder="ex. U11804"
+    <input id="li" class="inp" type="text" placeholder="ex. U00060"
       autocapitalize="characters" autocomplete="off"
       style="font-size:20px;letter-spacing:5px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:#05100a;border-color:rgba(201,162,39,.22)">
     <div id="lerr" style="color:#a04040;font-size:11px;min-height:16px;margin-bottom:8px"></div>
@@ -646,8 +646,6 @@ function sv(v){
 function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;sv("planning");}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;sv("planning");}
 
-</script>
-<script>
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
@@ -1409,8 +1407,6 @@ function parseCMCPlanningFromItems(allItems, year, month){
 }
 
 // Compat ancien appel
-</script>
-<script>
 function parseCMCPlanningFromRows(rows,year,month){
   var allItems=rows.flat();
   return parseCMCPlanningFromItems(allItems,year,month);
@@ -1497,21 +1493,26 @@ function doImport(){
     }
   }
   ls("cmc_ov",A.overrides);
-  // Sauver la référence d'import pour vérification
   ls("cmc_ref_"+key,refData);
   A.lastImportKey=key;
-  // Lancer la vérification automatique
+  // Naviguer vers le mois importé pour que gpl() soit cohérent
+  A.year=iy;
+  A.month=im;
+  ls("cmc_ym",{year:iy,month:im});
+  // Vérification automatique (gpl() utilise maintenant A.year/A.month corrects)
   var verif=runVerification(iy,im,refData);
   A.lastVerif=verif;
   ls("cmc_verif_"+key,verif);
   var r=document.getElementById("impRes");
   var verifTxt=verif.errors.length>0
-    ?` ⚠️ ${verif.errors.length} ERREUR(S) DÉTECTÉE(S) — voir onglet Aide`
-    :` ✅ Vérification OK — tous les horaires correspondent`;
-  if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules importées${err?" · <span style='color:#c9a227'>"+err+" ignorée(s)</span>":""} → ${MFR[im]} ${iy}</div>`+
-    `<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
-    (verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" · ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:"");
-  toast(verif.errors.length?`⚠️ ${verif.errors.length} erreur(s) détectée(s)`:`✅ Import vérifié — ${ok} cellules`);
+    ?`⚠️ ${verif.errors.length} différence(s) avec le planning théorique — normal si CP/absences`
+    :`✅ Planning correspond au roulement théorique`;
+  if(r)r.innerHTML=
+    `<div style="color:#3a8a50;font-weight:700">✅ ${ok} cellules importées → ${MFR[im]} ${iy}</div>`+
+    (err?`<div style="color:#c9a227;font-size:10px">${err} ligne(s) ignorée(s) — noms non reconnus</div>`:"")+
+    `<div style="margin-top:6px;font-size:10px;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`;
+  toast(`✅ ${MFR[im]} ${iy} importé — ${ok} cellules`);
+  dc();
   if(errLines.length>0) errLines.forEach(e=>console.warn("Import:",e));
 }
 
@@ -2022,12 +2023,7 @@ Posez votre question librement !`;
 • "Qui est chef de l'équipe 1 ?"`;
 }
 
-try{
-  render();
-}catch(e){
-  document.body.style.background="#000";
-  document.body.innerHTML="<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: "+e.message+"<br>Stack: "+(e.stack||"").replace(/</g,"&lt;").substr(0,500)+"</div>";
-}
+render();
 </script>
-<script>render();</script>
-</body></html>
+</body>
+</html>
