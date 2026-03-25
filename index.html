@@ -1595,14 +1595,26 @@ function parseCMCPlanningFromItems(allItems, year, month){
 
   if(empLines.length===0) return buildDebugCSV(allItems,"Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: "+allItems.slice(0,20).map(function(i){return i.txt;}).join(","));
 
-  // \u2500\u2500 4. Pour chaque item avec un code valide, trouver employ\u00e9+jour \u2500\u2500
-  var planning={}; // {empName:{day:code}}
+  // \u2500\u2500 4. D\u00e9tecter le s\u00e9parateur (trait noir = grand \u00e9cart vertical entre groupes d'employ\u00e9s) \u2500\u2500
+  var empYsSorted=empLines.map(function(e){return e.y;}).sort(function(a,b){return a-b;});
+  var sepY=null;
+  if(empYsSorted.length>2){
+    var maxGap=0,maxGapPos=null;
+    for(var gi=1;gi<empYsSorted.length;gi++){
+      var gap=empYsSorted[gi]-empYsSorted[gi-1];
+      if(gap>maxGap){maxGap=gap;maxGapPos=(empYsSorted[gi]+empYsSorted[gi-1])/2;}
+    }
+    // Ecart moyen entre lignes consecutives
+    var avgGap=(empYsSorted[empYsSorted.length-1]-empYsSorted[0])/(empYsSorted.length-1);
+    // Trait noir = ecart >2x la moyenne
+    if(maxGap>avgGap*2) sepY=maxGapPos;
+  }
+
+  // Planning vide par employe
+  var planning={};
   empLines.forEach(function(e){if(!planning[e.empName])planning[e.empName]={};});
 
-  // Construire une liste tri\u00e9e des Y d'employ\u00e9s
-  var empYs=empLines.map(function(e){return e.y;}).sort(function(a,b){return a-b;});
-
-  // Index CDP : items contenant "CDP" ou "*" pour les repérer par position
+  // Index CDP : items contenant "CDP" ou "*" pour les rep\u00e9rer par position
   var cdpItems=[];
   allItems.forEach(function(item){
     var t=item.txt.trim().toUpperCase();
@@ -1611,13 +1623,10 @@ function parseCMCPlanningFromItems(allItems, year, month){
 
   allItems.forEach(function(item){
     var raw=item.txt.trim().toUpperCase().replace(/['']/g,"'");
-    // Normaliser tiret→slash pour codes horaires : "16-3"→"16/3", "20-5"→"20/5"
-    var code=raw.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/, '$1/$2$3');
-    // Supprimer espaces parasites autour du slash
+    // Normaliser tiret\u2192slash pour codes horaires : "16-3"\u2192"16/3"
+    var code=raw.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,'$1/$2$3');
     code=code.replace(/\s*\/\s*/,'/');
-    // Si le code brut contient "CDP" collé ex "16/3CDP" → "16/3*"
-    code=code.replace(/CDP$/, '*');
-    // Si le code est une version sans * mais qu'un item CDP est proche, ajouter *
+    code=code.replace(/CDP$/,'*');
     if(CDP_MAP[code]){
       var hasCdpNear=false;
       cdpItems.forEach(function(ci){if(Math.abs(ci.x-item.x)<20&&Math.abs(ci.y-item.y)<12)hasCdpNear=true;});
@@ -1628,15 +1637,17 @@ function parseCMCPlanningFromItems(allItems, year, month){
     var day=xToDay(item.x);
     if(!day||day<1||day>days) return;
 
-    // Trouver l'employ\u00e9 le plus proche en Y
+    // Trouver l'employ\u00e9 le plus proche — DANS LE M\u00caMME GROUPE (m\u00eame c\u00f4t\u00e9 du trait noir)
     var bestEmp=null,bestDist=30;
     empLines.forEach(function(el){
+      // Respecter le s\u00e9parateur : ne pas croiser la ligne
+      if(sepY!==null&&((item.y<sepY)!==(el.y<sepY))) return;
       var d=Math.abs(el.y-item.y);
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
     if(bestEmp){
-      // Auto-upgrade CDP : si l'employé a ce code dans cdpShifts, utiliser la version *
       var empObj=A.employees.find(function(e){return e.name===bestEmp;});
+      // Auto-upgrade CDP selon profil employe
       if(empObj&&!code.endsWith("*")&&CDP_MAP[code]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(code)>=0){
         code=CDP_MAP[code];
       }
