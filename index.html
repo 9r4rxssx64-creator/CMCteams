@@ -883,11 +883,10 @@ function vPlan(){
         var cellBg=isTodCell?(code?ci.bg:"rgba(201,162,39,.06)"):ci.bg;
         var cellBorder=isTodCell?"border:1px solid rgba(201,162,39,.35)":"border:1px solid "+ci.b;
         var cdpShadow=ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":"";
-        h+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>
-          ${ci.cdp
-            ?`<div style="display:flex;flex-direction:column;align-items:center"><span style="color:${ci.c};font-size:8px;font-weight:800">${code.replace("*","")}</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>`
-            :`<span style="color:${ci.c}">${code||"\u00b7"}</span>`}
-        </td>`;
+        var cellInner=ci.cdp
+          ?'<div style="display:flex;flex-direction:column;align-items:center"><span style="color:'+ci.c+';font-size:8px;font-weight:800">'+code.replace("*","")+'</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>'
+          :'<span style="color:'+ci.c+'">'+(code||"\u00b7")+'</span>';
+        h+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
       });
       h+=`<td class="stattd">${repos}</td><td class="stattd">${trav}</td></tr>`;
     });
