@@ -996,17 +996,19 @@ function vDeparts(){
     var mo2=moOff(A.year,A.month);
     var teamPat=REPOS[tid]||[];
     var workDays=da.filter(function(d){var ad=mo2*30+(d-1);var cp=((ad%30)+30)%30+1;return teamPat.indexOf(cp)<0;});
-    h+=`<div style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
-      <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
-      <span style="font-size:12px;font-weight:700;color:${tcc}">${esc(team.name)}</span>
-      <span style="font-size:9px;color:#243020">${sl} chefs \u00b7 cycle ${SEQ5.join("\u2192")}</span>
-      ${isAdm?`<button onclick="showCI('${tid}')" style="margin-left:auto;background:${openCITeam===tid?tcc+'20':'transparent'};border:1px solid ${openCITeam===tid?tcc+'50':'#1e3020'};border-radius:6px;padding:4px 10px;font-size:11px;color:${openCITeam===tid?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u2699\ufe0f Positions</button>`:""}
-    </div>
-    <div style="background:#060f08;border:1px solid ${tcc}18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <table style="border-collapse:collapse;width:100%"><thead><tr>
-    <th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`;
+    var ciOpen=openCITeam===tid;
+    var ciBtn=isAdm?('<button onclick="showCI(\''+tid+'\')" style="margin-left:auto;background:'+(ciOpen?tcc+'20':'transparent')+';border:1px solid '+(ciOpen?tcc+'50':'#1e3020')+';border-radius:6px;padding:4px 10px;font-size:11px;color:'+(ciOpen?tcc:'#3a5030')+';cursor:pointer;font-weight:700">\u2699\ufe0f Positions</button>'):'';
+    h+='<div style="margin-bottom:16px">'
+      +'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+tcc+'0c;border:1px solid '+tcc+'22;border-radius:8px 8px 0 0">'
+      +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
+      +'<span style="font-size:12px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
+      +'<span style="font-size:9px;color:#243020">'+sl+' chefs \u00b7 cycle '+SEQ.join('\u2192')+'</span>'
+      +ciBtn
+      +'</div>'
+      +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'
+      +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
+      +'<table style="border-collapse:collapse;width:100%"><thead><tr>'
+      +'<th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>';
     workDays.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
       h+=`<th style="padding:3px 1px;min-width:32px;background:${we?"#16281a":"#16281a"};text-align:center">
@@ -1015,7 +1017,7 @@ function vDeparts(){
     });
     h+=`</tr></thead><tbody>`;
     chefEmps.forEach(function(emp,ei){
-      var isMe=emp.id===A.user.id;
+      var isMe=A.user&&emp.id===A.user.id;
       var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
@@ -1055,10 +1057,17 @@ function showCI(tid){
 function setCI(name,idx){
   if(!A.user||A.user.id!==AID)return;
   var CI=gCI(A.year,A.month);
-  // SWAP : trouver qui a deja cette position et lui donner l'ancienne position de name
-  var oldIdx=CI[name];
-  var other=Object.keys(CI).find(function(n){return n!==name&&CI[n]===idx;});
-  if(other!==undefined) CI[other]=oldIdx;
+  var tid=null;
+  A.teams.forEach(function(t){var names=CHEFS_T[t.id]||[];if(names.indexOf(name)>=0)tid=t.id;});
+  var teamNames=tid?(CHEFS_T[tid]||[]):[];
+  var sl=teamNames.length||1;
+  // Initialiser les chefs non encore définis avec leur position par défaut
+  teamNames.forEach(function(n,ei){if(CI[n]===undefined)CI[n]=ei%sl;});
+  // SWAP : l'autre chef qui avait idx prend l'ancienne position de name
+  var oldIdx=CI[name]!==undefined?CI[name]:0;
+  var other=null;
+  teamNames.forEach(function(n){if(n!==name&&CI[n]===idx)other=n;});
+  if(other!==null) CI[other]=oldIdx;
   CI[name]=idx;
   sCI(A.year,A.month,CI);
   dc();
@@ -1593,10 +1602,27 @@ function parseCMCPlanningFromItems(allItems, year, month){
   // Construire une liste tri\u00e9e des Y d'employ\u00e9s
   var empYs=empLines.map(function(e){return e.y;}).sort(function(a,b){return a-b;});
 
+  // Index CDP : items contenant "CDP" ou "*" pour les repérer par position
+  var cdpItems=[];
+  allItems.forEach(function(item){
+    var t=item.txt.trim().toUpperCase();
+    if(t==="CDP"||t==="*"||t==="C.D.P") cdpItems.push({x:item.x,y:item.y});
+  });
+
   allItems.forEach(function(item){
     var raw=item.txt.trim().toUpperCase().replace(/['']/g,"'");
-    // Normaliser codes CDP
-    var code=raw.replace("*","*");
+    // Normaliser tiret→slash pour codes horaires : "16-3"→"16/3", "20-5"→"20/5"
+    var code=raw.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/, '$1/$2$3');
+    // Supprimer espaces parasites autour du slash
+    code=code.replace(/\s*\/\s*/,'/');
+    // Si le code brut contient "CDP" collé ex "16/3CDP" → "16/3*"
+    code=code.replace(/CDP$/, '*');
+    // Si le code est une version sans * mais qu'un item CDP est proche, ajouter *
+    if(CDP_MAP[code]){
+      var hasCdpNear=false;
+      cdpItems.forEach(function(ci){if(Math.abs(ci.x-item.x)<20&&Math.abs(ci.y-item.y)<12)hasCdpNear=true;});
+      if(hasCdpNear) code=CDP_MAP[code];
+    }
     if(validCodesArr.indexOf(code)<0) return;
 
     var day=xToDay(item.x);
@@ -1711,6 +1737,9 @@ function doImport(){
     for(var di=1;di<parts.length;di++){
       var code=parts[di].trim().toUpperCase();
       if(!code||code==="0"||code==="-")continue;
+      // Normaliser tiret→slash : "16-3"→"16/3", "20-5*"→"20/5*"
+      code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
+      code=code.replace(/CDP$/,"*");
       if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][di]=code;
