@@ -1,318 +1,318 @@
-
-var MFR=["Janvier","F\u00e9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\u00fbt","Septembre","Octobre","Novembre","D\u00e9cembre"];
-var DS=["D","L","M","M","J","V","S"];
-var AID="U11804";
+var MFR=[“Janvier”,“F\u00e9vrier”,“Mars”,“Avril”,“Mai”,“Juin”,“Juillet”,“Ao\u00fbt”,“Septembre”,“Octobre”,“Novembre”,“D\u00e9cembre”];
+var DS=[“D”,“L”,“M”,“M”,“J”,“V”,“S”];
+var AID=“U11804”;
 var CODES={
-  "22/6"  :{l:"22h\u20136h",  bg:"#03101c",c:"#4a6888",b:"#07182e",cdp:false},
-  "19/4"  :{l:"19h\u20134h",  bg:"#04061a",c:"#405078",b:"#080c2a",cdp:false},
-  "16/3"  :{l:"16h\u20133h",  bg:"#020d07",c:"#2d5e3c",b:"#051408",cdp:false},
-  "14/19" :{l:"14h\u201319h", bg:"#070d03",c:"#465828",b:"#0c1606",cdp:false},
-  "20/5"  :{l:"20h\u20135h",  bg:"#060314",c:"#504888",b:"#0e0826",cdp:false},
-  "16/22" :{l:"16h\u201322h", bg:"#0c0900",c:"#786810",b:"#160f00",cdp:false},
-  "20/5*" :{l:"20h\u20135h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4*" :{l:"19h\u20134h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/3*" :{l:"16h\u20133h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/22*":{l:"16h\u201322h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4'" :{l:"Convention",bg:"#0e0303",c:"#684038",b:"#180606",cdp:false},
-  "RH"    :{l:"Repos Hebdo",bg:"#070716",c:"#303058",b:"#0e0e1e",cdp:false},
-  "R"     :{l:"Repos",    bg:"#070707",c:"#303030",b:"#0e0e0e",cdp:false},
-  "CP"    :{l:"Cong\u00e9",    bg:"#0e050e",c:"#684060",b:"#180a16",cdp:false},
-  "AF"    :{l:"Formation",bg:"#020d05",c:"#206038",b:"#041006",cdp:false},
-  "M"     :{l:"Maladie",  bg:"#0e0300",c:"#783840",b:"#180606",cdp:false},
-  "RRT"   :{l:"R\u00e9cup RRT",bg:"#020a14",c:"#205060",b:"#04101c",cdp:false},
-  "HC"    :{l:"H.Comp.",  bg:"#070d02",c:"#506818",b:"#0c1604",cdp:false}
+“22/6”  :{l:“22h\u20136h”,  bg:”#03101c”,c:”#4a6888”,b:”#07182e”,cdp:false},
+“19/4”  :{l:“19h\u20134h”,  bg:”#04061a”,c:”#405078”,b:”#080c2a”,cdp:false},
+“16/3”  :{l:“16h\u20133h”,  bg:”#020d07”,c:”#2d5e3c”,b:”#051408”,cdp:false},
+“14/19” :{l:“14h\u201319h”, bg:”#070d03”,c:”#465828”,b:”#0c1606”,cdp:false},
+“20/5”  :{l:“20h\u20135h”,  bg:”#060314”,c:”#504888”,b:”#0e0826”,cdp:false},
+“16/22” :{l:“16h\u201322h”, bg:”#0c0900”,c:”#786810”,b:”#160f00”,cdp:false},
+“20/5*” :{l:“20h\u20135h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“19/4*” :{l:“19h\u20134h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/3*” :{l:“16h\u20133h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“16/22*”:{l:“16h\u201322h CDP”,bg:”#120900”,c:”#987018”,b:”#1e0e00”,cdp:true},
+“19/4’” :{l:“Convention”,bg:”#0e0303”,c:”#684038”,b:”#180606”,cdp:false},
+“RH”    :{l:“Repos Hebdo”,bg:”#070716”,c:”#303058”,b:”#0e0e1e”,cdp:false},
+“R”     :{l:“Repos”,    bg:”#070707”,c:”#303030”,b:”#0e0e0e”,cdp:false},
+“CP”    :{l:“Cong\u00e9”,    bg:”#0e050e”,c:”#684060”,b:”#180a16”,cdp:false},
+“AF”    :{l:“Formation”,bg:”#020d05”,c:”#206038”,b:”#041006”,cdp:false},
+“M”     :{l:“Maladie”,  bg:”#0e0300”,c:”#783840”,b:”#180606”,cdp:false},
+“RRT”   :{l:“R\u00e9cup RRT”,bg:”#020a14”,c:”#205060”,b:”#04101c”,cdp:false},
+“HC”    :{l:“H.Comp.”,  bg:”#070d02”,c:”#506818”,b:”#0c1604”,cdp:false}
 };
 var CK=Object.keys(CODES);
-var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
+var TC={“1”:”#c9a227”,“2”:”#4a72a8”,“3”:”#3a8a50”,“4”:”#a84868”,“5”:”#c07830”};
 var DEF_TEAMS=[
-  {id:"1",name:"\u00c9quipe 1",mirrorTeamId:"4",departureOrder:1,color:"#c9a227"},
-  {id:"2",name:"\u00c9quipe 2",mirrorTeamId:"5",departureOrder:2,color:"#4a72a8"},
-  {id:"3",name:"\u00c9quipe 3",mirrorTeamId:null,departureOrder:3,color:"#3a8a50"},
-  {id:"4",name:"\u00c9quipe 4",mirrorTeamId:"1",departureOrder:4,color:"#a84868"},
-  {id:"5",name:"\u00c9quipe 5",mirrorTeamId:"2",departureOrder:5,color:"#c07830"}
+{id:“1”,name:”\u00c9quipe 1”,mirrorTeamId:“4”,departureOrder:1,color:”#c9a227”},
+{id:“2”,name:”\u00c9quipe 2”,mirrorTeamId:“5”,departureOrder:2,color:”#4a72a8”},
+{id:“3”,name:”\u00c9quipe 3”,mirrorTeamId:null,departureOrder:3,color:”#3a8a50”},
+{id:“4”,name:”\u00c9quipe 4”,mirrorTeamId:“1”,departureOrder:4,color:”#a84868”},
+{id:“5”,name:”\u00c9quipe 5”,mirrorTeamId:“2”,departureOrder:5,color:”#c07830”}
 ];
 
 var DEF_EMP=[
-  {id:"U00001",name:"ESPAGNOL S",       team:"1",post:"BRTP+K",  chef:true, cdpShifts:[]},
-  {id:"U00002",name:"SOLIMIEIS F",      team:"1",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00003",name:"TOMATIS P",        team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00004",name:"BERNARDI JE",      team:"1",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00005",name:"GATTI B",          team:"1",post:"BRTCK",   chef:false,cdpShifts:[]},
-  {id:"U00006",name:"SOSSO G",          team:"1",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00007",name:"MATTONE F",        team:"1",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00008",name:"BRASSEUR F",       team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00009",name:"GAZAGNE F",        team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00010",name:"BONO F",           team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00011",name:"COURTIN F",        team:"1",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00012",name:"BELTRANDI N",      team:"2",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00013",name:"PODGORNY B",       team:"2",post:"BRTP+KE", chef:true, cdpShifts:[]},
-  {id:"U00014",name:"HORGNE C",         team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5"]},
-  {id:"U00015",name:"AGLIARDI M",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00016",name:"EL MISSOURI O",    team:"2",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00017",name:"COTTALORDA D",     team:"2",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00018",name:"BASILE G",         team:"2",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00019",name:"BOYER G",          team:"2",post:"BRTP+KE", chef:true, cdpShifts:[]},
-  {id:"U00020",name:"NIGIONI C",        team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00021",name:"REVOLLON L",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00022",name:"PUGNETTI S",       team:"2",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U11804",name:"DESARZENS K",      team:"3",post:"BRTC",    chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00024",name:"MARIOTTINI J",     team:"3",post:"BRTCP+KE",chef:true, cdpShifts:[]},
-  {id:"U00025",name:"DESSI F",          team:"3",post:"BRTCK",   chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00026",name:"PEREIRA MACENA F", team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00027",name:"LANTERI E",        team:"3",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00028",name:"LARINI H",         team:"3",post:"BRTPE",   chef:false,cdpShifts:[]},
-  {id:"U00029",name:"VERZELLO O",       team:"3",post:"BRTP+K",  chef:true, cdpShifts:[]},
-  {id:"U00030",name:"ARCURI F",         team:"3",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00031",name:"DANIEL S",         team:"3",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00032",name:"FIA S",            team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00033",name:"CAISSON JC",       team:"3",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00034",name:"PARIZIA K",        team:"3",post:"BRTCP+KE",chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00035",name:"BATTAGLIA D",      team:"4",post:"BRTP+K",  chef:false,cdpShifts:[]},
-  {id:"U00036",name:"NIGIONI J",        team:"4",post:"BRTP+E",  chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00037",name:"FARRUGIA VALERI S",team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00038",name:"DESSI P",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00039",name:"BESSI N",          team:"4",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00040",name:"PAGLIAI D",        team:"4",post:"BRTCK",   chef:false,cdpShifts:[]},
-  {id:"U00041",name:"PETIT T",          team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00042",name:"CLAVE C",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00043",name:"NICASTRO M",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00044",name:"ELIODORI V",       team:"4",post:"BRTCP+E", chef:true, cdpShifts:["16/3"]},
-  {id:"U00045",name:"CAMPI PH",         team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00046",name:"MALGHERINI T",     team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00047",name:"MAGAGNIN J",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00048",name:"MERLINO B",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00049",name:"GALLIS J",         team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5"]},
-  {id:"U00050",name:"BONETTI P",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00051",name:"PALMARO M",        team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00052",name:"CONNEN R",         team:"5",post:"BRTCP+KE",chef:false,cdpShifts:[]},
-  {id:"U00053",name:"PASTOR P",         team:"5",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00054",name:"MAGARA M",         team:"5",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00055",name:"GARCIA A",         team:"5",post:"BRTCP+KE",chef:true, cdpShifts:[]},
-  {id:"U00056",name:"GARRO S",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00057",name:"FURST P",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00058",name:"PASSERON G",       team:"5",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00059",name:"FAUTRIER M",       team:"5",post:"BRTP+K",  chef:false,cdpShifts:[]},
-  {id:"U00060",name:"FOREST M",         team:"5",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00061",name:"COZZI H",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/22"]},
-  {id:"U00062",name:"LANDAU B",         team:"5",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00063",name:"MILLO W",          team:"5",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00064",name:"GIORSETTI S",      team:"5",post:"BRTP+KE", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00065",name:"FABRE SOCCAL Y",   team:"5",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00066",name:"SIRIO J",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00067",name:"GALLIS F",         team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00068",name:"CIOCO S",          team:"5",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00069",name:"COSTE W",          team:"5",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00070",name:"ENZA B",           team:"5",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00071",name:"PORTA A",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00072",name:"ROSSI J",          team:"5",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00073",name:"RICORDO B",        team:"5",post:"BRTP+KE", chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00074",name:"LEMONNIER PH",     team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"]}
+{id:“U00001”,name:“ESPAGNOL S”,       team:“1”,post:“BRTP+K”,  chef:true, cdpShifts:[]},
+{id:“U00002”,name:“SOLIMIEIS F”,      team:“1”,post:“BRTP+E”,  chef:true, cdpShifts:[]},
+{id:“U00003”,name:“TOMATIS P”,        team:“1”,post:“BRTP+E”,  chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00004”,name:“BERNARDI JE”,      team:“1”,post:“BRTCP+E”, chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00005”,name:“GATTI B”,          team:“1”,post:“BRTCK”,   chef:false,cdpShifts:[]},
+{id:“U00006”,name:“SOSSO G”,          team:“1”,post:“BRTP+E”,  chef:false,cdpShifts:[]},
+{id:“U00007”,name:“MATTONE F”,        team:“1”,post:“BRTP+E”,  chef:false,cdpShifts:[]},
+{id:“U00008”,name:“BRASSEUR F”,       team:“1”,post:“BRTP+E”,  chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00009”,name:“GAZAGNE F”,        team:“1”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00010”,name:“BONO F”,           team:“1”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00011”,name:“COURTIN F”,        team:“1”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00012”,name:“BELTRANDI N”,      team:“2”,post:“BRTP+”,   chef:false,cdpShifts:[]},
+{id:“U00013”,name:“PODGORNY B”,       team:“2”,post:“BRTP+KE”, chef:true, cdpShifts:[]},
+{id:“U00014”,name:“HORGNE C”,         team:“2”,post:“BRTCP+KE”,chef:true, cdpShifts:[“20/5”]},
+{id:“U00015”,name:“AGLIARDI M”,       team:“2”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00016”,name:“EL MISSOURI O”,    team:“2”,post:“BRTC”,    chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00017”,name:“COTTALORDA D”,     team:“2”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00018”,name:“BASILE G”,         team:“2”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00019”,name:“BOYER G”,          team:“2”,post:“BRTP+KE”, chef:true, cdpShifts:[]},
+{id:“U00020”,name:“NIGIONI C”,        team:“2”,post:“BRTCP+KE”,chef:true, cdpShifts:[“20/5”,“16/3”]},
+{id:“U00021”,name:“REVOLLON L”,       team:“2”,post:“BRTCK”,   chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00022”,name:“PUGNETTI S”,       team:“2”,post:“BRTP+”,   chef:false,cdpShifts:[]},
+{id:“U11804”,name:“DESARZENS K”,      team:“3”,post:“BRTC”,    chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00024”,name:“MARIOTTINI J”,     team:“3”,post:“BRTCP+KE”,chef:true, cdpShifts:[]},
+{id:“U00025”,name:“DESSI F”,          team:“3”,post:“BRTCK”,   chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00026”,name:“PEREIRA MACENA F”, team:“3”,post:“BRTC”,    chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00027”,name:“LANTERI E”,        team:“3”,post:“BRTP+E”,  chef:false,cdpShifts:[]},
+{id:“U00028”,name:“LARINI H”,         team:“3”,post:“BRTPE”,   chef:false,cdpShifts:[]},
+{id:“U00029”,name:“VERZELLO O”,       team:“3”,post:“BRTP+K”,  chef:true, cdpShifts:[]},
+{id:“U00030”,name:“ARCURI F”,         team:“3”,post:“BRTCP+E”, chef:true, cdpShifts:[“20/5”,“16/3”]},
+{id:“U00031”,name:“DANIEL S”,         team:“3”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00032”,name:“FIA S”,            team:“3”,post:“BRTC”,    chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00033”,name:“CAISSON JC”,       team:“3”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00034”,name:“PARIZIA K”,        team:“3”,post:“BRTCP+KE”,chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00035”,name:“BATTAGLIA D”,      team:“4”,post:“BRTP+K”,  chef:false,cdpShifts:[]},
+{id:“U00036”,name:“NIGIONI J”,        team:“4”,post:“BRTP+E”,  chef:true, cdpShifts:[“20/5”,“16/3”]},
+{id:“U00037”,name:“FARRUGIA VALERI S”,team:“4”,post:“BRTCPE”,  chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00038”,name:“DESSI P”,          team:“4”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00039”,name:“BESSI N”,          team:“4”,post:“BRTP+E”,  chef:true, cdpShifts:[]},
+{id:“U00040”,name:“PAGLIAI D”,        team:“4”,post:“BRTCK”,   chef:false,cdpShifts:[]},
+{id:“U00041”,name:“PETIT T”,          team:“4”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00042”,name:“CLAVE C”,          team:“4”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00043”,name:“NICASTRO M”,       team:“4”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00044”,name:“ELIODORI V”,       team:“4”,post:“BRTCP+E”, chef:true, cdpShifts:[“16/3”]},
+{id:“U00045”,name:“CAMPI PH”,         team:“4”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00046”,name:“MALGHERINI T”,     team:“4”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00047”,name:“MAGAGNIN J”,       team:“4”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00048”,name:“MERLINO B”,        team:“4”,post:“BRTP+KE”, chef:false,cdpShifts:[]},
+{id:“U00049”,name:“GALLIS J”,         team:“4”,post:“BRTCPE”,  chef:false,cdpShifts:[“20/5”]},
+{id:“U00050”,name:“BONETTI P”,        team:“4”,post:“BRTP+KE”, chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00051”,name:“PALMARO M”,        team:“4”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00052”,name:“CONNEN R”,         team:“5”,post:“BRTCP+KE”,chef:false,cdpShifts:[]},
+{id:“U00053”,name:“PASTOR P”,         team:“5”,post:“BRTP+E”,  chef:true, cdpShifts:[]},
+{id:“U00054”,name:“MAGARA M”,         team:“5”,post:“BTP+K”,   chef:false,cdpShifts:[]},
+{id:“U00055”,name:“GARCIA A”,         team:“5”,post:“BRTCP+KE”,chef:true, cdpShifts:[]},
+{id:“U00056”,name:“GARRO S”,          team:“5”,post:“BRTCP+E”, chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00057”,name:“FURST P”,          team:“5”,post:“BRTCK”,   chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00058”,name:“PASSERON G”,       team:“5”,post:“BRTP+”,   chef:false,cdpShifts:[]},
+{id:“U00059”,name:“FAUTRIER M”,       team:“5”,post:“BRTP+K”,  chef:false,cdpShifts:[]},
+{id:“U00060”,name:“FOREST M”,         team:“5”,post:“BRTP+KE”, chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00061”,name:“COZZI H”,          team:“5”,post:“BRTCK”,   chef:false,cdpShifts:[“20/5”,“16/22”]},
+{id:“U00062”,name:“LANDAU B”,         team:“5”,post:“BRTP+”,   chef:false,cdpShifts:[]},
+{id:“U00063”,name:“MILLO W”,          team:“5”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00064”,name:“GIORSETTI S”,      team:“5”,post:“BRTP+KE”, chef:true, cdpShifts:[“16/3”,“20/5”]},
+{id:“U00065”,name:“FABRE SOCCAL Y”,   team:“5”,post:“BRTC”,    chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00066”,name:“SIRIO J”,          team:“5”,post:“BRTCP+E”, chef:true, cdpShifts:[“20/5”,“16/3”]},
+{id:“U00067”,name:“GALLIS F”,         team:“5”,post:“BRTP+E”,  chef:false,cdpShifts:[“16/3”,“20/5”]},
+{id:“U00068”,name:“CIOCO S”,          team:“5”,post:“BRE”,     chef:false,cdpShifts:[]},
+{id:“U00069”,name:“COSTE W”,          team:“5”,post:“BRTP+KE”, chef:false,cdpShifts:[]},
+{id:“U00070”,name:“ENZA B”,           team:“5”,post:“BRTP+KE”, chef:false,cdpShifts:[]},
+{id:“U00071”,name:“PORTA A”,          team:“5”,post:“BRTCK”,   chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00072”,name:“ROSSI J”,          team:“5”,post:“BRTP+E”,  chef:false,cdpShifts:[]},
+{id:“U00073”,name:“RICORDO B”,        team:“5”,post:“BRTP+KE”, chef:false,cdpShifts:[“20/5”,“16/3”]},
+{id:“U00074”,name:“LEMONNIER PH”,     team:“5”,post:“BRTP+E”,  chef:false,cdpShifts:[“16/3”,“20/5”]}
 ];
 
 var REPOS={
-  "1":[5,6,11,12,17,18,23,24,29,30],
-  "2":[3,4,9,10,15,16,21,22,27,28],
-  "3":[1,2,7,8,13,14,19,20,25,26],
-  "4":[5,6,11,12,17,18,23,24,29,30],
-  "5":[3,4,9,10,15,16,21,22,27,28]
+“1”:[5,6,11,12,17,18,23,24,29,30],
+“2”:[3,4,9,10,15,16,21,22,27,28],
+“3”:[1,2,7,8,13,14,19,20,25,26],
+“4”:[5,6,11,12,17,18,23,24,29,30],
+“5”:[3,4,9,10,15,16,21,22,27,28]
 };
-var CDP_MAP={"20/5":"20/5*","19/4":"19/4*","16/3":"16/3*","16/22":"16/22*"};
+var CDP_MAP={“20/5”:“20/5*”,“19/4”:“19/4*”,“16/3”:“16/3*”,“16/22”:“16/22*”};
 var EP={
-  "ESPAGNOL S":        {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:3},
-  "SOLIMIEIS F":       {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3","20/5"],i:0},
-  "TOMATIS P":         {s:["19/4","16/22","16/3","14/19","20/5"],d:["16/3","20/5"],i:0},
-  "BERNARDI JE":       {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3","20/5"],i:0},
-  "GATTI B":           {s:["22/6","16/22","14/19"],d:[],i:0},
-  "SOSSO G":           {s:["16/22","14/19"],d:[],i:0},
-  "MATTONE F":         {s:["20/5","19/4","16/3","14/19","22/6"],d:[],i:0},
-  "BRASSEUR F":        {s:["19/4","16/3","14/19","20/5","16/22","22/6"],d:["16/3","20/5"],i:0},
-  "GAZAGNE F":         {s:["19/4","16/3","14/19","20/5","16/22","22/6"],d:["16/3","20/5"],i:0},
-  "BONO F":            {s:["19/4","16/3","14/19","20/5","16/22","22/6"],d:["16/3","20/5"],i:0},
-  "COURTIN F":         {s:["16/22","14/19"],d:[],i:0},
-  "BELTRANDI N":       {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:[],i:0},
-  "PODGORNY B":        {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:[],i:0},
-  "HORGNE C":          {s:["19/4","16/22","14/19","20/5","22/6"],d:["20/5"],i:0},
-  "AGLIARDI M":        {s:["16/3","14/19","20/5","19/4"],d:["16/3","20/5"],i:0},
-  "EL MISSOURI O":     {s:["16/3","19/4","14/19","22/6"],d:["16/3"],i:0},
-  "COTTALORDA D":      {s:["14/19","16/22"],d:[],i:0},
-  "BASILE G":          {s:["14/19","20/5","19/4","16/3","16/22","22/6"],d:[],i:0},
-  "BOYER G":           {s:["14/19","20/5","19/4","16/3"],d:[],i:0},
-  "NIGIONI C":         {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "REVOLLON L":        {s:["14/19","20/5","19/4","16/22","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "PUGNETTI S":        {s:["20/5","19/4","14/19","16/3","22/6"],d:[],i:1},
-  "DESARZENS K":       {s:["20/5","19/4","16/3","14/19"],d:["20/5","16/3"],i:0},
-  "MARIOTTINI J":      {s:["20/5","19/4","16/3","14/19","22/6","16/22"],d:[],i:0},
-  "DESSI F":           {s:["20/5","19/4","16/3","14/19"],d:["20/5","16/3"],i:0},
-  "PEREIRA MACENA F":  {s:["20/5","19/4","16/3","14/19"],d:["20/5","16/3"],i:0},
-  "LANTERI E":         {s:["16/22","14/19"],d:[],i:0},
-  "LARINI H":          {s:["20/5","19/4","16/3","14/19","22/6"],d:[],i:1},
-  "VERZELLO O":        {s:["19/4","16/22","14/19","22/6","16/3","20/5"],d:[],i:0},
-  "ARCURI F":          {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "DANIEL S":          {s:["20/5","19/4","16/22","14/19","22/6"],d:[],i:0},
-  "FIA S":             {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "CAISSON JC":        {s:["16/22","14/19"],d:[],i:0},
-  "PARIZIA K":         {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3","20/5"],i:0},
-  "BATTAGLIA D":       {s:["20/5","19/4","16/22","14/19","22/6"],d:[],i:0},
-  "NIGIONI J":         {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "FARRUGIA VALERI S": {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "DESSI P":           {s:["19/4","16/22","14/19","22/6"],d:[],i:0},
-  "BESSI N":           {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:2},
-  "PAGLIAI D":         {s:["19/4","16/22","16/3","14/19","22/6"],d:[],i:0},
-  "PETIT T":           {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:["16/3","20/5"],i:0},
-  "CLAVE C":           {s:["16/22","14/19","20/5","19/4","22/6"],d:[],i:0},
-  "NICASTRO M":        {s:["16/22","14/19","22/6","19/4","16/3","20/5"],d:[],i:0},
-  "ELIODORI V":        {s:["16/22","14/19","22/6","19/4","16/3","20/5"],d:["16/3"],i:0},
-  "CAMPI PH":          {s:["14/19","20/5","19/4","16/22","22/6","16/3"],d:["16/3","20/5"],i:0},
-  "MALGHERINI T":      {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:["16/3","20/5"],i:0},
-  "MAGAGNIN J":        {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:[],i:0},
-  "MERLINO B":         {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:[],i:0},
-  "GALLIS J":          {s:["16/3","14/19","20/5","19/4","16/22","22/6"],d:["20/5","16/3"],i:0},
-  "BONETTI P":         {s:["14/19","20/5","19/4","16/22","22/6","16/3"],d:[],i:0},
-  "PALMARO M":         {s:["14/19","20/5","19/4","16/22","22/6","16/3"],d:[],i:0},
-  "CONNEN R":          {s:["22/6","19/4","16/3","14/19","16/22"],d:[],i:0},
-  "PASTOR P":          {s:["20/5","19/4","16/22","14/19"],d:[],i:0},
-  "MAGARA M":          {s:["14/19","22/6","19/4","16/3","20/5"],d:[],i:0},
-  "GARCIA A":          {s:["14/19","20/5","19/4","16/3"],d:["16/3"],i:0},
-  "GARRO S":           {s:["14/19","22/6","19/4","16/3","20/5","16/22"],d:["16/3","20/5"],i:0},
-  "FURST P":           {s:["14/19","22/6","19/4","16/3","20/5"],d:["16/3"],i:0},
-  "PASSERON G":        {s:["20/5","19/4","16/22","14/19"],d:[],i:1},
-  "FAUTRIER M":        {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:1},
-  "FOREST M":          {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3","20/5"],i:1},
-  "COZZI H":           {s:["20/5","19/4","16/22","14/19"],d:["20/5","16/22"],i:0},
-  "LANDAU B":          {s:["22/6","19/4","16/3","14/19"],d:[],i:1},
-  "MILLO W":           {s:["20/5","19/4","16/22","14/19"],d:[],i:0},
-  "GIORSETTI S":       {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3","20/5"],i:1},
-  "FABRE SOCCAL Y":    {s:["22/6","19/4","16/3","14/19","20/5"],d:["16/3","20/5"],i:1},
-  "SIRIO J":           {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "GALLIS F":          {s:["22/6","19/4","16/22","14/19","20/5"],d:[],i:0},
-  "CIOCO S":           {s:["19/4","16/22","14/19","22/6","20/5"],d:[],i:0},
-  "COSTE W":           {s:["14/19","22/6","19/4","16/3","20/5"],d:["16/3"],i:0},
-  "ENZA B":            {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:0},
-  "PORTA A":           {s:["20/5","19/4","16/22","14/19","22/6","16/3"],d:["20/5","16/3"],i:0},
-  "ROSSI J":           {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:0},
-  "RICORDO B":         {s:["22/6","19/4","14/19","20/5","16/22","16/3"],d:["20/5","16/3"],i:0},
-  "LEMONNIER PH":      {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3"],i:0}
+“ESPAGNOL S”:        {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:3},
+“SOLIMIEIS F”:       {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:0},
+“TOMATIS P”:         {s:[“19/4”,“16/22”,“16/3”,“14/19”,“20/5”],d:[“16/3”,“20/5”],i:0},
+“BERNARDI JE”:       {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:0},
+“GATTI B”:           {s:[“22/6”,“16/22”,“14/19”],d:[],i:0},
+“SOSSO G”:           {s:[“16/22”,“14/19”],d:[],i:0},
+“MATTONE F”:         {s:[“20/5”,“19/4”,“16/3”,“14/19”,“22/6”],d:[],i:0},
+“BRASSEUR F”:        {s:[“19/4”,“16/3”,“14/19”,“20/5”,“16/22”,“22/6”],d:[“16/3”,“20/5”],i:0},
+“GAZAGNE F”:         {s:[“19/4”,“16/3”,“14/19”,“20/5”,“16/22”,“22/6”],d:[“16/3”,“20/5”],i:0},
+“BONO F”:            {s:[“19/4”,“16/3”,“14/19”,“20/5”,“16/22”,“22/6”],d:[“16/3”,“20/5”],i:0},
+“COURTIN F”:         {s:[“16/22”,“14/19”],d:[],i:0},
+“BELTRANDI N”:       {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[],i:0},
+“PODGORNY B”:        {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[],i:0},
+“HORGNE C”:          {s:[“19/4”,“16/22”,“14/19”,“20/5”,“22/6”],d:[“20/5”],i:0},
+“AGLIARDI M”:        {s:[“16/3”,“14/19”,“20/5”,“19/4”],d:[“16/3”,“20/5”],i:0},
+“EL MISSOURI O”:     {s:[“16/3”,“19/4”,“14/19”,“22/6”],d:[“16/3”],i:0},
+“COTTALORDA D”:      {s:[“14/19”,“16/22”],d:[],i:0},
+“BASILE G”:          {s:[“14/19”,“20/5”,“19/4”,“16/3”,“16/22”,“22/6”],d:[],i:0},
+“BOYER G”:           {s:[“14/19”,“20/5”,“19/4”,“16/3”],d:[],i:0},
+“NIGIONI C”:         {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“REVOLLON L”:        {s:[“14/19”,“20/5”,“19/4”,“16/22”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“PUGNETTI S”:        {s:[“20/5”,“19/4”,“14/19”,“16/3”,“22/6”],d:[],i:1},
+“DESARZENS K”:       {s:[“20/5”,“19/4”,“16/3”,“14/19”],d:[“20/5”,“16/3”],i:0},
+“MARIOTTINI J”:      {s:[“20/5”,“19/4”,“16/3”,“14/19”,“22/6”,“16/22”],d:[],i:0},
+“DESSI F”:           {s:[“20/5”,“19/4”,“16/3”,“14/19”],d:[“20/5”,“16/3”],i:0},
+“PEREIRA MACENA F”:  {s:[“20/5”,“19/4”,“16/3”,“14/19”],d:[“20/5”,“16/3”],i:0},
+“LANTERI E”:         {s:[“16/22”,“14/19”],d:[],i:0},
+“LARINI H”:          {s:[“20/5”,“19/4”,“16/3”,“14/19”,“22/6”],d:[],i:1},
+“VERZELLO O”:        {s:[“19/4”,“16/22”,“14/19”,“22/6”,“16/3”,“20/5”],d:[],i:0},
+“ARCURI F”:          {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“DANIEL S”:          {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”],d:[],i:0},
+“FIA S”:             {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“CAISSON JC”:        {s:[“16/22”,“14/19”],d:[],i:0},
+“PARIZIA K”:         {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:0},
+“BATTAGLIA D”:       {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”],d:[],i:0},
+“NIGIONI J”:         {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“FARRUGIA VALERI S”: {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“DESSI P”:           {s:[“19/4”,“16/22”,“14/19”,“22/6”],d:[],i:0},
+“BESSI N”:           {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:2},
+“PAGLIAI D”:         {s:[“19/4”,“16/22”,“16/3”,“14/19”,“22/6”],d:[],i:0},
+“PETIT T”:           {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[“16/3”,“20/5”],i:0},
+“CLAVE C”:           {s:[“16/22”,“14/19”,“20/5”,“19/4”,“22/6”],d:[],i:0},
+“NICASTRO M”:        {s:[“16/22”,“14/19”,“22/6”,“19/4”,“16/3”,“20/5”],d:[],i:0},
+“ELIODORI V”:        {s:[“16/22”,“14/19”,“22/6”,“19/4”,“16/3”,“20/5”],d:[“16/3”],i:0},
+“CAMPI PH”:          {s:[“14/19”,“20/5”,“19/4”,“16/22”,“22/6”,“16/3”],d:[“16/3”,“20/5”],i:0},
+“MALGHERINI T”:      {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[“16/3”,“20/5”],i:0},
+“MAGAGNIN J”:        {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[],i:0},
+“MERLINO B”:         {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[],i:0},
+“GALLIS J”:          {s:[“16/3”,“14/19”,“20/5”,“19/4”,“16/22”,“22/6”],d:[“20/5”,“16/3”],i:0},
+“BONETTI P”:         {s:[“14/19”,“20/5”,“19/4”,“16/22”,“22/6”,“16/3”],d:[],i:0},
+“PALMARO M”:         {s:[“14/19”,“20/5”,“19/4”,“16/22”,“22/6”,“16/3”],d:[],i:0},
+“CONNEN R”:          {s:[“22/6”,“19/4”,“16/3”,“14/19”,“16/22”],d:[],i:0},
+“PASTOR P”:          {s:[“20/5”,“19/4”,“16/22”,“14/19”],d:[],i:0},
+“MAGARA M”:          {s:[“14/19”,“22/6”,“19/4”,“16/3”,“20/5”],d:[],i:0},
+“GARCIA A”:          {s:[“14/19”,“20/5”,“19/4”,“16/3”],d:[“16/3”],i:0},
+“GARRO S”:           {s:[“14/19”,“22/6”,“19/4”,“16/3”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:0},
+“FURST P”:           {s:[“14/19”,“22/6”,“19/4”,“16/3”,“20/5”],d:[“16/3”],i:0},
+“PASSERON G”:        {s:[“20/5”,“19/4”,“16/22”,“14/19”],d:[],i:1},
+“FAUTRIER M”:        {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:1},
+“FOREST M”:          {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:1},
+“COZZI H”:           {s:[“20/5”,“19/4”,“16/22”,“14/19”],d:[“20/5”,“16/22”],i:0},
+“LANDAU B”:          {s:[“22/6”,“19/4”,“16/3”,“14/19”],d:[],i:1},
+“MILLO W”:           {s:[“20/5”,“19/4”,“16/22”,“14/19”],d:[],i:0},
+“GIORSETTI S”:       {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”,“20/5”],i:1},
+“FABRE SOCCAL Y”:    {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”],d:[“16/3”,“20/5”],i:1},
+“SIRIO J”:           {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“GALLIS F”:          {s:[“22/6”,“19/4”,“16/22”,“14/19”,“20/5”],d:[],i:0},
+“CIOCO S”:           {s:[“19/4”,“16/22”,“14/19”,“22/6”,“20/5”],d:[],i:0},
+“COSTE W”:           {s:[“14/19”,“22/6”,“19/4”,“16/3”,“20/5”],d:[“16/3”],i:0},
+“ENZA B”:            {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:0},
+“PORTA A”:           {s:[“20/5”,“19/4”,“16/22”,“14/19”,“22/6”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“ROSSI J”:           {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:0},
+“RICORDO B”:         {s:[“22/6”,“19/4”,“14/19”,“20/5”,“16/22”,“16/3”],d:[“20/5”,“16/3”],i:0},
+“LEMONNIER PH”:      {s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[“16/3”],i:0}
 };
-function getEP(e){return EP[e.name]||{s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:0};}
+function getEP(e){return EP[e.name]||{s:[“22/6”,“19/4”,“16/3”,“14/19”,“20/5”,“16/22”],d:[],i:0};}
 
 // Utilitaires
 function getDays(y,m){return new Date(y,m+1,0).getDate();}
 function getDow(y,m,d){return new Date(y,m,d).getDay();}
 function lg(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
 function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+function esc(s){return String(s||””).replace(/&/g,”&”).replace(/”/g,”"”).replace(/</g,”<”);}
 function now(){return Date.now();}
-function fmtTs(ms){const d=new Date(ms);return String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");}
+function fmtTs(ms){const d=new Date(ms);return String(d.getHours()).padStart(2,“0”)+“h”+String(d.getMinutes()).padStart(2,“0”);}
 function moOff(y,m){return(y-2026)*12+(m-2);}
-function tc(tid){const t=A.teams.find(x=>x.id===tid);return(t&&t.color)||TC[tid]||"#888";}
+function tc(tid){const t=A.teams.find(x=>x.id===tid);return(t&&t.color)||TC[tid]||”#888”;}
 function gt(tid){return A.teams.find(x=>x.id===tid)||null;}
 function gm(tid){const t=gt(tid);return t&&t.mirrorTeamId?gt(t.mirrorTeamId):null;}
 
 // Hachage mot de passe simple (pas crypto mais suffisant pour usage interne)
 function hashPw(pw){
-  let h=0;
-  for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}
-  return String(h>>>0);
+let h=0;
+for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}
+return String(h>>>0);
 }
 
 // \u00c9tat
 var A={
-  user:null,
-  view:"planning",
-  year:new Date().getFullYear(),
-  month:new Date().getMonth(),
-  employees:lg("cmc_e",DEF_EMP),
-  teams:lg("cmc_t",DEF_TEAMS),
-  overrides:lg("cmc_ov",{}),
-  passwords:lg("cmc_pw",{}),
-  showLeg:false,
-  chatMsgs:lg("cmc_chat",[]),
-  empQ:"",
-  pt:null
+user:null,
+view:“planning”,
+year:new Date().getFullYear(),
+month:new Date().getMonth(),
+employees:lg(“cmc_e”,DEF_EMP),
+teams:lg(“cmc_t”,DEF_TEAMS),
+overrides:lg(“cmc_ov”,{}),
+passwords:lg(“cmc_pw”,{}),
+showLeg:false,
+chatMsgs:lg(“cmc_chat”,[]),
+empQ:””,
+pt:null
 };
-function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
+function sav(){ls(“cmc_e”,A.employees);ls(“cmc_t”,A.teams);ls(“cmc_ov”,A.overrides);}
 
 function genBase(y,m){
-  const days=getDays(y,m),mo=moOff(y,m),p={};
-  A.employees.forEach(emp=>{
-    const pat=REPOS[emp.team]||[],prof=getEP(emp);
-    const seq=prof.s,cdpL=prof.d,sl=seq.length;
-    const si0=(((prof.i||0)+(mo*21))%sl+sl)%sl;
-    p[emp.id]={};let wc=0;
-    for(let d=1;d<=days;d++){
-      const ad=(mo*30)+(d-1),cp=((ad%30)+30)%30+1;
-      const isR=pat.indexOf(cp)>=0;
-      if(isR){
-        let rb=0;
-        for(let dd=1;dd<d;dd++){const a2=(mo*30)+(dd-1),c2=((a2%30)+30)%30+1;if(pat.indexOf(c2)>=0)rb++;}
-        p[emp.id][d]=(rb%2===0)?"RH":"R";
-      } else {
-        const idx=((si0+wc)%sl+sl)%sl,base=seq[idx];
-        p[emp.id][d]=(cdpL.indexOf(base)>=0)?(CDP_MAP[base]||base):base;
-        wc++;
-      }
-    }
-  });
-  return p;
+const days=getDays(y,m),mo=moOff(y,m),p={};
+A.employees.forEach(emp=>{
+const pat=REPOS[emp.team]||[],prof=getEP(emp);
+const seq=prof.s,cdpL=prof.d,sl=seq.length;
+const si0=(((prof.i||0)+(mo*21))%sl+sl)%sl;
+p[emp.id]={};let wc=0;
+for(let d=1;d<=days;d++){
+const ad=(mo*30)+(d-1),cp=((ad%30)+30)%30+1;
+const isR=pat.indexOf(cp)>=0;
+if(isR){
+let rb=0;
+for(let dd=1;dd<d;dd++){const a2=(mo*30)+(dd-1),c2=((a2%30)+30)%30+1;if(pat.indexOf(c2)>=0)rb++;}
+p[emp.id][d]=(rb%2===0)?“RH”:“R”;
+} else {
+const idx=((si0+wc)%sl+sl)%sl,base=seq[idx];
+p[emp.id][d]=(cdpL.indexOf(base)>=0)?(CDP_MAP[base]||base):base;
+wc++;
+}
+}
+});
+return p;
 }
 function gpl(){
-  const base=genBase(A.year,A.month),key=`${A.year}-${A.month}`,ov=A.overrides[key]||{};
-  Object.keys(ov).forEach(eid=>{
-    if(!base[eid])base[eid]={};
-    Object.keys(ov[eid]).forEach(d=>{
-      const v=ov[eid][d];
-      if(!v)delete base[eid][d]; else base[eid][d]=v;
-    });
-  });
-  return base;
+const base=genBase(A.year,A.month),key=`${A.year}-${A.month}`,ov=A.overrides[key]||{};
+Object.keys(ov).forEach(eid=>{
+if(!base[eid])base[eid]={};
+Object.keys(ov[eid]).forEach(d=>{
+const v=ov[eid][d];
+if(!v)delete base[eid][d]; else base[eid][d]=v;
+});
+});
+return base;
 }
 function saveOv(eid,day,code){
-  if(!A.user||A.user.id!==AID)return;
-  const key=`${A.year}-${A.month}`;
-  if(!A.overrides[key])A.overrides[key]={};
-  if(!A.overrides[key][eid])A.overrides[key][eid]={};
-  if(code==="")delete A.overrides[key][eid][day]; else A.overrides[key][eid][day]=code;
-  ls("cmc_ov",A.overrides);
+if(!A.user||A.user.id!==AID)return;
+const key=`${A.year}-${A.month}`;
+if(!A.overrides[key])A.overrides[key]={};
+if(!A.overrides[key][eid])A.overrides[key][eid]={};
+if(code===””)delete A.overrides[key][eid][day]; else A.overrides[key][eid][day]=code;
+ls(“cmc_ov”,A.overrides);
 }
-var isWork=c=>c&&c!=="RH"&&c!=="R"&&c!=="CP"&&c!=="M"&&c!=="AF";
+var isWork=c=>c&&c!==“RH”&&c!==“R”&&c!==“CP”&&c!==“M”&&c!==“AF”;
 
 var tT=null;
-function toast(msg,type="ok"){
-  const el=document.getElementById("toast");
-  el.textContent=(type==="err"?"\u26a0 ":"\u2713 ")+msg;
-  el.style.cssText=`display:block;background:${type==="err"?"#200600":"#03100a"};border:1px solid ${type==="err"?"#481010":"#0a2810"}`;
-  if(tT)clearTimeout(tT);tT=setTimeout(()=>el.style.display="none",3200);
+function toast(msg,type=“ok”){
+const el=document.getElementById(“toast”);
+el.textContent=(type===“err”?”\u26a0 “:”\u2713 “)+msg;
+el.style.cssText=`display:block;background:${type==="err"?"#200600":"#03100a"};border:1px solid ${type==="err"?"#481010":"#0a2810"}`;
+if(tT)clearTimeout(tT);tT=setTimeout(()=>el.style.display=“none”,3200);
 }
 
 function render(){
-  const app=document.getElementById("app");
-  if(!A.user){app.innerHTML=vLogin();setTimeout(()=>{const e=document.getElementById("li");if(e)e.onkeydown=ev=>{if(ev.key==="Enter")step1();};},40);return;}
-  app.innerHTML=`<div id="topbar">${vTopbar()}</div><div id="content">${vMain()}</div>${vNav()}`;
-  setTimeout(adjGrid,50);
+const app=document.getElementById(“app”);
+if(!A.user){app.innerHTML=vLogin();setTimeout(()=>{const e=document.getElementById(“li”);if(e)e.onkeydown=ev=>{if(ev.key===“Enter”)step1();};},40);return;}
+app.innerHTML=`<div id="topbar">${vTopbar()}</div><div id="content">${vMain()}</div>${vNav()}`;
+setTimeout(adjGrid,50);
 }
 function dc(){
-  const c=document.getElementById("content");if(!c)return;
-  c.innerHTML=vMain();
-  if(A.view==="planning")adjGrid();
-  if(A.view==="chat")setTimeout(()=>{const m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+const c=document.getElementById(“content”);if(!c)return;
+c.innerHTML=vMain();
+if(A.view===“planning”)adjGrid();
+if(A.view===“chat”)setTimeout(()=>{const m=document.getElementById(“chatMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
 }
 function adjGrid(){
-  const g=document.getElementById("planGrid");if(!g)return;
-  const nb=document.getElementById("bnav"),nbH=nb?nb.offsetHeight:70;
-  const av=window.innerHeight-g.getBoundingClientRect().top-nbH-8;
-  if(av>100)g.style.height=av+"px";
+const g=document.getElementById(“planGrid”);if(!g)return;
+const nb=document.getElementById(“bnav”),nbH=nb?nb.offsetHeight:70;
+const av=window.innerHeight-g.getBoundingClientRect().top-nbH-8;
+if(av>100)g.style.height=av+“px”;
 }
-window.addEventListener("resize",adjGrid);
+window.addEventListener(“resize”,adjGrid);
 
-var loginStep=0,loginUid="";
+var loginStep=0,loginUid=””;
 function vLogin(){
-  if(loginStep===1) return vLoginStep1();
-  if(loginStep===2) return vLoginStepPin();
-  return vLoginStep0();
+if(loginStep===1) return vLoginStep1();
+if(loginStep===2) return vLoginStepPin();
+return vLoginStep0();
 }
 
 function vLoginStep0(){
-  return `<div class="login-bg">
+return `<div class="login-bg">
+
   <div class="login-card">
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:28px">
@@ -333,9 +333,10 @@ function vLoginStep0(){
 }
 
 function vLoginStep1(){
-  const emp=A.employees.find(e=>e.id===loginUid)||{};
-  const isNew=!A.passwords[loginUid];
-  return `<div class="login-bg">
+const emp=A.employees.find(e=>e.id===loginUid)||{};
+const isNew=!A.passwords[loginUid];
+return `<div class="login-bg">
+
   <div class="login-card">
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
@@ -357,7 +358,8 @@ function vLoginStep1(){
 }
 
 function vLoginStepPin(){
-  return `<div class="login-bg">
+return `<div class="login-bg">
+
   <div class="login-card">
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
@@ -380,7 +382,12 @@ function stepPin(){
     const er=document.getElementById("pinerr");if(er)er.textContent="Code incorrect";return;
   }
   const emp=A.employees.find(e=>e.id===AID);
-  A.user=emp;loginStep=0;render();
+  A.user=emp;loginStep=0;window.addEventListener("DOMContentLoaded",function(){
+  try{render();}catch(e){
+    var el=document.getElementById("app")||document.body;
+    if(el)el.innerHTML='<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0a1a0c;padding:20px;color:#c9a227;font-family:monospace;font-size:11px;z-index:9999"><b>ERR RUNTIME</b><br>'+e.message+'<br><br>'+e.stack.slice(0,300)+'</div>';
+  }
+});
 }
 function step1(){
   const el=document.getElementById("li");if(!el)return;
@@ -397,34 +404,35 @@ function step1(){
 }
 
 function step2(){
-  const emp=A.employees.find(e=>e.id===loginUid)||{};
-  const isNew=!A.passwords[loginUid];
-  const errEl=document.getElementById("fperr");
-  const pw1=(document.getElementById("fp1")||{}).value||"";
-  if(isNew){
-    const fn=(document.getElementById("fn")||{}).value.trim().toUpperCase();
-    if(fn!==emp.name){if(errEl)errEl.textContent="Nom incorrect \u2014 saisissez exactement : "+emp.name;return;}
-    if(pw1.length<6){if(errEl)errEl.textContent="Mot de passe trop court (min. 6 caract\u00e8res)";return;}
-    const pw2=(document.getElementById("fp2")||{}).value||"";
-    if(pw1!==pw2){if(errEl)errEl.textContent="Les mots de passe ne correspondent pas";return;}
-    A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls("cmc_pw",A.passwords);
-    A.user=emp;loginStep=0;render();toast("Bienvenue "+emp.name.split(" ")[0]+" !");
-  } else {
-    const stored=A.passwords[loginUid];
-    const valid=(typeof stored==="string"&&hashPw(pw1)===stored)||(stored&&stored.h&&hashPw(pw1)===stored.h);
-    if(!valid){if(errEl)errEl.textContent="Mot de passe incorrect";return;}
-    // Migrer vers nouveau format si ancien
-    if(typeof stored==="string"){A.passwords[loginUid]={h:stored,p:pw1};ls("cmc_pw",A.passwords);}
-    A.user=emp;loginStep=0;render();
-  }
+const emp=A.employees.find(e=>e.id===loginUid)||{};
+const isNew=!A.passwords[loginUid];
+const errEl=document.getElementById(“fperr”);
+const pw1=(document.getElementById(“fp1”)||{}).value||””;
+if(isNew){
+const fn=(document.getElementById(“fn”)||{}).value.trim().toUpperCase();
+if(fn!==emp.name){if(errEl)errEl.textContent=“Nom incorrect \u2014 saisissez exactement : “+emp.name;return;}
+if(pw1.length<6){if(errEl)errEl.textContent=“Mot de passe trop court (min. 6 caract\u00e8res)”;return;}
+const pw2=(document.getElementById(“fp2”)||{}).value||””;
+if(pw1!==pw2){if(errEl)errEl.textContent=“Les mots de passe ne correspondent pas”;return;}
+A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls(“cmc_pw”,A.passwords);
+A.user=emp;loginStep=0;render();toast(“Bienvenue “+emp.name.split(” “)[0]+” !”);
+} else {
+const stored=A.passwords[loginUid];
+const valid=(typeof stored===“string”&&hashPw(pw1)===stored)||(stored&&stored.h&&hashPw(pw1)===stored.h);
+if(!valid){if(errEl)errEl.textContent=“Mot de passe incorrect”;return;}
+// Migrer vers nouveau format si ancien
+if(typeof stored===“string”){A.passwords[loginUid]={h:stored,p:pw1};ls(“cmc_pw”,A.passwords);}
+A.user=emp;loginStep=0;render();
+}
 }
 
 function doLogout(){A.user=null;render();}
 
 function vTopbar(){
-  const u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:"1"),t=gt(u?u.team:"");
-  return `
-  <span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
+const u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:“1”),t=gt(u?u.team:””);
+return `
+<span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
+
   <div style="flex:1;min-width:0">
     <div style="font-size:13px;font-weight:800;color:#c9a227;letter-spacing:1px">CMC Teams</div>
     <div style="font-size:7px;color:#1e2e1e;letter-spacing:3px;text-transform:uppercase">Casino de Monaco</div>
@@ -443,58 +451,59 @@ function vTopbar(){
 }
 
 function vNav(){
-  const isAdm=A.user&&A.user.id===AID;
-  const tabs=[
-    {id:"planning",ic:"\ud83d\udcc5",lb:"Planning"},
-    {id:"departs",ic:"\ud83c\udfaf",lb:"D\u00e9parts"},
-    {id:"chat",ic:"\ud83d\udcac",lb:"Chat"},
-    {id:"ia",ic:"\ud83e\udd16",lb:"Aide"}
-  ];
-  if(isAdm){
-    tabs.splice(2,0,{id:"stats",ic:"\ud83d\udcca",lb:"Stats"});
-    tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin"});
-  }
-  const unread=A.chatMsgs.filter(m=>m.uid!==A.user.id&&m.ts>(lg("cmc_lastread",0))).length;
-  return `<div id="bnav">${tabs.map(t=>{
-    const badge=t.id==="chat"&&unread>0?`<span id="chatBadge" class="nbadge" style="display:block">${unread}</span>`:`<span id="chatBadge" class="nbadge"></span>`;
-    return `<button class="nt${A.view===t.id?" on":""}" onclick="sv('${t.id}')" style="font-size:7px"><em>${t.ic}</em>${badge}${t.lb}</button>`;
-  }).join("")}</div>`;
+const isAdm=A.user&&A.user.id===AID;
+const tabs=[
+{id:“planning”,ic:”\ud83d\udcc5”,lb:“Planning”},
+{id:“departs”,ic:”\ud83c\udfaf”,lb:“D\u00e9parts”},
+{id:“chat”,ic:”\ud83d\udcac”,lb:“Chat”},
+{id:“ia”,ic:”\ud83e\udd16”,lb:“Aide”}
+];
+if(isAdm){
+tabs.splice(2,0,{id:“stats”,ic:”\ud83d\udcca”,lb:“Stats”});
+tabs.push({id:“admin”,ic:”\u2699\ufe0f”,lb:“Admin”});
+}
+const unread=A.chatMsgs.filter(m=>m.uid!==A.user.id&&m.ts>(lg(“cmc_lastread”,0))).length;
+return `<div id="bnav">${tabs.map(t=>{ const badge=t.id==="chat"&&unread>0?`<span id="chatBadge" class="nbadge" style="display:block">${unread}</span>`:`<span id="chatBadge" class="nbadge"></span>`; return `<button class=“nt${A.view===t.id?” on”:””}” onclick=“sv(’${t.id}’)” style=“font-size:7px”><em>${t.ic}</em>${badge}${t.lb}</button>`; }).join("")}</div>`;
 }
 
 function vMain(){
-  const isAdm=A.user&&A.user.id===AID;
-  switch(A.view){
-    case"planning": return vPlan();
-    case"departs":  return vDeparts();
-    case"stats":    return isAdm?vStats():"";
-    case"chat":     return vChat();
-    case"admin":    return isAdm?vAdmin():"";
-    case"teams":    return isAdm?vTeams():"";
-    case"employees":return isAdm?vEmps():"";
-    case"import":      return isAdm?vImport():"";
+const isAdm=A.user&&A.user.id===AID;
+switch(A.view){
+case”planning”: return vPlan();
+case”departs”:  return vDeparts();
+case”stats”:    return isAdm?vStats():””;
+case”chat”:     return vChat();
+case”admin”:    return isAdm?vAdmin():””;
+case”teams”:    return isAdm?vTeams():””;
+case”employees”:return isAdm?vEmps():””;
+case”import”:      return isAdm?vImport():””;
 
-    case"ia":       return vIA();
-    default: return "";
-  }
+```
+case"ia":       return vIA();
+default: return "";
+```
+
+}
 }
 function sv(v){
-  A.view=v;dc();
-  const old=document.getElementById("bnav");
-  if(old){const tmp=document.createElement("div");tmp.innerHTML=vNav();old.parentNode.replaceChild(tmp.firstChild,old);}
-  if(v==="planning")setTimeout(adjGrid,80);
-  if(v==="chat"){setTimeout(()=>{const m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());},80);}
+A.view=v;dc();
+const old=document.getElementById(“bnav”);
+if(old){const tmp=document.createElement(“div”);tmp.innerHTML=vNav();old.parentNode.replaceChild(tmp.firstChild,old);}
+if(v===“planning”)setTimeout(adjGrid,80);
+if(v===“chat”){setTimeout(()=>{const m=document.getElementById(“chatMsgs”);if(m)m.scrollTop=m.scrollHeight;ls(“cmc_lastread”,now());},80);}
 }
-function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;sv("planning");}
-function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;sv("planning");}
+function prevM(){if(A.month===0){A.month=11;A.year–;}else A.month–;sv(“planning”);}
+function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;sv(“planning”);}
 
 function vPlan(){
-  const isAdm=A.user&&A.user.id===AID;
-  const pl=gpl(),days=getDays(A.year,A.month);
-  const da=Array.from({length:days},(_,i)=>i+1);
-  const byT={};A.employees.forEach(e=>{if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e);});
-  const tOrd=[];A.employees.forEach(e=>{if(!tOrd.includes(e.team))tOrd.push(e.team);});
-  const utid=A.user?A.user.team:null,utc=tc(utid),mirT=utid?gm(utid):null;
-  let h=`<div class="page">
+const isAdm=A.user&&A.user.id===AID;
+const pl=gpl(),days=getDays(A.year,A.month);
+const da=Array.from({length:days},(_,i)=>i+1);
+const byT={};A.employees.forEach(e=>{if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e);});
+const tOrd=[];A.employees.forEach(e=>{if(!tOrd.includes(e.team))tOrd.push(e.team);});
+const utid=A.user?A.user.team:null,utc=tc(utid),mirT=utid?gm(utid):null;
+let h=`<div class="page">
+
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button>
     <div style="flex:1;text-align:center">
@@ -543,75 +552,79 @@ function vPlan(){
           ${isMe?"\u25b6 ":""}${esc(emp.name)}
           ${emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':""}
 
-        </td>`;
-      da.forEach(d=>{
-        const code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
-        const click=isAdm?` onclick="openPicker('${emp.id}',${d},this)"`:"";
-        h+=`<td class="ctd" style="background:${ci.bg};border:1px solid ${ci.b}${ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":""}"${click}>
-          ${ci.cdp
-            ?`<div style="display:flex;flex-direction:column;align-items:center"><span style="color:${ci.c};font-size:8px;font-weight:800">${code.replace("*","")}</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>`
-            :`<span style="color:${ci.c}">${code||"\u00b7"}</span>`}
-        </td>`;
-      });
-      h+=`<td class="stattd">${repos}</td><td class="stattd">${trav}</td></tr>`;
-    });
+```
+    </td>`;
+  da.forEach(d=>{
+    const code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
+    const click=isAdm?` onclick="openPicker('${emp.id}',${d},this)"`:"";
+    h+=`<td class="ctd" style="background:${ci.bg};border:1px solid ${ci.b}${ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":""}"${click}>
+      ${ci.cdp
+        ?`<div style="display:flex;flex-direction:column;align-items:center"><span style="color:${ci.c};font-size:8px;font-weight:800">${code.replace("*","")}</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>`
+        :`<span style="color:${ci.c}">${code||"\u00b7"}</span>`}
+    </td>`;
   });
-  return h+`</tbody></table></div></div>`;
+  h+=`<td class="stattd">${repos}</td><td class="stattd">${trav}</td></tr>`;
+});
+```
+
+});
+return h+`</tbody></table></div></div>`;
 }
 
-// S\u00e9quences de d\u00e9part par taille d'\u00e9quipe
+// S\u00e9quences de d\u00e9part par taille d’\u00e9quipe
 var SEQS={
-  5:[1,4,2,3,5],
-  6:[1,6,4,2,3,5],
-  7:[1,6,4,2,7,3,5],
-  8:[1,6,4,2,7,3,8,5],
-  9:[1,6,4,9,2,7,3,8,5]
+5:[1,4,2,3,5],
+6:[1,6,4,2,3,5],
+7:[1,6,4,2,7,3,5],
+8:[1,6,4,2,7,3,8,5],
+9:[1,6,4,9,2,7,3,8,5]
 };
 function getSeqForSize(n){return SEQS[n]||SEQS[5];}
 var SEQ5=SEQS[5]; // compat
-// Chef d'equipe : UN SEUL par equipe
-var DEF_CHEF_EQ={"1":"ESPAGNOL S","2":"PODGORNY B","3":"DESARZENS K","4":"NIGIONI J","5":"GARCIA A"};
-var CHEF_EQ=lg("cmc_chef_eq",Object.assign({},DEF_CHEF_EQ));
-function saveChefEq(){if(!A.user||A.user.id!==AID)return;ls("cmc_chef_eq",CHEF_EQ);}
+// Chef d’equipe : UN SEUL par equipe
+var DEF_CHEF_EQ={“1”:“ESPAGNOL S”,“2”:“PODGORNY B”,“3”:“DESARZENS K”,“4”:“NIGIONI J”,“5”:“GARCIA A”};
+var CHEF_EQ=lg(“cmc_chef_eq”,Object.assign({},DEF_CHEF_EQ));
+function saveChefEq(){if(!A.user||A.user.id!==AID)return;ls(“cmc_chef_eq”,CHEF_EQ);}
 function pickChef(tid,idx){
-  if(!A.user||A.user.id!==AID)return;
-  const teamEmps=A.employees.filter(e=>e.team===tid);
-  const emp=teamEmps[idx];
-  if(!emp)return;
-  CHEF_EQ[tid]=emp.name;saveChefEq();editChefSlot=null;dc();
-  toast("Chef d'\u00e9quipe : "+emp.name);
+if(!A.user||A.user.id!==AID)return;
+const teamEmps=A.employees.filter(e=>e.team===tid);
+const emp=teamEmps[idx];
+if(!emp)return;
+CHEF_EQ[tid]=emp.name;saveChefEq();editChefSlot=null;dc();
+toast(“Chef d’\u00e9quipe : “+emp.name);
 }
 // Ordre de depart (tous les chefs de partie)
 var DEF_CHEFS_T={
-  "1":["ESPAGNOL S","BRASSEUR F","GAZAGNE F","BONO F","COURTIN F"],
-  "2":["PODGORNY B","HORGNE C","BOYER G","NIGIONI C","REVOLLON L"],
-  "3":["DESARZENS K","MARIOTTINI J","DESSI F","PEREIRA MACENA F","ARCURI F"],
-  "4":["NIGIONI J","BESSI N","ELIODORI V","BONETTI P","PALMARO M"],
-  "5":["GARCIA A","GARRO S","GIORSETTI S","SIRIO J","FAUTRIER M"]
+“1”:[“ESPAGNOL S”,“BRASSEUR F”,“GAZAGNE F”,“BONO F”,“COURTIN F”],
+“2”:[“PODGORNY B”,“HORGNE C”,“BOYER G”,“NIGIONI C”,“REVOLLON L”],
+“3”:[“DESARZENS K”,“MARIOTTINI J”,“DESSI F”,“PEREIRA MACENA F”,“ARCURI F”],
+“4”:[“NIGIONI J”,“BESSI N”,“ELIODORI V”,“BONETTI P”,“PALMARO M”],
+“5”:[“GARCIA A”,“GARRO S”,“GIORSETTI S”,“SIRIO J”,“FAUTRIER M”]
 };
-var CHEFS_T=lg("cmc_chefs_t",JSON.parse(JSON.stringify(DEF_CHEFS_T)));
+var CHEFS_T=lg(“cmc_chefs_t”,JSON.parse(JSON.stringify(DEF_CHEFS_T)));
 var openCITeam=null;
 var editChefSlot=null;
-function saveChefsT(){if(!A.user||A.user.id!==AID)return;ls("cmc_chefs_t",CHEFS_T);}
+function saveChefsT(){if(!A.user||A.user.id!==AID)return;ls(“cmc_chefs_t”,CHEFS_T);}
 // BaseIdx SEQ5=[1,4,2,3,5]: 0\u2192part1er, 1\u21924e, 2\u21922e, 3\u21923e, 4\u21925e
 var DEF_CI={
-  "ESPAGNOL S":0,"BRASSEUR F":1,"GAZAGNE F":2,"BONO F":3,"COURTIN F":4,
-  "PODGORNY B":0,"HORGNE C":1,"BOYER G":2,"NIGIONI C":3,"REVOLLON L":4,
-  "DESARZENS K":0,"MARIOTTINI J":1,"DESSI F":2,"PEREIRA MACENA F":3,"ARCURI F":4,
-  "NIGIONI J":0,"BESSI N":1,"ELIODORI V":2,"BONETTI P":3,"PALMARO M":4,
-  "GARCIA A":0,"GARRO S":1,"GIORSETTI S":2,"SIRIO J":3,"FAUTRIER M":4
+“ESPAGNOL S”:0,“BRASSEUR F”:1,“GAZAGNE F”:2,“BONO F”:3,“COURTIN F”:4,
+“PODGORNY B”:0,“HORGNE C”:1,“BOYER G”:2,“NIGIONI C”:3,“REVOLLON L”:4,
+“DESARZENS K”:0,“MARIOTTINI J”:1,“DESSI F”:2,“PEREIRA MACENA F”:3,“ARCURI F”:4,
+“NIGIONI J”:0,“BESSI N”:1,“ELIODORI V”:2,“BONETTI P”:3,“PALMARO M”:4,
+“GARCIA A”:0,“GARRO S”:1,“GIORSETTI S”:2,“SIRIO J”:3,“FAUTRIER M”:4
 };
-var DCOL=["#c9a227","#4a72a8","#3a8a50","#a84868","#c07830","#38bdf8","#a3e635","#f87171","#c084fc"];
+var DCOL=[”#c9a227”,”#4a72a8”,”#3a8a50”,”#a84868”,”#c07830”,”#38bdf8”,”#a3e635”,”#f87171”,”#c084fc”];
 function gCI(y,m){return lg(`cmc_ci_${y}_${m}`,JSON.parse(JSON.stringify(DEF_CI)));}
 function sCI(y,m,o){ls(`cmc_ci_${y}_${m}`,o);}
 
 function vDeparts(){
-  const isAdm=A.user&&A.user.id===AID;
-  const pl=gpl(),days=getDays(A.year,A.month),da=Array.from({length:days},(_,i)=>i+1);
-  const CI=gCI(A.year,A.month);
-  const myTeam=A.user?A.user.team:null;
-  const show=isAdm?A.teams.map(t=>t.id):[myTeam];
-  let h=`<div class="page">
+const isAdm=A.user&&A.user.id===AID;
+const pl=gpl(),days=getDays(A.year,A.month),da=Array.from({length:days},(_,i)=>i+1);
+const CI=gCI(A.year,A.month);
+const myTeam=A.user?A.user.team:null;
+const show=isAdm?A.teams.map(t=>t.id):[myTeam];
+let h=`<div class="page">
+
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>
     <div style="flex:1;text-align:center">
@@ -684,43 +697,42 @@ function vDeparts(){
 }
 
 function showCI(tid){
-  if(!A.user||A.user.id!==AID)return;
-  openCITeam=(openCITeam===tid)?null:tid;
-  dc();
+if(!A.user||A.user.id!==AID)return;
+openCITeam=(openCITeam===tid)?null:tid;
+dc();
 }
 function setCI(name,idx){
-  if(!A.user||A.user.id!==AID)return;
-  const CI=gCI(A.year,A.month);CI[name]=idx;sCI(A.year,A.month,CI);
-  dc();
+if(!A.user||A.user.id!==AID)return;
+const CI=gCI(A.year,A.month);CI[name]=idx;sCI(A.year,A.month,CI);
+dc();
 }
 function renderCIPanel(tid){
-  const CI=gCI(A.year,A.month);
-  const names=CHEFS_T[tid]||[];
-  const emps=names.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
-  const team=A.teams.find(t=>t.id===tid),tcc=team?team.color:"#888";
-  const SEQCI=getSeqForSize(emps.length);
-  let h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px">
-    <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
-  if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
-  emps.forEach(emp=>{
-    const cur=CI[emp.name]!==undefined?CI[emp.name]:0;
-    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span>
-      <div style="display:flex;gap:4px">`;
-    for(let si=0;si<emps.length;si++){
-      const pos=SEQCI[si],col=DCOL[pos-1],sel=cur===si;
-      h+=`<div onclick="setCI('${emp.name}',${si})" style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
-    }
-    h+=`</div></div>`;
-  });
-  h+=`<button onclick="openCITeam=null;dc()" style="margin-top:4px;background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#3a5030;font-size:11px;cursor:pointer">Fermer</button>
+const CI=gCI(A.year,A.month);
+const names=CHEFS_T[tid]||[];
+const emps=names.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
+const team=A.teams.find(t=>t.id===tid),tcc=team?team.color:”#888”;
+const SEQCI=getSeqForSize(emps.length);
+let h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px"> <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
+if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
+emps.forEach(emp=>{
+const cur=CI[emp.name]!==undefined?CI[emp.name]:0;
+h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"> <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span> <div style="display:flex;gap:4px">`;
+for(let si=0;si<emps.length;si++){
+const pos=SEQCI[si],col=DCOL[pos-1],sel=cur===si;
+h+=`<div onclick="setCI('${emp.name}',${si})" style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
+}
+h+=`</div></div>`;
+});
+h+=`<button onclick="openCITeam=null;dc()" style="margin-top:4px;background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#3a5030;font-size:11px;cursor:pointer">Fermer</button>
+
   </div>`;
   return h;
 }
 
 function vStats(){
-  const pl=gpl();
-  let h=`<div class="page"><div style="margin-bottom:12px"><div class="sec-title">Statistiques</div>
+const pl=gpl();
+let h=`<div class="page"><div style="margin-bottom:12px"><div class="sec-title">Statistiques</div>
+
   <div class="sec-sub">${MFR[A.month]} ${A.year}</div></div><div style="display:flex;flex-direction:column;gap:8px">`;
   A.employees.forEach(emp=>{
     const p=pl[emp.id]||{},v=Object.values(p);
@@ -752,9 +764,10 @@ function vStats(){
 }
 
 function vChat(){
-  ls("cmc_lastread",now());
-  const msgs=A.chatMsgs;
-  let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
+ls(“cmc_lastread”,now());
+const msgs=A.chatMsgs;
+let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
+
   <div style="padding:8px 14px;border-bottom:1px solid #182818;font-size:9px;color:#243020;flex-shrink:0">
     \u2666 Chat interne \u00b7 ${A.employees.length} membres \u00b7 messages locaux
   </div>
@@ -792,16 +805,17 @@ function sendMsg(){
 }
 
 function vAdmin(){
-  const pinSet=lg("cmc_admin_pin",null);
-  const items=[
-    {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
-    {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
-    {ic:"\ud83d\udce5",lb:"Import planning",fn:"sv('import')"},
-    {ic:"\ud83d\udd11",lb:"R\u00e9initialiser un mot de passe",fn:"resetPw()"},
-    {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
-    {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier le code PIN admin":"Activer un code PIN admin",fn:"showPinSetup()"}
-  ];
-  return `<div class="page">
+const pinSet=lg(“cmc_admin_pin”,null);
+const items=[
+{ic:”\ud83d\udc51”,lb:“Chefs & ordres de d\u00e9part”,fn:“sv(‘teams’)”},
+{ic:”\ud83d\udc65”,lb:“Employ\u00e9s”,fn:“sv(‘employees’)”},
+{ic:”\ud83d\udce5”,lb:“Import planning”,fn:“sv(‘import’)”},
+{ic:”\ud83d\udd11”,lb:“R\u00e9initialiser un mot de passe”,fn:“resetPw()”},
+{ic:”\ud83d\uddd1”,lb:“Effacer planning du mois”,fn:“clearMonth()”},
+{ic:pinSet?”\ud83d\udd10”:”\ud83d\udd13”,lb:pinSet?“Modifier le code PIN admin”:“Activer un code PIN admin”,fn:“showPinSetup()”}
+];
+return `<div class="page">
+
   <div style="margin-bottom:14px"><div class="sec-title">Administration</div>
   <div class="sec-sub">Acc\u00e8s r\u00e9serv\u00e9</div></div>
   <div style="display:flex;flex-direction:column;gap:8px">
@@ -869,8 +883,9 @@ function clearMonth(){
 }
 
 function vTeams(){
-  const sorted=[...A.teams].sort((a,b)=>a.departureOrder-b.departureOrder);
-  let h=`<div class="page">
+const sorted=[…A.teams].sort((a,b)=>a.departureOrder-b.departureOrder);
+let h=`<div class="page">
+
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div><div class="sec-title">\u00c9quipes</div><div class="sec-sub">${A.employees.length} employ\u00e9s</div></div>
     <button class="btn gold" onclick="sv('employees')" style="font-size:11px;padding:8px 11px">\ud83d\udc65 Employ\u00e9s</button>
@@ -893,201 +908,195 @@ function vTeams(){
         <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #182818;background:#06110a;cursor:pointer;padding:2px"></div>
       </div>
 
-      <div style="margin-bottom:10px">
-        <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udc51 Chef d'\u00e9quipe</div>
-        ${(()=>{
-          const chef=CHEF_EQ[team.id]||"";
-          const isEditing=editChefSlot&&editChefSlot.tid===team.id;
-          let r=`<div style="border:1px solid ${tcc}30;border-radius:8px;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${tcc}08">
-              <span style="font-size:18px">\ud83d\udc51</span>
-              <span style="font-size:12px;font-weight:700;color:#d0cca0;flex:1">${esc(chef||"\u2014 Non d\u00e9fini \u2014")}</span>
-              <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?tcc+'20':'transparent'};border:1px solid ${isEditing?tcc+'50':'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
-            </div>`;
-          if(isEditing){
-            r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${tcc}20">
-              <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
-              <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
-                ${teamEmps.map((e,ei)=>`<button onclick="pickChef('${team.id}',${ei})" style="text-align:left;padding:9px 12px;background:${chef===e.name?'rgba(201,162,39,.15)':'#0c1e0e'};border:1px solid ${chef===e.name?'rgba(201,162,39,.4)':'#1e3020'};border-radius:7px;font-size:12px;color:${chef===e.name?'#c9a227':'#90a878'};cursor:pointer;font-weight:${chef===e.name?700:400}">${esc(e.name)}${chef===e.name?' \u2713':''}</button>`).join('')}
-              </div>
-            </div>`;
-          }
-          r+=`</div>`;
-          return r;
-        })()}
-      </div>
-    </div>`;
-  });
-  return h+`</div>`;
+```
+  <div style="margin-bottom:10px">
+    <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udc51 Chef d'\u00e9quipe</div>
+    ${(()=>{
+      const chef=CHEF_EQ[team.id]||"";
+      const isEditing=editChefSlot&&editChefSlot.tid===team.id;
+      let r=`<div style="border:1px solid ${tcc}30;border-radius:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${tcc}08">
+          <span style="font-size:18px">\ud83d\udc51</span>
+          <span style="font-size:12px;font-weight:700;color:#d0cca0;flex:1">${esc(chef||"\u2014 Non d\u00e9fini \u2014")}</span>
+          <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?tcc+'20':'transparent'};border:1px solid ${isEditing?tcc+'50':'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
+        </div>`;
+      if(isEditing){
+        r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${tcc}20">
+          <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
+          <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
+            ${teamEmps.map((e,ei)=>`<button onclick="pickChef('${team.id}',${ei})" style="text-align:left;padding:9px 12px;background:${chef===e.name?'rgba(201,162,39,.15)':'#0c1e0e'};border:1px solid ${chef===e.name?'rgba(201,162,39,.4)':'#1e3020'};border-radius:7px;font-size:12px;color:${chef===e.name?'#c9a227':'#90a878'};cursor:pointer;font-weight:${chef===e.name?700:400}">${esc(e.name)}${chef===e.name?' \u2713':''}</button>`).join('')}
+          </div>
+        </div>`;
+      }
+      r+=`</div>`;
+      return r;
+    })()}
+  </div>
+</div>`;
+```
+
+});
+return h+`</div>`;
 }
 
 function setChef(tid,pos,name){
-  if(!A.user||A.user.id!==AID)return;
-  if(!CHEFS_T[tid])CHEFS_T[tid]=[];
-  if(name===""){CHEFS_T[tid][pos]="__empty__";}
-  else{CHEFS_T[tid][pos]=name;}
-  // Nettoyer les vides
-  CHEFS_T[tid]=CHEFS_T[tid].filter(n=>n&&n!=="__empty__");
-  saveChefsT();dc();
+if(!A.user||A.user.id!==AID)return;
+if(!CHEFS_T[tid])CHEFS_T[tid]=[];
+if(name===””){CHEFS_T[tid][pos]=”**empty**”;}
+else{CHEFS_T[tid][pos]=name;}
+// Nettoyer les vides
+CHEFS_T[tid]=CHEFS_T[tid].filter(n=>n&&n!==”**empty**”);
+saveChefsT();dc();
 }
 function addChef(tid){
-  if(!A.user||A.user.id!==AID)return;
-  if(!CHEFS_T[tid])CHEFS_T[tid]=[];
-  // Ajouter le premier employ\u00e9 de l'\u00e9quipe pas encore dans la liste
-  const teamEmps=A.employees.filter(e=>e.team===tid);
-  const next=teamEmps.find(e=>!CHEFS_T[tid].includes(e.name));
-  CHEFS_T[tid].push(next?next.name:teamEmps[0]?teamEmps[0].name:"");
-  saveChefsT();dc();
+if(!A.user||A.user.id!==AID)return;
+if(!CHEFS_T[tid])CHEFS_T[tid]=[];
+// Ajouter le premier employ\u00e9 de l’\u00e9quipe pas encore dans la liste
+const teamEmps=A.employees.filter(e=>e.team===tid);
+const next=teamEmps.find(e=>!CHEFS_T[tid].includes(e.name));
+CHEFS_T[tid].push(next?next.name:teamEmps[0]?teamEmps[0].name:””);
+saveChefsT();dc();
 }
 function removeChef(tid,pos){
-  if(!A.user||A.user.id!==AID)return;
-  if(!CHEFS_T[tid])return;
-  CHEFS_T[tid].splice(pos,1);
-  saveChefsT();dc();
+if(!A.user||A.user.id!==AID)return;
+if(!CHEFS_T[tid])return;
+CHEFS_T[tid].splice(pos,1);
+saveChefsT();dc();
 }
 
 var showAddF=false,editEmpId=null;
 function vEmps(){
-  const filt=A.employees.filter(e=>{
-    const q=A.empQ.toLowerCase();
-    return e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q);
-  });
-  let h=`<div class="page">
+const filt=A.employees.filter(e=>{
+const q=A.empQ.toLowerCase();
+return e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q);
+});
+let h=`<div class="page">
+
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s</div></div>
     <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:11px;flex-shrink:0">+ Ajouter</button>
   </div>
   <input class="inp" style="margin-bottom:10px" placeholder="Rechercher..." value="${esc(A.empQ)}" oninput="A.empQ=this.value;dc()">`;
 
-  if(showAddF){
-    h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">Nouvel employ\u00e9</div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <input id="nid" class="inp" placeholder="Matricule (U00073)" autocapitalize="characters" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase">
-        <input id="nname" class="inp" placeholder="NOM Pr\u00e9nom (MAJUSCULES)">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <select id="nteam" class="inp" style="padding:9px 10px;font-size:12px">${A.teams.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join("")}</select>
-          <input id="npost" class="inp" placeholder="Poste (ex: BRTCK)">
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6040;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00e9part)</label>
-        <div style="display:flex;gap:8px">
-          <button class="btn gold" onclick="addEmp()" style="flex:1;justify-content:center">Ajouter</button>
-          <button class="btn ghost" onclick="showAddF=false;dc()" style="flex:1;justify-content:center">Annuler</button>
-        </div>
+if(showAddF){
+h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px"> <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">Nouvel employ\u00e9</div> <div style="display:flex;flex-direction:column;gap:7px"> <input id="nid" class="inp" placeholder="Matricule (U00073)" autocapitalize="characters" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase"> <input id="nname" class="inp" placeholder="NOM Pr\u00e9nom (MAJUSCULES)"> <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"> <select id="nteam" class="inp" style="padding:9px 10px;font-size:12px">${A.teams.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join("")}</select> <input id="npost" class="inp" placeholder="Poste (ex: BRTCK)"> </div> <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6040;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00e9part)</label> <div style="display:flex;gap:8px"> <button class="btn gold" onclick="addEmp()" style="flex:1;justify-content:center">Ajouter</button> <button class="btn ghost" onclick="showAddF=false;dc()" style="flex:1;justify-content:center">Annuler</button> </div> </div> </div>`;
+}
+
+h+=`<div class="card">`;
+filt.forEach((emp,i)=>{
+const tcc=tc(emp.team),isAdm=emp.id===AID;
+const isEdit=editEmpId===emp.id;
+h+=`<div style="${i>0?"border-top:1px solid #0a160a":""}">`;
+
+```
+if(isEdit){
+  // Panneau d'\u00e9dition inline
+  h+=`<div style="padding:12px;background:${tcc}08;border-left:2px solid ${tcc}50">
+    <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270f\ufe0f ${esc(emp.name)}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+
+      <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00c9quipe</div>
+      <select class="inp" style="padding:8px 10px;font-size:12px" onchange="chTeam('${emp.id}',this.value)">
+        ${A.teams.map(function(t){return '<option value="'+t.id+'"'+(emp.team===t.id?' selected':'')+'>'+esc(t.name)+'</option>';}).join("")}
+      </select></div>
+
+      <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Poste</div>
+      <input class="inp" style="padding:8px 10px;font-size:12px" value="${esc(emp.post||"")}" placeholder="ex: BRTCK"
+        onchange="updEmp('${emp.id}','post',this.value)"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:11px;color:${emp.chef?"#c9a227":"#4a6040"}">
+          <input type="checkbox" ${emp.chef?"checked":""} onchange="updEmp('${emp.id}','chef',this.checked)">
+          Chef de partie
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.cdpShifts&&emp.cdpShifts.length?"rgba(180,130,10,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:11px;color:${emp.cdpShifts&&emp.cdpShifts.length?"#b89010":"#4a6040"}">
+          <input type="checkbox" ${emp.cdpShifts&&emp.cdpShifts.length?"checked":""} onchange="updCDP('${emp.id}',this.checked)">
+          Shifts CDP
+        </label>
       </div>
-    </div>`;
-  }
 
-  h+=`<div class="card">`;
-  filt.forEach((emp,i)=>{
-    const tcc=tc(emp.team),isAdm=emp.id===AID;
-    const isEdit=editEmpId===emp.id;
-    h+=`<div style="${i>0?"border-top:1px solid #0a160a":""}">`;
-
-    if(isEdit){
-      // Panneau d'\u00e9dition inline
-      h+=`<div style="padding:12px;background:${tcc}08;border-left:2px solid ${tcc}50">
-        <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270f\ufe0f ${esc(emp.name)}</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-
-          <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00c9quipe</div>
-          <select class="inp" style="padding:8px 10px;font-size:12px" onchange="chTeam('${emp.id}',this.value)">
-            ${A.teams.map(function(t){return '<option value="'+t.id+'"'+(emp.team===t.id?' selected':'')+'>'+esc(t.name)+'</option>';}).join("")}
-          </select></div>
-
-          <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Poste</div>
-          <input class="inp" style="padding:8px 10px;font-size:12px" value="${esc(emp.post||"")}" placeholder="ex: BRTCK"
-            onchange="updEmp('${emp.id}','post',this.value)"></div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:11px;color:${emp.chef?"#c9a227":"#4a6040"}">
-              <input type="checkbox" ${emp.chef?"checked":""} onchange="updEmp('${emp.id}','chef',this.checked)">
-              Chef de partie
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.cdpShifts&&emp.cdpShifts.length?"rgba(180,130,10,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:11px;color:${emp.cdpShifts&&emp.cdpShifts.length?"#b89010":"#4a6040"}">
-              <input type="checkbox" ${emp.cdpShifts&&emp.cdpShifts.length?"checked":""} onchange="updCDP('${emp.id}',this.checked)">
-              Shifts CDP
-            </label>
-          </div>
-
-          ${A.user&&A.user.id===AID?`
-          <div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
-            <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-              <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Matricule</span>
-              <span style="font-size:11px;font-family:monospace;color:#c9a227;letter-spacing:2px;background:rgba(201,162,39,.08);padding:3px 8px;border-radius:5px">${esc(emp.id)}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Mot de passe</span>
-              ${A.passwords[emp.id]
-                ?`<span style="font-size:11px;font-family:monospace;color:#a0b890;background:#0c1e0e;padding:3px 8px;border-radius:5px;border:1px solid #1e3020">${esc(typeof A.passwords[emp.id]==="object"?A.passwords[emp.id].p:"(ancien format)")}</span>
-                  <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:9px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>`
-                :`<span style="font-size:10px;color:#243020;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
-            </div>
-          </div>`:""}
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn gold" onclick="editEmpId=null;dc()" style="flex:1;justify-content:center;padding:10px;font-size:12px">\u2713 Fermer</button>
-            ${!isAdm?('<button class="danger" onclick="delEmp(\''+emp.id+'\')" style="flex-shrink:0">Supprimer</button>'):""}
-          </div>
+      ${A.user&&A.user.id===AID?`
+      <div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
+        <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Matricule</span>
+          <span style="font-size:11px;font-family:monospace;color:#c9a227;letter-spacing:2px;background:rgba(201,162,39,.08);padding:3px 8px;border-radius:5px">${esc(emp.id)}</span>
         </div>
-      </div>`;
-    } else {
-      h+=`<div class="emp-row" onclick="editEmpId='${emp.id}';showAddF=false;dc()" style="cursor:pointer">
-        <div style="width:28px;height:28px;border-radius:50%;background:${tcc}15;color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${esc(emp.name[0])}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:${isAdm?700:400};color:${isAdm?"#c9a227":"#a0b090"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            ${esc(emp.name)}
-            ${isAdm?'<span class="chef-badge" style="margin-left:4px">ADMIN</span>':""}
-            ${emp.chef&&!isAdm?'<span class="chef-badge" style="margin-left:4px">CHEF</span>':""}
-          </div>
-          <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Mot de passe</span>
+          ${A.passwords[emp.id]
+            ?`<span style="font-size:11px;font-family:monospace;color:#a0b890;background:#0c1e0e;padding:3px 8px;border-radius:5px;border:1px solid #1e3020">${esc(typeof A.passwords[emp.id]==="object"?A.passwords[emp.id].p:"(ancien format)")}</span>
+              <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:9px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>`
+            :`<span style="font-size:10px;color:#243020;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
         </div>
-        <span style="font-size:14px;color:#243020;flex-shrink:0">\u203a</span>
-      </div>`;
-    }
-    h+=`</div>`;
-  });
-  return h+`</div></div>`;
+      </div>`:""}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn gold" onclick="editEmpId=null;dc()" style="flex:1;justify-content:center;padding:10px;font-size:12px">\u2713 Fermer</button>
+        ${!isAdm?('<button class="danger" onclick="delEmp(\''+emp.id+'\')" style="flex-shrink:0">Supprimer</button>'):""}
+      </div>
+    </div>
+  </div>`;
+} else {
+  h+=`<div class="emp-row" onclick="editEmpId='${emp.id}';showAddF=false;dc()" style="cursor:pointer">
+    <div style="width:28px;height:28px;border-radius:50%;background:${tcc}15;color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${esc(emp.name[0])}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:11px;font-weight:${isAdm?700:400};color:${isAdm?"#c9a227":"#a0b090"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${esc(emp.name)}
+        ${isAdm?'<span class="chef-badge" style="margin-left:4px">ADMIN</span>':""}
+        ${emp.chef&&!isAdm?'<span class="chef-badge" style="margin-left:4px">CHEF</span>':""}
+      </div>
+      <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span></div>
+    </div>
+    <span style="font-size:14px;color:#243020;flex-shrink:0">\u203a</span>
+  </div>`;
+}
+h+=`</div>`;
+```
+
+});
+return h+`</div></div>`;
 }
 
 function updEmp(id,field,val){
-  if(!A.user||A.user.id!==AID)return;
-  const e=A.employees.find(x=>x.id===id);
-  if(!e)return;
-  e[field]=val;
-  sav();
-  // Re-render inline sans fermer
-  const c=document.getElementById("content");if(c)c.innerHTML=vMain();
+if(!A.user||A.user.id!==AID)return;
+const e=A.employees.find(x=>x.id===id);
+if(!e)return;
+e[field]=val;
+sav();
+// Re-render inline sans fermer
+const c=document.getElementById(“content”);if(c)c.innerHTML=vMain();
 }
 function updCDP(id,enabled){
-  if(!A.user||A.user.id!==AID)return;
-  const e=A.employees.find(x=>x.id===id);
-  if(!e)return;
-  // Activer ou d\u00e9sactiver les shifts CDP selon le profil de l'employ\u00e9
-  const prof=EP[e.name];
-  if(enabled){
-    // CDP par d\u00e9faut selon le profil
-    const cdpBase=["16/3","20/5"];
-    e.cdpShifts=prof?prof.d.length?prof.d:cdpBase:cdpBase;
-  } else {
-    e.cdpShifts=[];
-  }
-  sav();
-  const c=document.getElementById("content");if(c)c.innerHTML=vMain();
+if(!A.user||A.user.id!==AID)return;
+const e=A.employees.find(x=>x.id===id);
+if(!e)return;
+// Activer ou d\u00e9sactiver les shifts CDP selon le profil de l’employ\u00e9
+const prof=EP[e.name];
+if(enabled){
+// CDP par d\u00e9faut selon le profil
+const cdpBase=[“16/3”,“20/5”];
+e.cdpShifts=prof?prof.d.length?prof.d:cdpBase:cdpBase;
+} else {
+e.cdpShifts=[];
+}
+sav();
+const c=document.getElementById(“content”);if(c)c.innerHTML=vMain();
 }
 
 function vImport(){
-  var iy=A.year,im=A.month;
-  var days=getDays(iy,im);
-  var key=im+"-"+iy;
-  
-  return `<div class="page">
+var iy=A.year,im=A.month;
+var days=getDays(iy,im);
+var key=im+”-”+iy;
+
+return `<div class="page">
+
   <div style="margin-bottom:14px">
     <div class="sec-title">Import Planning</div>
     <div class="sec-sub">${MFR[im]} ${iy}</div>
   </div>
 
   <!-- S\u00e9lection mois -->
+
   <div class="card" style="padding:12px;margin-bottom:10px">
     <div style="font-size:9px;color:#c9a227;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Mois</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1097,6 +1106,7 @@ function vImport(){
   </div>
 
   <!-- Import fichier CSV -->
+
   <div class="card" style="padding:14px;margin-bottom:10px;border-left:3px solid rgba(201,162,39,.5)">
     <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcc2 Fichier CSV</div>
     <div style="font-size:10px;color:#4a6040;margin-bottom:10px;line-height:1.7">
@@ -1111,6 +1121,7 @@ function vImport(){
   </div>
 
   <!-- Saisie rapide -->
+
   <div class="card" style="padding:14px;margin-bottom:10px">
     <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:4px">\u270f\ufe0f Coller ou saisir</div>
     <div style="font-size:9px;color:#3a5030;margin-bottom:8px">Collez depuis Numbers/Excel ou tapez directement</div>
@@ -1124,6 +1135,7 @@ function vImport(){
   </div>
 
   <!-- Guide PDF -->
+
   <div class="card" style="padding:14px;opacity:.8">
     <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcc4 Depuis un PDF</div>
     <div style="font-size:10px;color:#6a8a68;line-height:1.9">
@@ -1139,306 +1151,309 @@ function vImport(){
 
 // \u2500\u2500 Parser planning CMC (items avec coordonn\u00e9es X,Y) \u2500\u2500\u2500\u2500\u2500
 function parseCMCPlanningFromItems(allItems, year, month){
-  const days=getDays(year,month);
-  const validCodes=new Set(Object.keys(CODES));
+const days=getDays(year,month);
+const validCodes=new Set(Object.keys(CODES));
 
-  // \u2500\u2500 1. Grouper les items par ligne Y (tol\u00e9rance \u00b15px) \u2500\u2500
-  const sorted=[...allItems].sort((a,b)=>a.y-b.y||a.x-b.x);
-  const rows=[];
-  let curY=null;
-  sorted.forEach(item=>{
-    if(curY===null||Math.abs(item.y-curY)>5){
-      rows.push([]);curY=item.y;
-    }
-    rows[rows.length-1].push(item);
-  });
+// \u2500\u2500 1. Grouper les items par ligne Y (tol\u00e9rance \u00b15px) \u2500\u2500
+const sorted=[…allItems].sort((a,b)=>a.y-b.y||a.x-b.x);
+const rows=[];
+let curY=null;
+sorted.forEach(item=>{
+if(curY===null||Math.abs(item.y-curY)>5){
+rows.push([]);curY=item.y;
+}
+rows[rows.length-1].push(item);
+});
 
-  // \u2500\u2500 2. Trouver la ligne des jours (1-31) \u2500\u2500
-  let dayRow=null;
-  rows.forEach(row=>{
-    const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
-    if(nums.length>=20) dayRow=nums; // au moins 20 jours trouv\u00e9s sur une ligne
-  });
-  // Fallback: prendre la ligne avec le plus de chiffres 1-31
-  if(!dayRow){
-    let best=0;
-    rows.forEach(row=>{
-      const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
-      if(nums.length>best){best=nums.length;dayRow=nums;}
-    });
-  }
-  if(!dayRow||dayRow.length<5) return buildDebugCSV(allItems,"Ligne jours non trouv\u00e9e");
+// \u2500\u2500 2. Trouver la ligne des jours (1-31) \u2500\u2500
+let dayRow=null;
+rows.forEach(row=>{
+const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
+if(nums.length>=20) dayRow=nums; // au moins 20 jours trouv\u00e9s sur une ligne
+});
+// Fallback: prendre la ligne avec le plus de chiffres 1-31
+if(!dayRow){
+let best=0;
+rows.forEach(row=>{
+const nums=row.filter(i=>{const n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
+if(nums.length>best){best=nums.length;dayRow=nums;}
+});
+}
+if(!dayRow||dayRow.length<5) return buildDebugCSV(allItems,“Ligne jours non trouv\u00e9e”);
 
-  // Position X de chaque jour
-  const dayPos={};
-  dayRow.forEach(i=>dayPos[parseInt(i.txt)]=i.x);
+// Position X de chaque jour
+const dayPos={};
+dayRow.forEach(i=>dayPos[parseInt(i.txt)]=i.x);
 
-  // Tol\u00e9rance X = moiti\u00e9 espacement entre jours cons\u00e9cutifs
-  const dNums=Object.keys(dayPos).map(Number).sort((a,b)=>a-b);
-  let xTol=15;
-  if(dNums.length>=2){
-    const gaps=[];
-    for(let i=1;i<Math.min(dNums.length,8);i++){
-      const g=dayPos[dNums[i]]-dayPos[dNums[i-1]];
-      if(g>2&&g<80) gaps.push(g);
-    }
-    if(gaps.length) xTol=Math.round(gaps.reduce((a,b)=>a+b)/gaps.length*0.55);
-  }
+// Tol\u00e9rance X = moiti\u00e9 espacement entre jours cons\u00e9cutifs
+const dNums=Object.keys(dayPos).map(Number).sort((a,b)=>a-b);
+let xTol=15;
+if(dNums.length>=2){
+const gaps=[];
+for(let i=1;i<Math.min(dNums.length,8);i++){
+const g=dayPos[dNums[i]]-dayPos[dNums[i-1]];
+if(g>2&&g<80) gaps.push(g);
+}
+if(gaps.length) xTol=Math.round(gaps.reduce((a,b)=>a+b)/gaps.length*0.55);
+}
 
-  function xToDay(x){
-    let best=null,bestDist=xTol*1.8;
-    dNums.forEach(d=>{
-      const dist=Math.abs(dayPos[d]-x);
-      if(dist<bestDist){bestDist=dist;best=d;}
-    });
-    return best;
-  }
+function xToDay(x){
+let best=null,bestDist=xTol*1.8;
+dNums.forEach(d=>{
+const dist=Math.abs(dayPos[d]-x);
+if(dist<bestDist){bestDist=dist;best=d;}
+});
+return best;
+}
 
-  // \u2500\u2500 3. Trouver les lignes d'employ\u00e9s \u2500\u2500
-  // Chaque employ\u00e9 appara\u00eet comme NOM + PRENOM sur une ligne
-  const empLines=[]; // {empName, y, rowIdx}
-  rows.forEach((row,ri)=>{
-    const lineText=row.map(i=>i.txt).join(" ").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    A.employees.forEach(emp=>{
-      const eName=emp.name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-      const parts=eName.split(" ");
-      // Match si le NOM de famille appara\u00eet dans cette ligne
-      const nomMatch=parts[0]&&lineText.includes(parts[0]);
-      const prenomMatch=parts.length>1&&parts[1]&&lineText.includes(parts[1][0]);
-      if(nomMatch&&(parts.length===1||prenomMatch)){
-        const existing=empLines.find(e=>e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20);
-        if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
-      }
-    });
-  });
+// \u2500\u2500 3. Trouver les lignes d’employ\u00e9s \u2500\u2500
+// Chaque employ\u00e9 appara\u00eet comme NOM + PRENOM sur une ligne
+const empLines=[]; // {empName, y, rowIdx}
+rows.forEach((row,ri)=>{
+const lineText=row.map(i=>i.txt).join(” “).toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
+A.employees.forEach(emp=>{
+const eName=emp.name.toUpperCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
+const parts=eName.split(” “);
+// Match si le NOM de famille appara\u00eet dans cette ligne
+const nomMatch=parts[0]&&lineText.includes(parts[0]);
+const prenomMatch=parts.length>1&&parts[1]&&lineText.includes(parts[1][0]);
+if(nomMatch&&(parts.length===1||prenomMatch)){
+const existing=empLines.find(e=>e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20);
+if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
+}
+});
+});
 
-  if(empLines.length===0) return buildDebugCSV(allItems,"Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: "+allItems.slice(0,20).map(i=>i.txt).join(","));
+if(empLines.length===0) return buildDebugCSV(allItems,“Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: “+allItems.slice(0,20).map(i=>i.txt).join(”,”));
 
-  // \u2500\u2500 4. Pour chaque item avec un code valide, trouver employ\u00e9+jour \u2500\u2500
-  const planning={}; // {empName:{day:code}}
-  empLines.forEach(e=>{if(!planning[e.empName])planning[e.empName]={};});
+// \u2500\u2500 4. Pour chaque item avec un code valide, trouver employ\u00e9+jour \u2500\u2500
+const planning={}; // {empName:{day:code}}
+empLines.forEach(e=>{if(!planning[e.empName])planning[e.empName]={};});
 
-  // Construire une liste tri\u00e9e des Y d'employ\u00e9s
-  const empYs=empLines.map(e=>e.y).sort((a,b)=>a-b);
+// Construire une liste tri\u00e9e des Y d’employ\u00e9s
+const empYs=empLines.map(e=>e.y).sort((a,b)=>a-b);
 
-  allItems.forEach(item=>{
-    const raw=item.txt.trim().toUpperCase().replace(/['']/g,"'");
-    // Normaliser codes CDP
-    const code=raw.replace("*","*");
-    if(!validCodes.has(code)) return;
+allItems.forEach(item=>{
+const raw=item.txt.trim().toUpperCase().replace(/[’’]/g,”’”);
+// Normaliser codes CDP
+const code=raw.replace(”*”,”*”);
+if(!validCodes.has(code)) return;
 
-    const day=xToDay(item.x);
-    if(!day||day<1||day>days) return;
+```
+const day=xToDay(item.x);
+if(!day||day<1||day>days) return;
 
-    // Trouver l'employ\u00e9 le plus proche en Y
-    let bestEmp=null,bestDist=30;
-    empLines.forEach(el=>{
-      const d=Math.abs(el.y-item.y);
-      if(d<bestDist){bestDist=d;bestEmp=el.empName;}
-    });
-    if(bestEmp) planning[bestEmp][day]=code;
-  });
+// Trouver l'employ\u00e9 le plus proche en Y
+let bestEmp=null,bestDist=30;
+empLines.forEach(el=>{
+  const d=Math.abs(el.y-item.y);
+  if(d<bestDist){bestDist=d;bestEmp=el.empName;}
+});
+if(bestEmp) planning[bestEmp][day]=code;
+```
 
-  // \u2500\u2500 5. Construire CSV \u2500\u2500
-  const found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
-  if(!found.length) return buildDebugCSV(allItems,"Codes trouv\u00e9s mais pas associ\u00e9s. DayPos: "+JSON.stringify(dayPos).slice(0,100));
+});
 
-  const header="NOM,"+Array.from({length:days},(_,i)=>i+1).join(",");
-  return [header,...found.map(name=>[name,...Array.from({length:days},(_,i)=>planning[name][i+1]||"")].join(","))].join("\n");
+// \u2500\u2500 5. Construire CSV \u2500\u2500
+const found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
+if(!found.length) return buildDebugCSV(allItems,“Codes trouv\u00e9s mais pas associ\u00e9s. DayPos: “+JSON.stringify(dayPos).slice(0,100));
+
+const header=“NOM,”+Array.from({length:days},(*,i)=>i+1).join(”,”);
+return [header,…found.map(name=>[name,…Array.from({length:days},(*,i)=>planning[name][i+1]||””)].join(”,”))].join(”\n”);
 }
 
 // Compat ancien appel
 function parseCMCPlanningFromRows(rows,year,month){
-  const allItems=rows.flat();
-  return parseCMCPlanningFromItems(allItems,year,month);
+const allItems=rows.flat();
+return parseCMCPlanningFromItems(allItems,year,month);
 }
 
 function buildDebugCSV(items,reason){
-  const lines=["# DEBUG: "+reason];
-  // Afficher les 40 premiers items distincts
-  const seen=new Set();
-  items.slice(0,200).forEach(i=>{if(!seen.has(i.txt)&&i.txt.length<20){seen.add(i.txt);lines.push("x="+i.x+",y="+i.y+",txt="+i.txt);}});
-  return lines.join("\n");
+const lines=[”# DEBUG: “+reason];
+// Afficher les 40 premiers items distincts
+const seen=new Set();
+items.slice(0,200).forEach(i=>{if(!seen.has(i.txt)&&i.txt.length<20){seen.add(i.txt);lines.push(“x=”+i.x+”,y=”+i.y+”,txt=”+i.txt);}});
+return lines.join(”\n”);
 }
 
 function handleFileImport(input){
-  if(!input.files||!input.files[0]) return;
-  var file=input.files[0];
-  var info=document.getElementById("fileInfo");
-  if(info) info.innerHTML='<span style="color:#c9a227">\u23f3 Lecture de '+file.name+'...</span>';
+if(!input.files||!input.files[0]) return;
+var file=input.files[0];
+var info=document.getElementById(“fileInfo”);
+if(info) info.innerHTML=’<span style="color:#c9a227">\u23f3 Lecture de ‘+file.name+’…</span>’;
 
-  // D\u00e9tecter mois/ann\u00e9e depuis le nom
-  var s=file.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  var MOIS={"janvier":0,"fevrier":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11};
-  var detM=-1,detY=-1;
-  Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
-  var ym=s.match(/20(2[0-9]|3[0-9])/);
-  if(ym) detY=parseInt(ym[0]);
-  if(detM>=0){var sm=document.getElementById("impM");if(sm)sm.value=String(detM);}
-  if(detY>0){var sy=document.getElementById("impY");if(sy)sy.value=String(detY);}
+// D\u00e9tecter mois/ann\u00e9e depuis le nom
+var s=file.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
+var MOIS={“janvier”:0,“fevrier”:1,“mars”:2,“avril”:3,“mai”:4,“juin”:5,“juillet”:6,“aout”:7,“septembre”:8,“octobre”:9,“novembre”:10,“decembre”:11};
+var detM=-1,detY=-1;
+Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
+var ym=s.match(/20(2[0-9]|3[0-9])/);
+if(ym) detY=parseInt(ym[0]);
+if(detM>=0){var sm=document.getElementById(“impM”);if(sm)sm.value=String(detM);}
+if(detY>0){var sy=document.getElementById(“impY”);if(sy)sy.value=String(detY);}
 
-  var r=new FileReader();
-  r.onload=function(e){
-    var txt=e.target.result;
-    if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
-    var ta=document.getElementById("impTxt");
-    if(ta) ta.value=txt;
-    var n=txt.split("\n").filter(function(l){return l.trim();}).length;
-    if(info) info.innerHTML='<span style="color:#3a8a50">\u2705 '+file.name+' \u2014 '+n+' lignes</span>';
-    setTimeout(function(){doImport();},100);
-  };
-  r.onerror=function(){
-    if(info) info.innerHTML='<span style="color:#c04040">\u274c Erreur lecture \u2014 ce format nest pas support\u00e9 directement</span>';
-  };
-  r.readAsText(file,"UTF-8");
+var r=new FileReader();
+r.onload=function(e){
+var txt=e.target.result;
+if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+var ta=document.getElementById(“impTxt”);
+if(ta) ta.value=txt;
+var n=txt.split(”\n”).filter(function(l){return l.trim();}).length;
+if(info) info.innerHTML=’<span style="color:#3a8a50">\u2705 ‘+file.name+’ \u2014 ‘+n+’ lignes</span>’;
+setTimeout(function(){doImport();},100);
+};
+r.onerror=function(){
+if(info) info.innerHTML=’<span style="color:#c04040">\u274c Erreur lecture \u2014 ce format nest pas support\u00e9 directement</span>’;
+};
+r.readAsText(file,“UTF-8”);
 }
 
-
 function doImport(){
-  if(!A.user||A.user.id!==AID)return;
-  const txt=(document.getElementById("impTxt")||{}).value||"";
-  const iy=parseInt((document.getElementById("impY")||{}).value||A.year);
-  const im=parseInt((document.getElementById("impM")||{}).value||A.month);
-  if(!txt){toast("Aucun contenu","err");return;}
-  const lines=txt.split("\n").map(l=>l.trim()).filter(Boolean);
-  if(lines.length<2){toast("Format invalide","err");return;}
-  const sep=lines[0].includes("\t")?"\t":",";
-  const key=`${iy}-${im}`;
-  if(!A.overrides[key])A.overrides[key]={};
-  // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
-  const refData={year:iy,month:im,rows:{},importedAt:Date.now()};
-  let ok=0,err=0,errLines=[];
-  for(let li=1;li<lines.length;li++){
-    const parts=lines[li].split(sep);
-    const name=parts[0].trim().toUpperCase();
-    const emp=A.employees.find(e=>e.name===name);
-    if(!emp){err++;errLines.push("Inconnu: "+name);continue;}
-    refData.rows[emp.id]={};
-    for(let di=1;di<parts.length;di++){
-      const code=parts[di].trim().toUpperCase();
-      if(!code||code==="0"||code==="-")continue;
-      if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
-      if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
-      A.overrides[key][emp.id][di]=code;
-      refData.rows[emp.id][di]=code;
-      ok++;
-    }
-  }
-  ls("cmc_ov",A.overrides);
-  // Sauver la r\u00e9f\u00e9rence d'import pour v\u00e9rification
-  ls("cmc_ref_"+key,refData);
-  A.lastImportKey=key;
-  // Lancer la v\u00e9rification automatique
-  const verif=runVerification(iy,im,refData);
-  A.lastVerif=verif;
-  ls("cmc_verif_"+key,verif);
-  const r=document.getElementById("impRes");
-  const verifTxt=verif.errors.length>0
-    ?` \u26a0\ufe0f ${verif.errors.length} ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide`
-    :` \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent`;
-  if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules import\u00e9es${err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":""} \u2192 ${MFR[im]} ${iy}</div>`+
-    `<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
-    (verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" \u00b7 ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:"");
-  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s) d\u00e9tect\u00e9e(s)':'\u2705 Import v\u00e9rifi\u00e9 \u2014 '+ok+' cellules');
-  if(errLines.length>0) errLines.forEach(e=>console.warn("Import:",e));
+if(!A.user||A.user.id!==AID)return;
+const txt=(document.getElementById(“impTxt”)||{}).value||””;
+const iy=parseInt((document.getElementById(“impY”)||{}).value||A.year);
+const im=parseInt((document.getElementById(“impM”)||{}).value||A.month);
+if(!txt){toast(“Aucun contenu”,“err”);return;}
+const lines=txt.split(”\n”).map(l=>l.trim()).filter(Boolean);
+if(lines.length<2){toast(“Format invalide”,“err”);return;}
+const sep=lines[0].includes(”\t”)?”\t”:”,”;
+const key=`${iy}-${im}`;
+if(!A.overrides[key])A.overrides[key]={};
+// Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
+const refData={year:iy,month:im,rows:{},importedAt:Date.now()};
+let ok=0,err=0,errLines=[];
+for(let li=1;li<lines.length;li++){
+const parts=lines[li].split(sep);
+const name=parts[0].trim().toUpperCase();
+const emp=A.employees.find(e=>e.name===name);
+if(!emp){err++;errLines.push(“Inconnu: “+name);continue;}
+refData.rows[emp.id]={};
+for(let di=1;di<parts.length;di++){
+const code=parts[di].trim().toUpperCase();
+if(!code||code===“0”||code===”-”)continue;
+if(code&&!CODES[code]){err++;errLines.push(name+” j”+di+”:code inconnu ‘”+code+”’”);continue;}
+if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
+A.overrides[key][emp.id][di]=code;
+refData.rows[emp.id][di]=code;
+ok++;
+}
+}
+ls(“cmc_ov”,A.overrides);
+// Sauver la r\u00e9f\u00e9rence d’import pour v\u00e9rification
+ls(“cmc_ref_”+key,refData);
+A.lastImportKey=key;
+// Lancer la v\u00e9rification automatique
+const verif=runVerification(iy,im,refData);
+A.lastVerif=verif;
+ls(“cmc_verif_”+key,verif);
+const r=document.getElementById(“impRes”);
+const verifTxt=verif.errors.length>0
+?` \u26a0\ufe0f ${verif.errors.length} ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide`
+:` \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent`;
+if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules import\u00e9es${err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":""} \u2192 ${MFR[im]} ${iy}</div>`+
+`<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
+(verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" \u00b7 ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:””);
+toast(verif.errors.length?’\u26a0\ufe0f ‘+verif.errors.length+’ erreur(s) d\u00e9tect\u00e9e(s)’:’\u2705 Import v\u00e9rifi\u00e9 \u2014 ‘+ok+’ cellules’);
+if(errLines.length>0) errLines.forEach(e=>console.warn(“Import:”,e));
 }
 
 // \u2500\u2500 MOTEUR DE V\u00c9RIFICATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function runVerification(year,month,refData){
-  const pl=gpl(); // planning tel qu'affich\u00e9 dans l'app
-  const ref=refData||lg("cmc_ref_"+year+"-"+month,null);
-  const result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
-  if(!ref||!ref.rows){result.warnings.push({msg:"Aucune r\u00e9f\u00e9rence d'import pour ce mois"});return result;}
-  const days=getDays(year,month);
-  // Pour chaque employ\u00e9 dans la r\u00e9f\u00e9rence
-  Object.keys(ref.rows).forEach(empId=>{
-    const emp=A.employees.find(e=>e.id===empId);
-    if(!emp){result.warnings.push({msg:"Employ\u00e9 "+empId+" introuvable dans la liste"});return;}
-    const refRow=ref.rows[empId];
-    const plRow=pl[empId]||{};
-    Object.keys(refRow).forEach(d=>{
-      const refCode=refRow[d];
-      const plCode=plRow[parseInt(d)]||"";
-      if(refCode!==plCode){
-        result.errors.push({
-          empId,empName:emp.name,day:parseInt(d),
-          refCode,plCode,
-          msg:`${emp.name} j${d}: planning="${plCode||"vide"}" \u2260 r\u00e9f\u00e9rence="${refCode}"`
-        });
-      } else {
-        result.ok.push({empId,day:d,code:refCode});
-      }
-    });
-    // V\u00e9rifier les jours du planning non couverts par la r\u00e9f\u00e9rence
-    Object.keys(plRow).forEach(d=>{
-      if(!refRow[d]&&plRow[d]&&plRow[d]!=="RH"&&plRow[d]!=="R"){
-        // Jour travaill\u00e9 dans le planning mais absent de la r\u00e9f\u00e9rence
-        // C'est normal si la r\u00e9f\u00e9rence ne couvre pas tous les jours
-      }
-    });
-  });
-  result.summary={
-    total:result.ok.length+result.errors.length,
-    correct:result.ok.length,
-    errors:result.errors.length,
-    coverage:Math.round(result.ok.length/(result.ok.length+result.errors.length+.001)*100)
-  };
-  return result;
+const pl=gpl(); // planning tel qu’affich\u00e9 dans l’app
+const ref=refData||lg(“cmc_ref_”+year+”-”+month,null);
+const result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
+if(!ref||!ref.rows){result.warnings.push({msg:“Aucune r\u00e9f\u00e9rence d’import pour ce mois”});return result;}
+const days=getDays(year,month);
+// Pour chaque employ\u00e9 dans la r\u00e9f\u00e9rence
+Object.keys(ref.rows).forEach(empId=>{
+const emp=A.employees.find(e=>e.id===empId);
+if(!emp){result.warnings.push({msg:“Employ\u00e9 “+empId+” introuvable dans la liste”});return;}
+const refRow=ref.rows[empId];
+const plRow=pl[empId]||{};
+Object.keys(refRow).forEach(d=>{
+const refCode=refRow[d];
+const plCode=plRow[parseInt(d)]||””;
+if(refCode!==plCode){
+result.errors.push({
+empId,empName:emp.name,day:parseInt(d),
+refCode,plCode,
+msg:`${emp.name} j${d}: planning="${plCode||"vide"}" \u2260 r\u00e9f\u00e9rence="${refCode}"`
+});
+} else {
+result.ok.push({empId,day:d,code:refCode});
+}
+});
+// V\u00e9rifier les jours du planning non couverts par la r\u00e9f\u00e9rence
+Object.keys(plRow).forEach(d=>{
+if(!refRow[d]&&plRow[d]&&plRow[d]!==“RH”&&plRow[d]!==“R”){
+// Jour travaill\u00e9 dans le planning mais absent de la r\u00e9f\u00e9rence
+// C’est normal si la r\u00e9f\u00e9rence ne couvre pas tous les jours
+}
+});
+});
+result.summary={
+total:result.ok.length+result.errors.length,
+correct:result.ok.length,
+errors:result.errors.length,
+coverage:Math.round(result.ok.length/(result.ok.length+result.errors.length+.001)*100)
+};
+return result;
 }
 
 function verifyCurrentMonth(){
-  const key=A.year+"-"+A.month;
-  const ref=lg("cmc_ref_"+key,null);
-  if(!ref){return null;}
-  const v=runVerification(A.year,A.month,ref);
-  A.lastVerif=v;
-  ls("cmc_verif_"+key,v);
-  return v;
+const key=A.year+”-”+A.month;
+const ref=lg(“cmc_ref_”+key,null);
+if(!ref){return null;}
+const v=runVerification(A.year,A.month,ref);
+A.lastVerif=v;
+ls(“cmc_verif_”+key,v);
+return v;
 }
 
 function openPicker(eid,day,el){
-  if(!A.user||A.user.id!==AID)return;
-  A.pt={eid,day};
-  const pl=gpl(),cur=(pl[eid]||{})[day]||"";
-  const pk=document.getElementById("pk");
-  pk.innerHTML=CK.map(c=>{
-    const ci=CODES[c];
-    return `<div class="pb${c===cur?" cur":""}" style="color:${ci.c};border-color:${c===cur?"#c9a227":ci.b}" onclick="pc('${c}')">${c}</div>`;
-  }).join("")+`<div class="pclr" onclick="pc('')">\u2715 Effacer</div>`;
-  const rect=el.getBoundingClientRect();
-  let left=rect.left+rect.width/2-84,top=rect.bottom+5;
-  if(left<4)left=4;if(left+168>window.innerWidth-4)left=window.innerWidth-172;
-  if(top+230>window.innerHeight-75)top=rect.top-235;
-  pk.style.cssText=`display:flex;left:${left}px;top:${top}px`;
-  document.getElementById("ov").style.display="block";
+if(!A.user||A.user.id!==AID)return;
+A.pt={eid,day};
+const pl=gpl(),cur=(pl[eid]||{})[day]||””;
+const pk=document.getElementById(“pk”);
+pk.innerHTML=CK.map(c=>{
+const ci=CODES[c];
+return `<div class="pb${c===cur?" cur":""}" style="color:${ci.c};border-color:${c===cur?"#c9a227":ci.b}" onclick="pc('${c}')">${c}</div>`;
+}).join(””)+`<div class="pclr" onclick="pc('')">\u2715 Effacer</div>`;
+const rect=el.getBoundingClientRect();
+let left=rect.left+rect.width/2-84,top=rect.bottom+5;
+if(left<4)left=4;if(left+168>window.innerWidth-4)left=window.innerWidth-172;
+if(top+230>window.innerHeight-75)top=rect.top-235;
+pk.style.cssText=`display:flex;left:${left}px;top:${top}px`;
+document.getElementById(“ov”).style.display=“block”;
 }
-function closePicker(){document.getElementById("pk").style.display="none";document.getElementById("ov").style.display="none";A.pt=null;}
+function closePicker(){document.getElementById(“pk”).style.display=“none”;document.getElementById(“ov”).style.display=“none”;A.pt=null;}
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
-function uT(id,f,v){if(!A.user||A.user.id!==AID)return;const t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls("cmc_t",A.teams);}}
+function uT(id,f,v){if(!A.user||A.user.id!==AID)return;const t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls(“cmc_t”,A.teams);}}
 function chTeam(id,team){if(!A.user||A.user.id!==AID)return;const e=A.employees.find(x=>x.id===id);if(e){e.team=team;sav();}}
-function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast("Employ\u00e9 supprim\u00e9");dc();}
+function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast(“Employ\u00e9 supprim\u00e9”);dc();}
 function addEmp(){
-  if(!A.user||A.user.id!==AID)return;
-  let id=(document.getElementById("nid")||{}).value||"";
-  const name=(document.getElementById("nname")||{}).value||"";
-  const team=(document.getElementById("nteam")||{}).value||"1";
-  const post=(document.getElementById("npost")||{}).value||"";
-  const chef=document.getElementById("nchef")?document.getElementById("nchef").checked:false;
-  if(!id||!name){toast("Remplissez tous les champs","err");return;}
-  id=id.trim().toUpperCase();
-  if(A.employees.find(e=>e.id===id)){toast("Matricule d\u00e9j\u00e0 existant","err");return;}
-  A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
-  sav();toast("Employ\u00e9 ajout\u00e9 !");showAddF=false;dc();
+if(!A.user||A.user.id!==AID)return;
+let id=(document.getElementById(“nid”)||{}).value||””;
+const name=(document.getElementById(“nname”)||{}).value||””;
+const team=(document.getElementById(“nteam”)||{}).value||“1”;
+const post=(document.getElementById(“npost”)||{}).value||””;
+const chef=document.getElementById(“nchef”)?document.getElementById(“nchef”).checked:false;
+if(!id||!name){toast(“Remplissez tous les champs”,“err”);return;}
+id=id.trim().toUpperCase();
+if(A.employees.find(e=>e.id===id)){toast(“Matricule d\u00e9j\u00e0 existant”,“err”);return;}
+A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
+sav();toast(“Employ\u00e9 ajout\u00e9 !”);showAddF=false;dc();
 }
 
 /* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-   ASSISTANT IA CMC \u2014 moteur de r\u00e9ponses
+ASSISTANT IA CMC \u2014 moteur de r\u00e9ponses
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 var iaHistory=[];
 
 function vIA(){
-  const isAdm=A.user&&A.user.id===AID;
-  let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
+const isAdm=A.user&&A.user.id===AID;
+let h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
+
   <div style="padding:10px 14px;border-bottom:1px solid #1e3020;flex-shrink:0;background:#0a180c">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
@@ -1452,36 +1467,20 @@ function vIA(){
   </div>
   <div id="iaMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px">`;
 
-  if(!iaHistory.length){
-    h+=`<div style="text-align:center;padding:20px 10px">
-      <div style="font-size:28px;margin-bottom:8px">\u2666</div>
-      <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00e9s,<br>\u00e9quipes, codes horaires et le planning.</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${["Qui travaille ce soir en \u00e9quipe 3 ?",
-           "V\u00e9rifie le planning du mois",
-           "Quels sont les horaires 22/6 ?",
-           "Qui est chef de l'\u00e9quipe 1 ?",
-           "Montre-moi le planning de DESSI F",
-           "Erreurs dans le planning ?"
-          ].map(q=>`<button onclick="iaSend('${q.replace(/'/g,"\\'")}')" style="background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left">${q}</button>`).join("")}
-      </div>
-    </div>`;
-  }
+if(!iaHistory.length){
+h+=`<div style="text-align:center;padding:20px 10px"> <div style="font-size:28px;margin-bottom:8px">\u2666</div> <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00e9s,<br>\u00e9quipes, codes horaires et le planning.</div> <div style="display:flex;flex-direction:column;gap:6px"> ${["Qui travaille ce soir en \u00e9quipe 3 ?", "V\u00e9rifie le planning du mois", "Quels sont les horaires 22/6 ?", "Qui est chef de l'\u00e9quipe 1 ?", "Montre-moi le planning de DESSI F", "Erreurs dans le planning ?" ].map(q=>`<button onclick=“iaSend(’${q.replace(/’/g,”\’”)}’)” style=“background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left”>${q}</button>`).join("")} </div> </div>`;
+}
 
-  iaHistory.forEach(msg=>{
-    if(msg.role==="user"){
-      h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%">
-        <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div>
-      </div>`;
-    } else {
-      h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%">
-        <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">\ud83e\udd16 Assistant CMC</div>
-        <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div>
-      </div>`;
-    }
-  });
+iaHistory.forEach(msg=>{
+if(msg.role===“user”){
+h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%"> <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div> </div>`;
+} else {
+h+=`<div style="align-self:flex-start;background:#0e2010;border:1px solid #1e3020;border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:92%"> <div style="font-size:9px;font-weight:700;color:#c9a227;margin-bottom:4px">\ud83e\udd16 Assistant CMC</div> <div style="font-size:12px;color:#90a880;line-height:1.55">${msg.html}</div> </div>`;
+}
+});
 
-  h+=`</div>
+h+=`</div>
+
   <div style="padding:9px 14px;border-top:1px solid #1e3020;display:flex;gap:8px;background:#0a180c;flex-shrink:0">
     <input id="iaIn" class="inp" style="flex:1;padding:9px 12px;font-size:13px;background:#0c1e0e"
       placeholder="Posez votre question..."
@@ -1493,35 +1492,36 @@ function vIA(){
 }
 
 function iaCheckNow(){
-  const v=verifyCurrentMonth();
-  if(!v){
-    iaHistory.push({role:"user",text:"V\u00e9rifier le planning "+MFR[A.month]+" "+A.year});
-    iaHistory.push({role:"bot",html:`<span style="color:#c9a227">\u26a0\ufe0f Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin \u2192 Import planning</strong> pour importer un planning CSV, puis je le v\u00e9rifierai automatiquement.`});
-    dc();setTimeout(()=>{const m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
-    return;
-  }
-  iaHistory.push({role:"user",text:"V\u00e9rifier le planning "+MFR[A.month]+" "+A.year});
-  iaHistory.push({role:"bot",html:formatVerifReport(v)});
-  sv("ia");
-  setTimeout(()=>{const m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},80);
+const v=verifyCurrentMonth();
+if(!v){
+iaHistory.push({role:“user”,text:“V\u00e9rifier le planning “+MFR[A.month]+” “+A.year});
+iaHistory.push({role:“bot”,html:`<span style="color:#c9a227">\u26a0\ufe0f Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin \u2192 Import planning</strong> pour importer un planning CSV, puis je le v\u00e9rifierai automatiquement.`});
+dc();setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
+return;
+}
+iaHistory.push({role:“user”,text:“V\u00e9rifier le planning “+MFR[A.month]+” “+A.year});
+iaHistory.push({role:“bot”,html:formatVerifReport(v)});
+sv(“ia”);
+setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},80);
 }
 
 function formatVerifReport(v){
-  if(!v) return "Aucune v\u00e9rification disponible.";
-  const pct=v.summary?v.summary.coverage:0;
-  const barColor=pct>=95?"#3a8a50":pct>=80?"#c9a227":"#c04040";
-  let h=`<div style="margin-bottom:8px">
-    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">\ud83d\udd0d V\u00e9rification planning \u2014 ${MFR[v.month]} ${v.year}</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <div style="flex:1;height:6px;background:#0c1e0e;border-radius:3px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
-      </div>
-      <span style="font-size:10px;font-weight:700;color:${barColor}">${pct}%</span>
-    </div>
-    <div style="font-size:10px;color:#6a8a68">
-      \u2705 ${v.summary?v.summary.correct:0} cellules correctes &nbsp;\u00b7&nbsp;
-      ${v.errors.length>0?'<span style="color:#c9a227">\u26a0\ufe0f '+v.errors.length+' erreur(s)</span>':'<span style="color:#3a8a50">\u2705 0 erreur</span>'}
-    </div>
+if(!v) return “Aucune v\u00e9rification disponible.”;
+const pct=v.summary?v.summary.coverage:0;
+const barColor=pct>=95?”#3a8a50”:pct>=80?”#c9a227”:”#c04040”;
+let h=`<div style="margin-bottom:8px">
+<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:6px">\ud83d\udd0d V\u00e9rification planning \u2014 ${MFR[v.month]} ${v.year}</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="flex:1;height:6px;background:#0c1e0e;border-radius:3px;overflow:hidden">
+<div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
+</div>
+<span style="font-size:10px;font-weight:700;color:${barColor}">${pct}%</span>
+</div>
+<div style="font-size:10px;color:#6a8a68">
+\u2705 ${v.summary?v.summary.correct:0} cellules correctes  \u00b7 
+${v.errors.length>0?’<span style="color:#c9a227">\u26a0\ufe0f ‘+v.errors.length+’ erreur(s)</span>’:’<span style="color:#3a8a50">\u2705 0 erreur</span>’}
+</div>
+
   </div>`;
   if(v.errors.length===0){
     h+=`<div style="padding:8px;background:#061c0a;border:1px solid #1a4020;border-radius:7px;font-size:11px;color:#3a8a50;font-weight:700">
@@ -1565,23 +1565,24 @@ function formatVerifReport(v){
 var pendingFix=null;
 
 function iaAskCorrect(){
-  if(!A.lastVerif||!A.lastVerif.errors.length) return;
-  pendingFix=A.lastVerif;
-  const n=pendingFix.errors.length;
-  // R\u00e9sum\u00e9 des corrections \u00e0 faire
-  const byEmp={};
-  pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
-  const summary=Object.keys(byEmp).slice(0,5).map(n=>n+" ("+byEmp[n]+"j)").join(", ");
-  let h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
-    <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
-    <div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
-      Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00e9 :<br>
-      <strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?" ...":""}</strong>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:#1a3a1e;border:1px solid #2a6030;border-radius:8px;font-size:11px;color:#3a8a50;font-weight:700;cursor:pointer">\u2705 Oui, corriger</button>
-      <button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#3a5030;cursor:pointer">\u2715 Annuler</button>
-    </div>
+if(!A.lastVerif||!A.lastVerif.errors.length) return;
+pendingFix=A.lastVerif;
+const n=pendingFix.errors.length;
+// R\u00e9sum\u00e9 des corrections \u00e0 faire
+const byEmp={};
+pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
+const summary=Object.keys(byEmp).slice(0,5).map(n=>n+” (”+byEmp[n]+“j)”).join(”, “);
+let h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
+<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
+<div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
+Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00e9 :<br>
+<strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?” …”:””}</strong>
+</div>
+<div style="display:flex;gap:6px">
+<button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:#1a3a1e;border:1px solid #2a6030;border-radius:8px;font-size:11px;color:#3a8a50;font-weight:700;cursor:pointer">\u2705 Oui, corriger</button>
+<button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#3a5030;cursor:pointer">\u2715 Annuler</button>
+</div>
+
   </div>`;
   iaHistory.push({role:"user",text:"Corriger les erreurs du planning"});
   iaHistory.push({role:"bot",html:h});
@@ -1590,264 +1591,248 @@ function iaAskCorrect(){
 }
 
 function iaCancelFix(){
-  pendingFix=null;
-  iaHistory.push({role:"bot",html:"<span style='color:#3a5030'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>"});
-  dc();
-  setTimeout(()=>{const m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+pendingFix=null;
+iaHistory.push({role:“bot”,html:”<span style='color:#3a5030'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>”});
+dc();
+setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaConfirmCorrect(){
-  if(!A.user||A.user.id!==AID){toast("Action r\u00e9serv\u00e9e \u00e0 l'admin","err");return;}
-  if(!pendingFix||!pendingFix.errors.length){
-    iaHistory.push({role:"bot",html:"Aucune erreur \u00e0 corriger."});
-    dc();return;
-  }
-  const errors=pendingFix.errors;
-  let fixed=0,skipped=0;
-  const details=[];
-  errors.forEach(e=>{
-    if(!e.refCode||!CODES[e.refCode]){skipped++;return;}
-    saveOv(e.empId,e.day,e.refCode);
-    fixed++;
-    details.push({name:e.empName,day:e.day,old:e.plCode,new:e.refCode});
-  });
-  // Re-v\u00e9rifier apr\u00e8s correction
-  const key=pendingFix.year+"-"+pendingFix.month;
-  const ref=lg("cmc_ref_"+key,null);
-  const recheck=ref?runVerification(pendingFix.year,pendingFix.month,ref):null;
-  A.lastVerif=recheck;
-  pendingFix=null;
-  // R\u00e9sum\u00e9
-  let h=`<div>
-    <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">\u2705 ${fixed} correction(s) appliqu\u00e9e(s)</div>`;
-  if(details.length>0){
-    h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
-    details.slice(0,8).forEach(d=>{
-      const ciO=CODES[d.old]||{c:"#c04040"};
-      const ciN=CODES[d.new]||{c:"#3a8a50"};
-      h+=`<div style="font-size:9px;color:#6a8a68">
-        ${esc(d.name)} j${d.day} :
-        <span style="color:${ciO.c};text-decoration:line-through">${d.old||"vide"}</span>
-        \u2192 <span style="color:${ciN.c};font-weight:700">${d.new}</span>
-      </div>`;
-    });
-    if(details.length>8) h+=`<div style="font-size:9px;color:#2a4028">...et ${details.length-8} autre(s)</div>`;
-    h+=`</div>`;
-  }
-  if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f ${skipped} cellule(s) non corrig\u00e9e(s) \u2014 code invalide</div>`;
-  if(recheck){
-    h+=recheck.errors.length===0
-      ?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">\u2705 V\u00e9rification apr\u00e8s correction : aucune erreur restante !</div>`
-      :`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">\u26a0\ufe0f ${recheck.errors.length} erreur(s) encore pr\u00e9sente(s) \u2014 relancez la v\u00e9rification pour les voir.</div>`;
-  }
-  h+=`</div>`;
-  iaHistory.push({role:"bot",html:h});
-  dc();
-  setTimeout(()=>{const m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
-  toast("\u2705 "+fixed+" correction(s) appliqu\u00e9e(s)");
+if(!A.user||A.user.id!==AID){toast(“Action r\u00e9serv\u00e9e \u00e0 l’admin”,“err”);return;}
+if(!pendingFix||!pendingFix.errors.length){
+iaHistory.push({role:“bot”,html:“Aucune erreur \u00e0 corriger.”});
+dc();return;
+}
+const errors=pendingFix.errors;
+let fixed=0,skipped=0;
+const details=[];
+errors.forEach(e=>{
+if(!e.refCode||!CODES[e.refCode]){skipped++;return;}
+saveOv(e.empId,e.day,e.refCode);
+fixed++;
+details.push({name:e.empName,day:e.day,old:e.plCode,new:e.refCode});
+});
+// Re-v\u00e9rifier apr\u00e8s correction
+const key=pendingFix.year+”-”+pendingFix.month;
+const ref=lg(“cmc_ref_”+key,null);
+const recheck=ref?runVerification(pendingFix.year,pendingFix.month,ref):null;
+A.lastVerif=recheck;
+pendingFix=null;
+// R\u00e9sum\u00e9
+let h=`<div> <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">\u2705 ${fixed} correction(s) appliqu\u00e9e(s)</div>`;
+if(details.length>0){
+h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
+details.slice(0,8).forEach(d=>{
+const ciO=CODES[d.old]||{c:”#c04040”};
+const ciN=CODES[d.new]||{c:”#3a8a50”};
+h+=`<div style="font-size:9px;color:#6a8a68"> ${esc(d.name)} j${d.day} : <span style="color:${ciO.c};text-decoration:line-through">${d.old||"vide"}</span> \u2192 <span style="color:${ciN.c};font-weight:700">${d.new}</span> </div>`;
+});
+if(details.length>8) h+=`<div style="font-size:9px;color:#2a4028">...et ${details.length-8} autre(s)</div>`;
+h+=`</div>`;
+}
+if(skipped>0) h+=`<div style="font-size:9px;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f ${skipped} cellule(s) non corrig\u00e9e(s) \u2014 code invalide</div>`;
+if(recheck){
+h+=recheck.errors.length===0
+?`<div style="padding:6px 10px;background:#061c0a;border:1px solid #1a4020;border-radius:6px;font-size:10px;color:#3a8a50;font-weight:700">\u2705 V\u00e9rification apr\u00e8s correction : aucune erreur restante !</div>`
+:`<div style="padding:6px 10px;background:#0e1808;border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:10px;color:#c9a227">\u26a0\ufe0f ${recheck.errors.length} erreur(s) encore pr\u00e9sente(s) \u2014 relancez la v\u00e9rification pour les voir.</div>`;
+}
+h+=`</div>`;
+iaHistory.push({role:“bot”,html:h});
+dc();
+setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
+toast(”\u2705 “+fixed+” correction(s) appliqu\u00e9e(s)”);
 }
 
 function iaSend(preset){
-  const inp=document.getElementById("iaIn");
-  const text=preset||(inp?inp.value.trim():"");
-  if(!text)return;
-  if(inp)inp.value="";
-  iaHistory.push({role:"user",text});
-  const reply=iaRespond(text);
-  if(reply!==null) iaHistory.push({role:"bot",html:reply});
-  dc();
-  setTimeout(()=>{const m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+const inp=document.getElementById(“iaIn”);
+const text=preset||(inp?inp.value.trim():””);
+if(!text)return;
+if(inp)inp.value=””;
+iaHistory.push({role:“user”,text});
+const reply=iaRespond(text);
+if(reply!==null) iaHistory.push({role:“bot”,html:reply});
+dc();
+setTimeout(()=>{const m=document.getElementById(“iaMsgs”);if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaClearHistory(){iaHistory=[];dc();}
 
 function iaRespond(q){
-  const ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  const pl=gpl();
-  const isAdm=A.user&&A.user.id===AID;
+const ql=q.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””);
+const pl=gpl();
+const isAdm=A.user&&A.user.id===AID;
 
-  // \u2500\u2500 Planning d'un employ\u00e9 \u2500\u2500
-  const empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
-  if(empMatch&&(ql.includes("planning")||ql.includes("horaire")||ql.includes("mois")||ql.includes("travail"))){
-    const p=pl[empMatch.id]||{};
-    const days=getDays(A.year,A.month);
-    let rows="";
-    for(let d=1;d<=days;d++){
-      const code=p[d]||"\u2014";
-      const ci=CODES[code];
-      if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
-    }
-    const trav=Object.values(p).filter(v=>v&&v!=="RH"&&v!=="R").length;
-    const team=gt(empMatch.team);
-    return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> \u2014 ${esc(team?team.name:"")} \u2014 ${trav}j travaill\u00e9s en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouv\u00e9"}`;
-  }
+// \u2500\u2500 Planning d’un employ\u00e9 \u2500\u2500
+const empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””)));
+if(empMatch&&(ql.includes(“planning”)||ql.includes(“horaire”)||ql.includes(“mois”)||ql.includes(“travail”))){
+const p=pl[empMatch.id]||{};
+const days=getDays(A.year,A.month);
+let rows=””;
+for(let d=1;d<=days;d++){
+const code=p[d]||”\u2014”;
+const ci=CODES[code];
+if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
+}
+const trav=Object.values(p).filter(v=>v&&v!==“RH”&&v!==“R”).length;
+const team=gt(empMatch.team);
+return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> \u2014 ${esc(team?team.name:"")} \u2014 ${trav}j travaill\u00e9s en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouv\u00e9"}`;
+}
 
-  // \u2500\u2500 Qui travaille ce soir / aujourd'hui \u2500\u2500
-  if(ql.includes("travaille")||ql.includes("travail")||ql.includes("service")||ql.includes("soir")||ql.includes("nuit")||ql.includes("aujourd")){
-    const today=new Date().getDate();
-    const tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
-    if(tYear===A.year&&tMonth===A.month){
-      const workers=A.employees.filter(e=>{
-        const code=(pl[e.id]||{})[today]||"";
-        return isWork(code);
-      });
-      if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
-      const byTeam={};
-      workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
-      let r=`<strong>${workers.length} employ\u00e9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
-      Object.keys(byTeam).forEach(tid=>{
-        const tcc=tc(tid),team=gt(tid);
-        r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span> : `;
-        r+=byTeam[tid].map(e=>{
-          const code=(pl[e.id]||{})[today]||"";
-          const ci=CODES[code]||{c:"#888"};
-          return `${esc(e.name)} <span style="color:${ci.c};font-size:10px">(${code})</span>`;
-        }).join(", ")+"<br>";
-      });
-      return r;
-    }
-  }
+// \u2500\u2500 Qui travaille ce soir / aujourd’hui \u2500\u2500
+if(ql.includes(“travaille”)||ql.includes(“travail”)||ql.includes(“service”)||ql.includes(“soir”)||ql.includes(“nuit”)||ql.includes(“aujourd”)){
+const today=new Date().getDate();
+const tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
+if(tYear===A.year&&tMonth===A.month){
+const workers=A.employees.filter(e=>{
+const code=(pl[e.id]||{})[today]||””;
+return isWork(code);
+});
+if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
+const byTeam={};
+workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
+let r=`<strong>${workers.length} employ\u00e9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
+Object.keys(byTeam).forEach(tid=>{
+const tcc=tc(tid),team=gt(tid);
+r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span> : `;
+r+=byTeam[tid].map(e=>{
+const code=(pl[e.id]||{})[today]||””;
+const ci=CODES[code]||{c:”#888”};
+return `${esc(e.name)} <span style="color:${ci.c};font-size:10px">(${code})</span>`;
+}).join(”, “)+”<br>”;
+});
+return r;
+}
+}
 
-  // \u2500\u2500 Effectif d'une \u00e9quipe \u2500\u2500
-  const teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes("equipe "+t.id)||ql.includes("\u00e9quipe "+t.id)||ql.includes("team "+t.id));
-  if(teamMatch){
-    const emps=A.employees.filter(e=>e.team===teamMatch.id);
-    const chefs=emps.filter(e=>e.chef);
-    const mir=gm(teamMatch.id);
-    let r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
-    if(chefs.length) r+=`<br>\ud83d\udc51 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
-    if(mir) r+=`\u21cc Miroir : ${esc(mir.name)}<br>`;
-    r+=`<br>Membres :<br>${emps.map(function(e){return '\u2022 '+esc(e.name)+(e.chef?' \ud83d\udc51':'')+' <span style="font-size:10px;color:#3a5030">'+esc(e.post||'')+'</span>';}).join("<br>")}`;
-    return r;
-  }
+// \u2500\u2500 Effectif d’une \u00e9quipe \u2500\u2500
+const teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize(“NFD”).replace(/[\u0300-\u036f]/g,””))||ql.includes(“equipe “+t.id)||ql.includes(”\u00e9quipe “+t.id)||ql.includes(“team “+t.id));
+if(teamMatch){
+const emps=A.employees.filter(e=>e.team===teamMatch.id);
+const chefs=emps.filter(e=>e.chef);
+const mir=gm(teamMatch.id);
+let r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
+if(chefs.length) r+=`<br>\ud83d\udc51 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
+if(mir) r+=`\u21cc Miroir : ${esc(mir.name)}<br>`;
+r+=`<br>Membres :<br>${emps.map(function(e){return '\u2022 '+esc(e.name)+(e.chef?' \ud83d\udc51':'')+' <span style="font-size:10px;color:#3a5030">'+esc(e.post||'')+'</span>';}).join("<br>")}`;
+return r;
+}
 
-  // \u2500\u2500 Code horaire \u2500\u2500
-  const codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*']/g,"").includes(c.toLowerCase().replace(/[^a-z0-9/*']/g,"")));
-  if(codeMatch&&(ql.includes("horaire")||ql.includes("heure")||ql.includes("signifie")||ql.includes("veut dire")||ql.includes("quoi")||ql.includes("c'est")||ql.includes("code"))){
-    const ci=CODES[codeMatch];
-    return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Caf\u00e9 de Paris)":""}`;
-  }
+// \u2500\u2500 Code horaire \u2500\u2500
+const codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*’]/g,””).includes(c.toLowerCase().replace(/[^a-z0-9/*’]/g,””)));
+if(codeMatch&&(ql.includes(“horaire”)||ql.includes(“heure”)||ql.includes(“signifie”)||ql.includes(“veut dire”)||ql.includes(“quoi”)||ql.includes(“c’est”)||ql.includes(“code”))){
+const ci=CODES[codeMatch];
+return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Caf\u00e9 de Paris)":""}`;
+}
 
-  // \u2500\u2500 Tous les codes \u2500\u2500
-  if(ql.includes("codes")||ql.includes("liste des horaires")||ql.includes("tous les horaires")){
-    let r="<strong>Codes horaires CMC :</strong><br><br>";
-    CK.forEach(c=>{
-      const ci=CODES[c];
-      r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">${c}</span> ${ci.l}${ci.cdp?" \u2605":""}<br>`;
-    });
-    return r;
-  }
+// \u2500\u2500 Tous les codes \u2500\u2500
+if(ql.includes(“codes”)||ql.includes(“liste des horaires”)||ql.includes(“tous les horaires”)){
+let r=”<strong>Codes horaires CMC :</strong><br><br>”;
+CK.forEach(c=>{
+const ci=CODES[c];
+r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">${c}</span> ${ci.l}${ci.cdp?" \u2605":""}<br>`;
+});
+return r;
+}
 
-  // \u2500\u2500 Chefs d'une \u00e9quipe \u2500\u2500
-  if(ql.includes("chef")){
-    if(teamMatch){
-      const chef=CHEF_EQ[teamMatch.id]||"Non d\u00e9fini";
-      return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
-    }
-    let r="<strong>Chefs d'\u00e9quipe :</strong><br><br>";
-    A.teams.forEach(t=>{
-      const chef=CHEF_EQ[t.id]||"\u2014";
-      r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
-    });
-    return r;
-  }
+// \u2500\u2500 Chefs d’une \u00e9quipe \u2500\u2500
+if(ql.includes(“chef”)){
+if(teamMatch){
+const chef=CHEF_EQ[teamMatch.id]||“Non d\u00e9fini”;
+return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
+}
+let r=”<strong>Chefs d’\u00e9quipe :</strong><br><br>”;
+A.teams.forEach(t=>{
+const chef=CHEF_EQ[t.id]||”\u2014”;
+r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
+});
+return r;
+}
 
-  // \u2500\u2500 Absents / repos \u2500\u2500
-  if(ql.includes("absent")||ql.includes("repos")||ql.includes("conge")||ql.includes("rh")){
-    const today=new Date().getDate();
-    if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
-      const absents=A.employees.filter(e=>{const c=(pl[e.id]||{})[today]||"";return c==="RH"||c==="R"||c==="CP"||c==="M"||c==="AF";});
-      if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
-      return `<strong>${absents.length} employ\u00e9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{const c=(pl[e.id]||{})[today]||"";const ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} \u2014 <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
-    }
-  }
+// \u2500\u2500 Absents / repos \u2500\u2500
+if(ql.includes(“absent”)||ql.includes(“repos”)||ql.includes(“conge”)||ql.includes(“rh”)){
+const today=new Date().getDate();
+if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
+const absents=A.employees.filter(e=>{const c=(pl[e.id]||{})[today]||””;return c===“RH”||c===“R”||c===“CP”||c===“M”||c===“AF”;});
+if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
+return `<strong>${absents.length} employ\u00e9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{const c=(pl[e.id]||{})[today]||"";const ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} \u2014 <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
+}
+}
 
-  // \u2500\u2500 CDP ce mois \u2500\u2500
-  if(ql.includes("cdp")||ql.includes("cafe de paris")||ql.includes("caf\u00e9 de paris")){
-    const days=getDays(A.year,A.month);
-    const cdpEmps=A.employees.filter(e=>{
-      for(let d=1;d<=days;d++){const c=(pl[e.id]||{})[d]||"";if(CODES[c]&&CODES[c].cdp)return true;}
-      return false;
-    });
-    if(!cdpEmps.length) return `Aucun employ\u00e9 avec shifts CDP en ${MFR[A.month]}.`;
-    return `<strong>${cdpEmps.length} employ\u00e9(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
-  }
+// \u2500\u2500 CDP ce mois \u2500\u2500
+if(ql.includes(“cdp”)||ql.includes(“cafe de paris”)||ql.includes(“caf\u00e9 de paris”)){
+const days=getDays(A.year,A.month);
+const cdpEmps=A.employees.filter(e=>{
+for(let d=1;d<=days;d++){const c=(pl[e.id]||{})[d]||””;if(CODES[c]&&CODES[c].cdp)return true;}
+return false;
+});
+if(!cdpEmps.length) return `Aucun employ\u00e9 avec shifts CDP en ${MFR[A.month]}.`;
+return `<strong>${cdpEmps.length} employ\u00e9(s) avec shifts CDP en ${MFR[A.month]} :</strong><br><br>${cdpEmps.map(e=>esc(e.name)).join("<br>")}`;
+}
 
-  // \u2500\u2500 Stats globales \u2500\u2500
-  if(ql.includes("stat")||ql.includes("combien")||ql.includes("effectif")||ql.includes("total")){
-    let r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
-    r+=`\ud83d\udc65 Total : <strong>${A.employees.length}</strong> employ\u00e9s<br>`;
-    A.teams.forEach(t=>{
-      const n=A.employees.filter(e=>e.team===t.id).length;
-      r+=`<span style="color:${t.color}">\u25cf</span> ${esc(t.name)} : ${n} personnes<br>`;
-    });
-    return r;
-  }
+// \u2500\u2500 Stats globales \u2500\u2500
+if(ql.includes(“stat”)||ql.includes(“combien”)||ql.includes(“effectif”)||ql.includes(“total”)){
+let r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
+r+=`\ud83d\udc65 Total : <strong>${A.employees.length}</strong> employ\u00e9s<br>`;
+A.teams.forEach(t=>{
+const n=A.employees.filter(e=>e.team===t.id).length;
+r+=`<span style="color:${t.color}">\u25cf</span> ${esc(t.name)} : ${n} personnes<br>`;
+});
+return r;
+}
 
-  // \u2500\u2500 Aide / que sais-tu \u2500\u2500
-  if(ql.includes("aide")||ql.includes("help")||ql.includes("peux-tu")||ql.includes("peux tu")||ql.includes("sais-tu")||ql.includes("sais tu")||ql.includes("quoi faire")){
-    return `Je peux vous aider avec :<br><br>
-\ud83d\udcc5 <strong>Planning</strong> \u2014 "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br>
-\ud83d\udc65 <strong>\u00c9quipes</strong> \u2014 "Combien dans l'\u00e9quipe 3 ?", "Chefs de l'\u00e9quipe 2"<br>
-\u23f0 <strong>Horaires</strong> \u2014 "Que signifie 22/6 ?", "Liste des codes"<br>
-\ud83d\udcca <strong>Stats</strong> \u2014 "Combien d'employ\u00e9s total ?", "Qui a CDP ce mois ?"<br>
-\ud83d\udd0d <strong>Absences</strong> \u2014 "Qui est absent aujourd'hui ?"<br><br>
-Posez votre question librement !`;
-  }
+// \u2500\u2500 Aide / que sais-tu \u2500\u2500
+if(ql.includes(“aide”)||ql.includes(“help”)||ql.includes(“peux-tu”)||ql.includes(“peux tu”)||ql.includes(“sais-tu”)||ql.includes(“sais tu”)||ql.includes(“quoi faire”)){
+return `Je peux vous aider avec :<br><br> \ud83d\udcc5 <strong>Planning</strong> \u2014 "Planning de DESSI F", "Qui travaille aujourd'hui ?"<br> \ud83d\udc65 <strong>\u00c9quipes</strong> \u2014 "Combien dans l'\u00e9quipe 3 ?", "Chefs de l'\u00e9quipe 2"<br> \u23f0 <strong>Horaires</strong> \u2014 "Que signifie 22/6 ?", "Liste des codes"<br> \ud83d\udcca <strong>Stats</strong> \u2014 "Combien d'employ\u00e9s total ?", "Qui a CDP ce mois ?"<br> \ud83d\udd0d <strong>Absences</strong> \u2014 "Qui est absent aujourd'hui ?"<br><br> Posez votre question librement !`;
+}
 
-  // \u2500\u2500 V\u00e9rification planning \u2500\u2500
-  if(ql.includes("verif")||ql.includes("erreur")||ql.includes("correct")||ql.includes("check")||ql.includes("bon horaire")||ql.includes("correspond")||ql.includes("juste")){
-    if(!isAdm) return "La v\u00e9rification du planning est r\u00e9serv\u00e9e \u00e0 l'administrateur.";
-    const key=A.year+"-"+A.month;
-    const ref=lg("cmc_ref_"+key,null);
-    if(!ref) return `<span style="color:#c9a227">Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin \u2192 Import planning</strong>, je le v\u00e9rifierai automatiquement.`;
-    const v=runVerification(A.year,A.month,ref);
-    A.lastVerif=v;
-    return formatVerifReport(v);
-  }
+// \u2500\u2500 V\u00e9rification planning \u2500\u2500
+if(ql.includes(“verif”)||ql.includes(“erreur”)||ql.includes(“correct”)||ql.includes(“check”)||ql.includes(“bon horaire”)||ql.includes(“correspond”)||ql.includes(“juste”)){
+if(!isAdm) return “La v\u00e9rification du planning est r\u00e9serv\u00e9e \u00e0 l’administrateur.”;
+const key=A.year+”-”+A.month;
+const ref=lg(“cmc_ref_”+key,null);
+if(!ref) return `<span style="color:#c9a227">Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Importez un planning CSV via <strong>Admin \u2192 Import planning</strong>, je le v\u00e9rifierai automatiquement.`;
+const v=runVerification(A.year,A.month,ref);
+A.lastVerif=v;
+return formatVerifReport(v);
+}
 
-  // \u2500\u2500 Rapport derni\u00e8re v\u00e9rification \u2500\u2500
-  if(ql.includes("rapport")||ql.includes("dernier")||ql.includes("r\u00e9sultat")){
-    if(A.lastVerif) return formatVerifReport(A.lastVerif);
-    return "Aucune v\u00e9rification effectu\u00e9e. Importez un planning ou cliquez sur \ud83d\udd0d V\u00e9rifier.";
-  }
+// \u2500\u2500 Rapport derni\u00e8re v\u00e9rification \u2500\u2500
+if(ql.includes(“rapport”)||ql.includes(“dernier”)||ql.includes(“r\u00e9sultat”)){
+if(A.lastVerif) return formatVerifReport(A.lastVerif);
+return “Aucune v\u00e9rification effectu\u00e9e. Importez un planning ou cliquez sur \ud83d\udd0d V\u00e9rifier.”;
+}
 
-  // \u2500\u2500 Erreurs d'un employ\u00e9 sp\u00e9cifique \u2500\u2500
-  if(empMatch&&(ql.includes("erreur")||ql.includes("verif")||ql.includes("correct")||ql.includes("horaire"))){
-    const key=A.year+"-"+A.month;
-    const ref=lg("cmc_ref_"+key,null);
-    if(!ref) return `Pas de r\u00e9f\u00e9rence d'import pour ${MFR[A.month]} ${A.year}.`;
-    const v=runVerification(A.year,A.month,ref);
-    const empErrs=v.errors.filter(e=>e.empId===empMatch.id);
-    if(!empErrs.length) return `\u2705 <strong>${esc(empMatch.name)}</strong> \u2014 aucune erreur d\u00e9tect\u00e9e, tous les horaires correspondent.`;
-    let r=`\u26a0\ufe0f <strong>${esc(empMatch.name)}</strong> \u2014 ${empErrs.length} erreur(s) :<br><br>`;
-    empErrs.forEach(e=>{
-      const ciR=CODES[e.refCode]||{c:"#c9a227"};
-      const ciP=CODES[e.plCode]||{c:"#6a8a68"};
-      r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> \u2192 devrait \u00eatre <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
-    });
-    return r;
-  }
+// \u2500\u2500 Erreurs d’un employ\u00e9 sp\u00e9cifique \u2500\u2500
+if(empMatch&&(ql.includes(“erreur”)||ql.includes(“verif”)||ql.includes(“correct”)||ql.includes(“horaire”))){
+const key=A.year+”-”+A.month;
+const ref=lg(“cmc_ref_”+key,null);
+if(!ref) return `Pas de r\u00e9f\u00e9rence d'import pour ${MFR[A.month]} ${A.year}.`;
+const v=runVerification(A.year,A.month,ref);
+const empErrs=v.errors.filter(e=>e.empId===empMatch.id);
+if(!empErrs.length) return `\u2705 <strong>${esc(empMatch.name)}</strong> \u2014 aucune erreur d\u00e9tect\u00e9e, tous les horaires correspondent.`;
+let r=`\u26a0\ufe0f <strong>${esc(empMatch.name)}</strong> \u2014 ${empErrs.length} erreur(s) :<br><br>`;
+empErrs.forEach(e=>{
+const ciR=CODES[e.refCode]||{c:”#c9a227”};
+const ciP=CODES[e.plCode]||{c:”#6a8a68”};
+r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> \u2192 devrait \u00eatre <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
+});
+return r;
+}
 
-  // \u2500\u2500 Corriger les erreurs \u2500\u2500
-  if(ql.includes("corrig")||ql.includes("fix")||ql.includes("r\u00e9pare")||ql.includes("modifie")||ql.includes("appliqu")){
-    if(!isAdm) return "La correction du planning est r\u00e9serv\u00e9e \u00e0 l'administrateur.";
-    if(!A.lastVerif||!A.lastVerif.errors.length){
-      const v=verifyCurrentMonth();
-      if(!v) return "Aucune r\u00e9f\u00e9rence d'import disponible. Importez d'abord un planning.";
-      if(!v.errors.length) return "\u2705 Aucune erreur \u00e0 corriger \u2014 le planning est correct !";
-    }
-    iaAskCorrect();
-    return null; // iaAskCorrect g\u00e8re l'affichage
-  }
+// \u2500\u2500 Corriger les erreurs \u2500\u2500
+if(ql.includes(“corrig”)||ql.includes(“fix”)||ql.includes(“r\u00e9pare”)||ql.includes(“modifie”)||ql.includes(“appliqu”)){
+if(!isAdm) return “La correction du planning est r\u00e9serv\u00e9e \u00e0 l’administrateur.”;
+if(!A.lastVerif||!A.lastVerif.errors.length){
+const v=verifyCurrentMonth();
+if(!v) return “Aucune r\u00e9f\u00e9rence d’import disponible. Importez d’abord un planning.”;
+if(!v.errors.length) return “\u2705 Aucune erreur \u00e0 corriger \u2014 le planning est correct !”;
+}
+iaAskCorrect();
+return null; // iaAskCorrect g\u00e8re l’affichage
+}
 
-  // \u2500\u2500 R\u00e9ponse par d\u00e9faut \u2500\u2500
-  return `Je n'ai pas compris votre question. Essayez par exemple :<br><br>
-\u2022 "Planning de [NOM]"<br>
-\u2022 "Qui travaille aujourd'hui ?"<br>
-\u2022 "Combien dans l'\u00e9quipe 3 ?"<br>
-\u2022 "Que signifie le code 22/6 ?"<br>
-\u2022 "Qui est chef de l'\u00e9quipe 1 ?"`;
+// \u2500\u2500 R\u00e9ponse par d\u00e9faut \u2500\u2500
+return `Je n'ai pas compris votre question. Essayez par exemple :<br><br> \u2022 "Planning de [NOM]"<br> \u2022 "Qui travaille aujourd'hui ?"<br> \u2022 "Combien dans l'\u00e9quipe 3 ?"<br> \u2022 "Que signifie le code 22/6 ?"<br> \u2022 "Qui est chef de l'\u00e9quipe 1 ?"`;
 }
 
 render();
