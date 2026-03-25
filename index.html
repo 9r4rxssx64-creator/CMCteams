@@ -1634,7 +1634,14 @@ function parseCMCPlanningFromItems(allItems, year, month){
       var d=Math.abs(el.y-item.y);
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
-    if(bestEmp) planning[bestEmp][day]=code;
+    if(bestEmp){
+      // Auto-upgrade CDP : si l'employé a ce code dans cdpShifts, utiliser la version *
+      var empObj=A.employees.find(function(e){return e.name===bestEmp;});
+      if(empObj&&!code.endsWith("*")&&CDP_MAP[code]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(code)>=0){
+        code=CDP_MAP[code];
+      }
+      planning[bestEmp][day]=code;
+    }
   });
 
   // \u2500\u2500 5. Construire CSV \u2500\u2500
@@ -1740,6 +1747,10 @@ function doImport(){
       // Normaliser tiret→slash : "16-3"→"16/3", "20-5*"→"20/5*"
       code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
       code=code.replace(/CDP$/,"*");
+      // Auto-upgrade CDP : si l'employé a ce code dans cdpShifts, mettre la version *
+      if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
+        code=CDP_MAP[code];
+      }
       if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][di]=code;
