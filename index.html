@@ -372,8 +372,8 @@ function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"
 function now(){return Date.now();}
 function fmtTs(ms){var d=new Date(ms);return String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");}
 function moOff(y,m){return(y-2026)*12+(m-2);}
-function tc(tid){var t=A.teams.find(x=>x.id===tid);return(t&&t.color)||TC[tid]||"#888";}
-function gt(tid){return A.teams.find(x=>x.id===tid)||null;}
+function tc(tid){var t=A.teams.find(function(x){return x.id===tid;});return(t&&t.color)||TC[tid]||"#888";}
+function gt(tid){return A.teams.find(function(x){return x.id===tid;})||null;}
 function gm(tid){var t=gt(tid);return t&&t.mirrorTeamId?gt(t.mirrorTeamId):null;}
 
 // Hachage mot de passe simple (pas crypto mais suffisant pour usage interne)
@@ -402,7 +402,7 @@ function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrid
 
 function genBase(y,m){
   var days=getDays(y,m),mo=moOff(y,m),p={};
-  A.employees.forEach(emp=>{
+  A.employees.forEach(function(emp){
     var pat=REPOS[emp.team]||[],prof=getEP(emp);
     var seq=prof.s,cdpL=prof.d,sl=seq.length;
     var si0=(((prof.i||0)+(mo*21))%sl+sl)%sl;
@@ -424,10 +424,10 @@ function genBase(y,m){
   return p;
 }
 function gpl(){
-  var base=genBase(A.year,A.month),key=`${A.year}-${A.month}`,ov=A.overrides[key]||{};
-  Object.keys(ov).forEach(eid=>{
+  var base=genBase(A.year,A.month),key=""+A.year+"-"+A.month,ov=A.overrides[key]||{};
+  Object.keys(ov).forEach(function(eid){
     if(!base[eid])base[eid]={};
-    Object.keys(ov[eid]).forEach(d=>{
+    Object.keys(ov[eid]).forEach(function(d){
       var v=ov[eid][d];
       if(!v)delete base[eid][d]; else base[eid][d]=v;
     });
@@ -436,25 +436,28 @@ function gpl(){
 }
 function saveOv(eid,day,code){
   if(!A.user||A.user.id!==AID)return;
-  var key=`${A.year}-${A.month}`;
+  var key=""+A.year+"-"+A.month;
   if(!A.overrides[key])A.overrides[key]={};
   if(!A.overrides[key][eid])A.overrides[key][eid]={};
   if(code==="")delete A.overrides[key][eid][day]; else A.overrides[key][eid][day]=code;
   ls("cmc_ov",A.overrides);
 }
-var isWork=c=>c&&c!=="RH"&&c!=="R"&&c!=="CP"&&c!=="M"&&c!=="AF";
+var isWork=function(c){return c&&c!=="RH"&&c!=="R"&&c!=="CP"&&c!=="M"&&c!=="AF";};
 
 var tT=null;
-function toast(msg,type="ok"){
+function toast(msg,type){
+  if(type===undefined)type="ok";
   var el=document.getElementById("toast");
   el.textContent=(type==="err"?"\u26a0 ":"\u2713 ")+msg;
-  el.style.cssText=`display:block;background:${type==="err"?"#200600":"#03100a"};border:1px solid ${type==="err"?"#481010":"#0a2810"}`;
-  if(tT)clearTimeout(tT);tT=setTimeout(()=>el.style.display="none",3200);
+  var bg=type==="err"?"#200600":"#03100a";
+  var bd=type==="err"?"#481010":"#0a2810";
+  el.style.cssText="display:block;background:"+bg+";border:1px solid "+bd;
+  if(tT)clearTimeout(tT);tT=setTimeout(function(){el.style.display="none";},3200);
 }
 
 function render(){
   var app=document.getElementById("app");
-  if(!A.user){app.innerHTML=vLogin();setTimeout(()=>{var e=document.getElementById("li");if(e)e.onkeydown=ev=>{if(ev.key==="Enter")step1();};},40);return;}
+  if(!A.user){app.innerHTML=vLogin();setTimeout(function(){var e=document.getElementById("li");if(e)e.onkeydown=function(ev){if(ev.key==="Enter")step1();};},40);return;}
   app.innerHTML=`<div id="topbar">${vTopbar()}</div><div id="content">${vMain()}</div>${vNav()}`;
   setTimeout(adjGrid,50);
 }
@@ -462,7 +465,7 @@ function dc(){
   var c=document.getElementById("content");if(!c)return;
   c.innerHTML=vMain();
   if(A.view==="planning")adjGrid();
-  if(A.view==="chat")setTimeout(()=>{var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 function adjGrid(){
   var g=document.getElementById("planGrid");if(!g)return;
@@ -501,7 +504,7 @@ function vLoginStep0(){
 }
 
 function vLoginStep1(){
-  var emp=A.employees.find(e=>e.id===loginUid)||{};
+  var emp=A.employees.find(function(e){return e.id===loginUid;})||{};
   var isNew=!A.passwords[loginUid];
   return `<div class="login-bg">
   <div class="login-card">
@@ -547,13 +550,13 @@ function stepPin(){
   if(hashPw(pin)!==stored){
     var er=document.getElementById("pinerr");if(er)er.textContent="Code incorrect";return;
   }
-  var emp=A.employees.find(e=>e.id===AID);
+  var emp=A.employees.find(function(e){return e.id===AID;});
   A.user=emp;loginStep=0;render();
 }
 function step1(){
   var el=document.getElementById("li");if(!el)return;
   var uid=el.value.trim().toUpperCase();
-  var emp=A.employees.find(e=>e.id===uid);
+  var emp=A.employees.find(function(e){return e.id===uid;});
   if(!emp){var er=document.getElementById("lerr");if(er)er.textContent="Matricule non reconnu.";return;}
   if(uid===AID){
     var pin=lg("cmc_admin_pin",null);
@@ -565,7 +568,7 @@ function step1(){
 }
 
 function step2(){
-  var emp=A.employees.find(e=>e.id===loginUid)||{};
+  var emp=A.employees.find(function(e){return e.id===loginUid;})||{};
   var isNew=!A.passwords[loginUid];
   var errEl=document.getElementById("fperr");
   var pw1=(document.getElementById("fp1")||{}).value||"";
@@ -622,8 +625,8 @@ function vNav(){
     tabs.splice(2,0,{id:"stats",ic:"\ud83d\udcca",lb:"Stats"});
     tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin"});
   }
-  var unread=A.chatMsgs.filter(m=>m.uid!==A.user.id&&m.ts>(lg("cmc_lastread",0))).length;
-  return `<div id="bnav">${tabs.map(t=>{
+  var unread=A.chatMsgs.filter(function(m){return m.uid!==A.user.id&&m.ts>(lg("cmc_lastread",0));}).length;
+  return `<div id="bnav">${tabs.map(function(t){
     var badge=t.id==="chat"&&unread>0?`<span id="chatBadge" class="nbadge" style="display:block">${unread}</span>`:`<span id="chatBadge" class="nbadge"></span>`;
     return `<button class="nt${A.view===t.id?" on":""}" onclick="sv('${t.id}')" style="font-size:7px"><em>${t.ic}</em>${badge}${t.lb}</button>`;
   }).join("")}</div>`;
@@ -646,11 +649,10 @@ function vMain(){
   }
 }
 function sv(v){
-  A.view=v;dc();
-  var old=document.getElementById("bnav");
-  if(old){var tmp=document.createElement("div");tmp.innerHTML=vNav();old.parentNode.replaceChild(tmp.firstChild,old);}
+  A.view=v;
+  render();
   if(v==="planning")setTimeout(adjGrid,80);
-  if(v==="chat"){setTimeout(()=>{var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());},80);}
+  if(v==="chat"){setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());},80);}
 }
 function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;sv("planning");}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;sv("planning");}
@@ -659,8 +661,8 @@ function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
   var da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
-  var byT={};A.employees.forEach(e=>{if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e);});
-  var tOrd=[];A.employees.forEach(e=>{if(!tOrd.includes(e.team))tOrd.push(e.team);});
+  var byT={};A.employees.forEach(function(e){if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e);});
+  var tOrd=[];A.employees.forEach(function(e){if(!tOrd.includes(e.team))tOrd.push(e.team);});
   var utid=A.user?A.user.team:null,utc=tc(utid),mirT=utid?gm(utid):null;
   var h=`<div class="page">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -683,28 +685,28 @@ function vPlan(){
   </div>`;
   if(A.showLeg){
     h+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">`;
-    CK.forEach(c=>{var ci=CODES[c];h+=`<div style="display:flex;align-items:center;gap:3px;background:${ci.bg};border:1px solid ${ci.b};border-radius:8px;padding:2px 6px"><span style="color:${ci.c};font-size:8px;font-weight:700">${c}</span><span style="color:#243020;font-size:7px">${ci.l}</span></div>`;});
+    CK.forEach(function(c){var ci=CODES[c];h+=`<div style="display:flex;align-items:center;gap:3px;background:${ci.bg};border:1px solid ${ci.b};border-radius:8px;padding:2px 6px"><span style="color:${ci.c};font-size:8px;font-weight:700">${c}</span><span style="color:#243020;font-size:7px">${ci.l}</span></div>`;});
     h+=`</div>`;
   }
   h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;width:100%"><thead><tr>
     <th class="sth">Employ\u00e9</th>`;
-  da.forEach(d=>{
+  da.forEach(function(d){
     var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
     h+=`<th class="dth" style="background:${we?"#162818":"#16281a"}"><div style="font-weight:700;color:${we?"#4a6888":"#3a4a38"}">${d}</div><div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
   });
   h+=`<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>`;
-  tOrd.forEach(tid=>{
+  tOrd.forEach(function(tid){
     var te=byT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
     h+=`<tr><td colspan="${days+3}" class="steptd" style="border-left:2px solid ${tcc}50">
       <span style="color:${tcc};font-size:11px;font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span>
       ${mir?'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':""}
     </td></tr>`;
-    te.forEach(emp=>{
+    te.forEach(function(emp){
       var p=pl[emp.id]||{};
       var repos=0,trav=0;
-      Object.values(p).forEach(v=>{if(v==="RH"||v==="R")repos++;else if(v)trav++;});
+      Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
-      var nbg=isMe?`${tcc}0a`:"#162818";
+      var nbg=isMe?(tcc+"0a"):"#162818";
       var ncol=isMe?tcc:"#8a9a78";
       h+=`<tr style="border-bottom:1px solid #0c160a;background:${nbg}">
         <td class="ntd" style="background:${nbg};color:${ncol};font-weight:${isMe?700:400}">
@@ -712,7 +714,7 @@ function vPlan(){
           ${emp.chef?"<span class=\"chef-badge\" style=\"margin-left:3px\">C</span>":""}
 
         </td>`;
-      da.forEach(d=>{
+      da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
         var click=isAdm?` onclick="openPicker('${emp.id}',${d},this)"`:"";
         h+=`<td class="ctd" style="background:${ci.bg};border:1px solid ${ci.b}${ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":""}"${click}>
@@ -743,7 +745,7 @@ var CHEF_EQ=lg("cmc_chef_eq",Object.assign({},DEF_CHEF_EQ));
 function saveChefEq(){if(!A.user||A.user.id!==AID)return;ls("cmc_chef_eq",CHEF_EQ);}
 function pickChef(tid,idx){
   if(!A.user||A.user.id!==AID)return;
-  var teamEmps=A.employees.filter(e=>e.team===tid);
+  var teamEmps=A.employees.filter(function(e){return e.team===tid;});
   var emp=teamEmps[idx];
   if(!emp)return;
   CHEF_EQ[tid]=emp.name;saveChefEq();editChefSlot=null;dc();
@@ -770,15 +772,15 @@ var DEF_CI={
   "GARCIA A":0,"GARRO S":1,"GIORSETTI S":2,"SIRIO J":3,"FAUTRIER M":4
 };
 var DCOL=["#c9a227","#4a72a8","#3a8a50","#a84868","#c07830","#38bdf8","#a3e635","#f87171","#c084fc"];
-function gCI(y,m){return lg(`cmc_ci_${y}_${m}`,JSON.parse(JSON.stringify(DEF_CI)));}
-function sCI(y,m,o){ls(`cmc_ci_${y}_${m}`,o);}
+function gCI(y,m){return lg("cmc_ci_"+y+"_"+m,JSON.parse(JSON.stringify(DEF_CI)));}
+function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
   var CI=gCI(A.year,A.month);
   var myTeam=A.user?A.user.team:null;
-  var show=isAdm?A.teams.map(t=>t.id):[myTeam];
+  var show=isAdm?A.teams.map(function(t){return t.id;}):[myTeam];
   var h=`<div class="page">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>
@@ -789,15 +791,17 @@ function vDeparts(){
     <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>
   </div>
   ${isAdm?"<button onclick=\"sv('teams')\" style=\"width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px\">\ud83d\udc51 G\u00e9rer les chefs d'\u00e9quipe \u2192</button>":""}`;
-  show.forEach(tid=>{
-    var team=A.teams.find(t=>t.id===tid);if(!team)return;
+  show.forEach(function(tid){
+    var team=A.teams.find(function(t){return t.id===tid;});if(!team)return;
     var tcc=team.color||TC[tid]||"#888";
     var chefNames=CHEFS_T[tid]||[];
-    var chefEmps=chefNames.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
+    var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(Boolean);
     if(!chefEmps.length)return;
     var sl=chefEmps.length;
     var SEQ=getSeqForSize(sl); // s\u00e9quence adapt\u00e9e au nombre de chefs
-    var workDays=da.filter(d=>chefEmps.some(e=>isWork((pl[e.id]||{})[d]||"")));
+    var mo2=moOff(A.year,A.month);
+    var teamPat=REPOS[tid]||[];
+    var workDays=da.filter(function(d){var ad=mo2*30+(d-1);var cp=((ad%30)+30)%30+1;return teamPat.indexOf(cp)<0;});
     h+=`<div style="margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${tcc}0c;border:1px solid ${tcc}22;border-radius:8px 8px 0 0">
       <div style="width:6px;height:6px;border-radius:50%;background:${tcc}"></div>
@@ -809,26 +813,25 @@ function vDeparts(){
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table style="border-collapse:collapse;width:100%"><thead><tr>
     <th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>`;
-    workDays.forEach(d=>{
+    workDays.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
       h+=`<th style="padding:3px 1px;min-width:32px;background:${we?"#16281a":"#16281a"};text-align:center">
         <div style="font-weight:700;color:${we?"#4a6888":"#3a4a38"};font-size:9px">${d}</div>
         <div style="font-size:6px;color:#182818">${DS[dow]}</div></th>`;
     });
     h+=`</tr></thead><tbody>`;
-    chefEmps.forEach((emp,ei)=>{
+    chefEmps.forEach(function(emp,ei){
       var isMe=emp.id===A.user.id;
       var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
         ${isMe?"\u25b6 ":""}${esc(emp.name)}</td>`;
-      var wb=0;
-      workDays.forEach(d=>{
+      workDays.forEach(function(d,wi){
         var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
         if(works){
           // Roulement: chaque groupe de 4j travaill\u00e9s d\u00e9cale d'un cran
           // Roulement 4j: idx=(wb%4 + floor(wb/4) + baseIdx) % 5
-          var rotIdx=(wb%4+Math.floor(wb/4)+base)%sl;
+          var rotIdx=(wi%4+Math.floor(wi/4)+base)%sl;
           var pos=SEQ[rotIdx];
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
@@ -837,7 +840,6 @@ function vDeparts(){
               <div style="width:20px;height:20px;border-radius:4px;background:${col}20;border:1.5px solid ${col}45;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${col}">${pos}</div>
               <div style="font-size:6px;color:${ci.c}">${code}</div>
             </div></td>`;
-          wb++;
         } else {
           var ci=CODES[code]||{c:"#1e2e1e"};
           h+=`<td style="text-align:center;background:#060e07;padding:2px 1px"><span style="font-size:8px;color:${ci.c}">${code||"\u00b7"}</span></td>`;
@@ -859,7 +861,7 @@ function showCI(tid){
 function setCI(name,idx){
   if(!A.user||A.user.id!==AID)return;
   var CI=gCI(A.year,A.month);
-  // SWAP : trouver qui a déjà cette position et lui donner l'ancienne position de name
+  // SWAP : trouver qui a deja cette position et lui donner l'ancienne position de name
   var oldIdx=CI[name];
   var other=Object.keys(CI).find(function(n){return n!==name&&CI[n]===idx;});
   if(other!==undefined) CI[other]=oldIdx;
@@ -870,13 +872,13 @@ function setCI(name,idx){
 function renderCIPanel(tid){
   var CI=gCI(A.year,A.month);
   var names=CHEFS_T[tid]||[];
-  var emps=names.map(n=>A.employees.find(e=>e.name===n)).filter(Boolean);
-  var team=A.teams.find(t=>t.id===tid),tcc=team?team.color:"#888";
+  var emps=names.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(Boolean);
+  var team=A.teams.find(function(t){return t.id===tid;}),tcc=team?team.color:"#888";
   var SEQCI=getSeqForSize(emps.length);
   var h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px">
     <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
   if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
-  emps.forEach(emp=>{
+  emps.forEach(function(emp){
     var cur=CI[emp.name]!==undefined?CI[emp.name]:0;
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span>
@@ -896,10 +898,10 @@ function vStats(){
   var pl=gpl();
   var h=`<div class="page"><div style="margin-bottom:12px"><div class="sec-title">Statistiques</div>
   <div class="sec-sub">${MFR[A.month]} ${A.year}</div></div><div style="display:flex;flex-direction:column;gap:8px">`;
-  A.employees.forEach(emp=>{
+  A.employees.forEach(function(emp){
     var p=pl[emp.id]||{},v=Object.values(p);
-    var cnts={};CK.forEach(c=>{cnts[c]=v.filter(x=>x===c).length;});
-    var trav=v.filter(x=>x&&x!=="RH"&&x!=="R").length;
+    var cnts={};CK.forEach(function(c){cnts[c]=v.filter(function(x){return x===c;}).length;});
+    var trav=v.filter(function(x){return x&&x!=="RH"&&x!=="R";}).length;
     var tcc=tc(emp.team),team=gt(emp.team);
     h+=`<div class="card" style="padding:12px;border-left:2px solid ${tcc}40">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -910,7 +912,7 @@ function vStats(){
         <span style="background:${tcc}14;color:${tcc};border:1px solid ${tcc}25;border-radius:14px;padding:1px 8px;font-size:9px;font-weight:700">${esc(team?team.name:emp.team)}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">`;
-    CK.forEach(c=>{
+    CK.forEach(function(c){
       if(!cnts[c])return;
       var ci=CODES[c];
       h+=`<div style="display:flex;align-items:center;gap:5px">
@@ -933,7 +935,7 @@ function vChat(){
     \u2666 Chat interne \u00b7 ${A.employees.length} membres \u00b7 messages locaux
   </div>
   <div id="chatMsgs" class="chat-msgs">`;
-  msgs.forEach(msg=>{
+  msgs.forEach(function(msg){
     var isMe=msg.uid===A.user.id;
     var col=tc(msg.team)||"#c9a227";
     h+=`<div class="${isMe?"msg-me":"msg-ot"}">
@@ -1037,24 +1039,24 @@ function doResetPw(){
 }
 function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
-  var key=`${A.year}-${A.month}`;
+  var key=""+A.year+"-"+A.month;
   delete A.overrides[key];ls("cmc_ov",A.overrides);
   toast("Planning du mois r\u00e9initialis\u00e9");dc();
 }
 
 function vTeams(){
-  var sorted=A.teams.slice().sort((a,b)=>a.departureOrder-b.departureOrder);
+  var sorted=A.teams.slice().sort(function(a,b){return a.departureOrder-b.departureOrder;});
   var h=`<div class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div><div class="sec-title">\u00c9quipes</div><div class="sec-sub">${A.employees.length} employ\u00e9s</div></div>
     <button class="btn gold" onclick="sv('employees')" style="font-size:11px;padding:8px 11px">\ud83d\udc65 Employ\u00e9s</button>
   </div>`;
-  sorted.forEach(team=>{
+  sorted.forEach(function(team){
     var tcc=team.color||"#888";
-    var ec=A.employees.filter(e=>e.team===team.id).length;
+    var ec=A.employees.filter(function(e){return e.team===team.id;}).length;
     var mi=gm(team.id);
     var chefs=CHEFS_T[team.id]||[];
-    var teamEmps=A.employees.filter(e=>e.team===team.id);
+    var teamEmps=A.employees.filter(function(e){return e.team===team.id;});
     h+=`<div class="card" style="padding:12px;border-top:2px solid ${tcc}45;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <div style="width:28px;height:28px;border-radius:7px;background:${tcc}18;color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${esc(team.id)}</div>
@@ -1069,7 +1071,7 @@ function vTeams(){
 
       <div style="margin-bottom:10px">
         <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udc51 Chef d'\u00e9quipe</div>
-        ${(()=>{
+        ${(function(){
           var chef=CHEF_EQ[team.id]||"";
           var isEditing=editChefSlot&&editChefSlot.tid===team.id;
           var r=`<div style="border:1px solid ${tcc}30;border-radius:8px;overflow:hidden">
@@ -1101,15 +1103,15 @@ function setChef(tid,pos,name){
   if(name===""){CHEFS_T[tid][pos]="__empty__";}
   else{CHEFS_T[tid][pos]=name;}
   // Nettoyer les vides
-  CHEFS_T[tid]=CHEFS_T[tid].filter(n=>n&&n!=="__empty__");
+  CHEFS_T[tid]=CHEFS_T[tid].filter(function(n){return n&&n!=="__empty__";});
   saveChefsT();dc();
 }
 function addChef(tid){
   if(!A.user||A.user.id!==AID)return;
   if(!CHEFS_T[tid])CHEFS_T[tid]=[];
   // Ajouter le premier employ\u00e9 de l'\u00e9quipe pas encore dans la liste
-  var teamEmps=A.employees.filter(e=>e.team===tid);
-  var next=teamEmps.find(e=>!CHEFS_T[tid].includes(e.name));
+  var teamEmps=A.employees.filter(function(e){return e.team===tid;});
+  var next=teamEmps.find(function(e){return !CHEFS_T[tid].includes(e.name);});
   CHEFS_T[tid].push(next?next.name:teamEmps[0]?teamEmps[0].name:"");
   saveChefsT();dc();
 }
@@ -1122,7 +1124,7 @@ function removeChef(tid,pos){
 
 var showAddF=false,editEmpId=null;
 function vEmps(){
-  var filt=A.employees.filter(e=>{
+  var filt=A.employees.filter(function(e){
     var q=A.empQ.toLowerCase();
     return e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q);
   });
@@ -1153,7 +1155,7 @@ function vEmps(){
   }
 
   h+=`<div class="card">`;
-  filt.forEach((emp,i)=>{
+  filt.forEach(function(emp,i){
     var tcc=tc(emp.team),isAdm=emp.id===AID;
     var isEdit=editEmpId===emp.id;
     h+=`<div style="${i>0?"border-top:1px solid #0a160a":""}">`;
@@ -1226,7 +1228,7 @@ function vEmps(){
 
 function updEmp(id,field,val){
   if(!A.user||A.user.id!==AID)return;
-  var e=A.employees.find(x=>x.id===id);
+  var e=A.employees.find(function(x){return x.id===id;});
   if(!e)return;
   e[field]=val;
   sav();
@@ -1235,7 +1237,7 @@ function updEmp(id,field,val){
 }
 function updCDP(id,enabled){
   if(!A.user||A.user.id!==AID)return;
-  var e=A.employees.find(x=>x.id===id);
+  var e=A.employees.find(function(x){return x.id===id;});
   if(!e)return;
   // Activer ou d\u00e9sactiver les shifts CDP selon le profil de l'employ\u00e9
   var prof=EP[e.name];
@@ -1290,7 +1292,7 @@ function vImport(){
     <div style="font-size:9px;color:#3a5030;margin-bottom:8px">Collez depuis Numbers/Excel ou tapez directement</div>
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:10px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
-      onpaste="setTimeout(()=>doImport(),300)"></textarea>
+      onpaste="setTimeout(function(){doImport();},300)"></textarea>
     <button class="btn gold" onclick="doImport()" style="width:100%;justify-content:center;margin-top:10px;padding:13px;font-size:13px;border-radius:10px">
       \u2705 Importer et v\u00e9rifier
     </button>
@@ -1314,13 +1316,13 @@ function vImport(){
 // \u2500\u2500 Parser planning CMC (items avec coordonn\u00e9es X,Y) \u2500\u2500\u2500\u2500\u2500
 function parseCMCPlanningFromItems(allItems, year, month){
   var days=getDays(year,month);
-  var validCodes=new Set(Object.keys(CODES));
+  var validCodesArr=Object.keys(CODES);
 
   // \u2500\u2500 1. Grouper les items par ligne Y (tol\u00e9rance \u00b15px) \u2500\u2500
-  var sorted=allItems.slice().sort((a,b)=>a.y-b.y||a.x-b.x);
+  var sorted=allItems.slice().sort(function(a,b){return a.y-b.y||a.x-b.x;});
   var rows=[];
   var curY=null;
-  sorted.forEach(item=>{
+  sorted.forEach(function(item){
     if(curY===null||Math.abs(item.y-curY)>5){
       rows.push([]);curY=item.y;
     }
@@ -1329,15 +1331,15 @@ function parseCMCPlanningFromItems(allItems, year, month){
 
   // \u2500\u2500 2. Trouver la ligne des jours (1-31) \u2500\u2500
   var dayRow=null;
-  rows.forEach(row=>{
-    var nums=row.filter(i=>{var n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
+  rows.forEach(function(row){
+    var nums=row.filter(function(i){var n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
     if(nums.length>=20) dayRow=nums; // au moins 20 jours trouv\u00e9s sur une ligne
   });
   // Fallback: prendre la ligne avec le plus de chiffres 1-31
   if(!dayRow){
     var best=0;
-    rows.forEach(row=>{
-      var nums=row.filter(i=>{var n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
+    rows.forEach(function(row){
+      var nums=row.filter(function(i){var n=parseInt(i.txt);return !isNaN(n)&&n>=1&&n<=31&&i.txt===String(n);});
       if(nums.length>best){best=nums.length;dayRow=nums;}
     });
   }
@@ -1345,10 +1347,10 @@ function parseCMCPlanningFromItems(allItems, year, month){
 
   // Position X de chaque jour
   var dayPos={};
-  dayRow.forEach(i=>dayPos[parseInt(i.txt)]=i.x);
+  dayRow.forEach(function(i){dayPos[parseInt(i.txt)]=i.x;});
 
   // Tol\u00e9rance X = moiti\u00e9 espacement entre jours cons\u00e9cutifs
-  var dNums=Object.keys(dayPos).map(Number).sort((a,b)=>a-b);
+  var dNums=Object.keys(dayPos).map(Number).sort(function(a,b){return a-b;});
   var xTol=15;
   if(dNums.length>=2){
     var gaps=[];
@@ -1356,12 +1358,12 @@ function parseCMCPlanningFromItems(allItems, year, month){
       var g=dayPos[dNums[i]]-dayPos[dNums[i-1]];
       if(g>2&&g<80) gaps.push(g);
     }
-    if(gaps.length) xTol=Math.round(gaps.reduce((a,b)=>a+b)/gaps.length*0.55);
+    if(gaps.length) xTol=Math.round(gaps.reduce(function(a,b){return a+b;})/gaps.length*0.55);
   }
 
   function xToDay(x){
     var best=null,bestDist=xTol*1.8;
-    dNums.forEach(d=>{
+    dNums.forEach(function(d){
       var dist=Math.abs(dayPos[d]-x);
       if(dist<bestDist){bestDist=dist;best=d;}
     });
@@ -1371,42 +1373,42 @@ function parseCMCPlanningFromItems(allItems, year, month){
   // \u2500\u2500 3. Trouver les lignes d'employ\u00e9s \u2500\u2500
   // Chaque employ\u00e9 appara\u00eet comme NOM + PRENOM sur une ligne
   var empLines=[]; // {empName, y, rowIdx}
-  rows.forEach((row,ri)=>{
-    var lineText=row.map(i=>i.txt).join(" ").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    A.employees.forEach(emp=>{
+  rows.forEach(function(row,ri){
+    var lineText=row.map(function(i){return i.txt;}).join(" ").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    A.employees.forEach(function(emp){
       var eName=emp.name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
       var parts=eName.split(" ");
       // Match si le NOM de famille appara\u00eet dans cette ligne
       var nomMatch=parts[0]&&lineText.includes(parts[0]);
       var prenomMatch=parts.length>1&&parts[1]&&lineText.includes(parts[1][0]);
       if(nomMatch&&(parts.length===1||prenomMatch)){
-        var existing=empLines.find(e=>e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20);
+        var existing=empLines.find(function(e){return e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20;});
         if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
       }
     });
   });
 
-  if(empLines.length===0) return buildDebugCSV(allItems,"Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: "+allItems.slice(0,20).map(i=>i.txt).join(","));
+  if(empLines.length===0) return buildDebugCSV(allItems,"Aucun employ\u00e9 trouv\u00e9. Noms dans le PDF: "+allItems.slice(0,20).map(function(i){return i.txt;}).join(","));
 
   // \u2500\u2500 4. Pour chaque item avec un code valide, trouver employ\u00e9+jour \u2500\u2500
   var planning={}; // {empName:{day:code}}
-  empLines.forEach(e=>{if(!planning[e.empName])planning[e.empName]={};});
+  empLines.forEach(function(e){if(!planning[e.empName])planning[e.empName]={};});
 
   // Construire une liste tri\u00e9e des Y d'employ\u00e9s
-  var empYs=empLines.map(e=>e.y).sort((a,b)=>a-b);
+  var empYs=empLines.map(function(e){return e.y;}).sort(function(a,b){return a-b;});
 
-  allItems.forEach(item=>{
+  allItems.forEach(function(item){
     var raw=item.txt.trim().toUpperCase().replace(/['']/g,"'");
     // Normaliser codes CDP
     var code=raw.replace("*","*");
-    if(!validCodes.has(code)) return;
+    if(validCodesArr.indexOf(code)<0) return;
 
     var day=xToDay(item.x);
     if(!day||day<1||day>days) return;
 
     // Trouver l'employ\u00e9 le plus proche en Y
     var bestEmp=null,bestDist=30;
-    empLines.forEach(el=>{
+    empLines.forEach(function(el){
       var d=Math.abs(el.y-item.y);
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
@@ -1414,11 +1416,18 @@ function parseCMCPlanningFromItems(allItems, year, month){
   });
 
   // \u2500\u2500 5. Construire CSV \u2500\u2500
-  var found=Object.keys(planning).filter(n=>Object.keys(planning[n]).length>0);
+  var found=Object.keys(planning).filter(function(n){return Object.keys(planning[n]).length>0;});
   if(!found.length) return buildDebugCSV(allItems,"Codes trouv\u00e9s mais pas associ\u00e9s. DayPos: "+JSON.stringify(dayPos).slice(0,100));
 
-  var header="NOM,"+(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days).join(",");
-  return [header,...found.map(name=>[name,...Array.from({length:days},(_,i)=>planning[name][i+1]||"")].join(","))].join("\n");
+  var daysArr=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
+  var header="NOM,"+daysArr.join(",");
+  var csvLines=[header];
+  found.forEach(function(name){
+    var row=[name];
+    for(var di=1;di<=days;di++){row.push(planning[name][di]||"");}
+    csvLines.push(row.join(","));
+  });
+  return csvLines.join("\n");
 }
 
 // Compat ancien appel
@@ -1430,8 +1439,8 @@ function parseCMCPlanningFromRows(rows,year,month){
 function buildDebugCSV(items,reason){
   var lines=["# DEBUG: "+reason];
   // Afficher les 40 premiers items distincts
-  var seen=new Set();
-  items.slice(0,200).forEach(i=>{if(!seen.has(i.txt)&&i.txt.length<20){seen.add(i.txt);lines.push("x="+i.x+",y="+i.y+",txt="+i.txt);}});
+  var seen={};
+  items.slice(0,200).forEach(function(i){if(!seen[i.txt]&&i.txt.length<20){seen[i.txt]=true;lines.push("x="+i.x+",y="+i.y+",txt="+i.txt);}});
   return lines.join("\n");
 }
 
@@ -1489,10 +1498,10 @@ function doImport(){
   var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
   if(!txt){toast("Aucun contenu","err");return;}
-  var lines=txt.split("\n").map(l=>l.trim()).filter(Boolean);
+  var lines=txt.split("\n").map(function(l){return l.trim();}).filter(Boolean);
   if(lines.length<2){toast("Format invalide","err");return;}
   var sep=lines[0].includes("\t")?"\t":",";
-  var key=`${iy}-${im}`;
+  var key=""+iy+"-"+im;
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
@@ -1500,7 +1509,7 @@ function doImport(){
   for(var li=1;li<lines.length;li++){
     var parts=lines[li].split(sep);
     var name=parts[0].trim().toUpperCase();
-    var emp=A.employees.find(e=>e.name===name);
+    var emp=A.employees.find(function(e){return e.name===name;});
     if(!emp){err++;errLines.push("Inconnu: "+name);continue;}
     refData.rows[emp.id]={};
     for(var di=1;di<parts.length;di++){
@@ -1523,46 +1532,50 @@ function doImport(){
   ls("cmc_verif_"+key,verif);
   var r=document.getElementById("impRes");
   var verifTxt=verif.errors.length>0
-    ?` \u26a0\ufe0f ${verif.errors.length} ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide`
-    :` \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent`;
-  if(r)r.innerHTML=`<div style="color:#c0cca8">${ok} cellules import\u00e9es${err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":""} \u2192 ${MFR[im]} ${iy}</div>`+
-    `<div style="margin-top:6px;font-weight:700;color:${verif.errors.length?"#c9a227":"#3a8a50"}">${verifTxt}</div>`+
-    (verif.errors.length?`<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: ${verif.errors.slice(0,3).map(e=>e.msg).join(" \u00b7 ")}${verif.errors.length>3?" (+"+( verif.errors.length-3)+" autres)":""}</div>`:"");
-  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s) d\u00e9tect\u00e9e(s)':`\u2705 Import v\u00e9rifi\u00e9 \u2014 ${ok} cellules`);
+    ?" \u26a0\ufe0f "+verif.errors.length+" ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide"
+    :" \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent";
+  var errPart=err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":"";
+  var verifCol=verif.errors.length?"#c9a227":"#3a8a50";
+  var errMsgs=verif.errors.length?verif.errors.slice(0,3).map(function(e){return e.msg;}).join(" \u00b7 "):"";
+  var plusMore=verif.errors.length>3?" (+"+(verif.errors.length-3)+" autres)":"";
+  var errDiv=verif.errors.length?'<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: '+errMsgs+plusMore+'</div>':"";
+  if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+' \u2192 '+MFR[im]+' '+iy+'</div>'+
+    '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv;
+  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s) d\u00e9tect\u00e9e(s)':'\u2705 Import v\u00e9rifi\u00e9 \u2014 '+ok+' cellules');
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+e.message+'</div>';
   }
-  if(errLines.length>0) errLines.forEach(e=>console.warn("Import:",e));
+  if(errLines.length>0) errLines.forEach(function(e){console.warn("Import:",e);});
 }
 
 // \u2500\u2500 MOTEUR DE V\u00c9RIFICATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function runVerification(year,month,refData){
   var pl=gpl(); // planning tel qu'affich\u00e9 dans l'app
   var ref=refData||lg("cmc_ref_"+year+"-"+month,null);
-  var result={year,month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
+  var result={year:year,month:month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
   if(!ref||!ref.rows){result.warnings.push({msg:"Aucune r\u00e9f\u00e9rence d'import pour ce mois"});return result;}
   var days=getDays(year,month);
   // Pour chaque employ\u00e9 dans la r\u00e9f\u00e9rence
-  Object.keys(ref.rows).forEach(empId=>{
-    var emp=A.employees.find(e=>e.id===empId);
+  Object.keys(ref.rows).forEach(function(empId){
+    var emp=A.employees.find(function(e){return e.id===empId;});
     if(!emp){result.warnings.push({msg:"Employ\u00e9 "+empId+" introuvable dans la liste"});return;}
     var refRow=ref.rows[empId];
     var plRow=pl[empId]||{};
-    Object.keys(refRow).forEach(d=>{
+    Object.keys(refRow).forEach(function(d){
       var refCode=refRow[d];
       var plCode=plRow[parseInt(d)]||"";
       if(refCode!==plCode){
         result.errors.push({
-          empId,empName:emp.name,day:parseInt(d),
-          refCode,plCode,
-          msg:`${emp.name} j${d}: planning="${plCode||"vide"}" \u2260 r\u00e9f\u00e9rence="${refCode}"`
+          empId:empId,empName:emp.name,day:parseInt(d),
+          refCode:refCode,plCode:plCode,
+          msg:emp.name+" j"+d+": planning=\""+(plCode||"vide")+"\" \u2260 r\u00e9f\u00e9rence=\""+refCode+"\""
         });
       } else {
-        result.ok.push({empId,day:d,code:refCode});
+        result.ok.push({empId:empId,day:d,code:refCode});
       }
     });
     // V\u00e9rifier les jours du planning non couverts par la r\u00e9f\u00e9rence
-    Object.keys(plRow).forEach(d=>{
+    Object.keys(plRow).forEach(function(d){
       if(!refRow[d]&&plRow[d]&&plRow[d]!=="RH"&&plRow[d]!=="R"){
         // Jour travaill\u00e9 dans le planning mais absent de la r\u00e9f\u00e9rence
         // C'est normal si la r\u00e9f\u00e9rence ne couvre pas tous les jours
@@ -1590,10 +1603,10 @@ function verifyCurrentMonth(){
 
 function openPicker(eid,day,el){
   if(!A.user||A.user.id!==AID)return;
-  A.pt={eid,day};
+  A.pt={eid:eid,day:day};
   var pl=gpl(),cur=(pl[eid]||{})[day]||"";
   var pk=document.getElementById("pk");
-  pk.innerHTML=CK.map(c=>{
+  pk.innerHTML=CK.map(function(c){
     var ci=CODES[c];
     return `<div class="pb${c===cur?" cur":""}" style="color:${ci.c};border-color:${c===cur?"#c9a227":ci.b}" onclick="pc('${c}')">${c}</div>`;
   }).join("")+`<div class="pclr" onclick="pc('')">\u2715 Effacer</div>`;
@@ -1606,9 +1619,9 @@ function openPicker(eid,day,el){
 }
 function closePicker(){document.getElementById("pk").style.display="none";document.getElementById("ov").style.display="none";A.pt=null;}
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
-function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(x=>x.id===id);if(t){t[f]=v;ls("cmc_t",A.teams);}}
-function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(x=>x.id===id);if(e){e.team=team;sav();}}
-function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(e=>e.id!==id);sav();toast("Employ\u00e9 supprim\u00e9");dc();}
+function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(function(x){return x.id===id;});if(t){t[f]=v;ls("cmc_t",A.teams);}}
+function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(function(x){return x.id===id;});if(e){e.team=team;sav();}}
+function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(function(e){return e.id!==id;});sav();toast("Employ\u00e9 supprim\u00e9");dc();}
 function addEmp(){
   if(!A.user||A.user.id!==AID)return;
   var id=(document.getElementById("nid")||{}).value||"";
@@ -1618,7 +1631,7 @@ function addEmp(){
   var chef=document.getElementById("nchef")?document.getElementById("nchef").checked:false;
   if(!id||!name){toast("Remplissez tous les champs","err");return;}
   id=id.trim().toUpperCase();
-  if(A.employees.find(e=>e.id===id)){toast("Matricule d\u00e9j\u00e0 existant","err");return;}
+  if(A.employees.find(function(e){return e.id===id;})){toast("Matricule d\u00e9j\u00e0 existant","err");return;}
   A.employees.push({id,name:name.trim().toUpperCase(),team,post:post.trim(),chef,cdpShifts:[]});
   sav();toast("Employ\u00e9 ajout\u00e9 !");showAddF=false;dc();
 }
@@ -1660,7 +1673,7 @@ function vIA(){
     </div>`;
   }
 
-  iaHistory.forEach(msg=>{
+  iaHistory.forEach(function(msg){
     if(msg.role==="user"){
       h+=`<div style="align-self:flex-end;background:rgba(201,162,39,.14);border:1px solid rgba(201,162,39,.2);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:85%">
         <div style="font-size:12px;color:#d0c090">${esc(msg.text)}</div>
@@ -1689,13 +1702,13 @@ function iaCheckNow(){
   if(!v){
     iaHistory.push({role:"user",text:"V\u00e9rifier le planning "+MFR[A.month]+" "+A.year});
     iaHistory.push({role:"bot",html:`<span style="color:#c9a227">\u26a0\ufe0f Aucun planning import\u00e9 pour ${MFR[A.month]} ${A.year}.</span><br>Utilisez <strong>Admin \u2192 Import planning</strong> pour importer un planning CSV, puis je le v\u00e9rifierai automatiquement.`});
-    dc();setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+    dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
     return;
   }
   iaHistory.push({role:"user",text:"V\u00e9rifier le planning "+MFR[A.month]+" "+A.year});
   iaHistory.push({role:"bot",html:formatVerifReport(v)});
   sv("ia");
-  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},80);
+  setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},80);
 }
 
 function formatVerifReport(v){
@@ -1723,12 +1736,12 @@ function formatVerifReport(v){
     h+=`<div style="font-size:10px;font-weight:700;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f Erreurs d\u00e9tect\u00e9es :</div>`;
     // Grouper par employ\u00e9
     var byEmp={};
-    v.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=[];byEmp[e.empName].push(e);});
-    Object.keys(byEmp).forEach(name=>{
+    v.errors.forEach(function(e){if(!byEmp[e.empName])byEmp[e.empName]=[];byEmp[e.empName].push(e);});
+    Object.keys(byEmp).forEach(function(name){
       var errs=byEmp[name];
       h+=`<div style="padding:7px 10px;background:#0e1c0e;border:1px solid #c9a22730;border-radius:7px;margin-bottom:5px">
         <div style="font-size:10px;font-weight:700;color:#d0cca0;margin-bottom:4px">\ud83d\udc64 ${esc(name)} \u2014 ${errs.length} erreur(s)</div>`;
-      errs.slice(0,5).forEach(e=>{
+      errs.slice(0,5).forEach(function(e){
         var ciRef=CODES[e.refCode]||{c:"#c9a227"};
         var ciPl=CODES[e.plCode]||{c:"#6a8a68"};
         h+=`<div style="font-size:9px;color:#6a8a68;margin-bottom:2px">
@@ -1762,8 +1775,8 @@ function iaAskCorrect(){
   var n=pendingFix.errors.length;
   // R\u00e9sum\u00e9 des corrections \u00e0 faire
   var byEmp={};
-  pendingFix.errors.forEach(e=>{if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
-  var summary=Object.keys(byEmp).slice(0,5).map(n=>n+" ("+byEmp[n]+"j)").join(", ");
+  pendingFix.errors.forEach(function(e){if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
+  var summary=Object.keys(byEmp).slice(0,5).map(function(n){return n+" ("+byEmp[n]+"j)";}).join(", ");
   var h=`<div style="padding:10px;background:#0e1c10;border:1px solid rgba(201,162,39,.3);border-radius:8px">
     <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
     <div style="font-size:10px;color:#6a8a68;margin-bottom:10px">
@@ -1778,14 +1791,14 @@ function iaAskCorrect(){
   iaHistory.push({role:"user",text:"Corriger les erreurs du planning"});
   iaHistory.push({role:"bot",html:h});
   dc();
-  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaCancelFix(){
   pendingFix=null;
   iaHistory.push({role:"bot",html:"<span style='color:#3a5030'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>"});
   dc();
-  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaConfirmCorrect(){
@@ -1797,7 +1810,7 @@ function iaConfirmCorrect(){
   var errors=pendingFix.errors;
   var fixed=0,skipped=0;
   var details=[];
-  errors.forEach(e=>{
+  errors.forEach(function(e){
     if(!e.refCode||!CODES[e.refCode]){skipped++;return;}
     saveOv(e.empId,e.day,e.refCode);
     fixed++;
@@ -1814,7 +1827,7 @@ function iaConfirmCorrect(){
     <div style="font-size:11px;font-weight:700;color:#3a8a50;margin-bottom:8px">\u2705 ${fixed} correction(s) appliqu\u00e9e(s)</div>`;
   if(details.length>0){
     h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">`;
-    details.slice(0,8).forEach(d=>{
+    details.slice(0,8).forEach(function(d){
       var ciO=CODES[d.old]||{c:"#c04040"};
       var ciN=CODES[d.new]||{c:"#3a8a50"};
       h+=`<div style="font-size:9px;color:#6a8a68">
@@ -1835,7 +1848,7 @@ function iaConfirmCorrect(){
   h+=`</div>`;
   iaHistory.push({role:"bot",html:h});
   dc();
-  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   toast("\u2705 "+fixed+" correction(s) appliqu\u00e9e(s)");
 }
 
@@ -1848,7 +1861,7 @@ function iaSend(preset){
   var reply=iaRespond(text);
   if(reply!==null) iaHistory.push({role:"bot",html:reply});
   dc();
-  setTimeout(()=>{var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 
 function iaClearHistory(){iaHistory=[];dc();}
@@ -1859,7 +1872,7 @@ function iaRespond(q){
   var isAdm=A.user&&A.user.id===AID;
 
   // \u2500\u2500 Planning d'un employ\u00e9 \u2500\u2500
-  var empMatch=A.employees.find(e=>ql.includes(e.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
+  var empMatch=A.employees.find(function(e){return ql.includes(e.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""));});
   if(empMatch&&(ql.includes("planning")||ql.includes("horaire")||ql.includes("mois")||ql.includes("travail"))){
     var p=pl[empMatch.id]||{};
     var days=getDays(A.year,A.month);
@@ -1869,7 +1882,7 @@ function iaRespond(q){
       var ci=CODES[code];
       if(ci)rows+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:1px 5px;font-size:10px;margin:1px">${d}: ${code}</span> `;
     }
-    var trav=Object.values(p).filter(v=>v&&v!=="RH"&&v!=="R").length;
+    var trav=Object.values(p).filter(function(v){return v&&v!=="RH"&&v!=="R";}).length;
     var team=gt(empMatch.team);
     return `<strong style="color:#c9a227">${esc(empMatch.name)}</strong> \u2014 ${esc(team?team.name:"")} \u2014 ${trav}j travaill\u00e9s en ${MFR[A.month]}<br><br>${rows||"Aucun planning trouv\u00e9"}`;
   }
@@ -1879,18 +1892,18 @@ function iaRespond(q){
     var today=new Date().getDate();
     var tYear=new Date().getFullYear(),tMonth=new Date().getMonth();
     if(tYear===A.year&&tMonth===A.month){
-      var workers=A.employees.filter(e=>{
+      var workers=A.employees.filter(function(e){
         var code=(pl[e.id]||{})[today]||"";
         return isWork(code);
       });
       if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
       var byTeam={};
-      workers.forEach(e=>{if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
+      workers.forEach(function(e){if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
       var r=`<strong>${workers.length} employ\u00e9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
-      Object.keys(byTeam).forEach(tid=>{
+      Object.keys(byTeam).forEach(function(tid){
         var tcc=tc(tid),team=gt(tid);
         r+=`<span style="color:${tcc};font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span> : `;
-        r+=byTeam[tid].map(e=>{
+        r+=byTeam[tid].map(function(e){
           var code=(pl[e.id]||{})[today]||"";
           var ci=CODES[code]||{c:"#888"};
           return `${esc(e.name)} <span style="color:${ci.c};font-size:10px">(${code})</span>`;
@@ -1901,10 +1914,10 @@ function iaRespond(q){
   }
 
   // \u2500\u2500 Effectif d'une \u00e9quipe \u2500\u2500
-  var teamMatch=A.teams.find(t=>ql.includes(t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes("equipe "+t.id)||ql.includes("\u00e9quipe "+t.id)||ql.includes("team "+t.id));
+  var teamMatch=A.teams.find(function(t){return ql.includes(t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes("equipe "+t.id)||ql.includes("\u00e9quipe "+t.id)||ql.includes("team "+t.id);});
   if(teamMatch){
-    var emps=A.employees.filter(e=>e.team===teamMatch.id);
-    var chefs=emps.filter(e=>e.chef);
+    var emps=A.employees.filter(function(e){return e.team===teamMatch.id;});
+    var chefs=emps.filter(function(e){return e.chef;});
     var mir=gm(teamMatch.id);
     var r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
     if(chefs.length) r+=`<br>\ud83d\udc51 Chefs : ${chefs.map(e=>esc(e.name)).join(", ")}<br>`;
@@ -1914,7 +1927,7 @@ function iaRespond(q){
   }
 
   // \u2500\u2500 Code horaire \u2500\u2500
-  var codeMatch=CK.find(c=>ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9/*']/g,"").includes(c.toLowerCase().replace(/[^a-z0-9/*']/g,"")));
+  var codeMatch=CK.find(function(c){return ql.includes(c.toLowerCase())||ql.replace(/[^a-z0-9\/*']/g,"").includes(c.toLowerCase().replace(/[^a-z0-9\/*']/g,""));});
   if(codeMatch&&(ql.includes("horaire")||ql.includes("heure")||ql.includes("signifie")||ql.includes("veut dire")||ql.includes("quoi")||ql.includes("c'est")||ql.includes("code"))){
     var ci=CODES[codeMatch];
     return `Code <strong style="color:${ci.c}">${codeMatch}</strong> = <strong>${ci.l}</strong>${ci.cdp?" (inclut Caf\u00e9 de Paris)":""}`;
@@ -1923,7 +1936,7 @@ function iaRespond(q){
   // \u2500\u2500 Tous les codes \u2500\u2500
   if(ql.includes("codes")||ql.includes("liste des horaires")||ql.includes("tous les horaires")){
     var r="<strong>Codes horaires CMC :</strong><br><br>";
-    CK.forEach(c=>{
+    CK.forEach(function(c){
       var ci=CODES[c];
       r+=`<span style="display:inline-block;background:${ci.bg};color:${ci.c};border:1px solid ${ci.b};border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">${c}</span> ${ci.l}${ci.cdp?" \u2605":""}<br>`;
     });
@@ -1937,7 +1950,7 @@ function iaRespond(q){
       return `Chef de la <strong style="color:${teamMatch.color}">${esc(teamMatch.name)}</strong> : <strong style="color:#c9a227">${esc(chef)}</strong>`;
     }
     var r="<strong>Chefs d'\u00e9quipe :</strong><br><br>";
-    A.teams.forEach(t=>{
+    A.teams.forEach(function(t){
       var chef=CHEF_EQ[t.id]||"\u2014";
       r+=`<span style="color:${t.color};font-weight:700">${esc(t.name)}</span> : <strong style="color:#c9a227">${esc(chef)}</strong><br>`;
     });
@@ -1948,16 +1961,16 @@ function iaRespond(q){
   if(ql.includes("absent")||ql.includes("repos")||ql.includes("conge")||ql.includes("rh")){
     var today=new Date().getDate();
     if(new Date().getFullYear()===A.year&&new Date().getMonth()===A.month){
-      var absents=A.employees.filter(e=>{var c=(pl[e.id]||{})[today]||"";return c==="RH"||c==="R"||c==="CP"||c==="M"||c==="AF";});
+      var absents=A.employees.filter(function(e){var c=(pl[e.id]||{})[today]||"";return c==="RH"||c==="R"||c==="CP"||c==="M"||c==="AF";});
       if(!absents.length) return `Personne en repos/absent le ${today} ${MFR[A.month]}.`;
-      return `<strong>${absents.length} employ\u00e9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(e=>{var c=(pl[e.id]||{})[today]||"";var ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} \u2014 <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
+      return `<strong>${absents.length} employ\u00e9(s) absent(s) le ${today} ${MFR[A.month]} :</strong><br><br>${absents.map(function(e){var c=(pl[e.id]||{})[today]||"";var ci=CODES[c]||{c:"#888"};return `\u2022 ${esc(e.name)} \u2014 <span style="color:${ci.c}">${c}</span>`;}).join("<br>")}`;
     }
   }
 
   // \u2500\u2500 CDP ce mois \u2500\u2500
   if(ql.includes("cdp")||ql.includes("cafe de paris")||ql.includes("caf\u00e9 de paris")){
     var days=getDays(A.year,A.month);
-    var cdpEmps=A.employees.filter(e=>{
+    var cdpEmps=A.employees.filter(function(e){
       for(var d=1;d<=days;d++){var c=(pl[e.id]||{})[d]||"";if(CODES[c]&&CODES[c].cdp)return true;}
       return false;
     });
@@ -1969,8 +1982,8 @@ function iaRespond(q){
   if(ql.includes("stat")||ql.includes("combien")||ql.includes("effectif")||ql.includes("total")){
     var r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
     r+=`\ud83d\udc65 Total : <strong>${A.employees.length}</strong> employ\u00e9s<br>`;
-    A.teams.forEach(t=>{
-      var n=A.employees.filter(e=>e.team===t.id).length;
+    A.teams.forEach(function(t){
+      var n=A.employees.filter(function(e){return e.team===t.id;}).length;
       r+=`<span style="color:${t.color}">\u25cf</span> ${esc(t.name)} : ${n} personnes<br>`;
     });
     return r;
@@ -2010,10 +2023,10 @@ Posez votre question librement !`;
     var ref=lg("cmc_ref_"+key,null);
     if(!ref) return `Pas de r\u00e9f\u00e9rence d'import pour ${MFR[A.month]} ${A.year}.`;
     var v=runVerification(A.year,A.month,ref);
-    var empErrs=v.errors.filter(e=>e.empId===empMatch.id);
+    var empErrs=v.errors.filter(function(e){return e.empId===empMatch.id;});
     if(!empErrs.length) return `\u2705 <strong>${esc(empMatch.name)}</strong> \u2014 aucune erreur d\u00e9tect\u00e9e, tous les horaires correspondent.`;
     var r=`\u26a0\ufe0f <strong>${esc(empMatch.name)}</strong> \u2014 ${empErrs.length} erreur(s) :<br><br>`;
-    empErrs.forEach(e=>{
+    empErrs.forEach(function(e){
       var ciR=CODES[e.refCode]||{c:"#c9a227"};
       var ciP=CODES[e.plCode]||{c:"#6a8a68"};
       r+=`Jour ${e.day} : planning=<span style="color:${ciP.c};font-weight:700">${e.plCode||"vide"}</span> \u2192 devrait \u00eatre <span style="color:${ciR.c};font-weight:700">${e.refCode}</span><br>`;
