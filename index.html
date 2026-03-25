@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -10,58 +9,59 @@
 <title>CMC Teams</title>
 <style>
 
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 input,select,button,textarea{font-family:inherit}
 
 /* === FOND FEUTRINE CASINO === */
 body{
-font-family:system-ui,-apple-system,sans-serif;
-font-size:14px;color:#b8c8a8;
-min-height:100vh;
-background:#1a2e1c;
+  font-family:system-ui,-apple-system,sans-serif;
+  font-size:14px;color:#b8c8a8;
+  min-height:100vh;
+  background:#1a2e1c;
 }
 /* Texture feutrine losanges */
 body::before{
-content:””;position:fixed;inset:0;z-index:0;pointer-events:none;
-background:
-repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,162,39,.022) 24px,rgba(201,162,39,.022) 26px),
-repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(201,162,39,.022) 24px,rgba(201,162,39,.022) 26px),
-radial-gradient(ellipse at 50% 0%,#223d24 0%,#1a2e1c 60%);
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,162,39,.022) 24px,rgba(201,162,39,.022) 26px),
+    repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(201,162,39,.022) 24px,rgba(201,162,39,.022) 26px),
+    radial-gradient(ellipse at 50% 0%,#223d24 0%,#1a2e1c 60%);
 }
 /* Symboles cartes en fond décoratif */
 body::after{
-content:“♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦”;
-position:fixed;bottom:90px;left:0;right:0;
-font-size:18px;letter-spacing:8px;
-color:rgba(201,162,39,.04);
-text-align:center;pointer-events:none;z-index:0;
-white-space:nowrap;overflow:hidden;
+  content:"♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦  ♠  ♣  ♥  ♦";
+  position:fixed;bottom:90px;left:0;right:0;
+  font-size:18px;letter-spacing:8px;
+  color:rgba(201,162,39,.04);
+  text-align:center;pointer-events:none;z-index:0;
+  white-space:nowrap;overflow:hidden;
 }
 #app,#toast,#pk,#ov{position:relative;z-index:1}
 
 /* === TOPBAR === */
 #topbar{
-background:linear-gradient(90deg,#18301a,#1e381e,#18301a);
-border-bottom:1px solid rgba(201,162,39,.25);
-box-shadow:0 2px 20px rgba(0,0,0,.75),inset 0 -1px 0 rgba(201,162,39,.1);
-padding:0 14px;height:54px;
-display:flex;align-items:center;gap:10px;
-position:sticky;top:0;z-index:90;
+  background:linear-gradient(90deg,#18301a,#1e381e,#18301a);
+  border-bottom:1px solid rgba(201,162,39,.25);
+  box-shadow:0 2px 20px rgba(0,0,0,.75),inset 0 -1px 0 rgba(201,162,39,.1);
+  padding:0 14px;height:54px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:90;
 }
 
 /* === NAV BAS === */
 #bnav{
-position:fixed;bottom:0;left:0;right:0;
-background:linear-gradient(0deg,#142418,#1a2e1c);
-border-top:1px solid rgba(201,162,39,.2);
-box-shadow:0 -4px 20px rgba(0,0,0,.65);
-display:flex;z-index:99;
+  position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,#142418,#1a2e1c);
+  border-top:1px solid rgba(201,162,39,.2);
+  box-shadow:0 -4px 20px rgba(0,0,0,.65);
+  display:flex;z-index:99;
 }
 .nt{
-flex:1;padding:9px 4px 8px;border:none;background:transparent;
-display:flex;flex-direction:column;align-items:center;gap:2px;
-font-size:8px;color:#243020;border-top:2px solid transparent;
-cursor:pointer;position:relative;text-transform:uppercase;letter-spacing:.5px;
+  flex:1;padding:9px 4px 8px;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:8px;color:#243020;border-top:2px solid transparent;
+  cursor:pointer;position:relative;text-transform:uppercase;letter-spacing:.5px;
 }
 .nt.on{color:#c9a227;border-top-color:#c9a227;font-weight:700}
 .nt em{font-size:17px;font-style:normal}
@@ -123,31 +123,32 @@ select.inp{-webkit-appearance:none}
 
 /* === ÉCRAN LOGIN === */
 .login-bg{
-min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
-background:
-repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,162,39,.025) 24px,rgba(201,162,39,.025) 26px),
-repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(201,162,39,.025) 24px,rgba(201,162,39,.025) 26px),
-radial-gradient(ellipse at 50% 20%,#223d24 0%,#1a2e1c 55%,#162818 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:
+    repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,162,39,.025) 24px,rgba(201,162,39,.025) 26px),
+    repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(201,162,39,.025) 24px,rgba(201,162,39,.025) 26px),
+    radial-gradient(ellipse at 50% 20%,#223d24 0%,#1a2e1c 55%,#162818 100%);
 }
 .login-card{
-background:linear-gradient(170deg,#203822,#1a2e1c);
-border:1px solid rgba(201,162,39,.28);
-border-radius:22px;padding:40px 28px;
-width:100%;max-width:340px;
-box-shadow:0 0 80px rgba(0,0,0,.85),0 0 0 1px rgba(201,162,39,.06),inset 0 1px 0 rgba(201,162,39,.08);
-position:relative;overflow:hidden;
+  background:linear-gradient(170deg,#203822,#1a2e1c);
+  border:1px solid rgba(201,162,39,.28);
+  border-radius:22px;padding:40px 28px;
+  width:100%;max-width:340px;
+  box-shadow:0 0 80px rgba(0,0,0,.85),0 0 0 1px rgba(201,162,39,.06),inset 0 1px 0 rgba(201,162,39,.08);
+  position:relative;overflow:hidden;
 }
 /* Coins de carte */
-.login-card::before{content:“♦”;position:absolute;top:12px;left:16px;font-size:14px;color:rgba(201,162,39,.22)}
-.login-card::after{content:“♦”;position:absolute;bottom:12px;right:16px;font-size:14px;color:rgba(201,162,39,.22);transform:rotate(180deg)}
+.login-card::before{content:"♦";position:absolute;top:12px;left:16px;font-size:14px;color:rgba(201,162,39,.22)}
+.login-card::after{content:"♦";position:absolute;bottom:12px;right:16px;font-size:14px;color:rgba(201,162,39,.22);transform:rotate(180deg)}
 /* Bande déco haut */
 .login-banner{
-background:linear-gradient(90deg,transparent,rgba(201,162,39,.08),transparent);
-border-top:1px solid rgba(201,162,39,.2);
-border-bottom:1px solid rgba(201,162,39,.2);
-text-align:center;font-size:10px;letter-spacing:4px;
-color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
+  background:linear-gradient(90deg,transparent,rgba(201,162,39,.08),transparent);
+  border-top:1px solid rgba(201,162,39,.2);
+  border-bottom:1px solid rgba(201,162,39,.2);
+  text-align:center;font-size:10px;letter-spacing:4px;
+  color:rgba(201,162,39,.35);padding:5px 0;margin-bottom:24px;
 }
+
 
 </style>
 </head>
