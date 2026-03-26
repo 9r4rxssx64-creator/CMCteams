@@ -197,6 +197,12 @@ var CODES={
 };
 var CK=Object.keys(CODES);
 var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
+// Etiquette affichee pour un employe : nom + etoile si chef roulette
+function empLabel(emp){
+  if(!emp) return "";
+  return emp.name+(emp.family==="roulettes"&&emp.chef?" ★":"");
+}
+
 var DEF_TEAMS=[
   {id:"1",name:"\u00c9quipe 1",mirrorTeamId:"4",departureOrder:1,color:"#c9a227"},
   {id:"2",name:"\u00c9quipe 2",mirrorTeamId:"5",departureOrder:2,color:"#4a72a8"},
@@ -206,80 +212,80 @@ var DEF_TEAMS=[
 ];
 
 var DEF_EMP=[
-  {id:"U00001",name:"ESPAGNOL S",       team:"1",post:"BRTP+K",  chef:true, cdpShifts:[]},
-  {id:"U00002",name:"SOLIMIEIS F",      team:"1",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00003",name:"TOMATIS P",        team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00004",name:"BERNARDI JE",      team:"1",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00005",name:"GATTI B",          team:"1",post:"BRTCK",   chef:false,cdpShifts:[]},
-  {id:"U00006",name:"SOSSO G",          team:"1",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00007",name:"MATTONE F",        team:"1",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00008",name:"BRASSEUR F",       team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00009",name:"GAZAGNE F",        team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00010",name:"BONO F",           team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00011",name:"COURTIN F",        team:"1",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00012",name:"BELTRANDI N",      team:"2",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00013",name:"PODGORNY B",       team:"2",post:"BRTP+KE", chef:true, cdpShifts:[]},
-  {id:"U00014",name:"HORGNE C",         team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5"]},
-  {id:"U00015",name:"AGLIARDI M",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00016",name:"EL MISSOURI O",    team:"2",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00017",name:"COTTALORDA D",     team:"2",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00018",name:"BASILE G",         team:"2",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00019",name:"BOYER G",          team:"2",post:"BRTP+KE", chef:true, cdpShifts:[]},
-  {id:"U00020",name:"NIGIONI C",        team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00021",name:"REVOLLON L",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00022",name:"PUGNETTI S",       team:"2",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U11804",name:"DESARZENS K",      team:"3",post:"BRTC",    chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00024",name:"MARIOTTINI J",     team:"3",post:"BRTCP+KE",chef:true, cdpShifts:[]},
-  {id:"U00025",name:"DESSI F",          team:"3",post:"BRTCK",   chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00026",name:"PEREIRA MACENA F", team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00027",name:"LANTERI E",        team:"3",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00028",name:"LARINI H",         team:"3",post:"BRTPE",   chef:false,cdpShifts:[]},
-  {id:"U00029",name:"VERZELLO O",       team:"3",post:"BRTP+K",  chef:true, cdpShifts:[]},
-  {id:"U00030",name:"ARCURI F",         team:"3",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00031",name:"DANIEL S",         team:"3",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00032",name:"FIA S",            team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00033",name:"CAISSON JC",       team:"3",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00034",name:"PARIZIA K",        team:"3",post:"BRTCP+KE",chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00035",name:"BATTAGLIA D",      team:"4",post:"BRTP+K",  chef:false,cdpShifts:[]},
-  {id:"U00036",name:"NIGIONI J",        team:"4",post:"BRTP+E",  chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00037",name:"FARRUGIA VALERI S",team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00038",name:"DESSI P",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00039",name:"BESSI N",          team:"4",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00040",name:"PAGLIAI D",        team:"4",post:"BRTCK",   chef:false,cdpShifts:[]},
-  {id:"U00041",name:"PETIT T",          team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00042",name:"CLAVE C",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00043",name:"NICASTRO M",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00044",name:"ELIODORI V",       team:"4",post:"BRTCP+E", chef:true, cdpShifts:["16/3"]},
-  {id:"U00045",name:"CAMPI PH",         team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00046",name:"MALGHERINI T",     team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00047",name:"MAGAGNIN J",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00048",name:"MERLINO B",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00049",name:"GALLIS J",         team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5"]},
-  {id:"U00050",name:"BONETTI P",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00051",name:"PALMARO M",        team:"4",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00052",name:"CONNEN R",         team:"5",post:"BRTCP+KE",chef:false,cdpShifts:[]},
-  {id:"U00053",name:"PASTOR P",         team:"5",post:"BRTP+E",  chef:true, cdpShifts:[]},
-  {id:"U00054",name:"MAGARA M",         team:"5",post:"BTP+K",   chef:false,cdpShifts:[]},
-  {id:"U00055",name:"GARCIA A",         team:"5",post:"BRTCP+KE",chef:true, cdpShifts:[]},
-  {id:"U00056",name:"GARRO S",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00057",name:"FURST P",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00058",name:"PASSERON G",       team:"5",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00059",name:"FAUTRIER M",       team:"5",post:"BRTP+K",  chef:false,cdpShifts:[]},
-  {id:"U00060",name:"FOREST M",         team:"5",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00061",name:"COZZI H",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/22"]},
-  {id:"U00062",name:"LANDAU B",         team:"5",post:"BRTP+",   chef:false,cdpShifts:[]},
-  {id:"U00063",name:"MILLO W",          team:"5",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00064",name:"GIORSETTI S",      team:"5",post:"BRTP+KE", chef:true, cdpShifts:["16/3","20/5"]},
-  {id:"U00065",name:"FABRE SOCCAL Y",   team:"5",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00066",name:"SIRIO J",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"]},
-  {id:"U00067",name:"GALLIS F",         team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"]},
-  {id:"U00068",name:"CIOCO S",          team:"5",post:"BRE",     chef:false,cdpShifts:[]},
-  {id:"U00069",name:"COSTE W",          team:"5",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00070",name:"ENZA B",           team:"5",post:"BRTP+KE", chef:false,cdpShifts:[]},
-  {id:"U00071",name:"PORTA A",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00072",name:"ROSSI J",          team:"5",post:"BRTP+E",  chef:false,cdpShifts:[]},
-  {id:"U00073",name:"RICORDO B",        team:"5",post:"BRTP+KE", chef:false,cdpShifts:["20/5","16/3"]},
-  {id:"U00074",name:"LEMONNIER PH",     team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"]}
+  {id:"U00001",name:"ESPAGNOL S",       team:"1",post:"BRTP+K",  chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00002",name:"SOLIMIEIS F",      team:"1",post:"BRTP+E",  chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00003",name:"TOMATIS P",        team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00004",name:"BERNARDI JE",      team:"1",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00005",name:"GATTI B",          team:"1",post:"BRTCK",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00006",name:"SOSSO G",          team:"1",post:"BRTP+E",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00007",name:"MATTONE F",        team:"1",post:"BRTP+E",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00008",name:"BRASSEUR F",       team:"1",post:"BRTP+E",  chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00009",name:"GAZAGNE F",        team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00010",name:"BONO F",           team:"1",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00011",name:"COURTIN F",        team:"1",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00012",name:"BELTRANDI N",      team:"2",post:"BRTP+",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00013",name:"PODGORNY B",       team:"2",post:"BRTP+KE", chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00014",name:"HORGNE C",         team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5"],family:"bj"},
+  {id:"U00015",name:"AGLIARDI M",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00016",name:"EL MISSOURI O",    team:"2",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00017",name:"COTTALORDA D",     team:"2",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00018",name:"BASILE G",         team:"2",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00019",name:"BOYER G",          team:"2",post:"BRTP+KE", chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00020",name:"NIGIONI C",        team:"2",post:"BRTCP+KE",chef:true, cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00021",name:"REVOLLON L",       team:"2",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00022",name:"PUGNETTI S",       team:"2",post:"BRTP+",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U11804",name:"DESARZENS K",      team:"3",post:"BRTC",    chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00024",name:"MARIOTTINI J",     team:"3",post:"BRTCP+KE",chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00025",name:"DESSI F",          team:"3",post:"BRTCK",   chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00026",name:"PEREIRA MACENA F", team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00027",name:"LANTERI E",        team:"3",post:"BRTP+E",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00028",name:"LARINI H",         team:"3",post:"BRTPE",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00029",name:"VERZELLO O",       team:"3",post:"BRTP+K",  chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00030",name:"ARCURI F",         team:"3",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00031",name:"DANIEL S",         team:"3",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00032",name:"FIA S",            team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00033",name:"CAISSON JC",       team:"3",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00034",name:"PARIZIA K",        team:"3",post:"BRTCP+KE",chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00035",name:"BATTAGLIA D",      team:"4",post:"BRTP+K",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00036",name:"NIGIONI J",        team:"4",post:"BRTP+E",  chef:true, cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00037",name:"FARRUGIA VALERI S",team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00038",name:"DESSI P",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00039",name:"BESSI N",          team:"4",post:"BRTP+E",  chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00040",name:"PAGLIAI D",        team:"4",post:"BRTCK",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00041",name:"PETIT T",          team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00042",name:"CLAVE C",          team:"4",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00043",name:"NICASTRO M",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00044",name:"ELIODORI V",       team:"4",post:"BRTCP+E", chef:true, cdpShifts:["16/3"],family:"bj"},
+  {id:"U00045",name:"CAMPI PH",         team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00046",name:"MALGHERINI T",     team:"4",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00047",name:"MAGAGNIN J",       team:"4",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00048",name:"MERLINO B",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00049",name:"GALLIS J",         team:"4",post:"BRTCPE",  chef:false,cdpShifts:["20/5"],family:"bj"},
+  {id:"U00050",name:"BONETTI P",        team:"4",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00051",name:"PALMARO M",        team:"4",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00052",name:"CONNEN R",         team:"5",post:"BRTCP+KE",chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00053",name:"PASTOR P",         team:"5",post:"BRTP+E",  chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00054",name:"MAGARA M",         team:"5",post:"BTP+K",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00055",name:"GARCIA A",         team:"5",post:"BRTCP+KE",chef:true, cdpShifts:[],family:"bj"},
+  {id:"U00056",name:"GARRO S",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00057",name:"FURST P",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00058",name:"PASSERON G",       team:"5",post:"BRTP+",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00059",name:"FAUTRIER M",       team:"5",post:"BRTP+K",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00060",name:"FOREST M",         team:"5",post:"BRTP+KE", chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00061",name:"COZZI H",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/22"],family:"bj"},
+  {id:"U00062",name:"LANDAU B",         team:"5",post:"BRTP+",   chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00063",name:"MILLO W",          team:"5",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00064",name:"GIORSETTI S",      team:"5",post:"BRTP+KE", chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00065",name:"FABRE SOCCAL Y",   team:"5",post:"BRTC",    chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00066",name:"SIRIO J",          team:"5",post:"BRTCP+E", chef:true, cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00067",name:"GALLIS F",         team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"],family:"bj"},
+  {id:"U00068",name:"CIOCO S",          team:"5",post:"BRE",     chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00069",name:"COSTE W",          team:"5",post:"BRTP+KE", chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00070",name:"ENZA B",           team:"5",post:"BRTP+KE", chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00071",name:"PORTA A",          team:"5",post:"BRTCK",   chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00072",name:"ROSSI J",          team:"5",post:"BRTP+E",  chef:false,cdpShifts:[],family:"bj"},
+  {id:"U00073",name:"RICORDO B",        team:"5",post:"BRTP+KE", chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00074",name:"LEMONNIER PH",     team:"5",post:"BRTP+E",  chef:false,cdpShifts:["16/3","20/5"],family:"bj"}
 ];
 
 var REPOS={
@@ -701,8 +707,8 @@ function sv(v){
   if(v==="planning")setTimeout(adjGrid,80);
   if(v==="chat"){setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());},80);}
 }
-function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;sv("planning");}
-function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;sv("planning");}
+function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);}
+function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);}
 
 // ── Calcul position de départ pour un chef un jour donné ──
 function calcDepPos(empName,tid,day){
@@ -874,7 +880,7 @@ function vPlan(){
       var ncol=isMe?tcc:"#8a9a78";
       h+=`<tr style="border-bottom:1px solid #0c160a;background:${nbg}">
         <td class="ntd" style="background:${nbg};color:${ncol};font-weight:${isMe?700:400}">
-          ${isMe?"\u25b6 ":""}${esc(emp.name)}
+          ${isMe?"\u25b6 ":""}${esc(empLabel(emp))}
           ${emp.chef?"<span class=\"chef-badge\" style=\"margin-left:3px\">C</span>":""}
 
         </td>`;
@@ -1021,11 +1027,11 @@ function vDeparts(){
     }
   }
   h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-    +'<button class="btn ghost" onclick="if(A.month===0){A.month=11;A.year--;}else A.month--;sv(\'departs\')" style="padding:7px 13px;font-size:20px">\u2039</button>'
+    +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
     +'<div style="flex:1;text-align:center">'
     +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts</div>'
     +'<div style="font-size:9px;color:#243020">Rotation par \u00e9quipe</div></div>'
-    +'<button class="btn ghost" onclick="if(A.month===11){A.month=0;A.year++;}else A.month++;sv(\'departs\')" style="padding:7px 13px;font-size:20px">\u203a</button>'
+    +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
   show.forEach(function(tid){
@@ -1064,7 +1070,7 @@ function vDeparts(){
       var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:5px 10px;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;font-size:10px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;z-index:3">
-        ${isMe?"\u25b6 ":""}${esc(emp.name)}</td>`;
+        ${isMe?"\u25b6 ":""}${esc(empLabel(emp))}</td>`;
       workDays.forEach(function(d,wi){
         var code=(pl[emp.id]||{})[d]||"",works=isWork(code);
         if(works){
@@ -1127,7 +1133,7 @@ function renderCIPanel(tid){
   emps.forEach(function(emp){
     var cur=CI[emp.name]!==undefined?CI[emp.name]:0;
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp.name)}</span>
+      <span style="font-size:10px;color:#8a9a78;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(empLabel(emp))}</span>
       <div style="display:flex;gap:4px">`;
     for(var si=0;si<emps.length;si++){
       var pos=SEQCI[si],col=DCOL[pos-1],sel=cur===si;
@@ -1622,7 +1628,10 @@ function parseCMCPlanningFromItems(allItems, year, month){
   // Chaque employ\u00e9 appara\u00eet comme NOM + PRENOM sur une ligne
   var empLines=[]; // {empName, y, rowIdx}
   rows.forEach(function(row,ri){
-    var lineText=row.map(function(i){return i.txt;}).join(" ").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var rawLineText=row.map(function(i){return i.txt;}).join(" ").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    // Detecter l'etoile rouge juste apres le nom (chef roulette) : ★ ⭐
+    var lineHasStar=/[\u2605\u2606\u2b50]/.test(rawLineText);
+    var lineText=rawLineText.replace(/[\u2605\u2606\u2b50]/g," ");
     A.employees.forEach(function(emp){
       var eName=emp.name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
       var parts=eName.split(" ");
@@ -1632,6 +1641,10 @@ function parseCMCPlanningFromItems(allItems, year, month){
       if(nomMatch&&(parts.length===1||prenomMatch)){
         var existing=empLines.find(function(e){return e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20;});
         if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
+        // Etoile sur la ligne = chef roulette
+        if(lineHasStar&&(emp.family!=="roulettes"||!emp.chef)){
+          emp.family="roulettes";emp.chef=true;ls("cmc_e",A.employees);
+        }
       }
     });
   });
@@ -1821,16 +1834,25 @@ function doImport(){
   var ok=0,err=0,errLines=[];
   for(var li=1;li<lines.length;li++){
     var parts=lines[li].split(sep);
-    var name=parts[0].trim().toUpperCase();
+    var rawName=parts[0].trim().toUpperCase();
+    // Etoile rouge apres le nom = chef roulette (ex: "DUPONT J ★")
+    var isRouletteChef=/[\u2605\u2606\u2b50]/.test(rawName);
+    var name=rawName.replace(/[\u2605\u2606\u2b50\s]+/g," ").trim();
     var emp=A.employees.find(function(e){return e.name===name;});
     if(!emp){
-      // Employe inconnu : creer un enregistrement minimal avec detection auto de l'equipe
       var detectedTeam=detectTeamFromRow(parts.slice(1),iy,im);
       var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
-      emp={id:newId,name:name,team:detectedTeam||"1",post:"",chef:false,cdpShifts:[]};
+      var newFamily=isRouletteChef?"roulettes":"bj";
+      emp={id:newId,name:name,team:detectedTeam||"1",post:"",chef:isRouletteChef,family:newFamily,cdpShifts:[]};
       A.employees.push(emp);
       ls("cmc_e",A.employees);
-      errLines.push("Nouveau: "+name+" (equipe "+emp.team+" auto)");
+      errLines.push("Nouveau: "+name+(isRouletteChef?" ★":"")+", eq."+emp.team);
+    } else {
+      // Mettre a jour family/chef si etoile detectee et non encore fait
+      var changed=false;
+      if(isRouletteChef&&emp.family!=="roulettes"){emp.family="roulettes";changed=true;}
+      if(isRouletteChef&&!emp.chef){emp.chef=true;changed=true;}
+      if(changed) ls("cmc_e",A.employees);
     }
     refData.rows[emp.id]={};
     for(var di=1;di<parts.length;di++){
@@ -2405,11 +2427,11 @@ function vAbsences(){
 
   var h='<div class="page">';
   h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
-   +'<button class="btn ghost" onclick="if(A.month===0){A.month=11;A.year--;}else A.month--;sv(\'absences\')" style="padding:7px 13px;font-size:20px">\u2039</button>'
+   +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
    +'<div style="flex:1;text-align:center">'
    +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 Absences</div>'
    +'<div style="font-size:9px;color:#243020">Cong\u00e9s \u00b7 Maladie \u00b7 Formation \u00b7 R\u00e9cup</div></div>'
-   +'<button class="btn ghost" onclick="if(A.month===11){A.month=0;A.year++;}else A.month++;sv(\'absences\')" style="padding:7px 13px;font-size:20px">\u203a</button>'
+   +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
    +'</div>';
 
   // Legende
@@ -2450,7 +2472,7 @@ function vAbsences(){
     absentEmps.forEach(function(emp,ei){
       var isMe=A.user&&emp.id===A.user.id;
       var row=pl[emp.id]||{};
-      h+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.04)":"")+'"><td style="padding:4px 8px;background:'+(isMe?"rgba(201,162,39,.05)":"#162818")+';position:sticky;left:0;border-right:1px solid #182818;font-size:9px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;z-index:3">'+(isMe?"\u25b6 ":"")+esc(emp.name)+'</td>';
+      h+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.04)":"")+'"><td style="padding:4px 8px;background:'+(isMe?"rgba(201,162,39,.05)":"#162818")+';position:sticky;left:0;border-right:1px solid #182818;font-size:9px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;z-index:3">'+(isMe?"\u25b6 ":"")+esc(empLabel(emp))+'</td>';
       daysArr.forEach(function(d){
         var c=row[d]||"";
         var col=ABS_CODES[c];
