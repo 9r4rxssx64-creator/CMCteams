@@ -1021,11 +1021,11 @@ function vDeparts(){
     }
   }
   h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-    +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
+    +'<button class="btn ghost" onclick="if(A.month===0){A.month=11;A.year--;}else A.month--;sv(\'departs\')" style="padding:7px 13px;font-size:20px">\u2039</button>'
     +'<div style="flex:1;text-align:center">'
     +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts</div>'
     +'<div style="font-size:9px;color:#243020">Rotation par \u00e9quipe</div></div>'
-    +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
+    +'<button class="btn ghost" onclick="if(A.month===11){A.month=0;A.year++;}else A.month++;sv(\'departs\')" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
   show.forEach(function(tid){
@@ -1739,6 +1739,33 @@ function detectMonthFromName(fname){
   if(ym)year=parseInt(ym[0]);
   return {month:month,year:year};
 }
+
+// Detecte l'equipe d'un employe depuis ses codes de planning (par correspondance avec REPOS)
+function detectTeamFromRow(parts,year,month){
+  var days=getDays(year,month);
+  var mo=moOff(year,month);
+  // Trouver les jours de repos (R ou RH) dans les donnees importees
+  var reposDays=[];
+  for(var di=0;di<parts.length&&di<days;di++){
+    var c=(parts[di]||"").trim().toUpperCase();
+    if(c==="R"||c==="RH"){reposDays.push(di+1);}
+  }
+  if(reposDays.length<3) return null;
+  // Convertir les jours repos du mois en position cyclique (1-30)
+  var repoCycles=reposDays.map(function(d){
+    var ad=(mo*30)+(d-1),cp=((ad%30)+30)%30+1;return cp;
+  });
+  // Comparer avec chaque pattern REPOS
+  var bestTeam=null,bestScore=0;
+  Object.keys(REPOS).forEach(function(tid){
+    var pat=REPOS[tid];
+    var matches=repoCycles.filter(function(cp){return pat.indexOf(cp)>=0;}).length;
+    var score=matches/Math.max(repoCycles.length,1);
+    if(score>bestScore){bestScore=score;bestTeam=tid;}
+  });
+  return (bestScore>0.5)?bestTeam:null;
+}
+
 function handleFileImport(input){
   if(!input.files||!input.files[0]) return;
   var file=input.files[0];
@@ -1796,7 +1823,15 @@ function doImport(){
     var parts=lines[li].split(sep);
     var name=parts[0].trim().toUpperCase();
     var emp=A.employees.find(function(e){return e.name===name;});
-    if(!emp){err++;errLines.push("Inconnu: "+name);continue;}
+    if(!emp){
+      // Employe inconnu : creer un enregistrement minimal avec detection auto de l'equipe
+      var detectedTeam=detectTeamFromRow(parts.slice(1),iy,im);
+      var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
+      emp={id:newId,name:name,team:detectedTeam||"1",post:"",chef:false,cdpShifts:[]};
+      A.employees.push(emp);
+      ls("cmc_e",A.employees);
+      errLines.push("Nouveau: "+name+" (equipe "+emp.team+" auto)");
+    }
     refData.rows[emp.id]={};
     for(var di=1;di<parts.length;di++){
       var code=parts[di].trim().toUpperCase();
@@ -1836,13 +1871,14 @@ function doImport(){
     '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv;
   // Resynchroniser les equipes apres import
   var syncRes=syncChefsT();
-  var syncMsg='';
   var syncAll=[].concat(syncRes.added,syncRes.removed,syncRes.moved);
-  if(syncAll.length>0){
-    syncMsg='<div style="margin-top:6px;font-size:9px;color:#4a72a8;font-weight:600">\u21bb '+(syncAll.length)+' changement(s) d'\u00e9quipe d\u00e9tect\u00e9(s) : '+syncAll.slice(0,3).join(' \u00b7 ')+(syncAll.length>3?' (+'+(syncAll.length-3)+' autres)':'')+'</div>';
-    if(r)r.innerHTML+=syncMsg;
+  if(syncAll.length>0&&r){
+    r.innerHTML+='<div style="margin-top:6px;font-size:9px;color:#4a72a8;font-weight:600">\u21bb '+syncAll.length+' changement(s) d\u2019\u00e9quipe : '+syncAll.slice(0,3).join(' \u00b7 ')+(syncAll.length>3?' (+' +(syncAll.length-3)+' autres)':'')+'</div>';
   }
-  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s) d\u00e9tect\u00e9e(s)':'\u2705 Import v\u00e9rifi\u00e9 \u2014 '+ok+' cellules');
+  // Naviguer vers le mois importe et rafraichir
+  A.year=iy;A.month=im;
+  dc();
+  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s)':'\u2705 Import OK \u2014 '+ok+' cellules \u2014 '+MFR[im]+' '+iy);
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+e.message+'</div>';
   }
@@ -2369,11 +2405,11 @@ function vAbsences(){
 
   var h='<div class="page">';
   h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
-   +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
+   +'<button class="btn ghost" onclick="if(A.month===0){A.month=11;A.year--;}else A.month--;sv(\'absences\')" style="padding:7px 13px;font-size:20px">\u2039</button>'
    +'<div style="flex:1;text-align:center">'
    +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 Absences</div>'
    +'<div style="font-size:9px;color:#243020">Cong\u00e9s \u00b7 Maladie \u00b7 Formation \u00b7 R\u00e9cup</div></div>'
-   +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
+   +'<button class="btn ghost" onclick="if(A.month===11){A.month=0;A.year++;}else A.month++;sv(\'absences\')" style="padding:7px 13px;font-size:20px">\u203a</button>'
    +'</div>';
 
   // Legende
