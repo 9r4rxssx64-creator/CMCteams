@@ -2011,50 +2011,94 @@ function doImport(){
   var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
   var ok=0,err=0,errLines=[];
   var importFamily="bj"; // famille courante par defaut
+  // Detecter la section depuis les premieres lignes (dont lines[0] qui est skippe dans la boucle)
+  for(var _si=0;_si<Math.min(5,lines.length);_si++){
+    var _sp=lines[_si].split(sep);
+    var _sh=_sp.slice(0,4).map(function(x){return x.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}).join(" ");
+    if(/ROULETT/.test(_sh)){importFamily="roulettes";break;}
+    if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC)/.test(_sh)){importFamily="bj";break;}
+    if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_sh)){importFamily="cmc";break;}
+  }
+  var _postPat=/^\.?[A-Z][A-Z0-9+.\/\-]*\.?$/; // pattern code poste ex: BRTP+E. ou .BRTCP+K
   for(var li=1;li<lines.length;li++){
     var parts=lines[li].split(sep);
-    // Detecter les entetes de section (ligne trop courte pour etre un employe)
-    var testHdr=parts[0].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if(/ROULETT/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="roulettes";continue;}
-    if(/(AMERICAN|AMERIC|BLACKJACK|BLACK.JACK|CARTE|CHEF.*AM)/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="bj";continue;}
-    if(/(CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="cmc";continue;}
-    var rawName=parts[0].trim().toUpperCase();
-    // Etoile rouge apres le nom = chef roulette (ex: "DUPONT J ★")
-    var isRouletteChef=/[\u2605\u2606\u2b50]/.test(rawName);
-    var name=rawName.replace(/[\u2605\u2606\u2b50\s]+/g," ").trim();
+    var p0raw=parts[0].trim();
+    var p0=p0raw.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var p1=parts[1]?parts[1].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""):"";
+    // Ignorer lignes calendrier : "dim 1 lun 2 ..." ou "mars 2026"
+    if(/^(DIM|LUN|MAR|MER|JEU|VEN|SAM)\s*\d/.test(p0)) continue;
+    if(/^(JANVIER|FEVRIER|MARS|AVRIL|MAI|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE)\s+\d{4}$/.test(p0)) continue;
+    // En-tete de colonne type "Colonne4" ou "Co" → extraire section de parts[1]
+    if(/^CO(LONNE)?\d*$/.test(p0)){
+      var _c3=parts[2]?parts[2].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""):"";
+      var _ch=[p1,_c3].join(" ");
+      if(/ROULETT/.test(_ch)) importFamily="roulettes";
+      else if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC)/.test(_ch)) importFamily="bj";
+      else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_ch)) importFamily="cmc";
+      continue;
+    }
+    // Detecter entetes de section dans les premiers champs
+    var _hdr=[p0,p1].join(" ");
+    if(/ROULETT/.test(_hdr)){importFamily="roulettes";continue;}
+    if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC|RESPONSABLE.DE.TABLE)/.test(_hdr)){importFamily="bj";continue;}
+    if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="cmc";continue;}
+    // Detecter format planning : code poste col 0 (ex BRTP+E.), nom col 1, du/au col 2/3
+    var nameIdx=0,codesStart=1;
+    if(_postPat.test(p0)&&!/ /.test(p0raw)&&
+       parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z]/.test(parts[1].trim())&&
+       parts[2]&&/^\*?\d{1,2}$/.test(parts[2].trim())){
+      nameIdx=1; codesStart=4; // sauter post, nom, du, au
+    }
+    var rawName=parts[nameIdx].trim().toUpperCase();
+    // Chef : ★ * apres le nom, ou * avant le 'du' (format planning)
+    var isRouletteChef=/[\u2605\u2606\u2b50*]/.test(rawName)||
+      (nameIdx===1&&/^\*/.test((parts[2]||"").trim()));
+    var name=rawName.replace(/[\u2605\u2606\u2b50*]+$/,"").trim();
+    if(!name||name.length<2||!name.includes(" ")) continue; // nom invalide (post code, etc.)
     var emp=A.employees.find(function(e){return e.name===name;});
     if(!emp){
-      var detectedTeam=detectTeamFromRow(parts.slice(1),iy,im);
+      var detectedTeam=detectTeamFromRow(parts.slice(codesStart),iy,im);
       var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
       var newFamily=isRouletteChef?"roulettes":importFamily;
-      emp={id:newId,name:name,team:detectedTeam||"1",post:"",chef:isRouletteChef,family:newFamily,cdpShifts:[]};
+      emp={id:newId,name:name,team:detectedTeam||"1",post:nameIdx===1?p0raw:"",chef:isRouletteChef,family:newFamily,cdpShifts:[]};
       A.employees.push(emp);
       ls("cmc_e",A.employees);
       errLines.push("Nouveau: "+name+(isRouletteChef?" ★":"")+", eq."+emp.team);
     } else {
-      // Mettre a jour family/chef si etoile detectee et non encore fait
       var changed=false;
-      if(isRouletteChef&&emp.family!=="roulettes"){emp.family="roulettes";changed=true;}
+      var targetFam=isRouletteChef?"roulettes":importFamily;
       if(isRouletteChef&&!emp.chef){emp.chef=true;changed=true;}
-      if(!emp.family){emp.family=isRouletteChef?"roulettes":importFamily;changed=true;}
-      if(!emp.family){emp.family=isRouletteChef?"roulettes":importFamily;changed=true;}
+      if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;changed=true;}
       if(changed) ls("cmc_e",A.employees);
     }
     refData.rows[emp.id]={};
-    for(var di=1;di<parts.length;di++){
+    var dayOff=codesStart-1; // codesStart=1→dayOff=0, codesStart=4→dayOff=3
+    for(var di=codesStart;di<parts.length;di++){
       var code=parts[di].trim().toUpperCase();
-      if(!code||code==="0"||code==="-")continue;
-      // Normaliser tiret→slash : "16-3"→"16/3", "20-5*"→"20/5*"
+      if(!code||code==="0"||code==="-") continue;
+      // Ignorer champs numeriques seuls (du/au) et en-tetes colonne residuels
+      if(/^\d{1,2}$/.test(code)||/^CO(LONNE)?\d*$/.test(code)) continue;
+      // Normaliser tiret→slash : "16-3"→"16/3"
       code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
       code=code.replace(/CDP$/,"*");
-      // Auto-upgrade CDP : si l'employé a ce code dans cdpShifts, mettre la version *
+      // Normaliser codes format planning : supprimer 'C' final (convention) et quotes
+      if(!CODES[code]){
+        var c2=code.replace(/C$/,"");
+        if(c2!==code&&CODES[c2]){code=c2;}
+        else{c2=code.replace(/['"]+$/,"");
+          if(c2!==code&&CODES[c2]){code=c2;}
+          else{c2=code.replace(/['"C]+$/,"");if(CODES[c2])code=c2;}}
+      }
+      // Auto-upgrade CDP
       if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
         code=CDP_MAP[code];
       }
-      if(code&&!CODES[code]){err++;errLines.push(name+" j"+di+":code inconnu '"+code+"'");continue;}
+      if(code&&!CODES[code]){err++;errLines.push(name+" j"+(di-dayOff)+":code inconnu '"+code+"'");continue;}
+      var dayNum=di-dayOff;
+      if(dayNum<1||dayNum>days) continue;
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
-      A.overrides[key][emp.id][di]=code;
-      refData.rows[emp.id][di]=code;
+      A.overrides[key][emp.id][dayNum]=code;
+      refData.rows[emp.id][dayNum]=code;
       ok++;
     }
   }
