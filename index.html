@@ -251,7 +251,7 @@ var DEF_EMP=[
   {id:"U11804",name:"DESARZENS K",      team:"3",post:"BRTC",    chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
   {id:"U00024",name:"MARIOTTINI J",     team:"3",post:"BRTCP+KE",chef:true, cdpShifts:[],family:"bj"},
   {id:"U00025",name:"DESSI F",          team:"3",post:"BRTCK",   chef:true, cdpShifts:["16/3","20/5"],family:"bj"},
-  {id:"U00026",name:"PEREIRA MACENA F", team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"],family:"bj"},
+  {id:"U00026",name:"PEREIRA MACENA F", team:"3",post:"BRTC",    chef:false,cdpShifts:["20/5","16/3"],family:"bj",toMo:1},
   {id:"U00027",name:"LANTERI E",        team:"3",post:"BRTP+E",  chef:false,cdpShifts:[],family:"bj"},
   {id:"U00028",name:"LARINI H",         team:"3",post:"BRTPE",   chef:false,cdpShifts:[],family:"bj"},
   {id:"U00029",name:"VERZELLO O",       team:"3",post:"BRTP+K",  chef:true, cdpShifts:[],family:"bj"},
@@ -397,6 +397,30 @@ function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"
 function now(){return Date.now();}
 function fmtTs(ms){var d=new Date(ms);return String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");}
 function moOff(y,m){return(y-2026)*12+(m-2);}
+// Retourne vrai si l'employé est actif pour le mois y/m.
+// emp.fromMo : premier moOff actif (null = depuis toujours)
+// emp.toMo   : premier moOff INACTIF (null = pour toujours)
+function isEmpActive(emp,y,m){
+  var mo=moOff(y,m);
+  if(emp.fromMo!==undefined&&emp.fromMo!==null&&mo<emp.fromMo) return false;
+  if(emp.toMo!==undefined&&emp.toMo!==null&&mo>=emp.toMo) return false;
+  return true;
+}
+// Convertit un moOff en "Mois AAAA" pour l'affichage
+function moToLabel(mo){
+  var mIdx=mo+2,y2=2026+Math.floor(mIdx/12),m2=((mIdx%12)+12)%12;
+  return MFR[m2]+" "+y2;
+}
+// Options <select> pour choisir un moOff (toMo / fromMo)
+function moSelOpts(val,blank){
+  var o=blank||'<option value="">Toujours</option>';
+  for(var yy=2025;yy<=2028;yy++){for(var mm=0;mm<12;mm++){
+    var mo=moOff(yy,mm);
+    if(mo<-3) continue;
+    o+='<option value="'+mo+'"'+(val===mo?' selected':'')+'>'+MFR[mm]+' '+yy+'</option>';
+  }}
+  return o;
+}
 function tc(tid){var t=A.teams.find(function(x){return x.id===tid;});return(t&&t.color)||TC[tid]||"#888";}
 function gt(tid){return A.teams.find(function(x){return x.id===tid;})||null;}
 function gm(tid){var t=gt(tid);return t&&t.mirrorTeamId?gt(t.mirrorTeamId):null;}
@@ -446,7 +470,7 @@ function cumWorkDays(teamId,mo){
 }
 function genBase(y,m){
   var days=getDays(y,m),mo=moOff(y,m),p={};
-  A.employees.forEach(function(emp){
+  A.employees.filter(function(emp){return isEmpActive(emp,y,m);}).forEach(function(emp){
     var pat=REPOS[emp.team]||[],prof=getEP(emp);
     var seq=prof.s,cdpL=prof.d,sl=seq.length;
     var si0=(((prof.i||0)+cumWorkDays(emp.team,mo))%sl+sl)%sl;
@@ -780,7 +804,7 @@ function vAccueil(){
   // Qui travaille aujourd'hui dans mon équipe
   var teamToday=[];
   if(isToday&&tid){
-    teamToday=A.employees.filter(function(e){return e.team===tid&&isWork((pl[e.id]||{})[tod]||"");});
+    teamToday=A.employees.filter(function(e){return e.team===tid&&isEmpActive(e,A.year,A.month)&&isWork((pl[e.id]||{})[tod]||"");});
   }
   // Chefs en service avec leur position
   var chefNames=tid?(CHEFS_T[tid]||[]):[];
@@ -861,7 +885,7 @@ function vPlan(){
   // ── Planning : groupement par famille puis equipe + miroir ──────────────────
   var FAMS_ORDER=["roulettes","bj","cmc"];
   FAMS_ORDER.forEach(function(fid){
-    var famEmps=A.employees.filter(function(e){return (e.family||"bj")===fid;});
+    var famEmps=A.employees.filter(function(e){return (e.family||"bj")===fid&&isEmpActive(e,A.year,A.month);});
     if(!famEmps.length) return;
     var famColor=getFamColor(fid),famLabel=getFamLabel(fid);
     h+='<tr><td colspan="'+(days+3)+'" style="padding:6px 10px;background:'+famColor+'18;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25">'
@@ -996,7 +1020,7 @@ function syncChefsT(){
   var pl=gpl();
   A.teams.forEach(function(t){
     if(!CHEFS_T[t.id]) CHEFS_T[t.id]=[];
-    var teamChefs=A.employees.filter(function(e){return e.team===t.id&&e.chef;});
+    var teamChefs=A.employees.filter(function(e){return e.team===t.id&&e.chef&&isEmpActive(e,A.year,A.month);});
     // Ajouter les chefs manquants
     teamChefs.forEach(function(e){
       if(CHEFS_T[t.id].indexOf(e.name)<0){
@@ -1091,7 +1115,7 @@ function vDeparts(){
     }
     var tcc=team.color||TC[tid]||"#888";
     var chefNames=CHEFS_T[tid]||[];
-    var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(Boolean);
+    var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(function(e){return e&&isEmpActive(e,A.year,A.month);});
     if(!chefEmps.length)return;
     var sl=chefEmps.length;
     var SEQ=getSeqForSize(sl); // s\u00e9quence adapt\u00e9e au nombre de chefs
@@ -1496,6 +1520,17 @@ function vEmps(){
             ${FAMILIES.map(function(f){return '<option value="'+f.id+'"'+((emp.family||'bj')===f.id?' selected':'')+'>'+esc(f.label)+'</option>';}).join('')}
           </select></div>
 
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Actif depuis</div>
+            <select class="inp" style="padding:8px 10px;font-size:12px" onchange="updEmpMo('${emp.id}','fromMo',this.value)">
+              ${moSelOpts(emp.fromMo,'<option value="">Depuis toujours</option>')}
+            </select></div>
+            <div><div style="font-size:8px;color:#a06060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Départ (exclu)</div>
+            <select class="inp" style="padding:8px 10px;font-size:12px;border-color:${(emp.toMo!==undefined&&emp.toMo!==null)?'rgba(180,60,60,.4)':'#1e3020'}" onchange="updEmpMo('${emp.id}','toMo',this.value)">
+              ${moSelOpts(emp.toMo,'<option value="">Encore actif</option>')}
+            </select></div>
+          </div>
+
           ${A.user&&A.user.id===AID?`
           <div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
             <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
@@ -1526,7 +1561,8 @@ function vEmps(){
             ${isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">ADMIN</span>":""}
             ${emp.chef&&!isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
           </div>
-          <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span></div>
+          <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
+          </div>
         </div>
         <span style="font-size:14px;color:#243020;flex-shrink:0">\u203a</span>
       </div>`;
@@ -1543,6 +1579,14 @@ function updEmp(id,field,val){
   e[field]=val;
   sav();
   // Re-render inline sans fermer
+  var c=document.getElementById("content");if(c)c.innerHTML=vMain();
+}
+function updEmpMo(id,field,val){
+  if(!A.user||A.user.id!==AID)return;
+  var e=A.employees.find(function(x){return x.id===id;});
+  if(!e)return;
+  e[field]=(val===""||val===null||val===undefined)?null:parseInt(val);
+  sav();
   var c=document.getElementById("content");if(c)c.innerHTML=vMain();
 }
 function updCDP(id,enabled){
@@ -2518,7 +2562,7 @@ function vAbsences(){
       absFamPrev=teamFam;
       h+='<div style="font-size:9px;font-weight:800;color:'+getFamColor(teamFam)+';text-transform:uppercase;letter-spacing:2px;margin:12px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(teamFam)+'30">'+esc(getFamLabel(teamFam))+'</div>';
     }
-    var emps=A.employees.filter(function(e){return e.team===team.id;});
+    var emps=A.employees.filter(function(e){return e.team===team.id&&isEmpActive(e,A.year,A.month);});
     // Filtrer: employés ayant au moins une absence ce mois
     var absentEmps=emps.filter(function(e){
       var row=pl[e.id]||{};
