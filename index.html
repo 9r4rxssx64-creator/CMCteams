@@ -197,6 +197,20 @@ var CODES={
 };
 var CK=Object.keys(CODES);
 var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
+var FAMILIES=[
+  {id:"roulettes",label:"Roulettes",color:"#c04040"},
+  {id:"bj",label:"Chefs Am\u00e9ricains",color:"#c9a227"},
+  {id:"cmc",label:"Employ\u00e9s CMC",color:"#4a72a8"}
+];
+function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
+function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
+var FAMILIES=[
+  {id:"roulettes",label:"Roulettes",color:"#c04040"},
+  {id:"bj",label:"Chefs Américains",color:"#c9a227"},
+  {id:"cmc",label:"Employés CMC",color:"#4a72a8"}
+];
+function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
+function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
 // Etiquette affichee pour un employe : nom + etoile si chef roulette
 function empLabel(emp){
   if(!emp) return "";
@@ -825,80 +839,93 @@ function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
   var da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
-  var byT={};A.employees.forEach(function(e){if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e);});
-  var tOrd=[];A.employees.forEach(function(e){if(!tOrd.includes(e.team))tOrd.push(e.team);});
-  var todayN=new Date();
-  var todayD=(todayN.getFullYear()===A.year&&todayN.getMonth()===A.month)?todayN.getDate():0;
-  var utid=A.user?A.user.team:null,utc=tc(utid),mirT=utid?gm(utid):null;
-  var h=`<div class="page">
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button>
-    <div style="flex:1;text-align:center">
-      <div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}</div>
-      <div style="font-size:10px;color:#243020">${A.year}</div>
-    </div>
-    <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button>
-  </div>`;
-  if(!isAdm&&utid){
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:${utc}0c;border:1px solid ${utc}20;border-radius:8px">
-      <span style="color:${utc};font-weight:700;font-size:12px">${esc(gt(utid)?gt(utid).name:"")}</span>
-      ${mirT?'<span style="font-size:9px;color:#243020">\u21cc '+esc(mirT.name)+'</span>':""}
-    </div>`;
-  }
-  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    ${isAdm?"<button onclick=\"sv('admin')\" style=\"background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:10px;color:#c9a227;cursor:pointer;font-weight:700\">\u2699\ufe0f Admin</button>":`<div></div>`}
-    <button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:9px">${A.showLeg?"\u25b2 L\u00e9gende":"\u25bc L\u00e9gende"}</button>
-  </div>`;
-  if(A.showLeg){
-    h+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">`;
-    CK.forEach(function(c){var ci=CODES[c];h+=`<div style="display:flex;align-items:center;gap:3px;background:${ci.bg};border:1px solid ${ci.b};border-radius:8px;padding:2px 6px"><span style="color:${ci.c};font-size:8px;font-weight:700">${c}</span><span style="color:#243020;font-size:7px">${ci.l}</span></div>`;});
-    h+=`</div>`;
-  }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;width:100%"><thead><tr>
-    <th class="sth">Employ\u00e9</th>`;
-  da.forEach(function(d){
-    var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
-    var isTod=d===todayD;
-    var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";
-    var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";
-    var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";
-    h+='<th class="dth" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:6px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';
-  });
-  h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
-  tOrd.forEach(function(tid){
-    var te=byT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
-    h+=`<tr><td colspan="${days+3}" class="steptd" style="border-left:2px solid ${tcc}50">
-      <span style="color:${tcc};font-size:11px;font-weight:700">${esc(team?team.name:"\u00c9q."+tid)}</span>
-      ${mir?'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':""}
-    </td></tr>`;
-    te.forEach(function(emp){
-      var p=pl[emp.id]||{};
-      var repos=0,trav=0;
-      Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
-      var isMe=emp.id===A.user.id;
-      var nbg=isMe?(tcc+"0a"):"#162818";
-      var ncol=isMe?tcc:"#8a9a78";
-      h+=`<tr style="border-bottom:1px solid #0c160a;background:${nbg}">
-        <td class="ntd" style="background:${nbg};color:${ncol};font-weight:${isMe?700:400}">
-          ${isMe?"\u25b6 ":""}${esc(empLabel(emp))}
-          ${emp.chef?"<span class=\"chef-badge\" style=\"margin-left:3px\">C</span>":""}
-
-        </td>`;
-      da.forEach(function(d){
-        var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
-        var click=isAdm?" onclick=\"openPicker('"+emp.id+"',"+d+",this)\"":"";
-        var isTodCell=d===todayD;
-        var cellBg=isTodCell?(code?ci.bg:"rgba(201,162,39,.06)"):ci.bg;
-        var cellBorder=isTodCell?"border:1px solid rgba(201,162,39,.35)":"border:1px solid "+ci.b;
-        var cdpShadow=ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":"";
-        var cellInner=ci.cdp
-          ?'<div style="display:flex;flex-direction:column;align-items:center"><span style="color:'+ci.c+';font-size:8px;font-weight:800">'+code.replace("*","")+'</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>'
-          :'<span style="color:'+ci.c+'">'+(code||"\u00b7")+'</span>';
-        h+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
-      });
-      h+=`<td class="stattd">${repos}</td><td class="stattd">${trav}</td></tr>`;
+  // ── Planning : groupement par famille puis equipe + miroir ──────────────────
+  var FAMS_ORDER=["roulettes","bj","cmc"];
+  FAMS_ORDER.forEach(function(fid){
+    var famEmps=A.employees.filter(function(e){return (e.family||"bj")===fid;});
+    if(!famEmps.length) return;
+    var famColor=getFamColor(fid),famLabel=getFamLabel(fid);
+    h+='<tr><td colspan="'+(days+3)+'" style="padding:6px 10px;background:'+famColor+'18;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25">'
+     +'<span style="font-size:11px;font-weight:800;color:'+famColor+';letter-spacing:1px;text-transform:uppercase">'+esc(famLabel)+'</span>'
+     +'</td></tr>';
+    var byFT={};var ftOrd=[];
+    famEmps.forEach(function(e){
+      if(!byFT[e.team])byFT[e.team]=[];
+      byFT[e.team].push(e);
+      if(ftOrd.indexOf(e.team)<0)ftOrd.push(e.team);
     });
-  });
+    var shownT={};
+    ftOrd.forEach(function(tid){
+      if(shownT[tid]) return;
+      shownT[tid]=true;
+      var te=byFT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
+      h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+tcc+'50">'
+       +'<span style="color:'+tcc+';font-size:11px;font-weight:700">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
+       +(mir?'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':"")
+       +'</td></tr>';
+      te.forEach(function(emp){
+        var p=pl[emp.id]||{};
+        var repos=0,trav=0;
+        Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
+        var isMe=emp.id===A.user.id;
+        var nbg=isMe?(tcc+"0a"):"#162818";
+        var ncol=isMe?tcc:"#8a9a78";
+        h+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
+         +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
+         +(isMe?"\u25b6 ":"")+esc(empLabel(emp))
+         +(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")
+         +'</td>';
+        da.forEach(function(d){
+          var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
+          var click=isAdm?" onclick=\"openPicker('"+emp.id+"',"+d+",this)\"":"";
+          var isTodCell=d===todayD;
+          var cellBg=isTodCell?(code?ci.bg:"rgba(201,162,39,.06)"):ci.bg;
+          var cellBorder=isTodCell?"border:1px solid rgba(201,162,39,.35)":"border:1px solid "+ci.b;
+          var cdpShadow=ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":"";
+          var cellInner=ci.cdp
+            ?'<div style="display:flex;flex-direction:column;align-items:center"><span style="color:'+ci.c+';font-size:8px;font-weight:800">'+code.replace("*","")+'</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>'
+            :'<span style="color:'+ci.c+'">'+(code||"\u00b7")+'</span>';
+          h+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
+        });
+        h+='<td class="stattd">'+repos+'</td><td class="stattd">'+trav+'</td></tr>';
+      });
+      // Equipe miroir (meme famille)
+      if(mir&&byFT[mir.id]&&!shownT[mir.id]){
+        shownT[mir.id]=true;
+        var mte=byFT[mir.id],mtcc=tc(mir.id);
+        h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+mtcc+'50">'
+         +'<span style="color:'+mtcc+';font-size:11px;font-weight:700">'+esc(mir.name)+'</span>'
+         +'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
+         +'</td></tr>';
+        mte.forEach(function(emp){
+          var p=pl[emp.id]||{};
+          var repos=0,trav=0;
+          Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
+          var isMe=emp.id===A.user.id;
+          var nbg=isMe?(mtcc+"0a"):"#162818";
+          var ncol=isMe?mtcc:"#8a9a78";
+          h+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
+           +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
+           +(isMe?"\u25b6 ":"")+esc(empLabel(emp))
+           +(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")
+           +'</td>';
+          da.forEach(function(d){
+            var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
+            var click=isAdm?" onclick=\"openPicker('"+emp.id+"',"+d+",this)\"":"";
+            var isTodCell=d===todayD;
+            var cellBg=isTodCell?(code?ci.bg:"rgba(201,162,39,.06)"):ci.bg;
+            var cellBorder=isTodCell?"border:1px solid rgba(201,162,39,.35)":"border:1px solid "+ci.b;
+            var cdpShadow=ci.cdp?";box-shadow:inset 0 0 0 1px rgba(180,130,10,.3)":"";
+            var cellInner=ci.cdp
+              ?'<div style="display:flex;flex-direction:column;align-items:center"><span style="color:'+ci.c+';font-size:8px;font-weight:800">'+code.replace("*","")+'</span><span style="font-size:5px;color:#987018;font-weight:700">CDP</span></div>'
+              :'<span style="color:'+ci.c+'">'+(code||"\u00b7")+'</span>';
+            h+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
+          });
+          h+='<td class="stattd">'+repos+'</td><td class="stattd">'+trav+'</td></tr>';
+        });
+      }
+    });
+  }));
   return h+`</tbody></table></div></div>`;
 }
 
@@ -1034,8 +1061,15 @@ function vDeparts(){
     +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
+  var prevFam=null;
   show.forEach(function(tid){
     var team=A.teams.find(function(t){return t.id===tid;});if(!team)return;
+    var curFamEmp=A.employees.find(function(e){return e.team===tid&&e.family;});
+    var curFam=curFamEmp?curFamEmp.family:"bj";
+    if(curFam!==prevFam){
+      prevFam=curFam;
+      h+='<div style="font-size:9px;font-weight:800;color:'+getFamColor(curFam)+';text-transform:uppercase;letter-spacing:2px;margin:12px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(curFam)+'30">'+esc(getFamLabel(curFam))+'</div>';
+    }
     var tcc=team.color||TC[tid]||"#888";
     var chefNames=CHEFS_T[tid]||[];
     var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(Boolean);
@@ -1832,8 +1866,14 @@ function doImport(){
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
   var ok=0,err=0,errLines=[];
+  var importFamily="bj"; // famille courante par defaut
   for(var li=1;li<lines.length;li++){
     var parts=lines[li].split(sep);
+    // Detecter les entetes de section (ligne trop courte pour etre un employe)
+    var testHdr=parts[0].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(/ROULETT/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="roulettes";continue;}
+    if(/(AMERICAN|AMERIC|BLACKJACK|BLACK.JACK|CARTE|CHEF.*AM)/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="bj";continue;}
+    if(/(CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(testHdr)&&parts.filter(function(p){return p.trim();}).length<=3){importFamily="cmc";continue;}
     var rawName=parts[0].trim().toUpperCase();
     // Etoile rouge apres le nom = chef roulette (ex: "DUPONT J ★")
     var isRouletteChef=/[\u2605\u2606\u2b50]/.test(rawName);
@@ -1842,7 +1882,7 @@ function doImport(){
     if(!emp){
       var detectedTeam=detectTeamFromRow(parts.slice(1),iy,im);
       var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
-      var newFamily=isRouletteChef?"roulettes":"bj";
+      var newFamily=isRouletteChef?"roulettes":importFamily;
       emp={id:newId,name:name,team:detectedTeam||"1",post:"",chef:isRouletteChef,family:newFamily,cdpShifts:[]};
       A.employees.push(emp);
       ls("cmc_e",A.employees);
@@ -1852,6 +1892,8 @@ function doImport(){
       var changed=false;
       if(isRouletteChef&&emp.family!=="roulettes"){emp.family="roulettes";changed=true;}
       if(isRouletteChef&&!emp.chef){emp.chef=true;changed=true;}
+      if(!emp.family){emp.family=isRouletteChef?"roulettes":importFamily;changed=true;}
+      if(!emp.family){emp.family=isRouletteChef?"roulettes":importFamily;changed=true;}
       if(changed) ls("cmc_e",A.employees);
     }
     refData.rows[emp.id]={};
@@ -2443,8 +2485,15 @@ function vAbsences(){
 
   // Par equipe
   var teamsToShow=isAdm?A.teams:A.teams.filter(function(t){return t.id===myTeam;});
+  var absFamPrev=null;
   teamsToShow.forEach(function(team){
     var tcc=team.color||TC[team.id]||"#888";
+    var famEmp=A.employees.find(function(e){return e.team===team.id&&e.family;});
+    var teamFam=famEmp?famEmp.family:"bj";
+    if(teamFam!==absFamPrev){
+      absFamPrev=teamFam;
+      h+='<div style="font-size:9px;font-weight:800;color:'+getFamColor(teamFam)+';text-transform:uppercase;letter-spacing:2px;margin:12px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(teamFam)+'30">'+esc(getFamLabel(teamFam))+'</div>';
+    }
     var emps=A.employees.filter(function(e){return e.team===team.id;});
     // Filtrer: employés ayant au moins une absence ce mois
     var absentEmps=emps.filter(function(e){
