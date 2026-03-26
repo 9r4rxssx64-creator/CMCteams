@@ -453,6 +453,12 @@ var A={
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=4;
+var APP_VER="v4.1";
+// Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
+function forceRefresh(){
+  var url=location.href.split("?")[0]+"?t="+Date.now();
+  location.replace(url);
+}
 (function migrateEmployees(){
   var storedVer=parseInt(localStorage.getItem("cmc_dver")||"0");
   var forceAll=storedVer<DATA_VER;
@@ -628,6 +634,11 @@ function vLoginStep0(){
       <div style="font-size:42px;color:#c9a227;text-shadow:0 0 24px rgba(201,162,39,.6),0 0 50px rgba(201,162,39,.2);line-height:1">\u2666</div>
       <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin-top:8px;color:#f0e8d0;text-shadow:0 1px 8px rgba(0,0,0,.7)">CMC Teams</div>
       <div style="font-size:8px;color:#2a4028;letter-spacing:4px;text-transform:uppercase;margin-top:6px">Black Jack \u00b7 Casino de Monaco</div>
+      <div style="font-size:8px;color:#1a2818;margin-top:4px;font-family:monospace">
+        <span id="verSpan">`+APP_VER+`</span>
+        &nbsp;&bull;&nbsp;
+        <span onclick="forceRefresh()" style="color:#3a5830;cursor:pointer;text-decoration:underline">Forcer mise \u00e0 jour</span>
+      </div>
     </div>
     <div style="font-size:9px;color:#3a5030;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Matricule SBM</div>
     <input id="li" class="inp" type="text" placeholder="ex. U007"
@@ -735,7 +746,7 @@ function vTopbar(){
   return `
   <span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
   <div style="flex:1;min-width:0">
-    <div style="font-size:13px;font-weight:800;color:#c9a227;letter-spacing:1px">CMC Teams</div>
+    <div style="font-size:13px;font-weight:800;color:#c9a227;letter-spacing:1px">CMC Teams <span style="font-size:8px;color:#1e3018;font-weight:400;font-family:monospace">`+APP_VER+`</span></div>
     <div style="font-size:7px;color:#1e2e1e;letter-spacing:3px;text-transform:uppercase">Casino de Monaco</div>
   </div>
   ${isAdm
