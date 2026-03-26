@@ -663,6 +663,7 @@ function vNav(){
     {id:"accueil",ic:"\u2666",lb:"Accueil"},
     {id:"planning",ic:"\ud83d\udcc5",lb:"Planning"},
     {id:"departs",ic:"\ud83c\udfaf",lb:"D\u00e9parts"},
+    {id:"absences",ic:"\ud83e\uddd1\u200d\ud83e\ude7a",lb:"Absences"},
     {id:"chat",ic:"\ud83d\udcac",lb:"Chat"},
     {id:"ia",ic:"\ud83e\udd16",lb:"Aide"}
   ];
@@ -683,6 +684,7 @@ function vMain(){
     case"accueil":  return vAccueil();
     case"planning": return vPlan();
     case"departs":  return vDeparts();
+    case"absences": return vAbsences();
     case"stats":    return isAdm?vStats():"";
     case"chat":     return vChat();
     case"admin":    return isAdm?vAdmin():"";
@@ -896,13 +898,19 @@ function vPlan(){
 
 // S\u00e9quences de d\u00e9part par taille d'\u00e9quipe
 var SEQS={
+  4:[1,4,2,3],
   5:[1,4,2,3,5],
   6:[1,6,4,2,3,5],
   7:[1,6,4,2,7,3,5],
   8:[1,6,4,2,7,3,8,5],
-  9:[1,6,4,9,2,7,3,8,5]
+  9:[1,6,4,9,2,7,3,8,5],
+  10:[1,6,4,9,2,7,3,8,5,10]
 };
-function getSeqForSize(n){return SEQS[n]||SEQS[5];}
+function getSeqForSize(n){
+  if(SEQS[n]) return SEQS[n];
+  // Fallback generique pour toute taille
+  var a=[];for(var i=1;i<=n;i++)a.push(i);return a;
+}
 var SEQ5=SEQS[5]; // compat
 // Chef d'equipe : UN SEUL par equipe
 var DEF_CHEF_EQ={"1":"ESPAGNOL S","2":"PODGORNY B","3":"DESARZENS K","4":"NIGIONI J","5":"GARCIA A"};
@@ -928,6 +936,41 @@ var CHEFS_T=lg("cmc_chefs_t",JSON.parse(JSON.stringify(DEF_CHEFS_T)));
 var openCITeam=null;
 var editChefSlot=null;
 function saveChefsT(){if(!A.user||A.user.id!==AID)return;ls("cmc_chefs_t",CHEFS_T);}
+// Resynchronise CHEFS_T avec les donnees employes actuelles
+// Appele apres chaque import pour detecter arrivees/departs/changements d'equipe
+function syncChefsT(){
+  if(!A.user||A.user.id!==AID) return {added:[],removed:[],moved:[]};
+  var changes={added:[],removed:[],moved:[]};
+  var pl=gpl();
+  A.teams.forEach(function(t){
+    if(!CHEFS_T[t.id]) CHEFS_T[t.id]=[];
+    var teamChefs=A.employees.filter(function(e){return e.team===t.id&&e.chef;});
+    // Ajouter les chefs manquants
+    teamChefs.forEach(function(e){
+      if(CHEFS_T[t.id].indexOf(e.name)<0){
+        CHEFS_T[t.id].push(e.name);
+        changes.added.push(e.name+' ('+t.name+')');
+      }
+    });
+    // Retirer les chefs qui ne sont plus dans cette equipe
+    var toRemove=CHEFS_T[t.id].filter(function(n){
+      var emp=A.employees.find(function(e){return e.name===n;});
+      return !emp||emp.team!==t.id||!emp.chef;
+    });
+    toRemove.forEach(function(n){
+      CHEFS_T[t.id]=CHEFS_T[t.id].filter(function(x){return x!==n;});
+      var emp=A.employees.find(function(e){return e.name===n;});
+      if(emp&&emp.chef){
+        // Chef est dans une autre equipe — deja gere par leur equipe
+        changes.moved.push(n+' retiré de '+t.name);
+      } else {
+        changes.removed.push(n+' retiré de '+t.name);
+      }
+    });
+  });
+  saveChefsT();
+  return changes;
+}
 // BaseIdx SEQ5=[1,4,2,3,5]: 0\u2192part1er, 1\u21924e, 2\u21922e, 3\u21923e, 4\u21925e
 var DEF_CI={
   "ESPAGNOL S":0,"BRASSEUR F":1,"GAZAGNE F":2,"BONO F":3,"COURTIN F":4,
@@ -1597,17 +1640,20 @@ function parseCMCPlanningFromItems(allItems, year, month){
 
   // \u2500\u2500 4. D\u00e9tecter le s\u00e9parateur (trait noir = grand \u00e9cart vertical entre groupes d'employ\u00e9s) \u2500\u2500
   var empYsSorted=empLines.map(function(e){return e.y;}).sort(function(a,b){return a-b;});
-  var sepY=null;
+  // Detecter TOUS les separateurs significatifs (traits rouges/noirs entre equipes et equipes miroirs)
+  var separators=[];
   if(empYsSorted.length>2){
-    var maxGap=0,maxGapPos=null;
+    var avgGap=(empYsSorted[empYsSorted.length-1]-empYsSorted[0])/(empYsSorted.length-1);
     for(var gi=1;gi<empYsSorted.length;gi++){
       var gap=empYsSorted[gi]-empYsSorted[gi-1];
-      if(gap>maxGap){maxGap=gap;maxGapPos=(empYsSorted[gi]+empYsSorted[gi-1])/2;}
+      if(gap>avgGap*1.8) separators.push((empYsSorted[gi]+empYsSorted[gi-1])/2);
     }
-    // Ecart moyen entre lignes consecutives
-    var avgGap=(empYsSorted[empYsSorted.length-1]-empYsSorted[0])/(empYsSorted.length-1);
-    // Trait noir = ecart >2x la moyenne
-    if(maxGap>avgGap*2) sepY=maxGapPos;
+  }
+  // Retourne le numero de segment pour une position Y
+  function getSegment(y){
+    var seg=0;
+    for(var si=0;si<separators.length;si++){if(y>separators[si])seg=si+1;}
+    return seg;
   }
 
   // Planning vide par employe
@@ -1640,8 +1686,8 @@ function parseCMCPlanningFromItems(allItems, year, month){
     // Trouver l'employ\u00e9 le plus proche — DANS LE M\u00caMME GROUPE (m\u00eame c\u00f4t\u00e9 du trait noir)
     var bestEmp=null,bestDist=30;
     empLines.forEach(function(el){
-      // Respecter le s\u00e9parateur : ne pas croiser la ligne
-      if(sepY!==null&&((item.y<sepY)!==(el.y<sepY))) return;
+      // Rester dans le meme segment (entre deux separateurs)
+      if(getSegment(item.y)!==getSegment(el.y)) return;
       var d=Math.abs(el.y-item.y);
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
@@ -1788,6 +1834,14 @@ function doImport(){
   var errDiv=verif.errors.length?'<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: '+errMsgs+plusMore+'</div>':"";
   if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+' \u2192 '+MFR[im]+' '+iy+'</div>'+
     '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv;
+  // Resynchroniser les equipes apres import
+  var syncRes=syncChefsT();
+  var syncMsg='';
+  var syncAll=[].concat(syncRes.added,syncRes.removed,syncRes.moved);
+  if(syncAll.length>0){
+    syncMsg='<div style="margin-top:6px;font-size:9px;color:#4a72a8;font-weight:600">\u21bb '+(syncAll.length)+' changement(s) d'\u00e9quipe d\u00e9tect\u00e9(s) : '+syncAll.slice(0,3).join(' \u00b7 ')+(syncAll.length>3?' (+'+(syncAll.length-3)+' autres)':'')+'</div>';
+    if(r)r.innerHTML+=syncMsg;
+  }
   toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s) d\u00e9tect\u00e9e(s)':'\u2705 Import v\u00e9rifi\u00e9 \u2014 '+ok+' cellules');
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+e.message+'</div>';
@@ -2300,6 +2354,87 @@ Posez votre question librement !`;
 \u2022 "Combien dans l'\u00e9quipe 3 ?"<br>
 \u2022 "Que signifie le code 22/6 ?"<br>
 \u2022 "Qui est chef de l'\u00e9quipe 1 ?"`;
+}
+
+
+// ── ONGLET ABSENCES ──────────────────────────────────────────────────────────
+function vAbsences(){
+  var pl=gpl(),days=getDays(A.year,A.month);
+  var daysArr=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
+  var isAdm=A.user&&A.user.id===AID;
+  var myTeam=A.user?A.user.team:null;
+  // Codes d'absence a afficher
+  var ABS_CODES={"CP":"#684060","M":"#783840","AF":"#206038","RRT":"#205060","HC":"#506818"};
+  var ABS_LBL={"CP":"Cong\u00e9","M":"Maladie","AF":"Formation","RRT":"R\u00e9cup","HC":"H.Comp."};
+
+  var h='<div class="page">';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+   +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
+   +'<div style="flex:1;text-align:center">'
+   +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 Absences</div>'
+   +'<div style="font-size:9px;color:#243020">Cong\u00e9s \u00b7 Maladie \u00b7 Formation \u00b7 R\u00e9cup</div></div>'
+   +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
+   +'</div>';
+
+  // Legende
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
+  Object.keys(ABS_CODES).forEach(function(k){
+    h+='<span style="background:'+ABS_CODES[k]+'22;border:1px solid '+ABS_CODES[k]+'55;border-radius:5px;padding:2px 8px;font-size:9px;color:'+ABS_CODES[k]+'">'+ABS_LBL[k]+'</span>';
+  });
+  h+='</div>';
+
+  // Par equipe
+  var teamsToShow=isAdm?A.teams:A.teams.filter(function(t){return t.id===myTeam;});
+  teamsToShow.forEach(function(team){
+    var tcc=team.color||TC[team.id]||"#888";
+    var emps=A.employees.filter(function(e){return e.team===team.id;});
+    // Filtrer: employés ayant au moins une absence ce mois
+    var absentEmps=emps.filter(function(e){
+      var row=pl[e.id]||{};
+      return Object.values(row).some(function(c){return ABS_CODES[c];});
+    });
+    if(!absentEmps.length) return;
+
+    h+='<div style="margin-bottom:14px">'
+     +'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:'+tcc+'0c;border:1px solid '+tcc+'22;border-radius:6px 6px 0 0">'
+     +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
+     +'<span style="font-size:11px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
+     +'<span style="font-size:9px;color:#243020">'+absentEmps.length+' employ\u00e9(s) absent(s)</span>'
+     +'</div>'
+     +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 6px 6px">'
+     +'<table style="border-collapse:collapse;width:100%"><thead><tr>'
+     +'<th style="padding:4px 8px;background:#060e07;color:#243020;font-size:9px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
+    daysArr.forEach(function(d){
+      var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
+      h+='<th style="padding:2px 1px;min-width:24px;background:#060e07;text-align:center">'
+       +'<div style="font-size:8px;font-weight:700;color:'+(we?"#4a6888":"#3a4a38")+'">'+d+'</div>'
+       +'</th>';
+    });
+    h+='</tr></thead><tbody>';
+    absentEmps.forEach(function(emp,ei){
+      var isMe=A.user&&emp.id===A.user.id;
+      var row=pl[emp.id]||{};
+      h+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.04)":"")+'"><td style="padding:4px 8px;background:'+(isMe?"rgba(201,162,39,.05)":"#162818")+';position:sticky;left:0;border-right:1px solid #182818;font-size:9px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;z-index:3">'+(isMe?"\u25b6 ":"")+esc(emp.name)+'</td>';
+      daysArr.forEach(function(d){
+        var c=row[d]||"";
+        var col=ABS_CODES[c];
+        if(col){
+          h+='<td style="text-align:center;padding:1px;background:'+col+'15">'
+           +'<span style="display:inline-block;background:'+col+'30;border:1px solid '+col+'60;border-radius:3px;padding:1px 2px;font-size:7px;font-weight:700;color:'+col+'">'+c+'</span>'
+           +'</td>';
+        } else {
+          h+='<td style="text-align:center;padding:1px;background:#060e07"><span style="font-size:7px;color:#1e2e1e">\u00b7</span></td>';
+        }
+      });
+      h+='</tr>';
+    });
+    h+='</tbody></table></div></div>';
+  });
+
+  // Si aucune absence ce mois
+  h+='<div id="abs-empty" style="display:none;text-align:center;padding:30px;color:#243020;font-size:11px">Aucune absence enregistr\u00e9e pour ce mois \u2014 tout le monde est pr\u00e9sent !</div>';
+  h+='</div>';
+  return h;
 }
 
 try{
