@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>CMC Teams</title>
 <style>
 
@@ -447,28 +450,33 @@ var A={
   empQ:"",
   pt:null
 };
-// Migration: applique les champs toMo/fromMo/family/chef de DEF_EMP sur les données
-// stockées en localStorage (qui peuvent être en retard sur le code).
+// Version des données. Incrémenter à chaque changement de DEF_EMP
+// pour forcer la re-synchronisation depuis le code vers localStorage.
+var DATA_VER=4;
 (function migrateEmployees(){
+  var storedVer=parseInt(localStorage.getItem("cmc_dver")||"0");
+  var forceAll=storedVer<DATA_VER;
   var changed=false;
   DEF_EMP.forEach(function(def){
     var e=A.employees.find(function(x){return x.id===def.id;});
     if(!e) return;
-    // Champs à synchroniser depuis DEF_EMP vers localStorage
-    ["toMo","fromMo","family","chef"].forEach(function(f){
-      if(def[f]!==undefined && e[f]!==def[f]){
-        // Ne pas écraser toMo/fromMo si l'admin a manuellement changé la valeur
-        // (sauf si DEF a une valeur et localStorage n'en a pas)
-        if(f==="toMo"||f==="fromMo"){
-          if(e[f]===undefined||e[f]===null) { e[f]=def[f]; changed=true; }
-        } else {
-          // family et chef : toujours synchroniser depuis DEF
-          e[f]=def[f]; changed=true;
-        }
+    ["toMo","fromMo","family","chef","cdpShifts","team","post"].forEach(function(f){
+      if(def[f]===undefined) return;
+      var needsUpdate;
+      if(f==="toMo"||f==="fromMo"){
+        // En force: toujours appliquer. Sinon: seulement si absent.
+        needsUpdate=forceAll||(e[f]===undefined||e[f]===null);
+      } else {
+        // family/chef/post/team/cdpShifts : toujours synchroniser depuis DEF_EMP
+        needsUpdate=true;
+      }
+      if(needsUpdate && JSON.stringify(e[f])!==JSON.stringify(def[f])){
+        e[f]=def[f]; changed=true;
       }
     });
   });
   if(changed) ls("cmc_e",A.employees);
+  if(forceAll) localStorage.setItem("cmc_dver",String(DATA_VER));
 }());
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
