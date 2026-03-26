@@ -447,6 +447,29 @@ var A={
   empQ:"",
   pt:null
 };
+// Migration: applique les champs toMo/fromMo/family/chef de DEF_EMP sur les données
+// stockées en localStorage (qui peuvent être en retard sur le code).
+(function migrateEmployees(){
+  var changed=false;
+  DEF_EMP.forEach(function(def){
+    var e=A.employees.find(function(x){return x.id===def.id;});
+    if(!e) return;
+    // Champs à synchroniser depuis DEF_EMP vers localStorage
+    ["toMo","fromMo","family","chef"].forEach(function(f){
+      if(def[f]!==undefined && e[f]!==def[f]){
+        // Ne pas écraser toMo/fromMo si l'admin a manuellement changé la valeur
+        // (sauf si DEF a une valeur et localStorage n'en a pas)
+        if(f==="toMo"||f==="fromMo"){
+          if(e[f]===undefined||e[f]===null) { e[f]=def[f]; changed=true; }
+        } else {
+          // family et chef : toujours synchroniser depuis DEF
+          e[f]=def[f]; changed=true;
+        }
+      }
+    });
+  });
+  if(changed) ls("cmc_e",A.employees);
+}());
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
 // Cumulative work days before month mo (mo=0 = March 2026) for a given team pattern.
