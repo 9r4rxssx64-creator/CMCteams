@@ -207,13 +207,6 @@ var FAMILIES=[
 ];
 function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
 function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
-var FAMILIES=[
-  {id:"roulettes",label:"Roulettes",color:"#c04040"},
-  {id:"bj",label:"Chefs Américains",color:"#c9a227"},
-  {id:"cmc",label:"Employés CMC",color:"#4a72a8"}
-];
-function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
-function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
 // Etiquette affichee pour un employe : nom + etoile si chef roulette
 function empLabel(emp){
   if(!emp) return "";
@@ -452,8 +445,9 @@ var A={
 };
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
-var DATA_VER=5;
-var APP_VER="v5.0";
+var DATA_VER=6;
+var APP_VER="v6.0";
+var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
   var url=location.href.split("?")[0]+"?t="+Date.now();
@@ -465,24 +459,38 @@ function forceRefresh(){
   var changed=false;
   DEF_EMP.forEach(function(def){
     var e=A.employees.find(function(x){return x.id===def.id;});
-    if(!e) return;
+    if(!e){
+      // Ajouter l'employé manquant
+      A.employees.push(JSON.parse(JSON.stringify(def)));
+      changed=true;
+      return;
+    }
+    // Synchroniser tous les champs de DEF_EMP
     ["toMo","fromMo","family","chef","cdpShifts","team","post"].forEach(function(f){
-      if(def[f]===undefined) return;
-      var needsUpdate;
       if(f==="toMo"||f==="fromMo"){
-        // En force: toujours appliquer. Sinon: seulement si absent.
-        needsUpdate=forceAll||(e[f]===undefined||e[f]===null);
+        if(forceAll){
+          // En force: appliquer la valeur DEF_EMP (null si absent dans DEF_EMP)
+          var defVal=def[f]!==undefined?def[f]:null;
+          if(JSON.stringify(e[f])!==JSON.stringify(defVal)){e[f]=defVal;changed=true;}
+        } else if(e[f]===undefined){
+          var defVal2=def[f]!==undefined?def[f]:null;
+          if(defVal2!==null){e[f]=defVal2;changed=true;}
+        }
       } else {
-        // family/chef/post/team/cdpShifts : toujours synchroniser depuis DEF_EMP
-        needsUpdate=true;
-      }
-      if(needsUpdate && JSON.stringify(e[f])!==JSON.stringify(def[f])){
-        e[f]=def[f]; changed=true;
+        // family/chef/post/team/cdpShifts : toujours synchroniser
+        if(def[f]!==undefined&&JSON.stringify(e[f])!==JSON.stringify(def[f])){
+          e[f]=def[f];changed=true;
+        }
       }
     });
   });
   if(changed) ls("cmc_e",A.employees);
-  if(forceAll) localStorage.setItem("cmc_dver",String(DATA_VER));
+  if(forceAll){
+    // Effacer le cache des indices de départ (CI) pour forcer recalcul
+    for(var _y=2025;_y<=2028;_y++){for(var _m=0;_m<12;_m++){localStorage.removeItem("cmc_ci_"+_y+"_"+_m);}}
+    _needResetChefsT=true;
+    localStorage.setItem("cmc_dver",String(DATA_VER));
+  }
 }());
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
@@ -1061,6 +1069,7 @@ var DEF_CHEFS_T={
   "5":["GARCIA A","GARRO S","GIORSETTI S","SIRIO J","FAUTRIER M"]
 };
 var CHEFS_T=lg("cmc_chefs_t",JSON.parse(JSON.stringify(DEF_CHEFS_T)));
+if(_needResetChefsT){CHEFS_T=JSON.parse(JSON.stringify(DEF_CHEFS_T));ls("cmc_chefs_t",CHEFS_T);}
 // Si DATA_VER a changé, réinitialiser CHEFS_T et les CI stockés
 (function(){
   if(parseInt(localStorage.getItem("cmc_dver")||"0")<DATA_VER){
@@ -1963,6 +1972,11 @@ function handleFileImport(input){
   r.onload=function(e){
     var txt=e.target.result;
     if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+    // Détecter un PDF binaire lu comme texte
+    if(txt.slice(0,5)==="%PDF-"){
+      if(info) info.innerHTML='<span style="color:#c04040">\u274c PDF non lisible directement — copiez le texte manuellement depuis votre lecteur PDF, puis collez-le ci-dessous</span>';
+      return;
+    }
     var ta=document.getElementById("impTxt");
     if(ta) ta.value=txt;
     var n=txt.split("\n").filter(function(l){return l.trim();}).length;
@@ -2045,6 +2059,8 @@ function doImport(){
     }
   }
   ls("cmc_ov",A.overrides);
+  // Mettre à jour le mois courant avant vérification (gpl() utilise A.year/A.month)
+  A.year=iy;A.month=im;
   // Sauver la r\u00e9f\u00e9rence d'import pour v\u00e9rification
   ls("cmc_ref_"+key,refData);
   A.lastImportKey=key;
@@ -2069,8 +2085,6 @@ function doImport(){
   if(syncAll.length>0&&r){
     r.innerHTML+='<div style="margin-top:6px;font-size:9px;color:#4a72a8;font-weight:600">\u21bb '+syncAll.length+' changement(s) d\u2019\u00e9quipe : '+syncAll.slice(0,3).join(' \u00b7 ')+(syncAll.length>3?' (+' +(syncAll.length-3)+' autres)':'')+'</div>';
   }
-  // Naviguer vers le mois importe et rafraichir
-  A.year=iy;A.month=im;
   dc();
   toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s)':'\u2705 Import OK \u2014 '+ok+' cellules \u2014 '+MFR[im]+' '+iy);
   }catch(e){
