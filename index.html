@@ -425,12 +425,31 @@ var A={
 };
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
+// Cumulative work days before month mo (mo=0 = March 2026) for a given team pattern.
+// Each 30-day cp cycle has 20 work days, but 31-day months add 1 extra work day
+// for teams whose repos pattern does NOT include cp=1 (teams 1,2,4,5).
+// Team 3 (pattern C includes cp=1) always has exactly 20 work days per calendar month.
+function cumWorkDays(teamId,mo){
+  if(mo<=0) return 0;
+  var pat=REPOS[teamId]||[],total=0;
+  for(var m=0;m<mo;m++){
+    var mIdx=m+2; // mo=0 is March (month index 2)
+    var y2=2026+Math.floor(mIdx/12);
+    var mMonth=mIdx%12;
+    var days2=getDays(y2,mMonth);
+    for(var d=1;d<=days2;d++){
+      var ad=m*30+(d-1),cp=((ad%30)+30)%30+1;
+      if(pat.indexOf(cp)<0) total++;
+    }
+  }
+  return total;
+}
 function genBase(y,m){
   var days=getDays(y,m),mo=moOff(y,m),p={};
   A.employees.forEach(function(emp){
     var pat=REPOS[emp.team]||[],prof=getEP(emp);
     var seq=prof.s,cdpL=prof.d,sl=seq.length;
-    var si0=(((prof.i||0)+(mo*21))%sl+sl)%sl;
+    var si0=(((prof.i||0)+cumWorkDays(emp.team,mo))%sl+sl)%sl;
     p[emp.id]={};var wc=0;
     for(var d=1;d<=days;d++){
       var ad=(mo*30)+(d-1),cp=((ad%30)+30)%30+1;
