@@ -204,7 +204,7 @@ var CODES={
   "14/20" :{l:"14h\u201320h",  bg:"#070d03",c:"#405028",b:"#0c1606",cdp:false}
 };
 var CK=Object.keys(CODES);
-var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
+var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830","6":"#7a4880","7":"#2a8888","8":"#886028","9":"#5aaa70","10":"#aa68b0","11":"#4aaabb","12":"#b08048"};
 var FAMILIES=[
   {id:"roulettes",label:"Roulettes",color:"#c04040"},
   {id:"bj",label:"Chefs Am\u00e9ricains",color:"#c9a227"},
@@ -219,11 +219,18 @@ function empLabel(emp){
 }
 
 var DEF_TEAMS=[
-  {id:"1",name:"\u00c9quipe 1",mirrorTeamId:"4",departureOrder:1,color:"#c9a227"},
-  {id:"2",name:"\u00c9quipe 2",mirrorTeamId:"5",departureOrder:2,color:"#4a72a8"},
-  {id:"3",name:"\u00c9quipe 3",mirrorTeamId:null,departureOrder:3,color:"#3a8a50"},
-  {id:"4",name:"\u00c9quipe 4",mirrorTeamId:"1",departureOrder:4,color:"#a84868"},
-  {id:"5",name:"\u00c9quipe 5",mirrorTeamId:"2",departureOrder:5,color:"#c07830"}
+  {id:"1", name:"\u00c9quipe 1", mirrorTeamId:"4",  departureOrder:1,  color:"#c9a227"},
+  {id:"2", name:"\u00c9quipe 2", mirrorTeamId:"5",  departureOrder:2,  color:"#4a72a8"},
+  {id:"3", name:"\u00c9quipe 3", mirrorTeamId:"9",  departureOrder:3,  color:"#3a8a50"},
+  {id:"4", name:"\u00c9quipe 4", mirrorTeamId:"1",  departureOrder:4,  color:"#a84868"},
+  {id:"5", name:"\u00c9quipe 5", mirrorTeamId:"2",  departureOrder:5,  color:"#c07830"},
+  {id:"6", name:"\u00c9quipe 6", mirrorTeamId:"10", departureOrder:6,  color:"#7a4880"},
+  {id:"7", name:"\u00c9quipe 7", mirrorTeamId:"11", departureOrder:7,  color:"#2a8888"},
+  {id:"8", name:"\u00c9quipe 8", mirrorTeamId:"12", departureOrder:8,  color:"#886028"},
+  {id:"9", name:"\u00c9quipe 9", mirrorTeamId:"3",  departureOrder:9,  color:"#5aaa70"},
+  {id:"10",name:"\u00c9quipe 10",mirrorTeamId:"6",  departureOrder:10, color:"#aa68b0"},
+  {id:"11",name:"\u00c9quipe 11",mirrorTeamId:"7",  departureOrder:11, color:"#4aaabb"},
+  {id:"12",name:"\u00c9quipe 12",mirrorTeamId:"8",  departureOrder:12, color:"#b08048"}
 ];
 
 var DEF_EMP=[
@@ -511,12 +518,29 @@ function forceRefresh(){
   // Auto-nettoyage : supprimer les employes importes si trop nombreux (évite freeze)
   var _defIds=DEF_EMP.map(function(e){return e.id;});
   var _importedCount=A.employees.filter(function(e){return _defIds.indexOf(e.id)<0;}).length;
-  if(_importedCount>15){
+  if(_importedCount>80){
     var _before=A.employees.length;
     A.employees=A.employees.filter(function(e){return _defIds.indexOf(e.id)>=0;});
     console.warn("Auto-nettoyage: "+(_before-A.employees.length)+" employes importes supprimes au demarrage");
     ls("cmc_e",A.employees);
   }
+}());
+// Synchroniser les équipes : ajouter les équipes manquantes et corriger mirrorTeamId
+(function mergeTeams(){
+  var changed=false;
+  DEF_TEAMS.forEach(function(def){
+    var t=A.teams.find(function(x){return x.id===def.id;});
+    if(!t){
+      A.teams.push(JSON.parse(JSON.stringify(def)));
+      changed=true;
+    } else {
+      // Toujours synchroniser mirrorTeamId depuis DEF_TEAMS
+      if(t.mirrorTeamId!==def.mirrorTeamId){t.mirrorTeamId=def.mirrorTeamId;changed=true;}
+      // Ajouter la couleur si absente
+      if(!t.color&&def.color){t.color=def.color;changed=true;}
+    }
+  });
+  if(changed) ls("cmc_t",A.teams);
 }());
 // Restaurer la session depuis localStorage (après migration, evite deconnexion apres erreur JS)
 (function(){
