@@ -173,7 +173,8 @@ window.onerror=function(msg,src,line,col,err){
   return false;
 };
 </script><script>
-
+if(!Object.values)Object.values=function(o){return Object.keys(o).map(function(k){return o[k];});};
+if(!Object.entries)Object.entries=function(o){return Object.keys(o).map(function(k){return[k,o[k]];});};
 
 var MFR=["Janvier","F\u00e9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\u00fbt","Septembre","Octobre","Novembre","D\u00e9cembre"];
 var DS=["D","L","M","M","J","V","S"];
@@ -196,7 +197,11 @@ var CODES={
   "AF"    :{l:"Formation",bg:"#020d05",c:"#206038",b:"#041006",cdp:false},
   "M"     :{l:"Maladie",  bg:"#0e0300",c:"#783840",b:"#180606",cdp:false},
   "RRT"   :{l:"R\u00e9cup RRT",bg:"#020a14",c:"#205060",b:"#04101c",cdp:false},
-  "HC"    :{l:"H.Comp.",  bg:"#070d02",c:"#506818",b:"#0c1604",cdp:false}
+  "HC"    :{l:"H.Comp.",  bg:"#070d02",c:"#506818",b:"#0c1604",cdp:false},
+  "PRT"   :{l:"Pr\u00eat",      bg:"#080808",c:"#505050",b:"#101010",cdp:false},
+  "PAT"   :{l:"Patrimonial",bg:"#080808",c:"#505050",b:"#101010",cdp:false},
+  "15/19" :{l:"15h\u201319h",  bg:"#070d03",c:"#405028",b:"#0c1606",cdp:false},
+  "14/20" :{l:"14h\u201320h",  bg:"#070d03",c:"#405028",b:"#0c1606",cdp:false}
 };
 var CK=Object.keys(CODES);
 var TC={"1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830"};
@@ -443,10 +448,15 @@ var A={
   empQ:"",
   pt:null
 };
+// Restaurer la session depuis localStorage (evite deconnexion apres erreur JS)
+(function(){
+  var uid=localStorage.getItem("cmc_uid");
+  if(uid){var e=A.employees.find(function(x){return x.id===uid;});if(e)A.user=e;}
+})();
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=6;
-var APP_VER="v6.0";
+var APP_VER="v6.1";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -708,7 +718,7 @@ function stepPin(){
     var er=document.getElementById("pinerr");if(er)er.textContent="Code incorrect";return;
   }
   var emp=A.employees.find(function(e){return e.id===AID;});
-  A.user=emp;loginStep=0;render();
+  A.user=emp;ls("cmc_uid",emp.id);loginStep=0;render();
 }
 function step1(){
   var el=document.getElementById("li");if(!el)return;
@@ -718,7 +728,7 @@ function step1(){
   if(uid===AID){
     var pin=lg("cmc_admin_pin",null);
     if(pin){loginUid=uid;loginStep=2;render();}
-    else{A.user=emp;loginStep=0;render();}
+    else{A.user=emp;ls("cmc_uid",emp.id);loginStep=0;render();}
     return;
   }
   loginUid=uid;loginStep=1;render();
@@ -736,18 +746,18 @@ function step2(){
     var pw2=(document.getElementById("fp2")||{}).value||"";
     if(pw1!==pw2){if(errEl)errEl.textContent="Les mots de passe ne correspondent pas";return;}
     A.passwords[loginUid]={h:hashPw(pw1),p:pw1};ls("cmc_pw",A.passwords);
-    A.user=emp;loginStep=0;render();toast("Bienvenue "+emp.name.split(" ")[0]+" !");
+    A.user=emp;ls("cmc_uid",emp.id);loginStep=0;render();toast("Bienvenue "+emp.name.split(" ")[0]+" !");
   } else {
     var stored=A.passwords[loginUid];
     var valid=(typeof stored==="string"&&hashPw(pw1)===stored)||(stored&&stored.h&&hashPw(pw1)===stored.h);
     if(!valid){if(errEl)errEl.textContent="Mot de passe incorrect";return;}
     // Migrer vers nouveau format si ancien
     if(typeof stored==="string"){A.passwords[loginUid]={h:stored,p:pw1};ls("cmc_pw",A.passwords);}
-    A.user=emp;loginStep=0;render();
+    A.user=emp;ls("cmc_uid",emp.id);loginStep=0;render();
   }
 }
 
-function doLogout(){A.user=null;render();}
+function doLogout(){A.user=null;localStorage.removeItem("cmc_uid");render();}
 
 function vTopbar(){
   var u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:"1"),t=gt(u?u.team:"");
@@ -2034,8 +2044,10 @@ function doImport(){
   })();
   var lines=txt.split("\n").map(function(l){return l.trim();}).filter(Boolean);
   if(lines.length<2){toast("Format invalide","err");return;}
-  var sep=lines[0].includes("\t")?"\t":",";
+  var hasTabs=lines.some(function(l){return l.indexOf("\t")>=0;});
+  var sep=hasTabs?"\t":",";
   var key=""+iy+"-"+im;
+  var days=getDays(iy,im);
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
@@ -2050,17 +2062,30 @@ function doImport(){
     if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_sh)){importFamily="cmc";break;}
   }
   var _postPat=/^\.?[A-Z][A-Z0-9+.\/\-]*\.?$/; // pattern code poste ex: BRTP+E. ou .BRTCP+K
+  function _norm(s){return (s||"").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
   for(var li=1;li<lines.length;li++){
-    var parts=lines[li].split(sep);
+    var rawLine=lines[li];
+    var parts=rawLine.split(sep);
+    // Format espace (PDF collé sans tab/virgule) : reconstruire parts[]
+    if(sep===","&&parts.length<4){
+      var sp=rawLine.trim().split(/\s+/);
+      var fromIdx=-1;
+      for(var _fi=2;_fi<Math.min(sp.length,10);_fi++){
+        if(/^\d{1,2}$/.test(sp[_fi])&&parseInt(sp[_fi])>=1&&parseInt(sp[_fi])<=31){fromIdx=_fi;break;}
+      }
+      if(fromIdx>=2&&fromIdx+1<sp.length&&/^\d{1,2}$/.test(sp[fromIdx+1])){
+        parts=[sp[0],sp.slice(1,fromIdx).join(" "),sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+      }
+    }
     var p0raw=parts[0].trim();
-    var p0=p0raw.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    var p1=parts[1]?parts[1].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""):"";
+    var p0=_norm(p0raw);
+    var p1=_norm(parts[1]||"");
     // Ignorer lignes calendrier : "dim 1 lun 2 ..." ou "mars 2026"
     if(/^(DIM|LUN|MAR|MER|JEU|VEN|SAM)\s*\d/.test(p0)) continue;
     if(/^(JANVIER|FEVRIER|MARS|AVRIL|MAI|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE)\s+\d{4}$/.test(p0)) continue;
     // En-tete de colonne type "Colonne4" ou "Co" → extraire section de parts[1]
     if(/^CO(LONNE)?\d*$/.test(p0)){
-      var _c3=parts[2]?parts[2].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""):"";
+      var _c3=_norm(parts[2]||"");
       var _ch=[p1,_c3].join(" ");
       if(/ROULETT/.test(_ch)) importFamily="roulettes";
       else if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC)/.test(_ch)) importFamily="bj";
@@ -2078,6 +2103,12 @@ function doImport(){
        parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z]/.test(parts[1].trim())&&
        parts[2]&&/^\*?\d{1,2}$/.test(parts[2].trim())){
       nameIdx=1; codesStart=4; // sauter post, nom, du, au
+    }
+    // Jour de debut de periode (from-day) pour calculer le bon numero de jour
+    var fromDay=1;
+    if(codesStart===4){
+      var _fd=parseInt((parts[2]||"").trim());
+      if(_fd>=1&&_fd<=31) fromDay=_fd;
     }
     var rawName=parts[nameIdx].trim().toUpperCase();
     // Chef : ★ * apres le nom, ou * avant le 'du' (format planning)
@@ -2105,7 +2136,6 @@ function doImport(){
       if(changed) ls("cmc_e",A.employees);
     }
     refData.rows[emp.id]={};
-    var dayOff=codesStart-1; // codesStart=1→dayOff=0, codesStart=4→dayOff=3
     for(var di=codesStart;di<parts.length;di++){
       var code=parts[di].trim().toUpperCase();
       if(!code||code==="0"||code==="-") continue;
@@ -2114,20 +2144,18 @@ function doImport(){
       // Normaliser tiret→slash : "16-3"→"16/3"
       code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
       code=code.replace(/CDP$/,"*");
-      // Normaliser codes format planning : supprimer 'C' final (convention) et quotes
+      // Normaliser codes CMC : "' → ' (conserve marqueur convention), puis strip C/quotes
       if(!CODES[code]){
-        var c2=code.replace(/C$/,"");
+        var c2=code.replace(/"'/g,"'");
         if(c2!==code&&CODES[c2]){code=c2;}
-        else{c2=code.replace(/['"]+$/,"");
-          if(c2!==code&&CODES[c2]){code=c2;}
-          else{c2=code.replace(/['"C]+$/,"");if(CODES[c2])code=c2;}}
+        else{c2=(c2!==code?c2:code).replace(/[C"']+$/,"");if(c2&&CODES[c2])code=c2;}
       }
       // Auto-upgrade CDP
       if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
         code=CDP_MAP[code];
       }
-      if(code&&!CODES[code]){err++;errLines.push(name+" j"+(di-dayOff)+":code inconnu '"+code+"'");continue;}
-      var dayNum=di-dayOff;
+      var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la periode
+      if(code&&!CODES[code]){err++;errLines.push(name+" j"+dayNum+":code inconnu '"+code+"'");continue;}
       if(dayNum<1||dayNum>days) continue;
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][dayNum]=code;
