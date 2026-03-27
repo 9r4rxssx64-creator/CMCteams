@@ -1375,6 +1375,7 @@ function vAdmin(){
     {ic:"\ud83d\udce5",lb:"Import planning",fn:"sv('import')"},
     {ic:"\ud83d\udd11",lb:"R\u00e9initialiser un mot de passe",fn:"resetPw()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
+    {ic:"\ud83e\uddf9",lb:"Supprimer employ\u00e9s import\u00e9s (PDF ind\u00e9sirables)",fn:"cleanImportedEmps()"},
     {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier le code PIN admin":"Activer un code PIN admin",fn:"showPinSetup()"}
   ];
   return `<div class="page">
@@ -1403,6 +1404,24 @@ function vAdmin(){
     </div>
   </div>
   </div>`;
+}
+function cleanImportedEmps(){
+  var defIds=DEF_EMP.map(function(e){return e.id;});
+  var before=A.employees.length;
+  // Supprimer les employes non-DEF_EMP (importes depuis PDF ou CSV)
+  A.employees=A.employees.filter(function(e){return defIds.indexOf(e.id)>=0;});
+  var removed=before-A.employees.length;
+  ls("cmc_e",A.employees);
+  // Nettoyer aussi les overrides qui referaient plancher ces IDs
+  var changed=false;
+  Object.keys(A.overrides).forEach(function(key){
+    Object.keys(A.overrides[key]).forEach(function(eid){
+      if(defIds.indexOf(eid)<0){delete A.overrides[key][eid];changed=true;}
+    });
+  });
+  if(changed) ls("cmc_ov",A.overrides);
+  toast(removed===0?"Aucun employe importe a supprimer":"\u2705 "+removed+" employe(s) importe(s) supprime(s)");
+  dc();
 }
 function resetPw(){document.getElementById("resetBox").style.display="block";}
 function doResetPwDirect(uid){
@@ -1692,8 +1711,8 @@ function vImport(){
   <div class="card" style="padding:12px;margin-bottom:10px">
     <div style="font-size:9px;color:#c9a227;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Mois</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <select id="impY" class="inp" style="font-size:13px;padding:10px" onchange="dc()">${[2025,2026,2027].map(function(y){return "<option value=\""+y+"\""+(y===A.year?" selected":"")+">"+y+"</option>";}).join("")}</select>
-      <select id="impM" class="inp" style="font-size:13px;padding:10px" onchange="dc()">${MFR.map(function(m,i){return "<option value=\""+i+"\""+(i===A.month?" selected":"")+">"+m+"</option>";}).join("")}</select>
+      <select id="impY" class="inp" style="font-size:13px;padding:10px">${[2025,2026,2027].map(function(y){return "<option value=\""+y+"\""+(y===A.year?" selected":"")+">"+y+"</option>";}).join("")}</select>
+      <select id="impM" class="inp" style="font-size:13px;padding:10px">${MFR.map(function(m,i){return "<option value=\""+i+"\""+(i===A.month?" selected":"")+">"+m+"</option>";}).join("")}</select>
     </div>
   </div>
 
@@ -2002,6 +2021,17 @@ function doImport(){
   var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
   if(!txt){toast("Aucun contenu","err");return;}
+  // Detecter mois/annee depuis le texte colle (pas juste le nom de fichier)
+  (function(){
+    var MOIS={"janvier":0,"fevrier":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11};
+    var s=txt.slice(0,800).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var detM=-1,detY=-1;
+    Object.keys(MOIS).forEach(function(m){if(s.indexOf(m)>=0)detM=MOIS[m];});
+    var ym=s.match(/20(2[0-9]|3[0-9])/);
+    if(ym) detY=parseInt(ym[0]);
+    if(detM>=0){var sm=document.getElementById("impM");if(sm){sm.value=String(detM);im=detM;}}
+    if(detY>0){var sy=document.getElementById("impY");if(sy){sy.value=String(detY);iy=detY;}}
+  })();
   var lines=txt.split("\n").map(function(l){return l.trim();}).filter(Boolean);
   if(lines.length<2){toast("Format invalide","err");return;}
   var sep=lines[0].includes("\t")?"\t":",";
@@ -2054,13 +2084,16 @@ function doImport(){
     var isRouletteChef=/[\u2605\u2606\u2b50*]/.test(rawName)||
       (nameIdx===1&&/^\*/.test((parts[2]||"").trim()));
     var name=rawName.replace(/[\u2605\u2606\u2b50*]+$/,"").trim();
-    if(!name||name.length<2||!name.includes(" ")) continue; // nom invalide (post code, etc.)
+    // Validation stricte : le nom doit etre "NOM [NOM2...] I" (lettres+tirets uniquement, initiale 1-3 lettres)
+    if(!name||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,3}$/.test(name)) continue;
     var emp=A.employees.find(function(e){return e.name===name;});
+    var _newEmpCount=A.employees.filter(function(e){return e._imported;}).length;
     if(!emp){
+      if(_newEmpCount>=60){err++;errLines.push("Limite employes atteinte — verifier le format");continue;}
       var detectedTeam=detectTeamFromRow(parts.slice(codesStart),iy,im);
       var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
       var newFamily=isRouletteChef?"roulettes":importFamily;
-      emp={id:newId,name:name,team:detectedTeam||"1",post:nameIdx===1?p0raw:"",chef:isRouletteChef,family:newFamily,cdpShifts:[]};
+      emp={id:newId,name:name,team:detectedTeam||"1",post:nameIdx===1?p0raw:"",chef:isRouletteChef,family:newFamily,cdpShifts:[],_imported:true};
       A.employees.push(emp);
       ls("cmc_e",A.employees);
       errLines.push("Nouveau: "+name+(isRouletteChef?" ★":"")+", eq."+emp.team);
