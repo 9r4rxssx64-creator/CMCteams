@@ -2183,28 +2183,32 @@ function doImport(){
       if(/ROULETT/.test(_lnU))importFamily="roulettes";
       else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
       else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_lnU))importFamily="cmc";
-      // Parser les paires (postCode → nom(s))
+      // Parser le bloc entête : codes poste consécutifs puis noms (1 poste → 1 nom, dans l'ordre)
+      // Format PDF : "BRTP+E. BRTP+E. BRTCP+E. SOLIMEIS F VECCHIERINI L NUNEZ S"
+      // = 3 postes → 3 noms appariés par index
       var _hbi=0;
       while(_hbi<_ltoks.length){
         if(_isPostTok(_ltoks[_hbi])){
-          var _hbpost=_ltoks[_hbi];var _hbntoks=[];var _hbj=_hbi+1;
-          while(_hbj<_ltoks.length){
-            var _hbnt=_ltoks[_hbj];
+          // Collecter les codes poste consécutifs
+          var _grpPosts=[];
+          while(_hbi<_ltoks.length&&_isPostTok(_ltoks[_hbi])){_grpPosts.push(_ltoks[_hbi]);_hbi++;}
+          // Collecter les noms qui suivent (jusqu'au prochain code poste ou chiffre)
+          var _hbntoks=[];
+          while(_hbi<_ltoks.length){
+            var _hbnt=_ltoks[_hbi];
             if(_isPostTok(_hbnt))break;
             if(/^\d/.test(_hbnt))break;
             var _hbnU=_hbnt.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
             if(/(AVRIL|MARS|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE|JANVIER|FEVRIER|MAI)\b/.test(_hbnU))break;
-            _hbntoks.push(_hbnU);_hbj++;
+            _hbntoks.push(_hbnU);_hbi++;
           }
+          // Appairer : noms[i] ↔ postes[i]
           var _hbsplit=_splitNames(_hbntoks);
-          var _hbpushed=0;
           for(var _hbni=0;_hbni<_hbsplit.length;_hbni++){
             var _hbnm=_hbsplit[_hbni].replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
-            if(/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(_hbnm)){_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false});_hbpushed++;}
+            var _hbpost=_grpPosts[Math.min(_hbni,_grpPosts.length-1)];
+            if(/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(_hbnm))_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false});
           }
-          // Aucun nom pour ce code poste : placeholder pour maintenir l'alignement des lignes de données
-          if(_hbpushed===0)_hdrEmpList.push({name:"",post:_hbpost,isChef:false,_skip:true});
-          _hbi=_hbj;
         } else {_hbi++;}
       }
       continue;
@@ -2222,8 +2226,6 @@ function doImport(){
       var _posCodes=_ltoks.slice(_pdi+2);
       if(_pendingEmp){_pendingEmp=null;}
       else{if(_posChef)_posEntry.isChef=true;_hdrEmpIdx++;}
-      // Placeholder (_skip) : ligne de données consommée pour l'alignement, pas de création d'employé
-      if(_posEntry._skip){continue;}
       var _posEmp=_findOrCreateEmp(_posEntry.name,_posEntry.post,importFamily,_posEntry.isChef||_posChef,_posCodes,_posFd);
       if(_posEmp)_applyCodeArr(_posEmp,_posCodes,_posFd);
       continue;
