@@ -451,7 +451,7 @@ var A={
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=7;
-var APP_VER="v7.1";
+var APP_VER="v7.2";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -2071,6 +2071,23 @@ function doImport(){
   })();
   var lines=txt.split("\n").map(function(l){return l.trim();}).filter(Boolean);
   if(lines.length<2){toast("Format invalide","err");return;}
+  // Preprocessing : fusionner les lignes de continuation (commencent par un code shift valide)
+  (function(){
+    function _isCodeTok(t){
+      t=(t||"").toUpperCase().replace(/[C"']+$/,"");
+      t=t.replace(/^(\d{1,2})-(\d{1,2})/,"$1/$2");
+      if(!t)return false;
+      return !!(CODES[t]||CODES[t.replace(/"'/g,"'")]);
+    }
+    for(var _cl=lines.length-1;_cl>1;_cl--){
+      var _t0=(lines[_cl].trim().split(/\s+/)[0]||"").toUpperCase();
+      // Continuation : pas chiffre, pas étoile, pas code poste (+), pas nom long
+      if(_t0&&!(/^\d/.test(_t0))&&_t0!=="*"&&!/[+]/.test(_t0)&&!/^\.[A-Z]{2}/.test(_t0)&&_isCodeTok(_t0)){
+        lines[_cl-1]+=" "+lines[_cl];
+        lines.splice(_cl,1);
+      }
+    }
+  })();
   var hasTabs=lines.some(function(l){return l.indexOf("\t")>=0;});
   var sep=hasTabs?"\t":",";
   var key=""+iy+"-"+im;
@@ -2090,8 +2107,166 @@ function doImport(){
   }
   var _postPat=/^\.?[A-Z][A-Z0-9+.\/\-]*\.?$/; // pattern code poste ex: BRTP+E. ou .BRTCP+K
   function _norm(s){return (s||"").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+  // ---- Etat formats B (roulettes) et C (CMC paires) ----
+  var _hdrEmpList=[]; // [{name,post,isChef}] depuis bloc entête
+  var _hdrEmpIdx=0;
+  var _pendingEmp=null; // second employé paire CMC en attente ligne suivante
+  // Appliquer un tableau de codes à un employé
+  function _applyCodeArr(empObj,codeArr,fDay){
+    if(!refData.rows[empObj.id])refData.rows[empObj.id]={};
+    if(!A.overrides[key][empObj.id])A.overrides[key][empObj.id]={};
+    for(var _ai=0;_ai<codeArr.length;_ai++){
+      var _ac=codeArr[_ai].trim().toUpperCase();
+      if(!_ac||_ac==="0"||_ac==="-")continue;
+      if(/^\d{1,2}$/.test(_ac)||/^CO(LONNE)?\d*$/.test(_ac))continue;
+      _ac=_ac.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");_ac=_ac.replace(/CDP$/,"*");
+      if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"']+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
+      if(!_ac||!CODES[_ac])continue;
+      var _adn=fDay+_ai;
+      if(_adn<1||_adn>days)continue;
+      if(!_ac.endsWith("*")&&CDP_MAP[_ac]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(_ac)>=0)_ac=CDP_MAP[_ac];
+      A.overrides[key][empObj.id][_adn]=_ac;
+      refData.rows[empObj.id][_adn]=_ac;
+      ok++;
+    }
+  }
+  // Trouver ou créer un employé importé
+  function _findOrCreateEmp(eName,ePost,eFamily,eIsChef,codesForTeam,fDay2){
+    eName=(eName||"").replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
+    if(!eName||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(eName))return null;
+    var _fe=A.employees.find(function(x){return x.name===eName;});
+    if(!_fe){
+      if(A.employees.filter(function(x){return x._imported;}).length>=60){err++;errLines.push("Limite 60 employes atteinte");return null;}
+      var _fdt=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1);
+      var _fid="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
+      _fe={id:_fid,name:eName,team:_fdt||"1",post:ePost||"",chef:!!eIsChef,family:eFamily||importFamily,cdpShifts:[],_imported:true};
+      A.employees.push(_fe);ls("cmc_e",A.employees);
+      errLines.push("Nouveau: "+eName+", eq."+_fe.team);
+    } else {
+      var _fisDef=DEF_EMP.some(function(d){return d.id===_fe.id;});
+      if(!_fisDef){
+        var _fch=false;
+        if(eIsChef&&!_fe.chef){_fe.chef=true;_fch=true;}
+        if(eFamily&&_fe.family!==eFamily){_fe.family=eFamily;_fch=true;}
+        if(_fch)ls("cmc_e",A.employees);
+      }
+    }
+    return _fe;
+  }
+  // Splitter une liste de tokens "NOM1 INIT1 NOM2 INIT2" en noms séparés
+  function _splitNames(toks){
+    var res=[],cur=[];
+    for(var _sni=0;_sni<toks.length;_sni++){
+      cur.push(toks[_sni]);
+      var nx=toks[_sni+1];
+      if(cur.length>=2&&toks[_sni].length<=2&&nx&&nx.length>=3){res.push(cur.join(" "));cur=[];}
+    }
+    if(cur.length)res.push(cur.join(" "));
+    return res;
+  }
+  // Détecteur : token est un code poste (BRTP+E., .BRTCP+K, BRE, BT, B...)
+  function _isPostTok(t){
+    return /[A-Z]{2,}\+/.test(t)||(/^\.[A-Z]{2}/.test(t)&&t.replace(/\./g,"").length>=3);
+  }
   for(var li=1;li<lines.length;li++){
     var rawLine=lines[li];
+    var _ltoks=rawLine.trim().split(/\s+/);
+    // Compter codes poste sur cette ligne
+    var _pCnt=_ltoks.filter(_isPostTok).length;
+    // --- FORMAT B : bloc entête roulettes (3+ codes poste sans data) ---
+    if(_pCnt>=3&&!/^\d/.test(_ltoks[0])&&_ltoks[0]!=="*"){
+      _hdrEmpList=[];_hdrEmpIdx=0;_pendingEmp=null;
+      var _lnU=rawLine.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      if(/ROULETT/.test(_lnU))importFamily="roulettes";
+      else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
+      else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_lnU))importFamily="cmc";
+      // Parser les paires (postCode → nom(s))
+      var _hbi=0;
+      while(_hbi<_ltoks.length){
+        if(_isPostTok(_ltoks[_hbi])){
+          var _hbpost=_ltoks[_hbi];var _hbntoks=[];var _hbj=_hbi+1;
+          while(_hbj<_ltoks.length){
+            var _hbnt=_ltoks[_hbj];
+            if(_isPostTok(_hbnt))break;
+            if(/^\d/.test(_hbnt))break;
+            var _hbnU=_hbnt.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+            if(/(AVRIL|MARS|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE|JANVIER|FEVRIER|MAI)\b/.test(_hbnU))break;
+            _hbntoks.push(_hbnU);_hbj++;
+          }
+          var _hbsplit=_splitNames(_hbntoks);
+          for(var _hbni=0;_hbni<_hbsplit.length;_hbni++){
+            var _hbnm=_hbsplit[_hbni].replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
+            if(/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(_hbnm))_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false});
+          }
+          _hbi=_hbj;
+        } else {_hbi++;}
+      }
+      continue;
+    }
+    // --- FORMAT B/C : ligne positionnelle (consommer depuis _hdrEmpList ou _pendingEmp) ---
+    var _d0=_ltoks[0]||"";
+    var _isPosDR=(_d0==="*")||(/^\d{1,2}$/.test(_d0)&&parseInt(_d0)>=1&&parseInt(_d0)<=31);
+    if(_isPosDR&&(_pendingEmp||(_hdrEmpList.length>0&&_hdrEmpIdx<_hdrEmpList.length))){
+      var _posEntry=_pendingEmp||_hdrEmpList[_hdrEmpIdx];
+      var _posChef=_ltoks[0]==="*";
+      var _pdi=_posChef?1:0;
+      var _posFd=parseInt(_ltoks[_pdi]||"1");
+      var _posTd=parseInt(_ltoks[_pdi+1]||""+days);
+      if(isNaN(_posFd)||_posFd<1||_posFd>31)_posFd=1;
+      var _posCodes=_ltoks.slice(_pdi+2);
+      if(_pendingEmp){_pendingEmp=null;}
+      else{if(_posChef)_posEntry.isChef=true;_hdrEmpIdx++;}
+      var _posEmp=_findOrCreateEmp(_posEntry.name,_posEntry.post,importFamily,_posEntry.isChef||_posChef,_posCodes,_posFd);
+      if(_posEmp)_applyCodeArr(_posEmp,_posCodes,_posFd);
+      continue;
+    }
+    // --- FORMAT C : 2 codes poste au début = paire CMC ---
+    if(_pCnt===2&&_isPostTok(_ltoks[0])&&_isPostTok(_ltoks[1])){
+      var _cpToks=_ltoks.slice(2);
+      // Trouver le premier chiffre (fromDay1)
+      var _cpFd1=-1;
+      for(var _cpi=0;_cpi<Math.min(_cpToks.length,14);_cpi++){
+        if(/^\d{1,2}$/.test(_cpToks[_cpi])&&parseInt(_cpToks[_cpi])>=1&&parseInt(_cpToks[_cpi])<=31){_cpFd1=_cpi;break;}
+      }
+      if(_cpFd1>=1){
+        var _cpAllNames=_cpToks.slice(0,_cpFd1).map(function(t){return t.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");});
+        var _cpNames=_splitNames(_cpAllNames);
+        if(_cpNames.length>=2){
+          var _cpName1=_cpNames[0],_cpName2=_cpNames[1];
+          var _cpRest=_cpToks.slice(_cpFd1);
+          if(_cpRest.length>=2&&/^\d{1,2}$/.test(_cpRest[0])&&/^\d{1,2}$/.test(_cpRest[1])){
+            var _cpFrom1=parseInt(_cpRest[0]);
+            // Chercher second fromDay/toDay dans les codes
+            var _cpFd2=-1;
+            for(var _cp2=2;_cp2<Math.min(_cpRest.length,8);_cp2++){
+              if(/^\d{1,2}$/.test(_cpRest[_cp2])&&/^\d{1,2}$/.test(_cpRest[_cp2+1]||"")){_cpFd2=_cp2;break;}
+            }
+            if(_cpFd2>2){
+              // Interleaved : deux paires fromDay/toDay → split moitié
+              var _cpFrom2=parseInt(_cpRest[_cpFd2]);
+              var _cpCodes1=_cpRest.slice(2,_cpFd2);
+              var _cpInterl=_cpRest.slice(_cpFd2+2);
+              var _cpH=Math.floor(_cpInterl.length/2);
+              var _cpCodes2=_cpInterl.slice(_cpH);
+              _cpCodes1=_cpCodes1.concat(_cpInterl.slice(0,_cpH));
+              var _cpE1=_findOrCreateEmp(_cpName1,_ltoks[0],importFamily,false,_cpCodes1,_cpFrom1);
+              var _cpE2=_findOrCreateEmp(_cpName2,_ltoks[1],importFamily,false,_cpCodes2,_cpFrom2);
+              if(_cpE1)_applyCodeArr(_cpE1,_cpCodes1,_cpFrom1);
+              if(_cpE2)_applyCodeArr(_cpE2,_cpCodes2,_cpFrom2);
+            } else {
+              // Positionnelle : emp1 inline, emp2 prochaine ligne
+              var _cpCodes1b=_cpRest.slice(2);
+              var _cpE1b=_findOrCreateEmp(_cpName1,_ltoks[0],importFamily,false,_cpCodes1b,_cpFrom1);
+              if(_cpE1b)_applyCodeArr(_cpE1b,_cpCodes1b,_cpFrom1);
+              _pendingEmp={name:_cpName2,post:_ltoks[1],isChef:false};
+            }
+          }
+        }
+      }
+      continue;
+    }
+    // Hors mode entête : réinitialiser si la ligne n'est pas positionnelle
+    if(!_isPosDR)_pendingEmp=null;
     var parts=rawLine.split(sep);
     // Format espace (PDF collé sans tab/virgule) : reconstruire parts[]
     if(sep===","&&parts.length<4){
