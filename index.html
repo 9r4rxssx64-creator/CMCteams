@@ -450,8 +450,8 @@ var A={
 };
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
-var DATA_VER=6;
-var APP_VER="v6.2";
+var DATA_VER=7;
+var APP_VER="v7.0";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -495,6 +495,11 @@ function forceRefresh(){
     for(var _y=2025;_y<=2028;_y++){for(var _m=0;_m<12;_m++){localStorage.removeItem("cmc_ci_"+_y+"_"+_m);}}
     _needResetChefsT=true;
     localStorage.setItem("cmc_dver",String(DATA_VER));
+    // Sur bump de version : supprimer TOUS les employes importes (hors DEF_EMP) pour repartir propre
+    var _defIds2=DEF_EMP.map(function(e){return e.id;});
+    var _before2=A.employees.length;
+    A.employees=A.employees.filter(function(e){return _defIds2.indexOf(e.id)>=0;});
+    if(_before2>A.employees.length){ls("cmc_e",A.employees);console.warn("Migration v"+DATA_VER+": "+(_before2-A.employees.length)+" employes importes supprimes, re-import necessaire");}
   }
   // Auto-nettoyage : supprimer les employes importes si trop nombreux (évite freeze)
   var _defIds=DEF_EMP.map(function(e){return e.id;});
@@ -2136,8 +2141,8 @@ function doImport(){
       (nameIdx===1&&/^\*/.test((parts[2]||"").trim()))
     );
     var name=rawName.replace(/[\u2605\u2606\u2b50*]+$/,"").trim();
-    // Validation stricte : le nom doit etre "NOM [NOM2...] I" (lettres+tirets uniquement, initiale 1-3 lettres)
-    if(!name||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,3}$/.test(name)) continue;
+    // Validation stricte : NOM(s) INITIALE(S) — initiale 1-2 lettres max (ex: B, JE, PH), rejette acronymes CMC/RH
+    if(!name||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(name)) continue;
     var emp=A.employees.find(function(e){return e.name===name;});
     var _newEmpCount=A.employees.filter(function(e){return e._imported;}).length;
     if(!emp){
