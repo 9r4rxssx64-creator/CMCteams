@@ -311,7 +311,11 @@ var REPOS={
   "5":[3,4,9,10,15,16,21,22,27,28],
   "6":[4,5,10,11,16,17,22,23,28,29],
   "7":[2,3,8,9,14,15,20,21,26,27],
-  "8":[1,6,7,12,13,18,19,24,25,30]
+  "8":[1,6,7,12,13,18,19,24,25,30],
+  "9":[1,2,7,8,13,14,19,20,25,26],
+  "10":[4,5,10,11,16,17,22,23,28,29],
+  "11":[2,3,8,9,14,15,20,21,26,27],
+  "12":[1,6,7,12,13,18,19,24,25,30]
 };
 var CDP_MAP={"20/5":"20/5*","19/4":"19/4*","16/3":"16/3*","16/22":"16/22*"};
 var EP={
@@ -2000,7 +2004,7 @@ function detectTeamFromRow(parts,year,month,fromDay){
   var repoCycles=reposDays.map(function(d){
     var ad=(mo*30)+(d-1),cp=((ad%30)+30)%30+1;return cp;
   });
-  // Comparer avec chaque pattern REPOS
+  // Comparer avec chaque pattern REPOS (les patterns dupliqués 4,5,9-12 scorent pareil que 1,2,3,6,7,8)
   var bestTeam=null,bestScore=0;
   Object.keys(REPOS).forEach(function(tid){
     var pat=REPOS[tid];
@@ -2008,7 +2012,18 @@ function detectTeamFromRow(parts,year,month,fromDay){
     var score=matches/Math.max(repoCycles.length,1);
     if(score>bestScore){bestScore=score;bestTeam=tid;}
   });
-  return (bestScore>0.5)?bestTeam:null;
+  if(bestScore<=0.5||!bestTeam) return null;
+  // Distinguer équipe de son miroir par le demi-cycle (20/5 ou 16/22 = premier; 22/6 ou 16/3 = second)
+  // Le demi-cycle bascule chaque mois selon la rotation continue — on scanne le premier code distinctif
+  var _MIRROR={"1":"4","2":"5","3":"9","6":"10","7":"11","8":"12"};
+  var _isSecondHalf=null;
+  for(var _mhi=0;_mhi<parts.length&&_isSecondHalf===null;_mhi++){
+    var _mc=(parts[_mhi]||"").trim().toUpperCase().replace(/[cC*]+$/,"");
+    if(_mc==="20/5"||_mc==="16/22")_isSecondHalf=false;
+    else if(_mc==="16/3"||_mc.slice(0,4)==="22/6")_isSecondHalf=true;
+  }
+  if(_isSecondHalf===true&&_MIRROR[bestTeam])bestTeam=_MIRROR[bestTeam];
+  return bestTeam;
 }
 
 function handleFileImport(input){
@@ -2151,6 +2166,9 @@ function doImport(){
         var _fch=false;
         if(eIsChef&&!_fe.chef){_fe.chef=true;_fch=true;}
         if(eFamily&&_fe.family!==eFamily){_fe.family=eFamily;_fch=true;}
+        // Mettre à jour l'équipe selon le mois importé (le demi-cycle bascule chaque mois)
+        var _fdt2=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1);
+        if(_fdt2&&_fe.team!==_fdt2){_fe.team=_fdt2;_fch=true;}
         if(_fch)ls("cmc_e",A.employees);
       }
     }
@@ -2357,6 +2375,9 @@ function doImport(){
         var targetFam=isRouletteChef?"roulettes":importFamily;
         if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
         if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
+        // Mettre à jour l'équipe selon le mois importé (demi-cycle change chaque mois)
+        var _updt=detectTeamFromRow(parts.slice(codesStart),iy,im,fromDay);
+        if(_updt&&emp.team!==_updt){emp.team=_updt;_changed=true;}
         if(_changed) ls("cmc_e",A.employees);
       }
       // Les employes DEF_EMP gardent leur family/team/chef du code (migration)
