@@ -448,11 +448,6 @@ var A={
   empQ:"",
   pt:null
 };
-// Restaurer la session depuis localStorage (evite deconnexion apres erreur JS)
-(function(){
-  var uid=localStorage.getItem("cmc_uid");
-  if(uid){var e=A.employees.find(function(x){return x.id===uid;});if(e)A.user=e;}
-})();
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=6;
@@ -501,7 +496,21 @@ function forceRefresh(){
     _needResetChefsT=true;
     localStorage.setItem("cmc_dver",String(DATA_VER));
   }
+  // Auto-nettoyage : supprimer les employes importes si trop nombreux (évite freeze)
+  var _defIds=DEF_EMP.map(function(e){return e.id;});
+  var _importedCount=A.employees.filter(function(e){return _defIds.indexOf(e.id)<0;}).length;
+  if(_importedCount>15){
+    var _before=A.employees.length;
+    A.employees=A.employees.filter(function(e){return _defIds.indexOf(e.id)>=0;});
+    console.warn("Auto-nettoyage: "+(_before-A.employees.length)+" employes importes supprimes au demarrage");
+    ls("cmc_e",A.employees);
+  }
 }());
+// Restaurer la session depuis localStorage (après migration, evite deconnexion apres erreur JS)
+(function(){
+  var uid=localStorage.getItem("cmc_uid");
+  if(uid){var e=A.employees.find(function(x){return x.id===uid;});if(e)A.user=e;}
+})();
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
 
 // Cumulative work days before month mo (mo=0 = March 2026) for a given team pattern.
@@ -2793,12 +2802,6 @@ function vAbsences(){
   return h;
 }
 
-try{
-  render();
-}catch(e){
-  document.body.style.background="#000";
-  document.body.innerHTML="<div style='padding:20px;color:#ff0;font-size:16px;font-family:monospace'>ERREUR: "+e.message+"<br>Stack: "+(e.stack||"").replace(/</g,"&lt;").substr(0,500)+"</div>";
-}
 render();
 
 </script>
