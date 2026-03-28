@@ -451,7 +451,7 @@ var A={
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=7;
-var APP_VER="v7.2";
+var APP_VER="v7.3";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -1980,7 +1980,8 @@ function detectMonthFromName(fname){
 }
 
 // Detecte l'equipe d'un employe depuis ses codes de planning (par correspondance avec REPOS)
-function detectTeamFromRow(parts,year,month,fromDay){
+// contextTeamId : equipe de reference connue pour departager les equipes miroir (1↔4, 2↔5)
+function detectTeamFromRow(parts,year,month,fromDay,contextTeamId){
   fromDay=fromDay||1;
   var days=getDays(year,month);
   var mo=moOff(year,month);
@@ -2004,6 +2005,8 @@ function detectTeamFromRow(parts,year,month,fromDay){
     var matches=repoCycles.filter(function(cp){return pat.indexOf(cp)>=0;}).length;
     var score=matches/Math.max(repoCycles.length,1);
     if(score>bestScore){bestScore=score;bestTeam=tid;}
+    // Departage equipes miroir (meme pattern) : privilegier le contexte de la section
+    else if(score>0&&score===bestScore&&contextTeamId===tid){bestTeam=tid;}
   });
   return (bestScore>0.5)?bestTeam:null;
 }
@@ -2092,11 +2095,14 @@ function doImport(){
   var sep=hasTabs?"\t":",";
   var key=""+iy+"-"+im;
   var days=getDays(iy,im);
-  if(!A.overrides[key])A.overrides[key]={};
+  // Toujours repartir d'un planning vierge pour ce mois (evite residus d'un import precedent)
+  A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
   var ok=0,err=0,errLines=[];
   var importFamily="bj"; // famille courante par defaut
+  // Equipe de la section courante : permet de departager les equipes miroir (1↔4, 2↔5)
+  var _contextTeam=null;
   // Detecter la section depuis les premieres lignes (dont lines[0] qui est skippe dans la boucle)
   for(var _si=0;_si<Math.min(5,lines.length);_si++){
     var _sp=lines[_si].split(sep);
@@ -2131,18 +2137,21 @@ function doImport(){
     }
   }
   // Trouver ou créer un employé importé
-  function _findOrCreateEmp(eName,ePost,eFamily,eIsChef,codesForTeam,fDay2){
+  // contextTid : equipe de reference pour departager les miroirs (optionnel)
+  function _findOrCreateEmp(eName,ePost,eFamily,eIsChef,codesForTeam,fDay2,contextTid){
     eName=(eName||"").replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
     if(!eName||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(eName))return null;
     var _fe=A.employees.find(function(x){return x.name===eName;});
     if(!_fe){
       if(A.employees.filter(function(x){return x._imported;}).length>=60){err++;errLines.push("Limite 60 employes atteinte");return null;}
-      var _fdt=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1);
+      var _fdt=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1,contextTid||_contextTeam);
       var _fid="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
       _fe={id:_fid,name:eName,team:_fdt||"1",post:ePost||"",chef:!!eIsChef,family:eFamily||importFamily,cdpShifts:[],_imported:true};
       A.employees.push(_fe);ls("cmc_e",A.employees);
       errLines.push("Nouveau: "+eName+", eq."+_fe.team);
     } else {
+      // Mettre a jour le contexte d'equipe depuis les employes DEF_EMP reconnus
+      if(DEF_EMP.some(function(d){return d.id===_fe.id;})) _contextTeam=_fe.team;
       var _fisDef=DEF_EMP.some(function(d){return d.id===_fe.id;});
       if(!_fisDef){
         var _fch=false;
@@ -2176,6 +2185,8 @@ function doImport(){
     // --- FORMAT B : bloc entête roulettes (3+ codes poste sans data) ---
     if(_pCnt>=3&&!/^\d/.test(_ltoks[0])&&_ltoks[0]!=="*"){
       _hdrEmpList=[];_hdrEmpIdx=0;_pendingEmp=null;
+      // Changement de section → reset contexte equipe miroir
+      _contextTeam=null;
       var _lnU=rawLine.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
       if(/ROULETT/.test(_lnU))importFamily="roulettes";
       else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
@@ -2303,9 +2314,9 @@ function doImport(){
     }
     // Detecter entetes de section dans les premiers champs
     var _hdr=[p0,p1].join(" ");
-    if(/ROULETT/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=4){importFamily="roulettes";continue;}
-    if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC|RESPONSABLE.DE.TABLE|AMENAGEMENT|AMENAG)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="bj";continue;}
-    if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="cmc";continue;}
+    if(/ROULETT/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=4){importFamily="roulettes";_contextTeam=null;continue;}
+    if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC|RESPONSABLE.DE.TABLE|AMENAGEMENT|AMENAG)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="bj";_contextTeam=null;continue;}
+    if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="cmc";_contextTeam=null;continue;}
     // Detecter format planning : code poste col 0 (ex BRTP+E.), nom col 1, du/au col 2/3
     var nameIdx=0,codesStart=1;
     if((!p0raw||(_postPat.test(p0)&&!/ /.test(p0raw)))&&
@@ -2316,7 +2327,8 @@ function doImport(){
     // Jour de debut de periode (from-day) pour calculer le bon numero de jour
     var fromDay=1;
     if(codesStart===4){
-      var _fd=parseInt((parts[2]||"").trim());
+      // Supprimer le marqueur chef (*) avant parseInt : "*14" → 14
+      var _fd=parseInt((parts[2]||"").replace(/^\*/,"").trim());
       if(_fd>=1&&_fd<=31) fromDay=_fd;
     }
     var rawName=parts[nameIdx].trim().toUpperCase();
@@ -2332,7 +2344,8 @@ function doImport(){
     var _newEmpCount=A.employees.filter(function(e){return e._imported;}).length;
     if(!emp){
       if(_newEmpCount>=60){err++;errLines.push("Limite employes atteinte — verifier le format");continue;}
-      var detectedTeam=detectTeamFromRow(parts.slice(codesStart),iy,im,fromDay);
+      // Passer le contexte d'equipe pour departager les miroirs (1↔4, 2↔5)
+      var detectedTeam=detectTeamFromRow(parts.slice(codesStart),iy,im,fromDay,_contextTeam);
       var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
       var newFamily=isRouletteChef?"roulettes":importFamily;
       emp={id:newId,name:name,team:detectedTeam||"1",post:nameIdx===1?p0raw:"",chef:isRouletteChef,family:newFamily,cdpShifts:[],_imported:true};
@@ -2340,6 +2353,8 @@ function doImport(){
       ls("cmc_e",A.employees);
       errLines.push("Nouveau: "+name+(isRouletteChef?" ★":"")+", eq."+emp.team);
     } else {
+      // Mettre a jour le contexte d'equipe depuis les employes DEF_EMP reconnus
+      if(DEF_EMP.some(function(d){return d.id===emp.id;})) _contextTeam=emp.team;
       // Pour les employes importes (non-DEF_EMP) uniquement : mettre a jour famille/chef
       var _isDefEmp=DEF_EMP.some(function(d){return d.id===emp.id;});
       if(!_isDefEmp){
