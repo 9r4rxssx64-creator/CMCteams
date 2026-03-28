@@ -464,8 +464,8 @@ var A={
 };
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
-var DATA_VER=9;
-var APP_VER="v9.0";
+var DATA_VER=10;
+var APP_VER="v10.0";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -2251,41 +2251,50 @@ function doImport(){
     var _ltoks=rawLine.trim().split(/\s+/);
     // Compter codes poste sur cette ligne
     var _pCnt=_ltoks.filter(_isPostTok).length;
-    // --- FORMAT B : bloc entête roulettes (3+ codes poste sans data) ---
-    if(_pCnt>=3&&!/^\d/.test(_ltoks[0])&&_ltoks[0]!=="*"){
+    // Detecter si la ligne contient un code horaire (shift) — exclut les vrais en-têtes FORMAT B
+    var _hasShiftCode=_ltoks.some(function(t){
+      var _tc=t.toUpperCase().replace(/[cC*'"]+$/,"").replace(/^(\d{1,2})-(\d{1,2})/,"$1/$2");
+      return !!CODES[_tc];
+    });
+    // --- FORMAT B : bloc entête roulettes (au moins 1 code poste, pas de codes shift, pas de ligne de données) ---
+    if(_pCnt>=1&&!_hasShiftCode&&!/^\d/.test(_ltoks[0])&&_ltoks[0]!=="*"){
       _finalizeSection(); // clôturer la section précédente avant de commencer la suivante
       _hdrEmpList=[];_hdrEmpIdx=0;_pendingEmp=null;
       var _lnU=rawLine.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
       if(/ROULETT/.test(_lnU))importFamily="roulettes";
       else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
       else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_lnU))importFamily="cmc";
-      // Parser le bloc entête : codes poste consécutifs puis noms (1 poste → 1 nom, dans l'ordre)
-      // Format PDF : "BRTP+E. BRTP+E. BRTCP+E. SOLIMEIS F VECCHIERINI L NUNEZ S"
-      // = 3 postes → 3 noms appariés par index
+      // Parser TOUS les noms et codes de poste de la ligne (format mixte PDF)
+      // Ex: "PORASSO C MERLINO T MACCARIO S BRTCP+E. RUZIC M BRTCP+K. MARCHI T"
+      // → 6 noms extraits dans l'ordre + 2 postes associés par index
+      var _hdrAllNames=[],_hdrAllPosts=[];
+      var _htoks2=_lnU.split(/\s+/);
       var _hbi=0;
-      while(_hbi<_ltoks.length){
-        if(_isPostTok(_ltoks[_hbi])){
-          // Collecter les codes poste consécutifs
-          var _grpPosts=[];
-          while(_hbi<_ltoks.length&&_isPostTok(_ltoks[_hbi])){_grpPosts.push(_ltoks[_hbi]);_hbi++;}
-          // Collecter les noms qui suivent (jusqu'au prochain code poste ou chiffre)
-          var _hbntoks=[];
-          while(_hbi<_ltoks.length){
-            var _hbnt=_ltoks[_hbi];
-            if(_isPostTok(_hbnt))break;
-            if(/^\d/.test(_hbnt))break;
-            var _hbnU=_hbnt.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-            if(/(AVRIL|MARS|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE|JANVIER|FEVRIER|MAI)\b/.test(_hbnU))break;
-            _hbntoks.push(_hbnU);_hbi++;
+      while(_hbi<_htoks2.length){
+        var _ht=_htoks2[_hbi];
+        if(!_ht){_hbi++;continue;}
+        if(/^(JANVIER|FEVRIER|MARS|AVRIL|MAI|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE)$/.test(_ht)){_hbi++;continue;}
+        if(_isPostTok(_ht)){_hdrAllPosts.push(_ht);_hbi++;continue;}
+        // Chercher un NOM composé suivi d'une INITIALE (1-2 lettres)
+        if(/^[A-Z][A-Z\-]{1,}$/.test(_ht)&&_hbi+1<_htoks2.length){
+          var _nm=_ht,_ni=_hbi+1;
+          // Absorber les parties composées du nom (mots de 3+ lettres, pas un code poste)
+          while(_ni<_htoks2.length&&/^[A-Z][A-Z\-]{2,}$/.test(_htoks2[_ni])&&!_isPostTok(_htoks2[_ni])){
+            _nm+=" "+_htoks2[_ni];_ni++;
           }
-          // Appairer : noms[i] ↔ postes[i]
-          var _hbsplit=_splitNames(_hbntoks);
-          for(var _hbni=0;_hbni<_hbsplit.length;_hbni++){
-            var _hbnm=_hbsplit[_hbni].replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
-            var _hbpost=_grpPosts[Math.min(_hbni,_grpPosts.length-1)];
-            if(/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(_hbnm))_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false});
-          }
+          // Consommer l'initiale (1-2 lettres)
+          if(_ni<_htoks2.length&&/^[A-Z]{1,2}$/.test(_htoks2[_ni])&&!_isPostTok(_htoks2[_ni])){
+            _nm+=" "+_htoks2[_ni];_ni++;
+            _nm=_nm.replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
+            if(/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(_nm))_hdrAllNames.push(_nm);
+            _hbi=_ni;
+          } else {_hbi++;}
         } else {_hbi++;}
+      }
+      // Associer les postes aux noms par ordre d'apparition
+      for(var _hni2=0;_hni2<_hdrAllNames.length;_hni2++){
+        var _hnpost=_hdrAllPosts[Math.min(_hni2,_hdrAllPosts.length-1)]||"";
+        _hdrEmpList.push({name:_hdrAllNames[_hni2],post:_hnpost,isChef:false});
       }
       continue;
     }
