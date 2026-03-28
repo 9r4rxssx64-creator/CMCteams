@@ -451,7 +451,7 @@ var A={
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=7;
-var APP_VER="v7.3";
+var APP_VER="v7.4";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -562,6 +562,18 @@ function genBase(y,m){
 }
 function gpl(){
   var base=genBase(A.year,A.month),key=""+A.year+"-"+A.month,ov=A.overrides[key]||{};
+  // Sans import pour ce mois : ne conserver que les jours de repos (RH/R)
+  // Les horaires de travail ne s'affichent que si un planning a été importé
+  var hasImport=!!lg("cmc_ref_"+key,null);
+  if(!hasImport){
+    Object.keys(base).forEach(function(eid){
+      var row=base[eid];
+      Object.keys(row).forEach(function(d){
+        if(row[d]!=="RH"&&row[d]!=="R") delete row[d];
+      });
+    });
+  }
+  // Appliquer les overrides (données importées)
   Object.keys(ov).forEach(function(eid){
     if(!base[eid])base[eid]={};
     Object.keys(ov[eid]).forEach(function(d){
