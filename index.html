@@ -19,34 +19,34 @@ input,select,button,textarea{font-family:inherit}
 /* === FOND TAPIS CASINO MONTE-CARLO === */
 body{
   font-family:system-ui,-apple-system,sans-serif;
-  font-size:14px;color:#b8c8a8;
+  font-size:15px;color:#d8ecd0;
   min-height:100vh;
-  background:#0d1f0f;
+  background:#1a3020;
 }
 /* Feutrine avec texture double trame */
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(0,0,0,.08) 11px,rgba(0,0,0,.08) 12px),
-    repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(0,0,0,.08) 11px,rgba(0,0,0,.08) 12px),
-    repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(201,162,39,.028) 18px,rgba(201,162,39,.028) 20px),
-    repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,162,39,.028) 18px,rgba(201,162,39,.028) 20px),
-    radial-gradient(ellipse at 50% 0%,#1a3a1c 0%,#0d1f0f 70%);
+    repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(0,0,0,.05) 11px,rgba(0,0,0,.05) 12px),
+    repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(0,0,0,.05) 11px,rgba(0,0,0,.05) 12px),
+    repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(201,162,39,.04) 18px,rgba(201,162,39,.04) 20px),
+    repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,162,39,.04) 18px,rgba(201,162,39,.04) 20px),
+    radial-gradient(ellipse at 50% 0%,#2a4a2c 0%,#1a3020 70%);
 }
 /* Frise dorée haut + bas */
 body::after{
   content:"";position:fixed;left:0;right:0;top:0;height:3px;z-index:200;pointer-events:none;
   background:linear-gradient(90deg,transparent,#c9a227 20%,#f0d060 50%,#c9a227 80%,transparent);
-  box-shadow:0 0 12px rgba(201,162,39,.5);
+  box-shadow:0 0 14px rgba(201,162,39,.6);
 }
 #app,#toast,#pk,#ov{position:relative;z-index:1}
 
 /* === TOPBAR === */
 #topbar{
-  background:linear-gradient(90deg,#18301a,#1e381e,#18301a);
-  border-bottom:1px solid rgba(201,162,39,.25);
-  box-shadow:0 2px 20px rgba(0,0,0,.75),inset 0 -1px 0 rgba(201,162,39,.1);
-  padding:0 14px;height:54px;
+  background:linear-gradient(90deg,#243e28,#2e5034,#243e28);
+  border-bottom:1px solid rgba(201,162,39,.35);
+  box-shadow:0 2px 20px rgba(0,0,0,.5),inset 0 -1px 0 rgba(201,162,39,.15);
+  padding:0 14px;height:56px;
   display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:90;
 }
@@ -54,114 +54,114 @@ body::after{
 /* === NAV BAS === */
 #bnav{
   position:fixed;bottom:0;left:0;right:0;
-  background:linear-gradient(0deg,#142418,#1a2e1c);
-  border-top:1px solid rgba(201,162,39,.2);
-  box-shadow:0 -4px 20px rgba(0,0,0,.65);
+  background:linear-gradient(0deg,#1e3a24,#283e2c);
+  border-top:1px solid rgba(201,162,39,.3);
+  box-shadow:0 -4px 24px rgba(0,0,0,.5);
   display:flex;z-index:99;
 }
 .nt{
-  flex:1;padding:9px 4px 8px;border:none;background:transparent;
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  font-size:8px;color:#243020;border-top:2px solid transparent;
+  flex:1;padding:10px 4px 9px;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10px;color:#7aaa80;border-top:2px solid transparent;
   cursor:pointer;position:relative;text-transform:uppercase;letter-spacing:.5px;
 }
 .nt.on{color:#c9a227;border-top-color:#c9a227;font-weight:700}
-.nt em{font-size:17px;font-style:normal}
-.nbadge{position:absolute;top:3px;right:calc(50% - 16px);background:#5a0010;color:#fca0a0;border-radius:8px;font-size:7px;font-weight:700;padding:0 4px;min-width:14px;text-align:center;display:none}
-#content{padding-bottom:74px}
+.nt em{font-size:22px;font-style:normal}
+.nbadge{position:absolute;top:4px;right:calc(50% - 16px);background:#7a0020;color:#ffb0b0;border-radius:8px;font-size:8px;font-weight:700;padding:0 4px;min-width:14px;text-align:center;display:none}
+#content{padding-bottom:78px}
 
 /* === BOUTONS === */
-.btn{border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.gold{background:linear-gradient(135deg,#c9a227,#8a6c0c);color:#040c04;box-shadow:0 2px 12px rgba(201,162,39,.28)}
-.ghost{background:transparent;border:1px solid #182818;color:#3a5038}
-.danger{background:transparent;border:1px solid #381010;color:#a06060;padding:5px 8px;font-size:11px;border-radius:7px;cursor:pointer}
+.btn{border:none;border-radius:8px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.gold{background:linear-gradient(135deg,#d4aa2a,#9a7810);color:#040c04;box-shadow:0 2px 14px rgba(201,162,39,.4)}
+.ghost{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:#a8c8a0}
+.danger{background:transparent;border:1px solid #682020;color:#d08080;padding:6px 10px;font-size:12px;border-radius:7px;cursor:pointer}
 
 /* === INPUTS === */
-.inp{background:#162818;border:1px solid #2a4030;border-radius:8px;padding:10px 14px;color:#b8c8a8;outline:none;width:100%}
-.inp:focus{border-color:rgba(201,162,39,.55);box-shadow:0 0 0 2px rgba(201,162,39,.07)}
+.inp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:11px 14px;color:#d8ecd0;outline:none;width:100%}
+.inp:focus{border-color:rgba(201,162,39,.7);box-shadow:0 0 0 2px rgba(201,162,39,.12)}
 select.inp{-webkit-appearance:none}
 
 /* === CARDS === */
-.card{background:rgba(20,34,22,.97);border:1px solid #2a4830;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.45)}
+.card{background:rgba(40,70,44,.96);border:1px solid rgba(255,255,255,.1);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.35)}
 .page{padding:14px 14px 10px}
-.sec-title{font-size:17px;font-weight:800;color:#d8cc9a;margin-bottom:3px}
-.sec-sub{font-size:11px;color:#243020}
+.sec-title{font-size:18px;font-weight:800;color:#f0e0a0;margin-bottom:3px}
+.sec-sub{font-size:12px;color:#80a878}
 
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
-.sth{padding:7px 10px;background:#16281a;color:#243020;font-size:9px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;min-width:108px;max-width:160px;text-align:left;border-right:1px solid #182818;border-bottom:2px solid rgba(201,162,39,.18);white-space:nowrap}
-.dth{padding:3px 1px;min-width:27px;background:#16281a;font-size:9px;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.18)}
-.stth{padding:3px 4px;background:#16281a;min-width:18px;font-size:8px;color:#182818;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.18)}
-.ntd{padding:5px 10px;background:#162818;position:sticky;left:0;z-index:4;border-right:1px solid #182818;font-size:10px;text-align:left;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctd{min-width:27px;height:27px;font-size:9px;font-weight:700;text-align:center;cursor:pointer}
-.steptd{background:#162818;padding:5px 10px;font-size:10px;font-weight:700;text-align:left;border-top:2px solid #020502}
-.stattd{padding:3px;font-size:9px;color:#253020;background:#162818;text-align:center}
+.sth{padding:7px 10px;background:#223a26;color:#80b880;font-size:10px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;min-width:110px;max-width:160px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap}
+.dth{padding:3px 1px;min-width:28px;background:#223a26;font-size:10px;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
+.stth{padding:3px 4px;background:#223a26;min-width:20px;font-size:9px;color:#6a9870;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
+.ntd{padding:5px 10px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:11px;text-align:left;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctd{min-width:28px;height:28px;font-size:10px;font-weight:700;text-align:center;cursor:pointer}
+.steptd{background:#1e3422;padding:6px 10px;font-size:11px;font-weight:700;text-align:left;border-top:2px solid #0a1508}
+.stattd{padding:3px;font-size:10px;color:#70a070;background:#1e3422;text-align:center}
 
 /* === PICKER === */
-#pk{display:none;position:fixed;background:#182e1c;border:1px solid rgba(201,162,39,.32);border-radius:12px;padding:10px;flex-wrap:wrap;gap:5px;z-index:999;box-shadow:0 16px 48px rgba(0,0,0,.97);width:168px}
-.pb{padding:7px 0;border-radius:7px;border:1px solid #2a4030;background:#162818;text-align:center;font-size:10px;font-weight:700;cursor:pointer;flex:0 0 calc(33% - 4px)}
-.pb.cur{background:rgba(201,162,39,.14);border-color:#c9a227}
-.pclr{flex:0 0 100%;padding:6px;border-radius:7px;border:1px solid #1e2e1e;background:#06110a;text-align:center;font-size:9px;color:#243020;cursor:pointer}
+#pk{display:none;position:fixed;background:#243c28;border:1px solid rgba(201,162,39,.5);border-radius:12px;padding:10px;flex-wrap:wrap;gap:5px;z-index:999;box-shadow:0 16px 48px rgba(0,0,0,.8);width:175px}
+.pb{padding:8px 0;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);text-align:center;font-size:11px;font-weight:700;cursor:pointer;flex:0 0 calc(33% - 4px);color:#c8e0c0}
+.pb.cur{background:rgba(201,162,39,.2);border-color:#c9a227;color:#f0d060}
+.pclr{flex:0 0 100%;padding:7px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.2);text-align:center;font-size:10px;color:#a0b898;cursor:pointer}
 #ov{display:none;position:fixed;inset:0;z-index:998}
 
 /* === TOAST === */
-#toast{display:none;position:fixed;bottom:84px;left:50%;transform:translateX(-50%);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;color:#e8d8a0;z-index:9999;pointer-events:none;white-space:nowrap}
+#toast{display:none;position:fixed;bottom:88px;left:50%;transform:translateX(-50%);border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0e0a0;z-index:9999;pointer-events:none;white-space:nowrap}
 
 /* === CHAT === */
 .chat-msgs{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
-.msg-me{align-self:flex-end;background:rgba(100,80,10,.26);border:1px solid rgba(201,162,39,.18);border-radius:12px 12px 2px 12px;padding:7px 11px;max-width:80%}
-.msg-ot{align-self:flex-start;background:#182e1c;border:1px solid #2a4030;border-radius:12px 12px 12px 2px;padding:7px 11px;max-width:80%}
-.msg-name{font-size:9px;font-weight:700;margin-bottom:2px}
-.msg-text{font-size:12px;color:#90a880;line-height:1.4;word-break:break-word}
-.msg-ts{font-size:8px;color:#1e2e1e;margin-top:2px;text-align:right}
-.chat-bar{padding:9px 14px;border-top:1px solid #182818;display:flex;gap:8px;background:#16281a;flex-shrink:0}
+.msg-me{align-self:flex-end;background:rgba(120,90,10,.3);border:1px solid rgba(201,162,39,.28);border-radius:12px 12px 2px 12px;padding:8px 12px;max-width:80%}
+.msg-ot{align-self:flex-start;background:rgba(40,70,44,.9);border:1px solid rgba(255,255,255,.1);border-radius:12px 12px 12px 2px;padding:8px 12px;max-width:80%}
+.msg-name{font-size:10px;font-weight:700;margin-bottom:2px}
+.msg-text{font-size:13px;color:#b8d0b0;line-height:1.5;word-break:break-word}
+.msg-ts{font-size:9px;color:#608060;margin-top:2px;text-align:right}
+.chat-bar{padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:8px;background:#1e3422;flex-shrink:0}
 
 /* === PRÉSENCE DOT === */
-.odot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
-.odot.on{background:#3a8a40}.odot.off{background:#1e2e1e}
-.emp-row{display:flex;align-items:center;gap:9px;padding:10px 14px}
-.chef-badge{background:rgba(201,162,39,.1);color:#c9a227;border:1px solid rgba(201,162,39,.22);border-radius:3px;padding:1px 5px;font-size:8px;font-weight:700}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#c9a227;color:#040c04;font-size:10px;font-weight:800;margin-right:6px}
+.odot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.odot.on{background:#50c060}.odot.off{background:#304030}
+.emp-row{display:flex;align-items:center;gap:9px;padding:11px 14px}
+.chef-badge{background:rgba(201,162,39,.15);color:#d4b840;border:1px solid rgba(201,162,39,.35);border-radius:3px;padding:1px 6px;font-size:9px;font-weight:700}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#c9a227;color:#040c04;font-size:11px;font-weight:800;margin-right:6px}
 
 /* === ÉCRAN LOGIN - TABLE DE JEU === */
 .login-bg{
   min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;
   background:
-    repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(0,0,0,.1) 11px,rgba(0,0,0,.1) 12px),
-    repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(0,0,0,.1) 11px,rgba(0,0,0,.1) 12px),
-    repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(201,162,39,.035) 18px,rgba(201,162,39,.035) 20px),
-    repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,162,39,.035) 18px,rgba(201,162,39,.035) 20px),
-    radial-gradient(ellipse at 50% 35%,#1e4020 0%,#0d1f0f 65%);
+    repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(0,0,0,.06) 11px,rgba(0,0,0,.06) 12px),
+    repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(0,0,0,.06) 11px,rgba(0,0,0,.06) 12px),
+    repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(201,162,39,.04) 18px,rgba(201,162,39,.04) 20px),
+    repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,162,39,.04) 18px,rgba(201,162,39,.04) 20px),
+    radial-gradient(ellipse at 50% 35%,#2a5030 0%,#1a3020 65%);
 }
 /* SVG table de jeu au-dessus de la carte login */
 .login-table-svg{
   width:100%;max-width:340px;margin-bottom:0px;border-radius:16px 16px 0 0;
-  overflow:hidden;border:1px solid rgba(201,162,39,.3);border-bottom:none;
-  box-shadow:0 -6px 30px rgba(0,0,0,.5);
+  overflow:hidden;border:1px solid rgba(201,162,39,.4);border-bottom:none;
+  box-shadow:0 -6px 30px rgba(0,0,0,.4);
 }
 .login-card{
-  background:linear-gradient(170deg,#1c3420,#142818);
-  border:1px solid rgba(201,162,39,.35);
+  background:linear-gradient(170deg,#2a4830,#1e3828);
+  border:1px solid rgba(201,162,39,.45);
   border-radius:0 0 20px 20px;padding:28px 28px 32px;
   width:100%;max-width:340px;
-  box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 0 1px rgba(201,162,39,.06),inset 0 1px 0 rgba(201,162,39,.1);
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(201,162,39,.08),inset 0 1px 0 rgba(201,162,39,.15);
   position:relative;overflow:hidden;
 }
-.login-card::before{content:"\u2666";position:absolute;top:10px;left:14px;font-size:12px;color:rgba(201,162,39,.2)}
-.login-card::after{content:"\u2666";position:absolute;bottom:10px;right:14px;font-size:12px;color:rgba(201,162,39,.2);transform:rotate(180deg)}
+.login-card::before{content:"\u2666";position:absolute;top:10px;left:14px;font-size:13px;color:rgba(201,162,39,.35)}
+.login-card::after{content:"\u2666";position:absolute;bottom:10px;right:14px;font-size:13px;color:rgba(201,162,39,.35);transform:rotate(180deg)}
 .login-banner{
-  background:linear-gradient(90deg,transparent,rgba(201,162,39,.1),transparent);
-  border-top:1px solid rgba(201,162,39,.22);
-  border-bottom:1px solid rgba(201,162,39,.22);
-  text-align:center;font-size:9px;letter-spacing:4px;
-  color:rgba(201,162,39,.4);padding:5px 0;margin-bottom:20px;
+  background:linear-gradient(90deg,transparent,rgba(201,162,39,.15),transparent);
+  border-top:1px solid rgba(201,162,39,.3);
+  border-bottom:1px solid rgba(201,162,39,.3);
+  text-align:center;font-size:10px;letter-spacing:4px;
+  color:rgba(201,162,39,.7);padding:5px 0;margin-bottom:20px;
 }
 
 
 </style>
 </head>
 <body>
-<div id="app" style="min-height:100vh;background:#1a2e1c"></div>
+<div id="app" style="min-height:100vh;background:#1a3020"></div>
 <div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#1e3820;border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:13px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap"></div>
 <div id="pk" style="display:none"></div>
 <div id="ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500"></div>
@@ -180,28 +180,28 @@ var MFR=["Janvier","F\u00e9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\u00f
 var DS=["D","L","M","M","J","V","S"];
 var AID="U11804";
 var CODES={
-  "22/6"  :{l:"22h\u20136h",  bg:"#03101c",c:"#4a6888",b:"#07182e",cdp:false},
-  "19/4"  :{l:"19h\u20134h",  bg:"#04061a",c:"#405078",b:"#080c2a",cdp:false},
-  "16/3"  :{l:"16h\u20133h",  bg:"#020d07",c:"#2d5e3c",b:"#051408",cdp:false},
-  "14/19" :{l:"14h\u201319h", bg:"#070d03",c:"#465828",b:"#0c1606",cdp:false},
-  "20/5"  :{l:"20h\u20135h",  bg:"#060314",c:"#504888",b:"#0e0826",cdp:false},
-  "16/22" :{l:"16h\u201322h", bg:"#0c0900",c:"#786810",b:"#160f00",cdp:false},
-  "20/5*" :{l:"20h\u20135h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4*" :{l:"19h\u20134h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/3*" :{l:"16h\u20133h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "16/22*":{l:"16h\u201322h CDP",bg:"#120900",c:"#987018",b:"#1e0e00",cdp:true},
-  "19/4'" :{l:"Convention",bg:"#0e0303",c:"#684038",b:"#180606",cdp:false},
-  "RH"    :{l:"Repos Hebdo",bg:"#070716",c:"#303058",b:"#0e0e1e",cdp:false},
-  "R"     :{l:"Repos",    bg:"#070707",c:"#303030",b:"#0e0e0e",cdp:false},
-  "CP"    :{l:"Cong\u00e9",    bg:"#0e050e",c:"#684060",b:"#180a16",cdp:false},
-  "AF"    :{l:"Formation",bg:"#020d05",c:"#206038",b:"#041006",cdp:false},
-  "M"     :{l:"Maladie",  bg:"#0e0300",c:"#783840",b:"#180606",cdp:false},
-  "RRT"   :{l:"R\u00e9cup RRT",bg:"#020a14",c:"#205060",b:"#04101c",cdp:false},
-  "HC"    :{l:"H.Comp.",  bg:"#070d02",c:"#506818",b:"#0c1604",cdp:false},
-  "PRT"   :{l:"Pr\u00eat",      bg:"#080808",c:"#505050",b:"#101010",cdp:false},
-  "PAT"   :{l:"Patrimonial",bg:"#080808",c:"#505050",b:"#101010",cdp:false},
-  "15/19" :{l:"15h\u201319h",  bg:"#070d03",c:"#405028",b:"#0c1606",cdp:false},
-  "14/20" :{l:"14h\u201320h",  bg:"#070d03",c:"#405028",b:"#0c1606",cdp:false}
+  "22/6"  :{l:"22h\u20136h",  bg:"#0f2a48",c:"#80c0f8",b:"#1a3e60",cdp:false},
+  "19/4"  :{l:"19h\u20134h",  bg:"#16164a",c:"#9898f0",b:"#222268",cdp:false},
+  "16/3"  :{l:"16h\u20133h",  bg:"#0e3020",c:"#58d888",b:"#185030",cdp:false},
+  "14/19" :{l:"14h\u201319h", bg:"#283810",c:"#b8d850",b:"#384e18",cdp:false},
+  "20/5"  :{l:"20h\u20135h",  bg:"#1a0e40",c:"#b090f8",b:"#281560",cdp:false},
+  "16/22" :{l:"16h\u201322h", bg:"#3a2400",c:"#f0c030",b:"#503400",cdp:false},
+  "20/5*" :{l:"20h\u20135h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
+  "19/4*" :{l:"19h\u20134h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
+  "16/3*" :{l:"16h\u20133h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
+  "16/22*":{l:"16h\u201322h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
+  "19/4'" :{l:"Convention",bg:"#381010",c:"#e09090",b:"#502020",cdp:false},
+  "RH"    :{l:"Repos Hebdo",bg:"#141440",c:"#8888e0",b:"#1e1e58",cdp:false},
+  "R"     :{l:"Repos",    bg:"#202020",c:"#909090",b:"#303030",cdp:false},
+  "CP"    :{l:"Cong\u00e9",    bg:"#38083a",c:"#e080e0",b:"#500858",cdp:false},
+  "AF"    :{l:"Formation",bg:"#103820",c:"#60e090",b:"#185030",cdp:false},
+  "M"     :{l:"Maladie",  bg:"#380a0a",c:"#f08080",b:"#501010",cdp:false},
+  "RRT"   :{l:"R\u00e9cup RRT",bg:"#0c2030",c:"#50b8e0",b:"#103050",cdp:false},
+  "HC"    :{l:"H.Comp.",  bg:"#1e3008",c:"#90c040",b:"#2c4410",cdp:false},
+  "PRT"   :{l:"Pr\u00eat",      bg:"#1a1a1a",c:"#909090",b:"#282828",cdp:false},
+  "PAT"   :{l:"Patrimonial",bg:"#1a1a1a",c:"#909090",b:"#282828",cdp:false},
+  "15/19" :{l:"15h\u201319h",  bg:"#263810",c:"#b0d048",b:"#364e18",cdp:false},
+  "14/20" :{l:"14h\u201320h",  bg:"#263810",c:"#b0d048",b:"#364e18",cdp:false}
 };
 var CK=Object.keys(CODES);
 var TC={
@@ -559,7 +559,7 @@ var A={
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=8;
-var APP_VER="v7.7";
+var APP_VER="v7.8";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -791,7 +791,7 @@ function vLoginStep0(){
         <span onclick="forceRefresh()" style="color:#3a5830;cursor:pointer;text-decoration:underline">Forcer mise \u00e0 jour</span>
       </div>
     </div>
-    <div style="font-size:9px;color:#3a5030;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Matricule SBM</div>
+    <div style="font-size:9px;color:#7aaa80;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Matricule SBM</div>
     <input id="li" class="inp" type="text" placeholder="ex. U007"
       autocapitalize="characters" autocomplete="off"
       style="font-size:20px;letter-spacing:5px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:#05100a;border-color:rgba(201,162,39,.22)">
@@ -812,13 +812,13 @@ function vLoginStep1(){
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:36px;line-height:1">${isNew?"\ud83d\udd10":"\ud83c\udccf"}</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">${isNew?"Cr\u00e9ation du mot de passe":"Connexion"}</div>
-      <div style="font-size:12px;color:#3a5030;margin-top:5px">Bienvenue, <strong style="color:#c9a227">${esc(emp.name||"")}</strong></div>
+      <div style="font-size:12px;color:#7aaa80;margin-top:5px">Bienvenue, <strong style="color:#c9a227">${esc(emp.name||"")}</strong></div>
     </div>
     ${isNew?`
-    <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Votre nom en majuscules (v\u00e9rification)</div>
+    <div style="font-size:9px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Votre nom en majuscules (v\u00e9rification)</div>
     <input id="fn" class="inp" type="text" placeholder="${esc(emp.name||"")}" autocapitalize="characters" style="text-transform:uppercase;margin-bottom:10px">
     `:""}
-    <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${isNew?"Choisir un mot de passe (min. 6 car.)":"Mot de passe"}</div>
+    <div style="font-size:9px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${isNew?"Choisir un mot de passe (min. 6 car.)":"Mot de passe"}</div>
     <input id="fp1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:8px">
     ${isNew?"<input id=\"fp2\" class=\"inp\" type=\"password\" placeholder=\"Confirmer le mot de passe\" style=\"margin-bottom:10px\">":""}
     <div id="fperr" style="color:#a04040;font-size:11px;min-height:16px;margin-bottom:8px"></div>
@@ -835,7 +835,7 @@ function vLoginStepPin(){
       <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
     </div>
-    <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Code PIN</div>
+    <div style="font-size:9px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Code PIN</div>
     <input id="pinIn" class="inp" type="password" inputmode="numeric" placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
       style="font-size:22px;letter-spacing:8px;text-align:center;margin-bottom:10px"
       onkeydown="if(event.key==='Enter')stepPin()">
@@ -898,7 +898,7 @@ function vTopbar(){
   <span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
   <div style="flex:1;min-width:0">
     <div style="font-size:13px;font-weight:800;color:#c9a227;letter-spacing:1px">CMC Teams <span style="font-size:8px;color:#1e3018;font-weight:400;font-family:monospace">`+APP_VER+`</span></div>
-    <div style="font-size:7px;color:#1e2e1e;letter-spacing:3px;text-transform:uppercase">Casino de Monaco</div>
+    <div style="font-size:7px;color:#7aaa80;letter-spacing:3px;text-transform:uppercase">Casino de Monaco</div>
   </div>
   ${isAdm
     ?"<span style=\"background:rgba(201,162,39,.12);color:#c9a227;border:1px solid rgba(201,162,39,.28);border-radius:4px;padding:2px 7px;font-size:8px;font-weight:700;letter-spacing:1px\">ADMIN</span>"
@@ -907,7 +907,7 @@ function vTopbar(){
     <div style="width:30px;height:30px;border-radius:50%;background:${col}18;color:${col};border:1px solid ${col}30;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${esc(u?u.name[0]:"?")}</div>
     <div>
       <div style="font-size:10px;font-weight:600;color:#c0cca8;max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u?u.name:"")}</div>
-      <div style="font-size:8px;color:#243020;font-family:monospace">${esc(u?u.id:"")}</div>
+      <div style="font-size:8px;color:#7aaa80;font-family:monospace">${esc(u?u.id:"")}</div>
     </div>
   </div>
   <button class="btn ghost" onclick="doLogout()" style="padding:4px 10px;font-size:10px;flex-shrink:0">\u2715</button>`;
@@ -985,7 +985,7 @@ function vAccueil(){
   var isToday=(tYr===A.year&&tMo===A.month);
   var u=A.user,tid=u?u.team:null,tcc=tc(tid),team=gt(tid);
   var code=isToday&&u?(pl[u.id]||{})[tod]||"":"";
-  var ci=CODES[code]||{l:"\u2014",c:"#3a5030",bg:"#060e07",b:"#0c160a",cdp:false};
+  var ci=CODES[code]||{l:"\u2014",c:"#3a5030",bg:"#1e3822",b:"#2a4830",cdp:false};
   var JOURS=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
   var dateTxt=JOURS[now2.getDay()]+" "+tod+" "+MFR[now2.getMonth()]+" "+tYr;
   // Pos départ
@@ -1004,20 +1004,20 @@ function vAccueil(){
   var h='<div class="page">';
   // Date + titre
   h+='<div style="text-align:center;padding:10px 0 14px">'
-    +'<div style="font-size:10px;color:#3a5030;letter-spacing:2px;text-transform:uppercase">'+dateTxt+'</div>'
+    +'<div style="font-size:10px;color:#7aaa80;letter-spacing:2px;text-transform:uppercase">'+dateTxt+'</div>'
     +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:2px;margin-top:4px">\u2666 CMC Teams</div>'
-    +'<div style="font-size:8px;color:#1e2e1e;letter-spacing:3px;text-transform:uppercase">Casino de Monte-Carlo</div>'
+    +'<div style="font-size:8px;color:#7aaa80;letter-spacing:3px;text-transform:uppercase">Casino de Monte-Carlo</div>'
     +'</div>';
   // Carte "Mon service"
   if(u){
     h+='<div class="card" style="padding:14px;margin-bottom:10px;border-left:3px solid '+tcc+';">';
     h+='<div style="font-size:8px;color:'+tcc+';font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">\u25b6 Mon Service '+MFR[A.month]+' '+A.year+'</div>';
     if(!isToday){
-      h+='<div style="font-size:11px;color:#3a5030;text-align:center;padding:10px 0">Naviguez sur le mois en cours pour voir votre service du jour.</div>';
+      h+='<div style="font-size:11px;color:#7aaa80;text-align:center;padding:10px 0">Naviguez sur le mois en cours pour voir votre service du jour.</div>';
     } else if(!hasImportedData(A.year,A.month)){
       h+='<div style="font-size:11px;color:#c9a227;text-align:center;padding:10px 0">&#128203; Planning non importé pour '+esc(MFR[A.month])+' '+A.year+'</div>';
     } else if(!code){
-      h+='<div style="font-size:13px;color:#3a5030;text-align:center;padding:8px 0">\u2014 Aucun horaire ce jour \u2014</div>';
+      h+='<div style="font-size:13px;color:#7aaa80;text-align:center;padding:8px 0">\u2014 Aucun horaire ce jour \u2014</div>';
     } else {
       h+='<div style="display:flex;align-items:center;gap:12px">';
       h+='<div style="background:'+ci.bg+';border:1px solid '+ci.b+';border-radius:10px;padding:10px 16px;text-align:center;flex-shrink:0">'
@@ -1026,7 +1026,7 @@ function vAccueil(){
         +'</div>';
       h+='<div style="flex:1">'
         +'<div style="font-size:13px;color:#c0cca8;font-weight:600">'+ci.l+'</div>'
-        +'<div style="font-size:9px;color:#3a5030;margin-top:3px">'+esc(team?team.name:'')+'</div>'
+        +'<div style="font-size:9px;color:#7aaa80;margin-top:3px">'+esc(team?team.name:'')+'</div>'
         +(myPos
           ?'<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><div style="width:26px;height:26px;border-radius:6px;background:'+myPosCol+'22;border:2px solid '+myPosCol+'55;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:'+myPosCol+'">'+myPos+'</div><span style="font-size:10px;color:#8a9a78">Ordre de d\u00e9part</span></div>'
           :'')
@@ -1048,17 +1048,17 @@ function vAccueil(){
     });
     ordres.sort(function(a,b){return (a.pos||99)-(b.pos||99);});
     ordres.forEach(function(o){
-      var c2=CODES[o.code]||{c:"#3a5030",bg:"#060e07",b:"#0c160a"};
+      var c2=CODES[o.code]||{c:"#3a5030",bg:"#1e3822",b:"#2a4830"};
       var pCol=o.pos?DCOL[o.pos-1]||"#c9a227":"#243020";
-      h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0c160a">';
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #2a4830">';
       if(o.pos){
         h+='<div style="width:22px;height:22px;border-radius:5px;background:'+pCol+'22;border:1.5px solid '+pCol+'50;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+pCol+'">'+o.pos+'</div>';
       } else {
-        h+='<div style="width:22px;height:22px;border-radius:5px;background:#060e07;border:1px solid #182818;display:flex;align-items:center;justify-content:center;font-size:8px;color:#1e2e1e">\u2014</div>';
+        h+='<div style="width:22px;height:22px;border-radius:5px;background:#060e07;border:1px solid #2a4830;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7aaa80">\u2014</div>';
       }
       h+='<span style="flex:1;font-size:10px;color:#8a9a78">'+esc(o.name)+'</span>';
       if(o.code){h+='<span style="font-size:9px;font-weight:700;color:'+c2.c+'">'+o.code+'</span>';}
-      else{h+='<span style="font-size:9px;color:#1e2e1e">R</span>';}
+      else{h+='<span style="font-size:9px;color:#7aaa80">R</span>';}
       h+='</div>';
     });
     h+='</div>';
@@ -1080,14 +1080,14 @@ function vPlan(){
   var todayN=new Date();
   var todayD=(todayN.getFullYear()===A.year&&todayN.getMonth()===A.month)?todayN.getDate():0;
   var utid=A.user?A.user.team:null,utc=tc(utid),mirT=utid?gm(utid):null;
-  var h=`<div class="page"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}</div><div style="font-size:10px;color:#243020">${A.year}</div></div><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div>`;
-  if(!isAdm&&utid){h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:${utc}0c;border:1px solid ${utc}20;border-radius:8px"><span style="color:${utc};font-weight:700;font-size:12px">${esc(gt(utid)?gt(utid).name:"")}</span>${mirT?'<span style="font-size:9px;color:#243020">\u21cc '+esc(mirT.name)+'</span>':""}</div>`;}
+  var h=`<div class="page"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}</div><div style="font-size:10px;color:#7aaa80">${A.year}</div></div><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div>`;
+  if(!isAdm&&utid){h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:${utc}0c;border:1px solid ${utc}20;border-radius:8px"><span style="color:${utc};font-weight:700;font-size:12px">${esc(gt(utid)?gt(utid).name:"")}</span>${mirT?'<span style="font-size:9px;color:#7aaa80">\u21cc '+esc(mirT.name)+'</span>':""}</div>`;}
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">${isAdm?`<button onclick="sv('admin')" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:10px;color:#c9a227;cursor:pointer;font-weight:700">\u2699\ufe0f Admin</button>`:`<div></div>`}<button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:9px">${A.showLeg?"\u25b2 L\u00e9gende":"\u25bc L\u00e9gende"}</button></div>`;
-  if(A.showLeg){h+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">`;CK.forEach(function(c){var ci=CODES[c];h+=`<div style="display:flex;align-items:center;gap:3px;background:${ci.bg};border:1px solid ${ci.b};border-radius:8px;padding:2px 6px"><span style="color:${ci.c};font-size:8px;font-weight:700">${c}</span><span style="color:#243020;font-size:7px">${ci.l}</span></div>`;});h+=`</div>`;}
+  if(A.showLeg){h+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">`;CK.forEach(function(c){var ci=CODES[c];h+=`<div style="display:flex;align-items:center;gap:3px;background:${ci.bg};border:1px solid ${ci.b};border-radius:8px;padding:2px 6px"><span style="color:${ci.c};font-size:8px;font-weight:700">${c}</span><span style="color:#7aaa80;font-size:7px">${ci.l}</span></div>`;});h+=`</div>`;}
   if(!hasImportedData(A.year,A.month)){
     h+=`<div style="margin-bottom:14px;padding:14px 16px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:10px;text-align:center">
       <div style="font-size:14px;color:#c9a227;font-weight:700;margin-bottom:4px">&#128203; Aucun planning importé</div>
-      <div style="font-size:10px;color:#3a5030">Importez le planning PDF via Admin → Import pour afficher les horaires de ${esc(MFR[A.month])} ${A.year}.</div>
+      <div style="font-size:10px;color:#7aaa80">Importez le planning PDF via Admin → Import pour afficher les horaires de ${esc(MFR[A.month])} ${A.year}.</div>
     </div>`;
   }
   h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;width:100%"><thead><tr><th class="sth">Employ\u00e9</th>`;
@@ -1115,7 +1115,7 @@ function vPlan(){
       var te=byFT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
       h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+tcc+'50">'
        +'<span style="color:'+tcc+';font-size:11px;font-weight:700">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
-       +(mir?'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':"")
+       +(mir?'<span style="color:#7aaa80;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':"")
        +'</td></tr>';
       te.forEach(function(emp){
         var p=pl[emp.id]||{};
@@ -1124,7 +1124,7 @@ function vPlan(){
         var isMe=emp.id===A.user.id;
         var nbg=isMe?(tcc+"0a"):"#162818";
         var ncol=isMe?tcc:"#8a9a78";
-        h+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
+        h+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
          +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
          +(isMe?"\u25b6 ":"")+esc(empLabel(emp))
          +(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")
@@ -1149,7 +1149,7 @@ function vPlan(){
         var mte=byFT[mir.id],mtcc=tc(mir.id);
         h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+mtcc+'50">'
          +'<span style="color:'+mtcc+';font-size:11px;font-weight:700">'+esc(mir.name)+'</span>'
-         +'<span style="color:#1e2e1e;font-size:9px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
+         +'<span style="color:#7aaa80;font-size:9px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
          +'</td></tr>';
         mte.forEach(function(emp){
           var p=pl[emp.id]||{};
@@ -1158,7 +1158,7 @@ function vPlan(){
           var isMe=emp.id===A.user.id;
           var nbg=isMe?(mtcc+"0a"):"#162818";
           var ncol=isMe?mtcc:"#8a9a78";
-          h+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
+          h+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
            +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
            +(isMe?"\u25b6 ":"")+esc(empLabel(emp))
            +(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")
@@ -1292,7 +1292,7 @@ function vDeparts(){
   if(!hasImportedData(A.year,A.month)){
     h+='<div style="margin-bottom:12px;padding:12px 14px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:10px;text-align:center">'
       +'<div style="font-size:13px;color:#c9a227;font-weight:700;margin-bottom:3px">&#128203; Aucun planning importé</div>'
-      +'<div style="font-size:10px;color:#3a5030">Les ordres de départ ne sont disponibles qu\'après import du planning.</div>'
+      +'<div style="font-size:10px;color:#7aaa80">Les ordres de départ ne sont disponibles qu\'après import du planning.</div>'
       +'</div>';
   }
   // Bandeau "Aujourd'hui" si mois courant
@@ -1328,7 +1328,7 @@ function vDeparts(){
     +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
     +'<div style="flex:1;text-align:center">'
     +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts</div>'
-    +'<div style="font-size:9px;color:#243020">Rotation par \u00e9quipe</div></div>'
+    +'<div style="font-size:9px;color:#7aaa80">Rotation par \u00e9quipe</div></div>'
     +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:12px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
@@ -1356,13 +1356,13 @@ function vDeparts(){
       +'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+tcc+'0c;border:1px solid '+tcc+'22;border-radius:8px 8px 0 0">'
       +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
       +'<span style="font-size:12px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
-      +'<span style="font-size:9px;color:#243020">'+sl+' chefs \u00b7 cycle '+SEQ.join('\u2192')+'</span>'
+      +'<span style="font-size:9px;color:#7aaa80">'+sl+' chefs \u00b7 cycle '+SEQ.join('\u2192')+'</span>'
       +ciBtn
       +'</div>'
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'
       +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
       +'<table style="border-collapse:collapse;width:100%"><thead><tr>'
-      +'<th style="padding:5px 10px;background:#060e07;color:#243020;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>';
+      +'<th style="padding:5px 10px;background:#060e07;color:#7aaa80;font-size:9px;text-transform:uppercase;text-align:left;position:sticky;left:0;min-width:90px;border-right:1px solid #182818;z-index:5">Chef</th>';
     workDays.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
       h+=`<th style="padding:3px 1px;min-width:32px;background:${we?"#16281a":"#16281a"};text-align:center">
@@ -1434,7 +1434,7 @@ function renderCIPanel(tid){
   var SEQCI=getSeqForSize(emps.length);
   var h=`<div style="margin-top:8px;padding:12px;background:#0a180c;border:1px solid rgba(201,162,39,.25);border-radius:10px">
     <div style="font-size:10px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
-  if(!emps.length){h+=`<div style="font-size:10px;color:#3a5030">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
+  if(!emps.length){h+=`<div style="font-size:10px;color:#7aaa80">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
   emps.forEach(function(emp){
     var cur=CI[emp.name]!==undefined?CI[emp.name]:0;
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -1446,7 +1446,7 @@ function renderCIPanel(tid){
     }
     h+=`</div></div>`;
   });
-  h+=`<button onclick="openCITeam=null;dc()" style="margin-top:4px;background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#3a5030;font-size:11px;cursor:pointer">Fermer</button>
+  h+=`<button onclick="openCITeam=null;dc()" style="margin-top:4px;background:transparent;border:1px solid #1e3020;border-radius:7px;padding:6px 14px;color:#7aaa80;font-size:11px;cursor:pointer">Fermer</button>
   </div>`;
   return h;
 }
@@ -1475,7 +1475,7 @@ function vStats(){
       h+=`<div style="display:flex;align-items:center;gap:5px">
         <span style="color:${ci.c};font-size:9px;width:30px;text-align:right;font-weight:600">${c}</span>
         <div style="flex:1;height:3px;background:#0c180e;border-radius:2px"><div style="height:100%;background:${ci.c}70;border-radius:2px;width:${Math.round(cnts[c]/31*100)}%"></div></div>
-        <span style="font-size:9px;color:#243020;width:12px;text-align:right">${cnts[c]}</span>
+        <span style="font-size:9px;color:#7aaa80;width:12px;text-align:right">${cnts[c]}</span>
       </div>`;
     });
     h+=`</div><div style="margin-top:6px;padding-top:6px;border-top:1px solid #0c180e;font-size:11px;color:#c9a227;font-weight:700">${trav} jours travaill\u00e9s</div>
@@ -1488,7 +1488,7 @@ function vChat(){
   ls("cmc_lastread",now());
   var msgs=A.chatMsgs;
   var h=`<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">
-  <div style="padding:8px 14px;border-bottom:1px solid #182818;font-size:9px;color:#243020;flex-shrink:0">
+  <div style="padding:8px 14px;border-bottom:1px solid #182818;font-size:9px;color:#7aaa80;flex-shrink:0">
     \u2666 Chat interne \u00b7 ${A.employees.length} membres \u00b7 messages locaux
   </div>
   <div id="chatMsgs" class="chat-msgs">`;
@@ -1551,7 +1551,7 @@ function vAdmin(){
   </div>
   <div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:#06100a;border:1px solid rgba(201,162,39,.18);border-radius:10px">
     <div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>
-    <div style="font-size:10px;color:#3a5030;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>
+    <div style="font-size:10px;color:#7aaa80;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <input id="pin1" class="inp" type="password" inputmode="numeric" placeholder="Nouveau code (min. 4 chiffres)" style="letter-spacing:4px;font-size:15px">
       <input id="pin2" class="inp" type="password" inputmode="numeric" placeholder="Confirmer le code" style="letter-spacing:4px;font-size:15px">
@@ -1649,10 +1649,10 @@ function vTeams(){
         <input class="inp" style="flex:1;padding:7px 10px;font-size:12px;font-weight:600" value="${esc(team.name)}" onchange="uT('${team.id}','name',this.value)">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><div style="font-size:8px;color:#243020;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ordre d\u00e9part</div>
+        <div><div style="font-size:8px;color:#7aaa80;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ordre d\u00e9part</div>
         <input type="number" class="inp" style="padding:7px 10px;font-size:12px" value="${esc(team.departureOrder)}" min="1" onchange="uT('${team.id}','departureOrder',parseInt(this.value))"></div>
-        <div><div style="font-size:8px;color:#243020;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Couleur</div>
-        <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #182818;background:#06110a;cursor:pointer;padding:2px"></div>
+        <div><div style="font-size:8px;color:#7aaa80;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Couleur</div>
+        <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #2a4830;background:#06110a;cursor:pointer;padding:2px"></div>
       </div>
 
       <div style="margin-bottom:10px">
@@ -1668,7 +1668,7 @@ function vTeams(){
             </div>`;
           if(isEditing){
             r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${tcc}20">
-              <div style="font-size:9px;color:#3a5030;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
+              <div style="font-size:9px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
               <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
                 ${teamEmps.map(function(e,ei){var sel=chef===e.name;return "<button onclick=\"pickChef('"+team.id+"',"+ei+")\" style=\"text-align:left;padding:9px 12px;background:"+(sel?"rgba(201,162,39,.15)":"#0c1e0e")+";border:1px solid "+(sel?"rgba(201,162,39,.4)":"#1e3020")+";border-radius:7px;font-size:12px;color:"+(sel?"#c9a227":"#90a878")+";cursor:pointer;font-weight:"+(sel?700:400)+"\">"+esc(e.name)+(sel?" \u2713":"")+"</button>";}).join("")}
               </div>
@@ -1752,12 +1752,12 @@ function vEmps(){
         <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270f\ufe0f ${esc(emp.name)}</div>
         <div style="display:flex;flex-direction:column;gap:8px">
 
-          <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00c9quipe</div>
+          <div><div style="font-size:8px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\u00c9quipe</div>
           <select class="inp" style="padding:8px 10px;font-size:12px" onchange="chTeam('${emp.id}',this.value)">
             ${A.teams.map(function(t){return "<option value=\""+t.id+"\""+(emp.team===t.id?" selected":"")+">"+esc(t.name)+"</option>";}).join("")}
           </select></div>
 
-          <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Poste</div>
+          <div><div style="font-size:8px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Poste</div>
           <input class="inp" style="padding:8px 10px;font-size:12px" value="${esc(emp.post||"")}" placeholder="ex: BRTCK"
             onchange="updEmp('${emp.id}','post',this.value)"></div>
 
@@ -1772,13 +1772,13 @@ function vEmps(){
             </label>
           </div>
 
-          <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Famille</div>
+          <div><div style="font-size:8px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Famille</div>
           <select class="inp" style="padding:8px 10px;font-size:12px" onchange="updEmp('${emp.id}','family',this.value)">
             ${FAMILIES.map(function(f){return '<option value="'+f.id+'"'+((emp.family||'bj')===f.id?' selected':'')+'>'+esc(f.label)+'</option>';}).join('')}
           </select></div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div><div style="font-size:8px;color:#243020;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Actif depuis</div>
+            <div><div style="font-size:8px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Actif depuis</div>
             <select class="inp" style="padding:8px 10px;font-size:12px" onchange="updEmpMo('${emp.id}','fromMo',this.value)">
               ${moSelOpts(emp.fromMo,'<option value="">Depuis toujours</option>')}
             </select></div>
@@ -1792,15 +1792,15 @@ function vEmps(){
           <div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
             <div style="font-size:8px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-              <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Matricule</span>
+              <span style="font-size:9px;color:#7aaa80;width:52px;flex-shrink:0">Matricule</span>
               <span style="font-size:11px;font-family:monospace;color:#c9a227;letter-spacing:2px;background:rgba(201,162,39,.08);padding:3px 8px;border-radius:5px">${esc(emp.id)}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:9px;color:#3a5030;width:52px;flex-shrink:0">Mot de passe</span>
+              <span style="font-size:9px;color:#7aaa80;width:52px;flex-shrink:0">Mot de passe</span>
               ${A.passwords[emp.id]
                 ?`<span style="font-size:11px;font-family:monospace;color:#a0b890;background:#0c1e0e;padding:3px 8px;border-radius:5px;border:1px solid #1e3020">${esc(typeof A.passwords[emp.id]==="object"?A.passwords[emp.id].p:"(ancien format)")}</span>
                   <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:9px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>`
-                :`<span style="font-size:10px;color:#243020;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
+                :`<span style="font-size:10px;color:#7aaa80;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
             </div>
           </div>`:""}
           <div style="display:flex;gap:8px;margin-top:8px">
@@ -1818,10 +1818,10 @@ function vEmps(){
             ${isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">ADMIN</span>":""}
             ${emp.chef&&!isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
           </div>
-          <div style="font-size:8px;color:#243020;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
+          <div style="font-size:8px;color:#7aaa80;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
           </div>
         </div>
-        <span style="font-size:14px;color:#243020;flex-shrink:0">\u203a</span>
+        <span style="font-size:14px;color:#7aaa80;flex-shrink:0">\u203a</span>
       </div>`;
     }
     h+=`</div>`;
@@ -1894,13 +1894,13 @@ function vImport(){
     <button onclick="document.getElementById('impFile').click()" style="width:100%;padding:16px;background:rgba(201,162,39,.1);border:2px dashed rgba(201,162,39,.4);border-radius:12px;font-size:14px;color:#c9a227;font-weight:700;cursor:pointer">
       \ud83d\udcc2 Choisir CSV ou PDF
     </button>
-    <div id="fileInfo" style="margin-top:8px;font-size:10px;color:#3a5030;min-height:16px"></div>
+    <div id="fileInfo" style="margin-top:8px;font-size:10px;color:#7aaa80;min-height:16px"></div>
   </div>
 
   <!-- Coller texte -->
   <div class="card" style="padding:14px;margin-bottom:10px">
     <div style="font-size:12px;font-weight:700;color:#c9a227;margin-bottom:4px">\u270f\ufe0f Coller le texte</div>
-    <div style="font-size:9px;color:#3a5030;margin-bottom:8px">Depuis Numbers, Excel, ou texte copi\u00e9 du PDF</div>
+    <div style="font-size:9px;color:#7aaa80;margin-bottom:8px">Depuis Numbers, Excel, ou texte copi\u00e9 du PDF</div>
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:10px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){doImport();},300)"></textarea>
@@ -2663,10 +2663,10 @@ function vIA(){
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:#c9a227">Assistant CMC</div>
-        <div style="font-size:9px;color:#3a5030">Planning \u00b7 V\u00e9rification \u00b7 \u00c9quipes \u00b7 Horaires</div>
+        <div style="font-size:9px;color:#7aaa80">Planning \u00b7 V\u00e9rification \u00b7 \u00c9quipes \u00b7 Horaires</div>
       </div>
       ${isAdm?"<button onclick=\"iaCheckNow()\" style=\"background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:9px;cursor:pointer;font-weight:700\">\ud83d\udd0d V\u00e9rifier</button>":""}
-      ${isAdm?"<button onclick=\"iaClearHistory()\" style=\"background:transparent;border:1px solid #1e3020;border-radius:6px;padding:4px 8px;color:#3a5030;font-size:9px;cursor:pointer\">\u2715</button>":""}
+      ${isAdm?"<button onclick=\"iaClearHistory()\" style=\"background:transparent;border:1px solid #1e3020;border-radius:6px;padding:4px 8px;color:#7aaa80;font-size:9px;cursor:pointer\">\u2715</button>":""}
     </div>
   </div>
   <div id="iaMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px">`;
@@ -2674,7 +2674,7 @@ function vIA(){
   if(!iaHistory.length){
     h+=`<div style="text-align:center;padding:20px 10px">
       <div style="font-size:28px;margin-bottom:8px">\u2666</div>
-      <div style="font-size:12px;color:#3a5030;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00e9s,<br>\u00e9quipes, codes horaires et le planning.</div>
+      <div style="font-size:12px;color:#7aaa80;margin-bottom:16px">Bonjour ! Je connais tous vos employ\u00e9s,<br>\u00e9quipes, codes horaires et le planning.</div>
       <div style="display:flex;flex-direction:column;gap:6px">
         ${["Qui travaille ce soir en \u00e9quipe 3 ?",
            "V\u00e9rifie le planning du mois",
@@ -2682,7 +2682,7 @@ function vIA(){
            "Qui est chef de l'\u00e9quipe 1 ?",
            "Montre-moi le planning de DESSI F",
            "Erreurs dans le planning ?"
-          ].map(function(q){return "<button onclick=\"iaSend('"+q.replace(/'/g,"\\'")+"')\" style=\"background:#162818;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left\">"+q+"</button>";}).join("")}
+          ].map(function(q){return "<button onclick=\"iaSend('"+q.replace(/'/g,"\\'")+"')\" style=\"background:#1e3422;border:1px solid #2a4030;border-radius:8px;padding:8px 12px;color:#6a8a68;font-size:11px;cursor:pointer;text-align:left\">"+q+"</button>";}).join("")}
       </div>
     </div>`;
   }
@@ -2763,10 +2763,10 @@ function formatVerifReport(v){
           \u2192 devrait \u00eatre <span style="color:${ciRef.c};font-weight:700">${e.refCode}</span>
         </div>`;
       });
-      if(errs.length>5) h+=`<div style="font-size:9px;color:#3a5030">...et ${errs.length-5} autre(s)</div>`;
+      if(errs.length>5) h+=`<div style="font-size:9px;color:#7aaa80">...et ${errs.length-5} autre(s)</div>`;
       h+=`</div>`;
     });
-    h+=`<div style="margin-top:8px;padding:7px;background:#0c1810;border-radius:7px;font-size:9px;color:#3a5030">
+    h+=`<div style="margin-top:8px;padding:7px;background:#0c1810;border-radius:7px;font-size:9px;color:#7aaa80">
       \ud83d\udca1 Pour corriger : allez dans Planning et modifiez les cellules incorrectes, ou r\u00e9-importez le bon fichier.
     </div>`;
   }
@@ -2799,7 +2799,7 @@ function iaAskCorrect(){
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:#1a3a1e;border:1px solid #2a6030;border-radius:8px;font-size:11px;color:#3a8a50;font-weight:700;cursor:pointer">\u2705 Oui, corriger</button>
-      <button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#3a5030;cursor:pointer">\u2715 Annuler</button>
+      <button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:11px;color:#7aaa80;cursor:pointer">\u2715 Annuler</button>
     </div>
   </div>`;
   iaHistory.push({role:"user",text:"Corriger les erreurs du planning"});
@@ -2810,7 +2810,7 @@ function iaAskCorrect(){
 
 function iaCancelFix(){
   pendingFix=null;
-  iaHistory.push({role:"bot",html:"<span style='color:#3a5030'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>"});
+  iaHistory.push({role:"bot",html:"<span style='color:#7aaa80'>Correction annul\u00e9e \u2014 aucune modification effectu\u00e9e.</span>"});
   dc();
   setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
@@ -2936,7 +2936,7 @@ function iaRespond(q){
     var r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
     if(chefs.length) r+="<br>\ud83d\udc51 Chefs : "+chefs.map(function(e){return esc(e.name);}).join(", ")+"<br>";
     if(mir) r+=`\u21cc Miroir : ${esc(mir.name)}<br>`;
-    r+="<br>Membres :<br>"+emps.map(function(e){return "\u2022 "+esc(e.name)+(e.chef?" \ud83d\udc51":"")+" <span style=\"font-size:10px;color:#3a5030\">"+esc(e.post||"")+"</span>";}).join("<br>");
+    r+="<br>Membres :<br>"+emps.map(function(e){return "\u2022 "+esc(e.name)+(e.chef?" \ud83d\udc51":"")+" <span style=\"font-size:10px;color:#7aaa80\">"+esc(e.post||"")+"</span>";}).join("<br>");
     return r;
   }
 
@@ -3085,7 +3085,7 @@ function vAbsences(){
    +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
    +'<div style="flex:1;text-align:center">'
    +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 Absences</div>'
-   +'<div style="font-size:9px;color:#243020">Cong\u00e9s \u00b7 Maladie \u00b7 Formation \u00b7 R\u00e9cup</div></div>'
+   +'<div style="font-size:9px;color:#7aaa80">Cong\u00e9s \u00b7 Maladie \u00b7 Formation \u00b7 R\u00e9cup</div></div>'
    +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
    +'</div>';
 
@@ -3119,11 +3119,11 @@ function vAbsences(){
      +'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:'+tcc+'0c;border:1px solid '+tcc+'22;border-radius:6px 6px 0 0">'
      +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
      +'<span style="font-size:11px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
-     +'<span style="font-size:9px;color:#243020">'+absentEmps.length+' employ\u00e9(s) absent(s)</span>'
+     +'<span style="font-size:9px;color:#7aaa80">'+absentEmps.length+' employ\u00e9(s) absent(s)</span>'
      +'</div>'
      +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 6px 6px">'
      +'<table style="border-collapse:collapse;width:100%"><thead><tr>'
-     +'<th style="padding:4px 8px;background:#060e07;color:#243020;font-size:9px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
+     +'<th style="padding:4px 8px;background:#060e07;color:#7aaa80;font-size:9px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
     daysArr.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
       h+='<th style="padding:2px 1px;min-width:24px;background:#060e07;text-align:center">'
@@ -3143,7 +3143,7 @@ function vAbsences(){
            +'<span style="display:inline-block;background:'+col+'30;border:1px solid '+col+'60;border-radius:3px;padding:1px 2px;font-size:7px;font-weight:700;color:'+col+'">'+c+'</span>'
            +'</td>';
         } else {
-          h+='<td style="text-align:center;padding:1px;background:#060e07"><span style="font-size:7px;color:#1e2e1e">\u00b7</span></td>';
+          h+='<td style="text-align:center;padding:1px;background:#060e07"><span style="font-size:7px;color:#7aaa80">\u00b7</span></td>';
         }
       });
       h+='</tr>';
@@ -3152,7 +3152,7 @@ function vAbsences(){
   });
 
   // Si aucune absence ce mois
-  h+='<div id="abs-empty" style="display:none;text-align:center;padding:30px;color:#243020;font-size:11px">Aucune absence enregistr\u00e9e pour ce mois \u2014 tout le monde est pr\u00e9sent !</div>';
+  h+='<div id="abs-empty" style="display:none;text-align:center;padding:30px;color:#7aaa80;font-size:11px">Aucune absence enregistr\u00e9e pour ce mois \u2014 tout le monde est pr\u00e9sent !</div>';
   h+='</div>';
   return h;
 }
