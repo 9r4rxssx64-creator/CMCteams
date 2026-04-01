@@ -558,8 +558,8 @@ var A={
 };
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
-var DATA_VER=7;
-var APP_VER="v7.6";
+var DATA_VER=8;
+var APP_VER="v7.7";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
@@ -612,7 +612,7 @@ function forceRefresh(){
   // Auto-nettoyage : supprimer les employes importes si trop nombreux (évite freeze)
   var _defIds=DEF_EMP.map(function(e){return e.id;});
   var _importedCount=A.employees.filter(function(e){return _defIds.indexOf(e.id)<0;}).length;
-  if(_importedCount>15){
+  if(_importedCount>500){
     var _before=A.employees.length;
     A.employees=A.employees.filter(function(e){return _defIds.indexOf(e.id)>=0;});
     console.warn("Auto-nettoyage: "+(_before-A.employees.length)+" employes importes supprimes au demarrage");
