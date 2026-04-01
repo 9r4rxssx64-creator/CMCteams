@@ -208,7 +208,9 @@ var TC={
   "1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830",
   "6":"#b89020","7":"#3a62a0","8":"#2a7a40","9":"#984060","10":"#a86820",
   "r1":"#2a9a9a","r2":"#1a8a8a","r3":"#0a7a9a","r4":"#2a8a8a","r5":"#1a9a8a","r6":"#2aaa8a","r7":"#1a9a9a",
-  "r8":"#2a8a8a","r9":"#1a7a9a","r10":"#0a8a8a","r11":"#2a7a9a","r12":"#1a8a8a","r13":"#0a9a8a"
+  "r8":"#2a8a8a","r9":"#1a7a9a","r10":"#0a8a8a","r11":"#2a7a9a","r12":"#1a8a8a","r13":"#0a9a8a",
+  "c1":"#8a50a8","c2":"#7040b0","c3":"#9050a0","c4":"#a04890","c5":"#b04080","c6":"#a84870",
+  "c7":"#7a4898","c8":"#6838a0","c9":"#804890","c10":"#904080","c11":"#a03878","c12":"#983060","c13":"#704868"
 };
 var FAMILIES=[
   {id:"roulettes",label:"Roulettes",color:"#c04040"},
@@ -248,7 +250,21 @@ var DEF_TEAMS=[
   {id:"r10",name:"Roul. \u00c9q.10", mirrorTeamId:"r3",  departureOrder:3,color:"#0a8a8a"},
   {id:"r11",name:"Roul. \u00c9q.11", mirrorTeamId:"r4",  departureOrder:4,color:"#2a7a9a"},
   {id:"r12",name:"Roul. \u00c9q.12", mirrorTeamId:"r5",  departureOrder:5,color:"#1a8a8a"},
-  {id:"r13",name:"Roul. \u00c9q.13", mirrorTeamId:"r6",  departureOrder:6,color:"#0a9a8a"}
+  {id:"r13",name:"Roul. \u00c9q.13", mirrorTeamId:"r6",  departureOrder:6,color:"#0a9a8a"},
+  // CMC Cartes
+  {id:"c1", name:"CMC \u00c9q.1",  mirrorTeamId:"c7",  departureOrder:1,color:"#8a50a8"},
+  {id:"c2", name:"CMC \u00c9q.2",  mirrorTeamId:"c8",  departureOrder:2,color:"#7040b0"},
+  {id:"c3", name:"CMC \u00c9q.3",  mirrorTeamId:"c9",  departureOrder:3,color:"#9050a0"},
+  {id:"c4", name:"CMC \u00c9q.4",  mirrorTeamId:"c10", departureOrder:4,color:"#a04890"},
+  {id:"c5", name:"CMC \u00c9q.5",  mirrorTeamId:null,  departureOrder:5,color:"#b04080"},
+  {id:"c6", name:"CMC \u00c9q.6",  mirrorTeamId:null,  departureOrder:6,color:"#a84870"},
+  {id:"c7", name:"CMC \u00c9q.7",  mirrorTeamId:"c1",  departureOrder:1,color:"#7a4898"},
+  {id:"c8", name:"CMC \u00c9q.8",  mirrorTeamId:"c2",  departureOrder:2,color:"#6838a0"},
+  {id:"c9", name:"CMC \u00c9q.9",  mirrorTeamId:"c3",  departureOrder:3,color:"#804890"},
+  {id:"c10",name:"CMC \u00c9q.10", mirrorTeamId:"c4",  departureOrder:4,color:"#904080"},
+  {id:"c11",name:"CMC \u00c9q.11", mirrorTeamId:"c8",  departureOrder:5,color:"#a03878"},
+  {id:"c12",name:"CMC \u00c9q.12", mirrorTeamId:"c9",  departureOrder:6,color:"#983060"},
+  {id:"c13",name:"CMC \u00c9q.13", mirrorTeamId:null,  departureOrder:7,color:"#704868"}
 ];
 
 var DEF_EMP=[
@@ -403,7 +419,149 @@ var DEF_EMP=[
   {id:"U00126",name:"SOLFERINO F",       team:"r13",chef:true, cdpShifts:[],             family:"roulettes"},
   {id:"U00127",name:"VATRICAN T",        team:"r13",chef:false,cdpShifts:[],             family:"roulettes"},
   {id:"U00128",name:"DEVERINI F",        team:"r13",chef:false,cdpShifts:[],             family:"roulettes"},
-  {id:"U00129",name:"DELMAS G",          team:"r13",chef:false,cdpShifts:[],             family:"roulettes"}
+  {id:"U00129",name:"DELMAS G",          team:"r13",chef:false,cdpShifts:[],             family:"roulettes"},
+  // ── CMC Cartes – Équipe 1 ──
+  {id:"U00130",name:"BARILARO A",        team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00131",name:"SYNAVE S",          team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00132",name:"CABALLERO PA",      team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00133",name:"DELLA PINA M",      team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00134",name:"LAVAGNA Y",         team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00135",name:"LAVAGNA E",         team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00136",name:"MONTESANO M",       team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00137",name:"KOVACS V",          team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00138",name:"CATTALANO C",       team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00139",name:"KARUANA T",         team:"c1", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 2 ──
+  {id:"U00140",name:"SANTINI K",         team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00141",name:"BARILARO H",        team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00142",name:"SERRA N",           team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00143",name:"TESTA G",           team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00144",name:"SUBTIL C",          team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00145",name:"COTTON J",          team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00146",name:"SOURMAILLE C",      team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00147",name:"MATTONI C",         team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00148",name:"MALGHERINI J",      team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00149",name:"DJORDJEVIC G",      team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00150",name:"BINI G",            team:"c2", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 3 ──
+  {id:"U00151",name:"BLANCHI H",         team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00152",name:"LEVESY A",          team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00153",name:"MORRA A",           team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00154",name:"GENDREAU C",        team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00155",name:"SORGI GM",          team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00156",name:"FERRARI G",         team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00157",name:"JOUGLAIN I",        team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00158",name:"BASTIANELLI A",     team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00159",name:"COSSO N",           team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00160",name:"GENDREAU V",        team:"c3", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 4 ──
+  {id:"U00161",name:"ESPAGNOL A",        team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00162",name:"CATALA T",          team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00163",name:"MICHELIS A",        team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00164",name:"VERDA N",           team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00165",name:"BERNARD J",         team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00166",name:"MORET A",           team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00167",name:"BOTTA V",           team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00168",name:"QUISSET Y",         team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00169",name:"TOMA O",            team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00170",name:"POUGET C",          team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00171",name:"BRASSEUR FR",       team:"c4", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 5 ──
+  {id:"U00172",name:"ELENA C",           team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00173",name:"SESTINI F",         team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00174",name:"BAUBRIT R",         team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00175",name:"GIACOLETTO S",      team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00176",name:"DUPORT R",          team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00177",name:"AGACCIO S",         team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00178",name:"MBOREHA N",         team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00179",name:"DELLA PINA L",      team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00180",name:"ELENA A",           team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00181",name:"CUCCHI H",          team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00182",name:"CASELLA A",         team:"c5", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 6 ──
+  {id:"U00183",name:"CASTELLINI K",      team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00184",name:"LUBIN O",           team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00185",name:"NIGIONI A",         team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00186",name:"RONCALLI A",        team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00187",name:"CREMA F",           team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00188",name:"PANIZZI S",         team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00189",name:"LANGELLOTTI D",     team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00190",name:"PAZZAGLIA A",       team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00191",name:"ADELLI M",          team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00192",name:"MAIARELLI M",       team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00193",name:"LANTERI T",         team:"c6", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 7 (miroir 1) ──
+  {id:"U00194",name:"ESPAGNOL P",        team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00195",name:"DARDANNE K",        team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00196",name:"SEGALEN L",         team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00197",name:"CANE J",            team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00198",name:"SINITO A",          team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00199",name:"DALMASSO N",        team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00200",name:"EL MISSOURI M",     team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00201",name:"COCCHI H",          team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00202",name:"CASTALDI V",        team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00203",name:"GIOVANNETTI R",     team:"c7", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 8 (miroir 2) ──
+  {id:"U00204",name:"GSTALDER F",        team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00205",name:"GAZZA S",           team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00206",name:"BAILET JF",         team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00207",name:"DE RYCKE K",        team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00208",name:"MARQUET N",         team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00209",name:"SANTINI M",         team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00210",name:"BATTAGLIA DE",      team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00211",name:"MORTINI M",         team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00212",name:"SCALZO M",          team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00213",name:"BONNEFOND M",       team:"c8", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 9 (miroir 3) ──
+  {id:"U00214",name:"DEGL INNOCENTI V",  team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00215",name:"MUCCILLI A",        team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00216",name:"SCHWIETZER M",      team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00217",name:"TANNA K",           team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00218",name:"GIACOBBI J",        team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00219",name:"MANFREDI H",        team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00220",name:"MERENDA V",         team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00221",name:"COSLOVICH V",       team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00222",name:"VOILLEQUIN R",      team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00223",name:"BORGIA L",          team:"c9", chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 10 (miroir 4) ──
+  {id:"U00224",name:"BOIRON B",          team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00225",name:"MIANI N",           team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00226",name:"BERNARDI J",        team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00227",name:"CRESCI C",          team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00228",name:"SONDOORKHAN N",     team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00229",name:"SIRIO S",           team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00230",name:"INZIRILLO R",       team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00231",name:"FRASCA A",          team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00232",name:"ORENGO N",          team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00233",name:"CHINTEMI J",        team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00234",name:"TULEU C",           team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00235",name:"AHMED A",           team:"c10",chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 11 (miroir 8) ──
+  {id:"U00236",name:"GILETTA B",         team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00237",name:"BANTI H",           team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00238",name:"ADELHEIM P",        team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00239",name:"MARTIRE M",         team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00240",name:"DE REGIBUS L",      team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00241",name:"MORANA A",          team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00242",name:"MORTER L",          team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00243",name:"DI LUCA L",         team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00244",name:"CAMILLERI P",       team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00245",name:"DELAUNAY L",        team:"c11",chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 12 (miroir 9) ──
+  {id:"U00246",name:"BESSO N",           team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00247",name:"GUERRE S",          team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00248",name:"CAMBI O",           team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00249",name:"ONNIS S",           team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00250",name:"BLANCHY F",         team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00251",name:"BERTOLOTTO F",      team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00252",name:"ABBAS N",           team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00253",name:"DEGIOVANNI R",      team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00254",name:"VOUKASSOVITCH H",   team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00255",name:"CAISSON K",         team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00256",name:"TOULET F",          team:"c12",chef:false,cdpShifts:[],             family:"cmc"},
+  // ── CMC Cartes – Équipe 13 (horaire aménagée) ──
+  {id:"U00257",name:"BLANZIERI K",       team:"c13",chef:false,cdpShifts:[],             family:"cmc"},
+  {id:"U00258",name:"ACCOMASSO F",       team:"c13",chef:false,cdpShifts:[],             family:"cmc"}
 ];
 
 var REPOS={
@@ -558,8 +716,8 @@ var A={
 };
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
-var DATA_VER=8;
-var APP_VER="v7.8";
+var DATA_VER=9;
+var APP_VER="v7.9";
 var _needResetChefsT=false;
 // Force le rechargement complet depuis le serveur (contourne le cache iOS Safari)
 function forceRefresh(){
