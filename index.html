@@ -2276,7 +2276,7 @@ function doImport(){
     if(!eName||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(eName))return null;
     var _fe=A.employees.find(function(x){return x.name===eName;});
     if(!_fe){
-      if(A.employees.filter(function(x){return x._imported;}).length>=60){err++;errLines.push("Limite 60 employes atteinte");return null;}
+      if(A.employees.filter(function(x){return x._imported;}).length>=500){err++;errLines.push("Limite 500 employes atteinte");return null;}
       var _fdt=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1,contextTid||_contextTeam);
       var _fid="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
       _fe={id:_fid,name:eName,team:_fdt||"1",post:ePost||"",chef:!!eIsChef,family:eFamily||importFamily,cdpShifts:[],_imported:true};
