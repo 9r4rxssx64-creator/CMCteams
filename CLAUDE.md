@@ -243,6 +243,36 @@ Teams 1↔4 and 2↔5 are mirror pairs (opposite shift rotations).
 
 ---
 
+## Claude Code Skills & Agents
+
+### Skills utilitaires (invocation manuelle `/nom`)
+| Skill | Commande | Description |
+|-------|----------|-------------|
+| `validate-js` | `/validate-js` | Valide la syntaxe JS d'index.html |
+| `find-employee` | `/find-employee NOM` | Recherche un employé par nom/ID |
+| `audit-seed` | `/audit-seed` | Audit complet des données SEED |
+| `bump-version` | `/bump-version patch` | Incrémente APP_VER / DATA_VER |
+| `check-xss` | `/check-xss` | Détecte les failles XSS |
+| `sync-backup` | `/sync-backup` | Synchronise app 2.js avec index.html |
+| `planning-summary` | `/planning-summary avril 2026` | Résumé planning mensuel |
+| `quality-gate` | `/quality-gate` | Vérification complète avant push |
+| `self-audit` | `/self-audit` | Auto-évaluation de la session |
+
+### Agents de vérification automatique (invocation auto par Claude)
+| Agent | Quand | Rôle |
+|-------|-------|------|
+| `verify-after-edit` | Après chaque édition d'index.html | Valide syntaxe, structure, constantes |
+| `review-before-commit` | Avant chaque commit | Revue qualité, sécurité, conventions |
+| `method-guard` | En continu | Vérifie les bonnes pratiques du projet |
+
+### Workflow recommandé
+1. Éditer index.html → `verify-after-edit` s'exécute
+2. Avant commit → `review-before-commit` analyse le diff
+3. Avant push → `/quality-gate` vérifie tout
+4. En fin de session → `/self-audit` évalue le travail
+
+---
+
 ## Constants Reference
 
 ```javascript
