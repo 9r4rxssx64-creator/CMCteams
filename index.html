@@ -1116,6 +1116,7 @@ function vMain(){
     case"teams":    return isAdm?vTeams():"";
     case"employees":return isAdm?vEmps():"";
     case"import":   return isAdm?vImport():"";
+    case"audit":    return isAdm?vAudit():"";
     case"ia":       return vIA();
     default: return vAccueil();
   }
@@ -1767,6 +1768,7 @@ function vAdmin(){
     {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
     {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
     {ic:"\ud83d\udce5",lb:"Import planning",fn:"sv('import')"},
+    {ic:"\ud83d\udd0d",lb:"Audit \u2014 v\u00e9rification compl\u00e8te des effectifs",fn:"sv('audit')"},
     {ic:"\ud83d\udd11",lb:"R\u00e9initialiser un mot de passe",fn:"resetPw()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
     {ic:"\ud83d\udd04",lb:"Recharger planning Avril 2026 (données pré-chargées)",fn:"reloadSeed()"},
@@ -1800,6 +1802,133 @@ function vAdmin(){
   </div>
   </div>`;
 }
+// --- AUDIT AUTONOME ---
+// Similarite entre deux chaines (pour detecter noms proches)
+function _strSim(a,b){
+  a=a.toUpperCase();b=b.toUpperCase();
+  if(a===b)return 1;
+  if(a.length<2||b.length<2)return 0;
+  var bigrams={};
+  for(var i=0;i<a.length-1;i++){var bg=a.slice(i,i+2);bigrams[bg]=(bigrams[bg]||0)+1;}
+  var inter=0;
+  for(var i=0;i<b.length-1;i++){var bg=b.slice(i,i+2);if(bigrams[bg]>0){inter++;bigrams[bg]--;}}
+  return 2*inter/(a.length+b.length-2);
+}
+
+function runAudit(y,m){
+  y=y||A.year;m=m||A.month;
+  var key=y+"-"+m;
+  var pl=(function(){var tmp=A.year,tm=A.month;A.year=y;A.month=m;var r=gpl();A.year=tmp;A.month=tm;return r;})();
+  var ref=lg("cmc_ref_"+key,null);
+  var importedIds=ref&&ref.rows?new Set(Object.keys(ref.rows)):new Set();
+  // Noms importes depuis le PDF (pour suggestions de correspondance)
+  var importedNames=[];
+  if(ref&&ref.rows){
+    importedIds.forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(emp)importedNames.push(emp.name);
+    });
+  }
+  // Lignes de depart
+  var allDepartureNames=new Set();
+  Object.keys(CHEFS_T).forEach(function(tid){(CHEFS_T[tid]||[]).forEach(function(n){allDepartureNames.add(n);});});
+  var defIds=new Set(DEF_EMP.map(function(e){return e.id;}));
+  var results={absentDuPDF:[],sansHoraire:[],sansDeparture:[],ok:0,hasImport:importedIds.size>0};
+  A.employees.filter(function(emp){return isEmpActive(emp,y,m)&&defIds.has(emp.id);}).forEach(function(emp){
+    var plRow=pl[emp.id]||{};
+    var hasDays=Object.keys(plRow).some(function(d){return !!plRow[d];});
+    var codes=Object.values(plRow);
+    var codesSummary=codes.slice(0,10).join(' ');
+    // Absent du PDF
+    if(importedIds.size>0&&!importedIds.has(emp.id)){
+      // Chercher noms similaires dans la liste des importes
+      var suggestions=[];
+      // Chercher parmi tous les noms dans le dernier import
+      if(ref&&ref.rows){
+        var allImportedEmps=[];
+        importedIds.forEach(function(eid){var e=A.employees.find(function(x){return x.id===eid;});if(e)allImportedEmps.push(e.name);});
+        allImportedEmps.forEach(function(n){
+          if(_strSim(emp.name,n)>0.55)suggestions.push(n);
+        });
+      }
+      results.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team,
+        hasDays:hasDays,codesSummary:codesSummary,suggestions:suggestions});
+    } else if(!hasDays){
+      results.sansHoraire.push({id:emp.id,name:emp.name,team:emp.team});
+    } else {
+      results.ok++;
+    }
+    if(!allDepartureNames.has(emp.name)){
+      results.sansDeparture.push({id:emp.id,name:emp.name,team:emp.team});
+    }
+  });
+  return results;
+}
+
+function auditDelEmp(id){
+  if(!confirm("Supprimer d\u00e9finitivement cet employ\u00e9 des effectifs ?"))return;
+  A.employees=A.employees.filter(function(e){return e.id!==id;});
+  sav();toast("Employ\u00e9 supprim\u00e9");
+  dc();
+}
+
+function vAudit(){
+  var y=A.year,m=A.month;
+  var audit=runAudit(y,m);
+  var totalProblems=audit.absentDuPDF.length+audit.sansHoraire.length;
+  function empRow(e,type){
+    var pl2=gpl();var plRow=pl2[e.id]||{};
+    var days=[];for(var d=1;d<=30;d++){if(plRow[d])days.push(d+":"+plRow[d]);}
+    var schedule=days.slice(0,8).join(', ')+(days.length>8?'...':'');
+    var sugHtml=e.suggestions&&e.suggestions.length?
+      '<div style="margin-top:3px;font-size:9px;color:#4a72a8">\u2753 Noms similaires dans le PDF\u00a0: '+e.suggestions.map(function(s){return '<b>'+esc(s)+'</b>';}).join(', ')+'</div>':'';
+    var schedHtml=e.hasDays?
+      '<div style="margin-top:2px;font-size:8px;color:#7aaa80">Planning actuel\u00a0: '+esc(schedule)+'</div>':
+      '<div style="margin-top:2px;font-size:8px;color:#c04040">Aucun horaire !</div>';
+    var bg=type==="sansHoraire"?"rgba(180,40,40,.12)":"rgba(180,120,0,.08)";
+    var border=type==="sansHoraire"?"#c04040":"#c9a227";
+    return '<div style="margin-bottom:6px;padding:8px 10px;background:'+bg+';border-left:3px solid '+border+';border-radius:4px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<div>'
+      +'<span style="font-size:11px;font-weight:700;color:#c0cca8">'+esc(e.name)+'</span>'
+      +' <span style="font-size:9px;color:#7aaa80">\u00c9q.'+esc(e.team)+'</span>'
+      +schedHtml+sugHtml
+      +'</div>'
+      +'<button class="btn danger" onclick="auditDelEmp(\''+e.id+'\')" style="padding:5px 10px;font-size:10px;flex-shrink:0">Supprimer</button>'
+      +'</div>'
+      +'</div>';
+  }
+  var absSect=audit.absentDuPDF.length?
+    '<div style="margin-bottom:16px">'
+    +'<div style="font-size:11px;font-weight:700;color:#c9a227;margin-bottom:8px">\u26a0\ufe0f Absents du dernier PDF import\u00e9 ('+audit.absentDuPDF.length+')</div>'
+    +'<div style="font-size:9px;color:#8a9a78;margin-bottom:8px">Ces employ\u00e9s sont dans les effectifs mais n\'ont pas \u00e9t\u00e9 trouv\u00e9s dans le dernier planning import\u00e9. Leur horaire du mois pr\u00e9c\u00e9dent a \u00e9t\u00e9 conserv\u00e9. Si l\'employ\u00e9 a quitt\u00e9 les effectifs, supprimez-le ici.</div>'
+    +audit.absentDuPDF.map(function(e){return empRow(e,"absentDuPDF");}).join('')
+    +'</div>':'';
+  var shSect=audit.sansHoraire.length?
+    '<div style="margin-bottom:16px">'
+    +'<div style="font-size:11px;font-weight:700;color:#c04040;margin-bottom:8px">\u274c Sans horaire ('+audit.sansHoraire.length+')</div>'
+    +audit.sansHoraire.map(function(e){return empRow(e,"sansHoraire");}).join('')
+    +'</div>':'';
+  var sdSect=audit.sansDeparture.length?
+    '<div style="margin-bottom:16px">'
+    +'<div style="font-size:11px;font-weight:700;color:#4a72a8;margin-bottom:8px">\u2139\ufe0f Sans ligne de d\u00e9part ('+audit.sansDeparture.length+')</div>'
+    +'<div style="font-size:9px;color:#8a9a78;margin-bottom:8px">Ces employ\u00e9s n\'apparaissent pas dans les listes de d\u00e9part. V\u00e9rifier les \u00e9quipes.</div>'
+    +'<div style="font-size:9px;color:#6080a0">'+audit.sansDeparture.map(function(e){return esc(e.name)+' (\u00e9q.'+esc(e.team)+')';}).join(' \u00b7 ')+'</div>'
+    +'</div>':'';
+  var okBanner=totalProblems===0&&audit.sansDeparture.length===0?
+    '<div style="padding:14px;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.3);border-radius:8px;text-align:center;color:#3a8a50;font-weight:700;font-size:13px">\u2705 Tous les employ\u00e9s actifs ont un horaire et une ligne de d\u00e9part</div>':'';
+  var noImport=!audit.hasImport?
+    '<div style="padding:10px;background:rgba(100,100,100,.1);border-radius:6px;font-size:10px;color:#8a9a78;margin-bottom:12px">\u2139\ufe0f Aucun planning import\u00e9 pour ce mois \u2014 la section "Absents du PDF" ne s\'affiche que apr\u00e8s un import.</div>':'';
+  return '<div class="page">'
+    +'<div style="margin-bottom:16px"><div class="sec-title">\ud83d\udd0d Audit des effectifs</div>'
+    +'<div class="sec-sub">'+MFR[m]+' '+y+(totalProblems>0?' \u2014 <span style="color:#c9a227">'+totalProblems+' probl\u00e8me(s) d\u00e9tect\u00e9(s)</span>':' \u2014 <span style="color:#3a8a50">Aucun probl\u00e8me d\u00e9tect\u00e9</span>')+'</div></div>'
+    +noImport
+    +okBanner
+    +absSect+shSect+sdSect
+    +'<button class="btn ghost" onclick="sv(\'admin\')" style="margin-top:8px">Retour admin</button>'
+    +'</div>';
+}
+
 function cleanImportedEmps(){
   var defIds=DEF_EMP.map(function(e){return e.id;});
   var before=A.employees.length;
@@ -2875,7 +3004,8 @@ function doImport(){
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+e.message+'</div>';
   }
-  if(errLines.length>0) errLines.forEach(function(e){console.warn("Import:",e);});\n}
+  if(errLines.length>0) errLines.forEach(function(e){console.warn("Import:",e);});
+}
 
 // \u2500\u2500 MOTEUR DE V\u00c9RIFICATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function runVerification(year,month,refData){
