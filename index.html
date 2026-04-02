@@ -1552,7 +1552,12 @@ function vDeparts(){
     }
     var tcc=team.color||TC[tid]||"#888";
     var chefNames=CHEFS_T[tid]||[];
-    var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(function(e){return e&&isEmpActive(e,A.year,A.month);});
+    // Exclure du tableau de départ les employés sans aucun jour travaillé ce mois
+    // (ils apparaîtront dans la section "Absents tout le mois" en bas)
+    var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(function(e){
+      if(!e||!isEmpActive(e,A.year,A.month))return false;
+      return da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});
+    });
     if(!chefEmps.length)return;
     var sl=chefEmps.length;
     var SEQ=getSeqForSize(sl); // s\u00e9quence adapt\u00e9e au nombre de chefs
@@ -1609,30 +1614,41 @@ function vDeparts(){
     h+=`</tbody></table></div></div></div>`;
     if(openCITeam===tid) h+=renderCIPanel(tid);
   });
-  // Section "Absents tout le mois"
+  // Section "Absents tout le mois" — tous les employés actifs sans aucun jour travaillé
   var srcEmps=isAdm
     ?A.employees.filter(function(e){return isEmpActive(e,A.year,A.month);})
     :A.employees.filter(function(e){return e.team===myTeam&&isEmpActive(e,A.year,A.month);});
   var absToShow=[];
   srcEmps.forEach(function(emp){
     var ep=pl[emp.id]||{};
-    if(da.some(function(d){return isWork(ep[d]||'');})) return;
+    if(da.some(function(d){return isWork(ep[d]||'');})) return; // a des jours travaillés → pas ici
     var cnt={};
     da.forEach(function(d){var c=ep[d]||'';if(c&&c!=='R'&&c!=='RH'&&c!=='RRT')cnt[c]=(cnt[c]||0)+1;});
-    var dom=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0];
-    if(dom) absToShow.push({emp:emp,code:dom});
+    var dom=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0]||'R';
+    absToShow.push({emp:emp,code:dom});
+  });
+  // Trier : M en premier, puis AF, CP, R
+  var codeOrder={M:0,AF:1,CP:2,R:3};
+  absToShow.sort(function(a,b){
+    var oa=codeOrder[a.code]!==undefined?codeOrder[a.code]:9;
+    var ob=codeOrder[b.code]!==undefined?codeOrder[b.code]:9;
+    if(oa!==ob)return oa-ob;
+    return a.emp.name.localeCompare(b.emp.name);
   });
   if(absToShow.length){
-    var codeLabels={M:'\uD83C\uDFE5 Maladie',CP:'\uD83C\uDF34 Congé payé',AF:'\uD83D\uDCDA Formation'};
+    var codeLabels={M:'\uD83C\uDFE5 Maladie',CP:'\uD83C\uDF34 Congé',AF:'\uD83D\uDCDA Formation',R:'\uD83D\uDECC Repos tout le mois'};
     var grps={};
     absToShow.forEach(function(o){if(!grps[o.code])grps[o.code]=[];grps[o.code].push(o.emp);});
-    h+='<div style="margin-top:18px"><div style="font-size:9px;font-weight:800;color:#a87070;text-transform:uppercase;letter-spacing:2px;padding:4px 0 5px;border-bottom:1px solid rgba(168,70,70,.25)">Absents tout le mois</div>';
-    Object.keys(grps).sort().forEach(function(code){
+    h+='<div style="margin-top:18px"><div style="font-size:9px;font-weight:800;color:#a87070;text-transform:uppercase;letter-spacing:2px;padding:4px 0 5px;border-bottom:1px solid rgba(168,70,70,.25)">Absents tout le mois ('+absToShow.length+')</div>';
+    ['M','AF','CP','R'].forEach(function(code){
+      if(!grps[code]) return;
       var col=(CODES[code]||{c:'#a87070'}).c;
-      h+='<div style="margin-top:10px"><div style="font-size:10px;color:'+col+';font-weight:700;margin-bottom:6px">'+(codeLabels[code]||code)+'</div>';
+      h+='<div style="margin-top:10px"><div style="font-size:10px;color:'+col+';font-weight:700;margin-bottom:6px">'+(codeLabels[code]||code)+' ('+grps[code].length+')</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:5px">';
       grps[code].forEach(function(emp){
-        h+='<div style="background:rgba(168,70,70,.06);border:1px solid rgba(168,70,70,.18);border-radius:7px;padding:4px 9px;font-size:10px;color:#8a7878">'+esc(empLabel(emp))+'</div>';
+        var team=A.teams.find(function(t){return t.id===emp.team;});
+        var tname=team?(' \u00b7 '+team.name):'';
+        h+='<div style="background:rgba(168,70,70,.06);border:1px solid rgba(168,70,70,.18);border-radius:7px;padding:4px 9px;font-size:10px;color:#8a7878">'+esc(empLabel(emp))+'<span style="font-size:8px;color:#6a6060">'+esc(tname)+'</span></div>';
       });
       h+='</div></div>';
     });
