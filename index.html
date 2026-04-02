@@ -775,13 +775,14 @@ function forceRefresh(){
     A.employees=A.employees.filter(function(e){return _defIds2.indexOf(e.id)>=0;});
     if(_before2>A.employees.length){ls("cmc_e",A.employees);console.warn("Migration v"+DATA_VER+": "+(_before2-A.employees.length)+" employes importes supprimes, re-import necessaire");}
   }
-  // Auto-nettoyage : supprimer les employes importes si trop nombreux (évite freeze)
+  // Nettoyage systematique : supprimer TOUS les employes non-DEF_EMP (fantomes d'imports)
+  // Tous les employes sont dans DEF_EMP, il ne doit jamais y avoir d'employes importes
   var _defIds=DEF_EMP.map(function(e){return e.id;});
   var _importedCount=A.employees.filter(function(e){return _defIds.indexOf(e.id)<0;}).length;
-  if(_importedCount>500){
+  if(_importedCount>0){
     var _before=A.employees.length;
     A.employees=A.employees.filter(function(e){return _defIds.indexOf(e.id)>=0;});
-    console.warn("Auto-nettoyage: "+(_before-A.employees.length)+" employes importes supprimes au demarrage");
+    console.warn("Nettoyage: "+(_before-A.employees.length)+" employes fantomes supprimes");
     ls("cmc_e",A.employees);
   }
 }());
@@ -1499,10 +1500,12 @@ function vDeparts(){
   var todN=new Date(),todD=(todN.getFullYear()===A.year&&todN.getMonth()===A.month)?todN.getDate():0;
   var h='<div class="page">';
   if(!hasImportedData(A.year,A.month)){
-    h+='<div style="margin-bottom:12px;padding:12px 14px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:10px;text-align:center">'
-      +'<div style="font-size:13px;color:#c9a227;font-weight:700;margin-bottom:3px">&#128203; Aucun planning importé</div>'
-      +'<div style="font-size:10px;color:#7aaa80">Les ordres de départ ne sont disponibles qu\'après import du planning.</div>'
-      +'</div>';
+    h+='<div style="padding:32px 24px;text-align:center;color:#7aaa80">'
+      +'<div style="font-size:40px;margin-bottom:12px">&#128203;</div>'
+      +'<div style="font-size:14px;font-weight:700;color:#c9a227;margin-bottom:6px">Aucun planning import\u00e9</div>'
+      +'<div style="font-size:11px">Importez le PDF du planning pour afficher les ordres de d\u00e9part.</div>'
+      +'</div></div>';
+    return h;
   }
   // Bandeau "Aujourd'hui" si mois courant
   if(todD&&myTeam){
@@ -2014,6 +2017,8 @@ function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
   var key=""+A.year+"-"+A.month;
   delete A.overrides[key];ls("cmc_ov",A.overrides);
+  localStorage.removeItem("cmc_ref_"+key);
+  localStorage.removeItem("cmc_verif_"+key);
   toast("Planning du mois r\u00e9initialis\u00e9");dc();
 }
 function reloadSeed(){
@@ -2752,14 +2757,16 @@ function doImport(){
     eName=(eName||"").replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
     if(!eName||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(eName))return null;
     var _fe=A.employees.find(function(x){return x.name===eName;});
-    if(!_fe){var _neN=eName.normalize("NFD").replace(/[\u0300-\u036f]/g,"");_fe=A.employees.find(function(x){return x.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"")===_neN;});}
     if(!_fe){
-      if(A.employees.filter(function(x){return x._imported;}).length>=500){err++;errLines.push("Limite 500 employes atteinte");return null;}
-      var _fdt=detectTeamFromRow(codesForTeam||[],iy,im,fDay2||1,contextTid||_contextTeam);
-      var _fid="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
-      _fe={id:_fid,name:eName,team:_fdt||"1",post:ePost||"",chef:!!eIsChef,family:eFamily||importFamily,cdpShifts:[],_imported:true};
-      A.employees.push(_fe);ls("cmc_e",A.employees);
-      errLines.push("Nouveau: "+eName+", eq."+_fe.team);
+      // Matching normalise : accents, traits d'union, apostrophes, espaces multiples
+      function _nImp(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();}
+      var _neN=_nImp(eName);
+      _fe=A.employees.find(function(x){return _nImp(x.name)===_neN;});
+    }
+    if(!_fe){
+      // Employe introuvable : NE PAS creer de fantome — tous les employes sont dans DEF_EMP
+      err++;errLines.push("INTROUVABLE (skipped): "+eName);
+      return null;
     } else {
       // Mettre a jour le contexte d'equipe depuis les employes DEF_EMP reconnus
       if(DEF_EMP.some(function(d){return d.id===_fe.id;})) _contextTeam=_fe.team;
@@ -2952,18 +2959,16 @@ function doImport(){
     // Validation stricte : NOM(s) INITIALE(S) — initiale 1-2 lettres max (ex: B, JE, PH), rejette acronymes CMC/RH
     if(!name||!/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/.test(name)) continue;
     var emp=A.employees.find(function(e){return e.name===name;});
-    if(!emp){var _impNn=name.normalize("NFD").replace(/[\u0300-\u036f]/g,"");emp=A.employees.find(function(e){return e.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"")===_impNn;});}
-    var _newEmpCount=A.employees.filter(function(e){return e._imported;}).length;
     if(!emp){
-      if(_newEmpCount>=500){err++;errLines.push("Limite employes atteinte — verifier le format");continue;}
-      // Passer le contexte d'equipe pour departager les miroirs (1↔4, 2↔5)
-      var detectedTeam=detectTeamFromRow(parts.slice(codesStart),iy,im,fromDay,_contextTeam);
-      var newId="U"+String(Date.now()+Math.floor(Math.random()*1000)).slice(-5);
-      var newFamily=isRouletteChef?"roulettes":importFamily;
-      emp={id:newId,name:name,team:detectedTeam||"1",post:nameIdx===1?p0raw:"",chef:isRouletteChef,family:newFamily,cdpShifts:[],_imported:true};
-      A.employees.push(emp);
-      ls("cmc_e",A.employees);
-      errLines.push("Nouveau: "+name+(isRouletteChef?" ★":"")+", eq."+emp.team);
+      // Matching normalise : accents, traits d'union, apostrophes, espaces
+      function _nImpL(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();}
+      var _impNL=_nImpL(name);
+      emp=A.employees.find(function(e){return _nImpL(e.name)===_impNL;});
+    }
+    if(!emp){
+      // Employe introuvable : NE PAS creer de fantome — tous les employes sont dans DEF_EMP
+      err++;errLines.push("INTROUVABLE (skipped): "+name);
+      continue;
     } else {
       // Mettre a jour le contexte d'equipe depuis les employes DEF_EMP reconnus
       if(DEF_EMP.some(function(d){return d.id===emp.id;})) _contextTeam=emp.team;
@@ -3024,13 +3029,22 @@ function doImport(){
   var verifTxt=verif.errors.length>0
     ?" \u26a0\ufe0f "+verif.errors.length+" ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide"
     :" \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent";
-  var errPart=err?" \u00b7 <span style='color:#c9a227'>"+err+" ignor\u00e9e(s)</span>":"";
+  var errPart=err?" \u00b7 <span style='color:#c9a227'>"+err+" employ\u00e9(s) introuvable(s)</span>":"";
+  // Afficher les noms introuvables
+  var notFoundNames=errLines.filter(function(l){return l.indexOf("INTROUVABLE")===0;}).map(function(l){return l.replace("INTROUVABLE (skipped): ","");});
   var verifCol=verif.errors.length?"#c9a227":"#3a8a50";
   var errMsgs=verif.errors.length?verif.errors.slice(0,3).map(function(e){return e.msg;}).join(" \u00b7 "):"";
   var plusMore=verif.errors.length>3?" (+"+(verif.errors.length-3)+" autres)":"";
   var errDiv=verif.errors.length?'<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: '+errMsgs+plusMore+'</div>':"";
   if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+' \u2192 '+MFR[im]+' '+iy+'</div>'+
     '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv;
+  // --- Employes introuvables lors de l'import (nom non reconnu) ---
+  if(notFoundNames&&notFoundNames.length>0&&r){
+    r.innerHTML+='<div style="margin-top:8px;padding:6px 8px;background:rgba(180,60,0,.15);border-left:3px solid #c07030;font-size:9px">'
+      +'<b style="color:#c07030">\u26a0\ufe0f '+notFoundNames.length+' nom(s) non reconnu(s) dans le PDF — employes ignor\u00e9s : </b>'
+      +'<div style="margin-top:3px;color:#d09060">'+notFoundNames.map(function(n){return esc(n);}).join(', ')+'</div>'
+      +'<div style="margin-top:3px;color:#a08050;font-style:italic">Ces noms ne correspondent \u00e0 aucun employ\u00e9. V\u00e9rifiez l\u0027orthographe dans DEF_EMP.</div></div>';
+  }
   // --- Rapport employ\u00e9s absents du PDF ---
   if(verif.absentDuPDF&&verif.absentDuPDF.length>0&&r){
     var absList=verif.absentDuPDF.map(function(e){return esc(e.name);}).join(', ');
