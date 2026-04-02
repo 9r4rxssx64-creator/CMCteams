@@ -2841,6 +2841,29 @@ function doImport(){
   var errDiv=verif.errors.length?'<div style="margin-top:4px;font-size:9px;color:#c9a227">Erreurs: '+errMsgs+plusMore+'</div>':"";
   if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+' \u2192 '+MFR[im]+' '+iy+'</div>'+
     '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv;
+  // --- Rapport employ\u00e9s absents du PDF ---
+  if(verif.absentDuPDF&&verif.absentDuPDF.length>0&&r){
+    var absList=verif.absentDuPDF.map(function(e){return esc(e.name);}).join(', ');
+    r.innerHTML+='<div style="margin-top:8px;padding:6px 8px;background:rgba(180,120,0,.15);border-left:3px solid #c9a227;font-size:9px">'
+      +'<b style="color:#c9a227">\u26a0\ufe0f '+verif.absentDuPDF.length+' employ\u00e9(s) absents du PDF \u2014 horaire conserv\u00e9 depuis le planning pr\u00e9c\u00e9dent :</b>'
+      +'<div style="margin-top:3px;color:#d4c080;line-height:1.5">'+absList+'</div>'
+      +'<div style="margin-top:3px;color:#a09060;font-style:italic">Si un employ\u00e9 a quitt\u00e9 les effectifs, supprimez-le depuis la gestion employ\u00e9s.</div>'
+      +'</div>';
+  }
+  // --- Employ\u00e9s sans horaire (probl\u00e8me critique) ---
+  if(verif.sansHoraire&&verif.sansHoraire.length>0&&r){
+    var shList=verif.sansHoraire.map(function(e){return esc(e.name);}).join(', ');
+    r.innerHTML+='<div style="margin-top:6px;padding:6px 8px;background:rgba(180,40,40,.15);border-left:3px solid #c04040;font-size:9px">'
+      +'<b style="color:#c04040">\u274c '+verif.sansHoraire.length+' employ\u00e9(s) SANS HORAIRE : </b>'
+      +'<span style="color:#d08080">'+shList+'</span></div>';
+  }
+  // --- Employ\u00e9s sans ligne de d\u00e9part ---
+  if(verif.sansDeparture&&verif.sansDeparture.length>0&&r){
+    var sdList=verif.sansDeparture.map(function(e){return esc(e.name);}).join(', ');
+    r.innerHTML+='<div style="margin-top:6px;padding:6px 8px;background:rgba(60,80,160,.15);border-left:3px solid #4a72a8;font-size:9px">'
+      +'<b style="color:#4a72a8">\u2139\ufe0f '+verif.sansDeparture.length+' employ\u00e9(s) sans ligne de d\u00e9part : </b>'
+      +'<span style="color:#8090c0">'+sdList+'</span></div>';
+  }
   // Resynchroniser les equipes apres import
   var syncRes=syncChefsT();
   var syncAll=[].concat(syncRes.added,syncRes.removed,syncRes.moved);
@@ -2852,18 +2875,19 @@ function doImport(){
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+e.message+'</div>';
   }
-  if(errLines.length>0) errLines.forEach(function(e){console.warn("Import:",e);});
-}
+  if(errLines.length>0) errLines.forEach(function(e){console.warn("Import:",e);});\n}
 
 // \u2500\u2500 MOTEUR DE V\u00c9RIFICATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function runVerification(year,month,refData){
   var pl=gpl(); // planning tel qu'affich\u00e9 dans l'app
   var ref=refData||lg("cmc_ref_"+year+"-"+month,null);
-  var result={year:year,month:month,errors:[],warnings:[],ok:[],checkedAt:Date.now()};
+  var result={year:year,month:month,errors:[],warnings:[],ok:[],
+    absentDuPDF:[],sansHoraire:[],sansDeparture:[],checkedAt:Date.now()};
   if(!ref||!ref.rows){result.warnings.push({msg:"Aucune r\u00e9f\u00e9rence d'import pour ce mois"});return result;}
   var days=getDays(year,month);
-  // Pour chaque employ\u00e9 dans la r\u00e9f\u00e9rence
-  Object.keys(ref.rows).forEach(function(empId){
+  var importedIds=new Set(Object.keys(ref.rows));
+  // --- 1. V\u00e9rifier la correspondance planning \u2194 r\u00e9f\u00e9rence PDF ---
+  importedIds.forEach(function(empId){
     var emp=A.employees.find(function(e){return e.id===empId;});
     if(!emp){result.warnings.push({msg:"Employ\u00e9 "+empId+" introuvable dans la liste"});return;}
     var refRow=ref.rows[empId];
@@ -2881,18 +2905,25 @@ function runVerification(year,month,refData){
         result.ok.push({empId:empId,day:d,code:refCode});
       }
     });
-    // V\u00e9rifier les jours du planning non couverts par la r\u00e9f\u00e9rence
-    Object.keys(plRow).forEach(function(d){
-      if(!refRow[d]&&plRow[d]&&plRow[d]!=="RH"&&plRow[d]!=="R"){
-        // Jour travaill\u00e9 dans le planning mais absent de la r\u00e9f\u00e9rence
-        // C'est normal si la r\u00e9f\u00e9rence ne couvre pas tous les jours
-      }
-    });
+  });
+  // --- 2. V\u00e9rifier que tous les employ\u00e9s actifs DEF_EMP ont horaire + ligne d\u00e9part ---
+  var allDepartureNames=new Set();
+  Object.keys(CHEFS_T).forEach(function(tid){(CHEFS_T[tid]||[]).forEach(function(n){allDepartureNames.add(n);});});
+  var defIds=new Set(DEF_EMP.map(function(e){return e.id;}));
+  A.employees.filter(function(emp){return isEmpActive(emp,year,month)&&defIds.has(emp.id);}).forEach(function(emp){
+    if(!importedIds.has(emp.id)) result.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team});
+    var plRow=pl[emp.id]||{};
+    var hasDays=Object.keys(plRow).some(function(d){return !!plRow[d];});
+    if(!hasDays) result.sansHoraire.push({id:emp.id,name:emp.name,team:emp.team});
+    if(!allDepartureNames.has(emp.name)) result.sansDeparture.push({id:emp.id,name:emp.name,team:emp.team});
   });
   result.summary={
     total:result.ok.length+result.errors.length,
     correct:result.ok.length,
     errors:result.errors.length,
+    absentDuPDF:result.absentDuPDF.length,
+    sansHoraire:result.sansHoraire.length,
+    sansDeparture:result.sansDeparture.length,
     coverage:Math.round(result.ok.length/(result.ok.length+result.errors.length+.001)*100)
   };
   return result;
