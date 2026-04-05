@@ -7,7 +7,7 @@
 
 | Paramètre | Valeur |
 |-----------|--------|
-| **Version** | `APP_VER = "v8.61"` |
+| **Version** | `APP_VER = "v8.63"` |
 | **DATA_VER** | `29` |
 | **Fichier** | `index.html` (~360 KB, tout-en-un HTML+CSS+JS) |
 | **Déployé** | GitHub Pages (branche `main` → déploiement automatique) |
