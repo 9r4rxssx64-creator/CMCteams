@@ -1,188 +1,243 @@
-# Document Relais — CMCteams v8.15
-*Dernière mise à jour : 2 avril 2026*
+# Document Relais — CMCteams
+*Dernière mise à jour : 5 avril 2026 — Version v8.61*
 
 ---
 
 ## État actuel de l'application
 
-- **Version** : `APP_VER = "v8.15"`, `DATA_VER = 22`
-- **Fichier principal** : `index.html` (~290 KB, tout-en-un HTML+CSS+JS)
-- **Déployé sur** : GitHub Pages (branche `main` → déploiement automatique)
-- **258 employés** : BJ (équipes 1–10), Roulette (r1–r13), CMC (c1–c13)
+| Paramètre | Valeur |
+|-----------|--------|
+| **Version** | `APP_VER = "v8.61"` |
+| **DATA_VER** | `29` |
+| **Fichier** | `index.html` (~360 KB, tout-en-un HTML+CSS+JS) |
+| **Déployé** | GitHub Pages (branche `main` → déploiement automatique) |
+| **Employés** | ~258 (BJ équipes 1–10, Roulettes r1–r13, CMC c1–c13) |
+| **JS syntax** | ✅ validé par `node --check` |
 
 ---
 
-## Ce qui a été fait dans ces sessions
+## Fonctionnalités disponibles (audit complet)
 
-### ✅ Corrections de plannings
-- **ARCURI F (U00030)** : planifiée à partir du 17 avril avec sa rotation exacte
-  `j17=20/5, j18=19/4, j19=16/22, j20=14/19, j21=RH, j22=R, j23=22/6, j24=19/4, j25=16/3, j26=14/19, j27=RH, j28=R, j29=20/5, j30=19/4`
-- **LEMONNIER PH** : retiré de la ligne de départ équipe 5 → apparaît dans "Absents tout le mois"
-- SEED Avril 2026 complété : 258 × 30 jours, aucune cellule vide, tous codes valides
+### Vues accessibles à tous les employés
+| Vue | Fonction | Description |
+|-----|----------|-------------|
+| Planning | `vPlan()` | Grille mensuelle 30 jours, navigation mois/année, légende |
+| Départs | `vDeparts()` | Tableaux de départ par équipe, section "Absents tout le mois" |
+| Absences | `vAbsences()` | Suivi congés / maladies / formations |
+| Chat | `vChat()` | Messagerie d'équipe avec badge nouvelles messages |
+| Aide IA | `vIA()` | Chatbot assistant (répond en français) |
+| Accueil | `vAccueil()` | Page d'accueil après connexion |
 
-### ✅ Bug critique corrigé — doImport() (v8.14)
-**Problème** : `A.overrides[key] = {}` à la ligne 2519 effaçait TOUT le SEED quand on importait un PDF.  
-**Fix** : Pour Avril 2026, l'import part maintenant du SEED complet, puis écrase uniquement les employés présents dans le PDF. Les absents du PDF conservent leur horaire seed (M, AF, CP, etc.).
+### Vues admin uniquement
+| Vue | Fonction | Description |
+|-----|----------|-------------|
+| Admin | `vAdmin()` | Dashboard avec accès à toutes les fonctions admin |
+| Statistiques | `vStats()` | Stats par équipe/employé avec navigation multi-mois |
+| Équipes | `vTeams()` | Gestion chefs d'équipe et ordres de départ |
+| Employés | `vEmps()` | CRUD employés |
+| Import | `vImport()` | Import planning PDF (drag & drop, conversion automatique) |
+| Vérification import | `vImportVerif()` | Vérification employé par employé après import |
+| Audit | `vAudit()` | Vérification complète des effectifs + détection anomalies |
+| Journal audit | `vAuditLog()` | Journal des modifications manuelles admin |
+| Gestion mois | `vMoisStockes()` | Gestion des mois stockés en localStorage |
 
+---
+
+## Historique complet des versions
+
+### v8.10 à v8.15 (sessions précédentes)
+| Version | DATA_VER | Changements |
+|---------|----------|-------------|
+| v8.10 | 19 | ARCURI F : planning exact depuis j17 avril |
+| v8.11 | 20 | LEMONNIER PH → section Absents tout le mois |
+| v8.12 | 21 | 44 employés incomplets complétés (258 × 30 jours) |
+| v8.13 | 21 | DEF_CHEFS_T roulette : tous membres ajoutés (41 employés) |
+| v8.14 | 22 | **doImport() corrigé** : plus d'écrasement du SEED lors de l'import |
+| v8.15 | 22 | Section "Absents tout le mois" avec tri M→AF→CP→R |
+
+### v8.27 à v8.30 (session sécurité)
+| Version | Changements |
+|---------|-------------|
+| v8.27 | `esc()` XSS complet, suppression mots de passe en clair, `gpl()` import partiel, `hardReset` avec backup |
+| v8.28 | Export CSV planning, rate-limiting PIN, session 8h auto-expiry, alerte quota localStorage |
+| v8.29 | Gestion multi-mois localStorage, jauge stockage, journal d'audit modifications, `vStats` refait |
+| v8.30 | LEMONNIER PH retiré équipe 5 (`toMo:1`), profils EP équipe 5 synchronisés (`i=2`), SEED protégé contre écrasement imports |
+
+### v8.50 à v8.61 (session import PDF + vérification)
+| Version | Changements |
+|---------|-------------|
+| v8.50–v8.55 | Amélioration parser CSV/texte : détection double-shift, consensus équipe, fill automatique |
+| v8.56 | **Bug** : `hasDoubleShift()` manquait COURTIN F (consensus de 2 sources identiques) |
+| v8.57 | `hasDoubleShift()` basé sur pattern (2 codes identiques consécutifs non-personnels), indépendant du consensus |
+| v8.58 | Repair pass : employees avec < 5 codes remplis depuis consensus équipe ou équipe miroir |
+| v8.59 | Condition repair pass corrigée : `< days` au lieu de `> 0` |
+| v8.60 | Parser CSV structuré : auto-détection lignes 32+ colonnes → parsing colonne-par-colonne |
+| v8.61 | **PDF.js CDN** : import PDF direct sans copier-coller + `vImportVerif()` vérification employé par employé |
+
+---
+
+## Ce qui a fonctionné ✅
+
+### Import et parsing
+- **Parser texte multi-passes** : détection nom employé, codes shifts, jours de repos
+- **`hasDoubleShift(empId)`** : détection fiable des outliers (2 codes identiques consécutifs = données corrompues)
+- **Consensus équipe** : remplissage des employés manquants depuis la majorité de l'équipe
+- **Repair pass** : deuxième passe pour les employés avec < 30 codes (partiel)
+- **Équipe miroir fallback** : LANTERI E (r6 seul) rempli depuis r13
+- **Parser CSV 32+ colonnes** : auto-détection et parsing colonne-par-colonne
+- **PDF.js direct** : extraction PDF dans le navigateur, 0 copier-coller
+
+### Sécurité
+- **`esc()`** : protection XSS sur tous les innerHTML avec données utilisateur
+- **Suppression mots de passe en clair** : stockage hashé uniquement
+- **Session TTL 8h** : déconnexion automatique après inactivité
+- **Rate-limiting PIN** : verrouillage progressif [30s, 2min, 10min, 1h, 24h]
+
+### Données
+- **SEED Avril 2026** : 258 employés × 30 jours, protégé contre écrasement par import réel
+- **`toMo`** : désactivation employé à partir d'un mois (LEMONNIER PH)
+- **Journal d'audit** : trace toutes modifications manuelles admin (max 500 entrées)
+- **Export CSV** : planning exportable depuis la vue admin
+
+### UI
+- **Drag & drop PDF** : zone de dépôt visible dans la vue import
+- **`vImportVerif()`** : grille 30 jours par employé avec code-couleur + clic pour corriger
+- **`vStats`** : navigation multi-mois, groupes par équipe
+- **`hardReset`** : télécharge backup JSON avant nettoyage localStorage
+
+---
+
+## Ce qui n'a pas fonctionné / Problèmes rencontrés ❌
+
+### Parser PDF texte (v8.50–v8.55)
+- **Problème** : Le texte copié-collé depuis iOS donnait des formats ambigus (espaces insécables, lignes fusionnées)
+- **Résolution** : PDF.js en v8.61 évite entièrement le copier-coller
+
+### Détection outliers (v8.56)
+- **Problème** : `hasDoubleShift()` basé sur consensus échouait si consensus = 2 sources (COURTIN F avait agreement 100% sur j1 avec CLAVE C)
+- **Résolution** : Réécriture en pattern-based (v8.57) — détecte `14/19 14/19`, `RH RH`, `16/22 16/22` directement
+
+### Repair pass (v8.58→v8.59)
+- **Problème** : Condition `> 0` excluait les employés avec 1–4 codes (partiel) du repair pass
+- **Résolution** : Changé en `>= days` (skip si déjà complet)
+
+### Edits Python nécessaires
+- Plusieurs `Edit` tool ont échoué sur `index.html` en raison de séquences Unicode échappées (`\u00e9` vs `é`) dans le fichier
+- **Résolution** : Utilisation de `python3 -c` pour les remplacements complexes (lecture UTF-8, substitution string, réécriture)
+
+### Fonctions orphelines découvertes (nettoyage v8.62)
+- `setChef()`, `addChef()`, `removeChef()` : définies mais jamais appelées (remplacées par `pickChef()`)
+- `parseCMCPlanningFromRows()` : wrapper de compatibilité non référencé
+- `detectMonthFromName()`, `detectTeamFromRow()` : helpers de parsing ancien non appelés
+- `repairBJSchedules()` : ancienne fonction de réparation pré-`hasDoubleShift`, non appelée
+- `splitTwoEmpLines()` : appelée comme IIFE dans `doImport`, donc **à garder**
+
+---
+
+## Architecture technique clé
+
+### Pattern SPA monofichier
+```
+index.html
+├── <style>      ~9 KB CSS embarqué
+├── <body>
+│   ├── #app     point de montage principal
+│   ├── #toast   notifications
+│   ├── #pk      overlay sélection
+│   └── #ov      overlay modal
+└── <script>     ~350 KB JS vanilla
+```
+
+### Objet d'état global `A`
 ```javascript
-// AVANT (bugué) :
-A.overrides[key] = {};
-
-// APRÈS (corrigé) :
-if(key === "2026-3" && typeof SEED_APR2026 !== "undefined") {
-    A.overrides[key] = JSON.parse(JSON.stringify(SEED_APR2026));
-} else {
-    if(!A.overrides[key]) A.overrides[key] = {};
-}
+var A = {
+  user: null,          // employé connecté
+  view: "planning",    // vue courante
+  year: 2026,
+  month: 3,            // 1-indexé (avril = 3 dans le système interne)
+  employees: [...],    // 258 employés
+  teams: [...],
+  overrides: {},       // "2026-3" → {eid → {jour → code}}
+  passwords: {},       // mots de passe hashés
+  showLeg: false,
+  chatMsgs: [...]
+};
 ```
 
-### ✅ Nettoyage des employés fantômes (v8.14)
-- `DATA_VER` passé de 21 à 22 → migration forcée au premier chargement
-- La migration supprime les employés `_imported` créés par les anciens imports ratés
-
-### ✅ Section "Absents tout le mois" (v8.15)
-- Les employés sans aucun jour travaillé **ne s'affichent plus** dans leurs tableaux de départ
-- Ils apparaissent uniquement dans la section "Absents tout le mois" triée par :
-  - 🏥 Maladie (M) : LEMONNIER PH, SIRIO S
-  - 📚 Formation (AF) : BONO F, CATTALANO C, GARINO Y, KOVACS V
-  - 🌴 Congé (CP) : DESSI P, ELIODORI V, MARIANI M, PEREIRA MACENA F, RICORDO B
-  - 🛌 Repos tout le mois : BONO V
-
-### ✅ Audit post-import automatique (v8.14)
-Après chaque import PDF, l'app affiche :
-- 🟡 Employés absents du PDF (liste avec leur planning conservé)
-- 🔴 Employés sans aucun horaire (erreur critique)
-- 🔵 Employés sans ligne de départ
-
-### ✅ Écran Audit autonome (v8.14)
-Admin → 🔍 Audit : vérification complète à tout moment sans import.
-- Détection de noms similaires dans le PDF (algo bigrams)
-- Bouton "Supprimer" par employé
-
-### ✅ Lignes de départ roulette complètes (v8.13)
-DEF_CHEFS_T completé avec TOUS les membres des équipes (avant : seuls les chefs étaient listés).
-
----
-
-## Audit de l'état actuel (vérifié ce jour)
-
-### Données de base
-| Contrôle | Résultat |
-|----------|---------|
-| DEF_EMP | 258 employés |
-| SEED Avril 2026 | 258 × 30 jours, 0 vide, 0 code invalide |
-| Tous les 258 ont une entrée SEED | ✅ |
-| Tous ont une ligne de départ (DEF_CHEFS_T) | 257/258 — LEMONNIER PH intentionnellement absent (→ section Absents) |
-| Noms fantômes dans DEF_CHEFS_T | 0 ✅ |
-| Cohérence équipe DEF_EMP ↔ DEF_CHEFS_T | ✅ Toutes équipes correctes |
-
-### ⚠️ PROBLÈME EN SUSPENS — Jours de repos BJ incohérents
-
-**Cause** : Lors d'une session précédente, 44 employés avec plannings incomplets ont été complétés algorithmiquement avec de **mauvais templates**. Les jours de repos de ~45 employés BJ ne correspondent pas au pattern de leur équipe.
-
-**Équipes affectées** :
-| Équipe | Pattern correct | Employés incorrects |
-|--------|----------------|---------------------|
-| 1 | repos j5,6,11,12,17,18,23,24,29,30 | ESPAGNOL S, TOMATIS P, SIRIO J, GALLIS F, CIOCO S |
-| 2 | repos j3,4,9,10,15,16,21,22,27,28 | BRASSEUR F (1 jour manquant) |
-| 3 | repos j1,2,7,8,13,14,19,20,25,26 | BELTRANDI N, SOSSO G, AGLIARDI M, COSTE W, EL MISSOURI O |
-| 6 | repos j5,6,11,12,17,18,23,24,29,30 | VERZELLO O, CAISSON JC |
-| 7 | repos j3,4,9,10,15,16,21,22,27,28 | NIGIONI J, GALLIS J, FARRUGIA VALERI S, MALGHERINI T |
-| 8 | repos j1,2,7,8,13,14,19,20,25,26 | MAGAGNIN J, PETIT T, COURTIN F, CLAVE C, NICASTRO M, BONETTI P, CAMPI PH, COTTALORDA D |
-| 9 | repos j2,3,8,9,14,15,20,21,26,27 | PASTOR P, BERNARDI JE |
-| 10 | repos j4,5,10,11,16,17,22,23,28,29 | PASSERON G, ROSSI J |
-
-**Équipes correctes** : 4, 5 (peu de données) ; 6 (3/5) ; 9 (3/5) ; 10 (3/5)
-
----
-
-## 🎯 Par où commencer la prochaine fois
-
-### Étape 1 — PRIORITÉ ABSOLUE : Réimporter le planning Avril V2
-
-C'est la **seule solution fiable** pour corriger les jours de repos erronés.
-
-1. Ouvrir l'app → Admin → Import planning
-2. Coller le texte copié du PDF Avril V2
-3. L'import corrigera automatiquement les plannings des employés trouvés dans le PDF
-4. Vérifier le rapport d'import :
-   - ✅ Employés importés avec bon planning
-   - 🟡 Employés absents du PDF (conservent leur planning seed)
-5. Aller dans Admin → 🔍 Audit pour voir ce qui reste à corriger
-
-### Étape 2 — Vérifier les employés absents du PDF
-
-Après import, l'audit listera les employés non trouvés dans le PDF. Pour chacun :
-- S'il est malade/formation/congé → son horaire M/AF/CP dans le seed est déjà correct ✅
-- S'il devrait être dans le PDF mais n'y est pas → vérifier l'orthographe du nom dans le PDF
-
-### Étape 3 — Valider visuellement
-
-Ouvrir la vue Planning → chaque équipe BJ doit avoir des colonnes de repos identiques pour tous ses membres.
-
----
-
-## Structure technique clé
-
-### Fichiers
-```
-index.html          # L'APPLICATION ENTIÈRE (~290 KB)
-CLAUDE.md           # Instructions pour l'IA
-RELAIS.md           # CE DOCUMENT
-.github/workflows/deploy.yml  # Deploy auto sur GitHub Pages
-```
-
-### Variables globales importantes
+### Constantes critiques
 ```javascript
-var AID      = "U11804";   // Admin : DESARZENS K
-var DATA_VER = 22;         // Version schema localStorage
-var APP_VER  = "v8.15";    // Version affichée
-var MFR      = [...]        // Noms des mois en français (1-indexé)
+var AID      = "U11804";   // Admin = DESARZENS K (équipe 5)
+var DATA_VER = 29;         // Incrémenter + migration si schéma change
+var APP_VER  = "v8.61";    // Affiché dans l'UI
 ```
 
 ### Clés localStorage
 | Clé | Contenu |
 |-----|---------|
-| `cmc_e` | Tableau des employés |
-| `cmc_t` | Tableau des équipes |
-| `cmc_ov` | Overrides planning (SEED + imports) |
+| `cmc_e` | Tableau employés |
+| `cmc_t` | Tableau équipes |
+| `cmc_ov` | Overrides planning |
 | `cmc_pw` | Mots de passe hashés |
-| `cmc_chefs_t` | Ordre de départ par équipe |
-| `cmc_ref_YYYY-M` | Référence brute du dernier import |
-| `cmc_dver` | Version schema stockée |
+| `cmc_chat` | Messages chat |
+| `cmc_chef_eq` | Map chefs d'équipe |
+| `cmc_chefs_t` | Chefs par tour (ordre départ) |
+| `cmc_admin_pin` | Hash PIN admin |
+| `cmc_lastread` | Timestamp dernier message chat lu |
+| `cmc_ref_YYYY-M` | Référence import PDF du mois |
+| `cmc_audit` | Journal modifications admin (max 500) |
+| `cmc_pin_fails` | Compteur échecs PIN `{count, until}` |
+| `cmc_lastact` | Timestamp dernière activité (session TTL) |
+| `cmc_uid` | ID employé connecté (persiste entre rechargements) |
+| `cmc_dver` | Version schéma stockée |
 
 ### Fonctions critiques
 ```javascript
-// Planning (lecture)
-gpl()                    // Retourne le planning courant (overrides + genBase fallback)
-genBase(y, m)            // Génère planning théorique via EP + REPOS
-SEED_APR2026             // Planning Avril 2026 complet (258 emp × 30 jours)
+// Rendu
+render()           // Re-rend tout #app
+dc()               // Re-rend seulement #content (plus rapide)
+sv(view)           // Changer de vue + dc()
+
+// Planning
+gpl()              // Planning courant (overrides + genBase fallback)
+genBase(y, m)      // Planning théorique via EP + REPOS
+moOff(y, m)        // Offset mois depuis mars 2026
+cumWorkDays(t, mo) // Jours ouvrés cumulés pour une équipe
+isEmpActive(e,y,m) // Filtre employés actifs (toMo)
 
 // Import
-doImport()               // Import PDF texte copié-collé
-doImportJSON()           // Import JSON (merge, pas d'écrasement)
-runVerification(y, m, ref)  // Vérifie planning vs référence PDF + audit complet
+doImport()                  // Parse texte/CSV/PDF converti, remplit overrides
+handleFileImport(input)     // Détecte PDF→PDF.js, CSV→doImport direct
+_extractPdfLines(file, cb)  // Extraction PDF via PDF.js (Y-grouping)
+hasDoubleShift(empId)       // Détecte outlier (2 codes identiques consécutifs)
+runVerification(y,m,ref)    // Compare planning vs référence PDF
 
-// Audit
-runAudit(y, m)           // Vérification autonome complète
-vAudit()                 // Vue interface de l'audit
+// Sécurité
+esc(s)             // Échappe HTML (anti-XSS) — TOUJOURS utiliser avant innerHTML
+hashPw(pw)         // Hash simple (non cryptographique, OK intranet)
+touchSession()     // Renouvelle TTL session
 
-// Départs
-vDeparts()               // Vue départs avec section "Absents tout le mois"
-syncChefsT()             // Synchronise CHEFS_T depuis DEF_CHEFS_T
+// Stockage
+lg(key, fallback)  // localStorage.getItem + JSON.parse
+ls(key, value)     // localStorage.setItem + JSON.stringify
+saveOv()           // Sauvegarde overrides + trace audit
 
-// Migration
-migrateEmployees()        // Appelée au démarrage, force reset si DATA_VER change
+// Admin
+hardReset()        // Backup JSON + nettoyage complet localStorage
+runAudit(y, m)     // Vérification complète effectifs
 ```
 
-### Structure de l'override SEED (A.overrides["2026-3"])
-```javascript
-{
-  "U00001": { 1: "19/4", 2: "16/22", 3: "14/19", 4: "22/6", 5: "RH", 6: "R", ... },
-  "U00002": { ... },
-  // 258 entrées × 30 jours chacune
-}
-```
+---
+
+## Taille des blocs de code
+
+| Bloc | Taille approx. |
+|------|---------------|
+| `SEED_APR2026` | ~76 KB (258 emp × 30 jours) |
+| `DEF_EMP` | ~27 KB (258 employés) |
+| `EP` (profils shift) | ~6 KB |
+| `DEF_CHEFS_T` | ~3 KB |
+| CSS | ~9 KB |
+| **Total** | **~360 KB** |
 
 ---
 
@@ -196,63 +251,93 @@ migrateEmployees()        // Appelée au démarrage, force reset si DATA_VER cha
 | `14/19` | 14h–19h |
 | `20/5` | 20h–5h |
 | `16/22` | 16h–22h |
-| `RH` | Repos hebdomadaire (1er jour du bloc) |
-| `R` | Repos (2e jour du bloc) |
-| `RRT` | Récupération/repos |
+| `RH` | Repos hebdomadaire (1er jour) |
+| `R` | Repos (2e jour) |
+| `RRT` | Récupération |
 | `CP` | Congé payé |
 | `M` | Maladie |
 | `AF` | Formation |
 
-Codes CDP (départ prioritaire) : suffixe `*` → ex. `20/5*`
+Codes CDP : suffixe `*` → `20/5*`, `16/3*`, etc.
 
 ---
 
 ## Patterns de repos par équipe BJ (Avril 2026)
 
-Les jours de repos doivent être identiques pour tous les membres d'une même équipe :
-
-| Équipe | Jours de repos en avril |
-|--------|------------------------|
-| 1 et 6 | 5, 6, 11, 12, 17, 18, 23, 24, 29, 30 |
-| 2 et 7 | 3, 4, 9, 10, 15, 16, 21, 22, 27, 28 |
-| 3 et 8 | 1, 2, 7, 8, 13, 14, 19, 20, 25, 26 |
-| 4 et 9 | 2, 3, 8, 9, 14, 15, 20, 21, 26, 27 |
-| 5 et 10 | 4, 5, 10, 11, 16, 17, 22, 23, 28, 29 |
-
-*(Les équipes miroirs 1↔6, 2↔7... ont les mêmes jours de repos mais des séquences de shifts différentes)*
+| Équipes miroirs | Jours de repos |
+|-----------------|---------------|
+| 1 ↔ 6 | 5, 6, 11, 12, 17, 18, 23, 24, 29, 30 |
+| 2 ↔ 7 | 3, 4, 9, 10, 15, 16, 21, 22, 27, 28 |
+| 3 ↔ 8 | 1, 2, 7, 8, 13, 14, 19, 20, 25, 26 |
+| 4 ↔ 9 | 2, 3, 8, 9, 14, 15, 20, 21, 26, 27 |
+| 5 ↔ 10 | 4, 5, 10, 11, 16, 17, 22, 23, 28, 29 |
 
 ---
 
-## Commandes utiles pour l'IA (Claude)
+## Problèmes connus / À faire
 
+1. **`cumWorkDays()` cycle 30 jours** : mois de 31 jours → +1 jour ouvré possible pour équipes 3 et 8. Non corrigé (risqué).
+2. **Équipes BJ 1–4, 6–10** : profils EP non audités pour désynchronisation (seule l'équipe 5 a été validée).
+3. **PDF.js Y-tolerance = 3pt** : peut mal grouper des lignes très proches dans certains PDF. Ajuster TOL si nécessaire.
+4. **`hashPw()`** : hash simple non cryptographique — acceptable pour intranet, pas pour prod publique.
+5. **Fonctions orphelines** (supprimées en v8.62) : `setChef`, `addChef`, `removeChef`, `parseCMCPlanningFromRows`, `detectMonthFromName`, `detectTeamFromRow`, `repairBJSchedules`.
+
+---
+
+## Workflow de développement
+
+### Ajouter une vue
+1. Créer `vMaVue()` retournant une string HTML
+2. Ajouter `case"maVue": return isAdm?vMaVue():"";` dans le `switch` de `vMain()`
+3. Si accessible non-admin : supprimer la condition `isAdm`
+4. Naviguer : `A.view="maVue"; dc();` ou via `sv('maVue')`
+
+### Modifier les données employés/équipes
+- Toujours sauvegarder : `ls("cmc_e", A.employees)` / `ls("cmc_t", A.teams)`
+- Si schéma change : incrémenter `DATA_VER` + ajouter bloc migration au démarrage
+
+### Déployer
 ```bash
-# Vérifier la syntaxe JS
-node --check /tmp/test.js
+git add index.html
+git commit -m "vX.Y: description en français"
+git checkout main
+git merge claude/<branche> --ff-only
+git push origin main
+# → GitHub Actions déploie automatiquement
+```
 
-# Extraire et valider le JS de l'app
+### Valider la syntaxe JS
+```bash
 node -e "
-const fs = require('fs');
-const html = fs.readFileSync('index.html', 'utf8');
-const s = html.lastIndexOf('<script>'), e = html.lastIndexOf('</script>');
-fs.writeFileSync('/tmp/test.js', html.slice(s+8, e));
-" && node --check /tmp/test.js
+const fs=require('fs');
+const html=fs.readFileSync('index.html','utf8');
+const s=html.lastIndexOf('<script>'),e=html.lastIndexOf('</script>');
+fs.writeFileSync('/tmp/test.js',html.slice(s+8,e));
+" && node --check /tmp/test.js && echo "JS OK"
+```
 
-# Audit Python du SEED
-python3 audit_seed.py  # (script à créer si besoin)
-
-# Déployer
-git add index.html && git commit -m "vX.Y: description" && git push origin main
+### Éditer du code avec Unicode (éviter les échecs Edit tool)
+```python
+# Si l'Edit tool échoue à cause d'Unicode :
+python3 -c "
+with open('index.html','r',encoding='utf-8') as f: c=f.read()
+c=c.replace('ancien texte','nouveau texte',1)
+with open('index.html','w',encoding='utf-8') as f: f.write(c)
+print('Done')
+"
 ```
 
 ---
 
-## Historique des versions récentes
+## Simulation équipe 5 avril 2026 (validée)
 
-| Version | DATA_VER | Description |
-|---------|----------|-------------|
-| v8.10 | 19 | ARCURI F planning exact depuis j17 |
-| v8.11 | 20 | LEMONNIER PH → section Absents tout le mois |
-| v8.12 | 21 | 44 employés incomplets corrigés (258 × 30 jours) |
-| v8.13 | 21 | DEF_CHEFS_T roulette : tous membres ajoutés (41 employés) |
-| v8.14 | 22 | **doImport() corrigé** : plus d'écrasement du SEED + Audit post-import + Écran Audit autonome |
-| v8.15 | 22 | Absents tout le mois : exclusion auto des tableaux de départ, tri M→AF→CP→R |
+```
+i=2, cumWorkDays("5",1)=21, si0=(2+21)%4=3
+Séquence ["20/5","19/4","16/3","14/19"], si0=3 → D01=14/19
+
+PUGNETTI S:   D01:14/19  D02:20/5   D03:19/4  D04:RH  D05:R  D06:16/3
+DESARZENS K:  D01:14/19  D02:20/5*  D03:19/4  D04:RH  D05:R  D06:16/3*
+MARIOTTINI J: D01:14/19  D02:20/5   D03:19/4  D04:RH  D05:R  D06:16/3
+DESSI F:      D01:14/19  D02:20/5*  D03:19/4  D04:RH  D05:R  D06:16/3*
+✅ Même shift de base, 3 avril = 19/4 confirmé
+```
