@@ -2247,7 +2247,7 @@ function vPasswords(){
     h+='<div style="font-size:9px;font-weight:800;color:'+famColor+';letter-spacing:2px;text-transform:uppercase;margin:10px 0 6px">'+esc(fam.lb)+'</div>';
     famEmps.forEach(function(emp){
       var hasPw=!!A.passwords[emp.id];
-      var tcc=getTeamColor(emp.team);
+      var tcc=tc(emp.team);
       var reg=A.reg[emp.id]||null;
       var emailStr=reg&&reg.email?reg.email:"";
       var dateStr=reg&&reg.createdAt?(new Date(reg.createdAt)).toLocaleDateString("fr-FR"):"";
