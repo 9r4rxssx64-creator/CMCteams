@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.80.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.83.
 
 ---
 
@@ -9,7 +9,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.80"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v8.83"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -452,6 +452,9 @@ Ordre d'affichage : `FAMS_ORDER = ["bj", "roulettes", "cmc"]` — BJ en premier 
 | v8.78 | avr 2026 | Fix départs post-import, solde CP/RRT, export ICS, commentaires vPlan, SW offline |
 | v8.79 | avr 2026 | Import = seule source de vérité — suppression tous les fallbacks théoriques REPOS |
 | v8.80 | avr 2026 | Fix grilles départs (table-layout:fixed), fix DEF_CHEF_EQ, suppression code mort |
+| v8.81 | avr 2026 | vPlan non-admin : équipe+miroir en priorité ; vDeparts non-admin : miroir visible |
+| v8.82 | avr 2026 | Fix scroll mobile vDeparts (overflow:hidden → visible sur parent) ; workflow .claude/ |
+| v8.83 | avr 2026 | Chat : messages privés (DM), réponses, suppression admin, filtres, séparateurs date |
 
 ---
 
@@ -460,7 +463,7 @@ Ordre d'affichage : `FAMS_ORDER = ["bj", "roulettes", "cmc"]` — BJ en premier 
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K (équipe 5)
 var DATA_VER = 29;         // Version schéma localStorage (incrémenter si schéma change)
-var APP_VER  = "v8.80";    // Version affichée dans l'interface
+var APP_VER  = "v8.83";    // Version affichée dans l'interface
 var MFR      = ["Janvier","Février","Mars","Avril","Mai","Juin",
                 "Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 // MFR[A.month] → nom du mois courant (A.month = 0-indexé comme Date.getMonth())
@@ -468,7 +471,7 @@ var MFR      = ["Janvier","Février","Mars","Avril","Mai","Juin",
 
 ---
 
-## État au 6 avril 2026 (v8.80)
+## État au 6 avril 2026 (v8.82)
 
 ### Problèmes connus / à surveiller
 
@@ -488,3 +491,145 @@ PDF brut
   → gpl() lit A.overrides
   → toutes les vues utilisent gpl()
 ```
+
+---
+
+## Erreurs à ne pas faire — Liste définitive
+
+> Erreurs réelles commises et corrigées au fil des sessions. À relire avant toute modification.
+
+### 1. `table-layout:fixed` dans les grilles scrollables ❌
+
+**Contexte :** Les grilles de départ (`vDeparts`) utilisent `overflow-x:auto` pour scroller sur mobile.  
+**Erreur :** Ajouter `table-layout:fixed` + `width:100%` sur le `<table>` — ignore `min-width` sur les colonnes, compresse les cellules à ~13px, rend les grilles illisibles.  
+**Fix :** `table-layout` ne doit jamais être `fixed` dans un conteneur scrollable. Utiliser `min-width:100%` sur le tableau, et des div wrapper (ex: `width:90px`) pour les colonnes de noms.
+
+### 2. `overflow:hidden` sur un parent contenant un enfant scrollable ❌
+
+**Contexte :** Le div parent des grilles de départ avait `overflow:hidden` pour clipper le border-radius.  
+**Erreur :** Sur mobile WebKit, `overflow:hidden` sur un parent intercepte les gestes tactiles et empêche le `overflow-x:auto` de l'enfant de défiler — l'écran "bloque".  
+**Fix :** Retirer `overflow:hidden` du parent. Appliquer `border-radius` + `overflow-y:hidden` directement sur le div scrollable enfant.
+
+### 3. Fallbacks théoriques REPOS dans les vues ❌
+
+**Contexte :** Principe fondamental depuis v8.79 : **import = seule source de vérité**.  
+**Erreur :** Ajouter un fallback `REPOS[tid]` ou `genBase()` dans vDeparts, calcDepPos, bandeau aujourd'hui — génère des données fantômes si pas d'import.  
+**Fix :** Toutes les vues doivent retourner null/vide si pas de données importées. Jamais de données théoriques en affichage.
+
+### 4. `syncChefsT()` — la fonction bugguée (supprimée v8.80) ❌
+
+**Contexte :** `syncChefsT()` retirait les membres non-`chef:true` de la rotation après chaque import.  
+**Erreur :** Ne pas réintroduire cette fonction. `CHEFS_T` est initialisé depuis `DEF_CHEFS_T` qui contient **tous** les membres de rotation (pas seulement les chefs désignés).  
+**Fix :** `CHEFS_T` est reset depuis `DEF_CHEFS_T` au démarrage. Ne jamais filtrer par `chef:true` dans la rotation.
+
+### 5. `DEF_CHEF_EQ` avec des mauvais noms ❌
+
+**Contexte :** `DEF_CHEF_EQ` mappe les équipes à leurs chefs désignés par défaut.  
+**Erreur :** Mettre des noms d'employés dans la mauvaise équipe (ex: PODGORNY B est en roulettes r4, pas en BJ éq.2).  
+**Fix actuel :** `{"1":"ESPAGNOL S","2":"CIOCO S","3":"BELTRANDI N","4":"PALMARO M","5":"PUGNETTI S"}` — vérifier avec `A.employees` avant de modifier.
+
+### 6. Charger SEED inconditionnellement ❌
+
+**Contexte :** `SEED_APR2026` est un planning pré-calculé d'urgence pour avril 2026.  
+**Erreur :** Charger le SEED sans vérifier qu'il n'y a pas d'import réel — écrase le vrai planning PDF importé.  
+**Fix :** Toujours vérifier `_hasRealImport` avant de charger le SEED. Ne charger le SEED que si `cmc_ref_2026-3` est absent ou `synthetic:true`.
+
+### 7. `genBase()` / `cumWorkDays()` — fonctions supprimées ❌
+
+**Contexte :** Ces fonctions généraient le planning théorique depuis les profils EP.  
+**Erreur :** Réintroduire ces fonctions ou les appeler — elles ne fonctionnent plus (supprimées v8.80, code mort).  
+**Fix :** Le planning est 100% issu de `A.overrides`. `gpl()` lit uniquement les overrides.
+
+### 8. Oublier `esc()` avant `innerHTML` ❌
+
+**Contexte :** L'application injecte des noms d'employés, messages de chat, etc. dans `innerHTML`.  
+**Erreur :** Injecter `emp.name` ou contenu utilisateur sans `esc()` — XSS possible sur intranet.  
+**Fix :** Systématiquement `esc(emp.name)`, `esc(msg.text)`, etc. avant toute injection DOM.
+
+### 9. Horaires différents dans une même équipe — ce n'est pas forcément une erreur ✅
+
+**Contexte :** Les membres de l'équipe de rotation (CHEFS_T) peuvent avoir des séquences EP différentes.  
+**Explication :** En particulier les équipes d'inspection (chefs de partie BJ équipes 6-10) ont des profils EP individuels — chacun suit sa propre rotation de shifts. Deux membres du même groupe peuvent légitimement avoir des shifts différents le même jour.  
+**Action correcte :** Avant de "corriger" un shift, vérifier d'abord dans les données importées si c'est réel. Si l'import est erroné, corriger manuellement via admin.
+
+### 10. Push sur `main` sans passer par une branche feature ❌
+
+**Contexte :** `main` déploie automatiquement sur GitHub Pages.  
+**Erreur :** Pusher du code non testé directement sur `main` — déploiement immédiat en production.  
+**Fix :** Toujours développer sur `claude/<description>`, tester, puis merger sur `main`.
+
+### 11. Autoriser les utilisateurs non-admin à modifier l'application ❌
+
+**Règle fondamentale :** Seul l'admin (`AID = "U11804"` — DESARZENS K) peut modifier les données ou l'état de l'application.  
+**Erreur :** Ajouter des boutons "Supprimer", "Modifier", "Ajouter" accessibles à tous les utilisateurs connectés.  
+**Fix :** Toujours vérifier `A.user.id === AID` avant toute action de modification. Les utilisateurs non-admin sont en mode **lecture seule** pour tout sauf :
+- Envoyer des messages chat (tous peuvent écrire dans le chat)
+- Modifier leur propre mot de passe
+- Navigation / consultation des vues
+
+### 12. Format messages chat — champs optionnels à préserver ✅
+
+**Format étendu (v8.83+) :**
+```javascript
+{
+  text: string,           // texte (obligatoire)
+  uid: string,            // ID expéditeur (obligatoire)
+  name: string,           // nom expéditeur (obligatoire)
+  team: string,           // équipe expéditeur (obligatoire)
+  ts: number,             // timestamp ms (obligatoire)
+  to?: string,            // ID destinataire DM (optionnel)
+  toName?: string,        // nom destinataire DM (optionnel)
+  replyTo?: {ts, name, text}, // citation de réponse (optionnel)
+  del?: true              // supprimé par admin (optionnel)
+}
+```
+- Les anciens messages sans champs optionnels restent valides (rétrocompat)
+- `del:true` = soft delete — visible uniquement admin avec label "[message supprimé]"
+- Seul l'admin peut supprimer (`chatDelMsg`). Les utilisateurs ne peuvent PAS supprimer leurs propres messages.
+
+---
+
+## Architecture du chat (v8.83+)
+
+| localStorage | Contenu |
+|--------------|---------|
+| `cmc_chat` | Tableau messages (max 500) |
+| `cmc_lastread` | Timestamp dernière lecture messages publics |
+| `cmc_lastread_dm` | Timestamp dernière lecture DMs |
+
+**Fonctions chat :**
+- `chatSetDm(id, name)` — active un destinataire DM
+- `chatSetDmById(uid)` — active DM par ID employé
+- `chatSetDmEmp(empIdx)` — active DM par index dans A.employees
+- `chatCancelDm()` — annule le DM actif
+- `chatPickDm()` — toggle le sélecteur de destinataire
+- `chatSetReply(ts)` — active la citation d'un message
+- `chatCancelReply()` — annule la citation
+- `chatDelMsg(ts)` — supprime (admin seulement)
+- `chatFilterSet(f)` — filtre "all"|"pub"|"dm" (admin seulement)
+
+---
+
+## Workflow automatique — suivi des modifications
+
+Un hook Claude Code est configuré dans `.claude/settings.json` pour journaliser automatiquement chaque commit git dans `.claude_journal.md`.
+
+Format du journal :
+```
+- **[YYYY-MM-DD HH:MM]** `hash` — message du commit
+```
+
+### Processus de développement obligatoire
+
+Après **chaque modification importante** de l'application :
+
+1. **Nettoyage des fichiers** : Supprimer tout code mort, commentaires inutiles, fonctions supprimées. `index.html` doit rester propre.
+2. **Vérification par un agent** : Lancer un agent `Explore` pour vérifier que les modifications sont correctes, cohérentes, et sans régression. L'agent doit confirmer :
+   - Pas de bug introduit
+   - Pas de fallback théorique ajouté (principe import-only)
+   - Pas de modification accessible à non-admin sans check `AID`
+   - `esc()` appliqué à tous les contenus utilisateur dans innerHTML
+3. **Mise à jour CLAUDE.md** : Version, historique, et toute nouvelle erreur connue documentée.
+4. **Commit sur branche feature** (`claude/<description>`) uniquement — jamais directement sur `main`.
+
+Consulter `.claude_journal.md` pour l'historique complet des modifications de la session.

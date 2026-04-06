@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "STDIN=$(cat); CMD=$(echo \"$STDIN\" | jq -r '.tool_input.command // \"\"'); if echo \"$CMD\" | grep -q 'git commit'; then DATE=$(date \"+%Y-%m-%d %H:%M\"); cd /home/user/CMCteams; HASH=$(git log -1 --format=\"%h\" 2>/dev/null); MSG=$(git log -1 --format=\"%s\" 2>/dev/null); ENTRY=\"- **[$DATE]** \\`$HASH\\` — $MSG\"; echo \"$ENTRY\" >> /home/user/CMCteams/.claude_journal.md; fi",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Rappel workflow : 1) Nettoyer le code (supprimer code mort), 2) Vérifier avec agent Explore, 3) Mettre à jour CLAUDE.md, 4) Committer sur branche feature.\"}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
