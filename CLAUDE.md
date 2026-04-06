@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.82.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.83.
 
 ---
 
@@ -9,7 +9,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.82"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v8.83"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -454,6 +454,7 @@ Ordre d'affichage : `FAMS_ORDER = ["bj", "roulettes", "cmc"]` — BJ en premier 
 | v8.80 | avr 2026 | Fix grilles départs (table-layout:fixed), fix DEF_CHEF_EQ, suppression code mort |
 | v8.81 | avr 2026 | vPlan non-admin : équipe+miroir en priorité ; vDeparts non-admin : miroir visible |
 | v8.82 | avr 2026 | Fix scroll mobile vDeparts (overflow:hidden → visible sur parent) ; workflow .claude/ |
+| v8.83 | avr 2026 | Chat : messages privés (DM), réponses, suppression admin, filtres, séparateurs date |
 
 ---
 
@@ -462,7 +463,7 @@ Ordre d'affichage : `FAMS_ORDER = ["bj", "roulettes", "cmc"]` — BJ en premier 
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K (équipe 5)
 var DATA_VER = 29;         // Version schéma localStorage (incrémenter si schéma change)
-var APP_VER  = "v8.82";    // Version affichée dans l'interface
+var APP_VER  = "v8.83";    // Version affichée dans l'interface
 var MFR      = ["Janvier","Février","Mars","Avril","Mai","Juin",
                 "Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 // MFR[A.month] → nom du mois courant (A.month = 0-indexé comme Date.getMonth())
@@ -557,6 +558,56 @@ PDF brut
 **Erreur :** Pusher du code non testé directement sur `main` — déploiement immédiat en production.  
 **Fix :** Toujours développer sur `claude/<description>`, tester, puis merger sur `main`.
 
+### 11. Autoriser les utilisateurs non-admin à modifier l'application ❌
+
+**Règle fondamentale :** Seul l'admin (`AID = "U11804"` — DESARZENS K) peut modifier les données ou l'état de l'application.  
+**Erreur :** Ajouter des boutons "Supprimer", "Modifier", "Ajouter" accessibles à tous les utilisateurs connectés.  
+**Fix :** Toujours vérifier `A.user.id === AID` avant toute action de modification. Les utilisateurs non-admin sont en mode **lecture seule** pour tout sauf :
+- Envoyer des messages chat (tous peuvent écrire dans le chat)
+- Modifier leur propre mot de passe
+- Navigation / consultation des vues
+
+### 12. Format messages chat — champs optionnels à préserver ✅
+
+**Format étendu (v8.83+) :**
+```javascript
+{
+  text: string,           // texte (obligatoire)
+  uid: string,            // ID expéditeur (obligatoire)
+  name: string,           // nom expéditeur (obligatoire)
+  team: string,           // équipe expéditeur (obligatoire)
+  ts: number,             // timestamp ms (obligatoire)
+  to?: string,            // ID destinataire DM (optionnel)
+  toName?: string,        // nom destinataire DM (optionnel)
+  replyTo?: {ts, name, text}, // citation de réponse (optionnel)
+  del?: true              // supprimé par admin (optionnel)
+}
+```
+- Les anciens messages sans champs optionnels restent valides (rétrocompat)
+- `del:true` = soft delete — visible uniquement admin avec label "[message supprimé]"
+- Seul l'admin peut supprimer (`chatDelMsg`). Les utilisateurs ne peuvent PAS supprimer leurs propres messages.
+
+---
+
+## Architecture du chat (v8.83+)
+
+| localStorage | Contenu |
+|--------------|---------|
+| `cmc_chat` | Tableau messages (max 500) |
+| `cmc_lastread` | Timestamp dernière lecture messages publics |
+| `cmc_lastread_dm` | Timestamp dernière lecture DMs |
+
+**Fonctions chat :**
+- `chatSetDm(id, name)` — active un destinataire DM
+- `chatSetDmById(uid)` — active DM par ID employé
+- `chatSetDmEmp(empIdx)` — active DM par index dans A.employees
+- `chatCancelDm()` — annule le DM actif
+- `chatPickDm()` — toggle le sélecteur de destinataire
+- `chatSetReply(ts)` — active la citation d'un message
+- `chatCancelReply()` — annule la citation
+- `chatDelMsg(ts)` — supprime (admin seulement)
+- `chatFilterSet(f)` — filtre "all"|"pub"|"dm" (admin seulement)
+
 ---
 
 ## Workflow automatique — suivi des modifications
@@ -567,5 +618,18 @@ Format du journal :
 ```
 - **[YYYY-MM-DD HH:MM]** `hash` — message du commit
 ```
+
+### Processus de développement obligatoire
+
+Après **chaque modification importante** de l'application :
+
+1. **Nettoyage des fichiers** : Supprimer tout code mort, commentaires inutiles, fonctions supprimées. `index.html` doit rester propre.
+2. **Vérification par un agent** : Lancer un agent `Explore` pour vérifier que les modifications sont correctes, cohérentes, et sans régression. L'agent doit confirmer :
+   - Pas de bug introduit
+   - Pas de fallback théorique ajouté (principe import-only)
+   - Pas de modification accessible à non-admin sans check `AID`
+   - `esc()` appliqué à tous les contenus utilisateur dans innerHTML
+3. **Mise à jour CLAUDE.md** : Version, historique, et toute nouvelle erreur connue documentée.
+4. **Commit sur branche feature** (`claude/<description>`) uniquement — jamais directement sur `main`.
 
 Consulter `.claude_journal.md` pour l'historique complet des modifications de la session.

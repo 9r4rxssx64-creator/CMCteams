@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\": \"Rappel : mettre à jour CLAUDE.md si des changements importants ont été faits cette session.\"}'",
+            "command": "echo '{\"systemMessage\": \"Rappel workflow : 1) Nettoyer le code (supprimer code mort), 2) Vérifier avec agent Explore, 3) Mettre à jour CLAUDE.md, 4) Committer sur branche feature.\"}'",
             "timeout": 5
           }
         ]
