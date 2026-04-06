@@ -2132,8 +2132,10 @@ function vPlan(){
       Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
       var nbg=isMe?hexA(tcc2,.04):"#162818",ncol=isMe?tcc2:"#8a9a78";
+      // ntdBg = couleur SOLIDE pour la colonne sticky (sinon les cellules scrollent en transparence dessous)
+      var ntdBg=isMe?"#1d2d1a":"#162818";
       rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
-        +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
+        +'<td class="ntd" style="background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
         +(isMe?"\u25b6 ":"")+esc(empLabel(emp))+(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
@@ -2330,7 +2332,10 @@ function vDeparts(){
   var CI=gCI(A.year,A.month);
   var myTeam=A.user?A.user.team:null;
   var myMirT=myTeam?gm(myTeam):null;
-  var show=isAdm?A.teams.slice().sort(function(a,b){var fa=a.family||'bj',fb=b.family||'bj';if(fa!==fb)return ['bj','roulettes','cmc'].indexOf(fa)-['bj','roulettes','cmc'].indexOf(fb);var na=parseInt(a.id.replace(/[^0-9]/g,""))||0,nb=parseInt(b.id.replace(/[^0-9]/g,""))||0;return na-nb;}).map(function(t){return t.id;}):[myTeam,myMirT?myMirT.id:null].filter(Boolean);
+  // Mon équipe + miroir en tête (admin et non-admin), puis le reste par famille/numéro
+  var _depPri=[myTeam,myMirT?myMirT.id:null].filter(Boolean);
+  var _depRest=A.teams.slice().sort(function(a,b){var fa=a.family||'bj',fb=b.family||'bj';if(fa!==fb)return ['bj','roulettes','cmc'].indexOf(fa)-['bj','roulettes','cmc'].indexOf(fb);var na=parseInt(a.id.replace(/[^0-9]/g,""))||0,nb=parseInt(b.id.replace(/[^0-9]/g,""))||0;return na-nb;}).map(function(t){return t.id;}).filter(function(id){return _depPri.indexOf(id)<0;});
+  var show=isAdm?_depPri.concat(_depRest):[myTeam,myMirT?myMirT.id:null].filter(Boolean);
   var todN=new Date(),todD=(todN.getFullYear()===A.year&&todN.getMonth()===A.month)?todN.getDate():0;
   var h='<div class="page">';
   var _hasImport=hasImportedData(A.year,A.month);
@@ -2462,7 +2467,7 @@ function vDeparts(){
       var isMe=A.user&&emp.id===A.user.id;
       var base=CI[emp.name]!==undefined?CI[emp.name]:(ei%sl);
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
-      <td style="padding:0;background:${isMe?"rgba(201,162,39,.05)":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
+      <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
         <div style="width:90px;padding:5px 8px;font-size:14px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${isMe?"\u25b6 ":""}${esc(empLabel(emp))}</div></td>`;
       workDays.forEach(function(d,wi){
         var code=(pl[emp.id]||{})[d]||"";
