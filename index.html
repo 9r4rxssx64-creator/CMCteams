@@ -1739,6 +1739,7 @@ function sv(v){
   if(v!=="chat"){_chatDm=null;_chatDmPick=false;_chatRep=null;} // Reset état chat à la navigation
   A.view=v;
   touchSession();
+  window.scrollTo(0,0); // Retour en haut à chaque changement de page
   render();
   if(v==="planning")setTimeout(adjGrid,80);
   if(v==="departs")setTimeout(adjDeparts,150);
@@ -2153,8 +2154,8 @@ function vPlan(){
     return rh;
   };
   var _globalShown={};
-  // ── Non-admin : équipe propre + miroir en tête ──────────────────────────────
-  if(!isAdm&&utid){
+  // ── Équipe propre + miroir en tête (tous, admin inclus) ─────────────────────
+  if(utid){
     var _priTids=[utid,mirT?mirT.id:null].filter(Boolean);
     h+='<tr><td colspan="'+(days+3)+'" style="padding:5px 10px;background:'+utc+'12;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25">'
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
