@@ -95,7 +95,7 @@ select.inp{-webkit-appearance:none}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .ntd{padding:5px 10px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:16px;text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctd{min-width:34px;height:34px;font-size:15px;font-weight:700;text-align:center;cursor:pointer}
-.steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0}
+.steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0;position:sticky;left:0;z-index:5}
 .stattd{padding:3px;font-size:15px;color:#90b888;background:#1e3422;text-align:center}
 
 /* === PICKER === */
@@ -2159,7 +2159,7 @@ function vPlan(){
   // ── Équipe propre + miroir en tête (tous, admin inclus) ─────────────────────
   if(utid){
     var _priTids=[utid,mirT?mirT.id:null].filter(Boolean);
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:5px 10px;background:'+utc+'12;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25">'
+    h+='<tr><td colspan="'+(days+3)+'" style="padding:5px 10px;background:#0e1c10;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25;position:sticky;left:0;z-index:5">'
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
       +(mirT?'<span style="font-size:14px;color:#7aaa80;margin-left:8px">\u21cc '+esc(mirT.name)+'</span>':"")
       +'</td></tr>';
@@ -2174,7 +2174,7 @@ function vPlan(){
         +'</td></tr>';
       h+=_renderEmpRows(te2,tcc2);
     });
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:4px 10px;background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815">'
+    h+='<tr><td colspan="'+(days+3)+'" style="padding:4px 10px;background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;position:sticky;left:0;z-index:5">'
       +'<span style="font-size:13px;font-weight:700;color:#3a5030;text-transform:uppercase;letter-spacing:2px">Autres \u00e9quipes \u2014 consultation</span>'
       +'</td></tr>';
   }
@@ -2190,7 +2190,7 @@ function vPlan(){
     ftOrd.sort(function(a,b){var na=parseInt(a.replace(/[^0-9]/g,""))||0,nb=parseInt(b.replace(/[^0-9]/g,""))||0;return na-nb;});
     var hasUnshown=ftOrd.some(function(tid){return !_globalShown[tid];});
     if(!hasUnshown) return;
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:6px 10px;background:'+famColor+'18;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25">'
+    h+='<tr><td colspan="'+(days+3)+'" style="padding:6px 10px;background:#0e1c10;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25;position:sticky;left:0;z-index:5">'
       +'<span style="font-size:15px;font-weight:800;color:'+famColor+';letter-spacing:1px;text-transform:uppercase">'+esc(famLabel)+'</span>'
       +'</td></tr>';
     ftOrd.forEach(function(tid){
@@ -2386,14 +2386,30 @@ function vDeparts(){
     +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:16px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
-  var prevFam=null;
-  show.forEach(function(tid){
+  // Séparateur "Ma section" pour admin et non-admin
+  if(myTeam&&_depPri.length){
+    var _myMirName=myMirT?myMirT.name:"";
+    h+='<div style="padding:6px 12px;background:#0e1c10;border-top:2px solid '+tc(myTeam)+'50;border-bottom:1px solid '+tc(myTeam)+'25;margin-bottom:4px">'
+      +'<span style="font-size:14px;font-weight:800;color:'+tc(myTeam)+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
+      +(_myMirName?'<span style="font-size:14px;color:#7aaa80;margin-left:8px">\u21cc '+esc(_myMirName)+'</span>':"")
+      +'</div>';
+  }
+  var prevFam=null,_priDone=false;
+  show.forEach(function(tid,_tidIdx){
+    // Séparateur "Autres équipes" après les équipes prioritaires (admin seulement)
+    if(isAdm&&myTeam&&!_priDone&&_tidIdx===_depPri.length&&_depPri.length<show.length){
+      _priDone=true;
+      prevFam=null; // reset famille pour forcer l'en-tête famille suivant
+      h+='<div style="padding:4px 12px;background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;margin:6px 0 4px">'
+        +'<span style="font-size:13px;font-weight:700;color:#3a5030;text-transform:uppercase;letter-spacing:2px">Autres \u00e9quipes</span>'
+        +'</div>';
+    }
     var team=A.teams.find(function(t){return t.id===tid;});if(!team)return;
     var curFamEmp=A.employees.find(function(e){return e.team===tid&&e.family;});
     var curFam=curFamEmp?curFamEmp.family:"bj";
-    if(curFam!==prevFam){
+    if(isAdm&&_tidIdx>=_depPri.length&&curFam!==prevFam){
       prevFam=curFam;
-      h+='<div style="font-size:14px;font-weight:800;color:'+getFamColor(curFam)+';text-transform:uppercase;letter-spacing:2px;margin:12px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(curFam)+'30">'+esc(getFamLabel(curFam))+'</div>';
+      h+='<div style="font-size:14px;font-weight:800;color:'+getFamColor(curFam)+';text-transform:uppercase;letter-spacing:2px;margin:8px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(curFam)+'30">'+esc(getFamLabel(curFam))+'</div>';
     }
     var tcc=team.color||TC[tid]||"#888";
     var chefNames=CHEFS_T[tid]||[];
@@ -2451,7 +2467,10 @@ function vDeparts(){
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
       +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5">'
-      +'<div style="width:90px;padding:5px 10px;font-size:14px;color:#7aaa80;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Chef</div></th>';
+      +'<div style="width:90px;padding:4px 8px;overflow:hidden">'
+      +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
+      +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
+      +'</div></th>';
     workDays.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
       var isHigh=d===highlightD,isNext=d===nextWorkD;
