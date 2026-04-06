@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.93.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.97.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.92"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v8.97"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -301,6 +301,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 | v8.94 | Bouton admin désactiver/activer IA Claude (économie tokens) |
 | v8.95 | Recherche internet (web_search), mode local toujours actif, audit 29/29 |
 | v8.96 | Login par nom+prénom (matricule optionnel), adminChangeEmpId, adminResetAllPw |
+| v8.97 | findEmpByName() — recherche prénom complet, préfixe STOCKÉ = préfixe SAISI |
 
 ---
 
@@ -309,6 +310,6 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v8.96";
+var APP_VER  = "v8.97";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 ```
