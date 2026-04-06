@@ -6312,7 +6312,7 @@ function vAbsences(){
     absentEmps.forEach(function(emp,ei){
       var isMe=A.user&&emp.id===A.user.id;
       var row=pl[emp.id]||{};
-      h+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.04)":"")+'"><td style="padding:4px 8px;background:'+(isMe?"rgba(201,162,39,.05)":"#162818")+';position:sticky;left:0;border-right:1px solid #182818;font-size:14px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;z-index:3">'+(isMe?"\u25b6 ":"")+esc(empLabel(emp))+'</td>';
+      h+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.04)":"")+'"><td style="padding:4px 8px;background:'+(isMe?"#1c1c10":"#162818")+';position:sticky;left:0;border-right:1px solid #182818;font-size:14px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;z-index:3">'+(isMe?"\u25b6 ":"")+esc(empLabel(emp))+'</td>';
       daysArr.forEach(function(d){
         var c=row[d]||"";
         var col=ABS_CODES[c];
