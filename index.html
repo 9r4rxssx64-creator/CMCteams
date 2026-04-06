@@ -813,8 +813,9 @@ function fbPushAll(){
   }).catch(function(e){toast("\u274c Erreur réseau Firebase : "+e.message,"err");});
 }
 
+var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 function fbInit(){
-  FB_URL=(localStorage.getItem("cmc_fb_url")||"").trim().replace(/\/$/,"");
+  FB_URL=(localStorage.getItem("cmc_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");
   if(!FB_URL)return;
   fbLoadAll();
   fbStartListening();
