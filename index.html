@@ -2827,6 +2827,8 @@ function chatSetDmEmp(empIdx){var e=A.employees[empIdx];if(e)chatSetDm(e.id,e.na
 function chatCancelDm(){_chatDm=null;_chatDmPick=false;_chatDmQ="";dc();}
 function chatPickDm(){_chatDmPick=!_chatDmPick;_chatDmQ="";dc();setTimeout(function(){var i=document.getElementById("chatDmQIn");if(i)i.focus();},30);}
 function chatDmSearch(q){_chatDmQ=q;var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;dc();if(el){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}}}
+// Helper universel : met à jour A[key], re-render, replace le focus dans l'input
+function searchInput(key,val,id){A[key]=val;dc();var i=document.getElementById(id);if(i){var p=val.length;i.focus();try{i.setSelectionRange(p,p);}catch(e){}}}
 function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;_chatRep={ts:m.ts,name:m.name,text:m.text||""};dc();setTimeout(function(){var i=document.getElementById("chatIn");if(i)i.focus();},50);}
 function chatCancelReply(){_chatRep=null;dc();}
 function chatDelMsg(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m)return;if(!A.user||A.user.id!==AID)return;// Seul l'admin peut supprimer
@@ -3304,8 +3306,8 @@ function vPasswords(){
      +'\u2139\ufe0f Les employ\u00e9s marqu\u00e9s \u201c\u2705 Inscrit\u201d se sont d\u00e9j\u00e0 connect\u00e9s (ou ont \u00e9t\u00e9 test\u00e9s). C\'est normal.</div>';
   }
   // Search
-  h+='<input class="inp" type="text" placeholder="\ud83d\udd0d Rechercher par nom ou matricule\u2026" value="'+esc(A.pwQ||"")+'"'
-   +' oninput="A.pwQ=this.value;dc()" style="margin-bottom:10px;font-size:16px">';
+  h+='<input id="pwQIn" class="inp" type="text" placeholder="\ud83d\udd0d Rechercher par nom ou matricule\u2026" value="'+esc(A.pwQ||"")+'"'
+   +' oninput="searchInput(\'pwQ\',this.value,\'pwQIn\')" style="margin-bottom:10px;font-size:16px">';
   if(emps.length===0){
     h+='<div style="padding:24px;text-align:center;font-size:15px;color:#5a7060">Aucun employ\u00e9 dans cette cat\u00e9gorie.</div>';
   }
@@ -3711,7 +3713,7 @@ function vEmps(){
     <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s</div></div>
     <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:15px;flex-shrink:0">+ Ajouter</button>
   </div>
-  <input class="inp" style="margin-bottom:10px" placeholder="Rechercher..." value="${esc(A.empQ)}" oninput="A.empQ=this.value;dc()">`;
+  <input id="empQIn" class="inp" style="margin-bottom:10px" placeholder="Rechercher..." value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">`;
 
   if(showAddF){
     h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px">
