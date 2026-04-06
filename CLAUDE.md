@@ -298,6 +298,9 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 | v8.91 | Présence temps réel (vOnline), historique connexions, horloge topbar, CSS animations |
 | v8.92 | adjGrid scroll vers aujourd'hui (vPlan), tri équipes croissant, data-planday |
 | v8.93 | Fix couleur rgba vMonPlanning (tcc+"14" → rgba valide), CLAUDE.md ToolSearch |
+| v8.94 | Bouton admin désactiver/activer IA Claude (économie tokens) |
+| v8.95 | Recherche internet (web_search), mode local toujours actif, audit 29/29 |
+| v8.96 | Login par nom+prénom (matricule optionnel), adminChangeEmpId, adminResetAllPw |
 
 ---
 
@@ -306,6 +309,6 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v8.93";
+var APP_VER  = "v8.96";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 ```
