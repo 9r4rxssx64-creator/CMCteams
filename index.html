@@ -23,6 +23,7 @@ body{
   font-size:17px;color:#e0f0d8;
   min-height:100vh;
   background:#1a3020;
+  overflow-x:hidden; /* Empêche la page de scroller horizontalement */
 }
 /* Feutrine avec texture double trame */
 body::before{
@@ -95,7 +96,7 @@ select.inp{-webkit-appearance:none}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .ntd{padding:5px 10px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:16px;text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctd{min-width:34px;height:34px;font-size:15px;font-weight:700;text-align:center;cursor:pointer}
-.steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0;position:sticky;left:0;z-index:5}
+.steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0}
 .stattd{padding:3px;font-size:15px;color:#90b888;background:#1e3422;text-align:center}
 
 /* === PICKER === */
@@ -2166,24 +2167,27 @@ function vPlan(){
   // ── Équipe propre + miroir en tête (tous, admin inclus) ─────────────────────
   if(utid){
     var _priTids=[utid,mirT?mirT.id:null].filter(Boolean);
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:5px 10px;background:#0e1c10;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25;position:sticky;left:0;z-index:5">'
+    h+='<tr>'
+      +'<td style="position:sticky;left:0;z-index:6;background:#0e1c10;padding:5px 10px;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25;white-space:nowrap">'
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
       +(mirT?'<span style="font-size:14px;color:#7aaa80;margin-left:8px">\u21cc '+esc(mirT.name)+'</span>':"")
-      +'</td></tr>';
+      +'</td><td colspan="'+(days+2)+'" style="background:#0e1c10;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25"></td></tr>';
     _priTids.forEach(function(tid){
       var team2=gt(tid),tcc2=tc(tid),mir2=gm(tid);
       var te2=A.employees.filter(function(e){return e.team===tid&&isEmpActive(e,A.year,A.month);});
       if(!te2.length) return;
       _globalShown[tid]=true;
-      h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:3px solid '+tcc2+'">'
+      h+='<tr>'
+        +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:3px solid '+tcc2+';white-space:nowrap">'
         +'<span style="color:'+tcc2+';font-size:15px;font-weight:700">'+esc(team2?team2.name:"\u00c9q."+tid)+'</span>'
         +(mir2?'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(mir2.name)+'</span>':"")
-        +'</td></tr>';
+        +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
       h+=_renderEmpRows(te2,tcc2);
     });
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:4px 10px;background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;position:sticky;left:0;z-index:5">'
-      +'<span style="font-size:13px;font-weight:700;color:#3a5030;text-transform:uppercase;letter-spacing:2px">Autres \u00e9quipes \u2014 consultation</span>'
-      +'</td></tr>';
+    h+='<tr>'
+      +'<td style="position:sticky;left:0;z-index:6;background:#0a140c;padding:4px 10px;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;white-space:nowrap">'
+      +'<span style="font-size:13px;font-weight:700;color:#3a5030;text-transform:uppercase;letter-spacing:2px">Autres \u00e9quipes</span>'
+      +'</td><td colspan="'+(days+2)+'" style="background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815"></td></tr>';
   }
   // ── Toutes les équipes groupées par famille ──────────────────────────────────
   var FAMS_ORDER=["bj","roulettes","cmc"];
@@ -2197,25 +2201,28 @@ function vPlan(){
     ftOrd.sort(function(a,b){var na=parseInt(a.replace(/[^0-9]/g,""))||0,nb=parseInt(b.replace(/[^0-9]/g,""))||0;return na-nb;});
     var hasUnshown=ftOrd.some(function(tid){return !_globalShown[tid];});
     if(!hasUnshown) return;
-    h+='<tr><td colspan="'+(days+3)+'" style="padding:6px 10px;background:#0e1c10;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25;position:sticky;left:0;z-index:5">'
+    h+='<tr>'
+      +'<td style="position:sticky;left:0;z-index:6;background:#0e1c10;padding:6px 10px;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25;white-space:nowrap">'
       +'<span style="font-size:15px;font-weight:800;color:'+famColor+';letter-spacing:1px;text-transform:uppercase">'+esc(famLabel)+'</span>'
-      +'</td></tr>';
+      +'</td><td colspan="'+(days+2)+'" style="background:#0e1c10;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25"></td></tr>';
     ftOrd.forEach(function(tid){
       if(_globalShown[tid]) return;
       _globalShown[tid]=true;
       var te=byFT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
-      h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+hexA(tcc,.31)+'">'
+      h+='<tr>'
+        +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:2px solid '+hexA(tcc,.31)+';white-space:nowrap">'
         +'<span style="color:'+tcc+';font-size:15px;font-weight:700">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
         +(mir?'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(mir.name)+'</span>':"")
-        +'</td></tr>';
+        +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
       h+=_renderEmpRows(te,tcc);
       if(mir&&byFT[mir.id]&&!_globalShown[mir.id]){
         _globalShown[mir.id]=true;
         var mtcc=tc(mir.id);
-        h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+hexA(mtcc,.31)+'">'
+        h+='<tr>'
+          +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:2px solid '+hexA(mtcc,.31)+';white-space:nowrap">'
           +'<span style="color:'+mtcc+';font-size:15px;font-weight:700">'+esc(mir.name)+'</span>'
           +'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
-          +'</td></tr>';
+          +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
         h+=_renderEmpRows(byFT[mir.id],mtcc);
       }
     });
