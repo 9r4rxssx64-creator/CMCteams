@@ -3922,12 +3922,18 @@ function vEmps(){
               <span style="font-size:14px;color:#7aaa80;width:52px;flex-shrink:0">Matricule</span>
               <span style="font-size:15px;font-family:monospace;color:#c9a227;letter-spacing:2px;background:rgba(201,162,39,.08);padding:3px 8px;border-radius:5px">${esc(emp.id)}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <span style="font-size:14px;color:#7aaa80;width:52px;flex-shrink:0">Mot de passe</span>
-              ${A.passwords[emp.id]
-                ?`<span style="font-size:14px;color:#7aaa80;font-style:italic">\u2705 D\u00e9fini</span>
-                  <button onclick="doResetPwDirect('${emp.id}')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:14px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>`
-                :`<span style="font-size:14px;color:#7aaa80;font-style:italic">Pas encore cr\u00e9\u00e9</span>`}
+            <div style="margin-bottom:8px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <span style="font-size:14px;color:#7aaa80;width:52px;flex-shrink:0">Mot de passe</span>
+                ${A.passwords[emp.id]
+                  ?'<span style="font-size:14px;color:#3a8a50;font-weight:700">\ud83d\udd12 D\u00e9fini</span>'
+                  +'<button onclick="doResetPwDirect(\''+emp.id+'\')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:14px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>'
+                  :'<span style="font-size:14px;color:#c9a227;font-style:italic">\u26a0\ufe0f Non cr\u00e9\u00e9</span>'}
+              </div>
+              <div style="display:flex;gap:4px">
+                <input id="adm_pw_${emp.id}" class="inp" type="password" placeholder="${A.passwords[emp.id]?"Nouveau mot de passe…":"Initialiser le mot de passe…"}" style="padding:6px 8px;font-size:15px;flex:1">
+                <button onclick="adminSetPw('${emp.id}',document.getElementById('adm_pw_${emp.id}').value)" style="background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.3);border-radius:6px;color:#3a8a50;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713 Définir</button>
+              </div>
             </div>
             <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.12)">
               <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\ud83d\udc64 Identit\u00e9 compl\u00e8te</div>
@@ -3977,6 +3983,9 @@ function vEmps(){
         </div>
       </div>`;
     } else {
+      var _er=A.reg[emp.id]||{};
+      var _erFull=(_er.prenom&&_er.nom)?_er.prenom+" "+_er.nom:(_er.prenom||_er.nom||"");
+      var _hasPw=!!A.passwords[emp.id];
       h+=`<div class="emp-row" onclick="editEmpId='${emp.id}';showAddF=false;dc()" style="cursor:pointer">
         <div style="width:28px;height:28px;border-radius:50%;background:${hexA(tcc,.08)};color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${esc(emp.name[0])}</div>
         <div style="flex:1;min-width:0">
@@ -3984,8 +3993,9 @@ function vEmps(){
             ${esc(emp.name)}
             ${isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">ADMIN</span>":""}
             ${emp.chef&&!isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
+            ${_erFull?'<span style="font-size:13px;color:#7aaa80;margin-left:6px">'+esc(_erFull)+'</span>':""}
           </div>
-          <div style="font-size:13px;color:#7aaa80;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
+          <div style="font-size:13px;color:#7aaa80;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${_hasPw?'<span style="color:#3a8a50;margin-left:4px">\ud83d\udd12</span>':'<span style="color:#6a5a30;margin-left:4px">\u26a0\ufe0f sans MDP</span>'}${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
           </div>
         </div>
         <span style="font-size:16px;color:#7aaa80;flex-shrink:0">\u203a</span>
@@ -4069,6 +4079,16 @@ function adminSetReg(id,field,val){
   A.reg[id][field]=(val||"").trim();
   ls("cmc_reg",A.reg);
   toast("Identit\u00e9 mise \u00e0 jour");
+  dc();
+}
+function adminSetPw(id,pw){
+  if(!A.user||A.user.id!==AID)return;
+  pw=(pw||"").trim();
+  if(pw.length<4){toast("Mot de passe trop court (4 caractères minimum)","err");return;}
+  A.passwords[id]={h:hashPw(pw)};
+  ls("cmc_pw",A.passwords);
+  _audit("set_pw",AID,id,null,"Mot de passe défini par admin");
+  toast("\u2705 Mot de passe défini pour "+id);
   dc();
 }
 
