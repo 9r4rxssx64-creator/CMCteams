@@ -951,7 +951,7 @@ function dc(){
   var c=document.getElementById("content");if(!c)return;
   c.innerHTML=vMain();
   if(A.view==="planning")adjGrid();
-  if(A.view==="departs")setTimeout(adjDeparts,80);
+  if(A.view==="departs")setTimeout(adjDeparts,150);
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
 function adjGrid(){
@@ -965,15 +965,18 @@ function adjDeparts(){
   var tod=new Date();
   if(tod.getFullYear()!==A.year||tod.getMonth()!==A.month)return;
   var todD=tod.getDate(),maxD=getDays(A.year,A.month);
-  // Trouver le <th> du jour courant ou du prochain jour de travail
   var th=null;
   for(var _d=todD;_d<=maxD;_d++){
     var _els=document.querySelectorAll('[data-depday="'+_d+'"]');
     if(_els&&_els.length>0){th=_els[0];break;}
   }
   if(!th)return;
-  var scrollPos=Math.max(0,th.offsetLeft-100);
-  document.querySelectorAll('.dep-grid-scroll').forEach(function(g){g.scrollLeft=scrollPos;});
+  // getBoundingClientRect pour un calcul fiable (offsetLeft est relatif au <table>, pas au conteneur scroll)
+  document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
+    var thR=th.getBoundingClientRect(),gR=g.getBoundingClientRect();
+    var sp=Math.max(0,g.scrollLeft+(thR.left-gR.left)-100);
+    g.scrollLeft=sp;
+  });
 }
 window.addEventListener("resize",adjGrid);
 
@@ -1354,11 +1357,12 @@ function vMain(){
 }
 function sv(v){
   if(v==="accueil"||v==="departs"){var _n=new Date();A.year=_n.getFullYear();A.month=_n.getMonth();}
+  if(v!=="chat"){_chatDm=null;_chatDmPick=false;_chatRep=null;} // Reset état chat à la navigation
   A.view=v;
   touchSession();
   render();
   if(v==="planning")setTimeout(adjGrid,80);
-  if(v==="departs")setTimeout(adjDeparts,80);
+  if(v==="departs")setTimeout(adjDeparts,150);
   if(v==="chat"){setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());ls("cmc_lastread_dm",now());},80);}
 }
 function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);}
@@ -5295,7 +5299,14 @@ window.addEventListener('storage',function(e){
   if(e.key==='cmc_ov'){A.overrides=lg('cmc_ov',{});dc();}
   else if(e.key==='cmc_e'){A.employees=lg('cmc_e',[]);dc();}
   else if(e.key==='cmc_t'){A.teams=lg('cmc_t',[]);dc();}
-  else if(e.key==='cmc_chat'){A.chatMsgs=lg('cmc_chat',[]);if(A.view==='chat')dc();}
+  else if(e.key==='cmc_chat'){
+    A.chatMsgs=lg('cmc_chat',[]);
+    if(A.view==='chat'){
+      var _inp=document.getElementById('chatIn');
+      if(_inp&&document.activeElement===_inp)return; // Ne pas interrompre une saisie en cours
+      dc();
+    }
+  }
 });
 
 if('serviceWorker' in navigator){
