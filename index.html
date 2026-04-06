@@ -3943,6 +3943,18 @@ function adminChangeEmpId(oldId, newId){
     }
   });
   ls("cmc_ov",A.overrides);
+  // Migrer les références d'import PDF (cmc_ref_YYYY-M) pour éviter les faux "absent du PDF"
+  for(var _yi=2025;_yi<=2028;_yi++){
+    for(var _mi=0;_mi<12;_mi++){
+      var _rk="cmc_ref_"+_yi+"-"+_mi;
+      var _ref=lg(_rk,null);
+      if(_ref&&_ref.rows&&_ref.rows[oldId]){
+        _ref.rows[newId]=_ref.rows[oldId];
+        delete _ref.rows[oldId];
+        ls(_rk,_ref);
+      }
+    }
+  }
   // Si l'utilisateur connecté est cet employé, mettre à jour la session
   if(A.user&&A.user.id===oldId){A.user=emp;ls("cmc_uid",newId);}
   _audit("change_matricule",AID,emp.name,oldId,newId);
