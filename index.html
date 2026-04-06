@@ -2284,6 +2284,7 @@ var editChefSlot=null;
 var _chatDm=null;      // {id, name} — destinataire DM actif
 var _chatRep=null;     // {ts, name, text} — message cité
 var _chatDmPick=false; // picker destinataire visible
+var _chatDmQ="";       // recherche dans le picker DM
 function saveChefsT(){if(!A.user||A.user.id!==AID)return;ls("cmc_chefs_t",CHEFS_T);}
 // Resynchronise CHEFS_T avec les donnees employes actuelles
 // Appele apres chaque import pour detecter arrivees/departs/changements d'equipe
@@ -2722,16 +2723,50 @@ function vChat(){
   }
   // Picker DM (liste des employés)
   if(_chatDmPick){
-    var empList=A.employees.filter(function(e){return e.id!==myId&&isEmpActive(e,A.year,A.month);}).sort(function(a,b){return a.name.localeCompare(b.name);});
-    h+='<div style="max-height:150px;overflow-y:auto;border-top:1px solid #182818;background:#060f08;flex-shrink:0">'
-      +'<div style="padding:4px 14px;font-size:14px;color:#4a6840;background:#060e07;position:sticky;top:0">\u2709 Envoyer un message priv\u00e9 \u00e0 :</div>';
-    empList.forEach(function(e,idx){
-      h+='<button onclick="chatSetDmEmp('+A.employees.indexOf(e)+')" style="display:block;width:100%;text-align:left;padding:5px 14px;background:transparent;border:none;border-bottom:1px solid #0c160a;font-size:15px;cursor:pointer;color:#90b870">'
-        +'<span style="color:'+(tc(e.team)||"#c9a227")+';font-weight:700">'+esc(e.name)+'</span>'
-        +'<span style="font-size:14px;color:#4a6840;margin-left:6px">\u00c9q.'+esc(e.team)+'</span>'
-        +'</button>';
-    });
-    h+='</div>';
+    var _q=_chatDmQ.trim().toUpperCase();
+    var empList=A.employees.filter(function(e){
+      if(e.id===myId||!isEmpActive(e,A.year,A.month))return false;
+      if(!_q)return true;
+      // Recherche par nom (ex: "PORTA"), prénom (A.reg), matricule (U...)
+      var reg=A.reg[e.id]||{};
+      var prenom=(reg.prenom||"").toUpperCase();
+      var nomComplet=(e.name+" "+prenom+" "+e.id).toUpperCase();
+      return nomComplet.indexOf(_q)>=0;
+    }).sort(function(a,b){return a.name.localeCompare(b.name);});
+    h+='<div style="border-top:1px solid #182818;background:#060f08;flex-shrink:0">'
+      +'<div style="padding:6px 10px;background:#060e07;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:16px">✉️</span>'
+      +'<input id="chatDmQIn" class="inp" placeholder="Rechercher nom, prénom, matricule…" autocomplete="off"'
+      +' style="flex:1;padding:7px 10px;font-size:15px;background:rgba(255,255,255,.06)"'
+      +' value="'+esc(_chatDmQ)+'"'
+      +' oninput="chatDmSearch(this.value)"'
+      +' onkeydown="if(event.key===\'Escape\'){chatCancelDm();}">'
+      +'<button onclick="chatCancelDm()" style="background:none;border:none;color:#4a6840;font-size:18px;cursor:pointer;padding:0 4px">\u00d7</button>'
+      +'</div>'
+      +'<div style="max-height:180px;overflow-y:auto">';
+    if(empList.length===0){
+      h+='<div style="padding:12px 14px;font-size:14px;color:#4a6840;text-align:center">Aucun employé trouvé</div>';
+    } else {
+      empList.slice(0,30).forEach(function(e){
+        var reg=A.reg[e.id]||{};
+        var prenom=reg.prenom||"";
+        var tCol=tc(e.team)||"#c9a227";
+        var teamObj=gt(e.team);
+        h+='<button onclick="chatSetDm(\''+esc(e.id)+'\',\''+esc(e.name)+'\')" style="display:block;width:100%;text-align:left;padding:8px 14px;background:transparent;border:none;border-bottom:1px solid #0c160a;cursor:pointer">'
+          +'<div style="display:flex;align-items:center;gap:8px">'
+          +'<div style="width:28px;height:28px;border-radius:50%;background:'+tCol+'20;border:1.5px solid '+tCol+'50;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:'+tCol+';flex-shrink:0">'+esc(e.name[0])+'</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:15px;font-weight:700;color:#c0d8a8">'+(prenom?esc(prenom)+' ':'')+esc(e.name.split(' ')[0])+'</div>'
+          +'<div style="font-size:13px;color:'+tCol+'">'+esc(teamObj?teamObj.name:'Éq.'+e.team)+'</div>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#3a5030;font-family:monospace">'+esc(e.id)+'</div>'
+          +'</div>'
+          +'</button>';
+      });
+    }
+    h+='</div></div>';
+    // Focus automatique sur l'input de recherche
+    setTimeout(function(){var i=document.getElementById("chatDmQIn");if(i)i.focus();},30);
   }
   // Barre de saisie
   h+='<div class="chat-bar">'
@@ -2759,8 +2794,9 @@ function sendMsg(){
 function chatSetDm(id,name){_chatDm={id:id,name:name};_chatDmPick=false;dc();setTimeout(function(){var i=document.getElementById("chatIn");if(i)i.focus();},50);}
 function chatSetDmById(uid){var e=A.employees.find(function(x){return x.id===uid;});if(e)chatSetDm(e.id,e.name);}
 function chatSetDmEmp(empIdx){var e=A.employees[empIdx];if(e)chatSetDm(e.id,e.name);}
-function chatCancelDm(){_chatDm=null;_chatDmPick=false;dc();}
-function chatPickDm(){_chatDmPick=!_chatDmPick;dc();}
+function chatCancelDm(){_chatDm=null;_chatDmPick=false;_chatDmQ="";dc();}
+function chatPickDm(){_chatDmPick=!_chatDmPick;_chatDmQ="";dc();setTimeout(function(){var i=document.getElementById("chatDmQIn");if(i)i.focus();},30);}
+function chatDmSearch(q){_chatDmQ=q;var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;dc();if(el){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}}}
 function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;_chatRep={ts:m.ts,name:m.name,text:m.text||""};dc();setTimeout(function(){var i=document.getElementById("chatIn");if(i)i.focus();},50);}
 function chatCancelReply(){_chatRep=null;dc();}
 function chatDelMsg(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m)return;if(!A.user||A.user.id!==AID)return;// Seul l'admin peut supprimer
