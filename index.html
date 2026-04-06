@@ -1542,6 +1542,7 @@ function vPlan(){
       <div style="font-size:10px;color:#7aaa80">Importez le planning PDF via Admin → Import pour afficher les horaires de ${esc(MFR[A.month])} ${A.year}.</div>
     </div>`;
   }
+  if(!isAdm){h+='<div style="padding:7px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:7px;margin-bottom:8px;font-size:9px;color:#6a8aaa">\u2139\ufe0f Vous voyez votre \u00e9quipe et son \u00e9quipe miroir. Les autres \u00e9quipes sont visibles en mode admin.</div>';}
   h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;width:100%"><thead><tr><th class="sth">Employ\u00e9</th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:6px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
