@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.98.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.99.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.98"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v8.99"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -283,7 +283,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 
 ---
 
-## Historique versions (v8.83 → v8.93)
+## Historique versions (v8.83 → v8.99)
 
 | Version | Changements |
 |---------|-------------|
@@ -302,6 +302,8 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 | v8.95 | Recherche internet (web_search), mode local toujours actif, audit 29/29 |
 | v8.96 | Login par nom+prénom (matricule optionnel), adminChangeEmpId, adminResetAllPw |
 | v8.97 | findEmpByName() — recherche prénom complet, préfixe STOCKÉ = préfixe SAISI |
+| v8.98 | (skipped — version numérotée dans le message d'accueil uniquement) |
+| v8.99 | Corrections générales issues des tests PORTA : fix step1 matricule ignoré, nettoyage DEF_EMP doublons, dead code stepRegister, message vMonPlanning amélioré |
 
 ---
 
@@ -310,6 +312,6 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v8.97";
+var APP_VER  = "v8.99";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 ```
