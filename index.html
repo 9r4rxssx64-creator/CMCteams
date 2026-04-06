@@ -2366,6 +2366,11 @@ function vDeparts(){
     var chefEmps=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(function(e){
       return e&&isEmpActive(e,A.year,A.month);
     });
+    // Garantir que l'utilisateur connecté apparaît dans sa propre grille même si son nom
+    // ne correspond pas exactement à CHEFS_T (ex: initiale différente après inscription)
+    if(A.user&&A.user.team===tid&&isEmpActive(A.user,A.year,A.month)&&!chefEmps.find(function(e){return e.id===A.user.id;})){
+      chefEmps.push(A.user);
+    }
     if(!chefEmps.length)return;
     var sl=chefEmps.length;
     var SEQ=getSeqForSize(sl); // s\u00e9quence adapt\u00e9e au nombre de chefs
