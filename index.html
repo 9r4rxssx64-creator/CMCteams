@@ -689,7 +689,7 @@ fbWrite(k,v);
 }
 
 // ── Synchronisation temps réel Firebase ─────────────────────────────────────
-var FB_URL=""; // ex: https://mon-projet-default-rtdb.firebaseio.com
+var FB_URL=localStorage.getItem("cmc_fb_url")||"https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_PATH="/cmcteams";
 var _fbEs=null,_fbConnected=false;
 // Clés fixes partagées entre tous les appareils
