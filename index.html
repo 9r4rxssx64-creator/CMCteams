@@ -1079,9 +1079,9 @@ function vLoginStep0(){
     <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" autocomplete="off"
       style="margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liMat').focus()">
-    <div style="font-size:11px;color:#a0c898;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM <span style="font-weight:400;color:#5a7060;text-transform:none;letter-spacing:0">(optionnel)</span></div>
-    <div style="font-size:9px;color:#5a7060;margin-bottom:6px">Si vous le connaissez \u2014 format U00001. Sinon, laissez vide.</div>
-    <input id="liMat" class="inp" type="text" placeholder="ex. U00071 (optionnel)"
+    <div style="font-size:11px;color:#c07830;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:400;color:#5a7060;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
+    <div style="font-size:9px;color:#5a7060;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
+    <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
       autocapitalize="characters" autocomplete="off"
       style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:#05100a;border-color:rgba(201,162,39,.15)"
       onkeydown="if(event.key==='Enter')step1()">
@@ -1246,6 +1246,13 @@ function stepRegister(){
     ls("cmc_e",A.employees);
   }
   var teamObj=gt(emp.team);
+  // Alerte admin si l'employé n'est pas reconnu dans la base
+  if(emp.team==="?"){
+    var alerts=lg("cmc_reg_alerts",[]);
+    alerts.push({ts:Date.now(),nom:nom,prenom:prenom,id:emp.id});
+    if(alerts.length>50)alerts=alerts.slice(-50);
+    ls("cmc_reg_alerts",alerts);
+  }
   A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();render();
   toast("Bienvenue "+prenom+"\u00a0!"+(teamObj?" \u2014 "+teamObj.name:"")+" Compte cr\u00e9\u00e9.");
 }
@@ -1339,12 +1346,23 @@ function step1(){
       ||A.employees.find(function(e){return e.name.indexOf(nb)===0&&e.name.slice(nb.length).charAt(0)===i1;});
     if(dm){emp=dm;uid=dm.id;}
   }
-  // 4. Pas trouvé → UID temporaire déterministe (sera lié au vrai matricule lors de l'inscription)
+  // 4. Pas trouvé → UID temporaire déterministe
   if(!uid){uid=genTempUid(nom,prenom);}
   // Vérifier inactif
   if(emp&&!isEmpActive(emp,A.year,A.month)){if(er)er.textContent="Compte d\u00e9sactiv\u00e9 \u2014 contactez l\u2019administration.";return;}
   loginUid=uid;
-  if(!A.passwords[uid]){loginStep=3;render();return;}
+  var hasAccount=!!A.passwords[uid];
+  // Première connexion : matricule OBLIGATOIRE
+  if(!hasAccount){
+    if(!mat){if(er)er.textContent="Premi\u00e8re connexion : votre matricule SBM est obligatoire.";return;}
+    if(mat!==uid&&!emp){
+      // Matricule fourni → on l'utilise directement comme UID final
+      var empByMat2=A.employees.find(function(e){return e.id===mat;});
+      if(empByMat2){loginUid=mat;uid=mat;emp=empByMat2;}
+      else{loginUid=mat;uid=mat;}
+    }
+    loginStep=3;render();return;
+  }
   loginStep=1;render();
 }
 
@@ -1729,10 +1747,24 @@ function vAccueil(){
     +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:2px;margin-top:4px">\u2666 CMC Teams</div>'
     +'<div style="font-size:8px;color:#7aaa80;letter-spacing:3px;text-transform:uppercase">Casino de Monte-Carlo</div>'
     +'</div>';
-  // Mini badge "en ligne"
+  // Bloc présence en ligne
   var _onl=getOnlineUsers();
   if(_onl.length>0){
-    h+='<div style="text-align:center;margin-bottom:10px"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(58,138,80,.1);border:1px solid rgba(58,138,80,.2);border-radius:20px;padding:3px 12px;font-size:9px;color:#5aaa70"><span style="width:7px;height:7px;border-radius:50%;background:#3a8a50;display:inline-block"></span>'+_onl.length+' utilisateur'+(_onl.length>1?'s':'')+' actif'+(_onl.length>1?'s':'')+' en ce moment</span></div>';
+    h+='<div class="card" style="padding:10px 12px;margin-bottom:10px;border-left:3px solid rgba(58,138,80,.6)">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    h+='<div style="display:flex;align-items:center;gap:6px"><div class="online-dot"></div><div style="font-size:10px;font-weight:700;color:#5aaa70;text-transform:uppercase;letter-spacing:1px">En ligne maintenant</div></div>';
+    h+='<span style="background:rgba(58,138,80,.15);color:#3a8a50;border:1px solid rgba(58,138,80,.3);border-radius:10px;padding:2px 9px;font-size:9px;font-weight:800">'+_onl.length+'</span>';
+    h+='</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    _onl.forEach(function(u){
+      var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team;
+      var isMe=A.user&&u.uid===A.user.id;
+      h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:'+hexA(tcc2,.06)+';border:1px solid '+hexA(tcc2,.2)+';border-radius:20px;flex-shrink:0">';
+      h+='<div style="position:relative;flex-shrink:0"><div style="width:22px;height:22px;border-radius:50%;background:'+hexA(tcc2,.18)+';color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-radius:50%;background:#3a8a50;border:1px solid #060f06"></div></div>';
+      h+='<div><div style="font-size:10px;font-weight:700;color:#d0e8c0">'+esc(u.name)+(isMe?' <span style="font-size:8px;color:#7aaa80">(moi)</span>':'')+'</div><div style="font-size:8px;color:'+tcc2+'">'+esc(tname)+'</div></div>';
+      h+='</div>';
+    });
+    h+='</div></div>';
   }
   // Carte "Mon service"
   if(u){
@@ -2911,9 +2943,18 @@ function vAdmin(){
   // Calcul de la dernière connexion réussie pour affichage dans l'admin
   var _lastOk=(function(){var ss=lg("cmc_admin_sessions",[]);for(var i=ss.length-1;i>=0;i--){if(ss[i].type==="success"&&i<ss.length-1)return ss[i];}return null;})();
   var _lastOkStr=_lastOk?(function(){var d=new Date(_lastOk.ts);return d.toLocaleDateString("fr-FR")+" \u00e0 "+String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");})():null;
+  var _regAlerts=lg("cmc_reg_alerts",[]);
   return '<div class="page">'
   +'<div style="margin-bottom:14px"><div class="sec-title">Administration</div>'
   +'<div class="sec-sub">Acc\u00e8s r\u00e9serv\u00e9</div></div>'
+  +(_regAlerts.length>0?'<div style="padding:10px 12px;background:rgba(192,120,48,.1);border:1px solid rgba(192,120,48,.35);border-radius:8px;margin-bottom:10px;cursor:pointer" onclick="var al=lg(\'cmc_reg_alerts\',[]);al=[];ls(\'cmc_reg_alerts\',al);dc();">'
+    +'<div style="font-size:11px;font-weight:700;color:#c07830">\ud83d\udc64 '+_regAlerts.length+' nouveau'+(
+_regAlerts.length>1?"x":"")+" employ\u00e9"+(
+_regAlerts.length>1?"s":"")+' inscrit'+(
+_regAlerts.length>1?"s":"")+" — \u00e9quipe inconnue</div>"
+    +'<div style="display:flex;flex-direction:column;gap:3px;margin-top:6px">'+_regAlerts.slice(-5).map(function(a){var d=new Date(a.ts);return '<div style="font-size:9px;color:#a08060">\u2022 '+esc(a.prenom+' '+a.nom)+' ('+esc(a.id)+') \u2014 '+d.toLocaleDateString("fr-FR")+'</div>';}).join("")+'</div>'
+    +'<div style="font-size:8px;color:#7a6040;margin-top:5px">Appuyez pour effacer \u2014 assignez leur \u00e9quipe dans la fiche Employ\u00e9s</div>'
+    +'</div>':"")
   +(_failsAlert>0?'<div style="padding:10px 12px;background:rgba(180,40,40,.1);border:1px solid rgba(180,40,40,.3);border-radius:8px;margin-bottom:10px;cursor:pointer" onclick="sv(\'security\')">'
     +'<div style="font-size:11px;font-weight:700;color:#d06060">\u26a0\ufe0f '+_failsAlert+' tentative'+(
 _failsAlert>1?"s":"")+" \u00e9chou\u00e9e"+(
