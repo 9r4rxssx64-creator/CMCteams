@@ -1379,17 +1379,14 @@ function calcDepPos(empName,tid,day){
   var chefNames=CHEFS_T[tid]||[];
   var sl=chefNames.length; if(!sl) return null;
   var SEQ=getSeqForSize(sl);
-  var mo2=moOff(A.year,A.month);
-  var teamPat=REPOS[tid]||[];
   var days=getDays(A.year,A.month);
   var da=[]; for(var i=1;i<=days;i++) da.push(i);
-  // Utiliser le planning réel (gpl) pour cohérence avec le tableau vDeparts
+  // Uniquement les jours importés — cohérence avec vDeparts (pas de fallback REPOS)
   var pl=gpl();
   var refEmp=chefNames.map(function(n){return A.employees.find(function(e){return e.name===n;});})
-    .find(function(e){return e&&isEmpActive(e,A.year,A.month);});
-  var workDays=refEmp
-    ?da.filter(function(d){return isWork((pl[refEmp.id]||{})[d]||'');})
-    :da.filter(function(d){var ad=mo2*30+(d-1);var cp=((ad%30)+30)%30+1;return teamPat.indexOf(cp)<0;});
+    .find(function(e){return e&&isEmpActive(e,A.year,A.month)&&da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});});
+  if(!refEmp) return null; // pas de données importées → position inconnue
+  var workDays=da.filter(function(d){return isWork((pl[refEmp.id]||{})[d]||'');});
   var wi=workDays.indexOf(day); if(wi<0) return null;
   var base=CI[empName]!==undefined?CI[empName]:0;
   var rotIdx=(wi%4+Math.floor(wi/4)+base)%sl;
