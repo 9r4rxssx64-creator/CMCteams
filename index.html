@@ -1746,7 +1746,8 @@ function sv(v){
   A.view=v;
   touchSession();
   render();
-  window.scrollTo(0,0); // Retour en haut à chaque changement de page
+  // Scroll en haut après le layout — requestAnimationFrame garantit que le DOM est peint
+  requestAnimationFrame(function(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
   if(v==="planning")setTimeout(adjGrid,80);
   if(v==="departs")setTimeout(adjDeparts,150);
   if(v==="chat"){setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());ls("cmc_lastread_dm",now());},80);}
