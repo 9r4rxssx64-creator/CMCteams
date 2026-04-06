@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.1.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.5.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.1"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v9.5"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -297,10 +297,15 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 ## Sécurité
 
 - `esc(s)` : toujours sur les données utilisateur avant innerHTML
+- `e.message` dans les handlers d'erreur : `.replace(/</g,"&lt;")` obligatoire (pas d'accès à `esc` dans `window.onerror`)
 - Session TTL 8h (`cmc_lastact`)
 - Rate-limiting PIN : 5 échecs → verrouillage progressif [30s, 2min, 10min, 1h, 24h]
 - Seul `AID = "U11804"` (DESARZENS K) peut modifier les données
+- Toutes les fonctions destructrices (`doResetPwDirect`, `adminSetPw`, etc.) doivent avoir le guard `if(!A.user||A.user.id!==AID)return;`
+- Hash mots de passe : `hashPwStrong()` pour nouveaux comptes (10 000 rounds + sel), `verifyPw()` pour vérification (backward-compat legacy DJB2)
 - Journal sécurité admin : toutes les connexions/échecs/déconnexions
+- `cmc_admin_pin` dans `FB_LOCAL` (ne jamais synchroniser vers Firebase)
+- Proxy IA optionnel : `cmc_ia_proxy` dans FB_LOCAL, bouton 🔗 dans vIA pour l'admin
 
 ---
 
@@ -377,6 +382,10 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 | v8.99 | Fix step1 matricule ignoré, nettoyage DEF_EMP doublons, vMonPlanning message sync |
 | v9.0 | viewAs/viewAsBack (vue-employé admin), reset chat, reset compte complet (pw+reg) |
 | v9.1 | Fix recherche : searchInput() helper, inputs empQIn/pwQIn ne perdent plus le focus |
+| v9.2 | Admin voit son équipe+miroir en tête dans vPlan et vDeparts, sticky solides |
+| v9.3 | Section headers sticky vPlan, overflow-x:clip body, gm() fallback DEF_TEAMS, requestAnimationFrame scroll |
+| v9.4 | Zoom activé (max-scale=5), vDeparts tous les jours du mois, logUserLogin enrichi (IP/UA/écran/timezone), logIAInteraction (cmc_ia_log Firebase), adminSetPw, fiches employés nom/prénom/🔒 |
+| v9.5 | Audit sécurité : XSS corrigés (3 handlers d'erreur), guard doResetPwDirect, hashPwStrong() 10k rounds backward-compat, proxy IA (iaSetProxy/cmc_ia_proxy), cmc_admin_pin dans FB_LOCAL, fallback base=0 cohérent vDeparts↔calcDepPos, adjMonPlanning scroll aujourd'hui, colonne nom 100-130px |
 
 ---
 
@@ -385,7 +394,7 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v9.1";
+var APP_VER  = "v9.5";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
