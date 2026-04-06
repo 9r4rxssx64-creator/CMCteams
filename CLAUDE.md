@@ -1,6 +1,8 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.92.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.93.
+
+> **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
 ---
 
@@ -245,6 +247,34 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 
 ---
 
+## Recherche d'outils (ToolSearch)
+
+**À chaque session**, avant toute interaction GitHub ou MCP :
+
+1. Les outils MCP sont listés dans les messages `<system-reminder>` comme "deferred tools"
+2. Utiliser `ToolSearch` pour charger leur schéma avant de les appeler :
+   ```
+   ToolSearch("select:mcp__github__create_pull_request")
+   ToolSearch("github")           // liste tous les outils GitHub disponibles
+   ToolSearch("select:AskUserQuestion,TodoWrite")
+   ```
+3. Ne jamais déclarer un outil indisponible sans avoir cherché avec `ToolSearch`
+
+**Outils MCP courants dans ce projet :**
+
+| Outil | Usage |
+|-------|-------|
+| `mcp__github__push_files` | Pousser des fichiers vers GitHub |
+| `mcp__github__create_pull_request` | Créer une PR |
+| `mcp__github__add_issue_comment` | Commenter une issue |
+| `mcp__github__get_file_contents` | Lire un fichier sur GitHub |
+| `mcp__github__list_branches` | Lister les branches |
+| `mcp__github__search_code` | Chercher du code dans le repo |
+| `mcp__github__pull_request_read` | Lire une PR |
+| `mcp__github__subscribe_pr_activity` | S'abonner aux événements PR |
+
+---
+
 ## Workflow Git
 
 - **Branche principale :** `main` (déploie GitHub Pages)
@@ -253,7 +283,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 
 ---
 
-## Historique versions (v8.83 → v8.92)
+## Historique versions (v8.83 → v8.93)
 
 | Version | Changements |
 |---------|-------------|
@@ -267,6 +297,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 | v8.90 | Journal sécurité admin, logAdminSession, vAdminSecurity |
 | v8.91 | Présence temps réel (vOnline), historique connexions, horloge topbar, CSS animations |
 | v8.92 | adjGrid scroll vers aujourd'hui (vPlan), tri équipes croissant, data-planday |
+| v8.93 | Fix couleur rgba vMonPlanning (tcc+"14" → rgba valide), CLAUDE.md ToolSearch |
 
 ---
 
@@ -275,6 +306,6 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v8.92";
+var APP_VER  = "v8.93";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 ```
