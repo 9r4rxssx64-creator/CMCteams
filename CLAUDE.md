@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.99.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.1.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -8,11 +8,11 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ## Vue d'ensemble du projet
 
-**CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
+**CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.99"`, `DATA_VER = 29`
-- **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
+- **Version actuelle :** `APP_VER = "v9.1"`, `DATA_VER = 29`
+- **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
 ---
@@ -21,7 +21,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ```
 CMCteams/
-├── index.html          # Application entière (HTML + CSS + JS, ~430 KB)
+├── index.html          # Application entière (HTML + CSS + JS, ~440 KB)
 ├── sw.js               # Service Worker (cache offline — ajouté v8.78)
 ├── README.md           # Description minimale
 ├── CLAUDE.md           # Ce fichier
@@ -43,7 +43,7 @@ CMCteams/
 </head>
 <body>
   <div id="app"></div>   ← point de montage principal
-  <script>  ← ~5700 lignes de JS vanilla
+  <script>  ← ~5900 lignes de JS vanilla
   </script>
 </body>
 ```
@@ -76,6 +76,32 @@ var A = {
 - `gpl()` retourne uniquement les overrides (données importées + modifications admin)
 - Sans import pour un mois → les vues affichent "Importez le planning PDF"
 - `genBase()` et `cumWorkDays()` sont **supprimées** depuis v8.80
+
+---
+
+## Firebase Realtime Database (v8.98+)
+
+```javascript
+var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+var FB_URL = "";   // initialisé par fbInit() — utilise FB_DEFAULT si pas de cmc_fb_url
+
+// Clés synchronisées (partagées entre tous les appareils)
+var FB_FIX = ["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat",
+              "cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog"];
+var FB_PRE = ["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_"];
+
+// Clés locales uniquement (non synchronisées)
+var FB_LOCAL = ["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm",
+                "cmc_pin_fails","cmc_admin_sessions","cmc_ia_enabled",
+                "cmc_ia_websearch","cmc_ia_key","cmc_fb_url"];
+
+fbInit()           // Appelé au démarrage — charge tout + démarre SSE listener
+fbWrite(k, v)      // Appelé par ls() automatiquement si clé partagée
+fbLoadAll()        // Charge snapshot complet depuis Firebase
+fbStartListening() // SSE EventSource sur /cmcteams.json pour mises à jour temps réel
+```
+
+**Indicateur topbar :** 🟢 connecté / 🟡 en cours de connexion
 
 ---
 
@@ -115,7 +141,7 @@ var A = {
 | `vMonPlanning` | Planning personnel mensuel complet | Tous |
 | `vPlan` | Grille planning équipe | Tous |
 | `vDeparts` | Grille ordres de départ | Tous |
-| `vChat` | Chat (DM, réponses, filtres) | Tous |
+| `vChat` | Chat (DM, réponses, filtres, vider) | Tous |
 | `vStats` | Dashboard statistiques | Admin |
 | `vAdmin` | Panneau admin | Admin |
 | `vOnline` | Présence temps réel + historique 24h | Admin |
@@ -124,25 +150,37 @@ var A = {
 | `vEmps` | Gestion employés + éditeur identité (A.reg) | Admin |
 | `vRetrait` | Employés retraités | Admin |
 | `vImport` | Import PDF | Admin |
-| `vPasswords` | Gestion mots de passe | Admin |
+| `vPasswords` | Gestion mots de passe + vue-employé + reset | Admin |
 | `vAbsences` | Suivi absences | Admin |
 | `vAuditLog` | Journal modifications | Admin |
 | `vIA` | Chatbot IA | Tous |
 
 ---
 
+## Impersonation admin — Vue-employé (v9.0+)
+
+```javascript
+var _viewAs = null; // null = mode normal, sinon = objet user admin sauvegardé
+
+viewAs(id)      // Admin prend la vue d'un employé donné
+viewAsBack()    // Retour au compte admin (aussi déclenché par doLogout)
+```
+
+- Bannière jaune fixe en haut de l'écran quand actif
+- Bouton "← Retour admin" dans la bannière
+- Le bouton ✕ (topbar) ramène l'admin au lieu de déconnecter
+- Déclenché depuis vPasswords → bouton "👁 Voir" par employé
+
+---
+
 ## Système de présence (v8.91+)
 
 ```javascript
-// Fonctions
 logUserLogin(emp)        // Appelé à chaque connexion réussie
 logUserLogout(uid)       // Appelé à la déconnexion
 updatePresence()         // Heartbeat toutes les 2 minutes
 getOnlineUsers()         // Liste utilisateurs actifs (< 5 min)
 startPresenceHeartbeat() // Démarre le heartbeat (login + reprise session)
-
-// Limitation : fonctionne par session navigateur (localStorage partagé entre onglets)
-// Pas de présence cross-device (pas de backend)
 ```
 
 ---
@@ -172,11 +210,27 @@ Après chaque import :
 ```javascript
 adminSetReg(id, field, val)
 // Modifie A.reg[id][field] (prenom/nom/email), sauvegarde cmc_reg, dc()
-// Accessible dans la fiche employé (vEmps, section "Identité complète")
 ```
 
 **Recherche universelle** (vEmps + vPasswords) :
 - Matricule SBM, `NOM Initiale`, prénom, nom complet, email
+
+---
+
+## Recherche — helper searchInput (v9.1+)
+
+```javascript
+// Évite la perte de focus après dc() dans les champs de recherche
+searchInput(key, val, id)
+// key   : clé dans A (ex: "empQ", "pwQ")
+// val   : nouvelle valeur
+// id    : id de l'input HTML à refocuser
+
+// Utilisé dans :
+// vEmps     → id="empQIn"
+// vPasswords → id="pwQIn"
+// vChat DM  → id="chatDmQIn" (via chatDmSearch)
+```
 
 ---
 
@@ -218,9 +272,25 @@ Nav admin:     Accueil | Mon Plan. | Équipe | Départs | Stats | Chat | Admin |
 // Fonctions
 chatSetDm(id, name)    chatCancelDm()    chatPickDm()
 chatSetReply(ts)       chatCancelReply()
-chatDelMsg(ts)         // Admin seulement
-chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
+chatDelMsg(ts)         // Admin : supprime un message (soft delete)
+chatFilterSet(f)       // Admin : "all"|"pub"|"dm"
+// Admin : bouton "🗑 Vider" dans l'en-tête du chat pour effacer tous les messages
 ```
+
+---
+
+## Reset compte employé (v9.0+)
+
+`doResetPwDirect(uid)` — efface **mot de passe + A.reg** (identité complète).
+L'employé devra se réinscrire à la prochaine connexion. Avec confirmation dialog.
+
+---
+
+## Changement de matricule (adminChangeEmpId)
+
+Migre automatiquement : `A.employees`, `A.passwords`, `A.reg`, `A.overrides`,
+et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
+"absent du PDF" après changement d'ID.
 
 ---
 
@@ -244,6 +314,8 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 6. Push directement sur `main` sans branche feature ❌
 7. Modifier des données sans vérifier `A.user.id === AID` ❌
 8. `innerHTML` sans `esc()` ❌
+9. `oninput` appelant `dc()` directement sans restaurer le focus → utiliser `searchInput()` ❌
+10. `overflow-y:hidden` sur parent de colonne sticky (iOS Safari) ❌
 
 ---
 
@@ -255,10 +327,9 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 2. Utiliser `ToolSearch` pour charger leur schéma avant de les appeler :
    ```
    ToolSearch("select:mcp__github__create_pull_request")
-   ToolSearch("github")           // liste tous les outils GitHub disponibles
+   ToolSearch("github")
    ToolSearch("select:AskUserQuestion,TodoWrite")
    ```
-3. Ne jamais déclarer un outil indisponible sans avoir cherché avec `ToolSearch`
 
 **Outils MCP courants dans ce projet :**
 
@@ -283,7 +354,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 
 ---
 
-## Historique versions (v8.83 → v8.99)
+## Historique versions (v8.83 → v9.1)
 
 | Version | Changements |
 |---------|-------------|
@@ -297,13 +368,15 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 | v8.90 | Journal sécurité admin, logAdminSession, vAdminSecurity |
 | v8.91 | Présence temps réel (vOnline), historique connexions, horloge topbar, CSS animations |
 | v8.92 | adjGrid scroll vers aujourd'hui (vPlan), tri équipes croissant, data-planday |
-| v8.93 | Fix couleur rgba vMonPlanning (tcc+"14" → rgba valide), CLAUDE.md ToolSearch |
-| v8.94 | Bouton admin désactiver/activer IA Claude (économie tokens) |
-| v8.95 | Recherche internet (web_search), mode local toujours actif, audit 29/29 |
+| v8.93 | Fix couleur rgba vMonPlanning, CLAUDE.md ToolSearch |
+| v8.94 | Bouton admin désactiver/activer IA Claude |
+| v8.95 | Recherche internet (web_search), mode local toujours actif |
 | v8.96 | Login par nom+prénom (matricule optionnel), adminChangeEmpId, adminResetAllPw |
 | v8.97 | findEmpByName() — recherche prénom complet, préfixe STOCKÉ = préfixe SAISI |
-| v8.98 | (skipped — version numérotée dans le message d'accueil uniquement) |
-| v8.99 | Corrections générales issues des tests PORTA : fix step1 matricule ignoré, nettoyage DEF_EMP doublons, dead code stepRegister, message vMonPlanning amélioré |
+| v8.98 | Firebase Realtime Database (sync temps réel tous appareils), FB_DEFAULT hardcodé |
+| v8.99 | Fix step1 matricule ignoré, nettoyage DEF_EMP doublons, vMonPlanning message sync |
+| v9.0 | viewAs/viewAsBack (vue-employé admin), reset chat, reset compte complet (pw+reg) |
+| v9.1 | Fix recherche : searchInput() helper, inputs empQIn/pwQIn ne perdent plus le focus |
 
 ---
 
@@ -312,6 +385,7 @@ chatFilterSet(f)       // Admin seulement : "all"|"pub"|"dm"
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v8.99";
+var APP_VER  = "v9.1";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
+var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
