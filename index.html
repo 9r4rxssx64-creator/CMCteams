@@ -23,7 +23,7 @@ body{
   font-size:17px;color:#e0f0d8;
   min-height:100vh;
   background:#1a3020;
-  overflow-x:hidden; /* Empêche la page de scroller horizontalement */
+  overflow-x:clip; /* Empêche la page de scroller horizontalement sans bloquer les enfants scrollables */
 }
 /* Feutrine avec texture double trame */
 body::before{
