@@ -3199,7 +3199,7 @@ function vOnline(){
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
   h+='<div><div style="font-size:14px;color:#7aaa80;font-weight:700;text-transform:uppercase;letter-spacing:1px">\ud83e\udd16 Historique IA (7j)</div>';
   h+='<div style="font-size:13px;color:#5a7a5a">'+recentIA.length+' interactions</div></div>';
-  h+='<button onclick="if(confirm(\'Effacer historique IA ?\\')){ls(\'cmc_ia_log\',[]);dc();}" style="background:rgba(160,40,40,.08);border:1px solid rgba(160,40,40,.2);border-radius:5px;color:#a06060;font-size:13px;padding:3px 8px;cursor:pointer">\ud83d\uddd1 Effacer</button>';
+  h+='<button onclick="if(confirm(\'Effacer historique IA ?\')){ls(\'cmc_ia_log\',[]);dc();}" style="background:rgba(160,40,40,.08);border:1px solid rgba(160,40,40,.2);border-radius:5px;color:#a06060;font-size:13px;padding:3px 8px;cursor:pointer">\ud83d\uddd1 Effacer</button>';
   h+='</div>';
   if(!recentIA.length){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucune interaction IA cette semaine</div>';}
   else{
