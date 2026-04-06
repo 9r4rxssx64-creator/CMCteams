@@ -686,6 +686,7 @@ function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){
   }
 }}
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
+function hexA(h,a){return "rgba("+parseInt(h.slice(1,3),16)+","+parseInt(h.slice(3,5),16)+","+parseInt(h.slice(5,7),16)+","+a+")";}
 function now(){return Date.now();}
 function fmtTs(ms){var d=new Date(ms),n=new Date();var sameDay=d.toDateString()===n.toDateString();var yest=new Date(n.getTime()-864e5);var isYest=d.toDateString()===yest.toDateString();var t=String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");if(sameDay)return t;if(isYest)return"hier "+t;return d.getDate()+"/"+(d.getMonth()+1)+" "+t;}
 function moOff(y,m){return(y-2026)*12+(m-2);}
@@ -1826,7 +1827,7 @@ function vPlan(){
       var p=pl[emp.id]||{};var repos=0,trav=0;
       Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
-      var nbg=isMe?(tcc2+"0a"):"#162818",ncol=isMe?tcc2:"#8a9a78";
+      var nbg=isMe?hexA(tcc2,.04):"#162818",ncol=isMe?tcc2:"#8a9a78";
       rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
         +'<td class="ntd" style="background:'+nbg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
         +(isMe?"\u25b6 ":"")+esc(empLabel(emp))+(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</td>';
@@ -1890,7 +1891,7 @@ function vPlan(){
       if(_globalShown[tid]) return;
       _globalShown[tid]=true;
       var te=byFT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
-      h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+tcc+'50">'
+      h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+hexA(tcc,.31)+'">'
         +'<span style="color:'+tcc+';font-size:11px;font-weight:700">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
         +(mir?'<span style="color:#7aaa80;font-size:9px"> \u21cc '+esc(mir.name)+'</span>':"")
         +'</td></tr>';
@@ -1898,7 +1899,7 @@ function vPlan(){
       if(mir&&byFT[mir.id]&&!_globalShown[mir.id]){
         _globalShown[mir.id]=true;
         var mtcc=tc(mir.id);
-        h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+mtcc+'50">'
+        h+='<tr><td colspan="'+(days+3)+'" class="steptd" style="border-left:2px solid '+hexA(mtcc,.31)+'">'
           +'<span style="color:'+mtcc+';font-size:11px;font-weight:700">'+esc(mir.name)+'</span>'
           +'<span style="color:#7aaa80;font-size:9px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
           +'</td></tr>';
@@ -2106,7 +2107,7 @@ function vDeparts(){
     if(todD>0&&!highlightD){for(var _wi=0;_wi<workDays.length;_wi++){if(workDays[_wi]>todD){nextWorkD=workDays[_wi];break;}}}
     var showD=highlightD||nextWorkD;
     var ciOpen=openCITeam===tid;
-    var ciBtn=isAdm?('<button onclick="showCI(\''+tid+'\')" style="margin-left:auto;background:'+(ciOpen?tcc+'20':'transparent')+';border:1px solid '+(ciOpen?tcc+'50':'#1e3020')+';border-radius:6px;padding:4px 10px;font-size:11px;color:'+(ciOpen?tcc:'#3a5030')+';cursor:pointer;font-weight:700">\u2699\ufe0f Positions</button>'):'';
+    var ciBtn=isAdm?('<button onclick="showCI(\''+tid+'\')" style="margin-left:auto;background:'+(ciOpen?hexA(tcc,.13):'transparent')+';border:1px solid '+(ciOpen?hexA(tcc,.31):'#1e3020')+';border-radius:6px;padding:4px 10px;font-size:11px;color:'+(ciOpen?tcc:'#3a5030')+';cursor:pointer;font-weight:700">\u2699\ufe0f Positions</button>'):'';
     // Équipe sans jours ouvrés calculables → afficher juste l'ordre de rotation sans grille
     if(!workDays.length){
       h+='<div style="margin-bottom:10px;background:'+tcc+'08;border:1px solid '+tcc+'18;border-radius:8px;padding:8px 12px">'
@@ -2323,14 +2324,14 @@ function vStats(){
     if(emp.team!==prevTeam){
       prevTeam=emp.team;
       var tcc2=tc(emp.team),team2=gt(emp.team);
-      h+=`<div style="font-size:9px;font-weight:800;color:${tcc2};text-transform:uppercase;letter-spacing:2px;margin:6px 0 2px;padding-bottom:4px;border-bottom:1px solid ${tcc2}30">${esc(team2?team2.name:emp.team)}</div>`;
+      h+=`<div style="font-size:9px;font-weight:800;color:${tcc2};text-transform:uppercase;letter-spacing:2px;margin:6px 0 2px;padding-bottom:4px;border-bottom:1px solid ${hexA(tcc2,.19)}">${esc(team2?team2.name:emp.team)}</div>`;
     }
     var p=pl[emp.id]||{},v=Object.values(p);
     var cnts={};CK.forEach(function(c){cnts[c]=v.filter(function(x){return x===c;}).length;});
     var trav=v.filter(function(x){return x&&x!=="RH"&&x!=="R";}).length;
     var repos=v.filter(function(x){return x==="RH"||x==="R";}).length;
     var tcc=tc(emp.team);
-    h+=`<div class="card" style="padding:10px 12px;border-left:2px solid ${tcc}40">
+    h+=`<div class="card" style="padding:10px 12px;border-left:2px solid ${hexA(tcc,.25)}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:5px">
           <span style="font-size:11px;font-weight:600;color:#c0cca8">${esc(emp.name)}</span>
@@ -3277,9 +3278,9 @@ function vTeams(){
     var mi=gm(team.id);
     var chefs=CHEFS_T[team.id]||[];
     var teamEmps=A.employees.filter(function(e){return e.team===team.id;});
-    h+=`<div class="card" style="padding:12px;border-top:2px solid ${tcc}45;margin-bottom:8px">
+    h+=`<div class="card" style="padding:12px;border-top:2px solid ${hexA(tcc,.27)};margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="width:28px;height:28px;border-radius:7px;background:${tcc}18;color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${esc(team.id)}</div>
+        <div style="width:28px;height:28px;border-radius:7px;background:${hexA(tcc,.09)};color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${esc(team.id)}</div>
         <input class="inp" style="flex:1;padding:7px 10px;font-size:12px;font-weight:600" value="${esc(team.name)}" onchange="uT('${team.id}','name',this.value)">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -3294,14 +3295,14 @@ function vTeams(){
         ${(function(){
           var chef=CHEF_EQ[team.id]||"";
           var isEditing=editChefSlot&&editChefSlot.tid===team.id;
-          var r=`<div style="border:1px solid ${tcc}30;border-radius:8px;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${tcc}08">
+          var r=`<div style="border:1px solid ${hexA(tcc,.19)};border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${hexA(tcc,.03)}">
               <span style="font-size:18px">\ud83d\udc51</span>
               <span style="font-size:12px;font-weight:700;color:#d0cca0;flex:1">${esc(chef||"\u2014 Non d\u00e9fini \u2014")}</span>
-              <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?tcc+'20':'transparent'};border:1px solid ${isEditing?tcc+'50':'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
+              <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?hexA(tcc,.13):'transparent'};border:1px solid ${isEditing?hexA(tcc,.31):'#1e3020'};border-radius:6px;padding:5px 12px;font-size:11px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
             </div>`;
           if(isEditing){
-            r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${tcc}20">
+            r+=`<div style="padding:10px;background:#0a180c;border-top:1px solid ${hexA(tcc,.13)}">
               <div style="font-size:9px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
               <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
                 ${teamEmps.map(function(e,ei){var sel=chef===e.name;return "<button onclick=\"pickChef('"+team.id+"',"+ei+")\" style=\"text-align:left;padding:9px 12px;background:"+(sel?"rgba(201,162,39,.15)":"#0c1e0e")+";border:1px solid "+(sel?"rgba(201,162,39,.4)":"#1e3020")+";border-radius:7px;font-size:12px;color:"+(sel?"#c9a227":"#90a878")+";cursor:pointer;font-weight:"+(sel?700:400)+"\">"+esc(e.name)+(sel?" \u2713":"")+"</button>";}).join("")}
@@ -3363,7 +3364,7 @@ function vEmps(){
 
     if(isEdit){
       // Panneau d'\u00e9dition inline
-      h+=`<div style="padding:12px;background:${tcc}08;border-left:2px solid ${tcc}50">
+      h+=`<div style="padding:12px;background:${hexA(tcc,.03)};border-left:2px solid ${hexA(tcc,.31)}">
         <div style="font-size:11px;font-weight:700;color:${tcc};margin-bottom:10px">\u270f\ufe0f ${esc(emp.name)}</div>
         <div style="display:flex;flex-direction:column;gap:8px">
 
@@ -3463,7 +3464,7 @@ function vEmps(){
       </div>`;
     } else {
       h+=`<div class="emp-row" onclick="editEmpId='${emp.id}';showAddF=false;dc()" style="cursor:pointer">
-        <div style="width:28px;height:28px;border-radius:50%;background:${tcc}15;color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${esc(emp.name[0])}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:${hexA(tcc,.08)};color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${esc(emp.name[0])}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-weight:${isAdm?700:400};color:${isAdm?"#c9a227":"#a0b090"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             ${esc(emp.name)}
@@ -3533,7 +3534,7 @@ function createEmpFromImport(name,family){
   _audit("createEmpFromImport",tmpId,name,null,{name:name,family:family,id:tmpId});
   toast("\u2705 "+name+" ajout\u00e9 \u2014 matricule temporaire \u00e0 corriger dans la fiche");
   editEmpId=tmpId;
-  sv("emps");
+  sv("employees");
 }
 
 function markAsRetired(empId,toMo){
