@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.97.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v8.98.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le département BlackJack du Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v8.97"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v8.98"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur uniquement (pas de serveur ni BDD)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
