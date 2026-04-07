@@ -94,7 +94,7 @@ select.inp{-webkit-appearance:none}
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
 .sth{padding:3px 4px;background:#223a26;color:#b0d8a8;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3)}
-.sth .nw,.ntd .nw{width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.sth .nw,.ntd .nw{width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .dth{padding:2px 1px;min-width:28px;background:#223a26;font-size:14px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .ntd{padding:2px 4px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:12px;text-align:left}
@@ -1355,7 +1355,7 @@ function adjDeparts(){
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
-    g.scrollLeft=Math.max(0,th.offsetLeft-90); // 90 = largeur fixe colonne noms
+    g.scrollLeft=Math.max(0,th.offsetLeft-110); // 110 = largeur fixe colonne noms
   });
 }
 window.addEventListener("resize",adjGrid);
@@ -2838,8 +2838,8 @@ function vDeparts(){
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:90px">'
-      +'<div style="width:90px;padding:3px 5px;overflow:hidden">'
+      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:110px">'
+      +'<div style="width:110px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
@@ -7093,7 +7093,7 @@ function vImportVerif(){
         +'</summary><div style="margin-top:4px;overflow-x:auto">';
       // En-tête jours
       html+='<table style="border-collapse:collapse;font-size:13px;min-width:100%"><thead><tr>'
-        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:#1a3020;min-width:90px">Employé</td>';
+        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:#1a3020;min-width:110px">Employé</td>';
       for(var d=1;d<=Math.min(days,30);d++){
         html+='<td style="padding:2px;text-align:center;color:#6a8a68;width:'+dayW+';min-width:'+dayW+'">'+d+'</td>';
       }
