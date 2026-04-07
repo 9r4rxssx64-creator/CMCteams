@@ -2531,11 +2531,11 @@ function vPlan(){
       var p=pl[emp.id]||{};var repos=0,trav=0;
       Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
-      var nbg=isMe?hexA(tcc2,.04):"#162818",ncol=isMe?tcc2:"#8a9a78";
+      var nbg=isMe?"rgba(201,162,39,.05)":"#060e07",ncol=isMe?tcc2:"#7a8a68";
       // ntdBg = couleur SOLIDE pour la colonne sticky (sinon les cellules scrollent en transparence dessous)
-      var ntdBg=isMe?"#1d2d1a":"#162818";
-      rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
-        +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="width:118px;background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'"><div class="nw">'
+      var ntdBg=isMe?"#1c1c10":"#0a1408";
+      rh+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
+        +'<td style="padding:2px 4px;position:sticky;left:0;z-index:4;border-right:1px solid #182818;font-size:12px;text-align:left;width:118px;background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'" title="'+esc(empLabel(emp))+'"><div class="nw">'
         +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
@@ -2573,9 +2573,9 @@ function vPlan(){
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #2a4830;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
-    da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";bh+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
-    bh+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
+    bh+='<thead><tr><th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
+    da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";bh+='<th data-planday="'+d+'" style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+'"><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
+    bh+='<th style="padding:3px 4px;background:#060e07;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:#060e07;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
     bh+=_renderEmpRows(emps,tcc);
     bh+='</tbody></table></div></div></div>';
     return bh;
