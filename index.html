@@ -94,7 +94,7 @@ select.inp{-webkit-appearance:none}
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
 .sth{padding:3px 4px;background:#223a26;color:#b0d8a8;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3)}
-.sth .nw,.ntd .nw{width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.sth .nw,.ntd .nw{width:118px;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .dth{padding:2px 1px;min-width:28px;background:#223a26;font-size:14px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .ntd{padding:2px 4px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:12px;text-align:left}
@@ -2523,7 +2523,7 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;width:auto"><thead><tr><th class="sth"><div class="nw">Employ\u00e9</div></th>`;
+  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;min-width:`+(118+da.length*44+2*30)+`px"><thead><tr><th class="sth" style="width:118px"><div class="nw">Employ\u00e9</div></th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
@@ -2538,7 +2538,7 @@ function vPlan(){
       // ntdBg = couleur SOLIDE pour la colonne sticky (sinon les cellules scrollent en transparence dessous)
       var ntdBg=isMe?"#1d2d1a":"#162818";
       rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
-        +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'"><div class="nw">'
+        +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="width:118px;background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'"><div class="nw">'
         +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
