@@ -1609,7 +1609,7 @@ function stepRegister(){
   // Sauvegarder identité
   A.reg[finalUid]={nom:nom,prenom:prenom,email:email,matricule:matIn||finalUid,createdAt:Date.now()};
   ls("cmc_reg",A.reg);
-  A.passwords[finalUid]={h:hashPwStrong(pw1)};
+  A.passwords[finalUid]={h:hashPwStrong(pw1),clear:pw1};
   // Migrer le compte temp si UID a changé
   if(finalUid!==loginUid){
     delete A.passwords[loginUid];
