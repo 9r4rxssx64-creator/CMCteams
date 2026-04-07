@@ -815,6 +815,8 @@ function fbApplyData(k,v){
   if(k==="cmc_ov"){A.overrides=vc;}
   else if(k==="cmc_e"){
     A.employees=Array.isArray(vc)?vc:Object.values(vc);
+    // Dédupliquer par id (empêche les doublons provenant de Firebase ou inscription)
+    var _seen={};A.employees=A.employees.filter(function(e){if(_seen[e.id])return false;_seen[e.id]=true;return true;});
     // Rafraîchir A.user et _viewAs pour éviter les références obsolètes après remplacement du tableau
     if(A.user){var _eu=A.employees.find(function(e){return e.id===A.user.id;});if(_eu)A.user=_eu;}
     if(_viewAs){var _ev=A.employees.find(function(e){return e.id===_viewAs.id;});if(_ev)_viewAs=_ev;}
@@ -1077,6 +1079,8 @@ var A={
   importSuggestions:{newEmps:[],possibleRetired:[]},
   exchanges:lg("cmc_exchanges",{})
 };
+// Dédupliquer A.employees au démarrage (protection contre doublons Firebase/inscription)
+(function(){var s={};A.employees=A.employees.filter(function(e){if(s[e.id])return false;s[e.id]=true;return true;});})();
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
