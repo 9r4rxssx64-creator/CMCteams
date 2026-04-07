@@ -510,7 +510,165 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.13";
+var APP_VER  = "v9.14";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+```
+
+---
+
+## Workflow expert — Développement CMCteams
+
+> Procédure obligatoire pour chaque modification. Conçu pour une SPA monofichier casino avec 258 employés, sync Firebase temps réel, et contraintes mobiles.
+
+### Phase 0 — Prise de contexte (avant tout code)
+
+1. **Lire le CLAUDE.md** : vérifier APP_VER, DATA_VER, erreurs connues (#1–#20)
+2. **Identifier la demande** : UI ? Logique métier ? Import ? Sécurité ? Firebase ?
+3. **Cartographier l'impact** : quelles fonctions/vues sont touchées ?
+
+```
+Matrice d'impact rapide :
+┌─────────────────┬──────────────────────────────────────────────┐
+│ Zone modifiée   │ Vues à vérifier                              │
+├─────────────────┼──────────────────────────────────────────────┤
+│ A.employees     │ vEmps, vPlan, vDeparts, vAccueil, vStats     │
+│ A.overrides     │ vPlan, vDeparts, vMonPlanning, vAccueil       │
+│ A.reg           │ vMonProfil, vEmps, vPasswords                 │
+│ A.passwords     │ vPasswords, vLogin                            │
+│ A.chatMsgs      │ vChat                                        │
+│ A.exchanges     │ vEchanges, vMonPlanning                       │
+│ CHEFS_T / CI    │ vDeparts, calcDepPos                          │
+│ CSS / Layout    │ vPlan, vDeparts, vMonPlanning (mobile!)       │
+│ Firebase sync   │ fbWrite, fbApplyData, SSE listener            │
+│ Navigation      │ render(), dc(), sv(), topbar                  │
+│ Import PDF      │ doImport, vImport, importSuggestions           │
+│ Sécurité        │ vLogin, admin guards, esc(), hashPwStrong()   │
+└─────────────────┴──────────────────────────────────────────────┘
+```
+
+### Phase 1 — Analyse du code existant
+
+1. **Lire les fonctions concernées** en entier (pas de modification à l'aveugle)
+2. **Tracer le flux de données** : d'où vient la donnée → où elle est affichée
+3. **Vérifier les dépendances** : `dc()` re-rend tout → un changement dans `vDeparts` peut affecter le scroll `adjDeparts()`
+4. **Chercher les patterns similaires** : si on modifie une colonne dans vDeparts, vérifier vPlan aussi
+
+### Phase 2 — Codage (règles strictes)
+
+#### Sécurité (non-négociable)
+- [ ] `esc()` sur TOUTE donnée utilisateur avant `innerHTML`
+- [ ] Guard `if(!A.user||A.user.id!==AID)return;` sur fonctions admin destructrices
+- [ ] `e.message.replace(/</g,"&lt;")` dans les handlers d'erreur (pas d'accès à `esc`)
+- [ ] Pas de données sensibles en clair (clé API, PIN, mots de passe)
+
+#### Layout & CSS
+- [ ] Jamais `table-layout:fixed` dans un conteneur scrollable (#1)
+- [ ] Jamais `overflow:hidden` sur parent d'enfant scrollable (#2)
+- [ ] Jamais `overflow-y:hidden` sur parent de colonne sticky (#10)
+- [ ] Jamais `width:100%` sur table scrollable → `width:auto` (#11)
+- [ ] Jamais `max-width` sur `<td>` → wrapper `<div class="nw">` (#18)
+- [ ] Tester scroll horizontal (vPlan/vDeparts) sur viewport 375px (iPhone SE)
+
+#### Données & État
+- [ ] `gpl()` = seule source de vérité (pas de fallback genBase) (#3)
+- [ ] Ne jamais utiliser `base=0` dans calcDepPos → utiliser `ei` (#13)
+- [ ] Rafraîchir `A.user`/`_viewAs` après remplacement `A.employees` par SSE (#16)
+- [ ] Ne jamais utiliser une variable locale d'une autre vue (#20)
+- [ ] `searchInput()` pour les champs de recherche (pas `oninput→dc()`) (#9)
+
+#### Firebase
+- [ ] Clés `FB_LOCAL` ne doivent JAMAIS être synchronisées
+- [ ] `fbApplyData` doit cloner en profondeur (pas de référence partagée)
+- [ ] `fbWrite` avec retry + queue offline en cas d'échec
+
+#### Navigation & UX
+- [ ] Max 8 onglets nav (mobile) (#14)
+- [ ] `chatSetReply` doit auto-activer `_chatDm` pour les DM (#19)
+- [ ] Notifications : vérifier `typeof Notification !== "undefined"` (iOS) (#15)
+
+### Phase 3 — Validation
+
+```bash
+# 1. Syntaxe JS (obligatoire avant commit)
+node -e "
+const fs=require('fs');
+const html=fs.readFileSync('index.html','utf8');
+const s=html.lastIndexOf('<script>'),e=html.lastIndexOf('</script>');
+fs.writeFileSync('/tmp/test.js',html.slice(s+8,e));
+" && node --check /tmp/test.js && echo "✅ JS OK"
+
+# 2. Taille fichier (surveillance dérive)
+wc -c index.html  # Attendu : ~440-480 KB
+
+# 3. Recherche oublis sécurité
+grep -n 'innerHTML' index.html | grep -v 'esc(' | head -20
+```
+
+#### Checklist de validation par type de changement
+
+| Type | Vérifications |
+|------|--------------|
+| **UI/CSS** | Scroll OK ? Sticky OK ? Mobile 375px ? Noms lisibles ? |
+| **Logique métier** | Rotation correcte ? Senior ★ respecté ? Tous les 258 emp ? |
+| **Import** | Compétences BRTPECK ? newEmps/possibleRetired détectés ? |
+| **Firebase** | fbWrite appelé ? SSE listener reçoit ? Queue offline ? |
+| **Sécurité** | esc() partout ? Guards admin ? XSS dans erreurs ? |
+| **Chat** | DM privé reste privé ? Reply correct ? Filtres admin ? |
+
+### Phase 4 — Versionnement & Commit
+
+1. **Bumper `APP_VER`** : format `vX.Y` (X = majeur, Y = incrémental)
+   - Nouveau module/vue → bump X
+   - Fix/amélioration → bump Y
+2. **Ne PAS bumper `DATA_VER`** sauf si schéma `DEF_EMP`/`DEF_TEAMS` change
+3. **Commit** : `vX.Y: description en français`
+4. **Mettre à jour CLAUDE.md** : historique versions + constantes si changement
+
+### Phase 5 — Déploiement
+
+```
+Branche feature → commit → push → PR (si demandé) → merge main → GitHub Pages auto
+```
+
+- Jamais de push direct sur `main`
+- Un commit = un changement cohérent (pas de méga-commits multi-fonctions — erreur #17)
+- Vérifier le déploiement GitHub Pages après merge
+
+---
+
+### Arbres de décision rapides
+
+#### "Où modifier ?" — Localisation du code
+
+```
+Demande concerne...
+├── L'apparence → CSS embarqué (<style>) ou style inline dans la vue
+├── Une vue spécifique → fonction vNomDeLaVue()
+├── Le planning → gpl(), overrides, CODES
+├── Les départs → vDeparts(), calcDepPos(), CHEFS_T, CI
+├── L'import PDF → doImport(), parseur texte/PDF.js
+├── Firebase → fbInit/fbWrite/fbApplyData/fbStartListening
+├── Login/sécurité → vLogin*, hashPwStrong, verifyPw, guards AID
+├── Un employé → A.employees, DEF_EMP, A.reg
+└── Le chat → vChat(), chatSetDm/Reply/Del, _chatDm/_chatReply
+```
+
+#### "Faut-il bumper DATA_VER ?"
+
+```
+Modification de DEF_EMP (ajout/retrait employé) → OUI
+Modification de DEF_TEAMS (ajout/retrait équipe) → OUI
+Changement de schéma A.employees (nouveau champ) → OUI
+Tout le reste (CSS, logique, vues, Firebase) → NON
+```
+
+#### "Cette modification casse-t-elle le mobile ?"
+
+```
+Colonne > 130px dans une table scrollable → RISQUE
+Position sticky + overflow sur parent → RISQUE (iOS Safari)
+Plus de 8 onglets nav → CASSE (#14)
+Font-size < 11px → illisible sur mobile
+Touch target < 44px → difficile à toucher
 ```
