@@ -2332,10 +2332,10 @@ function vAccueil(){
       // Repos / jour off — trouver le prochain service
       var _nextW=0,_nextWC="";
       for(var _ni=tod+1;_ni<=getDays(A.year,A.month);_ni++){var _nc2=(pl[u.id]||{})[_ni]||"";if(isWork(_nc2)){_nextW=_ni;_nextWC=_nc2;break;}}
-      var _ci3=CODES[myPl[tod]||""]||{l:"Repos",c:"#3a5030"};
+      var _ci3=CODES[code]||{l:"Repos",c:"#3a5030"};
       h+='<div style="display:flex;align-items:center;gap:10px;padding:4px 0">'
         +'<div style="font-size:24px;color:#2a3a28">\ud83c\udf19</div>'
-        +'<div><div style="font-size:16px;color:'+_ci3.c+';font-weight:700">'+(myPl[tod]||"Repos")+'</div>'
+        +'<div><div style="font-size:16px;color:'+_ci3.c+';font-weight:700">'+(code||"Repos")+'</div>'
         +'<div style="font-size:13px;color:#4a6040">Pas de service aujourd\u2019hui</div></div>'
         +((_nextW)?'<div style="margin-left:auto;text-align:right">'
           +'<div style="font-size:12px;color:#5a7060">Prochain service</div>'
