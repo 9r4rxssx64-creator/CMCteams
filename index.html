@@ -856,13 +856,16 @@ function _checkNewChat(msgs){
   if(!A.user||!Array.isArray(msgs)||!msgs.length)return;
   var lastTs=parseInt(localStorage.getItem("cmc_notif_ts")||"0");
   var newMsgs=msgs.filter(function(m){return m.ts>lastTs&&m.uid!==A.user.id&&!m.del&&(!m.to||m.to===A.user.id);});
-  if(newMsgs.length){
-    var m=newMsgs[newMsgs.length-1];
-    var preview=(m.text||"").slice(0,80);
-    var _sent=sendNotif(m.to?"💬 Message privé de "+m.name:"💬 "+m.name+" dans le chat",preview,{tag:"chat"});
-    // Ne marquer comme vu que si la notif a réellement été envoyée (app en arrière-plan)
-    if(_sent)localStorage.setItem("cmc_notif_ts",String(Date.now()));
+  if(!newMsgs.length)return;
+  var m=newMsgs[newMsgs.length-1];
+  if(document.visibilityState==="visible"){
+    // App visible : marquer comme vus pour ne pas notifier plus tard
+    localStorage.setItem("cmc_notif_ts",String(m.ts));
+    return;
   }
+  var preview=(m.text||"").slice(0,80);
+  var _sent=sendNotif(m.to?"💬 Message privé de "+m.name:"💬 "+m.name+" dans le chat",preview,{tag:"chat"});
+  if(_sent)localStorage.setItem("cmc_notif_ts",String(m.ts));
 }
 function requestNotifPermission(){
   if(!("Notification" in window)){toast("Notifications non supportées","err");return;}
@@ -2221,6 +2224,17 @@ function vMonProfil(){
   h+='<div><label for="profil_dateNaissance" style="font-size:12px;color:rgba(255,255,255,.55)">Date de naissance</label>'
     +'<input id="profil_dateNaissance" class="inp" type="date" value="'+esc(reg.dateNaissance||"")+'" style="margin-top:4px"></div>';
   h+='</div>';
+  // Notifications
+  h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notifications</div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
+  h+='<div style="font-size:14px;color:rgba(255,255,255,.6)">'+(typeof Notification==="undefined"?"Non supporté sur cet appareil":Notification.permission==="granted"?"Activées \u2014 vous recevez les alertes planning et chat":"Désactivées \u2014 activez pour être alerté des changements")+'</div>';
+  if(typeof Notification!=="undefined"&&Notification.permission!=="granted"){
+    h+='<button onclick="requestNotifPermission()" style="flex-shrink:0;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:6px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>';
+  } else {
+    h+='<span style="flex-shrink:0;font-size:18px">'+(typeof Notification!=="undefined"&&Notification.permission==="granted"?"\u2705":"&mdash;")+'</span>';
+  }
+  h+='</div></div>';
   // Bouton sauvegarder
   h+='<button class="btn gold" onclick="empSaveProfil()" style="width:100%;padding:12px;font-size:16px;font-weight:700">\u2713 Enregistrer ma fiche</button>';
   if(reg.updatedAt)h+='<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.28);margin-top:10px">Derni\u00e8re mise \u00e0 jour : '+new Date(reg.updatedAt).toLocaleDateString("fr-FR")+'</div>';
@@ -2454,7 +2468,7 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;width:100%"><thead><tr><th class="sth">Employ\u00e9</th>`;
+  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;width:auto"><thead><tr><th class="sth">Employ\u00e9</th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
@@ -3061,6 +3075,29 @@ function vChat(){
       +'</div>';
   }
   h+='</div>';
+  // Utilisateurs en ligne — DM rapide
+  var _online=getOnlineUsers().filter(function(u){return u.uid!==myId;});
+  if(_online.length){
+    h+='<div style="padding:6px 10px;border-bottom:1px solid #0c160a;background:#040c06;flex-shrink:0;overflow-x:auto;white-space:nowrap">';
+    h+='<span style="font-size:11px;color:#3a5830;text-transform:uppercase;letter-spacing:1px;margin-right:6px">En ligne</span>';
+    _online.forEach(function(u){
+      var emp=A.employees.find(function(e){return e.id===u.uid;});
+      var tCol=emp?tc(emp.team)||"#3a8a50":"#3a8a50";
+      var isActive=_chatDm&&_chatDm.id===u.uid;
+      h+='<button onclick="chatSetDm(\''+esc(u.uid)+'\',\''+esc(u.name)+'\')" '
+        +'title="Message privé à '+esc(u.name)+'" '
+        +'style="display:inline-flex;align-items:center;gap:5px;margin-right:6px;padding:4px 9px;border-radius:20px;cursor:pointer;'
+        +'background:'+(isActive?tCol+'25':'rgba(255,255,255,.04)')+';'
+        +'border:1px solid '+(isActive?tCol+'60':'rgba(58,138,80,.25)')+';'
+        +'color:'+(isActive?tCol:'#7aaa80')+'">'
+        +'<span style="width:7px;height:7px;border-radius:50%;background:#3a8a50;flex-shrink:0"></span>'
+        +'<span style="font-size:13px;font-weight:'+(isActive?700:400)+'">'
+        +esc((A.reg[u.uid]&&A.reg[u.uid].prenom?A.reg[u.uid].prenom+' ':'')+u.name.split(' ')[0])
+        +'</span>'
+        +'</button>';
+    });
+    h+='</div>';
+  }
   // Messages
   h+='<div id="chatMsgs" class="chat-msgs">';
   var prevDateStr="";
