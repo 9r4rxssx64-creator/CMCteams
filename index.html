@@ -2520,12 +2520,7 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(118+da.length*44+2*30)+`px"><colgroup><col style="width:118px">`;
-  da.forEach(function(){h+='<col style="width:44px">';});
-  h+='<col style="width:30px"><col style="width:30px"></colgroup>';
-  h+=`<thead><tr><th class="sth" style="width:118px"><div class="nw">Employ\u00e9</div></th>`;
-  da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
-  h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
+  h+=`<div id="planGrid">`;
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
   var _planComments=getComments();
   var _renderEmpRows=function(emps,tcc2){
@@ -2559,32 +2554,49 @@ function vPlan(){
     return rh;
   };
   var _globalShown={};
-  // ── Équipe propre + miroir en tête (tous, admin inclus) ─────────────────────
+  // Helper : rend une équipe dans un bloc encadré (style vDeparts)
+  var _renderTeamBlock=function(tid,emps,tcc){
+    if(!emps.length)return'';
+    var team=gt(tid),mir=gm(tid);
+    var empCount=emps.length;
+    var bh='<div style="margin-bottom:16px">'
+      +'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+tcc+'0c;border:1px solid '+tcc+'22;border-radius:8px 8px 0 0">'
+      +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
+      +'<span style="font-size:16px;font-weight:700;color:'+tcc+'">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
+      +(mir?'<span style="font-size:14px;color:#7aaa80"> \u21cc '+esc(mir.name)+'</span>':"")
+      +'<span style="font-size:13px;color:#5a7060;margin-left:auto">'+empCount+' emp.</span>'
+      +'</div>'
+      +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
+      +'<div style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
+      +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
+    da.forEach(function(){bh+='<col style="width:44px">';});
+    bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
+    bh+='<thead><tr><th class="sth" style="width:118px"><div class="nw">'+esc(team?team.name:"\u00c9q."+tid)+'</div></th>';
+    da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";bh+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
+    bh+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
+    bh+=_renderEmpRows(emps,tcc);
+    bh+='</tbody></table></div></div></div>';
+    return bh;
+  };
+  // ── Ma section (équipe propre + miroir en tête) ─────────────────────
   if(utid){
     var _priTids=[utid,mirT?mirT.id:null].filter(Boolean);
-    h+='<tr>'
-      +'<td style="position:sticky;left:0;z-index:6;background:#0e1c10;padding:5px 10px;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25;white-space:nowrap">'
+    h+='<div style="padding:6px 12px;background:#0e1c10;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25;margin-bottom:4px">'
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
       +(mirT?'<span style="font-size:14px;color:#7aaa80;margin-left:8px">\u21cc '+esc(mirT.name)+'</span>':"")
-      +'</td><td colspan="'+(days+2)+'" style="background:#0e1c10;border-top:2px solid '+utc+'50;border-bottom:1px solid '+utc+'25"></td></tr>';
+      +'</div>';
     _priTids.forEach(function(tid){
-      var team2=gt(tid),tcc2=tc(tid),mir2=gm(tid);
+      var tcc2=tc(tid);
       var te2=A.employees.filter(function(e){return e.team===tid&&isEmpActive(e,A.year,A.month);});
       if(!te2.length) return;
       _globalShown[tid]=true;
-      h+='<tr>'
-        +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:3px solid '+tcc2+';white-space:nowrap">'
-        +'<span style="color:'+tcc2+';font-size:15px;font-weight:700">'+esc(team2?team2.name:"\u00c9q."+tid)+'</span>'
-        +(mir2?'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(mir2.name)+'</span>':"")
-        +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
-      h+=_renderEmpRows(te2,tcc2);
+      h+=_renderTeamBlock(tid,te2,tcc2);
     });
-    h+='<tr>'
-      +'<td style="position:sticky;left:0;z-index:6;background:#0a140c;padding:4px 10px;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;white-space:nowrap">'
+    h+='<div style="padding:4px 12px;background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815;margin:6px 0 4px">'
       +'<span style="font-size:13px;font-weight:700;color:#3a5030;text-transform:uppercase;letter-spacing:2px">Autres \u00e9quipes</span>'
-      +'</td><td colspan="'+(days+2)+'" style="background:#0a140c;border-top:1px solid #1e2818;border-bottom:1px solid #1a2815"></td></tr>';
+      +'</div>';
   }
-  // ── Toutes les équipes groupées par famille ──────────────────────────────────
+  // ── Toutes les équipes groupées par famille ──────────────────────────
   var FAMS_ORDER=["bj","roulettes","cmc"];
   FAMS_ORDER.forEach(function(fid){
     var famEmps=A.employees.filter(function(e){return (e.family||"bj")===fid&&isEmpActive(e,A.year,A.month);});
@@ -2592,37 +2604,18 @@ function vPlan(){
     var famColor=getFamColor(fid),famLabel=getFamLabel(fid);
     var byFT={},ftOrd=[];
     famEmps.forEach(function(e){if(!byFT[e.team])byFT[e.team]=[];byFT[e.team].push(e);if(ftOrd.indexOf(e.team)<0)ftOrd.push(e.team);});
-    // Tri par numéro d'équipe croissant (1,2,3... r1,r2... c1,c2...)
     ftOrd.sort(function(a,b){var na=parseInt(a.replace(/[^0-9]/g,""))||0,nb=parseInt(b.replace(/[^0-9]/g,""))||0;return na-nb;});
     var hasUnshown=ftOrd.some(function(tid){return !_globalShown[tid];});
     if(!hasUnshown) return;
-    h+='<tr>'
-      +'<td style="position:sticky;left:0;z-index:6;background:#0e1c10;padding:6px 10px;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25;white-space:nowrap">'
-      +'<span style="font-size:15px;font-weight:800;color:'+famColor+';letter-spacing:1px;text-transform:uppercase">'+esc(famLabel)+'</span>'
-      +'</td><td colspan="'+(days+2)+'" style="background:#0e1c10;border-top:2px solid '+famColor+'40;border-bottom:1px solid '+famColor+'25"></td></tr>';
+    h+='<div style="font-size:14px;font-weight:800;color:'+famColor+';text-transform:uppercase;letter-spacing:2px;margin:8px 0 4px;padding:4px 0;border-bottom:1px solid '+famColor+'30">'+esc(famLabel)+'</div>';
     ftOrd.forEach(function(tid){
       if(_globalShown[tid]) return;
       _globalShown[tid]=true;
-      var te=byFT[tid]||[],team=gt(tid),mir=gm(tid),tcc=tc(tid);
-      h+='<tr>'
-        +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:2px solid '+hexA(tcc,.31)+';white-space:nowrap">'
-        +'<span style="color:'+tcc+';font-size:15px;font-weight:700">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
-        +(mir?'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(mir.name)+'</span>':"")
-        +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
-      h+=_renderEmpRows(te,tcc);
-      if(mir&&byFT[mir.id]&&!_globalShown[mir.id]){
-        _globalShown[mir.id]=true;
-        var mtcc=tc(mir.id);
-        h+='<tr>'
-          +'<td style="position:sticky;left:0;z-index:6;background:#1e3422;padding:6px 10px;border-top:2px solid #0a1508;border-left:2px solid '+hexA(mtcc,.31)+';white-space:nowrap">'
-          +'<span style="color:'+mtcc+';font-size:15px;font-weight:700">'+esc(mir.name)+'</span>'
-          +'<span style="color:#7aaa80;font-size:14px"> \u21cc '+esc(team?team.name:"\u00c9q."+tid)+'</span>'
-          +'</td><td colspan="'+(days+2)+'" style="background:#1e3422;border-top:2px solid #0a1508"></td></tr>';
-        h+=_renderEmpRows(byFT[mir.id],mtcc);
-      }
+      var te=byFT[tid]||[],tcc=tc(tid);
+      h+=_renderTeamBlock(tid,te,tcc);
     });
   });
-  return h+`</tbody></table></div></div>`;
+  return h+'</div>';
 }
 
 // S\u00e9quences de d\u00e9part par taille d'\u00e9quipe
