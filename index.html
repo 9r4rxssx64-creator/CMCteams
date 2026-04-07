@@ -1923,8 +1923,8 @@ function vNav(){
     {id:"ia",ic:"\ud83e\udd16",lb:"Aide"}
   ];
   if(isAdm){
-    tabs.splice(4,0,{id:"stats",ic:"\ud83d\udcca",lb:"Stats"});
     tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin"});
+    // Stats accessible depuis le panneau Admin (évite 9 onglets trop étroits)
   }
   // Onglet échanges : visible si feature activée (admin voit toujours, employé seulement si activé)
   var _pendingEx=A.exchanges?Object.values(A.exchanges).filter(function(e){return e.status==="pending";}).length:0;
@@ -2227,14 +2227,23 @@ function vMonProfil(){
   // Notifications
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notifications</div>';
-  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
-  h+='<div style="font-size:14px;color:rgba(255,255,255,.6)">'+(typeof Notification==="undefined"?"Non supporté sur cet appareil":Notification.permission==="granted"?"Activées \u2014 vous recevez les alertes planning et chat":"Désactivées \u2014 activez pour être alerté des changements")+'</div>';
-  if(typeof Notification!=="undefined"&&Notification.permission!=="granted"){
-    h+='<button onclick="requestNotifPermission()" style="flex-shrink:0;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:6px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>';
+  if(typeof Notification==="undefined"){
+    // iOS Safari sans PWA — guider l'utilisateur
+    h+='<div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.5">'
+      +'\ud83d\udcf1 Sur iPhone/iPad, les notifications n\u2019fonctionnent que depuis l\u2019\u00e9cran d\u2019accueil.<br>'
+      +'<strong style="color:rgba(201,162,39,.8)">Partager \u2192 Sur l\u2019\u00e9cran d\u2019accueil</strong> puis rouvrir l\u2019app.'
+      +'</div>';
   } else {
-    h+='<span style="flex-shrink:0;font-size:18px">'+(typeof Notification!=="undefined"&&Notification.permission==="granted"?"\u2705":"&mdash;")+'</span>';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
+    h+='<div style="font-size:14px;color:rgba(255,255,255,.6)">'+(Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat en temps r\u00e9el":"D\u00e9sactiv\u00e9es \u2014 activez pour \u00eatre alert\u00e9 des changements")+'</div>';
+    if(Notification.permission!=="granted"){
+      h+='<button onclick="requestNotifPermission()" style="flex-shrink:0;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:6px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>';
+    } else {
+      h+='<span style="flex-shrink:0;font-size:18px">\u2705</span>';
+    }
+    h+='</div>';
   }
-  h+='</div></div>';
+  h+='</div>';
   // Bouton sauvegarder
   h+='<button class="btn gold" onclick="empSaveProfil()" style="width:100%;padding:12px;font-size:16px;font-weight:700">\u2713 Enregistrer ma fiche</button>';
   if(reg.updatedAt)h+='<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.28);margin-top:10px">Derni\u00e8re mise \u00e0 jour : '+new Date(reg.updatedAt).toLocaleDateString("fr-FR")+'</div>';
@@ -3638,6 +3647,7 @@ function vAdmin(){
     if(_se.type==="pin_fail")_failsAlert++;
   }
   var items=[
+    {ic:"\ud83d\udcca",lb:"Statistiques du mois",fn:"sv('stats')"},
     {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
     {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
     {ic:"\ud83c\udf92",lb:"Retrait\u00e9s \u2014 anciens employ\u00e9s",fn:"sv('retrait')"},
@@ -3706,8 +3716,8 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'</div>'
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#030a04;border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
-  +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"Non supporté":Notification.permission==="granted"?"Activées — alertes planning et chat en temps réel":"Désactivées — cliquer pour activer")+'</div></div>'
-  +(typeof Notification!=="undefined"&&Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:'+(typeof Notification!=="undefined"&&Notification.permission==="granted"?"#3a8a50":"#5a7060")+'">'+(typeof Notification!=="undefined"&&Notification.permission==="granted"?"\u2705 OK":"\u2014")+'</span>')
+  +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
+  +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
   +'</div>'
   +'</div></div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
