@@ -1390,7 +1390,7 @@ function adjDeparts(){
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
-    g.scrollLeft=Math.max(0,th.offsetLeft-110); // 110 = largeur fixe colonne noms
+    g.scrollLeft=Math.max(0,th.offsetLeft-118); // 118 = largeur fixe colonne noms
     initAxisLock(g);
   });
 }
@@ -2523,7 +2523,10 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;min-width:`+(118+da.length*44+2*30)+`px"><thead><tr><th class="sth" style="width:118px"><div class="nw">Employ\u00e9</div></th>`;
+  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(118+da.length*44+2*30)+`px"><colgroup><col style="width:118px">`;
+  da.forEach(function(){h+='<col style="width:44px">';});
+  h+='<col style="width:30px"><col style="width:30px"></colgroup>';
+  h+=`<thead><tr><th class="sth" style="width:118px"><div class="nw">Employ\u00e9</div></th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
@@ -2874,8 +2877,8 @@ function vDeparts(){
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:110px">'
-      +'<div style="width:110px;padding:3px 5px;overflow:hidden">'
+      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
+      +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
@@ -2900,7 +2903,7 @@ function vDeparts(){
       var base=CI[emp.name]!==undefined?CI[emp.name]:ei; // cohérent avec calcDepPos (ei = index dans la liste)
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
-        <div title="${esc(empLabel(emp))}" style="width:110px;padding:3px 5px;font-size:12px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
+        <div title="${esc(empLabel(emp))}" style="width:118px;padding:3px 5px;font-size:12px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
       da.forEach(function(d){
         var code=(pl[emp.id]||{})[d]||"";
         var works=code?isWork(code):false;
@@ -7137,7 +7140,7 @@ function vImportVerif(){
         +'</summary><div style="margin-top:4px;overflow-x:auto">';
       // En-tête jours
       html+='<table style="border-collapse:collapse;font-size:13px;min-width:100%"><thead><tr>'
-        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:#1a3020;min-width:110px">Employé</td>';
+        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:#1a3020;min-width:118px">Employé</td>';
       for(var d=1;d<=Math.min(days,30);d++){
         html+='<td style="padding:2px;text-align:center;color:#6a8a68;width:'+dayW+';min-width:'+dayW+'">'+d+'</td>';
       }
