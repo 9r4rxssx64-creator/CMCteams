@@ -1366,11 +1366,13 @@ function adjGrid(){
   var tod2=new Date();
   if(tod2.getFullYear()!==A.year||tod2.getMonth()!==A.month)return;
   var todD2=tod2.getDate();
-  var th2=g.querySelector('[data-planday="'+todD2+'"]');
-  if(!th2)return;
-  var firstTh2=g.querySelector('th');
-  var stickyW=firstTh2?firstTh2.offsetWidth:75;
-  g.scrollLeft=Math.max(0,th2.offsetLeft-stickyW);
+  // Chaque équipe a sa propre grille scrollable — scroller chacune vers aujourd'hui
+  g.querySelectorAll('.plan-grid-scroll').forEach(function(sc){
+    var th=sc.querySelector('[data-planday="'+todD2+'"]');
+    if(!th)return;
+    sc.scrollLeft=Math.max(0,th.offsetLeft-118);
+    initAxisLock(sc);
+  });
 }
 function adjMonPlanning(){
   var tod=new Date();
@@ -2567,11 +2569,11 @@ function vPlan(){
       +'<span style="font-size:13px;color:#5a7060;margin-left:auto">'+empCount+' emp.</span>'
       +'</div>'
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
-      +'<div style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
+      +'<div class="plan-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th class="sth" style="width:118px"><div class="nw">'+esc(team?team.name:"\u00c9q."+tid)+'</div></th>';
+    bh+='<thead><tr><th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #2a4830;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";bh+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
     bh+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
     bh+=_renderEmpRows(emps,tcc);
