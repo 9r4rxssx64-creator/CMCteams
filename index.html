@@ -91,10 +91,10 @@ select.inp{-webkit-appearance:none}
 
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
-.sth{padding:5px 6px;background:#223a26;color:#b0d8a8;font-size:14px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;min-width:80px;max-width:110px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap}
+.sth{padding:4px 5px;background:#223a26;color:#b0d8a8;font-size:13px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;width:72px;min-width:55px;max-width:72px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dth{padding:3px 1px;min-width:30px;background:#223a26;font-size:15px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
-.ntd{padding:4px 6px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:14px;text-align:left;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ntd{padding:3px 5px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:13px;text-align:left;width:72px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctd{min-width:34px;height:34px;font-size:15px;font-weight:700;text-align:center;cursor:pointer}
 .steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0}
 .stattd{padding:3px;font-size:15px;color:#90b888;background:#1e3422;text-align:center}
@@ -1129,7 +1129,7 @@ function render(){
       +'</div>':''  ;
     app.innerHTML=_viewAsBanner+'<div id="topbar" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><div id="content">'+vMain()+'</div>'+vNav();
     setTimeout(adjGrid,50);
-    if(A.view==="departs")setTimeout(adjDeparts,150);
+    if(A.view==="departs")setTimeout(adjDeparts,300);
     if(A.view==="monplanning")setTimeout(adjMonPlanning,100);
   }catch(e){
     app.innerHTML='<div style="min-height:100vh;background:#0a1a0c;padding:24px;color:#c9a227;font-family:monospace">'
@@ -1145,7 +1145,7 @@ function dc(){
   var c=document.getElementById("content");if(!c)return;
   c.innerHTML=vMain();
   if(A.view==="planning")adjGrid();
-  if(A.view==="departs")setTimeout(adjDeparts,150);
+  if(A.view==="departs")setTimeout(adjDeparts,300);
   if(A.view==="monplanning")setTimeout(adjMonPlanning,80);
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
 }
@@ -1160,10 +1160,9 @@ function adjGrid(){
   var todD2=tod2.getDate();
   var th2=g.querySelector('[data-planday="'+todD2+'"]');
   if(!th2)return;
-  var thR2=th2.getBoundingClientRect(),gR2=g.getBoundingClientRect();
-  var stickyW=90; // largeur colonne nom
-  var sp2=Math.max(0,g.scrollLeft+(thR2.left-gR2.left)-stickyW);
-  g.scrollLeft=sp2;
+  var firstTh2=g.querySelector('th');
+  var stickyW=firstTh2?firstTh2.offsetWidth:75;
+  g.scrollLeft=Math.max(0,th2.offsetLeft-stickyW);
 }
 function adjMonPlanning(){
   var tod=new Date();
@@ -1176,13 +1175,13 @@ function adjDeparts(){
   var tod=new Date();
   if(tod.getFullYear()!==A.year||tod.getMonth()!==A.month)return;
   var todD=tod.getDate();
-  // Chaque grille trouve et scrolle vers sa propre colonne aujourd'hui
+  // offsetLeft : fiable même pour les éléments hors-écran (pas de getBoundingClientRect)
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
-    var thR=th.getBoundingClientRect(),gR=g.getBoundingClientRect();
-    var sp=Math.max(0,g.scrollLeft+(thR.left-gR.left)-94);
-    g.scrollLeft=sp;
+    var firstTh=g.querySelector('th');
+    var stickyW=firstTh?firstTh.offsetWidth:75;
+    g.scrollLeft=Math.max(0,th.offsetLeft-stickyW);
   });
 }
 window.addEventListener("resize",adjGrid);
@@ -1805,12 +1804,12 @@ function sv(v){
   // Scroll en haut après le layout — requestAnimationFrame garantit que le DOM est peint
   requestAnimationFrame(function(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
   if(v==="planning")setTimeout(adjGrid,80);
-  if(v==="departs")setTimeout(adjDeparts,150);
+  if(v==="departs")setTimeout(adjDeparts,300);
   if(v==="monplanning")setTimeout(adjMonPlanning,100);
   if(v==="chat"){setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;ls("cmc_lastread",now());ls("cmc_lastread_dm",now());},80);}
 }
-function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,150);}
-function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,150);}
+function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
+function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
 
 // ── Calcul position de départ pour un chef un jour donné ──
 function calcDepPos(empName,tid,day){
@@ -2535,8 +2534,8 @@ function vDeparts(){
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5">'
-      +'<div style="width:90px;padding:4px 8px;overflow:hidden">'
+      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:72px">'
+      +'<div style="width:72px;padding:3px 6px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
@@ -2561,7 +2560,7 @@ function vDeparts(){
       var base=CI[emp.name]!==undefined?CI[emp.name]:0; // cohérent avec calcDepPos
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
-        <div style="width:90px;padding:5px 8px;font-size:14px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${isMe?"\u25b6 ":""}${esc(empLabel(emp))}</div></td>`;
+        <div style="width:72px;padding:3px 6px;font-size:13px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${isMe?"\u25b6 ":""}${esc(empLabel(emp))}</div></td>`;
       da.forEach(function(d){
         var code=(pl[emp.id]||{})[d]||"";
         var works=code?isWork(code):false;
