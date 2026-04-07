@@ -10,6 +10,17 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "STDIN=$(cat); FILE=$(echo \"$STDIN\" | jq -r '.tool_input.file_path // .tool_response.filePath // \"\"'); if echo \"$FILE\" | grep -qE 'index\\.html$'; then node --input-type=module <<'JSEOF' 2>&1 | grep -E '(SyntaxError|Error|error)' | head -5 || true\nimport { readFileSync } from 'fs';\nconst src = readFileSync('/home/user/CMCteams/index.html','utf8');\nconst m = src.match(/<script[^>]*>([\\s\\S]*?)<\\/script>/g);\nif(m){const js=m.map(s=>s.replace(/<script[^>]*>/,'').replace(/<\\/script>/,'')).join('\\n'); new Function(js);}\nconsole.log('JS OK');\nJSEOF\nfi",
+            "timeout": 20,
+            "statusMessage": "Validation JS index.html..."
+          }
+        ]
       }
     ],
     "Stop": [
@@ -17,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\": \"Rappel workflow : 1) Nettoyer le code (supprimer code mort), 2) Vérifier avec agent Explore, 3) Mettre à jour CLAUDE.md, 4) Committer sur branche feature.\"}'",
+            "command": "echo '{\"systemMessage\": \"Rappel workflow expert : 1) esc() sur toutes données user avant innerHTML, 2) Guard A.user.id===AID sur fonctions admin, 3) sw.js CACHE version = APP_VER, 4) fbWrite avec retry backoff, 5) Mettre à jour CLAUDE.md + committer sur branche feature.\"}'",
             "timeout": 5
           }
         ]
