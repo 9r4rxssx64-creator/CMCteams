@@ -1,4 +1,4 @@
-const CACHE='cmcteams-v9.13';
+const CACHE='cmcteams-v9.14';
 const ASSETS=['./','/index.html'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS);}));
@@ -12,14 +12,16 @@ self.addEventListener('activate',function(e){
 });
 self.addEventListener('fetch',function(e){
   if(e.request.method!=='GET') return;
-  e.respondWith(caches.match(e.request).then(function(cached){
-    var fresh=fetch(e.request).then(function(resp){
+  // Network-first : toujours chercher la version fraîche, cache en fallback offline
+  e.respondWith(
+    fetch(e.request).then(function(resp){
       if(resp&&resp.status===200){
         var clone=resp.clone();
         caches.open(CACHE).then(function(c){c.put(e.request,clone);});
       }
       return resp;
-    }).catch(function(){return cached;});
-    return cached||fresh;
-  }));
+    }).catch(function(){
+      return caches.match(e.request);
+    })
+  );
 });
