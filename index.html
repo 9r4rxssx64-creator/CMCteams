@@ -2184,23 +2184,23 @@ function vMonProfil(){
   // Contact
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Contact</div>';
-  h+='<div style="margin-bottom:10px"><label style="font-size:12px;color:rgba(255,255,255,.55)">Adresse e-mail</label>'
+  h+='<div style="margin-bottom:10px"><label for="profil_email" style="font-size:12px;color:rgba(255,255,255,.55)">Adresse e-mail</label>'
     +'<input id="profil_email" class="inp" type="email" placeholder="prenom.nom@sbm.mc" value="'+esc(reg.email||"")+'" style="margin-top:4px"></div>';
-  h+='<div><label style="font-size:12px;color:rgba(255,255,255,.55)">Adresse postale</label>'
+  h+='<div><label for="profil_adresse" style="font-size:12px;color:rgba(255,255,255,.55)">Adresse postale</label>'
     +'<input id="profil_adresse" class="inp" type="text" placeholder="Ex : 10 avenue Grande-Bretagne, Monaco" value="'+esc(reg.adresse||"")+'" style="margin-top:4px"></div>';
   h+='</div>';
   // Informations professionnelles
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Informations professionnelles</div>';
-  h+='<div style="margin-bottom:10px"><label style="font-size:12px;color:rgba(255,255,255,.55)">Num\u00e9ro USBM</label>'
+  h+='<div style="margin-bottom:10px"><label for="profil_usbm" style="font-size:12px;color:rgba(255,255,255,.55)">Num\u00e9ro USBM</label>'
     +'<input id="profil_usbm" class="inp" type="text" placeholder="Num\u00e9ro Union Syndicale" value="'+esc(reg.usbm||"")+'" style="margin-top:4px"></div>';
-  h+='<div><label style="font-size:12px;color:rgba(255,255,255,.55)">Intitul\u00e9 du poste</label>'
+  h+='<div><label for="profil_poste" style="font-size:12px;color:rgba(255,255,255,.55)">Intitul\u00e9 du poste</label>'
     +'<input id="profil_poste" class="inp" type="text" placeholder="Ex : Chef de partie, Croupier..." value="'+esc(reg.poste||"")+'" style="margin-top:4px"></div>';
   h+='</div>';
   // État civil
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:16px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">\u00c9tat civil</div>';
-  h+='<div><label style="font-size:12px;color:rgba(255,255,255,.55)">Date de naissance</label>'
+  h+='<div><label for="profil_dateNaissance" style="font-size:12px;color:rgba(255,255,255,.55)">Date de naissance</label>'
     +'<input id="profil_dateNaissance" class="inp" type="date" value="'+esc(reg.dateNaissance||"")+'" style="margin-top:4px"></div>';
   h+='</div>';
   // Bouton sauvegarder
@@ -4636,20 +4636,23 @@ function adminSetReg(id,field,val){
   toast("Identit\u00e9 mise \u00e0 jour");
   dc();
 }
-// Employé met à jour sa propre fiche (champs libres uniquement — pas nom/prenom)
-function empUpdateReg(field,val){
+// Champs que l'employé peut modifier lui-même (whitelist sécurité)
+var _PROFIL_FIELDS=["email","adresse","usbm","poste","dateNaissance"];
+// Employé met à jour sa propre fiche — batch, une seule écriture Firebase
+function empSaveProfil(){
   if(!A.user)return;
   var uid=A.user.id;
   if(!A.reg[uid])A.reg[uid]={createdAt:Date.now()};
-  A.reg[uid][field]=(val||"").trim();
-  A.reg[uid].updatedAt=Date.now();
+  var changed=false;
+  _PROFIL_FIELDS.forEach(function(f){
+    var el=document.getElementById("profil_"+f);
+    if(!el)return;
+    var v=(el.value||"").trim();
+    if(A.reg[uid][f]!==v){A.reg[uid][f]=v;changed=true;}
+  });
+  if(changed)A.reg[uid].updatedAt=Date.now();
   ls("cmc_reg",A.reg);
   fbWrite("cmc_reg",A.reg);
-}
-function empSaveProfil(){
-  if(!A.user)return;
-  var fields=["email","adresse","usbm","poste","dateNaissance"];
-  fields.forEach(function(f){var el=document.getElementById("profil_"+f);if(el)empUpdateReg(f,el.value);});
   toast("\u2705 Fiche enregistr\u00e9e");
   dc();
 }

@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.9.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.10.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.9"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v9.10"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -60,7 +60,7 @@ var A = {
   teams: [...],
   overrides: {},
   passwords: {},
-  reg: {},               // {uid: {nom, prenom, email, createdAt}} — A.reg
+  reg: {},               // {uid: {nom, prenom, email, adresse, dateNaissance, usbm, poste, createdAt, updatedAt}} — A.reg
   showLeg: false,
   chatMsgs: [...],
   empQ: "", pwQ: "", pwFilt: "all",
@@ -114,7 +114,7 @@ fbStartListening() // SSE EventSource sur /cmcteams.json pour mises à jour temp
 | `cmc_ov` | Objet overrides |
 | `cmc_pw` | Mots de passe hachés |
 | `cmc_chat` | Messages de chat (max 500) |
-| `cmc_reg` | Identités complètes {uid: {nom, prenom, email, createdAt}} |
+| `cmc_reg` | Identités complètes {uid: {nom, prenom, email, adresse, dateNaissance, usbm, poste, createdAt, updatedAt}} |
 | `cmc_admin_pin` | Hash du PIN admin |
 | `cmc_admin_sessions` | Journal sécurité admin (max 200) |
 | `cmc_userlog` | Historique connexions tous utilisateurs (max 500) |
@@ -139,6 +139,7 @@ fbStartListening() // SSE EventSource sur /cmcteams.json pour mises à jour temp
 | `vLogin` / `vLoginStep*` | Authentification | Tous |
 | `vAccueil` | Dashboard accueil | Tous |
 | `vMonPlanning` | Planning personnel mensuel complet | Tous |
+| `vMonProfil` | Fiche de renseignement (self-service) | Tous |
 | `vPlan` | Grille planning équipe | Tous |
 | `vDeparts` | Grille ordres de départ | Tous |
 | `vChat` | Chat (DM, réponses, filtres, vider) | Tous |
@@ -206,12 +207,31 @@ Après chaque import :
 
 ---
 
-## Identité admin (A.reg) (v8.87+)
+## Identité & fiche de renseignement (A.reg)
 
 ```javascript
+// Admin uniquement — modifie nom/prenom/email (v8.87+)
 adminSetReg(id, field, val)
-// Modifie A.reg[id][field] (prenom/nom/email), sauvegarde cmc_reg, dc()
+
+// Employé — sauvegarde sa propre fiche en un seul batch Firebase (v9.10)
+empSaveProfil()
+// Lit les inputs #profil_email, #profil_adresse, #profil_usbm, #profil_poste, #profil_dateNaissance
+// Whitelist: var _PROFIL_FIELDS = ["email","adresse","usbm","poste","dateNaissance"]
+// Nom/prénom/matricule/secteur : lecture seule pour l'employé, modifiables par admin
 ```
+
+**Champs A.reg :**
+| Champ | Qui peut modifier | Via |
+|-------|-------------------|-----|
+| `nom` | Admin | `adminSetReg` |
+| `prenom` | Admin | `adminSetReg` |
+| `email` | Employé + Admin | `empSaveProfil` / `adminSetReg` |
+| `adresse` | Employé | `empSaveProfil` |
+| `dateNaissance` | Employé | `empSaveProfil` |
+| `usbm` | Employé | `empSaveProfil` |
+| `poste` | Employé | `empSaveProfil` |
+| `createdAt` | Système | login |
+| `updatedAt` | Système | `empSaveProfil` |
 
 **Recherche universelle** (vEmps + vPasswords) :
 - Matricule SBM, `NOM Initiale`, prénom, nom complet, email
@@ -238,9 +258,10 @@ searchInput(key, val, id)
 ## Navigation
 
 ```
-Nav non-admin: Accueil | Mon Plan. | Équipe | Départs | Chat | Aide
-Nav admin:     Accueil | Mon Plan. | Équipe | Départs | Stats | Chat | Admin | Aide
+Nav non-admin: Accueil | Mon Plan. | Profil | Équipe | Départs | Chat | Aide
+Nav admin:     Accueil | Mon Plan. | Profil | Équipe | Départs | Stats | Chat | Admin | Aide
 ```
+Onglet Échanges inséré dynamiquement si `_exchEnabled` (avant Chat).
 
 ---
 
@@ -435,6 +456,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.7 | Import avec confirmation si corrections manuelles, touchSession dans heartbeat, fbWrite retry + syncQueue, améliorations vMonPlanning/vAccueil/topbar, compteur employés vPlan |
 | v9.8 | fbApplyData clone profond, tc() validation hex couleur, retraités détectés à l'import, title noms complets, toast queue anti-collision, line-height planning |
 | v9.9 | Queue offline (sync auto retour online, badge ⏳), notifications navigateur (planning modifié, nouveaux messages), échanges de shifts (demande depuis vMonPlanning, vue admin RH/refus/swap, audit complet, sync Firebase) |
+| v9.10 | Fiche de renseignement (onglet Profil 👤) : employé remplit adresse/naissance/USBM/poste, batch Firebase unique, whitelist champs sécurisée. ROTATION 55+ corrigé : mêmes patterns standard, max 40min par défaut / 60min avec accord. Admin voit la fiche dans vEmps. |
 
 ---
 
@@ -442,15 +464,16 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 > ⚠️ Règle opérationnelle à respecter dans tous les calculs de planning
 
+### Tous les employés (standard)
+- Patterns autorisés : **20/20** · **40/20** · **60/20** (travail/pause en minutes)
+- Maximum **60 minutes de travail consécutif** en toutes circonstances
+
 ### Employés 55+ (★ rouge)
 - Identifiés par `emp.senior = true` (ou `emp.family==="roulettes" && emp.chef` en rétro-compatibilité)
 - Affichés avec `★` rouge dans le planning, vDeparts, vEmps
-- **Max 40 minutes de travail consécutif → pause 20 minutes obligatoire**
-- Sauf autorisation écrite de l'employé (`emp.seniorAuth = true`)
-
-### Autres employés
-- Patterns autorisés : **20/20** · **40/20** · **60/20** (travail/pause en minutes)
-- Maximum **60 minutes de travail consécutif** en toutes circonstances
+- **Même patterns que les autres (20/20, 40/20, 60/20)**
+- **Par défaut : maximum 40 min de travail consécutif** → pause 20 min obligatoire
+- **Avec accord de l'employé : jusqu'à 60 min autorisé** (même règle que standard)
 
 ### Exception
 - **Roulette européenne** (compétence `E`) : règles de rotation différentes (à préciser)
@@ -458,11 +481,11 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 ### Constante dans le code
 ```javascript
 var ROTATION = {
-  senior:   {maxWork: 40, pause: 20},  // 55+ ans
+  senior:   {maxWork: 40, maxWorkConsent: 60, pause: 20, patterns: [20, 40, 60]},
   standard: {maxWork: 60, pause: 20, patterns: [20, 40, 60]},
   exceptionComp: "E"  // roulette européenne
 };
-function isSenior(emp)  // true si emp.senior || (roulettes && chef)
+function isSenior(emp)      // true si emp.senior || (roulettes && chef)
 function empLabelHtml(emp)  // nom + ★ rouge si senior (pour innerHTML)
 function empLabel(emp)      // nom + ★ texte (pour title="")
 ```
@@ -474,7 +497,7 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v9.9";
+var APP_VER  = "v9.10";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
