@@ -3109,9 +3109,11 @@ function vMoisStockes(){
       var importeAt=m.ref&&m.ref.importedAt?new Date(m.ref.importedAt).toLocaleDateString("fr-FR"):"?";
       var isCurrent=(yr==A.year&&mo==A.month);
       var ovSize=m.hasOv?Object.keys(A.overrides[m.key]||{}).length:0;
+      var vNum=m.ref&&m.ref.version?m.ref.version:1;
+      var vBadge=vNum>1?'<span style="font-size:13px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;margin-left:6px">v'+vNum+'</span>':"";
       h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0a1a0c;border:1px solid '+(isCurrent?"#c9a227":"#1e3020")+';border-radius:9px">'
         +'<div style="flex:1">'
-        +'<div style="font-size:16px;font-weight:700;color:'+(isCurrent?"#c9a227":"#c0cca8")+'">'+nomMois+(isCurrent?' <span style="font-size:14px;color:#c9a227">\u25c4 Actif</span>':"")+'</div>'
+        +'<div style="font-size:16px;font-weight:700;color:'+(isCurrent?"#c9a227":"#c0cca8")+'">'+nomMois+vBadge+(isCurrent?' <span style="font-size:14px;color:#c9a227">\u25c4 Actif</span>':"")+'</div>'
         +'<div style="font-size:14px;color:#7aaa80;margin-top:2px">Import\u00e9 le '+importeAt+(ovSize?' \u00b7 '+ovSize+' employ\u00e9s':"")+''+(m.ref&&m.ref.synthetic?' \u00b7 <i>synth\u00e9tique</i>':"")+'</div>'
         +'</div>'
         +(isCurrent?'<span style="font-size:14px;color:#c9a227;font-style:italic">Mois courant</span>'
@@ -4949,23 +4951,16 @@ function doImport(){
   var sep=hasTabs?"\t":",";
   var key=""+iy+"-"+im;
   var days=getDays(iy,im);
-  // Vérifier si ce mois a déjà des données importées
-  var _alreadyImported=hasImportedData(iy,im);
-  if(_alreadyImported){
-    var _prevRef=lg("cmc_ref_"+key,null);
-    var _prevDate=_prevRef&&_prevRef.importedAt?new Date(_prevRef.importedAt).toLocaleDateString("fr-FR"):"?";
-    var _nManual=0;
-    if(A.overrides[key]){Object.keys(A.overrides[key]).forEach(function(eid){_nManual+=Object.keys(A.overrides[key][eid]||{}).length;});}
-    var _msg="⚠️ "+MFR[im]+" "+iy+" a déjà été importé le "+_prevDate+".";
-    if(_nManual>0)_msg+="\n\n"+_nManual+" correction(s) manuelle(s) seront EFFACÉES.";
-    _msg+="\n\nContinuer et remplacer toutes les données ?";
-    if(!confirm(_msg))return;
-  }
+  // Versioning : récupérer la version précédente si elle existe
+  var _prevRef=lg("cmc_ref_"+key,null);
+  var _importVersion=(_prevRef&&_prevRef.version?_prevRef.version:0)+1;
+  var _importHistory=_prevRef&&_prevRef.history?_prevRef.history:[];
+  if(_prevRef&&_prevRef.importedAt)_importHistory=_importHistory.concat([{importedAt:_prevRef.importedAt,version:_prevRef.version||1,rowCount:_prevRef.rows?Object.keys(_prevRef.rows).length:0}]).slice(-5);
   // Table rase : le PDF est la seule référence, pas de pré-remplissage genBase
   A.year=iy;A.month=im; // necessaire pour isEmpActive
   A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
-  var refData={year:iy,month:im,rows:{},importedAt:Date.now()};
+  var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory};
   var ok=0,err=0,errLines=[],_fuzzyMatches=[]; // _fuzzyMatches = correspondances incertaines (bigram)
   var _csvParsed=false;
   var importFamily="bj"; // famille courante par defaut
@@ -5823,7 +5818,8 @@ function doImport(){
   var exportBtn='<button onclick="exportImportReport()" style="margin-top:6px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.4);border-radius:6px;padding:4px 10px;font-size:14px;color:#4a72a8;cursor:pointer;font-weight:700">\u2193 T\u00e9l\u00e9charger rapport complet</button>';
   var verifBtn='<button onclick="A.view=\'importVerif\';dc()" style="margin-top:6px;margin-left:6px;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.5);border-radius:6px;padding:4px 10px;font-size:14px;color:#3a8a50;cursor:pointer;font-weight:700">\ud83d\udd0d V\u00e9rifier employ\u00e9 par employ\u00e9</button>';
   var fillPart=_fillCount?" \u00b7 <span style='color:#4a72a8'>"+_fillCount+" cellules \u00e9quipe compl\u00e9t\u00e9es</span>":"";
-  if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+fillPart+' \u2192 '+MFR[im]+' '+iy+'</div>'+
+  var _vBadgeRes=_importVersion>1?'<span style="font-size:13px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;margin-left:6px">v'+_importVersion+'</span>':"";
+  if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+fillPart+' \u2192 '+MFR[im]+' '+iy+_vBadgeRes+'</div>'+
     '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv+exportBtn+verifBtn;
   // --- Correspondances approximatives (bigram) — À VÉRIFIER MANUELLEMENT ---
   if(_fuzzyMatches.length>0&&r){
@@ -5964,7 +5960,8 @@ function doImport(){
     r.innerHTML+=_dsHtml;
   }
   dc();
-  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s)':'\u2705 Import OK \u2014 '+ok+' cellules \u2014 '+MFR[im]+' '+iy);
+  var _vLabel=_importVersion>1?' (v'+_importVersion+')':"";
+  toast(verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s)':'\u2705 Import'+_vLabel+' OK \u2014 '+ok+' cellules \u2014 '+MFR[im]+' '+iy);
   }catch(e){
     var r=document.getElementById("impRes");if(r)r.innerHTML='<div style="color:#c04040"><b>Erreur import:</b> '+esc(String(e.message||e))+'</div>';
   }
