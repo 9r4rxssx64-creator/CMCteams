@@ -3065,9 +3065,9 @@ function chatSetDmById(uid){var e=A.employees.find(function(x){return x.id===uid
 function chatSetDmEmp(empIdx){var e=A.employees[empIdx];if(e)chatSetDm(e.id,e.name);}
 function chatCancelDm(){_chatDm=null;_chatDmPick=false;_chatDmQ="";dc();}
 function chatPickDm(){_chatDmPick=!_chatDmPick;_chatDmQ="";dc();setTimeout(function(){var i=document.getElementById("chatDmQIn");if(i)i.focus();},30);}
-function chatDmSearch(q){_chatDmQ=q;var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;dc();if(el){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}}}
+function chatDmSearch(q){var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;_chatDmQ=q;dc();requestAnimationFrame(function(){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}});}
 // Helper universel : met à jour A[key], re-render, replace le focus dans l'input
-function searchInput(key,val,id){A[key]=val;dc();var i=document.getElementById(id);if(i){var p=val.length;i.focus();try{i.setSelectionRange(p,p);}catch(e){}}}
+function searchInput(key,val,id){A[key]=val;dc();requestAnimationFrame(function(){var i=document.getElementById(id);if(i){var p=val.length;i.focus();try{i.setSelectionRange(p,p);}catch(e){}}});}
 function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;_chatRep={ts:m.ts,name:m.name,text:m.text||""};dc();setTimeout(function(){var i=document.getElementById("chatIn");if(i)i.focus();},50);}
 function chatCancelReply(){_chatRep=null;dc();}
 function chatDelMsg(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m)return;if(!A.user||A.user.id!==AID)return;// Seul l'admin peut supprimer
