@@ -2500,10 +2500,7 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(110+da.length*44+2*30)+`px"><colgroup><col style="width:110px">`;
-  da.forEach(function(){h+='<col style="width:44px">';});
-  h+='<col style="width:30px"><col style="width:30px"></colgroup>';
-  h+=`<thead><tr><th class="sth" style="width:110px"><div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Employ\u00e9</div></th>`;
+  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;width:auto"><thead><tr><th class="sth"><div class="nw">Employ\u00e9</div></th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
@@ -2518,7 +2515,7 @@ function vPlan(){
       // ntdBg = couleur SOLIDE pour la colonne sticky (sinon les cellules scrollent en transparence dessous)
       var ntdBg=isMe?"#1d2d1a":"#162818";
       rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
-        +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="width:110px;min-width:110px;background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'"><div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+        +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'"><div class="nw">'
         +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
