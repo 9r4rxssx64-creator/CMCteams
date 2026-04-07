@@ -2880,7 +2880,7 @@ function vDeparts(){
       var base=CI[emp.name]!==undefined?CI[emp.name]:ei; // cohérent avec calcDepPos (ei = index dans la liste)
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
-        <div title="${esc(empLabel(emp))}" style="width:90px;padding:3px 5px;font-size:12px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
+        <div title="${esc(empLabel(emp))}" style="width:110px;padding:3px 5px;font-size:12px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
       da.forEach(function(d){
         var code=(pl[emp.id]||{})[d]||"";
         var works=code?isWork(code):false;
