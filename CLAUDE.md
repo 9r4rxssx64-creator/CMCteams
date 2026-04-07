@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.11.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.13.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.11"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.13"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -394,6 +394,9 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 15. Notifs iOS Safari navigateur : `typeof Notification === "undefined"` (toujours) → ne fonctionne qu'en PWA (écran d'accueil) ❌
 16. A.user/_viewAs non rafraîchis après remplacement de A.employees par Firebase SSE → références obsolètes ❌
 17. Modifier plusieurs fonctions dans un même commit sans vérifier chaque flux → régressions ❌
+18. `max-width` sur `<td>` en table-layout:auto ignoré par les browsers → utiliser un `<div class="nw">` wrapper à l'intérieur du td ❌
+19. `chatSetReply(ts)` sans auto-activer `_chatDm` sur un DM → la réponse part en public au lieu de revenir en privé ❌
+20. Utiliser une variable locale d'une autre fonction vue (ex: `myPl` de `vMonPlanning` dans `vAccueil`) → ReferenceError en production ❌
 
 ---
 
@@ -465,6 +468,8 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.9 | Queue offline (sync auto retour online, badge ⏳), notifications navigateur (planning modifié, nouveaux messages), échanges de shifts (demande depuis vMonPlanning, vue admin RH/refus/swap, audit complet, sync Firebase) |
 | v9.10 | Fiche de renseignement (onglet Profil 👤) : employé remplit adresse/naissance/USBM/poste, batch Firebase unique, whitelist champs sécurisée. ROTATION 55+ corrigé : mêmes patterns standard, max 40min par défaut / 60min avec accord. Admin voit la fiche dans vEmps. |
 | v9.11 | Audit complet + corrections : compétences import BRTPECK (toutes familles), rotation départs base=ei, A.user/_viewAs refresh post-SSE, vPlan table width:auto colonnes 62/28px, chat utilisateurs en ligne (DM rapide), notifs iOS guide PWA, nav admin 8 onglets (Stats→Admin panel), _checkNewChat toast si visible hors-chat, PWA meta (title+theme-color), SW cache v9.11 |
+| v9.12 | Fix ReferenceError myPl dans vAccueil (→ variable code), fix largeur colonne noms vPlan (wrapper div .nw 90px — max-width ignoré par browsers sur td en auto-layout) |
+| v9.13 | Fix chat DM reply : chatSetReply auto-active _chatDm → réponse privée bien routée. Nettoyage code mort (chatSetDmEmp, commentaires genBase obsolètes) |
 
 ---
 
@@ -505,7 +510,7 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.11";
+var APP_VER  = "v9.13";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
