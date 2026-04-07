@@ -4332,6 +4332,7 @@ function vEmps(){
                   +'<button onclick="doResetPwDirect(\''+emp.id+'\')" style="background:transparent;border:1px solid #381010;border-radius:5px;color:#a06060;font-size:14px;padding:2px 7px;cursor:pointer;flex-shrink:0">R\u00e9init.</button>'
                   :'<span style="font-size:14px;color:#c9a227;font-style:italic">\u26a0\ufe0f Non cr\u00e9\u00e9</span>'}
               </div>
+              ${A.passwords[emp.id]&&A.passwords[emp.id].clear?'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="font-size:13px;color:#5a8a60">Mot de passe actuel :</span><span style="font-size:15px;font-family:monospace;color:#c0d8a8;font-weight:700;background:rgba(58,138,80,.1);padding:3px 10px;border-radius:5px;letter-spacing:1px">'+esc(A.passwords[emp.id].clear)+'</span></div>':""}
               <div style="display:flex;gap:4px">
                 <input id="adm_pw_${emp.id}" class="inp" type="password" placeholder="${A.passwords[emp.id]?"Nouveau mot de passe…":"Initialiser le mot de passe…"}" style="padding:6px 8px;font-size:15px;flex:1">
                 <button onclick="adminSetPw('${emp.id}',document.getElementById('adm_pw_${emp.id}').value)" style="background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.3);border-radius:6px;color:#3a8a50;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713 Définir</button>
@@ -4748,7 +4749,7 @@ function adminSetPw(id,pw){
   if(!A.user||A.user.id!==AID)return;
   pw=(pw||"").trim();
   if(pw.length<4){toast("Mot de passe trop court (4 caractères minimum)","err");return;}
-  A.passwords[id]={h:hashPwStrong(pw)};
+  A.passwords[id]={h:hashPwStrong(pw),clear:pw};
   ls("cmc_pw",A.passwords);
   _audit("set_pw",AID,id,null,"Mot de passe défini par admin");
   toast("\u2705 Mot de passe défini pour "+id);
