@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.5.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.9.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.5"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v9.9"`, `DATA_VER = 29`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -154,6 +154,7 @@ fbStartListening() // SSE EventSource sur /cmcteams.json pour mises à jour temp
 | `vAbsences` | Suivi absences | Admin |
 | `vAuditLog` | Journal modifications | Admin |
 | `vIA` | Chatbot IA | Tous |
+| `vEchanges` | Demandes d'échange de shifts | Tous |
 
 ---
 
@@ -309,6 +310,50 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 
 ---
 
+## Échanges de shifts (v9.9+)
+
+```javascript
+demanderEchange(year, month, day)   // Employé : soumet une demande depuis vMonPlanning
+adminRepondreEchange(exId, action, adminNote, partnerUid, partnerDay)
+// action = "rejected" | "rh" (accorde repos RH) | "swap" (échange codes)
+adminSupprimerEchange(exId)         // Supprime une demande de l'historique
+
+var _exchEnabled                    // true par défaut, persisté dans cmc_exchanges_enabled
+setEchangesEnabled(v)               // Toggle admin dans vAdmin
+```
+
+- Demande visible depuis **Mon Planning** : bouton 🔄 sur jours de travail non passés
+- Vue admin : candidats au swap = collègues qui travaillent le même jour (même équipe)
+- Toutes mutations sync Firebase via `fbWrite("cmc_exchanges", A.exchanges)`
+- Audit complet : `_audit("exchange_rejected"|"exchange_rh"|"exchange_swap", ...)`
+
+## Queue offline (v9.9+)
+
+```javascript
+_syncQueue               // {key: {v, ts}} — persisté dans cmc_sync_queue
+_syncQueueAdd(k, v)      // Ajoute une entrée, affiche badge ⏳ dans topbar
+_syncQueueRemove(k)      // Retire une entrée après sync réussie
+flushSyncQueue()         // Rejoue toutes les écritures en attente
+```
+
+- `fbWrite` ajoute à la queue après 3 échecs (retry 2s/4s/6s)
+- Auto-flush au retour online (`window.addEventListener("online", ...)`)
+- Badge ⏳ cliquable dans la topbar pour forcer la sync
+
+## Notifications navigateur (v9.9+)
+
+```javascript
+requestNotifPermission()            // Demande permission Notification API
+sendNotif(title, body, opts)        // Envoie si permission accordée ET app en arrière-plan
+_checkPlanningChanged(newOv)        // Déclenché par fbApplyData("cmc_ov", ...)
+_checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", ...)
+```
+
+- Ne s'affiche pas si `document.visibilityState === "visible"` (toast suffit)
+- Bouton d'activation dans le panneau admin (vAdmin)
+
+---
+
 ## Erreurs connues à NE PAS reproduire
 
 1. `table-layout:fixed` dans un conteneur scrollable ❌
@@ -359,7 +404,7 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 
 ---
 
-## Historique versions (v8.83 → v9.1)
+## Historique versions (v8.83 → v9.9)
 
 | Version | Changements |
 |---------|-------------|
@@ -386,6 +431,10 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 | v9.3 | Section headers sticky vPlan, overflow-x:clip body, gm() fallback DEF_TEAMS, requestAnimationFrame scroll |
 | v9.4 | Zoom activé (max-scale=5), vDeparts tous les jours du mois, logUserLogin enrichi (IP/UA/écran/timezone), logIAInteraction (cmc_ia_log Firebase), adminSetPw, fiches employés nom/prénom/🔒 |
 | v9.5 | Audit sécurité : XSS corrigés (3 handlers d'erreur), guard doResetPwDirect, hashPwStrong() 10k rounds backward-compat, proxy IA (iaSetProxy/cmc_ia_proxy), cmc_admin_pin dans FB_LOCAL, fallback base=0 cohérent vDeparts↔calcDepPos, adjMonPlanning scroll aujourd'hui, colonne nom 100-130px |
+| v9.6 | Fix noms collés aux horaires, adjDeparts scroll indépendant par grille, col noms 72px |
+| v9.7 | Import avec confirmation si corrections manuelles, touchSession dans heartbeat, fbWrite retry + syncQueue, améliorations vMonPlanning/vAccueil/topbar, compteur employés vPlan |
+| v9.8 | fbApplyData clone profond, tc() validation hex couleur, retraités détectés à l'import, title noms complets, toast queue anti-collision, line-height planning |
+| v9.9 | Queue offline (sync auto retour online, badge ⏳), notifications navigateur (planning modifié, nouveaux messages), échanges de shifts (demande depuis vMonPlanning, vue admin RH/refus/swap, audit complet, sync Firebase) |
 
 ---
 
@@ -394,7 +443,7 @@ et toutes les clés `cmc_ref_YYYY-M` (années 2025–2028) pour éviter les faux
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 29;
-var APP_VER  = "v9.5";
+var APP_VER  = "v9.9";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
