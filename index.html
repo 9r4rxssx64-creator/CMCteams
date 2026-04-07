@@ -2501,7 +2501,10 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;min-width:100%"><thead><tr><th class="sth" style="width:110px;min-width:110px"><div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Employ\u00e9</div></th>`;
+  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(110+da.length*34+2*30)+`px"><colgroup><col style="width:110px">`;
+  da.forEach(function(){h+='<col style="width:34px">';});
+  h+='<col style="width:30px"><col style="width:30px"></colgroup>';
+  h+=`<thead><tr><th class="sth" style="width:110px"><div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Employ\u00e9</div></th>`;
   da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#162818":"#16281a";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?"border-bottom:2px solid #c9a227;":"";h+='<th class="dth" data-planday="'+d+'" style="background:'+thBg+';'+thBorder+'"><div style="font-weight:700;color:'+thCol+'">'+d+'</div><div style="font-size:11px;color:'+(isTod?"#c9a227":"#182818")+'">'+DS[dow]+'</div></th>';});
   h+='<th class="stth">RH</th><th class="stth">Tr.</th></tr></thead><tbody>';
   // ── Planning : rendu lignes employés (helper inline) ─────────────────────────
