@@ -91,10 +91,10 @@ select.inp{-webkit-appearance:none}
 
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
-.sth{padding:7px 8px;background:#223a26;color:#b0d8a8;font-size:15px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;min-width:100px;max-width:130px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap}
+.sth{padding:5px 6px;background:#223a26;color:#b0d8a8;font-size:14px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;min-width:80px;max-width:110px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap}
 .dth{padding:3px 1px;min-width:30px;background:#223a26;font-size:15px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
-.ntd{padding:5px 8px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:16px;text-align:left;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ntd{padding:4px 6px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:14px;text-align:left;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctd{min-width:34px;height:34px;font-size:15px;font-weight:700;text-align:center;cursor:pointer}
 .steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0}
 .stattd{padding:3px;font-size:15px;color:#90b888;background:#1e3422;text-align:center}
@@ -1161,7 +1161,7 @@ function adjGrid(){
   var th2=g.querySelector('[data-planday="'+todD2+'"]');
   if(!th2)return;
   var thR2=th2.getBoundingClientRect(),gR2=g.getBoundingClientRect();
-  var stickyW=110; // largeur colonne nom
+  var stickyW=90; // largeur colonne nom
   var sp2=Math.max(0,g.scrollLeft+(thR2.left-gR2.left)-stickyW);
   g.scrollLeft=sp2;
 }
@@ -1175,17 +1175,13 @@ function adjDeparts(){
   if(!A.user)return;
   var tod=new Date();
   if(tod.getFullYear()!==A.year||tod.getMonth()!==A.month)return;
-  var todD=tod.getDate(),maxD=getDays(A.year,A.month);
-  var th=null;
-  for(var _d=todD;_d<=maxD;_d++){
-    var _els=document.querySelectorAll('[data-depday="'+_d+'"]');
-    if(_els&&_els.length>0){th=_els[0];break;}
-  }
-  if(!th)return;
-  // getBoundingClientRect pour un calcul fiable (offsetLeft est relatif au <table>, pas au conteneur scroll)
+  var todD=tod.getDate();
+  // Chaque grille trouve et scrolle vers sa propre colonne aujourd'hui
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
+    var th=g.querySelector('[data-depday="'+todD+'"]');
+    if(!th)return;
     var thR=th.getBoundingClientRect(),gR=g.getBoundingClientRect();
-    var sp=Math.max(0,g.scrollLeft+(thR.left-gR.left)-94); // 90px = nom sticky
+    var sp=Math.max(0,g.scrollLeft+(thR.left-gR.left)-94);
     g.scrollLeft=sp;
   });
 }
