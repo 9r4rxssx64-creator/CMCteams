@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.10.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.11.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,7 +11,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.10"`, `DATA_VER = 29`
+- **Version actuelle :** `APP_VER = "v9.11"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 
@@ -387,6 +387,13 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 8. `innerHTML` sans `esc()` ❌
 9. `oninput` appelant `dc()` directement sans restaurer le focus → utiliser `searchInput()` ❌
 10. `overflow-y:hidden` sur parent de colonne sticky (iOS Safari) ❌
+11. `width:100%` sur table dans conteneur scrollable → étire les colonnes, codes loin des noms → utiliser `width:auto` ❌
+12. Mettre à jour `cmc_notif_ts` sans envoyer de notification → marque les messages comme vus sans notifier ❌
+13. `base=0` dans calcDepPos/vDeparts → tous les employés au même rang → utiliser index `ei` ou `chefNames.indexOf` ❌
+14. Onglets nav admin > 8 → Admin poussé hors écran sur iPhone → Stats accessible depuis panneau Admin ❌
+15. Notifs iOS Safari navigateur : `typeof Notification === "undefined"` (toujours) → ne fonctionne qu'en PWA (écran d'accueil) ❌
+16. A.user/_viewAs non rafraîchis après remplacement de A.employees par Firebase SSE → références obsolètes ❌
+17. Modifier plusieurs fonctions dans un même commit sans vérifier chaque flux → régressions ❌
 
 ---
 
@@ -457,6 +464,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.8 | fbApplyData clone profond, tc() validation hex couleur, retraités détectés à l'import, title noms complets, toast queue anti-collision, line-height planning |
 | v9.9 | Queue offline (sync auto retour online, badge ⏳), notifications navigateur (planning modifié, nouveaux messages), échanges de shifts (demande depuis vMonPlanning, vue admin RH/refus/swap, audit complet, sync Firebase) |
 | v9.10 | Fiche de renseignement (onglet Profil 👤) : employé remplit adresse/naissance/USBM/poste, batch Firebase unique, whitelist champs sécurisée. ROTATION 55+ corrigé : mêmes patterns standard, max 40min par défaut / 60min avec accord. Admin voit la fiche dans vEmps. |
+| v9.11 | Audit complet + corrections : compétences import BRTPECK (toutes familles), rotation départs base=ei, A.user/_viewAs refresh post-SSE, vPlan table width:auto colonnes 62/28px, chat utilisateurs en ligne (DM rapide), notifs iOS guide PWA, nav admin 8 onglets (Stats→Admin panel), _checkNewChat toast si visible hors-chat, PWA meta (title+theme-color), SW cache v9.11 |
 
 ---
 
@@ -496,8 +504,8 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
-var DATA_VER = 29;
-var APP_VER  = "v9.10";
+var DATA_VER = 30;
+var APP_VER  = "v9.11";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```
