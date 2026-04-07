@@ -807,7 +807,12 @@ function fbApplyData(k,v){
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   if(k==="cmc_ov"){A.overrides=vc;}
-  else if(k==="cmc_e"){A.employees=Array.isArray(vc)?vc:Object.values(vc);}
+  else if(k==="cmc_e"){
+    A.employees=Array.isArray(vc)?vc:Object.values(vc);
+    // Rafraîchir A.user et _viewAs pour éviter les références obsolètes après remplacement du tableau
+    if(A.user){var _eu=A.employees.find(function(e){return e.id===A.user.id;});if(_eu)A.user=_eu;}
+    if(_viewAs){var _ev=A.employees.find(function(e){return e.id===_viewAs.id;});if(_ev)_viewAs=_ev;}
+  }
   else if(k==="cmc_t"){A.teams=Array.isArray(vc)?vc:Object.values(vc);}
   else if(k==="cmc_pw"){A.passwords=vc;}
   else if(k==="cmc_reg"){
