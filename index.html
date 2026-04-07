@@ -239,6 +239,40 @@ var FAMILIES=[
 ];
 function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
 function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
+// ── Compétences jeux (initiales du code poste PDF) ────────────────────────────
+var COMPETENCES=[
+  {id:"B",  l:"Blackjack",            c:"#c9a227"},
+  {id:"R",  l:"Roulette anglaise",    c:"#4a72a8"},
+  {id:"E",  l:"Roulette europ\u00e9enne", c:"#2a9a9a"},
+  {id:"T",  l:"Texas Hold\u2019em Ult.", c:"#3a8a50"},
+  {id:"P+", l:"Poker+",               c:"#9060c0"},
+  {id:"C",  l:"Craps",                c:"#c04040"},
+  {id:"K",  l:"Cash Game",            c:"#c07830"}
+];
+// Parse la chaîne de poste PDF ("BRTP+E.") → tableau de codes ["B","R","T","P+","E"]
+function parseCompetences(post){
+  if(!post)return[];
+  var s=post.replace(/[.\s]/g,"").toUpperCase();
+  var res=[],i=0;
+  while(i<s.length){
+    if(s[i]==="+"||s[i]==="-"){i++;continue;}
+    if(s[i+1]==="+"){res.push(s[i]+"+");i+=2;}
+    else{res.push(s[i]);i++;}
+  }
+  return res;
+}
+// Rebuild chaîne poste depuis tableau de codes
+function buildPost(comps){return comps.join("");}
+// Badges HTML des compétences d'un employé
+function renderCompBadges(post,small){
+  var comps=parseCompetences(post);
+  if(!comps.length)return"";
+  var sz=small?"12px":"13px",pad=small?"1px 5px":"2px 8px";
+  return comps.map(function(cid){
+    var comp=COMPETENCES.find(function(x){return x.id===cid;})||{l:cid,c:"#7aaa80"};
+    return'<span title="'+esc(comp.l)+'" style="display:inline-block;background:'+comp.c+'1a;color:'+comp.c+';border:1px solid '+comp.c+'50;border-radius:4px;font-size:'+sz+';font-weight:700;padding:'+pad+';line-height:1.4;white-space:nowrap">'+esc(cid)+'</span>';
+  }).join(" ");
+}
 // Etiquette affichee pour un employe : nom + etoile si chef roulette
 function empLabel(emp){
   if(!emp) return "";
@@ -4059,9 +4093,27 @@ function vEmps(){
             ${A.teams.map(function(t){return "<option value=\""+t.id+"\""+(emp.team===t.id?" selected":"")+">"+esc(t.name)+"</option>";}).join("")}
           </select></div>
 
-          <div><div style="font-size:13px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Poste</div>
-          <input class="inp" style="padding:8px 10px;font-size:16px" value="${esc(emp.post||"")}" placeholder="ex: BRTCK"
-            onchange="updEmp('${emp.id}','post',this.value)"></div>
+          <div>
+            <div style="font-size:13px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Compétences jeux</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+              ${COMPETENCES.map(function(comp){
+                var active=parseCompetences(emp.post||"").indexOf(comp.id)>=0;
+                return '<button onclick="toggleCompetence(\''+esc(emp.id)+'\',\''+esc(comp.id)+'\')" '
+                  +'title="'+esc(comp.l)+'" '
+                  +'style="padding:5px 10px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;'
+                  +'background:'+(active?comp.c+'22':'rgba(255,255,255,.03)')+';'
+                  +'border:1px solid '+(active?comp.c+'80':'#1e3020')+';'
+                  +'color:'+(active?comp.c:'#3a5030')+'">'
+                  +esc(comp.id)+' <span style="font-size:12px;font-weight:400">'+esc(comp.l)+'</span>'
+                  +'</button>';
+              }).join("")}
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12px;color:#4a6040">Code PDF :</span>
+              <input class="inp" style="padding:4px 8px;font-size:14px;font-family:monospace;flex:1" value="${esc(emp.post||"")}" placeholder="ex: BRTP+E."
+                onchange="updEmp('${emp.id}','post',this.value)">
+            </div>
+          </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.chef?"#c9a227":"#4a6040"}">
@@ -4174,7 +4226,15 @@ function vEmps(){
             ${emp.chef&&!isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
             ${_erFull?'<span style="font-size:13px;color:#7aaa80;margin-left:6px">'+esc(_erFull)+'</span>':""}
           </div>
-          <div style="font-size:13px;color:#7aaa80;font-family:monospace">${esc(emp.id)} \u00b7 ${esc(emp.post||"")} \u00b7 <span style="color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span> \u00b7 <span style="color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>${_hasPw?'<span style="color:#3a8a50;margin-left:4px">\ud83d\udd12</span>':'<span style="color:#6a5a30;margin-left:4px">\u26a0\ufe0f sans MDP</span>'}${(emp.toMo!==undefined&&emp.toMo!==null)?(' \u00b7 <span style="color:#a06060">Départ '+moToLabel(emp.toMo)+'</span>'):""}${(emp.fromMo!==undefined&&emp.fromMo!==null)?(' \u00b7 <span style="color:#408060">Depuis '+moToLabel(emp.fromMo)+'</span>'):""}
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:2px">
+            <span style="font-size:13px;color:#4a6040;font-family:monospace">${esc(emp.id)}</span>
+            <span style="color:#2a4020">·</span>
+            <span style="font-size:13px;color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span>
+            <span style="color:#2a4020">·</span>
+            <span style="font-size:13px;color:${getFamColor(emp.family||'bj')}">${getFamLabel(emp.family||'bj')}</span>
+            ${renderCompBadges(emp.post,true)}
+            ${_hasPw?'<span style="color:#3a8a50;font-size:13px">\ud83d\udd12</span>':'<span style="color:#6a5a30;font-size:13px">\u26a0\ufe0f</span>'}
+            ${(emp.toMo!==undefined&&emp.toMo!==null)?('<span style="font-size:12px;color:#a06060">· Départ '+moToLabel(emp.toMo)+'</span>'):""}
           </div>
         </div>
         <span style="font-size:16px;color:#7aaa80;flex-shrink:0">\u203a</span>
@@ -4185,6 +4245,23 @@ function vEmps(){
   return h+`</div></div>`;
 }
 
+function toggleCompetence(id,cid){
+  if(!A.user||A.user.id!==AID)return;
+  var e=A.employees.find(function(x){return x.id===id;});
+  if(!e)return;
+  var comps=parseCompetences(e.post||"");
+  var idx=comps.indexOf(cid);
+  if(idx>=0)comps.splice(idx,1);else comps.push(cid);
+  // Ordonner selon COMPETENCES pour cohérence
+  comps.sort(function(a,b){
+    var ai=COMPETENCES.findIndex(function(x){return x.id===a;});
+    var bi=COMPETENCES.findIndex(function(x){return x.id===b;});
+    return (ai<0?99:ai)-(bi<0?99:bi);
+  });
+  e.post=buildPost(comps);
+  sav();
+  var c=document.getElementById("content");if(c)c.innerHTML=vMain();
+}
 function updEmp(id,field,val){
   if(!A.user||A.user.id!==AID)return;
   var e=A.employees.find(function(x){return x.id===id;});
@@ -5172,7 +5249,7 @@ function doImport(){
         if(eIsChef&&!_fe.chef){_fe.chef=true;_fch=true;}
         if(eFamily&&_fe.family!==eFamily){_fe.family=eFamily;_fch=true;}
         if(_contextTeam&&_fe.team!==_contextTeam){_fe.team=_contextTeam;_fch=true;}
-        if(ePost&&!_fe.post){_fe.post=(ePost||"").replace(/[.]+$/,"").trim()||_fe.post;_fch=true;}
+        if(ePost){var _ep2=(ePost||"").replace(/[.]+$/,"").replace(/\s+/g,"").trim();if(_ep2&&_fe.post!==_ep2){_fe.post=_ep2;_fch=true;}}
         if(_fch){ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);}
       }
     }
@@ -5572,10 +5649,10 @@ function doImport(){
       if(!_isDefEmp&&_contextTeam&&emp.team!==_contextTeam){
         emp.team=_contextTeam;_changed=true;
       }
-      // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent)
-      if(!_isDefEmp&&nameIdx===1&&p0raw&&!emp.post){
-        var _postClean=p0raw.replace(/[.]+$/,"").trim();
-        if(_postClean)emp.post=_postClean;_changed=true;
+      // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent) — PDF = source de vérité
+      if(nameIdx===1&&p0raw){
+        var _postClean=p0raw.replace(/[.]+$/,"").replace(/\s+/g,"").trim();
+        if(_postClean&&emp.post!==_postClean){emp.post=_postClean;_changed=true;}
       }
       if(_changed){ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);}
     }
