@@ -587,7 +587,16 @@ Matrice d'impact rapide :
 - [ ] `chatSetReply` doit auto-activer `_chatDm` pour les DM (#19)
 - [ ] Notifications : vérifier `typeof Notification !== "undefined"` (iOS) (#15)
 
-### Phase 3 — Validation
+### Phase 3 — Validation (OBLIGATOIRE avant CHAQUE commit)
+
+> ⚠️ **RÈGLE ABSOLUE** : Ne JAMAIS pousser sans avoir vérifié soi-même.
+> Après CHAQUE modification, AVANT de commit :
+> 1. Valider la syntaxe JS
+> 2. Vérifier que la modification n'a PAS cassé les fonctions existantes
+> 3. Simuler le rendu HTML généré pour les vues affectées
+> 4. Comparer avec l'état précédent (git diff) pour détecter les régressions
+> 5. Si modification CSS/layout : calculer les dimensions (largeurs colonnes vs contenu)
+> 6. Ne JAMAIS enchaîner plusieurs commits de "fix" sans vérification — c'est signe de travail bâclé
 
 ```bash
 # 1. Syntaxe JS (obligatoire avant commit)
@@ -599,11 +608,25 @@ fs.writeFileSync('/tmp/test.js',html.slice(s+8,e));
 " && node --check /tmp/test.js && echo "✅ JS OK"
 
 # 2. Taille fichier (surveillance dérive)
-wc -c index.html  # Attendu : ~440-480 KB
+wc -c index.html  # Attendu : ~440-540 KB
 
 # 3. Recherche oublis sécurité
 grep -n 'innerHTML' index.html | grep -v 'esc(' | head -20
+
+# 4. Diff avec état précédent (vérifier régressions)
+git diff --stat HEAD
+
+# 5. Si modif layout : vérifier que les vues non-modifiées restent intactes
+# Comparer les fonctions vPlan/vDeparts/vMonPlanning avec le dernier commit stable
 ```
+
+### Règle anti-régression
+
+> **INTERDIT** de modifier une vue (vPlan, vDeparts, etc.) sans vérifier que les AUTRES vues
+> ne sont pas affectées. Utiliser la matrice d'impact Phase 0.
+> Si un changement CSS affecte `.sth`, `.ntd`, `.ctd`, `.dth` → vérifier vPlan ET vDeparts.
+> Si un changement touche `A.employees` → vérifier vEmps, vPlan, vDeparts, vAccueil, vStats.
+> Un commit qui casse une fonction existante = travail à refaire entièrement.
 
 #### Checklist de validation par type de changement
 
