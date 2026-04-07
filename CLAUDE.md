@@ -438,6 +438,37 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
+## Règles de rotation Casino de Monaco
+
+> ⚠️ Règle opérationnelle à respecter dans tous les calculs de planning
+
+### Employés 55+ (★ rouge)
+- Identifiés par `emp.senior = true` (ou `emp.family==="roulettes" && emp.chef` en rétro-compatibilité)
+- Affichés avec `★` rouge dans le planning, vDeparts, vEmps
+- **Max 40 minutes de travail consécutif → pause 20 minutes obligatoire**
+- Sauf autorisation écrite de l'employé (`emp.seniorAuth = true`)
+
+### Autres employés
+- Patterns autorisés : **20/20** · **40/20** · **60/20** (travail/pause en minutes)
+- Maximum **60 minutes de travail consécutif** en toutes circonstances
+
+### Exception
+- **Roulette européenne** (compétence `E`) : règles de rotation différentes (à préciser)
+
+### Constante dans le code
+```javascript
+var ROTATION = {
+  senior:   {maxWork: 40, pause: 20},  // 55+ ans
+  standard: {maxWork: 60, pause: 20, patterns: [20, 40, 60]},
+  exceptionComp: "E"  // roulette européenne
+};
+function isSenior(emp)  // true si emp.senior || (roulettes && chef)
+function empLabelHtml(emp)  // nom + ★ rouge si senior (pour innerHTML)
+function empLabel(emp)      // nom + ★ texte (pour title="")
+```
+
+---
+
 ## Constantes
 
 ```javascript

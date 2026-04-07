@@ -273,11 +273,27 @@ function renderCompBadges(post,small){
     return'<span title="'+esc(comp.l)+'" style="display:inline-block;background:'+comp.c+'1a;color:'+comp.c+';border:1px solid '+comp.c+'50;border-radius:4px;font-size:'+sz+';font-weight:700;padding:'+pad+';line-height:1.4;white-space:nowrap">'+esc(cid)+'</span>';
   }).join(" ");
 }
-// Etiquette affichee pour un employe : nom + etoile si chef roulette
+// ── Règles de rotation (Casino de Monaco) ────────────────────────────────────
+// Employé 55+ (★ rouge) : max 40 min de travail consécutif · pause 20 min · sauf autorisation écrite
+// Autres employés      : 20/20 · 40/20 · 60/20 (max 60 min consécutives)
+// Exception            : roulette européenne (compétence E) — règles différentes
+var ROTATION={senior:{maxWork:40,pause:20},standard:{maxWork:60,pause:20,patterns:[20,40,60]},exceptionComp:"E"};
+// Etiquette texte employé (pour title="", exports)
 function empLabel(emp){
   if(!emp) return "";
-  return emp.name+(emp.family==="roulettes"&&emp.chef?" ★":"");
+  var isSr=emp.senior||(emp.family==="roulettes"&&emp.chef);
+  return emp.name+(isSr?" ★":"");
 }
+// Etiquette HTML employé (pour affichage inline — ★ rouge si senior)
+function empLabelHtml(emp,isMe){
+  if(!emp) return "";
+  var isSr=emp.senior||(emp.family==="roulettes"&&emp.chef);
+  var n=esc(emp.name);
+  if(isSr) n+=' <span style="color:#e04040;font-size:11px" title="55+ ans \u2014 rotation max '+ROTATION.senior.maxWork+' min \u00b7 pause '+ROTATION.senior.pause+' min obligatoire">\u2605</span>';
+  return n;
+}
+// L'employé est-il senior (55+) ?
+function isSenior(emp){return !!(emp&&(emp.senior||(emp.family==="roulettes"&&emp.chef)));}
 
 var DEF_TEAMS=[
   // BJ Chefs Cartes
@@ -2373,7 +2389,7 @@ function vPlan(){
       var ntdBg=isMe?"#1d2d1a":"#162818";
       rh+='<tr style="border-bottom:1px solid #2a4830;background:'+nbg+'">'
         +'<td class="ntd" title="'+esc(empLabel(emp))+'" style="background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'">'
-        +(isMe?"\u25b6 ":"")+esc(empLabel(emp))+(emp.chef?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</td>';
+        +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
         var click=isAdm?" onclick=\"openPicker('"+emp.id+"',"+d+",this)\"":"";
@@ -2734,7 +2750,7 @@ function vDeparts(){
       var base=CI[emp.name]!==undefined?CI[emp.name]:0; // cohérent avec calcDepPos
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
-        <div title="${esc(empLabel(emp))}" style="width:72px;padding:3px 6px;font-size:13px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${isMe?"\u25b6 ":""}${esc(empLabel(emp))}</div></td>`;
+        <div title="${esc(empLabel(emp))}" style="width:72px;padding:3px 6px;font-size:13px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
       da.forEach(function(d){
         var code=(pl[emp.id]||{})[d]||"";
         var works=code?isWork(code):false;
@@ -4115,7 +4131,7 @@ function vEmps(){
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
             <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.chef?"#c9a227":"#4a6040"}">
               <input type="checkbox" ${emp.chef?"checked":""} onchange="updEmp('${emp.id}','chef',this.checked)">
               Chef de partie
@@ -4123,6 +4139,10 @@ function vEmps(){
             <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.cdpShifts&&emp.cdpShifts.length?"rgba(180,130,10,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.cdpShifts&&emp.cdpShifts.length?"#b89010":"#4a6040"}">
               <input type="checkbox" ${emp.cdpShifts&&emp.cdpShifts.length?"checked":""} onchange="updCDP('${emp.id}',this.checked)">
               Shifts CDP
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#060f0a;border:1px solid ${emp.senior?"rgba(224,64,64,.35)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.senior?"#e04040":"#4a6040"}" title="Rotation max 40 min · pause 20 min obligatoire">
+              <input type="checkbox" ${emp.senior?"checked":""} onchange="updEmp('${emp.id}','senior',this.checked)">
+              <span style="color:#e04040;margin-right:2px">\u2605</span> 55+ ans
             </label>
           </div>
 
@@ -4223,7 +4243,8 @@ function vEmps(){
           <div style="font-size:15px;font-weight:${isAdm?700:400};color:${isAdm?"#c9a227":"#a0b090"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             ${esc(emp.name)}
             ${isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">ADMIN</span>":""}
-            ${emp.chef&&!isAdm?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
+            ${emp.chef&&!isAdm&&emp.family!=="roulettes"?"<span class=\"chef-badge\" style=\"margin-left:4px\">CHEF</span>":""}
+            ${isSenior(emp)?'<span style="color:#e04040;font-size:13px;margin-left:3px" title="55+ ans \u2014 rotation max 40 min">\u2605</span>':""}
             ${_erFull?'<span style="font-size:13px;color:#7aaa80;margin-left:6px">'+esc(_erFull)+'</span>':""}
           </div>
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:2px">
@@ -4755,9 +4776,9 @@ function parseCMCPlanningFromItems(allItems, year, month){
       if(nomMatch&&(parts.length===1||prenomMatch)){
         var existing=empLines.find(function(e){return e.empName===emp.name&&Math.abs(e.y-(row[0]||{y:0}).y)<20;});
         if(!existing) empLines.push({empName:emp.name,y:(row[0]||{y:0}).y,rowIdx:ri});
-        // Etoile sur la ligne = chef roulette
-        if(lineHasStar&&(emp.family!=="roulettes"||!emp.chef)){
-          emp.family="roulettes";emp.chef=true;ls("cmc_e",A.employees);
+        // Etoile sur la ligne = senior 55+ (roulettes)
+        if(lineHasStar&&(!emp.senior||emp.family!=="roulettes")){
+          emp.family="roulettes";emp.chef=true;emp.senior=true;ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);
         }
       }
     });
@@ -5641,6 +5662,7 @@ function doImport(){
         var _changed=false;
         var targetFam=isRouletteChef?"roulettes":importFamily;
         if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
+        if(isRouletteChef&&!emp.senior){emp.senior=true;_changed=true;}
         if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
         if(_changed) ls("cmc_e",A.employees);
       }
