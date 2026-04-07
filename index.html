@@ -1079,8 +1079,27 @@ var A={
   importSuggestions:{newEmps:[],possibleRetired:[]},
   exchanges:lg("cmc_exchanges",{})
 };
-// Dédupliquer A.employees au démarrage (protection contre doublons Firebase/inscription)
-(function(){var s={};A.employees=A.employees.filter(function(e){if(s[e.id])return false;s[e.id]=true;return true;});})();
+// Dédupliquer A.employees au démarrage — par id ET par nom
+// Si doublon par nom → garder celui de DEF_EMP, sinon le premier
+(function(){
+  var defIds={};DEF_EMP.forEach(function(d){defIds[d.id]=true;});
+  var byName={},clean=[];
+  A.employees.forEach(function(e){
+    if(byName[e.name]){
+      // Doublon nom : si le nouveau est dans DEF_EMP, il remplace
+      if(defIds[e.id]&&!defIds[byName[e.name].id]){
+        clean=clean.filter(function(x){return x.id!==byName[e.name].id;});
+        byName[e.name]=e;clean.push(e);
+      }
+      // Sinon on ignore le doublon
+      return;
+    }
+    byName[e.name]=e;clean.push(e);
+  });
+  // Aussi dédupliquer par id
+  var sId={};clean=clean.filter(function(e){if(sId[e.id])return false;sId[e.id]=true;return true;});
+  if(clean.length!==A.employees.length){A.employees=clean;ls("cmc_e",A.employees);}
+})();
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
