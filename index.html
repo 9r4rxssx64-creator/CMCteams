@@ -1343,7 +1343,6 @@ function adjGrid(){
   var nb=document.getElementById("bnav"),nbH=nb?nb.offsetHeight:70;
   var av=window.innerHeight-g.getBoundingClientRect().top-nbH-8;
   if(av>100)g.style.height=av+"px";
-  initAxisLock(g);
   var tod2=new Date();
   if(tod2.getFullYear()!==A.year||tod2.getMonth()!==A.month)return;
   var todD2=tod2.getDate();
