@@ -91,11 +91,11 @@ select.inp{-webkit-appearance:none}
 
 /* === GRILLE === */
 #planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
-.sth{padding:4px 5px;background:#223a26;color:#b0d8a8;font-size:13px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;width:72px;min-width:55px;max-width:72px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dth{padding:3px 1px;min-width:30px;background:#223a26;font-size:15px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2}
+.sth{padding:3px 4px;background:#223a26;color:#b0d8a8;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;width:62px;min-width:48px;max-width:62px;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dth{padding:2px 1px;min-width:28px;background:#223a26;font-size:14px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2}
 .stth{padding:3px 4px;background:#223a26;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3)}
-.ntd{padding:3px 5px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:13px;text-align:left;width:72px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctd{min-width:34px;height:34px;font-size:15px;font-weight:700;text-align:center;cursor:pointer}
+.ntd{padding:2px 4px;background:#1e3422;position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:12px;text-align:left;width:62px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctd{min-width:28px;height:32px;font-size:14px;font-weight:700;text-align:center;cursor:pointer}
 .steptd{background:#1e3422;padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid #0a1508;color:#d0e8c0}
 .stattd{padding:3px;font-size:15px;color:#90b888;background:#1e3422;text-align:center}
 
@@ -1342,7 +1342,7 @@ function adjDeparts(){
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
-    g.scrollLeft=Math.max(0,th.offsetLeft-72); // 72 = largeur fixe colonne noms
+    g.scrollLeft=Math.max(0,th.offsetLeft-62); // 62 = largeur fixe colonne noms
   });
 }
 window.addEventListener("resize",adjGrid);
@@ -1998,7 +1998,7 @@ function calcDepPos(empName,tid,day){
   if(!refEmp) return null; // pas de données importées → position inconnue
   var workDays=da.filter(function(d){return isWork((pl[refEmp.id]||{})[d]||'');});
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  var base=CI[empName]!==undefined?CI[empName]:0;
+  var base=CI[empName]!==undefined?CI[empName]:chefNames.indexOf(empName);
   var rotIdx=(wi%4+Math.floor(wi/4)+base)%sl;
   return SEQ[rotIdx];
 }
@@ -2805,8 +2805,8 @@ function vDeparts(){
       +'<div style="background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:72px">'
-      +'<div style="width:72px;padding:3px 6px;overflow:hidden">'
+      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:62px">'
+      +'<div style="width:62px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
@@ -2828,10 +2828,10 @@ function vDeparts(){
     h+=`</tr></thead><tbody>`;
     chefEmps.forEach(function(emp,ei){
       var isMe=A.user&&emp.id===A.user.id;
-      var base=CI[emp.name]!==undefined?CI[emp.name]:0; // cohérent avec calcDepPos
+      var base=CI[emp.name]!==undefined?CI[emp.name]:ei; // cohérent avec calcDepPos (ei = index dans la liste)
       h+=`<tr style="${ei>0?"border-top:1px solid #0c160a":""}${isMe?";background:rgba(201,162,39,.05)":""}">
       <td style="padding:0;background:${isMe?"#1c1c10":"#162818"};position:sticky;left:0;border-right:1px solid #182818;z-index:3">
-        <div title="${esc(empLabel(emp))}" style="width:72px;padding:3px 6px;font-size:13px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
+        <div title="${esc(empLabel(emp))}" style="width:62px;padding:3px 5px;font-size:12px;font-weight:${isMe?700:400};color:${isMe?"#c9a227":"#7a8a68"};overflow:hidden;white-space:nowrap">${isMe?"\u25b6 ":""}${empLabelHtml(emp)}</div></td>`;
       da.forEach(function(d){
         var code=(pl[emp.id]||{})[d]||"";
         var works=code?isWork(code):false;
