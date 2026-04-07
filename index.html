@@ -1330,6 +1330,16 @@ function adjGrid(){
   var nb=document.getElementById("bnav"),nbH=nb?nb.offsetHeight:70;
   var av=window.innerHeight-g.getBoundingClientRect().top-nbH-8;
   if(av>100)g.style.height=av+"px";
+  // Verrouillage axe tactile : empêche le drift horizontal quand on scroll verticalement
+  if(!g._axBound){
+    g._axBound=true;
+    var _ax=null,_sx=0,_sy=0,_sl=0;
+    g.addEventListener("touchstart",function(e){_ax=null;_sx=e.touches[0].clientX;_sy=e.touches[0].clientY;_sl=g.scrollLeft;},{passive:true});
+    g.addEventListener("touchmove",function(e){
+      if(!_ax){var dx=Math.abs(e.touches[0].clientX-_sx),dy=Math.abs(e.touches[0].clientY-_sy);if(dx>5||dy>5)_ax=dx>dy?"x":"y";}
+      if(_ax==="y")g.scrollLeft=_sl;
+    },{passive:true});
+  }
   // Scroll horizontal vers aujourd'hui
   var tod2=new Date();
   if(tod2.getFullYear()!==A.year||tod2.getMonth()!==A.month)return;
@@ -1356,6 +1366,16 @@ function adjDeparts(){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
     g.scrollLeft=Math.max(0,th.offsetLeft-110); // 110 = largeur fixe colonne noms
+    // Verrouillage axe tactile
+    if(!g._axBound){
+      g._axBound=true;
+      var _ax=null,_sx=0,_sy=0,_sl=0;
+      g.addEventListener("touchstart",function(e){_ax=null;_sx=e.touches[0].clientX;_sy=e.touches[0].clientY;_sl=g.scrollLeft;},{passive:true});
+      g.addEventListener("touchmove",function(e){
+        if(!_ax){var dx=Math.abs(e.touches[0].clientX-_sx),dy=Math.abs(e.touches[0].clientY-_sy);if(dx>5||dy>5)_ax=dx>dy?"x":"y";}
+        if(_ax==="y")g.scrollLeft=_sl;
+      },{passive:true});
+    }
   });
 }
 window.addEventListener("resize",adjGrid);
