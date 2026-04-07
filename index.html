@@ -851,8 +851,9 @@ function _checkNewChat(msgs){
   if(newMsgs.length){
     var m=newMsgs[newMsgs.length-1];
     var preview=(m.text||"").slice(0,80);
-    sendNotif(m.to?"💬 Message privé de "+m.name:"💬 "+m.name+" dans le chat",preview,{tag:"chat"});
-    localStorage.setItem("cmc_notif_ts",String(Date.now()));
+    var _sent=sendNotif(m.to?"💬 Message privé de "+m.name:"💬 "+m.name+" dans le chat",preview,{tag:"chat"});
+    // Ne marquer comme vu que si la notif a réellement été envoyée (app en arrière-plan)
+    if(_sent)localStorage.setItem("cmc_notif_ts",String(Date.now()));
   }
 }
 function requestNotifPermission(){
@@ -865,9 +866,10 @@ function requestNotifPermission(){
   });
 }
 function sendNotif(title,body,opts){
-  if(!("Notification" in window)||Notification.permission!=="granted")return;
-  if(document.visibilityState==="visible")return; // app visible : toast suffit
-  try{new Notification(title,Object.assign({body:body,icon:"/favicon.ico"},opts||{}));}catch(e){}
+  if(!("Notification" in window)||Notification.permission!=="granted")return false;
+  if(document.visibilityState==="visible")return false; // app visible : toast suffit
+  try{new Notification(title,Object.assign({body:body},opts||{}));return true;}catch(e){}
+  return false;
 }
 
 function fbStartListening(){
@@ -1332,9 +1334,7 @@ function adjDeparts(){
   document.querySelectorAll('.dep-grid-scroll').forEach(function(g){
     var th=g.querySelector('[data-depday="'+todD+'"]');
     if(!th)return;
-    var firstTh=g.querySelector('th');
-    var stickyW=firstTh?firstTh.offsetWidth:75;
-    g.scrollLeft=Math.max(0,th.offsetLeft-stickyW);
+    g.scrollLeft=Math.max(0,th.offsetLeft-72); // 72 = largeur fixe colonne noms
   });
 }
 window.addEventListener("resize",adjGrid);
@@ -1906,7 +1906,6 @@ function vNav(){
   var tabs=[
     {id:"accueil",ic:"\u2666",lb:"Accueil"},
     {id:"monplanning",ic:"\ud83d\udcc6",lb:"Mon Plan."},
-    {id:"profil",ic:"\ud83d\udc64",lb:"Profil"},
     {id:"planning",ic:"\ud83d\udcc5",lb:"\u00c9quipe"},
     {id:"departs",ic:"\ud83c\udfaf",lb:"D\u00e9parts"},
     {id:"chat",ic:"\ud83d\udcac",lb:"Chat"},
@@ -2077,6 +2076,7 @@ function vMonPlanning(){
     +'<div style="width:40px;height:40px;border-radius:50%;background:'+tcc+'20;border:2px solid '+tcc+'40;color:'+tcc+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0">'+esc(emp.name[0])+'</div>'
     +'<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;color:#d0e8c0">'+esc(dispName)+'</div>'
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
+    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 Ma fiche</button>'
     +'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#6a92c8;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -2813,7 +2813,7 @@ function vDeparts(){
       var bg=isHigh?'rgba(201,162,39,.18)':isNext?'rgba(80,140,80,.12)':isWork2?'#16281a':'#0a1408';
       var col=isHigh?'#c9a227':we?'#4a6888':isWork2?'#3a4a38':'#1e2a1e';
       var brd=isHigh?';border-bottom:2px solid rgba(201,162,39,.5)':isNext?';border-bottom:2px solid rgba(80,160,80,.3)':'';
-      h+='<th data-depday="'+d+'" style="padding:3px 1px;min-width:32px;background:'+bg+';text-align:center'+brd+'">'
+      h+='<th data-depday="'+d+'" style="padding:3px 1px;min-width:36px;background:'+bg+';text-align:center'+brd+'">'
         +'<div style="font-weight:700;color:'+col+';font-size:14px">'+d+'</div>'
         +'<div style="font-size:11px;color:'+(isHigh?'rgba(201,162,39,.4)':isNext?'rgba(80,160,80,.3)':'#182818')+'">'+DS[dow]+'</div></th>';
     });
@@ -4568,10 +4568,10 @@ function vEchanges(){
         h+='<input id="anote_'+exSafe+'" class="inp" placeholder="Note pour l\'employ\u00e9 (optionnel)" style="font-size:14px;padding:6px 8px;margin-bottom:8px">';
         // Actions
         h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
-        h+='<button onclick="adminRepondreEchange(\''+exSafe+'\',\'rh\',(document.getElementById(\'anote_'+exSafe+'\')?.value||\'\')" '
+        h+='<button onclick="adminRepondreEchange(\''+exSafe+'\',\'rh\',(document.getElementById(\'anote_'+exSafe+'\')?.value||\'\'))" '
           +'style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.4);border-radius:7px;padding:7px 12px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px;flex:1">'
           +'\ud83c\udf19 Accorder repos (RH)</button>';
-        h+='<button onclick="adminRepondreEchange(\''+exSafe+'\',\'rejected\',(document.getElementById(\'anote_'+exSafe+'\')?.value||\'\')" '
+        h+='<button onclick="adminRepondreEchange(\''+exSafe+'\',\'rejected\',(document.getElementById(\'anote_'+exSafe+'\')?.value||\'\'))" '
           +'style="background:rgba(180,40,40,.1);border:1px solid rgba(180,40,40,.3);border-radius:7px;padding:7px 12px;color:#c04040;font-weight:700;cursor:pointer;font-size:14px;flex:1">'
           +'\u274c Refuser</button>';
         h+='</div>';
