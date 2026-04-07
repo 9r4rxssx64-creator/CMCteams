@@ -807,7 +807,17 @@ function fbApplyData(k,v){
   else if(k==="cmc_e"){A.employees=Array.isArray(vc)?vc:Object.values(vc);}
   else if(k==="cmc_t"){A.teams=Array.isArray(vc)?vc:Object.values(vc);}
   else if(k==="cmc_pw"){A.passwords=vc;}
-  else if(k==="cmc_reg"){A.reg=vc;}
+  else if(k==="cmc_reg"){
+    // Merge : conserver les entrées locales plus récentes (anti race-condition SSE)
+    Object.keys(A.reg).forEach(function(id){
+      if(!A.reg[id]||!A.reg[id].updatedAt)return;
+      if(!vc[id]||!vc[id].updatedAt||A.reg[id].updatedAt>vc[id].updatedAt){
+        vc[id]=A.reg[id];
+      }
+    });
+    A.reg=vc;
+    try{localStorage.setItem("cmc_reg",JSON.stringify(vc));}catch(e){}
+  }
   else if(k==="cmc_chat"){A.chatMsgs=Array.isArray(vc)?vc:[];}
   else if(k==="cmc_exchanges"){A.exchanges=vc||{};}
   // Pour les clés dynamiques (cmc_ref_*, etc.) : juste localStorage suffit
