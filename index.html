@@ -253,11 +253,14 @@ var COMPETENCES=[
 function parseCompetences(post){
   if(!post)return[];
   var s=post.replace(/[.\s]/g,"").toUpperCase();
+  var knownIds=COMPETENCES.map(function(c){return c.id;});
   var res=[],i=0;
   while(i<s.length){
     if(s[i]==="+"||s[i]==="-"){i++;continue;}
-    if(s[i+1]==="+"){res.push(s[i]+"+");i+=2;}
-    else{res.push(s[i]);i++;}
+    var cid;
+    if(s[i+1]==="+"){cid=s[i]+"+";i+=2;}
+    else{cid=s[i];i++;}
+    if(knownIds.indexOf(cid)>=0)res.push(cid); // filtre les chars inconnus
   }
   return res;
 }
@@ -5180,10 +5183,11 @@ function doImport(){
   // Distinguer code poste (BRTP+E., BRE, BRTPE) d'un nom de famille (GALLIS, COSTE, ENZA, BASILE)
   function _isRoleCode(t){
     var _tn=_norm(t);
+    if(!_tn)return false;
     if(/[+\.]/.test(t))return true;               // contient + ou . → code poste (BRTP+E., BTP+K…)
     if(!_postPat.test(_tn))return false;
-    if(/^B[A-Z]{0,2}$/.test(_tn))return true;     // B, BT, BTE, BRE (≤3 lettres commençant par B)
-    if(/^BRT[A-Z]{0,2}$/.test(_tn))return true;   // BRTP, BRTPE, BRTCK, BRTCP
+    // Code compétence : combinaison de lettres B R T P E C K uniquement (1-8 chars)
+    if(/^[BRTPECK]{1,8}$/.test(_tn))return true;
     return false;                                   // GALLIS, COSTE, ENZA, BASILE… → nom de famille
   }
   function _isInitTok(t){return /^[A-Z]{1,2}$/.test(_norm(t));}
@@ -5776,8 +5780,9 @@ function doImport(){
       }
       // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent) — PDF = source de vérité
       if(nameIdx===1&&p0raw){
-        var _postClean=p0raw.replace(/[.]+$/,"").replace(/\s+/g,"").trim();
-        if(_postClean&&emp.post!==_postClean){emp.post=_postClean;_changed=true;}
+        var _postClean=p0raw.replace(/[.]+$/,"").replace(/\s+/g,"").trim().toUpperCase();
+        // Valider : uniquement lettres BRTPECK + optionnel +/. (rejette IDs équipe, chiffres…)
+        if(_postClean&&/^[BRTPECK+.]{1,12}$/.test(_postClean)&&emp.post!==_postClean){emp.post=_postClean;_changed=true;}
       }
       if(_changed){ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);}
     }
