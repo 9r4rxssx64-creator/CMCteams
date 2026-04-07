@@ -5094,7 +5094,9 @@ function doImport(){
       _ac=_ac.replace(/[\u2215\u2044\uff0f]/g,"/");
       if(/^CO(LONNE)?\d*$/.test(_ac))continue;
       _ac=_ac.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");_ac=_ac.replace(/CDP$/,"*");
+      _ac=_ac.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
       if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"']+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
+      if(!CODES[_ac]){var _cAl={"RHE":"RH","RHO":"RH","REPO":"R","REPOS":"R","CONGE":"CP","MALADIE":"M","FORMATION":"AF","RECUP":"RRT","PRET":"PRT","PATRIMOINE":"PAT","20H5":"20/5","19H4":"19/4","16H3":"16/3","16H22":"16/22","22H6":"22/6","14H19":"14/19"};if(_cAl[_ac])_ac=_cAl[_ac];}
       if(!_ac||!CODES[_ac])continue;
       var _adn=_curFDay+(_ai-_curBase);
       if(_adn<1||_adn>days)continue;
@@ -5169,7 +5171,9 @@ function doImport(){
         var _fch=false;
         if(eIsChef&&!_fe.chef){_fe.chef=true;_fch=true;}
         if(eFamily&&_fe.family!==eFamily){_fe.family=eFamily;_fch=true;}
-        if(_fch)ls("cmc_e",A.employees);
+        if(_contextTeam&&_fe.team!==_contextTeam){_fe.team=_contextTeam;_fch=true;}
+        if(ePost&&!_fe.post){_fe.post=(ePost||"").replace(/[.]+$/,"").trim()||_fe.post;_fch=true;}
+        if(_fch){ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);}
       }
     }
     return _fe;
@@ -5264,6 +5268,15 @@ function doImport(){
       if(/ROULETT/.test(_lnU))importFamily="roulettes";
       else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
       else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_lnU))importFamily="cmc";
+      // Détecter numéro d'équipe dans le header de bloc (ex: "EQUIPE 3", "EQ.5")
+      (function(){
+        var _em2=_lnU.match(/(?:EQ(?:UIPE)?\.?\s*)([RC]?\s*\d{1,2})\b/);
+        if(!_em2)return;
+        var _eid2=_em2[1].replace(/\s+/g,"").toLowerCase();
+        var _etid=importFamily==="roulettes"&&!/^r/.test(_eid2)?"r"+_eid2:importFamily==="cmc"&&!/^c/.test(_eid2)?"c"+_eid2:_eid2;
+        var _et=A.teams.find(function(t){return t.id===_etid;});
+        if(_et)_contextTeam=_et.id;
+      })();
       // Parser les paires (postCode → nom(s))
       var _hbi=0;
       while(_hbi<_ltoks.length){
@@ -5391,6 +5404,16 @@ function doImport(){
     if(/ROULETT/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=4){importFamily="roulettes";_contextTeam=null;continue;}
     if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC|RESPONSABLE.DE.TABLE|AMENAGEMENT|AMENAG)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="bj";_contextTeam=null;continue;}
     if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){importFamily="cmc";_contextTeam=null;continue;}
+    // Détecter numéro d'équipe explicite dans l'en-tête (ex: "EQUIPE 1", "EQ.3", "ÉQ. 2", "ÉQUIPE R5")
+    (function(){
+      var _eqH=_hdr.replace(/\u00c9/g,"E").replace(/\u00e9/g,"e");
+      var _eqM=_eqH.match(/(?:EQ(?:UIPE)?\.?\s*)([RC]?\s*\d{1,2})\b/i);
+      if(!_eqM)return;
+      var _eqN=_eqM[1].replace(/\s+/g,"").toLowerCase();
+      var _eqTid=importFamily==="roulettes"&&!/^r/.test(_eqN)?"r"+_eqN:importFamily==="cmc"&&!/^c/.test(_eqN)?"c"+_eqN:_eqN;
+      var _eqT=A.teams.find(function(t){return t.id===_eqTid;});
+      if(_eqT){_contextTeam=_eqT.id;}
+    })();
     // Detecter format planning : code poste col 0 (ex BRTP+E. ou BRTP+E. BRTC.), nom col 1, du/au col 2/3
     var nameIdx=0,codesStart=1;
     if((!p0raw||p0raw.trim().split(/\s+/).every(function(t){return _isRoleCode(t);}))&&
@@ -5545,6 +5568,16 @@ function doImport(){
         if(_changed) ls("cmc_e",A.employees);
       }
       // Les employes DEF_EMP gardent leur family/team/chef du code (migration)
+      // Pour les non-DEF_EMP : mettre à jour équipe depuis le contexte d'import
+      if(!_isDefEmp&&_contextTeam&&emp.team!==_contextTeam){
+        emp.team=_contextTeam;_changed=true;
+      }
+      // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent)
+      if(!_isDefEmp&&nameIdx===1&&p0raw&&!emp.post){
+        var _postClean=p0raw.replace(/[.]+$/,"").trim();
+        if(_postClean)emp.post=_postClean;_changed=true;
+      }
+      if(_changed){ls("cmc_e",A.employees);fbWrite("cmc_e",A.employees);}
     }
     refData.rows[emp.id]={};
     for(var di=codesStart;di<parts.length;di++){
@@ -5570,11 +5603,22 @@ function doImport(){
       // Normaliser tiret→slash : "16-3"→"16/3"
       code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
       code=code.replace(/CDP$/,"*");
+      // Normaliser espace manquant entre heure et slash : "16/ 3"→"16/3", "20 /5"→"20/5"
+      code=code.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
       // Normaliser codes CMC : "' → ' (conserve marqueur convention), puis strip C/quotes
       if(!CODES[code]){
         var c2=code.replace(/"'/g,"'");
         if(c2!==code&&CODES[c2]){code=c2;}
         else{c2=(c2!==code?c2:code).replace(/[C"']+$/,"");if(c2&&CODES[c2])code=c2;}
+      }
+      // Alias codes courants mal formatés dans certains exports PDF
+      if(!CODES[code]){
+        var _cAlias={"RHE":"RH","RHO":"RH","REPO":"R","REPOS":"R","CONGE":"CP","CONGÉ":"CP",
+          "MALADIE":"M","FORMATION":"AF","HC":"HC","RECUP":"RRT","RÉCUP":"RRT",
+          "PRET":"PRT","PRÊT":"PRT","PATRIMOINE":"PAT",
+          "20H5":"20/5","19H4":"19/4","16H3":"16/3","16H22":"16/22","22H6":"22/6","14H19":"14/19","15H19":"15/19","14H20":"14/20",
+          "20/5CDP":"20/5*","19/4CDP":"19/4*","16/3CDP":"16/3*","16/22CDP":"16/22*"};
+        if(_cAlias[code])code=_cAlias[code];
       }
       // Auto-upgrade CDP
       if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
