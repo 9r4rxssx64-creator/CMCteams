@@ -92,7 +92,7 @@ select.inp{-webkit-appearance:none}
 .sec-sub{font-size:16px;color:#9abf90}
 
 /* === GRILLE === */
-#planGrid{overflow:scroll;-webkit-overflow-scrolling:touch}
+#planGrid{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
 .sth{padding:3px 4px;background:#223a26;color:#b0d8a8;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.3)}
 .sth .nw,.ntd .nw{width:118px;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .dth{padding:2px 1px;min-width:28px;background:#223a26;font-size:14px;font-weight:700;color:#c0d8b8;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2}
@@ -1363,10 +1363,6 @@ function initAxisLock(g){
 }
 function adjGrid(){
   var g=document.getElementById("planGrid");if(!g)return;
-  var nb=document.getElementById("bnav"),nbH=nb?nb.offsetHeight:70;
-  var av=window.innerHeight-g.getBoundingClientRect().top-nbH-8;
-  if(av>100)g.style.height=av+"px";
-  initAxisLock(g);
   var tod2=new Date();
   if(tod2.getFullYear()!==A.year||tod2.getMonth()!==A.month)return;
   var todD2=tod2.getDate();
@@ -2524,7 +2520,7 @@ function vPlan(){
       <span style="font-size:13px;color:#3a5030;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
-  h+=`<div id="planGrid" style="overflow:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(118+da.length*44+2*30)+`px"><colgroup><col style="width:118px">`;
+  h+=`<div id="planGrid" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain"><table style="border-collapse:collapse;table-layout:fixed;width:`+(118+da.length*44+2*30)+`px"><colgroup><col style="width:118px">`;
   da.forEach(function(){h+='<col style="width:44px">';});
   h+='<col style="width:30px"><col style="width:30px"></colgroup>';
   h+=`<thead><tr><th class="sth" style="width:118px"><div class="nw">Employ\u00e9</div></th>`;
