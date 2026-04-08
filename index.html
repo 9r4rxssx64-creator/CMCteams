@@ -220,13 +220,13 @@ var AID="U11804";
 var CODES={
   "22/6"  :{l:"22h\u20136h",  bg:"#0f2a48",c:"#80c0f8",b:"#1a3e60",cdp:false},
   "19/4"  :{l:"19h\u20134h",  bg:"#16164a",c:"#9898f0",b:"#222268",cdp:false},
-  "16/3"  :{l:"16h\u20133h",  bg:"#0e3020",c:"#58d888",b:"#185030",cdp:false},
+  "16/3"  :{l:"16h-20h / 22h-3h (coupure)",bg:"#0e3020",c:"#58d888",b:"#185030",cdp:false},
   "14/19" :{l:"14h\u201319h", bg:"#283810",c:"#b8d850",b:"#384e18",cdp:false},
   "20/5"  :{l:"20h\u20135h",  bg:"#1a0e40",c:"#b090f8",b:"#281560",cdp:false},
   "16/22" :{l:"16h\u201322h", bg:"#3a2400",c:"#f0c030",b:"#503400",cdp:false},
   "20/5*" :{l:"20h\u20135h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
   "19/4*" :{l:"19h\u20134h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
-  "16/3*" :{l:"16h\u20133h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
+  "16/3*" :{l:"16h-20h / 22h-3h CDP (coupure)",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
   "16/22*":{l:"16h\u201322h CDP",bg:"#402800",c:"#ffb830",b:"#583800",cdp:true},
   "19/4'" :{l:"Convention",bg:"#381010",c:"#e09090",b:"#502020",cdp:false},
   "RH"    :{l:"Repos Hebdo",bg:"#141440",c:"#8888e0",b:"#1e1e58",cdp:false},
@@ -3220,8 +3220,15 @@ function vStats(){
 
 // ── STATISTIQUES COMPLÈTES PAR EMPLOYÉ ───────────────────────────────────────
 // Calcule les heures de travail d'un code horaire (ex: "22/6" → 8h)
+// Table des shifts à durée spécifique (coupures, exceptions)
+// Par défaut : calcul continu (fin - début). Ici : overrides pour les coupures.
+var CODE_HOURS={
+  "16/3":9,   // Service coupure : 16h-20h (4h) + 22h-3h (5h)
+  "16/3*":9
+};
 function codeHours(code){
   if(!code)return 0;
+  if(CODE_HOURS[code]!==undefined)return CODE_HOURS[code];
   var m=code.replace(/[*']/g,"").match(/^(\d{1,2})\/(\d{1,2})$/);
   if(!m)return 0;
   var s=parseInt(m[1]),e=parseInt(m[2]);
