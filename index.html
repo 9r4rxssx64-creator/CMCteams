@@ -1370,7 +1370,7 @@ function adjGrid(){
   g.querySelectorAll('.plan-grid-scroll').forEach(function(sc){
     var th=sc.querySelector('[data-planday="'+todD2+'"]');
     if(!th)return;
-    sc.scrollLeft=Math.max(0,th.offsetLeft-118);
+    sc.scrollLeft=Math.max(0,th.offsetLeft-118-22);
     initAxisLock(sc);
   });
 }
@@ -2531,11 +2531,10 @@ function vPlan(){
       var p=pl[emp.id]||{};var repos=0,trav=0;
       Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
-      var nbg=isMe?"rgba(201,162,39,.05)":"#060e07",ncol=isMe?tcc2:"#7a8a68";
-      // ntdBg = couleur SOLIDE pour la colonne sticky (sinon les cellules scrollent en transparence dessous)
-      var ntdBg=isMe?"#1c1c10":"#0a1408";
-      rh+='<tr style="border-bottom:1px solid #0c160a;background:'+nbg+'">'
-        +'<td style="padding:2px 4px;position:sticky;left:0;z-index:4;border-right:1px solid #182818;font-size:12px;text-align:left;width:118px;background:'+ntdBg+';color:'+ncol+';font-weight:'+(isMe?700:400)+'" title="'+esc(empLabel(emp))+'"><div class="nw">'
+      // ntdBg = couleur SOLIDE pour la colonne sticky
+      var ntdBg=isMe?"#1c1c10":"#162818";
+      rh+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.05)":"")+'">'
+        +'<td style="padding:0;position:sticky;left:0;z-index:3;border-right:1px solid #182818;background:'+ntdBg+'"><div title="'+esc(empLabel(emp))+'" style="width:118px;padding:3px 5px;font-size:12px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';overflow:hidden;white-space:nowrap">'
         +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
@@ -2551,7 +2550,7 @@ function vPlan(){
         cellInner+=(_myComment?'<div style="width:4px;height:4px;border-radius:50%;background:#c9a227;margin:1px auto" title="'+esc(_myComment)+'"></div>':'');
         rh+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
       });
-      rh+='<td class="stattd">'+repos+'</td><td class="stattd">'+trav+'</td></tr>';
+      rh+='<td style="padding:3px;font-size:14px;color:#90b888;background:#060e07;text-align:center">'+repos+'</td><td style="padding:3px;font-size:14px;color:#90b888;background:#060e07;text-align:center">'+trav+'</td></tr>';
     });
     return rh;
   };
