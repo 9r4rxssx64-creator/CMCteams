@@ -3799,7 +3799,10 @@ function vPasswords(){
     return e.name.toLowerCase().indexOf(q)>=0||e.id.toLowerCase().indexOf(q)>=0
       ||(reg.prenom&&reg.prenom.toLowerCase().indexOf(q)>=0)
       ||(reg.nom&&reg.nom.toLowerCase().indexOf(q)>=0)
-      ||(reg.email&&reg.email.toLowerCase().indexOf(q)>=0);
+      ||(reg.email&&reg.email.toLowerCase().indexOf(q)>=0)
+      ||(reg.usbm&&reg.usbm.toLowerCase().indexOf(q)>=0)
+      ||(reg.poste&&reg.poste.toLowerCase().indexOf(q)>=0)
+      ||(reg.adresse&&reg.adresse.toLowerCase().indexOf(q)>=0);
   });
   var h='<div class="page">';
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
@@ -3834,7 +3837,7 @@ function vPasswords(){
      +'\u2139\ufe0f Les employ\u00e9s marqu\u00e9s \u201c\u2705 Inscrit\u201d se sont d\u00e9j\u00e0 connect\u00e9s (ou ont \u00e9t\u00e9 test\u00e9s). C\'est normal.</div>';
   }
   // Search
-  h+='<input id="pwQIn" class="inp" type="text" placeholder="\ud83d\udd0d Rechercher par nom ou matricule\u2026" value="'+esc(A.pwQ||"")+'"'
+  h+='<input id="pwQIn" class="inp" type="text" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USBM\u2026" value="'+esc(A.pwQ||"")+'"'
    +' oninput="searchInput(\'pwQ\',this.value,\'pwQIn\')" style="margin-bottom:10px;font-size:16px">';
   if(emps.length===0){
     h+='<div style="padding:24px;text-align:center;font-size:15px;color:#5a7060">Aucun employ\u00e9 dans cette cat\u00e9gorie.</div>';
@@ -4239,14 +4242,17 @@ function vEmps(){
     return e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q)
       ||(reg.prenom&&reg.prenom.toLowerCase().includes(q))
       ||(reg.nom&&reg.nom.toLowerCase().includes(q))
-      ||(reg.email&&reg.email.toLowerCase().includes(q));
+      ||(reg.email&&reg.email.toLowerCase().includes(q))
+      ||(reg.usbm&&reg.usbm.toLowerCase().includes(q))
+      ||(reg.poste&&reg.poste.toLowerCase().includes(q))
+      ||(reg.adresse&&reg.adresse.toLowerCase().includes(q));
   });
   var h=`<div class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s</div></div>
     <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:15px;flex-shrink:0">+ Ajouter</button>
   </div>
-  <input id="empQIn" class="inp" style="margin-bottom:10px" placeholder="Rechercher..." value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">`;
+  <input id="empQIn" class="inp" style="margin-bottom:10px" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USBM\u2026" value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">`;
 
   if(showAddF){
     h+=`<div class="card" style="padding:12px;border:1px solid rgba(201,162,39,.2);margin-bottom:10px">
