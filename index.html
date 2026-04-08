@@ -4337,9 +4337,6 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="font-size:14px;font-weight:800;color:#5a9a70;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2699\ufe0f Fonctionnalit\u00e9s</div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#030a04;border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd04 Demandes d\'\u00e9change de shifts</div>'
-
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#030a04;border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
