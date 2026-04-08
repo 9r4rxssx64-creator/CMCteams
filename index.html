@@ -39,11 +39,12 @@ body::before{
 }
 /* Silhouette Casino de Monte-Carlo (fond décoratif) */
 .bg-casino{position:relative;overflow:hidden}
-.bg-casino::before{content:"";position:absolute;bottom:0;right:-10px;width:200px;height:80px;opacity:.04;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'%3E%3Cpath d='M20 80V40h10V25h5V15h10V10h10V5h10V2h10V5h10v5h10v5h5v10h10v15h10v10h20V50h10V40h5V30h10V20h10V15h5V10h5v5h5v5h10v10h5v10h10v10h10v30' fill='%23c9a227'/%3E%3Crect x='45' y='20' width='8' height='12' rx='4' fill='%23c9a227'/%3E%3Crect x='60' y='15' width='8' height='15' rx='4' fill='%23c9a227'/%3E%3Crect x='75' y='12' width='10' height='18' rx='5' fill='%23c9a227'/%3E%3Crect x='92' y='15' width='8' height='15' rx='4' fill='%23c9a227'/%3E%3Crect x='107' y='20' width='8' height='12' rx='4' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom right/contain}
+.bg-casino::before{content:"";position:absolute;bottom:0;right:0;width:100%;height:120px;opacity:.08;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100'%3E%3Cpath d='M0 100V70h20V50h10V35h8V25h12V18h8V12h12V8h8V4h14V8h8v4h12v6h8v7h12v10h8v15h10v20h30V65h15V50h10V35h12V25h10V18h8V12h6v6h8v7h10v10h15v15h10v20h30V75h10V60h8V45h10V35h8V28h6v7h8v10h10v15h8v15h10v20' fill='%23c9a227'/%3E%3Cellipse cx='80' cy='18' rx='6' ry='10' fill='none' stroke='%23c9a227' stroke-width='1.5'/%3E%3Cellipse cx='200' cy='14' rx='8' ry='14' fill='none' stroke='%23c9a227' stroke-width='1.5'/%3E%3Cellipse cx='310' cy='20' rx='6' ry='10' fill='none' stroke='%23c9a227' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat bottom center/100% auto}
 /* Silhouette Palais Princier (fond admin) */
-.bg-palace::before{content:"";position:absolute;bottom:0;left:-10px;width:180px;height:70px;opacity:.04;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 70'%3E%3Cpath d='M5 70V35h8V25h4V15h6V10h4V5h6V2h4V5h6v5h4v5h6v10h4v10h8v5h12V30h4V20h4V15h4V10h6V5h4V10h4v5h4v5h4v10h12v5h8v10h12V45h6V35h8v35' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom left/contain}
+.bg-palace{position:relative;overflow:hidden}
+.bg-palace::before{content:"";position:absolute;bottom:0;left:0;width:100%;height:100px;opacity:.08;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 80'%3E%3Cpath d='M0 80V50h15V35h8V20h10V12h6V6h8V2h6V6h8v6h6v8h10v15h8v5h25V40h5V25h8V15h6V8h5V4h4V8h5v7h6v10h8v15h5v5h25V40h5V25h8V15h6V8h5V4h4V8h5v7h6v10h8v15h5v5h25V40h5V28h8V18h6V10h5V6h4v4h5v8h6v10h8v12h5v10h30V45h8V30h10V20h6V12h5V8h6v4h5v8h10v10h8v15h15v15' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom center/100% auto}
 /* Losanges Monaco (rouge/blanc) */
-.monaco-loz{background:repeating-linear-gradient(45deg,rgba(206,17,38,.08) 0px,rgba(206,17,38,.08) 6px,transparent 6px,transparent 12px,rgba(255,255,255,.04) 12px,rgba(255,255,255,.04) 18px,transparent 18px,transparent 24px)}
+.monaco-loz{background:repeating-linear-gradient(45deg,rgba(206,17,38,.06) 0px,rgba(206,17,38,.06) 8px,transparent 8px,transparent 16px,rgba(255,255,255,.03) 16px,rgba(255,255,255,.03) 24px,transparent 24px,transparent 32px)}
 /* Frise dorée haut + bas */
 body::after{
   content:"";position:fixed;left:0;right:0;top:0;height:3px;z-index:200;pointer-events:none;
@@ -2336,12 +2337,17 @@ function vAccueil(){
     }
   }
   var h='<div class="page bg-casino" style="position:relative">';
-  // Date + titre + blason Monaco
-  h+='<div style="text-align:center;padding:14px 0 16px">'
-    +'<div style="font-size:28px;margin-bottom:4px">\ud83c\uddf2\ud83c\udde8</div>'
-    +'<div style="font-size:14px;color:#7aaa80;letter-spacing:2px;text-transform:uppercase">'+dateTxt+'</div>'
-    +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:3px;margin-top:4px">\u2666 CMC Teams \u2666</div>'
-    +'<div style="font-size:12px;color:rgba(201,162,39,.5);letter-spacing:4px;text-transform:uppercase;margin-top:2px">Casino de Monte-Carlo \u2022 S.B.M.</div>'
+  // Bandeau Monaco doré
+  h+='<div style="text-align:center;padding:18px 16px 20px;margin:-14px -14px 14px;background:linear-gradient(180deg,rgba(201,162,39,.12) 0%,rgba(201,162,39,.03) 60%,transparent);border-bottom:1px solid rgba(201,162,39,.15)">'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px">'
+    +'<div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,162,39,.5))"></div>'
+    +'<span style="font-size:24px">\ud83c\uddf2\ud83c\udde8</span>'
+    +'<div style="width:40px;height:1px;background:linear-gradient(90deg,rgba(201,162,39,.5),transparent)"></div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:4px;text-transform:uppercase;margin-bottom:4px">Principaut\u00e9 de Monaco</div>'
+    +'<div style="font-size:24px;font-weight:800;color:#c9a227;letter-spacing:3px;text-shadow:0 0 20px rgba(201,162,39,.3)">\u2666 CMC Teams \u2666</div>'
+    +'<div style="font-size:12px;color:rgba(201,162,39,.4);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo \u2022 S.B.M.</div>'
+    +'<div style="font-size:14px;color:#7aaa80;letter-spacing:1px;margin-top:8px">'+dateTxt+'</div>'
     +'</div>';
   // Fêtes et événements
   var _fetes={"1-1":"\ud83c\udf89 Bonne Ann\u00e9e !","6-1":"\u2b50 \u00c9piphanie","27-1":"\ud83c\uddf2\ud83c\udde8 Sainte-D\u00e9vote \u2014 Patronne de Monaco","14-2":"\u2764\ufe0f Joyeuse Saint-Valentin","8-3":"\ud83c\udf38 Journ\u00e9e de la femme","1-5":"\u2728 F\u00eate du travail","21-6":"\u2600\ufe0f F\u00eate de la musique","15-8":"\u26ea Assomption","1-11":"\ud83d\udd6f\ufe0f Toussaint","19-11":"\ud83c\uddf2\ud83c\udde8 F\u00eate Nationale de Monaco","8-12":"\u2b50 Immacul\u00e9e Conception","25-12":"\ud83c\udf84 Joyeux No\u00ebl !","26-12":"\ud83c\udf81 Saint-\u00c9tienne","31-12":"\ud83c\udf86 R\u00e9veillon du Nouvel An"};
@@ -3176,10 +3182,10 @@ function vChat(){
   });
   var h='<div style="display:flex;flex-direction:column;height:calc(100vh - 128px)">';
   // En-tête + filtres admin
-  h+='<div style="padding:8px 12px;border-bottom:1px solid rgba(201,162,39,.1);flex-shrink:0;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(201,162,39,.06),transparent)">'
-    +'<span style="font-size:20px">\ud83d\udcac</span>'
-    +'<div><div style="font-size:15px;font-weight:800;color:#c9a227;letter-spacing:1px">Chat Casino</div>'
-    +'<div style="font-size:12px;color:rgba(255,255,255,.3)">'+A.chatMsgs.length+' messages</div></div>';
+  h+='<div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(201,162,39,.1),rgba(201,162,39,.02),transparent)">'
+    +'<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(201,162,39,.2),rgba(201,162,39,.08));border:1.5px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:18px">\ud83d\udcac</div>'
+    +'<div><div style="font-size:16px;font-weight:800;color:#c9a227;letter-spacing:1px">Chat Casino <span style="font-size:11px;color:rgba(201,162,39,.4);font-weight:400">\ud83c\uddf2\ud83c\udde8</span></div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.25)">'+A.chatMsgs.length+' messages \u2022 Casino de Monte-Carlo</div></div>';
   if(isAdm){
     var _fb=function(v,lbl){var on=filter===v;return '<button onclick="chatFilterSet(\''+v+'\')" style="background:'+(on?'rgba(201,162,39,.15)':'transparent')+';border:1px solid '+(on?'rgba(201,162,39,.4)':'#1e3020')+';border-radius:5px;padding:2px 8px;font-size:14px;color:'+(on?'#c9a227':'#4a6840')+';cursor:pointer">'+lbl+'</button>';};
     h+='<div style="margin-left:auto;display:flex;gap:4px">'+_fb("all","Tous")+_fb("pub","Publics")+_fb("dm","Priv\u00e9s")
