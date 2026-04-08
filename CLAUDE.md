@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.13.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.32.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -11,9 +11,11 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.13"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.32"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
+- **Taille fichier :** ~620 KB (HTML + CSS + JS)
+- **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps)
 
 ---
 
@@ -435,7 +437,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
-## Historique versions (v8.83 → v9.9)
+## Historique versions (v8.83 → v9.32)
 
 | Version | Changements |
 |---------|-------------|
@@ -470,6 +472,25 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.11 | Audit complet + corrections : compétences import BRTPECK (toutes familles), rotation départs base=ei, A.user/_viewAs refresh post-SSE, vPlan table width:auto colonnes 62/28px, chat utilisateurs en ligne (DM rapide), notifs iOS guide PWA, nav admin 8 onglets (Stats→Admin panel), _checkNewChat toast si visible hors-chat, PWA meta (title+theme-color), SW cache v9.11 |
 | v9.12 | Fix ReferenceError myPl dans vAccueil (→ variable code), fix largeur colonne noms vPlan (wrapper div .nw 90px — max-width ignoré par browsers sur td en auto-layout) |
 | v9.13 | Fix chat DM reply : chatSetReply auto-active _chatDm → réponse privée bien routée. Nettoyage code mort (chatSetDmEmp, commentaires genBase obsolètes) |
+| v9.14 | Workflow expert CLAUDE.md, fix crash .touches[0], guards admin (removePinCode, savePinCode, auditDelEmp, auditRenameEmp), XSS picker, PIN hashPwStrong, strip .clear Firebase, font-size 11px min, touch targets 44px, import _importSkipped |
+| v9.15 | Audit complet + corrections 10 fixes, refactoring vPlan (table-layout:fixed + colgroup puis revert auto), initAxisLock factorisé, bloc infos connexion admin |
+| v9.16 | Refonte chat (bulles gradient, avatars, SVG Casino en fond), suppression module échanges, Casino Live placeholder, anniversaires, fêtes dynamiques (Pâques calculé), logo SBM SVG |
+| v9.17 | Améliorations UX : cartes premium, raccourcis carousel horizontal accueil, badges statut employé, login progression |
+| v9.18 | Statistiques annuelles avec archive, ROLES (12 postes hiérarchiques), Chefs Cartes (label famille) |
+| v9.19 | Stats complètes : calcStats (mois/année/carrière) + heures, vMesStats employé, vStatsAnnuelles admin, CODE_HOURS override 16/3=9h coupure |
+| v9.20 | vStatsGlobal (effectifs par lieu/rôle/famille), VENUES (6 lieux), archivage par employé |
+| v9.21 | Fix doublons inscription reg_alerts, import avec fusion (plus de table rase), synthèse vImportVerif |
+| v9.22 | teamForMonth (teamHistory par mois), stats fiche admin, bloc stats accueil, mode visiteur SBM |
+| v9.23 | OTP vérification email (genVerifCode/checkVerifCode/adminValidateCode, cmc_verif_codes FB_FIX), EmailJS optionnel, connexion multi-critères (email/mat/nom+prénom) |
+| v9.24 | Audit complet (4 agents) + 4 corrections UX P0/P1 (font-size, touch targets 44px, axis-lock seuil 10px, touch-action:pan-x pan-y) |
+| v9.25 | 7 améliorations expert : backup/restore JSON, IA prompts enrichis, réactions emoji chat, login autocomplete datalist, badge sync Firebase, runTests framework (16 tests unitaires) |
+| v9.26 | Bulk actions admin : mode sélection + 6 actions groupées (équipe, rôle, lieu, reset MDP, export CSV, supprimer) avec confirmation double |
+| v9.27 | Fix bug doublon PORTA (dédup avec migration données), fix nav PWA iOS (viewport-fit=cover, safe-area-inset, translateZ(0), touch-action), outil detectDuplicates |
+| v9.28 | Compétences corrigées (P=Punto Banco, P+=Punto HR, K=Poker Cash Game), dateEntreeSbm + dateEntreeJeux (admin RH + affichage carrière profil) |
+| v9.29 | Convention collective SBM intégrée : CONVENTION (29 articles), BULLETIN_CODES, grilles salaires, vConvention (4 onglets), prompt IA enrichi |
+| v9.30 | Fix calcDepPos désynchro avec vDeparts (bug PORTA étape 2), USBM→USM label, ROLES enrichi (chef américain au lieu de chef cartes), fusion vEmps/vPasswords (bouton raccourci), XSS setCI, contraste WCAG .sec-sub |
+| v9.31 | Note DRH 2021 congés familiaux : extension PACS/union libre, règles d'application (prise obligatoire, R/RH, décompte ouvrés, si absence), UI enrichi vConvention, prompt IA mis à jour |
+| v9.32 | Règles des 8 jeux de table (JEUX), onglet Jeux dans vConvention (accordéon détails), graphique SVG heures/mois dans stats (renderStatsCard), recherche chat avec barre toggle, animation msgIn (fade+translate nouveaux messages) |
 
 ---
 
