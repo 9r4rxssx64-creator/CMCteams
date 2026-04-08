@@ -2336,7 +2336,16 @@ function vAccueil(){
     +'<div style="font-size:13px;color:#7aaa80;letter-spacing:3px;text-transform:uppercase">Casino de Monte-Carlo</div>'
     +'</div>';
   // Fêtes et événements
-  var _fetes={"1-1":"\ud83c\udf89 Bonne Ann\u00e9e !","14-2":"\u2764\ufe0f Joyeuse Saint-Valentin","8-3":"\ud83c\udf38 Journ\u00e9e de la femme","1-5":"\u2728 F\u00eate du travail","19-11":"\ud83c\uddf2\ud83c\udde8 F\u00eate Nationale de Monaco","25-12":"\ud83c\udf84 Joyeux No\u00ebl !","31-12":"\ud83c\udf86 R\u00e9veillon du Nouvel An","6-1":"\u2b50 \u00c9piphanie","21-6":"\u2600\ufe0f F\u00eate de la musique","15-8":"\u26ea Assomption","1-11":"\ud83d\udd6f\ufe0f Toussaint"};
+  var _fetes={"1-1":"\ud83c\udf89 Bonne Ann\u00e9e !","6-1":"\u2b50 \u00c9piphanie","27-1":"\ud83c\uddf2\ud83c\udde8 Sainte-D\u00e9vote \u2014 Patronne de Monaco","14-2":"\u2764\ufe0f Joyeuse Saint-Valentin","8-3":"\ud83c\udf38 Journ\u00e9e de la femme","1-5":"\u2728 F\u00eate du travail","21-6":"\u2600\ufe0f F\u00eate de la musique","15-8":"\u26ea Assomption","1-11":"\ud83d\udd6f\ufe0f Toussaint","19-11":"\ud83c\uddf2\ud83c\udde8 F\u00eate Nationale de Monaco","8-12":"\u2b50 Immacul\u00e9e Conception","25-12":"\ud83c\udf84 Joyeux No\u00ebl !","26-12":"\ud83c\udf81 Saint-\u00c9tienne","31-12":"\ud83c\udf86 R\u00e9veillon du Nouvel An"};
+  // Pâques (calcul automatique) + lundi de Pâques + Ascension + lundi de Pentecôte
+  (function(){var y=tYr,a=y%19,b=Math.floor(y/100),cc=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),hh=(19*a+b-d-g+15)%30,i=Math.floor(cc/4),k=cc%4,l=(32+2*e+2*i-hh-k)%7,m=Math.floor((a+11*hh+22*l)/451),mo=Math.floor((hh+l-7*m+114)/31)-1,da2=(hh+l-7*m+114)%31+1;
+    var easter=new Date(y,mo,da2);
+    var lunPaq=new Date(+easter+864e5),ascen=new Date(+easter+39*864e5),lunPent=new Date(+easter+50*864e5);
+    _fetes[easter.getDate()+"-"+(easter.getMonth()+1)]="\ud83d\udc30 Joyeuses P\u00e2ques !";
+    _fetes[lunPaq.getDate()+"-"+(lunPaq.getMonth()+1)]="\ud83c\udf3c Lundi de P\u00e2ques";
+    _fetes[ascen.getDate()+"-"+(ascen.getMonth()+1)]="\u2728 Ascension";
+    _fetes[lunPent.getDate()+"-"+(lunPent.getMonth()+1)]="\ud83c\udf3f Lundi de Pentec\u00f4te";
+  })();
   var _feteKey=now2.getDate()+"-"+(now2.getMonth()+1);
   var _feteMsg=_fetes[_feteKey]||null;
   if(_feteMsg){
