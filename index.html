@@ -2527,7 +2527,7 @@ function vPlan(){
   var _planComments=getComments();
   var _renderEmpRows=function(emps,tcc2){
     var rh='';
-    emps.forEach(function(emp){
+    emps.forEach(function(emp,ei){
       var p=pl[emp.id]||{};var repos=0,trav=0;
       Object.values(p).forEach(function(v){if(v==="RH"||v==="R")repos++;else if(v)trav++;});
       var isMe=emp.id===A.user.id;
