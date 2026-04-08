@@ -37,6 +37,13 @@ body::before{
     repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,162,39,.04) 18px,rgba(201,162,39,.04) 20px),
     radial-gradient(ellipse at 50% 0%,#2a4a2c 0%,#1a3020 70%);
 }
+/* Silhouette Casino de Monte-Carlo (fond décoratif) */
+.bg-casino{position:relative;overflow:hidden}
+.bg-casino::before{content:"";position:absolute;bottom:0;right:-10px;width:200px;height:80px;opacity:.04;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'%3E%3Cpath d='M20 80V40h10V25h5V15h10V10h10V5h10V2h10V5h10v5h10v5h5v10h10v15h10v10h20V50h10V40h5V30h10V20h10V15h5V10h5v5h5v5h10v10h5v10h10v10h10v30' fill='%23c9a227'/%3E%3Crect x='45' y='20' width='8' height='12' rx='4' fill='%23c9a227'/%3E%3Crect x='60' y='15' width='8' height='15' rx='4' fill='%23c9a227'/%3E%3Crect x='75' y='12' width='10' height='18' rx='5' fill='%23c9a227'/%3E%3Crect x='92' y='15' width='8' height='15' rx='4' fill='%23c9a227'/%3E%3Crect x='107' y='20' width='8' height='12' rx='4' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom right/contain}
+/* Silhouette Palais Princier (fond admin) */
+.bg-palace::before{content:"";position:absolute;bottom:0;left:-10px;width:180px;height:70px;opacity:.04;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 70'%3E%3Cpath d='M5 70V35h8V25h4V15h6V10h4V5h6V2h4V5h6v5h4v5h6v10h4v10h8v5h12V30h4V20h4V15h4V10h6V5h4V10h4v5h4v5h4v10h12v5h8v10h12V45h6V35h8v35' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom left/contain}
+/* Losanges Monaco (rouge/blanc) */
+.monaco-loz{background:repeating-linear-gradient(45deg,rgba(206,17,38,.08) 0px,rgba(206,17,38,.08) 6px,transparent 6px,transparent 12px,rgba(255,255,255,.04) 12px,rgba(255,255,255,.04) 18px,transparent 18px,transparent 24px)}
 /* Frise dorée haut + bas */
 body::after{
   content:"";position:fixed;left:0;right:0;top:0;height:3px;z-index:200;pointer-events:none;
@@ -2328,12 +2335,13 @@ function vAccueil(){
       _upcomingDays.push({d:_di,c:_c2});
     }
   }
-  var h='<div class="page">';
-  // Date + titre
-  h+='<div style="text-align:center;padding:10px 0 14px">'
+  var h='<div class="page bg-casino" style="position:relative">';
+  // Date + titre + blason Monaco
+  h+='<div style="text-align:center;padding:14px 0 16px">'
+    +'<div style="font-size:28px;margin-bottom:4px">\ud83c\uddf2\ud83c\udde8</div>'
     +'<div style="font-size:14px;color:#7aaa80;letter-spacing:2px;text-transform:uppercase">'+dateTxt+'</div>'
-    +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:2px;margin-top:4px">\u2666 CMC Teams</div>'
-    +'<div style="font-size:13px;color:#7aaa80;letter-spacing:3px;text-transform:uppercase">Casino de Monte-Carlo</div>'
+    +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:3px;margin-top:4px">\u2666 CMC Teams \u2666</div>'
+    +'<div style="font-size:12px;color:rgba(201,162,39,.5);letter-spacing:4px;text-transform:uppercase;margin-top:2px">Casino de Monte-Carlo \u2022 S.B.M.</div>'
     +'</div>';
   // Fêtes et événements
   var _fetes={"1-1":"\ud83c\udf89 Bonne Ann\u00e9e !","6-1":"\u2b50 \u00c9piphanie","27-1":"\ud83c\uddf2\ud83c\udde8 Sainte-D\u00e9vote \u2014 Patronne de Monaco","14-2":"\u2764\ufe0f Joyeuse Saint-Valentin","8-3":"\ud83c\udf38 Journ\u00e9e de la femme","1-5":"\u2728 F\u00eate du travail","21-6":"\u2600\ufe0f F\u00eate de la musique","15-8":"\u26ea Assomption","1-11":"\ud83d\udd6f\ufe0f Toussaint","19-11":"\ud83c\uddf2\ud83c\udde8 F\u00eate Nationale de Monaco","8-12":"\u2b50 Immacul\u00e9e Conception","25-12":"\ud83c\udf84 Joyeux No\u00ebl !","26-12":"\ud83c\udf81 Saint-\u00c9tienne","31-12":"\ud83c\udf86 R\u00e9veillon du Nouvel An"};
@@ -3337,7 +3345,7 @@ function sendMsg(){
 }
 // ── Gestion Live Casino (Étape 2 — à venir) ──────────────────────────────────
 function vGestionLive(){
-  var h='<div class="page">';
+  var h='<div class="page bg-casino monaco-loz" style="position:relative">';
   h+='<div style="text-align:center;padding:30px 20px">'
     +'<div style="font-size:48px;margin-bottom:12px">\ud83c\udfb0</div>'
     +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:2px;margin-bottom:6px">CASINO LIVE</div>'
@@ -3798,9 +3806,9 @@ function vAdmin(){
   var _lastOk=(function(){var ss=lg("cmc_admin_sessions",[]);for(var i=ss.length-1;i>=0;i--){if(ss[i].type==="success"&&i<ss.length-1)return ss[i];}return null;})();
   var _lastOkStr=_lastOk?(function(){var d=new Date(_lastOk.ts);return d.toLocaleDateString("fr-FR")+" \u00e0 "+String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");})():null;
   var _regAlerts=lg("cmc_reg_alerts",[]);
-  return '<div class="page">'
-  +'<div style="margin-bottom:14px"><div class="sec-title">Administration</div>'
-  +'<div class="sec-sub">Acc\u00e8s r\u00e9serv\u00e9</div></div>'
+  return '<div class="page bg-palace" style="position:relative">'
+  +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="font-size:28px">\ud83c\uddf2\ud83c\udde8</div><div><div class="sec-title">\ud83d\udc51 Administration</div>'
+  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 Acc\u00e8s r\u00e9serv\u00e9</div></div></div>'
   +'<div style="padding:10px 14px;background:rgba(58,100,180,.08);border:1px solid rgba(58,100,180,.25);border-radius:10px;margin-bottom:12px">'
   +'<div style="font-size:15px;font-weight:700;color:#6090d0;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udd04 Synchronisation temps r\u00e9el</div>'
   +(FB_URL&&_fbConnected
