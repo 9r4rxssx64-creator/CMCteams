@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.35.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.36.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -603,6 +603,10 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.30 | Fix calcDepPos désynchro avec vDeparts (bug PORTA étape 2), USBM→USM label, ROLES enrichi (chef américain au lieu de chef cartes), fusion vEmps/vPasswords (bouton raccourci), XSS setCI, contraste WCAG .sec-sub |
 | v9.31 | Note DRH 2021 congés familiaux : extension PACS/union libre, règles d'application (prise obligatoire, R/RH, décompte ouvrés, si absence), UI enrichi vConvention, prompt IA mis à jour |
 | v9.32 | Règles des 8 jeux de table (JEUX), onglet Jeux dans vConvention (accordéon détails), graphique SVG heures/mois dans stats (renderStatsCard), recherche chat avec barre toggle, animation msgIn (fade+translate nouveaux messages) |
+| v9.33 | Audit post-v9.32 : JEUX injecté dans buildIASystemPrompt, fix layout chat header (double margin-left:auto), suppression helpers morts getJeu/getJeuByComp |
+| v9.34 | Upload photos perso (chatBg/accueilBg/loginBg/planningBg) via file input admin + base64 resize 800x800, banque documents multi-format (vDocs : photos/PDF/DOC/XLS, 6 catégories, preview lightbox, filtres), fix topbar safe-area-inset-top iOS notch, fix vChat height 100dvh |
+| v9.35 | Helper empAvatarHtml (img si photo sinon lettre), upload photo self-service (vMonProfil), upload photo admin (vEmps édition), avatars photo partout (topbar/chat/accueil/profil/emps), planningBg appliqué vPlan/vDeparts via classes body.has-*-bg |
+| v9.36 | Audit v9.35 + 3 corrections : vIA height 100vh→100dvh, planning bg sans ::after (direct sur .bg-planning via background-attachment:fixed), data URLs quotées défense XSS (empAvatar/chatBg/vDocs/vMonProfil/vEmps/CSS vars) |
 
 ---
 
