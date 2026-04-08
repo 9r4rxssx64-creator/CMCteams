@@ -1330,6 +1330,7 @@ function render(){
       +'<button onclick="viewAsBack()" style="margin-left:auto;background:#0a1a0c;color:#c9a227;border:1px solid #0a1a0c;border-radius:4px;padding:3px 12px;cursor:pointer;font-size:13px;font-weight:700">← Retour admin</button>'
       +'</div>':''  ;
     app.innerHTML=_viewAsBanner+'<div id="topbar" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><div id="content">'+vMain()+'</div>'+vNav();
+    requestAnimationFrame(function(){window.scrollTo(0,0);});
     setTimeout(adjGrid,50);
     if(A.view==="departs")setTimeout(adjDeparts,300);
     if(A.view==="monplanning")setTimeout(adjMonPlanning,100);
