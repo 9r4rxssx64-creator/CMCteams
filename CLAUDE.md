@@ -1,8 +1,120 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.32.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.35.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
+
+---
+
+## ⚠️ RÈGLE ABSOLUE — Méthode de travail (non-négociable)
+
+**L'utilisateur ne doit JAMAIS avoir à rappeler une demande oubliée.** Cette règle prime sur tout le reste.
+
+### 1. Feuille de route systématique (TodoWrite obligatoire)
+
+À CHAQUE nouvelle demande de l'utilisateur — même au milieu d'une autre tâche — tu DOIS :
+
+1. **Interrompre mentalement** la tâche courante (pas physiquement — finir le tool call en cours)
+2. **Ajouter immédiatement** la nouvelle demande à la feuille de route via `TodoWrite`
+3. **Reprendre** la tâche courante OU basculer sur la nouvelle si elle est plus prioritaire
+4. **Jamais** répondre "OK je le ferai après" sans l'avoir écrit dans la todo list
+5. **Jamais** clôturer une session sans avoir vérifié que tous les items sont `completed`
+
+Les `<system-reminder>` qui mentionnent "The user sent a new message while you were working" sont le signal OBLIGATOIRE de mettre à jour la roadmap avant de continuer.
+
+### 2. Vérification systématique après CHAQUE modification
+
+Avant de dire "c'est fait", tu DOIS :
+
+1. **Syntax check JS** : `node --check` sur le bloc script extrait
+2. **Re-lire** les lignes modifiées pour confirmer le résultat
+3. **Tracer le flux** : la modif casse-t-elle une autre fonction ? (utiliser la matrice d'impact Phase 0)
+4. **Vérifier le rendu** : le HTML généré est-il bien formé ? Les styles inline cohérents ?
+5. **Vérifier les guards** : `esc()` présent ? `A.user.id===AID` pour les actions admin ?
+6. **Mobile-first** : la modif fonctionne-t-elle à 375px ? iOS safe-areas respectées ?
+
+### 3. Auto-audit et corrections continues
+
+Après une série de modifications, tu DOIS :
+
+1. **Lancer un audit** (soit manuellement avec Grep/Read, soit via un subagent Explore)
+2. **Chercher activement** ce qui pourrait ne pas marcher — ne pas attendre que l'utilisateur trouve les bugs
+3. **Appliquer les corrections** sans demander l'autorisation pour les bugs évidents
+4. **Bumper la version** à chaque batch cohérent de corrections
+5. **Commit + push** avec un message descriptif
+
+### 4. Se faire vérifier par un subagent
+
+Pour les modifications importantes (nouveau module, refactoring, fix complexe), tu DOIS utiliser un subagent `Explore` pour un second regard :
+
+```
+Agent({
+  description: "Audit indépendant v9.XX",
+  subagent_type: "Explore",
+  prompt: "Audit la fonction XXX dans /home/user/CMCteams/index.html lignes A-B.
+           Vérifie : (1) bugs de logique, (2) XSS, (3) edge cases non gérés,
+           (4) cohérence avec le reste du code. Rapport court."
+})
+```
+
+### 5. Amélioration continue
+
+- **Jamais se satisfaire** d'un "113/114 OK" — toujours chercher le 1 manquant
+- **Anticiper** les demandes implicites (ex: si on ajoute un upload photo, l'utilisateur voudra sûrement aussi la supprimer → ajouter les deux)
+- **Rigueur > vitesse** : mieux vaut 1 commit bien fait que 5 commits de "fix" qui se corrigent mutuellement
+
+### 6. Communication honnête
+
+- **Ne jamais dire "j'ai tout fait"** si tu n'as pas vérifié
+- **Lister explicitement** ce qui n'est pas fait et pourquoi
+- **Demander** plutôt que deviner quand c'est ambigu
+- **Reconnaître** les erreurs sans excuse ni justification
+
+### 7. Mémoire et référence aux demandes passées
+
+- **Relire les conversations passées** en cas de doute avant d'agir
+- **Consulter ce CLAUDE.md** comme source de vérité à chaque session
+- **Ne jamais répéter une erreur** documentée dans "Erreurs connues à NE PAS reproduire"
+- Si une demande ancienne semble oubliée, **revenir la chercher** dans l'historique au lieu de demander à l'utilisateur
+- Les demandes récurrentes de l'utilisateur (ex: "revois le thème", "mets des vraies photos") doivent être **tracées dans une todo persistante** jusqu'à résolution complète
+
+### 8. Anticipation des bugs futurs
+
+Avant de livrer, se poser les questions :
+
+- Que se passe-t-il si `A.user` est null au moment de l'appel ?
+- Que se passe-t-il si Firebase n'est pas connecté ?
+- Que se passe-t-il si localStorage est plein (QuotaExceededError) ?
+- Que se passe-t-il sur iOS Safari en mode PWA vs navigateur ?
+- Que se passe-t-il si l'employé a été supprimé mais ses messages chat existent encore ?
+- Que se passe-t-il si deux admins modifient la même donnée en même temps (conflit SSE) ?
+- Que se passe-t-il si l'import PDF rate à mi-parcours ?
+- Que se passe-t-il sur viewport 375px (iPhone SE) ?
+
+Chaque edge case non géré = bug futur.
+
+### 9. Mise à jour CLAUDE.md après chaque session
+
+À la fin de chaque batch de modifications cohérent, tu DOIS :
+
+1. Bumper `APP_VER` dans l'en-tête du CLAUDE.md
+2. Ajouter une ligne dans le tableau "Historique versions"
+3. Documenter les nouvelles constantes/fonctions dans les sections appropriées
+4. Mettre à jour la liste "Erreurs connues" si une erreur a été identifiée
+5. Commit le CLAUDE.md dans le même push que le code
+
+**Le CLAUDE.md est la mémoire persistante inter-sessions. Sans mise à jour, les prochaines sessions répéteront les mêmes erreurs.**
+
+### 10. Agir en expert — pas en simple exécutant
+
+Le rôle n'est pas de cocher mécaniquement une liste mais :
+
+- **Challenger** les demandes floues : "Tu veux X ou Y ?"
+- **Proposer** des améliorations que l'utilisateur n'a pas envisagées
+- **Refuser** (poliment) les demandes qui cassent un principe fondamental du projet
+- **Expliquer** les trade-offs quand une solution a des coûts cachés
+- **Ne pas attendre** l'autorisation pour les fixes évidents
+- **Rigueur technique** : valider à chaque étape, ne jamais supposer
 
 ---
 
