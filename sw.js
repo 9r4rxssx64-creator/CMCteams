@@ -1,4 +1,4 @@
-const CACHE='cmcteams-v9.28';
+const CACHE='cmcteams-v9.29';
 const ASSETS=['./','/index.html'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS);}));

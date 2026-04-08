@@ -473,6 +473,67 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
+## Convention Collective Jeux de Table SBM (référence officielle)
+
+> 📖 Document de référence intégré depuis v9.29 — consultable via `CONVENTION` et `BULLETIN_CODES` dans le code.
+> Source : Convention Collective du 1er avril 2015 + Note 6 janvier 1993 (B. Lées).
+> À utiliser pour répondre aux questions employés (chat, IA) et pour la gestion RH.
+
+### Articles clés (voir `CONVENTION.articles`)
+
+| Article | Sujet | Règle principale |
+|---------|-------|------------------|
+| **4** | Recrutement | Âge minimum **21 ans** |
+| **5** | Écoles de jeux | 5 écoles premium sur 9 ans, min 1 an entre deux |
+| **6** | Contrat | Contrat initial **12 mois**, essai **3 mois**, CDI à 18 mois |
+| **10** | Carrière employés | Niveaux 1-7 selon jeux validés (Niv 7 = Expert tous jeux) |
+| **11** | Promotions | Expert → Chef → Inspecteur → Sous-dir → Directeur |
+| **13** | Rémunération | 3 parties : fixe (+200€/niveau) + %CA + %cagnottes. Min garanti 10,85 mois |
+| **17.4** | Congés | **2 mois/an** : 1 mois été (1 mai-31 oct) + 1 mois hiver, 4 sem consécutives min |
+| **17.5** | Repos hebdo | Min 1j, normalement 2j consécutifs, min 10j/6 sem. Majoration 50% si >4j supprimés |
+| **17.6** | Forte affluence | Juillet-août, 16 déc-15 janv, Grand Prix, Pâques. Planning publié vendredi <12h |
+| **17.8** | Pauses | **55+ et femmes enceintes : pause toutes 40 min** (au lieu de 60) |
+| **18** | Congés familiaux | Mariage 4j · Naissance 3j · Décès proche 3j · Mariage enfant 2j · Décès beau-parent 1j |
+| **23** | Maladie | Indemnisation 85% (min 91%), max **1095 jours** |
+| **26** | Retraite | 10 ans=½ mois · 15 ans=1 mois · 20 ans=1,5 mois · 30 ans=2 mois. Groupe fermé=3 mois |
+| **35** | Effectifs | Chefs de table = **25-30%** de l'effectif employés |
+
+### Codes d'activité bulletins paie (voir `BULLETIN_CODES`)
+
+Source : Note SBM du 6 janvier 1993 (Bernard Lées, DAJS).
+
+| Catégorie | Codes principaux |
+|-----------|------------------|
+| **Présence/Repos** | P, RH, RTP, RTR, RRT, RHS, DP |
+| **Congés Payés** | CP, CRH, CPS, CPM, CDP, CDH |
+| **Fêtes Légales** | FL, CFL, FTP, FTR, RFT |
+| **À la masse** | FCP, FCS, FRH, FFL |
+| **Absences** | M, AT, MT, ABS, ABI, ABP, AF, CL, CEO, CSC, CSS |
+| **Sanctions** | PNE, AMP, MPC, MPP |
+| **Autres** | PAT, PRT, HC |
+
+### Grilles de rémunération (Annexe 1 — nouveaux entrants)
+
+| Niveau | Poste | Salaire/mois | %CA | %Cag |
+|--------|-------|--------------|-----|------|
+| 1 | Employé 1 jeu | 2 300 € | 0,003% | 0,06% |
+| 7 | Expert (tous jeux) | 6 113 € | 0,012% | 0,24% |
+| 9/1 | Sous-chef table | 6 460 € | 0,0135% | 0,27% |
+| 11/1 | Chef de table | 7 000 € | 0,015% | 0,30% |
+
+Cadres (Annexe 2) : Inspecteur 8 295-8 710 €, Sous-directeur 10 452 €.
+
+### Accès dans l'app
+- Vue `vConvention` (tous employés) — onglet 📖 Convention depuis l'Accueil
+- 4 tabs : Articles / Codes paie / Grilles / Recherche
+- Référence injectée dans le contexte IA (`buildIASystemPrompt`) → Claude peut citer les articles
+- Helper `conventionSearch(q)`, `conventionCongeJours(evt)`, `bulletinCodeLabel(code)`, `bulletinAllCodes()`
+
+### Utilisation par Claude Code (moi-même)
+Quand tu me demandes une info RH, congés, promotion, salaire, etc. → je dois chercher dans ces données en priorité avant de répondre.
+
+---
+
 ## Règles de rotation Casino de Monaco
 
 > ⚠️ Règle opérationnelle à respecter dans tous les calculs de planning
