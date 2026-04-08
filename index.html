@@ -43,6 +43,8 @@ body::before{
 /* Silhouette Palais Princier (fond admin) */
 .bg-palace{position:relative;overflow:hidden}
 .bg-palace::before{content:"";position:absolute;bottom:0;left:0;width:100%;height:100px;opacity:.08;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 80'%3E%3Cpath d='M0 80V50h15V35h8V20h10V12h6V6h8V2h6V6h8v6h6v8h10v15h8v5h25V40h5V25h8V15h6V8h5V4h4V8h5v7h6v10h8v15h5v5h25V40h5V25h8V15h6V8h5V4h4V8h5v7h6v10h8v15h5v5h25V40h5V28h8V18h6V10h5V6h4v4h5v8h6v10h8v12h5v10h30V45h8V30h10V20h6V12h5V8h6v4h5v8h10v10h8v15h15v15' fill='%23c9a227'/%3E%3C/svg%3E") no-repeat bottom center/100% auto}
+/* Logo SBM inline */
+.sbm-logo{display:inline-block;vertical-align:middle}
 /* Losanges Monaco (rouge/blanc) */
 .monaco-loz{background:repeating-linear-gradient(45deg,rgba(206,17,38,.06) 0px,rgba(206,17,38,.06) 8px,transparent 8px,transparent 16px,rgba(255,255,255,.03) 16px,rgba(255,255,255,.03) 24px,transparent 24px,transparent 32px)}
 /* Frise dorée haut + bas */
@@ -169,8 +171,8 @@ select.inp{-webkit-appearance:none}
   box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(201,162,39,.08),inset 0 1px 0 rgba(201,162,39,.15);
   position:relative;overflow:hidden;
 }
-.login-card::before{content:"\u2666";position:absolute;top:10px;left:14px;font-size:16px;color:rgba(201,162,39,.35)}
-.login-card::after{content:"\u2666";position:absolute;bottom:10px;right:14px;font-size:16px;color:rgba(201,162,39,.35);transform:rotate(180deg)}
+.login-card::before{content:"♦";position:absolute;top:10px;left:14px;font-size:16px;color:rgba(201,162,39,.35)}
+.login-card::after{content:"♦";position:absolute;bottom:10px;right:14px;font-size:16px;color:rgba(201,162,39,.35);transform:rotate(180deg)}
 .login-banner{
   background:linear-gradient(90deg,transparent,rgba(201,162,39,.15),transparent);
   border-top:1px solid rgba(201,162,39,.3);
@@ -1481,7 +1483,7 @@ function vLoginStep0(){
       <text x="180" y="38" text-anchor="middle" font-size="7" fill="rgba(201,162,39,.7)" font-family="Georgia,serif" letter-spacing="1">BACCARAT</text>
       <text x="168" y="72" text-anchor="middle" font-size="14" fill="rgba(201,162,39,.4)">\u2660</text>
       <text x="180" y="72" text-anchor="middle" font-size="14" fill="rgba(201,162,39,.4)">\u2665</text>
-      <text x="192" y="72" text-anchor="middle" font-size="14" fill="rgba(201,162,39,.4)">\u2666</text>
+      <text x="192" y="72" text-anchor="middle" font-size="14" fill="rgba(201,162,39,.4)">♦</text>
       <text x="180" y="90" text-anchor="middle" font-size="14" fill="rgba(201,162,39,.4)">\u2663</text>
       <text x="300" y="38" text-anchor="middle" font-size="7" fill="rgba(201,162,39,.7)" font-family="Georgia,serif" letter-spacing="1">JEUX</text>
       <text x="300" y="48" text-anchor="middle" font-size="6" fill="rgba(201,162,39,.5)" font-family="Georgia,serif" letter-spacing="1">AM\u00c9RICAINS</text>
@@ -1492,11 +1494,11 @@ function vLoginStep0(){
       <circle cx="302" cy="68" r="1.5" fill="rgba(201,162,39,.6)"/>
       <circle cx="308" cy="74" r="1.5" fill="rgba(201,162,39,.6)"/>
       <circle cx="305" cy="68" r="1.5" fill="rgba(201,162,39,.6)"/>
-      <text x="180" y="108" text-anchor="middle" font-size="5.5" fill="rgba(201,162,39,.45)" font-family="Georgia,serif" letter-spacing="2">CMC TEAMS \u2014 CASINO DE MONTE-CARLO \u2014 S.B.M.</text>
+      <text x="180" y="108" text-anchor="middle" font-size="5.5" fill="rgba(201,162,39,.45)" font-family="Georgia,serif" letter-spacing="2">CMC TEAMS — CASINO DE MONTE-CARLO — CAFÉ DE PARIS — S.B.M.</text>
     </svg>
   </div>
   <div class="login-card">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:9px;color:rgba(201,162,39,.4);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:42px;color:#c9a227;text-shadow:0 0 24px rgba(201,162,39,.6),0 0 50px rgba(201,162,39,.2);line-height:1">\u2666</div>
       <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin-top:8px;color:#f0e8d0;text-shadow:0 1px 8px rgba(0,0,0,.7)">CMC Teams</div>
@@ -1538,7 +1540,7 @@ function vLoginStep1(){
   var displayName=emp?emp.name:(reg?(reg.nom||"")+" "+(reg.prenom||""):"");
   return `<div class="login-bg">
   <div class="login-card">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:9px;color:rgba(201,162,39,.4);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:36px;line-height:1">\ud83c\udccf</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Connexion</div>
@@ -1583,7 +1585,7 @@ function vLoginRegister(){
   var knownCol=empFromDB?tc(empFromDB.team):"#888";
   var isTmp=loginUid.indexOf("TMP")===0;
   return '<div class="login-bg"><div class="login-card">'
-    +'<div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>'
+    +'<div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:9px;color:rgba(201,162,39,.4);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>'
     +'<div style="text-align:center;margin-bottom:12px">'
     +'<div style="font-size:28px;line-height:1">\ud83d\udccb</div>'
     +'<div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Premi\u00e8re connexion</div>'
@@ -1696,7 +1698,7 @@ function stepRegister(){
 function vLoginStepPin(){
   return `<div class="login-bg">
   <div class="login-card">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:9px;color:rgba(201,162,39,.4);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
@@ -2302,6 +2304,10 @@ function vMonProfil(){
 }
 
 // ── Dashboard Accueil ──
+function sbmLogo(size){
+  var s=size||24;
+  return '<svg viewBox="0 0 60 30" width="'+s+'" style="vertical-align:middle"><ellipse cx="30" cy="15" rx="28" ry="13" fill="none" stroke="rgba(201,162,39,.6)" stroke-width="1.5"/><text x="30" y="20" text-anchor="middle" font-size="14" font-weight="800" fill="#c9a227" font-family="Georgia,serif" letter-spacing="2">SBM</text></svg>';
+}
 function vAccueil(){
   var pl=gpl();
   var now2=new Date();
@@ -2346,7 +2352,7 @@ function vAccueil(){
     +'</div>'
     +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:4px;text-transform:uppercase;margin-bottom:4px">Principaut\u00e9 de Monaco</div>'
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;letter-spacing:3px;text-shadow:0 0 20px rgba(201,162,39,.3)">\u2666 CMC Teams \u2666</div>'
-    +'<div style="font-size:12px;color:rgba(201,162,39,.4);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo \u2022 S.B.M.</div>'
+    +'<div style="font-size:12px;color:rgba(201,162,39,.4);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo</div>'+sbmLogo(50)+'<div style="height:4px"></div>'
     +'<div style="font-size:14px;color:#7aaa80;letter-spacing:1px;margin-top:8px">'+dateTxt+'</div>'
     +'</div>';
   // Fêtes et événements
@@ -3364,7 +3370,7 @@ function vGestionLive(){
     {ic:"\ud83c\udfaf",t:"Comp\u00e9tences jeux",d:"Attribution par comp\u00e9tence (Blackjack, Roulette, Poker, etc.)",s:"Phase 2.3"},
     {ic:"\ud83d\udd04",t:"Rotation aux tables",d:"Roulement automatique avec respect des pauses 20/40/60 min",s:"Phase 2.4"},
     {ic:"\u23f1\ufe0f",t:"Gestion des pauses",d:"Planification et suivi des pauses r\u00e9glementaires en direct",s:"Phase 2.5"},
-    {ic:"\ud83d\udccd",t:"Zones & salles",d:"Gestion multi-salles (Salle Europe, Salle des Am\u00e9riques, Priv\u00e9s\u2026)",s:"Phase 2.6"}
+    {ic:"\ud83d\udccd",t:"Zones & salles",d:"Casino de Monte-Carlo, Caf\u00e9 de Paris, Salle Europe, Salle des Am\u00e9riques, Sun Casino\u2026",s:"Phase 2.6"}
   ];
   modules.forEach(function(m){
     h+='<div style="margin-bottom:10px;padding:14px 16px;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.1);border-radius:10px;display:flex;gap:14px;align-items:center">'
@@ -3814,7 +3820,7 @@ function vAdmin(){
   var _regAlerts=lg("cmc_reg_alerts",[]);
   return '<div class="page bg-palace" style="position:relative">'
   +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="font-size:28px">\ud83c\uddf2\ud83c\udde8</div><div><div class="sec-title">\ud83d\udc51 Administration</div>'
-  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 Acc\u00e8s r\u00e9serv\u00e9</div></div></div>'
+  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 '+sbmLogo(40)+'</div></div></div>'
   +'<div style="padding:10px 14px;background:rgba(58,100,180,.08);border:1px solid rgba(58,100,180,.25);border-radius:10px;margin-bottom:12px">'
   +'<div style="font-size:15px;font-weight:700;color:#6090d0;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udd04 Synchronisation temps r\u00e9el</div>'
   +(FB_URL&&_fbConnected
