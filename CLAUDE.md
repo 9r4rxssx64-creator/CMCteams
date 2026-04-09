@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.37.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.38.
 
 > **Règles globales** (s'appliquent à tous les projets) : voir `~/.claude/CLAUDE.md`
 
@@ -608,6 +608,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 | v9.35 | Helper empAvatarHtml (img si photo sinon lettre), upload photo self-service (vMonProfil), upload photo admin (vEmps édition), avatars photo partout (topbar/chat/accueil/profil/emps), planningBg appliqué vPlan/vDeparts via classes body.has-*-bg |
 | v9.36 | Audit v9.35 + 3 corrections : vIA height 100vh→100dvh, planning bg sans ::after (direct sur .bg-planning via background-attachment:fixed), data URLs quotées défense XSS (empAvatar/chatBg/vDocs/vMonProfil/vEmps/CSS vars) |
 | v9.37 | **Glass morphism total + dossier partagé** : suppression silhouettes SVG par défaut (.bg-casino::before / .bg-palace::before), photos user appliquées sur body via CSS vars (--cmc-accueil-bg, --cmc-planning-bg actif en vPlan/vDeparts), cards/topbar/nav semi-transparents avec backdrop-filter:blur, encadrés vPlan/vDeparts/vPartage/vDocs transparents, family headers enrichis avec icônes (🃏♦️♠️) et gradient, bulles chat plus translucides, **chat carousel multi-images** (chatBg + chatBg2 + chatBg3 avec animation CSS 30s), **champ `shared` sur docs** + `toggleDocShared` + `uploadDocShared`, vDocs avec 3 onglets (Tous/Privés/Partagés) + boutons upload séparés (privé vs partagé), **nouvelle vue vPartage** accessible à TOUS les employés (read-only, docs shared seulement), helper _renderDocCard réutilisé, catégories docs enrichies (+Procédures +Plans du Casino = 8 dossiers), quick link "👥 Dossier partagé" dans accueil |
+| v9.38 | Audit post-v9.37 : 3 fixes XSS défensifs sur data URLs dans CSS/attributs. Nouveau helper `_safeUrl()` qui encode `"`, `\`, `'`, `(`, `)` en `%XX`. Appliqué à 10 endroits : empAvatarHtml, vDocs thumbnails, previewDoc img/iframe src, render() CSS vars (loginBg/accueilBg/planningBg), vMonProfil photo 80x80, vEmps édition 64x64, vAdmin photos 52x52, chat-bg-layer carousel. Fix clignotement chat avec 1 seule photo (classe `.multi` requise pour l'animation). |
 
 ---
 
