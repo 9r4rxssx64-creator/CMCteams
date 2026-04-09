@@ -1,6 +1,8 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.50.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.52.
+
+> 📌 **Reprise de session** : voir `MEMO_RESUME.md` à la racine pour savoir où j'en suis.
 
 > **Règles globales** (méthodologie expert, tous projets) : `~/.claude/CLAUDE.md`
 
