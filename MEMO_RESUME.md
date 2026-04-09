@@ -1,27 +1,43 @@
-# 📌 Mémo de reprise — 2026-04-09 (session Phase 2 terminée)
+# 📌 Mémo de reprise — 2026-04-09 (session terminée)
 
 ## Dernière version stable
-**v9.55** — commit `8e84515` sur `main` ✅ **SAFE_TO_RELEASE**
+**v9.56** — commit `68d7fab` sur `main` ✅ **IMPORT_SAFE + SAFE_TO_RELEASE**
 
-## Historique commits récents
+## 🎯 Session complète : v9.52 → v9.56
+
 ```
+68d7fab v9.56: Hot-patch audit v9.54 — 2 bugs critiques import corrigés ⭐
+cc1ea13 docs: MEMO_RESUME.md — session Phase 2 terminée (v9.55 stable)
 8e84515 v9.55: Export ICS par équipe + toast ARIA live
 82c4142 v9.54: Calendrier d'affluence Casino + mémo mise à jour
 eecf122 v9.53: Phase 2 experts — Planning templates/solde CP/retardataires + Toast + Preconnect
 08ea290 v9.52: Sauvegarde stable — fix cadena/œil vEmps + BACCARA import + mémo reprise
-3e3afda v9.51: Diaporama fond d'écran — défilement photos 5s crossfade
-3b79803 v9.50: Département Jeux de table + fonds perso par employé
 ```
 
-## État général
-- **Phase 1** (v9.45-v9.46) : terminée et stable
-- **Phase 1 pas à pas** (v9.47-v9.52) : terminée et stable
-- **Phase 2** (v9.53-v9.55) : nouvelle passe experts — terminée
-- **Bugs utilisateur** : tous corrigés (cadena mdp, œil viewAs, BACCARA import)
-- **Règles persistantes** : mémo pré-limite + reprise auto dans `~/.claude/CLAUDE.md`
-- **Audit manuel** : ✅ 74 guards admin, toutes nouvelles fonctions protégées
+## 🏆 Audit import FINAL — IMPORT_SAFE ✓
 
-## Items livrés session complète
+L'audit subagent Explore a enfin fourni son rapport complet après plusieurs tentatives :
+
+**2 bugs critiques trouvés et corrigés en v9.56** :
+1. **BACCARA regex incomplète ligne 9357** (section "Colonne4" CSV) — manquait `CHEF.*BACCAR|EMPLOYE.*BACCAR|CROUPIER.*BACCAR`. **Impact** : PDFs avec colonne structurée "EMPLOYE BACCARA" étaient importés en BJ.
+2. **Pattern nom rejetait apostrophes** (4 occurrences) — `O'BRIEN J` → "INTROUVABLE" même si dans DEF_EMP. **Impact** : noms avec apostrophes perdus à l'import.
+
+**15 vérifications passées** ✓ :
+- Bug PORTA doublon départs (dedup strict v9.27/v9.30) ✓
+- Bug 16/3* coupure stats (CODE_HOURS explicite) ✓
+- Bug senior forcé roulettes (isRouletteChef limité v9.40) ✓
+- Bug CP mistaken for FL (aliases CONGE→CP) ✓
+- Homonymes DESSI F/P (dedup + initiale + bigram) ✓
+- Re-import fusion correcte (corrections manuelles préservées) ✓
+- getDays() 28/29/30/31 + débordement ✓
+- _applyCodeArr array vide ✓
+- Code "16/3*" conservé dans overrides ✓
+- Mois absent/mal formaté safe ✓
+- Pattern apostrophes (fixé v9.56) ✓
+
+**Verdict final** : `IMPORT_SAFE` ✓
+
+## 📦 Items livrés session complète
 
 ### Phase 2 — Rôle Planning Expert
 - ✅ **Templates de planning** (save/apply/delete + vTemplates) v9.53
@@ -33,13 +49,18 @@ eecf122 v9.53: Phase 2 experts — Planning templates/solde CP/retardataires + T
 ### Phase 2 — Rôle Designer
 - ✅ **Toast system 4 types** (ok/err/warn/info + gradients + animations) v9.53
 - ✅ **Animations CSS** (toastIn/toastOut/successPulse) v9.53
+- ✅ **Toast ARIA live** (WCAG 2.1 AA) v9.55
 
 ### Phase 2 — Rôle IT
 - ✅ **Preconnect / DNS prefetch** (Firebase, cdnjs, Anthropic, EmailJS) v9.53
-- ✅ **Règle reprise auto** inscrite globalement v9.53
-- ✅ **ARIA toast** (role="status" aria-live="polite") v9.55
+- ✅ **Règle reprise auto** globale inscrite v9.53
 
-## À faire (prochaine session ou plus tard)
+### Bugs utilisateur corrigés
+- ✅ Cadena mdp invisible fiche employé (reveal+copy) v9.52
+- ✅ Œil viewAs disparu fiche employé (ajouté ligne matricule) v9.52
+- ✅ Détection BACCARA manquante import (3 endroits) v9.52 + v9.56
+
+## À faire (prochaine session)
 - [ ] **SRI hash exact PDF.js** via vérification externe (low priority)
 - [ ] **Illustrations SVG empty states** (remplacer emojis par SVG custom)
 - [ ] **Refactor styles inline vers :root tokens** (progressif)
@@ -47,32 +68,29 @@ eecf122 v9.53: Phase 2 experts — Planning templates/solde CP/retardataires + T
 - [ ] **Onboarding tour** pour nouveaux employés
 - [ ] **Service Worker stale-while-revalidate** cache strategy
 - [ ] **Lighthouse perf audit** complet
-- [ ] **Audit import** subagent en profondeur (toujours rate-limité aujourd'hui)
 - [ ] **Lazy-load modules lourds** (stats, audit) — nécessite refactor
+- [ ] **Tests unitaires** étendus (actuellement 16 tests)
 
-## Bugs actifs (à surveiller)
-- **PORTA** : historiquement doublon vDeparts. Fixé v9.27/v9.30/v9.40. Stable.
-- **Pattern import apostrophe** : O'BRIEN J accepté via _nImp() normalisation. OK.
-- **Audit subagent import** : plusieurs rate-limits. À relancer demain.
+## Contexte utilisateur
+- **DESARZENS K (U11804)**, admin Casino de Monte-Carlo
+- **258 employés**, 36 équipes (10 BJ + 13 roulettes + 13 CMC + baccara futur)
+- **Priorité** : lisibilité infos sur fond photo, import PDF correct, fluidité
+- **iPhone PWA** safe-area iOS, PWA installée écran d'accueil
+
+## Règles permanentes inscrites
+1. `~/.claude/CLAUDE.md` (global, tous projets) :
+   - 9 étapes expert (informer → renseigner → analyser → demander → aller plus loin → exécuter → tester → audit → sauvegarder)
+   - Mémo pré-limite (MEMO_RESUME.md avant fin crédit)
+   - **Reprise automatique** : dès que la limite Claude est levée, lire MEMO_RESUME.md et reprendre le travail sans attendre l'utilisateur
+2. `CLAUDE.md` projet (CMCteams) : règles spécifiques
 
 ## Décisions architecturales récentes
 - **DEPTS extensible** : jeux_de_table seul actif, valets/machines préparés
 - **cmc_templates** dans FB_FIX (max 20 templates synced)
-- **calcLeaveBalance** : 60 jours/an constante (convention SBM art.17.4)
+- **calcLeaveBalance** : 60 jours/an (convention SBM art.17.4)
 - **CALENDRIER_AFFLUENCE** : Pâques mobile calculée via algo Gauss
-- **toast system** : 4 types avec configurations distinctes par icône/couleur
-- **Preconnect** : Firebase crossorigin (auth potentielle future)
-
-## Contexte utilisateur
-- **DESARZENS K (U11804)**, admin Casino de Monte-Carlo
-- **258 employés**, 36 équipes (10 BJ + 13 roulettes + 13 CMC + quelques baccara)
-- **Priorités** : lisibilité infos sur fond photo, import PDF correct, fluidité
-- **iPhone PWA** safe-area iOS, PWA installée écran d'accueil
-- **Règles** : TodoWrite, audit, commit, mémo, reprise auto, continuer jusqu'à fin tâche
-
-## Prochaine étape concrète
-Attendre nouvelle demande utilisateur. Session Phase 2 complète.
-Si reprise auto sur limite : lire ce mémo, reprendre items "À faire" par ordre d'impact.
+- **Pattern nom** : accepte apostrophes `/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,2}$/`
+- **BACCARA detection** : 4 endroits harmonisés avec même regex exhaustive
 
 ## Commandes utiles
 ```bash
@@ -81,16 +99,13 @@ node -e "const fs=require('fs');const html=fs.readFileSync('/home/user/CMCteams/
 
 # État
 git log --oneline -10
-git status
 wc -c /home/user/CMCteams/index.html
-grep -c 'A\.user\.id!==AID' /home/user/CMCteams/index.html  # guards admin
+grep -c 'A\.user\.id!==AID' /home/user/CMCteams/index.html  # guards admin (74)
 ```
 
-## Méthodologie active
-- `~/.claude/CLAUDE.md` (global) : 9 étapes expert + mémo pré-limite + reprise auto
-- `CLAUDE.md` projet : règles CMCteams spécifiques
-- Cycle : TodoWrite → analyse → execute → syntax check → audit subagent → corrections → commit → push → memo update
-
 ## Taille du fichier
-- v9.55 : **797 KB** (vs 620 KB au début de la session)
-- +177 KB de features livrées en Phase 1 + Phase 2
+- v9.56 : **798 KB** (de 775 KB en début de session = +23 KB)
+
+## Prochaine étape concrète
+**Attendre nouvelle demande utilisateur.** Session complète et stable.
+Si reprise automatique : lire ce mémo et reprendre les items "À faire" par ordre d'impact (commencer par illustrations SVG ou dark mode selon préférence utilisateur).
