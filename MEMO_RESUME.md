@@ -1,93 +1,87 @@
 # 📌 Mémo de reprise — 2026-04-09
 
 ## Dernière version stable
-**v9.52** — commit `TBD` (ce commit) sur `main`
+**v9.54** — en cours de commit (après `eecf122` v9.53 poussée)
 
 ## État général
-- Audit import PDF manuel effectué (agent rate-limited)
-- 2 bugs utilisateur critiques fixés (cadena mdp + bouton œil viewAs)
-- 1 bug import trouvé et fixé (détection section BACCARA manquante)
-- Règle permanente "memo pré-limite" inscrite dans `~/.claude/CLAUDE.md`
+- Phase 1 (v9.45-v9.52) : terminée et stable
+- Phase 2 (v9.53-v9.54) : en cours, 3 rôles experts nouvelle passe
+- Bugs utilisateur signalés : **tous corrigés** (cadena, œil, BACCARA import)
+- Règles persistantes : mémo pré-limite + reprise auto inscrites dans `~/.claude/CLAUDE.md`
 
 ## Tâche en cours
-**Phase 2** — 3 rôles experts (Planning → Designer → IT en dernier)
-Sur demande utilisateur : nouvelle passe d'améliorations après la phase 1 (v9.45).
+**Phase 2 — suite** : continuer les items experts non traités.
 
-## Fait ✅ (session en cours)
-- `v9.47` Historique employé + Export paie CSV enrichi + Vue "Qui est libre ?"
-- `v9.48` Focus-visible + skip-link + reduced-motion + tablet breakpoint + transitions
-- `v9.49` Lisibilité prioritaire (opacité renforcée) + lazy-load PDF.js
-- `v9.50` Département "Jeux de table" extensible + fonds perso par employé
-- `v9.51` Diaporama fond d'écran 5s crossfade
-- `v9.52` Fix cadena/mdp + œil viewAs fiche employé + détection BACCARA à l'import + règle mémo
+## Fait ✅ (Phase 2)
+### v9.53 (commit `eecf122`)
+- Templates de planning (save/apply/delete + vTemplates)
+- Calcul solde CP annuel + widget visuel renderLeaveBalance
+- Détection retardataires (non inscrits, inactifs 30j, sans email, sans photo) + vRetardataires
+- Toast system 4 types (ok/err/warn/info) avec icônes + gradients + animations
+- Preconnect Firebase/cdnjs + dns-prefetch Anthropic/EmailJS
+- Règle reprise auto inscrite dans CLAUDE.md global
 
-## À faire 🔲 (Phase 2 — 3 rôles experts)
+### v9.54 (en cours de commit)
+- Calendrier d'affluence Casino (CALENDRIER_AFFLUENCE + getAffluenceEvents + getAffluenceForDay)
+- Bandeau affluence dans vAccueil (Grand Prix, Pâques, haute saison, Fête Nationale Monaco)
+- 3 niveaux d'intensité : peak (rouge) / high (or) / medium (bleu)
 
-### Rôle 1 : Expert Planning (NOUVEAUX items — pas ceux de v9.45)
-- [ ] **Templates de planning** : sauvegarder un mois comme template, réutiliser
-- [ ] **Rappels auto retardataires** : détection employés non inscrits depuis X jours
-- [ ] **Calcul auto jours de congés restants** par employé (solde CP)
-- [ ] **Détection doublons à l'import** (employé déjà importé)
-- [ ] **Export ICS complet** par équipe (pas seulement personnel)
-- [ ] **Validation horaires** (alertes si incohérence chef/équipe)
-- [ ] **Notifications RH automatiques** (anniversaires, retraites approchantes)
-- [ ] **Calendrier événements** affluence (Grand Prix, Pâques, Fêtes)
-
-### Rôle 2 : Designer (NOUVEAUX items)
-- [ ] **Refactorer styles inline vers tokens** (:root CSS déjà défini v9.45)
-- [ ] **Dark/Light mode toggle** optionnel
-- [ ] **Toast system** CSS cohérent (classes .toast-success/error/info)
-- [ ] **Illustrations custom** (empty states plus humains)
-- [ ] **Loading skeletons actifs** sur les listes (déjà classes, pas utilisées)
+## À faire 🔲
+### Phase 2 items restants
+- [ ] **SRI hash PDF.js** exact via verification externe (low priority)
+- [ ] **Export ICS par équipe** (pas seulement personnel)
+- [ ] **Illustrations SVG empty states** (remplacer les emojis par SVG)
+- [ ] **Refactor styles inline vers tokens** (progressif)
+- [ ] **Dark/Light mode toggle** (optionnel)
 - [ ] **Onboarding tour** pour nouveaux employés
-- [ ] **Micro-animations** success/error feedback
+- [ ] **Lazy-load modules lourds** (stats, audit)
+- [ ] **Service Worker stale-while-revalidate**
+- [ ] **Lighthouse perf audit** + fixes
 
-### Rôle 3 : IT/Sécurité (en dernier)
-- [ ] **SRI hash exact** sur PDF.js CDN (via WebFetch)
-- [ ] **Audit accessibility WCAG AAA** complet
-- [ ] **Lighthouse perf** audit + fixes
-- [ ] **Lazy-load autres modules** lourds (stats, audit, etc.)
-- [ ] **Service Worker** cache strategy améliorée (stale-while-revalidate)
-- [ ] **Preload critical CSS** inline / rest async
-- [ ] **HTTP/2 hints** (preconnect Firebase, Anthropic)
-- [ ] **Meilleure error recovery** (retry + fallback sur fbWrite)
+### Audit import (toujours en attente)
+- Subagent Explore a été relancé mais stall à 71 lignes
+- À relancer après reset limite
+- Focus : reconnaissance homonymes, extraction PDF, calcDepPos cohérence
 
 ## Prochaine étape concrète
-**Phase 2 Rôle 1 — Planning** : commencer par `templates de planning` (feature la plus demandée RH). Implémenter :
-1. `savePlanningTemplate(name)` — sauve le mois courant comme template
-2. `listPlanningTemplates()` — liste les templates disponibles
-3. `applyPlanningTemplate(tplId)` — applique un template au mois courant
-4. Vue admin `vTemplates` + entrées menu
+1. Commit v9.54 (calendrier affluence)
+2. Relancer audit import subagent (limit reset)
+3. Continuer phase 2 items restants
+4. Audit final + save finale avec tag v9.5X-stable
 
-## Bugs actifs (non résolus ou à surveiller)
-- **PORTA** : historiquement doublon dans vDeparts. Fixé v9.27/v9.30/v9.40 avec dédup id+nom. Reste à surveiller.
-- **Import pattern O'BRIEN** : pattern `/^[A-Z][A-Z\- ]+\s[A-Z]{1,2}$/` rejette les apostrophes, mais `_nImp()` les normalise en espaces donc OK.
+## Bugs actifs (à surveiller)
+- **PORTA** : historiquement doublon dans vDeparts. Fixé v9.27/v9.30/v9.40. Stable.
+- **Import pattern apostrophe** : O'BRIEN J accepté via _nImp() normalisation. OK.
+- **Audit subagent** : rate-limited, à relancer en boucle.
+
+## Contexte utilisateur
+- DESARZENS K (U11804), admin Casino de Monte-Carlo
+- 258 employés, 36 équipes
+- Priorité : lisibilité infos sur fond photo, import PDF correct
+- iPhone PWA safe-area iOS
+- Règles permanentes : TodoWrite, audit, commit, mémo, reprise auto
 
 ## Décisions architecturales importantes
-- **DEPTS extensible** : `DEPTS[0] = "jeux_de_table"` est le seul actif. Valets/Machines à sous préparés mais non utilisés.
-- **calcDepPos** utilise la même logique que vDeparts (dédup id+nom, chefEmps filtered) — NE PAS toucher sans tester les deux ensemble.
-- **gpl(y, m)** accepte params optionnels depuis v9.46 — utiliser cette signature propre, pas l'IIFE qui mute A.year/A.month.
-- **Cache `_conflictCache`** dans detectRepoConflicts — signature JSON pour invalidation auto.
-
-## Contexte utilisateur important
-- Utilisateur : DESARZENS K (U11804), admin du Casino de Monte-Carlo
-- 258 employés, 36 équipes (10 BJ + 13 roulettes + 13 CMC)
-- Priorité absolue : **lisibilité des infos** sur fond photo (opacité cards .82/.88)
-- iPhone PWA avec safe-area iOS
-- Règle : jamais oublier une demande, TodoWrite immédiat, audit avant release
+- **DEPTS extensible** : jeux_de_table seul actif, valets/machines préparés
+- **calcDepPos = vDeparts logic** : ne pas toucher sans tester ensemble
+- **gpl(y,m)** signature propre depuis v9.46
+- **_conflictCache** invalidation par signature JSON
+- **Template storage** : `cmc_templates` dans FB_FIX, max 20 templates
+- **Solde CP** : 60 jours/an (convention SBM art.17.4)
+- **Affluence events** : fixes annuels + Pâques mobile calculée
 
 ## Commandes utiles
 ```bash
 # Syntax check JS
 node -e "const fs=require('fs');const html=fs.readFileSync('/home/user/CMCteams/index.html','utf8');const s=html.lastIndexOf('<'+'script>'),e=html.lastIndexOf('</'+'script>');fs.writeFileSync('/tmp/test.js',html.slice(s+8,e));" && node --check /tmp/test.js
 
-# Status
+# État git
 git log --oneline -10
 git status
 wc -c /home/user/CMCteams/index.html
 ```
 
-## Méthodologie (rappel)
-Voir `~/.claude/CLAUDE.md` (règle globale expert 9 étapes) et `CLAUDE.md` projet (règles CMCteams spécifiques).
-
-**Règle mémo** : ce fichier DOIT être mis à jour avant chaque fin de session ou approche de limite crédit.
+## Méthodologie active (rappel)
+- `~/.claude/CLAUDE.md` : 9 étapes expert + mémo pré-limite + reprise auto
+- `CLAUDE.md` projet : règles CMCteams spécifiques
+- Cycle : TodoWrite → analyse → execute → syntax check → audit subagent → corrections → commit → push → memo
