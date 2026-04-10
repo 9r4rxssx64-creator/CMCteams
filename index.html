@@ -4604,8 +4604,9 @@ function genVerifCode(empId,email,nom,prenom){
   };
   ls("cmc_verif_codes",codes);
   // Tentative d'envoi via EmailJS si configuré
-  try{sendVerifEmail(email,prenom,code);}catch(e){}
-  return code;
+  var sent=false;
+  try{sent=sendVerifEmail(email,prenom,code);}catch(e){}
+  return {code:code,emailSent:sent};
 }
 function checkVerifCode(empId,inputCode){
   var codes=lg("cmc_verif_codes",{});
@@ -4621,9 +4622,9 @@ function checkVerifCode(empId,inputCode){
 // Envoi email via EmailJS (optionnel, configurable par admin)
 // Paramètres EmailJS stockés dans cmc_emailjs_config (FB_LOCAL)
 function sendVerifEmail(email,prenom,code){
-  if(!email)return;
+  if(!email)return false;
   var cfg=lg("cmc_emailjs_config",null);
-  if(!cfg||!cfg.serviceId||!cfg.templateId||!cfg.userId)return;
+  if(!cfg||!cfg.serviceId||!cfg.templateId||!cfg.userId)return false;
   // Appel API EmailJS REST
   fetch("https://api.emailjs.com/api/v1.0/email/send",{
     method:"POST",headers:{"Content-Type":"application/json"},
@@ -4634,6 +4635,28 @@ function sendVerifEmail(email,prenom,code){
   }).then(function(r){if(r.ok)console.log("EmailJS: code envoy\u00e9 \u00e0 "+email);
     else console.warn("EmailJS erreur:",r.status);
   }).catch(function(e){console.warn("EmailJS exception:",e);});
+  return true;
+}
+function isEmailJSConfigured(){
+  var cfg=lg("cmc_emailjs_config",null);
+  return !!(cfg&&cfg.serviceId&&cfg.templateId&&cfg.userId);
+}
+function saveEmailJSConfig(){
+  if(!A.user||A.user.id!==AID)return;
+  var sid=(document.getElementById("ejs_sid")||{}).value||"";
+  var tid=(document.getElementById("ejs_tid")||{}).value||"";
+  var uid=(document.getElementById("ejs_uid")||{}).value||"";
+  sid=sid.trim();tid=tid.trim();uid=uid.trim();
+  if(!sid||!tid||!uid){toast("Remplissez les 3 champs EmailJS","err");return;}
+  ls("cmc_emailjs_config",{serviceId:sid,templateId:tid,userId:uid});
+  toast("\u2705 EmailJS configur\u00e9 \u2014 les codes seront envoy\u00e9s par email");
+  dc();
+}
+function removeEmailJSConfig(){
+  if(!A.user||A.user.id!==AID)return;
+  localStorage.removeItem("cmc_emailjs_config");
+  toast("EmailJS d\u00e9sactiv\u00e9 \u2014 les codes resteront visibles dans le panneau admin");
+  dc();
 }
 function stepRegister(){
   var nom=(document.getElementById("rNom")||{}).value||"";
@@ -4711,21 +4734,27 @@ function stepRegister(){
     ls("cmc_reg_alerts",alerts);
   }
   // Email obligatoire → générer un code OTP et passer à l'étape de vérification
-  genVerifCode(finalUid,email,nom,prenom);
+  var _otp=genVerifCode(finalUid,email,nom,prenom);
   loginUid=finalUid;
   loginStep=4;render();
-  toast("\ud83d\udcec Code de v\u00e9rification envoy\u00e9 \u00e0 "+email);
+  if(_otp.emailSent){toast("\ud83d\udcec Code de v\u00e9rification envoy\u00e9 \u00e0 "+email);}
+  else{toast("\ud83d\udd10 Code g\u00e9n\u00e9r\u00e9 \u2014 demandez-le \u00e0 l\u2019administrateur","err");}
 }
 // Étape 4 : saisie du code OTP reçu par email
 function vLoginStepVerify(){
   var reg=A.reg[loginUid]||{};
+  var _ejsOk=isEmailJSConfigured();
   return '<div class="login-bg"><div class="login-card">'
     +'<div class="login-banner">\u2709\ufe0f &nbsp; V\u00c9RIFICATION &nbsp; \u2709\ufe0f</div>'
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;line-height:1">\ud83d\udd10</div>'
-    +'<div style="font-size:18px;font-weight:800;color:#f0e8d0;margin-top:10px">V\u00e9rification de votre email</div>'
-    +'<div style="font-size:14px;color:#7aaa80;margin-top:6px">Un code \u00e0 6 chiffres a \u00e9t\u00e9 envoy\u00e9 \u00e0</div>'
-    +'<div style="font-size:15px;color:#c9a227;font-weight:700;margin-top:2px">'+esc(reg.email||"")+'</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#f0e8d0;margin-top:10px">V\u00e9rification de votre identit\u00e9</div>'
+    +(_ejsOk
+      ?'<div style="font-size:14px;color:#7aaa80;margin-top:6px">Un code \u00e0 6 chiffres a \u00e9t\u00e9 envoy\u00e9 \u00e0</div>'
+       +'<div style="font-size:15px;color:#c9a227;font-weight:700;margin-top:2px">'+esc(reg.email||"")+'</div>'
+      :'<div style="font-size:14px;color:#c07830;margin-top:6px;line-height:1.5">'
+       +'Un code \u00e0 6 chiffres a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9.<br>'
+       +'<strong style="color:#c9a227">Contactez votre administrateur</strong> pour l\u2019obtenir.</div>')
     +'</div>'
     +'<div style="font-size:14px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:600">Code de v\u00e9rification</div>'
     +'<input id="otpIn" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" autofocus'
@@ -4735,7 +4764,9 @@ function vLoginStepVerify(){
     +'<button class="btn gold" onclick="stepVerifyCode()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">V\u00e9rifier \u2192</button>'
     +'<button class="btn ghost" onclick="stepResendCode()" style="width:100%;padding:10px;font-size:14px;justify-content:center;margin-top:8px">\ud83d\udd04 Renvoyer un code</button>'
     +'<div style="margin-top:14px;text-align:center;font-size:12px;color:#5a7060;line-height:1.6">'
-    +'\ud83d\udca1 Vous n\'avez pas re\u00e7u le code ?<br>Contactez l\'administrateur qui peut le voir dans son panneau Admin.'
+    +(_ejsOk
+      ?'\ud83d\udca1 Vous n\'avez pas re\u00e7u le code ?<br>V\u00e9rifiez vos spams ou contactez l\'administrateur.'
+      :'\ud83d\udca1 L\'administrateur voit les codes dans son panneau Admin.<br>Contactez-le par t\u00e9l\u00e9phone ou en personne.')
     +'</div>'
     +'</div></div>';
 }
@@ -4755,8 +4786,9 @@ function stepVerifyCode(){
 function stepResendCode(){
   var reg=A.reg[loginUid]||{};
   if(!reg.email){toast("Email manquant","err");return;}
-  genVerifCode(loginUid,reg.email,reg.nom,reg.prenom);
-  toast("\ud83d\udcec Nouveau code envoy\u00e9 \u00e0 "+reg.email);
+  var _otp2=genVerifCode(loginUid,reg.email,reg.nom,reg.prenom);
+  if(_otp2.emailSent){toast("\ud83d\udcec Nouveau code envoy\u00e9 \u00e0 "+reg.email);}
+  else{toast("\ud83d\udd10 Nouveau code g\u00e9n\u00e9r\u00e9 \u2014 demandez-le \u00e0 l\u2019administrateur","err");}
 }
 
 function vLoginStepPin(){
@@ -8935,6 +8967,26 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     +_photoKey("planningBg","Fond du planning","Vue \u00c9quipe & D\u00e9parts")
     +'</div></div>';
   })()
+  // Bloc EmailJS (envoi emails OTP)
+  +(function(){
+    var cfg=lg("cmc_emailjs_config",null);
+    var ok=!!(cfg&&cfg.serviceId&&cfg.templateId&&cfg.userId);
+    return '<div style="padding:10px 14px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2);border-radius:10px;margin-bottom:12px">'
+    +'<div style="font-size:14px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\u2709\ufe0f Envoi emails (codes OTP)</div>'
+    +'<div style="font-size:13px;color:#5a7a90;margin-bottom:8px;line-height:1.5">'
+    +(ok
+      ?'\u2705 EmailJS configur\u00e9 \u2014 les codes de v\u00e9rification seront envoy\u00e9s par email aux employ\u00e9s.'
+      :'\u26a0\ufe0f Non configur\u00e9 \u2014 les codes apparaissent dans ce panneau admin mais ne sont <b>pas envoy\u00e9s par email</b>. Cr\u00e9ez un compte gratuit sur <span style="color:#6a92c8">emailjs.com</span> pour activer l\u2019envoi.')
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +'<input id="ejs_sid" class="inp" placeholder="Service ID (ex: service_abc123)" style="font-size:14px;padding:6px 8px;font-family:monospace" value="'+esc(ok?cfg.serviceId:"")+'">'
+    +'<input id="ejs_tid" class="inp" placeholder="Template ID (ex: template_xyz789)" style="font-size:14px;padding:6px 8px;font-family:monospace" value="'+esc(ok?cfg.templateId:"")+'">'
+    +'<input id="ejs_uid" class="inp" placeholder="User ID / Public Key (ex: user_abc)" style="font-size:14px;padding:6px 8px;font-family:monospace" value="'+esc(ok?cfg.userId:"")+'">'
+    +'<div style="display:flex;gap:6px">'
+    +'<button class="btn gold" onclick="saveEmailJSConfig()" style="flex:1;justify-content:center;padding:8px;font-size:14px">'+(ok?'\ud83d\udd04 Mettre \u00e0 jour':'\u2705 Activer EmailJS')+'</button>'
+    +(ok?'<button class="btn ghost" onclick="removeEmailJSConfig()" style="padding:8px 12px;font-size:14px;color:#c06060">\u2715 D\u00e9sactiver</button>':'')
+    +'</div></div></div>';
+  })()
   // Bloc paramètres fonctionnalités
   +'<div style="padding:10px 14px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:10px;margin-bottom:12px">'
   +'<div style="font-size:14px;font-weight:800;color:#5a9a70;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2699\ufe0f Fonctionnalit\u00e9s</div>'
@@ -10101,7 +10153,8 @@ function vEmps(){
                     <div style="font-size:13px;color:#7aaa80;margin-bottom:3px">Pr\u00e9nom</div>
                     <div style="display:flex;gap:4px">
                       <input id="reg_prenom_${emp.id}" class="inp" style="padding:6px 8px;font-size:15px;flex:1" placeholder="Ex: Jean" value="${esc(_rPrenom)}"
-                        onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','prenom',this.value);}">
+                        onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','prenom',this.value);}"
+                        onblur="_adminSetRegSilent('${emp.id}','prenom',this.value)">
                       <button onclick="adminSetReg('${emp.id}','prenom',document.getElementById('reg_prenom_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:6px;color:#c9a227;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713</button>
                     </div>
                   </div>
@@ -10109,7 +10162,8 @@ function vEmps(){
                     <div style="font-size:13px;color:#7aaa80;margin-bottom:3px">Nom complet</div>
                     <div style="display:flex;gap:4px">
                       <input id="reg_nom_${emp.id}" class="inp" style="padding:6px 8px;font-size:15px;flex:1" placeholder="Ex: DUPONT" value="${esc(_rNom)}"
-                        onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','nom',this.value);}">
+                        onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','nom',this.value);}"
+                        onblur="_adminSetRegSilent('${emp.id}','nom',this.value)">
                       <button onclick="adminSetReg('${emp.id}','nom',document.getElementById('reg_nom_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:6px;color:#c9a227;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713</button>
                     </div>
                   </div>
@@ -10118,7 +10172,8 @@ function vEmps(){
                   <div style="font-size:13px;color:#7aaa80;margin-bottom:3px">Email</div>
                   <div style="display:flex;gap:4px">
                     <input id="reg_email_${emp.id}" class="inp" style="padding:6px 8px;font-size:15px;flex:1" placeholder="prenom.nom@sbm.mc" type="email" value="${esc(_rEmail)}"
-                      onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','email',this.value);}">
+                      onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','email',this.value);}"
+                      onblur="_adminSetRegSilent('${emp.id}','email',this.value)">
                     <button onclick="adminSetReg('${emp.id}','email',document.getElementById('reg_email_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:6px;color:#c9a227;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713</button>
                   </div>
                 </div>
@@ -10139,11 +10194,11 @@ function vEmps(){
               <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcc5 Donn\u00e9es RH (admin)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
                 <div><div style="font-size:12px;color:#7aaa80;margin-bottom:3px">Entr\u00e9e SBM</div>
-                <div style="display:flex;gap:4px"><input id="reg_dateSbm_${emp.id}" type="date" class="inp" style="padding:5px 7px;font-size:13px;flex:1" value="${esc(_r.dateEntreeSbm||"")}"><button onclick="adminSetReg('${emp.id}','dateEntreeSbm',document.getElementById('reg_dateSbm_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:5px;color:#c9a227;font-size:13px;padding:4px 8px;cursor:pointer">\u2713</button></div>
+                <div style="display:flex;gap:4px"><input id="reg_dateSbm_${emp.id}" type="date" class="inp" style="padding:5px 7px;font-size:13px;flex:1" value="${esc(_r.dateEntreeSbm||"")}" onchange="_adminSetRegSilent('${emp.id}','dateEntreeSbm',this.value)"><button onclick="adminSetReg('${emp.id}','dateEntreeSbm',document.getElementById('reg_dateSbm_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:5px;color:#c9a227;font-size:13px;padding:4px 8px;cursor:pointer">\u2713</button></div>
                 ${_r.dateEntreeSbm?(function(){var d=new Date(_r.dateEntreeSbm);var y=new Date().getFullYear()-d.getFullYear();return '<div style="font-size:11px;color:#5aaa70;margin-top:2px">\u2713 '+y+' an'+(y>1?'s':'')+' d\'anciennet\u00e9 SBM</div>';})():""}
                 </div>
                 <div><div style="font-size:12px;color:#7aaa80;margin-bottom:3px">Entr\u00e9e Jeux</div>
-                <div style="display:flex;gap:4px"><input id="reg_dateJeux_${emp.id}" type="date" class="inp" style="padding:5px 7px;font-size:13px;flex:1" value="${esc(_r.dateEntreeJeux||"")}"><button onclick="adminSetReg('${emp.id}','dateEntreeJeux',document.getElementById('reg_dateJeux_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:5px;color:#c9a227;font-size:13px;padding:4px 8px;cursor:pointer">\u2713</button></div>
+                <div style="display:flex;gap:4px"><input id="reg_dateJeux_${emp.id}" type="date" class="inp" style="padding:5px 7px;font-size:13px;flex:1" value="${esc(_r.dateEntreeJeux||"")}" onchange="_adminSetRegSilent('${emp.id}','dateEntreeJeux',this.value)"><button onclick="adminSetReg('${emp.id}','dateEntreeJeux',document.getElementById('reg_dateJeux_${emp.id}').value)" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.25);border-radius:5px;color:#c9a227;font-size:13px;padding:4px 8px;cursor:pointer">\u2713</button></div>
                 ${_r.dateEntreeJeux?(function(){var d=new Date(_r.dateEntreeJeux);var y=new Date().getFullYear()-d.getFullYear();return '<div style="font-size:11px;color:#5aaa70;margin-top:2px">\ud83c\udfb2 '+y+' an'+(y>1?'s':'')+' d\'anciennet\u00e9 jeux</div>';})():""}
                 </div>
               </div>
@@ -10158,8 +10213,9 @@ function vEmps(){
             <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcdc Historique des modifications</div>
             ${renderEmpHistory(emp.id)}
           </div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn gold" onclick="editEmpId=null;dc()" style="flex:1;justify-content:center;padding:10px;font-size:16px">\u2713 Fermer</button>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(201,162,39,.15)">
+            <button class="btn gold" onclick="adminSaveAllFields('${emp.id}')" style="width:100%;justify-content:center;padding:12px;font-size:16px">\ud83d\udcbe Sauvegarder toutes les modifications</button>
+            <button class="btn ghost" onclick="adminSaveAllFields('${emp.id}');setTimeout(function(){editEmpId=null;dc();},100)" style="width:100%;justify-content:center;padding:10px;font-size:15px">\u2713 Sauvegarder et fermer</button>
             ${!isAdm?('<button class="danger" onclick="delEmp(\''+emp.id+'\')" style="flex-shrink:0">Supprimer</button>'):""}
           </div>
         </div>
@@ -10452,9 +10508,48 @@ function markAsRetired(empId,toMo){
 function adminSetReg(id,field,val){
   if(!A.user||A.user.id!==AID)return;
   if(!A.reg[id])A.reg[id]={createdAt:Date.now()};
-  A.reg[id][field]=(val||"").trim();
+  var old=A.reg[id][field]||"";
+  var nv=(val||"").trim();
+  if(old===nv)return; // pas de changement
+  A.reg[id][field]=nv;
+  A.reg[id].updatedAt=Date.now();
   ls("cmc_reg",A.reg);
-  toast("Identit\u00e9 mise \u00e0 jour");
+  toast("\u2705 "+field+" mis \u00e0 jour");
+  dc();
+}
+// Version silencieuse : sauvegarde sans re-render ni toast (pour onblur auto-save)
+function _adminSetRegSilent(id,field,val){
+  if(!A.user||A.user.id!==AID)return;
+  if(!A.reg[id])A.reg[id]={createdAt:Date.now()};
+  var old=A.reg[id][field]||"";
+  var nv=(val||"").trim();
+  if(old===nv)return false; // pas de changement
+  A.reg[id][field]=nv;
+  A.reg[id].updatedAt=Date.now();
+  ls("cmc_reg",A.reg);
+  return true;
+}
+// Sauvegarder TOUS les champs de la fiche employé en une seule opération
+function adminSaveAllFields(id){
+  if(!A.user||A.user.id!==AID)return;
+  var changed=0;
+  // Champs reg (identité)
+  var regFields=[
+    {field:"prenom",inputId:"reg_prenom_"+id},
+    {field:"nom",inputId:"reg_nom_"+id},
+    {field:"email",inputId:"reg_email_"+id},
+    {field:"dateEntreeSbm",inputId:"reg_dateSbm_"+id},
+    {field:"dateEntreeJeux",inputId:"reg_dateJeux_"+id}
+  ];
+  regFields.forEach(function(f){
+    var el=document.getElementById(f.inputId);
+    if(el&&_adminSetRegSilent(id,f.field,el.value))changed++;
+  });
+  if(changed>0){
+    toast("\u2705 "+changed+" champ"+(changed>1?"s":"")+" sauvegard\u00e9"+(changed>1?"s":""));
+  } else {
+    toast("Aucune modification \u00e0 sauvegarder");
+  }
   dc();
 }
 // Champs que l'employé peut modifier lui-même (whitelist sécurité)
