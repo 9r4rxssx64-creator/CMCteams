@@ -459,7 +459,15 @@ body.has-login-bg .login-bg{
 <body>
 <div id="bgA" class="bg-slide"></div><div id="bgB" class="bg-slide"></div>
 <a href="#content" class="skip-link">Aller au contenu principal</a>
-<div id="app" style="min-height:100vh;background:transparent"></div>
+<div id="app" style="min-height:100vh;background:transparent">
+<!-- Splash screen instantané v9.67 — visible immédiatement pendant le parsing JS -->
+<div id="splash" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:18px">
+<div style="font-size:42px;font-weight:800;color:#c9a227;letter-spacing:1px;text-shadow:0 0 20px rgba(201,162,39,.4)">CMC Teams</div>
+<div style="font-size:13px;color:#7aaa80;letter-spacing:2px;text-transform:uppercase">Casino de Monte-Carlo</div>
+<div style="margin-top:12px;width:48px;height:48px;border:3px solid rgba(201,162,39,.2);border-top-color:#c9a227;border-radius:50%;animation:splspin .8s linear infinite"></div>
+<style>@keyframes splspin{to{transform:rotate(360deg)}}</style>
+</div>
+</div>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#1e3820;border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:16px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap;max-width:90vw"></div>
 <div id="pk" style="display:none"></div>
 <div id="ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998"></div>
@@ -3986,11 +3994,9 @@ var SESSION_TTL=8*60*60*1000; // 8 heures en ms
 })();
 function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date.now()));}
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);}
-// Démarrer la synchronisation Firebase (si URL configurée)
-fbInit();
-// Charger la queue de sync offline (écritures en attente)
+// v9.67 — Firebase et sync queue différés APRÈS premier render (perf: first paint rapide)
+// fbInit() sera appelé par _deferredInit() après render()
 _syncQueue=lg("cmc_sync_queue",{});
-if(Object.keys(_syncQueue).length&&navigator.onLine){setTimeout(flushSyncQueue,3000);}
 
 // Cumulative work days before month mo (mo=0 = March 2026) for a given team pattern.
 // Each 30-day cp cycle has 20 work days, but 31-day months add 1 extra work day
@@ -4106,7 +4112,7 @@ function _toastNext(){
 
 // ── DIAPORAMA FOND D'\u00c9CRAN (v9.51) ────────────────────────────────────────
 // Collecte toutes les photos dispo, les fait d\u00e9filer toutes les 5s avec crossfade.
-var _bgSlides=[],_bgIdx=0,_bgLayer="A",_bgTimer=null;
+var _bgSlides=[],_bgIdx=0,_bgLayer="A",_bgTimer=null,_bgSig="";
 function _collectBgPhotos(){
   var photos=[];
   var ph=A.photos||{};
@@ -4121,9 +4127,13 @@ function _collectBgPhotos(){
   return photos;
 }
 function _startBgSlideshow(){
-  // Arr\u00eater le pr\u00e9c\u00e9dent si en cours
+  // v9.67 : cache — ne re-init que si les photos ont changé
+  var newPhotos=_collectBgPhotos();
+  var sig=newPhotos.length+":"+newPhotos.map(function(p){return p.length;}).join(",");
+  if(sig===_bgSig&&_bgSlides.length)return;
+  _bgSig=sig;
   if(_bgTimer){clearInterval(_bgTimer);_bgTimer=null;}
-  _bgSlides=_collectBgPhotos();
+  _bgSlides=newPhotos;
   if(!_bgSlides.length){
     // Pas de photos : masquer les couches
     var a=document.getElementById("bgA"),b=document.getElementById("bgB");
@@ -4158,6 +4168,7 @@ function _startBgSlideshow(){
 }
 function _stopBgSlideshow(){
   if(_bgTimer){clearInterval(_bgTimer);_bgTimer=null;}
+  _bgSig="";
   var a=document.getElementById("bgA"),b=document.getElementById("bgB");
   if(a)a.style.opacity="0";if(b)b.style.opacity="0";
 }
@@ -4182,8 +4193,8 @@ function render(){
     if(_planBg&&(A.view==="planning"||A.view==="departs")) b.classList.add("bg-planning-active");
     else b.classList.remove("bg-planning-active");
   })();
-  // v9.51 : lancer le diaporama fond d'\u00e9cran (5s crossfade)
-  _startBgSlideshow();
+  // v9.67 : diaporama différé après paint (ne bloque plus le rendu)
+  requestAnimationFrame(_startBgSlideshow);
   if(!A.user){app.innerHTML=vLogin();setTimeout(function(){var e=document.getElementById("li");if(e)e.onkeydown=function(ev){if(ev.key==="Enter")step1();};},40);return;}
   try{
     var _viewAsBanner=_viewAs?'<div id="viewAsBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#c9a227;color:#0a1a0c;padding:5px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.4)">'
@@ -13508,6 +13519,20 @@ function vAbsences(){
 }
 
 render();
+
+// v9.67 — Initialisation différée : Firebase + sync queue APRÈS le premier paint
+// Le premier render() utilise les données localStorage (synchrone, rapide).
+// Firebase arrive après et met à jour via SSE → dc() automatique.
+var _deferredDone=false;
+function _deferredInit(){
+  if(_deferredDone)return;_deferredDone=true;
+  fbInit();
+  if(Object.keys(_syncQueue).length&&navigator.onLine){setTimeout(flushSyncQueue,2000);}
+}
+// requestIdleCallback si disponible (attend que le browser ait fini le paint),
+// sinon setTimeout 80ms (bien après le premier paint à ~16ms)
+if(window.requestIdleCallback) requestIdleCallback(_deferredInit,{timeout:300});
+else setTimeout(_deferredInit,80);
 
 // ── Synchronisation multi-onglets ──────────────────────────────────────────
 // Quand l'admin modifie les données dans un onglet, tous les autres onglets
