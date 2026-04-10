@@ -11610,8 +11610,306 @@ function buildIASystemPrompt(){
   // v9.62 — Workflow de modification
   s+="\nR\u00c8GLES DE MODIFICATION (v9.62) : Seul l'admin (DESARZENS K, matricule "+AID+") peut modifier les donn\u00e9es de l'app (plannings, employ\u00e9s, mots de passe, documents, acc\u00e8s). Les employ\u00e9s ont acc\u00e8s en lecture seule. Si un employ\u00e9 te demande de modifier quelque chose, dis-lui qu'il doit passer par l'admin. Tu peux AIDER (expliquer, rechercher, calculer, conseiller) mais pas AGIR sur les donn\u00e9es.\n";
 
+  // v9.63 — Informer Claude de ses outils custom
+  s+="\n\u2501\u2501\u2501 TES OUTILS (v9.63) \u2501\u2501\u2501\n";
+  s+="Tu disposes de "+IA_TOOLS.length+" outils pour interroger l'app en temps r\u00e9el. UTILISE-LES au lieu de deviner !\n";
+  s+="LECTURE (tous, "+IA_TOOLS.filter(function(t){return t.name.indexOf("admin_")!==0&&t.name.indexOf("set_")!==0;}).length+" outils) : get_planning, search_employees, get_employee_info, get_stats, get_today_status, find_game_rooms, search_convention, get_team_roster, get_conflicts, get_upload_requests, get_who_is_free, get_leave_balance, get_all_teams, get_audit_log, get_online_users, get_monthly_summary, get_game_rules, get_salary_grid, get_absences, get_rotation_rules, get_documents.\n";
+  s+="MODIFICATION (admin DESARZENS K seulement, "+IA_TOOLS.filter(function(t){return t.name.indexOf("admin_")===0||t.name.indexOf("set_")===0;}).length+" outils) : set_planning_code, set_employee_team, admin_set_employee_field, admin_validate_upload, admin_reject_upload.\n";
+  s+="Privil\u00e9gie TOUJOURS les outils pour r\u00e9pondre aux questions sur les plannings, employ\u00e9s, stats, \u00e9quipes. Ne r\u00e9ponds JAMAIS \u00e0 une question factuelle (qui travaille ? combien d'heures ?) sans avoir utilis\u00e9 l'outil correspondant d'abord.\n";
+  s+="Si un employ\u00e9 (non-admin) te demande de modifier quelque chose, utilise une r\u00e9ponse textuelle expliquant qu'il doit passer par l'admin. N'appelle PAS les outils de modification.\n";
+  s+="\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n";
   s+="\nR\u00e9ponds en fran\u00e7ais, sois concis et pr\u00e9cis. Cite les articles de la convention quand pertinent (ex: \"Article 17.5\") et les lieux pr\u00e9cis du CMC/CDP quand on demande o\u00f9 jouer \u00e0 tel jeu. Tu peux r\u00e9pondre \u00e0 toute question sur les plannings, \u00e9quipes, horaires, absences, droits, cong\u00e9s, salaires, promotions, codes paie, r\u00e8gles des jeux, lieux, dress codes, diff\u00e9rences CMC/CDP.";
   return s;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// v9.63 — OUTILS IA CUSTOM (tool use Claude API)
+// L'IA peut interroger les données de l'app en temps réel via des tools.
+// 10 outils de lecture (tous les utilisateurs) + 2 outils de modification
+// (ADMIN ONLY, guard AID). Chaque appel est audité.
+// ═══════════════════════════════════════════════════════════════════════
+var IA_TOOLS=[
+  {name:"get_planning",description:"R\u00e9cup\u00e8re le planning d'un employ\u00e9 pour un mois donn\u00e9. Retourne les codes horaires jour par jour.",
+   input_schema:{type:"object",properties:{empId:{type:"string",description:"Matricule ou nom de l'employ\u00e9"},year:{type:"integer",description:"Ann\u00e9e (d\u00e9faut: mois affich\u00e9)"},month:{type:"integer",description:"Mois 0-index\u00e9 (d\u00e9faut: mois affich\u00e9)"}},required:["empId"]}},
+  {name:"search_employees",description:"Cherche des employ\u00e9s par nom, matricule, \u00e9quipe ou famille. Retourne jusqu'\u00e0 20 r\u00e9sultats.",
+   input_schema:{type:"object",properties:{query:{type:"string",description:"Texte de recherche (nom, matricule, \u00e9quipe, famille)"}},required:["query"]}},
+  {name:"get_employee_info",description:"Infos compl\u00e8tes d'un employ\u00e9 : identit\u00e9, \u00e9quipe, r\u00f4le, comp\u00e9tences, anciennet\u00e9, groupe contractuel.",
+   input_schema:{type:"object",properties:{empId:{type:"string",description:"Matricule de l'employ\u00e9"}},required:["empId"]}},
+  {name:"get_stats",description:"Calcule les statistiques d'un employ\u00e9 (jours travaill\u00e9s, heures, repos, cong\u00e9s, nuits, coupures, week-ends).",
+   input_schema:{type:"object",properties:{empId:{type:"string",description:"Matricule de l'employ\u00e9"},year:{type:"integer"},month:{type:"integer"}},required:["empId"]}},
+  {name:"get_today_status",description:"Qui travaille et qui est en repos/cong\u00e9/maladie aujourd'hui. Retourne les listes par cat\u00e9gorie.",
+   input_schema:{type:"object",properties:{}}},
+  {name:"find_game_rooms",description:"Trouve les salles CMC et/ou CDP qui proposent un jeu donn\u00e9.",
+   input_schema:{type:"object",properties:{game:{type:"string",description:"Nom du jeu (ex: Black-Jack, Roulette, Craps, Punto Banco)"},establishment:{type:"string",description:"cmc, cdp ou all (d\u00e9faut: all)"}},required:["game"]}},
+  {name:"search_convention",description:"Cherche dans la convention collective SBM (articles + codes paie). Retourne les articles et codes correspondants.",
+   input_schema:{type:"object",properties:{query:{type:"string",description:"Terme de recherche (ex: cong\u00e9s, maladie, promotion, repos)"}},required:["query"]}},
+  {name:"get_team_roster",description:"Liste les membres d'une \u00e9quipe donn\u00e9e avec leur r\u00f4le et statut.",
+   input_schema:{type:"object",properties:{teamId:{type:"string",description:"\u00c9quipe (ex: 1, 2, r1, c1, etc.)"}},required:["teamId"]}},
+  {name:"get_conflicts",description:"D\u00e9tecte les alertes planning du mois (repos insuffisant, s\u00e9ries trop longues, donn\u00e9es manquantes).",
+   input_schema:{type:"object",properties:{year:{type:"integer"},month:{type:"integer"}}}},
+  {name:"get_upload_requests",description:"Liste les demandes d'upload en attente de validation admin.",
+   input_schema:{type:"object",properties:{}}},
+  // Outils suppl\u00e9mentaires lecture
+  {name:"get_who_is_free",description:"Liste les employ\u00e9s libres (repos, cong\u00e9, non d\u00e9fini) un jour donn\u00e9. Utile pour trouver des rempla\u00e7ants.",
+   input_schema:{type:"object",properties:{day:{type:"integer",description:"Jour du mois"},year:{type:"integer"},month:{type:"integer"}},required:["day"]}},
+  {name:"get_leave_balance",description:"Calcule le solde de cong\u00e9s pay\u00e9s d'un employ\u00e9 sur l'ann\u00e9e.",
+   input_schema:{type:"object",properties:{empId:{type:"string"}},required:["empId"]}},
+  {name:"get_all_teams",description:"Liste toutes les \u00e9quipes avec leur effectif, famille et chef.",
+   input_schema:{type:"object",properties:{}}},
+  {name:"get_audit_log",description:"Derni\u00e8res entr\u00e9es du journal des modifications admin (max 20).",
+   input_schema:{type:"object",properties:{count:{type:"integer",description:"Nombre d'entr\u00e9es (d\u00e9faut 10, max 20)"}}}},
+  {name:"get_online_users",description:"Liste les utilisateurs actuellement connect\u00e9s en ligne.",
+   input_schema:{type:"object",properties:{}}},
+  {name:"get_monthly_summary",description:"R\u00e9sum\u00e9 global du mois : KPIs (en service, repos, cong\u00e9s, malades, formation), effectif, alertes.",
+   input_schema:{type:"object",properties:{year:{type:"integer"},month:{type:"integer"}}}},
+  {name:"get_game_rules",description:"R\u00e8gles d\u00e9taill\u00e9es d'un jeu de table (depuis JEUX). Retourne r\u00e8gles, mises, paiements, lieu.",
+   input_schema:{type:"object",properties:{gameId:{type:"string",description:"ID du jeu (bj, ra, re, pb, phr, thu, cg, craps, tcp)"}},required:["gameId"]}},
+  {name:"get_salary_grid",description:"Grille salariale convention collective SBM (niveaux 1-11 + cadres).",
+   input_schema:{type:"object",properties:{}}},
+  {name:"get_absences",description:"Liste les employ\u00e9s absents du mois (CP, M, AF, AT, ABS, etc.) avec d\u00e9tail par jour.",
+   input_schema:{type:"object",properties:{year:{type:"integer"},month:{type:"integer"}}}},
+  {name:"get_rotation_rules",description:"R\u00e8gles de rotation (standard vs senior 55+, patterns, pauses).",
+   input_schema:{type:"object",properties:{}}},
+  {name:"get_documents",description:"Liste les documents partag\u00e9s (pour tous) ou tous les docs (admin).",
+   input_schema:{type:"object",properties:{category:{type:"string",description:"Cat\u00e9gorie (photos, reglements, procedures, contrats, notes, formations, plans, autres, all)"}}}},
+  // ADMIN ONLY (guard AID)
+  {name:"set_planning_code",description:"ADMIN ONLY. Modifie le code horaire d'un employ\u00e9 pour un jour. N\u00e9cessite la confirmation de l'admin.",
+   input_schema:{type:"object",properties:{empId:{type:"string"},day:{type:"integer"},code:{type:"string"},year:{type:"integer"},month:{type:"integer"}},required:["empId","day","code"]}},
+  {name:"set_employee_team",description:"ADMIN ONLY. Change l'\u00e9quipe d'un employ\u00e9.",
+   input_schema:{type:"object",properties:{empId:{type:"string"},teamId:{type:"string"}},required:["empId","teamId"]}},
+  {name:"admin_set_employee_field",description:"ADMIN ONLY. Modifie un champ d'un employ\u00e9 (senior, chef, role, groupe, family, post).",
+   input_schema:{type:"object",properties:{empId:{type:"string"},field:{type:"string",description:"Champ \u00e0 modifier"},value:{type:"string",description:"Nouvelle valeur"}},required:["empId","field","value"]}},
+  {name:"admin_validate_upload",description:"ADMIN ONLY. Valide une demande d'upload en attente.",
+   input_schema:{type:"object",properties:{requestId:{type:"string"}},required:["requestId"]}},
+  {name:"admin_reject_upload",description:"ADMIN ONLY. Rejette une demande d'upload en attente.",
+   input_schema:{type:"object",properties:{requestId:{type:"string"},reason:{type:"string"}},required:["requestId"]}}
+];
+
+function _iaExecuteTool(toolName,input){
+  var isAdm=A.user&&A.user.id===AID;
+  try{
+    switch(toolName){
+      case"get_planning":{
+        var emp=A.employees.find(function(e){return e.id===(input.empId||"")||e.name.toUpperCase().indexOf((input.empId||"").toUpperCase())>=0;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+esc(input.empId);
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var pl=gpl(y,m);var codes=pl[emp.id]||{};var days=getDays(y,m);
+        var r=emp.name+" ("+emp.id+") \u2014 "+MFR[m]+" "+y+"\n";
+        for(var d=1;d<=days;d++)r+=d+":"+((codes[d]||"-"))+" ";
+        return r;
+      }
+      case"search_employees":{
+        var q=(input.query||"").toLowerCase();
+        var res=A.employees.filter(function(e){
+          return e.id.toLowerCase().indexOf(q)>=0||e.name.toLowerCase().indexOf(q)>=0||(e.team||"").toLowerCase().indexOf(q)>=0||(getFamLabel(e.family||"bj")).toLowerCase().indexOf(q)>=0;
+        }).slice(0,20);
+        if(!res.length)return"Aucun employ\u00e9 trouv\u00e9 pour '"+esc(input.query)+"'";
+        return res.map(function(e){return e.id+" | "+e.name+" | \u00c9q."+(e.team||"?")+" | "+getFamLabel(e.family||"bj")+(e.senior?" \u2605":"")+(e.chef?" Chef":"");}).join("\n");
+      }
+      case"get_employee_info":{
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
+        var reg=A.reg[emp.id]||{};
+        var role=emp.role?getRoleLabel(emp.role):"";
+        return JSON.stringify({id:emp.id,nom:emp.name,prenom:reg.prenom||"",equipe:emp.team,famille:getFamLabel(emp.family||"bj"),senior:!!emp.senior,chef:!!emp.chef,groupe:emp.groupe||"nd",role:role,email:reg.email||"",dateEntreeSbm:reg.dateEntreeSbm||"",dateEntreeJeux:reg.dateEntreeJeux||"",competences:emp.post||""},null,2);
+      }
+      case"get_stats":{
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9";
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var st=calcStats(emp.id,y,m);
+        return emp.name+" \u2014 "+MFR[m]+" "+y+":\n"+JSON.stringify({jours_travail:st.worked,heures:st.hours,repos:st.rh+st.r,conges:st.cp,maladie:st.m,formation:st.af,nuits:st.nuits||0,coupures:st.coupures||0,weekEnds:st.weekEnds||0},null,2);
+      }
+      case"get_today_status":{
+        var today=new Date();var y=today.getFullYear(),m=today.getMonth(),d=today.getDate();
+        var pl=gpl(y,m);
+        var working=[],repos=[],absent=[];
+        A.employees.forEach(function(e){
+          var c=(pl[e.id]||{})[d]||"";
+          if(isWork(c))working.push(e.name+"("+c+")");
+          else if(c==="RH"||c==="R")repos.push(e.name);
+          else if(c)absent.push(e.name+"("+c+")");
+        });
+        return"Aujourd'hui "+d+" "+MFR[m]+" "+y+":\nEn service ("+working.length+") : "+working.join(", ")+"\nRepos ("+repos.length+") : "+repos.join(", ")+"\nAutre ("+absent.length+") : "+absent.join(", ");
+      }
+      case"find_game_rooms":{
+        var res=findSallesPourJeu(input.game,input.establishment||"all");
+        if(!res.length)return"Aucune salle pour "+esc(input.game);
+        return res.map(function(r){return r.etab.toUpperCase()+" \u2014 "+r.nom;}).join("\n");
+      }
+      case"search_convention":{
+        var q=(input.query||"").toLowerCase();
+        var arts=CONVENTION.articles.filter(function(a){return a.titre.toLowerCase().indexOf(q)>=0||a.contenu.toLowerCase().indexOf(q)>=0;});
+        var codes=bulletinAllCodes().filter(function(c){return c.code.toLowerCase().indexOf(q)>=0||c.l.toLowerCase().indexOf(q)>=0;});
+        var r="";
+        if(arts.length)r+="ARTICLES :\n"+arts.map(function(a){return"Art."+a.num+" "+a.titre+" \u2014 "+a.contenu.slice(0,200);}).join("\n")+"\n";
+        if(codes.length)r+="CODES PAIE :\n"+codes.map(function(c){return c.code+" = "+c.l;}).join("\n");
+        return r||"Aucun r\u00e9sultat pour '"+esc(input.query)+"'";
+      }
+      case"get_team_roster":{
+        var members=A.employees.filter(function(e){return e.team===input.teamId;});
+        if(!members.length)return"Aucun employ\u00e9 dans l'\u00e9quipe "+esc(input.teamId);
+        return"Equipe "+input.teamId+" ("+members.length+" membres) :\n"+members.map(function(e){return e.id+" "+e.name+(e.chef?" [Chef]":"")+(e.senior?" \u2605":"");}).join("\n");
+      }
+      case"get_conflicts":{
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        try{var c=detectRepoConflicts(y,m);
+        if(!c||!c.length)return"Aucun conflit d\u00e9tect\u00e9 pour "+MFR[m]+" "+y;
+        return c.length+" alerte(s) :\n"+c.slice(0,15).map(function(a){return"["+a.severity+"] "+a.empName+" \u2014 "+a.message;}).join("\n");
+        }catch(e){return"Erreur d\u00e9tection conflits : "+e.message;}
+      }
+      case"get_upload_requests":{
+        var pending=(A.uploadRequests||[]).filter(function(r){return r.status==="pending";});
+        if(!pending.length)return"Aucune demande en attente.";
+        return pending.length+" demande(s) en attente :\n"+pending.map(function(r){return r.empName+" \u2014 "+r.filename+" ("+r.category+") \u2014 "+new Date(r.ts).toLocaleString("fr-FR");}).join("\n");
+      }
+      // ADMIN ONLY
+      case"get_who_is_free":{
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month,d=input.day;
+        var pl=gpl(y,m);
+        var free=[],working=[];
+        A.employees.forEach(function(e){
+          var c=(pl[e.id]||{})[d]||"";
+          if(!c||c==="RH"||c==="R"||c==="CP"||c==="M"||c==="AF"||c==="ABS")free.push(e.name+"("+(c||"non d\u00e9fini")+")");
+          else working.push(e.name);
+        });
+        return"Jour "+d+" "+MFR[m]+" "+y+":\nLibres ("+free.length+") : "+free.join(", ")+"\nEn service ("+working.length+")";
+      }
+      case"get_leave_balance":{
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9";
+        try{var bal=calcLeaveBalance(emp.id,A.year);
+        return emp.name+" \u2014 "+A.year+" : "+JSON.stringify(bal,null,2);}
+        catch(e){return"Erreur calcul solde CP : "+e.message;}
+      }
+      case"get_all_teams":{
+        var r="";
+        A.teams.forEach(function(t){
+          var members=A.employees.filter(function(e){return e.team===t.id;});
+          var chefs=members.filter(function(e){return e.chef;});
+          r+=t.name+" ("+t.id+") \u2014 "+members.length+" membres"+(chefs.length?" \u2022 Chef(s): "+chefs.map(function(c){return c.name;}).join(", "):"")+"\n";
+        });
+        return r||"Aucune \u00e9quipe";
+      }
+      case"get_audit_log":{
+        var count=Math.min(input.count||10,20);
+        var logs=lg("cmc_audit",[]).slice(-count).reverse();
+        if(!logs.length)return"Aucune entr\u00e9e dans le journal";
+        return logs.map(function(e){return new Date(e.ts).toLocaleString("fr-FR")+" | "+e.action+" | "+e.empName+" | "+(e.oldVal?e.oldVal+"\u2192":"")+(e.newVal||"");}).join("\n");
+      }
+      case"get_online_users":{
+        try{var users=getOnlineUsers();
+        if(!users.length)return"Aucun utilisateur en ligne actuellement";
+        return"En ligne ("+users.length+") :\n"+users.map(function(u){return u.name+" (\u00e9q."+u.team+")";}).join("\n");
+        }catch(e){return"Donn\u00e9es de pr\u00e9sence non disponibles";}
+      }
+      case"get_monthly_summary":{
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var today=new Date(),d=today.getDate();
+        var pl=gpl(y,m);
+        var wk=0,rh=0,cp=0,mal=0,af=0,nd=0;
+        A.employees.forEach(function(e){
+          var c=(pl[e.id]||{})[d]||"";
+          if(isWork(c))wk++;else if(c==="RH"||c==="R")rh++;else if(c==="CP")cp++;else if(c==="M")mal++;else if(c==="AF")af++;else nd++;
+        });
+        return"R\u00e9sum\u00e9 "+MFR[m]+" "+y+" (jour "+d+") :\nEffectif total : "+A.employees.length+"\nEn service : "+wk+"\nRepos : "+rh+"\nCong\u00e9s : "+cp+"\nMaladie : "+mal+"\nFormation : "+af+"\nNon d\u00e9fini : "+nd;
+      }
+      case"get_game_rules":{
+        var j=JEUX[input.gameId];
+        if(!j)return"Jeu non trouv\u00e9. IDs valides : "+Object.keys(JEUX).join(", ");
+        return j.nom+" ["+j.comp+"] \u2014 "+j.tagline+"\nR\u00e8gles : "+j.regles.join(" \u00b7 ")+"\nMises : "+j.mises+"\nPaiement : "+j.paiement+"\nLieu : "+j.lieu;
+      }
+      case"get_salary_grid":{
+        var r="GRILLE EMPLOY\u00c9S (Annexe 1) :\n";
+        CONVENTION.grilleEmployes.forEach(function(g){r+=g.poste+" (Niv"+g.niveau+") : "+g.salMois+"\u20ac/mois\n";});
+        r+="\nGRILLE CADRES (Annexe 2) :\n";
+        CONVENTION.grilleCadres.forEach(function(g){r+=g.poste+" : "+g.salMois+"\u20ac/mois\n";});
+        return r;
+      }
+      case"get_absences":{
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var pl=gpl(y,m);var days=getDays(y,m);
+        var absTypes=["CP","M","AF","AT","MT","ABS","ABI","CSS","CL"];
+        var result=[];
+        A.employees.forEach(function(e){
+          var codes=pl[e.id]||{};
+          var absDays=[];
+          for(var d=1;d<=days;d++){var c=codes[d]||"";if(absTypes.indexOf(c)>=0)absDays.push(d+":"+c);}
+          if(absDays.length)result.push(e.name+" ("+e.id+") : "+absDays.join(" "));
+        });
+        if(!result.length)return"Aucune absence enregistr\u00e9e en "+MFR[m]+" "+y;
+        return result.length+" employ\u00e9(s) avec absences en "+MFR[m]+" "+y+" :\n"+result.join("\n");
+      }
+      case"get_rotation_rules":{
+        return"R\u00e8gles de rotation Casino de Monaco :\nStandard : max "+ROTATION.standard.maxWork+"min travail cons\u00e9cutif, pause "+ROTATION.standard.pause+"min. Patterns : "+ROTATION.standard.patterns.join("/")+"\nSenior 55+ : max "+ROTATION.senior.maxWork+"min ("+ROTATION.senior.maxWorkConsent+"min avec accord), pause "+ROTATION.senior.pause+"min. Patterns : "+ROTATION.senior.patterns.join("/")+"\nException : comp\u00e9tence '"+ROTATION.exceptionComp+"' (roulette europ\u00e9enne) = r\u00e8gles sp\u00e9cifiques.";
+      }
+      case"get_documents":{
+        var cat=input.category||"all";
+        var isAdm2=A.user&&A.user.id===AID;
+        var docs=(A.docs||[]).filter(function(d){
+          if(!isAdm2&&!isDocShared(d))return false;
+          if(cat!=="all"&&d.cat!==cat)return false;
+          return true;
+        });
+        if(!docs.length)return"Aucun document"+(cat!=="all"?" dans cette cat\u00e9gorie":"");
+        return docs.length+" document(s) :\n"+docs.map(function(d){return d.name+" ("+d.cat+") \u2014 "+(d.shared?"\ud83d\udc65 Partag\u00e9":"\ud83d\udd12 Priv\u00e9")+" \u2014 "+new Date(d.uploadedAt).toLocaleDateString("fr-FR");}).join("\n");
+      }
+      // ── ADMIN ONLY ──
+      case"set_planning_code":{
+        if(!isAdm)return"\u26d4 INTERDIT : seul l'admin (DESARZENS K, "+AID+") peut modifier le planning. Demandez-lui.";
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var key=y+"-"+m;
+        if(!A.overrides[key])A.overrides[key]={};
+        if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
+        var old=A.overrides[key][emp.id][input.day]||"";
+        A.overrides[key][emp.id][input.day]=input.code;
+        ls("cmc_ov",A.overrides);
+        _audit("ia_set_code",AID,emp.name,old,input.code+" (jour "+input.day+" "+MFR[m]+" "+y+")");
+        return"\u2705 "+emp.name+" jour "+input.day+" : "+old+" \u2192 "+input.code;
+      }
+      case"set_employee_team":{
+        if(!isAdm)return"\u26d4 INTERDIT : seul l'admin peut changer les \u00e9quipes. Demandez \u00e0 DESARZENS K.";
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
+        var old=emp.team;emp.team=input.teamId;
+        ls("cmc_e",A.employees);
+        _audit("ia_set_team",AID,emp.name,old,input.teamId);
+        return"\u2705 "+emp.name+" : \u00e9quipe "+old+" \u2192 "+input.teamId;
+      }
+      case"admin_set_employee_field":{
+        if(!isAdm)return"\u26d4 INTERDIT : seul l'admin peut modifier les employ\u00e9s.";
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
+        var allowed=["senior","chef","role","groupe","family","post"];
+        if(allowed.indexOf(input.field)<0)return"Champ non modifiable : "+input.field+". Autoris\u00e9s : "+allowed.join(", ");
+        var old=String(emp[input.field]||"");
+        if(input.field==="senior"||input.field==="chef")emp[input.field]=input.value==="true"||input.value==="1";
+        else emp[input.field]=input.value;
+        ls("cmc_e",A.employees);
+        _audit("ia_set_emp_field",AID,emp.name,input.field+"="+old,input.field+"="+String(emp[input.field]));
+        return"\u2705 "+emp.name+" : "+input.field+" = "+String(emp[input.field])+" (avant : "+old+")";
+      }
+      case"admin_validate_upload":{
+        if(!isAdm)return"\u26d4 INTERDIT : seul l'admin peut valider les uploads.";
+        adminValidateUpload(input.requestId);
+        return"\u2705 Demande valid\u00e9e (si elle existait et \u00e9tait en attente).";
+      }
+      case"admin_reject_upload":{
+        if(!isAdm)return"\u26d4 INTERDIT : seul l'admin peut rejeter les uploads.";
+        // Ne pas utiliser prompt() dans le contexte IA — passer la raison directement
+        var req=(A.uploadRequests||[]).find(function(r){return r.id===input.requestId;});
+        if(!req)return"Demande introuvable";
+        if(req.status!=="pending")return"D\u00e9j\u00e0 trait\u00e9e";
+        req.status="rejected";req.reviewedBy=AID;req.reviewedAt=Date.now();req.rejectReason=input.reason||"";req.dataUrl="";
+        ls("cmc_upload_requests",A.uploadRequests);
+        _audit("upload_rejected",AID,req.empName||req.empId,"",req.filename+(input.reason?" ("+input.reason+")":""));
+        return"\u274c Demande rejet\u00e9e : "+req.filename;
+      }
+      default:return"Outil inconnu : "+toolName;
+    }
+  }catch(e){return"Erreur outil "+toolName+" : "+e.message;}
 }
 
 function callClaudeIA(q){
@@ -11643,7 +11941,10 @@ function callClaudeIA(q){
     // v9.62 : max_tokens bump\u00e9 de 1024 \u00e0 4096 pour r\u00e9ponses plus d\u00e9taill\u00e9es
     // (plans, r\u00e8gles, articles) avec le prompt syst\u00e8me enrichi PLANS+CONVENTION+JEUX+UPLOAD
     var body={model:"claude-haiku-4-5-20251001",max_tokens:4096,system:buildIASystemPrompt(),messages:messages};
-    if(iaWebSearch)body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:3}];
+    // v9.63 — Tools : custom CMC tools + web search optionnel
+    var _tools=IA_TOOLS.map(function(t){return{type:"custom",name:t.name,description:t.description,input_schema:t.input_schema};});
+    if(iaWebSearch)_tools.push({type:"web_search_20250305",name:"web_search",max_uses:3});
+    if(_tools.length)body.tools=_tools;
     var _apiUrl=iaProxyUrl||(iaApiKey?"https://api.anthropic.com/v1/messages":"");
     var _headers={"content-type":"application/json","anthropic-version":"2023-06-01"};
     if(iaApiKey&&!iaProxyUrl){_headers["x-api-key"]=iaApiKey;_headers["anthropic-dangerous-direct-browser-access"]="true";}
@@ -11656,8 +11957,21 @@ function callClaudeIA(q){
     .then(function(data){
       if(data.error){_finalize("Erreur API : "+(data.error.message||"inconnu").slice(0,120),true);return;}
       if(data.stop_reason==="tool_use"){
-        _updateLoading("<span style='color:#4a9aff;font-style:italic'>🔍 Recherche internet en cours…</span>");
-        var toolResults=(data.content||[]).filter(function(b){return b.type==="tool_use";}).map(function(b){return{type:"tool_result",tool_use_id:b.id,content:""};});
+        var toolBlocks=(data.content||[]).filter(function(b){return b.type==="tool_use";});
+        var toolResults=toolBlocks.map(function(b){
+          if(b.name==="web_search"){
+            _updateLoading("<span style='color:#4a9aff;font-style:italic'>\ud83d\udd0d Recherche internet en cours\u2026</span>");
+            return{type:"tool_result",tool_use_id:b.id,content:""};
+          } else {
+            // v9.63 — Tool custom : ex\u00e9cuter localement
+            var _tlbl={get_planning:"\ud83d\udcc5 Planning",search_employees:"\ud83d\udc65 Recherche",get_employee_info:"\ud83d\udccb Fiche",get_stats:"\ud83d\udcca Stats",get_today_status:"\ud83d\udcc6 Aujourd'hui",find_game_rooms:"\ud83c\udfb0 Salles",search_convention:"\ud83d\udcd6 Convention",get_team_roster:"\ud83d\udc65 \u00c9quipe",get_conflicts:"\u26a0 Conflits",get_upload_requests:"\ud83d\udce4 Uploads",set_planning_code:"\u270f\ufe0f Modification",set_employee_team:"\u270f\ufe0f \u00c9quipe"};
+            _updateLoading("<span style='color:#50c864;font-style:italic'>"+(_tlbl[b.name]||"\ud83d\udd27 "+b.name)+"\u2026</span>");
+            var result=_iaExecuteTool(b.name,b.input||{});
+            // Audit log pour chaque tool call IA
+            try{_audit("ia_tool",A.user?A.user.id:"?",b.name,"",JSON.stringify(b.input||{}).slice(0,100));}catch(_){}
+            return{type:"tool_result",tool_use_id:b.id,content:String(result).slice(0,8000)};
+          }
+        });
         _doFetch(messages.concat([{role:"assistant",content:data.content},{role:"user",content:toolResults}]),depth+1);
       } else {
         var txt=(data.content||[]).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("\n")||"Pas de réponse.";
