@@ -9289,7 +9289,11 @@ function vAudit(){
     +'<div style="font-size:15px;font-weight:700;color:#c9a227">\u26a0\ufe0f Absents du dernier PDF import\u00e9 ('+audit.absentDuPDF.length+')</div>'
     +'<button onclick="auditMarkAllPresent()" style="background:rgba(58,138,80,.2);border:1px solid rgba(58,138,80,.5);border-radius:5px;padding:4px 10px;font-size:14px;color:#3a8a50;cursor:pointer;font-weight:700">\u2714 Marquer tous pr\u00e9sents (CP/Cong\u00e9)</button>'
     +'</div>'
-    +'<div style="font-size:14px;color:#8a9a78;margin-bottom:8px">Ces employ\u00e9s sont dans les effectifs mais introuvables dans le PDF import\u00e9. Leur planning est VIDE (aucune pr\u00e9diction). Si tous sont en cong\u00e9/maladie ce mois-ci, cliquez le bouton vert. Pour un employ\u00e9 sp\u00e9cifique : \u00ab\u00a0Pr\u00e9sent \u2714\u00a0\u00bb ou \u00ab\u00a0Renommer\u00a0\u00bb si son nom est diff\u00e9rent dans le PDF.</div>'
+    +'<div style="font-size:14px;color:#8a9a78;margin-bottom:8px;line-height:1.5">'
+    +'<b>Pourquoi cette liste ?</b> Ces employ\u00e9s existent dans l\u2019app mais ne sont pas dans le PDF que vous avez import\u00e9. Causes possibles :<br>'
+    +'&bull; L\u2019employ\u00e9 est en <b>cong\u00e9, maladie ou formation</b> \u2192 cliquez <b style="color:#3a8a50">\u2714 Marquer tous pr\u00e9sents (CP)</b> ci-dessus<br>'
+    +'&bull; Le nom est diff\u00e9rent dans le PDF (accent, espace, initiale) \u2192 cliquez <b style="color:#4a72a8">Renommer</b><br>'
+    +'&bull; L\u2019employ\u00e9 est parti / retrait\u00e9 \u2192 cliquez <b style="color:#c04040">Supprimer</b></div>'
     +audit.absentDuPDF.map(function(e){return empRow(e,"absentDuPDF");}).join('')
     +'</div>':'';
   var shSect='';
@@ -11649,10 +11653,21 @@ function doImport(){
       (nameIdx===1&&/^\*/.test((parts[2]||"").trim()))
     );
     var name=rawName.replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
-    // Validation stricte : NOM(s) INITIALE(S) — initiale 1-2 lettres max (ex: B, JE, PH), rejette acronymes CMC/RH
-    // v9.56 : accepter apostrophes (O'BRIEN, D'ANGELO) et apostrophe unicode \u2019
-    if(!name||!/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,2}$/.test(name)) continue;
+    // Exact match AVANT validation regex (un nom dans DEF_EMP doit TOUJOURS être reconnu)
+    if(!name) continue;
     var emp=A.employees.find(function(e){return e.name===name;});
+    // Si pas exact match : essayer normalized
+    if(!emp){
+      var _nImpPre=name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();
+      emp=A.employees.find(function(e){return e.name.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim()===_nImpPre;});
+    }
+    // Si pas match : fallback nom de famille seul (PDF a juste "REVOLLON" sans initiale)
+    if(!emp&&/^[A-Z][A-Z\-'\u2019 ]+$/.test(name)&&name.indexOf(" ")<0){
+      var _surnOnly=A.employees.filter(function(e){return e.name.split(/\s+/)[0]===name&&isEmpActive(e,iy,im);});
+      if(_surnOnly.length===1)emp=_surnOnly[0];
+    }
+    // Validation format : si toujours pas trouvé et format invalide, skip
+    if(!emp&&!/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,3}$/.test(name)) continue;
     if(!emp){
       // Matching normalise : accents, traits d'union, apostrophes, espaces
       function _nImpL(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();}
@@ -12178,18 +12193,19 @@ function doImport(){
   // --- Suggestions : nouveaux employés (INTROUVABLE dans PDF) ---
   if(notFoundNames&&notFoundNames.length>0&&r){
     var _nfHtml='<div style="margin-top:10px;padding:10px;background:rgba(80,180,80,.08);border:1px solid rgba(80,180,80,.25);border-radius:8px">'
-      +'<div style="font-size:14px;font-weight:700;color:#5aaa70;margin-bottom:8px">\ud83d\udc65 '+notFoundNames.length+' nom(s) inconnu(s) \u2014 Nouveaux recrutements ?</div>'
+      +'<div style="font-size:15px;font-weight:700;color:#5aaa70;margin-bottom:4px">\ud83d\udc65 '+notFoundNames.length+' nom(s) non reconnu(s) dans le PDF</div>'
+      +'<div style="font-size:13px;color:#8aca92;margin-bottom:8px;line-height:1.5"><b>Pourquoi ?</b> Ces noms sont dans le PDF mais l\u2019app ne les conna\u00eet pas encore.<br>'
+      +'<b>Que faire ?</b> Cliquez <b>\u2795 Cr\u00e9er</b> pour ajouter l\u2019employ\u00e9. Au prochain import, son planning sera reconnu automatiquement.</div>'
       +'<div style="display:flex;flex-direction:column;gap:6px">'
       +notFoundNames.map(function(n){
         var fam=importFamily||"bj";
         var nEnc=encodeURIComponent(n);
-        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(80,180,80,.06);border:1px solid rgba(80,180,80,.15);border-radius:6px">'
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(80,180,80,.06);border:1px solid rgba(80,180,80,.15);border-radius:6px">'
           +'<span style="font-size:15px;color:#a0e0a0;font-family:monospace;flex:1">'+esc(n)+'</span>'
-          +'<button onclick="createEmpFromImport(\''+esc(n).replace(/'/g,"\\'")+'\',\''+fam+'\')" style="background:rgba(80,180,80,.15);border:1px solid rgba(80,180,80,.4);border-radius:5px;color:#5aaa70;font-size:14px;padding:3px 9px;cursor:pointer;font-weight:700;flex-shrink:0">\u2795 Cr\u00e9er</button>'
+          +'<button onclick="createEmpFromImport(\''+esc(n).replace(/'/g,"\\'")+'\',\''+fam+'\')" style="background:rgba(80,180,80,.15);border:1px solid rgba(80,180,80,.4);border-radius:6px;color:#5aaa70;font-size:14px;padding:6px 12px;cursor:pointer;font-weight:700;flex-shrink:0;min-height:44px">\u2795 Cr\u00e9er</button>'
           +'</div>';
       }).join('')
       +'</div>'
-      +'<div style="margin-top:6px;font-size:13px;color:#6a9870;font-style:italic">Cr\u00e9er l\'employ\u00e9 pour que son planning soit reconnu au prochain import.</div>'
       +'</div>';
     r.innerHTML+=_nfHtml;
   }
@@ -12197,7 +12213,9 @@ function doImport(){
   if(_depSugg&&_depSugg.length>0&&r){
     var _curMoOff=moOff(iy,im);
     var _dsHtml='<div style="margin-top:10px;padding:10px;background:rgba(180,80,20,.08);border:1px solid rgba(180,80,20,.3);border-radius:8px">'
-      +'<div style="font-size:14px;font-weight:700;color:#d08040;margin-bottom:8px">\ud83d\udeb6 '+_depSugg.length+' employ\u00e9(s) absents du planning ce mois \u2014 D\u00e9parts / Retraites ?</div>'
+      +'<div style="font-size:15px;font-weight:700;color:#d08040;margin-bottom:4px">\ud83d\udeb6 '+_depSugg.length+' employ\u00e9(s) absents du planning ce mois</div>'
+      +'<div style="font-size:13px;color:#c0a070;margin-bottom:8px;line-height:1.5"><b>Pourquoi ?</b> Ces employ\u00e9s avaient un planning le mois dernier mais n\u2019apparaissent pas dans cet import.<br>'
+      +'<b>Que faire ?</b> Si l\u2019employ\u00e9 est parti \u2192 <b>Marquer parti</b>. Sinon, ignorez (il est peut-\u00eatre en cong\u00e9 ou dans une autre section du PDF).</div>'
       +'<div style="display:flex;flex-direction:column;gap:6px">'
       +_depSugg.map(function(emp){
         var tcc=tc(emp.team);
@@ -12210,7 +12228,7 @@ function doImport(){
           +'</div>';
       }).join('')
       +'</div>'
-      +'<div style="margin-top:6px;font-size:13px;color:#a07040;font-style:italic">Ces employ\u00e9s avaient un planning le mois pr\u00e9c\u00e9dent mais n\'apparaissent pas dans cet import. V\u00e9rifiez avant de confirmer.</div>'
+      +'<div style="margin-top:6px;font-size:13px;color:#a07040">\ud83d\udca1 <b>Pas s\u00fbr ?</b> Ne faites rien \u2014 l\u2019employ\u00e9 restera actif. Vous pouvez toujours le marquer parti plus tard via la fiche Employ\u00e9s.</div>'
       +'</div>';
     r.innerHTML+=_dsHtml;
   }
