@@ -450,6 +450,7 @@ body.has-login-bg .login-bg{
 </head>
 <body>
 <div id="bgA" class="bg-slide"></div><div id="bgB" class="bg-slide"></div>
+<a href="#content" class="skip-link">Aller au contenu principal</a>
 <div id="app" style="min-height:100vh;background:transparent"></div>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#1e3820;border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:16px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap;max-width:90vw"></div>
 <div id="pk" style="display:none"></div>
@@ -2093,14 +2094,17 @@ function getEP(e){return EP[e.name]||{s:["22/6","19/4","16/3","14/19","20/5","16
 function getDays(y,m){return new Date(y,m+1,0).getDate();}
 function getDow(y,m,d){return new Date(y,m,d).getDay();}
 function lg(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
-function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){
-  // Quota dépassé : avertir l'utilisateur et tenter de libérer de l'espace
-  if(e&&e.name==="QuotaExceededError"){
-    toast("\u26a0\ufe0f Stockage plein — exportez une sauvegarde et supprimez les anciens mois","err");
-    console.error("localStorage QuotaExceededError pour clé:",k);
+function ls(k,v){
+  var _lsOk=true;
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){
+    _lsOk=false;
+    if(e&&e.name==="QuotaExceededError"){
+      toast("\u26a0\ufe0f Stockage plein \u2014 exportez une sauvegarde et supprimez les anciens mois","err");
+      console.error("localStorage QuotaExceededError pour cl\u00e9:",k);
+    } else {console.warn("ls() error:",k,e);}
   }
-}
-fbWrite(k,v);
+  fbWrite(k,v);
+  return _lsOk; // v9.66 : retourne false si quota d\u00e9pass\u00e9 (audit robustesse)
 }
 
 // ── Synchronisation temps réel Firebase ─────────────────────────────────────
@@ -2452,6 +2456,8 @@ function isEmpActive(emp,y,m){
 function teamForMonth(emp,y,m){
   if(!emp)return null;
   var key=y+"-"+m;
+  // v9.66 robustesse : fallback sécurisé si teamHistory corrompu
+  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return emp.team||"?";}
   if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];
   // Chercher le teamHistory le plus récent antérieur à ce mois
   if(emp.teamHistory){
