@@ -2209,8 +2209,14 @@ function _flushImportPending(){
 function fbApplyData(k,v){
   k=fbRestoreKey(k);
   if(!fbShouldSync(k)||v===null||v===undefined)return;
+  // Validation basique du type de données attendu (sécurité)
+  if(k==="cmc_e"&&typeof v!=="object")return;
+  if(k==="cmc_ov"&&typeof v!=="object")return;
+  if(k==="cmc_t"&&typeof v!=="object")return;
+  if(k==="cmc_pw"&&typeof v!=="object")return;
+  if(k==="cmc_chat"&&typeof v!=="object")return;
   // Cloner profondément pour éviter les références partagées avec l'objet Firebase SSE
-  var vc=JSON.parse(JSON.stringify(v));
+  var vc;try{vc=JSON.parse(JSON.stringify(v));}catch(e){console.warn("fbApplyData: JSON invalide pour",k);return;}
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   if(k==="cmc_ov"){A.overrides=vc;}
@@ -5053,7 +5059,14 @@ function _updateClock(){var c=document.getElementById("topClock");if(!c)return;v
 var _clockInt=null;
 function startPresenceHeartbeat(){
   if(_presInt)clearInterval(_presInt);
-  _presInt=setInterval(function(){updatePresence();touchSession();},120000); // toutes les 2 min — renouvelle aussi la session
+  _presInt=setInterval(function(){
+    // Vérifier expiration session (TTL 8h) à chaque heartbeat
+    var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0");
+    if(lastAct>0&&(Date.now()-lastAct)>SESSION_TTL){
+      console.info("Session expirée (heartbeat check).");doLogout();return;
+    }
+    updatePresence();touchSession();
+  },120000); // toutes les 2 min
   updatePresence(); // immédiatement
   // Horloge topbar
   if(_clockInt)clearInterval(_clockInt);
@@ -12391,7 +12404,16 @@ function closePicker(){document.getElementById("pk").style.display="none";docume
 function pc(code){if(!A.pt)return;saveOv(A.pt.eid,A.pt.day,code);closePicker();dc();}
 function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(function(x){return x.id===id;});if(t){t[f]=v;ls("cmc_t",A.teams);}}
 function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(function(x){return x.id===id;});if(e){e.team=team;sav();}}
-function delEmp(id){if(!A.user||A.user.id!==AID)return;A.employees=A.employees.filter(function(e){return e.id!==id;});sav();toast("Employ\u00e9 supprim\u00e9");dc();}
+function delEmp(id){
+  if(!A.user||A.user.id!==AID)return;
+  if(!confirm("Supprimer cet employ\u00e9 d\u00e9finitivement ?"))return;
+  A.employees=A.employees.filter(function(e){return e.id!==id;});
+  // Nettoyage données orphelines (photos, reg, passwords)
+  if(A.reg&&A.reg[id]){delete A.reg[id].customBg;delete A.reg[id];ls("cmc_reg",A.reg);}
+  if(A.passwords&&A.passwords[id]){delete A.passwords[id];ls("cmc_pw",A.passwords);}
+  sav();_audit("emp_delete",AID,id,"","Employ\u00e9 supprim\u00e9");
+  toast("Employ\u00e9 supprim\u00e9");dc();
+}
 function addEmp(){
   if(!A.user||A.user.id!==AID)return;
   var id=(document.getElementById("nid")||{}).value||"";
