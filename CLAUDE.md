@@ -515,6 +515,9 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 18. `max-width` sur `<td>` en table-layout:auto ignoré par les browsers → utiliser un `<div class="nw">` wrapper à l'intérieur du td ❌
 19. `chatSetReply(ts)` sans auto-activer `_chatDm` sur un DM → la réponse part en public au lieu de revenir en privé ❌
 20. Utiliser une variable locale d'une autre fonction vue (ex: `myPl` de `vMonPlanning` dans `vAccueil`) → ReferenceError en production ❌
+21. **Git rebase sans vérification post-rebase** : un rebase peut perdre silencieusement des modifications (règles detectRepoConflicts, blocs HTML dans vDocs, validation post-import). **OBLIGATION** : après TOUT rebase, vérifier avec `grep` que CHAQUE feature ajoutée est encore présente dans le fichier. Liste de contrôle post-rebase : `grep -c "mot_clé_unique_feature"` pour chaque ajout ❌
+22. Données SEED incorrectes sans validation : SEED_APR2026 avait des horaires de travail au lieu de CP/AF pour REVOLLON. **OBLIGATION** : toute donnée SEED doit être vérifiée par `detectRepoConflicts()` — la règle 4 (horaire_dans_absence) attrape ce type d'erreur automatiquement ❌
+23. Audit "simple" au lieu d'audit "général expert" : un audit qui vérifie seulement la syntaxe JS n'est PAS un audit expert. **OBLIGATION** : utiliser la checklist complète (21 points : 8 flux utilisateur + 5 flux admin + 5 sécurité + 3 données) à CHAQUE audit final ❌
 
 ---
 
@@ -882,6 +885,32 @@ Branche feature → commit → push → PR (si demandé) → merge main → GitH
 - Jamais de push direct sur `main`
 - Un commit = un changement cohérent (pas de méga-commits multi-fonctions — erreur #17)
 - Vérifier le déploiement GitHub Pages après merge
+
+### Phase 5b — Vérification post-rebase/merge (OBLIGATOIRE — erreur #21)
+
+> ⚠️ Un rebase peut PERDRE SILENCIEUSEMENT du code. Après TOUT rebase ou merge avec conflits :
+
+```bash
+# 1. Zéro marqueurs de conflit
+grep -c "^<<<<<<\|^======\|^>>>>>>" index.html CLAUDE.md sw.js
+
+# 2. Syntaxe JS valide
+node -e "..." && node --check /tmp/test.js
+
+# 3. Vérifier CHAQUE feature ajoutée dans cette session
+grep -c "mot_cle_unique_1" index.html  # Doit être > 0
+grep -c "mot_cle_unique_2" index.html  # Doit être > 0
+# ... pour CHAQUE ajout
+
+# 4. Les 5 règles detectRepoConflicts
+grep -o "horaire_dans_absence\|absence_longue\|repos_insuffisant\|max_jours_consec\|donnees_manquantes" index.html | sort -u | wc -l
+# Doit retourner 5
+
+# 5. Validation post-import
+grep -c "_postConflicts" index.html  # Doit être > 0
+
+# Si un grep retourne 0 → le code a été perdu → restaurer AVANT de push
+```
 
 ---
 
