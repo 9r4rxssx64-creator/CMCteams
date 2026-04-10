@@ -19,7 +19,7 @@
 <link rel="dns-prefetch" href="https://api.anthropic.com">
 <link rel="dns-prefetch" href="https://api.emailjs.com">
 <!-- CSP v9.45 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org; frame-src data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org; frame-src data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -303,6 +303,12 @@ body:not(.has-accueil-bg) #bnav{
 
 /* === INPUTS === */
 .inp{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:13px 16px;color:#e8f8e0;outline:none;width:100%}
+/* v9.62 : Fix iOS auto-zoom au focus — force font-size 16px sur les devices tactiles uniquement
+   (laisse les admins desktop avec leurs inputs compacts) */
+@media (pointer:coarse){
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]):not([type="range"]),
+  select,textarea{font-size:16px!important}
+}
 .inp:focus{border-color:rgba(201,162,39,.7);box-shadow:0 0 0 2px rgba(201,162,39,.12)}
 select.inp{-webkit-appearance:none}
 
@@ -348,33 +354,38 @@ body:not(.has-accueil-bg) .card{background:linear-gradient(145deg,rgba(40,70,44,
 .chat-msgs.multi .chat-bg-layer.l3{animation-delay:-20s}
 .chat-msgs > *{position:relative;z-index:1}
 @keyframes chatBgFade{0%,33%{opacity:.42}50%,83%{opacity:0}100%{opacity:.42}}
-.msg-me{align-self:flex-end;background:linear-gradient(135deg,rgba(220,170,40,.85),rgba(180,130,20,.78));backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(255,220,90,.55);border-radius:16px 16px 4px 16px;padding:7px 13px;max-width:82%;position:relative;animation:msgIn .3s ease-out;box-shadow:0 3px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.18)}
-.msg-ot{align-self:flex-start;background:linear-gradient(135deg,rgba(245,250,240,.96),rgba(225,238,220,.93));backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(255,255,255,.4);border-radius:16px 16px 16px 4px;padding:7px 13px;max-width:82%;position:relative;animation:msgIn .3s ease-out;box-shadow:0 3px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.55);color:#0a1a0c}
-.msg-ot .msg-text{color:#0a1a0c}
-.msg-me .msg-text{color:#0a1408;font-weight:600}
+/* === BULLES CHAT v9.62 — fond quasi-transparent, textes bien soutenus === */
+/* Philosophie : la photo de fond reste TRÈS visible, mais le texte est parfaitement lisible
+   grâce à (1) backdrop-filter blur fort + saturate, (2) text-shadow sombre puissant,
+   (3) font-weight élevé, (4) couleurs claires contrastées. Fonctionne sur fond clair OU sombre. */
+.msg-me{align-self:flex-end;background:rgba(201,162,39,.18);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,220,90,.45);border-radius:16px 16px 4px 16px;padding:8px 14px;max-width:82%;position:relative;animation:msgIn .3s ease-out;box-shadow:0 4px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22)}
+.msg-ot{align-self:flex-start;background:rgba(255,255,255,.09);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.22);border-radius:16px 16px 16px 4px;padding:8px 14px;max-width:82%;position:relative;animation:msgIn .3s ease-out;box-shadow:0 4px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
 @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg-name{font-size:13px;font-weight:800;margin-bottom:1px;letter-spacing:.3px}
-.msg-text{font-size:15px;color:#e0f0d8;line-height:1.45;word-break:break-word}
-.msg-ts{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
-/* Lisibilit\u00e9 sur bulles claires (msg-ot blanc, msg-me dor\u00e9) */
-.msg-ot .msg-ts{color:rgba(10,26,12,.55)}
-.msg-ot .msg-name{text-shadow:none;filter:brightness(.55) saturate(1.3)}
-.msg-ot .msg-reply-q{background:rgba(10,26,12,.08);border-left-color:rgba(10,26,12,.3);color:rgba(10,26,12,.7)}
-.msg-ot .chat-act-btn{color:rgba(10,26,12,.45)}
-.msg-ot .chat-act-btn:hover{color:rgba(10,26,12,.9)}
-.msg-me .msg-ts{color:rgba(10,20,8,.55)}
-.msg-me .msg-name{color:rgba(10,20,8,.85)!important;filter:none}
-.msg-me .chat-act-btn{color:rgba(10,20,8,.55)}
+/* Texte : blanc avec text-shadow sombre puissant → lisible sur tout fond (clair/sombre/photo) */
+.msg-text{font-size:15px;color:#ffffff;font-weight:600;line-height:1.45;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.9),0 1px 4px rgba(0,0,0,.55)}
+.msg-me .msg-text{color:#ffffff;font-weight:700}
+.msg-ot .msg-text{color:#ffffff;font-weight:600}
+/* Nom auteur : coloré pour distinguer (moi/autre/DM) + text-shadow fort */
+.msg-name{font-size:13px;font-weight:800;margin-bottom:2px;letter-spacing:.3px;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 6px rgba(0,0,0,.4)}
+.msg-me .msg-name{color:#ffdc40}
+.msg-ot .msg-name{color:#a0e080}
+.msg-dm .msg-name{color:#d0a0ff}
+/* Timestamp : blanc discret avec text-shadow */
+.msg-ts{font-size:11px;color:rgba(255,255,255,.82);margin-top:3px;text-shadow:0 1px 2px rgba(0,0,0,.85);font-weight:500}
+/* Reply quoted : fond noir très transparent + bordure dorée + texte clair */
+.msg-reply-q{background:rgba(0,0,0,.25);border-left:2px solid rgba(255,220,90,.6);border-radius:4px;padding:4px 8px;margin-bottom:5px;font-size:13px;color:rgba(255,255,255,.88);text-shadow:0 1px 2px rgba(0,0,0,.8);display:block;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .chat-bar{padding:8px 10px;border-top:1px solid rgba(201,162,39,.1);display:flex;gap:6px;background:linear-gradient(0deg,#0a1a0c,#122418);flex-shrink:0;align-items:center}
-.chat-bar .inp{border-radius:20px;padding:10px 16px;font-size:15px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-.msg-dm{border-color:rgba(180,140,255,.7)!important;background:linear-gradient(135deg,rgba(170,130,230,.88),rgba(130,90,200,.82))!important;color:#fff}
-.msg-dm .msg-text{color:#fff;font-weight:500}
-.msg-dm-badge{font-size:11px;background:rgba(140,80,220,.2);color:#b080ff;border-radius:8px;padding:1px 6px;margin-left:4px;vertical-align:middle;font-weight:600}
-.msg-reply-q{background:rgba(255,255,255,.04);border-left:2px solid rgba(201,162,39,.4);border-radius:4px;padding:3px 8px;margin-bottom:4px;font-size:13px;color:#8aaa80;display:block}
-.chat-status-bar{padding:6px 12px;border-top:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0;background:rgba(0,0,0,.2)}
-.chat-datesep{text-align:center;font-size:12px;color:rgba(255,255,255,.8);background:rgba(0,0,0,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:12px;padding:2px 12px;margin:10px auto 6px;user-select:none;pointer-events:none;letter-spacing:1px;display:table;text-shadow:0 1px 2px rgba(0,0,0,.5)}
-.chat-act-btn{background:none;border:none;cursor:pointer;font-size:16px;color:rgba(255,255,255,.25);padding:0;line-height:1;min-width:44px;min-height:44px;border-radius:50%;transition:color .2s,background .2s;display:inline-flex;align-items:center;justify-content:center}
-.chat-act-btn:active{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)}
+.chat-bar .inp{border-radius:20px;padding:10px 16px;font-size:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+/* DM : violet quasi-transparent + blur + texte blanc soutenu */
+.msg-dm{border-color:rgba(180,140,255,.5)!important;background:rgba(160,100,230,.22)!important;backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
+.msg-dm .msg-text{color:#ffffff;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.9),0 1px 4px rgba(0,0,0,.55)}
+.msg-dm-badge{font-size:11px;background:rgba(160,100,230,.3);color:#e0c0ff;border-radius:8px;padding:2px 7px;margin-left:4px;vertical-align:middle;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.8);border:1px solid rgba(180,140,255,.35)}
+.chat-status-bar{padding:6px 12px;border-top:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0;background:rgba(0,0,0,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.chat-datesep{text-align:center;font-size:12px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:3px 14px;margin:10px auto 6px;user-select:none;pointer-events:none;letter-spacing:1px;display:table;text-shadow:0 1px 2px rgba(0,0,0,.9)}
+/* Boutons d'action chat : TOUJOURS visibles (pas hover-only) → fonctionnalité intuitive mobile */
+.chat-act-btn{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.15);cursor:pointer;font-size:15px;color:rgba(255,255,255,.85);padding:0;line-height:1;min-width:34px;min-height:34px;border-radius:50%;transition:color .18s,background .18s,transform .15s;display:inline-flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.chat-act-btn:hover{background:rgba(255,220,90,.25);color:#ffdc40;border-color:rgba(255,220,90,.5)}
+.chat-act-btn:active{background:rgba(255,220,90,.35);color:#ffdc40;transform:scale(.92)}
 .nbadge-dm{background:#4a2880!important;color:#c090ff!important}
 
 /* === PRÉSENCE DOT === */
@@ -6179,7 +6190,7 @@ function vChat(){
   if(A.chatSearchOpen||searchQ){
     h+='<div style="padding:6px 10px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.12);flex-shrink:0;display:flex;gap:6px;align-items:center">'
       +'<input id="chatSearchIn" class="inp" placeholder="Rechercher dans les messages..." value="'+esc(searchQ)+'"'
-      +' oninput="searchInput(\'chatSearchQ\',this.value,\'chatSearchIn\')" style="flex:1;padding:7px 10px;font-size:14px;background:rgba(255,255,255,.04)">'
+      +' oninput="searchInput(\'chatSearchQ\',this.value,\'chatSearchIn\')" style="flex:1;padding:8px 10px;font-size:16px;background:rgba(255,255,255,.04)">'
       +(searchQ?'<button onclick="A.chatSearchQ=\'\';dc()" style="background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 9px;font-size:12px;color:#7aaa80;cursor:pointer">\u2715</button>':'')
       +'<button onclick="A.chatSearchOpen=false;A.chatSearchQ=\'\';dc()" style="background:transparent;border:none;color:#7aaa80;font-size:16px;cursor:pointer;padding:5px 8px">\u2193</button>'
       +'</div>';
