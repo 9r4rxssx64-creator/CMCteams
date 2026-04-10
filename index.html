@@ -1678,7 +1678,7 @@ function empLabelHtml(emp,isMe){
     n+=' <span title="55+ ans \u2014 max '+ROTATION.senior.maxWork+'min (ou '+ROTATION.senior.maxWorkConsent+'min avec accord) \u00b7 pause '+ROTATION.senior.pause+'min obligatoire" style="display:inline-block;font-size:11px;color:#ffce3a;text-shadow:0 0 3px rgba(255,206,58,.6);margin-left:2px;vertical-align:middle">\u2605</span>';
   }
   if(gf){
-    n+=' <span title="Groupe ferm\u00e9 \u2014 noyau historique SBM (pr\u00e9-1993)" style="display:inline-block;font-size:10px;color:#d09060;background:rgba(160,104,64,.18);border:1px solid rgba(160,104,64,.45);border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;font-weight:700;letter-spacing:.3px">F</span>';
+    n+=' <span title="Groupe ferm\u00e9 \u2014 noyau historique SBM (pr\u00e9-1993)" style="display:inline-block;font-size:11px;color:#d09060;background:rgba(160,104,64,.18);border:1px solid rgba(160,104,64,.45);border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;font-weight:700;letter-spacing:.3px">F</span>';
   }
   return n;
 }
@@ -3208,12 +3208,12 @@ function _renderDocCard(d,opts){
   var out='<div style="background:rgba(3,10,4,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+catInfo.col+'30;border-radius:10px;overflow:hidden;display:flex;flex-direction:column">'
     +'<div onclick="previewDoc(\''+esc(d.id)+'\')" style="height:100px;background:'+(isImg?'url(&quot;'+_safeUrl(d.dataUrl)+'&quot;) center/cover':catInfo.col+"0c")+';cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative">'
     +(isImg?"":'<div style="font-size:40px;color:'+catInfo.col+';opacity:.6">'+(d.mime.indexOf("pdf")>=0?"\ud83d\udcd5":d.mime.indexOf("word")>=0||/\.docx?$/.test(d.name)?"\ud83d\udcc4":d.mime.indexOf("sheet")>=0||d.mime.indexOf("excel")>=0||/\.xlsx?$/.test(d.name)?"\ud83d\udcca":"\ud83d\udcc4")+'</div>')
-    +'<div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:'+catInfo.col+';border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700">'+catInfo.lb.split(" ")[0]+'</div>'
-    +(d.shared?'<div style="position:absolute;top:4px;right:4px;background:rgba(58,138,80,.75);color:#d8f4de;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:800;display:flex;align-items:center;gap:3px">\ud83d\udc65 Partag\u00e9</div>':(o.adminMode?'<div style="position:absolute;top:4px;right:4px;background:rgba(60,60,60,.7);color:#aab8a4;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700">\ud83d\udd12 Priv\u00e9</div>':''))
+    +'<div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:'+catInfo.col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700">'+catInfo.lb.split(" ")[0]+'</div>'
+    +(d.shared?'<div style="position:absolute;top:4px;right:4px;background:rgba(58,138,80,.75);color:#d8f4de;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;display:flex;align-items:center;gap:3px">\ud83d\udc65 Partag\u00e9</div>':(o.adminMode?'<div style="position:absolute;top:4px;right:4px;background:rgba(60,60,60,.7);color:#aab8a4;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700">\ud83d\udd12 Priv\u00e9</div>':''))
     +'</div>'
     +'<div style="padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:4px">'
     +'<div style="font-size:12px;font-weight:700;color:#c0d8c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(d.name)+'">'+esc(d.name)+'</div>'
-    +'<div style="font-size:10px;color:#5a7060;display:flex;justify-content:space-between">'
+    +'<div style="font-size:11px;color:#5a7060;display:flex;justify-content:space-between">'
     +'<span>'+sizeTxt+'</span><span>'+dateTxt+'</span>'
     +'</div>'
     +'<div style="display:flex;gap:4px;margin-top:4px">'
@@ -5831,7 +5831,7 @@ function _hrKpi(icon,num,label,col){
   return '<div style="padding:8px 6px;background:'+col+'0c;border:1px solid '+col+'28;border-radius:8px;text-align:center">'
     +'<div style="font-size:15px;margin-bottom:2px">'+icon+'</div>'
     +'<div style="font-size:20px;font-weight:800;color:'+col+';line-height:1">'+num+'</div>'
-    +'<div style="font-size:10px;color:#8aaa88;text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+label+'</div>'
+    +'<div style="font-size:11px;color:#8aaa88;text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+label+'</div>'
     +'</div>';
 }
 function vAccueil(){
@@ -5923,7 +5923,7 @@ function vAccueil(){
     h+='<div style="background:linear-gradient(145deg,rgba(201,162,39,.08),rgba(40,70,44,.35));border:1px solid rgba(201,162,39,.2);border-radius:14px;padding:12px 14px;margin-bottom:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">'
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'
       +'<span style="font-size:11px;color:#c9a227;font-weight:800;letter-spacing:1.5px;text-transform:uppercase">\ud83d\udc51 Tableau de bord RH</span>'
-      +'<span style="font-size:10px;color:#7a8a70;margin-left:auto">Aujourd\u2019hui</span>'
+      +'<span style="font-size:11px;color:#7a8a70;margin-left:auto">Aujourd\u2019hui</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">'
       +_hrKpi("\ud83d\udcbc",_working.length,"En service","#5aaa70")
@@ -6878,8 +6878,9 @@ function vStats(){
 // Table des shifts à durée spécifique (coupures, exceptions)
 // Par défaut : calcul continu (fin - début). Ici : overrides pour les coupures.
 var CODE_HOURS={
-  "16/3":9,   // Service coupure : 16h-20h (4h) + 22h-3h (5h)
-  "16/3*":9
+  "16/3":9,"16/3*":9,   // Coupure : 16h-20h (4h) + 22h-3h (5h) = 9h
+  "22/6":8,"19/4":9,"20/5":9,"16/22":6,"14/19":5,"15/19":4,"14/20":6,
+  "20/5*":9,"19/4*":9,"16/22*":6  // CDP : mêmes heures que les shifts de base
 };
 function codeHours(code){
   if(!code)return 0;
@@ -7051,7 +7052,7 @@ function renderEmpHistory(empId){
       +'<div style="font-size:12px;color:#c0d8a8;font-weight:700">'+act+'</div>'
       +(change?'<div style="font-size:11px;color:#7aaa80;margin-top:2px;word-break:break-word">'+change+'</div>':"")
       +'</div>'
-      +'<div style="font-size:10px;color:#4a6040;font-family:monospace;text-align:right;flex-shrink:0;white-space:nowrap">'+dateStr+'</div>'
+      +'<div style="font-size:11px;color:#4a6040;font-family:monospace;text-align:right;flex-shrink:0;white-space:nowrap">'+dateStr+'</div>'
       +'</div>';
   });
   if(entries.length>30){
@@ -8101,12 +8102,15 @@ function vConvention(){
         // Mises + Paiement + Lieu (toujours visible)
         h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'
           +'<div style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px">'
-          +'<div style="font-size:10px;color:'+catCol+';text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">\ud83d\udcb0 Mises</div>'
-          +'<div style="font-size:12px;color:#c0d8a8;line-height:1.4">'+esc(j.mises)+'</div></div>'
+          +'<div style="font-size:11px;color:'+catCol+';text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">\ud83d\udcb0 Mises</div>'
+          +'<div style="font-size:12px;color:#c0d8a8;line-height:1.4">'+esc(j.mises)+'</div>'
+          +'</div>'
           +'<div style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px">'
-          +'<div style="font-size:10px;color:'+catCol+';text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">\ud83c\udfc6 Paiement</div>'
-          +'<div style="font-size:12px;color:#c0d8a8;line-height:1.4">'+esc(j.paiement)+'</div></div></div>'
-          +'<div style="margin-top:8px;padding:8px 10px;background:rgba(201,162,39,.04);border-left:2px solid '+catCol+';border-radius:4px">'
+          +'<div style="font-size:11px;color:'+catCol+';text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">\ud83c\udfc6 Paiement</div>'
+          +'<div style="font-size:12px;color:#c0d8a8;line-height:1.4">'+esc(j.paiement)+'</div>'
+          +'</div>'
+          +'</div>'
+          +'<div style="margin-top:10px;padding:8px 10px;background:rgba(201,162,39,.04);border-left:2px solid '+catCol+';border-radius:4px">'
           +'<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">\ud83d\udccd Lieu</div>'
           +'<div style="font-size:12px;color:#c9a227">'+esc(j.lieu)+'</div></div>'
           +'</div>';
@@ -9603,8 +9607,8 @@ function detectRepoConflicts(y,m){
       if(c==="R"||c==="RH")totalRepo++;
       else if(/^\d/.test(c))totalWork++;
     }
-    // R\u00e8gle 1 : min 10j repos / 6 semaines = ~1.67/semaine en moyenne
-    if(totalWork>0&&totalRepo<Math.floor(daysInMonth/8)){
+    // Règle 1 : Convention SBM art.17.5 — min 10j repos / 6 semaines ≈ 5j repos / mois
+    if(totalWork>0&&totalRepo<Math.ceil(daysInMonth/7)){
       conflicts.push({emp:emp,type:"repos_insuffisant",msg:emp.name+" : seulement "+totalRepo+" repos sur "+daysInMonth+"j ("+totalWork+" jours travaill\u00e9s)",severity:"high"});
     }
     // R\u00e8gle 2 : d\u00e9tecter 7+ jours cons\u00e9cutifs sans repos
@@ -9988,7 +9992,7 @@ function vEmps(){
               :'<div style="width:48px;height:32px;border-radius:6px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.3);font-size:14px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
             +'<div style="flex:1;min-width:0">'
             +'<div style="font-size:12px;color:#c9a227;font-weight:700">Fond d\u2019\u00e9cran perso</div>'
-            +'<div style="font-size:10px;color:#7a8a70">'+(_bg?Math.round(_bg.length/1024)+' KB \u2014 cet employ\u00e9 verra ce fond au lieu du global':'Aucun \u2014 utilise le fond global')+'</div>'
+            +'<div style="font-size:11px;color:#7a8a70">'+(_bg?Math.round(_bg.length/1024)+' KB \u2014 cet employ\u00e9 verra ce fond au lieu du global':'Aucun \u2014 utilise le fond global')+'</div>'
             +'</div>'
             +'<button onclick="event.stopPropagation();adminSetEmpBg(\''+emp.id+'\')" style="background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.35);border-radius:5px;color:#5aaa70;font-size:11px;padding:4px 8px;cursor:pointer;font-weight:700;flex-shrink:0">'+(_bg?'\ud83d\udd04':'\ud83d\udcf7')+'</button>'
             +(_bg?'<button onclick="event.stopPropagation();adminRemoveEmpBg(\''+emp.id+'\')" style="background:rgba(160,40,40,.1);border:1px solid rgba(160,40,40,.3);border-radius:5px;color:#c06060;font-size:11px;padding:4px 6px;cursor:pointer;flex-shrink:0">\u2715</button>':'')
@@ -10180,16 +10184,35 @@ function vEmps(){
                 ${_rPrenom?'<div style="font-size:13px;color:#5aaa70;margin-top:2px">\u2705 Import PDF utilisera ce pr\u00e9nom pour lever les ambigu\u00eft\u00e9s d\'homonymes</div>':'<div style="font-size:13px;color:#7aaa80;margin-top:2px">Aide l\'import \u00e0 reconna\u00eetre cet employ\u00e9 en cas d\'homonymes</div>'}
               </div>
             </div>
-            ${(_r.adresse||_r.dateNaissance||_r.usbm||_r.poste)?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.1)">
-              <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\ud83d\udcc4 Fiche renseignement (remplie par l\u2019employ\u00e9)</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:13px">
-                ${_r.adresse?`<div style="grid-column:1/-1"><span style="color:rgba(255,255,255,.4)">Adresse :</span> ${esc(_r.adresse)}</div>`:""}
-                ${_r.dateNaissance?`<div><span style="color:rgba(255,255,255,.4)">Naissance :</span> ${esc(_r.dateNaissance)}</div>`:""}
-                ${_r.usbm?`<div><span style="color:rgba(255,255,255,.4)">USM :</span> ${esc(_r.usbm)}</div>`:""}
-                ${_r.poste?`<div style="grid-column:1/-1"><span style="color:rgba(255,255,255,.4)">Poste :</span> ${esc(_r.poste)}</div>`:""}
-                ${_r.updatedAt?`<div style="grid-column:1/-1;color:rgba(255,255,255,.25);font-size:12px">Mis \u00e0 jour le ${new Date(_r.updatedAt).toLocaleDateString("fr-FR")}</div>`:""}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.1)">
+              <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\ud83d\udcc4 Fiche renseignement (modifiable par admin)</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div>
+                  <div style="font-size:12px;color:#7aaa80;margin-bottom:3px">Adresse</div>
+                  <input id="reg_adresse_${emp.id}" class="inp" style="padding:6px 8px;font-size:14px;width:100%" placeholder="Adresse compl\u00e8te" value="${esc(_r.adresse||"")}"
+                    onblur="_adminSetRegSilent('${emp.id}','adresse',this.value)"
+                    onkeydown="if(event.key==='Enter'){adminSetReg('${emp.id}','adresse',this.value);}">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                  <div>
+                    <div style="font-size:12px;color:#7aaa80;margin-bottom:3px">Date de naissance</div>
+                    <input id="reg_dateNaissance_${emp.id}" type="date" class="inp" style="padding:5px 7px;font-size:13px;width:100%" value="${esc(_r.dateNaissance||"")}"
+                      onchange="_adminSetRegSilent('${emp.id}','dateNaissance',this.value)">
+                  </div>
+                  <div>
+                    <div style="font-size:12px;color:#7aaa80;margin-bottom:3px">N\u00b0 USM</div>
+                    <input id="reg_usbm_${emp.id}" class="inp" style="padding:6px 8px;font-size:13px;width:100%" placeholder="Ex: 12345" value="${esc(_r.usbm||"")}"
+                      onblur="_adminSetRegSilent('${emp.id}','usbm',this.value)">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:12px;color:#7aaa80;margin-bottom:3px">Poste / Fonction</div>
+                  <input id="reg_poste_${emp.id}" class="inp" style="padding:6px 8px;font-size:14px;width:100%" placeholder="Ex: Croupier niveau 3" value="${esc(_r.poste||"")}"
+                    onblur="_adminSetRegSilent('${emp.id}','poste',this.value)">
+                </div>
+                ${_r.updatedAt?`<div style="font-size:12px;color:rgba(255,255,255,.25)">Mis \u00e0 jour le ${new Date(_r.updatedAt).toLocaleDateString("fr-FR")}</div>`:""}
               </div>
-            </div>`:""}
+            </div>
             <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.1)">
               <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcc5 Donn\u00e9es RH (admin)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
@@ -10538,6 +10561,10 @@ function adminSaveAllFields(id){
     {field:"prenom",inputId:"reg_prenom_"+id},
     {field:"nom",inputId:"reg_nom_"+id},
     {field:"email",inputId:"reg_email_"+id},
+    {field:"adresse",inputId:"reg_adresse_"+id},
+    {field:"dateNaissance",inputId:"reg_dateNaissance_"+id},
+    {field:"usbm",inputId:"reg_usbm_"+id},
+    {field:"poste",inputId:"reg_poste_"+id},
     {field:"dateEntreeSbm",inputId:"reg_dateSbm_"+id},
     {field:"dateEntreeJeux",inputId:"reg_dateJeux_"+id}
   ];
