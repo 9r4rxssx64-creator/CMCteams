@@ -5650,21 +5650,39 @@ function sbmLogo(size){
 // Couleurs officielles : 5€ rouge, 25€ vert, 100€ noir, 500€ violet,
 // 1000€ rose, 2500€ bleu marine. Plaques rectangulaires dorées.
 // ═══════════════════════════════════════════════════════════════════════
-var CHIP_COLORS={
-  1:  {bg:"#f0f0f0",fg:"#1a1a1a",rim:"#d0d0d0",spot:"#ffffff",name:"blanc"},
-  5:  {bg:"#c82020",fg:"#ffffff",rim:"#a01818",spot:"#ffffff",name:"rouge"},
-  10: {bg:"#1848a0",fg:"#ffffff",rim:"#103880",spot:"#ffffff",name:"bleu"},
-  25: {bg:"#1a7a30",fg:"#ffffff",rim:"#146020",spot:"#ffffff",name:"vert"},
-  100:{bg:"#1a1a1a",fg:"#ffffff",rim:"#333333",spot:"#c9a227",name:"noir"},
-  500:{bg:"#7030a0",fg:"#ffffff",rim:"#5a2080",spot:"#e0c050",name:"violet"},
-  1000:{bg:"#d060a0",fg:"#ffffff",rim:"#b04880",spot:"#ffffff",name:"rose"},
+// Deux familles de jetons au Casino de Monte-Carlo (source : SBM officiel)
+// 1) "Jeux Am\u00e9ricains" (BJ, Craps, Roulette Am\u00e9ricaine) : jetons ronds color\u00e9s
+// 2) "Jeux Europ\u00e9ens" (Punto Banco, Roulette Fran\u00e7aise/Anglaise, 30-40) : jetons + plaques SBM
+var CHIP_AMERICAINS={
+  1:   {bg:"#f0f0f0",fg:"#1a1a1a",rim:"#d0d0d0",spot:"#c0c0c0",name:"blanc"},
+  5:   {bg:"#c82020",fg:"#ffffff",rim:"#a01818",spot:"#ffffff",name:"rouge"},
+  10:  {bg:"#1848a0",fg:"#ffffff",rim:"#103880",spot:"#ffffff",name:"bleu"},
+  25:  {bg:"#1a7a30",fg:"#ffffff",rim:"#146020",spot:"#ffffff",name:"vert"},
+  100: {bg:"#1a1a1a",fg:"#ffffff",rim:"#333333",spot:"#c9a227",name:"noir"},
+  500: {bg:"#7030a0",fg:"#ffffff",rim:"#5a2080",spot:"#e0c050",name:"violet"},
+  1000:{bg:"#e8a820",fg:"#1a1a1a",rim:"#c88810",spot:"#ffffff",name:"jaune"},
   2500:{bg:"#102860",fg:"#c9a227",rim:"#0a1e50",spot:"#c9a227",name:"marine"}
 };
+var CHIP_EUROPEENS={
+  1:   {bg:"#d8c8a0",fg:"#3a2a10",rim:"#c0a870",spot:"#f0e0b0",name:"ivoire"},
+  2:   {bg:"#c9a227",fg:"#1a1408",rim:"#a88020",spot:"#f0d860",name:"or"},
+  5:   {bg:"#c82828",fg:"#ffffff",rim:"#a01818",spot:"#f0c050",name:"rouge"},
+  10:  {bg:"#2060b0",fg:"#ffffff",rim:"#1848a0",spot:"#e0c050",name:"bleu"},
+  20:  {bg:"#d06820",fg:"#ffffff",rim:"#b05010",spot:"#f0d860",name:"orange"},
+  50:  {bg:"#1a7a30",fg:"#ffffff",rim:"#146020",spot:"#f0d060",name:"vert"},
+  100: {bg:"#1a1a1a",fg:"#c9a227",rim:"#333333",spot:"#c9a227",name:"noir"},
+  500: {bg:"#d060a0",fg:"#ffffff",rim:"#b04880",spot:"#f0d060",name:"rose"},
+  1000:{bg:"#8040c0",fg:"#ffffff",rim:"#6030a0",spot:"#f0d060",name:"violet"}
+};
+// Compat : CHIP_COLORS = fusion (fallback pour renderChip si pas de famille specifi\u00e9e)
+var CHIP_COLORS=Object.assign({},CHIP_AMERICAINS);
 
 // Render un jeton SVG (chip casino) — taille en px, label optionnel
-function renderChip(value,size,label){
+// famille: "am" (Am\u00e9ricains BJ/Craps) ou "eu" (Europ\u00e9ens PB/Roulette) — d\u00e9faut "am"
+function renderChip(value,size,label,famille){
   var s=size||48;
-  var c=CHIP_COLORS[value]||CHIP_COLORS[100];
+  var palette=(famille==="eu")?CHIP_EUROPEENS:CHIP_AMERICAINS;
+  var c=palette[value]||CHIP_AMERICAINS[value]||CHIP_AMERICAINS[100];
   var vTxt=label||String(value);
   var nSpots=16;
   var svg='<svg viewBox="0 0 100 100" width="'+s+'" height="'+s+'" style="vertical-align:middle;flex-shrink:0">';
@@ -5690,8 +5708,9 @@ function renderChip(value,size,label){
   // Valeur centrale
   var fSize=vTxt.length<=2?24:vTxt.length<=3?18:vTxt.length<=4?14:11;
   svg+='<text x="50" y="'+(vTxt.length<=3?56:55)+'" text-anchor="middle" font-size="'+fSize+'" font-weight="800" fill="'+c.fg+'" font-family="Georgia,serif" letter-spacing="1">'+esc(vTxt)+'</text>';
-  // Texte "CMC" en bas
-  svg+='<text x="50" y="70" text-anchor="middle" font-size="7" font-weight="700" fill="'+c.fg+'" font-family="system-ui" letter-spacing="2" opacity=".5">CMC</text>';
+  // Texte famille en bas (AM = Am\u00e9ricains, SBM = Europ\u00e9ens)
+  var _famTxt=(famille==="eu")?"SBM":"CMC";
+  svg+='<text x="50" y="70" text-anchor="middle" font-size="7" font-weight="700" fill="'+c.fg+'" font-family="system-ui" letter-spacing="2" opacity=".5">'+_famTxt+'</text>';
   svg+='</svg>';
   return svg;
 }
@@ -5808,8 +5827,11 @@ function vAccueil(){
     +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:4px;text-transform:uppercase;margin-bottom:4px">Principaut\u00e9 de Monaco</div>'
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;letter-spacing:3px;text-shadow:0 0 20px rgba(201,162,39,.3)">\u2666 CMC Teams \u2666</div>'
     +'<div style="font-size:12px;color:rgba(201,162,39,.4);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo</div>'+sbmLogo(50)
-    +'<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;opacity:.6">'
-    +renderChip(5,22)+renderChip(25,26)+renderChip(100,30)+renderChip(500,26)+renderChip(1000,22)
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;opacity:.55">'
+    +renderChip(5,20,null,"am")+renderChip(25,24,null,"am")+renderChip(100,28,null,"am")+renderChip(500,24,null,"am")+renderChip(1000,20,null,"am")
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;opacity:.45">'
+    +renderChip(5,18,null,"eu")+renderChip(50,22,null,"eu")+renderChip(100,26,null,"eu")+renderChip(500,22,null,"eu")+renderChip(1000,18,null,"eu")
     +'</div><div style="height:4px"></div>'
     +'<div style="font-size:14px;color:#7aaa80;letter-spacing:1px;margin-top:8px">'+dateTxt+'</div>'
     +'</div>';
