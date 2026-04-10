@@ -1,36 +1,35 @@
-# 📌 Mémo de reprise — 2026-04-10 (v9.64 livrée)
+# Mémo de reprise — 2026-04-10 (v9.65 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 
 ---
 
-## 📊 Dernière version stable
+## Dernière version stable
 
-**`APP_VER = "v9.64"`** — branche `claude/find-casino-project-vcUDZ` + `main`
-
----
-
-## ✅ Livré cette session
-
-### v9.62 — Multi-axe
-Bulles quasi-transparentes + fix iOS zoom + CSP + upload modéré + PLANS CMC/CDP + IA enrichie + vConvention Lieux + galerie 75 photos + 15 tests
-
-### v9.63 — Tool use IA (28 outils)
-23 outils lecture + 5 outils admin (guard AID) — l'IA interroge et agit sur TOUTE l'app en temps réel
-
-### v9.64 — JEUX_SBM + vConvention Jeux enrichi
-- JEUX_SBM : 6 jeux Formation SBM 2016 (BJ, RA, Craps, PB, THU, TCP+procédures)
-- vConvention onglet Jeux : toggle Express / Formation SBM détaillée
-- 2 outils IA supplémentaires : get_game_rules_sbm, search_game_rules
+**`APP_VER = "v9.65"`** — 13 248 lignes, 972 KB — branche `main`
 
 ---
 
-## 🔲 Prochaine version (v9.65+)
+## Livré cette session (v9.62 → v9.65)
 
-- **LOI_1103 + OS_8929 + AM_88_384** : cadre légal monégasque complet
-- Nouveaux jeux manquants (rmc, ram, tq, boule, etc.)
-- Roulette Monte-Carlo (AM 2019-819, 39 cases)
+| Version | Contenu |
+|---------|---------|
+| **v9.62** | Bulles quasi-transparentes, iOS zoom fix, CSP élargie, upload modéré, PLANS CMC/CDP (9+4), galerie 75 photos, IA enrichie max_tokens 4096, vConvention Lieux, 15 tests |
+| **v9.63** | 28 outils IA tool use custom (23 lecture + 5 admin) — l'IA interroge TOUTE l'app en temps réel |
+| **v9.64** | JEUX_SBM 6 jeux Formation SBM 2016, vConvention toggle Express/SBM, +2 outils IA |
+| **v9.65** | Cadre légal monégasque (LOI_1103, OS_8929, AM_88_384), vConvention onglet Loi, +2 outils IA (total 30), 16 prompts IA enrichis, buildIASystemPrompt cadre légal |
+
+**Total : 30 outils IA, 7 onglets vConvention, 75 photos galerie, ~2800 lignes ajoutées.**
 
 ---
 
-*Dernière mise à jour : 2026-04-10 — v9.64*
+## Prochaine version (v9.66+)
+
+- Roulette Monte-Carlo (AM 2019-819, 39 cases) : ajout dans JEUX + JEUX_SBM
+- Nouveaux jeux manquants (ram, tq, boule, bq, paig, carib, stud, war)
+- Galerie photos intégrée dans vConvention onglet Lieux
+- Sécurité avancée : rate limiting IA, token budget par user
+
+---
+
+*Dernière mise à jour : 2026-04-10 — v9.65*
