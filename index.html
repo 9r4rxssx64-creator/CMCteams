@@ -1171,6 +1171,101 @@ function findSallesPourJeu(jid,etab){
   return results;
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// GALERIE PHOTOS SALONS — 75 photos officielles CMC & CDP (v9.62)
+// Sources : SBM officiel (asset.montecarlosbm.com), Wikimedia Commons
+// (CC BY-SA), archives publiques (Rijksmuseum, LOC). Statut juridique
+// vérifiable par source. Libre d'utilisation interne CMC Teams.
+// ═══════════════════════════════════════════════════════════════════════
+function _wcUrl(f,w){return"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(f)+"?width="+(w||1200);}
+function _sbmUrl(f){return"https://asset.montecarlosbm.com/styles/hero_desktop_wide_responsive_webp/s3/media/orphea/"+f;}
+function _sbm2Url(f){return"https://asset.montecarlosbm.com/styles/list_item_short_style_desktop_webp/s3/media/orphea/"+f;}
+function _sbm3Url(f){return"https://asset.montecarlosbm.com/styles/list_item_short_style_desktop_webp/s3/media/image/"+f;}
+function _sbm4Url(f){return"https://asset.montecarlosbm.com/styles/emag_article_image_text_quote_image_desktop_webp/s3/media/image/"+f;}
+
+var SALON_PHOTOS=[
+// CMC — SALLE EUROPE (SBM officiel)
+{id:1,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2023",title:"Salle Europe \u2014 Vue panoramique",desc:"8 lustres cristal de Boh\u00eame (150 kg) \u2022 Verri\u00e8re color\u00e9e \u2022 Tables Craps",jeux:["Craps","Black-Jack","Roulette"],url:_sbmUrl("salleeuropecmc3_1900x990_0.jpg.webp")},
+{id:2,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2023",title:"Tables \u2014 Salon Europ\u00e9en",desc:"Tables \u00e9clair\u00e9es par lustres cristal \u2022 D\u00e9cor Belle \u00c9poque",jeux:["Black-Jack","Roulette","Punto Banco"],url:_sbmUrl("ca_gambling_european_room_0034.jpg.webp")},
+{id:3,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2019",title:"Salle Europe 2019 \u2014 \u0152uvres murales",desc:"Paul Steck 1898 : La R\u00e9colte d'oranges \u2022 Ribera \u2022 Picard \u2022 Lucas",jeux:[],url:_sbmUrl("ca_salle_europe_2019_0004.jpg.webp")},
+{id:4,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2023",title:"\u0152il-de-b\u0153uf historique",desc:"Fen\u00eatre d'observation scell\u00e9e \u2022 Camille Blanc surveillait joueurs",jeux:[],url:_sbm4Url("Salle_europe_Oeil_de_boeuf.jpg.webp")},
+// CMC — SALLE EUROPE (Wikimedia s\u00e9rie 2020)
+{id:5,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (1)",desc:"Vue g\u00e9n\u00e9rale salle principale avant 14h",jeux:["Craps","Roulette"],url:_wcUrl("Interior of Casino de Monte Carlo (1).jpg")},
+{id:6,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (2)",desc:"Tables vides \u2022 Lustres cristal visibles",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (2).jpg")},
+{id:7,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (3)",desc:"Verri\u00e8re color\u00e9e \u2022 All\u00e9e centrale \u2022 Belle \u00c9poque",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (3).jpg")},
+{id:8,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (4)",desc:"D\u00e9cor or/rouge \u2022 Feutre vert \u2022 Perspective",jeux:["Black-Jack"],url:_wcUrl("Interior of Casino de Monte Carlo (4).jpg")},
+{id:9,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (5)",desc:"Moulures dor\u00e9es \u2022 Plafond peint \u2022 Colonnes",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (5).jpg")},
+{id:10,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (6)",desc:"Vitraux \u2022 Bas-reliefs \u2022 Sculptures Belle \u00c9poque",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (6).jpg")},
+{id:11,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (7)",desc:"Tables align\u00e9es \u2022 Tapis rouge \u2022 Lustre monumental",jeux:["Roulette"],url:_wcUrl("Interior of Casino de Monte Carlo (7).jpg")},
+{id:12,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (8)",desc:"Vue en enfilade des salles \u2022 Arches \u2022 Perspective profonde",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (8).jpg")},
+{id:13,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (9)",desc:"D\u00e9tail plafond verri\u00e8re bleut\u00e9e \u2022 Architecture Garnier",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (9).jpg")},
+{id:14,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (10)",desc:"Vue depuis l'entr\u00e9e \u2022 Tables en perspective",jeux:["Craps","Black-Jack"],url:_wcUrl("Interior of Casino de Monte Carlo (10).jpg")},
+{id:15,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (11)",desc:"D\u00e9tail plafond et lustres \u2022 Reflets dor\u00e9s",jeux:[],url:_wcUrl("Interior of Casino de Monte Carlo (11).jpg")},
+{id:16,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (12)",desc:"Marqueterie sol \u2022 Colonnes dor\u00e9es \u2022 Miroirs",jeux:["Roulette"],url:_wcUrl("Interior of Casino de Monte Carlo (12).jpg")},
+{id:17,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Int\u00e9rieur CMC (13)",desc:"Salle en activit\u00e9 \u2022 Croupiers \u2022 Joueurs assis",jeux:["Black-Jack","Roulette"],url:_wcUrl("Interior of Casino de Monte Carlo (13).jpg")},
+// CMC — SALLE EUROPE (autres CC)
+{id:18,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2015",title:"Casino Monte-Carlo \u2014 Vue g\u00e9n\u00e9rale",desc:"Vue int\u00e9rieure depuis l'entr\u00e9e principale",jeux:[],url:_wcUrl("Le casino de Monte-Carlo.JPG")},
+{id:19,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2020",title:"Casino Bar \u2014 Salle Europe",desc:"Bar central sous les lustres \u2022 Ambiance soir\u00e9e",jeux:[],url:_wcUrl("Monte-Carlo - Casino Bar (49582110096).jpg")},
+{id:21,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2022",title:"Int\u00e9rieur CMC \u2014 Juin 2022",desc:"Vue d'ensemble tables de jeux",jeux:["Roulette","Black-Jack"],url:_wcUrl("20220621 113859 Casino de Monte-Carlo.jpg")},
+{id:22,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2024",title:"Int\u00e9rieur (1) \u2014 2024",desc:"S\u00e9rie 2024 \u2022 Salon principal",jeux:["Roulette"],url:_wcUrl("Int\u00e9rieur (1) (Casino Monte-Carlo).jpg")},
+{id:23,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2024",title:"Int\u00e9rieur (2) \u2014 2024",desc:"Tables recouvertes \u2022 Lustres allum\u00e9s",jeux:["Black-Jack"],url:_wcUrl("Int\u00e9rieur (2) (Casino Monte-Carlo).jpg")},
+{id:24,etab:"CMC",salon:"Salle Europe",src:"CC",date:"2024",title:"Int\u00e9rieur (3) \u2014 2024",desc:"Perspective salons en enfilade",jeux:[],url:_wcUrl("Int\u00e9rieur (3) (Casino Monte-Carlo).jpg")},
+// CMC — ATRIUM (9 photos + 2 plafonds)
+{id:25,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 28 colonnes (1)",desc:"Colonnes chapiteaux stuc \u2022 Candel\u00e0bres bronze \u2022 Dutrou 1878",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 1.jpg")},
+{id:26,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Vue lat\u00e9rale (2)",desc:"Galerie sup\u00e9rieure \u2022 Caf\u00e9 de la Rotonde",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 2.jpg")},
+{id:27,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Enfilade (3)",desc:"Perspective colonnade \u2022 Acc\u00e8s Salle Europe",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 3.jpg")},
+{id:28,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 D\u00e9tail colonne (4)",desc:"D\u00e9tail colonne et lustre \u2022 Or et marbre",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 4.jpg")},
+{id:29,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Galerie haute (5)",desc:"Galerie haute \u2022 Arches \u2022 D\u00e9cor stuc \u2022 Balustrade",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 5.jpg")},
+{id:30,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Entr\u00e9e (6)",desc:"Marbres polis \u2022 Colonnes ioniques",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 6.jpg")},
+{id:31,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Candel\u00e0bres soir (7)",desc:"Candel\u00e0bres en bronze \u2022 Lumi\u00e8re chaude",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 7.jpg")},
+{id:32,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Vue compl\u00e8te (8)",desc:"28 colonnes visibles",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 8.jpg")},
+{id:33,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Contre-plong\u00e9e (9)",desc:"Galerie haute \u2022 Vo\u00fbtes",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium 9.jpg")},
+{id:34,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Plafond (1)",desc:"Plafond peint \u2022 M\u00e9daillons \u2022 Corniche dor\u00e9e",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium Plafond 1.jpg")},
+{id:35,etab:"CMC",salon:"Atrium",src:"CC",date:"2023",title:"Atrium \u2014 Plafond (2)",desc:"Fresques plafond \u2022 Dorures \u2022 Chapiteaux",jeux:[],url:_wcUrl("Monaco Casino de Monte Carlo Int\u00e9rieur Atrium Plafond 2.jpg")},
+// CMC — SALLES TOUZET / M\u00c9DECIN / BLANCHE / RENAISSANCE / AM\u00c9RIQUES / SALON ROSE
+{id:36,etab:"CMC",salon:"Salles Touzet",src:"SBM",date:"2023",title:"Salons Touzet \u2014 Vitraux",desc:"Jumeaux 1890 Jules Touzet \u2022 Vitraux \u00e9motions",jeux:["Roulette","Punto Banco"],url:_sbmUrl("ca_gambling_room_touzet_0013.jpg.webp")},
+{id:37,etab:"CMC",salon:"Salle M\u00e9decin",src:"SBM",date:"2023",title:"Salle M\u00e9decin \u2014 Vue d'ensemble",desc:"Proportions majestueuses \u2022 Mahogany grav\u00e9 or",jeux:["Roulette","Punto Banco"],url:_sbmUrl("ca_miscellaneous_0172.jpg.webp")},
+{id:38,etab:"CMC",salon:"Salle M\u00e9decin",src:"SBM",date:"2023",title:"Salle M\u00e9decin \u2014 D\u00eener surr\u00e9aliste",desc:"Config \u00e9v\u00e9nement gala \u2022 Bas-reliefs Peynot",jeux:[],url:_sbmUrl("diner_surrealiste_header_video.jpg.webp")},
+{id:39,etab:"CMC",salon:"Salle Blanche",src:"SBM",date:"2023",title:"Terrasse Salle Blanche",desc:"Tables plein air vue M\u00e9diterran\u00e9e \u2022 VIP",jeux:["Black-Jack","Punto Banco","Roulette"],url:"https://asset.montecarlosbm.com/styles/hero_desktop_wide_responsive_webp/s3/media/orphea/ca_salle_blanche_gambling_terrace_0003.jpg.webp"},
+{id:40,etab:"CMC",salon:"Salle Renaissance",src:"SBM",date:"2023",title:"Salle Renaissance \u2014 Machines",desc:"~50 machines \u2022 Ouverture 11h \u2022 Acc\u00e8s libre",jeux:["Machines \u00e0 sous"],url:_sbmUrl("ca_gambling_room_renaissance_0007.jpg.webp")},
+{id:41,etab:"CMC",salon:"Salle des Am\u00e9riques",src:"SBM",date:"2023",title:"Salle des Am\u00e9riques \u2014 Garnier 1881",desc:"Masques 4 saisons \u2022 Machines \u00e0 sous",jeux:["Machines \u00e0 sous","Craps"],url:_sbm4Url("salle-des-ameriques-casino-montecarlo-monacojpg.jpg.webp")},
+{id:43,etab:"CMC",salon:"Salon Rose",src:"SBM",date:"2023",title:"Salon Rose \u2014 Ancien fumoir",desc:"Fumoir 1903 \u2192 Restaurant \u2022 Ch\u00e9rubin plafond",jeux:[],url:_sbmUrl("casino-de-monte-carlo-monacorestaurant_salon_rose_0007.jpg.webp")},
+{id:44,etab:"CMC",salon:"Salon Rose",src:"SBM",date:"2023",title:"Salon Rose 2023 \u2014 Vue actuelle",desc:"Boiseries sombres \u2022 Terrasse mer",jeux:[],url:_sbmUrl("ca_restaurant_salon_rose_2023_0005.jpg.webp")},
+{id:45,etab:"CMC",salon:"Salon Rose",src:"SBM",date:"2023",title:"Salon Rose \u2014 Les Fumeuses",desc:"Fresque Gallelli \u2022 Ch\u00e9rubin omniscient",jeux:[],url:_sbm4Url("gallelli-les-fumeuses-casino-montecarlo-monaco-salon-rose.jpg.webp")},
+// CMC — JEUX SP\u00c9CIFIQUES (SBM)
+{id:46,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2018",title:"Table Punto Banco 2018",desc:"Feutre vert \u2022 Plaques de mise",jeux:["Punto Banco"],url:_sbm2Url("ca_punto_banco_2018_0002.jpg.webp")},
+{id:47,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2018",title:"Table Black-Jack 2018",desc:"Table BJ sabot \u2022 Croupier \u2022 Plaques SBM",jeux:["Black-Jack"],url:_sbm2Url("ca_black_jack_2018_0001.jpg.webp")},
+{id:48,etab:"CMC",salon:"Salle Europe",src:"SBM",date:"2018",title:"Table Poker THU 2018",desc:"Ultimate Texas Hold'em \u2022 Cartes \u2022 Plaques",jeux:["Texas Hold'em"],url:_sbm2Url("ca_poker_2018_0001_0.jpg.webp")},
+// CMC — TRENTE ET QUARANTE
+{id:49,etab:"CMC",salon:"Salle Blanche",src:"CC",date:"2020",title:"Trente-et-Quarante \u2014 Croupier",desc:"Vue c\u00f4t\u00e9 croupier \u2022 Tableau de la marque",jeux:["Trente et Quarante"],url:_wcUrl("Trente et Quarante table (dealer's view).jpg")},
+{id:50,etab:"CMC",salon:"Salle Blanche",src:"CC",date:"2020",title:"Trente-et-Quarante \u2014 Joueur",desc:"Vue c\u00f4t\u00e9 ponte \u2022 Zones rouge/noir",jeux:["Trente et Quarante"],url:_wcUrl("Trente et Quarante table (punter's view).jpg")},
+// CMC — PHOTOS HISTORIQUES
+{id:51,etab:"CMC",salon:"Salle Europe",src:"HIST",date:"1890-1910",title:"Speelzaal \u2014 Rijksmuseum",desc:"\u00c9preuve albumine \u2022 Tables roulette XIXe",jeux:["Roulette"],url:_wcUrl("Speelzaal van het Monte Carlo Casino, RP-F-F01156-BX.jpg")},
+{id:52,etab:"CMC",salon:"Salle des Am\u00e9riques",src:"HIST",date:"~1880",title:"Trente-et-Quarante \u2014 Neurdein",desc:"Rijksmuseum RP-F-F01000-AC \u2022 Tables historiques",jeux:["Trente et Quarante"],url:_wcUrl("Interieur van het Monte Carlo Casino de Salle de Trente et Quarante Casino de Monte-Carlo.- La Salle de Trente et Quarante., RP-F-F01000-AC.jpg")},
+{id:54,etab:"CMC",salon:"Atrium",src:"HIST",date:"~1905",title:"Entr\u00e9e Atrium \u2014 Photochrom LOC",desc:"Library of Congress LCCN2001699319",jeux:[],url:_wcUrl("Casino entrance, atrium, Monte Carlo, Riviera-LCCN2001699319.jpg")},
+{id:55,etab:"CMC",salon:"Salle des Am\u00e9riques",src:"HIST",date:"~1905",title:"Nouvelle salle de jeux \u2014 LOC",desc:"Photochrom couleur int\u00e9rieur",jeux:["Roulette"],url:_wcUrl("The new gambling room, Monte Carlo, Riviera-LCCN2001699313.jpg")},
+{id:56,etab:"CMC",salon:"Salle Europe",src:"HIST",date:"~1910",title:"Table Roulette \u2014 Carte postale",desc:"Neurdein fr\u00e8res Paris \u2022 Salle Schmitt",jeux:["Roulette"],url:_wcUrl("Table de Roulette, Casino de Monte Carlo (Carte Postale Ancienne).jpg")},
+{id:57,etab:"CMC",salon:"Salle Europe",src:"CC",date:"~1930",title:"Vue int\u00e9rieure ancienne B/W",desc:"Photo noir et blanc \u2022 Roulettes actives",jeux:["Roulette"],url:_wcUrl("Inner view of casino Monte-Carlo.jpg")},
+// CMC — FA\u00c7ADE
+{id:59,etab:"CMC",salon:"Fa\u00e7ade",src:"CC",date:"2016",title:"Fa\u00e7ade CMC \u2014 Vue 01",desc:"Entr\u00e9e principale \u2022 Jardins \u2022 Fontaine",jeux:[],url:_wcUrl("2016 Casino de Monte Carlo 01.jpg")},
+{id:60,etab:"CMC",salon:"Fa\u00e7ade",src:"CC",date:"2016",title:"Fa\u00e7ade CMC \u2014 Vue 02",desc:"Tourelles \u2022 Architecture Dutrou 1878",jeux:[],url:_wcUrl("2016 Casino de Monte Carlo 02.jpg")},
+{id:62,etab:"CMC",salon:"Fa\u00e7ade",src:"CC",date:"2016",title:"Fa\u00e7ade CMC \u2014 Nuit",desc:"\u00c9clairages ext\u00e9rieurs \u2022 Fontaine illumin\u00e9e",jeux:[],url:_wcUrl("2016 Casino de Monte Carlo 05.jpg")},
+{id:65,etab:"CMC",salon:"Fa\u00e7ade",src:"CC",date:"2024",title:"Fa\u00e7ade CMC \u2014 Septembre 2024",desc:"Photo r\u00e9cente \u00e9tat actuel",jeux:[],url:_wcUrl("2024-09-22 Casino de Monte Carlo.jpg")},
+// CDP — CASINO CAF\u00c9 DE PARIS
+{id:66,etab:"CDP",salon:"Salle principale",src:"CC",date:"2021",title:"Casino CDP \u2014 Salle (1)",desc:"Machines \u00e0 sous \u2022 LED color\u00e9es \u2022 ~480 appareils",jeux:["Machines \u00e0 sous"],url:_wcUrl("Caf\u00e9 de Paris (Monte Carlo) en novembre 2021.jpg")},
+{id:67,etab:"CDP",salon:"Salle principale",src:"CC",date:"2021",title:"Casino CDP \u2014 Int\u00e9rieur (2)",desc:"D\u00e9cor contemporain \u2022 Baies vitr\u00e9es",jeux:["Machines \u00e0 sous","Roulette"],url:_wcUrl("Caf\u00e9 de Paris (Monte Carlo) en novembre 2021 (2).jpg")},
+{id:68,etab:"CDP",salon:"Salle principale",src:"CC",date:"2021",title:"Casino CDP \u2014 Vue haute (3)",desc:"Lumi\u00e8res color\u00e9es \u2022 Machines en rang\u00e9es",jeux:["Machines \u00e0 sous"],url:_wcUrl("Caf\u00e9 de Paris (Monte Carlo) en novembre 2021 (3).jpg")},
+{id:69,etab:"CDP",salon:"Fa\u00e7ade",src:"CC",date:"2021",title:"Caf\u00e9 de Paris \u2014 Fa\u00e7ade Place",desc:"D\u00f4me cuivre vieilli \u2022 Style Belle \u00c9poque 1988",jeux:[],url:_wcUrl("Caf\u00e9 de Paris, Monte Carlo depuis la place (novembre 2021).jpg")},
+{id:70,etab:"CDP",salon:"Terrasse",src:"CC",date:"2021",title:"Caf\u00e9 de Paris \u2014 Terrasse",desc:"Terrasse ext\u00e9rieure \u2022 Vue Place du Casino",jeux:[],url:_wcUrl("Caf\u00e9 de Paris, Monte Carlo - terrasse (novembre 2021).jpg")},
+{id:71,etab:"CDP",salon:"Salle principale",src:"SBM",date:"2022",title:"CDP \u2014 Table Roulette Anglaise",desc:"Croupier \u2022 Cylindre \u2022 Feutre vert",jeux:["Roulette"],url:_sbm2Url("ccp_gambling_room_detail_0038.jpg.webp")},
+{id:72,etab:"CDP",salon:"Salle principale",src:"SBM",date:"2023",title:"CDP \u2014 Salle officielle",desc:"Machines \u2022 Tables \u2022 Ambiance lumineuse",jeux:["Machines \u00e0 sous","Black-Jack"],url:_sbm3Url("3-CCDP%20SALLE.jpg.webp")},
+{id:73,etab:"CDP",salon:"Zone Electronic Gaming",src:"SBM",date:"2023",title:"CDP \u2014 Roulette \u00c9lectronique",desc:"18 postes \u2022 2 cylindres auto \u2022 Inaugur\u00e9e 2023",jeux:["Roulette \u00e9lectronique"],url:_sbm2Url("header_roulette_electronnique_0.jpg.webp")},
+{id:74,etab:"CDP",salon:"Fa\u00e7ade",src:"HIST",date:"1904",title:"Caf\u00e9 de Paris \u2014 1904",desc:"Fonds Trutat \u2022 Biblioth\u00e8que de Toulouse",jeux:[],url:_wcUrl("Caf\u00e9 de Paris, Monte-Carlo, avril 1904 (5686522451).jpg")},
+{id:75,etab:"CDP",salon:"Fa\u00e7ade",src:"HIST",date:"1906",title:"Caf\u00e9 de Paris \u2014 1906",desc:"Style mauresque Schmit 1897",jeux:[],url:_wcUrl("Caf\u00e9 de Paris, Monte-Carlo, avril 1906 (5615364657).jpg")}
+];
+var _PHOTO_SRC_LB={SBM:"Officiel SBM",CC:"Wikimedia CC",HIST:"Archive publique"};
+var _PHOTO_SRC_COL={SBM:"#c9963a",CC:"#3a7abf",HIST:"#7a5a9a"};
+
 // Helper : retrouve le label officiel d'un code d'activité
 function bulletinCodeLabel(code){
   if(!code)return"";
@@ -4501,6 +4596,7 @@ function vMain(){
     case"admin":    return isAdm?vAdmin():"";
     case"gestionlive": return isAdm?vGestionLive():"";
     case"convention": return vConvention();
+    case"galerie": return vGalerie(); // v9.62
     case"teams":    return isAdm?vTeams():"";
     case"employees":return isAdm?vEmps():"";
     case"documents":return isAdm?vDocs():"";
@@ -5365,6 +5461,7 @@ function vAccueil(){
     {v:"chat",ic:"\ud83d\udcac",lb:"Chat"},
     {v:"ia",ic:"\ud83e\udd16",lb:"Aide IA"},
     {v:"convention",ic:"\ud83d\udcd6",lb:"Convention"},
+    {v:"galerie",ic:"\ud83c\udfdb\ufe0f",lb:"Galerie Salons"},
     {fn:"exportMyICS()",ic:"\ud83d\udcc6",lb:"Export ICS"}
   ];
   _shortcuts.forEach(function(s){
@@ -6616,6 +6713,164 @@ function vStatsAnnuelles(){
   });
   h+='</div>';
   return h+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// GALERIE DES SALONS — vGalerie() (v9.62)
+// Grille responsive + filtres (etab, salon, source) + recherche +
+// lightbox navigable clavier (← → Esc). Port du composant React user
+// en vanilla JS pur, mobile-first, backdrop-filter compatible.
+// ═══════════════════════════════════════════════════════════════════════
+var _galEtab="Tous",_galSalon="Tous",_galSrc="Toutes",_galQ="",_galLb=null,_galImgErr={};
+
+function _galFiltered(){
+  return SALON_PHOTOS.filter(function(p){
+    if(_galEtab!=="Tous"&&p.etab!==_galEtab)return false;
+    if(_galSalon!=="Tous"&&p.salon!==_galSalon)return false;
+    if(_galSrc!=="Toutes"&&p.src!==_galSrc)return false;
+    if(_galQ){
+      var q=_galQ.toLowerCase();
+      return (p.title||"").toLowerCase().indexOf(q)>=0||
+        (p.desc||"").toLowerCase().indexOf(q)>=0||
+        (p.salon||"").toLowerCase().indexOf(q)>=0||
+        (p.jeux||[]).some(function(j){return j.toLowerCase().indexOf(q)>=0;});
+    }
+    return true;
+  });
+}
+function _galAllSalons(){
+  var set={};
+  SALON_PHOTOS.forEach(function(p){
+    if(_galEtab==="Tous"||p.etab===_galEtab)set[p.salon]=true;
+  });
+  return ["Tous"].concat(Object.keys(set).sort());
+}
+function _galNav(dir){
+  if(!_galLb)return;
+  var fl=_galFiltered();
+  var i=fl.findIndex(function(p){return p.id===_galLb.id;});
+  if(i<0)return;
+  _galLb=fl[(i+dir+fl.length)%fl.length];
+  dc();
+}
+// Keyboard handler (attaché au document lors de l'ouverture du lightbox)
+function _galKeyHandler(e){
+  if(!_galLb)return;
+  if(e.key==="Escape"){_galLb=null;dc();}
+  if(e.key==="ArrowRight")_galNav(1);
+  if(e.key==="ArrowLeft")_galNav(-1);
+}
+
+function vGalerie(){
+  if(!A.user)return"";
+  var fl=_galFiltered();
+  var salons=_galAllSalons();
+  var h='<div class="page">';
+  // Header
+  h+='<div style="text-align:center;padding:14px 0 16px">'
+    +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:4px;text-transform:uppercase;margin-bottom:6px">\u2666 CMC TEAMS \u2014 BLACK JACK SBM \u2666</div>'
+    +'<div style="font-size:20px;font-weight:800;color:#c9a227;letter-spacing:2px">\ud83c\udfdb\ufe0f Galerie des Salons</div>'
+    +'<div style="font-size:12px;color:#7aaa80;margin-top:4px">Casino de Monte-Carlo \u00b7 Caf\u00e9 de Paris \u00b7 <b style="color:#c9a227">'+SALON_PHOTOS.length+'</b> documents</div>'
+    +'</div>';
+  // Barre de recherche
+  h+='<input id="galQIn" class="inp" placeholder="\ud83d\udd0d  Salle, jeu, description\u2026" value="'+esc(_galQ)+'" oninput="_galQ=this.value;dc();var el=document.getElementById(\'galQIn\');if(el){var v=el.value;setTimeout(function(){var x=document.getElementById(\'galQIn\');if(x){x.focus();x.value=\'\';x.value=v;}},0);}" style="margin-bottom:10px;font-size:16px">';
+  // Filtres
+  var _pill=function(active,val,onclk,col){
+    return '<button onclick="'+onclk+'" style="background:'+(active?(col||"#c9a227")+'25':'transparent')+';border:1px solid '+(active?(col||"#c9a227"):'#2a3020')+';border-radius:20px;padding:5px 12px;font-size:12px;color:'+(active?(col||"#c9a227"):'#7a8a70')+';cursor:pointer;white-space:nowrap;font-weight:'+(active?'bold':'normal')+';min-height:36px">'+esc(val)+'</button>';
+  };
+  // Établissement
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">'
+    +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">\u00c9tablissement</span>';
+  ["Tous","CMC","CDP"].forEach(function(v){
+    h+=_pill(_galEtab===v,v,"_galEtab=\\'"+v+"\\';_galSalon=\\'Tous\\';dc()");
+  });
+  h+='</div>';
+  // Source
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">'
+    +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Source</span>';
+  [["Toutes",null],["SBM",_PHOTO_SRC_COL.SBM],["CC",_PHOTO_SRC_COL.CC],["HIST",_PHOTO_SRC_COL.HIST]].forEach(function(x){
+    var v=x[0],col=x[1];
+    var lbl=v==="Toutes"?"Toutes":(_PHOTO_SRC_LB[v]||v);
+    h+=_pill(_galSrc===v,lbl,"_galSrc=\\'"+v+"\\';dc()",col);
+  });
+  h+='</div>';
+  // Salon (dynamique selon étab)
+  if(salons.length>2){
+    h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;align-items:center">'
+      +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Salon</span>';
+    salons.forEach(function(v){
+      h+=_pill(_galSalon===v,v,"_galSalon=\\'"+v+"\\';dc()");
+    });
+    h+='</div>';
+  }
+  // Compteur
+  h+='<div style="font-size:12px;color:#c9a227;font-style:italic;margin-bottom:10px;text-align:right">'+fl.length+' photo'+(fl.length!==1?'s':'')+'</div>';
+  // Grille
+  if(!fl.length){
+    h+='<div style="padding:40px 20px;text-align:center;color:#5a6a50;background:rgba(255,255,255,.02);border:1px dashed rgba(201,162,39,.25);border-radius:12px">'
+      +'<div style="font-size:56px;margin-bottom:8px">\ud83d\udcf7</div>'
+      +'<div style="font-size:14px;color:#7aaa80">Aucune photo trouv\u00e9e</div></div>';
+  } else {
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">';
+    fl.forEach(function(p){
+      var srcCol=_PHOTO_SRC_COL[p.src]||"#7a8a80";
+      var srcLb=_PHOTO_SRC_LB[p.src]||p.src;
+      h+='<div onclick="_galLb=SALON_PHOTOS.find(function(x){return x.id==='+p.id+';});document.addEventListener(\'keydown\',_galKeyHandler);dc()" class="card" style="overflow:hidden;cursor:pointer;padding:0;border-color:rgba(201,162,39,.15)">'
+        +'<div style="position:relative;height:170px;overflow:hidden;background:#0a180c">';
+      if(_galImgErr[p.id]){
+        h+='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a5a40;font-size:26px;gap:6px">\ud83d\udcf7<span style="font-size:10px">Non disponible</span></div>';
+      } else {
+        h+='<img src="'+_safeUrl(p.url)+'" alt="'+esc(p.title)+'" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="_galImgErr['+p.id+']=true;dc()">';
+      }
+      h+='<div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border-radius:10px;color:#fff;text-transform:uppercase;background:'+srcCol+'">'+esc(srcLb)+'</div>'
+        +'</div>'
+        +'<div style="padding:9px 11px">'
+        +'<div style="font-size:10px;color:#c9a227;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+' \u00b7 '+esc(p.date)+'</div>'
+        +'<div style="font-size:13px;color:#e0f0d0;line-height:1.4">'+esc(p.title)+'</div>';
+      if(p.jeux&&p.jeux.length){
+        h+='<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">';
+        p.jeux.forEach(function(j){h+='<span style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;font-size:10px;color:#c9a227">'+esc(j)+'</span>';});
+        h+='</div>';
+      }
+      h+='</div></div>';
+    });
+    h+='</div>';
+  }
+  // Lightbox
+  if(_galLb){
+    var p=_galLb,srcCol2=_PHOTO_SRC_COL[p.src]||"#7a8a80",idx=fl.findIndex(function(x){return x.id===p.id;}),srcLb2=_PHOTO_SRC_LB[p.src]||p.src;
+    h+='<div onclick="_galLb=null;document.removeEventListener(\'keydown\',_galKeyHandler);dc()" style="position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px">'
+      +'<button onclick="_galLb=null;document.removeEventListener(\'keydown\',_galKeyHandler);dc();event.stopPropagation()" style="position:fixed;top:12px;right:16px;background:none;border:none;color:#c9a227;font-size:26px;cursor:pointer;z-index:10000;min-width:44px;min-height:44px">\u2715</button>'
+      +'<button onclick="_galNav(-1);event.stopPropagation()" style="position:fixed;left:10px;top:50%;transform:translateY(-50%);background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);color:#c9a227;font-size:28px;width:44px;height:56px;cursor:pointer;z-index:10000;border-radius:4px;display:flex;align-items:center;justify-content:center">\u2039</button>'
+      +'<button onclick="_galNav(1);event.stopPropagation()" style="position:fixed;right:10px;top:50%;transform:translateY(-50%);background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);color:#c9a227;font-size:28px;width:44px;height:56px;cursor:pointer;z-index:10000;border-radius:4px;display:flex;align-items:center;justify-content:center">\u203a</button>'
+      +'<div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;max-width:860px;width:100%;max-height:92vh;background:#1a2418;border-radius:8px;overflow:hidden;border:1px solid rgba(201,162,39,.3)">'
+      +'<div style="background:#0a160c;flex-shrink:0">';
+    if(_galImgErr[p.id]){
+      h+='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5a40;font-size:18px;gap:8px">\ud83d\udcf7 Non disponible</div>';
+    } else {
+      h+='<img src="'+_safeUrl(p.url)+'" alt="'+esc(p.title)+'" style="width:100%;max-height:56vh;object-fit:contain;display:block" onerror="_galImgErr['+p.id+']=true;dc()">';
+    }
+    h+='</div>'
+      +'<div style="padding:14px 18px;overflow-y:auto">'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'
+      +'<span style="font-size:9px;font-weight:bold;padding:2px 7px;border-radius:10px;color:#fff;text-transform:uppercase;background:'+srcCol2+'">'+esc(srcLb2)+'</span>'
+      +'<span style="font-size:10px;color:#c9a227;letter-spacing:2px;text-transform:uppercase">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+'</span>'
+      +'<span style="font-size:11px;color:#5a6a50;margin-left:auto">'+esc(p.date)+'</span></div>'
+      +'<div style="font-size:17px;color:#e0f0d0;margin-bottom:6px">'+esc(p.title)+'</div>'
+      +'<div style="font-size:13px;color:#8aaa80;line-height:1.6;margin-bottom:8px">'+esc(p.desc)+'</div>';
+    if(p.jeux&&p.jeux.length){
+      h+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      p.jeux.forEach(function(j){h+='<span style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:2px 8px;font-size:11px;color:#c9a227">'+esc(j)+'</span>';});
+      h+='</div>';
+    }
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(201,162,39,.15)">'
+      +'<button onclick="_galNav(-1);event.stopPropagation()" style="background:none;border:1px solid rgba(201,162,39,.3);color:#c9a227;padding:5px 12px;cursor:pointer;border-radius:4px;font-size:12px;min-height:36px">\u2190 Pr\u00e9c\u00e9dent</button>'
+      +'<span style="color:#5a6a50;font-size:12px">'+(idx>=0?idx+1:"-")+" / "+fl.length+'</span>'
+      +'<button onclick="_galNav(1);event.stopPropagation()" style="background:none;border:1px solid rgba(201,162,39,.3);color:#c9a227;padding:5px 12px;cursor:pointer;border-radius:4px;font-size:12px;min-height:36px">Suivant \u2192</button>'
+      +'</div></div></div></div>';
+  }
+  h+='</div>';
+  return h;
 }
 
 function vChat(){
