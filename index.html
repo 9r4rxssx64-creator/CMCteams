@@ -988,6 +988,189 @@ var JEUX={
     lieu:"Casino de Monte-Carlo, Sun Casino"
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLANS ARCHITECTURAUX — CMC & CDP (v9.62)
+// Source : document interne CMC Teams avril 2026 (compilation Gallica/BnF
+// + SBM officiel + Wikipedia FR/EN). Libre pour usage interne.
+// Utilisé par l'IA pour répondre aux questions "Où jouer à X au CMC/CDP ?",
+// "Quel dress code Salle Europe ?", "Différences CMC vs CDP ?", etc.
+// ═══════════════════════════════════════════════════════════════════════
+var PLANS_CMC={
+  nom:"Casino de Monte-Carlo",
+  adresse:"Place du Casino, MC 98000 Monaco",
+  tel:"+377 98 06 21 21",
+  style:"Belle \u00c9poque / Beaux-Arts / Second Empire",
+  surface:"~10 000 m\u00b2 (~108 000 sq ft)",
+  ageMin:18,
+  entree:"10 \u20ac (tables) \u00b7 0 \u20ac (machines \u00e0 partir de 11h)",
+  dressCode:"Strict apr\u00e8s 20h : veste recommand\u00e9e. Bermuda/t-shirts/sandales/baskets interdits",
+  ouverture:{tables:"14h00",slots:"11h00",h24:false},
+  architectes:["Charles Garnier (1825-1898)","Jules Dutrou (1819-1885)","Jules Touzet","Henri Schmit","Julien M\u00e9decin","Andr\u00e9 Levasseur"],
+  historique:"Fondation 1856 (Charles III) \u00b7 Extension Garnier/Dutrou 1878-1881 \u00b7 Salle des Am\u00e9riques 1881 (ex Trente-et-Quarante) \u00b7 Salons Touzet 1890 \u00b7 Salle Blanche 1903 \u00b7 Salle M\u00e9decin 1910 \u00b7 Restauration Salle Europe 1968",
+  salles:[
+    {
+      id:"renaissance",nom:"Salle Renaissance",ic:"\ud83c\udfb0",
+      type:"Antichambre / Machines \u00e0 sous",
+      architecte:"Dutrou/Garnier 1878-1879",
+      description:"L'une des plus anciennes salles, ant\u00e9chambre des salles de jeux. Style Renaissance avec colonnes et fresques. D\u00e9bouche sur l'Atrium et Salle Europe.",
+      jeux:["Machines \u00e0 sous","Vid\u00e9o poker"],
+      nbMachines:50,
+      horaires:"Slots : 11h00",
+      dressCode:"Tol\u00e9rance (shorts, t-shirts)",
+      acces:"Entr\u00e9e principale \u2192 Atrium"
+    },
+    {
+      id:"atrium",nom:"Atrium (Caf\u00e9 de la Rotonde)",ic:"\ud83c\udfdb\ufe0f",
+      type:"Hall central / Bar-Caf\u00e9",
+      architecte:"Jules Dutrou 1878-1879",
+      description:"28 colonnes de pierre \u00e0 chapiteaux de stuc, galerie sup\u00e9rieure, candelabres de bronze, plancher de marbre. C\u0153ur de transition entre toutes les salles de jeux. Aujourd'hui Caf\u00e9 de la Rotonde (bar).",
+      jeux:[],
+      acces:"Entre Salle Renaissance et Salle Europe / Salle des Am\u00e9riques"
+    },
+    {
+      id:"europe",nom:"Salle Europe",ic:"\u2764\ufe0f",
+      type:"Salle principale de jeux de table (C\u0152UR HISTORIQUE)",
+      architecte:"Dutrou 1878-1879 \u00b7 Restauration Levasseur 1968",
+      description:"Grande salle sous verri\u00e8re avec 8 lustres en cristal de Boh\u00eame (~150 kg chacun). \u0152ils-de-b\u0153uf dans les murs (surveillance Camille Blanc). \u0152uvres Paul Steck 1898 (La R\u00e9colte d'oranges), Pedro Ribera, Georges Picard, F\u00e9lix-Hippolyte Lucas. Bar Salle Europe (live music jeudi).",
+      jeux:["Roulette europ\u00e9enne","Roulette anglaise","Roulette am\u00e9ricaine","Black-Jack","Punto Banco","Craps","Texas Hold'em Ultimate","Trente et Quarante"],
+      nbMachines:80,
+      horaires:"Tables : 14h00 \u00b7 Slots : 11h00",
+      dressCode:"Strict apr\u00e8s 20h (veste recommand\u00e9e)",
+      noteCmc:"Salle principale CMC Teams pour BJ + Roulette + Punto Banco + Craps",
+      acces:"Depuis Salle Renaissance via arche \u2192 Salle des Am\u00e9riques"
+    },
+    {
+      id:"ameriques",nom:"Salle des Am\u00e9riques",ic:"\ud83c\uddfa\ud83c\uddf8",
+      type:"Machines \u00e0 sous + Jeux am\u00e9ricains (ex-Salle Garnier)",
+      architecte:"Charles Garnier 1881",
+      description:"Initialement Salle Trente-et-Quarante (1880-1881), r\u00e9am\u00e9nag\u00e9e en Salle des Am\u00e9ricains 15 mars 1969. D\u00e9cor Garnier d'origine pr\u00e9serv\u00e9 (plafond). 8 tableaux originaux (Gustave Boulanger, Georges Clairin). Masques sculpt\u00e9s des 4 saisons. Plafond richement d\u00e9cor\u00e9.",
+      jeux:["Machines \u00e0 sous","Craps","Black-Jack am\u00e9ricain"],
+      acces:"Depuis Salle Europe \u2192 droite Salle Blanche, gauche Salle Touzet Nord"
+    },
+    {
+      id:"blanche",nom:"Salle Blanche + Terrasse M\u00e9diterran\u00e9e",ic:"\ud83d\udd0e",
+      type:"Salon VIP / Jeux haut de gamme",
+      architecte:"Henri Schmit 1903 (salle de lecture d'origine)",
+      description:"Tons blanc, or et bleu azur. Moulures dor\u00e9es, pilastres \u00e0 chapiteaux dor\u00e9s. Fresques color\u00e9es, drap\u00e9s au-dessus des fen\u00eatres. Sculptures d'anges soutenant le plafond. \u0152uvre majeure : Les Gr\u00e2ces Florentines de Paul Gervais (visages de Liane de Pougy, \u00c9milienne d'Alen\u00e7on, La Belle Ot\u00e9ro). Bar en mosa\u00efque. Terrasse vue mer Mediterran\u00e9e.",
+      jeux:["Roulette europ\u00e9enne","Roulette anglaise","Black-Jack","Punto Banco","Trente et Quarante","Texas Hold'em Ultimate"],
+      horaires:"Tables : 14h00 \u00b7 Bar : 19h00",
+      dressCode:"Salon VIP \u2014 veste obligatoire",
+      acces:"R\u00e9serv\u00e9 clients My Monte-Carlo Gold/Platinum/Priv\u00e9",
+      entree:"10 \u20ac + 10 \u20ac suppl\u00e9ment salons priv\u00e9s",
+      noteCmc:"Salon VIP \u2014 Punto Banco avec cartes pr\u00eates \u00e0 l'emploi (AM 2021-302)"
+    },
+    {
+      id:"medecin",nom:"Salle M\u00e9decin",ic:"\ud83d\udc51",
+      type:"Salon priv\u00e9 embl\u00e9matique",
+      architecte:"Julien M\u00e9decin (d\u00e9but XXe) \u00b7 Bas-reliefs \u00c9mile Peynot",
+      description:"L'une des salles les plus grandioses. Proportions majestueuses. Bas-reliefs d'\u00c9mile Peynot : H\u00e9lios (soleil) et S\u00e9l\u00e9n\u00e9 (lune). D\u00e9coration artistique exceptionnelle. Mahogany grav\u00e9 or. Terrasse M\u00e9decin (hivers) + Bar des Priv\u00e9s.",
+      jeux:["Roulette Fran\u00e7aise (principale EU)","Tables de jeux diverses"],
+      noteCmc:"Principale salle de Roulette Europ\u00e9enne"
+    },
+    {
+      id:"touzet",nom:"Salles Touzet (Nord & Sud)",ic:"\ud83d\udc6f",
+      type:"Deux salons priv\u00e9s jumeaux",
+      architecte:"Jules Touzet 1890",
+      description:"Deux salles identiques communicantes style Art Nouveau. Partie basse : motifs botaniques. Vitraux portraits d'\u00e9motions. Fen\u00eatres inscrites Prestat et Cie (Paris). Horloge caract\u00e9ristique c\u00e9l\u00e8bre. Tapis rouge fonc\u00e9 floral, lambris \u00e9pais. Utilis\u00e9es pour grands \u00e9v\u00e9nements.",
+      jeux:["Roulette","Punto Banco","Tables diverses","Machines \u00e0 sous"]
+    },
+    {
+      id:"superprives",nom:"Salons Super Priv\u00e9s",ic:"\ud83d\udd10",
+      type:"Salles enti\u00e8rement privatis\u00e9es",
+      description:"Ambiance feutr\u00e9e, espace totalement privatis\u00e9 pour vie priv\u00e9e VIP. Gardes du corps \u00e0 l'entr\u00e9e. Exp\u00e9rience de jeu sur mesure.",
+      jeux:["Black-Jack","Punto Banco","Roulette"],
+      acces:"Sur invitation / demande uniquement",
+      noteCmc:"Tables Punto Banco avec cartes pr\u00eates \u00e0 l'emploi (AM 2021-302)"
+    }
+  ],
+  annexes:[
+    {nom:"Le Train Bleu",type:"Restaurant",desc:"Cuisine italienne, d\u00e9cor wagon-restaurant Belle \u00c9poque"},
+    {nom:"Salon Rose",type:"Restaurant bistro",desc:"Ancien fumoir 1903. Fresque ch\u00e9rubin dos au spectateur (Massimiliano Gallelli : Les Fumeuses)"},
+    {nom:"Bar Salle Europe",type:"Lounge bar",desc:"Live music le jeudi soir"},
+    {nom:"Bar Salle Blanche",type:"Bar mosa\u00efque",desc:"Ouverture 19h, entre salle et terrasse"},
+    {nom:"Bar des Priv\u00e9s",type:"Bar VIP",desc:"Service le soir pour clients des salons priv\u00e9s"},
+    {nom:"Salle Garnier (Op\u00e9ra)",type:"Op\u00e9ra de Monte-Carlo",desc:"524 si\u00e8ges, acc\u00e8s depuis l'int\u00e9rieur du casino, c\u00f4t\u00e9 mer"}
+  ]
+};
+
+var PLANS_CDP={
+  nom:"Casino Caf\u00e9 de Paris",
+  adresse:"Place du Casino, MC 98000 Monaco",
+  tel:"+377 98 06 77 77",
+  style:"Contemporain Art D\u00e9co (r\u00e9novation 2023)",
+  surface:"~11 600 m\u00b2 (post-r\u00e9novation 2023) \u00b7 9 600 m\u00b2 base 1988",
+  ageMin:21,
+  entree:"Libre sur pr\u00e9sentation d'un passeport valide",
+  dressCode:"D\u00e9tendu",
+  ouverture:{tables:"16h00",slots:"10h00",h24:true},
+  historique:"1868 Caf\u00e9-Divan (Marie Blanc) \u00b7 1882 renomm\u00e9 Caf\u00e9 de Paris \u00b7 1897 reconstruction orientale Schmit (minarets) \u00b7 1913 salle Louis XIV L\u00e9on Blois \u00b7 1930s Art D\u00e9co \u00b7 1988 Nouveau Caf\u00e9 de Paris (Giraldi + Perrot, 9 600 m\u00b2, inauguration Prince Rainier) \u00b7 2023 M\u00e9tamorphose 55 M\u20ac (Giraldi + Perrot + David Collins Studio, 3 niveaux)",
+  zones:[
+    {
+      id:"principale",nom:"Salle principale int\u00e9rieure",ic:"\ud83c\udfb0",
+      type:"Machines \u00e0 sous + Tables",
+      description:"D\u00e9cor contemporain, grandes baies vitr\u00e9es sur Place du Casino, lumi\u00e8res et \u00e9crans g\u00e9ants, espaces immersifs.",
+      jeux:["Black-Jack","Punto Banco","Roulette anglaise","Roulette am\u00e9ricaine","Texas Hold'em Ultimate"],
+      nbMachines:480,
+      horaires:"Tables : 16h00 \u00b7 Slots : 10h00"
+    },
+    {
+      id:"electronic",nom:"Zone Electronic Gaming",ic:"\ud83d\udcbb",
+      type:"Roulette \u00e9lectronique (inaugur\u00e9e 2024)",
+      description:"18 postes de jeu \u00e9lectroniques + 2 cylindres automatiques + grand \u00e9cran HD.",
+      jeux:["Roulette \u00e9lectronique"],
+      nbPostes:18,
+      nbCylindres:2,
+      gainMax:"jusqu'\u00e0 500\u00d7 la mise"
+    },
+    {
+      id:"terrasse1",nom:"Terrasse 1 (fumeurs)",ic:"\ud83c\udf33",
+      type:"Terrasse fumeurs (ouverte toute l'ann\u00e9e)",
+      description:"100 machines \u00e0 sous + roulette Golden Ball (VIP lounge).",
+      jeux:["Machines \u00e0 sous","Roulette Golden Ball"],
+      nbMachines:100
+    },
+    {
+      id:"terrasse2",nom:"Terrasse 2 (fumeurs)",ic:"\ud83c\udf33",
+      type:"Terrasse fumeurs (ouverte toute l'ann\u00e9e)",
+      description:"60 machines \u00e0 sous suppl\u00e9mentaires + tables de jeux.",
+      jeux:["Machines \u00e0 sous","Tables"],
+      nbMachines:60
+    }
+  ],
+  chiffres:{
+    machinesInterieur:480,
+    machinesTerrasses:160,
+    machinesTotal:640,
+    postesRouletteElec:18,
+    cylindresAuto:2,
+    jackpotMax:"1 000 000 \u20ac (plus hauts de la C\u00f4te d'Azur)"
+  },
+  niveauxBatiment:[
+    {niv:"Rooftop",contenu:"Amazonico Monte-Carlo (restaurant ~1 000 m\u00b2)"},
+    {niv:"1er \u00e9tage",contenu:"Brasserie Caf\u00e9 de Paris (niveau sup.) + terrasse 200 m\u00b2 vue Place du Casino"},
+    {niv:"Rez-de-chauss\u00e9e",contenu:"Brasserie (300 couverts) + terrasse (200 couverts) + bar + boutiques luxe (Chopard, Arije, Tag Heuer, Tiffany)"},
+    {niv:"Casino (int\u00e9gr\u00e9)",contenu:"Nouvelle entr\u00e9e exclusive 2024 + zone Electronic Gaming + 2 terrasses fumeurs"}
+  ]
+};
+
+// Helper : retourne toutes les salles (CMC) ou zones (CDP) qui proposent un jeu donn\u00e9
+// jid peut \u00eatre un id (bj, ra, re, pb, thu, craps, tcp) ou un label ("Black-Jack", "Roulette"...)
+function findSallesPourJeu(jid,etab){
+  var etabs=etab==="cmc"?[{k:"cmc",data:PLANS_CMC,key:"salles"}]:etab==="cdp"?[{k:"cdp",data:PLANS_CDP,key:"zones"}]:[{k:"cmc",data:PLANS_CMC,key:"salles"},{k:"cdp",data:PLANS_CDP,key:"zones"}];
+  var labelMap={bj:"Black-Jack",ra:"Roulette anglaise",re:"Roulette europ\u00e9enne",pb:"Punto Banco",phr:"Punto Banco",thu:"Texas Hold'em",craps:"Craps",tcp:"Three Card Poker",cg:"Poker"};
+  var needle=(labelMap[jid]||jid||"").toLowerCase();
+  var results=[];
+  etabs.forEach(function(e){
+    (e.data[e.key]||[]).forEach(function(s){
+      if((s.jeux||[]).some(function(j){return j.toLowerCase().indexOf(needle)>=0;})){
+        results.push({etab:e.k,nom:s.nom,id:s.id});
+      }
+    });
+  });
+  return results;
+}
+
 // Helper : retrouve le label officiel d'un code d'activité
 function bulletinCodeLabel(code){
   if(!code)return"";
@@ -6690,6 +6873,7 @@ function vConvention(){
     +_tab("codes","Codes paie","\ud83d\udcdd")
     +_tab("grille","Grilles","\ud83d\udcb0")
     +_tab("jeux","Jeux","\ud83c\udccf")
+    +_tab("lieux","Lieux","\ud83c\udfdb\ufe0f")
     +_tab("search","Recherche","\ud83d\udd0d")
     +'</div>';
   // Tab : Articles
@@ -6856,6 +7040,148 @@ function vConvention(){
       }
       h+='</div>';
     });
+  }
+  // Tab : Lieux — PLANS_CMC + PLANS_CDP (v9.62)
+  if(tab==="lieux"){
+    var _sub=A.convLieuxSub||"cmc"; // cmc | cdp | compare
+    // Sous-onglets
+    var _sbtn=function(id,lbl,col){
+      var on=_sub===id;
+      return '<button onclick="A.convLieuxSub=\''+id+'\';dc()" style="flex:1;background:'+(on?col+'22':'transparent')+';border:1px solid '+(on?col+'55':'#1e3020')+';border-radius:8px;padding:9px 10px;color:'+(on?col:'#7aaa80')+';font-size:13px;font-weight:'+(on?800:600)+';cursor:pointer;min-height:44px">'+lbl+'</button>';
+    };
+    h+='<div style="display:flex;gap:6px;margin-bottom:12px">'+_sbtn("cmc","\ud83c\udfdb\ufe0f Monte-Carlo","#c9a227")+_sbtn("cdp","\ud83c\udfb0 Caf\u00e9 de Paris","#4a9aff")+_sbtn("compare","\u2696\ufe0f Comparer","#a060ff")+'</div>';
+    // Sous-onglet : CMC
+    if(_sub==="cmc"){
+      var _p=PLANS_CMC;
+      h+='<div style="padding:14px 16px;background:linear-gradient(135deg,rgba(201,162,39,.08),rgba(201,162,39,.02));border:1px solid rgba(201,162,39,.3);border-radius:12px;margin-bottom:14px">'
+        +'<div style="font-size:18px;font-weight:800;color:#c9a227;margin-bottom:4px">'+esc(_p.nom)+'</div>'
+        +'<div style="font-size:12px;color:#a8c8a0;margin-bottom:8px">'+esc(_p.adresse)+' \u00b7 '+esc(_p.tel)+'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;font-size:12px;color:#c0d8a8">'
+        +'<div><b style="color:#c9a227">Style</b><br>'+esc(_p.style)+'</div>'
+        +'<div><b style="color:#c9a227">Surface</b><br>'+esc(_p.surface)+'</div>'
+        +'<div><b style="color:#c9a227">\u00c2ge min</b><br>'+_p.ageMin+' ans</div>'
+        +'<div><b style="color:#c9a227">Tables</b><br>'+esc(_p.ouverture.tables)+'</div>'
+        +'<div><b style="color:#c9a227">Slots</b><br>'+esc(_p.ouverture.slots)+'</div>'
+        +'<div><b style="color:#c9a227">Dress code</b><br>'+esc(_p.dressCode.slice(0,60))+(_p.dressCode.length>60?'...':'')+'</div>'
+        +'</div>'
+        +'<div style="font-size:12px;color:#8aa890;margin-top:10px;padding-top:8px;border-top:1px solid rgba(201,162,39,.2)"><b>Historique :</b> '+esc(_p.historique)+'</div>'
+        +'</div>';
+      // Salles
+      h+='<div style="font-size:13px;color:#c9a227;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin:14px 0 8px;padding-left:4px">\ud83d\udcc0 '+_p.salles.length+' salles de jeu</div>';
+      var _selS=A.convLieuxSel||"";
+      _p.salles.forEach(function(sl){
+        var open=_selS===sl.id;
+        h+='<div onclick="A.convLieuxSel=\''+esc(sl.id)+'\';dc()" style="padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,.03);border:1px solid '+(open?'rgba(201,162,39,.5)':'rgba(201,162,39,.15)')+';border-radius:8px;cursor:pointer">'
+          +'<div style="display:flex;align-items:center;gap:10px">'
+          +'<span style="font-size:22px">'+sl.ic+'</span>'
+          +'<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#c9a227">'+esc(sl.nom)+'</div>'
+          +'<div style="font-size:12px;color:#7aaa80">'+esc(sl.type)+'</div></div>'
+          +'<div style="font-size:16px;color:#4a6040">'+(open?'\u25be':'\u203a')+'</div>'
+          +'</div>';
+        if(open){
+          if(sl.architecte)h+='<div style="margin-top:8px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">Architecte :</b> '+esc(sl.architecte)+'</div>';
+          if(sl.description)h+='<div style="margin-top:6px;font-size:13px;color:#c0d8a8;line-height:1.5">'+esc(sl.description)+'</div>';
+          if(sl.jeux&&sl.jeux.length){
+            h+='<div style="margin-top:8px"><b style="color:#c9a227;font-size:12px">\ud83c\udfb0 Jeux disponibles :</b><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">';
+            sl.jeux.forEach(function(j){h+='<span style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:2px 7px;font-size:11px;color:#c9a227">'+esc(j)+'</span>';});
+            h+='</div></div>';
+          }
+          if(sl.horaires)h+='<div style="margin-top:6px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">\u23f0 Horaires :</b> '+esc(sl.horaires)+'</div>';
+          if(sl.dressCode)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">\ud83d\udc54 Dress code :</b> '+esc(sl.dressCode)+'</div>';
+          if(sl.acces)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">\ud83d\udeaa Acc\u00e8s :</b> '+esc(sl.acces)+'</div>';
+          if(sl.entree)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">\ud83c\udfab Entr\u00e9e :</b> '+esc(sl.entree)+'</div>';
+          if(sl.noteCmc)h+='<div style="margin-top:6px;padding:6px 8px;background:rgba(80,200,100,.08);border-left:3px solid rgba(80,200,100,.5);border-radius:4px;font-size:12px;color:#7acc80"><b>Note CMC Teams :</b> '+esc(sl.noteCmc)+'</div>';
+          if(sl.nbMachines)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">\ud83c\udfb2 Machines :</b> '+sl.nbMachines+'</div>';
+        }
+        h+='</div>';
+      });
+      // Espaces annexes
+      if(_p.annexes&&_p.annexes.length){
+        h+='<div style="font-size:13px;color:#c9a227;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin:14px 0 8px;padding-left:4px">\ud83c\udf77 Espaces annexes</div>';
+        _p.annexes.forEach(function(a){
+          h+='<div style="padding:8px 12px;margin-bottom:4px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:6px">'
+            +'<div style="font-size:13px;font-weight:700;color:#c0d8a8">'+esc(a.nom)+' <span style="font-size:11px;color:#7aaa80">\u00b7 '+esc(a.type)+'</span></div>'
+            +'<div style="font-size:12px;color:#8aa890;margin-top:2px">'+esc(a.desc)+'</div></div>';
+        });
+      }
+    }
+    // Sous-onglet : CDP
+    if(_sub==="cdp"){
+      var _p2=PLANS_CDP;
+      h+='<div style="padding:14px 16px;background:linear-gradient(135deg,rgba(74,154,255,.08),rgba(74,154,255,.02));border:1px solid rgba(74,154,255,.3);border-radius:12px;margin-bottom:14px">'
+        +'<div style="font-size:18px;font-weight:800;color:#4a9aff;margin-bottom:4px">'+esc(_p2.nom)+'</div>'
+        +'<div style="font-size:12px;color:#a8c8a0;margin-bottom:8px">'+esc(_p2.adresse)+' \u00b7 '+esc(_p2.tel)+'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;font-size:12px;color:#c0d8a8">'
+        +'<div><b style="color:#4a9aff">Style</b><br>'+esc(_p2.style)+'</div>'
+        +'<div><b style="color:#4a9aff">Surface</b><br>'+esc(_p2.surface)+'</div>'
+        +'<div><b style="color:#4a9aff">\u00c2ge min</b><br>'+_p2.ageMin+' ans</div>'
+        +'<div><b style="color:#4a9aff">Tables</b><br>'+esc(_p2.ouverture.tables)+'</div>'
+        +'<div><b style="color:#4a9aff">Slots</b><br>'+esc(_p2.ouverture.slots)+(_p2.ouverture.h24?' (24h/24)':'')+'</div>'
+        +'<div><b style="color:#4a9aff">Entr\u00e9e</b><br>'+esc(_p2.entree)+'</div>'
+        +'</div>'
+        +'<div style="font-size:12px;color:#8aa890;margin-top:10px;padding-top:8px;border-top:1px solid rgba(74,154,255,.2)"><b>Historique :</b> '+esc(_p2.historique)+'</div>'
+        +'</div>';
+      // Zones
+      h+='<div style="font-size:13px;color:#4a9aff;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin:14px 0 8px;padding-left:4px">\ud83d\udcc0 Zones de jeu</div>';
+      _p2.zones.forEach(function(z){
+        h+='<div style="padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.03);border:1px solid rgba(74,154,255,.25);border-radius:8px">'
+          +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">'
+          +'<span style="font-size:22px">'+z.ic+'</span>'
+          +'<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#4a9aff">'+esc(z.nom)+'</div>'
+          +'<div style="font-size:12px;color:#7aaa80">'+esc(z.type)+'</div></div></div>'
+          +'<div style="font-size:13px;color:#c0d8a8;line-height:1.5;margin-top:6px">'+esc(z.description)+'</div>';
+        if(z.jeux&&z.jeux.length){
+          h+='<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">';
+          z.jeux.forEach(function(j){h+='<span style="background:rgba(74,154,255,.12);border:1px solid rgba(74,154,255,.3);border-radius:4px;padding:2px 7px;font-size:11px;color:#4a9aff">'+esc(j)+'</span>';});
+          h+='</div>';
+        }
+        if(z.nbMachines)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#4a9aff">\ud83c\udfb0 Machines :</b> '+z.nbMachines+'</div>';
+        if(z.gainMax)h+='<div style="margin-top:4px;font-size:12px;color:#a8c8a0"><b style="color:#4a9aff">\ud83d\udcb0 Gain max :</b> '+esc(z.gainMax)+'</div>';
+        h+='</div>';
+      });
+      // Chiffres CDP
+      h+='<div style="font-size:13px;color:#4a9aff;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin:14px 0 8px;padding-left:4px">\ud83d\udcca Chiffres cl\u00e9s</div>';
+      h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px">'
+        +'<div style="padding:10px;background:rgba(74,154,255,.08);border:1px solid rgba(74,154,255,.25);border-radius:8px;text-align:center"><div style="font-size:22px;font-weight:800;color:#4a9aff">'+_p2.chiffres.machinesTotal+'</div><div style="font-size:11px;color:#a8c8a0">Machines total</div></div>'
+        +'<div style="padding:10px;background:rgba(74,154,255,.08);border:1px solid rgba(74,154,255,.25);border-radius:8px;text-align:center"><div style="font-size:22px;font-weight:800;color:#4a9aff">'+_p2.chiffres.postesRouletteElec+'</div><div style="font-size:11px;color:#a8c8a0">Postes roul. \u00e9lec</div></div>'
+        +'<div style="padding:10px;background:rgba(74,154,255,.08);border:1px solid rgba(74,154,255,.25);border-radius:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#4a9aff">'+esc(_p2.chiffres.jackpotMax.split(" ")[0]+" "+(_p2.chiffres.jackpotMax.split(" ")[1]||""))+'</div><div style="font-size:11px;color:#a8c8a0">Jackpot max</div></div>'
+        +'</div>';
+      // Niveaux du bâtiment
+      h+='<div style="font-size:13px;color:#4a9aff;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin:14px 0 8px;padding-left:4px">\ud83c\udfe2 Niveaux du b\u00e2timent</div>';
+      _p2.niveauxBatiment.forEach(function(n){
+        h+='<div style="padding:8px 12px;margin-bottom:4px;background:rgba(255,255,255,.02);border-left:3px solid #4a9aff;border-radius:0 6px 6px 0">'
+          +'<div style="font-size:13px;font-weight:700;color:#4a9aff">'+esc(n.niv)+'</div>'
+          +'<div style="font-size:12px;color:#c0d8a8;margin-top:2px">'+esc(n.contenu)+'</div></div>';
+      });
+    }
+    // Sous-onglet : Comparer CMC vs CDP
+    if(_sub==="compare"){
+      var _rows=[
+        ["Style",PLANS_CMC.style,PLANS_CDP.style],
+        ["Surface",PLANS_CMC.surface,PLANS_CDP.surface],
+        ["\u00c2ge minimum",PLANS_CMC.ageMin+" ans",PLANS_CDP.ageMin+" ans"],
+        ["Entr\u00e9e",PLANS_CMC.entree,PLANS_CDP.entree],
+        ["Dress code",PLANS_CMC.dressCode,PLANS_CDP.dressCode],
+        ["Ouverture tables",PLANS_CMC.ouverture.tables,PLANS_CDP.ouverture.tables],
+        ["Ouverture slots",PLANS_CMC.ouverture.slots,PLANS_CDP.ouverture.slots+(PLANS_CDP.ouverture.h24?" (24h/24)":"")],
+        ["Sp\u00e9cialit\u00e9","Tables de prestige (Belle \u00c9poque)","Machines \u00e0 sous (~"+PLANS_CDP.chiffres.machinesTotal+" total)"]
+      ];
+      h+='<div style="overflow-x:auto;border:1px solid rgba(160,96,255,.25);border-radius:10px">'
+        +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        +'<thead><tr style="background:rgba(160,96,255,.12)">'
+        +'<th style="padding:10px;text-align:left;color:#a060ff;font-weight:800">Crit\u00e8re</th>'
+        +'<th style="padding:10px;text-align:left;color:#c9a227;font-weight:800">\ud83c\udfdb\ufe0f CMC</th>'
+        +'<th style="padding:10px;text-align:left;color:#4a9aff;font-weight:800">\ud83c\udfb0 CDP</th>'
+        +'</tr></thead><tbody>';
+      _rows.forEach(function(r,i){
+        h+='<tr style="border-top:1px solid rgba(255,255,255,.05);background:'+(i%2?'rgba(255,255,255,.02)':'transparent')+'">'
+          +'<td style="padding:8px 10px;color:#a060ff;font-weight:700">'+esc(r[0])+'</td>'
+          +'<td style="padding:8px 10px;color:#c0d8a8">'+esc(r[1])+'</td>'
+          +'<td style="padding:8px 10px;color:#c0d8a8">'+esc(r[2])+'</td>'
+          +'</tr>';
+      });
+      h+='</tbody></table></div>';
+    }
   }
   // Tab : Recherche
   if(tab==="search"){
@@ -10948,7 +11274,32 @@ function buildIASystemPrompt(){
     s+="  Mises : "+j.mises+" · Paiement : "+j.paiement+" · Lieu : "+j.lieu+"\n";
   });
   s+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-  s+="\nRéponds en français, sois concis et précis. Cite les articles de la convention quand pertinent (ex: \"Article 17.5\"). Tu peux répondre à toute question sur les plannings, équipes, horaires, absences, droits, congés, salaires, promotions, codes paie, règles des jeux.";
+
+  // v9.62 — PLANS CMC & CDP : architecture + disposition des salles + horaires + dress codes
+  s+="\n━━━ LIEUX : CASINO DE MONTE-CARLO (CMC) & CASINO CAFÉ DE PARIS (CDP) ━━━\n";
+  s+="CMC : "+PLANS_CMC.nom+" \u00b7 "+PLANS_CMC.adresse+" \u00b7 "+PLANS_CMC.tel+" \u00b7 "+PLANS_CMC.style+" \u00b7 "+PLANS_CMC.surface+" \u00b7 \u00c2ge min "+PLANS_CMC.ageMin+" ans \u00b7 Entr\u00e9e "+PLANS_CMC.entree+" \u00b7 Dress code : "+PLANS_CMC.dressCode+" \u00b7 Tables "+PLANS_CMC.ouverture.tables+" / Slots "+PLANS_CMC.ouverture.slots+"\n";
+  s+="Salles CMC (9) : ";
+  s+=PLANS_CMC.salles.map(function(sl){
+    var jeux=(sl.jeux&&sl.jeux.length)?" [jeux : "+sl.jeux.join(", ")+"]":"";
+    return sl.nom+" ("+sl.type+")"+jeux;
+  }).join(" \u00b7 ")+"\n";
+  s+="CDP : "+PLANS_CDP.nom+" \u00b7 "+PLANS_CDP.adresse+" \u00b7 "+PLANS_CDP.tel+" \u00b7 "+PLANS_CDP.style+" \u00b7 \u00c2ge min "+PLANS_CDP.ageMin+" ans (attention 21 ans au CDP vs 18 au CMC) \u00b7 Entr\u00e9e "+PLANS_CDP.entree+" \u00b7 Dress code : "+PLANS_CDP.dressCode+" \u00b7 Tables "+PLANS_CDP.ouverture.tables+" / Slots "+PLANS_CDP.ouverture.slots+" \u00b7 "+(PLANS_CDP.ouverture.h24?"24h/24 (slots)":"")+"\n";
+  s+="Zones CDP : "+PLANS_CDP.zones.map(function(z){var jj=(z.jeux&&z.jeux.length)?" [jeux : "+z.jeux.join(", ")+"]":"";return z.nom+" ("+z.type+")"+jj;}).join(" \u00b7 ")+"\n";
+  s+="Chiffres CDP : "+PLANS_CDP.chiffres.machinesTotal+" machines \u00e0 sous (dont "+PLANS_CDP.chiffres.machinesInterieur+" int + "+PLANS_CDP.chiffres.machinesTerrasses+" terrasses) \u00b7 "+PLANS_CDP.chiffres.postesRouletteElec+" postes roulette \u00e9lectronique \u00b7 Jackpot max "+PLANS_CDP.chiffres.jackpotMax+"\n";
+  s+="Diff\u00e9rences cl\u00e9s : CMC = tables de prestige (Belle \u00c9poque, 8 lustres cristal Salle Europe, 18 ans min, dress code strict apr\u00e8s 20h, tables 14h). CDP = machines \u00e0 sous principales (~640 total, contemporain Art D\u00e9co 2023, 21 ans min, d\u00e9tendu, slots 24h, tables 16h).\n";
+  s+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+
+  // v9.62 — Workflow d'upload mod\u00e9r\u00e9 (si en attente, mentionner)
+  var _pendingUp=(A.uploadRequests||[]).filter(function(r){return r.status==="pending";}).length;
+  if(_pendingUp>0&&A.user&&A.user.id===AID){
+    s+="\n\u26a0\ufe0f ALERTE ADMIN : "+_pendingUp+" demande(s) d'upload en attente de validation. Invite l'utilisateur \u00e0 aller dans Admin \u2192 Mod\u00e9ration uploads si la question concerne des documents.\n";
+  }
+  s+="\nR\u00c8GLES D'UPLOAD (v9.62) : Seul l'admin (DESARZENS K, U11804) peut uploader directement. Les employ\u00e9s peuvent PROPOSER un document via vPartage, cela cr\u00e9e une demande qui n\u00e9cessite la validation admin. Bouton global admin on/off. Tout est audit\u00e9.\n";
+
+  // v9.62 — Workflow de modification
+  s+="\nR\u00c8GLES DE MODIFICATION (v9.62) : Seul l'admin (DESARZENS K, matricule "+AID+") peut modifier les donn\u00e9es de l'app (plannings, employ\u00e9s, mots de passe, documents, acc\u00e8s). Les employ\u00e9s ont acc\u00e8s en lecture seule. Si un employ\u00e9 te demande de modifier quelque chose, dis-lui qu'il doit passer par l'admin. Tu peux AIDER (expliquer, rechercher, calculer, conseiller) mais pas AGIR sur les donn\u00e9es.\n";
+
+  s+="\nR\u00e9ponds en fran\u00e7ais, sois concis et pr\u00e9cis. Cite les articles de la convention quand pertinent (ex: \"Article 17.5\") et les lieux pr\u00e9cis du CMC/CDP quand on demande o\u00f9 jouer \u00e0 tel jeu. Tu peux r\u00e9pondre \u00e0 toute question sur les plannings, \u00e9quipes, horaires, absences, droits, cong\u00e9s, salaires, promotions, codes paie, r\u00e8gles des jeux, lieux, dress codes, diff\u00e9rences CMC/CDP.";
   return s;
 }
 
@@ -10978,7 +11329,9 @@ function callClaudeIA(q){
 
   function _doFetch(messages,depth){
     if(depth>4){_finalize("Trop d'étapes de recherche. Réessayez.",true);return;}
-    var body={model:"claude-haiku-4-5-20251001",max_tokens:1024,system:buildIASystemPrompt(),messages:messages};
+    // v9.62 : max_tokens bump\u00e9 de 1024 \u00e0 4096 pour r\u00e9ponses plus d\u00e9taill\u00e9es
+    // (plans, r\u00e8gles, articles) avec le prompt syst\u00e8me enrichi PLANS+CONVENTION+JEUX+UPLOAD
+    var body={model:"claude-haiku-4-5-20251001",max_tokens:4096,system:buildIASystemPrompt(),messages:messages};
     if(iaWebSearch)body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:3}];
     var _apiUrl=iaProxyUrl||(iaApiKey?"https://api.anthropic.com/v1/messages":"");
     var _headers={"content-type":"application/json","anthropic-version":"2023-06-01"};
