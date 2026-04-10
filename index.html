@@ -2311,9 +2311,28 @@ function _ovHash(ov){
 }
 function _checkPlanningChanged(newOv){
   var newH=_ovHash(newOv);
-  if(_lastOvHash&&_lastOvHash!==newH){
-    sendNotif("📅 Votre planning a été modifié","Ouvrez CMC Teams pour voir les changements.",{tag:"planning"});
-    toast("Votre planning a \u00e9t\u00e9 mis \u00e0 jour");
+  if(_lastOvHash&&_lastOvHash!==newH&&A.user){
+    // Identifier précisément ce qui a changé pour l'employé connecté
+    var uid=A.user.id;
+    var key=A.year+"-"+A.month;
+    var oldPl=(A.overrides[key]||{})[uid]||{};
+    var newPl=(newOv[key]||{})[uid]||{};
+    var changes=[];
+    var days=getDays(A.year,A.month);
+    for(var _cd=1;_cd<=days;_cd++){
+      var oldC=oldPl[_cd]||"";
+      var newC=newPl[_cd]||"";
+      if(oldC!==newC)changes.push({d:_cd,old:oldC,new:newC});
+    }
+    if(changes.length){
+      var detail=changes.slice(0,3).map(function(c){
+        return "J"+c.d+" : "+(c.old||"\u2014")+"\u2192"+(c.new||"\u2014");
+      }).join(", ")+(changes.length>3?" (+"+( changes.length-3)+" autres)":"");
+      sendNotif("\ud83d\udcc5 Planning modifi\u00e9 ("+changes.length+" jour"+(changes.length>1?"s":"")+")",detail,{tag:"planning"});
+      toast("\ud83d\udcc5 Planning modifi\u00e9 : "+detail);
+    } else {
+      toast("Planning mis \u00e0 jour");
+    }
   }
   _lastOvHash=newH;
 }
@@ -5539,18 +5558,28 @@ function vMonPlanning(){
     var isWE=dow2===0||dow2===6;
     var ci2=CODES[code]||null;
     var codeColor=ci2?ci2.c:(isWork(code)?tcc:(code?"#3a503a":"#1e2e1e"));
-    var codeBg=ci2&&isWork(code)?(codeColor+"18"):"transparent";
+    var codeBg=ci2?(ci2.bg||"transparent"):"transparent";
     var depPos=null;
     if(isWork(code)&&CHEFS_T[emp.team]&&CHEFS_T[emp.team].indexOf(emp.name)>=0)
       depPos=calcDepPos(emp.name,emp.team,d);
     var _isPast=isCurrentMo&&d<todD&&!isToday;
-    var cellBg=isToday?"rgba(201,162,39,.18)":_isPast?"#030808":"#050d05";
-    var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":isWE?"#162018":"#121c12");
+    // Horaire en clair (ex: "19h→4h")
+    var _timeLabel="";
+    if(ci2&&ci2.l&&isWork(code)){var _tl=ci2.l.replace(/h\u20136/,"h\u21926").replace(/h\u20134/,"h\u21924").replace(/h\u20133/,"h\u21923").replace(/h\u201319/,"h\u219219").replace(/h\u20135/,"h\u21925").replace(/h\u201322/,"h\u219222");_timeLabel=_tl.length>12?_tl.split("/")[0]+"h":_tl;}
+    else if(code==="CP")_timeLabel="\ud83c\udfd6 Cong\u00e9";
+    else if(code==="AF")_timeLabel="\ud83c\udf93 Form.";
+    else if(code==="M")_timeLabel="\ud83e\udd12 Maladie";
+    else if(code==="RH"||code==="R")_timeLabel="\ud83d\udca4 Repos";
+    else if(code==="RRT")_timeLabel="\u21bb R\u00e9cup";
+    var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"#030808":(ci2&&isWork(code)?codeBg+"60":"#050d05");
+    var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":ci2&&isWork(code)?codeColor+"40":isWE?"#162018":"#121c12");
     h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
-      +';border:'+borderStyle+';border-radius:6px;text-align:center;min-height:52px;opacity:'+(_isPast?"0.45":"1")+'">'
-      +'<div style="font-size:12px;color:'+(isToday?"#c9a227":isWE?"#3a5888":"#3a5030")+';font-weight:'+(isToday?800:400)+';margin-bottom:1px">'+d+'</div>'
-      +'<div style="font-size:'+(code.length>4?7:9)+'px;font-weight:700;color:'+codeColor+';background:'+codeBg+';border-radius:3px;padding:1px 0;line-height:1.4;min-height:12px">'+(code||'<span style="opacity:.2">\u00b7</span>')+'</div>'
-      +(depPos?'<div style="font-size:11px;color:#c9a227;font-weight:800;margin-top:1px">\u2191'+depPos+'</div>':"")
+      +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
+      +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
+      +'<div style="font-size:11px;color:'+(isToday?"#c9a227":isWE?"#3a5888":"#3a5030")+';font-weight:'+(isToday?800:600)+'">'+d+'</div>'
+      +'<div style="font-size:'+(code.length>4?'11':'12')+'px;font-weight:800;color:'+codeColor+';line-height:1.2">'+(code||'<span style="opacity:.15">\u00b7</span>')+'</div>'
+      +(_timeLabel?'<div style="font-size:8px;color:'+codeColor+';opacity:.75;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%">'+_timeLabel+'</div>':"")
+      +(depPos?'<div style="font-size:11px;color:#c9a227;font-weight:800">\u2191'+depPos+'</div>':"")
       +'</div>';
   }
   h+='</div>';
@@ -5570,7 +5599,9 @@ function vMonPlanning(){
       +'<div style="font-size:13px;color:#7aaa80">'+s.lb+'</div></div>';
   });
   h+='</div>';
-  // v9.66 Planning audit : alerte s\u00e9rie jours cons\u00e9cutifs (>5 = attention, >7 = alerte)
+  // Solde congés de l'employé
+  h+=renderLeaveBalance(emp.id,A.year);
+  // v9.66 Planning audit : alerte série jours consécutifs (>5 = attention, >7 = alerte)
   if(_maxConsec>=5){
     var _sevCol=_maxConsec>=7?"#e04040":_maxConsec>=6?"#c07830":"#c9a227";
     var _sevLb=_maxConsec>=7?"\u26a0\ufe0f Alerte repos":"S\u00e9rie en cours";
@@ -5976,6 +6007,30 @@ function vAccueil(){
         +'<span style="font-size:14px;color:'+(_critCount?"#e09090":"#d8b860")+'">\u203a</span>'
         +'</div>';
     }
+    // Taux d'absentéisme mensuel + répartition CP par équipe
+    var _absTot=_conge.length+_malade.length;
+    var _absRate=_active.length?Math.round((_absTot/_active.length)*100):0;
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">'
+      +'<div style="padding:8px 10px;background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);border-radius:8px">'
+      +'<div style="font-size:20px;font-weight:800;color:'+(_absRate>15?"#e06060":_absRate>8?"#c9a227":"#5aaa70")+'">'+_absRate+'%</div>'
+      +'<div style="font-size:11px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px">Absent\u00e9isme</div></div>'
+      +'<div style="padding:8px 10px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.18);border-radius:8px">'
+      +'<div style="font-size:20px;font-weight:800;color:#5aaa70">'+(_active.length?Math.round((_working.length/_active.length)*100):0)+'%</div>'
+      +'<div style="font-size:11px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px">Pr\u00e9sence</div></div>'
+      +'</div>';
+    // CP par équipe (top 5)
+    var _cpByTeam={};
+    _conge.forEach(function(e){var tn=gt(e.team)?gt(e.team).name:e.team;_cpByTeam[tn]=(_cpByTeam[tn]||0)+1;});
+    var _cpTeams=Object.keys(_cpByTeam).sort(function(a,b){return _cpByTeam[b]-_cpByTeam[a];}).slice(0,5);
+    if(_cpTeams.length){
+      h+='<div style="margin-top:6px;padding:6px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:8px">'
+        +'<div style="font-size:11px;color:#6a92c8;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\ud83c\udf34 CP par \u00e9quipe aujourd\u2019hui</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      _cpTeams.forEach(function(tn){
+        h+='<span style="font-size:12px;padding:2px 8px;background:rgba(74,114,168,.12);border-radius:12px;color:#8ab0d0">'+esc(tn)+' <b>'+_cpByTeam[tn]+'</b></span>';
+      });
+      h+='</div></div>';
+    }
     h+='</div>';
   }
   // Fêtes et événements
@@ -6190,6 +6245,20 @@ function vAccueil(){
       +'<div style="font-size:18px;font-weight:800;color:#a064a8">'+_soldeRRT+'</div>'
       +'<div style="font-size:13px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px">RRT</div></div>'
       +'</div>';
+  }
+  // Solde congés annuel (CP restants / total)
+  if(u&&!isUserFloating(u,A.year,A.month)){
+    var _lb=calcLeaveBalance(u.id,A.year);
+    if(!_lb.invalid){
+      var _lbCol=_lb.restant>=20?"#5aaa70":_lb.restant>=10?"#c9a227":"#c06060";
+      h+='<div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg,'+_lbCol+'0c,'+_lbCol+'04);border:1px solid '+_lbCol+'30;border-radius:10px;display:flex;align-items:center;gap:12px">'
+        +'<div style="font-size:22px">\ud83c\udf34</div>'
+        +'<div style="flex:1"><div style="font-size:12px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px">Cong\u00e9s '+_lb.year+'</div>'
+        +'<div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:4px;overflow:hidden"><div style="height:100%;width:'+Math.min(100,_lb.pourcent)+'%;background:'+_lbCol+';border-radius:3px"></div></div></div>'
+        +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:'+_lbCol+'">'+_lb.restant+'</div>'
+        +'<div style="font-size:11px;color:#7aaa80">/ '+_lb.total+' j</div></div>'
+        +'</div>';
+    }
   }
   // Bloc "Mes stats" synthétique (mois courant + année)
   if(u){
