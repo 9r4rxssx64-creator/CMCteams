@@ -3419,6 +3419,25 @@ function vDocs(){
   h+='</div>';
   h+='<div style="font-size:11px;color:#7a8a80;margin-top:6px">\ud83d\udd12 <strong>Priv\u00e9</strong> : visible seulement par vous \u2022 \ud83d\udc65 <strong>Partag\u00e9</strong> : visible par tous les employ\u00e9s via \u201cPartag\u00e9\u201d</div>';
   h+='</div>';
+  // v9.67 — Ressources intégrées à l'application
+  h+='<div style="padding:10px 12px;margin-bottom:14px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2);border-radius:10px">'
+    +'<div style="font-size:12px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcda Ressources int\u00e9gr\u00e9es \u00e0 l\u2019application</div>'
+    +'<div style="font-size:11px;color:#5a7a90;margin-bottom:8px;line-height:1.5">Ces documents sont int\u00e9gr\u00e9s dans le code et accessibles directement.</div>'
+    +'<div style="display:flex;flex-direction:column;gap:5px">';
+  [{ic:"\ud83d\udcd6",lb:"Convention Collective SBM",sub:"29 articles \u2022 Codes paie \u2022 Grilles salaires",fn:"sv('convention')"},
+   {ic:"\u2696\ufe0f",lb:"Cadre l\u00e9gal mon\u00e9gasque",sub:"Loi 1.103 \u2022 OS 8.929 \u2022 AM 88-384",fn:"A.convTab='loi';sv('convention')"},
+   {ic:"\ud83c\udfb2",lb:"R\u00e8gles des 8 jeux de table",sub:"BJ \u2022 Roulettes \u2022 Punto \u2022 Craps \u2022 Poker",fn:"A.convTab='jeux';sv('convention')"},
+   {ic:"\ud83c\udf93",lb:"Formation SBM 2016",sub:"Proc\u00e9dures croupier \u2022 Tableaux \u2022 Rapports",fn:"A.convTab='jeux';sv('convention')"},
+   {ic:"\ud83c\udfe8",lb:"Plans Casino (CMC + CDP)",sub:"9 salles CMC \u2022 4 zones CDP",fn:"A.convTab='lieux';sv('convention')"},
+   {ic:"\ud83d\uddbc\ufe0f",lb:"Galerie photos salons (75)",sub:"Photos SBM \u2022 Wikimedia \u2022 Archives",fn:"sv('galerie')"}
+  ].forEach(function(b){
+    h+='<button onclick="'+b.fn+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:8px;cursor:pointer;text-align:left;width:100%">'
+      +'<span style="font-size:20px;flex-shrink:0">'+b.ic+'</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#a0c8e0">'+b.lb+'</div>'
+      +'<div style="font-size:12px;color:#5a7a90">'+b.sub+'</div></div>'
+      +'<span style="font-size:14px;color:#4a72a8;flex-shrink:0">\u203a</span></button>';
+  });
+  h+='</div></div>';
   // Liste / grille des documents
   if(!filtered.length){
     h+='<div style="padding:40px 20px;text-align:center;color:#5a7060;background:rgba(255,255,255,.02);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px dashed rgba(201,162,39,.2);border-radius:12px">'
@@ -9638,10 +9657,33 @@ function detectRepoConflicts(y,m){
     if(maxConsec>=7){
       conflicts.push({emp:emp,type:"max_jours_consec",msg:emp.name+" : "+maxConsec+" jours cons\u00e9cutifs de travail sans repos",severity:"critical"});
     }
-    // R\u00e8gle 3 : jours vides nombreux (data manquante)
+    // Règle 3 : jours vides nombreux (data manquante)
     if(emptyDays>daysInMonth/2){
       conflicts.push({emp:emp,type:"donnees_manquantes",msg:emp.name+" : "+emptyDays+" jours non renseign\u00e9s",severity:"info"});
     }
+    // Règle 4 : horaire de travail intercalé dans une période CP/AF/M (incohérence import)
+    var _absTypes={"CP":1,"AF":1,"M":1};
+    for(var d4=2;d4<daysInMonth;d4++){
+      var cPrev=(row[d4-1]||"").toUpperCase().trim();
+      var cCur=(row[d4]||"").toUpperCase().trim();
+      var cNext=(row[d4+1]||"").toUpperCase().trim();
+      if(_absTypes[cPrev]&&_absTypes[cNext]&&cCur&&!_absTypes[cCur]&&cCur!=="R"&&cCur!=="RH"&&/^\d/.test(cCur)){
+        conflicts.push({emp:emp,type:"horaire_dans_absence",msg:emp.name+" : "+cCur+" le jour "+d4+" entre "+cPrev+" (j"+(d4-1)+") et "+cNext+" (j"+(d4+1)+") \u2014 v\u00e9rifier",severity:"critical"});
+      }
+    }
+    // Règle 5 : longue série d'absences (CP/AF/M) > 15 jours → vérification RH
+    var _absCon=0,_absStart=0,_absType="";
+    for(var d5=1;d5<=daysInMonth;d5++){
+      var c5=(row[d5]||"").toUpperCase().trim();
+      if(_absTypes[c5]){
+        if(!_absCon){_absStart=d5;_absType=c5;}
+        _absCon++;
+      } else {
+        if(_absCon>=16){conflicts.push({emp:emp,type:"absence_longue",msg:emp.name+" : "+_absCon+"j de "+_absType+" cons\u00e9cutifs (j"+_absStart+"\u2192j"+(d5-1)+") \u2014 \u00e0 v\u00e9rifier avec RH",severity:"info"});}
+        _absCon=0;
+      }
+    }
+    if(_absCon>=16){conflicts.push({emp:emp,type:"absence_longue",msg:emp.name+" : "+_absCon+"j de "+_absType+" cons\u00e9cutifs (j"+_absStart+"\u2192j"+daysInMonth+") \u2014 \u00e0 v\u00e9rifier avec RH",severity:"info"});}
   });
   _conflictCache=conflicts;_conflictCacheKey=cacheKey;
   return conflicts;
@@ -12264,6 +12306,20 @@ function doImport(){
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
   _flushImportPending();
+  // v9.67 — Validation automatique post-import : détecter anomalies
+  _conflictCacheKey="";_conflictCache=null;
+  var _postConflicts=detectRepoConflicts(iy,im);
+  var _criticals=_postConflicts.filter(function(c){return c.severity==="critical";});
+  if(_criticals.length){
+    var _r3=document.getElementById("impRes");
+    if(_r3){
+      _r3.innerHTML+='<div style="margin-top:12px;padding:12px;background:rgba(224,64,64,.1);border:2px solid rgba(224,64,64,.5);border-radius:10px">'
+        +'<div style="font-size:16px;font-weight:800;color:#e06060;margin-bottom:8px">\ud83d\udea8 '+_criticals.length+' anomalie'+((_criticals.length>1)?'s':'')+' d\u00e9tect\u00e9e'+((_criticals.length>1)?'s':'')+' dans le planning</div>'
+        +'<div style="font-size:13px;color:#c08080;margin-bottom:8px">Ces incoh\u00e9rences ont \u00e9t\u00e9 d\u00e9tect\u00e9es automatiquement. V\u00e9rifiez le PDF source et corrigez si n\u00e9cessaire.</div>'
+        +_criticals.map(function(c){return '<div style="padding:6px 10px;margin-bottom:4px;background:rgba(224,64,64,.06);border-left:3px solid #e06060;border-radius:4px;font-size:14px;color:#e0a0a0">'+esc(c.msg)+'</div>';}).join('')
+        +'</div>';
+    }
+  }
   }catch(e){
     // v9.58 — En cas d'erreur : désactiver le flag et flush ce qui a été bufferisé
     _importInProgress=false;
