@@ -12697,7 +12697,8 @@ function buildIASystemPrompt(){
   // v9.63 — Informer Claude de ses outils custom
   s+="\n\u2501\u2501\u2501 TES OUTILS (v9.63) \u2501\u2501\u2501\n";
   s+="Tu disposes de "+IA_TOOLS.length+" outils pour interroger l'app en temps r\u00e9el. UTILISE-LES au lieu de deviner !\n";
-  s+="LECTURE (tous, "+IA_TOOLS.filter(function(t){return t.name.indexOf("admin_")!==0&&t.name.indexOf("set_")!==0;}).length+" outils) : get_planning, search_employees, get_employee_info, get_stats, get_today_status, find_game_rooms, search_convention, get_team_roster, get_conflicts, get_upload_requests, get_who_is_free, get_leave_balance, get_all_teams, get_audit_log, get_online_users, get_monthly_summary, get_game_rules, get_salary_grid, get_absences, get_rotation_rules, get_documents.\n";
+  s+="LECTURE (tous, "+IA_TOOLS.filter(function(t){return t.name.indexOf("admin_")!==0&&t.name.indexOf("set_")!==0;}).length+" outils) : get_planning, search_employees, get_employee_info, get_stats, get_today_status, find_game_rooms, search_convention, get_team_roster, get_conflicts, get_upload_requests, get_who_is_free, get_leave_balance, get_all_teams, get_audit_log, get_online_users, get_monthly_summary, get_game_rules, get_salary_grid, get_absences, get_rotation_rules, get_documents, get_departure_order, compare_months, get_team_day, get_conges_familiaux, get_shift_details, get_employee_history.\n";
+  s+="NOUVEAUX OUTILS PERFORMANTS : get_departure_order (position de d\u00e9part d'un employ\u00e9 un jour donn\u00e9), compare_months (comparer 2 mois), get_team_day (planning \u00e9quipe pour 1 jour), get_conges_familiaux (jours accord\u00e9s pour mariage/naissance/d\u00e9c\u00e8s), get_shift_details (horaires/lieu d'un code), get_employee_history (historique modifs).\n";
   s+="JEUX D\u00c9TAILL\u00c9S : get_game_rules_sbm (r\u00e8gles compl\u00e8tes SBM Formation 2016 : sections, paiements, tableaux de tirage, proc\u00e9dures croupier, lexique), search_game_rules (recherche par mot-cl\u00e9 dans tous les jeux SBM).\n";
   s+="L\u00c9GISLATION MON\u00c9GASQUE : search_legislation (recherche dans Loi 1.103 + OS 8.929 + AM 88-384), get_authorized_games (liste officielle des "+OS_8929.jeuxAutorises.length+" jeux autoris\u00e9s \u00e0 Monaco).\n";
   s+="MODIFICATION (admin DESARZENS K seulement, "+IA_TOOLS.filter(function(t){return t.name.indexOf("admin_")===0||t.name.indexOf("set_")===0;}).length+" outils) : set_planning_code, set_employee_team, admin_set_employee_field, admin_validate_upload, admin_reject_upload.\n";
@@ -12776,7 +12777,20 @@ var IA_TOOLS=[
   {name:"search_legislation",description:"Recherche dans le cadre l\u00e9gal mon\u00e9gasque des jeux : Loi 1.103, OS 8.929, AM 88-384. Retourne articles + extraits pertinents.",
    input_schema:{type:"object",properties:{query:{type:"string",description:"Terme (ex: agr\u00e9ment, mises, recettes, interdiction, triche, personnel, machines)"}},required:["query"]}},
   {name:"get_authorized_games",description:"Liste officielle des jeux de hasard autoris\u00e9s \u00e0 Monaco (OS 8.929 + amendements).",
-   input_schema:{type:"object",properties:{}}}
+   input_schema:{type:"object",properties:{}}},
+  // v9.67 — 6 nouveaux outils haute performance
+  {name:"get_departure_order",description:"Ordre de d\u00e9part d'un employ\u00e9 pour un jour donn\u00e9. R\u00e9pond \u00e0 'je pars en quelle position demain ?'",
+   input_schema:{type:"object",properties:{empId:{type:"string",description:"Matricule de l'employ\u00e9"},day:{type:"integer",description:"Jour du mois"},year:{type:"integer"},month:{type:"integer"}},required:["empId","day"]}},
+  {name:"compare_months",description:"Compare 2 mois pour un employ\u00e9 (jours travaill\u00e9s, heures, CP, repos). Utile pour 'ai-je plus travaill\u00e9 en mars ou avril ?'",
+   input_schema:{type:"object",properties:{empId:{type:"string"},year1:{type:"integer"},month1:{type:"integer"},year2:{type:"integer"},month2:{type:"integer"}},required:["empId","year1","month1","year2","month2"]}},
+  {name:"get_team_day",description:"Planning complet d'une \u00e9quipe pour un jour pr\u00e9cis. Qui travaille, qui est en repos, avec quel horaire.",
+   input_schema:{type:"object",properties:{teamId:{type:"string"},day:{type:"integer"},year:{type:"integer"},month:{type:"integer"}},required:["teamId","day"]}},
+  {name:"get_conges_familiaux",description:"Calcule les jours de cong\u00e9 pour un \u00e9v\u00e9nement familial (convention art.18 + note DRH 2021). Ex: mariage, naissance, d\u00e9c\u00e8s.",
+   input_schema:{type:"object",properties:{event:{type:"string",description:"\u00c9v\u00e9nement (mariage, naissance, deces_conjoint, deces_parent, deces_enfant, deces_frere, deces_beau_parent, mariage_enfant, oncle_tante)"}},required:["event"]}},
+  {name:"get_shift_details",description:"D\u00e9tails complets d'un code horaire : heures, lieu (CMC/CDP), dur\u00e9e, nuit/jour/coupure.",
+   input_schema:{type:"object",properties:{code:{type:"string",description:"Code horaire (ex: 22/6, 19/4, CP, AF, 16/3*)"}},required:["code"]}},
+  {name:"get_employee_history",description:"Historique des modifications admin d'un employ\u00e9 (changements planning, \u00e9quipe, r\u00f4le, etc.).",
+   input_schema:{type:"object",properties:{empId:{type:"string",description:"Matricule de l'employ\u00e9"},count:{type:"integer",description:"Nombre d'entr\u00e9es (d\u00e9faut 15, max 30)"}},required:["empId"]}}
 ];
 
 function _iaExecuteTool(toolName,input){
@@ -13038,6 +13052,70 @@ function _iaExecuteTool(toolName,input){
       }
       case"get_authorized_games":{
         return"JEUX AUTORIS\u00c9S \u00c0 MONACO (OS n\u00b0 8.929 du 15/07/1987, consolid\u00e9e 2008) :\n"+OS_8929.jeuxAutorises.map(function(j,i){return(i+1)+". "+j;}).join("\n")+"\n\nNote : "+OS_8929.note+"\n\nAmendements sp\u00e9cifiques :\n"+AM_88_384.amendements.join("\n");
+      }
+      // v9.67 — 6 nouveaux outils
+      case"get_departure_order":{
+        var emp=A.employees.find(function(e){return e.id===input.empId||e.name.toUpperCase().indexOf((input.empId||"").toUpperCase())>=0;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+esc(input.empId);
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var d=input.day;var tid=teamForMonth(emp,y,m);
+        if(!tid)return emp.name+" n'a pas d'\u00e9quipe en "+MFR[m]+" "+y;
+        var pos=calcDepPos(emp.name,tid,d);
+        if(!pos){var pl2=gpl(y,m);var c2=(pl2[emp.id]||{})[d]||"";return emp.name+" le "+d+" "+MFR[m]+" : "+(!c2?"pas de donn\u00e9es":c2==="RH"||c2==="R"?"repos":c2==="CP"?"cong\u00e9":c2==="M"?"maladie":c2==="AF"?"formation":"code "+c2+" (pas un horaire de travail)");}
+        return emp.name+" le "+d+" "+MFR[m]+" "+y+" : d\u00e9part en POSITION "+pos+(pos===1?" (premier \u00e0 partir)":"")+" dans l'\u00e9quipe "+tid;
+      }
+      case"compare_months":{
+        var emp=A.employees.find(function(e){return e.id===input.empId;});
+        if(!emp)return"Employ\u00e9 non trouv\u00e9";
+        var s1=calcStats(emp.id,{y:input.year1,m:input.month1});
+        var s2=calcStats(emp.id,{y:input.year2,m:input.month2});
+        var diff=function(a,b){return a>b?"+"+(a-b):a<b?""+(a-b):"=";};
+        return emp.name+" \u2014 Comparaison :\n"
+          +MFR[input.month1]+" "+input.year1+" : "+s1.trav+"j travaill\u00e9s, "+s1.heures+"h, "+s1.CP+" CP, "+s1.RH+" RH\n"
+          +MFR[input.month2]+" "+input.year2+" : "+s2.trav+"j travaill\u00e9s, "+s2.heures+"h, "+s2.CP+" CP, "+s2.RH+" RH\n"
+          +"Diff\u00e9rence : travail "+diff(s2.trav,s1.trav)+"j, heures "+diff(s2.heures,s1.heures)+"h, CP "+diff(s2.CP,s1.CP)+"j";
+      }
+      case"get_team_day":{
+        var tid=input.teamId;var d=input.day;
+        var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
+        var pl=gpl(y,m);
+        var members=A.employees.filter(function(e){return teamForMonth(e,y,m)===tid&&isEmpActive(e,y,m);});
+        if(!members.length)return"Aucun membre dans l'\u00e9quipe "+tid+" en "+MFR[m]+" "+y;
+        var work=[],repos=[],other=[];
+        members.forEach(function(e){
+          var c=(pl[e.id]||{})[d]||"";
+          if(isWork(c))work.push(e.name+" ("+c+")");
+          else if(c==="RH"||c==="R")repos.push(e.name);
+          else other.push(e.name+"("+(c||"?")+")");
+        });
+        return"\u00c9quipe "+tid+" le "+d+" "+MFR[m]+" "+y+" :\nEn service ("+work.length+") : "+(work.join(", ")||"aucun")+"\nRepos ("+repos.length+") : "+(repos.join(", ")||"aucun")+"\nAutre ("+other.length+") : "+(other.join(", ")||"aucun");
+      }
+      case"get_conges_familiaux":{
+        var evt=(input.event||"").toLowerCase().replace(/[_\-]/g," ");
+        var table={"mariage":4,"naissance":3,"adoption":3,"deces conjoint":3,"deces enfant":3,"deces parent":3,"deces pere":3,"deces mere":3,"deces frere":3,"deces soeur":3,"deces grand parent":3,"deces grand pere":3,"deces grand mere":3,"deces petit enfant":3,"oncle":1,"tante":1,"oncle tante":1,"mariage enfant":2,"deces beau parent":1,"deces belle mere":1,"deces beau pere":1,"deces gp conjoint":1,"deces frere conjoint":1,"deces soeur conjoint":1};
+        var jours=null;var evtLabel=evt;
+        for(var k in table){if(evt.indexOf(k)>=0){jours=table[k];evtLabel=k;break;}}
+        if(jours===null)return"Ev\u00e9nement non reconnu : '"+esc(input.event)+"'. Exemples : mariage, naissance, deces_conjoint, deces_parent, mariage_enfant, oncle_tante.";
+        return"\ud83d\udcc4 Convention art.18 + Note DRH 2021 :\n\u00c9v\u00e9nement : "+evtLabel+"\nDur\u00e9e : "+jours+" jour"+(jours>1?"s":"")+" ouvr\u00e9"+(jours>1?"s":"")+"\n\nR\u00e8gles : \u00e0 prendre le jour de l'\u00e9v\u00e9nement (ou veille/lendemain). Si R/RH le jour J, cong\u00e9 \u00e0 compter du lendemain. D\u00e9compt\u00e9s en jours ouvr\u00e9s. Extension PACS/union libre (Note 2021).";
+      }
+      case"get_shift_details":{
+        var code=(input.code||"").trim();
+        var ci=CODES[code];
+        if(!ci)return"Code inconnu : '"+esc(code)+"'. Codes valides : "+Object.keys(CODES).join(", ");
+        var hrs=codeHours(code);
+        var isCDP=code.endsWith("*");
+        var isNight=/^(22\/6|19\/4|20\/5)/.test(code);
+        var isCoupure=/^16\/3/.test(code);
+        return"Code : "+code+"\nLibell\u00e9 : "+ci.l+"\nDur\u00e9e : "+hrs+"h"+"\nType : "+(isCoupure?"Service coup\u00e9 (2 p\u00e9riodes)":isNight?"Service de nuit":"Service de jour")+"\nLieu : "+(isCDP?"Caf\u00e9 de Paris (CDP)":"Casino de Monte-Carlo (CMC)")+"\nCouleur : "+ci.c+"\nTravail : "+(isWork(code)?"oui":"non (repos/absence)");
+      }
+      case"get_employee_history":{
+        var count=Math.min(input.count||15,30);
+        var allLogs=lg("cmc_audit",[]);
+        var empLogs=allLogs.filter(function(e){return e.eid===input.empId||e.name===input.empId;}).slice(-count).reverse();
+        if(!empLogs.length)return"Aucune modification enregistr\u00e9e pour "+esc(input.empId);
+        return empLogs.length+" modification(s) :\n"+empLogs.map(function(e){
+          return new Date(e.ts).toLocaleString("fr-FR")+" | "+(e.action||"modif")+" | "+(e.old?e.old+"\u2192":"")+(e.new||"");
+        }).join("\n");
       }
       default:return"Outil inconnu : "+toolName;
     }
