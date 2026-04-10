@@ -12811,8 +12811,8 @@ function _iaExecuteTool(toolName,input){
         var emp=A.employees.find(function(e){return e.id===input.empId;});
         if(!emp)return"Employ\u00e9 non trouv\u00e9";
         var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
-        var st=calcStats(emp.id,y,m);
-        return emp.name+" \u2014 "+MFR[m]+" "+y+":\n"+JSON.stringify({jours_travail:st.worked,heures:st.hours,repos:st.rh+st.r,conges:st.cp,maladie:st.m,formation:st.af,nuits:st.nuits||0,coupures:st.coupures||0,weekEnds:st.weekEnds||0},null,2);
+        var st=calcStats(emp.id,{y:y,m:m});
+        return emp.name+" \u2014 "+MFR[m]+" "+y+":\n"+JSON.stringify({jours_travail:st.trav,heures:st.heures,repos:st.RH+st.R,conges:st.CP,maladie:st.M,formation:st.AF,nuits:st.nuits||0,coupures:st.coupures||0,weekEnds:st.weekEnds||0},null,2);
       }
       case"get_today_status":{
         var today=new Date();var y=today.getFullYear(),m=today.getMonth(),d=today.getDate();
@@ -12849,7 +12849,7 @@ function _iaExecuteTool(toolName,input){
         var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
         try{var c=detectRepoConflicts(y,m);
         if(!c||!c.length)return"Aucun conflit d\u00e9tect\u00e9 pour "+MFR[m]+" "+y;
-        return c.length+" alerte(s) :\n"+c.slice(0,15).map(function(a){return"["+a.severity+"] "+a.empName+" \u2014 "+a.message;}).join("\n");
+        return c.length+" alerte(s) :\n"+c.slice(0,15).map(function(a){return"["+a.severity+"] "+(a.emp?a.emp.name:"?")+" \u2014 "+a.msg;}).join("\n");
         }catch(e){return"Erreur d\u00e9tection conflits : "+e.message;}
       }
       case"get_upload_requests":{
@@ -12889,7 +12889,7 @@ function _iaExecuteTool(toolName,input){
         var count=Math.min(input.count||10,20);
         var logs=lg("cmc_audit",[]).slice(-count).reverse();
         if(!logs.length)return"Aucune entr\u00e9e dans le journal";
-        return logs.map(function(e){return new Date(e.ts).toLocaleString("fr-FR")+" | "+e.action+" | "+e.empName+" | "+(e.oldVal?e.oldVal+"\u2192":"")+(e.newVal||"");}).join("\n");
+        return logs.map(function(e){return new Date(e.ts).toLocaleString("fr-FR")+" | "+(e.action||"?")+" | "+(e.name||e.eid||"?")+" | "+(e.old?e.old+"\u2192":"")+(e.new||"");}).join("\n");
       }
       case"get_online_users":{
         try{var users=getOnlineUsers();
@@ -13074,7 +13074,8 @@ function callClaudeIA(q){
     // (plans, r\u00e8gles, articles) avec le prompt syst\u00e8me enrichi PLANS+CONVENTION+JEUX+UPLOAD
     var body={model:"claude-haiku-4-5-20251001",max_tokens:4096,system:buildIASystemPrompt(),messages:messages};
     // v9.63 — Tools : custom CMC tools + web search optionnel
-    var _tools=IA_TOOLS.map(function(t){return{type:"custom",name:t.name,description:t.description,input_schema:t.input_schema};});
+    // Les outils custom n'ont PAS de type (le type est réservé aux outils spéciaux Anthropic)
+    var _tools=IA_TOOLS.map(function(t){return{name:t.name,description:t.description,input_schema:t.input_schema};});
     if(iaWebSearch)_tools.push({type:"web_search_20250305",name:"web_search",max_uses:3});
     if(_tools.length)body.tools=_tools;
     var _apiUrl=iaProxyUrl||(iaApiKey?"https://api.anthropic.com/v1/messages":"");
