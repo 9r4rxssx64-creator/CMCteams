@@ -2,7 +2,7 @@
 node_modules/
 package-lock.json
 
-# Artefacts vidéo (générés, trop lourds pour Git)
+# Artefacts vidéo intermédiaires
 tools/video/frames/
-tools/video/output/
+tools/video/output/_palette.png
 tools/video/assets/*.png
