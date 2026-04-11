@@ -3417,7 +3417,7 @@ function vDocs(){
     h+='<button onclick="toggleDocCatShared(\''+esc(c.id)+'\')" title="'+(isShared?"Rendre priv\u00e9":"Partager avec tous")+'" style="flex:1;min-width:140px;background:'+(isShared?"rgba(58,138,80,.18)":"rgba(144,144,168,.08)")+';border:1px solid '+(isShared?"rgba(58,138,80,.5)":"rgba(144,144,168,.25)")+';border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left;color:'+(isShared?"#8aca92":"#a0a8a0")+';font-weight:700;font-size:12px;display:flex;align-items:center;gap:6px">'
       +'<span style="font-size:16px;flex-shrink:0">'+(isShared?"\ud83d\udc65":"\ud83d\udd12")+'</span>'
       +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.lb)+'</span>'
-      +'<span style="font-size:10px;opacity:.7">('+nDocs+')</span>'
+      +'<span style="font-size:11px;opacity:.7">('+nDocs+')</span>'
       +'</button>';
   });
   h+='</div></div>';
@@ -7322,7 +7322,7 @@ function renderLeaveBalance(empId,year){
     +'<div style="flex:1"><div style="font-size:13px;font-weight:800;color:#c090ff;text-transform:uppercase;letter-spacing:1px">Cong\u00e9s '+b.year+'</div>'
     +'<div style="font-size:11px;color:#a8c8a0">Convention SBM art.17.4 \u2014 2 mois/an ('+b.total+' jours)</div></div>'
     +'<div style="text-align:right"><div style="font-size:24px;font-weight:800;color:'+col+';line-height:1">'+b.restant+'</div>'
-    +'<div style="font-size:10px;color:#7aaa80;text-transform:uppercase">jours restants</div></div></div>'
+    +'<div style="font-size:11px;color:#7aaa80;text-transform:uppercase">jours restants</div></div></div>'
     // Barre de progression
     +'<div style="height:10px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;position:relative">'
     +'<div style="position:absolute;inset:0;width:'+Math.min(100,b.pourcent)+'%;background:linear-gradient(90deg,'+col+',#a060ff);transition:width .6s ease"></div>'
@@ -7628,14 +7628,14 @@ function vGalerie(){
   };
   // Établissement
   h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">'
-    +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">\u00c9tablissement</span>';
+    +'<span style="font-size:11px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">\u00c9tablissement</span>';
   ["Tous","CMC","CDP"].forEach(function(v){
     h+=_pill(_galEtab===v,v,"_galEtab=\\'"+v+"\\';_galSalon=\\'Tous\\';dc()");
   });
   h+='</div>';
   // Source
   h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">'
-    +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Source</span>';
+    +'<span style="font-size:11px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Source</span>';
   [["Toutes",null],["SBM",_PHOTO_SRC_COL.SBM],["CC",_PHOTO_SRC_COL.CC],["HIST",_PHOTO_SRC_COL.HIST]].forEach(function(x){
     var v=x[0],col=x[1];
     var lbl=v==="Toutes"?"Toutes":(_PHOTO_SRC_LB[v]||v);
@@ -7645,7 +7645,7 @@ function vGalerie(){
   // Salon (dynamique selon étab)
   if(salons.length>2){
     h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;align-items:center">'
-      +'<span style="font-size:10px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Salon</span>';
+      +'<span style="font-size:11px;color:#5a6a50;letter-spacing:2px;text-transform:uppercase">Salon</span>';
     salons.forEach(function(v){
       h+=_pill(_galSalon===v,v,"_galSalon=\\'"+v+"\\';dc()");
     });
@@ -7666,18 +7666,18 @@ function vGalerie(){
       h+='<div onclick="_galLb=SALON_PHOTOS.find(function(x){return x.id==='+p.id+';});document.addEventListener(\'keydown\',_galKeyHandler);dc()" class="card" style="overflow:hidden;cursor:pointer;padding:0;border-color:rgba(201,162,39,.15)">'
         +'<div style="position:relative;height:170px;overflow:hidden;background:#0a180c">';
       if(_galImgErr[p.id]){
-        h+='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a5a40;font-size:26px;gap:6px">\ud83d\udcf7<span style="font-size:10px">Non disponible</span></div>';
+        h+='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a5a40;font-size:26px;gap:6px">\ud83d\udcf7<span style="font-size:11px">Non disponible</span></div>';
       } else {
         h+='<img src="'+_safeUrl(p.url)+'" alt="'+esc(p.title)+'" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="_galImgErr['+p.id+']=true;dc()">';
       }
       h+='<div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border-radius:10px;color:#fff;text-transform:uppercase;background:'+srcCol+'">'+esc(srcLb)+'</div>'
         +'</div>'
         +'<div style="padding:9px 11px">'
-        +'<div style="font-size:10px;color:#c9a227;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+' \u00b7 '+esc(p.date)+'</div>'
+        +'<div style="font-size:11px;color:#c9a227;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+' \u00b7 '+esc(p.date)+'</div>'
         +'<div style="font-size:13px;color:#e0f0d0;line-height:1.4">'+esc(p.title)+'</div>';
       if(p.jeux&&p.jeux.length){
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">';
-        p.jeux.forEach(function(j){h+='<span style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;font-size:10px;color:#c9a227">'+esc(j)+'</span>';});
+        p.jeux.forEach(function(j){h+='<span style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;font-size:11px;color:#c9a227">'+esc(j)+'</span>';});
         h+='</div>';
       }
       h+='</div></div>';
@@ -7702,7 +7702,7 @@ function vGalerie(){
       +'<div style="padding:14px 18px;overflow-y:auto">'
       +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'
       +'<span style="font-size:9px;font-weight:bold;padding:2px 7px;border-radius:10px;color:#fff;text-transform:uppercase;background:'+srcCol2+'">'+esc(srcLb2)+'</span>'
-      +'<span style="font-size:10px;color:#c9a227;letter-spacing:2px;text-transform:uppercase">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+'</span>'
+      +'<span style="font-size:11px;color:#c9a227;letter-spacing:2px;text-transform:uppercase">'+esc(p.etab)+' \u00b7 '+esc(p.salon)+'</span>'
       +'<span style="font-size:11px;color:#5a6a50;margin-left:auto">'+esc(p.date)+'</span></div>'
       +'<div style="font-size:17px;color:#e0f0d0;margin-bottom:6px">'+esc(p.title)+'</div>'
       +'<div style="font-size:13px;color:#8aaa80;line-height:1.6;margin-bottom:8px">'+esc(p.desc)+'</div>';
