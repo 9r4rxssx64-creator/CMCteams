@@ -11724,6 +11724,14 @@ function _doExtractPdfLines(file,onDone,onErr){
                 if(it.bg&&it.bg.r>200&&it.bg.g>150&&it.bg.b>180&&it.bg.r>it.bg.g){
                   window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"cp"});
                 }
+                // Fond violet foncé = RH (repos hebdo)
+                if(it.bg&&it.bg.r>80&&it.bg.r<160&&it.bg.b>150&&it.bg.g<100){
+                  window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"rh"});
+                }
+                // Fond violet clair / lavande = R (repos)
+                if(it.bg&&it.bg.r>160&&it.bg.b>180&&it.bg.g>140&&it.bg.g<200&&it.bg.b>it.bg.g){
+                  window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"r"});
+                }
                 // Fond gris = Horaires aménagés
                 if(it.bg&&it.bg.r>150&&it.bg.r<210&&Math.abs(it.bg.r-it.bg.g)<30&&Math.abs(it.bg.g-it.bg.b)<30){
                   window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"amenage"});
@@ -13033,6 +13041,10 @@ function doImport(){
       if(_amenCount)_msg+='\u23f0 '+_amenCount+' Am\u00e9nag\u00e9s (fond gris) ';
       var _cpCount=window._pdfCdpCells.filter(function(c){return c.type==="cp";}).length;
       if(_cpCount)_msg+='\ud83c\udfd6 '+_cpCount+' Cong\u00e9s (fond rose) ';
+      var _rhCount=window._pdfCdpCells.filter(function(c){return c.type==="rh";}).length;
+      if(_rhCount)_msg+='\ud83d\udcaa '+_rhCount+' RH (fond violet fonc\u00e9) ';
+      var _rCount=window._pdfCdpCells.filter(function(c){return c.type==="r";}).length;
+      if(_rCount)_msg+='\ud83d\udca4 '+_rCount+' Repos (fond lavande) ';
       _r5.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;font-size:14px;color:#c9a227">'+_msg+'</div>';
     }
     window._pdfCdpCells=[];
