@@ -4110,7 +4110,11 @@ var SESSION_TTL=8*60*60*1000; // 8 heures en ms
       console.info("Session expirée après inactivité.");
     } else {
       var e=A.employees.find(function(x){return x.id===uid;});
-      if(e){A.user=e;localStorage.setItem("cmc_lastact",String(Date.now()));startPresenceHeartbeat();}
+      if(e){A.user=e;localStorage.setItem("cmc_lastact",String(Date.now()));startPresenceHeartbeat();
+        // Restaurer les préférences de l'employé depuis A.reg
+        var _pr=A.reg[e.id]||{};
+        if(_pr.prefLang&&_pr.prefLang!==_lang){_lang=_pr.prefLang;localStorage.setItem("cmc_lang",_lang);_ttsLang=_lang==="it"?"it-IT":_lang==="en"?"en-US":"fr-FR";}
+      }
     }
   }
 })();
@@ -5889,6 +5893,37 @@ function vMonPlanning(){
   var firstDow=new Date(A.year,A.month,1).getDay();
   var _affOn=isFeatureOn("affluence");
   var _affCache=_affOn?lg("cmc_affluence_"+A.year+"_"+A.month,{}):{};
+  // Fonction popup détail jour
+  if(!window._showDayDetail){
+    window._showDayDetail=function(d){
+      var _pl2=gpl();var _code2=(_pl2[A.user.id]||{})[d]||"";
+      var _ci6=CODES[_code2]||{l:_code2||"—",c:"#a0cca0"};
+      var _dow4=new Date(A.year,A.month,d).getDay();
+      var _JOURS2=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+      var _hrs=codeHours(_code2);
+      var _isCdp=_code2.endsWith("*");
+      var _isConv=_code2.endsWith("'");
+      var _lieu=_isCdp?"☕ Café de Paris":_isConv?"🎩 Convention":"🏛 Casino Monte-Carlo";
+      var _pos=isWork(_code2)&&CHEFS_T[A.user.team]?calcDepPos(A.user.name,A.user.team,d):null;
+      // Collègues même jour
+      var _cols=A.employees.filter(function(e){return e.team===A.user.team&&e.id!==A.user.id&&isEmpActive(e,A.year,A.month)&&isWork((_pl2[e.id]||{})[d]||"");});
+      var _html='<div onclick="this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px">'
+        +'<div onclick="event.stopPropagation()" style="max-width:340px;width:100%;background:rgba(20,40,24,.95);border:2px solid '+_ci6.c+';border-radius:16px;padding:20px;backdrop-filter:blur(20px)">'
+        +'<div style="text-align:center;margin-bottom:14px"><div style="font-size:14px;color:#a0cca0">'+_JOURS2[_dow4]+'</div>'
+        +'<div style="font-size:32px;font-weight:800;color:#c9a227">'+d+' '+MFR[A.month]+'</div></div>'
+        +'<div style="text-align:center;padding:12px;background:'+_ci6.c+'15;border:1px solid '+_ci6.c+'40;border-radius:10px;margin-bottom:10px">'
+        +'<div style="font-size:22px;font-weight:800;color:'+_ci6.c+'">'+(_code2||"—")+'</div>'
+        +'<div style="font-size:15px;color:#c0d8c0;margin-top:4px">'+_ci6.l+'</div>'
+        +(isWork(_code2)?'<div style="font-size:13px;color:#a0cca0;margin-top:4px">'+_hrs+'h · '+_lieu+'</div>':'')
+        +(_pos?'<div style="font-size:14px;color:#c9a227;font-weight:700;margin-top:6px">↑ Position '+_pos+'</div>':'')
+        +'</div>'
+        +(_cols.length?'<div style="font-size:12px;color:#a0cca0;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">👥 Collègues en service ('+_cols.length+')</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">'+_cols.map(function(e){var c2=(_pl2[e.id]||{})[d]||"";return '<span style="padding:2px 8px;background:rgba(255,255,255,.06);border-radius:6px;font-size:13px;color:#b0ccb0">'+esc(e.name.split(" ")[0])+' <span style="color:'+((CODES[c2]||{}).c||"#888")+'">'+c2+'</span></span>';}).join("")+'</div>':'')
+        +'<button onclick="this.parentElement.parentElement.remove()" style="width:100%;padding:12px;background:#c9a227;color:#0a1408;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer">Fermer</button>'
+        +'</div></div>';
+      document.body.insertAdjacentHTML("beforeend",_html);
+    };
+  }
 
   h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">';
   DOW.forEach(function(lb){h+='<div style="font-size:12px;color:'+(lb==="Dim"||lb==="Sam"?"#3a5888":"#5a7a5a")+';text-align:center;font-weight:700;padding:2px 0">'+lb+'</div>';});
@@ -5930,7 +5965,7 @@ function vMonPlanning(){
       :(ci2&&isWork(code)?codeBg+"60":"rgba(5,13,5,.3)");
     var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"rgba(12,18,8,.5)":ci2&&isWork(code)?codeColor+"40":code==="CP"?"rgba(200,150,200,.3)":code==="RH"?"rgba(100,80,160,.35)":code==="AF"?"rgba(80,180,80,.3)":isWE?"rgba(22,32,24,.5)":"rgba(18,28,18,.4)");
     var _affDot=_affOn&&_affCache[d]?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="Forte affluence"></span>':"";
-    h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
+    h+='<div data-mpday="'+d+'" onclick="_showDayDetail('+d+')" style="cursor:pointer;padding:3px 2px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
       +'<div style="font-size:11px;color:'+(isToday?"#c9a227":isWE?"#3a5888":"#3a5030")+';font-weight:'+(isToday?800:600)+'">'+d+_affDot+'</div>'
@@ -13585,7 +13620,13 @@ var I18N={
   }
 };
 function t(key){return (I18N[_lang]||I18N.fr)[key]||(I18N.fr[key])||key;}
-function setLang(lang){_lang=lang;localStorage.setItem("cmc_lang",lang);_ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":"fr-FR";toast("\ud83c\udf10 "+({fr:"Fran\u00e7ais",en:"English",it:"Italiano"}[lang]||lang));render();}
+function setLang(lang){
+  _lang=lang;localStorage.setItem("cmc_lang",lang);
+  _ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":"fr-FR";
+  // Sync préférences dans A.reg pour synchronisation Firebase
+  if(A.user&&A.reg[A.user.id]){A.reg[A.user.id].prefLang=lang;ls("cmc_reg",A.reg);}
+  toast("\ud83c\udf10 "+({fr:"Fran\u00e7ais",en:"English",it:"Italiano"}[lang]||lang));render();
+}
 var LANGS=[{id:"fr",label:"Fran\u00e7ais",flag:"\ud83c\uddeb\ud83c\uddf7"},{id:"en",label:"English",flag:"\ud83c\uddec\ud83c\udde7"},{id:"it",label:"Italiano",flag:"\ud83c\uddee\ud83c\uddf9"}];
 
 var _theme=localStorage.getItem("cmc_theme")||"casino";
