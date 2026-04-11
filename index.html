@@ -129,11 +129,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* === TRANSITIONS FLUIDES ENTRE VUES (v9.48) === */
-#content{animation:contentFade .28s var(--ease,ease-out) both}
+#content{animation:contentFade .22s var(--ease,ease-out) both}
 @keyframes contentFade{
-  from{opacity:.4;transform:translateY(6px)}
-  to{opacity:1;transform:translateY(0)}
+  from{opacity:0;transform:translateY(10px) scale(.995)}
+  to{opacity:1;transform:translateY(0) scale(1)}
 }
+/* Cards apparition décalée */
+.card{animation:cardIn .25s var(--ease) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* Skeleton shimmer pour chargement */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* === TABLET BREAKPOINT (v9.48) === */
 @media (min-width:768px){
@@ -305,11 +310,12 @@ body:not(.has-accueil-bg) #bnav{
 #content{padding-bottom:calc(78px + env(safe-area-inset-bottom,0))}
 
 /* === BOUTONS === */
-.btn{border:none;border-radius:8px;padding:11px 18px;font-weight:700;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.gold{background:linear-gradient(135deg,#d4aa2a,#9a7810);color:#040c04;box-shadow:0 2px 14px rgba(201,162,39,.4);transition:transform .1s,box-shadow .1s}
-.gold:active{transform:scale(.97);box-shadow:0 1px 8px rgba(201,162,39,.3)}
-.ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#b8d8b0;transition:background .15s}
-.ghost:active{background:rgba(255,255,255,.12)}
+.btn{border:none;border-radius:8px;padding:11px 18px;font-weight:700;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .12s var(--ease),box-shadow .12s,background .15s,opacity .15s}
+.btn:active{transform:scale(.95)}
+.gold{background:linear-gradient(135deg,#d4aa2a,#9a7810);color:#040c04;box-shadow:0 2px 14px rgba(201,162,39,.4)}
+.gold:active{transform:scale(.93);box-shadow:0 1px 6px rgba(201,162,39,.25)}
+.ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#b8d8b0}
+.ghost:active{background:rgba(255,255,255,.14);transform:scale(.96)}
 .danger{background:transparent;border:1px solid #682020;color:#d08080;padding:6px 10px;font-size:16px;border-radius:7px;cursor:pointer}
 /* v9.66 — État disabled pour tous les boutons (audit designer) */
 button:disabled,.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none;filter:grayscale(.3)}
@@ -5224,6 +5230,27 @@ function viewAsBack(){
   render();
 }
 
+// v9.67 — Recherche universelle (employés, codes, jeux, convention, docs)
+var _searchOpen=false,_searchQ="";
+function globalSearch(q){
+  _searchQ=q;if(!q||q.length<2){dc();return;}
+  var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  var results=[];
+  // Employés
+  A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
+    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+e.id+"';sv('employees')"});
+  });
+  // Codes horaires
+  Object.keys(CODES).filter(function(c){return c.toLowerCase().indexOf(ql)>=0||CODES[c].l.toLowerCase().indexOf(ql)>=0;}).slice(0,3).forEach(function(c){
+    results.push({cat:"\u23f0",label:c+" \u2014 "+CODES[c].l,action:"sv('ia')"});
+  });
+  // Jeux
+  Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];if(j.nom.toLowerCase().indexOf(ql)>=0){results.push({cat:"\ud83c\udfb2",label:j.nom,action:"A.convTab='jeux';sv('convention')"});}});
+  // Convention
+  if(typeof conventionSearch==="function"){conventionSearch(q).slice(0,3).forEach(function(a){results.push({cat:"\ud83d\udcd6",label:"Art."+a.num+" "+a.titre,action:"A.convTab='articles';sv('convention')"});});}
+  A._searchResults=results;dc();
+}
+function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];dc();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
 function vTopbar(){
   var u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:"1"),t=gt(u?u.team:"");
   // Code du jour de l'utilisateur dans la topbar
@@ -5253,12 +5280,17 @@ function vTopbar(){
     :(_todCode&&isWork(_todCode)?`<span title="${(_todCi&&_todCi.l)||_todCode}" style="background:${(_todCi&&_todCi.c)||col}18;color:${(_todCi&&_todCi.c)||col};border:1px solid ${(_todCi&&_todCi.c)||col}35;border-radius:6px;padding:2px 6px;font-size:13px;font-weight:800;flex-shrink:0">${esc(_todCode)}</span>`:"")}
   ${!isAdm&&t?`<span style="background:${col}14;color:${col};border:1px solid ${col}28;border-radius:8px;padding:2px 7px;font-size:12px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${esc(t.name)}</span>`:""}
   <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">
+    <button onclick="toggleSearch()" title="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
     <div id="topClock" style="font-size:11px;font-family:monospace;color:#7aaa80;line-height:1;white-space:nowrap"></div>
     ${_syncDot}
     <span id="syncBadge" onclick="flushSyncQueue()" title="Cliquer pour synchroniser" style="display:none;font-size:11px;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:5px;padding:1px 5px;cursor:pointer"></span>
     ${u?empAvatarHtml(u,30,col):""}
     <button class="btn ghost" onclick="doLogout()" title="D\u00e9connexion" aria-label="D\u00e9connexion" style="padding:3px 8px;font-size:14px;line-height:1;min-width:28px;min-height:28px">\u2715</button>
-  </div>`;
+  </div>`
+  +(_searchOpen?`<div style="position:absolute;top:100%;left:0;right:0;background:rgba(10,20,12,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.3);padding:8px 14px;z-index:89">
+    <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher employ\u00e9, code, jeu, convention..." value="${esc(_searchQ)}" oninput="globalSearch(this.value)" style="font-size:16px;padding:10px 14px;border-radius:20px">
+    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:200px;overflow-y:auto">'+A._searchResults.map(function(r){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:#c0d8c0;font-size:14px"><span>'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#7aaa80;font-size:12px">\u203a</span></button>';}).join('')+'</div>':''}
+  </div>`:'');
 }
 
 function vNav(){
@@ -5368,6 +5400,22 @@ function goBack(){
 }
 function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
+// v9.67 — Swipe horizontal pour changer de mois (planning, départs, monplanning)
+(function(){
+  var _swX=0,_swY=0,_swOn=false;
+  document.addEventListener("touchstart",function(e){
+    if(A.view!=="planning"&&A.view!=="departs"&&A.view!=="monplanning")return;
+    _swX=e.touches[0].clientX;_swY=e.touches[0].clientY;_swOn=true;
+  },{passive:true});
+  document.addEventListener("touchend",function(e){
+    if(!_swOn)return;_swOn=false;
+    var dx=e.changedTouches[0].clientX-_swX;
+    var dy=e.changedTouches[0].clientY-_swY;
+    if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*1.5){
+      if(dx<0)nextM(); else prevM();
+    }
+  },{passive:true});
+})();
 
 // ── Calcul position de départ pour un chef un jour donné ──
 function calcDepPos(empName,tid,day){
