@@ -5234,6 +5234,31 @@ function startPresenceHeartbeat(){
       console.info("Session expirée (heartbeat check).");doLogout();return;
     }
     updatePresence();touchSession();
+    // v9.67 — Notification prochain shift dans 1h
+    if(A.user&&isFeatureOn("countdown")){
+      var _hn=new Date(),_hy=_hn.getFullYear(),_hm=_hn.getMonth(),_hd=_hn.getDate();
+      if(_hy===A.year&&_hm===A.month){
+        var _hpl=gpl();var _hc=(_hpl[A.user.id]||{})[_hd]||"";
+        if(!isWork(_hc)){
+          // Chercher prochain shift
+          var _hDays=getDays(A.year,A.month);
+          for(var _hdi=_hd;_hdi<=_hDays;_hdi++){
+            var _hc2=(_hpl[A.user.id]||{})[_hdi]||"";
+            if(isWork(_hc2)){
+              var _hStart=parseInt((_hc2.replace(/[*']/g,"").match(/^(\d{1,2})\//)||[])[1]||"0");
+              var _hDate=new Date(_hy,_hm,_hdi,_hStart,0);
+              var _hDiff=Math.floor((_hDate.getTime()-Date.now())/60000);
+              if(_hDiff>0&&_hDiff<=60&&!window._shiftNotifSent){
+                window._shiftNotifSent=true;
+                var _ci5=CODES[_hc2]||{l:_hc2};
+                sendNotif("\ud83d\udea8 Service dans "+_hDiff+" min",(_ci5.l||_hc2),{tag:"shift-soon"});
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
   },120000); // toutes les 2 min
   updatePresence(); // immédiatement
   // Horloge topbar
@@ -6836,7 +6861,7 @@ function vPlan(){
       var ntdBg=isMe?"#1c1c10":"#162818";
       rh+='<tr style="'+(ei>0?"border-top:1px solid #0c160a":"")+(isMe?";background:rgba(201,162,39,.05)":"")+'">'
         +'<td style="padding:0;position:sticky;left:0;z-index:3;border-right:1px solid #182818;background:'+ntdBg+'"><div title="'+esc(empLabel(emp))+'" style="width:118px;padding:3px 5px;font-size:12px;font-weight:'+(isMe?700:400)+';color:'+(isMe?"#c9a227":"#7a8a68")+';overflow:hidden;white-space:nowrap">'
-        +(isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
+        +(function(){var _todCode2=todayD?(pl[emp.id]||{})[todayD]||"":"";return isWork(_todCode2)?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#5aaa70;margin-right:3px;vertical-align:middle"></span>':"";})()+( isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+'</div></td>';
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
         var click=isAdm?" onclick=\"openPicker('"+emp.id+"',"+d+",this)\"":"";
