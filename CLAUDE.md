@@ -130,7 +130,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 - **Version actuelle :** `APP_VER = "v9.67"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
-- **Taille fichier :** ~1.07 MB (HTML + CSS + JS) — v9.67
+- **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
 - **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps)
 
 ---
