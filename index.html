@@ -6504,6 +6504,44 @@ function vAccueil(){
       }
     }
   }
+  // v9.67 — Countdown prochain shift
+  if(isFeatureOn("countdown")&&isToday&&u&&!isWork(code)){
+    var _nextShiftH=null;
+    if(_nextW&&_nextWC){
+      var _nxCode=_nextWC.replace(/[*']/g,"").match(/^(\d{1,2})\//);
+      if(_nxCode){_nextShiftH=parseInt(_nxCode[1]);}
+    }
+    if(_nextShiftH!==null&&_nextW){
+      var _nxDate=new Date(A.year,A.month,_nextW,_nextShiftH,0);
+      var _nxDiff=Math.max(0,Math.floor((_nxDate.getTime()-Date.now())/60000));
+      var _nxH=Math.floor(_nxDiff/60),_nxM=_nxDiff%60;
+      if(_nxDiff>0&&_nxDiff<1440){
+        h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:10px;margin-top:8px">'
+          +'<span style="font-size:20px">\u23f3</span>'
+          +'<div><div style="font-size:13px;color:#a0cca0">'+t("nextShift")+'</div>'
+          +'<div style="font-size:18px;font-weight:800;color:#c9a227">'+_nxH+'h'+String(_nxM).padStart(2,"0")+'</div></div></div>';
+      }
+    }
+  }
+
+  // v9.67 — Résumé vocal auto au login (première visite de la session)
+  if(isFeatureOn("voiceResume")&&u&&isToday&&!window._voiceResumeDone){
+    window._voiceResumeDone=true;
+    var _vr=t("hello")+" "+((A.reg[u.id]||{}).prenom||u.name.split(" ")[0]);
+    if(isWork(code)){var _ci4=CODES[code];_vr+=". "+t("shift")+" : "+(_ci4?_ci4.l:code)+".";}
+    else{_vr+=". "+t("repos")+".";}
+    var _lb2=calcLeaveBalance(u.id,A.year);
+    if(_lb2&&!_lb2.invalid)_vr+=" "+_lb2.restant+" "+t("leave")+" "+t("rest")+".";
+    setTimeout(function(){ttsSpeak(_vr);},1500);
+  }
+
+  // v9.67 — Thème auto jour/nuit
+  if(isFeatureOn("autoTheme")){
+    var _hr=new Date().getHours();
+    var _autoT=(_hr>=6&&_hr<20)?"clair":"casino";
+    if(_theme!==_autoT){_theme=_autoT;localStorage.setItem("cmc_theme",_autoT);var _th=THEMES[_autoT];if(_th){document.documentElement.style.setProperty("--theme-bg",_th.bg);document.documentElement.style.setProperty("--theme-text",_th.text);}}
+  }
+
   // Chefs de mon équipe aujourd'hui
   if(isToday&&chefNames.length>0){
     h+='<div class="card" style="padding:12px;margin-bottom:10px">';
@@ -9609,7 +9647,11 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
       {id:"ics",ic:"\ud83d\udcc5",lb:"Export ICS"},
       {id:"search",ic:"\ud83d\udd0d",lb:"Recherche globale"},
       {id:"presentation",ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation"},
-      {id:"visitor",ic:"\ud83d\udc64",lb:"Compte visiteur"}
+      {id:"visitor",ic:"\ud83d\udc64",lb:"Compte visiteur"},
+      {id:"affluence",ic:"\ud83d\udcc8",lb:"Affluence calendrier"},
+      {id:"countdown",ic:"\u23f3",lb:"Compte \u00e0 rebours shift"},
+      {id:"voiceResume",ic:"\ud83d\udce2",lb:"R\u00e9sum\u00e9 vocal login"},
+      {id:"autoTheme",ic:"\ud83c\udf13",lb:"Th\u00e8me auto jour/nuit"}
     ];
     return _fList.map(function(f){
       var on=isFeatureOn(f.id);
@@ -13106,7 +13148,7 @@ var iaProxyUrl=localStorage.getItem("cmc_ia_proxy")||"";
 var _ttsEnabled=localStorage.getItem("cmc_tts_enabled")==="1";
 // v9.67 — Compte visiteur U007 (vue générale, toggle admin)
 // v9.67 — Toggles admin centralisés pour chaque feature utilisateur
-var _features=lg("cmc_features",{tts:true,stt:true,likes:true,favorites:true,requests:true,themes:true,languages:true,visitor:true,pdf:true,ics:true,search:true,presentation:true});
+var _features=lg("cmc_features",{tts:true,stt:true,likes:true,favorites:true,requests:true,themes:true,languages:true,visitor:true,pdf:true,ics:true,search:true,presentation:true,affluence:true,countdown:true,voiceResume:true,autoTheme:true});
 function isFeatureOn(f){return _features[f]!==false;}
 function toggleFeature(f){
   if(!A.user||A.user.id!==AID)return;
