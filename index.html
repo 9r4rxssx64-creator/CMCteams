@@ -2144,7 +2144,7 @@ var FB_URL=localStorage.getItem("cmc_fb_url")||"https://cmcteams-c16ab-default-r
 var FB_PATH="/cmcteams";
 var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
-var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled"];
+var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -2299,6 +2299,7 @@ function fbApplyData(k,v){
     if(A.user&&A.user.id===AID)_checkNewUploadRequest(A.uploadRequests);
   }
   else if(k==="cmc_upload_enabled"){A.uploadEnabled=vc!==false;}
+  else if(k==="cmc_likes"){_likes=vc||{};}
   // Pour les clés dynamiques (cmc_ref_*, etc.) : juste localStorage suffit
   // Détecter changement de planning / chat → notification (PAS pendant le chargement initial Firebase)
   if(!_fbInitialLoad){
@@ -3234,6 +3235,24 @@ function toggleDocShared(id){
 function uploadDocShared(cat){uploadDoc(cat,true);}
 
 // Helper interne : rend une carte document (r\u00e9utilis\u00e9e par vDocs et vPartage)
+// v9.67 — Système de likes (photos, documents)
+var _likes=lg("cmc_likes",{}); // {docId: {count: N, users: {uid:true}}}
+function toggleLike(docId){
+  if(!A.user)return;
+  var uid=A.user.id;
+  if(!_likes[docId])_likes[docId]={count:0,users:{}};
+  if(_likes[docId].users[uid]){
+    delete _likes[docId].users[uid];
+    _likes[docId].count=Math.max(0,_likes[docId].count-1);
+  } else {
+    _likes[docId].users[uid]=true;
+    _likes[docId].count=(_likes[docId].count||0)+1;
+  }
+  ls("cmc_likes",_likes);
+  dc();
+}
+function getLikes(docId){return _likes[docId]||{count:0,users:{}};}
+function hasLiked(docId){return A.user&&_likes[docId]&&_likes[docId].users&&!!_likes[docId].users[A.user.id];}
 function _renderDocCard(d,opts){
   var o=opts||{};
   var catInfo=DOC_CATS.find(function(c){return c.id===d.cat;})||{col:"#7a8a80",lb:"\ud83d\udcc1"};
@@ -3254,6 +3273,7 @@ function _renderDocCard(d,opts){
     +'<span>'+sizeTxt+'</span><span>'+dateTxt+'</span>'
     +'</div>'
     +'<div style="display:flex;gap:4px;margin-top:4px">'
+    +'<button onclick="event.stopPropagation();toggleLike(\''+esc(d.id)+'\')" title="J\u2019aime" style="flex:1;background:'+(hasLiked(d.id)?'rgba(224,64,80,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(hasLiked(d.id)?'rgba(224,64,80,.5)':'rgba(255,255,255,.1)')+';color:'+(hasLiked(d.id)?'#e04050':'#7a8a80')+';border-radius:5px;padding:5px;cursor:pointer;font-size:11px;font-weight:700">'+(hasLiked(d.id)?'\u2764\ufe0f':'\ud83e\udd0d')+' '+getLikes(d.id).count+'</button>'
     +'<button onclick="previewDoc(\''+esc(d.id)+'\')" title="Aper\u00e7u" style="flex:1;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.4);color:#6a92c8;border-radius:5px;padding:5px;cursor:pointer;font-size:11px">\ud83d\udc41\ufe0f</button>'
     +'<button onclick="downloadDoc(\''+esc(d.id)+'\')" title="T\u00e9l\u00e9charger" style="flex:1;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.4);color:#5aaa70;border-radius:5px;padding:5px;cursor:pointer;font-size:11px">\u2193</button>'
     +(o.adminMode
