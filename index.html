@@ -6619,7 +6619,7 @@ function vAccueil(){
     _favs.emps.forEach(function(eid){
       var fe=A.employees.find(function(e){return e.id===eid;});
       if(!fe)return;
-      var fc=(pl[fe.id]||{})[todD]||"";
+      var fc=(pl[fe.id]||{})[tod]||"";
       var fci=CODES[fc]||{c:"#5a7060"};
       h+='<div onclick="editEmpId=\''+fe.id+'\';sv(\'employees\')" style="flex-shrink:0;padding:8px 10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.15);border-radius:10px;cursor:pointer;text-align:center;min-width:65px">'
         +empAvatarHtml(fe,28,tc(fe.team))
