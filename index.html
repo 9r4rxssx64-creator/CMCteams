@@ -6635,7 +6635,7 @@ function vAccueil(){
   // Alerte : série de jours consécutifs
   if(u&&isToday){
     var _myPl2=pl[u.id]||{};var _consec=0;
-    for(var _cd=todD;_cd>=1;_cd--){if(isWork(_myPl2[_cd]||""))_consec++;else break;}
+    for(var _cd=tod;_cd>=1;_cd--){if(isWork(_myPl2[_cd]||""))_consec++;else break;}
     if(_consec>=5)_smartCards.push({ic:"\u26a0\ufe0f",col:"#c07830",title:_consec+" jours cons\u00e9cutifs",sub:"Pensez \u00e0 v\u00e9rifier votre repos"});
   }
   // Anniversaire d'entrée SBM
@@ -6643,7 +6643,7 @@ function vAccueil(){
     var _reg2=A.reg[u.id]||{};
     if(_reg2.dateEntreeSbm){
       var _dsbm=new Date(_reg2.dateEntreeSbm);
-      if(_dsbm.getDate()===todD&&_dsbm.getMonth()===tMo)_smartCards.push({ic:"\ud83c\udf89",col:"#c9a227",title:"Joyeux anniversaire SBM !",sub:(tYr-_dsbm.getFullYear())+" ans d\u2019anciennet\u00e9"});
+      if(_dsbm.getDate()===tod&&_dsbm.getMonth()===tMo)_smartCards.push({ic:"\ud83c\udf89",col:"#c9a227",title:"Joyeux anniversaire SBM !",sub:(tYr-_dsbm.getFullYear())+" ans d\u2019anciennet\u00e9"});
     }
   }
   // Demandes en attente

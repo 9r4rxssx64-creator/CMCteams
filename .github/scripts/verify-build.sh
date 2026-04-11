@@ -38,6 +38,11 @@ grep -q '_postConflicts' "$F" 2>/dev/null && echo "OK post-import"
 grep -q 'ttsSpeak' "$F" 2>/dev/null || { echo "FAIL TTS"; FAIL=1; }
 grep -q 'ttsSpeak' "$F" 2>/dev/null && echo "OK TTS"
 
+# 9. Variables cross-vue (erreur #20)
+# todD n'existe que dans vMonPlanning, pas dans vAccueil
+node -e "var f=require('fs'),h=f.readFileSync('$F','utf8');var acc=h.slice(h.indexOf('function vAccueil'),h.indexOf('function vPlan'));if(/[^a-zA-Z_]todD[^a-zA-Z_]/.test(acc)){console.log('CROSS-VUE: todD dans vAccueil');process.exit(1);}if(/[^a-zA-Z_]myPl[^a-zA-Z_]/.test(acc)&&acc.indexOf('var myPl')<0){console.log('CROSS-VUE: myPl dans vAccueil');process.exit(1);}" 2>/dev/null
+if [ $? -ne 0 ]; then echo "FAIL variables cross-vue"; FAIL=1; else echo "OK cross-vue"; fi
+
 echo ""
 if [ "$FAIL" -eq 0 ]; then echo "=== TOUT OK ==="; exit 0
 else echo "=== REGRESSIONS ==="; exit 1; fi
