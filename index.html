@@ -4790,6 +4790,25 @@ function removeEmailJSConfig(){
   toast("EmailJS d\u00e9sactiv\u00e9 \u2014 les codes resteront visibles dans le panneau admin");
   dc();
 }
+function testEmailJS(){
+  if(!A.user||A.user.id!==AID)return;
+  var cfg=lg("cmc_emailjs_config",null);
+  if(!cfg||!cfg.serviceId||!cfg.templateId||!cfg.userId){toast("EmailJS non configur\u00e9","err");return;}
+  var reg=A.reg[A.user.id]||{};
+  var testEmail=reg.email||prompt("Adresse email pour le test :");
+  if(!testEmail){toast("Email requis","err");return;}
+  toast("\u23f3 Envoi du test...");
+  fetch("https://api.emailjs.com/api/v1.0/email/send",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      service_id:cfg.serviceId,template_id:cfg.templateId,user_id:cfg.userId,
+      template_params:{to_email:testEmail,to_name:"Admin Test",verification_code:"123456",app_name:"CMCteams (TEST)"}
+    })
+  }).then(function(r){
+    if(r.ok){toast("\u2705 Email de test envoy\u00e9 \u00e0 "+testEmail+" \u2014 v\u00e9rifiez votre bo\u00eete (et spams)");}
+    else{r.text().then(function(t){toast("\u274c Erreur EmailJS : "+r.status+" \u2014 "+t.slice(0,80),"err");});}
+  }).catch(function(e){toast("\u274c Erreur r\u00e9seau : "+e.message,"err");});
+}
 function stepRegister(){
   var nom=(document.getElementById("rNom")||{}).value||"";
   var prenom=(document.getElementById("rPrenom")||{}).value||"";
@@ -9521,7 +9540,8 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     +'<input id="ejs_uid" class="inp" placeholder="User ID / Public Key (ex: user_abc)" style="font-size:14px;padding:6px 8px;font-family:monospace" value="'+esc(ok?cfg.userId:"")+'">'
     +'<div style="display:flex;gap:6px">'
     +'<button class="btn gold" onclick="saveEmailJSConfig()" style="flex:1;justify-content:center;padding:8px;font-size:14px">'+(ok?'\ud83d\udd04 Mettre \u00e0 jour':'\u2705 Activer EmailJS')+'</button>'
-    +(ok?'<button class="btn ghost" onclick="removeEmailJSConfig()" style="padding:8px 12px;font-size:14px;color:#e08080">\u2715 D\u00e9sactiver</button>':'')
+    +(ok?'<button class="btn ghost" onclick="testEmailJS()" style="padding:8px 12px;font-size:14px;color:#8ab0e0">\ud83d\udce7 Tester</button>':'')
+    +(ok?'<button class="btn ghost" onclick="removeEmailJSConfig()" style="padding:8px 12px;font-size:14px;color:#e08080">\u2715</button>':'')
     +'</div></div></div>';
   })()
   // Bloc paramètres fonctionnalités
