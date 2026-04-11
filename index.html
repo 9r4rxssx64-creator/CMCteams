@@ -11748,7 +11748,20 @@ function _doExtractPdfLines(file,onDone,onErr){
                   }
                 }
               });
-              var line=items.map(function(i){return i.t;}).join("\t");
+              // Encoder la couleur de fond dans le texte avec un marqueur {{TYPE}}
+              var line=items.map(function(i){
+                var tag="";
+                if(i.bg){
+                  if(i.bg.r>200&&i.bg.g>=80&&i.bg.g<=180&&i.bg.b<100)tag="{{CDP}}";
+                  else if(i.bg.g>150&&i.bg.r<150&&i.bg.b<150)tag="{{AF}}";
+                  else if(i.bg.r>200&&i.bg.g<80&&i.bg.b<80)tag="{{CONV}}";
+                  else if(i.bg.r>200&&i.bg.g>150&&i.bg.b>180&&i.bg.r>i.bg.g)tag="{{CP}}";
+                  else if(i.bg.r>80&&i.bg.r<160&&i.bg.b>150&&i.bg.g<100)tag="{{RH}}";
+                  else if(i.bg.r>160&&i.bg.b>180&&i.bg.g>140&&i.bg.g<200&&i.bg.b>i.bg.g)tag="{{R}}";
+                  else if(i.bg.r>220&&i.bg.g>200&&i.bg.b<120)tag="{{RRT}}";
+                }
+                return i.t+tag;
+              }).join("\t");
               if(line.trim())allLines.push(line);
             });
             pg++;nextPage();
@@ -12033,7 +12046,12 @@ function doImport(){
     if(!_touched[empObj.id]){A.overrides[key][empObj.id]={};_touched[empObj.id]=true;}
     var _curFDay=fDay,_curBase=0; // base index pour calcul dayNum avec sous-périodes
     for(var _ai=0;_ai<codeArr.length;_ai++){
-      var _ac=codeArr[_ai].trim().toUpperCase();
+      var _rawCell=codeArr[_ai].trim();
+      // v9.67 — Détecter marqueur couleur PDF {{TYPE}} et forcer le code
+      var _pdfTag=null;
+      var _tagMatch=_rawCell.match(/\{\{(CDP|AF|CONV|CP|RH|R|RRT)\}\}/);
+      if(_tagMatch){_pdfTag=_tagMatch[1];_rawCell=_rawCell.replace(/\{\{[A-Z]+\}\}/g,"").trim();}
+      var _ac=_rawCell.toUpperCase();
       if(!_ac||_ac==="0"||_ac==="-")continue;
       // Détection sous-période inline : deux entiers consécutifs = FROM TO
       if(/^\d{1,2}$/.test(_ac)){
@@ -12056,6 +12074,16 @@ function doImport(){
       var _adn=_curFDay+(_ai-_curBase);
       if(_adn<1||_adn>days)continue;
       if(!_ac.endsWith("*")&&CDP_MAP[_ac]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(_ac)>=0)_ac=CDP_MAP[_ac];
+      // v9.67 — Appliquer automatiquement le tag couleur PDF
+      if(_pdfTag){
+        if(_pdfTag==="CDP"&&CDP_MAP[_ac.replace(/[*']/g,"")])_ac=CDP_MAP[_ac.replace(/[*']/g,"")];
+        else if(_pdfTag==="CONV"&&CODES[_ac.replace(/[*]/g,"")+"'"])_ac=_ac.replace(/[*]/g,"")+"'";
+        else if(_pdfTag==="AF")_ac="AF";
+        else if(_pdfTag==="CP")_ac="CP";
+        else if(_pdfTag==="RH")_ac="RH";
+        else if(_pdfTag==="R")_ac="R";
+        else if(_pdfTag==="RRT")_ac="RRT";
+      }
       A.overrides[key][empObj.id][_adn]=_ac;
       refData.rows[empObj.id][_adn]=_ac;
       ok++;
