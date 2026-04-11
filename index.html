@@ -6199,7 +6199,7 @@ function vAccueil(){
       if(o.pos){
         h+='<div style="width:22px;height:22px;border-radius:5px;background:'+pCol+'22;border:1.5px solid '+pCol+'50;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:'+pCol+'">'+o.pos+'</div>';
       } else {
-        h+='<div style="width:22px;height:22px;border-radius:5px;background:#060e07;border:1px solid #2a4830;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7aaa80">\u2014</div>';
+        h+='<div style="width:22px;height:22px;border-radius:5px;background:rgba(6,14,7,.55);border:1px solid #2a4830;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7aaa80">\u2014</div>';
       }
       h+='<span style="flex:1;font-size:14px;color:#8a9a78">'+esc(o.name)+'</span>';
       if(o.code){h+='<span style="font-size:14px;font-weight:700;color:'+c2.c+'">'+o.code+'</span>';}
@@ -6388,7 +6388,7 @@ function vPlan(){
         cellInner+=(_myComment?'<div style="width:4px;height:4px;border-radius:50%;background:#c9a227;margin:1px auto" title="'+esc(_myComment)+'"></div>':'');
         rh+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
       });
-      rh+='<td style="padding:3px;font-size:14px;color:#90b888;background:#060e07;text-align:center">'+repos+'</td><td style="padding:3px;font-size:14px;color:#90b888;background:#060e07;text-align:center">'+trav+'</td></tr>';
+      rh+='<td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.55);text-align:center">'+repos+'</td><td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.55);text-align:center">'+trav+'</td></tr>';
     });
     return rh;
   };
@@ -6405,14 +6405,14 @@ function vPlan(){
       +(mir?'<span style="font-size:14px;color:#7aaa80"> \u21cc '+esc(mir.name)+'</span>':"")
       +'<span style="font-size:13px;color:#5a7060;margin-left:auto">'+empCount+' emp.</span>'
       +'</div>'
-      +'<div style="background:rgba(6,15,8,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
+      +'<div style="background:rgba(6,15,8,.38);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="plan-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
+    bh+='<thead><tr><th style="padding:0;background:rgba(6,14,7,.55);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";bh+='<th data-planday="'+d+'" style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+'"><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
-    bh+='<th style="padding:3px 4px;background:#060e07;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:#060e07;min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
+    bh+='<th style="padding:3px 4px;background:rgba(6,14,7,.55);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:rgba(6,14,7,.55);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
     bh+=_renderEmpRows(emps,tcc);
     bh+='</tbody></table></div></div></div>';
     return bh;
@@ -6746,10 +6746,10 @@ function vDeparts(){
       +'<span style="font-size:14px;color:#7aaa80">'+sl+' chefs \u00b7 cycle '+SEQ.join('\u2192')+'</span>'
       +ciBtn
       +'</div>'
-      +'<div style="background:rgba(6,15,8,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
+      +'<div style="background:rgba(6,15,8,.38);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:#060e07;position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
+      +'<th style="padding:0;background:rgba(6,14,7,.55);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
       +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
@@ -7900,7 +7900,7 @@ function vChat(){
       return nomComplet.indexOf(_q)>=0;
     }).sort(function(a,b){return a.name.localeCompare(b.name);});
     h+='<div style="border-top:1px solid #182818;background:#060f08;flex-shrink:0">'
-      +'<div style="padding:6px 10px;background:#060e07;display:flex;align-items:center;gap:8px">'
+      +'<div style="padding:6px 10px;background:rgba(6,14,7,.55);display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:16px">✉️</span>'
       +'<input id="chatDmQIn" class="inp" placeholder="Rechercher nom, prénom, matricule…" autocomplete="off"'
       +' style="flex:1;padding:7px 10px;font-size:15px;background:rgba(255,255,255,.06)"'
@@ -8805,7 +8805,7 @@ function vOnline(){
   h+='<div style="padding:7px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:7px;margin-bottom:10px;font-size:13px;color:#5a7a9a">\u2139\ufe0f Pr\u00e9sence d\u00e9tect\u00e9e dans la m\u00eame session navigateur, mise \u00e0 jour toutes les 2 min.</div>';
   h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#7aaa80;font-weight:700;text-transform:uppercase;letter-spacing:1px">En ligne maintenant</div><span style="background:rgba(80,180,80,.15);color:#5aaa70;border:1px solid rgba(80,180,80,.3);border-radius:10px;padding:2px 8px;font-size:14px;font-weight:700">'+online.length+' actif'+(online.length>1?"s":"")+'</span></div>';
   if(online.length===0){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucun utilisateur actif d\u00e9tect\u00e9</div>';}
-  else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:#06100a;border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
+  else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.55);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
   h+='</div>';
   h+='<div class="card" style="padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#7aaa80;font-weight:700;text-transform:uppercase;letter-spacing:1px">Activit\u00e9 (24h)</div><span style="font-size:14px;color:#5a7a5a">'+recent.length+' \u00e9v\u00e9nements</span></div>';
   if(recent.length===0){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucune activit\u00e9 aujourd\x27hui</div>';}
@@ -8813,7 +8813,7 @@ function vOnline(){
     function uaBrief(ua){if(!ua)return"?";if(/iPhone/i.test(ua))return"\ud83d\udcf1 iPhone";if(/iPad/i.test(ua))return"\ud83d\udcf1 iPad";if(/Android/i.test(ua))return"\ud83d\udcf1 Android";if(/Chrome/i.test(ua))return"\ud83c\udf10 Chrome";if(/Firefox/i.test(ua))return"\ud83e\udd8a Firefox";if(/Safari/i.test(ua))return"\ud83e\udde1 Safari";return"\ud83d\udcbb "+ua.slice(0,20);}
     recent.slice(0,40).forEach(function(e){
       var isL=e.type==="login";
-      h+='<div style="padding:6px 8px;margin-bottom:4px;background:rgba(10,22,10,.5);border:1px solid #1a2e1a;border-radius:7px">'
+      h+='<div style="padding:6px 8px;margin-bottom:4px;background:rgba(10,22,10,.35);border:1px solid #1a2e1a;border-radius:7px">'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(isL&&(e.ip||e.email||e.ua)?'4px':'0')+'">'
         +'<span style="font-size:15px;flex-shrink:0">'+(isL?"\u2705":"\ud83d\udeaa")+'</span>'
         +'<span style="font-size:14px;color:#c0d8b0;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
@@ -8857,7 +8857,7 @@ function vOnline(){
   if(!recentIA.length){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucune interaction IA cette semaine</div>';}
   else{
     recentIA.slice(0,30).forEach(function(e){
-      h+='<div style="padding:7px 8px;margin-bottom:5px;background:rgba(10,22,10,.5);border:1px solid #1a2e1a;border-radius:7px">'
+      h+='<div style="padding:7px 8px;margin-bottom:5px;background:rgba(10,22,10,.35);border:1px solid #1a2e1a;border-radius:7px">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
         +'<span style="font-size:15px">\ud83e\udd16</span>'
         +'<span style="font-size:14px;color:#c0d8b0;font-weight:700">'+esc(e.name)+'</span>'
@@ -9059,7 +9059,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     var _photoKey=function(k,lbl,descr){
       var hasImg=!!ph[k];
       var sz=hasImg?Math.round(ph[k].length/1024)+" KB":"";
-      return '<div style="padding:10px;background:#030a04;border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
+      return '<div style="padding:10px;background:rgba(3,10,4,.55);border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
         +(hasImg
           ?'<div style="width:52px;height:52px;border-radius:8px;background:url(&quot;'+_safeUrl(ph[k])+'&quot;) center/cover;border:1px solid rgba(201,162,39,.3);flex-shrink:0"></div>'
           :'<div style="width:52px;height:52px;border-radius:8px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.4);font-size:22px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
@@ -9107,7 +9107,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="padding:10px 14px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:10px;margin-bottom:12px">'
   +'<div style="font-size:14px;font-weight:800;color:#5a9a70;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2699\ufe0f Fonctionnalit\u00e9s</div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#030a04;border:1px solid #1a2e18;border-radius:8px">'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.55);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
@@ -9116,7 +9116,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="display:flex;flex-direction:column;gap:8px">'
   +(function(){return items.map(function(it){return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:16px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';}).join("");})()
   +'</div>'
-  +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:#06100a;border:1px solid rgba(201,162,39,.18);border-radius:10px">'
+  +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.55);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
   +'<div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>'
   +'<div style="font-size:14px;color:#7aaa80;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
@@ -12295,7 +12295,7 @@ function doImport(){
     var _catColors={CP:"#3a8a50",M:"#c04040",AF:"#4a72a8",RRT:"#c07830",HC:"#9060a0",PRT:"#407080"};
     var _catBlocks=Object.keys(_cats).filter(function(c){return _cats[c].length>0;});
     if(_catBlocks.length>0){
-      var _catHtml='<div style="margin-top:10px;padding:10px;background:rgba(10,22,10,.5);border:1px solid #1e3020;border-radius:8px">'
+      var _catHtml='<div style="margin-top:10px;padding:10px;background:rgba(10,22,10,.35);border:1px solid #1e3020;border-radius:8px">'
         +'<div style="font-size:14px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcca R\u00e9capitulatif '+MFR[im]+' '+iy+' par cat\u00e9gorie</div>'
         +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">';
       _catBlocks.forEach(function(cat){
@@ -13893,10 +13893,10 @@ function vAbsences(){
      +'</div>'
      +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;background:#060f08;border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 6px 6px">'
      +'<table style="border-collapse:collapse;width:auto;min-width:100%"><thead><tr>'
-     +'<th style="padding:4px 8px;background:#060e07;color:#7aaa80;font-size:14px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
+     +'<th style="padding:4px 8px;background:rgba(6,14,7,.55);color:#7aaa80;font-size:14px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
     daysArr.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
-      h+='<th style="padding:2px 1px;min-width:24px;background:#060e07;text-align:center">'
+      h+='<th style="padding:2px 1px;min-width:24px;background:rgba(6,14,7,.55);text-align:center">'
        +'<div style="font-size:13px;font-weight:700;color:'+(we?"#4a6888":"#3a4a38")+'">'+d+'</div>'
        +'</th>';
     });
@@ -13913,7 +13913,7 @@ function vAbsences(){
            +'<span style="display:inline-block;background:'+col+'30;border:1px solid '+col+'60;border-radius:3px;padding:1px 2px;font-size:12px;font-weight:700;color:'+col+'">'+c+'</span>'
            +'</td>';
         } else {
-          h+='<td style="text-align:center;padding:1px;background:#060e07"><span style="font-size:12px;color:#7aaa80">\u00b7</span></td>';
+          h+='<td style="text-align:center;padding:1px;background:rgba(6,14,7,.55)"><span style="font-size:12px;color:#7aaa80">\u00b7</span></td>';
         }
       });
       h+='</tr>';
