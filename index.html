@@ -4597,28 +4597,28 @@ function vLoginStep0(){
       <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin-top:8px;color:#f0e8d0;text-shadow:0 1px 8px rgba(0,0,0,.7)">CMC Teams</div>
       <div style="font-size:14px;color:#8ab888;letter-spacing:4px;text-transform:uppercase;margin-top:6px">Casino de Monaco</div>
     </div>
-    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Nom de famille *</div>
+    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">${t("lastName")} *</div>
     <input id="liNom" class="inp" type="text" placeholder="ex. DUPONT" autocapitalize="characters" autocomplete="family-name" list="liNomList"
       style="text-transform:uppercase;margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liPrenom').focus()">
     <datalist id="liNomList">`+(function(){var seen={},opts=[];A.employees.forEach(function(e){var n=(e.name||"").split(" ")[0];if(n&&!seen[n]){seen[n]=1;opts.push('<option value="'+esc(n)+'">');}});return opts.join("");})()+`</datalist>
-    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Pr\u00e9nom *</div>
+    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">${t("firstName")} *</div>
     <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" autocomplete="off"
       style="margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liMat').focus()">
-    <div style="font-size:15px;color:#e09848;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
-    <div style="font-size:14px;color:#b0ccb0;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
+    <div style="font-size:15px;color:#e09848;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">${t("matricule")} * <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(${t("firstConnection")})</span></div>
+    <div style="font-size:14px;color:#b0ccb0;margin-bottom:6px">Format U00001</div>
     <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
       autocapitalize="characters" autocomplete="off"
       style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:rgba(5,16,10,.20);border-color:rgba(201,162,39,.15)"
       onkeydown="if(event.key==='Enter')document.getElementById('liMail').focus()">
-    <div style="font-size:14px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Email <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(alternatif \u2014 si compte existant)</span></div>
+    <div style="font-size:14px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${t("email")}</div>
     <input id="liMail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" autocomplete="email"
       style="margin-bottom:10px" onkeydown="if(event.key==='Enter')step1()">
     <div id="lerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>
-    <button class="btn gold" onclick="step1()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">Continuer &nbsp;\u2192</button>
+    <button class="btn gold" onclick="step1()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">${t("continue")} &nbsp;\u2192</button>
     <div style="margin-top:14px;text-align:center;font-size:14px;color:#80a878;border-top:1px solid rgba(201,162,39,.2);padding-top:12px;line-height:1.8">
-      \u2666 &nbsp; Premi\u00e8re connexion ? Vous cr\u00e9erez votre mot de passe \u00e0 l\u2019\u00e9tape suivante &nbsp; \u2666
+      \u2666 &nbsp; ${t("firstConnection")} ? ${t("createPassword")} &nbsp; \u2666
     </div>
     <div style="margin-top:10px;text-align:center;font-size:13px;color:#90ac90;letter-spacing:1px">
       Cr\u00e9\u00e9 par <span style="color:#5a7050;font-weight:600">Desarzens Kevin</span>
@@ -4626,7 +4626,7 @@ function vLoginStep0(){
     <div style="margin-top:6px;text-align:center;font-size:14px;color:#8aaa80;font-family:monospace">
       <span id="verSpan" style="color:#c0d8a8;font-weight:700">`+APP_VER+`</span>
       &nbsp;&bull;&nbsp;
-      <span onclick="forceRefresh()" style="color:#7aaa70;cursor:pointer;text-decoration:underline">Forcer mise \u00e0 jour</span>
+      <span onclick="forceRefresh()" style="color:#7aaa70;cursor:pointer;text-decoration:underline">${t("forceUpdate")}</span>
     </div>
     <div style="margin-top:10px;display:flex;justify-content:center;gap:8px">
       ${LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:8px;padding:6px 14px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')}
@@ -4902,20 +4902,20 @@ function vLoginStepVerify(){
     +'<div class="login-banner">\u2709\ufe0f &nbsp; V\u00c9RIFICATION &nbsp; \u2709\ufe0f</div>'
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;line-height:1">\ud83d\udd10</div>'
-    +'<div style="font-size:18px;font-weight:800;color:#f0e8d0;margin-top:10px">V\u00e9rification de votre identit\u00e9</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#f0e8d0;margin-top:10px">'+t("verifyIdentity")+'</div>'
     +(_ejsOk
       ?'<div style="font-size:14px;color:#a0cca0;margin-top:6px">Un code \u00e0 6 chiffres a \u00e9t\u00e9 envoy\u00e9 \u00e0</div>'
        +'<div style="font-size:15px;color:#c9a227;font-weight:700;margin-top:2px">'+esc(reg.email||"")+'</div>'
       :'<div style="font-size:14px;color:#e09848;margin-top:6px;line-height:1.5">'
-       +'Votre demande d\u2019inscription a \u00e9t\u00e9 envoy\u00e9e.<br>'
-       +'<strong style="color:#c9a227">L\u2019administrateur va valider votre compte.</strong></div>')
+       +t("requestSent")+'.<br>'
+       +'<strong style="color:#c9a227">'+t("adminWillValidate")+'.</strong></div>')
     +'</div>'
     +'<div style="font-size:14px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:600">Code de v\u00e9rification</div>'
     +'<input id="otpIn" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" autofocus'
     +' style="font-size:28px;letter-spacing:12px;text-align:center;font-family:monospace;margin-bottom:8px"'
     +' onkeydown="if(event.key===\'Enter\')stepVerifyCode()">'
     +'<div id="otpErr" style="color:#a04040;font-size:14px;min-height:16px;margin-bottom:8px"></div>'
-    +'<button class="btn gold" onclick="stepVerifyCode()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">V\u00e9rifier \u2192</button>'
+    +'<button class="btn gold" onclick="stepVerifyCode()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">'+t("verify")+' \u2192</button>'
     +'<button class="btn ghost" onclick="stepResendCode()" style="width:100%;padding:10px;font-size:14px;justify-content:center;margin-top:8px">\ud83d\udd04 Nouveau code</button>'
     +'<div style="margin-top:14px;text-align:center;font-size:13px;color:#b0ccb0;line-height:1.6">'
     +(_ejsOk
