@@ -5789,8 +5789,8 @@ function vMonPlanning(){
   var totWork=0,totCp=0,totM=0,totRRT=0,totAF=0,totRH=0;
   // v9.66 Planning audit : calcul s\u00e9rie cons\u00e9cutive de jours travaill\u00e9s (alerte fatigue)
   var _maxConsec=0,_curConsec=0,_curConsecStart=0;
-  var totCDP=0,totConv=0;
-  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_c.endsWith("'"))totConv++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
+  var totCDP=0,totConv=0,totNuit=0,totCoup=0,totJour=0,totHeures=0;
+  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_c.endsWith("'"))totConv++;totHeures+=codeHours(_c);var _base=_c.replace(/[*']/g,"");if(_base==="22/6"||_base==="20/5"||_base==="19/4")totNuit++;else if(_base==="16/3")totCoup++;else totJour++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
   var h='<div class="page bg-casino" style="position:relative">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
     +empAvatarHtml(emp,40,tcc)
@@ -5843,7 +5843,11 @@ function vMonPlanning(){
   h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">';
   DOW.forEach(function(lb){h+='<div style="font-size:12px;color:'+(lb==="Dim"||lb==="Sam"?"#3a5888":"#5a7a5a")+';text-align:center;font-weight:700;padding:2px 0">'+lb+'</div>';});
   for(var i=0;i<firstDow;i++)h+='<div></div>';
+  var _weekHrs=0;
   for(var d=1;d<=days;d++){
+    // Calculer heures de la semaine
+    var _dc=myPl[d]||"";
+    if(isWork(_dc))_weekHrs+=codeHours(_dc);
     var code=myPl[d]||"";
     var isToday=d===todD;
     var dow2=new Date(A.year,A.month,d).getDay();
@@ -5887,6 +5891,12 @@ function vMonPlanning(){
       +(code.endsWith("'")?'<div style="font-size:7px;color:#e08080;font-weight:800;line-height:1">\ud83c\udfa9</div>':"")
       +(isWork(code)&&!code.endsWith("*")&&!code.endsWith("'")?'<div style="font-size:6px;color:rgba(160,200,160,.4);line-height:1">CMC</div>':"")
       +'</div>';
+    // Fin de semaine (samedi) ou fin de mois
+    var _dow3=new Date(A.year,A.month,d).getDay();
+    if((_dow3===6||d===days)&&_weekHrs>0){
+      // On n'ajoute pas de cellules supplémentaires pour ne pas casser le grid
+      _weekHrs=0;
+    }
   }
   h+='</div>';
   // Légende couleurs
@@ -5905,6 +5915,10 @@ function vMonPlanning(){
   if(totRH)statItems.push({n:totRH,lb:"Repos",c:"#3a4a3a"});
   if(totCDP)statItems.push({n:totCDP,lb:"\u2615 CDP",c:"#e09848"});
   if(totConv)statItems.push({n:totConv,lb:"\ud83c\udfa9 Conv.",c:"#e08080"});
+  statItems.push({n:totHeures+"h",lb:"Heures",c:"#c9a227"});
+  if(totNuit)statItems.push({n:totNuit,lb:"\ud83c\udf19 Nuits",c:"#6a92c8"});
+  if(totCoup)statItems.push({n:totCoup,lb:"\u2702 Coup.",c:"#5aaa70"});
+  if(totJour)statItems.push({n:totJour,lb:"\u2600 Jour",c:"#e09848"});
   h+='<div class="card" style="padding:10px"><div style="font-size:13px;color:#a0cca0;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">R\u00e9capitulatif '+MFR[A.month]+'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">';
   statItems.forEach(function(s){
