@@ -5048,8 +5048,23 @@ function step2(){
     setTimeout(function(){loginStep=3;render();},1500);return;
   }
   var stored=A.passwords[loginUid];
+  // Rate-limiting : max 5 tentatives, verrouillage progressif
+  var _pwFails=lg("cmc_pw_fails",{});
+  var _pf=_pwFails[loginUid]||{count:0,until:0};
+  if(_pf.until&&Date.now()<_pf.until){
+    var _wait=Math.ceil((_pf.until-Date.now())/1000);
+    if(errEl)errEl.textContent="Trop de tentatives \u2014 r\u00e9essayez dans "+_wait+"s";return;
+  }
   var valid=verifyPw(pw1,stored);
-  if(!valid){if(errEl)errEl.textContent="Mot de passe incorrect";return;}
+  if(!valid){
+    _pf.count=(_pf.count||0)+1;
+    var _delays=[0,0,0,30000,60000,300000,600000]; // 3 essais gratuits, puis 30s, 1min, 5min, 10min
+    _pf.until=_pf.count>=3?Date.now()+(_delays[Math.min(_pf.count,6)]||600000):0;
+    _pwFails[loginUid]=_pf;ls("cmc_pw_fails",_pwFails);
+    if(errEl)errEl.textContent="Mot de passe incorrect"+(_pf.count>=3?" ("+_pf.count+" essais)":"");return;
+  }
+  // Réinitialiser les échecs après succès
+  if(_pwFails[loginUid]){delete _pwFails[loginUid];ls("cmc_pw_fails",_pwFails);}
   // Migrer vers nouveau format si ancien
   if(typeof stored==="string"){A.passwords[loginUid]={h:stored};ls("cmc_pw",A.passwords);}
   var regPrenom=(A.reg[loginUid]||{}).prenom||"";
@@ -5296,12 +5311,12 @@ function vTopbar(){
 function vNav(){
   var isAdm=A.user&&A.user.id===AID;
   var tabs=[
-    {id:"accueil",ic:"\u2666",lb:"Accueil"},
-    {id:"monplanning",ic:"\ud83d\udcc6",lb:"Mon Plan."},
-    {id:"planning",ic:"\ud83d\udcc5",lb:"\u00c9quipe"},
-    {id:"departs",ic:"\ud83c\udfaf",lb:"D\u00e9parts"},
-    {id:"chat",ic:"\ud83d\udcac",lb:"Chat"},
-    {id:"ia",ic:"\ud83e\udd16",lb:"Aide"}
+    {id:"accueil",ic:"\u2666",lb:t("accueil")},
+    {id:"monplanning",ic:"\ud83d\udcc6",lb:t("monPlan")},
+    {id:"planning",ic:"\ud83d\udcc5",lb:t("equipe")},
+    {id:"departs",ic:"\ud83c\udfaf",lb:t("departs")},
+    {id:"chat",ic:"\ud83d\udcac",lb:t("chat")},
+    {id:"ia",ic:"\ud83e\udd16",lb:t("aide")}
   ];
   if(isAdm){
     tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin"});
@@ -7366,6 +7381,31 @@ function renderStatsCard(empId,empName){
     +'<div style="font-size:12px;color:#8088b0;margin-top:2px">'+s.RH+' RH \u00b7 '+s.R+' R</div>'
     +'</div>';
   h+='</div>';
+  // v9.67 — Donut SVG répartition
+  var _total=s.trav+s.repos+s.CP+s.M+s.AF+(s.RRT||0)+(s.autre||0);
+  if(_total>0){
+    var _slices=[{v:s.trav,c:"#5aaa70",l:t("working")},{v:s.repos,c:"#8088b0",l:t("repos")},{v:s.CP,c:"#a060ff",l:t("conge")},{v:s.M,c:"#c06060",l:t("maladie")},{v:s.AF,c:"#4a72a8",l:t("formation")}].filter(function(s){return s.v>0;});
+    var _r=40,_cx=50,_cy=50,_off=0;
+    h+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">';
+    h+='<svg viewBox="0 0 100 100" width="90" height="90" style="flex-shrink:0">';
+    _slices.forEach(function(sl){
+      var pct=sl.v/_total;var angle=pct*360;
+      var rad1=(_off-90)*Math.PI/180,rad2=(_off+angle-90)*Math.PI/180;
+      var x1=_cx+_r*Math.cos(rad1),y1=_cy+_r*Math.sin(rad1);
+      var x2=_cx+_r*Math.cos(rad2),y2=_cy+_r*Math.sin(rad2);
+      var large=angle>180?1:0;
+      h+='<path d="M'+_cx+','+_cy+' L'+x1.toFixed(1)+','+y1.toFixed(1)+' A'+_r+','+_r+' 0 '+large+',1 '+x2.toFixed(1)+','+y2.toFixed(1)+' Z" fill="'+sl.c+'" opacity=".85"/>';
+      _off+=angle;
+    });
+    h+='<circle cx="'+_cx+'" cy="'+_cy+'" r="22" fill="rgba(10,20,12,.7)"/>';
+    h+='<text x="'+_cx+'" y="'+(_cy+1)+'" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="#c9a227">'+_total+'j</text>';
+    h+='</svg>';
+    h+='<div style="display:flex;flex-direction:column;gap:3px">';
+    _slices.forEach(function(sl){
+      h+='<div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:10px;height:10px;border-radius:50%;background:'+sl.c+';flex-shrink:0"></div><span style="color:#c0d8c0">'+sl.l+'</span><span style="color:'+sl.c+';font-weight:800">'+sl.v+'j</span><span style="color:#5a7060;font-size:11px">('+Math.round(sl.v/_total*100)+'%)</span></div>';
+    });
+    h+='</div></div>';
+  }
   // Absences
   h+='<div style="padding:12px 14px;margin-bottom:10px;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.15);border-radius:10px">'
     +'<div style="font-size:12px;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">\ud83d\udcc5 Absences & Cong\u00e9s</div>'
@@ -9308,9 +9348,16 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
   +'</div>'
+  // Langue
+  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
+  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udf10 '+t("language")+'</div>'
+  +'<div style="font-size:13px;color:#4a6a48">'+(LANGS.find(function(l){return l.id===_lang;})||LANGS[0]).label+'</div></div>'
+  +'<div style="display:flex;gap:4px">'
+  +LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')
+  +'</div></div>'
   // Thème visuel
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udfa8 Th\u00e8me visuel</div>'
+  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udfa8 '+t("theme")+'</div>'
   +'<div style="font-size:13px;color:#4a6a48">Actuel : '+(THEMES[_theme]||THEMES.casino).icon+' '+(THEMES[_theme]||THEMES.casino).label+'</div></div>'
   +'<div style="display:flex;gap:4px">'
   +Object.keys(THEMES).map(function(tid){var t=THEMES[tid];var on=_theme===tid;return '<button onclick="setTheme(\''+tid+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;min-height:44px;color:'+(on?'#c9a227':'#7aaa80')+'">'+t.icon+'</button>';}).join('')
@@ -12844,6 +12891,62 @@ function _trackView(uid,view){
 }
 function getVisitStats(uid){return _visitStats[uid]||{logins:0,views:0,lastLogin:0,lastView:0};}
 // v9.67 — Thèmes visuels
+// v9.67 — Système multi-langues (i18n)
+var _lang=localStorage.getItem("cmc_lang")||"fr";
+var I18N={
+  fr:{
+    accueil:"Accueil",monPlan:"Mon Plan.",equipe:"\u00c9quipe",departs:"D\u00e9parts",chat:"Chat",aide:"Aide",admin:"Admin",
+    today:"Aujourd\u2019hui",yesterday:"Hier",tomorrow:"Demain",
+    working:"En service",repos:"Repos",conge:"Cong\u00e9",maladie:"Maladie",formation:"Formation",
+    search:"Rechercher",save:"Sauvegarder",close:"Fermer",cancel:"Annuler",confirm:"Confirmer",delete:"Supprimer",
+    employee:"Employ\u00e9",employees:"Employ\u00e9s",team:"Equipe",teams:"\u00c9quipes",
+    planning:"Planning",schedule:"Horaire",shift:"Service",departure:"D\u00e9part",
+    login:"Connexion",logout:"D\u00e9connexion",password:"Mot de passe",
+    settings:"Param\u00e8tres",notifications:"Notifications",theme:"Th\u00e8me",language:"Langue",
+    convention:"Convention",rules:"R\u00e8gles",games:"Jeux",salary:"Salaire",leave:"Cong\u00e9s",
+    statistics:"Statistiques",documents:"Documents",security:"S\u00e9curit\u00e9",
+    nextShift:"Prochain service",noData:"Aucune donn\u00e9e",import:"Importer",export:"Exporter",
+    visitor:"Visiteur",online:"En ligne",offline:"Hors ligne",
+    voiceOn:"Lecture vocale activ\u00e9e",voiceOff:"Lecture vocale d\u00e9sactiv\u00e9e",
+    speak:"Parlez...",micDenied:"Microphone refus\u00e9"
+  },
+  en:{
+    accueil:"Home",monPlan:"My Sched.",equipe:"Team",departs:"Departures",chat:"Chat",aide:"Help",admin:"Admin",
+    today:"Today",yesterday:"Yesterday",tomorrow:"Tomorrow",
+    working:"On duty",repos:"Rest",conge:"Leave",maladie:"Sick",formation:"Training",
+    search:"Search",save:"Save",close:"Close",cancel:"Cancel",confirm:"Confirm",delete:"Delete",
+    employee:"Employee",employees:"Employees",team:"Team",teams:"Teams",
+    planning:"Planning",schedule:"Schedule",shift:"Shift",departure:"Departure",
+    login:"Login",logout:"Logout",password:"Password",
+    settings:"Settings",notifications:"Notifications",theme:"Theme",language:"Language",
+    convention:"Convention",rules:"Rules",games:"Games",salary:"Salary",leave:"Leave",
+    statistics:"Statistics",documents:"Documents",security:"Security",
+    nextShift:"Next shift",noData:"No data",import:"Import",export:"Export",
+    visitor:"Visitor",online:"Online",offline:"Offline",
+    voiceOn:"Voice reading on",voiceOff:"Voice reading off",
+    speak:"Speak...",micDenied:"Microphone denied"
+  },
+  it:{
+    accueil:"Home",monPlan:"Piano",equipe:"Squadra",departs:"Partenze",chat:"Chat",aide:"Aiuto",admin:"Admin",
+    today:"Oggi",yesterday:"Ieri",tomorrow:"Domani",
+    working:"In servizio",repos:"Riposo",conge:"Ferie",maladie:"Malattia",formation:"Formazione",
+    search:"Cerca",save:"Salva",close:"Chiudi",cancel:"Annulla",confirm:"Conferma",delete:"Elimina",
+    employee:"Dipendente",employees:"Dipendenti",team:"Squadra",teams:"Squadre",
+    planning:"Pianificazione",schedule:"Orario",shift:"Turno",departure:"Partenza",
+    login:"Accesso",logout:"Disconnetti",password:"Password",
+    settings:"Impostazioni",notifications:"Notifiche",theme:"Tema",language:"Lingua",
+    convention:"Convenzione",rules:"Regole",games:"Giochi",salary:"Stipendio",leave:"Ferie",
+    statistics:"Statistiche",documents:"Documenti",security:"Sicurezza",
+    nextShift:"Prossimo turno",noData:"Nessun dato",import:"Importa",export:"Esporta",
+    visitor:"Visitatore",online:"Online",offline:"Offline",
+    voiceOn:"Lettura vocale attivata",voiceOff:"Lettura vocale disattivata",
+    speak:"Parla...",micDenied:"Microfono negato"
+  }
+};
+function t(key){return (I18N[_lang]||I18N.fr)[key]||(I18N.fr[key])||key;}
+function setLang(lang){_lang=lang;localStorage.setItem("cmc_lang",lang);_ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":"fr-FR";toast("\ud83c\udf10 "+({fr:"Fran\u00e7ais",en:"English",it:"Italiano"}[lang]||lang));dc();}
+var LANGS=[{id:"fr",label:"Fran\u00e7ais",flag:"\ud83c\uddeb\ud83c\uddf7"},{id:"en",label:"English",flag:"\ud83c\uddec\ud83c\udde7"},{id:"it",label:"Italiano",flag:"\ud83c\uddee\ud83c\uddf9"}];
+
 var _theme=localStorage.getItem("cmc_theme")||"casino";
 var THEMES={
   casino:{label:"Casino",icon:"\ud83c\udfb0",bg:"#0a1408",text:"#e0f0d8",card:"rgba(14,28,18,.28)"},
