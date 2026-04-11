@@ -12230,7 +12230,7 @@ function doImport(){
     if(!emp&&!/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,3}$/.test(name)) continue;
     if(!emp){
       // Matching normalise : accents, traits d'union, apostrophes, espaces
-      function _nImpL(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();}
+      var _nImpL=function(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();};
       var _impNL=_nImpL(name);
       emp=A.employees.find(function(e){return _nImpL(e.name)===_impNL;});
     }
