@@ -11720,6 +11720,10 @@ function _doExtractPdfLines(file,onDone,onErr){
                 if(it.bg&&it.bg.g>150&&it.bg.r<150&&it.bg.b<150){
                   window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"af"});
                 }
+                // Fond gris = Horaires aménagés
+                if(it.bg&&it.bg.r>150&&it.bg.r<210&&Math.abs(it.bg.r-it.bg.g)<30&&Math.abs(it.bg.g-it.bg.b)<30){
+                  window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"amenage"});
+                }
                 // Fond rouge (R>200, G<80, B<80) = Convention (19/4')
                 if(it.bg&&it.bg.r>200&&it.bg.g<80&&it.bg.b<80){
                   var _convCode=it.t.replace(/[*']/g,"").trim();
@@ -13021,6 +13025,8 @@ function doImport(){
       if(_cdpCount)_msg+='\ud83c\udfb0 '+_cdpCount+' Caf\u00e9 de Paris (fond orange) ';
       if(_afCount)_msg+='\ud83c\udf93 '+_afCount+' Formation (fond vert) ';
       if(_convCount)_msg+='\ud83d\udcd6 '+_convCount+' Convention (fond rouge) ';
+      var _amenCount=window._pdfCdpCells.filter(function(c){return c.type==="amenage";}).length;
+      if(_amenCount)_msg+='\u23f0 '+_amenCount+' Am\u00e9nag\u00e9s (fond gris) ';
       _r5.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;font-size:14px;color:#c9a227">'+_msg+'</div>';
     }
     window._pdfCdpCells=[];
