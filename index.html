@@ -87,7 +87,7 @@ input,select,button,textarea{font-family:inherit}
 .txt-upper{text-transform:uppercase;letter-spacing:1px}
 /* === BADGE SYSTEM === */
 .badge{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-xs);font-weight:700;padding:2px 7px;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;line-height:1.2}
-.badge-gold{color:var(--cmc-gold-bright);background:rgba(201,162,39,.18);border-color:rgba(201,162,39,.4)}
+.badge-gold{color:var(--cmc-gold-bright);background:rgba(201,162,39,.18);border-color:rgba(201,162,39,.6)}
 .badge-green{color:var(--cmc-green-bright);background:rgba(58,138,80,.15);border-color:rgba(58,138,80,.35)}
 .badge-red{color:#e09090;background:rgba(192,64,64,.15);border-color:rgba(192,64,64,.35)}
 .badge-blue{color:#7aa8d0;background:rgba(74,114,168,.15);border-color:rgba(74,114,168,.35)}
@@ -3282,12 +3282,12 @@ function _renderDocCard(d,opts){
     +'</div>'
     +'<div style="padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:4px">'
     +'<div style="font-size:12px;font-weight:700;color:#c0d8c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(d.name)+'">'+esc(d.name)+'</div>'
-    +'<div style="font-size:11px;color:#8aaa88;display:flex;justify-content:space-between">'
+    +'<div style="font-size:11px;color:#b0ccb0;display:flex;justify-content:space-between">'
     +'<span>'+sizeTxt+'</span><span>'+dateTxt+'</span>'
     +'</div>'
     +'<div style="display:flex;gap:4px;margin-top:4px">'
     +'<button onclick="event.stopPropagation();toggleLike(\''+esc(d.id)+'\')" title="J\u2019aime" style="flex:1;background:'+(hasLiked(d.id)?'rgba(224,64,80,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(hasLiked(d.id)?'rgba(224,64,80,.5)':'rgba(255,255,255,.1)')+';color:'+(hasLiked(d.id)?'#e04050':'#7a8a80')+';border-radius:5px;padding:5px;cursor:pointer;font-size:11px;font-weight:700">'+(hasLiked(d.id)?'\u2764\ufe0f':'\ud83e\udd0d')+' '+getLikes(d.id).count+'</button>'
-    +'<button onclick="previewDoc(\''+esc(d.id)+'\')" title="Aper\u00e7u" style="flex:1;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.4);color:#6a92c8;border-radius:5px;padding:5px;cursor:pointer;font-size:11px">\ud83d\udc41\ufe0f</button>'
+    +'<button onclick="previewDoc(\''+esc(d.id)+'\')" title="Aper\u00e7u" style="flex:1;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.4);color:#8ab0e0;border-radius:5px;padding:5px;cursor:pointer;font-size:11px">\ud83d\udc41\ufe0f</button>'
     +'<button onclick="downloadDoc(\''+esc(d.id)+'\')" title="T\u00e9l\u00e9charger" style="flex:1;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.4);color:#5aaa70;border-radius:5px;padding:5px;cursor:pointer;font-size:11px">\u2193</button>'
     +(o.adminMode
       ?'<button onclick="toggleDocShared(\''+esc(d.id)+'\')" title="'+(d.shared?"Rendre priv\u00e9":"Partager avec tous")+'" style="flex:1;background:'+(d.shared?"rgba(58,138,80,.18)":"rgba(201,162,39,.15)")+';border:1px solid '+(d.shared?"rgba(58,138,80,.45)":"rgba(201,162,39,.4)")+';color:'+(d.shared?"#5aaa70":"#c9a227")+';border-radius:5px;padding:5px;cursor:pointer;font-size:11px">'+(d.shared?"\ud83d\udd13":"\ud83d\udd12")+'</button>'
@@ -3310,7 +3310,7 @@ function vUploadRequests(){
     +'<div style="font-size:28px;margin-bottom:4px">\ud83d\udce4</div>'
     +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px">Mod\u00e9ration</div>'
     +'<div style="font-size:18px;font-weight:800;color:#c9a227;letter-spacing:2px">Demandes d\'upload</div>'
-    +'<div style="font-size:11px;color:rgba(201,162,39,.4);letter-spacing:1px;text-transform:uppercase;margin-top:2px">Validation admin obligatoire</div>'
+    +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px">Validation admin obligatoire</div>'
     +'</div>';
   // Toggle global
   var enabled=isUploadEnabled();
@@ -3485,8 +3485,8 @@ function vDocs(){
   h+='</div>';
   // v9.67 — Ressources intégrées à l'application
   h+='<div style="padding:10px 12px;margin-bottom:14px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2);border-radius:10px">'
-    +'<div style="font-size:12px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcda Ressources int\u00e9gr\u00e9es \u00e0 l\u2019application</div>'
-    +'<div style="font-size:11px;color:#5a7a90;margin-bottom:8px;line-height:1.5">Ces documents sont int\u00e9gr\u00e9s dans le code et accessibles directement.</div>'
+    +'<div style="font-size:12px;font-weight:800;color:#8ab0e0;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcda Ressources int\u00e9gr\u00e9es \u00e0 l\u2019application</div>'
+    +'<div style="font-size:11px;color:#8aaac0;margin-bottom:8px;line-height:1.5">Ces documents sont int\u00e9gr\u00e9s dans le code et accessibles directement.</div>'
     +'<div style="display:flex;flex-direction:column;gap:5px">';
   [{ic:"\ud83d\udcd6",lb:"Convention Collective SBM",sub:"29 articles \u2022 Codes paie \u2022 Grilles salaires",fn:"sv('convention')"},
    {ic:"\u2696\ufe0f",lb:"Cadre l\u00e9gal mon\u00e9gasque",sub:"Loi 1.103 \u2022 OS 8.929 \u2022 AM 88-384",fn:"A.convTab='loi';sv('convention')"},
@@ -3498,13 +3498,13 @@ function vDocs(){
     h+='<button onclick="'+b.fn+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:8px;cursor:pointer;text-align:left;width:100%">'
       +'<span style="font-size:20px;flex-shrink:0">'+b.ic+'</span>'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#a0c8e0">'+b.lb+'</div>'
-      +'<div style="font-size:12px;color:#5a7a90">'+b.sub+'</div></div>'
+      +'<div style="font-size:12px;color:#8aaac0">'+b.sub+'</div></div>'
       +'<span style="font-size:14px;color:#4a72a8;flex-shrink:0">\u203a</span></button>';
   });
   h+='</div></div>';
   // Liste / grille des documents
   if(!filtered.length){
-    h+='<div style="padding:40px 20px;text-align:center;color:#8aaa88;background:rgba(255,255,255,.02);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px dashed rgba(201,162,39,.2);border-radius:12px">'
+    h+='<div style="padding:40px 20px;text-align:center;color:#b0ccb0;background:rgba(255,255,255,.02);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px dashed rgba(201,162,39,.2);border-radius:12px">'
       +'<div style="font-size:56px;margin-bottom:10px">\ud83d\udcc2</div>'
       +'<div style="font-size:15px;font-weight:700;color:#a0cca0;margin-bottom:4px">'+(q||cat!=="all"||tab!=="all"?"Aucun r\u00e9sultat":"Aucun document")+'</div>'
       +'<div style="font-size:13px">'+(q||cat!=="all"||tab!=="all"?"Changez les filtres ou la recherche":"Importez vos premiers fichiers via les boutons ci-dessus")+'</div>'
@@ -3514,7 +3514,7 @@ function vDocs(){
     filtered.forEach(function(d){h+=_renderDocCard(d,{adminMode:true});});
     h+='</div>';
   }
-  h+='<div style="margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;font-size:12px;color:#8aaa88;line-height:1.5">'
+  h+='<div style="margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;font-size:12px;color:#b0ccb0;line-height:1.5">'
     +'<strong style="color:#a0cca0">\u2139\ufe0f Formats accept\u00e9s :</strong> Images (JPG, PNG, HEIC), PDF, Word (DOC/DOCX), Excel (XLS/XLSX/CSV), Texte (TXT/RTF), LibreOffice (ODT/ODS).<br>'
     +'<strong style="color:#a0cca0">Limites :</strong> '+Math.round(DOC_MAX_SIZE/1024/1024)+' MB par fichier, synchronis\u00e9 via Firebase. Les images sont redimensionn\u00e9es automatiquement \u00e0 2000\u00d72000.'
     +'</div>';
@@ -3577,7 +3577,7 @@ function vPartage(){
     h+='</div>';
   }
   if(!filtered.length){
-    h+='<div style="padding:40px 20px;text-align:center;color:#8aaa88;background:rgba(255,255,255,.02);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px dashed rgba(58,138,80,.25);border-radius:12px">'
+    h+='<div style="padding:40px 20px;text-align:center;color:#b0ccb0;background:rgba(255,255,255,.02);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px dashed rgba(58,138,80,.25);border-radius:12px">'
       +'<div style="font-size:56px;margin-bottom:10px">\ud83d\udcc2</div>'
       +'<div style="font-size:15px;font-weight:700;color:#a0cca0;margin-bottom:4px">'+(allDocs.length===0?"Aucun document partag\u00e9 pour le moment":"Aucun r\u00e9sultat")+'</div>'
       +'<div style="font-size:13px">'+(allDocs.length===0?"L\u2019administrateur n\u2019a pas encore partag\u00e9 de documents.":"Essayez une autre recherche ou cat\u00e9gorie")+'</div>'
@@ -4323,7 +4323,8 @@ function render(){
       +'<span>👁 Vue en tant que <strong>'+esc(A.user.name)+'</strong> — '+esc(A.user.id)+'</span>'
       +'<button onclick="viewAsBack()" style="margin-left:auto;background:rgba(10,26,12,.22);color:#c9a227;border:1px solid #0a1a0c;border-radius:4px;padding:3px 12px;cursor:pointer;font-size:13px;font-weight:700">← Retour admin</button>'
       +'</div>':''  ;
-    app.innerHTML=_viewAsBanner+'<div id="topbar" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><div id="content">'+vMain()+'</div><div id="accessModalWrap">'+renderAccessModal()+'</div>'+vNav();
+    var _noPad=(A.view==="chat"||A.view==="ia")?' style="padding-bottom:0"':"";
+    app.innerHTML=_viewAsBanner+'<div id="topbar" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><div id="content"'+_noPad+'>'+vMain()+'</div><div id="accessModalWrap">'+renderAccessModal()+'</div>'+vNav();
     requestAnimationFrame(function(){window.scrollTo(0,0);});
     setTimeout(adjGrid,50);
     if(A.view==="departs")setTimeout(adjDeparts,300);
@@ -4345,6 +4346,8 @@ function dc(){
   try{
   var c=document.getElementById("content");if(!c){_dcRunning=false;return;}
   c.innerHTML=vMain();
+  // Chat/IA : pas de padding-bottom (la barre de saisie est dans le flex)
+  c.style.paddingBottom=(A.view==="chat"||A.view==="ia")?"0":"";
   // Maj classe body pour le fond planning sp\u00e9cifique
   var _b=document.body,_ph=A.photos||{};
   if(_ph.planningBg&&(A.view==="planning"||A.view==="departs")) _b.classList.add("bg-planning-active");
@@ -4588,7 +4591,7 @@ function vLoginStep0(){
     ${renderFloatingChips(8,600)}
   </div>
   <div class="login-card" style="position:relative;z-index:2">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.45);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:42px;color:#c9a227;text-shadow:0 0 24px rgba(201,162,39,.6),0 0 50px rgba(201,162,39,.2);line-height:1">\u2666</div>
       <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin-top:8px;color:#f0e8d0;text-shadow:0 1px 8px rgba(0,0,0,.7)">CMC Teams</div>
@@ -4603,13 +4606,13 @@ function vLoginStep0(){
     <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" autocomplete="off"
       style="margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liMat').focus()">
-    <div style="font-size:15px;color:#c07830;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:400;color:#8aaa88;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
-    <div style="font-size:14px;color:#8aaa88;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
+    <div style="font-size:15px;color:#c07830;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
+    <div style="font-size:14px;color:#b0ccb0;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
     <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
       autocapitalize="characters" autocomplete="off"
       style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:rgba(5,16,10,.20);border-color:rgba(201,162,39,.15)"
       onkeydown="if(event.key==='Enter')document.getElementById('liMail').focus()">
-    <div style="font-size:14px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Email <span style="font-weight:400;color:#8aaa88;text-transform:none;letter-spacing:0">(alternatif \u2014 si compte existant)</span></div>
+    <div style="font-size:14px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Email <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(alternatif \u2014 si compte existant)</span></div>
     <input id="liMail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" autocomplete="email"
       style="margin-bottom:10px" onkeydown="if(event.key==='Enter')step1()">
     <div id="lerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>
@@ -4617,7 +4620,7 @@ function vLoginStep0(){
     <div style="margin-top:14px;text-align:center;font-size:14px;color:#80a878;border-top:1px solid rgba(201,162,39,.2);padding-top:12px;line-height:1.8">
       \u2666 &nbsp; Premi\u00e8re connexion ? Vous cr\u00e9erez votre mot de passe \u00e0 l\u2019\u00e9tape suivante &nbsp; \u2666
     </div>
-    <div style="margin-top:10px;text-align:center;font-size:13px;color:#6a8a68;letter-spacing:1px">
+    <div style="margin-top:10px;text-align:center;font-size:13px;color:#90ac90;letter-spacing:1px">
       Cr\u00e9\u00e9 par <span style="color:#5a7050;font-weight:600">Desarzens Kevin</span>
     </div>
     <div style="margin-top:6px;text-align:center;font-size:14px;color:#8aaa80;font-family:monospace">
@@ -4634,7 +4637,7 @@ function vLoginStep1(){
   var displayName=emp?emp.name:(reg?(reg.nom||"")+" "+(reg.prenom||""):"");
   return `<div class="login-bg">
   <div class="login-card">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.45);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:36px;line-height:1">\ud83c\udccf</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Connexion</div>
@@ -4679,7 +4682,7 @@ function vLoginRegister(){
   var knownCol=empFromDB?tc(empFromDB.team):"#888";
   var isTmp=loginUid.indexOf("TMP")===0;
   return '<div class="login-bg"><div class="login-card">'
-    +'<div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.45);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>'
+    +'<div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>'
     +'<div style="text-align:center;margin-bottom:12px">'
     +'<div style="font-size:28px;line-height:1">\ud83d\udccb</div>'
     +'<div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Premi\u00e8re connexion</div>'
@@ -4699,15 +4702,15 @@ function vLoginRegister(){
     +'<input id="rPrenom" class="inp" placeholder="Votre pr\u00e9nom"'
     +' value="'+esc(_loginPrenom)+'" style="margin-bottom:6px" oninput="previewMatch()" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rMat\').focus()">'
     +'<div id="rMatch" style="display:none;padding:7px 10px;border:1px solid;border-radius:7px;font-size:15px;margin-bottom:6px"></div>'
-    +(isTmp?'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Matricule SBM <span style="font-weight:400;color:#6a8870;text-transform:none;letter-spacing:0">(optionnel)</span></div>'
-           +'<div style="font-size:14px;color:#8aaa88;margin-bottom:4px">Renseignez-le si vous le connaissez \u2014 il sera associ\u00e9 \u00e0 votre compte</div>'
+    +(isTmp?'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Matricule SBM <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(optionnel)</span></div>'
+           +'<div style="font-size:14px;color:#b0ccb0;margin-bottom:4px">Renseignez-le si vous le connaissez \u2014 il sera associ\u00e9 \u00e0 votre compte</div>'
            +'<input id="rMat" class="inp" placeholder="ex. U00071" value="'+esc(_loginMat)+'"'
            +' style="font-family:monospace;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;font-size:16px"'
            +' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rEmail\').focus()">'
            :'<input id="rMat" type="hidden" value="'+esc(isTmp?"":loginUid)+'">')
-    +'<div style="font-size:15px;color:#c07830;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Email * <span style="font-weight:400;color:#6a8870;text-transform:none;letter-spacing:0">(obligatoire \u2014 code de v\u00e9rification)</span></div>'
+    +'<div style="font-size:15px;color:#c07830;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Email * <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(obligatoire \u2014 code de v\u00e9rification)</span></div>'
     +'<input id="rEmail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" style="margin-bottom:6px" required onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw1\').focus()">'
-    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Mot de passe * <span style="font-weight:400;color:#6a8870;text-transform:none;letter-spacing:0">(min. 6 car.)</span></div>'
+    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Mot de passe * <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(min. 6 car.)</span></div>'
     +'<input id="rPw1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:2px" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw2\').focus()" oninput="(function(v){var s=document.getElementById(\'pwStrength\');if(!s)return;var sc=0;if(v.length>=6)sc++;if(v.length>=8)sc++;if(/[A-Z]/.test(v))sc++;if(/[0-9]/.test(v))sc++;if(/[^a-zA-Z0-9]/.test(v))sc++;var col=[\'#c04040\',\'#c07830\',\'#c9a227\',\'#5aaa70\',\'#3a8a50\'][Math.min(sc,4)];var lb=[\'Faible\',\'Moyen\',\'Correct\',\'Fort\',\'Excellent\'][Math.min(sc,4)];s.innerHTML=\'<div style=\\\"height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden\\\"><div style=\\\"height:100%;width:\'+(sc*20)+\'%;background:\'+col+\';border-radius:2px;transition:width .2s\\\"></div></div><div style=\\\"font-size:11px;color:\'+col+\';margin-top:2px;font-weight:700\\\">\'+lb+\'</div>\';})(this.value)">'
 +'<div id="pwStrength" style="margin-bottom:6px"></div>'
     +'<input id="rPw2" class="inp" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom:8px" onkeydown="if(event.key===\'Enter\')stepRegister()">'
@@ -4892,7 +4895,7 @@ function vLoginStepVerify(){
     +'<div id="otpErr" style="color:#a04040;font-size:14px;min-height:16px;margin-bottom:8px"></div>'
     +'<button class="btn gold" onclick="stepVerifyCode()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">V\u00e9rifier \u2192</button>'
     +'<button class="btn ghost" onclick="stepResendCode()" style="width:100%;padding:10px;font-size:14px;justify-content:center;margin-top:8px">\ud83d\udd04 Renvoyer un code</button>'
-    +'<div style="margin-top:14px;text-align:center;font-size:12px;color:#8aaa88;line-height:1.6">'
+    +'<div style="margin-top:14px;text-align:center;font-size:12px;color:#b0ccb0;line-height:1.6">'
     +(_ejsOk
       ?'\ud83d\udca1 Vous n\'avez pas re\u00e7u le code ?<br>V\u00e9rifiez vos spams ou contactez l\'administrateur.'
       :'\ud83d\udca1 L\'administrateur voit les codes dans son panneau Admin.<br>Contactez-le par t\u00e9l\u00e9phone ou en personne.')
@@ -4923,7 +4926,7 @@ function stepResendCode(){
 function vLoginStepPin(){
   return `<div class="login-bg">
   <div class="login-card">
-    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.45);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
+    <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
       <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
@@ -5293,7 +5296,7 @@ function vTopbar(){
   ${_backBtn}
   <span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
   <div style="flex:1;min-width:0;overflow:hidden">
-    <div style="font-size:15px;font-weight:800;color:#c9a227;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CMC Teams <span style="font-size:11px;color:rgba(201,162,39,.45);font-weight:400;font-family:monospace;margin-left:2px">`+APP_VER+`</span></div>
+    <div style="font-size:15px;font-weight:800;color:#c9a227;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CMC Teams <span style="font-size:11px;color:rgba(201,162,39,.65);font-weight:600;font-family:monospace;margin-left:2px">`+APP_VER+`</span></div>
     <div style="font-size:11px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Casino de Monaco</div>
   </div>
   ${isAdm
@@ -5583,7 +5586,7 @@ function vMesDemandes(){
     h+='<button onclick="var d=prompt(\'D\u00e9crivez votre demande de '+b.lb.split(" ")[1]+' :\');if(d)submitRequest(\''+b.t+'\',d);" style="flex:1;min-width:120px;padding:12px;background:'+b.col+'15;border:1px solid '+b.col+'40;border-radius:10px;color:'+b.col+';font-size:14px;font-weight:700;cursor:pointer;min-height:44px">'+b.lb+'</button>';
   });
   h+='</div>';
-  if(!myReqs.length){h+='<div style="text-align:center;padding:30px;color:#8aaa88">Aucune demande pour le moment</div>';}
+  if(!myReqs.length){h+='<div style="text-align:center;padding:30px;color:#b0ccb0">Aucune demande pour le moment</div>';}
   else{
     myReqs.forEach(function(r){
       var stCol=r.status==="approved"?"#5aaa70":r.status==="rejected"?"#c06060":"#c9a227";
@@ -5593,7 +5596,7 @@ function vMesDemandes(){
         +'<span style="font-size:13px;font-weight:700;color:'+stCol+'">'+({conge:"\ud83c\udfd6 Cong\u00e9",echange:"\ud83d\udd04 \u00c9change",modification:"\u270f\ufe0f Modification",autre:"\ud83d\udcac Autre"}[r.type]||r.type)+'</span>'
         +'<span style="font-size:12px;color:'+stCol+';font-weight:700">'+stLb+'</span></div>'
         +'<div style="font-size:14px;color:#c0d8c0">'+esc(r.details)+'</div>'
-        +'<div style="font-size:11px;color:#8aaa88;margin-top:4px">'+new Date(r.createdAt).toLocaleDateString("fr-FR")+'</div>'
+        +'<div style="font-size:11px;color:#b0ccb0;margin-top:4px">'+new Date(r.createdAt).toLocaleDateString("fr-FR")+'</div>'
         +(r.adminNote?'<div style="font-size:13px;color:#a0cca0;margin-top:4px;font-style:italic">\ud83d\udcac Admin : '+esc(r.adminNote)+'</div>':"")
         +'</div>';
     });
@@ -5632,7 +5635,7 @@ function exportMyPDF(){
   var html='<html><head><meta charset="UTF-8"><title>Planning '+esc(dispName)+' - '+MFR[A.month]+' '+A.year+'</title>'
     +'<style>body{font-family:Georgia,serif;color:#1a2a1c;margin:20px 30px;font-size:12px}'
     +'h1{font-size:18px;color:#1a3020;border-bottom:2px solid #c9a227;padding-bottom:6px}'
-    +'h2{font-size:14px;color:#7a9a78;margin:12px 0 6px}'
+    +'h2{font-size:14px;color:#a0bca0;margin:12px 0 6px}'
     +'table{border-collapse:collapse;width:100%}th,td{border:1px solid #c0c8b8;padding:4px 6px;text-align:center;font-size:11px}'
     +'th{background:#e8e4d8;font-weight:700}.work{background:#f0f8e8;font-weight:700}.cp{background:#f0e0f8}.af{background:#e0f8e8}.m{background:#f8e0e0}.rh{background:#e8e8f0}'
     +'</style></head><body>'
@@ -5736,7 +5739,7 @@ function vMonPlanning(){
       +'<div style="font-size:14px;color:#a0cca0;margin-top:4px">Vous n\u2019\u00eates pas encore rattach\u00e9 \u00e0 une \u00e9quipe</div>'
       +'</div>'
       +'<div class="card" style="padding:14px;margin-bottom:12px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2)">'
-      +'<div style="font-size:13px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px">\u2139\ufe0f En attente d\u2019attribution</div>'
+      +'<div style="font-size:13px;font-weight:800;color:#8ab0e0;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px">\u2139\ufe0f En attente d\u2019attribution</div>'
       +'<div style="font-size:14px;color:#b0c098;line-height:1.5">Votre administrateur a \u00e9t\u00e9 notifi\u00e9 de votre inscription. En attendant votre rattachement \u00e0 une \u00e9quipe, vous pouvez consulter :</div>'
       +'<ul style="font-size:14px;color:#8aaa90;margin:8px 0 0;padding-left:20px;line-height:1.7">'
       +'<li>Le <strong style="color:#c9a227">planning g\u00e9n\u00e9ral</strong> de toutes les \u00e9quipes</li>'
@@ -5771,7 +5774,7 @@ function vMonPlanning(){
     +'<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;color:#d0e8c0">'+esc(dispName)+'</div>'
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
     +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 Ma fiche</button>'
-    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#6a92c8;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
+    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#8ab0e0;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
     +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#c06060;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -5780,7 +5783,7 @@ function vMonPlanning(){
     +'<button class="btn ghost" onclick="nextM()" style="padding:5px 14px;font-size:16px">\u203a</button>'
     +'</div>';
   if(!hasImp){
-    var _syncMsg=FB_URL?'<div style="font-size:13px;color:#5a9a70;margin-top:6px">\ud83d\udd04 Synchronisation en cours...</div>':'<div style="font-size:13px;color:#8aaa88;margin-top:6px">Contactez l\'administrateur.</div>';
+    var _syncMsg=FB_URL?'<div style="font-size:13px;color:#5a9a70;margin-top:6px">\ud83d\udd04 Synchronisation en cours...</div>':'<div style="font-size:13px;color:#b0ccb0;margin-top:6px">Contactez l\'administrateur.</div>';
     return h+'<div class="card" style="padding:28px;text-align:center;color:#a0cca0">'
       +'<div style="font-size:28px;margin-bottom:8px">\ud83d\udcc5</div>'
       +'<div style="font-weight:700;font-size:16px;margin-bottom:6px">Planning non disponible</div>'
@@ -5804,7 +5807,7 @@ function vMonPlanning(){
     h+='<div style="background:'+tcc+'0c;border:1px solid '+tcc+'28;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">'
       +'<div style="text-align:center;min-width:44px"><div style="font-size:22px;font-weight:800;color:'+tcc+'">'+_nextShiftD+'</div>'
       +'<div style="font-size:11px;color:'+tcc+'80;text-transform:uppercase">'+_JOURS[_nDow].slice(0,3)+'</div></div>'
-      +'<div><div style="font-size:12px;color:#8aaa88;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Prochain service</div>'
+      +'<div><div style="font-size:12px;color:#b0ccb0;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Prochain service</div>'
       +'<div style="font-size:15px;font-weight:700;color:'+_nci.c+'">'+_nextShiftCode+' \u2014 '+esc(_nci.l||_nextShiftCode)+'</div></div>'
       +'</div>';
   }
@@ -5910,19 +5913,19 @@ function vMonProfil(){
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Identit\u00e9</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
-  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">Pr\u00e9nom</div>'
+  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:3px">Pr\u00e9nom</div>'
     +'<div style="padding:8px 10px;background:rgba(255,255,255,.06);border-radius:7px;font-size:15px">'+esc(reg.prenom||"\u2014")+'</div></div>';
-  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">Nom</div>'
+  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:3px">Nom</div>'
     +'<div style="padding:8px 10px;background:rgba(255,255,255,.06);border-radius:7px;font-size:15px">'+esc(reg.nom||emp.name||"\u2014")+'</div></div>';
   h+='</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">Matricule SBM</div>'
+  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:3px">Matricule SBM</div>'
     +'<div style="padding:8px 10px;background:rgba(255,255,255,.06);border-radius:7px;font-size:15px;font-family:monospace">'+esc(uid)+'</div></div>';
-  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">Secteur</div>'
+  h+='<div><div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:3px">Secteur</div>'
     +'<div style="padding:8px 10px;background:rgba(255,255,255,.06);border-radius:7px;font-size:15px">'+esc(tname)+'</div></div>';
   h+='</div>';
-  if(comps)h+='<div style="margin-top:10px"><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px">Comp\u00e9tences jeux</div>'+comps+'</div>';
-  h+='<div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.25)">Pour modifier votre nom, pr\u00e9nom ou matricule, contactez votre administrateur.</div>';
+  if(comps)h+='<div style="margin-top:10px"><div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:5px">Comp\u00e9tences jeux</div>'+comps+'</div>';
+  h+='<div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Pour modifier votre nom, pr\u00e9nom ou matricule, contactez votre administrateur.</div>';
   h+='</div>';
   // Contact
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
@@ -5996,7 +5999,7 @@ function vMonProfil(){
     h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
     h+='<div style="font-size:14px;color:rgba(255,255,255,.6)">'+(Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat en temps r\u00e9el":"D\u00e9sactiv\u00e9es \u2014 activez pour \u00eatre alert\u00e9 des changements")+'</div>';
     if(Notification.permission!=="granted"){
-      h+='<button onclick="requestNotifPermission()" style="flex-shrink:0;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:6px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>';
+      h+='<button onclick="requestNotifPermission()" style="flex-shrink:0;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:6px 14px;color:#8ab0e0;font-weight:700;cursor:pointer;font-size:14px">Activer</button>';
     } else {
       h+='<span style="flex-shrink:0;font-size:18px">\u2705</span>';
     }
@@ -6157,7 +6160,7 @@ function _hrKpi(icon,num,label,col){
   return '<div style="padding:8px 6px;background:'+col+'0c;border:1px solid '+col+'28;border-radius:8px;text-align:center">'
     +'<div style="font-size:15px;margin-bottom:2px">'+icon+'</div>'
     +'<div style="font-size:20px;font-weight:800;color:'+col+';line-height:1">'+num+'</div>'
-    +'<div style="font-size:11px;color:#8aaa88;text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+label+'</div>'
+    +'<div style="font-size:11px;color:#b0ccb0;text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+label+'</div>'
     +'</div>';
 }
 function vAccueil(){
@@ -6205,7 +6208,7 @@ function vAccueil(){
     +'</div>'
     +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:4px;text-transform:uppercase;margin-bottom:4px">Principaut\u00e9 de Monaco</div>'
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;letter-spacing:3px;text-shadow:0 0 20px rgba(201,162,39,.3)">\u2666 CMC Teams \u2666</div>'
-    +'<div style="font-size:12px;color:rgba(201,162,39,.4);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo</div>'+sbmLogo(50)
+    +'<div style="font-size:12px;color:rgba(201,162,39,.6);letter-spacing:3px;text-transform:uppercase;margin-top:3px">Casino de Monte-Carlo</div>'+sbmLogo(50)
     +'<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;opacity:.55">'
     +renderChip(5,20,null,"am")+renderChip(25,24,null,"am")+renderChip(100,28,null,"am")+renderChip(500,24,null,"am")+renderChip(1000,20,null,"am")
     +'</div>'
@@ -6287,7 +6290,7 @@ function vAccueil(){
     var _cpTeams=Object.keys(_cpByTeam).sort(function(a,b){return _cpByTeam[b]-_cpByTeam[a];}).slice(0,5);
     if(_cpTeams.length){
       h+='<div style="margin-top:6px;padding:6px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:8px">'
-        +'<div style="font-size:11px;color:#6a92c8;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\ud83c\udf34 CP par \u00e9quipe aujourd\u2019hui</div>'
+        +'<div style="font-size:11px;color:#8ab0e0;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\ud83c\udf34 CP par \u00e9quipe aujourd\u2019hui</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
       _cpTeams.forEach(function(tn){
         h+='<span style="font-size:12px;padding:2px 8px;background:rgba(74,114,168,.12);border-radius:12px;color:#8ab0d0">'+esc(tn)+' <b>'+_cpByTeam[tn]+'</b></span>';
@@ -6405,7 +6408,7 @@ function vAccueil(){
     h+='<div style="padding:12px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(74,114,168,.15),rgba(74,114,168,.05));border:1px solid rgba(74,114,168,.3);border-radius:12px">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
       +'<span style="font-size:20px">\ud83d\udc41\ufe0f</span>'
-      +'<div style="font-size:14px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:1px">Mode visiteur</div>'
+      +'<div style="font-size:14px;font-weight:800;color:#8ab0e0;text-transform:uppercase;letter-spacing:1px">Mode visiteur</div>'
       +'</div>'
       +'<div style="font-size:13px;color:#8aa8c8;line-height:1.5">Vous avez acc\u00e8s au planning, aux d\u00e9parts, au chat et aux statistiques g\u00e9n\u00e9rales. L\'administrateur vous assignera bient\u00f4t une \u00e9quipe.</div>'
       +'</div>';
@@ -6426,9 +6429,9 @@ function vAccueil(){
       h+='<div style="display:flex;align-items:center;gap:10px;padding:4px 0">'
         +'<div style="font-size:24px;color:#2a3a28">\ud83c\udf19</div>'
         +'<div><div style="font-size:16px;color:'+_ci3.c+';font-weight:700">'+(code||"Repos")+'</div>'
-        +'<div style="font-size:13px;color:#7a9a78">Pas de service aujourd\u2019hui</div></div>'
+        +'<div style="font-size:13px;color:#a0bca0">Pas de service aujourd\u2019hui</div></div>'
         +((_nextW)?'<div style="margin-left:auto;text-align:right">'
-          +'<div style="font-size:12px;color:#8aaa88">Prochain service</div>'
+          +'<div style="font-size:12px;color:#b0ccb0">Prochain service</div>'
           +'<div style="font-size:15px;font-weight:800;color:'+tcc+'">'+_nextW+' '+MFR[A.month].slice(0,4)+'</div>'
           +'<div style="font-size:13px;color:#a0cca0">'+_nextWC+'</div></div>':"")
         +'</div>';
@@ -6506,7 +6509,7 @@ function vAccueil(){
       +'<div style="font-size:13px;font-weight:800;color:#a0cca0;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">\ud83d\udcc5 Prochains jours</div>'
       +'<div style="display:flex;flex-direction:column;gap:4px">';
     if(!_upcomingDays.length){
-      h+='<div style="font-size:14px;color:#6a8a68">Fin du mois atteinte ou planning non import\u00e9</div>';
+      h+='<div style="font-size:14px;color:#90ac90">Fin du mois atteinte ou planning non import\u00e9</div>';
     } else {
       var _dsArr2=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
       _upcomingDays.forEach(function(o){
@@ -6514,8 +6517,8 @@ function vAccueil(){
         var _isWork2=isWork(o.c);
         var _dow2=getDow(A.year,A.month,o.d);
         h+='<div style="display:flex;align-items:center;gap:8px">'
-          +'<div style="font-size:14px;color:#6a8a68;width:28px">'+_dsArr2[_dow2]+'</div>'
-          +'<div style="font-size:14px;color:#7a9a78;width:16px">'+o.d+'</div>'
+          +'<div style="font-size:14px;color:#90ac90;width:28px">'+_dsArr2[_dow2]+'</div>'
+          +'<div style="font-size:14px;color:#a0bca0;width:16px">'+o.d+'</div>'
           +'<div style="font-size:14px;font-weight:'+(_isWork2?700:400)+';color:'+_ci2.c+'">'+(_isWork2?esc(o.c):(o.c?esc(o.c):'\u2014'))+'</div>'
           +'</div>';
       });
@@ -6572,14 +6575,14 @@ function vAccueil(){
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
       // Colonne MOIS
       +'<div style="padding:10px;background:rgba(58,138,80,.08);border:1px solid rgba(58,138,80,.2);border-radius:8px">'
-      +'<div style="font-size:11px;color:#5a9a60;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">'+esc(MFR[A.month])+' '+A.year+'</div>'
+      +'<div style="font-size:11px;color:#7aba80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">'+esc(MFR[A.month])+' '+A.year+'</div>'
       +'<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px"><span style="font-size:22px;font-weight:800;color:#5aaa70">'+_stMois.heures+'</span><span style="font-size:12px;color:#a0cca0">h trav.</span></div>'
       +'<div style="font-size:11px;color:#a0cca0">'+_stMois.trav+' jours \u00b7 '+(_stMois.RH+_stMois.R)+' repos</div>'
       +'<div style="font-size:11px;color:#a0cca0">'+_stMois.CP+' CP \u00b7 '+_stMois.M+' M \u00b7 '+_stMois.AF+' AF</div>'
       +'</div>'
       // Colonne ANNÉE
       +'<div style="padding:10px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.2);border-radius:8px">'
-      +'<div style="font-size:11px;color:#6a92c8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ann\u00e9e '+A.year+'</div>'
+      +'<div style="font-size:11px;color:#8ab0e0;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ann\u00e9e '+A.year+'</div>'
       +'<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px"><span style="font-size:22px;font-weight:800;color:#7aa8d0">'+_stAn.heures+'</span><span style="font-size:12px;color:#a0cca0">h trav.</span></div>'
       +'<div style="font-size:11px;color:#a0cca0">'+_stAn.trav+' jours \u00b7 '+(_stAn.RH+_stAn.R)+' repos</div>'
       +'<div style="font-size:11px;color:#a0cca0">'+_stAn.CP+' CP \u00b7 '+_stAn.M+' M \u00b7 '+_stAn.AF+' AF</div>'
@@ -6686,7 +6689,7 @@ function vPlan(){
     h+='<div style="padding:10px 14px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.25);border-radius:10px;margin-bottom:10px">'
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<div style="font-size:20px">\u2139\ufe0f</div>'
-      +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#6a92c8">Vue g\u00e9n\u00e9rale</div>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#8ab0e0">Vue g\u00e9n\u00e9rale</div>'
       +'<div style="font-size:13px;color:#a0cca0;margin-top:2px">Vous n\u2019\u00eates pas rattach\u00e9 \u00e0 une \u00e9quipe. Vous consultez le planning de toutes les \u00e9quipes.</div>'
       +'</div></div></div>';
   }
@@ -6705,7 +6708,7 @@ function vPlan(){
     h+=`<div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.15);border-radius:8px;margin-bottom:8px">
       <div style="width:8px;height:8px;border-radius:50%;background:#3a8a50;flex-shrink:0"></div>
       <span style="font-size:14px;color:#5a9a68;font-weight:700">Aujourd'hui : <strong style="color:#7aca88">${_todWork}</strong> en service</span>
-      <span style="font-size:13px;color:#6a8a68;margin-left:auto">/ ${_todTotal} actifs</span>
+      <span style="font-size:13px;color:#90ac90;margin-left:auto">/ ${_todTotal} actifs</span>
     </div>`;
   }
   h+=`<div id="planGrid">`;
@@ -6751,7 +6754,7 @@ function vPlan(){
       +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
       +'<span style="font-size:16px;font-weight:700;color:'+tcc+'">'+esc(team?team.name:"\u00c9q."+tid)+'</span>'
       +(mir?'<span style="font-size:14px;color:#a0cca0"> \u21cc '+esc(mir.name)+'</span>':"")
-      +'<span style="font-size:13px;color:#8aaa88;margin-left:auto">'+empCount+' emp.</span>'
+      +'<span style="font-size:13px;color:#b0ccb0;margin-left:auto">'+empCount+' emp.</span>'
       +'</div>'
       +'<div style="background:rgba(6,15,8,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="plan-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
@@ -6946,7 +6949,7 @@ function vDeparts(){
     h+='<div style="padding:10px 14px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.25);border-radius:10px;margin-bottom:12px">'
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<div style="font-size:20px">\u2139\ufe0f</div>'
-      +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#6a92c8">Vue g\u00e9n\u00e9rale</div>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#8ab0e0">Vue g\u00e9n\u00e9rale</div>'
       +'<div style="font-size:13px;color:#a0cca0;margin-top:2px">Vous n\u2019\u00eates pas rattach\u00e9 \u00e0 une \u00e9quipe. Vous consultez les d\u00e9parts de toutes les \u00e9quipes.</div>'
       +'</div></div></div>';
   }
@@ -7076,7 +7079,7 @@ function vDeparts(){
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
         +'<div style="width:6px;height:6px;border-radius:50%;background:'+tcc+'"></div>'
         +'<span style="font-size:16px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
-        +'<span style="font-size:14px;color:#8aaa88">Import PDF requis pour la grille</span>'
+        +'<span style="font-size:14px;color:#b0ccb0">Import PDF requis pour la grille</span>'
         +'</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
       chefEmps.forEach(function(emp,ei){
@@ -7100,7 +7103,7 @@ function vDeparts(){
       +'<th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
       +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
-      +'<div style="font-size:11px;color:#7a9a78;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
+      +'<div style="font-size:11px;color:#a0bca0;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
     // Indice de jour travaillé pour chaque jour calendaire (pour formule de rotation)
     var _wiMap={};var _wiCount=0;
@@ -7469,7 +7472,7 @@ function renderEmpHistory(empId){
   // Filtrer les entr\u00e9es li\u00e9es \u00e0 cet employ\u00e9 (eid match)
   var entries=log.filter(function(e){return e.eid===empId;}).slice().reverse();
   if(!entries.length){
-    return '<div style="padding:12px 14px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:8px;text-align:center;color:#8aaa88;font-size:13px">Aucune modification enregistr\u00e9e pour cet employ\u00e9.</div>';
+    return '<div style="padding:12px 14px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:8px;text-align:center;color:#b0ccb0;font-size:13px">Aucune modification enregistr\u00e9e pour cet employ\u00e9.</div>';
   }
   // Labels des actions pour affichage
   var _actLabels={
@@ -7508,11 +7511,11 @@ function renderEmpHistory(empId){
       +'<div style="font-size:12px;color:#c0d8a8;font-weight:700">'+act+'</div>'
       +(change?'<div style="font-size:11px;color:#a0cca0;margin-top:2px;word-break:break-word">'+change+'</div>':"")
       +'</div>'
-      +'<div style="font-size:11px;color:#7a9a78;font-family:monospace;text-align:right;flex-shrink:0;white-space:nowrap">'+dateStr+'</div>'
+      +'<div style="font-size:11px;color:#a0bca0;font-family:monospace;text-align:right;flex-shrink:0;white-space:nowrap">'+dateStr+'</div>'
       +'</div>';
   });
   if(entries.length>30){
-    h+='<div style="padding:6px 10px;font-size:11px;color:#8aaa88;text-align:center;font-style:italic;border-top:1px solid rgba(255,255,255,.04)">+ '+(entries.length-30)+' plus anciennes dans le journal g\u00e9n\u00e9ral</div>';
+    h+='<div style="padding:6px 10px;font-size:11px;color:#b0ccb0;text-align:center;font-style:italic;border-top:1px solid rgba(255,255,255,.04)">+ '+(entries.length-30)+' plus anciennes dans le journal g\u00e9n\u00e9ral</div>';
   }
   h+='</div>';
   return h;
@@ -7549,7 +7552,7 @@ function renderStatsCard(empId,empName){
   // Cartes principales
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
   h+='<div style="padding:14px;background:linear-gradient(135deg,rgba(58,138,80,.12),rgba(58,138,80,.04));border:1px solid rgba(58,138,80,.3);border-radius:12px">'
-    +'<div style="font-size:11px;color:#5a9a60;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\ud83d\udcbc Travail</div>'
+    +'<div style="font-size:11px;color:#7aba80;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">\ud83d\udcbc Travail</div>'
     +'<div style="font-size:28px;font-weight:800;color:#5aaa70">'+s.trav+'</div>'
     +'<div style="font-size:12px;color:#a0cca0;margin-top:2px">jours \u00b7 '+s.heures+'h total</div>'
     +(s.CDP?'<div style="font-size:11px;color:#b89010;margin-top:3px">\ud83d\udc51 '+s.CDP+' CDP</div>':'')
@@ -7581,7 +7584,7 @@ function renderStatsCard(empId,empName){
     h+='</svg>';
     h+='<div style="display:flex;flex-direction:column;gap:3px">';
     _slices.forEach(function(sl){
-      h+='<div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:10px;height:10px;border-radius:50%;background:'+sl.c+';flex-shrink:0"></div><span style="color:#c0d8c0">'+sl.l+'</span><span style="color:'+sl.c+';font-weight:800">'+sl.v+'j</span><span style="color:#8aaa88;font-size:11px">('+Math.round(sl.v/_total*100)+'%)</span></div>';
+      h+='<div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:10px;height:10px;border-radius:50%;background:'+sl.c+';flex-shrink:0"></div><span style="color:#c0d8c0">'+sl.l+'</span><span style="color:'+sl.c+';font-weight:800">'+sl.v+'j</span><span style="color:#b0ccb0;font-size:11px">('+Math.round(sl.v/_total*100)+'%)</span></div>';
     });
     h+='</div></div>';
   }
@@ -7782,7 +7785,7 @@ function vStatsGlobal(){
   // Totaux généraux (gros chiffres)
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
     +'<div style="padding:14px;background:linear-gradient(135deg,rgba(58,138,80,.15),rgba(58,138,80,.04));border:1px solid rgba(58,138,80,.35);border-radius:12px">'
-    +'<div style="font-size:11px;color:#5a9a60;text-transform:uppercase;letter-spacing:1px">\ud83d\udcbc Heures travaill\u00e9es</div>'
+    +'<div style="font-size:11px;color:#7aba80;text-transform:uppercase;letter-spacing:1px">\ud83d\udcbc Heures travaill\u00e9es</div>'
     +'<div style="font-size:28px;font-weight:800;color:#5aaa70">'+agg.heures+'h</div>'
     +'<div style="font-size:12px;color:#a0cca0">'+agg.trav+' jours \u00b7 '+agg.CDP+' CDP</div></div>'
     +'<div style="padding:14px;background:linear-gradient(135deg,rgba(201,162,39,.12),rgba(201,162,39,.04));border:1px solid rgba(201,162,39,.3);border-radius:12px">'
@@ -7854,7 +7857,7 @@ function vStatsGlobal(){
   h+='</div></div>';
   // Section : comptes inscrits
   h+='<div style="padding:12px 14px;margin-bottom:10px;background:rgba(58,138,80,.04);border:1px solid rgba(58,138,80,.15);border-radius:10px">'
-    +'<div style="font-size:13px;color:#5a9a60;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">\ud83d\udd10 Comptes</div>'
+    +'<div style="font-size:13px;color:#7aba80;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">\ud83d\udd10 Comptes</div>'
     +'<div style="display:flex;gap:8px">'
     +'<div style="flex:1;padding:10px;background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.3);border-radius:8px;text-align:center">'
     +'<div style="font-size:24px;font-weight:800;color:#5aaa70">'+inscrits+'</div>'
@@ -7929,7 +7932,7 @@ function vStatsAnnuelles(){
       +'</div>'
       +'<div style="font-size:12px;color:'+tcc+'">'+esc(o.id)+' \u00b7 '+(o.team?esc(o.team):"—")+'</div>'
       +'</div>'
-      +'<div style="font-size:16px;color:#7a9a78">\u203a</div>'
+      +'<div style="font-size:16px;color:#a0bca0">\u203a</div>'
       +'</div>';
   });
   h+='</div>';
@@ -8121,7 +8124,7 @@ function vChat(){
   h+='<div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(201,162,39,.1),rgba(201,162,39,.02),transparent)">'
     +'<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(201,162,39,.2),rgba(201,162,39,.08));border:1.5px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:18px">\ud83d\udcac</div>'
     +'<div><div style="font-size:15px;font-weight:800;color:#ffdc40;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)">Chat Casino \ud83c\uddf2\ud83c\udde8</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.75);text-shadow:0 1px 2px rgba(0,0,0,.5)">'+A.chatMsgs.length+' msg</div></div>';
+    +'<div style="font-size:11px;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.5)">'+A.chatMsgs.length+' msg</div></div>';
   // Groupe actions à droite (TTS + filtres admin + recherche)
   h+='<div style="margin-left:auto;display:flex;gap:4px;align-items:center">';
   // Bouton lecture vocale (TTS)
@@ -8298,7 +8301,7 @@ function vChat(){
           +'<div style="font-size:15px;font-weight:700;color:#c0d8a8">'+(prenom?esc(prenom)+' ':'')+esc(e.name.split(' ')[0])+'</div>'
           +'<div style="font-size:13px;color:'+tCol+'">'+esc(teamObj?teamObj.name:'Éq.'+e.team)+'</div>'
           +'</div>'
-          +'<div style="font-size:12px;color:#6a8a68;font-family:monospace">'+esc(e.id)+'</div>'
+          +'<div style="font-size:12px;color:#90ac90;font-family:monospace">'+esc(e.id)+'</div>'
           +'</div>'
           +'</button>';
       });
@@ -8342,7 +8345,7 @@ function vConvention(){
     +'<div style="font-size:28px;margin-bottom:4px">\ud83d\udcd6</div>'
     +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px">Convention Collective</div>'
     +'<div style="font-size:18px;font-weight:800;color:#c9a227;letter-spacing:2px">Jeux de Table SBM</div>'
-    +'<div style="font-size:11px;color:rgba(201,162,39,.4);letter-spacing:2px;text-transform:uppercase;margin-top:2px">En vigueur depuis le '+esc(CONVENTION.version)+'</div>'
+    +'<div style="font-size:11px;color:rgba(201,162,39,.6);letter-spacing:2px;text-transform:uppercase;margin-top:2px">En vigueur depuis le '+esc(CONVENTION.version)+'</div>'
     +'</div>';
   // Tabs
   var _tab=function(id,lbl,ic){
@@ -8490,7 +8493,7 @@ function vConvention(){
         +'<div onclick="A.convJeuSel=\''+(open?"":jid)+'\';dc()" style="padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px">'
         +'<div style="font-size:24px;flex-shrink:0">'+j.icone+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:15px;font-weight:800;color:'+catCol+';letter-spacing:.5px">'+esc(j.nom)+' <span style="font-size:11px;color:rgba(255,255,255,.4);font-weight:400;margin-left:4px">['+esc(j.comp)+']</span></div>'
+        +'<div style="font-size:15px;font-weight:800;color:'+catCol+';letter-spacing:.5px">'+esc(j.nom)+' <span style="font-size:11px;color:rgba(255,255,255,.65);font-weight:600;margin-left:4px">['+esc(j.comp)+']</span></div>'
         +'<div style="font-size:12px;color:#a8c8a0;margin-top:2px">'+esc(j.tagline)+'</div>'
         +'</div>'
         +'<div style="font-size:16px;color:'+catCol+';transition:transform .2s;transform:rotate('+(open?"90":"0")+'deg);flex-shrink:0">\u203a</div>'
@@ -8597,7 +8600,7 @@ function vConvention(){
           +'</div>'
           +'</div>'
           +'<div style="margin-top:10px;padding:8px 10px;background:rgba(201,162,39,.04);border-left:2px solid '+catCol+';border-radius:4px">'
-          +'<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">\ud83d\udccd Lieu</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">\ud83d\udccd Lieu</div>'
           +'<div style="font-size:12px;color:#c9a227">'+esc(j.lieu)+'</div></div>'
           +'</div>';
       }
@@ -8639,7 +8642,7 @@ function vConvention(){
           +'<span style="font-size:22px">'+sl.ic+'</span>'
           +'<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#c9a227">'+esc(sl.nom)+'</div>'
           +'<div style="font-size:12px;color:#a0cca0">'+esc(sl.type)+'</div></div>'
-          +'<div style="font-size:16px;color:#7a9a78">'+(open?'\u25be':'\u203a')+'</div>'
+          +'<div style="font-size:16px;color:#a0bca0">'+(open?'\u25be':'\u203a')+'</div>'
           +'</div>';
         if(open){
           if(sl.architecte)h+='<div style="margin-top:8px;font-size:12px;color:#a8c8a0"><b style="color:#c9a227">Architecte :</b> '+esc(sl.architecte)+'</div>';
@@ -8834,7 +8837,7 @@ function vConvention(){
         });
       }
     } else {
-      h+='<div style="text-align:center;padding:30px;color:#8aaa88;font-size:13px">Tapez un mot-cl\u00e9 pour rechercher dans la convention et les codes paie</div>';
+      h+='<div style="text-align:center;padding:30px;color:#b0ccb0;font-size:13px">Tapez un mot-cl\u00e9 pour rechercher dans la convention et les codes paie</div>';
     }
   }
   return h+'</div>';
@@ -8845,7 +8848,7 @@ function vGestionLive(){
     +'<div style="font-size:48px;margin-bottom:12px">\ud83c\udfb0</div>'
     +'<div style="font-size:22px;font-weight:800;color:#c9a227;letter-spacing:2px;margin-bottom:6px">CASINO LIVE</div>'
     +'<div style="font-size:14px;color:#a0cca0;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px">Gestion en temps r\u00e9el</div>'
-    +'<div style="font-size:15px;color:rgba(255,255,255,.4);margin-bottom:24px">Module en cours de d\u00e9veloppement</div>'
+    +'<div style="font-size:15px;color:rgba(255,255,255,.65);margin-bottom:24px">Module en cours de d\u00e9veloppement</div>'
     +'</div>';
   var modules=[
     {ic:"\ud83c\udccf",t:"Tables de jeux",d:"Ouverture/fermeture des tables en temps r\u00e9el selon l\u2019affluence",s:"Phase 2.1"},
@@ -8860,7 +8863,7 @@ function vGestionLive(){
       +'<div style="font-size:28px;flex-shrink:0">'+m.ic+'</div>'
       +'<div style="flex:1"><div style="font-size:16px;font-weight:700;color:#d0cc9a">'+esc(m.t)+'</div>'
       +'<div style="font-size:13px;color:#7a8a68;margin-top:2px">'+esc(m.d)+'</div></div>'
-      +'<div style="font-size:11px;color:rgba(201,162,39,.4);font-weight:700;letter-spacing:1px;text-transform:uppercase;flex-shrink:0">'+esc(m.s)+'</div>'
+      +'<div style="font-size:11px;color:rgba(201,162,39,.6);font-weight:700;letter-spacing:1px;text-transform:uppercase;flex-shrink:0">'+esc(m.s)+'</div>'
       +'</div>';
   });
   h+='<div style="text-align:center;padding:20px;font-size:13px;color:rgba(255,255,255,.2)">Ces fonctionnalit\u00e9s seront activ\u00e9es progressivement apr\u00e8s validation de l\u2019\u00e9tape 1.</div>';
@@ -8997,10 +9000,10 @@ function vAuditLog(){
         +'</div>'
         +'<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
         +'<span style="color:'+oldCol+';background:'+oldCol+'14;border:1px solid '+oldCol+'30;border-radius:4px;padding:1px 5px;font-weight:700">'+esc(e.old||"vide")+'</span>'
-        +'<span style="color:#6a8a68">\u2192</span>'
+        +'<span style="color:#90ac90">\u2192</span>'
         +'<span style="color:'+(isDelete?"#c04040":newCol)+';background:'+(isDelete?"rgba(192,64,64,.1)":newCol+"14")+';border:1px solid '+(isDelete?"rgba(192,64,64,.3)":newCol+"30")+';border-radius:4px;padding:1px 5px;font-weight:700">'+(isDelete?"\u2715 effac\u00e9":esc(e.new))+'</span>'
         +'</div>'
-        +'<div style="color:#6a8a68;flex-shrink:0;font-size:13px;white-space:nowrap">'+dateStr+'</div>'
+        +'<div style="color:#90ac90;flex-shrink:0;font-size:13px;white-space:nowrap">'+dateStr+'</div>'
         +'</div>';
     });
     h+='</div>';
@@ -9134,13 +9137,13 @@ function vRetrait(){
     });
     h+='</div>';
   } else {
-    h+='<div style="padding:16px;text-align:center;font-size:15px;color:#8aaa88;margin-bottom:12px">Aucun ancien employ\u00e9 enregistr\u00e9</div>';
+    h+='<div style="padding:16px;text-align:center;font-size:15px;color:#b0ccb0;margin-bottom:12px">Aucun ancien employ\u00e9 enregistr\u00e9</div>';
   }
 
   // Section pour mettre un actif à la retraite
   h+='<div style="font-size:14px;font-weight:800;color:#a0cca0;text-transform:uppercase;letter-spacing:2px;padding:4px 0;border-bottom:1px solid rgba(58,138,80,.2);margin-bottom:8px">'
     +'\u270f\ufe0f Marquer un employ\u00e9 comme parti</div>'
-    +'<div style="margin-bottom:8px;font-size:14px;color:#8aaa88">Choisissez l\u2019employ\u00e9 et le mois \u00e0 partir duquel il est inactif :</div>'
+    +'<div style="margin-bottom:8px;font-size:14px;color:#b0ccb0">Choisissez l\u2019employ\u00e9 et le mois \u00e0 partir duquel il est inactif :</div>'
     +'<div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:rgba(6,15,10,.20);border:1px solid #1e3020;border-radius:8px">'
     +'<select id="rtrEmp" class="inp" style="font-size:15px">'
     +'<option value="">-- Choisir un employ\u00e9 actif --</option>';
@@ -9178,7 +9181,7 @@ function vOnline(){
   var h='<div class="page"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><button class="btn ghost" onclick="sv(\x27admin\x27)" style="padding:5px 10px;font-size:15px">\u2190</button><div><div class="sec-title">\ud83d\udfe2 Utilisateurs connect\u00e9s</div><div class="sec-sub">Pr\u00e9sence \u00b7 Historique 24h</div></div></div>';
   h+='<div style="padding:7px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:7px;margin-bottom:10px;font-size:13px;color:#5a7a9a">\u2139\ufe0f Pr\u00e9sence d\u00e9tect\u00e9e dans la m\u00eame session navigateur, mise \u00e0 jour toutes les 2 min.</div>';
   h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#a0cca0;font-weight:700;text-transform:uppercase;letter-spacing:1px">En ligne maintenant</div><span style="background:rgba(80,180,80,.15);color:#5aaa70;border:1px solid rgba(80,180,80,.3);border-radius:10px;padding:2px 8px;font-size:14px;font-weight:700">'+online.length+' actif'+(online.length>1?"s":"")+'</span></div>';
-  if(online.length===0){h+='<div style="font-size:15px;color:#7a9a78;font-style:italic;text-align:center;padding:10px 0">Aucun utilisateur actif d\u00e9tect\u00e9</div>';}
+  if(online.length===0){h+='<div style="font-size:15px;color:#a0bca0;font-style:italic;text-align:center;padding:10px 0">Aucun utilisateur actif d\u00e9tect\u00e9</div>';}
   else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.22);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
   h+='</div>';
   // Statistiques d'utilisation par employé
@@ -9203,14 +9206,14 @@ function vOnline(){
         +'<span style="font-size:11px;color:#a0cca0">cx</span>'
         +'<span style="color:#4a72a8;font-weight:700;min-width:32px;text-align:right">'+v.views+'</span>'
         +'<span style="font-size:11px;color:#a0cca0">vues</span>'
-        +'<span style="font-size:11px;color:#8aaa88;min-width:55px;text-align:right">'+lastStr+'</span>'
+        +'<span style="font-size:11px;color:#b0ccb0;min-width:55px;text-align:right">'+lastStr+'</span>'
         +'</div>';
     });
     h+='</div>';
   }
   h+='</div>';
   h+='<div class="card" style="padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#a0cca0;font-weight:700;text-transform:uppercase;letter-spacing:1px">Activit\u00e9 (24h)</div><span style="font-size:14px;color:#5a7a5a">'+recent.length+' \u00e9v\u00e9nements</span></div>';
-  if(recent.length===0){h+='<div style="font-size:15px;color:#7a9a78;font-style:italic;text-align:center;padding:10px 0">Aucune activit\u00e9 aujourd\x27hui</div>';}
+  if(recent.length===0){h+='<div style="font-size:15px;color:#a0bca0;font-style:italic;text-align:center;padding:10px 0">Aucune activit\u00e9 aujourd\x27hui</div>';}
   else{
     function uaBrief(ua){if(!ua)return"?";if(/iPhone/i.test(ua))return"\ud83d\udcf1 iPhone";if(/iPad/i.test(ua))return"\ud83d\udcf1 iPad";if(/Android/i.test(ua))return"\ud83d\udcf1 Android";if(/Chrome/i.test(ua))return"\ud83c\udf10 Chrome";if(/Firefox/i.test(ua))return"\ud83e\udd8a Firefox";if(/Safari/i.test(ua))return"\ud83e\udde1 Safari";return"\ud83d\udcbb "+ua.slice(0,20);}
     recent.slice(0,40).forEach(function(e){
@@ -9256,7 +9259,7 @@ function vOnline(){
   h+='<div style="font-size:13px;color:#5a7a5a">'+recentIA.length+' interactions</div></div>';
   h+='<button onclick="if(confirm(\'Effacer historique IA ?\')){ls(\'cmc_ia_log\',[]);dc();}" style="background:rgba(160,40,40,.08);border:1px solid rgba(160,40,40,.2);border-radius:5px;color:#a06060;font-size:13px;padding:3px 8px;cursor:pointer">\ud83d\uddd1 Effacer</button>';
   h+='</div>';
-  if(!recentIA.length){h+='<div style="font-size:15px;color:#7a9a78;font-style:italic;text-align:center;padding:10px 0">Aucune interaction IA cette semaine</div>';}
+  if(!recentIA.length){h+='<div style="font-size:15px;color:#a0bca0;font-style:italic;text-align:center;padding:10px 0">Aucune interaction IA cette semaine</div>';}
   else{
     recentIA.slice(0,30).forEach(function(e){
       h+='<div style="padding:7px 8px;margin-bottom:5px;background:rgba(10,22,10,.20);border:1px solid #1a2e1a;border-radius:7px">'
@@ -9446,14 +9449,14 @@ _regAlerts.length>1?"s":"")+" — \u00e9quipe inconnue</div>"
     +'<div style="font-size:13px;color:#7a6040;margin-top:5px">Appuyez pour effacer \u2014 assignez leur \u00e9quipe dans la fiche Employ\u00e9s</div>'
     +'</div>':"")
   +(_pendingVerif.length>0?'<div style="padding:10px 12px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.3);border-radius:8px;margin-bottom:10px">'
-    +'<div style="font-size:15px;font-weight:700;color:#6a92c8;margin-bottom:8px">\ud83d\udd10 Codes de v\u00e9rification en attente ('+_pendingVerif.length+')</div>'
+    +'<div style="font-size:15px;font-weight:700;color:#8ab0e0;margin-bottom:8px">\ud83d\udd10 Codes de v\u00e9rification en attente ('+_pendingVerif.length+')</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +_pendingVerif.map(function(c){
       var minsLeft=Math.max(0,Math.ceil((c.expiresAt-Date.now())/60000));
       return '<div style="padding:8px 10px;background:rgba(3,10,14,.20);border:1px solid rgba(74,114,168,.25);border-radius:6px;display:flex;align-items:center;gap:8px">'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:700;color:#c0d8e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((c.prenom||"")+' '+(c.nom||"")+' ('+c.empId+')')+'</div>'
-        +'<div style="font-size:12px;color:#6a92c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u2709\ufe0f '+esc(c.email||"—")+' \u00b7 expire dans '+minsLeft+' min</div>'
+        +'<div style="font-size:12px;color:#8ab0e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u2709\ufe0f '+esc(c.email||"—")+' \u00b7 expire dans '+minsLeft+' min</div>'
         +'</div>'
         +'<div style="font-family:monospace;font-size:20px;font-weight:800;color:#c9a227;letter-spacing:3px;background:rgba(201,162,39,.1);padding:4px 10px;border-radius:6px;flex-shrink:0">'+esc(c.code)+'</div>'
         +'<button onclick="adminValidateCode(\''+esc(c.empId)+'\')" style="background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.4);color:#5aaa70;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0" title="Valider sans code">\u2713</button>'
@@ -9480,10 +9483,10 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
       return '<div style="padding:10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
         +(hasImg
           ?'<div style="width:52px;height:52px;border-radius:8px;background:url(&quot;'+_safeUrl(ph[k])+'&quot;) center/cover;border:1px solid rgba(201,162,39,.3);flex-shrink:0"></div>'
-          :'<div style="width:52px;height:52px;border-radius:8px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.4);font-size:22px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
+          :'<div style="width:52px;height:52px;border-radius:8px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.6);font-size:22px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:14px;font-weight:700;color:#c0d8c0">'+lbl+'</div>'
-        +'<div style="font-size:12px;color:#8aaa88">'+descr+(hasImg?' \u2022 '+sz:" \u2022 aucune")+'</div>'
+        +'<div style="font-size:12px;color:#b0ccb0">'+descr+(hasImg?' \u2022 '+sz:" \u2022 aucune")+'</div>'
         +'</div>'
         +'<button onclick="uploadAppPhoto(\''+k+'\')" style="background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.4);border-radius:6px;padding:6px 10px;color:#5aaa70;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">'+(hasImg?"\ud83d\udd04 Changer":"\ud83d\udcf7 Importer")+'</button>'
         +(hasImg?'<button onclick="removeAppPhoto(\''+k+'\')" style="background:rgba(160,40,40,.1);border:1px solid rgba(160,40,40,.3);border-radius:6px;padding:6px 8px;color:#c06060;font-size:12px;cursor:pointer;margin-left:4px">\u2715</button>':"")
@@ -9506,11 +9509,11 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     var cfg=lg("cmc_emailjs_config",null);
     var ok=!!(cfg&&cfg.serviceId&&cfg.templateId&&cfg.userId);
     return '<div style="padding:10px 14px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2);border-radius:10px;margin-bottom:12px">'
-    +'<div style="font-size:14px;font-weight:800;color:#6a92c8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\u2709\ufe0f Envoi emails (codes OTP)</div>'
-    +'<div style="font-size:13px;color:#5a7a90;margin-bottom:8px;line-height:1.5">'
+    +'<div style="font-size:14px;font-weight:800;color:#8ab0e0;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\u2709\ufe0f Envoi emails (codes OTP)</div>'
+    +'<div style="font-size:13px;color:#8aaac0;margin-bottom:8px;line-height:1.5">'
     +(ok
       ?'\u2705 EmailJS configur\u00e9 \u2014 les codes de v\u00e9rification seront envoy\u00e9s par email aux employ\u00e9s.'
-      :'\u26a0\ufe0f Non configur\u00e9 \u2014 les codes apparaissent dans ce panneau admin mais ne sont <b>pas envoy\u00e9s par email</b>. Cr\u00e9ez un compte gratuit sur <span style="color:#6a92c8">emailjs.com</span> pour activer l\u2019envoi.')
+      :'\u26a0\ufe0f Non configur\u00e9 \u2014 les codes apparaissent dans ce panneau admin mais ne sont <b>pas envoy\u00e9s par email</b>. Cr\u00e9ez un compte gratuit sur <span style="color:#8ab0e0">emailjs.com</span> pour activer l\u2019envoi.')
     +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +'<input id="ejs_sid" class="inp" placeholder="Service ID (ex: service_abc123)" style="font-size:14px;padding:6px 8px;font-family:monospace" value="'+esc(ok?cfg.serviceId:"")+'">'
@@ -9527,27 +9530,27 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="display:flex;flex-direction:column;gap:8px">'
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
-  +'<div style="font-size:13px;color:#7a9a78">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
-  +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#8aaa88">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
+  +'<div style="font-size:13px;color:#a0bca0">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
+  +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#b0ccb0">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#8ab0e0;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
   +'</div>'
   // Langue
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udf10 '+t("language")+'</div>'
-  +'<div style="font-size:13px;color:#7a9a78">'+(LANGS.find(function(l){return l.id===_lang;})||LANGS[0]).label+'</div></div>'
+  +'<div style="font-size:13px;color:#a0bca0">'+(LANGS.find(function(l){return l.id===_lang;})||LANGS[0]).label+'</div></div>'
   +'<div style="display:flex;gap:4px">'
   +LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')
   +'</div></div>'
   // Thème visuel
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udfa8 '+t("theme")+'</div>'
-  +'<div style="font-size:13px;color:#7a9a78">Actuel : '+(THEMES[_theme]||THEMES.casino).icon+' '+(THEMES[_theme]||THEMES.casino).label+'</div></div>'
+  +'<div style="font-size:13px;color:#a0bca0">Actuel : '+(THEMES[_theme]||THEMES.casino).icon+' '+(THEMES[_theme]||THEMES.casino).label+'</div></div>'
   +'<div style="display:flex;gap:4px">'
   +Object.keys(THEMES).map(function(tid){var t=THEMES[tid];var on=_theme===tid;return '<button onclick="setTheme(\''+tid+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;min-height:44px;color:'+(on?'#c9a227':'#7aaa80')+'">'+t.icon+'</button>';}).join('')
   +'</div></div>'
   // Compte visiteur U007
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udc64 Compte visiteur (U007)</div>'
-  +'<div style="font-size:13px;color:#7a9a78">Matricule : <b>U007</b> \u2022 Mot de passe : <b>sbm2026</b> \u2022 Vue g\u00e9n\u00e9rale uniquement</div></div>'
+  +'<div style="font-size:13px;color:#a0bca0">Matricule : <b>U007</b> \u2022 Mot de passe : <b>sbm2026</b> \u2022 Vue g\u00e9n\u00e9rale uniquement</div></div>'
   +'<button onclick="toggleVisitor()" style="background:'+(_visitorEnabled?'rgba(58,138,80,.2)':'rgba(192,64,64,.15)')+';border:1px solid '+(_visitorEnabled?'rgba(58,138,80,.5)':'rgba(192,64,64,.4)')+';border-radius:20px;padding:5px 14px;color:'+(_visitorEnabled?'#5aaa70':'#c06060')+';font-weight:700;cursor:pointer;font-size:14px;min-height:44px">'+(_visitorEnabled?'\u2705 Activ\u00e9':'\u274c D\u00e9sactiv\u00e9')+'</button>'
   +'</div>'
   +'</div></div>'
@@ -9631,7 +9634,7 @@ function vPasswords(){
   h+='<input id="pwQIn" class="inp" type="text" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USM\u2026" value="'+esc(A.pwQ||"")+'"'
    +' oninput="searchInput(\'pwQ\',this.value,\'pwQIn\')" style="margin-bottom:10px;font-size:16px">';
   if(emps.length===0){
-    h+='<div style="padding:24px;text-align:center;font-size:15px;color:#8aaa88">Aucun employ\u00e9 dans cette cat\u00e9gorie.</div>';
+    h+='<div style="padding:24px;text-align:center;font-size:15px;color:#b0ccb0">Aucun employ\u00e9 dans cette cat\u00e9gorie.</div>';
   }
   // List grouped by family
   var FAMS=[{id:"bj",lb:"Jeux am\u00e9ricains"},{id:"roulettes",lb:"Jeux europ\u00e9en"},{id:"baccara",lb:"Baccara"},{id:"cmc",lb:"Groupe ouvert"}];
@@ -10121,7 +10124,7 @@ function vTemplates(){
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:15px;font-weight:800;color:#ffdc40;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(tpl.name)+'</div>'
         +'<div style="font-size:12px;color:#a8c8a0;margin-top:2px">Source : '+esc(tpl.srcLabel)+' \u00b7 '+tpl.empCount+' employ\u00e9s</div>'
-        +'<div style="font-size:11px;color:#8aaa88;margin-top:2px">Cr\u00e9\u00e9 le '+dateStr+'</div>'
+        +'<div style="font-size:11px;color:#b0ccb0;margin-top:2px">Cr\u00e9\u00e9 le '+dateStr+'</div>'
         +'</div>'
         +'<div style="display:flex;gap:5px;flex-shrink:0;flex-direction:column">'
         +'<button onclick="applyPlanningTemplate(\''+esc(tpl.id)+'\')" class="btn gold" style="padding:6px 12px;font-size:13px" aria-label="Appliquer le template">\u2b07 Appliquer</button>'
@@ -10512,7 +10515,7 @@ function vEmps(){
     <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s${isBulk?' \u00b7 <span style="color:#c9a227">'+selCount+' s\u00e9lectionn\u00e9'+(selCount>1?'s':'')+'</span>':''}</div></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="sv('passwords')" style="font-size:14px;padding:7px 11px;flex-shrink:0">\ud83d\udd11 Mots de passe</button>
-      <button class="btn ghost" onclick="bulkToggleMode()" style="font-size:14px;padding:7px 11px;flex-shrink:0${isBulk?';background:rgba(201,162,39,.15);border-color:rgba(201,162,39,.4);color:#c9a227':''}">${isBulk?'\u2713 Termin\u00e9':'\u2611 S\u00e9lection'}</button>
+      <button class="btn ghost" onclick="bulkToggleMode()" style="font-size:14px;padding:7px 11px;flex-shrink:0${isBulk?';background:rgba(201,162,39,.15);border-color:rgba(201,162,39,.6);color:#c9a227':''}">${isBulk?'\u2713 Termin\u00e9':'\u2611 S\u00e9lection'}</button>
       <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:15px;flex-shrink:0">+ Ajouter</button>
     </div>
   </div>
@@ -10532,7 +10535,7 @@ function vEmps(){
           <select id="nteam" class="inp" style="padding:9px 10px;font-size:16px">${A.teams.map(function(t){return "<option value=\""+t.id+"\">"+esc(t.name)+"</option>";}).join("")}</select>
           <input id="npost" class="inp" placeholder="Poste (ex: BRTCK)">
         </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:15px;color:#7a9a78;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00e9part)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;color:#a0bca0;cursor:pointer"><input type="checkbox" id="nchef"> Chef de partie (ordre d\u00e9part)</label>
         <div style="display:flex;gap:8px">
           <button class="btn gold" onclick="addEmp()" style="flex:1;justify-content:center">Ajouter</button>
           <button class="btn ghost" onclick="showAddF=false;dc()" style="flex:1;justify-content:center">Annuler</button>
@@ -10616,12 +10619,12 @@ function vEmps(){
                   +'background:'+(active?comp.c+'22':'rgba(255,255,255,.03)')+';'
                   +'border:1px solid '+(active?comp.c+'80':'#1e3020')+';'
                   +'color:'+(active?comp.c:'#3a5030')+'">'
-                  +esc(comp.id)+' <span style="font-size:12px;font-weight:400">'+esc(comp.l)+'</span>'
+                  +esc(comp.id)+' <span style="font-size:12px;font-weight:600">'+esc(comp.l)+'</span>'
                   +'</button>';
               }).join("")}
             </div>
             <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:12px;color:#7a9a78">Code PDF :</span>
+              <span style="font-size:12px;color:#a0bca0">Code PDF :</span>
               <input class="inp" style="padding:4px 8px;font-size:14px;font-family:monospace;flex:1" value="${esc(emp.post||"")}" placeholder="ex: BRTP+E."
                 onchange="updEmp('${emp.id}','post',this.value)">
             </div>
@@ -10652,7 +10655,7 @@ function vEmps(){
             <option value="">\u2014 Non d\u00e9fini \u2014</option>
             ${GROUPES.map(function(g){return '<option value="'+g.id+'"'+((emp.groupe||'')===g.id?' selected':'')+'>'+g.icon+' '+esc(g.label)+'</option>';}).join('')}
           </select>
-          ${emp.groupe?'<div style="margin-top:4px;padding:6px 9px;background:'+getGroupeColor(emp.groupe)+'10;border-left:2px solid '+getGroupeColor(emp.groupe)+'60;border-radius:4px;font-size:12px;color:#a8c8a8;line-height:1.4">'+esc((GROUPES.find(function(g){return g.id===emp.groupe;})||{}).descr||'')+'</div>':'<div style="margin-top:4px;font-size:12px;color:#8aaa88;font-style:italic">Convention SBM art.26 (retraite) et art.13 (prime 1er mai) d\u00e9pendent de ce statut.</div>'}
+          ${emp.groupe?'<div style="margin-top:4px;padding:6px 9px;background:'+getGroupeColor(emp.groupe)+'10;border-left:2px solid '+getGroupeColor(emp.groupe)+'60;border-radius:4px;font-size:12px;color:#a8c8a8;line-height:1.4">'+esc((GROUPES.find(function(g){return g.id===emp.groupe;})||{}).descr||'')+'</div>':'<div style="margin-top:4px;font-size:12px;color:#b0ccb0;font-style:italic">Convention SBM art.26 (retraite) et art.13 (prime 1er mai) d\u00e9pendent de ce statut.</div>'}
           </div>
 
           <div><div style="font-size:13px;color:#a0cca0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">R\u00f4le / Poste</div>
@@ -10686,14 +10689,14 @@ function vEmps(){
             return `<div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px">
             <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udd11 Infos connexion (visible admin uniquement)</div>
             ${(_rNom||_rPrenom)?`<div style="padding:8px 10px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:7px;margin-bottom:8px">
-              <div style="font-size:12px;color:#5a9a60;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">L\u2019employ\u00e9 se connecte avec :</div>
+              <div style="font-size:12px;color:#7aba80;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">L\u2019employ\u00e9 se connecte avec :</div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px">
                 <span style="color:#5a8a60">Nom :</span><span style="color:#c0d8a8;font-weight:700">${esc(_rNom||emp.name.split(" ")[0])}</span>
                 <span style="color:#5a8a60">Pr\u00e9nom :</span><span style="color:#c0d8a8;font-weight:700">${esc(_rPrenom)}</span>
                 <span style="color:#5a8a60">Matricule :</span><span style="color:#c9a227;font-family:monospace;letter-spacing:1px">${esc(emp.id)}</span>
                 <span style="color:#5a8a60">Mot de passe :</span><span style="color:${A.passwords[emp.id]?"#3a8a50":"#c9a227"}">${A.passwords[emp.id]?"\ud83d\udd12 D\u00e9fini par l\u2019employ\u00e9":"\u26a0\ufe0f Pas encore cr\u00e9\u00e9"}</span>
               </div>
-              ${_r.createdAt?'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-top:4px">Inscrit le '+new Date(_r.createdAt).toLocaleDateString("fr-FR")+(_r.updatedAt?' \u00b7 MAJ '+new Date(_r.updatedAt).toLocaleDateString("fr-FR"):"")+'</div>':""}
+              ${_r.createdAt?'<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">Inscrit le '+new Date(_r.createdAt).toLocaleDateString("fr-FR")+(_r.updatedAt?' \u00b7 MAJ '+new Date(_r.updatedAt).toLocaleDateString("fr-FR"):"")+'</div>':""}
             </div>`:`<div style="padding:8px 10px;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.12);border-radius:7px;margin-bottom:8px;font-size:14px;color:#7a8a68;font-style:italic">\u23f3 Cet employ\u00e9 ne s\u2019est pas encore inscrit sur l\u2019application</div>`}
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
               <span style="font-size:14px;color:#a0cca0;width:52px;flex-shrink:0">Matricule</span>
@@ -10730,7 +10733,7 @@ function vEmps(){
                   onkeydown="if(event.key===\'Enter\'){adminChangeEmpId(\'${emp.id}\',document.getElementById(\'reg_mat_${emp.id}\').value);}">
                 <button onclick="adminChangeEmpId(\'${emp.id}\',document.getElementById(\'reg_mat_${emp.id}\').value)" style="background:rgba(192,120,48,.12);border:1px solid rgba(192,120,48,.3);border-radius:6px;color:#c07830;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713</button>
               </div>
-              <div style="font-size:13px;color:#8aaa88;margin-bottom:8px">Modifie l\'ID dans tout le syst\u00e8me (planning, mots de passe, historique)</div>
+              <div style="font-size:13px;color:#b0ccb0;margin-bottom:8px">Modifie l\'ID dans tout le syst\u00e8me (planning, mots de passe, historique)</div>
               <div style="display:flex;flex-direction:column;gap:5px">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                   <div>
@@ -10790,7 +10793,7 @@ function vEmps(){
                   <input id="reg_poste_${emp.id}" class="inp" style="padding:6px 8px;font-size:14px;width:100%" placeholder="Ex: Croupier niveau 3" value="${esc(_r.poste||"")}"
                     onblur="_adminSetRegSilent('${emp.id}','poste',this.value)">
                 </div>
-                ${_r.updatedAt?`<div style="font-size:12px;color:rgba(255,255,255,.25)">Mis \u00e0 jour le ${new Date(_r.updatedAt).toLocaleDateString("fr-FR")}</div>`:""}
+                ${_r.updatedAt?`<div style="font-size:12px;color:rgba(255,255,255,.5)">Mis \u00e0 jour le ${new Date(_r.updatedAt).toLocaleDateString("fr-FR")}</div>`:""}
               </div>
             </div>
             <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.1)">
@@ -10844,7 +10847,7 @@ function vEmps(){
             ${emp.groupe?'<span title="Groupe '+emp.groupe+' \u2014 convention SBM" style="font-size:11px;color:'+getGroupeColor(emp.groupe)+';background:'+getGroupeColor(emp.groupe)+'18;border:1px solid '+getGroupeColor(emp.groupe)+'40;border-radius:4px;padding:1px 6px;margin-left:4px;font-weight:700">'+getGroupeIcon(emp.groupe)+' '+esc((GROUPES.find(function(g){return g.id===emp.groupe;})||{}).short||'')+'</span>':''}
           </div>
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:2px">
-            <span style="font-size:13px;color:#7a9a78;font-family:monospace">${esc(emp.id)}</span>
+            <span style="font-size:13px;color:#a0bca0;font-family:monospace">${esc(emp.id)}</span>
             <span style="color:#2a4020">·</span>
             <span style="font-size:13px;color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span>
             <span style="color:#2a4020">·</span>
@@ -11324,7 +11327,7 @@ function vImport(){
   <!-- Guide PDF iPhone -->
   <div class="card" style="padding:14px;background:rgba(201,162,39,.04)">
     <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcf1 Comment importer depuis un PDF sur iPhone</div>
-    <div style="font-size:14px;color:#6a8a68;line-height:2">
+    <div style="font-size:14px;color:#90ac90;line-height:2">
       <span style="color:#c9a227;font-weight:700">Option 1 \u2014 Fichier PDF direct :</span><br>
       Appuyez sur \u00ab\u00a0Choisir CSV ou PDF\u00a0\u00bb \u2192 s\u00e9lectionnez votre PDF dans Fichiers \u2192 l\u2019appli tente une lecture automatique<br><br>
       <span style="color:#c9a227;font-weight:700">Option 2 \u2014 Copier-coller (plus fiable) :</span><br>
@@ -13863,8 +13866,8 @@ function vIA(){
     <div style="display:flex;align-items:center;gap:8px">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
       <div style="flex:1">
-        <div style="font-size:16px;font-weight:700;color:#c9a227">Assistant CMC ${iaApiKey&&iaEnabled?"<span style='font-size:14px;background:rgba(80,200,100,.15);border:1px solid rgba(80,200,100,.3);border-radius:4px;padding:1px 6px;color:#50c864;margin-left:5px'>IA Claude</span>":iaApiKey&&!iaEnabled?"<span style='font-size:14px;background:rgba(192,120,48,.15);border:1px solid rgba(192,120,48,.3);border-radius:4px;padding:1px 6px;color:#c07830;margin-left:5px'>IA désactivée</span>":"<span style='font-size:14px;color:#a0cca0'>(mode local)</span>"}</div>
-        <div style="font-size:14px;color:#a0cca0">${iaApiKey&&iaEnabled?"Connecté à Claude AI · "+IA_TOOLS.length+" outils · Planning · Stats · Jeux · Convention · Loi":iaApiKey&&!iaEnabled?"Désactivé par admin — mode local uniquement":"Planning · Vérification · Équipes · Horaires"}</div>
+        <div style="font-size:15px;font-weight:700;color:#c9a227;white-space:nowrap">Assistant CMC ${iaApiKey&&iaEnabled?"<span style='font-size:12px;color:#50c864;margin-left:4px'>IA</span>":"<span style='font-size:12px;color:#a0cca0'>(local)</span>"}</div>
+        <div style="font-size:12px;color:#a0cca0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${iaApiKey&&iaEnabled?IA_TOOLS.length+" outils":"Planning · Jeux · Convention"}</div>
       </div>
       ${isAdm?"<button onclick=\"iaCheckNow()\" style=\"background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:14px;cursor:pointer;font-weight:700\">\ud83d\udd0d V\u00e9rifier</button>":""}
       ${isAdm&&iaApiKey&&iaEnabled?"<button onclick=\"iaToggleWebSearch()\" style=\"background:"+(iaWebSearch?"rgba(74,154,255,.15)":"rgba(255,255,255,.05)")+";border:1px solid "+(iaWebSearch?"rgba(74,154,255,.4)":"#1e3020")+";border-radius:6px;padding:4px 8px;color:"+(iaWebSearch?"#4a9aff":"#7aaa80")+";font-size:14px;cursor:pointer;font-weight:700\" title=\""+(iaWebSearch?"Désactiver la recherche internet":"Activer la recherche internet pour répondre à toutes les questions")+"\">🔍 Web "+(iaWebSearch?"ON":"OFF")+"</button>":""}
@@ -13968,7 +13971,7 @@ function formatVerifReport(v){
       </div>
       <span style="font-size:14px;font-weight:700;color:${barColor}">${pct}%</span>
     </div>
-    <div style="font-size:14px;color:#6a8a68">
+    <div style="font-size:14px;color:#90ac90">
       \u2705 ${v.summary?v.summary.correct:0} cellules correctes &nbsp;\u00b7&nbsp;
       ${v.errors.length>0?'<span style="color:#c9a227">\u26a0\ufe0f '+v.errors.length+' erreur(s)</span>':'<span style="color:#3a8a50">\u2705 0 erreur</span>'}
     </div>
@@ -13989,7 +13992,7 @@ function formatVerifReport(v){
       errs.slice(0,5).forEach(function(e){
         var ciRef=CODES[e.refCode]||{c:"#c9a227"};
         var ciPl=CODES[e.plCode]||{c:"#6a8a68"};
-        h+=`<div style="font-size:14px;color:#6a8a68;margin-bottom:2px">
+        h+=`<div style="font-size:14px;color:#90ac90;margin-bottom:2px">
           Jour ${e.day} : planning=<span style="color:${ciPl.c};font-weight:700">${e.plCode||"vide"}</span>
           \u2192 devrait \u00eatre <span style="color:${ciRef.c};font-weight:700">${e.refCode}</span>
         </div>`;
@@ -14024,7 +14027,7 @@ function iaAskCorrect(){
   var summary=Object.keys(byEmp).slice(0,5).map(function(n){return n+" ("+byEmp[n]+"j)";}).join(", ");
   var h=`<div style="padding:10px;background:rgba(14,28,16,.20);border:1px solid rgba(201,162,39,.3);border-radius:8px">
     <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
-    <div style="font-size:14px;color:#6a8a68;margin-bottom:10px">
+    <div style="font-size:14px;color:#90ac90;margin-bottom:10px">
       Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00e9 :<br>
       <strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?" ...":""}</strong>
     </div>
@@ -14075,7 +14078,7 @@ function iaConfirmCorrect(){
     details.slice(0,8).forEach(function(d){
       var ciO=CODES[d.old]||{c:"#c04040"};
       var ciN=CODES[d.new]||{c:"#3a8a50"};
-      h+=`<div style="font-size:14px;color:#6a8a68">
+      h+=`<div style="font-size:14px;color:#90ac90">
         ${esc(d.name)} j${d.day} :
         <span style="color:${ciO.c};text-decoration:line-through">${d.old||"vide"}</span>
         \u2192 <span style="color:${ciN.c};font-weight:700">${d.new}</span>
@@ -14449,7 +14452,7 @@ function vImportVerif(){
     +'<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(30,48,32,.25);border-bottom:1px solid rgba(201,162,39,.2);position:sticky;top:0;z-index:10">'
     +'<button onclick="sv(\'admin\')" style="background:none;border:none;color:#c9a227;font-size:20px;cursor:pointer;padding:0 4px">&#8592;</button>'
     +'<div style="flex:1"><div style="font-size:16px;font-weight:700;color:#d8ecd0">V\u00e9rification import</div>'
-    +'<div style="font-size:14px;color:#6a8a68">'+MFR[im]+' '+iy+' \u00b7 \ud83d\udfe1 Diff\u00e9rent du consensus \u00b7 Cliquer pour corriger</div></div>'
+    +'<div style="font-size:14px;color:#90ac90">'+MFR[im]+' '+iy+' \u00b7 \ud83d\udfe1 Diff\u00e9rent du consensus \u00b7 Cliquer pour corriger</div></div>'
     +'<div style="display:flex;gap:4px"><button class="btn ghost" onclick="prevM()" style="padding:4px 10px">\u2039</button><button class="btn ghost" onclick="nextM()" style="padding:4px 10px">\u203a</button></div>'
     +'</div>'
     +_summary
@@ -14475,13 +14478,13 @@ function vImportVerif(){
       var anomBadge=anomCount?'<span style="background:rgba(192,112,48,.3);color:#e09040;border-radius:4px;padding:1px 5px;font-size:13px;margin-left:4px">\u26a0\ufe0f '+anomCount+'</span>':"";
       html+='<details style="margin-bottom:8px"><summary style="cursor:pointer;padding:7px 10px;background:rgba(0,0,0,.2);border-radius:8px;border-left:3px solid '+tc+';list-style:none;display:flex;align-items:center;gap:6px">'
         +'<span style="font-size:14px;font-weight:700;color:'+tc+'">'+esc(tname)+'</span>'
-        +'<span style="font-size:14px;color:#6a8a68">'+members.length+' employ\u00e9s</span>'+anomBadge
+        +'<span style="font-size:14px;color:#90ac90">'+members.length+' employ\u00e9s</span>'+anomBadge
         +'</summary><div style="margin-top:4px;overflow-x:auto">';
       // En-tête jours
       html+='<table style="border-collapse:collapse;font-size:13px;min-width:100%"><thead><tr>'
-        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:rgba(26,48,32,.22);min-width:118px">Employé</td>';
+        +'<td style="padding:3px 6px;color:#90ac90;font-weight:700;position:sticky;left:0;background:rgba(26,48,32,.22);min-width:118px">Employé</td>';
       for(var d=1;d<=Math.min(days,30);d++){
-        html+='<td style="padding:2px;text-align:center;color:#6a8a68;width:'+dayW+';min-width:'+dayW+'">'+d+'</td>';
+        html+='<td style="padding:2px;text-align:center;color:#90ac90;width:'+dayW+';min-width:'+dayW+'">'+d+'</td>';
       }
       html+='</tr></thead><tbody>';
       members.forEach(function(e){
@@ -14503,10 +14506,10 @@ function vImportVerif(){
         html+='</tr>';
       });
       // Ligne consensus
-      html+='<tr><td style="padding:3px 6px;color:#6a8a68;font-size:13px;font-style:italic;position:sticky;left:0;background:rgba(26,48,32,.22)">\u2248 Consensus</td>';
+      html+='<tr><td style="padding:3px 6px;color:#90ac90;font-size:13px;font-style:italic;position:sticky;left:0;background:rgba(26,48,32,.22)">\u2248 Consensus</td>';
       for(var d=1;d<=Math.min(days,30);d++){
         var c=teamConsensus[tid][d]||"";
-        html+='<td style="padding:2px;text-align:center;background:rgba(255,255,255,.04);color:#6a8a68;font-size:12px;border-radius:3px">'+esc(c)+'</td>';
+        html+='<td style="padding:2px;text-align:center;background:rgba(255,255,255,.04);color:#90ac90;font-size:12px;border-radius:3px">'+esc(c)+'</td>';
       }
       html+='</tr></tbody></table></div></details>';
     });
