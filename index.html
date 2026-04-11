@@ -13038,19 +13038,19 @@ function doImport(){
     var _r5=document.getElementById("impRes");
     if(_r5&&(_cdpCount||_afCount||_convCount)){
       var _msg='';
-      if(_cdpCount)_msg+='\ud83c\udfb0 '+_cdpCount+' Caf\u00e9 de Paris (fond orange) ';
-      if(_afCount)_msg+='\ud83c\udf93 '+_afCount+' Formation (fond vert) ';
-      if(_convCount)_msg+='\ud83d\udcd6 '+_convCount+' Convention (fond rouge) ';
+      if(_cdpCount)_msg+='\u2615 '+_cdpCount+' Caf\u00e9 de Paris (fond orange) ';
+      if(_afCount)_msg+='\ud83d\udcda '+_afCount+' Formation (fond vert) ';
+      if(_convCount)_msg+='\ud83c\udfa9 '+_convCount+' Convention (fond rouge) ';
       var _amenCount=window._pdfCdpCells.filter(function(c){return c.type==="amenage";}).length;
       if(_amenCount)_msg+='\u23f0 '+_amenCount+' Am\u00e9nag\u00e9s (fond gris) ';
       var _cpCount=window._pdfCdpCells.filter(function(c){return c.type==="cp";}).length;
-      if(_cpCount)_msg+='\ud83c\udfd6 '+_cpCount+' Cong\u00e9s (fond rose) ';
+      if(_cpCount)_msg+='\u2708 '+_cpCount+' Cong\u00e9s (fond rose) ';
       var _rhCount=window._pdfCdpCells.filter(function(c){return c.type==="rh";}).length;
       if(_rhCount)_msg+='\ud83d\udca4 '+_rhCount+' RH (fond violet fonc\u00e9) ';
       var _rCount=window._pdfCdpCells.filter(function(c){return c.type==="r";}).length;
       if(_rCount)_msg+='\ud83d\udca4 '+_rCount+' Repos (fond lavande) ';
       var _rrtCount=window._pdfCdpCells.filter(function(c){return c.type==="rrt";}).length;
-      if(_rrtCount)_msg+='\ud83d\udd04 '+_rrtCount+' RRT/PRT (fond jaune) ';
+      if(_rrtCount)_msg+='\u21bb '+_rrtCount+' RRT/PRT (fond jaune) ';
       _r5.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;font-size:14px;color:#c9a227">'+_msg+'</div>';
     }
     window._pdfCdpCells=[];
