@@ -1,0 +1,8 @@
+# Dépendances Node.js
+node_modules/
+package-lock.json
+
+# Artefacts vidéo (générés, trop lourds pour Git)
+tools/video/frames/
+tools/video/output/
+tools/video/assets/*.png

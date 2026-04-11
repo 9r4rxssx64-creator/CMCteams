@@ -1,0 +1,4 @@
+# Artefacts vidéo (trop lourds pour Git)
+frames/
+output/
+assets/*.png
