@@ -8044,6 +8044,7 @@ function vChat(){
   h+='<div class="chat-bar">'
     +'<button onclick="chatPickDm()" style="background:'+(_chatDm||_chatDmPick?'rgba(160,90,255,.15)':'none')+';border:'+(_chatDm||_chatDmPick?'1px solid rgba(160,90,255,.3)':''+'none')+';cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;color:'+(_chatDm?"#a060ff":"#4a6840")+'" title="Message priv\u00e9">\u2709</button>'
     +'<input id="chatIn" class="inp" style="flex:1;padding:9px 12px;font-size:16px" placeholder="'+(_chatDm?"Priv\u00e9 \u2192 "+esc(_chatDm.name)+"...":"Message...")+'" autocomplete="off" onkeydown="if(event.key===\'Enter\')sendMsg()">'
+    +((window.SpeechRecognition||window.webkitSpeechRecognition)?'<button onclick="sttStart(\'chatIn\')" style="flex-shrink:0;background:'+(_sttActive?'rgba(224,64,64,.3)':'rgba(255,255,255,.06)')+';border:1px solid '+(_sttActive?'rgba(224,64,64,.5)':'rgba(255,255,255,.1)')+';border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">'+(_sttActive?'\u23f9':'\ud83c\udf99')+'</button>':'')
     +'<button class="btn gold" onclick="sendMsg()" style="flex-shrink:0;padding:9px 14px;font-size:16px">\u2192</button>'
     +'</div></div>';
   return h;
@@ -12832,6 +12833,28 @@ function ttsSpeak(text){
   window.speechSynthesis.speak(utt);
 }
 function ttsStop(){if(window.speechSynthesis){window.speechSynthesis.cancel();_ttsSpeaking=false;}}
+// v9.67 — Reconnaissance vocale (Speech Recognition / dictée)
+var _sttActive=false,_sttRecog=null;
+function sttStart(targetInputId,onResult){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast("Reconnaissance vocale non supportée","err");return;}
+  if(_sttActive){sttStop();return;}
+  _sttRecog=new SR();
+  _sttRecog.lang="fr-FR";
+  _sttRecog.continuous=false;
+  _sttRecog.interimResults=false;
+  _sttActive=true;dc();
+  _sttRecog.onresult=function(e){
+    var txt=e.results[0][0].transcript;
+    if(targetInputId){var el=document.getElementById(targetInputId);if(el){el.value=txt;el.focus();}}
+    if(onResult)onResult(txt);
+    _sttActive=false;dc();
+  };
+  _sttRecog.onerror=function(e){_sttActive=false;if(e.error==="not-allowed")toast("Microphone refusé","err");else if(e.error!=="aborted")toast("Erreur micro: "+e.error,"err");dc();};
+  _sttRecog.onend=function(){_sttActive=false;dc();};
+  _sttRecog.start();toast("\ud83c\udf99 Parlez...");
+}
+function sttStop(){if(_sttRecog){try{_sttRecog.stop();}catch(_){}_sttRecog=null;}_sttActive=false;}
 function ttsToggle(){
   _ttsEnabled=!_ttsEnabled;
   localStorage.setItem("cmc_tts_enabled",_ttsEnabled?"1":"0");
@@ -13534,6 +13557,7 @@ function vIA(){
       placeholder="Posez votre question..."
       autocomplete="off"
       onkeydown="if(event.key==='Enter')iaSend()">
+    ${(window.SpeechRecognition||window.webkitSpeechRecognition)?'<button onclick="sttStart(\'iaIn\',function(t){iaSend(t);})" style="flex-shrink:0;background:'+(_sttActive?'rgba(224,64,64,.3)':'rgba(255,255,255,.06)')+';border:1px solid '+(_sttActive?'rgba(224,64,64,.5)':'rgba(255,255,255,.1)')+';border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">'+(_sttActive?'\u23f9':'\ud83c\udf99')+'</button>':''}
     <button class="btn gold" onclick="iaSend()" style="flex-shrink:0;padding:9px 14px;font-size:16px">\u2192</button>
   </div></div>`;
   return h;
