@@ -11658,19 +11658,46 @@ function _doExtractPdfLines(file,onDone,onErr){
       function nextPage(){
         if(pg>pdf.numPages){onDone(allLines.join("\n"));return;}
         pdf.getPage(pg).then(function(page){
-          page.getTextContent().then(function(tc){
+          // v9.67 — Extraire texte + couleurs pour détecter jours rouges (affluence)
+          Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
+            var tc=results[0],ops=results[1];
+            // Construire une map des couleurs : index opérateur → couleur fill
+            var _colorMap={},_curColor=null,_textIdx=0;
+            var OPS=pdfjsLib.OPS;
+            for(var oi=0;oi<ops.fnArray.length;oi++){
+              if(ops.fnArray[oi]===OPS.setFillRGBColor){
+                var rgb=ops.argsArray[oi];
+                _curColor=rgb?{r:Math.round(rgb[0]*255),g:Math.round(rgb[1]*255),b:Math.round(rgb[2]*255)}:null;
+              }
+              if(ops.fnArray[oi]===OPS.showText||ops.fnArray[oi]===OPS.showSpacedText){
+                _colorMap[_textIdx]=_curColor;
+                _textIdx++;
+              }
+            }
             var TOL=3,rowMap={};
+            var _ti=0;
             tc.items.forEach(function(it){
+              if(it.str===undefined){return;} // marked content
               var y=Math.round(it.transform[5]/TOL)*TOL;
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
+              var col=_colorMap[_ti]||null;
+              _ti++;
               if(!t)return;
               if(!rowMap[y])rowMap[y]=[];
-              rowMap[y].push({x:x,t:t});
+              rowMap[y].push({x:x,t:t,color:col});
             });
+            // Détecter les jours rouges dans l'en-tête (numéros 1-31 avec couleur rouge)
+            if(!window._pdfRedDays)window._pdfRedDays=[];
             var ys=Object.keys(rowMap).map(Number).sort(function(a,b){return b-a;});
             ys.forEach(function(y){
               var items=rowMap[y].slice().sort(function(a,b){return a.x-b.x;});
+              items.forEach(function(it){
+                var num=parseInt(it.t);
+                if(num>=1&&num<=31&&it.color&&it.color.r>180&&it.color.g<100&&it.color.b<100){
+                  if(window._pdfRedDays.indexOf(num)<0)window._pdfRedDays.push(num);
+                }
+              });
               var line=items.map(function(i){return i.t;}).join("\t");
               if(line.trim())allLines.push(line);
             });
@@ -12943,6 +12970,16 @@ function doImport(){
     ls("cmc_last_backup",_bk);
     console.log("Backup post-import enregistr\u00e9");
   }catch(_){}
+  // v9.67 — Marquer automatiquement les jours rouges du PDF comme affluence
+  if(window._pdfRedDays&&window._pdfRedDays.length){
+    var _affKey="cmc_affluence_"+iy+"_"+im;
+    var _affDays=lg(_affKey,{});
+    window._pdfRedDays.forEach(function(d){_affDays[d]=true;});
+    ls(_affKey,_affDays);
+    var _r4=document.getElementById("impRes");
+    if(_r4){_r4.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(224,64,64,.08);border:1px solid rgba(224,64,64,.25);border-radius:8px;font-size:14px;color:#e0a0a0">\ud83d\udd34 '+window._pdfRedDays.length+' jour'+(window._pdfRedDays.length>1?'s':'')+' de forte affluence d\u00e9tect\u00e9'+(window._pdfRedDays.length>1?'s':'')+' dans le PDF : <b style="color:#e08080">'+window._pdfRedDays.sort(function(a,b){return a-b;}).join(', ')+'</b></div>';}
+    window._pdfRedDays=[];
+  }
   // v9.67 — Validation automatique post-import : détecter anomalies
   _conflictCacheKey="";_conflictCache=null;
   var _postConflicts=detectRepoConflicts(iy,im);
