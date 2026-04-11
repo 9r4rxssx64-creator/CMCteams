@@ -4643,15 +4643,15 @@ function vLoginStep1(){
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:36px;line-height:1">\ud83c\udccf</div>
-      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Connexion</div>
-      ${displayName?`<div style="font-size:16px;color:#a0cca0;margin-top:5px">Bienvenue, <strong style="color:#c9a227">${esc(displayName.trim())}</strong></div>`:""}
+      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">${t("login")}</div>
+      ${displayName?`<div style="font-size:16px;color:#a0cca0;margin-top:5px">${t("welcome")}, <strong style="color:#c9a227">${esc(displayName.trim())}</strong></div>`:""}
       <div style="font-size:14px;color:#a0cca0;margin-top:3px;font-family:monospace">${esc(loginUid)}</div>
     </div>
-    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Mot de passe</div>
+    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">${t("password")}</div>
     <input id="fp1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')step2()" autofocus>
     <div id="fperr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>
-    <button class="btn gold" onclick="step2()" style="width:100%;padding:13px;font-size:16px;justify-content:center;border-radius:10px">Se connecter \u2192</button>
-    <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>
+    <button class="btn gold" onclick="step2()" style="width:100%;padding:13px;font-size:16px;justify-content:center;border-radius:10px">${t("login")} \u2192</button>
+    <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 ${_lang==="en"?"Back":_lang==="it"?"Indietro":"Retour"}</button>
   </div></div>`;
 }
 
@@ -4688,8 +4688,8 @@ function vLoginRegister(){
     +'<div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>'
     +'<div style="text-align:center;margin-bottom:12px">'
     +'<div style="font-size:28px;line-height:1">\ud83d\udccb</div>'
-    +'<div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">Premi\u00e8re connexion</div>'
-    +'<div style="font-size:14px;color:#a0cca0;margin-top:3px">Cr\u00e9ez votre compte pour acc\u00e9der \u00e0 votre planning</div>'
+    +'<div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:8px">'+t("firstConnection")+'</div>'
+    +'<div style="font-size:14px;color:#a0cca0;margin-top:3px">'+t("createPassword")+'</div>'
     +'</div>'
     +(knownName
       ?'<div style="padding:8px 12px;background:'+hexA(knownCol,.07)+';border:1px solid '+hexA(knownCol,.3)+';border-radius:8px;margin-bottom:10px">'
@@ -4698,11 +4698,11 @@ function vLoginRegister(){
         +(knownTeam?'<div style="font-size:14px;color:'+knownCol+';margin-top:2px">'+esc(knownTeam.name)+'</div>':'')
         +'</div>'
       :'')
-    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Nom *</div>'
-    +'<input id="rNom" class="inp" placeholder="Votre nom de famille" style="margin-bottom:6px;text-transform:uppercase"'
+    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">'+t("lastName")+' *</div>'
+    +'<input id="rNom" class="inp" placeholder="'+t("lastName")+'" style="margin-bottom:6px;text-transform:uppercase"'
     +' value="'+esc(_loginNom)+'" oninput="previewMatch()" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPrenom\').focus()">'
-    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Pr\u00e9nom *</div>'
-    +'<input id="rPrenom" class="inp" placeholder="Votre pr\u00e9nom"'
+    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">'+t("firstName")+' *</div>'
+    +'<input id="rPrenom" class="inp" placeholder="'+t("firstName")+'"'
     +' value="'+esc(_loginPrenom)+'" style="margin-bottom:6px" oninput="previewMatch()" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rMat\').focus()">'
     +'<div id="rMatch" style="display:none;padding:7px 10px;border:1px solid;border-radius:7px;font-size:15px;margin-bottom:6px"></div>'
     +(isTmp?'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Matricule SBM <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(optionnel)</span></div>'
@@ -4718,8 +4718,8 @@ function vLoginRegister(){
 +'<div id="pwStrength" style="margin-bottom:6px"></div>'
     +'<input id="rPw2" class="inp" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom:8px" onkeydown="if(event.key===\'Enter\')stepRegister()">'
     +'<div id="rerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>'
-    +'<button class="btn gold" onclick="stepRegister()" style="width:100%;padding:13px;font-size:16px;justify-content:center;border-radius:10px">Cr\u00e9er mon compte \u2192</button>'
-    +'<button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>'
+    +'<button class="btn gold" onclick="stepRegister()" style="width:100%;padding:13px;font-size:16px;justify-content:center;border-radius:10px">'+t("continue")+' \u2192</button>'
+    +'<button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 '+(_lang==="en"?"Back":_lang==="it"?"Indietro":"Retour")+'</button>'
     +'</div></div>';
 }
 // ── Codes de vérification email (OTP) ──────────────────────────────────────
