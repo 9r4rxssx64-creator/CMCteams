@@ -5837,6 +5837,9 @@ function vMonPlanning(){
   // Grille 7 colonnes
   var DOW=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
   var firstDow=new Date(A.year,A.month,1).getDay();
+  var _affOn=isFeatureOn("affluence");
+  var _affCache=_affOn?lg("cmc_affluence_"+A.year+"_"+A.month,{}):{};
+
   h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">';
   DOW.forEach(function(lb){h+='<div style="font-size:12px;color:'+(lb==="Dim"||lb==="Sam"?"#3a5888":"#5a7a5a")+';text-align:center;font-weight:700;padding:2px 0">'+lb+'</div>';});
   for(var i=0;i<firstDow;i++)h+='<div></div>';
@@ -5862,9 +5865,7 @@ function vMonPlanning(){
     else if(code==="RRT")_timeLabel="\u21bb R\u00e9cup";
     var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"#030808":(ci2&&isWork(code)?codeBg+"60":"#050d05");
     var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":ci2&&isWork(code)?codeColor+"40":isWE?"#162018":"#121c12");
-    // Affluence marquée par l'admin (jours rouges du PDF)
-    var _affDays=lg("cmc_affluence_"+A.year+"_"+A.month,{});
-    var _affDot=isFeatureOn("affluence")&&_affDays[d]?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="Forte affluence"></span>':"";
+    var _affDot=_affOn&&_affCache[d]?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="Forte affluence"></span>':"";
     h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
@@ -13102,6 +13103,30 @@ function doImport(){
         +_criticals.map(function(c){return '<div style="padding:6px 10px;margin-bottom:4px;background:rgba(224,64,64,.06);border-left:3px solid #e06060;border-radius:4px;font-size:14px;color:#e0a0a0">'+esc(c.msg)+'</div>';}).join('')
         +'</div>';
     }
+  }
+  // v9.67 — Rapport synthétique automatique
+  var _r6=document.getElementById("impRes");
+  if(_r6){
+    var _impOv=A.overrides[key]||{};
+    var _totEmp=Object.keys(_impOv).length;
+    var _totCells=0,_totCDP2=0,_totConv2=0,_totCP2=0,_totAF2=0,_totRH2=0,_totR2=0;
+    Object.keys(_impOv).forEach(function(eid){
+      var row=_impOv[eid];
+      Object.keys(row).forEach(function(d){
+        _totCells++;var c=row[d];
+        if(c&&c.endsWith("*"))_totCDP2++;
+        if(c&&c.endsWith("'"))_totConv2++;
+        if(c==="CP")_totCP2++;if(c==="AF")_totAF2++;if(c==="RH")_totRH2++;if(c==="R")_totR2++;
+      });
+    });
+    _r6.innerHTML+='<div style="margin-top:12px;padding:12px;background:rgba(58,138,80,.08);border:1px solid rgba(58,138,80,.3);border-radius:10px">'
+      +'<div style="font-size:14px;font-weight:800;color:#5aaa70;margin-bottom:8px">\u2705 R\u00e9sum\u00e9 import '+MFR[im]+' '+iy+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:13px">'
+      +'<div style="text-align:center;padding:6px;background:rgba(58,138,80,.1);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#5aaa70">'+_totEmp+'</div><div style="color:#a0cca0">Employ\u00e9s</div></div>'
+      +'<div style="text-align:center;padding:6px;background:rgba(201,162,39,.1);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#c9a227">'+_totCells+'</div><div style="color:#a0cca0">Cellules</div></div>'
+      +'<div style="text-align:center;padding:6px;background:rgba(224,152,72,.1);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#e09848">'+_totCDP2+'</div><div style="color:#a0cca0">\u2615 CDP</div></div>'
+      +'<div style="text-align:center;padding:6px;background:rgba(160,96,255,.1);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#c080ff">'+(_totCP2+_totRH2+_totR2)+'</div><div style="color:#a0cca0">Repos/CP</div></div>'
+      +'</div></div>';
   }
   }catch(e){
     // v9.58 — En cas d'erreur : désactiver le flag et flush ce qui a été bufferisé
