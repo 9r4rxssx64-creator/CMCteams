@@ -8116,12 +8116,12 @@ function vChat(){
     return true;
   });
   // Hauteur : 100dvh (dynamic viewport) - topbar - nav - safe areas → \u00e9vite d\u00e9bordement iOS
-  var h='<div style="display:flex;flex-direction:column;height:calc(100dvh - 56px);min-height:400px;margin-bottom:calc(-78px - env(safe-area-inset-bottom,0px));padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))">';
+  var h='<div style="display:flex;flex-direction:column;height:calc(100dvh - 56px - 68px - env(safe-area-inset-bottom,0px));min-height:300px">';
   // En-tête + filtres admin
   h+='<div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(201,162,39,.1),rgba(201,162,39,.02),transparent)">'
     +'<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(201,162,39,.2),rgba(201,162,39,.08));border:1.5px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:18px">\ud83d\udcac</div>'
-    +'<div><div style="font-size:16px;font-weight:800;color:#ffdc40;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.6)">Chat Casino <span style="font-size:11px;color:rgba(255,220,90,.7);font-weight:400">\ud83c\uddf2\ud83c\udde8</span></div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.75);text-shadow:0 1px 2px rgba(0,0,0,.5)">'+A.chatMsgs.length+' messages \u2022 Casino de Monte-Carlo</div></div>';
+    +'<div><div style="font-size:15px;font-weight:800;color:#ffdc40;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)">Chat Casino \ud83c\uddf2\ud83c\udde8</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.75);text-shadow:0 1px 2px rgba(0,0,0,.5)">'+A.chatMsgs.length+' msg</div></div>';
   // Groupe actions à droite (TTS + filtres admin + recherche)
   h+='<div style="margin-left:auto;display:flex;gap:4px;align-items:center">';
   // Bouton lecture vocale (TTS)
@@ -13858,7 +13858,7 @@ function callClaudeIA(q){
 }
 function vIA(){
   var isAdm=A.user&&A.user.id===AID;
-  var h=`<div style="display:flex;flex-direction:column;height:calc(100dvh - 56px);min-height:400px;margin-bottom:calc(-78px - env(safe-area-inset-bottom,0px));padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))">
+  var h=`<div style="display:flex;flex-direction:column;height:calc(100dvh - 56px - 68px - env(safe-area-inset-bottom,0px));min-height:300px">
   <div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;background:rgba(10,24,12,.20);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
