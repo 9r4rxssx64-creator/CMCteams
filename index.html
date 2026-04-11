@@ -6556,10 +6556,14 @@ function vAccueil(){
       var _nxDiff=Math.max(0,Math.floor((_nxDate.getTime()-Date.now())/60000));
       var _nxH=Math.floor(_nxDiff/60),_nxM=_nxDiff%60;
       if(_nxDiff>0&&_nxDiff<1440){
-        h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:10px;margin-top:8px">'
-          +'<span style="font-size:20px">\u23f3</span>'
-          +'<div><div style="font-size:13px;color:#a0cca0">'+t("nextShift")+'</div>'
-          +'<div style="font-size:18px;font-weight:800;color:#c9a227">'+_nxH+'h'+String(_nxM).padStart(2,"0")+'</div></div></div>';
+        var _urgent=_nxDiff<=120;
+        var _urgCol=_urgent?"#e06060":"#c9a227";
+        var _urgBg=_urgent?"rgba(224,96,96,.12)":"rgba(201,162,39,.08)";
+        var _urgBord=_urgent?"rgba(224,96,96,.4)":"rgba(201,162,39,.2)";
+        h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:'+_urgBg+';border:1px solid '+_urgBord+';border-radius:10px;margin-top:8px'+(_urgent?';animation:pulseDot 1.5s ease-in-out infinite':'')+'">'
+          +'<span style="font-size:22px">'+(_urgent?'\ud83d\udea8':'\u23f3')+'</span>'
+          +'<div><div style="font-size:13px;color:'+(_urgent?'#e0a0a0':'#a0cca0')+'">'+(_urgent?'Bient\u00f4t en service !':t("nextShift"))+'</div>'
+          +'<div style="font-size:18px;font-weight:800;color:'+_urgCol+'">'+_nxH+'h'+String(_nxM).padStart(2,"0")+'</div></div></div>';
       }
     }
   }
