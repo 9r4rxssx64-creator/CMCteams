@@ -13901,6 +13901,61 @@ Posez votre question librement !`;
     return null; // iaAskCorrect g\u00e8re l'affichage
   }
 
+  // ── Règles des jeux ──
+  var _jeuMatch=null;
+  Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];if(ql.includes(j.nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes(jid))_jeuMatch=j;});
+  if(!_jeuMatch&&(ql.includes("punto")||ql.includes("baccara")))_jeuMatch=JEUX.pb;
+  if(!_jeuMatch&&(ql.includes("blackjack")||ql.includes("black jack")||ql.includes("21")))_jeuMatch=JEUX.bj;
+  if(!_jeuMatch&&(ql.includes("roulette")))_jeuMatch=JEUX.ra;
+  if(!_jeuMatch&&(ql.includes("craps")))_jeuMatch=JEUX.craps;
+  if(!_jeuMatch&&(ql.includes("poker")||ql.includes("texas")))_jeuMatch=JEUX.thu;
+  if(_jeuMatch){
+    var r2='<strong style="color:#c9a227">'+esc(_jeuMatch.nom)+'</strong> ['+_jeuMatch.comp+'] — '+esc(_jeuMatch.tagline)+'<br><br>';
+    _jeuMatch.regles.forEach(function(rr){r2+='• '+esc(rr)+'<br>';});
+    r2+='<br><strong>Mises :</strong> '+esc(_jeuMatch.mises)+'<br><strong>Paiement :</strong> '+esc(_jeuMatch.paiement)+'<br><strong>Lieu :</strong> '+esc(_jeuMatch.lieu);
+    return r2;
+  }
+  if(ql.includes("jeux")||ql.includes("jeu de table")){
+    var r3='<strong>8 jeux de table :</strong><br><br>';
+    Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];r3+=j.icone+' <strong>'+esc(j.nom)+'</strong> ['+j.comp+'] — '+esc(j.tagline)+'<br>';});
+    return r3;
+  }
+
+  // ── Convention collective ──
+  if(ql.includes("convention")||ql.includes("article")||ql.includes("salaire")||ql.includes("grille")||ql.includes("promotion")||ql.includes("niveau")){
+    if(ql.includes("salaire")||ql.includes("grille")){
+      var r5='<strong>Grille salariale SBM :</strong><br><br>';
+      CONVENTION.grilleEmployes.forEach(function(g){r5+=esc(g.poste)+' (Niv'+g.niveau+') : <strong>'+g.salMois+'€/mois</strong><br>';});
+      return r5;
+    }
+    var _searchW=ql.split(" ").filter(function(w){return w.length>3;}).slice(-2).join(" ");
+    var arts=conventionSearch(_searchW);
+    if(arts.length){
+      var r4='<strong>Convention Collective SBM :</strong><br><br>';
+      arts.slice(0,5).forEach(function(a){r4+='<strong>Art. '+a.num+' — '+esc(a.titre)+'</strong><br>'+esc(a.contenu.slice(0,250))+'…<br><br>';});
+      return r4;
+    }
+  }
+
+  // ── Congés familiaux ──
+  if(ql.includes("conge")||ql.includes("mariage")||ql.includes("naissance")||ql.includes("deces")||ql.includes("familial")||ql.includes("familiaux")){
+    var evts={"mariage":4,"naissance":3,"adoption":3,"deces conjoint":3,"deces parent":3,"deces enfant":3,"deces frere":3,"mariage enfant":2,"deces beau-parent":1,"oncle/tante":1};
+    var r6='<strong>Congés familiaux (Convention art.18 + DRH 2021) :</strong><br><br>';
+    Object.keys(evts).forEach(function(e){r6+='• '+e.charAt(0).toUpperCase()+e.slice(1)+' : <strong>'+evts[e]+' jour'+(evts[e]>1?'s':'')+' ouvré'+(evts[e]>1?'s':'')+'</strong><br>';});
+    r6+='<br><em>Extension PACS/union libre (Note DRH 2021).</em>';
+    return r6;
+  }
+
+  // ── Rotation / pauses ──
+  if(ql.includes("rotation")||ql.includes("pause")||ql.includes("55")||ql.includes("senior")){
+    return '<strong>Règles de rotation :</strong><br><br>• Standard : max '+ROTATION.standard.maxWork+'min, pause '+ROTATION.standard.pause+'min<br>• Senior 55+ : max '+ROTATION.senior.maxWork+'min ('+ROTATION.senior.maxWorkConsent+'min avec accord)<br>• Patterns : '+ROTATION.standard.patterns.join('/')+' min';
+  }
+
+  // ── Lieux CMC / CDP ──
+  if(ql.includes("salle")||ql.includes("lieu")||ql.includes("monte carlo")||ql.includes("monte-carlo")||ql.includes("batiment")){
+    return '<strong>'+esc(PLANS_CMC.nom)+'</strong><br>'+esc(PLANS_CMC.adresse)+'<br>Style : '+esc(PLANS_CMC.style)+'<br>Age min : '+PLANS_CMC.ageMin+' ans<br>Salles : '+PLANS_CMC.salles.map(function(s){return esc(s.nom);}).join(', ');
+  }
+
   // \u2500\u2500 R\u00e9ponse par d\u00e9faut \u2500\u2500
   return `Je n'ai pas compris votre question. Essayez par exemple :<br><br>
 \u2022 "Planning de [NOM]"<br>
