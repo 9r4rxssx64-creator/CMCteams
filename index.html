@@ -4707,7 +4707,8 @@ function vLoginRegister(){
     +'<div style="font-size:15px;color:#c07830;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Email * <span style="font-weight:400;color:#6a8870;text-transform:none;letter-spacing:0">(obligatoire \u2014 code de v\u00e9rification)</span></div>'
     +'<input id="rEmail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" style="margin-bottom:6px" required onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw1\').focus()">'
     +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Mot de passe * <span style="font-weight:400;color:#6a8870;text-transform:none;letter-spacing:0">(min. 6 car.)</span></div>'
-    +'<input id="rPw1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:6px" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw2\').focus()">'
+    +'<input id="rPw1" class="inp" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="margin-bottom:2px" onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw2\').focus()" oninput="(function(v){var s=document.getElementById(\'pwStrength\');if(!s)return;var sc=0;if(v.length>=6)sc++;if(v.length>=8)sc++;if(/[A-Z]/.test(v))sc++;if(/[0-9]/.test(v))sc++;if(/[^a-zA-Z0-9]/.test(v))sc++;var col=[\'#c04040\',\'#c07830\',\'#c9a227\',\'#5aaa70\',\'#3a8a50\'][Math.min(sc,4)];var lb=[\'Faible\',\'Moyen\',\'Correct\',\'Fort\',\'Excellent\'][Math.min(sc,4)];s.innerHTML=\'<div style=\\\"height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden\\\"><div style=\\\"height:100%;width:\'+(sc*20)+\'%;background:\'+col+\';border-radius:2px;transition:width .2s\\\"></div></div><div style=\\\"font-size:11px;color:\'+col+\';margin-top:2px;font-weight:700\\\">\'+lb+\'</div>\';})(this.value)">'
++'<div id="pwStrength" style="margin-bottom:6px"></div>'
     +'<input id="rPw2" class="inp" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom:8px" onkeydown="if(event.key===\'Enter\')stepRegister()">'
     +'<div id="rerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>'
     +'<button class="btn gold" onclick="stepRegister()" style="width:100%;padding:13px;font-size:16px;justify-content:center;border-radius:10px">Cr\u00e9er mon compte \u2192</button>'
@@ -5323,7 +5324,8 @@ function vNav(){
     {id:"ia",ic:"\ud83e\udd16",lb:t("aide")}
   ];
   if(isAdm){
-    tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin"});
+    var _pendReqs=_empRequests.filter(function(r){return r.status==="pending";}).length;
+    tabs.push({id:"admin",ic:"\u2699\ufe0f",lb:"Admin",badge:_pendReqs||0});
     // Stats accessible depuis le panneau Admin (évite 9 onglets trop étroits)
   }
   if(isAdm){tabs.splice(tabs.length-1,0,{id:"gestionlive",ic:"\ud83c\udfb0",lb:"Live"});}
@@ -13159,6 +13161,22 @@ function toggleFavView(viewId){
   if(idx>=0)_favs.views.splice(idx,1); else{_favs.views.push(viewId);if(_favs.views.length>6)_favs.views.shift();}
   ls("cmc_favs",_favs);dc();
 }
+
+// v9.67 — Raccourcis clavier (desktop)
+document.addEventListener("keydown",function(e){
+  if(!A.user)return;
+  // Ignorer si focus dans un input
+  var tag=(document.activeElement||{}).tagName||"";
+  if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT")return;
+  if(e.key==="Escape"){if(_searchOpen){toggleSearch();e.preventDefault();return;}if(_presentMode){togglePresentation();e.preventDefault();return;}goBack();e.preventDefault();return;}
+  if(e.key==="1"){sv("accueil");e.preventDefault();}
+  else if(e.key==="2"){sv("monplanning");e.preventDefault();}
+  else if(e.key==="3"){sv("planning");e.preventDefault();}
+  else if(e.key==="4"){sv("departs");e.preventDefault();}
+  else if(e.key==="5"){sv("chat");e.preventDefault();}
+  else if(e.key==="6"){sv("ia");e.preventDefault();}
+  else if(e.key==="/"||e.key==="f"&&e.ctrlKey){toggleSearch();e.preventDefault();}
+});
 
 function toggleVisitor(){
   if(!A.user||A.user.id!==AID)return;
