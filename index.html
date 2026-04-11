@@ -6292,6 +6292,35 @@ function vAccueil(){
       h+='</div></div>';
     }
     h+='</div>';
+  // v9.67 — Courbe absentéisme 12 mois (SVG sparkline)
+  (function(){
+    var _mData=[];
+    for(var _mi=0;_mi<12;_mi++){
+      var _mPl=gpl(tYr,_mi);var _mDays=getDays(tYr,_mi);
+      var _mAct=A.employees.filter(function(e){return isEmpActive(e,tYr,_mi);});
+      if(!_mAct.length){_mData.push(0);continue;}
+      var _mAbs=0;
+      _mAct.forEach(function(e){for(var _d=1;_d<=_mDays;_d++){var c=(_mPl[e.id]||{})[_d]||"";if(c==="CP"||c==="M"||c==="AF")_mAbs++;}});
+      _mData.push(Math.round(_mAbs/(_mAct.length*_mDays)*100));
+    }
+    var _max=Math.max.apply(null,_mData)||1;
+    var _w=280,_h=60,_px=_w/11;
+    var _pts=_mData.map(function(v,i){return (i*_px)+","+((_h-4)-v/_max*(_h-8));});
+    h+='<div style="margin-top:8px;padding:8px 12px;background:rgba(192,64,64,.06);border:1px solid rgba(192,64,64,.15);border-radius:8px">'
+      +'<div style="font-size:11px;color:#c06060;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\ud83d\udcc9 Absent\u00e9isme '+tYr+' (CP+M+AF)</div>'
+      +'<svg viewBox="0 0 '+_w+' '+_h+'" width="100%" height="60" style="display:block">'
+      +'<polyline points="'+_pts.join(" ")+'" fill="none" stroke="#c06060" stroke-width="2" stroke-linejoin="round"/>'
+      +'<polyline points="0,'+_h+' '+_pts.join(" ")+' '+_w+','+_h+'" fill="rgba(192,64,64,.1)" stroke="none"/>';
+    _mData.forEach(function(v,i){
+      h+='<circle cx="'+(i*_px)+'" cy="'+((_h-4)-v/_max*(_h-8))+'" r="3" fill="'+(i===tMo?"#c9a227":"#c06060")+'" stroke="rgba(10,20,12,.5)" stroke-width="1"/>';
+      h+='<text x="'+(i*_px)+'" y="'+_h+'" text-anchor="middle" font-size="8" fill="#7a8a80">'+MFR[i].slice(0,1)+'</text>';
+    });
+    h+='</svg>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:#7a8a80;margin-top:2px">'
+      +_mData.map(function(v,i){return '<span style="color:'+(i===tMo?'#c9a227':'#7a6060')+'">'+v+'%</span>';}).join("")
+      +'</div></div>';
+  })();
+    h+='</div>';
   }
   // Fêtes et événements
   var _fetes={"1-1":"\ud83c\udf89 Bonne Ann\u00e9e !","6-1":"\u2b50 \u00c9piphanie","27-1":"\ud83c\uddf2\ud83c\udde8 Sainte-D\u00e9vote \u2014 Patronne de Monaco","14-2":"\u2764\ufe0f Joyeuse Saint-Valentin","8-3":"\ud83c\udf38 Journ\u00e9e de la femme","1-5":"\u2728 F\u00eate du travail","21-6":"\u2600\ufe0f F\u00eate de la musique","15-8":"\u26ea Assomption","1-11":"\ud83d\udd6f\ufe0f Toussaint","19-11":"\ud83c\uddf2\ud83c\udde8 F\u00eate Nationale de Monaco","8-12":"\u2b50 Immacul\u00e9e Conception","25-12":"\ud83c\udf84 Joyeux No\u00ebl !","26-12":"\ud83c\udf81 Saint-\u00c9tienne","31-12":"\ud83c\udf86 R\u00e9veillon du Nouvel An"};
