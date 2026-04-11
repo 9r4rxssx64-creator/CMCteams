@@ -11736,10 +11736,11 @@ function _doExtractPdfLines(file,onDone,onErr){
                 if(it.bg&&it.bg.r>220&&it.bg.g>200&&it.bg.b<120){
                   window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"rrt"});
                 }
-                // Fond gris = Horaires aménagés
+                // Fond gris = Horaires aménagés au Casino
                 if(it.bg&&it.bg.r>150&&it.bg.r<210&&Math.abs(it.bg.r-it.bg.g)<30&&Math.abs(it.bg.g-it.bg.b)<30){
                   window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"amenage"});
                 }
+                // Fond blanc = Casino normal (pas de tag)
                 // Fond rouge (R>200, G<80, B<80) = Convention (19/4')
                 if(it.bg&&it.bg.r>200&&it.bg.g<80&&it.bg.b<80){
                   var _convCode=it.t.replace(/[*']/g,"").trim();
@@ -13070,7 +13071,7 @@ function doImport(){
       if(_afCount)_msg+='\ud83d\udcda '+_afCount+' Formation (fond vert) ';
       if(_convCount)_msg+='\ud83c\udfa9 '+_convCount+' Convention (fond rouge) ';
       var _amenCount=window._pdfCdpCells.filter(function(c){return c.type==="amenage";}).length;
-      if(_amenCount)_msg+='\u23f0 '+_amenCount+' Am\u00e9nag\u00e9s (fond gris) ';
+      if(_amenCount)_msg+='\u23f0 '+_amenCount+' Am\u00e9nag\u00e9s Casino (fond gris) ';
       var _cpCount=window._pdfCdpCells.filter(function(c){return c.type==="cp";}).length;
       if(_cpCount)_msg+='\u2708 '+_cpCount+' Cong\u00e9s (fond rose) ';
       var _rhCount=window._pdfCdpCells.filter(function(c){return c.type==="rh";}).length;
