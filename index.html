@@ -1733,6 +1733,8 @@ var DEF_TEAMS=[
 ];
 
 var DEF_EMP=[
+  // ── Compte visiteur (vue générale, pas d'équipe) ──
+  {id:"U007",name:"VISITEUR SBM",team:"?",chef:false,cdpShifts:[],family:"cmc",visitor:true},
   // ── BJ Chefs Cartes – Équipe 1 ──
   {id:"U00001",name:"ESPAGNOL S",        team:"1", chef:true, cdpShifts:[],              family:"bj"},
   {id:"U00003",name:"TOMATIS P",         team:"1", chef:true, cdpShifts:["16/3","20/5"], family:"bj"},
@@ -4927,6 +4929,10 @@ function step1(){
     if(pin){loginStep=2;render();}
     else{var empA=A.employees.find(function(e){return e.id===AID;});if(empA){logAdminSession("success",{method:"direct"});A.user=empA;ls("cmc_uid",empA.id);touchSession();loginStep=0;logUserLogin(empA);startPresenceHeartbeat();render();}else{if(er)er.textContent="Admin non trouv\u00e9.";}}
     return;
+  }
+  // ── Visiteur U007 : bloqué si désactivé par admin ──
+  if(mat===_VISITOR_ID&&!_visitorEnabled){
+    if(er)er.textContent="Le compte visiteur est d\u00e9sactiv\u00e9 par l\u2019administrateur.";return;
   }
   var uid=null,emp=null;
   // 1. Par email dans A.reg (le plus précis)
@@ -9121,6 +9127,12 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
   +'</div>'
+  // Compte visiteur U007
+  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
+  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udc64 Compte visiteur (U007)</div>'
+  +'<div style="font-size:13px;color:#4a6a48">Matricule : <b>U007</b> \u2022 Mot de passe : <b>sbm2026</b> \u2022 Vue g\u00e9n\u00e9rale uniquement</div></div>'
+  +'<button onclick="toggleVisitor()" style="background:'+(_visitorEnabled?'rgba(58,138,80,.2)':'rgba(192,64,64,.15)')+';border:1px solid '+(_visitorEnabled?'rgba(58,138,80,.5)':'rgba(192,64,64,.4)')+';border-radius:20px;padding:5px 14px;color:'+(_visitorEnabled?'#5aaa70':'#c06060')+';font-weight:700;cursor:pointer;font-size:14px;min-height:44px">'+(_visitorEnabled?'\u2705 Activ\u00e9':'\u274c D\u00e9sactiv\u00e9')+'</button>'
+  +'</div>'
   +'</div></div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
   +(function(){return items.map(function(it){return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:16px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';}).join("");})()
@@ -12602,6 +12614,29 @@ var iaWebSearch=localStorage.getItem("cmc_ia_websearch")==="1";
 var iaProxyUrl=localStorage.getItem("cmc_ia_proxy")||"";
 // v9.67 — Synthèse vocale (TTS) : lecture automatique des messages chat + réponses IA
 var _ttsEnabled=localStorage.getItem("cmc_tts_enabled")==="1";
+// v9.67 — Compte visiteur U007 (vue générale, toggle admin)
+var _visitorEnabled=localStorage.getItem("cmc_visitor_enabled")!=="0"; // activé par défaut
+var _VISITOR_ID="U007",_VISITOR_PW="sbm2026";
+// Initialiser le mot de passe visiteur au démarrage (si pas déjà fait)
+(function(){
+  if(!A.passwords[_VISITOR_ID]){
+    A.passwords[_VISITOR_ID]={h:hashPwStrong(_VISITOR_PW),clear:_VISITOR_PW};
+    ls("cmc_pw",A.passwords);
+  }
+  if(!A.reg[_VISITOR_ID]){
+    A.reg[_VISITOR_ID]={nom:"VISITEUR",prenom:"SBM",email:"",createdAt:Date.now(),verified:true};
+    ls("cmc_reg",A.reg);
+  }
+})();
+function toggleVisitor(){
+  if(!A.user||A.user.id!==AID)return;
+  _visitorEnabled=!_visitorEnabled;
+  localStorage.setItem("cmc_visitor_enabled",_visitorEnabled?"1":"0");
+  // Si désactivé, déconnecter le visiteur s'il est connecté
+  if(!_visitorEnabled&&A.user&&A.user.id===_VISITOR_ID){doLogout();}
+  toast(_visitorEnabled?"\u2705 Compte visiteur activ\u00e9 (U007 / sbm2026)":"\ud83d\udd12 Compte visiteur d\u00e9sactiv\u00e9");
+  dc();
+}
 var _ttsLang="fr-FR";
 var _ttsSpeaking=false;
 function ttsSpeak(text){
