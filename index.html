@@ -4594,16 +4594,16 @@ function vLoginStep0(){
       <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin-top:8px;color:#f0e8d0;text-shadow:0 1px 8px rgba(0,0,0,.7)">CMC Teams</div>
       <div style="font-size:14px;color:#8ab888;letter-spacing:4px;text-transform:uppercase;margin-top:6px">Casino de Monaco</div>
     </div>
-    <div style="font-size:15px;color:#a0c898;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Nom de famille *</div>
+    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Nom de famille *</div>
     <input id="liNom" class="inp" type="text" placeholder="ex. DUPONT" autocapitalize="characters" autocomplete="family-name" list="liNomList"
       style="text-transform:uppercase;margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liPrenom').focus()">
     <datalist id="liNomList">`+(function(){var seen={},opts=[];A.employees.forEach(function(e){var n=(e.name||"").split(" ")[0];if(n&&!seen[n]){seen[n]=1;opts.push('<option value="'+esc(n)+'">');}});return opts.join("");})()+`</datalist>
-    <div style="font-size:15px;color:#a0c898;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Pr\u00e9nom *</div>
+    <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">Pr\u00e9nom *</div>
     <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" autocomplete="off"
       style="margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liMat').focus()">
-    <div style="font-size:15px;color:#c07830;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:400;color:#8aaa88;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
+    <div style="font-size:15px;color:#c07830;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Matricule SBM * <span style="font-weight:400;color:#8aaa88;text-transform:none;letter-spacing:0">(obligatoire 1ère connexion)</span></div>
     <div style="font-size:14px;color:#8aaa88;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
     <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
       autocapitalize="characters" autocomplete="off"
@@ -5293,8 +5293,8 @@ function vTopbar(){
   ${_backBtn}
   <span style="font-size:22px;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.4);flex-shrink:0">\u2666</span>
   <div style="flex:1;min-width:0;overflow:hidden">
-    <div style="font-size:16px;font-weight:800;color:#c9a227;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CMC Teams <span style="font-size:11px;color:rgba(201,162,39,.45);font-weight:400;font-family:monospace;margin-left:2px">`+APP_VER+`</span></div>
-    <div style="font-size:11px;color:#a0cca0;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Casino de Monaco</div>
+    <div style="font-size:15px;font-weight:800;color:#c9a227;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CMC Teams <span style="font-size:11px;color:rgba(201,162,39,.45);font-weight:400;font-family:monospace;margin-left:2px">`+APP_VER+`</span></div>
+    <div style="font-size:11px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Casino de Monaco</div>
   </div>
   ${isAdm
     ?"<span style=\"background:rgba(201,162,39,.15);color:#c9a227;border:1px solid rgba(201,162,39,.35);border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:.5px;flex-shrink:0\">ADM</span>"
@@ -6248,7 +6248,7 @@ function vAccueil(){
     var _highCount=_conflicts.filter(function(c){return c.severity==="high";}).length;
     h+='<div style="background:linear-gradient(145deg,rgba(201,162,39,.08),rgba(40,70,44,.35));border:1px solid rgba(201,162,39,.2);border-radius:14px;padding:12px 14px;margin-bottom:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">'
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'
-      +'<span style="font-size:11px;color:#c9a227;font-weight:800;letter-spacing:1.5px;text-transform:uppercase">\ud83d\udc51 Tableau de bord RH</span>'
+      +'<span style="font-size:11px;color:#c9a227;font-weight:800;letter-spacing:1px;text-transform:uppercase">\ud83d\udc51 Tableau de bord RH</span>'
       +'<span style="font-size:11px;color:#7a8a70;margin-left:auto">Aujourd\u2019hui</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">'
