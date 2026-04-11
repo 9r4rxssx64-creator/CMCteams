@@ -9591,6 +9591,36 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:12px 16px;font-size:15px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';
   }).join("");})()
   +'</div>'
+  // Panneau toggles features utilisateur
+  +'<div style="padding:10px 14px;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.15);border-radius:10px;margin-bottom:12px">'
+  +'<div style="font-size:14px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udd27 Fonctionnalit\u00e9s utilisateur (on/off)</div>'
+  +'<div style="font-size:12px;color:#a0bca0;margin-bottom:8px">Activez ou d\u00e9sactivez les fonctionnalit\u00e9s pour tous les employ\u00e9s</div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+  +(function(){
+    var _fList=[
+      {id:"tts",ic:"\ud83d\udd0a",lb:"Lecture vocale"},
+      {id:"stt",ic:"\ud83c\udf99",lb:"Micro dict\u00e9e"},
+      {id:"likes",ic:"\u2764\ufe0f",lb:"Likes documents"},
+      {id:"favorites",ic:"\u2b50",lb:"Favoris coll\u00e8gues"},
+      {id:"requests",ic:"\ud83d\udce8",lb:"Demandes employ\u00e9s"},
+      {id:"themes",ic:"\ud83c\udfa8",lb:"Th\u00e8mes visuels"},
+      {id:"languages",ic:"\ud83c\udf10",lb:"Multi-langues"},
+      {id:"pdf",ic:"\ud83d\udcc4",lb:"Export PDF"},
+      {id:"ics",ic:"\ud83d\udcc5",lb:"Export ICS"},
+      {id:"search",ic:"\ud83d\udd0d",lb:"Recherche globale"},
+      {id:"presentation",ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation"},
+      {id:"visitor",ic:"\ud83d\udc64",lb:"Compte visiteur"}
+    ];
+    return _fList.map(function(f){
+      var on=isFeatureOn(f.id);
+      return '<button onclick="toggleFeature(\''+f.id+'\')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:'+(on?'rgba(58,138,80,.12)':'rgba(160,40,40,.08)')+';border:1px solid '+(on?'rgba(58,138,80,.35)':'rgba(160,40,40,.25)')+';border-radius:8px;cursor:pointer;text-align:left;min-height:44px">'
+        +'<span style="font-size:16px">'+f.ic+'</span>'
+        +'<span style="flex:1;font-size:13px;font-weight:700;color:'+(on?'#a0cca0':'#e0a0a0')+'">'+f.lb+'</span>'
+        +'<span style="font-size:12px;font-weight:800;color:'+(on?'#5aaa70':'#e08080')+'">'+(on?'ON':'OFF')+'</span>'
+        +'</button>';
+    }).join('');
+  })()
+  +'</div></div>'
   +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.22);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
   +'<div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>'
   +'<div style="font-size:14px;color:#a0cca0;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>'
@@ -13075,7 +13105,17 @@ var iaProxyUrl=localStorage.getItem("cmc_ia_proxy")||"";
 // v9.67 — Synthèse vocale (TTS) : lecture automatique des messages chat + réponses IA
 var _ttsEnabled=localStorage.getItem("cmc_tts_enabled")==="1";
 // v9.67 — Compte visiteur U007 (vue générale, toggle admin)
-var _visitorEnabled=localStorage.getItem("cmc_visitor_enabled")!=="0"; // activé par défaut
+// v9.67 — Toggles admin centralisés pour chaque feature utilisateur
+var _features=lg("cmc_features",{tts:true,stt:true,likes:true,favorites:true,requests:true,themes:true,languages:true,visitor:true,pdf:true,ics:true,search:true,presentation:true});
+function isFeatureOn(f){return _features[f]!==false;}
+function toggleFeature(f){
+  if(!A.user||A.user.id!==AID)return;
+  _features[f]=!isFeatureOn(f);
+  ls("cmc_features",_features);
+  toast((isFeatureOn(f)?"\u2705 ":"\u274c ")+f);
+  dc();
+}
+var _visitorEnabled=localStorage.getItem("cmc_visitor_enabled")!=="0";
 var _VISITOR_ID="U007",_VISITOR_PW="sbm2026";
 // Initialiser le mot de passe visiteur au démarrage (si pas déjà fait)
 (function(){
