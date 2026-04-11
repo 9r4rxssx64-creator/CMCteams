@@ -6647,11 +6647,13 @@ function vAccueil(){
     }
   }
   // Demandes en attente
+  if(u){
   var _myPendingReqs=_empRequests.filter(function(r){return r.uid===u.id&&r.status==="pending";}).length;
   if(_myPendingReqs)_smartCards.push({ic:"\ud83d\udce8",col:"#4a72a8",title:_myPendingReqs+" demande"+(  _myPendingReqs>1?"s":"")+" en attente",sub:"Cliquez pour voir",fn:"sv('mesdemandes')"});
   // Messages non lus
   var _unrdTotal=(function(){var lr=lg("cmc_lastread",0);return A.chatMsgs.filter(function(m){return m.uid!==u.id&&!m.del&&m.ts>lr;}).length;})();
   if(_unrdTotal)_smartCards.push({ic:"\ud83d\udcac",col:"#5aaa70",title:_unrdTotal+" message"+(  _unrdTotal>1?"s":"")+" non lu"+(  _unrdTotal>1?"s":""),sub:"Ouvrir le chat",fn:"sv('chat')"});
+  }
 
   if(_smartCards.length){
     h+='<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">';
