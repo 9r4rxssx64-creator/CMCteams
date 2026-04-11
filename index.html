@@ -5861,8 +5861,16 @@ function vMonPlanning(){
     else if(code==="RRT")_timeLabel="\u21bb R\u00e9cup";
     var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"#030808":(ci2&&isWork(code)?codeBg+"60":"#050d05");
     var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":ci2&&isWork(code)?codeColor+"40":isWE?"#162018":"#121c12");
-    var _aff=isFeatureOn("affluence")?getAffluenceForDay(A.year,A.month,d):null;
-    var _affDot=_aff?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:'+(_aff.intensity==="peak"?"#e04040":"#c9a227")+';margin-left:2px;vertical-align:middle"></span>':"";
+    // Affluence basée sur les données importées réelles (pas théorique)
+    var _affDot="";
+    if(isFeatureOn("affluence")){
+      var _wkCount=0;
+      A.employees.forEach(function(e2){if(isEmpActive(e2,A.year,A.month)){var c2=(pl[e2.id]||{})[d]||"";if(isWork(c2))_wkCount++;}});
+      var _totalActive=A.employees.filter(function(e2){return isEmpActive(e2,A.year,A.month);}).length;
+      var _affPct=_totalActive?Math.round(_wkCount/_totalActive*100):0;
+      if(_affPct>=75)_affDot='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="'+_wkCount+' en service"></span>';
+      else if(_affPct>=60)_affDot='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#c9a227;margin-left:2px;vertical-align:middle" title="'+_wkCount+' en service"></span>';
+    }
     h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
