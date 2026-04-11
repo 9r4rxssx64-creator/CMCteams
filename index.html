@@ -2521,6 +2521,7 @@ function moOff(y,m){return(y-2026)*12+(m-2);}
 // emp.fromMo : premier moOff actif (null = depuis toujours)
 // emp.toMo   : premier moOff INACTIF (null = pour toujours)
 function isEmpActive(emp,y,m){
+  if(emp.visitor)return false; // v9.67 : visiteurs exclus des plannings/stats/audits
   var mo=moOff(y,m);
   if(emp.fromMo!==undefined&&emp.fromMo!==null&&mo<emp.fromMo) return false;
   if(emp.toMo!==undefined&&emp.toMo!==null&&mo>=emp.toMo) return false;
