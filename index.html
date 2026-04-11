@@ -5863,8 +5863,18 @@ function vMonPlanning(){
     else if(code==="M")_timeLabel="\ud83e\udd12 Maladie";
     else if(code==="RH"||code==="R")_timeLabel="\ud83d\udca4 Repos";
     else if(code==="RRT")_timeLabel="\u21bb R\u00e9cup";
-    var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"#030808":(ci2&&isWork(code)?codeBg+"60":"#050d05");
-    var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":ci2&&isWork(code)?codeColor+"40":isWE?"#162018":"#121c12");
+    // Fond cellule aligné sur les couleurs du PDF
+    var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"rgba(3,8,8,.6)"
+      :code==="CP"?"rgba(220,180,220,.15)"
+      :code==="RH"?"rgba(100,80,160,.18)"
+      :code==="R"?"rgba(160,150,200,.12)"
+      :code==="AF"?"rgba(80,180,80,.15)"
+      :code==="M"?"rgba(200,80,80,.12)"
+      :code==="RRT"||code==="PRT"?"rgba(220,200,60,.12)"
+      :code.endsWith("*")?"rgba(220,150,60,.15)"
+      :code.endsWith("'")?"rgba(200,80,80,.12)"
+      :(ci2&&isWork(code)?codeBg+"60":"rgba(5,13,5,.3)");
+    var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"rgba(12,18,8,.5)":ci2&&isWork(code)?codeColor+"40":code==="CP"?"rgba(200,150,200,.3)":code==="RH"?"rgba(100,80,160,.35)":code==="AF"?"rgba(80,180,80,.3)":isWE?"rgba(22,32,24,.5)":"rgba(18,28,18,.4)");
     var _affDot=_affOn&&_affCache[d]?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="Forte affluence"></span>':"";
     h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
