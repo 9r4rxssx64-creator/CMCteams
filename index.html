@@ -164,7 +164,7 @@ body{
   font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   font-size:17px;color:#e0f0d8;
   min-height:100vh;
-  background:rgba(26,48,32,.5);
+  background:rgba(26,48,32,.22);
   overflow-x:clip; /* Empêche la page de scroller horizontalement sans bloquer les enfants scrollables */
 }
 /* Feutrine avec texture double trame (fallback si aucune photo de fond) */
@@ -266,8 +266,8 @@ body::after{
   position:sticky;top:0;z-index:90;
 }
 body:not(.has-accueil-bg) #topbar{
-  background:linear-gradient(90deg,#243e28,#2e5034,#243e28);
-  backdrop-filter:none;-webkit-backdrop-filter:none;
+  background:linear-gradient(90deg,rgba(36,62,40,.45),rgba(46,80,52,.48),rgba(36,62,40,.45));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
 }
 #topbar > *{align-self:center}
 
@@ -288,8 +288,8 @@ body:not(.has-accueil-bg) #topbar{
   touch-action:manipulation;
 }
 body:not(.has-accueil-bg) #bnav{
-  background:linear-gradient(0deg,#1e3a24,#283e2c);
-  backdrop-filter:none;-webkit-backdrop-filter:none;
+  background:linear-gradient(0deg,rgba(30,58,36,.45),rgba(40,62,44,.48));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
 }
 .nt{
   flex:1;padding:10px 6px 9px;border:none;background:transparent;min-height:44px;min-width:44px;
@@ -331,7 +331,7 @@ select.inp{-webkit-appearance:none}
 /* === CARDS === v9.67b ultra-transparent (photo VRAIMENT visible) */
 .card{background:rgba(14,28,18,.28);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(201,162,39,.18);border-radius:14px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)}
 /* Cards sans photo de fond : totalement opaques */
-body:not(.has-accueil-bg) .card{background:linear-gradient(145deg,rgba(40,70,44,.98),rgba(30,55,35,1));backdrop-filter:none;-webkit-backdrop-filter:none}
+body:not(.has-accueil-bg) .card{background:rgba(30,55,35,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .page{padding:16px 16px 12px;position:relative;z-index:1}
 .sec-title{font-size:20px;font-weight:800;color:#f0e0a0;margin-bottom:3px;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .sec-sub{font-size:14px;color:#a8c8a0;letter-spacing:.5px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
@@ -342,17 +342,17 @@ body:not(.has-accueil-bg) .card{background:linear-gradient(145deg,rgba(40,70,44,
 .plan-grid-scroll{touch-action:pan-x pan-y}
 .dep-grid-scroll{touch-action:pan-x pan-y}
 /* v9.67b : tables ultra-transparentes */
-.sth{padding:3px 4px;background:rgba(18,32,22,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#c0e8b0;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;text-align:left;border-right:1px solid #2a4830;border-bottom:2px solid rgba(201,162,39,.4);text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.sth{padding:3px 4px;background:rgba(18,32,22,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#c0e8b0;font-size:12px;text-transform:uppercase;letter-spacing:1px;position:sticky;left:0;top:0;z-index:20;text-align:left;border-right:1px solid rgba(42,72,48,.4);border-bottom:2px solid rgba(201,162,39,.3);text-shadow:0 1px 3px rgba(0,0,0,.9)}
 .sth .nw,.ntd .nw{width:118px;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.dth{padding:2px 1px;min-width:28px;background:rgba(18,32,22,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:14px;font-weight:700;color:#d0e8c0;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.4);line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.8)}
-.stth{padding:3px 4px;background:rgba(18,32,22,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);min-width:22px;font-size:14px;color:#a0c898;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.4);text-shadow:0 1px 2px rgba(0,0,0,.8)}
-.ntd{padding:2px 4px;background:rgba(16,30,20,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:sticky;left:0;z-index:4;border-right:1px solid #2a4830;font-size:12px;text-align:left;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.dth{padding:2px 1px;min-width:28px;background:rgba(18,32,22,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-size:14px;font-weight:700;color:#d0e8c0;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);line-height:1.2;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.stth{padding:3px 4px;background:rgba(18,32,22,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);min-width:22px;font-size:14px;color:#a0c898;text-align:center;position:sticky;top:0;z-index:10;border-bottom:2px solid rgba(201,162,39,.3);text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.ntd{padding:2px 4px;background:rgba(16,30,20,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:sticky;left:0;z-index:4;border-right:1px solid rgba(42,72,48,.4);font-size:12px;text-align:left;text-shadow:0 1px 3px rgba(0,0,0,.9)}
 .ctd{min-width:28px;height:32px;font-size:14px;font-weight:700;text-align:center;cursor:pointer}
-.steptd{background:rgba(30,52,34,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid rgba(10,21,8,.3);color:#d0e8c0;text-shadow:0 1px 2px rgba(0,0,0,.7)}
-.stattd{padding:3px;font-size:15px;color:#90b888;background:rgba(30,52,34,.30);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.steptd{background:rgba(30,52,34,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:6px 10px;font-size:16px;font-weight:700;text-align:left;border-top:2px solid rgba(10,21,8,.2);color:#d0e8c0;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.stattd{padding:3px;font-size:15px;color:#90b888;background:rgba(30,52,34,.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 
 /* === PICKER === */
-#pk{display:none;position:fixed;background:rgba(36,60,40,.5);border:1px solid rgba(201,162,39,.5);border-radius:12px;padding:10px;flex-wrap:wrap;gap:5px;z-index:999;box-shadow:0 16px 48px rgba(0,0,0,.8);width:175px}
+#pk{display:none;position:fixed;background:rgba(36,60,40,.25);border:1px solid rgba(201,162,39,.5);border-radius:12px;padding:10px;flex-wrap:wrap;gap:5px;z-index:999;box-shadow:0 16px 48px rgba(0,0,0,.8);width:175px}
 .pb{padding:8px 0;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);text-align:center;font-size:15px;font-weight:700;cursor:pointer;flex:0 0 calc(33% - 4px);color:#c8e0c0;min-height:44px;display:flex;align-items:center;justify-content:center}
 .pb.cur{background:rgba(201,162,39,.2);border-color:#c9a227;color:#f0d060}
 .pclr{flex:0 0 100%;padding:7px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.2);text-align:center;font-size:14px;color:#a0b898;cursor:pointer}
@@ -407,7 +407,7 @@ body:not(.has-accueil-bg) .card{background:linear-gradient(145deg,rgba(40,70,44,
 
 /* === PRÉSENCE DOT === */
 .odot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
-.odot.on{background:#50c060}.odot.off{background:rgba(48,64,48,.5)}
+.odot.on{background:#50c060}.odot.off{background:rgba(48,64,48,.25)}
 .emp-row{display:flex;align-items:center;gap:9px;padding:12px 14px}
 .chef-badge{background:rgba(201,162,39,.15);color:#d4b840;border:1px solid rgba(201,162,39,.35);border-radius:3px;padding:1px 6px;font-size:14px;font-weight:700}
 .step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#c9a227;color:#040c04;font-size:15px;font-weight:800;margin-right:6px}
@@ -453,7 +453,7 @@ body.has-login-bg .login-bg{
 }
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.card{animation:fadeIn .18s ease-out}
+/* fadeIn retiré des cards — causait un clignotement opaque→transparent à chaque dc() */
 .online-dot{width:8px;height:8px;border-radius:50%;background:#3a8a50;display:inline-block;animation:pulse 2s infinite;margin-right:4px}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
@@ -473,7 +473,7 @@ body.has-login-bg .login-bg{
 <style>@keyframes splspin{to{transform:rotate(360deg)}}</style>
 </div>
 </div>
-<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:rgba(30,56,32,.5);border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:16px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap;max-width:90vw"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;background:rgba(30,56,32,.25);border:1px solid rgba(201,162,39,.4);border-radius:10px;font-size:16px;color:#c9a227;z-index:999;display:none;pointer-events:none;white-space:nowrap;max-width:90vw"></div>
 <div id="pk" style="display:none"></div>
 <div id="ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998"></div>
 <script>
@@ -487,14 +487,14 @@ body.has-login-bg .login-bg{
     try{localStorage.setItem("cmc_last_err",JSON.stringify(_errLog.slice(-5)));}catch(e){}
     // Si trop d'erreurs en cascade, juste recharger
     if(_errCount>_errMax){try{location.reload();}catch(e){}return;}
-    var s='<div role="alert" aria-live="assertive" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,26,12,.5);padding:24px;color:#c9a227;font-family:ui-monospace,monospace;z-index:9999;overflow:auto">'
+    var s='<div role="alert" aria-live="assertive" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,26,12,.22);padding:24px;color:#c9a227;font-family:ui-monospace,monospace;z-index:9999;overflow:auto">'
       +'<div style="font-size:22px;font-weight:800;margin-bottom:14px">\u26a0\ufe0f '+_escHtml(title)+'</div>'
       +'<div style="font-size:16px;word-break:break-all;margin-bottom:10px;color:#e0f0d8">'+_escHtml(msg)+'</div>'
       +(where?'<div style="font-size:14px;color:#7aaa80;margin-bottom:12px">'+_escHtml(where)+'</div>':'')
       +(stack?'<details style="margin-bottom:16px"><summary style="cursor:pointer;color:#7aaa80;font-size:13px">D\u00e9tails techniques</summary><div style="font-size:12px;color:#6a9870;word-break:break-all;margin-top:8px;max-height:200px;overflow:auto">'+_escHtml(stack).substring(0,1500)+'</div></details>':'')
       +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
-      +'<button onclick="location.reload()" aria-label="Recharger la page" style="padding:14px 24px;background:rgba(26,48,32,.5);color:#c9a227;border:1px solid #c9a227;border-radius:8px;font-size:16px;cursor:pointer;font-weight:700">\u21bb Recharger</button>'
-      +'<button onclick="try{localStorage.clear();}catch(e){}location.reload();" aria-label="Effacer les donn\u00e9es locales et recharger" style="padding:14px 24px;background:rgba(32,10,10,.6);color:#c07070;border:1px solid #804040;border-radius:8px;font-size:16px;cursor:pointer;font-weight:700">\ud83d\uddd1 Reset complet</button>'
+      +'<button onclick="location.reload()" aria-label="Recharger la page" style="padding:14px 24px;background:rgba(26,48,32,.22);color:#c9a227;border:1px solid #c9a227;border-radius:8px;font-size:16px;cursor:pointer;font-weight:700">\u21bb Recharger</button>'
+      +'<button onclick="try{localStorage.clear();}catch(e){}location.reload();" aria-label="Effacer les donn\u00e9es locales et recharger" style="padding:14px 24px;background:rgba(32,10,10,.35);color:#c07070;border:1px solid #804040;border-radius:8px;font-size:16px;cursor:pointer;font-weight:700">\ud83d\uddd1 Reset complet</button>'
       +'</div></div>';
     if(document.body)document.body.innerHTML=s;
   }
@@ -4250,7 +4250,7 @@ function render(){
   try{
     var _viewAsBanner=_viewAs?'<div id="viewAsBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#c9a227;color:#0a1a0c;padding:5px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.4)">'
       +'<span>👁 Vue en tant que <strong>'+esc(A.user.name)+'</strong> — '+esc(A.user.id)+'</span>'
-      +'<button onclick="viewAsBack()" style="margin-left:auto;background:rgba(10,26,12,.5);color:#c9a227;border:1px solid #0a1a0c;border-radius:4px;padding:3px 12px;cursor:pointer;font-size:13px;font-weight:700">← Retour admin</button>'
+      +'<button onclick="viewAsBack()" style="margin-left:auto;background:rgba(10,26,12,.22);color:#c9a227;border:1px solid #0a1a0c;border-radius:4px;padding:3px 12px;cursor:pointer;font-size:13px;font-weight:700">← Retour admin</button>'
       +'</div>':''  ;
     app.innerHTML=_viewAsBanner+'<div id="topbar" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><div id="content">'+vMain()+'</div><div id="accessModalWrap">'+renderAccessModal()+'</div>'+vNav();
     requestAnimationFrame(function(){window.scrollTo(0,0);});
@@ -4258,12 +4258,12 @@ function render(){
     if(A.view==="departs")setTimeout(adjDeparts,300);
     if(A.view==="monplanning")setTimeout(adjMonPlanning,100);
   }catch(e){
-    app.innerHTML='<div style="min-height:100vh;background:rgba(10,26,12,.5);padding:24px;color:#c9a227;font-family:monospace">'
+    app.innerHTML='<div style="min-height:100vh;background:rgba(10,26,12,.22);padding:24px;color:#c9a227;font-family:monospace">'
       +'<div style="font-size:18px;font-weight:800;margin-bottom:16px">\u26a0\ufe0f Erreur d\'affichage</div>'
       +'<div style="font-size:16px;word-break:break-all;margin-bottom:12px">'+String(e.message||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div>'
       +'<div style="font-size:14px;color:#7aaa80;word-break:break-all;margin-bottom:20px">'+String(e.stack||"").replace(/</g,"&lt;").substring(0,600)+'</div>'
-      +'<button onclick="A.view=\'accueil\';render()" style="padding:12px 20px;background:rgba(26,48,32,.5);color:#c9a227;border:1px solid #c9a227;border-radius:8px;font-size:16px;cursor:pointer;margin-right:10px">Recharger</button>'
-      +'<button onclick="doLogout()" style="padding:12px 20px;background:rgba(32,10,10,.6);color:#c07070;border:1px solid #804040;border-radius:8px;font-size:16px;cursor:pointer">D\u00e9connexion</button>'
+      +'<button onclick="A.view=\'accueil\';render()" style="padding:12px 20px;background:rgba(26,48,32,.22);color:#c9a227;border:1px solid #c9a227;border-radius:8px;font-size:16px;cursor:pointer;margin-right:10px">Recharger</button>'
+      +'<button onclick="doLogout()" style="padding:12px 20px;background:rgba(32,10,10,.35);color:#c07070;border:1px solid #804040;border-radius:8px;font-size:16px;cursor:pointer">D\u00e9connexion</button>'
       +'</div>';
   }
 }
@@ -4336,7 +4336,7 @@ function renderAccessModal(){
       +'<span style="font-size:14px;color:#d0c0b0">'+esc(_featLabels[f]||f)+'</span></label>';
   };
   return '<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeAccessModal()">'
-    +'<div style="background:rgba(10,26,12,.5);border:1px solid #2a4830;border-radius:12px;padding:18px;max-width:440px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.5)">'
+    +'<div style="background:rgba(10,26,12,.22);border:1px solid #2a4830;border-radius:12px;padding:18px;max-width:440px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.5)">'
     +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +'<div style="width:44px;height:44px;border-radius:50%;background:'+tcc+'20;border:2px solid '+tcc+'40;color:'+tcc+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0">'+esc(emp.name[0])+'</div>'
     +'<div style="flex:1;min-width:0"><div style="font-size:17px;font-weight:800;color:#c9a227">\ud83d\udd10 Acc\u00e8s</div>'
@@ -4530,7 +4530,7 @@ function vLoginStep0(){
     <div style="font-size:14px;color:#5a7060;margin-bottom:6px">Format U00001 \u2014 obligatoire si c\u2019est votre premi\u00e8re connexion. Optionnel si vous avez d\u00e9j\u00e0 un compte.</div>
     <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
       autocapitalize="characters" autocomplete="off"
-      style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:rgba(5,16,10,.45);border-color:rgba(201,162,39,.15)"
+      style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:rgba(5,16,10,.20);border-color:rgba(201,162,39,.15)"
       onkeydown="if(event.key==='Enter')document.getElementById('liMail').focus()">
     <div style="font-size:14px;color:#7aaa80;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Email <span style="font-weight:400;color:#5a7060;text-transform:none;letter-spacing:0">(alternatif \u2014 si compte existant)</span></div>
     <input id="liMail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" autocomplete="email"
@@ -6199,7 +6199,7 @@ function vAccueil(){
       if(o.pos){
         h+='<div style="width:22px;height:22px;border-radius:5px;background:'+pCol+'22;border:1.5px solid '+pCol+'50;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:'+pCol+'">'+o.pos+'</div>';
       } else {
-        h+='<div style="width:22px;height:22px;border-radius:5px;background:rgba(6,14,7,.55);border:1px solid #2a4830;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7aaa80">\u2014</div>';
+        h+='<div style="width:22px;height:22px;border-radius:5px;background:rgba(6,14,7,.22);border:1px solid #2a4830;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7aaa80">\u2014</div>';
       }
       h+='<span style="flex:1;font-size:14px;color:#8a9a78">'+esc(o.name)+'</span>';
       if(o.code){h+='<span style="font-size:14px;font-weight:700;color:'+c2.c+'">'+o.code+'</span>';}
@@ -6210,7 +6210,7 @@ function vAccueil(){
   }
   // 7 prochains jours
   if(u&&_todD2){
-    h+='<div style="margin-top:12px;padding:10px 12px;background:rgba(6,15,8,.45);border:1px solid #1e3020;border-radius:10px">'
+    h+='<div style="margin-top:12px;padding:10px 12px;background:rgba(6,15,8,.20);border:1px solid #1e3020;border-radius:10px">'
       +'<div style="font-size:13px;font-weight:800;color:#7aaa80;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">\ud83d\udcc5 Prochains jours</div>'
       +'<div style="display:flex;flex-direction:column;gap:4px">';
     if(!_upcomingDays.length){
@@ -6388,7 +6388,7 @@ function vPlan(){
         cellInner+=(_myComment?'<div style="width:4px;height:4px;border-radius:50%;background:#c9a227;margin:1px auto" title="'+esc(_myComment)+'"></div>':'');
         rh+='<td class="ctd" style="background:'+cellBg+';'+cellBorder+cdpShadow+'"'+click+'>'+cellInner+'</td>';
       });
-      rh+='<td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.55);text-align:center">'+repos+'</td><td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.55);text-align:center">'+trav+'</td></tr>';
+      rh+='<td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.22);text-align:center">'+repos+'</td><td style="padding:3px;font-size:14px;color:#90b888;background:rgba(6,14,7,.22);text-align:center">'+trav+'</td></tr>';
     });
     return rh;
   };
@@ -6405,14 +6405,14 @@ function vPlan(){
       +(mir?'<span style="font-size:14px;color:#7aaa80"> \u21cc '+esc(mir.name)+'</span>':"")
       +'<span style="font-size:13px;color:#5a7060;margin-left:auto">'+empCount+' emp.</span>'
       +'</div>'
-      +'<div style="background:rgba(6,15,8,.38);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
+      +'<div style="background:rgba(6,15,8,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="plan-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th style="padding:0;background:rgba(6,14,7,.55);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
+    bh+='<thead><tr><th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";bh+='<th data-planday="'+d+'" style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+'"><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
-    bh+='<th style="padding:3px 4px;background:rgba(6,14,7,.55);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:rgba(6,14,7,.55);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
+    bh+='<th style="padding:3px 4px;background:rgba(6,14,7,.22);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:rgba(6,14,7,.22);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
     bh+=_renderEmpRows(emps,tcc);
     bh+='</tbody></table></div></div></div>';
     return bh;
@@ -6746,10 +6746,10 @@ function vDeparts(){
       +'<span style="font-size:14px;color:#7aaa80">'+sl+' chefs \u00b7 cycle '+SEQ.join('\u2192')+'</span>'
       +ciBtn
       +'</div>'
-      +'<div style="background:rgba(6,15,8,.38);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
+      +'<div style="background:rgba(6,15,8,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:rgba(6,14,7,.55);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
+      +'<th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
       +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#4a6040;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
@@ -6879,7 +6879,7 @@ function renderCIPanel(tid){
   var emps=names.map(function(n){return A.employees.find(function(e){return e.name===n;});}).filter(Boolean);
   var team=A.teams.find(function(t){return t.id===tid;}),tcc=team?team.color:"#888";
   var SEQCI=getSeqForSize(emps.length);
-  var h=`<div style="margin-top:8px;padding:12px;background:rgba(10,24,12,.45);border:1px solid rgba(201,162,39,.25);border-radius:10px">
+  var h=`<div style="margin-top:8px;padding:12px;background:rgba(10,24,12,.20);border:1px solid rgba(201,162,39,.25);border-radius:10px">
     <div style="font-size:14px;color:#c9a227;font-weight:700;margin-bottom:10px">\u2699\ufe0f Positions de d\u00e9part \u2014 ${esc(team?team.name:tid)}</div>`;
   if(!emps.length){h+=`<div style="font-size:14px;color:#7aaa80">Aucun chef d\u00e9fini. Allez dans Admin \u2192 \u00c9quipes pour en ajouter.</div>`;}
   emps.forEach(function(emp){
@@ -6924,15 +6924,15 @@ function vStats(){
     <button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
-    <div style="background:rgba(10,26,12,.5);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
+    <div style="background:rgba(10,26,12,.22);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
       <div style="font-size:18px;font-weight:800;color:#c9a227">${totTrav}</div>
       <div style="font-size:13px;color:#7aaa80">Jours trav.</div>
     </div>
-    <div style="background:rgba(10,26,12,.5);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
+    <div style="background:rgba(10,26,12,.22);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
       <div style="font-size:18px;font-weight:800;color:#3a8a50">${totRepos}</div>
       <div style="font-size:13px;color:#7aaa80">Repos (RH/R)</div>
     </div>
-    <div style="background:rgba(10,26,12,.5);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
+    <div style="background:rgba(10,26,12,.22);border:1px solid #1e3020;border-radius:8px;padding:8px;text-align:center">
       <div style="font-size:18px;font-weight:800;color:#4a72a8">${totCP}</div>
       <div style="font-size:13px;color:#7aaa80">CP${totM?' \u00b7 <span style="color:#a8724a">'+totM+' M</span>':''}</div>
     </div>
@@ -7664,7 +7664,7 @@ function vGalerie(){
       var srcCol=_PHOTO_SRC_COL[p.src]||"#7a8a80";
       var srcLb=_PHOTO_SRC_LB[p.src]||p.src;
       h+='<div onclick="_galLb=SALON_PHOTOS.find(function(x){return x.id==='+p.id+';});document.addEventListener(\'keydown\',_galKeyHandler);dc()" class="card" style="overflow:hidden;cursor:pointer;padding:0;border-color:rgba(201,162,39,.15)">'
-        +'<div style="position:relative;height:170px;overflow:hidden;background:rgba(10,24,12,.45)">';
+        +'<div style="position:relative;height:170px;overflow:hidden;background:rgba(10,24,12,.20)">';
       if(_galImgErr[p.id]){
         h+='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a5a40;font-size:26px;gap:6px">\ud83d\udcf7<span style="font-size:11px">Non disponible</span></div>';
       } else {
@@ -7691,8 +7691,8 @@ function vGalerie(){
       +'<button onclick="_galLb=null;document.removeEventListener(\'keydown\',_galKeyHandler);dc();event.stopPropagation()" style="position:fixed;top:12px;right:16px;background:none;border:none;color:#c9a227;font-size:26px;cursor:pointer;z-index:10000;min-width:44px;min-height:44px">\u2715</button>'
       +'<button onclick="_galNav(-1);event.stopPropagation()" style="position:fixed;left:10px;top:50%;transform:translateY(-50%);background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);color:#c9a227;font-size:28px;width:44px;height:56px;cursor:pointer;z-index:10000;border-radius:4px;display:flex;align-items:center;justify-content:center">\u2039</button>'
       +'<button onclick="_galNav(1);event.stopPropagation()" style="position:fixed;right:10px;top:50%;transform:translateY(-50%);background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);color:#c9a227;font-size:28px;width:44px;height:56px;cursor:pointer;z-index:10000;border-radius:4px;display:flex;align-items:center;justify-content:center">\u203a</button>'
-      +'<div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;max-width:860px;width:100%;max-height:92vh;background:rgba(26,36,24,.45);border-radius:8px;overflow:hidden;border:1px solid rgba(201,162,39,.3)">'
-      +'<div style="background:rgba(10,22,12,.45);flex-shrink:0">';
+      +'<div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;max-width:860px;width:100%;max-height:92vh;background:rgba(26,36,24,.22);border-radius:8px;overflow:hidden;border:1px solid rgba(201,162,39,.3)">'
+      +'<div style="background:rgba(10,22,12,.20);flex-shrink:0">';
     if(_galImgErr[p.id]){
       h+='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5a40;font-size:18px;gap:8px">\ud83d\udcf7 Non disponible</div>';
     } else {
@@ -7778,7 +7778,7 @@ function vChat(){
   // Utilisateurs en ligne — DM rapide
   var _online=getOnlineUsers().filter(function(u){return u.uid!==myId;});
   if(_online.length){
-    h+='<div style="padding:6px 10px;border-bottom:1px solid #0c160a;background:rgba(4,12,6,.45);flex-shrink:0;overflow-x:auto;white-space:nowrap">';
+    h+='<div style="padding:6px 10px;border-bottom:1px solid #0c160a;background:rgba(4,12,6,.20);flex-shrink:0;overflow-x:auto;white-space:nowrap">';
     h+='<span style="font-size:11px;color:#3a5830;text-transform:uppercase;letter-spacing:1px;margin-right:6px">En ligne</span>';
     _online.forEach(function(u){
       var emp=A.employees.find(function(e){return e.id===u.uid;});
@@ -7875,14 +7875,14 @@ function vChat(){
   h+='</div>';
   // Barre réponse
   if(_chatRep){
-    h+='<div class="chat-status-bar" style="background:rgba(12,20,14,.45);color:#90b870">'
+    h+='<div class="chat-status-bar" style="background:rgba(12,20,14,.20);color:#90b870">'
       +'<span>\u21a9 R\u00e9ponse \u00e0 <strong>'+esc(_chatRep.name)+'</strong> : '+esc((_chatRep.text||"").substring(0,40))+((_chatRep.text||"").length>40?"\u2026":"")+'</span>'
       +'<button onclick="chatCancelReply()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#c04040;font-size:16px;padding:0">\u2715</button>'
       +'</div>';
   }
   // Barre DM
   if(_chatDm){
-    h+='<div class="chat-status-bar" style="background:rgba(13,12,24,.45);color:#a060ff">'
+    h+='<div class="chat-status-bar" style="background:rgba(13,12,24,.20);color:#a060ff">'
       +'<span>\u2709 Message priv\u00e9 \u2192 <strong>'+esc(_chatDm.name)+'</strong></span>'
       +'<button onclick="chatCancelDm()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#c04040;font-size:16px;padding:0">\u2715</button>'
       +'</div>';
@@ -7899,8 +7899,8 @@ function vChat(){
       var nomComplet=(e.name+" "+prenom+" "+e.id).toUpperCase();
       return nomComplet.indexOf(_q)>=0;
     }).sort(function(a,b){return a.name.localeCompare(b.name);});
-    h+='<div style="border-top:1px solid #182818;background:rgba(6,15,8,.45);flex-shrink:0">'
-      +'<div style="padding:6px 10px;background:rgba(6,14,7,.55);display:flex;align-items:center;gap:8px">'
+    h+='<div style="border-top:1px solid #182818;background:rgba(6,15,8,.20);flex-shrink:0">'
+      +'<div style="padding:6px 10px;background:rgba(6,14,7,.22);display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:16px">✉️</span>'
       +'<input id="chatDmQIn" class="inp" placeholder="Rechercher nom, prénom, matricule…" autocomplete="off"'
       +' style="flex:1;padding:7px 10px;font-size:15px;background:rgba(255,255,255,.06)"'
@@ -8549,12 +8549,12 @@ function vMoisStockes(){
     +'<div class="sec-title">\ud83d\uddc3\ufe0f Mois stock\u00e9s</div>'
     +'<div class="sec-sub">Plannings enregistr\u00e9s dans le navigateur</div></div>';
   // Jauge localStorage
-  h+='<div style="background:rgba(10,26,12,.5);border:1px solid #1e3020;border-radius:10px;padding:12px;margin-bottom:14px">'
+  h+='<div style="background:rgba(10,26,12,.22);border:1px solid #1e3020;border-radius:10px;padding:12px;margin-bottom:14px">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
     +'<span style="font-size:14px;font-weight:700;color:#c0cca8">Stockage navigateur</span>'
     +'<span style="font-size:14px;font-weight:700;color:'+pctCol+'">'+totalKB+' Ko / 5 120 Ko ('+pct+'%)</span>'
     +'</div>'
-    +'<div style="height:6px;background:rgba(12,24,14,.45);border-radius:3px;overflow:hidden">'
+    +'<div style="height:6px;background:rgba(12,24,14,.20);border-radius:3px;overflow:hidden">'
     +'<div style="height:100%;background:'+pctCol+';border-radius:3px;width:'+pct+'%;transition:width .3s"></div>'
     +'</div>'
     +(pct>80?'<div style="margin-top:6px;font-size:14px;color:#c04040">\u26a0\ufe0f Stockage presque plein — supprimez les anciens mois ou exportez une sauvegarde.</div>':"")+
@@ -8571,7 +8571,7 @@ function vMoisStockes(){
       var ovSize=m.hasOv?Object.keys(A.overrides[m.key]||{}).length:0;
       var vNum=m.ref&&m.ref.version?m.ref.version:1;
       var vBadge=vNum>1?'<span style="font-size:13px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;margin-left:6px">v'+vNum+'</span>':"";
-      h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,26,12,.5);border:1px solid '+(isCurrent?"#c9a227":"#1e3020")+';border-radius:9px">'
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,26,12,.22);border:1px solid '+(isCurrent?"#c9a227":"#1e3020")+';border-radius:9px">'
         +'<div style="flex:1">'
         +'<div style="font-size:16px;font-weight:700;color:'+(isCurrent?"#c9a227":"#c0cca8")+'">'+nomMois+vBadge+(isCurrent?' <span style="font-size:14px;color:#c9a227">\u25c4 Actif</span>':"")+'</div>'
         +'<div style="font-size:14px;color:#7aaa80;margin-top:2px">Import\u00e9 le '+importeAt+(ovSize?' \u00b7 '+ovSize+' employ\u00e9s':"")+''+(m.ref&&m.ref.synthetic?' \u00b7 <i>synth\u00e9tique</i>':"")+'</div>'
@@ -8616,7 +8616,7 @@ function vAuditLog(){
       var oldC=CODES[e.old]||null,newC=CODES[e.new]||null;
       var oldCol=oldC?oldC.c:"#7aaa80",newCol=newC?newC.c:"#7aaa80";
       var isDelete=e.new==="";
-      h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(10,26,12,.5);border:1px solid #1e3020;border-radius:7px;font-size:14px">'
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(10,26,12,.22);border:1px solid #1e3020;border-radius:7px;font-size:14px">'
         +'<div style="flex:1;min-width:0">'
         +'<div style="color:#c0cca8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.name)+'</div>'
         +'<div style="color:#7aaa80;margin-top:1px">'+mo2+' '+e.year+' \u00b7 Jour '+e.day+'</div>'
@@ -8767,7 +8767,7 @@ function vRetrait(){
   h+='<div style="font-size:14px;font-weight:800;color:#7aaa80;text-transform:uppercase;letter-spacing:2px;padding:4px 0;border-bottom:1px solid rgba(58,138,80,.2);margin-bottom:8px">'
     +'\u270f\ufe0f Marquer un employ\u00e9 comme parti</div>'
     +'<div style="margin-bottom:8px;font-size:14px;color:#5a7060">Choisissez l\u2019employ\u00e9 et le mois \u00e0 partir duquel il est inactif :</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:rgba(6,15,10,.45);border:1px solid #1e3020;border-radius:8px">'
+    +'<div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:rgba(6,15,10,.20);border:1px solid #1e3020;border-radius:8px">'
     +'<select id="rtrEmp" class="inp" style="font-size:15px">'
     +'<option value="">-- Choisir un employ\u00e9 actif --</option>';
   actifs.forEach(function(emp){
@@ -8805,7 +8805,7 @@ function vOnline(){
   h+='<div style="padding:7px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:7px;margin-bottom:10px;font-size:13px;color:#5a7a9a">\u2139\ufe0f Pr\u00e9sence d\u00e9tect\u00e9e dans la m\u00eame session navigateur, mise \u00e0 jour toutes les 2 min.</div>';
   h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#7aaa80;font-weight:700;text-transform:uppercase;letter-spacing:1px">En ligne maintenant</div><span style="background:rgba(80,180,80,.15);color:#5aaa70;border:1px solid rgba(80,180,80,.3);border-radius:10px;padding:2px 8px;font-size:14px;font-weight:700">'+online.length+' actif'+(online.length>1?"s":"")+'</span></div>';
   if(online.length===0){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucun utilisateur actif d\u00e9tect\u00e9</div>';}
-  else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.55);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
+  else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.22);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
   h+='</div>';
   h+='<div class="card" style="padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#7aaa80;font-weight:700;text-transform:uppercase;letter-spacing:1px">Activit\u00e9 (24h)</div><span style="font-size:14px;color:#5a7a5a">'+recent.length+' \u00e9v\u00e9nements</span></div>';
   if(recent.length===0){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucune activit\u00e9 aujourd\x27hui</div>';}
@@ -8813,7 +8813,7 @@ function vOnline(){
     function uaBrief(ua){if(!ua)return"?";if(/iPhone/i.test(ua))return"\ud83d\udcf1 iPhone";if(/iPad/i.test(ua))return"\ud83d\udcf1 iPad";if(/Android/i.test(ua))return"\ud83d\udcf1 Android";if(/Chrome/i.test(ua))return"\ud83c\udf10 Chrome";if(/Firefox/i.test(ua))return"\ud83e\udd8a Firefox";if(/Safari/i.test(ua))return"\ud83e\udde1 Safari";return"\ud83d\udcbb "+ua.slice(0,20);}
     recent.slice(0,40).forEach(function(e){
       var isL=e.type==="login";
-      h+='<div style="padding:6px 8px;margin-bottom:4px;background:rgba(10,22,10,.35);border:1px solid #1a2e1a;border-radius:7px">'
+      h+='<div style="padding:6px 8px;margin-bottom:4px;background:rgba(10,22,10,.20);border:1px solid #1a2e1a;border-radius:7px">'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(isL&&(e.ip||e.email||e.ua)?'4px':'0')+'">'
         +'<span style="font-size:15px;flex-shrink:0">'+(isL?"\u2705":"\ud83d\udeaa")+'</span>'
         +'<span style="font-size:14px;color:#c0d8b0;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
@@ -8857,7 +8857,7 @@ function vOnline(){
   if(!recentIA.length){h+='<div style="font-size:15px;color:#4a6040;font-style:italic;text-align:center;padding:10px 0">Aucune interaction IA cette semaine</div>';}
   else{
     recentIA.slice(0,30).forEach(function(e){
-      h+='<div style="padding:7px 8px;margin-bottom:5px;background:rgba(10,22,10,.35);border:1px solid #1a2e1a;border-radius:7px">'
+      h+='<div style="padding:7px 8px;margin-bottom:5px;background:rgba(10,22,10,.20);border:1px solid #1a2e1a;border-radius:7px">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
         +'<span style="font-size:15px">\ud83e\udd16</span>'
         +'<span style="font-size:14px;color:#c0d8b0;font-weight:700">'+esc(e.name)+'</span>'
@@ -9032,7 +9032,7 @@ _regAlerts.length>1?"s":"")+" — \u00e9quipe inconnue</div>"
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +_pendingVerif.map(function(c){
       var minsLeft=Math.max(0,Math.ceil((c.expiresAt-Date.now())/60000));
-      return '<div style="padding:8px 10px;background:rgba(3,10,14,.45);border:1px solid rgba(74,114,168,.25);border-radius:6px;display:flex;align-items:center;gap:8px">'
+      return '<div style="padding:8px 10px;background:rgba(3,10,14,.20);border:1px solid rgba(74,114,168,.25);border-radius:6px;display:flex;align-items:center;gap:8px">'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:700;color:#c0d8e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((c.prenom||"")+' '+(c.nom||"")+' ('+c.empId+')')+'</div>'
         +'<div style="font-size:12px;color:#6a92c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u2709\ufe0f '+esc(c.email||"—")+' \u00b7 expire dans '+minsLeft+' min</div>'
@@ -9059,7 +9059,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
     var _photoKey=function(k,lbl,descr){
       var hasImg=!!ph[k];
       var sz=hasImg?Math.round(ph[k].length/1024)+" KB":"";
-      return '<div style="padding:10px;background:rgba(3,10,4,.55);border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
+      return '<div style="padding:10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
         +(hasImg
           ?'<div style="width:52px;height:52px;border-radius:8px;background:url(&quot;'+_safeUrl(ph[k])+'&quot;) center/cover;border:1px solid rgba(201,162,39,.3);flex-shrink:0"></div>'
           :'<div style="width:52px;height:52px;border-radius:8px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.4);font-size:22px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
@@ -9107,7 +9107,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="padding:10px 14px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:10px;margin-bottom:12px">'
   +'<div style="font-size:14px;font-weight:800;color:#5a9a70;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2699\ufe0f Fonctionnalit\u00e9s</div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.55);border:1px solid #1a2e18;border-radius:8px">'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
@@ -9116,7 +9116,7 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="display:flex;flex-direction:column;gap:8px">'
   +(function(){return items.map(function(it){return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:16px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';}).join("");})()
   +'</div>'
-  +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.55);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
+  +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.22);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
   +'<div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>'
   +'<div style="font-size:14px;color:#7aaa80;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
@@ -10017,7 +10017,7 @@ function vTeams(){
         <div><div style="font-size:13px;color:#7aaa80;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ordre d\u00e9part</div>
         <input type="number" class="inp" style="padding:7px 10px;font-size:16px" value="${esc(team.departureOrder)}" min="1" onchange="uT('${team.id}','departureOrder',parseInt(this.value))"></div>
         <div><div style="font-size:13px;color:#7aaa80;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Couleur</div>
-        <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #2a4830;background:rgba(6,17,10,.45);cursor:pointer;padding:2px"></div>
+        <input type="color" value="${esc(tcc)}" onchange="uT('${team.id}','color',this.value)" style="width:100%;height:34px;border-radius:7px;border:1px solid #2a4830;background:rgba(6,17,10,.20);cursor:pointer;padding:2px"></div>
       </div>
 
       <div style="margin-bottom:10px">
@@ -10032,7 +10032,7 @@ function vTeams(){
               <button onclick="editChefSlot=editChefSlot&&editChefSlot.tid==='${team.id}'?null:{tid:'${team.id}'};dc()" style="background:${isEditing?hexA(tcc,.13):'transparent'};border:1px solid ${isEditing?hexA(tcc,.31):'#1e3020'};border-radius:6px;padding:5px 12px;font-size:15px;color:${isEditing?tcc:'#3a5030'};cursor:pointer;font-weight:700">\u270f\ufe0f Changer</button>
             </div>`;
           if(isEditing){
-            r+=`<div style="padding:10px;background:rgba(10,24,12,.45);border-top:1px solid ${hexA(tcc,.13)}">
+            r+=`<div style="padding:10px;background:rgba(10,24,12,.20);border-top:1px solid ${hexA(tcc,.13)}">
               <div style="font-size:14px;color:#7aaa80;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Choisir le chef d'\u00e9quipe</div>
               <div style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto">
                 ${teamEmps.map(function(e,ei){var sel=chef===e.name;return "<button onclick=\"pickChef('"+team.id+"',"+ei+")\" style=\"text-align:left;padding:9px 12px;background:"+(sel?"rgba(201,162,39,.15)":"#0c1e0e")+";border:1px solid "+(sel?"rgba(201,162,39,.4)":"#1e3020")+";border-radius:7px;font-size:16px;color:"+(sel?"#c9a227":"#90a878")+";cursor:pointer;font-weight:"+(sel?700:400)+"\">"+esc(e.name)+(sel?" \u2713":"")+"</button>";}).join("")}
@@ -10187,15 +10187,15 @@ function vEmps(){
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.45);border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.chef?"#c9a227":"#4a6040"}">
+            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.20);border:1px solid ${emp.chef?"rgba(201,162,39,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.chef?"#c9a227":"#4a6040"}">
               <input type="checkbox" ${emp.chef?"checked":""} onchange="updEmp('${emp.id}','chef',this.checked)">
               Chef de partie
             </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.45);border:1px solid ${emp.cdpShifts&&emp.cdpShifts.length?"rgba(180,130,10,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.cdpShifts&&emp.cdpShifts.length?"#b89010":"#4a6040"}">
+            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.20);border:1px solid ${emp.cdpShifts&&emp.cdpShifts.length?"rgba(180,130,10,.3)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.cdpShifts&&emp.cdpShifts.length?"#b89010":"#4a6040"}">
               <input type="checkbox" ${emp.cdpShifts&&emp.cdpShifts.length?"checked":""} onchange="updCDP('${emp.id}',this.checked)">
               Shifts CDP
             </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.45);border:1px solid ${emp.senior?"rgba(255,206,58,.45)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.senior?"#ffce3a":"#4a6040"}" title="Rotation max 40 min · pause 20 min obligatoire">
+            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.20);border:1px solid ${emp.senior?"rgba(255,206,58,.45)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.senior?"#ffce3a":"#4a6040"}" title="Rotation max 40 min · pause 20 min obligatoire">
               <input type="checkbox" ${emp.senior?"checked":""} onchange="updEmp('${emp.id}','senior',this.checked)">
               <span style="color:#ffce3a;margin-right:2px;text-shadow:0 0 4px rgba(255,206,58,.6)">\u2605</span> 55+ ans
             </label>
@@ -12295,7 +12295,7 @@ function doImport(){
     var _catColors={CP:"#3a8a50",M:"#c04040",AF:"#4a72a8",RRT:"#c07830",HC:"#9060a0",PRT:"#407080"};
     var _catBlocks=Object.keys(_cats).filter(function(c){return _cats[c].length>0;});
     if(_catBlocks.length>0){
-      var _catHtml='<div style="margin-top:10px;padding:10px;background:rgba(10,22,10,.35);border:1px solid #1e3020;border-radius:8px">'
+      var _catHtml='<div style="margin-top:10px;padding:10px;background:rgba(10,22,10,.20);border:1px solid #1e3020;border-radius:8px">'
         +'<div style="font-size:14px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udcca R\u00e9capitulatif '+MFR[im]+' '+iy+' par cat\u00e9gorie</div>'
         +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">';
       _catBlocks.forEach(function(cat){
@@ -13240,7 +13240,7 @@ function callClaudeIA(q){
 function vIA(){
   var isAdm=A.user&&A.user.id===AID;
   var h=`<div style="display:flex;flex-direction:column;height:calc(100dvh - 56px);min-height:400px;margin-bottom:calc(-78px - env(safe-area-inset-bottom,0px));padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))">
-  <div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;background:rgba(10,24,12,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)">
+  <div style="padding:10px 14px;border-bottom:1px solid rgba(201,162,39,.15);flex-shrink:0;background:rgba(10,24,12,.20);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">\ud83e\udd16</div>
       <div style="flex:1">
@@ -13312,7 +13312,7 @@ function vIA(){
   });
 
   h+=`</div>
-  <div style="padding:9px 14px;border-top:1px solid rgba(201,162,39,.15);display:flex;gap:8px;background:rgba(10,24,12,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);flex-shrink:0">
+  <div style="padding:9px 14px;border-top:1px solid rgba(201,162,39,.15);display:flex;gap:8px;background:rgba(10,24,12,.20);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);flex-shrink:0">
     <input id="iaIn" class="inp" style="flex:1;padding:9px 12px;font-size:16px;background:rgba(12,30,14,.4)"
       placeholder="Posez votre question..."
       autocomplete="off"
@@ -13343,7 +13343,7 @@ function formatVerifReport(v){
   var h=`<div style="margin-bottom:8px">
     <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:6px">\ud83d\udd0d V\u00e9rification planning \u2014 ${MFR[v.month]} ${v.year}</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <div style="flex:1;height:6px;background:rgba(12,30,14,.45);border-radius:3px;overflow:hidden">
+      <div style="flex:1;height:6px;background:rgba(12,30,14,.20);border-radius:3px;overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
       </div>
       <span style="font-size:14px;font-weight:700;color:${barColor}">${pct}%</span>
@@ -13354,7 +13354,7 @@ function formatVerifReport(v){
     </div>
   </div>`;
   if(v.errors.length===0){
-    h+=`<div style="padding:8px;background:rgba(6,28,10,.45);border:1px solid #1a4020;border-radius:7px;font-size:15px;color:#3a8a50;font-weight:700">
+    h+=`<div style="padding:8px;background:rgba(6,28,10,.20);border:1px solid #1a4020;border-radius:7px;font-size:15px;color:#3a8a50;font-weight:700">
       \u2705 Parfait \u2014 tous les horaires correspondent au planning import\u00e9.
     </div>`;
   } else {
@@ -13364,7 +13364,7 @@ function formatVerifReport(v){
     v.errors.forEach(function(e){if(!byEmp[e.empName])byEmp[e.empName]=[];byEmp[e.empName].push(e);});
     Object.keys(byEmp).forEach(function(name){
       var errs=byEmp[name];
-      h+=`<div style="padding:7px 10px;background:rgba(14,28,14,.45);border:1px solid #c9a22730;border-radius:7px;margin-bottom:5px">
+      h+=`<div style="padding:7px 10px;background:rgba(14,28,14,.20);border:1px solid #c9a22730;border-radius:7px;margin-bottom:5px">
         <div style="font-size:14px;font-weight:700;color:#d0cca0;margin-bottom:4px">\ud83d\udc64 ${esc(name)} \u2014 ${errs.length} erreur(s)</div>`;
       errs.slice(0,5).forEach(function(e){
         var ciRef=CODES[e.refCode]||{c:"#c9a227"};
@@ -13377,7 +13377,7 @@ function formatVerifReport(v){
       if(errs.length>5) h+=`<div style="font-size:14px;color:#7aaa80">...et ${errs.length-5} autre(s)</div>`;
       h+=`</div>`;
     });
-    h+=`<div style="margin-top:8px;padding:7px;background:rgba(12,24,16,.45);border-radius:7px;font-size:14px;color:#7aaa80">
+    h+=`<div style="margin-top:8px;padding:7px;background:rgba(12,24,16,.20);border-radius:7px;font-size:14px;color:#7aaa80">
       \ud83d\udca1 Pour corriger : allez dans Planning et modifiez les cellules incorrectes, ou r\u00e9-importez le bon fichier.
     </div>`;
   }
@@ -13402,14 +13402,14 @@ function iaAskCorrect(){
   var byEmp={};
   pendingFix.errors.forEach(function(e){if(!byEmp[e.empName])byEmp[e.empName]=0;byEmp[e.empName]++;});
   var summary=Object.keys(byEmp).slice(0,5).map(function(n){return n+" ("+byEmp[n]+"j)";}).join(", ");
-  var h=`<div style="padding:10px;background:rgba(14,28,16,.45);border:1px solid rgba(201,162,39,.3);border-radius:8px">
+  var h=`<div style="padding:10px;background:rgba(14,28,16,.20);border:1px solid rgba(201,162,39,.3);border-radius:8px">
     <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:8px">\ud83d\udd27 Corriger ${n} erreur(s) ?</div>
     <div style="font-size:14px;color:#6a8a68;margin-bottom:10px">
       Je vais remplacer les codes incorrects dans le planning par ceux du fichier import\u00e9 :<br>
       <strong style="color:#c0cca8">${summary}${Object.keys(byEmp).length>5?" ...":""}</strong>
     </div>
     <div style="display:flex;gap:6px">
-      <button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:rgba(26,58,30,.5);border:1px solid #2a6030;border-radius:8px;font-size:15px;color:#3a8a50;font-weight:700;cursor:pointer">\u2705 Oui, corriger</button>
+      <button onclick="iaConfirmCorrect()" style="flex:1;padding:9px;background:rgba(26,58,30,.25);border:1px solid #2a6030;border-radius:8px;font-size:15px;color:#3a8a50;font-weight:700;cursor:pointer">\u2705 Oui, corriger</button>
       <button onclick="iaCancelFix()" style="flex:1;padding:9px;background:transparent;border:1px solid #1e3020;border-radius:8px;font-size:15px;color:#7aaa80;cursor:pointer">\u2715 Annuler</button>
     </div>
   </div>`;
@@ -13467,8 +13467,8 @@ function iaConfirmCorrect(){
   if(skipped>0) h+=`<div style="font-size:14px;color:#c9a227;margin-bottom:6px">\u26a0\ufe0f ${skipped} cellule(s) non corrig\u00e9e(s) \u2014 code invalide</div>`;
   if(recheck){
     h+=recheck.errors.length===0
-      ?"<div style=\"padding:6px 10px;background:rgba(6,28,10,.45);border:1px solid #1a4020;border-radius:6px;font-size:14px;color:#3a8a50;font-weight:700\">\u2705 V\u00e9rification apr\u00e8s correction : aucune erreur restante !</div>"
-      :`<div style="padding:6px 10px;background:rgba(14,24,8,.45);border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:14px;color:#c9a227">\u26a0\ufe0f ${recheck.errors.length} erreur(s) encore pr\u00e9sente(s) \u2014 relancez la v\u00e9rification pour les voir.</div>`;
+      ?"<div style=\"padding:6px 10px;background:rgba(6,28,10,.20);border:1px solid #1a4020;border-radius:6px;font-size:14px;color:#3a8a50;font-weight:700\">\u2705 V\u00e9rification apr\u00e8s correction : aucune erreur restante !</div>"
+      :`<div style="padding:6px 10px;background:rgba(14,24,8,.20);border:1px solid rgba(201,162,39,.3);border-radius:6px;font-size:14px;color:#c9a227">\u26a0\ufe0f ${recheck.errors.length} erreur(s) encore pr\u00e9sente(s) \u2014 relancez la v\u00e9rification pour les voir.</div>`;
   }
   h+=`</div>`;
   iaHistory.push({role:"bot",html:h});
@@ -13771,7 +13771,7 @@ function vImportVerif(){
       +'<div style="font-size:13px;color:#a08040;line-height:1.6">'+_partial.slice(0,15).map(function(o){return esc(o.emp.name)+' ('+o.count+'/'+days+')';}).join(' \u2022 ')+(_partial.length>15?' \u2022 +'+(_partial.length-15)+' autres':'')+'</div></div>';
   }
   var html='<div class="page" style="padding:0">'
-    +'<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(30,48,32,.5);border-bottom:1px solid rgba(201,162,39,.2);position:sticky;top:0;z-index:10">'
+    +'<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(30,48,32,.25);border-bottom:1px solid rgba(201,162,39,.2);position:sticky;top:0;z-index:10">'
     +'<button onclick="sv(\'admin\')" style="background:none;border:none;color:#c9a227;font-size:20px;cursor:pointer;padding:0 4px">&#8592;</button>'
     +'<div style="flex:1"><div style="font-size:16px;font-weight:700;color:#d8ecd0">V\u00e9rification import</div>'
     +'<div style="font-size:14px;color:#6a8a68">'+MFR[im]+' '+iy+' \u00b7 \ud83d\udfe1 Diff\u00e9rent du consensus \u00b7 Cliquer pour corriger</div></div>'
@@ -13804,7 +13804,7 @@ function vImportVerif(){
         +'</summary><div style="margin-top:4px;overflow-x:auto">';
       // En-tête jours
       html+='<table style="border-collapse:collapse;font-size:13px;min-width:100%"><thead><tr>'
-        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:rgba(26,48,32,.5);min-width:118px">Employé</td>';
+        +'<td style="padding:3px 6px;color:#6a8a68;font-weight:700;position:sticky;left:0;background:rgba(26,48,32,.22);min-width:118px">Employé</td>';
       for(var d=1;d<=Math.min(days,30);d++){
         html+='<td style="padding:2px;text-align:center;color:#6a8a68;width:'+dayW+';min-width:'+dayW+'">'+d+'</td>';
       }
@@ -13812,7 +13812,7 @@ function vImportVerif(){
       members.forEach(function(e){
         var empOv=ov[e.id]||{};
         var hasData=Object.keys(empOv).length>0;
-        html+='<tr><td style="padding:3px 6px;color:'+(hasData?"#c0d8b0":"#c04040")+';font-size:13px;position:sticky;left:0;background:rgba(26,48,32,.5);white-space:nowrap">'
+        html+='<tr><td style="padding:3px 6px;color:'+(hasData?"#c0d8b0":"#c04040")+';font-size:13px;position:sticky;left:0;background:rgba(26,48,32,.22);white-space:nowrap">'
           +esc(e.name.length>14?e.name.slice(0,13)+"\u2026":e.name)
           +(hasData?"":"<br><span style='color:#c04040;font-style:italic'>Aucun horaire</span>")
           +'</td>';
@@ -13828,7 +13828,7 @@ function vImportVerif(){
         html+='</tr>';
       });
       // Ligne consensus
-      html+='<tr><td style="padding:3px 6px;color:#6a8a68;font-size:13px;font-style:italic;position:sticky;left:0;background:rgba(26,48,32,.5)">\u2248 Consensus</td>';
+      html+='<tr><td style="padding:3px 6px;color:#6a8a68;font-size:13px;font-style:italic;position:sticky;left:0;background:rgba(26,48,32,.22)">\u2248 Consensus</td>';
       for(var d=1;d<=Math.min(days,30);d++){
         var c=teamConsensus[tid][d]||"";
         html+='<td style="padding:2px;text-align:center;background:rgba(255,255,255,.04);color:#6a8a68;font-size:12px;border-radius:3px">'+esc(c)+'</td>';
@@ -13891,12 +13891,12 @@ function vAbsences(){
      +'<span style="font-size:15px;font-weight:700;color:'+tcc+'">'+esc(team.name)+'</span>'
      +'<span style="font-size:14px;color:#7aaa80">'+absentEmps.length+' employ\u00e9(s) absent(s)</span>'
      +'</div>'
-     +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(6,15,8,.45);border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 6px 6px">'
+     +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(6,15,8,.20);border:1px solid '+tcc+'18;border-top:none;border-radius:0 0 6px 6px">'
      +'<table style="border-collapse:collapse;width:auto;min-width:100%"><thead><tr>'
-     +'<th style="padding:4px 8px;background:rgba(6,14,7,.55);color:#7aaa80;font-size:14px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
+     +'<th style="padding:4px 8px;background:rgba(6,14,7,.22);color:#7aaa80;font-size:14px;text-align:left;position:sticky;left:0;min-width:80px;border-right:1px solid #182818;z-index:5">Nom</th>';
     daysArr.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
-      h+='<th style="padding:2px 1px;min-width:24px;background:rgba(6,14,7,.55);text-align:center">'
+      h+='<th style="padding:2px 1px;min-width:24px;background:rgba(6,14,7,.22);text-align:center">'
        +'<div style="font-size:13px;font-weight:700;color:'+(we?"#4a6888":"#3a4a38")+'">'+d+'</div>'
        +'</th>';
     });
@@ -13913,7 +13913,7 @@ function vAbsences(){
            +'<span style="display:inline-block;background:'+col+'30;border:1px solid '+col+'60;border-radius:3px;padding:1px 2px;font-size:12px;font-weight:700;color:'+col+'">'+c+'</span>'
            +'</td>';
         } else {
-          h+='<td style="text-align:center;padding:1px;background:rgba(6,14,7,.55)"><span style="font-size:12px;color:#7aaa80">\u00b7</span></td>';
+          h+='<td style="text-align:center;padding:1px;background:rgba(6,14,7,.22)"><span style="font-size:12px;color:#7aaa80">\u00b7</span></td>';
         }
       });
       h+='</tr>';
