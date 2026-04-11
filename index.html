@@ -18,6 +18,9 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="dns-prefetch" href="https://api.anthropic.com">
 <link rel="dns-prefetch" href="https://api.emailjs.com">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a1408'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='18' font-weight='800' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%230a1408'/%3E%3Ctext x='90' y='75' text-anchor='middle' font-size='48' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='90' y='120' text-anchor='middle' font-size='28' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.45 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org; frame-src data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -2152,7 +2155,7 @@ var FB_URL=localStorage.getItem("cmc_fb_url")||"https://cmcteams-c16ab-default-r
 var FB_PATH="/cmcteams";
 var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
-var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes"];
+var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes","cmc_emp_requests"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -2308,6 +2311,7 @@ function fbApplyData(k,v){
   }
   else if(k==="cmc_upload_enabled"){A.uploadEnabled=vc!==false;}
   else if(k==="cmc_likes"){_likes=vc||{};}
+  else if(k==="cmc_emp_requests"){_empRequests=Array.isArray(vc)?vc:[];}
   // Pour les clés dynamiques (cmc_ref_*, etc.) : juste localStorage suffit
   // Détecter changement de planning / chat → notification (PAS pendant le chargement initial Firebase)
   if(!_fbInitialLoad){
@@ -5342,6 +5346,7 @@ function vMain(){
   switch(A.view){
     case"accueil":  return vAccueil();
     case"monplanning": return vMonPlanning();
+    case"mesdemandes": return vMesDemandes();
     case"profil":   return vMonProfil();
     case"planning": return vPlan();
     case"departs":  return vDeparts();
@@ -5535,6 +5540,85 @@ function exportMyICS(){
   toast('Planning export\u00e9 en .ics \u2014 importez dans votre calendrier');
 }
 // v9.67 — Export PDF planning personnel (via window.print)
+// v9.67 — Système de demandes employés (congé, échange, modification)
+// Store cmc_emp_requests sync Firebase
+var _empRequests=lg("cmc_emp_requests",[]);
+function submitRequest(type,details){
+  if(!A.user)return;
+  var req={
+    id:Date.now(),uid:A.user.id,name:A.user.name,team:A.user.team,
+    type:type, // "conge","echange","modification","autre"
+    details:details||"",
+    status:"pending", // pending, approved, rejected
+    createdAt:Date.now(),
+    adminNote:""
+  };
+  _empRequests.push(req);
+  ls("cmc_emp_requests",_empRequests);
+  _audit("emp_request",A.user.id,A.user.name,type,details.slice(0,100));
+  toast("\u2705 Demande envoy\u00e9e \u00e0 l\u2019administrateur");
+  dc();
+}
+function adminRespondRequest(reqId,action,note){
+  if(!A.user||A.user.id!==AID)return;
+  var req=_empRequests.find(function(r){return r.id===reqId;});
+  if(!req)return;
+  req.status=action; // "approved" ou "rejected"
+  req.adminNote=note||"";
+  req.respondedAt=Date.now();
+  ls("cmc_emp_requests",_empRequests);
+  _audit("request_"+action,AID,req.name,req.type,req.details.slice(0,60));
+  toast(action==="approved"?"\u2705 Demande accept\u00e9e":"\u274c Demande refus\u00e9e");
+  dc();
+}
+function vMesDemandes(){
+  if(!A.user)return"";
+  var myReqs=_empRequests.filter(function(r){return r.uid===A.user.id;}).sort(function(a,b){return b.createdAt-a.createdAt;});
+  var h='<div class="page"><div class="sec-title">\ud83d\udce8 Mes demandes</div>';
+  h+='<div style="margin:10px 0;display:flex;gap:6px;flex-wrap:wrap">';
+  [{t:"conge",lb:"\ud83c\udfd6 Cong\u00e9",col:"#a060ff"},{t:"echange",lb:"\ud83d\udd04 \u00c9change",col:"#4a72a8"},{t:"modification",lb:"\u270f\ufe0f Modification",col:"#c9a227"},{t:"autre",lb:"\ud83d\udcac Autre",col:"#5aaa70"}].forEach(function(b){
+    h+='<button onclick="var d=prompt(\'D\u00e9crivez votre demande de '+b.lb.split(" ")[1]+' :\');if(d)submitRequest(\''+b.t+'\',d);" style="flex:1;min-width:120px;padding:12px;background:'+b.col+'15;border:1px solid '+b.col+'40;border-radius:10px;color:'+b.col+';font-size:14px;font-weight:700;cursor:pointer;min-height:44px">'+b.lb+'</button>';
+  });
+  h+='</div>';
+  if(!myReqs.length){h+='<div style="text-align:center;padding:30px;color:#5a7060">Aucune demande pour le moment</div>';}
+  else{
+    myReqs.forEach(function(r){
+      var stCol=r.status==="approved"?"#5aaa70":r.status==="rejected"?"#c06060":"#c9a227";
+      var stLb=r.status==="approved"?"\u2705 Accept\u00e9e":r.status==="rejected"?"\u274c Refus\u00e9e":"\u23f3 En attente";
+      h+='<div style="padding:10px 12px;background:'+stCol+'08;border:1px solid '+stCol+'25;border-left:3px solid '+stCol+';border-radius:8px;margin-bottom:6px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+        +'<span style="font-size:13px;font-weight:700;color:'+stCol+'">'+({conge:"\ud83c\udfd6 Cong\u00e9",echange:"\ud83d\udd04 \u00c9change",modification:"\u270f\ufe0f Modification",autre:"\ud83d\udcac Autre"}[r.type]||r.type)+'</span>'
+        +'<span style="font-size:12px;color:'+stCol+';font-weight:700">'+stLb+'</span></div>'
+        +'<div style="font-size:14px;color:#c0d8c0">'+esc(r.details)+'</div>'
+        +'<div style="font-size:11px;color:#5a7060;margin-top:4px">'+new Date(r.createdAt).toLocaleDateString("fr-FR")+'</div>'
+        +(r.adminNote?'<div style="font-size:13px;color:#7aaa80;margin-top:4px;font-style:italic">\ud83d\udcac Admin : '+esc(r.adminNote)+'</div>':"")
+        +'</div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+// v9.67 — Mode présentation (plein écran sans nav pour réunions/projecteur)
+var _presentMode=false;
+function togglePresentation(){
+  _presentMode=!_presentMode;
+  var bnav=document.getElementById("bnav");
+  var topbar=document.getElementById("topbar");
+  if(_presentMode){
+    if(bnav)bnav.style.display="none";
+    if(topbar)topbar.style.display="none";
+    var c=document.getElementById("content");if(c)c.style.paddingBottom="0";
+    document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(function(){});
+    toast("\ud83d\udcfa Mode pr\u00e9sentation \u2014 appuyez Esc pour quitter");
+  } else {
+    if(bnav)bnav.style.display="";
+    if(topbar)topbar.style.display="";
+    var c2=document.getElementById("content");if(c2)c2.style.paddingBottom="";
+    if(document.exitFullscreen)document.exitFullscreen().catch(function(){});
+  }
+}
+document.addEventListener("fullscreenchange",function(){if(!document.fullscreenElement&&_presentMode){_presentMode=false;var b=document.getElementById("bnav"),t=document.getElementById("topbar");if(b)b.style.display="";if(t)t.style.display="";var c=document.getElementById("content");if(c)c.style.paddingBottom="";}});
+
 function exportMyPDF(){
   if(!A.user)return;
   var pl=gpl();var myPl=pl[A.user.id]||{};
@@ -6474,6 +6558,7 @@ function vAccueil(){
     {v:"planning",ic:"\ud83d\udcc5",lb:"\u00c9quipe"},
     {v:"departs",ic:"\ud83c\udfaf",lb:"D\u00e9parts"},
     {v:"partage",ic:"\ud83d\udc65",lb:"Dossier partag\u00e9"},
+    {v:"mesdemandes",ic:"\ud83d\udce8",lb:"Mes demandes"},
     {v:"chat",ic:"\ud83d\udcac",lb:"Chat"},
     {v:"ia",ic:"\ud83e\udd16",lb:"Aide IA"},
     {v:"convention",ic:"\ud83d\udcd6",lb:"Convention"},
@@ -9220,6 +9305,9 @@ function vAdmin(){
     {ic:"\ud83d\udd0d",lb:"Audit effectifs",fn:"sv('audit')"},
     {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier PIN admin":"Activer PIN admin",fn:"showPinSetup()"},
     {ic:"\ud83d\udd13",lb:"R\u00e9init. tous les mots de passe",fn:"adminResetAllPw()"},
+
+    {sep:"\ud83d\udcfa PR\u00c9SENTATION"},
+    {ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation (plein \u00e9cran)",fn:"togglePresentation()"},
 
     {sep:"\u26a0\ufe0f MAINTENANCE"},
     {ic:"\ud83e\uddea",lb:"Tests unitaires",fn:"runTests()"},
