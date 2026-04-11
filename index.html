@@ -2140,7 +2140,7 @@ function ls(k,v){
 // ── Synchronisation temps réel Firebase ─────────────────────────────────────
 var FB_URL=localStorage.getItem("cmc_fb_url")||"https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_PATH="/cmcteams";
-var _fbEs=null,_fbConnected=false,_lastSyncTs=0;
+var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
 var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled"];
 // Préfixes pour clés dynamiques (mois/année)
@@ -2298,10 +2298,11 @@ function fbApplyData(k,v){
   }
   else if(k==="cmc_upload_enabled"){A.uploadEnabled=vc!==false;}
   // Pour les clés dynamiques (cmc_ref_*, etc.) : juste localStorage suffit
-  // Détecter changement de planning pour l'utilisateur connecté → notification
-  if(k==="cmc_ov"&&A.user)_checkPlanningChanged(vc);
-  // Détecter nouveau message chat → notification
-  if(k==="cmc_chat"&&A.user)_checkNewChat(vc);
+  // Détecter changement de planning / chat → notification (PAS pendant le chargement initial Firebase)
+  if(!_fbInitialLoad){
+    if(k==="cmc_ov"&&A.user)_checkPlanningChanged(vc);
+    if(k==="cmc_chat"&&A.user)_checkNewChat(vc);
+  }
   // v9.58 — debouncé via rAF pour batcher les rafales SSE (fix scintillement import)
   if(A.user)dcDebounced();
 }
@@ -2389,12 +2390,14 @@ function fbStartListening(){
         var msg=JSON.parse(e.data);
         var path=msg.path,data=msg.data;
         if(path==="/"){
-          // Snapshot initial : toutes les clés
+          // Snapshot initial : toutes les clés — PAS de dc() direct (dcDebounced dans fbApplyData suffit)
           _fbConnected=true;_lastSyncTs=Date.now();
+          _fbInitialLoad=true;
           if(data&&typeof data==="object"){
             Object.keys(data).forEach(function(k){fbApplyData(k,data[k]);});
           }
-          if(A.user)dc();
+          _fbInitialLoad=false;
+          if(A.user)dcDebounced();
         } else {
           // Mise à jour d'une clé spécifique
           var key=path.slice(1); // enlever le "/" initial
@@ -4267,8 +4270,12 @@ function render(){
       +'</div>';
   }
 }
+var _dcRunning=false;
 function dc(){
-  var c=document.getElementById("content");if(!c)return;
+  if(_dcRunning)return; // Protection anti-boucle
+  _dcRunning=true;
+  try{
+  var c=document.getElementById("content");if(!c){_dcRunning=false;return;}
   c.innerHTML=vMain();
   // Maj classe body pour le fond planning sp\u00e9cifique
   var _b=document.body,_ph=A.photos||{};
@@ -4281,6 +4288,8 @@ function dc(){
   if(A.view==="departs")setTimeout(adjDeparts,300);
   if(A.view==="monplanning")setTimeout(adjMonPlanning,80);
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  }catch(ex){console.warn("dc() error:",ex);}
+  _dcRunning=false;
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
 // rafales SSE Firebase (imports massifs : N clés reçues en cascade → 1 seul dc()).
