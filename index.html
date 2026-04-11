@@ -4266,7 +4266,7 @@ function _startBgSlideshow(){
   _bgIdx=0;_bgLayer="A";
   var first=document.getElementById("bgA");
   if(first){
-    first.style.backgroundImage="linear-gradient(rgba(8,16,8,.55),rgba(8,16,8,.68)),url(\""+_safeUrl(_bgSlides[0])+"\")";
+    first.style.backgroundImage="linear-gradient(rgba(8,16,8,.35),rgba(8,16,8,.45)),url(\""+_safeUrl(_bgSlides[0])+"\")";
     first.style.opacity="1";
   }
   // Si une seule photo, pas besoin de timer
@@ -4281,7 +4281,7 @@ function _startBgSlideshow(){
     var hide=document.getElementById(hideId);
     if(!show||!hide)return;
     // Pr\u00e9charger la nouvelle image sur la couche invisible
-    show.style.backgroundImage="linear-gradient(rgba(8,16,8,.55),rgba(8,16,8,.68)),url(\""+_safeUrl(img)+"\")";
+    show.style.backgroundImage="linear-gradient(rgba(8,16,8,.35),rgba(8,16,8,.45)),url(\""+_safeUrl(img)+"\")";
     // Crossfade : montrer la nouvelle, masquer l'ancienne
     show.style.opacity="1";
     hide.style.opacity="0";
