@@ -4904,8 +4904,8 @@ function vLoginStepVerify(){
       ?'<div style="font-size:14px;color:#a0cca0;margin-top:6px">Un code \u00e0 6 chiffres a \u00e9t\u00e9 envoy\u00e9 \u00e0</div>'
        +'<div style="font-size:15px;color:#c9a227;font-weight:700;margin-top:2px">'+esc(reg.email||"")+'</div>'
       :'<div style="font-size:14px;color:#e09848;margin-top:6px;line-height:1.5">'
-       +'Un code \u00e0 6 chiffres a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9.<br>'
-       +'<strong style="color:#c9a227">Contactez votre administrateur</strong> pour l\u2019obtenir.</div>')
+       +'Votre demande d\u2019inscription a \u00e9t\u00e9 envoy\u00e9e.<br>'
+       +'<strong style="color:#c9a227">L\u2019administrateur va valider votre compte.</strong></div>')
     +'</div>'
     +'<div style="font-size:14px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:600">Code de v\u00e9rification</div>'
     +'<input id="otpIn" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" autofocus'
@@ -4913,11 +4913,11 @@ function vLoginStepVerify(){
     +' onkeydown="if(event.key===\'Enter\')stepVerifyCode()">'
     +'<div id="otpErr" style="color:#a04040;font-size:14px;min-height:16px;margin-bottom:8px"></div>'
     +'<button class="btn gold" onclick="stepVerifyCode()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">V\u00e9rifier \u2192</button>'
-    +'<button class="btn ghost" onclick="stepResendCode()" style="width:100%;padding:10px;font-size:14px;justify-content:center;margin-top:8px">\ud83d\udd04 Renvoyer un code</button>'
-    +'<div style="margin-top:14px;text-align:center;font-size:12px;color:#b0ccb0;line-height:1.6">'
+    +'<button class="btn ghost" onclick="stepResendCode()" style="width:100%;padding:10px;font-size:14px;justify-content:center;margin-top:8px">\ud83d\udd04 Nouveau code</button>'
+    +'<div style="margin-top:14px;text-align:center;font-size:13px;color:#b0ccb0;line-height:1.6">'
     +(_ejsOk
       ?'\ud83d\udca1 Vous n\'avez pas re\u00e7u le code ?<br>V\u00e9rifiez vos spams ou contactez l\'administrateur.'
-      :'\ud83d\udca1 L\'administrateur voit les codes dans son panneau Admin.<br>Contactez-le par t\u00e9l\u00e9phone ou en personne.')
+      :'\ud83d\udca1 L\u2019administrateur re\u00e7oit votre demande automatiquement et validera votre acc\u00e8s.')
     +'</div>'
     +'</div></div>';
 }
