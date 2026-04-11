@@ -4628,6 +4628,9 @@ function vLoginStep0(){
       &nbsp;&bull;&nbsp;
       <span onclick="forceRefresh()" style="color:#7aaa70;cursor:pointer;text-decoration:underline">Forcer mise \u00e0 jour</span>
     </div>
+    <div style="margin-top:10px;display:flex;justify-content:center;gap:8px">
+      ${LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:8px;padding:6px 14px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')}
+    </div>
   </div></div>`;
 }
 
@@ -6027,6 +6030,14 @@ function vMonProfil(){
   h+='</div>';
   // Bouton sauvegarder
   h+='<button class="btn gold" onclick="empSaveProfil()" style="width:100%;padding:12px;font-size:16px;font-weight:700">\u2713 Enregistrer ma fiche</button>';
+  // Sélecteur de langue (choix personnel)
+  h+='<div style="margin-top:14px;padding:12px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.2);border-radius:10px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between">'
+    +'<div><div style="font-size:14px;font-weight:700;color:#a0c8e0">\ud83c\udf10 '+t("language")+'</div>'
+    +'<div style="font-size:12px;color:#8aaa88">'+(LANGS.find(function(l){return l.id===_lang;})||LANGS[0]).label+'</div></div>'
+    +'<div style="display:flex;gap:6px">'
+    +LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;min-height:44px">'+l.flag+'</button>';}).join('')
+    +'</div></div></div>';
   if(reg.updatedAt)h+='<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.28);margin-top:10px">Derni\u00e8re mise \u00e0 jour : '+new Date(reg.updatedAt).toLocaleDateString("fr-FR")+'</div>';
   h+='</div>';
   return h;
