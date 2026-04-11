@@ -9095,36 +9095,48 @@ function vAdmin(){
     if(_se.type==="pin_fail")_failsAlert++;
   }
   var items=[
-    {ic:"\ud83d\udcca",lb:"Statistiques du mois",fn:"sv('stats')"},
-    {ic:"\ud83c\udf10",lb:"Statistiques globales (effectifs par lieu/r\u00f4le/famille)",fn:"sv('statsglobal')"},
-    {ic:"\ud83d\udcc8",lb:"Statistiques par employ\u00e9 (avec archivage)",fn:"sv('statsannuelles')"},
-    {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
+    {sep:"\ud83d\udc65 EFFECTIFS"},
     {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
-    {ic:"\ud83d\udcc1",lb:"Banque de donn\u00e9es (photos, PDF, docs)",fn:"sv('documents')"},
-    {ic:"\ud83d\udce4",lb:"Mod\u00e9ration uploads employ\u00e9s"+(countPendingUploads()>0?" \u2014 "+countPendingUploads()+" en attente \u26a0":""),fn:"sv('uploadreq')",badge:countPendingUploads()},
-    {ic:"\ud83c\udf92",lb:"Retrait\u00e9s \u2014 anciens employ\u00e9s",fn:"sv('retrait')"},
-    {ic:"\ud83d\udce5",lb:"Import planning",fn:"sv('import')"},
-    {ic:"\ud83d\udd04",lb:"Dupliquer le planning du mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
-    {ic:"\ud83d\udcbe",lb:"Sauvegarder ce mois comme mod\u00e8le",fn:"saveTemplate()"},
-    {ic:"\ud83d\udcd1",lb:"Templates de planning (sauver / appliquer)",fn:"sv('templates')"},
-    {ic:"\ud83d\udce2",lb:"Retardataires \u00e0 relancer (inscription, email, photo)",fn:"sv('retardataires')"},
-    {ic:"\u26a0\ufe0f",lb:"Alertes planning (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
+    {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
+    {ic:"\ud83c\udf92",lb:"Retrait\u00e9s",fn:"sv('retrait')"},
+    {ic:"\ud83d\udc65",lb:"D\u00e9tecter doublons",fn:"detectDuplicates()"},
+    {ic:"\ud83d\udce2",lb:"Retardataires \u00e0 relancer",fn:"sv('retardataires')"},
+
+    {sep:"\ud83d\udcc5 PLANNING"},
+    {ic:"\ud83d\udce5",lb:"Importer un planning PDF",fn:"sv('import')"},
+    {ic:"\u2705",lb:"V\u00e9rifier l\u2019import",fn:"sv('importVerif')"},
+    {ic:"\u26a0\ufe0f",lb:"Alertes (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
     {ic:"\ud83d\ude34",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
-    {ic:"\u2705",lb:"V\u00e9rifier l'import du mois (horaires, d\u00e9parts, employ\u00e9s)",fn:"sv('importVerif')"},
-    {ic:"\ud83d\udcc4",lb:"Exporter planning en CSV",fn:"exportPlanningCSV()"},
-    {ic:"\ud83d\udcbe",lb:"Sauvegarde compl\u00e8te JSON (t\u00e9l\u00e9charger)",fn:"exportFullBackup()"},
-    {ic:"\ud83d\udce4",lb:"Restaurer une sauvegarde JSON",fn:"importFullBackup()"},
-    {ic:"\ud83e\uddea",lb:"Lancer les tests unitaires",fn:"runTests()"},
-    {ic:"\ud83d\udc65",lb:"D\u00e9tecter et nettoyer les doublons employ\u00e9s",fn:"detectDuplicates()"},
-    {ic:"\ud83d\uddc3\ufe0f",lb:"Gestion des mois stock\u00e9s",fn:"sv('mois')"},
-    {ic:"\ud83d\udd0d",lb:"Audit \u2014 v\u00e9rification compl\u00e8te des effectifs",fn:"sv('audit')"},
-    {ic:"\ud83d\udcdd",lb:"Journal des modifications manuelles",fn:"sv('auditlog')"},
-    {ic:"\ud83d\udd13",lb:"R\u00e9initialiser tous les mots de passe (hors admin)",fn:"adminResetAllPw()"},
+    {ic:"\ud83d\udd04",lb:"Dupliquer le mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
+    {ic:"\ud83d\udcbe",lb:"Sauvegarder comme mod\u00e8le",fn:"saveTemplate()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
-    {ic:"\ud83e\uddf9",lb:"Supprimer employ\u00e9s import\u00e9s (PDF ind\u00e9sirables)",fn:"cleanImportedEmps()"},
-    {ic:"\u26a0\ufe0f",lb:"R\u00e9initialisation compl\u00e8te — efface localStorage et recharge",fn:"hardReset()"},
-    {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier le code PIN admin":"Activer un code PIN admin",fn:"showPinSetup()"},
-    {ic:"\ud83d\udee1\ufe0f",lb:"Journal s\u00e9curit\u00e9 — historique des connexions",fn:"sv('security')"}
+
+    {sep:"\ud83d\udcca STATISTIQUES"},
+    {ic:"\ud83d\udcca",lb:"Stats du mois",fn:"sv('stats')"},
+    {ic:"\ud83c\udf10",lb:"Stats globales (lieu/r\u00f4le/famille)",fn:"sv('statsglobal')"},
+    {ic:"\ud83d\udcc8",lb:"Stats par employ\u00e9 (archivage)",fn:"sv('statsannuelles')"},
+
+    {sep:"\ud83d\udcc4 EXPORT & SAUVEGARDES"},
+    {ic:"\ud83d\udcc4",lb:"Exporter planning CSV",fn:"exportPlanningCSV()"},
+    {ic:"\ud83d\udcbe",lb:"Sauvegarde compl\u00e8te JSON",fn:"exportFullBackup()"},
+    {ic:"\ud83d\udce4",lb:"Restaurer une sauvegarde",fn:"importFullBackup()"},
+    {ic:"\ud83d\uddc3\ufe0f",lb:"Mois stock\u00e9s",fn:"sv('mois')"},
+
+    {sep:"\ud83d\udcc1 DOCUMENTS"},
+    {ic:"\ud83d\udcc1",lb:"Banque de donn\u00e9es (photos, PDF)",fn:"sv('documents')"},
+    {ic:"\ud83d\udce4",lb:"Mod\u00e9ration uploads"+(countPendingUploads()>0?" \u2014 "+countPendingUploads()+" \u26a0":""),fn:"sv('uploadreq')"},
+
+    {sep:"\ud83d\udd12 S\u00c9CURIT\u00c9"},
+    {ic:"\ud83d\udee1\ufe0f",lb:"Journal s\u00e9curit\u00e9 (connexions)",fn:"sv('security')"},
+    {ic:"\ud83d\udcdd",lb:"Journal des modifications",fn:"sv('auditlog')"},
+    {ic:"\ud83d\udd0d",lb:"Audit effectifs",fn:"sv('audit')"},
+    {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier PIN admin":"Activer PIN admin",fn:"showPinSetup()"},
+    {ic:"\ud83d\udd13",lb:"R\u00e9init. tous les mots de passe",fn:"adminResetAllPw()"},
+
+    {sep:"\u26a0\ufe0f MAINTENANCE"},
+    {ic:"\ud83e\uddea",lb:"Tests unitaires",fn:"runTests()"},
+    {ic:"\ud83e\uddf9",lb:"Nettoyer employ\u00e9s PDF",fn:"cleanImportedEmps()"},
+    {ic:"\u26a0\ufe0f",lb:"R\u00e9initialisation compl\u00e8te",fn:"hardReset()"}
   ];
   // Calcul de la dernière connexion réussie pour affichage dans l'admin
   var _lastOk=(function(){var ss=lg("cmc_admin_sessions",[]);for(var i=ss.length-1;i>=0;i--){if(ss[i].type==="success"&&i<ss.length-1)return ss[i];}return null;})();
@@ -9263,7 +9275,10 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'</div>'
   +'</div></div>'
   +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +(function(){return items.map(function(it){return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:13px 16px;font-size:16px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';}).join("");})()
+  +(function(){return items.map(function(it){
+    if(it.sep)return '<div style="font-size:12px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:2px;padding:14px 4px 6px;border-top:1px solid rgba(201,162,39,.15);margin-top:4px">'+it.sep+'</div>';
+    return '<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:12px 16px;font-size:15px;gap:10px;color:#b0c8a8">'+it.ic+' '+it.lb+'</button>';
+  }).join("");})()
   +'</div>'
   +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.22);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
   +'<div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px">\ud83d\udd10 Code PIN admin</div>'
