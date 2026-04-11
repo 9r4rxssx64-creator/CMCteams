@@ -11661,16 +11661,23 @@ function _doExtractPdfLines(file,onDone,onErr){
           // v9.67 — Extraire texte + couleurs pour détecter jours rouges (affluence)
           Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
             var tc=results[0],ops=results[1];
-            // Construire une map des couleurs : index opérateur → couleur fill
-            var _colorMap={},_curColor=null,_textIdx=0;
+            // Construire une map des couleurs texte + fond pour chaque item texte
+            var _colorMap={},_bgColorMap={},_curColor=null,_curBgColor=null,_textIdx=0;
             var OPS=pdfjsLib.OPS;
+            var _lastFillBeforeRect=null;
             for(var oi=0;oi<ops.fnArray.length;oi++){
               if(ops.fnArray[oi]===OPS.setFillRGBColor){
                 var rgb=ops.argsArray[oi];
                 _curColor=rgb?{r:Math.round(rgb[0]*255),g:Math.round(rgb[1]*255),b:Math.round(rgb[2]*255)}:null;
+                _lastFillBeforeRect=_curColor;
+              }
+              // Rectangles remplis = fonds de cellules
+              if(ops.fnArray[oi]===OPS.constructPath||ops.fnArray[oi]===OPS.fill){
+                _curBgColor=_lastFillBeforeRect;
               }
               if(ops.fnArray[oi]===OPS.showText||ops.fnArray[oi]===OPS.showSpacedText){
                 _colorMap[_textIdx]=_curColor;
+                _bgColorMap[_textIdx]=_curBgColor;
                 _textIdx++;
               }
             }
@@ -11682,20 +11689,43 @@ function _doExtractPdfLines(file,onDone,onErr){
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
               var col=_colorMap[_ti]||null;
+              var bgCol=_bgColorMap[_ti]||null;
               _ti++;
               if(!t)return;
               if(!rowMap[y])rowMap[y]=[];
-              rowMap[y].push({x:x,t:t,color:col});
+              rowMap[y].push({x:x,t:t,color:col,bg:bgCol});
             });
-            // Détecter les jours rouges dans l'en-tête (numéros 1-31 avec couleur rouge)
+            // Détecter jours rouges (affluence) + fonds orange/rouge (CDP)
             if(!window._pdfRedDays)window._pdfRedDays=[];
+            if(!window._pdfCdpCells)window._pdfCdpCells=[];
             var ys=Object.keys(rowMap).map(Number).sort(function(a,b){return b-a;});
             ys.forEach(function(y){
               var items=rowMap[y].slice().sort(function(a,b){return a.x-b.x;});
               items.forEach(function(it){
                 var num=parseInt(it.t);
+                // Jours rouges (texte rouge = affluence, en-tête)
                 if(num>=1&&num<=31&&it.color&&it.color.r>180&&it.color.g<100&&it.color.b<100){
                   if(window._pdfRedDays.indexOf(num)<0)window._pdfRedDays.push(num);
+                }
+                // Fond orange/rouge = CDP (Café de Paris)
+                // Orange : R>200, G entre 80-180, B<100
+                // Fond orange/rouge = CDP (Café de Paris)
+                if(it.bg&&it.bg.r>200&&it.bg.g>=80&&it.bg.g<=180&&it.bg.b<100){
+                  var _shiftCode=it.t.replace(/[*']/g,"").trim();
+                  if(CODES[_shiftCode]||CODES[_shiftCode+"*"]){
+                    window._pdfCdpCells.push({y:y,x:it.x,code:_shiftCode,type:"cdp"});
+                  }
+                }
+                // Fond vert = Formation (AF)
+                if(it.bg&&it.bg.g>150&&it.bg.r<150&&it.bg.b<150){
+                  window._pdfCdpCells.push({y:y,x:it.x,code:it.t.trim(),type:"af"});
+                }
+                // Fond rouge (R>200, G<80, B<80) = Convention (19/4')
+                if(it.bg&&it.bg.r>200&&it.bg.g<80&&it.bg.b<80){
+                  var _convCode=it.t.replace(/[*']/g,"").trim();
+                  if(CODES[_convCode]||CODES[_convCode+"'"]){
+                    window._pdfCdpCells.push({y:y,x:it.x,code:_convCode,type:"conv"});
+                  }
                 }
               });
               var line=items.map(function(i){return i.t;}).join("\t");
@@ -12979,6 +13009,21 @@ function doImport(){
     var _r4=document.getElementById("impRes");
     if(_r4){_r4.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(224,64,64,.08);border:1px solid rgba(224,64,64,.25);border-radius:8px;font-size:14px;color:#e0a0a0">\ud83d\udd34 '+window._pdfRedDays.length+' jour'+(window._pdfRedDays.length>1?'s':'')+' de forte affluence d\u00e9tect\u00e9'+(window._pdfRedDays.length>1?'s':'')+' dans le PDF : <b style="color:#e08080">'+window._pdfRedDays.sort(function(a,b){return a-b;}).join(', ')+'</b></div>';}
     window._pdfRedDays=[];
+  }
+  // v9.67 — Résumé couleurs CDP/AF détectées dans le PDF
+  if(window._pdfCdpCells&&window._pdfCdpCells.length){
+    var _cdpCount=window._pdfCdpCells.filter(function(c){return c.type==="cdp";}).length;
+    var _afCount=window._pdfCdpCells.filter(function(c){return c.type==="af";}).length;
+    var _convCount=window._pdfCdpCells.filter(function(c){return c.type==="conv";}).length;
+    var _r5=document.getElementById("impRes");
+    if(_r5&&(_cdpCount||_afCount||_convCount)){
+      var _msg='';
+      if(_cdpCount)_msg+='\ud83c\udfb0 '+_cdpCount+' Caf\u00e9 de Paris (fond orange) ';
+      if(_afCount)_msg+='\ud83c\udf93 '+_afCount+' Formation (fond vert) ';
+      if(_convCount)_msg+='\ud83d\udcd6 '+_convCount+' Convention (fond rouge) ';
+      _r5.innerHTML+='<div style="margin-top:8px;padding:8px 12px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;font-size:14px;color:#c9a227">'+_msg+'</div>';
+    }
+    window._pdfCdpCells=[];
   }
   // v9.67 — Validation automatique post-import : détecter anomalies
   _conflictCacheKey="";_conflictCache=null;
