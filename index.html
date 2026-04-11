@@ -5772,7 +5772,7 @@ function vMonPlanning(){
       +'<button onclick="sv(\'planning\')" class="btn ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:6px"><em style="font-size:26px">\ud83d\udcc5</em><span style="font-size:15px;font-weight:700">Planning g\u00e9n\u00e9ral</span></button>'
       +'<button onclick="sv(\'departs\')" class="btn ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:6px"><em style="font-size:26px">\ud83c\udfaf</em><span style="font-size:15px;font-weight:700">Ordres de d\u00e9part</span></button>'
       +'<button onclick="sv(\'chat\')" class="btn ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:6px"><em style="font-size:26px">\ud83d\udcac</em><span style="font-size:15px;font-weight:700">Chat</span></button>'
-      +'<button onclick="sv(\'profil\')" class="btn ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:6px"><em style="font-size:26px">\ud83d\udc64</em><span style="font-size:15px;font-weight:700">Ma fiche</span></button>'
+      +'<button onclick="sv(\'profil\')" class="btn ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:6px"><em style="font-size:26px">\ud83d\udc64</em><span style="font-size:15px;font-weight:700">'+t('myProfile')+'</span></button>'
       +'</div></div>';
   }
   var days=getDays(A.year,A.month);
@@ -5795,7 +5795,7 @@ function vMonPlanning(){
     +empAvatarHtml(emp,40,tcc)
     +'<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;color:#d0e8c0">'+esc(dispName)+'</div>'
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
-    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 Ma fiche</button>'
+    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 '+t('myProfile')+'</button>'
     +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#a0c8f0;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
     +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#e08080;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
     +'</div>'
@@ -5915,8 +5915,8 @@ function vMonProfil(){
   var h='<div class="page">';
   h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +empAvatarHtml(emp,64,tc(emp.team)||"#c9a227")
-    +'<div style="flex:1;min-width:0"><div class="sec-title">\ud83d\udc64 Ma fiche</div>'
-    +'<div class="sec-sub">Vos informations personnelles</div></div></div>';
+    +'<div style="flex:1;min-width:0"><div class="sec-title">\ud83d\udc64 '+t('myProfile')+'</div>'
+    +'<div class="sec-sub">'+t('yourInfo')+'</div></div></div>';
   // Photo de profil
   var _myPh=getEmpPhoto(uid);
   h+='<div style="background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.2);border-radius:10px;padding:14px;margin-bottom:12px">'
@@ -13124,7 +13124,17 @@ var I18N={
     nextShift:"Prochain service",noData:"Aucune donn\u00e9e",import:"Importer",export:"Exporter",
     visitor:"Visiteur",online:"En ligne",offline:"Hors ligne",
     voiceOn:"Lecture vocale activ\u00e9e",voiceOff:"Lecture vocale d\u00e9sactiv\u00e9e",
-    speak:"Parlez...",micDenied:"Microphone refus\u00e9"
+    speak:"Parlez...",micDenied:"Microphone refus\u00e9",
+    myProfile:"'+t('myProfile')+'",yourInfo:"'+t('yourInfo')+'",
+    continue:"Continuer",verify:"V\u00e9rifier",send:"Envoyer",
+    firstName:"Pr\u00e9nom",lastName:"Nom de famille",email:"Email",address:"Adresse",
+    birthday:"Date de naissance",position:"Poste",
+    workedDays:"Jours travaill\u00e9s",hours:"heures",totalHours:"Heures total",
+    favorites:"Favoris",requests:"Mes demandes",sharedFolder:"Dossier partag\u00e9",
+    noMessage:"Aucun message",messages:"messages",
+    leaveRequest:"Cong\u00e9",exchange:"Échange",modification:"Modification",other:"Autre",
+    pending:"En attente",approved:"Accept\u00e9e",rejected:"Refus\u00e9e",
+    presentation:"Pr\u00e9sentation",fullscreen:"Plein \u00e9cran"
   },
   en:{
     accueil:"Home",monPlan:"My Sched.",equipe:"Team",departs:"Departures",chat:"Chat",aide:"Help",admin:"Admin",
@@ -13139,8 +13149,18 @@ var I18N={
     statistics:"Statistics",documents:"Documents",security:"Security",
     nextShift:"Next shift",noData:"No data",import:"Import",export:"Export",
     visitor:"Visitor",online:"Online",offline:"Offline",
-    voiceOn:"Voice reading on",voiceOff:"Voice reading off",
-    speak:"Speak...",micDenied:"Microphone denied"
+    voiceOn:"Voice on",voiceOff:"Voice off",
+    speak:"Speak...",micDenied:"Microphone denied",
+    myProfile:"My profile",yourInfo:"Your personal information",
+    continue:"Continue",verify:"Verify",send:"Send",
+    firstName:"First name",lastName:"Last name",email:"Email",address:"Address",
+    birthday:"Date of birth",position:"Position",
+    workedDays:"Worked days",hours:"hours",totalHours:"Total hours",
+    favorites:"Favorites",requests:"My requests",sharedFolder:"Shared folder",
+    noMessage:"No messages",messages:"messages",
+    leaveRequest:"Leave",exchange:"Exchange",modification:"Change",other:"Other",
+    pending:"Pending",approved:"Approved",rejected:"Rejected",
+    presentation:"Presentation",fullscreen:"Fullscreen"
   },
   it:{
     accueil:"Home",monPlan:"Piano",equipe:"Squadra",departs:"Partenze",chat:"Chat",aide:"Aiuto",admin:"Admin",
@@ -13156,11 +13176,21 @@ var I18N={
     nextShift:"Prossimo turno",noData:"Nessun dato",import:"Importa",export:"Esporta",
     visitor:"Visitatore",online:"Online",offline:"Offline",
     voiceOn:"Lettura vocale attivata",voiceOff:"Lettura vocale disattivata",
-    speak:"Parla...",micDenied:"Microfono negato"
+    speak:"Parla...",micDenied:"Microfono negato",
+    myProfile:"Profilo",yourInfo:"Le tue informazioni personali",
+    continue:"Continua",verify:"Verifica",send:"Invia",
+    firstName:"Nome",lastName:"Cognome",email:"Email",address:"Indirizzo",
+    birthday:"Data di nascita",position:"Posizione",
+    workedDays:"Giorni lavorati",hours:"ore",totalHours:"Ore totali",
+    favorites:"Preferiti",requests:"Le mie richieste",sharedFolder:"Cartella condivisa",
+    noMessage:"Nessun messaggio",messages:"messaggi",
+    leaveRequest:"Ferie",exchange:"Scambio",modification:"Modifica",other:"Altro",
+    pending:"In attesa",approved:"Approvata",rejected:"Rifiutata",
+    presentation:"Presentazione",fullscreen:"Schermo intero"
   }
 };
 function t(key){return (I18N[_lang]||I18N.fr)[key]||(I18N.fr[key])||key;}
-function setLang(lang){_lang=lang;localStorage.setItem("cmc_lang",lang);_ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":"fr-FR";toast("\ud83c\udf10 "+({fr:"Fran\u00e7ais",en:"English",it:"Italiano"}[lang]||lang));dc();}
+function setLang(lang){_lang=lang;localStorage.setItem("cmc_lang",lang);_ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":"fr-FR";toast("\ud83c\udf10 "+({fr:"Fran\u00e7ais",en:"English",it:"Italiano"}[lang]||lang));render();}
 var LANGS=[{id:"fr",label:"Fran\u00e7ais",flag:"\ud83c\uddeb\ud83c\uddf7"},{id:"en",label:"English",flag:"\ud83c\uddec\ud83c\udde7"},{id:"it",label:"Italiano",flag:"\ud83c\uddee\ud83c\uddf9"}];
 
 var _theme=localStorage.getItem("cmc_theme")||"casino";
