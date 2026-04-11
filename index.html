@@ -5861,16 +5861,9 @@ function vMonPlanning(){
     else if(code==="RRT")_timeLabel="\u21bb R\u00e9cup";
     var cellBg=isToday?"rgba(201,162,39,.22)":_isPast?"#030808":(ci2&&isWork(code)?codeBg+"60":"#050d05");
     var borderStyle=isToday?"2px solid #c9a227":"1px solid "+(_isPast?"#0c1208":ci2&&isWork(code)?codeColor+"40":isWE?"#162018":"#121c12");
-    // Affluence basée sur les données importées réelles (pas théorique)
-    var _affDot="";
-    if(isFeatureOn("affluence")){
-      var _wkCount=0;
-      A.employees.forEach(function(e2){if(isEmpActive(e2,A.year,A.month)){var c2=(pl[e2.id]||{})[d]||"";if(isWork(c2))_wkCount++;}});
-      var _totalActive=A.employees.filter(function(e2){return isEmpActive(e2,A.year,A.month);}).length;
-      var _affPct=_totalActive?Math.round(_wkCount/_totalActive*100):0;
-      if(_affPct>=75)_affDot='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="'+_wkCount+' en service"></span>';
-      else if(_affPct>=60)_affDot='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#c9a227;margin-left:2px;vertical-align:middle" title="'+_wkCount+' en service"></span>';
-    }
+    // Affluence marquée par l'admin (jours rouges du PDF)
+    var _affDays=lg("cmc_affluence_"+A.year+"_"+A.month,{});
+    var _affDot=isFeatureOn("affluence")&&_affDays[d]?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#e04040;margin-left:2px;vertical-align:middle" title="Forte affluence"></span>':"";
     h+='<div data-mpday="'+d+'" style="padding:3px 2px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:8px;text-align:center;min-height:58px;opacity:'+(_isPast?"0.4":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
@@ -9457,6 +9450,7 @@ function vAdmin(){
     {ic:"\ud83d\ude34",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
     {ic:"\ud83d\udd04",lb:"Dupliquer le mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
     {ic:"\ud83d\udcbe",lb:"Sauvegarder comme mod\u00e8le",fn:"saveTemplate()"},
+    {ic:"\ud83d\udd34",lb:"Marquer jours forte affluence",fn:"markAffluenceBulk()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
 
     {sep:"\ud83d\udcca STATISTIQUES"},
@@ -13165,6 +13159,26 @@ function toggleFeature(f){
   _features[f]=!isFeatureOn(f);
   ls("cmc_features",_features);
   toast((isFeatureOn(f)?"\u2705 ":"\u274c ")+f);
+  dc();
+}
+// v9.67 — Jours d'affluence (marqués par l'admin, correspond aux jours rouges du PDF)
+function toggleAffluenceDay(y,m,d){
+  if(!A.user||A.user.id!==AID)return;
+  var key="cmc_affluence_"+y+"_"+m;
+  var days=lg(key,{});
+  if(days[d])delete days[d]; else days[d]=true;
+  ls(key,days);
+  dc();
+}
+function markAffluenceBulk(){
+  if(!A.user||A.user.id!==AID)return;
+  var input=prompt("Jours de forte affluence (s\u00e9par\u00e9s par des virgules) :\nEx: 4,5,11,12,18,19");
+  if(!input)return;
+  var key="cmc_affluence_"+A.year+"_"+A.month;
+  var days=lg(key,{});
+  input.split(",").forEach(function(s){var d=parseInt(s.trim());if(d>=1&&d<=31)days[d]=true;});
+  ls(key,days);
+  toast("\u2705 "+Object.keys(days).length+" jours d\u2019affluence marqu\u00e9s");
   dc();
 }
 var _visitorEnabled=localStorage.getItem("cmc_visitor_enabled")!=="0";
