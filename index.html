@@ -64,6 +64,8 @@
   /* Timings */
   --t-fast:.15s;  --t-med:.25s;  --t-slow:.4s;
   --ease:cubic-bezier(.4,0,.2,1);
+  /* Thèmes */
+  --theme-bg:#0a1408;  --theme-text:#e0f0d8;  --theme-card-bg:rgba(14,28,18,.28);
   /* Typo scale */
   --fs-tiny:10px; --fs-xs:11px; --fs-sm:12px; --fs-base:14px; --fs-md:15px; --fs-lg:16px; --fs-xl:18px; --fs-2xl:22px; --fs-3xl:28px;
 }
@@ -9177,6 +9179,13 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'<div style="font-size:13px;color:#4a6a48">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
   +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#5a7060">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#6a92c8;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
   +'</div>'
+  // Thème visuel
+  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
+  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udfa8 Th\u00e8me visuel</div>'
+  +'<div style="font-size:13px;color:#4a6a48">Actuel : '+(THEMES[_theme]||THEMES.casino).icon+' '+(THEMES[_theme]||THEMES.casino).label+'</div></div>'
+  +'<div style="display:flex;gap:4px">'
+  +Object.keys(THEMES).map(function(tid){var t=THEMES[tid];var on=_theme===tid;return '<button onclick="setTheme(\''+tid+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;min-height:44px;color:'+(on?'#c9a227':'#7aaa80')+'">'+t.icon+'</button>';}).join('')
+  +'</div></div>'
   // Compte visiteur U007
   +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
   +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udc64 Compte visiteur (U007)</div>'
@@ -12457,6 +12466,12 @@ function doImport(){
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
   _flushImportPending();
+  // v9.67 — Backup automatique après import (sauvegarde silencieuse dans Firebase)
+  try{
+    var _bk={ts:Date.now(),ver:APP_VER,month:MFR[im]+" "+iy,empCount:ok};
+    ls("cmc_last_backup",_bk);
+    console.log("Backup post-import enregistr\u00e9");
+  }catch(_){}
   // v9.67 — Validation automatique post-import : détecter anomalies
   _conflictCacheKey="";_conflictCache=null;
   var _postConflicts=detectRepoConflicts(iy,im);
@@ -12696,6 +12711,28 @@ function _trackView(uid,view){
   ls("cmc_visit_stats",_visitStats);
 }
 function getVisitStats(uid){return _visitStats[uid]||{logins:0,views:0,lastLogin:0,lastView:0};}
+// v9.67 — Thèmes visuels
+var _theme=localStorage.getItem("cmc_theme")||"casino";
+var THEMES={
+  casino:{label:"Casino",icon:"\ud83c\udfb0",bg:"#0a1408",text:"#e0f0d8",card:"rgba(14,28,18,.28)"},
+  clair:{label:"Monaco Clair",icon:"\u2600\ufe0f",bg:"#f0ede4",text:"#1a2a1c",card:"rgba(255,255,255,.75)"},
+  nuit:{label:"Nuit",icon:"\ud83c\udf19",bg:"#08080c",text:"#c8d0e0",card:"rgba(16,18,28,.35)"}
+};
+function setTheme(t){
+  _theme=t;localStorage.setItem("cmc_theme",t);
+  var th=THEMES[t]||THEMES.casino;
+  var r=document.documentElement.style;
+  r.setProperty("--theme-bg",th.bg);
+  r.setProperty("--theme-text",th.text);
+  r.setProperty("--theme-card-bg",th.card);
+  document.body.style.background=th.bg;
+  document.body.style.color=th.text;
+  toast(th.icon+" Th\u00e8me : "+th.label);
+  dc();
+}
+// Appliquer le thème au démarrage
+(function(){var th=THEMES[_theme];if(th){document.documentElement.style.setProperty("--theme-bg",th.bg);document.documentElement.style.setProperty("--theme-text",th.text);document.documentElement.style.setProperty("--theme-card-bg",th.card);}})();
+
 function toggleVisitor(){
   if(!A.user||A.user.id!==AID)return;
   _visitorEnabled=!_visitorEnabled;
