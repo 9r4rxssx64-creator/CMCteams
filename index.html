@@ -3580,6 +3580,39 @@ function vPartage(){
   return h;
 }
 
+// v9.67 — Templates planning (sauvegarder/appliquer un mois type)
+function saveTemplate(){
+  if(!A.user||A.user.id!==AID)return;
+  var key=A.year+"-"+A.month;
+  var ov=A.overrides[key]||{};
+  if(!Object.keys(ov).length){toast("Aucune donn\u00e9e ce mois \u2014 rien \u00e0 sauvegarder","err");return;}
+  var name=prompt("Nom du mod\u00e8le :",MFR[A.month]+" "+A.year);
+  if(!name)return;
+  var templates=lg("cmc_templates",[])||[];
+  templates.push({id:Date.now(),name:name.trim(),month:A.month,year:A.year,data:JSON.parse(JSON.stringify(ov)),createdAt:Date.now()});
+  if(templates.length>10)templates=templates.slice(-10);
+  ls("cmc_templates",templates);
+  toast("\u2705 Mod\u00e8le \""+name+"\" sauvegard\u00e9 ("+Object.keys(ov).length+" employ\u00e9s)");
+}
+function applyTemplate(tplId){
+  if(!A.user||A.user.id!==AID)return;
+  var templates=lg("cmc_templates",[])||[];
+  var tpl=templates.find(function(t){return t.id===tplId;});
+  if(!tpl){toast("Mod\u00e8le introuvable","err");return;}
+  if(!confirm("Appliquer le mod\u00e8le \""+tpl.name+"\" \u00e0 "+MFR[A.month]+" "+A.year+" ?\nCela remplacera le planning actuel."))return;
+  var key=A.year+"-"+A.month;
+  A.overrides[key]=JSON.parse(JSON.stringify(tpl.data));
+  ls("cmc_ov",A.overrides);
+  _audit("template_apply",AID,"",tpl.name,MFR[A.month]+" "+A.year);
+  toast("\u2705 Mod\u00e8le appliqu\u00e9 \u00e0 "+MFR[A.month]+" "+A.year);dc();
+}
+function deleteTemplate(tplId){
+  if(!A.user||A.user.id!==AID)return;
+  var templates=lg("cmc_templates",[])||[];
+  templates=templates.filter(function(t){return t.id!==tplId;});
+  ls("cmc_templates",templates);
+  toast("Mod\u00e8le supprim\u00e9");dc();
+}
 // ── BACKUP / RESTORE JSON COMPLET ───────────────────────────────────────────
 // Export : télécharge un JSON avec tout l'état de l'app
 function exportFullBackup(){
@@ -5438,6 +5471,39 @@ function exportMyICS(){
   URL.revokeObjectURL(url);
   toast('Planning export\u00e9 en .ics \u2014 importez dans votre calendrier');
 }
+// v9.67 — Export PDF planning personnel (via window.print)
+function exportMyPDF(){
+  if(!A.user)return;
+  var pl=gpl();var myPl=pl[A.user.id]||{};
+  var days=getDays(A.year,A.month);
+  var reg=A.reg[A.user.id]||{};
+  var dispName=reg.prenom?(reg.prenom+" "+(reg.nom||A.user.name.split(" ")[0])):A.user.name;
+  var team=gt(A.user.team);
+  var html='<html><head><meta charset="UTF-8"><title>Planning '+esc(dispName)+' - '+MFR[A.month]+' '+A.year+'</title>'
+    +'<style>body{font-family:Georgia,serif;color:#1a2a1c;margin:20px 30px;font-size:12px}'
+    +'h1{font-size:18px;color:#1a3020;border-bottom:2px solid #c9a227;padding-bottom:6px}'
+    +'h2{font-size:14px;color:#4a6a48;margin:12px 0 6px}'
+    +'table{border-collapse:collapse;width:100%}th,td{border:1px solid #c0c8b8;padding:4px 6px;text-align:center;font-size:11px}'
+    +'th{background:#e8e4d8;font-weight:700}.work{background:#f0f8e8;font-weight:700}.cp{background:#f0e0f8}.af{background:#e0f8e8}.m{background:#f8e0e0}.rh{background:#e8e8f0}'
+    +'</style></head><body>'
+    +'<h1>\u2666 CMC Teams \u2014 Casino de Monte-Carlo</h1>'
+    +'<h2>'+esc(dispName)+' \u2022 '+(team?esc(team.name):'')+' \u2022 '+esc(A.user.id)+' \u2022 '+MFR[A.month]+' '+A.year+'</h2>'
+    +'<table><thead><tr><th>Jour</th><th>Date</th><th>Code</th><th>Horaire</th><th>Dur\u00e9e</th></tr></thead><tbody>';
+  var DOW2=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+  for(var d=1;d<=days;d++){
+    var c=myPl[d]||"";var ci=CODES[c]||null;
+    var dow=new Date(A.year,A.month,d).getDay();
+    var cls=isWork(c)?"work":c==="CP"?"cp":c==="AF"?"af":c==="M"?"m":(c==="RH"||c==="R")?"rh":"";
+    html+='<tr class="'+cls+'"><td>'+DOW2[dow]+'</td><td>'+d+'</td><td><b>'+(c||'\u2014')+'</b></td><td>'+(ci?esc(ci.l):'\u2014')+'</td><td>'+(c?codeHours(c)+'h':'\u2014')+'</td></tr>';
+  }
+  html+='</tbody></table>'
+    +'<p style="margin-top:16px;font-size:11px;color:#7a8a78">G\u00e9n\u00e9r\u00e9 par CMC Teams '+APP_VER+' le '+new Date().toLocaleDateString("fr-FR")+'</p>'
+    +'<scr'+'ipt>window.print();setTimeout(function(){window.close();},500);</'+'script>'
+    +'</body></html>';
+  var win=window.open("","_blank");
+  if(win){win.document.write(html);win.document.close();}
+  else{toast("Popup bloqu\u00e9e \u2014 autorisez les popups pour ce site","err");}
+}
 
 // v9.54 \u2014 Export ICS par \u00e9quipe enti\u00e8re (admin)
 // G\u00e9n\u00e8re un seul fichier .ics avec les shifts de tous les employ\u00e9s de l'\u00e9quipe
@@ -5556,6 +5622,7 @@ function vMonPlanning(){
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
     +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 Ma fiche</button>'
     +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#6a92c8;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
+    +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#c06060;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     +'<button class="btn ghost" onclick="prevM()" style="padding:5px 14px;font-size:16px">\u2039</button>'
@@ -9037,6 +9104,7 @@ function vAdmin(){
     {ic:"\ud83c\udf92",lb:"Retrait\u00e9s \u2014 anciens employ\u00e9s",fn:"sv('retrait')"},
     {ic:"\ud83d\udce5",lb:"Import planning",fn:"sv('import')"},
     {ic:"\ud83d\udd04",lb:"Dupliquer le planning du mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
+    {ic:"\ud83d\udcbe",lb:"Sauvegarder ce mois comme mod\u00e8le",fn:"saveTemplate()"},
     {ic:"\ud83d\udcd1",lb:"Templates de planning (sauver / appliquer)",fn:"sv('templates')"},
     {ic:"\ud83d\udce2",lb:"Retardataires \u00e0 relancer (inscription, email, photo)",fn:"sv('retardataires')"},
     {ic:"\u26a0\ufe0f",lb:"Alertes planning (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
