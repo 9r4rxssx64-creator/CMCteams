@@ -4935,7 +4935,31 @@ function stepVerifyCode(){
   var emp=A.employees.find(function(e){return e.id===loginUid;});
   if(!emp){if(er)er.textContent="Compte introuvable";return;}
   A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();render();
-  toast("\u2705 Email v\u00e9rifi\u00e9 \u2014 Bienvenue !");
+  toast("\u2705 Bienvenue !");
+  // Guide premier login
+  if(!localStorage.getItem("cmc_onboarded")){
+    localStorage.setItem("cmc_onboarded","1");
+    setTimeout(function(){
+      var guide=document.getElementById("content");
+      if(guide){
+        var _ob='<div style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px" onclick="this.remove()">'
+          +'<div style="max-width:340px;background:rgba(20,40,24,.95);border:2px solid #c9a227;border-radius:16px;padding:24px;text-align:center" onclick="event.stopPropagation()">'
+          +'<div style="font-size:32px;margin-bottom:10px">\ud83c\uddf2\ud83c\udde8</div>'
+          +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:12px">Bienvenue sur CMC Teams !</div>'
+          +'<div style="font-size:14px;color:#b0ccb0;line-height:1.6;text-align:left">'
+          +'\ud83d\udcc5 <b>Mon Planning</b> \u2014 Votre calendrier personnel<br>'
+          +'\ud83d\udcc5 <b>\u00c9quipe</b> \u2014 Planning de toute l\u2019\u00e9quipe<br>'
+          +'\ud83c\udfaf <b>D\u00e9parts</b> \u2014 Ordres de d\u00e9part<br>'
+          +'\ud83d\udcac <b>Chat</b> \u2014 Messages entre coll\u00e8gues<br>'
+          +'\ud83e\udd16 <b>Aide</b> \u2014 Posez vos questions<br>'
+          +'\ud83d\udc64 <b>Profil</b> \u2014 Vos informations<br>'
+          +'</div>'
+          +'<button onclick="this.parentElement.parentElement.remove()" style="margin-top:16px;padding:12px 24px;background:#c9a227;color:#0a1408;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;width:100%">C\u2019est parti ! \u2192</button>'
+          +'</div></div>';
+        document.body.insertAdjacentHTML("beforeend",_ob);
+      }
+    },800);
+  }
 }
 function stepResendCode(){
   var reg=A.reg[loginUid]||{};
@@ -5390,7 +5414,8 @@ function vNav(){
     var _dmCls=t.id==="chat"&&_unrdDm>0?" nbadge-dm":"";
     var badge=(t.id==="chat"&&unread>0)?`<span id="chatBadge" class="nbadge${_dmCls}" style="display:block">${unread}</span>`
       :(t.badge?`<span class="nbadge" style="display:block">${t.badge}</span>`:`<span class="nbadge"></span>`);
-    return `<button class="nt${A.view===t.id?" on":""}" onclick="sv('${t.id}')" style="font-size:12px"><em>${t.ic}</em>${badge}${t.lb}</button>`;
+    var _tips={accueil:"Vue d'ensemble",monplanning:"Votre calendrier mensuel",planning:"Planning de toutes les \u00e9quipes",departs:"Ordres de d\u00e9part par \u00e9quipe",chat:"Messages entre coll\u00e8gues",ia:"Posez vos questions",admin:"Panneau administration",gestionlive:"Gestion en direct"};
+    return `<button class="nt${A.view===t.id?" on":""}" onclick="sv('${t.id}')" title="${_tips[t.id]||t.lb}" style="font-size:12px"><em>${t.ic}</em>${badge}${t.lb}</button>`;
   }).join("")}</div>`;
 }
 
