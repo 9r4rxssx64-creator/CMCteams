@@ -5789,7 +5789,8 @@ function vMonPlanning(){
   var totWork=0,totCp=0,totM=0,totRRT=0,totAF=0,totRH=0;
   // v9.66 Planning audit : calcul s\u00e9rie cons\u00e9cutive de jours travaill\u00e9s (alerte fatigue)
   var _maxConsec=0,_curConsec=0,_curConsecStart=0;
-  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
+  var totCDP=0,totConv=0;
+  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_c.endsWith("'"))totConv++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
   var h='<div class="page bg-casino" style="position:relative">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
     +empAvatarHtml(emp,40,tcc)
@@ -5871,6 +5872,8 @@ function vMonPlanning(){
       +'<div style="font-size:'+(code.length>4?'11':'12')+'px;font-weight:800;color:'+codeColor+';line-height:1.2">'+(code||'<span style="opacity:.15">\u00b7</span>')+'</div>'
       +(_timeLabel?'<div style="font-size:8px;color:'+codeColor+';opacity:.75;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:11px;color:#c9a227;font-weight:800">\u2191'+depPos+'</div>':"")
+      +(code.endsWith("*")?'<div style="font-size:7px;color:#e09848;font-weight:800;line-height:1">\u2615</div>':"")
+      +(code.endsWith("'")?'<div style="font-size:7px;color:#e08080;font-weight:800;line-height:1">\ud83c\udfa9</div>':"")
       +'</div>';
   }
   h+='</div>';
@@ -5882,6 +5885,8 @@ function vMonPlanning(){
   if(totRRT)statItems.push({n:totRRT,lb:"RRT",c:"#c07830"});
   if(totAF)statItems.push({n:totAF,lb:"Formation",c:"#4a72a8"});
   if(totRH)statItems.push({n:totRH,lb:"Repos",c:"#3a4a3a"});
+  if(totCDP)statItems.push({n:totCDP,lb:"\u2615 CDP",c:"#e09848"});
+  if(totConv)statItems.push({n:totConv,lb:"\ud83c\udfa9 Conv.",c:"#e08080"});
   h+='<div class="card" style="padding:10px"><div style="font-size:13px;color:#a0cca0;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">R\u00e9capitulatif '+MFR[A.month]+'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">';
   statItems.forEach(function(s){
