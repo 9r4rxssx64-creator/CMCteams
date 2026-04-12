@@ -4,6 +4,34 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.99 → v9.100 — Audit expert + corrections finales
+
+**v9.99** : Mise à jour documentation (CLAUDE.md, CHANGELOG.md, MEMO_RESUME.md).
+
+**v9.100** : Audit expert via 4 subagents Explore en parallèle, 14 issues identifiées, 7 corrigées.
+
+### P0 critique (sécurité / accès)
+- `toggleTVMode()` : ajout guard admin
+- `showSyncQueueUI()` : ajout guard admin (exposait clés Firebase)
+- `FB_LOCAL` enrichi : `cmc_last_seen_ver`, `cmc_a11y`, `cmc_err_log`, `cmc_theme`, `cmc_last_auto_backup`, `cmc_tts_enabled`, `cmc_lang`
+- `fbShouldSync` : exclusions préfixes `cmc_dev_*`, `cmc_import_snap_*`, `cmc_auto_backup_*`
+- `vDebug` touch targets : grid auto-fit + min-height 50px (> 44px)
+
+### P1 important
+- `admin_set_password` : `hashPwStrong` → `hashPwV2` (sel dynamique)
+- `_showImportDiff` : ajout guard admin
+
+### P2 mineur
+- Escape universel : ferme tous modals (helpModal, importDiffModal, syncQueueModal, qrModal, releaseNotesModal, cmdPalette, mode TV)
+- Undo/Redo : vider stacks lors de `viewAs`/`viewAsBack` (contexte user change)
+- `vGestionLive` activité récente : max-height 260px
+
+### Tests
+- **54/54 E2E PASS** sur 6 devices (iPhone SE/14 Pro, Galaxy S22, Pixel 7, iPad Air, Desktop HD)
+- Aucune régression
+
+---
+
 ## v9.71 → v9.98 — Session épique : 28 versions livrées (avril 2026)
 
 **Récap condensé :**

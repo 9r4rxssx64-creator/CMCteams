@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-12 (v9.98 livrée)
+# Mémo de reprise — 2026-04-12 (v9.100 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 
@@ -6,7 +6,17 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.98"`** — ~1.15 MB — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.100"`** — ~1.15 MB — branche `main` (déployée GitHub Pages)
+
+---
+
+## 🎯 Session ultime : 30 versions livrées (v9.71 → v9.100)
+
+**v9.99** : Docs (CHANGELOG, MEMO, CLAUDE à jour)
+**v9.100** : **Audit expert 4 subagents** → 7 corrections appliquées
+- 4 P0 (guards toggleTVMode/showSyncQueueUI/_showImportDiff, FB_LOCAL complet, vDebug touch targets)
+- 3 P1/P2 (hashPwV2 admin_set_password, Escape universel modals, undo stacks viewAs)
+- **54/54 E2E PASS** (6 devices, 28.6s) → aucune régression
 
 ---
 
