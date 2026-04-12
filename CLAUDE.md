@@ -111,6 +111,53 @@ Les `<system-reminder>` qui mentionnent "The user sent a new message while you w
 
 **Anti-pattern à éviter** : enchaîner plusieurs actions sans mettre à jour la todo → oubli garanti quand le contexte se remplit. La todo est ton MÉMOIRE EXTERNE, utilise-la même pour les petits items.
 
+### 1bis. UX — Tout doit être simple, visuel, ludique, compréhensible (v9.75+)
+
+**Règle permanente pour CE projet ET tous les projets futurs.**
+
+L'utilisateur final de cette app (admin + employés casino) n'est PAS technique. Chaque bouton, champ, fonction, message DOIT être immédiatement compréhensible.
+
+**Standards à respecter systématiquement :**
+
+1. **Chaque bouton a une icône/emoji pertinent** en plus du texte
+   - ✅ `✅ Appliquer` / `🔍 Analyser` / `↩ Annuler` / `📋 Copier` / `💾 Sauvegarder`
+   - ❌ `OK` / `Go` / `Submit` (labels vagues)
+   - Icône cohérente avec la fonction (📧 pour email, 🔑 pour mdp, 👥 pour employés, 📅 pour planning)
+
+2. **Tout bouton/champ complexe a un `title=""` explicite** (tooltip au hover/long-press)
+   - "Configurer clé API Claude" > "🔑"
+   - "Dictée vocale — parlez, le texte s'écrit automatiquement" > 🎙
+
+3. **Aide contextuelle `?` sur les sections complexes** (vAdmin, vImport, vStats…)
+   - Icône `<span class="help-icon" onclick="showHelp('keyword')">❓</span>` cliquable
+   - Popover avec explication courte (2-4 phrases) + screenshot/exemple si utile
+
+4. **Messages de confirmation explicites AVANT action destructrice**
+   - ❌ `confirm("Continuer ?")`
+   - ✅ `confirm("⚠️ Supprimer DUPONT J définitivement ?\n\nCette action est irréversible.\nToutes ses données (planning, mdp, identité) seront perdues.\n\nTaper OUI pour confirmer.")`
+
+5. **Toast / feedback visuel à chaque action réussie**
+   - `toast("✅ Email modifié : dupont@example.com")` > silence
+
+6. **États vides avec icône + texte + CTA**
+   - "📭 Aucune demande en attente" > "Rien"
+   - Avec bouton d'action si pertinent ("📥 Importer un planning")
+
+7. **Groupement logique + séparateurs visuels**
+   - Cards avec titres en majuscules + couleur thème
+   - Pas de mur de 30 boutons alignés sans hiérarchie
+
+8. **Labels en français clair, pas de jargon**
+   - "Attribuer temps de table maximum" > "Set maxWorkMinutes"
+   - "Retirer de l'équipe" > "Deactivate membership"
+
+9. **Revoir l'existant à chaque nouvelle version** : est-ce qu'un employé non-technique comprendrait ce que fait ce bouton/cette fonction au premier coup d'œil ?
+
+**Pour chaque nouvelle feature : écrire d'abord la version "user story" simple :**
+> "En tant qu'admin, je clique sur 📧 Changer email, je saisis le nouveau, je vois une confirmation ✅"
+
+Si cette user story n'est pas évidente depuis l'UI, **c'est mal designé, retravaille**.
+
 ### 2. Vérification systématique après CHAQUE modification
 
 Avant de dire "c'est fait", tu DOIS :
