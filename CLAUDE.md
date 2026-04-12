@@ -103,8 +103,13 @@ node tools/video/make-demo.js --skip-capture # Sans Puppeteer
 3. **Reprendre** la tâche courante OU basculer sur la nouvelle si elle est plus prioritaire
 4. **Jamais** répondre "OK je le ferai après" sans l'avoir écrit dans la todo list
 5. **Jamais** clôturer une session sans avoir vérifié que tous les items sont `completed`
+6. **Taguer la demande** avec `[CATÉGORIE]` dans le `TodoWrite.content` : `[CHAT]`, `[PLANNING]`, `[IA]`, `[SÉCU]`, `[IMPORT]`, `[ADMIN]`, `[UX]`, `[PERF]`, `[DOC]`, `[META]` — pour pouvoir regrouper/prioriser
+7. **Quand l'utilisateur envoie un message long avec plusieurs points** : décomposer en N todos distincts, un par point, même si c'est une question (marquer `[QUESTION]` et y répondre)
+8. **Avant toute réponse finale** : relire la todo list et confirmer à l'utilisateur ce qui est fait/pending
 
 Les `<system-reminder>` qui mentionnent "The user sent a new message while you were working" sont le signal OBLIGATOIRE de mettre à jour la roadmap avant de continuer.
+
+**Anti-pattern à éviter** : enchaîner plusieurs actions sans mettre à jour la todo → oubli garanti quand le contexte se remplit. La todo est ton MÉMOIRE EXTERNE, utilise-la même pour les petits items.
 
 ### 2. Vérification systématique après CHAQUE modification
 
