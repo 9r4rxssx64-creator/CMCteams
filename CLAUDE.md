@@ -1,6 +1,86 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.58.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.68.
+
+---
+
+## 🧰 Outils & réflexes expert (ajouté v9.68)
+
+> Boîte à outils personnelle pour éviter les erreurs et travailler plus vite. À consulter en début de session.
+
+### Outils d'analyse rapide
+
+| Besoin | Outil à utiliser | Pourquoi |
+|--------|-----------------|----------|
+| Recherche keyword ciblée | `Grep` | Instantané, ne pollue pas le contexte |
+| Fichier par nom/pattern | `Glob` | Plus rapide que `find` |
+| Lecture partielle d'un gros fichier | `Read offset+limit` | Évite "token limit exceeded" sur index.html (1.1 MB) |
+| Exploration ouverte multi-étapes | Subagent `Explore` | Délègue la lourdeur, rapport condensé |
+| Plan avant gros chantier | Subagent `Plan` | Évite de refactorer à l'aveugle |
+| **Audit parallèle** | **N subagents `Explore` en parallèle** sur zones distinctes | 4× plus rapide, contexte principal préservé |
+
+### Outils d'écriture précise
+
+| Action | Outil | Piège à éviter |
+|--------|-------|---------------|
+| Changer N lignes existantes | `Edit` (pas `Write`) | Un `Write` complet écrase tout |
+| Rename global | `Edit replace_all:true` | Pas Bash+sed |
+| Nouveau fichier | `Write` | Vérifier qu'il n'existe pas déjà avec `Glob` |
+| Lot de modifs liées | Plusieurs `Edit` séquentiels | Pas un méga `Edit` fragile |
+
+### Outils de validation systématique (à lancer APRÈS chaque batch)
+
+```bash
+# Syntaxe JS (OBLIGATOIRE avant commit — attrape 95% des erreurs)
+node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const s=h.lastIndexOf('<script>'),e=h.lastIndexOf('</script>');fs.writeFileSync('/tmp/t.js',h.slice(s+8,e));" && node --check /tmp/t.js && echo "✅ OK"
+
+# Taille fichier (dérive suspecte si > 1.3 MB)
+wc -c index.html
+
+# XSS potentiels non échappés
+grep -n 'innerHTML' index.html | grep -v 'esc(' | head -20
+
+# Marqueurs de conflit oubliés
+grep -c "^<<<<<<\|^======\|^>>>>>>" index.html CLAUDE.md
+
+# Diff pour détecter régressions
+git diff --stat HEAD
+```
+
+### Outils vidéo (ajouté v9.68 — `tools/video/`)
+
+```bash
+node tools/video/make-demo.js              # Pipeline complet MP4
+node tools/video/make-demo.js --fast       # Durées réduites
+node tools/video/make-demo.js --skip-capture # Sans Puppeteer
+```
+
+### Réflexes anti-erreur
+
+1. **Avant de modifier une fonction** → la lire intégralement avec `Read`, pas juste ses extraits `Grep`
+2. **Avant de toucher `index.html`** → checker `wc -c` avant/après (dérive = regression)
+3. **Avant un rebase** → checklist post-rebase (règle #21 dans "Erreurs connues")
+4. **Avant un commit** → 4 commandes de validation ci-dessus
+5. **Si `prompt too long`** → utiliser subagent `Explore` pour la partie lourde, ou `Read offset+limit`
+6. **Si un `Edit` échoue** → relire le fichier (il a pu être modifié par un linter entre-temps)
+7. **Demande multi-étape** → TodoWrite immédiat, pas "je le ferai après"
+8. **Nouveau module complexe** → subagent `Explore` pour audit indépendant une fois fini
+
+### Stratégies qui ont marché
+
+- **Parallélisme tool calls** : lancer 3-5 `Grep`/`Read`/`Bash` non dépendants dans un seul message → gain de vitesse énorme
+- **Background bash (`run_in_background`)** pour les commandes longues (`npm install`, génération vidéo, apt), continuer en parallèle
+- **Subagents en parallèle** pour auditer 4 zones du code simultanément → contexte principal reste propre
+- **CHANGELOG.md séparé** : garder CLAUDE.md < 45 KB, sinon "prompt too long" récurrent
+
+### Pièges connus (à ne JAMAIS refaire)
+
+- ❌ Relancer 5× la même commande qui échoue sans diagnostiquer
+- ❌ Écraser index.html avec `Write` pour "un petit changement" → toujours `Edit`
+- ❌ Bash avec `;` dans un filtergraph ffmpeg non quoté → shell interprète
+- ❌ Oublier `esc()` sur données user avant `innerHTML`
+- ❌ Commit sans syntax check JS → casse l'app en production
+- ❌ Remettre tout l'historique versions dans CLAUDE.md (déporter dans CHANGELOG.md)
 
 > 📌 **Reprise de session** : voir `MEMO_RESUME.md` à la racine pour savoir où j'en suis.
 
@@ -127,7 +207,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.68"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.69"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 - **Taille fichier :** ~620 KB (HTML + CSS + JS)
@@ -563,6 +643,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 | Version | Changements |
 |---------|-------------|
+| **v9.69** | **Audit expert 4 subagents parallèles + corrections**. Fix P1 : `cmc_motd` maintenant géré dans `fbApplyData` (accepte null=effacé, validation type objet). Fix P2 : auteur MOTD supprimé affiche "(supprimé)" au lieu de "undefined" ; bandeau MOTD gagne `word-break:break-word` + `overflow-wrap:anywhere` pour textes longs sans espaces. Section **"Outils & réflexes expert"** ajoutée dans CLAUDE.md (boîte à outils, commandes de validation, pièges à éviter). |
 | **v9.68** | **Message du jour admin + sync Firebase**. Store `A.motd={text,ts,author}` dans FB_FIX (`cmc_motd`). Fonctions `setMotd`/`clearMotd`/`adminSetMotdFromInput` (guard AID, max 500 car., audit `motd_set`/`motd_clear`). UI admin : textarea + boutons Publier/Effacer. UI employé : bandeau doré 📢 en haut de `vAccueil` (pre-wrap, date/heure). |
 | **v9.67** | **Version majeure 35+ fonctionnalités**. Splash screen, Firebase différé, auto-save fiches, CODE_HOURS complet, solde CP, dashboard RH + courbe 12 mois SVG, TTS/STT, compte visiteur U007, thèmes (Casino/Clair/Nuit), export PDF, templates planning, multi-langues FR/EN/IT, swipe mois, admin réorganisé 7 catégories, PWA installable, mode présentation. IA locale enrichie (36 outils). AUDIT 23/23 PASS. |
 | **v9.66** | Lisibilité (ratio WCAG AA), tokens CSS typography+blur centralisés, titres serif Garamond. |

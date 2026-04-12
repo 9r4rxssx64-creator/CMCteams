@@ -4,6 +4,31 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.69 — Audit expert + corrections post-audit
+
+**Audit parallèle avec 4 subagents Explore** (sécurité, logique métier, UI/CSS/mobile, feature MOTD).
+
+### Fixes P1 (importants)
+- **`fbApplyData`** : `cmc_motd` maintenant géré explicitement
+  - Accepte `null` (effacement depuis un autre appareil) → set `A.motd=null` + localStorage + dcDebounced
+  - Validation type : refuse tout sauf `null` ou `{text,ts,author}` (protection anti-corruption)
+  - Avant : effacement distant silencieusement ignoré (bug sync multi-appareils)
+
+### Fixes P2 (mineurs UX)
+- **vAdmin MOTD** : auteur supprimé affiche `par U11804 (supprimé)` au lieu de `par undefined`
+- **vAccueil bandeau MOTD** : ajout `word-break:break-word` + `overflow-wrap:anywhere` pour empêcher débordement horizontal sur textes longs sans espaces (iPhone SE 375px)
+
+### Méta
+- **CLAUDE.md** : nouvelle section **"🧰 Outils & réflexes expert"** en tête de fichier — boîte à outils personnelle pour futures sessions (outils par besoin, commandes de validation, pièges connus, stratégies qui marchent)
+
+### Non corrigés (après analyse)
+- `table-layout:fixed` dans vPlan (ligne 6802) : faux positif — la table a bien une `width:...px` explicite, comportement correct
+- `width` sur vDeparts (ligne 7143) : `min-width:100%` est intentionnel pour sticky headers
+- Toast `c.icon` sans esc : emoji hardcodé dans `conf` (pas de user input), risque théorique uniquement
+- Roulette chef forcé senior (ligne 12416) : règle métier existante, ne pas modifier sans validation utilisateur
+
+---
+
 ## v9.68 — Message du jour admin + sync Firebase
 
 - **Nouveau store** `A.motd` : `{text, ts, author}` ou `null`
