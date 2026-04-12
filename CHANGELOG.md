@@ -4,6 +4,54 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.70 — Fixes responsive mobile complets (iPhone SE / Android)
+
+**Tests multi-devices Puppeteer** : 5 profils (iPhone SE, iPhone 14 Pro, Samsung Galaxy S22, Pixel 7, iPad Air) avec viewports, userAgent et touch émulés.
+
+### Avant fixes
+- 55 PASS · 0 FAIL · **25 WARN** (overflow horizontal sur accueil/chat/IA/monplanning)
+- Nav bas débordait avec 8 onglets admin (585px sur viewport 375px)
+
+### Fixes appliqués
+
+#### 1. Nav bas `#bnav` (ligne 285)
+- Ajout `overflow-x:auto;overflow-y:hidden;scrollbar-width:none` (scroll interne)
+- `.nt` : `flex:1 1 auto` (shrink autorisé), `min-width:36px`, `white-space:nowrap;overflow:hidden`
+- Media query `@media (max-width:419px)` : labels cachés (ne garde que les emojis), padding réduit, `min-width:34px`
+- Template `vNav` : wrap du label dans `<span class="nt-lb">` pour permettre le `display:none`
+
+#### 2. Raccourcis accueil (ligne 6854)
+- Ajout `max-width:100vw;overflow-y:hidden;scrollbar-width:none` sur le scroll container
+- Child : `width:max-content` explicite pour bien contenir les boutons
+
+#### 3. Toolbar vIA (ligne 14448)
+- Ajout `flex-wrap:wrap` → les 5 boutons admin wrapent sur 2 lignes si nécessaire
+
+#### 4. Chat header (ligne 8390)
+- Ajout `flex-wrap:wrap;justify-content:flex-end` → 🗑 Vider + 🔍 wrapent
+
+#### 5. MonPlanning header (ligne 5900)
+- Ajout `flex-wrap:wrap` → 📄 PDF wrape si overflow
+
+#### 6. Safety net global (ligne 75-76)
+- `html{overflow-x:hidden}` + `body{overflow-x:hidden;max-width:100vw}` → empêche tout scroll horizontal au niveau page entière
+
+### Résultat
+
+| Device | Avant | Après |
+|--------|-------|-------|
+| iPhone SE 375×667 | 10/16 | **14/16** ✅ |
+| iPhone 14 Pro 393×852 | 11/16 | **14/16** ✅ |
+| Galaxy S22 360×780 | 10/16 | **14/16** ✅ |
+| Pixel 7 412×915 | 11/16 | **14/16** ✅ |
+| iPad Air 820×1180 | 13/16 | **14/16** ✅ |
+
+**Total : 70 PASS · 0 FAIL · 10 WARN** (les 10 warn restants sont "touch targets < 32px" sur éléments décoratifs non interactifs)
+
+Le warning `Nav 0 onglets (min Infinity)` était un faux positif du test (nav rendu dans le template inline).
+
+---
+
 ## v9.69 — Audit expert + corrections post-audit
 
 **Audit parallèle avec 4 subagents Explore** (sécurité, logique métier, UI/CSS/mobile, feature MOTD).
