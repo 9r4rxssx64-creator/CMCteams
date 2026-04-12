@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-12 (v9.70 livrée)
+# Mémo de reprise — 2026-04-12 (v9.98 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 
@@ -6,51 +6,85 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.70"`** — ~1.08 MB — branche `main` (déployée)
+**`APP_VER = "v9.98"`** — ~1.15 MB — branche `main` (déployée GitHub Pages)
 
 ---
 
-## Livré cette session
+## Session épique : 28 versions livrées (v9.71 → v9.98)
 
-| Version | Contenu |
-|---------|---------|
-| **Vidéo démo** | Pipeline vidéo complet dans `tools/video/` (Puppeteer + node-canvas + FFmpeg) — MP4 1:33 / 1080p / 16 MB à la racine (`CMCTeams_Demo.mp4`) |
-| **v9.68** | Message du jour admin + sync Firebase (`cmc_motd`) — textarea admin + bandeau doré accueil |
-| **v9.69** | Audit expert parallèle (4 subagents Explore) + fixes P1 sync Firebase MOTD + P2 UX + nouvelle section "🧰 Outils & réflexes expert" dans CLAUDE.md |
-| **v9.70** | Fixes responsive mobile complets : tests Puppeteer multi-devices (iPhone SE/14 Pro, Galaxy S22, Pixel 7, iPad), fix nav bas + toolbars IA/Chat/MonPlanning, safety net `html,body{overflow-x:hidden}`. 70 PASS / 0 FAIL |
+### 🎯 Capacités finales
+
+| Catégorie | Features |
+|-----------|----------|
+| **IA** | 71 outils (24 admin) • Mode proactif • Auto-diagnostic • Générateur mdp |
+| **Sécurité** | Hash v2 sel dynamique • Device fingerprint • Circuit breaker • Proxy template |
+| **Import** | Preview/Rollback/SHA-256 • Matching Levenshtein + Metaphone • Validation sommes |
+| **UX** | Command palette ⌘K • Undo/Redo ⌘Z • Aide `?` (16 sujets) • Dark/Light/Auto |
+| **Performance** | IndexedDB wrapper • Lazy-loader • Throttle • Error/Perf monitoring |
+| **A11y AAA** | Skip-link • ARIA landmarks • High contrast • Font scaler • Reduce motion |
+| **Resilience** | Retry jitter • Circuit breaker 5/60s • Sync queue UI • Offline-first |
+| **PWA** | Badge API • Web Share • Wake Lock • Shortcuts long-press |
+| **Dashboard** | LIVE temps réel • Mode TV grand écran • Release notes in-app |
+| **Tests** | E2E Playwright 54 tests × 6 devices • CI/CD GitHub Actions |
+
+### 📁 Fichiers livrés
+
+- `index.html` — app principale (v9.98, ~1.15 MB)
+- `manifest.json` — PWA avec 4 shortcuts
+- `firebase-rules.json` — template Firebase Security Rules
+- `proxy-anthropic-cloudflare.js` — template proxy sécurisé IA
+- `tools/tests/e2e.test.js` — suite de tests E2E automatisés
+- `tools/video/` — pipeline génération vidéo
+- `.github/workflows/tests.yml` — CI/CD
+- `CMCTeams_Demo.mp4` — vidéo de démo (1:33, 1080p)
+- `CLAUDE.md` / `CHANGELOG.md` / `README.md` — docs
 
 ---
 
-## Nettoyage effectué
-
-- **CLAUDE.md** : historique v8.83→v9.67 extrait vers `CHANGELOG.md` (74 KB → 44 KB, -40%)
-- **CHANGELOG.md** : créé à la racine avec historique complet
-- **RECAP.md** et **RELAIS.md** : supprimés (obsolètes v8.x, info déjà dans CLAUDE.md + CHANGELOG.md)
-- **README.md** : enrichi (résumé + lien vidéo + architecture)
-
----
-
-## Outils intégrés au projet (nouveaux)
+## Workflow testing
 
 ```bash
-# Pipeline vidéo réutilisable
-node tools/video/make-demo.js              # MP4 complet
-node tools/video/make-demo.js --fast       # Rapide
-node tools/video/make-demo.js --format all # MP4 + WebM + GIF
+# Tests E2E locaux (6 devices, ~30s)
+node tools/tests/e2e.test.js
 
-# Dépendances: puppeteer, canvas, sharp, @ffmpeg-installer/ffmpeg
-# (npm install à la racine)
+# Validation syntaxe JS
+node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const s=h.lastIndexOf('<script>'),e=h.lastIndexOf('</script>');fs.writeFileSync('/tmp/t.js',h.slice(s+8,e));" && node --check /tmp/t.js
+
+# Taille fichier
+wc -c index.html
 ```
 
 ---
 
-## Prochaines pistes
+## Prochaines pistes (v9.99+)
 
-- Merger `claude/create-demo-video-Ey9Hu` dans `main` pour déploiement GitHub Pages
-- Roulette Monte-Carlo (AM 2019-819, 39 cases) dans JEUX + JEUX_SBM
-- Rate limiting IA, token budget par user
-- Tests E2E Puppeteer sur les flux critiques (connexion, MOTD, planning)
+### Priorité haute (demandé par utilisateur, attend inputs)
+- **Tables casino amovibles** : quand plans + numéros + jeux fournis
+- **Horaires inspecteur/superviseur/pitboss** : quand les codes sont fournis
+
+### Améliorations continues
+- i18n étendu (EN/IT/DE complets) + traduction chat via IA
+- Export PDF planning individuel (via window.print + CSS @media print)
+- QR code partage planning
+- Drag & drop planning (shifts)
+- Bulk actions UI (checkbox selection)
+- Notifications push serveur-less
+- Onboarding interactif complet
+
+### Si scale
+- Migration Firebase Auth + custom tokens
+- Backend Cloudflare Workers + D1 (si > 10k users)
+- Multi-tenancy (si plusieurs casinos)
 
 ---
 
-*Dernière mise à jour : 2026-04-12 — v9.69*
+## Règles permanentes (ne jamais oublier)
+
+Voir `CLAUDE.md` sections :
+- **§1bis UX** : tout doit être simple/visuel/ludique/compréhensible
+- **§Outils & réflexes expert** : boîte à outils pour sessions futures
+- **§Erreurs connues** : 23 pièges documentés à ne JAMAIS refaire
+
+---
+
+*Dernière mise à jour : 2026-04-12 — v9.98 • 28 versions livrées • 54/54 E2E PASS*

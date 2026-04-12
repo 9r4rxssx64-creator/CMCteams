@@ -4,6 +4,66 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.71 → v9.98 — Session épique : 28 versions livrées (avril 2026)
+
+**Récap condensé :**
+
+### Sécurité
+- **v9.79** Hash v2 sel dynamique par user + device fingerprint anomaly detection
+- **v9.81** Backup auto quotidien (7j rotation) + Firebase Security Rules template
+- **v9.87** Générateur mots de passe sécurisés (14 car., strength meter)
+- **v9.92** Proxy Anthropic template (Cloudflare Workers gratuit)
+
+### Import fidélité P0+++
+- **v9.74** Preview/Diff avant commit + Snapshot/Rollback + Signature SHA-256
+- **v9.78** Matching Levenshtein + Metaphone + validation sommes
+
+### IA surpuissante
+- **v9.73** 50 outils (19 admin)
+- **v9.77** 63 outils + mode proactif
+- **v9.87** 71 outils au total + password generator + CSV export + audit report
+- **v9.90** Réactions emojis chat
+
+### UX / Productivité
+- **v9.75** Système d'aide contextuel `?` + 15 sujets
+- **v9.82** Command palette ⌘K (42 actions) + shortcuts clavier (? 1-9)
+- **v9.83** Undo/Redo global ⌘Z / ⌘⇧Z (50 actions)
+- **v9.84** Dashboard LIVE + Mode TV grand écran (Wake Lock)
+- **v9.85** Suggestions proactives + Dark/Light/Auto theme
+- **v9.97** Release notes in-app + auto-affichage nouvelle version
+
+### Performance
+- **v9.86** IndexedDB wrapper + lazy-loader + throttle helper
+- **v9.89** Error monitoring local + Performance tracking (Core Web Vitals)
+
+### Accessibilité AAA
+- **v9.94** Skip links + ARIA + High contrast + Font scaler + Reduce motion
+
+### Resilience
+- **v9.95** Retry jitter exponentiel + UI visible file sync
+- **v9.96** Circuit breaker Firebase (5 échecs = 60s cooldown)
+
+### PWA avancée
+- **v9.93** Badge API + Web Share + Wake Lock + Shortcuts long-press
+
+### Qualité / CI
+- **v9.91** Page Debug admin (perf + erreurs + santé) + QR code generator
+- **v9.98** Tests E2E Playwright 54 tests × 6 devices + CI/CD GitHub Actions
+
+### Fixes / Polish
+- **v9.71** EmailJS retiré + validation nouveaux + fix alignement planning
+- **v9.72** STT (dictée) réparée + TTS documenté
+- **v9.76** 8 sujets d'aide supplémentaires
+- **v9.80** Horaires multi-rôles (inspecteur/sup/pitboss) préparation
+- **v9.88** UX helpers (emptyState, skeleton, confirmDanger, statusBadge)
+
+### Tests finaux v9.98
+- **54/54 tests E2E PASS** (6 devices × 9 checks)
+- 0 erreur runtime
+- 27+ features critiques validées sur iPhone SE, iPhone 14 Pro, Galaxy S22, Pixel 7, iPad Air, Desktop HD
+
+---
+
 ## v9.70 — Fixes responsive mobile complets (iPhone SE / Android)
 
 **Tests multi-devices Puppeteer** : 5 profils (iPhone SE, iPhone 14 Pro, Samsung Galaxy S22, Pixel 7, iPad Air) avec viewports, userAgent et touch émulés.
