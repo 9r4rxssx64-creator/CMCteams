@@ -1,0 +1,8 @@
+# Dépendances Node.js
+node_modules/
+package-lock.json
+
+# Artefacts vidéo intermédiaires
+tools/video/frames/
+tools/video/output/_palette.png
+tools/video/assets/*.png
