@@ -1,0 +1,57 @@
+{
+  "_comment": "Firebase Realtime Database Security Rules pour CMC Teams v9.81+",
+  "_instructions": [
+    "1. Aller sur https://console.firebase.google.com/project/cmcteams-c16ab/database/cmcteams-c16ab-default-rtdb/rules",
+    "2. Copier-coller ces règles",
+    "3. Cliquer Publier",
+    "",
+    "IMPORTANT : ces règles sont MINIMALES. L'app actuelle n'utilise pas l'auth Firebase (auth maison via password hash). Pour une sécurité réelle, il faudrait migrer l'auth vers Firebase Auth + UID.",
+    "",
+    "En attendant, ces règles limitent au moins :",
+    "- Lecture : tous (données planning nécessaires au front)",
+    "- Écriture : uniquement données attendues, avec validation schéma",
+    "- Pas d'écriture de clés arbitraires (protection pollution)"
+  ],
+  "rules": {
+    "cmcteams": {
+      ".read": true,
+      ".write": true,
+      "$key": {
+        ".validate": "$key.matches(/^cmc_[a-z0-9_\\-]+$/)"
+      },
+      "cmc_motd": {
+        ".validate": "newData.hasChildren(['text','ts','author']) || newData.val() === null"
+      },
+      "cmc_e": {
+        ".validate": "newData.isString() == false"
+      },
+      "cmc_ov": {
+        ".validate": "newData.isString() == false"
+      },
+      "cmc_pw": {
+        ".validate": "newData.isString() == false",
+        "$uid": {
+          "clear": {
+            ".validate": false,
+            "_comment": "Bloque l'écriture du mot de passe en clair vers Firebase"
+          }
+        }
+      },
+      "cmc_admin_pin": {
+        ".write": false,
+        "_comment": "Le PIN admin ne doit JAMAIS aller sur Firebase — uniquement local"
+      },
+      "cmc_ia_key": {
+        ".write": false,
+        "_comment": "Clé API Anthropic ne doit JAMAIS aller sur Firebase"
+      }
+    }
+  },
+  "_recommandations_futures": [
+    "MIGRATION COMPLETE (v10+) : utiliser Firebase Auth avec custom tokens",
+    "- Backend (Cloud Functions) valide le password avec hashPwV2",
+    "- Émet un custom token Firebase avec claims {role: 'admin'|'employee', uid}",
+    "- Règles deviennent : .read/.write = auth != null && auth.token.role == 'admin'",
+    "- Protection CSRF automatique, pas de secrets client-side"
+  ]
+}
