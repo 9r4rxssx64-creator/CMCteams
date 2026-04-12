@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-10 (v9.65 livrée)
+# Mémo de reprise — 2026-04-12 (v9.69 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 
@@ -6,30 +6,50 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.65"`** — 13 248 lignes, 972 KB — branche `main`
+**`APP_VER = "v9.69"`** — ~1.05 MB — branche `claude/create-demo-video-Ey9Hu` (à merger dans `main`)
 
 ---
 
-## Livré cette session (v9.62 → v9.65)
+## Livré cette session
 
 | Version | Contenu |
 |---------|---------|
-| **v9.62** | Bulles quasi-transparentes, iOS zoom fix, CSP élargie, upload modéré, PLANS CMC/CDP (9+4), galerie 75 photos, IA enrichie max_tokens 4096, vConvention Lieux, 15 tests |
-| **v9.63** | 28 outils IA tool use custom (23 lecture + 5 admin) — l'IA interroge TOUTE l'app en temps réel |
-| **v9.64** | JEUX_SBM 6 jeux Formation SBM 2016, vConvention toggle Express/SBM, +2 outils IA |
-| **v9.65** | Cadre légal monégasque (LOI_1103, OS_8929, AM_88_384), vConvention onglet Loi, +2 outils IA (total 30), 16 prompts IA enrichis, buildIASystemPrompt cadre légal |
-
-**Total : 30 outils IA, 7 onglets vConvention, 75 photos galerie, ~2800 lignes ajoutées.**
+| **Vidéo démo** | Pipeline vidéo complet dans `tools/video/` (Puppeteer + node-canvas + FFmpeg) — MP4 1:33 / 1080p / 16 MB à la racine (`CMCTeams_Demo.mp4`) |
+| **v9.68** | Message du jour admin + sync Firebase (`cmc_motd`) — textarea admin + bandeau doré accueil |
+| **v9.69** | Audit expert parallèle (4 subagents Explore) + fixes P1 sync Firebase MOTD + P2 UX + nouvelle section "🧰 Outils & réflexes expert" dans CLAUDE.md |
 
 ---
 
-## Prochaine version (v9.66+)
+## Nettoyage effectué
 
-- Roulette Monte-Carlo (AM 2019-819, 39 cases) : ajout dans JEUX + JEUX_SBM
-- Nouveaux jeux manquants (ram, tq, boule, bq, paig, carib, stud, war)
-- Galerie photos intégrée dans vConvention onglet Lieux
-- Sécurité avancée : rate limiting IA, token budget par user
+- **CLAUDE.md** : historique v8.83→v9.67 extrait vers `CHANGELOG.md` (74 KB → 44 KB, -40%)
+- **CHANGELOG.md** : créé à la racine avec historique complet
+- **RECAP.md** et **RELAIS.md** : supprimés (obsolètes v8.x, info déjà dans CLAUDE.md + CHANGELOG.md)
+- **README.md** : enrichi (résumé + lien vidéo + architecture)
 
 ---
 
-*Dernière mise à jour : 2026-04-10 — v9.65*
+## Outils intégrés au projet (nouveaux)
+
+```bash
+# Pipeline vidéo réutilisable
+node tools/video/make-demo.js              # MP4 complet
+node tools/video/make-demo.js --fast       # Rapide
+node tools/video/make-demo.js --format all # MP4 + WebM + GIF
+
+# Dépendances: puppeteer, canvas, sharp, @ffmpeg-installer/ffmpeg
+# (npm install à la racine)
+```
+
+---
+
+## Prochaines pistes
+
+- Merger `claude/create-demo-video-Ey9Hu` dans `main` pour déploiement GitHub Pages
+- Roulette Monte-Carlo (AM 2019-819, 39 cases) dans JEUX + JEUX_SBM
+- Rate limiting IA, token budget par user
+- Tests E2E Puppeteer sur les flux critiques (connexion, MOTD, planning)
+
+---
+
+*Dernière mise à jour : 2026-04-12 — v9.69*
