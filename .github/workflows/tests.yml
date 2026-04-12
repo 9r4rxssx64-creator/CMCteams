@@ -1,0 +1,84 @@
+name: Tests E2E + Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate index.html JS syntax
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('index.html', 'utf8');
+            const s = html.lastIndexOf('<script>');
+            const e = html.lastIndexOf('</script>');
+            fs.writeFileSync('/tmp/test.js', html.slice(s+8, e));
+          "
+          node --check /tmp/test.js
+          echo "✅ JS syntax OK"
+
+      - name: Validate JSON files
+        run: |
+          for f in manifest.json firebase-rules.json; do
+            if [ -f "$f" ]; then
+              node -e "JSON.parse(require('fs').readFileSync('$f'))" && echo "✅ $f valide"
+            fi
+          done
+
+      - name: Check no conflict markers
+        run: |
+          if grep -rE "^(<<<<<<|======|>>>>>>)" --include="*.html" --include="*.md" --include="*.json" .; then
+            echo "❌ Marqueurs de conflit Git trouvés"
+            exit 1
+          fi
+          echo "✅ Aucun marqueur de conflit"
+
+      - name: Check file sizes (sanity)
+        run: |
+          size=$(wc -c < index.html)
+          echo "📏 index.html = $size octets ($(($size / 1024)) KB)"
+          if [ $size -gt 2000000 ]; then
+            echo "⚠️  index.html > 2 MB, surveiller la dérive"
+          fi
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: syntax-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Puppeteer
+        run: |
+          npm init -y > /dev/null 2>&1 || true
+          npm install puppeteer@latest --no-save --silent
+
+      - name: Run E2E tests
+        run: node tools/tests/e2e.test.js
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures
+          path: |
+            index.html
+            tools/tests/e2e.test.js
+          retention-days: 7
