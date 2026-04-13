@@ -71,21 +71,45 @@ Rôles identifiés :
 
 ---
 
-## 🎰 Tables casino (futur)
+## 🎰 Plans casino & Tables
 
-L'admin a dit : *"Quand on fera le plan du casino avec l'étable, il faut que je
-puisse bouger les tables manuellement, les déplacer, les renommer, changer les
-numéros, les jeux exploités, que je puisse mettre des noms de salon (Atrium…).
-Tables amovibles selon moments (travaux, manifestations)."*
+### ✅ Plans des casinos DÉJÀ dans l'app (depuis v9.62)
 
-**STATUS : En attente des plans + numéros + jeux par table**.
+**`PLANS_CMC`** (Casino de Monte-Carlo, ligne 1152 de index.html) :
+- 8 salles structurées : `renaissance`, `atrium`, `europe`, `ameriques`, `blanche`, `medecin`, `touzet`, `superprives`
+- Pour chaque salle : architecte, description historique, jeux exploités, dress code, accès, horaires
+- 6 annexes (Train Bleu, Salon Rose, Bars, Opéra Garnier, etc.)
+- Historique complet (fondation 1856 Charles III, extensions Garnier/Dutrou, etc.)
 
-Features attendues :
-- Drag & drop tables entre salons
-- Renommer / changer numéros
-- Assigner jeu par table
-- Salons configurables (Atrium, etc.)
-- Historique/versions selon événements (travaux, manifs)
+**`PLANS_CDP`** (Casino Café de Paris, ligne 1250) :
+- Zone principale + Electronic Gaming + 2 terrasses
+- Chiffres : 640 machines, 18 postes roulette élec, jackpot 1M€
+
+**Vue app** : accessible via onglet `vConvention` → "🏛️ Lieux" (3 sous-onglets CMC / CDP / Comparer)
+
+**Outils IA** :
+- `find_game_rooms(game, establishment)` : trouve les salles pour un jeu donné
+- `get_convention_article` : consultation réglementaire
+
+### ⏳ Ce qui MANQUE pour la gestion dynamique des tables
+
+L'admin a demandé : *"Tables amovibles, pouvoir bouger/renommer/changer numéros/jeux exploités, mettre des noms de salon, tables amovibles selon moments (travaux, manifestations)."*
+
+Ce qui existe déjà = description **statique** des salles et jeux possibles.
+Ce qui MANQUE = structure de **tables individuelles** (numéros, état dynamique, assignation).
+
+**Features à implémenter** :
+- Schéma `A.tables[]` avec : `{id, num, salle, jeu, ouverte, employe?, derniereModif}`
+- UI drag & drop entre salons
+- Éditeur : renommer table, changer numéro, changer jeu exploité
+- Renommer / ajouter salons configurables
+- Historique versions (snapshots selon événement : travaux, manif)
+- Intégration planning : affecter employé à table selon shift
+
+**En attente de l'admin** :
+- Numéros exacts des tables par salle (ex: Europe → tables 1-8 ?)
+- Jeu par défaut par numéro (ex: Table 1 Europe = Black-Jack ?)
+- Nom des salles en usage vs nom PDF officiel
 
 ---
 
