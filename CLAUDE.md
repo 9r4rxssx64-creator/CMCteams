@@ -111,6 +111,32 @@ Les `<system-reminder>` qui mentionnent "The user sent a new message while you w
 
 **Anti-pattern à éviter** : enchaîner plusieurs actions sans mettre à jour la todo → oubli garanti quand le contexte se remplit. La todo est ton MÉMOIRE EXTERNE, utilise-la même pour les petits items.
 
+### 1ter. NOTES_USER.md — Mémoire persistante des infos métier (v9.103+)
+
+**Règle absolue, non-négociable :**
+
+Dès que l'admin (Kevin DESARZENS / U11804) te donne une **info métier** — couleurs PDF,
+numéros de tables, horaires de rôles, règles spécifiques au casino, noms de salons,
+préférences, corrections d'erreurs passées — tu DOIS :
+
+1. **Enregistrer IMMÉDIATEMENT** dans `/home/user/CMCteams/NOTES_USER.md` (section appropriée)
+2. **Ne pas attendre** que l'admin redonne l'info plus tard
+3. **Lire NOTES_USER.md** au début de CHAQUE session (après CLAUDE.md)
+4. **Confirmer à l'admin** que c'est noté : "✅ Noté dans NOTES_USER.md section X"
+
+Exemples d'infos à enregistrer :
+- Couleurs exactes d'un code (screenshot PDF fourni)
+- Numéros de tables et jeux associés
+- Noms de salons (Atrium, Renaissance, …)
+- Horaires spécifiques d'un rôle (inspecteur, pitboss)
+- Noms d'employés particuliers / exceptions
+- Règles internes (rotation, pauses, priorités)
+- Préférences UX exprimées ("je veux tel bouton", "pas de confirmation sur…")
+
+**Sans NOTES_USER.md :** chaque session = l'admin doit tout ré-expliquer → perte de temps massive.
+
+
+
 ### 1bis. UX — Tout doit être simple, visuel, ludique, compréhensible (v9.75+)
 
 **Règle permanente pour CE projet ET tous les projets futurs.**
@@ -259,7 +285,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.100"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.103"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 - **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
@@ -807,7 +833,7 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.100";
+var APP_VER  = "v9.103";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```

@@ -4,6 +4,49 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.101 → v9.103 — Stabilité + couleurs PDF + NOTES_USER
+
+### v9.103 — Couleurs CODES calibrées sur le PDF SBM original
+
+Screenshots fournis par l'admin (planning avril 2026 v2) ont permis de
+remplacer les couleurs inventées par les VRAIES couleurs du PDF :
+- Horaires CMC : fonds pastel clairs (rose, jaune, orange pêche, vert tendre, bleu, lavande)
+- Variantes CCDP+CMC : orange pêche vif
+- Repos/congés : pastel lavande/rose/jaune canari/vert
+
+Cf. `NOTES_USER.md` pour la palette exacte.
+
+### v9.102 — Auto-vérification automatique post-import + 5 outils IA
+
+`doImport()` lance désormais AUTOMATIQUEMENT `_autoVerifyAfterImport(iy, im)` 400ms
+après le flush Firebase. Affiche un bandeau visuel (santé + 6 KPIs + warnings détaillés)
+dans `#impAutoVerify` + toast résumé.
+
+5 nouveaux outils IA (76 total) :
+- `deep_verify_import` : audit profond (couverture, codes inconnus avec positions, orphelins, hors limite, top codes)
+- `compare_import_to_reference` : diff A.overrides vs cmc_ref_YYYY-M
+- `check_planning_coherence` : cohérence métier (séries > 6j, repos < 8/mois)
+- `super_verify_import` : combine les 4 audits en 1 rapport
+- (confirmé `verify_import_integrity`)
+
+### v9.101 — Fix CRITIQUE crash Safari iOS + stabilité + lisibilité
+
+**Fix bug bloquant** : `SyntaxError: Invalid escape in identifier: '\'` causé par
+3 onclick inline avec `.replace(/'/g,"\\\\'")` mal escapé. Remplacé par :
+- Helper `_confirmValidateNewUser(empId)` pour validation nouveaux inscrits (ligne 11291)
+- `JSON.stringify(emp.name)` pour setCI (ligne 8919)
+- `JSON.stringify(n)` pour createEmpFromImport (ligne 15120)
+- Helper `_copyQR()` pour le QR code modal
+- Apostrophe courbe `'` dans l'historique de connexion
+
+**Null guards** : `A.user?.id`, EventSource fermé avant recréation, setTimeout .remove() null-safe.
+
+**Lisibilité textes** :
+- Variables texte remontées : #e0f0d8 → #eef8e4 (+8%), #a8c8a0 → #c0dcb8
+- `text-rendering:optimizeLegibility`, `-webkit-font-smoothing:antialiased`
+
+---
+
 ## v9.99 → v9.100 — Audit expert + corrections finales
 
 **v9.99** : Mise à jour documentation (CLAUDE.md, CHANGELOG.md, MEMO_RESUME.md).
