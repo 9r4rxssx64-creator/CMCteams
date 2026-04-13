@@ -52,6 +52,33 @@ Orange pêche vif `#ffb480` / texte `#a84018` — tous les codes `XX/Y*`.
 
 ---
 
+## 🎯 Détection secteur par compétences (v9.107)
+
+**Règle donnée par l'admin le 2026-04-13 :**
+
+| Compétences affichées | Fond case | Secteur |
+|----------------------|-----------|---------|
+| `P` ou `P+` (sans E) | normal | **Baccara** |
+| `P` ou `P+` (sans E) | **rose** | **Groupe ouvert** |
+| `E` (avec ou sans autres) | — | **Européen** |
+
+**Impact :**
+- L'import PDF doit classer automatiquement l'employé dans le bon secteur selon ses compétences
+- L'affichage (vPlan, vDeparts, vEmps) doit grouper par secteur : BJ / Baccara / Groupe ouvert / Européen / Roulettes / CMC
+- Les cases compétences avec fond rose = indicateur `groupe_ouvert`
+
+**Codes compétences standard (rappel) :**
+- `B` = Black Jack
+- `R` = Roulette anglaise
+- `T` = Texas Hold'em
+- `P` = Punto Banco (Baccara)
+- `P+` = Punto Banco High Roller
+- `E` = Roulette européenne
+- `C` = Craps
+- `K` = Poker Cash Game
+
+---
+
 ## 🕐 Horaires multi-rôles (à compléter)
 
 **v9.80 préparation structure dans ROLE_SHIFTS.**
