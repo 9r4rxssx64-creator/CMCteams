@@ -1,6 +1,51 @@
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**
+>
+> ## 🚨 MÉTA-RÈGLES PERMANENTES (session 2026-04-13)
+>
+> **À appliquer SANS que l'admin ait à le redemander.**
+>
+> 1. **Chaque info métier reçue = enregistrée IMMÉDIATEMENT dans ce fichier**
+>    (règle §1ter CLAUDE.md). Ne jamais attendre que l'admin redemande.
+>
+> 2. **Chaque nouvelle fonctionnalité/info doit être :**
+>    - ✅ Appliquée **automatiquement** partout dans l'app
+>    - ✅ **Vérifiée + sur-vérifiée** par tous les outils possibles (tests E2E,
+>      IA interne `_iaExecuteTool`, audits custom, `detectRepoConflicts`, etc.)
+>    - ✅ Accompagnée d'un **bouton manuel de secours** (backup UX)
+>    - ✅ La **priorité reste l'auto** : les boutons manuels ne sont qu'un fallback
+>
+> 3. **À CHAQUE IMPORT PDF** (priorité absolue, non-négociable) :
+>    - ✅ Reconnaissance des données (noms, compétences, codes, horaires)
+>    - ✅ Mise à jour auto des fiches employés (post, family, horaires)
+>    - ✅ Re-attribution auto des secteurs (via `reassignAllFamiliesByCompSilent`)
+>    - ✅ Détection conflits + corrections auto SAFE
+>    - ✅ Vérification + survérification 8 audits
+>    - ✅ Rapport visuel enrichi avec KPIs + bannières
+>    - ✅ 4 boutons manuels de secours : Re-vérifier, Rapport complet,
+>      Voir conflits, Annuler import
+>    - ✅ Les stats, vPlan, vDeparts, vStats, vEmps suivent automatiquement
+>
+> 4. **Compétences employés = source de vérité locale + import**
+>    - `emp.post` n'est PLUS jamais écrasé par DEF_EMP au reload (v9.108)
+>    - Import met à jour `emp.post` si PDF contient des compétences différentes
+>    - `emp.family` est dérivée de `emp.post` + `emp.pinkComp` (pas statique)
+>    - Respecter les modifications admin manuelles (toggle 🌸, réattribution)
+>
+> 5. **Clé API Claude (sk-ant-...) :**
+>    - Console Anthropic : https://console.anthropic.com/settings/keys
+>    - JAMAIS stockée dans le repo/commits/NOTES (sécurité)
+>    - Auto-backup Firebase (v9.108) : `cmc_admin_cfg`
+>    - Auto-restore à la connexion admin si localStorage vide
+>    - "Reset complet" (erreur screen) préserve la clé (v9.106)
+>
+> 6. **Tout doit s'enchaîner** : quand une info change (comp, equipe, horaire),
+>    toutes les vues dépendantes (stats, planning, départs, IA context)
+>    doivent refléter le changement automatiquement.
+>
+> ---
+>
 > Toutes les informations spécifiques au projet CMC Teams fournies par l'admin
 > (Kevin DESARZENS / U11804). À enrichir AUTOMATIQUEMENT dès qu'une info est donnée,
 > sans attendre que l'utilisateur la redemande.
@@ -163,6 +208,58 @@ L'admin veut l'IA au maximum de ses capacités :
 4. **Restrictions users non-admin** :
    - Lecture seule pour tout ce qui est modification
    - Peuvent interroger planning, convention, jeux
+   - **Burn-out info = admin-only** (confirmé v9.105 ligne 7717 `if(isAdm&&...)`)
+
+---
+
+## 🛡 Stabilité & pièges connus (session 2026-04-13)
+
+1. **Jamais d'échappements compliqués dans `onclick=` inline**
+   - Pattern `fn:"...\\\"function\\\"..."` → crash Safari iOS "Invalid escape in identifier"
+   - Toujours utiliser un **helper nommé** (ex: `_showBurnoutRisks(y,m)`)
+   - Jamais `\u{XXXX}` (ES6) → utiliser surrogate pair `\uD83D\uDCF1`
+
+2. **DOM orphelin après `dc()` dans STT (v9.106)**
+   - `sttStart` capturait `inputEl` AVANT `dc()` → reference détachée
+   - Fix : re-query `document.getElementById(targetInputId)` dans `onresult`
+   - Règle : toute fonction async qui vit au-delà d'un `dc()` doit re-query le DOM
+
+3. **`localStorage.clear()` doit TOUJOURS préserver la config admin**
+   - cmc_ia_key, cmc_ia_proxy, cmc_fb_url, cmc_theme, cmc_a11y, cmc_lang,
+     cmc_tts_enabled, cmc_ia_enabled, cmc_ia_websearch, cmc_emailjs_config
+   - Appliqué dans : bouton erreur (ligne 564), reset migration (ligne 4453)
+   - Le bouton admin "Reset total" (confirmDanger VIDER) est la seule exception nucléaire
+
+---
+
+## 🎨 Couleurs CODES (v9.105 — affinées à partir PDF SBM)
+
+| Code | Fond | Texte | Usage |
+|------|------|-------|-------|
+| `22/6` | `#fccfe0` rose pastel | `#6a1838` | CMC standard |
+| `19/4` | `#fff4a0` jaune pâle | `#463808` | CMC standard |
+| `16/3` | `#ffb070` pêche saturé | `#5a2808` | CMC standard (plus franc) |
+| `14/19` | `#c4e8a8` vert tendre | `#1f5008` | CMC standard |
+| `20/5` | `#b8d4f0` bleu clair | `#0c3a78` | CMC standard |
+| `16/22` | `#d4c4ec` lavande | `#402088` | CMC standard |
+| `20/5*` `19/4*` `16/3*` `16/22*` | `#ffe4d0` **pêche TRÈS clair** | `#804418` | **CDP (distinct)** |
+| `19/4'` | `#ffe4d0` | `#804418` | Convention |
+| `RH` | `#c8a8e0` violet | `#2a0870` | Repos hebdo |
+| `R` | `#e8e8e8` gris | `#202020` | Repos |
+| `CP` | `#f8c0d0` rose saumon | `#6a1028` | Congé payé |
+| `AF` | `#a8e0a8` vert | `#0c3a0c` | Formation |
+| `M` | `#ffe840` canari | `#4a3808` | Maladie |
+| `RRT` | `#ffd850` | `#5a3808` | Récup repos travaillé |
+| `HC` | `#d8e8a8` vert-jaune | `#2e3a10` | Heures comp. |
+| `PRT` | `#ffd060` | `#5a3808` | Prêt |
+
+**Règle admin** : CDP **beaucoup plus clair** visuellement que CMC (même horaire 16/3 vs 16/3*).
+
+**Transparences réduites (v9.105)** :
+- `.card` : rgba(14,28,18,.55) (avant .28)
+- `.sth` / `.dth` : rgba(18,32,22,.55) (avant .22)
+- `.inp` : rgba(255,255,255,.14) (avant .09)
+- Bordures gold : .32 (avant .18)
 
 ---
 

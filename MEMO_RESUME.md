@@ -1,13 +1,26 @@
-# Mémo de reprise — 2026-04-13 (v9.103 livrée)
+# Mémo de reprise — 2026-04-13 (v9.108 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
-> Puis lire `NOTES_USER.md` (infos métier fournies par l'admin).
+> Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
+
+---
+
+## 🚨 Méta-règles admin (appliquer SANS que l'admin ait à redemander)
+
+1. Chaque info métier admin → enregistrée IMMÉDIATEMENT dans `NOTES_USER.md`
+2. Chaque nouvelle fonction = auto + sur-vérif + bouton manuel de secours
+3. Priorité absolue = reconnaissance + placement correct à CHAQUE import PDF
+4. Compétences `emp.post` = persistantes (plus jamais écrasées au reload — v9.108)
+5. Secteurs dérivés auto : E → Européen · P/P+ rose → Groupe ouvert · P/P+ → Baccara
+6. Clé API Anthropic : backup Firebase auto + restore à la connexion (v9.108)
+   - Console : https://console.anthropic.com/settings/keys
+7. Tout s'enchaîne automatiquement (stats, vues, IA context suivent les modifs)
 
 ---
 
 ## Dernière version stable
 
-**`APP_VER = "v9.103"`** — ~1.24 MB — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.108"`** — branche `main` (déployée GitHub Pages)
 
 ---
 
