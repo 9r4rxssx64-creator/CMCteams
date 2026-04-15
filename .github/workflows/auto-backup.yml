@@ -1,0 +1,34 @@
+name: Auto-backup quotidien Firebase
+
+# Déclenche un backup CMC Teams chaque jour à 3h UTC (4h Monaco)
+# Stocke le résultat dans Firebase + notifie via Telegram
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 3h UTC = 4h Monaco l'hiver, 5h l'été
+  workflow_dispatch:      # déclenchable manuellement
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install agent dependencies
+        working-directory: tools/agent
+        run: npm install --silent
+
+      - name: Run daily backup
+        working-directory: tools/agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FB_URL: ${{ secrets.FB_URL || 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node cli.js daily-backup

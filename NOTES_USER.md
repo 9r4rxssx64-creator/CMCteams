@@ -62,6 +62,47 @@
 
 ---
 
+## 🤖 Écosystème agent + intégrations (2026-04-13)
+
+**Construit en autonomie** (commit `672d9a2`+ suivants) :
+
+### Agent 24/7 (`tools/agent/`)
+- 5 tâches automatiques (health-check, conflicts, burnout, backup, weekly-report)
+- Déployable sur **Vercel** (gratuit, recommandé)
+- Variables env requises : `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AGENT_SECRET`
+- ⚠️ **Clé Anthropic** : peut RÉUTILISER celle de l'app CMC Teams (multi-usage)
+
+### 8 intégrations (`tools/integrations/`)
+Gmail · Telegram · Drive · Calendar · Outlook · Facebook · Instagram · WhatsApp Business
+- Chacune : `client.js` + `setup.md` + `package.json` + `README.md`
+- Aucun secret en clair (env vars uniquement)
+
+### 5 skills Claude Code (`~/.claude/skills/`)
+`/cmc-deploy` · `/cmc-backup` · `/cmc-planning` · `/cmc-stats` · `/kdmc-status`
+
+### MCP servers (`tools/mcp/servers/`)
+- `firebase-mcp.js` : 5 outils Firebase (get/set/employees/planning/health)
+- `gmail-mcp.js` : wrapper Gmail (read/send/search/markRead)
+- `telegram-mcp.js` : wrapper Telegram (send/photo/doc)
+- Settings template : `tools/mcp/mcp_settings.example.json`
+
+### GitHub Actions automation
+- `tests.yml` : tests E2E à chaque push
+- `auto-backup.yml` : backup quotidien 3h UTC (nécessite secrets repo)
+- `auto-deploy-vercel.yml` : notif Telegram quand agent modifié
+
+### Procédure de déploiement
+- Voir `SETUP_FOR_LATER/0-LIRE_EN_PREMIER.md`
+- Phase 1 (Android, 30 min) : tout fonctionne sans ordi
+- Phase 2 (Ordi, 1-2h) : confort + intégrations OAuth complexes
+
+### 2 futurs projets (en attente)
+- `_PROJECTS_KDMC/IA-KDMC/CLAUDE.md` (mirror du dossier `/home/user/IA-KDMC/`)
+- `_PROJECTS_KDMC/e-KDMC/CLAUDE.md` (mirror du dossier `/home/user/e-KDMC/`)
+- À démarrer quand l'admin le demande
+
+---
+
 ## ⚠️ CORRECTION v9.118 — PAT = PATERNITÉ (pas Patrimonial)
 
 **Demande admin (2026-04-13) :**
