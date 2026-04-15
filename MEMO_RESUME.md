@@ -1,7 +1,8 @@
-# Mémo de reprise — 2026-04-13 (v9.108 livrée)
+# Mémo de reprise — 2026-04-13 (v9.117 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
+> Puis `~/.claude/CLAUDE.md` (règles globales multi-projets).
 
 ---
 
@@ -11,7 +12,10 @@
 2. Chaque nouvelle fonction = auto + sur-vérif + bouton manuel de secours
 3. Priorité absolue = reconnaissance + placement correct à CHAQUE import PDF
 4. Compétences `emp.post` = persistantes (plus jamais écrasées au reload — v9.108)
-5. Secteurs dérivés auto : E → Européen · P/P+ rose → Groupe ouvert · P/P+ → Baccara
+5. **IMPORTANT v9.116** : les familles/secteurs NE SONT PAS dérivés des compétences.
+   - `emp.family` vient de l'IMPORT (team dispatch bj1..r13..c13)
+   - `emp.post` (P/P+/E) reste dans la fiche, pour info / dispatch futur
+   - `reassignAllFamiliesByCompSilent` reste dispo MANUELLEMENT (bouton), pas auto
 6. Clé API Anthropic : backup Firebase auto + restore à la connexion (v9.108)
    - Console : https://console.anthropic.com/settings/keys
 7. Tout s'enchaîne automatiquement (stats, vues, IA context suivent les modifs)
@@ -20,7 +24,26 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.108"`** — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.117"`** — branche `main` (déployée GitHub Pages)
+
+### Session 2026-04-13 — ce qui a été livré
+| Version | Contenu |
+|---------|---------|
+| v9.103 | Couleurs CODES calibrées PDF SBM |
+| v9.104 | Auto-vérif import totale (8 audits + auto-corrections + 4 boutons secours) |
+| v9.105 | Fix crash Safari burn-out + CDP pêche clair + contraste AAA |
+| v9.106 | Fix micro chat + préservation clé API reset + TTS chat |
+| v9.107 | Helper secteurs P/P+/E (devenu manuel en v9.116) |
+| v9.108 | Backup admin Firebase + persistance post + auto-classif import (revert v9.116) |
+| v9.109 | Sync compact + auto-backup import + IA sur-vérif + auto-save profil |
+| v9.110 | Visibilité MAX + modal burnout propre |
+| v9.111 | Fix SW crash + 1 bouton fermer + login centré iOS |
+| v9.112 | Fix toast thème qui masquait Continuer login |
+| v9.113 | Thème clair RÉELLEMENT fonctionnel |
+| v9.114 | Bouton pause diaporama + visibilité massive + fond vert défaut |
+| v9.115 | Stats connexions complètes + fuzzy search IA |
+| v9.116 | Retrait auto-reassign familles + restore DEF_EMP |
+| v9.117 | Fix 3 sources de crashes (SW update, Firebase fetch, IA fetch) |
 
 ---
 

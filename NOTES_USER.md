@@ -58,6 +58,32 @@
 - **Matricule** : U11804
 - **Département** : Jeux de table / Black Jack
 - **Casino** : Monte-Carlo (SBM)
+- **Email** : kevind@monaco.mc
+
+---
+
+## ⚠️ CORRECTION v9.116 — Familles NE VIENNENT PAS des compétences
+
+**Demande admin explicite (2026-04-13) :**
+
+> "Les compétences P/P+/E doivent rester dans les fiches employés UNIQUEMENT,
+> pas dans le dispatch d'équipe. Le planning et les départs utilisent le team
+> dispatch de l'import. Les compétences peuvent être notifiées à côté des noms
+> si besoin, mais pas piloter le dispatch."
+
+**Règle appliquée :**
+- `emp.family` vient de l'**import PDF** (bj1..bj10, r1..r13, c1..c13)
+- `emp.post` (compétences BRTPECK) reste dans la fiche pour info
+- `emp.pinkComp` (marqueur rose) aussi conservé en fiche
+- `reassignAllFamiliesByCompSilent()` **n'est PAS appelée automatiquement**
+- Bouton manuel `🎯 Attribuer secteurs` dans vEmps reste dispo en secours
+- Migration one-shot `cmc_fam_restored_v116` restaure les familles DEF_EMP
+  pour les employés modifiés par v9.107-v9.108
+
+**Règle historique (conservée pour le bouton manuel uniquement) :**
+- `E` → Européen (roulettes)
+- `P/P+` avec case rose 🌸 → Groupe ouvert (cmc)
+- `P/P+` seul → Baccara (baccara)
 
 ---
 
