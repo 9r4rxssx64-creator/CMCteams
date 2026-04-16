@@ -107,6 +107,21 @@ async function cmdTestTts(args) {
 async function cmdGenerate(args) {
   const type = args.type || "narrative";
   const format = args.format || "long"; // long | short
+
+  // --- Option : générer un script via Gemma 4 AI ---
+  if (args["ai-script"]) {
+    const { generateScript, addToLibrary } = await import("./engine/script-generator.js");
+    const niche = args.niche || "betrayal-revenge";
+    const length = args.length || (format === "short" ? "short" : "medium");
+    console.log(`\n🤖 Génération script via Gemma 4 (niche=${niche}, length=${length})...`);
+    const newScript = await generateScript({ niche, length, topic: args.topic, language: args.language });
+    console.log(`✅ Script généré : "${newScript.title}" (${newScript.wordCount} mots)`);
+
+    // Ajoute à la library et continue avec ce script
+    addToLibrary(newScript);
+    args.story = newScript.id;
+  }
+
   const lib = JSON.parse(
     fs.readFileSync(path.join(SOCIAL_ROOT, "config", "content-library.json"), "utf8")
   );
@@ -228,6 +243,122 @@ async function sendVideoTelegram(videoPath, metadata) {
   console.log(`✅ Envoyé sur Telegram (${sizeMB.toFixed(2)} MB)`);
 }
 
+async function cmdGenerateScript(args) {
+  const { generateScript, generateBatch, addToLibrary } = await import("./engine/script-generator.js");
+  const niche = args.niche || "betrayal-revenge";
+  const length = args.length || "medium";
+  const count = parseInt(args.count || "1", 10);
+
+  console.log(`\n🤖 Génération de ${count} script(s) via Gemma 4`);
+  console.log(`   Niche  : ${niche}`);
+  console.log(`   Length : ${length}\n`);
+
+  let scripts;
+  if (count === 1) {
+    scripts = [await generateScript({ niche, length, topic: args.topic, language: args.language })];
+  } else {
+    scripts = await generateBatch(count, { niche, length, language: args.language });
+  }
+
+  for (const s of scripts) {
+    addToLibrary(s);
+    console.log(`✅ ${s.id} — "${s.title}" (${s.wordCount} mots)`);
+  }
+
+  console.log(`\n📚 ${scripts.length} script(s) ajoutés à content-library.json`);
+}
+
+async function cmdExtractShorts(args) {
+  const { extractShorts } = await import("./engine/shorts-extractor.js");
+  const video = args.video;
+  if (!video || !fs.existsSync(video)) {
+    console.error(`❌ Vidéo introuvable : ${video}`);
+    process.exit(1);
+  }
+  const count = parseInt(args.count || "3", 10);
+  const duration = parseInt(args.duration || "45", 10);
+
+  console.log(`\n✂️ Extraction de ${count} Shorts depuis ${path.basename(video)}`);
+  const results = await extractShorts(video, { count, targetDurationSec: duration });
+
+  console.log(`\n✅ ${results.length} Shorts extraits :`);
+  for (const r of results) {
+    const size = (fs.statSync(r.path).size / 1024 / 1024).toFixed(2);
+    console.log(`   ${r.index}. ${path.basename(r.path)} (${size} MB, début: ${r.startSec.toFixed(1)}s)`);
+  }
+}
+
+async function cmdPublish(args) {
+  const platform = args.platform;
+  const video = args.video;
+  if (!platform || !video) {
+    console.error(`❌ Usage : cli.js publish --platform <youtube|facebook|instagram> --video <path>`);
+    process.exit(1);
+  }
+  if (!fs.existsSync(video)) {
+    console.error(`❌ Vidéo introuvable : ${video}`);
+    process.exit(1);
+  }
+
+  // Charge les metadata si dispo
+  const metaPath = path.join(path.dirname(video), "metadata.json");
+  const meta = fs.existsSync(metaPath) ? JSON.parse(fs.readFileSync(metaPath, "utf8")) : {};
+
+  const title = args.title || meta.title || path.basename(video, path.extname(video));
+  const description = args.description || buildDefaultDescription(meta);
+  const tags = args.tags ? args.tags.split(",") : (meta.tags || []);
+  const privacy = args.privacy || "private";
+  const isShort = args.short === true || args.short === "true";
+
+  console.log(`\n📤 Publication sur ${platform.toUpperCase()}`);
+  console.log(`   Titre   : ${title}`);
+  console.log(`   Privacy : ${privacy}`);
+  console.log(`   Vidéo   : ${path.basename(video)} (${(fs.statSync(video).size / 1024 / 1024).toFixed(2)} MB)\n`);
+
+  let result;
+  switch (platform) {
+    case "youtube": {
+      const { uploadVideo } = await import("./publishers/youtube.js");
+      result = await uploadVideo(video, {
+        title,
+        description,
+        tags,
+        privacyStatus: privacy,
+        isShort,
+      });
+      break;
+    }
+    case "facebook": {
+      const { uploadVideo, createReel } = await import("./publishers/facebook.js");
+      if (isShort) {
+        result = await createReel(video, { description: title + "\n\n" + description });
+      } else {
+        result = await uploadVideo(video, { title, description, published: privacy === "public" });
+      }
+      break;
+    }
+    case "instagram": {
+      const { publishReelFromFile } = await import("./publishers/instagram.js");
+      result = await publishReelFromFile(video, { caption: title + "\n\n" + description });
+      break;
+    }
+    default:
+      console.error(`❌ Plateforme inconnue : ${platform}. Disponibles : youtube, facebook, instagram`);
+      process.exit(1);
+  }
+
+  console.log(`\n✅ Publié sur ${platform} : ${JSON.stringify(result, null, 2)}`);
+}
+
+function buildDefaultDescription(meta) {
+  const parts = [];
+  if (meta.tags && meta.tags.length > 0) {
+    parts.push("");
+    parts.push(meta.tags.map((t) => "#" + t.replace(/\s+/g, "")).slice(0, 5).join(" "));
+  }
+  return parts.join("\n");
+}
+
 function cmdStatus() {
   console.log("\n📊 Status du système social\n");
   const out = path.join(SOCIAL_ROOT, "output");
@@ -264,12 +395,32 @@ COMMANDS :
     --type narrative              Type de contenu (défaut: narrative)
     --story <id>                  ID spécifique (défaut: première non utilisée)
     --random                      Sélection aléatoire
+    --ai-script                   Génère un script via Gemma 4 avant la vidéo
+    --niche <niche>               Niche pour AI script (betrayal-revenge, mystery, finance-lesson...)
     --format long|short           Format (défaut: long, 16:9)
     --music <path>                Musique de fond MP3 (optionnel)
     --bg <path>                   Image de fond (optionnel)
     --send-telegram               Envoie la vidéo sur Telegram après génération
     --keep                        Garde les frames PNG (debug)
-    --verbose                     Logs ffmpeg détaillés
+
+  generate-script                 Génère script(s) via Gemma 4 (sans vidéo)
+    --niche <niche>               betrayal-revenge | mystery | finance-lesson | motivation | true-crime
+    --length <len>                short | medium | long | longform
+    --count <n>                   Nombre de scripts à générer (défaut 1)
+    --language en|fr              Langue (défaut en)
+    --topic "..."                 Topic spécifique (sinon Gemma invente)
+
+  extract-shorts --video <path>   Extrait N Shorts 9:16 depuis un long-form 16:9
+    --count <n>                   Nombre de Shorts (défaut 3)
+    --duration <sec>              Durée par Short en secondes (défaut 45)
+
+  publish --platform <p> --video <path>  Publie sur une plateforme
+    --platform youtube|facebook|instagram
+    --title "..."                 Titre (défaut: lu depuis metadata)
+    --description "..."           Description
+    --tags "tag1,tag2"            Tags comma-separated
+    --privacy private|unlisted|public  Pour YouTube (défaut private)
+    --short                       Si c'est un Short/Reel
 
   publish-telegram --video <path> Envoie une vidéo existante sur Telegram
 
@@ -309,6 +460,9 @@ async function main() {
       case "list-voices":       await cmdListVoices(); break;
       case "test-tts":          await cmdTestTts(args); break;
       case "generate":          await cmdGenerate(args); break;
+      case "generate-script":   await cmdGenerateScript(args); break;
+      case "extract-shorts":    await cmdExtractShorts(args); break;
+      case "publish":           await cmdPublish(args); break;
       case "publish-telegram":  await cmdPublishTelegram(args); break;
       case "status":            cmdStatus(); break;
       case "help":

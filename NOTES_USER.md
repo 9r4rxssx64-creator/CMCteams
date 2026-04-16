@@ -578,3 +578,78 @@ L'admin veut l'IA au maximum de ses capacités :
 ---
 
 *Dernière mise à jour : 2026-04-13 (v9.103)*
+
+---
+
+## 🎬 KDMC Social Videos — Pipeline faceless (session 2026-04-16)
+
+> Projet secondaire : chaîne YouTube faceless narrative storytelling + multi-plateformes.
+> Branche : `claude/automate-social-media-videos-RvjYq`
+> Voir `MEMO.md` à la racine pour les actions à faire (setup API keys).
+
+### Décisions prises (2026-04-16)
+
+- ✅ **Focus narrative storytelling long-form** (RPM $12.82, croissance 21x en 2026)
+- ✅ **Gemma 4 gratuit** via Google AI Studio pour génération scripts (pas Claude API payant)
+- ✅ **espeak-ng local** comme fallback quand internet restreint (sandbox)
+- ✅ **Publication privacy=private** par défaut (validation humaine avant public)
+- ❌ **PAS de X/Twitter Basic** ($100/mois) tant qu'audience pas validée
+- ❌ **KAIROS/Coordinator/UltraPlan** leakés mais pas shippés → skills custom simulés créés
+
+### Niches ciblées (ordre priorité)
+
+1. **Betrayal / Revenge stories** (RPM $12.82, croissance 21x)
+2. **Mystery narratives** (evergreen, forte demande)
+3. **Finance lessons** ($10-15 RPM, audience adulte)
+4. **True crime** (advertiser-friendly, bon CPM)
+5. **Motivation** (saturé mais facile)
+
+### Plateformes actives
+
+- ⭐ **YouTube** (long-form principal + Shorts extraction)
+- 🟡 **Instagram Reels** (via Graph API existant)
+- 🟡 **Facebook Reels** (via Graph API existant)
+- ⚠ **TikTok** (sandbox, review 2-4 semaines)
+- ❌ **X/Twitter** (skip — coût trop élevé)
+
+### Stack technique social
+
+- `tools/social/` — nouveau module complet
+- Node.js ES modules
+- `msedge-tts` (premium) + `espeak-ng` (fallback local)
+- `node-canvas` pour frames 1080x1920 et 1920x1080
+- `@ffmpeg-installer/ffmpeg` pour compilation
+- `@google/generative-ai` pour Gemma 4
+- `googleapis` pour YouTube
+- GitHub Actions cron quotidien (10h UTC)
+
+### Skills créés (~/.claude/skills/)
+
+14 skills installés :
+- `security`, `frontend-design`, `humanizer`, `know-me`, `create-skill`
+- `n8n`, `self-improving-agent`, `instagram-growth`, `design`, `word-docs`
+- `gemma-integration`, `kairos`, `ultraplan`, `coordinator`
+
+### Actions en attente (Kevin)
+
+Voir `MEMO.md`. Résumé :
+1. ⭐ **OBLIGATOIRE** : clé Google AI Studio (5 min) → génération scripts Gemma
+2. ⭐ **PRIORITÉ #1** : YouTube OAuth (15 min) → publication automatique
+3. ⭐ Assets musique (Pixabay, 5-10 MP3 royalty-free)
+4. 🟡 Vérifier Instagram/Facebook tokens (probablement déjà dans intégrations)
+5. 🟡 TikTok developer account (optionnel, review longue)
+
+### Timeline réaliste revenus
+
+- Mois 1-3 : $0 (construction bibliothèque + tests)
+- Mois 6-12 : $50-500/mois (seuil monétisation YouTube)
+- Mois 12-18 : $500-3000/mois (compounding)
+- Mois 18-24+ : $2500-10000/mois si constant
+
+Ce n'est PAS un quick-win. C'est un investissement 6-12 mois.
+
+### Mémoire d'erreurs à ne pas reproduire
+
+- ❌ Edge TTS ne marche pas dans sandbox Claude Code (bing.com bloqué) → espeak-ng
+- ❌ Path bug : utiliser `__dirname` + `path.resolve` pour output, pas relatifs
+- ❌ KAIROS/Coordinator features leakées → simulés via subagents parallèles
