@@ -47,6 +47,17 @@ ET de sa présence dans le planning des "Chefs cartes" à chaque import.
 - Tous utilisent le format bloc (entête noms + lignes positionnelles)
 - Compétences P/P+/E ne s'appliquent PAS aux pit boss/superviseurs/inspecteurs
 
+### Auto-apprentissage codes (v9.140 — demande admin 2026-04-16)
+
+> "Couleur cases fonds, dans les légendes des plannings déjà importés et apprend des nouveaux au fur à mesure"
+
+- Chaque code rencontré lors d'un import qui n'est PAS dans CODES dict est AUTO-APPRIS
+- Couleur de fond générée par hash du code (couleur unique déterministe)
+- Label deviné si format horaire (ex: "15/21" → "15h–21h")
+- Stocké dans `cmc_learned_codes` (localStorage) → persiste entre sessions
+- Fusionné dans CODES au boot → visible dans légendes, planning, départs
+- Admin peut ajuster via les outils IA ou manuellement si besoin
+
 ---
 
 ### Règles précises
