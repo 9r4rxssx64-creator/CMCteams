@@ -728,6 +728,30 @@ var CODES={
   "PK"    :{l:"Poker",             bg:"#f8a0c8",c:"#6a1040",b:"#d878a0",cdp:false,lieu:"POKER"},   // rose vif — affectation poker
   "HD"    :{l:"Hors D\u00e9partement",bg:"#ff6060",c:"#ffffff",b:"#cc3030",cdp:false}             // rouge vif
 };
+// v9.127b — Table spécifique CADRES : même code = lieu DIFFÉRENT selon le rôle
+// Source : légendes PDF "PLANNING PIT BOSS" Avril/Mai 2026
+var CADRE_LIEU={
+  "19/4"  :"CCDP",   // 19h-4h pit boss = Café de Paris
+  "19/4'" :"CMC",    // avec ' = Monte-Carlo
+  "16/20" :"CMC",
+  "12H30/19":"CMC",
+  "12h30/19":"CMC",
+  "22/6"  :"CMC",
+  "15/19" :"CCDP",
+  "19/2"  :"CMC",
+  "15/20" :"POKER NO LIMIT",
+  "23/6"  :"CMC",
+  "19/6"  :"CCDP",
+  "19/70" :"CMC",
+  "15/6"  :"CMC"
+};
+// Retourne le lieu exact d'un code pour un employé (rôle pit/sup → CADRE_LIEU, autres → code.lieu ou null)
+function getCodeLieu(code,emp){
+  if(emp && (emp.role==="pit"||emp.role==="sup"||emp.family==="cadres")){
+    return CADRE_LIEU[code]||(CODES[code]&&CODES[code].lieu)||null;
+  }
+  return (CODES[code]&&CODES[code].lieu)||null;
+}
 var CK=Object.keys(CODES);
 var TC={
   "1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830",
