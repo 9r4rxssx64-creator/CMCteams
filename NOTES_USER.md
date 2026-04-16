@@ -256,6 +256,22 @@ Orange pêche vif `#ffb480` / texte `#a84018` — tous les codes `XX/Y*`.
 
 **PDF REÇUS (2026-04-16 04:00) — ANALYSE COMPLÈTE captures ZOOM :**
 
+### ⚠️ Info admin (2026-04-16 04:25) : "Les inspecteurs vont tous passer pit boss à terme"
+→ Prévoir migration inspecteur → pit boss. Pas de section inspecteur dédiée à créer.
+→ La structure `role:"pit"` / `role:"sup"` suffit. Ajouter `role:"ins"` si inspecteurs avant transition.
+
+### ⚠️ Info admin (2026-04-16 04:25) : "Fais des familles dans les fiches"
+→ Afficher la famille (BJ/Roulettes/CMC/Cadres) clairement dans chaque fiche employé/cadre.
+→ Filtres par famille dans vEmps, vCadres.
+
+### ⚠️ Info admin (2026-04-16 04:25) : "Organise toute la partie admin bcp plus clairement"
+→ Refonte UX admin demandée : plus fonctionnel, visuel, intuitif, pratique.
+→ Regrouper par catégorie, cards claires, icônes cohérentes, actions directes.
+
+### ⚠️ Info admin (2026-04-16 04:25) : "Augmente encore bcp la visibilité des écrits"
+→ Font-weight global remonté, text-shadow renforcé, couleurs plus contrastées.
+→ Appliquer sur TOUTES les vues sans exception.
+
 ### Titre section dans le PDF : `Pit Boss 15`
 
 ### 16 PIT BOSS (noms complets + matricules)
