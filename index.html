@@ -27,6 +27,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CMC Teams</title>
+<!-- v9.130 — Google Fonts Cinzel (titres luxe) + Inter (texte courant) pour le look Monaco premium -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <!-- PDF.js v3.11.174 \u2014 lazy-load via loadPdfJs() uniquement au moment de l'import PDF (v9.49) -->
 <style>
 
@@ -172,8 +176,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 
 /* === FOND TAPIS CASINO MONTE-CARLO === */
 body{
-  font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  font-size:17px;font-weight:500;color:#ffffff; /* v9.121 : font-weight 500 (medium) + blanc pur */
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; /* v9.130 — Inter pro design */
+  font-size:17px;font-weight:500;color:#ffffff;
   /* v9.101 : anti-aliasing + text-rendering optimal pour lisibilit\u00e9 retina */
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -343,7 +347,7 @@ table,table *,code,pre,span[style*="background"]{text-shadow:none!important;font
 /* Cellules planning (codes) : AUCUN blur, texte noir/foncé forcé, gras 900 */
 td,th,.ctd,.ntd{text-shadow:none!important;letter-spacing:0!important}
 /* Sections titres - visibilité AAA */
-.sec-title{text-shadow:0 2px 6px rgba(0,0,0,1),0 0 14px rgba(0,0,0,.9)!important;color:#ffdc40!important;font-weight:900!important;font-size:20px!important}
+.sec-title{text-shadow:0 2px 6px rgba(0,0,0,1),0 0 14px rgba(0,0,0,.9)!important;color:#ffdc40!important;font-weight:900!important;font-size:22px!important;font-family:'Cinzel','Georgia',serif!important;letter-spacing:1.2px!important}
 .sec-sub{text-shadow:0 2px 4px rgba(0,0,0,1),0 0 10px rgba(0,0,0,.85)!important;color:#ffffff!important;font-weight:700!important;font-size:14px!important}
 .page > label,.page > div > label{text-shadow:0 1px 3px rgba(0,0,0,1);color:#ffffff!important;font-weight:700!important}
 /* Thème clair — pas d'ombres */
@@ -603,6 +607,52 @@ body.has-login-bg .login-bg{
 ::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
 ::-webkit-scrollbar-thumb{background:rgba(201,162,39,.3);border-radius:2px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(201,162,39,.5)}
+/* v9.130 — ANIMATIONS FESTIVES — activées par classe body.fete-X, dispatchées dans toute l'app */
+.fete-float{position:fixed;pointer-events:none;user-select:none;z-index:5;animation:fete-drift linear infinite;will-change:transform}
+@keyframes fete-drift{
+  0%{transform:translateY(-10vh) translateX(0) rotate(0deg);opacity:0}
+  10%{opacity:.9}
+  50%{transform:translateY(50vh) translateX(30px) rotate(180deg)}
+  90%{opacity:.7}
+  100%{transform:translateY(110vh) translateX(-20px) rotate(360deg);opacity:0}
+}
+@keyframes fete-sparkle{
+  0%,100%{opacity:.6;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.3)}
+}
+body.fete-noel .fete-float{animation-duration:10s}
+body.fete-paques .fete-float{animation-duration:14s}
+body.fete-fete-nat .fete-float{animation-duration:8s;animation-name:fete-drift-up}
+@keyframes fete-drift-up{
+  0%{transform:translateY(110vh) translateX(0) scale(.5);opacity:0}
+  20%{opacity:1}
+  100%{transform:translateY(-10vh) translateX(40px) scale(1.2);opacity:0}
+}
+/* Neige Noël : points blancs qui tombent */
+body.fete-noel::before{
+  content:"";position:fixed;inset:0;z-index:3;pointer-events:none;
+  background-image:radial-gradient(2px 2px at 20px 30px,rgba(255,255,255,.9),transparent),
+    radial-gradient(2px 2px at 40px 70px,rgba(255,255,255,.7),transparent),
+    radial-gradient(1px 1px at 50px 160px,rgba(255,255,255,.6),transparent),
+    radial-gradient(2px 2px at 90px 40px,rgba(255,255,255,.8),transparent),
+    radial-gradient(1px 1px at 130px 80px,rgba(255,255,255,.5),transparent);
+  background-size:200px 200px;
+  animation:snow-fall 15s linear infinite;opacity:.65;
+}
+@keyframes snow-fall{
+  from{background-position:0 0,0 0,0 0,0 0,0 0}
+  to{background-position:0 200px,-40px 180px,40px 210px,-20px 220px,60px 200px}
+}
+/* Touche festive Noël sur les titres */
+body.fete-noel .sec-title::after{content:" ❄";color:#ffffff;text-shadow:0 0 8px rgba(255,255,255,.9);animation:fete-sparkle 2s ease-in-out infinite}
+body.fete-paques .sec-title::after{content:" 🌸";animation:fete-sparkle 3s ease-in-out infinite}
+body.fete-fete-nat .sec-title::after{content:" 🎆";animation:fete-sparkle 1.5s ease-in-out infinite}
+body.fete-halloween .sec-title::after{content:" 🎃";animation:fete-sparkle 2s ease-in-out infinite}
+body.fete-stvalentin .sec-title::after{content:" 💖";animation:fete-sparkle 2s ease-in-out infinite}
+body.fete-stpatrick .sec-title::after{content:" 🍀";animation:fete-sparkle 2s ease-in-out infinite}
+
+/* v9.130 — Topbar luxe : bordure or fine + texte Cinzel */
+#topbar{font-family:'Cinzel','Georgia',serif;letter-spacing:0.8px}
 </style>
 </head>
 <body>
@@ -5588,6 +5638,23 @@ function _stopBgSlideshow(){
 
 function render(){
   var app=document.getElementById("app");
+  // v9.130 — Auto-détection des fêtes pour animations festives (Monaco/France)
+  (function(){
+    var d=new Date(),m=d.getMonth()+1,day=d.getDate();
+    var fete=null;
+    if(m===12&&day>=15)fete="noel";                          // 15-31 déc : Noël
+    else if(m===1&&day<=6)fete="noel";                       // 1-6 janv : Épiphanie
+    else if(m===3&&day>=25)fete="paques";                    // Fin mars : Pâques
+    else if(m===4&&day<=10)fete="paques";                    // 1-10 avril : Pâques
+    else if(m===7&&day>=11&&day<=16)fete="fete-nat";         // Fête nationale Monaco 19/11, France 14/7
+    else if(m===11&&day>=16&&day<=20)fete="fete-nat";        // 19 nov : St Rainier Monaco
+    else if(m===10&&day>=25)fete="halloween";                // Halloween fin oct
+    else if(m===2&&day>=10&&day<=16)fete="stvalentin";       // St Valentin
+    else if(m===3&&day>=14&&day<=18)fete="stpatrick";        // St Patrick
+    var b=document.body;
+    ["fete-noel","fete-paques","fete-fete-nat","fete-halloween","fete-stvalentin","fete-stpatrick"].forEach(function(c){b.classList.remove(c);});
+    if(fete)b.classList.add("fete-"+fete);
+  }());
   // Applique les photos personnalis\u00e9es via CSS variables + classes body
   // v9.50 : priorit\u00e9 fond perso employ\u00e9 (customBg) > fond global admin (accueilBg)
   (function(){
