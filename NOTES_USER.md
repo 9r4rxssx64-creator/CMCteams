@@ -20,12 +20,24 @@ ET de sa présence dans le planning des "Chefs cartes" à chaque import.
 
 ### Règles précises
 
-1. **Si `post` contient `P` ou `P+` SANS `E`** → Chef groupe fermé Baccara (family=baccara, chef=true)
-2. **Si `post` contient `E`** → NE PEUT PAS être groupe fermé. Automatiquement jeu européen.
-3. **Si chef européen (toutes compétences E)** → Chef JE
-4. **Si `E` + apparaît dans planning chefs cartes (mais pas chef complet)** → Sous-chef JE
-5. **Sinon `E` seul** → Employé européen
-6. Les chefs GF européens viennent **jamais ou très rarement** dans les plannings chefs cartes
+1. **PRIORITÉ #1 — Groupe OUVERT vs Groupe FERMÉ** (demande admin 2026-04-16 soir)
+   - **Tous les nouveaux employés** depuis la Convention (1er avril 2015) = **GROUPE OUVERT**
+   - Les nouveaux employés qui arrivent dans les imports (jamais vus avant) = **GROUPE OUVERT**
+   - Ils ne peuvent JAMAIS sortir du groupe ouvert (flag permanent)
+   - Les anciens déjà attribués chefs/etc. = GROUPE FERMÉ (historique)
+   - Flag app : `emp.groupeOuvert=true` (ou `emp.pinkComp=true`) pour groupe ouvert
+   - Par défaut : `groupeOuvert=false` (fermé) pour les anciens
+
+2. **Si `post` contient `P` ou `P+` SANS `E`** :
+   - Si **groupe ouvert** → family=cmc, chef=false (reste employé GO, PAS chef baccara)
+   - Si **groupe fermé** → Chef groupe fermé Baccara (family=baccara, chef=true, gf=true)
+
+3. **Si `post` contient `E`** → NE PEUT PAS être groupe fermé. Automatiquement jeu européen.
+4. **Si chef européen (toutes compétences E)** → Chef JE
+5. **Si `E` + apparaît dans planning chefs cartes (mais pas chef complet)** → Sous-chef JE
+6. **Sinon `E` seul** → Employé européen
+7. Les chefs GF européens viennent **jamais ou très rarement** dans les plannings chefs cartes
+8. **Inspecteurs + cadres supérieurs** : à gérer plus tard (TODO future session)
 
 ### Automatisation à chaque import
 
