@@ -249,10 +249,63 @@ Orange pêche vif `#ffb480` / texte `#a84018` — tous les codes `XX/Y*`.
 - Salle/lieu comme champ additionnel par entrée planning
 - ⚠️ Espace localStorage : prévoir nettoyage agressif (v9.120) + possible migration IndexedDB
 
-**En attente de :**
-- [ ] PDF planning pit boss (Kevin va l'envoyer)
-- [ ] PDF planning inspecteurs (Kevin va l'envoyer)
-- [ ] Correspondance nom cadre ↔ lieu exact (à extraire du PDF ou demander à Kevin)
+**PDF REÇUS (2026-04-16 03:57) — ANALYSE DES SCREENSHOTS :**
+
+### Document 1 : "7 PLANNING PIT BOSS-SUPE..." — Avril 2026
+- **2 sections dans le même PDF** : PIT BOSS (barre verte) + SUPERVISEUR (barre bleue)
+- Format identique au planning employés : noms à gauche, 30 jours en colonnes, codes couleurs dans les cellules
+- Matricules en colonne gauche (format XX/XX/XXXX ou XXXXXXXX)
+- Couleurs identiques (rose = 22/6, jaune = 19/4, violet = 16/22, vert = 14/19, bleu = 20/5, orange = 16/3)
+
+**Noms PIT BOSS (lisibles partiellement) :**
+- ANSEL M, GARELLI C, BENIST ?, BOUVIER B, HERVE A, DINA C
+- CORNALULLO R, FRANCOTTE ?, DI COLANTOSIO F, PELAZZA F, ROSPOCHER G
+- Environ 12-15 pit boss
+
+**Noms SUPERVISEUR :**
+- Section séparée en dessous (barre bleue)
+- ~3-5 superviseurs visibles (texte trop petit pour lire)
+
+**Légende PIT BOSS (codes horaires + LIEU) :**
+| Code | Lieu | Couleur fond |
+|------|------|-------------|
+| 19/6 | CCDP | orange |
+| 19/70 | CMC | ? |
+| 15/6? | CMC | ? |
+| 22/6 | CMC | rose |
+| 23/6 | CMC | ? |
+| 19/3 | CMC | ? |
+| 15/70 | ? | ? |
+| — | POKER NO LIMIT | jaune vif |
+
+**Légende SUPERVISEUR :**
+| Code | Lieu |
+|------|------|
+| 23/6 | CMC |
+| 19/20 | CMC |
+| 22/6 | CMC |
+| 19/3 | CMC |
+
+### Document 2 : "3 PLANNING PIT BOSS-..." — Mai 2026
+- Même format que Avril
+- Mêmes noms (à confirmer)
+- Mois de Mai 2026
+
+### Points clés à implémenter
+1. **Import séparé** : détecter "PIT BOSS" / "SUPERVISEUR" comme catégorie (pas "employé")
+2. **Codes horaires DIFFÉRENTS** des employés : 19/6, 19/70, 23/6, 15/6, 15/70 → NOUVEAUX codes à ajouter au dictionnaire CODES
+3. **Lieu EXACT** par code : chaque horaire correspond à un lieu (CMC, CCDP, Poker No Limit)
+4. **Vue dédiée** dans l'app : onglet "Cadres" ou sous-section vPlan/vDeparts
+5. **Stockage** : clé séparée `cmc_ov_cadres` ou sous-clé dans `cmc_ov` avec tag `role:"pit"/"sup"`
+
+### Format du PDF (pour le parseur)
+- Titre contient "PIT BOSS" et/ou "SUPERVISEUR" → détecter comme planning cadres
+- Même structure de grille que les employés (jours 1-31 en colonnes)
+- Légende en bas avec barres colorées = mapping code → lieu
+
+**⚠️ Les images sont trop petites pour lire tous les détails. Kevin devra :**
+- [ ] Envoyer les PDF directement (pas screenshots) dans l'app CMC Teams via Import
+- [ ] OU envoyer des captures ZOOM sur la légende et les noms pour que je lise tout
 
 ---
 
