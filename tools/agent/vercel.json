@@ -3,20 +3,12 @@
   "version": 2,
   "crons": [
     {
-      "path": "/api/cron?trigger=cron:*/15",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron?trigger=cron:hourly",
-      "schedule": "0 * * * *"
+      "path": "/api/cron?trigger=cron:0 3 * * *",
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron?trigger=cron:0 8 * * *",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron?trigger=cron:0 3 * * *",
-      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron?trigger=cron:0 9 * * 1",
