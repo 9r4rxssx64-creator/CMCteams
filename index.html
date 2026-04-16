@@ -15401,7 +15401,7 @@ function doImport(){
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory};
   var ok=0,err=0,errLines=[],_fuzzyMatches=[]; // _fuzzyMatches = correspondances incertaines (bigram)
-  var _csvParsed=false;
+  var _csvParsed=false,_csvCadreMode=false;
   var importFamily="bj"; // famille courante par defaut
   // Equipe de la section courante : permet de departager les equipes miroir (1↔4, 2↔5)
   var _contextTeam=null;
@@ -15789,7 +15789,15 @@ function doImport(){
     }
     _csvParsed=true;
   })();
-  for(var li=1;li<lines.length&&!_csvParsed;li++){
+  for(var li=1;li<lines.length;li++){
+    // v9.142 — Ne plus bloquer si CSV a tourn\u00e9 : cadres peuvent \u00eatre en format texte m\u00eame si CSV OK
+    if(_csvParsed&&li<lines.length){
+      // Apr\u00e8s CSV, ne traiter QUE les sections cadres (PIT BOSS, SUPERVISEUR, INSPECTEUR)
+      var _lineUC=lines[li].toUpperCase();
+      if(!_csvCadreMode&&!/(PIT\s*BOSS|SUPERVISEUR|SUPERVISOR|INSPECTEUR|INSPECTOR)/i.test(_lineUC))continue;
+      if(/(PIT\s*BOSS|SUPERVISEUR|SUPERVISOR|INSPECTEUR|INSPECTOR)/i.test(_lineUC))_csvCadreMode=true;
+    }
+    if(!lines[li].trim())continue; // Skip empty lines (pr\u00e9vient parsing ind\u00e9fini)
     var rawLine=lines[li];
     var _ltoks=rawLine.trim().split(/\s+/);
     // Compter codes poste sur cette ligne
@@ -15837,7 +15845,8 @@ function doImport(){
             var _hbSenior=/[\u2605\u2606\u2b50]/.test(_hbRaw); // v9.139 : d\u00e9tection ★ senior
             var _hbnm=_hbRaw.replace(/^[\u2605\u2606\u2b50*]+/,"").replace(/[\u2605\u2606\u2b50*.]+$/,"").trim();
             _hbnm=_hbnm.replace(/([A-Z])\.([A-Z])/g,"$1$2").replace(/\./g," ").replace(/\s+/g," ").trim();
-            if(/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,3}$/.test(_hbnm))_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false,senior:_hbSenior});
+            // v9.142 — Regex assouplie : accepte tout nom de 3+ chars avec au moins une lettre + espace
+            if(_hbnm.length>=3&&/[A-Z]/.test(_hbnm)&&/ /.test(_hbnm))_hdrEmpList.push({name:_hbnm,post:_hbpost,isChef:false,senior:_hbSenior});
           }
           _hbi=_hbj;
         } else {_hbi++;}
@@ -16007,8 +16016,11 @@ function doImport(){
       var _surnOnly=A.employees.filter(function(e){return e.name.split(/\s+/)[0]===name&&isEmpActive(e,iy,im);});
       if(_surnOnly.length===1)emp=_surnOnly[0];
     }
-    // Validation format : si toujours pas trouvé et format invalide, skip
-    if(!emp&&!/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,3}$/.test(name)) continue;
+    // v9.142 — Validation assouplie : pour cadres, accepter tout nom avec au moins 2 parties
+    if(!emp&&!/^[A-Z][A-Z\-'\u2019 ]+\s[A-Z]{1,3}$/.test(name)){
+      // Tenter quand m\u00eame pour cadres ou si le nom a un espace (NOM INIT)
+      if(importFamily!=="cadres"&&name.indexOf(" ")<0) continue;
+    }
     if(!emp){
       // Matching normalise : accents, traits d'union, apostrophes, espaces
       var _nImpL=function(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-\'\u2019\u2018\u02bc]/g," ").replace(/\s+/g," ").trim();};
@@ -16193,6 +16205,8 @@ function doImport(){
       }
       var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la (sous-)période
       if(dayNum<1||dayNum>days) continue;
+      // v9.142 — Auto-apprentissage + ne PAS ignorer les codes horaires
+      if(code&&!CODES[code]&&/\d/.test(code)){learnNewCode(code);_rebuildCK();}
       if(code&&!CODES[code]){err++;errLines.push(name+" j"+dayNum+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][dayNum]=code;
