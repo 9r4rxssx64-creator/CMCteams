@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "description": "Pool de contenus pour les templates. Chaque entrée a un 'used' qui passe à true après publication.",
+    "languages": ["en", "fr"]
+  },
+  "narrative_betrayal": [
+    {
+      "id": "betrayal-001",
+      "lang": "en",
+      "title": "She Trusted Her Sister",
+      "tags": ["betrayal", "family", "story"],
+      "script": "She trusted her sister with everything. Her secrets, her dreams, even her engagement ring while she was overseas. Three months later, she came home to discover her sister had pawned the ring and used the money to elope with her ex-boyfriend. The wedding photos were already on social media. The caption read: 'When you find true love, you don't ask permission.' She didn't say a word. She didn't cry. She simply wrote one message: 'I will never trust anyone again.' And she never did. Twenty years passed. Her sister died alone, broke, and forgotten. At the funeral, only one person showed up. Her. She placed the broken pieces of that pawned ring on the casket and walked away. Sometimes the loudest revenge is the silence of someone who once loved you.",
+      "used": false
+    },
+    {
+      "id": "betrayal-002",
+      "lang": "en",
+      "title": "The Best Man's Secret",
+      "tags": ["betrayal", "marriage", "twist"],
+      "script": "He chose his best friend to be his best man. They had known each other since kindergarten. The wedding day came, and during the speech, his friend told a joke that made the whole room go silent. He said: 'I want to thank the bride for choosing my best friend. After all, she chose me first.' Everyone laughed nervously, thinking it was a poorly timed joke. The groom looked at his bride. Her face was pale. Her hand was shaking. That night, in their honeymoon suite, she confessed everything. The affair had lasted six months before the engagement. He listened in silence. Then he picked up his phone. He didn't call a lawyer. He didn't call his family. He called his friend's wife. She was eight months pregnant. The conversation lasted four minutes. By morning, two marriages were destroyed. He never spoke to either of them again. He simply walked away with his dignity, and that was enough.",
+      "used": false
+    },
+    {
+      "id": "betrayal-003",
+      "lang": "en",
+      "title": "The Inheritance Trap",
+      "tags": ["betrayal", "money", "family"],
+      "script": "When their father died, the three siblings gathered for the will reading. The lawyer announced that the entire estate, worth four million dollars, was left to the youngest brother. The other two were furious. They accused their younger brother of manipulating their father in his final months. They sued. They spread rumors. They turned the entire family against him. The lawsuit lasted two years. The young brother lost everything to legal fees, defending his name. Then, on the last day of the trial, the lawyer revealed the truth. The will had a hidden clause. If the inheritance was contested by the other siblings, the entire estate would go to the youngest brother automatically, plus he would receive double the contested amount from a trust the father had set up secretly. The total: nine million dollars. The father had known his children better than they knew themselves. Greed had revealed their true colors. Loyalty had been rewarded.",
+      "used": false
+    }
+  ],
+  "narrative_revenge": [
+    {
+      "id": "revenge-001",
+      "lang": "en",
+      "title": "Fired After 30 Years",
+      "tags": ["revenge", "workplace", "justice"],
+      "script": "After thirty years at the company, he was fired by email. No warning, no severance, no thanks. His replacement was the CEO's nephew, twenty-three years old, no experience. He cleaned out his desk in silence. He didn't argue. He simply asked for one favor: to give his replacement a one-week handover. The CEO agreed, thinking he was being generous. For seven days, he showed the nephew the systems. He explained the processes. He introduced him to the clients. What the CEO didn't know was that for thirty years, this man had been the secret architect of the company's most profitable contracts. Each one had a single point of failure that only he understood. On the last day, he handed over a thick folder labeled 'Operations Manual.' Inside were three hundred pages of irrelevant information. The actual knowledge stayed in his head. Within six months, the company had lost its top five clients. Within a year, it filed for bankruptcy. He had already started his own consulting firm. He kept every single one of those clients. He never said a word about what happened. He didn't need to.",
+      "used": false
+    },
+    {
+      "id": "revenge-002",
+      "lang": "en",
+      "title": "The Restaurant Critic",
+      "tags": ["revenge", "food", "patience"],
+      "script": "She had worked as a waitress at the upscale restaurant for eight years. The new manager arrived with one mission: cut costs. He started by humiliating her in front of customers, demanding she clean tables faster, smile bigger, and never speak unless spoken to. He fired her in the middle of a Friday dinner rush, in front of fifty guests, claiming she was 'too old to represent the brand.' She walked out without a word. Three months later, the restaurant received a devastating review in the city's most prestigious magazine. The critic described every flaw in chilling detail: the watered down wine, the reused bread, the manager's habit of skimming tips, the violations in the kitchen she had documented for years. The article went viral. The restaurant closed within sixty days. The manager lost his career. What the manager never knew was that the magazine's lead food critic had been a regular customer for years. The waitress had served her every Tuesday. They had become friends. The critic had simply waited for the perfect moment.",
+      "used": false
+    }
+  ],
+  "narrative_mystery": [
+    {
+      "id": "mystery-001",
+      "lang": "en",
+      "title": "The Door That Was Never There",
+      "tags": ["mystery", "unexplained", "psychological"],
+      "script": "When she moved into the old apartment, she immediately noticed something strange. There was a door at the end of the hallway that didn't appear on the building's blueprints. The landlord said it had been there for as long as anyone could remember, but no one knew where the key was. The door was locked. She didn't think much of it. Until the noises started. Soft footsteps. A child laughing. Always at three in the morning. Always behind that door. She called a locksmith. He examined the door for an hour. Then he turned to her, his face pale, and said: 'There's no lock on this door. There's no door behind this door. It's painted onto the wall.' She placed her hand on the handle. It turned. The door opened into a small room she had never seen before. Inside, on a small table, was a single photograph. It was her. As a child. Standing in that exact room. She doesn't remember ever being there. The room is no longer in the apartment.",
+      "used": false
+    }
+  ],
+  "narrative_short_facts": [
+    {
+      "id": "fact-short-001",
+      "lang": "en",
+      "title": "The 1% Rule of Wealth",
+      "tags": ["finance", "psychology", "facts"],
+      "script": "Here's something most people don't know about money. The wealthiest one percent don't get rich by working harder. They get rich by understanding one simple rule. Time is the only resource you cannot manufacture. So they buy other people's time. They don't trade their hours for dollars. They build systems that work while they sleep. And the difference between a millionaire and someone struggling isn't talent. It's not even effort. It's whether you spend your time, or invest it.",
+      "durationTarget": 22,
+      "used": false
+    },
+    {
+      "id": "fact-short-002",
+      "lang": "en",
+      "title": "Why You Can't Remember Being a Baby",
+      "tags": ["psychology", "brain", "facts"],
+      "script": "You probably can't remember anything from before age three. But why? Scientists call it infantile amnesia. Your brain was actually creating memories the entire time. The problem is, your brain was also pruning neurons at incredible speed. Up to ten thousand connections per second were being deleted. Every memory you made as a baby was simply overwritten by your developing brain. So technically, you've already forgotten the most important years of your life. And yet, those years shaped everything about who you are today.",
+      "durationTarget": 24,
+      "used": false
+    },
+    {
+      "id": "fact-short-003",
+      "lang": "en",
+      "title": "The 21-Day Habit Lie",
+      "tags": ["psychology", "habits", "self-improvement"],
+      "script": "You've heard it takes 21 days to build a habit. That's a complete lie. The real number is 66 days on average. But here's what nobody tells you. The most successful people don't focus on days. They focus on identity. They don't say 'I want to exercise more.' They say 'I am someone who exercises.' Every action you take is a vote for the person you're becoming. So stop counting days. Start counting votes.",
+      "durationTarget": 18,
+      "used": false
+    }
+  ],
+  "narrative_finance": [
+    {
+      "id": "finance-001",
+      "lang": "en",
+      "title": "He Lost Everything in 24 Hours",
+      "tags": ["finance", "warning", "story"],
+      "script": "He was a thirty-five year old engineer making one hundred fifty thousand dollars a year. He had a beautiful wife, two kids, and a paid-off house. Life was good. Then he discovered options trading. The first month, he made twelve thousand dollars in pure profit. The second month, twenty-four thousand. He felt invincible. He took out a second mortgage on his house. He drained his retirement account. He even borrowed from his father-in-law. By the third month, he was managing four hundred thousand dollars in trades. Then came the news event nobody predicted. The market gapped down at open. His positions were wiped out before he could react. He lost everything in twenty-three minutes. The mortgage. The retirement. The borrowed money. His marriage ended within six months. His children were in another state with their mother. He works at a hardware store now. He tells this story to anyone who will listen. Not because he wants pity. But because he wants you to understand one thing. Leverage doesn't make you rich. Leverage just makes you faster, in whatever direction you're already heading.",
+      "used": false
+    }
+  ]
+}
