@@ -456,7 +456,7 @@ button:disabled,.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none
 select.inp{-webkit-appearance:none}
 
 /* === CARDS === v9.67b ultra-transparent (photo VRAIMENT visible) */
-.card{background:rgba(14,28,18,.55);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(201,162,39,.32);border-radius:14px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)}
+.card{background:rgba(14,28,18,.35);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(201,162,39,.22);border-radius:14px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}
 /* Cards sans photo de fond : totalement opaques */
 body:not(.has-accueil-bg) .card{background:rgba(30,55,35,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .page{padding:16px 16px 12px;position:relative;z-index:1}
@@ -8866,7 +8866,7 @@ function vPlan(){
     +'<div><div style="font-size:16px;font-weight:800;color:'+DEPT.color+';text-transform:uppercase;letter-spacing:2px;text-shadow:0 1px 2px rgba(0,0,0,.5)">'+esc(DEPT.label)+'</div>'
     +'<div style="font-size:11px;color:#a8c8a0">Casino de Monte-Carlo \u00b7 '+A.employees.filter(function(e){return isEmpActive(e,A.year,A.month);}).length+' employ\u00e9s actifs</div></div>'
     +'</div>';
-  var FAMS_ORDER=["bj","roulettes","baccara","cmc"];
+  var FAMS_ORDER=["bj","roulettes","baccara","cmc","cadres"];
   FAMS_ORDER.forEach(function(fid){
     var famEmps=A.employees.filter(function(e){return (e.family||"bj")===fid&&isEmpActive(e,A.year,A.month);});
     if(!famEmps.length) return;
@@ -11258,7 +11258,7 @@ function exportPlanningCSV(){
   // Trier : famille puis \u00e9quipe puis nom
   var emps=A.employees.filter(function(emp){return isEmpActive(emp,A.year,A.month);});
   emps.sort(function(a,b){
-    var fo=["bj","roulettes","baccara","cmc"];
+    var fo=["bj","roulettes","baccara","cmc","cadres"];
     var fa=fo.indexOf(a.family||"bj"),fb=fo.indexOf(b.family||"bj");
     if(fa!==fb) return fa-fb;
     if(a.team!==b.team) return String(a.team).localeCompare(String(b.team));
@@ -12095,7 +12095,7 @@ function vPasswords(){
     h+='<div style="padding:24px;text-align:center;font-size:15px;color:#b0ccb0">Aucun employ\u00e9 dans cette cat\u00e9gorie.</div>';
   }
   // List grouped by family
-  var FAMS=[{id:"bj",lb:"Jeux am\u00e9ricains"},{id:"roulettes",lb:"Jeux europ\u00e9en"},{id:"baccara",lb:"Baccara"},{id:"cmc",lb:"Groupe ouvert"}];
+  var FAMS=[{id:"bj",lb:"Jeux am\u00e9ricains"},{id:"roulettes",lb:"Jeux europ\u00e9en"},{id:"baccara",lb:"Baccara"},{id:"cmc",lb:"Groupe ouvert"},{id:"cadres",lb:"Cadres (Pit Boss/Sup)"}];
   FAMS.forEach(function(fam){
     var famEmps=emps.filter(function(e){return (e.family||"bj")===fam.id;});
     if(famEmps.length===0)return;
@@ -14982,6 +14982,8 @@ function doImport(){
     if(/(BACCAR|PUNTO\s*BANCO|PUNTO.HR|PUNTO.HIGH|CHEF.*BACCAR|EMPLOYE.*BACCAR|CROUPIER.*BACCAR)/.test(_sh)){importFamily="baccara";break;}
     if(/(BLACKJACK|BLACK.JACK|CHEF.*JACK|JEUX.*AM|CHEF.*AM|CARTES.AM|AMERICAN|AMERIC|RESPONSABLE.DE.TABLE|AMENAGEMENT|AMENAG)/.test(_sh)){importFamily="bj";break;}
     if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_sh)){importFamily="cmc";break;}
+    // v9.121 — Import PIT BOSS / SUPERVISEUR / INSPECTEUR = famille "cadres"
+    if(/(PIT\s*BOSS|SUPERVISEUR|SUPERVISOR|INSPECTEUR|INSPECTOR)/i.test(_sh)){importFamily="cadres";break;}
   }
   var _postPat=/^\.?[A-Z][A-Z0-9+.\/\-]*\.?$/; // pattern code poste ex: BRTP+E. ou .BRTCP+K
   function _norm(s){return (s||"").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
@@ -15299,6 +15301,7 @@ function doImport(){
       else if(/(BACCAR|PUNTO\s*BANCO|PUNTO.HR|PUNTO.HIGH|CHEF.*BACCAR|EMPLOYE.*BACCAR|CROUPIER.*BACCAR)/.test(_lnU))importFamily="baccara";
       else if(/(BLACKJACK|BLACK.JACK|AMENAG|AMERICAIN|AMERIC|CARTES.AM|CHEF.*JACK)/.test(_lnU))importFamily="bj";
       else if(/(CARTES.CMC|EMPLOYE.*CMC|CROUPIER.*CMC)/.test(_lnU))importFamily="cmc";
+      else if(/(PIT\s*BOSS|SUPERVISEUR|SUPERVISOR|INSPECTEUR|INSPECTOR)/i.test(_lnU))importFamily="cadres"; // v9.121
       // Détecter numéro d'équipe dans le header de bloc (ex: "EQUIPE 3", "EQ.5")
       (function(){
         var _em2=_lnU.match(/(?:EQ(?:UIPE)?\.?\s*)([RC]?\s*\d{1,2})\b/);
@@ -16811,7 +16814,7 @@ function buildIASystemPrompt(){
   var _grpCnt={ouvert:0,ferme:0,nd:0};
   A.employees.forEach(function(e){_grpCnt[e.groupe||"nd"]=(_grpCnt[e.groupe||"nd"]||0)+1;});
   s+="Statuts contractuels : "+_grpCnt.ouvert+" groupe ouvert (polyvalents, mobilit\u00e9 jeux) \u00b7 "+_grpCnt.ferme+" groupe ferm\u00e9 (noyau historique, prime 280\u20ac, retraite \u00e9tendue) \u00b7 "+_grpCnt.nd+" non d\u00e9finis.\n";
-  ["bj","roulettes","baccara","cmc"].forEach(function(fid){
+  ["bj","roulettes","baccara","cmc","cadres"].forEach(function(fid){
     var emps=A.employees.filter(function(e){return (e.family||"bj")===fid;});
     if(!emps.length)return;
     s+="\n"+getFamLabel(fid)+" ("+emps.length+") :\n";
@@ -18742,7 +18745,7 @@ function vImportVerif(){
     }
   });
   // Grouper par famille et équipe
-  var FAM_ORDER=["bj","roulettes","baccara","cmc"];
+  var FAM_ORDER=["bj","roulettes","baccara","cmc","cadres"];
   var FAM_LABELS={"bj":"Jeux am\u00e9ricains","roulettes":"Jeux europ\u00e9en","baccara":"Baccara","cmc":"Groupe ouvert"};
   var FAM_COLORS={"bj":"#c9a227","roulettes":"#4a72a8","baccara":"#a060ff","cmc":"#3a8a50"};
   var famTeams={"bj":[],"roulettes":[],"baccara":[],"cmc":[]};
