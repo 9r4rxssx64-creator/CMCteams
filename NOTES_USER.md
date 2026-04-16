@@ -228,6 +228,34 @@ Orange pêche vif `#ffb480` / texte `#a84018` — tous les codes `XX/Y*`.
 
 ---
 
+## 🕐 Plannings Pit Boss + Inspecteurs (demande 2026-04-16)
+
+**Demande admin :**
+> "Je vais renvoyer le planning des pit boss et celui des inspecteurs à implanter
+> dans l'app, une autre section avec toujours pareil attribution d'horaires exacte
+> pour chaque cadre, lieu exact."
+
+**Spécifications :**
+- **Nouvelle section** dédiée dans l'app (onglet ou sous-menu de vPlan/vDeparts)
+- **Planning pit boss** : horaires exactes, attribution par cadre, lieu exact
+- **Planning inspecteurs** : idem, horaires propres aux inspecteurs
+- **Attribution par cadre** : chaque pit boss / inspecteur a son horaire individuel
+- **Lieu exact** : salle/zone d'affectation (Renaissance, Atrium, Europe, Amériques, etc.)
+- L'import PDF doit gérer ces plannings séparément (format à voir quand Kevin envoie les PDF)
+
+**Impact technique :**
+- Nouvelle clé overrides (ex: `cmc_ov_pitboss`, `cmc_ov_inspecteur`) ou sous-clés dans `cmc_ov`
+- Nouveaux rôles `pit` / `ins` dans `ROLE_SHIFTS` (structure prête depuis v9.80)
+- Salle/lieu comme champ additionnel par entrée planning
+- ⚠️ Espace localStorage : prévoir nettoyage agressif (v9.120) + possible migration IndexedDB
+
+**En attente de :**
+- [ ] PDF planning pit boss (Kevin va l'envoyer)
+- [ ] PDF planning inspecteurs (Kevin va l'envoyer)
+- [ ] Correspondance nom cadre ↔ lieu exact (à extraire du PDF ou demander à Kevin)
+
+---
+
 ## 🕐 Horaires multi-rôles (à compléter)
 
 **v9.80 préparation structure dans ROLE_SHIFTS.**
