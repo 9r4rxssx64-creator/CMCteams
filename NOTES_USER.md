@@ -1,7 +1,39 @@
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**
->
+
+## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
+
+L'app DOIT auto-inférer le rôle de l'employé à partir de `emp.post` (compétences)
+ET de sa présence dans le planning des "Chefs cartes" à chaque import.
+
+### Nomenclature officielle (Casino de Monaco)
+
+| Groupe planning | Détection compétences | Rôle auto |
+|-----------------|----------------------|-----------|
+| Chefs jeux américains (BJ) | dans planning "chef cartes américaines" | **Chef BJ** (family=bj, chef=true) |
+| Chefs jeux européens | `E` seul ou avec comp. européennes | **Chef jeu européen** (roulettes, chef=true) |
+| Sous-chefs jeux européens | Toutes comp. E + apparaît dans planning chefs cartes | **Sous-chef JE** (roulettes, sousChef=true) |
+| Employés européens | `E` sans être chef/sous-chef | **Employé européen** (roulettes) |
+| Chefs groupe fermé Baccara | `P` ou `P+` SANS `E` | **Chef GF Baccara** (baccara, chef=true, gf=true) |
+| Chefs GF jeux européens | Toutes comp. GF européennes | **Chef GF européen** — rare dans chefs cartes |
+
+### Règles précises
+
+1. **Si `post` contient `P` ou `P+` SANS `E`** → Chef groupe fermé Baccara (family=baccara, chef=true)
+2. **Si `post` contient `E`** → NE PEUT PAS être groupe fermé. Automatiquement jeu européen.
+3. **Si chef européen (toutes compétences E)** → Chef JE
+4. **Si `E` + apparaît dans planning chefs cartes (mais pas chef complet)** → Sous-chef JE
+5. **Sinon `E` seul** → Employé européen
+6. Les chefs GF européens viennent **jamais ou très rarement** dans les plannings chefs cartes
+
+### Automatisation à chaque import
+
+- Re-classifier les employés suivant leurs compétences + présence planning chefs
+- Mettre à jour `emp.family`, `emp.chef`, `emp.sousChef`, `emp.gf` automatiquement
+- Recalculer les stats et afficher les changements dans l'audit
+- Bouton manuel de secours pour forcer re-classification
+
 > ## 🚨 MÉTA-RÈGLES PERMANENTES (session 2026-04-13)
 >
 > **À appliquer SANS que l'admin ait à le redemander.**
