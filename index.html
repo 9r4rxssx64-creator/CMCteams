@@ -15116,7 +15116,8 @@ function doImport(){
       if(/^CO(LONNE)?\d*$/.test(_ac))continue;
       _ac=_ac.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");_ac=_ac.replace(/CDP$/,"*");
       _ac=_ac.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
-      if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"']+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
+      // v9.122 — Accepter aussi les variantes avec : ou ; ou multiples ''/"" en suffixe (pit boss PDF)
+      if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"':;]+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
       if(!CODES[_ac]){var _cAl={"RHE":"RH","RHO":"RH","REPO":"R","REPOS":"R","CONGE":"CP","MALADIE":"M","FORMATION":"AF","RECUP":"RRT","PRET":"PRT","PATRIMOINE":"PAT","20H5":"20/5","19H4":"19/4","16H3":"16/3","16H22":"16/22","22H6":"22/6","14H19":"14/19"};if(_cAl[_ac])_ac=_cAl[_ac];}
       if(!_ac||!CODES[_ac]){if(_ac)_importSkipped++;continue;}
       var _adn=_curFDay+(_ai-_curBase);
