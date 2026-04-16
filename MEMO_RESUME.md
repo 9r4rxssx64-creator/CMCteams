@@ -1,8 +1,19 @@
-# Mémo de reprise — 2026-04-13 (v9.117 livrée)
+# Mémo de reprise — 2026-04-16 (v9.119 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
 > Puis `~/.claude/CLAUDE.md` (règles globales multi-projets).
+> **⚠️ AUSSI lire `TODO_REMINDERS.md`** — tâches en attente que Kevin a demandées.
+
+---
+
+## 🗓 RAPPELS À TRAITER PROCHAINEMENT (voir TODO_REMINDERS.md)
+
+1. **Nettoyage projets Vercel** (demandé 2026-04-16 03:05) — supprimer tous SAUF `kdmc-bot-2026`
+2. Régénérer token Telegram (token visible dans captures)
+3. Ajouter 4 secrets GitHub Actions pour activer crons fréquents
+4. Backup chiffré tokens sur Drive (sécu 3-2-1)
+5. Créer repos GitHub IA-KDMC + e-KDMC
 
 ---
 
