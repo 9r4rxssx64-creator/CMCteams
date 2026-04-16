@@ -6,6 +6,11 @@
 >
 > **À appliquer SANS que l'admin ait à le redemander.**
 >
+> 0. **MODE EXPERT PERMANENT** : TodoWrite, subagents parallèles, audit Explore,
+>    syntax check + tests AVANT commit, sur-vérification auto 6 points,
+>    matrice d'impact, edge cases iOS/localStorage/Firebase.
+>    Détails dans `~/.claude/CLAUDE.md` section "MODE EXPERT PERMANENT".
+>
 > 1. **Chaque info métier reçue = enregistrée IMMÉDIATEMENT dans ce fichier**
 >    (règle §1ter CLAUDE.md). Ne jamais attendre que l'admin redemande.
 >
@@ -249,7 +254,87 @@ Orange pêche vif `#ffb480` / texte `#a84018` — tous les codes `XX/Y*`.
 - Salle/lieu comme champ additionnel par entrée planning
 - ⚠️ Espace localStorage : prévoir nettoyage agressif (v9.120) + possible migration IndexedDB
 
-**PDF REÇUS (2026-04-16 03:57) — ANALYSE DES SCREENSHOTS :**
+**PDF REÇUS (2026-04-16 04:00) — ANALYSE COMPLÈTE captures ZOOM :**
+
+### Titre section dans le PDF : `Pit Boss 15`
+
+### 16 PIT BOSS (noms complets + matricules)
+| Matricule | Nom | Actif |
+|-----------|-----|-------|
+| 62224/62056 | JANEL JM | oui |
+| 62224/62056 | GARELLI C | oui (*) |
+| 62224/62056 | LANDAU J | oui |
+| 62224/62056 | PETIT J | oui |
+| 0 | BOUVIER JF | oui |
+| 62224/62056 | JONIAUX S | oui |
+| 62224/62056 | HERVE A | oui |
+| 62224/62056 | EMMERICH JC | oui |
+| 62224/62056 | ENZA C | oui |
+| — | CORNUTELLO A | oui |
+| 62224/62056 | PENNACINO JP | oui |
+| 62224/62056 | DI COLANGELO F | oui (*) |
+| 62224/62056 | CAMPI H | oui |
+| 62224/62056 | PELAZZA F | oui (*) |
+| 62224/62056 | LONG JP | oui (*) |
+| 62224/62056 | ROSPOCHER G | oui (*) — MALADIE tout le mois avril |
+
+### 5 SUPERVISEURS
+| Matricule | Nom |
+|-----------|-----|
+| 0 | ETTORI M. |
+| 0 | FOUQUE V. |
+| — | PLACENTI L. (*) |
+| 62224/62056 | DOGLIOLO Y. |
+| 0 | MUS L. |
+
+### CODES HORAIRES PIT BOSS (légende verte — TOUS LIRE)
+Barre légende : `15 | HD | 12H30/19 | 12H30/19 | 15/19 | 16/20 | 19/2 | 19/4 | 19/4 | 22/6 | 22/6`
+
+**Mapping code → lieu (tableau légende) :**
+| Code | Lieu |
+|------|------|
+| `19/4` | **CCDP** |
+| `16/20` | **CMC** |
+| `12H30/19` | **CMC** |
+| `22/6` | **CMC** |
+| `19/4'` (avec ') | **CMC** |
+| `15/19` | **CCDP** |
+| `19/2` | **CMC** |
+| `12H30/19` (2ème) | **CMC** |
+| `15/20` (rose) | **POKER NO LIMIT** |
+
+⚠️ **ATTENTION** : `19/4` PIT BOSS = CCDP, mais `19/4` EMPLOYÉ = CMC.
+Le MÊME code a un LIEU DIFFÉRENT selon le rôle ! L'app doit gérer ça.
+
+`19/4'` (avec apostrophe) = CMC (comme les employés variante CDP).
+
+### CODES HORAIRES SUPERVISEUR (légende bleue/cyan)
+Visibles en bas du PDF avril (coupé). À confirmer avec Kevin.
+
+### Autres codes vus dans les cellules
+| Code | Sens |
+|------|------|
+| `PK` | Poker (fond rose — affectation Poker) |
+| `HD` | Hors Département ? ou Jour Férié ? (fond rouge vif) |
+| `RRT` | Récup repos travaillé |
+| `PRT` | Prêt |
+| `CP` | Congé payé |
+| `RH` | Repos hebdo |
+| `R` | Repos |
+| `M` | Maladie (ROSPOCHER G tout le mois avril) |
+
+### Format spécial `12H30/19`
+Ce code contient un "H" (heure) : signifie **12h30 à 19h**.
+Le parseur doit accepter le format `XXhXX/YY` en plus de `XX/YY`.
+
+### Colonnes après le nom
+- Colonne 1 : `*` = marqueur spécial (senior ? ou annotation)
+- Colonne 2 : nombre (1, 11, 21) = peut-être index de rotation ou début de service
+- Colonne 3 : nombre (30, 31, 20, 10) = nombre de jours du mois ou fin de service
+
+---
+
+**ANCIENNE ANALYSE (remplacée) :**
 
 ### Document 1 : "7 PLANNING PIT BOSS-SUPE..." — Avril 2026
 - **2 sections dans le même PDF** : PIT BOSS (barre verte) + SUPERVISEUR (barre bleue)
