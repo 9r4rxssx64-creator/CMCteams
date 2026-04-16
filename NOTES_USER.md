@@ -18,6 +18,37 @@ ET de sa présence dans le planning des "Chefs cartes" à chaque import.
 | Chefs groupe fermé Baccara | `P` ou `P+` SANS `E` | **Chef GF Baccara** (baccara, chef=true, gf=true) |
 | Chefs GF jeux européens | Toutes comp. GF européennes | **Chef GF européen** — rare dans chefs cartes |
 
+### Règles visuelles plannings Pit Boss / Inspecteurs (demande admin 2026-04-16 soir)
+
+| Visuel | Signification |
+|--------|--------------|
+| Fond **jaune** | Poker No Limit (PNL) |
+| Fond **blanc** | Pas de Poker No Limit ce jour |
+| Noms en **rouge** | Noms non reconnus par le PDF (pas grave la couleur en soi) |
+| **Étoile rouge** (★) | Personne de +55 ans (senior) |
+
+- Les pit boss PEUVENT avoir fond jaune OU fond blanc selon le service du jour
+- La légende en bas du planning PDF pit boss de mai indique les significations exactes
+- Se servir de cette légende pour reconnaître les codes correctement
+
+### Comparaison formats plannings cadres (demande admin 2026-04-16)
+
+| Type | Format PDF | Particularités |
+|------|-----------|----------------|
+| **Chefs cartes (BJ/Roul.)** | Bloc NOM + codes positionnels (jours 1→30) | ★ = chef, * = ligne positionnelle |
+| **Pit Boss** | Bloc NOM + codes, fond jaune = PNL, ★ rouge = 55+ | CADRE_LIEU table différencie CMC/CCDP/PNL |
+| **Superviseurs** | Même format que pit boss, section SUPERVISEUR après | Souvent après une ligne vide (bug fix v9.133) |
+| **Inspecteurs** | Similaire pit boss, à intégrer plus tard | TODO : ajouter family:"cadres", role:"inspecteur" |
+
+**Points communs (importants pour reconnaissance)** :
+- Tous ont les mêmes CODES horaires (19/4, 22/6, 16/20, 15/20, etc.)
+- CADRE_LIEU s'applique à TOUS les cadres (même mapping)
+- ★ = senior (55+) dans TOUS les plannings cadres
+- Tous utilisent le format bloc (entête noms + lignes positionnelles)
+- Compétences P/P+/E ne s'appliquent PAS aux pit boss/superviseurs/inspecteurs
+
+---
+
 ### Règles précises
 
 1. **PRIORITÉ #1 — Groupe OUVERT vs Groupe FERMÉ** (demande admin 2026-04-16 soir)
