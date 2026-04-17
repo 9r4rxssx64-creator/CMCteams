@@ -4,6 +4,28 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.203 → v9.232 — Session 2026-04-17 bis (30 versions, géoloc + pit boss + heures effectives)
+
+### 🎰 Batch 12 — Historique ghost + notif (v9.230 → v9.232)
+- **v9.232** : MAJ CLAUDE.md + CHANGELOG.md (traces session) + FB_LOCAL `cmc_ghost_log`
+- **v9.231** : `getGhostHistoryForUid()`, `ghostHistoryCountLast24h()`, store `cmc_ghost_log` rolling 500
+- **v9.230** : Ghost watcher polling 30s + notif push persistent > 2min (sendNotif tag `ghost-<uid>`)
+
+### 🏆 Batch 11 — Coord tables ↔ pit boss (v9.228 → v9.229)
+- **v9.229** : Ghost alerts dans `pitCompute` (emps présents détectés à coord physique liée sans être assignés)
+- **v9.228** : `pitAction("linkPhys",...)` + bouton 📍 par table live + `_pitLinkPhysPrompt()`
+
+### 📊 Batch 10 — CSV export + dashboard heures (v9.225 → v9.227)
+- **v9.227** : `vDashboardHeures()` mensuel (KPIs globaux + barre progression vs contractuel)
+- **v9.226** : Auto-assign GPS dans `pitAction.openTable` (priorité 1 physTableId)
+- **v9.225** : `exportEffectiveHoursCSVDay/Month` avec récap mensuel par employé
+
+### 🕰 Batch 9 — Heures effectives + coord tables (v9.223 → v9.224)
+- **v9.224** : `calcEffectiveHours(uid, ts)` via timings (pre/post/pause/coupure 16/3 auto-détectée)
+- **v9.223** : `cmc_table_coords` + `detectEmpAtTable()` + `vTablesCoords` + bouton "Capturer ma position"
+
+---
+
 ## v9.153 → v9.202 — Session 2026-04-17 (50 versions, 12 audits externes, note 6.62→8.50)
 
 ### 🏆 Batch 8 — Polish B+C+D post-audits (v9.199 → v9.202)
