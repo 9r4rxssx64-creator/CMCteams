@@ -176,18 +176,80 @@ var K = {
 > 2. Les entrer dans les Settings de l'app KDMC AI
 > 3. Le proxy Cloudflare garde tout securise
 
+### 12. Communication Inter-Appareils (NOUVEAU)
+- [x] **Hub central Firebase** : chaque appareil s'enregistre (deviceId, type, nom, lastSeen)
+- [x] **File de commandes** : iPhone envoie commande > Firebase > Tablette execute
+- [x] **Types de commandes** : ouvrir URL, envoyer fichier, copier texte, notification, lancer app
+- [x] **Sync clipboard** : copier sur iPhone = disponible sur tablette et PC
+- [x] **Transfert fichiers** : via Firebase Storage (photos, docs, audio)
+- [x] **Notifications croisees** : recevoir sur tous les appareils ou un seul (au choix)
+- [x] **Bouton ON/OFF par appareil** : activer/desactiver chaque connexion individuellement
+- [x] **Log des commandes** : historique de qui a envoye quoi a quel appareil
+
+### 13. Securite Blindee + Multi-Tenant (NOUVEAU)
+- [x] **Separation admin / utilisateur** : 2 interfaces completement differentes
+  - Admin (Kevin) : acces total, toutes les donnees, tous les outils
+  - Utilisateur (client) : interface limitee, pas d'acces aux donnees admin
+- [x] **Bouton ON/OFF sur CHAQUE fonction sensible** :
+  - Toggle connexion Facebook ON/OFF
+  - Toggle connexion Instagram ON/OFF
+  - Toggle connexion WhatsApp ON/OFF
+  - Toggle acces fichiers ON/OFF
+  - Toggle commandes inter-appareils ON/OFF
+  - Toggle paiements ON/OFF
+  - Toggle web search ON/OFF
+  - Toggle execution code ON/OFF
+- [x] **Isolation des donnees** : chaque utilisateur a son propre espace Firebase
+- [x] **Rate limiting** : max requetes/minute par utilisateur (anti-abuse)
+- [x] **Chiffrement E2E** : donnees sensibles chiffrees avant stockage
+- [x] **Audit log** : chaque action sensible est logguee (qui, quoi, quand)
+- [x] **2FA optionnel** : PIN + biometrie (Face ID / empreinte) sur mobile
+- [x] **Blocage d'urgence** : bouton rouge = tout couper instantanement
+- [x] **Whitelist IP** : optionnel, restreindre l'acces a certaines IPs
+- [x] **Token expiration** : sessions courtes pour les clients (1h), longues pour admin (24h)
+- [x] **Sandbox client** : les utilisateurs clients NE PEUVENT PAS :
+  - Acceder aux donnees de Kevin
+  - Modifier les parametres admin
+  - Voir les conversations admin
+  - Executer du code non-sandbox
+  - Acceder aux API connectees de Kevin
+  - Envoyer des commandes aux appareils de Kevin
+
 ---
 
-## Securite
+## Securite (niveau entreprise)
 
-- API keys JAMAIS dans le code -- stockees localement ou dans Cloudflare Secrets
-- esc() sur TOUTE donnee utilisateur avant innerHTML
-- Sandbox iframe pour execution de code
-- CSP restrictif
+### Couche 1 — Protection des donnees
+- API keys JAMAIS dans le code -- Cloudflare Secrets uniquement
+- esc() sur TOUTE donnee utilisateur avant innerHTML (anti-XSS)
+- CSP restrictif (Content Security Policy)
 - CORS restreint au domaine GitHub Pages
-- Chiffrement des donnees sensibles en localStorage
-- Session TTL 24h avec renouvellement auto
-- Pin/mot de passe optionnel pour l'app
+- Chiffrement AES-256 des donnees sensibles en localStorage
+- Pas de donnees en clair dans Firebase (hachage mots de passe)
+
+### Couche 2 — Authentification
+- PIN admin (6 chiffres) + biometrie mobile (Face ID / empreinte)
+- Session TTL : 24h admin, 1h clients
+- Rate limiting PIN : 5 echecs = verrouillage progressif
+- 2FA optionnel (TOTP / authenticator app)
+
+### Couche 3 — Isolation multi-tenant
+- Chaque utilisateur = espace Firebase separe (`/users/{uid}/`)
+- Admin (`/admin/`) : espace prive, JAMAIS accessible aux clients
+- Regles Firebase strictes : `auth.uid === resource.data.owner`
+- Pas de requetes cross-tenant possibles
+
+### Couche 4 — Controle d'acces granulaire
+- Bouton ON/OFF sur CHAQUE connexion et fonction sensible
+- Matrice de permissions : admin / pro / free (3 niveaux)
+- Audit log complet (qui fait quoi quand) -- non-deletable
+- Bouton d'urgence "TOUT COUPER" (kill switch global)
+
+### Couche 5 — Sandbox client
+- Code execute dans iframe sandbox (pas d'acces DOM parent)
+- Pas d'acces localStorage admin depuis l'espace client
+- Pas d'acces aux outils admin (tools verrouilles par role)
+- Filtrage des commandes IA (pas de commandes destructrices)
 
 ---
 
