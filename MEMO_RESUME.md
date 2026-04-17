@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-16 (v9.119 livrée)
+# Mémo de reprise — 2026-04-17 (v9.147 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
@@ -7,54 +7,67 @@
 
 ---
 
-## 🗓 RAPPELS À TRAITER PROCHAINEMENT (voir TODO_REMINDERS.md)
+## 🚨 PROBLÈME EN COURS (priorité 1)
 
-1. **Nettoyage projets Vercel** (demandé 2026-04-16 03:05) — supprimer tous SAUF `kdmc-bot-2026`
-2. Régénérer token Telegram (token visible dans captures)
-3. Ajouter 4 secrets GitHub Actions pour activer crons fréquents
-4. Backup chiffré tokens sur Drive (sécu 3-2-1)
-5. Créer repos GitHub IA-KDMC + e-KDMC
+**5 superviseurs (ETTORI M, FOUQUE V, PLACENTI L, DOGLIOLO Y, MUS L) + BOUVIER JF (pit15)**
+ont TOUJOURS 0 horaire après import malgré v9.133→v9.147.
+
+**Diagnostic en cours** : 3 subagents audit lancés. Le scan de secours brute-force (v9.146)
+et le diagnostic console (v9.146) devraient aider à identifier la cause racine.
+
+**Hypothèse** : le texte PDF collé ne contient peut-être PAS les sections superviseur/pit boss,
+OU le format est radicalement différent de ce qu'on suppose.
+
+**Prochaine action** : vérifier les logs console [DIAG CADRES] après import pour voir
+si les noms sont présents dans le texte.
 
 ---
 
-## 🚨 Méta-règles admin (appliquer SANS que l'admin ait à redemander)
+## 🗓 RAPPELS À TRAITER
 
-1. Chaque info métier admin → enregistrée IMMÉDIATEMENT dans `NOTES_USER.md`
-2. Chaque nouvelle fonction = auto + sur-vérif + bouton manuel de secours
-3. Priorité absolue = reconnaissance + placement correct à CHAQUE import PDF
-4. Compétences `emp.post` = persistantes (plus jamais écrasées au reload — v9.108)
-5. **IMPORTANT v9.116** : les familles/secteurs NE SONT PAS dérivés des compétences.
-   - `emp.family` vient de l'IMPORT (team dispatch bj1..r13..c13)
-   - `emp.post` (P/P+/E) reste dans la fiche, pour info / dispatch futur
-   - `reassignAllFamiliesByCompSilent` reste dispo MANUELLEMENT (bouton), pas auto
-6. Clé API Anthropic : backup Firebase auto + restore à la connexion (v9.108)
-   - Console : https://console.anthropic.com/settings/keys
-7. Tout s'enchaîne automatiquement (stats, vues, IA context suivent les modifs)
+1. **Constitution monégasque** : intégrer dans la base de données app (comme vConvention)
+2. **Nettoyage projets Vercel** : supprimer tous sauf `kdmc-bot-2026`
+3. **Régénérer token Telegram** (visible dans captures)
+4. **Ajouter 4 secrets GitHub Actions**
+5. **Backup chiffré tokens** sur Drive
+6. **Créer repos GitHub** IA-KDMC + e-KDMC
 
 ---
 
 ## Dernière version stable
 
-**`APP_VER = "v9.117"`** — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.147"`** — branche `main` (déployée GitHub Pages)
 
-### Session 2026-04-13 — ce qui a été livré
+### Session 2026-04-17 — ce qui a été livré (v9.133 → v9.147)
+
 | Version | Contenu |
 |---------|---------|
-| v9.103 | Couleurs CODES calibrées PDF SBM |
-| v9.104 | Auto-vérif import totale (8 audits + auto-corrections + 4 boutons secours) |
-| v9.105 | Fix crash Safari burn-out + CDP pêche clair + contraste AAA |
-| v9.106 | Fix micro chat + préservation clé API reset + TTS chat |
-| v9.107 | Helper secteurs P/P+/E (devenu manuel en v9.116) |
-| v9.108 | Backup admin Firebase + persistance post + auto-classif import (revert v9.116) |
-| v9.109 | Sync compact + auto-backup import + IA sur-vérif + auto-save profil |
-| v9.110 | Visibilité MAX + modal burnout propre |
-| v9.111 | Fix SW crash + 1 bouton fermer + login centré iOS |
-| v9.112 | Fix toast thème qui masquait Continuer login |
-| v9.113 | Thème clair RÉELLEMENT fonctionnel |
-| v9.114 | Bouton pause diaporama + visibilité massive + fond vert défaut |
-| v9.115 | Stats connexions complètes + fuzzy search IA |
-| v9.116 | Retrait auto-reassign familles + restore DEF_EMP |
-| v9.117 | Fix 3 sources de crashes (SW update, Firebase fetch, IA fetch) |
+| v9.133 | Anti-crash scroll iOS + débordement codes + BOUVIER JF dots→JF + visibilité |
+| v9.135 | Auto-inférence rôles P/P+/E + vue équipes pliable par famille |
+| v9.136 | Groupe Ouvert/Fermé + sécurité IA hardcodée + auto-fix emp vides |
+| v9.137 | Planning + Départs familles pliables (anti-surcharge) |
+| v9.138 | Premium UX (toast undo, focus-visible, micro-interactions) + monégasque 80+ clés |
+| v9.139 | Senior ★ auto-détecté import + fond jaune PNL + couleurs cadres |
+| v9.140 | Auto-apprentissage codes inconnus (couleur hash + label deviné) |
+| v9.141 | 9 niveaux fallback noms + regex assouplie + log erreurs positions |
+| v9.142 | FIX CRITIQUE format B seuil 0 pour cadres + section detection |
+| v9.142b | Zéro-erreur : CSV→cadre passthrough + lignes vides + header-block assoupli |
+| v9.143 | Perf array.join + data viz SVG (donut présence + barre familles) |
+| v9.144 | Visibilité MAX : textes blancs, fonds opaques, tailles minimum 13px |
+| v9.145 | Fix tag PDF {{CO qui fuitait + nettoyage guillemets |
+| v9.146 | Scan secours brute-force + diagnostic visible cadres vides |
+| v9.147 | BORGIA L→T + adminRenameEmp() + champ nom modifiable admin |
+
+### Capacités ajoutées cette session
+
+- **Import** : 9 niveaux fallback + auto-learn codes + brute-force secours + diagnostic console
+- **UX Premium** : toast undo, focus-visible, micro-interactions, optimistic sync
+- **Organisation** : familles pliables dans planning, départs, équipes admin
+- **Sécurité** : double garde IA admin, audit tentatives non-autorisées
+- **Métier** : GO/GF, senior ★, fond jaune PNL, rôles P/P+/E
+- **i18n** : monégasque complet 80+ clés
+- **Data Viz** : donut SVG présence + barre répartition familles
+- **Admin** : renommage employé partout + BORGIA corrigé
 
 ---
 
@@ -63,107 +76,11 @@
 | Fichier | Rôle |
 |---------|------|
 | `CLAUDE.md` | Guide assistant IA (règles, workflow, erreurs connues) |
-| `NOTES_USER.md` | **Infos métier admin** (couleurs PDF, tables, horaires rôles, vision IA…) |
+| `NOTES_USER.md` | Infos métier admin (couleurs, tables, horaires, GO/GF, cadres) |
 | `CHANGELOG.md` | Historique complet versions |
 | `MEMO_RESUME.md` | État courant (ce fichier) |
-| `README.md` | Vitrine projet |
+| `~/.claude/CLAUDE.md` | Règles globales multi-projets |
 
 ---
 
-## 🚀 Session nuit du 12 au 13 avril 2026
-
-### Livré (v9.100 → v9.103)
-
-| Version | Contenu |
-|---------|---------|
-| **v9.100** | Audit expert 4 subagents → 7 corrections P0/P1 (guards admin, FB_LOCAL, hashV2, touch targets, Escape, undo stacks) |
-| **v9.101** | **URGENT** Fix crash Safari iOS `SyntaxError: Invalid escape` (3 onclick inline + null guards) + lisibilité textes ↑ |
-| **v9.102** | Auto-vérification AUTOMATIQUE post-import (pas de bouton) + 5 outils IA sur-vérification (deep/compare/coherence/super) |
-| **v9.103** | **Couleurs CODES calibrées** sur le PDF SBM original (screenshots fournis par admin) |
-
-### Tests finaux
-- **54/54 E2E PASS** sur 6 devices en ~29s
-- 0 erreur runtime
-- 32 versions livrées depuis v9.70 (v9.71 → v9.103)
-
----
-
-## 🎯 Capacités actuelles
-
-- **76 outils IA** (24 admin) — langage naturel complet
-- **17 sujets aide `?`** contextuelle
-- **43 actions** command palette ⌘K
-- **Undo/Redo** ⌘Z global
-- **Backup auto** quotidien + rotation 7j
-- **Preview/Rollback import** SHA-256
-- **Auto-vérification** post-import (bandeau + toast)
-- **Dashboard LIVE** + Mode TV
-- **Dark/Light/Auto** theme
-- **IndexedDB** wrapper
-- **Password gen + strength**
-- **Error + Perf monitoring**
-- **Réactions emojis chat**
-- **Hash v2** sel dynamique
-- **Circuit breaker Firebase** (5 échecs/60s cooldown)
-- **PWA** Badge/Share/WakeLock/Shortcuts
-- **Accessibilité AAA** (skip-link, ARIA, high contrast, font scaler)
-- **Couleurs PDF SBM** calibrées
-
----
-
-## ⏳ En attente d'inputs admin
-
-Voir `NOTES_USER.md` pour détails :
-
-1. **Horaires inspecteur/superviseur/pitboss** : structure `ROLE_SHIFTS` prête, attend codes exacts
-2. **Plans casino + numéros tables + jeux** : gestion tables amovibles, salons (Atrium…)
-3. **Couleurs affinées** : si les couleurs actuelles ne matchent pas à 100%, l'admin envoie nouveau screenshot
-
----
-
-## 🔒 Règles permanentes (voir CLAUDE.md)
-
-1. **§1** — TodoWrite obligatoire pour chaque demande
-2. **§1bis** — UX : simple, visuel, ludique, compréhensible (icônes/emojis, tooltips, aide `?`)
-3. **§1ter** — NOTES_USER.md : enregistrer IMMÉDIATEMENT toute info métier donnée par l'admin
-4. **§Outils expert** — boîte à outils pour sessions futures
-5. **§Erreurs connues** — 23 pièges documentés à ne JAMAIS refaire
-
----
-
-## 🧪 Workflow testing
-
-```bash
-# Tests E2E locaux (6 devices, ~29s)
-node tools/tests/e2e.test.js
-
-# Validation syntaxe JS
-node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const s=h.lastIndexOf('<script>'),e=h.lastIndexOf('</script>');fs.writeFileSync('/tmp/t.js',h.slice(s+8,e));" && node --check /tmp/t.js
-
-# Taille fichier
-wc -c index.html   # ~1.24 MB actuellement
-
-# Git status + log récent
-git status && git log --oneline -10
-```
-
----
-
-## 🔮 Prochaines pistes
-
-### Priorité haute (attend inputs)
-- Horaires inspecteur/superviseur/pitboss (codes)
-- Plans casino tables amovibles
-
-### Améliorations continues possibles
-- i18n étendu (EN/IT/DE complets) + traduction chat via IA
-- Export PDF planning individuel (via window.print + CSS @media print)
-- QR code partage planning
-- Drag & drop planning (shifts)
-- Bulk actions UI (checkbox selection)
-- Notifications push serveur-less
-- Onboarding interactif complet
-
----
-
-*Dernière mise à jour : 2026-04-13 — v9.103*
+*Dernière mise à jour : 2026-04-17 — v9.147*
