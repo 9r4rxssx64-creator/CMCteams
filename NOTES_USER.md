@@ -2,6 +2,66 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🆕 SESSION 2026-04-17 (v9.207 → v9.213) — Features majeures livrées
+
+### v9.207 — Auto-fill cadres manquants
+- PDF tronqué = 5 superviseurs + 18 pit boss partiels → auto-complétés
+- `autoFillMissingCadres(year, month)` : copie mois N-1 (≥80%) ou pattern RH dimanche
+- Auto-trigger dans doImport + bouton FAB "✨ Auto-remplir cadres manquants"
+- Bouton direct dans Vérification import (v9.208)
+
+### v9.209 — Géolocalisation timeclock opt-in
+- `_features.geoloc` (toggle admin Fonctionnalités)
+- `timeclockPunch` enrichi {lat, lng, accuracy}
+
+### v9.210 — Géofence + carte live admin
+- `A.geofence = {center, radius, enabled, tolerance}` sync Firebase
+- `geoDistance(a, b)` approximation Monaco (erreur < 0.5m sur 1km)
+- `vGeoAdmin` : iframe OSM + carte SVG custom + liste employés triée + recherche
+- **Tolerance INDOOR** : GPS timeout → accepter pointage (pas bloquer), permission refusée → reject strict
+
+### v9.211 — vPit : vue pit boss live (MAJEUR)
+- `A.live = {date, tables, statuts, events, pitBossId}`
+- Persist : `cmc_live_<YYYY-MM-DD>` sync Firebase via FB_PRE
+- 7 actions : openTable, closeTable, setStatut, libererEmp, assignEmp, removeEmp, rotateNow
+- Auto-assign par compétence : `JEU_COMP` mapping bj→B, roul_eur→E, etc.
+- Rotation : roul_eur=20min, senior=40min, standard=60min
+- Accès : admin + `emp.chef` + `family=cadres`
+- FAB "♊ Pit Boss Live"
+
+### v9.212 — Cards vGestionLive cliquables
+- Chaque KPI ouvre modal liste : `working/online/rest/leave/sick/active/fam_*`
+- `showLiveList(key)` + `showEmpQuickProfile` au clic emp
+
+### v9.213 — Réattribution auto secteurs baccara
+- Bouton `🎯 Réattribuer auto` dans vGestionLive
+- Détecte emps P/P+ sans E mal classés, re-assign selon règle
+
+## 📝 Features demandées à LIVRER (ordre priorité)
+
+### v9.214 — Identités permanentes (demande Kevin 2026-04-17)
+> "L'app doit garder et accumuler les identités des personnes qu'elle apprend dans les plannings importés même effacé, dans les nouvelles connexions et sauvegarder à chaque fois."
+
+**Plan** :
+- Nouvelle clé `cmc_known_identities` (sync Firebase, FB_FIX)
+- À chaque détection nom dans PDF import → enregistrer `{name, firstSeenAt, sources[], lastSeenAt}`
+- Jamais supprimé même si employé effacé (`delEmp`)
+- Consultable via vEmps → "Identités apprises" (liste historique)
+
+### v9.215 — Timings admin (demande Kevin)
+> "Il faut un réglage admin lorsqu'une personne entre dans le casino et est effectif au travail. Temps de change habit, temps de pause, coupure…"
+
+**Plan** : `A.timings = {preShiftMin:15, postShiftMin:5, pauseMin:20, coupureMin:120}` avec UI admin. Impact calcul heures effectives timeclock.
+
+### v9.216 — Auto-tracking positions tables (demande Kevin, dépend plan casino)
+> "Avec le plan on ajustera. Quand on aura le plan l'app saura quand l'employé est à quelle table et quand elle bouge de ces endroits cibles"
+
+**Plan** :
+- Admin saisit coord (lat/lng) de chaque table dans la config
+- App match position emp → table la plus proche (géoloc temps réel)
+- Auto-marque "à table Tx" ou "en break" selon distance
+- Intégration vPit pour mise à jour live sans intervention
+
 ## 🔍 RÈGLE PERMANENTE — Vérification multi-source (2026-04-17)
 
 **Pour TOUTE information factuelle que Claude doit fournir, calculer ou appliquer :**
