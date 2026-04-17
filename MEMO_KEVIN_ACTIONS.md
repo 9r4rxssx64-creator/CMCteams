@@ -8,17 +8,21 @@
 
 ## URGENT -- A faire MAINTENANT
 
-### 1. Recharger credits API Claude
-- [ ] Aller sur https://console.anthropic.com/settings/billing
-- [ ] Verifier le solde (si 0$ = erreur API dans l'app)
-- [ ] Recharger (minimum 10$ recommande)
-- [ ] L'erreur API dans CMCteams disparaitra automatiquement apres recharge
+### 1. Erreurs API dans Claude Code / Claude.ai
+- **Statut** : Kevin voit des erreurs API dans ses conversations Claude
+- **Solde API** : Verifie OK (credits disponibles)
+- **Cause probable** : Surcharge temporaire serveurs Anthropic
+- **Actions :**
+  - [ ] Verifier https://status.anthropic.com (statut serveurs)
+  - [ ] Si "Degraded Performance" : attendre que ca passe
+  - [ ] Si tout est vert : deconnecter/reconnecter la session
+  - [ ] Si ca persiste > 1h : contacter support@anthropic.com
+- **Note** : cette erreur n'a RIEN a voir avec la cle API CMCteams
 
-### 2. Verifier la cle API
-- [ ] Aller sur https://console.anthropic.com/settings/keys
+### 2. Cle API CMCteams (app)
 - [ ] Verifier que ta cle commence par `sk-ant-api03-...`
-- [ ] Si elle est revoquee, en creer une nouvelle
 - [ ] La saisir dans CMCteams : Aide IA > bouton cle
+- [ ] Solde API : https://console.anthropic.com/settings/billing
 
 ---
 
