@@ -22,7 +22,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a1408'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='18' font-weight='800' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%230a1408'/%3E%3Ctext x='90' y='75' text-anchor='middle' font-size='48' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='90' y='120' text-anchor='middle' font-size='28' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.45 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org; frame-src data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -3204,7 +3204,7 @@ var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
 var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes","cmc_emp_requests","cmc_motd",
 // v9.204 — Ajout sync pour toutes les données admin partagées (bug cross-device résolu)
-"cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes"];
+"cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes","cmc_geofence"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -6981,6 +6981,7 @@ function _fabActions(){
     acts.push({ic:"\ud83d\udcca",lb:"Export CSV",fn:"exportPlanningCSV(A.year,A.month)"});
     if(A.view==="planning")acts.push({ic:"\ud83d\udccb",lb:"Copier mois pr\u00e9c\u00e9dent",fn:"copyPrevMonthPlanning()"});
     acts.push({ic:"\u2728",lb:"Auto-remplir cadres manquants",fn:"autoFillMissingCadres(A.year,A.month)"});
+    acts.push({ic:"\ud83d\udccd",lb:"G\u00e9ofence / Carte live",fn:"sv('geo')"});
     acts.push({ic:"\u26a1",lb:"\u00c9valuer IA",fn:"if(typeof _iaAutoCheck===\u0022function\u0022)_iaAutoCheck();else toast('IA indisponible','err')"});
   }
   // Admin navigation
@@ -8423,6 +8424,7 @@ function vMain(){
     case"auditlog": return isAdm?vAuditLog():"";
     case"uploadreq": return isAdm?vUploadRequests():""; // v9.62
     case"passwords": return isAdm?vPasswords():"";
+    case"geo":      return isAdm?vGeoAdmin():""; // v9.210
     case"security": return isAdm?vAdminSecurity():"";
     case"connexions": return isAdm?vConnexions():""; // v9.115
     case"online":   return isAdm?vOnline():"";
@@ -8749,6 +8751,175 @@ function promptDayNote(y,m,d){
 // v9.166 — Timeclock (pointage entrée / sortie)
 // Stocke les pointages dans cmc_timeclock = [{uid, ts, type: "in"/"out", note?}]
 var _timeclock=lg("cmc_timeclock",[]);
+// ═══════════════════════════════════════════════════════════════════════
+// v9.210 — GÉOFENCE (zone de pointage autorisée) + DISTANCE check + LIVE map SVG
+// ═══════════════════════════════════════════════════════════════════════
+// Data : A.geofence = {center:{lat,lng}, radius:m, enabled:bool, tolerance:m, updatedAt, updatedBy}
+// Approx équirectangulaire locale (Monaco, cos(43.74°)=0.723) — suffit pour < 2 km
+// ═══════════════════════════════════════════════════════════════════════
+function getGeofence(){
+  var g=lg("cmc_geofence",null);
+  if(!g||typeof g!=="object"){g={center:{lat:43.7384,lng:7.4290},radius:150,enabled:false,tolerance:30,updatedAt:0,updatedBy:""};}
+  if(!g.center||typeof g.center.lat!=="number")g.center={lat:43.7384,lng:7.4290};
+  if(typeof g.radius!=="number"||g.radius<10)g.radius=150;
+  if(typeof g.tolerance!=="number"||g.tolerance<0)g.tolerance=30;
+  return g;
+}
+function saveGeofence(g){
+  if(!A.user||A.user.id!==AID){toast("\u26a0 R\u00e9serv\u00e9 admin","err");return;}
+  g.updatedAt=Date.now();g.updatedBy=A.user.id;
+  ls("cmc_geofence",g);
+  _audit("geofence_update",AID,"","",JSON.stringify({lat:g.center.lat,lng:g.center.lng,r:g.radius,on:g.enabled}));
+  toast("\ud83d\udccd G\u00e9ofence enregistr\u00e9e");
+  dc();
+}
+// Distance Monaco (équirectangulaire local, erreur < 0.5 m sur 1 km)
+function geoDistance(a,b){
+  if(!a||!b||typeof a.lat!=="number"||typeof b.lat!=="number")return Infinity;
+  var dx=(a.lng-b.lng)*80400;
+  var dy=(a.lat-b.lat)*111320;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+function isInsideGeofence(lat,lng,accuracy){
+  var g=getGeofence();
+  if(!g.enabled)return true;
+  var d=geoDistance({lat:lat,lng:lng},g.center);
+  return d<=(g.radius+(g.tolerance||30)+(accuracy||0));
+}
+// Retourne le dernier pointage géolocalisé par employé (même si plus en ligne)
+function lastGeoPunchByEmp(){
+  var byUid={};
+  _timeclock.forEach(function(p){
+    if(!p.geo)return;
+    if(!byUid[p.uid]||p.ts>byUid[p.uid].ts)byUid[p.uid]=p;
+  });
+  return byUid;
+}
+// Vue admin : carte + liste live + recherche + édition géofence
+function vGeoAdmin(){
+  if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
+  var g=getGeofence();
+  var lastByUid=lastGeoPunchByEmp();
+  if(!window._geoAdminQ)window._geoAdminQ="";
+  // Bounding box OSM (~radius ×3 autour du centre)
+  var radiusDeg=(g.radius*3)/111320; // ~3× rayon en degrés latitude
+  var lonSpread=radiusDeg/0.723; // conversion pour longitude Monaco
+  var bbox=(g.center.lng-lonSpread)+","+(g.center.lat-radiusDeg)+","+(g.center.lng+lonSpread)+","+(g.center.lat+radiusDeg);
+  var osmUrl="https://www.openstreetmap.org/export/embed.html?bbox="+encodeURIComponent(bbox)+"&layer=mapnik&marker="+encodeURIComponent(g.center.lat+","+g.center.lng);
+  // Liste des emps pointés récemment (derniers 24h)
+  var now=Date.now();
+  var emps=A.employees.map(function(e){
+    var last=lastByUid[e.id];
+    if(!last)return{emp:e,last:null,dist:null,mins:null,inside:null};
+    var dist=Math.round(geoDistance({lat:last.geo.lat,lng:last.geo.lng},g.center));
+    var mins=Math.round((now-last.ts)/60000);
+    return{emp:e,last:last,dist:dist,mins:mins,inside:dist<=g.radius+g.tolerance};
+  }).filter(function(o){return o.last||A.user.id===AID;});
+  var q=window._geoAdminQ.toLowerCase().trim();
+  if(q)emps=emps.filter(function(o){return o.emp.name.toLowerCase().indexOf(q)>=0||(o.emp.id||"").toLowerCase().indexOf(q)>=0;});
+  emps.sort(function(a,b){if(a.last&&!b.last)return-1;if(!a.last&&b.last)return 1;return (b.last?b.last.ts:0)-(a.last?a.last.ts:0);});
+  var nIn=emps.filter(function(o){return o.inside===true;}).length;
+  var nOut=emps.filter(function(o){return o.inside===false;}).length;
+  var nNone=emps.filter(function(o){return !o.last;}).length;
+  var h='<div class="page"><div class="sec-title">\ud83d\udccd G\u00e9olocalisation pointages</div>';
+  // Bandeau résumé
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
+    +'<div style="padding:8px;background:linear-gradient(135deg,rgba(90,170,112,.22),rgba(50,140,80,.1));border:1px solid rgba(90,170,112,.45);border-radius:8px;text-align:center"><div style="font-size:22px;font-weight:900;color:#8afcaa">'+nIn+'</div><div style="font-size:10px;color:#a0cca0">\u2705 DANS la zone</div></div>'
+    +'<div style="padding:8px;background:linear-gradient(135deg,rgba(224,96,96,.22),rgba(170,60,60,.1));border:1px solid rgba(224,96,96,.45);border-radius:8px;text-align:center"><div style="font-size:22px;font-weight:900;color:#ff8080">'+nOut+'</div><div style="font-size:10px;color:#e0a0a0">\u26a0 HORS zone</div></div>'
+    +'<div style="padding:8px;background:linear-gradient(135deg,rgba(120,120,140,.2),rgba(80,80,110,.1));border:1px solid rgba(150,150,170,.35);border-radius:8px;text-align:center"><div style="font-size:22px;font-weight:900;color:#c0c0d0">'+nNone+'</div><div style="font-size:10px;color:#a0a0b8">\u2753 Sans position</div></div>'
+    +'</div>';
+  // Config géofence
+  h+='<div class="card" style="padding:12px;margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:800;color:#c9a227;text-transform:uppercase;margin-bottom:10px">\u2699\ufe0f Configuration zone autoris\u00e9e</div>'
+    +'<label style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(0,0,0,.15);border-radius:8px;margin-bottom:10px;cursor:pointer">'
+    +'<input type="checkbox" id="gfOn" '+(g.enabled?"checked":"")+' style="width:22px;height:22px;cursor:pointer">'
+    +'<span style="flex:1;font-size:14px;color:#e0e8d0;font-weight:700">Activer le rejet des pointages hors zone</span>'
+    +'</label>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+    +'<div><div style="font-size:11px;color:#a0cca0;margin-bottom:3px">Latitude centre</div><input type="number" id="gfLat" step="0.000001" value="'+g.center.lat+'" class="inp" style="width:100%;padding:6px 8px;font-size:13px"></div>'
+    +'<div><div style="font-size:11px;color:#a0cca0;margin-bottom:3px">Longitude centre</div><input type="number" id="gfLng" step="0.000001" value="'+g.center.lng+'" class="inp" style="width:100%;padding:6px 8px;font-size:13px"></div>'
+    +'<div><div style="font-size:11px;color:#a0cca0;margin-bottom:3px">Rayon (m\u00e8tres)</div><input type="number" id="gfRad" min="20" max="2000" value="'+g.radius+'" class="inp" style="width:100%;padding:6px 8px;font-size:13px"></div>'
+    +'<div><div style="font-size:11px;color:#a0cca0;margin-bottom:3px">Tol\u00e9rance GPS (m\u00e8tres)</div><input type="number" id="gfTol" min="0" max="500" value="'+g.tolerance+'" class="inp" style="width:100%;padding:6px 8px;font-size:13px"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+    +'<button class="btn ghost" onclick="navigator.geolocation&&navigator.geolocation.getCurrentPosition(function(p){document.getElementById(\'gfLat\').value=p.coords.latitude.toFixed(6);document.getElementById(\'gfLng\').value=p.coords.longitude.toFixed(6);toast(\'\ud83d\udccd Position \u00e0 jour\')})" style="flex:1;padding:8px;font-size:13px">\ud83d\udccd Ma position</button>'
+    +'<button class="btn ghost" onclick="document.getElementById(\'gfLat\').value=\'43.7384\';document.getElementById(\'gfLng\').value=\'7.4290\';toast(\'\u2666 Centre Casino Monte-Carlo\')" style="flex:1;padding:8px;font-size:13px">\u2666 Casino MC</button>'
+    +'</div>'
+    +'<button onclick="(function(){var g={center:{lat:parseFloat(document.getElementById(\'gfLat\').value)||43.7384,lng:parseFloat(document.getElementById(\'gfLng\').value)||7.4290},radius:parseInt(document.getElementById(\'gfRad\').value)||150,tolerance:parseInt(document.getElementById(\'gfTol\').value)||30,enabled:document.getElementById(\'gfOn\').checked};saveGeofence(g);})()" style="width:100%;padding:11px;background:linear-gradient(135deg,#c9a227,#8a6a10);border:none;border-radius:8px;color:#0a1a0c;font-weight:800;cursor:pointer">\ud83d\udcbe Enregistrer g\u00e9ofence</button>'
+    +'</div>';
+  // Iframe OSM
+  h+='<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden">'
+    +'<div style="padding:10px 12px;background:rgba(201,162,39,.08);border-bottom:1px solid rgba(201,162,39,.2);font-size:13px;font-weight:700;color:#c9a227">\ud83c\udfdb\ufe0f Zone OpenStreetMap</div>'
+    +'<iframe src="'+esc(osmUrl)+'" style="width:100%;height:320px;border:0" loading="lazy" referrerpolicy="no-referrer" title="Carte OSM zone pointage"></iframe>'
+    +'<div style="padding:8px 12px;font-size:11px;color:#8aa088;text-align:center;background:rgba(0,0,0,.15)">\u24d8 Cercle rayon non affich\u00e9 sur OSM (voir SVG ci-dessous) \u00b7 Centre = marqueur rouge</div>'
+    +'</div>';
+  // SVG custom : dots relatifs au centre avec cercle de rayon
+  h+=_renderGeoSvg(g,emps);
+  // Recherche
+  h+='<div style="margin-bottom:8px"><input id="geoAdminQ" class="inp" placeholder="\ud83d\udd0d Rechercher un employ\u00e9..." value="'+esc(window._geoAdminQ||"")+'" oninput="searchInput(\'_geoAdminQ\',this.value,\'geoAdminQ\')" style="width:100%;padding:8px 10px;font-size:13px"></div>';
+  // Liste employés
+  h+='<div class="card" style="padding:10px;max-height:400px;overflow-y:auto">';
+  h+='<div style="font-size:12px;font-weight:800;color:#c9a227;text-transform:uppercase;margin-bottom:8px">\ud83d\udc65 Derni\u00e8res positions ('+emps.length+')</div>';
+  if(!emps.length)h+='<div style="text-align:center;color:#8aa088;padding:20px">Aucun r\u00e9sultat</div>';
+  emps.slice(0,50).forEach(function(o){
+    var emp=o.emp;
+    var col=o.inside===true?"#5aaa70":o.inside===false?"#e06060":"#8aa088";
+    var status=o.inside===true?"\u2705 DANS":o.inside===false?"\u26a0 HORS":"\u2753 Aucune";
+    var mins=o.mins;
+    var agoStr=!mins?"":mins<1?"<1min":mins<60?(mins+" min"):mins<1440?(Math.floor(mins/60)+"h"):(Math.floor(mins/1440)+"j");
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +empAvatarHtml(emp,32,tc(emp.team))
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;color:#e0e8d0;font-weight:700">'+esc(emp.name)+'</div>'
+      +'<div style="font-size:11px;color:#a0cca0">'+(o.last?(o.last.type==="in"?"\u25b6 Entr\u00e9e":"\u23f9 Sortie")+" il y a "+agoStr+(o.dist?" \u00b7 "+o.dist+"m":""):"Pas de pointage g\u00e9olocalis\u00e9")+'</div>'
+      +'</div>'
+      +'<span style="padding:4px 9px;background:'+col+'22;border:1px solid '+col+'55;color:'+col+';border-radius:12px;font-size:11px;font-weight:800;white-space:nowrap">'+status+'</span>'
+      +(o.last?'<a href="https://www.openstreetmap.org/?mlat='+o.last.geo.lat+'&mlon='+o.last.geo.lng+'#map=18/'+o.last.geo.lat+'/'+o.last.geo.lng+'" target="_blank" rel="noopener" style="padding:4px 8px;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.5);color:#9ac6ff;border-radius:6px;font-size:12px;text-decoration:none;white-space:nowrap">\ud83d\uddfa\ufe0f</a>':'')
+      +'</div>';
+  });
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+// SVG custom : cercle rayon + dots positions (projection équirectangulaire locale)
+function _renderGeoSvg(g,emps){
+  var W=360,H=360,cx=W/2,cy=H/2;
+  // Scale : on veut que radius + 30m marge tienne dans W/2 - 20
+  var maxM=g.radius*1.6+50;
+  var scale=(W/2-25)/maxM;
+  var rPx=g.radius*scale;
+  var tolPx=(g.radius+g.tolerance)*scale;
+  var svg='<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden">'
+    +'<div style="padding:10px 12px;background:rgba(90,170,112,.08);border-bottom:1px solid rgba(90,170,112,.2);font-size:13px;font-weight:700;color:#7acc90">\ud83d\udcca Vue distance (cercle rayon)</div>'
+    +'<svg width="100%" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="background:radial-gradient(circle at center,rgba(10,30,15,.7),rgba(5,15,8,1))" aria-label="Carte distances g\u00e9ofence">';
+  // Grille 50m
+  for(var r=50;r<maxM;r+=50){
+    var rp=r*scale;
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+rp+'" fill="none" stroke="rgba(255,255,255,.06)" stroke-dasharray="2,4"/>';
+    svg+='<text x="'+(cx+rp-2)+'" y="'+(cy-2)+'" fill="rgba(160,200,160,.4)" font-size="9" text-anchor="end">'+r+'m</text>';
+  }
+  // Cercle tolérance (pointillé)
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+tolPx+'" fill="rgba(90,170,112,.08)" stroke="rgba(90,170,112,.35)" stroke-width="1.5" stroke-dasharray="6,4"/>';
+  // Cercle rayon (plein)
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+rPx+'" fill="rgba(90,170,112,.18)" stroke="#5aaa70" stroke-width="2.5"/>';
+  // Centre
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#ffdc40" stroke="#0a1408" stroke-width="2"/>';
+  svg+='<text x="'+cx+'" y="'+(cy-10)+'" fill="#ffdc40" font-size="11" font-weight="800" text-anchor="middle">\u2666 Centre</text>';
+  // Dots employés
+  emps.forEach(function(o){
+    if(!o.last||!o.last.geo)return;
+    var dx=(o.last.geo.lng-g.center.lng)*80400*scale;
+    var dy=-(o.last.geo.lat-g.center.lat)*111320*scale; // inverse car SVG y descend
+    var px=cx+dx,py=cy+dy;
+    if(px<5||px>W-5||py<5||py>H-5)return; // hors viewBox
+    var col=o.inside===true?"#5aaa70":"#e06060";
+    svg+='<circle cx="'+px+'" cy="'+py+'" r="5" fill="'+col+'" stroke="#000" stroke-width="1.5"><title>'+esc(o.emp.name)+' \u00b7 '+(o.dist||0)+'m</title></circle>';
+  });
+  svg+='</svg>';
+  svg+='<div style="padding:8px 12px;font-size:11px;color:#8aa088;text-align:center;background:rgba(0,0,0,.15)">\u2666 Centre \u00b7 cercle plein = rayon, pointill\u00e9 = tol\u00e9rance \u00b7 \u2022 vert=dans, rouge=hors</div>';
+  svg+='</div>';
+  return svg;
+}
 function timeclockPunch(){
   if(!A.user)return;
   // v9.187 — Anti-spam : min 30s entre deux pointages consécutifs
@@ -8763,8 +8934,30 @@ function timeclockPunch(){
   var lastType=todays.length?todays[todays.length-1].type:null;
   var newType=lastType==="in"?"out":"in";
   // v9.209 — Géolocalisation si activée par admin (_features.geoloc)
+  // v9.210 — Rejet pointage hors zone si geofence.enabled
   var geoOn=(typeof _features!=="undefined"&&_features&&_features.geoloc)?true:false;
+  var _gf=getGeofence();
+  var gfOn=geoOn&&_gf.enabled;
   function _savePunch(geo){
+    // v9.210 — Check géofence si active (tolerant indoor : accepte sans geo)
+    if(gfOn){
+      if(!geo){
+        // GPS indoor indisponible : accepter le pointage mais flag noGeo
+        toast("\u26a0 Position non disponible (indoor) \u2014 pointage accept\u00e9 avec avertissement","warn",3500);
+        try{_audit("timeclock_nogeo",A.user.id,A.user.name,"GPS indoor indisponible","");}catch(_){}
+        // continue sans reject — flag sera visible côté admin
+      }else{
+        var d=geoDistance({lat:geo.lat,lng:geo.lng},_gf.center);
+        var tol=(_gf.tolerance||30)+(geo.accuracy||0);
+        if(d>_gf.radius+tol){
+          // Hors zone AVEC position valide → reject
+          toast("\u26d4 Hors zone : "+Math.round(d)+"m du centre (max "+_gf.radius+"m + tol.)","err",5500);
+          try{_audit("timeclock_rejected_geo",A.user.id,A.user.name,Math.round(d)+"m",JSON.stringify(geo));}catch(_){}
+          return;
+        }
+        geo.dist=Math.round(d);
+      }
+    }
     var punch={uid:A.user.id,name:A.user.name,ts:Date.now(),type:newType};
     if(geo)punch.geo=geo;
     _timeclock.push(punch);
@@ -8772,7 +8965,7 @@ function timeclockPunch(){
     var cutoff=Date.now()-90*24*3600000;
     _timeclock=_timeclock.filter(function(p){return p.ts>=cutoff;});
     ls("cmc_timeclock",_timeclock);
-    var geoStr=geo?(" \u00b7 "+geo.lat.toFixed(4)+","+geo.lng.toFixed(4)+" (±"+Math.round(geo.accuracy)+"m)"):"";
+    var geoStr=geo?(" \u00b7 "+geo.lat.toFixed(4)+","+geo.lng.toFixed(4)+" (±"+Math.round(geo.accuracy)+"m"+(geo.dist!==undefined?", "+geo.dist+"m du centre":"")+")"):"";
     _audit("timeclock_"+newType,A.user.id,A.user.name,new Date(punch.ts).toLocaleTimeString("fr-FR"),geoStr);
     toast(newType==="in"?("\u23f1\ufe0f Pointage entr\u00e9e enregistr\u00e9"+(geo?" \ud83d\udccd":"")):("\u23f1\ufe0f Pointage sortie \u2014 bonne journ\u00e9e !"+(geo?" \ud83d\udccd":"")));
     dc();
@@ -8782,9 +8975,15 @@ function timeclockPunch(){
     navigator.geolocation.getCurrentPosition(function(pos){
       _savePunch({lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy||0,ts:pos.timestamp||Date.now()});
     },function(err){
-      // Refus permission ou échec : sauve quand même sans geo
+      // Refus permission ou timeout (GPS indoor fréquent dans casino)
       console.warn("geolocation:",err&&err.message);
-      toast("\u26a0 G\u00e9olocalisation indisponible \u2014 pointage sans position","warn");
+      // v9.210 tolerant : accepter le pointage même sans geo (l'admin verra 'sans position')
+      // Distinction : si code 1 (PERMISSION_DENIED) + geofence active → reject strict
+      if(gfOn&&err&&err.code===1){
+        toast("\u26d4 Permission GPS refus\u00e9e \u2014 autoriser dans les r\u00e9glages navigateur","err",5500);
+        return;
+      }
+      // Autres erreurs (timeout, indisponible) → pointage accept\u00e9 avec flag noGeo
       _savePunch(null);
     },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
   }else{
