@@ -4,7 +4,27 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
-## v9.203 → v9.232 — Session 2026-04-17 bis (30 versions, géoloc + pit boss + heures effectives)
+## v9.203 → v9.246 — Session 2026-04-17 bis (44 versions, géoloc + pit boss + heures effectives + notifs temps réel)
+
+### 📣 Batch 15 — Export + alertes + docs (v9.244 → v9.246)
+- **v9.246** : MAJ CLAUDE.md + CHANGELOG.md (bump v9.232 → v9.246)
+- **v9.245** : `pitLowAckEmps(threshold)` + bloc alerte dashboard "<70% conformité"
+- **v9.244** : `exportPitAckCSV(sinceH)` — export stats ack pour audit RH (matricule, nom, envoyés, acquittés, taux, délai, types)
+
+### 📊 Batch 14 — Auto-rotation + dashboard pit boss (v9.241 → v9.243)
+- **v9.243** : `vPitDashboard()` — 4 KPIs + toggle auto-rotation + tableau par emp avec code couleur
+- **v9.242** : `pitAckStats(sinceMs)` + `_fmtDelay(ms)` — stats envoyés/acquittés/délai/taux
+- **v9.241** : `autoRotationCron()` toutes 60s + opt-out `cmc_auto_rotation_off`
+
+### 📱 Batch 13 — Notifs emp temps réel (v9.233 → v9.240)
+- **v9.240** : Rotation broadcast → notif à tous les emps sur la table
+- **v9.239** : Bannière in-app `_checkPitBanner()` + animation `pitBannerSlide` + TTS
+- **v9.238** : `pitAckMessage(ts)` + `pitPendingAcks()` + badge vPit header
+- **v9.237** : Convocations groupées (uids, group "present"/"all"/"team:X") + `_pitConvocationPrompt`
+- **v9.236** : `pitAction("convocation")` 6 presets (visite_medicale, habillement, rh, formation, pitboss, annonce)
+- **v9.235** : `_notifFinService(uid)` → "👋 Fin de service"
+- **v9.234** : `_notifBreak(uid, fromTid)` → "☕ Break (table X) · ~20 min"
+- **v9.233** : `_notifAssign(uid, tid)` + `sendPitMessage()` → "🎲 Assigné : table X · Jeu Y · ~Z min"
 
 ### 🎰 Batch 12 — Historique ghost + notif (v9.230 → v9.232)
 - **v9.232** : MAJ CLAUDE.md + CHANGELOG.md (traces session) + FB_LOCAL `cmc_ghost_log`
