@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-17 (v9.149 livrée)
+# Mémo de reprise — 2026-04-17 (v9.157 livrée)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
@@ -9,68 +9,55 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.152"`** — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.157"`** — branche `claude/resume-work-9OVV4` (à merger sur `main` pour déploiement)
 
-### Session 2026-04-17 — 17 versions livrées (v9.133 → v9.149)
+### Session 2026-04-17 (2e vague) — 5 versions livrées (v9.153 → v9.157)
 
 | Version | Contenu |
 |---------|---------|
-| v9.133 | Anti-crash scroll iOS + overflow codes + BOUVIER JF |
-| v9.135 | Auto-inférence rôles P/P+/E + vTeams pliable |
-| v9.136 | Groupe Ouvert/Fermé + sécurité IA + auto-fix vides |
-| v9.137 | vPlan + vDeparts familles pliables |
-| v9.138 | Premium UX + monégasque 80+ clés |
-| v9.139 | Senior ★ auto-détecté + fond jaune PNL |
-| v9.140 | Auto-apprentissage codes inconnus |
-| v9.141 | 9 niveaux fallback noms |
-| v9.142 | FIX CRITIQUE : format B seuil 0 cadres |
-| v9.143 | Perf array.join + SVG donut stats |
-| v9.144 | Visibilité MAXIMALE textes |
-| v9.145 | Fix tag PDF {{CO |
-| v9.146 | Scan secours brute-force |
-| v9.147 | BORGIA T + adminRenameEmp |
-| v9.148 | SÉCURITÉ : passwords clear supprimés |
-| v9.148b | Constitution de Monaco intégrée |
-| v9.149 | Audit expert 3 subagents — P0/P1 corrigés |
-| v9.150 | Outil IA Constitution + fond jaune PNL PDF |
-| v9.151 | FIX CRITIQUE connexion : fbWrite manquant sur 6 fonctions |
-| v9.151b | Sync Firebase bidirectionnel (admin↔employés) |
-| v9.152 | Tutoriel onboarding 8 étapes + aide intégrée |
+| v9.153 | Filter chips familles en haut de vPlan + Inline edit double-clic (mode brosse) |
+| v9.154 | Live presence avatars (vPlan/vDeparts/vEmps) + Sparkline 12 mois (vEmps) + getRoleIcon |
+| v9.155 | Heatmap densité 12 mois dans vStats + Bulk select Shift+Click (admin vPlan) |
+| v9.156 | Drag & drop cellules admin (swap par défaut, Ctrl/Meta = copier) |
+| v9.157 | Fix perf sparkline (cache par render + fenêtre A.year-1→A.year) + guard cellDragEnd |
 
-### Audits
+### Audit subagent final
 
-| Audit | Résultat |
-|-------|----------|
-| Subagent CSS+constantes (L.1-5000) | 10 findings, P1 corrigés |
-| Subagent Vues (L.8000-13000) | 10 findings, guards OK |
-| Subagent Import+IA (L.13000+) | 10 findings, mutex ajouté |
-| Vérification finale 5 points | 5/5 PASS |
+| Niveau | Finding | Action |
+|--------|---------|--------|
+| P0 | — | — |
+| P1 | Perf sparkline calcStats carrière × 258 emps | ✅ Corrigé v9.157 (cache + scope réduit) |
+| P1 | cellDragEnd sans guard AID | ✅ Corrigé v9.157 |
+| P2 | Shift+Click pas dispo sur mobile tactile | ⚠️ Documenté (long-press futur) |
+| P2 | iOS HTML5 DnD < 13 non documenté | ⚠️ Documenté (iOS récent OK) |
 
 ---
 
-## 🎯 Capacités actuelles
+## 🎯 Capacités ajoutées
 
-- **82 outils IA** + Constitution + Monaco
-- **Constitution monégasque** (onglet 🇲🇨 + recherche + 45 articles)
-- **Convention Collective SBM** (35 articles + codes + grilles)
-- **Familles pliables** dans vPlan, vDeparts, vTeams
-- **Auto-apprentissage codes** import
-- **Sécurité** : hash-only passwords, double garde IA, mutex import
-- **Premium UX** : toast undo, focus-visible, SVG stats, micro-interactions
-- **4 langues** : FR, EN, IT, Monégasque
-- **Admin Rename** : modifier nom employé partout
-- **Tutoriel onboarding** : 8 étapes à la 1ère connexion (auto + revoir depuis Aide)
-- **Connexion fix** : sync Firebase bidirectionnel sur toutes les fonctions mdp/reg
+- **Filter chips famille** : bande haut de vPlan, toggle unique, compteur actifs par famille
+- **Mode brosse admin** : double-clic sur cellule = applique le dernier code choisi (propagation ultra-rapide)
+- **Live presence dots** : cercle vert pulsant à côté des noms en ligne (vPlan, vDeparts, vEmps)
+- **Sparkline 12 mois** : SVG vert/rouge dans chaque ligne employé (trav vs abs)
+- **Heatmap annuelle** : grille 12×31 dans vStats avec 5 niveaux de vert selon charge
+- **Bulk select Shift+Click** : sélection multi-cellules, bandeau bleu avec actions groupées
+- **Drag & drop cellules** : swap codes (HTML5 DnD), Ctrl/Meta = copier
 
 ---
 
 ## ⏳ En attente (voir TODO_REMINDERS.md)
 
-1. Superviseurs : section PDF tronquée au copier-coller
-2. Nettoyage Vercel + token Telegram + secrets GitHub
-3. Repos IA-KDMC + e-KDMC
-4. Features futures : drag & drop, bulk select, inline edit
+1. **Superviseurs PDF tronqué** : warning déjà dans vImport, attendre import test réel
+2. **Actions Kevin (non-code)** :
+   - Nettoyage Vercel (garder `kdmc-bot-2026`)
+   - Régénération token Telegram (@BotFather)
+   - 4 secrets GitHub Actions à ajouter
+   - Backup chiffré tokens (3-2-1)
+3. **Repos satellites** : IA-KDMC + e-KDMC (stubs `_PROJECTS_KDMC/` présents, à créer sur GitHub)
+4. **Features mobiles** :
+   - Fallback long-press pour bulk select (Shift n'existe pas tactile)
+   - Polyfill HTML5 DnD pour iOS anciens
 
 ---
 
-*Dernière mise à jour : 2026-04-17 — v9.152*
+*Dernière mise à jour : 2026-04-17 — v9.157*
