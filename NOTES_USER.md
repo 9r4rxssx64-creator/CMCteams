@@ -2,6 +2,27 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🔍 RÈGLE PERMANENTE — Vérification multi-source (2026-04-17)
+
+**Pour TOUTE information factuelle que Claude doit fournir, calculer ou appliquer :**
+
+1. **Minimum 10 sources de données** à croiser avant de produire la réponse/action
+2. Si sources divergent → signaler explicitement à l'admin et demander clarification
+3. Toujours citer les sources consultées dans la réponse (ou au moins l'ordre de grandeur)
+4. Ne JAMAIS inventer un chiffre/loi/règle sans vérification
+5. Pour les calculs de paie, conventions, lois, indices : **vérification obligatoire**
+6. Domaines particulièrement sensibles : paie, fiscalité, convention SBM, lois monégasques, horaires réglementaires, droit du travail
+
+**Note technique** : si WebSearch / WebFetch indisponibles, Claude doit le dire explicitement et proposer de chercher à la place.
+
+### Indice salaires Monaco (à vérifier)
+- Admin indique : "indice INCE" (possible ICEC, indice coût emploi)
+- À croiser avec : INSEE France, Convention SBM, Journal de Monaco, Direction du Travail Monaco
+- Appliqué annuellement pour actualiser les salaires de base des années antérieures
+- Intégrer le facteur d'indexation dans le calcul de paie (salaire_base × facteur_cumul)
+
+---
+
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
 L'app DOIT auto-inférer le rôle de l'employé à partir de `emp.post` (compétences)
