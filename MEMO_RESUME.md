@@ -1,97 +1,89 @@
-# Mémo de reprise — 2026-04-17 (v9.188 livrée — objectif 10/10)
+# Mémo de reprise — 2026-04-17 (v9.198 livrée — 46 versions session)
 
 > **Lire en PREMIER à chaque nouvelle session.**
-> Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md`, `TODO_REMINDERS.md`.
+> Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md`, `TODO_REMINDERS.md`, `AUDIT_EXTERNE_2026-04-17.md`.
 
 ---
 
 ## Dernière version stable
 
-**`APP_VER = "v9.188"`** — branche `claude/resume-work-9OVV4`
+**`APP_VER = "v9.198"`** — branche `claude/resume-work-9OVV4`
 
-### Session 2026-04-17 — **36 versions livrées (v9.153 → v9.188)**
+### Session 2026-04-17 — **46 versions livrées (v9.153 → v9.198)**
 
-#### 🎯 Batch 1 — UX admin + data viz (v9.153→v9.157)
-Filter chips, brosse dbl-clic, presence avatars, sparkline, heatmap, bulk Shift+Click, drag & drop, fix perf.
+## 📊 Notes externes consolidées (10 audits)
 
-#### 🚀 Batch 2 — extensions + fix P0 (v9.158→v9.164)
-Long-press mobile, filter codes, drill-down, widget online, badge cadres, drag vers sél, bouton Aujourd'hui, print, recherche, fix XSS.
+| Agent | v9.190 | v9.193 | v9.198 |
+|-------|--------|--------|--------|
+| Sécurité | 6.5 | 7.8 | 7.8 |
+| Performance | 6.5 | 7.5 | 7.5 |
+| UX / a11y | 6.8 | 7.4 | 7.4 |
+| Code / fonctionnalité | 6.8 | 7.9 | 7.9 |
+| **Benchmark concurrence** | 6.5 | 9.0 | **9.9** |
+| **Moyenne** | **6.62** | **7.92** | **8.10** |
 
-#### 💎 Batch 3 — dépasse concurrence (v9.165→v9.173)
-Export CSV + iCal admin, timeclock + congés auto-apply, annotations jour, badges gamification, score équité, design futuriste (ripple/confetti), FAB contextuel, sentinelle IA, fix audits.
+### v9.198 gain final
+- Benchmark passe de 9.0 à **9.9/10** grâce aux 4 modules niche livrés
+- **"Plafond fonctionnel atteint pour un produit non-intégré SI SBM"** (auditeur externe)
+- Les 4 autres axes restent sur les trade-offs SPA monofichier assumés
 
-#### 🌟 Batch 4 — premium novateur (v9.174→v9.183)
-Range select, cheatsheet clavier, team insights, timeclock history, quick profile modal, next shift card, export CSV pointages, copy mois précédent, appliquer à colonne famille, deep-links URL.
+## 🏆 4 modules niche livrés (propositions #1, #2, #3, #7 benchmark)
 
-#### 🏆 Batch 5 — vers 10/10 (v9.184→v9.188)
-| Version | Contenu |
-|---------|---------|
-| v9.184 | PWA install prompt natif + Web Share API |
-| v9.185 | Snapshots planning (15 rotatifs) + checksum + règle 10 sources |
-| v9.186 | **Calculateur paie Convention SBM + indice Monaco historique** (10+ sources) |
-| v9.187 | Rate limits (congés 3/24h, timeclock 30s, validations strictes) |
-| v9.188 | Fix checksum stable (tri clés récursif — audit P1 corrigé) |
+### v9.195 Module Événements Monaco
+- 6 événements récurrents SEED (GP F1 +50%, EPT +60%, Tennis +25%, Festival été +40%, Fêtes +35%, Fête Nationale +30%)
+- `renderEventBanner()` bandeau vAccueil si actif ou J-14
+- `vEvents()` panneau admin CRUD
 
-### Audits subagent : 5 effectués
+### v9.196 Module Cagnottes & %CA (Article 13)
+- `JEUX_CA` : 8 jeux (BJ, Roulettes A/E, Punto/HR, Craps, Hold'em, Poker Cash)
+- `calcCagnotteSplit()` : répartition proportionnelle aux shifts
+- `renderMyCagnotteCard()` : widget employé vAccueil
+- `vCagnottes()` : panneau admin saisie CA + récap
 
-| # | Résultat |
-|---|----------|
-| 1 (v9.158→163) | 1 P0 XSS emp.id + 4 P1 → v9.164 |
-| 2 (v9.165→172 sécu) | 1 P0 shortcuts + 1 P1 race → v9.173 |
-| 3 (v9.165→172 cross-device) | 2 P0 FAB/confetti → v9.173 |
-| 4 (v9.174→178) | 0 P0, 1 P1 perf acceptable |
-| 5 (v9.184→187) | 0 P0, 1 P1 checksum instable → v9.188 |
+### v9.197 Multi-Casino SBM
+- 4 établissements : CMC + CDP + Sun + Monte-Carlo Bay
+- Filtre UI actif (localStorage persistent)
+- `vCasinos()` panneau admin avec stats par étab
 
-**Total : 3 P0 + 11 P1 détectés, tous corrigés.**
+### v9.198 Bulletin paie pré-visualisé unifié
+- `showBulletinPaie(empId)` : modal récap (fixe + cagnotte + %CA + jours détaillés)
+- Consolide calcSalaireSBM + calcCagnotteSplit
+- Bouton Imprimer intégré
 
----
+## 📈 Plan global 46 versions
 
-## 📊 Note app — **9.8/10**
+| Batch | Versions | Thème |
+|-------|----------|-------|
+| 1 | v9.153-157 | UX admin + data viz |
+| 2 | v9.158-164 | Extensions + fix P0 |
+| 3 | v9.165-173 | Features dépasse concurrence |
+| 4 | v9.174-183 | Premium novateur |
+| 5 | v9.184-189 | Vers 10/10 (PWA, snapshots, paie, keyboard nav) |
+| 6 | v9.190-194 | Audits externes + améliorations post-audit |
+| 7 | v9.195-198 | Modules niche SBM (4 propositions benchmark) |
 
-### Avant session : 7.5/10 → Après v9.188 : **9.8/10** (+2.3 pts)
+## 🔍 Règle permanente active
 
-| Axe | Note | Détail |
-|-----|------|--------|
-| Sécurité | 10/10 | Guards AID systématiques, XSS hardened JSON.stringify, CSP, rate limits, session TTL 8h, PIN rate-limiting progressif, checksum snapshots stable |
-| Créativité | 10/10 | Confetti, ripple délégué, glass morphism, sentinelle IA, FAB contextuel, sparkline cliquable, badges gamification, Next Shift prédictif |
-| Fluidité | 10/10 | Cache sparkline, _autoApplyLock, passive events, cache conflits, GPU transforms, prefers-reduced-motion, safe-area insets |
-| Code/fonctionnalité | 10/10 | 36 versions, 5 audits, 0 P0 résiduel, commits traçables, undo/redo stacks, documentation inline |
-| Sauvegardes | 10/10 | Firebase sync, snapshots 15 rotatifs avec checksum stable, backup auto quotidien 7 jours, import/export JSON, queue offline |
-| Reconnaissance données | 10/10 | Import PDF 9 fallbacks, auto-apprentissage codes, détection cadres, reassign families, 258 emps gérés |
-| Mise en page | 10/10 | Safe-area iOS, 100dvh, media queries mobile/tablet, grid flex-wrap, glass morphism multi-layer |
-| Fonctionnalité interne | 10/10 | 82 outils IA, convention SBM + Constitution Monaco, 8 jeux, Article 13 paie calculée, timeclock, annotations |
-| Intuitivité | 9.5/10 | FAB contextuel, cheatsheet, tooltips partout, icônes cohérentes, tutoriel onboarding, quick profile, command palette ⌘K |
-| Points mineurs | 9.5/10 | Deep-links URL, export multi-formats, share API natif, view transitions |
+**Vérification 10 sources minimum** pour toute info factuelle (voir NOTES_USER.md).
+Appliquée lors de l'intégration de l'indice Monaco v9.186.
 
-### Gap restant pour 10/10 parfait
-- **0.2 pt** : keyboard nav cellules complet (arrow keys dans grille admin)
-- Mineur : onboarding guidé visuel (tour overlay) — non implémenté
+## ⏳ Gaps résiduels au 10/10 parfait
 
----
+### Côté technique (trade-offs SPA monofichier assumés)
+- Chiffrement AES-GCM des `clear` passwords (~3h)
+- Event delegation → CSP SHA256 (~2h)
+- `dcView()` granular Virtual-DOM-like (~2h)
 
-## 🔍 Règle permanente — Vérification 10 sources
+### Côté niche (0.1 pt du 10/10)
+- Intégration SIRH SBM (dépend partenariat externe)
+- Module pourboires automatique terminal caisse (hors scope SBM)
 
-Toute info factuelle (paie, convention, lois, indices) → **minimum 10 sources croisées** avant réponse/action. Voir NOTES_USER.md.
-
-### Indice Monaco (v9.186)
-Sources consolidées (10+) :
-- Journal de Monaco : arrêtés 2023-219/412/607, 2024-283, 2025-356
-- Legimonaco, IMSEE, MonServicePublic.mc
-- L'Observateur de Monaco, Monaco Hebdo
-- SNES HDF, Service Public, Convention CCN casinos FR
-
-Historique **indice 100** (traitement indiciaire annuel Fonction Publique Monaco) :
-- 2020: 7124,19€ · 2021: 7216,80€ · 2022: 7710,20€ · 2023: 7998,84€
-- 2024: 8078,83€ · 2025: 8159,62€ · 2026: 8240€ (projection 1%)
-
----
-
-## ⏳ En attente
-
-1. Actions Kevin (hors code) : Vercel, Telegram, GitHub secrets
-2. Repos satellites (IA-KDMC, e-KDMC) — stubs prêts
-3. Test import superviseurs PDF (data side)
+### Actions Kevin (hors code)
+- Nettoyage Vercel (garder kdmc-bot-2026)
+- Régénération token Telegram
+- 4 secrets GitHub Actions
+- Repos IA-KDMC + e-KDMC
 
 ---
 
-*Dernière mise à jour : 2026-04-17 — v9.188 (36 versions, 5 audits, 9.8/10)*
+*Dernière mise à jour : 2026-04-17 — v9.198 (46 versions, 11 audits, moyenne externe 8.1/10, benchmark niche 9.9/10)*
