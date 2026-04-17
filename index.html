@@ -1325,6 +1325,97 @@ function conventionCongeJours(evenement){
   return match?match.jours:0;
 }
 // ── Codes d'activité des bulletins de paie SBM (note 6 janv 1993) ──────────
+// v9.148 — Constitution de la Principaut\u00e9 de Monaco (17 d\u00e9cembre 1962, r\u00e9vis\u00e9e 2 avril 2002)
+var CONSTITUTION_MC={
+  version:"17 d\u00e9cembre 1962 (r\u00e9vis\u00e9e par la loi n\u00b01.249 du 2 avril 2002)",
+  source:"Constitution de la Principaut\u00e9 de Monaco",
+  titres:[
+    {num:"I",nom:"De la Principaut\u00e9 — De ses principes de gouvernement",articles:[
+      {num:1,texte:"La Principaut\u00e9 de Monaco est un \u00c9tat souverain et ind\u00e9pendant dans le cadre des principes g\u00e9n\u00e9raux du droit international et des conventions particuli\u00e8res avec la France. Le territoire de la Principaut\u00e9 est inali\u00e9nable."},
+      {num:2,texte:"Le principe du gouvernement est la monarchie h\u00e9r\u00e9ditaire et constitutionnelle. La Principaut\u00e9 est un \u00c9tat de droit attach\u00e9 au respect des libert\u00e9s et droits fondamentaux."}
+    ]},
+    {num:"II",nom:"Le Prince — La D\u00e9volution de la Couronne",articles:[
+      {num:3,texte:"Le pouvoir ex\u00e9cutif rel\u00e8ve de la haute autorit\u00e9 du Prince. La personne du Prince est inviolable."},
+      {num:4,texte:"Le pouvoir l\u00e9gislatif est exerc\u00e9 conjointement par le Prince et le Conseil National."},
+      {num:5,texte:"Le pouvoir judiciaire est d\u00e9l\u00e9gu\u00e9 par le Prince aux cours et tribunaux. L'ind\u00e9pendance des juges est garantie."},
+      {num:9,texte:"La R\u00e9gence est exerc\u00e9e en cas de vacance du Tr\u00f4ne ou d\u2019incapacit\u00e9 du Prince."},
+      {num:10,texte:"Les fonctions de R\u00e9gent sont exerc\u00e9es par le Conseil de la Couronne."},
+      {num:11,texte:"Le Prince exerce son autorit\u00e9 en conformit\u00e9 des dispositions de la Constitution et des lois."},
+      {num:12,texte:"Le Prince signe et ratifie les trait\u00e9s et conventions apr\u00e8s consultation du Conseil de la Couronne."},
+      {num:13,texte:"Le Prince exerce le droit de gr\u00e2ce et d\u2019amnistie."},
+      {num:14,texte:"Le Prince conf\u00e8re les ordres, titres et distinctions."},
+      {num:15,texte:"Apr\u00e8s consultation du Conseil de la Couronne, le Prince peut prononcer la dissolution du Conseil National."}
+    ]},
+    {num:"III",nom:"Libert\u00e9s et droits fondamentaux",articles:[
+      {num:17,texte:"Les Mon\u00e9gasques sont \u00e9gaux devant la loi. Il n\u2019y a pas entre eux de privil\u00e8ges."},
+      {num:18,texte:"Les conditions dans lesquelles la nationalit\u00e9 mon\u00e9gasque est attribu\u00e9e sont fix\u00e9es par la loi."},
+      {num:19,texte:"La libert\u00e9 individuelle est garantie. Nul ne peut \u00eatre poursuivi que dans les cas pr\u00e9vus par la loi. Nul ne peut \u00eatre d\u00e9tenu que dans les cas et formes pr\u00e9vus par la loi."},
+      {num:20,texte:"Nulle peine ne peut \u00eatre \u00e9tablie ni appliqu\u00e9e qu\u2019en vertu de la loi. La peine de mort est abolie."},
+      {num:21,texte:"Le domicile est inviolable. Aucune visite domiciliaire ne peut avoir lieu que dans les cas et formes pr\u00e9vus par la loi."},
+      {num:22,texte:"Toute personne a droit au respect de sa vie priv\u00e9e et familiale et au secret de sa correspondance."},
+      {num:23,texte:"La libert\u00e9 des cultes et celle de leur exercice public sont garanties."},
+      {num:24,texte:"La libert\u00e9 d\u2019opinion est garantie. La libert\u00e9 de la presse est garantie."},
+      {num:25,texte:"Le droit de propri\u00e9t\u00e9 est inviolable. Nul ne peut \u00eatre priv\u00e9 de sa propri\u00e9t\u00e9 que pour cause d\u2019utilit\u00e9 publique."},
+      {num:26,texte:"Toute personne a droit au travail dans des conditions de s\u00e9curit\u00e9 et de salubrit\u00e9. Une r\u00e9mun\u00e9ration \u00e9quitable est assur\u00e9e au travailleur."},
+      {num:27,texte:"Tout travailleur a droit de d\u00e9fendre ses int\u00e9r\u00eats par l\u2019action syndicale. Le droit de gr\u00e8ve est reconnu."},
+      {num:28,texte:"Tout Mon\u00e9gasque a droit \u00e0 l\u2019aide de l\u2019\u00c9tat en cas d\u2019indigence, de ch\u00f4mage, de maladie, d\u2019invalidit\u00e9, de vieillesse et de maternit\u00e9."},
+      {num:29,texte:"Toute personne a droit \u00e0 l\u2019instruction gratuite. L\u2019enseignement est obligatoire."},
+      {num:32,texte:"L\u2019\u00e9tranger jouit dans la Principaut\u00e9 de la protection de sa personne et de ses biens."}
+    ]},
+    {num:"IV",nom:"Du Domaine Public — Des Finances Publiques",articles:[
+      {num:33,texte:"Le domaine public est inali\u00e9nable et imprescriptible."},
+      {num:34,texte:"Le budget de l\u2019\u00c9tat comprend les recettes et les d\u00e9penses annuelles de l\u2019\u00c9tat."},
+      {num:35,texte:"Le Conseil National vote le budget. Aucune imp\u00f4t direct ne peut \u00eatre \u00e9tabli qu\u2019en vertu d\u2019une loi."},
+      {num:38,texte:"Le contr\u00f4le sup\u00e9rieur des finances est exerc\u00e9 par une Commission."},
+      {num:40,texte:"Le projet de budget est soumis au Conseil National avant le 30 septembre."}
+    ]},
+    {num:"V",nom:"Du Gouvernement",articles:[
+      {num:43,texte:"Le Gouvernement est exerc\u00e9 sous la haute autorit\u00e9 du Prince par un Ministre d\u2019\u00c9tat et des Conseillers de Gouvernement."},
+      {num:44,texte:"Le Ministre d\u2019\u00c9tat repr\u00e9sente le Prince et pr\u00e9side le Conseil de Gouvernement."},
+      {num:46,texte:"Les d\u00e9lib\u00e9rations du Conseil de Gouvernement sont soumises \u00e0 l\u2019approbation du Prince."},
+      {num:47,texte:"Le Ministre d\u2019\u00c9tat est responsable devant le Prince de l\u2019administration de la Principaut\u00e9."},
+      {num:50,texte:"Le Ministre d\u2019\u00c9tat et les Conseillers de Gouvernement sont responsables de l\u2019administration. Les fonctionnaires sont recrut\u00e9s par concours."}
+    ]},
+    {num:"VII",nom:"Du Conseil National",articles:[
+      {num:53,texte:"Le Conseil National comprend vingt-quatre membres \u00e9lus au suffrage universel direct pour cinq ans."},
+      {num:54,texte:"Sont \u00e9lecteurs les Mon\u00e9gasques des deux sexes, \u00e2g\u00e9s de dix-huit ans r\u00e9volus."},
+      {num:57,texte:"Le Conseil National fixe son r\u00e8glement int\u00e9rieur. Il \u00e9lit son Pr\u00e9sident et son Bureau."},
+      {num:58,texte:"Les s\u00e9ances du Conseil National sont publiques."},
+      {num:61,texte:"Le Conseil National vote les lois. Les projets et propositions de loi sont d\u00e9lib\u00e9r\u00e9s en s\u00e9ance publique."},
+      {num:66,texte:"Le Conseil National peut adresser au Gouvernement des questions \u00e9crites ou orales."},
+      {num:67,texte:"Le Conseil National ne peut \u00eatre dissous que par ordonnance souveraine motiv\u00e9e."}
+    ]},
+    {num:"VIII",nom:"Du Conseil de la Couronne",articles:[
+      {num:68,texte:"Le Conseil de la Couronne comprend sept membres de nationalit\u00e9 mon\u00e9gasque nomm\u00e9s par le Prince."},
+      {num:70,texte:"Le Conseil de la Couronne est obligatoirement consult\u00e9 sur les trait\u00e9s internationaux, la dissolution du Conseil National et les demandes de naturalisation."}
+    ]},
+    {num:"X",nom:"De la Justice",articles:[
+      {num:88,texte:"L\u2019organisation judiciaire est \u00e9tablie par la loi. La justice est rendue au nom du Prince."},
+      {num:89,texte:"L\u2019ind\u00e9pendance des juges est garantie."},
+      {num:90,texte:"Le Tribunal Supr\u00eame est compos\u00e9 de cinq membres titulaires et de deux membres suppl\u00e9ants."},
+      {num:91,texte:"Le Tribunal Supr\u00eame statue souverainement sur les recours en annulation pour exc\u00e8s de pouvoir."},
+      {num:92,texte:"Le Tribunal Supr\u00eame statue sur les conflits de comp\u00e9tence."}
+    ]},
+    {num:"XI",nom:"De la R\u00e9vision de la Constitution",articles:[
+      {num:94,texte:"La Constitution ne peut faire l\u2019objet d\u2019aucune suspension."},
+      {num:95,texte:"La r\u00e9vision de la Constitution peut \u00eatre propos\u00e9e par le Prince ou le Conseil National. Elle doit faire l\u2019objet d\u2019un accord entre le Prince et le Conseil National."}
+    ]},
+    {num:"XII",nom:"Dispositions Finales et Transitoires",articles:[
+      {num:97,texte:"La pr\u00e9sente Constitution entrera en vigueur le lendemain de la date de sa promulgation."}
+    ]}
+  ]
+};
+function constitutionSearch(q){
+  q=(q||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  var res=[];
+  CONSTITUTION_MC.titres.forEach(function(t){
+    t.articles.forEach(function(a){
+      var txt=(a.texte||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      if(txt.indexOf(q)>=0)res.push({titre:t.num+" - "+t.nom,art:a.num,texte:a.texte});
+    });
+  });
+  return res;
+}
 // Référence officielle : colonne ACTIV du bulletin, 1-3 lettres par jour
 // Utilisé pour mapper les codes du planning aux significations officielles
 var BULLETIN_CODES={
@@ -10838,6 +10929,7 @@ function vConvention(){
     +_tab("jeux","Jeux","\ud83c\udccf")
     +_tab("lieux","Lieux","\ud83c\udfdb\ufe0f")
     +_tab("loi","Loi","\u2696\ufe0f")
+    +_tab("constit","Constitution","\ud83c\uddf2\ud83c\udde8")
     +_tab("search","Recherche","\ud83d\udd0d")
     +'</div>';
   // Tab : Articles
@@ -11289,13 +11381,47 @@ function vConvention(){
       });
     }
   }
+  // Tab : Constitution mon\u00e9gasque
+  if(tab==="constit"){
+    h+='<div style="text-align:center;padding:10px 0 14px">'
+      +'<div style="font-size:24px">\ud83c\uddf2\ud83c\udde8</div>'
+      +'<div style="font-size:16px;font-weight:800;color:#c9a227;letter-spacing:1px">Constitution de la Principaut\u00e9 de Monaco</div>'
+      +'<div style="font-size:12px;color:#a0cca0;margin-top:4px">'+esc(CONSTITUTION_MC.version)+'</div>'
+      +'</div>';
+    h+='<input id="constitQIn" class="inp" placeholder="\ud83d\udd0d Rechercher dans la Constitution..." oninput="var q=this.value.toLowerCase();var els=document.querySelectorAll(\'.constit-art\');els.forEach(function(e){e.style.display=!q||e.textContent.toLowerCase().indexOf(q)>=0?\'block\':\'none\';})" style="margin-bottom:12px">';
+    CONSTITUTION_MC.titres.forEach(function(t){
+      h+='<div style="margin-bottom:12px">'
+        +'<div style="padding:8px 12px;background:rgba(201,162,39,.1);border-left:3px solid #c9a227;border-radius:0 8px 8px 0;margin-bottom:6px">'
+        +'<div style="font-size:15px;font-weight:800;color:#c9a227">Titre '+esc(t.num)+'</div>'
+        +'<div style="font-size:13px;color:#d0e8c0">'+esc(t.nom)+'</div>'
+        +'</div>';
+      t.articles.forEach(function(a){
+        h+='<div class="constit-art" style="padding:8px 14px;border-bottom:1px solid rgba(201,162,39,.08)">'
+          +'<span style="font-size:13px;font-weight:800;color:#c9a227;margin-right:8px">Art. '+a.num+'</span>'
+          +'<span style="font-size:14px;color:#e0ecd8;line-height:1.5">'+esc(a.texte)+'</span>'
+          +'</div>';
+      });
+      h+='</div>';
+    });
+  }
   // Tab : Recherche
   if(tab==="search"){
-    h+='<input id="convQIn" class="inp" placeholder="\ud83d\udd0d Rechercher dans convention + codes paie..." value="'+esc(q)+'" oninput="searchInput(\'convQ\',this.value,\'convQIn\')" style="margin-bottom:12px">';
+    h+='<input id="convQIn" class="inp" placeholder="\ud83d\udd0d Rechercher dans convention + codes + Constitution..." value="'+esc(q)+'" oninput="searchInput(\'convQ\',this.value,\'convQIn\')" style="margin-bottom:12px">';
     if(q){
       var qL=q.toLowerCase();
       var arts=CONVENTION.articles.filter(function(a){return a.titre.toLowerCase().indexOf(qL)>=0||a.contenu.toLowerCase().indexOf(qL)>=0||String(a.num).indexOf(q)>=0;});
       var codes=bulletinAllCodes().filter(function(c){return c.code.toLowerCase().indexOf(qL)>=0||c.l.toLowerCase().indexOf(qL)>=0;});
+      // v9.148 — Recherche dans la Constitution
+      var constArts=constitutionSearch(q);
+      if(constArts.length){
+        h+='<div style="font-size:14px;font-weight:700;color:#c9a227;margin:8px 0 6px">\ud83c\uddf2\ud83c\udde8 Constitution ('+constArts.length+' r\u00e9sultat'+(constArts.length>1?'s':'')+')</div>';
+        constArts.slice(0,10).forEach(function(a){
+          h+='<div class="card" style="padding:10px 14px;margin-bottom:6px">'
+            +'<div style="font-size:13px;color:#c9a227;font-weight:700">Art. '+a.art+' \u2014 Titre '+esc(a.titre)+'</div>'
+            +'<div style="font-size:14px;color:#e0ecd8;margin-top:4px;line-height:1.5">'+esc(a.texte)+'</div>'
+            +'</div>';
+        });
+      }
       if(!arts.length&&!codes.length){
         h+='<div style="text-align:center;padding:30px;color:#a0cca0;font-size:14px">Aucun r\u00e9sultat pour "'+esc(q)+'"</div>';
       }
