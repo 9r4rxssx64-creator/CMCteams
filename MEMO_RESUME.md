@@ -9,7 +9,7 @@
 
 ## Dernière version stable
 
-**`APP_VER = "v9.149"`** — branche `main` (déployée GitHub Pages)
+**`APP_VER = "v9.152"`** — branche `main` (déployée GitHub Pages)
 
 ### Session 2026-04-17 — 17 versions livrées (v9.133 → v9.149)
 
@@ -32,6 +32,10 @@
 | v9.148 | SÉCURITÉ : passwords clear supprimés |
 | v9.148b | Constitution de Monaco intégrée |
 | v9.149 | Audit expert 3 subagents — P0/P1 corrigés |
+| v9.150 | Outil IA Constitution + fond jaune PNL PDF |
+| v9.151 | FIX CRITIQUE connexion : fbWrite manquant sur 6 fonctions |
+| v9.151b | Sync Firebase bidirectionnel (admin↔employés) |
+| v9.152 | Tutoriel onboarding 8 étapes + aide intégrée |
 
 ### Audits
 
@@ -55,6 +59,8 @@
 - **Premium UX** : toast undo, focus-visible, SVG stats, micro-interactions
 - **4 langues** : FR, EN, IT, Monégasque
 - **Admin Rename** : modifier nom employé partout
+- **Tutoriel onboarding** : 8 étapes à la 1ère connexion (auto + revoir depuis Aide)
+- **Connexion fix** : sync Firebase bidirectionnel sur toutes les fonctions mdp/reg
 
 ---
 
@@ -67,4 +73,4 @@
 
 ---
 
-*Dernière mise à jour : 2026-04-17 — v9.149*
+*Dernière mise à jour : 2026-04-17 — v9.152*
