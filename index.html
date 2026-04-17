@@ -2920,7 +2920,7 @@ function fbWrite(k,v,_retry){
   if(_importInProgress){_importPending[k]=v;return;}
   if(_cbIsOpen()){_syncQueueAdd(k,v);return;}
   var _v=v;
-  if(k==="cmc_pw"&&v&&typeof v==="object"){_v={};for(var _pk in v){if(v.hasOwnProperty(_pk)){var _e=v[_pk];_v[_pk]=_e&&_e.clear?{h:_e.h}:_e;}}}
+  if(k==="cmc_pw"&&v&&typeof v==="object"){_v={};for(var _pk in v){if(v.hasOwnProperty(_pk)){var _e=v[_pk];_v[_pk]={h:_e.h,setBy:_e.setBy,setAt:_e.setAt};}}}
   if(!_retry){_fbPendingWrites++;_fbShowSyncBadge();}
   fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(_v)
@@ -3012,14 +3012,7 @@ function fbApplyData(k,v){
     if(A.passwords){
       Object.keys(A.passwords).forEach(function(uid){
         var loc=A.passwords[uid];
-        if(loc&&loc.clear&&_merged[uid]&&typeof _merged[uid]==="object"&&!_merged[uid].clear){
-          // v9.61 : merger uniquement si le hash distant est identique au hash local
-          // (= m\u00eame mdp, juste resync). Si les hash diff\u00e8rent, c'est un vrai changement
-          // \u2192 on abandonne le 'clear' local car il correspond \u00e0 l'ancien mdp.
-          if(loc.h&&_merged[uid].h&&loc.h===_merged[uid].h){
-            _merged[uid].clear=loc.clear;
-          }
-        }
+        // v9.148 — SÉCURITÉ : plus de merge de mots de passe en clair
       });
     }
     A.passwords=_merged;
@@ -6407,7 +6400,7 @@ function stepRegister(){
   // Sauvegarder identité (non vérifiée : le code OTP devra être saisi juste après)
   A.reg[finalUid]={nom:nom,prenom:prenom,email:email,matricule:matIn||finalUid,createdAt:Date.now(),verified:false};
   ls("cmc_reg",A.reg);
-  A.passwords[finalUid]={h:hashPwStrong(pw1),clear:pw1};
+  A.passwords[finalUid]={h:hashPwStrong(pw1)};
   // Migrer le compte temp si UID a changé
   if(finalUid!==loginUid){
     delete A.passwords[loginUid];
@@ -14551,7 +14544,7 @@ function adminSetPw(id,pw){
   if(!A.user||A.user.id!==AID)return;
   pw=(pw||"").trim();
   if(pw.length<4){toast("Mot de passe trop court (4 caractères minimum)","err");return;}
-  A.passwords[id]={h:hashPwStrong(pw),clear:pw};
+  A.passwords[id]={h:hashPwStrong(pw)};
   ls("cmc_pw",A.passwords);
   _audit("set_pw",AID,id,null,"Mot de passe défini par admin");
   toast("\u2705 Mot de passe défini pour "+id);
@@ -14650,6 +14643,10 @@ function vImport(){
   <div class="card" style="padding:14px;margin-bottom:10px">
     <div style="font-size:16px;font-weight:700;color:#c9a227;margin-bottom:4px;display:flex;align-items:center">\u270f\ufe0f Coller le texte ${helpIcon("import","Comment importer un planning ?")}</div>
     <div style="font-size:14px;color:#a0cca0;margin-bottom:8px">Depuis Numbers, Excel, ou texte copi\u00e9 du PDF</div>
+    <!-- v9.148 — Rappel cadres : section souvent coup\u00e9e au copier-coller -->
+    <div style="padding:8px 10px;background:rgba(192,120,48,.08);border:1px solid rgba(192,120,48,.25);border-radius:8px;margin-bottom:8px;font-size:13px;color:#e0a050;line-height:1.5">
+      <b>\u26a0 Superviseurs / Pit Boss</b> : assurez-vous de copier TOUTE la page PDF, y compris les sections en bas (superviseurs, inspecteurs). Si tronqu\u00e9 \u2192 import incomplet. Vous pouvez importer en plusieurs fois (donn\u00e9es fusionn\u00e9es).
+    </div>
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){previewImport();},700)"></textarea>
@@ -18272,7 +18269,7 @@ function _iaExecuteTool(toolName,input){
         if(pw.length<6)return"\u274c Mot de passe trop court (minimum 6 caract\u00e8res).";
         // v9.100 — Utiliser hashPwV2 (sel dynamique, 15K rounds, 3 registres)
         var h=(typeof hashPwV2==="function")?hashPwV2(pw):hashPwStrong(pw);
-        A.passwords[emp.id]={h:h,clear:pw,setBy:AID,setAt:Date.now()};
+        A.passwords[emp.id]={h:h,setBy:AID,setAt:Date.now()};
         ls("cmc_pw",A.passwords);
         _audit("ia_set_pw",AID,emp.name,"","d\u00e9fini par admin (v2)");
         return"\u2705 Nouveau mot de passe d\u00e9fini pour "+emp.name+" \u2014 communiquez-le par canal s\u00e9curis\u00e9.";
