@@ -18128,11 +18128,23 @@ function callClaudeIA(q){
   }
   function _finalize(txt,isErr){
     if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
-    var html=isErr
-      ?"<span style='color:#f08080'>"+esc(txt)+"</span>"
-      :esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
-    iaHistory.push({role:"bot",html:html});
-    if(!isErr){logIAInteraction(q,html,"claude");ttsSpeak(txt);}
+    if(isErr){
+      var localReply=iaRespond(q);
+      if(localReply){
+        iaHistory.push({role:"bot",html:"<span style='color:#e09848;font-size:12px'>Mode local (API indisponible)</span><br>"+localReply});
+        logIAInteraction(q,localReply,"local_fallback");
+      } else {
+        var isBilling=txt.indexOf("402")>=0||txt.indexOf("credit")>=0||txt.indexOf("billing")>=0||txt.indexOf("insufficient")>=0;
+        var html=isBilling
+          ?"<span style='color:#e09848'>\u26a0 Cr\u00e9dits API \u00e9puis\u00e9s. <a href='https://console.anthropic.com/settings/billing' target='_blank' style='color:#4a9aff;text-decoration:underline'>Recharger ici</a>.<br><span style='font-size:13px;color:#a0cca0'>L'assistant local reste disponible pour le planning, jeux, convention.</span></span>"
+          :"<span style='color:#f08080'>"+esc(txt)+"</span>";
+        iaHistory.push({role:"bot",html:html});
+      }
+    } else {
+      var html=esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+      iaHistory.push({role:"bot",html:html});
+      logIAInteraction(q,html,"claude");ttsSpeak(txt);
+    }
     dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   }
 
