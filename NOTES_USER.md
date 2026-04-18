@@ -2,6 +2,17 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
+> **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
+
+Mode expert maintenu sans exception sur toutes les sessions :
+- Parallélisation + subagents
+- Tests + validation avant commit
+- Sécurité (esc, guards AID)
+- Docs à jour (CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md)
+- Zéro régression
+
+
 ## 🆕 SESSION 2026-04-18 (v9.287) — Consigne PDF cadres haut-droite
 
 **Demande Kevin** : "Oubli pas d'enregistrer et de prendre en compte les cadres en haut à droite des planning chefs/cate/employé : **vacances / formation / malade / sans solde**."
