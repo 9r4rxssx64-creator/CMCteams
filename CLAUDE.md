@@ -698,6 +698,9 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 21. **Git rebase sans vérification post-rebase** : un rebase peut perdre silencieusement des modifications (règles detectRepoConflicts, blocs HTML dans vDocs, validation post-import). **OBLIGATION** : après TOUT rebase, vérifier avec `grep` que CHAQUE feature ajoutée est encore présente dans le fichier. Liste de contrôle post-rebase : `grep -c "mot_clé_unique_feature"` pour chaque ajout ❌
 22. Données SEED incorrectes sans validation : SEED_APR2026 avait des horaires de travail au lieu de CP/AF pour REVOLLON. **OBLIGATION** : toute donnée SEED doit être vérifiée par `detectRepoConflicts()` — la règle 4 (horaire_dans_absence) attrape ce type d'erreur automatiquement ❌
 23. Audit "simple" au lieu d'audit "général expert" : un audit qui vérifie seulement la syntaxe JS n'est PAS un audit expert. **OBLIGATION** : utiliser la checklist complète (21 points : 8 flux utilisateur + 5 flux admin + 5 sécurité + 3 données) à CHAQUE audit final ❌
+24. **Fuzzy matching aveugle** (v9.376-377) : Levenshtein ≥0.75 matchait `BORGIA L` à `BORGIA T` (similarité 0.875). **OBLIGATION** : quand fuzzy match + surname identique + initiales différentes + initiales courtes (≤2 chars) → consulter `known_identities` (v9.220). Si nom vu ≥2 fois → vrai homonyme, sinon → anomalie OCR dans `cmc_import_anomalies`. Jamais matcher aveuglément les homonymes ❌
+25. **Correction générique vs spécifique** : quand Kevin signale un bug précis (ex: BORGIA), le fix doit être **générique** (s'applique à tous les cas similaires), pas hardcodé au cas signalé. Toujours généraliser le pattern ❌
+26. **Propagation codes invalides** (v9.373) : `autoFillMissingCadres` copiait sans validation → codes non reconnus se propageaient d'un mois à l'autre. **OBLIGATION** : valider `CODES[c]` avant toute copie cross-mois ❌
 
 ---
 
