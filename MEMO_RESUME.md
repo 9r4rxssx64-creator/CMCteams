@@ -151,9 +151,22 @@ malgré le fail Vercel car le code est validé localement.
 Kevin a demandé d'utiliser "Google outils / Gemini / DALL-E / Stable Diffusion" pour :
 - Générer images/fonds écran Monaco (casino, palais)
 - Améliorer plans (pas flou, futuriste)
-- Animations/montages
+- Animations/montages / vidéos narratives
 
-**Statut actuel** : AUCUN MCP tool image gen disponible. Seulement GitHub MCP + Bash/Edit.
+**Statut actuel (session 2026-04-18 extension v9.408)** : AUCUN MCP tool image/vidéo gen disponible.
+Disponible : GitHub MCP, WebSearch, WebFetch (403 sur montecarlosbm-corporate.com).
+
+**Tools utiles identifiés à installer (Kevin confirme installation en cours 2026-04-18)** :
+- `mcp-server-google-genai` (Gemini image + video gen, multi-modal)
+- `mcp-server-replicate` (Stable Diffusion, Flux, Hailuo video, Runway)
+- `mcp-server-openai-images` (DALL-E 3 via OpenAI API)
+- `mcp-server-stability-ai` (Stable Video Diffusion)
+- `mcp-server-elevenlabs` (voix narrative pro pour conte)
+- `mcp-server-google-workspace` (Drive pour héberger vidéos générées)
+
+**Note isolation sessions** : chaque session Claude Code est isolée (pas de mémoire croisée).
+Je ne peux pas consulter d'autres conversations. Quand MCPs installés → Kevin doit
+relancer session / me signaler la disponibilité pour que je les utilise.
 
 **À ajouter par Kevin** dans `~/.claude/settings.json` section `mcpServers` :
 - `mcp-server-anthropic-images` (si existe)
