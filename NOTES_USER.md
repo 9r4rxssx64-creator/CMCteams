@@ -2,6 +2,35 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🆕 SESSION 2026-04-18 (v9.287) — Consigne PDF cadres haut-droite
+
+**Demande Kevin** : "Oubli pas d'enregistrer et de prendre en compte les cadres en haut à droite des planning chefs/cate/employé : **vacances / formation / malade / sans solde**."
+
+### Contexte
+Screenshot PDF MAI 2026 V1 montre des cadres info en haut-droite du planning avec :
+- Nom employé + code compétences (`.BRT`, `.BRTP`, `.BRTCPK`, `BRTCP+.`)
+- Code état plein mois : **CP** (congé payé / vacances), **AF** (formation), **M** (malade), **SS** (sans solde)
+- Colonnes `du X au Y` pour la période (ex: "1 au 31" = plein mois)
+
+### À faire (roadmap)
+1. **Parser PDF** détecter ces cadres et leurs codes d'état plein période
+2. **Store** : pour chaque uid + mois → {code, du, au, source:"pdf_cadre"}
+3. **Import** : générer automatiquement les overrides pour tous les jours de la période
+4. **Import preview** : afficher les absences longue durée détectées dans vImportVerif
+5. **vRetrait / vAbsences** : afficher les cadres comme source distincte
+
+### Codes à capturer (enrichir CONVENTION.bulletinCodes)
+- **CP** : Congé payé (vacances) → plein mois si cadre
+- **AF** : Absence formation
+- **M** / **MAL** : Maladie
+- **SS** : Sans solde (absence autorisée non payée)
+- **ABI** : Absence injustifiée
+- **AT** : Arrêt travail
+- **PAT** : Paternité (déjà couvert)
+- **CFL** : Congé fêtes légales
+
+---
+
 ## 🆕 SESSION 2026-04-17 (v9.207 → v9.213) — Features majeures livrées
 
 ### v9.207 — Auto-fill cadres manquants
