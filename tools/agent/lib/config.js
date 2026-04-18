@@ -30,6 +30,11 @@ export function loadConfig() {
     AGENT_TIMEZONE: process.env.AGENT_TIMEZONE || "Europe/Monaco",
     AGENT_ADMIN_ID: process.env.AGENT_ADMIN_ID || "U11804",
     AGENT_SECRET: process.env.AGENT_SECRET || "", // pour protéger endpoint API
+
+    // Sentry monitoring (ajouté v1.1 — intégration P4 2026-04-17)
+    SENTRY_DSN: process.env.SENTRY_DSN || "",
+    SENTRY_ENVIRONMENT: process.env.VERCEL_ENV || process.env.NODE_ENV || "production",
+    SENTRY_RELEASE: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
   };
 
   // Check minimums
