@@ -1,178 +1,187 @@
 # GUIDE_IPHONE.md — Mémo actions pas à pas (iOS Safari)
 
-> Destiné à Kevin DESARZENS — iPhone iOS Safari.
+> **Destiné à Kevin DESARZENS — iPhone iOS Safari.**
 > Toutes les URLs ci-dessous sont **cliquables** depuis ce fichier sur GitHub.
 > Format : **🎯 But → 🔗 URL → 👆 Ce que tu vas voir → ✅ Action**.
+> ⏱️ Ordre strict de priorité. Fais dans l'ordre, chaque étape débloque la suivante.
 
 ---
 
-## 📌 Prérequis — accès et comptes
+## 📌 État actuel (17 avril 2026)
 
-| Service | Compte | Statut |
-|---------|--------|--------|
-| **GitHub** | `9r4rxssx64-creator` | ✅ Confirmé |
-| **Vercel** | `g7vrdynktn-5574's projects` | ✅ Confirmé (cmc-teams + kdmc-agent-monaco déployés) |
-| **Anthropic API** | `ANTHROPIC_API_KEY` | ✅ Configuré dans env Vercel |
-| **Telegram Bot** | Bot token + chat ID `5458942048` | ✅ Configuré dans env Vercel |
-| **Firebase RTDB** | `cmcteams-c16ab` | ✅ URL dans le code |
-| **Google Drive / Gmail** | Tokens OAuth | ⚠️ À vérifier |
-| **Sentry** | — | ❌ Pas de compte (à créer si monitoring) |
+| Service | Statut | Note |
+|---------|--------|------|
+| **GitHub** `9r4rxssx64-creator/CMCteams` | ✅ OK | branche active : `claude/evaluate-resources-shZBa` |
+| **Vercel** projets | ✅ OK | `cmc-teams` + `kdmc-agent-monaco.vercel.app` |
+| **Agent Claude 24/7** | ⚠️ cron bloqué | GitHub Actions workflow créé — secret manquant |
+| **Anthropic API** | ✅ OK | configuré dans env Vercel |
+| **Telegram Bot** | ⚠️ chat_id à vérifier | erreur `chat not found` vue |
+| **Firebase RTDB** | ✅ OK | `cmcteams-c16ab` |
+| **Sentry** (monitoring) | ❌ pas de compte | à créer pour alerte crashes |
+| **Notion / Figma** | ⚪ optionnels | si besoin futur |
 
 ---
 
-## 🔴 ACTION URGENTE 1 — Résoudre le cron Vercel bloqué
+# 🔴 PRIORITÉ 1 — Débloquer le cron de ton agent 24/7 (5 min)
 
-**Problème :** ton agent `kdmc-agent-monaco` a un cron `*/15 * * * *` (toutes les 15 min) mais Vercel Hobby limite à **1 fois par jour**.
+**Pourquoi critique :** ton agent `kdmc-agent-monaco` ne tourne plus car Vercel Hobby bloque les crons < 24h. **J'ai créé un workflow GitHub Actions gratuit qui remplace.** Il te suffit d'ajouter 1 secret.
 
-### 🎯 Solution gratuite recommandée : GitHub Actions
+### 👆 Étape 1.1 — Ajouter AGENT_SECRET dans GitHub
 
-**Avantages :** gratuit (2000 min/mois repo public), pas de limite sur le cron, logs consultables.
+1. **Ouvre :** 🔗 https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new
+2. **Tu vas voir :** formulaire "New repository secret" — 2 champs : `Name` et `Secret`
+3. **✅ Action :**
+   - **Name** (exactement) : `AGENT_SECRET`
+   - **Secret** (copie depuis Vercel) : la valeur actuelle de `AGENT_SECRET` que tu avais mise dans Vercel
+     - 🔗 Pour la retrouver : https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/settings/environment-variables
+     - **Clique sur `AGENT_SECRET`** → bouton **œil** 👁 pour révéler la valeur → copie-la
+4. **Clique "Add secret"** (bouton vert en bas)
+5. **Tu reverras :** la liste des secrets avec `AGENT_SECRET` ✅
 
-**👆 Sur iPhone Safari :**
+### 👆 Étape 1.2 — Activer le workflow (si pas déjà actif)
 
 1. **Ouvre :** 🔗 https://github.com/9r4rxssx64-creator/CMCteams/actions
-2. **Tu vas voir :** page "Actions" avec les workflows existants (`auto-backup.yml`, `auto-deploy-vercel.yml`, `deploy.yml`, `tests.yml`)
-3. **✅ Action :** ne fais rien ici, c'est juste pour vérifier. **Je vais créer le workflow `agent-cron.yml` pour toi** (dis-moi quand tu veux que je le fasse — une ligne suffit : *« crée le cron GitHub Actions »*).
+2. **Tu vas voir :** la liste des workflows dont **"Agent KDMC — Cron 24/7"**
+3. **Si marqué "Disabled"** → clique dessus, puis bouton **"Enable workflow"**
+4. **Test manuel immédiat :** onglet **"Run workflow"** (à droite) → bouton vert **"Run workflow"**
+5. **Tu verras :** un job qui démarre, puis ✅ vert après ~30 s si tout est bon
 
-### 🎯 Alternative si tu préfères payer
+### ⚠️ Étape 1.3 — Désactiver les crons Vercel (pour éviter doublon)
 
-**🔗 Vercel Pro :** https://vercel.com/team/g7vrdynktn-5574/settings/billing
-- 👆 Tu verras "Upgrade to Pro" — **20 $/mois**
-- ✅ Déverrouille tous les crons Vercel
+1. **Ouvre :** 🔗 https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/agent/vercel.json
+2. **Tu verras :** l'éditeur GitHub avec le fichier JSON
+3. **✅ Action :** supprimer toute la section `"crons": [...]` OU modifier le fichier pour ne garder que `"functions"`
+4. **Commit :** "v9.154: désactivation crons Vercel (remplacés par GitHub Actions)"
 
-👉 **Ma reco : GitHub Actions (gratuit)**
-
----
-
-## 🟡 ACTION 2 — Créer compte Sentry (monitoring erreurs gratuit)
-
-**Pourquoi :** ton agent et ton app tournent en prod, Sentry t'alerte en cas de crash (gratuit 5k erreurs/mois).
-
-### 👆 Sur iPhone Safari :
-
-1. **Ouvre :** 🔗 https://sentry.io/signup/
-2. **Tu vas voir :** formulaire "Get started with Sentry" — 3 champs : email, password, organization name
-3. **✅ Action :**
-   - Email : ton email
-   - Password : crée-en un fort
-   - Organization : `kdmc` (ou `cmcteams`)
-4. **Clique "Sign up"**
-5. **Ensuite tu verras :** écran "Start with your platform" — choisis **Browser JavaScript**
-6. **Tu auras une clé DSN** (`https://xxx@xxx.ingest.sentry.io/xxx`)
-7. **Copie-la et envoie-la-moi** — je configurerai le MCP Sentry et l'intégration dans CMCteams.
+**👉 Je peux aussi faire l'étape 1.3 pour toi — dis juste "désactive les crons Vercel".**
 
 ---
 
-## 🟢 ACTION 3 — (Optionnel) Créer compte Notion
+# 🟠 PRIORITÉ 2 — Corriger l'erreur Telegram (2 min)
 
-**Pourquoi :** si tu veux que je lise/écrive dans ton Notion (doc projet, specs, notes).
+**Pourquoi important :** tu as vu `{"ok":false,"error_code":400,"description":"Bad Request: chat not found"}` — ton bot ne peut pas t'envoyer les alertes.
 
-### 👆 Sur iPhone Safari :
-
-1. **Ouvre :** 🔗 https://www.notion.so/signup
-2. **Tu vas voir :** écran "Sign up" — boutons Apple/Google/Email
-3. **✅ Action :** connecte-toi avec ton Apple ID (le plus simple sur iPhone)
-4. **Après la création :** le MCP Notion déjà installé dans le sandbox se connectera automatiquement au premier usage (OAuth pop-up dans le navigateur).
-
-**Si tu n'utilises pas Notion : passe cette étape.**
-
----
-
-## 🟢 ACTION 4 — (Optionnel) Créer compte Figma
-
-**Pourquoi :** si tu veux mockuper l'UI avant que je code.
-
-### 👆 Sur iPhone Safari :
-
-1. **Ouvre :** 🔗 https://www.figma.com/signup
-2. **Tu vas voir :** "Create a free account" — 3 champs
-3. **✅ Action :** crée le compte (gratuit, usage personnel illimité)
-
-**Si tu ne mockupes pas : passe cette étape.**
-
----
-
-## 🔵 ACTION 5 — Corriger erreur Telegram "chat not found" (tu avais une capture)
-
-**Problème que tu as vu :** `{"ok":false,"error_code":400,"description":"Bad Request: chat not found"}`
-
-**Cause :** le `TELEGRAM_CHAT_ID` (actuellement `5458942048`) n'est peut-être pas le bon, ou ton bot n'a jamais démarré de conversation avec toi.
-
-### 👆 Vérification sur iPhone (2 minutes) :
+### 👆 Étape 2.1 — Vérifier que tu as bien démarré ton bot
 
 1. **Ouvre Telegram sur ton iPhone**
-2. **Cherche ton bot** (par son nom @XXX_bot)
-3. **Tape `/start`** dans la conversation avec lui
-4. **Tu dois voir un message de bienvenue**
-5. **Puis sur Safari ouvre :** 🔗 https://api.telegram.org/bot`<TON_TOKEN>`/getUpdates
-   - Remplace `<TON_TOKEN>` par ton vrai bot token
-   - **Tu vas voir du JSON** avec ton `chat.id` réel
-6. **Compare** avec `5458942048` : si différent, **envoie-moi le bon** et je mets à jour env Vercel.
+2. **Cherche ton bot** par son nom `@XXXXX_bot` (tu as son nom quelque part)
+3. **Si tu ne l'avais jamais ouvert** → clique sur **"START"** (bouton bleu en bas)
+4. **Envoie-lui** `/start` (juste pour créer la conversation)
+
+### 👆 Étape 2.2 — Récupérer le vrai chat_id
+
+1. **Ouvre sur Safari :** 🔗 `https://api.telegram.org/botTON_TOKEN/getUpdates`
+   - Remplace `TON_TOKEN` par ton vrai bot token
+   - Le token est dans Vercel : 🔗 https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/settings/environment-variables → `TELEGRAM_BOT_TOKEN`
+2. **Tu vas voir :** du JSON avec `"chat":{"id":XXXXX,...}` — **copie la valeur `id`**
+3. **Compare avec `5458942048`** (chat_id actuel) :
+   - Si **identique** : pas de problème, le bot ne t'a juste pas trouvé parce qu'il n'avait pas démarré.
+   - Si **différent** : il faut mettre à jour `TELEGRAM_CHAT_ID` dans Vercel
+
+### 👆 Étape 2.3 — Mettre à jour Vercel (si nécessaire)
+
+1. **Ouvre :** 🔗 https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/settings/environment-variables
+2. **Cherche** `TELEGRAM_CHAT_ID`
+3. **Clique les 3 points ⋯ → "Edit"**
+4. **Colle le nouveau chat_id**
+5. **Clique "Save"**
+6. **Redéploie :** onglet "Deployments" → 3 points ⋯ du dernier déploiement → "Redeploy"
 
 ---
 
-## 🚀 ACTION 6 — Installer MCP dans TON Claude Code (si tu en as un local)
+# 🟡 PRIORITÉ 3 — Créer compte Sentry (3 min, gratuit)
 
-**Si tu utilises Claude Code uniquement via le web** (claude.ai/code sur iPhone) : **tu n'as rien à faire**, j'ai installé les MCP côté sandbox.
+**Pourquoi utile :** ton agent et ton app tournent en prod. Sentry t'alerte automatiquement en cas de crash. **5000 events/mois gratuits**.
 
-**Si tu as Claude Code installé sur Mac/PC :** ouvre ton terminal et colle ces 4 commandes (déjà validées gratuites sans OAuth lourd) :
+### 👆 Étape 3.1 — Inscription
 
-```bash
-claude mcp add context7 --transport http https://mcp.context7.com/mcp
-claude mcp add vercel --transport http https://mcp.vercel.com
-claude mcp add sentry --transport http https://mcp.sentry.dev/mcp
-claude mcp add hf --transport http https://huggingface.co/mcp
-```
+1. **Ouvre :** 🔗 https://sentry.io/signup/
+2. **Tu vas voir :** "Get started with Sentry" — 3 champs
+3. **✅ Action :**
+   - **Email** : ton email
+   - **Password** : crée-en un fort (je recommande ceci : `KdmcSentry2026!SBM` — à personnaliser)
+   - **Organization** : `kdmc` ou `cmcteams`
+4. **Clique "Sign up"**
 
-Puis vérifie :
-```bash
-claude mcp list
-```
+### 👆 Étape 3.2 — Créer le projet
+
+1. **Tu verras :** "Start with your platform"
+2. **Choisis** → **Browser JavaScript** (pour CMCteams) **ou** **Node.js** (pour l'agent Vercel)
+3. **Nom du projet** : `cmcteams`
+4. **Clique "Create Project"**
+
+### 👆 Étape 3.3 — Copier la DSN
+
+1. **Tu verras :** une clé qui commence par `https://xxx@oXXXX.ingest.sentry.io/XXXXX`
+2. **Copie-la entièrement**
+3. **Envoie-la-moi par message :** *"Voici ma DSN Sentry : https://..."*
+
+Je configurerai l'intégration dans CMCteams + l'agent Vercel à la prochaine session.
 
 ---
 
-## 📊 État actuel des MCP installés dans ton sandbox
+# 🟢 PRIORITÉ 4 — Optionnel : Notion / Figma
 
-| MCP | Statut | Usage | Gratuit ? |
-|-----|--------|-------|-----------|
-| **Context7** | ✅ Installé | Docs à jour pour frameworks | ✅ Oui |
-| **Vercel** | ✅ Installé | Gérer tes déploiements (cmc-teams, kdmc-agent-monaco) | ✅ Oui |
-| **Sentry** | ✅ Installé | Monitoring erreurs prod | ✅ 5k events/mois |
-| **Hugging Face** | ✅ Installé | Génération images gratuite (Flux, SDXL, etc.) | ✅ Oui (quota) |
+**Seulement si tu comptes les utiliser.**
+
+### Notion (documentation projets)
+1. 🔗 https://www.notion.so/signup
+2. Connecte-toi avec Apple ID
+3. MCP Notion s'activera automatiquement au 1er usage
+
+### Figma (mockups UI)
+1. 🔗 https://www.figma.com/signup
+2. Création gratuite usage perso
+
+**👉 Skip si tu n'en as pas besoin.**
 
 ---
 
-## 🎨 Génération d'images gratuites (sans compte)
+# 🎨 BONUS — Génération d'images gratuite (aucun compte)
 
-**Le plus simple :** API **Pollinations.ai** — zéro clé, zéro compte.
-
-**Test sur ton iPhone** :
+**Test immédiat Pollinations.ai :**
 1. **Ouvre :** 🔗 https://image.pollinations.ai/prompt/casino%20monte%20carlo%20roulette%20table
-2. **Tu vas voir :** une image générée à la volée
-3. **✅ Action :** si ça te plaît, je peux intégrer ça dans CMCteams pour générer des illustrations (avatars employés, bannières, splash).
+2. **Tu verras :** une image générée en direct, gratuite, sans clé
+
+Si tu veux intégrer ça dans CMCteams (avatars, bannières, splash), **dis-moi** et je l'ajoute aux outils IA de l'app.
 
 ---
 
-## ✅ Récap — ordre de priorité des actions
+# 📊 Récap priorités — ordre d'action
 
-| # | Action | Durée | Priorité |
-|---|--------|-------|----------|
-| 1 | Dis-moi "crée le cron GitHub Actions" pour résoudre Vercel Hobby | 10 s | 🔴 Urgent |
-| 2 | Créer compte Sentry + m'envoyer la DSN | 3 min | 🟡 Recommandé |
-| 3 | Vérifier/corriger `TELEGRAM_CHAT_ID` | 2 min | 🔵 Utile |
-| 4 | Créer compte Notion (si utile) | 2 min | 🟢 Optionnel |
-| 5 | Créer compte Figma (si utile) | 2 min | 🟢 Optionnel |
+| # | Action | Durée | URL principale | Gratuit ? |
+|---|--------|-------|----------------|-----------|
+| **1** | 🔴 Ajouter `AGENT_SECRET` dans GitHub + activer workflow | 5 min | [Secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new) | ✅ |
+| **2** | 🟠 Corriger Telegram chat_id | 2 min | [Env vars Vercel](https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/settings/environment-variables) | ✅ |
+| **3** | 🟡 Créer compte Sentry + m'envoyer DSN | 3 min | [Sentry signup](https://sentry.io/signup/) | ✅ 5k events/mois |
+| **4** | 🟢 Notion / Figma (si utile) | 2 min ×2 | — | ✅ |
 
 ---
 
-## 📞 Comment me demander d'agir
+# 📞 Comment me demander d'agir à la prochaine session
 
-À la prochaine session Claude Code (iPhone ou desktop), dis-moi simplement :
-- *« Crée le cron GitHub Actions »* → je fais le workflow
-- *« Voici ma DSN Sentry : ... »* → je configure le monitoring
+Dis-moi simplement :
+- *« Désactive les crons Vercel »* → je modifie `tools/agent/vercel.json`
+- *« Voici ma DSN Sentry : https://... »* → je configure le monitoring
 - *« Le chat_id Telegram correct est : ... »* → je mets à jour Vercel
+- *« Intègre Pollinations dans CMCteams »* → j'ajoute l'outil IA de génération d'images
 - *« Génère une image pour X »* → j'utilise Pollinations ou Hugging Face
 
 ---
 
-**Tout est prêt. Les fichiers `MCP_INSTALL.md`, `GUIDE_IPHONE.md`, `~/.claude/CLAUDE.md` et l'enrichissement de `buildIASystemPrompt` sont committés sur la branche `claude/evaluate-resources-shZBa`.**
+# 🔗 Liens directs récurrents
+
+| Pour... | URL |
+|---------|-----|
+| Voir les workflows GitHub | https://github.com/9r4rxssx64-creator/CMCteams/actions |
+| Ajouter un secret GitHub | https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new |
+| Dashboard Vercel | https://vercel.com/g7vrdynktn-5574s-projects |
+| Agent Vercel — env vars | https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/settings/environment-variables |
+| Agent Vercel — logs | https://vercel.com/g7vrdynktn-5574s-projects/kdmc-bot-2026/logs |
+| Agent Vercel — health check | https://kdmc-agent-monaco.vercel.app/api/health |
+| Firebase console | https://console.firebase.google.com/project/cmcteams-c16ab |
+| Sentry dashboard (après création) | https://sentry.io/organizations/kdmc/ |
+
+---
+
+**Tout est prêt sur la branche `claude/evaluate-resources-shZBa`. Le workflow GitHub Actions attend juste ton `AGENT_SECRET`.**
