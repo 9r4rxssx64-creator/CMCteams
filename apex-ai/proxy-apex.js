@@ -78,8 +78,7 @@
 const ALLOW_ORIGINS = [
   "https://9r4rxssx64-creator.github.io",
   "http://localhost:8000",  // pour tests locaux
-  "http://localhost:3000",
-  "file://"                 // autoriser le chargement depuis file:// (dev)
+  "http://localhost:3000"
 ];
 
 // Modèle Anthropic par défaut (peut être overridé par le body)
