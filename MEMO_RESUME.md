@@ -1,7 +1,87 @@
-# Mémo de reprise — v9.375 (session 2026-04-18 extension)
+# Mémo de reprise — v9.397 (session 2026-04-18 soirée — Sentry complet + règles globales)
 
 > **Lire en PREMIER à chaque nouvelle session.**
-> Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md`, `CHANGELOG.md`.
+> Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md` (11 règles permanentes), `CHANGELOG.md`.
+> **⚠️ Aussi lire `GUIDE_IPHONE.md`** — actions priorisées côté Kevin avec URLs directes.
+> **⚠️ Aussi lire `INTEGRATION_STANDARD.md`** — stack universelle à propager dans APEX + futurs projets.
+
+---
+
+## 🆕 Session soirée 2026-04-18 (21h-23h30) — RÉALISATIONS MAJEURES
+
+### ✅ Résolu / mergé aujourd'hui
+
+| PR | Titre | Contenu |
+|----|-------|---------|
+| #82 | workflow cron GitHub Actions | Remplace crons Vercel Hobby bloqués (3 schedules + workflow_dispatch) |
+| #83 | v9.396 Sentry browser CMCteams | Loader Script dans `<head>` + CSP élargie Sentry |
+| #84 | P4 Sentry Node agent Vercel | `@sentry/node` + init centralisé + captureException avec contexte |
+| #85 | `/api/sentry-test` + SENTRY_DSN dans health | Endpoint test Sentry + vérification env var |
+| #86 | INTEGRATION_STANDARD.md | Stack universelle à propager dans tous projets |
+
+### 🔧 En cours (sur branche `claude/pollinations-and-vercel-skip`)
+
+| Commit | Contenu |
+|--------|---------|
+| v9.397 | Outil IA `generate_image` (Pollinations.ai gratuit) + vercel.json skip docs/agent renforcé |
+
+### ⚙️ Configuration côté Kevin
+
+| Action | Statut |
+|--------|--------|
+| `AGENT_SECRET` ajouté dans GitHub Secrets | ✅ fait |
+| `SENTRY_DSN` ajouté dans Vercel env vars agent | ✅ fait |
+| Telegram bot `/start` fait + chat_id validé `5458942048` | ✅ fait |
+| Sentry compte créé (org `kdmc`, projet `cmcteams`) | ✅ fait |
+
+### ⏳ Attente blocage externe
+
+- **Vercel Free rate limit atteint** (100 deploys preview/jour) → redeploy kdmc-agent-monaco bloqué pour 24h
+- Test `/api/sentry-test` ne marchera qu'**après demain ~22h30** (reset rate limit)
+- Meanwhile, le code est bon, juste pas propagé au runtime Vercel
+
+### 🔍 SyntaxError CMCTEAMS-1 (Sentry)
+
+**Diagnostic final** : chargement HTML partiel (index.html 1.98 MB), pas un bug de code.
+- Testé en Playwright local : aucune erreur
+- Stack trace sans fichier/ligne : signature classique de script inline tronqué
+- **Action** : marquer "Resolved" dans Sentry, si récidive creuser
+- **Roadmap** : découper index.html en chunks ou service worker intégrité
+
+### 🤖 MCP installés dans sandbox Claude Code
+
+- `context7` (docs à jour anti-hallucination)
+- `vercel` (gestion déploiements)
+- `sentry` (monitoring)
+- `hf` (Hugging Face, images gratuites)
+
+### 📜 Règles globales propagées dans `~/.claude/CLAUDE.md`
+
+12 règles permanentes :
+0. Anti-coupure / anti-timeout
+1. Travail complet
+2. Minimum investissement gratuit
+3. Autonomie max (Playwright, curl, MCP, subagents)
+4. Évolutivité
+5. Vérifier existant
+6. Ne pas abîmer
+7. Communication honnête
+8. TodoWrite systématique
+9. Propagation IA (CMCteams + APEX + agents)
+10. URLs directes + vue iPhone obligatoire (Playwright simuler avant)
+11. Minimum intervention utilisateur (IA se débrouille seule)
+12. Propagation à toutes les IA créées y compris Apex
+
+### 🌐 Stack universelle (à propager partout)
+
+Dans `~/.claude/CLAUDE.md` et `INTEGRATION_STANDARD.md` :
+
+1. **Sentry** monitoring (org `kdmc`, 5k events/mois gratuits)
+2. **Pollinations.ai** images (gratuit sans clé)
+3. **Context7** docs MCP anti-hallucination
+4. **GitHub Actions** cron illimité (remplace Vercel Hobby)
+5. **CDN preconnect** pour perf
+6. **Règles permanentes** dans `buildIASystemPrompt` de chaque IA d'app
 
 ---
 
