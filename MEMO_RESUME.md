@@ -7,6 +7,59 @@
 
 ## 📋 À FAIRE (demandes Kevin à traiter dans ordre)
 
+### 🎛 SYSTÈME TOGGLES ADMIN CENTRALISÉ (priorité haute, 2026-04-18)
+> "L'admin puisse faire on/off avec bouton sympa pour chaque fonction.
+> Quand off → info disparaît chez tout le monde en live. Pareil micros, IA,
+> météo, caméra, etc. Si admin désactive, info disparaît dans vue de tous."
+
+**Plan** :
+- Store `cmc_feature_flags` = {cam_live:true, meteo:true, mic:true, ia:true, ...}
+- Sync Firebase FB_FIX (propage temps réel via SSE)
+- Helper `isFeatureEnabled(key)` utilisable partout
+- Panel admin unique `vFeatureFlags` avec boutons ON/OFF stylisés
+- Chaque feature existante enveloppe son rendu dans `if(isFeatureEnabled(...))`
+
+### 📹 CAMÉRA PUBLIQUE PLACE DU CASINO
+> "Caméra Place du Casino publique. Vue live de la société."
+
+**Plan** :
+- Chercher flux webcam public Place du Casino (YouTube Live ?)
+- iframe embed si trouvé (CSP à adapter)
+- Fallback : liens vers webcam.travel ou sites Monaco officiel
+- Affichage dans vMonacoLive conditionné par feature_flag cam_live
+
+### 🔐 RECONNAISSANCE FACIALE / WebAuthn (priorité moyenne)
+> "Reconnaissance faciale pour connexion après création compte.
+> Pareil pour admin."
+
+**Plan** :
+- WebAuthn API (`navigator.credentials.create/get`)
+- iOS 16+ Face ID via Passkeys
+- Android via biometric
+- Store credential ID dans cmc_reg[uid].webauthn_cred
+- Login flow : si credential existe → proposer Face ID avant password
+- Guard AID strict pour admin (double check)
+
+### 🌙 FONCTIONNEMENT ARRIÈRE-PLAN / VEILLE
+> "Application marche en arrière-plan sur appareils même en veille.
+> iPhone/Android/ordinateur au maximum."
+
+**Plan** :
+- Déjà en place : Wake Lock (v9.218), keep-alive audio (v9.219), Service Worker
+- À améliorer :
+  - Background Sync API (chrome/edge)
+  - Periodic Background Sync (PWA installée)
+  - Push notifications via Service Worker
+  - iOS limitations acceptées (JS coupé après 30s background)
+  - Demander permissions notifications + background-fetch au login
+
+### 🔑 GUARD ADMIN RENFORCÉ TEMPS RÉEL (déjà en place mais à auditer)
+- AID = "U11804" check à TOUTES les fonctions destructrices (déjà OK)
+- Firebase SSE propage modifs admin temps réel (déjà OK v8.98+)
+- Audit complet à faire : vérifier CHAQUE action sensible a son guard
+
+---
+
 ### 🌦 Dashboard Monaco Live (demandé 2026-04-18)
 > "Ajoute météo, température, infos locales Monaco hebdo, Monaco info,
 > des liens en rapport avec le casino et Monaco et les jeux. Réfléchis
