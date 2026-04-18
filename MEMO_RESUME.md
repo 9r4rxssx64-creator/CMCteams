@@ -5,6 +5,41 @@
 
 ---
 
+## 📋 À FAIRE (demandes Kevin à traiter dans ordre)
+
+### 🌦 Dashboard Monaco Live (demandé 2026-04-18)
+> "Ajoute météo, température, infos locales Monaco hebdo, Monaco info,
+> des liens en rapport avec le casino et Monaco et les jeux. Réfléchis
+> et innove, crée, surprends-moi."
+
+**Plan** :
+- `vMonacoLive()` view (router + FAB)
+- Météo via **open-meteo.com** (gratuit, sans clé, CORS OK)
+  - Endpoint : `https://api.open-meteo.com/v1/forecast?latitude=43.7384&longitude=7.4246&current_weather=true&timezone=Europe/Monaco`
+  - Icône animée selon conditions (soleil ☀️ / nuageux ☁️ / pluie 🌧 / vent 💨)
+- Cartes liens externes :
+  - 🗞 Monaco Info (monacoinfo.com)
+  - 📰 Monaco Hebdo (monacohebdo.mc)
+  - 🎰 SBM Casino (montecarlosbm.com)
+  - 🏰 Palais Princier (palais.mc)
+  - 🏛 Visit Monaco (visitmonaco.com)
+  - 🏙 Mairie Monaco (mairie.mc)
+- Agenda événements Monaco (GP F1, EPT, Fête Nationale 19 nov)
+- Horloge Monaco tz Europe/Monaco
+
+### 🎨 Thème Monaco visuel (demandé 2026-04-18)
+> SVG drapeau monégasque + blason princier + fond stylisé casino/palais.
+> Mode nuit avec écrits lumineux (glow/neon).
+
+**Plan** :
+- SVG inline drapeau (2 bandes rouge/blanc)
+- SVG blason princier stylisé
+- CSS glow/neon pour thème nuit
+- Gradient Monaco (rouge/blanc/or) pour fond page accueil
+- À faire une fois les outils image gen disponibles (pour montages photos réelles)
+
+---
+
 ## ⚠️ MCP TOOLS À INSTALLER (demande Kevin 2026-04-18)
 
 Kevin a demandé d'utiliser "Google outils / Gemini / DALL-E / Stable Diffusion" pour :
