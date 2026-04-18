@@ -83,6 +83,12 @@ Dans `~/.claude/CLAUDE.md` et `INTEGRATION_STANDARD.md` :
 5. **CDN preconnect** pour perf
 6. **Règles permanentes** dans `buildIASystemPrompt` de chaque IA d'app
 
+### 🚀 Propagation APEX AI — ✅ DÉJÀ FAIT
+
+L'autre session Claude Code a déjà appliqué `INTEGRATION_STANDARD.md` dans APEX AI
+(projet séparé, branche `claude/custom-ai-assistant-project-i1U0p`).
+→ Stack universelle active dans les 2 projets maintenant.
+
 ---
 
 ## 📋 À FAIRE (demandes Kevin à traiter dans ordre)
