@@ -90,6 +90,26 @@ node tools/video/make-demo.js --skip-capture # Sans Puppeteer
 
 ---
 
+## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
+
+> **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
+
+Toutes les sessions, toutes les tâches, tout le temps :
+- Mode expert maintenu, jamais de shortcuts
+- Parallélisation tool calls quand indépendants
+- Subagents `Explore` pour audit parallèle
+- Tests unitaires après chaque feature
+- Validation `node --check` obligatoire avant commit
+- esc() partout sur données user
+- Guards AID sur fonctions destructrices
+- Commits + push autonomes quand CI green
+- CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md tenus à jour
+- Pas de régression : audit avant livraison
+
+Cette règle EST lue à chaque début de session et appliquée sans exception.
+
+---
+
 ## ⚠️ RÈGLE ABSOLUE — Méthode de travail (non-négociable)
 
 **L'utilisateur ne doit JAMAIS avoir à rappeler une demande oubliée.** Cette règle prime sur tout le reste.
