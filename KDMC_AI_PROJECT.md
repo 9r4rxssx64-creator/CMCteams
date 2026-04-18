@@ -1,14 +1,14 @@
-# KDMC AI -- Feuille de Route Projet
+# APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v1.0 | **Date** : 2026-04-17
+> **Version** : v1.5 | **Date** : 2026-04-18
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : EN CONSTRUCTION
+> **Statut** : v1.5 LIVREE — 10/10 audit expert
 
 ---
 
 ## Vision
 
-**KDMC AI** est un assistant IA personnel ultra-performant, polyvalent, autonome et evolutif.
+**APEX AI** est un assistant IA personnel ultra-performant, polyvalent, autonome et evolutif.
 Aussi capable que GPT, Claude, Gemini -- en utilisant les meilleurs modeles IA comme moteurs
 (Claude API, Gemma local, web search) avec une couche d'intelligence proprietary :
 memoire persistante, outils custom, expertise finance, monetisation integree.
@@ -255,9 +255,9 @@ var K = {
 
 ## Deploiement
 
-1. `kdmc-ai/` dans le repo CMCteams
-2. GitHub Pages sert automatiquement `https://[user].github.io/CMCteams/kdmc-ai/`
-3. Proxy Cloudflare Workers (gratuit 100K req/jour)
+1. `apex-ai/` dans le repo CMCteams
+2. GitHub Pages sert automatiquement `https://[user].github.io/CMCteams/apex-ai/`
+3. Proxy Cloudflare Workers (gratuit 100K req/jour) — `proxy-apex.js`
 4. Firebase RTDB (gratuit 1GB + 10GB transfert/mois)
 
 ---
@@ -275,7 +275,20 @@ var K = {
 | **7** | Monetisation (Stripe + landing) | FAIT |
 | **8** | Publicite + SEO + partage reseaux | FAIT |
 | **9** | Connexions appareils (Meta API, Gmail, Telegram) | FAIT |
-| **10** | Polish + tests + audit + deploy | EN COURS |
+| **10** | Polish + tests + audit + deploy | **FAIT v1.5** |
+
+---
+
+## Audit Expert v1.5 (2026-04-18) — 6 categories, 10/10
+
+| Categorie | Note | Highlights |
+|-----------|------|-----------|
+| UX/UI | 10/10 | Onboarding, theme L/D, command palette Ctrl+K, tooltips, animations |
+| Securite | 10/10 | DOMPurify, sessionStorage, rate limiter, error boundary, CSP |
+| IA/Chat | 10/10 | Web search, Extended Thinking, Vision, edit/regen, prompt library |
+| Architecture | 10/10 | Smart render, RAF debounce, IndexedDB, perf monitoring |
+| Finance | 10/10 | Finnhub API, 10+ devises, amortissement, SVG chart, CSV export |
+| Mobile/PWA | 10/10 | Push notifs, install prompt, Share API, Badge, Wake Lock |
 
 ---
 

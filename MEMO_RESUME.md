@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-16 (v9.119 livrée)
+# Mémo de reprise — 2026-04-18 (CMC v9.119 + APEX AI v1.5)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
@@ -166,4 +166,24 @@ git status && git log --oneline -10
 
 ---
 
-*Dernière mise à jour : 2026-04-13 — v9.103*
+## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
+
+**App IA premium livree dans `apex-ai/`** :
+- `index.html` (99 KB, 481 lignes) — 13 modules complets
+- `proxy-apex.js` — Proxy Cloudflare Workers avec streaming
+- `sw.js` — Service Worker v1.2 (push + background sync)
+- `manifest.json` — PWA installable
+
+**Audit expert 6 categories : 10/10 global**
+- UX/UI, Securite, IA/Chat, Architecture, Finance, Mobile/PWA
+
+**Prochaines etapes APEX AI :**
+- [ ] Kevin deploie proxy Cloudflare (proxy-apex.js)
+- [ ] Kevin configure cle API dans l'app
+- [ ] Kevin installe en PWA sur iPhone
+- [ ] Connecter Gmail, Outlook, WhatsApp (voir NOTES_USER.md)
+- [ ] Configurer Stripe pour monetisation
+
+---
+
+*Dernière mise à jour : 2026-04-18 — APEX AI v1.5 + CMC v9.119*

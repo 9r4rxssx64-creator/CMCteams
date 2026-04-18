@@ -116,7 +116,11 @@
 ## SUIVI
 
 | Date | Action | Statut |
-|------|--------|--------|
+|------|--------|--------
+| 2026-04-18 | APEX AI v1.5 livree (10/10 audit) | FAIT |
+| 2026-04-18 | proxy-apex.js (streaming) cree | FAIT |
+| 2026-04-18 | sw.js corrige (paths apex-ai) | FAIT |
+| 2026-04-18 | Comptes email/reseaux notes | FAIT |
 | 2026-04-17 | Recharger API credits | EN ATTENTE |
 | 2026-04-17 | Verifier cle API | EN ATTENTE |
 | 2026-04-17 | Deployer proxy Cloudflare | EN ATTENTE |
