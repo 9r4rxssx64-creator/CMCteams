@@ -40,6 +40,40 @@
 - Login flow : si credential existe → proposer Face ID avant password
 - Guard AID strict pour admin (double check)
 
+### 🌐 RÉSILIENCE LOC + CONNEXION TEMPS RÉEL (2026-04-18)
+> "Localisation et infos temps réel via WiFi casino (public + employé).
+> Bluetooth, P2P entre téléphones pendant coupures. Résilience maximale."
+
+**Limitations honnêtes web / PWA** :
+- ❌ Pas d'accès direct SSID WiFi côté navigateur (sécurité)
+- ❌ WebBluetooth limité iOS (uniquement via Bluefy)
+- ✅ `navigator.geolocation` utilise déjà WiFi en fond sur mobile
+- ✅ WebRTC P2P possible avec signaling serveur initial
+
+**Solutions réalistes à implémenter** :
+1. **Ping endpoint interne** : `/ping-casino` hébergé sur serveur casino local
+   - Si ping répond → téléphone sur WiFi casino → assume emp sur site
+   - Résout le problème SSID sans besoin d'accès direct
+   
+2. **Service Worker Background Sync** :
+   - Queue positions en IndexedDB quand offline
+   - Sync automatique au retour online
+   - Couvre les coupures courtes
+   
+3. **WebBluetooth beacons BLE** :
+   - Pour Android uniquement (Chrome Beta)
+   - Scanner proximité beacons casino (si installés)
+   - Triangulation fine indoor
+   
+4. **WebRTC P2P entre téléphones** :
+   - Peer connection via signaling initial Firebase
+   - Échange de positions même si un client offline  
+   - Redondance en cas de coupure serveur
+   - Complexe → priorité basse
+
+**Codes WiFi Kevin** : à ajouter dans settings admin quand dispo pour
+détection automatique réseau casino.
+
 ### 🌙 FONCTIONNEMENT ARRIÈRE-PLAN / VEILLE
 > "Application marche en arrière-plan sur appareils même en veille.
 > iPhone/Android/ordinateur au maximum."
