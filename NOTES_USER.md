@@ -2,6 +2,28 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🚨 RÈGLE ABSOLUE ANTI-TIMEOUT (Kevin 2026-04-18)
+
+> **"Les time out sans cesse dans toutes mes discussions ça me rend fou. Fais le nécessaire, corrige tout ça. Continue en autonomie avec les agents, que ça ne coupe pas ce que tu fais à chaque fois."**
+
+### Règle permanente non-négociable — TOUTES sessions, TOUS projets :
+
+1. **Commandes longues** : `run_in_background: true` par défaut (audit, build, npm install, ffmpeg, génération vidéo, subagents lourds). Continuer à travailler en parallèle, ne PAS attendre synchrone.
+
+2. **Multiples subagents en parallèle** : si 2-3 tâches indépendantes → lancer toutes en même temps dans un seul message, `run_in_background: true` si > 30s. Continuer le travail pendant qu'ils tournent.
+
+3. **Ne JAMAIS bloquer sur une seule opération** : si une commande risque de timeout, la lancer en background et continuer sur autre chose. Kevin n'a pas le temps d'attendre.
+
+4. **Si un fetch/WebSearch fail** : noter la limitation, passer à autre chose, ne pas retry 5× la même chose. Chercher alternative (recherche différente, subagent, info de knowledge base).
+
+5. **Timeout par défaut 2 min** : toujours estimer avant. Si > 90s → `run_in_background: true` + timeout augmenté.
+
+6. **Session interrompue / timeout** : quand reprise, lire MEMO_RESUME.md + NOTES_USER.md + CLAUDE.md d'abord. Continuer exactement là où on en était. Pas de repartir de zéro.
+
+7. **Work never stops** : tant qu'il y a du travail utile à faire, ne pas s'arrêter pour attendre qu'un subagent / une commande finisse. Avancer sur autre chose.
+
+8. **Documentation pour mémoire croisée** : les sessions sont isolées → tout ce qu'on apprend doit être noté dans NOTES_USER.md / MEMO_RESUME.md pour que la prochaine session Claude ait le contexte.
+
 ## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
 > **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
 
