@@ -1,8 +1,21 @@
 # MCP_INSTALL.md — Guide d'installation des MCP Claude Code
 
 > Synthèse cumulative de l'analyse des MCP Claude Code par rapport à CMCteams et projets futurs.
-> Dernière mise à jour : v9.103 (16 avril 2026).
+> Dernière mise à jour : v9.104 (17 avril 2026).
 > Source : [code.claude.com](https://code.claude.com) — documentation officielle des MCP.
+
+---
+
+## ✅ MCP déjà installés dans le sandbox (état actuel)
+
+| MCP | Commande | Gratuit | OAuth |
+|-----|----------|---------|-------|
+| **context7** | `claude mcp add context7 --transport http https://mcp.context7.com/mcp` | ✅ | Non |
+| **vercel** | `claude mcp add vercel --transport http https://mcp.vercel.com` | ✅ | OAuth au 1er usage |
+| **sentry** | `claude mcp add sentry --transport http https://mcp.sentry.dev/mcp` | ✅ 5k events/mois | OAuth au 1er usage |
+| **hf** (Hugging Face) | `claude mcp add hf --transport http https://huggingface.co/mcp` | ✅ | Token optionnel |
+
+**Vérifier :** `claude mcp list`
 
 ---
 
@@ -74,6 +87,27 @@ claude mcp add zapier --transport http https://mcp.zapier.com/api/v1/connect
 # PostHog — product analytics (sessions, funnels utilisateurs)
 claude mcp add posthog --transport http https://mcp.posthog.com/mcp
 ```
+
+---
+
+## 🎨 MCP pour génération d'images/vidéo (gratuit max)
+
+```bash
+# Hugging Face — DÉJÀ INSTALLÉ ✅ (Flux, SDXL, LTX-Video via Spaces)
+# claude mcp add hf --transport http https://huggingface.co/mcp
+
+# Pollinations.ai — 100% gratuit, PAS DE CLÉ ni compte (API directe fetch)
+# Usage : https://image.pollinations.ai/prompt/<texte>?width=1024&height=1024
+# Pas de MCP officiel, mais l'app peut appeler directement l'API publique.
+
+# Replicate — crédits gratuits limités puis payant
+# claude mcp add replicate --transport http https://mcp.replicate.com/ -H "Authorization: Bearer $REPLICATE_TOKEN"
+
+# Fal.ai — ~$1-5 offerts à l'inscription
+# claude mcp add fal --transport http https://mcp.fal.ai/ -H "Authorization: Key $FAL_KEY"
+```
+
+**Recommandation CMCteams :** utiliser **Pollinations.ai** en direct (sans MCP, zéro friction) pour avatars, bannières, illustrations. Hugging Face en backup si besoin de modèles spécifiques.
 
 ---
 

@@ -4,6 +4,17 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.153 — Règles permanentes IA + MCP installés + GUIDE_IPHONE (17 avril 2026)
+
+- `buildIASystemPrompt` enrichi : 10 règles permanentes de travail héritées du CLAUDE.md global (continuité, gratuité, évolutivité, honnêteté, mémoire contexte admin).
+- 4 MCP installés dans le sandbox Claude Code : Context7, Vercel, Sentry, Hugging Face (tous gratuits).
+- Nouveau fichier `~/.claude/CLAUDE.md` : règles globales pour tous les projets du même utilisateur (CMCteams, agents autonomes, commerce, vidéo, futurs projets).
+- Nouveau fichier `GUIDE_IPHONE.md` à la racine : mémo pas à pas iOS Safari avec URLs directes cliquables (cron Vercel → GitHub Actions, Sentry signup, Telegram chat_id fix, MCP images via Pollinations/HF).
+- `MCP_INSTALL.md` mis à jour : section "MCP installés", section images/vidéo gratuits (Pollinations, HF, Replicate, Fal.ai).
+- Aucune régression fonctionnelle (syntax check JS OK, taille index.html 1.44 MB, stable).
+
+---
+
 ## v9.101 → v9.103 — Stabilité + couleurs PDF + NOTES_USER
 
 ### v9.103 — Couleurs CODES calibrées sur le PDF SBM original
