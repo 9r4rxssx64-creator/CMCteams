@@ -127,6 +127,25 @@ détection automatique réseau casino.
 
 ---
 
+## ⚠️ VERCEL RATE LIMIT ATTEINT (2026-04-18)
+
+Vercel Free tier = **100 déploiements preview / jour**.
+
+Atteint aujourd'hui après 74 PRs cumulées en une journée. Les PRs
+suivantes auront statut CI "failure" Vercel mais c'est UN PROBLÈME
+DE QUOTA, PAS UN BUG CODE.
+
+**Solutions** :
+- **Merger quand même** si `node --check` passe et code propre
+  (GitHub Pages main → production continue de fonctionner)
+- **Attendre 24h** pour reset quota
+- **Upgrade Vercel Pro** ($20/mois, unlimited builds)
+
+Kevin avisé. Dans la session actuelle, continuer à merger sur main
+malgré le fail Vercel car le code est validé localement.
+
+---
+
 ## ⚠️ MCP TOOLS À INSTALLER (demande Kevin 2026-04-18)
 
 Kevin a demandé d'utiliser "Google outils / Gemini / DALL-E / Stable Diffusion" pour :
