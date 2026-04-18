@@ -4,6 +4,17 @@ Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.
 
 ---
 
+## v9.396 — Sentry monitoring intégré (17 avril 2026)
+
+- Ajout du **Sentry Loader Script** dans `<head>` d'index.html — monitoring erreurs production gratuit (5k events/mois).
+- CSP v9.45 **v9.396** : élargissement de `script-src` et `connect-src` pour autoriser `*.sentry-cdn.com` et `*.ingest.sentry.io`.
+- Preconnect + DNS prefetch Sentry ajoutés pour latence réduite.
+- Organisation Sentry : `kdmc` — Projet : `cmcteams` (Browser JavaScript, vanilla JS).
+- Lazy-load : le SDK Sentry ne se charge que si une erreur est capturée (impact perf nul sur page chargement).
+- Fait suite à résolution P1 (workflow cron GitHub Actions mergé PR #82) + P2 (chat_id Telegram validé, bot opérationnel).
+
+---
+
 ## v9.203 → v9.246 — Session 2026-04-17 bis (44 versions, géoloc + pit boss + heures effectives + notifs temps réel)
 
 ### 📣 Batch 15 — Export + alertes + docs (v9.244 → v9.246)
