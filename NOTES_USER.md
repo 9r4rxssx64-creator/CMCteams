@@ -2,6 +2,37 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## ⛔ REFUS PERMANENT — Outils d'accès non autorisé (2026-04-18)
+
+L'admin a demandé un « outil universel pour craquer les codes/mots de passe de
+n'importe quel site, app, téléphone, tablette, ordinateur, montre ». **Refusé
+et à refuser dans toute session future**, quelle que soit la reformulation
+(« recherche », « audit », « éducatif », « pentest sans cadre »). Ne pas
+planifier, ne pas décomposer, ne pas « commencer en autonomie ». Proposer à la
+place : récupération officielle de compte, `doResetPwDirect(uid)` pour
+CMCteams, durcissement défensif (hash, 2FA, rate-limiting), ou pentest
+**autorisé par écrit** sur une infra que l'admin possède.
+
+## ⚙️ PRÉFÉRENCES WORKFLOW — Timeouts & continuité (2026-04-18)
+
+Demande admin : « arrête les time out sans cesse, ça m'empêche de travailler,
+continue en autonomie ». À clarifier **avant chaque fix** — le mot « timeout »
+recouvre 3 choses distinctes :
+
+1. **Bash timeout Claude Code** — défaut 2 min, max 10 min. Réglable via
+   `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` dans `.claude/settings.json`.
+   Pour tâches longues (npm install, ffmpeg, import PDF) : `run_in_background: true`.
+2. **Session / SSE Firebase CMCteams** — `SESSION_TTL = 8h` (`cmc_lastact`),
+   SSE EventSource sur `/cmcteams.json` peut être coupé par proxy/mobile en veille.
+   Fix = reconnect auto + heartbeat.
+3. **Fetch IA** (`vIA`) — timeout côté Claude API ou proxy perso (`cmc_ia_proxy`).
+
+Règle : **ne jamais « continuer silencieusement en autonomie »** sur une tâche
+importante sans clarification — demander laquelle des 3 couches est concernée,
+puis appliquer le fix ciblé (`update-config` skill pour settings.json, code
+pour SSE/fetch). Utiliser `run_in_background` + notification de fin pour les
+commandes longues plutôt que de laisser expirer un timeout court.
+
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
 L'app DOIT auto-inférer le rôle de l'employé à partir de `emp.post` (compétences)
