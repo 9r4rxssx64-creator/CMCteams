@@ -90,6 +90,41 @@ node tools/video/make-demo.js --skip-capture # Sans Puppeteer
 
 ---
 
+## ⚡ RÈGLE BATCHING CI (Kevin 2026-04-18 — v9.381+)
+
+**Éviter rate limit Vercel Free (100 déploys/jour) et services similaires.**
+
+Règle permanente pour CE projet ET tous projets futurs :
+
+1. **BATCHER** les changements : 1 PR = 5-10 fixes/features cohérents
+   ❌ PAS : 1 PR par petit fix (→ 75 PRs = rate limit)
+   ✅ OUI : grouper par batch thématique (UI + fixes + tests → 1 PR)
+
+2. **SKIP CI sur docs-only** via `vercel.json` :
+   ```json
+   { "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':(exclude)*.md'" }
+   ```
+   Si seulement `*.md` changé → Vercel skip build
+
+3. **Accumuler en local** : plusieurs commits sur une branche avant push
+   - Bump APP_VER à chaque batch logique, pas à chaque fix
+   - Test `node --check` après le batch complet
+   - Push + PR quand le batch est cohérent
+
+4. **Doc-only commits** : pousser direct sur main si seulement notes/docs
+   (évite branch + PR + CI pour rien)
+
+5. **Anticipation** : si >10 PRs prévues dans la session, consolidation
+   immédiate obligatoire
+
+**Exemple bon batch** :
+- v9.X00 : fix bug A + fix bug B + test + CSS polish → 1 PR
+
+**Exemple mauvais** (ce qui a causé rate limit aujourd'hui) :
+- v9.371 PR + v9.372 PR + v9.373 PR + ... (1 fix = 1 PR)
+
+---
+
 ## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
 
 > **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**

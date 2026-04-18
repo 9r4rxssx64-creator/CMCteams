@@ -1,0 +1,3 @@
+{
+  "ignoreCommand": "bash -c 'git diff HEAD^ HEAD --quiet -- . \":(exclude)*.md\" \":(exclude).github/**\" \":(exclude)CHANGELOG*\"'"
+}
