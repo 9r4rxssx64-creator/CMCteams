@@ -577,4 +577,39 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
-*Dernière mise à jour : 2026-04-13 (v9.103)*
+---
+
+## 📱 Comptes & appareils Kevin (session 2026-04-18)
+
+**Appareils :**
+- iPhone (principal) — Safari PWA
+- Tablette Android (chez sa belle-fille actuellement)
+- Ordinateur (pas sur lui, a connecter plus tard)
+
+**Comptes email :**
+- Gmail (adresse a confirmer)
+- Outlook : kevind@monaco.mc (sur iPhone)
+- iCloud (adresse a confirmer — icloud.com ou mac.com)
+
+**Reseaux sociaux / messagerie :**
+- WhatsApp (a connecter via Meta Business API)
+- Instagram (a connecter)
+- Facebook (a connecter)
+- Telegram : bot @Kdmc_kevind_2026_bot (deja cree)
+
+**Demande admin (2026-04-18) :**
+> "Je veux que tu aies acces a tous mes outils, toutes mes applications
+> au maximum pour pouvoir agir quand je te le demande. Executer des
+> actions pour moi sur tous mes appareils."
+
+**Actions requises :**
+- [ ] Gmail : activer API Google + OAuth
+- [ ] Outlook/monaco.mc : configurer OAuth Microsoft
+- [ ] WhatsApp : creer compte Meta Business API
+- [ ] Instagram/Facebook : lier Meta Business Suite
+- [ ] iCloud : mot de passe d'app specifique
+- [ ] Configurer tout dans la section admin APEX AI
+
+---
+
+*Dernière mise à jour : 2026-04-18 (APEX AI)*
