@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>APEX AI — Intelligence Artificielle Ultime</title>
+<meta name="description" content="Assistant IA premium — Finance, Code, Documents, Voix, Multi-appareils. Par Kevin DESARZENS.">
+<meta name="keywords" content="APEX AI, assistant IA, Claude, finance, code, voix, multi-appareils">
+<meta name="author" content="Kevin DESARZENS">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#c9a227">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="APEX AI — Intelligence Artificielle Ultime">
+<meta property="og:description" content="Assistant IA premium multi-appareils avec finance, code, voix et memoire persistante.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2308080f'/%3E%3Ctext x='256' y='200' text-anchor='middle' font-size='120' font-weight='800' fill='%23c9a227'%3E%E2%9C%A6%3C/text%3E%3Ctext x='256' y='310' text-anchor='middle' font-size='68' font-weight='800' fill='%23c9a227'%3EAPEX%3C/text%3E%3Ctext x='256' y='380' text-anchor='middle' font-size='44' fill='%236a8aff'%3EAI%3C/text%3E%3C/svg%3E">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://js.stripe.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://*.firebasedatabase.app https://*.workers.dev https://api.anthropic.com; frame-src blob: data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://api.anthropic.com">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"APEX AI","description":"Assistant IA premium multi-appareils","applicationCategory":"ProductivityApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","lowPrice":"0","highPrice":"49.99","priceCurrency":"EUR"}}</script>
+<style>
+:root{
+--ax-bg:#08080f;--ax-bg2:#12121c;--ax-bg-card:rgba(18,18,28,.7);
+--ax-bg-input:rgba(255,255,255,.04);--ax-gold:#c9a227;--ax-gold-bright:#e8c840;
+--ax-gold-soft:rgba(201,162,39,.12);--ax-text:#f0f0f0;--ax-text-dim:#888898;
+--ax-blue:#4a9aff;--ax-green:#4caf50;--ax-red:#ef5350;
+--ax-border:rgba(201,162,39,.12);--ax-glass:rgba(20,20,30,.7);
+--ax-blur:16px;--ax-r:12px;--ax-r-sm:8px;
+--ax-font:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+--ax-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+--ax-t:.2s;--ax-ease:cubic-bezier(.4,0,.2,1);
+--ax-safe-b:env(safe-area-inset-bottom,0px);
+--ax-safe-t:env(safe-area-inset-top,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--ax-bg);color:var(--ax-text);font-family:var(--ax-font);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(201,162,39,.3);border-radius:3px}
+::selection{background:rgba(201,162,39,.3);color:#fff}
+#app{display:flex;flex-direction:column;height:100%;position:relative}
+#topbar{height:48px;min-height:48px;padding-top:var(--ax-safe-t);display:flex;align-items:center;justify-content:space-between;padding-left:16px;padding-right:16px;background:var(--ax-glass);backdrop-filter:blur(var(--ax-blur));-webkit-backdrop-filter:blur(var(--ax-blur));border-bottom:1px solid var(--ax-border);z-index:100;position:relative}
+#topbar .ax-logo{font-size:18px;font-weight:800;color:var(--ax-gold);letter-spacing:2px}
+#topbar .ax-logo span{color:var(--ax-blue);font-weight:600}
+#topbar .ax-status{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ax-text-dim)}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative}
+#navbar{height:64px;padding-bottom:var(--ax-safe-b);display:flex;align-items:center;justify-content:space-around;background:var(--ax-glass);backdrop-filter:blur(var(--ax-blur));-webkit-backdrop-filter:blur(var(--ax-blur));border-top:1px solid var(--ax-border);z-index:100}
+.ax-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 0;min-width:56px;cursor:pointer;color:var(--ax-text-dim);transition:color var(--ax-t) var(--ax-ease);text-decoration:none;-webkit-tap-highlight-color:transparent}
+.ax-tab.active{color:var(--ax-gold)}
+.ax-tab .ic{font-size:22px}
+.ax-tab .lb{font-size:10px;font-weight:600;letter-spacing:.5px}
+.ax-glass{background:var(--ax-glass);backdrop-filter:blur(var(--ax-blur));-webkit-backdrop-filter:blur(var(--ax-blur));border:1px solid var(--ax-border);border-radius:var(--ax-r)}
+.ax-card{background:var(--ax-bg-card);border:1px solid var(--ax-border);border-radius:var(--ax-r);padding:16px;margin:8px 0}
+.ax-card h3{color:var(--ax-gold);font-size:14px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.ax-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:var(--ax-r-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all var(--ax-t) var(--ax-ease);min-height:44px;min-width:44px;font-family:var(--ax-font)}
+.ax-btn-primary{background:linear-gradient(135deg,var(--ax-gold),var(--ax-gold-bright));color:#08080f}
+.ax-btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.ax-btn-outline{background:transparent;border:1px solid var(--ax-gold);color:var(--ax-gold)}
+.ax-btn-danger{background:var(--ax-red);color:#fff}
+.ax-btn-ghost{background:transparent;color:var(--ax-text-dim)}
+.ax-btn-icon{width:44px;height:44px;padding:0;border-radius:50%;background:var(--ax-bg-input);color:var(--ax-text);border:1px solid var(--ax-border)}
+.ax-input{width:100%;padding:12px 14px;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:var(--ax-r-sm);color:var(--ax-text);font-size:15px;font-family:var(--ax-font);outline:none;transition:border-color var(--ax-t)}
+.ax-input:focus{border-color:var(--ax-gold)}
+.ax-input::placeholder{color:var(--ax-text-dim)}
+textarea.ax-input{resize:vertical;min-height:44px}
+.ax-toggle{position:relative;display:inline-block;width:48px;height:28px}
+.ax-toggle input{opacity:0;width:0;height:0}
+.ax-toggle .slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:14px;cursor:pointer;transition:var(--ax-t)}
+.ax-toggle .slider::before{content:"";position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:var(--ax-t)}
+.ax-toggle input:checked+.slider{background:var(--ax-gold)}
+.ax-toggle input:checked+.slider::before{transform:translateX(20px)}
+.ax-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.ax-badge-gold{background:var(--ax-gold-soft);color:var(--ax-gold)}
+.ax-badge-green{background:rgba(76,175,80,.15);color:var(--ax-green)}
+.ax-badge-red{background:rgba(239,83,80,.15);color:var(--ax-red)}
+.ax-msg{padding:10px 14px;border-radius:var(--ax-r);margin:4px 12px;max-width:85%;word-wrap:break-word;overflow-wrap:break-word;line-height:1.55;font-size:14px}
+.ax-msg-user{background:rgba(201,162,39,.12);margin-left:auto;border-bottom-right-radius:4px;color:var(--ax-text)}
+.ax-msg-bot{background:var(--ax-bg-card);margin-right:auto;border-bottom-left-radius:4px;border:1px solid var(--ax-border)}
+.ax-msg-system{background:transparent;text-align:center;color:var(--ax-text-dim);font-size:12px;max-width:100%;margin:8px auto}
+.ax-msg .ax-name{font-size:11px;font-weight:600;margin-bottom:2px;color:var(--ax-text-dim)}
+.ax-msg .ax-time{font-size:10px;color:var(--ax-text-dim);margin-top:4px}
+.ax-code{background:#0d0d18;border:1px solid rgba(255,255,255,.08);border-radius:var(--ax-r-sm);padding:12px;overflow-x:auto;font-family:var(--ax-mono);font-size:13px;line-height:1.5;position:relative;margin:8px 0}
+.ax-code .ax-copy{position:absolute;top:6px;right:6px;padding:4px 10px;background:rgba(255,255,255,.08);border:none;border-radius:4px;color:var(--ax-text-dim);font-size:11px;cursor:pointer}
+.ax-code .ax-copy:hover{background:rgba(201,162,39,.2);color:var(--ax-gold)}
+#toast-container{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.ax-toast{padding:10px 20px;border-radius:var(--ax-r-sm);font-size:13px;font-weight:600;animation:axSlideUp .3s var(--ax-ease);pointer-events:auto;text-align:center;max-width:90vw}
+.ax-toast-ok{background:var(--ax-green);color:#fff}
+.ax-toast-err{background:var(--ax-red);color:#fff}
+.ax-toast-warn{background:#ff9800;color:#fff}
+.ax-toast-info{background:var(--ax-blue);color:#fff}
+.ax-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ax-modal{background:var(--ax-bg2);border:1px solid var(--ax-border);border-radius:var(--ax-r);padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto}
+.ax-modal h2{color:var(--ax-gold);font-size:18px;margin-bottom:12px}
+.ax-modal .ax-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--ax-text-dim);font-size:20px;cursor:pointer}
+.ax-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.ax-empty .ax-empty-icon{font-size:48px;margin-bottom:12px}
+.ax-empty .ax-empty-text{color:var(--ax-text-dim);font-size:14px;margin-bottom:16px}
+.ax-loading{display:flex;gap:4px;align-items:center;justify-content:center;padding:20px}
+.ax-loading span{width:8px;height:8px;border-radius:50%;background:var(--ax-gold);animation:axPulse 1.2s infinite}
+.ax-loading span:nth-child(2){animation-delay:.2s}
+.ax-loading span:nth-child(3){animation-delay:.4s}
+.ax-chatbar{position:sticky;bottom:0;display:flex;align-items:flex-end;gap:6px;padding:8px 12px;padding-bottom:calc(8px + var(--ax-safe-b));background:var(--ax-glass);backdrop-filter:blur(var(--ax-blur));-webkit-backdrop-filter:blur(var(--ax-blur));border-top:1px solid var(--ax-border)}
+.ax-chatbar textarea{flex:1;max-height:120px;min-height:44px;resize:none}
+.ax-sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;background:var(--ax-bg2);border-right:1px solid var(--ax-border);z-index:200;transform:translateX(-100%);transition:transform .3s var(--ax-ease);overflow-y:auto;padding-top:calc(48px + var(--ax-safe-t))}
+.ax-sidebar.open{transform:translateX(0)}
+.ax-sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.ax-sidebar.open~.ax-sidebar-overlay{display:block}
+.ax-conv-item{display:flex;align-items:center;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--ax-border);transition:background var(--ax-t)}
+.ax-conv-item:hover,.ax-conv-item.active{background:var(--ax-gold-soft)}
+.ax-conv-item .ax-conv-title{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax-conv-item .ax-conv-time{font-size:10px;color:var(--ax-text-dim)}
+.ax-setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ax-setting-row .ax-label{font-size:14px;display:flex;align-items:center;gap:8px}
+.ax-setting-row .ax-desc{font-size:11px;color:var(--ax-text-dim)}
+.ax-fin-card{background:var(--ax-bg-card);border:1px solid var(--ax-border);border-radius:var(--ax-r);padding:16px;display:flex;align-items:center;justify-content:space-between}
+.ax-fin-up{color:var(--ax-green)}
+.ax-fin-down{color:var(--ax-red)}
+.ax-landing-hero{text-align:center;padding:60px 20px 40px;background:radial-gradient(ellipse at center,rgba(201,162,39,.08) 0%,transparent 70%)}
+.ax-landing-hero h1{font-size:42px;font-weight:800;color:var(--ax-gold);margin-bottom:8px}
+.ax-landing-hero h1 span{color:var(--ax-blue)}
+.ax-landing-hero p{color:var(--ax-text-dim);font-size:16px;max-width:500px;margin:0 auto 24px}
+.ax-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:0 16px}
+.ax-pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:20px 16px}
+.ax-price-card{text-align:center;padding:24px;border-radius:var(--ax-r);background:var(--ax-bg-card);border:1px solid var(--ax-border)}
+.ax-price-card.featured{border-color:var(--ax-gold);box-shadow:0 0 20px rgba(201,162,39,.15)}
+.ax-price-card .ax-amount{font-size:36px;font-weight:800;color:var(--ax-gold);margin:12px 0}
+.ax-price-card .ax-period{font-size:13px;color:var(--ax-text-dim)}
+.ax-price-card ul{list-style:none;text-align:left;margin:16px 0}
+.ax-price-card li{padding:6px 0;font-size:13px;color:var(--ax-text-dim)}
+.ax-price-card li::before{content:"\2713 ";color:var(--ax-green);font-weight:700}
+.ax-md h1,.ax-md h2,.ax-md h3{color:var(--ax-gold);margin:12px 0 6px}
+.ax-md h1{font-size:20px}.ax-md h2{font-size:17px}.ax-md h3{font-size:15px}
+.ax-md p{margin:6px 0}
+.ax-md ul,.ax-md ol{padding-left:20px;margin:6px 0}
+.ax-md li{margin:3px 0}
+.ax-md a{color:var(--ax-blue);text-decoration:underline}
+.ax-md strong{color:var(--ax-gold-bright)}
+.ax-md code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-family:var(--ax-mono);font-size:13px}
+.ax-md table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+.ax-md th{background:rgba(201,162,39,.1);color:var(--ax-gold);padding:6px 10px;text-align:left;border:1px solid var(--ax-border)}
+.ax-md td{padding:6px 10px;border:1px solid var(--ax-border)}
+.ax-md blockquote{border-left:3px solid var(--ax-gold);padding-left:12px;color:var(--ax-text-dim);margin:8px 0}
+@keyframes axSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes axPulse{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+@keyframes axFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes axShimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+@media(min-width:768px){.ax-msg{max-width:70%}.ax-sidebar{width:320px}.ax-features{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1200px){#content{max-width:900px;margin:0 auto}.ax-msg{max-width:60%}.ax-features{grid-template-columns:repeat(3,1fr)}.ax-pricing{grid-template-columns:repeat(3,1fr)}}
+@media print{#topbar,#navbar,.ax-chatbar,.ax-sidebar{display:none}#content{overflow:visible}}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="topbar"></div>
+<div id="content"></div>
+<div id="navbar"></div>
+</div>
+<div id="toast-container"></div>
+<script>
+"use strict";
+// ========================================================
+// APEX AI v1.0 — Assistant IA Premium
+// ========================================================
+var APP_VER="v1.0",ADMIN_ID="kdmc_admin";
+var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+var FB_URL="",FB_PATH="/apex";
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard"];
+var FB_PRE=["ax_msgs_"];
+var FB_LOCAL=["ax_uid","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_pin_fails","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles"];
+var SESSION_TTL=24*60*60*1000;
+var _toastQ=[],_toastBusy=false,_viewHistory=[];
+var _sidebarOpen=false,_fbEs=null,_axSyncQueue={};
+var _hljsLoaded=false,_pdfjsLoaded=false,_stripeLoaded=false;
+var _sttRecog=null,_ttsUtter=null;
+
+// --- Etat global ---
+var K={
+  view:"chat",user:null,activeConvId:null,
+  conversations:[],messages:[],
+  kb:{facts:[],instructions:[]},
+  fin:{portfolios:[],watchlist:[],alerts:[]},
+  settings:{model:"claude-sonnet-4-6",maxTokens:4096,temperature:0.7,webSearch:true,ttsEnabled:false,voiceLang:"fr-FR"},
+  syncQueue:[],isStreaming:false,gemmaReady:false
+};
+
+// --- Utilitaires ---
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
+function lg(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
+function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){if(e&&e.name==="QuotaExceededError"){_emergencyCleanup();try{localStorage.setItem(k,JSON.stringify(v));}catch(e2){toast("Stockage plein","err");}}}fbWrite(k,v);}
+function _emergencyCleanup(){var keys=Object.keys(localStorage).filter(function(k){return k.startsWith("ax_msgs_");}).sort();while(keys.length>5){localStorage.removeItem(keys.shift());}}
+function now(){return Date.now();}
+function uid(){try{return crypto.randomUUID();}catch(e){return"ax-"+now()+"-"+Math.random().toString(36).slice(2,9);}}
+function touchSession(){localStorage.setItem("ax_lastact",String(now()));}
+
+// --- Toast ---
+function toast(msg,type){if(!type)type="ok";_toastQ.push({msg:msg,type:type});if(!_toastBusy)_toastNext();}
+function _toastNext(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=true;var item=_toastQ.shift();var el=document.createElement("div");el.className="ax-toast ax-toast-"+item.type;el.textContent=item.msg;var c=document.getElementById("toast-container");if(c)c.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);_toastNext();},2500);}
+
+// --- Firebase ---
+function fbShouldSync(k){if(FB_LOCAL.indexOf(k)>=0)return false;for(var i=0;i<FB_FIX.length;i++)if(k===FB_FIX[i])return true;for(var i=0;i<FB_PRE.length;i++)if(k.indexOf(FB_PRE[i])===0)return true;return false;}
+function fbSanitizeKey(k){return k.replace(/\./g,"_dot_");}
+function fbInit(){FB_URL=(localStorage.getItem("ax_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");if(!FB_URL)return;fbLoadAll();fbStartListening();}
+function fbWrite(k,v){if(!FB_URL||!fbShouldSync(k))return;var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);}).catch(function(e){_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);});}
+function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
+function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();}}}catch(ex){}};_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}setTimeout(fbStartListening,5000);};}
+function flushSyncQueue(){_axSyncQueue=lg("ax_sync_queue",{});var keys=Object.keys(_axSyncQueue);if(!keys.length)return;keys.forEach(function(k){fbWrite(k,_axSyncQueue[k].v);delete _axSyncQueue[k];});ls("ax_sync_queue",_axSyncQueue);toast("Sync terminee","info");}
+
+// --- Securite ---
+function axIsAdmin(){return K.user&&K.user.id===ADMIN_ID;}
+function axHashPin(pin){var s="APEX2026:"+pin;var h1=0,h2=2166136261;for(var r=0;r<10000;r++){for(var i=0;i<s.length;i++){h1=((h1<<5)-h1)+s.charCodeAt(i)|0;h2=(h2^s.charCodeAt(i))*16777619>>>0;}}return h1.toString(36)+"$"+h2.toString(36);}
+function axCheckPin(pin){var stored=lg("ax_pin",null);if(!stored)return true;return axHashPin(pin)===stored;}
+function axSetPin(pin){var h=axHashPin(pin);localStorage.setItem("ax_pin",JSON.stringify(h));toast("PIN enregistre","ok");}
+function _audit(type,who,what,detail){var log=lg("ax_audit",[]);log.unshift({type:type,who:who,what:what,detail:detail||"",ts:now()});if(log.length>500)log=log.slice(0,500);ls("ax_audit",log);}
+function axCanUse(feat){var toggles=lg("ax_toggles",{});if(toggles[feat]===false)return false;return true;}
+function axToggle(feat,state){if(!axIsAdmin())return;var toggles=lg("ax_toggles",{});toggles[feat]=state;ls("ax_toggles",toggles);_audit("toggle",K.user.id,feat,state?"ON":"OFF");dc();}
+function axKillSwitch(){if(!axIsAdmin())return;if(!confirm("KILL SWITCH : tout desactiver ?"))return;var toggles=lg("ax_toggles",{});Object.keys(toggles).forEach(function(k){toggles[k]=false;});ls("ax_toggles",toggles);_audit("kill_switch",K.user.id,"all","OFF");K.user=null;ls("ax_uid",null);toast("Tout desactive","err");sv("login");}
+
+// --- Auth ---
+function axLogin(name,pin){if(!axCheckPin(pin)){var fails=lg("ax_pin_fails",{count:0,until:0});fails.count++;var delays=[0,0,0,0,0,30000,120000,600000,3600000];var d=delays[Math.min(fails.count,delays.length-1)];if(d)fails.until=now()+d;ls("ax_pin_fails",fails);toast("PIN incorrect","err");return false;}ls("ax_pin_fails",{count:0,until:0});K.user={name:name,id:name==="Kevin DESARZENS"?ADMIN_ID:"user_"+uid(),lang:"fr",plan:"free"};ls("ax_uid",K.user.id);ls("ax_user",K.user);touchSession();_audit("login",K.user.id,K.user.name,"");if(!K.activeConvId)newConversation();sv("chat");toast("Bienvenue "+esc(name),"ok");return true;}
+function axLogout(){if(K.user)_audit("logout",K.user.id,K.user.name,"");K.user=null;ls("ax_uid",null);sv("login");}
+
+// --- Navigation ---
+function sv(v){_viewHistory.push(K.view);K.view=v;render();var c=document.getElementById("content");if(c)c.scrollTop=0;}
+function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="chat";render();}
+function render(){var app=document.getElementById("app");if(!app)return;app.innerHTML=vTopbar()+vMainContent()+vNav();_bindEvents();}
+function dc(){render();}
+
+function vTopbar(){var online=navigator.onLine;var statusDot=online?'<span style="color:var(--ax-green)" title="En ligne">&#9679;</span>':'<span style="color:var(--ax-red)" title="Hors ligne">&#9679;</span>';var menuBtn=K.user?'<span onclick="toggleSidebar()" style="cursor:pointer;font-size:20px" title="Historique">&#9776;</span>':"";var logoutBtn=K.user?'<span onclick="axLogout()" style="cursor:pointer;font-size:14px" title="Deconnexion">&#10005;</span>':"";return'<div id="topbar">'+menuBtn+' <div class="ax-logo">APEX <span>AI</span></div><div class="ax-status">'+statusDot+" "+logoutBtn+"</div></div>";}
+
+function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";var tabs=[{id:"chat",ic:"\uD83D\uDCAC",lb:"Chat"},{id:"kb",ic:"\uD83E\uDDE0",lb:"Memoire"},{id:"finance",ic:"\uD83D\uDCB0",lb:"Finance"},{id:"devices",ic:"\uD83D\uDCF1",lb:"Appareils"},{id:"settings",ic:"\u2699\uFE0F",lb:"Reglages"}];var h='<div id="navbar">';for(var i=0;i<tabs.length;i++){var t=tabs[i];var cls=K.view===t.id?" active":"";h+='<div class="ax-tab'+cls+'" onclick="sv(\''+t.id+'\')" title="'+t.lb+'"><span class="ic">'+t.ic+'</span><span class="lb">'+t.lb+'</span></div>';}return h+"</div>";}
+
+function vMainContent(){var side=K.user?vSidebar():"";return side+'<div id="content">'+vMain()+"</div>";}
+
+function vMain(){switch(K.view){case"login":return vLogin();case"landing":return vLanding();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"settings":return vSettings();default:return vChat();}}
+
+// --- Sidebar ---
+function vSidebar(){var cls=_sidebarOpen?" open":"";var h='<div class="ax-sidebar'+cls+'">';h+='<div style="padding:12px 16px;border-bottom:1px solid var(--ax-border)"><button class="ax-btn ax-btn-primary" onclick="newConversation();toggleSidebar()" style="width:100%">\u2795 Nouvelle conversation</button></div>';for(var i=0;i<K.conversations.length;i++){var c=K.conversations[i];var act=c.id===K.activeConvId?" active":"";h+='<div class="ax-conv-item'+act+'" onclick="loadConversation(\''+esc(c.id)+'\');toggleSidebar()"><div class="ax-conv-title">'+esc(c.title||"Sans titre")+'</div><div class="ax-conv-time">'+_timeAgo(c.ts)+"</div></div>";}h+="</div>";if(_sidebarOpen)h+='<div class="ax-sidebar-overlay" onclick="toggleSidebar()"></div>';return h;}
+function toggleSidebar(){_sidebarOpen=!_sidebarOpen;dc();}
+function _timeAgo(ts){if(!ts)return"";var d=now()-ts;if(d<60000)return"maintenant";if(d<3600000)return Math.floor(d/60000)+"min";if(d<86400000)return Math.floor(d/3600000)+"h";return Math.floor(d/86400000)+"j";}
+
+// --- Login ---
+function vLogin(){return'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:40px 20px"><div style="font-size:60px;margin-bottom:16px">\u2726</div><h1 style="color:var(--ax-gold);font-size:28px;font-weight:800;letter-spacing:3px;margin-bottom:4px">APEX AI</h1><p style="color:var(--ax-text-dim);font-size:14px;margin-bottom:32px">Intelligence Artificielle Ultime</p><div style="width:100%;max-width:320px"><input id="ax-login-name" class="ax-input" placeholder="Votre nom" value="Kevin DESARZENS" style="margin-bottom:12px"><input id="ax-login-pin" class="ax-input" type="password" placeholder="PIN (optionnel)" style="margin-bottom:16px"><button class="ax-btn ax-btn-primary" onclick="_doLogin()" style="width:100%">\uD83D\uDD13 Connexion</button><p style="text-align:center;margin-top:16px"><a href="#" onclick="sv(\'landing\');return false" style="color:var(--ax-blue);font-size:13px">Decouvrir APEX AI</a></p></div></div>';}
+function _doLogin(){var name=document.getElementById("ax-login-name");var pin=document.getElementById("ax-login-pin");if(!name||!name.value.trim()){toast("Entrez votre nom","warn");return;}axLogin(name.value.trim(),pin?pin.value:"");}
+
+// --- Conversations ---
+function newConversation(){var id=uid();K.activeConvId=id;K.messages=[];K.conversations.unshift({id:id,title:"Nouvelle conversation",ts:now()});_saveConvs();dc();}
+function loadConversation(id){K.activeConvId=id;K.messages=lg("ax_msgs_"+id,[]);dc();}
+function deleteConversation(id){K.conversations=K.conversations.filter(function(c){return c.id!==id;});localStorage.removeItem("ax_msgs_"+id);if(K.activeConvId===id){if(K.conversations.length)loadConversation(K.conversations[0].id);else newConversation();}_saveConvs();}
+function _saveConvs(){ls("ax_convs",K.conversations);}
+function _saveMsgs(){ls("ax_msgs_"+K.activeConvId,K.messages);}
+function autoTitle(convId){if(!K.messages.length)return;var first=K.messages[0];if(!first||first.role!=="user")return;var text=first.content;if(text.length>100)text=text.slice(0,100);for(var i=0;i<K.conversations.length;i++){if(K.conversations[i].id===convId){K.conversations[i].title=text;break;}}_saveConvs();}
+function exportConversation(id,format){var msgs=lg("ax_msgs_"+id,[]);var conv=K.conversations.find(function(c){return c.id===id;});var title=conv?conv.title:"export";var content;if(format==="json"){content=JSON.stringify(msgs,null,2);}else{content="# "+title+"\n\n";msgs.forEach(function(m){content+="## "+(m.role==="user"?"Vous":"APEX AI")+"\n\n"+m.content+"\n\n";});}var blob=new Blob([content],{type:"text/"+(format==="json"?"json":"markdown")});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title.replace(/[^a-zA-Z0-9]/g,"_")+"."+format;a.click();toast("Export "+format+" telecharge","ok");}
+
+// --- PLACEHOLDER SUITES (seront ajoutes par Edit) ---
+// === MODULE: Chat IA ===
+function vChat(){if(!K.user)return vLogin();var msgs="";for(var i=0;i<K.messages.length;i++){var m=K.messages[i];if(m.role==="user"){msgs+='<div class="ax-msg ax-msg-user"><div class="ax-name">Vous</div>'+renderMd(m.content)+'<div class="ax-time">'+_fmtTime(m.ts)+"</div></div>";}else if(m.role==="assistant"){msgs+='<div class="ax-msg ax-msg-bot"><div class="ax-name">\u2726 APEX AI</div><div class="ax-md">'+renderMd(m.content)+'</div><div class="ax-time">'+_fmtTime(m.ts)+"</div></div>";}else if(m.role==="system"){msgs+='<div class="ax-msg ax-msg-system">'+esc(m.content)+"</div>";}}if(!K.messages.length){msgs='<div class="ax-empty"><div class="ax-empty-icon">\u2726</div><div class="ax-empty-text">Posez-moi une question, je suis pret.</div></div>';}if(K.isStreaming){msgs+='<div class="ax-msg ax-msg-bot"><div class="ax-name">\u2726 APEX AI</div><div id="ax-stream-target" class="ax-md"></div><div class="ax-loading"><span></span><span></span><span></span></div></div>';}var chatbar='<div class="ax-chatbar"><button class="ax-btn-icon" onclick="axCameraCapture()" title="Camera">\uD83D\uDCF7</button><button class="ax-btn-icon" onclick="document.getElementById(\'ax-file-input\').click()" title="Fichier">\uD83D\uDCCE</button><input type="file" id="ax-file-input" style="display:none" accept="image/*,.pdf" onchange="_handleFileUpload(this)"><textarea id="ax-chat-input" class="ax-input" placeholder="Ecrivez votre message..." rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();_sendFromInput()}"></textarea><button class="ax-btn-icon" onclick="axSttToggle()" title="Dictee vocale" id="ax-mic-btn">\uD83C\uDF99\uFE0F</button><button class="ax-btn-icon ax-btn-primary" onclick="_sendFromInput()" title="Envoyer" style="border-radius:50%">\u27A4</button></div>';return'<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:8px 0" id="ax-chat-scroll">'+msgs+"</div>"+chatbar+"</div>";}
+
+function _fmtTime(ts){if(!ts)return"";var d=new Date(ts);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+
+function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim()||K.isStreaming)return;var text=el.value.trim();el.value="";sendMessage(text);}
+
+function sendMessage(text){if(!text||K.isStreaming)return;K.messages.push({role:"user",content:text,ts:now()});_saveMsgs();autoTitle(K.activeConvId);dc();_scrollChatBottom();K.isStreaming=true;dc();var sysPrompt=_buildSystemPrompt();var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);}
+
+function _buildSystemPrompt(){var s="Tu es APEX AI, un assistant IA premium cree par Kevin DESARZENS. Tu es expert en finance, code, documents, et productivite. Reponds en francais par defaut. Sois precis, utile et professionnel.\n\nDate: "+new Date().toLocaleDateString("fr-FR")+"\nHeure: "+new Date().toLocaleTimeString("fr-FR");if(K.kb.facts.length){s+="\n\nMemoire persistante:\n";K.kb.facts.slice(0,20).forEach(function(f){s+="- "+f.text+"\n";});}if(K.kb.instructions.length){s+="\n\nInstructions permanentes:\n";K.kb.instructions.forEach(function(inst){s+="- "+inst.text+"\n";});}return s;}
+
+function _getApiUrl(){var proxy=localStorage.getItem("ax_proxy_url");if(proxy)return proxy.replace(/\/$/,"");return"https://api.anthropic.com/v1/messages";}
+
+function _getApiKey(){return localStorage.getItem("ax_api_key")||"";}
+
+function _callClaudeAPI(sysPrompt,msgs,depth){if(depth>=8){K.isStreaming=false;K.messages.push({role:"assistant",content:"(profondeur max atteinte)",ts:now()});_saveMsgs();dc();return;}var proxy=localStorage.getItem("ax_proxy_url");var apiKey=_getApiKey();var headers={"Content-Type":"application/json"};if(!proxy&&apiKey){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";}var tools=_getToolDefs();var body={model:K.settings.model||"claude-sonnet-4-6",max_tokens:K.settings.maxTokens||4096,system:sysPrompt,messages:msgs,stream:true};if(tools.length)body.tools=tools;fetch(_getApiUrl(),{method:"POST",headers:headers,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("API "+r.status);return _processStream(r.body,depth,msgs,sysPrompt);}).catch(function(e){K.isStreaming=false;K.messages.push({role:"assistant",content:"Erreur : "+esc(e.message),ts:now()});_saveMsgs();dc();toast("Erreur API","err");});}
+
+function _processStream(body,depth,msgs,sysPrompt){var reader=body.getReader();var decoder=new TextDecoder();var fullText="";var toolUseBlocks=[];var currentToolUse=null;var buffer="";function read(){reader.read().then(function(result){if(result.done){_onStreamDone(fullText,toolUseBlocks,depth,msgs,sysPrompt);return;}buffer+=decoder.decode(result.value,{stream:true});var lines=buffer.split("\n");buffer=lines.pop()||"";for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line.startsWith("data: "))continue;var json=line.slice(6);if(json==="[DONE]")continue;try{var ev=JSON.parse(json);if(ev.type==="content_block_start"&&ev.content_block){if(ev.content_block.type==="tool_use"){currentToolUse={id:ev.content_block.id,name:ev.content_block.name,input_json:""};}}if(ev.type==="content_block_delta"&&ev.delta){if(ev.delta.type==="text_delta"&&ev.delta.text){fullText+=ev.delta.text;_updateStreamBubble(fullText);}if(ev.delta.type==="input_json_delta"&&ev.delta.partial_json&&currentToolUse){currentToolUse.input_json+=ev.delta.partial_json;}}if(ev.type==="content_block_stop"&&currentToolUse){try{currentToolUse.input=JSON.parse(currentToolUse.input_json);}catch(pe){currentToolUse.input={};}toolUseBlocks.push(currentToolUse);currentToolUse=null;}}catch(pe){}}read();}).catch(function(e){K.isStreaming=false;if(fullText)K.messages.push({role:"assistant",content:fullText,ts:now()});else K.messages.push({role:"assistant",content:"Erreur streaming: "+e.message,ts:now()});_saveMsgs();dc();});}read();}
+
+function _updateStreamBubble(text){var el=document.getElementById("ax-stream-target");if(el)el.innerHTML=renderMd(text);}
+
+function _onStreamDone(text,toolUseBlocks,depth,msgs,sysPrompt){if(toolUseBlocks.length){var content=[];if(text)content.push({type:"text",text:text});toolUseBlocks.forEach(function(tb){content.push({type:"tool_use",id:tb.id,name:tb.name,input:tb.input});});msgs.push({role:"assistant",content:content});var toolResults=[];toolUseBlocks.forEach(function(tb){var result=axExecuteTool(tb.name,tb.input);toolResults.push({type:"tool_result",tool_use_id:tb.id,content:typeof result==="string"?result:JSON.stringify(result)});});msgs.push({role:"user",content:toolResults});if(text)K.messages.push({role:"assistant",content:text,ts:now()});_callClaudeAPI(sysPrompt,msgs,depth+1);}else{K.isStreaming=false;K.messages.push({role:"assistant",content:text||"(reponse vide)",ts:now()});_saveMsgs();dc();_scrollChatBottom();if(K.settings.ttsEnabled)axTtsSpeak(text);}}
+
+function _scrollChatBottom(){setTimeout(function(){var el=document.getElementById("ax-chat-scroll");if(el)el.scrollTop=el.scrollHeight;},50);}
+
+function searchConversations(query){if(!query)return[];var q=query.toLowerCase();var results=[];K.conversations.forEach(function(c){var msgs=lg("ax_msgs_"+c.id,[]);for(var i=0;i<msgs.length;i++){if(msgs[i].content&&msgs[i].content.toLowerCase().indexOf(q)>=0){results.push({convId:c.id,title:c.title,msg:msgs[i].content.slice(0,100),ts:msgs[i].ts});break;}}});return results;}
+
+// --- Markdown ---
+function renderMd(text){if(!text)return"";var h=esc(text);h=h.replace(/```(\w*)\n([\s\S]*?)```/g,function(m,lang,code){var id="cb"+Math.random().toString(36).slice(2,7);return'<div class="ax-code"><button class="ax-copy" onclick="axCopyCode(\''+id+'\')">\uD83D\uDCCB Copier</button><pre><code id="'+id+'">'+code+"</code></pre></div>";});h=h.replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;font-family:var(--ax-mono);font-size:13px">$1</code>');h=h.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");h=h.replace(/\*([^*]+)\*/g,"<em>$1</em>");h=h.replace(/^### (.+)$/gm,"<h3>$1</h3>");h=h.replace(/^## (.+)$/gm,"<h2>$1</h2>");h=h.replace(/^# (.+)$/gm,"<h1>$1</h1>");h=h.replace(/^\- (.+)$/gm,"<li>$1</li>");h=h.replace(/(<li>.*<\/li>)/gs,"<ul>$1</ul>");h=h.replace(/\n/g,"<br>");return h;}
+
+function axCopyCode(id){var el=document.getElementById(id);if(!el)return;navigator.clipboard.writeText(el.textContent).then(function(){toast("Code copie","ok");}).catch(function(){toast("Erreur copie","err");});}
+// === MODULE: Knowledge Base ===
+function vKB(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">\uD83E\uDDE0 Base de Connaissances</h2>';h+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ax-kb-input" class="ax-input" placeholder="Ajouter un fait ou une instruction..." style="flex:1"><button class="ax-btn ax-btn-primary" onclick="_kbAddFromInput()">\u2795 Ajouter</button></div>';h+='<div style="display:flex;gap:8px;margin-bottom:16px"><button class="ax-btn ax-btn-outline" onclick="kbExport()">\uD83D\uDCE4 Exporter</button><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'ax-kb-import\').click()">\uD83D\uDCE5 Importer</button><input type="file" id="ax-kb-import" style="display:none" accept=".json" onchange="_kbImportFile(this)"><button class="ax-btn ax-btn-ghost" onclick="kbDistill()" title="Compresser les faits anciens">\uD83E\uDDEA Distiller</button></div>';h+='<div class="ax-card"><h3>\uD83D\uDCDD Faits ('+K.kb.facts.length+")</h3>";if(!K.kb.facts.length)h+='<p style="color:var(--ax-text-dim);font-size:13px">Aucun fait enregistre. Dites "retiens que..." dans le chat.</p>';K.kb.facts.forEach(function(f,i){h+='<div class="ax-setting-row"><span style="font-size:13px;flex:1">'+esc(f.text)+'</span><span style="font-size:10px;color:var(--ax-text-dim);margin:0 8px">'+_timeAgo(f.ts)+'</span><button class="ax-btn-icon" onclick="kbRemove(\'fact\','+i+')" title="Supprimer" style="width:32px;height:32px;font-size:14px">\u2715</button></div>';});h+="</div>";h+='<div class="ax-card"><h3>\uD83D\uDCCC Instructions ('+K.kb.instructions.length+")</h3>";if(!K.kb.instructions.length)h+='<p style="color:var(--ax-text-dim);font-size:13px">Aucune instruction. Ex: "desormais reponds toujours en anglais"</p>';K.kb.instructions.forEach(function(inst,i){h+='<div class="ax-setting-row"><span style="font-size:13px;flex:1">'+esc(inst.text)+'</span><button class="ax-btn-icon" onclick="kbRemove(\'instruction\','+i+')" title="Supprimer" style="width:32px;height:32px;font-size:14px">\u2715</button></div>';});h+="</div></div>";return h;}
+
+function _kbAddFromInput(){var el=document.getElementById("ax-kb-input");if(!el||!el.value.trim())return;kbAdd(el.value.trim(),"manual","fact");el.value="";}
+function kbAdd(text,source,type){if(!type)type="fact";var item={id:uid(),text:text,source:source||"chat",ts:now()};if(type==="instruction")K.kb.instructions.push(item);else K.kb.facts.push(item);ls("ax_kb",K.kb);dc();toast("Memorise","ok");}
+function kbRemove(type,idx){if(type==="instruction")K.kb.instructions.splice(idx,1);else K.kb.facts.splice(idx,1);ls("ax_kb",K.kb);dc();}
+function kbSearch(query,topN){if(!topN)topN=5;if(!query||!K.kb.facts.length)return[];var scores=tfidf(query,K.kb.facts.map(function(f){return f.text;}));var results=K.kb.facts.map(function(f,i){return{fact:f,score:scores[i]};}).filter(function(r){return r.score>0;}).sort(function(a,b){return b.score-a.score;});return results.slice(0,topN).map(function(r){return r.fact;});}
+function tokenize(text){return text.toLowerCase().replace(/[^\w\s]/g,"").split(/\s+/).filter(function(w){return w.length>2;});}
+function tfidf(query,docs){var qTokens=tokenize(query);var scores=[];docs.forEach(function(doc){var dTokens=tokenize(doc);var score=0;qTokens.forEach(function(qt){var tf=dTokens.filter(function(t){return t===qt;}).length/Math.max(dTokens.length,1);var df=docs.filter(function(d){return d.toLowerCase().indexOf(qt)>=0;}).length;var idfVal=Math.log((docs.length+1)/(df+1));score+=tf*idfVal;});scores.push(score);});return scores;}
+function kbDistill(){if(K.kb.facts.length<20){toast("Pas assez de faits pour distiller","warn");return;}var old=K.kb.facts.splice(0,Math.floor(K.kb.facts.length/2));var summary=old.map(function(f){return f.text;}).join("; ");K.kb.facts.push({id:uid(),text:"[Resume] "+summary.slice(0,500),source:"distillation",ts:now()});ls("ax_kb",K.kb);dc();toast("Distillation terminee","ok");}
+function kbExport(){var blob=new Blob([JSON.stringify(K.kb,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="apex-ai-kb.json";a.click();toast("KB exportee","ok");}
+function kbImport(jsonStr){try{var data=JSON.parse(jsonStr);if(data.facts)K.kb.facts=K.kb.facts.concat(data.facts);if(data.instructions)K.kb.instructions=K.kb.instructions.concat(data.instructions);ls("ax_kb",K.kb);dc();toast("KB importee ("+K.kb.facts.length+" faits)","ok");}catch(e){toast("Erreur import: JSON invalide","err");}}
+function _kbImportFile(input){if(!input.files||!input.files[0])return;var reader=new FileReader();reader.onload=function(e){kbImport(e.target.result);};reader.readAsText(input.files[0]);}
+
+// === MODULE: Tools Custom ===
+function _getToolDefs(){return[{name:"kb_search",description:"Chercher dans la memoire persistante",input_schema:{type:"object",properties:{query:{type:"string",description:"Recherche"}},required:["query"]}},{name:"kb_remember",description:"Memoriser un fait ou une instruction",input_schema:{type:"object",properties:{text:{type:"string"},type:{type:"string",enum:["fact","instruction"]}},required:["text"]}},{name:"calculate",description:"Calculatrice securisee",input_schema:{type:"object",properties:{expression:{type:"string"}},required:["expression"]}},{name:"finance_calculate",description:"Calculs financiers (NPV, IRR, pret, ROI, interets composes)",input_schema:{type:"object",properties:{type:{type:"string",enum:["compound","roi","npv","irr","loan"]},params:{type:"object"}},required:["type","params"]}},{name:"code_execute",description:"Executer du code JavaScript en sandbox",input_schema:{type:"object",properties:{code:{type:"string"}},required:["code"]}},{name:"search_conversations",description:"Chercher dans l historique des conversations",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"get_datetime",description:"Obtenir la date et l heure actuelles",input_schema:{type:"object",properties:{}}},{name:"set_reminder",description:"Definir un rappel",input_schema:{type:"object",properties:{text:{type:"string"},delay_minutes:{type:"number"}},required:["text","delay_minutes"]}},{name:"device_status",description:"Infos appareil (batterie, reseau, stockage)",input_schema:{type:"object",properties:{}}},{name:"web_search",description:"Recherche web via Claude",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"finance_portfolio",description:"Gestion portefeuille (ajouter/retirer position)",input_schema:{type:"object",properties:{action:{type:"string",enum:["add","remove","list"]},symbol:{type:"string"},qty:{type:"number"},price:{type:"number"}},required:["action"]}}];}
+
+function axExecuteTool(name,input){switch(name){case"kb_search":var results=kbSearch(input.query);return results.length?results.map(function(f){return f.text;}).join("\n"):"Aucun resultat.";case"kb_remember":kbAdd(input.text,"tool_use",input.type||"fact");return"Memorise: "+input.text;case"calculate":return _safeCalc(input.expression);case"finance_calculate":return _finCalcTool(input.type,input.params);case"code_execute":return axRunCode(input.code);case"search_conversations":var r=searchConversations(input.query);return r.length?JSON.stringify(r.slice(0,5)):"Aucun resultat.";case"get_datetime":return JSON.stringify({date:new Date().toLocaleDateString("fr-FR"),time:new Date().toLocaleTimeString("fr-FR"),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,timestamp:now()});case"set_reminder":setTimeout(function(){toast("Rappel: "+input.text,"info");if(typeof Notification!=="undefined"&&Notification.permission==="granted")new Notification("APEX AI - Rappel",{body:input.text});},input.delay_minutes*60000);return"Rappel programme dans "+input.delay_minutes+" minutes.";case"device_status":return JSON.stringify({online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,storage:_getStorageUsed(),screen:screen.width+"x"+screen.height});case"web_search":return"(recherche web deleguee a Claude)";case"finance_portfolio":return _finPortfolioTool(input);default:return"Outil inconnu: "+name;}}
+
+function _safeCalc(expr){try{var safe=expr.replace(/[^0-9+\-*/.()%\s]/g,"");return String(Function('"use strict";return ('+safe+")")());}catch(e){return"Erreur calcul: "+e.message;}}
+function _getStorageUsed(){var total=0;for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);total+=localStorage.getItem(k).length;}return Math.round(total/1024)+"KB";}
+// === MODULE: Finance ===
+function finCompound(p,r,n,t){return p*Math.pow(1+r/n,n*t);}
+function finROI(gain,cost){return((gain-cost)/cost*100).toFixed(2)+"%";}
+function finNPV(rate,cashflows){var npv=0;cashflows.forEach(function(cf,i){npv+=cf/Math.pow(1+rate,i);});return npv;}
+function finIRR(cashflows){var guess=0.1;for(var iter=0;iter<100;iter++){var npv=0,dnpv=0;cashflows.forEach(function(cf,i){npv+=cf/Math.pow(1+guess,i);dnpv+=-i*cf/Math.pow(1+guess,i+1);});if(Math.abs(npv)<0.0001)return(guess*100).toFixed(2)+"%";guess-=npv/dnpv;}return"Non convergent";}
+function finLoan(p,annualRate,months){var mr=annualRate/12;var pmt=p*mr*Math.pow(1+mr,months)/(Math.pow(1+mr,months)-1);return{monthly:pmt.toFixed(2),total:(pmt*months).toFixed(2),interest:(pmt*months-p).toFixed(2)};}
+function finAddPosition(sym,qty,price,cur){K.fin.portfolios.push({id:uid(),symbol:sym.toUpperCase(),qty:qty,avgPrice:price,currency:cur||"EUR",ts:now()});ls("ax_fin",K.fin);dc();}
+function finRemovePosition(id){K.fin.portfolios=K.fin.portfolios.filter(function(p){return p.id!==id;});ls("ax_fin",K.fin);dc();}
+function _finCalcTool(type,params){switch(type){case"compound":return"Montant final: "+finCompound(params.principal||1000,params.rate||0.05,params.n||12,params.years||10).toFixed(2)+" "+( params.currency||"EUR");case"roi":return"ROI: "+finROI(params.gain||0,params.cost||1);case"npv":return"VAN: "+finNPV(params.rate||0.1,params.cashflows||[]).toFixed(2);case"irr":return"TRI: "+finIRR(params.cashflows||[]);case"loan":var l=finLoan(params.principal||100000,params.rate||0.03,params.months||240);return"Mensualite: "+l.monthly+"EUR, Total: "+l.total+"EUR, Interets: "+l.interest+"EUR";default:return"Type de calcul inconnu.";}}
+function _finPortfolioTool(input){switch(input.action){case"add":finAddPosition(input.symbol||"???",input.qty||1,input.price||0);return"Position ajoutee: "+input.symbol;case"remove":var pos=K.fin.portfolios.find(function(p){return p.symbol===input.symbol;});if(pos){finRemovePosition(pos.id);return"Position supprimee: "+input.symbol;}return"Position non trouvee.";case"list":return JSON.stringify(K.fin.portfolios);default:return"Action inconnue.";}}
+
+function vFinance(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">\uD83D\uDCB0 Finance Expert</h2>';h+='<div class="ax-card"><h3>\uD83D\uDCBC Portefeuille</h3>';if(!K.fin.portfolios.length){h+='<p style="color:var(--ax-text-dim);font-size:13px">Aucune position. Dites "ajoute 10 actions AAPL a 180$" dans le chat.</p>';}K.fin.portfolios.forEach(function(p){h+='<div class="ax-fin-card" style="margin:6px 0"><div><strong>'+esc(p.symbol)+'</strong> x'+p.qty+'<div style="font-size:12px;color:var(--ax-text-dim)">Prix moyen: '+p.avgPrice+" "+esc(p.currency)+'</div></div><button class="ax-btn-icon" onclick="finRemovePosition(\''+p.id+'\')" style="width:32px;height:32px">\u2715</button></div>';});h+="</div>";h+='<div class="ax-card"><h3>\uD83E\uDDEE Calculatrice Financiere</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="ax-btn ax-btn-outline" onclick="_finCalcUI(\'compound\')">Interets composes</button><button class="ax-btn ax-btn-outline" onclick="_finCalcUI(\'loan\')">Simulation pret</button><button class="ax-btn ax-btn-outline" onclick="_finCalcUI(\'roi\')">ROI</button><button class="ax-btn ax-btn-outline" onclick="_finCalcUI(\'npv\')">VAN/TRI</button></div><div id="ax-fin-result" style="margin-top:12px"></div></div>';h+='<div class="ax-card"><h3>\uD83D\uDCC8 Watchlist</h3>';if(!K.fin.watchlist.length){h+='<p style="color:var(--ax-text-dim);font-size:13px">Dites "surveille le cours de AAPL" dans le chat.</p>';}K.fin.watchlist.forEach(function(w){h+='<div class="ax-setting-row"><span>'+esc(w.symbol)+'</span><button class="ax-btn-icon" onclick="finRemoveWatch(\''+esc(w.symbol)+'\')" style="width:32px;height:32px">\u2715</button></div>';});h+="</div></div>";return h;}
+function _finCalcUI(type){var msg="";switch(type){case"compound":msg="Calcule les interets composes de 10000 EUR a 5% sur 10 ans";break;case"loan":msg="Simule un pret de 200000 EUR a 3% sur 20 ans";break;case"roi":msg="Calcule le ROI d un investissement de 5000 EUR qui vaut maintenant 7500 EUR";break;case"npv":msg="Calcule la VAN et le TRI des flux -10000, 3000, 3000, 4000, 5000 a 10%";break;}if(msg){sv("chat");setTimeout(function(){sendMessage(msg);},100);}}
+function finAddWatch(sym){K.fin.watchlist.push({symbol:sym.toUpperCase(),ts:now()});ls("ax_fin",K.fin);dc();}
+function finRemoveWatch(sym){K.fin.watchlist=K.fin.watchlist.filter(function(w){return w.symbol!==sym;});ls("ax_fin",K.fin);dc();}
+
+// === MODULE: Voice (STT/TTS) ===
+function axSttToggle(){if(_sttRecog){axSttStop();return;}axSttStart("ax-chat-input");}
+function axSttStart(targetId){if(!("webkitSpeechRecognition" in window)&&!("SpeechRecognition" in window)){toast("Reconnaissance vocale non disponible","warn");return;}var SR=window.SpeechRecognition||window.webkitSpeechRecognition;_sttRecog=new SR();_sttRecog.continuous=false;_sttRecog.interimResults=true;_sttRecog.lang=K.settings.voiceLang||"fr-FR";_sttRecog.onresult=function(e){var el=document.getElementById(targetId);if(!el)return;var t="";for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;el.value=t;};_sttRecog.onerror=function(){axSttStop();};_sttRecog.onend=function(){_sttRecog=null;var btn=document.getElementById("ax-mic-btn");if(btn)btn.style.background="";};_sttRecog.start();var btn=document.getElementById("ax-mic-btn");if(btn)btn.style.background="var(--ax-red)";toast("Parlez maintenant...","info");}
+function axSttStop(){if(_sttRecog){_sttRecog.stop();_sttRecog=null;}var btn=document.getElementById("ax-mic-btn");if(btn)btn.style.background="";}
+function axTtsSpeak(text){if(!text||!("speechSynthesis" in window))return;window.speechSynthesis.cancel();_ttsUtter=new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g,"").slice(0,500));_ttsUtter.lang=K.settings.voiceLang||"fr-FR";_ttsUtter.rate=1;window.speechSynthesis.speak(_ttsUtter);}
+function axTtsStop(){if("speechSynthesis" in window)window.speechSynthesis.cancel();}
+
+// === MODULE: Code Sandbox ===
+function axRunCode(code){try{var iframe=document.createElement("iframe");iframe.sandbox="allow-scripts";iframe.style.display="none";document.body.appendChild(iframe);var result;try{result=iframe.contentWindow.eval(code);}catch(e){result="Erreur: "+e.message;}document.body.removeChild(iframe);return String(result);}catch(e){return"Sandbox erreur: "+e.message;}}
+function axPreviewHtml(html){var w=window.open("","_blank","width=600,height=400");if(w){w.document.write(html);w.document.close();}}
+function axHljsLoad(){if(_hljsLoaded)return Promise.resolve();return new Promise(function(resolve){var link=document.createElement("link");link.rel="stylesheet";link.href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css";document.head.appendChild(link);var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";s.onload=function(){_hljsLoaded=true;resolve();};document.head.appendChild(s);});}
+
+// === MODULE: Documents ===
+function _handleFileUpload(input){if(!input.files||!input.files[0])return;var file=input.files[0];if(file.type.startsWith("image/")){axUploadImage(file);}else if(file.type==="application/pdf"){axParsePdf(file);}else{toast("Format non supporte","warn");}}
+function axUploadImage(file){var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;sendMessage("[Image jointe : "+esc(file.name)+"]");};reader.readAsDataURL(file);}
+function axParsePdf(file){if(!_pdfjsLoaded){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";s.onload=function(){_pdfjsLoaded=true;window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";_doParsePdf(file);};document.head.appendChild(s);}else{_doParsePdf(file);}}
+function _doParsePdf(file){var reader=new FileReader();reader.onload=function(e){var arr=new Uint8Array(e.target.result);window.pdfjsLib.getDocument(arr).promise.then(function(pdf){var text="";var pages=[];for(var i=1;i<=pdf.numPages;i++)pages.push(i);return pages.reduce(function(p,pg){return p.then(function(){return pdf.getPage(pg).then(function(page){return page.getTextContent().then(function(tc){text+=tc.items.map(function(it){return it.str;}).join(" ")+"\n";});});});},Promise.resolve()).then(function(){sendMessage("Contenu du PDF ("+file.name+") :\n\n"+text.slice(0,3000));});}).catch(function(e){toast("Erreur PDF: "+e.message,"err");});};reader.readAsArrayBuffer(file);}
+function axCameraCapture(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0])axUploadImage(input.files[0]);};input.click();}
+// === MODULE: Monetisation ===
+function vLanding(){var h='<div class="ax-landing-hero"><div style="font-size:72px;margin-bottom:8px">\u2726</div><h1>APEX <span>AI</span></h1><p>L\'assistant IA le plus puissant. Finance, code, voix, documents, multi-appareils. Votre intelligence augmentee.</p><button class="ax-btn ax-btn-primary" onclick="sv(\'login\')" style="font-size:16px;padding:14px 32px">\uD83D\uDE80 Commencer gratuitement</button></div>';h+='<div class="ax-features" style="padding:24px 16px"><div class="ax-card"><h3>\uD83D\uDCAC Chat IA</h3><p style="font-size:13px;color:var(--ax-text-dim)">Claude Sonnet/Opus avec streaming, outils, recherche web et memoire persistante.</p></div><div class="ax-card"><h3>\uD83D\uDCB0 Finance Expert</h3><p style="font-size:13px;color:var(--ax-text-dim)">Calculatrice NPV/IRR, portefeuille, watchlist, alertes de prix en temps reel.</p></div><div class="ax-card"><h3>\uD83C\uDF99\uFE0F Voix</h3><p style="font-size:13px;color:var(--ax-text-dim)">Dictee vocale et lecture a voix haute. Mode conversation continue.</p></div><div class="ax-card"><h3>\uD83D\uDCBB Code</h3><p style="font-size:13px;color:var(--ax-text-dim)">Generation, execution sandbox, coloration syntaxique, preview HTML.</p></div><div class="ax-card"><h3>\uD83D\uDCF1 Multi-Appareils</h3><p style="font-size:13px;color:var(--ax-text-dim)">Sync Firebase, clipboard partage, commandes inter-appareils.</p></div><div class="ax-card"><h3>\uD83D\uDD12 Securite</h3><p style="font-size:13px;color:var(--ax-text-dim)">5 couches de protection. Chiffrement, PIN, audit, kill switch.</p></div></div>';h+='<h2 style="text-align:center;color:var(--ax-gold);padding:24px 0 8px">Tarifs</h2>';h+='<div class="ax-pricing"><div class="ax-price-card"><h3 style="color:var(--ax-text)">Free</h3><div class="ax-amount">0\u20AC</div><div class="ax-period">pour toujours</div><ul><li>5 messages / jour</li><li>Memoire 50 faits</li><li>1 appareil</li></ul><button class="ax-btn ax-btn-outline" onclick="sv(\'login\')">Commencer</button></div><div class="ax-price-card featured"><h3 style="color:var(--ax-gold)">Pro</h3><div class="ax-amount">9.99\u20AC</div><div class="ax-period">/ mois</div><ul><li>Messages illimites</li><li>Memoire illimitee</li><li>3 appareils</li><li>Finance Expert</li><li>Mode vocal</li></ul><button class="ax-btn ax-btn-primary" onclick="axStripeCheckout(\'pro\')">Souscrire</button></div><div class="ax-price-card"><h3 style="color:var(--ax-text)">Enterprise</h3><div class="ax-amount">49.99\u20AC</div><div class="ax-period">/ mois</div><ul><li>Tout Pro inclus</li><li>Appareils illimites</li><li>API personnalisee</li><li>Support prioritaire</li><li>Multi-utilisateurs</li></ul><button class="ax-btn ax-btn-outline" onclick="axStripeCheckout(\'enterprise\')">Contacter</button></div></div>';h+='<div style="text-align:center;padding:24px;font-size:12px;color:var(--ax-text-dim)">\u00A9 2026 APEX AI — Kevin DESARZENS. Tous droits reserves.</div>';return h;}
+
+function axStripeCheckout(plan){var pubKey=localStorage.getItem("ax_stripe_pub");if(!pubKey){toast("Stripe non configure","warn");return;}toast("Redirection vers Stripe...","info");}
+function axTrackUsage(tokens){var usage=lg("ax_usage",{today:0,month:0,total:0,date:""});var today=new Date().toISOString().slice(0,10);if(usage.date!==today){usage.today=0;usage.date=today;}usage.today+=tokens;usage.month+=tokens;usage.total+=tokens;ls("ax_usage",usage);}
+
+// === MODULE: Devices ===
+function vDevices(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">\uD83D\uDCF1 Appareils & Connexions</h2>';var devices=lg("ax_devices",{});var devKeys=Object.keys(devices);h+='<div class="ax-card"><h3>\uD83D\uDD17 Appareils connectes ('+devKeys.length+')</h3>';if(!devKeys.length){h+='<p style="color:var(--ax-text-dim);font-size:13px">Cet appareil sera enregistre automatiquement.</p>';}devKeys.forEach(function(dk){var d=devices[dk];h+='<div class="ax-setting-row"><div><span style="font-size:16px">'+(d.type==="phone"?"\uD83D\uDCF1":d.type==="tablet"?"\uD83D\uDCBB":"\uD83D\uDDA5\uFE0F")+'</span> <strong>'+esc(d.name)+'</strong></div><span class="ax-badge ax-badge-'+(now()-d.lastSeen<300000?"green":"red")+'">'+(now()-d.lastSeen<300000?"En ligne":"Hors ligne")+"</span></div>";});h+="</div>";var toggles=[{id:"email_gmail",name:"\uD83D\uDCE7 Gmail",desc:"Lire et envoyer des emails"},{id:"email_outlook",name:"\uD83D\uDCE8 Outlook (monaco.mc)",desc:"Acces emails Monaco"},{id:"whatsapp",name:"\uD83D\uDCF2 WhatsApp",desc:"Messages automatises"},{id:"instagram",name:"\uD83D\uDCF7 Instagram",desc:"Publier du contenu"},{id:"facebook",name:"\uD83D\uDC65 Facebook",desc:"Gerer la page"},{id:"telegram",name:"\u2708\uFE0F Telegram",desc:"Bot notifications"},{id:"clipboard_sync",name:"\uD83D\uDCCB Sync Presse-papiers",desc:"Copier entre appareils"},{id:"file_transfer",name:"\uD83D\uDCC1 Transfert Fichiers",desc:"Envoyer des fichiers entre appareils"}];h+='<div class="ax-card"><h3>\uD83D\uDD18 Connexions (activer/desactiver)</h3>';toggles.forEach(function(tg){var enabled=axCanUse(tg.id);h+='<div class="ax-setting-row"><div class="ax-label">'+tg.name+'<div class="ax-desc">'+tg.desc+'</div></div><label class="ax-toggle"><input type="checkbox" '+(enabled?"checked":"")+" onchange=\"axToggle('"+tg.id+"',this.checked)\"><span class=\"slider\"></span></label></div>";});h+="</div>";h+='<div class="ax-card"><h3>\uD83D\uDCE1 Commandes inter-appareils</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'clipboard\')">\uD83D\uDCCB Sync clipboard</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'notify\')">\uD83D\uDD14 Notifier tous</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'url\')">\uD83C\uDF10 Ouvrir URL</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'file\')">\uD83D\uDCC1 Envoyer fichier</button></div></div></div>';return h;}
+function axRegisterDevice(){var deviceId=lg("ax_device_id",null);if(!deviceId){deviceId=uid();ls("ax_device_id",deviceId);}var type=/iPhone|iPad/.test(navigator.userAgent)?"phone":/Android/.test(navigator.userAgent)&&screen.width>600?"tablet":"desktop";var devices=lg("ax_devices",{});devices[deviceId]={type:type,name:type==="phone"?"iPhone":type==="tablet"?"Tablette":"Ordinateur",lastSeen:now(),ua:navigator.userAgent.slice(0,100)};ls("ax_devices",devices);}
+function _deviceCmd(type){toast("Commande "+type+" envoyee","info");var cmds=lg("ax_cmds",[]);cmds.push({type:type,from:lg("ax_device_id","?"),ts:now()});ls("ax_cmds",cmds);}
+
+// === MODULE: Settings ===
+function vSettings(){if(!K.user)return vLogin();var isAdm=axIsAdmin();var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">\u2699\uFE0F Reglages</h2>';h+='<div class="ax-card"><h3>\uD83E\uDD16 Intelligence Artificielle</h3>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDD11 Cle API Claude<div class="ax-desc">Ou utilisez un proxy</div></div><button class="ax-btn ax-btn-outline" onclick="_settingsApiKey()">Configurer</button></div>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDD17 URL Proxy<div class="ax-desc">Cloudflare Workers</div></div><button class="ax-btn ax-btn-outline" onclick="_settingsProxy()">Configurer</button></div>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83E\uDDE0 Modele<div class="ax-desc">'+esc(K.settings.model)+'</div></div><select class="ax-input" style="width:auto" onchange="K.settings.model=this.value;ls(\'ax_settings\',K.settings)"><option value="claude-sonnet-4-6"'+(K.settings.model==="claude-sonnet-4-6"?" selected":"")+'>Sonnet 4.6</option><option value="claude-opus-4-6"'+(K.settings.model==="claude-opus-4-6"?" selected":"")+'>Opus 4.6</option><option value="claude-haiku-4-5-20251001"'+(K.settings.model==="claude-haiku-4-5-20251001"?" selected":"")+">Haiku 4.5</option></select></div>";h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDD0A Lecture vocale (TTS)</div><label class="ax-toggle"><input type="checkbox" '+(K.settings.ttsEnabled?"checked":"")+" onchange=\"K.settings.ttsEnabled=this.checked;ls('ax_settings',K.settings)\"><span class=\"slider\"></span></label></div>";h+="</div>";if(isAdm){h+='<div class="ax-card"><h3>\uD83D\uDD12 Securite Admin</h3>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDD10 Changer le PIN</div><button class="ax-btn ax-btn-outline" onclick="_settingsPin()">Modifier</button></div>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDEA8 Kill Switch<div class="ax-desc">Tout desactiver en urgence</div></div><button class="ax-btn ax-btn-danger" onclick="axKillSwitch()">\u26A0\uFE0F TOUT COUPER</button></div>';h+='<div class="ax-setting-row"><div class="ax-label">\uD83D\uDCCB Journal d\'audit<div class="ax-desc">'+lg("ax_audit",[]).length+' entrees</div></div><button class="ax-btn ax-btn-outline" onclick="_showAuditLog()">\uD83D\uDC41 Voir</button></div>';h+="</div>";}h+='<div class="ax-card"><h3>\u2139\uFE0F Informations</h3>';h+='<div class="ax-setting-row"><span>Version</span><span class="ax-badge ax-badge-gold">'+APP_VER+'</span></div>';h+='<div class="ax-setting-row"><span>Stockage</span><span>'+_getStorageUsed()+'</span></div>';h+='<div class="ax-setting-row"><span>Conversations</span><span>'+K.conversations.length+'</span></div>';h+='<div class="ax-setting-row"><span>Faits memorises</span><span>'+K.kb.facts.length+'</span></div>';h+="</div>";h+='<div style="padding:16px 0;text-align:center"><button class="ax-btn ax-btn-danger" onclick="if(confirm(\'Supprimer TOUTES les donnees ?\')){localStorage.clear();location.reload()}">\uD83D\uDDD1\uFE0F Reinitialiser l\'app</button></div></div>';return h;}
+
+function _settingsApiKey(){var key=prompt("Cle API Claude (sk-ant-...):");if(key!==null){localStorage.setItem("ax_api_key",key);toast("Cle API enregistree","ok");}}
+function _settingsProxy(){var url=prompt("URL du proxy Cloudflare Workers:");if(url!==null){localStorage.setItem("ax_proxy_url",url);toast("Proxy configure","ok");}}
+function _settingsPin(){var pin=prompt("Nouveau PIN (6 chiffres):");if(pin&&pin.length>=4){axSetPin(pin);}else if(pin!==null){toast("PIN trop court (min 4)","warn");}}
+function _showAuditLog(){var log=lg("ax_audit",[]);var h='<h2>Journal d\'audit</h2><div style="max-height:60vh;overflow-y:auto">';log.slice(0,50).forEach(function(entry){h+='<div style="padding:8px 0;border-bottom:1px solid var(--ax-border);font-size:12px"><strong>'+esc(entry.type)+'</strong> — '+esc(entry.who)+' — '+esc(entry.what)+'<br><span style="color:var(--ax-text-dim)">'+new Date(entry.ts).toLocaleString("fr-FR")+"</span></div>";});h+="</div>";_showModal(h);}
+function _showModal(content){var c=document.getElementById("modal-container");if(!c){c=document.createElement("div");c.id="modal-container";document.body.appendChild(c);}c.innerHTML='<div class="ax-modal-overlay" onclick="this.parentNode.innerHTML=\'\'"><div class="ax-modal" onclick="event.stopPropagation()">'+content+'<div style="text-align:right;margin-top:16px"><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'">Fermer</button></div></div></div>';}
+
+// === MODULE: Share / SEO ===
+function vShareButtons(){return'<div style="display:flex;gap:8px;justify-content:center;padding:12px"><a href="https://wa.me/?text='+encodeURIComponent("Decouvrez APEX AI !  ")+'" target="_blank" class="ax-btn-icon" title="WhatsApp">\uD83D\uDCF2</a><a href="https://t.me/share/url?url=&text='+encodeURIComponent("APEX AI")+'" target="_blank" class="ax-btn-icon" title="Telegram">\u2708\uFE0F</a><a href="mailto:?subject=APEX%20AI&body='+encodeURIComponent("Decouvrez APEX AI !")+'" class="ax-btn-icon" title="Email">\uD83D\uDCE7</a></div>';}
+// === INIT ===
+function _loadState(){K.conversations=lg("ax_convs",[]);K.kb=lg("ax_kb",{facts:[],instructions:[]});K.fin=lg("ax_fin",{portfolios:[],watchlist:[],alerts:[]});K.settings=lg("ax_settings",K.settings);_axSyncQueue=lg("ax_sync_queue",{});var userId=lg("ax_uid",null);if(userId){K.user=lg("ax_user",null);if(!K.user)K.user={name:"Utilisateur",id:userId,lang:"fr",plan:"free"};var lastAct=parseInt(localStorage.getItem("ax_lastact")||"0");if(now()-lastAct>SESSION_TTL){K.user=null;ls("ax_uid",null);}}if(K.user&&K.conversations.length){K.activeConvId=K.conversations[0].id;K.messages=lg("ax_msgs_"+K.activeConvId,[]);}}
+
+function _bindEvents(){var input=document.getElementById("ax-chat-input");if(input){input.addEventListener("input",function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,120)+"px";});}}
+
+function axInit(){_loadState();if(K.user){K.view="chat";touchSession();axRegisterDevice();}else{K.view="login";}render();fbInit();if(navigator.onLine)flushSyncQueue();window.addEventListener("online",function(){toast("Connexion retablie","ok");flushSyncQueue();dc();});window.addEventListener("offline",function(){toast("Mode hors ligne","warn");dc();});if("Notification" in window&&Notification.permission==="default"){setTimeout(function(){Notification.requestPermission();},5000);}if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(e){console.warn("SW:",e);});}document.addEventListener("visibilitychange",function(){if(!document.hidden&&K.user)touchSession();});}
+
+window.addEventListener("DOMContentLoaded",axInit)
+</script>
+</body>
+</html>

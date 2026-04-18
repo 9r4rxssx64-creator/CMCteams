@@ -612,4 +612,21 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
+---
+
+## ⚠️ ANTI-TIMEOUT — Regle permanente (2026-04-18)
+
+**Probleme** : "API Error: Stream idle timeout" quand on ecrit des gros fichiers d'un coup.
+
+**Solution obligatoire :**
+1. JAMAIS ecrire un fichier > 500 lignes en un seul Write — decouper en morceaux
+2. Ecrire le squelette d'abord (Write), puis completer par Edit sequentiels
+3. Agents : leur donner des taches COURTES et PRECISES (pas "ecris 4000 lignes")
+4. Si timeout : reprendre IMMEDIATEMENT ou on en etait, sans tout recommencer
+5. Travailler en autonomie — ne jamais s'arreter a cause d'un timeout
+
+**Kevin ne veut PLUS voir de timeout bloquer le travail.**
+
+---
+
 *Dernière mise à jour : 2026-04-18 (APEX AI)*
