@@ -1,20 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "crons": [
-    {
-      "path": "/api/cron?trigger=cron:0 3 * * *",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron?trigger=cron:0 8 * * *",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron?trigger=cron:0 9 * * 1",
-      "schedule": "0 9 * * 1"
-    }
-  ],
   "functions": {
     "api/cron.js": {
       "maxDuration": 60
