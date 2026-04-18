@@ -2,6 +2,46 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🤖 RÈGLE PERMANENTE — UTILISER L'IA PARTOUT (Kevin 2026-04-18 v9.441+)
+
+> **"Utilise l'IA partout tout le temps que nécessaire et utile ou possible pour améliorer l'application les tâches. Les automatiser. Note le"**
+
+S'applique à TOUS les développements futurs CMCteams :
+
+1. **Aide à la décision** : avant un choix complexe (parsing PDF, mapping import, conflit planning), proposer suggestion IA (Claude API existant) avant action manuelle.
+2. **Auto-fill intelligent** : nouveaux employés, codes horaires manquants, templates planning → IA propose, admin valide.
+3. **Détection anomalies** : import PDF, planning incohérent, repos insuffisant → IA analyse + alerte proactive (ne pas attendre admin).
+4. **Génération texte** : descriptions documents, MOTD du jour, résumés réunions, communications équipe → suggestion IA.
+5. **Recherche universelle** : si user pose question, l'IA cherche dans TOUTE la base (planning, employés, conventions, jurisprudence, sport, finance) avant fallback.
+6. **Reconnaissance OCR** : pour images/PDF complexes → IA Vision (quand MCP image dispo) plutôt que parsing manuel.
+7. **Prédictions proactives** : staffing, congés à venir, rotations optimales → l'IA propose en background.
+8. **Routing automatique** : import universel → l'IA classe (planning vs doc vs photo) sans demander à l'admin.
+9. **Conformité auto** : vérifications convention SBM, code travail monégasque → IA pré-vérifie chaque action sensible.
+10. **Réponses langage naturel** : l'employé parle en FR normal, l'IA traduit en action concrète (ex: "je veux changer mon shift demain" → propose démarche échange).
+
+**Implémentation** : utiliser `_iaExecuteTool()` + `IA_TOOLS` existant. Ajouter de nouveaux outils IA pour chaque domaine. Activer le mode `cmc_pit_ai_mode` par défaut. Si Claude API key absente → fallback heuristiques locales.
+
+**Coût** : Claude Haiku ~0.25€/1M tokens input. Pour 258 employés × 5 interactions/jour = négligeable. Si gros volume, basculer Sonnet uniquement pour l'admin.
+
+## 🎮 RÈGLE PERMANENTE — UI PIT BOSS LUDIQUE ENFANT (Kevin 2026-04-18 v9.441+)
+
+> **"Crée l'interface pour les pits très ludique comme pour un enfant. Facile d'utilisation. Note le"**
+
+Pour TOUTES les vues utilisées par les Pit Boss (vPitHub, vPit, vOpenShifts admin, vImport admin, vDocs admin) :
+
+1. **Gros boutons** ≥ 140×140px (touchables même avec doigt mouillé/gants casino)
+2. **Emojis géants** ≥ 48px en lieu et place d'icônes monochromes
+3. **Couleurs vives saturées** (vert/rouge/jaune/bleu primaires, pas de gris terne)
+4. **1-3 mots max** par bouton (PAS de phrases, PAS de jargon technique)
+5. **Animations subtiles** au hover/clic (bounce, glow, scale 1.05) — feedback immédiat
+6. **Texte 16-18px** minimum (lisibilité bras tendus depuis table)
+7. **Pictogrammes universels** (📥 import, 📤 envoi, ✅ ok, ❌ no, 👁 voir, ✏ écrire)
+8. **Aucun jargon** : "Importer planning" pas "Upload PDF avec OCR"
+9. **Confirmation visuelle énorme** après action (toast + animation card)
+10. **Aide contextuelle "?"** pop-up gros texte si compliqué
+
+S'applique à : Pit Boss, Inspecteurs, Cadres. Pas à l'admin (Kevin) qui a sa partie expert.
+
 ## 🚨 RÈGLE ABSOLUE ANTI-TIMEOUT (Kevin 2026-04-18)
 
 > **"Les time out sans cesse dans toutes mes discussions ça me rend fou. Fais le nécessaire, corrige tout ça. Continue en autonomie avec les agents, que ça ne coupe pas ce que tu fais à chaque fois."**
