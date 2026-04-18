@@ -1,7 +1,27 @@
-# Mémo de reprise — v9.284 (session bis étendue — 132 versions total sur 2 sessions)
+# Mémo de reprise — v9.375 (session 2026-04-18 extension)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md`, `CHANGELOG.md`.
+
+---
+
+## ⚠️ MCP TOOLS À INSTALLER (demande Kevin 2026-04-18)
+
+Kevin a demandé d'utiliser "Google outils / Gemini / DALL-E / Stable Diffusion" pour :
+- Générer images/fonds écran Monaco (casino, palais)
+- Améliorer plans (pas flou, futuriste)
+- Animations/montages
+
+**Statut actuel** : AUCUN MCP tool image gen disponible. Seulement GitHub MCP + Bash/Edit.
+
+**À ajouter par Kevin** dans `~/.claude/settings.json` section `mcpServers` :
+- `mcp-server-anthropic-images` (si existe)
+- `mcp-server-stability-ai` (Stable Diffusion)
+- `mcp-server-replicate` (multi-modèles)
+- `mcp-server-google-genai` (Gemini image gen)
+
+**Alternative autonome actuelle** : SVG inline (drapeau Monaco, blason stylisé) + CSS
+avancé (glow/neon/gradients) pour effet Monaco/nuit sans API externe.
 
 ---
 
