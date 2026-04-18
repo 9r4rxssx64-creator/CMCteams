@@ -161,6 +161,40 @@ Exemples d'infos à enregistrer :
 
 **Règle permanente pour CE projet ET tous les projets futurs.**
 
+### 1ter. UX allégement + stats cliquables (Kevin 2026-04-18 v9.379+)
+
+**RÈGLE PERMANENTE NON-NÉGOCIABLE** à appliquer à CHAQUE vue créée ou modifiée :
+
+1. **Alléger les vues** :
+   - Familles / sous-dossiers / menus déroulants (`<details><summary>`)
+   - Défilement horizontal (`overflow-x:auto`) quand > 5 éléments
+   - Résumés en tête, détails dépliables au clic
+   - JAMAIS tout afficher d'un coup (> 20 lignes = scroll horizontal ou collapse)
+
+2. **Stats cliquables actionnables** :
+   - Une stat "2 malades" → clic → liste des 2 employés malades
+   - "15 présents secteur BJ" → clic → leur planning/cards
+   - "3 en attente ack" → clic → liste des DM non acquittés
+   - Aucune stat orpheline (pur affichage sans lien)
+
+3. **Hiérarchie progressive** :
+   - Niveau 1 : compteurs grands + icône
+   - Niveau 2 : sous-sections dépliables
+   - Niveau 3 : détails ligne par ligne
+   - L'admin déplie ce qu'il veut voir
+
+4. **Exemples à suivre dans le code** :
+   - `showLiveList(key)` (v9.212) : cards KPI cliquables → modal liste
+   - `vEndShiftDashboard` : stats colorées par urgence + clic → action
+   - `vPitHistory` : filtres type + 8 events max visibles
+
+**À appliquer quand je crée/modifie des vues** :
+- Checker systématiquement : "Cette stat peut-elle être cliquée pour voir les détails ?"
+- Si oui → ajouter onclick → modal ou sv(vue_detail)
+- Si non pertinent → garder tel quel (ex: version APP_VER)
+
+---
+
 L'utilisateur final de cette app (admin + employés casino) n'est PAS technique. Chaque bouton, champ, fonction, message DOIT être immédiatement compréhensible.
 
 **Standards à respecter systématiquement :**
