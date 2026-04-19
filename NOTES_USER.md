@@ -591,6 +591,9 @@ L'admin veut l'IA au maximum de ses capacités :
 - Outlook : kevind@monaco.mc (sur iPhone)
 - iCloud (adresse a confirmer — icloud.com ou mac.com)
 
+**Services multimedia :**
+- Spotify (compte actif) — integre dans KDMC (playlists, recherche, ambiances)
+
 **Reseaux sociaux / messagerie :**
 - WhatsApp (a connecter via Meta Business API)
 - Instagram (a connecter)
