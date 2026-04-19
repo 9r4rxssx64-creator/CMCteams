@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
+# Mémo de reprise — 2026-04-19 (CMC v9.303 + KDMC v10.4)
 
 > **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
 >
@@ -181,36 +181,46 @@ git status && git log --oneline -10
 
 ---
 
-## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
+## KDMC v10.4 (2026-04-19) — App IA premium
 
 **App IA premium livree dans `apex-ai/`** :
-- `index.html` (355 KB, 1097 lignes) — 247+ actions, self-modifying, AI Crew
+- `index.html` (468 KB) — 300+ actions, self-modifying, AI Crew
 - `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
 - `sw.js` — Service Worker v1.2 (push + background sync)
 - `manifest.json` — PWA installable
 
-**60 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
+**110+ commits, audits experts, corrections P0/P1/P2 appliquees**
 
-**KDMC v6.1 — Capacites :**
-- 247+ actions autonomes, 70+ templates pro, 10 personas
+**KDMC v10.4 — Capacites :**
+- 300+ actions autonomes, 80+ templates pro, 13 personas
 - AI Crew (5 agents internes: verificateur, critique, optimiseur, fact-checker, creatif)
-- Local Workers (4 agents arriere-plan: erreurs, habitudes, taches, backup)
+- Local Workers (10 agents arriere-plan)
 - Self-modifying + Self-improving (apprend des reactions)
 - Auto-learn 24 marques appareils
 - IFTTT Rules + Predictions + Monte Carlo
 - Python + JS + Canvas + Code Editor
 - 12 ambiances domotique, 42 commandes IR Broadlink
 - Smart TV WiFi (Samsung, LG, Roku, Android TV)
-- Assistant vocal continu type Siri (32 commandes)
+- Assistant vocal continu type Siri (32+ commandes)
+- 44 voix (paysan, grand-mere, gangster, ivre, pirate, Dark Vador, helium, accents...)
 - Finance (NPV/IRR/SMA/EMA/Finnhub/Crypto)
 - Mode offline Gemma WebLLM
-- 15 achievements, 6 themes, 4 langues
+- 15 achievements, 6 themes, 5 langues (FR/EN/IT/ES/DE)
 - Gamification XP + slot machine + Konami
 - Deep Research + Multi-perspective
 - Snapshots time travel + Export universel
+- **Messagerie admin** (DM prives + Groupe + Visio)
+- **Favoris messages** + raccourcis rapides + historique recherches
+- **Traducteur universel 30 langues** + allemand interface
+- **8 outils texte** + menu contextuel messages
+- **Comptes** : Kevin (admin), Laurence (family), Sandrine + Christophe TARDIEU (clients test)
+- CGU completes + Stats admin + Historique global
+- Smart Context + Astuce du jour + Quick actions enrichis
+- Rapport hebdo + notification tous + export PDF
+- Background keep-alive (wake lock + audio silent + SW ping)
 
 **Voir MEMO_KEVIN_ACTIONS.md pour les actions restantes de Kevin.**
 
 ---
 
-*Dernière mise à jour : 2026-04-18 — APEX AI v1.5 + CMC v9.119*
+*Derniere mise a jour : 2026-04-19 — KDMC v10.4 + CMC v9.303*
