@@ -885,6 +885,21 @@ L'admin veut l'IA au maximum de ses capacités :
 
 **247+ actions, 70+ templates, 10 personas, 15 achievements, 12 ambiances**
 
+## 🚨 REGLE ABSOLUE N°1 (Kevin 2026-04-19)
+
+> **TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS QU'ON AIT A LE REDEMANDER.**
+> - Stockage : MAXIMUM
+> - Performance : MAXIMUM
+> - Securite : MAXIMUM
+> - Nombre de voix/themes/templates/personas : MAXIMUM
+> - Limites/quotas : les plus hauts possibles
+> - Qualite code : EXPERT SENIOR
+> - Chaque fonction : la MEILLEURE possible
+> - Ne JAMAIS mettre une valeur basse "par defaut" — toujours le MAX
+> - Se faire aider par des agents pour verifier qu'on est au MAX
+> - APPRENDRE de ses erreurs et NE PLUS les refaire
+> - NOTER cette regle PARTOUT (CLAUDE.md, NOTES_USER.md, system prompt app)
+
 ## 📋 Regles permanentes (rappel)
 
 1. **Toute info de Kevin = noter dans NOTES_USER.md immediatement**
