@@ -2,6 +2,35 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🚨 SCALABILITÉ — SEUILS CRITIQUES (audit externe v9.444)
+
+**Plafonds durs identifiés** :
+- **100 connexions Firebase Free simultanées** → ouverture matin casino peut casser l'app dès >100 emp connectés dans la fenêtre 8h TTL
+- **400 employés** : seuil dégradation perf mobile iPhone SE (render >300ms)
+- **1000 employés** : casse technique (boot >5s, FPS <30, Blaze + refacto oblig.)
+- **3-5 admins simultanés** : au-delà, races conditions écrasent `cmc_ov`
+- **3 MB localStorage** : seuil sécuritaire (sur 5 MB max navigateur)
+- **80 emp actifs réguliers** : Firebase Free 10 GB/mois viable
+
+**Actions P0 appliquées v9.444** :
+- cmc_userlog 500 → **5000** entries (conformité RGPD ~20j au lieu de 2j)
+- cmc_audit 500 → **2000** entries (~40j)
+- cmc_pw_access_log 500 → **2000** entries
+- Alerte quota Firebase écrit/jour (toast à 5000 + 10000)
+- Web Locks stricts (retirer ifAvailable:true sur écritures critiques)
+- `get_app_stats` IA retourne les seuils + warnings
+
+**Actions P0 à faire URGENT** (Kevin décision) :
+- 🔴 **Passer Firebase Blaze** (pay-as-you-go, ~5-15€/mois à 258 emp) — débloque 100+ connexions
+- Sharder `cmc_ov` par mois (`cmc_ov_2026_4`) — ROI 10/10, effort 4h
+- Migrer chat vers Firebase `push()` (append-only) — gain bandwidth -30%
+- Sortir photos/docs du localStorage vers Firebase Storage (5 GB free)
+
+**Recommandations moyen terme** :
+- Backup off-site auto (GitHub Gist privé quotidien)
+- Lazy-render vPlan (±2 mois au lieu de 12)
+- Split monofichier en modules ESM (seuil 3 MB actuel = 2.1 MB)
+
 ## 🤖 RÈGLE PERMANENTE — UTILISER L'IA PARTOUT (Kevin 2026-04-18 v9.441+)
 
 > **"Utilise l'IA partout tout le temps que nécessaire et utile ou possible pour améliorer l'application les tâches. Les automatiser. Note le"**
