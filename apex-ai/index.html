@@ -54,7 +54,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--ax-bg-flat);co
 #topbar .ax-status{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ax-text-dim)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative}
 #navbar{height:72px;padding-bottom:var(--ax-safe-b);display:flex;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--ax-glass);backdrop-filter:blur(var(--ax-blur));-webkit-backdrop-filter:blur(var(--ax-blur));border-top:1px solid var(--ax-border);z-index:100}
-.ax-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;min-width:48px;flex-shrink:0;cursor:pointer;color:var(--ax-text-dim);transition:color var(--ax-t) var(--ax-ease);text-decoration:none;-webkit-tap-highlight-color:transparent}
+.ax-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;min-width:54px;flex-shrink:0;cursor:pointer;color:var(--ax-text-dim);transition:color var(--ax-t) var(--ax-ease);text-decoration:none;-webkit-tap-highlight-color:transparent}
 .ax-tab.active{color:var(--ax-gold);position:relative}
 .ax-tab.active::after{content:"";position:absolute;bottom:2px;left:25%;width:50%;height:3px;background:var(--ax-gold);border-radius:2px}
 .ax-tab .ic{font-size:28px}
@@ -221,7 +221,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v11.5",ADMIN_ID="kdmc_admin";
+var APP_VER="v11.6",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1275,13 +1275,13 @@ var _focusMode=false;
 function axToggleFocusMode(){_focusMode=!_focusMode;if(_focusMode){document.body.style.filter="grayscale(0.3)";axPomodoroStart(25);toast("Mode Focus active — 25min de concentration","ok");axWakeLockAcquire();}else{document.body.style.filter="";axPomodoroStop();axWakeLockRelease();toast("Mode Focus desactive","info");}dc();}
 
 // === MODULE: Statistiques conversation ===
-function _convStats(){if(!K.messages.length)return"";var userMsgs=K.messages.filter(function(m){return m.role==="user";});var botMsgs=K.messages.filter(function(m){return m.role==="assistant";});var totalChars=K.messages.reduce(function(a,m){return a+(typeof m.content==="string"?m.content.length:0);},0);var avgLen=botMsgs.length?Math.round(totalChars/botMsgs.length):0;return'<div style="display:flex;gap:6px;padding:4px 12px;font-size:10px;color:var(--ax-text-dim);justify-content:center"><span>\uD83D\uDCAC '+K.messages.length+' msgs</span><span>\uD83D\uDC64 '+userMsgs.length+' vous</span><span>\u2726 '+botMsgs.length+' IA</span><span>\uD83D\uDCDD ~'+Math.round(totalChars/1000)+'K car</span><span>\uD83D\uDCCF moy '+avgLen+' car/rep</span></div>';}
+function _convStats(){if(K.messages.length<3)return"";var userMsgs=K.messages.filter(function(m){return m.role==="user";});var botMsgs=K.messages.filter(function(m){return m.role==="assistant";});var totalChars=K.messages.reduce(function(a,m){return a+(typeof m.content==="string"?m.content.length:0);},0);var avgLen=botMsgs.length?Math.round(totalChars/botMsgs.length):0;return'<div style="display:flex;gap:6px;padding:4px 12px;font-size:10px;color:var(--ax-text-dim);justify-content:center"><span>\uD83D\uDCAC '+K.messages.length+' msgs</span><span>\uD83D\uDC64 '+userMsgs.length+' vous</span><span>\u2726 '+botMsgs.length+' IA</span><span>\uD83D\uDCDD ~'+Math.round(totalChars/1000)+'K car</span><span>\uD83D\uDCCF moy '+avgLen+' car/rep</span></div>';}
 
 // === MODULE: Themes visuels casino ===
 var THEMES={dark:{name:"Sombre",bg:"#08080f",gold:"#c9a227"},light:{name:"Clair",bg:"#f5f5f0",gold:"#9a7a10"},casino:{name:"Casino Royal",bg:"#0a0a1a",gold:"#ffd700"},ocean:{name:"Ocean Monaco",bg:"#0a1628",gold:"#40c4e0"},sunset:{name:"Coucher de soleil",bg:"#1a0a0a",gold:"#ff6b35"},emerald:{name:"Emeraude",bg:"#0a1a0a",gold:"#50c878"}};
 
 // === MODULE: Raccourcis rapides accueil ===
-function _quickActions(){return'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:8px 12px"><button class="ax-btn ax-btn-outline" onclick="axDailyBriefing()" style="font-size:11px;padding:4px 10px">\u2600\uFE0F Briefing</button><button class="ax-btn ax-btn-outline" onclick="axToggleFocusMode()" style="font-size:11px;padding:4px 10px">\uD83C\uDFAF Focus</button><button class="ax-btn ax-btn-outline" onclick="axShowQR()" style="font-size:11px;padding:4px 10px">\uD83D\uDCF1 QR</button><button class="ax-btn ax-btn-outline" onclick="var p=axGenPassword();navigator.clipboard.writeText(p);toast(\'MDP: \'+p,\'ok\')" style="font-size:11px;padding:4px 10px">\uD83D\uDD10 MDP</button><button class="ax-btn ax-btn-outline" onclick="_showWorldClocks()" style="font-size:11px;padding:4px 10px">\uD83C\uDF0D Horloges</button><button class="ax-btn ax-btn-outline" onclick="axSetAmbiance(\'cinema\')" style="font-size:11px;padding:4px 10px">\uD83C\uDFAC Cinema</button><button class="ax-btn ax-btn-outline" onclick="axSetAmbiance(\'nuit\')" style="font-size:11px;padding:4px 10px">\uD83C\uDF19 Nuit</button></div>';}
+function _quickActions(){var actions=[{fn:"axDailyBriefing()",ic:"\u2600\uFE0F",lb:"Briefing"},{fn:"axToggleFocusMode()",ic:"\uD83C\uDFAF",lb:"Focus"},{fn:"axSetAmbiance('cinema')",ic:"\uD83C\uDFAC",lb:"Cinema"},{fn:"axSetAmbiance('nuit')",ic:"\uD83C\uDF19",lb:"Nuit"},{fn:"axSetAmbiance('detente')",ic:"\uD83C\uDFB5",lb:"Detente"}];return'<div style="display:flex;gap:6px;overflow-x:auto;padding:6px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+actions.map(function(a){return'<button class="ax-btn ax-btn-outline" onclick="'+a.fn+'" style="font-size:13px;padding:8px 14px;white-space:nowrap;flex-shrink:0;border-radius:20px">'+a.ic+' '+a.lb+'</button>';}).join("")+'</div>';}
 function _showWorldClocks(){_showModal('<h2>\uD83C\uDF0D Horloges mondiales</h2>'+_worldClocks());}
 
 // === MODULE: Raccourcis messages rapides ===
