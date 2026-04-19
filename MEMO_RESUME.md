@@ -1,4 +1,4 @@
-# Mémo de reprise — v9.397 (session 2026-04-18 soirée — Sentry complet + règles globales)
+# Mémo de reprise — v9.399 (session 2026-04-19 reprise autonome)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md` (11 règles permanentes), `CHANGELOG.md`.
@@ -7,7 +7,44 @@
 
 ---
 
-## 🆕 Session soirée 2026-04-18 (21h-23h30) — RÉALISATIONS MAJEURES
+## 🆕 Session 2026-04-19 matin (reprise autonome après Vercel rate limit)
+
+### Contexte de reprise
+- Dernier commit réel hier soir : `b02e4b5 v9.397` (PR #88 mergée, Pollinations + vercel skip docs)
+- Branche de reprise : `claude/resume-cmc-teams-DSvJH` (2 commits devant main)
+- Blocage : Vercel Free rate limit atteint → previews KO ~24h, main + GitHub Pages OK
+
+### ✅ Livré autonome ce matin
+
+| Commit | Version | Feature |
+|--------|---------|---------|
+| `07a5608` | v9.398 | **WebAuthn — Face ID / Touch ID / Windows Hello** : helpers `_b64url`, `webauthnRegister/Login/Remove/DoLogin`, enrôlement vMonProfil, bouton biométrique en tête vLoginStep1, creds dans `A.reg[uid].webauthn[]` sync Firebase, guards + audit (`webauthn_register`, `webauthn_remove`, `login_webauthn`). Fallback si navigateur non-supporté. |
+| `ef44e82` | v9.399 | **Ping-casino + détection onsite WiFi** : `cmc_ping_urls` FB_FIX (URLs admin), `pingCasinoNetwork` fetch no-cors timeout 2.5s, `runOnsiteCheck` combine WiFi + GPS geofence (confidence 0.7/0.85/1.0), auto-check 5min visible + throttle 60s, déclenché aux 3 entrées login. UI admin dans vGeoAdmin : ajouter/retirer URLs, bouton test, dernier statut affiché. |
+| (à venir) | v9.400 | **Audit guards AID** : 22 fonctions destructives scannées (delEmp, saveOv, doReset*, adminSet*, removeEvent, savePlanPositions, markAsRetired, etc.) — **21 OK**, 1 gap corrigé : `clearErrorLog` ajouté au guard AID. Rapport complet dans section "🔑 Audit guards AID" ci-dessous. |
+
+### 🔑 Audit guards AID — v9.400 (2026-04-19)
+
+Scan automatique de toutes fonctions suspectes (`del*`, `remove*`, `clear*`, `save*`, `admin*`, `doReset*`, `setMotd*`, etc.) et des handlers admin (pit boss, exchange, import).
+
+**Résultat** : **21/22 conformes** — toutes les fonctions mutantes critiques ont bien `if(!A.user||A.user.id!==AID)return;` en première ligne. Fonctions multi-rôles (pit boss : admin + chef + cadres) utilisent le pattern `isAdm || isChef` avec vérif explicite.
+
+**1 seul gap trouvé** : `clearErrorLog` (usage admin-only via vDebug mais guard absent) → corrigé. Impact faible car `cmc_err_log` est FB_LOCAL (jamais sync), mais correction pour cohérence.
+
+**Fonctions auditées OK** : `adminSetEmpBg`, `setMotd`, `clearMotd`, `adminSetMotdFromInput`, `adminDeleteUploadRequest`, `doResetPwDirect`, `adminSetReg`, `adminSetPw`, `adminChangeEmpId`, `delEmp`, `saveOv`, `saveCagnottes`, `applyTemplate`, `deleteTemplate`, `savePlanningTemplate`, `applyPlanningTemplate`, `deletePlanningTemplate`, `removeAppPhoto`, `removeEmpPhoto`, `removeEvent`, `removePinCode`, `removeCustomSalon`, `removeEmailJSConfig`, `savePlanPositions`, `markAsRetired`, `createEmpFromImport`, `autoFillMissingCadres`, `webauthnRemove`, `setPingUrls`.
+
+**Fonctions multi-rôles (pattern isAdm || isChef)** : `pitApplyStaffingPlan`, `pitDeclareLastCall`, `pitFlipTable` — délégation Pit Boss gérée par cadres + admin, voir `A.user.chef || A.user.family==="cadres"`.
+
+### ⏳ À faire ensuite (priorité memo)
+
+- 🔑 **Audit guards AID** systématique (toutes fonctions destructrices)
+- 📹 Caméra publique Place du Casino → déjà cablée (cam_live flag + lien skylinewebcams)
+- 🎨 Images Monaco via `generate_image` Pollinations (fond accueil, bannières)
+- 🌙 Améliorer mode arrière-plan (Background Sync, periodic sync PWA)
+- 🔐 WebAuthn admin : double-guard AID renforcé (déjà OK car uid=U11804)
+
+---
+
+## 🗂 Session soirée 2026-04-18 (21h-23h30) — RÉALISATIONS MAJEURES
 
 ### ✅ Résolu / mergé aujourd'hui
 
