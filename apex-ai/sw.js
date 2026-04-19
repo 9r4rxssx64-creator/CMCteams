@@ -1,4 +1,4 @@
-const CACHE='apex-ai-v1.2';
+const CACHE='kdmc-v1.2';
 const ASSETS=['./','./index.html'];
 
 self.addEventListener('install',function(e){
@@ -52,11 +52,11 @@ self.addEventListener('push',function(e){
   if(!e.data)return;
   var data=e.data.json();
   e.waitUntil(
-    self.registration.showNotification(data.title||'APEX AI',{
+    self.registration.showNotification(data.title||'KDMC',{
       body:data.body||'',
       icon:data.icon||'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 96 96%27%3E%3Crect width=%2796%27 height=%2796%27 rx=%2720%27 fill=%27%2308080f%27/%3E%3Ctext x=%2748%27 y=%2766%27 text-anchor=%27middle%27 font-size=%2740%27 fill=%27%23c9a227%27%3E%E2%9C%A6%3C/text%3E%3C/svg%3E',
       badge:data.badge||undefined,
-      tag:data.tag||'apex-ai',
+      tag:data.tag||'kdmc',
       data:data.url||'/'
     })
   );

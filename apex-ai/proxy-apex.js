@@ -1,8 +1,8 @@
 /**
- * APEX AI — Proxy Anthropic sécurisé (Cloudflare Workers)
+ * KDMC — Proxy Anthropic sécurisé (Cloudflare Workers)
  *
  * Ce worker protège votre clé API Anthropic en la gardant côté serveur.
- * L'app APEX AI appelle ce proxy qui ajoute le header Authorization
+ * L'app KDMC appelle ce proxy qui ajoute le header Authorization
  * et forward vers api.anthropic.com.
  *
  * ════════════════════════════════════════════════════════════════════
@@ -12,7 +12,7 @@
  * ✅ Streaming natif — le body de la réponse Anthropic est pipé
  *    directement vers le client (pas de await .text() bloquant)
  * ✅ MAX_BODY_SIZE = 1 MB (au lieu de 500 KB) pour Claude Vision
- * ✅ Header X-Proxy = "APEX-AI-v1"
+ * ✅ Header X-Proxy = "KDMC-AI-v1"
  * ✅ Modèle par défaut = claude-sonnet-4-6 (dernier en date)
  * ✅ Endpoint /health (GET) pour monitoring
  *
@@ -35,7 +35,7 @@
  * 5. Notez l'URL de votre worker :
  *    https://apex-ai-proxy.VOTRE-USER.workers.dev
  *
- * 6. Dans l'app APEX AI :
+ * 6. Dans l'app KDMC :
  *    - Configurez l'URL du proxy dans les paramètres
  *    - La clé API reste UNIQUEMENT sur Cloudflare (jamais côté client)
  *
@@ -52,7 +52,7 @@
  * ✅ Streaming : pas de buffering mémoire côté worker
  *
  * ⚠️  Le plan gratuit Cloudflare Workers = 100 000 requêtes/jour
- *     Largement suffisant pour APEX AI en usage normal
+ *     Largement suffisant pour KDMC en usage normal
  *
  * ════════════════════════════════════════════════════════════════════
  * STREAMING
@@ -91,7 +91,7 @@ const MAX_BODY_SIZE = 1024 * 1024; // 1 MB
 const ANTHROPIC_API_VERSION = "2023-06-01";
 
 // Identifiant du proxy (header X-Proxy)
-const PROXY_ID = "APEX-AI-v1";
+const PROXY_ID = "KDMC-AI-v1";
 
 // ═══════════════════════════════════════════════════════════════════
 // HELPERS
@@ -267,7 +267,7 @@ export default {
 //
 // --- Health check ---
 // curl https://apex-ai-proxy.VOTRE-USER.workers.dev/health
-// Réponse attendue : {"status":"ok","proxy":"APEX-AI-v1"}
+// Réponse attendue : {"status":"ok","proxy":"KDMC-AI-v1"}
 //
 // --- Message simple (sans streaming) ---
 // curl -X POST https://apex-ai-proxy.VOTRE-USER.workers.dev \
