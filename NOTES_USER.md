@@ -900,6 +900,16 @@ L'admin veut l'IA au maximum de ses capacités :
 > - APPRENDRE de ses erreurs et NE PLUS les refaire
 > - NOTER cette regle PARTOUT (CLAUDE.md, NOTES_USER.md, system prompt app)
 
+## 🚨 REGLE ABSOLUE N°0 — AUTONOMIE TOTALE (Kevin 2026-04-19)
+
+> **FAIRE TOUT EN AUTONOMIE. NE DEMANDER A KEVIN QUE CE QUI EST IMPOSSIBLE.**
+> - Si Claude a les infos → configurer lui-meme SANS demander
+> - Si Claude a les acces → faire lui-meme SANS demander
+> - Si Claude a les outils → utiliser lui-meme SANS demander
+> - VERIFIER que c'est VRAIMENT impossible avant de demander
+> - Cette regle s'applique a TOUS les projets, TOUTES les sessions, TOUTES les interactions
+> - NE PLUS JAMAIS dire "Kevin doit faire X" si Claude peut le faire
+
 ## ⚠️ Regle permissions (2026-04-19)
 > **Toute demande de permission (micro, notifications, camera, etc.) = UNE SEULE FOIS.**
 > Si acceptee: sauvegarder et ne PLUS redemander. JAMAIS.
