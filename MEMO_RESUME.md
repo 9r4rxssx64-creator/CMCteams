@@ -1,6 +1,9 @@
 # Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
 
+> **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
+>
 > **REGLES PERMANENTES pour CHAQUE session :**
+> 0. TOUT AU MAXIMUM — ne JAMAIS mettre une valeur basse par defaut
 > 1. Lire ce fichier EN PREMIER
 > 2. Lire NOTES_USER.md (infos metier Kevin)
 > 3. Lire KDMC_AI_PROJECT.md (feuille de route)
