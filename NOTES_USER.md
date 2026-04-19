@@ -900,6 +900,13 @@ L'admin veut l'IA au maximum de ses capacités :
 > - APPRENDRE de ses erreurs et NE PLUS les refaire
 > - NOTER cette regle PARTOUT (CLAUDE.md, NOTES_USER.md, system prompt app)
 
+## ⚠️ Regle permissions (2026-04-19)
+> **Toute demande de permission (micro, notifications, camera, etc.) = UNE SEULE FOIS.**
+> Si acceptee: sauvegarder et ne PLUS redemander. JAMAIS.
+> Si refusee: sauvegarder et ne PLUS redemander. JAMAIS.
+> Note: Safari iOS redemande parfois les permissions — c'est une limitation Apple, pas l'app.
+> L'app doit MINIMISER les demandes au strict necessaire.
+
 ## 📋 Regles permanentes (rappel)
 
 1. **Toute info de Kevin = noter dans NOTES_USER.md immediatement**
