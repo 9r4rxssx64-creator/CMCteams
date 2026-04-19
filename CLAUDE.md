@@ -26,6 +26,30 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 👁 RÈGLE — Surveillance live multi-utilisateurs (Kevin 2026-04-19 v9.414+)
+
+> **"Les agents et subagents travaillent chez tout le monde et l'IA aussi. Chez tous les comptes, y compris l'admin en permanence, en direct, en live, et créent des alertes et des bugs pour avoir un retour des problèmes rencontrés chez tout le monde et pouvoir agir en autonomie à la correction."**
+
+Obligations système :
+
+1. **Agents tournent chez TOUS les connectés** (plus juste admin) — mode "silent watcher" pour employés
+2. **Télémétrie auto** : `window.onerror`, `unhandledrejection`, actions lentes, fonctions qui échouent → capture anonymisée
+3. **Analyse chat IA** : si l'IA répond mal ou si l'employé exprime une confusion → flag + remédier
+4. **Agents interviennent** : détection erreur → correction auto + audit trail
+5. **Sauvegarde permanente** : toutes modifications / questions enregistrées en dossier
+6. **Dossiers MD** créés par projet / utilisateur, à jour avec erreurs à ne pas reproduire + ce qui marche
+7. **Partage de savoir** : ce qui marche chez un user sert à tous via `cmc_lessons_learned` (FB_FIX)
+8. **Confidentialité** : tout en arrière-plan, seul l'admin U11804 voit les détails par utilisateur
+9. **Vue admin `vTelemetry`** : agrège tous les retours users, affiche erreurs, tendances, anomalies
+
+Implémentation v9.414 :
+- `reportUserEvent(type, detail)` — helper appelé partout
+- `cmc_user_telemetry_<uid>` — par-user local + digest FB_FIX admin-only
+- `cmc_lessons_learned` — FB_FIX, partagé entre tous admins connectés
+- Agent "user-watcher" tourne aussi pour non-admins (mode restreint)
+
+---
+
 ## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
 
 > **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout. Intègre ça dans l'application, dans son IA, dans son fonctionnement, dans APEX, dans les sources de données, dans les feuilles de route, dans les skills, dans les hooks, dans les agents et leur façon de travailler. Partout. Tout le temps."**
