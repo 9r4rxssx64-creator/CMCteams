@@ -1,4 +1,16 @@
-# Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v5.5)
+# Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
+
+> **REGLES PERMANENTES pour CHAQUE session :**
+> 1. Lire ce fichier EN PREMIER
+> 2. Lire NOTES_USER.md (infos metier Kevin)
+> 3. Lire KDMC_AI_PROJECT.md (feuille de route)
+> 4. Lire MEMO_KEVIN_ACTIONS.md (actions Kevin)
+> 5. TodoWrite AVANT de coder
+> 6. Ne JAMAIS oublier une demande — tout noter
+> 7. Se referer aux docs a chaque decision
+> 8. MAJ tous les .md apres chaque session
+> 9. Petits morceaux (Edit) pour eviter timeouts
+> 10. Agents en arriere-plan pour auditer
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
@@ -169,34 +181,32 @@ git status && git log --oneline -10
 ## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
 
 **App IA premium livree dans `apex-ai/`** :
-- `index.html` (223 KB, 794 lignes) — 85 actions, self-modifying
+- `index.html` (355 KB, 1097 lignes) — 247+ actions, self-modifying, AI Crew
 - `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
 - `sw.js` — Service Worker v1.2 (push + background sync)
 - `manifest.json` — PWA installable
 
-**32 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
+**60 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
 
-**Capacites uniques :**
-- Self-modifying (l'IA modifie son propre code CSS/JS/onglets)
-- Code Editor integre (admin)
-- 85 actions autonomes sans intervention
-- Python + JS interpreter
-- 6 themes casino visuels
-- Gamification XP + achievements + slot machine
-- Finance expert (NPV/IRR/SMA/EMA/Finnhub)
+**KDMC v6.1 — Capacites :**
+- 247+ actions autonomes, 70+ templates pro, 10 personas
+- AI Crew (5 agents internes: verificateur, critique, optimiseur, fact-checker, creatif)
+- Local Workers (4 agents arriere-plan: erreurs, habitudes, taches, backup)
+- Self-modifying + Self-improving (apprend des reactions)
+- Auto-learn 24 marques appareils
+- IFTTT Rules + Predictions + Monte Carlo
+- Python + JS + Canvas + Code Editor
+- 12 ambiances domotique, 42 commandes IR Broadlink
+- Smart TV WiFi (Samsung, LG, Roku, Android TV)
+- Assistant vocal continu type Siri (32 commandes)
+- Finance (NPV/IRR/SMA/EMA/Finnhub/Crypto)
 - Mode offline Gemma WebLLM
-- Dashboard widgets
-- 6 templates pro (email, LinkedIn, reunion...)
-- Clipboard manager, URL shortener, traducteur
+- 15 achievements, 6 themes, 4 langues
+- Gamification XP + slot machine + Konami
+- Deep Research + Multi-perspective
+- Snapshots time travel + Export universel
 
-**Prochaines etapes Kevin :**
-- [ ] Deployer proxy Cloudflare (proxy-apex.js)
-- [ ] Configurer cle API Claude dans Reglages
-- [ ] Installer en PWA sur iPhone
-- [ ] Configurer Sentry DSN
-- [ ] Configurer Finnhub (cours bourse)
-- [ ] Configurer Telegram bot
-- [ ] Connecter Gmail, Outlook, WhatsApp
+**Voir MEMO_KEVIN_ACTIONS.md pour les actions restantes de Kevin.**
 
 ---
 

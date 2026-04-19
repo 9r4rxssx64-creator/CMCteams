@@ -651,16 +651,32 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
-## 🤖 APEX AI v4.8 — Capacites self-modify (2026-04-19)
+## 📡 Broadlink Kevin (2026-04-19)
 
-**L'IA peut modifier l'app en temps reel sur demande Kevin :**
-- "Change la police" → modify_css
-- "Ajoute un onglet" → add_tab
-- "Montre-moi le code de sendMessage" → get_function_code
-- "Exporte le code" → export_app
+**Kevin a un Broadlink sur son reseau local.**
+- 42 commandes IR pre-configurees (TV, AC, lumieres, volets, ventilo, barre son, projecteur)
+- Bridge HTTP requis : `pip install broadlinkhttp` sur un appareil local
+- URL a configurer dans KDMC > Reglages > IR Blaster
 
-**85 actions autonomes, 6 themes, 5 personas, code editor admin**
+## 🤖 KDMC v6.1 — Capacites (2026-04-19)
+
+**L'IA peut modifier l'app + se faire aider + verifier son travail :**
+- Self-modify: CSS, JS, onglets, code source
+- AI Crew: 5 agents internes verifient chaque reponse
+- Local Workers: 4 agents arriere-plan surveillent en permanence
+- Auto-learn: reconnait 24 marques d'appareils automatiquement
+- Self-improving: apprend des reactions 👍👎
+
+**247+ actions, 70+ templates, 10 personas, 15 achievements, 12 ambiances**
+
+## 📋 Regles permanentes (rappel)
+
+1. **Toute info de Kevin = noter dans NOTES_USER.md immediatement**
+2. **Lire MEMO_RESUME.md + NOTES_USER.md au debut de CHAQUE session**
+3. **MAJ tous les .md apres chaque session**
+4. **Ne JAMAIS oublier une demande — tout dans TodoWrite**
+5. **Se referer aux feuilles de route pour CHAQUE action**
 
 ---
 
-*Dernière mise à jour : 2026-04-19 (APEX AI v3.8)*
+*Dernière mise à jour : 2026-04-19 (KDMC v6.1 — 60 commits, 355 KB)*

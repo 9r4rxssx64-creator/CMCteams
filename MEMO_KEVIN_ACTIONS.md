@@ -121,10 +121,57 @@
 | 2026-04-18 | proxy-apex.js (streaming) cree | FAIT |
 | 2026-04-18 | sw.js corrige (paths apex-ai) | FAIT |
 | 2026-04-18 | Comptes email/reseaux notes | FAIT |
-| 2026-04-19 | APEX AI v3.8 livree (85 actions, self-modify) | FAIT |
+| 2026-04-19 | KDMC v6.1 livree (355 KB, 60 commits) | FAIT |
 | 2026-04-19 | 7 audits experts + corrections P0/P1/P2 | FAIT |
 | 2026-04-19 | INTEGRATION_STANDARD.md cree | FAIT |
-| 2026-04-19 | Issue #87 GitHub mise a jour | FAIT |
+| 2026-04-19 | Rename APEX AI -> KDMC | FAIT |
+| 2026-04-19 | 70+ templates pro (10 categories) | FAIT |
+| 2026-04-19 | 10 personas, 15 achievements, 12 ambiances | FAIT |
+| 2026-04-19 | AI Crew + Local Workers integres | FAIT |
+| 2026-04-19 | Broadlink configure (42 commandes IR) | FAIT |
+| 2026-04-19 | Auto-learn 24 marques appareils | FAIT |
+
+---
+
+## A FAIRE PAR KEVIN (actions restantes)
+
+### URGENT (pour commercialiser)
+
+1. **Creer compte Stripe** (20 min)
+   - https://dashboard.stripe.com/register
+   - Produits: Free (0 EUR), Pro (14.99 EUR/mois), Pro Annuel (119.99 EUR/an), Enterprise (49.99 EUR/mois), Lifetime (249 EUR)
+   - Configurer dans KDMC > Reglages > Stripe
+
+2. **Deployer proxy Cloudflare** (10 min)
+   - https://dash.cloudflare.com > Workers > Creer
+   - Copier `proxy-apex.js` > Deployer
+   - Secret: ANTHROPIC_API_KEY = ta cle sk-ant-...
+   - URL dans KDMC > Reglages > Proxy
+
+3. **Acheter nom de domaine** (5 min)
+   - Suggestion: kdmc.ai ou kdmc-app.com (~12 EUR/an)
+   - DNS vers GitHub Pages
+
+4. **CGV + Mentions legales + RGPD** (30 min)
+   - Template dispo dans KDMC > Templates > Admin > RGPD
+   - Adapter avec tes coordonnees
+
+### IMPORTANT (visibilite)
+
+5. **Video demo 60s** — filmer l'ecran montrant les features cles
+6. **Post Product Hunt** — https://producthunt.com (gratuit)
+7. **Page LinkedIn KDMC** — posts reguliers
+8. **Page Instagram @kdmc.ai** — videos courtes features
+9. **Thread Twitter/X** — "J'ai cree une IA qui..."
+10. **Post Reddit** — r/artificial + r/SideProject
+
+### MOYEN TERME
+
+11. **Configurer Sentry DSN** dans Reglages
+12. **Configurer Finnhub key** (cours bourse gratuit)
+13. **Configurer Broadlink** — `pip install broadlinkhttp` sur un appareil local
+14. **Configurer Home Assistant** (Raspberry Pi ~50 EUR)
+15. **Installer PWA sur iPhone** — Safari > Partager > Ecran d'accueil
 | 2026-04-17 | Recharger API credits | EN ATTENTE |
 | 2026-04-17 | Verifier cle API | EN ATTENTE |
 | 2026-04-17 | Deployer proxy Cloudflare | EN ATTENTE |
