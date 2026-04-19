@@ -32,9 +32,29 @@
 
 ---
 
-## CE QUE KEVIN DOIT FAIRE (actions restantes)
+## CE DONT CLAUDE A BESOIN (codes/identifiants a donner)
 
-### ETAPE 1 — Deploiement (30 min) — OBLIGATOIRE avant vente
+> **Kevin : donne-moi ces infos quand tu peux. Je les integre en AUTONOMIE.**
+> **Une fois donne = sauvegarde + jamais redemande.**
+
+| # | Info | Pourquoi | Ou la trouver | Status |
+|---|------|----------|---------------|--------|
+| 1 | Proxy Cloudflare code | Worker a le mauvais code | Kevin colle proxy-apex.js (besoin PC) | EN ATTENTE |
+| 2 | Stripe cles API | Paiements clients | stripe.com/register | EN ATTENTE |
+| 3 | Gmail mot de passe app | Emails depuis KDMC | Google > Securite > MDP apps | EN ATTENTE |
+| 4 | Outlook MDP app (monaco.mc) | Emails pro | Outlook > Securite | EN ATTENTE |
+| 5 | Instagram identifiants | Publier contenu | Meta Business Suite | EN ATTENTE |
+| 6 | Facebook page identifiants | Publier contenu | Meta Business Suite | EN ATTENTE |
+| 7 | WhatsApp Business API | Messages auto | Meta for Developers | EN ATTENTE |
+| 8 | Finnhub cle API | Cours bourse | finnhub.io/register (gratuit) | EN ATTENTE |
+| 9 | Sentry DSN | Monitoring erreurs | kdmc.sentry.io > Settings > Keys | EN ATTENTE |
+| 10 | Spotify | Musique | Deja integre | FAIT |
+
+---
+
+## CE QUE KEVIN DOIT FAIRE (seulement ce qui est IMPOSSIBLE en autonomie)
+
+### ETAPE 1 — Deploiement
 
 1. **Deployer proxy Cloudflare** (10 min)
    - https://dash.cloudflare.com > Workers > Creer > Nom: `kdmc-proxy`
