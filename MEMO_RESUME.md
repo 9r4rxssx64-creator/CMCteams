@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-19 (CMC v9.119 + APEX AI v3.8)
+# Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v5.5)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
