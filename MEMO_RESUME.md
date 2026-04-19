@@ -1,3 +1,70 @@
+# Mémo de reprise — v9.407 (session 2026-04-19 autonome)
+
+> **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
+>
+> **REGLES PERMANENTES pour CHAQUE session :**
+> 0. TOUT AU MAXIMUM — ne JAMAIS mettre une valeur basse par defaut
+> 1. Lire ce fichier EN PREMIER
+> 2. Lire NOTES_USER.md (infos metier Kevin)
+> 3. Lire ~/.claude/CLAUDE.md (règles globales multi-projets)
+> 4. Lire CLAUDE.md projet (spécificités codebase)
+> 5. Lire KDMC_AI_PROJECT.md (feuille de route si présent)
+> 6. Lire MEMO_KEVIN_ACTIONS.md (actions Kevin si présent)
+> 7. TodoWrite AVANT de coder
+> 8. Ne JAMAIS oublier une demande — tout noter dans les 3 fichiers meta
+> 9. Petits morceaux (Edit) pour eviter timeouts
+> 10. Agents en arrière-plan pour auditer en permanence
+> 11. Subagents Explore en parallèle (3-5) à chaque tâche non triviale
+> 12. PROPAGATION : règle donnée → tous projets + agents locaux + internes app + IA app + skills + hooks
+
+---
+
+## 🆕 Session 2026-04-19 — v9.398 → v9.407 (10 versions, 14 commits autonomes)
+
+### Livrables majeurs
+
+| Version | Feature |
+|---------|---------|
+| v9.398 | **WebAuthn Face ID / Touch ID / Windows Hello** (enrôlement vMonProfil + login biométrique) |
+| v9.399 | **Ping-casino + détection onsite** (WiFi fetch no-cors + GPS geofence combinés) |
+| v9.400 | **Audit guards AID** systématique (21/22 OK, 1 gap fermé sur clearErrorLog) |
+| v9.401 | **Framework agents internes** + règle CLAUDE SUBAGENTS MAX + 3 fixes audits (removeEmpPhoto fbWrite, fbStartListening cap 10, overscroll-behavior) |
+| v9.402 | Fixes UX/perf/fluidité (pit boss buttons 44px, confirms explicites, DM toast, backdrop blur mobile) |
+| v9.403 | Agent 6 compliance-watcher (Convention SBM Art. 17.5 temps réel) |
+| v9.404 | Badge agents sur Accueil admin (alertes cliquables vers vAgents) |
+| v9.405 | Sync-doctor auto-flush + IA context enrichi avec rapports agents |
+| v9.406 | **4 agents HR** : shift-optimizer, comp-advisor, rotation-fairness, pause-guardian |
+| v9.407 | **Agent 11 import-guardian** + règle suprême "TOUJOURS AU MAXIMUM" (CLAUDE.md + NOTES + IA prompt + global ~/.claude/CLAUDE.md) |
+
+### 🤖 11 agents internes opérationnels dans l'app
+
+⚠ Conflit · 🧹 Hygiène · 🔥 Burnout · 💊 Sync · ⚡ Perf · ⚖️ Convention SBM · 🔄 Shifts · 🎓 Compétences · ⚖ Rotation · ⏸ Pauses · 📄 Import PDF
+
+- `vAgents` admin view : toggles ON/OFF par agent, historique 15 derniers, lancement manuel
+- Badge Accueil cliquable si warn/err
+- IA context inclut rapports live (répond "quoi de neuf ?")
+- Auto-pause si onglet caché (économie batterie)
+- Agent import-guardian auto-déclenché après chaque `doImport`
+- Reports stockés dans `cmc_agent_reports` (FB_LOCAL, 50/agent max)
+
+### 📜 Règles permanentes propagées (5 endroits)
+
+1. **CLAUDE.md projet** : AU MAXIMUM + SUBAGENTS MAX (en tête)
+2. **NOTES_USER.md** : AU MAXIMUM (en tête)
+3. **~/.claude/CLAUDE.md** : nouveau fichier global (hérite CMCteams + APEX + tous futurs projets)
+4. **buildIASystemPrompt** : 7 règles injectées dans contexte IA de l'app
+5. **Agent propagation** : tous agents internes connaissent leur rôle (conflict, hygiene, burnout, sync, perf, compliance, shift, comp, rotfair, pause, import)
+
+### 5 Explore subagents lancés en parallèle
+
+Rapports complets traçés : performance (15 items P0/P1/P2), UX mobile 375px (15 items), scalabilité 500+ emps (12 items), fluidité visuelle (10 items), features créatives (10 idées).
+
+### Blocage externe
+
+Vercel Free rate limit atteint hier (100 previews/jour). GitHub Pages main continue à déployer normalement. Merge possible via bypass du check Vercel failure (code validé `node --check` OK).
+
+---
+
 # Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
 
 > **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**

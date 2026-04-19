@@ -4,6 +4,68 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
+
+> **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout. Intègre ça dans l'application, dans son IA, dans son fonctionnement, dans APEX, dans les sources de données, dans les feuilles de route, dans les skills, dans les hooks, dans les agents et leur façon de travailler. Partout. Tout le temps."**
+
+**Règle NON-NÉGOCIABLE appliquée sans exception à TOUTE interaction :**
+
+1. **Ne jamais s'arrêter au début d'un problème** : si je peux mentionner que je peux faire mieux, alors je DOIS déjà avoir fait mieux. Pas de "on verra", pas de "next step", pas de "je te laisse décider" quand le next step est évident.
+2. **Livrer le MAXIMUM à chaque tour**, pas le minimum. Si la demande implique 3 features, j'en livre 3, pas 1 + promesse.
+3. **Saturer avant de rendre** : audit, fix, test, doc, commit, push — dans le même tour.
+4. **Anticiper l'implicite** : une demande "ajoute une feature" implique automatiquement : UI + wire + persist + sync Firebase + tests + audit + doc + push. Ne JAMAIS livrer 2/8.
+5. **Pas de validation demandée** pour les évidences. Décider et livrer.
+6. **Propagation permanente** : TOUTE règle/demande de Kevin s'applique à CE projet + APEX + futurs projets + agents locaux (Claude Code) + agents internes (app) + IA de l'app + skills + hooks + feuilles de route + CLAUDE.md + NOTES_USER + MEMO_RESUME.
+7. **Tracé obligatoire** : chaque règle, chaque info métier, chaque feature → noté dans CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md. Aucune info ne se perd.
+8. **Appliqué dans l'app aussi** : `buildIASystemPrompt` doit rappeler les règles permanentes pour que l'IA utilisateur réponde elle-même selon ces principes.
+
+---
+
+## 🤖 RÈGLE PERMANENTE — SUBAGENTS AU MAXIMUM (Kevin 2026-04-19 v9.401+)
+
+> **"Ajoute des subagents, agents en local et en ouvert pour aider l'IA, l'app, le bon fonctionnement, les recherches, les données, la fonctionnalité, la performance, la scalabilité, l'intuitivité, la fluidité, la créativité, l'amélioration permanente, l'enrichissement général en permanence. Tout le temps, partout. Au maximum."**
+
+**Règle absolue non-négociable à chaque session, pour CE projet ET tous futurs projets :**
+
+### 1. Parallélisation par défaut
+
+À chaque tâche non triviale, lancer **3 à 5 subagents `Explore` en parallèle** dans un SEUL message (tool calls groupés). Zones à auditer systématiquement :
+- **Performance** : O(n²), re-renders, localStorage size, listeners empilés, cache manquant
+- **UX / intuitivité** : mobile 375px, touch targets 44px, labels, confirmations, états vides
+- **Sécurité** : guards AID, esc() manquants, FB_LOCAL vs sync, XSS résiduels, CSP
+- **Scalabilité** : 500+ employés, 5000+ chats, 36 mois overrides, QuotaExceeded
+- **Créativité** : features manquantes niche casino, delighters, micro-interactions
+
+### 2. Au minimum 1 audit subagent par batch de modifications
+
+Après un gros changement : lancer `Explore` ciblé pour vérifier l'absence de régression sur les zones connexes (matrice d'impact Phase 0).
+
+### 3. Subagents pour les recherches factuelles
+
+Dès qu'une info factuelle doit être vérifiée (loi Monaco, règle Convention, article précis, coord GPS, lien officiel) : déléguer à un subagent `Explore` avec WebFetch/WebSearch plutôt que d'encombrer le contexte principal.
+
+### 4. Subagents pour la data quality
+
+À chaque import PDF / modification planning → subagent audit silencieux pour détecter conflits, anomalies, incohérences sans bloquer l'admin.
+
+### 5. Agents persistents (nightly / automatiques)
+
+Déjà en place (voir `tools/agent/` + GitHub Actions cron) : 5 tâches automatiques (health-check, conflicts, burnout, backup, weekly-report). À enrichir en continu avec de nouveaux "gardiens" (perf-watcher, UX-checker, sentry-digest).
+
+### 6. Subagents "créatifs" pour enrichir
+
+1 fois par session majeure : subagent `Explore` avec prompt créatif ("propose 10 features niche casino manquantes") → transforme le quotidien utilisateur.
+
+### 7. Noter toutes les sorties agents dans MEMO_RESUME.md
+
+Chaque rapport agent → résumé 3-5 lignes dans MEMO_RESUME.md section "Agents lancés session". Trace permanente pour éviter doublons et répétitions.
+
+### 8. Pattern applicatif
+
+Même dans le code de l'app : l'IA Pit Boss (v9.298-300) est un agent interne. En ajouter d'autres progressivement : agent de suggestion d'échanges, agent de détection absences à risque, agent de répartition équitable.
+
+---
+
 ## 🧰 Outils & réflexes expert (ajouté v9.68)
 
 > Boîte à outils personnelle pour éviter les erreurs et travailler plus vite. À consulter en début de session.
