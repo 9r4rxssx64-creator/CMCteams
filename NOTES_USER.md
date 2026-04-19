@@ -629,7 +629,29 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
-## 🤖 APEX AI v3.8 — Capacites self-modify (2026-04-19)
+## 📡 Domotique Kevin (2026-04-19)
+
+**Broadlink** : present sur le reseau local de Kevin
+- Modele : a confirmer (probablement RM4 Mini ou RM Pro)
+- Protocole : UDP proprietaire (necessite bridge HTTP pour controle web)
+- Usage : TV, climatisation, lumieres, volets
+
+**Configuration necessaire (Kevin) :**
+- [ ] Installer broadlink-http-rest sur un appareil local (PC, Raspberry Pi, ou NAS)
+  - `pip install broadlinkhttp` ou Docker : `docker run -p 8780:8780 rackhd/broadlink-http`
+  - OU installer Home Assistant avec integration Broadlink native
+- [ ] Configurer l'URL du bridge dans APEX AI > Reglages > IR Blaster
+- [ ] Apprendre les codes IR de chaque appareil (TV, AC, lumieres)
+
+**Appareils a controler :**
+- [ ] TV (marque a confirmer)
+- [ ] Climatisation (marque a confirmer)
+- [ ] Lumieres (si connectees via IR)
+- [ ] Volets (si connectes)
+
+---
+
+## 🤖 APEX AI v4.8 — Capacites self-modify (2026-04-19)
 
 **L'IA peut modifier l'app en temps reel sur demande Kevin :**
 - "Change la police" → modify_css
