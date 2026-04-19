@@ -797,7 +797,11 @@ L'admin veut l'IA au maximum de ses capacités :
 **Proxy KDMC :** `https://kdmc-proxy.desarzens-kevin.workers.dev` — NON FONCTIONNEL (code Worker incorrect, retourne "Host not in allowlist"). A corriger quand Kevin aura un PC. En attendant, cle API directe fonctionne parfaitement.
 
 **Femme de Kevin :** SAINT-POLIT Laurence — compte gratuit, role family (peut modifier son theme)
-**Client test :** TARDIEU — compte gratuit temporaire, PIN initial 2026 (force changement), role client (lecture seule)
+**Clients test TARDIEU :**
+- TARDIEU — compte gratuit, PIN 2026, role client
+- Sandrine TARDIEU — compte gratuit, PIN 2026, role client
+- Christophe TARDIEU — compte gratuit, PIN 2026, role client
+- Tous doivent changer leur PIN a la premiere connexion
 **REGLE :** Aucune modification importante de l'app sans accord explicite de Kevin.
 
 **Comptes email :**
