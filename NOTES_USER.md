@@ -677,62 +677,78 @@ commandes longues plutôt que de laisser expirer un timeout court.
 - `MCP_TIMEOUT = 60000` / `MCP_TOOL_TIMEOUT = 600000`
 - ⚠️ Nécessite redémarrage Claude Code pour prise en compte des `env`.
 
-## 🚀 INTÉGRATION APEX AI (2026-04-18)
+## 🚀 INTÉGRATION APEX AI (2026-04-18, corrigé)
 
-**APEX AI** = sous-app du repo `9r4rxssx64-creator/CMCteams`, dossier
-`apex-ai/` (`index.html` + `manifest.json` + `sw.js` + `proxy-apex.js`).
-Développée dans une session Claude Code dédiée (visible dans l'app mobile
-Claude Code, section « En cours »). Version actuelle : **v3.8**
-(commit `b5a1c7a` sur main, MAJ docs MD complète).
+### Distinction fondamentale (à ne plus jamais oublier)
 
-Fil rouge des commits APEX AI (v3.0 → v3.8) :
-- v3.3 Fun + Gamification + Stabilité
-- v3.4 Self-Modify + 6 thèmes casino + Focus Mode
-- v3.5 AI Power Tools + Dashboard + Dev Tools + Casino Game
-- v3.6 Code Editor + Self-Modify PRO
-- v3.7 Clipboard + Traducteur + Math + Templates (82 actions)
-- v3.8 Présentation + Notifs planifiées + Auto-categorize (85 actions)
+| Projet | Nature | Public | Fichiers |
+|--------|--------|--------|----------|
+| **CMCteams** | App planning shifts Casino de Monaco | 258 employés casino + admin Kevin | `index.html` racine, `sw.js`, `CHANGELOG.md`, … |
+| **APEX AI** (ex-KDMC AI) | Assistant IA personnel de Kevin (chat IA, KB, finance, voix, multi-device, Stripe) | Kevin uniquement (puis usage public/payant) | `apex-ai/index.html`, `apex-ai/manifest.json`, `apex-ai/sw.js`, `apex-ai/proxy-apex.js`, `KDMC_AI_PROJECT.md` |
 
-**Demande admin (2026-04-18)** : « quand tout sera fonctionnel, ajoute le
-projet à mon application APEX AI ». Interprétation probable : intégrer
-CMCteams (cette branche) dans APEX AI sous une forme à préciser. Avant
-d'agir, clarifier :
+**Les deux co-habitent dans le même repo Git mais sont des projets distincts.**
+Aucun lien fonctionnel actuel — pas de code partagé.
 
-1. **Forme de l'intégration** :
-   a. Bouton/entrée dans `apex-ai/index.html` qui ouvre CMCteams (URL GitHub
-      Pages) ?
-   b. Inclusion CMCteams comme « projet » dans une liste/dashboard interne à
-      APEX AI ?
-   c. Fusion de fonctionnalités CMCteams dans apex-ai/ (ex : import code
-      CMCteams via Self-Modify) ?
-2. **Périmètre** : URL déployée seule, ou clone du code, ou les deux ?
-3. **Critère « fonctionnel »** : timeouts confirmés OK + commits poussés sur
-   main ? Ou autre milestone ?
+### APEX AI en bref (lu depuis `KDMC_AI_PROJECT.md` v3.8)
 
-### Décision (2026-04-18) — Qui fait l'intégration ?
+Vision : assistant IA aussi capable que GPT/Claude/Gemini, avec une couche
+proprietary (mémoire persistante, outils custom, expertise finance,
+monétisation Stripe). Hébergé GitHub Pages + proxy Cloudflare Workers,
+backend Firebase RTDB. État courant : **v3.8, 85 actions, 32 commits**.
 
-**C'est la session APEX AI qui fait l'intégration**, pas les autres sessions.
+Modules clés : Chat IA, **KB persistante (faits + instructions)**, mode
+offline (Gemma WebGPU), Finance Expert, Voix STT/TTS, Documents (vision/PDF),
+Monétisation Stripe, Connexions Meta/Gmail/Telegram, **Hub inter-appareils
+Firebase** (chaque device s'enregistre).
 
-Raisons (validées avec l'admin) :
-- APEX AI développe activement `apex-ai/` (v3.0 → v3.8, 10 commits récents).
-  Toucher ces fichiers depuis une autre session = risque de **conflit de merge**.
-- La session APEX AI connaît son architecture interne (Self-Modify, dashboard,
-  85 actions, conventions). Une autre session peut **casser** sans le savoir.
-- APEX AI a peut-être déjà un mécanisme natif pour référencer des projets
-  externes → éviter le **doublonnage**.
+### Demande admin (2026-04-18)
 
-⚠️ Note importante : ça ne **verrouille rien**. N'importe quelle session peut
-toujours modifier `apex-ai/` après coup (même repo, pas d'exclusivité Git).
-La règle est juste de **laisser APEX AI initier** l'intégration pour éviter
-les conflits actifs.
+> « Quand tout sera fonctionnel, ajoute le projet à mon application APEX AI. »
 
-Action attendue côté session APEX AI à son prochain démarrage :
-1. Lire ce fichier (NOTES_USER.md) → voir la demande
-2. Demander à l'admin la forme exacte (option A / B / C ci-dessus)
-3. Implémenter dans `apex-ai/`, commiter, pousser
-4. Cocher la case ci-dessous
+**Interprétation correcte (validée 2026-04-18)** : enregistrer **CMCteams
+comme projet géré** à l'intérieur d'APEX AI — pas une fusion de code, pas
+une copie. CMCteams reste une app à part (casino), mais APEX AI doit le
+**connaître** pour pouvoir en parler, surveiller son état, notifier Kevin
+en cas d'événement, etc.
 
-- [ ] Intégration CMCteams ↔ APEX AI réalisée par session APEX AI
+### Forme probable de l'intégration (à confirmer par session APEX AI)
+
+1. **Entrée dans la KB d'APEX AI** : un fait du genre
+   `{type:"projet_geré", nom:"CMCteams", url:"https://9r4rxssx64-creator.github.io/CMCteams/", repo:"9r4rxssx64-creator/CMCteams", description:"App planning casino", admin:"Kevin", users:258}`
+   → APEX AI peut alors répondre aux questions « parle-moi de CMCteams »,
+   « quelle est sa version », etc.
+2. **Entrée dans le Hub inter-appareils** (module 12) : CMCteams listé comme
+   un « device/projet » connu, avec son URL et son statut.
+3. **Outil custom dédié** : `cmcteams_status` qui interroge l'API CMCteams
+   (ou son Firebase) pour donner planning/effectif en temps réel.
+4. **Page projets dans le dashboard APEX AI** (s'il existe) : carte CMCteams
+   avec lien direct + dernière version + santé Firebase.
+
+→ La session APEX AI choisira la forme adaptée à son architecture.
+
+### Décision : qui fait l'intégration ?
+
+**Session APEX AI** (pas les autres sessions). Raisons :
+- APEX AI développe activement `apex-ai/` (v3.0 → v3.8, 10 commits récents) →
+  modifier depuis une autre session = risque de **conflit de merge**.
+- Connaît son architecture interne (KB, Self-Modify, hub multi-device).
+- A peut-être déjà un mécanisme natif pour les « projets gérés ».
+
+⚠️ Aucun verrou Git — toute session peut modifier `apex-ai/` après coup.
+La règle vise juste à éviter les conflits actifs pendant le développement
+intense d'APEX AI.
+
+### Actions attendues côté session APEX AI (au prochain démarrage)
+
+1. Lire `NOTES_USER.md` (ce fichier) → voir cette demande
+2. Demander à Kevin la forme exacte (1, 2, 3, 4 ci-dessus, ou autre)
+3. Implémenter dans `apex-ai/`, commiter, pousser sur sa propre branche
+4. Cocher ci-dessous + remplir le commit/branche utilisé
+
+- [ ] **Intégration CMCteams comme projet géré dans APEX AI** — réalisée par session APEX AI
+  - Branche : `_____`
+  - Commit : `_____`
+  - Forme retenue : `_____`
 
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
