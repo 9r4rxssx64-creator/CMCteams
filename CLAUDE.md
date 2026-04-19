@@ -26,6 +26,25 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🔁 RÈGLE — BOUCLE AUTO-CORRECTION AGENTS (Kevin 2026-04-19 v9.435+)
+
+> **"L'agent doit réagir au bug/mauvaise info, prendre les outils nécessaires, corriger, tirer des leçons. Mettre à jour les bases. Intégrer le même principe dans TOUS les projets."**
+
+Pipeline CMCteams v9.435 :
+
+1. `agentAppendReport(id, status, msg, details, action)` accepte `action = {label, fn, auto:true/false, recordLesson:"..."}`
+2. Si `action.auto=true` + warn/err + admin connecté → `_agentAutoFixAttempt` lance la fonction (whitelist stricte)
+3. Rate-limit 1/h par agent
+4. Après succès : `addLessonLearned` auto avec pattern détecté (category `auto-fix`)
+5. Audit `agent_auto_fix` trace
+6. IA enrichie via `buildIASystemPrompt` (v9.418) → mémoire cross-session
+
+Whitelist auto actuelle : `agentActionFlushSync`, `agentActionPurgeOldLogs`, `_agentImportGuardian`, `autoFillMissingCadres`.
+
+À propager : même pattern dans APEX AI, e-KDMC, futurs projets.
+
+---
+
 ## 👁 RÈGLE — Surveillance live multi-utilisateurs (Kevin 2026-04-19 v9.414+)
 
 > **"Les agents et subagents travaillent chez tout le monde et l'IA aussi. Chez tous les comptes, y compris l'admin en permanence, en direct, en live, et créent des alertes et des bugs pour avoir un retour des problèmes rencontrés chez tout le monde et pouvoir agir en autonomie à la correction."**
