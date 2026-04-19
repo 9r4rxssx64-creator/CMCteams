@@ -586,6 +586,8 @@ L'admin veut l'IA au maximum de ses capacités :
 - Tablette Android (chez sa belle-fille actuellement)
 - Ordinateur (pas sur lui, a connecter plus tard)
 
+**Compte Cloudflare :** Desarzens.kevin@gmail.com (confirme 2026-04-19)
+
 **Comptes email :**
 - Gmail (adresse a confirmer)
 - Outlook : kevind@monaco.mc (sur iPhone)
