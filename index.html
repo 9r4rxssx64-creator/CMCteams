@@ -25363,7 +25363,6 @@ function doImport(){
     if(/(PIT\s*BOSS|SUPERVISEUR|SUPERVISOR|INSPECTEUR|INSPECTOR|SOUS.DIRECTEUR)/i.test(_hdr)&&parts.filter(function(p){return p.trim();}).length<=6){
       importFamily="cadres";
       // v9.409/410 — Inspecteur = Superviseur (Kevin 2026-04-19). Seulement 2 rôles cadres : sup ou pit.
-      // Pit boss = promotion de superviseur/inspecteur. Section dédiée sur planning.
       if(/INSPECTEUR|INSPECTOR|SUPERVISEUR|SUPERVISOR|SOUS.DIRECTEUR/i.test(_hdr)){_contextCadreRole="sup";_contextTeam="sup";}
       else {_contextCadreRole="pit";_contextTeam="pit15";}
       continue;
@@ -25546,9 +25545,9 @@ function doImport(){
         if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
         if(isRouletteChef&&!emp.senior){emp.senior=true;_changed=true;}
         if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
-        // v9.409 — Fix bug historique : assigner role="pit"|"sup"|"ins" pour les cadres importés
+        // v9.409 — Fix bug historique : assigner role="pit"|"sup" pour les cadres importés
         if(targetFam==="cadres"&&_contextCadreRole&&emp.role!==_contextCadreRole){emp.role=_contextCadreRole;_changed=true;}
-        // v9.410 — Assigner team pit15/sup/ins automatiquement (bug Kevin : cadres sans équipe)
+        // v9.410 — Assigner team pit15/sup automatiquement (bug Kevin : cadres sans équipe)
         if(targetFam==="cadres"&&_contextTeam&&(emp.team==="?"||!emp.team||emp.team!==_contextTeam)){emp.team=_contextTeam;_changed=true;}
         if(_changed) ls("cmc_e",A.employees);
       } else {
