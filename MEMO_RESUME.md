@@ -24,6 +24,8 @@
 | `715799f` | v9.401 | **Agents internes permanents + règle CLAUDE.md SUBAGENTS MAX + 3 fixes audits** : APP_AGENTS registry (5 agents : conflict, hygiene, burnout, sync, perf), vAgents admin UI, toggles ON/OFF, reports cmc_agent_reports. CLAUDE.md : 8 points règle permanente subagents au maximum. Fixes : removeEmpPhoto fbWrite, fbStartListening backoff cap 10, overscroll-behavior-y:contain. |
 | `a186cf0` | v9.402 | **Fixes P1 audits — UX + perf + fluidité mobile** : pit boss buttons 44px + titres explicites, applyTemplate confirm multi-ligne (2 places), removeEvent confirm avec nom/dates, sendMsg toast "Message privé envoyé", _updateAppBadge pause si onglet caché, backdrop-filter blur réduit 4px via @media (max-width:480px). |
 | `6407f1b` | v9.403 | **Agent 6 compliance-watcher** : gardien Convention SBM temps réel, icône ⚖️, 20 min. Vérifie Art. 17.5 (> 6 jours consécutifs) + min 4 repos/mois. Intègre vAgents. Continue trajectoire agents + idée P2 #9 audit créativité. |
+| `ee4b9b6` | v9.404 | **Badge agents sur Accueil admin** : si warn/err sur un agent → bandeau cliquable rouge/orange avec icône + dernier message, link `sv('agents')`. Discret (invisible si tous OK). Rend les agents immédiatement actionables. |
+| `dfac278` | v9.405 | **Agents câblés partout** : sync-doctor auto-flush la queue si online, contexte IA enrichi avec rapports agents (admin peut demander "quoi de neuf ?" à l'IA qui répond avec les infos live des 6 agents). |
 
 ### 🔑 Audit guards AID — v9.400 (2026-04-19)
 
