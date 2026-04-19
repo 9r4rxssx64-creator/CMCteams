@@ -36,11 +36,61 @@ Scan automatique de toutes fonctions suspectes (`del*`, `remove*`, `clear*`, `sa
 
 ### ⏳ À faire ensuite (priorité memo)
 
-- 🔑 **Audit guards AID** systématique (toutes fonctions destructrices)
+- 🔑 **Audit guards AID** systématique (toutes fonctions destructrices) ✅ fait v9.400
 - 📹 Caméra publique Place du Casino → déjà cablée (cam_live flag + lien skylinewebcams)
 - 🎨 Images Monaco via `generate_image` Pollinations (fond accueil, bannières)
 - 🌙 Améliorer mode arrière-plan (Background Sync, periodic sync PWA)
 - 🔐 WebAuthn admin : double-guard AID renforcé (déjà OK car uid=U11804)
+
+---
+
+## 🤖 Agents lancés session 2026-04-19 (règle permanente "subagents au max")
+
+Kevin (2026-04-19) : **"Ajoute des subagents, agents local et ouvert… aider l'IA, app, perf, scalabilité, intuitivité, fluidité, créativité… permanence, au maximum."**
+
+Règle ajoutée en tête de `CLAUDE.md` (8 points). 5 subagents `Explore` lancés en parallèle dans un seul message, 5 axes distincts.
+
+### Audit 1 — Performance (task `a950208…`) ✅
+
+**P0** (critiques) :
+- `A.employees.find()` utilisé 133× malgré `empById()` cache O(1) (L3481) → généraliser
+- Double `Object.keys` imbriqué L27520 → `Object.entries` 1 passe
+- 294 `dc()` non debouncés → généraliser `dcDebounced`
+- `querySelectorAll` dans setTimeout L6701 → cache DOM avant
+
+**P1** :
+- `ls(k,v)` fait 2-3× `JSON.stringify` → risque Quota 500+ emps
+- `setInterval(_updateAppBadge)` jamais clear L7929 → leak progressif
+- `JSON.parse(JSON.stringify(A.overrides))` sans window 12 mois
+
+**P2** :
+- `gpl(y,m)` recalculé 30×/render planning → memoize
+- Emergency cleanup full-scan localStorage → décrémentale + break
+- console.log restants → `if(DEBUG)`
+
+### Audit 2 — UX mobile 375px (task `abd14ec29…`) ✅
+
+**P0** :
+- Boutons pit boss 🏠 Now / ⏳ Fin tour : 11px, padding 3px → ↑14px/8px, min-height 44px
+- Login Étape 0 : tokens `t("lastName")` cassent si i18n fail
+- `confirm("Appliquer le modèle ?")` vague → msg explicite + majuscules
+- Flux PIN 4 étapes sans description claire par étape
+- Bouton "✕ Annuler (ne rien appliquer)" incohérent → "⬅️ Retour sans appliquer"
+
+**P1** :
+- Chat DM : pas de toast confirmation → silence après envoi
+- Profil : `usbm`/`poste` jargon sans help-icon ?
+- Event delete sans confirmation
+- Sync badge ⏳ pas de title ni feedback click
+
+**P2** :
+- Toast "Annuler" 11px → ↑13px, min-height 44px
+- `confirm()` multi-ligne IA Pit Boss → modal
+- Rollback import visuellement perdu → badge sticky
+
+### Audits en cours (3) : features créatives, scalabilité, fluidité
+
+Résultats à compiler dans fix batch v9.401 (parser + appliquer les items P0/P1 en un commit groupé, rate-limit Vercel oblige).
 
 ---
 
