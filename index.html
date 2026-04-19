@@ -27694,11 +27694,23 @@ function callClaudeIA(q){
   }
   function _finalize(txt,isErr){
     if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
-    var html=isErr
-      ?"<span style='color:#f08080'>"+esc(txt)+"</span>"
-      :esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
-    iaHistory.push({role:"bot",html:html});
-    if(!isErr){logIAInteraction(q,html,"claude");ttsSpeak(txt);}
+    if(isErr){
+      var localReply=iaRespond(q);
+      if(localReply){
+        iaHistory.push({role:"bot",html:"<span style='color:#e09848;font-size:12px'>Mode local (API indisponible)</span><br>"+localReply});
+        logIAInteraction(q,localReply,"local_fallback");
+      } else {
+        var isBilling=txt.indexOf("402")>=0||txt.indexOf("credit")>=0||txt.indexOf("billing")>=0||txt.indexOf("insufficient")>=0;
+        var html=isBilling
+          ?"<span style='color:#e09848'>\u26a0 Cr\u00e9dits API \u00e9puis\u00e9s. <a href='https://console.anthropic.com/settings/billing' target='_blank' style='color:#4a9aff;text-decoration:underline'>Recharger ici</a>.<br><span style='font-size:13px;color:#a0cca0'>L'assistant local reste disponible pour le planning, jeux, convention.</span></span>"
+          :"<span style='color:#f08080'>"+esc(txt)+"</span>";
+        iaHistory.push({role:"bot",html:html});
+      }
+    } else {
+      var html=esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+      iaHistory.push({role:"bot",html:html});
+      logIAInteraction(q,html,"claude");ttsSpeak(txt);
+    }
     dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   }
 
@@ -27715,22 +27727,34 @@ function callClaudeIA(q){
     var _apiUrl=iaProxyUrl||(iaApiKey?"https://api.anthropic.com/v1/messages":"");
     var _headers={"content-type":"application/json","anthropic-version":"2023-06-01"};
     if(iaApiKey&&!iaProxyUrl){_headers["x-api-key"]=iaApiKey;_headers["anthropic-dangerous-direct-browser-access"]="true";}
+    var _retryCount=0;var _maxRetries=2;
+    function _fetchWithRetry(){
     fetch(_apiUrl,{
       method:"POST",
       headers:_headers,
       body:JSON.stringify(body)
     })
     .then(function(r){
-      // v9.117 — Évite r.json() sur réponse HTML (503 CloudFlare, 429 rate limit, etc.)
       if(!r.ok){
         return r.text().then(function(txt){
-          throw new Error("API HTTP "+r.status+" : "+(txt||"").slice(0,100));
+          var parsed=null;try{parsed=JSON.parse(txt);}catch(_){}
+          var msg=parsed&&parsed.error?parsed.error.message:txt;
+          var err=new Error(msg||"Erreur inconnue");err.httpStatus=r.status;err.apiError=parsed?parsed.error:null;throw err;
         });
       }
       return r.json();
     })
     .then(function(data){
-      if(data.error){_finalize("Erreur API : "+(data.error.message||"inconnu").slice(0,120),true);return;}
+      if(data.error){
+        var em=data.error.message||"inconnu";
+        var code=data.error.type||"";
+        var hint="";
+        if(code==="authentication_error"||em.indexOf("invalid")>=0)hint="\n\nV\u00e9rifiez votre cl\u00e9 API : https://console.anthropic.com/settings/keys";
+        else if(code==="rate_limit_error"||em.indexOf("rate")>=0)hint="\n\nTrop de requ\u00eates. Attendez 30 secondes.";
+        else if(em.indexOf("credit")>=0||em.indexOf("billing")>=0||em.indexOf("insufficient")>=0)hint="\n\nCr\u00e9dits \u00e9puis\u00e9s. Rechargez : https://console.anthropic.com/settings/billing";
+        else if(code==="overloaded_error")hint="\n\nServeur surcharg\u00e9. Nouvelle tentative auto...";
+        _finalize("Erreur API : "+esc(em).slice(0,120)+hint,true);return;
+      }
       if(data.stop_reason==="tool_use"){
         var toolBlocks=(data.content||[]).filter(function(b){return b.type==="tool_use";});
         var toolResults=toolBlocks.map(function(b){
@@ -27754,8 +27778,25 @@ function callClaudeIA(q){
       }
     })
     .catch(function(err){
-      _finalize("Erreur réseau : "+(err.message||"connexion impossible").slice(0,80)+"\nVérifiez votre clé API et connexion.",true);
+      var st=err.httpStatus||0;
+      // v9.122 — Retry auto sur erreurs temporaires (429 rate limit, 529 overloaded, 503 service unavailable)
+      if((st===429||st===529||st===503||st===0)&&_retryCount<_maxRetries){
+        _retryCount++;
+        var wait=_retryCount*3000;
+        _updateLoading("<span style='color:#ffaa00;font-style:italic'>Nouvelle tentative ("+_retryCount+"/"+_maxRetries+") dans "+(wait/1000)+"s\u2026</span>");
+        setTimeout(_fetchWithRetry,wait);return;
+      }
+      var hint="";
+      if(st===401||st===403)hint="\n\nCl\u00e9 API invalide ou expir\u00e9e.\nV\u00e9rifiez : https://console.anthropic.com/settings/keys";
+      else if(st===402)hint="\n\nCr\u00e9dits insuffisants.\nRechargez : https://console.anthropic.com/settings/billing";
+      else if(st===429)hint="\n\nTrop de requ\u00eates. Attendez 1 minute.";
+      else if(st===529||st===503)hint="\n\nServeur Anthropic temporairement indisponible. R\u00e9essayez dans quelques minutes.";
+      else if(!navigator.onLine)hint="\n\nPas de connexion internet. L'assistant local reste disponible.";
+      else hint="\n\nV\u00e9rifiez votre cl\u00e9 API et connexion internet.";
+      _finalize("Erreur : "+(err.message||"connexion impossible").slice(0,120)+hint,true);
     });
+    }
+    _fetchWithRetry();
   }
   _doFetch(msgs,0);
 }

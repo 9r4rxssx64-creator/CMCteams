@@ -1,378 +1,213 @@
-# Mémo de reprise — v9.397 (session 2026-04-18 soirée — Sentry complet + règles globales)
+# Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
+
+> **REGLES PERMANENTES pour CHAQUE session :**
+> 1. Lire ce fichier EN PREMIER
+> 2. Lire NOTES_USER.md (infos metier Kevin)
+> 3. Lire KDMC_AI_PROJECT.md (feuille de route)
+> 4. Lire MEMO_KEVIN_ACTIONS.md (actions Kevin)
+> 5. TodoWrite AVANT de coder
+> 6. Ne JAMAIS oublier une demande — tout noter
+> 7. Se referer aux docs a chaque decision
+> 8. MAJ tous les .md apres chaque session
+> 9. Petits morceaux (Edit) pour eviter timeouts
+> 10. Agents en arriere-plan pour auditer
 
 > **Lire en PREMIER à chaque nouvelle session.**
-> Puis `NOTES_USER.md`, `~/.claude/CLAUDE.md` (11 règles permanentes), `CHANGELOG.md`.
-> **⚠️ Aussi lire `GUIDE_IPHONE.md`** — actions priorisées côté Kevin avec URLs directes.
-> **⚠️ Aussi lire `INTEGRATION_STANDARD.md`** — stack universelle à propager dans APEX + futurs projets.
+> Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
+> Puis `~/.claude/CLAUDE.md` (règles globales multi-projets).
+> **⚠️ AUSSI lire `TODO_REMINDERS.md`** — tâches en attente que Kevin a demandées.
 
 ---
 
-## 🆕 Session soirée 2026-04-18 (21h-23h30) — RÉALISATIONS MAJEURES
+## 🗓 RAPPELS À TRAITER PROCHAINEMENT (voir TODO_REMINDERS.md)
 
-### ✅ Résolu / mergé aujourd'hui
-
-| PR | Titre | Contenu |
-|----|-------|---------|
-| #82 | workflow cron GitHub Actions | Remplace crons Vercel Hobby bloqués (3 schedules + workflow_dispatch) |
-| #83 | v9.396 Sentry browser CMCteams | Loader Script dans `<head>` + CSP élargie Sentry |
-| #84 | P4 Sentry Node agent Vercel | `@sentry/node` + init centralisé + captureException avec contexte |
-| #85 | `/api/sentry-test` + SENTRY_DSN dans health | Endpoint test Sentry + vérification env var |
-| #86 | INTEGRATION_STANDARD.md | Stack universelle à propager dans tous projets |
-
-### 🔧 En cours (sur branche `claude/pollinations-and-vercel-skip`)
-
-| Commit | Contenu |
-|--------|---------|
-| v9.397 | Outil IA `generate_image` (Pollinations.ai gratuit) + vercel.json skip docs/agent renforcé |
-
-### ⚙️ Configuration côté Kevin
-
-| Action | Statut |
-|--------|--------|
-| `AGENT_SECRET` ajouté dans GitHub Secrets | ✅ fait |
-| `SENTRY_DSN` ajouté dans Vercel env vars agent | ✅ fait |
-| Telegram bot `/start` fait + chat_id validé `5458942048` | ✅ fait |
-| Sentry compte créé (org `kdmc`, projet `cmcteams`) | ✅ fait |
-
-### ⏳ Attente blocage externe
-
-- **Vercel Free rate limit atteint** (100 deploys preview/jour) → redeploy kdmc-agent-monaco bloqué pour 24h
-- Test `/api/sentry-test` ne marchera qu'**après demain ~22h30** (reset rate limit)
-- Meanwhile, le code est bon, juste pas propagé au runtime Vercel
-
-### 🔍 SyntaxError CMCTEAMS-1 (Sentry)
-
-**Diagnostic final** : chargement HTML partiel (index.html 1.98 MB), pas un bug de code.
-- Testé en Playwright local : aucune erreur
-- Stack trace sans fichier/ligne : signature classique de script inline tronqué
-- **Action** : marquer "Resolved" dans Sentry, si récidive creuser
-- **Roadmap** : découper index.html en chunks ou service worker intégrité
-
-### 🤖 MCP installés dans sandbox Claude Code
-
-- `context7` (docs à jour anti-hallucination)
-- `vercel` (gestion déploiements)
-- `sentry` (monitoring)
-- `hf` (Hugging Face, images gratuites)
-
-### 📜 Règles globales propagées dans `~/.claude/CLAUDE.md`
-
-12 règles permanentes :
-0. Anti-coupure / anti-timeout
-1. Travail complet
-2. Minimum investissement gratuit
-3. Autonomie max (Playwright, curl, MCP, subagents)
-4. Évolutivité
-5. Vérifier existant
-6. Ne pas abîmer
-7. Communication honnête
-8. TodoWrite systématique
-9. Propagation IA (CMCteams + APEX + agents)
-10. URLs directes + vue iPhone obligatoire (Playwright simuler avant)
-11. Minimum intervention utilisateur (IA se débrouille seule)
-12. Propagation à toutes les IA créées y compris Apex
-
-### 🌐 Stack universelle (à propager partout)
-
-Dans `~/.claude/CLAUDE.md` et `INTEGRATION_STANDARD.md` :
-
-1. **Sentry** monitoring (org `kdmc`, 5k events/mois gratuits)
-2. **Pollinations.ai** images (gratuit sans clé)
-3. **Context7** docs MCP anti-hallucination
-4. **GitHub Actions** cron illimité (remplace Vercel Hobby)
-5. **CDN preconnect** pour perf
-6. **Règles permanentes** dans `buildIASystemPrompt` de chaque IA d'app
-
-### 🚀 Propagation APEX AI — ✅ DÉJÀ FAIT
-
-L'autre session Claude Code a déjà appliqué `INTEGRATION_STANDARD.md` dans APEX AI
-(projet séparé, branche `claude/custom-ai-assistant-project-i1U0p`).
-→ Stack universelle active dans les 2 projets maintenant.
+1. **Nettoyage projets Vercel** (demandé 2026-04-16 03:05) — supprimer tous SAUF `kdmc-bot-2026`
+2. Régénérer token Telegram (token visible dans captures)
+3. Ajouter 4 secrets GitHub Actions pour activer crons fréquents
+4. Backup chiffré tokens sur Drive (sécu 3-2-1)
+5. Créer repos GitHub IA-KDMC + e-KDMC
 
 ---
 
-## 📋 À FAIRE (demandes Kevin à traiter dans ordre)
+## 🚨 Méta-règles admin (appliquer SANS que l'admin ait à redemander)
 
-### 🎛 SYSTÈME TOGGLES ADMIN CENTRALISÉ (priorité haute, 2026-04-18)
-> "L'admin puisse faire on/off avec bouton sympa pour chaque fonction.
-> Quand off → info disparaît chez tout le monde en live. Pareil micros, IA,
-> météo, caméra, etc. Si admin désactive, info disparaît dans vue de tous."
-
-**Plan** :
-- Store `cmc_feature_flags` = {cam_live:true, meteo:true, mic:true, ia:true, ...}
-- Sync Firebase FB_FIX (propage temps réel via SSE)
-- Helper `isFeatureEnabled(key)` utilisable partout
-- Panel admin unique `vFeatureFlags` avec boutons ON/OFF stylisés
-- Chaque feature existante enveloppe son rendu dans `if(isFeatureEnabled(...))`
-
-### 📹 CAMÉRA PUBLIQUE PLACE DU CASINO
-> "Caméra Place du Casino publique. Vue live de la société."
-
-**Plan** :
-- Chercher flux webcam public Place du Casino (YouTube Live ?)
-- iframe embed si trouvé (CSP à adapter)
-- Fallback : liens vers webcam.travel ou sites Monaco officiel
-- Affichage dans vMonacoLive conditionné par feature_flag cam_live
-
-### 🔐 RECONNAISSANCE FACIALE / WebAuthn (priorité moyenne)
-> "Reconnaissance faciale pour connexion après création compte.
-> Pareil pour admin."
-
-**Plan** :
-- WebAuthn API (`navigator.credentials.create/get`)
-- iOS 16+ Face ID via Passkeys
-- Android via biometric
-- Store credential ID dans cmc_reg[uid].webauthn_cred
-- Login flow : si credential existe → proposer Face ID avant password
-- Guard AID strict pour admin (double check)
-
-### 🌐 RÉSILIENCE LOC + CONNEXION TEMPS RÉEL (2026-04-18)
-> "Localisation et infos temps réel via WiFi casino (public + employé).
-> Bluetooth, P2P entre téléphones pendant coupures. Résilience maximale."
-
-**Limitations honnêtes web / PWA** :
-- ❌ Pas d'accès direct SSID WiFi côté navigateur (sécurité)
-- ❌ WebBluetooth limité iOS (uniquement via Bluefy)
-- ✅ `navigator.geolocation` utilise déjà WiFi en fond sur mobile
-- ✅ WebRTC P2P possible avec signaling serveur initial
-
-**Solutions réalistes à implémenter** :
-1. **Ping endpoint interne** : `/ping-casino` hébergé sur serveur casino local
-   - Si ping répond → téléphone sur WiFi casino → assume emp sur site
-   - Résout le problème SSID sans besoin d'accès direct
-   
-2. **Service Worker Background Sync** :
-   - Queue positions en IndexedDB quand offline
-   - Sync automatique au retour online
-   - Couvre les coupures courtes
-   
-3. **WebBluetooth beacons BLE** :
-   - Pour Android uniquement (Chrome Beta)
-   - Scanner proximité beacons casino (si installés)
-   - Triangulation fine indoor
-   
-4. **WebRTC P2P entre téléphones** :
-   - Peer connection via signaling initial Firebase
-   - Échange de positions même si un client offline  
-   - Redondance en cas de coupure serveur
-   - Complexe → priorité basse
-
-**Codes WiFi Kevin** : à ajouter dans settings admin quand dispo pour
-détection automatique réseau casino.
-
-### 🌙 FONCTIONNEMENT ARRIÈRE-PLAN / VEILLE
-> "Application marche en arrière-plan sur appareils même en veille.
-> iPhone/Android/ordinateur au maximum."
-
-**Plan** :
-- Déjà en place : Wake Lock (v9.218), keep-alive audio (v9.219), Service Worker
-- À améliorer :
-  - Background Sync API (chrome/edge)
-  - Periodic Background Sync (PWA installée)
-  - Push notifications via Service Worker
-  - iOS limitations acceptées (JS coupé après 30s background)
-  - Demander permissions notifications + background-fetch au login
-
-### 🔑 GUARD ADMIN RENFORCÉ TEMPS RÉEL (déjà en place mais à auditer)
-- AID = "U11804" check à TOUTES les fonctions destructrices (déjà OK)
-- Firebase SSE propage modifs admin temps réel (déjà OK v8.98+)
-- Audit complet à faire : vérifier CHAQUE action sensible a son guard
-
----
-
-### 🌦 Dashboard Monaco Live (demandé 2026-04-18)
-> "Ajoute météo, température, infos locales Monaco hebdo, Monaco info,
-> des liens en rapport avec le casino et Monaco et les jeux. Réfléchis
-> et innove, crée, surprends-moi."
-
-**Plan** :
-- `vMonacoLive()` view (router + FAB)
-- Météo via **open-meteo.com** (gratuit, sans clé, CORS OK)
-  - Endpoint : `https://api.open-meteo.com/v1/forecast?latitude=43.7384&longitude=7.4246&current_weather=true&timezone=Europe/Monaco`
-  - Icône animée selon conditions (soleil ☀️ / nuageux ☁️ / pluie 🌧 / vent 💨)
-- Cartes liens externes :
-  - 🗞 Monaco Info (monacoinfo.com)
-  - 📰 Monaco Hebdo (monacohebdo.mc)
-  - 🎰 SBM Casino (montecarlosbm.com)
-  - 🏰 Palais Princier (palais.mc)
-  - 🏛 Visit Monaco (visitmonaco.com)
-  - 🏙 Mairie Monaco (mairie.mc)
-- Agenda événements Monaco (GP F1, EPT, Fête Nationale 19 nov)
-- Horloge Monaco tz Europe/Monaco
-
-### 🎨 Thème Monaco visuel (demandé 2026-04-18)
-> SVG drapeau monégasque + blason princier + fond stylisé casino/palais.
-> Mode nuit avec écrits lumineux (glow/neon).
-
-**Plan** :
-- SVG inline drapeau (2 bandes rouge/blanc)
-- SVG blason princier stylisé
-- CSS glow/neon pour thème nuit
-- Gradient Monaco (rouge/blanc/or) pour fond page accueil
-- À faire une fois les outils image gen disponibles (pour montages photos réelles)
-
----
-
-## ⚠️ VERCEL RATE LIMIT ATTEINT (2026-04-18)
-
-Vercel Free tier = **100 déploiements preview / jour**.
-
-Atteint aujourd'hui après 74 PRs cumulées en une journée. Les PRs
-suivantes auront statut CI "failure" Vercel mais c'est UN PROBLÈME
-DE QUOTA, PAS UN BUG CODE.
-
-**Solutions** :
-- **Merger quand même** si `node --check` passe et code propre
-  (GitHub Pages main → production continue de fonctionner)
-- **Attendre 24h** pour reset quota
-- **Upgrade Vercel Pro** ($20/mois, unlimited builds)
-
-Kevin avisé. Dans la session actuelle, continuer à merger sur main
-malgré le fail Vercel car le code est validé localement.
-
----
-
-## ⚠️ MCP TOOLS À INSTALLER (demande Kevin 2026-04-18)
-
-Kevin a demandé d'utiliser "Google outils / Gemini / DALL-E / Stable Diffusion" pour :
-- Générer images/fonds écran Monaco (casino, palais)
-- Améliorer plans (pas flou, futuriste)
-- Animations/montages
-
-**Statut actuel** : AUCUN MCP tool image gen disponible. Seulement GitHub MCP + Bash/Edit.
-
-**À ajouter par Kevin** dans `~/.claude/settings.json` section `mcpServers` :
-- `mcp-server-anthropic-images` (si existe)
-- `mcp-server-stability-ai` (Stable Diffusion)
-- `mcp-server-replicate` (multi-modèles)
-- `mcp-server-google-genai` (Gemini image gen)
-
-**Alternative autonome actuelle** : SVG inline (drapeau Monaco, blason stylisé) + CSS
-avancé (glow/neon/gradients) pour effet Monaco/nuit sans API externe.
+1. Chaque info métier admin → enregistrée IMMÉDIATEMENT dans `NOTES_USER.md`
+2. Chaque nouvelle fonction = auto + sur-vérif + bouton manuel de secours
+3. Priorité absolue = reconnaissance + placement correct à CHAQUE import PDF
+4. Compétences `emp.post` = persistantes (plus jamais écrasées au reload — v9.108)
+5. **IMPORTANT v9.116** : les familles/secteurs NE SONT PAS dérivés des compétences.
+   - `emp.family` vient de l'IMPORT (team dispatch bj1..r13..c13)
+   - `emp.post` (P/P+/E) reste dans la fiche, pour info / dispatch futur
+   - `reassignAllFamiliesByCompSilent` reste dispo MANUELLEMENT (bouton), pas auto
+6. Clé API Anthropic : backup Firebase auto + restore à la connexion (v9.108)
+   - Console : https://console.anthropic.com/settings/keys
+7. Tout s'enchaîne automatiquement (stats, vues, IA context suivent les modifs)
 
 ---
 
 ## Dernière version stable
 
-**`APP_VER = "v9.284"`** — branche `main`
+**`APP_VER = "v9.117"`** — branche `main` (déployée GitHub Pages)
 
-- Session 1 (matin 2026-04-17) : v9.153 → v9.202 (50 versions, moyenne audit externe 6.62 → 8.50)
-- Session 2 (après-midi/soir 2026-04-17 à 2026-04-18) : **v9.203 → v9.284 (82 versions, 19 PRs mergées)**
-
-## 🎯 Modules majeurs session bis (v9.203-284)
-
-### 🎰 Pit boss live (v9.211+)
-- `vPit` : gestion tables ouvertes avec couverture/compétences
-- Auto-assign compétence + GPS
-- Auto-rotation cron 60s + opt-out
-- Ghost alerts (emps détectés non assignés > 2min)
-
-### 📍 Coord GPS tables (v9.223+)
-- `cmc_table_coords` : {id, name, jeu, jeux[], lat, lng, salon}
-- Admin capture position via bouton
-- `detectEmpAtTable(pos)` seuil 4m + accuracy
-- Dots tables sur carte admin
-
-### 🕰 Heures effectives (v9.224+)
-- `calcEffectiveHours(uid, dateTs)` — déduction pre/post-shift + coupure 16/3 stricte
-- `vHeuresShift` jour + `vDashboardHeures` mensuel
-- Export CSV jour + mois + dashboard conformité
-
-### 📢 Notifs temps réel pit → employés (v9.233+)
-- `sendPitMessage` : DM chat + notif push si arrière-plan
-- Types : assign, break, fin_service, rotation, rotation_auto, convoc_*, flip, realloc_out
-- Presets convocation : visite_medicale, habillement, rh, formation, pitboss, annonce
-- Groupes : individual, present, all, team:X
-- Bannière in-app `_checkPitBanner` avec TTS
-- Ack + réactions emoji (✅ 👍 ⚠️ ⏳ ❌ 🙅)
-- Badge pulsant topbar si pending
-
-### 🧩 Solveur staffing + dernier call (v9.265+)
-- `pitSolveStaffing` : algo allocation par score (compétence + chef + senior)
-- `pitApplyStaffingPlan` : applique auto, notif emps retirés/ajoutés
-- `pitDeclareLastCall` : bloque nouvelles ouvertures jusqu'à 14h lendemain
-
-### 🔁 Tables réversibles (v9.268+)
-- `cmc_table_coords[].jeux = ["bj","punto"]` (1 ou plus)
-- `pitFlipTable` : change jeu en cours + notif + re-calibre rotDurMin
-- Auto-rebalance si emps incompatibles (confirm prompt)
-- UI multi-select jeux (checkboxes)
-
-### 🗺 Plan d'implantation évolutif (v9.274+)
-- `vPlanImplantation` : SVG 800×500 par établissement (CMC, Café, CDP, Sun)
-- Drag & drop tables (position en % viewBox, responsive)
-- Image de fond uploadable par URL
-- Lien Google Maps par adresse
-- Icônes créatives par jeu : ♠ ● ○ ♣ ♦ 🎲 ♥
-- `autoPlacePlanFromGPS` : min-max normalization lat/lng → %
-- Dots live pulsants 🟢 sur tables ouvertes
-- Stats par salon (compteur + ouvertes live)
-- Salons custom par établissement (ajout/suppression)
-- **Clic sur table = ouvrir/fermer live** (mode consult)
-
-## 📋 PRs mergées session bis
-
-| PR | Titre | Versions |
-|----|-------|----------|
-| #20 | Coord tables GPS + heures effectives | v9.223-224 |
-| #21 | CSV export + auto-assign GPS + dashboard heures | v9.225-227 |
-| #22 | Lien table physique + ghost alerts | v9.228-229 |
-| #23 | Ghost watcher + notifs temps réel emp + convocations | v9.230-237 |
-| #24 | Ack emp + bannière in-app + rotation notif | v9.238-240 |
-| #25 | Auto-rotation cron + dashboard pit boss | v9.241-243 |
-| #26 | Export CSV ack + alerte conformité + docs | v9.244-246 |
-| #27 | Historique session + fil emp + badge topbar | v9.247-249 |
-| #28 | Tests unitaires notifs + notes | v9.250-251 |
-| #29 | Notif push + auto-assign GPS + emoji feedback | v9.252-254 |
-| #30 | Stats réactions + timer emp | v9.255-256 |
-| #31 | **Fixes audit externe** (coupure 16/3 + races) | v9.257-259 |
-| #32 | Polish UX (responsive + a11y) | v9.260-262 |
-| #33 | Solveur staffing + dernier call + tests | v9.263-267 |
-| #34 | Tables réversibles + flip | v9.268-270 |
-| #35 | Datalist salons + auto-rebalance | v9.271-273 |
-| #36 | Plan implantation évolutif casino+café | v9.274-277 |
-| #37 | Plan ↔ GPS sync + live status + stats salon | v9.278-280 |
-| #38 | Plan interactif (clic live + salons custom) | v9.281-283 |
-
-## 🔑 Clés Firebase ajoutées session bis
-
-| Clé | Sync | Usage |
-|-----|------|-------|
-| `cmc_table_coords` | FB_FIX | Coord GPS tables |
-| `cmc_timings` | FB_FIX | Timings shift |
-| `cmc_known_identities` | FB_FIX | Historique permanent identités |
-| `cmc_positions` | FB_FIX | Positions live emps (rolling 48h) |
-| `cmc_plan_positions` | FB_FIX | Positions visuelles tables plan |
-| `cmc_plan_bg_images` | FB_FIX | Images de fond plan |
-| `cmc_custom_salons` | FB_FIX | Salons custom par établissement |
-| `cmc_ghost_log` | FB_LOCAL | Historique détections ghost |
-| `cmc_auto_rotation_off` | FB_LOCAL | Opt-out auto-rotation |
-| `cmc_auto_assign_gps` | FB_LOCAL | Opt-in auto-assign GPS |
-
-## 🔍 Règles permanentes actives
-
-- **Vérification 10 sources minimum** pour toute info factuelle
-- **Merge autonome** quand CI Vercel green
-- **Audit externe** via subagents Explore avant chaque batch majeur
-- **Tests unitaires** après chaque nouvelle feature dans runTests()
-- **esc() partout** sur données user avant innerHTML
-- **Guards admin** `if(!A.user||A.user.id!==AID)return;` sur fonctions destructrices
-
-## ⏳ Roadmap futurs
-
-- **App native** (ROADMAP_NATIVE_APP.md) : ~15-20k€, 2 mois (géoloc 24/7)
-- Module paie complet (Article 13 Convention + cagnottes par jeu)
-- Intégration SI SBM externe
-- Multi-langue IT/EN complet
-- Export PDF planning signé
-
-## ⏳ Actions Kevin hors code
-
-- Nettoyage Vercel (kdmc-bot-2026)
-- Token Telegram / secrets GitHub Actions
-- Créer repos IA-KDMC + e-KDMC
-- Valider budget app native si souhait 24/7 strict
+### Session 2026-04-13 — ce qui a été livré
+| Version | Contenu |
+|---------|---------|
+| v9.103 | Couleurs CODES calibrées PDF SBM |
+| v9.104 | Auto-vérif import totale (8 audits + auto-corrections + 4 boutons secours) |
+| v9.105 | Fix crash Safari burn-out + CDP pêche clair + contraste AAA |
+| v9.106 | Fix micro chat + préservation clé API reset + TTS chat |
+| v9.107 | Helper secteurs P/P+/E (devenu manuel en v9.116) |
+| v9.108 | Backup admin Firebase + persistance post + auto-classif import (revert v9.116) |
+| v9.109 | Sync compact + auto-backup import + IA sur-vérif + auto-save profil |
+| v9.110 | Visibilité MAX + modal burnout propre |
+| v9.111 | Fix SW crash + 1 bouton fermer + login centré iOS |
+| v9.112 | Fix toast thème qui masquait Continuer login |
+| v9.113 | Thème clair RÉELLEMENT fonctionnel |
+| v9.114 | Bouton pause diaporama + visibilité massive + fond vert défaut |
+| v9.115 | Stats connexions complètes + fuzzy search IA |
+| v9.116 | Retrait auto-reassign familles + restore DEF_EMP |
+| v9.117 | Fix 3 sources de crashes (SW update, Firebase fetch, IA fetch) |
 
 ---
 
-*Dernière mise à jour : 2026-04-18 — v9.284 (132 versions total, 19 PRs mergées session bis, modules pit boss/coord GPS/heures effectives/notifs/plan implantation complets)*
+## 📋 Fichiers documentation à JOUR
+
+| Fichier | Rôle |
+|---------|------|
+| `CLAUDE.md` | Guide assistant IA (règles, workflow, erreurs connues) |
+| `NOTES_USER.md` | **Infos métier admin** (couleurs PDF, tables, horaires rôles, vision IA…) |
+| `CHANGELOG.md` | Historique complet versions |
+| `MEMO_RESUME.md` | État courant (ce fichier) |
+| `README.md` | Vitrine projet |
+
+---
+
+## 🚀 Session nuit du 12 au 13 avril 2026
+
+### Livré (v9.100 → v9.103)
+
+| Version | Contenu |
+|---------|---------|
+| **v9.100** | Audit expert 4 subagents → 7 corrections P0/P1 (guards admin, FB_LOCAL, hashV2, touch targets, Escape, undo stacks) |
+| **v9.101** | **URGENT** Fix crash Safari iOS `SyntaxError: Invalid escape` (3 onclick inline + null guards) + lisibilité textes ↑ |
+| **v9.102** | Auto-vérification AUTOMATIQUE post-import (pas de bouton) + 5 outils IA sur-vérification (deep/compare/coherence/super) |
+| **v9.103** | **Couleurs CODES calibrées** sur le PDF SBM original (screenshots fournis par admin) |
+
+### Tests finaux
+- **54/54 E2E PASS** sur 6 devices en ~29s
+- 0 erreur runtime
+- 32 versions livrées depuis v9.70 (v9.71 → v9.103)
+
+---
+
+## 🎯 Capacités actuelles
+
+- **76 outils IA** (24 admin) — langage naturel complet
+- **17 sujets aide `?`** contextuelle
+- **43 actions** command palette ⌘K
+- **Undo/Redo** ⌘Z global
+- **Backup auto** quotidien + rotation 7j
+- **Preview/Rollback import** SHA-256
+- **Auto-vérification** post-import (bandeau + toast)
+- **Dashboard LIVE** + Mode TV
+- **Dark/Light/Auto** theme
+- **IndexedDB** wrapper
+- **Password gen + strength**
+- **Error + Perf monitoring**
+- **Réactions emojis chat**
+- **Hash v2** sel dynamique
+- **Circuit breaker Firebase** (5 échecs/60s cooldown)
+- **PWA** Badge/Share/WakeLock/Shortcuts
+- **Accessibilité AAA** (skip-link, ARIA, high contrast, font scaler)
+- **Couleurs PDF SBM** calibrées
+
+---
+
+## ⏳ En attente d'inputs admin
+
+Voir `NOTES_USER.md` pour détails :
+
+1. **Horaires inspecteur/superviseur/pitboss** : structure `ROLE_SHIFTS` prête, attend codes exacts
+2. **Plans casino + numéros tables + jeux** : gestion tables amovibles, salons (Atrium…)
+3. **Couleurs affinées** : si les couleurs actuelles ne matchent pas à 100%, l'admin envoie nouveau screenshot
+
+---
+
+## 🔒 Règles permanentes (voir CLAUDE.md)
+
+1. **§1** — TodoWrite obligatoire pour chaque demande
+2. **§1bis** — UX : simple, visuel, ludique, compréhensible (icônes/emojis, tooltips, aide `?`)
+3. **§1ter** — NOTES_USER.md : enregistrer IMMÉDIATEMENT toute info métier donnée par l'admin
+4. **§Outils expert** — boîte à outils pour sessions futures
+5. **§Erreurs connues** — 23 pièges documentés à ne JAMAIS refaire
+
+---
+
+## 🧪 Workflow testing
+
+```bash
+# Tests E2E locaux (6 devices, ~29s)
+node tools/tests/e2e.test.js
+
+# Validation syntaxe JS
+node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const s=h.lastIndexOf('<script>'),e=h.lastIndexOf('</script>');fs.writeFileSync('/tmp/t.js',h.slice(s+8,e));" && node --check /tmp/t.js
+
+# Taille fichier
+wc -c index.html   # ~1.24 MB actuellement
+
+# Git status + log récent
+git status && git log --oneline -10
+```
+
+---
+
+## 🔮 Prochaines pistes
+
+### Priorité haute (attend inputs)
+- Horaires inspecteur/superviseur/pitboss (codes)
+- Plans casino tables amovibles
+
+### Améliorations continues possibles
+- i18n étendu (EN/IT/DE complets) + traduction chat via IA
+- Export PDF planning individuel (via window.print + CSS @media print)
+- QR code partage planning
+- Drag & drop planning (shifts)
+- Bulk actions UI (checkbox selection)
+- Notifications push serveur-less
+- Onboarding interactif complet
+
+---
+
+## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
+
+**App IA premium livree dans `apex-ai/`** :
+- `index.html` (355 KB, 1097 lignes) — 247+ actions, self-modifying, AI Crew
+- `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
+- `sw.js` — Service Worker v1.2 (push + background sync)
+- `manifest.json` — PWA installable
+
+**60 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
+
+**KDMC v6.1 — Capacites :**
+- 247+ actions autonomes, 70+ templates pro, 10 personas
+- AI Crew (5 agents internes: verificateur, critique, optimiseur, fact-checker, creatif)
+- Local Workers (4 agents arriere-plan: erreurs, habitudes, taches, backup)
+- Self-modifying + Self-improving (apprend des reactions)
+- Auto-learn 24 marques appareils
+- IFTTT Rules + Predictions + Monte Carlo
+- Python + JS + Canvas + Code Editor
+- 12 ambiances domotique, 42 commandes IR Broadlink
+- Smart TV WiFi (Samsung, LG, Roku, Android TV)
+- Assistant vocal continu type Siri (32 commandes)
+- Finance (NPV/IRR/SMA/EMA/Finnhub/Crypto)
+- Mode offline Gemma WebLLM
+- 15 achievements, 6 themes, 4 langues
+- Gamification XP + slot machine + Konami
+- Deep Research + Multi-perspective
+- Snapshots time travel + Export universel
+
+**Voir MEMO_KEVIN_ACTIONS.md pour les actions restantes de Kevin.**
+
+---
+
+*Dernière mise à jour : 2026-04-18 — APEX AI v1.5 + CMC v9.119*

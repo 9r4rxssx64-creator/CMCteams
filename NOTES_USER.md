@@ -784,4 +784,127 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
-*Dernière mise à jour : 2026-04-13 (v9.103)*
+---
+
+## 📱 Comptes & appareils Kevin (session 2026-04-18)
+
+**Appareils :**
+- iPhone (principal) — Safari PWA
+- Tablette Android (chez sa belle-fille actuellement)
+- Ordinateur (pas sur lui, a connecter plus tard)
+
+**Compte Cloudflare :** Desarzens.kevin@gmail.com (confirme 2026-04-19)
+
+**Comptes email :**
+- Gmail (adresse a confirmer)
+- Outlook : kevind@monaco.mc (sur iPhone)
+- iCloud (adresse a confirmer — icloud.com ou mac.com)
+
+**Services multimedia :**
+- Spotify (compte actif) — integre dans KDMC (playlists, recherche, ambiances)
+
+**Reseaux sociaux / messagerie :**
+- WhatsApp (a connecter via Meta Business API)
+- Instagram (a connecter)
+- Facebook (a connecter)
+- Telegram : bot @Kdmc_kevind_2026_bot (deja cree)
+
+**Demande admin (2026-04-18) :**
+> "Je veux que tu aies acces a tous mes outils, toutes mes applications
+> au maximum pour pouvoir agir quand je te le demande. Executer des
+> actions pour moi sur tous mes appareils."
+
+**Actions requises :**
+- [ ] Gmail : activer API Google + OAuth
+- [ ] Outlook/monaco.mc : configurer OAuth Microsoft
+- [ ] WhatsApp : creer compte Meta Business API
+- [ ] Instagram/Facebook : lier Meta Business Suite
+- [ ] iCloud : mot de passe d'app specifique
+- [ ] Configurer tout dans la section admin APEX AI
+
+---
+
+---
+
+## ⚠️ ANTI-TIMEOUT — Regle permanente (2026-04-18)
+
+**Probleme** : "API Error: Stream idle timeout" quand on ecrit des gros fichiers d'un coup.
+
+**Solution obligatoire :**
+1. JAMAIS ecrire un fichier > 500 lignes en un seul Write — decouper en morceaux
+2. Ecrire le squelette d'abord (Write), puis completer par Edit sequentiels
+3. Agents : leur donner des taches COURTES et PRECISES (pas "ecris 4000 lignes")
+4. Si timeout : reprendre IMMEDIATEMENT ou on en etait, sans tout recommencer
+5. Travailler en autonomie — ne jamais s'arreter a cause d'un timeout
+
+**Kevin ne veut PLUS voir de timeout bloquer le travail.**
+
+---
+
+## 📡 Domotique Kevin (2026-04-19)
+
+**Broadlink** : present sur le reseau local de Kevin
+- Modele : a confirmer (probablement RM4 Mini ou RM Pro)
+- Protocole : UDP proprietaire (necessite bridge HTTP pour controle web)
+- Usage : TV, climatisation, lumieres, volets
+
+**Configuration necessaire (Kevin) :**
+- [ ] Installer broadlink-http-rest sur un appareil local (PC, Raspberry Pi, ou NAS)
+  - `pip install broadlinkhttp` ou Docker : `docker run -p 8780:8780 rackhd/broadlink-http`
+  - OU installer Home Assistant avec integration Broadlink native
+- [ ] Configurer l'URL du bridge dans APEX AI > Reglages > IR Blaster
+- [ ] Apprendre les codes IR de chaque appareil (TV, AC, lumieres)
+
+**Appareils a controler :**
+- [ ] TV (marque a confirmer)
+- [ ] Climatisation (marque a confirmer)
+- [ ] Lumieres (si connectees via IR)
+- [ ] Volets (si connectes)
+
+---
+
+## 📡 Broadlink Kevin (2026-04-19)
+
+**Kevin a un Broadlink sur son reseau local.**
+- 42 commandes IR pre-configurees (TV, AC, lumieres, volets, ventilo, barre son, projecteur)
+- Bridge HTTP requis : `pip install broadlinkhttp` sur un appareil local
+- URL a configurer dans KDMC > Reglages > IR Blaster
+
+## 🤖 KDMC v6.1 — Capacites (2026-04-19)
+
+**L'IA peut modifier l'app + se faire aider + verifier son travail :**
+- Self-modify: CSS, JS, onglets, code source
+- AI Crew: 5 agents internes verifient chaque reponse
+- Local Workers: 4 agents arriere-plan surveillent en permanence
+- Auto-learn: reconnait 24 marques d'appareils automatiquement
+- Self-improving: apprend des reactions 👍👎
+
+**247+ actions, 70+ templates, 10 personas, 15 achievements, 12 ambiances**
+
+## 📋 Regles permanentes (rappel)
+
+1. **Toute info de Kevin = noter dans NOTES_USER.md immediatement**
+2. **Lire MEMO_RESUME.md + NOTES_USER.md au debut de CHAQUE session**
+3. **MAJ tous les .md apres chaque session**
+4. **Ne JAMAIS oublier une demande — tout dans TodoWrite**
+5. **Se referer aux feuilles de route pour CHAQUE action**
+6. **A chaque fin de travail, se demander : puis-je faire mieux ?**
+7. **Chaque livrable = verifie, teste, corrige, sauvegarde AVANT livraison**
+8. **Ne JAMAIS s'arreter avant d'avoir tout termine**
+9. **Agents/workers en arriere-plan pour surveiller en permanence**
+10. **Si l'app ne connait pas un sujet, elle va chercher les infos (web_search) AVANT de repondre**
+11. **L'app doit anticiper bugs, fonctions cassees, et corriger automatiquement**
+12. **Long terme : l'app doit durer pour toujours, etre gratuite/low-cost, rapporter un maximum**
+
+## 💰 Objectif business KDMC
+
+- **Visibilite maximale** : SEO, Product Hunt, Reddit, LinkedIn, TikTok, YouTube
+- **Publicite** : mettre en avant les avantages vs concurrence partout
+- **Revenus** : Free/Pro (14.99 EUR)/Enterprise (49.99 EUR)/Lifetime (249 EUR)
+- **Couts quasi zero** : GitHub Pages (gratuit), Firebase (gratuit), Cloudflare (gratuit)
+- **Marge nette : ~85%**
+- **Objectif 3 ans : 900 000 EUR/an**
+
+---
+
+*Dernière mise à jour : 2026-04-19 (KDMC v6.1 — 60 commits, 355 KB)*
