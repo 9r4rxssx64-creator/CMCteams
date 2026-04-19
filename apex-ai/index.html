@@ -17,6 +17,8 @@
 <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2308080f'/%3E%3Ctext x='256' y='200' text-anchor='middle' font-size='120' font-weight='800' fill='%23c9a227'%3E%E2%9C%A6%3C/text%3E%3Ctext x='256' y='310' text-anchor='middle' font-size='68' font-weight='800' fill='%23c9a227'%3EAPEX%3C/text%3E%3Ctext x='256' y='380' text-anchor='middle' font-size='44' fill='%236a8aff'%3EAI%3C/text%3E%3C/svg%3E">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://js.stripe.com https://*.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://*.firebasedatabase.app https://*.workers.dev https://api.anthropic.com https://api.exchangerate-api.com https://finnhub.io https://api.telegram.org https://api.emailjs.com https://*.ingest.sentry.io; frame-src blob: data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%2308080f'/%3E%3Ctext x='90' y='75' text-anchor='middle' font-size='50' font-weight='800' fill='%23c9a227'%3E%E2%9C%A6%3C/text%3E%3Ctext x='90' y='120' text-anchor='middle' font-size='32' font-weight='800' fill='%23c9a227' letter-spacing='3'%3EKDMC%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="KDMC">
 <link rel="preconnect" href="https://api.anthropic.com">
 <link rel="dns-prefetch" href="https://browser.sentry-cdn.com">
 <link rel="preconnect" href="https://browser.sentry-cdn.com" crossorigin>
@@ -159,6 +161,7 @@ textarea.ax-input{resize:vertical;min-height:44px}
 .ax-md th{background:rgba(201,162,39,.1);color:var(--ax-gold);padding:6px 10px;text-align:left;border:1px solid var(--ax-border)}
 .ax-md td{padding:6px 10px;border:1px solid var(--ax-border)}
 .ax-md blockquote{border-left:3px solid var(--ax-gold);padding-left:12px;color:var(--ax-text-dim);margin:8px 0}
+@keyframes axSplashBar{0%{width:0%}50%{width:60%}100%{width:100%}}
 @keyframes axSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes axPulse{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 @keyframes axFadeIn{from{opacity:0}to{opacity:1}}
@@ -174,6 +177,8 @@ textarea.ax-input{resize:vertical;min-height:44px}
 .ax-success-flash{animation:axSuccessFlash .5s ease}.ax-error-shake{animation:axErrorShake .4s ease}
 @keyframes axSuccessFlash{0%{box-shadow:0 0 0 0 rgba(76,175,80,.5)}100%{box-shadow:0 0 0 12px rgba(76,175,80,0)}}
 @keyframes axErrorShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media(max-width:390px){.ax-tab .lb{font-size:9px}.ax-msg{margin:3px 8px;padding:8px 10px;font-size:13px}.ax-chatbar{padding:6px 8px}.ax-card{padding:12px;margin:6px 0}.ax-landing-hero h1{font-size:32px}.ax-price-card .ax-amount{font-size:28px}#topbar{padding-left:10px;padding-right:10px;height:44px}.ax-landing-hero{padding:40px 12px 30px}}
+@media(max-width:480px){.ax-sidebar{width:100%}.ax-canvas{width:100%;max-width:100%}.ax-modal{margin:0 8px;max-width:calc(100vw - 16px)}.ax-features{grid-template-columns:1fr}.ax-pricing>div{min-width:140px}}
 @media(min-width:768px){.ax-msg{max-width:70%}.ax-sidebar{width:320px}.ax-features{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1200px){#content{max-width:900px;margin:0 auto}.ax-msg{max-width:60%}.ax-features{grid-template-columns:repeat(3,1fr)}.ax-pricing{grid-template-columns:repeat(3,1fr)}}
 .ax-light{--ax-bg:#f5f5f0;--ax-bg2:#ffffff;--ax-bg-card:rgba(255,255,255,.85);--ax-bg-input:rgba(0,0,0,.04);--ax-text:#1a1a1a;--ax-text-dim:#666;--ax-glass:rgba(255,255,255,.8);--ax-border:rgba(201,162,39,.2);--ax-gold:#9a7a10;--ax-gold-bright:#c9a227;--ax-gold-soft:rgba(201,162,39,.1)}
@@ -201,6 +206,7 @@ textarea.ax-input{resize:vertical;min-height:44px}
 </style>
 </head>
 <body>
+<div id="ax-splash" style="position:fixed;inset:0;background:#08080f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s"><div style="font-size:64px;animation:axPulse 1.5s infinite">&loz;</div><div style="color:#c9a227;font-size:28px;font-weight:800;letter-spacing:4px;margin-top:12px">KDMC</div><div style="color:#4a9aff;font-size:14px;margin-top:4px">Intelligence Artificielle</div><div style="margin-top:20px;width:120px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden"><div style="width:0%;height:100%;background:#c9a227;border-radius:2px;animation:axSplashBar 2s ease forwards"></div></div></div>
 <div id="app">
 <div id="topbar"></div>
 <div id="content"></div>
@@ -212,7 +218,7 @@ textarea.ax-input{resize:vertical;min-height:44px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v7.1",ADMIN_ID="kdmc_admin";
+var APP_VER="v7.3",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1200,7 +1206,7 @@ window.addEventListener("unhandledrejection",function(e){var log=lg("ax_err_log"
 var _perfMarks={};
 function perfStart(label){_perfMarks[label]=performance.now();}
 function perfEnd(label){if(!_perfMarks[label])return 0;var d=performance.now()-_perfMarks[label];delete _perfMarks[label];return Math.round(d);}
-window.addEventListener("DOMContentLoaded",function(){perfStart("init");axInit();_loadPurify();_restoreReminders();finFetchRates();idbOpen().catch(function(){});_globalIntervals.push(setInterval(function(){finUpdatePrices();},300000));_globalIntervals.push(setInterval(function(){_checkDailySchedules();},60000));_globalIntervals.push(setInterval(function(){finFetchRates();},3600000));var customAmb=lg("ax_custom_ambiances",{});Object.keys(customAmb).forEach(function(k){AMBIANCES[k]=customAmb[k];});_processDeepLink();_checkShareTarget();console.log("KDMC "+APP_VER+" init en "+perfEnd("init")+"ms");})
+window.addEventListener("DOMContentLoaded",function(){perfStart("init");axInit();_loadPurify();_restoreReminders();finFetchRates();idbOpen().catch(function(){});_globalIntervals.push(setInterval(function(){finUpdatePrices();},300000));_globalIntervals.push(setInterval(function(){_checkDailySchedules();},60000));_globalIntervals.push(setInterval(function(){finFetchRates();},3600000));var customAmb=lg("ax_custom_ambiances",{});Object.keys(customAmb).forEach(function(k){AMBIANCES[k]=customAmb[k];});_processDeepLink();_checkShareTarget();var splash=document.getElementById("ax-splash");if(splash){splash.style.opacity="0";setTimeout(function(){splash.remove();},600);}console.log("KDMC "+APP_VER+" init en "+perfEnd("init")+"ms");})
 </script>
 </body>
 </html>
