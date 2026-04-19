@@ -1,6 +1,68 @@
-# Mémo de reprise — v9.415 (session 2026-04-19 autonome étendue)
+# Mémo de reprise — v9.432 (session 2026-04-19 autonome complète)
 
-## 🆕 Extensions session 2026-04-19 (v9.410 → v9.415)
+## 🆕 Session 2026-04-19 — **35 versions mergées** (v9.398 → v9.432)
+
+### Bloc final v9.416 → v9.432 (chaîne autonome complète)
+
+| Version | Feature | PR |
+|---------|---------|----|
+| v9.416 | Framework actions one-click agents (`action={label,fn}`) + purge orphelins auto | #101 |
+| v9.417 | Actions one-click sur TOUS les 13 agents (navigation + corrections) | #102 |
+| v9.418 | IA prompt enrichi `cmc_lessons_learned` (mémoire cross-session) | #103 |
+| v9.419 | Event-bus agents (`post_import`, `post_save_ov`, `post_chat_msg`) | #104 |
+| v9.420 | Perf : 75 `find()` → `empById()` O(1) (~19 000 itérations/render économisées) | #105 |
+| v9.421 | Memoize `gpl()` + invalidation ciblée saveOv/doImport | #106 |
+| v9.422 | IA tools admin `admin_run_agent` + `admin_agent_action` + `admin_add_lesson` | #107 |
+| v9.423 | Timeline visuelle 24h dans vAgents (barres densité statut) | #108 |
+| v9.424 | Bannière Accueil enrichie (mini-cards par agent + quick-action inline) | #109 |
+| v9.425 | `learnIdentity` durant import + sync Firebase throttle 30s | #110 |
+| v9.426 | Chat-analyzer réactif temps réel (event `post_chat_msg`) | #111 |
+| v9.427 | **Agent 14** 💡 lesson-suggester (patterns récurrents 7j → suggestions auto) | #112 |
+| v9.428 | Timeline cliquable drill-down par heure | #113 |
+| v9.429 | Push notif admin agents warn/err (dedup 1h, app cachée) | #114 |
+| v9.430 | Daily digest 24h sur Accueil admin (rapports/alertes/connexions/modifs) | #115 |
+| v9.431 | Filtres chips statut dans vAgents historique | #116 |
+| v9.432 | Badge pulsant topbar admin si warn/err pending | #117 |
+
+### 🤖 14 agents internes actifs
+
+⚠ Conflit · 🧹 Hygiène · 🔥 Burnout · 💊 Sync · ⚡ Perf · ⚖ Convention · 🔄 Shifts · 🎓 Comp · ⚖ Rotation · ⏸ Pauses · 📄 Import · 📡 User-watcher · 💬 Chat-analyzer · 💡 Lesson-suggester
+
+### 🔄 Chaîne 100% autonome opérationnelle
+
+1. **Scan** : interval + event-bus réactif (post_import/save_ov/chat_msg)
+2. **Report** : vAgents + bannière Accueil enrichie + badge topbar pulsant + push notif background
+3. **Drill** : timeline cliquable + filtres chips statut + historique par heure
+4. **Act** : quick-actions inline (purge/flush/goto) OU IA tools OU manuel
+5. **Learn** : lesson-suggester détecte patterns récurrents → admin approuve → IA bénéficie
+6. **Share** : cmc_lessons_learned cross-admin (FB_FIX) + IA prompt enrichi
+
+### 📡 Surveillance live multi-users
+
+- Agent 12 user-watcher chez TOUS les connectés (pas que admin)
+- Digest télémétrie 1/h → `cmc_telemetry_digest_<uid>` visible par admin
+- Chat-analyzer détecte confusion/frustration en **temps réel** (event sendMsg)
+- `vTelemetry` admin-only : digests + lessons + suggestions auto
+
+### 📜 Règles propagées 5 endroits
+
+- `CLAUDE.md` projet + dossier Kevin (9 demandes ✅/🔄)
+- `NOTES_USER.md`
+- `~/.claude/CLAUDE.md` global (tous projets futurs)
+- `buildIASystemPrompt` IA app (règles + agents + lessons)
+- Agent descriptions (logique métier embarquée)
+
+### ⚡ Perf / Qualité code
+
+- 75 `find()` → `empById()` O(1)
+- `gpl()` memoize par mois + invalidation ciblée
+- Formule Haversine corrigée (asin → atan2)
+- Anti-BORGIA strict (pas d'invention)
+- Guards AID renforcés (22/22 fonctions destructives)
+
+---
+
+## 🗂 Extensions antérieures session 2026-04-19 (v9.410 → v9.415)
 
 13 versions livrées et mergées sur `main` en autonomie :
 
