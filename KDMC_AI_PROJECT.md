@@ -1,8 +1,8 @@
 # APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v3.0 | **Date** : 2026-04-18
+> **Version** : v3.5 | **Date** : 2026-04-19
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : v3.0 LIVREE — Super-app IA complete (185 KB, 42 actions, 16 onglets)
+> **Statut** : v3.5 LIVREE — Super-app IA self-modifying (208 KB, 66 actions, dashboard, casino, 6 themes)
 
 ---
 
