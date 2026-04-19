@@ -905,6 +905,19 @@ L'admin veut l'IA au maximum de ses capacités :
 > - APPRENDRE de ses erreurs et NE PLUS les refaire
 > - NOTER cette regle PARTOUT (CLAUDE.md, NOTES_USER.md, system prompt app)
 
+## ✅ Lecons apprises (ne plus reproduire)
+
+1. **Cle API** : JAMAIS montrer/demander aux clients — cle partagee automatique
+2. **Settings admin** : TOUJOURS cacher aux non-admin — check isAdm AVANT d'afficher
+3. **Onboarding** : JAMAIS parler de config technique aux clients — guide simple
+4. **Service Worker** : TOUJOURS bumper la version cache apres chaque maj majeure
+5. **Streaming API** : NE PAS utiliser sur Safari iOS PWA — mode JSON simple
+6. **Permissions** : 1 SEULE demande, sauvegarder, ne PLUS redemander
+7. **Toast parasites** : NE PAS afficher au demarrage (taux change, decouverte, etc)
+8. **Variables** : TOUJOURS declarer AVANT d'utiliser (crash silencieux sinon)
+9. **Tester CHAQUE role** : admin + family + client AVANT de livrer
+10. **localStorage** : sauvegarder TOUT en permanence (pas sessionStorage)
+
 ## 🚨 REGLE ABSOLUE N°0 — AUTONOMIE TOTALE (Kevin 2026-04-19)
 
 > **FAIRE TOUT EN AUTONOMIE. NE DEMANDER A KEVIN QUE CE QUI EST IMPOSSIBLE.**
