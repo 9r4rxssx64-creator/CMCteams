@@ -676,6 +676,22 @@ L'admin veut l'IA au maximum de ses capacités :
 3. **MAJ tous les .md apres chaque session**
 4. **Ne JAMAIS oublier une demande — tout dans TodoWrite**
 5. **Se referer aux feuilles de route pour CHAQUE action**
+6. **A chaque fin de travail, se demander : puis-je faire mieux ?**
+7. **Chaque livrable = verifie, teste, corrige, sauvegarde AVANT livraison**
+8. **Ne JAMAIS s'arreter avant d'avoir tout termine**
+9. **Agents/workers en arriere-plan pour surveiller en permanence**
+10. **Si l'app ne connait pas un sujet, elle va chercher les infos (web_search) AVANT de repondre**
+11. **L'app doit anticiper bugs, fonctions cassees, et corriger automatiquement**
+12. **Long terme : l'app doit durer pour toujours, etre gratuite/low-cost, rapporter un maximum**
+
+## 💰 Objectif business KDMC
+
+- **Visibilite maximale** : SEO, Product Hunt, Reddit, LinkedIn, TikTok, YouTube
+- **Publicite** : mettre en avant les avantages vs concurrence partout
+- **Revenus** : Free/Pro (14.99 EUR)/Enterprise (49.99 EUR)/Lifetime (249 EUR)
+- **Couts quasi zero** : GitHub Pages (gratuit), Firebase (gratuit), Cloudflare (gratuit)
+- **Marge nette : ~85%**
+- **Objectif 3 ans : 900 000 EUR/an**
 
 ---
 
