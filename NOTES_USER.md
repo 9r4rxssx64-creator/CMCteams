@@ -671,6 +671,29 @@ puis appliquer le fix ciblé (`update-config` skill pour settings.json, code
 pour SSE/fetch). Utiliser `run_in_background` + notification de fin pour les
 commandes longues plutôt que de laisser expirer un timeout court.
 
+**État config (2026-04-18, `~/.claude/settings.json`) :**
+- `BASH_DEFAULT_TIMEOUT_MS = 600000` (10 min, max plafond Claude Code)
+- `BASH_MAX_TIMEOUT_MS = 600000`
+- `MCP_TIMEOUT = 60000` / `MCP_TOOL_TIMEOUT = 600000`
+- ⚠️ Nécessite redémarrage Claude Code pour prise en compte des `env`.
+
+## 🚀 INTÉGRATION APEX AI (2026-04-18) — EN ATTENTE
+
+Demande admin : « quand tout sera fonctionnel, ajoute le projet à mon
+application APEX AI ». **Aucune info technique disponible** — à clarifier
+avant toute action :
+
+1. **Nature d'APEX AI** : plateforme externe ? app perso (web/desktop/mobile) ?
+   agrégateur de projets ? IDE ? hub IA personnel ?
+2. **Méthode d'ajout** : URL GitHub à coller ? import API ? upload fichiers ?
+   connecteur dédié ? CLI ? webhook ?
+3. **Périmètre** : repo CMCteams entier ? URL GitHub Pages déployée ? export ?
+4. **Critère « fonctionnel »** : timeouts OK confirmés ? feature précise
+   terminée ? autre ?
+
+Action quand l'admin répond : noter les 4 points ici, faire l'intégration au
+moment voulu, ne pas redemander.
+
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
 L'app DOIT auto-inférer le rôle de l'employé à partir de `emp.post` (compétences)
