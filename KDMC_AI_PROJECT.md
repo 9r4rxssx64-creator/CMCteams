@@ -1,9 +1,9 @@
 # APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v7.1 | **Date** : 2026-04-19
+> **Version** : v9.7 | **Date** : 2026-04-19
 > **Nom** : KDMC (anciennement APEX AI)
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : v7.1 — 394 KB, 270 actions, 1178 lignes, 68 commits, 13 personas, 80+ templates, 12 categories
+> **Statut** : v9.7 — 435 KB, 290 actions, 1252 lignes, 90+ commits, 55 connecteurs, coffre-fort securise
 >
 > **Methodologie de travail OBLIGATOIRE a chaque session :**
 > 1. Lire CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md + KDMC_AI_PROJECT.md
