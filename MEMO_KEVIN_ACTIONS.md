@@ -10,7 +10,7 @@
 
 | Action | Status |
 |--------|--------|
-| App KDMC v7.2 complete (398 KB, 277 actions, 70 commits) | FAIT |
+| App KDMC v10.4 complete (468 KB, 300+ actions, 110+ commits) | FAIT |
 | Landing page + 6 forfaits + comparatif concurrence | FAIT |
 | 80+ templates pro (12 categories) | FAIT |
 | 13 personas experts (medecin, psychologue, juriste...) | FAIT |
@@ -19,15 +19,23 @@
 | Self-modifying + Self-improving + auto-learn 24 marques | FAIT |
 | Gamification (XP, streaks, achievements, daily rewards, parrainage) | FAIT |
 | Spotify integre (8 playlists, commandes vocales) | FAIT |
-| Assistant vocal Siri (32+ commandes) | FAIT |
+| Assistant vocal Siri (32+ commandes) + 44 voix | FAIT |
 | Finance (NPV/IRR/SMA/EMA/Finnhub/Crypto) | FAIT |
 | Medecine + Psychologie + Philosophie | FAIT |
 | FAQ + Changelog + Analytics client in-app | FAIT |
 | Live users + Client tracking + Fiches clients | FAIT |
 | Auto-save 10s + Snapshots time travel | FAIT |
 | IFTTT Rules + Predictions + Monte Carlo | FAIT |
-| Traduction 15 langues + Presentations + Analyse docs | FAIT |
+| Traducteur universel 30 langues + allemand interface | FAIT |
 | SEO + OG + Schema.org + Share Target PWA | FAIT |
+| CGU completes + Stats admin + Historique global | FAIT |
+| Background keep-alive (wake lock + audio silent + SW ping) | FAIT |
+| Smart Context + Astuce jour + Quick actions enrichis | FAIT |
+| Rapport hebdo + notification tous + export PDF | FAIT |
+| Messagerie admin (DM prives + Groupe + Visio) | FAIT |
+| Comptes Sandrine + Christophe TARDIEU (clients test) | FAIT |
+| Favoris messages + raccourcis rapides + historique recherches | FAIT |
+| 8 outils texte + menu contextuel messages | FAIT |
 | Tous les .md a jour | FAIT |
 
 ---
@@ -102,10 +110,14 @@
 
 | Date | Action | Statut |
 |------|--------|--------|
-| 2026-04-19 | KDMC v7.2 livree (70 commits) | FAIT |
+| 2026-04-19 | KDMC v10.4 livree (468 KB, 110+ commits) | FAIT |
+| 2026-04-19 | Messagerie admin + DM + Groupe + Visio | FAIT |
+| 2026-04-19 | Traducteur 30 langues + 8 outils texte | FAIT |
+| 2026-04-19 | 44 voix (paysan, gangster, Dark Vador, helium...) | FAIT |
+| 2026-04-19 | Comptes Sandrine + Christophe TARDIEU | FAIT |
 | 2026-04-19 | Tous les .md a jour | FAIT |
 | 2026-04-19 | App PRETE a commercialiser | FAIT |
 
 ---
 
-*Mis a jour par Claude Code le 2026-04-19 — KDMC v7.2*
+*Mis a jour par Claude Code le 2026-04-19 — KDMC v10.4*

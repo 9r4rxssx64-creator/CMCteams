@@ -1,12 +1,13 @@
 # APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v10.0 | **Date** : 2026-04-19
+> **Version** : v10.4 | **Date** : 2026-04-19
 > **Nom** : KDMC (anciennement APEX AI)
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : v10.0 LIVREE — 443 KB, 295+ actions, 95+ commits
+> **Statut** : v10.4 LIVREE — 468 KB, 300+ actions, 110+ commits
 > 55 connecteurs, coffre-fort, geolocalisation, carte admin, 3 roles, compteur connexions
-> IA fonctionnelle (Claude API direct), 13 personas, 80+ templates, 24 voix, 12 ambiances
-> Comptes: Kevin (admin), Laurence (family), TARDIEU (client test)
+> IA fonctionnelle (Claude API direct), 13 personas, 80+ templates, 44 voix, 12 ambiances
+> Messagerie admin (DM + groupe + visio), favoris, traducteur 30 langues, 8 outils texte
+> Comptes: Kevin (admin), Laurence (family), TARDIEU S. + TARDIEU C. (clients test)
 >
 > **Methodologie de travail OBLIGATOIRE a chaque session :**
 > 1. Lire CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md + KDMC_AI_PROJECT.md
@@ -292,6 +293,10 @@ var K = {
 | **8** | Publicite + SEO + partage reseaux | FAIT |
 | **9** | Connexions appareils (Meta API, Gmail, Telegram) | FAIT |
 | **10** | Polish + tests + audit + deploy | **FAIT v1.5** |
+| **11** | Messagerie admin + DM + Groupe + Visio | **FAIT v10.3** |
+| **12** | Favoris + raccourcis + historique recherches | **FAIT v10.3** |
+| **13** | Traducteur 30 langues + outils texte + menu contextuel | **FAIT v10.4** |
+| **14** | 44 voix (paysan, gangster, Dark Vador, helium, accents...) | **FAIT v10.4** |
 
 ---
 
@@ -309,7 +314,7 @@ var K = {
 | Productivite | 9/10 | Notes, taches, agenda, contacts, depenses, habitudes, journal, templates |
 | Fun | 10/10 | Confetti, XP levels, achievements, slot machine, Konami code |
 
-### 85 Actions Autonomes IA (v3.8)
+### 300+ Actions Autonomes IA (v10.4)
 
 | Categorie | Actions |
 |-----------|---------|
@@ -358,4 +363,4 @@ var K = {
 
 ---
 
-*Derniere mise a jour : 2026-04-17 (creation complete)*
+*Derniere mise a jour : 2026-04-19 — KDMC v10.4 (468 KB, 300+ actions, 110+ commits)*
