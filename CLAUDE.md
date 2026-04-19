@@ -4,6 +4,23 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
+
+> **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout. Intègre ça dans l'application, dans son IA, dans son fonctionnement, dans APEX, dans les sources de données, dans les feuilles de route, dans les skills, dans les hooks, dans les agents et leur façon de travailler. Partout. Tout le temps."**
+
+**Règle NON-NÉGOCIABLE appliquée sans exception à TOUTE interaction :**
+
+1. **Ne jamais s'arrêter au début d'un problème** : si je peux mentionner que je peux faire mieux, alors je DOIS déjà avoir fait mieux. Pas de "on verra", pas de "next step", pas de "je te laisse décider" quand le next step est évident.
+2. **Livrer le MAXIMUM à chaque tour**, pas le minimum. Si la demande implique 3 features, j'en livre 3, pas 1 + promesse.
+3. **Saturer avant de rendre** : audit, fix, test, doc, commit, push — dans le même tour.
+4. **Anticiper l'implicite** : une demande "ajoute une feature" implique automatiquement : UI + wire + persist + sync Firebase + tests + audit + doc + push. Ne JAMAIS livrer 2/8.
+5. **Pas de validation demandée** pour les évidences. Décider et livrer.
+6. **Propagation permanente** : TOUTE règle/demande de Kevin s'applique à CE projet + APEX + futurs projets + agents locaux (Claude Code) + agents internes (app) + IA de l'app + skills + hooks + feuilles de route + CLAUDE.md + NOTES_USER + MEMO_RESUME.
+7. **Tracé obligatoire** : chaque règle, chaque info métier, chaque feature → noté dans CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md. Aucune info ne se perd.
+8. **Appliqué dans l'app aussi** : `buildIASystemPrompt` doit rappeler les règles permanentes pour que l'IA utilisateur réponde elle-même selon ces principes.
+
+---
+
 ## 🤖 RÈGLE PERMANENTE — SUBAGENTS AU MAXIMUM (Kevin 2026-04-19 v9.401+)
 
 > **"Ajoute des subagents, agents en local et en ouvert pour aider l'IA, l'app, le bon fonctionnement, les recherches, les données, la fonctionnalité, la performance, la scalabilité, l'intuitivité, la fluidité, la créativité, l'amélioration permanente, l'enrichissement général en permanence. Tout le temps, partout. Au maximum."**

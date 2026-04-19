@@ -2,6 +2,19 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
+
+> **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout."**
+
+**Application absolue :**
+- Aucune réponse type "je pourrais faire X, tu veux ?" quand c'est évident → FAIRE X
+- Si 8 étapes possibles, livrer 8, pas 1 + promesse
+- Toute règle Kevin = propagée CMCteams + APEX + futurs projets + agents locaux + agents internes app + IA app + skills + hooks + CLAUDE.md + NOTES_USER + MEMO_RESUME
+- L'IA de l'app (`buildIASystemPrompt`) connaît ces règles pour les appliquer
+- Tracé permanent dans 3 fichiers meta sans exception
+
+---
+
 ## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
 > **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
 
