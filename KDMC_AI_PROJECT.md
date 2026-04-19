@@ -1,8 +1,20 @@
 # APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v3.8 | **Date** : 2026-04-19
+> **Version** : v5.3 | **Date** : 2026-04-19
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : v3.8 LIVREE — 223 KB, 85 actions, self-modifying, code editor, 6 themes, 32 commits
+> **Statut** : v5.3 LIVREE — 325 KB, 245 actions, 1070 lignes, 54 commits
+>
+> **Methodologie de travail OBLIGATOIRE a chaque session :**
+> 1. Lire CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md + KDMC_AI_PROJECT.md
+> 2. TodoWrite AVANT de coder
+> 3. Subagents paralleles pour audits
+> 4. Syntax check + tests AVANT commit
+> 5. Ne JAMAIS s'arreter avant d'avoir tout termine
+> 6. Petits morceaux (Edit) pour eviter les timeouts
+> 7. Agents en arriere-plan pour auditer pendant qu'on code
+> 8. Commit + push reguliers (pas de mega-commits)
+> 9. MAJ docs .md apres chaque session
+> 10. Regle anti-timeout : decouper fichiers > 500 lignes
 
 ---
 
