@@ -6,3 +6,19 @@ package-lock.json
 tools/video/frames/
 tools/video/output/_palette.png
 tools/video/assets/*.png
+
+# Builds / exports obsolètes (historique archivé dans CHANGELOG + git tags)
+dist/
+*.zip
+
+# Fichiers d'extraction temporaires (scripts legacy)
+app [0-9]*.js
+/tmp/
+*.tmp
+
+# Éditeurs
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

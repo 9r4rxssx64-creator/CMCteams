@@ -90,6 +90,61 @@ node tools/video/make-demo.js --skip-capture # Sans Puppeteer
 
 ---
 
+## ⚡ RÈGLE BATCHING CI (Kevin 2026-04-18 — v9.381+)
+
+**Éviter rate limit Vercel Free (100 déploys/jour) et services similaires.**
+
+Règle permanente pour CE projet ET tous projets futurs :
+
+1. **BATCHER** les changements : 1 PR = 5-10 fixes/features cohérents
+   ❌ PAS : 1 PR par petit fix (→ 75 PRs = rate limit)
+   ✅ OUI : grouper par batch thématique (UI + fixes + tests → 1 PR)
+
+2. **SKIP CI sur docs-only** via `vercel.json` :
+   ```json
+   { "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':(exclude)*.md'" }
+   ```
+   Si seulement `*.md` changé → Vercel skip build
+
+3. **Accumuler en local** : plusieurs commits sur une branche avant push
+   - Bump APP_VER à chaque batch logique, pas à chaque fix
+   - Test `node --check` après le batch complet
+   - Push + PR quand le batch est cohérent
+
+4. **Doc-only commits** : pousser direct sur main si seulement notes/docs
+   (évite branch + PR + CI pour rien)
+
+5. **Anticipation** : si >10 PRs prévues dans la session, consolidation
+   immédiate obligatoire
+
+**Exemple bon batch** :
+- v9.X00 : fix bug A + fix bug B + test + CSS polish → 1 PR
+
+**Exemple mauvais** (ce qui a causé rate limit aujourd'hui) :
+- v9.371 PR + v9.372 PR + v9.373 PR + ... (1 fix = 1 PR)
+
+---
+
+## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
+
+> **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
+
+Toutes les sessions, toutes les tâches, tout le temps :
+- Mode expert maintenu, jamais de shortcuts
+- Parallélisation tool calls quand indépendants
+- Subagents `Explore` pour audit parallèle
+- Tests unitaires après chaque feature
+- Validation `node --check` obligatoire avant commit
+- esc() partout sur données user
+- Guards AID sur fonctions destructrices
+- Commits + push autonomes quand CI green
+- CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md tenus à jour
+- Pas de régression : audit avant livraison
+
+Cette règle EST lue à chaque début de session et appliquée sans exception.
+
+---
+
 ## ⚠️ RÈGLE ABSOLUE — Méthode de travail (non-négociable)
 
 **L'utilisateur ne doit JAMAIS avoir à rappeler une demande oubliée.** Cette règle prime sur tout le reste.
@@ -140,6 +195,40 @@ Exemples d'infos à enregistrer :
 ### 1bis. UX — Tout doit être simple, visuel, ludique, compréhensible (v9.75+)
 
 **Règle permanente pour CE projet ET tous les projets futurs.**
+
+### 1ter. UX allégement + stats cliquables (Kevin 2026-04-18 v9.379+)
+
+**RÈGLE PERMANENTE NON-NÉGOCIABLE** à appliquer à CHAQUE vue créée ou modifiée :
+
+1. **Alléger les vues** :
+   - Familles / sous-dossiers / menus déroulants (`<details><summary>`)
+   - Défilement horizontal (`overflow-x:auto`) quand > 5 éléments
+   - Résumés en tête, détails dépliables au clic
+   - JAMAIS tout afficher d'un coup (> 20 lignes = scroll horizontal ou collapse)
+
+2. **Stats cliquables actionnables** :
+   - Une stat "2 malades" → clic → liste des 2 employés malades
+   - "15 présents secteur BJ" → clic → leur planning/cards
+   - "3 en attente ack" → clic → liste des DM non acquittés
+   - Aucune stat orpheline (pur affichage sans lien)
+
+3. **Hiérarchie progressive** :
+   - Niveau 1 : compteurs grands + icône
+   - Niveau 2 : sous-sections dépliables
+   - Niveau 3 : détails ligne par ligne
+   - L'admin déplie ce qu'il veut voir
+
+4. **Exemples à suivre dans le code** :
+   - `showLiveList(key)` (v9.212) : cards KPI cliquables → modal liste
+   - `vEndShiftDashboard` : stats colorées par urgence + clic → action
+   - `vPitHistory` : filtres type + 8 events max visibles
+
+**À appliquer quand je crée/modifie des vues** :
+- Checker systématiquement : "Cette stat peut-elle être cliquée pour voir les détails ?"
+- Si oui → ajouter onclick → modal ou sv(vue_detail)
+- Si non pertinent → garder tel quel (ex: version APP_VER)
+
+---
 
 L'utilisateur final de cette app (admin + employés casino) n'est PAS technique. Chaque bouton, champ, fonction, message DOIT être immédiatement compréhensible.
 
@@ -285,11 +374,13 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.103"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.303"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
-- **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
-- **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
-- **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps)
+- **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC + 4 casinos SBM (CMC/CDP/Sun/MCB, v9.197)
+- **Taille fichier :** ~1.80 MB (HTML + CSS + JS) — v9.303
+- **IA Pit Boss** (v9.298-300) : orchestrateur auto avec prédictions proactives, opt-in `cmc_pit_ai_mode`
+- **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps) + Constitution de Monaco (v9.148b) + Indice Monaco Fonction Publique pour calcul paie (v9.186)
+- **Audits externes** : moyenne **8.50/10** (benchmark niche casino SBM **9.9/10**) — voir `AUDIT_EXTERNE_2026-04-17.md`
 
 ---
 
@@ -676,6 +767,9 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 21. **Git rebase sans vérification post-rebase** : un rebase peut perdre silencieusement des modifications (règles detectRepoConflicts, blocs HTML dans vDocs, validation post-import). **OBLIGATION** : après TOUT rebase, vérifier avec `grep` que CHAQUE feature ajoutée est encore présente dans le fichier. Liste de contrôle post-rebase : `grep -c "mot_clé_unique_feature"` pour chaque ajout ❌
 22. Données SEED incorrectes sans validation : SEED_APR2026 avait des horaires de travail au lieu de CP/AF pour REVOLLON. **OBLIGATION** : toute donnée SEED doit être vérifiée par `detectRepoConflicts()` — la règle 4 (horaire_dans_absence) attrape ce type d'erreur automatiquement ❌
 23. Audit "simple" au lieu d'audit "général expert" : un audit qui vérifie seulement la syntaxe JS n'est PAS un audit expert. **OBLIGATION** : utiliser la checklist complète (21 points : 8 flux utilisateur + 5 flux admin + 5 sécurité + 3 données) à CHAQUE audit final ❌
+24. **Fuzzy matching aveugle** (v9.376-377) : Levenshtein ≥0.75 matchait `BORGIA L` à `BORGIA T` (similarité 0.875). **OBLIGATION** : quand fuzzy match + surname identique + initiales différentes + initiales courtes (≤2 chars) → consulter `known_identities` (v9.220). Si nom vu ≥2 fois → vrai homonyme, sinon → anomalie OCR dans `cmc_import_anomalies`. Jamais matcher aveuglément les homonymes ❌
+25. **Correction générique vs spécifique** : quand Kevin signale un bug précis (ex: BORGIA), le fix doit être **générique** (s'applique à tous les cas similaires), pas hardcodé au cas signalé. Toujours généraliser le pattern ❌
+26. **Propagation codes invalides** (v9.373) : `autoFillMissingCadres` copiait sans validation → codes non reconnus se propageaient d'un mois à l'autre. **OBLIGATION** : valider `CODES[c]` avant toute copie cross-mois ❌
 
 ---
 
@@ -833,7 +927,7 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.103";
+var APP_VER  = "v9.303";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```

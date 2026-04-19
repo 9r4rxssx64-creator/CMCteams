@@ -1,336 +1,293 @@
-# INTEGRATION_STANDARD.md — Standard universel Kevin DESARZENS
+# INTEGRATION_STANDARD.md — Stack universelle à intégrer dans TOUS les projets Kevin
 
-> Standard d'integration applicable a tous les projets (CMCteams, APEX AI, e-KDMC, futurs).
-> A fournir a tout nouveau Claude Code pour bootstrapper un projet conforme.
+> **À propager dans :** IA Apex, kdmc-agent-monaco, CMCteams, commerce, vidéo, et **tous les futurs projets** de Kevin DESARZENS.
+> **Dernière mise à jour :** 18 avril 2026.
+> **Source de vérité :** `~/.claude/CLAUDE.md` global.
 
----
+## 🎯 Comment utiliser ce document
 
-## 1. Stack technique recommandee (free tier first)
-
-| Service | Usage | Limite gratuite |
-|---------|-------|-----------------|
-| **GitHub Pages** | Hebergement statique | Illimite (repos publics) |
-| **Cloudflare Workers** | Proxy API / middleware | 100 000 req/jour |
-| **Firebase RTDB** | Base de donnees temps reel | 1 GB stockage, 10 GB/mois transfert |
-| **Sentry** | Monitoring erreurs | 5 000 events/mois |
-| **GitHub Actions** | CI/CD | 2 000 min/mois |
-| **Vercel** | Serverless functions / agents | 100 GB-h/mois |
-| **Stripe** | Paiement | Pay-as-you-go |
+Copie **ce fichier entier** dans le contexte de ton assistant Claude Code pour chaque nouveau projet. L'assistant aura les règles + le code prêt à coller.
 
 ---
 
-## 2. Integration Sentry (monitoring erreurs)
+## 📌 Les 12 règles permanentes de travail
 
-### 2.1 Organisation et projet
+Toute IA (Claude Code, agents autonomes, IA dans l'app) doit appliquer ces règles :
 
-- **Organisation Sentry** : `kdmc`
-- **Projet browser** : un projet par app (ex: `cmcteams` pour JavaScript vanilla)
-- **DSN** : recuperer depuis le dashboard Sentry, JAMAIS hardcoded dans le code source
-  - Stocker dans `localStorage` ou variable d'environnement Cloudflare/Vercel
+1. **Anti-coupure** : ne jamais s'arrêter, utiliser `run_in_background` pour commandes longues, paralléliser les tool calls, subagents pour recherches lourdes.
+2. **Travail complet** : aller au bout, pas de commit "fix" successifs, vérifier avant de dire "c'est fait".
+3. **Minimum d'investissement, qualité pro** : gratuit d'abord (GitHub Pages, GitHub Actions, Vercel Hobby, Firebase free, Sentry dev, Cloudflare free).
+4. **Autonomie maximale** : chercher, décider, installer, TESTER soi-même (Playwright, curl, MCP) avant de demander à l'utilisateur.
+5. **Évolutivité** : chaque session améliore l'existant, factoriser, centraliser, bumper APP_VER, CHANGELOG.
+6. **Vérifier l'existant** avant d'agir : `claude mcp list`, lire `.env`, `vercel.json`, `package.json`.
+7. **Ne jamais abîmer** : cartographier l'impact, `Edit` (pas `Write`) sur gros fichiers, post-rebase grep vérif.
+8. **Communication honnête** : pas de "j'ai tout fait" sans vérif, point d'étape bref, signaler blocages immédiatement.
+9. **TodoWrite systématique** à chaque nouvelle demande utilisateur.
+10. **URLs directes + vue iPhone** : fournir les liens cliquables, voir avant de dicter (Playwright simulate iPhone), mémos pas à pas.
+11. **Minimum d'intervention utilisateur** : l'IA se débrouille seule, demande uniquement OAuth/captcha/2FA personnels.
+12. **Propagation** : inclure ces 12 règles dans le système prompt de toute IA créée.
 
-### 2.2 Integration browser (SPA / HTML statique)
+---
 
-Utiliser le **Sentry Loader Script** (lazy-load, zero impact sur les performances initiales) :
+## 🧬 Stack universelle (gratuit au max)
+
+### 1. 📊 Monitoring erreurs — Sentry (gratuit 5k events/mois)
+
+**Organisation Sentry :** `kdmc` → https://kdmc.sentry.io
+
+#### A) Browser JS / HTML — Loader Script
+
+À placer dans `<head>` avant les autres scripts inline :
 
 ```html
-<head>
-  <!-- Sentry Loader — lazy-load, 0 impact perf -->
-  <script
-    src="https://js.sentry-cdn.com/XXXXXXXXXXXXXXXX.min.js"
-    crossorigin="anonymous"
-    defer>
-  </script>
-
-  <!-- Preconnect pour accelerer le chargement -->
-  <link rel="preconnect" href="https://js.sentry-cdn.com" crossorigin>
-  <link rel="dns-prefetch" href="https://js.sentry-cdn.com">
-  <link rel="preconnect" href="https://o4509363296296960.ingest.de.sentry.io" crossorigin>
-  <link rel="dns-prefetch" href="https://o4509363296296960.ingest.de.sentry.io">
-</head>
+<!-- Sentry monitoring (Loader Script, lazy-loaded, 0 impact perf) -->
+<link rel="preconnect" href="https://js-de.sentry-cdn.com" crossorigin>
+<link rel="dns-prefetch" href="https://o0.ingest.sentry.io">
+<script src="https://js-de.sentry-cdn.com/<LOADER_ID>.min.js" crossorigin="anonymous"></script>
 ```
 
-### 2.3 Configuration Sentry (onLoad)
-
-```javascript
-Sentry.onLoad(function() {
-  Sentry.init({
-    tracesSampleRate: 0.1,  // 10% — compatible free tier 5000 events/mois
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    beforeSend(event) {
-      // Filtrer les erreurs non pertinentes
-      var msg = (event.exception?.values?.[0]?.value || "");
-      if (/AbortError|ECONNRESET|ResizeObserver|Script error/i.test(msg)) {
-        return null;
-      }
-      return event;
-    }
-  });
-  // Tags globaux
-  Sentry.setTag("component", "browser");
-  Sentry.setTag("project", "cmcteams"); // adapter par projet
-  // Identifier l'admin
-  if (typeof A !== "undefined" && A.user && A.user.id === "U11804") {
-    Sentry.setTag("admin", "U11804");
-    Sentry.setUser({ id: "U11804", username: "DESARZENS K" });
-  }
-});
+**CSP à élargir** :
+```
+script-src ... https://*.sentry-cdn.com https://*.sentry.io;
+connect-src ... https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com
 ```
 
-### 2.4 Integration Node.js (agents Vercel / Cloudflare Workers)
+**Où récupérer `<LOADER_ID>` :** https://kdmc.sentry.io/settings/projects/<PROJET>/keys/
 
-```javascript
-const Sentry = require("@sentry/node");
+#### B) Node.js / Vercel agents — SDK Node
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,  // Variable d'environnement, jamais dans le code
-  tracesSampleRate: 0.1,
-  beforeSend(event) {
-    var msg = (event.exception?.values?.[0]?.value || "");
-    if (/AbortError|ECONNRESET|ETIMEDOUT/i.test(msg)) return null;
-    return event;
-  }
-});
-
-Sentry.setTag("component", "agent");
-```
-
-### 2.5 CSP (Content Security Policy)
-
-Ajouter ces domaines a la CSP existante :
-
-```
-script-src: https://*.sentry-cdn.com
-connect-src: https://*.ingest.sentry.io https://*.ingest.de.sentry.io
-```
-
----
-
-## 3. Les 12 regles permanentes
-
-Ces regles s'appliquent a TOUS les projets sans exception.
-
-| # | Regle | Details |
-|---|-------|---------|
-| 1 | **TodoWrite obligatoire** | Chaque demande utilisateur = un item TodoWrite immediat |
-| 2 | **Subagents paralleles** | Audits via N subagents Explore sur zones distinctes |
-| 3 | **Syntax check + tests AVANT commit** | `node --check`, tests unitaires, zero erreur |
-| 4 | **Matrice d'impact** | Identifier toutes les vues/fonctions affectees avant de coder |
-| 5 | **Edge cases** | iOS Safari, localStorage quota, Firebase offline, PWA |
-| 6 | **esc() obligatoire** | Toute donnee utilisateur echappee avant `innerHTML` |
-| 7 | **Zero cle API dans le code** | localStorage, env vars, ou Cloudflare Secrets uniquement |
-| 8 | **Validation post-commit** | Relire le diff, verifier le deploiement, tester le rendu |
-| 9 | **Auto-audit apres chaque batch** | Chercher activement les bugs, ne pas attendre le signalement |
-| 10 | **Mobile-first (375px min)** | iPhone SE comme viewport de reference |
-| 11 | **Tout en francais** | UI, commentaires, noms de commits, documentation |
-| 12 | **Batching PRs** | 5-10 fixes par PR, pas 1 PR par fix (eviter le bruit) |
-
----
-
-## 4. Templates standards
-
-### 4.1 Template commit message
-
-```
-vX.Y: description courte en francais
-
-Corps optionnel si besoin de details.
-```
-
-Exemples :
-- `v9.104: integration Sentry monitoring erreurs`
-- `v2.1: fix scroll horizontal planning mobile`
-- `v3.0: nouveau module export PDF`
-
-### 4.2 Template PR body
-
-```markdown
-## Objectif
-Description concise du but de cette PR (1-2 phrases).
-
-## Changements
-- Point 1
-- Point 2
-- Point 3
-
-## Validation
-- [ ] Syntax check JS OK
-- [ ] Test mobile 375px
-- [ ] Pas de regression (git diff verifie)
-- [ ] esc() sur toutes les donnees utilisateur
-- [ ] Pas de cle API dans le code
-
-## Prerequis
-Dependances ou configuration necessaire (ou "Aucun").
-```
-
-### 4.3 Template CLAUDE.md pour nouveau projet
-
-```markdown
-# CLAUDE.md — [NOM DU PROJET]
-
-## Vue d'ensemble
-- **Projet** : [description]
-- **Owner** : Kevin DESARZENS (kevind@monaco.mc)
-- **Version** : v1.0
-- **Stack** : [GitHub Pages / Firebase / Cloudflare / Sentry]
-
-## Architecture
-[Description de la structure du projet]
-
-## Regles
-Voir INTEGRATION_STANDARD.md pour les 12 regles permanentes.
-
-## Constantes
-[Variables globales, IDs admin, URLs]
-
-## Erreurs connues
-[Liste des bugs connus a ne pas reproduire]
-
-## Historique versions
-| Version | Changements |
-|---------|-------------|
-| v1.0    | Version initiale |
-```
-
-### 4.4 Template manifest.json (PWA)
-
+**`package.json`** :
 ```json
-{
-  "name": "[Nom complet de l'app]",
-  "short_name": "[Nom court]",
-  "description": "[Description]",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#c9a84c",
-  "orientation": "any",
-  "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+"dependencies": {
+  "@sentry/node": "^8.43.0"
 }
 ```
 
-### 4.5 Template proxy Cloudflare Workers
-
+**`lib/sentry.js`** (helper centralisé) :
 ```javascript
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const API_KEY = env.API_KEY; // Cloudflare Secret, JAMAIS dans le code
+import * as Sentry from "@sentry/node";
+let _initialized = false;
 
-    // CORS
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
-        }
-      });
-    }
+export function initSentry(cfg) {
+  if (_initialized) return Sentry;
+  if (!cfg?.SENTRY_DSN) return Sentry;
 
-    // Proxy vers l'API cible
-    const resp = await fetch("https://api.example.com/endpoint", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + API_KEY
-      },
-      body: request.body
-    });
+  Sentry.init({
+    dsn: cfg.SENTRY_DSN,
+    environment: cfg.SENTRY_ENVIRONMENT || "production",
+    release: cfg.SENTRY_RELEASE || "unknown",
+    tracesSampleRate: 0.1,
+    integrations: [
+      Sentry.httpIntegration({ breadcrumbs: true }),
+      Sentry.consoleIntegration(),
+    ],
+    initialScope: {
+      tags: { component: "<PROJECT_NAME>", admin: cfg.AGENT_ADMIN_ID || "U11804" },
+    },
+    beforeSend(event, hint) {
+      const err = hint?.originalException;
+      if (err?.name === "AbortError" || err?.code === "ECONNRESET") return null;
+      return event;
+    },
+  });
 
-    return new Response(resp.body, {
-      status: resp.status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
-  }
-};
+  _initialized = true;
+  return Sentry;
+}
+
+export { Sentry };
 ```
 
-### 4.6 Template Service Worker (cache offline)
-
+**`index.js`** (init AVANT tout autre import applicatif) :
 ```javascript
-var CACHE = "app-v1";
-var URLS = ["/", "/index.html", "/icon-192.png"];
+import { loadConfig } from "./lib/config.js";
+import { initSentry } from "./lib/sentry.js";
 
-self.addEventListener("install", function(e) {
-  e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(URLS); }));
-  self.skipWaiting();
-});
+const cfg = loadConfig();
+const Sentry = initSentry(cfg);
 
-self.addEventListener("activate", function(e) {
-  e.waitUntil(
-    caches.keys().then(function(ks) {
-      return Promise.all(ks.filter(function(k) { return k !== CACHE; })
-        .map(function(k) { return caches.delete(k); }));
-    })
-  );
-  self.clients.claim();
-});
+// ⬇ Autres imports APRÈS init Sentry
+import Anthropic from "@anthropic-ai/sdk";
+// ...
+```
 
-self.addEventListener("fetch", function(e) {
-  e.respondWith(
-    caches.match(e.request).then(function(r) {
-      return r || fetch(e.request).then(function(resp) {
-        if (resp.status === 200) {
-          var cl = resp.clone();
-          caches.open(CACHE).then(function(c) { c.put(e.request, cl); });
-        }
-        return resp;
-      });
-    }).catch(function() {
-      return caches.match("/index.html");
-    })
-  );
-});
+**Capture avec contexte** dans les catches :
+```javascript
+try {
+  // code
+} catch (err) {
+  Sentry.withScope((scope) => {
+    scope.setTag("trigger", trigger);
+    scope.setLevel("fatal");
+    scope.setContext("report", { ... });
+    Sentry.captureException(err);
+  });
+}
+// Pour Vercel serverless :
+await Sentry.flush(2000);
+```
+
+**`config.js`** (env vars requises) :
+```javascript
+SENTRY_DSN: process.env.SENTRY_DSN || "",
+SENTRY_ENVIRONMENT: process.env.VERCEL_ENV || process.env.NODE_ENV || "production",
+SENTRY_RELEASE: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+```
+
+**Skill officiel suivi :** https://github.com/getsentry/sentry-for-ai/blob/main/skills/sentry-sdk-setup/SKILL.md
+
+#### C) Endpoint de test `/api/sentry-test`
+
+Ajouter cet endpoint pour vérifier que Sentry capture bien :
+```javascript
+// GET /api/sentry-test?secret=<AGENT_SECRET>&type=sync|async|message
+// Retourne { ok:true, sent:true, eventId, sentryDashboard }
+// Voir tools/agent/api/sentry-test.js dans CMCteams pour le code complet
+```
+
+#### D) Vérification dans `/api/health`
+
+Inclure `SENTRY_DSN` dans le `env_check` pour vérifier d'un coup d'œil :
+```javascript
+env_check: {
+  SENTRY_DSN: process.env.SENTRY_DSN ? "set (monitoring active)" : "MISSING",
+  SENTRY_ENVIRONMENT: process.env.VERCEL_ENV || "unknown",
+}
 ```
 
 ---
 
-## 5. Comment utiliser ce standard
+### 2. 🎨 Génération d'images — Pollinations.ai (100 % gratuit, zéro clé)
 
-### Pour un nouveau projet
+**API publique** (aucun compte requis) :
+```
+https://image.pollinations.ai/prompt/<texte_url_encoded>?width=1024&height=1024
+```
 
-Donner cette instruction a Claude Code :
+**Usage typique** (avatars, bannières, splash, illustrations) :
+```javascript
+const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
+```
 
-> Applique la stack universelle du fichier `INTEGRATION_STANDARD.md` — integre
-> Sentry, les 12 regles permanentes, et tous les templates dans ce projet.
-
-### Pour un projet existant
-
-> Lis `INTEGRATION_STANDARD.md` et fais un audit de conformite :
-> quelles regles sont deja en place, lesquelles manquent ?
-> Propose un plan d'integration par priorite.
-
-### Checklist d'integration
-
-- [ ] CLAUDE.md cree avec le template section 4.3
-- [ ] manifest.json PWA en place (section 4.4)
-- [ ] Service Worker enregistre (section 4.6)
-- [ ] Sentry Loader integre dans le HTML (section 2.2)
-- [ ] Sentry configure (tracesSampleRate 0.1, filtres, tags) (section 2.3)
-- [ ] CSP mise a jour pour Sentry (section 2.5)
-- [ ] Proxy Cloudflare Workers si API externe (section 4.5)
-- [ ] Firebase RTDB si sync temps reel necessaire
-- [ ] Les 12 regles documentees dans CLAUDE.md du projet
-- [ ] Premier commit au format `v1.0: description` (section 4.1)
+**Fallback** : Hugging Face MCP (installé globalement) pour modèles spécifiques (Flux, SDXL, LTX-Video).
 
 ---
 
-## 6. Contacts et references
+### 3. 📚 Docs à jour pour LLMs — Context7 (MCP installé)
 
-- **Owner** : Kevin DESARZENS — kevind@monaco.mc
-- **Admin ID** : U11804
-- **Organisation Sentry** : kdmc
-- **Repo principal** : github.com / CMCteams
-- **Regles globales Claude** : `~/.claude/CLAUDE.md`
-- **Notes metier** : `NOTES_USER.md` (par projet)
+```bash
+claude mcp add context7 --transport http https://mcp.context7.com/mcp
+```
+
+Utiliser pour toute question sur frameworks récents (anti-hallucination).
 
 ---
 
-*Derniere mise a jour : 2026-04-18 — base sur PRs #82, #83, #84 CMCteams*
+### 4. ⏰ Cron > 1×/jour — GitHub Actions (gratuit, illimité)
+
+Pattern : `.github/workflows/agent-cron.yml`
+
+```yaml
+name: Agent Cron 24/7
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 3h UTC
+    - cron: '0 8 * * *'   # 8h UTC
+    - cron: '0 9 * * 1'   # lundi 9h UTC
+  workflow_dispatch:  # manuel
+
+jobs:
+  trigger-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call agent endpoint
+        env:
+          AGENT_URL: https://<PROJECT>.vercel.app
+          AGENT_SECRET: ${{ secrets.AGENT_SECRET }}
+        run: |
+          curl -sS -o response.json -w "%{http_code}" \
+            "$AGENT_URL/api/cron?trigger=cron:$(date -u +'%H:%M')&secret=$AGENT_SECRET"
+          cat response.json | head -80
+```
+
+**Secret GitHub requis** : `AGENT_SECRET` (même valeur que côté Vercel).
+
+---
+
+### 5. 🔗 CDN / preconnect — pour perf optimale
+
+Dans `<head>` de toute page web :
+```html
+<link rel="preconnect" href="https://..." crossorigin>
+<link rel="dns-prefetch" href="https://...">
+```
+
+Pour chaque service externe : Firebase, Sentry, Anthropic, fonts, etc.
+
+---
+
+### 6. 🤖 IA custom dans l'app — règles à inclure dans le system prompt
+
+```javascript
+function buildIASystemPrompt() {
+  let prompt = "Tu es l'assistant IA de <PROJECT>...\n";
+  // ... contexte métier ...
+
+  // Règles permanentes (à la fin)
+  prompt += "\n━━━ RÈGLES PERMANENTES DE TRAVAIL ━━━\n";
+  prompt += "1. Travail complet : aller au bout, pas de réponse à moitié.\n";
+  prompt += "2. Minimum d'investissement : privilégier le gratuit.\n";
+  prompt += "3. Qualité professionnelle : réponses claires, structurées, mobile-friendly.\n";
+  prompt += "4. Évolutivité : suggérer des améliorations, pas de gadgets.\n";
+  prompt += "5. Vérifier l'existant : utiliser les outils avant de deviner.\n";
+  prompt += "6. Ne pas abîmer : confirmer actions destructrices.\n";
+  prompt += "7. Communication honnête : dire 'je ne sais pas' si besoin.\n";
+  prompt += "8. Continuité : terminer la tâche avant de changer.\n";
+  prompt += "9. Mémoire contexte : rappeler rôle admin et préférences.\n";
+  prompt += "10. URLs directes : fournir les liens cliquables.\n";
+  prompt += "11. Minimum d'intervention : l'IA se débrouille, l'user ne fait que l'OAuth.\n";
+  prompt += "12. Propagation : ces règles s'appliquent partout, tout le temps.\n";
+  return prompt;
+}
+```
+
+---
+
+## 📁 Fichiers mémoire standards par projet
+
+Chaque projet doit avoir à la racine :
+- `CLAUDE.md` — guide projet spécifique
+- `NOTES_USER.md` — infos métier données par Kevin (couleurs, numéros, règles internes)
+- `CHANGELOG.md` — historique versions détaillé
+- `MEMO_RESUME.md` — où j'en suis en fin de session
+- `MCP_INSTALL.md` — MCP recommandés + installés
+- `GUIDE_IPHONE.md` — mémo pas à pas iOS Safari avec URLs directes
+- `INTEGRATION_STANDARD.md` — ce fichier (copié/référencé)
+
+---
+
+## 🚀 Workflow de propagation à un nouveau projet
+
+1. **Créer un nouveau projet Sentry** sur https://kdmc.sentry.io/projects/new
+   - Platform : Browser JavaScript (web) OU Node.js (agent)
+   - Slug : `<project-name>`
+2. **Récupérer** Loader Script (browser) + DSN classique (Node) sur `/settings/projects/<slug>/keys/`
+3. **Intégrer le code** de la section 1 (A, B, C, D) selon le type de projet
+4. **Ajouter `SENTRY_DSN`** dans les env vars Vercel
+5. **Redeploy** Vercel
+6. **Tester** via `/api/sentry-test?secret=...` (Node) ou provoquer une erreur (browser)
+7. **Vérifier** dans Sentry dashboard
+
+---
+
+## 📞 Contact et coordination inter-projets
+
+- **Admin** : Kevin DESARZENS (U11804)
+- **Organisation Sentry** : `kdmc`
+- **Organisation Vercel** : `g7vrdynktn-5574's projects`
+- **Compte GitHub** : `9r4rxssx64-creator`
+- **Firebase** : `cmcteams-c16ab` (pour CMCteams)
+- **Telegram bot** : `@Kdmc_kevind_2026_bot` (chat_id : `5458942048`)
+- **Anthropic API key** : stockée comme `ANTHROPIC_API_KEY` env var

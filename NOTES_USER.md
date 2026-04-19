@@ -1,7 +1,214 @@
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**
->
+
+## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
+> **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
+
+Mode expert maintenu sans exception sur toutes les sessions :
+- Parallélisation + subagents
+- Tests + validation avant commit
+- Sécurité (esc, guards AID)
+- Docs à jour (CLAUDE.md + NOTES_USER.md + MEMO_RESUME.md)
+- Zéro régression
+
+
+## 🆕 SESSION 2026-04-18 (v9.287) — Consigne PDF cadres haut-droite
+
+**Demande Kevin** : "Oubli pas d'enregistrer et de prendre en compte les cadres en haut à droite des planning chefs/cate/employé : **vacances / formation / malade / sans solde**."
+
+### Contexte
+Screenshot PDF MAI 2026 V1 montre des cadres info en haut-droite du planning avec :
+- Nom employé + code compétences (`.BRT`, `.BRTP`, `.BRTCPK`, `BRTCP+.`)
+- Code état plein mois : **CP** (congé payé / vacances), **AF** (formation), **M** (malade), **SS** (sans solde)
+- Colonnes `du X au Y` pour la période (ex: "1 au 31" = plein mois)
+
+### À faire (roadmap)
+1. **Parser PDF** détecter ces cadres et leurs codes d'état plein période
+2. **Store** : pour chaque uid + mois → {code, du, au, source:"pdf_cadre"}
+3. **Import** : générer automatiquement les overrides pour tous les jours de la période
+4. **Import preview** : afficher les absences longue durée détectées dans vImportVerif
+5. **vRetrait / vAbsences** : afficher les cadres comme source distincte
+
+### Codes à capturer (enrichir CONVENTION.bulletinCodes)
+- **CP** : Congé payé (vacances) → plein mois si cadre
+- **AF** : Absence formation
+- **M** / **MAL** : Maladie
+- **SS** : Sans solde (absence autorisée non payée)
+- **ABI** : Absence injustifiée
+- **AT** : Arrêt travail
+- **PAT** : Paternité (déjà couvert)
+- **CFL** : Congé fêtes légales
+
+---
+
+## 🆕 SESSION 2026-04-17 (v9.207 → v9.213) — Features majeures livrées
+
+### v9.207 — Auto-fill cadres manquants
+- PDF tronqué = 5 superviseurs + 18 pit boss partiels → auto-complétés
+- `autoFillMissingCadres(year, month)` : copie mois N-1 (≥80%) ou pattern RH dimanche
+- Auto-trigger dans doImport + bouton FAB "✨ Auto-remplir cadres manquants"
+- Bouton direct dans Vérification import (v9.208)
+
+### v9.209 — Géolocalisation timeclock opt-in
+- `_features.geoloc` (toggle admin Fonctionnalités)
+- `timeclockPunch` enrichi {lat, lng, accuracy}
+
+### v9.210 — Géofence + carte live admin
+- `A.geofence = {center, radius, enabled, tolerance}` sync Firebase
+- `geoDistance(a, b)` approximation Monaco (erreur < 0.5m sur 1km)
+- `vGeoAdmin` : iframe OSM + carte SVG custom + liste employés triée + recherche
+- **Tolerance INDOOR** : GPS timeout → accepter pointage (pas bloquer), permission refusée → reject strict
+
+### v9.211 — vPit : vue pit boss live (MAJEUR)
+- `A.live = {date, tables, statuts, events, pitBossId}`
+- Persist : `cmc_live_<YYYY-MM-DD>` sync Firebase via FB_PRE
+- 7 actions : openTable, closeTable, setStatut, libererEmp, assignEmp, removeEmp, rotateNow
+- Auto-assign par compétence : `JEU_COMP` mapping bj→B, roul_eur→E, etc.
+- Rotation : roul_eur=20min, senior=40min, standard=60min
+- Accès : admin + `emp.chef` + `family=cadres`
+- FAB "♊ Pit Boss Live"
+
+### v9.212 — Cards vGestionLive cliquables
+- Chaque KPI ouvre modal liste : `working/online/rest/leave/sick/active/fam_*`
+- `showLiveList(key)` + `showEmpQuickProfile` au clic emp
+
+### v9.213 — Réattribution auto secteurs baccara
+- Bouton `🎯 Réattribuer auto` dans vGestionLive
+- Détecte emps P/P+ sans E mal classés, re-assign selon règle
+
+## 📝 Features demandées à LIVRER (ordre priorité)
+
+### v9.214 — Identités permanentes (demande Kevin 2026-04-17)
+> "L'app doit garder et accumuler les identités des personnes qu'elle apprend dans les plannings importés même effacé, dans les nouvelles connexions et sauvegarder à chaque fois."
+
+**Plan** :
+- Nouvelle clé `cmc_known_identities` (sync Firebase, FB_FIX)
+- À chaque détection nom dans PDF import → enregistrer `{name, firstSeenAt, sources[], lastSeenAt}`
+- Jamais supprimé même si employé effacé (`delEmp`)
+- Consultable via vEmps → "Identités apprises" (liste historique)
+
+### v9.215 — Timings admin (demande Kevin)
+> "Il faut un réglage admin lorsqu'une personne entre dans le casino et est effectif au travail. Temps de change habit, temps de pause, coupure…"
+
+**Plan** : `A.timings = {preShiftMin:15, postShiftMin:5, pauseMin:20, coupureMin:120}` avec UI admin. Impact calcul heures effectives timeclock.
+
+### v9.216 — Auto-tracking positions tables (demande Kevin, dépend plan casino)
+> "Avec le plan on ajustera. Quand on aura le plan l'app saura quand l'employé est à quelle table et quand elle bouge de ces endroits cibles"
+
+**Plan** :
+- Admin saisit coord (lat/lng) de chaque table dans la config
+- App match position emp → table la plus proche (géoloc temps réel)
+- Auto-marque "à table Tx" ou "en break" selon distance
+- Intégration vPit pour mise à jour live sans intervention
+
+## 🔍 RÈGLE PERMANENTE — Vérification multi-source (2026-04-17)
+
+**Pour TOUTE information factuelle que Claude doit fournir, calculer ou appliquer :**
+
+1. **Minimum 10 sources de données** à croiser avant de produire la réponse/action
+2. Si sources divergent → signaler explicitement à l'admin et demander clarification
+3. Toujours citer les sources consultées dans la réponse (ou au moins l'ordre de grandeur)
+4. Ne JAMAIS inventer un chiffre/loi/règle sans vérification
+5. Pour les calculs de paie, conventions, lois, indices : **vérification obligatoire**
+6. Domaines particulièrement sensibles : paie, fiscalité, convention SBM, lois monégasques, horaires réglementaires, droit du travail
+
+**Note technique** : si WebSearch / WebFetch indisponibles, Claude doit le dire explicitement et proposer de chercher à la place.
+
+### Indice salaires Monaco (à vérifier)
+- Admin indique : "indice INCE" (possible ICEC, indice coût emploi)
+- À croiser avec : INSEE France, Convention SBM, Journal de Monaco, Direction du Travail Monaco
+- Appliqué annuellement pour actualiser les salaires de base des années antérieures
+- Intégrer le facteur d'indexation dans le calcul de paie (salaire_base × facteur_cumul)
+
+---
+
+## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
+
+L'app DOIT auto-inférer le rôle de l'employé à partir de `emp.post` (compétences)
+ET de sa présence dans le planning des "Chefs cartes" à chaque import.
+
+### Nomenclature officielle (Casino de Monaco)
+
+| Groupe planning | Détection compétences | Rôle auto |
+|-----------------|----------------------|-----------|
+| Chefs jeux américains (BJ) | dans planning "chef cartes américaines" | **Chef BJ** (family=bj, chef=true) |
+| Chefs jeux européens | `E` seul ou avec comp. européennes | **Chef jeu européen** (roulettes, chef=true) |
+| Sous-chefs jeux européens | Toutes comp. E + apparaît dans planning chefs cartes | **Sous-chef JE** (roulettes, sousChef=true) |
+| Employés européens | `E` sans être chef/sous-chef | **Employé européen** (roulettes) |
+| Chefs groupe fermé Baccara | `P` ou `P+` SANS `E` | **Chef GF Baccara** (baccara, chef=true, gf=true) |
+| Chefs GF jeux européens | Toutes comp. GF européennes | **Chef GF européen** — rare dans chefs cartes |
+
+### Règles visuelles plannings Pit Boss / Inspecteurs (demande admin 2026-04-16 soir)
+
+| Visuel | Signification |
+|--------|--------------|
+| Fond **jaune** | Poker No Limit (PNL) |
+| Fond **blanc** | Pas de Poker No Limit ce jour |
+| Noms en **rouge** | Noms non reconnus par le PDF (pas grave la couleur en soi) |
+| **Étoile rouge** (★) | Personne de +55 ans (senior) |
+
+- Les pit boss PEUVENT avoir fond jaune OU fond blanc selon le service du jour
+- La légende en bas du planning PDF pit boss de mai indique les significations exactes
+- Se servir de cette légende pour reconnaître les codes correctement
+
+### Comparaison formats plannings cadres (demande admin 2026-04-16)
+
+| Type | Format PDF | Particularités |
+|------|-----------|----------------|
+| **Chefs cartes (BJ/Roul.)** | Bloc NOM + codes positionnels (jours 1→30) | ★ = chef, * = ligne positionnelle |
+| **Pit Boss** | Bloc NOM + codes, fond jaune = PNL, ★ rouge = 55+ | CADRE_LIEU table différencie CMC/CCDP/PNL |
+| **Superviseurs** | Même format que pit boss, section SUPERVISEUR après | Souvent après une ligne vide (bug fix v9.133) |
+| **Inspecteurs** | Similaire pit boss, à intégrer plus tard | TODO : ajouter family:"cadres", role:"inspecteur" |
+
+**Points communs (importants pour reconnaissance)** :
+- Tous ont les mêmes CODES horaires (19/4, 22/6, 16/20, 15/20, etc.)
+- CADRE_LIEU s'applique à TOUS les cadres (même mapping)
+- ★ = senior (55+) dans TOUS les plannings cadres
+- Tous utilisent le format bloc (entête noms + lignes positionnelles)
+- Compétences P/P+/E ne s'appliquent PAS aux pit boss/superviseurs/inspecteurs
+
+### Auto-apprentissage codes (v9.140 — demande admin 2026-04-16)
+
+> "Couleur cases fonds, dans les légendes des plannings déjà importés et apprend des nouveaux au fur à mesure"
+
+- Chaque code rencontré lors d'un import qui n'est PAS dans CODES dict est AUTO-APPRIS
+- Couleur de fond générée par hash du code (couleur unique déterministe)
+- Label deviné si format horaire (ex: "15/21" → "15h–21h")
+- Stocké dans `cmc_learned_codes` (localStorage) → persiste entre sessions
+- Fusionné dans CODES au boot → visible dans légendes, planning, départs
+- Admin peut ajuster via les outils IA ou manuellement si besoin
+
+---
+
+### Règles précises
+
+1. **PRIORITÉ #1 — Groupe OUVERT vs Groupe FERMÉ** (demande admin 2026-04-16 soir)
+   - **Tous les nouveaux employés** depuis la Convention (1er avril 2015) = **GROUPE OUVERT**
+   - Les nouveaux employés qui arrivent dans les imports (jamais vus avant) = **GROUPE OUVERT**
+   - Ils ne peuvent JAMAIS sortir du groupe ouvert (flag permanent)
+   - Les anciens déjà attribués chefs/etc. = GROUPE FERMÉ (historique)
+   - Flag app : `emp.groupeOuvert=true` (ou `emp.pinkComp=true`) pour groupe ouvert
+   - Par défaut : `groupeOuvert=false` (fermé) pour les anciens
+
+2. **Si `post` contient `P` ou `P+` SANS `E`** :
+   - Si **groupe ouvert** → family=cmc, chef=false (reste employé GO, PAS chef baccara)
+   - Si **groupe fermé** → Chef groupe fermé Baccara (family=baccara, chef=true, gf=true)
+
+3. **Si `post` contient `E`** → NE PEUT PAS être groupe fermé. Automatiquement jeu européen.
+4. **Si chef européen (toutes compétences E)** → Chef JE
+5. **Si `E` + apparaît dans planning chefs cartes (mais pas chef complet)** → Sous-chef JE
+6. **Sinon `E` seul** → Employé européen
+7. Les chefs GF européens viennent **jamais ou très rarement** dans les plannings chefs cartes
+8. **Inspecteurs + cadres supérieurs** : à gérer plus tard (TODO future session)
+
+### Automatisation à chaque import
+
+- Re-classifier les employés suivant leurs compétences + présence planning chefs
+- Mettre à jour `emp.family`, `emp.chef`, `emp.sousChef`, `emp.gf` automatiquement
+- Recalculer les stats et afficher les changements dans l'audit
+- Bouton manuel de secours pour forcer re-classification
+
 > ## 🚨 MÉTA-RÈGLES PERMANENTES (session 2026-04-13)
 >
 > **À appliquer SANS que l'admin ait à le redemander.**
