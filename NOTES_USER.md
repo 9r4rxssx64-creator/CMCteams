@@ -796,8 +796,10 @@ L'admin veut l'IA au maximum de ses capacités :
 **Compte Cloudflare :** Desarzens.kevin@gmail.com
 **Proxy KDMC deploye :** `https://kdmc-proxy.desarzens-kevin.workers.dev`
 
+**Femme de Kevin :** SAINT-POLIT Laurence — compte KDMC gratuit (free plan)
+
 **Comptes email :**
-- Gmail (adresse a confirmer)
+- Gmail : Desarzens.kevin@gmail.com
 - Outlook : kevind@monaco.mc (sur iPhone)
 - iCloud (adresse a confirmer — icloud.com ou mac.com)
 
