@@ -1,3 +1,31 @@
+# Mémo de reprise — v9.415 (session 2026-04-19 autonome étendue)
+
+## 🆕 Extensions session 2026-04-19 (v9.410 → v9.415)
+
+13 versions livrées et mergées sur `main` en autonomie :
+
+| Version | Feature | PR |
+|---------|---------|----|
+| v9.410 | Inspecteurs/superviseurs team fusion (ins=sup unique) + auto-migration cadres | #94 |
+| v9.411 | Auto-apply cadres absences haut-droite CP/AF/M/SS + strict matching anti-BORGIA | merged direct |
+| v9.412 | ROLES_SBM 12→20 (Direction/Cadres/Niv 1-11/Support) + icônes + fiche profil + dossier permanent CLAUDE.md | #96 |
+| v9.413 | Extraction légendes PDF (`parseLegendsFromPdf`) + `cmc_learned_legends` FB_FIX cross-device | #97 |
+| v9.414 | **Surveillance live multi-users** : `reportUserEvent`, agent 12 `user-watcher` chez TOUS, `cmc_lessons_learned`, `vTelemetry` admin | #98 |
+| v9.415 | Agent 13 `chat-analyzer` : détecte confusion/erreur/frustration dans chat users + iaHistory (5 patterns, 24h fenêtre) | #99 |
+
+**13 agents internes actifs** : Conflit · Hygiène · Burnout · Sync · Perf · Convention · Shifts · Compétences · Rotation · Pauses · Import · User-watcher · Chat-analyzer.
+
+**Règles permanentes propagées (5 fichiers)** :
+- `CLAUDE.md` : dossier demandes + AU MAXIMUM + SUBAGENTS MAX + surveillance live
+- `NOTES_USER.md` : AU MAXIMUM en tête
+- `~/.claude/CLAUDE.md` : règles globales multi-projets (dossier + AU MAXIMUM + subagents + UX + sécu + perf + batching CI)
+- `buildIASystemPrompt` : 7 règles injectées dans contexte IA app
+- Internal agents : descriptions portent la logique métier
+
+**Dossier Kevin (tableau ✅/🔄)** : tête de CLAUDE.md, à consulter en PREMIER.
+
+---
+
 # Mémo de reprise — v9.407 (session 2026-04-19 autonome)
 
 > **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
