@@ -797,6 +797,7 @@ L'admin veut l'IA au maximum de ses capacités :
 **Proxy KDMC deploye :** `https://kdmc-proxy.desarzens-kevin.workers.dev`
 
 **Femme de Kevin :** SAINT-POLIT Laurence — compte KDMC gratuit (free plan)
+**REGLE :** Aucune modification importante de l'app sans accord explicite de Kevin.
 
 **Comptes email :**
 - Gmail : Desarzens.kevin@gmail.com
