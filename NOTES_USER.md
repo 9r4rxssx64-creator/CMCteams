@@ -71,8 +71,30 @@ d'agir, clarifier :
 3. **Critère « fonctionnel »** : timeouts confirmés OK + commits poussés sur
    main ? Ou autre milestone ?
 
-Action quand l'admin répond : noter ici, faire l'intégration sur la branche
-APEX AI (pas celle-ci), sans redemander.
+### Décision (2026-04-18) — Qui fait l'intégration ?
+
+**C'est la session APEX AI qui fait l'intégration**, pas les autres sessions.
+
+Raisons (validées avec l'admin) :
+- APEX AI développe activement `apex-ai/` (v3.0 → v3.8, 10 commits récents).
+  Toucher ces fichiers depuis une autre session = risque de **conflit de merge**.
+- La session APEX AI connaît son architecture interne (Self-Modify, dashboard,
+  85 actions, conventions). Une autre session peut **casser** sans le savoir.
+- APEX AI a peut-être déjà un mécanisme natif pour référencer des projets
+  externes → éviter le **doublonnage**.
+
+⚠️ Note importante : ça ne **verrouille rien**. N'importe quelle session peut
+toujours modifier `apex-ai/` après coup (même repo, pas d'exclusivité Git).
+La règle est juste de **laisser APEX AI initier** l'intégration pour éviter
+les conflits actifs.
+
+Action attendue côté session APEX AI à son prochain démarrage :
+1. Lire ce fichier (NOTES_USER.md) → voir la demande
+2. Demander à l'admin la forme exacte (option A / B / C ci-dessus)
+3. Implémenter dans `apex-ai/`, commiter, pousser
+4. Cocher la case ci-dessous
+
+- [ ] Intégration CMCteams ↔ APEX AI réalisée par session APEX AI
 
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
