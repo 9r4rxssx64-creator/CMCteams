@@ -677,22 +677,40 @@ commandes longues plutôt que de laisser expirer un timeout court.
 - `MCP_TIMEOUT = 60000` / `MCP_TOOL_TIMEOUT = 600000`
 - ⚠️ Nécessite redémarrage Claude Code pour prise en compte des `env`.
 
-## 🚀 INTÉGRATION APEX AI (2026-04-18) — EN ATTENTE
+## 🚀 INTÉGRATION APEX AI (2026-04-18)
 
-Demande admin : « quand tout sera fonctionnel, ajoute le projet à mon
-application APEX AI ». **Aucune info technique disponible** — à clarifier
-avant toute action :
+**APEX AI** = sous-app du repo `9r4rxssx64-creator/CMCteams`, dossier
+`apex-ai/` (`index.html` + `manifest.json` + `sw.js` + `proxy-apex.js`).
+Développée dans une session Claude Code dédiée (visible dans l'app mobile
+Claude Code, section « En cours »). Version actuelle : **v3.8**
+(commit `b5a1c7a` sur main, MAJ docs MD complète).
 
-1. **Nature d'APEX AI** : plateforme externe ? app perso (web/desktop/mobile) ?
-   agrégateur de projets ? IDE ? hub IA personnel ?
-2. **Méthode d'ajout** : URL GitHub à coller ? import API ? upload fichiers ?
-   connecteur dédié ? CLI ? webhook ?
-3. **Périmètre** : repo CMCteams entier ? URL GitHub Pages déployée ? export ?
-4. **Critère « fonctionnel »** : timeouts OK confirmés ? feature précise
-   terminée ? autre ?
+Fil rouge des commits APEX AI (v3.0 → v3.8) :
+- v3.3 Fun + Gamification + Stabilité
+- v3.4 Self-Modify + 6 thèmes casino + Focus Mode
+- v3.5 AI Power Tools + Dashboard + Dev Tools + Casino Game
+- v3.6 Code Editor + Self-Modify PRO
+- v3.7 Clipboard + Traducteur + Math + Templates (82 actions)
+- v3.8 Présentation + Notifs planifiées + Auto-categorize (85 actions)
 
-Action quand l'admin répond : noter les 4 points ici, faire l'intégration au
-moment voulu, ne pas redemander.
+**Demande admin (2026-04-18)** : « quand tout sera fonctionnel, ajoute le
+projet à mon application APEX AI ». Interprétation probable : intégrer
+CMCteams (cette branche) dans APEX AI sous une forme à préciser. Avant
+d'agir, clarifier :
+
+1. **Forme de l'intégration** :
+   a. Bouton/entrée dans `apex-ai/index.html` qui ouvre CMCteams (URL GitHub
+      Pages) ?
+   b. Inclusion CMCteams comme « projet » dans une liste/dashboard interne à
+      APEX AI ?
+   c. Fusion de fonctionnalités CMCteams dans apex-ai/ (ex : import code
+      CMCteams via Self-Modify) ?
+2. **Périmètre** : URL déployée seule, ou clone du code, ou les deux ?
+3. **Critère « fonctionnel »** : timeouts confirmés OK + commits poussés sur
+   main ? Ou autre milestone ?
+
+Action quand l'admin répond : noter ici, faire l'intégration sur la branche
+APEX AI (pas celle-ci), sans redemander.
 
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
