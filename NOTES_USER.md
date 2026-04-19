@@ -794,7 +794,7 @@ L'admin veut l'IA au maximum de ses capacités :
 - Ordinateur (pas sur lui, a connecter plus tard)
 
 **Compte Cloudflare :** Desarzens.kevin@gmail.com
-**Proxy KDMC deploye :** `https://kdmc-proxy.desarzens-kevin.workers.dev`
+**Proxy KDMC :** `https://kdmc-proxy.desarzens-kevin.workers.dev` — NON FONCTIONNEL (code Worker incorrect, retourne "Host not in allowlist"). A corriger quand Kevin aura un PC. En attendant, cle API directe fonctionne parfaitement.
 
 **Femme de Kevin :** SAINT-POLIT Laurence — compte KDMC gratuit (free plan)
 **REGLE :** Aucune modification importante de l'app sans accord explicite de Kevin.
