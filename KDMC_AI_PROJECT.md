@@ -1,8 +1,8 @@
 # APEX AI — Feuille de Route Projet (ex-KDMC AI)
 
-> **Version** : v3.5 | **Date** : 2026-04-19
+> **Version** : v3.8 | **Date** : 2026-04-19
 > **Auteur** : Kevin DESARZENS (U11804 - kevind@monaco.mc)
-> **Statut** : v3.5 LIVREE — Super-app IA self-modifying (208 KB, 66 actions, dashboard, casino, 6 themes)
+> **Statut** : v3.8 LIVREE — 223 KB, 85 actions, self-modifying, code editor, 6 themes, 32 commits
 
 ---
 
@@ -283,12 +283,29 @@ var K = {
 
 | Categorie | Note | Highlights |
 |-----------|------|-----------|
-| UX/UI | 10/10 | Onboarding, theme L/D, command palette Ctrl+K, tooltips, animations |
-| Securite | 10/10 | DOMPurify, sessionStorage, rate limiter, error boundary, CSP |
-| IA/Chat | 10/10 | Web search, Extended Thinking, Vision, edit/regen, prompt library |
-| Architecture | 10/10 | Smart render, RAF debounce, IndexedDB, perf monitoring |
-| Finance | 10/10 | Finnhub API, 10+ devises, amortissement, SVG chart, CSV export |
-| Mobile/PWA | 10/10 | Push notifs, install prompt, Share API, Badge, Wake Lock |
+| UX/UI | 9/10 | Dashboard widgets, 6 themes casino, onboarding 6 etapes, command palette, gamification XP |
+| Securite | 8/10 | DOMPurify, PIN 50K hash, rate limiter, error boundary, CSP, Sentry |
+| IA/Chat | 9.5/10 | Web search, Extended Thinking, Vision, Python+JS, images, Deep Research, 5 personas |
+| Architecture | 7/10 | Smart render, RAF debounce, IndexedDB, Firebase retry, memory cleanup |
+| Finance | 9/10 | Finnhub API, 10+ devises, NPV/IRR/SMA/EMA, SVG chart, CSV, alertes |
+| Mobile/PWA | 8.5/10 | Push notifs, install prompt, Share API, Badge, Wake Lock, 6 voice commands |
+| Self-Modify | 10/10 | Code editor, CSS live, inject JS, add/remove tabs, read source, export HTML |
+| Productivite | 9/10 | Notes, taches, agenda, contacts, depenses, habitudes, journal, templates |
+| Fun | 10/10 | Confetti, XP levels, achievements, slot machine, Konami code |
+
+### 85 Actions Autonomes IA (v3.8)
+
+| Categorie | Actions |
+|-----------|---------|
+| **App** | set_theme, set_model, set_language, cleanup_convs, backup, clear_errors, clear_audit, kill_switch, toggle_focus, presentation, fullscreen |
+| **Self-Modify** | modify_css, inject_function, add_tab, remove_tab, get_source, get_css, find_in_code, get_function_code, replace_in_code, get_variable, set_variable, export_app, list_functions, get_app_info |
+| **Communication** | send_cmc_motd, send_cmc_chat, send_telegram, send_email |
+| **Productivite** | create_note, add_task, complete_task, add_event, add_contact, add_expense, add_habit, check_habit, write_diary, add_bookmark, get_template |
+| **Finance** | set_alert, add_position, convert_currency, convert_unit |
+| **Fun** | slot_machine, start_pomodoro, stop_pomodoro, start_meditation, start_stopwatch, reset_stopwatch |
+| **Dev Tools** | format_json, base64_encode, base64_decode, regex_test, lorem_ipsum, hash_text, word_count, color_convert |
+| **Power Tools** | summarize_conv, compare_texts, read_aloud, screen_info, perf_report, open_url, shorten_url, translate, detect_language, smart_summarize, math_advanced, clip_history, schedule_notif |
+| **IA Core** | kb_search, kb_remember, calculate, code_execute (JS+Python), generate_image, web_search, get_datetime, set_reminder, device_status, finance_calculate, finance_portfolio, finance_technical, analyze_and_act, daily_briefing, generate_password, world_clocks, get_meteo, show_qr |
 
 ---
 

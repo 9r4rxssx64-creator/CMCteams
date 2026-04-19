@@ -121,6 +121,10 @@
 | 2026-04-18 | proxy-apex.js (streaming) cree | FAIT |
 | 2026-04-18 | sw.js corrige (paths apex-ai) | FAIT |
 | 2026-04-18 | Comptes email/reseaux notes | FAIT |
+| 2026-04-19 | APEX AI v3.8 livree (85 actions, self-modify) | FAIT |
+| 2026-04-19 | 7 audits experts + corrections P0/P1/P2 | FAIT |
+| 2026-04-19 | INTEGRATION_STANDARD.md cree | FAIT |
+| 2026-04-19 | Issue #87 GitHub mise a jour | FAIT |
 | 2026-04-17 | Recharger API credits | EN ATTENTE |
 | 2026-04-17 | Verifier cle API | EN ATTENTE |
 | 2026-04-17 | Deployer proxy Cloudflare | EN ATTENTE |

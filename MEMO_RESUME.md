@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-18 (CMC v9.119 + APEX AI v1.5)
+# Mémo de reprise — 2026-04-19 (CMC v9.119 + APEX AI v3.8)
 
 > **Lire en PREMIER à chaque nouvelle session.**
 > Puis lire `NOTES_USER.md` (méta-règles admin + infos métier).
@@ -169,20 +169,34 @@ git status && git log --oneline -10
 ## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
 
 **App IA premium livree dans `apex-ai/`** :
-- `index.html` (99 KB, 481 lignes) — 13 modules complets
-- `proxy-apex.js` — Proxy Cloudflare Workers avec streaming
+- `index.html` (223 KB, 794 lignes) — 85 actions, self-modifying
+- `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
 - `sw.js` — Service Worker v1.2 (push + background sync)
 - `manifest.json` — PWA installable
 
-**Audit expert 6 categories : 10/10 global**
-- UX/UI, Securite, IA/Chat, Architecture, Finance, Mobile/PWA
+**32 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
 
-**Prochaines etapes APEX AI :**
-- [ ] Kevin deploie proxy Cloudflare (proxy-apex.js)
-- [ ] Kevin configure cle API dans l'app
-- [ ] Kevin installe en PWA sur iPhone
-- [ ] Connecter Gmail, Outlook, WhatsApp (voir NOTES_USER.md)
-- [ ] Configurer Stripe pour monetisation
+**Capacites uniques :**
+- Self-modifying (l'IA modifie son propre code CSS/JS/onglets)
+- Code Editor integre (admin)
+- 85 actions autonomes sans intervention
+- Python + JS interpreter
+- 6 themes casino visuels
+- Gamification XP + achievements + slot machine
+- Finance expert (NPV/IRR/SMA/EMA/Finnhub)
+- Mode offline Gemma WebLLM
+- Dashboard widgets
+- 6 templates pro (email, LinkedIn, reunion...)
+- Clipboard manager, URL shortener, traducteur
+
+**Prochaines etapes Kevin :**
+- [ ] Deployer proxy Cloudflare (proxy-apex.js)
+- [ ] Configurer cle API Claude dans Reglages
+- [ ] Installer en PWA sur iPhone
+- [ ] Configurer Sentry DSN
+- [ ] Configurer Finnhub (cours bourse)
+- [ ] Configurer Telegram bot
+- [ ] Connecter Gmail, Outlook, WhatsApp
 
 ---
 

@@ -629,4 +629,16 @@ L'admin veut l'IA au maximum de ses capacités :
 
 ---
 
-*Dernière mise à jour : 2026-04-18 (APEX AI)*
+## 🤖 APEX AI v3.8 — Capacites self-modify (2026-04-19)
+
+**L'IA peut modifier l'app en temps reel sur demande Kevin :**
+- "Change la police" → modify_css
+- "Ajoute un onglet" → add_tab
+- "Montre-moi le code de sendMessage" → get_function_code
+- "Exporte le code" → export_app
+
+**85 actions autonomes, 6 themes, 5 personas, code editor admin**
+
+---
+
+*Dernière mise à jour : 2026-04-19 (APEX AI v3.8)*
