@@ -4,6 +4,28 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 📌 DOSSIER DE TRAVAIL — Demandes Kevin en cours (2026-04-19 soir)
+
+**À traiter au maximum, vérifier après chaque fix, ne JAMAIS oublier :**
+
+1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → **v9.409-410 fixés** (team "sup" unique, fusion ins=sup)
+2. 🔄 **Organigramme SBM Monaco** : chercher exhaustivement (10 sources min), ajouter ROLES_SBM dans l'app, dropdown dans vEmps
+3. 🔄 **Fiches employés évolutives** : rôles/fonctions, dropdowns pour assigner
+4. 🔄 **Extraction complète PDF** : légendes, encadrés haut-droite (CP/AF/M/SS pleine période), couleurs de fond (PNL jaune), tous codes — ne rater aucune info
+5. 🔄 **Distinction fonds/couleurs/lettres** : ne jamais inventer (ex bug BORGIA), être strict
+6. 🔄 **Accumulation données** : chaque import enrichit, jamais efface
+7. 🔄 **Inspecteurs importés ont toujours horaires** : si le PDF les liste, c'est qu'ils bossent
+8. 🔄 **Vérification systématique à chaque commit** : agents + subagents audit croisé avant "done"
+9. 🔄 **Procédures du dossier à respecter** sans rappel — ce fichier + NOTES_USER + MEMO_RESUME = source de vérité
+
+**Méthode de travail permanente** :
+- À chaque nouvelle demande Kevin → ajouter ici IMMÉDIATEMENT
+- À chaque fix → cocher ✅ avec version
+- À chaque commit → lancer audit croisé (5-7 subagents Explore)
+- À chaque session → lire ce dossier EN PREMIER
+
+---
+
 ## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
 
 > **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout. Intègre ça dans l'application, dans son IA, dans son fonctionnement, dans APEX, dans les sources de données, dans les feuilles de route, dans les skills, dans les hooks, dans les agents et leur façon de travailler. Partout. Tout le temps."**
