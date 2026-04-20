@@ -18291,18 +18291,11 @@ function autoFillMissingCadres(year,month,opts){
         nSet++;
       }
     }else{
-      // Stratégie 2 : pattern repos par défaut (RH le dimanche, reste vide)
-      strategy="default_rh_pattern";
-      for(var dd=1;dd<=days;dd++){
-        if(curRow[dd])continue;
-        var pc=defaultPat[dd];
-        if(!pc)continue;
-        curRow[dd]=pc;
-        auditLog.push({ts:Date.now(),adminId:A.user.id,eid:emp.id,name:emp.name,year:year,month:month,day:dd,old:"",new:pc,src:"auto_fill_default"});
-        nSet++;
-      }
+      // v12.2 — Ne JAMAIS inventer de données. Si pas de source, alerter seulement.
+      strategy="needs_source";
+      nSet=0;
     }
-    if(nSet>0)applied.push({empId:emp.id,name:emp.name,strategy:strategy,nSet:nSet});
+    if(nSet>0||strategy==="needs_source")applied.push({empId:emp.id,name:emp.name,strategy:strategy,nSet:nSet});
   });
   if(applied.length>0){
     if(auditLog.length>500)auditLog=auditLog.slice(-500);
@@ -18313,9 +18306,9 @@ function autoFillMissingCadres(year,month,opts){
       var copied=applied.filter(function(a){return a.strategy==="copy_prev_month";}).length;
       var defaulted=applied.filter(function(a){return a.strategy==="default_rh_pattern";}).length;
       var msg="\u2728 "+applied.length+" cadre"+(applied.length>1?"s":"")+" auto-compl\u00e9t\u00e9"+(applied.length>1?"s":"");
-      if(copied&&defaulted)msg+=" ("+copied+" copi\u00e9s + "+defaulted+" pattern)";
-      else if(copied)msg+=" (copie mois pr\u00e9c\u00e9dent)";
-      else msg+=" (pattern repos par d\u00e9faut)";
+      var needsSource=applied.filter(function(a){return a.strategy==="needs_source";});
+      if(copied)msg+=" ("+copied+" depuis mois prec.)";
+      if(needsSource.length){msg+="\n\u26A0 "+needsSource.length+" cadre"+(needsSource.length>1?"s":"")+" sans source — verifiez le PDF";toast("\u26A0 "+needsSource.map(function(ns){return ns.name;}).join(", ")+" : pas de donnees source, verifiez le PDF","warn");}
       toast(msg);
       try{confetti(30);}catch(_){}
     }
