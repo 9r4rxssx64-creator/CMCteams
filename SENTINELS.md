@@ -134,6 +134,65 @@ Les seules fonctions dont le `self-heal-sentinel` peut déclencher l'exécution 
 
 ---
 
+## Pipeline d'autonomie complet inter-apps (v9.445 / v12.8, Kevin 2026-04-20 soir)
+
+**Règle Kevin** : *"CMCteams fait remonter problèmes/actions/historique à l'IA Apex.
+L'IA Apex corrige, répare, améliore. Si elle n'y arrive pas, elle écrit à Claude Code
+qui patch le code à la prochaine session. Tout en autonomie."*
+
+### Chaîne complète
+
+```
+Sentinelle (n'importe quelle app)
+    ↓ [err/warn détecté]
+_sentinelLogFinding local + push ax_telemetry_in (Firebase shared)
+    ↓
+Firebase SSE broadcast
+    ↓
+Apex AI : fbStartListening écoute ax_telemetry_in
+    ↓
+_processIncomingTelemetry(buffer) :
+  pour chaque entry non processed :
+    _aiHandleIssue("cross-app-"+src+"-"+id, kind, msg)
+      ↓ Claude Haiku 4.5 analyse + choisit action whitelist
+      ├─ flushSyncQueue / emergencyCleanup / fbReconnect / resetStreaming → auto-exec
+      ├─ escalateToClaudeCode(context, reason) → écrit dans ax_claude_todo
+      └─ logOnly → notée
+    entry.processed = true
+    entry.processedBy = APP_VER
+    entry.processedAt = Date.now()
+ls("ax_telemetry_in", buffer)  // re-sync pour que les autres apps voient l'état
+    ↓
+ax_claude_todo (si escalade) → lu par Claude Code à la prochaine session utilisateur
+    ↓
+Claude Code : read outbox + patch + push via git
+```
+
+### Clés Firebase partagées (ajoutées à FB_FIX dans chaque app)
+
+| Clé | Producteur | Consommateur | Usage |
+|-----|-----------|--------------|-------|
+| `ax_telemetry_in` | CMCteams, e-KDMC, futurs | Apex AI | Erreurs/warnings sentinelles à traiter |
+| `ax_claude_todo` | Apex AI | Claude Code | Problèmes non résolus, fix code nécessaire |
+| `ax_lessons_learned` | Tous | Tous | Mémoire cross-session, cross-projet |
+
+### Garanties
+
+- **Rate limit** : 1 appel IA/sentinelle/30min (coût API maîtrisé)
+- **Dédup** : flag `processed` évite re-traiter la même entry
+- **Buffer circulaire** : 100 entries max (ax_telemetry_in), 50 max (ax_claude_todo)
+- **Admin-only** : l'IA ne réagit qu'en session admin (garde-fou)
+- **Audit trail** : chaque étape log'ée dans `ax_sentinels_log` avec src/dest
+
+### Propagation
+
+- ✅ CMCteams v9.445 : `_pushTelemetryToApex` dans `_sentinelLogFinding`
+- ✅ Apex v12.8 : `_processIncomingTelemetry` + `_escalateToClaudeCode` dans whitelist
+- 🔄 e-KDMC : à ajouter dès le début
+- 🔄 Futurs projets : copier-coller le pattern 4 lignes
+
+---
+
 ## Bridge Sentinelles → IA (v9.442 / v12.6, Kevin 2026-04-20)
 
 **Règle additionnelle non-négociable** : chaque sentinelle qui détecte un `err`

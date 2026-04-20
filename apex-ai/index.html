@@ -260,11 +260,11 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.7",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.8",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned"];
 var FB_PRE=["ax_msgs_"];
 var FB_LOCAL=["ax_uid","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_pin_fails","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles"];
 var SESSION_TTL=24*60*60*1000;
@@ -303,7 +303,11 @@ function fbSanitizeKey(k){return k.replace(/\./g,"_dot_");}
 function fbInit(){FB_URL=(localStorage.getItem("ax_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");if(!FB_URL)return;fbLoadAll();fbStartListening();}
 function fbWrite(k,v,_retry){if(!FB_URL||!fbShouldSync(k))return;if(!_retry)_retry=0;var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);}).catch(function(e){if(_retry<3){setTimeout(function(){fbWrite(k,v,_retry+1);},1000*Math.pow(2,_retry));}else{_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);}});}
 function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
-function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();}}}catch(ex){}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}setTimeout(fbStartListening,Math.min(5000*_fbRetries,60000));};}
+function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}setTimeout(fbStartListening,Math.min(5000*_fbRetries,60000));};}
+// v12.8 — Pipeline autonomie : Apex AI traite la telemetry recue de CMCteams/autres apps
+function _processIncomingTelemetry(buffer){try{if(!Array.isArray(buffer)||!axIsAdmin())return;var changed=false;buffer.forEach(function(entry){if(!entry||entry.processed)return;if(entry.kind!=="err"&&entry.kind!=="warn")return;_snLog("telemetry-in","info","["+entry.src+"@"+entry.v+"] "+entry.id+": "+String(entry.msg).slice(0,80));_aiHandleIssue("cross-app-"+entry.src+"-"+entry.id,entry.kind,"["+entry.src+" "+entry.v+"] "+entry.msg);entry.processed=true;entry.processedBy=APP_VER;entry.processedAt=Date.now();changed=true;});if(changed)ls("ax_telemetry_in",buffer);}catch(e){_snLog("telemetry-in","err",String(e).slice(0,80));}}
+// v12.8 — Escalade Claude Code : si l'IA Apex ne sait pas resoudre, push dans outbox lu a la prochaine session Claude
+function _escalateToClaudeCode(context,reason){try{var todo=lg("ax_claude_todo",[]);todo.push({ts:Date.now(),apexVersion:APP_VER,context:context,reason:reason,status:"pending"});if(todo.length>50)todo=todo.slice(-50);ls("ax_claude_todo",todo);_snLog("escalate","info","→ Claude Code: "+String(reason).slice(0,80));return"escalated";}catch(e){return"escalate-err: "+e;}}
 function flushSyncQueue(){_axSyncQueue=lg("ax_sync_queue",{});var keys=Object.keys(_axSyncQueue);if(!keys.length)return;keys.forEach(function(k){fbWrite(k,_axSyncQueue[k].v);delete _axSyncQueue[k];});ls("ax_sync_queue",_axSyncQueue);toast("Sync terminee","info");}
 
 // --- Securite ---
@@ -1524,7 +1528,7 @@ function _snReport(id,kind,msg){_snLog(id,kind,msg);if(kind==="err"||kind==="war
 // Chaque sentinelle en mode err appelle l'IA avec contexte + whitelist d'actions.
 // L'IA diagnostique, decide, auto-execute si confiante. Rate-limit 1/sentinel/30min.
 // Whitelist actions auto-executables : safe operations seulement.
-var _aiHandleWhitelist={"flushSyncQueue":function(){try{if(typeof flushSyncQueue==="function")flushSyncQueue();return"queue flush OK";}catch(e){return"erreur: "+e;}},"emergencyCleanup":function(){try{if(typeof _emergencyCleanup==="function")_emergencyCleanup();return"cleanup OK";}catch(e){return"erreur: "+e;}},"fbReconnect":function(){try{if(typeof fbStartListening==="function")fbStartListening();return"fb reconnect OK";}catch(e){return"erreur: "+e;}},"resetStreaming":function(){K.isStreaming=false;ls("ax_streaming_since",0);try{dc();}catch(_){}return"streaming reset";},"logOnly":function(){return"noted";}};
+var _aiHandleWhitelist={"flushSyncQueue":function(){try{if(typeof flushSyncQueue==="function")flushSyncQueue();return"queue flush OK";}catch(e){return"erreur: "+e;}},"emergencyCleanup":function(){try{if(typeof _emergencyCleanup==="function")_emergencyCleanup();return"cleanup OK";}catch(e){return"erreur: "+e;}},"fbReconnect":function(){try{if(typeof fbStartListening==="function")fbStartListening();return"fb reconnect OK";}catch(e){return"erreur: "+e;}},"resetStreaming":function(){K.isStreaming=false;ls("ax_streaming_since",0);try{dc();}catch(_){}return"streaming reset";},"escalateToClaudeCode":function(ctx,reason){return _escalateToClaudeCode(ctx||"unknown",reason||"action non resolvable par IA Apex");},"logOnly":function(){return"noted";}};
 function _aiHandleIssue(sentinelId,severity,finding){
   try{
     if(!K.user||!axIsAdmin())return;
