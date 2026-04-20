@@ -27019,6 +27019,16 @@ function doImport(){
       +'<div style="text-align:center;padding:6px;background:rgba(160,96,255,.1);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#c080ff">'+(_totCP2+_totRH2+_totR2)+'</div><div style="color:#a0cca0">Repos/CP</div></div>'
       +'</div></div>';
   }
+  // v12.2 — Auto-remplir cadres sans horaire IMMEDIATEMENT apres chaque import
+  try{
+    var _cadreResult=autoFillMissingCadres(iy,im,{silent:false});
+    if(_cadreResult&&_cadreResult.filled>0){
+      var _r7=document.getElementById("impRes");
+      if(_r7){
+        _r7.innerHTML+='<div style="margin-top:8px;padding:10px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);border-radius:8px;font-size:13px;color:#c9a227">\u2728 '+_cadreResult.filled+' cadre'+((_cadreResult.filled>1)?'s':'')+' auto-complete'+((_cadreResult.filled>1)?'s':'')+' (inspecteurs/superviseurs)</div>';
+      }
+    }
+  }catch(_acfErr){}
   }catch(e){
     // v9.58 — En cas d'erreur : désactiver le flag et flush ce qui a été bufferisé
     _importInProgress=false;
