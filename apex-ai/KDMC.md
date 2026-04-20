@@ -1,7 +1,7 @@
 # KDMC AI — Fichier Reference Persistant
 
 > Ce fichier est la memoire de l'app KDMC. L'IA le lit et le met a jour automatiquement.
-> Derniere MAJ: 2026-04-20 — v12.1
+> Derniere MAJ: 2026-04-20 — v12.3
 
 ---
 
@@ -87,6 +87,13 @@
 12. **Audit insuffisant** — verifier les GUARDS ne suffit pas. Il faut aussi verifier le FLUX DE DONNEES bout-en-bout (ecriture → sync → lecture). Un guard OK avec un flux casse = bug invisible
 13. **Format ls/lg** — ls() stocke en JSON (ajoute des quotes), localStorage.setItem stocke brut. _getApiKey doit gerer les deux formats
 14. **Audits a faire** — CHAQUE audit doit inclure: (1) syntaxe JS, (2) guards securite, (3) flux de donnees complet, (4) format donnees, (5) cross-device sync
+15. **IA bloquee "3 petits points a l'infini" (v12.3 fix definitif)** — 3 causes cumulatives:
+    (a) `_callClaudeAPI` ignorait `ax_proxy_url` → CORS silent hang sur iOS Safari PWA. FIX: lire `localStorage.getItem("ax_proxy_url")` et utiliser en priorite.
+    (b) Tool-use recursion droppait les messages a `content` tableau (filtrage `typeof==="string"`) → API recevait conversation cassee → 400/loop silencieux. FIX: preserver `Array.isArray(m.content)` aussi.
+    (c) Pas d'`AbortController` → fetch zombie apres timeout. FIX: AbortController signal sur chaque fetch + abort() dans le timeout.
+    Idem pour `_mcSend` et `axUploadImage` (images en array).
+    **Regle permanente** : JAMAIS hardcoder `https://api.anthropic.com/v1/messages` directement, TOUJOURS passer par `ax_proxy_url`-or-default. JAMAIS filtrer par `typeof content === "string"` dans les messages API.
+16. **Health check proactif** — _healthCheck check si `isStreaming` dure > 45s et push un message visible "(IA debloquee automatiquement)" + dc() pour que l'utilisateur voit immediatement que c'est reglable.
 
 ---
 
