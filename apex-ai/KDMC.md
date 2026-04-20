@@ -74,22 +74,64 @@
 ## Lecons apprises (auto-enrichi)
 
 1. **Ne jamais hardcoder le system prompt** — toujours utiliser _buildSystemPrompt()
-2. **Toujours guard admin sur les fonctions settings** — 9 fonctions corrigees
-3. **Quotes dans les strings HTML** — eviter d'affaires, utiliser "CA" ou esc()
+2. **Toujours guard admin sur les fonctions settings** — 11 fonctions protegees
+3. **Quotes dans les strings HTML** — eviter apostrophes francaises, utiliser esc()
 4. **SW cache** — TOUJOURS bumper avec la version app
 5. **Boutons touch** — minimum 44px sur mobile
 6. **Firebase user-prefix** — fbShouldSync doit checker les cles suffixees
-7. **Timeout API** — toujours mettre un timeout (60s) sinon freeze
-8. **CSS .ax-msg** — ne pas definir 2 fois (fusionner)
+7. **Timeout API** — toujours mettre un timeout (45s) sinon freeze
+8. **CSS .ax-msg** — ne pas definir 2 fois (fusionner en une regle)
 9. **axInjectFunction** — toujours guard admin (code injection)
 10. **cmcRead** — proteger par admin (donnees sensibles)
+11. **SYNC FIREBASE** — toute donnee partagee (ex: ax_shared_api_key) DOIT etre dans FB_FIX ET utiliser ls() pas localStorage.setItem directement. TOUJOURS verifier le flux complet: ecriture → fbShouldSync → Firebase → fbLoadAll → lecture client
+12. **Audit insuffisant** — verifier les GUARDS ne suffit pas. Il faut aussi verifier le FLUX DE DONNEES bout-en-bout (ecriture → sync → lecture). Un guard OK avec un flux casse = bug invisible
+13. **Format ls/lg** — ls() stocke en JSON (ajoute des quotes), localStorage.setItem stocke brut. _getApiKey doit gerer les deux formats
+14. **Audits a faire** — CHAQUE audit doit inclure: (1) syntaxe JS, (2) guards securite, (3) flux de donnees complet, (4) format donnees, (5) cross-device sync
+
+---
+
+## Procedure d'audit obligatoire (CHAQUE session)
+
+> **REGLE ABSOLUE** : Ne JAMAIS valider sans cet audit complet.
+
+### Niveau 1 — Syntaxe (automatique)
+- [ ] node --check → JS OK
+- [ ] wc -c → taille coherente
+- [ ] SW cache == APP_VER
+
+### Niveau 2 — Securite (agents)
+- [ ] Toutes les fonctions _settings* ont guard admin
+- [ ] Toutes les vues ont guard K.user
+- [ ] innerHTML sans esc() → 0
+- [ ] new Function / eval → sandboxe ou admin-only
+
+### Niveau 3 — Flux de donnees (NOUVEAU — celui qui manquait)
+- [ ] Chaque donnee partagee est dans FB_FIX ou FB_PRE
+- [ ] Chaque ecriture partagee utilise ls() pas localStorage.setItem
+- [ ] fbShouldSync retourne true pour chaque cle partagee
+- [ ] fbLoadAll charge correctement dans localStorage
+- [ ] _getApiKey gere les deux formats (raw et JSON)
+- [ ] Cross-device : admin ecrit → Firebase sync → client lit → fonctionne
+
+### Niveau 4 — Fonctionnel (agents)
+- [ ] Chaque vue du vMain switch a sa fonction
+- [ ] Chaque tab du navbar a son case dans vMain
+- [ ] Tous les workers ont leur case handler
+- [ ] Toutes les onclick appellent des fonctions existantes
+
+### Niveau 5 — UX (verification manuelle)
+- [ ] Login fonctionne (admin + client)
+- [ ] Chat envoie et recoit des reponses
+- [ ] Sidebar affiche les conversations
+- [ ] Toutes les vues s'affichent sans erreur
+- [ ] Mobile 375px : tout est lisible
 
 ---
 
 ## Regles permanentes
 
 1. TOUT AU MAXIMUM — jamais de valeur basse par defaut
-2. Agents en permanence — 26 workers actifs surveillent tout
+2. Agents en permanence — 26+ workers actifs surveillent tout
 3. Auto-apprentissage — apprend des reactions, des erreurs, s'ameliore
 4. Auto-nettoyage — nettoie convs anciennes, erreurs, queue
 5. Auto-backup — snapshot quotidien a 3h
@@ -98,6 +140,10 @@
 8. Self-modify — peut modifier son CSS, ses fonctions, ses tabs en direct
 9. Multi-projet — gere KDMC + CMCteams + e-KDMC + Remote + CrackPass
 10. Anticipation — prevoit les bugs avant qu'ils arrivent
+11. AUDIT 5 NIVEAUX — syntaxe + securite + flux donnees + fonctionnel + UX
+12. FLUX DE DONNEES — verifier bout-en-bout, pas juste les guards
+13. LECONS APPRISES — chaque erreur = nouvelle lecon notee ici et dans ax_lessons_learned
+14. NE JAMAIS REPETER UNE ERREUR — relire cette section avant chaque session
 
 ---
 

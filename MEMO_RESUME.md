@@ -238,5 +238,15 @@ git status && git log --oneline -10
 | v12.1 | NOUVEAU: vRemote() — Telecommande universelle (TV/Clim/Lumieres, 15 boutons) |
 | v12.1 | NOUVEAU: vCrackPass() — Generateur MDP crypto + testeur force + batch |
 | v12.1 | CMCteams: management enrichi + cmcRead securise par admin guard |
+| v12.1 | 26 workers/agents autonomes + vue Agents admin + AI Crew 8 agents |
+| v12.1 | Self-repair + Health Check predictif 30s + auto-apprentissage lecons |
+| v12.2 | FIX: ax_shared_api_key sync Firebase (casse cross-device) |
+| v12.2 | Sidebar style Claude: 3 onglets (Convs/Projets/Favoris) |
+| v12.2 | Procedure audit 5 niveaux + 3 lecons CLAUDE.md (#27 #28 #29) |
 
-*Derniere mise a jour : 2026-04-20 — KDMC v12.1 + CMC v9.303*
+**LECONS CRITIQUES v12.0-v12.2 (a ne JAMAIS reproduire) :**
+1. Verifier le FLUX DE DONNEES complet, pas juste les guards
+2. Toute donnee partagee = FB_FIX + ls() (pas localStorage.setItem)
+3. Audit 5 niveaux obligatoire (syntaxe/securite/flux/fonctionnel/UX)
+
+*Derniere mise a jour : 2026-04-20 — KDMC v12.2 + CMC v9.303*
