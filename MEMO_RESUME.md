@@ -1,4 +1,4 @@
-# Mémo de reprise — 2026-04-19 (CMC v9.303 + KDMC v10.4)
+# Mémo de reprise — 2026-04-20 (CMC v9.303 + KDMC v12.1)
 
 > **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
 >
@@ -181,18 +181,18 @@ git status && git log --oneline -10
 
 ---
 
-## KDMC v10.4 (2026-04-19) — App IA premium
+## KDMC v12.1 (2026-04-20) — App IA premium
 
 **App IA premium livree dans `apex-ai/`** :
-- `index.html` (468 KB) — 300+ actions, self-modifying, AI Crew
+- `index.html` (557 KB) — 350+ actions, self-modifying, AI Crew
 - `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
-- `sw.js` — Service Worker v1.2 (push + background sync)
+- `sw.js` — Service Worker v12.1 (push + background sync)
 - `manifest.json` — PWA installable
 
-**110+ commits, audits experts, corrections P0/P1/P2 appliquees**
+**130+ commits, audits experts, corrections P0/P1/P2 appliquees**
 
-**KDMC v10.4 — Capacites :**
-- 300+ actions autonomes, 80+ templates pro, 13 personas
+**KDMC v12.1 — Capacites :**
+- 350+ actions autonomes, 80+ templates pro, 13 personas
 - AI Crew (5 agents internes: verificateur, critique, optimiseur, fact-checker, creatif)
 - Local Workers (10 agents arriere-plan)
 - Self-modifying + Self-improving (apprend des reactions)
@@ -223,4 +223,20 @@ git status && git log --oneline -10
 
 ---
 
-*Derniere mise a jour : 2026-04-19 — KDMC v10.4 + CMC v9.303*
+### Session 2026-04-20 — KDMC v12.0 → v12.1
+
+| Version | Contenu |
+|---------|---------|
+| v12.0 | Refonte visuelle complete — 5 subagents experts CSS/Dashboard/Chat/Nav/Login |
+| v12.0 | 30+ headers gradient dore, 31 left-borders colores, 18 animations CSS |
+| v12.0 | 23 guards login + 23 guards admin + 4 bugs corriges (CSS/securite/Firebase/SSE) |
+| v12.0 | 40+ vues polies avec themes couleurs uniques par module |
+| v12.0 | Dashboard widget "Aujourd'hui", sidebar enrichie, welcome-back intelligent |
+| v12.1 | FIX CRITIQUE: IA utilisait prompt hardcode → _buildSystemPrompt() complet |
+| v12.1 | FIX CRITIQUE: 9 fonctions settings sans guard admin → toutes protegees |
+| v12.1 | FIX: Chatbar boutons 44-48px (avant 36px), timeout 60s anti-freeze |
+| v12.1 | NOUVEAU: vRemote() — Telecommande universelle (TV/Clim/Lumieres, 15 boutons) |
+| v12.1 | NOUVEAU: vCrackPass() — Generateur MDP crypto + testeur force + batch |
+| v12.1 | CMCteams: management enrichi + cmcRead securise par admin guard |
+
+*Derniere mise a jour : 2026-04-20 — KDMC v12.1 + CMC v9.303*
