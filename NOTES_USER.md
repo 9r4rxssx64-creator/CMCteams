@@ -677,78 +677,92 @@ commandes longues plutôt que de laisser expirer un timeout court.
 - `MCP_TIMEOUT = 60000` / `MCP_TOOL_TIMEOUT = 600000`
 - ⚠️ Nécessite redémarrage Claude Code pour prise en compte des `env`.
 
-## 🚀 INTÉGRATION APEX AI (2026-04-18, corrigé)
+## 🚀 INTÉGRATION APEX AI (2026-04-18, corrigé v3)
 
-### Distinction fondamentale (à ne plus jamais oublier)
+### Architecture correcte (validée admin 2026-04-18)
 
-| Projet | Nature | Public | Fichiers |
-|--------|--------|--------|----------|
-| **CMCteams** | App planning shifts Casino de Monaco | 258 employés casino + admin Kevin | `index.html` racine, `sw.js`, `CHANGELOG.md`, … |
-| **APEX AI** (ex-KDMC AI) | Assistant IA personnel de Kevin (chat IA, KB, finance, voix, multi-device, Stripe) | Kevin uniquement (puis usage public/payant) | `apex-ai/index.html`, `apex-ai/manifest.json`, `apex-ai/sw.js`, `apex-ai/proxy-apex.js`, `KDMC_AI_PROJECT.md` |
+**APEX AI est un HUB / LAUNCHER** qui contient plusieurs sous-apps.
+Chaque sous-app est **aussi installable seule** en PWA indépendante
+(autonome, fonctionne sans APEX AI). Mais l'usage normal passe par APEX AI :
+Kevin les **utilise, surveille, gère, modifie et fait évoluer** depuis APEX AI.
 
-**Les deux co-habitent dans le même repo Git mais sont des projets distincts.**
-Aucun lien fonctionnel actuel — pas de code partagé.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    APEX AI (hub v3.8)                    │
+│  Assistant IA + KB + Self-Modify + Hub multi-device     │
+│                                                          │
+│  ┌────────────────┐ ┌────────────────┐ ┌─────────────┐ │
+│  │   CMCteams     │ │ Télécommande   │ │  Crakpass   │ │
+│  │   (casino)     │ │     uni        │ │  (inactif)  │ │
+│  │                │ │                │ │             │ │
+│  │ Installable    │ │ Installable    │ │ Installable │ │
+│  │ seule (PWA)    │ │ seule (PWA)    │ │ seule (PWA) │ │
+│  └────────────────┘ └────────────────┘ └─────────────┘ │
+│                                                          │
+│       + autres sous-apps (e-KDMC, KDMC vidéos, …)       │
+└─────────────────────────────────────────────────────────┘
+```
 
-### APEX AI en bref (lu depuis `KDMC_AI_PROJECT.md` v3.8)
+### Relations entre les projets
 
-Vision : assistant IA aussi capable que GPT/Claude/Gemini, avec une couche
-proprietary (mémoire persistante, outils custom, expertise finance,
-monétisation Stripe). Hébergé GitHub Pages + proxy Cloudflare Workers,
-backend Firebase RTDB. État courant : **v3.8, 85 actions, 32 commits**.
+| Aspect | Comportement |
+|--------|-------------|
+| **Autonomie** | Chaque sous-app fonctionne seule (GitHub Pages propre, service worker, manifest PWA) |
+| **Hub** | APEX AI référence les sous-apps, les lance, les pilote, les met à jour |
+| **Dev** | Kevin modifie les sous-apps **depuis** APEX AI (via Self-Modify et outils dev v3.6) |
+| **Usage** | Kevin les utilise via APEX AI au quotidien (launcher) |
+| **Surveillance** | Monitoring/santé/notifs centralisés dans APEX AI |
+| **Sessions Claude Code** | Chaque sous-app a sa propre session dédiée (visible mobile) |
 
-Modules clés : Chat IA, **KB persistante (faits + instructions)**, mode
-offline (Gemma WebGPU), Finance Expert, Voix STT/TTS, Documents (vision/PDF),
-Monétisation Stripe, Connexions Meta/Gmail/Telegram, **Hub inter-appareils
-Firebase** (chaque device s'enregistre).
+### Statut actuel des sous-apps (vu sur écran mobile 2026-04-18)
 
-### Demande admin (2026-04-18)
+| Sous-app | Statut | Session Claude Code | Notes |
+|----------|--------|---------------------|-------|
+| APEX AI | ✅ En cours (hub) | « APEX AI » | v3.8, 85 actions |
+| Télécommande uni | ✅ En cours | « Télécommande uni » | - |
+| CMCteams | ✅ **Intégré** (cette session) | « App CMCteams » (archivé) + sessions branche | v9.103, 258 emp |
+| e-KDMC | ⏸ Inactif | « e-KDMC » | - |
+| KDMC vidéos | ⏸ Inactif | « KDMC vidéos » | - |
+| Crakpass | ⏸ Inactif | « Crakpass » | Voir ⛔ refus ci-dessus, ne pas y contribuer |
+
+### Demande admin revisée
 
 > « Quand tout sera fonctionnel, ajoute le projet à mon application APEX AI. »
 
-**Interprétation correcte (validée 2026-04-18)** : enregistrer **CMCteams
-comme projet géré** à l'intérieur d'APEX AI — pas une fusion de code, pas
-une copie. CMCteams reste une app à part (casino), mais APEX AI doit le
-**connaître** pour pouvoir en parler, surveiller son état, notifier Kevin
-en cas d'événement, etc.
+**Réinterprétation correcte** : CMCteams est **déjà référencé** dans APEX AI
+(sinon il n'apparaîtrait pas dans la liste mobile). La demande signifie donc
+probablement l'une de ces deux choses :
 
-### Forme probable de l'intégration (à confirmer par session APEX AI)
+1. **Rafraîchir/mettre à jour** l'entrée CMCteams dans APEX AI une fois les
+   timeouts confirmés OK (nouvelle version v9.103+, health check à jour).
+2. **Formaliser** le lien (KB, hub, notifs) si ce n'est pas déjà fait de
+   manière structurée.
 
-1. **Entrée dans la KB d'APEX AI** : un fait du genre
-   `{type:"projet_geré", nom:"CMCteams", url:"https://9r4rxssx64-creator.github.io/CMCteams/", repo:"9r4rxssx64-creator/CMCteams", description:"App planning casino", admin:"Kevin", users:258}`
-   → APEX AI peut alors répondre aux questions « parle-moi de CMCteams »,
-   « quelle est sa version », etc.
-2. **Entrée dans le Hub inter-appareils** (module 12) : CMCteams listé comme
-   un « device/projet » connu, avec son URL et son statut.
-3. **Outil custom dédié** : `cmcteams_status` qui interroge l'API CMCteams
-   (ou son Firebase) pour donner planning/effectif en temps réel.
-4. **Page projets dans le dashboard APEX AI** (s'il existe) : carte CMCteams
-   avec lien direct + dernière version + santé Firebase.
+→ À confirmer avec Kevin au moment du « fonctionnel ».
 
-→ La session APEX AI choisira la forme adaptée à son architecture.
+### Règle de travail inter-sessions (IMPORTANT)
 
-### Décision : qui fait l'intégration ?
+- **Chaque session Claude Code modifie son propre périmètre** (APEX AI ↔
+  `apex-ai/`, CMCteams ↔ `index.html` racine, etc.).
+- **`NOTES_USER.md` est partagé** entre toutes les sessions → c'est le canal
+  officiel d'information cross-session.
+- **Ne jamais modifier `apex-ai/` depuis la session CMCteams** (sauf
+  demande explicite) pour éviter les conflits avec la session APEX AI
+  active en parallèle.
+- **Inversement** : la session APEX AI ne doit pas modifier `index.html`
+  racine (CMCteams) sans passer par une demande admin explicite.
+- En cas de besoin transverse → poser une note dans `NOTES_USER.md` à
+  l'attention de l'autre session.
 
-**Session APEX AI** (pas les autres sessions). Raisons :
-- APEX AI développe activement `apex-ai/` (v3.0 → v3.8, 10 commits récents) →
-  modifier depuis une autre session = risque de **conflit de merge**.
-- Connaît son architecture interne (KB, Self-Modify, hub multi-device).
-- A peut-être déjà un mécanisme natif pour les « projets gérés ».
+### Checklist finale (à cocher par session APEX AI)
 
-⚠️ Aucun verrou Git — toute session peut modifier `apex-ai/` après coup.
-La règle vise juste à éviter les conflits actifs pendant le développement
-intense d'APEX AI.
-
-### Actions attendues côté session APEX AI (au prochain démarrage)
-
-1. Lire `NOTES_USER.md` (ce fichier) → voir cette demande
-2. Demander à Kevin la forme exacte (1, 2, 3, 4 ci-dessus, ou autre)
-3. Implémenter dans `apex-ai/`, commiter, pousser sur sa propre branche
-4. Cocher ci-dessous + remplir le commit/branche utilisé
-
-- [ ] **Intégration CMCteams comme projet géré dans APEX AI** — réalisée par session APEX AI
-  - Branche : `_____`
-  - Commit : `_____`
-  - Forme retenue : `_____`
+- [ ] Vérifier que l'entrée CMCteams est à jour dans APEX AI (version,
+      URL GitHub Pages, dernière santé Firebase)
+- [ ] Ajouter un health-check automatique si absent (outil custom
+      `cmcteams_status` ou équivalent)
+- [ ] Notifier Kevin via APEX AI en cas de régression CMCteams
+- Branche retenue : `_____`
+- Commit : `_____`
 
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
