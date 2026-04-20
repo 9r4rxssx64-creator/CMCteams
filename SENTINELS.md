@@ -134,6 +134,62 @@ Les seules fonctions dont le `self-heal-sentinel` peut déclencher l'exécution 
 
 ---
 
+## Bridge Sentinelles → IA (v9.442 / v12.6, Kevin 2026-04-20)
+
+**Règle additionnelle non-négociable** : chaque sentinelle qui détecte un `err`
+doit appeler l'IA locale avec contexte + whitelist d'actions. L'IA diagnostique,
+choisit UNE action, auto-exécute si whitelist autorise.
+
+### Pattern universel
+
+```js
+// Dans le log de la sentinelle (err uniquement)
+if (kind === "err") _aiHandleIssue(sentinelId, severity, finding);
+
+// Fonction universelle (à porter dans chaque projet)
+function _aiHandleIssue(sentinelId, severity, finding) {
+  // 1. Admin only + rate-limit 30min/sentinelle
+  // 2. Construit prompt : "sentinel X a détecté Y, actions disponibles: [whitelist]"
+  // 3. Appelle l'API (proxy ou direct), model: haiku-4-5 (rapide + cheap)
+  // 4. Parse JSON { diagnostic, action }
+  // 5. Exécute action si dans whitelist
+  // 6. Log tout dans <prefix>_sentinels_log pour traçabilité
+}
+```
+
+### Whitelist actions auto-exécutables
+
+**Communes à tous projets** (safe, réversibles, non destructives) :
+
+| Action | Effet |
+|--------|-------|
+| `flushSyncQueue` | Rejoue la queue offline |
+| `emergencyCleanup` | Nettoie localStorage (vieilles convs/erreurs) |
+| `fbReconnect` | Relance Firebase SSE |
+| `resetStreaming` | Force K.isStreaming=false |
+| `logOnly` | Noter sans action (diagnostic seulement) |
+
+**Interdits en auto-exécution** : delete user, write to Firebase, send message,
+network call externe. L'IA peut PROPOSER ces actions mais l'admin doit valider.
+
+### Sécurité
+
+- Admin uniquement (`A.user.id===AID` ou `axIsAdmin()`)
+- Rate-limit strict 1 appel/sentinelle/30min (coût API maîtrisé)
+- Model `claude-haiku-4-5-20251001` (rapide + économique, 200-400 tokens max)
+- Timeout 12-15s avec AbortController
+- Fallback silencieux si l'IA échoue (pas de toast anxiogène)
+- Traçabilité complète dans `<prefix>_sentinels_log` + `ai-handler` entries
+
+### Propagation (à répliquer)
+
+- ✅ CMCteams v9.442 (`_cmcAiHandleIssue`)
+- ✅ KDMC Apex v12.6 (`_aiHandleIssue` + `_aiHandleWhitelist`)
+- 🔄 e-KDMC (à faire quand le projet démarre)
+- 🔄 Tous les futurs projets : obligatoire
+
+---
+
 ## Règle permanente
 
 **Kevin 2026-04-20** : *"Des sentinelles expert autonomes dédiées pour augmenter
