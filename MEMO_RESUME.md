@@ -94,6 +94,7 @@ Vercel Free rate limit atteint hier (100 previews/jour). GitHub Pages main conti
 ---
 
 # Mémo de reprise — 2026-04-19 (CMC v9.119 + KDMC v6.1)
+# Mémo de reprise — 2026-04-20 (CMC v9.303 + KDMC v12.1)
 
 > **REGLE ABSOLUE : TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS REDEMANDER.**
 >
@@ -276,36 +277,72 @@ git status && git log --oneline -10
 
 ---
 
-## APEX AI v1.5 (2026-04-18) — NOUVEAU PROJET
+## KDMC v12.1 (2026-04-20) — App IA premium
 
 **App IA premium livree dans `apex-ai/`** :
-- `index.html` (355 KB, 1097 lignes) — 247+ actions, self-modifying, AI Crew
+- `index.html` (557 KB) — 350+ actions, self-modifying, AI Crew
 - `proxy-apex.js` — Proxy Cloudflare Workers avec streaming SSE
-- `sw.js` — Service Worker v1.2 (push + background sync)
+- `sw.js` — Service Worker v12.1 (push + background sync)
 - `manifest.json` — PWA installable
 
-**60 commits, 7 audits experts, corrections P0/P1/P2 appliquees**
+**130+ commits, audits experts, corrections P0/P1/P2 appliquees**
 
-**KDMC v6.1 — Capacites :**
-- 247+ actions autonomes, 70+ templates pro, 10 personas
+**KDMC v12.1 — Capacites :**
+- 350+ actions autonomes, 80+ templates pro, 13 personas
 - AI Crew (5 agents internes: verificateur, critique, optimiseur, fact-checker, creatif)
-- Local Workers (4 agents arriere-plan: erreurs, habitudes, taches, backup)
+- Local Workers (10 agents arriere-plan)
 - Self-modifying + Self-improving (apprend des reactions)
 - Auto-learn 24 marques appareils
 - IFTTT Rules + Predictions + Monte Carlo
 - Python + JS + Canvas + Code Editor
 - 12 ambiances domotique, 42 commandes IR Broadlink
 - Smart TV WiFi (Samsung, LG, Roku, Android TV)
-- Assistant vocal continu type Siri (32 commandes)
+- Assistant vocal continu type Siri (32+ commandes)
+- 44 voix (paysan, grand-mere, gangster, ivre, pirate, Dark Vador, helium, accents...)
 - Finance (NPV/IRR/SMA/EMA/Finnhub/Crypto)
 - Mode offline Gemma WebLLM
-- 15 achievements, 6 themes, 4 langues
+- 15 achievements, 6 themes, 5 langues (FR/EN/IT/ES/DE)
 - Gamification XP + slot machine + Konami
 - Deep Research + Multi-perspective
 - Snapshots time travel + Export universel
+- **Messagerie admin** (DM prives + Groupe + Visio)
+- **Favoris messages** + raccourcis rapides + historique recherches
+- **Traducteur universel 30 langues** + allemand interface
+- **8 outils texte** + menu contextuel messages
+- **Comptes** : Kevin (admin), Laurence (family), Sandrine + Christophe TARDIEU (clients test)
+- CGU completes + Stats admin + Historique global
+- Smart Context + Astuce du jour + Quick actions enrichis
+- Rapport hebdo + notification tous + export PDF
+- Background keep-alive (wake lock + audio silent + SW ping)
 
 **Voir MEMO_KEVIN_ACTIONS.md pour les actions restantes de Kevin.**
 
 ---
 
-*Dernière mise à jour : 2026-04-18 — APEX AI v1.5 + CMC v9.119*
+### Session 2026-04-20 — KDMC v12.0 → v12.1
+
+| Version | Contenu |
+|---------|---------|
+| v12.0 | Refonte visuelle complete — 5 subagents experts CSS/Dashboard/Chat/Nav/Login |
+| v12.0 | 30+ headers gradient dore, 31 left-borders colores, 18 animations CSS |
+| v12.0 | 23 guards login + 23 guards admin + 4 bugs corriges (CSS/securite/Firebase/SSE) |
+| v12.0 | 40+ vues polies avec themes couleurs uniques par module |
+| v12.0 | Dashboard widget "Aujourd'hui", sidebar enrichie, welcome-back intelligent |
+| v12.1 | FIX CRITIQUE: IA utilisait prompt hardcode → _buildSystemPrompt() complet |
+| v12.1 | FIX CRITIQUE: 9 fonctions settings sans guard admin → toutes protegees |
+| v12.1 | FIX: Chatbar boutons 44-48px (avant 36px), timeout 60s anti-freeze |
+| v12.1 | NOUVEAU: vRemote() — Telecommande universelle (TV/Clim/Lumieres, 15 boutons) |
+| v12.1 | NOUVEAU: vCrackPass() — Generateur MDP crypto + testeur force + batch |
+| v12.1 | CMCteams: management enrichi + cmcRead securise par admin guard |
+| v12.1 | 26 workers/agents autonomes + vue Agents admin + AI Crew 8 agents |
+| v12.1 | Self-repair + Health Check predictif 30s + auto-apprentissage lecons |
+| v12.2 | FIX: ax_shared_api_key sync Firebase (casse cross-device) |
+| v12.2 | Sidebar style Claude: 3 onglets (Convs/Projets/Favoris) |
+| v12.2 | Procedure audit 5 niveaux + 3 lecons CLAUDE.md (#27 #28 #29) |
+
+**LECONS CRITIQUES v12.0-v12.2 (a ne JAMAIS reproduire) :**
+1. Verifier le FLUX DE DONNEES complet, pas juste les guards
+2. Toute donnee partagee = FB_FIX + ls() (pas localStorage.setItem)
+3. Audit 5 niveaux obligatoire (syntaxe/securite/flux/fonctionnel/UX)
+
+*Derniere mise a jour : 2026-04-20 — KDMC v12.2 + CMC v9.303*
