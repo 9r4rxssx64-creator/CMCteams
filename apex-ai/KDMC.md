@@ -135,4 +135,63 @@
 
 ---
 
+---
+
+## Methodologie de travail (appliquee a CHAQUE interaction)
+
+1. **TodoWrite AVANT de coder** — planifier, decomposer, suivre
+2. **Subagents pour auditer** — verifier chaque modification par un agent independant
+3. **Syntax check AVANT commit** — node --check obligatoire
+4. **esc() sur toute donnee utilisateur** — securite XSS
+5. **Guards admin sur fonctions sensibles** — if(!axIsAdmin())return
+6. **Tester sur mobile 375px** — iPhone SE = reference
+7. **Ne jamais oublier une demande** — tout noter dans TodoWrite + KDMC.md
+8. **Auto-apprentissage** — chaque erreur = lecon apprise automatiquement
+9. **Auto-nettoyage** — conversations >60j, erreurs >40, queue sync
+10. **MAJ tous les fichiers apres chaque session** — KDMC.md, MEMO_RESUME.md, NOTES_USER.md
+
+## Self-repair (auto-reparation)
+
+L'app detecte et corrige les problemes en autonomie:
+- **Erreurs JS** → remontees dans ax_err_log, notifiees par worker Erreurs
+- **Firebase deconnecte** → reconnexion auto avec backoff exponentiel
+- **Queue sync pleine** → flush auto au retour online
+- **Stockage plein** → _emergencyCleanup() supprime les vieilles conversations
+- **Session expiree** → redirect login automatique
+- **SW desynchronise** → proposition MAJ + cache bust
+- **API timeout** → lecon apprise + suggestion reduire le prompt
+- **Worker crashe** → restart auto au prochain interval
+
+## Fonctions de gestion des projets (depuis KDMC)
+
+| Action | Fonction | Description |
+|--------|----------|-------------|
+| Modifier CSS | axModifyCSS(selector, prop, value) | Change le style en direct |
+| Injecter fonction | axInjectFunction(name, code) | Ajoute du code JS |
+| Ajouter tab | axAddTab(id, icon, label, html) | Nouveau module |
+| Supprimer tab | axRemoveTab(id) | Retire un module |
+| Lire le code | axGetAppSource() | Code source complet |
+| Chercher dans le code | axFindInCode(query) | Trouve les lignes |
+| Lire une fonction | axGetFunctionCode(name) | Code d'une fonction |
+| Remplacer dans le CSS | axReplaceInCode(search, replace) | Modification |
+| Exporter l'app | axExportAppCode() | Telecharge le HTML |
+| Lire Firebase CMC | cmcRead(key) | Donnees CMCteams |
+| Ecrire Firebase CMC | cmcWrite(key, value) | Modifier CMCteams |
+| MOTD CMCteams | cmcSetMotd(text) | Message du jour |
+| Chat CMCteams | cmcSendChat(msg) | Envoyer un message |
+
+## Checklist pre-livraison (appliquer CHAQUE fois)
+
+- [ ] node --check /tmp/t.js → JS OK
+- [ ] wc -c index.html → taille coherente
+- [ ] grep innerHTML | grep -v esc → 0 XSS
+- [ ] grep "axIsAdmin" sur toutes les fonctions sensibles
+- [ ] git diff → pas de regression
+- [ ] Test mental: que se passe-t-il si K.user est null ?
+- [ ] Test mental: que se passe-t-il sur iPhone Safari PWA ?
+- [ ] Test mental: que se passe-t-il si Firebase est down ?
+
+---
+
 *Ce fichier est mis a jour automatiquement par les workers KDMC.*
+*Derniere verification: tous les audits PASS (2026-04-20)*
