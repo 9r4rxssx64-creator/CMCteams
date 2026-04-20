@@ -144,7 +144,8 @@
 12. FLUX DE DONNEES — verifier bout-en-bout, pas juste les guards
 13. LECONS APPRISES — chaque erreur = nouvelle lecon notee ici et dans ax_lessons_learned
 14. **NE JAMAIS INVENTER DE DONNEES** — si pas de source reelle (mois precedent, PDF), NE PAS mettre de pattern par defaut. Alerter l'admin a la place. Les donnees doivent TOUJOURS venir d'une source verifiee.
-15. **Test de flux reel** — un audit qui verifie la syntaxe et les guards n'est PAS suffisant. Il faut tester le flux REEL (envoyer un message, faire un import, cliquer un bouton) pour detecter les bugs d'execution.
+15. **Test de flux reel** — un audit qui verifie la syntaxe et les guards n'est PAS suffisant. Il faut tester le flux REEL.
+16. **JAMAIS DE STREAMING SSE** — Safari iOS PWA ne supporte PAS getReader() correctement en mode standalone. Le streaming BLOQUE l'app (3 points infinis). Mode JSON UNIQUEMENT. Ne PLUS JAMAIS remettre le streaming. C'est la 3e fois que ce bug se reproduit.
 
 ---
 
