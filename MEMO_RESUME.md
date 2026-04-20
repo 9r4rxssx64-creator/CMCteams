@@ -1,5 +1,54 @@
 # Mémo de reprise — v9.432 (session 2026-04-19 autonome complète)
 
+## 🆕 Session 2026-04-20 soir — KDMC Apex AI v12.3 (fix "3 points infini" définitif)
+
+Branche : `claude/fix-apex-ai-bugs-adHfF`
+
+### Bug historique (3e reprise) — RÉSOLU
+
+L'IA KDMC (`apex-ai/index.html`) laissait tourner l'indicateur "3 petits points"
+sans jamais répondre, chez Kevin et chez tous les utilisateurs, depuis des semaines.
+
+### Causes racines identifiées par audit externe (4 subagents)
+
+1. **`_callClaudeAPI` hardcodait `https://api.anthropic.com/v1/messages`** —
+   ignorait complètement `ax_proxy_url` configuré via Réglages. Sur iOS Safari
+   PWA, les appels directs en mode standalone hangent silencieusement
+   (CORS + `anthropic-dangerous-direct-browser-access`).
+2. **Filtre `typeof content === "string"` droppait les messages tool_use /
+   tool_result / image** dans la récursion. L'API recevait une conversation
+   incohérente → boucle infinie jusqu'à depth=5 → "(vide)".
+3. **Aucun `AbortController`** — le fetch restait zombie après le timeout,
+   pouvant réécrire `K.isStreaming=true` après auto-recovery.
+4. Idem bug dans `_mcSend` (mini-chat FAB) et callpath `axUploadImage`.
+
+### Fixes v12.3
+
+- `_callClaudeAPI` : lit `ax_proxy_url` → utilise proxy Cloudflare si configuré,
+  sinon fallback direct. Active `AbortController` + `signal` sur le fetch.
+  Préserve `Array.isArray(m.content)` pour tool_use/tool_result/image.
+  Exécution d'outils wrappée try/catch, gère les Promises retournées sans hang.
+- `_mcSend` : mêmes fixes (proxy + abort + timeout cleanup).
+- `_healthCheck` : seuil streaming-stuck 60s → 45s, push message visible
+  "(IA débloquée automatiquement après 45s — réessayez)" au lieu d'un toast
+  invisible.
+- Bump `APP_VER = v12.3` + `sw.js` cache `kdmc-v12.3` pour forcer la MAJ
+  des clients PWA.
+
+### Audit externe
+
+Subagent Explore indépendant → 4/4 PASS (proxy respecté, abort + cleanup sur
+tous les paths, `isStreaming=false` + `dc()` à chaque sortie, aucune autre
+fetch() hardcodée qui bypasse le proxy). Aucune régression détectée.
+Syntaxe JS OK (`node --check` sur 2 script blocks).
+
+### Leçon apprise ajoutée dans `apex-ai/KDMC.md` (#15)
+
+JAMAIS hardcoder l'URL Anthropic, JAMAIS filtrer les messages par
+`typeof === "string"` avant de les envoyer à l'API (casserait tool_use).
+
+---
+
 ## 🆕 Session 2026-04-19 — **35 versions mergées** (v9.398 → v9.432)
 
 ### Bloc final v9.416 → v9.432 (chaîne autonome complète)
