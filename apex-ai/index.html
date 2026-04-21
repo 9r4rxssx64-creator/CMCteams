@@ -260,7 +260,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.18",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.19",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1582,7 +1582,31 @@ var _sidebarSearch="";
 function _bindEvents(){_applyTheme();_rememberLastUser();var content=document.getElementById("content");if(content){content.addEventListener("dragover",function(e){e.preventDefault();e.stopPropagation();content.style.outline="2px dashed var(--ax-gold)";});content.addEventListener("dragleave",function(){content.style.outline="";});content.addEventListener("drop",function(e){e.preventDefault();e.stopPropagation();content.style.outline="";if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){for(var i=0;i<e.dataTransfer.files.length;i++){_handleFileUpload({files:[e.dataTransfer.files[i]]});}toast(e.dataTransfer.files.length+" fichier(s) recu(s)","ok");}});}var input=document.getElementById("ax-chat-input");if(input){input.addEventListener("input",function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,120)+"px";});}}
 
 function _autoConfigureDefaults(){if(!localStorage.getItem("ax_fb_url"))localStorage.setItem("ax_fb_url","https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app");if(!localStorage.getItem("ax_agent_url"))localStorage.setItem("ax_agent_url","https://kdmc-agent-monaco.vercel.app");}
-function axInit(){_autoConfigureDefaults();_loadState();K.isStreaming=false;_canvasOpen=false;_sidebarOpen=false;if(K.user){K.view="chat";touchSession();axRegisterDevice();}else{K.view="login";}render();fbInit();if(navigator.onLine)flushSyncQueue();window.addEventListener("online",function(){toast("Connexion retablie","ok");flushSyncQueue();_checkRules("online");dc();});window.addEventListener("offline",function(){toast("Mode hors ligne","warn");_checkRules("offline");dc();});if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(e){console.warn("SW:",e);});}document.addEventListener("visibilitychange",function(){if(!document.hidden&&K.user)touchSession();});try{_startSentinels();}catch(_){}}
+function axInit(){_autoConfigureDefaults();_loadState();K.isStreaming=false;_canvasOpen=false;_sidebarOpen=false;if(K.user){K.view="chat";touchSession();axRegisterDevice();}else{K.view="login";}render();fbInit();if(navigator.onLine)flushSyncQueue();window.addEventListener("online",function(){toast("Connexion retablie","ok");flushSyncQueue();_checkRules("online");dc();});window.addEventListener("offline",function(){toast("Mode hors ligne","warn");_checkRules("offline");dc();});if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(e){console.warn("SW:",e);});}document.addEventListener("visibilitychange",function(){if(!document.hidden&&K.user)touchSession();});try{_startSentinels();}catch(_){}try{axAutoSeedKB();}catch(_){}}
+function axAutoSeedKB(){
+  try{
+    if(!axIsAdmin())return;
+    if(!K.kb)K.kb={facts:[],instructions:[]};
+    if(!K.kb.facts)K.kb.facts=[];
+    if(!K.kb.instructions)K.kb.instructions=[];
+    if(K.kb.facts.length>=5)return; // deja rempli
+    var seeds=[
+      {text:"Admin principal: Kevin DESARZENS (kdmc_admin / U11804 CMCteams), kevind@monaco.mc, Casino de Monaco SBM.",source:"handoff-auto"},
+      {text:"Projets actifs: CMCteams (planning casino 258 emp), Apex AI (moi), e-KDMC (e-commerce), Remote, CrackPass.",source:"handoff-auto"},
+      {text:"Firebase partage: cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app (paths /cmcteams /apex).",source:"handoff-auto"},
+      {text:"Regle #1 Kevin: TOUT AU MAXIMUM. Jamais de valeur basse par defaut.",source:"handoff-auto"},
+      {text:"Regle #2 Kevin: Ne JAMAIS inventer de donnees. Si pas de source reelle, alerter admin.",source:"handoff-auto"},
+      {text:"Regle UX erreurs: jamais message technique brut, toujours user-friendly actionnable.",source:"handoff-auto"},
+      {text:"Pipeline autonomie: ax_telemetry_in (inbox), ax_claude_todo (outbox Claude Code), ax_lessons_learned (shared), ax_handoff_journal.",source:"handoff-auto"},
+      {text:"Audit auto toutes 4h via _snAutoAudit. Feed Claude Code lu toutes 2h via _snFeedPoll.",source:"handoff-auto"},
+      {text:"BOUVIER JF actuellement faisant fonction pit boss dans CMCteams (fond bleu Pit Boss 15 avril 2026). Les 5 superviseurs ETTORI M/FOUQUE V/PLACENTI L/DOGLIOLO Y/MUS L sous SUPERVISEUR.",source:"handoff-auto"},
+      {text:"Convention Collective SBM: congés 2 mois/an (17.4), repos hebdo min (17.5), pause 40min si 55+ (17.8), mariage 4j/naissance 3j/décès 3j (18).",source:"handoff-auto"}
+    ];
+    seeds.forEach(function(s){K.kb.facts.push({id:uid(),text:s.text,source:s.source,ts:now()});});
+    ls("ax_kb",K.kb);
+    if(typeof axJournalEntry==="function")axJournalEntry("apex-ai","Auto-seed KB","K.kb.facts vide au demarrage","axAutoSeedKB",seeds.length+" faits ajoutes","memoire pre-remplie avec handoff Claude Code");
+  }catch(e){}
+}
 
 window.onerror=function(msg,src,line,col,err){var log=lg("ax_err_log",[]);var entry={msg:String(msg).replace(/</g,"&lt;"),src:String(src||"").slice(-50),line:line,ts:now()};log.unshift(entry);if(log.length>50)log=log.slice(0,50);try{localStorage.setItem("ax_err_log",JSON.stringify(log));}catch(e){}if(window.Sentry&&err)window.Sentry.captureException(err);_autoLearnFromError(String(msg));_selfRepair(entry);try{if(typeof toast==="function"&&String(msg).indexOf("undefined")>=0)toast("Erreur interne detectee. Verifiez MAJ (Reglages).","err");}catch(_){}try{axJournalEntry&&axJournalEntry("apex-ai","window.onerror",String(src).slice(-30)+":"+line,"global error handler",String(msg).slice(0,100),null);}catch(_){}return false;};
 function _selfRepair(err){var msg=err.msg||"";if(msg.indexOf("localStorage")>=0||msg.indexOf("QuotaExceeded")>=0){_emergencyCleanup();toast("Stockage nettoye auto","info");}if(msg.indexOf("Firebase")>=0||msg.indexOf("fbWrite")>=0){if(!_fbEs&&navigator.onLine){setTimeout(fbStartListening,3000);toast("Firebase: reconnexion...","info");}}if(msg.indexOf("null")>=0&&msg.indexOf("user")>=0){if(!K.user){sv("login");}}}
