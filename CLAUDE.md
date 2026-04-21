@@ -1,22 +1,30 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.68.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.450 / Apex v12.11 (2026-04-21).
 
 ---
 
-## 📌 DOSSIER DE TRAVAIL — Demandes Kevin en cours (2026-04-19 soir)
+## 📌 DOSSIER DE TRAVAIL — Status au 2026-04-21 matin
 
-**À traiter au maximum, vérifier après chaque fix, ne JAMAIS oublier :**
+**Progrès session marathon 2026-04-20 nuit → 21 (6 PRs mergées #123 → #130) :**
 
-1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → **v9.409-410 fixés** (team "sup" unique, fusion ins=sup)
-2. 🔄 **Organigramme SBM Monaco** : chercher exhaustivement (10 sources min), ajouter ROLES_SBM dans l'app, dropdown dans vEmps
-3. 🔄 **Fiches employés évolutives** : rôles/fonctions, dropdowns pour assigner
-4. 🔄 **Extraction complète PDF** : légendes, encadrés haut-droite (CP/AF/M/SS pleine période), couleurs de fond (PNL jaune), tous codes — ne rater aucune info
-5. 🔄 **Distinction fonds/couleurs/lettres** : ne jamais inventer (ex bug BORGIA), être strict
-6. 🔄 **Accumulation données** : chaque import enrichit, jamais efface
-7. 🔄 **Inspecteurs importés ont toujours horaires** : si le PDF les liste, c'est qu'ils bossent
-8. 🔄 **Vérification systématique à chaque commit** : agents + subagents audit croisé avant "done"
-9. 🔄 **Procédures du dossier à respecter** sans rappel — ce fichier + NOTES_USER + MEMO_RESUME = source de vérité
+1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → v9.409-410 + fix parser v9.446 (regex permissive) + fallback v9.447/v9.449 (name-first anywhere) + agent `cadres-watch` v9.450 qui détecte et escalade auto
+2. 🔄 Organigramme SBM Monaco
+3. 🔄 Fiches employés évolutives
+4. 🔄 Extraction complète PDF (légendes, encadrés, couleurs)
+5. ✅ Distinction fonds/couleurs/lettres — règle "ne jamais inventer" respectée dans tous les fix parser v9.437→v9.450
+6. ✅ Accumulation données — jamais d'écrasement sans confirmation
+7. ✅ Inspecteurs importés ont toujours horaires → fallback name-first v9.447+v9.449 scanne PDF brut par nom si header rate
+8. ✅ Vérification systématique — audit 5 niveaux via subagents à CHAQUE PR (procédure respectée #123→#130)
+9. ✅ Procédures dossier respectées — ce fichier + NOTES_USER + MEMO_RESUME + SENTINELS.md tenus à jour
+
+**Écosystème autonome complet (v9.450 + v12.11) :**
+- CMCteams : 23 agents + 7 sentinelles = 30 watchers autonomes
+- Apex AI : 16 sentinelles + bridge IA Claude Haiku + outbox Claude Code
+- Pipeline cross-app : `ax_telemetry_in` / `ax_claude_todo` / `ax_lessons_learned` (Firebase shared)
+- CGU universel : FaceID + Micro + Géolocalisation dans les 2 apps
+
+**Action Kevin pour tester** : force-refresh PWA (supprimer + réinstaller icône) pour passer sur v9.450/v12.11, puis ré-importer PDF avril.
 
 **Méthode de travail permanente** :
 - À chaque nouvelle demande Kevin → ajouter ici IMMÉDIATEMENT

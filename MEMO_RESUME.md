@@ -1,4 +1,62 @@
-# Mémo de reprise — v9.432 (session 2026-04-19 autonome complète)
+# Mémo de reprise — v9.450 (session 2026-04-20 nuit → 2026-04-21)
+
+## 🔄 Session marathon 2026-04-20 nuit → 21 avril — 6 PRs mergées (v9.445 → v9.450 + Apex v12.8 → v12.11)
+
+### Bilan
+
+| PR | Versions | Changements clés |
+|----|----------|------------------|
+| #123 | v9.445 + v12.8 | Pipeline autonomie inter-apps, 12 sentinelles Apex, 7 sentinelles CMC, hub modules visibles, vAdminReport, bridge IA (13 commits fusionnés — avaient stagné sur feature branch non mergée ⚠️) |
+| #125 | v9.446 | Regex cadres permissive (bullets/arrows/CADRES en prefix) |
+| #127 | v9.447 | Fix indicateur Firebase stuck "jaune" + fallback cadres name-first |
+| #128 | v9.448 + v12.9 | CGU universel FaceID/Micro/Géoloc |
+| #129 | v9.449 + v12.10 | Fix `extraTabs` scope global Apex + fallback cadres match anywhere + diag log |
+| #130 | v9.450 + v12.11 | 8 agents spécialisés CMCteams + 4 sentinelles Apex dédiées bugs récurrents |
+
+### Écosystème autonome final
+
+**CMCteams v9.450 — 30 watchers** :
+- 23 agents (15 métier + 8 spécialisés v9.450) : cadres-watch, parser-quality, error-pattern, planning-integrity, session-watch, sw-sync, fb-rules-probe, autonomy-bridge
+- 7 sentinelles universelles (perf/sec/data/api/ux/heal/learn)
+- Helper `_cmcEscalate(ctx, reason)` → écrit dans `ax_claude_todo`
+
+**Apex AI v12.11 — 16 sentinelles + pipeline autonomie** :
+- 12 universelles + 4 spécialisées (undefined-var/fb-stale/ai-health/global-vars)
+- `_processIncomingTelemetry` lit `ax_telemetry_in` depuis Firebase
+- `_aiHandleIssue` avec Claude Haiku 4.5 + whitelist 5 actions safe
+- `_escalateToClaudeCode(ctx, reason)` pour problèmes non auto-résolvables
+- `vAdminReport` compte-rendu admin central
+
+**Pipeline autonomie cross-app** :
+```
+CMCteams sentinelle → ax_telemetry_in Firebase
+  → Apex SSE reçoit → _processIncomingTelemetry
+  → _aiHandleIssue analyse + whitelist
+  → auto-heal OR escalate vers ax_claude_todo
+  → Claude Code lit à la prochaine session pour patch code
+```
+
+### Root causes identifiées + corrigées
+
+1. **13 commits orphelins** : branche `claude/fix-apex-ai-bugs-adHfF` jamais mergée dans main → GitHub Pages ne déployait jamais mes fixes. PR #123 a réglé ça. **LEÇON CRITIQUE** : toujours vérifier la branche de déploiement en début de session.
+2. **Regex parser v9.437 régression** : match substring anywhere → fausses détections cadres. Fix v9.444/v9.446 avec anchor `^` + prefix tolérant.
+3. **IA "3 points infini"** : proxy ignoré + filter tool_use/tool_result + pas d'AbortController. Fix v12.3/v12.4.
+4. **Indicateur Firebase stuck jaune** : `_fbConnected=true` seulement sur snapshot initial. Fix v9.447.
+5. **`extraTabs` scope local** : introduit en v12.8, crash v12.9. Fix v12.10 remonte au global.
+6. **Firebase bloqué "Host not in allowlist"** : test curl bloqué par anti-abus, vraie DB OK (Kevin confirmé via URL directe). Fix allowlist Kevin console Firebase.
+
+### Nouveaux fichiers/docs
+
+- `SENTINELS.md` : spec universelle + pattern CGU + pipeline autonomie
+- `CLAUDE.md` : leçons #30→#35 ajoutées (IA 3 points, parser strict, régression regex, PR orpheline, indicateur stale, pattern CGU)
+
+### Action utilisateur nécessaire
+
+1. Force-refresh PWA (supprimer + réinstaller icônes) → voir **v9.450** / **v12.11**
+2. Ré-importer PDF avril → les 6 inspecteurs remontent (regex v9.446 + fallback v9.447/v9.449)
+3. Allowlist Firebase déjà gérée par Kevin (rules publiées avec sections `cmcteams` + `apex`)
+
+---
 
 ## 🆕 Session 2026-04-20 soir — KDMC Apex AI v12.3 (fix "3 points infini" définitif)
 
