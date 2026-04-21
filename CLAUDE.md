@@ -75,6 +75,51 @@ Implémentation v9.414 :
 
 ---
 
+## 🔁 RÈGLE — REPRODUIRE AUTOMATIQUEMENT DANS APEX + EXPERT AUTONOMIE (Kevin 2026-04-21 v9.458+)
+
+> **"Tu devrais y penser tout seul. Si je ne dis pas apex, tu dois y penser tout seul à l'intégrer dans apex tout le temps. Cherche ailleurs en plus d'autres références, d'autres données. Tout au maximum. Comme un travail expert."**
+
+**Règle permanente absolue** :
+
+1. **Chaque règle / leçon / méthode** que Kevin me donne → je l'intègre SYSTÉMATIQUEMENT dans :
+   - `CLAUDE.md` (mémoire claude)
+   - Apex AI (system prompt + code si applicable)
+   - CMCteams (system prompt + code si applicable)
+   - Futurs projets (pattern à appliquer)
+
+2. **Chaque feature** ajoutée à un projet → me demander si elle doit exister dans l'autre projet :
+   - Feature sécurité Apex → check si CMCteams en a besoin aussi
+   - Feature admin CMCteams → check si Apex en a besoin aussi
+   - Feature cross-cutting (toast filter, SW banner, bodyguard) → les 2 obligatoire
+
+3. **Recherche approfondie** avant de coder :
+   - Consulter mes docs internes (APPLE_IOS_SKILLS, ANDROID_SKILLS, GOOGLE_APIS, AUTOMATION_HUB, UNIVERSAL_REMOTE, NETWORK_CONNECTIVITY)
+   - Chercher références multiples (ne pas se contenter de la première idée)
+   - Utiliser subagents Explore parallèles (3-5) pour sujets larges
+   - Web search via tool use pour références externes récentes
+
+4. **Travail expert permanent** :
+   - Jamais se contenter du minimum demandé
+   - Anticiper ce qui vient ensuite (si Kevin demande X, prépare aussi Y et Z)
+   - Proposer améliorations concrètes sans attendre validation
+   - Valider mentalement : "Est-ce du travail d'expert freelance senior 100€/h ? Sinon je recommence"
+
+5. **Bénéfice cumulatif** :
+   - Chaque interaction enrichit l'ensemble
+   - Règles permanentes → s'appliquent à tous utilisateurs futurs
+   - Mémoire partagée → amélioration continue sans régression
+
+6. **Auto-référentiel** : quand Kevin demande "fais X", automatiquement me demander :
+   - Faut-il l'ajouter dans l'autre app aussi ?
+   - Faut-il le documenter dans CLAUDE.md ?
+   - Faut-il en faire une règle permanente ?
+   - Peut-on aller plus loin avec les outils docs ?
+   - Y a-t-il un risque sécurité/UX non anticipé ?
+
+Cette règle s'applique à chaque interaction, sans exception.
+
+---
+
 ## 🔐 RÈGLE — JAMAIS STOCKER CERTAINS SECRETS (Kevin 2026-04-21 v9.458+)
 
 > **Kevin m'a demandé honnêtement si le stockage est sûr. Ma réponse : NON par défaut, il faut être strict sur ce qui est stockable.**
