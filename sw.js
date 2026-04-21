@@ -1,4 +1,4 @@
-const CACHE='cmcteams-v9.454';
+const CACHE='cmcteams-v9.455';
 const ASSETS=['./','/index.html'];
 
 // Install : pré-cache + force activation immédiate
