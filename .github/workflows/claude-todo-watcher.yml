@@ -1,8 +1,10 @@
 name: Claude Todo Watcher (escalade autonome)
 on:
   schedule:
-    - cron: '0 */2 * * *'  # Toutes les 2 heures
-  workflow_dispatch:
+    - cron: '*/15 * * * *'  # Toutes les 15 minutes (temps reponse critique)
+  workflow_dispatch:        # Declenchement manuel + par Apex via API
+  repository_dispatch:      # Apex peut declencher via event apex_escalation
+    types: [apex_escalation, critical_issue]
 
 jobs:
   check-escalations:
