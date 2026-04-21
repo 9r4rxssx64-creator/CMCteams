@@ -1,4 +1,48 @@
-# SENTINELLES EXPERT — Spec universelle (tous projets Kevin)
+# SENTINELLES EXPERT + CGU — Spec universelle (tous projets Kevin)
+
+## Pattern CGU (Consentement utilisateur) — v9.448 / v12.9, Kevin 2026-04-20 nuit
+
+**Règle permanente** : toute feature qui accède à un capteur device (caméra, micro, GPS,
+biométrie, notifications) DOIT demander consentement via `cguAsk(feature, label, desc)`,
+le persister en localStorage, et offrir révocation.
+
+### Helper universel
+
+```js
+function cguAsk(feature, label, description) {
+  var k = "<prefix>_cgu_" + feature;
+  if (lg(k, "0") === "1") return true;
+  var msg = label + "\n\n" + description
+    + "\n\n• Données stockées localement uniquement"
+    + "\n• Révocable dans Réglages/Admin > Confidentialité";
+  if (!confirm(msg)) return false;
+  ls(k, "1");
+  audit("cgu_accept", userId, feature, label);
+  return true;
+}
+function cguRevoke(feature) { ls("<prefix>_cgu_" + feature, "0"); }
+function cguStatus() { /* retourne objet {feature: accepted} */ }
+```
+
+### Features à wrap obligatoires
+
+| Feature | Entry point Apex | Entry point CMCteams |
+|---------|------------------|----------------------|
+| `biometric` | `axBiometricAuth()` | `webauthnLogin(uid)` |
+| `microphone` | `axSttToggle()` | `sttStart()` |
+| `geolocation` | `axGetLocation()` | `cmc_geoloc_consent` existant |
+| `camera` | `axCameraCapture()` (à wrapper) | upload image admin |
+| `notifications` | `requestNotifPermission()` | `requestNotifPermission()` |
+
+### Textes CGU recommandés
+
+- **Biométrie** : "Votre biométrie ne quitte JAMAIS votre appareil (WebAuthn standard)"
+- **Micro** : "Traitement par moteur natif du navigateur. Aucun audio envoyé à un serveur externe"
+- **Géolocalisation** : "Position utilisée pour détection de lieu (casino/domicile) et contexte local"
+
+---
+
+
 
 > Règle permanente : **chaque projet Kevin doit embarquer les 7 sentinelles ci-dessous**
 > en plus de ses agents domain-specific. Elles tournent en autonomie totale, en permanence,
