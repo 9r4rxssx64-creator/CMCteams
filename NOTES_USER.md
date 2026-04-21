@@ -2,6 +2,39 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 📄 FORMAT PDF CADRES (Kevin 2026-04-21) — CRUCIAL pour fallback parser
+
+**Structure exacte PDF SBM "PLANNING PIT BOSS" / mensuel cadres :**
+
+| Col | Contenu | Prendre en compte ? |
+|-----|---------|---------------------|
+| 1 | `62224/620` = 2 téléphones internes (casino/pit), séparés par `/` | **NON — IGNORER** |
+| 2 | Nom cadre (`JANEL JM`, `ETTORI M.`, etc.) | OUI |
+| 3 | `*` optionnel OU nombre priorité | Skip (metadata) |
+| 4 | Nombre durée | Skip (metadata) |
+| 5+ | Codes horaires/jour avec apostrophes/quotes | **OUI** (1 par jour) |
+
+**Sections headers :** `Pit Boss 15` puis noms · `SUPERVISEUR` (singulier) puis noms.
+
+**Codes fréquents AVEC apostrophes (v9.451 normalise) :** `22/6'`, `22/6"`, `22/6"'`, `19/2"`, `12h30/19'`. Strip `"'""''` puis CODES.
+
+**Faisant fonction = fond BLEU dans PDF** (ou texte rouge) :
+- Superviseur faisant le job de pit boss sans le titre officiel
+- **BOUVIER JF** actuellement faisant fonction pit boss (fond bleu Pit Boss 15 avril 2026)
+- Bientôt il passera pit boss → fond perdra son bleu
+- Les 5 superviseurs (ETTORI M., FOUQUE V., PLACENTI L., DOGLIOLO Y., MUS L.) ont tous fond bleu ou texte rouge
+
+**Traitement parser** : le fond bleu/rouge est juste visuel, le parser doit **lire la ligne tel quel**. Le fix v9.451 skip metadata + normalise quotes doit capturer tous ces cas.
+
+**Cadres sans équipe** (contrairement BJ/roulettes/CMC) : pas d'assignation numérique, juste nom + horaires.
+
+**Agents/sentinelles qui couvrent ça** (v9.450) :
+- `cadres-watch` : détecte cadres famille="cadres" sans horaires après import → log diag + escalade
+- `parser-quality` : analyse couverture + codes inconnus
+- Fallback name-first v9.447→v9.451 dans `doImport` : scan PDF brut par nom si header rate
+
+---
+
 ## 🎯 RÈGLE EXPERT PERMANENTE (Kevin 2026-04-18)
 > **"Travail comme un professionnel tout le temps. Un expert tu es. Note le pour tout partout tout le temps."**
 
