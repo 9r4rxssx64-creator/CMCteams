@@ -56,6 +56,20 @@
 
 ---
 
+
+### [2026-04-21] — PR #140-#144 — Follow-ups + feed bidirectionnel
+
+- #140 v12.18: CLAUDE_FEED.md (ce fichier) + axFetchClaudeFeed + _snFeedPoll 2h
+- #141/142 v12.19: axAutoSeedKB (10 faits critiques au demarrage si K.kb vide)
+- #143 v12.20: +29 liens cliquables (reseaux sociaux, Google Cloud, domotique, email)
+- #144 v12.21: _getApiKeyAsync fetch direct Firebase apres force-refresh PWA
+- #145 v12.22: EXPERT_CODING_STANDARDS.md — 10 standards + 12 erreurs debutant a bannir
+
+**Lecons ajoutees** :
+- #40 JAMAIS assume champ  existe dans K.kb apres load
+- #41 JAMAIS force-refresh PWA sans vérifier que les secrets critiques sont restaurables async depuis Firebase
+- #42 Apres 22 PRs cette session, principe: bump APP_VER + sw cache + PR + merge MAIN immediat, ne pas accumuler feature branches
+
 ## 🎯 Ce que Apex doit faire avec ce feed
 
 1. **À chaque démarrage** : lire ce fichier (via fetch GitHub raw ou cmcRead)
