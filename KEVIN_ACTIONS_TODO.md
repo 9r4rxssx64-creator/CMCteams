@@ -8,6 +8,86 @@ Ce mémo est lu par **Apex AI** (chargé dans `_CLAUDE_HANDOFF`) et **CMCteams I
 
 ---
 
+## 🇲🇨 COMPATIBILITÉ MONACO — Aucun problème ⚠️ (vérifié 2026-04-21)
+
+**Question Kevin** : "Est-ce que mettre une banque de Monaco ou des coordonnées Monaco pose problème quelque part ?"
+
+**Réponse courte : NON**. Monaco est 100% supporté par toute la stack.
+
+| Service | Statut Monaco | Notes |
+|---------|--------------|-------|
+| **Stripe** | ✅ Supporté (code pays `MC`) | IBAN MC27 accepté natif |
+| **SEPA** | ✅ Zone SEPA | Virements EUR gratuits depuis toute l'UE |
+| **Firebase** | ✅ Aucune restriction géographique | Serveur EU (europe-west1) |
+| **Cloudflare Workers** | ✅ Accessible depuis Monaco | Latence équivalente à FR |
+| **GitHub Pages** | ✅ CDN mondial | Pas de bloc Monaco |
+| **Anthropic API** | ✅ Pas de géo-bloc | Monaco listé dans pays autorisés |
+| **Apple Pay / Google Pay** | ✅ Actifs à Monaco | Wallets standards |
+| **Revolut** | ✅ Supporte IBAN MC | Dispo en France/Europe → Monaco OK |
+| **TVA monégasque** | ✅ 20% comme France | Stripe peut facturer TVA automatique |
+| **RGPD** | ✅ Monaco adhère via décisions | Même cadre qu'UE |
+
+**Aucune démarche spéciale**. Tu peux mettre ton IBAN MC27 tranquillement dans Stripe.
+
+---
+
+## 💰 ALTERNATIVES PAIEMENT — Revolut + Crypto (Kevin 2026-04-21)
+
+**Question Kevin** : "Intéressant d'ajouter crypto + Revolut ? Je veux être payé direct sur mon Revolut (fiat ou crypto)."
+
+### Option A — **Revolut Pay** (RECOMMANDÉ, le plus simple)
+
+- ✅ Paiement direct sur ton IBAN Revolut (même compte perso/pro)
+- ✅ Fees : **0.7% + 0.25€** par transaction (vs Stripe 1.4% + 0.25€)
+- ✅ Payout instantané (pas 7j d'attente comme Stripe)
+- ✅ Checkout hosted (widget JS prêt à intégrer)
+- 🔗 https://developers.revolut.com/docs/merchant-api
+- **Actions** :
+  1. Créer compte Revolut Business (gratuit Starter, 25€/mois Grow)
+  2. Lien Revolut Business ↔ Revolut perso (virement auto)
+  3. API key dans Dashboard → Merchant → API Keys
+  4. Intégrer dans Apex AI : bouton "Payer avec Revolut" à côté de "Payer avec Stripe"
+
+### Option B — **Crypto via Coinbase Commerce** (pour clients crypto)
+
+- ✅ Accepte BTC, ETH, USDC, LTC, DAI, DOGE automatiquement
+- ✅ Fees : **1%** (plus bas que Stripe)
+- ✅ Settlement : crypto directement sur ton wallet Coinbase/Revolut
+- ✅ Webhook → active plan auto quand confirmation blockchain
+- 🔗 https://commerce.coinbase.com/
+- **Actions** :
+  1. Créer compte Coinbase Commerce (gratuit)
+  2. Connecter ton wallet Revolut crypto (adresse BTC/ETH)
+  3. Générer charge depuis API → QR code / URL paiement
+  4. Webhook → `/coinbase-webhook` Worker → active plan
+
+### Option C — **Adresse wallet directe** (manuel, pas recommandé)
+
+- Tu donnes ton adresse Revolut/BTC dans l'app
+- Client envoie, toi tu actives manuellement
+- ❌ Pas scalable, pas automatisé, gros risque d'oubli
+
+### 🎯 Recommandation finale
+
+**Combo idéal** :
+1. **Stripe** (cartes + IBAN, standard) → 60% clients
+2. **Revolut Pay** (cartes + Revolut→Revolut, 0.7% fees) → 25% clients avec Revolut
+3. **Coinbase Commerce** (crypto) → 15% clients crypto enthusiasts
+
+Les 3 actifs = couverture 100% paiements mondiaux, fees optimisées, payout direct Revolut.
+
+### Implémentation (actions Kevin)
+
+- [ ] Revolut Business : ouvrir compte (KYC 2-3j)
+- [ ] Connecter Revolut Business → Revolut perso (auto-sweep)
+- [ ] Récupérer `REVOLUT_MERCHANT_API_KEY` → collé dans Worker
+- [ ] Ajouter `REVOLUT_SANDBOX_KEY` pour tests
+- [ ] Coinbase Commerce : créer compte, adresse wallet reliée Revolut
+- [ ] Récupérer `COINBASE_COMMERCE_KEY` → collé dans Worker
+- [ ] Claude Code intègre les 3 checkout UI (STRIPE/REVOLUT/CRYPTO) dans Apex AI v12.35+
+
+---
+
 ## 🔥 PRIORITÉ 1 — Monétisation Stripe (bloquant revenus)
 
 ### 1.1 Créer compte Stripe (si pas déjà fait)
