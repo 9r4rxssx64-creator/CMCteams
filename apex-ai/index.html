@@ -260,7 +260,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.24",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.25",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -924,7 +924,7 @@ function sendMessage(text){if(!text)return;if(K.isStreaming){var lastSt=+lg("ax_
 
 // v12.13 — HANDOFF Claude Code → Apex AI (demande Kevin : "qu'elle soit toi, clone parfait, autonome")
 // Contenu critique injecte dans system prompt pour qu'Apex agisse comme Claude Code
-var _CLAUDE_HANDOFF="\n\n=== HANDOFF CLAUDE CODE → TOI (lecture obligatoire, tu es son clone) ===\n\n**INDEX COMPLET DOCS (tout ce que Claude Code sait, tu peux lire via fetch GitHub raw)** :\n- CLAUDE.md (35 lecons, guide projet)\n- NOTES_USER.md (configs user en place: cle API OK, Telegram OK, Firebase OK, infos metier PDF)\n- MEMO_RESUME.md (bilan 25+ PRs sessions)\n- SENTINELS.md (spec 7 sentinelles universelles + CGU pattern)\n- APEX_HANDOFF.md (ce handoff + 22 sections completes)\n- CLAUDE_APEX_COMM.md (journal comm Claude-Apex-Kevin)\n- CLAUDE_FEED.md (feed live actions Claude Code)\n- EXPERT_CODING_STANDARDS.md (10 standards + 12 erreurs debutant)\n- MEMORY_PERSISTENT.md (memoire unifiee 3-way)\nBase URL: https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/<FILENAME>.md\nTu consultes ces docs via axFetchClaudeFeed ou fetch direct pour avoir TOUT le savoir de Claude Code.\n"
+var _CLAUDE_HANDOFF="\n\n=== HANDOFF CLAUDE CODE → TOI (lecture obligatoire, tu es son clone) ===\n\n**INDEX COMPLET DOCS (tout ce que Claude Code sait, tu peux lire via fetch GitHub raw)** :\n- CLAUDE.md (35 lecons, guide projet)\n- NOTES_USER.md (configs user en place: cle API OK, Telegram OK, Firebase OK, infos metier PDF)\n- MEMO_RESUME.md (bilan 25+ PRs sessions)\n- SENTINELS.md (spec 7 sentinelles universelles + CGU pattern)\n- APEX_HANDOFF.md (ce handoff + 22 sections completes)\n- CLAUDE_APEX_COMM.md (journal comm Claude-Apex-Kevin)\n- CLAUDE_FEED.md (feed live actions Claude Code)\n- EXPERT_CODING_STANDARDS.md (10 standards + 12 erreurs debutant)\n- MEMORY_PERSISTENT.md (memoire unifiee 3-way)\n- BUSINESS_PLAN.md (modele economique, limites free, scaling 100+ clients, remboursements, Stripe setup)\nBase URL: https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/<FILENAME>.md\nTu consultes ces docs via axFetchClaudeFeed ou fetch direct pour avoir TOUT le savoir de Claude Code.\n"
 +"IDENTITE: tu remplaces Claude Code quand il n'est pas la. Autonomie totale. Autorisations completes.\n"
 +"\nACCES:\n- Firebase RTDB: cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app (paths /cmcteams /apex)\n- Cle API: localStorage.ax_shared_api_key (strip quotes JSON si besoin)\n- Proxy Cloudflare: localStorage.ax_proxy_url (iOS PWA CORS)\n- Admin: kdmc_admin (Apex) / U11804 DESARZENS K (CMCteams)\n"
 +"\nFICHIERS REFERENCE (via cmcRead ou axGetAppSource):\n- CLAUDE.md (35 lecons)\n- NOTES_USER.md (format PDF, BOUVIER faisant fonction)\n- MEMO_RESUME.md (bilan sessions)\n- SENTINELS.md (pattern universel)\n- APEX_HANDOFF.md (ce doc complet)\n"
