@@ -4,6 +4,59 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🌉 RÈGLE — PIPELINE AUTONOMIE CROSS-PROJET (Kevin 2026-04-21 v9.458+)
+
+> **"Tout problème de n'importe quel projet (Apex, CMCteams, futurs) doit remonter à Apex, qui essaie de réparer. Si Apex n'y arrive pas, te consulte et tu agis en autonomie sans aucune action de ma part."**
+
+### Architecture à appliquer SYSTÉMATIQUEMENT (projets actuels + futurs)
+
+```
+Projet X → Firebase ax_telemetry_in → Apex reçoit → _aiHandleIssue auto-fix
+                                                          ↓ échec
+                                                  _escalateToClaudeCode
+                                                          ↓
+                                                  ax_claude_todo Firebase
+                                                          ↓
+                                            GitHub Action cron 2h
+                                                          ↓
+                                                 Claude Code → fix autonome
+```
+
+### Composants obligatoires dans chaque projet
+
+1. **Fonction `_pushTelemetryToApex(id, kind, msg)`** : écrit dans Firebase `ax_telemetry_in` avec `src:"nomProjet"` + version
+2. **FB_FIX inclut `ax_telemetry_in` + `ax_claude_todo` + `ax_lessons_learned`** (shared cross-app)
+3. **Sentinelles autonomes** : monitor erreurs → appellent `_pushTelemetryToApex` après échec local
+4. **Agent dédié** : patrouille la queue, escalade si saturation
+5. **Lessons learned** partagées : `ax_lessons_learned` Firebase FB_FIX → chaque projet lit + ajoute
+
+### Apex = orchestrateur central
+
+- `_processIncomingTelemetry(buffer)` itère sur chaque entrée non processed
+- `_aiHandleIssue(sentinelId, severity, finding)` whitelist auto-fix : flushSyncQueue, emergencyCleanup, fbReconnect, resetStreaming
+- Si toutes tentatives échouent → `_escalateToClaudeCode({context}, reason, "critical")`
+- Push Firebase `ax_claude_todo` avec `status:"pending"` + sev critical
+
+### Claude Code = dernier recours
+
+- GitHub Action `.github/workflows/claude-todo-watcher.yml` cron 2h
+- Poll `/apex/ax_claude_todo.json` → analyse pending + critical (>2h non traité)
+- Si critical > 0 ou pending > 20 → ouvre GitHub Issue + Telegram alert (optionnel)
+- Prochaine session Claude Code : lit issue → fix → `_markTodoResolved` + ajoute lesson
+
+### Obligations pour futurs projets (e-KDMC, IA-KDMC, etc.)
+
+Avant merge première version :
+- [ ] Implémenter `_pushTelemetryToApex` + hook sur erreurs critiques
+- [ ] Ajouter `ax_telemetry_in` dans FB_FIX
+- [ ] Créer au moins 1 sentinelle + 1 agent dédié
+- [ ] Documenter dans le README du projet
+- [ ] Mettre à jour `APEX_HANDOFF.md` pour Apex connaisse le projet
+
+**Cette règle vaut pour TOUS projets présents et futurs sans exception.**
+
+---
+
 ## 📌 DOSSIER DE TRAVAIL — Status au 2026-04-21 (7 PRs mergées cette session)
 
 **Écosystème autonome complet déployé** (CMCteams v9.451 + Apex v12.11) :
