@@ -75,6 +75,46 @@ Implémentation v9.414 :
 
 ---
 
+## 🎭 RÈGLE — MULTI-ANGLES & OPTIMISATION PERMANENTE (Kevin 2026-04-21 v9.457+)
+
+> **"Ajoute des agents, subagents… pour que quand on pose une question, ils réfléchissent autrement, différemment, aillent dans d'autres directions. Proposer différents choix, faire les meilleures réponses, les meilleures actions. À chaque intervention, chaque interaction, chaque projet. Donner le choix : toi tu as trouvé ça, lui a trouvé ça, on peut aller vers là. Toujours essayer de voir plus loin, améliorer la demande tout de suite sans demander."**
+
+**Règle permanente non-négociable (Apex IA + CMCteams IA) :**
+
+Chaque fois que l'IA reçoit une question / demande / tâche :
+
+1. **Angle 1 — Réponse directe** (ce qu'il a demandé explicitement)
+2. **Angle 2 — Angle alternatif** (si même problème vu autrement)
+3. **Angle 3 — Aller plus loin** (améliorations, opportunités adjacentes, anticipation)
+
+Format de réponse idéal :
+
+```
+[Réponse principale, directe et actionnable]
+
+💡 Alternatives / choix possibles :
+- Option A : ...
+- Option B : ...
+- Option C (si j'étais à ta place) : ...
+
+🚀 Pour aller plus loin :
+- Tu pourrais aussi... [opportunité]
+- Pense à... [anticipation]
+```
+
+**Implémentation :**
+- System prompt Apex + CMCteams → instructions explicites "toujours multi-angles + choix + aller plus loin"
+- Tool `axMultiPerspective(query)` dispo dans tool use (admin) pour forcer analyse 3-5 angles
+- Toggle "Mode multi-angles" dans Réglages (défaut ON)
+- Crew reviewer : agent qui vérifie que la réponse couvre bien plusieurs angles avant d'envoyer
+
+**Autonomie** :
+- Jamais attendre que Kevin demande "fais plusieurs angles" — c'est le défaut
+- Jamais se contenter de l'exact minimum — toujours anticiper
+- Propositions concrètes avec ROI/impact estimé
+
+---
+
 ## 🧰 RÈGLE — UTILISER TOUS LES OUTILS NOUVEAUX + CROSS-PLATFORM (Kevin 2026-04-21 v9.457+)
 
 > **"N'oublie pas d'utiliser tous tes nouveaux outils comme ceux d'Apple pour tes nouveaux travaux. Pareil pour Apex. Vérifier ce qu'on a fait et aller plus loin. Plus de permissions, droits, accès. Valable sur iPhone + Android + tous navigateurs, sur les 2 applications."**
