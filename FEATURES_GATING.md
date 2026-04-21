@@ -58,17 +58,16 @@
 
 ---
 
-## 💰 Impact forfaits révisé (upsell justifié)
+## 💰 Grille tarifaire SIMPLIFIÉE (2 plans payants uniquement, Kevin 2026-04-21 v12.29)
 
-| Plan | Prix actuel | Prix révisé | Features clés | Cible |
-|------|-------------|-------------|---------------|-------|
-| **Free** | 0€ | 0€ | Chat basique + 1k msg + voix TTS 1 | Acquisition |
-| **Starter** | 4.99€ | 7.99€ | + Vision 50 + PDF 5 + Templates 20 | Particulier curieux |
-| **Mid** 🆕 | — | 12.99€ | + Web search 30 + Finance 10 + Identify&Shop 20 + Canvas JS | Utilisateur régulier |
-| **Pro** | 14.99€ | 19.99€ | + Domotique + Web ∞ + Vision ∞ + Canvas Py + Agents 5 + Multi-LLM | Power user |
-| **Business** | 29.99€ | 39.99€ | + Agents 20 + Backup real-time + Support 24/7 | Équipes, PME |
-| **Enterprise** | 79.99€ | 149€ | + Agents ∞ + Marketplace + SLA 99.9% + Webhook custom + dédié | Entreprises |
-| **Lifetime** | 299€ | 399€ (= Pro à vie) | Pro features illimitées | Early adopters |
+| Plan | Prix | Features | Cible |
+|------|------|----------|-------|
+| **Pro** | 19.99€/mois | **Tout** sauf backup temps réel & multi-LLM. Domotique, Web search, Vision, Identify&Shop, Canvas JS+Py, Finance, 10 agents, 10 personas, 5 devices | Particuliers power + pros |
+| **Business** | 49.99€/mois | + Backup real-time + Multi-LLM + Support 24/7 + Agents illimités + 20 devices | Équipes/PME |
+
+**Free et Lifetime supprimés** (décision Kevin : tous clients paient).
+
+**Revenu projeté 100 clients** (80 Pro + 20 Business) : ~3 600 €/mois. Tous clients paient, revenu garanti.
 
 **Revenu mensuel projeté 100 clients (mix Starter 40 / Mid 30 / Pro 20 / Business 8 / Enterprise 2)** :
 - Actuel : ~1 070 €/mois
