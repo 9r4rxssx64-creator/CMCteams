@@ -260,7 +260,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.11",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.12",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1584,7 +1584,9 @@ function _mcSend(){var inp=document.getElementById("ax-mc-input");if(!inp||!inp.
 // ═══════════════════════════════════════════════════════════════════════
 function _snLog(id,kind,msg){try{var log=lg("ax_sentinels_log",[]);log.push({ts:Date.now(),id:id,kind:kind,msg:String(msg).slice(0,200)});if(log.length>500)log=log.slice(-500);ls("ax_sentinels_log",log);}catch(_){}}
 function _snCanHeal(id){var k="ax_sn_heal_"+id;var last=+lg(k,0);if(Date.now()-last<3600000)return false;ls(k,Date.now());return true;}
-function _snReport(id,kind,msg){_snLog(id,kind,msg);if(kind==="err"||kind==="warn"){var errs=lg("ax_err_log",[]);errs.unshift({msg:"["+id+"] "+String(msg).slice(0,200),ts:Date.now()});if(errs.length>50)errs=errs.slice(0,50);try{localStorage.setItem("ax_err_log",JSON.stringify(errs));}catch(_){}if(kind==="err")_aiHandleIssue(id,kind,msg);}}
+function _snReport(id,kind,msg){_snLog(id,kind,msg);if(kind==="err"||kind==="warn"){var errs=lg("ax_err_log",[]);errs.unshift({msg:"["+id+"] "+String(msg).slice(0,200),ts:Date.now()});if(errs.length>50)errs=errs.slice(0,50);try{localStorage.setItem("ax_err_log",JSON.stringify(errs));}catch(_){}if(kind==="err"){_aiHandleIssue(id,kind,msg);_apexPushTelemetry(id,kind,msg);}}}
+// v12.12 — Apex push aussi vers inbox partagee pour visibilite cross-app (CMCteams, e-KDMC, futurs projets)
+function _apexPushTelemetry(id,kind,msg){try{var buf=lg("ax_telemetry_in",[]);buf.push({src:"apex",v:APP_VER,id:id,kind:kind,msg:String(msg).slice(0,300),ts:Date.now(),processed:false});if(buf.length>100)buf=buf.slice(-100);ls("ax_telemetry_in",buf);}catch(_){}}
 // ═══ Bridge sentinelles → IA (Kevin 2026-04-20 v12.6) ═══
 // Chaque sentinelle en mode err appelle l'IA avec contexte + whitelist d'actions.
 // L'IA diagnostique, decide, auto-execute si confiante. Rate-limit 1/sentinel/30min.
