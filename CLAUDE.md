@@ -75,6 +75,38 @@ Implémentation v9.414 :
 
 ---
 
+## 🔄 RÈGLE — AUTO-REFRESH PWA + TEST iOS+ANDROID (Kevin 2026-04-21 v9.456+)
+
+> **"Le force refresh, la mise à jour automatique pour la version, aurais dû y penser bien avant, je te dis tout automatiser, ça en fait partie. Vérifie à chaque fois sur iPhone ET sur Android. Vérifie pourquoi il me demande toujours les autorisations à chaque connexion."**
+
+**Règle permanente :**
+
+1. **CHAQUE PWA doit avoir** un Service Worker avec :
+   - `updatefound` event listener
+   - Banner doré visible automatique quand nouvelle version prête
+   - `skipWaiting` + `location.reload` au clic utilisateur
+   - Appliqué à Apex v12.37+ ET CMCteams v9.456+
+
+2. **Permissions natives** (GPS, micro, notif, caméra) :
+   - NE JAMAIS re-demander à chaque login
+   - Cooldown minimum 5 min entre demandes (`ax_last_gps_track`, `ax_last_mic_ask`, etc.)
+   - Vérifier `navigator.permissions.query({name})` AVANT de retrigger
+   - Si `state === "denied"` → ne plus demander, afficher lien vers réglages OS
+
+3. **Vérifier iOS + Android à chaque release** :
+   - Safari iOS PWA (cache agressif, WebKit limité)
+   - Chrome Android (permissions différentes, plus permissif)
+   - Tester `navigator.bluetooth`, `NDEFReader`, `getUserMedia` séparément
+
+4. **Auto-consent** (RGPD-compatible) :
+   - Stocker `ax_cgu_accepted_<uid>` au premier accept
+   - Ne plus RE-afficher CGU si déjà accepté
+   - Révocable via bouton "Retirer consentement" dans Réglages
+
+5. **Debug** : `ax_silent_log` + `ax_bodyguard_log` gardent trace pour admin uniquement, invisibles clients.
+
+---
+
 ## 🤝 RÈGLE — AUTONOMIE SUR TÂCHES KEVIN (Kevin 2026-04-21 v9.455+)
 
 > **"Dans mes actions à faire, vérifie avec tes nouveaux outils si tu ne peux pas quand même résoudre un maximum de tâches pour moi. Réfléchis autrement pour alléger ma tâche. Note-le, rappelle-toi en tout le temps."**
