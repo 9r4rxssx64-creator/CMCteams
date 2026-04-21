@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Politique de confidentialité — Apex AI</title>
+<meta name="description" content="Politique de confidentialite d'Apex AI, conforme RGPD et loi monégasque.">
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:720px;margin:40px auto;padding:24px;line-height:1.6;color:#333;background:#f9f9fc}
+h1{color:#c9a227;border-bottom:2px solid #c9a227;padding-bottom:8px}
+h2{color:#1a4080;margin-top:32px}
+ul{padding-left:24px}
+a{color:#1a4080}
+.note{background:#fff9e0;padding:12px;border-left:4px solid #c9a227;margin:16px 0;border-radius:4px}
+.back{display:inline-block;margin-top:32px;padding:8px 16px;background:#c9a227;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}
+table{border-collapse:collapse;width:100%;margin:16px 0}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+th{background:#f0f0f0}
+</style>
+</head>
+<body>
+<h1>Politique de confidentialité — Apex AI</h1>
+<p><strong>Dernière mise à jour</strong> : 21 avril 2026</p>
+
+<div class="note">
+  <strong>TL;DR</strong> : Apex AI stocke tes données principalement en local (navigateur) et partage le minimum avec Firebase (chiffré) + Anthropic (pour les réponses IA). Tu contrôles tout, tu peux exporter ou effacer à tout moment.
+</div>
+
+<h2>1. Responsable du traitement</h2>
+<ul>
+  <li><strong>Responsable</strong> : Kevin DESARZENS, Monaco</li>
+  <li><strong>Contact DPO</strong> : support@apex-ai.fr</li>
+</ul>
+
+<h2>2. Données collectées</h2>
+<table>
+  <tr><th>Catégorie</th><th>Données</th><th>Finalité</th><th>Durée</th></tr>
+  <tr><td>Identité</td><td>Nom, prénom, email</td><td>Authentification, facturation</td><td>Jusqu'à résiliation + 30j</td></tr>
+  <tr><td>Authentification</td><td>PIN (hashé), Face/Touch ID (token WebAuthn)</td><td>Sécurité compte</td><td>Session</td></tr>
+  <tr><td>Usage</td><td>Messages chat, préférences, historique</td><td>Fonctionnement app</td><td>Sur ton device + Firebase (jusqu'à suppression)</td></tr>
+  <tr><td>Géolocalisation</td><td>GPS (si tu l'autorises)</td><td>Contexte météo, domotique</td><td>Pas stockée, utilisée à la volée</td></tr>
+  <tr><td>Microphone</td><td>Audio STT (local)</td><td>Dictée vocale</td><td>Traité par le navigateur, jamais envoyé à un serveur</td></tr>
+  <tr><td>Caméra</td><td>Photos (identify & shop)</td><td>Analyse Vision</td><td>Envoyée à Anthropic, pas stockée par nous</td></tr>
+  <tr><td>Connexion</td><td>IP, UA, device fingerprint</td><td>Sécurité (Bodyguard audit)</td><td>500 derniers événements</td></tr>
+  <tr><td>Paiement</td><td>Stripe customer ID, historique</td><td>Facturation</td><td>10 ans (obligation comptable)</td></tr>
+</table>
+
+<h2>3. Destinataires</h2>
+<ul>
+  <li><strong>Anthropic</strong> (USA, via Cloudflare Worker UE) : tes prompts sont envoyés pour générer les réponses IA. Anthropic applique sa propre politique : <a href="https://www.anthropic.com/privacy" target="_blank">anthropic.com/privacy</a></li>
+  <li><strong>Firebase / Google</strong> (UE, europe-west1) : synchronisation cross-device chiffrée. Tes données n'entrent pas dans Google Ads.</li>
+  <li><strong>Stripe</strong> (UE) : paiements. <a href="https://stripe.com/privacy" target="_blank">stripe.com/privacy</a></li>
+  <li><strong>Cloudflare</strong> (UE) : proxy API. Pas de stockage durable.</li>
+  <li><strong>GitHub Pages</strong> (USA) : hébergement statique de l'app.</li>
+</ul>
+
+<h2>4. Transferts hors UE</h2>
+<p>Les transferts vers les USA (Anthropic, GitHub, Stripe) sont couverts par les clauses contractuelles types de l'UE + Data Privacy Framework (USA). Monaco adhère aux décisions d'adéquation UE.</p>
+
+<h2>5. Sécurité</h2>
+<ul>
+  <li>HTTPS obligatoire sur toute l'app</li>
+  <li>Tokens stockés localStorage (jamais en URL / logs)</li>
+  <li>PIN hashé (pas en clair)</li>
+  <li>Option Face ID / Touch ID (WebAuthn / PassKeys)</li>
+  <li>Session TTL 24h (30 jours sur appareil de confiance)</li>
+  <li>Audit Bodyguard : log chaque connexion avec IP + fingerprint</li>
+  <li>Firebase rules restrictives (lecture/écriture authentifiée uniquement)</li>
+  <li>Kill switch global si urgence (tu coupes tout en 1 clic)</li>
+</ul>
+
+<h2>6. Tes droits RGPD</h2>
+<p>Tu peux à tout moment exercer les droits suivants :</p>
+<ul>
+  <li><strong>Accès</strong> : export complet JSON (Réglages > Mes données > Télécharger)</li>
+  <li><strong>Rectification</strong> : modifier ton profil directement dans l'app</li>
+  <li><strong>Effacement</strong> : bouton "Supprimer toutes mes données" dans Réglages</li>
+  <li><strong>Portabilité</strong> : export JSON exploitable ailleurs</li>
+  <li><strong>Opposition / Limitation</strong> : désactiver features via toggles (géoloc, micro, caméra)</li>
+  <li><strong>Plainte</strong> : CNIL (France) ou APDP (Monaco) si tu considères tes droits violés</li>
+</ul>
+<p>Pour exercer ces droits : <a href="mailto:support@apex-ai.fr">support@apex-ai.fr</a> — réponse sous 30 jours.</p>
+
+<h2>7. Cookies / Tracking</h2>
+<p>Apex AI n'utilise <strong>aucun cookie tiers</strong> (pas de Google Analytics, pas de publicité). Seul le localStorage navigateur est utilisé pour le fonctionnement de l'app — c'est techniquement requis pour la PWA, pas un tracker. Pas de bandeau cookies obligatoire.</p>
+
+<h2>8. Modifications</h2>
+<p>Cette politique peut être modifiée. Les utilisateurs sont notifiés 30 jours avant toute modification substantielle.</p>
+
+<h2>9. Contact</h2>
+<p>Pour toute question RGPD : <a href="mailto:support@apex-ai.fr">support@apex-ai.fr</a></p>
+
+<a href="./index.html" class="back">← Retour à l'app</a>
+
+</body>
+</html>

@@ -75,6 +75,32 @@ Implémentation v9.414 :
 
 ---
 
+## 🤝 RÈGLE — AUTONOMIE SUR TÂCHES KEVIN (Kevin 2026-04-21 v9.455+)
+
+> **"Dans mes actions à faire, vérifie avec tes nouveaux outils si tu ne peux pas quand même résoudre un maximum de tâches pour moi. Réfléchis autrement pour alléger ma tâche. Note-le, rappelle-toi en tout le temps."**
+
+**Règle permanente non-négociable :**
+
+À chaque nouvelle entrée dans `KEVIN_ACTIONS_TODO.md` — ou toute tâche "physique" — je me demande d'abord :
+1. **Puis-je la faire en code** (script, template, workflow GitHub Action) ?
+2. **Puis-je la réduire à un clic** (lien, URL, QR code) ?
+3. **Puis-je la préparer à 95%** (code + doc, il reste juste à coller une valeur) ?
+4. **Puis-je la déléguer à un service** (webhook, cron, Cloudflare Worker) ?
+
+Si oui → je le fais en autonomie et note "préparé à 95%" dans KEVIN_ACTIONS_TODO.
+Si non (strictement humain : KYC, achat domaine, signature bancaire) → je documente précisément ce qu'il reste (3 min max).
+
+Exemples v12.37 :
+- Stripe webhook → Cloudflare Worker code complet, Kevin déploie (2 min)
+- Stripe produits → guide Dashboard + alternative CLI prêt à coller
+- Firebase backup → GitHub Action automatique nightly (zéro action)
+- CGU/RGPD → HTML complets déployés
+- SEO → meta + sitemap + robots déjà faits
+
+Reste strictement Kevin : KYC Stripe, IBAN, achat domaine, billing Firebase Blaze.
+
+---
+
 ## 🏆 RÈGLE SUPRÊME — TOUJOURS AU MAXIMUM (Kevin 2026-04-19 v9.407+)
 
 > **"Tu dois toujours faire le mieux. Arrête de t'arrêter juste au début. Va au bout du projet à chaque fois, au maximum, à chaque fois de ce que je te demande. À chaque question, chaque interaction, chaque projet, chaque tout, tout le temps, partout. Intègre ça dans l'application, dans son IA, dans son fonctionnement, dans APEX, dans les sources de données, dans les feuilles de route, dans les skills, dans les hooks, dans les agents et leur façon de travailler. Partout. Tout le temps."**
