@@ -75,6 +75,46 @@ Implémentation v9.414 :
 
 ---
 
+## 🔐 RÈGLE — JAMAIS STOCKER CERTAINS SECRETS (Kevin 2026-04-21 v9.458+)
+
+> **Kevin m'a demandé honnêtement si le stockage est sûr. Ma réponse : NON par défaut, il faut être strict sur ce qui est stockable.**
+
+**Règle absolue non-négociable** — NE JAMAIS proposer de stocker dans localStorage / Firebase / PWA :
+
+### ❌ INTERDICTION ABSOLUE
+- **Seed phrases crypto** (Phantom, MetaMask, Trust Wallet, etc.) → hardware wallet obligatoire
+- **Private keys crypto** → idem
+- **Mots de passe bancaires** (Société Générale, CIC, BNP, etc.) → OAuth ou app native
+- **PINs hardware wallet** (Ledger, Trezor) → jamais ailleurs que le device
+- **Photos ID / passeport** → chiffrement zero-knowledge requis
+- **Numéro CB complet + CVV** → tokeniser via Stripe/PSP
+- **Mots de passe Apple ID / Google principal** → Keychain / Google Password Manager
+
+### ✅ OK à stocker (avec précautions)
+- IBAN (peu sensible, donné à chaque virement)
+- Adresses crypto **publiques** (par définition publiques)
+- Emails
+- Tokens API SaaS (Stripe/Twilio/OpenAI) **SI** Firebase rules strictes + HTTPS
+- Tokens OAuth courts (<1h TTL)
+- Préférences, notes, historique conversations IA
+
+### 🛡 Protections obligatoires
+- Chiffrement AES-GCM 256 (PBKDF2 100k iterations) pour TOUS les secrets via `axEncryptSecret/Decrypt`
+- Passphrase Vault séparée du PIN login
+- Audit `axSecurityAudit()` à chaque boot
+- Warning visible Vault : "Ne stockez JAMAIS X, Y, Z"
+- Firebase rules strictes (auth required + path whitelist)
+
+### Pattern correct pour credentials sensibles
+1. **Bancaire** : ne pas stocker → ouvrir app native via URL scheme (`app-socgen://`, `app-cic://`)
+2. **Crypto** : ne stocker QUE l'adresse publique, lecture on-chain uniquement
+3. **Social media** : OAuth 2.0 avec refresh token seulement (pas password)
+4. **API services** : token-scoped minimum (read-only quand possible)
+
+Cette règle s'applique à **Apex AI + CMCteams + tous projets futurs**.
+
+---
+
 ## 📚 RÈGLE — SOURCES MULTIPLES + ACCUMULATION CONTINUE (Kevin 2026-04-21 v9.458+)
 
 > **"Peut-être qu'ils aillent chercher tous des références différentes, des manières de travailler différentes, des sources différentes et tout s'accumule, améliore à chaque fois. Ça rend plus complet, plus poussé, plus recherché, plus pointu, améliorer sans cesse, être à l'optimal, toujours partout tout le temps."**
