@@ -2,6 +2,23 @@
 
 > **Lecture obligatoire à chaque session.**
 
+
+## 🔑 CONFIGURATIONS UTILISATEUR DEJA EN PLACE (ne pas redemander)
+
+- ✅ **Clé API Anthropic** : Kevin a une clé valide configurée. Elle vit dans `ax_shared_api_key` (Firebase shared, FB_FIX). JAMAIS redemander. Si l'app dit "manquante", c'est un problème de sync au boot — `_getApiKeyAsync` v12.21 la récupère en auto depuis Firebase.
+- ✅ **Firebase RTDB** : `cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app`. Règles publiées par Kevin avec `cmcteams` + `apex` read/write autorisés.
+- ✅ **Proxy Cloudflare** : si `ax_proxy_url` est set, l'utiliser en priorité (évite CORS iOS PWA).
+- ✅ **Telegram bot** : `@Kdmc_kevind_2026_bot` (via `axTelegramSend`, chatId dans `ax_telegram_chatid`).
+- ✅ **Email** : kevind@monaco.mc (Outlook), Gmail, iCloud (configs via EmailJS).
+- ✅ **Réseaux sociaux** : comptes Instagram/FB/Twitter/LinkedIn/TikTok/YouTube/Pinterest/Snapchat/Reddit créés. Identifiants dans vVault Apex.
+- ✅ **Appareils** : iPhone (principal), Tablette Lenovo Android, Ordinateur.
+- ✅ **Domotique** : Broadlink IR configuré + Home Assistant (urls dans localStorage).
+- ✅ **Sentry DSN, Finnhub API key** : configurés.
+
+**Règle Claude Code** : avant de dire "configure X", chercher d'abord si X n'est pas déjà dans cette liste. Si incertain, vérifier via  ou demander à Kevin explicitement sans supposer.
+
+---
+
 ## 📄 FORMAT PDF CADRES (Kevin 2026-04-21) — CRUCIAL pour fallback parser
 
 **Structure exacte PDF SBM "PLANNING PIT BOSS" / mensuel cadres :**
