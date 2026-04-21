@@ -260,7 +260,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.27",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.28",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1056,7 +1056,35 @@ function _handleFileUpload(input){if(!input.files||!input.files[0])return;var fi
 function axUploadImage(file){var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;var mediaType=file.type||"image/jpeg";var base64Data=b64.split(",")[1];K.messages.push({role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},{type:"text",text:"Analyse cette image : "+file.name}],ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;dc();var sysPrompt=_buildSystemPrompt();var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);};reader.readAsDataURL(file);}
 function axParsePdf(file){if(!_pdfjsLoaded){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";s.onload=function(){_pdfjsLoaded=true;window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";_doParsePdf(file);};document.head.appendChild(s);}else{_doParsePdf(file);}}
 function _doParsePdf(file){var reader=new FileReader();reader.onload=function(e){var arr=new Uint8Array(e.target.result);window.pdfjsLib.getDocument(arr).promise.then(function(pdf){var text="";var pages=[];for(var i=1;i<=pdf.numPages;i++)pages.push(i);return pages.reduce(function(p,pg){return p.then(function(){return pdf.getPage(pg).then(function(page){return page.getTextContent().then(function(tc){text+=tc.items.map(function(it){return it.str;}).join(" ")+"\n";});});});},Promise.resolve()).then(function(){sendMessage("Contenu du PDF ("+file.name+") :\n\n"+text.slice(0,3000));});}).catch(function(e){toast("Erreur PDF: "+e.message,"err");});};reader.readAsArrayBuffer(file);}
-function axIdentifyAndShop(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}if(!_cguAsk("camera","Camera + identification","APEX AI prend une photo, l identifie via Claude Vision (plante/objet/meuble/livre/etc), puis cherche ou acheter via recherche web."))return;K.settings.webSearch=true;ls("ax_settings",K.settings);var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0]){var file=input.files[0];var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;var mediaType=file.type||"image/jpeg";var base64Data=b64.split(",")[1];K.messages.push({role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},{type:"text",text:"Identifie precisement ce que tu vois sur cette photo (nom, espece, marque, modele). Puis utilise web_search pour trouver 3 liens ou l acheter en France avec prix. Reponds structure: 1) Identification 2) Caracteristiques 3) 3 liens achat avec prix."}],ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;ls("ax_streaming_since",Date.now());dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE IDENTIFY-AND-SHOP: utilise vision pour identifier + web_search pour prix/achats. Cite sources.";var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);toast("Analyse en cours...","info");};reader.readAsDataURL(file);}};input.click();}
+function axIsFeatureAllowed(feature){try{
+  // ADMIN = tout autorise
+  if(axIsAdmin())return{allowed:true,reason:"admin",upgrade:null};
+  // Admin toggle global peut couper pour tous
+  var toggles=lg("ax_toggles",{});
+  if(toggles[feature]===false)return{allowed:false,reason:"feature desactivee par admin",upgrade:null};
+  // Features ADMIN-ONLY strictes (jamais client)
+  var adminOnly=["inject_function","modify_css","replace_in_code","cmcRead","cmcWrite","kill_all_devices","vault"];
+  if(adminOnly.indexOf(feature)>=0)return{allowed:false,reason:"action administrateur",upgrade:null};
+  // Matrice plan
+  var plan=(typeof axGetPlanInfo==="function"?(axGetPlanInfo().plan||"free"):"free");
+  var matrix={
+    free:["chat","voice_stt","tts_basic"],
+    starter:["chat","voice_stt","tts_basic","vision","pdf_ocr","templates","finance_basic"],
+    mid:["chat","voice_stt","tts_basic","vision","pdf_ocr","templates","finance","web_search","identify_shop","canvas_js"],
+    pro:["chat","voice_stt","tts_pro","vision","pdf_ocr","templates","finance","web_search","identify_shop","canvas_js","canvas_py","domotique","multi_llm","agents_custom","crackpass"],
+    business:["chat","voice_stt","tts_pro","vision","pdf_ocr","templates","finance","web_search","identify_shop","canvas_js","canvas_py","domotique","multi_llm","agents_custom","crackpass","backup_realtime","support_247"],
+    enterprise:["*"]
+  };
+  var allowed=(matrix[plan]||[]).indexOf(feature)>=0||(matrix[plan]||[]).indexOf("*")>=0;
+  if(!allowed){
+    var upgradeOrder=["mid","pro","business","enterprise"];
+    var needed="pro";
+    for(var i=0;i<upgradeOrder.length;i++){if((matrix[upgradeOrder[i]]||[]).indexOf(feature)>=0||(matrix[upgradeOrder[i]]||[]).indexOf("*")>=0){needed=upgradeOrder[i];break;}}
+    return{allowed:false,reason:"pas dans plan "+plan,upgrade:needed};
+  }
+  return{allowed:true,reason:plan,upgrade:null};
+}catch(e){return{allowed:false,reason:"erreur check",upgrade:null};}}
+function axIdentifyAndShop(){var _gate=axIsFeatureAllowed("identify_shop");if(!_gate.allowed){toast("Identify&Shop reserve plan "+(_gate.upgrade||"Pro")+" ("+_gate.reason+")","warn");if(typeof sv==="function")sv("plans");return;}if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}if(!_cguAsk("camera","Camera + identification","APEX AI prend une photo, l identifie via Claude Vision (plante/objet/meuble/livre/etc), puis cherche ou acheter via recherche web."))return;K.settings.webSearch=true;ls("ax_settings",K.settings);var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0]){var file=input.files[0];var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;var mediaType=file.type||"image/jpeg";var base64Data=b64.split(",")[1];K.messages.push({role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},{type:"text",text:"Identifie precisement ce que tu vois sur cette photo (nom, espece, marque, modele). Puis utilise web_search pour trouver 3 liens ou l acheter en France avec prix. Reponds structure: 1) Identification 2) Caracteristiques 3) 3 liens achat avec prix."}],ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;ls("ax_streaming_since",Date.now());dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE IDENTIFY-AND-SHOP: utilise vision pour identifier + web_search pour prix/achats. Cite sources.";var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);toast("Analyse en cours...","info");};reader.readAsDataURL(file);}};input.click();}
 function axCameraCapture(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0])axUploadImage(input.files[0]);};input.click();}
 // === MODULE: Generation images IA ===
 function axGenerateImage(prompt,width,height){width=width||1024;height=height||1024;var url="https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width="+width+"&height="+height+"&nologo=true&seed="+Math.floor(Math.random()*999999);K.messages.push({role:"assistant",content:"Image generee :\n\n!["+esc(prompt)+"]("+url+")\n\n*Prompt: "+prompt+"*",ts:now()});_saveMsgs();dc();_scrollChatBottom();return url;}
