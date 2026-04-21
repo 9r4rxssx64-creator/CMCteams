@@ -4,6 +4,45 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🔍 RÈGLE — RECHERCHE NOM/PRÉNOM TOUJOURS FLEXIBLE (Kevin 2026-04-21 v9.458+ / v12.57+)
+
+> **"Laurence SAINT-POLIT ou SAINT-POLIT Laurence. Toutes les façons, avec ou sans trait d'union. Pour tout le monde. Anticipe partout les problèmes de connexion similaires."**
+
+**Règle permanente absolue — Apex + CMCteams + tout projet futur :**
+
+Aucun login, recherche, authentification ou match par nom ne doit être strict. Toujours accepter :
+- ✅ Tous les ordres (prénom-nom / nom-prénom)
+- ✅ Casse libre (majuscule/minuscule)
+- ✅ Avec ou sans tirets / espaces
+- ✅ Avec ou sans accents
+- ✅ Nom collé (SAINTPOLIT) ou séparé (SAINT POLIT)
+- ✅ Espaces multiples
+
+**Algorithme obligatoire** (référence `_checkPreconfiguredUser` Apex v12.57) :
+1. Match exact d'abord (perf)
+2. Normalize : `.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_]+/g," ").trim()`
+3. Tokens triés alphabétiquement → match indépendant de l'ordre
+4. Squash collé (tout sans espace) → accepte "saintpolitlaurence"
+5. Substring token + tolérance ±1 char → accepte "SAINTPOLITLAURENCE"
+
+**Zones à vérifier dans chaque projet** :
+- Login (axLogin / doLogin)
+- Recherche employés (findEmpByName CMCteams)
+- Recherche clients / fiches
+- Import PDF parser (reconnaissance noms)
+- Chat DM (destination par nom)
+- Admin queries ("qu'a fait Laurence")
+- Tout autocomplete/suggestion
+
+**Leçons tirées de problèmes passés** :
+- Fuzzy match Levenshtein aveugle = danger (BORGIA T vs BORGIA L)
+- Match strict = utilisateurs frustrés (TRADIEU typo, oubli tiret)
+- Bon équilibre = tokens triés + tolérance contrôlée
+
+**À propager quand j'ajoute un nouveau projet** : utiliser directement le helper `_checkPreconfiguredUser` comme référence + auditer toutes les fonctions de recherche.
+
+---
+
 ## 🌉 RÈGLE — PIPELINE AUTONOMIE CROSS-PROJET (Kevin 2026-04-21 v9.458+)
 
 > **"Tout problème de n'importe quel projet (Apex, CMCteams, futurs) doit remonter à Apex, qui essaie de réparer. Si Apex n'y arrive pas, te consulte et tu agis en autonomie sans aucune action de ma part."**

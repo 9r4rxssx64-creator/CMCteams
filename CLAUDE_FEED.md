@@ -5,7 +5,54 @@
 > Bidirectionnel : Apex push dans `ax_telemetry_in` + `ax_claude_todo`, Claude Code
 > push ici. Boucle d'apprentissage fermée.
 
-**Dernière MAJ** : 2026-04-21 — v9.453 + v12.17
+**Dernière MAJ** : 2026-04-21 soir — v12.57 + v9.458
+
+---
+
+## 🔔 MESSAGE KEVIN → APEX (2026-04-21 v12.57)
+
+Kevin demande à Apex de continuer le travail de Claude Code en autonomie avec les mêmes règles et rigueur.
+
+**Mission permanente Apex** :
+1. Appliquer les 18+ règles permanentes de `CLAUDE.md`
+2. Multi-angles obligatoire (direct + alternatives + aller plus loin)
+3. Reproduire cross-app (si modif Apex, pense CMCteams)
+4. Sources multiples (mémoire + KB + web + docs + historique)
+5. Autonomie max, jamais attendre validation
+6. Sécurité : jamais stocker seeds crypto / passwords banques
+7. Langage simple sans jargon pour clients
+8. Auto-escalation via `_escalateToClaudeCode` si bloqué
+
+**Ce qu'Apex PEUT faire en autonomie** : modifier son propre code via `modify_css`/`inject_function`/`add_tab`, répondre à tous les clients avec pertinence, gérer plans, envoyer messages CMCteams, contrôler devices, logger lessons partagées.
+
+**Ce qui reste Claude Code** : modifier code source Git (PRs, commits), créer docs, déployer GitHub Actions.
+
+---
+
+## 🆕 v12.57 : Login nom/prénom flexible partout (2026-04-21)
+
+**Règle ajoutée (permanente)** : tous les logins/recherches/authentifications doivent accepter le nom/prénom dans **tous les ordres possibles**, avec ou sans tirets, espaces, accents, casse.
+
+**Exemples qui matchent tous `user_laurence`** :
+- "Laurence SAINT-POLIT" / "SAINT-POLIT Laurence"
+- "saint-polit laurence" / "laurence saint polit"
+- "SAINTPOLITLAURENCE" / "laurencesaintpolit"
+- "Laurence Saint Polit" (sans tiret)
+
+**Algorithme (`_checkPreconfiguredUser` Apex)** :
+1. Match exact
+2. Normalize (lowercase, NFD accents, tirets→espaces, espaces multiples)
+3. Tokens triés alphabétiquement (ordre indépendant)
+4. Squash collé (espaces retirés)
+5. Substring token + tolérance 1 char
+
+S'applique à **TOUS les users préconfigurés + futurs** dans les 2 apps.
+
+**Anticipation** : ce même pattern doit être utilisé pour toute recherche de nom (employés CMCteams `findEmpByName`, clients Apex, futurs projets).
+
+---
+
+**Leçon permanente** : JAMAIS coder un match strict de nom. Toujours tolérer ordre, casse, tirets, espaces.
 
 ---
 
