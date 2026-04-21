@@ -1,7 +1,49 @@
 # KEVIN_ACTIONS_TODO.md — Actions restantes Kevin (Apex AI + CMCteams)
 
 > **Destinataire** : Kevin DESARZENS (admin U11804, proprio Apex AI v12.31 + CMCteams v9.454)
-> **Dernière MAJ** : 2026-04-21 par Claude Code
+---
+
+## ✅ FAIT EN AUTONOMIE PAR CLAUDE CODE (v12.37) — Kevin n'a plus qu'à...
+
+### 1. Stripe Webhook → prêt à déployer
+- **Fichier** : `tools/stripe-webhook-worker.js` (Cloudflare Worker complet)
+- **Kevin fait** : coller code dans nouveau Worker Cloudflare (2 min) + ajouter env vars `STRIPE_WEBHOOK_SECRET` et `FB_URL`
+
+### 2. Stripe produits → guide step-by-step
+- **Fichier** : `tools/stripe-setup-products.md`
+- **Kevin fait** : Option A (Dashboard) 5 min ou Option B (CLI) 2 min → copier 2 `price_id` dans worker ligne 78
+
+### 3. Firebase Backup Nightly → déployé autonome
+- **Fichier** : `.github/workflows/firebase-backup.yml`
+- **Kevin fait** : rien. Tourne toutes les nuits à 3h UTC, artifact 30j.
+
+### 4. CGU + Privacy → publiés
+- **Fichiers** : `apex-ai/cgu.html`, `apex-ai/privacy.html`
+- **URLs** : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/cgu.html` + `privacy.html`
+- **Kevin fait** : optionnel, faire relire par avocat si budget. Changer email support si ≠ support@apex-ai.fr
+
+### 5. SEO → en place
+- **Fichiers** : `apex-ai/robots.txt`, `apex-ai/sitemap.xml`, meta tags dans `index.html` (title, description, keywords, canonical)
+- **Kevin fait** : rien. Si achat domaine custom, update canonical URL.
+
+### 6. SW Update Banner → déployé
+- **Fichier** : `apex-ai/index.html` (SW register handler)
+- **Kevin fait** : rien. Quand nouvelle version déployée, utilisateurs voient une banner dorée "🔄 Nouvelle version disponible, tape pour recharger" → fini le cache PWA hell.
+
+---
+
+## 🔴 RESTE STRICTEMENT À KEVIN (actions humaines non-automatisables)
+
+1. **KYC Stripe** : photo ID + justif domicile (5 min upload)
+2. **IBAN MC27** : saisir RIB Revolut/banque Monaco dans Stripe Dashboard
+3. **Firebase Blaze** : carte bancaire dans console Firebase (quand >50 clients)
+4. **Domaine custom** (optionnel) : acheter `apex-ai.fr` ou `.mc` sur Gandi/OVH (~12€/an)
+
+Temps total Kevin : **~30 minutes** pour passer de zéro à monétisation opérationnelle.
+
+---
+
+> **Dernière MAJ** : 2026-04-21 par Claude Code (v12.37 — 6 tâches résolues en autonomie)
 > **Instruction Kevin** : "Tu as rajouté sur le mémo qui atterrira dans Apex pour les actions qu'il me reste à faire. Pour le RIB, et caetera, tout ce qu'on a dit là tout à l'heure."
 
 Ce mémo est lu par **Apex AI** (chargé dans `_CLAUDE_HANDOFF`) et **CMCteams IA** pour te rappeler les actions à faire hors-code (humaines, externes, paiements, légal).
