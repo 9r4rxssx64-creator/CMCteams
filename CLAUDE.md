@@ -75,6 +75,54 @@ Implémentation v9.414 :
 
 ---
 
+## 🧒 RÈGLE — LANGAGE SIMPLE PARTOUT (Kevin 2026-04-21 v9.458+)
+
+> **"Erreur JS pour quelqu'un comme moi ça ne veut rien dire. Fais simple, clair, pour tout le monde, comme pour les enfants. Sans rien casser."**
+
+**Règle permanente non-négociable** — Aucun jargon technique dans l'UI visible utilisateur :
+
+### ❌ Termes interdits côté utilisateur
+| Technique | → | Français simple |
+|-----------|---|----------------|
+| "Erreur JS" / "JavaScript error" | | "Un petit souci" / "Ça ne marche pas" |
+| "HTTP 500 / 502" | | "Le serveur ne répond pas, attends un peu" |
+| "Timeout" | | "C'est trop long, réessaie" |
+| "API key" / "Token" | | "Clé d'accès" / "Clé secrète" |
+| "Proxy" | | "Chemin sécurisé" |
+| "Firebase" / "Realtime DB" | | "Stockage en ligne" / "Sauvegarde sur le cloud" |
+| "localStorage" | | "Mémoire de l'app" |
+| "Webhook" | | "Notification automatique" |
+| "CORS / CSP" | | "Sécurité internet" |
+| "Sync / Syncing" | | "Synchronisation" / "Mise à jour" |
+| "STT / TTS" | | "Dictée" / "Lecture à voix" |
+| "PWA" | | "Application web" |
+| "Cache" | | "Mémoire temporaire" |
+| "Deploy" | | "Publier" |
+| "Backup" | | "Sauvegarder" |
+| "Log" | | "Historique" |
+| "Parsing error" | | "Je n'ai pas compris le format" |
+| "Null reference" | | "Donnée manquante, je recharge" |
+| "Bug / dysfonctionnement" | | "Ça ne marche pas" |
+| "Upgrade" | | "Plus de fonctions" |
+
+### ✅ OK côté admin (Kevin voit tout)
+- Les logs techniques admin-only (`ax_silent_log`, `ax_bodyguard_log`, audit) gardent leurs termes
+- L'onglet Admin peut afficher termes techniques si Kevin explicitement admin
+- Le toast filter `_technical` masque déjà les messages techniques aux non-admin
+
+### Règle d'or
+**Si un enfant de 12 ans ne comprend pas le texte, il faut le réécrire.**
+
+### À vérifier à chaque release
+- FAQ : questions/réponses en français simple
+- Boutons : verbes d'action clairs (Envoyer, Sauvegarder, Lire, Partager)
+- Messages d'erreur : toujours expliquer QUOI + COMMENT corriger
+- Formulaires : labels explicites, placeholders concrets
+
+**Appliquer dans Apex + CMCteams + futurs projets.**
+
+---
+
 ## 🔁 RÈGLE — REPRODUIRE AUTOMATIQUEMENT DANS APEX + EXPERT AUTONOMIE (Kevin 2026-04-21 v9.458+)
 
 > **"Tu devrais y penser tout seul. Si je ne dis pas apex, tu dois y penser tout seul à l'intégrer dans apex tout le temps. Cherche ailleurs en plus d'autres références, d'autres données. Tout au maximum. Comme un travail expert."**
