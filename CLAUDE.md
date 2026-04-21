@@ -75,6 +75,48 @@ Implémentation v9.414 :
 
 ---
 
+## 🧰 RÈGLE — UTILISER TOUS LES OUTILS NOUVEAUX + CROSS-PLATFORM (Kevin 2026-04-21 v9.457+)
+
+> **"N'oublie pas d'utiliser tous tes nouveaux outils comme ceux d'Apple pour tes nouveaux travaux. Pareil pour Apex. Vérifier ce qu'on a fait et aller plus loin. Plus de permissions, droits, accès. Valable sur iPhone + Android + tous navigateurs, sur les 2 applications."**
+
+**Règle permanente non-négociable** :
+
+À chaque nouvelle demande Kevin, je dois :
+
+1. **Consulter mes propres docs skills** avant de coder :
+   - `APPLE_IOS_SKILLS.md` (Safari PWA, Siri Shortcuts, Pushcut, URL schemes, Wallet, WebAuthn)
+   - `ANDROID_SKILLS.md` (Web Bluetooth/USB/NFC/Serial/MIDI, Intent URLs, Tasker, TWA)
+   - `GOOGLE_APIS_INTEGRATION.md` (OAuth, Gmail, Calendar, Drive, Sheets, Vision)
+   - `AUTOMATION_HUB.md` (Home Assistant, n8n, NFC tags, Broadlink)
+   - `UNIVERSAL_REMOTE.md` (TVs par marque, IR/RF/BLE/Zigbee)
+   - `NETWORK_CONNECTIVITY.md` (WiFi, Bluetooth, pare-feux corporate)
+
+2. **Implémenter sur les 2 apps** (Apex + CMCteams) — sauf si clairement spécifique à une :
+   - Web NFC → Apex (scan tags) + CMCteams (badge pointage employés)
+   - Web Bluetooth → les 2 (détection devices proches)
+   - Siri Shortcuts generator → Apex (actions AI) + CMCteams (raccourcis RH)
+   - Vibration haptique → les 2 (feedback tactile)
+   - Web Share Target → les 2 (apparaître dans menu Partager OS)
+
+3. **Cross-platform systématique** :
+   - iOS Safari PWA (tests prioritaires)
+   - Chrome Android (features BLE/USB/NFC)
+   - Chrome Desktop / Safari macOS / Firefox
+   - Feature detection (`if('NDEFReader' in window)`) avant appel
+
+4. **Aller plus loin que demandé** :
+   - Si Kevin demande "scanner tag NFC" → ajouter aussi Web Bluetooth, Vibration feedback, historique scans
+   - Si Kevin demande "lien Revolut" → ajouter aussi API integration (plus riche qu'un simple lien)
+
+5. **Permissions maximales préparées** :
+   - CGU universel déjà fait (`_cguAsk`) pour obtenir consentement toutes features d'un coup
+   - `navigator.permissions.query` pour voir ce qu'on a déjà
+   - Bouton "Demander toutes autorisations" (GPS + micro + caméra + notifs + BLE + NFC) dans Réglages
+
+6. **Noter ce qui manque** dans KEVIN_ACTIONS_TODO si requires humain
+
+---
+
 ## 🔄 RÈGLE — AUTO-REFRESH PWA + TEST iOS+ANDROID (Kevin 2026-04-21 v9.456+)
 
 > **"Le force refresh, la mise à jour automatique pour la version, aurais dû y penser bien avant, je te dis tout automatiser, ça en fait partie. Vérifie à chaque fois sur iPhone ET sur Android. Vérifie pourquoi il me demande toujours les autorisations à chaque connexion."**
