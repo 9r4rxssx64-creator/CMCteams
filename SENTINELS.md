@@ -300,3 +300,29 @@ la performance, la sécurité, le fonctionnement, etc., dans tous les projets. L
 donner toutes les tâches importantes à exécuter en autonomie totale."*
 
 → Appliqué à CMCteams (v9.438+), KDMC Apex AI (v12.4+), et tous projets à venir.
+
+
+## 🚨 REGLE UX ERREURS (Kevin 2026-04-21, OBLIGATOIRE)
+
+JAMAIS afficher message erreur technique brut a l utilisateur final.
+TOUJOURS remplacer par message actionnable clair.
+
+| Technique (interdit) | User-friendly (attendu) |
+|----------------------|-------------------------|
+| undefined is not an object | Erreur interne, recharge la page |
+| null reference | Donnees manquantes, reinstalle l icone |
+| HTTP 500 / 502 / 503 | Serveur surcharge, reessaie dans 1 min |
+| Failed to fetch / network | Reseau indisponible, verifie Wi-Fi/4G |
+| CORS / Host not allowed | Blocage API, contacte admin ou attends |
+| QuotaExceededError | Stockage plein, un cleanup auto a ete lance |
+| Timeout | Pas de reponse apres 30s, reessaie |
+
+Applicable dans :
+- Chaque catch (try/catch ou .catch)
+- Chaque toast visible user
+- Chaque push message assistant dans K.messages/A.iaHistory
+- Chaque alert/confirm
+
+A verifier a chaque audit (axRunAudit, subagent audit).
+
+---
