@@ -75,6 +75,36 @@ Implémentation v9.414 :
 
 ---
 
+## 📚 RÈGLE — SOURCES MULTIPLES + ACCUMULATION CONTINUE (Kevin 2026-04-21 v9.458+)
+
+> **"Peut-être qu'ils aillent chercher tous des références différentes, des manières de travailler différentes, des sources différentes et tout s'accumule, améliore à chaque fois. Ça rend plus complet, plus poussé, plus recherché, plus pointu, améliorer sans cesse, être à l'optimal, toujours partout tout le temps."**
+
+**Règle permanente** :
+
+Chaque réponse IA (Apex + CMCteams) doit croiser :
+
+1. **Mémoire persistante** (`ax_persistent_memory`, `cmc_persistent_memory`, 1000 faits max) → contexte accumulé des sessions passées
+2. **Knowledge base** (`K.kb.facts`, `K.kb.instructions`) → faits métier Kevin + consignes explicites
+3. **Web Search** (Anthropic native quand activé) → sources externes fraîches
+4. **Docs de référence internes** via `axFetchClaudeFeed` → APPLE_IOS_SKILLS, ANDROID_SKILLS, GOOGLE_APIS, AUTOMATION_HUB, UNIVERSAL_REMOTE, NETWORK_CONNECTIVITY, etc.
+5. **Historique conversations** (30 derniers messages) → continuité contexte
+
+**Pattern d'accumulation** :
+- Chaque réponse IA extrait automatiquement les faits clés → ajoute à `ax_persistent_memory`
+- Chaque nouvelle session lit les 20-30 faits les plus récents → injecte dans system prompt
+- Chaque agent/sentinelle peut AJOUTER au pool (pas seulement lire)
+- Les lessons learned (`cmc_lessons_learned`) partagées cross-user admin
+
+**Optimisation continue** :
+- Score de qualité chaque réponse (Crew reviewer) → ajoute aux faits si >8/10
+- Faits duppliqués → dédupe par similarité texte (Levenshtein)
+- Faits datés → si ancien >90 jours, vérifier toujours valide via web_search
+- Auto-enrichissement : si fait cité plusieurs fois → priorité haute
+
+**Objectif** : chaque interaction rend la prochaine PLUS intelligente, PLUS précise, PLUS pointue.
+
+---
+
 ## 🎭 RÈGLE — MULTI-ANGLES & OPTIMISATION PERMANENTE (Kevin 2026-04-21 v9.457+)
 
 > **"Ajoute des agents, subagents… pour que quand on pose une question, ils réfléchissent autrement, différemment, aillent dans d'autres directions. Proposer différents choix, faire les meilleures réponses, les meilleures actions. À chaque intervention, chaque interaction, chaque projet. Donner le choix : toi tu as trouvé ça, lui a trouvé ça, on peut aller vers là. Toujours essayer de voir plus loin, améliorer la demande tout de suite sans demander."**
