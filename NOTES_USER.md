@@ -2,6 +2,26 @@
 
 > **Lecture obligatoire à chaque session.**
 
+## 👤 IDENTIFIANTS DE CONNEXION — ordre flexible (Kevin 2026-04-21)
+
+**Règle absolue** : les noms de connexion doivent matcher quel que soit l'ordre prénom/nom, la casse, les tirets, les accents, les espaces multiples.
+
+Utilisateurs preconfigurés dans Apex (`PRECONFIGURED_USERS`) :
+
+| Clé officielle | Tous les formats acceptés |
+|----------------|---------------------------|
+| **Laurence SAINT-POLIT** | Laurence SAINT-POLIT, SAINT-POLIT Laurence, saint-polit laurence, laurence saint polit, Saint-Polit Laurence, etc. |
+| **Christophe TARDIEU** | Christophe TARDIEU, TARDIEU Christophe, tardieu christophe, etc. |
+| **Sandrine TARDIEU** | Sandrine TARDIEU, TARDIEU Sandrine, sandrine-tardieu, etc. |
+| **TARDIEU** (compte test) | TARDIEU, tardieu |
+| **Kevin DESARZENS** (admin) | Toute casse/tiret/underscore matche admin (regex `/kevin[\s_-]*desarz/i`) |
+
+**Implémentation v12.57** : `_checkPreconfiguredUser` normalise (lowercase, suppression accents, tirets → espaces) puis compare par **ensemble de mots triés alphabétiquement** → indépendant de l'ordre.
+
+**S'applique à tout nouvel user préconfiguré** — ajouter simplement dans `PRECONFIGURED_USERS`, la matchage flexible fonctionne automatiquement.
+
+---
+
 
 ## 🔑 CONFIGURATIONS UTILISATEUR DEJA EN PLACE (ne pas redemander)
 
