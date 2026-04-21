@@ -260,7 +260,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.10",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.11",ADMIN_ID="kdmc_admin";
 var APP_NAME="KDMC";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1648,19 +1648,30 @@ function _snMobile(){try{var w=window.innerWidth;if(w<375)_snReport("mobile","wa
 // 12. 🧰 Workers/agents — verifier que les _localWorkers sont actifs
 function _snWorkers(){try{if(typeof _localWorkers!=="undefined"){var zombies=(_localWorkers||[]).filter(function(w){return w&&!w.active&&w.interval>0;}).length;if(zombies>0)_snReport("workers","warn","Workers zombies "+zombies);}}catch(e){_snReport("workers","err",e.message);}}
 
+// v12.11 — 4 sentinelles specialisees sur les bugs recurrents Kevin 2026-04-20
+// 13. Undefined-var : detecte ReferenceError recurrents et escalade a Claude Code
+function _snUndefinedVar(){try{var errs=lg("ax_err_log",[]);var refs=errs.filter(function(e){return /Can't find variable|ReferenceError|is not defined/.test(e.msg||"");});if(refs.length>=3){var first3=refs.slice(0,3).map(function(e){return (e.msg||"").slice(0,60);});_snReport("undefined-var","err","Refs non def: "+first3.join(" | "));if(_snCanHeal("undefined-var")&&typeof _escalateToClaudeCode==="function")_escalateToClaudeCode({errors:refs.slice(0,5),count:refs.length},"Reference errors recurrents - bug scope variable");}}catch(e){_snReport("undefined-var","err",(e.message||"").slice(0,80));}}
+// 14. Firebase-stale : online+SSE down depuis >60s → force reconnect
+function _snFbStale(){try{if(typeof _fbEs!=="undefined"&&!_fbEs&&navigator.onLine&&typeof FB_URL!=="undefined"&&FB_URL){var last=+lg("ax_fb_last_retry",0);if(Date.now()-last>60000){_snReport("fb-stale","warn","FB down >60s + online");if(_snCanHeal("fb-stale")){ls("ax_fb_last_retry",Date.now());if(typeof fbStartListening==="function")fbStartListening();_snReport("fb-stale","heal","fbStartListening triggered");}}}}catch(e){_snReport("fb-stale","err",(e.message||"").slice(0,80));}}
+// 15. AI-health : surveille etat streaming + reponses vides/timeout, reset si stuck
+function _snAiHealth(){try{if(K.isStreaming){var since=+lg("ax_streaming_since",0);if(since&&Date.now()-since>45000){_snReport("ai-health","err","AI stuck >45s");if(_snCanHeal("ai-health")){K.isStreaming=false;ls("ax_streaming_since",0);try{dc();}catch(_){}_snReport("ai-health","heal","streaming reset force");}}}var msgs=K.messages||[];var recentEmpty=msgs.slice(-5).filter(function(m){return m.role==="assistant"&&(typeof m.content==="string")&&(m.content==="(vide)"||m.content==="(reponse vide — reessayez ou reformulez)");}).length;if(recentEmpty>=2)_snReport("ai-health","warn","2+ reponses vides consecutives — verifier proxy/cle API");}catch(e){_snReport("ai-health","err",(e.message||"").slice(0,80));}}
+// 16. Global-vars-check : verifie que les variables globales critiques sont definies
+function _snGlobalVars(){try{var required=["K","APP_VER","FB_URL","extraTabs","PERSONAS"];var missing=[];required.forEach(function(v){if(typeof window[v]==="undefined")missing.push(v);});if(missing.length){_snReport("global-vars","err","Variables globales manquantes: "+missing.join(", "));if(_snCanHeal("global-vars")&&typeof _escalateToClaudeCode==="function")_escalateToClaudeCode({missing:missing},"Variables globales undefined");}}catch(e){_snReport("global-vars","err",(e.message||"").slice(0,80));}}
 function _startSentinels(){
   if(!K.user)return;
-  // 12 sentinelles, chaque interval optimise pour son role
+  // v12.11 : 16 sentinelles autonomes, chaque interval optimise pour son role
+  // 1-12: universelles (perf, sec, data, api, ux, heal, learn, battery, scale, crypto, mobile, workers)
+  // 13-16: specialisees bugs recurrents (undefined-var, fb-stale, ai-health, global-vars)
   var defs=[
     {fn:_snPerf,ms:120000},{fn:_snSecurity,ms:300000},{fn:_snData,ms:600000},
     {fn:_snApi,ms:60000},{fn:_snUx,ms:900000},{fn:_snHeal,ms:180000},
     {fn:_snLearner,ms:1800000},{fn:_snBattery,ms:600000},{fn:_snScale,ms:600000},
-    {fn:_snCrypto,ms:900000},{fn:_snMobile,ms:1800000},{fn:_snWorkers,ms:600000}
+    {fn:_snCrypto,ms:900000},{fn:_snMobile,ms:1800000},{fn:_snWorkers,ms:600000},
+    {fn:_snUndefinedVar,ms:300000},{fn:_snFbStale,ms:30000},{fn:_snAiHealth,ms:60000},{fn:_snGlobalVars,ms:300000}
   ];
   defs.forEach(function(d){_globalIntervals.push(setInterval(d.fn,d.ms));});
-  // Premier run immediat pour chaque
   defs.forEach(function(d){try{d.fn();}catch(_){}});
-  _snLog("start","ok","12 sentinelles demarrees (v12.4)");
+  _snLog("start","ok","16 sentinelles demarrees (v12.11)");
 }
 function _healthCheck(){var issues=[];if(!navigator.onLine)issues.push("offline");var memUsed=0;try{for(var hi=0;hi<localStorage.length;hi++)memUsed+=(localStorage.getItem(localStorage.key(hi))||"").length;}catch(ex){}if(memUsed>4500000)issues.push("storage-critical");if(!_fbEs&&navigator.onLine&&FB_URL)issues.push("firebase-down");if(!_getApiKey())issues.push("no-api-key");var recentErrs=lg("ax_err_log",[]).filter(function(er){return now()-er.ts<300000;});if(recentErrs.length>3)issues.push("error-storm");if(K.isStreaming&&K.messages.length){var lastMsg=K.messages[K.messages.length-1];if(lastMsg.ts&&now()-lastMsg.ts>45000){K.isStreaming=false;issues.push("streaming-stuck");K.messages.push({role:"assistant",content:"(IA debloquee automatiquement apres 45s — reessayez)",ts:now()});_saveMsgs();dc();}}_predictiveAlert();if(issues.length){var status=lg("ax_health_status",{ok:true});if(status.ok||!status.issues||status.issues.join(",")!==issues.join(",")){ls("ax_health_status",{ok:false,issues:issues,ts:now()});if(issues.indexOf("firebase-down")>=0)setTimeout(fbStartListening,2000);if(issues.indexOf("storage-critical")>=0)_emergencyCleanup();if(issues.indexOf("streaming-stuck")>=0)toast("IA debloquee","info");if(issues.indexOf("error-storm")>=0)toast("Erreurs detectees — auto-repair","warn");}}else{ls("ax_health_status",{ok:true,ts:now()});}}
 window.addEventListener("DOMContentLoaded",function(){perfStart("init");axInit();_loadPurify();_restoreReminders();finFetchRates();idbOpen().catch(function(){});_globalIntervals.push(setInterval(_healthCheck,30000));_globalIntervals.push(setInterval(function(){finUpdatePrices();},300000));_globalIntervals.push(setInterval(function(){_checkDailySchedules();},60000));_globalIntervals.push(setInterval(function(){finFetchRates();},3600000));var customAmb=lg("ax_custom_ambiances",{});Object.keys(customAmb).forEach(function(k){AMBIANCES[k]=customAmb[k];});_processDeepLink();_checkShareTarget();var splash=document.getElementById("ax-splash");if(splash){splash.style.opacity="0";setTimeout(function(){splash.remove();},600);}console.log("KDMC "+APP_VER+" init en "+perfEnd("init")+"ms");})
