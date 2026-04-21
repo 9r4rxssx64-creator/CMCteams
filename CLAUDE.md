@@ -1,14 +1,20 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.68.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.451 / Apex v12.11 (2026-04-21).
 
 ---
 
-## 📌 DOSSIER DE TRAVAIL — Demandes Kevin en cours (2026-04-19 soir)
+## 📌 DOSSIER DE TRAVAIL — Status au 2026-04-21 (7 PRs mergées cette session)
 
-**À traiter au maximum, vérifier après chaque fix, ne JAMAIS oublier :**
+**Écosystème autonome complet déployé** (CMCteams v9.451 + Apex v12.11) :
+- 23 agents CMC + 7 sentinelles + 16 sentinelles Apex = 46 watchers permanents
+- Pipeline autonomie cross-app : sentinelles → IA Apex → Claude Code outbox
+- Bridge IA Claude Haiku 4.5 avec whitelist 5 actions safe auto-exécutables
+- CGU universel FaceID + Micro + Géoloc (RGPD, révocable)
 
-1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → **v9.409-410 fixés** (team "sup" unique, fusion ins=sup)
+**Items dossier :**
+
+1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → v9.409-410 (fusion ins=sup) + parser fix v9.446 (regex permissive) + fallback v9.447/v9.449 (name-first anywhere) + fix apostrophes v9.451 (22/6', 19/2", 12h30/19') + agent `cadres-watch` v9.450 (détection auto + escalade)
 2. 🔄 **Organigramme SBM Monaco** : chercher exhaustivement (10 sources min), ajouter ROLES_SBM dans l'app, dropdown dans vEmps
 3. 🔄 **Fiches employés évolutives** : rôles/fonctions, dropdowns pour assigner
 4. 🔄 **Extraction complète PDF** : légendes, encadrés haut-droite (CP/AF/M/SS pleine période), couleurs de fond (PNL jaune), tous codes — ne rater aucune info

@@ -1,4 +1,36 @@
-# Mémo de reprise — v9.432 (session 2026-04-19 autonome complète)
+# Mémo de reprise — v9.451 (session 2026-04-20 nuit → 2026-04-21 fin)
+
+## 🔄 Session marathon — 7 PRs mergées (v9.445 → v9.451 + Apex v12.8 → v12.11)
+
+| PR | Versions | Changements |
+|----|----------|-------------|
+| #123 | v9.445 + v12.8 | Pipeline autonomie + 12 sentinelles Apex + 7 sentinelles CMC + hub + vAdminReport + bridge IA (13 commits fusionnés — avaient stagné sur feature branch non mergée) |
+| #125 | v9.446 | Regex cadres permissive (bullets/arrows/CADRES) |
+| #127 | v9.447 | Fix indicateur Firebase stuck + fallback cadres name-first |
+| #128 | v9.448 + v12.9 | CGU universel FaceID/Micro/Géoloc |
+| #129 | v9.449 + v12.10 | Fix extraTabs scope global + fallback match anywhere + diag |
+| #130 | v9.450 + v12.11 | 8 agents spécialisés CMCteams + 4 sentinelles Apex |
+| #131 | v9.451 | Fallback cadres : skip metadata cols + normalise apostrophes/quotes (bug PDF Kevin : `22/6'`, `19/2"`, `12h30/19'` pas dans CODES) |
+
+### Écosystème autonome final (v9.451 + v12.11)
+
+**CMCteams** : 23 agents métier/spécialisés + 7 sentinelles = 30 watchers autonomes
+**Apex AI** : 16 sentinelles + bridge IA Claude Haiku + outbox Claude Code + 40+ vues (hub modules)
+
+**Pipeline cross-app** : `ax_telemetry_in` → Apex SSE → `_aiHandleIssue` → whitelist ou `ax_claude_todo` → Claude Code prochaine session
+
+**Root causes corrigées (7)** :
+1. 13 commits orphelins non mergés dans main (PR #123)
+2. Regex parser régression v9.437 (PR #125/127/129)
+3. IA "3 points infini" (v12.3→v12.4 : proxy + tool_use + AbortController)
+4. Indicateur Firebase stuck jaune (v9.447)
+5. `extraTabs` scope local (v12.10)
+6. Firebase allowlist + rules publiées (Kevin côté Firebase console)
+7. Codes PDF avec apostrophes/quotes non reconnus par fallback (v9.451)
+
+**Actions Kevin requises** : force-refresh PWA (supprimer + réinstaller icône) + ré-importer PDF avril.
+
+---
 
 ## 🆕 Session 2026-04-20 soir — KDMC Apex AI v12.3 (fix "3 points infini" définitif)
 
