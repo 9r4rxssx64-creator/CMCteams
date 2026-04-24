@@ -1,13 +1,17 @@
 """AI chat — multi-provider (Anthropic primary, OpenAI fallback)."""
 
 import os
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 from services.anthropic_client import call_anthropic
 from services.openai_client import call_openai
 
 router = APIRouter()
+
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
 
 class Message(BaseModel):
@@ -91,3 +95,41 @@ async def chat_completion(req: ChatRequest):
         )
 
     raise HTTPException(status_code=400, detail=f"Unknown provider {provider}")
+
+
+@router.post("/proxy")
+async def chat_proxy(request: Request):
+    """
+    Passthrough vers Anthropic Messages API.
+    Accepte le schéma natif Anthropic (tools, tool_use, tool_result, images).
+    La clé API reste côté serveur — jamais exposée au client.
+
+    Usage frontend : POST /api/chat/proxy avec le body Anthropic standard
+    (model, max_tokens, system, messages, tools, ...).
+    Réponse : JSON brut d'Anthropic.
+    """
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY non configure sur le serveur")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body invalide")
+
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    }
+
+    timeout = httpx.Timeout(180.0, connect=10.0)
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(ANTHROPIC_API_URL, json=body, headers=headers)
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Timeout Anthropic (>180s)")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Upstream error: {e}")
+
+    return JSONResponse(status_code=resp.status_code, content=resp.json() if resp.headers.get("content-type","").startswith("application/json") else {"error": resp.text[:500]})
