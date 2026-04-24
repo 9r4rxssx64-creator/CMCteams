@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.96",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.97",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1436,42 +1436,27 @@ function _readGitHubPat(){
   return _rv("ax_github_pat")||_rv("ax_github_token")||"";
 }
 function axGithubReadFile(path,branch){
-  /* v12.95 — Hybrid sync cache + async prefetch : tool_use necessite reponse sync string */
-  if(!path)return"Erreur: path obligatoire";
-  branch=branch||"main";
-  var cacheKey="ax_gh_cache_"+path+"_"+branch;
-  var cached=lg(cacheKey,null);
-  /* Cache frais (30s) : retourne direct */
-  if(cached&&cached.content&&(Date.now()-cached.ts)<30000)return cached.content;
-  /* Lancer fetch async en arriere-plan pour remplir le cache */
-  var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch);
-  var pat=_readGitHubPat();
-  var headers={"Accept":"application/vnd.github.v3+json"};
-  if(pat)headers["Authorization"]="Bearer "+pat;
-  var _bgFetching=lg("ax_gh_fetching_"+cacheKey,0);
-  if(Date.now()-_bgFetching>60000){
-    ls("ax_gh_fetching_"+cacheKey,Date.now());
-    fetch(url,{headers:headers}).then(function(r){
-      if(!r.ok){
-        var errMsg="Erreur GitHub "+r.status;
-        if(r.status===401||r.status===403)errMsg+=": PAT invalide. Regenere un PAT Contents R/W.";
-        else if(r.status===404)errMsg+=": fichier introuvable ou repo prive (besoin PAT).";
-        ls(cacheKey,{content:errMsg,ts:Date.now()});
-        return;
-      }
-      return r.json().then(function(data){
-        if(!data.content){ls(cacheKey,{content:"Erreur: pas de contenu",ts:Date.now()});return;}
-        var content=atob(data.content.replace(/\s/g,""));
-        if(content.length>80000)content=content.slice(0,80000)+"\n\n[... tronque "+(content.length-80000)+" chars]";
-        ls(cacheKey,{content:content,ts:Date.now()});
-      });
-    }).catch(function(e){
-      ls(cacheKey,{content:"Erreur reseau GitHub: "+(e.message||e),ts:Date.now()});
-    });
-  }
-  /* Cache stale : retourne derniere valeur si existe */
-  if(cached&&cached.content)return cached.content+"\n\n[Cache "+Math.round((Date.now()-cached.ts)/1000)+"s old - en train d actualiser en arriere-plan]";
-  return"Chargement en cours... Retry dans 2s (GitHub API async, tool_use Claude necessite reponse sync). Relance la meme commande dans 2 secondes.";
+  /* v12.97 — Sync XHR avec try/catch robuste + diagnostic precis */
+  try{
+    if(!path)return"Erreur: path obligatoire";
+    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch||"main");
+    var pat=_readGitHubPat();
+    var headers={"Accept":"application/vnd.github.v3+json"};
+    if(pat)headers["Authorization"]="Bearer "+pat;
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET",url,false);
+    Object.keys(headers).forEach(function(h){xhr.setRequestHeader(h,headers[h]);});
+    try{xhr.send();}catch(sendErr){return"Erreur reseau (XHR bloque par Safari iOS PWA): "+(sendErr.message||sendErr)+". Essaie via navigateur non-PWA.";}
+    if(xhr.status===0)return"Erreur reseau: aucune reponse de GitHub (peut etre CORS ou connexion). URL: "+url.slice(0,80);
+    if(xhr.status===401||xhr.status===403)return"Erreur "+xhr.status+": PAT invalide ou insuffisant.\n- Verifie que le PAT est bien colle dans Vault (GitHub Token ou ax_github_pat)\n- Verifie qu il a les permissions Contents:R/W\n- Regenere le token si necessaire\nResponse: "+xhr.responseText.slice(0,200);
+    if(xhr.status===404)return"Erreur 404: fichier "+path+" non trouve, ou PAT manquant pour repo prive";
+    if(xhr.status!==200)return"Erreur GitHub "+xhr.status+": "+xhr.responseText.slice(0,300);
+    var data=JSON.parse(xhr.responseText);
+    if(!data.content)return"Erreur: pas de contenu (format inattendu)";
+    var content=atob(data.content.replace(/\s/g,""));
+    if(content.length>80000)content=content.slice(0,80000)+"\n\n[... tronque "+(content.length-80000)+" chars]";
+    return content;
+  }catch(e){return"Erreur lecture GitHub: "+(e.message||e).slice(0,200);}
 }
 function axGithubListFiles(path,branch){
   try{
