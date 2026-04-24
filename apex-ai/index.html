@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.93",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.94",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -907,7 +907,7 @@ function axSelfReviewCapabilities(){
       memoryFacts:lg("ax_persistent_memory",[]).length,
       lessons:lg("ax_lessons_learned",[]).length,
       connectedUsers:Object.keys(lg("ax_activity_index",{})).length,
-      hasPat:!!lg("ax_github_pat",""),
+      hasPat:!!_readGitHubPat(),
       hasApiKey:!!_getApiKey(),
       fbConnected:!!_fbEs,
       permissions:{
@@ -1430,11 +1430,16 @@ case"github_write_file":if(!axIsAdmin())return"Refuse: admin uniquement (axIsAdm
 default:return"Outil inconnu: "+name;}}
 // v12.70 — GitHub self-access (Kevin: "Donne lui acces a son code etc")
 var AX_REPO_OWNER="9r4rxssx64-creator",AX_REPO_NAME="CMCteams";
+// v12.94 — PAT lecture fallback (Kevin colle soit ax_github_pat soit ax_github_token dans Vault)
+function _readGitHubPat(){
+  function _rv(k){var v=localStorage.getItem(k);if(!v)return"";try{var p=JSON.parse(v);return(typeof p==="string"?p:v).replace(/^"|"$/g,"");}catch(e){return String(v).replace(/^"|"$/g,"");}}
+  return _rv("ax_github_pat")||_rv("ax_github_token")||"";
+}
 function axGithubReadFile(path,branch){
   try{
     if(!path)return"Erreur: path obligatoire";
     var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch||"main");
-    var pat=lg("ax_github_pat","");
+    var pat=_readGitHubPat();
     var headers={"Accept":"application/vnd.github.v3+json"};
     if(pat)headers["Authorization"]="Bearer "+pat;
     // Note : synchrone via XHR (tool_use API de Claude attend reponse string)
@@ -1454,7 +1459,7 @@ function axGithubReadFile(path,branch){
 function axGithubListFiles(path,branch){
   try{
     var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path||"")+"?ref="+encodeURIComponent(branch||"main");
-    var pat=lg("ax_github_pat","");
+    var pat=_readGitHubPat();
     var headers={"Accept":"application/vnd.github.v3+json"};
     if(pat)headers["Authorization"]="Bearer "+pat;
     var xhr=new XMLHttpRequest();
@@ -1471,7 +1476,7 @@ function axGithubWriteFile(path,content,message,reason){
   try{
     if(!axIsAdmin())return"Refuse: admin uniquement";
     if(!path||!content||!message)return"Erreur: path+content+message obligatoires";
-    var pat=lg("ax_github_pat","");
+    var pat=_readGitHubPat();
     if(!pat)return"Erreur: ax_github_pat manquant dans Vault. Kevin doit le configurer une fois dans Coffre.";
     var branchName="claude/apex-auto-"+Date.now().toString(36);
     var headers={"Accept":"application/vnd.github.v3+json","Authorization":"Bearer "+pat,"Content-Type":"application/json"};
