@@ -1,13 +1,37 @@
 # KEVIN_ACTIONS_TODO.md — Actions restantes Kevin (Apex AI + CMCteams)
 
-> **Destinataire** : Kevin DESARZENS (admin U11804, proprio Apex AI v12.78 + CMCteams v9.465)
+> **Destinataire** : Kevin DESARZENS (admin U11804, proprio Apex AI v12.104 + CMCteams v9.469)
 ---
 
-## 🎯 SESSION 2026-04-24 — ACTIONS KEVIN (minimal)
+## 🎯 SESSION 2026-04-25 — ACTIONS KEVIN (priorité ordonnée)
 
-### 🔴 OBLIGATOIRE (5 min total)
-1. **Re-importer PDF CMCteams Avril** → valider cadres remontent (v9.462). Si échec : console → `localStorage.getItem('cmc_cadres_fallback_diag')` → copier-coller ici
-2. **Configurer `ax_github_pat` dans Vault Apex** → voir `INSTALL_PAT.md` (60 sec)
+### 🟢 PRIORITÉ #1 — RAPIDE (1 min, MAINTENANT)
+**Tester le bouton "couper la voix"** (Apex v12.104)
+- Recharge Apex (PWA → tire vers le bas pour MAJ, ou supprime + réinstalle l'icône)
+- Chat → nouveau bouton à gauche du micro :
+  - 🔇 = voix coupée (cliquer pour activer)
+  - 🔊 = voix activée (cliquer pour couper)
+  - ⏹ = en train de lire (cliquer pour arrêter immédiatement)
+- ✅ Si OK : me dire "voix OK"
+
+### 🟡 PRIORITÉ #2 — Backend pro déployé ✅ FAIT
+- Backend FastAPI Railway : `https://cmcteams-production.up.railway.app` opérationnel
+- `/health` répond `{"status":"ok"}`
+- Apex utilise via `ax_backend_url` (Coffre) → chat passe par backend (clé Anthropic cachée)
+
+### 🟠 PRIORITÉ #3 — CMCteams cadres (5 min, important métier)
+**Re-importer PDF CMCteams Avril/Mai** → valider 6 inspecteurs cadres remontent avec horaires (v9.468 fix). Si échec :
+- CMCteams admin → Bouton **"Diagnostic cadres"** (popup iPhone)
+- Capture du JSON → envoie-moi
+
+### 🟡 PRIORITÉ #4 — Domaine pro apex.sbs (5 min, qualité)
+Tu as acheté `apex.sbs` ($35/an). Lier au backend pour `api.apex.sbs` :
+1. Railway → service CMCteams → Settings → Networking → **+ Custom Domain** → `api.apex.sbs`
+2. Railway → Settings compte → Domains → `apex.sbs` → DNS auto
+3. Mets à jour `ax_backend_url` dans Apex Coffre : `https://api.apex.sbs`
+
+### 🔴 ANCIENNES — encore en attente
+- **Configurer `ax_github_pat` dans Vault Apex** → voir `INSTALL_PAT.md` (60 sec)
 
 ### 🟡 RECOMMANDÉ (10 min)
 3. **Firebase Rules** (console Firebase) : je NE peux PAS faire ça en code. Exemple rules admin-only pour `ax_shared_api_key` dans `BILAN_PRO.md`
