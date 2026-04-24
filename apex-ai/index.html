@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.94",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.95",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1250,7 +1250,7 @@ function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="
 var _dcRaf=0,_lastView="",_chatPageSize=50;
 function _throttle(fn,delay){var last=0;return function(){var n=now();if(n-last>=delay){last=n;fn.apply(this,arguments);}};}
 function render(){var app=document.getElementById("app");if(!app)return;try{app.innerHTML=vTopbar()+vMainContent()+vNav();_lastView=K.view;_bindEvents();}catch(re){console.error("[RENDER CRASH]",re);try{app.innerHTML='<div id="topbar"><div class="ax-logo">APEX <span>AI</span></div></div><div id="content" style="padding:40px;text-align:center;color:#fff"><h2 style="color:#c9a227">APEX</h2><p>Un souci technique. Essaie de recharger.</p><button class="ax-btn ax-btn-primary" onclick="location.reload()" style="margin-top:20px;padding:14px 28px">Recharger</button><p style="color:#999;font-size:11px;margin-top:20px">'+String(re.message||re).slice(0,100).replace(/</g,"&lt;")+'</p></div>';}catch(_){}}}
-function dc(){if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();return;}}render();});}
+function dc(){if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. */if(_savedScroll){var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<200;if(_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight-_newChat.clientHeight;}else{_newChat.scrollTop=_savedScroll.top;}}}return;}}render();});}
 function dcNow(){_dcRaf=0;render();}
 
 function _viewAsBanner(){if(!_viewAsUser)return"";return'<div style="background:var(--ax-gold);color:#000;text-align:center;padding:4px 8px;font-size:12px;font-weight:700">Vue: '+esc(K.user.name)+' <span onclick="axViewAsBack()" style="cursor:pointer;text-decoration:underline">Retour admin</span></div>';}
@@ -1388,7 +1388,7 @@ function _autoExtractFacts(text){if(!text||text.length<50)return;var patterns=[/
 function _factSimilar(a,b){if(!a||!b)return false;if(a.length<20||b.length<20)return false;var la=a.toLowerCase(),lb=b.toLowerCase();if(la===lb)return true;var common=0;la.split(/\s+/).forEach(function(w){if(w.length>3&&lb.indexOf(w)>=0)common++;});return common>=5;}
 function axShareConversation(){if(!K.activeConvId||!K.messages.length){toast("Rien a partager","warn");return;}var conv=K.conversations.find(function(c){return c.id===K.activeConvId;});var text="# "+(conv?conv.title:"Conversation KDMC")+"\n\n";K.messages.forEach(function(m){var content=typeof m.content==="string"?m.content:JSON.stringify(m.content);text+="**"+(m.role==="user"?"Vous":"APEX")+"** :\n"+content+"\n\n";});if(navigator.share){navigator.share({title:conv?conv.title:"APEX",text:text.slice(0,2000)}).catch(function(){});}else{navigator.clipboard.writeText(text).then(function(){toast("Conversation copiee dans le presse-papiers","ok");}).catch(function(){toast("Erreur copie","err");});}}
 function axCopyMsg(idx){var msg=K.messages[idx];if(!msg)return;var text=typeof msg.content==="string"?msg.content:JSON.stringify(msg.content);navigator.clipboard.writeText(text).then(function(){toast("Message copie","ok");}).catch(function(){toast("Erreur copie","err");});}
-function _scrollChatBottom(force){setTimeout(function(){var el=document.getElementById("ax-chat-scroll");if(!el)return;if(!force){var distFromBottom=el.scrollHeight-el.scrollTop-el.clientHeight;if(distFromBottom>200)return;}el.scrollTop=el.scrollHeight-el.clientHeight;},100);}
+function _scrollChatBottom(force){var _f=function(){var el=document.getElementById("ax-chat-scroll");if(!el)return;if(!force){var distFromBottom=el.scrollHeight-el.scrollTop-el.clientHeight;if(distFromBottom>200)return;}el.scrollTop=el.scrollHeight-el.clientHeight;};_f();/* v12.95 — double-tap pour cas late-render */setTimeout(_f,50);}
 
 var PROMPT_LIBRARY=[{cat:"Productivite",prompts:["Redige un email professionnel pour...","Resume ce texte en 3 points cles","Traduis en anglais : ","Cree une liste de taches pour..."]},{cat:"Finance",prompts:["Analyse le cours de l'action AAPL","Calcule les interets composes de 10000 EUR a 5% sur 10 ans","Simule un pret immobilier de 300000 EUR a 3.5%","Compare ETF World vs S&P 500"]},{cat:"Code",prompts:["Ecris une fonction JavaScript qui...","Explique ce code : ","Corrige ce bug : ","Cree une API REST pour..."]},{cat:"Creative",prompts:["Ecris un post LinkedIn sur...","Genere 5 idees de contenu pour...","Redige une newsletter sur...","Cree un script video de 60 secondes sur..."]}];
 function axShowPromptLib(){var h='<h2>\uD83D\uDCDA Bibliotheque de prompts</h2>';PROMPT_LIBRARY.forEach(function(cat){h+='<div class="ax-card" style="margin:8px 0"><h3>'+esc(cat.cat)+'</h3>';cat.prompts.forEach(function(p){h+='<div class="ax-setting-row" style="cursor:pointer" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';sv(\'chat\');setTimeout(function(){var el=document.getElementById(\'ax-chat-input\');if(el){el.value=\''+esc(p).replace(/'/g,"\\'")+'\';el.focus();}},100)"><span style="font-size:13px">'+esc(p)+'</span><span style="color:var(--ax-text-dim)">\u2192</span></div>';});h+="</div>";});_showModal(h);}
@@ -1436,25 +1436,42 @@ function _readGitHubPat(){
   return _rv("ax_github_pat")||_rv("ax_github_token")||"";
 }
 function axGithubReadFile(path,branch){
-  try{
-    if(!path)return"Erreur: path obligatoire";
-    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch||"main");
-    var pat=_readGitHubPat();
-    var headers={"Accept":"application/vnd.github.v3+json"};
-    if(pat)headers["Authorization"]="Bearer "+pat;
-    // Note : synchrone via XHR (tool_use API de Claude attend reponse string)
-    var xhr=new XMLHttpRequest();
-    xhr.open("GET",url,false);
-    Object.keys(headers).forEach(function(h){xhr.setRequestHeader(h,headers[h]);});
-    xhr.send();
-    if(xhr.status!==200)return"Erreur GitHub "+xhr.status+": "+xhr.responseText.slice(0,300);
-    var data=JSON.parse(xhr.responseText);
-    if(!data.content)return"Erreur: pas de contenu";
-    var content=atob(data.content.replace(/\s/g,""));
-    // Trunque si trop gros pour tool_result (limite ~100KB)
-    if(content.length>80000)content=content.slice(0,80000)+"\n\n[... tronque "+(content.length-80000)+" chars. Utilise line range dans prochaine lecture]";
-    return content;
-  }catch(e){return"Erreur lecture GitHub: "+(e.message||e);}
+  /* v12.95 — Hybrid sync cache + async prefetch : tool_use necessite reponse sync string */
+  if(!path)return"Erreur: path obligatoire";
+  branch=branch||"main";
+  var cacheKey="ax_gh_cache_"+path+"_"+branch;
+  var cached=lg(cacheKey,null);
+  /* Cache frais (30s) : retourne direct */
+  if(cached&&cached.content&&(Date.now()-cached.ts)<30000)return cached.content;
+  /* Lancer fetch async en arriere-plan pour remplir le cache */
+  var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch);
+  var pat=_readGitHubPat();
+  var headers={"Accept":"application/vnd.github.v3+json"};
+  if(pat)headers["Authorization"]="Bearer "+pat;
+  var _bgFetching=lg("ax_gh_fetching_"+cacheKey,0);
+  if(Date.now()-_bgFetching>60000){
+    ls("ax_gh_fetching_"+cacheKey,Date.now());
+    fetch(url,{headers:headers}).then(function(r){
+      if(!r.ok){
+        var errMsg="Erreur GitHub "+r.status;
+        if(r.status===401||r.status===403)errMsg+=": PAT invalide. Regenere un PAT Contents R/W.";
+        else if(r.status===404)errMsg+=": fichier introuvable ou repo prive (besoin PAT).";
+        ls(cacheKey,{content:errMsg,ts:Date.now()});
+        return;
+      }
+      return r.json().then(function(data){
+        if(!data.content){ls(cacheKey,{content:"Erreur: pas de contenu",ts:Date.now()});return;}
+        var content=atob(data.content.replace(/\s/g,""));
+        if(content.length>80000)content=content.slice(0,80000)+"\n\n[... tronque "+(content.length-80000)+" chars]";
+        ls(cacheKey,{content:content,ts:Date.now()});
+      });
+    }).catch(function(e){
+      ls(cacheKey,{content:"Erreur reseau GitHub: "+(e.message||e),ts:Date.now()});
+    });
+  }
+  /* Cache stale : retourne derniere valeur si existe */
+  if(cached&&cached.content)return cached.content+"\n\n[Cache "+Math.round((Date.now()-cached.ts)/1000)+"s old - en train d actualiser en arriere-plan]";
+  return"Chargement en cours... Retry dans 2s (GitHub API async, tool_use Claude necessite reponse sync). Relance la meme commande dans 2 secondes.";
 }
 function axGithubListFiles(path,branch){
   try{
