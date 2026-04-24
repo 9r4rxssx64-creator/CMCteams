@@ -22,3 +22,8 @@ app [0-9]*.js
 .idea/
 *.swp
 *~
+
+# Données personnelles Kevin (JAMAIS commit)
+KEVIN_PERSONAL.md
+KEVIN_PROFILE_LOCAL.json
+*.private.md

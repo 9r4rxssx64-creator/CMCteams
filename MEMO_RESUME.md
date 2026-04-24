@@ -1,4 +1,69 @@
-# Mémo de reprise — v9.451 (session 2026-04-20 nuit → 2026-04-21 fin)
+# Mémo de reprise — v12.76 + v9.464 (session 2026-04-24)
+
+## 🎯 SESSION 2026-04-24 — 10 PRs mergées + CREW multi-IA + audit 3 agents + sécurité
+
+### PRs merged (session complète)
+
+| PR | Versions | Livrable |
+|----|---------|----------|
+| #195 | CMC v9.461 | FAB gros bouton+ (backslash-quotes HTML) |
+| #196 | CMC v9.462 | Inspecteurs cadres 5 strategies (PDF.js fragment) |
+| #197 | Apex v12.69 | Landing obligatoire + fiche abonnement WhatsApp |
+| #198 | Apex v12.70 | github_read/list/write_file tools (Apex auto-patch) |
+| #199 | v12.71+v9.463 | Pipeline erreurs auto (onerror hook + digest + vue admin) |
+| #200 | v12.72+v12.73+v9.464 | Whitelist +14 · Langues I18N · FaceID login |
+| #201 | docs | CLAUDE_FEED session + 4 leçons permanentes |
+| #202 | v12.74 | Compteur connexions admin + auto-suggest FaceID |
+| #203 (en cours) | v12.75+v12.76 | CREW multi-IA + timeout 180s + BILAN_PRO + security fixes |
+
+### 🎭 v12.75 CREW multi-agents (Kevin: "concertation permanente")
+
+- **9 agents spécialisés** : Dev, Finance, Medecin, Juriste, Psy, Chef, Marketing, Security, Assistant
+- **3 modèles** : Sonnet 4.6 (général), Opus 4.7 (médecine/juridique/security), Haiku 4.5 (rapide)
+- **Dispatcher auto** `axDispatchAgent(query)` — scan mots-clés, route expert
+- **Concertation auto** dans `sendMessage` : si `K.settings.crewMode=true` (défaut) + question ≥25 chars → consulte 2 experts en parallèle, injecte avis dans system prompt → Sonnet consolide
+- **Apprentissage** `axCrewLearnFromFeedback` : +50 positive / -30 negative par agent
+- **Vue admin** 🎭 Crew IA : stats + 30 dernières consultations + testeur dispatcher
+
+### ⚡ v12.75 Performances Apex
+
+- Timeout API **60s → 180s** + retry auto 1x avant échec
+- `max_tokens` **8192 → 16384** (double)
+- Mini chat : 45s → 180s · 4096 → 8192 tokens
+- CMCteams IA : 30s → 120s · 4096 → 8192 tokens
+- `K.settings.apiTimeout` paramétrable
+
+### 🔐 v12.76 Security fixes (agent diag critique)
+
+**CRITIQUE** — 2 vulnérabilités fixées :
+1. **Admin escalation via regex** : `/kevin[\s_-]*desarz/i.test(name)` permettait à n'importe qui de devenir admin en tapant "Kevin Desarz" sans PIN valide. **Fix** : PIN fort (≥6 chars) obligatoire première fois, match hash stocké ensuite, bodyguard log si échec
+2. **Device trusted 30j → 7j** : fenêtre auto-login réduite + timestamp pour expiration précise
+
+### 🤖 Audit 3 agents exploration
+
+**Agent Sécurité** : 7 vulnérabilités trouvées (2 critiques fixées, 5 à traiter : API key FB_FIX, PIN hash salt userAgent, device fingerprint faible, XSS potentiels vClientAdmin, Firebase rules)
+
+**Agent Évolutivité** : 8 axes d'amélioration — Plugin Store + Workspace multi-tenant + Offline IndexedDB = roadmap 8-10 semaines pour 10× scale
+
+**Agent Performance** : 11 problèmes à 500+ users — setInterval manager (60-70 MB/user économisés), DOM diffing chat (10→60 FPS), localStorage buffering (write latency 500ms→0.1ms)
+
+### 📄 Nouveaux docs
+
+- `BILAN_PRO.md` — architecture vs template pro, scoring 55/100, budget 650-1400€/mois cible, roadmap 5 phases
+- `INSTALL_PAT.md` — guide 60 sec pour configurer GitHub PAT et débloquer Apex auto-patch
+- `.github/dependabot.yml` + `.github/workflows/codeql-analysis.yml` — sécurité automatique activée (Kevin n'a plus rien à faire)
+- `CLAUDE_FEED.md` mise à jour avec leçons permanentes session
+
+### 🔑 Actions Kevin restantes (minimum)
+
+1. **Ré-importer PDF CMCteams Avril** → valider 6 inspecteurs remontent
+2. **Configurer `ax_github_pat`** dans Coffre Apex — voir `INSTALL_PAT.md` (60 sec)
+
+Tout le reste est automatisé.
+
+---
+
+## 🔄 Session précédente — v9.451 (2026-04-20 nuit → 2026-04-21 fin)
 
 ## 🔄 Session marathon — 7 PRs mergées (v9.445 → v9.451 + Apex v12.8 → v12.11)
 
