@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.89",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.90",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1800,7 +1800,7 @@ function axSendApprovalNotif(r){
   var emailSent=false;
   if(emailjsService&&emailjsTemplate&&emailjsUserId&&r.email){
     try{
-      fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:emailjsService,template_id:emailjsTemplate,user_id:emailjsUserId,template_params:{to_email:r.email,to_name:r.prenom+" "+r.nom,from_name:"APEX AI",subject:"✅ Ton inscription APEX est validee",plan_name:planName,pin:r.initPin,login_url:loginUrl,message_html:htmlMsg,message_text:textMsg}})}).then(function(resp){if(resp.ok){emailSent=true;toast("Email envoye a "+r.email,"ok");}else{toast("EmailJS echec "+resp.status+" - voir modal","warn");}}).catch(function(e){console.warn("EmailJS error:",e);});
+      fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:emailjsService,template_id:emailjsTemplate,user_id:emailjsUserId,template_params:{to_email:r.email,to_name:r.prenom+" "+r.nom,message:textMsg}})}).then(function(resp){if(resp.ok){emailSent=true;toast("Email envoye a "+r.email,"ok");}else{toast("EmailJS echec "+resp.status+" - voir modal","warn");}}).catch(function(e){console.warn("EmailJS error:",e);});
     }catch(e){console.warn("EmailJS:",e);}
   }
   /* Essai 2 : WhatsApp wa.me ouvre le client WhatsApp admin */
@@ -1899,14 +1899,8 @@ function axTestEmailJS(){
       user_id:userId,
       template_params:{
         to_email:testEmail,
-        to_name:"Test Kevin",
-        from_name:"APEX AI",
-        subject:"✅ Test EmailJS APEX",
-        plan_name:"Test",
-        pin:"000000",
-        login_url:loginUrl,
-        message_html:"<h2>Test EmailJS APEX</h2><p>Si tu recois ce mail, EmailJS est <b>bien configure</b>. Tu peux maintenant approuver les users et ils recevront leur PIN par email auto.</p>",
-        message_text:"Test EmailJS APEX - config OK."
+        to_name:"Kevin",
+        message:"Test EmailJS APEX\n\nSi tu recois ce mail, EmailJS est bien configure. Les futures approbations de users enverront automatiquement leur PIN par email.\n\n— Kevin / APEX AI"
       }
     })
   }).then(function(r){
