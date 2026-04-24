@@ -1,4 +1,4 @@
-const CACHE='kdmc-v12.82';
+const CACHE='kdmc-v12.83';
 const ASSETS=['./','./index.html'];
 
 self.addEventListener('install',function(e){
