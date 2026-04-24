@@ -29947,7 +29947,7 @@ function callClaudeIA(q){
     if(depth>4){_finalize("Trop d'étapes de recherche. Réessayez.",true);return;}
     // v9.62 : max_tokens bump\u00e9 de 1024 \u00e0 4096 pour r\u00e9ponses plus d\u00e9taill\u00e9es
     // (plans, r\u00e8gles, articles) avec le prompt syst\u00e8me enrichi PLANS+CONVENTION+JEUX+UPLOAD
-    var body={model:"claude-haiku-4-5-20251001",max_tokens:4096,system:buildIASystemPrompt(),messages:messages};
+    var body={model:"claude-haiku-4-5-20251001",max_tokens:8192,system:buildIASystemPrompt(),messages:messages};
     // v9.63 — Tools : custom CMC tools + web search optionnel
     // Les outils custom n'ont PAS de type (le type est réservé aux outils spéciaux Anthropic)
     var _tools=IA_TOOLS.map(function(t){return{name:t.name,description:t.description,input_schema:t.input_schema};});
@@ -29960,7 +29960,7 @@ function callClaudeIA(q){
     function _fetchWithRetry(){
     var _iaCtrl=(typeof AbortController!=="undefined")?new AbortController():null;
     var _iaDone=false;
-    var _iaTimeout=setTimeout(function(){if(_iaDone)return;_iaDone=true;if(_iaCtrl)try{_iaCtrl.abort();}catch(_){}_finalize("Timeout (30s). V\u00e9rifiez votre connexion ou la cl\u00e9 API.",true);},30000);
+    var _iaTimeout=setTimeout(function(){if(_iaDone)return;_iaDone=true;if(_iaCtrl)try{_iaCtrl.abort();}catch(_){}_finalize("Trop long (120s). Reessaie avec une demande plus courte.",true);},120000);
     var _iaOpts={method:"POST",headers:_headers,body:JSON.stringify(body)};
     if(_iaCtrl)_iaOpts.signal=_iaCtrl.signal;
     fetch(_apiUrl,_iaOpts)
