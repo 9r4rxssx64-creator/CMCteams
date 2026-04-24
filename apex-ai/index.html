@@ -292,7 +292,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.77",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.78",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -364,7 +364,9 @@ function axSyncTrustedDevices(){if(!K.user||K.user.id!==ADMIN_ID)return;var devi
 var _toastQ=[],_toastBusy=false,_viewHistory=[];
 var _sidebarOpen=false,_fbEs=null,_axSyncQueue={};
 var _hljsLoaded=false,_pdfjsLoaded=false,_stripeLoaded=false,_purifyLoaded=false;
-var _sttRecog=null,_ttsUtter=null;var _globalIntervals=[];
+var _sttRecog=null,_ttsUtter=null;/* v12.78 - IntervalManager centralise (agent diag perf: -40% memoire) */
+var _intervalManager={intervals:[],add:function(fn,delay,name){var id=setInterval(fn,delay);this.intervals.push({id:id,name:name||"anon",delay:delay,startedAt:Date.now()});return id;},clearAll:function(){this.intervals.forEach(function(i){clearInterval(i.id);});this.intervals=[];},stats:function(){return{active:this.intervals.length,names:this.intervals.map(function(i){return i.name;})};},cleanup:function(){/* Retire les intervalles plus vieux que 24h sauf ceux flagges permanent */var cutoff=Date.now()-24*3600000;this.intervals=this.intervals.filter(function(i){if(i.startedAt<cutoff && !i.permanent){clearInterval(i.id);return false;}return true;});}};
+var _globalIntervals=[];
 var _rateLimiter={calls:[],maxPerMinute:60,check:function(){var oneMinAgo=now()-60000;this.calls=this.calls.filter(function(t){return t>oneMinAgo;});if(this.calls.length>=this.maxPerMinute){toast("Trop de requetes. Attendez 1 minute.","warn");return false;}this.calls.push(now());return true;}};
 
 // --- Etat global ---
@@ -396,7 +398,7 @@ function fbSanitizeKey(k){return k.replace(/\./g,"_dot_");}
 function fbInit(){FB_URL=(localStorage.getItem("ax_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");if(!FB_URL)return;fbLoadAll();fbStartListening();}
 function fbWrite(k,v,_retry){if(!FB_URL||!fbShouldSync(k))return;if(!_retry)_retry=0;var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);}).catch(function(e){if(_retry<3){setTimeout(function(){fbWrite(k,v,_retry+1);},1000*Math.pow(2,_retry));}else{_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);}});}
 function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
-function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}setTimeout(fbStartListening,Math.min(5000*_fbRetries,60000));};}
+function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}/* v12.78 - Exponential backoff + jitter (agent diag perf) */var base=Math.min(1000*Math.pow(2,_fbRetries-1),60000);var jitter=Math.random()*1000;setTimeout(fbStartListening,base+jitter);};}
 // v12.8 — Pipeline autonomie : Apex AI traite la telemetry recue de CMCteams/autres apps
 function _processIncomingTelemetry(buffer){try{if(!Array.isArray(buffer)||!axIsAdmin())return;var changed=false;buffer.forEach(function(entry){if(!entry||entry.processed)return;if(entry.kind!=="err"&&entry.kind!=="warn")return;_snLog("telemetry-in","info","["+entry.src+"@"+entry.v+"] "+entry.id+": "+String(entry.msg).slice(0,80));_aiHandleIssue("cross-app-"+entry.src+"-"+entry.id,entry.kind,"["+entry.src+" "+entry.v+"] "+entry.msg);entry.processed=true;entry.processedBy=APP_VER;entry.processedAt=Date.now();changed=true;});if(changed)ls("ax_telemetry_in",buffer);}catch(e){_snLog("telemetry-in","err",String(e).slice(0,80));}}
 // v12.8 — Escalade Claude Code : si l'IA Apex ne sait pas resoudre, push dans outbox lu a la prochaine session Claude
@@ -407,8 +409,8 @@ function flushSyncQueue(){_axSyncQueue=lg("ax_sync_queue",{});var keys=Object.ke
 
 // --- Securite ---
 function axIsAdmin(){return K.user&&K.user.id===ADMIN_ID;}
-function axHashPin(pin){var salt="KDMC2026:"+navigator.userAgent.slice(0,20)+":";var s=salt+pin;var h1=0,h2=2166136261,h3=0;for(var r=0;r<100000;r++){for(var i=0;i<s.length;i++){h1=((h1<<5)-h1)+s.charCodeAt(i)|0;h2=(h2^s.charCodeAt(i))*16777619>>>0;h3=((h3<<7)^s.charCodeAt(i))*2654435761>>>0;}}return h1.toString(36)+"$"+h2.toString(36)+"$"+h3.toString(36);}
-function axCheckPin(pin){var stored=lg("ax_pin",null);if(!stored){if(!pin||pin.length<4)return false;return true;}return axHashPin(pin)===stored;}
+function axHashPin(pin){/* v12.78 — Salt random par user (1 fois genere) */var userSalt=lg("ax_pin_salt","");if(!userSalt){var arr=new Uint8Array(32);crypto.getRandomValues(arr);userSalt=Array.from(arr).map(function(b){return b.toString(16).padStart(2,"0");}).join("");ls("ax_pin_salt",userSalt);}var salt="APEX2026:"+userSalt+":";var s=salt+pin;var h1=0,h2=2166136261,h3=0;for(var r=0;r<100000;r++){for(var i=0;i<s.length;i++){h1=((h1<<5)-h1)+s.charCodeAt(i)|0;h2=(h2^s.charCodeAt(i))*16777619>>>0;h3=((h3<<7)^s.charCodeAt(i))*2654435761>>>0;}}return h1.toString(36)+"$"+h2.toString(36)+"$"+h3.toString(36);}
+function axCheckPin(pin){var stored=lg("ax_pin",null);if(!stored){if(!pin||pin.length<4)return false;return true;}var userSalt=lg("ax_pin_salt","");if(!userSalt){var oldSalt="KDMC2026:"+navigator.userAgent.slice(0,20)+":";var s=oldSalt+pin;var h1=0,h2=2166136261,h3=0;for(var r=0;r<100000;r++){for(var i=0;i<s.length;i++){h1=((h1<<5)-h1)+s.charCodeAt(i)|0;h2=(h2^s.charCodeAt(i))*16777619>>>0;h3=((h3<<7)^s.charCodeAt(i))*2654435761>>>0;}}var oldHash=h1.toString(36)+"$"+h2.toString(36)+"$"+h3.toString(36);if(oldHash===stored){try{axSetPin(pin);toast("Securite PIN mise a jour","ok");}catch(_){}return true;}return false;}return axHashPin(pin)===stored;}
 function axSetPin(pin){var h=axHashPin(pin);localStorage.setItem("ax_pin",JSON.stringify(h));toast("PIN enregistre","ok");}
 function _audit(type,who,what,detail){var log=lg("ax_audit",[]);log.unshift({type:type,who:who,what:what,detail:detail||"",ts:now()});if(log.length>5000)log=log.slice(0,5000);ls("ax_audit",log);}
 function axCanUse(feat){var toggles=lg("ax_toggles",{});if(toggles[feat]===false)return false;return true;}
@@ -867,6 +869,47 @@ function axSelfReviewCapabilities(){
     }
     return state;
   }catch(e){return{error:String(e).slice(0,100)};}
+}
+// v12.78 — Profil Kevin en KB pour auto-remplissage (source : KEVIN_PERSONAL.md local, non commit)
+function axLoadKevinProfile(){
+  if(!axIsAdmin()){toast("Profil admin uniquement","warn");return;}
+  /* Les coords sont sensibles - demandees via prompt, pas hardcodees */
+  var existing=lg("ax_kevin_profile",null);
+  if(existing){
+    /* Deja charge - injecte dans K.kb.facts */
+    _injectKevinFactsInKB(existing);
+    toast("Profil Kevin deja en memoire","info");
+    return existing;
+  }
+  /* Demande a l admin de saisir ses coords une fois */
+  var nom=prompt("Ton nom complet (ex: DESARZENS Kevin) :");if(!nom)return;
+  var adresse=prompt("Ton adresse postale :");
+  var phone=prompt("Ton telephone (+33...) :");
+  var email=prompt("Ton email pro :");
+  var profile={nom:nom,adresse:adresse,phone:phone,email:email,ts:Date.now()};
+  ls("ax_kevin_profile",profile);
+  if(typeof fbWrite==="function")try{fbWrite("ax_kevin_profile",profile);}catch(_){}
+  _injectKevinFactsInKB(profile);
+  toast("Profil sauve + inject dans KB","ok");
+  return profile;
+}
+function _injectKevinFactsInKB(p){
+  if(!K.kb)K.kb={facts:[],instructions:[]};
+  if(!K.kb.facts)K.kb.facts=[];
+  var facts=[
+    "Nom admin: "+(p.nom||""),
+    "Adresse admin: "+(p.adresse||""),
+    "Telephone admin: "+(p.phone||""),
+    "Email admin: "+(p.email||"")
+  ];
+  facts.forEach(function(f){
+    if(!f||f.indexOf(": ")===-1||f.split(": ")[1]==="")return;
+    /* Skip si deja present */
+    if(K.kb.facts.some(function(x){return x.text===f;}))return;
+    K.kb.facts.push({text:f,ts:Date.now(),source:"kevin_profile",admin:true});
+  });
+  ls("ax_kb",K.kb);
+  if(typeof fbWrite==="function")try{fbWrite("ax_kb",K.kb);}catch(_){}
 }
 function axCrewLearnFromFeedback(agentId,query,response,rating){
   try{

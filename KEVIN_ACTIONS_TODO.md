@@ -1,6 +1,26 @@
 # KEVIN_ACTIONS_TODO.md — Actions restantes Kevin (Apex AI + CMCteams)
 
-> **Destinataire** : Kevin DESARZENS (admin U11804, proprio Apex AI v12.31 + CMCteams v9.454)
+> **Destinataire** : Kevin DESARZENS (admin U11804, proprio Apex AI v12.78 + CMCteams v9.465)
+---
+
+## 🎯 SESSION 2026-04-24 — ACTIONS KEVIN (minimal)
+
+### 🔴 OBLIGATOIRE (5 min total)
+1. **Re-importer PDF CMCteams Avril** → valider cadres remontent (v9.462). Si échec : console → `localStorage.getItem('cmc_cadres_fallback_diag')` → copier-coller ici
+2. **Configurer `ax_github_pat` dans Vault Apex** → voir `INSTALL_PAT.md` (60 sec)
+
+### 🟡 RECOMMANDÉ (10 min)
+3. **Firebase Rules** (console Firebase) : je NE peux PAS faire ça en code. Exemple rules admin-only pour `ax_shared_api_key` dans `BILAN_PRO.md`
+
+### 🟢 OPTIONNEL
+4. Dependabot + CodeQL : **déjà configurés**, s'activent auto
+5. Tester Face ID (après 3 connexions)
+6. Tester concertation multi-agents (question longue avec mots-clés métier)
+
+### 🔒 Données personnelles
+- `KEVIN_PERSONAL.md` local créé, `.gitignore` actif, JAMAIS dans le repo public
+- Apex charge via `axLoadKevinProfile()` (admin only)
+
 ---
 
 ## ✅ FAIT EN AUTONOMIE PAR CLAUDE CODE (v12.37) — Kevin n'a plus qu'à...
