@@ -292,7 +292,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.69",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.70",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1116,9 +1116,105 @@ function kbImport(jsonStr){try{var data=JSON.parse(jsonStr);if(data.facts)K.kb.f
 function _kbImportFile(input){if(!input.files||!input.files[0])return;var reader=new FileReader();reader.onload=function(e){kbImport(e.target.result);};reader.readAsText(input.files[0]);}
 
 // === MODULE: Tools Custom ===
-function _getToolDefs(){return[{name:"kb_search",description:"Chercher dans la memoire persistante",input_schema:{type:"object",properties:{query:{type:"string",description:"Recherche"}},required:["query"]}},{name:"kb_remember",description:"Memoriser un fait ou une instruction",input_schema:{type:"object",properties:{text:{type:"string"},type:{type:"string",enum:["fact","instruction"]}},required:["text"]}},{name:"calculate",description:"Calculatrice securisee",input_schema:{type:"object",properties:{expression:{type:"string"}},required:["expression"]}},{name:"finance_calculate",description:"Calculs financiers (NPV, IRR, pret, ROI, interets composes)",input_schema:{type:"object",properties:{type:{type:"string",enum:["compound","roi","npv","irr","loan"]},params:{type:"object"}},required:["type","params"]}},{name:"code_execute",description:"Executer du code JavaScript ou Python",input_schema:{type:"object",properties:{code:{type:"string"},language:{type:"string",enum:["javascript","python"],description:"Langage (defaut: javascript)"}},required:["code"]}},{name:"search_conversations",description:"Chercher dans l historique des conversations",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"get_datetime",description:"Obtenir la date et l heure actuelles",input_schema:{type:"object",properties:{}}},{name:"set_reminder",description:"Definir un rappel",input_schema:{type:"object",properties:{text:{type:"string"},delay_minutes:{type:"number"}},required:["text","delay_minutes"]}},{name:"device_status",description:"Infos appareil (batterie, reseau, stockage)",input_schema:{type:"object",properties:{}}},{name:"web_search",description:"Recherche web via Claude",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"finance_portfolio",description:"Gestion portefeuille (ajouter/retirer position)",input_schema:{type:"object",properties:{action:{type:"string",enum:["add","remove","list"]},symbol:{type:"string"},qty:{type:"number"},price:{type:"number"}},required:["action"]}},{name:"finance_technical",description:"Analyse technique (SMA, EMA, tendance) sur un tableau de prix",input_schema:{type:"object",properties:{prices:{type:"array",items:{type:"number"},description:"Tableau de prix historiques"},symbol:{type:"string"}},required:["prices"]}},_getImageToolDef(),{name:"app_action",description:"Executer une action dans l'app APEX (admin uniquement). Actions: set_theme, set_model, set_language, cleanup_convs, backup, clear_errors, clear_audit, send_cmc_motd, send_cmc_chat, toggle_feature, set_persona, open_canvas, export_kb, new_conversation, logout",input_schema:{type:"object",properties:{action:{type:"string",description:"Nom de l'action"},params:{type:"object",description:"Parametres de l'action"}},required:["action"]}},{name:"analyze_and_act",description:"Analyser une image ou document et proposer/executer des actions. Utiliser apres upload d'image ou PDF.",input_schema:{type:"object",properties:{analysis:{type:"string",description:"Resultat de l'analyse"},suggested_actions:{type:"array",items:{type:"string"},description:"Actions suggerees"},auto_execute:{type:"boolean",description:"Executer automatiquement les actions suggerees"}},required:["analysis"]}}];}
+function _getToolDefs(){return[{name:"kb_search",description:"Chercher dans la memoire persistante",input_schema:{type:"object",properties:{query:{type:"string",description:"Recherche"}},required:["query"]}},{name:"kb_remember",description:"Memoriser un fait ou une instruction",input_schema:{type:"object",properties:{text:{type:"string"},type:{type:"string",enum:["fact","instruction"]}},required:["text"]}},{name:"calculate",description:"Calculatrice securisee",input_schema:{type:"object",properties:{expression:{type:"string"}},required:["expression"]}},{name:"finance_calculate",description:"Calculs financiers (NPV, IRR, pret, ROI, interets composes)",input_schema:{type:"object",properties:{type:{type:"string",enum:["compound","roi","npv","irr","loan"]},params:{type:"object"}},required:["type","params"]}},{name:"code_execute",description:"Executer du code JavaScript ou Python",input_schema:{type:"object",properties:{code:{type:"string"},language:{type:"string",enum:["javascript","python"],description:"Langage (defaut: javascript)"}},required:["code"]}},{name:"search_conversations",description:"Chercher dans l historique des conversations",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"get_datetime",description:"Obtenir la date et l heure actuelles",input_schema:{type:"object",properties:{}}},{name:"set_reminder",description:"Definir un rappel",input_schema:{type:"object",properties:{text:{type:"string"},delay_minutes:{type:"number"}},required:["text","delay_minutes"]}},{name:"device_status",description:"Infos appareil (batterie, reseau, stockage)",input_schema:{type:"object",properties:{}}},{name:"web_search",description:"Recherche web via Claude",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},{name:"finance_portfolio",description:"Gestion portefeuille (ajouter/retirer position)",input_schema:{type:"object",properties:{action:{type:"string",enum:["add","remove","list"]},symbol:{type:"string"},qty:{type:"number"},price:{type:"number"}},required:["action"]}},{name:"finance_technical",description:"Analyse technique (SMA, EMA, tendance) sur un tableau de prix",input_schema:{type:"object",properties:{prices:{type:"array",items:{type:"number"},description:"Tableau de prix historiques"},symbol:{type:"string"}},required:["prices"]}},_getImageToolDef(),{name:"app_action",description:"Executer une action dans l'app APEX (admin uniquement). Actions: set_theme, set_model, set_language, cleanup_convs, backup, clear_errors, clear_audit, send_cmc_motd, send_cmc_chat, toggle_feature, set_persona, open_canvas, export_kb, new_conversation, logout",input_schema:{type:"object",properties:{action:{type:"string",description:"Nom de l'action"},params:{type:"object",description:"Parametres de l'action"}},required:["action"]}},{name:"analyze_and_act",description:"Analyser une image ou document et proposer/executer des actions. Utiliser apres upload d'image ou PDF.",input_schema:{type:"object",properties:{analysis:{type:"string",description:"Resultat de l'analyse"},suggested_actions:{type:"array",items:{type:"string"},description:"Actions suggerees"},auto_execute:{type:"boolean",description:"Executer automatiquement les actions suggerees"}},required:["analysis"]}},
+// v12.70 — Acces Apex a son propre code (Kevin 2026-04-22: "Donne lui acces a son code etc")
+{name:"github_read_file",description:"Lire un fichier source Apex/CMCteams depuis GitHub (ex: apex-ai/index.html, index.html, sw.js). Retourne le contenu complet.",input_schema:{type:"object",properties:{path:{type:"string",description:"Chemin relatif depuis la racine du repo (ex: apex-ai/index.html)"},branch:{type:"string",description:"Branche (defaut: main)"}},required:["path"]}},
+{name:"github_list_files",description:"Lister les fichiers d'un dossier du repo GitHub.",input_schema:{type:"object",properties:{path:{type:"string",description:"Chemin du dossier (defaut: racine)"},branch:{type:"string",description:"Branche (defaut: main)"}}}},
+{name:"github_write_file",description:"Ecrire/modifier un fichier du repo et creer une PR (admin uniquement, nécessite ax_github_pat dans Vault). Ne commit JAMAIS directement sur main - cree toujours une branche claude/apex-auto-<timestamp> + PR que Kevin doit merger.",input_schema:{type:"object",properties:{path:{type:"string"},content:{type:"string",description:"Nouveau contenu complet du fichier"},message:{type:"string",description:"Message de commit (ex: 'v12.71: fix bug X')"},reason:{type:"string",description:"Explication detaillee du changement pour Kevin"}},required:["path","content","message","reason"]}}];}
 
-function axExecuteTool(name,input){switch(name){case"kb_search":var results=kbSearch(input.query);return results.length?results.map(function(f){return f.text;}).join("\n"):"Aucun resultat.";case"kb_remember":kbAdd(input.text,"tool_use",input.type||"fact");return"Memorise: "+input.text;case"calculate":return _safeCalc(input.expression);case"finance_calculate":return _finCalcTool(input.type,input.params);case"code_execute":if(input.language==="python")return axRunPython(input.code);return axRunCode(input.code);case"search_conversations":var r=searchConversations(input.query);return r.length?JSON.stringify(r.slice(0,5)):"Aucun resultat.";case"get_datetime":return JSON.stringify({date:new Date().toLocaleDateString("fr-FR"),time:new Date().toLocaleTimeString("fr-FR"),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,timestamp:now()});case"set_reminder":var rem={id:uid(),text:input.text,triggerAt:now()+input.delay_minutes*60000,done:false};var rems=lg("ax_reminders",[]);rems.push(rem);ls("ax_reminders",rems);setTimeout(function(){_fireReminder(rem.id);},input.delay_minutes*60000);return"Rappel programme dans "+input.delay_minutes+" minutes (persistant).";case"device_status":return JSON.stringify({online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,storage:_getStorageUsed(),screen:screen.width+"x"+screen.height});case"web_search":return"(recherche web deleguee a Claude)";case"finance_portfolio":return _finPortfolioTool(input);case"generate_image":var imgUrl=axGenerateImage(input.prompt,input.width,input.height);return"Image generee avec succes. URL: "+imgUrl;case"app_action":return _execAppAction(input.action,input.params||{});case"analyze_and_act":var result="Analyse: "+input.analysis;if(input.auto_execute&&input.suggested_actions){input.suggested_actions.forEach(function(a){result+="\nAction: "+_execAppAction(a,{});});}return result;case"finance_technical":var prices=input.prices||[];if(!prices.length)return"Fournissez un tableau de prix.";return JSON.stringify({sma20:finSMA(prices,20),sma50:finSMA(prices,50),ema12:finEMA(prices,12),ema26:finEMA(prices,26),trend:parseFloat(finEMA(prices,12))>parseFloat(finEMA(prices,26))?"haussiere":"baissiere"});default:return"Outil inconnu: "+name;}}
+function axExecuteTool(name,input){switch(name){case"kb_search":var results=kbSearch(input.query);return results.length?results.map(function(f){return f.text;}).join("\n"):"Aucun resultat.";case"kb_remember":kbAdd(input.text,"tool_use",input.type||"fact");return"Memorise: "+input.text;case"calculate":return _safeCalc(input.expression);case"finance_calculate":return _finCalcTool(input.type,input.params);case"code_execute":if(input.language==="python")return axRunPython(input.code);return axRunCode(input.code);case"search_conversations":var r=searchConversations(input.query);return r.length?JSON.stringify(r.slice(0,5)):"Aucun resultat.";case"get_datetime":return JSON.stringify({date:new Date().toLocaleDateString("fr-FR"),time:new Date().toLocaleTimeString("fr-FR"),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,timestamp:now()});case"set_reminder":var rem={id:uid(),text:input.text,triggerAt:now()+input.delay_minutes*60000,done:false};var rems=lg("ax_reminders",[]);rems.push(rem);ls("ax_reminders",rems);setTimeout(function(){_fireReminder(rem.id);},input.delay_minutes*60000);return"Rappel programme dans "+input.delay_minutes+" minutes (persistant).";case"device_status":return JSON.stringify({online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,storage:_getStorageUsed(),screen:screen.width+"x"+screen.height});case"web_search":return"(recherche web deleguee a Claude)";case"finance_portfolio":return _finPortfolioTool(input);case"generate_image":var imgUrl=axGenerateImage(input.prompt,input.width,input.height);return"Image generee avec succes. URL: "+imgUrl;case"app_action":return _execAppAction(input.action,input.params||{});case"analyze_and_act":var result="Analyse: "+input.analysis;if(input.auto_execute&&input.suggested_actions){input.suggested_actions.forEach(function(a){result+="\nAction: "+_execAppAction(a,{});});}return result;case"finance_technical":var prices=input.prices||[];if(!prices.length)return"Fournissez un tableau de prix.";return JSON.stringify({sma20:finSMA(prices,20),sma50:finSMA(prices,50),ema12:finEMA(prices,12),ema26:finEMA(prices,26),trend:parseFloat(finEMA(prices,12))>parseFloat(finEMA(prices,26))?"haussiere":"baissiere"});case"github_read_file":return axGithubReadFile(input.path,input.branch||"main");
+case"github_list_files":return axGithubListFiles(input.path||"",input.branch||"main");
+case"github_write_file":if(!axIsAdmin())return"Refuse: admin uniquement (axIsAdmin=false)";return axGithubWriteFile(input.path,input.content,input.message,input.reason);
+default:return"Outil inconnu: "+name;}}
+// v12.70 — GitHub self-access (Kevin: "Donne lui acces a son code etc")
+var AX_REPO_OWNER="9r4rxssx64-creator",AX_REPO_NAME="CMCteams";
+function axGithubReadFile(path,branch){
+  try{
+    if(!path)return"Erreur: path obligatoire";
+    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch||"main");
+    var pat=lg("ax_github_pat","");
+    var headers={"Accept":"application/vnd.github.v3+json"};
+    if(pat)headers["Authorization"]="Bearer "+pat;
+    // Note : synchrone via XHR (tool_use API de Claude attend reponse string)
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET",url,false);
+    Object.keys(headers).forEach(function(h){xhr.setRequestHeader(h,headers[h]);});
+    xhr.send();
+    if(xhr.status!==200)return"Erreur GitHub "+xhr.status+": "+xhr.responseText.slice(0,300);
+    var data=JSON.parse(xhr.responseText);
+    if(!data.content)return"Erreur: pas de contenu";
+    var content=atob(data.content.replace(/\s/g,""));
+    // Trunque si trop gros pour tool_result (limite ~100KB)
+    if(content.length>80000)content=content.slice(0,80000)+"\n\n[... tronque "+(content.length-80000)+" chars. Utilise line range dans prochaine lecture]";
+    return content;
+  }catch(e){return"Erreur lecture GitHub: "+(e.message||e);}
+}
+function axGithubListFiles(path,branch){
+  try{
+    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path||"")+"?ref="+encodeURIComponent(branch||"main");
+    var pat=lg("ax_github_pat","");
+    var headers={"Accept":"application/vnd.github.v3+json"};
+    if(pat)headers["Authorization"]="Bearer "+pat;
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET",url,false);
+    Object.keys(headers).forEach(function(h){xhr.setRequestHeader(h,headers[h]);});
+    xhr.send();
+    if(xhr.status!==200)return"Erreur GitHub "+xhr.status+": "+xhr.responseText.slice(0,300);
+    var data=JSON.parse(xhr.responseText);
+    if(!Array.isArray(data))return"Erreur: reponse inattendue (fichier au lieu de dossier?)";
+    return JSON.stringify(data.map(function(f){return{name:f.name,path:f.path,type:f.type,size:f.size};}),null,2);
+  }catch(e){return"Erreur list GitHub: "+(e.message||e);}
+}
+function axGithubWriteFile(path,content,message,reason){
+  try{
+    if(!axIsAdmin())return"Refuse: admin uniquement";
+    if(!path||!content||!message)return"Erreur: path+content+message obligatoires";
+    var pat=lg("ax_github_pat","");
+    if(!pat)return"Erreur: ax_github_pat manquant dans Vault. Kevin doit le configurer une fois dans Coffre.";
+    var branchName="claude/apex-auto-"+Date.now().toString(36);
+    var headers={"Accept":"application/vnd.github.v3+json","Authorization":"Bearer "+pat,"Content-Type":"application/json"};
+    // 1. Get main SHA
+    var mainRef=new XMLHttpRequest();
+    mainRef.open("GET","https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/git/refs/heads/main",false);
+    Object.keys(headers).forEach(function(h){mainRef.setRequestHeader(h,headers[h]);});
+    mainRef.send();
+    if(mainRef.status!==200)return"Erreur lecture main: "+mainRef.status;
+    var mainSha=JSON.parse(mainRef.responseText).object.sha;
+    // 2. Create branch
+    var crBranch=new XMLHttpRequest();
+    crBranch.open("POST","https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/git/refs",false);
+    Object.keys(headers).forEach(function(h){crBranch.setRequestHeader(h,headers[h]);});
+    crBranch.send(JSON.stringify({ref:"refs/heads/"+branchName,sha:mainSha}));
+    if(crBranch.status>=400)return"Erreur branche: "+crBranch.status+" "+crBranch.responseText.slice(0,200);
+    // 3. Get file SHA on new branch (may not exist)
+    var fileSha=null;
+    var getFile=new XMLHttpRequest();
+    getFile.open("GET","https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+branchName,false);
+    Object.keys(headers).forEach(function(h){getFile.setRequestHeader(h,headers[h]);});
+    getFile.send();
+    if(getFile.status===200){try{fileSha=JSON.parse(getFile.responseText).sha;}catch(_){}}
+    // 4. Put file
+    var putBody={message:message,content:btoa(unescape(encodeURIComponent(content))),branch:branchName};
+    if(fileSha)putBody.sha=fileSha;
+    var putReq=new XMLHttpRequest();
+    putReq.open("PUT","https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path),false);
+    Object.keys(headers).forEach(function(h){putReq.setRequestHeader(h,headers[h]);});
+    putReq.send(JSON.stringify(putBody));
+    if(putReq.status>=400)return"Erreur ecriture: "+putReq.status+" "+putReq.responseText.slice(0,200);
+    // 5. Create PR
+    var prReq=new XMLHttpRequest();
+    prReq.open("POST","https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/pulls",false);
+    Object.keys(headers).forEach(function(h){prReq.setRequestHeader(h,headers[h]);});
+    var prBody={title:message.slice(0,80),body:"Auto-patch par Apex AI "+APP_VER+"\n\n**Raison :**\n"+reason+"\n\n*Cette PR a ete creee automatiquement par l'IA Apex. Kevin doit la reviewer + merger.*",head:branchName,base:"main"};
+    prReq.send(JSON.stringify(prBody));
+    if(prReq.status>=400)return"Branche creee mais PR echec: "+prReq.status;
+    var prData=JSON.parse(prReq.responseText);
+    // Audit
+    try{var logs=lg("ax_github_writes",[]);logs.push({ts:Date.now(),path:path,branch:branchName,pr:prData.number,msg:message,reason:reason,by:(K.user&&K.user.id)||"apex"});if(logs.length>100)logs=logs.slice(-100);ls("ax_github_writes",logs);}catch(_){}
+    toast("✓ Apex a cree PR #"+prData.number,"ok");
+    return"OK PR #"+prData.number+" creee : "+prData.html_url+"\nBranche: "+branchName+"\nKevin doit merger manuellement.";
+  }catch(e){return"Erreur write GitHub: "+(e.message||e);}
+}
 
 function _safeCalc(expr){try{var tokens=expr.match(/[\d.]+|[+\-*/%()]/g);if(!tokens)return"Expression invalide";var safe=tokens.join("");if(/[^0-9+\-*/%().\s]/.test(safe))return"Caracteres non autorises";var result=Function('"use strict";return ('+safe+")")();if(typeof result!=="number"||!isFinite(result))return"Resultat invalide";return String(result);}catch(e){return"Erreur calcul: "+e.message;}}
 function _getStorageUsed(){try{var total=0;var keys=[];for(var i=0;i<localStorage.length;i++)keys.push(localStorage.key(i));keys.forEach(function(k){try{total+=(localStorage.getItem(k)||"").length;}catch(e){}});return Math.round(total/1024)+"KB";}catch(e){return"?KB";}}
