@@ -5,7 +5,41 @@
 > Bidirectionnel : Apex push dans `ax_telemetry_in` + `ax_claude_todo`, Claude Code
 > push ici. Boucle d'apprentissage fermée.
 
-**Dernière MAJ** : 2026-04-21 soir — v12.57 + v9.458
+**Dernière MAJ** : 2026-04-24 — v12.73 + v9.464 (6 PRs mergées cette session)
+
+---
+
+## 🆕 SESSION 2026-04-24 — 6 PRs mergées (Claude Code)
+
+**PRs** : #195 (FAB v9.461) · #196 (Cadres v9.462) · #197 (Landing v12.69) · #198 (Apex GitHub access v12.70) · #199 (Pipeline erreurs v12.71+v9.463) · #200 (Whitelist enrichi + Fix langues + Fix FaceID v12.72+v12.73+v9.464)
+
+### Bugs fixés + diagnostics
+
+1. **CMCteams FAB gros bouton+** : toutes actions mortes. Root cause = `onclick="try{...}catch(e){toast(\"Erreur\",\"err\")}"` utilisait `\"` backslash-quotes INVALIDES en attributs HTML, parser cassait le JS. Fix = event delegation `data-fab-idx` + addEventListener. **Leçon permanente : JAMAIS de `\"` dans un onclick inline** — toujours addEventListener.
+
+2. **Inspecteurs SANS horaires** (ETTORI M, FOUQUE V, PLACENTI L, DOGLIOLO Y, MUS L, BOUVIER JF) : PDF.js fragmente "ETTORI" et "M." sur 2 lignes visuelles. Regex `\bETTORI M\b` ne matchait JAMAIS. Fix v9.462 = 5 stratégies cumulatives : (1) pre-traitement join lignes cassées, (2) nom complet, (3) ordre inversé "M ETTORI", (4) surname seul + aggrégation ligne N+N+1, (5) normalisation codes étendue. **Leçon** : PDF.js peut fragmenter les cellules — toujours prévoir surname-only fallback + multi-ligne.
+
+3. **Apex bug langues** : `K.settings.lang` changé mais aucune fonction `_applyI18n` n'existait. Fix v12.73 = dictionnaire I18N 6 langues + `tr(key)` + `_applyI18n()` hookée dans `_applyTheme` et onchange Réglages. **Leçon** : toute app multi-langue doit AVOIR une fonction d'application, pas juste un stockage.
+
+4. **Apex bug FaceID** : `_cguAsk` bloquait `axBiometricAuth` après 1 refus CGU. Aucun bouton login pour déclencher. Fix v12.73 = skip CGU si déjà enregistré + `axBiometricLoginTry()` + bouton "👤 Face ID / Touch ID" sur vLogin. **Leçon** : CGU une seule fois à l'enregistrement, jamais bloquant sur auth ensuite.
+
+### Pipeline autonomie renforcé
+
+- **v9.463 + v12.71** : `window.onerror` et `unhandledrejection` des 2 apps pushent maintenant vers `_pushTelemetryToApex` / `_apexPushTelemetry` AUTO (avant seules les sentinelles).
+- `_apexPushTelemetry` écrit aussi Firebase (cross-device).
+- Nouveau `_digestTelemetryPeriodic` (45s) + `_agentErrorDigest` (3min, aggrège par signature, escalade si ≥3 récurrences, critical si ≥10x).
+- Vue admin **🚨 Erreurs Live** dans Apex : compteurs + liste telemetry + Claude Code todo.
+
+### Whitelist auto-fix enrichi (Kevin: "elle corrige")
+
+- CMCteams `_cmcAiWhitelist` : 3 → 10 actions (+7)
+- Apex `_aiHandleWhitelist` : 6 → 13 actions (+7)
+- **Total 23 actions auto-réparatrices** : purge logs, clear processed, fb resync, retry stale todos, escalate direct, etc.
+
+### Nouvelles capacités Apex
+
+- **Landing obligatoire first-time** (v12.69) : `ax_landing_seen` flag + `axOpenSubscribeForm` + validation admin `axApproveSubscription` avec WhatsApp auto via `wa.me`.
+- **Apex a accès à son propre code** (v12.70) : 3 tools `github_read_file` / `github_list_files` / `github_write_file`. Write admin-only + `ax_github_pat` Vault + crée TOUJOURS branche + PR.
 
 ---
 
