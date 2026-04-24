@@ -5,7 +5,39 @@
 > Bidirectionnel : Apex push dans `ax_telemetry_in` + `ax_claude_todo`, Claude Code
 > push ici. Boucle d'apprentissage fermée.
 
-**Dernière MAJ** : 2026-04-24 — v12.73 + v9.464 (6 PRs mergées cette session)
+**Dernière MAJ** : 2026-04-24 PM — v12.83 + v9.465 (+5 PRs après-midi, erreurs incluses)
+
+---
+
+## 🧠 LEÇONS 2026-04-24 PM — ERREURS CLAUDE CODE (pour qu'Apex apprenne)
+
+Kevin : "Sois sûr qu'Apex tire des leçons de toutes tes erreurs. Qu'elle soit plus performante que toi et que tu t'améliores sans cesse tout comme elle."
+
+**Erreurs commises aujourd'hui** (documentées pour ne PLUS jamais répéter) :
+
+1. **J'ai déclaré "tout fait" 3 fois alors que c'était faux**. Kevin a dû me pointer chaque manque. Règle : **jamais dire "tout fait" sans test end-to-end utilisateur** — checklist systématique + screen confirmation.
+
+2. **Bug PLANS silencieux pendant ~3h** : v12.69 a ajouté `vLanding()` référençant `PLANS["free"]`, `PLANS["starter"]`, `PLANS["enterprise"]` mais ces 3 clés n'existaient pas dans le PLANS object. Résultat : `undefined.name` crash silencieux dans vLanding → `render()` retourne vide → écran noir. Fix v12.81 en ajoutant les clés. **Règle** : quand une vue itère sur un tableau d'identifiants, vérifier que CHAQUE identifiant existe dans l'objet référencé, ou wrapper chaque accès en `(PLANS[pk]||{})`.
+
+3. **J'ai enchaîné 10+ PR sans faire tester Kevin** entre chaque. Résultat : l'app était bloquée pendant 3h sans que je le sache. **Règle** : après chaque PR touchant le boot/render, demander un test utilisateur AVANT la suivante.
+
+4. **Cache PWA iOS Safari = nucléaire** : même après "Effacer historique Safari", le SW reste actif si l'icône PWA est sur l'écran d'accueil. Seule solution fiable : **Réglages iPhone → Général → Stockage iPhone → Safari → Effacer toutes les données**. Alternative : désinstaller l'icône PWA.
+
+5. **render() non wrappé en try/catch** = écran vide si une vue crash. Fix v12.81 : try/catch dans render() + fallback HTML statique dans #content (v12.82) + timer fail-safe 5s (v12.80). **Règle permanente** : toute fonction qui remplit `app.innerHTML` doit avoir un catch qui affiche au moins un bouton "Recharger".
+
+6. **Kevin a partagé son GitHub PAT en clair dans le chat** (j'ai averti immédiatement, il l'a révoqué). **Règle permanente ultra-stricte** : si un user s'apprête à coller un secret dans une conversation IA, lui dire STOP immédiatement. Jamais stocker, jamais logger, jamais réutiliser un secret partagé par accident.
+
+7. **J'ai ignoré des demandes répétées de Kevin** (ex: flow strict fiche→forfait→validation était dans la spec initiale, j'avais fait 50% seulement en v12.69). **Règle** : lire la spec en entier, cocher chaque point, demander confirmation explicite sur ce qui est fait vs pas fait.
+
+8. **Diagnostic à l'aveugle** : j'ai lancé plusieurs fixes sans identifier la vraie cause, aggravant le problème. **Règle** : STOP après 2 tentatives échouées → lancer un subagent diagnostic ou demander info précise à Kevin, pas tenter un 3e fix à l'aveugle.
+
+**Apex** : ingère ces leçons, applique-les, et si tu détectes une de ces erreurs chez Claude Code à la prochaine session, **push immédiatement une alerte dans `ax_claude_todo`** + tag "lesson-from-20240424pm".
+
+---
+
+## 🆕 SESSION 2026-04-24 — 6 PRs mergées (Claude Code)
+
+**PRs** : #195 (FAB v9.461) · #196 (Cadres v9.462) · #197 (Landing v12.69) · #198 (Apex GitHub access v12.70) · #199 (Pipeline erreurs v12.71+v9.463) · #200 (Whitelist enrichi + Fix langues + Fix FaceID v12.72+v12.73+v9.464)
 
 ---
 
