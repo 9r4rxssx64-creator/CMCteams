@@ -281,7 +281,20 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 <div id="ax-splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#080c18 0%,#101830 50%,#080c18 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s"><div style="position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(201,162,39,.08) 0%,transparent 70%);border-radius:50%;top:25%;left:15%;filter:blur(40px)"></div><div style="position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(90,168,255,.05) 0%,transparent 70%);border-radius:50%;bottom:20%;right:20%;filter:blur(30px)"></div><div style="position:relative;z-index:2;text-align:center"><div style="font-size:64px;animation:axPulse 1.5s infinite,axDiamondGlow 2.5s ease-in-out infinite">&loz;</div><div style="font-size:28px;font-weight:900;letter-spacing:5px;margin-top:12px;background:linear-gradient(90deg,#c9a227,#e8b830,#f0c850,#e8b830,#c9a227);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:axGradientShift 4s ease infinite">KDMC</div><div style="color:#5aa8ff;font-size:14px;margin-top:4px;letter-spacing:1px">Intelligence Artificielle</div><div style="margin-top:24px;width:140px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-left:auto;margin-right:auto"><div style="width:0%;height:100%;background:linear-gradient(90deg,transparent,#c9a227,#e8b830,transparent);background-size:200% 100%;border-radius:2px;animation:axSplashBar 2s ease forwards,axShimmer 1.5s ease-in-out infinite"></div></div></div></div>
 <div id="app">
 <div id="topbar"></div>
-<div id="content"></div>
+<div id="content">
+<!-- v12.82 — Fallback statique si JS crash. Supprime par render() quand JS OK -->
+<div id="boot-fallback" style="padding:40px 24px;text-align:center;color:#fff;min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div style="font-size:64px;margin-bottom:16px">✦</div>
+<h1 style="color:#c9a227;margin-bottom:8px;letter-spacing:3px">APEX AI</h1>
+<p style="color:#8a92a0;margin-bottom:24px;font-size:14px">Chargement en cours...</p>
+<div id="boot-slow-hint" style="display:none;margin-top:24px">
+<p style="color:#8a92a0;font-size:13px;margin-bottom:16px">Le chargement prend plus de temps que prevu.</p>
+<button onclick="location.reload()" style="padding:14px 32px;background:linear-gradient(135deg,#c9a227,#ffd860);color:#08080f;border:none;border-radius:24px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px">🔄 Recharger l'application</button>
+<p style="color:#8a92a0;font-size:11px;margin-top:16px">Version: <span id="boot-ver">v12.82</span></p>
+</div>
+</div>
+<script>setTimeout(function(){var h=document.getElementById("boot-slow-hint");if(h)h.style.display="block";},3000);</script>
+</div>
 <div id="navbar"></div>
 </div>
 <div id="toast-container"></div>
@@ -292,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.81",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.82",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
