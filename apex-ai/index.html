@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.99",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.100",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1436,17 +1436,32 @@ function _readGitHubPat(){
   return _rv("ax_github_pat")||_rv("ax_github_token")||"";
 }
 function axGithubReadFile(path,branch){
-  /* v12.97 — Sync XHR avec try/catch robuste + diagnostic precis */
+  /* v12.100 — Tri : 1) raw.githubusercontent.com (CORS permissif, public repos) 2) api.github.com (fallback avec PAT) */
   try{
     if(!path)return"Erreur: path obligatoire";
-    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch||"main");
+    branch=branch||"main";
+    /* Essai 1 : raw.githubusercontent.com (pas de CORS restrictif, public repos OK) */
+    var rawUrl="https://raw.githubusercontent.com/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/"+encodeURIComponent(branch)+"/"+path;
     var pat=_readGitHubPat();
+    try{
+      var xhrRaw=new XMLHttpRequest();
+      xhrRaw.open("GET",rawUrl,false);
+      if(pat)xhrRaw.setRequestHeader("Authorization","Bearer "+pat);
+      xhrRaw.send();
+      if(xhrRaw.status===200){
+        var rawContent=xhrRaw.responseText;
+        if(rawContent.length>80000)rawContent=rawContent.slice(0,80000)+"\n\n[... tronque "+(rawContent.length-80000)+" chars]";
+        return rawContent;
+      }
+    }catch(rawErr){/* fallthrough vers api */}
+    /* Essai 2 : api.github.com avec Base64 decode */
+    var url="https://api.github.com/repos/"+AX_REPO_OWNER+"/"+AX_REPO_NAME+"/contents/"+encodeURIComponent(path)+"?ref="+encodeURIComponent(branch);
     var headers={"Accept":"application/vnd.github.v3+json"};
     if(pat)headers["Authorization"]="Bearer "+pat;
     var xhr=new XMLHttpRequest();
     xhr.open("GET",url,false);
     Object.keys(headers).forEach(function(h){xhr.setRequestHeader(h,headers[h]);});
-    try{xhr.send();}catch(sendErr){return"Erreur reseau (XHR bloque par Safari iOS PWA): "+(sendErr.message||sendErr)+". Essaie via navigateur non-PWA.";}
+    try{xhr.send();}catch(sendErr){return"Erreur reseau Safari iOS PWA bloque. Utilise navigateur Safari standard (pas l icone PWA) OU configure un Cloudflare Worker proxy.";}
     if(xhr.status===0)return"Erreur reseau: aucune reponse de GitHub (peut etre CORS ou connexion). URL: "+url.slice(0,80);
     if(xhr.status===401||xhr.status===403)return"Erreur "+xhr.status+": PAT invalide ou insuffisant.\n- Verifie que le PAT est bien colle dans Vault (GitHub Token ou ax_github_pat)\n- Verifie qu il a les permissions Contents:R/W\n- Regenere le token si necessaire\nResponse: "+xhr.responseText.slice(0,200);
     if(xhr.status===404)return"Erreur 404: fichier "+path+" non trouve, ou PAT manquant pour repo prive";
