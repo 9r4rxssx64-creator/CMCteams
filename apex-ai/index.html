@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.88",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.89",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1792,9 +1792,11 @@ function axSendApprovalNotif(r){
   var textMsg="Bonjour "+r.prenom+",\n\nTon inscription APEX est validee !\n\nPlan : "+planName+"\nPIN initial : "+r.initPin+"\n\nConnecte-toi : "+loginUrl+"\nUtilise ton nom \""+r.prenom+" "+r.nom+"\" et le PIN ci-dessus.\n\nTu peux changer ton PIN dans Reglages apres la 1re connexion.\n\n— Kevin / APEX AI";
   var htmlMsg='<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f7"><div style="background:linear-gradient(135deg,#c9a227,#ffd860);padding:20px;border-radius:12px;text-align:center;margin-bottom:20px"><h1 style="color:#08080f;margin:0">APEX AI</h1></div><div style="background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)"><p>Bonjour <b>'+esc(r.prenom)+'</b>,</p><p style="color:#4caf50;font-size:18px;font-weight:700">Ton inscription APEX est validee !</p><p><b>Plan choisi :</b> '+esc(planName)+'</p><div style="background:#f0f0f5;padding:16px;border-radius:8px;margin:16px 0;text-align:center"><p style="margin:0 0 8px 0;color:#666;font-size:13px">Ton PIN initial</p><p style="font-size:32px;font-weight:900;letter-spacing:8px;margin:0;color:#c9a227">'+r.initPin+'</p></div><p>Connecte-toi : <a href="'+loginUrl+'" style="color:#4a9aff">'+loginUrl+'</a></p><p>Utilise ton nom <b>"'+esc(r.prenom)+' '+esc(r.nom)+'"</b> et le PIN ci-dessus.</p><p style="color:#666;font-size:13px">Tu peux changer ton PIN dans Reglages apres la 1re connexion.</p></div><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Kevin / APEX AI</p></body></html>';
   /* Essai 1 : EmailJS si configure */
-  var emailjsService=lg("ax_emailjs_serviceid","");
-  var emailjsTemplate=lg("ax_emailjs_templateid","");
-  var emailjsUserId=lg("ax_emailjs_userid","");
+  /* v12.89 — lecture directe pour compat Vault string brute */
+  function _rv(k){var v=localStorage.getItem(k);if(!v)return"";try{var p=JSON.parse(v);return(typeof p==="string"?p:v).replace(/^"|"$/g,"");}catch(e){return String(v).replace(/^"|"$/g,"");}}
+  var emailjsService=_rv("ax_emailjs_serviceid");
+  var emailjsTemplate=_rv("ax_emailjs_templateid");
+  var emailjsUserId=_rv("ax_emailjs_userid");
   var emailSent=false;
   if(emailjsService&&emailjsTemplate&&emailjsUserId&&r.email){
     try{
@@ -1827,7 +1829,8 @@ function axSendApprovalNotif(r){
     h+='<button class="ax-btn ax-btn-outline" onclick="axOpenSmsForUser(\''+r.id+'\')" style="padding:12px;font-size:13px">💬 SMS</button>';
     h+='<button class="ax-btn ax-btn-outline" onclick="axCopyApprovalMessage(\''+r.id+'\')" style="padding:12px;font-size:13px">📋 Copier tout</button>';
     h+='</div>';
-    if(emailjsService&&emailjsTemplate&&emailjsUserId)h+='<p style="font-size:11px;color:var(--ax-green);margin-top:12px">✓ EmailJS configure : email auto envoye en arriere-plan</p>';
+    var _ejsReady=(emailjsService&&emailjsTemplate&&emailjsUserId);
+    if(_ejsReady)h+='<p style="font-size:11px;color:var(--ax-green);margin-top:12px">✓ EmailJS configure : email auto envoye en arriere-plan</p>';
     else h+='<p style="font-size:11px;color:var(--ax-warn);margin-top:12px">⚠ EmailJS pas configure (Vault: ax_emailjs_serviceid/templateid/userid). Envoi email auto indisponible.</p>';
     h+='<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="width:100%;margin-top:10px;padding:10px;font-size:12px">Fermer</button>';
     _showModal(h);
@@ -1870,9 +1873,11 @@ function axCopyApprovalMessage(reqId){
 // v12.88 — Test EmailJS (Kevin : verifie que ca marche)
 function axTestEmailJS(){
   if(!axIsAdmin()){toast("Admin uniquement","warn");return;}
-  var serviceId=lg("ax_emailjs_serviceid","");
-  var templateId=lg("ax_emailjs_templateid","");
-  var userId=lg("ax_emailjs_userid","");
+  /* v12.89 — Vault stocke en string brute, lg() echoue sur JSON.parse : on lit direct */
+  function _readVaultStr(k){var v=localStorage.getItem(k);if(!v)return"";try{var p=JSON.parse(v);return(typeof p==="string"?p:v).replace(/^"|"$/g,"");}catch(e){return String(v).replace(/^"|"$/g,"");}}
+  var serviceId=_readVaultStr("ax_emailjs_serviceid");
+  var templateId=_readVaultStr("ax_emailjs_templateid");
+  var userId=_readVaultStr("ax_emailjs_userid");
   if(!serviceId||!templateId||!userId){
     var missing=[];
     if(!serviceId)missing.push("ax_emailjs_serviceid");
