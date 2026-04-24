@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.85",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.86",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1752,23 +1752,98 @@ function axApproveSubscription(reqId){
   var reqs=lg("ax_subscription_requests",{});
   var r=reqs[reqId];if(!r){toast("Demande introuvable","err");return;}
   if(!confirm("Valider "+r.prenom+" "+r.nom+" ("+r.plan+") ?"))return;
-  /* v12.85 — Genere PIN initial 6 chiffres + envoie par WhatsApp */
+  /* v12.85 — Genere PIN initial 6 chiffres */
   var initPin=Math.floor(100000+Math.random()*900000).toString();
   r.status="approved";r.approvedTs=Date.now();r.approvedBy=(K.user&&K.user.id)||"admin";r.initPin=initPin;
   reqs[reqId]=r;
   ls("ax_subscription_requests",reqs);
   if(typeof fbWrite==="function")try{fbWrite("ax_subscription_requests",reqs);}catch(_){}
-  /* WhatsApp avec PIN initial */
+  /* v12.86 — Cascade envoi : EmailJS > WhatsApp auto > modal admin avec PIN + boutons manuels */
+  axSendApprovalNotif(r);
+  toast("✓ "+r.prenom+" "+r.nom+" approuve (PIN: "+initPin+")","ok");
+  dc();
+}
+// v12.86 — Envoi cascade notif approval + modal admin secours
+function axSendApprovalNotif(r){
+  var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
+  var planName=(PLANS[r.plan]&&PLANS[r.plan].name)||r.plan;
+  var textMsg="Bonjour "+r.prenom+",\n\nTon inscription APEX est validee !\n\nPlan : "+planName+"\nPIN initial : "+r.initPin+"\n\nConnecte-toi : "+loginUrl+"\nUtilise ton nom \""+r.prenom+" "+r.nom+"\" et le PIN ci-dessus.\n\nTu peux changer ton PIN dans Reglages apres la 1re connexion.\n\n— Kevin / APEX AI";
+  var htmlMsg='<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f7"><div style="background:linear-gradient(135deg,#c9a227,#ffd860);padding:20px;border-radius:12px;text-align:center;margin-bottom:20px"><h1 style="color:#08080f;margin:0">APEX AI</h1></div><div style="background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)"><p>Bonjour <b>'+esc(r.prenom)+'</b>,</p><p style="color:#4caf50;font-size:18px;font-weight:700">Ton inscription APEX est validee !</p><p><b>Plan choisi :</b> '+esc(planName)+'</p><div style="background:#f0f0f5;padding:16px;border-radius:8px;margin:16px 0;text-align:center"><p style="margin:0 0 8px 0;color:#666;font-size:13px">Ton PIN initial</p><p style="font-size:32px;font-weight:900;letter-spacing:8px;margin:0;color:#c9a227">'+r.initPin+'</p></div><p>Connecte-toi : <a href="'+loginUrl+'" style="color:#4a9aff">'+loginUrl+'</a></p><p>Utilise ton nom <b>"'+esc(r.prenom)+' '+esc(r.nom)+'"</b> et le PIN ci-dessus.</p><p style="color:#666;font-size:13px">Tu peux changer ton PIN dans Reglages apres la 1re connexion.</p></div><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Kevin / APEX AI</p></body></html>';
+  /* Essai 1 : EmailJS si configure */
+  var emailjsService=lg("ax_emailjs_serviceid","");
+  var emailjsTemplate=lg("ax_emailjs_templateid","");
+  var emailjsUserId=lg("ax_emailjs_userid","");
+  var emailSent=false;
+  if(emailjsService&&emailjsTemplate&&emailjsUserId&&r.email){
+    try{
+      fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:emailjsService,template_id:emailjsTemplate,user_id:emailjsUserId,template_params:{to_email:r.email,to_name:r.prenom+" "+r.nom,from_name:"APEX AI",subject:"✅ Ton inscription APEX est validee",plan_name:planName,pin:r.initPin,login_url:loginUrl,message_html:htmlMsg,message_text:textMsg}})}).then(function(resp){if(resp.ok){emailSent=true;toast("Email envoye a "+r.email,"ok");}else{toast("EmailJS echec "+resp.status+" - voir modal","warn");}}).catch(function(e){console.warn("EmailJS error:",e);});
+    }catch(e){console.warn("EmailJS:",e);}
+  }
+  /* Essai 2 : WhatsApp wa.me ouvre le client WhatsApp admin */
+  var waOpened=false;
   try{
     var waPhone=(r.phone||"").replace(/[^0-9]/g,"");
     if(waPhone){
-      var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
-      var msg=encodeURIComponent("Bonjour "+r.prenom+",\n\n✅ Ton inscription APEX est validee !\n\nPlan : "+(PLANS[r.plan]?PLANS[r.plan].name:r.plan)+"\nPIN initial : "+initPin+"\n\nConnecte-toi : "+loginUrl+"\n\nUtilise ton nom \""+r.prenom+" "+r.nom+"\" et le PIN ci-dessus. Tu pourras le changer dans Reglages.\n\nKevin / APEX AI");
-      window.open("https://wa.me/"+waPhone+"?text="+msg,"_blank");
+      var waUrl="https://wa.me/"+waPhone+"?text="+encodeURIComponent(textMsg);
+      var w=window.open(waUrl,"_blank");
+      if(w)waOpened=true;
     }
   }catch(_){}
-  toast("✓ "+r.prenom+" "+r.nom+" approuve (PIN: "+initPin+")","ok");
-  dc();
+  /* MODAL ADMIN OBLIGATOIRE : toujours afficher le PIN + boutons manuels pour renvoyer */
+  setTimeout(function(){
+    var h='<h2 style="color:var(--ax-green);margin-bottom:8px">✅ '+esc(r.prenom)+' approuve</h2>';
+    h+='<div style="background:rgba(201,162,39,.1);border:1px solid var(--ax-gold);padding:16px;border-radius:8px;margin-bottom:12px;text-align:center">';
+    h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:0 0 6px 0">PIN initial a transmettre au user</p>';
+    h+='<p style="font-size:32px;font-weight:900;letter-spacing:8px;color:var(--ax-gold);margin:0;font-family:monospace">'+r.initPin+'</p>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="navigator.clipboard.writeText(\''+r.initPin+'\');toast(\'PIN copie\',\'ok\')" style="margin-top:10px;padding:8px 16px;font-size:12px">📋 Copier le PIN</button>';
+    h+='</div>';
+    h+='<p style="font-size:13px;margin-bottom:8px"><b>'+esc(r.prenom+" "+r.nom)+'</b><br><span style="color:var(--ax-text-dim);font-size:11px">'+esc(r.email)+' · '+esc(r.phone)+' · '+esc(planName)+'</span></p>';
+    h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:12px 0">Kevin, choisis comment lui envoyer :</p>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+='<button class="ax-btn ax-btn-primary" onclick="axOpenWhatsAppForUser(\''+r.id+'\')" style="padding:12px;font-size:13px">📱 WhatsApp</button>';
+    h+='<button class="ax-btn ax-btn-primary" onclick="axOpenEmailForUser(\''+r.id+'\')" style="padding:12px;font-size:13px">📧 Email (mailto)</button>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="axOpenSmsForUser(\''+r.id+'\')" style="padding:12px;font-size:13px">💬 SMS</button>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="axCopyApprovalMessage(\''+r.id+'\')" style="padding:12px;font-size:13px">📋 Copier tout</button>';
+    h+='</div>';
+    if(emailjsService&&emailjsTemplate&&emailjsUserId)h+='<p style="font-size:11px;color:var(--ax-green);margin-top:12px">✓ EmailJS configure : email auto envoye en arriere-plan</p>';
+    else h+='<p style="font-size:11px;color:var(--ax-warn);margin-top:12px">⚠ EmailJS pas configure (Vault: ax_emailjs_serviceid/templateid/userid). Envoi email auto indisponible.</p>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="width:100%;margin-top:10px;padding:10px;font-size:12px">Fermer</button>';
+    _showModal(h);
+  },300);
+}
+function axOpenWhatsAppForUser(reqId){
+  var reqs=lg("ax_subscription_requests",{});var r=reqs[reqId];if(!r)return;
+  var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
+  var planName=(PLANS[r.plan]&&PLANS[r.plan].name)||r.plan;
+  var text="Bonjour "+r.prenom+", ton inscription APEX est validee !\n\nPlan : "+planName+"\nPIN : "+r.initPin+"\n\nConnecte-toi : "+loginUrl+"\nNom : "+r.prenom+" "+r.nom;
+  var waPhone=(r.phone||"").replace(/[^0-9]/g,"");
+  if(!waPhone){toast("Telephone invalide","err");return;}
+  window.open("https://wa.me/"+waPhone+"?text="+encodeURIComponent(text),"_blank");
+}
+function axOpenEmailForUser(reqId){
+  var reqs=lg("ax_subscription_requests",{});var r=reqs[reqId];if(!r)return;
+  var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
+  var planName=(PLANS[r.plan]&&PLANS[r.plan].name)||r.plan;
+  var subj="APEX AI - Ton acces est valide";
+  var body="Bonjour "+r.prenom+",\n\nTon inscription APEX est validee.\n\nPlan : "+planName+"\nPIN initial : "+r.initPin+"\n\nConnecte-toi : "+loginUrl+"\nNom : "+r.prenom+" "+r.nom+"\n\nTu peux changer ton PIN dans Reglages apres la premiere connexion.\n\nKevin / APEX AI";
+  if(!r.email){toast("Email invalide","err");return;}
+  window.location.href="mailto:"+r.email+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+}
+function axOpenSmsForUser(reqId){
+  var reqs=lg("ax_subscription_requests",{});var r=reqs[reqId];if(!r)return;
+  var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
+  var planName=(PLANS[r.plan]&&PLANS[r.plan].name)||r.plan;
+  var text="APEX: Bonjour "+r.prenom+", acces valide ! Plan "+planName+". PIN: "+r.initPin+". Login: "+loginUrl;
+  var phone=(r.phone||"");
+  if(!phone){toast("Telephone invalide","err");return;}
+  window.location.href="sms:"+phone+"?body="+encodeURIComponent(text);
+}
+function axCopyApprovalMessage(reqId){
+  var reqs=lg("ax_subscription_requests",{});var r=reqs[reqId];if(!r)return;
+  var loginUrl=location.origin+location.pathname.replace(/[^/]*$/,"");
+  var planName=(PLANS[r.plan]&&PLANS[r.plan].name)||r.plan;
+  var text="Bonjour "+r.prenom+",\n\nTon inscription APEX est validee !\n\nPlan : "+planName+"\nPIN initial : "+r.initPin+"\n\nConnecte-toi : "+loginUrl+"\nUtilise ton nom \""+r.prenom+" "+r.nom+"\"\n\nTu pourras changer ton PIN dans Reglages apres connexion.\n\nKevin / APEX AI";
+  try{navigator.clipboard.writeText(text).then(function(){toast("Message copie dans le presse-papier","ok");});}catch(e){toast("Copie impossible","err");}
 }
 // v12.85 — Vue "en attente de validation" affichee quand user a soumis demande mais Kevin n'a pas encore valide
 function vWaitingApproval(){
@@ -1836,7 +1911,20 @@ function vSubscriptionsAdmin(){
     h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:2px 0">📧 '+esc(r.email)+' · 📱 '+esc(r.phone)+'</p>';
     h+='<p style="font-size:12px;margin:2px 0">Plan: <b style="color:var(--ax-gold)">'+esc(r.plan)+'</b> · <span style="color:'+col+';font-weight:700">'+lbl+'</span></p>';
     if(r.msg)h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-top:6px;font-style:italic">"'+esc(r.msg)+'"</p>';
-    h+='<p style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">'+new Date(r.ts).toLocaleString("fr-FR")+'</p></div></div>';
+    h+='<p style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">'+new Date(r.ts).toLocaleString("fr-FR")+'</p>';
+    /* v12.86 — PIN visible + boutons renvoi pour approuves */
+    if(r.status==="approved"&&r.initPin){
+      h+='<div style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);padding:8px 12px;border-radius:6px;margin-top:6px">';
+      h+='<span style="font-size:11px;color:var(--ax-text-dim)">PIN initial :</span> <b style="font-family:monospace;color:var(--ax-gold);font-size:16px;letter-spacing:3px">'+esc(r.initPin)+'</b>';
+      h+=' <button onclick="navigator.clipboard.writeText(\''+esc(r.initPin)+'\');toast(\'PIN copie\',\'ok\')" style="padding:4px 8px;font-size:11px;background:rgba(201,162,39,.2);border:none;color:var(--ax-gold);border-radius:4px;margin-left:8px">📋</button>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px">';
+      h+='<button class="ax-btn ax-btn-outline" onclick="axOpenWhatsAppForUser(\''+r.id+'\')" style="padding:6px 8px;font-size:11px">📱 WA</button>';
+      h+='<button class="ax-btn ax-btn-outline" onclick="axOpenEmailForUser(\''+r.id+'\')" style="padding:6px 8px;font-size:11px">📧 Mail</button>';
+      h+='<button class="ax-btn ax-btn-outline" onclick="axOpenSmsForUser(\''+r.id+'\')" style="padding:6px 8px;font-size:11px">💬 SMS</button>';
+      h+='</div>';
+    }
+    h+='</div></div>';
     if(r.status==="pending"){
       h+='<div style="display:flex;gap:6px;margin-top:8px">';
       h+='<button class="ax-btn ax-btn-primary" onclick="axApproveSubscription(\''+r.id+'\')" style="flex:1;padding:10px;font-size:13px">✓ Approuver + WhatsApp</button>';
