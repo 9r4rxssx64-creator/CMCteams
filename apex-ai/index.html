@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.90",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.91",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1909,13 +1909,10 @@ function axTestEmailJS(){
       _showModal('<h2 style="color:var(--ax-green)">✅ EmailJS fonctionne</h2><p>Email test envoye a <b>'+esc(testEmail)+'</b>.</p><p style="font-size:12px;color:var(--ax-text-dim);margin-top:8px">Verifie ta boite (et les spams). Si tu le recois, EmailJS est configure. Les futures approbations enverront auto les emails aux users.</p><p style="font-size:11px;color:var(--ax-text-dim);margin-top:8px">Limite gratuite : 200 emails/mois.</p>');
     }else{
       return r.text().then(function(t){
-        var friendly="Erreur "+r.status+". ";
-        if(r.status===400)friendly+="Template ou variables invalides.";
-        else if(r.status===403)friendly+="Domaine pas autorise. Va sur EmailJS > Account > Security > Allowed Origins et ajoute "+location.origin;
-        else if(r.status===404)friendly+="Service ou Template ID incorrect.";
-        else friendly+=t.slice(0,200);
-        toast(friendly,"err");
-        _showModal('<h2 style="color:var(--ax-red)">⛔ EmailJS erreur '+r.status+'</h2><p>'+esc(friendly)+'</p><p style="font-size:11px;color:var(--ax-text-dim);margin-top:12px">Verifie sur https://dashboard.emailjs.com que :<br>1. Service ID, Template ID, Public Key sont corrects<br>2. Domaine <code>'+location.origin+'</code> est dans Allowed Origins<br>3. Template contient bien les variables <code>{{to_email}}</code>, <code>{{pin}}</code>, <code>{{plan_name}}</code>, <code>{{login_url}}</code>, <code>{{to_name}}</code></p>');
+        /* v12.91 — Afficher reponse EmailJS exacte */
+        var short=t.slice(0,400);
+        toast("Erreur "+r.status+" : "+short.slice(0,80),"err");
+        _showModal('<h2 style="color:var(--ax-red)">⛔ EmailJS erreur '+r.status+'</h2><p><b>Reponse EmailJS brute :</b></p><pre style="background:rgba(255,88,88,.08);padding:10px;border-radius:6px;font-size:11px;white-space:pre-wrap;word-break:break-word;color:var(--ax-red)">'+esc(short)+'</pre><p style="font-size:11px;color:var(--ax-text-dim);margin-top:12px"><b>Vault actuel :</b><br>service_id : <code>'+esc((serviceId||"").slice(0,30))+'</code><br>template_id : <code>'+esc((templateId||"").slice(0,30))+'</code><br>user_id : <code>'+esc((userId||"").slice(0,20))+'...</code><br><br><b>Domaine :</b> <code>'+esc(location.origin)+'</code><br><br>Copie le message d erreur et envoie a Claude Code.</p>');
       });
     }
   }).catch(function(e){
