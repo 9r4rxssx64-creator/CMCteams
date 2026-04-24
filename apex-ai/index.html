@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.83",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.84",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -2309,7 +2309,8 @@ function _applyI18n(){try{
   if(K.user)K.user.lang=lang;
   if(typeof toast==="function"&&window._lastAppliedLang&&window._lastAppliedLang!==lang){var msg={fr:"Langue changee",en:"Language changed",it:"Lingua cambiata",es:"Idioma cambiado",de:"Sprache geandert",pt:"Idioma alterado"};toast(msg[lang]||msg.fr,"ok");}
   window._lastAppliedLang=lang;
-  if(typeof dc==="function")dc();
+  /* v12.84 — JAMAIS appeler dc() ici : boucle infinie via _bindEvents > _applyTheme > _applyI18n > dc > render > _bindEvents.
+     Les [data-i18n] sont deja maj ci-dessus. Les autres strings suivront naturellement au prochain render utilisateur. */
 }catch(_){}}
 document.addEventListener("keydown",function(e){if(!K.user)return;if(e.key==="/"&&!_isInputFocused()){e.preventDefault();var el=document.getElementById("ax-chat-input");if(el)el.focus();}if(e.ctrlKey||e.metaKey){if(e.key==="k"){e.preventDefault();_showCommandPalette();}if(e.key==="f"){e.preventDefault();_showUniversalSearch();}if(e.key==="n"){e.preventDefault();newConversation();dc();}if(e.key==="b"){e.preventDefault();toggleSidebar();}}if(e.key==="?"){if(!_isInputFocused()){e.preventDefault();_showShortcutsHelp();}}if(e.key==="Escape"){if(_sidebarOpen)toggleSidebar();var modal=document.getElementById("modal-container");if(modal)modal.innerHTML="";}});
 function _isInputFocused(){var el=document.activeElement;return el&&(el.tagName==="INPUT"||el.tagName==="TEXTAREA"||el.isContentEditable);}
