@@ -68,6 +68,56 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 🎓 RÈGLE PERMANENTE — NIVEAU EXPERT PRO PARTOUT (Kevin 2026-04-25, ABSOLUE)
+
+> **"Va plus loin pour tout. Je veux du professionnel niveau expert."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Standard de qualité minimum
+
+Chaque fonctionnalité ajoutée DOIT atteindre niveau **expert professionnel du domaine**. Test mental obligatoire : *"Un pro du domaine (avocat, architecte, finance, médecin, traducteur professionnel) trouverait-il cette fonctionnalité utile et précise ?"* Si non → enrichir.
+
+### 2. Domaines couverts niveau expert
+
+- **Juridique** : 18+ codes français + jurisprudence Cassation/Conseil État/CJUE/CEDH + Monaco + calculs (indemnité licenciement, prescription, congés payés). Ref Légifrance.
+- **Finance/Fiscalité** : IR FR 2026, PFU 30%, plus-values immo (abattement 22/30 ans), crédit immo, Monaco fiscal.
+- **Architecture/Bâtiment** : RE2020, RT, DTU, normes PMR/ERP, dimensions standards, calcul Blondel, mélanges béton/peinture/chaux/carrelage, palettes Pantone 2026.
+- **Administratif** : Démarches FR + Monaco + 40+ templates courriers officiels avec ref légales.
+- **Médical** : Vidal, posologies, interactions, RDV.
+- **Traduction** : 30+ langues, mode interprète temps réel.
+- **Construction** : conversions universelles, surfaces, volumes.
+- **Jardinage** : phases lune Conway, calendrier biodynamique.
+- **Météo** : 7 jours via open-meteo gratuit.
+
+### 3. Pas de demi-mesure
+
+❌ Interdit : "version basique on enrichira après"
+✅ Obligatoire : version expert dès le 1er commit + extensible.
+
+### 4. Sources officielles obligatoires
+
+Référencer : Légifrance, Service-public.fr, Légimonaco, ANTS, Impôts.gouv, Ameli, CAF, Pôle Emploi, Cassation, Conseil d'État, CJUE, CEDH, Vidal, ANSM, Has-sante, Pantone, RAL, NCS.
+
+### 5. Anticipation cas pro avancés
+
+Pour chaque fonction prévoir : standards (80% users) + spéciaux (15% pro) + extrêmes (5% experts) avec note "consulter expert" si limite.
+
+### 6. Mention prudence
+
+Pour conseils juridiques/médicaux/fiscaux : "Cette information est indicative. Pour décision importante, consulter avocat / médecin / expert-comptable." + liens annuaires officiels.
+
+### 7. Cross-app
+
+Apex + CMCteams partagent base experte via `ax_legal_kb`, `ax_admin_kb`, `ax_finance_kb`, etc. en FB_FIX.
+
+**Test mental obligatoire avant chaque ajout** :
+*"Cette feature satisferait-elle un expert du domaine en consultation chez moi ?"*
+
+Si non → enrichir jusqu'au niveau pro.
+
+---
+
 ## 💾 RÈGLE PERMANENTE — RIEN PERDRE + SYNTHÈSE + SAUVEGARDE TEMPS RÉEL (Kevin 2026-04-25, ABSOLUE)
 
 > **"Récupère les infos partout (chat, questions IA, etc.). Enrichis et donnes vue admin dans fiches. Synthèse mise à jour régulièrement automatiquement. À chaque nouvelle conversation, enrichir banque d'infos. Agents dédiés avec outils experts surveillent que rien ne passe à travers. Sauvegarder temps réel, rien perdre. Toujours s'en rappeler, s'en servir, s'améliorer."**
