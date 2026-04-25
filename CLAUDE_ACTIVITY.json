@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777124001148,
-  "total_commits": 236,
+  "updated_at": 1777124231209,
+  "total_commits": 239,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,38 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "aef93500",
+      "ts": 1777124228000,
+      "msg": "Apex v12.205: Backup quotidien card vBackups + CLAUDE.md regle VERIFIER AVANT D'ENVOYER",
+      "project": "apex",
+      "ver": "12.205",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3e7f53e9",
+      "ts": 1777124191000,
+      "msg": "Apex v12.201: Backup auto quotidien + rapport sante email + sentinelle backup-watch",
+      "project": "apex",
+      "ver": "12.201",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1bf80bdc",
+      "ts": 1777124081000,
+      "msg": "Apex v12.205: Backup auto quotidien + axDailyBackup + axRestoreFromBackup + sentinelle backup-watch",
+      "project": "apex",
+      "ver": "12.205",
+      "author": "claude-code"
+    },
+    {
+      "sha": "adb293f7",
+      "ts": 1777124035000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.205 + v9.515",
+      "project": "docs",
+      "ver": "12.205",
+      "author": "claude-code"
+    },
     {
       "sha": "cfade397",
       "ts": 1777123976000,
@@ -935,38 +967,6 @@
       "msg": "Apex v12.124: mode global niveau IA (Kevin: 'fonction generale, pas par client')",
       "project": "apex",
       "ver": "12.124",
-      "author": "claude-code"
-    },
-    {
-      "sha": "940b1d75",
-      "ts": 1777081138000,
-      "msg": "CMCteams v9.484: smart routing IA Haiku/Sonnet/Opus (parite Apex v12.121)",
-      "project": "cmcteams",
-      "ver": "9.484",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8aeb76d8",
-      "ts": 1777081122000,
-      "msg": "Apex v12.123: affichage conso tokens dans fiches users + threshold admin",
-      "project": "apex",
-      "ver": "12.123",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f728aff9",
-      "ts": 1777081090000,
-      "msg": "CMCteams v9.483: simplifier niveau IA en global employes (Kevin)",
-      "project": "cmcteams",
-      "ver": "9.483",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0806150b",
-      "ts": 1777081006000,
-      "msg": "CMCteams: ajout cmc_employees_global_level a FB_FIX (subagent en cours)",
-      "project": "multi",
-      "ver": null,
       "author": "claude-code"
     }
   ]
