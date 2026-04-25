@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777141290417,
-  "total_commits": 246,
+  "updated_at": 1777141531158,
+  "total_commits": 249,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "4ab5922b",
+      "ts": 1777141458000,
+      "msg": "Audit regression session 2026-04-25: 36 features testees, 1 orpheline corrigee",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "2942b1b2",
+      "ts": 1777141352000,
+      "msg": "CLAUDE.md regle 'RIEN PERDRE + SAUVEGARDE TEMPS REEL' (Kevin: 15 fois rentrer cles - jamais plus)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "48f44ccb",
+      "ts": 1777141296000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres Apex v12.218",
+      "project": "docs",
+      "ver": "12.218",
+      "author": "claude-code"
+    },
     {
       "sha": "b2cb8aa8",
       "ts": 1777141274000,
@@ -943,30 +967,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.144 (~190 commits, 16 sujets)",
       "project": "docs",
       "ver": "12.144",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ca7bac52",
-      "ts": 1777084197000,
-      "msg": "Apex v12.144: Command Palette - scandoc + activer notifications",
-      "project": "apex",
-      "ver": "12.144",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8bb43fea",
-      "ts": 1777084154000,
-      "msg": "Apex v12.144: push notifications helpers (axPushPermission + axShowNotif + axScheduleNotif)",
-      "project": "apex",
-      "ver": "12.144",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b2417e5c",
-      "ts": 1777083999000,
-      "msg": "Apex SW v12.142 cache version (force refresh PWA)",
-      "project": "multi",
-      "ver": "12.142",
       "author": "claude-code"
     }
   ]

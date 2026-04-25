@@ -372,7 +372,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.221",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.222",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -624,6 +624,93 @@ function fbInit(){FB_URL=(localStorage.getItem("ax_fb_url")||FB_DEFAULT).trim().
 function fbWrite(k,v,_retry){if(!FB_URL||!fbShouldSync(k))return;if(!_retry)_retry=0;var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);}).catch(function(e){if(_retry<3){setTimeout(function(){fbWrite(k,v,_retry+1);},1000*Math.pow(2,_retry));}else{_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);}});}
 function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
 function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");if(k&&!FB_LOCAL.includes(k)){try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}_loadState();dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}/* v12.78 - Exponential backoff + jitter (agent diag perf) */var base=Math.min(1000*Math.pow(2,_fbRetries-1),60000);var jitter=Math.random()*1000;setTimeout(fbStartListening,base+jitter);};}
+/* ========================================================
+   v12.222 — TRIPLE PERSISTENCE (Kevin 2026-04-25)
+   "Plus jamais re-saisir les cles API"
+   localStorage + IndexedDB shadow + Firebase = triple redondance
+   ======================================================== */
+var AX_IDB_NAME="apex_shadow",AX_IDB_STORE="kv",_axIdb=null;
+function _axIdbOpen(){if(_axIdb)return Promise.resolve(_axIdb);return new Promise(function(resolve,reject){if(!("indexedDB" in window))return reject(new Error("no idb"));try{var req=indexedDB.open(AX_IDB_NAME,1);req.onerror=function(){reject(req.error);};req.onupgradeneeded=function(){try{req.result.createObjectStore(AX_IDB_STORE);}catch(_){}};req.onsuccess=function(){_axIdb=req.result;resolve(_axIdb);};}catch(e){reject(e);}});}
+function axIdbSet(key,value){return _axIdbOpen().then(function(db){return new Promise(function(res,rej){try{var tx=db.transaction(AX_IDB_STORE,"readwrite");tx.objectStore(AX_IDB_STORE).put(value,key);tx.oncomplete=function(){res(true);};tx.onerror=function(){rej(tx.error);};}catch(e){rej(e);}});}).catch(function(){return false;});}
+function axIdbGet(key){return _axIdbOpen().then(function(db){return new Promise(function(res){try{var tx=db.transaction(AX_IDB_STORE,"readonly");var req=tx.objectStore(AX_IDB_STORE).get(key);req.onsuccess=function(){res(req.result);};req.onerror=function(){res(null);};}catch(_){res(null);}});}).catch(function(){return null;});}
+function axIdbAllKeys(){return _axIdbOpen().then(function(db){return new Promise(function(res){try{var tx=db.transaction(AX_IDB_STORE,"readonly");var req=tx.objectStore(AX_IDB_STORE).getAllKeys();req.onsuccess=function(){res(req.result||[]);};req.onerror=function(){res([]);}}catch(_){res([]);}});}).catch(function(){return[];});}
+// Cles critiques a sauvegarder en triple (la liste vit dans Firebase aussi via FB_FIX)
+var AX_CRITICAL_KEYS=["ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_huggingface_key","ax_elevenlabs_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_iban","ax_iban_nom","ax_proxy_url","ax_backend_url","ax_cloudflare_token","ax_vercel_token","ax_telegram_chatid","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid"];
+function axTripleSave(key,value){
+  var result={ls:false,fb:false,idb:false};
+  // 1) localStorage + Firebase via ls() si applicable
+  try{
+    if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf(key)>=0&&typeof ls==="function"){ls(key,value);result.ls=true;result.fb=true;}
+    else{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));result.ls=true;}
+  }catch(e){console.error("[TRIPLE] localStorage fail:",e&&e.message);}
+  // 2) IndexedDB shadow
+  try{axIdbSet(key,value).then(function(ok){if(ok)result.idb=true;});}catch(_){}
+  // 3) Verification immediate (re-try si KO)
+  setTimeout(function(){try{var lsCheck=localStorage.getItem(key);var expected=typeof value==="string"?value:JSON.stringify(value);if(!lsCheck||(typeof value==="string"&&lsCheck!==value)){if(typeof toast==="function")toast("Sauvegarde "+key.slice(-10)+" incomplete, retry...","warn",{force:true});try{localStorage.setItem(key,expected);}catch(_){}}}catch(_){}},120);
+  return result;
+}
+function axRestoreFromAll(criticalKeys){
+  criticalKeys=criticalKeys||AX_CRITICAL_KEYS;
+  var restored=0,sources={};
+  return Promise.all(criticalKeys.map(function(k){
+    if(localStorage.getItem(k))return Promise.resolve();
+    // 1) IndexedDB
+    return axIdbGet(k).then(function(val){
+      if(val!==undefined&&val!==null){
+        try{localStorage.setItem(k,typeof val==="string"?val:JSON.stringify(val));sources[k]="idb";restored++;return;}catch(_){}
+      }
+      // 2) Firebase
+      if(typeof FB_URL!=="undefined"&&FB_URL){
+        return fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(k)+".json").then(function(r){return r.ok?r.json():null;}).then(function(v){
+          if(v!==null&&v!==undefined){
+            try{localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v));sources[k]="firebase";restored++;axIdbSet(k,v);}catch(_){}
+          }
+        }).catch(function(){});
+      }
+    });
+  })).then(function(){
+    if(restored>0&&typeof toast==="function")toast(restored+" cles restaurees depuis sauvegarde","ok",{force:true});
+    var log=lg("ax_persistence_restore_log",[]);log.push({ts:Date.now(),restored:restored,sources:sources});if(log.length>50)log=log.slice(-50);ls("ax_persistence_restore_log",log);
+    return restored;
+  });
+}
+function axBackupAllCriticalNow(){
+  var saved=0;AX_CRITICAL_KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v){try{axIdbSet(k,v);saved++;}catch(_){}}});
+  if(typeof toast==="function")toast(saved+" cles sauvegardees en triple","ok",{force:true});
+  return saved;
+}
+function _agentPersistenceWatch(){
+  try{
+    if(typeof axIsAdmin==="function"&&!axIsAdmin())return;
+    var missing=AX_CRITICAL_KEYS.filter(function(k){return !localStorage.getItem(k);});
+    if(missing.length>0){
+      if(typeof axRestoreFromAll==="function")axRestoreFromAll(missing);
+      var log=lg("ax_persistence_alerts",[]);log.push({ts:Date.now(),missing:missing.slice(0,10),count:missing.length});if(log.length>50)log=log.slice(-50);ls("ax_persistence_alerts",log);
+      if(typeof _snLog==="function")_snLog("persistence-watch","warn",missing.length+" cles critiques absentes localStorage, auto-restore lance");
+    }
+    // Backup auto en IDB des cles presentes
+    AX_CRITICAL_KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v)axIdbSet(k,v);});
+  }catch(e){if(typeof _snLog==="function")_snLog("persistence-watch","err",String(e).slice(0,80));}
+}
+function vPersistenceAudit(){
+  if(typeof axIsAdmin==="function"&&!axIsAdmin())return '<div style="padding:24px;text-align:center"><h2>Acces admin requis</h2></div>';
+  var rows=AX_CRITICAL_KEYS.map(function(k){var lsV=localStorage.getItem(k);return{k:k,ls:!!lsV,len:lsV?lsV.length:0};});
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px">Audit persistence triple</h2>';
+  h+='<div class="ax-card" style="margin-bottom:12px"><p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:10px">Tes cles sont sauvegardees en 3 endroits : memoire de l app, base locale shadow, et cloud. Si une couche perd une cle, les autres la restaurent.</p>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" onclick="axBackupAllCriticalNow();dc();" style="min-height:44px">Sauvegarder tout maintenant</button><button class="ax-btn ax-btn-outline" onclick="axRestoreFromAll().then(function(){dc();})" style="min-height:44px">Restaurer manquantes</button></div></div>';
+  h+='<div class="ax-card"><h3>Cles critiques ('+rows.length+')</h3>';
+  // Pull idb keys async, but show ls status now
+  rows.forEach(function(r){var st=r.ls?'<span style="color:var(--ax-green)">OK</span>':'<span style="color:var(--ax-red)">ABSENT</span>';h+='<div class="ax-setting-row"><span style="font-family:monospace;font-size:12px">'+esc(r.k)+'</span><span style="font-size:12px">'+st+(r.ls?' ('+r.len+' chars)':'')+'</span></div>';});
+  h+='</div>';
+  var alerts=lg("ax_persistence_alerts",[]);
+  if(alerts.length){h+='<div class="ax-card"><h3>Historique alertes (max 50)</h3>';alerts.slice(-15).reverse().forEach(function(a){h+='<div class="ax-setting-row"><span style="font-size:11px">'+new Date(a.ts).toLocaleString("fr-FR")+'</span><span style="font-size:11px;color:var(--ax-text-dim)">'+a.count+' manquantes</span></div>';});h+='</div>';}
+  var log=lg("ax_persistence_restore_log",[]);
+  if(log.length){h+='<div class="ax-card"><h3>Restaurations recentes</h3>';log.slice(-15).reverse().forEach(function(r){h+='<div class="ax-setting-row"><span style="font-size:11px">'+new Date(r.ts).toLocaleString("fr-FR")+'</span><span style="font-size:11px;color:var(--ax-green)">+'+r.restored+'</span></div>';});h+='</div>';}
+  h+='</div>';return h;
+}
+// Auto-restore au boot + sentinelle 10 min
+try{setTimeout(function(){if(navigator.onLine)axRestoreFromAll();},3500);setInterval(_agentPersistenceWatch,600000);}catch(_){}
+
 // v12.8 — Pipeline autonomie : Apex AI traite la telemetry recue de CMCteams/autres apps
 function _processIncomingTelemetry(buffer){try{if(!Array.isArray(buffer)||!axIsAdmin())return;var changed=false;buffer.forEach(function(entry){if(!entry||entry.processed)return;if(entry.kind!=="err"&&entry.kind!=="warn")return;_snLog("telemetry-in","info","["+entry.src+"@"+entry.v+"] "+entry.id+": "+String(entry.msg).slice(0,80));_aiHandleIssue("cross-app-"+entry.src+"-"+entry.id,entry.kind,"["+entry.src+" "+entry.v+"] "+entry.msg);entry.processed=true;entry.processedBy=APP_VER;entry.processedAt=Date.now();changed=true;});if(changed)ls("ax_telemetry_in",buffer);}catch(e){_snLog("telemetry-in","err",String(e).slice(0,80));}}
 // v12.8 — Escalade Claude Code : si l'IA Apex ne sait pas resoudre, push dans outbox lu a la prochaine session Claude
