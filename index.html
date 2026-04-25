@@ -10299,9 +10299,9 @@ function vAgentsHealth(){
     h+='</div>';
   });
   h+='</div>';
-  // Auto-refresh 30s
-  h+='<script>(function(){if(window._cmcAhInt)clearInterval(window._cmcAhInt);window._cmcAhInt=setInterval(function(){if(A.view==="agentshealth"&&document.visibilityState==="visible")dc();},30000);})();<\/script>';
   h+='</div>';
+  // Auto-refresh 30s (programme apres rendu)
+  try{if(window._cmcAhInt)clearInterval(window._cmcAhInt);window._cmcAhInt=setInterval(function(){if(A.view==="agentshealth"&&document.visibilityState==="visible")dc();},30000);}catch(_){}
   return h;
 }
 function _fmtAgo(ts){var s=Math.floor((Date.now()-ts)/1000);if(s<60)return "il y a "+s+"s";if(s<3600)return "il y a "+Math.floor(s/60)+"min";if(s<86400)return "il y a "+Math.floor(s/3600)+"h";return "il y a "+Math.floor(s/86400)+"j";}
