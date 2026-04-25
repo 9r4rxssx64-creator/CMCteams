@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777110388101,
+  "updated_at": 1777111349532,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 194,
+  "total_commits": 198,
   "projects": [
     "apex",
     "backend",
@@ -16,11 +16,11 @@
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 37
+      "count": 39
     },
     {
       "name": "📅 Planning & Cadres",
-      "count": 21
+      "count": 22
     },
     {
       "name": "🎨 UX & Design",
@@ -28,7 +28,7 @@
     },
     {
       "name": "🤖 Agents & Automation",
-      "count": 12
+      "count": 13
     },
     {
       "name": "🚂 Backend & Hosting",
@@ -72,6 +72,42 @@
     }
   ],
   "commits": [
+    {
+      "sha": "7b78e3f9",
+      "ts": 1777111284000,
+      "msg": "Apex pending changes (subagent enrichment in progress)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f8ac87c3",
+      "ts": 1777111238000,
+      "msg": "CMCteams v9.503: outils metier (jsPDF + QR + lazy-load)",
+      "project": "cmcteams",
+      "ver": "9.503",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "baaff5cd",
+      "ts": 1777111106000,
+      "msg": "CLAUDE.md: regle permanente enrichissement autonome outils (Kevin)",
+      "project": "docs",
+      "ver": null,
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2189bfd0",
+      "ts": 1777110388000,
+      "msg": "CLAUDE_ACTIVITY regen apres v12.153 voice + experts (~225 commits)",
+      "project": "docs",
+      "ver": "12.153",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "4fefa9d6",
       "ts": 1777110354000,
@@ -1114,42 +1150,6 @@
       "project": "multi",
       "ver": "12.87",
       "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2cb9f045",
-      "ts": 1777039098000,
-      "msg": "v12.86: Notifications approbation cascade (Kevin je recois pas code WhatsApp/mail)",
-      "project": "multi",
-      "ver": "12.86",
-      "topic": "📧 Email & Notif",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8e11c479",
-      "ts": 1777038186000,
-      "msg": "v12.85: Flow strict landing -> fiche -> forfait -> attente -> approve avec PIN auto",
-      "project": "multi",
-      "ver": "12.85",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "96264346",
-      "ts": 1777037178000,
-      "msg": "CRITICAL v12.84: Fix boucle infinie _applyI18n > dc > render > _bindEvents",
-      "project": "multi",
-      "ver": "12.84",
-      "topic": "🔧 Bug fixes",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d8e08986",
-      "ts": 1777032354000,
-      "msg": "diag: Page /apex-ai/diag.html + CLAUDE_FEED lecons 8 erreurs Claude Code session PM",
-      "project": "multi",
-      "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     }
   ]
