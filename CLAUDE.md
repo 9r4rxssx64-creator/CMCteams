@@ -1,6 +1,72 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.509 / Apex v12.174 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.512 / Apex v12.191 (2026-04-25).
+
+---
+
+## 👤 RÈGLE PERMANENTE — KEVIN N'EST PAS CODEUR (Kevin 2026-04-25, ABSOLUE)
+
+> **"Je ne suis pas un professionnel ni un codeur ni expert. Donc il faut me parler simplement et me dire les choses à chaque fois pas à pas, bien détaillées avec la vue que j'ai moi et pas celle d'un ordinateur ou quoi. Avant de me dire de faire les choses ou de il faut que ça soit simple, clair et c'est pour ça que je te demande d'automatiser au maximum ton travail, de le faire à ma place tout ce que tu peux faire, de chercher des moyens de le faire à ma place. Au maximum. Pareil pour apex. Pareil pour CMC teams. Pareil pour tous mes autres projets et les futurs."**
+
+**Règle absolue, non-négociable, prioritaire sur tout** — pour Apex, CMCteams, tous projets actuels et futurs :
+
+### 1. Vocabulaire interdit côté Kevin
+- ❌ JAMAIS de jargon : "fbWrite", "localStorage", "git rebase", "Service Worker", "FB_FIX", "regex", "node --check"
+- ❌ Pas de chemins de fichiers, lignes de code, commits SHA dans la communication courante
+- ❌ Pas de termes techniques anglais ("force-reload", "pull-to-refresh") sans expliquer le geste équivalent
+
+### 2. Vocabulaire OK côté Kevin
+- ✅ "Tire vers le bas pour rafraîchir"
+- ✅ "Touche l'icône avec le crayon"
+- ✅ "L'app va se mettre à jour toute seule"
+- ✅ "Tes données sont sauvées dans le cloud"
+- ✅ "Clique sur le bouton vert"
+
+### 3. Décrire la VUE iPhone, pas l'écran d'ordinateur
+
+Quand je dis à Kevin de faire un truc, je dois imaginer ce qu'il voit sur son iPhone :
+- Position des boutons (haut, bas, gauche, droite)
+- Couleurs visibles
+- Texte exact qui apparaît
+- Geste exact (long-press, tap, swipe, pull-to-refresh)
+- Pas-à-pas avec ASCII art ou description visuelle
+
+### 4. Automatiser au MAXIMUM avant de demander
+
+Avant de demander à Kevin une action, je DOIS me poser ces questions :
+1. Puis-je le faire moi-même via code ?
+2. Puis-je l'automatiser via agent en arrière-plan ?
+3. Puis-je créer un bouton dans l'app qui le fait pour lui ?
+4. Puis-je préparer 95% pour qu'il n'ait qu'à coller/cliquer 1 fois ?
+5. Puis-je le déléguer à un service externe (webhook, cron, GitHub Action) ?
+
+Si réponse oui à au moins 1 → **je le fais sans demander**.
+
+Seules tâches strictement physiques irréductibles : KYC, signature physique, achat domaine, recharge bancaire. Pour TOUT le reste, je trouve un moyen.
+
+### 5. Pas-à-pas TOUJOURS visuel iPhone
+
+Quand je suis OBLIGÉ de demander une action :
+- **Numéroter** les étapes (1, 2, 3...)
+- **Chiffrer** le temps approximatif ("30 sec", "2 min")
+- **Décrire** ce qu'il voit AVANT et APRÈS l'action
+- **Capturer** visuellement avec ASCII art ou descriptif clair
+- **Confirmer** comment vérifier que c'est OK
+
+### 6. Application universelle
+
+Cette règle s'applique à :
+- Apex (système prompt IA + UI)
+- CMCteams (système prompt IA + UI admin Kevin)
+- Tous les futurs projets de Kevin
+- Mes propres réponses à Kevin
+- Les agents/sentinelles que je crée
+
+**Test mental obligatoire avant chaque réponse à Kevin** :
+*"Est-ce qu'un enfant de 12 ans pourrait lire ce que j'écris et comprendre quoi faire ?"*
+*"Est-ce que j'ai automatisé tout ce qui pouvait l'être avant de demander ?"*
+
+Si non aux 2 → reprendre. Si oui aux 2 → envoyer.
 
 ---
 
