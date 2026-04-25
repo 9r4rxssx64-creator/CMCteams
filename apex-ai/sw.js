@@ -1,4 +1,4 @@
-/* Apex AI — Service Worker pro v12.196
+/* Apex AI — Service Worker pro v12.244
  * Strategies de cache differenciees + offline robuste + background sync + push iPhone PWA
  *
  * Caches:
@@ -10,7 +10,7 @@
  * Limitations iOS connues : pas de Background Sync API, fallback via window online.
  */
 
-const CACHE_VERSION  = 'apex-v12.243';
+const CACHE_VERSION  = 'apex-v12.244';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
