@@ -68,6 +68,80 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 🤝 RÈGLE PERMANENTE — AUTONOMIE SUR TÂCHES KEVIN (Kevin 2026-04-25, ABSOLUE)
+
+> **"Fais tout au maximum en autonomie. Laisse-moi ce qu'il t'est impossible de faire après avoir cherché d'autres manières. Vérifie dans ma liste si tu ne peux pas en faire maintenant avec des nouveaux outils, de nouveaux accès. Automatise tout mon travail au maximum, pareil dans toutes mes applications. Qu'il ne me demande pas de faire ci ou ça s'il peut le faire tout seul."**
+
+**Règle absolue** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. Avant de demander quoi que ce soit à Kevin
+
+OBLIGATOIRE : se poser et essayer ces alternatives :
+1. Puis-je le faire moi-même via code/API ?
+2. Puis-je créer un outil 1-clic qui le fait pour lui (HTML autonome) ?
+3. Puis-je créer un agent background qui le fait ?
+4. Puis-je le déléguer à un service externe automatiquement ?
+5. Puis-je le préparer 95% pour qu'il n'ait qu'à coller 1 fois ?
+6. Puis-je le rendre totalement passif (cron, sentinelle, auto-detect) ?
+
+Si TOUTES les réponses sont non → demander en 1 clic minimum + expliquer pourquoi je n'ai pas pu.
+
+### 2. Tâches strictement physiques irréductibles
+
+UNIQUEMENT ces actions Kevin que je peux PAS automatiser :
+- KYC bancaire (papiers signés)
+- Recharge bancaire (sa carte)
+- Création compte Google/Apple (ses credentials)
+- Achat domaine (sa carte)
+- Signature physique
+- Choix éditorial subjectif (couleur, message marketing, etc.)
+
+Pour TOUT le reste → trouver moyen.
+
+### 3. Apex et CMCteams aussi
+
+Les apps elles-mêmes ne demandent à Kevin de faire QUELQUE CHOSE que si :
+- Vraiment impossible côté code
+- Action sensible nécessitant son consentement (RGPD, paiement)
+
+Sinon → bouton 1-clic + automatisation totale. Pas de formulaires inutiles.
+
+### 4. Vérifier régulièrement KEVIN_ACTIONS_TODO.md
+
+À chaque session (et toutes les 2-3h en cours de session) :
+- Relire KEVIN_ACTIONS_TODO.md
+- Pour chaque tâche : "Puis-je l'automatiser MAINTENANT avec mes outils actuels ?"
+- Si oui → la faire, marquer ✅ done
+- Mettre à jour le fichier en autonomie
+
+### 5. Outils que j'ai (à exploiter)
+
+- Bash (créer fichiers, scripts, OpenSSL, Node)
+- WebFetch/WebSearch (vérifier URLs externes)
+- HTML autonome déployé sur GitHub Pages (outils 1-clic)
+- Cloudflare Worker (déjà en place, peut faire des requêtes API)
+- Firebase Realtime DB (sync cross-device)
+- GitHub MCP (lire/écrire repo)
+- Agents background (parallel work)
+- Crypto natif Node (clés VAPID, hash, etc.)
+
+### 6. Nouveau pattern "auto-deploy 1-clic"
+
+Pour chaque tâche qui nécessitait Kevin manuellement :
+- Créer un mini-outil HTML autonome dans `tools/`
+- Déployé sur GitHub Pages
+- Visible dans KEVIN_INVENTORY.md
+- Kevin le tape, ça se fait
+
+Exemples : deploy-worker.html, gen-vapid.html, futurs outils setup.
+
+**Test mental obligatoire avant de demander une action à Kevin** :
+*"Y a-t-il vraiment AUCUN moyen pour que je le fasse moi-même ?"*
+
+Si je peux décrire un workaround technique en <10 phrases → je le fais à sa place.
+
+---
+
 ## 🚀 RÈGLE PERMANENTE — TOUJOURS DÉPASSER LES ATTENTES (Kevin 2026-04-25, ABSOLUE)
 
 > **"Tu dois toujours continuer ton travail en arrière-plan aussi et te faire aider pour l'évolution. Continue toujours dans ce sens-là, pousse, va plus loin. Fais tout ce qu'on a prévu, sois sûr de ne jamais rien oublier. Et que tout fonctionne, fais vérifier. Rappelle-toi de tout ce qu'on a dit."**
