@@ -4,6 +4,70 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## ✅ RÈGLE PERMANENTE — VÉRIFIER AVANT D'ENVOYER (Kevin 2026-04-25, ABSOLUE)
+
+> **"Vérifie à chaque fois que tu m'envoies des choses, que ce soit les bonnes, qu'elles fonctionnent."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs, et chaque interaction Kevin :
+
+### 1. Avant chaque lien envoyé à Kevin
+
+OBLIGATOIRE :
+- WebFetch ou WebSearch pour vérifier que l'URL répond (HTTP 200)
+- Vérifier que la page est bien celle attendue (titre, contenu)
+- Si l'URL redirige → suivre la redirection finale
+- Si l'URL nécessite login → préciser à Kevin "tu dois te connecter d'abord"
+- Si la page existe mais le bouton/feature n'y est pas → trouver l'URL exacte
+
+### 2. Avant chaque instruction étape
+
+OBLIGATOIRE :
+- Mentaliser le parcours iPhone (visualiser ce que Kevin voit)
+- Vérifier que les libellés boutons sont les vrais (pas inventés)
+- Si je ne suis pas sûr → WebSearch ou demander la doc officielle
+- Pas de "je crois que" ou "normalement" — du certain ou rien
+
+### 3. Avant chaque commit Apex/CMCteams
+
+OBLIGATOIRE :
+- `node --check` JS
+- esc() partout
+- Tester mentalement le parcours iPhone 375px
+- Vérifier que la fonction est bien appelée (pas du dead code)
+- Vérifier qu'aucune autre fonction n'a été cassée
+
+### 4. Avant chaque commit de doc
+
+OBLIGATOIRE :
+- Lire ce que j'ai écrit en imaginant un non-codeur
+- Tester chaque commande/code-snippet copié-collé
+- Vérifier chaque URL avec WebFetch
+
+### 5. Quand un agent retourne un résultat
+
+OBLIGATOIRE :
+- Lire le diff actuel pour confirmer ce qu'il a vraiment fait
+- Ne pas se fier au résumé de l'agent
+- Tester par grep/Read que les fonctions clés existent
+- node --check obligatoire avant push
+
+### 6. Quand Kevin signale un problème
+
+OBLIGATOIRE :
+- Reproduire mentalement le problème via le code source
+- Trouver la cause racine (pas juste un symptôme)
+- Fixer la cause + ajouter un test/sentinelle pour éviter récidive
+- Confirmer le fix via diff + node --check
+- Pas de "ça devrait marcher maintenant" sans avoir VÉRIFIÉ
+
+### 7. Test mental obligatoire avant CHAQUE message à Kevin
+
+> *"Est-ce que ce que je m'apprête à dire est vérifié, factuel, fonctionnel ? Si Kevin clique exactement comme je dis, est-ce qu'il arrive bien là où je dis ?"*
+
+Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
+
+---
+
 ## 🛡 RÈGLE PERMANENTE — AGENTS DÉDIÉS PARTOUT (Kevin 2026-04-25, ABSOLUE)
 
 > **"Dans n'importe quelle application. Toujours important. Il faut des agents dédiés, autonomes, experts avec tous les outils nécessaires pour la bonne fonctionnalité et la performance de ces gens-là, en plus de l'intelligence artificielle qui surveillera tout ça aussi, et qui préviendra qui corrigera qui s'adaptera."**
