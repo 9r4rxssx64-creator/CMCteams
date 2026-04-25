@@ -11144,6 +11144,8 @@ function vMain(){
     case"geo":      return isAdm?vGeoAdmin():""; // v9.210
     case"geolocation": return isAdm?vGeolocationCMC():""; // v9.487 — multi-casinos precision live
     case"pit":      return vPit(); // v9.211 — pit boss live (admin + cadres)
+    case"pitmap":   return vPitMapView(); // v9.500 — map visuelle Pit Boss (lecture seule + carré break)
+    case"pitmapview": return vPitMapView(); // v9.500 — alias
     case"quotidienne": return vQuotidienne(); // v9.312 — réunion direction
     case"endshiftdash": return vEndShiftDashboard(); // v9.339 — dashboard fins de shift
     case"dayhistory":  return vDayHistory(); // v9.342 — historique du jour
