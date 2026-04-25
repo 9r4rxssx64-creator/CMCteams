@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'tools/cloudflare/apex-push-worker.js'
+      - 'tools/cloudflare/wrangler.toml'
       - '.github/workflows/deploy-push-worker.yml'
   workflow_dispatch:
 
@@ -17,151 +18,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy with full diagnostics
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Vérifier secrets
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID_OPT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          set +e
-
           if [ -z "$CF_API_TOKEN" ]; then
-            echo "::error::Manque CLOUDFLARE_API_TOKEN dans Secrets GitHub"
+            echo "::error::Manque CLOUDFLARE_API_TOKEN"
             exit 1
           fi
-
-          # ÉTAPE 1 : Vérifier le token
-          echo "═══════════════════════════════════════════"
-          echo "→ Étape 1 : Vérification du token API"
-          echo "═══════════════════════════════════════════"
-          VERIFY=$(curl -s -w "\nHTTP:%{http_code}" \
-            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}")
-          VERIFY_STATUS=$(echo "$VERIFY" | tail -n1 | sed 's/HTTP://')
-          echo "Status: $VERIFY_STATUS"
-          if [ "$VERIFY_STATUS" != "200" ]; then
-            echo "::error::❌ Token API invalide (HTTP $VERIFY_STATUS)"
-            echo "$VERIFY" | sed '$d'
+          if [ -z "$CF_ACCOUNT_ID" ]; then
+            echo "::error::Manque CLOUDFLARE_ACCOUNT_ID"
             exit 1
           fi
-          echo "✅ Token valide"
+          echo "✅ Secrets OK"
 
-          # ÉTAPE 2 : Account ID
-          echo ""
-          echo "═══════════════════════════════════════════"
-          echo "→ Étape 2 : Account ID"
-          echo "═══════════════════════════════════════════"
-          if [ -n "$CF_ACCOUNT_ID_OPT" ]; then
-            CF_ACCOUNT_ID="$CF_ACCOUNT_ID_OPT"
-            echo "→ Depuis secret: $CF_ACCOUNT_ID"
-          else
-            ACCOUNTS_JSON=$(curl -s "https://api.cloudflare.com/client/v4/accounts" \
-              -H "Authorization: Bearer ${CF_API_TOKEN}")
-            CF_ACCOUNT_ID=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].id // empty')
-            if [ -z "$CF_ACCOUNT_ID" ]; then
-              echo "::error::Aucun compte trouvé"
-              echo "$ACCOUNTS_JSON" | head -c 500
-              exit 1
-            fi
-            echo "✅ Auto-détecté: $CF_ACCOUNT_ID"
-          fi
+      - name: Préparer répertoire wrangler
+        run: |
+          mkdir -p /tmp/wrangler-deploy
+          cp tools/cloudflare/apex-push-worker.js /tmp/wrangler-deploy/index.js
+          cat > /tmp/wrangler-deploy/wrangler.toml << 'EOF'
+          name = "apex-push-worker"
+          main = "index.js"
+          compatibility_date = "2024-12-01"
+          EOF
+          echo "Fichiers prêts :"
+          ls -la /tmp/wrangler-deploy/
 
-          # ÉTAPE 3 : Préparer fichier .mjs (nouveau format)
-          echo ""
-          echo "═══════════════════════════════════════════"
-          echo "→ Étape 3 : Préparation fichier worker"
-          echo "═══════════════════════════════════════════"
-          cp tools/cloudflare/apex-push-worker.js /tmp/worker.mjs
-          echo "Fichier prêt: $(wc -c < /tmp/worker.mjs) bytes"
-          head -2 /tmp/worker.mjs
+      - name: Déployer via Wrangler officiel
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: /tmp/wrangler-deploy
+          command: deploy
 
-          # ÉTAPE 4 : Tentative déploiement (format ES module)
-          echo ""
-          echo "═══════════════════════════════════════════"
-          echo "→ Étape 4 : Déploiement (ES module .mjs)"
-          echo "═══════════════════════════════════════════"
-
-          METADATA='{"main_module":"worker.mjs","compatibility_date":"2024-12-01","bindings":[]}'
-          echo "Metadata: $METADATA"
-
-          RESPONSE=$(curl -s -w "\nHTTP:%{http_code}" \
-            -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            -F "metadata=${METADATA};type=application/json" \
-            -F "worker.mjs=@/tmp/worker.mjs;type=application/javascript+module")
-
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/HTTP://')
-
-          echo ""
-          echo "═══════════════════════════════════════════"
-          echo "RÉPONSE CLOUDFLARE :"
-          echo "═══════════════════════════════════════════"
-          echo "Status HTTP: $STATUS"
-          echo ""
-          echo "Body complet (formatté JSON):"
-          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
-
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "201" ]; then
-            echo ""
-            echo "::notice::✅ Déploiement RÉUSSI !"
-            sleep 4
-            echo ""
-            echo "→ Test /health :"
-            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" | jq '.' 2>/dev/null || echo "(propagation en cours)"
-            exit 0
-          fi
-
-          echo ""
-          echo "::warning::Tentative 1 échouée (HTTP $STATUS), essai format alternatif..."
-
-          # ÉTAPE 5 : Fallback - service worker syntax (addEventListener) — convert si possible
-          echo ""
-          echo "═══════════════════════════════════════════"
-          echo "→ Étape 5 : Fallback format service worker"
-          echo "═══════════════════════════════════════════"
-
-          # Convert ES module to service worker style by wrapping
-          cat > /tmp/worker-sw.js << 'WRAPPER'
-WRAPPER
-          cat tools/cloudflare/apex-push-worker.js >> /tmp/worker-sw.js
-          # Append a service-worker compatible wrapper at end
-          cat >> /tmp/worker-sw.js << 'WRAPPER'
-
-// Service Worker compat layer
-addEventListener("fetch", (event) => {
-  const handler = (typeof globalThis.handler !== "undefined") ? globalThis.handler : null;
-  // We use the export default {} object if available
-  const main = (typeof exports === "object" && exports.default) ? exports.default : null;
-  // Fallback: just respond
-  event.respondWith(new Response("Apex Push Worker SW fallback", {status: 200}));
-});
-WRAPPER
-          # Actually that's not a proper conversion. Let me just retry with module format but "main_module" without bindings
-          echo "Tentative simplifiée sans bindings..."
-          METADATA2='{"main_module":"worker.mjs","compatibility_date":"2024-12-01"}'
-          RESPONSE2=$(curl -s -w "\nHTTP:%{http_code}" \
-            -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            -F "metadata=${METADATA2};type=application/json" \
-            -F "worker.mjs=@/tmp/worker.mjs;type=application/javascript+module")
-          STATUS2=$(echo "$RESPONSE2" | tail -n1 | sed 's/HTTP://')
-          BODY2=$(echo "$RESPONSE2" | sed '$d')
-          echo "Tentative 2 - Status: $STATUS2"
-          echo "$BODY2" | jq '.' 2>/dev/null || echo "$BODY2"
-
-          if [ "$STATUS2" = "200" ] || [ "$STATUS2" = "201" ]; then
-            echo "::notice::✅ Déploiement RÉUSSI (tentative 2) !"
-            exit 0
-          fi
-
-          echo ""
-          echo "::error::❌ Déploiement échoué après 2 tentatives"
-          echo ""
-          echo "Diagnostic :"
-          if echo "$BODY" | grep -q "10021"; then
-            echo "→ Code 10021 = problème de validation script"
-            echo "→ Cause possible : le worker apex-push-worker.js a un export ou format invalide"
-          fi
-          exit 1
+      - name: Test /health après déploiement
+        run: |
+          sleep 5
+          echo "→ Test /health :"
+          curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" | jq '.' || \
+          curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health"
