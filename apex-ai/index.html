@@ -2847,7 +2847,71 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+/* v12.168 — Vue admin Tokens & Soldes IA avec forecast + fallback toggle (Kevin: jamais de coupure) */
+function vTokenBalance(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Reserve admin</div></div>';
+  var services=(typeof axGetServices==="function")?(function(){try{return axGetServices()||[];}catch(_){return [];}})():[];
+  var apiSvc=services.filter(function(s){return s&&s.category==="api";});
+  var fallbackEnabled=lg("ax_fallback_auto","1")==="1";
+  var h='<div style="padding:16px;max-width:760px;margin:0 auto"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">📊 Tokens IA &amp; Soldes Live</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Vue admin : equilibrage automatique entre providers. Si une IA tombe a court, l app bascule sur la suivante (admin Kevin = jamais aucune coupure).</p>';
+  /* Toggle fallback auto */
+  h+='<div class="ax-card" style="border-left:4px solid '+(fallbackEnabled?"var(--ax-green)":"var(--ax-red)")+';margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><strong>'+(fallbackEnabled?"🟢 Fallback auto ACTIVE":"🔴 Fallback auto DESACTIVE")+'</strong><div style="font-size:11px;color:var(--ax-text-dim);margin-top:3px">'+(fallbackEnabled?"Bascule auto vers IA equivalente si solde critique":"Risque de coupure si solde critique")+'</div></div><button class="ax-btn '+(fallbackEnabled?"ax-btn-outline":"ax-btn-primary")+'" onclick="ls(\'ax_fallback_auto\',\''+(fallbackEnabled?"0":"1")+'\');toast(\'Fallback auto '+(fallbackEnabled?"desactive":"active")+'\',\'ok\');dc()" style="white-space:nowrap">'+(fallbackEnabled?"Desactiver":"Activer")+'</button></div></div>';
+  /* Tier visualization */
+  var tierColors={premium:"#e8b830",standard:"#5aa8ff",cheap:"#7edc90",free:"#9aa"};
+  var tierLabels={premium:"💎 Premium (Tier S)",standard:"⭐ Standard (Tier A)",cheap:"💰 Economique (Tier B)",free:"🆓 Gratuit"};
+  Object.keys(AX_PROVIDER_TIERS).forEach(function(tier){
+    var providers=AX_PROVIDER_TIERS[tier]||[];
+    var col=tierColors[tier]||"#888";
+    h+='<div class="ax-card" style="border-left:4px solid '+col+';margin-bottom:10px"><h3 style="margin:0 0 8px 0;color:'+col+'">'+esc(tierLabels[tier]||tier)+'</h3>';
+    /* Group by provider */
+    var seen={};
+    providers.forEach(function(p){
+      if(seen[p.provider])return;
+      seen[p.provider]=true;
+      var has=axHasProviderKey(p.provider);
+      var status=axGetProviderHealth(p.provider);
+      var srv=apiSvc.find?apiSvc.find(function(s){return s.id===p.provider;}):null;
+      var statusIc={ok:"🟢",low:"🟠",critical:"🔴",unknown:"⚪"}[status]||"⚪";
+      var balance=srv&&srv.balance!=null&&srv.balance!==""?(esc(String(srv.balance))+" "+esc(srv.currency||"")):"--";
+      /* Forecast au rythme actuel : si historique consommation dispo */
+      var forecast="";
+      try{
+        var usageHist=lg("ax_balance_history_"+p.provider,[]);
+        if(Array.isArray(usageHist)&&usageHist.length>=2&&srv&&srv.balance!=null){
+          var oldest=usageHist[0],newest=usageHist[usageHist.length-1];
+          var dDays=(newest.ts-oldest.ts)/(86400000);
+          var dBalance=Number(oldest.balance)-Number(newest.balance);
+          if(dDays>0.5&&dBalance>0){
+            var rate=dBalance/dDays;/* per day */
+            var daysLeft=Math.floor(Number(srv.balance)/rate);
+            if(daysLeft>=0&&daysLeft<365)forecast='<div style="font-size:10px;color:'+(daysLeft<7?"var(--ax-red)":"var(--ax-text-dim)")+';margin-top:2px">⏱ Au rythme actuel: epuise dans '+daysLeft+'j</div>';
+          }
+        }
+      }catch(_){}
+      h+='<div style="padding:8px;border-bottom:1px solid var(--ax-border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+statusIc+' '+esc(p.provider.charAt(0).toUpperCase()+p.provider.slice(1))+'</div><div style="font-size:11px;color:var(--ax-text-dim);font-family:var(--ax-mono)">'+esc(p.model)+'</div>'+forecast+'</div><div style="text-align:right;white-space:nowrap"><div style="font-size:13px;font-weight:700;color:'+(status==="critical"?"var(--ax-red)":(status==="low"?"#e8a248":"var(--ax-green)"))+'">'+balance+'</div><div style="font-size:10px;color:var(--ax-text-dim)">'+(has?"✅ Cle OK":"⚠️ Pas de cle")+'</div></div></div>';
+    });
+    h+='</div>';
+  });
+  /* Alertes recentes */
+  var alerts=lg("ax_admin_notifs",[]).filter(function(a){return a&&a.type==="balance_alert";}).slice(-10).reverse();
+  if(alerts.length){
+    h+='<div class="ax-card" style="border-left:4px solid var(--ax-orange);margin-top:12px"><h3 style="margin:0 0 8px 0">🔔 Alertes recentes ('+alerts.length+')</h3>';
+    alerts.forEach(function(a){
+      h+='<div style="padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:12px"><strong style="color:'+(a.severity==="critical"?"var(--ax-red)":"#e8a248")+'">'+esc(a.msg||"")+'</strong><div style="font-size:10px;color:var(--ax-text-dim)">'+_timeAgo(a.ts||0)+'</div></div>';
+    });
+    h+='</div>';
+  }
+  /* Actions */
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="ax-btn ax-btn-primary" onclick="if(typeof axCheckBalancesProactive===\'function\')axCheckBalancesProactive();if(typeof axCheckServiceBalances===\'function\')try{axCheckServiceBalances();}catch(_){}toast(\'Soldes rafraichis\',\'ok\');setTimeout(dc,500)">🔄 Rafraichir soldes</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="sv(\'links\')">🔗 Liens recharge</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="sv(\'aiproviders\')">⚙ Providers IA</button></div>';
+  h+='</div>';
+  return h;
+}
+
+
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"tokenbalance":return vTokenBalance();case"servicespro":return vTokenBalance();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
