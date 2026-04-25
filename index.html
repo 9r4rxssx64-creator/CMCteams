@@ -4594,7 +4594,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.539";
+var APP_VER="v9.540";
 // --- i18n minimal v9.534 — 30 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
 var I18N_CRITICAL={
 fr:{
@@ -12546,6 +12546,7 @@ function vMain(){
   var isAdm=A.user&&A.user.id===AID;
   switch(A.view){
     case"ocrhistory": return vOcrHistory();
+    case"camerastudio": return (typeof vCMCCameraStudio==="function")?vCMCCameraStudio():'<div class="card">Vue indisponible</div>';
     case"browser":  return vBrowserCMC();
     case"accueil":  return vAccueil();
     case"monplanning": return vMonPlanning();
@@ -12630,6 +12631,9 @@ function vMain(){
     case"debug": return isAdm?vDebug():""; // v9.91
     case"ia":       return vIA();
     case"lessonscmc": return isAdm?vLessonsLearnedCmc():""; // v9.525 - Lessons partagees Apex+CMCteams
+    case"passation":  return vPassation(); // v9.540 - Passation digitale (form remplir)
+    case"passations": return vPassationsList(); // v9.540 - Liste passations
+    case"crossteamactivity": return isAdm?vCrossTeamActivity():""; // v9.540 - Stats cross-team
     default: return vAccueil();
   }
 }
@@ -21720,6 +21724,9 @@ function vChat(){
     if(m.del&&!isAdm)return false;
     if(filter==="pub"&&isAdm)return !m.to;
     if(filter==="dm"&&isAdm)return !!m.to;
+    /* v9.540 - filtres avances : epingles, mentions de moi, non lus */
+    if(filter==="pinned"){if(typeof cmcChatIsPinned!=="function"||!cmcChatIsPinned(m.ts))return false;}
+    if(filter==="mentions"){if(typeof cmcMsgMentionsMe!=="function"||!cmcMsgMentionsMe(m,A.user))return false;}
     if(!m.to&&!(m.to===myId||m.uid===myId||isAdm)){/* noop */}
     var visible=!m.to||m.to===myId||m.uid===myId||isAdm;
     if(!visible)return false;
@@ -21745,9 +21752,11 @@ function vChat(){
   if(window.speechSynthesis){
     h+='<button onclick="ttsToggle()" title="'+(_ttsEnabled?"Lecture vocale ACTIV\u00c9E \u2014 cliquer pour d\u00e9sactiver":"Lecture vocale des messages re\u00e7us (TTS) \u2014 cliquer pour activer")+'" aria-label="Lecture vocale des messages" style="background:'+(_ttsEnabled?"rgba(80,200,100,.25)":"rgba(0,0,0,.35)")+';border:2px solid '+(_ttsEnabled?"rgba(80,200,100,.6)":"rgba(255,255,255,.2)")+';border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer;min-width:42px;min-height:42px;display:flex;align-items:center;justify-content:center">'+(_ttsEnabled?"\ud83d\udd0a":"\ud83d\udd07")+'</button>';
   }
+  /* v9.540 - filtres avances : visibles tous (epingles, mentions). Admin a aussi pub/priv/vider */
+  var _fb=function(v,lbl){var on=filter===v;return '<button onclick="chatFilterSet(\''+v+'\')" style="background:'+(on?'rgba(201,162,39,.25)':'rgba(0,0,0,.35)')+';border:1px solid '+(on?'rgba(201,162,39,.6)':'rgba(201,162,39,.3)')+';border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:'+(on?'#ffdc40':'#d8e8c8')+';cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">'+lbl+'</button>';};
+  h+=_fb("all","Tous")+_fb("pinned","\ud83d\udccc \u00c9pingl\u00e9s")+_fb("mentions","@ Moi");
   if(isAdm){
-    var _fb=function(v,lbl){var on=filter===v;return '<button onclick="chatFilterSet(\''+v+'\')" style="background:'+(on?'rgba(201,162,39,.25)':'rgba(0,0,0,.35)')+';border:1px solid '+(on?'rgba(201,162,39,.6)':'rgba(201,162,39,.3)')+';border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:'+(on?'#ffdc40':'#d8e8c8')+';cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">'+lbl+'</button>';};
-    h+=_fb("all","Tous")+_fb("pub","Publics")+_fb("dm","Priv\u00e9s")
+    h+=_fb("pub","Publics")+_fb("dm","Priv\u00e9s")
       +'<button onclick="if(confirm(\'Vider tout le chat ? (irr\u00e9versible)\')){A.chatMsgs=[];ls(\'cmc_chat\',[]);toast(\'Chat vid\u00e9\');dc();}" style="background:rgba(160,40,40,.35);border:1px solid rgba(220,80,80,.55);border-radius:6px;padding:4px 10px;font-size:13px;color:#ffc0c0;cursor:pointer;font-weight:700;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">\ud83d\uddd1 Vider</button>';
   }
   // Bouton recherche (toggle)
@@ -21847,6 +21856,11 @@ function vChat(){
       acts+='<button class="chat-act-btn" onclick="chatSetReply('+msg.ts+')" title="R\u00e9pondre">\u21a9</button>';
       acts+='<button class="chat-act-btn" onclick="chatReadMsg('+msg.ts+')" title="\u00c9couter ce message" aria-label="Lire \u00e0 voix haute">\ud83d\udd0a</button>';
       if(!isMe)acts+='<button class="chat-act-btn" onclick="chatSetDmById(\''+msg.uid+'\')" title="Message priv\u00e9">\u2709</button>';
+      /* v9.540 - Pin/unpin admin uniquement (epinglage messages importants) */
+      if(isAdm){
+        var _pinned=(typeof cmcChatIsPinned==="function")?cmcChatIsPinned(msg.ts):false;
+        acts+='<button class="chat-act-btn" onclick="cmcChatTogglePin('+msg.ts+')" title="'+(_pinned?"D\u00e9sepingler":"\u00c9pingler ce message")+'" style="'+(_pinned?'color:#ffdc40;background:rgba(201,162,39,.18)':'')+'">\ud83d\udccc</button>';
+      }
     }
     if(canDel)acts+='<button class="chat-act-btn" onclick="chatDelMsg('+msg.ts+')" title="Supprimer" style="color:rgba(180,60,60,.6)">\u2715</button>';
     bubble+='<div style="display:flex;align-items:center;gap:3px;margin-top:1px;justify-content:'+(isMe?"flex-end":"flex-start")+'">';
@@ -21945,6 +21959,8 @@ function sendMsg(){
   if(_chatDm){msg.to=_chatDm.id;msg.toName=_chatDm.name;}
   if(_chatRep){msg.replyTo={ts:_chatRep.ts,name:_chatRep.name,text:(_chatRep.text||"").substring(0,100)};}
   _chatRep=null;
+  /* v9.540 - Detecter mentions @prenom @nom @matricule + notifier les concernes */
+  try{if(typeof cmcExtractMentions==="function"){var _ms=cmcExtractMentions(text);if(_ms&&_ms.length)msg.mentions=_ms;}}catch(_){}
   A.chatMsgs.push(msg);
   if(A.chatMsgs.length>500)A.chatMsgs=A.chatMsgs.slice(-500);
   ls("cmc_chat",A.chatMsgs);
@@ -23419,6 +23435,11 @@ function vAdmin(){
   }
   // v9.475 \u2014 R\u00e9organisation admin : 4 cat\u00e9gories (vs 8) avec sous-groupes collapsibles
   var items=[
+    /* v9.540 - Passation digitale (acces 1-clic top admin) */
+    {sep:"\ud83d\udcdd PASSATION & COMMUNICATION"},
+    {ic:"\ud83d\udcdd",lb:"Nouvelle passation (fin de tourn\u00e9e)",fn:"sv('passation')"},
+    {ic:"\ud83d\udcd6",lb:"Historique passations"+((typeof cmcPassationsPendingCount==="function"&&cmcPassationsPendingCount()>0)?(" \u2014 "+cmcPassationsPendingCount()+" non lue"+(cmcPassationsPendingCount()>1?"s":"")):""),fn:"sv('passations')"},
+    {ic:"\ud83d\udcca",lb:"Activit\u00e9 cross-team (chat stats)",fn:"sv('crossteamactivity')"},
     {sep:"\ud83d\udc65 DONN\u00c9ES & EFFECTIFS"},
     // Effectifs
     {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
@@ -31700,6 +31721,156 @@ function cmcScanDocument(){
     input.click();
   }catch(e){toast("Camera indisponible","err");}
 }
+/* ============ v9.540 — CAMERA HD + VISION MULTI-MODE + SCAN BADGE EMPLOYE (Kevin 2026-04-25) ============ */
+function _cmcCameraConstraintsMax(opts){opts=opts||{};var facing=opts.facing||"environment";var withAudio=!!opts.audio;return{video:{facingMode:{ideal:facing},width:{ideal:3840,min:640},height:{ideal:2160,min:480},frameRate:{ideal:opts.fps||60,min:24},aspectRatio:{ideal:16/9},focusMode:{ideal:"continuous"},exposureMode:{ideal:"continuous"},whiteBalanceMode:{ideal:"continuous"}},audio:withAudio?{noiseSuppression:{ideal:true},echoCancellation:{ideal:true},autoGainControl:{ideal:true},sampleRate:{ideal:48000},channelCount:{ideal:2}}:false};}
+function _cmcCaptureFrameFromStream(stream,opts){opts=opts||{};return new Promise(function(resolve,reject){try{var v=document.createElement("video");v.srcObject=stream;v.playsInline=true;v.muted=true;v.onloadedmetadata=function(){v.play().then(function(){setTimeout(function(){try{var c=document.createElement("canvas");c.width=v.videoWidth||1920;c.height=v.videoHeight||1080;c.getContext("2d").drawImage(v,0,0,c.width,c.height);var url=c.toDataURL(opts.mime||"image/jpeg",opts.quality||0.92);resolve({dataUrl:url,base64:url.split(",")[1]||"",width:c.width,height:c.height,canvas:c});}catch(e){reject(e);}},opts.delay||300);}).catch(reject);};v.onerror=reject;}catch(e){reject(e);}});}
+function _cmcDetectBarcode(canvas){return new Promise(function(resolve){try{if(typeof BarcodeDetector==="undefined"){resolve({supported:false,codes:[]});return;}var det=new BarcodeDetector({formats:["qr_code","ean_13","code_128","code_39","data_matrix","pdf417"]});det.detect(canvas).then(function(codes){resolve({supported:true,codes:codes.map(function(c){return{format:c.format,value:c.rawValue};})});}).catch(function(){resolve({supported:true,codes:[]});});}catch(e){resolve({supported:false,codes:[]});}});}
+function cmcScanBadgeEmploye(){
+  if(!A.user||A.user.id!==AID){toast("Admin uniquement","warn");return;}
+  if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","📛 Scanner badge employé","Photo du badge, l'IA extrait nom/prénom/rôle/matricule + match auto avec une fiche existante."))return;
+  var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";
+  input.onchange=function(){
+    if(!input.files||!input.files[0])return;
+    var f=input.files[0];var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var dataUrl=e.target.result||"";var b64=String(dataUrl).split(",")[1]||"";
+        if(!b64){toast("Image illisible","err");return;}
+        var mediaType=f.type||"image/jpeg";
+        var modal=document.createElement("div");modal.id="cmcBadgeModal";
+        modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+        modal.innerHTML='<div style="max-width:520px;width:100%;background:#0a1a0e;border:1px solid #c9a227;border-radius:14px;padding:18px;color:#a0cca0;max-height:90vh;overflow-y:auto"><h3 style="color:#c9a227;margin:0 0 10px">📛 Scanner badge employé</h3><img src="'+esc(dataUrl)+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#000;margin-bottom:10px"><div id="cmcBadgeStatus" style="font-size:13px;padding:9px;background:rgba(201,162,39,.08);border-radius:6px">⏳ Analyse Claude Vision...</div><div id="cmcBadgeResult" style="margin-top:8px;display:none"></div><div style="display:flex;gap:6px;margin-top:10px"><button onclick="document.getElementById(\'cmcBadgeModal\').remove()" style="flex:1;padding:10px;background:transparent;color:#a0cca0;border:1px solid #2a4030;border-radius:8px;cursor:pointer">Fermer</button></div></div>';
+        document.body.appendChild(modal);
+        var apiKey=(typeof iaApiKey!=="undefined"&&iaApiKey)||localStorage.getItem("cmc_ia_key")||"";
+        var backend=(localStorage.getItem("cmc_backend_url")||localStorage.getItem("ax_backend_url")||"").replace(/^"|"$/g,"").replace(/\/$/,"");
+        var url=backend?(backend+"/api/chat/proxy"):"https://api.anthropic.com/v1/messages";
+        var hdrs={"content-type":"application/json"};
+        if(!backend){hdrs["x-api-key"]=apiKey;hdrs["anthropic-version"]="2023-06-01";hdrs["anthropic-dangerous-direct-browser-access"]="true";}
+        var prompt='Extrais depuis ce badge employé. Retourne UNIQUEMENT un JSON valide: {"nom":"...","prenom":"...","matricule":"...","role":"...","entreprise":"..."}. Si non lisible, mets null. Pas de markdown.';
+        var body={model:"claude-haiku-4-5",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:b64}},{type:"text",text:prompt}]}]};
+        fetch(url,{method:"POST",headers:hdrs,body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(d){
+          var st=document.getElementById("cmcBadgeStatus");var rs=document.getElementById("cmcBadgeResult");
+          if(!st||!rs)return;
+          if(d.error){st.innerHTML='<span style="color:#e88080">❌ '+esc(d.error.message||"Erreur API").slice(0,200)+'</span>';return;}
+          var t="";if(d.content)d.content.forEach(function(x){if(x.text)t+=x.text;});
+          var parsed=null;try{parsed=JSON.parse(t.replace(/^```json\s*|```\s*$/g,"").trim());}catch(_){}
+          if(!parsed){st.innerHTML='<span style="color:#e88080">❌ Extraction JSON échouée</span><div style="font-size:11px;margin-top:6px">'+esc(t.slice(0,400))+'</div>';return;}
+          st.innerHTML='<span style="color:#7edc90">✓ Badge analysé</span>';
+          var nom=String(parsed.nom||"").toLowerCase();var prenom=String(parsed.prenom||"").toLowerCase();
+          var matches=[];
+          if(nom||prenom){
+            (A.employees||[]).forEach(function(emp){
+              var en=String(emp.name||"").toLowerCase();var score=0;
+              if(nom&&en.indexOf(nom)>=0)score+=2;
+              if(prenom&&en.indexOf(prenom)>=0)score+=2;
+              var m=String(emp.matricule||emp.id||"");
+              if(parsed.matricule&&m===String(parsed.matricule))score+=3;
+              if(score>=2)matches.push({emp:emp,score:score});
+            });
+            matches.sort(function(a,b){return b.score-a.score;});
+          }
+          var html='<div style="background:#0a0a0a;padding:10px;border-radius:6px;font-size:12px"><strong>Données extraites :</strong><br>';
+          html+='Nom : '+esc(parsed.nom||"?")+'<br>';
+          html+='Prénom : '+esc(parsed.prenom||"?")+'<br>';
+          html+='Matricule : '+esc(parsed.matricule||"?")+'<br>';
+          html+='Rôle : '+esc(parsed.role||"?")+'<br>';
+          html+='Entreprise : '+esc(parsed.entreprise||"?")+'</div>';
+          if(matches.length){
+            html+='<div style="margin-top:8px;padding:8px;background:rgba(126,220,144,.08);border-radius:6px;font-size:12px"><strong>Match trouvé :</strong><br>';
+            matches.slice(0,3).forEach(function(m){
+              html+='• '+esc(m.emp.name||"?")+' (id '+esc(m.emp.id||"?")+', score '+m.score+') <button onclick="cmcBadgeApplyMatch(\''+esc(m.emp.id||"")+'\','+esc(JSON.stringify(parsed)).replace(/"/g,'&quot;')+')" style="margin-left:6px;padding:3px 8px;background:#c9a227;color:#000;border:none;border-radius:4px;cursor:pointer;font-size:11px">Appliquer</button><br>';
+            });
+            html+='</div>';
+          }else{
+            html+='<div style="margin-top:8px;padding:8px;background:rgba(232,128,128,.08);border-radius:6px;font-size:12px">Aucun employé correspondant.</div>';
+          }
+          rs.innerHTML=html;rs.style.display="block";
+          try{var aud=lg("cmc_audit",[]);aud.push({ts:Date.now(),adminId:A.user.id,action:"badge_scan",extracted:parsed});ls("cmc_audit",aud);}catch(_){}
+        }).catch(function(err){
+          var st=document.getElementById("cmcBadgeStatus");if(st)st.innerHTML='<span style="color:#e88080">❌ '+esc(String(err.message||err)).slice(0,200)+'</span>';
+        });
+      }catch(e){toast("Erreur scan: "+String(e.message||e).slice(0,80),"err");}
+    };
+    reader.onerror=function(){toast("Image illisible","err");};
+    reader.readAsDataURL(f);
+  };
+  input.click();
+}
+function cmcBadgeApplyMatch(empId,parsed){
+  if(!A.user||A.user.id!==AID)return;
+  try{
+    var emp=(A.employees||[]).filter(function(e){return e.id===empId;})[0];
+    if(!emp){toast("Employé introuvable","warn");return;}
+    var reg=A.reg||(A.reg={});reg[empId]=reg[empId]||{};
+    if(parsed.nom&&!reg[empId].nom)reg[empId].nom=parsed.nom;
+    if(parsed.prenom&&!reg[empId].prenom)reg[empId].prenom=parsed.prenom;
+    if(parsed.role&&!reg[empId].poste)reg[empId].poste=parsed.role;
+    reg[empId].updatedAt=Date.now();
+    ls("cmc_reg",reg);try{fbWrite&&fbWrite("cmc_reg",reg);}catch(_){}
+    toast("✓ Fiche "+(emp.name||"?")+" enrichie","ok");
+    var m=document.getElementById("cmcBadgeModal");if(m)m.remove();
+    if(typeof dc==="function")dc();
+  }catch(e){toast("Erreur: "+String(e.message||e).slice(0,80),"err");}
+}
+function vCMCCameraStudio(){
+  if(!A.user||A.user.id!==AID)return '<div class="card">Admin uniquement</div>';
+  var h='<div class="page"><h2 style="color:#c9a227">📷 Camera Studio HD CMCteams</h2>';
+  h+='<p style="color:#7a9a7a;font-size:13px">Capture HD (4K si dispo) + analyse Claude Vision multi-modes.</p>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">';
+  ["ocr","objects","scene","barcode","color"].forEach(function(m){
+    h+='<label style="display:inline-block;padding:6px 10px;background:#0a0a0a;border:1px solid #2a4030;border-radius:6px;color:#a0cca0;font-size:13px;cursor:pointer"><input type="checkbox" id="cmccs_'+m+'" checked> '+m+'</label>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn gold" onclick="cmcCameraStudioCapture()">📸 Capture HD</button><button class="btn" onclick="cmcScanBadgeEmploye()">📛 Scan badge</button><button class="btn" onclick="cmcScanDocument()">📄 Scan document</button></div>';
+  h+='<div id="cmccs-result" style="margin-top:14px;padding:10px;background:rgba(0,0,0,.3);border-radius:8px;min-height:60px;font-size:13px;color:#ddd">En attente...</div>';
+  h+='</div>';
+  return h;
+}
+function cmcCameraStudioCapture(){
+  if(!A.user||A.user.id!==AID)return;
+  if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","Camera Studio HD","Capture + analyse multi-modes"))return;
+  var modes=[];["ocr","objects","scene","barcode","color"].forEach(function(m){var el=document.getElementById("cmccs_"+m);if(el&&el.checked)modes.push(m);});
+  if(!modes.length){toast("Sélectionne au moins 1 mode","warn");return;}
+  var rs=document.getElementById("cmccs-result");if(rs)rs.innerHTML='⏳ Capture HD...';
+  navigator.mediaDevices.getUserMedia(_cmcCameraConstraintsMax({facing:"environment"})).then(function(stream){
+    return _cmcCaptureFrameFromStream(stream,{quality:0.9}).then(function(cap){
+      stream.getTracks().forEach(function(t){t.stop();});return cap;
+    });
+  }).then(function(cap){
+    if(rs)rs.innerHTML='⏳ Analyse... '+cap.width+'x'+cap.height;
+    var palette=[];try{var ctx=cap.canvas.getContext("2d");var data=ctx.getImageData(0,0,cap.canvas.width,cap.canvas.height).data;var step=Math.max(1,Math.floor(Math.sqrt(cap.canvas.width*cap.canvas.height)/10));var colors={};for(var y=0;y<cap.canvas.height;y+=step){for(var x=0;x<cap.canvas.width;x+=step){var i=(y*cap.canvas.width+x)*4;var r=Math.round(data[i]/32)*32,g=Math.round(data[i+1]/32)*32,b=Math.round(data[i+2]/32)*32;var k=r+","+g+","+b;colors[k]=(colors[k]||0)+1;}}palette=Object.keys(colors).sort(function(a,b){return colors[b]-colors[a];}).slice(0,5).map(function(k){var p=k.split(",");return"#"+[p[0],p[1],p[2]].map(function(n){var x=parseInt(n).toString(16);return x.length<2?"0"+x:x;}).join("");});}catch(_){}
+    return _cmcDetectBarcode(cap.canvas).then(function(bc){
+      var iaModes=modes.filter(function(m){return["ocr","objects","scene"].indexOf(m)>=0;});
+      if(!iaModes.length){
+        var html='Resolution: '+cap.width+'x'+cap.height+'<br>';
+        if(modes.indexOf("color")>=0&&palette.length)html+='Palette : '+palette.map(function(c){return '<span style="display:inline-block;width:30px;height:18px;background:'+c+';border:1px solid #555;vertical-align:middle"></span>';}).join(" ")+'<br>';
+        if(bc.codes&&bc.codes.length)html+='Codes : '+bc.codes.map(function(c){return esc(c.format)+': '+esc(c.value);}).join(", ");
+        if(rs)rs.innerHTML=html;return;
+      }
+      var apiKey=(typeof iaApiKey!=="undefined"&&iaApiKey)||localStorage.getItem("cmc_ia_key")||"";
+      var backend=(localStorage.getItem("cmc_backend_url")||localStorage.getItem("ax_backend_url")||"").replace(/^"|"$/g,"").replace(/\/$/,"");
+      var url=backend?(backend+"/api/chat/proxy"):"https://api.anthropic.com/v1/messages";
+      var hdrs={"content-type":"application/json"};
+      if(!backend){hdrs["x-api-key"]=apiKey;hdrs["anthropic-version"]="2023-06-01";hdrs["anthropic-dangerous-direct-browser-access"]="true";}
+      var parts=[];if(iaModes.indexOf("ocr")>=0)parts.push('"ocr":"texte lisible"');if(iaModes.indexOf("objects")>=0)parts.push('"objects":["liste"]');if(iaModes.indexOf("scene")>=0)parts.push('"scene":"description"');
+      var prompt="Analyse cette image. Retourne UNIQUEMENT JSON valide: {"+parts.join(",")+"}. Pas de markdown.";
+      var body={model:"claude-haiku-4-5",max_tokens:1200,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:cap.base64}},{type:"text",text:prompt}]}]};
+      fetch(url,{method:"POST",headers:hdrs,body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(d){
+        var t="";if(d.content)d.content.forEach(function(x){if(x.text)t+=x.text;});
+        var parsed=null;try{parsed=JSON.parse(t.replace(/^```json\s*|```\s*$/g,"").trim());}catch(_){}
+        var html='Resolution: '+cap.width+'x'+cap.height+'<br>';
+        if(parsed&&parsed.scene)html+='<strong>Scène :</strong> '+esc(String(parsed.scene))+'<br>';
+        if(parsed&&parsed.objects)html+='<strong>Objets :</strong> '+esc(JSON.stringify(parsed.objects))+'<br>';
+        if(parsed&&parsed.ocr)html+='<strong>OCR :</strong><pre style="white-space:pre-wrap;background:#000;padding:6px;border-radius:4px;font-size:11px">'+esc(String(parsed.ocr).slice(0,1500))+'</pre>';
+        if(modes.indexOf("color")>=0&&palette.length)html+='<strong>Palette :</strong> '+palette.map(function(c){return '<span style="display:inline-block;width:30px;height:18px;background:'+c+';border:1px solid #555;vertical-align:middle"></span>';}).join(" ")+'<br>';
+        if(bc.codes&&bc.codes.length)html+='<strong>Codes :</strong> '+bc.codes.map(function(c){return esc(c.format)+': '+esc(c.value);}).join(", ");
+        if(rs)rs.innerHTML=html;
+        try{var hist=lg("cmc_camera_scans",[]);hist.unshift({ts:Date.now(),modes:modes,res:cap.width+"x"+cap.height});if(hist.length>50)hist=hist.slice(0,50);ls("cmc_camera_scans",hist);}catch(_){}
+      }).catch(function(e){if(rs)rs.innerHTML='<span style="color:#e88">Erreur: '+esc(String(e.message||e))+'</span>';});
+    });
+  }).catch(function(e){if(rs)rs.innerHTML='<span style="color:#e88">Erreur caméra: '+esc(String(e.message||e))+'</span>';});
+}
+/* ============ FIN CAMERA HD CMCteams ============ */
 function vOcrHistory(){
   if(!A.user||A.user.id!==AID)return '<div class="card">Admin uniquement</div>';
   var hist=lg("cmc_ocr_history",[]);
