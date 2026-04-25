@@ -1750,6 +1750,7 @@ if(!_claimedAdmin&&!preconf){
     if(!K.activeConvId)newConversation();sv("dashboard");
     toast("Bienvenue "+_subReq.prenom+" ! Plan: "+_subReq.plan,"ok");
     _saveLastUser();_initPresence();_logConnection("login");
+    try{_axApplyPendingReferral();}catch(_){}
     return true;
   }
 }
