@@ -1350,7 +1350,7 @@ function axSentinelEnhance(sentinelId,context){
   (s.monitors||[]).forEach(function(m){try{var fn=window["_check_"+m];if(typeof fn==="function"){var r=fn();if(r&&r.alert)report.findings.push({monitor:m,kind:r.kind,msg:r.msg,data:r});}}catch(_){}});
   if(report.findings.some(function(f){return f.kind==="err";}))report.status="critical";
   else if(report.findings.length)report.status="warn";
-  if(report.findings.length){(s.auto_fix||[]).slice(0,3).forEach(function(fix){try{var fn=window[fix];if(typeof fn==="function"){var ck="ax_sn_fix_"+sentinelId+"_"+fix;var last=+lg(ck,0);if(Date.now()-last<3600000)return;ls(ck,Date.now());fn();report.actions.push(fix);}}catch(_){}});}
+  if(report.findings.length){(s.auto_fix||[]).slice(0,3).forEach(function(fix){try{var fn=window[fix];if(typeof fn==="function"){var ck="ax_sn_fix_"+sentinelId+"_"+fix;var last=+lg(ck,0);if(Date.now()-last<3600000)return;ls(ck,Date.now());fn();report.actions.push(fix);/* v12.261 — Increment lesson counter for this auto-fix category */try{if(typeof axLessonApplyByCategory==="function")axLessonApplyByCategory("auto-fix-"+sentinelId,1);}catch(_){}}}catch(_){}});}
   try{var hist=lg("ax_sentinel_history",[]);hist.push(report);if(hist.length>200)hist=hist.slice(-200);ls("ax_sentinel_history",hist);}catch(_){}
   try{if(report.status==="critical"&&typeof _apexPushTelemetry==="function")_apexPushTelemetry(sentinelId,"err",report.findings.map(function(f){return f.msg;}).join(" | "));}catch(_){}
   return report;
@@ -10190,6 +10190,34 @@ function axLessonMarkApplied(ts){
   }catch(e){return false;}
 }
 
+/* v12.261 — Increment timesApplied counter (utilise par auto-fix pour mesurer effet) */
+function axLessonIncrementApplied(ts,by){
+  try{
+    var arr=lg("ax_lessons_learned",[]);
+    var e=arr.find(function(x){return x&&x.ts===ts;});
+    if(!e)return false;
+    e.timesApplied=(e.timesApplied||0)+(by||1);
+    e.lastApplied=Date.now();
+    ls("ax_lessons_learned",arr);
+    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
+    return true;
+  }catch(e){return false;}
+}
+/* v12.261 — Trouver une lecon par categorie + auto-incrementer (pour auto-fix) */
+function axLessonApplyByCategory(cat,by){
+  try{
+    var arr=lg("ax_lessons_learned",[])||[];
+    var c=String(cat||"").toLowerCase();
+    var matches=arr.filter(function(e){return e&&e.category===c;});
+    if(!matches.length)return 0;
+    matches.forEach(function(e){e.timesApplied=(e.timesApplied||0)+(by||1);e.lastApplied=Date.now();});
+    ls("ax_lessons_learned",arr);
+    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
+    return matches.length;
+  }catch(e){return 0;}
+}
+try{window.axLessonIncrementApplied=axLessonIncrementApplied;window.axLessonApplyByCategory=axLessonApplyByCategory;}catch(_){}
+
 /* Detection nouvelle lesson critique au boot (toast 1x) */
 function _axCheckNewCriticalLessons(){
   try{
@@ -10279,6 +10307,7 @@ function vLessonsLearned(){
       h+='<span class="ax-badge ax-badge-blue" style="font-size:11px">'+esc(e.category||"general")+'</span>';
       if(e.sev==="critical")h+='<span class="ax-badge" style="background:var(--ax-red);color:#fff;font-size:11px">CRITIQUE</span>';
       if(e.applied)h+='<span class="ax-badge" style="background:var(--ax-green);color:#000;font-size:11px">✅ Applique</span>';
+      if(e.timesApplied&&e.timesApplied>0)h+='<span class="ax-badge" style="background:var(--ax-blue,#5aa8ff);color:#000;font-size:11px" title="Nombre de fois appliquee par auto-fix">🔁 '+e.timesApplied+'×</span>';
       h+='</div>';
       h+='<small style="color:var(--ax-text-dim);font-size:10px">'+esc(dateStr)+'</small>';
       h+='</div>';
