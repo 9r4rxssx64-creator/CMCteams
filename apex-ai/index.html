@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.121",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.122",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -2515,7 +2515,47 @@ function axClearStripeLink(plan){
     dc();
   }catch(e){toast("Erreur","err");}
 }
-function axTrackUsage(tokens){var usage=lg("ax_usage",{today:0,month:0,total:0,date:"",history:[]});var today=new Date().toISOString().slice(0,10);if(usage.date!==today){if(usage.date&&usage.today>0){usage.history=usage.history||[];usage.history.push({date:usage.date,tokens:usage.today});if(usage.history.length>30)usage.history=usage.history.slice(-30);}usage.today=0;usage.date=today;}usage.today+=tokens;usage.month+=tokens;usage.total+=tokens;ls("ax_usage",usage);}
+function axTrackUsage(tokens){var usage=lg("ax_usage",{today:0,month:0,total:0,date:"",history:[]});var today=new Date().toISOString().slice(0,10);if(usage.date!==today){if(usage.date&&usage.today>0){usage.history=usage.history||[];usage.history.push({date:usage.date,tokens:usage.today});if(usage.history.length>30)usage.history=usage.history.slice(-30);}usage.today=0;usage.date=today;}usage.today+=tokens;usage.month+=tokens;usage.total+=tokens;ls("ax_usage",usage);
+/* v12.122 — Suivi conso par utilisateur + alertes admin (Kevin: 'alerte admin quand client consomme bcp') */
+var uid=K.user&&K.user.id;
+if(uid){
+  var perUser=lg("ax_user_usage",{});
+  var u=perUser[uid]||{today:0,month:0,total:0,date:""};
+  if(u.date!==today){if(u.date&&u.today>0){u.history=u.history||[];u.history.push({date:u.date,tokens:u.today});if(u.history.length>30)u.history=u.history.slice(-30);}u.today=0;u.date=today;}
+  u.today+=tokens;u.month+=tokens;u.total+=tokens;u.lastUpdate=Date.now();
+  perUser[uid]=u;
+  ls("ax_user_usage",perUser);
+  if(typeof fbWrite==="function")try{fbWrite("ax_user_usage",perUser);}catch(_){}
+  /* Alerte admin si conso elevee */
+  axCheckHighUsage(uid,u);
+}}
+function axCheckHighUsage(uid,u){
+  if(uid===ADMIN_ID)return;/* Pas d alerte sur admin */
+  var thresh=lg("ax_usage_threshold",{daily:50000,monthly:500000});
+  var alerted=lg("ax_usage_alerts_sent",{});
+  var key=uid+"_"+(new Date().toISOString().slice(0,10));
+  if(alerted[key])return;
+  var triggered=null;
+  if(u.today>=thresh.daily)triggered="quotidien ("+Math.round(u.today/1000)+"k tokens)";
+  else if(u.month>=thresh.monthly)triggered="mensuel ("+Math.round(u.month/1000)+"k tokens)";
+  if(triggered){
+    alerted[key]=Date.now();ls("ax_usage_alerts_sent",alerted);
+    var alerts=lg("ax_security_alerts",[]);
+    var profs=lg("ax_client_profiles",{});
+    var name=(profs[uid]&&profs[uid].name)||uid;
+    alerts.push({ts:Date.now(),type:"high_usage",uid:uid,name:name,severity:"warn",msg:"Conso elevee "+triggered+" - "+name});
+    if(alerts.length>500)alerts=alerts.slice(-500);
+    ls("ax_security_alerts",alerts);
+    if(typeof fbWrite==="function")try{fbWrite("ax_security_alerts",alerts);}catch(_){}
+    try{if(typeof axNotifyAdmin==="function")axNotifyAdmin("⚠️ Conso "+triggered+" pour "+name);}catch(_){}
+  }
+}
+function axGetUserUsage(uid){
+  uid=uid||(K.user&&K.user.id)||"";
+  if(!uid)return{today:0,month:0,total:0};
+  var all=lg("ax_user_usage",{});
+  return all[uid]||{today:0,month:0,total:0};
+}
 
 // === MODULE: Devices ===
 function vDevices(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-cyan),#20c0b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83D\uDCF1 Appareils & Connexions</h2>';var devices=lg("ax_devices",{});var devKeys=Object.keys(devices);h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:linear-gradient(135deg,rgba(76,208,128,.04),transparent)"><h3>\uD83D\uDD17 Appareils connectes ('+devKeys.length+')</h3>';if(!devKeys.length){h+='<p style="color:var(--ax-text-dim);font-size:13px">Cet appareil sera enregistre automatiquement.</p>';}devKeys.forEach(function(dk){var d=devices[dk];h+='<div class="ax-setting-row"><div><span style="font-size:16px">'+(d.type==="phone"?"\uD83D\uDCF1":d.type==="tablet"?"\uD83D\uDCBB":"\uD83D\uDDA5\uFE0F")+'</span> <strong>'+esc(d.name)+'</strong></div><span class="ax-badge ax-badge-'+(now()-d.lastSeen<300000?"green":"red")+'">'+(now()-d.lastSeen<300000?"En ligne":"Hors ligne")+"</span></div>";});h+="</div>";var toggles=[{id:"email_gmail",name:"\uD83D\uDCE7 Gmail",desc:"Lire et envoyer des emails"},{id:"email_outlook",name:"\uD83D\uDCE8 Outlook (monaco.mc)",desc:"Acces emails Monaco"},{id:"whatsapp",name:"\uD83D\uDCF2 WhatsApp",desc:"Messages automatises"},{id:"instagram",name:"\uD83D\uDCF7 Instagram",desc:"Publier du contenu"},{id:"facebook",name:"\uD83D\uDC65 Facebook",desc:"Gerer la page"},{id:"telegram",name:"\u2708\uFE0F Telegram",desc:"Bot notifications"},{id:"clipboard_sync",name:"\uD83D\uDCCB Sync Presse-papiers",desc:"Copier entre appareils"},{id:"file_transfer",name:"\uD83D\uDCC1 Transfert Fichiers",desc:"Envoyer des fichiers entre appareils"}];h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.04),transparent)"><h3>\uD83D\uDD18 Connexions (activer/desactiver)</h3>';toggles.forEach(function(tg){var enabled=axCanUse(tg.id);h+='<div class="ax-setting-row"><div class="ax-label">'+tg.name+'<div class="ax-desc">'+tg.desc+'</div></div><label class="ax-toggle"><input type="checkbox" '+(enabled?"checked":"")+" onchange=\"axToggle('"+tg.id+"',this.checked)\"><span class=\"slider\"></span></label></div>";});h+="</div>";h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);background:linear-gradient(135deg,rgba(90,168,255,.04),transparent)"><h3>\uD83D\uDCE1 Commandes inter-appareils</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'clipboard\')">\uD83D\uDCCB Sync clipboard</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'notify\')">\uD83D\uDD14 Notifier tous</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'url\')">\uD83C\uDF10 Ouvrir URL</button><button class="ax-btn ax-btn-outline" onclick="_deviceCmd(\'file\')">\uD83D\uDCC1 Envoyer fichier</button></div></div></div>';return h;}
