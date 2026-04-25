@@ -1,5 +1,5 @@
 {
-  "updated_at": 1777118742599,
+  "updated_at": 1777119038998,
   "total_commits": 220,
   "projects": [
     "apex",
@@ -9,6 +9,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "3c577b63",
+      "ts": 1777118744000,
+      "msg": "Apex v12.174: Fix Coffre crayon (1er clic ouvre prompt) + sync FB + admin-first UX rule",
+      "project": "apex",
+      "ver": "12.174",
+      "author": "claude-code"
+    },
     {
       "sha": "74ff49aa",
       "ts": 1777117430000,
@@ -959,14 +967,6 @@
       "msg": "CMCteams v9.476: FaceID auto-trigger ecran login (parite Apex v12.112)",
       "project": "cmcteams",
       "ver": "9.476",
-      "author": "claude-code"
-    },
-    {
-      "sha": "458bca3d",
-      "ts": 1777078459000,
-      "msg": "Apex v12.112: FaceID priorite + auto-trigger sur ecran login",
-      "project": "apex",
-      "ver": "12.112",
       "author": "claude-code"
     }
   ]

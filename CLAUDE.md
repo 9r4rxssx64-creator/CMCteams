@@ -4,6 +4,58 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🎨 RÈGLE PERMANENTE — SMART STUDIOS ANTICIPATIFS (Kevin 2026-04-25)
+
+> **"Imaginons qu'on lui dise 'je veux faire un montage vidéo' → hop, il me sort une table de mixage vidéo. 'Montage musique' → table de mixage musique. 'Dossier préfecture' → tous les liens pré-remplis. Il anticipe à aller plus loin que ce que l'utilisateur attend. Quand il a compris le principe, il fait les recherches encore plus poussées pour surprendre dans le bon sens."**
+
+À chaque demande utilisateur, Apex (et CMCteams quand pertinent) doit :
+
+### 1. Détecter l'intention (axDetectIntent / cmcDetectIntent)
+
+Map FR/EN d'expressions → studios dédiés :
+- "montage video / clip / film / pub" → Studio Vidéo
+- "montage musique / track / chanson" → Studio Musique
+- "dossier prefecture / titre sejour / cni" → Studio Préfecture
+- "cv / curriculum" → Studio CV
+- "facture / devis" → Studio Facture
+- "contrat / nda / cdi" → Studio Contrat
+- "presentation / slides / pitch" → Studio Présentation
+- "logo / branding" → Studio Logo
+- "clip a partir de cette photo" → Studio Clip Photo→Vidéo
+
+### 2. Ouvrir le studio dédié (axOpenStudio(name))
+
+Chaque studio = vue UI dédiée avec :
+- Tous les outils nécessaires PRÉ-CHARGÉS
+- Templates rapides ("Vacances", "Pub produit", "Pitch startup", etc.)
+- Formulaires pré-remplis depuis `A.user.reg`
+- Liens directs externes pertinents (gouv.fr, banques, plateformes...)
+- Export multi-format (PDF, MP4, MP3, DOCX, PNG, SVG)
+
+### 3. Anticipation engine (axAnticipateNext)
+
+Après chaque action :
+- Détecter logical next steps ("logo généré → cartes de visite ? site web ? t-shirt ?")
+- Proposer 3-5 suggestions visuelles cliquables
+- Apprendre les patterns user dans `ax_anticipation_patterns`
+
+### 4. Aller au-delà sans demander
+
+- Si user demande "facture" → Apex propose AUSSI : devis lié, suivi paiement, relance auto
+- Si user demande "CV" → Apex propose AUSSI : LinkedIn updaté, lettre motivation IA, mock entretien
+- Si user demande "préfecture" → Apex propose AUSSI : checklist documents, calendrier RDV, notification rappel
+
+### 5. Recherche autonome de meilleurs outils
+
+Sentinelle "tools-watch" tourne périodiquement :
+- Détecte nouveaux APIs (Replicate, ElevenLabs, Suno, Pika, etc.)
+- Détecte mises à jour modèles IA (FLUX 2, Sora, Veo 2, etc.)
+- Propose intégration auto via `ax_claude_todo` si pertinent
+
+S'applique : Apex (Studios), CMCteams (Workflows métier casino), tous projets futurs.
+
+---
+
 ## 👑 RÈGLE PERMANENTE — ADMIN-FIRST UX (Kevin 2026-04-25)
 
 > **"Fais ma première vue, la mon équipe toujours, l'équipe miroir ensuite, et fait un système de famille différent de celui qui tu as mis, plus simple, plus intuitif, plus clair, plus facile d'accès. Plus simple pour l'admin, ici comme ailleurs, toujours en général, faire au plus simple pour que les infos soient faciles d'accès, recherchées, que tout soit clair et fonctionnel et visuel pour l'admin."**
