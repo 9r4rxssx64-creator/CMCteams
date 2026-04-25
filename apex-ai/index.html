@@ -360,7 +360,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.163",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.164",ADMIN_ID="kdmc_admin";
 /* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
 var AX_LOCALES={
   MC:{name:"Monaco",flag:"🇲🇨",lang:"fr",currency:"EUR",timezone:"Europe/Monaco",emergency:"112"},
@@ -737,7 +737,7 @@ function vVault(){if(!axIsAdmin()){return'<div class="ax-empty"><div class="ax-e
 
 function _vaultAction(ev){var btn=ev.target.closest("[data-vault-action]");if(!btn)return;var act=btn.dataset.vaultAction;var k=btn.dataset.vkey;if(act==="copy"){var v=localStorage.getItem(k);if(v){navigator.clipboard.writeText(v);toast("Copie","ok");}}else if(act==="edit"){var name=btn.dataset.vname||k;var cur=localStorage.getItem(k)||"";var nv=prompt(name+":",cur);if(nv!==null){if(nv==="")localStorage.removeItem(k);else localStorage.setItem(k,nv);dc();}}}
 document.addEventListener("click",_vaultAction);
-function _filterVault(q){document.querySelectorAll(".ax-vault-item").forEach(function(el){var s=el.getAttribute("data-search")||"";el.style.display=s.indexOf(q.toLowerCase())>=0?"":"none";});document.querySelectorAll(".ax-vault-cat").forEach(function(el){var visible=el.querySelectorAll(".ax-vault-item:not([style*='none'])").length;var cat=el.getAttribute("data-cat")||"";if(!q)el.style.display="";else el.style.display=(visible>0||cat.indexOf(q.toLowerCase())>=0)?"":"none";});}
+function _filterVault(q){var ql=String(q||"").toLowerCase().trim();document.querySelectorAll(".ax-vault-item").forEach(function(el){var s=(el.getAttribute("data-search")||el.getAttribute("data-vname")||el.getAttribute("data-vkey")||el.textContent||"").toLowerCase();el.style.display=(!ql||s.indexOf(ql)>=0)?"":"none";});document.querySelectorAll(".ax-vault-cat").forEach(function(el){var visible=el.querySelectorAll(".ax-vault-item:not([style*='none'])").length;var cat=(el.getAttribute("data-cat")||"").toLowerCase();if(!ql)el.style.display="";else el.style.display=(visible>0||cat.indexOf(ql)>=0)?"":"none";});}
 function _exportVault(){var data={};var prefix="ax_";for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.startsWith(prefix)){data[k]=localStorage.getItem(k);}}var json=JSON.stringify(data,null,2);var pin=prompt("Choisissez un mot de passe pour chiffrer l'export :");if(!pin)return;var encoded=btoa(unescape(encodeURIComponent(pin+":"+json)));var blob=new Blob([encoded],{type:"text/plain"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="kdmc-vault-"+new Date().toISOString().slice(0,10)+".enc";a.click();toast("Coffre exporte (chiffre)","ok");}
 function _importVault(input){if(!input.files||!input.files[0])return;var pin=prompt("Mot de passe du fichier :");if(!pin)return;var reader=new FileReader();reader.onload=function(e){try{var decoded=decodeURIComponent(escape(atob(e.target.result)));if(!decoded.startsWith(pin+":")){toast("Mot de passe incorrect","err");return;}var json=decoded.slice(pin.length+1);var data=JSON.parse(json);var count=0;Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);count++;});toast(count+" identifiants importes","ok");dc();}catch(ex){toast("Erreur import","err");}};reader.readAsText(input.files[0]);}
 
@@ -5080,7 +5080,47 @@ function axUniversalSearch(query){
   try{if(typeof FAQ_ITEMS!=="undefined"){FAQ_ITEMS.forEach(function(f){var blob=String(f.q||"")+" "+String(f.a||"");if(blob.toLowerCase().indexOf(query)>=0){results.push({type:"FAQ",icon:"❓",title:String(f.q||"").slice(0,80),action:"sv('faq')"});}});}}catch(_){}
   try{lg("ax_expenses",[]).forEach(function(e){var blob=String(e.desc||"")+" "+String(e.cat||"");if(blob.toLowerCase().indexOf(query)>=0){results.push({type:"Depense",icon:"💳",title:String(e.desc||"")+" ("+String(e.amount||0)+")",action:"sv('expenses')"});}});}catch(_){}
   try{lg("ax_goals",[]).forEach(function(g){var t=String(g.title||g.name||"");if(t.toLowerCase().indexOf(query)>=0){results.push({type:"Objectif",icon:"🎯",title:t.slice(0,80),action:"sv('goals')"});}});}catch(_){}
-  return results.slice(0,30);
+  /* v12.164 — Recherche dans Coffre + AI providers + Liens admin (Kevin: 'tape DeepSeek API ne trouve rien') */
+  try{
+    /* Cherche dans toutes les cles du Coffre par key + label */
+    var vaultMap={"ax_api_key":"Cle API Claude Anthropic","ax_openai_key":"OpenAI API GPT","ax_gemini_key":"Google Gemini API gratuit","ax_deepseek_key":"DeepSeek Coder API","ax_mistral_key":"Mistral API","ax_perplexity_key":"Perplexity Sonar API","ax_grok_key":"xAI Grok API","ax_openrouter_key":"OpenRouter 200+ IA","ax_replicate_key":"Replicate API","ax_finnhub_key":"Finnhub API bourse","ax_sentry_dsn":"Sentry DSN monitoring","ax_paypal_me":"PayPal.me username","ax_revolut_tag":"Revolut Revtag","ax_lydia_phone":"Lydia telephone","ax_btc_address":"Bitcoin address BTC","ax_eth_address":"Ethereum address ETH","ax_usdc_address":"USDC address","ax_iban":"IBAN virement bancaire","ax_iban_nom":"IBAN beneficiaire nom","ax_paypal_email":"PayPal email pro","ax_stripe_pub":"Stripe publishable key","ax_stripe_secret":"Stripe secret key","ax_emailjs_serviceid":"EmailJS Service ID","ax_emailjs_templateid":"EmailJS Template","ax_emailjs_userid":"EmailJS User ID","ax_telegram_token":"Telegram bot token","ax_whatsapp_phone":"WhatsApp number","ax_backend_url":"Backend Railway URL","ax_proxy_url":"Cloudflare proxy URL","ax_github_token":"GitHub PAT","ax_ha_url":"Home Assistant URL","ax_ha_token":"Home Assistant token","ax_tv_ip":"Smart TV IP","ax_router_url":"Routeur URL","ax_ir_url":"Broadlink IR URL"};
+    Object.keys(vaultMap).forEach(function(k){
+      var blob=(k+" "+vaultMap[k]).toLowerCase();
+      if(blob.indexOf(query)>=0){
+        var configured=!!localStorage.getItem(k);
+        results.push({type:"Coffre",icon:configured?"🔓":"🔒",title:vaultMap[k]+(configured?" ✓":" (à configurer)"),action:"sv('vault');setTimeout(function(){var i=document.getElementById('ax-vault-search');if(i){i.value='"+k+"';_filterVault('"+k+"');}},200);"});
+      }
+    });
+    /* Cherche dans AI providers */
+    if(typeof AX_AI_PROVIDERS!=="undefined"){
+      Object.keys(AX_AI_PROVIDERS).forEach(function(id){
+        var p=AX_AI_PROVIDERS[id];if(!p)return;
+        var blob=(id+" "+p.name+" "+(p.specialties||[]).join(" ")+" "+p.provider).toLowerCase();
+        if(blob.indexOf(query)>=0){
+          results.push({type:"IA Modele",icon:"🤖",title:p.name+" ("+p.provider+")",action:"sv('aiproviders')"});
+        }
+      });
+    }
+    /* Cherche dans liens admin (vAdminLinks data) */
+    var adminLinksKeywords={"anthropic":"Anthropic billing","claude":"Claude API","openai":"OpenAI billing","gpt":"GPT API","gemini":"Google Gemini","google":"Google AI","mistral":"Mistral AI","deepseek":"DeepSeek code","perplexity":"Perplexity recherche","grok":"xAI Grok","openrouter":"OpenRouter multi-IA","railway":"Railway hosting","apex.sbs":"Domaine apex.sbs","firebase":"Firebase RTDB","stripe":"Stripe paiements","paypal":"PayPal","revolut":"Revolut bank","binance":"Binance crypto","metamask":"MetaMask wallet","coinbase":"Coinbase","cloudflare":"Cloudflare","github":"GitHub repo","sentry":"Sentry monitoring","spotify":"Spotify music","ledger":"Ledger hardware wallet","trezor":"Trezor wallet"};
+    Object.keys(adminLinksKeywords).forEach(function(k){
+      var blob=(k+" "+adminLinksKeywords[k]).toLowerCase();
+      if(blob.indexOf(query)>=0){
+        results.push({type:"Lien admin",icon:"🔗",title:adminLinksKeywords[k],action:"sv('links')"});
+      }
+    });
+    /* Cherche dans PLANS */
+    if(typeof PLANS!=="undefined"){
+      Object.keys(PLANS).forEach(function(pk){
+        var p=PLANS[pk];if(!p||p.hidden)return;
+        var blob=(pk+" "+p.name).toLowerCase();
+        if(blob.indexOf(query)>=0){
+          results.push({type:"Plan",icon:"💎",title:p.name+" — "+(p.price?p.price+"€"+(p.oneshot?" (1x)":"/mois"):"Gratuit"),action:"sv('subscriptions')"});
+        }
+      });
+    }
+  }catch(_){}
+  return results.slice(0,40);
 }
 function _axGoCmd(id){try{if(typeof APEX_COMMANDS==="undefined")return;var c=APEX_COMMANDS.find(function(c){return c.id===id;});if(c&&typeof c.act==="function")c.act();}catch(_){}}
 function _showUniversalSearch(){var h='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:20px;margin-bottom:10px">🔍 Recherche universelle</h2><input id="ax-usearch" class="ax-input" placeholder="Chercher partout (conversations, notes, taches, contacts, vues, FAQ...)" oninput="_updateSearchResults(this.value)" autofocus style="margin-bottom:12px;font-size:16px;padding:14px;width:100%"><div id="ax-usearch-results" style="max-height:60vh;overflow-y:auto"></div><p style="font-size:11px;color:var(--ax-text-dim);margin-top:8px">Astuce : <kbd>Cmd</kbd>+<kbd>F</kbd> pour rouvrir. <kbd>Esc</kbd> pour fermer.</p>';_showModal(h);setTimeout(function(){var el=document.getElementById("ax-usearch");if(el)el.focus();_updateSearchResults("");},100);}
