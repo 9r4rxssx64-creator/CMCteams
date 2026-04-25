@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777120818904,
-  "total_commits": 225,
+  "updated_at": 1777121382217,
+  "total_commits": 226,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,22 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "5050d29b",
+      "ts": 1777121206000,
+      "msg": "Apex v12.185: Fix bandeau dore \"AI\" sur ecran login (vTopbar masque si pas connecte)",
+      "project": "apex",
+      "ver": "12.185",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c72c3a64",
+      "ts": 1777120819000,
+      "msg": "Apex v12.180: Sync Coffre Firebase auto + Restaurer + plus de re-saisie",
+      "project": "apex",
+      "ver": "12.180",
+      "author": "claude-code"
+    },
     {
       "sha": "69aeccb6",
       "ts": 1777119602000,
@@ -951,22 +967,6 @@
       "msg": "Apex v12.118: PayPal.me en plus de Stripe (Kevin pas encore societe)",
       "project": "apex",
       "ver": "12.118",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5c1a9b54",
-      "ts": 1777079436000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.116 Stripe",
-      "project": "docs",
-      "ver": "12.116",
-      "author": "claude-code"
-    },
-    {
-      "sha": "82eb5173",
-      "ts": 1777079403000,
-      "msg": "Apex v12.116: Stripe Checkout integration (clients paient en ligne)",
-      "project": "apex",
-      "ver": "12.116",
       "author": "claude-code"
     }
   ]
