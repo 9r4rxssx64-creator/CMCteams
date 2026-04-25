@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777109552855,
+  "updated_at": 1777110388101,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 188,
+  "total_commits": 194,
   "projects": [
     "apex",
     "backend",
@@ -16,7 +16,7 @@
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 35
+      "count": 37
     },
     {
       "name": "📅 Planning & Cadres",
@@ -24,19 +24,19 @@
     },
     {
       "name": "🎨 UX & Design",
-      "count": 14
+      "count": 15
     },
     {
       "name": "🤖 Agents & Automation",
       "count": 12
     },
     {
-      "name": "🔮 Autre",
+      "name": "🚂 Backend & Hosting",
       "count": 10
     },
     {
-      "name": "🚂 Backend & Hosting",
-      "count": 9
+      "name": "🔮 Autre",
+      "count": 10
     },
     {
       "name": "💳 Paiement & Abos",
@@ -48,19 +48,19 @@
     },
     {
       "name": "🎙 Voix & Audio",
-      "count": 7
+      "count": 8
     },
     {
       "name": "📧 Email & Notif",
       "count": 5
     },
     {
-      "name": "🔄 Sync & Storage",
+      "name": "📚 Docs & Méthodologie",
       "count": 4
     },
     {
-      "name": "📚 Docs & Méthodologie",
-      "count": 3
+      "name": "🔄 Sync & Storage",
+      "count": 4
     },
     {
       "name": "📊 Worklog & Suivi",
@@ -72,6 +72,60 @@
     }
   ],
   "commits": [
+    {
+      "sha": "4fefa9d6",
+      "ts": 1777110354000,
+      "msg": "Apex v12.153: voice commands universels (toutes fonctions activables a la voix)",
+      "project": "apex",
+      "ver": "12.153",
+      "topic": "🎙 Voix & Audio",
+      "author": "claude-code"
+    },
+    {
+      "sha": "56e0d794",
+      "ts": 1777110254000,
+      "msg": "Apex v12.153 — Concertation experte par competence (10 roles + avocat du diable)",
+      "project": "apex",
+      "ver": "12.153",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b1d8b1ee",
+      "ts": 1777110214000,
+      "msg": "MEMO_KEVIN_ACTIONS: tri par priorite + tache urgente #1 (Kevin demande)",
+      "project": "multi",
+      "ver": null,
+      "topic": "📚 Docs & Méthodologie",
+      "author": "claude-code"
+    },
+    {
+      "sha": "20b85346",
+      "ts": 1777109962000,
+      "msg": "Apex commit pending changes (subagent v12.151 services dashboard)",
+      "project": "multi",
+      "ver": "12.151",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "639e23fe",
+      "ts": 1777109926000,
+      "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
+      "project": "backend",
+      "ver": null,
+      "topic": "🚂 Backend & Hosting",
+      "author": "claude-code"
+    },
+    {
+      "sha": "256b021e",
+      "ts": 1777109552000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.150 + v9.502 (~210 commits)",
+      "project": "docs",
+      "ver": "12.150",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "d0d5a7a9",
       "ts": 1777109490000,
@@ -1096,60 +1150,6 @@
       "project": "multi",
       "ver": null,
       "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "06ce75a9",
-      "ts": 1777032056000,
-      "msg": "v12.83: Flow strict Kevin - fiche -> forfait -> validation -> acces",
-      "project": "multi",
-      "ver": "12.83",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c46dbd91",
-      "ts": 1777031722000,
-      "msg": "CRITICAL v12.82: Fallback HTML statique - Apex bloque ecran vide",
-      "project": "multi",
-      "ver": "12.82",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "06e5946a",
-      "ts": 1777031499000,
-      "msg": "CRITICAL v12.81: Fix Apex bloque ecran vide - PLANS manquants + render try/catch",
-      "project": "multi",
-      "ver": "12.81",
-      "topic": "💳 Paiement & Abos",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b97d69cb",
-      "ts": 1777031026000,
-      "msg": "URGENT v12.80: FAB cache par defaut + fail-safe force K.view=login si vide (#208)",
-      "project": "multi",
-      "ver": "12.80",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "82a17ca4",
-      "ts": 1777030379000,
-      "msg": "URGENT v12.79: Fail-safe splash removal - Kevin bloque sur splash (#206)",
-      "project": "multi",
-      "ver": "12.79",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e1b483e9",
-      "ts": 1777028632000,
-      "msg": "docs: GUIDE_KEVIN_MOBILE.md - guide pas a pas iPhone/Android actions 2 et 3 (#205)",
-      "project": "multi",
-      "ver": null,
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     }
   ]
