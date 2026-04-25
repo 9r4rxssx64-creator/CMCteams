@@ -1360,7 +1360,7 @@ function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";var co
 
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -2269,6 +2269,87 @@ function vSubscriptionsAdmin(){
   h+='</div>';
   return h;
 }
+/* v12.116 — Vue admin : configuration des Payment Links Stripe */
+function vStripeSetup(){
+  if(!axIsAdmin())return'<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin requis</div></div>';
+  var paidPlans=["starter","pro","business","enterprise"];
+  var h='<div style="padding:16px;max-width:760px;margin:0 auto">';
+  h+='<h2 style="color:var(--ax-gold);margin-bottom:6px">💳 Paiements Stripe</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Configure un Payment Link Stripe pour chaque plan payant. Quand un client choisit son plan apres validation admin, il sera redirige vers le lien Stripe correspondant.</p>';
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);margin-bottom:14px">';
+  h+='<div style="font-size:13px;font-weight:700;margin-bottom:6px">📚 Comment creer un Payment Link ?</div>';
+  h+='<ol style="font-size:12px;color:var(--ax-text-dim);padding-left:20px;line-height:1.6;margin:0">';
+  h+='<li>Va sur <a href="https://dashboard.stripe.com/payment-links" target="_blank" rel="noopener" style="color:var(--ax-gold);text-decoration:underline">dashboard.stripe.com/payment-links</a></li>';
+  h+='<li>Clique "+ Nouveau" → cree un produit (ex: "APEX Starter") avec son prix</li>';
+  h+='<li>Active "Recurrent (mensuel)" pour starter/pro/business · "One-shot" pour enterprise</li>';
+  h+='<li>Copie le lien genere (format <code>https://buy.stripe.com/xxxxxx</code>)</li>';
+  h+='<li>Colle-le dans le champ correspondant ci-dessous puis clique "Sauvegarder"</li>';
+  h+='</ol>';
+  h+='<div style="margin-top:10px"><a href="https://dashboard.stripe.com/payment-links" target="_blank" rel="noopener" class="ax-btn ax-btn-outline" style="padding:8px 14px;font-size:12px;display:inline-block;text-decoration:none;min-height:44px;line-height:28px">🌐 Ouvrir Stripe Dashboard</a></div>';
+  h+='</div>';
+  paidPlans.forEach(function(pk){
+    var p=PLANS[pk];if(!p)return;
+    var current=axGetStripeLink(pk);
+    var statusBadge=current?'<span class="ax-badge" style="background:var(--ax-green);color:#fff">✓ Configure</span>':'<span class="ax-badge" style="background:var(--ax-red);color:#fff">⚠ Manquant</span>';
+    var priceLabel=p.price+"€"+(p.oneshot?" (une fois)":"/mois");
+    h+='<div class="ax-card" style="border-left:4px solid '+(current?"var(--ax-green)":"var(--ax-red)")+';margin-bottom:12px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
+    h+='<div><div style="font-size:16px;font-weight:700">'+esc(p.name)+' — <span style="color:var(--ax-gold)">'+esc(priceLabel)+'</span></div>';
+    h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">Plan ID: <code>'+esc(pk)+'</code></div></div>';
+    h+='<div>'+statusBadge+'</div>';
+    h+='</div>';
+    h+='<input id="ax-stripe-link-'+esc(pk)+'" class="ax-input" type="url" placeholder="https://buy.stripe.com/..." value="'+esc(current)+'" style="width:100%;padding:10px;font-size:13px;margin-bottom:8px;min-height:44px">';
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    h+='<button class="ax-btn ax-btn-primary" onclick="axSaveStripeLink(\''+esc(pk)+'\')" style="flex:1;min-width:120px;padding:10px;font-size:13px;min-height:44px">💾 Sauvegarder</button>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="axTestStripeLink(\''+esc(pk)+'\')" style="flex:1;min-width:120px;padding:10px;font-size:13px;min-height:44px">🔗 Tester</button>';
+    if(current)h+='<button class="ax-btn ax-btn-outline" onclick="axClearStripeLink(\''+esc(pk)+'\')" style="padding:10px;font-size:13px;min-height:44px;color:var(--ax-red);border-color:var(--ax-red)">🗑</button>';
+    h+='</div>';
+    h+='</div>';
+  });
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-orange);margin-top:14px">';
+  h+='<div style="font-size:13px;font-weight:700;margin-bottom:6px">⚙️ Phase 2 — Activation auto (optionnel)</div>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:0 0 6px 0">Pour le moment, tu dois marquer le client comme "paye" manuellement dans Abonnements apres reception du paiement Stripe.</p>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:0">Plus tard : un webhook Cloudflare Worker pourra mettre a jour <code>status:"paid"</code> dans Firebase automatiquement (Stripe → Cloudflare → Apex).</p>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+function axSaveStripeLink(plan){
+  if(!axIsAdmin()){toast("Reserve admin","warn");return;}
+  var inp=document.getElementById("ax-stripe-link-"+plan);if(!inp){toast("Champ introuvable","err");return;}
+  var v=(inp.value||"").trim();
+  if(v&&!/^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com)\//i.test(v)){
+    if(!confirm("L\'URL ne ressemble pas a un lien Stripe officiel (https://buy.stripe.com/...).\nSauvegarder quand meme ?"))return;
+  }
+  try{
+    if(v)localStorage.setItem("ax_stripe_link_"+plan,v);
+    else localStorage.removeItem("ax_stripe_link_"+plan);
+    STRIPE_PAYMENT_LINKS[plan]=v;
+    if(typeof _audit==="function")_audit("stripe_link_set",plan,v?"set":"clear","");
+    toast("Lien "+plan+" sauvegarde","ok");
+    dc();
+  }catch(e){toast("Erreur sauvegarde","err");}
+}
+function axTestStripeLink(plan){
+  if(!axIsAdmin()){toast("Reserve admin","warn");return;}
+  var v=axGetStripeLink(plan);
+  var inp=document.getElementById("ax-stripe-link-"+plan);
+  if(inp&&inp.value&&inp.value.trim()&&inp.value.trim()!==v)v=inp.value.trim();
+  if(!v){toast("Aucun lien configure pour "+plan,"warn");return;}
+  try{window.open(v,"_blank","noopener");toast("Lien Stripe ouvert dans un nouvel onglet","ok");}
+  catch(e){toast("Impossible d\'ouvrir le lien","err");}
+}
+function axClearStripeLink(plan){
+  if(!axIsAdmin()){toast("Reserve admin","warn");return;}
+  if(!confirm("Effacer le Payment Link pour "+plan+" ?"))return;
+  try{
+    localStorage.removeItem("ax_stripe_link_"+plan);
+    STRIPE_PAYMENT_LINKS[plan]="";
+    if(typeof _audit==="function")_audit("stripe_link_clear",plan,"","");
+    toast("Lien efface","ok");
+    dc();
+  }catch(e){toast("Erreur","err");}
+}
 function axTrackUsage(tokens){var usage=lg("ax_usage",{today:0,month:0,total:0,date:"",history:[]});var today=new Date().toISOString().slice(0,10);if(usage.date!==today){if(usage.date&&usage.today>0){usage.history=usage.history||[];usage.history.push({date:usage.date,tokens:usage.today});if(usage.history.length>30)usage.history=usage.history.slice(-30);}usage.today=0;usage.date=today;}usage.today+=tokens;usage.month+=tokens;usage.total+=tokens;ls("ax_usage",usage);}
 
 // === MODULE: Devices ===
@@ -2618,6 +2699,7 @@ var APEX_COMMANDS=[
   /* Admin */
   {id:"clients",lb:"🛡 Clients",cat:"Admin",adminOnly:true,act:function(){sv("clients");}},
   {id:"subscriptions",lb:"💎 Abonnements",cat:"Admin",adminOnly:true,act:function(){sv("subscriptions");}},
+  {id:"stripesetup",lb:"💳 Configurer paiements Stripe",cat:"Admin",adminOnly:true,act:function(){sv("stripesetup");}},
   {id:"links",lb:"🔗 Liens admin",cat:"Admin",adminOnly:true,act:function(){sv("links");}},
   {id:"connections",lb:"🌐 Connexions live",cat:"Admin",adminOnly:true,act:function(){sv("connections");}},
   {id:"errorslive",lb:"🐛 Erreurs live",cat:"Admin",adminOnly:true,act:function(){sv("errorslive");}},
