@@ -146,6 +146,80 @@ S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
 
 ---
 
+## 📷 RÈGLE PERMANENTE — SCAN & DICTÉE PARTOUT (Kevin 2026-04-25, ABSOLUE)
+
+> **"Quand je clique dans un champ à remplir, j'ai le moyen de lui dire ouvre la caméra ou je clique sur la caméra pour scanner un code, email, QR code, papier, mur, n'importe quoi. Reconnaît auto. Idem dictée vocale. Pas écrire, parler ou scanner."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Tout champ à remplir = 3 boutons d'aide
+
+À côté de chaque input :
+- 📷 **Scanner** : caméra → OCR/QR/barcode → autofill
+- 🎙 **Dicter** : voix → texte → autofill
+- 🤖 **IA** : décrit ce que tu veux → IA propose
+
+Touch targets 44×44px chacun, visibles iPhone.
+
+### 2. Capacités Scanner
+
+- **OCR texte** : Tesseract.js (lazy-load) — papier, écran, écriture manuscrite
+- **QR codes** : BarcodeDetector API + jsQR fallback (cross-browser)
+- **Barcode** : EAN/UPC/Code128 via BarcodeDetector
+- **Cartes de visite** : extraction multi-champs (nom, email, tel, role, société) en une photo
+- **Documents officiels** : passeport, permis, carte vitale → extraction structurée
+- **Vision IA** (Claude vision API) : scènes complexes, écriture cursive, langues exotiques
+
+### 3. Smart routing du contenu scanné
+
+Détection automatique du format :
+- `^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$` → email
+- `^\+?[\d\s-]{10,}$` → téléphone
+- `^bc1[a-z0-9]+$` → BTC address
+- `^0x[a-fA-F0-9]{40}$` → ETH address
+- `^sk-[A-Za-z0-9-_]+$` → API key OpenAI/Claude
+- `^AIza[A-Za-z0-9_-]+$` → Google API key
+- `^[A-Z]{2}\d{2}[A-Z0-9]+$` → IBAN
+- QR commençant par `https://...` → URL
+- QR `BEGIN:VCARD` → contact complet
+
+Si l'utilisateur a tapé sur le champ "ax_gemini_key" puis 📷, et que le scan donne `AIzaSy...` → autofill direct. Sinon proposer au choix.
+
+### 4. Capacités Dictée
+
+- Web Speech API (français par défaut)
+- Continuous mode : tu peux parler 30 sec
+- Auto-correction post-dictée : "ai zay sy x y z 1 2 3" → "AIzaSyXYZ123"
+- Lettres/chiffres : "A comme Anatole, B comme Bernard..." → décode
+- Punctuation parlée : "arobase" → @, "point" → .
+
+### 5. Mode "Tout-en-un" Studio Scan
+
+Vue dédiée `vScanStudio` :
+- Caméra plein écran
+- Boutons en bas : OCR / QR / Barcode / Vision IA / Card
+- Résultats apparaissent en temps réel
+- Bouton "Envoyer vers" → liste des champs Coffre cibles
+- Historique scans (max 50, FB_FIX `ax_camera_scans`)
+
+### 6. Compression & adaptation auto
+
+Si le scan donne un résultat trop long ou format inadapté :
+- Trim espaces, retours ligne
+- Décode HTML entities, URL encoding
+- Compresse les noms longs (initiales)
+- Convertit unités (cm→m, mètres→pieds, etc.)
+- Adapte format date (DD/MM/YYYY, MM-DD-YYYY auto-détect)
+
+### 7. Pas d'écriture obligatoire
+
+Sur chaque formulaire de l'app, message subtil :
+*"💡 Tu peux scanner 📷 ou dicter 🎙 au lieu d'écrire."*
+
+S'applique à : Coffre, Réglages, Profil, Fiche client, Fiche employé, etc.
+
+---
+
 ## 🧭 RÈGLE PERMANENTE — IA NAVIGUE ET REMPLIT (Kevin 2026-04-25, ABSOLUE)
 
 > **"Je peux dire à l'IA, montre-moi où est-ce que je colle ou remplir ça, donne-moi la vue, amène-moi là, il comprend direct et il exécute. Et n'oublie pas d'intégrer au fur et à mesure toutes les infos directement en autonomie au lieu de me demander."**
