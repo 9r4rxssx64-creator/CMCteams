@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777112138404,
-  "total_commits": 201,
+  "updated_at": 1777112375742,
+  "total_commits": 204,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "e24cd3d1",
+      "ts": 1777112365000,
+      "msg": "CMCteams v9.504: feature flags etendus QR badge + NFC + outils metier (ON/OFF admin)",
+      "project": "cmcteams",
+      "ver": "9.504",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d13268a9",
+      "ts": 1777112197000,
+      "msg": "CMCteams subagent intermediate (feature flags WIP)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "32639cca",
+      "ts": 1777112150000,
+      "msg": "CLAUDE_ACTIVITY regen apres Apex v12.156 (vAdminLinks solde live)",
+      "project": "docs",
+      "ver": "12.156",
+      "author": "claude-code"
+    },
     {
       "sha": "865dbf37",
       "ts": 1777112127000,
@@ -943,30 +967,6 @@
       "msg": "v12.93: Fix vLanding crash si PLANS[pk] manquant (audit agent)",
       "project": "multi",
       "ver": "12.93",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c235b863",
-      "ts": 1777058428000,
-      "msg": "v12.92: Fix emoji banner SW (\\uD83D\\uDD04 -> 🔄)",
-      "project": "multi",
-      "ver": "12.92",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f81de853",
-      "ts": 1777057033000,
-      "msg": "v12.91: Afficher reponse EmailJS brute pour diagnostiquer erreur 400",
-      "project": "multi",
-      "ver": "12.91",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d38f4c5f",
-      "ts": 1777056180000,
-      "msg": "v12.90: EmailJS payload minimal {to_email, to_name, message}",
-      "project": "multi",
-      "ver": "12.90",
       "author": "claude-code"
     }
   ]
