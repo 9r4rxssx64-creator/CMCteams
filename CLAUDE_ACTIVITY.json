@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777119038998,
-  "total_commits": 220,
+  "updated_at": 1777119129877,
+  "total_commits": 221,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "85d869a1",
+      "ts": 1777119039000,
+      "msg": "CLAUDE.md: Regle permanente Smart Studios anticipatifs (Kevin 2026-04-25)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
     {
       "sha": "3c577b63",
       "ts": 1777118744000,
@@ -959,14 +967,6 @@
       "msg": "Apex v12.113 + CMCteams v9.477: CLAUDE_ACTIVITY journal cross-app",
       "project": "apex",
       "ver": "12.113",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5582db02",
-      "ts": 1777078555000,
-      "msg": "CMCteams v9.476: FaceID auto-trigger ecran login (parite Apex v12.112)",
-      "project": "cmcteams",
-      "ver": "9.476",
       "author": "claude-code"
     }
   ]

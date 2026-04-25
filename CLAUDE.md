@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.506 / Apex v12.174 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.509 / Apex v12.174 (2026-04-25).
 
 ---
 
