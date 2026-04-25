@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777080763798,
+  "updated_at": 1777081239670,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 144,
+  "total_commits": 151,
   "projects": [
     "apex",
     "backend",
@@ -12,15 +12,15 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 38
+      "count": 40
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 28
+      "count": 33
     },
     {
       "name": "📅 Planning & Cadres",
-      "count": 16
+      "count": 15
     },
     {
       "name": "🎨 UX & Design",
@@ -44,7 +44,7 @@
     },
     {
       "name": "🎙 Voix & Audio",
-      "count": 4
+      "count": 5
     },
     {
       "name": "📧 Email & Notif",
@@ -72,6 +72,87 @@
     }
   ],
   "commits": [
+    {
+      "sha": "214d6229",
+      "ts": 1777081230000,
+      "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (subagent commit intermediaire)",
+      "project": "cmcteams",
+      "ver": "9.485",
+      "topic": "🎙 Voix & Audio",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1be8321d",
+      "ts": 1777081183000,
+      "msg": "Apex v12.124: mode global niveau IA (Kevin: 'fonction generale, pas par client')",
+      "project": "apex",
+      "ver": "12.124",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "940b1d75",
+      "ts": 1777081138000,
+      "msg": "CMCteams v9.484: smart routing IA Haiku/Sonnet/Opus (parite Apex v12.121)",
+      "project": "cmcteams",
+      "ver": "9.484",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8aeb76d8",
+      "ts": 1777081122000,
+      "msg": "Apex v12.123: affichage conso tokens dans fiches users + threshold admin",
+      "project": "apex",
+      "ver": "12.123",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f728aff9",
+      "ts": 1777081090000,
+      "msg": "CMCteams v9.483: simplifier niveau IA en global employes (Kevin)",
+      "project": "cmcteams",
+      "ver": "9.483",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0806150b",
+      "ts": 1777081006000,
+      "msg": "CMCteams: ajout cmc_employees_global_level a FB_FIX (subagent en cours)",
+      "project": "multi",
+      "ver": null,
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d8492895",
+      "ts": 1777080904000,
+      "msg": "Apex v12.122: suivi conso par user + alerte admin si conso elevee",
+      "project": "apex",
+      "ver": "12.122",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2bf4f90e",
+      "ts": 1777080826000,
+      "msg": "CMCteams v9.482: niveaux IA par employe (parite Apex v12.121)",
+      "project": "cmcteams",
+      "ver": "9.482",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5c7589e0",
+      "ts": 1777080768000,
+      "msg": "CLAUDE_ACTIVITY regen apres v9.481",
+      "project": "docs",
+      "ver": "9.481",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "521ff6b5",
       "ts": 1777080747000,
@@ -1069,87 +1150,6 @@
       "project": "multi",
       "ver": "12.39",
       "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "da7ede9e",
-      "ts": 1776779608000,
-      "msg": "v12.38 FIX CRITIQUE API KEY: Modal active + diagnostic local + 5 paths Firebase fallback + retire Bodyguard banner vLogin (#163)",
-      "project": "multi",
-      "ver": "12.38",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2bc75c49",
-      "ts": 1776778568000,
-      "msg": "v12.37: Autonomie max — 6 actions Kevin resolues (SW notif + CGU + SEO + backup cron + Stripe webhook + docs) (#162)",
-      "project": "multi",
-      "ver": "12.37",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d89bebf6",
-      "ts": 1776778128000,
-      "msg": "v12.36 + v9.455: STT fluide (live interim + silence auto-send) + toast filtre CMCteams clients + LESSONS session (#161)",
-      "project": "multi",
-      "ver": "12.36",
-      "topic": "🎙 Voix & Audio",
-      "author": "claude-code"
-    },
-    {
-      "sha": "700e0f83",
-      "ts": 1776777670000,
-      "msg": "v12.35: Widget crypto dashboard + vue Portfolio + NFC card vRemote + vue Mes devices admin (#160)",
-      "project": "multi",
-      "ver": "12.35",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "df111e80",
-      "ts": 1776776667000,
-      "msg": "v12.34: Crypto widget (BTC/ETH live) + NFC scan/write + 21 liens crypto + multi-device admin sync (#159)",
-      "project": "multi",
-      "ver": "12.34",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d17b55c3",
-      "ts": 1776776144000,
-      "msg": "v12.33: Telecommande+CrackPass cliquables dans Projets + Bodyguard login + VPN detect + device scan (#158)",
-      "project": "multi",
-      "ver": "12.33",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "82756b82",
-      "ts": 1776775850000,
-      "msg": "v12.33a: 5 docs recherche iOS/Android/Google/Automation/Universal Remote + Network (#157)",
-      "project": "multi",
-      "ver": "12.33",
-      "topic": "🤖 Agents & Automation",
-      "author": "claude-code"
-    },
-    {
-      "sha": "dc3c4a63",
-      "ts": 1776775305000,
-      "msg": "v12.32: UX settings enrichi + device trust 30j + Kevin admin case-insensitive + APPLE_IOS_SKILLS + Monaco/Revolut/Crypto docs (#156)",
-      "project": "multi",
-      "ver": "12.32",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a836c825",
-      "ts": 1776774812000,
-      "msg": "v12.31: Fix cle API recovery (mini chat + boot) + PRICING + KEVIN_ACTIONS_TODO + prix +20 euros (#155)",
-      "project": "multi",
-      "ver": "12.31",
-      "topic": "🔧 Bug fixes",
       "author": "claude-code"
     }
   ]
