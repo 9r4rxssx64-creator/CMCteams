@@ -396,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.256",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.259",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -629,10 +629,39 @@ function axT(key){try{var lang=(typeof K!=="undefined"&&K&&K.settings&&K.setting
 // --- Utilitaires ---
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
 // v12.133+ — Compression base64 simple pour valeurs > 5KB
-function _axCompress(str){try{return "B64:"+btoa(unescape(encodeURIComponent(str)));}catch(e){return str;}}
-function _axDecompress(str){if(typeof str==="string"&&str.indexOf("B64:")===0){try{return decodeURIComponent(escape(atob(str.slice(4))));}catch(e){return str.slice(4);}}return str;}
+// v12.257 (Kevin 2026-04-25 "memoire pleine") — lazy-load lz-string CDN pour compression UTF16 (~50% gain vs base64)
+var _axLZ=null,_axLZLoading=false;
+function _axLoadLZ(){
+  if(_axLZ||_axLZLoading)return;
+  if(typeof window!=="undefined"&&window.LZString){_axLZ=window.LZString;return;}
+  _axLZLoading=true;
+  try{
+    var s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js";
+    s.async=true;
+    s.onload=function(){_axLZ=window.LZString||null;_axLZLoading=false;};
+    s.onerror=function(){_axLZLoading=false;};
+    document.head.appendChild(s);
+  }catch(_){_axLZLoading=false;}
+}
+function _axCompress(str){
+  try{
+    if(_axLZ&&_axLZ.compressToUTF16){return "__LZ__"+_axLZ.compressToUTF16(str);}
+    return "B64:"+btoa(unescape(encodeURIComponent(str)));
+  }catch(e){return str;}
+}
+function _axDecompress(str){
+  if(typeof str!=="string")return str;
+  if(str.indexOf("__LZ__")===0){
+    try{if(_axLZ&&_axLZ.decompressFromUTF16)return _axLZ.decompressFromUTF16(str.slice(6))||str;}catch(_){}
+    return str;
+  }
+  if(str.indexOf("B64:")===0){try{return decodeURIComponent(escape(atob(str.slice(4))));}catch(e){return str.slice(4);}}
+  return str;
+}
+try{if(typeof window!=="undefined")setTimeout(_axLoadLZ,500);}catch(_){}
 function lg(k,fb){try{var v=localStorage.getItem(k);if(!v)return fb;v=_axDecompress(v);return JSON.parse(v);}catch(e){return fb;}}
-function ls(k,v){try{var s=JSON.stringify(v);if(s&&s.length>5000)s=_axCompress(s);localStorage.setItem(k,s);}catch(e){if(e&&e.name==="QuotaExceededError"){_emergencyCleanup();try{var s2=JSON.stringify(v);if(s2&&s2.length>5000)s2=_axCompress(s2);localStorage.setItem(k,s2);}catch(e2){if(typeof toast==="function")toast(typeof axT==="function"?axT("err.storage"):"Memoire pleine","warn");}}}fbWrite(k,v);}
+function ls(k,v){try{var s=JSON.stringify(v);if(s&&s.length>1024){if(!_axLZ)_axLoadLZ();s=_axCompress(s);}localStorage.setItem(k,s);}catch(e){if(e&&e.name==="QuotaExceededError"){_emergencyCleanup();try{var s2=JSON.stringify(v);if(s2&&s2.length>1024)s2=_axCompress(s2);localStorage.setItem(k,s2);}catch(e2){/* Fallback IDB only si vraiment plein */try{if(typeof axIdbSet==="function")axIdbSet(k,v);}catch(_){}if(typeof toast==="function")toast(typeof axT==="function"?axT("err.storage"):"Memoire saturee, sauvegarde IDB","warn");}}}fbWrite(k,v);}
 function _emergencyCleanup(){var keys=Object.keys(localStorage).filter(function(k){return k.startsWith("ax_msgs_");});var convs=lg("ax_convs",[]).sort(function(a,b){return(a.ts||0)-(b.ts||0);});var removed=0;while(convs.length>3&&removed<10){var old=convs.shift();localStorage.removeItem("ax_msgs_"+old.id);removed++;}if(!removed){keys.sort();while(keys.length>3){localStorage.removeItem(keys.shift());}}}
 function _axCheckQuota(){try{var used=0;for(var k in localStorage){if(localStorage.hasOwnProperty(k))used+=(localStorage[k]||"").length+k.length;}var pct=(used*2/(5*1024*1024))*100;if(pct>80){var purgeKeys=["ax_audit","ax_silent_log","ax_bodyguard_log","ax_telemetry","ax_user_telemetry","ax_err_log","ax_location_history","ax_geofence_log","ax_table_presences","ax_client_logs","ax_connection_history","ax_activity_log"];purgeKeys.forEach(function(pk){var data=lg(pk,null);if(Array.isArray(data)&&data.length>50){ls(pk,data.slice(-50));}});Object.keys(localStorage).forEach(function(kk){if(kk.indexOf("ax_backup_")===0){var d=kk.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000)localStorage.removeItem(kk);}if(kk.indexOf("ax_activity_")===0){var data2=lg(kk,null);if(Array.isArray(data2)&&data2.length>200)ls(kk,data2.slice(-200));}});if(typeof toast==="function")toast("Memoire optimisee automatiquement","ok");}return Math.round(pct);}catch(e){return 0;}}
 function _axStorageStats(){try{var stats=[];var total=0;for(var k in localStorage){if(!localStorage.hasOwnProperty(k))continue;var v=localStorage[k]||"";var size=v.length+k.length;total+=size;stats.push({key:k,size:size,compressed:typeof v==="string"&&v.indexOf("B64:")===0});}stats.sort(function(a,b){return b.size-a.size;});return{stats:stats,total:total,pct:Math.round(total*2/(5*1024*1024)*100)};}catch(e){return{stats:[],total:0,pct:0};}}
