@@ -17,51 +17,98 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Auto-detect Account ID + Deploy
+      - name: Deploy with full diagnostics
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT_ID_OPT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          set -e
+          set +e
 
           if [ -z "$CF_API_TOKEN" ]; then
             echo "::error::Manque CLOUDFLARE_API_TOKEN dans Secrets GitHub"
             exit 1
           fi
 
-          # Si pas d'Account ID fourni, on l'auto-détecte
-          if [ -z "$CF_ACCOUNT_ID_OPT" ]; then
-            echo "→ Auto-détection Account ID via API..."
+          # Étape 1 : Vérifier le token
+          echo "═══════════════════════════════════════════"
+          echo "→ Étape 1 : Vérification du token API"
+          echo "═══════════════════════════════════════════"
+
+          VERIFY=$(curl -s -w "\nHTTP:%{http_code}" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}")
+          VERIFY_BODY=$(echo "$VERIFY" | sed '$d')
+          VERIFY_STATUS=$(echo "$VERIFY" | tail -n1 | sed 's/HTTP://')
+          echo "Status: $VERIFY_STATUS"
+          echo "Body: $VERIFY_BODY" | head -c 300
+
+          if [ "$VERIFY_STATUS" != "200" ]; then
+            echo ""
+            echo "::error::❌ Token API invalide (HTTP $VERIFY_STATUS)"
+            echo "Va sur Cloudflare → API Tokens → Régénérer ton token 'Modifier Cloudflare Workers'"
+            exit 1
+          fi
+          echo "✅ Token valide"
+
+          # Étape 2 : Account ID
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "→ Étape 2 : Détermination Account ID"
+          echo "═══════════════════════════════════════════"
+
+          if [ -n "$CF_ACCOUNT_ID_OPT" ]; then
+            CF_ACCOUNT_ID="$CF_ACCOUNT_ID_OPT"
+            echo "→ Depuis secret CLOUDFLARE_ACCOUNT_ID: $CF_ACCOUNT_ID"
+          else
             ACCOUNTS_JSON=$(curl -s \
               "https://api.cloudflare.com/client/v4/accounts" \
               -H "Authorization: Bearer ${CF_API_TOKEN}")
-
-            SUCCESS=$(echo "$ACCOUNTS_JSON" | jq -r '.success')
-            if [ "$SUCCESS" != "true" ]; then
-              echo "::error::Token API invalide ou manque permission Account:Read"
-              echo "$ACCOUNTS_JSON" | jq '.errors // .'
+            CF_ACCOUNT_ID=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].id // empty')
+            CF_ACCOUNT_NAME=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].name // empty')
+            if [ -z "$CF_ACCOUNT_ID" ]; then
+              echo "::error::Aucun compte trouvé via le token"
+              echo "$ACCOUNTS_JSON" | head -c 500
               exit 1
             fi
-
-            CF_ACCOUNT_ID=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].id')
-            CF_ACCOUNT_NAME=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].name')
-            echo "✅ Compte détecté : $CF_ACCOUNT_NAME ($CF_ACCOUNT_ID)"
-          else
-            CF_ACCOUNT_ID="$CF_ACCOUNT_ID_OPT"
-            CF_ACCOUNT_NAME="(from secret)"
-            echo "→ Utilisation Account ID des secrets : $CF_ACCOUNT_ID"
+            echo "✅ Auto-détecté : $CF_ACCOUNT_NAME ($CF_ACCOUNT_ID)"
           fi
 
-          echo "→ Déploiement apex-push-worker..."
+          # Étape 3 : Test lecture du worker (vérifie la perm Workers Read)
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "→ Étape 3 : Test lecture worker apex-push-worker"
+          echo "═══════════════════════════════════════════"
 
-          cat > /tmp/metadata.json << EOF
+          READ_RESP=$(curl -s -w "\nHTTP:%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}")
+          READ_STATUS=$(echo "$READ_RESP" | tail -n1 | sed 's/HTTP://')
+          echo "Status: $READ_STATUS"
+          if [ "$READ_STATUS" = "200" ] || [ "$READ_STATUS" = "404" ]; then
+            echo "✅ Token a accès à l'account"
+          elif [ "$READ_STATUS" = "401" ] || [ "$READ_STATUS" = "403" ]; then
+            echo "::error::❌ Le token ne peut pas lire le worker (HTTP $READ_STATUS)"
+            echo "$READ_RESP" | sed '$d' | head -c 500
+            echo ""
+            echo "Cause probable : permissions manquantes."
+            echo "Recrée le token avec template EXACT 'Modifier Cloudflare Workers' (pas 'Custom')."
+            exit 1
+          fi
+
+          # Étape 4 : Déploiement
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "→ Étape 4 : Déploiement code apex-push-worker.js"
+          echo "═══════════════════════════════════════════"
+
+          cat > /tmp/metadata.json << 'EOF'
           {
             "main_module": "worker.js",
-            "compatibility_date": "$(date -u +%Y-%m-%d)"
+            "compatibility_date": "2026-04-25"
           }
-          EOF
+EOF
 
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+          RESPONSE=$(curl -s -w "\nHTTP:%{http_code}" \
             -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
@@ -69,22 +116,37 @@ jobs:
             -F "worker.js=@tools/cloudflare/apex-push-worker.js;type=application/javascript+module")
 
           BODY=$(echo "$RESPONSE" | sed '$d')
-          STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/HTTP_STATUS://')
+          STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/HTTP://')
 
           echo "Status: $STATUS"
-          echo "Body (500 first chars):"
-          echo "$BODY" | head -c 500
+          echo "Body (1000 chars):"
+          echo "$BODY" | head -c 1000
 
           if [ "$STATUS" = "200" ] || [ "$STATUS" = "201" ]; then
             echo ""
-            echo "::notice::✅ Déploiement réussi sur compte $CF_ACCOUNT_NAME !"
-            sleep 3
+            echo "::notice::✅ Déploiement réussi !"
             echo ""
-            echo "→ Test /health (peut échouer depuis runner si propagation pas finie) :"
-            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" || true
+            sleep 4
+            echo "→ Test /health :"
+            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" || echo "(test propagation)"
           else
             echo ""
             echo "::error::❌ Déploiement échoué (HTTP $STATUS)"
             echo "$BODY"
+            echo ""
+            echo "═══════════════════════════════════════════"
+            echo "DIAGNOSTIC :"
+            echo "─────────"
+            if [ "$STATUS" = "401" ]; then
+              echo "401 = Token rejeté."
+              echo "→ Le token n'a pas la permission 'Workers Scripts: Edit'"
+              echo "→ Recrée le token avec template EXACT 'Modifier Cloudflare Workers'"
+            elif [ "$STATUS" = "403" ]; then
+              echo "403 = Token interdit pour cette action."
+              echo "→ Vérifier que le token a accès au compte $CF_ACCOUNT_ID"
+            elif [ "$STATUS" = "404" ]; then
+              echo "404 = Worker apex-push-worker introuvable."
+              echo "→ Crée d'abord le worker dans Cloudflare Dashboard"
+            fi
             exit 1
           fi
