@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777079958640,
+  "updated_at": 1777080763798,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 140,
+  "total_commits": 144,
   "projects": [
     "apex",
     "backend",
@@ -12,11 +12,11 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 36
+      "count": 38
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 27
+      "count": 28
     },
     {
       "name": "📅 Planning & Cadres",
@@ -24,7 +24,7 @@
     },
     {
       "name": "🎨 UX & Design",
-      "count": 10
+      "count": 11
     },
     {
       "name": "💳 Paiement & Abos",
@@ -72,6 +72,60 @@
     }
   ],
   "commits": [
+    {
+      "sha": "521ff6b5",
+      "ts": 1777080747000,
+      "msg": "CMCteams v9.481: pub Apex multi-endroits + toggles admin",
+      "project": "cmcteams",
+      "ver": "9.481",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "7cb6ae19",
+      "ts": 1777080614000,
+      "msg": "CMCteams v9.481: pub Apex multi-endroits subagent (commit intermediaire)",
+      "project": "cmcteams",
+      "ver": "9.481",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "be38561a",
+      "ts": 1777080483000,
+      "msg": "CMCteams v9.480: pub Apex banner top accueil + popup admin-toggle",
+      "project": "cmcteams",
+      "ver": "9.480",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "baddbd3a",
+      "ts": 1777080319000,
+      "msg": "Apex v12.121: niveaux IA par user (economie/moyen/fort) + admin Kevin fort",
+      "project": "apex",
+      "ver": "12.121",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "fe71f6c2",
+      "ts": 1777080062000,
+      "msg": "Apex v12.120: breadcrumbs visibles (UX intuitivite)",
+      "project": "apex",
+      "ver": "12.120",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a3ceba35",
+      "ts": 1777079994000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.119 (138 commits, 16 sujets)",
+      "project": "docs",
+      "ver": "12.119",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "b130ccfe",
       "ts": 1777079883000,
@@ -1096,60 +1150,6 @@
       "project": "multi",
       "ver": "12.31",
       "topic": "🔧 Bug fixes",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ef4f5cb4",
-      "ts": 1776774271000,
-      "msg": "v12.30: Fix micro silencieux + geoloc Android + vAdminLinks sans admin gate (#154)",
-      "project": "multi",
-      "ver": "12.30",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d1a686a2",
-      "ts": 1776773282000,
-      "msg": "v12.29: 2 plans PAYANTS (Pro/Business) + section Banque/RIB admin (#153)",
-      "project": "multi",
-      "ver": "12.29",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8a627fb5",
-      "ts": 1776772828000,
-      "msg": "v12.28: axIsFeatureAllowed gating + FEATURES_GATING.md matrice forfaits (#152)",
-      "project": "multi",
-      "ver": "12.28",
-      "topic": "💳 Paiement & Abos",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b4cb3933",
-      "ts": 1776772631000,
-      "msg": "v12.27: axIdentifyAndShop - photo + identification + liens achat optimum (#151)",
-      "project": "multi",
-      "ver": "12.27",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "01cfd2e7",
-      "ts": 1776772525000,
-      "msg": "v12.26: Web search Anthropic natif + COMPETITIVE_ANALYSIS.md (note 6.5->8.2/10) (#150)",
-      "project": "multi",
-      "ver": "12.26",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "040364cc",
-      "ts": 1776772300000,
-      "msg": "v12.25: BUSINESS_PLAN.md complet (scaling, tarifs, Stripe, remboursements, banque) (#149)",
-      "project": "multi",
-      "ver": "12.25",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     }
   ]
