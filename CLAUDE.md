@@ -1,6 +1,53 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.502 / Apex v12.165 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.506 / Apex v12.174 (2026-04-25).
+
+---
+
+## 👑 RÈGLE PERMANENTE — ADMIN-FIRST UX (Kevin 2026-04-25)
+
+> **"Fais ma première vue, la mon équipe toujours, l'équipe miroir ensuite, et fait un système de famille différent de celui qui tu as mis, plus simple, plus intuitif, plus clair, plus facile d'accès. Plus simple pour l'admin, ici comme ailleurs, toujours en général, faire au plus simple pour que les infos soient faciles d'accès, recherchées, que tout soit clair et fonctionnel et visuel pour l'admin."**
+
+S'applique à CMCteams + Apex + tous projets futurs, sans exception :
+
+### 1. Hiérarchie d'affichage admin (priorité visuelle)
+
+1. **Mon équipe** (équipe principale de l'admin) — TOUJOURS en premier
+2. **Équipe miroir** (équipe complémentaire) — TOUJOURS en deuxième
+3. **Familles regroupées** (BJ / Roulettes / CMC) — collapsibles, non hiérarchiques
+4. **Cadres / Inspecteurs / Sup** — section dédiée séparée
+5. **Tout le reste** — accessible via filtre/recherche, pas affiché par défaut
+
+### 2. Système de familles simplifié
+
+- **Pas de sous-niveaux complexes** (équipe.role.statut.dispo) — max 2 niveaux
+- **Icônes claires** : 🃏 BJ / 🎰 Roulettes / 🎲 CMC / ⭐ Cadres
+- **Couleurs distinctes** par famille (cohérence visuelle)
+- **Badges nombre** : `(15)` à côté du nom famille → l'admin sait combien de monde
+- **Toggle expand/collapse** : 1 clic = ouvert/fermé, état persisté
+
+### 3. Accès rapide partout
+
+- Recherche universelle TOUJOURS visible en haut (input avec placeholder explicite)
+- Filtres rapides en chips cliquables (`[En ligne 12]` `[Malade 2]` `[Aujourd'hui 45]`)
+- Stats cliquables → modal avec liste détaillée (pas pur affichage)
+
+### 4. Test mental obligatoire avant chaque commit
+
+- "Est-ce que MON équipe apparaît en haut sans scroller ?"
+- "Est-ce qu'un admin trouve une info en moins de 3 clics ?"
+- "Est-ce que c'est plus simple qu'avant ou plus complexe ?"
+- "Si non → REPRENDRE jusqu'à ce que ce soit plus simple"
+
+### 5. Anti-patterns interdits
+
+- ❌ Mur de cards/lignes sans hiérarchie
+- ❌ Boutons cachés dans menus déroulés (max 1 niveau)
+- ❌ Trop de couleurs/badges (max 3 couleurs primaires + 2 accents)
+- ❌ Texte technique visible (`emp.statut.contractCode === "RTP"` → "Repos")
+- ❌ Ordre alphabétique strict (mon équipe doit ressortir d'abord)
+
+S'applique à : `vEmps`, `vPlan`, `vDeparts`, `vMonPlanning`, `vAdminLinks` (Apex), tous nouveaux modules.
 
 ---
 

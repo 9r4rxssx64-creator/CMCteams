@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777117421856,
-  "total_commits": 224,
+  "updated_at": 1777118742599,
+  "total_commits": 220,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "74ff49aa",
+      "ts": 1777117430000,
+      "msg": "Apex v12.173: login wallpaper discret (motif diamants + diagonales gold subtle)",
+      "project": "apex",
+      "ver": "12.173",
+      "author": "claude-code"
+    },
     {
       "sha": "8a985582",
       "ts": 1777117376000,
@@ -959,14 +967,6 @@
       "msg": "Apex v12.112: FaceID priorite + auto-trigger sur ecran login",
       "project": "apex",
       "ver": "12.112",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c313becc",
-      "ts": 1777078358000,
-      "msg": "Apex v12.111: dedup Settings/Vault + Reset users + Worklog cross-app",
-      "project": "apex",
-      "ver": "12.111",
       "author": "claude-code"
     }
   ]
