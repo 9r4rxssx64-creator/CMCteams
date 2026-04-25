@@ -1,13 +1,22 @@
 {
-  "updated_at": 1777123766424,
-  "total_commits": 232,
+  "updated_at": 1777123769026,
+  "total_commits": 233,
   "projects": [
     "apex",
+    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "d6151812",
+      "ts": 1777123766000,
+      "msg": "Apex v12.203 + CLAUDE.md: Login universel partial + Cloudflare push backend + regle AGENTS DEDIES PARTOUT",
+      "project": "apex",
+      "ver": "12.203",
+      "author": "claude-code"
+    },
     {
       "sha": "724aaedd",
       "ts": 1777123611000,
@@ -540,7 +549,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "multi",
+      "project": "backend",
       "ver": null,
       "author": "claude-code"
     },
@@ -957,14 +966,6 @@
       "ts": 1777080768000,
       "msg": "CLAUDE_ACTIVITY regen apres v9.481",
       "project": "docs",
-      "ver": "9.481",
-      "author": "claude-code"
-    },
-    {
-      "sha": "521ff6b5",
-      "ts": 1777080747000,
-      "msg": "CMCteams v9.481: pub Apex multi-endroits + toggles admin",
-      "project": "cmcteams",
       "ver": "9.481",
       "author": "claude-code"
     }
