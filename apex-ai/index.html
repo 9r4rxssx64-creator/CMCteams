@@ -371,7 +371,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.205",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.206",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 var AX_VAPID_PUBLIC="BEl62iUYgUivxIkv69yViEuiBIa1HI9hRmKvSzg_TvNh4zRDEtv2JzHE8MqQgqp7XeKQHEKZ4ETZiB2EW3YcQyc";
@@ -3184,36 +3184,54 @@ function _checkPreconfiguredUser(name){if(!name)return null;var preconf=PRECONFI
 
 /* v12.203 — Login multi-format + auto-merge doublons (Kevin 2026-04-25) */
 function axNormalizeName(s){if(!s)return"";return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_]+/g," ").trim();}
+/* v12.206 — Securite renforcee Kevin: nom seul OU prenom seul plus accepte. Exige prenom+nom (any order) OU email entier OU nom colle (sans espace). */
 function axMatchUser(input,users){
   if(!input||!users||!users.length)return null;
   var ni=axNormalizeName(input);
   var nis=ni.replace(/\s+/g,"");
   var iEmail=ni.indexOf("@")>0;
+  /* Pass 1 — Email entier */
   if(iEmail){
     for(var i=0;i<users.length;i++){
       if(users[i]&&users[i].email&&axNormalizeName(users[i].email)===ni)return users[i];
     }
+    return null;
   }
+  /* Pass 2 — Prenom + Nom (any order, exact). Exige les DEUX. */
   for(var i=0;i<users.length;i++){
     var u=users[i];if(!u)continue;
     var p=axNormalizeName(u.prenom||"");
     var n=axNormalizeName(u.nom||"");
+    if(!p||!n)continue;
     var pn=(p+" "+n).trim();
     var np=(n+" "+p).trim();
-    if(ni===p||ni===n||ni===pn||ni===np)return u;
+    if(ni===pn||ni===np)return u;
   }
+  /* Pass 3 — Squashed (sans espace) : "kevindesarzens" / "desarzenskevin" */
   for(var i=0;i<users.length;i++){
     var u=users[i];if(!u)continue;
-    var sq=(axNormalizeName(u.prenom||"")+axNormalizeName(u.nom||"")).replace(/\s+/g,"");
-    var sq2=(axNormalizeName(u.nom||"")+axNormalizeName(u.prenom||"")).replace(/\s+/g,"");
+    var p=axNormalizeName(u.prenom||"");
+    var n=axNormalizeName(u.nom||"");
+    if(!p||!n)continue;
+    var sq=(p+n).replace(/\s+/g,"");
+    var sq2=(n+p).replace(/\s+/g,"");
     if(nis===sq||nis===sq2)return u;
   }
+  /* Pass 4 — Tokens triés (multi-mots dans n'importe quel ordre, mais il faut au moins 2 tokens) */
   var iTokens=ni.split(/\s+/).filter(Boolean).sort();
+  if(iTokens.length>=2){
+    for(var i=0;i<users.length;i++){
+      var u=users[i];if(!u)continue;
+      var uTokens=((u.prenom||"")+" "+(u.nom||"")).toLowerCase().split(/\s+/).map(axNormalizeName).filter(Boolean).sort();
+      if(uTokens.length>=2&&iTokens.length===uTokens.length&&iTokens.every(function(t,idx){return t===uTokens[idx];}))return u;
+    }
+  }
+  /* Pass 5 — Alias explicite (admin Kevin uniquement, configure manuellement) */
   for(var i=0;i<users.length;i++){
-    var u=users[i];if(!u)continue;
-    var uTokens=((u.prenom||"")+" "+(u.nom||"")).toLowerCase().split(/\s+/).map(axNormalizeName).filter(Boolean).sort();
-    if(iTokens.length&&iTokens.length===uTokens.length&&iTokens.every(function(t,idx){return t===uTokens[idx];}))return u;
-    if(u.aliases&&Array.isArray(u.aliases)){for(var ai=0;ai<u.aliases.length;ai++){if(axNormalizeName(u.aliases[ai])===ni)return u;}}
+    var u=users[i];if(!u||!u.aliases||!Array.isArray(u.aliases))continue;
+    for(var ai=0;ai<u.aliases.length;ai++){
+      if(axNormalizeName(u.aliases[ai])===ni)return u;
+    }
   }
   return null;
 }
