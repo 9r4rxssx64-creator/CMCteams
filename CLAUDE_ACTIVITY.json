@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777148871943,
-  "total_commits": 275,
+  "updated_at": 1777149696496,
+  "total_commits": 287,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,102 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "8ac87c23",
+      "ts": 1777149683000,
+      "msg": "CMCteams v9.529: bump APP_VER + commit auto-learn parser via combined commit",
+      "project": "cmcteams",
+      "ver": "9.529",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ceb18ee6",
+      "ts": 1777149627000,
+      "msg": "Apex v12.244 + CMCteams v9.528: agents background (sentinelles + voix + tools)",
+      "project": "apex",
+      "ver": "12.244",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ee99a403",
+      "ts": 1777149462000,
+      "msg": "CLAUDE.md: 3 regles permanentes (outils auto-apparents + dual pro/fun + voix diversifiees)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "4c46cff1",
+      "ts": 1777149391000,
+      "msg": "CMCteams v9.527: bump version (work-in-progress agent background)",
+      "project": "cmcteams",
+      "ver": "9.527",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b62c101b",
+      "ts": 1777149246000,
+      "msg": "CMCteams v9.526: Lessons Learned cross-app (mirroir Apex v12.243)",
+      "project": "cmcteams",
+      "ver": "9.526",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f7925d24",
+      "ts": 1777149135000,
+      "msg": "CMCteams v9.525: parser auto-learn fingerprint (agent background)",
+      "project": "cmcteams",
+      "ver": "9.525",
+      "author": "claude-code"
+    },
+    {
+      "sha": "fb068e94",
+      "ts": 1777149021000,
+      "msg": "Apex v12.243: UX Laurence simplifie enfantine",
+      "project": "apex",
+      "ver": "12.243",
+      "author": "claude-code"
+    },
+    {
+      "sha": "af2362db",
+      "ts": 1777148913000,
+      "msg": "Apex v12.242: Lessons Learned cross-app (Apex+CMCteams)",
+      "project": "apex",
+      "ver": "12.242",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9e0616f4",
+      "ts": 1777148909000,
+      "msg": "MEMO_RESUME: bilan session 2026-04-25 (Apex v12.242 + CMCteams v9.522) - 13/13 demandes Kevin completees + verifications autonomes + reste a tester user-side",
+      "project": "multi",
+      "ver": "12.242",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2367cc42",
+      "ts": 1777148904000,
+      "msg": "KEVIN_INVENTORY: modules pro Apex (Cuisine/Medical/Finance/Legal/Traducteur/Pack/Vue Laurence) + sentinelles GitHub Actions (sw-cache-sync) + outils 1-clic (album-laurence) + audits",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "245b8687",
+      "ts": 1777148893000,
+      "msg": "CLAUDE.md: 3 regles permanentes (SW cache sync + nom+prenom+pass + PIN per-user) + 3 erreurs connues (#37, #38, #39) + dossier de travail mis a jour Apex v12.242 + CMCteams v9.522",
+      "project": "docs",
+      "ver": "12.242",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5bc28795",
+      "ts": 1777148881000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres v9.523",
+      "project": "docs",
+      "ver": "9.523",
+      "author": "claude-code"
+    },
     {
       "sha": "a189f0ea",
       "ts": 1777148857000,
@@ -871,102 +967,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v12.166 actionable IA (~260 commits)",
       "project": "docs",
       "ver": "12.166",
-      "author": "claude-code"
-    },
-    {
-      "sha": "380de1c1",
-      "ts": 1777115366000,
-      "msg": "Apex v12.166: Reponses IA actionnables + concertation parallele",
-      "project": "apex",
-      "ver": "12.166",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ffdcf77e",
-      "ts": 1777115280000,
-      "msg": "CLAUDE.md: regle permanente toujours depasser attentes (Kevin)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "6ceebb8a",
-      "ts": 1777115235000,
-      "msg": "Apex pending changes (subagent actionable IA work in progress)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "81be6d3d",
-      "ts": 1777115188000,
-      "msg": "CLAUDE_ACTIVITY regen apres v12.165 (~250 commits)",
-      "project": "docs",
-      "ver": "12.165",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2a49a307",
-      "ts": 1777115129000,
-      "msg": "Apex v12.165: bump cache + audit Settings (Kevin signal 'plus acces parametres')",
-      "project": "apex",
-      "ver": "12.165",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a804550f",
-      "ts": 1777115090000,
-      "msg": "SW: bump cache version v12.164 (force fresh assets pour les fixes)",
-      "project": "multi",
-      "ver": "12.164",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2315cef8",
-      "ts": 1777115043000,
-      "msg": "Apex v12.164: Recherche Coffre + Universelle - fix DeepSeek non trouve",
-      "project": "apex",
-      "ver": "12.164",
-      "author": "claude-code"
-    },
-    {
-      "sha": "689422af",
-      "ts": 1777114945000,
-      "msg": "Apex v12.163: Coffre IA enrichi + Paiements perso (Kevin: clés manquantes)",
-      "project": "apex",
-      "ver": "12.163",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f008e6f4",
-      "ts": 1777114661000,
-      "msg": "Apex v12.162: fix navbar flottante (Kevin: 'navbar bouge monte/descend')",
-      "project": "apex",
-      "ver": "12.162",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2eb1976e",
-      "ts": 1777114594000,
-      "msg": "Apex v12.161: theme clair WCAG AAA contrast (Kevin urgent)",
-      "project": "apex",
-      "ver": "12.161",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f721e631",
-      "ts": 1777114504000,
-      "msg": "Subagent intermediate (theme/settings audit work)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "591388fc",
-      "ts": 1777114463000,
-      "msg": "Apex v12.160: URGENT FIX axGetLocaleInfo undefined (app crash)",
-      "project": "apex",
-      "ver": "12.160",
       "author": "claude-code"
     }
   ]
