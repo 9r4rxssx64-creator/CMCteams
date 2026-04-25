@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.113",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.114",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -2392,19 +2392,35 @@ function _axRefreshClaudeActivity(){
   box.innerHTML='<p style="font-size:12px;color:var(--ax-text-dim)">⏳ Chargement journal Claude Code...</p>';
   fetch("https://9r4rxssx64-creator.github.io/CMCteams/CLAUDE_ACTIVITY.json?t="+Date.now()).then(function(r){return r.json();}).then(function(d){
     if(!d||!d.commits){box.innerHTML='<p style="font-size:12px;color:var(--ax-red)">Pas de donnees.</p>';return;}
+    /* v12.114 — Tri par sujet/thematique (Kevin: 'fait le tri quand on travail sur un sujet et autre') */
+    var html='<p style="font-size:11px;color:var(--ax-text-dim);margin:0 0 8px"><strong>Total: '+d.total_commits+' commits</strong> sur '+(d.projects||[]).length+' projets</p>';
+    /* SECTION 1: par sujet (top) */
+    if(d.topics&&d.topics.length){
+      html+='<div style="font-size:11px;font-weight:700;color:var(--ax-gold);text-transform:uppercase;margin:8px 0 4px;letter-spacing:1px">📂 Par sujet</div>';
+      var maxT=d.topics[0].count;
+      d.topics.forEach(function(t){
+        var w=Math.round((t.count/maxT)*100);
+        html+='<div style="margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px"><span>'+esc(t.name)+'</span><span style="color:var(--ax-gold);font-weight:700">'+t.count+'</span></div>';
+        html+='<div style="height:5px;background:var(--ax-bg-input);border-radius:3px"><div style="width:'+w+'%;height:100%;background:linear-gradient(90deg,#00d4ff,var(--ax-gold));border-radius:3px"></div></div></div>';
+      });
+    }
+    /* SECTION 2: par projet */
     var byProj={};
     d.commits.forEach(function(c){if(!byProj[c.project])byProj[c.project]=0;byProj[c.project]++;});
-    var html='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:8px 0">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--ax-gold);text-transform:uppercase;margin:12px 0 4px;letter-spacing:1px">🏗 Par projet</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:6px 0">';
     Object.keys(byProj).forEach(function(p){
       html+='<div style="background:var(--ax-bg-input);padding:8px;border-radius:6px;text-align:center"><div style="font-size:18px;color:var(--ax-gold);font-weight:700">'+byProj[p]+'</div><div style="font-size:10px;color:var(--ax-text-dim);text-transform:uppercase">'+p+'</div></div>';
     });
     html+='</div>';
-    html+='<p style="font-size:11px;color:var(--ax-text-dim);margin:8px 0 4px"><strong>Total: '+d.total_commits+' commits</strong> sur '+(d.projects||[]).length+' projets</p>';
-    html+='<details><summary style="cursor:pointer;color:var(--ax-blue);font-size:12px;margin-top:8px">Voir 30 derniers commits</summary>';
+    /* SECTION 3: filtrage par sujet (clic sur tag) */
+    html+='<details style="margin-top:12px"><summary style="cursor:pointer;color:var(--ax-blue);font-size:12px">Voir 30 derniers commits (avec sujet)</summary>';
     html+='<div style="max-height:300px;overflow-y:auto;margin-top:6px">';
     d.commits.slice(0,30).forEach(function(c){
       var dt=new Date(c.ts);
-      html+='<div style="padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:11px"><div style="display:flex;justify-content:space-between"><span style="font-weight:700;color:var(--ax-gold)">'+esc(c.project||"?")+(c.ver?" v"+c.ver:"")+'</span><span style="color:var(--ax-text-dim)">'+dt.toLocaleDateString("fr-FR")+'</span></div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">'+esc((c.msg||"").slice(0,120))+'</div></div>';
+      html+='<div style="padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:11px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px"><span style="font-weight:700;color:var(--ax-gold)">'+esc(c.project||"?")+(c.ver?" v"+c.ver:"")+'</span><span style="color:var(--ax-text-dim);font-size:10px">'+dt.toLocaleDateString("fr-FR")+' '+dt.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+'</span></div>';
+      if(c.topic)html+='<div style="font-size:10px;color:#00d4ff;margin-top:2px">'+esc(c.topic)+'</div>';
+      html+='<div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">'+esc((c.msg||"").slice(0,120))+'</div></div>';
     });
     html+='</div></details>';
     if(d.updated_at){var u=new Date(d.updated_at);html+='<p style="font-size:10px;color:var(--ax-text-dim);margin-top:6px">MAJ '+u.toLocaleDateString("fr-FR")+' '+u.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+'</p>';}
