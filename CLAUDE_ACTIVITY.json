@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777121825096,
-  "total_commits": 225,
+  "updated_at": 1777122004056,
+  "total_commits": 226,
   "projects": [
     "apex",
     "cmcteams",
@@ -8,6 +8,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "5162215f",
+      "ts": 1777121825000,
+      "msg": "Apex v12.187: Status visuel par credential (vert/jaune/rouge) + test auto",
+      "project": "apex",
+      "ver": "12.187",
+      "author": "claude-code"
+    },
     {
       "sha": "d65d9671",
       "ts": 1777121382000,
@@ -957,14 +965,6 @@
       "ts": 1777079658000,
       "msg": "CLAUDE_ACTIVITY.json: regen apres v12.115 + v9.479",
       "project": "docs",
-      "ver": "12.115",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f5113d50",
-      "ts": 1777079577000,
-      "msg": "Apex v12.115 + CMCteams v9.479: vUsersActivity tracker par utilisateur",
-      "project": "apex",
       "ver": "12.115",
       "author": "claude-code"
     }
