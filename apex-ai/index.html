@@ -360,7 +360,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.167",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.168",ADMIN_ID="kdmc_admin";
 /* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
 var AX_LOCALES={
   MC:{name:"Monaco",flag:"🇲🇨",lang:"fr",currency:"EUR",timezone:"Europe/Monaco",emergency:"112"},
@@ -709,6 +709,114 @@ function _cguAsk(feature,label,description){
 }
 function axCguRevoke(feature){ls("ax_cgu_"+feature,"0");toast("Consentement « "+feature+" » revoque","ok");}
 function axCguStatus(){var out={};["biometric","microphone","geolocation","camera","notifications"].forEach(function(f){out[f]=lg("ax_cgu_"+f,"0")==="1";});return out;}
+
+/* v12.168 — Smart load-balancing tokens (Kevin: 'jamais aucune coupure pour moi') */
+var AX_PROVIDER_TIERS={
+  /* Tier S (premium) : Anthropic Opus / Claude Sonnet / GPT-4o / o1 */
+  premium:[
+    {id:"claude-opus-4-7",model:"claude-opus-4-7",provider:"anthropic",balance_key:"anthropic"},
+    {id:"claude-sonnet-4-6",model:"claude-sonnet-4-6",provider:"anthropic",balance_key:"anthropic"},
+    {id:"gpt-4o",model:"gpt-4o",provider:"openai",balance_key:"openai"},
+    {id:"o1-preview",model:"o1-preview",provider:"openai",balance_key:"openai"}
+  ],
+  /* Tier A (rapide+qualite) */
+  standard:[
+    {id:"claude-haiku-4-5-20251001",model:"claude-haiku-4-5-20251001",provider:"anthropic",balance_key:"anthropic"},
+    {id:"gpt-4o-mini",model:"gpt-4o-mini",provider:"openai",balance_key:"openai"},
+    {id:"gemini-2.0-flash",model:"gemini-2.0-flash",provider:"google",balance_key:"google"},
+    {id:"mistral-large-latest",model:"mistral-large-latest",provider:"mistral",balance_key:"mistral"}
+  ],
+  /* Tier B (cheap fallback) */
+  cheap:[
+    {id:"gemini-1.5-flash",model:"gemini-1.5-flash",provider:"google",balance_key:"google"},
+    {id:"deepseek-coder",model:"deepseek-coder",provider:"deepseek",balance_key:"deepseek"},
+    {id:"mistral-small-latest",model:"mistral-small-latest",provider:"mistral",balance_key:"mistral"}
+  ],
+  /* Tier ultime (gratuit) : Google Gemini 1500 req/jour gratuit */
+  free:[
+    {id:"gemini-2.0-flash-exp",model:"gemini-2.0-flash-exp",provider:"google",balance_key:"google"}
+  ]
+};
+
+function axGetProviderHealth(providerId){
+  var services=(typeof axGetServices==="function")?axGetServices():[];
+  var s=services.find?services.find(function(x){return x&&x.id===providerId;}):null;
+  if(!s)return "unknown";
+  if(s.balance==null||s.balance==="")return "unknown";
+  var crit=s.threshold_critical!=null?s.threshold_critical:1;
+  var low=s.threshold_low!=null?s.threshold_low:5;
+  if(Number(s.balance)<=crit)return "critical";
+  if(Number(s.balance)<=low)return "low";
+  return "ok";
+}
+
+function axHasProviderKey(providerId){
+  var keyMap={anthropic:"ax_api_key",openai:"ax_openai_key",google:"ax_gemini_key",mistral:"ax_mistral_key",deepseek:"ax_deepseek_key",perplexity:"ax_perplexity_key",xai:"ax_grok_key"};
+  var k=keyMap[providerId];
+  return k?!!localStorage.getItem(k):false;
+}
+
+function axPickBestAvailableModel(level,domain){
+  level=level||"moyen";
+  /* Choose tier based on level */
+  var tier=level==="economie"?"cheap":(level==="fort"?"premium":"standard");
+  var providers=AX_PROVIDER_TIERS[tier]||AX_PROVIDER_TIERS.standard;
+  /* Filter: only providers with key + non-critical health */
+  var available=providers.filter(function(p){return axHasProviderKey(p.provider)&&axGetProviderHealth(p.provider)!=="critical";});
+  if(available.length){
+    /* Prefer "ok" over "low" */
+    var ok=available.filter(function(p){return axGetProviderHealth(p.provider)==="ok";});
+    return (ok[0]||available[0]).model;
+  }
+  /* All critical -> try cheaper tier */
+  if(tier!=="cheap"&&tier!=="free"){
+    return axPickBestAvailableModel("economie",domain);
+  }
+  /* Last resort -> free tier (Gemini gratuit) */
+  if(axHasProviderKey("google")){
+    return "gemini-2.0-flash-exp";
+  }
+  return "claude-sonnet-4-6";/* Default fallback */
+}
+
+/* v12.168 — Alertes proactives soldes IA */
+function axCheckBalancesProactive(){
+  try{
+    var services=(typeof axGetServices==="function")?axGetServices():[];
+    if(!services||!services.length)return;
+    var notifs=[];
+    services.forEach(function(s){
+      if(!s||s.category!=="api")return;
+      var status=axGetProviderHealth(s.id);
+      if(status==="critical"){
+        notifs.push({severity:"critical",msg:"⚠️ "+(s.name||s.id)+" CRITIQUE: "+s.balance+" "+(s.currency||"")+" — bascule auto vers fallback",service:s.id});
+      }else if(status==="low"){
+        notifs.push({severity:"warn",msg:"⚡ "+(s.name||s.id)+" faible: "+s.balance+" "+(s.currency||"")+" — recharge dans les 7j",service:s.id});
+      }
+    });
+    if(notifs.length){
+      /* Push to admin alerts (dedupe par service+severity dans 1h) */
+      var alerts=lg("ax_admin_notifs",[]);
+      var nowTs=Date.now();
+      notifs.forEach(function(n){
+        var dup=alerts.some(function(a){return a.type==="balance_alert"&&a.service===n.service&&a.severity===n.severity&&(nowTs-(a.ts||0))<3600000;});
+        if(!dup)alerts.push({ts:nowTs,type:"balance_alert",severity:n.severity,msg:n.msg,service:n.service,seen:false});
+      });
+      if(alerts.length>200)alerts=alerts.slice(-200);
+      ls("ax_admin_notifs",alerts);
+      /* Toast + push notif a l'admin uniquement */
+      if(typeof axIsAdmin==="function"&&axIsAdmin()){
+        notifs.forEach(function(n){
+          if(typeof toast==="function")toast(n.msg,n.severity==="critical"?"err":"warn",{force:true});
+          if(typeof axShowNotif==="function"&&n.severity==="critical")try{axShowNotif("APEX Alerte solde IA",n.msg,{tag:"ax-balance-"+n.service,requireInteraction:true});}catch(_){}
+        });
+      }
+    }
+  }catch(e){try{var log=lg("ax_err_log",[]);log.push({ts:Date.now(),where:"axCheckBalancesProactive",msg:String(e&&e.message||e).slice(0,200)});if(log.length>500)log=log.slice(-500);ls("ax_err_log",log);}catch(_){}}
+}
+/* Run au boot + chaque heure */
+try{setTimeout(axCheckBalancesProactive,5000);setInterval(axCheckBalancesProactive,3600000);}catch(_){}
+
 /* v12.135 — Precision GPS max (Kevin: "plus precise possible"). enableHighAccuracy:true + timeout 30s + maximumAge:0 + historique 1000 + fallback IP + geofences. */
 function axGetLocation(){return new Promise(function(resolve){if(!_cguAsk("geolocation","Geolocalisation","APEX AI utilise votre position GPS la plus precise (jusqu'a 5m) pour gestion personnel/contexte/meteo. Revocable a tout moment."))return resolve({error:"CGU refuse"});if(!navigator.geolocation){_axIpFallback(resolve);return;}toast("Recherche GPS haute precision...","info");var _gotIt=false;var opts={enableHighAccuracy:true,timeout:30000,maximumAge:0};navigator.geolocation.getCurrentPosition(function(p){if(_gotIt)return;_gotIt=true;var loc={lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy,altitude:p.coords.altitude,altitudeAccuracy:p.coords.altitudeAccuracy,heading:p.coords.heading,speed:p.coords.speed,via:"gps",ts:p.timestamp||Date.now()};ls("ax_last_location",loc);var hist=lg("ax_location_history",[]);hist.push(loc);if(hist.length>1000)hist=hist.slice(-1000);ls("ax_location_history",hist);if(typeof fbWrite==="function"&&K.user)try{fbWrite("ax_user_locations/"+K.user.id,loc);}catch(_){}toast("Position trouvee ("+Math.round(loc.accuracy)+"m)","ok");try{if(typeof axCheckGeofences==="function")axCheckGeofences(loc);}catch(_){}resolve(loc);},function(err){if(_gotIt)return;_gotIt=true;if(err.code===1){toast("Permission refusee, fallback approximatif","warn");}else if(err.code===3){toast("GPS lent, fallback IP","warn");}_axIpFallback(resolve);},opts);});}
 /* v12.135 — Fallback IP geolocation (precision ~50km mais toujours dispo) */

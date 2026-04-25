@@ -4,6 +4,49 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🤖 RÈGLE PERMANENTE — AGENTS TOUJOURS BOOSTÉS (Kevin 2026-04-25)
+
+> **"Vérifie que tous les agents sont équipés au mieux, boostés, augmentés. Ajoute des outils dédiés individuellement spécifiques. Vérifie régulièrement si tu peux faire mieux. Va plus loin sans qu'on te le demande."**
+
+À CHAQUE session, je DOIS automatiquement :
+
+### 1. Audit agents/sentinelles initial
+
+À chaque démarrage je vérifie :
+- Combien d'agents existent (Apex AX_CREW_EXPERT, sentinelles AX_SENTINEL_TOOLS)
+- Combien d'agents existent (CMCteams CMC_AGENT_TOOLS, sentinelles)
+- Chaque agent a-t-il : `tools[]`, `data_sources[]`, `prompt_extension`, `auto_fix[]` ?
+- Si manquant → enrichir IMMÉDIATEMENT sans demander
+
+### 2. Outils dédiés par compétence
+
+Chaque expert/sentinelle = outils spécialisés :
+- Finance → finance_calculate, calculate, web_search
+- Juriste → CONVENTION + BULLETIN_CODES + web_search jurisprudence
+- CTO → code_execute, get_source, modify_css, inject_function
+- Designer → modify_css, screenshot
+- CISO → security audit tools, OWASP, NIST
+- Performance → measure_render_time, detect_memory_leaks
+- Erreurs → capture_stacktrace, detect_pattern, escalate_to_claude
+- UX → measure_lcp/fid/cls, debounce, optimize_render
+- Sentinelle Enrichissement Auto → détecte nouvelles APIs/libs/IA models
+
+### 3. Auto-amélioration permanente
+
+- Sentinelles tournent 24/7 (16+ agents)
+- Détectent malfonction → auto-fix 3 stratégies → si échec → escalade Claude Code
+- Lessons learned partagées cross-app (Apex ↔ CMCteams)
+- Nouvelles APIs détectées → ajout auto dans system prompt
+- Modèles IA upgrade → migration auto vers meilleur
+
+### 4. Cross-app propagation
+
+Si j'enrichis un agent dans Apex → je vérifie si pertinent CMCteams (et inverse).
+
+S'applique à chaque interaction, sans exception.
+
+---
+
 ## 🚀 RÈGLE PERMANENTE — TOUJOURS DÉPASSER LES ATTENTES (Kevin 2026-04-25)
 
 > **"Toujours anticiper les attentes de l'utilisateur en allant au plus loin. Améliorer à chaque fois. Toujours donner des dossiers prêts à télécharger, prêts à copier, des liens directs, des informations claires, vérifiées. Concertation IA + agents + autonomie pour que tout s'optimise et se corrige sans cesse. Historique pour l'admin partout."**
