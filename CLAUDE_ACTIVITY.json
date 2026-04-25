@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777123439845,
-  "total_commits": 230,
+  "updated_at": 1777123605526,
+  "total_commits": 232,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,22 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "3a6231a3",
+      "ts": 1777123594000,
+      "msg": "Apex v12.202: Monitoring pro dashboard (score 100 + 4 metriques + timeline + 6 quick actions)",
+      "project": "apex",
+      "ver": "12.202",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e7a18bfa",
+      "ts": 1777123464000,
+      "msg": "Apex v12.199: Bouton activation notifs push (+ pas-a-pas install PWA iOS + status visible)",
+      "project": "apex",
+      "ver": "12.199",
+      "author": "claude-code"
+    },
     {
       "sha": "dcb0827c",
       "ts": 1777123277000,
@@ -951,22 +967,6 @@
       "msg": "CMCteams v9.481: pub Apex multi-endroits subagent (commit intermediaire)",
       "project": "cmcteams",
       "ver": "9.481",
-      "author": "claude-code"
-    },
-    {
-      "sha": "be38561a",
-      "ts": 1777080483000,
-      "msg": "CMCteams v9.480: pub Apex banner top accueil + popup admin-toggle",
-      "project": "cmcteams",
-      "ver": "9.480",
-      "author": "claude-code"
-    },
-    {
-      "sha": "baddbd3a",
-      "ts": 1777080319000,
-      "msg": "Apex v12.121: niveaux IA par user (economie/moyen/fort) + admin Kevin fort",
-      "project": "apex",
-      "ver": "12.121",
       "author": "claude-code"
     }
   ]
