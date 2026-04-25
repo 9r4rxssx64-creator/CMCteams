@@ -1,14 +1,21 @@
 {
-  "updated_at": 1777123769026,
-  "total_commits": 233,
+  "updated_at": 1777123915128,
+  "total_commits": 234,
   "projects": [
     "apex",
-    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "ee5e0546",
+      "ts": 1777123829000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.203 (Cloudflare push backend)",
+      "project": "docs",
+      "ver": "12.203",
+      "author": "claude-code"
+    },
     {
       "sha": "d6151812",
       "ts": 1777123766000,
@@ -549,7 +556,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -959,14 +966,6 @@
       "msg": "CMCteams v9.482: niveaux IA par employe (parite Apex v12.121)",
       "project": "cmcteams",
       "ver": "9.482",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5c7589e0",
-      "ts": 1777080768000,
-      "msg": "CLAUDE_ACTIVITY regen apres v9.481",
-      "project": "docs",
-      "ver": "9.481",
       "author": "claude-code"
     }
   ]
