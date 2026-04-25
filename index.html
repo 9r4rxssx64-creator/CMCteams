@@ -22,7 +22,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a1408'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='18' font-weight='800' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%230a1408'/%3E%3Ctext x='90' y='75' text-anchor='middle' font-size='48' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='90' y='120' text-anchor='middle' font-size='28' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.396 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic/Sentry -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://*.firebasedatabase.app https://api.anthropic.com https://api.emailjs.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://*.firebasedatabase.app https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -7671,6 +7671,10 @@ function _fabActions(){
     acts.push({ic:"\ud83c\udfe0",lb:"Demander fin de service",fn:"var r=prompt('Raison (optionnel) :');empRequestEndShift(r||'')"});
     // v9.481 - Lien direct Apex AI (Kevin: 'fais la pub a plusieurs endroits')
     acts.push({ic:"\u26a1",lb:"Ouvrir APEX AI",fn:"window.open('"+APEX_URL+"','_blank','noopener')"});
+    // v9.500 \u2014 Tables Live (carte) accessible Pit Boss / chefs / cadres + admin
+    if(isAdm||(A.user&&(A.user.chef||A.user.family==="cadres"||A.user.role==="pit"||A.user.role==="sup"))){
+      acts.push({ic:"\ud83d\uddfa\ufe0f",lb:"Tables Live (carte)",fn:"sv('pitmap')"});
+    }
   }
   if(isAdm){
     acts.push({ic:"\ud83d\udcca",lb:"Export CSV",fn:"exportPlanningCSV(A.year,A.month)"});
@@ -24999,8 +25003,55 @@ function vQRCodesTables(){
     });
     h+='</div>';
   }
+  h+='<div style="margin-top:14px;padding:10px;background:rgba(122,204,144,.06);border:1px solid rgba(122,204,144,.25);border-radius:8px;font-size:12px;color:#a8d4b4;line-height:1.5">ℹ️ <b>Comment scanner</b> : iPhone/iPad → ouvrez l\'app Appareil photo et visez le QR. Notification "Ouvrir CMCteams" apparait → tapotez. Android → idem avec Google Lens. Aucune app supplémentaire requise.</div>';
   h+='</div>';
   return h;
+}
+// v9.492 — Export PDF tous QR via fenetre print-friendly (Kevin: "imprimable PDF")
+function cmcExportQRsPDF(){
+  if(!A.user||A.user.id!==AID){toast("Accès admin requis","warn");return;}
+  var tables=(typeof getTablesCoords==="function")?getTablesCoords():{};
+  var ids=Object.keys(tables);
+  if(_qrFilterCasino)ids=ids.filter(function(tid){return tables[tid].casino===_qrFilterCasino;});
+  ids.sort(function(a,b){return (tables[a].name||"").localeCompare(tables[b].name||"");});
+  if(!ids.length){toast("Aucune table à exporter","warn");return;}
+  var w;
+  try{w=window.open("","_blank");}catch(_){}
+  if(!w){toast("⚠ Bloqueur popup actif — autorisez puis réessayez","warn");return;}
+  var titleSuffix=_qrFilterCasino?(" — "+_qrFilterCasino):"";
+  var html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>QR Tables CMCteams'+esc(titleSuffix)+'</title>';
+  html+='<style>'
+    +'*{box-sizing:border-box}'
+    +'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:18px;background:#fff;color:#222}'
+    +'h1{font-size:18px;margin:0 0 12px}'
+    +'.meta{font-size:11px;color:#666;margin-bottom:14px}'
+    +'.qr-card{display:inline-block;border:1px dashed #888;padding:10px;margin:5px;text-align:center;width:240px;vertical-align:top}'
+    +'.qr-card img{display:block;margin:0 auto;background:#fff}'
+    +'.qr-card .nm{font-weight:bold;margin-top:8px;font-size:13px}'
+    +'.qr-card .sub{font-size:11px;color:#555;margin-top:2px}'
+    +'.qr-card .url{font-size:9px;color:#888;margin-top:6px;word-break:break-all}'
+    +'.print-btn{position:fixed;top:10px;right:10px;padding:10px 20px;background:#c9a227;color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2)}'
+    +'@media print{.qr-card{break-inside:avoid;page-break-inside:avoid}.print-btn{display:none}}'
+    +'</style></head><body>';
+  html+='<button class="print-btn" onclick="window.print()">🖨 Imprimer / PDF</button>';
+  html+='<h1>QR Codes Tables — Casino Monte-Carlo'+esc(titleSuffix)+'</h1>';
+  html+='<div class="meta">Généré le '+(new Date()).toLocaleString("fr-FR")+' · '+ids.length+' table(s) · CMCteams '+esc(typeof APP_VER!=="undefined"?APP_VER:"")+'</div>';
+  ids.forEach(function(tid){
+    var t=tables[tid];
+    var url=_buildCheckinUrl(tid,t.casino);
+    var qr=_qrImageUrl(url,220);
+    var jeuLbl=(typeof _JEU_LABEL!=="undefined"&&_JEU_LABEL[t.jeu])||t.jeu||"";
+    var sub=esc(jeuLbl)+(t.casino?' · '+esc(t.casino):'')+(t.salon?' · '+esc(t.salon):'');
+    html+='<div class="qr-card">'
+      +'<img src="'+esc(qr)+'" width="220" height="220" alt="QR '+esc(t.name||tid)+'"/>'
+      +'<div class="nm">'+esc(t.name||tid)+'</div>'
+      +'<div class="sub">'+sub+'</div>'
+      +'<div class="url">'+esc(url)+'</div>'
+      +'</div>';
+  });
+  html+='</body></html>';
+  w.document.open();w.document.write(html);w.document.close();
+  toast("✅ PDF prêt — cliquez sur Imprimer dans la fenêtre");
 }
 // v9.314 — Check-in manuel table (alternative fiable au GPS indoor)
 // Demande Kevin : "La loc interne va être compliqué (tables très proches).
