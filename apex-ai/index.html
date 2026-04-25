@@ -322,7 +322,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.143",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.144",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -414,6 +414,44 @@ function axClientProfileSave(data){if(!K.user)return;var profiles=lg("ax_client_
 function axClientProfileGet(uid){var profiles=lg("ax_client_profiles",{});return profiles[uid]||null;}
 function axAdminSetPlan(uid,plan,role,note){if(!axIsAdmin()){toast("Reserve au proprietaire","warn");return;}var profiles=lg("ax_client_profiles",{});if(!profiles[uid])profiles[uid]={uid:uid};profiles[uid].plan=plan||"free";profiles[uid].role=role||"client";if(note)profiles[uid].adminNote=note;profiles[uid].planUpdatedBy=K.user.id;profiles[uid].planUpdatedAt=Date.now();ls("ax_client_profiles",profiles);if(typeof fbWrite==="function")try{fbWrite("ax_client_profiles",profiles);}catch(_){}var audit=lg("ax_audit",[]);audit.push({ts:Date.now(),type:"admin_set_plan",who:K.user.id,target:uid,plan:plan,role:role,note:note||""});if(audit.length>1000)audit=audit.slice(-1000);ls("ax_audit",audit);toast("Plan de "+uid+" : "+plan+" ("+role+")","ok");try{dc();}catch(_){}}
 function axNotifyAdminNewConnection(uid,name){var notifs=lg("ax_admin_notifs",[]);notifs.push({ts:Date.now(),type:"new_connection",uid:uid,name:name,seen:false});if(notifs.length>500)notifs=notifs.slice(-500);ls("ax_admin_notifs",notifs);if(typeof fbWrite==="function")try{fbWrite("ax_admin_notifs",notifs);}catch(_){}}
+/* v12.144 — Push notifications helpers (Kevin: 'apex pro continu') */
+async function axPushPermission(){
+  if(!("Notification" in window))return false;
+  if(Notification.permission==="granted")return true;
+  if(Notification.permission==="denied"){toast("Notifications bloquées. Va dans Réglages iPhone > Safari > Apex AI","warn");return false;}
+  try{var p=await Notification.requestPermission();if(p==="granted")toast("✓ Notifications activées","ok");return p==="granted";}catch(_){return false;}
+}
+function axShowNotif(title,body,opts){
+  if(!("Notification" in window)||Notification.permission!=="granted")return null;
+  opts=opts||{};
+  try{
+    var n=new Notification(title,{
+      body:body||"",
+      icon:opts.icon||"icon-192.png",
+      badge:"icon-192.png",
+      tag:opts.tag||"apex",
+      silent:opts.silent||false,
+      requireInteraction:opts.requireInteraction||false,
+      vibrate:opts.vibrate||[200,100,200]
+    });
+    if(opts.onclick)n.onclick=opts.onclick;
+    if(opts.timeout)setTimeout(function(){try{n.close();}catch(_){}},opts.timeout);
+    return n;
+  }catch(e){console.warn("[notif]",e);return null;}
+}
+function axScheduleNotif(title,body,delayMs,opts){
+  if(!delayMs||delayMs<=0)return axShowNotif(title,body,opts);
+  setTimeout(function(){axShowNotif(title,body,opts);},delayMs);
+  /* Persist scheduled */
+  try{var sched=lg("ax_scheduled_notifs",[]);sched.push({title:title,body:body,at:Date.now()+delayMs,opts:opts||{}});ls("ax_scheduled_notifs",sched);}catch(_){}
+  return true;
+}
+function axNotifyAdmin(msg){
+  if(typeof Notification==="undefined")return;
+  if(Notification.permission==="granted"){
+    axShowNotif("⚠️ APEX Admin",msg,{tag:"apex-admin",requireInteraction:true});
+  }
+}
 function axConnectionStats(){var hist=lg("ax_connection_history",[]);var now=Date.now();var H=3600000,D=86400000,W=7*D,M=30*D;var stats={lastHour:0,today:0,thisWeek:0,thisMonth:0,uniqueDay:{},uniqueWeek:{},uniqueMonth:{},byHour:{},byDay:{}};hist.forEach(function(e){if(e.type!=="login")return;var diff=now-e.ts;if(diff<H)stats.lastHour++;if(diff<D){stats.today++;stats.uniqueDay[e.userId]=true;var hr=new Date(e.ts).getHours();stats.byHour[hr]=(stats.byHour[hr]||0)+1;}if(diff<W){stats.thisWeek++;stats.uniqueWeek[e.userId]=true;var day=new Date(e.ts).toISOString().slice(0,10);stats.byDay[day]=(stats.byDay[day]||0)+1;}if(diff<M){stats.thisMonth++;stats.uniqueMonth[e.userId]=true;}});stats.uniqueDay=Object.keys(stats.uniqueDay).length;stats.uniqueWeek=Object.keys(stats.uniqueWeek).length;stats.uniqueMonth=Object.keys(stats.uniqueMonth).length;return stats;}
 function vClientProfileForm(){if(!K.user)return vLogin();var p=axClientProfileGet(K.user.id)||{};var isAdm=axIsAdmin();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">\uD83D\uDC64 Ma Fiche</h2>';if(isAdm)h+='<p style="font-size:11px;color:var(--ax-text-dim);margin-bottom:12px">Admin : tu peux voir/modifier les fiches clients dans l\'onglet Clients.</p>';h+='<div class="ax-card"><h3>\uD83D\uDCCB Informations</h3><div style="display:grid;gap:10px">';var fields=[{k:"email",lb:"Email",ph:"email@exemple.com",type:"email"},{k:"phone",lb:"Telephone",ph:"+33...",type:"tel"},{k:"birthdate",lb:"Date de naissance",ph:"1990-05-15",type:"date"},{k:"city",lb:"Ville",ph:"Monaco",type:"text"},{k:"profession",lb:"Profession",ph:"Votre metier",type:"text"},{k:"interests",lb:"Centres interet",ph:"tech, crypto, musique...",type:"text"},{k:"preferences",lb:"Preferences IA",ph:"Reponses courtes, francais, tutoiement...",type:"text"}];fields.forEach(function(f){h+='<div><label style="font-size:11px;color:var(--ax-text-dim);display:block;margin-bottom:4px">'+f.lb+'</label><input id="ax-prof-'+f.k+'" class="ax-input" type="'+f.type+'" placeholder="'+f.ph+'" value="'+esc(p[f.k]||"")+'"></div>';});h+='</div><button class="ax-btn ax-btn-primary" onclick="axClientProfileSave({email:document.getElementById(\'ax-prof-email\').value,phone:document.getElementById(\'ax-prof-phone\').value,birthdate:document.getElementById(\'ax-prof-birthdate\').value,city:document.getElementById(\'ax-prof-city\').value,profession:document.getElementById(\'ax-prof-profession\').value,interests:document.getElementById(\'ax-prof-interests\').value,preferences:document.getElementById(\'ax-prof-preferences\').value})" style="width:100%;margin-top:12px">\uD83D\uDCBE Sauvegarder</button></div>';if(p.plan){h+='<div class="ax-card"><h3>\uD83C\uDFAB Mon abonnement</h3><div class="ax-setting-row"><span>Plan</span><span class="ax-badge ax-badge-gold">'+esc(p.plan||"free")+'</span></div>';if(p.role)h+='<div class="ax-setting-row"><span>Statut</span><span class="ax-badge ax-badge-blue">'+esc(p.role)+'</span></div>';h+='</div>';}return h+'</div>';}
 function axCryptoLivePrice(symbols){symbols=symbols||["bitcoin","ethereum"];return fetch("https://api.coingecko.com/api/v3/simple/price?ids="+symbols.join(",")+"&vs_currencies=eur,usd&include_24hr_change=true&include_last_updated_at=true").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).then(function(d){var cache={ts:Date.now(),data:d};ls("ax_crypto_cache",cache);return d;}).catch(function(e){var cache=lg("ax_crypto_cache",null);if(cache&&Date.now()-cache.ts<3600000)return cache.data;throw e;});}
