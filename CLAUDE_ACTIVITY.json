@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777117054038,
-  "total_commits": 222,
+  "updated_at": 1777117369609,
+  "total_commits": 224,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "e7e8cb77",
+      "ts": 1777117241000,
+      "msg": "Apex v12.170: Resiliation clients (cancel anytime, mois entame du, win-back, pause)",
+      "project": "apex",
+      "ver": "12.170",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3367a82e",
+      "ts": 1777117221000,
+      "msg": "Apex v12.171: rebrand final KDMC -> APEX (banner chat, splash, exports, landing)",
+      "project": "apex",
+      "ver": "12.171",
+      "author": "claude-code"
+    },
+    {
+      "sha": "46b5eac7",
+      "ts": 1777117054000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh apres v12.169 + v9.506 (memoire pro)",
+      "project": "docs",
+      "ver": "12.169",
+      "author": "claude-code"
+    },
     {
       "sha": "04c566d8",
       "ts": 1777117032000,
@@ -943,30 +967,6 @@
       "msg": "CMCteams v9.475: Admin reorganise en 4 categories (vs 8)",
       "project": "cmcteams",
       "ver": "9.475",
-      "author": "claude-code"
-    },
-    {
-      "sha": "18cda0ad",
-      "ts": 1777077872000,
-      "msg": "CLAUDE.md: regle critique iPhone-first (Kevin permanent)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "944f9298",
-      "ts": 1777077839000,
-      "msg": "Apex v12.110: bouton palette iPhone visible (topbar)",
-      "project": "apex",
-      "ver": "12.110",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e7b804ef",
-      "ts": 1777077677000,
-      "msg": "Apex v12.109: smart model routing auto Haiku/Sonnet (economie tokens)",
-      "project": "apex",
-      "ver": "12.109",
       "author": "claude-code"
     }
   ]
