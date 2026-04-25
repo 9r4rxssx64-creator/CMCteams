@@ -25055,6 +25055,7 @@ function vEmps(){
       <button class="btn ghost" onclick="if(confirm('Attribuer automatiquement les secteurs selon les comp\u00e9tences ?\\n\\n\u2022 E \u2192 Europ\u00e9en\\n\u2022 P/P+ avec marqueur rose \ud83c\udf38 \u2192 Groupe ouvert\\n\u2022 P/P+ seul \u2192 Baccara\\n\\nLes employ\u00e9s sans comp\u00e9tences ne seront pas touch\u00e9s.'))reassignAllFamiliesByComp()" style="font-size:14px;padding:7px 11px;flex-shrink:0" title="R\u00e9attribue baccara/europ\u00e9en/groupe ouvert selon les comp\u00e9tences P/P+/E et le marqueur rose">\ud83c\udfaf Attribuer secteurs</button>
       <button class="btn ghost" onclick="bulkToggleMode()" style="font-size:14px;padding:7px 11px;flex-shrink:0${isBulk?';background:rgba(201,162,39,.15);border-color:rgba(201,162,39,.6);color:#c9a227':''}">${isBulk?'\u2713 Termin\u00e9':'\u2611 S\u00e9lection'}</button>
       <button class="btn gold" onclick="showAddF=true;editEmpId=null;dc()" style="font-size:15px;flex-shrink:0">+ Ajouter</button>
+      <button class="btn ghost" onclick="cmcScanBadgeEmploye()" style="font-size:14px;padding:7px 11px;flex-shrink:0" title="Scanner un badge employé : photo → IA extrait nom/prénom/rôle/matricule + match auto">📛 Scan badge</button>
     </div>
   </div>
   <input id="empQIn" class="inp" style="margin-bottom:10px;min-height:44px" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USM\u2026" value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">
