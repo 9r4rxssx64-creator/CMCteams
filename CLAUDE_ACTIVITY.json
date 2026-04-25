@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777119473325,
-  "total_commits": 224,
+  "updated_at": 1777119524387,
+  "total_commits": 225,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "731fb137",
+      "ts": 1777119473000,
+      "msg": "Apex v12.179: axGenerateVideo + axGenerateMusic + axGenerateLogo + axTextToVoice + tool use IA",
+      "project": "apex",
+      "ver": "12.179",
+      "author": "claude-code"
+    },
     {
       "sha": "c087e25e",
       "ts": 1777119396000,
@@ -959,14 +967,6 @@
       "msg": "Apex v12.116: feature flags - filter sidebar projects + apostrophe fix",
       "project": "apex",
       "ver": "12.116",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8f022594",
-      "ts": 1777079142000,
-      "msg": "Apex v12.115: feature flags ON/OFF subagent (provisoire commit pour stop-hook)",
-      "project": "apex",
-      "ver": "12.115",
       "author": "claude-code"
     }
   ]
