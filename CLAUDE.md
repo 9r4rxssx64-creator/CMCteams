@@ -4,6 +4,83 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🛡 RÈGLE PERMANENTE — AGENTS DÉDIÉS PARTOUT (Kevin 2026-04-25, ABSOLUE)
+
+> **"Dans n'importe quelle application. Toujours important. Il faut des agents dédiés, autonomes, experts avec tous les outils nécessaires pour la bonne fonctionnalité et la performance de ces gens-là, en plus de l'intelligence artificielle qui surveillera tout ça aussi, et qui préviendra qui corrigera qui s'adaptera."**
+
+**Règle absolue, prioritaire pour Apex + CMCteams + tous projets actuels et futurs** :
+
+### 1. Chaque feature critique = 1 agent dédié
+
+À chaque fonctionnalité importante créée, créer en parallèle :
+- 1 sentinelle qui surveille
+- 1 agent qui auto-corrige
+- 1 escalade vers Claude Code si auto-fix échoue
+- 1 vue admin de monitoring
+
+### 2. Agents équipés au max
+
+Chaque agent a obligatoirement :
+- `tools[]` spécifiques à sa mission
+- `data_sources[]` (localStorage + Firebase paths)
+- `prompt_extension` pour expertise
+- `auto_fix[]` whitelist d'actions safe
+- `escalate_threshold` (quand abandonner)
+
+### 3. IA superviseure permanente
+
+L'IA Apex (et IA CMCteams, et toute IA d'app future) :
+- Lit en continu les logs de tous les agents
+- Détecte patterns anormaux
+- Prévient l'admin avec contexte
+- Propose corrections concrètes
+- Apprend des décisions admin pour s'adapter
+
+### 4. Cross-app standardisation
+
+Les agents critiques DOIVENT exister dans CHAQUE app :
+- **Sécurité** : login anomalies, actions suspectes, auto-block + alerte admin
+- **Performance** : FPS, latence, memory, slow-clicks → auto-optimize
+- **Données** : duplicates, integrity, backup, restore
+- **Erreurs** : capture, classify, fix attempts, escalade
+- **Comportement utilisateur** : patterns, frustrations, suggestions
+- **Conformité** : CGU à jour, permissions valides, rotation tokens
+
+### 5. Liste des agents critiques (template universel)
+
+À implémenter dans Apex + CMCteams + futurs :
+
+```
+- security-watch    : login + actions sensibles + intrusions
+- performance-watch : FPS + latence + memory leaks
+- data-integrity    : duplicates + corruption + sync
+- backup-watch      : daily backup + retention
+- error-watch       : capture + auto-fix 3 tentatives + escalade
+- ux-watch          : frustrations + click failures + UX patterns
+- token-watch       : quotas IA + failover + rotation
+- import-watch      : parser PDF/OCR + validation
+- presence-watch    : online/offline + sync
+- conflict-watch    : changements simultanés + résolution
+- compliance-watch  : CGU + permissions + RGPD
+- sentinel-meta     : surveille les autres sentinelles
+```
+
+### 6. Auto-création quand projet créé
+
+Au démarrage d'une nouvelle app/projet, créer automatiquement :
+- Les 12 agents critiques avec config par défaut
+- Vue admin "🛡 Sentinelles" qui les pilote
+- Pipeline cross-app vers Apex IA centrale
+- Documentation auto-générée des agents
+
+### 7. Apprentissage cross-app
+
+Quand un agent dans une app détecte un pattern → propage la leçon à toutes les autres apps via `ax_lessons_learned` Firebase shared. Si Apex apprend que "login depuis IP suspect = bloquer", CMCteams hérite de la règle.
+
+**Règle s'applique à chaque interaction, sans exception.**
+
+---
+
 ## 🤖 RÈGLE PERMANENTE — AUTOMATISATION TOTALE (Kevin 2026-04-25, ABSOLUE)
 
 > **"Automatise tout, tout, tout. Tout le temps."**

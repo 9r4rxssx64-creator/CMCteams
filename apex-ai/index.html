@@ -371,7 +371,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.203",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.205",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 var AX_VAPID_PUBLIC="BEl62iUYgUivxIkv69yViEuiBIa1HI9hRmKvSzg_TvNh4zRDEtv2JzHE8MqQgqp7XeKQHEKZ4ETZiB2EW3YcQyc";
@@ -397,7 +397,7 @@ function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https:
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_admin_token","ax_push_errors"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -977,7 +977,7 @@ function vVault(){if(!axIsAdmin()){return'<div class="ax-empty"><div class="ax-e
 "\u2601\uFE0F Stockage cloud":["ax_gdrive_token","ax_gcalendar_token","ax_onedrive_token","ax_dropbox_token","ax_notion_token","ax_airtable_key","ax_trello_key"],
 "\uD83C\uDFE0 Maison connectee":["ax_ha_url","ax_ha_token","ax_ir_url","ax_tv_ip","ax_router_url"],
 "\uD83D\uDCDE Telephone & SMS (Twilio)":["ax_twilio_sid","ax_twilio_token"],
-"\u2699\uFE0F Infrastructure technique (admin)":["ax_proxy_url","ax_backend_url","ax_github_token","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_n8n_url","ax_zapier_webhook","ax_make_webhook"],
+"\u2699\uFE0F Infrastructure technique (admin)":["ax_proxy_url","ax_backend_url","ax_github_token","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_push_worker_url","ax_push_admin_token"],
 "\uD83D\uDCCA Analytics & monitoring":["ax_finnhub_key","ax_plausible_site","ax_sentry_dsn"],
 "\uD83C\uDFB5 Musique & medias":["ax_spotify_user"]
 };var names={
@@ -1069,6 +1069,8 @@ function vVault(){if(!axIsAdmin()){return'<div class="ax-empty"><div class="ax-e
 "ax_n8n_url":"\u2699\uFE0F n8n \u2014 URL instance",
 "ax_zapier_webhook":"\u2699\uFE0F Zapier \u2014 URL Webhook",
 "ax_make_webhook":"\u2699\uFE0F Make.com \u2014 URL Webhook",
+"ax_push_worker_url":"\uD83D\uDD14 URL Cloudflare Push Worker \u2014 https://apex-push-worker.xxx.workers.dev (voir tools/cloudflare/DEPLOY-PUSH-WORKER.md)",
+"ax_push_admin_token":"\uD83D\uDD14 Token admin Push Worker \u2014 mot de passe secret 32+ chars (jamais partager)",
 "ax_twilio_sid":"\uD83D\uDCDE Twilio \u2014 Account SID (commence par AC...)",
 "ax_twilio_token":"\uD83D\uDCDE Twilio \u2014 Auth Token"
 };var totalConfig=0,totalItems=0;Object.keys(categories).forEach(function(cat){var keys=categories[cat];var items=[];keys.forEach(function(k){var val=localStorage.getItem(k);totalItems++;if(val){totalConfig++;items.push({key:k,name:names[k]||k,value:val,masked:k.indexOf("pass")>=0||k.indexOf("token")>=0||k.indexOf("secret")>=0||k.indexOf("key")>=0});}});h+='<div class="ax-card ax-vault-cat" data-cat="'+esc(cat.toLowerCase())+'"><h3>'+cat+' <span class="ax-badge '+(items.length?"ax-badge-green":"ax-badge-red")+'">'+items.length+'/'+keys.length+'</span></h3>';var missingKeys=keys.filter(function(k){return !localStorage.getItem(k);});if(!items.length){h+='<p style="font-size:12px;color:var(--ax-text-dim)">Aucun identifiant configure dans cette categorie</p>';}missingKeys.forEach(function(mk){var nm=names[mk]||mk;h+='<div class="ax-setting-row ax-vault-item" data-status="empty" data-vkey="'+esc(mk)+'" style="opacity:.6"><div style="flex:1"><strong style="font-size:12px">'+esc(nm)+'</strong> <span style="background:rgba(255,88,88,.2);color:var(--ax-red);font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:4px">\u26A0 A configurer</span></div><button class="ax-btn-icon" onclick="_vaultEditKey(\''+esc(mk).replace(/'/g,"\\'")+'\',\''+esc(nm).replace(/'/g,"\\'")+'\')" title="Configurer (clic = ouvrir)" style="width:32px;height:32px;font-size:14px;background:linear-gradient(135deg,rgba(232,184,48,.2),rgba(232,184,48,.06));border:1px solid rgba(232,184,48,.5);color:var(--ax-gold);min-width:44px;min-height:44px">\u270F\uFE0F</button></div>';});items.forEach(function(item){var display=item.masked?item.value.slice(0,8)+"..."+item.value.slice(-4):item.value;h+='<div class="ax-setting-row ax-vault-item" data-search="'+esc((item.name+" "+item.key).toLowerCase())+'"><div style="flex:1"><strong style="font-size:12px">'+axCredBadge(item.key)+esc(item.name)+'</strong><div style="font-size:10px;color:var(--ax-text-dim);font-family:var(--ax-mono)">'+esc(display)+'</div></div><div style="display:flex;gap:4px"><button class="ax-btn-icon" onclick="navigator.clipboard.writeText(localStorage.getItem(\''+item.key+'\'));toast(\'Copie\',\'ok\')" title="Copier" style="width:28px;height:28px;font-size:12px">\uD83D\uDCCB</button><button class="ax-btn-icon" onclick="_vaultEditKey(\''+item.key+'\',\''+esc(item.name).replace(/'/g,"\\\\\'")+'\')" title="Modifier" style="width:32px;height:32px;font-size:14px;min-width:44px;min-height:44px">\u270F\uFE0F</button></div></div>';});h+="</div>";});h+='<div class="ax-card" style="text-align:center"><strong>'+totalConfig+'/'+totalItems+' configures</strong><div style="width:100%;height:6px;background:var(--ax-bg-input);border-radius:3px;margin:8px 0"><div style="width:'+Math.round(totalConfig/totalItems*100)+'%;height:100%;background:var(--ax-green);border-radius:3px"></div></div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:linear-gradient(135deg,rgba(76,208,128,.06),transparent);margin-top:8px"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:28px">\u2601\uFE0F</div><div style="flex:1"><strong style="color:var(--ax-green);font-size:13px">Synchronisation Firebase active</strong><div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">Vos cles sont sauvegardees auto + restaurees a chaque connexion. Aucune re-saisie meme apres reinstall.</div></div><button class="ax-btn ax-btn-outline" onclick="axRestoreVaultFromFirebase()" style="font-size:11px;padding:6px 10px;min-height:36px;white-space:nowrap" title="Force restauration cles depuis Firebase">\uD83D\uDD04 Restaurer</button></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" onclick="_exportVault()">\uD83D\uDCE4 Exporter (chiffre)</button><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'ax-vault-import\').click()">\uD83D\uDCE5 Importer</button><input type="file" id="ax-vault-import" style="display:none" accept=".json" onchange="_importVault(this)"><button class="ax-btn ax-btn-outline" onclick="axTestAllCredentials()" style="background:rgba(76,208,128,.1);border-color:var(--ax-green);color:var(--ax-green)">\uD83E\uDDEA Tester toutes les cles</button><button class="ax-btn ax-btn-outline" onclick="axTestEmailJS()" style="background:rgba(74,154,255,.1);border-color:var(--ax-blue);color:var(--ax-blue)">\uD83D\uDCE7 Tester EmailJS</button></div></div>';return h;}
@@ -5029,6 +5031,94 @@ function axTestPushNotif(){
   }catch(e){toast("Erreur : "+String(e.message||e).slice(0,60),"err");}
 }
 
+/* v12.203 - Envoyer push via Cloudflare Worker (backend) */
+async function axSendPushFromAdmin(targetUserIds,payload){
+  if(!axIsAdmin()){toast("Reserve admin","warn");return;}
+  var workerUrl=(localStorage.getItem("ax_push_worker_url")||"").trim().replace(/\/$/,"");
+  if(!workerUrl){toast("Configure d'abord l'URL du Worker dans Coffre","warn",{force:true});return;}
+  var token=(localStorage.getItem("ax_push_admin_token")||"").trim();
+  if(!token){toast("Configure le token admin dans Coffre","warn",{force:true});return;}
+  if(!targetUserIds||!targetUserIds.length){toast("Aucun destinataire","warn");return;}
+  if(!payload||!payload.title){payload=Object.assign({title:"Apex",body:"Notification"},payload||{});}
+  try{
+    var ctrl=new AbortController();
+    setTimeout(function(){try{ctrl.abort();}catch(_){}},15000);
+    var r=await fetch(workerUrl+"/send",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({userIds:targetUserIds,payload:payload}),
+      signal:ctrl.signal
+    });
+    var data;try{data=await r.json();}catch(_){data={};}
+    if(!r.ok){
+      var em="HTTP "+r.status+(data&&data.error?" "+data.error:"");
+      toast("Erreur : "+em,"err",{force:true});
+      _axPushLogError("send",em);
+      return data;
+    }
+    var sent=data.sent||0,failed=data.failed||0;
+    toast("Push envoye a "+sent+" user(s)"+(failed?" ("+failed+" echecs)":""),sent?"ok":"warn",{force:true});
+    try{_audit("push_send",K.user?K.user.id:"?","userIds="+targetUserIds.length,"sent="+sent+" failed="+failed);}catch(_){}
+    return data;
+  }catch(e){
+    var msg=String(e&&e.message||e).slice(0,80);
+    toast("Erreur : "+msg,"err",{force:true});
+    _axPushLogError("send_exception",msg);
+  }
+}
+
+function _axPushLogError(kind,msg){
+  try{
+    var errs=lg("ax_push_errors",[]);
+    errs.push({ts:Date.now(),kind:kind,msg:String(msg).slice(0,200),uid:K.user?K.user.id:"?"});
+    if(errs.length>100)errs=errs.slice(-100);
+    ls("ax_push_errors",errs);
+    if(typeof fbWrite==="function")try{fbWrite("ax_push_errors",errs);}catch(_){}
+  }catch(_){}
+}
+
+/* v12.203 - Sentinelle push-watch : verifie chaque heure que le worker repond + notifie admin */
+async function _snPushWatch(){
+  try{
+    if(!axIsAdmin())return;
+    var workerUrl=(localStorage.getItem("ax_push_worker_url")||"").trim().replace(/\/$/,"");
+    if(!workerUrl)return; // pas configure, normal
+    // Cooldown 1h entre tests
+    var last=+lg("ax_push_watch_last",0);
+    if(Date.now()-last<3600000)return;
+    ls("ax_push_watch_last",Date.now());
+    var ctrl=new AbortController();
+    setTimeout(function(){try{ctrl.abort();}catch(_){}},10000);
+    var r=await fetch(workerUrl+"/health",{signal:ctrl.signal});
+    if(!r.ok){
+      _axPushWatchFailure("health HTTP "+r.status);
+      return;
+    }
+    var data;try{data=await r.json();}catch(_){data={};}
+    if(!data.ok||!data.configured){
+      _axPushWatchFailure("worker not configured");
+      return;
+    }
+    // Reset compteur echecs sur succes
+    ls("ax_push_watch_fails",0);
+    if(typeof _snLog==="function")_snLog("push-watch","ok","Worker actif - "+(data.version||"?"));
+  }catch(e){
+    _axPushWatchFailure(String(e&&e.message||e).slice(0,80));
+  }
+}
+
+function _axPushWatchFailure(reason){
+  var fails=(+lg("ax_push_watch_fails",0))+1;
+  ls("ax_push_watch_fails",fails);
+  _axPushLogError("watch",reason);
+  if(typeof _snLog==="function")_snLog("push-watch","warn","Echec "+fails+"/3: "+reason);
+  if(fails>=3){
+    if(typeof toast==="function")toast("Push Worker hors service apres 3 verifs - verifie Cloudflare","err",{force:true});
+    if(typeof _escalateToClaudeCode==="function")try{_escalateToClaudeCode("push-watch","Worker push KO 3x: "+reason,"normal");}catch(_){}
+    ls("ax_push_watch_fails",0); // reset pour eviter spam
+  }
+}
+
 function _axPushBanner(){
   if(!K.user||!axIsAdmin())return"";
   if(!('Notification' in window))return"";
@@ -6768,11 +6858,11 @@ function _startSentinels(){
     {fn:_snApi,ms:60000},{fn:_snUx,ms:900000},{fn:_snHeal,ms:180000},
     {fn:_snLearner,ms:1800000},{fn:_snBattery,ms:600000},{fn:_snScale,ms:600000},
     {fn:_snCrypto,ms:900000},{fn:_snMobile,ms:1800000},{fn:_snWorkers,ms:600000},
-    {fn:_snUndefinedVar,ms:300000},{fn:_snFbStale,ms:30000},{fn:_snAiHealth,ms:60000},{fn:_snGlobalVars,ms:300000},{fn:_snAutoAudit,ms:14400000},{fn:_snFeedPoll,ms:7200000}
+    {fn:_snUndefinedVar,ms:300000},{fn:_snFbStale,ms:30000},{fn:_snAiHealth,ms:60000},{fn:_snGlobalVars,ms:300000},{fn:_snAutoAudit,ms:14400000},{fn:_snFeedPoll,ms:7200000},{fn:_snPushWatch,ms:3600000}
   ];
   defs.forEach(function(d){_globalIntervals.push(setInterval(d.fn,d.ms));});
   defs.forEach(function(d){try{d.fn();}catch(_){}});
-  _snLog("start","ok","16 sentinelles demarrees (v12.11)");
+  _snLog("start","ok","17 sentinelles demarrees (v12.203 +push-watch)");
 }
 function _healthCheck(){var issues=[];if(!navigator.onLine)issues.push("offline");var memUsed=0;try{for(var hi=0;hi<localStorage.length;hi++)memUsed+=(localStorage.getItem(localStorage.key(hi))||"").length;}catch(ex){}if(memUsed>4500000)issues.push("storage-critical");if(!_fbEs&&navigator.onLine&&FB_URL)issues.push("firebase-down");if(!_getApiKey())issues.push("no-api-key");var recentErrs=lg("ax_err_log",[]).filter(function(er){return now()-er.ts<300000;});if(recentErrs.length>3)issues.push("error-storm");if(K.isStreaming&&K.messages.length){var lastMsg=K.messages[K.messages.length-1];if(lastMsg.ts&&now()-lastMsg.ts>45000){K.isStreaming=false;issues.push("streaming-stuck");K.messages.push({role:"assistant",content:"(IA debloquee automatiquement apres 45s — reessayez)",ts:now()});_saveMsgs();dc();}}_predictiveAlert();if(issues.length){var status=lg("ax_health_status",{ok:true});if(status.ok||!status.issues||status.issues.join(",")!==issues.join(",")){ls("ax_health_status",{ok:false,issues:issues,ts:now()});if(issues.indexOf("firebase-down")>=0)setTimeout(fbStartListening,2000);if(issues.indexOf("storage-critical")>=0)_emergencyCleanup();if(issues.indexOf("streaming-stuck")>=0)toast("IA debloquee","info");if(issues.indexOf("error-storm")>=0)toast("Erreurs detectees — auto-repair","warn");}}else{ls("ax_health_status",{ok:true,ts:now()});}}
 window.addEventListener("error",function(e){try{if(typeof axAutoHandleError==="function")axAutoHandleError("js_error",(e.message||"?")+" "+(e.filename||""));if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("js_error",(e.message||"?")+" "+(e.filename||""));}catch(_){}});window.addEventListener("unhandledrejection",function(e){try{if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("promise_rejection",String(e.reason||"?").slice(0,200));}catch(_){}});

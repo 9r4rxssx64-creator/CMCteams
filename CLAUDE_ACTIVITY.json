@@ -1,14 +1,21 @@
 {
-  "updated_at": 1777123605526,
+  "updated_at": 1777123766424,
   "total_commits": 232,
   "projects": [
     "apex",
-    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "724aaedd",
+      "ts": 1777123611000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.202",
+      "project": "docs",
+      "ver": "12.202",
+      "author": "claude-code"
+    },
     {
       "sha": "3a6231a3",
       "ts": 1777123594000,
@@ -533,7 +540,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -957,14 +964,6 @@
       "sha": "521ff6b5",
       "ts": 1777080747000,
       "msg": "CMCteams v9.481: pub Apex multi-endroits + toggles admin",
-      "project": "cmcteams",
-      "ver": "9.481",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7cb6ae19",
-      "ts": 1777080614000,
-      "msg": "CMCteams v9.481: pub Apex multi-endroits subagent (commit intermediaire)",
       "project": "cmcteams",
       "ver": "9.481",
       "author": "claude-code"
