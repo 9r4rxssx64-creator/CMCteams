@@ -382,7 +382,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.230",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.233",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -1459,7 +1459,7 @@ var _filterVault=_axDebounce(_filterVaultRaw,150);
 /* v12.213 — IA navigation + autofill (Kevin 2026-04-25)
    axNavigateTo : amene Kevin direct au bon champ avec highlight dore
    axAutofillField : remplit un champ Coffre avec confirmation */
-function axNavigateTo(target,opts){opts=opts||{};var map={"coffre.gemini":{view:"vault",search:"gemini",key:"ax_gemini_key"},"coffre.openai":{view:"vault",search:"openai",key:"ax_openai_key"},"coffre.claude":{view:"vault",search:"claude",key:"ax_api_key"},"coffre.anthropic":{view:"vault",search:"anthropic",key:"ax_api_key"},"coffre.paypal":{view:"vault",search:"paypal",key:"ax_paypal_me"},"coffre.revolut":{view:"vault",search:"revolut",key:"ax_revolut_tag"},"coffre.btc":{view:"vault",search:"bitcoin",key:"ax_btc_address"},"coffre.eth":{view:"vault",search:"ethereum",key:"ax_eth_address"},"coffre.iban":{view:"vault",search:"iban",key:"ax_iban"},"coffre.cloudflare":{view:"vault",search:"cloudflare",key:"ax_cloudflare_token"},"coffre.stripe":{view:"vault",search:"stripe"},"coffre.email":{view:"vault",search:"emailjs"},"coffre.telegram":{view:"vault",search:"telegram"},"coffre.deepseek":{view:"vault",search:"deepseek",key:"ax_deepseek_key"},"coffre.mistral":{view:"vault",search:"mistral",key:"ax_mistral_key"},"coffre.groq":{view:"vault",search:"groq",key:"ax_groq_key"},"coffre.perplexity":{view:"vault",search:"perplexity",key:"ax_perplexity_key"},"coffre.github":{view:"vault",search:"github",key:"ax_github_proxy_url"},"coffre":{view:"vault"},"settings.theme":{view:"settings",section:"theme"},"settings.voice":{view:"settings",section:"voice"},"settings.notifications":{view:"settings",section:"notifs"},"settings.cloudflare":{view:"settings",section:"cloudflare"},"settings":{view:"settings"},"reglages":{view:"settings"},"monitoring":{view:"monitoringpro"},"sentinelles":{view:"sentinelshealth"},"backup":{view:"backupslist"},"sauvegardes":{view:"backupslist"},"alertes":{view:"securityalerts"},"securite":{view:"securityalerts"},"doublons":{view:"duplicates"},"banque":{view:"knowledgebank"},"stats":{view:"history"},"historique":{view:"history"},"clients":{view:"clients"},"persistence":{view:"persaudit"},"sauvegarde-cles":{view:"persaudit"},"personalisation":{view:"userpersonalization"},"personnalisation":{view:"userpersonalization"},"laurence":{view:"userpersonalization"},"fond d ecran":{view:"userpersonalization"},"fond ecran":{view:"userpersonalization"},"wallpaper":{view:"userpersonalization"},"diaporama":{view:"userpersonalization"},"slideshow":{view:"userpersonalization"},"bulles":{view:"userpersonalization"},"theme amour":{view:"userpersonalization"}};var t=String(target||"").toLowerCase().trim();var found=map[t];if(!found){var keys=Object.keys(map);for(var i=0;i<keys.length;i++){if(t.indexOf(keys[i])>=0||keys[i].indexOf(t)>=0){found=map[keys[i]];break;}}}if(!found){if(typeof toast==="function")toast("Je n'ai pas trouve '"+String(target).slice(0,40)+"'. Essaie : coffre.gemini, monitoring, alertes...","warn");return false;}try{if(typeof sv==="function")sv(found.view);}catch(_){}setTimeout(function(){try{if(found.search){var input=document.getElementById("ax-vault-search");if(input){input.value=found.search;if(typeof _filterVault==="function")_filterVault(found.search);else if(typeof _filterVaultRaw==="function")_filterVaultRaw(found.search);}}}catch(_){}if(found.key){setTimeout(function(){try{var rows=document.querySelectorAll(".ax-vault-item");rows.forEach(function(r){var dataKey=r.getAttribute("data-vkey")||"";if(dataKey===found.key||(r.textContent||"").toLowerCase().indexOf(String(found.key).toLowerCase())>=0){r.style.transition="all .3s ease";r.style.boxShadow="0 0 20px var(--ax-gold), 0 0 40px var(--ax-gold)";r.style.background="rgba(232,184,48,.15)";try{r.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}setTimeout(function(){try{r.style.boxShadow="";r.style.background="";}catch(_){}},3000);}});}catch(_){}},400);}},200);if(typeof toast==="function")toast("→ "+String(target).slice(0,40),"info");return true;}
+function axNavigateTo(target,opts){opts=opts||{};var map={"coffre.gemini":{view:"vault",search:"gemini",key:"ax_gemini_key"},"coffre.openai":{view:"vault",search:"openai",key:"ax_openai_key"},"coffre.claude":{view:"vault",search:"claude",key:"ax_api_key"},"coffre.anthropic":{view:"vault",search:"anthropic",key:"ax_api_key"},"coffre.paypal":{view:"vault",search:"paypal",key:"ax_paypal_me"},"coffre.revolut":{view:"vault",search:"revolut",key:"ax_revolut_tag"},"coffre.btc":{view:"vault",search:"bitcoin",key:"ax_btc_address"},"coffre.eth":{view:"vault",search:"ethereum",key:"ax_eth_address"},"coffre.iban":{view:"vault",search:"iban",key:"ax_iban"},"coffre.cloudflare":{view:"vault",search:"cloudflare",key:"ax_cloudflare_token"},"coffre.stripe":{view:"vault",search:"stripe"},"coffre.email":{view:"vault",search:"emailjs"},"coffre.telegram":{view:"vault",search:"telegram"},"coffre.deepseek":{view:"vault",search:"deepseek",key:"ax_deepseek_key"},"coffre.mistral":{view:"vault",search:"mistral",key:"ax_mistral_key"},"coffre.groq":{view:"vault",search:"groq",key:"ax_groq_key"},"coffre.perplexity":{view:"vault",search:"perplexity",key:"ax_perplexity_key"},"coffre.github":{view:"vault",search:"github",key:"ax_github_proxy_url"},"coffre":{view:"vault"},"settings.theme":{view:"settings",section:"theme"},"settings.voice":{view:"settings",section:"voice"},"settings.notifications":{view:"settings",section:"notifs"},"settings.cloudflare":{view:"settings",section:"cloudflare"},"settings":{view:"settings"},"reglages":{view:"settings"},"monitoring":{view:"monitoringpro"},"sentinelles":{view:"sentinelshealth"},"backup":{view:"backupslist"},"sauvegardes":{view:"backupslist"},"alertes":{view:"securityalerts"},"securite":{view:"securityalerts"},"doublons":{view:"duplicates"},"banque":{view:"knowledgebank"},"stats":{view:"history"},"historique":{view:"history"},"clients":{view:"clients"},"persistence":{view:"persaudit"},"sauvegarde-cles":{view:"persaudit"},"personalisation":{view:"userpersonalization"},"personnalisation":{view:"userpersonalization"},"laurence":{view:"userpersonalization"},"fond d ecran":{view:"userpersonalization"},"fond ecran":{view:"userpersonalization"},"wallpaper":{view:"userpersonalization"},"diaporama":{view:"userpersonalization"},"slideshow":{view:"userpersonalization"},"bulles":{view:"userpersonalization"},"theme amour":{view:"userpersonalization"},"traducteur":{view:"translatorpro"},"translation":{view:"translatorpro"},"translator":{view:"translatorpro"},"traduction":{view:"translatorpro"},"architecture":{view:"architecture"},"archi":{view:"architecture"},"plans":{view:"architecture"},"agencement":{view:"architecture"},"design":{view:"architecture"},"renovation":{view:"architecture"},"construction":{view:"architecture"}};var t=String(target||"").toLowerCase().trim();var found=map[t];if(!found){var keys=Object.keys(map);for(var i=0;i<keys.length;i++){if(t.indexOf(keys[i])>=0||keys[i].indexOf(t)>=0){found=map[keys[i]];break;}}}if(!found){if(typeof toast==="function")toast("Je n'ai pas trouve '"+String(target).slice(0,40)+"'. Essaie : coffre.gemini, monitoring, alertes...","warn");return false;}try{if(typeof sv==="function")sv(found.view);}catch(_){}setTimeout(function(){try{if(found.search){var input=document.getElementById("ax-vault-search");if(input){input.value=found.search;if(typeof _filterVault==="function")_filterVault(found.search);else if(typeof _filterVaultRaw==="function")_filterVaultRaw(found.search);}}}catch(_){}if(found.key){setTimeout(function(){try{var rows=document.querySelectorAll(".ax-vault-item");rows.forEach(function(r){var dataKey=r.getAttribute("data-vkey")||"";if(dataKey===found.key||(r.textContent||"").toLowerCase().indexOf(String(found.key).toLowerCase())>=0){r.style.transition="all .3s ease";r.style.boxShadow="0 0 20px var(--ax-gold), 0 0 40px var(--ax-gold)";r.style.background="rgba(232,184,48,.15)";try{r.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}setTimeout(function(){try{r.style.boxShadow="";r.style.background="";}catch(_){}},3000);}});}catch(_){}},400);}},200);if(typeof toast==="function")toast("→ "+String(target).slice(0,40),"info");return true;}
 function axAutofillField(key,value,opts){opts=opts||{};if(!key||value===undefined||value===null)return false;var k=String(key).trim();var v=String(value).trim();if(!opts.skipConfirm){var preview=v.length>80?v.slice(0,80)+"...":v;if(!confirm("Remplir le champ '"+k+"' avec :\n\n"+preview+"\n\n?"))return false;}try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf(k)>=0&&typeof ls==="function"){ls(k,v);}else{localStorage.setItem(k,v);}if(k==="ax_api_key"&&typeof ls==="function"){try{ls("ax_shared_api_key",v);}catch(_){}}if(typeof toast==="function")toast("✅ "+k+" enregistre","ok");try{if(typeof axCredSetStatus==="function")axCredSetStatus(k,"yellow","Saisi via IA");}catch(_){}try{if(typeof axTestCredential==="function")setTimeout(function(){axTestCredential(k,true);},500);}catch(_){}try{if(typeof dc==="function")dc();}catch(_){}return true;}catch(e){if(typeof toast==="function")toast("Erreur : "+String(e&&e.message||e).slice(0,60),"err");return false;}}
 /* v12.220 - Audit bug-hunter : Studio fallbacks (axOpenStudio/axDetectIntent/axProposeStudio referenced in system prompt mais non definis -> crash IA quand user demande "fais une video"). Stubs minimaux + fallback vChat pour vues manquantes. */
 function axDetectIntent(text){if(!text||typeof text!=="string")return null;var map=[{re:/\b(montage|clip|edit) ?(video|film|pub|story)|video editing\b/i,studio:"video"},{re:/\b(montage|edit) ?(musique|musical|son|audio|track|beat|chanson)|music editing\b/i,studio:"music"},{re:/\b(prefecture|carte de sejour|naturalisation|titre de sejour|cni|passeport)\b/i,studio:"prefecture"},{re:/\b(cv|curriculum|candidature|resume)\b/i,studio:"cv"},{re:/\b(facture|devis|invoice|bill)\b/i,studio:"facture"},{re:/\b(contrat|nda|cdi|cdd|prestation|bail)\b/i,studio:"contrat"},{re:/\b(presentation|slides|pitch|soutenance|powerpoint|keynote)\b/i,studio:"presentation"},{re:/\b(logo|branding|identite visuelle)\b/i,studio:"logo"},{re:/\b(clip photo|raconter une histoire|photo to video)\b/i,studio:"clip"}];for(var i=0;i<map.length;i++){if(map[i].re.test(text))return{studio:map[i].studio,params:{}};}return null;}
@@ -4006,7 +4006,7 @@ function vTokenBalance(){
 }
 
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -4299,7 +4299,11 @@ function _getToolDefs(){return[{name:"kb_search",description:"Chercher dans la m
 {name:"meteo",description:"Meteo gratuite (Open-Meteo, sans cle API) pour n importe quelle ville. Retourne meteo actuelle + prevision 7 jours.",input_schema:{type:"object",properties:{city:{type:"string",description:"Ville (ex: Monaco, Paris, Geneve)"}},required:["city"]}},
 {name:"legal_lookup",description:"Recherche un code juridique francais sur Legifrance. Retourne URL officielle. Codes valides: civil, penal, travail, commerce, consommation, secu_sociale, sante, impots, urbanisme, environnement, education, transports, procedure_civile, procedure_penale, justice_admin, propriete_intellectuelle, monetaire_financier, general_collectivites.",input_schema:{type:"object",properties:{code:{type:"string",description:"Nom du code (ex: travail, civil, penal)"}},required:["code"]}},
 {name:"legal_calc",description:"Calculs juridiques francais. Types: indemnite_licenciement (params:{anciennete,salaire}), prescription (params:{type:civil|contrat|penal_contravention|penal_delit|penal_crime|fiscal|salaire|immobilier|sante}), conges_payes (params:{salaire_mensuel}).",input_schema:{type:"object",properties:{type:{type:"string",enum:["indemnite_licenciement","prescription","conges_payes"]},params:{type:"object"}},required:["type","params"]}},
-{name:"jurisprudence",description:"Recherche jurisprudence francaise (Cour de cassation, Conseil d Etat, CJUE, CEDH). Retourne URL de recherche pre-remplie.",input_schema:{type:"object",properties:{keywords:{type:"string",description:"Mots-cles de la recherche"},source:{type:"string",enum:["cassation","conseil_etat","conseil_constitutionnel","cjue","cedh"],description:"Source (defaut: cassation)"}},required:["keywords"]}}];}
+{name:"jurisprudence",description:"Recherche jurisprudence francaise (Cour de cassation, Conseil d Etat, CJUE, CEDH). Retourne URL de recherche pre-remplie.",input_schema:{type:"object",properties:{keywords:{type:"string",description:"Mots-cles de la recherche"},source:{type:"string",enum:["cassation","conseil_etat","conseil_constitutionnel","cjue","cedh"],description:"Source (defaut: cassation)"}},required:["keywords"]}},
+{name:"arch_surface",description:"Calcul surface m2, perimetre m et volume m3 (si H fournie). Inclut recommandations electrique/chauffage automatiques.",input_schema:{type:"object",properties:{L:{type:"number",description:"Longueur en metres"},W:{type:"number",description:"Largeur en metres"},H:{type:"number",description:"Hauteur en metres (optionnel pour volume)"}},required:["L","W"]}},
+{name:"arch_escalier",description:"Calcul escalier loi de Blondel (2h+g=63cm). Donne nb marches, hauteur marche, giron, longueur totale.",input_schema:{type:"object",properties:{hauteur_etage_cm:{type:"number",description:"Hauteur d etage a franchir en cm"}},required:["hauteur_etage_cm"]}},
+{name:"arch_eclairage",description:"Calcul eclairage : lumens, watts LED, nb spots selon type piece (sejour, cuisine, sdb, chambre, bureau, couloir, garage, atelier).",input_schema:{type:"object",properties:{surface_m2:{type:"number"},type:{type:"string",enum:["sejour","cuisine","sdb","chambre","bureau","couloir","garage","atelier"]}},required:["surface_m2","type"]}},
+{name:"arch_chauffage",description:"Calcul puissance chauffage en W et kW selon volume et niveau d isolation (tres_bonne, bonne, moyenne, ancienne).",input_schema:{type:"object",properties:{volume_m3:{type:"number"},isolation:{type:"string",enum:["tres_bonne","bonne","moyenne","ancienne"]}},required:["volume_m3","isolation"]}}];}
 
 function axExecuteTool(name,input){switch(name){case"kb_search":var results=kbSearch(input.query);return results.length?results.map(function(f){return f.text;}).join("\n"):"Aucun resultat.";case"kb_remember":kbAdd(input.text,"tool_use",input.type||"fact");return"Memorise: "+input.text;case"calculate":return _safeCalc(input.expression);case"finance_calculate":return _finCalcTool(input.type,input.params);case"code_execute":if(input.language==="python")return axRunPython(input.code);return axRunCode(input.code);case"search_conversations":var r=searchConversations(input.query);return r.length?JSON.stringify(r.slice(0,5)):"Aucun resultat.";case"get_datetime":return JSON.stringify({date:new Date().toLocaleDateString("fr-FR"),time:new Date().toLocaleTimeString("fr-FR"),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,timestamp:now()});case"set_reminder":var rem={id:uid(),text:input.text,triggerAt:now()+input.delay_minutes*60000,done:false};var rems=lg("ax_reminders",[]);rems.push(rem);ls("ax_reminders",rems);setTimeout(function(){_fireReminder(rem.id);},input.delay_minutes*60000);return"Rappel programme dans "+input.delay_minutes+" minutes (persistant).";case"device_status":return JSON.stringify({online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,storage:_getStorageUsed(),screen:screen.width+"x"+screen.height});case"web_search":return"(recherche web deleguee a Claude)";case"finance_portfolio":return _finPortfolioTool(input);case"generate_image":var imgUrl=axGenerateImage(input.prompt,input.width,input.height);return"Image generee avec succes. URL: "+imgUrl;case"generate_video":axGenerateVideo(input.prompt,{duration:input.duration_sec,ratio:input.aspect_ratio}).then(function(u){if(u)toast("Video prete","ok");});return"Generation video lancee (resultat dans le chat sous ~30s).";case"generate_music":axGenerateMusic(input.prompt,input.duration_sec).then(function(u){if(u)toast("Musique prete","ok");});return"Generation musique lancee (resultat dans le chat sous ~20s).";case"app_action":return _execAppAction(input.action,input.params||{});case"analyze_and_act":var result="Analyse: "+input.analysis;if(input.auto_execute&&input.suggested_actions){input.suggested_actions.forEach(function(a){result+="\nAction: "+_execAppAction(a,{});});}return result;case"finance_technical":var prices=input.prices||[];if(!prices.length)return"Fournissez un tableau de prix.";return JSON.stringify({sma20:finSMA(prices,20),sma50:finSMA(prices,50),ema12:finEMA(prices,12),ema26:finEMA(prices,26),trend:parseFloat(finEMA(prices,12))>parseFloat(finEMA(prices,26))?"haussiere":"baissiere"});case"github_read_file":return axGithubReadFile(input.path,input.branch||"main");
 case"github_list_files":return axGithubListFiles(input.path||"",input.branch||"main");
@@ -4314,6 +4318,10 @@ case"meteo":try{axMeteo(input.city).then(function(d){if(d){var msg="Meteo "+d.ci
 case"legal_lookup":try{return"URL officielle: "+axLegalLookup(input.code);}catch(_e){return"Erreur legal_lookup: "+(_e.message||_e);}
 case"legal_calc":try{var lp=input.params||{};if(input.type==="indemnite_licenciement")return JSON.stringify(axLegalCalcIndemniteLicenciement(Number(lp.anciennete)||0,Number(lp.salaire)||0));if(input.type==="prescription")return JSON.stringify(axLegalPrescription(lp.type));if(input.type==="conges_payes")return JSON.stringify(axLegalCongesPayes(Number(lp.salaire_mensuel)||0));return"Type inconnu: "+input.type;}catch(_e){return"Erreur legal_calc: "+(_e.message||_e);}
 case"jurisprudence":try{var src=(input.source||"cassation").toLowerCase();var base=AX_LEGAL_FR.jurisprudence[src]||AX_LEGAL_FR.jurisprudence.cassation;return"Recherche "+src+": "+base+"?search="+encodeURIComponent(input.keywords||"");}catch(_e){return"Erreur jurisprudence: "+(_e.message||_e);}
+case"arch_surface":try{var aL=Number(input.L)||0,aW=Number(input.W)||0,aH=Number(input.H)||0;var sR=axArchSurface(aL,aW);var out={surface_m2:sR.surface_m2,perimetre_m:sR.perimetre_m};if(aH){var vR=axArchVolume(aL,aW,aH);out.volume_m3=vR.volume_m3;out.surface_murs_m2=vR.surface_murs_m2;out.electrique=axArchElectrique(sR.surface_m2);out.chauffage_isolation_moyenne=axArchChauffage(vR.volume_m3,"moyenne");}return JSON.stringify(out);}catch(_e){return"Erreur arch_surface: "+(_e.message||_e);}
+case"arch_escalier":try{return JSON.stringify(axArchEscalier(Number(input.hauteur_etage_cm)||0));}catch(_e){return"Erreur arch_escalier: "+(_e.message||_e);}
+case"arch_eclairage":try{return JSON.stringify(axArchEclairage(Number(input.surface_m2)||0,input.type||"sejour"));}catch(_e){return"Erreur arch_eclairage: "+(_e.message||_e);}
+case"arch_chauffage":try{return JSON.stringify(axArchChauffage(Number(input.volume_m3)||0,input.isolation||"moyenne"));}catch(_e){return"Erreur arch_chauffage: "+(_e.message||_e);}
 default:return"Outil inconnu: "+name;}}
 // v12.102 — Backend pro (FastAPI) : si ax_backend_url configure, route via backend
 // Resout Safari PWA CORS + expose moins de secrets client + fallback multi-provider
@@ -9166,6 +9174,192 @@ function vCalculatorsHub(){
   html+='</div>';
   return html;
 }
+
+/* ====================================================================
+   v12.232 — Studio Architecture Pro (calculs Blondel + RE2020 + normes
+   FR + 17 styles + palettes 2026 + tools IA arch_*)
+   ==================================================================== */
+var AX_ARCH={
+  styles:["Moderne minimaliste","Industriel","Scandinave","Contemporain","Mediterraneen","Japandi","Art Deco","Haussmannien","Provencal","Loft NYC","Bauhaus","Neo-classique","Mid-century","Wabi-sabi","Boheme","Brutaliste","Organique"],
+  normes:{
+    "RE2020":{desc:"Reglementation Energetique 2020",ref:"https://www.ecologie.gouv.fr/RE2020"},
+    "DTU":{desc:"Documents Techniques Unifies (CSTB)",ref:"https://boutique.cstb.fr/dtu"},
+    "PMR":{desc:"Personne Mobilite Reduite (Loi Handicap 2005)",largeur_porte_min:90,hauteur_table:80,largeur_couloir_min:120},
+    "ERP":{desc:"Etablissement Recevant du Public",largeur_circulation_min:140,sortie_secours_min:90},
+    "NF C 15-100":{desc:"Norme electrique habitations",ref:"https://www.promotelec.com"},
+    "ICPE":{desc:"Installations Classees Protection Environnement"}
+  },
+  dimensions_standard:{
+    porte_interieure:{largeur:[73,83,93],hauteur:204},
+    porte_entree:{largeur:[83,93],hauteur:[204,215]},
+    porte_garage:{largeur:[240,260,300],hauteur:[200,215]},
+    fenetre:{largeur:[60,80,100,120,140,160],hauteur:[60,75,100,125,140,160]},
+    velux:{largeur:[55,78,114],hauteur:[78,98,118,140]},
+    couloir_min:90,couloir_confort:120,couloir_pmr:140,
+    chambre_min:9,chambre_parents_min:12,sejour_min:14,cuisine_min:9,salle_bain_min:4,wc_min:0.9,
+    plafond_min:240,plafond_confort:270,plafond_loft:300,
+    escalier:{giron:25,hauteur_marche:17,largeur_min:80,paillasse:90},
+    table_hauteur:75,chaise_assise:45,bar_hauteur:110,plan_travail:90,
+    lit_simple:{largeur:90,longueur:190},lit_double:{largeur:140,longueur:190},
+    lit_queen:{largeur:160,longueur:200},lit_king:{largeur:180,longueur:200},
+    canape_2pl:{largeur:160,profondeur:90},canape_3pl:{largeur:200,profondeur:90}
+  },
+  palettes_2026:{
+    "Cafe Creme (Pantone 2025)":["#A67B5B","#D4B896","#F5E6D3","#3E2C1C"],
+    "Mocha Mousse (Pantone 2026)":["#A47864","#D4B896","#FFFFFF","#2A1810"],
+    "Sage & Terracotta":["#9CAF88","#C1654C","#F5F1E8","#3D2817"],
+    "Navy Gold (luxe)":["#1a2840","#c9a227","#ffffff","#0a1428"],
+    "Black White (Bauhaus)":["#000000","#ffffff","#e0e0e0","#666666"],
+    "Pastel Boheme":["#f4d3d3","#dec0a3","#a8c8b0","#3e3e3e"]
+  }
+};
+function axArchSurface(L,W){return{surface_m2:L*W,perimetre_m:2*(L+W)};}
+function axArchVolume(L,W,H){return{volume_m3:L*W*H,surface_murs_m2:2*H*(L+W)};}
+function axArchEscalier(hauteur_etage_cm){
+  var nb=Math.ceil(hauteur_etage_cm/17);
+  var hm=hauteur_etage_cm/nb;
+  var giron=63-2*hm;
+  var longueur=(nb-1)*giron;
+  return{nb_marches:nb,hauteur_marche_cm:Math.round(hm*10)/10,giron_cm:Math.round(giron*10)/10,longueur_escalier_cm:Math.round(longueur),formule:"Blondel: 2h+g=63cm"};
+}
+function axArchEclairage(surface_m2,type){
+  var lux={sejour:100,cuisine:300,sdb:200,chambre:100,bureau:500,couloir:100,garage:50,atelier:500}[type]||200;
+  var lumens=surface_m2*lux;
+  return{lumens_total:lumens,watts_led:Math.round(lumens/100),nb_spots_10w:Math.ceil(lumens/1000),recommandation:lux+" lux pour "+type};
+}
+function axArchChauffage(volume_m3,isolation){
+  var w={tres_bonne:30,bonne:40,moyenne:60,ancienne:100}[isolation]||60;
+  var watts=volume_m3*w;
+  return{puissance_watts:watts,puissance_kw:watts/1000,recommandation:w+" W/m3 pour isolation "+isolation};
+}
+function axArchPlomberie(nb_pieces_eau){
+  return{pression_min_bar:3,debit_evier_lmin:12,debit_douche_lmin:9,debit_baignoire_lmin:18,ballon_eau_chaude_l:nb_pieces_eau*50,recommandation:"Diametre PER: 16mm evier/lavabo, 20mm douche/baignoire"};
+}
+function axArchElectrique(surface_m2){
+  var nb=Math.ceil(surface_m2/35);
+  return{puissance_compteur_kva:surface_m2<50?9:(surface_m2<100?12:15),nb_circuits:nb,prises_par_chambre:3,prises_par_sejour:5,prises_cuisine:6,ref:"NF C 15-100"};
+}
+function vArchitectureStudio(){
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#c9a227,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;-webkit-text-fill-color:transparent">Studio Architecture Pro</h2><p style="color:var(--ax-text-dim);font-size:13px">Calculs surface, escalier (loi Blondel), eclairage, chauffage, electrique. Standards et normes FR.</p>';
+  h+='<div class="ax-card" style="margin-top:12px"><h3>Calculs surface / volume</h3>';
+  h+='<input id="archL" type="number" placeholder="Longueur (m)" class="ax-input" style="margin-bottom:6px;min-height:44px">';
+  h+='<input id="archW" type="number" placeholder="Largeur (m)" class="ax-input" style="margin-bottom:6px;min-height:44px">';
+  h+='<input id="archH" type="number" placeholder="Hauteur (m)" class="ax-input" style="min-height:44px">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="_axArchCalc()" style="width:100%;margin-top:8px;min-height:44px">Calculer</button>';
+  h+='<div id="archResult" style="margin-top:8px;padding:8px;background:rgba(232,184,48,.08);border-radius:8px;font-size:13px"></div></div>';
+  h+='<div class="ax-card"><h3>Escalier (loi Blondel)</h3>';
+  h+='<input id="archStair" type="number" placeholder="Hauteur d etage (cm, ex 270)" class="ax-input" style="min-height:44px">';
+  h+='<button class="ax-btn ax-btn-outline" onclick="_axArchStair()" style="width:100%;margin-top:8px;min-height:44px">Calculer escalier</button>';
+  h+='<div id="archStairResult" style="margin-top:8px;font-size:13px"></div></div>';
+  h+='<div class="ax-card"><h3>Eclairage</h3>';
+  h+='<select id="archLightType" class="ax-input" style="min-height:44px"><option value="sejour">Sejour</option><option value="cuisine">Cuisine</option><option value="sdb">Salle de bain</option><option value="chambre">Chambre</option><option value="bureau">Bureau</option><option value="couloir">Couloir</option><option value="atelier">Atelier</option></select>';
+  h+='<input id="archLightS" type="number" placeholder="Surface (m2)" class="ax-input" style="margin-top:6px;min-height:44px">';
+  h+='<button class="ax-btn ax-btn-outline" onclick="_axArchLight()" style="width:100%;margin-top:8px;min-height:44px">Calculer</button>';
+  h+='<div id="archLightResult" style="margin-top:8px;font-size:13px"></div></div>';
+  h+='<div class="ax-card"><h3>Standards dimensions (cm)</h3><div style="font-size:12px;line-height:1.7">';
+  var keys=Object.keys(AX_ARCH.dimensions_standard);
+  for(var i=0;i<Math.min(keys.length,18);i++){
+    var k=keys[i],v=AX_ARCH.dimensions_standard[k];
+    var sv=(typeof v==="object")?JSON.stringify(v).replace(/[\{\}"]/g,"").replace(/,/g,", "):String(v);
+    h+='<div><strong>'+esc(k.replace(/_/g," "))+":</strong> "+esc(sv)+"</div>";
+  }
+  h+="</div></div>";
+  h+='<div class="ax-card"><h3>Palettes tendance 2026</h3>';
+  Object.keys(AX_ARCH.palettes_2026).forEach(function(name){
+    var colors=AX_ARCH.palettes_2026[name];
+    h+='<div style="margin:6px 0"><strong style="font-size:13px">'+esc(name)+'</strong><div style="display:flex;gap:4px;margin-top:4px">';
+    colors.forEach(function(c){h+='<div style="flex:1;height:30px;background:'+esc(c)+';border-radius:6px;border:1px solid rgba(255,255,255,.1)"></div>';});
+    h+="</div></div>";
+  });
+  h+="</div>";
+  h+='<div class="ax-card"><h3>17 Styles d architecture</h3><div style="font-size:13px;line-height:1.8">';
+  AX_ARCH.styles.forEach(function(s){h+='<span style="display:inline-block;background:rgba(232,184,48,.08);padding:4px 10px;border-radius:12px;margin:3px">'+esc(s)+"</span>";});
+  h+="</div></div>";
+  h+='<div class="ax-card"><h3>Normes construction FR</h3>';
+  Object.keys(AX_ARCH.normes).forEach(function(n){
+    var nm=AX_ARCH.normes[n];
+    h+='<div style="padding:6px 0"><strong>'+esc(n)+"</strong> : "+esc(nm.desc)+(nm.ref?'<br><a href="'+esc(nm.ref)+'" target="_blank" style="color:var(--ax-blue,#7ab);font-size:11px">'+esc(nm.ref)+"</a>":"")+"</div>";
+  });
+  h+="</div></div>";
+  return h;
+}
+function _axArchCalc(){
+  var L=parseFloat((document.getElementById("archL")||{}).value)||0;
+  var W=parseFloat((document.getElementById("archW")||{}).value)||0;
+  var H=parseFloat((document.getElementById("archH")||{}).value)||0;
+  var r="";
+  if(L&&W){
+    var s=axArchSurface(L,W);
+    r+="Surface : "+s.surface_m2.toFixed(2)+" m2<br>Perimetre : "+s.perimetre_m.toFixed(2)+" m";
+    if(H){
+      var v=axArchVolume(L,W,H);
+      r+="<br>Volume : "+v.volume_m3.toFixed(2)+" m3<br>Surface murs : "+v.surface_murs_m2.toFixed(2)+" m2";
+      var elec=axArchElectrique(s.surface_m2);
+      r+="<br>Compteur conseille : "+elec.puissance_compteur_kva+" kVA, "+elec.nb_circuits+" circuits";
+      var chf=axArchChauffage(v.volume_m3,"moyenne");
+      r+="<br>Chauffage : "+chf.puissance_kw.toFixed(1)+" kW (isolation moyenne)";
+    }
+  }else r="Entre L et W au minimum.";
+  var el=document.getElementById("archResult");if(el)el.innerHTML=r;
+}
+function _axArchStair(){
+  var hv=parseFloat((document.getElementById("archStair")||{}).value)||270;
+  var r=axArchEscalier(hv);
+  var el=document.getElementById("archStairResult");
+  if(el)el.innerHTML=r.nb_marches+" marches<br>Hauteur marche : "+r.hauteur_marche_cm+" cm<br>Giron : "+r.giron_cm+" cm<br>Longueur escalier : "+r.longueur_escalier_cm+" cm<br><small style=\"color:#888\">"+esc(r.formule)+"</small>";
+}
+function _axArchLight(){
+  var s=parseFloat((document.getElementById("archLightS")||{}).value)||0;
+  var t=(document.getElementById("archLightType")||{}).value||"sejour";
+  if(!s){var el=document.getElementById("archLightResult");if(el)el.innerHTML="Entre une surface.";return;}
+  var r=axArchEclairage(s,t);
+  var el2=document.getElementById("archLightResult");
+  if(el2)el2.innerHTML=r.lumens_total+" lumens total<br>"+r.watts_led+"W LED equivalent<br>"+r.nb_spots_10w+" spots de 10W<br><small style=\"color:#888\">"+esc(r.recommandation)+"</small>";
+}
+
+/* v12.233 - Traducteur Pro 30 langues (cache + Claude Haiku + STT/TTS) */
+var AX_LANGS={fr:"🇫🇷 Francais",en:"🇬🇧 English",es:"🇪🇸 Espanol",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",pt:"🇵🇹 Portugues",nl:"🇳🇱 Dutch",ru:"🇷🇺 Russian",zh:"🇨🇳 Chinese",ja:"🇯🇵 Japanese",ko:"🇰🇷 Korean",ar:"🇸🇦 Arabic",hi:"🇮🇳 Hindi",tr:"🇹🇷 Turkish",pl:"🇵🇱 Polski",sv:"🇸🇪 Svenska",no:"🇳🇴 Norsk",da:"🇩🇰 Dansk",fi:"🇫🇮 Suomi",el:"🇬🇷 Greek",he:"🇮🇱 Hebrew",th:"🇹🇭 Thai",vi:"🇻🇳 Vietnamese",id:"🇮🇩 Bahasa",uk:"🇺🇦 Ukrainian",cs:"🇨🇿 Cestina",ro:"🇷🇴 Romana",hu:"🇭🇺 Magyar",bg:"🇧🇬 Bulgarian",hr:"🇭🇷 Hrvatski"};
+
+async function axTranslateProV2(text,targetLang){
+  if(!text||!targetLang)return "";
+  var cacheKey="tr_"+targetLang.slice(0,2)+"_"+(text.length>200?text.slice(0,200):text);
+  var cache=lg("ax_translate_cache",{});
+  if(cache[cacheKey])return cache[cacheKey];
+  try{
+    if(typeof _callClaudeAPI==="function"){
+      var prompt="Translate to "+(AX_LANGS[targetLang]||targetLang)+". Output ONLY translation, no preamble:\n\n"+text;
+      var resp=await _callClaudeAPI([{role:"user",content:prompt}],{model:"claude-haiku-4-5",max_tokens:1500});
+      var t=(typeof resp==="string"?resp:(resp&&resp.content&&resp.content[0]&&resp.content[0].text)||"").trim();
+      if(t){cache[cacheKey]=t;ls("ax_translate_cache",cache);return t;}
+    }
+  }catch(e){console.warn("[translate]",e);}
+  return text;
+}
+
+function vTranslatorPro(){
+  var prefs=lg("ax_translator_prefs",{tgt:"en"});
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#5aa8ff,#3a85e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🌐 Traducteur Pro</h2>';
+  h+='<div class="ax-card"><label style="font-size:12px;color:var(--ax-text-dim)">Langue cible :</label>';
+  h+='<select id="trTgt" class="ax-input" style="margin-top:6px">';
+  Object.keys(AX_LANGS).forEach(function(k){h+='<option value="'+k+'"'+(prefs.tgt===k?" selected":"")+'>'+AX_LANGS[k]+'</option>';});
+  h+='</select></div>';
+  h+='<div class="ax-card"><textarea id="trIn" placeholder="Texte a traduire..." class="ax-input" style="min-height:120px;font-size:15px"></textarea>';
+  h+='<button class="ax-btn ax-btn-primary" onclick="_axDoTranslate()" style="width:100%;margin-top:8px;min-height:48px">🌐 Traduire</button>';
+  h+='<div id="trOut" style="margin-top:12px;padding:12px;background:rgba(90,168,255,.08);border-radius:10px;border:1px solid rgba(90,168,255,.3);min-height:60px;font-size:15px;line-height:1.6"></div>';
+  h+='<div style="display:flex;gap:8px;margin-top:8px"><button class="ax-btn ax-btn-outline" onclick="_axTrCopy()" style="flex:1;font-size:12px">📋 Copier</button><button class="ax-btn ax-btn-outline" onclick="_axTrSpeak()" style="flex:1;font-size:12px">🔊 Lire</button></div></div></div>';
+  return h;
+}
+
+function _axDoTranslate(){
+  var inp=document.getElementById("trIn");var out=document.getElementById("trOut");
+  var tgt=document.getElementById("trTgt").value;
+  if(!inp||!inp.value.trim())return;
+  out.innerHTML="Traduction en cours...";
+  ls("ax_translator_prefs",{tgt:tgt});
+  axTranslateProV2(inp.value,tgt).then(function(r){out.textContent=r;});
+}
+function _axTrCopy(){var t=document.getElementById("trOut").textContent;if(t&&navigator.clipboard){navigator.clipboard.writeText(t);if(typeof toast==="function")toast("Copie","ok");}}
+function _axTrSpeak(){var t=document.getElementById("trOut").textContent;var l=document.getElementById("trTgt").value;if(t&&"speechSynthesis" in window){var u=new SpeechSynthesisUtterance(t);u.lang=l+"-"+l.toUpperCase();speechSynthesis.cancel();speechSynthesis.speak(u);}}
 
 </script>
 </body>
