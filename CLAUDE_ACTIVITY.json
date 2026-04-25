@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777122004056,
-  "total_commits": 226,
+  "updated_at": 1777123042357,
+  "total_commits": 227,
   "projects": [
     "apex",
     "cmcteams",
@@ -8,6 +8,22 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "85c47f37",
+      "ts": 1777122471000,
+      "msg": "CLAUDE.md: Regle permanente KEVIN N'EST PAS CODEUR (priorite absolue, vocabulaire iPhone simple, automation max)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "f6655ec2",
+      "ts": 1777122004000,
+      "msg": "Apex v12.191: Performance iPhone max + sentinelle slow-click + auto-restore agressif",
+      "project": "apex",
+      "ver": "12.191",
+      "author": "claude-code"
+    },
     {
       "sha": "5162215f",
       "ts": 1777121825000,
@@ -950,22 +966,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.117 tutorial",
       "project": "docs",
       "ver": "12.117",
-      "author": "claude-code"
-    },
-    {
-      "sha": "75be86da",
-      "ts": 1777079767000,
-      "msg": "Apex v12.117: vTutorial - mode d emploi clients selon plan",
-      "project": "apex",
-      "ver": "12.117",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e64b96a8",
-      "ts": 1777079658000,
-      "msg": "CLAUDE_ACTIVITY.json: regen apres v12.115 + v9.479",
-      "project": "docs",
-      "ver": "12.115",
       "author": "claude-code"
     }
   ]

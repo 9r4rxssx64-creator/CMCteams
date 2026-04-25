@@ -1,16 +1,16 @@
-/* Apex AI — Service Worker pro v12.171
- * Strategies de cache differenciees + offline robuste + background sync + push
+/* Apex AI — Service Worker pro v12.196
+ * Strategies de cache differenciees + offline robuste + background sync + push iPhone PWA
  *
  * Caches:
  *   <ver>-static  : assets statiques (cache-first, long TTL)
  *   <ver>-runtime : ressources dynamiques (stale-while-revalidate)
  *   <ver>-offline : page de fallback offline
  *
- * Compatible iOS Safari PWA (limitations connues : pas de Background Sync API,
- * fallback via window online listener cote app).
+ * Compatible iOS Safari PWA 16.4+ (push notifications + display-mode:standalone).
+ * Limitations iOS connues : pas de Background Sync API, fallback via window online.
  */
 
-const CACHE_VERSION  = 'apex-v12.171';
+const CACHE_VERSION  = 'apex-v12.196';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
@@ -304,40 +304,103 @@ self.addEventListener('sync', function(e){
   }
 });
 
-/* ================== PUSH NOTIFICATIONS ================== */
+/* ================== PUSH NOTIFICATIONS (iOS 16.4+ PWA + Android Chrome) ================== */
+/* Payload attendu :
+ * {
+ *   title: "Sentinelle critique",
+ *   body: "Erreur 1500ms detectee sur dashboard",
+ *   icon: "data:image/svg+xml,...",  // icone notification
+ *   badge: "data:image/svg+xml,...", // petit badge mono iOS
+ *   tag: "ax-sentinel",              // group/replace
+ *   url: "/CMCteams/apex-ai/#sentinelshealth",  // deeplink view
+ *   view: "sentinelshealth",         // alternative deeplink view name
+ *   category: "sentinel",            // pour stats / filtrage
+ *   urgent: true,                    // requireInteraction
+ *   silent: false,
+ *   vibrate: [120,60,120],
+ *   actions: [{action:"see",title:"Voir details"},{action:"dismiss",title:"Ignorer"}]
+ * }
+ */
 self.addEventListener('push', function(e){
   if (!e.data) return;
   var data = {};
   try { data = e.data.json(); } catch(_){ data = {body: e.data.text()}; }
 
   var title = data.title || 'APEX AI';
+  var defaultIcon = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2736%27 fill=%27%2308080f%27/%3E%3Ctext x=%2796%27 y=%27110%27 text-anchor=%27middle%27 font-size=%2780%27 fill=%27%23c9a227%27%3E%E2%9C%A6%3C/text%3E%3C/svg%3E';
+  /* Build deeplink URL : prefere data.url, sinon construit depuis data.view */
+  var deepUrl = data.url || ('/CMCteams/apex-ai/' + (data.view ? '#' + encodeURIComponent(data.view) : ''));
   var options = {
     body: data.body || '',
-    icon: data.icon || 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2736%27 fill=%27%2308080f%27/%3E%3Ctext x=%2796%27 y=%27110%27 text-anchor=%27middle%27 font-size=%2780%27 fill=%27%23c9a227%27%3E%E2%9C%A6%3C/text%3E%3C/svg%3E',
-    badge: data.badge || undefined,
+    icon: data.icon || defaultIcon,
+    badge: data.badge || defaultIcon,
     tag: data.tag || 'apex-notif',
-    data: data.url || '/CMCteams/apex-ai/',
+    /* On stocke un objet pour pouvoir router actions + analytics */
+    data: {
+      url: deepUrl,
+      view: data.view || null,
+      category: data.category || 'general',
+      ts: Date.now(),
+      payload: data.payload || null
+    },
     vibrate: data.vibrate || [120, 60, 120],
     requireInteraction: !!data.urgent,
     silent: !!data.silent,
-    actions: data.actions || []
+    actions: Array.isArray(data.actions) ? data.actions.slice(0,2) : [],
+    timestamp: Date.now()
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', function(e){
   e.notification.close();
-  var targetUrl = e.notification.data || '/CMCteams/apex-ai/';
+  var d = e.notification.data || {};
+  var targetUrl = (typeof d === 'string') ? d : (d.url || '/CMCteams/apex-ai/');
+  var action = e.action || 'open';
+
+  /* Ignorer = juste fermer la notif, pas d'ouverture */
+  if (action === 'dismiss' || action === 'ignore'){
+    return;
+  }
+
   e.waitUntil(
     self.clients.matchAll({type: 'window', includeUncontrolled: true}).then(function(list){
       for (var i=0;i<list.length;i++){
         var c = list[i];
         if (c.url && c.url.indexOf('/apex-ai/') >= 0 && 'focus' in c){
-          c.postMessage({type: 'NOTIF_CLICK', url: targetUrl});
+          c.postMessage({
+            type: 'NOTIF_CLICK',
+            url: targetUrl,
+            action: action,
+            view: (d && d.view) || null,
+            category: (d && d.category) || 'general',
+            payload: (d && d.payload) || null
+          });
           return c.focus();
         }
       }
       if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+    })
+  );
+});
+
+/* Notif fermee sans clic (analytics) */
+self.addEventListener('notificationclose', function(e){
+  var d = e.notification.data || {};
+  self.clients.matchAll({type:'window', includeUncontrolled:true}).then(function(list){
+    list.forEach(function(c){
+      c.postMessage({type:'NOTIF_CLOSE', category:(d&&d.category)||'general', view:(d&&d.view)||null});
+    });
+  });
+});
+
+/* Subscription expiree : prevenir le client pour re-subscribe */
+self.addEventListener('pushsubscriptionchange', function(e){
+  e.waitUntil(
+    self.clients.matchAll({type:'window', includeUncontrolled:true}).then(function(list){
+      list.forEach(function(c){
+        c.postMessage({type:'PUSH_SUB_CHANGE'});
+      });
     })
   );
 });
