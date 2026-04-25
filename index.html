@@ -14728,9 +14728,45 @@ var _LIVEROOM_STATE={selTid:null,selUid:null,lastRender:0};
 // v9.382-384 — Feature flags centralisés + Monaco Live dashboard
 // Kevin : "Admin on/off features, météo Monaco, liens locaux"
 // ═══════════════════════════════════════════════════════════════════════
-var FEATURE_FLAGS_DEFAULT={cam_live:false,meteo:true,mic:true,ia:true,monaco_links:true,xmas:true,xmas_auto:true,seasonal_auto:true};
+// v9.504 — Feature flags ON/OFF admin etendus (Kevin: "si pas utilise masquer, activer plus tard")
+// Defaults par defaut : false = fonction OPT-IN (cachee tant que pas activee), true = fonction visible
+var FEATURE_FLAGS_DEFAULT={cam_live:false,meteo:true,mic:true,ia:true,monaco_links:true,xmas:true,xmas_auto:true,seasonal_auto:true,
+  qr_badge:false,nfc_pointage:false,ocr_scanner:true,pdf_export:true,voice_assistant:true,geo_tracking:false,pit_boss_view:true,apex_pub:true,browser_web:true,multi_currency:false,i18n:true};
+// v9.504 — Labels affichables (FR clair, emoji visuel)
+var FEATURE_FLAGS_LABELS={
+  cam_live:"📹 Caméra Place du Casino (live)",
+  meteo:"🌦 Météo Monaco",
+  mic:"🎙 Dictée vocale",
+  ia:"🤖 Assistant IA",
+  monaco_links:"🔗 Liens Monaco officiel",
+  xmas:"🎄 Mode Noël (guirlandes + flocons)",
+  xmas_auto:"📅 Auto-activer Noël en décembre",
+  seasonal_auto:"☀️ Thème auto selon heure (jour/nuit)",
+  qr_badge:"📱 QR Badge employé",
+  nfc_pointage:"📡 NFC pointage tag",
+  ocr_scanner:"📄 OCR Scanner document",
+  pdf_export:"📄 Export PDF planning",
+  voice_assistant:"🎙 Assistant vocal",
+  geo_tracking:"📍 Géolocalisation continue",
+  pit_boss_view:"👁 Vue Pit Boss live",
+  apex_pub:"⚡ Pub APEX (banner+popup)",
+  browser_web:"🌐 Navigateur web intégré",
+  multi_currency:"💱 Multi-devises display",
+  i18n:"🌍 Multi-langues FR/EN/IT"
+};
 function getFeatureFlags(){var s=lg("cmc_feature_flags",null);if(!s||typeof s!=="object")s={};for(var k in FEATURE_FLAGS_DEFAULT)if(!(k in s))s[k]=FEATURE_FLAGS_DEFAULT[k];return s;}
 function isFeatureEnabled(key){return !!getFeatureFlags()[key];}
+// v9.504 — Alias compat parite Apex (cmcFeatureEnabled / cmcSetFeature)
+function cmcFeatureEnabled(key){return isFeatureEnabled(key);}
+function cmcSetFeature(key,on){
+  if(!A.user||A.user.id!==AID){toast("Admin uniquement","err");return;}
+  var f=getFeatureFlags();f[key]=!!on;ls("cmc_feature_flags",f);
+  if(typeof fbWrite==="function")try{fbWrite("cmc_feature_flags",f);}catch(_){}
+  try{_audit("featureToggle",AID,key,"",on?"ON":"OFF");}catch(_){}
+  var lab=FEATURE_FLAGS_LABELS[key]||key;
+  toast(lab+(on?" activée":" désactivée"));
+  dc();
+}
 // v9.389-392 — Thèmes saisonniers novateurs
 function applySeasonalTheme(){
   try{
@@ -14781,8 +14817,11 @@ setInterval(applySeasonalTheme,60*60*1000); // réévalue toutes les heures
 function toggleFeature(key){
   if(!A.user||A.user.id!==AID){toast("Admin requis","err");return;}
   var f=getFeatureFlags();f[key]=!f[key];ls("cmc_feature_flags",f);
+  // v9.504 \u2014 sync cross-device via Firebase
+  if(typeof fbWrite==="function")try{fbWrite("cmc_feature_flags",f);}catch(_){}
   _audit("featureToggle",AID,key,"",f[key]?"ON":"OFF");
-  toast("\u2699 "+key+" : "+(f[key]?"\u25b6 ON":"\u23f8 OFF"));
+  var lab=(typeof FEATURE_FLAGS_LABELS!=="undefined"&&FEATURE_FLAGS_LABELS[key])||key;
+  toast(lab+" : "+(f[key]?"\u25b6 ON":"\u23f8 OFF"));
   dc();
 }
 // v9.383 — vFeatureFlags : panel admin toggles
