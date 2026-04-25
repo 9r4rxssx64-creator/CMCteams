@@ -372,7 +372,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.224",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.225",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -849,7 +849,266 @@ function _cguAsk(feature,label,description){
   }catch(e){return false;}
 }
 function axCguRevoke(feature){ls("ax_cgu_"+feature,"0");toast("Consentement « "+feature+" » revoque","ok");}
-function axCguStatus(){var out={};["biometric","microphone","geolocation","camera","notifications"].forEach(function(f){out[f]=lg("ax_cgu_"+f,"0")==="1";});return out;}
+function axCguStatus(){var out={};["biometric","microphone","geolocation","camera","notifications","wake_word_apex"].forEach(function(f){out[f]=lg("ax_cgu_"+f,"0")==="1";});return out;}
+
+/* ===== v12.225 — Wake word "Dis Apex" (Kevin 2026-04-25) ===== */
+var _axWakeWordActive=false;
+var _axWakeRecognition=null;
+var _axWakeRetries=0;
+var _axWakeLastTrigger=0;
+var WAKE_WORDS_DEFAULT=["apex","dis apex","ok apex","hey apex","ay apex","ape ex"];
+function axWakeWordList(){var c=lg("ax_wake_word_words",null);if(Array.isArray(c)&&c.length)return c;return WAKE_WORDS_DEFAULT.slice();}
+function axWakeWordSupported(){return ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);}
+function axWakeWordAllowedForUser(){
+  try{
+    var glob=lg("ax_wake_word_global",null);
+    var users=lg("ax_wake_word_users",{});
+    var uid=K.user?K.user.id:null;
+    if(uid && users && users[uid] && users[uid].enabled===true)return true;
+    if(uid && users && users[uid] && users[uid].enabled===false)return false;
+    if(glob && glob.mode==="all" && glob.enabled===true)return true;
+    if(glob && glob.mode==="all" && glob.enabled===false)return false;
+    if(uid && K.user && K.user.id===ADMIN_ID)return true;
+    return false;
+  }catch(e){return false;}
+}
+function axWakeWordStart(silent){
+  try{
+    if(!axWakeWordSupported()){if(!silent)toast("Reconnaissance vocale non supportee sur ce navigateur","warn");return false;}
+    if(_axWakeWordActive){if(!silent)toast("'Dis Apex' deja actif","info");return true;}
+    if(typeof _cguAsk==="function" && !_cguAsk("wake_word_apex","Activer 'Dis Apex' (micro continu)","Apex ecoute ton micro en permanence pour reagir au mot 'Apex'. L'audio reste sur ton telephone, rien n'est envoye. Tu peux desactiver a tout moment depuis Reglages.")){return false;}
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    _axWakeRecognition=new SR();
+    try{_axWakeRecognition.lang=(K.settings&&K.settings.voiceLang)||"fr-FR";}catch(_){_axWakeRecognition.lang="fr-FR";}
+    _axWakeRecognition.continuous=true;
+    _axWakeRecognition.interimResults=false;
+    _axWakeRecognition.onresult=function(event){
+      try{
+        var i=event.resultIndex;
+        for(var j=i;j<event.results.length;j++){
+          if(!event.results[j].isFinal)continue;
+          var transcript=String(event.results[j][0].transcript||"").toLowerCase().trim();
+          if(!transcript)continue;
+          var words=axWakeWordList();
+          var matched=false;
+          for(var w=0;w<words.length;w++){if(transcript.indexOf(words[w])>=0){matched=true;break;}}
+          if(matched){
+            if(Date.now()-_axWakeLastTrigger<2000)continue;
+            _axWakeLastTrigger=Date.now();
+            _axOnWakeDetected(transcript);
+          }
+        }
+      }catch(e){console.warn("[wake] onresult err:",e);}
+    };
+    _axWakeRecognition.onerror=function(e){
+      var err=e&&e.error?String(e.error):"unknown";
+      console.warn("[wake] error:",err);
+      if(err==="no-speech"||err==="audio-capture"||err==="network"){
+        _axWakeRetries++;
+        if(_axWakeRetries<200){setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},1500);}
+      }else if(err==="not-allowed"||err==="service-not-allowed"){
+        _axWakeWordActive=false;
+        ls("ax_wake_word_active",false);
+        if(typeof toast==="function")toast("Permission micro refusee. Active dans Reglages iOS > Safari > Micro","err",{force:true});
+      }
+    };
+    _axWakeRecognition.onend=function(){
+      if(_axWakeWordActive){
+        setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},500);
+      }
+    };
+    _axWakeRecognition.start();
+    _axWakeWordActive=true;
+    _axWakeRetries=0;
+    ls("ax_wake_word_active",true);
+    if(typeof toast==="function" && !silent)toast("👂 Apex ecoute 'Dis Apex' en arriere-plan","ok",{duration:5000});
+    if(typeof navigator.vibrate==="function")try{navigator.vibrate(50);}catch(_){}
+    try{var log=lg("ax_wake_log",[]);log.push({ts:Date.now(),ev:"start",uid:K.user?K.user.id:"?"});if(log.length>200)log=log.slice(-200);ls("ax_wake_log",log);}catch(_){}
+    try{if(typeof dc==="function")dc();}catch(_){}
+    return true;
+  }catch(e){
+    if(typeof toast==="function" && !silent)toast("Erreur demarrage wake word: "+(e&&e.message?e.message:"?"),"err");
+    return false;
+  }
+}
+function axWakeWordStop(silent){
+  _axWakeWordActive=false;
+  ls("ax_wake_word_active",false);
+  if(_axWakeRecognition){try{_axWakeRecognition.onend=null;_axWakeRecognition.stop();}catch(_){}_axWakeRecognition=null;}
+  if(typeof toast==="function" && !silent)toast("👂 'Dis Apex' desactive","info");
+  try{var log=lg("ax_wake_log",[]);log.push({ts:Date.now(),ev:"stop",uid:K.user?K.user.id:"?"});if(log.length>200)log=log.slice(-200);ls("ax_wake_log",log);}catch(_){}
+  try{if(typeof dc==="function")dc();}catch(_){}
+}
+function axWakeWordToggle(){if(_axWakeWordActive)axWakeWordStop();else axWakeWordStart();}
+function _axOnWakeDetected(transcript){
+  try{if(typeof navigator.vibrate==="function")navigator.vibrate([100,50,100]);}catch(_){}
+  if(typeof toast==="function")toast("🎙 Apex ecoute...","ok",{force:true,duration:3000});
+  var lower=String(transcript||"").toLowerCase();
+  var cmd=lower;
+  axWakeWordList().forEach(function(w){var idx=lower.indexOf(w);if(idx>=0){var c=lower.slice(idx+w.length).trim();if(c.length<cmd.length||cmd===lower)cmd=c;}});
+  try{
+    var log=lg("ax_wake_log",[]);
+    log.push({ts:Date.now(),ev:"trigger",transcript:String(transcript).slice(0,200),cmd:String(cmd).slice(0,200),uid:K.user?K.user.id:"?"});
+    if(log.length>200)log=log.slice(-200);
+    ls("ax_wake_log",log);
+  }catch(_){}
+  if(cmd && cmd.length>3){
+    if(typeof sendMessage==="function")sendMessage(cmd);
+    else if(typeof axAssistantStart==="function")axAssistantStart();
+  } else if(typeof axAssistantStart==="function"){
+    axAssistantStart();
+  } else if(typeof axSttToggle==="function"){
+    axSttToggle();
+  }
+}
+function axWakeWordSetUser(userId,enabled,customWord){
+  if(typeof axIsAdmin==="function" && !axIsAdmin()){toast("Reserve admin","warn");return false;}
+  if(!userId)return false;
+  var users=lg("ax_wake_word_users",{});
+  users[userId]={enabled:!!enabled,customWord:String(customWord||"apex").slice(0,50),ts:Date.now(),by:K.user?K.user.id:"?"};
+  ls("ax_wake_word_users",users);
+  toast("✅ Wake word "+(enabled?"actif":"inactif")+" pour "+userId,"ok");
+  return true;
+}
+function axWakeWordSetGlobal(enabled,mode){
+  if(typeof axIsAdmin==="function" && !axIsAdmin()){toast("Reserve admin","warn");return false;}
+  var g={enabled:!!enabled,mode:mode||"selection",ts:Date.now(),by:K.user?K.user.id:"?"};
+  ls("ax_wake_word_global",g);
+  toast("✅ Wake word global : "+(enabled?(mode==="all"?"tous users":"selection"):"off"),"ok");
+  try{if(typeof dc==="function")dc();}catch(_){}
+  return true;
+}
+function axWakeWordAddCustom(word){
+  if(typeof axIsAdmin==="function" && !axIsAdmin()){toast("Reserve admin","warn");return false;}
+  word=String(word||"").trim().toLowerCase();
+  if(!word||word.length<3){toast("Mot trop court","warn");return false;}
+  var list=axWakeWordList();
+  if(list.indexOf(word)>=0){toast("Deja present","info");return false;}
+  list.push(word);
+  ls("ax_wake_word_words",list);
+  toast("✅ Mot ajoute","ok");
+  try{if(typeof dc==="function")dc();}catch(_){}
+  return true;
+}
+function axWakeWordRemoveCustom(word){
+  if(typeof axIsAdmin==="function" && !axIsAdmin()){toast("Reserve admin","warn");return false;}
+  word=String(word||"").trim().toLowerCase();
+  var list=axWakeWordList();
+  var idx=list.indexOf(word);
+  if(idx<0){toast("Introuvable","warn");return false;}
+  list.splice(idx,1);
+  ls("ax_wake_word_words",list);
+  toast("✅ Mot retire","ok");
+  try{if(typeof dc==="function")dc();}catch(_){}
+  return true;
+}
+
+/* CGU bundle 1 clic - toutes permissions en sequence */
+function axRequestAllPermissionsBundle(){
+  return new Promise(function(resolve){
+    var results={};
+    var done=function(){ls("ax_permissions_bundle",results);try{toast("✅ Autorisations demandees","ok",{force:true});}catch(_){}resolve(results);};
+    var step=0;
+    var next=function(){
+      step++;
+      if(step===1){
+        if("Notification" in window){try{Notification.requestPermission().then(function(r){results.notif=r;next();}).catch(function(){results.notif="error";next();});}catch(_){results.notif="error";next();}}
+        else{results.notif="unsupported";next();}
+      } else if(step===2){
+        if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){stream.getTracks().forEach(function(t){t.stop();});results.mic="granted";try{ls("ax_cgu_microphone","1");}catch(_){}next();}).catch(function(){results.mic="denied";next();});}
+        else{results.mic="unsupported";next();}
+      } else if(step===3){
+        if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){navigator.mediaDevices.getUserMedia({video:true}).then(function(s){s.getTracks().forEach(function(t){t.stop();});results.camera="granted";try{ls("ax_cgu_camera","1");}catch(_){}next();}).catch(function(){results.camera="denied";next();});}
+        else{results.camera="unsupported";next();}
+      } else if(step===4){
+        if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(){results.geo="granted";try{ls("ax_cgu_geolocation","1");}catch(_){}next();},function(){results.geo="denied";next();},{timeout:8000,enableHighAccuracy:false});}
+        else{results.geo="unsupported";next();}
+      } else if(step===5){
+        if(navigator.storage && navigator.storage.persist){navigator.storage.persist().then(function(p){results.storage=p?"granted":"denied";next();}).catch(function(){results.storage="error";next();});}
+        else{results.storage="unsupported";next();}
+      } else if(step===6){
+        results.wake_word="ready";try{ls("ax_cgu_wake_word_apex","1");}catch(_){}done();
+      } else { done(); }
+    };
+    next();
+  });
+}
+function axRequestAllPermissionsBundleUI(){
+  if(!confirm("✨ Donner toutes les autorisations a Apex en 1 clic ?\n\n• 🔔 Notifications\n• 🎙 Microphone (Dis Apex + dictee)\n• 📷 Camera (scan, photos)\n• 📍 Geolocalisation\n• 💾 Stockage persistant\n\nTu peux refuser chacune individuellement, et les revoquer plus tard dans Reglages."))return;
+  axRequestAllPermissionsBundle().then(function(res){
+    var lines=[];
+    Object.keys(res).forEach(function(k){lines.push("• "+k+": "+res[k]);});
+    alert("Resultat:\n\n"+lines.join("\n"));
+  });
+}
+
+/* Vue admin Wake word */
+function vWakeWordAdmin(){
+  if(typeof axIsAdmin==="function" && !axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Acces admin requis</div></div>';
+  var glob=lg("ax_wake_word_global",{enabled:false,mode:"selection"});
+  var users=lg("ax_wake_word_users",{});
+  var profiles=lg("ax_client_profiles",{});
+  var words=axWakeWordList();
+  var log=lg("ax_wake_log",[]);
+  var triggersToday=log.filter(function(e){return e.ev==="trigger" && (Date.now()-e.ts)<86400000;}).length;
+  var triggers100min=log.filter(function(e){return e.ev==="trigger" && (Date.now()-e.ts)<6000000;}).length;
+  var statusActive=_axWakeWordActive;
+  var supported=axWakeWordSupported();
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">🎙 Dis Apex (wake word)</h2>';
+  if(!supported)h+='<div class="ax-card" style="border-left:4px solid var(--ax-red)"><strong>⚠️ Non supporte</strong><div style="font-size:12px;color:var(--ax-text-dim);margin-top:6px">Ce navigateur ne supporte pas la reconnaissance vocale. Utilise Safari iOS (PWA installee) ou Chrome Android.</div></div>';
+  /* Status local */
+  h+='<div class="ax-card" style="border-left:4px solid '+(statusActive?"var(--ax-green)":"var(--ax-text-dim)")+'"><h3>Sur cet appareil</h3><div class="ax-setting-row"><span>Statut</span><span class="ax-badge '+(statusActive?"ax-badge-green":"ax-badge-red")+'">'+(statusActive?"🟢 Actif":"⚫ Inactif")+'</span></div>';
+  h+='<button class="ax-btn '+(statusActive?"ax-btn-danger":"ax-btn-primary")+'" onclick="axWakeWordToggle()" style="width:100%;margin-top:8px;min-height:44px">'+(statusActive?"⏸ Arreter d ecouter":"▶ Demarrer l ecoute")+'</button></div>';
+  /* Mode global */
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold)"><h3>Mode</h3>';
+  h+='<div class="ax-setting-row"><span>Active globalement</span><label class="ax-switch"><input type="checkbox" '+(glob.enabled?"checked":"")+' onchange="axWakeWordSetGlobal(this.checked,document.getElementById(\'ax-ww-mode\').value)"><span class="ax-slider"></span></label></div>';
+  h+='<div class="ax-setting-row"><span>Mode</span><select id="ax-ww-mode" class="ax-input" onchange="axWakeWordSetGlobal('+(glob.enabled?"true":"false")+',this.value)"><option value="all"'+(glob.mode==="all"?" selected":"")+'>Tous les utilisateurs</option><option value="selection"'+(glob.mode!=="all"?" selected":"")+'>Selection (par utilisateur)</option></select></div>';
+  h+='</div>';
+  /* Users */
+  if(glob.mode!=="all"){
+    h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue)"><h3>Utilisateurs autorises</h3>';
+    var pkeys=Object.keys(profiles);
+    if(!pkeys.length)h+='<div style="font-size:12px;color:var(--ax-text-dim)">Aucun utilisateur enregistre</div>';
+    pkeys.slice(0,40).forEach(function(uid){
+      var p=profiles[uid]||{};
+      var u=users[uid]||{};
+      h+='<div class="ax-setting-row"><span style="flex:1">'+esc(p.name||uid)+' <span style="font-size:10px;color:var(--ax-text-dim)">'+esc(p.plan||"")+'</span></span><label class="ax-switch"><input type="checkbox" '+(u.enabled?"checked":"")+' onchange="axWakeWordSetUser(\''+esc(uid)+'\',this.checked)"><span class="ax-slider"></span></label></div>';
+    });
+    h+='</div>';
+  }
+  /* Mots */
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple)"><h3>Mots declencheurs</h3>';
+  words.forEach(function(w){h+='<div class="ax-setting-row"><span>🔊 '+esc(w)+'</span><button class="ax-btn ax-btn-outline" onclick="axWakeWordRemoveCustom(\''+esc(w)+'\')" style="padding:4px 10px;font-size:11px">Retirer</button></div>';});
+  h+='<div style="display:flex;gap:6px;margin-top:8px"><input id="ax-ww-newword" class="ax-input" placeholder="Ajouter un mot custom (chef, axel...)" style="flex:1"><button class="ax-btn ax-btn-primary" onclick="axWakeWordAddCustom(document.getElementById(\'ax-ww-newword\').value)" style="min-height:44px;min-width:44px">+</button></div>';
+  h+='</div>';
+  /* Stats */
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-cyan,#5aa8ff)"><h3>📊 Statistiques</h3>';
+  h+='<div class="ax-setting-row"><span>Aujourd hui</span><strong>'+triggersToday+' declenchements</strong></div>';
+  h+='<div class="ax-setting-row"><span>100 dernieres minutes</span><strong>'+triggers100min+'</strong></div>';
+  h+='</div>';
+  /* Historique */
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-text-dim)"><h3>Historique (50 derniers)</h3>';
+  var lastTriggers=log.filter(function(e){return e.ev==="trigger";}).slice(-50).reverse();
+  if(!lastTriggers.length)h+='<div style="font-size:12px;color:var(--ax-text-dim)">Aucun declenchement</div>';
+  lastTriggers.forEach(function(e){var t=new Date(e.ts);var hh=t.toLocaleTimeString("fr-FR").slice(0,5);h+='<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px"><strong>'+hh+'</strong> &laquo;'+esc(String(e.transcript||"").slice(0,80))+'&raquo;</div>';});
+  h+='</div>';
+  /* Permissions bundle */
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-green)"><h3>🔓 Toutes autorisations en 1 clic</h3><div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">Demande micro + camera + notif + geo + stockage en 1 clic.</div><button class="ax-btn ax-btn-primary" onclick="axRequestAllPermissionsBundleUI()" style="width:100%;min-height:44px">🔓 Donner toutes les autorisations</button></div>';
+  h+='</div>';
+  return h;
+}
+
+/* Sentinelle wake-watch : verifie que si l ecoute est censee tourner, le recognition est actif. Sinon restart auto. */
+function _snWakeWatch(){
+  try{
+    if(!_axWakeWordActive)return;
+    if(!_axWakeRecognition){
+      _axWakeWordActive=false;
+      var allowed=axWakeWordAllowedForUser();
+      if(allowed)setTimeout(function(){axWakeWordStart(true);},200);
+    }
+  }catch(_){}
+}
 
 /* v12.168 — Smart load-balancing tokens (Kevin: 'jamais aucune coupure pour moi') */
 var AX_PROVIDER_TIERS={
@@ -3639,13 +3898,13 @@ function dcNow(){_dcRaf=0;render();}
 (function(){if(typeof render==="function"&&!render._axWrapped){var _origRender=render;window.render=function(){var t0=performance.now();try{return _origRender.apply(this,arguments);}finally{try{var dt=performance.now()-t0;if(typeof _axTrackRender==="function"&&K&&K.view)_axTrackRender(K.view,dt);if(dt>200&&typeof _snLog==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())_snLog("perf-watch","warn","render "+K.view+" "+Math.round(dt)+"ms");}catch(_){}}};window.render._axWrapped=true;}})();
 
 function _viewAsBanner(){if(!_viewAsUser)return"";return'<div style="background:var(--ax-gold);color:#000;text-align:center;padding:4px 8px;font-size:12px;font-weight:700">Vue: '+esc(K.user.name)+' <span onclick="axViewAsBack()" style="cursor:pointer;text-decoration:underline">Retour admin</span></div>';}
-function vTopbar(){if(!K.user||K.view==="login"||K.view==="landing"||K.view==="waiting"||K.view==="waitingApproval")return"";var online=navigator.onLine;var _tb=function(icon,onclick,title,extra){return'<button onclick="'+onclick+'" style="cursor:pointer;font-size:16px;width:40px;height:40px;border:none;background:rgba(232,184,48,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-text);border:1px solid rgba(232,184,48,.08);'+(extra||"")+'" title="'+title+'">'+icon+'</button>';};var menuBtn=K.user?_tb("&#9776;","toggleSidebar()","Historique","font-size:18px"):"";/* v12.98 — Bouton retour (Kevin) */var _mainViews=["chat","dashboard","login","landing"];var _canGoBack=K.user&&_viewHistory.length>0&&_mainViews.indexOf(K.view)<0;var backBtn=_canGoBack?_tb("&larr;","goBack()","Retour","font-size:18px;margin-right:4px"):"";var paletteBtn=K.user?_tb("\u26A1","axCommandPalette()","Commande rapide","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var searchBtn=K.user?_tb("\uD83D\uDD0D","_showUniversalSearch()","Recherche universelle (Cmd+F)","color:var(--ax-blue);background:rgba(90,168,255,.10);border-color:rgba(90,168,255,.25)")+" ":"";var assistBtn=K.user?_tb("\uD83C\uDF99\uFE0F","axAssistantStart()",_assistantListening?"Assistant actif":"Assistant vocal",_assistantListening?"color:var(--ax-red);animation:axPulse 1s infinite;background:rgba(255,88,88,.1);border-color:rgba(255,88,88,.2)":"")+" ":"";var pomodoroBtn=_pomodoroDisplay();var canvasBtn="";/* v12.5 — Canvas button retire du topbar (Kevin 2026-04-20). Accessible via IA qui ouvre automatiquement un canvas quand elle genere du code. Evite bouton accidentel → ecran noir. */var shareBtn=K.user&&K.view==="chat"?_tb("\uD83D\uDCE4","axShareConversation()","Partager")+" ":"";/* v12.162 — Bouton Reglages topbar (Kevin: garantie acces toujours visible) */var settingsBtn=K.user?_tb("\u2699\uFE0F","sv('settings')","Reglages","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var logoutBtn=K.user?'<button onclick="axLogout()" style="cursor:pointer;font-size:14px;width:40px;height:40px;border:none;background:rgba(255,88,88,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-red);border:1px solid rgba(255,88,88,.1)" title="Deconnexion">&#10005;</button>':"";return _viewAsBanner()+_statusBar()+'<div id="topbar">'+menuBtn+' <div class="ax-logo">APEX <span>AI</span></div><div class="ax-status" style="display:flex;gap:6px;align-items:center">'+paletteBtn+searchBtn+assistBtn+pomodoroBtn+" "+canvasBtn+shareBtn+settingsBtn+logoutBtn+"</div></div>";}
+function vTopbar(){if(!K.user||K.view==="login"||K.view==="landing"||K.view==="waiting"||K.view==="waitingApproval")return"";var online=navigator.onLine;var _tb=function(icon,onclick,title,extra){return'<button onclick="'+onclick+'" style="cursor:pointer;font-size:16px;width:40px;height:40px;border:none;background:rgba(232,184,48,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-text);border:1px solid rgba(232,184,48,.08);'+(extra||"")+'" title="'+title+'">'+icon+'</button>';};var menuBtn=K.user?_tb("&#9776;","toggleSidebar()","Historique","font-size:18px"):"";/* v12.98 — Bouton retour (Kevin) */var _mainViews=["chat","dashboard","login","landing"];var _canGoBack=K.user&&_viewHistory.length>0&&_mainViews.indexOf(K.view)<0;var backBtn=_canGoBack?_tb("&larr;","goBack()","Retour","font-size:18px;margin-right:4px"):"";var paletteBtn=K.user?_tb("\u26A1","axCommandPalette()","Commande rapide","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var searchBtn=K.user?_tb("\uD83D\uDD0D","_showUniversalSearch()","Recherche universelle (Cmd+F)","color:var(--ax-blue);background:rgba(90,168,255,.10);border-color:rgba(90,168,255,.25)")+" ":"";var assistBtn=K.user?_tb("\uD83C\uDF99\uFE0F","axAssistantStart()",_assistantListening?"Assistant actif":"Assistant vocal",_assistantListening?"color:var(--ax-red);animation:axPulse 1s infinite;background:rgba(255,88,88,.1);border-color:rgba(255,88,88,.2)":"")+" ":"";var wakeBtn=K.user?_tb(_axWakeWordActive?"\uD83D\uDC42":"\uD83C\uDF99","axWakeWordToggle()",_axWakeWordActive?"\u0027Dis Apex\u0027 actif - touche pour arreter":"Activer \u0027Dis Apex\u0027",_axWakeWordActive?"color:#4cd080;animation:axPulse 1.5s infinite;background:rgba(76,208,128,.12);border-color:rgba(76,208,128,.3)":"opacity:.65")+" ":"";var pomodoroBtn=_pomodoroDisplay();var canvasBtn="";/* v12.5 — Canvas button retire du topbar (Kevin 2026-04-20). Accessible via IA qui ouvre automatiquement un canvas quand elle genere du code. Evite bouton accidentel → ecran noir. */var shareBtn=K.user&&K.view==="chat"?_tb("\uD83D\uDCE4","axShareConversation()","Partager")+" ":"";/* v12.162 — Bouton Reglages topbar (Kevin: garantie acces toujours visible) */var settingsBtn=K.user?_tb("\u2699\uFE0F","sv('settings')","Reglages","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var logoutBtn=K.user?'<button onclick="axLogout()" style="cursor:pointer;font-size:14px;width:40px;height:40px;border:none;background:rgba(255,88,88,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-red);border:1px solid rgba(255,88,88,.1)" title="Deconnexion">&#10005;</button>':"";return _viewAsBanner()+_statusBar()+'<div id="topbar">'+menuBtn+' <div class="ax-logo">APEX <span>AI</span></div><div class="ax-status" style="display:flex;gap:6px;align-items:center">'+paletteBtn+searchBtn+assistBtn+wakeBtn+pomodoroBtn+" "+canvasBtn+shareBtn+settingsBtn+logoutBtn+"</div></div>";}
 
 
 /* v12.213 — Audit UX final (Kevin 2026-04-25): suppression des doublons (vault/links/projects/ecommerce/cmcadmin/workers deja presents en navbar admin). Habits passe en icone differenciee pour ne plus partager 🎯 avec Objectifs. */
 var extraTabs=[{id:"crew",ic:"🎭",lb:"Crew IA"},{id:"crewexperts",ic:"🎓",lb:"Experts"},{id:"connections",ic:"📊",lb:"Connexions"},{id:"errorslive",ic:"🚨",lb:"Erreurs Live"},{id:"subscriptions",ic:"✨",lb:"Inscriptions"},{id:"report",ic:"\uD83D\uDCCA",lb:"Compte-rendu"},{id:"crackpass",ic:"\uD83D\uDD10",lb:"CrackPass"},{id:"remote",ic:"\uD83C\uDFAE",lb:"Telecommande"},{id:"bookmarks",ic:"\u2B50",lb:"Favoris URL"},{id:"templates",ic:"\uD83D\uDCDA",lb:"Templates"},{id:"notes",ic:"\uD83D\uDCDD",lb:"Notes"},{id:"tasks",ic:"\u2705",lb:"Taches"},{id:"calendar",ic:"\uD83D\uDCC5",lb:"Agenda"},{id:"contacts",ic:"\uD83D\uDC65",lb:"Contacts"},{id:"expenses",ic:"\uD83D\uDCB8",lb:"Depenses"},{id:"mystats",ic:"\uD83D\uDCC8",lb:"Stats"},{id:"profile",ic:"\uD83D\uDC64",lb:"Profil"},{id:"shopping",ic:"\uD83D\uDED2",lb:"Courses"},{id:"goals",ic:"\uD83C\uDFAF",lb:"Objectifs"},{id:"faq",ic:"\u2753",lb:"Aide"},{id:"changelog",ic:"\uD83D\uDCCB",lb:"Changelog"},{id:"habits",ic:"\uD83D\uDD04",lb:"Habitudes"},{id:"news",ic:"\uD83D\uDCF0",lb:"Actus"},{id:"diary",ic:"\uD83D\uDCD3",lb:"Journal"}];
 
-function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";/* v12.162 — URGENT FIX (Kevin: plus acces aux parametres). Reglages epingle en PREMIERE position pour iPhone (toujours visible sans scroll horizontal), duplique en derniere. */var tabs=[{id:"settings",ic:"\u2699\uFE0F",lb:"Reglages"},{id:"dashboard",ic:"\u2726",lb:"Accueil"},{id:"chat",ic:"\uD83D\uDCAC",lb:"Chat"},{id:"kb",ic:"\uD83E\uDDE0",lb:"Memoire"},{id:"finance",ic:"\uD83D\uDCB0",lb:"Finance"},{id:"_more",ic:"\u2795",lb:"Plus"}];if(axIsAdmin()){tabs.push({id:"messaging",ic:"\uD83D\uDCE8",lb:"Messages"});tabs.push({id:"live",ic:"\uD83D\uDFE2",lb:"Live"});tabs.push({id:"clients",ic:"\uD83D\uDC65",lb:"Clients"});tabs.push({id:"discovery",ic:"\uD83D\uDD0D",lb:"Scan"});tabs.push({id:"map",ic:"\uD83D\uDDFA\uFE0F",lb:"Carte"});tabs.push({id:"history",ic:"\uD83D\uDCCA",lb:"Stats"});tabs.push({id:"vault",ic:"\uD83D\uDD10",lb:"Coffre"});tabs.push({id:"links",ic:"\uD83D\uDD17",lb:"Liens"});tabs.push({id:"ecommerce",ic:"\uD83D\uDED2",lb:"e-Shop"});tabs.push({id:"projects",ic:"\uD83D\uDCC1",lb:"Projets"});tabs.push({id:"workers",ic:"\uD83E\uDD16",lb:"Agents"});tabs.push({id:"codeeditor",ic:"\uD83D\uDCBB",lb:"Code"});tabs.push({id:"cmcadmin",ic:"\uD83C\uDFB0",lb:"CMC"});tabs.push({id:"appadmin",ic:"\uD83D\uDEE0\uFE0F",lb:"App"});}var h='<nav id="navbar" role="tablist" aria-label="Navigation principale">';for(var i=0;i<tabs.length;i++){var t=tabs[i];if(t.id==="_more"){h+='<div class="ax-tab" role="tab" tabindex="0" onclick="_showMoreMenu()" aria-label="Plus de modules" title="Plus"><span class="ic" aria-hidden="true">'+t.ic+'</span><span class="lb">'+t.lb+'</span></div>';continue;}var sel=K.view===t.id;var cls=sel?" active":"";h+='<div class="ax-tab'+cls+'" role="tab" aria-selected="'+(sel?"true":"false")+'" tabindex="0" onclick="sv(\''+t.id+'\')" onkeydown="if(event.key===\'Enter\')sv(\''+t.id+'\')" aria-label="'+t.lb+'" title="'+t.lb+'"><span class="ic" aria-hidden="true">'+t.ic+'</span><span class="lb">'+t.lb+'</span></div>';}return h+"</nav>";}
+function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";/* v12.162 — URGENT FIX (Kevin: plus acces aux parametres). Reglages epingle en PREMIERE position pour iPhone (toujours visible sans scroll horizontal), duplique en derniere. */var tabs=[{id:"settings",ic:"\u2699\uFE0F",lb:"Reglages"},{id:"dashboard",ic:"\u2726",lb:"Accueil"},{id:"chat",ic:"\uD83D\uDCAC",lb:"Chat"},{id:"kb",ic:"\uD83E\uDDE0",lb:"Memoire"},{id:"finance",ic:"\uD83D\uDCB0",lb:"Finance"},{id:"_more",ic:"\u2795",lb:"Plus"}];if(axIsAdmin()){tabs.push({id:"messaging",ic:"\uD83D\uDCE8",lb:"Messages"});tabs.push({id:"live",ic:"\uD83D\uDFE2",lb:"Live"});tabs.push({id:"clients",ic:"\uD83D\uDC65",lb:"Clients"});tabs.push({id:"discovery",ic:"\uD83D\uDD0D",lb:"Scan"});tabs.push({id:"map",ic:"\uD83D\uDDFA\uFE0F",lb:"Carte"});tabs.push({id:"history",ic:"\uD83D\uDCCA",lb:"Stats"});tabs.push({id:"vault",ic:"\uD83D\uDD10",lb:"Coffre"});tabs.push({id:"links",ic:"\uD83D\uDD17",lb:"Liens"});tabs.push({id:"ecommerce",ic:"\uD83D\uDED2",lb:"e-Shop"});tabs.push({id:"projects",ic:"\uD83D\uDCC1",lb:"Projets"});tabs.push({id:"workers",ic:"\uD83E\uDD16",lb:"Agents"});tabs.push({id:"codeeditor",ic:"\uD83D\uDCBB",lb:"Code"});tabs.push({id:"cmcadmin",ic:"\uD83C\uDFB0",lb:"CMC"});tabs.push({id:"wakeword",ic:"\uD83D\uDC42",lb:"Dis Apex"});tabs.push({id:"appadmin",ic:"\uD83D\uDEE0\uFE0F",lb:"App"});}var h='<nav id="navbar" role="tablist" aria-label="Navigation principale">';for(var i=0;i<tabs.length;i++){var t=tabs[i];if(t.id==="_more"){h+='<div class="ax-tab" role="tab" tabindex="0" onclick="_showMoreMenu()" aria-label="Plus de modules" title="Plus"><span class="ic" aria-hidden="true">'+t.ic+'</span><span class="lb">'+t.lb+'</span></div>';continue;}var sel=K.view===t.id;var cls=sel?" active":"";h+='<div class="ax-tab'+cls+'" role="tab" aria-selected="'+(sel?"true":"false")+'" tabindex="0" onclick="sv(\''+t.id+'\')" onkeydown="if(event.key===\'Enter\')sv(\''+t.id+'\')" aria-label="'+t.lb+'" title="'+t.lb+'"><span class="ic" aria-hidden="true">'+t.ic+'</span><span class="lb">'+t.lb+'</span></div>';}return h+"</nav>";}
 
 /* v12.120 — Breadcrumbs visibles (Kevin: 'top du top fluidite intuitivite') */
 function _axBreadcrumb(){
@@ -3721,7 +3980,7 @@ function vTokenBalance(){
 }
 
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"wakeword":return vWakeWordAdmin();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -7472,11 +7731,13 @@ function _startSentinels(){
     {fn:_snApi,ms:60000},{fn:_snUx,ms:900000},{fn:_snHeal,ms:180000},
     {fn:_snLearner,ms:1800000},{fn:_snBattery,ms:600000},{fn:_snScale,ms:600000},
     {fn:_snCrypto,ms:900000},{fn:_snMobile,ms:1800000},{fn:_snWorkers,ms:600000},
-    {fn:_snUndefinedVar,ms:300000},{fn:_snFbStale,ms:30000},{fn:_snAiHealth,ms:60000},{fn:_snGlobalVars,ms:300000},{fn:_snAutoAudit,ms:14400000},{fn:_snFeedPoll,ms:7200000},{fn:_snPushWatch,ms:3600000},{fn:_snProfileWatch,ms:86400000}
+    {fn:_snUndefinedVar,ms:300000},{fn:_snFbStale,ms:30000},{fn:_snAiHealth,ms:60000},{fn:_snGlobalVars,ms:300000},{fn:_snAutoAudit,ms:14400000},{fn:_snFeedPoll,ms:7200000},{fn:_snPushWatch,ms:3600000},{fn:_snProfileWatch,ms:86400000},{fn:_snWakeWatch,ms:300000}
   ];
   defs.forEach(function(d){_globalIntervals.push(setInterval(d.fn,d.ms));});
   defs.forEach(function(d){try{d.fn();}catch(_){}});
-  _snLog("start","ok","17 sentinelles demarrees (v12.203 +push-watch)");
+  _snLog("start","ok","18 sentinelles demarrees (v12.225 +wake-watch)");
+  /* v12.225 - Auto-start wake word si autorise + activement persiste */
+  try{if(typeof axWakeWordAllowedForUser==="function" && axWakeWordAllowedForUser() && lg("ax_wake_word_active",false)===true){setTimeout(function(){try{axWakeWordStart(true);}catch(_){}},3500);}}catch(_){}
 }
 function _healthCheck(){var issues=[];if(!navigator.onLine)issues.push("offline");var memUsed=0;try{for(var hi=0;hi<localStorage.length;hi++)memUsed+=(localStorage.getItem(localStorage.key(hi))||"").length;}catch(ex){}if(memUsed>4500000)issues.push("storage-critical");if(!_fbEs&&navigator.onLine&&FB_URL)issues.push("firebase-down");if(!_getApiKey())issues.push("no-api-key");var recentErrs=lg("ax_err_log",[]).filter(function(er){return now()-er.ts<300000;});if(recentErrs.length>3)issues.push("error-storm");if(K.isStreaming&&K.messages.length){var lastMsg=K.messages[K.messages.length-1];if(lastMsg.ts&&now()-lastMsg.ts>45000){K.isStreaming=false;issues.push("streaming-stuck");K.messages.push({role:"assistant",content:"(IA debloquee automatiquement apres 45s — reessayez)",ts:now()});_saveMsgs();dc();}}_predictiveAlert();if(issues.length){var status=lg("ax_health_status",{ok:true});if(status.ok||!status.issues||status.issues.join(",")!==issues.join(",")){ls("ax_health_status",{ok:false,issues:issues,ts:now()});if(issues.indexOf("firebase-down")>=0)setTimeout(fbStartListening,2000);if(issues.indexOf("storage-critical")>=0)_emergencyCleanup();if(issues.indexOf("streaming-stuck")>=0)toast("IA debloquee","info");if(issues.indexOf("error-storm")>=0)toast("Erreurs detectees — auto-repair","warn");}}else{ls("ax_health_status",{ok:true,ts:now()});}}
 window.addEventListener("error",function(e){try{if(typeof axAutoHandleError==="function")axAutoHandleError("js_error",(e.message||"?")+" "+(e.filename||""));if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("js_error",(e.message||"?")+" "+(e.filename||""));}catch(_){}});window.addEventListener("unhandledrejection",function(e){try{if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("promise_rejection",String(e.reason||"?").slice(0,200));}catch(_){}});

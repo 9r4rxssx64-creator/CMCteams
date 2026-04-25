@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777141794252,
-  "total_commits": 252,
+  "updated_at": 1777142220157,
+  "total_commits": 256,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,38 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "05ce17c5",
+      "ts": 1777141989000,
+      "msg": "Apex v12.224: bump (agent en cours - work in progress)",
+      "project": "apex",
+      "ver": "12.224",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ebfab566",
+      "ts": 1777141872000,
+      "msg": "tools/audit: rapport tech-scout-2026 (capabilities iPhone iOS 17/18 + APIs cutting-edge integrees)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "1c66b15c",
+      "ts": 1777141827000,
+      "msg": "CMCteams v9.519: Triple persistence + auto-restore donnees casino",
+      "project": "cmcteams",
+      "ver": "9.519",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3460559e",
+      "ts": 1777141816000,
+      "msg": "Apex v12.223: Triple persistence (localStorage + IndexedDB + Firebase) + auto-restore + sentinelle persistence-watch",
+      "project": "apex",
+      "ver": "12.223",
+      "author": "claude-code"
+    },
     {
       "sha": "aed33969",
       "ts": 1777141650000,
@@ -935,38 +967,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.150 + v9.502 (~210 commits)",
       "project": "docs",
       "ver": "12.150",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d0d5a7a9",
-      "ts": 1777109490000,
-      "msg": "Apex v12.150: bump version (multi-IA AX_AI_PROVIDERS + vAIProviders + auto-routing)",
-      "project": "apex",
-      "ver": "12.150",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f0f595da",
-      "ts": 1777109431000,
-      "msg": "CMCteams v9.502: navigateur web integre + iframe + VPN guide (parite Apex v12.149)",
-      "project": "cmcteams",
-      "ver": "9.502",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5ec011b0",
-      "ts": 1777109376000,
-      "msg": "Apex v12.149: navigateur web integre + iframe + VPN guide",
-      "project": "apex",
-      "ver": "12.149",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4b5d3510",
-      "ts": 1777109227000,
-      "msg": "Apex v12.147: stockage hybride pro (localStorage + IndexedDB + Railway)",
-      "project": "apex",
-      "ver": "12.147",
       "author": "claude-code"
     }
   ]
