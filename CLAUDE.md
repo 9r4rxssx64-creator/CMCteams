@@ -38,6 +38,29 @@ json.dump(data, open('CLAUDE_ACTIVITY.json','w'), ensure_ascii=False, indent=2)
 
 ---
 
+## 🗺 RÈGLE — PERMISSIONS MAP CMCteams (Kevin 2026-04-25)
+
+> **"Seul l'admin voit la map. Le pit sait qui et quand est à table etc."**
+
+Hiérarchie d'accès au système de carte interactive :
+
+| Rôle | Map editor | Live positions | Édition |
+|------|-----------|----------------|---------|
+| **Admin Kevin** (AID U11804) | ✅ | ✅ | ✅ |
+| **Pit Boss** (`emp.pit_boss` ou rôle pit) | ❌ | ✅ (lecture seule) | ❌ |
+| **Cadre/Inspecteur/Sup** | ❌ | ✅ (lecture seule) | ❌ |
+| **Chef de table** | ❌ | ✅ son équipe seulement | ❌ |
+| **Employé simple** | ❌ | ❌ | ❌ |
+
+Implémentation :
+- `vMapEditor()` → guard `if(!A.user||A.user.id!==AID)return ...`
+- `vTableMap()` (live read-only) → guard `if(!A.user||(A.user.id!==AID && !isPitBoss(A.user) && !isCadre(A.user)))return ...`
+- Helper `isPitBoss(emp)` / `isCadre(emp)` à créer si absent
+
+S'applique à tous les futurs subagents qui touchent à la map.
+
+---
+
 ## 📱 RÈGLE CRITIQUE — KEVIN TRAVAILLE SUR iPHONE (Kevin 2026-04-25 permanent)
 
 > **"Rappel toi tjs que je travail sur iPhone"**
