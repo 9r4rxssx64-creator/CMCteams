@@ -7629,6 +7629,7 @@ function _fabActions(){
     acts.push({ic:"\ud83c\udde8\ud83c\uddf2",lb:"Monaco Live",fn:"sv('monaco')"});
     acts.push({ic:"\ud83d\udcf1",lb:"QR codes tables",fn:"sv('qrtables')"});
     acts.push({ic:"\ud83d\udccd",lb:"G\u00e9ofence / Carte live",fn:"sv('geo')"});
+    acts.push({ic:"\ud83d\udccd",lb:"G\u00e9olocalisation employ\u00e9s",fn:"sv('geolocation')"}); // v9.487 \u2014 precision multi-casinos
     acts.push({ic:"\u264a",lb:"Pit Boss Live",fn:"sv('pit')"});
     acts.push({ic:"\ud83d\udcdd",lb:"Identit\u00e9s apprises",fn:"sv('identities')"});
     acts.push({ic:"\u23f1\ufe0f",lb:"Timings shift",fn:"sv('timings')"});
@@ -8262,7 +8263,7 @@ async function webauthnDoLogin(uid){
   A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;
   try{logUserLogin(emp);}catch(_){}
   try{startPresenceHeartbeat();}catch(_){}
-  try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}
+  try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}
   if(typeof _audit==="function")_audit("login_webauthn",{uid:uid});
   render();
   if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();
@@ -10279,7 +10280,7 @@ function stepVerifyCode(){
   if(A.reg[loginUid]){A.reg[loginUid].verified=true;A.reg[loginUid].verifiedAt=Date.now();ls("cmc_reg",A.reg);}
   var emp=empById(loginUid);
   if(!emp){if(er)er.textContent="Compte introuvable";return;}
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
   toast("\u2705 Bienvenue !");
   // Guide premier login
   if(!localStorage.getItem("cmc_onboarded")){
@@ -10367,7 +10368,7 @@ function stepPin(){
   ls("cmc_pin_fails",{count:0,until:0});
   logAdminSession("success",{method:"pin",failsSinceLast:_failsSinceLast});
   var emp=empById(AID);
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
 }
 function step1(){
   var er=document.getElementById("lerr");
@@ -10489,7 +10490,7 @@ function step2(){
   }
   var regPrenom=(A.reg[loginUid]||{}).prenom||"";
   var greet=regPrenom||(emp.name||"").split(" ").slice(1).join(" ")||(emp.name||"").split(" ")[0]||"";
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
   if(greet)toast("Bienvenue "+greet+"\u00a0!");
 }
 
@@ -10921,6 +10922,7 @@ function vMain(){
     case"uploadreq": return isAdm?vUploadRequests():""; // v9.62
     case"passwords": return isAdm?vPasswords():"";
     case"geo":      return isAdm?vGeoAdmin():""; // v9.210
+    case"geolocation": return isAdm?vGeolocationCMC():""; // v9.487 — multi-casinos precision live
     case"pit":      return vPit(); // v9.211 — pit boss live (admin + cadres)
     case"quotidienne": return vQuotidienne(); // v9.312 — réunion direction
     case"endshiftdash": return vEndShiftDashboard(); // v9.339 — dashboard fins de shift
@@ -11511,6 +11513,235 @@ function lastGeoPunchByEmp(){
     if(!byUid[p.uid]||p.ts>byUid[p.uid].ts)byUid[p.uid]=p;
   });
   return byUid;
+}
+// ═══════════════════════════════════════════════════════════════════════
+// v9.487 — Geolocalisation HAUTE PRECISION + multi-casinos (Kevin 2026-04-25)
+// "plus precise possible pour gestion personnel"
+// ═══════════════════════════════════════════════════════════════════════
+var CASINO_MONACO={lat:43.7395,lng:7.4279,radius:200,name:"Casino de Monte-Carlo",code:"CMC"};
+var CASINO_PARIS={lat:43.7387,lng:7.4287,radius:150,name:"Casino de Paris (CDP)",code:"CDP"};
+var CASINO_SUN={lat:43.7416,lng:7.4257,radius:100,name:"Sun Casino",code:"SUN"};
+var CASINO_MCB={lat:43.7395,lng:7.4296,radius:100,name:"Monte-Carlo Bay",code:"MCB"};
+var ALL_CASINOS=[CASINO_MONACO,CASINO_PARIS,CASINO_SUN,CASINO_MCB];
+
+function cmcGetPreciseLocation(){
+  return new Promise(function(resolve){
+    if(!navigator.geolocation){resolve(null);return;}
+    try{
+      if(typeof cmcCguAsk==="function"&&!cmcCguAsk("geo","📍 Localisation GPS","CMCteams utilise ta position GPS pour valider que tu es bien sur le casino. Geofencing precis 100-200m. Sans consentement, tu peux quand meme te connecter mais sans auto check-in.")){resolve(null);return;}
+    }catch(_){}
+    navigator.geolocation.getCurrentPosition(function(p){
+      var loc={
+        lat:p.coords.latitude,
+        lng:p.coords.longitude,
+        accuracy:p.coords.accuracy,
+        altitude:p.coords.altitude,
+        speed:p.coords.speed,
+        heading:p.coords.heading,
+        ts:p.timestamp||Date.now()
+      };
+      try{ls("cmc_last_location",loc);}catch(_){}
+      resolve(loc);
+    },function(e){
+      try{console.log("[geo] err:",e&&e.code);}catch(_){}
+      resolve(null);
+    },{enableHighAccuracy:true,timeout:30000,maximumAge:0});
+  });
+}
+function cmcDistanceFromCasino(loc,casino){
+  if(!loc)return Infinity;
+  casino=casino||CASINO_MONACO;
+  var R=6371000;
+  var dLat=(casino.lat-loc.lat)*Math.PI/180;
+  var dLng=(casino.lng-loc.lng)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(loc.lat*Math.PI/180)*Math.cos(casino.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function cmcWhichCasino(loc){
+  if(!loc)return null;
+  var best=null,bestDist=Infinity;
+  for(var i=0;i<ALL_CASINOS.length;i++){
+    var c=ALL_CASINOS[i];
+    var d=cmcDistanceFromCasino(loc,c);
+    if(d<=c.radius&&d<bestDist){best=c;bestDist=d;}
+  }
+  return best;
+}
+function cmcAutoCheckin(){
+  if(!A.user)return;
+  cmcGetPreciseLocation().then(function(loc){
+    if(!loc)return;
+    var casino=cmcWhichCasino(loc);
+    var checkins=lg("cmc_checkins",[])||[];
+    if(casino){
+      checkins.push({
+        uid:A.user.id,
+        name:A.user.name,
+        casino:casino.name,
+        casinoCode:casino.code,
+        ts:Date.now(),
+        lat:loc.lat,
+        lng:loc.lng,
+        accuracy:loc.accuracy,
+        type:"auto"
+      });
+      if(checkins.length>1000)checkins=checkins.slice(-1000);
+      try{ls("cmc_checkins",checkins);}catch(_){}
+      try{if(typeof fbWrite==="function")fbWrite("cmc_checkins",checkins);}catch(_){}
+      try{toast("✅ Sur site: "+casino.name+" (precision "+Math.round(loc.accuracy)+"m)");}catch(_){}
+      try{if(typeof _audit==="function")_audit("checkin_auto",A.user.id,A.user.name,casino.code,"precision "+Math.round(loc.accuracy)+"m");}catch(_){}
+    }else{
+      var d=cmcDistanceFromCasino(loc);
+      try{toast("📍 Hors site - "+(d>=1000?(d/1000).toFixed(1)+"km":Math.round(d)+"m")+" du casino");}catch(_){}
+    }
+    try{
+      var locStore=lg("cmc_user_locations",{})||{};
+      locStore[A.user.id]={
+        uid:A.user.id,
+        name:A.user.name,
+        lat:loc.lat,
+        lng:loc.lng,
+        accuracy:loc.accuracy,
+        casino:casino?casino.code:null,
+        ts:Date.now()
+      };
+      ls("cmc_user_locations",locStore);
+      if(typeof fbWrite==="function")fbWrite("cmc_user_locations",locStore);
+    }catch(_){}
+  });
+}
+var _cmcGeoWatchId=null;
+function cmcStartShiftTracking(){
+  if(!navigator.geolocation||!A.user)return;
+  if(_cmcGeoWatchId!=null){try{navigator.geolocation.clearWatch(_cmcGeoWatchId);}catch(_){}}
+  _cmcGeoWatchId=navigator.geolocation.watchPosition(function(p){
+    try{
+      var loc={lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy,ts:p.timestamp||Date.now()};
+      ls("cmc_last_location",loc);
+      var casino=cmcWhichCasino(loc);
+      var locStore=lg("cmc_user_locations",{})||{};
+      locStore[A.user.id]={
+        uid:A.user.id,
+        name:A.user.name,
+        lat:loc.lat,
+        lng:loc.lng,
+        accuracy:loc.accuracy,
+        casino:casino?casino.code:null,
+        ts:Date.now()
+      };
+      ls("cmc_user_locations",locStore);
+      if(typeof fbWrite==="function")try{fbWrite("cmc_user_locations",locStore);}catch(_){}
+    }catch(_){}
+  },function(){},{enableHighAccuracy:true,timeout:60000,maximumAge:30000});
+}
+function cmcStopShiftTracking(){
+  if(_cmcGeoWatchId!=null&&navigator.geolocation){
+    try{navigator.geolocation.clearWatch(_cmcGeoWatchId);}catch(_){}
+  }
+  _cmcGeoWatchId=null;
+}
+function vGeolocationCMC(){
+  if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status"><div class="empty-title">Accès admin requis</div></div></div>';
+  if(!window._geoCMCFilter)window._geoCMCFilter="all";
+  if(!window._geoCMCQ)window._geoCMCQ="";
+  var locs=lg("cmc_user_locations",{})||{};
+  var checkins=lg("cmc_checkins",[])||[];
+  var rows=[];
+  for(var uid in locs){
+    if(!Object.prototype.hasOwnProperty.call(locs,uid))continue;
+    var loc=locs[uid];
+    if(!loc||typeof loc.lat!=="number")continue;
+    var emp=A.employees.find(function(e){return e.id===uid;});
+    var casinoObj=null;
+    for(var ci=0;ci<ALL_CASINOS.length;ci++){
+      if(ALL_CASINOS[ci].code===loc.casino){casinoObj=ALL_CASINOS[ci];break;}
+    }
+    var nearestC=null,nearestD=Infinity;
+    for(var k=0;k<ALL_CASINOS.length;k++){
+      var dd=cmcDistanceFromCasino({lat:loc.lat,lng:loc.lng},ALL_CASINOS[k]);
+      if(dd<nearestD){nearestD=dd;nearestC=ALL_CASINOS[k];}
+    }
+    rows.push({
+      uid:uid,
+      name:loc.name||(emp?emp.name:uid),
+      lat:loc.lat,
+      lng:loc.lng,
+      accuracy:loc.accuracy||0,
+      casino:loc.casino,
+      casinoName:casinoObj?casinoObj.name:null,
+      ts:loc.ts||0,
+      onsite:!!loc.casino,
+      distM:Math.round(nearestD),
+      nearestC:nearestC
+    });
+  }
+  var f=window._geoCMCFilter;
+  if(f==="onsite")rows=rows.filter(function(r){return r.onsite;});
+  else if(f==="offsite")rows=rows.filter(function(r){return !r.onsite;});
+  var q=(window._geoCMCQ||"").toLowerCase().trim();
+  if(q)rows=rows.filter(function(r){return (r.name||"").toLowerCase().indexOf(q)>=0||(r.uid||"").toLowerCase().indexOf(q)>=0;});
+  rows.sort(function(a,b){return b.ts-a.ts;});
+  var nOn=0,nOff=0;
+  Object.keys(locs).forEach(function(u){var L=locs[u];if(L&&L.casino)nOn++;else nOff++;});
+  var h='<div class="page"><div class="sec-title">📍 Géolocalisation employés (live)</div>';
+  h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px">';
+  h+='<div style="background:rgba(40,140,80,.15);padding:6px 10px;border-radius:8px;border:1px solid rgba(40,140,80,.4)"><b style="color:#7fd49b">'+nOn+'</b> sur site</div>';
+  h+='<div style="background:rgba(140,90,40,.15);padding:6px 10px;border-radius:8px;border:1px solid rgba(140,90,40,.4)"><b style="color:#e0b070">'+nOff+'</b> hors site</div>';
+  h+='<div style="background:rgba(60,90,140,.15);padding:6px 10px;border-radius:8px;border:1px solid rgba(60,90,140,.4)"><b style="color:#90c0e8">'+checkins.length+'</b> check-ins</div>';
+  h+='</div></div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">';
+  h+='<button onclick="window._geoCMCFilter=\'all\';dc()" class="btn" style="min-height:44px;padding:8px 12px;font-size:13px;'+(f==="all"?"background:#3a8a50;color:#fff;":"")+'">Tous</button>';
+  h+='<button onclick="window._geoCMCFilter=\'onsite\';dc()" class="btn" style="min-height:44px;padding:8px 12px;font-size:13px;'+(f==="onsite"?"background:#3a8a50;color:#fff;":"")+'">✅ Sur site</button>';
+  h+='<button onclick="window._geoCMCFilter=\'offsite\';dc()" class="btn" style="min-height:44px;padding:8px 12px;font-size:13px;'+(f==="offsite"?"background:#3a8a50;color:#fff;":"")+'">📍 Hors site</button>';
+  h+='</div>';
+  h+='<div style="margin-bottom:8px"><input id="geoCMCQ" class="inp" placeholder="🔍 Rechercher employé..." value="'+esc(window._geoCMCQ||"")+'" oninput="searchInput(\'_geoCMCQ\',this.value,\'geoCMCQ\')" style="width:100%;padding:10px;font-size:14px;min-height:44px"></div>';
+  if(!rows.length){
+    h+='<div class="empty" role="status"><div class="empty-title">Aucune position partagée</div><div class="empty-sub">Les positions arrivent quand un employé se connecte avec consentement GPS.</div></div>';
+  }else{
+    h+='<div class="card" style="padding:0;overflow:hidden">';
+    rows.forEach(function(r){
+      var ago=Math.round((Date.now()-r.ts)/60000);
+      var agoTxt=ago<1?"maintenant":(ago<60?ago+" min":Math.round(ago/60)+" h");
+      var pinIc=r.onsite?"✅":"📍";
+      var bg=r.onsite?"rgba(40,140,80,.08)":"rgba(140,90,40,.06)";
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:'+bg+'">';
+      h+='<div style="font-size:18px;min-width:24px;text-align:center">'+pinIc+'</div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-weight:600;font-size:14px">'+esc(r.name)+' <span style="font-weight:400;color:#888;font-size:11px">'+esc(r.uid)+'</span></div>';
+      h+='<div style="font-size:11px;color:#999;margin-top:2px">';
+      if(r.onsite){h+='🏢 '+esc(r.casinoName||r.casino||"")+' • ';}
+      else if(r.nearestC){h+=esc(r.nearestC.name)+' à '+(r.distM>=1000?(r.distM/1000).toFixed(1)+"km":r.distM+"m")+' • ';}
+      h+='±'+Math.round(r.accuracy||0)+'m • '+agoTxt;
+      h+='</div></div>';
+      h+='<a href="https://www.google.com/maps?q='+r.lat+','+r.lng+'" target="_blank" rel="noopener" style="min-height:44px;min-width:44px;padding:8px 10px;background:rgba(60,120,200,.15);border:1px solid rgba(60,120,200,.4);border-radius:8px;color:#90c0e8;text-decoration:none;font-size:12px;display:flex;align-items:center;justify-content:center" title="Ouvrir dans Google Maps">🗺️</a>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  if(checkins.length){
+    var recent=checkins.slice(-15).reverse();
+    h+='<div class="sec-title" style="margin-top:14px">📘 Derniers check-ins ('+checkins.length+' total)</div>';
+    h+='<div class="card" style="padding:0;overflow:hidden">';
+    recent.forEach(function(c){
+      var ago=Math.round((Date.now()-c.ts)/60000);
+      var agoTxt=ago<1?"maintenant":(ago<60?ago+" min":Math.round(ago/60)+" h");
+      var ic=c.type==="auto"?"✨":"✍";
+      h+='<div style="display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;align-items:center">';
+      h+='<div style="min-width:22px;text-align:center">'+ic+'</div>';
+      h+='<div style="flex:1;min-width:0"><b>'+esc(c.name||c.uid)+'</b> • '+esc(c.casino||c.casinoCode||"")+'</div>';
+      h+='<div style="font-size:11px;color:#888">±'+Math.round(c.accuracy||0)+'m • '+agoTxt+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="sec-title" style="margin-top:14px">🏢 Casinos surveillés</div>';
+  h+='<div class="card" style="padding:10px 12px;font-size:12px;line-height:1.7">';
+  ALL_CASINOS.forEach(function(c){
+    h+='<div><b>'+esc(c.name)+'</b> ('+esc(c.code)+') • rayon '+c.radius+'m • '+c.lat.toFixed(4)+','+c.lng.toFixed(4)+'</div>';
+  });
+  h+='</div>';
+  h+='</div>';
+  return h;
 }
 // Vue admin : carte + liste live + recherche + édition géofence
 function vGeoAdmin(){
