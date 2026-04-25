@@ -7835,7 +7835,218 @@ try{
   setTimeout(function(){try{clearInterval(_axTourLoginInterval);}catch(_){}},60000);
 }catch(_){}
 
+/* === v12.212 — Banque d'infos + synthese auto + sentinelle data-leak-watch === */
+try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_profile_synthesis")<0)FB_FIX.push("ax_profile_synthesis");}catch(_){}
+try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_data_enrichment_log")<0)FB_FIX.push("ax_data_enrichment_log");}catch(_){}
 
+/* Lightweight extractor — patterns simples, fail-safe */
+function _axProfileExtractFromText(text){
+  var out={};if(!text||typeof text!=="string")return out;var t=text;
+  try{
+    var em=t.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);if(em)out.email=em[0];
+    var ph=t.match(/(?:\+?\d[\s.-]?){8,15}/);if(ph)out.phone=ph[0].replace(/[\s.-]+/g," ").trim();
+    var age=t.match(/\b(?:j['e]\s*ai\s*|age\s*[:=]?\s*|j['a]\s*)(\d{1,2})\s*ans?\b/i);if(age)out.age=age[1];
+    var city=t.match(/\b(?:habite|j'habite|vit\s+a|domicile)\s+(?:a\s+)?([A-ZÀ-ÿ][a-zà-ÿ\-' ]{2,40})/i);if(city)out.city=city[1].trim();
+    var job=t.match(/\b(?:travaill?e?\s+(?:comme|en\s+tant\s+que|chez)|metier\s*[:=]?\s*|profession\s*[:=]?\s*)\s*([A-Za-zà-ÿ\-' ]{3,40})/i);if(job)out.job=job[1].trim();
+    var aller=t.match(/\b(?:allergi(?:que|e)s?\s+(?:a|aux)\s+|allergie\s*[:=]?\s*)([A-Za-zà-ÿ,\- ]{3,80})/i);if(aller)out.allergies=aller[1].trim();
+    var hobby=t.match(/\b(?:j'aime|j['e]\s*adore|hobby\s*[:=]?\s*|passion\s*[:=]?\s*|loisirs?\s*[:=]?\s*)\s+([A-Za-zà-ÿ,\- ]{3,80})/i);if(hobby)out.hobbies=hobby[1].trim();
+    var nm=t.match(/\b(?:je\s*m'appelle|mon\s*nom\s*est|moi\s*c'est)\s+([A-ZÀ-ÿ][a-zà-ÿ\-']{1,30})(?:\s+([A-ZÀ-ÿ][a-zà-ÿ\-']{1,30}))?/i);
+    if(nm){out.prenom=nm[1];if(nm[2])out.nom=nm[2];}
+  }catch(_){}
+  return out;
+}
+
+function axGenerateProfileSynthesis(userId){
+  if(!userId)return null;
+  var profile=lg("ax_profile_"+userId,{})||{};
+  /* enrichir depuis derniers messages user (auto-extract si pas deja fait) */
+  try{
+    var convs=(K&&K.conversations)||[];
+    var allMsgs=[];
+    convs.forEach(function(c){try{var mm=lg("ax_msgs_"+c.id,[]);if(Array.isArray(mm))allMsgs=allMsgs.concat(mm);}catch(_){}});
+    var userMsgs=allMsgs.filter(function(m){return m&&m.role==="user"&&typeof m.content==="string";}).slice(-30);
+    userMsgs.forEach(function(m){
+      var ext=_axProfileExtractFromText(m.content);
+      Object.keys(ext).forEach(function(k){if(!profile[k])profile[k]=ext[k];});
+    });
+    profile._lastEnriched=Date.now();
+    ls("ax_profile_"+userId,profile);
+  }catch(_){}
+  var parts=[];
+  if(profile.prenom||profile.nom)parts.push(((profile.prenom||"")+" "+(profile.nom||"")).trim());
+  if(profile.age)parts.push(profile.age+" ans");
+  if(profile.city)parts.push("habite "+profile.city);
+  if(profile.job)parts.push("travaille comme "+profile.job);
+  if(profile.email)parts.push("("+profile.email+")");
+  if(profile.phone)parts.push("tel "+profile.phone);
+  if(profile.allergies)parts.push("allergique a "+profile.allergies);
+  if(profile.hobbies)parts.push("aime "+profile.hobbies);
+  var synthesis=parts.length?parts.join(", "):"Profil pas encore enrichi.";
+  var all=lg("ax_profile_synthesis",{})||{};
+  all[userId]={text:synthesis,ts:Date.now(),facts:Object.keys(profile).filter(function(k){return k.charAt(0)!=="_";}).length};
+  ls("ax_profile_synthesis",all);
+  if(typeof fbWrite==="function")try{fbWrite("ax_profile_synthesis",all);}catch(_){}
+  return synthesis;
+}
+
+function axGenerateAllSyntheses(){
+  if(typeof axIsAdmin==="function"&&!axIsAdmin())return;
+  var ids={};
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf("ax_profile_")===0&&k!=="ax_profile_synthesis"){
+        var uid=k.substring("ax_profile_".length);
+        if(uid&&uid.indexOf("_")<0)ids[uid]=true;
+      }
+    }
+  }catch(_){}
+  var arr=Object.keys(ids);
+  arr.forEach(axGenerateProfileSynthesis);
+  if(typeof toast==="function")toast("Syntheses generees : "+arr.length+" profils","ok");
+  try{if(typeof dc==="function")dc();}catch(_){}
+  return arr.length;
+}
+
+function axScheduleSyntheses(){
+  try{
+    var last=lg("ax_last_syntheses",0)||0;
+    if(Date.now()-last>24*3600*1000){
+      setTimeout(function(){try{axGenerateAllSyntheses();ls("ax_last_syntheses",Date.now());}catch(_){}},30000);
+    }
+  }catch(_){}
+}
+try{axScheduleSyntheses();}catch(_){}
+
+function _filterKB(q){
+  try{
+    var ql=String(q||"").toLowerCase().trim();
+    var rows=document.querySelectorAll(".kb-row");
+    for(var i=0;i<rows.length;i++){
+      var s=(rows[i].getAttribute("data-search")||"").toLowerCase();
+      rows[i].style.display=(!ql||s.indexOf(ql)>=0)?"":"none";
+    }
+  }catch(_){}
+}
+
+function _kbViewProfile(uid){
+  try{
+    var p=lg("ax_profile_"+uid,{})||{};
+    var h='<h2 style="color:var(--ax-gold);margin-bottom:12px">📋 Fiche complete</h2><div class="ax-card">';
+    var keys=Object.keys(p).filter(function(k){return k.charAt(0)!=="_";});
+    if(!keys.length)h+='<p style="color:var(--ax-text-dim)">Aucune info enregistree.</p>';
+    else keys.forEach(function(k){
+      h+='<div class="ax-setting-row"><span style="color:var(--ax-text-dim);font-size:11px">'+esc(k)+'</span><span style="font-weight:600">'+esc(String(p[k]))+'</span></div>';
+    });
+    h+='</div>';
+    if(typeof _showModal==="function")_showModal(h);
+  }catch(_){}
+}
+
+function _kbBriefing(uid){
+  try{
+    var s=(lg("ax_profile_synthesis",{})||{})[uid];
+    if(!s){if(typeof toast==="function")toast("Synthese en cours de generation...","info");axGenerateProfileSynthesis(uid);return;}
+    if(typeof newConversation==="function")newConversation();
+    if(typeof sendMessage==="function")sendMessage("Brief moi rapidement sur cette personne avant que je la rencontre : "+s.text);
+    if(typeof sv==="function")sv("chat");
+  }catch(_){}
+}
+
+function _kbRegenerate(){
+  try{axGenerateAllSyntheses();}catch(_){}
+}
+
+function vKnowledgeBank(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return '<div class="ax-empty" style="padding:24px;text-align:center;color:var(--ax-text-dim)">🔒 Reserve a l admin</div>';
+  var syntheses=lg("ax_profile_synthesis",{})||{};
+  var profiles={};
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf("ax_profile_")===0&&k!=="ax_profile_synthesis"){
+        var uid=k.substring("ax_profile_".length);
+        if(uid&&uid.indexOf("_")<0){try{profiles[uid]=lg(k,{})||{};}catch(_){}}
+      }
+    }
+  }catch(_){}
+  var ids=Object.keys(profiles);
+  var totalFields=15;
+  var stats={total:ids.length,complete:0,partial:0,draft:0};
+  ids.forEach(function(uid){
+    var p=profiles[uid]||{};
+    var n=Object.keys(p).filter(function(k){return k.charAt(0)!=="_";}).length;
+    var pct=Math.round(n/totalFields*100);
+    if(pct>=80)stats.complete++;else if(pct>=50)stats.partial++;else stats.draft++;
+  });
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">🗂 Banque d\'infos clients</h2>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><input class="ax-input" id="ax-kb-search" placeholder="🔍 Tape un nom, email, mot-cle..." oninput="_filterKB(this.value)" style="flex:1;min-width:180px;min-height:44px"><button class="ax-btn ax-btn-outline" onclick="_kbRegenerate()" style="min-height:44px">🔄 Regenerer</button></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">';
+  h+='<div class="ax-card" style="text-align:center;padding:8px"><div style="font-size:18px;font-weight:800">'+stats.total+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Total</div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--ax-green,#4cd080)">'+stats.complete+'</div><div style="font-size:10px;color:var(--ax-text-dim)">&gt;80%</div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--ax-gold)">'+stats.partial+'</div><div style="font-size:10px;color:var(--ax-text-dim)">50-80%</div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:8px"><div style="font-size:18px;font-weight:800;color:var(--ax-red,#e88080)">'+stats.draft+'</div><div style="font-size:10px;color:var(--ax-text-dim)">&lt;50%</div></div>';
+  h+='</div>';
+  ids.sort(function(a,b){
+    var pa=profiles[a]||{},pb=profiles[b]||{};
+    return (pb._lastEnriched||0)-(pa._lastEnriched||0);
+  }).forEach(function(uid){
+    var p=profiles[uid]||{};
+    var s=syntheses[uid];
+    var n=Object.keys(p).filter(function(k){return k.charAt(0)!=="_";}).length;
+    var pct=Math.round(n/totalFields*100);
+    var col=pct>=80?"#4cd080":(pct>=50?"#e8a248":"#e88080");
+    var name=((p.prenom||"")+" "+(p.nom||"")).trim()||uid.slice(-8);
+    var search=(name+" "+(p.email||"")+" "+(s?s.text:"")).toLowerCase();
+    h+='<div class="ax-card kb-row" data-search="'+esc(search)+'" style="border-left:4px solid '+col+';margin-bottom:8px">';
+    h+='<div style="display:flex;align-items:center;gap:10px"><div style="font-size:32px">👤</div>';
+    h+='<div style="flex:1;min-width:0"><strong>'+esc(name)+'</strong> <span class="ax-badge" style="background:'+col+';color:#000;font-size:10px;padding:2px 6px;border-radius:6px">'+pct+'%</span>';
+    h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px;word-wrap:break-word">'+(s?esc(String(s.text).slice(0,160)):"Pas de synthese")+'</div></div></div>';
+    h+='<div style="display:flex;gap:6px;margin-top:8px"><button class="ax-btn ax-btn-outline" onclick="_kbViewProfile(\''+esc(uid)+'\')" style="flex:1;font-size:11px;padding:8px;min-height:44px">📋 Fiche</button>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="_kbBriefing(\''+esc(uid)+'\')" style="flex:1;font-size:11px;padding:8px;min-height:44px">🤖 Briefing</button></div>';
+    h+='</div>';
+  });
+  if(!ids.length)h+='<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun profil enrichi pour le moment. Les conversations chat enrichiront automatiquement.</p>';
+  h+='</div>';
+  return h;
+}
+
+/* Sentinelle data-leak-watch — patrouille messages, re-extrait infos */
+function _agentDataLeakWatch(){
+  try{
+    if(typeof axIsAdmin!=="function"||!axIsAdmin())return {recovered:0};
+    var convs=(K&&K.conversations)||[];
+    var recovered=0;
+    convs.slice(0,5).forEach(function(c){
+      try{
+        var msgs=lg("ax_msgs_"+c.id,[])||[];
+        var changed=false;
+        msgs.forEach(function(m){
+          if(m&&m.role==="user"&&typeof m.content==="string"&&!m._enriched&&(Date.now()-(m.ts||0)<7*86400000)){
+            var ext=_axProfileExtractFromText(m.content);
+            if(Object.keys(ext).length&&K&&K.user){
+              var prof=lg("ax_profile_"+K.user.id,{})||{};
+              var added=0;
+              Object.keys(ext).forEach(function(k){if(!prof[k]){prof[k]=ext[k];added++;}});
+              if(added>0){prof._lastEnriched=Date.now();ls("ax_profile_"+K.user.id,prof);recovered+=added;}
+              m._enriched=true;changed=true;
+            }
+          }
+        });
+        if(changed)try{ls("ax_msgs_"+c.id,msgs);}catch(_){}
+      }catch(_){}
+    });
+    if(recovered>0){
+      var log=lg("ax_data_enrichment_log",[])||[];
+      log.push({ts:Date.now(),recovered:recovered,src:"data-leak-watch"});
+      if(log.length>200)log=log.slice(-200);
+      ls("ax_data_enrichment_log",log);
+    }
+    return {recovered:recovered};
+  }catch(_){return {recovered:0};}
+}
+try{setInterval(_agentDataLeakWatch,3600000);}catch(_){}
+/* === fin v12.212 === */
 
 </script>
 </body>
