@@ -3526,7 +3526,7 @@ function vTokenBalance(){
 }
 
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":return vTokenBalance();case"servicespro":return vTokenBalance();case"sentinelshealth":return vSentinelsHealth();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackupsList();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":return vTokenBalance();case"servicespro":return vTokenBalance();case"sentinelshealth":return vSentinelsHealth();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -5471,6 +5471,213 @@ function _restoreFromFile(input){
   };
   reader.readAsText(input.files[0]);
 }
+/* v12.201 — Backup auto quotidien complet (toutes cles ax_*) + rapport sante email + sentinelle backup-watch */
+function axDailyBackupCheck(){
+  try{
+    if(!axIsAdmin())return;
+    var lastBackup=parseInt(lg("ax_last_daily_backup",0),10)||0;
+    var nowTs=Date.now();
+    if(nowTs-lastBackup>23*3600*1000){
+      setTimeout(axDailyBackup,30000);
+    }
+  }catch(_){}
+}
+function axDailyBackup(){
+  try{
+    if(!axIsAdmin())return null;
+    var snapshot={};
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf("ax_")===0&&k.slice(-7)!=="_status"&&k!=="ax_last_daily_backup"&&k.indexOf("ax_backup_")!==0){
+        snapshot[k]=localStorage.getItem(k);
+      }
+    }
+    var bk={ts:Date.now(),version:APP_VER,count:Object.keys(snapshot).length,data:snapshot};
+    var dateKey=new Date().toISOString().slice(0,10);
+    if(typeof fbWrite==="function"){
+      try{fbWrite("ax_backup_full_"+dateKey,bk);}catch(_){}
+    }
+    try{ls("ax_last_daily_backup",Date.now());}catch(_){}
+    var hist=lg("ax_backup_history",[]);
+    var jsonSize=0;try{jsonSize=JSON.stringify(bk).length;}catch(_){}
+    hist.push({date:dateKey,ts:bk.ts,count:bk.count,size:jsonSize,version:APP_VER});
+    if(hist.length>30)hist=hist.slice(-30);
+    try{ls("ax_backup_history",hist);}catch(_){}
+    try{_audit("backup_daily_full",K.user?K.user.id:"system","ax_backup_full_"+dateKey,Math.round(jsonSize/1024)+"KB / "+bk.count+" cles");}catch(_){}
+    if(typeof toast==="function")toast("Sauvegarde quotidienne OK ("+bk.count+" cles)","ok");
+    return bk;
+  }catch(e){
+    if(typeof toast==="function")toast("Sauvegarde : un petit souci, on reessaie plus tard","warn");
+    return null;
+  }
+}
+function axRestoreFromBackup(dateKey){
+  if(!axIsAdmin())return;
+  if(!dateKey){toast("Date manquante","err");return;}
+  if(!confirm("Restaurer le backup du "+dateKey+" ?\n\nUn snapshot pre-restore sera fait par securite.\nLa page va recharger."))return;
+  try{axDailyBackup();}catch(_){}
+  if(!FB_URL){toast("Stockage en ligne non configure","err");return;}
+  fetch(FB_URL+FB_PATH+"/ax_backup_full_"+encodeURIComponent(dateKey)+".json").then(function(r){return r.json();}).then(function(bk){
+    if(!bk||!bk.data){toast("Backup introuvable","err");return;}
+    var n=0;
+    Object.keys(bk.data).forEach(function(k){try{localStorage.setItem(k,bk.data[k]);n++;}catch(_){}});
+    try{_audit("restore_daily_full",K.user?K.user.id:"?",dateKey,n+" cles");}catch(_){}
+    toast("Restauration OK ("+n+" cles). Rechargement...","ok",{force:true});
+    setTimeout(function(){location.reload();},2000);
+  }).catch(function(e){toast("Backup introuvable ou stockage indisponible","err");});
+}
+function axRestoreTestPreview(dateKey){
+  if(!axIsAdmin())return;
+  if(!FB_URL){toast("Stockage en ligne non configure","err");return;}
+  fetch(FB_URL+FB_PATH+"/ax_backup_full_"+encodeURIComponent(dateKey)+".json").then(function(r){return r.json();}).then(function(bk){
+    if(!bk||!bk.data){toast("Backup introuvable","err");return;}
+    var nbKeys=Object.keys(bk.data).length;
+    var totalSize=0;Object.keys(bk.data).forEach(function(k){totalSize+=String(bk.data[k]||"").length;});
+    var h='<h2>&#129514; Test de restauration</h2>';
+    h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Aucune donnee n\'est ecrasee, c\'est juste un apercu.</div>';
+    h+='<div class="ax-card"><div><strong>Date :</strong> '+esc(dateKey)+'</div>';
+    h+='<div><strong>Version :</strong> '+esc(bk.version||"?")+'</div>';
+    h+='<div><strong>Cles :</strong> '+nbKeys+'</div>';
+    h+='<div><strong>Taille :</strong> '+Math.round(totalSize/1024)+' KB</div>';
+    h+='<div><strong>Date snapshot :</strong> '+(bk.ts?new Date(bk.ts).toLocaleString("fr-FR"):"?")+'</div>';
+    h+='</div>';
+    h+='<div style="margin-top:12px"><button class="ax-btn ax-btn-primary" onclick="axRestoreFromBackup(\''+esc(dateKey)+'\')" style="width:100%;min-height:44px">&#128260; Restaurer pour de vrai</button></div>';
+    _showModal(h);
+  }).catch(function(){toast("Backup introuvable","err");});
+}
+function axDownloadDailyBackup(dateKey){
+  if(!axIsAdmin())return;
+  if(!FB_URL){toast("Stockage en ligne non configure","err");return;}
+  fetch(FB_URL+FB_PATH+"/ax_backup_full_"+encodeURIComponent(dateKey)+".json").then(function(r){return r.json();}).then(function(bk){
+    if(!bk){toast("Backup introuvable","err");return;}
+    try{
+      var blob=new Blob([JSON.stringify(bk,null,2)],{type:"application/json"});
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="apex-daily-backup-"+dateKey+".json";
+      a.click();
+      setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(_){}},2000);
+      toast("Telechargement lance","ok");
+    }catch(_){toast("Telechargement impossible","err");}
+  }).catch(function(){toast("Backup introuvable","err");});
+}
+function axGenerateHealthReport(){
+  return new Promise(function(resolve){
+    try{
+      if(!axIsAdmin())return resolve(null);
+      var report={
+        date:new Date().toISOString(),
+        version:APP_VER,
+        health:{},
+        activity:{},
+        issues:[],
+        suggestions:[]
+      };
+      try{report.health.score=(typeof axHealthScore==="function")?axHealthScore():"N/A";}catch(_){report.health.score="N/A";}
+      try{report.health.credentials=(typeof axCredStatus==="function")?Object.keys(axCredStatus()||{}).length:0;}catch(_){report.health.credentials=0;}
+      try{report.health.fbConnected=(typeof _fbEs!=="undefined"&&!!_fbEs);}catch(_){report.health.fbConnected=false;}
+      try{report.health.lastBackup=parseInt(lg("ax_last_daily_backup",0),10)||0;}catch(_){report.health.lastBackup=0;}
+      try{report.activity.conversations=(K.conversations?K.conversations.length:0);}catch(_){report.activity.conversations=0;}
+      try{report.activity.messages=(K.messages?K.messages.length:0);}catch(_){report.activity.messages=0;}
+      try{var tu=lg("ax_token_use",{});report.activity.tokensToday=tu&&tu.today?tu.today:0;}catch(_){report.activity.tokensToday=0;}
+      try{
+        var errors=lg("ax_err_log",[]);
+        report.issues=errors.slice(0,10).map(function(e){return {ts:e.ts,msg:String(e.msg||"").slice(0,100)};});
+      }catch(_){}
+      if(report.activity.conversations>100)report.suggestions.push("Pense a archiver les anciennes conversations");
+      if(report.health.credentials<5)report.suggestions.push("Configure plus de cles API pour profiter de toutes les IA");
+      if(!localStorage.getItem("ax_proxy_url"))report.suggestions.push("Configure un proxy Cloudflare pour securiser tes cles");
+      if(!report.health.lastBackup||(Date.now()-report.health.lastBackup)>30*3600*1000)report.suggestions.push("Lance une sauvegarde manuelle, la derniere est ancienne");
+      try{ls("ax_last_health_report",report);}catch(_){}
+      resolve(report);
+    }catch(e){resolve(null);}
+  });
+}
+function axShowHealthReport(){
+  axGenerateHealthReport().then(function(r){
+    if(!r){toast("Rapport indisponible","err");return;}
+    var lastBkLbl=r.health.lastBackup?new Date(r.health.lastBackup).toLocaleString("fr-FR"):"jamais";
+    var h='<h2>&#128202; Rapport sante quotidien</h2>';
+    h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:12px">'+esc(new Date(r.date).toLocaleString("fr-FR"))+'</div>';
+    h+='<div class="ax-card"><h3>&#128994; Sante globale: '+esc(String(r.health.score))+'/100</h3>';
+    h+='<div style="font-size:13px">'+esc(String(r.health.credentials))+' cles configurees &middot; Stockage en ligne '+(r.health.fbConnected?"connecte":"deconnecte")+'</div>';
+    h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">Dernier backup : '+esc(lastBkLbl)+'</div>';
+    h+='</div>';
+    h+='<div class="ax-card"><h3>&#128200; Activite</h3><div>'+esc(String(r.activity.conversations))+' conversations &middot; '+esc(String(r.activity.messages))+' messages &middot; '+esc(String(r.activity.tokensToday))+' tokens aujourd\'hui</div></div>';
+    if(r.issues&&r.issues.length){
+      h+='<div class="ax-card" style="border-left:3px solid var(--ax-red)"><h3>&#9888;&#65039; Problemes detectes</h3>';
+      r.issues.forEach(function(i){h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--ax-border)">'+esc(i.msg)+'</div>';});
+      h+='</div>';
+    }
+    if(r.suggestions&&r.suggestions.length){
+      h+='<div class="ax-card" style="border-left:3px solid var(--ax-gold)"><h3>&#128161; Suggestions</h3>';
+      r.suggestions.forEach(function(s){h+='<div style="font-size:13px;padding:4px 0">&bull; '+esc(s)+'</div>';});
+      h+='</div>';
+    }
+    h+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" onclick="axEmailHealthReport()" style="flex:1;min-height:44px">&#128231; Envoyer par email</button><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="flex:1;min-height:44px">Fermer</button></div>';
+    _showModal(h);
+  });
+}
+function axEmailHealthReport(){
+  axGenerateHealthReport().then(function(r){
+    if(!r){toast("Rapport indisponible","err");return;}
+    var serviceId=localStorage.getItem("ax_emailjs_serviceid");
+    var templateId=localStorage.getItem("ax_emailjs_templateid");
+    var userId=localStorage.getItem("ax_emailjs_userid");
+    if(!serviceId||!templateId||!userId){toast("Configure EmailJS dans le Coffre d'abord","warn");return;}
+    var to=lg("ax_admin_email","")||localStorage.getItem("ax_user_email")||"";
+    if(!to){to=prompt("Email admin pour recevoir le rapport ?");if(!to)return;try{ls("ax_admin_email",to);}catch(_){}}
+    var body="Rapport sante Apex "+r.date.slice(0,10)+"\n\n";
+    body+="Score: "+r.health.score+"/100\n";
+    body+="Cles configurees: "+r.health.credentials+"\n";
+    body+="Stockage en ligne: "+(r.health.fbConnected?"OK":"deconnecte")+"\n";
+    body+="Conversations: "+r.activity.conversations+"\n";
+    body+="Messages: "+r.activity.messages+"\n";
+    body+="Tokens aujourd'hui: "+r.activity.tokensToday+"\n\n";
+    if(r.issues&&r.issues.length){body+="Problemes:\n";r.issues.forEach(function(i){body+=" - "+i.msg+"\n";});body+="\n";}
+    if(r.suggestions&&r.suggestions.length){body+="Suggestions:\n";r.suggestions.forEach(function(s){body+=" - "+s+"\n";});}
+    var send=function(){
+      try{
+        if(typeof emailjs!=="undefined"&&emailjs.send){
+          emailjs.send(serviceId,templateId,{to_email:to,subject:"Apex - Rapport sante "+r.date.slice(0,10),body:body}).then(function(){
+            try{ls("ax_last_health_report_ts",Date.now());}catch(_){}
+            toast("Rapport envoye a "+to,"ok");
+          },function(){toast("Email non envoye, reessaie plus tard","warn");});
+        }else{toast("EmailJS pas charge. Va dans Coffre tester EmailJS d'abord.","warn");}
+      }catch(_){toast("Email non envoye","warn");}
+    };
+    if(typeof emailjs==="undefined"){
+      var sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+      sc.onload=function(){try{if(emailjs.init)emailjs.init({publicKey:userId});}catch(_){}send();};
+      sc.onerror=function(){toast("Impossible de charger EmailJS","err");};
+      document.head.appendChild(sc);
+    }else{try{if(emailjs.init)emailjs.init({publicKey:userId});}catch(_){}send();}
+  });
+}
+function axScheduleHealthReport(){
+  try{
+    if(!axIsAdmin())return;
+    var lastReport=parseInt(lg("ax_last_health_report_ts",0),10)||0;
+    var nowTs=Date.now();
+    var d=new Date();
+    if(d.getHours()>=8&&(nowTs-lastReport)>23*3600*1000){
+      axEmailHealthReport();
+    }
+  }catch(_){}
+}
+function _agentBackupWatch(){
+  try{
+    if(!axIsAdmin())return;
+    var last=parseInt(lg("ax_last_daily_backup",0),10)||0;
+    var nowTs=Date.now();
+    if(!last||nowTs-last>30*3600*1000){
+      try{toast("Sauvegarde quotidienne manquee, je relance","warn");}catch(_){}
+      try{axDailyBackup();}catch(_){}
+    }
+    try{axScheduleHealthReport();}catch(_){}
+  }catch(_){}
+}
+function vBackupsList(){return vBackups();}
 function vBackups(){
   if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">Acces admin requis</div></div>';
   var keys=_axBackupListKeys().slice().reverse();
@@ -6828,7 +7035,7 @@ function _bindEvents(){_applyTheme();_rememberLastUser();var content=document.ge
 function _autoConfigureDefaults(){if(!localStorage.getItem("ax_fb_url"))localStorage.setItem("ax_fb_url","https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app");if(!localStorage.getItem("ax_agent_url"))localStorage.setItem("ax_agent_url","https://kdmc-agent-monaco.vercel.app");}
 /* v12.125 — Banner hors ligne persistant (Kevin polish pro) */
 function _axUpdateOfflineBanner(){try{var existing=document.getElementById("ax-offline-banner");var off=!navigator.onLine;if(off){if(!existing){var b=document.createElement("div");b.id="ax-offline-banner";b.className="ax-offline-banner";b.setAttribute("role","status");b.setAttribute("aria-live","polite");b.innerHTML='<span style="font-size:14px">🌐</span><span>Hors ligne — tes donnees sont sauvegardees localement</span>';document.body.appendChild(b);}document.body.classList.add("ax-offline");}else{if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);document.body.classList.remove("ax-offline");}}catch(_){}}
-function axInit(){_autoConfigureDefaults();_loadState();try{_axDetectBrowserLang();}catch(_){}try{if(typeof axDetectLocaleByIP==="function"&&navigator.onLine&&!localStorage.getItem("ax_locale"))setTimeout(function(){try{axDetectLocaleByIP();}catch(_){}},2000);}catch(_){}try{_spotifyHandleCallback();}catch(_){}K.isStreaming=false;_canvasOpen=false;_sidebarOpen=false;if(K.user){K.view="chat";touchSession();axRegisterDevice();}else{/* v12.85 — Detection demande en attente */var _draft=lg("ax_sub_draft",null);var _hasReq=false;if(_draft&&_draft.email){var _reqs=lg("ax_subscription_requests",{});Object.keys(_reqs).forEach(function(k){if(_reqs[k].email===_draft.email)_hasReq=true;});}if(_hasReq){K.view="waiting";}else{K.view=lg("ax_landing_seen",false)?"login":"landing";}}render();fbInit();try{axRefreshExchangeRates();}catch(_){}_axUpdateOfflineBanner();if(navigator.onLine)flushSyncQueue();window.addEventListener("online",function(){toast("Connexion retablie","ok");_axUpdateOfflineBanner();flushSyncQueue();_checkRules("online");dc();});window.addEventListener("offline",function(){toast("Mode hors ligne","warn");_axUpdateOfflineBanner();_checkRules("offline");dc();});if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(function(reg){reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){/* v12.99 — MAJ auto (Kevin : active les MAJ auto partout) */var t=document.createElement("div");t.id="ax-update-banner";t.style.cssText="position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:10000;padding:8px 16px;border-radius:20px;background:linear-gradient(135deg,var(--ax-gold),#e8b830);color:#000;font-weight:700;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;animation:axSlideDown .3s";t.innerHTML='🔄 Mise a jour auto dans 3s...';document.body.appendChild(t);/* Auto-skip + reload apres 3s (laisse voir la banner puis charge v+1) */try{if(nw.postMessage)nw.postMessage("skipWaiting");}catch(_){}setTimeout(function(){location.reload();},3000);}});});/* v12.186 Kevin: auto-refresh aggressif (60s + visibility + focus) */setInterval(function(){try{reg.update();}catch(_){}},60000);document.addEventListener("visibilitychange",function(){if(!document.hidden){try{reg.update();}catch(_){}}});window.addEventListener("focus",function(){try{reg.update();}catch(_){}});}).catch(function(e){console.warn("SW:",e);});/* Detect controller change (ex via postMessage skipWaiting) -> reload auto */navigator.serviceWorker.addEventListener("controllerchange",function(){if(!window._axReloading){window._axReloading=true;location.reload();}});}document.addEventListener("visibilitychange",function(){if(!document.hidden&&K.user)touchSession();});try{_axNightlyBackupCheck();}catch(_){}try{_startSentinels();}catch(_){}try{axAutoSeedKB();}catch(_){}if(navigator.onLine){try{var _hadKey=!!_getApiKey();_getApiKeyAsync().then(function(k){if(k&&!_hadKey){toast("Cle API recuperee depuis Firebase","ok");try{dc();}catch(_){}try{axJournalEntry&&axJournalEntry("apex-ai","API key recovered","getApiKey empty au boot","fetch direct Firebase","cle restauree depuis ax_shared_api_key","Toujours fetch Firebase si cle vide + online avant de dire cle manquante");}catch(_){}}else if(!k&&!_hadKey){try{axJournalEntry&&axJournalEntry("apex-ai","API key still missing","axInit boot","fetch Firebase","vide dans les 2 sources","Kevin doit entrer cle dans Reglages OU verifier Firebase path /apex/ax_shared_api_key");}catch(_){}}});}catch(_){}}}
+function axInit(){_autoConfigureDefaults();_loadState();try{_axDetectBrowserLang();}catch(_){}try{if(typeof axDetectLocaleByIP==="function"&&navigator.onLine&&!localStorage.getItem("ax_locale"))setTimeout(function(){try{axDetectLocaleByIP();}catch(_){}},2000);}catch(_){}try{_spotifyHandleCallback();}catch(_){}K.isStreaming=false;_canvasOpen=false;_sidebarOpen=false;if(K.user){K.view="chat";touchSession();axRegisterDevice();}else{/* v12.85 — Detection demande en attente */var _draft=lg("ax_sub_draft",null);var _hasReq=false;if(_draft&&_draft.email){var _reqs=lg("ax_subscription_requests",{});Object.keys(_reqs).forEach(function(k){if(_reqs[k].email===_draft.email)_hasReq=true;});}if(_hasReq){K.view="waiting";}else{K.view=lg("ax_landing_seen",false)?"login":"landing";}}render();fbInit();try{axRefreshExchangeRates();}catch(_){}_axUpdateOfflineBanner();if(navigator.onLine)flushSyncQueue();window.addEventListener("online",function(){toast("Connexion retablie","ok");_axUpdateOfflineBanner();flushSyncQueue();_checkRules("online");dc();});window.addEventListener("offline",function(){toast("Mode hors ligne","warn");_axUpdateOfflineBanner();_checkRules("offline");dc();});if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(function(reg){reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){/* v12.99 — MAJ auto (Kevin : active les MAJ auto partout) */var t=document.createElement("div");t.id="ax-update-banner";t.style.cssText="position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:10000;padding:8px 16px;border-radius:20px;background:linear-gradient(135deg,var(--ax-gold),#e8b830);color:#000;font-weight:700;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;animation:axSlideDown .3s";t.innerHTML='🔄 Mise a jour auto dans 3s...';document.body.appendChild(t);/* Auto-skip + reload apres 3s (laisse voir la banner puis charge v+1) */try{if(nw.postMessage)nw.postMessage("skipWaiting");}catch(_){}setTimeout(function(){location.reload();},3000);}});});/* v12.186 Kevin: auto-refresh aggressif (60s + visibility + focus) */setInterval(function(){try{reg.update();}catch(_){}},60000);document.addEventListener("visibilitychange",function(){if(!document.hidden){try{reg.update();}catch(_){}}});window.addEventListener("focus",function(){try{reg.update();}catch(_){}});}).catch(function(e){console.warn("SW:",e);});/* Detect controller change (ex via postMessage skipWaiting) -> reload auto */navigator.serviceWorker.addEventListener("controllerchange",function(){if(!window._axReloading){window._axReloading=true;location.reload();}});}document.addEventListener("visibilitychange",function(){if(!document.hidden&&K.user)touchSession();});try{_axNightlyBackupCheck();}catch(_){}try{axDailyBackupCheck();}catch(_){}try{_globalIntervals.push(setInterval(_agentBackupWatch,3600000));setTimeout(_agentBackupWatch,60000);}catch(_){}try{_startSentinels();}catch(_){}try{axAutoSeedKB();}catch(_){}if(navigator.onLine){try{var _hadKey=!!_getApiKey();_getApiKeyAsync().then(function(k){if(k&&!_hadKey){toast("Cle API recuperee depuis Firebase","ok");try{dc();}catch(_){}try{axJournalEntry&&axJournalEntry("apex-ai","API key recovered","getApiKey empty au boot","fetch direct Firebase","cle restauree depuis ax_shared_api_key","Toujours fetch Firebase si cle vide + online avant de dire cle manquante");}catch(_){}}else if(!k&&!_hadKey){try{axJournalEntry&&axJournalEntry("apex-ai","API key still missing","axInit boot","fetch Firebase","vide dans les 2 sources","Kevin doit entrer cle dans Reglages OU verifier Firebase path /apex/ax_shared_api_key");}catch(_){}}});}catch(_){}}}
 function axAutoSeedKB(){
   try{
     if(!axIsAdmin())return;
