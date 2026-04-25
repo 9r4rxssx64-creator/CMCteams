@@ -68,6 +68,84 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 💾 RÈGLE PERMANENTE — RIEN PERDRE + SYNTHÈSE + SAUVEGARDE TEMPS RÉEL (Kevin 2026-04-25, ABSOLUE)
+
+> **"Récupère les infos partout (chat, questions IA, etc.). Enrichis et donnes vue admin dans fiches. Synthèse mise à jour régulièrement automatiquement. À chaque nouvelle conversation, enrichir banque d'infos. Agents dédiés avec outils experts surveillent que rien ne passe à travers. Sauvegarder temps réel, rien perdre. Toujours s'en rappeler, s'en servir, s'améliorer."**
+
+### 1. Sources d'extraction permanentes (en plus de chat IA)
+
+À monitorer en continu :
+- Messages chat (user → IA, IA → user) Apex + CMCteams
+- Questions à l'IA (input texte)
+- Documents uploadés (PDF, photos, scans OCR)
+- Email signature (si emails envoyés)
+- Voice transcripts (STT speech-to-text)
+- Notes admin (cmc_audit, ax_audit)
+- Commentaires planning
+- Réponses formulaires
+
+### 2. Synthèse profil auto (`axGenerateProfileSynthesis`)
+
+À chaque enrichissement majeur (3+ nouveaux faits) :
+- Génère un résumé 5-10 lignes en langage naturel
+- "Kevin, 35 ans, habite Monaco. Travaille au CMC. Marié, 2 enfants. Allergique aux fruits de mer. Aime voyager au Maroc, joue au tennis le dimanche."
+- Stocke dans `ax_profile_synthesis_<userId>` (FB_FIX)
+- Update toutes les 24h via cron
+- Si IA a accès → l'IA peut citer la synthèse pour mieux personnaliser
+
+### 3. Vue admin "🗂 Banque d'infos clients/employés"
+
+`vKnowledgeBank()` ou similaire dans Apex + CMCteams :
+- Liste tous les profils avec score complétude
+- Pour chaque : avatar, nom, synthèse 3 lignes, date dernière maj, lien fiche complète
+- Search bar par nom / email / mot-clé
+- Filter par : score complétude / dernière interaction / tag custom
+- Bouton "🤖 Briefing IA pour cette personne" → IA génère mémo avant rendez-vous
+
+### 4. Sentinelle `data-leak-watch` (rien ne passe à travers)
+
+Audite chaque heure :
+- Messages chat des 24h dernières
+- Pour chaque, vérifier si `_enrichProfileFromMessage` a tourné
+- Si pas → relancer l'extraction sur ce message
+- Si erreur → log + escalade
+- Backup quotidien de tous les profils enrichis dans Firebase + IndexedDB
+
+### 5. Sauvegarde temps réel multi-niveau
+
+Pour chaque modification de profil :
+1. Écriture localStorage immédiate
+2. Push Firebase (FB_FIX synced)
+3. Backup IndexedDB (shadow copy)
+4. Audit log avec horodatage milliseconde
+5. Si offline → queue puis flush online
+
+### 6. Mémoire intégrée à l'IA
+
+Le system prompt Apex IA + CMCteams IA inclut maintenant :
+- Résumé profil de l'utilisateur courant (`axGetCurrentProfileSummary`)
+- Top 10 faits les plus récents
+- Préférences connues
+- Évite de redemander des infos déjà connues
+
+### 7. "Rien perdre" — triple redondance
+
+- Local (localStorage)
+- Cloud (Firebase)
+- Backup quotidien (Firebase ax_backup_<date>)
+- Auto-restore si une couche perdue
+
+### 8. Sentinelle `profile-completeness-watch`
+
+Tourne 1×/jour :
+- Identifie profils <50% remplis
+- Génère 3 questions naturelles à poser au prochain chat
+- Push notif admin si profil employé critique manque infos
+
+S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
+
+---
+
 ## 🧠 RÈGLE PERMANENTE — ENRICHISSEMENT PROFILS CONTINU (Kevin 2026-04-25, ABSOLUE)
 
 > **"Toutes mes données doivent déjà être intégrées pendant les mises à jour. Quand tu apprends quelque chose, tu dois mettre à jour dans toutes mes fiches perso admin. Tu accumules des informations pour moi comme pour tout le monde au fur et à mesure des discussions. Peut-être quand toi tu poses des questions un détournées pour apprendre encore plus de choses sur chaque client, chaque employé. Tu as accès aux dossiers officiels, photos, réseaux sociaux. Fournis-toi et recherche un maximum de données pour être plus compétente."**
