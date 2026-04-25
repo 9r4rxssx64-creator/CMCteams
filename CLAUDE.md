@@ -146,6 +146,61 @@ S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
 
 ---
 
+## 🧭 RÈGLE PERMANENTE — IA NAVIGUE ET REMPLIT (Kevin 2026-04-25, ABSOLUE)
+
+> **"Je peux dire à l'IA, montre-moi où est-ce que je colle ou remplir ça, donne-moi la vue, amène-moi là, il comprend direct et il exécute. Et n'oublie pas d'intégrer au fur et à mesure toutes les infos directement en autonomie au lieu de me demander."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. L'IA comprend les commandes navigation
+
+Mots-clés que l'IA Apex (et CMCteams) doit reconnaître :
+- "montre-moi où / amène-moi à / vais à X" → navigue à la vue + scroll au champ
+- "où je colle X / où je mets X" → ouvre le bon champ + zoom
+- "remplis X avec Y" → fait l'autofill direct (1 confirmation)
+- "fais-le / vas-y" → exécute action proposée
+
+### 2. Tool IA `axNavigateTo(target, [field])`
+
+Disponible dans le system prompt IA :
+```js
+axNavigateTo("coffre.gemini") → ouvre Coffre, scroll à ax_gemini_key, highlight 2s
+axNavigateTo("settings.notifications") → ouvre Réglages section notifications
+axNavigateTo("monitoring") → ouvre vMonitoringPro
+```
+
+Mappings explicites pour éviter les ambiguïtés :
+- `coffre.gemini` `coffre.openai` `coffre.paypal` etc.
+- `settings.theme` `settings.voice` `settings.notifications`
+- `monitoring` `sentinelles` `backup` `alertes`
+
+### 3. Tool IA `axAutofillField(key, value, confirm)`
+
+Quand l'IA détecte une instruction "remplis X avec Y" :
+- Confirme à l'admin (modal "Remplir X avec Y ? [Oui/Non]")
+- Si oui → écrit dans Coffre + sync Firebase
+- Toast vert "✅ X enregistré"
+
+### 4. Auto-intégration depuis sources
+
+Pendant les chats, l'IA doit AUTONOMEMENT :
+- Détecter des données utiles ("mon email est X@Y")
+- Demander confirmation discrète ("Je note ton email X@Y dans ta fiche ?")
+- Si oui → autofill + log enrichment
+
+### 5. Pas demander à Kevin si je peux faire moi-même
+
+Avant chaque "tu peux faire X dans tel endroit" :
+- Vérifier si IA peut le faire via tool/API
+- Si oui → faire + confirmer "✅ Fait pour toi"
+- Si non → guider visuellement avec navigateAndHighlight
+
+### 6. Cross-app
+
+Si Apex IA détecte info pertinente CMCteams (ex: nouvel employé mentionné), propage automatiquement via `ax_lessons_learned`.
+
+---
+
 ## 🧠 RÈGLE PERMANENTE — ENRICHISSEMENT PROFILS CONTINU (Kevin 2026-04-25, ABSOLUE)
 
 > **"Toutes mes données doivent déjà être intégrées pendant les mises à jour. Quand tu apprends quelque chose, tu dois mettre à jour dans toutes mes fiches perso admin. Tu accumules des informations pour moi comme pour tout le monde au fur et à mesure des discussions. Peut-être quand toi tu poses des questions un détournées pour apprendre encore plus de choses sur chaque client, chaque employé. Tu as accès aux dossiers officiels, photos, réseaux sociaux. Fournis-toi et recherche un maximum de données pour être plus compétente."**
