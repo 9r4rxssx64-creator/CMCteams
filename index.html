@@ -24722,17 +24722,57 @@ function _handleCheckinParam(){
   try{
     var usp=new URLSearchParams(window.location.search);
     var tid=usp.get("checkin");
-    if(!tid||!A.user)return;
+    if(!tid)return;
+    var casino=usp.get("c")||"";
+    if(!A.user){
+      try{sessionStorage.setItem("cmc_pending_checkin",JSON.stringify({tid:tid,c:casino,ts:Date.now()}));}catch(_){}
+      return;
+    }
     if(!lg("cmc_qr_checkin_enabled",false)){
       toast("\u26a0 Check-in QR d\u00e9sactiv\u00e9 \u2014 activer dans Dashboard pit","warn");
       history.replaceState(null,"",window.location.pathname);
       return;
     }
     history.replaceState(null,"",window.location.pathname);
-    setTimeout(function(){
-      if(typeof checkInMeAtTable==="function")checkInMeAtTable(tid);
-    },800);
+    cmcQRCheckin(tid,casino);
   }catch(e){console.warn("_handleCheckinParam",e);}
+}
+// v9.492 \u2014 Execute le check-in apres validation (feedback visuel + vibration haptique)
+function cmcQRCheckin(tableId,casino){
+  if(!tableId||!A.user)return;
+  var tables=(typeof getTablesCoords==="function")?getTablesCoords():{};
+  var t=tables[tableId];
+  if(!t){
+    toast("\u26a0\ufe0f Table inconnue : "+esc(tableId),"warn");
+    return;
+  }
+  if(casino&&t.casino&&String(t.casino).toLowerCase()!==String(casino).toLowerCase()){
+    toast("\u26a0\ufe0f Casino incoherent ("+esc(casino)+" vs "+esc(t.casino)+")","warn");
+    return;
+  }
+  setTimeout(function(){
+    if(typeof checkInMeAtTable==="function")checkInMeAtTable(tableId);
+  },400);
+  var jeuLbl=(typeof _JEU_LABEL!=="undefined"&&_JEU_LABEL[t.jeu])||t.jeu||"";
+  toast("\u2705 "+esc(t.name||tableId)+(jeuLbl?" \u00b7 "+esc(jeuLbl):""));
+  try{if(navigator.vibrate)navigator.vibrate([100,50,100]);}catch(_){}
+}
+// v9.492 \u2014 Reprend un check-in en attente apres login (sessionStorage handover)
+function _cmcResumePendingCheckin(){
+  try{
+    var raw=sessionStorage.getItem("cmc_pending_checkin");
+    if(!raw||!A.user)return;
+    sessionStorage.removeItem("cmc_pending_checkin");
+    var data;
+    try{data=JSON.parse(raw);}catch(_){data={tid:raw};}
+    if(!data||!data.tid)return;
+    if(data.ts&&Date.now()-data.ts>600000)return; // TTL 10 min
+    if(!lg("cmc_qr_checkin_enabled",false)){
+      toast("\u26a0 Check-in QR d\u00e9sactiv\u00e9 par l'admin","warn");
+      return;
+    }
+    cmcQRCheckin(data.tid,data.c||"");
+  }catch(e){console.warn("_cmcResumePendingCheckin",e);}
 }
 // v9.317 — Toggle QR check-in (opt-in admin quand QR physiques installés)
 function qrCheckinToggle(){
