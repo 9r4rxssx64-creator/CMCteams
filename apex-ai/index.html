@@ -53,7 +53,7 @@
 :root{
 --ax-bg:linear-gradient(145deg,#080c1a 0%,#0f1528 40%,#121830 70%,#0a0e1e 100%);--ax-bg-flat:#0a0e1e;--ax-bg2:#161c38;--ax-bg-card:rgba(22,28,56,.82);
 --ax-bg-input:rgba(255,255,255,.08);--ax-gold:#e8b830;--ax-gold-bright:#ffd860;
---ax-gold-soft:rgba(232,184,48,.14);--ax-text:#f0f0ff;--ax-text-dim:#9498c0;
+--ax-gold-soft:rgba(232,184,48,.14);--ax-text:#f0f0ff;--ax-text-dim:#b0b4d8;
 --ax-blue:#5aa8ff;--ax-green:#4cd080;--ax-red:#ff5858;--ax-purple:#a878ff;--ax-orange:#ff8838;--ax-cyan:#38d8c8;
 --ax-border:rgba(232,184,48,.12);--ax-glass:rgba(16,22,48,.82);
 --ax-blur:20px;--ax-r:14px;--ax-r-sm:10px;
@@ -68,6 +68,11 @@
 --ax-shadow-glow:0 0 20px rgba(232,184,48,.08);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* v12.254 — A11y WCAG 2.1 AA : prefers-reduced-motion respect global */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* v12.254 — A11y skip-link "Aller au contenu" */
+.ax-skip-link{position:absolute;left:-9999px;top:0;z-index:99999}
+.ax-skip-link:focus{left:8px;top:8px;background:var(--ax-gold);color:#000;padding:12px 16px;border-radius:8px;font-weight:700;text-decoration:none;outline:3px solid #fff;outline-offset:2px}
 html,body{height:100%;width:100%;overflow:hidden;background:var(--ax-bg-flat);color:var(--ax-text);font-family:var(--ax-font);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -391,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.253",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.254",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -1060,7 +1065,7 @@ function axWakeWordRemoveCustom(word){
   word=String(word||"").trim().toLowerCase();
   var list=axWakeWordList();
   var idx=list.indexOf(word);
-  if(idx<0){toast("Introuvable","warn");return false;}
+  if(idx<0){toast(axT("err.notfound"),"warn");return false;}
   list.splice(idx,1);
   ls("ax_wake_word_words",list);
   toast("✅ Mot retire","ok");
