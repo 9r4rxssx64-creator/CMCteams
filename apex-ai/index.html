@@ -382,7 +382,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.228",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.229",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -4283,13 +4283,23 @@ function _getToolDefs(){return[{name:"kb_search",description:"Chercher dans la m
 {name:"github_write_file",description:"Ecrire/modifier un fichier du repo et creer une PR (admin uniquement, nécessite ax_github_pat dans Vault). Ne commit JAMAIS directement sur main - cree toujours une branche claude/apex-auto-<timestamp> + PR que Kevin doit merger.",input_schema:{type:"object",properties:{path:{type:"string"},content:{type:"string",description:"Nouveau contenu complet du fichier"},message:{type:"string",description:"Message de commit (ex: 'v12.71: fix bug X')"},reason:{type:"string",description:"Explication detaillee du changement pour Kevin"}},required:["path","content","message","reason"]}},
 /* v12.213 — IA navigation + autofill (Kevin 2026-04-25) */
 {name:"navigate_to",description:"Navigue vers une vue/champ specifique de l app et highlight le champ cible. Utilise quand le user dit 'montre-moi', 'amene-moi a', 'va a', 'ou je colle X'. Cibles: coffre.{gemini,openai,claude,paypal,revolut,btc,eth,iban,cloudflare,stripe,email,telegram,deepseek,mistral,groq,perplexity,github}, settings.{theme,voice,notifications,cloudflare}, monitoring, sentinelles, backup, alertes, doublons, banque, stats, clients.",input_schema:{type:"object",properties:{target:{type:"string",description:"ex: coffre.gemini, monitoring, alertes, settings.theme"}},required:["target"]}},
-{name:"autofill_field",description:"Remplit automatiquement un champ du Coffre (avec confirmation user). Utilise quand le user dit 'remplis X avec Y', 'note X dans Coffre', 'mets cette cle dans Y'. La cle doit etre une cle ax_* valide (ex: ax_gemini_key, ax_paypal_me, ax_iban).",input_schema:{type:"object",properties:{key:{type:"string",description:"Cle ax_* (ex: ax_gemini_key)"},value:{type:"string",description:"Valeur a stocker"}},required:["key","value"]}}];}
+{name:"autofill_field",description:"Remplit automatiquement un champ du Coffre (avec confirmation user). Utilise quand le user dit 'remplis X avec Y', 'note X dans Coffre', 'mets cette cle dans Y'. La cle doit etre une cle ax_* valide (ex: ax_gemini_key, ax_paypal_me, ax_iban).",input_schema:{type:"object",properties:{key:{type:"string",description:"Cle ax_* (ex: ax_gemini_key)"},value:{type:"string",description:"Valeur a stocker"}},required:["key","value"]}},
+{name:"convert",description:"Convertit une valeur entre unites (longueur, poids, volume, temperature, surface, vitesse, pression, energie, temps). Ex: m->ft, kg->lb, C->F, km/h->mph",input_schema:{type:"object",properties:{value:{type:"number"},from:{type:"string",description:"Unite source (m,cm,mm,km,in,ft,yd,mi,nm,g,kg,oz,lb,t,ml,l,m3,gal,pt,C,F,K,m2,ha,acre,ft2,kmh,mph,kn,ms,Pa,hPa,bar,psi,J,kJ,kWh,cal,s,min,h,j,an)"},to:{type:"string",description:"Unite cible"}},required:["value","from","to"]}},
+{name:"calc_construction",description:"Calculs batiment: beton (volume_m3->ciment+sable+gravier+eau), peinture (surface_m2,couches->litres), chaux (surface_m2,type->kg), carrelage (surface_m2,format_cm->nb+colle+joints), placo (surface_m2->plaques+vis+bandes), surface_pente (longueur,largeur,pente_deg->m2 reels)",input_schema:{type:"object",properties:{type:{type:"string",enum:["beton","peinture","chaux","carrelage","placo","surface_pente"]},params:{type:"object"}},required:["type","params"]}},
+{name:"lune",description:"Calcule la phase de la lune pour une date (jardinage, peche, agriculture biodynamique). Retourne phase, % illumine, montante/descendante, conseil jardinage",input_schema:{type:"object",properties:{date:{type:"string",description:"Date ISO YYYY-MM-DD (defaut aujourd hui)"}}}},
+{name:"delai",description:"Calcule date apres N unites (jours, semaines, mois, annees) ou difference entre 2 dates ou jours feries. Ex: 'delai 15 jours apres 2026-05-01', 'jours entre 2026-01-01 et 2026-06-15', 'paques 2026', 'feries france 2026'",input_schema:{type:"object",properties:{op:{type:"string",enum:["add","diff","easter","holidays","businessdays","countdown"]},date:{type:"string"},date2:{type:"string"},amount:{type:"number"},unit:{type:"string",enum:["days","weeks","months","years"]},country:{type:"string",enum:["FR","MC","CH"]}},required:["op"]}},
+{name:"meteo",description:"Meteo gratuite (Open-Meteo, sans cle API) pour n importe quelle ville. Retourne meteo actuelle + prevision 7 jours.",input_schema:{type:"object",properties:{city:{type:"string",description:"Ville (ex: Monaco, Paris, Geneve)"}},required:["city"]}}];}
 
 function axExecuteTool(name,input){switch(name){case"kb_search":var results=kbSearch(input.query);return results.length?results.map(function(f){return f.text;}).join("\n"):"Aucun resultat.";case"kb_remember":kbAdd(input.text,"tool_use",input.type||"fact");return"Memorise: "+input.text;case"calculate":return _safeCalc(input.expression);case"finance_calculate":return _finCalcTool(input.type,input.params);case"code_execute":if(input.language==="python")return axRunPython(input.code);return axRunCode(input.code);case"search_conversations":var r=searchConversations(input.query);return r.length?JSON.stringify(r.slice(0,5)):"Aucun resultat.";case"get_datetime":return JSON.stringify({date:new Date().toLocaleDateString("fr-FR"),time:new Date().toLocaleTimeString("fr-FR"),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,timestamp:now()});case"set_reminder":var rem={id:uid(),text:input.text,triggerAt:now()+input.delay_minutes*60000,done:false};var rems=lg("ax_reminders",[]);rems.push(rem);ls("ax_reminders",rems);setTimeout(function(){_fireReminder(rem.id);},input.delay_minutes*60000);return"Rappel programme dans "+input.delay_minutes+" minutes (persistant).";case"device_status":return JSON.stringify({online:navigator.onLine,userAgent:navigator.userAgent,language:navigator.language,storage:_getStorageUsed(),screen:screen.width+"x"+screen.height});case"web_search":return"(recherche web deleguee a Claude)";case"finance_portfolio":return _finPortfolioTool(input);case"generate_image":var imgUrl=axGenerateImage(input.prompt,input.width,input.height);return"Image generee avec succes. URL: "+imgUrl;case"generate_video":axGenerateVideo(input.prompt,{duration:input.duration_sec,ratio:input.aspect_ratio}).then(function(u){if(u)toast("Video prete","ok");});return"Generation video lancee (resultat dans le chat sous ~30s).";case"generate_music":axGenerateMusic(input.prompt,input.duration_sec).then(function(u){if(u)toast("Musique prete","ok");});return"Generation musique lancee (resultat dans le chat sous ~20s).";case"app_action":return _execAppAction(input.action,input.params||{});case"analyze_and_act":var result="Analyse: "+input.analysis;if(input.auto_execute&&input.suggested_actions){input.suggested_actions.forEach(function(a){result+="\nAction: "+_execAppAction(a,{});});}return result;case"finance_technical":var prices=input.prices||[];if(!prices.length)return"Fournissez un tableau de prix.";return JSON.stringify({sma20:finSMA(prices,20),sma50:finSMA(prices,50),ema12:finEMA(prices,12),ema26:finEMA(prices,26),trend:parseFloat(finEMA(prices,12))>parseFloat(finEMA(prices,26))?"haussiere":"baissiere"});case"github_read_file":return axGithubReadFile(input.path,input.branch||"main");
 case"github_list_files":return axGithubListFiles(input.path||"",input.branch||"main");
 case"github_write_file":if(!axIsAdmin())return"Refuse: admin uniquement (axIsAdmin=false)";return axGithubWriteFile(input.path,input.content,input.message,input.reason);
 case"navigate_to":var navOk=axNavigateTo(input.target);return navOk?("Navigation OK vers "+input.target):("Cible inconnue: "+input.target+". Cibles valides: coffre.gemini, coffre.openai, coffre.paypal, coffre.iban, monitoring, sentinelles, alertes, backup, doublons, banque, stats, settings.theme, settings.voice.");
 case"autofill_field":var afOk=axAutofillField(input.key,input.value);return afOk?("Champ "+input.key+" rempli avec succes (auto-test lance)"):("Refus user ou erreur sur "+input.key);
+case"convert":try{var _r=axCalcConvert(input.value,input.from,input.to);return _r==null?"Conversion impossible ("+input.from+"->"+input.to+")":(input.value+" "+input.from+" = "+_r+" "+input.to);}catch(_e){return"Erreur conversion: "+(_e.message||_e);}
+case"calc_construction":try{return JSON.stringify(axCalcConstruction(input.type,input.params||{}));}catch(_e){return"Erreur calcul: "+(_e.message||_e);}
+case"lune":try{return JSON.stringify(axCalcLune(input.date?new Date(input.date):new Date()));}catch(_e){return"Erreur lune: "+(_e.message||_e);}
+case"delai":try{return JSON.stringify(axDateCalc(input));}catch(_e){return"Erreur date: "+(_e.message||_e);}
+case"meteo":try{axMeteo(input.city).then(function(d){if(d){var msg="Meteo "+d.city+" ("+d.country+"): "+d.current.temperature_2m+"°C, vent "+d.current.wind_speed_10m+"km/h";if(typeof toast==="function")toast(msg,"info");K.messages.push({role:"assistant",content:msg+"\n\nPrevision 7j: "+d.forecast.temperature_2m_max.map(function(t,i){return d.forecast.time[i]+": "+d.forecast.temperature_2m_min[i]+"->"+t+"°C";}).join("\n"),ts:now()});_saveMsgs();dc();}});return"Recherche meteo "+input.city+" en cours (resultat dans le chat).";}catch(_e){return"Erreur meteo: "+(_e.message||_e);}
 default:return"Outil inconnu: "+name;}}
 // v12.102 — Backend pro (FastAPI) : si ax_backend_url configure, route via backend
 // Resout Safari PWA CORS + expose moins de secrets client + fallback multi-provider
@@ -8911,6 +8921,237 @@ function axGetKevinProfile(){
 }
 // Auto-init au boot si admin
 try{ setTimeout(function(){if(typeof axIsAdmin==="function"&&axIsAdmin())axEnsureKevinAdminProfile();},2500); }catch(_){}
+
+/* ===== v12.229 — Pack pro: conversions + construction + lune + meteo + dates pro ===== */
+/* Conversions universelles (longueur, poids, volume, temperature, surface, vitesse, pression, energie, temps) */
+function axCalcConvert(value,from,to){
+  if(typeof value!=="number"||isNaN(value))return null;
+  /* Temperature : conversion non-lineaire */
+  var temps={C:1,F:1,K:1};
+  if(temps[from]&&temps[to]){
+    var c;
+    if(from==="C")c=value;
+    else if(from==="F")c=(value-32)*5/9;
+    else if(from==="K")c=value-273.15;
+    else return null;
+    if(to==="C")return Math.round(c*100)/100;
+    if(to==="F")return Math.round((c*9/5+32)*100)/100;
+    if(to==="K")return Math.round((c+273.15)*100)/100;
+    return null;
+  }
+  /* Tables de facteurs vers unite SI */
+  var tables={
+    longueur:{m:1,cm:0.01,mm:0.001,km:1000,"in":0.0254,ft:0.3048,yd:0.9144,mi:1609.344,nm:1852},
+    poids:{g:0.001,kg:1,oz:0.0283495,lb:0.453592,t:1000},
+    volume:{ml:0.001,l:1,m3:1000,gal:3.78541,pt:0.473176},
+    surface:{m2:1,ha:10000,acre:4046.86,ft2:0.092903},
+    vitesse:{kmh:1,mph:1.60934,kn:1.852,ms:3.6},
+    pression:{Pa:1,hPa:100,bar:100000,psi:6894.76},
+    energie:{J:1,kJ:1000,kWh:3600000,cal:4.184},
+    temps:{s:1,min:60,h:3600,j:86400,an:31536000}
+  };
+  for(var cat in tables){
+    if(tables[cat][from]!=null&&tables[cat][to]!=null){
+      var inSI=value*tables[cat][from];
+      var out=inSI/tables[cat][to];
+      return Math.round(out*10000)/10000;
+    }
+  }
+  return null;
+}
+
+/* Calculs batiment */
+function axCalcConstruction(type,params){
+  params=params||{};
+  if(type==="beton"){
+    var v=Number(params.volume_m3)||0;
+    /* Ratio standard 350kg ciment/m3, 1:2:3 ciment:sable:gravier */
+    return{volume_m3:v,ciment_kg:Math.round(v*350),sable_m3:Math.round(v*0.42*100)/100,gravier_m3:Math.round(v*0.84*100)/100,eau_l:Math.round(v*175),sacs_ciment_35kg:Math.ceil(v*350/35)};
+  }
+  if(type==="peinture"){
+    var s=Number(params.surface_m2)||0;
+    var couches=Number(params.couches)||2;
+    /* Rendement 10m2/L, * couches */
+    var litres=Math.round(s*couches/10*100)/100;
+    return{surface_m2:s,couches:couches,litres_total:litres,pots_5L:Math.ceil(litres/5)};
+  }
+  if(type==="chaux"){
+    var s2=Number(params.surface_m2)||0;
+    var typeC=params.type||"aerienne";
+    /* Aerienne 1.5kg/m2, hydraulique 2.5kg/m2 par couche */
+    var rdt=typeC==="hydraulique"?2.5:1.5;
+    return{surface_m2:s2,type:typeC,kg_total:Math.round(s2*rdt),sacs_25kg:Math.ceil(s2*rdt/25)};
+  }
+  if(type==="carrelage"){
+    var s3=Number(params.surface_m2)||0;
+    var fmt=Number(params.format_cm)||30;
+    var nbCarreaux=Math.ceil(s3/((fmt*fmt)/10000)*1.1);/* +10% chutes */
+    return{surface_m2:s3,format_cm:fmt+"x"+fmt,nb_carreaux:nbCarreaux,colle_kg:Math.ceil(s3*4),joints_kg:Math.ceil(s3*0.5),marge_chutes_pct:10};
+  }
+  if(type==="placo"){
+    var s4=Number(params.surface_m2)||0;
+    /* Plaque 2.5x1.2 = 3m2 */
+    var plaques=Math.ceil(s4/3*1.05);
+    return{surface_m2:s4,plaques_BA13:plaques,vis:plaques*30,bandes_ml:Math.ceil(s4*1.5),enduit_kg:Math.ceil(s4*1.2)};
+  }
+  if(type==="surface_pente"){
+    var l=Number(params.longueur)||0;
+    var w=Number(params.largeur)||0;
+    var p=Number(params.pente_deg)||0;
+    var rad=p*Math.PI/180;
+    var surfacePlan=l*w;
+    var surfaceReelle=surfacePlan/Math.cos(rad);
+    return{longueur:l,largeur:w,pente_deg:p,surface_plane_m2:Math.round(surfacePlan*100)/100,surface_reelle_m2:Math.round(surfaceReelle*100)/100};
+  }
+  return{erreur:"Type inconnu: "+type+". Types valides: beton, peinture, chaux, carrelage, placo, surface_pente"};
+}
+
+/* Phase lunaire (algorithme Conway simplifie) */
+function axCalcLune(date){
+  var d=date instanceof Date?date:new Date();
+  var year=d.getFullYear(),month=d.getMonth()+1,day=d.getDate();
+  /* Conway algo */
+  var r=year%100;
+  r%=19;
+  if(r>9)r-=19;
+  r=(r*11)%30+(month<3?month+2:month)+day;
+  if(year<2000)r-=4;else r-=8.3;
+  r=((r%30)+30)%30;
+  /* r=0: nouvelle, 7.5: premier quartier, 15: pleine, 22.5: dernier quartier */
+  var phase,emoji;
+  if(r<1.85)phase="Nouvelle lune",emoji="🌑";
+  else if(r<5.5)phase="Premier croissant",emoji="🌒";
+  else if(r<9.2)phase="Premier quartier",emoji="🌓";
+  else if(r<12.9)phase="Lune gibbeuse croissante",emoji="🌔";
+  else if(r<16.6)phase="Pleine lune",emoji="🌕";
+  else if(r<20.3)phase="Lune gibbeuse decroissante",emoji="🌖";
+  else if(r<24)phase="Dernier quartier",emoji="🌗";
+  else if(r<27.7)phase="Dernier croissant",emoji="🌘";
+  else phase="Nouvelle lune",emoji="🌑";
+  var illumination=Math.round((1-Math.cos(2*Math.PI*r/29.53))*50);
+  var montante=r<14.77;
+  var conseil=montante?"Lune montante: semis de feuilles, greffes, recolte fruits/legumes au-dessus du sol":"Lune descendante: travaux racines, taille, recolte legumes-racines, plantations";
+  return{date:d.toISOString().slice(0,10),phase:phase,emoji:emoji,age_jours:Math.round(r*10)/10,illumination_pct:illumination,montante:montante,conseil_jardinage:conseil};
+}
+
+/* Calculs date/heure pro (delai, difference, paques, jours feries) */
+function _easterDate(year){
+  /* Algorithme Meeus/Jones/Butcher */
+  var a=year%19,b=Math.floor(year/100),c=year%100;
+  var d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+  var h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+  var l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  var month=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
+  return new Date(year,month-1,day);
+}
+function _holidaysFor(year,country){
+  var list=[];
+  function add(m,d,n){list.push({date:year+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"),name:n});}
+  add(1,1,"Jour de l'An");
+  add(5,1,"Fete du Travail");
+  add(12,25,"Noel");
+  var easter=_easterDate(year);
+  var em=easter.getMonth()+1,ed=easter.getDate();
+  var lundiPaques=new Date(easter);lundiPaques.setDate(easter.getDate()+1);
+  add(lundiPaques.getMonth()+1,lundiPaques.getDate(),"Lundi de Paques");
+  var ascension=new Date(easter);ascension.setDate(easter.getDate()+39);
+  add(ascension.getMonth()+1,ascension.getDate(),"Ascension");
+  var pentecote=new Date(easter);pentecote.setDate(easter.getDate()+50);
+  add(pentecote.getMonth()+1,pentecote.getDate(),"Lundi de Pentecote");
+  if(country==="FR"){add(5,8,"Victoire 1945");add(7,14,"Fete Nationale");add(8,15,"Assomption");add(11,1,"Toussaint");add(11,11,"Armistice 1918");}
+  else if(country==="MC"){add(1,27,"Sainte Devote");add(8,15,"Assomption");add(11,1,"Toussaint");add(11,19,"Fete du Prince");add(12,8,"Immaculee Conception");}
+  else if(country==="CH"){add(8,1,"Fete Nationale Suisse");add(12,26,"Saint Etienne");}
+  return list.sort(function(a,b){return a.date.localeCompare(b.date);});
+}
+function axDateCalc(input){
+  input=input||{};
+  if(input.op==="add"){
+    var base=new Date(input.date||new Date());
+    var amt=Number(input.amount)||0;
+    var unit=input.unit||"days";
+    var r=new Date(base);
+    if(unit==="days")r.setDate(r.getDate()+amt);
+    else if(unit==="weeks")r.setDate(r.getDate()+amt*7);
+    else if(unit==="months")r.setMonth(r.getMonth()+amt);
+    else if(unit==="years")r.setFullYear(r.getFullYear()+amt);
+    return{base:base.toISOString().slice(0,10),amount:amt,unit:unit,result:r.toISOString().slice(0,10),weekday:r.toLocaleDateString("fr-FR",{weekday:"long"})};
+  }
+  if(input.op==="diff"){
+    var d1=new Date(input.date),d2=new Date(input.date2);
+    var ms=Math.abs(d2-d1);
+    var days=Math.floor(ms/86400000);
+    return{date1:input.date,date2:input.date2,jours:days,semaines:Math.floor(days/7),mois_approx:Math.floor(days/30.44),annees_approx:Math.floor(days/365.25)};
+  }
+  if(input.op==="easter"){
+    var y=Number(input.date)||new Date().getFullYear();
+    var e=_easterDate(y);
+    return{annee:y,paques:e.toISOString().slice(0,10),jour:e.toLocaleDateString("fr-FR",{weekday:"long"})};
+  }
+  if(input.op==="holidays"){
+    var yh=Number(input.date)||new Date().getFullYear();
+    var ctry=input.country||"FR";
+    return{annee:yh,pays:ctry,jours_feries:_holidaysFor(yh,ctry)};
+  }
+  if(input.op==="businessdays"){
+    var bd1=new Date(input.date),bd2=new Date(input.date2);
+    var bdc=input.country||"FR";
+    var fy=_holidaysFor(bd1.getFullYear(),bdc).concat(_holidaysFor(bd2.getFullYear(),bdc));
+    var fset={};fy.forEach(function(h){fset[h.date]=1;});
+    var count=0,cur=new Date(bd1);
+    while(cur<=bd2){
+      var iso=cur.toISOString().slice(0,10);
+      var dow=cur.getDay();
+      if(dow!==0&&dow!==6&&!fset[iso])count++;
+      cur.setDate(cur.getDate()+1);
+    }
+    return{date1:input.date,date2:input.date2,jours_ouvres:count,pays:bdc};
+  }
+  if(input.op==="countdown"){
+    var target=new Date(input.date);
+    var nowD=new Date();
+    var diff=target-nowD;
+    var days2=Math.floor(diff/86400000);
+    return{cible:input.date,jours_restants:days2,passe:diff<0};
+  }
+  return{erreur:"Operation inconnue. Operations: add, diff, easter, holidays, businessdays, countdown"};
+}
+
+/* Meteo gratuite via Open-Meteo (sans cle API) */
+async function axMeteo(city){
+  if(!city)return null;
+  try{
+    var geo=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(city)+"&count=1&language=fr").then(function(r){return r.json();});
+    if(!geo||!geo.results||!geo.results[0])return null;
+    var lat=geo.results[0].latitude,lon=geo.results[0].longitude;
+    var w=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&timezone=auto&forecast_days=7").then(function(r){return r.json();});
+    return{city:geo.results[0].name,country:geo.results[0].country||"",lat:lat,lon:lon,current:w.current,forecast:w.daily};
+  }catch(e){return{erreur:"Meteo indisponible: "+(e.message||e)};}
+}
+
+/* Vue admin: Hub des calculatrices */
+function vCalculatorsHub(){
+  if(!axIsAdmin&&!axIsAdmin())return'<div class="card"><h3>Hub Calculatrices</h3><p>Reserve admin</p></div>';
+  var ex=[
+    {ic:"📐",title:"Conversions",desc:"m -> ft, kg -> lb, °C -> °F, etc.",demo:"convert 100 km en mi",fn:"axCalcConvert(100,'km','mi')"},
+    {ic:"🏗️",title:"Beton",desc:"Volume m³ -> ciment + sable + gravier + eau",demo:"calc beton 5 m3",fn:"axCalcConstruction('beton',{volume_m3:5})"},
+    {ic:"🎨",title:"Peinture",desc:"Surface m² -> litres + nombre de pots",demo:"peinture 80 m2 sur 2 couches",fn:"axCalcConstruction('peinture',{surface_m2:80,couches:2})"},
+    {ic:"🧱",title:"Carrelage",desc:"Surface + format -> nb carreaux + colle + joints",demo:"carrelage 25 m2 format 30cm",fn:"axCalcConstruction('carrelage',{surface_m2:25,format_cm:30})"},
+    {ic:"🌙",title:"Phase Lune",desc:"Date -> phase + jardinage biodynamique",demo:"lune aujourd hui",fn:"axCalcLune(new Date())"},
+    {ic:"📅",title:"Dates Pro",desc:"Delais, Paques, jours feries, jours ouvres",demo:"15 jours apres 2026-05-01",fn:"axDateCalc({op:'add',date:'2026-05-01',amount:15,unit:'days'})"},
+    {ic:"⛅",title:"Meteo Gratuite",desc:"Meteo + previsions 7j (Open-Meteo, pas de cle)",demo:"meteo Monaco",fn:"axMeteo('Monaco').then(console.log)"}
+  ];
+  var html='<div class="card"><h3>🧮 Hub Calculatrices Pro</h3><p style="color:var(--ax-text-dim);margin:8px 0">Toutes accessibles directement via le chat IA. Demande naturellement.</p>';
+  ex.forEach(function(e){
+    html+='<div style="background:var(--ax-bg-elev,#1a1a2e);border:1px solid var(--ax-border,#333);border-radius:10px;padding:12px;margin:8px 0">';
+    html+='<div style="font-size:18px;font-weight:600">'+e.ic+' '+esc(e.title)+'</div>';
+    html+='<div style="color:var(--ax-text-dim);font-size:13px;margin:4px 0">'+esc(e.desc)+'</div>';
+    html+='<div style="font-size:12px;color:var(--ax-gold);margin:4px 0">Exemple chat: "<i>'+esc(e.demo)+'</i>"</div>';
+    html+='<button class="btn" style="min-height:44px;margin-top:6px" onclick="try{var r='+e.fn+';if(r&&r.then)r.then(function(x){alert(JSON.stringify(x,null,2));});else alert(JSON.stringify(r,null,2));}catch(e){alert(e.message);}">▶ Tester</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  return html;
+}
 
 </script>
 </body>
