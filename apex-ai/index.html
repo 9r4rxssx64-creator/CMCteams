@@ -6642,6 +6642,179 @@ document.addEventListener("click",function(ev){var el=ev.target.closest("[data-l
 
 document.addEventListener("click",function(ev){var el=ev.target.closest("[data-open-user-report]");if(el){window._axReportUid=el.getAttribute("data-open-user-report");sv("userreport");}});
 
+/* ============================================================ */
+/* v12.198 - PERFORMANCE PACK iPhone (Kevin: fluidite max)       */
+/* ============================================================ */
+
+/* 1) Override axTestAllCredentials en parallele (5 a la fois) */
+window.axTestAllCredentials=function(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return;
+  var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("ax_")===0&&FB_LOCAL.indexOf(k)<0&&k.indexOf("_status")!==k.length-7&&localStorage.getItem(k))keys.push(k);}
+  if(!keys.length){toast("Aucune cle a tester","warn");return;}
+  toast("Test "+keys.length+" cles en parallele x5","info");
+  var ok=0,ko=0,unk=0;
+  _axParallel(keys,function(k){return axTestCredential(k,true).then(function(r){if(r&&r.ok&&r.msg!=="CORS")ok++;else if(r&&(r.msg==="CORS"||r.msg==="saisi"))unk++;else ko++;return r;}).catch(function(){ko++;});},5).then(function(){toast(ok+" OK / "+unk+" non testables / "+ko+" KO","ok",{force:true});try{dc();}catch(_){}});
+};
+
+/* 2) Memo wrappers stats lourdes (TTL 30s) */
+(function(){
+  if(typeof axHealthScore==="function"&&!axHealthScore._axMemoed){
+    var _orig=axHealthScore;
+    window.axHealthScore=function(){var args=arguments;return _axMemo("axHealthScore",30000,function(){return _orig.apply(null,args);});};
+    window.axHealthScore._axMemoed=true;
+  }
+  if(typeof axCredStatus==="function"&&!axCredStatus._axMemoed){
+    var _origCS=axCredStatus;
+    window.axCredStatus=function(){var args=arguments;return _axMemo("axCredStatus",15000,function(){return _origCS.apply(null,args);});};
+    window.axCredStatus._axMemoed=true;
+  }
+})();
+
+/* 3) Sentinelle perf-watch : FPS + memory */
+function _axPerfSentinel(){
+  try{
+    if(typeof axIsAdmin!=="function"||!axIsAdmin())return;
+    _axMeasureFPS(2000,function(fps){
+      try{var mem=_axMemorySnapshot();
+        var log=lg("ax_perf_log",[]);
+        log.push({ts:Date.now(),fps:fps,view:K&&K.view,mem:mem});
+        if(log.length>100)log=log.slice(-100);
+        ls("ax_perf_log",log);
+        if(fps<30&&typeof _snLog==="function")_snLog("perf-watch","warn","FPS bas: "+fps+" view="+(K&&K.view));
+        if(mem&&mem.pct>85&&typeof _snLog==="function")_snLog("perf-watch","warn","Memoire JS "+mem.pct+"%");
+      }catch(_){}
+    });
+  }catch(_){}
+}
+try{if(typeof _globalIntervals!=="undefined"&&_globalIntervals&&_globalIntervals.push)_globalIntervals.push(setInterval(_axPerfSentinel,60000));}catch(_){}
+setTimeout(_axPerfSentinel,4000);
+
+/* 4) Vue admin Performance */
+function vPerformance(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">Admin requis</div></div>';
+  var fpsLast=_axFpsLast?_axFpsLast.fps:null;
+  var mem=_axMemorySnapshot();
+  var quota=(typeof _axCheckQuota==="function")?_axCheckQuota():0;
+  var rt=_axRenderTimes||{};
+  var rtKeys=Object.keys(rt).map(function(v){var r=rt[v];return{view:v,avg:Math.round(r.total/r.n),max:Math.round(r.max),n:r.n};}).sort(function(a,b){return b.avg-a.avg;}).slice(0,8);
+  var perfLog=lg("ax_perf_log",[]);
+  var fpsAvg=perfLog.length?Math.round(perfLog.reduce(function(a,e){return a+(e.fps||0);},0)/perfLog.length):null;
+  var slowClicks=lg("ax_click_slow",[]).slice(-10).reverse();
+  var convsCount=(typeof K!=="undefined"&&K.conversations)?K.conversations.length:0;
+
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">&#9889; Performance</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Mesures en temps reel. Objectif iPhone : 60 FPS, render &lt;200ms, memoire &lt;80%.</p>';
+
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+  var fpsColor=(fpsLast===null)?'var(--ax-text-dim)':(fpsLast>=55?'var(--ax-green)':fpsLast>=40?'var(--ax-orange)':'var(--ax-red)');
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:11px;color:var(--ax-text-dim)">FPS actuel</div><div style="font-size:28px;font-weight:800;color:'+fpsColor+'">'+(fpsLast===null?'…':fpsLast)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">moyenne: '+(fpsAvg===null?'-':fpsAvg)+'</div></div>';
+  var memColor=mem?(mem.pct<60?'var(--ax-green)':mem.pct<85?'var(--ax-orange)':'var(--ax-red)'):'var(--ax-text-dim)';
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:11px;color:var(--ax-text-dim)">Memoire JS</div><div style="font-size:28px;font-weight:800;color:'+memColor+'">'+(mem?mem.pct+'%':'-')+'</div><div style="font-size:10px;color:var(--ax-text-dim)">'+(mem?mem.used+' / '+mem.limit+' Mo':'iPhone Safari ne mesure pas')+'</div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:11px;color:var(--ax-text-dim)">Stockage local</div><div style="font-size:28px;font-weight:800;color:'+(quota<70?'var(--ax-green)':quota<90?'var(--ax-orange)':'var(--ax-red)')+'">'+quota+'%</div><div class="ax-perf-bar"><span style="width:'+Math.min(100,quota)+'%"></span></div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:11px;color:var(--ax-text-dim)">Conversations</div><div style="font-size:28px;font-weight:800;color:var(--ax-gold)">'+convsCount+'</div><div style="font-size:10px;color:var(--ax-text-dim)">'+(convsCount>50?'Virtualisation active':'Toutes affichees')+'</div></div>';
+  h+='</div>';
+
+  h+='<div class="ax-card"><h3>&#128269; Top vues lentes</h3>';
+  if(!rtKeys.length){h+='<p style="font-size:12px;color:var(--ax-text-dim)">Pas encore de donnees. Navigue dans l\'app pour mesurer.</p>';}
+  rtKeys.forEach(function(r){var c=r.avg<100?'var(--ax-green)':r.avg<200?'var(--ax-orange)':'var(--ax-red)';h+='<div class="ax-perf-row"><strong>'+esc(r.view)+'</strong><span style="color:'+c+'">'+r.avg+' ms <small style="color:var(--ax-text-dim)">(max '+r.max+', n='+r.n+')</small></span></div>';});
+  h+='</div>';
+
+  if(slowClicks.length){
+    h+='<div class="ax-card"><h3>&#128012; Clics les plus lents</h3>';
+    slowClicks.forEach(function(c){var col=c.ms<800?'var(--ax-orange)':'var(--ax-red)';h+='<div class="ax-perf-row"><strong>'+esc(c.view)+'</strong><span style="color:'+col+'">'+c.ms+' ms</span></div>';});
+    h+='</div>';
+  }
+
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:linear-gradient(135deg,rgba(76,208,128,.06),transparent);text-align:center"><h3>&#128640; Optimiser maintenant</h3><p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Purge logs anciens + nettoie cache + libere memoire en 1 clic.</p><button class="ax-btn ax-btn-primary" onclick="axOptimizeNow()" style="padding:14px 22px;min-height:48px">&#9889; Lancer l\'optimisation</button></div>';
+
+  if(perfLog.length){
+    h+='<div class="ax-card"><h3>&#128202; Historique FPS (30 dernieres)</h3><div style="font-family:var(--ax-mono);font-size:11px;max-height:200px;overflow-y:auto;color:var(--ax-text-dim)">';
+    perfLog.slice(-30).reverse().forEach(function(e){var c=e.fps>=55?'var(--ax-green)':e.fps>=40?'var(--ax-orange)':'var(--ax-red)';h+='<div>'+new Date(e.ts).toLocaleTimeString("fr-FR")+' &middot; <span style="color:'+c+'">'+e.fps+' FPS</span> &middot; '+esc(e.view||'?')+(e.mem?' &middot; '+e.mem.pct+'% mem':'')+'</div>';});
+    h+='</div></div>';
+  }
+
+  h+='</div>';
+  return h;
+}
+window.vPerformance=vPerformance;
+
+/* 5) Bouton "Optimiser maintenant" */
+function axOptimizeNow(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return;
+  var t0=performance.now();
+  var purged=0,compressed=0;
+  try{purged=(typeof _axPurgeOld==="function")?_axPurgeOld():0;}catch(_){}
+  try{compressed=(typeof _axCompressAll==="function")?_axCompressAll():0;}catch(_){}
+  try{_axMemoBust();}catch(_){}
+  var pct=(typeof _axCheckQuota==="function")?_axCheckQuota():0;
+  var dt=Math.round(performance.now()-t0);
+  toast("Optimise en "+dt+"ms - "+purged+" logs purges, "+compressed+" compressees, stockage "+pct+"%","ok",{force:true});
+  try{dc();}catch(_){}
+}
+window.axOptimizeNow=axOptimizeNow;
+
+/* 6) Brancher la vue dans vMain (additif) */
+(function(){
+  if(typeof vMain==="function"&&!vMain._axPerfPatched){
+    var _origVMain=vMain;
+    window.vMain=function(){
+      try{if(K&&K.view==="performance")return vPerformance();}catch(_){}
+      return _origVMain.apply(this,arguments);
+    };
+    window.vMain._axPerfPatched=true;
+  }
+})();
+
+/* 6b) Injecter card Performance dans vAdminLinks (additif) */
+(function(){
+  if(typeof vAdminLinks==="function"&&!vAdminLinks._axPerfPatched){
+    var _orig=vAdminLinks;
+    window.vAdminLinks=function(){
+      var html=_orig.apply(this,arguments);
+      try{
+        var perfCard='<div class="ax-card" onclick="sv(\'performance\')" style="cursor:pointer;background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(90,168,255,.04));border:2px solid rgba(232,184,48,.5);box-shadow:0 4px 14px rgba(232,184,48,.15);margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">&#9889;</div><div style="flex:1"><div style="font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Performance &amp; Fluidite</div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:3px">FPS live, render time, memoire, top vues lentes, optimisation 1-clic</div></div><div style="font-size:18px;color:var(--ax-gold)">&rarr;</div></div></div>';
+        html=html.replace('Liens directs Admin</h2>','Liens directs Admin</h2>'+perfCard);
+      }catch(_){}
+      return html;
+    };
+    window.vAdminLinks._axPerfPatched=true;
+  }
+})();
+
+/* 7) Image lazy-load auto sur tous les <img> non taggees */
+function _axLazyImages(){try{var imgs=document.querySelectorAll("img:not([loading])");for(var i=0;i<imgs.length;i++){imgs[i].setAttribute("loading","lazy");imgs[i].setAttribute("decoding","async");}}catch(_){}}
+
+/* 7b) Virtualisation post-render : cap a 50 items dans sidebar conversations + bouton "Charger plus" */
+window._axSidebarCap=window._axSidebarCap||50;
+function _axVirtSidebar(){
+  try{
+    var items=document.querySelectorAll(".ax-sidebar .ax-conv-item");
+    if(!items||items.length<=window._axSidebarCap)return;
+    for(var i=window._axSidebarCap;i<items.length;i++){items[i].style.display="none";}
+    /* eviter doublons */
+    if(document.querySelector(".ax-sidebar .ax-virt-more"))return;
+    var sidebar=document.querySelector(".ax-sidebar");
+    if(!sidebar)return;
+    var btn=document.createElement("div");
+    btn.className="ax-virt-more";
+    btn.textContent="↓ Charger plus ("+(items.length-window._axSidebarCap)+" restants)";
+    btn.onclick=function(){window._axSidebarCap+=50;_axVirtSidebar();var b=document.querySelector(".ax-sidebar .ax-virt-more");if(b)b.remove();_axVirtSidebar();};
+    /* inserer apres le dernier item visible */
+    var last=items[window._axSidebarCap-1];
+    if(last&&last.parentNode)last.parentNode.insertBefore(btn,last.nextSibling);
+  }catch(_){}
+}
+
+(function(){if(typeof render==="function"&&!render._axLazyPatched){var _orig=render;window.render=function(){var r=_orig.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_){}return r;};window.render._axLazyPatched=true;}})();
+(function(){if(typeof dc==="function"&&!dc._axVirtPatched){var _origDc=dc;window.dc=function(){var r=_origDc.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_){}return r;};window.dc._axVirtPatched=true;}})();
+
+/* 8) Lessons learned cross-app */
+try{
+  var _L=lg("ax_lessons_learned",[]);
+  _L.push({ts:Date.now(),category:"perf",pattern:"App lente sur iPhone (Projets/Favoris)",solution:"v12.198: CSS contain + memoization 30s + debounce 150ms + virtualisation listes >50 + Promise.all x5 + image lazy-load + sentinelle perf-watch + vue admin Performance + bouton Optimiser. Cible iPhone: 60 FPS, render <200ms.",apexVersion:"v12.198"});
+  if(_L.length>500)_L=_L.slice(-500);ls("ax_lessons_learned",_L);
+}catch(_){}
+
 </script>
 </body>
 </html>
