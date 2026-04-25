@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777119129877,
-  "total_commits": 221,
+  "updated_at": 1777119473325,
+  "total_commits": 224,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "c087e25e",
+      "ts": 1777119396000,
+      "msg": "Apex v12.178: Coffre + Groq + Cohere (Kevin: les avait tape mais pas de champ)",
+      "project": "apex",
+      "ver": "12.178",
+      "author": "claude-code"
+    },
+    {
+      "sha": "778433d6",
+      "ts": 1777119311000,
+      "msg": "CMCteams v9.510: Scanner planning camera iPhone (OCR Tesseract auto-tri mois/cadres/employes/chefs)",
+      "project": "cmcteams",
+      "ver": "9.510",
+      "author": "claude-code"
+    },
+    {
+      "sha": "66d6c340",
+      "ts": 1777119191000,
+      "msg": "CMCteams v9.507: UX admin-first (mon equipe + miroir + familles collapsibles)",
+      "project": "cmcteams",
+      "ver": "9.507",
+      "author": "claude-code"
+    },
     {
       "sha": "85d869a1",
       "ts": 1777119039000,
@@ -943,30 +967,6 @@
       "msg": "Apex v12.115: feature flags ON/OFF subagent (provisoire commit pour stop-hook)",
       "project": "apex",
       "ver": "12.115",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b23e30d2",
-      "ts": 1777078913000,
-      "msg": "Apex v12.114 + CMCteams v9.478: tri commits par sujet/thematique",
-      "project": "apex",
-      "ver": "12.114",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a772715f",
-      "ts": 1777078765000,
-      "msg": "CLAUDE.md: regle permanente maintenir CLAUDE_ACTIVITY.json a chaque commit",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "a10efdb6",
-      "ts": 1777078739000,
-      "msg": "Apex v12.113 + CMCteams v9.477: CLAUDE_ACTIVITY journal cross-app",
-      "project": "apex",
-      "ver": "12.113",
       "author": "claude-code"
     }
   ]
