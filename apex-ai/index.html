@@ -371,10 +371,11 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.201",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.203",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
+/* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 var AX_VAPID_PUBLIC="BEl62iUYgUivxIkv69yViEuiBIa1HI9hRmKvSzg_TvNh4zRDEtv2JzHE8MqQgqp7XeKQHEKZ4ETZiB2EW3YcQyc";
-// REMPLACER par vraie cle quand backend deploye - voir docs.html
+// REMPLACER par vraie cle quand backend deploye - generer via tools/cloudflare/gen-vapid.html
 /* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
 var AX_LOCALES={
   MC:{name:"Monaco",flag:"🇲🇨",lang:"fr",currency:"EUR",timezone:"Europe/Monaco",emergency:"112"},
@@ -6973,6 +6974,114 @@ try{
   _L.push({ts:Date.now(),category:"perf",pattern:"App lente sur iPhone (Projets/Favoris)",solution:"v12.198: CSS contain + memoization 30s + debounce 150ms + virtualisation listes >50 + Promise.all x5 + image lazy-load + sentinelle perf-watch + vue admin Performance + bouton Optimiser. Cible iPhone: 60 FPS, render <200ms.",apexVersion:"v12.198"});
   if(_L.length>500)_L=_L.slice(-500);ls("ax_lessons_learned",_L);
 }catch(_){}
+
+/* v12.202 — Monitoring pro dashboard (score live + sentinelles + timeline + quick actions) */
+function axHealthScore(){
+  try{
+    var score=0;
+    var status=lg("ax_credential_status",{});
+    var greenCount=0;
+    try{Object.keys(status||{}).forEach(function(k){if(status[k]&&status[k].status==="green")greenCount++;});}catch(_){}
+    score+=Math.min(30,greenCount*3);
+    var sentLog=lg("ax_silent_log",[]);
+    if(!Array.isArray(sentLog))sentLog=[];
+    sentLog=sentLog.slice(-50);
+    var ids={};
+    sentLog.forEach(function(e){if(e&&e.id)ids[e.id]=1;});
+    var activeSent=Object.keys(ids).length;
+    score+=Math.min(25,activeSent*2);
+    var errors=lg("ax_err_log",[]);
+    if(!Array.isArray(errors))errors=[];
+    errors=errors.filter(function(e){return e&&e.ts&&(Date.now()-e.ts<86400000);});
+    score+=Math.max(0,20-errors.length);
+    var tokenUse=lg("ax_token_use",{});
+    var todayTokens=(tokenUse&&tokenUse.today)||0;
+    if(todayTokens<50000)score+=15;
+    else if(todayTokens<200000)score+=10;
+    else score+=5;
+    var lastBackup=lg("ax_last_daily_backup",0);
+    if(!lastBackup)lastBackup=lg("ax_last_backup_ts",0);
+    if(Date.now()-lastBackup<25*3600*1000)score+=10;
+    return Math.min(100,Math.max(0,score));
+  }catch(e){return 50;}
+}
+
+function vMonitoringPro(){
+  if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin requis</div></div>';
+  var score=axHealthScore();
+  var color=score>=85?"var(--ax-green)":(score>=60?"var(--ax-gold)":"var(--ax-red)");
+  var emoji=score>=85?"🟢":(score>=60?"🟡":"🔴");
+  var statusMsg=score>=85?"Tout va bien":(score>=60?"Quelques alertes":"Action requise");
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">📊 Monitoring pro</h2>';
+  h+='<div class="ax-card" style="text-align:center;border-left:4px solid '+color+';padding:24px"><div style="font-size:64px;line-height:1">'+emoji+'</div><div style="font-size:48px;font-weight:900;color:'+color+';margin:8px 0">'+score+'<span style="font-size:24px;color:var(--ax-text-dim)">/100</span></div><div style="font-size:16px;font-weight:700">'+esc(statusMsg)+'</div></div>';
+  var cred=lg("ax_credential_status",{});
+  var greenCred=0,totalCred=0;
+  try{Object.keys(cred||{}).forEach(function(k){totalCred++;if(cred[k]&&cred[k].status==="green")greenCred++;});}catch(_){}
+  var errArr=lg("ax_err_log",[]);if(!Array.isArray(errArr))errArr=[];
+  var errors24h=errArr.filter(function(e){return e&&e.ts&&(Date.now()-e.ts<86400000);}).length;
+  var slowArr=lg("ax_click_slow",[]);if(!Array.isArray(slowArr))slowArr=[];
+  var slowClicks=slowArr.length;
+  var sLog=lg("ax_silent_log",[]);if(!Array.isArray(sLog))sLog=[];
+  var sIds={};sLog.slice(-100).forEach(function(e){if(e&&e.id)sIds[e.id]=1;});
+  var sentinels=Object.keys(sIds).length;
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">';
+  h+='<div class="ax-card" onclick="sv(\'vault\')" style="cursor:pointer;text-align:center;min-height:88px"><div style="font-size:24px">🤖</div><div style="font-size:20px;font-weight:800;color:var(--ax-gold)">'+greenCred+'/'+totalCred+'</div><div style="font-size:11px;color:var(--ax-text-dim)">IA testees OK</div></div>';
+  h+='<div class="ax-card" onclick="_showErrorLog()" style="cursor:pointer;text-align:center;min-height:88px"><div style="font-size:24px">🚨</div><div style="font-size:20px;font-weight:800;color:'+(errors24h>10?"var(--ax-red)":"var(--ax-text)")+'">'+errors24h+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Erreurs 24h</div></div>';
+  h+='<div class="ax-card" style="text-align:center;min-height:88px"><div style="font-size:24px">⚡</div><div style="font-size:20px;font-weight:800;color:'+(slowClicks>5?"var(--ax-red)":"var(--ax-green)")+'">'+slowClicks+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Clics lents</div></div>';
+  h+='<div class="ax-card" onclick="sv(\'sentinelshealth\')" style="cursor:pointer;text-align:center;min-height:88px"><div style="font-size:24px">🛡️</div><div style="font-size:20px;font-weight:800;color:var(--ax-blue)">'+sentinels+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Sentinelles actives</div></div>';
+  h+='</div>';
+  var events=[];
+  try{
+    var aud=lg("ax_audit",[]);if(!Array.isArray(aud))aud=[];
+    aud.slice(0,10).forEach(function(a){if(a)events.push({ts:a.ts||0,type:"audit",msg:String((a.type||a.action||"")+" "+(a.what||a.target||"")).trim()});});
+    sLog.slice(-10).forEach(function(s){if(s)events.push({ts:s.ts||0,type:s.lvl||s.type||"info",msg:"["+(s.id||"?")+"] "+String(s.msg||"")});});
+    errArr.slice(0,10).forEach(function(e){if(e)events.push({ts:e.ts||0,type:"err",msg:String(e.msg||"").slice(0,80)});});
+  }catch(_){}
+  events.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  events=events.slice(0,15);
+  h+='<div class="ax-card"><h3>📅 Activite recente</h3><div style="max-height:300px;overflow-y:auto">';
+  if(!events.length)h+='<p style="color:var(--ax-text-dim);font-size:12px">Aucune activite recente</p>';
+  events.forEach(function(e){
+    var ic=e.type==="err"?"🔴":(e.type==="warn"?"🟡":(e.type==="audit"?"📝":"ℹ️"));
+    var t=e.ts?new Date(e.ts).toLocaleTimeString("fr-FR"):"--:--";
+    h+='<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:12px"><span>'+ic+'</span><span style="color:var(--ax-text-dim);min-width:60px">'+esc(t)+'</span><span style="flex:1;word-break:break-word">'+esc(e.msg)+'</span></div>';
+  });
+  h+='</div></div>';
+  h+='<div class="ax-card"><h3>🚀 Actions rapides</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="axTestAllCredentials()" style="min-height:44px">🧪 Tester toutes IA</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="(typeof axShowHealthReport===\'function\'?axShowHealthReport():sv(\'report\'))" style="min-height:44px">📊 Rapport</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="(typeof axDailyBackup===\'function\'?axDailyBackup():sv(\'backups\'))" style="min-height:44px">💾 Backup now</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="sv(\'errorslive\')" style="min-height:44px">🐛 Erreurs live</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="sv(\'sentinelshealth\')" style="min-height:44px">🛡️ Sentinelles</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axRestoreVaultFromFirebase()" style="min-height:44px">🔄 Restore Coffre</button>';
+  h+='</div></div></div>';
+  return h;
+}
+window.v_custom_monitoringpro=vMonitoringPro;
+
+var _monitoringRefreshTimer=null;
+function _startMonitoringRefresh(){
+  try{
+    if(_monitoringRefreshTimer)clearInterval(_monitoringRefreshTimer);
+    _monitoringRefreshTimer=setInterval(function(){
+      try{if(typeof K!=="undefined"&&K&&K.view==="monitoringpro"&&typeof dc==="function")dc();}catch(_){}
+    },30000);
+  }catch(_){}
+}
+try{_startMonitoringRefresh();}catch(_){}
+
+function _agentHealthAlert(){
+  try{
+    if(typeof axIsAdmin!=="function"||!axIsAdmin())return;
+    var s=axHealthScore();
+    var lastAlert=lg("ax_last_health_alert",0)||0;
+    if(s<60&&Date.now()-lastAlert>3600000){
+      if(typeof toast==="function")toast("⚠️ Score sante: "+s+"/100. Verifie le monitoring.","warn",{force:true,duration:8000});
+      ls("ax_last_health_alert",Date.now());
+    }
+  }catch(_){}
+}
+try{setInterval(_agentHealthAlert,600000);}catch(_){}
 
 </script>
 </body>
