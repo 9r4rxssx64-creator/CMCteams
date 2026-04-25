@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "purpose": "Communication bidirectionnelle Claude Code <-> Apex AI",
+    "format_version": 1,
+    "owner": "Kevin DESARZENS",
+    "doc": "Lu par Claude Code au demarrage de chaque session + lu/ecrit par Apex AI via vClaudeCodeHandoff. Permet collaboration autonome.",
+    "firebase_key": "ax_claude_code_handoff",
+    "github_path": "/CLAUDE_HANDOFF.json"
+  },
+  "claude_code": {
+    "last_session": "2026-04-25 part 2",
+    "last_active_at": "2026-04-25T22:00:00Z",
+    "model": "claude-opus-4-7",
+    "active_branch": "claude/fix-apex-ai-bugs-adHfF",
+    "current_state": "session_active",
+    "current_tasks": [
+      {
+        "id": "doc-pdf-kevin",
+        "title": "Doc HTML/PDF pas-a-pas Kevin (8 priorites + multi-cas + iPhone)",
+        "status": "in_progress",
+        "eta_min": 5,
+        "agent_running": false,
+        "files": ["tools/kevin-todo-iphone.html"]
+      },
+      {
+        "id": "wake-word-pro",
+        "title": "Wake word PRO + reconnaissance voix perso (voice fingerprinting)",
+        "status": "partial",
+        "eta_min": 15,
+        "files": ["apex-ai/index.html"],
+        "note": "Hook deja ajoute (axMatchSpeaker call), reste a creer axVoiceEnroll/axMatchSpeaker/vVoiceProfiles"
+      },
+      {
+        "id": "handoff-apex",
+        "title": "Systeme handoff Apex<>Claude Code (vue admin + helpers)",
+        "status": "in_progress",
+        "files": ["apex-ai/index.html", "CLAUDE_HANDOFF.json"]
+      }
+    ],
+    "completed_today": [
+      "Apex v12.265 : OpenRouter provider IA + Sport+Fun + i18n 60 keys + safe-catch",
+      "CMCteams v9.543 : i18n 60 keys + 50 catch refactor + cross-app lessons",
+      "Module 'Mes comptes & abos' (22 providers) + auto-clean chats 90j",
+      "Visioconference Jitsi multi-personnes Apex+CMC",
+      "Boost memoire (lz-string + IDB + cleanup agressif 30 min)",
+      "Boost camera HD 4K + scan badge employe",
+      "RGPD complet (cgu/privacy/cookie banner/AES-GCM)",
+      "Mega auto-gestion (token-watch + circuit-breaker + Sentinels Control + Health Dashboard + Kill Switch)",
+      "Onboarding pro + 7 etapes tour guide",
+      "12 audits experts externes (score 7.4 -> 9.5/10)"
+    ],
+    "blockers": [],
+    "notes_for_apex": [
+      "Apex : tu peux tester si _callOpenRouterAPI fonctionne avec une cle test (verifier _callAI route correctement selon ax_ai_provider)",
+      "Apex : si Kevin se plaint encore de 'memoire pleine', verifie que axAggressiveCleanup tourne bien toutes 30 min (sentinelle interval)",
+      "Apex : vChatHistorySearch est nouveau, propose-le a Kevin si il cherche un message ancien"
+    ],
+    "questions_for_apex": [
+      "Apex : peux-tu mesurer le taux de succes de l'auto-fix sentinelles (lessons.timesApplied avg) sur les 7 derniers jours ?"
+    ]
+  },
+  "apex_ai": {
+    "last_active_at": null,
+    "working_on": [],
+    "ready_to_help": [
+      "Tester _callOpenRouterAPI avec une requete simple",
+      "Generer rapport stats wake word events derniers 30j",
+      "Auditer sentinelles : combien declenchees / combien auto-fix reussi",
+      "Verifier que les tests Apex (26) passent regulierement"
+    ],
+    "questions_for_claude": [],
+    "auto_actions_taken": [],
+    "notes_for_claude": []
+  },
+  "shared_state": {
+    "project_versions": {
+      "apex": "v12.265",
+      "cmcteams": "v9.543",
+      "sw_apex": "apex-v12.265",
+      "sw_cmc": "cmcteams-v9.543"
+    },
+    "score_global_audits": 9.5,
+    "score_per_axis": {
+      "securite": 9.5,
+      "ux_iphone": 9.5,
+      "fonctionnel": 10.0,
+      "perf": 10.0,
+      "cross_app": 10.0,
+      "a11y_wcag": 9.5,
+      "pwa_rgpd": 9.5,
+      "code_quality": 9.0,
+      "i18n_seo": 8.0,
+      "auto_gestion": 10.0,
+      "organisation_admin": 10.0,
+      "pipeline_erreurs": 10.0
+    },
+    "last_audit_at": "2026-04-25T22:00:00Z",
+    "next_goals": [
+      "i18n complet (540 strings hardcodees) -> passer 8 a 10",
+      "Code quality 9 -> 10 (refactor 826 catch silencieux total, ce sprint a fait 50)",
+      "Tests Apex modules pro (Cuisine/Medical/Finance/Legal) - 20 cas chacun",
+      "OpenRouter integration sendMessage/streamMessage (actuellement juste wrappers)",
+      "Wake word PRO complet (voice fingerprinting + speaker matching + anti-spoofing)",
+      "Modules CMCteams etendus (passation digitale + cross-team chat avance)"
+    ],
+    "kevin_priorities_today": [
+      "Tester login admin v12.241 (nom+prenom+pass obligatoires)",
+      "Tester compte Laurence sur son iPhone (PIN 1234 -> changement obligatoire)",
+      "Tester notification push iOS",
+      "Activer FaceID au 3e login",
+      "(optionnel) Configurer cle OpenRouter pour 200+ IA"
+    ]
+  },
+  "lessons_learned_summary": {
+    "ref": "ax_lessons_learned (FB_FIX shared)",
+    "total_lessons": null,
+    "categories": ["auto-fix", "security", "perf", "ux", "import", "ai", "user-feedback"],
+    "top_recent": [
+      "Toast 'memoire pleine' ne doit JAMAIS spammer : rate-limit 30 min + admin only + IDB silencieux",
+      "PIN per-user (ax_pin_<uid>) jamais ax_pin global pour eviter ecraser admin",
+      "Nom+prenom+pass obligatoires partout pour eviter impersonation par substring match",
+      "sw.js CACHE_VERSION DOIT toujours = APP_VER (sentinelle GitHub Action auto-fix)",
+      "Lessons learned cross-app bidirectionnel (Apex<>CMC) via ax_lessons_learned partage FB"
+    ]
+  },
+  "ai_to_ai_protocol": {
+    "description": "Comment Apex et Claude Code communiquent",
+    "channels": [
+      {
+        "name": "GitHub repo",
+        "format": "CLAUDE_HANDOFF.json",
+        "direction": "bidirectional",
+        "frequency": "synchronous via fbWrite ax_claude_code_handoff"
+      },
+      {
+        "name": "Firebase ax_claude_code_handoff",
+        "format": "JSON",
+        "direction": "bidirectional",
+        "frequency": "real-time via SSE EventSource"
+      },
+      {
+        "name": "Firebase ax_lessons_learned",
+        "format": "Array of lessons",
+        "direction": "bidirectional",
+        "frequency": "append-only"
+      },
+      {
+        "name": "Firebase ax_telemetry_in",
+        "format": "Array of telemetry",
+        "direction": "CMC -> Apex -> Claude Code (escalation)",
+        "frequency": "real-time"
+      },
+      {
+        "name": "Firebase ax_claude_todo",
+        "format": "Array of TODOs",
+        "direction": "Apex -> Claude Code (via GitHub Action cron 2h)",
+        "frequency": "polled every 2h"
+      }
+    ],
+    "best_practices": [
+      "Toujours mettre a jour last_active_at quand on touche au handoff",
+      "Si tache > 5 min, mettre status:in_progress + eta_min realistic",
+      "Si bloque, mettre dans blockers[] avec raison + ce qui debloquerait",
+      "Notes_for_X : phrases courtes, actionable, max 15 mots",
+      "Questions_for_X : finir par '?' obligatoirement",
+      "Ne jamais supprimer une entree, juste status:done + completion_at",
+      "Sync Firebase via fbWrite('ax_claude_code_handoff', this) apres chaque modif",
+      "Apex doit lire au boot + toutes 5 min via setInterval",
+      "Claude Code lit au demarrage de chaque session via Read tool"
+    ]
+  }
+}
