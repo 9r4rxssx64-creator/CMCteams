@@ -184,6 +184,87 @@
       "Lessons learned cross-app bidirectionnel (Apex<>CMC) via ax_lessons_learned partage FB"
     ]
   },
+  "auto_verify_tasks": {
+    "purpose": "Tests automatiques cross-AI : Claude Code demande a Apex de verifier une fonction, Apex execute et reporte. Et inverse.",
+    "tasks_for_apex": [
+      {
+        "id": "verify-openrouter",
+        "title": "Tester _callOpenRouterAPI avec une cle test (1 message simple)",
+        "fn": "axTestFn",
+        "args": ["openrouter_call", {"model": "anthropic/claude-3.5-haiku", "messages": [{"role":"user","content":"OK?"}]}],
+        "expects": "response.content non null",
+        "status": "pending",
+        "requested_by": "claude_code",
+        "requested_at": "2026-04-25T22:30:00Z"
+      },
+      {
+        "id": "verify-cleanup-mem",
+        "title": "Lancer axAggressiveCleanup et reporter combien de KB liberes",
+        "fn": "axAggressiveCleanup",
+        "args": [],
+        "expects": "totalRemoved > 0",
+        "status": "pending"
+      },
+      {
+        "id": "verify-sentinels",
+        "title": "Verifier que les 22 sentinelles tournent bien (lastRunAt < 30 min)",
+        "fn": "axCheckSentinelsHealth",
+        "args": [],
+        "expects": "all 22 healthy",
+        "status": "pending"
+      },
+      {
+        "id": "verify-fb-circuit",
+        "title": "Tester circuit-breaker Firebase (forcer 11 erreurs et verifier coupure)",
+        "fn": "_fbCircuitTrip",
+        "args": [],
+        "expects": "circuit_open=true",
+        "status": "pending"
+      },
+      {
+        "id": "verify-billing-balance",
+        "title": "Pour chaque provider live, tester axCheckBalanceLive",
+        "fn": "axCheckBalanceLive",
+        "args": ["openai|openrouter|elevenlabs|stripe"],
+        "expects": "ok=true ou CORS message",
+        "status": "pending"
+      },
+      {
+        "id": "verify-visioconf",
+        "title": "Generer URL Jitsi via _startVideoCall et verifier format URL",
+        "fn": "_startVideoCall",
+        "args": [],
+        "expects": "URL meet.jit.si valide",
+        "status": "pending"
+      }
+    ],
+    "tasks_for_claude_code": [],
+    "results": [],
+    "whitelist_fn": [
+      "axTestFn",
+      "axAggressiveCleanup",
+      "axCheckSentinelsHealth",
+      "axCheckBalanceLive",
+      "_startVideoCall",
+      "axGetUserPin",
+      "_isFamilyUser",
+      "axApplyUserTheme",
+      "axCalcBMI",
+      "axMedicalLookup",
+      "axCuisineSearch",
+      "_axCameraConstraintsHD",
+      "axHandoffGet",
+      "_callAI",
+      "axDetectIntent"
+    ],
+    "auto_run": {
+      "apex_runs_pending_every_min": 5,
+      "max_runs_per_session": 20,
+      "rate_limit_same_task": "1 per hour"
+    },
+    "instructions_apex": "Apex : au boot, run axRunHandoffTasks() qui itere tasks_for_apex pending, execute les fn whitelistees avec args, ecrit results[]. Push Firebase. Claude Code voit au prochain pull.",
+    "instructions_claude": "Claude Code : au demarrage de session, lis results[] pour voir ce qu'Apex a verifie pour toi. Si bug detecte, fix dans le code."
+  },
   "ai_to_ai_protocol": {
     "description": "Comment Apex et Claude Code communiquent",
     "channels": [
