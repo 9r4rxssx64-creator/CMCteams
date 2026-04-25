@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777079787210,
+  "updated_at": 1777079958640,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 138,
+  "total_commits": 140,
   "projects": [
     "apex",
     "backend",
@@ -16,7 +16,7 @@
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 26
+      "count": 27
     },
     {
       "name": "📅 Planning & Cadres",
@@ -25,6 +25,10 @@
     {
       "name": "🎨 UX & Design",
       "count": 10
+    },
+    {
+      "name": "💳 Paiement & Abos",
+      "count": 8
     },
     {
       "name": "🚂 Backend & Hosting",
@@ -37,10 +41,6 @@
     {
       "name": "🔧 Bug fixes",
       "count": 8
-    },
-    {
-      "name": "💳 Paiement & Abos",
-      "count": 7
     },
     {
       "name": "🎙 Voix & Audio",
@@ -72,6 +72,24 @@
     }
   ],
   "commits": [
+    {
+      "sha": "b130ccfe",
+      "ts": 1777079883000,
+      "msg": "Apex v12.119: 13 moyens paiement + CSP fix crypto + iban perso/pro",
+      "project": "apex",
+      "ver": "12.119",
+      "topic": "💳 Paiement & Abos",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5271019d",
+      "ts": 1777079793000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.117 tutorial",
+      "project": "docs",
+      "ver": "12.117",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "75be86da",
       "ts": 1777079767000,
@@ -1132,24 +1150,6 @@
       "project": "multi",
       "ver": "12.25",
       "topic": "💳 Paiement & Abos",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b7b45e0b",
-      "ts": 1776771981000,
-      "msg": "v12.24: INDEX COMPLET docs en tete du HANDOFF (propagation 100% confirmee) (#148)",
-      "project": "multi",
-      "ver": "12.24",
-      "topic": "📚 Docs & Méthodologie",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3f81ea4e",
-      "ts": 1776771817000,
-      "msg": "v9.454: Memoire permanente CMCteams + shared avec Apex (#147)",
-      "project": "cmcteams",
-      "ver": "9.454",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     }
   ]
