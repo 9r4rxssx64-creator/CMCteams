@@ -41,17 +41,25 @@ a:hover{text-decoration:underline}
   <div class="sub">Déployeur Push Worker — 1 clic</div>
 
   <div class="card">
-    <div class="step-title">Étape 1 — Token API Cloudflare</div>
+    <div class="step-title">Étape 1 — Authentification Cloudflare</div>
     <div class="help">
-      Crée un token API Cloudflare (5 sec) :<br>
-      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">→ Cloudflare Tokens</a><br>
-      → "Create Token"<br>
-      → Template "<b>Edit Cloudflare Workers</b>"<br>
-      → "Continue to summary" → "Create Token"<br>
-      → Copie le token (il apparaît UNE seule fois)<br>
-      → Colle ici-dessous.
+      <b>Choix 1 (recommandé) : Token API moderne</b><br>
+      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">→ Créer un nouveau Token</a><br>
+      → Template "Edit Cloudflare Workers" → Create.<br>
+      <br>
+      <b>Choix 2 : Réutiliser ta Global API Key</b><br>
+      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">→ Section "Clés API"</a><br>
+      → Tape "Affichage" sur Global API Key → Confirme avec ton mdp.<br>
+      → Tape sur "🌍 Global API Key" ci-dessous + colle email + clé.
     </div>
-    <input type="password" id="cfToken" placeholder="Token Cloudflare (commence par...)" autocomplete="off">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="setMode('token')" id="modeToken" class="outline" style="flex:1">🔑 Token API</button>
+      <button onclick="setMode('global')" id="modeGlobal" class="outline" style="flex:1">🌍 Global API Key</button>
+    </div>
+    <div id="emailWrap" style="display:none;margin-bottom:8px">
+      <input type="email" id="cfEmail" placeholder="Ton email Cloudflare (Desarzens.kevin@gmail.com)" autocomplete="off">
+    </div>
+    <input type="password" id="cfToken" placeholder="Token API ou Global API Key" autocomplete="off">
     <button onclick="loadAccounts()" id="btnLoad">Charger mes comptes Cloudflare</button>
   </div>
 
@@ -83,6 +91,7 @@ a:hover{text-decoration:underline}
 
 <script>
 let TOKEN='', ACCOUNT_ID='', ACCOUNTS=[];
+window.addEventListener('DOMContentLoaded', ()=>setMode('token'));
 const RAW_URL = 'https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/cloudflare/apex-push-worker.js';
 const SCRIPT_NAME = 'apex-push-worker';
 
@@ -95,17 +104,27 @@ function log(msg, cls){
   logEl.scrollTop = logEl.scrollHeight;
 }
 
+let AUTH_MODE='token';
+function setMode(m){AUTH_MODE=m;document.getElementById('emailWrap').style.display=m==='global'?'block':'none';document.getElementById('modeToken').classList.toggle('outline',m!=='token');document.getElementById('modeGlobal').classList.toggle('outline',m!=='global');document.getElementById('cfToken').placeholder=m==='global'?'Global API Key':'Token API (commence par...)';}
+function authHeaders(){
+  if(AUTH_MODE==='global'){
+    const e=document.getElementById('cfEmail').value.trim();
+    return {'X-Auth-Email':e,'X-Auth-Key':TOKEN};
+  }
+  return {'Authorization':'Bearer '+TOKEN};
+}
 async function loadAccounts(){
   const t = document.getElementById('cfToken').value.trim();
-  if(!t){alert('Colle ton token Cloudflare');return;}
+  if(!t){alert('Colle ton token ou Global API Key');return;}
+  if(AUTH_MODE==='global' && !document.getElementById('cfEmail').value.trim()){alert('Entre ton email Cloudflare');return;}
   TOKEN = t;
   const btn = document.getElementById('btnLoad');
   btn.innerHTML = '<span class="spinner"></span> Chargement...';
   btn.disabled = true;
-  log('→ Vérification du token...');
+  log('→ Vérification ('+AUTH_MODE+')...');
   try {
     const r = await fetch('https://api.cloudflare.com/client/v4/accounts', {
-      headers: {'Authorization':'Bearer '+TOKEN}
+      headers: authHeaders()
     });
     const data = await r.json();
     if(!data.success){
@@ -147,7 +166,7 @@ function pickAccount(id, el){
 async function checkWorker(){
   log('→ Vérification du worker apex-push-worker...');
   const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, {
-    headers: {'Authorization':'Bearer '+TOKEN}
+    headers: authHeaders()
   });
   if(r.ok || r.status===200){
     log('✅ Worker apex-push-worker trouvé','ok');
@@ -182,7 +201,7 @@ async function deployWorker(){
 
     const r = await fetch(url, {
       method:'PUT',
-      headers:{'Authorization':'Bearer '+TOKEN},
+      headers: authHeaders(),
       body: fd
     });
     const result = await r.json();
