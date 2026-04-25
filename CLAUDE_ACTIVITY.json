@@ -1,13 +1,62 @@
 {
-  "updated_at": 1777139238537,
-  "total_commits": 240,
+  "updated_at": 1777141290417,
+  "total_commits": 246,
   "projects": [
     "apex",
+    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "b2cb8aa8",
+      "ts": 1777141274000,
+      "msg": "Apex v12.218: URGENT cleanup stockage + auto-purge boot + sentinelle storage-watch + perf reduction setIntervals",
+      "project": "apex",
+      "ver": "12.218",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e439cc91",
+      "ts": 1777141245000,
+      "msg": "KEVIN_INVENTORY: ajout Revtag Revolut @kdmc",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "74051b0e",
+      "ts": 1777140305000,
+      "msg": "GitHub Actions: deploy en .mjs + erreur complete formatee + 2 tentatives fallback (resoudre code 10021)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "6f94b2bb",
+      "ts": 1777139343000,
+      "msg": "Apex v12.217: Enrichissement profils auto + extraction NLP messages chat + cross-fiches",
+      "project": "apex",
+      "ver": "12.217",
+      "author": "claude-code"
+    },
+    {
+      "sha": "94b241c0",
+      "ts": 1777139238000,
+      "msg": "Apex v12.216 + CMCteams v9.517: travaux agents background (enrichissement profils + 12 agents critiques)",
+      "project": "apex",
+      "ver": "12.216",
+      "author": "claude-code"
+    },
+    {
+      "sha": "59cfab03",
+      "ts": 1777139237000,
+      "msg": "Apex v12.216: Icone PWA regeneree APEX (rebrand final - plus de KDMC visible iPhone)",
+      "project": "apex",
+      "ver": "12.216",
+      "author": "claude-code"
+    },
     {
       "sha": "a6c65553",
       "ts": 1777139174000,
@@ -828,7 +877,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "multi",
+      "project": "backend",
       "ver": null,
       "author": "claude-code"
     },
@@ -918,54 +967,6 @@
       "msg": "Apex SW v12.142 cache version (force refresh PWA)",
       "project": "multi",
       "ver": "12.142",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7bb339e1",
-      "ts": 1777083964000,
-      "msg": "CSP fix CMCteams + Apex (Kevin: erreur CSP visible + ecran blanc)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "dcb4ce29",
-      "ts": 1777083471000,
-      "msg": "CMCteams v9.498: live employee overlay sur carte interactive",
-      "project": "cmcteams",
-      "ver": "9.498",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9326001e",
-      "ts": 1777083457000,
-      "msg": "Subagents intermediate (parallel work multiple)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "b0dcca3c",
-      "ts": 1777083350000,
-      "msg": "CMCteams subagent intermediate",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "dc29c010",
-      "ts": 1777083313000,
-      "msg": "Apex v12.141: parrainage complet (referral system)",
-      "project": "apex",
-      "ver": "12.141",
-      "author": "claude-code"
-    },
-    {
-      "sha": "97b7d277",
-      "ts": 1777083291000,
-      "msg": "CMCteams v9.497: touch gestures iPhone pour vMapEditor (pinch zoom + pan + long-press)",
-      "project": "cmcteams",
-      "ver": "9.497",
       "author": "claude-code"
     }
   ]
