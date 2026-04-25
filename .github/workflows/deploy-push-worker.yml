@@ -29,124 +29,139 @@ jobs:
             exit 1
           fi
 
-          # Étape 1 : Vérifier le token
+          # ÉTAPE 1 : Vérifier le token
           echo "═══════════════════════════════════════════"
           echo "→ Étape 1 : Vérification du token API"
           echo "═══════════════════════════════════════════"
-
           VERIFY=$(curl -s -w "\nHTTP:%{http_code}" \
             "https://api.cloudflare.com/client/v4/user/tokens/verify" \
             -H "Authorization: Bearer ${CF_API_TOKEN}")
-          VERIFY_BODY=$(echo "$VERIFY" | sed '$d')
           VERIFY_STATUS=$(echo "$VERIFY" | tail -n1 | sed 's/HTTP://')
           echo "Status: $VERIFY_STATUS"
-          echo "Body: $VERIFY_BODY" | head -c 300
-
           if [ "$VERIFY_STATUS" != "200" ]; then
-            echo ""
             echo "::error::❌ Token API invalide (HTTP $VERIFY_STATUS)"
-            echo "Va sur Cloudflare → API Tokens → Régénérer ton token 'Modifier Cloudflare Workers'"
+            echo "$VERIFY" | sed '$d'
             exit 1
           fi
           echo "✅ Token valide"
 
-          # Étape 2 : Account ID
+          # ÉTAPE 2 : Account ID
           echo ""
           echo "═══════════════════════════════════════════"
-          echo "→ Étape 2 : Détermination Account ID"
+          echo "→ Étape 2 : Account ID"
           echo "═══════════════════════════════════════════"
-
           if [ -n "$CF_ACCOUNT_ID_OPT" ]; then
             CF_ACCOUNT_ID="$CF_ACCOUNT_ID_OPT"
-            echo "→ Depuis secret CLOUDFLARE_ACCOUNT_ID: $CF_ACCOUNT_ID"
+            echo "→ Depuis secret: $CF_ACCOUNT_ID"
           else
-            ACCOUNTS_JSON=$(curl -s \
-              "https://api.cloudflare.com/client/v4/accounts" \
+            ACCOUNTS_JSON=$(curl -s "https://api.cloudflare.com/client/v4/accounts" \
               -H "Authorization: Bearer ${CF_API_TOKEN}")
             CF_ACCOUNT_ID=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].id // empty')
-            CF_ACCOUNT_NAME=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].name // empty')
             if [ -z "$CF_ACCOUNT_ID" ]; then
-              echo "::error::Aucun compte trouvé via le token"
+              echo "::error::Aucun compte trouvé"
               echo "$ACCOUNTS_JSON" | head -c 500
               exit 1
             fi
-            echo "✅ Auto-détecté : $CF_ACCOUNT_NAME ($CF_ACCOUNT_ID)"
+            echo "✅ Auto-détecté: $CF_ACCOUNT_ID"
           fi
 
-          # Étape 3 : Test lecture du worker (vérifie la perm Workers Read)
+          # ÉTAPE 3 : Préparer fichier .mjs (nouveau format)
           echo ""
           echo "═══════════════════════════════════════════"
-          echo "→ Étape 3 : Test lecture worker apex-push-worker"
+          echo "→ Étape 3 : Préparation fichier worker"
           echo "═══════════════════════════════════════════"
+          cp tools/cloudflare/apex-push-worker.js /tmp/worker.mjs
+          echo "Fichier prêt: $(wc -c < /tmp/worker.mjs) bytes"
+          head -2 /tmp/worker.mjs
 
-          READ_RESP=$(curl -s -w "\nHTTP:%{http_code}" \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}")
-          READ_STATUS=$(echo "$READ_RESP" | tail -n1 | sed 's/HTTP://')
-          echo "Status: $READ_STATUS"
-          if [ "$READ_STATUS" = "200" ] || [ "$READ_STATUS" = "404" ]; then
-            echo "✅ Token a accès à l'account"
-          elif [ "$READ_STATUS" = "401" ] || [ "$READ_STATUS" = "403" ]; then
-            echo "::error::❌ Le token ne peut pas lire le worker (HTTP $READ_STATUS)"
-            echo "$READ_RESP" | sed '$d' | head -c 500
-            echo ""
-            echo "Cause probable : permissions manquantes."
-            echo "Recrée le token avec template EXACT 'Modifier Cloudflare Workers' (pas 'Custom')."
-            exit 1
-          fi
-
-          # Étape 4 : Déploiement
+          # ÉTAPE 4 : Tentative déploiement (format ES module)
           echo ""
           echo "═══════════════════════════════════════════"
-          echo "→ Étape 4 : Déploiement code apex-push-worker.js"
+          echo "→ Étape 4 : Déploiement (ES module .mjs)"
           echo "═══════════════════════════════════════════"
 
-          cat > /tmp/metadata.json << 'EOF'
-          {
-            "main_module": "worker.js",
-            "compatibility_date": "2026-04-25"
-          }
-EOF
+          METADATA='{"main_module":"worker.mjs","compatibility_date":"2024-12-01","bindings":[]}'
+          echo "Metadata: $METADATA"
 
           RESPONSE=$(curl -s -w "\nHTTP:%{http_code}" \
             -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            -F "metadata=@/tmp/metadata.json;type=application/json" \
-            -F "worker.js=@tools/cloudflare/apex-push-worker.js;type=application/javascript+module")
+            -F "metadata=${METADATA};type=application/json" \
+            -F "worker.mjs=@/tmp/worker.mjs;type=application/javascript+module")
 
           BODY=$(echo "$RESPONSE" | sed '$d')
           STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/HTTP://')
 
-          echo "Status: $STATUS"
-          echo "Body (1000 chars):"
-          echo "$BODY" | head -c 1000
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "RÉPONSE CLOUDFLARE :"
+          echo "═══════════════════════════════════════════"
+          echo "Status HTTP: $STATUS"
+          echo ""
+          echo "Body complet (formatté JSON):"
+          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
 
           if [ "$STATUS" = "200" ] || [ "$STATUS" = "201" ]; then
             echo ""
-            echo "::notice::✅ Déploiement réussi !"
-            echo ""
+            echo "::notice::✅ Déploiement RÉUSSI !"
             sleep 4
+            echo ""
             echo "→ Test /health :"
-            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" || echo "(test propagation)"
-          else
-            echo ""
-            echo "::error::❌ Déploiement échoué (HTTP $STATUS)"
-            echo "$BODY"
-            echo ""
-            echo "═══════════════════════════════════════════"
-            echo "DIAGNOSTIC :"
-            echo "─────────"
-            if [ "$STATUS" = "401" ]; then
-              echo "401 = Token rejeté."
-              echo "→ Le token n'a pas la permission 'Workers Scripts: Edit'"
-              echo "→ Recrée le token avec template EXACT 'Modifier Cloudflare Workers'"
-            elif [ "$STATUS" = "403" ]; then
-              echo "403 = Token interdit pour cette action."
-              echo "→ Vérifier que le token a accès au compte $CF_ACCOUNT_ID"
-            elif [ "$STATUS" = "404" ]; then
-              echo "404 = Worker apex-push-worker introuvable."
-              echo "→ Crée d'abord le worker dans Cloudflare Dashboard"
-            fi
-            exit 1
+            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" | jq '.' 2>/dev/null || echo "(propagation en cours)"
+            exit 0
           fi
+
+          echo ""
+          echo "::warning::Tentative 1 échouée (HTTP $STATUS), essai format alternatif..."
+
+          # ÉTAPE 5 : Fallback - service worker syntax (addEventListener) — convert si possible
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "→ Étape 5 : Fallback format service worker"
+          echo "═══════════════════════════════════════════"
+
+          # Convert ES module to service worker style by wrapping
+          cat > /tmp/worker-sw.js << 'WRAPPER'
+WRAPPER
+          cat tools/cloudflare/apex-push-worker.js >> /tmp/worker-sw.js
+          # Append a service-worker compatible wrapper at end
+          cat >> /tmp/worker-sw.js << 'WRAPPER'
+
+// Service Worker compat layer
+addEventListener("fetch", (event) => {
+  const handler = (typeof globalThis.handler !== "undefined") ? globalThis.handler : null;
+  // We use the export default {} object if available
+  const main = (typeof exports === "object" && exports.default) ? exports.default : null;
+  // Fallback: just respond
+  event.respondWith(new Response("Apex Push Worker SW fallback", {status: 200}));
+});
+WRAPPER
+          # Actually that's not a proper conversion. Let me just retry with module format but "main_module" without bindings
+          echo "Tentative simplifiée sans bindings..."
+          METADATA2='{"main_module":"worker.mjs","compatibility_date":"2024-12-01"}'
+          RESPONSE2=$(curl -s -w "\nHTTP:%{http_code}" \
+            -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -F "metadata=${METADATA2};type=application/json" \
+            -F "worker.mjs=@/tmp/worker.mjs;type=application/javascript+module")
+          STATUS2=$(echo "$RESPONSE2" | tail -n1 | sed 's/HTTP://')
+          BODY2=$(echo "$RESPONSE2" | sed '$d')
+          echo "Tentative 2 - Status: $STATUS2"
+          echo "$BODY2" | jq '.' 2>/dev/null || echo "$BODY2"
+
+          if [ "$STATUS2" = "200" ] || [ "$STATUS2" = "201" ]; then
+            echo "::notice::✅ Déploiement RÉUSSI (tentative 2) !"
+            exit 0
+          fi
+
+          echo ""
+          echo "::error::❌ Déploiement échoué après 2 tentatives"
+          echo ""
+          echo "Diagnostic :"
+          if echo "$BODY" | grep -q "10021"; then
+            echo "→ Code 10021 = problème de validation script"
+            echo "→ Cause possible : le worker apex-push-worker.js a un export ou format invalide"
+          fi
+          exit 1
