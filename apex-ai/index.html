@@ -2772,6 +2772,210 @@ function _axWelcomeFinish(){try{ls("ax_welcome_done",true);}catch(_){}var el=doc
 function axShowWelcomeFlow(stepOverride){try{if(typeof K==="undefined"||!K||!K.user)return;var step=(typeof stepOverride==="number")?stepOverride:lg("ax_welcome_step",0);if(step<0)step=0;if(step>3)step=3;ls("ax_welcome_step",step);var firstName="";try{firstName=String(K.user.name||"").split(" ")[0];}catch(_){firstName="";}if(!firstName)firstName="cher utilisateur";var existing=document.getElementById("ax-welcome-overlay");if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);var ov=document.createElement("div");ov.id="ax-welcome-overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.style.cssText="position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(circle at 50% 30%,rgba(232,184,48,.18),rgba(0,0,0,.92) 70%);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)";var card='<div style="position:relative;max-width:440px;width:100%;background:linear-gradient(160deg,rgba(22,28,56,.96),rgba(16,22,48,.95));border:1.5px solid rgba(232,184,48,.45);border-radius:24px;padding:28px 22px 22px 22px;box-shadow:0 24px 80px rgba(0,0,0,.6),inset 0 1px 1px rgba(255,255,255,.08);max-height:92vh;overflow-y:auto">';card+='<button onclick="axSkipWelcome()" aria-label="Passer" title="Plus tard" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>';var dotsHtml='<div style="display:flex;gap:6px;justify-content:center;margin:6px 0 14px">';for(var di=0;di<4;di++){dotsHtml+='<span style="width:8px;height:8px;border-radius:50%;background:'+(di===step?"linear-gradient(135deg,#e8b830,#ffd700)":"rgba(255,255,255,.18)")+';transition:all .3s"></span>';}dotsHtml+='</div>';if(step===0)card+=_axWelcomeStep0(firstName,dotsHtml);else if(step===1)card+=_axWelcomeStepSpotlight(1,"💬","Le chat IA","Tape ta question dans la zone de saisie en bas.<br>L\'IA te repond en quelques secondes — tu peux aussi parler au micro.","💡 Astuce : Entree pour envoyer, Maj+Entree pour aller a la ligne","rgba(232,184,48,.08)",0,2,dotsHtml);else if(step===2)card+=_axWelcomeStepSpotlight(2,"🔐","Le coffre securise","Toutes tes cles et identifiants en un seul endroit.<br>Chiffres localement — jamais envoyes ailleurs.","🔒 Categories : IA, banque, social, sites","rgba(90,168,255,.08)",1,3,dotsHtml);else if(step===3)card+=_axWelcomeStep3(dotsHtml);card+='</div>';ov.innerHTML=card;document.body.appendChild(ov);}catch(e){console.warn("[axShowWelcomeFlow]",e);}}
 function vTutorial(){if(!K.user)return vLogin();var info=_tutorialPlanInfo();var planObj=info.planObj||{};var planName=info.name||"Gratuit";var planPrice=(typeof info.price==="number"&&info.price>0)?(axFormatPrice(info.price,{round:true})+(planObj.oneshot?"":" /mois")):"Gratuit";var h='<div style="padding:16px;max-width:720px;margin:0 auto">';h+='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 6px 0;font-size:26px;font-weight:900">📖 Mode d\'emploi Apex AI</h2>';h+='<p style="margin:0 0 16px 0;font-size:13px;color:var(--ax-text-dim)">Decouvre toutes les fonctions disponibles avec ton plan. Tape "Essayer" pour tester.</p>';h+='<div class="ax-card" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(232,184,48,.10),rgba(232,184,48,.02));border:1px solid rgba(232,184,48,.4);margin-bottom:16px">';h+='<div style="font-size:32px">💎</div>';h+='<div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:1px">Ton plan actuel</div><div style="font-size:18px;font-weight:900;color:var(--ax-gold)">'+esc(planName)+'</div><div style="font-size:12px;color:var(--ax-text-dim)">'+esc(planPrice)+'</div></div>';h+='<button class="ax-btn ax-btn-outline" style="min-height:44px" onclick="sv(\'settings\')" title="Voir mon plan / changer">⚙️ Mon plan</button>';h+='</div>';var unlockedCount=0,lockedCount=0;TUTORIAL_GUIDES.forEach(function(g){if(_tutorialFeatureUnlocked(g.feature,planObj))unlockedCount++;else lockedCount++;});h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';h+='<div style="flex:1;min-width:120px;background:rgba(40,200,120,.10);border:1px solid rgba(40,200,120,.3);border-radius:10px;padding:10px;text-align:center"><div style="font-size:24px;font-weight:900;color:#28c878">'+unlockedCount+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Debloquees</div></div>';h+='<div style="flex:1;min-width:120px;background:rgba(220,80,80,.06);border:1px solid rgba(220,80,80,.25);border-radius:10px;padding:10px;text-align:center"><div style="font-size:24px;font-weight:900;color:#dc5050">'+lockedCount+'</div><div style="font-size:11px;color:var(--ax-text-dim)">A debloquer</div></div>';h+='</div>';TUTORIAL_GUIDES.forEach(function(g){var unlocked=_tutorialFeatureUnlocked(g.feature,planObj);var bg=unlocked?"linear-gradient(135deg,rgba(40,200,120,.06),transparent)":"linear-gradient(135deg,rgba(120,120,120,.05),transparent)";var border=unlocked?"rgba(40,200,120,.3)":"rgba(120,120,120,.25)";h+='<div class="ax-card" style="margin-bottom:12px;background:'+bg+';border:1px solid '+border+';padding:14px">';h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';h+='<div style="font-size:32px;'+(unlocked?"":"opacity:.4;filter:grayscale(.6)")+'">'+g.icon+'</div>';h+='<div style="flex:1;min-width:0">';h+='<div style="font-size:16px;font-weight:700;color:var(--ax-text)">'+esc(g.title)+'</div>';h+='<div style="font-size:12px;color:var(--ax-text-dim)">'+esc(g.desc||"")+'</div>';h+='</div>';if(unlocked){h+='<span style="background:rgba(40,200,120,.18);color:#28c878;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;white-space:nowrap">✅ Debloque</span>';}else{var needPlan=_tutorialFirstPlanForFeature(g.feature);var needName=(PLANS[needPlan]&&PLANS[needPlan].name)?PLANS[needPlan].name:needPlan;h+='<span style="background:rgba(220,80,80,.14);color:#dc5050;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;white-space:nowrap" title="Plan requis : '+esc(needName)+'">🔒 '+esc(needName)+'</span>';}h+='</div>';if(g.steps&&g.steps.length){h+='<ol style="margin:6px 0 10px 0;padding-left:20px;font-size:13px;color:'+(unlocked?"var(--ax-text-dim)":"rgba(180,180,180,.6)")+';line-height:1.6">';g.steps.forEach(function(s){h+='<li>'+esc(s)+'</li>';});h+='</ol>';}h+='<div style="display:flex;gap:8px;flex-wrap:wrap">';if(unlocked){var safeAct=String(g.tryAct||"").replace(/"/g,'&quot;');h+='<button class="ax-btn ax-btn-primary" style="min-height:44px" onclick="try{'+safeAct+'}catch(e){toast(\'Action indisponible\',\'warn\');}" title="Essayer '+esc(g.title)+'">▶ '+esc(g.tryLabel||"Essayer")+'</button>';}else{h+='<button class="ax-btn ax-btn-outline" style="min-height:44px" onclick="tutorialUpgradeHint()" title="Voir les plans">💳 Voir les plans</button>';}h+='</div>';h+='</div>';});h+='<div class="ax-card" style="margin-top:18px;text-align:center;background:linear-gradient(135deg,rgba(90,168,255,.06),transparent);border-left:4px solid #5aa8ff">';h+='<h3 style="margin:0 0 6px 0;font-size:14px">🔄 Refaire le tour de bienvenue</h3>';h+='<p style="margin:0 0 10px 0;font-size:12px;color:var(--ax-text-dim)">Relance le guide pas-a-pas qui s\'affiche au premier lancement.</p>';h+='<button class="ax-btn ax-btn-outline" style="min-height:44px" onclick="tutorialResetOnboard()">↺ Recommencer le tour</button>';h+='</div>';h+='<p style="text-align:center;font-size:11px;color:var(--ax-text-dim);margin-top:14px">Apex AI '+esc(APP_VER)+' · Mode d\'emploi adapte a ton plan</p>';h+='</div>';return h;}
 
+// === MODULE: Onboarding Pro 7-step (v12.260) ===
+/* Override axShowWelcomeFlow with 7 steps + tracking + contextual help + demo mode */
+(function(){
+var TOTAL_STEPS=7;
+var STEPS_DEF=[
+{ic:"✦",title:"Bienvenue",sub:"DECOUVERTE",tip:"",bg:"rgba(232,184,48,.08)"},
+{ic:"☰",title:"Le menu",sub:"NAVIGATION",tip:"💡 Tu retrouves Notes, Calendrier, Reglages...",bg:"rgba(232,184,48,.08)"},
+{ic:"💬",title:"Le chat IA",sub:"INTERACTION",tip:"💡 Pose ta question, l IA repond en quelques secondes",bg:"rgba(64,196,224,.10)"},
+{ic:"🎙",title:"La voix",sub:"PARLER",tip:"💡 Touche le micro, parle au lieu de taper",bg:"rgba(168,120,255,.10)"},
+{ic:"🔔",title:"Les notifs",sub:"RAPPELS",tip:"💡 Active pour recevoir les rappels importants",bg:"rgba(76,208,128,.10)"},
+{ic:"⚙️",title:"Les reglages",sub:"PERSONNALISER",tip:"💡 Theme, voix, securite, langue, plan...",bg:"rgba(232,184,48,.08)"},
+{ic:"👤",title:"Ton profil",sub:"COMPTE",tip:"💡 En haut a droite : ton nom, ton plan, deconnexion",bg:"rgba(255,144,56,.10)"}
+];
+function _stepDescription(i,firstName){
+  if(i===0)return "Voici ton assistant IA personnel "+esc(firstName)+".<br>Decouvre en 7 etapes ce qu il peut faire pour toi.";
+  if(i===1)return "Touche le menu hamburger ☰ en haut a gauche.<br>Tu accedes a toutes les fonctions de l app.";
+  if(i===2)return "Le chat est ton point d entree principal.<br>Pose-moi tes questions, je t aide pour tout.";
+  if(i===3)return "Active la voix 🎙 dans la barre de chat.<br>Parle au lieu de taper, plus rapide et naturel.";
+  if(i===4)return "Active les notifs 🔔 pour recevoir les rappels.<br>Tache, anniversaire, evenement, alerte importante.";
+  if(i===5)return "Le menu Reglages ⚙ te permet de personnaliser.<br>Theme, voix, securite, langue, plan, sauvegarde.";
+  if(i===6)return "Touche ton profil 👤 en haut a droite.<br>Tu vois ton nom, ton plan, et tu peux te deconnecter.";
+  return "";
+}
+function _axOnbDots(curStep){
+  var html='<div style="display:flex;gap:6px;justify-content:center;margin:6px 0 14px">';
+  for(var di=0;di<TOTAL_STEPS;di++){html+='<span style="width:8px;height:8px;border-radius:50%;background:'+(di===curStep?"linear-gradient(135deg,#e8b830,#ffd700)":"rgba(255,255,255,.18)")+';transition:all .3s"></span>';}
+  html+='</div>';return html;
+}
+function _axOnbBtnRow(step){
+  var prev=Math.max(0,step-1),next=step+1;
+  var html='<div style="display:flex;gap:10px">';
+  if(step>0)html+='<button onclick="axQuickTour('+prev+')" style="flex:1;min-height:52px;font-size:15px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:#fff;cursor:pointer">Retour</button>';
+  if(step<TOTAL_STEPS-1)html+='<button onclick="axQuickTour('+next+')" style="flex:'+(step>0?"2":"1")+';min-height:52px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#e8b830,#ffd700);color:#08080f;border:none;cursor:pointer">Suivant →</button>';
+  else html+='<button onclick="axFinishTour()" style="flex:'+(step>0?"2":"1")+';min-height:52px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#e8b830,#ffd700);color:#08080f;border:none;cursor:pointer">✨ Terminer</button>';
+  html+='</div>';
+  html+='<button onclick="axSkipWelcome();axOnbTrack(\'skip\','+step+')" style="width:100%;margin-top:10px;background:none;border:none;color:rgba(255,255,255,.55);font-size:13px;cursor:pointer;padding:8px;min-height:44px">Passer le tour</button>';
+  return html;
+}
+window.axOnbTrack=function(action,step){
+  try{
+    var log=lg("ax_onboard_log",[]);
+    log.push({uid:(K&&K.user)?K.user.id:"anon",name:(K&&K.user)?K.user.name:"",action:action,step:Number(step)||0,ts:Date.now()});
+    if(log.length>500)log=log.slice(-500);
+    ls("ax_onboard_log",log);
+  }catch(_){}
+};
+window.axQuickTour=function(stepIndex,force){
+  try{
+    if(typeof K==="undefined"||!K||!K.user)return;
+    if(force)ls("ax_welcome_done",false);
+    var step=(typeof stepIndex==="number")?stepIndex:lg("ax_welcome_step",0);
+    if(step<0)step=0;if(step>=TOTAL_STEPS)step=TOTAL_STEPS-1;
+    ls("ax_welcome_step",step);
+    if(step===0)axOnbTrack("start",0);else axOnbTrack("step",step);
+    var firstName="";try{firstName=String(K.user.name||"").split(" ")[0];}catch(_){firstName="";}
+    if(!firstName)firstName="cher utilisateur";
+    var existing=document.getElementById("ax-welcome-overlay");
+    if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);
+    var ov=document.createElement("div");
+    ov.id="ax-welcome-overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
+    ov.style.cssText="position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(circle at 50% 30%,rgba(232,184,48,.18),rgba(0,0,0,.92) 70%);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)";
+    var def=STEPS_DEF[step]||STEPS_DEF[0];
+    var card='<div style="position:relative;max-width:440px;width:100%;background:linear-gradient(160deg,rgba(22,28,56,.96),rgba(16,22,48,.95));border:1.5px solid rgba(232,184,48,.45);border-radius:24px;padding:28px 22px 22px 22px;box-shadow:0 24px 80px rgba(0,0,0,.6);max-height:92vh;overflow-y:auto">';
+    card+='<button onclick="axSkipWelcome();axOnbTrack(\'close\','+step+')" aria-label="Fermer" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>';
+    card+='<div style="text-align:center;padding:6px 0 4px">';
+    card+='<div style="font-size:60px;line-height:1;margin-bottom:8px">'+def.ic+'</div>';
+    card+='<div style="font-size:11px;color:rgba(232,184,48,.85);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Etape '+(step+1)+' / '+TOTAL_STEPS+' · '+esc(def.sub)+'</div>';
+    card+='<h2 style="margin:0;font-size:22px;font-weight:800;background:linear-gradient(135deg,#e8b830,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">'+(step===0?("Bienvenue "+esc(firstName)):esc(def.title))+'</h2>';
+    card+='<p style="margin:10px 14px 14px;font-size:15px;color:rgba(255,255,255,.78);line-height:1.5">'+_stepDescription(step,firstName)+'</p>';
+    card+='</div>';
+    if(def.tip)card+='<div style="background:'+def.bg+';border-radius:12px;padding:12px;margin:6px 0 14px;font-size:13px;color:rgba(255,255,255,.75);text-align:center">'+def.tip+'</div>';
+    card+=_axOnbDots(step);
+    card+=_axOnbBtnRow(step);
+    card+='</div>';
+    ov.innerHTML=card;
+    document.body.appendChild(ov);
+  }catch(e){console.warn("[axQuickTour]",e);}
+};
+window.axFinishTour=function(){
+  try{ls("ax_welcome_done",true);ls("ax_first_login",true);}catch(_){}
+  axOnbTrack("complete",TOTAL_STEPS-1);
+  var el=document.getElementById("ax-welcome-overlay");
+  if(el&&el.parentNode)el.parentNode.removeChild(el);
+  try{if(typeof axConfetti==="function")axConfetti(60);}catch(_){}
+  if(typeof toast==="function")toast("Tour termine, c est parti !","ok");
+  if(typeof sv==="function")sv("chat");
+};
+/* Override the existing axShowWelcomeFlow to redirect to axQuickTour */
+window.axShowWelcomeFlow=function(stepOverride){return axQuickTour(stepOverride);};
+})();
+
+/* Contextual help — popover discret 1ere fois sur une feature */
+window.axContextualHelp=function(feature,title,desc){
+  try{
+    if(!K||!K.user)return;
+    var key="ax_help_seen_"+feature+"_"+K.user.id;
+    if(lg(key,false))return;
+    var existing=document.getElementById("ax-ctx-help-"+feature);
+    if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);
+    var ov=document.createElement("div");
+    ov.id="ax-ctx-help-"+feature;
+    ov.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:99997;max-width:340px;width:calc(100% - 32px);background:linear-gradient(135deg,rgba(22,28,56,.98),rgba(16,22,48,.96));border:1.5px solid rgba(232,184,48,.5);border-radius:14px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.55);animation:slideUpFade .3s ease-out";
+    ov.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px"><div style="font-size:24px;flex-shrink:0">💡</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">'+esc(title||"Astuce")+'</div><div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.4">'+esc(desc||"")+'</div></div><button onclick="axDismissHelp(\''+esc(feature)+'\')" aria-label="Compris" style="background:rgba(232,184,48,.15);border:1px solid rgba(232,184,48,.3);color:#fff;border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;flex-shrink:0">✓</button></div>';
+    document.body.appendChild(ov);
+    setTimeout(function(){if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);},8000);
+  }catch(_){}
+};
+window.axDismissHelp=function(feature){
+  try{
+    if(!K||!K.user)return;
+    ls("ax_help_seen_"+feature+"_"+K.user.id,true);
+    var el=document.getElementById("ax-ctx-help-"+feature);
+    if(el&&el.parentNode)el.parentNode.removeChild(el);
+  }catch(_){}
+};
+
+/* Demo mode (admin only) — reset compte demo + pre-rempli */
+window.axStartDemoMode=function(){
+  try{
+    if(!K||!K.user||(typeof axIsAdmin==="function"&&!axIsAdmin())){
+      if(typeof toast==="function")toast("Reserve admin","warn");return;
+    }
+    if(!confirm("Lancer le mode demo ?\n\nReinitialise les comptes laurence et demo_user avec exemples realistes.\nTes donnees Kevin ne sont PAS affectees."))return;
+    var demos=["user_laurence","user_demo"];
+    demos.forEach(function(uid){
+      try{
+        ls("ax_welcome_done_"+uid,false);
+        ls("ax_welcome_step_"+uid,0);
+        ls("ax_first_login_"+uid,false);
+        ls("ax_demo_seeded_"+uid,Date.now());
+      }catch(_){}
+    });
+    /* Sample contacts */
+    try{
+      var sampleContacts=[
+        {name:"Marie Dupont",phone:"+33612345678",email:"marie@exemple.fr",ts:Date.now()},
+        {name:"Jean Martin",phone:"+33687654321",email:"jean@exemple.fr",ts:Date.now()}
+      ];
+      ls("ax_contacts_demo",sampleContacts);
+    }catch(_){}
+    if(typeof toast==="function")toast("Mode demo active. Connecte-toi avec Laurence ou demo_user.","ok");
+    try{axOnbTrack("demo_started",0);}catch(_){}
+  }catch(e){if(typeof toast==="function")toast("Erreur demo","warn");}
+};
+
+/* Vue admin onboarding stats */
+window.vOnboardingStats=function(){
+  if(!K.user)return vLogin();
+  if(typeof axIsAdmin==="function"&&!axIsAdmin()){
+    if(typeof toast==="function")toast("Reserve admin","warn");
+    K.view="dashboard";return vDashboard();
+  }
+  var log=lg("ax_onboard_log",[]);
+  var byUser={};var stepCounts={};var skipsAt={};var completes=0,skips=0,starts=0;
+  log.forEach(function(e){
+    var uid=e.uid||"anon";
+    if(!byUser[uid])byUser[uid]={uid:uid,name:e.name||uid,lastStep:0,lastTs:0,actions:0,done:false,skipped:false};
+    byUser[uid].actions++;
+    if(e.ts>byUser[uid].lastTs){byUser[uid].lastTs=e.ts;byUser[uid].lastStep=e.step;}
+    if(e.action==="complete"){byUser[uid].done=true;completes++;}
+    if(e.action==="skip"||e.action==="close"){byUser[uid].skipped=true;skips++;skipsAt[e.step]=(skipsAt[e.step]||0)+1;}
+    if(e.action==="start")starts++;
+    stepCounts[e.step]=(stepCounts[e.step]||0)+1;
+  });
+  var maxSkipStep=0,maxSkipCount=0;
+  Object.keys(skipsAt).forEach(function(k){if(skipsAt[k]>maxSkipCount){maxSkipCount=skipsAt[k];maxSkipStep=Number(k);}});
+  var users=Object.keys(byUser).map(function(k){return byUser[k];}).sort(function(a,b){return b.lastTs-a.lastTs;});
+  var h='<div style="padding:16px;max-width:760px;margin:0 auto"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 12px;font-size:22px;font-weight:900">📊 Onboarding · Stats admin</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin:0 0 16px">Suivi du tour de bienvenue 7 etapes pour tous les users.</p>';
+  h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">';
+  h+='<div class="ax-card" style="padding:12px;background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);border-left:4px solid var(--ax-gold);text-align:center"><div style="font-size:26px;font-weight:900;color:var(--ax-gold)">'+starts+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Tours commences</div></div>';
+  h+='<div class="ax-card" style="padding:12px;background:linear-gradient(135deg,rgba(76,208,128,.08),transparent);border-left:4px solid var(--ax-green);text-align:center"><div style="font-size:26px;font-weight:900;color:var(--ax-green)">'+completes+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Tours termines</div></div>';
+  h+='<div class="ax-card" style="padding:12px;background:linear-gradient(135deg,rgba(255,88,88,.08),transparent);border-left:4px solid var(--ax-red);text-align:center"><div style="font-size:26px;font-weight:900;color:var(--ax-red)">'+skips+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Skips/Closes</div></div>';
+  h+='<div class="ax-card" style="padding:12px;background:linear-gradient(135deg,rgba(255,144,56,.08),transparent);border-left:4px solid var(--ax-orange);text-align:center"><div style="font-size:26px;font-weight:900;color:var(--ax-orange)">Etape '+(maxSkipStep+1)+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Plus skipee ('+maxSkipCount+')</div></div>';
+  h+='</div>';
+  /* Per-step funnel */
+  h+='<div class="ax-card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:14px">📊 Vues par etape</h3>';
+  for(var s=0;s<7;s++){
+    var c=stepCounts[s]||0;var pct=starts>0?Math.round(c/starts*100):0;
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="width:60px;font-size:11px;color:var(--ax-text-dim);flex-shrink:0">Etape '+(s+1)+'</div><div style="flex:1;background:rgba(255,255,255,.05);border-radius:8px;height:18px;overflow:hidden;position:relative"><div style="background:linear-gradient(90deg,var(--ax-gold),#ffd700);height:100%;width:'+pct+'%;transition:width .4s"></div></div><div style="width:60px;text-align:right;font-size:11px;color:#fff;flex-shrink:0">'+c+' ('+pct+'%)</div></div>';
+  }
+  h+='</div>';
+  /* Per-user list */
+  h+='<div class="ax-card"><h3 style="margin:0 0 10px;font-size:14px">👥 Users ('+users.length+')</h3>';
+  if(!users.length){h+='<p style="color:var(--ax-text-dim);font-size:12px;text-align:center;padding:20px">Aucune donnee onboarding pour le moment.</p>';}
+  else{
+    users.slice(0,30).forEach(function(u){
+      var status=u.done?"✅ Termine":(u.skipped?"⏭ Skip":"⏳ Etape "+(u.lastStep+1));
+      var color=u.done?"var(--ax-green)":(u.skipped?"var(--ax-red)":"var(--ax-gold)");
+      var date=u.lastTs?new Date(u.lastTs).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"-";
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#fff">'+esc(u.name||u.uid)+'</div><div style="font-size:11px;color:var(--ax-text-dim)">'+esc(date)+' · '+u.actions+' actions</div></div><div style="font-size:12px;font-weight:700;color:'+color+';white-space:nowrap">'+status+'</div></div>';
+    });
+  }
+  h+='</div>';
+  /* Actions */
+  h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">';
+  h+='<button class="ax-btn ax-btn-primary" style="min-height:44px;flex:1;min-width:140px" onclick="axStartDemoMode()">🎬 Mode demo</button>';
+  h+='<button class="ax-btn ax-btn-outline" style="min-height:44px;flex:1;min-width:140px" onclick="if(confirm(\'Effacer tous les logs onboarding ?\')){ls(\'ax_onboard_log\',[]);if(typeof dc===\'function\')dc();}">🗑 Reset logs</button>';
+  h+='<button class="ax-btn ax-btn-outline" style="min-height:44px;flex:1;min-width:140px" onclick="axQuickTour(0,true)">▶ Tester le tour</button>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+};
+
 // === MODULE: Analytics Client (dashboard usage pour le client) ===
 function vMyStats(){if(!K.user)return vLogin();var usage=lg("ax_usage",{today:0,month:0,total:0,history:[]});var xp=lg("ax_xp",0);var level=Math.floor(xp/100)+1;var achs=lg("ax_achievements",[]);var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-blue),#40c4e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83D\uDCCA Mon utilisation</h2>';h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(232,184,48,.06),transparent);border-left:4px solid var(--ax-gold)"><div style="font-size:26px;font-weight:900;color:var(--ax-gold)">Niv.'+level+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">'+xp+' XP</div></div>';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(90,168,255,.06),transparent);border-left:4px solid var(--ax-blue)"><div style="font-size:26px;font-weight:900;color:var(--ax-blue)">'+K.conversations.length+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">Convs</div></div>';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(76,208,128,.06),transparent);border-left:4px solid var(--ax-green)"><div style="font-size:26px;font-weight:900;color:var(--ax-green)">'+K.kb.facts.length+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">Faits</div></div>';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(168,120,255,.06),transparent);border-left:4px solid var(--ax-purple)"><div style="font-size:26px;font-weight:900;color:var(--ax-purple)">'+usage.today+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">Tokens/jour</div></div>';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(255,144,56,.06),transparent);border-left:4px solid var(--ax-orange)"><div style="font-size:26px;font-weight:900;color:var(--ax-orange)">'+usage.month+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">Tokens/mois</div></div>';h+='<div class="ax-card" style="text-align:center;padding:14px;background:linear-gradient(135deg,rgba(255,88,88,.06),transparent);border-left:4px solid var(--ax-red)"><div style="font-size:26px;font-weight:900;color:var(--ax-red)">\uD83C\uDFC6 '+achs.length+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">Badges</div></div></div>';if(usage.history&&usage.history.length){h+=_adminUsageChart();}h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(76,208,128,.04),transparent);border-left:4px solid var(--ax-green)"><h3 style="display:flex;align-items:center;gap:8px">\uD83C\uDFC6 Achievements <span style="font-size:11px;background:var(--ax-green);color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">'+achs.length+'</span></h3>';if(achs.length){h+='<div style="display:flex;flex-wrap:wrap;gap:6px">';achs.forEach(function(a){h+='<span class="ax-badge ax-badge-green" style="padding:6px 12px;background:rgba(76,208,128,.15);border:1px solid var(--ax-green)">'+esc(a)+'</span>';});h+='</div>';}else h+='<div style="text-align:center;padding:16px"><div style="font-size:32px;margin-bottom:6px">\uD83C\uDFC6</div><p style="color:var(--ax-text-dim);font-size:13px">Utilisez l\'app pour debloquer des achievements !</p></div>';h+="</div></div>";return h;}
 
@@ -4105,7 +4309,7 @@ function vTokenBalance(){
 }
 
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
