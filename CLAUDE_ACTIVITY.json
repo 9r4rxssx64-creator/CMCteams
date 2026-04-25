@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777123915128,
-  "total_commits": 234,
+  "updated_at": 1777123976513,
+  "total_commits": 235,
   "projects": [
     "apex",
     "cmcteams",
@@ -8,6 +8,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "9112266b",
+      "ts": 1777123915000,
+      "msg": "Apex v12.205: Login multi-format universel + auto-merge doublons + Kevin unifie",
+      "project": "apex",
+      "ver": "12.205",
+      "author": "claude-code"
+    },
     {
       "sha": "ee5e0546",
       "ts": 1777123829000,
@@ -958,14 +966,6 @@
       "msg": "Apex v12.122: suivi conso par user + alerte admin si conso elevee",
       "project": "apex",
       "ver": "12.122",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2bf4f90e",
-      "ts": 1777080826000,
-      "msg": "CMCteams v9.482: niveaux IA par employe (parite Apex v12.121)",
-      "project": "cmcteams",
-      "ver": "9.482",
       "author": "claude-code"
     }
   ]
