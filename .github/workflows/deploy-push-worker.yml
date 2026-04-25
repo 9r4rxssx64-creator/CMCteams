@@ -58,6 +58,35 @@ jobs:
           workingDirectory: /tmp/wrangler-deploy
           command: deploy
 
+
+      - name: Re-pusher les secrets Cloudflare (preserve variables)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_VAPID_PUBLIC_KEY: ${{ secrets.CF_VAPID_PUBLIC_KEY }}
+          CF_VAPID_PRIVATE_KEY: ${{ secrets.CF_VAPID_PRIVATE_KEY }}
+          CF_VAPID_EMAIL: ${{ secrets.CF_VAPID_EMAIL }}
+          CF_FIREBASE_URL: ${{ secrets.CF_FIREBASE_URL }}
+          CF_ADMIN_TOKEN: ${{ secrets.CF_ADMIN_TOKEN }}
+        working-directory: /tmp/wrangler-deploy
+        run: |
+          if [ -n "$CF_VAPID_PUBLIC_KEY" ]; then
+            echo "$CF_VAPID_PUBLIC_KEY" | npx wrangler secret put VAPID_PUBLIC_KEY 2>&1 || echo "skip VAPID_PUBLIC_KEY"
+          fi
+          if [ -n "$CF_VAPID_PRIVATE_KEY" ]; then
+            echo "$CF_VAPID_PRIVATE_KEY" | npx wrangler secret put VAPID_PRIVATE_KEY 2>&1 || echo "skip"
+          fi
+          if [ -n "$CF_VAPID_EMAIL" ]; then
+            echo "$CF_VAPID_EMAIL" | npx wrangler secret put VAPID_EMAIL 2>&1 || echo "skip"
+          fi
+          if [ -n "$CF_FIREBASE_URL" ]; then
+            echo "$CF_FIREBASE_URL" | npx wrangler secret put FIREBASE_URL 2>&1 || echo "skip"
+          fi
+          if [ -n "$CF_ADMIN_TOKEN" ]; then
+            echo "$CF_ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN 2>&1 || echo "skip"
+          fi
+          echo "✅ Secrets re-pushes (si fournis dans GitHub Secrets)"
+
       - name: Test /health après déploiement
         run: |
           sleep 5
