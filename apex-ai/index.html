@@ -372,7 +372,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.222",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.223",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -1760,6 +1760,73 @@ function axGenerateContract(type,parties,clauses){var prompt="Redige un "+type+"
 
 // === MODULE: Diagnostic appareil ===
 function axDiagnosticDevice(){var diag={browser:navigator.userAgent,platform:navigator.platform,screen:screen.width+"x"+screen.height,pixelRatio:window.devicePixelRatio,memory:navigator.deviceMemory||"?",cores:navigator.hardwareConcurrency||"?",online:navigator.onLine,connection:navigator.connection?{type:navigator.connection.effectiveType,downlink:navigator.connection.downlink,rtt:navigator.connection.rtt}:null,storage:{used:_getStorageUsed(),quota:"5MB localStorage"},battery:null,gpu:null};if(navigator.getBattery){navigator.getBattery().then(function(b){diag.battery={level:Math.round(b.level*100)+"%",charging:b.charging,chargingTime:b.chargingTime,dischargingTime:b.dischargingTime};ls("ax_last_diagnostic",diag);});}if(navigator.gpu){diag.gpu="WebGPU disponible";}ls("ax_last_diagnostic",diag);return diag;}
+
+// === MODULE: Tech Scout 2026 - Capabilities cutting-edge (v12.219) ===
+var AX_CAPABILITIES_2026={
+  storageBuckets:{check:function(){return typeof navigator!=="undefined"&&"storageBuckets" in navigator;},label:"Storage Buckets",desc:"Stockage isole multi-conteneurs",cat:"storage"},
+  backgroundFetch:{check:function(){return typeof navigator!=="undefined"&&"serviceWorker" in navigator&&"BackgroundFetchManager" in self;},label:"Background Fetch",desc:"Telechargement en arriere-plan PWA",cat:"storage"},
+  compressionStreams:{check:function(){return typeof CompressionStream!=="undefined";},label:"Compression Streams",desc:"Gzip/deflate natif (sans librairie)",cat:"storage"},
+  viewTransitions:{check:function(){return typeof document!=="undefined"&&"startViewTransition" in document;},label:"View Transitions",desc:"Animations fluides entre vues",cat:"ux"},
+  speculationRules:{check:function(){return typeof HTMLScriptElement!=="undefined"&&HTMLScriptElement.supports&&HTMLScriptElement.supports("speculationrules");},label:"Speculation Rules",desc:"Preload intelligent navigation",cat:"perf"},
+  webAI:{check:function(){return (typeof window!=="undefined"&&"ai" in window)||(typeof self!=="undefined"&&"ai" in self);},label:"Web AI (Gemini Nano)",desc:"IA locale Chrome 138+ - zero cloud",cat:"ai"},
+  translationAPI:{check:function(){return typeof self!=="undefined"&&"translation" in self;},label:"Translation API",desc:"Traduction native navigateur",cat:"ai"},
+  summarizationAPI:{check:function(){return typeof self!=="undefined"&&"ai" in self&&self.ai&&self.ai.summarizer;},label:"Summarization API",desc:"Resume natif local",cat:"ai"},
+  writerAPI:{check:function(){return typeof self!=="undefined"&&"ai" in self&&self.ai&&self.ai.writer;},label:"Writer API",desc:"Generation/reecriture native",cat:"ai"},
+  webCodecs:{check:function(){return typeof VideoEncoder!=="undefined"&&typeof AudioEncoder!=="undefined";},label:"WebCodecs",desc:"Encode/decode H.264/AV1 hardware",cat:"media"},
+  webTransport:{check:function(){return typeof WebTransport!=="undefined";},label:"WebTransport",desc:"HTTP/3 streaming bidirectionnel",cat:"network"},
+  audioWorklet:{check:function(){return typeof AudioWorkletNode!=="undefined";},label:"AudioWorklet",desc:"Audio temps reel pro",cat:"media"},
+  webGPU:{check:function(){return typeof navigator!=="undefined"&&"gpu" in navigator;},label:"WebGPU",desc:"Calculs GPU (ML local, 3D)",cat:"ai"},
+  webNN:{check:function(){return typeof navigator!=="undefined"&&"ml" in navigator;},label:"WebNN",desc:"Neural Network inference natif",cat:"ai"},
+  fileSystemAccess:{check:function(){return typeof window!=="undefined"&&"showOpenFilePicker" in window;},label:"File System Access",desc:"Acces fichiers disque (avec permission)",cat:"ux"},
+  webShareTarget:{check:function(){return typeof navigator!=="undefined"&&"share" in navigator;},label:"Web Share",desc:"Partage natif iOS/Android",cat:"ux"},
+  longAnimationFrames:{check:function(){try{return typeof PerformanceObserver!=="undefined"&&PerformanceObserver.supportedEntryTypes&&PerformanceObserver.supportedEntryTypes.indexOf("long-animation-frame")>=0;}catch(e){return false;}},label:"Long Animation Frames",desc:"Detection lag UI precise",cat:"perf"},
+  computePressure:{check:function(){return typeof PressureObserver!=="undefined";},label:"Compute Pressure",desc:"Monitoring CPU live",cat:"perf"},
+  idleDetection:{check:function(){return typeof IdleDetector!=="undefined";},label:"Idle Detection",desc:"Detection inactivite user",cat:"ux"},
+  anchorPositioning:{check:function(){try{return CSS.supports&&CSS.supports("anchor-name: --x");}catch(e){return false;}},label:"CSS Anchor Positioning",desc:"Tooltips/popovers smart",cat:"ux"},
+  networkInfo:{check:function(){return typeof navigator!=="undefined"&&"connection" in navigator;},label:"Network Information",desc:"4G/5G/Wifi detection",cat:"network"},
+  saveData:{check:function(){return typeof navigator!=="undefined"&&navigator.connection&&"saveData" in navigator.connection;},label:"Save-Data hints",desc:"Mode economie utilisateur",cat:"network"},
+  periodicSync:{check:function(){return typeof navigator!=="undefined"&&"serviceWorker" in navigator&&"periodicSync" in (navigator.serviceWorker||{});},label:"Periodic Background Sync",desc:"Sync periodique offline",cat:"network"},
+  bluetooth:{check:function(){return typeof navigator!=="undefined"&&"bluetooth" in navigator;},label:"Web Bluetooth",desc:"Connexion BLE devices",cat:"sensor"},
+  nfc:{check:function(){return typeof window!=="undefined"&&"NDEFReader" in window;},label:"Web NFC",desc:"Tags NFC scan/ecriture",cat:"sensor"},
+  hid:{check:function(){return typeof navigator!=="undefined"&&"hid" in navigator;},label:"WebHID",desc:"Manettes/devices custom",cat:"sensor"},
+  serial:{check:function(){return typeof navigator!=="undefined"&&"serial" in navigator;},label:"Web Serial",desc:"Communication serie/USB-C",cat:"sensor"},
+  webAuthn:{check:function(){return typeof window!=="undefined"&&"PublicKeyCredential" in window;},label:"WebAuthn (FaceID/TouchID)",desc:"Auth biometrique passkeys",cat:"sensor"}
+};
+function axCheckCapability(name){var c=AX_CAPABILITIES_2026[name];if(!c||typeof c.check!=="function")return false;try{return !!c.check();}catch(e){return false;}}
+function axScanCapabilities(){var result={};for(var k in AX_CAPABILITIES_2026){result[k]=axCheckCapability(k);}ls("ax_capabilities_scan",{ts:now(),result:result});return result;}
+function axCapsSummary(){var scan=axScanCapabilities();var ok=0,total=0;for(var k in scan){total++;if(scan[k])ok++;}return {ok:ok,total:total,pct:total?Math.round(ok/total*100):0,scan:scan};}
+function axCapsHasNewSinceLastScan(){var prev=lg("ax_capabilities_scan_prev",null);var cur=axScanCapabilities();ls("ax_capabilities_scan_prev",cur);if(!prev||!prev.result)return [];var newOnes=[];for(var k in cur){if(cur[k]&&!prev.result[k])newOnes.push(k);}return newOnes;}
+function vDeviceCapabilities(){
+  if(!K.user)return vLogin();
+  var scan=axScanCapabilities();
+  var sum=axCapsSummary();
+  var cats={storage:"Stockage & Performance",ai:"IA locale",media:"Multimedia avance",ux:"UX moderne",network:"Reseau intelligent",sensor:"Capteurs device",perf:"Performance"};
+  var byCat={};
+  for(var k in AX_CAPABILITIES_2026){var c=AX_CAPABILITIES_2026[k];var cat=c.cat||"other";if(!byCat[cat])byCat[cat]=[];byCat[cat].push({key:k,info:c,ok:scan[k]});}
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Tech Scout 2026</h2>';
+  h+='<div style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">APIs cutting-edge stables disponibles sur ton appareil. Plus tu en as, plus Apex est puissant.</div>';
+  h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(232,184,48,.04));border:2px solid rgba(232,184,48,.4);text-align:center;margin-bottom:16px"><div style="font-size:36px;font-weight:800;color:var(--ax-gold)">'+esc(sum.ok+"/"+sum.total)+'</div><div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">capacites detectees ('+esc(String(sum.pct))+"%)</div></div>";
+  for(var ck in byCat){
+    if(!cats[ck])continue;
+    h+='<div class="ax-card"><h3>'+esc(cats[ck])+"</h3>";
+    byCat[ck].forEach(function(item){
+      var color=item.ok?"#4cd080":"#888";
+      var ic=item.ok?"OK":"--";
+      h+='<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="font-size:11px;width:28px;text-align:center;color:'+color+';font-weight:700">'+ic+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+color+'">'+esc(item.info.label)+'</div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">'+esc(item.info.desc)+'</div></div></div>';
+    });
+    h+="</div>";
+  }
+  h+='<div class="ax-card" style="margin-top:16px"><h3>Modeles IA (2026 latest)</h3>';
+  var modelOrder=["claude-opus-4-7","claude-opus-4-7-1m","claude-sonnet-4-6","claude-haiku-4-5-20251001","gpt-5","gpt-5-mini","gemini-2.5-pro","gemini-2.5-flash","deepseek-v3","mistral-large-2026"];
+  modelOrder.forEach(function(mid){var m=AX_AI_PROVIDERS[mid];if(!m)return;h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="flex:1"><div style="font-size:13px;font-weight:600">'+esc(m.name)+'</div><div style="font-size:11px;color:var(--ax-text-dim)">'+esc(m.provider)+" - "+esc((m.context/1000)+"K ctx")+" - qualite "+esc(String(m.quality))+'/10</div></div><div style="font-size:11px;color:var(--ax-gold)">$'+esc(String(m.cost_in))+"/M in</div></div>";});
+  h+="</div>";
+  h+='<div class="ax-card" style="margin-top:16px;text-align:center"><button class="ax-btn ax-btn-primary" onclick="axScanCapabilities();toast(\'Scan refait\',\'ok\');dc()">Re-scanner</button></div>';
+  h+="</div>";
+  return h;
+}
+function vIosHacks(){if(!K.user)return vLogin();return vDeviceCapabilities();}
+function _axCapsBootScan(){try{var newOnes=axCapsHasNewSinceLastScan();if(newOnes&&newOnes.length>0&&typeof axIsAdmin==="function"&&axIsAdmin()){var labels=newOnes.map(function(n){return AX_CAPABILITIES_2026[n]&&AX_CAPABILITIES_2026[n].label||n;});if(typeof toast==="function"){setTimeout(function(){toast("Nouvelles capacites: "+labels.slice(0,2).join(", "),"info");},3500);}}}catch(e){}}
+if(typeof window!=="undefined"){setTimeout(_axCapsBootScan,4000);}
 
 // === MODULE: Changelog in-app ===
 var CHANGELOG=[{version:"v7.1",date:"2026-04-19",changes:["13 personas experts (medecin, psychologue, philosophe...)","80+ templates pro (12 categories)","Medecine chinoise + occidentale","Psychologie TCC + CNV"]},{version:"v7.0",date:"2026-04-19",changes:["6 forfaits (Free a Enterprise)","Systeme de quotas","Streaks + recompenses quotidiennes","Parrainage"]},{version:"v6.0",date:"2026-04-19",changes:["AI Crew (5 agents internes)","10 workers permanents","Auto-learn 24 marques","Self-improving AI"]},{version:"v5.0",date:"2026-04-19",changes:["Auto-discovery appareils","Smart TV WiFi 4 marques","Domotique complete"]},{version:"v4.0",date:"2026-04-19",changes:["Dashboard accueil","Dev tools","Casino game","Canvas editeur"]},{version:"v3.0",date:"2026-04-18",changes:["13 modules complets","Self-modifying AI","6 themes casino"]},{version:"v1.0",date:"2026-04-18",changes:["Premiere version","Chat IA streaming","Firebase sync"]}];
