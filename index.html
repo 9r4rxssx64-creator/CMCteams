@@ -9163,6 +9163,120 @@ function _cmcAiHandleIssue(sentinelId,severity,finding){
   }catch(ex){_sentinelLogFinding("ai-handler","err",String(ex).slice(0,80));}
 }
 
+/* v9.482 — Vue admin : niveau IA par employe (parite Apex v12.121).
+   Liste tous A.employees avec dropdown (faible/moyen/expert).
+   Filtre par equipe/famille en haut. Mobile-friendly (touch 44px+).
+   Note: l environnement IA gerant le planning, conflits, parser PDF, sentinels reste TOUJOURS expert. */
+var _consumLvlFilter="";
+function _consumLvlSetFilter(v){_consumLvlFilter=v||"";dc();}
+function vConsumptionLevelsCMC(){
+  if(!A.user||A.user.id!==AID)return '<div class="page"><div class="empty">🔒 Admin uniquement</div></div>';
+  var perUser=lg("cmc_consumption_levels",{});
+  var emps=(A.employees||[]).filter(function(e){return !e.toMo;}).slice();
+  // Tri : famille puis nom
+  emps.sort(function(a,b){
+    var fa=(a.family||"")+"";var fb=(b.family||"")+"";
+    if(fa!==fb)return fa<fb?-1:1;
+    var na=((a.nom||a.name||a.id)+"").toUpperCase();
+    var nb=((b.nom||b.name||b.id)+"").toUpperCase();
+    return na<nb?-1:(na>nb?1:0);
+  });
+  // Filtre
+  var filt=_consumLvlFilter||"";
+  if(filt){
+    emps=emps.filter(function(e){
+      var f=(e.family||"")+"";
+      var t=(e.team||"")+"";
+      return f===filt||t===filt||(filt==="cadres"&&(e.chef||e.cadre||e.inspecteur||e.superviseur));
+    });
+  }
+  // Liste familles/equipes uniques pour le filtre
+  var families={};
+  (A.employees||[]).forEach(function(e){if(e.family)families[e.family]=true;if(e.team)families["team:"+e.team]=true;});
+  var famKeys=Object.keys(families).sort();
+
+  var h='<div class="page bg-palace" style="position:relative;padding:14px 12px">';
+  h+='<div style="margin-bottom:14px"><div class="sec-title">⚙️ Niveau IA par employé</div>';
+  h+='<div class="sec-sub">Définit la qualité/coût du modèle IA pour le chat personnel de chaque employé.</div></div>';
+
+  // Note importante
+  h+='<div style="background:rgba(232,184,48,.08);border-left:4px solid #e8b830;border-radius:8px;padding:12px;margin-bottom:14px">';
+  h+='<div style="font-weight:700;font-size:14px;margin-bottom:6px">💡 À savoir</div>';
+  h+='<div style="font-size:12px;line-height:1.5;color:#bbb">L\'IA qui gère le planning, les conflits, le parser PDF et les sentinelles reste <strong style="color:#e8b830">toujours expert</strong> (autonome). Ce réglage concerne uniquement le <strong>chat IA personnel</strong> de chaque employé.</div>';
+  h+='</div>';
+
+  // Legende des 3 niveaux
+  h+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:14px">';
+  h+='<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 Les 3 niveaux</div>';
+  Object.keys(CMC_CONSUMPTION_LEVELS).forEach(function(k){
+    var l=CMC_CONSUMPTION_LEVELS[k];
+    h+='<div style="margin:8px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:6px;border-left:4px solid '+esc(l.color)+'">';
+    h+='<div style="font-weight:700">'+esc(l.name)+'</div>';
+    h+='<div style="font-size:11px;color:#aaa;margin-top:4px">'+esc(l.desc)+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+
+  // Filtre par equipe/famille
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">';
+  h+='<label style="font-size:13px;color:#bbb">Filtrer:</label>';
+  h+='<select onchange="_consumLvlSetFilter(this.value)" style="padding:10px;min-height:44px;background:#222;color:#fff;border:1px solid #444;border-radius:6px;font-size:14px;flex:1;min-width:180px">';
+  h+='<option value=""'+(filt===""?" selected":"")+'>Tous les employés ('+(A.employees||[]).filter(function(e){return !e.toMo;}).length+')</option>';
+  h+='<option value="cadres"'+(filt==="cadres"?" selected":"")+'>👑 Cadres (chefs/inspecteurs/superviseurs)</option>';
+  famKeys.forEach(function(k){
+    var lbl=k.indexOf("team:")===0?("Équipe "+k.slice(5)):("Famille "+k);
+    h+='<option value="'+esc(k.indexOf("team:")===0?k.slice(5):k)+'"'+(filt===(k.indexOf("team:")===0?k.slice(5):k)?" selected":"")+'>'+esc(lbl)+'</option>';
+  });
+  h+='</select>';
+  h+='</div>';
+
+  // Liste des employes
+  h+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px">';
+  h+='<div style="font-weight:700;font-size:14px;padding:8px 4px 12px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px">👥 Employés ('+emps.length+')</div>';
+
+  if(!emps.length){
+    h+='<div style="padding:20px;text-align:center;color:#888;font-size:13px">Aucun employé pour ce filtre.</div>';
+  }else{
+    emps.forEach(function(e){
+      var current=perUser[e.id]||cmcGetConsumptionLevel(e.id);
+      var cur=CMC_CONSUMPTION_LEVELS[current]||CMC_CONSUMPTION_LEVELS.faible;
+      var isAdmin=(e.id===AID);
+      var isCadre=!!(e.chef||e.cadre||e.inspecteur||e.superviseur||e.family==="cadres");
+      var nm=esc((e.nom||e.name||e.id)+(e.prenom?" "+e.prenom.charAt(0)+".":""));
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid rgba(255,255,255,.04);flex-wrap:wrap">';
+      h+='<div style="flex:1;min-width:140px">';
+      h+='<div style="font-weight:600;font-size:14px">'+nm;
+      if(isAdmin)h+=' <span style="font-size:10px;background:#e8b830;color:#000;padding:2px 6px;border-radius:4px;margin-left:4px">ADMIN</span>';
+      else if(isCadre)h+=' <span style="font-size:10px;background:#5aa8ff;color:#000;padding:2px 6px;border-radius:4px;margin-left:4px">CADRE</span>';
+      h+='</div>';
+      h+='<div style="font-size:11px;color:#888">'+esc(e.id)+(e.team?" • Éq. "+esc(e.team):"")+(e.family?" • "+esc(e.family):"")+'</div>';
+      h+='</div>';
+      h+='<select onchange="cmcSetConsumptionLevel(\''+esc(e.id)+'\',this.value);dc();" style="min-height:44px;padding:8px 10px;border-radius:6px;border:1px solid #444;font-size:13px;min-width:170px;background:'+esc(cur.color)+'22;color:#fff">';
+      Object.keys(CMC_CONSUMPTION_LEVELS).forEach(function(k){
+        h+='<option value="'+k+'"'+(current===k?" selected":"")+'>'+esc(CMC_CONSUMPTION_LEVELS[k].name)+'</option>';
+      });
+      h+='</select>';
+      h+='</div>';
+    });
+  }
+  h+='</div>';
+
+  // Defaults rappel
+  h+='<div style="margin-top:14px;padding:12px;background:rgba(58,100,180,.08);border:1px solid rgba(58,100,180,.2);border-radius:8px;font-size:12px;line-height:1.5;color:#bbb">';
+  h+='<div style="font-weight:700;color:#6090d0;margin-bottom:6px">📌 Valeurs par défaut</div>';
+  h+='<ul style="margin:0;padding-left:18px">';
+  h+='<li>Admin Kevin → <strong style="color:#e8b830">Expert</strong></li>';
+  h+='<li>Cadres / chefs / inspecteurs / superviseurs → <strong style="color:#5aa8ff">Moyen</strong></li>';
+  h+='<li>Autres employés → <strong style="color:#4cd080">Faible</strong></li>';
+  h+='</ul>';
+  h+='<div style="margin-top:8px;font-size:11px;color:#888">Tu peux surclasser un employé spécifique en modifiant son niveau ci-dessus.</div>';
+  h+='</div>';
+
+  h+='<div style="margin-top:10px"><button class="btn" onclick="sv(\'admin\')" style="min-height:44px;padding:10px 18px">← Retour Admin</button></div>';
+  h+='</div>';
+  return h;
+}
+
 // 1. ⚡ Perf-Sentinel — render time, RAM, localStorage %, DOM size
 function _sentinelPerf(){
   try{
