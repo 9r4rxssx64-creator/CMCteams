@@ -1,13 +1,22 @@
 {
-  "updated_at": 1777123976513,
-  "total_commits": 235,
+  "updated_at": 1777124001148,
+  "total_commits": 236,
   "projects": [
     "apex",
+    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "cfade397",
+      "ts": 1777123976000,
+      "msg": "Apex v12.205 + CMCteams v9.515: vDuplicatesAdmin route + cles FB_LOCAL agents",
+      "project": "apex",
+      "ver": "12.205",
+      "author": "claude-code"
+    },
     {
       "sha": "9112266b",
       "ts": 1777123915000,
@@ -564,7 +573,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "multi",
+      "project": "backend",
       "ver": null,
       "author": "claude-code"
     },
@@ -958,14 +967,6 @@
       "msg": "CMCteams: ajout cmc_employees_global_level a FB_FIX (subagent en cours)",
       "project": "multi",
       "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "d8492895",
-      "ts": 1777080904000,
-      "msg": "Apex v12.122: suivi conso par user + alerte admin si conso elevee",
-      "project": "apex",
-      "ver": "12.122",
       "author": "claude-code"
     }
   ]
