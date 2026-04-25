@@ -1,14 +1,21 @@
 {
-  "updated_at": 1777121382217,
-  "total_commits": 226,
+  "updated_at": 1777121825096,
+  "total_commits": 225,
   "projects": [
     "apex",
-    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "d65d9671",
+      "ts": 1777121382000,
+      "msg": "Apex v12.186 + CMCteams v9.512: 3 fixes Kevin + auto-refresh agressif partout",
+      "project": "apex",
+      "ver": "12.186",
+      "author": "claude-code"
+    },
     {
       "sha": "5050d29b",
       "ts": 1777121206000,
@@ -453,7 +460,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -959,14 +966,6 @@
       "msg": "Apex v12.115 + CMCteams v9.479: vUsersActivity tracker par utilisateur",
       "project": "apex",
       "ver": "12.115",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e78c7956",
-      "ts": 1777079574000,
-      "msg": "Apex v12.118: PayPal.me en plus de Stripe (Kevin pas encore societe)",
-      "project": "apex",
-      "ver": "12.118",
       "author": "claude-code"
     }
   ]
