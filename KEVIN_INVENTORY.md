@@ -100,6 +100,19 @@
 | 🚀 **Deploy Worker** | https://9r4rxssx64-creator.github.io/CMCteams/tools/cloudflare/deploy-worker.html | Déployer le worker Cloudflare en 1 clic |
 | 🔑 **Gen VAPID** | https://9r4rxssx64-creator.github.io/CMCteams/tools/cloudflare/gen-vapid.html | Générer les clés push VAPID |
 | 📷 **Album Laurence** | https://9r4rxssx64-creator.github.io/CMCteams/tools/album-laurence.html | Upload photos diaporama Laurence (compression auto + push Firebase) |
+| ⚖ **Calc Conventions SBM** | https://9r4rxssx64-creator.github.io/CMCteams/tools/calc-conventions.html | Calculer congés familiaux (Art. 18) + indemnité retraite (Art. 26) Convention SBM |
+| 💳 **Gen Bulletin Paie** | https://9r4rxssx64-creator.github.io/CMCteams/tools/gen-bulletin-paie.html | Fiche paie indicative Casino Monaco (8 postes, cotisations CCSS+CARTI, export PDF) |
+| 📝 **Décodeur Codes Planning** | https://9r4rxssx64-creator.github.io/CMCteams/tools/codes-decoder.html | Tous les codes planning (CP, RTR, 22/6, etc.) avec recherche + filtres + apprentissage |
+| 📅 **Planning Week-end** | https://9r4rxssx64-creator.github.io/CMCteams/tools/planning-weekend.html | Visualiseur rapide qui bosse sam/dim (parser texte + partage SMS pit boss) |
+
+### Liens GitHub des nouveaux outils
+
+| Outil | View | Raw | Edit |
+|-------|------|-----|------|
+| `calc-conventions.html` | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/calc-conventions.html) | [Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/calc-conventions.html) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/calc-conventions.html) |
+| `gen-bulletin-paie.html` | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/gen-bulletin-paie.html) | [Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/gen-bulletin-paie.html) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/gen-bulletin-paie.html) |
+| `codes-decoder.html` | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/codes-decoder.html) | [Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/codes-decoder.html) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/codes-decoder.html) |
+| `planning-weekend.html` | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/planning-weekend.html) | [Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/planning-weekend.html) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/planning-weekend.html) |
 
 ---
 
