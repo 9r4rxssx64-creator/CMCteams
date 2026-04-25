@@ -322,7 +322,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.145",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.147",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1940,7 +1940,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -3774,7 +3774,9 @@ var APEX_COMMANDS=[
   /* v12.115 — Feature flags ON/OFF */
   {id:"featureflags",lb:"🔘 Activer/Désactiver fonctions",cat:"Admin",adminOnly:true,act:function(){sv("featureflags");}},
   /* v12.141 — Parrainage */
-  {id:"referral",lb:"🎁 Parrainage",cat:"Principal",act:function(){sv("referral");}}
+  {id:"referral",lb:"🎁 Parrainage",cat:"Principal",act:function(){sv("referral");}},
+  /* v12.147 — Stockage pro hybride (localStorage + IndexedDB + Railway) */
+  {id:"storagepro",lb:"💾 Stockage pro",cat:"Admin",adminOnly:true,act:function(){sv("storagepro");}}
 ];
 function axCommandPalette(){
   var isAdmin=axIsAdmin&&axIsAdmin();
@@ -3852,6 +3854,216 @@ var _idb=null;
 function idbOpen(){return new Promise(function(resolve,reject){var req=indexedDB.open("kdmc_ai",2);req.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains("conversations"))db.createObjectStore("conversations",{keyPath:"id"});if(!db.objectStoreNames.contains("messages"))db.createObjectStore("messages",{keyPath:"convId"});if(!db.objectStoreNames.contains("files"))db.createObjectStore("files",{keyPath:"id"});if(!db.objectStoreNames.contains("cache"))db.createObjectStore("cache",{keyPath:"key"});};req.onsuccess=function(e){_idb=e.target.result;resolve(_idb);};req.onerror=function(){reject();};});}
 function idbPut(store,data){if(!_idb)return;try{var tx=_idb.transaction(store,"readwrite");tx.objectStore(store).put(data);}catch(e){}}
 function idbGet(store,key){if(!_idb)return Promise.resolve(null);return new Promise(function(resolve){try{var tx=_idb.transaction(store,"readonly");var req=tx.objectStore(store).get(key);req.onsuccess=function(){resolve(req.result||null);};req.onerror=function(){resolve(null);};}catch(e){resolve(null);}});}
+
+/* === v12.147 — Stockage pro IndexedDB pour gros volumes (Kevin: "stockage professionnel") === */
+var _axDB=null;
+function axDBInit(){
+  return new Promise(function(resolve){
+    if(!window.indexedDB){resolve(null);return;}
+    try{
+      var req=indexedDB.open("apex-db",1);
+      req.onupgradeneeded=function(e){
+        var db=e.target.result;
+        if(!db.objectStoreNames.contains("kv"))db.createObjectStore("kv",{keyPath:"key"});
+        if(!db.objectStoreNames.contains("conversations"))db.createObjectStore("conversations",{keyPath:"id"});
+        if(!db.objectStoreNames.contains("messages"))db.createObjectStore("messages",{keyPath:"key"});
+        if(!db.objectStoreNames.contains("kb"))db.createObjectStore("kb",{keyPath:"id"});
+      };
+      req.onsuccess=function(){_axDB=req.result;resolve(_axDB);};
+      req.onerror=function(){resolve(null);};
+    }catch(_){resolve(null);}
+  });
+}
+function axDBSet(store,key,value){
+  return new Promise(function(resolve){
+    var go=function(){
+      if(!_axDB){resolve(false);return;}
+      try{
+        var tx=_axDB.transaction([store],"readwrite");
+        tx.objectStore(store).put({key:key,id:key,value:value,ts:Date.now()});
+        tx.oncomplete=function(){resolve(true);};
+        tx.onerror=function(){resolve(false);};
+      }catch(_){resolve(false);}
+    };
+    if(!_axDB)axDBInit().then(go);else go();
+  });
+}
+function axDBGet(store,key){
+  return new Promise(function(resolve){
+    var go=function(){
+      if(!_axDB){resolve(null);return;}
+      try{
+        var tx=_axDB.transaction([store],"readonly");
+        var req=tx.objectStore(store).get(key);
+        req.onsuccess=function(){resolve(req.result?req.result.value:null);};
+        req.onerror=function(){resolve(null);};
+      }catch(_){resolve(null);}
+    };
+    if(!_axDB)axDBInit().then(go);else go();
+  });
+}
+function axDBDelete(store,key){
+  return new Promise(function(resolve){
+    var go=function(){
+      if(!_axDB){resolve(false);return;}
+      try{
+        var tx=_axDB.transaction([store],"readwrite");
+        tx.objectStore(store).delete(key);
+        tx.oncomplete=function(){resolve(true);};
+        tx.onerror=function(){resolve(false);};
+      }catch(_){resolve(false);}
+    };
+    if(!_axDB)axDBInit().then(go);else go();
+  });
+}
+function axDBList(store){
+  return new Promise(function(resolve){
+    var go=function(){
+      if(!_axDB){resolve([]);return;}
+      try{
+        var tx=_axDB.transaction([store],"readonly");
+        var req=tx.objectStore(store).getAll();
+        req.onsuccess=function(){resolve(req.result||[]);};
+        req.onerror=function(){resolve([]);};
+      }catch(_){resolve([]);}
+    };
+    if(!_axDB)axDBInit().then(go);else go();
+  });
+}
+function axDBClear(store){
+  return new Promise(function(resolve){
+    var go=function(){
+      if(!_axDB){resolve(false);return;}
+      try{
+        var tx=_axDB.transaction([store],"readwrite");
+        tx.objectStore(store).clear();
+        tx.oncomplete=function(){resolve(true);};
+        tx.onerror=function(){resolve(false);};
+      }catch(_){resolve(false);}
+    };
+    if(!_axDB)axDBInit().then(go);else go();
+  });
+}
+/* Migration auto : si localStorage > 4MB, deplacer chats anciens (>30j) vers IndexedDB */
+function axMigrateOldChatsToIDB(){
+  return new Promise(function(resolve){
+    try{
+      var totalBytes=0;
+      for(var k in localStorage){if(localStorage.hasOwnProperty(k))totalBytes+=(localStorage[k]||"").length+k.length;}
+      if(totalBytes<4194304){resolve(0);return;}
+      var cutoff=Date.now()-30*86400000;
+      var keys=[];
+      for(var key in localStorage){if(localStorage.hasOwnProperty(key)&&key.indexOf("ax_msgs_")===0)keys.push(key);}
+      var moved=0,i=0;
+      var next=function(){
+        if(i>=keys.length){if(moved&&typeof toast==="function")toast("Archivage : "+moved+" anciennes conversations en stockage pro","ok");resolve(moved);return;}
+        var kk=keys[i++];
+        var msgs=lg(kk,[]);
+        if(!msgs||!msgs.length){next();return;}
+        var lastTs=msgs[msgs.length-1].ts||0;
+        if(lastTs<cutoff){
+          axDBSet("messages",kk,msgs).then(function(ok){
+            if(ok){try{localStorage.removeItem(kk);moved++;}catch(_){}}
+            next();
+          });
+        }else{next();}
+      };
+      next();
+    }catch(_){resolve(0);}
+  });
+}
+/* Estimation usage IndexedDB via navigator.storage.estimate */
+function axStorageEstimate(){
+  return new Promise(function(resolve){
+    try{
+      if(navigator.storage&&navigator.storage.estimate){
+        navigator.storage.estimate().then(function(est){
+          resolve({usage:est.usage||0,quota:est.quota||0});
+        }).catch(function(){resolve({usage:0,quota:0});});
+      }else{resolve({usage:0,quota:0});}
+    }catch(_){resolve({usage:0,quota:0});}
+  });
+}
+/* Test backend Railway (api.apex.sbs) */
+function axBackendStatus(){
+  return new Promise(function(resolve){
+    try{
+      var url=lg("ax_proxy_url","")||"https://api.apex.sbs";
+      var ctrl=null;
+      try{ctrl=new AbortController();setTimeout(function(){try{ctrl.abort();}catch(_){}},5000);}catch(_){}
+      fetch(url+"/health",{method:"GET",signal:ctrl?ctrl.signal:undefined}).then(function(r){
+        resolve({ok:r&&r.ok,url:url,status:r?r.status:0});
+      }).catch(function(){resolve({ok:false,url:url,status:0});});
+    }catch(_){resolve({ok:false,url:"",status:0});}
+  });
+}
+function axStorageProRefresh(){
+  try{
+    var elLs=document.getElementById("axSpLs");
+    var elIdb=document.getElementById("axSpIdb");
+    var elBe=document.getElementById("axSpBe");
+    var elStats=document.getElementById("axSpStats");
+    if(elLs){var st=_axStorageStats();var pct=st.pct;var col=pct>80?"var(--ax-red)":(pct>60?"var(--ax-orange)":"var(--ax-green)");elLs.innerHTML='<div style="display:flex;justify-content:space-between"><span>localStorage (rapide)</span><strong style="color:'+col+'">'+pct+'%</strong></div><div style="width:100%;height:10px;background:var(--ax-bg-input);border-radius:5px;overflow:hidden;margin-top:6px"><div style="width:'+Math.min(pct,100)+'%;height:100%;background:'+col+'"></div></div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:6px">'+Math.round(st.total/1024)+' Ko / ~5 Mo - '+st.stats.length+' cles</div>';}
+    axStorageEstimate().then(function(est){
+      if(elIdb){
+        var pctI=est.quota?Math.round(est.usage/est.quota*100):0;
+        var mbU=Math.round(est.usage/1048576*10)/10;
+        var mbQ=Math.round(est.quota/1048576);
+        elIdb.innerHTML='<div style="display:flex;justify-content:space-between"><span>IndexedDB (gros volumes)</span><strong style="color:var(--ax-green)">'+pctI+'%</strong></div><div style="width:100%;height:10px;background:var(--ax-bg-input);border-radius:5px;overflow:hidden;margin-top:6px"><div style="width:'+Math.min(pctI,100)+'%;height:100%;background:var(--ax-green)"></div></div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:6px">'+mbU+' Mo / '+mbQ+' Mo disponibles</div>';
+      }
+    });
+    axBackendStatus().then(function(b){
+      if(elBe){
+        var col=b.ok?"var(--ax-green)":"var(--ax-orange)";
+        var lab=b.ok?"En ligne":"Hors ligne";
+        elBe.innerHTML='<div style="display:flex;justify-content:space-between"><span>Backend Railway (donnees critiques)</span><strong style="color:'+col+'">'+esc(lab)+'</strong></div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:6px">'+esc(b.url||"")+' - statut '+b.status+'</div>';
+      }
+    });
+    if(elStats){
+      Promise.all([axDBList("conversations"),axDBList("messages"),axDBList("kb")]).then(function(arr){
+        var c=arr[0]?arr[0].length:0;
+        var m=arr[1]?arr[1].length:0;
+        var kb=arr[2]?arr[2].length:0;
+        elStats.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center"><div><div style="font-size:24px;font-weight:700;color:var(--ax-gold)">'+c+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Conversations</div></div><div><div style="font-size:24px;font-weight:700;color:var(--ax-gold)">'+m+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Lots messages</div></div><div><div style="font-size:24px;font-weight:700;color:var(--ax-gold)">'+kb+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Faits memoire</div></div></div>';
+      });
+    }
+  }catch(_){}
+}
+function axStorageProArchive(){
+  if(!confirm("Archiver les conversations de plus de 30 jours dans le stockage professionnel (IndexedDB) ?\n\nElles resteront accessibles mais liberera de la place rapide."))return;
+  axMigrateOldChatsToIDB().then(function(n){
+    if(typeof toast==="function")toast(n+" conversation(s) archivee(s)","ok");
+    axStorageProRefresh();
+  });
+}
+function axStorageProClear(){
+  if(!confirm("ATTENTION : vider tout le stockage IndexedDB ?\n\nTous les chats archives seront perdus. Action irreversible."))return;
+  if(!confirm("Confirmer une seconde fois : SUPPRIMER toutes les donnees IndexedDB ?"))return;
+  Promise.all([axDBClear("kv"),axDBClear("conversations"),axDBClear("messages"),axDBClear("kb")]).then(function(){
+    if(typeof toast==="function")toast("Stockage IndexedDB vide","ok");
+    axStorageProRefresh();
+  });
+}
+function vStoragePro(){
+  if(!K.user)return vLogin();
+  if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Reserve admin</div></div>';
+  setTimeout(axStorageProRefresh,100);
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">💾 Stockage professionnel</h2>';
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold)"><h3>3 niveaux de stockage</h3>';
+  h+='<div id="axSpLs" style="margin:12px 0;padding:10px;background:var(--ax-bg-input);border-radius:8px"><em>Chargement...</em></div>';
+  h+='<div id="axSpIdb" style="margin:12px 0;padding:10px;background:var(--ax-bg-input);border-radius:8px"><em>Chargement...</em></div>';
+  h+='<div id="axSpBe" style="margin:12px 0;padding:10px;background:var(--ax-bg-input);border-radius:8px"><em>Chargement...</em></div>';
+  h+='</div>';
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue)"><h3>📊 Donnees pro</h3><div id="axSpStats" style="margin:8px 0"><em>Chargement...</em></div></div>';
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-green)"><h3>Actions</h3>';
+  h+='<div class="ax-setting-row"><div class="ax-label">📦 Archiver chats &gt; 30j<div class="ax-desc">Deplace en IndexedDB pour liberer le stockage rapide</div></div><button class="ax-btn ax-btn-primary" onclick="axStorageProArchive()">Archiver</button></div>';
+  h+='<div class="ax-setting-row"><div class="ax-label">🔄 Rafraichir<div class="ax-desc">Recalcule les usages</div></div><button class="ax-btn ax-btn-outline" onclick="axStorageProRefresh()">Rafraichir</button></div>';
+  h+='<div class="ax-setting-row"><div class="ax-label">🗑 Vider IndexedDB<div class="ax-desc">Supprime toutes donnees pro (irreversible)</div></div><button class="ax-btn ax-btn-outline" style="border-color:var(--ax-red);color:var(--ax-red)" onclick="axStorageProClear()">Vider</button></div>';
+  h+='</div>';
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple)"><h3>ℹ️ Comment ca marche</h3><p style="font-size:12px;color:var(--ax-text-dim);line-height:1.6"><strong>localStorage</strong> (rapide, ~5 Mo) : reglages, preferences, donnees du jour.<br><br><strong>IndexedDB</strong> (gros volumes, ~50 Mo a 1 Go selon iOS/Android) : conversations archivees, base de connaissance, fichiers, audit log.<br><br><strong>Backend Railway</strong> (illimite, securise) : donnees critiques (abonnements, paiements, comptes utilisateurs).<br><br>Migration automatique au demarrage si localStorage depasse 4 Mo : les conversations de plus de 30 jours sont deplacees vers IndexedDB.</p></div>';
+  h+='</div>';
+  return h;
+}
 
 // === MODULE: QR Code ===
 function axQRCode(text,size){size=size||200;return'<img src="https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(text)+'&bgcolor=08080f&color=c9a227" alt="QR Code" style="border-radius:8px;margin:8px auto;display:block">';}
@@ -4638,7 +4850,7 @@ window.addEventListener("beforeunload",function(){axForceStopAllMedia();});
 window.addEventListener("blur",function(){setTimeout(function(){if(document.hidden)axForceStopAllMedia();},500);});
 if(!window._activeMediaStreams)window._activeMediaStreams=[];
 if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&!navigator.mediaDevices._axWrapped){var _origGUM=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=function(c){return _origGUM(c).then(function(s){window._activeMediaStreams.push(s);return s;});};navigator.mediaDevices._axWrapped=true;}
-window.addEventListener("DOMContentLoaded",function(){/* v12.79 FAIL-SAFE : splash retire apres 5s MAX meme si init crash (Kevin bloque sur splash 2026-04-24) */setTimeout(function(){try{var sp=document.getElementById("ax-splash");if(sp){sp.style.opacity="0";setTimeout(function(){try{sp.remove();}catch(_){}},300);console.warn("[SPLASH] Fail-safe removed splash after 5s timeout");}/* v12.80 — Force login view si contenu vide + pas connecte */var content=document.getElementById("content");if((!content||!content.innerHTML||content.innerHTML.trim().length<50)){try{if(typeof K!=="undefined"){if(!K.user){K.view=lg("ax_landing_seen",false)?"login":"landing";}else if(K.view==="chat"&&typeof vChat==="function"){/* keep chat */}if(typeof render==="function")render();console.warn("[BOOT] Forced view="+K.view+" - was empty");}}catch(fe){console.error("[FORCE VIEW]",fe);}}/* FAB cache si pas connecte */try{var fb=document.getElementById("ax-fab");if(fb&&(!K||!K.user))fb.classList.add("hidden");}catch(_){}}catch(_){}},5000);try{perfStart("init");axInit();}catch(bootErr){console.error("[BOOT CRASH]",bootErr);try{var sp=document.getElementById("ax-splash");if(sp)sp.remove();}catch(_){}/* Show login manually */try{if(typeof K!=="undefined"){K.view="login";if(typeof render==="function")render();}}catch(_){}}_loadPurify();_restoreReminders();finFetchRates();idbOpen().catch(function(){});_globalIntervals.push(setInterval(_healthCheck,30000));/* v12.137 — Quota check toutes les 5 min */_globalIntervals.push(setInterval(_axCheckQuota,5*60000));_globalIntervals.push(setInterval(function(){finUpdatePrices();},300000));_globalIntervals.push(setInterval(function(){_checkDailySchedules();},60000));_globalIntervals.push(setInterval(function(){finFetchRates();},3600000));/* v12.71 */_globalIntervals.push(setInterval(_digestTelemetryPeriodic,45000));_globalIntervals.push(setInterval(_agentErrorDigest,180000));/* v12.75 */_globalIntervals.push(setInterval(axSelfReviewCapabilities,6*3600000));setTimeout(axSelfReviewCapabilities,10000);var customAmb=lg("ax_custom_ambiances",{});Object.keys(customAmb).forEach(function(k){AMBIANCES[k]=customAmb[k];});_processDeepLink();_checkShareTarget();var splash=document.getElementById("ax-splash");if(splash){splash.style.opacity="0";setTimeout(function(){splash.remove();},600);}console.log("APEX "+APP_VER+" init en "+perfEnd("init")+"ms");})
+window.addEventListener("DOMContentLoaded",function(){/* v12.79 FAIL-SAFE : splash retire apres 5s MAX meme si init crash (Kevin bloque sur splash 2026-04-24) */setTimeout(function(){try{var sp=document.getElementById("ax-splash");if(sp){sp.style.opacity="0";setTimeout(function(){try{sp.remove();}catch(_){}},300);console.warn("[SPLASH] Fail-safe removed splash after 5s timeout");}/* v12.80 — Force login view si contenu vide + pas connecte */var content=document.getElementById("content");if((!content||!content.innerHTML||content.innerHTML.trim().length<50)){try{if(typeof K!=="undefined"){if(!K.user){K.view=lg("ax_landing_seen",false)?"login":"landing";}else if(K.view==="chat"&&typeof vChat==="function"){/* keep chat */}if(typeof render==="function")render();console.warn("[BOOT] Forced view="+K.view+" - was empty");}}catch(fe){console.error("[FORCE VIEW]",fe);}}/* FAB cache si pas connecte */try{var fb=document.getElementById("ax-fab");if(fb&&(!K||!K.user))fb.classList.add("hidden");}catch(_){}}catch(_){}},5000);try{perfStart("init");axInit();}catch(bootErr){console.error("[BOOT CRASH]",bootErr);try{var sp=document.getElementById("ax-splash");if(sp)sp.remove();}catch(_){}/* Show login manually */try{if(typeof K!=="undefined"){K.view="login";if(typeof render==="function")render();}}catch(_){}}_loadPurify();_restoreReminders();finFetchRates();idbOpen().catch(function(){});/* v12.147 — Stockage pro init + migration auto chats anciens */try{axDBInit().then(function(){setTimeout(function(){try{axMigrateOldChatsToIDB();}catch(_){}},8000);});}catch(_){}_globalIntervals.push(setInterval(_healthCheck,30000));/* v12.137 — Quota check toutes les 5 min */_globalIntervals.push(setInterval(_axCheckQuota,5*60000));_globalIntervals.push(setInterval(function(){finUpdatePrices();},300000));_globalIntervals.push(setInterval(function(){_checkDailySchedules();},60000));_globalIntervals.push(setInterval(function(){finFetchRates();},3600000));/* v12.71 */_globalIntervals.push(setInterval(_digestTelemetryPeriodic,45000));_globalIntervals.push(setInterval(_agentErrorDigest,180000));/* v12.75 */_globalIntervals.push(setInterval(axSelfReviewCapabilities,6*3600000));setTimeout(axSelfReviewCapabilities,10000);var customAmb=lg("ax_custom_ambiances",{});Object.keys(customAmb).forEach(function(k){AMBIANCES[k]=customAmb[k];});_processDeepLink();_checkShareTarget();var splash=document.getElementById("ax-splash");if(splash){splash.style.opacity="0";setTimeout(function(){splash.remove();},600);}console.log("APEX "+APP_VER+" init en "+perfEnd("init")+"ms");})
 document.addEventListener("click",function(ev){var el=ev.target.closest("[data-live-filter]");if(el){var mode=el.getAttribute("data-live-filter");toast("Filtre: "+mode,"info");}});
 
 document.addEventListener("click",function(ev){var el=ev.target.closest("[data-open-user-report]");if(el){window._axReportUid=el.getAttribute("data-open-user-report");sv("userreport");}});
