@@ -1,13 +1,70 @@
 {
-  "updated_at": 1777134085736,
-  "total_commits": 219,
+  "updated_at": 1777134490813,
+  "total_commits": 226,
   "projects": [
     "apex",
+    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "01a4b62a",
+      "ts": 1777134480000,
+      "msg": "Apex v12.211: Onboarding tour iPhone + CGU bundle 1 clic permissions + haptic confirm",
+      "project": "apex",
+      "ver": "12.211",
+      "author": "claude-code"
+    },
+    {
+      "sha": "cf7b4249",
+      "ts": 1777134444000,
+      "msg": "CLAUDE.md regle RIEN PERDRE + SYNTHESE + SAUVEGARDE TEMPS REEL (Kevin: vue banque d'infos, agents surveillent rien ne passe)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "74425244",
+      "ts": 1777134407000,
+      "msg": "Apex v12.209: vSettings extension agent partiel (autonomie)",
+      "project": "apex",
+      "ver": "12.209",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b02182c2",
+      "ts": 1777134304000,
+      "msg": "CLAUDE.md regle permanente ENRICHISSEMENT PROFILS CONTINU (Kevin: auto-extraction chat + sources externes + cross-fiches)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "d848ea7c",
+      "ts": 1777134271000,
+      "msg": "Apex v12.208: Agent securite dedie + alertes critiques + push admin",
+      "project": "apex",
+      "ver": "12.208",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dbf165b7",
+      "ts": 1777134244000,
+      "msg": "CLAUDE.md regle \"AUTONOMIE SUR TACHES KEVIN\" + KEVIN_ACTIONS_TODO.md reduite",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "6ddd72cb",
+      "ts": 1777134086000,
+      "msg": "Outil deploy-worker.html 1 clic + regle \"TOUJOURS DEPASSER LES ATTENTES\"",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
     {
       "sha": "c8c6ca84",
       "ts": 1777126949000,
@@ -628,7 +685,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "multi",
+      "project": "backend",
       "ver": null,
       "author": "claude-code"
     },
@@ -910,62 +967,6 @@
       "msg": "Apex v12.130: subagent commit intermediaire (parallel work)",
       "project": "apex",
       "ver": "12.130",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0e68c043",
-      "ts": 1777081981000,
-      "msg": "Apex v12.129: i18n etendu (AX_I18N FR/EN/IT) + auto-detect navigateur",
-      "project": "apex",
-      "ver": "12.129",
-      "author": "claude-code"
-    },
-    {
-      "sha": "67545070",
-      "ts": 1777081957000,
-      "msg": "Apex v12.127: SEO + Open Graph image + manifest pro (subagent SEO complete)",
-      "project": "apex",
-      "ver": "12.127",
-      "author": "claude-code"
-    },
-    {
-      "sha": "94bfe407",
-      "ts": 1777081940000,
-      "msg": "Apex v12.128: SEO + acquisition (Open Graph complet + Twitter cards + JSON-LD WebApplication + manifest enrichi + bouton Installer Reglages)",
-      "project": "apex",
-      "ver": "12.128",
-      "author": "claude-code"
-    },
-    {
-      "sha": "54b1abe3",
-      "ts": 1777081771000,
-      "msg": "Apex v12.126: SEO meta tags + Open Graph optimises (subagent SEO)",
-      "project": "apex",
-      "ver": "12.126",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a17fe4d0",
-      "ts": 1777081488000,
-      "msg": "Apex v12.125: polish pro (offline banner + button disabled state + spinner CSS)",
-      "project": "apex",
-      "ver": "12.125",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a91b73fa",
-      "ts": 1777081442000,
-      "msg": "CMCteams v9.486: breadcrumbs visibles (parite Apex v12.120)",
-      "project": "cmcteams",
-      "ver": "9.486",
-      "author": "claude-code"
-    },
-    {
-      "sha": "04036684",
-      "ts": 1777081320000,
-      "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (parite Apex v12.107)",
-      "project": "cmcteams",
-      "ver": "9.485",
       "author": "claude-code"
     }
   ]
