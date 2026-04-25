@@ -72,6 +72,67 @@
     "auto_actions_taken": [],
     "notes_for_claude": []
   },
+  "kevin_documents": {
+    "purpose": "Documents partages avec Kevin (lus/modifies par Claude Code ET Apex AI). Sync temps reel via Firebase + GitHub.",
+    "items": [
+      {
+        "id": "kevin-todo-iphone",
+        "title": "Doc pas-a-pas iPhone Kevin (PDF imprimable)",
+        "path": "tools/kevin-todo-iphone.html",
+        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kevin-todo-iphone.html",
+        "url_live": "https://9r4rxssx64-creator.github.io/CMCteams/tools/kevin-todo-iphone.html",
+        "url_edit": "https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kevin-todo-iphone.html",
+        "status": "in_progress_by_claude",
+        "updated_by": "claude_code",
+        "updated_at": "2026-04-25T22:10:00Z",
+        "description": "8 priorites + multi-cas + iPhone-first + imprimable PDF + hors-ligne. Apex peut ajouter notes via apex_added_notes",
+        "apex_can_edit": true,
+        "apex_added_notes": [],
+        "kevin_progress": {
+          "p1_login_admin": "pending",
+          "p2_laurence": "pending",
+          "p3_push_notif": "pending",
+          "p4_faceid": "pending",
+          "p5_nouveautes": "pending",
+          "p6_openrouter": "pending",
+          "p7_import_pdf": "pending",
+          "p8_album_laurence": "pending"
+        }
+      },
+      {
+        "id": "claude-handoff",
+        "title": "Dossier partage Claude Code <> Apex (ce fichier)",
+        "path": "CLAUDE_HANDOFF.json",
+        "status": "active",
+        "updated_by": "claude_code+apex_ai",
+        "description": "Lu par Claude Code au demarrage de session. Lu/ecrit par Apex IA via vClaudeCodeHandoff. Synchronise Firebase ax_claude_code_handoff temps reel."
+      },
+      {
+        "id": "memo-resume",
+        "title": "MEMO_RESUME bilan sessions",
+        "path": "MEMO_RESUME.md",
+        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/MEMO_RESUME.md",
+        "status": "active",
+        "updated_by": "claude_code",
+        "description": "Bilan complet sessions + scores audits + a faire plus tard"
+      },
+      {
+        "id": "kevin-inventory",
+        "title": "KEVIN_INVENTORY.md - tous les fichiers",
+        "path": "KEVIN_INVENTORY.md",
+        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/KEVIN_INVENTORY.md",
+        "status": "active",
+        "updated_by": "claude_code",
+        "description": "Liste tous les fichiers du repo avec liens view/raw/edit"
+      }
+    ],
+    "sync_protocol": [
+      "Apex peut ajouter une note dans apex_added_notes[] de chaque doc via axHandoffNoteOnDoc(docId, note)",
+      "Quand Kevin coche une tache (kevin-todo-iphone), kevin_progress.pX_xxx = 'done'",
+      "Sync Firebase real-time (FB_FIX) -> tous les devices Kevin et Apex voient en direct",
+      "Claude Code lit ces docs au demarrage pour savoir ou Kevin en est"
+    ]
+  },
   "shared_state": {
     "project_versions": {
       "apex": "v12.265",
