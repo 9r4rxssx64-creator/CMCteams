@@ -9216,6 +9216,54 @@ function vConsumptionLevelsCMC(){
   return h;
 }
 
+/* v9.485 — Vue admin : choisir voix premium iOS + presets fun (parite Apex v12.107) */
+function vVoicePresetsCMC(){
+  if(!A.user||A.user.id!==AID)return '<div class="page"><div class="empty">🔒 Admin uniquement</div></div>';
+  var cur=(localStorage.getItem("cmc_voice_preset")||"default");
+  var voicesAvail=(window.speechSynthesis&&window.speechSynthesis.getVoices)?window.speechSynthesis.getVoices():[];
+  var nVoices=voicesAvail.length;
+  var h='<div class="page bg-palace" style="position:relative;padding:14px 12px">';
+  h+='<h2 style="color:#c9a227;margin:0 0 14px 0">🔊 Choisir voix (lecture vocale)</h2>';
+  h+='<div class="card" style="border-left:4px solid #c9a227;padding:14px;margin-bottom:14px">';
+  h+='<p style="font-size:13px;color:#a8c8a0;margin:0 0 8px 0;line-height:1.5">Sur iPhone, telecharge les <strong>voix Premium</strong> dans Reglages &gt; Accessibilite &gt; Contenu enonce &gt; Voix &gt; Francais (selectionne <strong>Audrey (Amelioree)</strong> ou <strong>Thomas (Amelioree)</strong>). Une fois telechargees, choisis le preset correspondant ci-dessous.</p>';
+  h+='<p style="font-size:12px;color:#7a9a7a;margin:0">'+nVoices+' voix detectees sur ce navigateur.</p>';
+  h+='</div>';
+  h+='<div class="card" style="padding:14px;margin-bottom:14px">';
+  h+='<h3 style="margin:0 0 8px 0;color:#c9a227">Preset actuel : '+esc((CMC_VOICE_PRESETS.find(function(v){return v.id===cur;})||CMC_VOICE_PRESETS[0]).name)+'</h3>';
+  h+='<select id="cmcVoicePresetSel" onchange="cmcSetVoicePreset(this.value)" style="width:100%;padding:14px;font-size:15px;background:rgba(10,22,10,.4);color:#a0cca0;border:1px solid #c9a227;border-radius:8px;min-height:48px">';
+  CMC_VOICE_PRESETS.forEach(function(p){
+    h+='<option value="'+esc(p.id)+'"'+(cur===p.id?" selected":"")+'>'+esc(p.name)+' ('+esc(p.lang)+')</option>';
+  });
+  h+='</select>';
+  h+='<p style="font-size:11px;color:#7a9a7a;margin:8px 0 0 0">Le changement declenche une lecture de test. La lecture vocale doit etre activee dans le chat (icone 🔊) pour entendre l\'IA.</p>';
+  h+='</div>';
+  /* Apercu : top voix detectees pour preset courant */
+  h+='<div class="card" style="padding:14px;margin-bottom:14px">';
+  h+='<h3 style="margin:0 0 8px 0;color:#c9a227">Voix detectees (preset actuel)</h3>';
+  try{
+    var preset=_cmcGetVoicePreset();
+    var langPrefix=(preset.lang||"fr-FR").slice(0,2).toLowerCase();
+    var matches=voicesAvail.filter(function(v){return (v.lang||"").toLowerCase().indexOf(langPrefix)===0;}).slice(0,8);
+    if(matches.length===0){
+      h+='<p style="color:#a08060;font-size:13px;margin:0">Aucune voix '+esc(preset.lang)+' detectee. Sur iOS, telecharge les voix dans Reglages &gt; Accessibilite.</p>';
+    }else{
+      h+='<ul style="margin:0;padding-left:18px;color:#a0cca0;font-size:13px">';
+      matches.forEach(function(v){
+        var tag=(v.localService?" 📱local":"")+(/(enhanced|premium|neural|amelior)/i.test(v.name||"")?" ⭐premium":"");
+        h+='<li>'+esc(v.name||"?")+' <span style="color:#7a9a7a;font-size:11px">('+esc(v.lang||"")+')</span>'+esc(tag)+'</li>';
+      });
+      h+='</ul>';
+    }
+  }catch(_){h+='<p style="color:#a08060;font-size:13px">Erreur lecture voix</p>';}
+  h+='</div>';
+  h+='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
+  h+='<button class="btn gold" onclick="cmcSetVoicePreset((document.getElementById(\'cmcVoicePresetSel\')||{}).value||\'default\')" style="min-height:48px;padding:12px 18px">▶ Tester voix</button>';
+  h+='<button class="btn" onclick="sv(\'admin\')" style="min-height:48px;padding:12px 18px">← Retour Admin</button>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+
 // 1. ⚡ Perf-Sentinel — render time, RAM, localStorage %, DOM size
 function _sentinelPerf(){
   try{
@@ -10893,6 +10941,7 @@ function vMain(){
     case"admintimework": return isAdm?vAdminTimework():""; // v9.474 — compteur temps admin
     case"usersactivity": return isAdm?vUsersActivity():""; // v9.479 — compteur par utilisateur
     case"consumptionlevels": return isAdm?vConsumptionLevelsCMC():""; // v9.482 — niveau IA par employe
+    case"voicepresets": return isAdm?vVoicePresetsCMC():""; // v9.485 — voix premium + presets fun
     case"connexions": return isAdm?vConnexions():""; // v9.115
     case"online":   return isAdm?vOnline():"";
     case"debug": return isAdm?vDebug():""; // v9.91
@@ -21432,6 +21481,8 @@ function vAdmin(){
     {sep:"\u2699\ufe0f CONFIGURATION & OUTILS"},
     // v9.482 \u2014 Niveau IA par employe (parite Apex v12.121)
     {ic:"\u2699\ufe0f",lb:"Niveau IA par employ\u00e9",fn:"sv('consumptionlevels')"},
+    // v9.485 \u2014 Voix premium iOS + presets fun (parite Apex v12.107)
+    {ic:"\ud83d\udd0a",lb:"Choisir voix (lecture vocale)",fn:"sv('voicepresets')"},
     // Pr\u00e9sentation
     {ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation (plein \u00e9cran)",fn:"togglePresentation()"},
     // v9.481 \u2014 Pub Apex AI (Kevin: 'fais la pub \u00e0 plusieurs endroits. Activable admin')
