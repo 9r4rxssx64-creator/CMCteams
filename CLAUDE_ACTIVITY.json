@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777115187988,
+  "updated_at": 1777115424464,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 216,
+  "total_commits": 219,
   "projects": [
     "apex",
     "backend",
@@ -16,7 +16,7 @@
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 42
+      "count": 46
     },
     {
       "name": "📅 Planning & Cadres",
@@ -32,7 +32,7 @@
     },
     {
       "name": "🔧 Bug fixes",
-      "count": 12
+      "count": 11
     },
     {
       "name": "🔮 Autre",
@@ -72,6 +72,42 @@
     }
   ],
   "commits": [
+    {
+      "sha": "380de1c1",
+      "ts": 1777115366000,
+      "msg": "Apex v12.166: Reponses IA actionnables + concertation parallele",
+      "project": "apex",
+      "ver": "12.166",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ffdcf77e",
+      "ts": 1777115280000,
+      "msg": "CLAUDE.md: regle permanente toujours depasser attentes (Kevin)",
+      "project": "docs",
+      "ver": null,
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6ceebb8a",
+      "ts": 1777115235000,
+      "msg": "Apex pending changes (subagent actionable IA work in progress)",
+      "project": "multi",
+      "ver": null,
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "81be6d3d",
+      "ts": 1777115188000,
+      "msg": "CLAUDE_ACTIVITY regen apres v12.165 (~250 commits)",
+      "project": "docs",
+      "ver": "12.165",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "2a49a307",
       "ts": 1777115129000,
@@ -1113,42 +1149,6 @@
       "msg": "Backend: retire nixpacks.toml (override casse pip install)",
       "project": "backend",
       "ver": null,
-      "topic": "🚂 Backend & Hosting",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0f3b0c20",
-      "ts": 1777073928000,
-      "msg": "Backend: requirements.txt minimal MVP (retire pandas/supabase/pinecone/voyageai/redis)",
-      "project": "backend",
-      "ver": null,
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ede803b4",
-      "ts": 1777073115000,
-      "msg": "Backend: nixpacks.toml + railway.json pour force Python + healthcheck",
-      "project": "backend",
-      "ver": null,
-      "topic": "🚂 Backend & Hosting",
-      "author": "claude-code"
-    },
-    {
-      "sha": "01eecae8",
-      "ts": 1777067882000,
-      "msg": "PRO Phase 4: Apex v12.103 chat via backend proxy Anthropic passthrough",
-      "project": "backend",
-      "ver": "12.103",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5449db95",
-      "ts": 1777067602000,
-      "msg": "Apex v12.102: Adapter frontend pro - axBackendCall priorite sur direct",
-      "project": "apex",
-      "ver": "12.102",
       "topic": "🚂 Backend & Hosting",
       "author": "claude-code"
     }
