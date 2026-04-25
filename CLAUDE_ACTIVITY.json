@@ -1,5 +1,5 @@
 {
-  "updated_at": 1777117369609,
+  "updated_at": 1777117421856,
   "total_commits": 224,
   "projects": [
     "apex",
@@ -9,6 +9,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "8a985582",
+      "ts": 1777117376000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh apres v12.171 (rebrand KDMC -> APEX)",
+      "project": "docs",
+      "ver": "12.171",
+      "author": "claude-code"
+    },
     {
       "sha": "e7e8cb77",
       "ts": 1777117241000,
@@ -959,14 +967,6 @@
       "msg": "Apex v12.111: dedup Settings/Vault + Reset users + Worklog cross-app",
       "project": "apex",
       "ver": "12.111",
-      "author": "claude-code"
-    },
-    {
-      "sha": "71d8f05d",
-      "ts": 1777078111000,
-      "msg": "CMCteams v9.475: Admin reorganise en 4 categories (vs 8)",
-      "project": "cmcteams",
-      "ver": "9.475",
       "author": "claude-code"
     }
   ]
