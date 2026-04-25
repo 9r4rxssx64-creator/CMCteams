@@ -1,14 +1,53 @@
 {
-  "updated_at": 1777137263722,
-  "total_commits": 235,
+  "updated_at": 1777139238537,
+  "total_commits": 240,
   "projects": [
     "apex",
-    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "a6c65553",
+      "ts": 1777139174000,
+      "msg": "GitHub Actions: diagnostic complet 4 etapes (verify token + check perms + test read + deploy avec messages erreur clairs)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "f8260e68",
+      "ts": 1777138615000,
+      "msg": "KEVIN_INVENTORY: ajout Account ID Cloudflare + worker URLs (32 hex chars confirme)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "c8f9dfd7",
+      "ts": 1777138536000,
+      "msg": "GitHub Actions: auto-detect Account ID via Cloudflare API (plus besoin du secret CLOUDFLARE_ACCOUNT_ID)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "b5f440fb",
+      "ts": 1777137308000,
+      "msg": "Apex v12.215 (extra UX): messaging icon (📨 != chat 💬) + alias canoniques routes",
+      "project": "apex",
+      "ver": "12.215",
+      "author": "claude-code"
+    },
+    {
+      "sha": "246a03bf",
+      "ts": 1777137287000,
+      "msg": "Apex v12.215+ : tools/audit + diff mineur (auto-bump)",
+      "project": "apex",
+      "ver": "12.215",
+      "author": "claude-code"
+    },
     {
       "sha": "ba77da82",
       "ts": 1777137228000,
@@ -789,7 +828,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -927,46 +966,6 @@
       "msg": "CMCteams v9.497: touch gestures iPhone pour vMapEditor (pinch zoom + pan + long-press)",
       "project": "cmcteams",
       "ver": "9.497",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5da59fcc",
-      "ts": 1777083196000,
-      "msg": "Subagent intermediate",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "f19a3042",
-      "ts": 1777083175000,
-      "msg": "CMCteams v9.495: editeur cartes multi-casinos + upload floor plan",
-      "project": "cmcteams",
-      "ver": "9.495",
-      "author": "claude-code"
-    },
-    {
-      "sha": "469cd458",
-      "ts": 1777083154000,
-      "msg": "Apex v12.141: geolocalisation haute precision + geofences + vue admin",
-      "project": "apex",
-      "ver": "12.141",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1a2feaeb",
-      "ts": 1777083110000,
-      "msg": "CLAUDE.md: regle permissions map CMCteams (Kevin: 'seul admin voit map, pit voit qui a table')",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "1167e0e7",
-      "ts": 1777083073000,
-      "msg": "Subagent intermediate (parallel work)",
-      "project": "multi",
-      "ver": null,
       "author": "claude-code"
     }
   ]
