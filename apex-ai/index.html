@@ -2216,6 +2216,107 @@ function _restoreFromFile(input){if(!input.files||!input.files[0])return;if(!con
 function _showErrorLog(){var log=lg("ax_err_log",[]);var h='<h2>\uD83D\uDC1B Erreurs capturees ('+log.length+')</h2><div style="max-height:60vh;overflow-y:auto">';if(!log.length)h+='<p style="color:var(--ax-text-dim)">Aucune erreur. Tout va bien !</p>';log.slice(0,50).forEach(function(entry){h+='<div style="padding:8px 0;border-bottom:1px solid var(--ax-border);font-size:12px"><span style="color:var(--ax-red)">'+esc(entry.msg)+'</span>';if(entry.src)h+='<br><span style="color:var(--ax-text-dim)">'+esc(entry.src)+':'+entry.line+'</span>';h+='<br><span style="color:var(--ax-text-dim)">'+new Date(entry.ts).toLocaleString("fr-FR")+"</span></div>";});h+="</div>";if(log.length)h+='<div style="margin-top:12px"><button class="ax-btn ax-btn-danger" onclick="ls(\'ax_err_log\',[]);document.getElementById(\'modal-container\').innerHTML=\'\';dc()">\uD83D\uDDD1 Vider le journal</button></div>';_showModal(h);}
 function _showModal(content){var c=document.getElementById("modal-container");if(!c){c=document.createElement("div");c.id="modal-container";document.body.appendChild(c);}c.innerHTML='<div class="ax-modal-overlay" onclick="this.parentNode.innerHTML=\'\'"><div class="ax-modal" onclick="event.stopPropagation()">'+content+'<div style="text-align:right;margin-top:16px"><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'">Fermer</button></div></div></div>';}
 
+/* v12.108 — COMMAND PALETTE (Kevin: 'top du top niveau organisation fluidite intuitivite') */
+var APEX_COMMANDS=[
+  /* Vues principales */
+  {id:"chat",lb:"💬 Chat IA",cat:"Principal",act:function(){sv("chat");}},
+  {id:"dashboard",lb:"🏠 Tableau de bord",cat:"Principal",act:function(){sv("dashboard");}},
+  {id:"kb",lb:"📚 Mémoire (KB)",cat:"Principal",act:function(){sv("kb");}},
+  {id:"vault",lb:"🔐 Coffre-fort",cat:"Principal",act:function(){sv("vault");}},
+  {id:"settings",lb:"⚙️ Réglages",cat:"Principal",act:function(){sv("settings");}},
+  /* Productivite */
+  {id:"notes",lb:"📝 Notes",cat:"Productivité",act:function(){sv("notes");}},
+  {id:"tasks",lb:"✅ Tâches",cat:"Productivité",act:function(){sv("tasks");}},
+  {id:"calendar",lb:"📅 Calendrier",cat:"Productivité",act:function(){sv("calendar");}},
+  {id:"contacts",lb:"👥 Contacts",cat:"Productivité",act:function(){sv("contacts");}},
+  {id:"goals",lb:"🎯 Objectifs",cat:"Productivité",act:function(){sv("goals");}},
+  {id:"habits",lb:"🔄 Habitudes",cat:"Productivité",act:function(){sv("habits");}},
+  {id:"diary",lb:"📔 Journal intime",cat:"Productivité",act:function(){sv("diary");}},
+  {id:"templates",lb:"📋 Templates",cat:"Productivité",act:function(){sv("templates");}},
+  /* Argent */
+  {id:"finance",lb:"💰 Finance",cat:"Argent",act:function(){sv("finance");}},
+  {id:"expenses",lb:"💳 Dépenses",cat:"Argent",act:function(){sv("expenses");}},
+  {id:"shopping",lb:"🛒 Shopping",cat:"Argent",act:function(){sv("shopping");}},
+  {id:"cryptoportfolio",lb:"₿ Crypto portefeuille",cat:"Argent",act:function(){sv("cryptoportfolio");}},
+  /* Maison / objets */
+  {id:"devices",lb:"📱 Appareils",cat:"Maison",act:function(){sv("devices");}},
+  {id:"remote",lb:"🎮 Télécommande",cat:"Maison",act:function(){sv("remote");}},
+  {id:"music",lb:"🎵 Musique",cat:"Maison",act:function(){sv("music");}},
+  /* Stats / favoris */
+  {id:"mystats",lb:"📊 Mes stats",cat:"Stats",act:function(){sv("mystats");}},
+  {id:"favorites",lb:"⭐ Favoris",cat:"Stats",act:function(){sv("favorites");}},
+  {id:"news",lb:"📰 Actu",cat:"Stats",act:function(){sv("news");}},
+  {id:"bookmarks",lb:"🔖 Marque-pages",cat:"Stats",act:function(){sv("bookmarks");}},
+  {id:"profile",lb:"👤 Mon profil",cat:"Stats",act:function(){sv("profile");}},
+  {id:"faq",lb:"❓ FAQ",cat:"Stats",act:function(){sv("faq");}},
+  {id:"changelog",lb:"📜 Changelog",cat:"Stats",act:function(){sv("changelog");}},
+  /* Admin */
+  {id:"clients",lb:"🛡 Clients",cat:"Admin",adminOnly:true,act:function(){sv("clients");}},
+  {id:"subscriptions",lb:"💎 Abonnements",cat:"Admin",adminOnly:true,act:function(){sv("subscriptions");}},
+  {id:"links",lb:"🔗 Liens admin",cat:"Admin",adminOnly:true,act:function(){sv("links");}},
+  {id:"connections",lb:"🌐 Connexions live",cat:"Admin",adminOnly:true,act:function(){sv("connections");}},
+  {id:"errorslive",lb:"🐛 Erreurs live",cat:"Admin",adminOnly:true,act:function(){sv("errorslive");}},
+  {id:"crew",lb:"👨‍💼 Agents IA",cat:"Admin",adminOnly:true,act:function(){sv("crew");}},
+  {id:"map",lb:"🗺 Carte admin",cat:"Admin",adminOnly:true,act:function(){sv("map");}},
+  {id:"history",lb:"⏱ Historique",cat:"Admin",adminOnly:true,act:function(){sv("history");}},
+  {id:"reports",lb:"📈 Rapports",cat:"Admin",adminOnly:true,act:function(){sv("reports");}},
+  {id:"adminbox",lb:"📥 Inbox admin",cat:"Admin",adminOnly:true,act:function(){sv("adminbox");}},
+  {id:"appadmin",lb:"⚡ App admin",cat:"Admin",adminOnly:true,act:function(){sv("appadmin");}},
+  {id:"messaging",lb:"💌 Messagerie admin",cat:"Admin",adminOnly:true,act:function(){sv("messaging");}},
+  /* Actions rapides */
+  {id:"act_newconv",lb:"➕ Nouvelle conversation",cat:"Action",act:function(){newConversation();dc();}},
+  {id:"act_logout",lb:"🚪 Déconnexion",cat:"Action",act:function(){axLogout();}},
+  {id:"act_sync",lb:"🔄 Synchroniser maintenant",cat:"Action",act:function(){if(typeof flushSyncQueue==="function")flushSyncQueue();toast("Sync forcée","ok");}},
+  {id:"act_refresh",lb:"♻️ Forcer mise à jour app",cat:"Action",act:function(){if(typeof axForceRefresh==="function")axForceRefresh();else location.reload();}},
+  {id:"act_paste_pat",lb:"🔑 Coller PAT GitHub",cat:"Action",adminOnly:true,act:function(){var p=prompt("Colle ton PAT GitHub:");if(p&&p.length>20){localStorage.setItem("ax_github_pat",p);toast("PAT enregistré","ok");}}},
+  {id:"act_test_voice",lb:"🔊 Tester voix actuelle",cat:"Action",act:function(){axTtsSpeak("Bonjour, ceci est un test de la voix sélectionnée.");}},
+  {id:"act_choose_voice",lb:"🎙 Choisir voix",cat:"Action",act:function(){sv("settings");setTimeout(function(){var s=document.getElementById("ax-voice-preset");if(s)s.scrollIntoView({behavior:"smooth"});},300);}}
+];
+function axCommandPalette(){
+  var isAdmin=axIsAdmin&&axIsAdmin();
+  var cmds=APEX_COMMANDS.filter(function(c){return !c.adminOnly||isAdmin;});
+  window.__axPaletteCmds=cmds;
+  var content='<div style="min-width:min(540px,90vw)"><h3 style="margin-bottom:10px">⚡ Commande rapide</h3>';
+  content+='<input id="ax-palette-in" placeholder="Tape pour chercher (ex: chat, finance, crypto, abonnements...)" autofocus class="ax-input" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px" oninput="_axPaletteRender(this.value)">';
+  content+='<div id="ax-palette-results" style="max-height:50vh;overflow-y:auto"></div>';
+  content+='<p style="font-size:11px;color:var(--ax-text-dim);margin-top:8px">Astuce: <kbd>Cmd</kbd>+<kbd>K</kbd> ou <kbd>Ctrl</kbd>+<kbd>K</kbd> pour rouvrir. <kbd>Esc</kbd> pour fermer.</p></div>';
+  _showModal(content);
+  setTimeout(function(){_axPaletteRender("");var inp=document.getElementById("ax-palette-in");if(inp)inp.focus();},80);
+}
+function _axPaletteRender(q){
+  var cmds=window.__axPaletteCmds||APEX_COMMANDS;
+  q=String(q||"").toLowerCase().trim();
+  var filtered=q?cmds.filter(function(c){var t=(c.lb+" "+c.cat+" "+c.id).toLowerCase();return t.indexOf(q)>=0;}):cmds;
+  filtered=filtered.slice(0,30);
+  var byCat={};
+  filtered.forEach(function(c){if(!byCat[c.cat])byCat[c.cat]=[];byCat[c.cat].push(c);});
+  var html="";
+  Object.keys(byCat).forEach(function(cat){
+    html+='<div style="font-size:10px;font-weight:700;color:var(--ax-gold);text-transform:uppercase;letter-spacing:1px;margin:8px 0 4px">'+cat+'</div>';
+    byCat[cat].forEach(function(c){
+      html+='<button onclick="_axPaletteRun(\''+c.id+'\')" style="display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:2px;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);cursor:pointer;font-size:14px">'+c.lb+'</button>';
+    });
+  });
+  if(!filtered.length)html='<div style="text-align:center;padding:24px;color:var(--ax-text-dim)">Aucun résultat pour "'+esc(q)+'"</div>';
+  var box=document.getElementById("ax-palette-results");if(box)box.innerHTML=html;
+}
+function _axPaletteRun(id){
+  var cmd=(window.__axPaletteCmds||APEX_COMMANDS).find(function(c){return c.id===id;});
+  if(!cmd)return;
+  var c=document.getElementById("modal-container");if(c)c.innerHTML="";
+  try{cmd.act();}catch(e){toast("Erreur: "+String(e.message||e).slice(0,80),"err");}
+}
+/* Listener global Cmd+K / Ctrl+K */
+(function(){
+  if(window.__axPaletteBound)return;window.__axPaletteBound=true;
+  document.addEventListener("keydown",function(e){
+    if((e.metaKey||e.ctrlKey)&&(e.key==="k"||e.key==="K")){
+      e.preventDefault();
+      try{if(K.user)axCommandPalette();}catch(_){}
+    }
+  });
+})();
+
 // === MODULE: Share / SEO ===
 function vShareButtons(){var h='<div style="display:flex;gap:8px;justify-content:center;padding:12px;flex-wrap:wrap">';if(navigator.share){h+='<button class="ax-btn ax-btn-outline" onclick="axNativeShare()" title="Partager">\uD83D\uDCE4 Partager</button>';}h+='<a href="https://wa.me/?text='+encodeURIComponent("Decouvrez KDMC !")+'" target="_blank" class="ax-btn-icon" title="WhatsApp" aria-label="Partager sur WhatsApp">\uD83D\uDCF2</a>';h+='<a href="https://t.me/share/url?url=&text='+encodeURIComponent("APEX")+'" target="_blank" class="ax-btn-icon" title="Telegram" aria-label="Partager sur Telegram">\u2708\uFE0F</a>';h+='<a href="mailto:?subject=KDMC%20AI&body='+encodeURIComponent("Decouvrez KDMC !")+'" class="ax-btn-icon" title="Email" aria-label="Partager par email">\uD83D\uDCE7</a>';h+="</div>";return h;}
 function axNativeShare(){navigator.share({title:"APEX",text:"Decouvrez KDMC — l'assistant IA ultime",url:location.href}).catch(function(){});}
