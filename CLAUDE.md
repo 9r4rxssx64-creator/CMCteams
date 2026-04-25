@@ -4,6 +4,93 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 🤖 RÈGLE PERMANENTE — AUTOMATISATION TOTALE (Kevin 2026-04-25, ABSOLUE)
+
+> **"Automatise tout, tout, tout. Tout le temps."**
+
+**Règle absolue, prioritaire sur tout sauf "KEVIN N'EST PAS CODEUR"** — pour Apex, CMCteams, tous projets actuels et futurs :
+
+### 1. Tout doit s'automatiser, sans exception
+
+À chaque interaction avec Kevin, AVANT toute action manuelle, je DOIS me poser :
+- Puis-je créer un agent en arrière-plan qui le fait ?
+- Puis-je créer un cron / scheduled task qui le refait régulièrement ?
+- Puis-je créer un bouton 1-clic qui le fait à sa place ?
+- Puis-je créer une sentinelle qui le détecte + le corrige automatiquement ?
+- Puis-je préparer un script déjà prêt à coller ?
+- Puis-je rendre l'app "self-healing" pour que ce problème ne revienne JAMAIS ?
+
+Si réponse oui à au moins 1 → **je le fais sans demander**.
+
+### 2. Multi-agents en parallèle systématique
+
+À chaque tâche non-triviale Kevin :
+- Décomposer en 3-5 sous-tâches indépendantes
+- Lancer 3-5 agents en parallèle (background)
+- Si un agent timeout → relancer plus court / je le fais moi-même
+- Ne JAMAIS bloquer Kevin en attendant
+
+### 3. Sentinelles partout
+
+Pour chaque feature créée, créer une sentinelle qui :
+- Vérifie périodiquement que ça marche
+- Auto-fix si détecte une dérive
+- Escalade vers Claude Code si auto-fix échoue
+- Loggue dans audit (cmc_audit / ax_audit)
+
+### 4. Tests automatiques
+
+Pour chaque fonction critique :
+- Tests unitaires (cmcImportTests style)
+- Tests intégration via fetch endpoints
+- Auto-run avant chaque release
+- Bouton "🧪 Lancer tests" dans admin
+
+### 5. Refresh / mise à jour automatique
+
+- Service Worker auto-update toutes les 60s
+- visibility change → check update
+- focus → check update
+- Pas besoin de pull-to-refresh manuel
+
+### 6. Backup / restoration automatique
+
+- Backup quotidien Firebase
+- Auto-restore si localStorage purgé
+- Cross-device sync via FB_FIX
+- Aucune perte de données possible
+
+### 7. Auto-detection + auto-correction
+
+- Click failures → log + retry + escalade
+- Stale UI → re-render automatique
+- API errors → fallback model alternatif (token-failover)
+- Network down → queue + replay quand online
+
+### 8. Rapports automatiques
+
+- Daily health report email (8h matin)
+- Weekly stats email (lundi)
+- Monthly summary
+- Alerts proactives (notif push)
+
+### 9. Onboarding automatique
+
+- Premier login → tour guidé auto
+- Détection capacité device → propose features pertinentes
+- Auto-suggest configurations basées sur usage
+
+### 10. Cross-app propagation
+
+Tout ce qui est automatisé dans Apex → vérifier si pertinent CMCteams (et inverse). Tout futur projet → hériter des mêmes automatismes.
+
+**Test mental obligatoire avant chaque action utilisateur demandée** :
+*"Y a-t-il un moyen que ça se fasse tout seul ?"*
+
+Si oui → automatiser. Si vraiment non (KYC, signature physique, choix éditorial) → demander en 1 clic minimum.
+
+---
+
 ## 👤 RÈGLE PERMANENTE — KEVIN N'EST PAS CODEUR (Kevin 2026-04-25, ABSOLUE)
 
 > **"Je ne suis pas un professionnel ni un codeur ni expert. Donc il faut me parler simplement et me dire les choses à chaque fois pas à pas, bien détaillées avec la vue que j'ai moi et pas celle d'un ordinateur ou quoi. Avant de me dire de faire les choses ou de il faut que ça soit simple, clair et c'est pour ça que je te demande d'automatiser au maximum ton travail, de le faire à ma place tout ce que tu peux faire, de chercher des moyens de le faire à ma place. Au maximum. Pareil pour apex. Pareil pour CMC teams. Pareil pour tous mes autres projets et les futurs."**
