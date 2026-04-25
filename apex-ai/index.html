@@ -869,9 +869,208 @@ var _loginStreak=0;
 function _updateLoginStreak(){var streakData=lg("ax_login_streak",{lastDate:"",count:0});var today=new Date().toISOString().slice(0,10);var yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);if(streakData.lastDate===today)return streakData.count;if(streakData.lastDate===yesterday){streakData.count++;streakData.lastDate=today;}else{streakData.count=1;streakData.lastDate=today;}ls("ax_login_streak",streakData);_loginStreak=streakData.count;if(_loginStreak===7){axConfetti(40);toast("\uD83D\uDD25 7 jours de suite ! +200 XP","ok");axGainXP(200);}if(_loginStreak===30){axConfetti(80);toast("\uD83C\uDFC6 30 jours de suite ! +1000 XP + badge LEGEND","ok");axGainXP(1000);}if(_loginStreak===3){toast("\uD83D\uDD25 "+_loginStreak+" jours de suite !","info");}return _loginStreak;}
 function axGetStreak(){return lg("ax_login_streak",{count:0}).count;}
 
-// === MODULE: Referral System (parrainage) ===
-function axGetReferralLink(){var code=lg("ax_referral_code",null);if(!code){code="KDMC-"+uid().slice(0,6).toUpperCase();ls("ax_referral_code",code);}return{code:code,link:location.origin+location.pathname+"?ref="+code,referrals:lg("ax_referrals",[]).length};}
-function axApplyReferralCode(code){if(!code||code.length<6)return"Code invalide";var referrals=lg("ax_referrals",[]);if(referrals.indexOf(code)>=0)return"Code deja utilise";referrals.push(code);ls("ax_referrals",referrals);axGainXP(100);toast("Code parrainage applique ! +100 XP","ok");return"Parrainage accepte. Bonus active.";}
+// === MODULE: Referral System (parrainage) — v12.141 ===
+/* Code parrainage unique par utilisateur. Filleul s'inscrit avec le code -> parrain recoit -50% pendant 1 mois. */
+function axGetMyReferralCode(){
+  if(!K||!K.user)return null;
+  var code=lg("ax_my_referral",null);
+  if(code)return code;
+  var uidStr=String(K.user.id||"USR");
+  var base=uidStr.replace(/[^a-zA-Z0-9]/g,"").slice(-3).toUpperCase();
+  while(base.length<3)base="X"+base;
+  code=base+Math.random().toString(36).slice(2,7).toUpperCase();
+  while(code.length<8)code+=Math.random().toString(36).slice(2,3).toUpperCase();
+  code=code.slice(0,8);
+  var refs=lg("ax_referrals",{});
+  if(Array.isArray(refs))refs={};
+  var tries=0;
+  while(refs[code]&&tries<5){
+    code=base+Math.random().toString(36).slice(2,7).toUpperCase();
+    while(code.length<8)code+=Math.random().toString(36).slice(2,3).toUpperCase();
+    code=code.slice(0,8);
+    tries++;
+  }
+  ls("ax_my_referral",code);
+  refs[code]={uid:K.user.id,name:K.user.name||"",createdAt:Date.now(),uses:0};
+  ls("ax_referrals",refs);
+  if(typeof fbWrite==="function")try{fbWrite("ax_referrals",refs);}catch(_){}
+  return code;
+}
+function axGetReferralLink(){
+  var code=axGetMyReferralCode();
+  if(!code){var fb="KDMC-"+(typeof uid==="function"?uid().slice(0,6).toUpperCase():"AAAAAA");return{code:fb,link:location.origin+location.pathname+"?ref="+fb,referrals:0};}
+  var refs=lg("ax_referrals",{});
+  if(Array.isArray(refs))refs={};
+  var entry=refs[code]||{};
+  return{code:code,link:_axReferralLink(code),referrals:entry.uses||0};
+}
+function axApplyReferralCode(code){
+  if(!code||!K||!K.user)return false;
+  code=String(code).toUpperCase().trim();
+  if(!/^[A-Z0-9\-]{4,16}$/.test(code))return false;
+  var refs=lg("ax_referrals",{});
+  if(Array.isArray(refs))refs={};
+  if(!refs[code])return false;
+  if(refs[code].uid===K.user.id)return false;
+  var alreadyUsed=lg("ax_used_referral",null);
+  if(alreadyUsed)return false;
+  refs[code].uses=(refs[code].uses||0)+1;
+  refs[code].lastUseAt=Date.now();
+  refs[code].lastUseBy=K.user.id;
+  ls("ax_referrals",refs);
+  var bonus=lg("ax_referral_bonus",{});
+  bonus[refs[code].uid]={discount:50,expiresAt:Date.now()+30*86400000,reason:"Parrainage de "+(K.user.name||K.user.id),sponsorOf:K.user.id};
+  ls("ax_referral_bonus",bonus);
+  ls("ax_used_referral",code);
+  if(typeof fbWrite==="function")try{fbWrite("ax_referrals",refs);fbWrite("ax_referral_bonus",bonus);}catch(_){}
+  try{if(typeof axGainXP==="function")axGainXP(100);}catch(_){}
+  return true;
+}
+function axGetMyBonus(){
+  if(!K||!K.user)return null;
+  var bonus=lg("ax_referral_bonus",{});
+  var b=bonus[K.user.id];
+  if(!b||b.expiresAt<Date.now())return null;
+  return b;
+}
+function axGetReferralStats(){
+  if(!K||!K.user)return {invited:0,saved:0,code:null};
+  var myCode=lg("ax_my_referral",null);
+  if(!myCode)return {invited:0,saved:0,code:null};
+  var refs=lg("ax_referrals",{});
+  if(Array.isArray(refs))refs={};
+  var entry=refs[myCode]||{};
+  var uses=entry.uses||0;
+  var b=axGetMyBonus();
+  var saved=b?Math.round((9.99*0.5)*Math.min(uses,1)*100)/100:0;
+  return {invited:uses,saved:saved,code:myCode};
+}
+function _axReferralLink(code){
+  var base=location.origin+location.pathname.replace(/[^/]*$/,"");
+  return base+"?ref="+encodeURIComponent(code);
+}
+function _axRefFallbackCopy(text){
+  try{
+    var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+    toast("Copie !","ok");
+  }catch(e){toast("Impossible de copier","warn");}
+}
+function axCopyReferralLink(){
+  var code=axGetMyReferralCode();
+  if(!code){toast("Code indisponible — connecte-toi","warn");return;}
+  var link=_axReferralLink(code);
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link).then(function(){toast("Lien copie !","ok");}).catch(function(){_axRefFallbackCopy(link);});
+    }else{_axRefFallbackCopy(link);}
+  }catch(e){_axRefFallbackCopy(link);}
+}
+function axShareReferral(){
+  var code=axGetMyReferralCode();
+  if(!code){toast("Code indisponible","warn");return;}
+  var link=_axReferralLink(code);
+  var text="Decouvre APEX AI - l'assistant IA ultime ! Avec mon code "+code+" tu beneficies de 50% de reduction. "+link;
+  if(navigator.share){
+    navigator.share({title:"APEX AI - Parrainage",text:text,url:link}).catch(function(){});
+  }else{
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){toast("Texte copie ! Colle-le dans WhatsApp/SMS","ok");});
+      }else{_axRefFallbackCopy(text);}
+    }catch(e){_axRefFallbackCopy(text);}
+  }
+}
+function axCopyReferralCode(){
+  var code=axGetMyReferralCode();
+  if(!code){toast("Code indisponible","warn");return;}
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(function(){toast("Code copie !","ok");}).catch(function(){_axRefFallbackCopy(code);});
+    }else{_axRefFallbackCopy(code);}
+  }catch(e){_axRefFallbackCopy(code);}
+}
+function axSubmitReferralCode(){
+  var inp=document.getElementById("ax-ref-input");
+  if(!inp)return;
+  var code=String(inp.value||"").toUpperCase().trim();
+  if(!code){toast("Saisis un code","warn");return;}
+  var ok=axApplyReferralCode(code);
+  if(ok){toast("Code applique ! Ton parrain recoit 50% pendant 1 mois.","ok");try{dc();}catch(_){}}
+  else{toast("Code invalide ou deja utilise","err");}
+}
+function _axApplyPendingReferral(){
+  try{
+    if(!K||!K.user)return;
+    var pending=null;
+    try{pending=localStorage.getItem("ax_pending_referral");}catch(_){}
+    if(!pending)return;
+    try{var p=JSON.parse(pending);if(typeof p==="string")pending=p;}catch(_){}
+    var ok=axApplyReferralCode(pending);
+    if(ok){toast("Bienvenue ! Code de parrainage "+pending+" applique","ok");}
+    try{localStorage.removeItem("ax_pending_referral");}catch(_){}
+  }catch(e){}
+}
+function vReferral(){
+  if(!K.user)return vLogin();
+  var code=axGetMyReferralCode();
+  var stats=axGetReferralStats();
+  var bonus=axGetMyBonus();
+  var alreadyUsed=lg("ax_used_referral",null);
+  var h='<div style="padding:16px;max-width:600px;margin:0 auto">';
+  h+='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd860);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;font-size:24px">🎁 Parrainage Apex</h2>';
+  h+='<p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:18px">Partage ce code pour offrir 50% de reduction a un ami. Tu recois aussi <b style="color:var(--ax-gold)">50% pendant 1 mois</b> quand il s\'inscrit !</p>';
+  if(bonus){
+    var daysLeft=Math.ceil((bonus.expiresAt-Date.now())/86400000);
+    var d=new Date(bonus.expiresAt);
+    var dStr=("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();
+    h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:linear-gradient(135deg,rgba(76,208,128,.1),transparent);margin-bottom:14px"><div style="font-size:28px;margin-bottom:4px">🎉</div><h3 style="color:var(--ax-green);margin:0 0 4px">-'+esc(String(bonus.discount))+'% jusqu\'au '+esc(dStr)+'</h3><div style="font-size:12px;color:var(--ax-text-dim)">'+esc(bonus.reason||"Bonus parrainage")+' &middot; '+daysLeft+' jour'+(daysLeft>1?"s":"")+' restants</div></div>';
+  }
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);text-align:center;margin-bottom:14px">';
+  h+='<div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--ax-text-dim);margin-bottom:8px">Mon code</div>';
+  h+='<div onclick="axCopyReferralCode()" title="Cliquer pour copier" style="font-family:monospace;font-size:34px;font-weight:900;letter-spacing:6px;color:var(--ax-gold);cursor:pointer;padding:12px;background:rgba(232,184,48,.06);border-radius:12px;border:1px dashed rgba(232,184,48,.3);min-height:64px;display:flex;align-items:center;justify-content:center">'+esc(code||"--------")+'</div>';
+  h+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="axCopyReferralLink()" style="min-height:44px;font-weight:700">🔗 Copier le lien</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axShareReferral()" style="min-height:44px;border-color:var(--ax-gold);color:var(--ax-gold)">📤 Partager</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axCopyReferralCode()" style="min-height:44px">📋 Copier code</button>';
+  h+='</div></div>';
+  h+='<div class="ax-card" style="margin-bottom:14px"><h3 style="margin:0 0 12px;font-size:14px;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:1px">📊 Mes resultats</h3>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h+='<div style="background:rgba(90,168,255,.08);border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:var(--ax-blue)">'+stats.invited+'</div><div style="font-size:11px;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:1px">Ami'+(stats.invited>1?"s":"")+' parraine'+(stats.invited>1?"s":"")+'</div></div>';
+  h+='<div style="background:rgba(76,208,128,.08);border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:var(--ax-green)">'+stats.saved.toFixed(2)+'€</div><div style="font-size:11px;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:1px">Economise</div></div>';
+  h+='</div></div>';
+  if(!alreadyUsed){
+    h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple);background:linear-gradient(135deg,rgba(168,120,255,.06),transparent);margin-bottom:14px">';
+    h+='<h3 style="margin:0 0 6px;color:var(--ax-purple)">🔑 J\'ai un code parrainage</h3>';
+    h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Entre le code d\'un ami pour qu\'il recoive son bonus. Tu ne peux le faire qu\'une seule fois.</p>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="ax-ref-input" class="ax-input" placeholder="Ex: ABC12XYZ" maxlength="16" style="flex:1;min-width:140px;text-transform:uppercase;font-family:monospace;letter-spacing:2px;font-size:16px;min-height:44px" onkeydown="if(event.key===\'Enter\')axSubmitReferralCode()">';
+    h+='<button class="ax-btn ax-btn-primary" onclick="axSubmitReferralCode()" style="min-height:44px;background:linear-gradient(135deg,var(--ax-purple),#c060ff);font-weight:700">✨ Valider</button></div>';
+    h+='</div>';
+  }else{
+    h+='<div class="ax-card" style="background:rgba(168,120,255,.04);margin-bottom:14px"><p style="margin:0;font-size:12px;color:var(--ax-text-dim)">✅ Tu as deja utilise un code parrainage : <b>'+esc(String(alreadyUsed))+'</b></p></div>';
+  }
+  h+='<div class="ax-card"><h3 style="margin:0 0 10px;font-size:14px">❓ Comment ca marche ?</h3>';
+  h+='<ol style="font-size:13px;line-height:1.7;color:var(--ax-text-dim);padding-left:20px;margin:0">';
+  h+='<li>Tu copies ton lien et tu le partages avec un ami</li>';
+  h+='<li>Ton ami clique sur le lien et s\'inscrit a APEX</li>';
+  h+='<li>Tu recois <b style="color:var(--ax-gold)">-50% pendant 1 mois</b> sur ton abonnement</li>';
+  h+='<li>Ton ami beneficie aussi de <b>-50%</b> sur son premier mois</li>';
+  h+='</ol></div>';
+  h+='</div>';
+  return h;
+}
+/* Capture code parrainage depuis ?ref= au boot (avant login) */
+(function(){
+  try{
+    var urlRef=new URLSearchParams(location.search).get("ref");
+    if(urlRef){
+      urlRef=String(urlRef).toUpperCase().trim().slice(0,16);
+      if(/^[A-Z0-9\-]{4,16}$/.test(urlRef)){
+        try{localStorage.setItem("ax_pending_referral",urlRef);}catch(_){}
+      }
+    }
+  }catch(_){}
+})();
 
 // === MODULE: Daily Rewards (recompenses quotidiennes) ===
 function _checkDailyReward(){var lastReward=lg("ax_last_daily_reward","");var today=new Date().toISOString().slice(0,10);if(lastReward===today)return;ls("ax_last_daily_reward",today);var streak=axGetStreak();var xpReward=10+streak*5;axGainXP(xpReward);toast("\uD83C\uDF81 Recompense quotidienne: +"+xpReward+" XP (streak x"+streak+")","ok");}
@@ -1584,7 +1783,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();case"referral":return vReferral();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
