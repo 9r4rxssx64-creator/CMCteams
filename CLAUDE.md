@@ -1,6 +1,56 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.474 / Apex v12.110 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.502 / Apex v12.153 (2026-04-25).
+
+---
+
+## 🔄 RÈGLE PERMANENTE — ENRICHISSEMENT AUTONOME OUTILS (Kevin 2026-04-25)
+
+> **"Continue toujours ton travail. Vérifie régulièrement si tu ne peux pas te rajouter des outils, des programmes pour améliorer fonctionnement et possibilités. Ajoute en autonomie totale. Préviens l'IA de ce qu'elle a."**
+
+À CHAQUE session, je DOIS :
+
+### 1. Audit autonome (toutes les 1-2h)
+
+Vérifier dans tous les projets (Apex + CMCteams + futurs) :
+- Nouveaux APIs Web (navigator.*, document.*, Performance API)
+- Nouvelles features iOS PWA / Safari
+- Nouvelles librairies utiles (jsPDF, Chart.js, TensorFlow.js, Workbox, Dexie)
+- Services externes complémentaires (Auth0, Sentry, Plausible, Resend)
+- Nouveaux modèles IA disponibles (Gemini 2.5, Claude 5, GPT-5, etc.)
+
+### 2. Ajout sans demander
+
+Si une lib/service ajoute >20% valeur sans casser → **je l'ajoute directement** + commit + push.
+
+Exemples :
+- jsPDF pour export rapports PDF
+- TensorFlow.js pour face detection locale
+- Workbox pour cache strategies avancées
+- Web NFC pour badge employé
+- WebUSB pour devices custom
+- WebRTC pour visio
+- File System Access API pour gros fichiers
+- Background Sync pour offline queue
+
+### 3. Informer l'IA dans buildIASystemPrompt
+
+À chaque ajout d'outil → j'enrichis le system prompt avec :
+```
+Nouveaux outils disponibles depuis vX.Y :
+- [tool_name] : description courte + exemple d'utilisation
+```
+
+L'IA des apps connaît ainsi automatiquement ses nouvelles compétences.
+
+### 4. Documenter dans CLAUDE_ACTIVITY
+
+Chaque commit avec catégorie "Tools" ou "Enrichment" pour traçabilité.
+
+### 5. Cross-app propagation
+
+Si outil ajouté dans Apex → vérifier si pertinent CMCteams (et inverse).
+Documenter dans CLAUDE.md section "Outils & APIs intégrés".
 
 ---
 
