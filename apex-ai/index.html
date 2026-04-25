@@ -322,7 +322,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.144",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.145",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -1048,6 +1048,124 @@ function _axApplyPendingReferral(){
     if(ok){toast("Bienvenue ! Code de parrainage "+pending+" applique","ok");}
     try{localStorage.removeItem("ax_pending_referral");}catch(_){}
   }catch(e){}
+}
+/* v12.145 — Health Status admin (Kevin: 'apex pro tout en 1 ecran') */
+function vHealth(){
+  if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin uniquement</div></div>';
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-green),#38b060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">⚕️ Health Status — APEX</h2>';
+  h+='<p style="font-size:11px;color:var(--ax-text-dim);margin-bottom:12px">Diagnostic complet en 1 écran. Recharge pour actualiser.</p>';
+
+  /* Backend status */
+  var backendUrl=(typeof _readBackendUrl==="function")?_readBackendUrl():"";
+  h+='<div class="ax-card" style="border-left:4px solid '+(backendUrl?"var(--ax-green)":"var(--ax-red)")+'">';
+  h+='<h3>🚂 Backend Railway</h3>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim)">URL: <code>'+esc(backendUrl||"NON CONFIGURÉ")+'</code></div>';
+  h+='<div id="ax-health-backend" style="margin-top:8px;font-size:13px">⏳ Test en cours...</div>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="_axHealthCheckBackend()" style="margin-top:8px;font-size:11px">🔄 Re-tester</button>';
+  h+='</div>';
+
+  /* Service Worker */
+  var swSupported="serviceWorker" in navigator;
+  h+='<div class="ax-card" style="border-left:4px solid '+(swSupported?"var(--ax-green)":"var(--ax-orange)")+'"><h3>⚙️ Service Worker</h3>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim)">Support: '+(swSupported?"✅ Oui":"❌ Non")+'</div>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim)">App version: <strong>'+APP_VER+'</strong></div>';
+  h+='</div>';
+
+  /* Storage */
+  var totalKeys=0,totalBytes=0;
+  try{for(var k in localStorage){if(localStorage.hasOwnProperty(k)){totalKeys++;totalBytes+=(localStorage[k]||"").length+k.length;}}}catch(_){}
+  var pct=Math.round((totalBytes/5242880)*100);
+  var col=pct>80?"var(--ax-red)":pct>50?"var(--ax-orange)":"var(--ax-green)";
+  h+='<div class="ax-card" style="border-left:4px solid '+col+'"><h3>💾 Stockage local</h3>';
+  h+='<div style="font-size:13px"><strong>'+totalKeys+'</strong> clés · <strong>'+(totalBytes/1024).toFixed(1)+' KB</strong> ('+pct+'% de 5MB)</div>';
+  h+='<div style="height:6px;background:var(--ax-bg-input);border-radius:3px;margin-top:6px;overflow:hidden"><div style="width:'+Math.min(pct,100)+'%;height:100%;background:'+col+'"></div></div>';
+  h+='</div>';
+
+  /* Erreurs récentes */
+  var errors=lg("ax_err_log",[]);
+  var recentErrors=errors.filter(function(e){return Date.now()-(e.ts||0)<86400000;});
+  h+='<div class="ax-card" style="border-left:4px solid '+(recentErrors.length?"var(--ax-orange)":"var(--ax-green)")+'"><h3>🐛 Erreurs (24h)</h3>';
+  h+='<div style="font-size:13px"><strong>'+recentErrors.length+'</strong> erreur(s)</div>';
+  if(recentErrors.length){
+    h+='<div style="max-height:120px;overflow-y:auto;margin-top:8px;font-size:11px">';
+    recentErrors.slice(-5).forEach(function(e){
+      h+='<div style="padding:4px;border-bottom:1px solid var(--ax-border)"><span style="color:var(--ax-red)">'+esc((e.msg||"?").slice(0,80))+'</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+
+  /* Activité IA */
+  var usage=lg("ax_usage",{today:0,month:0,total:0});
+  h+='<div class="ax-card"><h3>⚡ Conso IA (admin)</h3>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--ax-gold)">'+(usage.today||0).toLocaleString()+'</div><div style="font-size:10px">Aujourd\'hui</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--ax-blue)">'+(usage.month||0).toLocaleString()+'</div><div style="font-size:10px">Ce mois</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700">'+(usage.total||0).toLocaleString()+'</div><div style="font-size:10px">Total</div></div>';
+  h+='</div></div>';
+
+  /* Subscriptions */
+  var reqs=lg("ax_subscription_requests",{});
+  var counts={pending:0,approved:0,rejected:0,paid:0};
+  Object.keys(reqs).forEach(function(k){var s=reqs[k].status||"pending";counts[s]=(counts[s]||0)+1;});
+  h+='<div class="ax-card"><h3>👥 Demandes inscription</h3>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">';
+  h+='<div style="text-align:center;padding:6px;background:rgba(232,162,72,.1);border-radius:6px"><div style="font-size:18px;font-weight:700;color:#e8a248">'+counts.pending+'</div><div style="font-size:10px">⏳ Pending</div></div>';
+  h+='<div style="text-align:center;padding:6px;background:rgba(76,208,128,.1);border-radius:6px"><div style="font-size:18px;font-weight:700;color:var(--ax-green)">'+counts.approved+'</div><div style="font-size:10px">✓ Approved</div></div>';
+  h+='<div style="text-align:center;padding:6px;background:rgba(232,184,48,.1);border-radius:6px"><div style="font-size:18px;font-weight:700;color:var(--ax-gold)">'+(counts.paid||0)+'</div><div style="font-size:10px">💳 Paid</div></div>';
+  h+='<div style="text-align:center;padding:6px;background:rgba(255,88,88,.1);border-radius:6px"><div style="font-size:18px;font-weight:700;color:var(--ax-red)">'+counts.rejected+'</div><div style="font-size:10px">✗ Reject</div></div>';
+  h+='</div></div>';
+
+  /* Connexion réseau */
+  h+='<div class="ax-card" style="border-left:4px solid '+(navigator.onLine?"var(--ax-green)":"var(--ax-red)")+'"><h3>🌐 Connexion</h3>';
+  h+='<div style="font-size:13px">'+(navigator.onLine?"✅ En ligne":"❌ Hors ligne")+'</div>';
+  if(navigator.connection)h+='<div style="font-size:11px;color:var(--ax-text-dim)">Type: '+esc(navigator.connection.effectiveType||"?")+' · '+(navigator.connection.downlink||"?")+' Mbps</div>';
+  h+='</div>';
+
+  /* Permissions */
+  h+='<div class="ax-card"><h3>🔐 Permissions accordées</h3>';
+  ["geolocation","camera","microphone","notifications"].forEach(function(p){
+    h+='<div class="ax-setting-row" id="ax-perm-'+p+'"><span>'+p+'</span><span style="color:var(--ax-text-dim)">…</span></div>';
+  });
+  h+='</div>';
+
+  /* Action: forcer refresh + clear cache */
+  h+='<div class="ax-card" style="text-align:center"><h3>🔧 Actions urgentes</h3>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="if(confirm(\'Forcer reload PWA?\'))location.reload(true)" style="margin:4px">🔄 Reload</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});toast(\'SW unregistered, reload\',\'ok\');setTimeout(function(){location.reload();},1000);});}" style="margin:4px">🗑 Reset SW</button>';
+  h+='</div>';
+
+  setTimeout(function(){_axHealthCheckBackend();_axHealthCheckPermissions();},200);
+
+  h+='</div>';
+  return h;
+}
+function _axHealthCheckBackend(){
+  var box=document.getElementById("ax-health-backend");
+  if(!box)return;
+  var url=(typeof _readBackendUrl==="function")?_readBackendUrl():"";
+  if(!url){box.innerHTML='<span style="color:var(--ax-red)">❌ Pas de backend configuré (Coffre → ax_backend_url)</span>';return;}
+  box.innerHTML='⏳ Test...';
+  var t0=Date.now();
+  fetch(url+"/health").then(function(r){return r.json();}).then(function(d){
+    var dt=Date.now()-t0;
+    box.innerHTML='<span style="color:var(--ax-green)">✅ '+(d.status||"ok")+' ('+dt+'ms)</span>';
+  }).catch(function(e){
+    box.innerHTML='<span style="color:var(--ax-red)">❌ '+esc(String(e.message||e).slice(0,80))+'</span>';
+  });
+}
+function _axHealthCheckPermissions(){
+  if(!navigator.permissions||!navigator.permissions.query)return;
+  ["geolocation","camera","microphone","notifications"].forEach(function(p){
+    navigator.permissions.query({name:p}).then(function(s){
+      var el=document.getElementById("ax-perm-"+p);
+      if(!el)return;
+      var st=s.state;
+      var col=st==="granted"?"var(--ax-green)":st==="denied"?"var(--ax-red)":"var(--ax-text-dim)";
+      var ic=st==="granted"?"✅":st==="denied"?"❌":"⏸";
+      el.querySelector("span:last-child").innerHTML='<span style="color:'+col+'">'+ic+' '+st+'</span>';
+    }).catch(function(){});
+  });
 }
 function vReferral(){
   if(!K.user)return vLogin();
@@ -1822,7 +1940,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();case"referral":return vReferral();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -3642,6 +3760,8 @@ var APEX_COMMANDS=[
   {id:"act_test_voice",lb:"🔊 Tester voix actuelle",cat:"Action",act:function(){axTtsSpeak("Bonjour, ceci est un test de la voix sélectionnée.");}},
   /* v12.144 — Document scanner OCR */
   {id:"scandoc",lb:"📄 Scanner document (OCR)",cat:"Action",act:function(){axScanDocument();}},
+  /* v12.145 — Health Status admin */
+  {id:"health",lb:"⚕️ Health Status (diagnostic)",cat:"Admin",adminOnly:true,act:function(){sv("health");}},
   /* v12.144 — Push notifications activation */
   {id:"act_enable_notif",lb:"🔔 Activer notifications",cat:"Action",act:function(){axPushPermission().then(function(ok){if(ok)axShowNotif("APEX","Notifications activées ✓");});}},
   {id:"act_choose_voice",lb:"🎙 Choisir voix",cat:"Action",act:function(){sv("settings");setTimeout(function(){var s=document.getElementById("ax-voice-preset");if(s)s.scrollIntoView({behavior:"smooth"});},300);}},
