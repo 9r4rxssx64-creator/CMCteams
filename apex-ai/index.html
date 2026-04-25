@@ -305,11 +305,11 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.114",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.115",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags"];
 var FB_PRE=["ax_msgs_"];
 var FB_LOCAL=["ax_uid","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_pin_fails","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles"];
 var SESSION_TTL=24*60*60*1000;
@@ -1347,7 +1347,7 @@ function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";var co
 
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+vMain()+"</div>"+canvas;}
 
-function vMain(){switch(K.view){case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -1812,14 +1812,14 @@ function axIsFeatureAllowed(feature){try{
   }
   return{allowed:true,reason:plan,upgrade:null};
 }catch(e){return{allowed:false,reason:"erreur check",upgrade:null};}}
-function axIdentifyAndShop(){var _gate=axIsFeatureAllowed("identify_shop");if(!_gate.allowed){toast("Identify&Shop reserve plan "+(_gate.upgrade||"Pro")+" ("+_gate.reason+")","warn");if(typeof sv==="function")sv("settings");return;}if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}if(!_cguAsk("camera","Camera + identification","APEX AI prend une photo, l identifie via Claude Vision (plante/objet/meuble/livre/etc), puis cherche ou acheter via recherche web."))return;K.settings.webSearch=true;ls("ax_settings",K.settings);var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0]){var file=input.files[0];var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;var mediaType=file.type||"image/jpeg";var base64Data=b64.split(",")[1];K.messages.push({role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},{type:"text",text:"Identifie precisement ce que tu vois sur cette photo (nom, espece, marque, modele). Puis utilise web_search pour trouver 3 liens ou l acheter en France avec prix. Reponds structure: 1) Identification 2) Caracteristiques 3) 3 liens achat avec prix."}],ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;ls("ax_streaming_since",Date.now());dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE IDENTIFY-AND-SHOP: utilise vision pour identifier + web_search pour prix/achats. Cite sources.";var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);toast("Analyse en cours...","info");};reader.readAsDataURL(file);}};input.click();}
+function axIdentifyAndShop(){if(typeof axFeatureEnabled==="function"&&!axFeatureEnabled("identifyshop")){toast("Identify & Shop est désactivé par l\'admin","warn");return;}var _gate=axIsFeatureAllowed("identify_shop");if(!_gate.allowed){toast("Identify&Shop reserve plan "+(_gate.upgrade||"Pro")+" ("+_gate.reason+")","warn");if(typeof sv==="function")sv("settings");return;}if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}if(!_cguAsk("camera","Camera + identification","APEX AI prend une photo, l identifie via Claude Vision (plante/objet/meuble/livre/etc), puis cherche ou acheter via recherche web."))return;K.settings.webSearch=true;ls("ax_settings",K.settings);var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0]){var file=input.files[0];var reader=new FileReader();reader.onload=function(e){var b64=e.target.result;var mediaType=file.type||"image/jpeg";var base64Data=b64.split(",")[1];K.messages.push({role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},{type:"text",text:"Identifie precisement ce que tu vois sur cette photo (nom, espece, marque, modele). Puis utilise web_search pour trouver 3 liens ou l acheter en France avec prix. Reponds structure: 1) Identification 2) Caracteristiques 3) 3 liens achat avec prix."}],ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;ls("ax_streaming_since",Date.now());dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE IDENTIFY-AND-SHOP: utilise vision pour identifier + web_search pour prix/achats. Cite sources.";var apiMsgs=K.messages.map(function(m){return{role:m.role,content:m.content};});_callClaudeAPI(sysPrompt,apiMsgs,0);toast("Analyse en cours...","info");};reader.readAsDataURL(file);}};input.click();}
 function axCameraCapture(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Camera non disponible","warn");return;}var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.onchange=function(){if(input.files&&input.files[0])axUploadImage(input.files[0]);};input.click();}
 // === MODULE: Generation images IA ===
 function axGenerateImage(prompt,width,height){width=width||1024;height=height||1024;var url="https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width="+width+"&height="+height+"&nologo=true&seed="+Math.floor(Math.random()*999999);K.messages.push({role:"assistant",content:"Image generee :\n\n!["+esc(prompt)+"]("+url+")\n\n*Prompt: "+prompt+"*",ts:now()});_saveMsgs();dc();_scrollChatBottom();return url;}
 function _getImageToolDef(){return{name:"generate_image",description:"Generer une image a partir d'une description textuelle (DALL-E equivalent gratuit)",input_schema:{type:"object",properties:{prompt:{type:"string",description:"Description de l'image a generer (en anglais de preference)"},width:{type:"number",description:"Largeur en pixels (defaut 1024)"},height:{type:"number",description:"Hauteur en pixels (defaut 1024)"}},required:["prompt"]}};}
 
 // === MODULE: Deep Research ===
-function axDeepResearch(query){if(K.isStreaming)return;toast("Deep Research lance...","info");var researchPrompt="Tu es un chercheur expert. L'utilisateur demande une recherche approfondie sur : \""+query+"\".\n\nProcessus :\n1. Decompose la question en 3-5 sous-questions\n2. Pour chaque sous-question, utilise web_search pour trouver des sources\n3. Synthetise toutes les informations\n4. Produis un rapport structure avec sources\n\nSois exhaustif et cite tes sources.";K.messages.push({role:"user",content:"[Deep Research] "+query,ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE DEEP RESEARCH : utilise web_search plusieurs fois pour chaque sous-question. Produis un rapport complet et structure.";var apiMsgs=[{role:"user",content:researchPrompt}];_callClaudeAPI(sysPrompt,apiMsgs,0);}
+function axDeepResearch(query){if(typeof axFeatureEnabled==="function"&&!axFeatureEnabled("deepresearch")){toast("Deep Research est désactivé par l\'admin","warn");return;}if(K.isStreaming)return;toast("Deep Research lance...","info");var researchPrompt="Tu es un chercheur expert. L'utilisateur demande une recherche approfondie sur : \""+query+"\".\n\nProcessus :\n1. Decompose la question en 3-5 sous-questions\n2. Pour chaque sous-question, utilise web_search pour trouver des sources\n3. Synthetise toutes les informations\n4. Produis un rapport structure avec sources\n\nSois exhaustif et cite tes sources.";K.messages.push({role:"user",content:"[Deep Research] "+query,ts:now()});_saveMsgs();dc();_scrollChatBottom();K.isStreaming=true;dc();var sysPrompt=_buildSystemPrompt()+"\n\nMODE DEEP RESEARCH : utilise web_search plusieurs fois pour chaque sous-question. Produis un rapport complet et structure.";var apiMsgs=[{role:"user",content:researchPrompt}];_callClaudeAPI(sysPrompt,apiMsgs,0);}
 
 // === MODULE: Personas Custom ===
 var PERSONAS=[{id:"default",name:"APEX",icon:"\u2726",prompt:"Tu es APEX AI, assistant premium polyvalent ultra-performant. Tu excelles dans TOUS les domaines."},{id:"finance",name:"Expert Finance",icon:"\uD83D\uDCB0",prompt:"Tu es un expert financier senior (Bloomberg-level). Tu analyses les marches, calcules NPV/IRR/SMA/EMA, donnes des conseils d'investissement precis avec Monte Carlo. Utilise finance_calculate et finance_technical."},{id:"code",name:"Dev Senior",icon:"\uD83D\uDCBB",prompt:"Tu es un architecte logiciel senior full-stack (Google-level). Code COMPLET, production-ready, teste. CSS premium, responsive, anime. Architecture clean. Utilise code_execute Python+JS. Preview dans Canvas."},{id:"writer",name:"Redacteur Pro",icon:"\u270D\uFE0F",prompt:"Tu es un copywriter premium. Emails, articles, posts LinkedIn, newsletters, scripts video. Style percutant, adapte au public. SEO-optimise."},{id:"research",name:"Chercheur",icon:"\uD83D\uDD2C",prompt:"Tu es un chercheur academique senior. Analyses en profondeur, sources citees, rapports structures. Utilise web_search pour chaque affirmation. Deep Research."},{id:"lawyer",name:"Juriste",icon:"\u2696\uFE0F",prompt:"Tu es un juriste specialise droit des affaires, droit du travail, RGPD. Tu rediges contrats, CGV, statuts, mises en demeure. Droit francais et monegasque."},{id:"designer",name:"Designer UI/UX",icon:"\uD83C\uDFA8",prompt:"Tu es un designer UI/UX senior (Figma/Apple-level). Tu crees des interfaces premium, accessibles, animees. Glassmorphism, gradients, micro-interactions. Code CSS complet."},{id:"coach",name:"Coach Personnel",icon:"\uD83C\uDFAF",prompt:"Tu es un coach de vie et de carriere certifie. Tu aides a definir objectifs SMART, creer plans d'action, gerer le stress, developper les competences. Bienveillant mais exigeant."},{id:"marketing",name:"Growth Hacker",icon:"\uD83D\uDE80",prompt:"Tu es un expert growth hacking et marketing digital. SEO, SEA, social media, funnels, A/B testing, analytics, content marketing. ROI-obsessed."},{id:"data",name:"Data Analyst",icon:"\uD83D\uDCCA",prompt:"Tu es un data analyst senior. Tu analyses les donnees, crees des visualisations (bar/pie charts), detectes des patterns, calcules des stats. Utilise code_execute Python pour les analyses."},{id:"doctor",name:"Medecin",icon:"\uD83E\uDE7A",prompt:"Tu es un medecin generaliste et specialiste avec 30 ans d'experience. Tu connais la medecine occidentale, la medecine chinoise traditionnelle (MTC), l'ayurveda, la naturopathie. Tu analyses les symptomes, proposes des diagnostics differentiels, recommandes des examens, expliques les traitements. Tu cites les sources medicales (Vidal, HAS, OMS, Merck Manual). IMPORTANT: tu rappelles TOUJOURS que tes conseils ne remplacent pas une consultation medicale reelle."},{id:"psycho",name:"Psychologue",icon:"\uD83E\uDDE0",prompt:"Tu es un psychologue clinicien et coach certifie (TCC, psychanalyse, EMDR, pleine conscience). Tu ecoutes avec empathie, analyses les schemas cognitifs, proposes des exercices pratiques, aides a gerer stress/anxiete/depression/relations. Bienveillant mais professionnel. Tu recommandes de consulter un professionnel pour les cas graves."},{id:"philo",name:"Philosophe",icon:"\uD83E\uDD14",prompt:"Tu es un philosophe et penseur. Tu analyses les questions existentielles, ethiques, morales avec profondeur. Tu cites Socrate, Nietzsche, Sartre, Confucius, Marc-Aurele, Epictete. Tu aides a trouver du sens, prendre du recul, et reflechir avec rigueur."}];
@@ -2428,6 +2428,117 @@ function _axRefreshClaudeActivity(){
   }).catch(function(e){box.innerHTML='<p style="font-size:12px;color:var(--ax-red)">Pas accessible: '+esc(String(e.message||e))+'</p>';});
 }
 
+/* v12.115 — FEATURE FLAGS (Kevin: 'toutes les fonctions avec bouton off on et si off disparait des chez tel ou tel') */
+var AX_FEATURES={
+  'voice':{label:'🎙 Voix (TTS)',default:true,cat:'Interaction'},
+  'finance':{label:'💰 Finance',default:true,cat:'Argent'},
+  'crypto':{label:'₿ Crypto Portfolio',default:true,cat:'Argent'},
+  'shopping':{label:'🛒 Shopping',default:true,cat:'Argent'},
+  'ecommerce':{label:'🛕 E-commerce',default:false,cat:'Argent'},
+  'devices':{label:'📱 Appareils & Domotique',default:true,cat:'Maison'},
+  'remote':{label:'🎮 Télécommande',default:true,cat:'Maison'},
+  'music':{label:'🎵 Musique',default:true,cat:'Maison'},
+  'goals':{label:'🎯 Objectifs',default:true,cat:'Productivité'},
+  'habits':{label:'🔄 Habitudes',default:true,cat:'Productivité'},
+  'diary':{label:'📔 Journal intime',default:true,cat:'Productivité'},
+  'projects':{label:'📁 Projets',default:true,cat:'Productivité'},
+  'codeeditor':{label:'💻 Code Editor',default:true,cat:'Productivité'},
+  'news':{label:'📰 Actu',default:true,cat:'Info'},
+  'biometric':{label:'👤 Face ID / Touch ID',default:true,cat:'Sécurité'},
+  'crackpass':{label:'🔓 CrackPass',default:false,cat:'Sécurité'},
+  'identifyshop':{label:'📷 Identify & Shop',default:true,cat:'IA'},
+  'deepresearch':{label:'🔍 Deep Research',default:true,cat:'IA'},
+  'crewmode':{label:'👥 Crew Multi-IA',default:true,cat:'IA'},
+  'websearch':{label:'🌐 Web Search',default:true,cat:'IA'}
+};
+function axFeatureEnabled(name){
+  try{
+    var flags=lg("ax_feature_flags",{});
+    if(name in flags)return !!flags[name];
+    return AX_FEATURES[name]&&AX_FEATURES[name].default!==false;
+  }catch(_){return true;}
+}
+function axSetFeature(name,on){
+  try{
+    var flags=lg("ax_feature_flags",{});
+    flags[name]=!!on;
+    ls("ax_feature_flags",flags);
+    var lb=AX_FEATURES[name]?AX_FEATURES[name].label:name;
+    toast(lb+(on?" activée":" désactivée"),"ok");
+    if(typeof dc==="function")dc();
+  }catch(e){toast("Impossible de modifier","err");}
+}
+function axSetAllFeatures(on){
+  if(!axIsAdmin())return;
+  try{
+    var flags=lg("ax_feature_flags",{});
+    Object.keys(AX_FEATURES).forEach(function(n){flags[n]=!!on;});
+    ls("ax_feature_flags",flags);
+    toast(on?"Toutes les fonctions activées":"Toutes les fonctions désactivées","ok");
+    if(typeof dc==="function")dc();
+  }catch(_){}
+}
+/* Map des views Apex aux feature names — pour redirect si OFF */
+var AX_VIEW_FEATURE={
+  finance:"finance",cryptoportfolio:"crypto",shopping:"shopping",ecommerce:"ecommerce",
+  devices:"devices",remote:"remote",music:"music",
+  goals:"goals",habits:"habits",diary:"diary",projects:"projects",codeeditor:"codeeditor",
+  news:"news",crackpass:"crackpass",crew:"crewmode"
+};
+function axViewAllowed(view){
+  var f=AX_VIEW_FEATURE[view];
+  if(!f)return true;
+  return axFeatureEnabled(f);
+}
+var _axFeatureSearch="";
+function vFeatureFlags(){
+  if(!axIsAdmin())return '<div style="padding:24px;text-align:center;color:var(--ax-text-dim)">Réservé à l\'administrateur.</div>';
+  var flags=lg("ax_feature_flags",{});
+  var q=_axFeatureSearch.toLowerCase();
+  var keys=Object.keys(AX_FEATURES);
+  var byCat={};
+  keys.forEach(function(k){
+    var f=AX_FEATURES[k];
+    var hay=(f.label+" "+k+" "+(f.cat||"")).toLowerCase();
+    if(q&&hay.indexOf(q)<0)return;
+    var cat=f.cat||"Autre";
+    if(!byCat[cat])byCat[cat]=[];
+    byCat[cat].push(k);
+  });
+  var total=keys.length;
+  var on=0;
+  keys.forEach(function(k){if(axFeatureEnabled(k))on++;});
+  var h='<div style="padding:16px;max-width:760px;margin:0 auto">';
+  h+='<h2 style="color:var(--ax-gold);margin-bottom:6px">🔘 Activer / Désactiver les fonctions</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Coupe une fonction → elle disparaît de l\'app pour tous les utilisateurs. <strong style="color:var(--ax-gold)">'+on+'/'+total+'</strong> activées.</p>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+  h+='<button class="ax-btn ax-btn-outline" style="min-height:44px" onclick="axSetAllFeatures(true)">✅ Tout activer</button>';
+  h+='<button class="ax-btn ax-btn-outline" style="min-height:44px" onclick="if(confirm(\'Desactiver toutes les fonctions ?\\nL app sera tres reduite.\'))axSetAllFeatures(false)">✖ Tout désactiver</button>';
+  h+='</div>';
+  h+='<input id="ax-ff-search" class="ax-input" placeholder="🔍 Rechercher une fonction..." value="'+esc(_axFeatureSearch)+'" oninput="_axFeatureSearch=this.value;dc();setTimeout(function(){var i=document.getElementById(\'ax-ff-search\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},30)" style="margin-bottom:14px;min-height:44px">';
+  var cats=Object.keys(byCat).sort();
+  if(!cats.length){
+    h+='<div style="text-align:center;padding:24px;color:var(--ax-text-dim)">Aucun résultat</div>';
+  }
+  cats.forEach(function(cat){
+    h+='<div style="font-size:11px;font-weight:700;color:var(--ax-gold);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">'+esc(cat)+'</div>';
+    byCat[cat].forEach(function(k){
+      var f=AX_FEATURES[k];
+      var enabled=axFeatureEnabled(k);
+      var bg=enabled?"rgba(40,200,120,.10)":"rgba(220,80,80,.08)";
+      var border=enabled?"rgba(40,200,120,.4)":"rgba(220,80,80,.3)";
+      var status=enabled?'<span style="color:#28c878;font-weight:700">ON</span>':'<span style="color:#dc5050;font-weight:700">OFF</span>';
+      h+='<div class="ax-card" style="display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:6px;background:'+bg+';border:1px solid '+border+';min-height:56px">';
+      h+='<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(f.label)+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">id: '+esc(k)+' · '+status+'</div></div>';
+      h+='<button onclick="axSetFeature(\''+esc(k)+'\','+(enabled?"false":"true")+')" style="min-width:88px;min-height:44px;padding:8px 14px;border-radius:24px;border:none;cursor:pointer;font-weight:700;font-size:13px;background:'+(enabled?"#28c878":"#555")+';color:'+(enabled?"#000":"#bbb")+'" title="'+(enabled?"Désactiver":"Activer")+' '+esc(f.label)+'">'+(enabled?"✅ ON":"⚪ OFF")+'</button>';
+      h+='</div>';
+    });
+  });
+  h+='<p style="font-size:11px;color:var(--ax-text-dim);margin-top:18px;text-align:center">Synchronisé cross-appareils via Firebase · Apex '+APP_VER+'</p>';
+  h+='</div>';
+  return h;
+}
+
 /* v12.108 — COMMAND PALETTE (Kevin: 'top du top niveau organisation fluidite intuitivite') */
 var APEX_COMMANDS=[
   /* Vues principales */
@@ -2486,11 +2597,18 @@ var APEX_COMMANDS=[
   /* v12.111 — Reset comptes (admin only) */
   {id:"act_reset_users",lb:"🗑 Effacer comptes (garde Kevin+Laurence)",cat:"Action",adminOnly:true,act:function(){axResetAllUsers();}},
   /* v12.111 — Worklog Apex (admin uniquement) */
-  {id:"adminworklog",lb:"⏱ Mon temps de travail (admin)",cat:"Admin",adminOnly:true,act:function(){sv("adminworklog");}}
+  {id:"adminworklog",lb:"⏱ Mon temps de travail (admin)",cat:"Admin",adminOnly:true,act:function(){sv("adminworklog");}},
+  /* v12.115 — Feature flags ON/OFF */
+  {id:"featureflags",lb:"🔘 Activer/Désactiver fonctions",cat:"Admin",adminOnly:true,act:function(){sv("featureflags");}}
 ];
 function axCommandPalette(){
   var isAdmin=axIsAdmin&&axIsAdmin();
-  var cmds=APEX_COMMANDS.filter(function(c){return !c.adminOnly||isAdmin;});
+  var cmds=APEX_COMMANDS.filter(function(c){
+    if(c.adminOnly&&!isAdmin)return false;
+    /* v12.115 — masquer les commandes des features OFF (sauf pour admin) */
+    if(typeof axViewAllowed==="function"&&!isAdmin&&c.id&&!axViewAllowed(c.id))return false;
+    return true;
+  });
   window.__axPaletteCmds=cmds;
   var content='<div style="min-width:min(540px,90vw)"><h3 style="margin-bottom:10px">⚡ Commande rapide</h3>';
   content+='<input id="ax-palette-in" placeholder="Tape pour chercher (ex: chat, finance, crypto, abonnements...)" autofocus class="ax-input" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px" oninput="_axPaletteRender(this.value)">';
