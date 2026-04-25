@@ -68,8 +68,9 @@ fi
 
 # 4. Verif rapide XSS innerHTML sans esc() (warning seulement)
 if [ -f index.html ]; then
-  XSS_COUNT=$(grep -c 'innerHTML.*\${' index.html 2>/dev/null || echo 0)
-  if [ "$XSS_COUNT" -gt 50 ]; then
+  XSS_COUNT=$(grep -c 'innerHTML.*\${' index.html 2>/dev/null | head -1)
+  XSS_COUNT=${XSS_COUNT:-0}
+  if [ "$XSS_COUNT" -gt 50 ] 2>/dev/null; then
     echo "[pre-commit] WARN: $XSS_COUNT innerHTML+template-string dans index.html (verifier esc())"
   fi
 fi
