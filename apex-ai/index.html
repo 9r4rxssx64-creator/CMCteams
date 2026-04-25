@@ -10116,6 +10116,8 @@ function axLessonAdd(category, lesson, source, opts){
       src:String(source||"apex").toLowerCase().slice(0,20),
       sev:sev,
       applied:false,
+      timesApplied:0, /* v12.261 */
+      lastApplied:null, /* v12.261 */
       hint:opts&&opts.hint?String(opts.hint).slice(0,400):""
     };
     /* dedupe similaire (meme cat + 80% lesson identique) */
