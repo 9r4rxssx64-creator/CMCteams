@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777134855896,
-  "total_commits": 228,
+  "updated_at": 1777136949961,
+  "total_commits": 231,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,54 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "688bb8f3",
+      "ts": 1777136935000,
+      "msg": "Apex v12.213: IA navigation + autofill (axNavigateTo + axAutofillField + tools IA)",
+      "project": "apex",
+      "ver": "12.213",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6cc354ed",
+      "ts": 1777136879000,
+      "msg": "CLAUDE.md regle 'SCAN & DICTEE PARTOUT' (Kevin: cam+mic sur chaque champ + smart routing + vision IA)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "25b15f63",
+      "ts": 1777136691000,
+      "msg": "CLAUDE.md regle 'IA NAVIGUE ET REMPLIT' (Kevin: dire 'amene-moi la' + auto-integration sans demander)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "02c081c2",
+      "ts": 1777136639000,
+      "msg": "deploy-worker.html: pre-fill email Kevin + bouton 'Charger depuis Apex Coffre' + auto-save localStorage",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "549a7a6c",
+      "ts": 1777135695000,
+      "msg": "deploy-worker.html: support Global API Key (en plus du Token API) pour reutilisation existant",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "9ecca2ba",
+      "ts": 1777134862000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres v12.212 + v9.516 (Banque d'infos + sentinelle)",
+      "project": "docs",
+      "ver": "12.212",
+      "author": "claude-code"
+    },
     {
       "sha": "91d7369a",
       "ts": 1777134845000,
@@ -919,54 +967,6 @@
       "msg": "CMCteams v9.492: AUTO continuous tracking apres checkin (Kevin: 'automatiser')",
       "project": "cmcteams",
       "ver": "9.492",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c8ddb21a",
-      "ts": 1777082856000,
-      "msg": "Apex v12.139: cascade emails auto (Kevin P1) — 4 emails + helper + admin Boite emails",
-      "project": "apex",
-      "ver": "12.139",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9c46b60f",
-      "ts": 1777082789000,
-      "msg": "Subagents commits batch (parallel work)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "4e496609",
-      "ts": 1777082789000,
-      "msg": "CMCteams v9.491+: visuel premium carte interactive (CSS luxe casino Monaco)",
-      "project": "cmcteams",
-      "ver": "9.491",
-      "author": "claude-code"
-    },
-    {
-      "sha": "95bc3268",
-      "ts": 1777082675000,
-      "msg": "Apex v12.136: backup nightly auto + restore + vue admin",
-      "project": "apex",
-      "ver": "12.136",
-      "author": "claude-code"
-    },
-    {
-      "sha": "14cf0b6d",
-      "ts": 1777082634000,
-      "msg": "Apex v12.133: SW pro-level (cache strategies + offline + push + bg sync)",
-      "project": "apex",
-      "ver": "12.133",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9208d4f8",
-      "ts": 1777082564000,
-      "msg": "Subagents commits intermediaires: Apex + CMCteams parallel work",
-      "project": "multi",
-      "ver": null,
       "author": "claude-code"
     }
   ]
