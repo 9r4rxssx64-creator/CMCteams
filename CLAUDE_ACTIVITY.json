@@ -1,0 +1,974 @@
+{
+  "updated_at": 1777078645505,
+  "session_id": "kevin-2026-04-21-25",
+  "total_commits": 128,
+  "projects": [
+    "apex",
+    "backend",
+    "cmcteams",
+    "docs",
+    "multi"
+  ],
+  "commits": [
+    {
+      "sha": "5582db02",
+      "ts": 1777078555000,
+      "msg": "CMCteams v9.476: FaceID auto-trigger ecran login (parite Apex v12.112)",
+      "project": "cmcteams",
+      "ver": "9.476",
+      "author": "claude-code"
+    },
+    {
+      "sha": "458bca3d",
+      "ts": 1777078459000,
+      "msg": "Apex v12.112: FaceID priorite + auto-trigger sur ecran login",
+      "project": "apex",
+      "ver": "12.112",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c313becc",
+      "ts": 1777078358000,
+      "msg": "Apex v12.111: dedup Settings/Vault + Reset users + Worklog cross-app",
+      "project": "apex",
+      "ver": "12.111",
+      "author": "claude-code"
+    },
+    {
+      "sha": "71d8f05d",
+      "ts": 1777078111000,
+      "msg": "CMCteams v9.475: Admin reorganise en 4 categories (vs 8)",
+      "project": "cmcteams",
+      "ver": "9.475",
+      "author": "claude-code"
+    },
+    {
+      "sha": "18cda0ad",
+      "ts": 1777077872000,
+      "msg": "CLAUDE.md: regle critique iPhone-first (Kevin permanent)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "944f9298",
+      "ts": 1777077839000,
+      "msg": "Apex v12.110: bouton palette iPhone visible (topbar)",
+      "project": "apex",
+      "ver": "12.110",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e7b804ef",
+      "ts": 1777077677000,
+      "msg": "Apex v12.109: smart model routing auto Haiku/Sonnet (economie tokens)",
+      "project": "apex",
+      "ver": "12.109",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4318cc1f",
+      "ts": 1777077616000,
+      "msg": "CMCteams v9.474: vAdminTimework — compteur temps admin Kevin",
+      "project": "cmcteams",
+      "ver": "9.474",
+      "author": "claude-code"
+    },
+    {
+      "sha": "531c4541",
+      "ts": 1777077605000,
+      "msg": "Apex v12.108: Command Palette Cmd+K (UX fluidite top)",
+      "project": "apex",
+      "ver": "12.108",
+      "author": "claude-code"
+    },
+    {
+      "sha": "21469a74",
+      "ts": 1777077462000,
+      "msg": "Apex v12.108: section Backend & Hosting + OpenAI dans liens admin",
+      "project": "apex",
+      "ver": "12.108",
+      "author": "claude-code"
+    },
+    {
+      "sha": "11f338d5",
+      "ts": 1777077195000,
+      "msg": "Apex v12.106-107 + CMCteams v9.472-473: IA rapide + voix premium",
+      "project": "apex",
+      "ver": "12.106",
+      "author": "claude-code"
+    },
+    {
+      "sha": "af9f0d9d",
+      "ts": 1777076940000,
+      "msg": "Apex v12.105 + CMCteams v9.471: STRICT LOGIN GATE (validation admin obligatoire)",
+      "project": "apex",
+      "ver": "12.105",
+      "author": "claude-code"
+    },
+    {
+      "sha": "475140fe",
+      "ts": 1777074972000,
+      "msg": "CMCteams v9.470: chat IA passe par backend FastAPI Railway si configure",
+      "project": "cmcteams",
+      "ver": "9.470",
+      "author": "claude-code"
+    },
+    {
+      "sha": "92d9df8b",
+      "ts": 1777074837000,
+      "msg": "Update KEVIN_ACTIONS_TODO: Apex v12.104 + CMCteams v9.469 + backend deployed",
+      "project": "multi",
+      "ver": "12.104",
+      "author": "claude-code"
+    },
+    {
+      "sha": "35416243",
+      "ts": 1777074772000,
+      "msg": "Apex v12.104 + CMCteams v9.469: bouton couper voix instant",
+      "project": "apex",
+      "ver": "12.104",
+      "author": "claude-code"
+    },
+    {
+      "sha": "fd3c25a4",
+      "ts": 1777074138000,
+      "msg": "Backend: retire nixpacks.toml (override casse pip install)",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "0f3b0c20",
+      "ts": 1777073928000,
+      "msg": "Backend: requirements.txt minimal MVP (retire pandas/supabase/pinecone/voyageai/redis)",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "ede803b4",
+      "ts": 1777073115000,
+      "msg": "Backend: nixpacks.toml + railway.json pour force Python + healthcheck",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "01eecae8",
+      "ts": 1777067882000,
+      "msg": "PRO Phase 4: Apex v12.103 chat via backend proxy Anthropic passthrough",
+      "project": "backend",
+      "ver": "12.103",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5449db95",
+      "ts": 1777067602000,
+      "msg": "Apex v12.102: Adapter frontend pro - axBackendCall priorite sur direct",
+      "project": "apex",
+      "ver": "12.102",
+      "author": "claude-code"
+    },
+    {
+      "sha": "cec5865f",
+      "ts": 1777067557000,
+      "msg": "PRO Phase 1: Backend FastAPI scaffold complet (Kevin 'passer au pro')",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "89df8e70",
+      "ts": 1777067222000,
+      "msg": "v9.468: Cadres parser +2 strategies (agent audit v9.462 5/6 echec)",
+      "project": "cmcteams",
+      "ver": "9.468",
+      "author": "claude-code"
+    },
+    {
+      "sha": "afec80f6",
+      "ts": 1777067155000,
+      "msg": "v9.467: axManualDeepClean - cleanup storage agressif (Kevin banner 'stockage toujours plein')",
+      "project": "cmcteams",
+      "ver": "9.467",
+      "author": "claude-code"
+    },
+    {
+      "sha": "be9fad77",
+      "ts": 1777067063000,
+      "msg": "v9.466: Bouton diag cadres sans horaires visible iPhone (Kevin n a que iPhone)",
+      "project": "cmcteams",
+      "ver": "9.466",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c21b3b45",
+      "ts": 1777066858000,
+      "msg": "v12.101: Cloudflare Worker proxy GitHub (contourne Safari PWA iOS CORS)",
+      "project": "multi",
+      "ver": "12.101",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6d068d3f",
+      "ts": 1777066293000,
+      "msg": "v12.100: GitHub fallback raw.githubusercontent.com (Safari iOS PWA CORS)",
+      "project": "multi",
+      "ver": "12.100",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1cb816ca",
+      "ts": 1777063807000,
+      "msg": "v12.99: MAJ auto activee partout (Kevin: active les MAJ auto partout)",
+      "project": "multi",
+      "ver": "12.99",
+      "author": "claude-code"
+    },
+    {
+      "sha": "18fce23f",
+      "ts": 1777063732000,
+      "msg": "v12.98: Bouton retour dans topbar (Kevin manque fleches pour revenir)",
+      "project": "multi",
+      "ver": "12.98",
+      "author": "claude-code"
+    },
+    {
+      "sha": "61ac0a55",
+      "ts": 1777063691000,
+      "msg": "v12.97: Revert GitHub XHR sync avec diagnostic precis (Kevin PAT pas ok)",
+      "project": "multi",
+      "ver": "12.97",
+      "author": "claude-code"
+    },
+    {
+      "sha": "43424cb5",
+      "ts": 1777063648000,
+      "msg": "v12.96: Fix axClearChatScreen - utilise newConversation au lieu de vider",
+      "project": "multi",
+      "ver": "12.96",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0228e420",
+      "ts": 1777063557000,
+      "msg": "v12.95: Fix scroll chat remonte + GitHub async cache (tool_use sync)",
+      "project": "multi",
+      "ver": "12.95",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9ddd229c",
+      "ts": 1777063152000,
+      "msg": "v12.94: Fix PAT lecture (fallback ax_github_pat / ax_github_token)",
+      "project": "multi",
+      "ver": "12.94",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2dd56e83",
+      "ts": 1777058526000,
+      "msg": "v12.93: Fix vLanding crash si PLANS[pk] manquant (audit agent)",
+      "project": "multi",
+      "ver": "12.93",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c235b863",
+      "ts": 1777058428000,
+      "msg": "v12.92: Fix emoji banner SW (\\uD83D\\uDD04 -> 🔄)",
+      "project": "multi",
+      "ver": "12.92",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f81de853",
+      "ts": 1777057033000,
+      "msg": "v12.91: Afficher reponse EmailJS brute pour diagnostiquer erreur 400",
+      "project": "multi",
+      "ver": "12.91",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d38f4c5f",
+      "ts": 1777056180000,
+      "msg": "v12.90: EmailJS payload minimal {to_email, to_name, message}",
+      "project": "multi",
+      "ver": "12.90",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b4c3d7d8",
+      "ts": 1777050414000,
+      "msg": "v12.89: Fix lecture Vault EmailJS (string brute vs JSON)",
+      "project": "multi",
+      "ver": "12.89",
+      "author": "claude-code"
+    },
+    {
+      "sha": "04afb01e",
+      "ts": 1777048617000,
+      "msg": "v12.88: Bouton Tester EmailJS + diagnostic configuration",
+      "project": "multi",
+      "ver": "12.88",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b1177e24",
+      "ts": 1777047532000,
+      "msg": "v12.87: PIN admin provisoire + reconnaissance Kevin/Desarzens + FaceID auto",
+      "project": "multi",
+      "ver": "12.87",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2cb9f045",
+      "ts": 1777039098000,
+      "msg": "v12.86: Notifications approbation cascade (Kevin je recois pas code WhatsApp/mail)",
+      "project": "multi",
+      "ver": "12.86",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8e11c479",
+      "ts": 1777038186000,
+      "msg": "v12.85: Flow strict landing -> fiche -> forfait -> attente -> approve avec PIN auto",
+      "project": "multi",
+      "ver": "12.85",
+      "author": "claude-code"
+    },
+    {
+      "sha": "96264346",
+      "ts": 1777037178000,
+      "msg": "CRITICAL v12.84: Fix boucle infinie _applyI18n > dc > render > _bindEvents",
+      "project": "multi",
+      "ver": "12.84",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d8e08986",
+      "ts": 1777032354000,
+      "msg": "diag: Page /apex-ai/diag.html + CLAUDE_FEED lecons 8 erreurs Claude Code session PM",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "06ce75a9",
+      "ts": 1777032056000,
+      "msg": "v12.83: Flow strict Kevin - fiche -> forfait -> validation -> acces",
+      "project": "multi",
+      "ver": "12.83",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c46dbd91",
+      "ts": 1777031722000,
+      "msg": "CRITICAL v12.82: Fallback HTML statique - Apex bloque ecran vide",
+      "project": "multi",
+      "ver": "12.82",
+      "author": "claude-code"
+    },
+    {
+      "sha": "06e5946a",
+      "ts": 1777031499000,
+      "msg": "CRITICAL v12.81: Fix Apex bloque ecran vide - PLANS manquants + render try/catch",
+      "project": "multi",
+      "ver": "12.81",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b97d69cb",
+      "ts": 1777031026000,
+      "msg": "URGENT v12.80: FAB cache par defaut + fail-safe force K.view=login si vide (#208)",
+      "project": "multi",
+      "ver": "12.80",
+      "author": "claude-code"
+    },
+    {
+      "sha": "82a17ca4",
+      "ts": 1777030379000,
+      "msg": "URGENT v12.79: Fail-safe splash removal - Kevin bloque sur splash (#206)",
+      "project": "multi",
+      "ver": "12.79",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e1b483e9",
+      "ts": 1777028632000,
+      "msg": "docs: GUIDE_KEVIN_MOBILE.md - guide pas a pas iPhone/Android actions 2 et 3 (#205)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "4bd0925d",
+      "ts": 1777027853000,
+      "msg": "Apex v12.78 + CMC v9.465: Session \"Tout fix\" (Kevin demande) (#204)",
+      "project": "apex",
+      "ver": "12.78",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9d9f9d7d",
+      "ts": 1777027471000,
+      "msg": "Apex v12.77 + docs: Crew multi-IA + security critique + BILAN_PRO + Dependabot/CodeQL (#203)",
+      "project": "apex",
+      "ver": "12.77",
+      "author": "claude-code"
+    },
+    {
+      "sha": "bf823896",
+      "ts": 1777026258000,
+      "msg": "Apex v12.74: Compteur connexions admin + auto-suggest FaceID post-login (#202)",
+      "project": "apex",
+      "ver": "12.74",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9443d28e",
+      "ts": 1777025696000,
+      "msg": "docs: CLAUDE_FEED.md MAJ session 2026-04-24 (6 PRs + lessons permanentes) (#201)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "67a63ef5",
+      "ts": 1777025597000,
+      "msg": "v9.464 + v12.72 + v12.73: Whitelist auto-fix enrichi + Fix langues + Fix FaceID (#200)",
+      "project": "cmcteams",
+      "ver": "9.464",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0a603b15",
+      "ts": 1777024898000,
+      "msg": "v9.463 + v12.71: Pipeline autonome erreurs remontees + auto-fix IA (#199)",
+      "project": "cmcteams",
+      "ver": "9.463",
+      "author": "claude-code"
+    },
+    {
+      "sha": "7ce58bd1",
+      "ts": 1777024352000,
+      "msg": "Apex v12.70: Acces Apex a son propre code (GitHub API) (#198)",
+      "project": "apex",
+      "ver": "12.70",
+      "author": "claude-code"
+    },
+    {
+      "sha": "485e0ca9",
+      "ts": 1777024202000,
+      "msg": "Apex v12.69: Landing obligatoire first-time + fiche abonnement admin-validated (#197)",
+      "project": "apex",
+      "ver": "12.69",
+      "author": "claude-code"
+    },
+    {
+      "sha": "438c2b5f",
+      "ts": 1777023869000,
+      "msg": "v9.462: Cadres fallback ultra-robuste - 5 strategies matching (#196)",
+      "project": "cmcteams",
+      "ver": "9.462",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f89be5e6",
+      "ts": 1777023542000,
+      "msg": "v9.461: CMCteams FAB gros bouton+ FIX CRITIQUE - toutes actions ne marchaient plus (#195)",
+      "project": "cmcteams",
+      "ver": "9.461",
+      "author": "claude-code"
+    },
+    {
+      "sha": "86154879",
+      "ts": 1777023104000,
+      "msg": "v9.461: CMCteams FAB gros bouton+ FIX CRITIQUE - toutes actions ne marchaient plus (#194)",
+      "project": "cmcteams",
+      "ver": "9.461",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e3f2b4c2",
+      "ts": 1777022944000,
+      "msg": "v12.68: UX Laurence allege + message demande admin softer (#193)",
+      "project": "multi",
+      "ver": "12.68",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e61e0a36",
+      "ts": 1777022736000,
+      "msg": "v12.66: Tronçage 8K -> 100K (coller gros code) + bouton Effacer ecran + scroll respecte user + update reload confirmation (#192)",
+      "project": "multi",
+      "ver": "12.66",
+      "author": "claude-code"
+    },
+    {
+      "sha": "81dc022b",
+      "ts": 1777022585000,
+      "msg": "v12.65: Fixes critiques - PIN obligatoire, KDMC->APEX, IA perso prenom, anti-hallucination (#191)",
+      "project": "multi",
+      "ver": "12.65",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5e69edae",
+      "ts": 1776801276000,
+      "msg": "v12.64: Escalation rapide Claude Code - cron 15min + webhook immediat via repository_dispatch (#190)",
+      "project": "multi",
+      "ver": "12.64",
+      "author": "claude-code"
+    },
+    {
+      "sha": "11e75843",
+      "ts": 1776801010000,
+      "msg": "v12.63: Apex IA clone complet - capacites explicitees + escalade auto + acces repo prive via GitHub PAT (#189)",
+      "project": "multi",
+      "ver": "12.63",
+      "author": "claude-code"
+    },
+    {
+      "sha": "419e799b",
+      "ts": 1776791077000,
+      "msg": "v12.62 + v9.460: Batch fix 11 bugs (audit 4 agents specialises) (#188)",
+      "project": "multi",
+      "ver": "12.62",
+      "author": "claude-code"
+    },
+    {
+      "sha": "67784181",
+      "ts": 1776790215000,
+      "msg": "v12.61: Badges Aujourd'hui cliquables (messages/taches/notes) + mea culpa explication (#187)",
+      "project": "multi",
+      "ver": "12.61",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d955aa12",
+      "ts": 1776790115000,
+      "msg": "v12.60 FIX URGENT: Tool names doublon web_search + messages erreur API user-friendly + auto-escalation (#186)",
+      "project": "multi",
+      "ver": "12.60",
+      "author": "claude-code"
+    },
+    {
+      "sha": "546ccaa3",
+      "ts": 1776789218000,
+      "msg": "v12.59 docs: LESSONS_2026-04-21.md mis a jour fin de session (20 lecons, 35 PRs, etat technique + architecture + securite + UX + reste Kevin)",
+      "project": "multi",
+      "ver": "12.59",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3106d6ae",
+      "ts": 1776787771000,
+      "msg": "v12.59 + v9.459: Helpers universels axNameMatch / cmcNameMatch (tous users, pas juste preconfigures) + findEmpByFullName pour CMCteams (#185)",
+      "project": "multi",
+      "ver": "12.59",
+      "author": "claude-code"
+    },
+    {
+      "sha": "258e0e6e",
+      "ts": 1776785070000,
+      "msg": "v12.58 (docs only): Regle permanente login/recherche flexible + feed Apex mission autonomie (#184)",
+      "project": "multi",
+      "ver": "12.58",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e21acae8",
+      "ts": 1776784927000,
+      "msg": "v12.57: Login nom/prenom flexible (tous ordres, avec/sans tiret/espace) + note permanente (#183)",
+      "project": "multi",
+      "ver": "12.57",
+      "author": "claude-code"
+    },
+    {
+      "sha": "49b31e75",
+      "ts": 1776784287000,
+      "msg": "v12.56: Theme Amour complet pour Laurence (user_laurence) - couleurs rose/magenta sur toute l app (#182)",
+      "project": "multi",
+      "ver": "12.56",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0dc3827f",
+      "ts": 1776784121000,
+      "msg": "v12.55b: Banner romantique pour Laurence (user_laurence) sur Dashboard Apex (#181)",
+      "project": "multi",
+      "ver": "12.55",
+      "author": "claude-code"
+    },
+    {
+      "sha": "219733ef",
+      "ts": 1776783726000,
+      "msg": "v12.55: Regle permanente pipeline autonomie cross-projet (Apex + CMCteams + futurs) (#180)",
+      "project": "multi",
+      "ver": "12.55",
+      "author": "claude-code"
+    },
+    {
+      "sha": "bb72f372",
+      "ts": 1776783620000,
+      "msg": "v12.54 + v9.458: Fiches cliquables + vue user temps reel + controles admin + CMCteams auto-reload preserve view (#179)",
+      "project": "multi",
+      "ver": "12.54",
+      "author": "claude-code"
+    },
+    {
+      "sha": "211aff7f",
+      "ts": 1776783105000,
+      "msg": "v12.53 AUDIT FIXES: FB_FIX 9 cles ajoutees + regex admin-only _execAppAction + detection suspecte enrichie + UX jargon retire (#178)",
+      "project": "multi",
+      "ver": "12.53",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3eab618d",
+      "ts": 1776782830000,
+      "msg": "v12.52: Rapports journaliers par user + historique chat + detection actions suspectes + alertes admin (#177)",
+      "project": "multi",
+      "ver": "12.52",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8a930260",
+      "ts": 1776782324000,
+      "msg": "v12.51: Geolocalisation continue pour admin/family/friend/gift dans Apex (CMCteams deja OK v9.214+) + safety micro NE coupe QUE audio/video (#176)",
+      "project": "multi",
+      "ver": "12.51",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e34de34d",
+      "ts": 1776782162000,
+      "msg": "v12.50: Langage simple UI (19 termes) + Safety micro iPhone/Android (stop auto quand app fermee/caChee) (#175)",
+      "project": "multi",
+      "ver": "12.50",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e60aeabb",
+      "ts": 1776781962000,
+      "msg": "v12.49 + GitHub Action: Pipeline escalation autonome Apex -> Claude Code (meme si Kevin offline) (#174)",
+      "project": "multi",
+      "ver": "12.49",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f7b0f42b",
+      "ts": 1776781777000,
+      "msg": "v12.48: Vault 'A configurer' pour champs vides + AxAutoHandleError (IA repare seule + escalade admin si recurrent 3x/h) + axClearChatScreen (nettoie ecran garde historique) + bouton Report bug client ",
+      "project": "multi",
+      "ver": "12.48",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1b45baa2",
+      "ts": 1776781602000,
+      "msg": "v12.47: Plan Decouverte 24h gratuit + Contact Admin + Boite admin + Auto-log anomalies JS (#172)",
+      "project": "multi",
+      "ver": "12.47",
+      "author": "claude-code"
+    },
+    {
+      "sha": "fbbebaf9",
+      "ts": 1776781014000,
+      "msg": "v12.46: _CLAUDE_HANDOFF mis a jour (Apex IA = clone permanent Claude Code) avec 10 regles permanentes + 23 docs + 170 PRs (#171)",
+      "project": "multi",
+      "ver": "12.46",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3e7cc95f",
+      "ts": 1776780926000,
+      "msg": "v12.45: Fiche client + selecteur plan family/friend/gift/client + notif admin + compteurs connexion live + regle permanente expert autonomie (#170)",
+      "project": "multi",
+      "ver": "12.45",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ac10308f",
+      "ts": 1776780702000,
+      "msg": "v12.44 SECURITE CRITIQUE: Retire 14 champs dangereux + AES-GCM chiffrement + regle permanente jamais stocker seeds/banques (#169)",
+      "project": "multi",
+      "ver": "12.44",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dc3ec17a",
+      "ts": 1776780423000,
+      "msg": "v12.43: Bilan general integre dans Apex + 11 nouvelles banques + retire nom perso pages publiques (#168)",
+      "project": "multi",
+      "ver": "12.43",
+      "author": "claude-code"
+    },
+    {
+      "sha": "10338f67",
+      "ts": 1776780159000,
+      "msg": "v12.42: Sources multiples + accumulation continue memoire + dedupe similarite (Kevin \"references differentes, sources differentes, tout s'accumule\") (#167)",
+      "project": "multi",
+      "ver": "12.42",
+      "author": "claude-code"
+    },
+    {
+      "sha": "cb6d473f",
+      "ts": 1776780071000,
+      "msg": "v12.41 + v9.457: Multi-angles IA obligatoire (Apex + CMCteams) + agents Crew verifient choix multiples + autonomie max (#166)",
+      "project": "multi",
+      "ver": "12.41",
+      "author": "claude-code"
+    },
+    {
+      "sha": "fd3ee7ca",
+      "ts": 1776779923000,
+      "msg": "v12.40: 12 nouveaux outils iOS/Android (Siri Shortcuts, Apple Pay, Haptic, NFC, Contact Picker, Web Share, Ambient Light, Wake Lock, Badge, Web OTP, Idle Detection) (#165)",
+      "project": "multi",
+      "ver": "12.40",
+      "author": "claude-code"
+    },
+    {
+      "sha": "39cc3da1",
+      "ts": 1776779771000,
+      "msg": "v12.39 + v9.456: GPS cooldown 5min + SW banner CMCteams + regle auto-refresh + permissions cache (#164)",
+      "project": "multi",
+      "ver": "12.39",
+      "author": "claude-code"
+    },
+    {
+      "sha": "da7ede9e",
+      "ts": 1776779608000,
+      "msg": "v12.38 FIX CRITIQUE API KEY: Modal active + diagnostic local + 5 paths Firebase fallback + retire Bodyguard banner vLogin (#163)",
+      "project": "multi",
+      "ver": "12.38",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2bc75c49",
+      "ts": 1776778568000,
+      "msg": "v12.37: Autonomie max — 6 actions Kevin resolues (SW notif + CGU + SEO + backup cron + Stripe webhook + docs) (#162)",
+      "project": "multi",
+      "ver": "12.37",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d89bebf6",
+      "ts": 1776778128000,
+      "msg": "v12.36 + v9.455: STT fluide (live interim + silence auto-send) + toast filtre CMCteams clients + LESSONS session (#161)",
+      "project": "multi",
+      "ver": "12.36",
+      "author": "claude-code"
+    },
+    {
+      "sha": "700e0f83",
+      "ts": 1776777670000,
+      "msg": "v12.35: Widget crypto dashboard + vue Portfolio + NFC card vRemote + vue Mes devices admin (#160)",
+      "project": "multi",
+      "ver": "12.35",
+      "author": "claude-code"
+    },
+    {
+      "sha": "df111e80",
+      "ts": 1776776667000,
+      "msg": "v12.34: Crypto widget (BTC/ETH live) + NFC scan/write + 21 liens crypto + multi-device admin sync (#159)",
+      "project": "multi",
+      "ver": "12.34",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d17b55c3",
+      "ts": 1776776144000,
+      "msg": "v12.33: Telecommande+CrackPass cliquables dans Projets + Bodyguard login + VPN detect + device scan (#158)",
+      "project": "multi",
+      "ver": "12.33",
+      "author": "claude-code"
+    },
+    {
+      "sha": "82756b82",
+      "ts": 1776775850000,
+      "msg": "v12.33a: 5 docs recherche iOS/Android/Google/Automation/Universal Remote + Network (#157)",
+      "project": "multi",
+      "ver": "12.33",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dc3c4a63",
+      "ts": 1776775305000,
+      "msg": "v12.32: UX settings enrichi + device trust 30j + Kevin admin case-insensitive + APPLE_IOS_SKILLS + Monaco/Revolut/Crypto docs (#156)",
+      "project": "multi",
+      "ver": "12.32",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a836c825",
+      "ts": 1776774812000,
+      "msg": "v12.31: Fix cle API recovery (mini chat + boot) + PRICING + KEVIN_ACTIONS_TODO + prix +20 euros (#155)",
+      "project": "multi",
+      "ver": "12.31",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ef4f5cb4",
+      "ts": 1776774271000,
+      "msg": "v12.30: Fix micro silencieux + geoloc Android + vAdminLinks sans admin gate (#154)",
+      "project": "multi",
+      "ver": "12.30",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d1a686a2",
+      "ts": 1776773282000,
+      "msg": "v12.29: 2 plans PAYANTS (Pro/Business) + section Banque/RIB admin (#153)",
+      "project": "multi",
+      "ver": "12.29",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8a627fb5",
+      "ts": 1776772828000,
+      "msg": "v12.28: axIsFeatureAllowed gating + FEATURES_GATING.md matrice forfaits (#152)",
+      "project": "multi",
+      "ver": "12.28",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b4cb3933",
+      "ts": 1776772631000,
+      "msg": "v12.27: axIdentifyAndShop - photo + identification + liens achat optimum (#151)",
+      "project": "multi",
+      "ver": "12.27",
+      "author": "claude-code"
+    },
+    {
+      "sha": "01cfd2e7",
+      "ts": 1776772525000,
+      "msg": "v12.26: Web search Anthropic natif + COMPETITIVE_ANALYSIS.md (note 6.5->8.2/10) (#150)",
+      "project": "multi",
+      "ver": "12.26",
+      "author": "claude-code"
+    },
+    {
+      "sha": "040364cc",
+      "ts": 1776772300000,
+      "msg": "v12.25: BUSINESS_PLAN.md complet (scaling, tarifs, Stripe, remboursements, banque) (#149)",
+      "project": "multi",
+      "ver": "12.25",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b7b45e0b",
+      "ts": 1776771981000,
+      "msg": "v12.24: INDEX COMPLET docs en tete du HANDOFF (propagation 100% confirmee) (#148)",
+      "project": "multi",
+      "ver": "12.24",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3f81ea4e",
+      "ts": 1776771817000,
+      "msg": "v9.454: Memoire permanente CMCteams + shared avec Apex (#147)",
+      "project": "cmcteams",
+      "ver": "9.454",
+      "author": "claude-code"
+    },
+    {
+      "sha": "660573c9",
+      "ts": 1776771623000,
+      "msg": "v12.23: KDMC AI -> APEX AI + MEMORY_PERSISTENT + fix oubli cle API Kevin (#146)",
+      "project": "multi",
+      "ver": "12.23",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c64a156a",
+      "ts": 1776771140000,
+      "msg": "v12.22: EXPERT_CODING_STANDARDS.md + injection HANDOFF + CLAUDE_FEED MAJ (#145)",
+      "project": "multi",
+      "ver": "12.22",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9e1126af",
+      "ts": 1776770984000,
+      "msg": "v12.21: Auto-recovery cle API depuis Firebase apres force-refresh PWA (#144)",
+      "project": "multi",
+      "ver": "12.21",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4e16358e",
+      "ts": 1776770715000,
+      "msg": "v12.20: +29 liens cliquables reseaux sociaux + Google Cloud + domotique + email (#143)",
+      "project": "multi",
+      "ver": "12.20",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3fa9e370",
+      "ts": 1776770547000,
+      "msg": "v12.19: Auto-seed K.kb.facts memoire Apex au demarrage (#142)",
+      "project": "multi",
+      "ver": "12.19",
+      "author": "claude-code"
+    },
+    {
+      "sha": "59d3e3ad",
+      "ts": 1776770274000,
+      "msg": "v12.18: Feed Claude Code -> Apex (bidirectionnel complet) (#140)",
+      "project": "multi",
+      "ver": "12.18",
+      "author": "claude-code"
+    },
+    {
+      "sha": "969b1d85",
+      "ts": 1776769916000,
+      "msg": "v12.17: Stabilite pro - messages user-friendly + regle docs + audit stabilite (#139)",
+      "project": "multi",
+      "ver": "12.17",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f50530b2",
+      "ts": 1776769643000,
+      "msg": "v12.16: Fix crash K.kb.instructions.length undefined + K.kb normalise au load (#138)",
+      "project": "multi",
+      "ver": "12.16",
+      "author": "claude-code"
+    },
+    {
+      "sha": "87e80911",
+      "ts": 1776769518000,
+      "msg": "v12.15: Assignation 2 taches securite a Apex (XSS a.fn + window.onerror) (#137)",
+      "project": "multi",
+      "ver": "12.15",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3ec0bbf1",
+      "ts": 1776740803000,
+      "msg": "v12.14: Audit autonome + journal permanent Claude<->Apex (Kevin 2026-04-21) (#136)",
+      "project": "multi",
+      "ver": "12.14",
+      "author": "claude-code"
+    },
+    {
+      "sha": "bb5f6123",
+      "ts": 1776740495000,
+      "msg": "v12.13: HANDOFF Claude Code → Apex AI (clone parfait autonome) (#135)",
+      "project": "multi",
+      "ver": "12.13",
+      "author": "claude-code"
+    },
+    {
+      "sha": "489bf089",
+      "ts": 1776736523000,
+      "msg": "v9.453 + v12.12: Visibilite cross-app Apex ↔ CMCteams + telemetry bidirectionnelle (#134)",
+      "project": "cmcteams",
+      "ver": "9.453",
+      "author": "claude-code"
+    }
+  ]
+}
