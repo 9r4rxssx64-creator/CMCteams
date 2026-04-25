@@ -124,3 +124,15 @@
 4. Choisis ton compte → "Déployer Apex Push Worker"
 5. ✅ Le code remplace automatiquement Hello World
 6. Bouton "Tester /health" pour vérifier
+
+---
+
+## 🔑 IDENTIFIANTS CLOUDFLARE (confirmés)
+
+| Quoi | Valeur |
+|---|---|
+| Account ID | `ffaca6f306a953f82834db0970f300f0` |
+| Email Cloudflare | `Desarzens.kevin@gmail.com` |
+| Worker URL | https://apex-push-worker.desarzens-kevin.workers.dev |
+| Health endpoint | https://apex-push-worker.desarzens-kevin.workers.dev/health |
+| Workers dashboard | https://dash.cloudflare.com/ffaca6f306a953f82834db0970f300f0/workers/services/view/apex-push-worker/production |
