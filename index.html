@@ -3303,9 +3303,9 @@ function _cmcLoadLZ(){
     document.head.appendChild(s);
   }catch(_){_cmcLZLoading=false;}
 }
-function _cmcCompress(str){try{if(_cmcLZ&&_cmcLZ.compressToUTF16)return "__LZ__"+_cmcLZ.compressToUTF16(str);}catch(_){}return str;}
-function _cmcDecompress(str){if(typeof str!=="string")return str;if(str.indexOf("__LZ__")===0){try{if(_cmcLZ&&_cmcLZ.decompressFromUTF16)return _cmcLZ.decompressFromUTF16(str.slice(6))||str;}catch(_){}return str;}return str;}
-try{if(typeof window!=="undefined")setTimeout(_cmcLoadLZ,500);}catch(_){}
+function _cmcCompress(str){try{if(_cmcLZ&&_cmcLZ.compressToUTF16)return "__LZ__"+_cmcLZ.compressToUTF16(str);}catch(_e){_cmcSafeCatch("cmc-compress",_e);}return str;}
+function _cmcDecompress(str){if(typeof str!=="string")return str;if(str.indexOf("__LZ__")===0){try{if(_cmcLZ&&_cmcLZ.decompressFromUTF16)return _cmcLZ.decompressFromUTF16(str.slice(6))||str;}catch(_e){_cmcSafeCatch("cmc-compress",_e);}return str;}return str;}
+try{if(typeof window!=="undefined")setTimeout(_cmcLoadLZ,500);}catch(_e){_cmcSafeCatch("cmc-compress",_e);}
 function lg(k,fb){try{var v=localStorage.getItem(k);if(!v)return fb;v=_cmcDecompress(v);return JSON.parse(v);}catch(e){return fb;}}
 function ls(k,v){
   var _lsOk=true;
@@ -3322,8 +3322,8 @@ function ls(k,v){
         _lsOk=false;
         /* v9.541 - IDB silencieux si possible. Toast rare (30 min max) admin uniquement */
         var _idbOkCmc=false;
-        try{if(typeof cmcIdbSet==="function"){cmcIdbSet(k,v);_idbOkCmc=true;}}catch(_){}
-        if(!_idbOkCmc){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();if(A&&A.user&&A.user.id===AID)toast("\u26a0\ufe0f Stockage critique \u2014 auto-clean lance","warn");}try{if(typeof cmcAggressiveCleanup==="function")cmcAggressiveCleanup();}catch(_){}}
+        try{if(typeof cmcIdbSet==="function"){cmcIdbSet(k,v);_idbOkCmc=true;}}catch(_e){_cmcSafeCatch("cmc-quota",_e);}
+        if(!_idbOkCmc){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();if(A&&A.user&&A.user.id===AID)toast("\u26a0\ufe0f Stockage critique \u2014 auto-clean lance","warn");}try{if(typeof cmcAggressiveCleanup==="function")cmcAggressiveCleanup();}catch(_e){_cmcSafeCatch("cmc-quota",_e);}}
       }
     } else {_lsOk=false;console.warn("ls() error:",k,e);}
   }
@@ -3351,7 +3351,7 @@ function _emergencyCleanup(){
         localStorage.setItem(k,JSON.stringify(arr));
         freed+=old-JSON.stringify(arr).length;
       }
-    }catch(_){}
+    }catch(_e){_cmcSafeCatch("cmc-storage",_e);}
   });
   // 3. Tronquer le chat (garder 100 au lieu de 500)
   try{
@@ -3362,7 +3362,7 @@ function _emergencyCleanup(){
       localStorage.setItem("cmc_chat",JSON.stringify(chat));
       freed+=old2-JSON.stringify(chat).length;
     }
-  }catch(_){}
+  }catch(_e){_cmcSafeCatch("cmc-storage",_e);}
   // 4. Purger les anciennes vérifications et commentaires (> 6 mois)
   var now=new Date();var cutY=now.getFullYear(),cutM=now.getMonth()-6;
   if(cutM<0){cutM+=12;cutY--;}
@@ -3387,28 +3387,28 @@ function _emergencyCleanup(){
       }
     });
     if(removed>0)localStorage.setItem("cmc_ov",JSON.stringify(ov));
-  }catch(_){}
+  }catch(_e){_cmcSafeCatch("cmc-storage",_e);}
   console.info("[v9.120] Emergency cleanup: freed ~"+Math.round(freed/1024)+"KB");
   if(freed>10000)toast("\ud83e\uddf9 Nettoyage auto : ~"+Math.round(freed/1024)+"KB lib\u00e9r\u00e9s",null,4000);
 }
 
 /* === v9.538 (Kevin 2026-04-25 "memoire pleine") \u2014 Cleanup AGRESSIF auto 30 min === */
-function _cmcMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_){}return u;}
+function _cmcMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_e){_cmcSafeCatch("cmc-mem",_e);}return u;}
 function cmcAggressiveCleanup(){
   var before=_cmcMemoryUsedBytes();
   try{
     var caps={"cmc_chat":200,"cmc_audit":100,"cmc_userlog":100,"cmc_admin_sessions":80,"cmc_ia_log":50,"cmc_pdf_fingerprints":30,"cmc_learned_patterns":100,"cmc_import_log":100,"cmc_silent_log":50,"cmc_err_log":100,"cmc_telemetry":50,"cmc_user_telemetry":50,"cmc_lessons_learned":80,"cmc_click_failures":20,"cmc_anomalies":50,"cmc_import_anomalies":50};
-    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_){}});
-    try{for(var i=0;i<localStorage.length;i++){var kb=localStorage.key(i);if(!kb)continue;if(kb.indexOf("cmc_auto_backup")===0||kb.indexOf("cmc_import_snap")===0||kb.indexOf("cmc_agent_backup")===0){var raw=localStorage.getItem(kb);try{var d=JSON.parse(_cmcDecompress(raw)||"{}");if(d&&d.ts&&Date.now()-d.ts>7*86400000)localStorage.removeItem(kb);}catch(_){}}}}catch(_){}
-    try{var now=new Date(),cy=now.getFullYear(),cm=now.getMonth()-12;if(cm<0){cm+=12;cy--;}for(var j=0;j<localStorage.length;j++){var kk=localStorage.key(j);if(!kk)continue;if(kk.indexOf("cmc_verif_")===0||kk.indexOf("cmc_comments_")===0){var p=kk.replace(/^[^_]+_[^_]+_/,"").split("-");var y=parseInt(p[0]),mo=parseInt(p[1]);if(!isNaN(y)&&!isNaN(mo)&&(y<cy||(y===cy&&mo<cm)))localStorage.removeItem(kk);}}}catch(_){}
-  }catch(_){}
+    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}});
+    try{for(var i=0;i<localStorage.length;i++){var kb=localStorage.key(i);if(!kb)continue;if(kb.indexOf("cmc_auto_backup")===0||kb.indexOf("cmc_import_snap")===0||kb.indexOf("cmc_agent_backup")===0){var raw=localStorage.getItem(kb);try{var d=JSON.parse(_cmcDecompress(raw)||"{}");if(d&&d.ts&&Date.now()-d.ts>7*86400000)localStorage.removeItem(kb);}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}}}}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}
+    try{var now=new Date(),cy=now.getFullYear(),cm=now.getMonth()-12;if(cm<0){cm+=12;cy--;}for(var j=0;j<localStorage.length;j++){var kk=localStorage.key(j);if(!kk)continue;if(kk.indexOf("cmc_verif_")===0||kk.indexOf("cmc_comments_")===0){var p=kk.replace(/^[^_]+_[^_]+_/,"").split("-");var y=parseInt(p[0]),mo=parseInt(p[1]);if(!isNaN(y)&&!isNaN(mo)&&(y<cy||(y===cy&&mo<cm)))localStorage.removeItem(kk);}}}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}
+  }catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}
   var after=_cmcMemoryUsedBytes();
   var freed=Math.max(0,before-after);
-  if(freed>100*1024&&typeof toast==="function"){try{toast("\ud83d\ude80 Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_){}}
+  if(freed>100*1024&&typeof toast==="function"){try{toast("\ud83d\ude80 Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}}
   return freed;
 }
-function _cmcAggressiveAuto(){try{var pct=_cmcMemoryUsedBytes()/5242880*100;if(pct>80)cmcAggressiveCleanup();}catch(_){}}
-try{setInterval(_cmcAggressiveAuto,1800000);setTimeout(_cmcAggressiveAuto,8000);}catch(_){}
+function _cmcAggressiveAuto(){try{var pct=_cmcMemoryUsedBytes()/5242880*100;if(pct>80)cmcAggressiveCleanup();}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}}
+try{setInterval(_cmcAggressiveAuto,1800000);setTimeout(_cmcAggressiveAuto,8000);}catch(_e){_cmcSafeCatch("cmc-cleanup",_e);}
 try{if(typeof window!=="undefined")window.cmcAggressiveCleanup=cmcAggressiveCleanup;}catch(_){}
 
 /* ========================================================
@@ -3417,7 +3417,7 @@ try{if(typeof window!=="undefined")window.cmcAggressiveCleanup=cmcAggressiveClea
    localStorage + IndexedDB shadow + Firebase = triple redondance
    ======================================================== */
 var CMC_IDB_NAME="cmc_shadow",CMC_IDB_STORE="kv",_cmcIdb=null;
-function _cmcIdbOpen(){if(_cmcIdb)return Promise.resolve(_cmcIdb);return new Promise(function(resolve,reject){if(!("indexedDB" in window))return reject(new Error("no idb"));try{var req=indexedDB.open(CMC_IDB_NAME,1);req.onerror=function(){reject(req.error);};req.onupgradeneeded=function(){try{req.result.createObjectStore(CMC_IDB_STORE);}catch(_){}};req.onsuccess=function(){_cmcIdb=req.result;resolve(_cmcIdb);};}catch(e){reject(e);}});}
+function _cmcIdbOpen(){if(_cmcIdb)return Promise.resolve(_cmcIdb);return new Promise(function(resolve,reject){if(!("indexedDB" in window))return reject(new Error("no idb"));try{var req=indexedDB.open(CMC_IDB_NAME,1);req.onerror=function(){reject(req.error);};req.onupgradeneeded=function(){try{req.result.createObjectStore(CMC_IDB_STORE);}catch(_e){_cmcSafeCatch("cmc-idb",_e);}};req.onsuccess=function(){_cmcIdb=req.result;resolve(_cmcIdb);};}catch(e){reject(e);}});}
 function cmcIdbSet(key,value){return _cmcIdbOpen().then(function(db){return new Promise(function(res,rej){try{var tx=db.transaction(CMC_IDB_STORE,"readwrite");tx.objectStore(CMC_IDB_STORE).put(value,key);tx.oncomplete=function(){res(true);};tx.onerror=function(){rej(tx.error);};}catch(e){rej(e);}});}).catch(function(){return false;});}
 function cmcIdbGet(key){return _cmcIdbOpen().then(function(db){return new Promise(function(res){try{var tx=db.transaction(CMC_IDB_STORE,"readonly");var req=tx.objectStore(CMC_IDB_STORE).get(key);req.onsuccess=function(){res(req.result);};req.onerror=function(){res(null);}}catch(_){res(null);}});}).catch(function(){return null;});}
 // Cles critiques CMCteams (donnees metier casino : on ne peut pas les perdre)
@@ -3428,8 +3428,8 @@ function cmcTripleSave(key,value){
     if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf(key)>=0&&typeof ls==="function"){ls(key,value);result.ls=true;result.fb=true;}
     else{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));result.ls=true;}
   }catch(e){console.error("[TRIPLE-CMC] localStorage fail:",e&&e.message);}
-  try{cmcIdbSet(key,value).then(function(ok){if(ok)result.idb=true;});}catch(_){}
-  setTimeout(function(){try{var lsCheck=localStorage.getItem(key);var expected=typeof value==="string"?value:JSON.stringify(value);if(!lsCheck){if(typeof toast==="function")toast("Sauvegarde "+key+" incomplete, retry","warn");try{localStorage.setItem(key,expected);}catch(_){}}}catch(_){}},120);
+  try{cmcIdbSet(key,value).then(function(ok){if(ok)result.idb=true;});}catch(_e){_cmcSafeCatch("cmc-idb",_e);}
+  setTimeout(function(){try{var lsCheck=localStorage.getItem(key);var expected=typeof value==="string"?value:JSON.stringify(value);if(!lsCheck){if(typeof toast==="function")toast("Sauvegarde "+key+" incomplete, retry","warn");try{localStorage.setItem(key,expected);}catch(_e){_cmcSafeCatch("cmc-idb",_e);}}}catch(_e){_cmcSafeCatch("cmc-idb",_e);}},120);
   return result;
 }
 function cmcRestoreFromAll(criticalKeys){
@@ -3439,24 +3439,24 @@ function cmcRestoreFromAll(criticalKeys){
     if(localStorage.getItem(k))return Promise.resolve();
     return cmcIdbGet(k).then(function(val){
       if(val!==undefined&&val!==null){
-        try{localStorage.setItem(k,typeof val==="string"?val:JSON.stringify(val));sources[k]="idb";restored++;return;}catch(_){}
+        try{localStorage.setItem(k,typeof val==="string"?val:JSON.stringify(val));sources[k]="idb";restored++;return;}catch(_e){_cmcSafeCatch("cmc-idb",_e);}
       }
       if(typeof FB_URL!=="undefined"&&FB_URL){
         return fetch(FB_URL+"/cmcteams/"+encodeURIComponent(k)+".json").then(function(r){return r.ok?r.json():null;}).then(function(v){
           if(v!==null&&v!==undefined){
-            try{localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v));sources[k]="firebase";restored++;cmcIdbSet(k,v);}catch(_){}
+            try{localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v));sources[k]="firebase";restored++;cmcIdbSet(k,v);}catch(_e){_cmcSafeCatch("cmc-idb",_e);}
           }
         }).catch(function(){});
       }
     });
   })).then(function(){
     if(restored>0&&typeof toast==="function")toast("Donnees restaurees : "+restored,"info",4000);
-    var log=lg("cmc_persistence_restore_log",[]);log.push({ts:Date.now(),restored:restored,sources:sources});if(log.length>50)log=log.slice(-50);try{localStorage.setItem("cmc_persistence_restore_log",JSON.stringify(log));}catch(_){}
+    var log=lg("cmc_persistence_restore_log",[]);log.push({ts:Date.now(),restored:restored,sources:sources});if(log.length>50)log=log.slice(-50);try{localStorage.setItem("cmc_persistence_restore_log",JSON.stringify(log));}catch(_e){_cmcSafeCatch("cmc-restore",_e);}
     return restored;
   });
 }
 function cmcBackupAllCriticalNow(){
-  var saved=0;CMC_CRITICAL_KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v){try{cmcIdbSet(k,v);saved++;}catch(_){}}});
+  var saved=0;CMC_CRITICAL_KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v){try{cmcIdbSet(k,v);saved++;}catch(_e){_cmcSafeCatch("cmc-restore",_e);}}});
   if(typeof toast==="function")toast("Sauvegarde triple : "+saved+" cles","ok",4000);
   return saved;
 }
@@ -3491,7 +3491,7 @@ try{setTimeout(function(){if(navigator.onLine)cmcRestoreFromAll();},5000);setInt
 
 // v9.467 — Cleanup agressif manuel admin (Kevin bannière "stockage toujours plein")
 function axManualDeepClean(){
-  if(!A.user||A.user.id!==AID){toast("Admin uniquement","err");return;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
   var before=_getStorageBytes();
   var freed=0;
   var keys=Object.keys(localStorage);
@@ -4598,8 +4598,8 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.542";
-// --- i18n minimal v9.534 → v9.542 — 60 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
+var APP_VER="v9.543";
+// --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
 "login.required":"Connecte-toi d'abord","login.welcome":"Bienvenue !","login.fail":"Identifiants invalides","login.logout":"Deconnecte",
@@ -4761,7 +4761,7 @@ function removeAppPhoto(key){
   A.photos=A.photos||{};delete A.photos[key];
   ls("cmc_photos",A.photos);
   _audit("photo_remove",AID,"","","Photo "+key+" supprim\u00e9e");
-  toast("Photo supprim\u00e9e");dc();
+  toast(cmcT("toast.deleted"));dc();
 }
 // Photo employé (avatar) : 300x300 max, stockée dans A.reg[uid].photo — budget 60 KB
 function uploadEmpPhoto(uid){
@@ -4789,7 +4789,7 @@ function removeEmpPhoto(uid){
   if(!confirm("Supprimer la photo de cet employ\u00e9 ?"))return;
   if(A.reg&&A.reg[uid]){delete A.reg[uid].photo;A.reg[uid].updatedAt=Date.now();ls("cmc_reg",A.reg);try{fbWrite("cmc_reg",A.reg);}catch(_){}}
   _audit("emp_photo_remove",AID,uid,"","Photo avatar supprim\u00e9e");
-  toast("Photo supprim\u00e9e");dc();
+  toast(cmcT("toast.deleted"));dc();
 }
 // Helper : récupère la photo d'un employé ou renvoie null
 function getEmpPhoto(uid){return A.reg&&A.reg[uid]&&A.reg[uid].photo?A.reg[uid].photo:null;}
@@ -4852,7 +4852,7 @@ function removeMyPhoto(){
   if(!confirm("Supprimer votre photo de profil ?"))return;
   var myId=A.user.id;
   if(A.reg&&A.reg[myId]){delete A.reg[myId].photo;A.reg[myId].updatedAt=Date.now();ls("cmc_reg",A.reg);}
-  toast("Photo supprim\u00e9e");dc();
+  toast(cmcT("toast.deleted"));dc();
 }
 
 // ── DOCUMENTS : banque de donn\u00e9es multi-format (v9.34 / v9.37) ─────────────
@@ -5010,8 +5010,8 @@ function employeeProposeUpload(category){
 function adminValidateUpload(reqId){
   if(!A.user||A.user.id!==AID)return;
   var req=(A.uploadRequests||[]).find(function(r){return r.id===reqId;});
-  if(!req){toast("Demande introuvable","err");return;}
-  if(req.status!=="pending"){toast("D\u00e9j\u00e0 trait\u00e9e","warn");return;}
+  if(!req){toast(cmcT("err.notfound"),"err");return;}
+  if(req.status!=="pending"){toast(cmcT("toast.applied"),"warn");return;}
   req.status="approved";
   req.reviewedBy=AID;
   req.reviewedAt=Date.now();
@@ -5042,8 +5042,8 @@ function adminValidateUpload(reqId){
 function adminRejectUpload(reqId){
   if(!A.user||A.user.id!==AID)return;
   var req=(A.uploadRequests||[]).find(function(r){return r.id===reqId;});
-  if(!req){toast("Demande introuvable","err");return;}
-  if(req.status!=="pending"){toast("D\u00e9j\u00e0 trait\u00e9e","warn");return;}
+  if(!req){toast(cmcT("err.notfound"),"err");return;}
+  if(req.status!=="pending"){toast(cmcT("toast.applied"),"warn");return;}
   var reason=prompt("Raison du refus (optionnel) :","")||"";
   req.status="rejected";
   req.reviewedBy=AID;
@@ -6535,7 +6535,7 @@ function _cmcRunParserTests(){
   return {pass:pass,fail:fail,total:pass+fail,results:results};
 }
 function cmcImportTests(){
-  if(!A.user||A.user.id!==AID){toast("Reserve admin","err");return null;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return null;}
   var r=_cmcRunParserTests(),pass=r.pass,fail=r.fail,results=r.results;
   var bg=fail===0?"linear-gradient(135deg,#3a8a50,#2a6a40)":"linear-gradient(135deg,#c08030,#a06020)";
   var icon=fail===0?"✅":"⚠";
@@ -6559,7 +6559,7 @@ function cmcImportTests(){
 }
 // v9.521 — Lance les 55+ tests, stocke resultats, ouvre la vue admin dediee
 function cmcImportTestRunAll(){
-  if(!A.user||A.user.id!==AID){toast("Reserve admin","err");return null;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return null;}
   var r=_cmcRunParserTests();
   // Stockage persistant
   try{
@@ -8042,7 +8042,7 @@ if(_getOnlineUsersRaw){
 function showBulletinPaie(empId){
   var existing=document.getElementById("bullPaie");if(existing){existing.remove();return;}
   var emp=empId?empById(empId):A.user;
-  if(!emp){toast("Employ\u00e9 introuvable","err");return;}
+  if(!emp){toast(cmcT("err.notfound"),"err");return;}
   var y=A.year,m=A.month;
   var reg=A.reg[emp.id]||{};
   var niveau=reg.niveauSBM||"N1";
@@ -8373,7 +8373,7 @@ function renderNextShiftCard(emp){
 function showEmpQuickProfile(empId){
   var existing=document.getElementById("empQP");if(existing){existing.remove();return;}
   var emp=empById(empId);
-  if(!emp){toast("Employ\u00e9 introuvable","err");return;}
+  if(!emp){toast(cmcT("err.notfound"),"err");return;}
   var isAdm=A.user&&A.user.id===AID;
   var reg=A.reg[emp.id]||{};
   var pl=gpl()||{},p=pl[emp.id]||{};
@@ -9181,7 +9181,7 @@ async function cmcExportPlanningPDF(empId){
     toast("✓ PDF planning genere");
     try{_audit&&_audit("export_pdf_planning",{empId:empId,name:emp.name,month:A.month,year:A.year});}catch(_){}
   }catch(e){
-    toast("Probleme lors de la generation, reessaie");
+    toast(cmcT("err.generic"));
     try{console.error("[cmcExportPlanningPDF]",e);}catch(_){}
   }
 }
@@ -9238,7 +9238,7 @@ async function cmcGenerateBadgeQR(empId){
     document.body.appendChild(modal);
     try{_audit&&_audit("generate_qr_badge",{empId:empId,name:emp.name});}catch(_){}
   }catch(e){
-    toast("Probleme lors de la generation, reessaie");
+    toast(cmcT("err.generic"));
     try{console.error("[cmcGenerateBadgeQR]",e);}catch(_){}
   }
 }
@@ -10320,7 +10320,7 @@ function cmcGetConsumptionLevel(uid){
   return lvl;
 }
 function cmcSetEmployeesLevel(level){
-  if(!A.user||A.user.id!==AID){toast("Admin uniquement");return;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
   if(!CMC_CONSUMPTION_LEVELS[level]){toast("Niveau invalide");return;}
   localStorage.setItem("cmc_employees_global_level",level);
   if(typeof fbWrite==="function")try{fbWrite("cmc_employees_global_level",level);}catch(_){}
@@ -10330,7 +10330,7 @@ function cmcSetEmployeesLevel(level){
 }
 /* Backward-compat : ancienne API par employe (deprecated v9.483) */
 function cmcSetConsumptionLevel(uid,level){
-  if(!A.user||A.user.id!==AID){toast("Admin uniquement");return;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
   if(uid===AID){toast("Admin verrouille en expert");return;}
   cmcSetEmployeesLevel(level);
 }
@@ -12453,7 +12453,7 @@ function doLogout(){
 function viewAs(id){
   if(!A.user||A.user.id!==AID)return;
   var emp=empById(id);
-  if(!emp){toast("Employé introuvable","err");return;}
+  if(!emp){toast(cmcT("err.notfound"),"err");return;}
   // v9.408 — Arrêter les agents avant swap user (évite agents tournant sur identité fausse)
   try{if(typeof agentsStop==="function")agentsStop();}catch(_){}
   _viewAs=A.user;
@@ -14177,7 +14177,7 @@ function _pitEmpRotPrompt(uid){
   if(n===1)minv=20;
   else if(n===2)minv=40;
   else if(n===3)minv=60;
-  else if(n===4){var c=prompt("Minutes (10-120) :");minv=parseInt(c,10);if(!minv||minv<10||minv>120){toast("Valeur invalide","err");return;}}
+  else if(n===4){var c=prompt("Minutes (10-120) :");minv=parseInt(c,10);if(!minv||minv<10||minv>120){toast(cmcT("err.invalid_input"),"err");return;}}
   else if(n===5)minv=0;
   else{toast("Choix invalide","err");return;}
   pitAction("setEmpRotOverride",{uid:uid,min:minv});
@@ -14893,7 +14893,7 @@ function pitRequestReplace(tid,uid,reason){
   var live=getLiveState();
   var t=live.tables[tid];if(!t||t.closedAt){toast("Table introuvable","err");return;}
   var emp=empById(uid);
-  if(!emp){toast("Employ\u00e9 introuvable","err");return;}
+  if(!emp){toast(cmcT("err.notfound"),"err");return;}
   var result=findBestReplacement(tid,uid);
   if(!result){
     toast("\u26a0 Aucun rempla\u00e7ant disponible (y compris emps en pause)","err");
@@ -16131,7 +16131,7 @@ function isFeatureEnabled(key){return !!getFeatureFlags()[key];}
 // v9.504 — Alias compat parite Apex (cmcFeatureEnabled / cmcSetFeature)
 function cmcFeatureEnabled(key){return isFeatureEnabled(key);}
 function cmcSetFeature(key,on){
-  if(!A.user||A.user.id!==AID){toast("Admin uniquement","err");return;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
   var f=getFeatureFlags();f[key]=!!on;ls("cmc_feature_flags",f);
   if(typeof fbWrite==="function")try{fbWrite("cmc_feature_flags",f);}catch(_){}
   try{_audit("featureToggle",AID,key,"",on?"ON":"OFF");}catch(_){}
@@ -20296,7 +20296,7 @@ function codeTimeRange(code){
 // v9.165 — Export planning employé au format iCalendar (.ics)
 function exportICS(empId,year,month){
   var emp=empById(empId);
-  if(!emp){toast("Employ\u00e9 introuvable","err");return;}
+  if(!emp){toast(cmcT("err.notfound"),"err");return;}
   var pl=gpl(year,month)||{};
   var row=pl[empId]||{};
   var days=getDays(year,month);
@@ -21762,7 +21762,7 @@ function vGalerie(){
 }
 
 /* v9.535 - VISIO MULTI-PERSONNES via Jitsi Meet (gratuit, multi-participants iOS Safari OK) */
-function _cmcStartVideoCall(){var room="cmc-"+(A.user&&A.user.id?A.user.id:"x")+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);var url="https://meet.jit.si/"+encodeURIComponent(room)+"#config.startWithAudioMuted=true&config.prejoinPageEnabled=false&config.disableDeepLinking=true";var who=A.user&&A.user.name?A.user.name:"Quelqu'un";try{if(Array.isArray(A.chatMsgs)){A.chatMsgs.push({uid:A.user&&A.user.id||"sys",name:who,team:A.user&&A.user.team||"",text:"📹 Visio CMCteams en cours. Rejoindre : "+url,ts:Date.now(),visioRoom:room,visioUrl:url});if(typeof ls==="function")ls("cmc_chat",A.chatMsgs.slice(-500));}}catch(_){}var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);if(isIOS){try{navigator.clipboard.writeText(url);}catch(_){}toast("📹 Visio creee. Lien copie. Partage-le.");window.open(url,"_blank","noopener");return;}var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";ov.innerHTML='<div style="background:#0a1a0e;color:#a0cca0;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px"><span>📹 '+esc(room)+'</span><div style="display:flex;gap:6px"><button id="cmc-visio-copy" style="background:#c9a227;color:#000;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;min-height:36px;cursor:pointer">📋 Lien</button><button id="cmc-visio-close" style="background:#ff5858;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;min-height:36px;cursor:pointer">✕ Quitter</button></div></div><iframe allow="camera;microphone;display-capture;fullscreen;autoplay" style="width:100%;flex:1;border:0" src="'+esc(url)+'"></iframe>';document.body.appendChild(ov);ov.querySelector("#cmc-visio-close").addEventListener("click",function(){ov.remove();});ov.querySelector("#cmc-visio-copy").addEventListener("click",function(){try{navigator.clipboard.writeText(url);toast("Lien copie");}catch(e){toast("Copie impossible");}});toast("📹 Visio Jitsi creee");try{if(typeof dc==="function")dc();}catch(_){}}
+function _cmcStartVideoCall(){var room="cmc-"+(A.user&&A.user.id?A.user.id:"x")+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);var url="https://meet.jit.si/"+encodeURIComponent(room)+"#config.startWithAudioMuted=true&config.prejoinPageEnabled=false&config.disableDeepLinking=true";var who=A.user&&A.user.name?A.user.name:"Quelqu'un";try{if(Array.isArray(A.chatMsgs)){A.chatMsgs.push({uid:A.user&&A.user.id||"sys",name:who,team:A.user&&A.user.team||"",text:"📹 Visio CMCteams en cours. Rejoindre : "+url,ts:Date.now(),visioRoom:room,visioUrl:url});if(typeof ls==="function")ls("cmc_chat",A.chatMsgs.slice(-500));}}catch(_){}var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);if(isIOS){try{navigator.clipboard.writeText(url);}catch(_){}toast("📹 Visio creee. Lien copie. Partage-le.");window.open(url,"_blank","noopener");return;}var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";ov.innerHTML='<div style="background:#0a1a0e;color:#a0cca0;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px"><span>📹 '+esc(room)+'</span><div style="display:flex;gap:6px"><button id="cmc-visio-copy" style="background:#c9a227;color:#000;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;min-height:36px;cursor:pointer">📋 Lien</button><button id="cmc-visio-close" style="background:#ff5858;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;min-height:36px;cursor:pointer">✕ Quitter</button></div></div><iframe allow="camera;microphone;display-capture;fullscreen;autoplay" style="width:100%;flex:1;border:0" src="'+esc(url)+'"></iframe>';document.body.appendChild(ov);ov.querySelector("#cmc-visio-close").addEventListener("click",function(){ov.remove();});ov.querySelector("#cmc-visio-copy").addEventListener("click",function(){try{navigator.clipboard.writeText(url);toast(cmcT("toast.copy"));}catch(e){toast(cmcT("err.generic"));}});toast("📹 Visio Jitsi creee");try{if(typeof dc==="function")dc();}catch(_){}}
 function _cmcJoinVideoCall(url){if(!url)return;var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);if(isIOS){window.open(url,"_blank","noopener");return;}var room=url.split("/").pop().split("#")[0];var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";ov.innerHTML='<div style="background:#0a1a0e;color:#a0cca0;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px"><span>📹 '+esc(room)+'</span><button id="cmc-vj-close" style="background:#ff5858;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;min-height:36px;cursor:pointer">✕ Quitter</button></div><iframe allow="camera;microphone;display-capture;fullscreen;autoplay" style="width:100%;flex:1;border:0" src="'+esc(url)+'"></iframe>';document.body.appendChild(ov);ov.querySelector("#cmc-vj-close").addEventListener("click",function(){ov.remove();});}
 function vChat(){
   var isAdm=A.user&&A.user.id===AID;
@@ -24535,8 +24535,8 @@ function doResetPwDirect(uid){
   if(!confirm("R\u00e9initialiser le compte de "+uid+" ?\n\nMot de passe ET identit\u00e9 effac\u00e9s — l'employ\u00e9 devra se r\u00e9inscrire."))return;
   delete A.passwords[uid];ls("cmc_pw",A.passwords);
   delete A.reg[uid];ls("cmc_reg",A.reg);
-  try{fbWrite("cmc_pw",A.passwords);fbWrite("cmc_reg",A.reg);}catch(_){}
-  try{_audit("admin_reset_pw",AID,uid,"","compte r\u00e9initialis\u00e9 (mdp + identit\u00e9)");}catch(_){}
+  try{fbWrite("cmc_pw",A.passwords);fbWrite("cmc_reg",A.reg);}catch(_e){_cmcSafeCatch("cmc-resetpw",_e);}
+  try{_audit("admin_reset_pw",AID,uid,"","compte r\u00e9initialis\u00e9 (mdp + identit\u00e9)");}catch(_e){_cmcSafeCatch("cmc-resetpw",_e);}
   toast("Compte r\u00e9initialis\u00e9 \u2014 "+uid+" devra se r\u00e9inscrire");dc();
 }
 function showPinSetup(){
@@ -31684,7 +31684,7 @@ function _cmcImportFromScan(){
   },150);
 }
 function cmcScanPlanningCamera(){
-  if(!A.user||A.user.id!==AID){toast("Reserve admin","err");return;}
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
   try{
     if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","📷 Scanner planning","CMCteams ouvre la camera arriere pour photographier ou filmer le planning. OCR local (Tesseract.js) extrait le texte, detecte le mois, classe cadres/employes/chefs et re-trie automatiquement. Aucune image n est envoyee a un serveur."))return;
     _cmcScanState={pages:[]};
@@ -34926,7 +34926,7 @@ function _cmcKbViewProfile(uid){
   try{
     var emp=null;
     for(var i=0;i<A.employees.length;i++){if(A.employees[i].id===uid){emp=A.employees[i];break;}}
-    if(!emp){toast("Employé introuvable","err");return;}
+    if(!emp){toast(cmcT("err.notfound"),"err");return;}
     var reg=(A.reg&&A.reg[uid])||{};
     var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.remove()"><div style="background:#1a2026;border:1px solid #c9a227;border-radius:14px;padding:16px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto"><h3 style="color:#f0d060;margin:0 0 12px">📋 Fiche '+esc(((reg.prenom||emp.prenom||"")+" "+(reg.nom||emp.nom||"")).trim()||uid)+'</h3>';
     var rows=[
@@ -35442,7 +35442,7 @@ function cmcDeleteMyData(){
     var msg="ATTENTION : cette action va effacer tes donnees personnelles :\n\n- Ton profil (email, adresse, date naissance)\n- Ton mot de passe / PIN\n- Tes parametres locaux\n\nTes plannings et messages restent (necessaires au fonctionnement equipe). Pour suppression complete, contacte l administrateur.\n\nTaper SUPPRIMER pour confirmer :";
     var c=prompt(msg);
     if(c==null)return;
-    if(String(c).trim().toUpperCase()!=="SUPPRIMER"){if(typeof toast==="function")toast("Annule (mot incorrect)","info");return;}
+    if(String(c).trim().toUpperCase()!=="SUPPRIMER"){if(typeof toast==="function")toast(cmcT("toast.cancelled"),"info");return;}
     try{if(typeof _audit==="function")_audit("rgpd_delete",uid,"delete_my_data","profile cleared");}catch(_){}
     if(A.reg&&A.reg[uid]){delete A.reg[uid];if(typeof ls==="function")ls("cmc_reg",A.reg);}
     if(A.passwords&&A.passwords[uid]){delete A.passwords[uid];if(typeof ls==="function")ls("cmc_pw",A.passwords);}
