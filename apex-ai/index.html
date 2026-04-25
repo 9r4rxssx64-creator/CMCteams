@@ -371,7 +371,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.209",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.211",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -398,7 +398,7 @@ function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https:
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_admin_token","ax_push_errors"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_admin_token","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -450,7 +450,7 @@ function axRefreshExchangeRates(){
     localStorage.setItem("ax_currency",auto);
   }catch(_){}
 })();
-var FB_PRE=["ax_msgs_"];
+var FB_PRE=["ax_msgs_","ax_profile_"];
 var FB_LOCAL=["ax_uid","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_pin_fails","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles"];
 var SESSION_TTL=24*60*60*1000;
 var SESSION_TTL_TRUSTED=30*24*60*60*1000;
@@ -7689,6 +7689,153 @@ if(!window._secWatchStarted){
   try{setInterval(_agentSecurityWatch,30000);}catch(_){}
   try{setTimeout(_agentSecurityWatch,5000);}catch(_){}
 }
+
+
+/* v12.209 — Onboarding tour iPhone-first + CGU bundle 1-clic permissions + axHapticConfirm + banner dashboard */
+function axIsIOSPWA(){try{return (window.matchMedia&&window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone)&&/iPad|iPhone|iPod/.test(navigator.userAgent);}catch(_){return false;}}
+function axHapticConfirm(msg){try{if(navigator.vibrate)navigator.vibrate(50);}catch(_){}try{if(typeof toast==="function")toast("✅ "+(msg||"OK"),"ok");}catch(_){}}
+var AX_TOUR_CARDS=[
+  {icon:"✨",title:"Bienvenue sur Apex",text:"Apex est ton assistant IA premium.<br>Discute, organise, analyse — comme un vrai expert dans ta poche.",accent:"#e8b830"},
+  {icon:"🔓",title:"Coffre auto-sauvegarde",text:"Tes cles, mots de passe, identifiants : chiffres et synchronises tout seul.<br><span style=\"color:#4cd080\">●</span> Pastille verte = tout est sauvegarde, restauration auto sur n\'importe quel appareil.",accent:"#4cd080"},
+  {icon:"📸",title:"Camera reconnaissance",text:"Pointe une plante, un lieu, un animal, un document.<br>Apex te dit immediatement ce que c\'est et ce que tu peux en faire.",accent:"#5aa8ff"},
+  {icon:"🎬",title:"Studios anticipatifs",text:"Tu ecris ta question, Apex ouvre le bon studio :<br>montage video, musique, dossier prefecture, CV, facture, logo... pre-rempli.",accent:"#a878ff"},
+  {icon:"🔔",title:"Notifications push",text:"Sois alerte meme quand l\'app est fermee : rappels, alertes prix crypto, nouveau message admin.<br><strong>Active en 1 clic plus loin.</strong>",accent:"#ffb84a"},
+  {icon:"🛡️",title:"Sentinelles 24/7",text:"16 agents veillent en permanence : securite, performance, donnees, erreurs.<br>Si quelque chose ne va pas, ils corrigent tout seuls et m\'alertent en dernier recours.",accent:"#38d8c8"}
+];
+function axShowQuickTour(stepOverride,fromButton){
+  try{
+    if(typeof K==="undefined"||!K||!K.user)return;
+    var step=(typeof stepOverride==="number")?stepOverride:lg("ax_tour_step",0);
+    if(step<0)step=0;
+    if(step>=AX_TOUR_CARDS.length){axCompleteQuickTour();return;}
+    ls("ax_tour_step",step);
+    var card=AX_TOUR_CARDS[step];
+    var existing=document.getElementById("ax-tour-overlay");
+    if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);
+    var ov=document.createElement("div");
+    ov.id="ax-tour-overlay";
+    ov.setAttribute("role","dialog");
+    ov.setAttribute("aria-modal","true");
+    ov.style.cssText="position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 30%,rgba(232,184,48,.18),rgba(0,0,0,.94) 70%);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)";
+    var dotsHtml='<div style="display:flex;gap:6px;justify-content:center;margin:12px 0">';
+    for(var di=0;di<AX_TOUR_CARDS.length;di++){
+      dotsHtml+='<span style="width:8px;height:8px;border-radius:50%;background:'+(di===step?"linear-gradient(135deg,#e8b830,#ffd700)":"rgba(255,255,255,.18)")+';transition:all .3s"></span>';
+    }
+    dotsHtml+='</div>';
+    var html='<div style="position:relative;max-width:440px;width:100%;background:linear-gradient(160deg,rgba(22,28,56,.96),rgba(16,22,48,.95));border:1.5px solid '+esc(card.accent)+';border-radius:24px;padding:28px 22px 22px 22px;box-shadow:0 24px 80px rgba(0,0,0,.6),inset 0 1px 1px rgba(255,255,255,.08);max-height:92vh;overflow-y:auto">';
+    html+='<button onclick="axSkipQuickTour()" aria-label="Passer" title="Plus tard" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">✕</button>';
+    html+='<div style="text-align:center;font-size:64px;margin:8px 0 8px 0;line-height:1">'+esc(card.icon)+'</div>';
+    html+='<h2 style="text-align:center;color:'+esc(card.accent)+';font-size:22px;margin:0 0 12px 0;font-weight:900;letter-spacing:.5px">'+esc(card.title)+'</h2>';
+    html+='<div style="font-size:14px;color:#e8eaf2;line-height:1.55;text-align:center;padding:0 6px">'+card.text+'</div>';
+    html+=dotsHtml;
+    html+='<div style="display:flex;gap:8px;margin-top:8px">';
+    if(step>0)html+='<button class="ax-btn ax-btn-outline" onclick="axShowQuickTour('+(step-1)+',true)" style="flex:1;min-height:48px;font-size:15px">← Avant</button>';
+    else html+='<button class="ax-btn ax-btn-outline" onclick="axSkipQuickTour()" style="flex:1;min-height:48px;font-size:15px">Passer</button>';
+    if(step<AX_TOUR_CARDS.length-1)html+='<button class="ax-btn ax-btn-primary" onclick="axShowQuickTour('+(step+1)+',true)" style="flex:1;min-height:48px;font-size:15px;font-weight:700">Suivant →</button>';
+    else html+='<button class="ax-btn ax-btn-primary" onclick="axCompleteQuickTour()" style="flex:1;min-height:48px;font-size:15px;font-weight:700">✅ Terminer</button>';
+    html+='</div>';
+    if(step===4){
+      html+='<div style="margin-top:10px"><button class="ax-btn" onclick="axRequestAllPermissions();" style="width:100%;min-height:44px;background:linear-gradient(135deg,#ffb84a,#ffd700);color:#1a1a1a;font-weight:700">🔔 Activer maintenant</button></div>';
+    }
+    html+='<p style="text-align:center;font-size:11px;color:rgba(255,255,255,.4);margin:10px 0 0 0">Etape '+(step+1)+' / '+AX_TOUR_CARDS.length+'</p>';
+    html+='</div>';
+    ov.innerHTML=html;
+    document.body.appendChild(ov);
+    if(navigator.vibrate)try{navigator.vibrate(20);}catch(_){}
+  }catch(e){if(typeof console!=="undefined")console.warn("[axShowQuickTour]",e);}
+}
+function axSkipQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_skipped_at",Date.now());}catch(_){}}
+function axCompleteQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_done",true);ls("ax_tour_step",0);if(typeof axHapticConfirm==="function")axHapticConfirm("Tour termine");if(typeof toast==="function")toast("Bienvenue sur Apex 🎉","ok");try{if(typeof axConfetti==="function")axConfetti(30);}catch(_){}try{dc();}catch(_){}}catch(_){}}
+
+function axRequestAllPermissions(){
+  try{
+    var perms=[
+      {key:"notif",label:"Notifications",icon:"🔔",desc:"Etre alerte meme quand l\'app est fermee (rappels, alertes crypto, messages admin).",fn:function(cb){if(!("Notification" in window)){cb("not-supported");return;}Notification.requestPermission().then(function(r){cb(r);}).catch(function(){cb("err");});}},
+      {key:"geo",label:"Localisation",icon:"📍",desc:"Te proposer la meteo locale, restos proches, alertes geofencing famille.",fn:function(cb){if(!navigator.geolocation){cb("not-supported");return;}navigator.geolocation.getCurrentPosition(function(){cb("granted");},function(e){cb(e.code===1?"denied":"err");},{timeout:10000,maximumAge:60000});}},
+      {key:"mic",label:"Microphone",icon:"🎤",desc:"Dictee vocale et conversation mains libres avec Apex.",fn:function(cb){if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){cb("not-supported");return;}navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){s.getTracks().forEach(function(t){t.stop();});cb("granted");}).catch(function(e){cb(e&&e.name==="NotAllowedError"?"denied":"err");});}},
+      {key:"cam",label:"Camera",icon:"📸",desc:"Photo de plante/lieu/animal/document pour reconnaissance instantanee.",fn:function(cb){if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){cb("not-supported");return;}navigator.mediaDevices.getUserMedia({video:true}).then(function(s){s.getTracks().forEach(function(t){t.stop();});cb("granted");}).catch(function(e){cb(e&&e.name==="NotAllowedError"?"denied":"err");});}},
+      {key:"storage",label:"Stockage permanent",icon:"💾",desc:"Empeche le navigateur d\'effacer ton coffre et tes conversations.",fn:function(cb){if(!(navigator.storage&&navigator.storage.persist)){cb("not-supported");return;}navigator.storage.persist().then(function(ok){cb(ok?"granted":"denied");}).catch(function(){cb("err");});}}
+    ];
+    var i=0;var results={};
+    function nextPerm(){
+      if(i>=perms.length){
+        try{ls("ax_perm_results_"+(K.user&&K.user.id||"anon"),{ts:Date.now(),results:results});}catch(_){}
+        var ok=Object.keys(results).filter(function(k){return results[k]==="granted";}).length;
+        try{var ov=document.getElementById("ax-perm-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);}catch(_){}
+        if(typeof axHapticConfirm==="function")axHapticConfirm(ok+"/"+perms.length+" autorisations OK");
+        try{if(typeof toast==="function")toast("✅ "+ok+"/"+perms.length+" autorisations accordees","ok");}catch(_){}
+        return;
+      }
+      var p=perms[i];
+      var existing=document.getElementById("ax-perm-overlay");
+      if(existing&&existing.parentNode)existing.parentNode.removeChild(existing);
+      var ov=document.createElement("div");
+      ov.id="ax-perm-overlay";
+      ov.style.cssText="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));background:rgba(0,0,0,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)";
+      var html='<div style="max-width:420px;width:100%;background:linear-gradient(160deg,rgba(22,28,56,.97),rgba(16,22,48,.96));border:1.5px solid rgba(232,184,48,.45);border-radius:22px;padding:24px 20px;box-shadow:0 24px 80px rgba(0,0,0,.6)">';
+      html+='<div style="text-align:center;font-size:56px;margin-bottom:8px">'+esc(p.icon)+'</div>';
+      html+='<h2 style="text-align:center;color:var(--ax-gold);margin:0 0 8px 0;font-size:20px;font-weight:900">'+esc(p.label)+'</h2>';
+      html+='<p style="text-align:center;font-size:13px;color:#e8eaf2;line-height:1.5;margin:0 0 6px 0">Apex va demander la permission <strong>'+esc(p.label)+'</strong> pour :</p>';
+      html+='<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px;font-size:13px;color:#cbd0e0;margin-bottom:10px;line-height:1.5">'+esc(p.desc)+'</div>';
+      html+='<p style="text-align:center;font-size:11px;color:rgba(255,255,255,.5);margin:0 0 14px 0">Tu peux refuser plus tard dans Reglages iPhone.</p>';
+      html+='<p style="text-align:center;font-size:10px;color:rgba(255,255,255,.4);margin:0 0 12px 0">Etape '+(i+1)+' / '+perms.length+'</p>';
+      html+='<div style="display:flex;gap:8px">';
+      html+='<button class="ax-btn ax-btn-outline" onclick="window._axPermSkip()" style="flex:1;min-height:48px">Passer</button>';
+      html+='<button class="ax-btn ax-btn-primary" onclick="window._axPermAccept()" style="flex:1;min-height:48px;font-weight:700">Autoriser</button>';
+      html+='</div></div>';
+      ov.innerHTML=html;
+      document.body.appendChild(ov);
+      window._axPermAccept=function(){p.fn(function(r){results[p.key]=r;i++;nextPerm();});};
+      window._axPermSkip=function(){results[p.key]="skipped";i++;nextPerm();};
+    }
+    nextPerm();
+  }catch(e){if(typeof console!=="undefined")console.warn("[axRequestAllPermissions]",e);}
+}
+
+function axMaybeShowTourOnLogin(){
+  try{
+    if(!K||!K.user)return;
+    if(!axIsAdmin())return;
+    if(lg("ax_tour_done",false))return;
+    var skipped=lg("ax_tour_skipped_at",0);
+    if(skipped&&(Date.now()-skipped)<24*60*60*1000)return;
+    setTimeout(function(){try{axShowQuickTour(0,false);}catch(_){}},2000);
+  }catch(_){}
+}
+function _axTourDashboardBanner(){
+  try{
+    if(!K||!K.user)return;
+    if(!axIsAdmin())return;
+    if(lg("ax_tour_done",false))return;
+    var c=document.querySelector('#app');
+    if(!c)return;
+    if(document.getElementById('ax-tour-banner'))return;
+    var firstH2=c.querySelector('h2');
+    if(!firstH2)return;
+    var b=document.createElement('div');
+    b.id='ax-tour-banner';
+    b.style.cssText="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(232,184,48,.04));border:1px solid rgba(232,184,48,.5);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;-webkit-tap-highlight-color:transparent";
+    b.innerHTML='<div style="font-size:30px">🎯</div><div style="flex:1;min-width:160px"><div style="font-size:14px;font-weight:700;color:var(--ax-gold);margin-bottom:2px">Decouvre Apex en 1 minute</div><div style="font-size:12px;color:var(--ax-text-dim)">6 etapes simples : coffre, camera, studios, notifs, sentinelles.</div></div><button class="ax-btn ax-btn-primary" onclick="axShowQuickTour(0,true)" style="min-height:44px;font-weight:700">Demarrer</button><button class="ax-btn ax-btn-outline" onclick="ls(\'ax_tour_skipped_at\',Date.now());var x=document.getElementById(\'ax-tour-banner\');if(x&&x.parentNode)x.parentNode.removeChild(x);" style="min-height:44px" aria-label="Plus tard">✕</button>';
+    firstH2.parentNode.insertBefore(b,firstH2.nextSibling);
+  }catch(_){}
+}
+try{
+  var _axTourObs=new MutationObserver(function(){
+    try{
+      if(typeof K==="undefined"||!K||!K.user)return;
+      if(K.view!=="dashboard")return;
+      _axTourDashboardBanner();
+    }catch(_){}
+  });
+  if(document.body)_axTourObs.observe(document.body,{childList:true,subtree:true});
+  else document.addEventListener("DOMContentLoaded",function(){_axTourObs.observe(document.body,{childList:true,subtree:true});});
+}catch(_){}
+try{
+  var _axTourLoginInterval=setInterval(function(){try{if(K&&K.user&&axIsAdmin()){clearInterval(_axTourLoginInterval);axMaybeShowTourOnLogin();}}catch(_){}},1500);
+  setTimeout(function(){try{clearInterval(_axTourLoginInterval);}catch(_){}},60000);
+}catch(_){}
+
+
 
 </script>
 </body>
