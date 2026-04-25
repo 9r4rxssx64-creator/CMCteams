@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777136949961,
-  "total_commits": 231,
+  "updated_at": 1777137263722,
+  "total_commits": 235,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,38 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "ba77da82",
+      "ts": 1777137228000,
+      "msg": "GitHub Actions: deploy auto Apex Push Worker (sur push tools/cloudflare/apex-push-worker.js OR trigger manuel)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "582f4467",
+      "ts": 1777137172000,
+      "msg": "Apex v12.215: UX audit final - elimination doublons extraTabs (vault/links/projects/ecommerce/cmcadmin/workers deja dans navbar admin) + habits icon differenciee",
+      "project": "apex",
+      "ver": "12.215",
+      "author": "claude-code"
+    },
+    {
+      "sha": "bacc70d0",
+      "ts": 1777137076000,
+      "msg": "Apex v12.214: case scanstudio dans vMain (fallback safe vers vChat si vScanStudio pas charge)",
+      "project": "apex",
+      "ver": "12.214",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1eb20f17",
+      "ts": 1777136955000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres v12.213",
+      "project": "docs",
+      "ver": "12.213",
+      "author": "claude-code"
+    },
     {
       "sha": "688bb8f3",
       "ts": 1777136935000,
@@ -935,38 +967,6 @@
       "msg": "Subagent intermediate (parallel work)",
       "project": "multi",
       "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "01d6b001",
-      "ts": 1777083041000,
-      "msg": "Subagents commits batch (currency + email + universal search + locale)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "26b832b9",
-      "ts": 1777082952000,
-      "msg": "Subagents commits batch (universal search + email cascade)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "f4d1bfb6",
-      "ts": 1777082922000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.140 + v9.492 (160+ commits)",
-      "project": "docs",
-      "ver": "12.140",
-      "author": "claude-code"
-    },
-    {
-      "sha": "34bc122b",
-      "ts": 1777082899000,
-      "msg": "CMCteams v9.492: AUTO continuous tracking apres checkin (Kevin: 'automatiser')",
-      "project": "cmcteams",
-      "ver": "9.492",
       "author": "claude-code"
     }
   ]
