@@ -2759,6 +2759,40 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
+## 💾 RÈGLE PERMANENTE — MEMOIRE MAX iPHONE (Kevin 2026-04-25, ABSOLUE)
+
+> **"Memoire pleine, ca arrive trop souvent."** — Kevin v12.260 / v9.538
+
+iPhone Safari PWA limite localStorage à ~5 Mo par origin. Pour repousser ce mur :
+
+### 1. Compression LZ-string UTF16 (lazy CDN)
+
+Apex (`_axCompress`/`_axDecompress`) et CMCteams (`_cmcCompress`/`_cmcDecompress`) utilisent `lz-string@1.5.0` via `https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js`, lazy-loadé au premier `ls()` write. Toute valeur JSON > 1 KB est compressée avec `compressToUTF16` et préfixée `__LZ__`. Gain typique : 50-70% vs texte brut. Backward compat : valeurs base64 (`B64:`) ou non-compressed lues normalement.
+
+### 2. IDB shadow auto-fallback
+
+Quand `QuotaExceededError` persiste après cleanup, écriture directe vers IndexedDB via `axIdbSet`/`cmcIdbSet`. IDB capacité ~50 MB-1 GB Safari iOS. Toast user-friendly "Stockage saturé — sauvegarde IDB" au lieu d'erreur technique.
+
+### 3. Cleanup AGRESSIF auto 30 min
+
+`axAggressiveCleanup()` (Apex) et `cmcAggressiveCleanup()` (CMC) tournent toutes les 30 min via `setInterval` quand quota > 80%. Trim caps stricts :
+- **Apex** : audit 100, err_log 50, silent_log 50, claude_todo 20, telemetry_in 40, lessons 80, persistent_memory 150, K.messages 100/conv, photos diaporama theme 5 max, telemetry processed > 7j retiré, claude_todo resolved > 7j retiré, backups > 7j supprimés.
+- **CMC** : cmc_chat 200, cmc_audit 100, cmc_userlog 100, cmc_pdf_fingerprints 30, cmc_learned_patterns 100, cmc_import_log 100, backups > 7j, verifications/comments > 12 mois.
+
+Toast user : "🚀 Memoire optimisee : X Ko liberes" si delta > 100 KB.
+
+### 4. Indicateur stockage visible
+
+Vue `vStorageManage` (Apex admin) : barre progressive Ko / 5120 Ko avec couleur vert (<60%) / jaune (60-80%) / rouge (>80%) + bouton "🧹 Nettoyer maintenant" qui appelle `axEmergencyCleanup`.
+
+### 5. Test mental obligatoire avant chaque release
+
+*"Si une donnée user dépasse 1 KB, est-elle compressée ? Si quota > 80%, le cleanup agressif tourne-t-il ?"*
+
+Si non → fixer avant push.
+
+---
+
 ## 🔄 RÈGLE PERMANENTE — SW CACHE_VERSION = APP_VER TOUJOURS (Kevin 2026-04-25, ABSOLUE)
 
 > **"Le force refresh, la mise à jour automatique pour la version, ça en fait partie."**

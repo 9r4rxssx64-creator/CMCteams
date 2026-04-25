@@ -3288,16 +3288,39 @@ function getEP(e){return EP[e.name]||{s:["22/6","19/4","16/3","14/19","20/5","16
 // Utilitaires
 function getDays(y,m){return new Date(y,m+1,0).getDate();}
 function getDow(y,m,d){return new Date(y,m,d).getDay();}
-function lg(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
+// v9.538 (Kevin 2026-04-25 "memoire pleine") — lazy lz-string CDN UTF16 compression
+var _cmcLZ=null,_cmcLZLoading=false;
+function _cmcLoadLZ(){
+  if(_cmcLZ||_cmcLZLoading)return;
+  if(typeof window!=="undefined"&&window.LZString){_cmcLZ=window.LZString;return;}
+  _cmcLZLoading=true;
+  try{
+    var s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js";
+    s.async=true;
+    s.onload=function(){_cmcLZ=window.LZString||null;_cmcLZLoading=false;};
+    s.onerror=function(){_cmcLZLoading=false;};
+    document.head.appendChild(s);
+  }catch(_){_cmcLZLoading=false;}
+}
+function _cmcCompress(str){try{if(_cmcLZ&&_cmcLZ.compressToUTF16)return "__LZ__"+_cmcLZ.compressToUTF16(str);}catch(_){}return str;}
+function _cmcDecompress(str){if(typeof str!=="string")return str;if(str.indexOf("__LZ__")===0){try{if(_cmcLZ&&_cmcLZ.decompressFromUTF16)return _cmcLZ.decompressFromUTF16(str.slice(6))||str;}catch(_){}return str;}return str;}
+try{if(typeof window!=="undefined")setTimeout(_cmcLoadLZ,500);}catch(_){}
+function lg(k,fb){try{var v=localStorage.getItem(k);if(!v)return fb;v=_cmcDecompress(v);return JSON.parse(v);}catch(e){return fb;}}
 function ls(k,v){
   var _lsOk=true;
-  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){
+  try{
+    var s=JSON.stringify(v);
+    if(s&&s.length>1024){if(!_cmcLZ)_cmcLoadLZ();s=_cmcCompress(s);}
+    localStorage.setItem(k,s);
+  }catch(e){
     if(e&&e.name==="QuotaExceededError"){
       // v9.120 — Nettoyage agressif auto + retry (au lieu de juste afficher une erreur)
       console.warn("QuotaExceeded pour:",k,"— nettoyage auto lancé");
       _emergencyCleanup();
-      try{localStorage.setItem(k,JSON.stringify(v));_lsOk=true;}catch(e2){
+      try{var s2=JSON.stringify(v);if(s2&&s2.length>1024)s2=_cmcCompress(s2);localStorage.setItem(k,s2);_lsOk=true;}catch(e2){
         _lsOk=false;
+        try{if(typeof cmcIdbSet==="function")cmcIdbSet(k,v);}catch(_){}
         toast("\u26a0\ufe0f Stockage toujours plein apr\u00e8s nettoyage \u2014 exportez une sauvegarde","err");
       }
     } else {_lsOk=false;console.warn("ls() error:",k,e);}
@@ -3366,6 +3389,25 @@ function _emergencyCleanup(){
   console.info("[v9.120] Emergency cleanup: freed ~"+Math.round(freed/1024)+"KB");
   if(freed>10000)toast("\ud83e\uddf9 Nettoyage auto : ~"+Math.round(freed/1024)+"KB lib\u00e9r\u00e9s",null,4000);
 }
+
+/* === v9.538 (Kevin 2026-04-25 "memoire pleine") \u2014 Cleanup AGRESSIF auto 30 min === */
+function _cmcMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_){}return u;}
+function cmcAggressiveCleanup(){
+  var before=_cmcMemoryUsedBytes();
+  try{
+    var caps={"cmc_chat":200,"cmc_audit":100,"cmc_userlog":100,"cmc_admin_sessions":80,"cmc_ia_log":50,"cmc_pdf_fingerprints":30,"cmc_learned_patterns":100,"cmc_import_log":100,"cmc_silent_log":50,"cmc_err_log":50,"cmc_telemetry":50,"cmc_user_telemetry":50,"cmc_lessons_learned":80,"cmc_click_failures":20,"cmc_anomalies":50,"cmc_import_anomalies":50};
+    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_){}});
+    try{for(var i=0;i<localStorage.length;i++){var kb=localStorage.key(i);if(!kb)continue;if(kb.indexOf("cmc_auto_backup")===0||kb.indexOf("cmc_import_snap")===0||kb.indexOf("cmc_agent_backup")===0){var raw=localStorage.getItem(kb);try{var d=JSON.parse(_cmcDecompress(raw)||"{}");if(d&&d.ts&&Date.now()-d.ts>7*86400000)localStorage.removeItem(kb);}catch(_){}}}}catch(_){}
+    try{var now=new Date(),cy=now.getFullYear(),cm=now.getMonth()-12;if(cm<0){cm+=12;cy--;}for(var j=0;j<localStorage.length;j++){var kk=localStorage.key(j);if(!kk)continue;if(kk.indexOf("cmc_verif_")===0||kk.indexOf("cmc_comments_")===0){var p=kk.replace(/^[^_]+_[^_]+_/,"").split("-");var y=parseInt(p[0]),mo=parseInt(p[1]);if(!isNaN(y)&&!isNaN(mo)&&(y<cy||(y===cy&&mo<cm)))localStorage.removeItem(kk);}}}catch(_){}
+  }catch(_){}
+  var after=_cmcMemoryUsedBytes();
+  var freed=Math.max(0,before-after);
+  if(freed>100*1024&&typeof toast==="function"){try{toast("\ud83d\ude80 Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_){}}
+  return freed;
+}
+function _cmcAggressiveAuto(){try{var pct=_cmcMemoryUsedBytes()/5242880*100;if(pct>80)cmcAggressiveCleanup();}catch(_){}}
+try{setInterval(_cmcAggressiveAuto,1800000);setTimeout(_cmcAggressiveAuto,8000);}catch(_){}
+try{if(typeof window!=="undefined")window.cmcAggressiveCleanup=cmcAggressiveCleanup;}catch(_){}
 
 /* ========================================================
    v9.519 — TRIPLE PERSISTENCE (Kevin 2026-04-25)
@@ -4552,7 +4594,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.537";
+var APP_VER="v9.539";
 // --- i18n minimal v9.534 — 30 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
 var I18N_CRITICAL={
 fr:{
