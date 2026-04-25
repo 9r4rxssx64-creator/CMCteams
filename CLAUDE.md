@@ -68,6 +68,85 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 🧠 RÈGLE PERMANENTE — ENRICHISSEMENT PROFILS CONTINU (Kevin 2026-04-25, ABSOLUE)
+
+> **"Toutes mes données doivent déjà être intégrées pendant les mises à jour. Quand tu apprends quelque chose, tu dois mettre à jour dans toutes mes fiches perso admin. Tu accumules des informations pour moi comme pour tout le monde au fur et à mesure des discussions. Peut-être quand toi tu poses des questions un détournées pour apprendre encore plus de choses sur chaque client, chaque employé. Tu as accès aux dossiers officiels, photos, réseaux sociaux. Fournis-toi et recherche un maximum de données pour être plus compétente."**
+
+**Règle absolue, prioritaire** — Apex + CMCteams + tous projets futurs :
+
+### 1. Extraction continue depuis le chat (Apex IA + CMCteams IA)
+
+À chaque message user (Kevin OU client OU employé) :
+- Parser le texte (regex + NLP simple)
+- Extraire : email, téléphone, date naissance, adresse, nom complet, métier, lieu, préférences, intérêts
+- Mettre à jour la fiche du user concerné (ax_user, cmc_emp, ou ax_client_profiles)
+- Logger dans `ax_data_enrichment_log` (audit trail)
+- Notifier discrètement Kevin si fait nouveau important
+
+### 2. Questions détournées intelligentes
+
+L'IA pose subtilement des questions pour combler les gaps :
+- Si fiche manque adresse → "Tu habites Monaco depuis longtemps ?" → extrait ville
+- Si manque date naissance → "Tu fêtes ton anniversaire bientôt ?" → extrait mois/saison
+- Si manque métier → "Comment se passe ton boulot ?" → extrait poste
+- Toujours naturel, jamais intrusif. Kevin peut désactiver dans Réglages.
+
+### 3. Sources externes (avec consentement RGPD)
+
+Si l'utilisateur a déjà donné son CGU et a partagé des comptes :
+- Réseaux sociaux mentionnés → fetch profil public (open graph)
+- Photos uploadées → vision API extrait visages, lieux, contexte
+- Documents scannés (carnet santé, CV, factures) → OCR + extraction structurée
+- Email signature → extraire phone, role, company
+- Calendar shared → habitudes, événements importants
+
+### 4. Cross-fiches propagation
+
+Quand info ajoutée à une fiche :
+- Si même prénom+nom dans autre fiche → fusionner ou flagger doublon
+- Si email partagé entre fiches → cross-reference
+- Si famille (même nom de famille + adresse) → tag "famille" auto
+- Si collègue (même entreprise mentionnée) → tag "collègue" auto
+
+### 5. Profils enrichis Apex
+
+Pour chaque user (`A.user`, `K.user`, `ax_client_profiles`) :
+- Champs étendus : age, dateNaissance, adressePrincipale, adresseSecondaire, telephones[], emails[], reseauxSociaux{}, langues[], photo, anniversaire, conjoint, enfants, animaux, hobbies, allergies, dernieresInteractions[]
+- Score complétude /100
+- Notification admin si profil <50% rempli
+- Auto-rappel anniversaire 7j avant
+
+### 6. Profils enrichis CMCteams
+
+Pour chaque employé (`A.employees`, `A.reg`) :
+- Mêmes champs + spécifiques casino : poste, niveau jeux validés, école formation, années expérience SBM, planning préférences
+- Liens entre employés (collègues, mentors)
+
+### 7. Sentinelle data-enrichment-watch
+
+Tourne 1×/jour :
+- Audit profils incomplets
+- Suggère questions à poser dans le prochain chat
+- Détecte infos contradictoires (date naissance différentes 2 sources)
+- Escalade admin si conflit non résoluble
+
+### 8. RGPD & Sécurité
+
+- Toujours opt-in explicite (CGU)
+- Bouton "Voir mes données" + "Exporter" + "Supprimer" dans Réglages
+- Données sensibles (carte bancaire, mot de passe) JAMAIS extraites
+- Chiffrement AES pour données privées
+- Audit log toutes extractions
+
+### 9. Cross-app
+
+Si Apex apprend qu'un client a déménagé → CMCteams (s'il est employé aussi) hérite l'info via `ax_lessons_learned` ou Firebase shared user_id.
+
+**Test mental obligatoire** :
+*"Cette info que je viens de capturer, ai-je mis à jour TOUTES les fiches concernées + cross-app ?"*
+
+---
+
 ## 🤝 RÈGLE PERMANENTE — AUTONOMIE SUR TÂCHES KEVIN (Kevin 2026-04-25, ABSOLUE)
 
 > **"Fais tout au maximum en autonomie. Laisse-moi ce qu'il t'est impossible de faire après avoir cherché d'autres manières. Vérifie dans ma liste si tu ne peux pas en faire maintenant avec des nouveaux outils, de nouveaux accès. Automatise tout mon travail au maximum, pareil dans toutes mes applications. Qu'il ne me demande pas de faire ci ou ça s'il peut le faire tout seul."**
