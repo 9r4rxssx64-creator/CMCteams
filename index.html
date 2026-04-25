@@ -24951,9 +24951,28 @@ function setQrFilterCasino(c){_qrFilterCasino=c||"";dc();}
 function vQRCodesTables(){
   if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
   var tables=getTablesCoords();
-  var ids=Object.keys(tables).sort(function(a,b){return (tables[a].name||"").localeCompare(tables[b].name||"");});
+  var allIds=Object.keys(tables);
+  var casinos={};
+  allIds.forEach(function(tid){var c=tables[tid].casino;if(c)casinos[c]=true;});
+  var casinosList=Object.keys(casinos).sort();
+  var ids=allIds.filter(function(tid){return !_qrFilterCasino||tables[tid].casino===_qrFilterCasino;});
+  ids.sort(function(a,b){return (tables[a].name||"").localeCompare(tables[b].name||"");});
   var h='<div class="page"><div class="sec-title">\ud83d\udcf1 QR codes tables \u2014 pour impression</div>';
-  h+='<div style="padding:10px;background:rgba(74,160,255,.06);border:1px solid rgba(74,160,255,.2);border-radius:8px;margin-bottom:12px;font-size:13px;color:#c0d8e8;line-height:1.6">\ud83d\udca1 Imprimez ces QR codes et collez-les sur chaque table. Les employ\u00e9s les scannent avec leur cam\u00e9ra pour un check-in instantan\u00e9 (alternative fiable \u00e0 la g\u00e9oloc indoor).<br><button onclick="window.print()" style="margin-top:6px;padding:6px 12px;background:rgba(74,160,255,.2);border:1px solid rgba(74,160,255,.5);border-radius:6px;color:#4aa0ff;cursor:pointer;font-weight:700">\ud83d\udda8 Imprimer</button></div>';
+  h+='<div style="padding:10px;background:rgba(74,160,255,.06);border:1px solid rgba(74,160,255,.2);border-radius:8px;margin-bottom:12px;font-size:13px;color:#c0d8e8;line-height:1.6">\ud83d\udca1 Imprimez ces QR codes et collez-les sur chaque table. Les employ\u00e9s les scannent avec la cam\u00e9ra (iPhone/Android) pour un check-in instantan\u00e9 \u2014 alternative fiable au NFC (non support\u00e9 sur iPhone Safari).<br>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'
+    +'<button onclick="cmcExportQRsPDF()" style="padding:8px 14px;background:rgba(201,162,39,.25);border:1px solid rgba(201,162,39,.6);border-radius:6px;color:#ffdc40;cursor:pointer;font-weight:700;min-height:44px">\ud83d\udce5 T\u00e9l\u00e9charger PDF</button>'
+    +'<button onclick="window.print()" style="padding:8px 14px;background:rgba(74,160,255,.2);border:1px solid rgba(74,160,255,.5);border-radius:6px;color:#4aa0ff;cursor:pointer;font-weight:700;min-height:44px">\ud83d\udda8 Imprimer cette page</button>'
+    +'</div></div>';
+  if(casinosList.length>1){
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center">';
+    h+='<span style="font-size:12px;color:#8aa088">Filtrer:</span>';
+    h+='<button onclick="setQrFilterCasino(\'\')" style="padding:6px 12px;min-height:36px;background:'+(_qrFilterCasino?"rgba(255,255,255,.05)":"rgba(201,162,39,.25)")+';border:1px solid '+(_qrFilterCasino?"rgba(255,255,255,.15)":"rgba(201,162,39,.6)")+';border-radius:6px;color:'+(_qrFilterCasino?"#c0c0c0":"#ffdc40")+';cursor:pointer;font-size:12px">Tous</button>';
+    casinosList.forEach(function(c){
+      var act=_qrFilterCasino===c;
+      h+='<button onclick="setQrFilterCasino('+JSON.stringify(c)+')" style="padding:6px 12px;min-height:36px;background:'+(act?"rgba(201,162,39,.25)":"rgba(255,255,255,.05)")+';border:1px solid '+(act?"rgba(201,162,39,.6)":"rgba(255,255,255,.15)")+';border-radius:6px;color:'+(act?"#ffdc40":"#c0c0c0")+';cursor:pointer;font-size:12px">'+esc(c)+'</button>';
+    });
+    h+='</div>';
+  }
   if(!ids.length){
     h+='<div class="empty" role="status"><div class="empty-icon" aria-hidden="true">\ud83d\udccd</div><div class="empty-title">Aucune table enregistr\u00e9e</div><div class="empty-sub">Utilisez "Coord tables" pour en ajouter</div></div>';
   }else{
