@@ -1,5 +1,5 @@
 {
-  "updated_at": 1777119524387,
+  "updated_at": 1777120818904,
   "total_commits": 225,
   "projects": [
     "apex",
@@ -9,6 +9,22 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "69aeccb6",
+      "ts": 1777119602000,
+      "msg": "CMCteams v9.511: Parser cadres ZERO ERREUR (multi-strategy + 22 tests + sentinelle import-watch + banner)",
+      "project": "cmcteams",
+      "ver": "9.511",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5991dc7f",
+      "ts": 1777119568000,
+      "msg": "CMCteams v9.509: Parser inspecteurs ZERO erreur (sentinelle import-watch + 22 tests + banner post-import)",
+      "project": "cmcteams",
+      "ver": "9.509",
+      "author": "claude-code"
+    },
     {
       "sha": "731fb137",
       "ts": 1777119473000,
@@ -949,22 +965,6 @@
       "sha": "82eb5173",
       "ts": 1777079403000,
       "msg": "Apex v12.116: Stripe Checkout integration (clients paient en ligne)",
-      "project": "apex",
-      "ver": "12.116",
-      "author": "claude-code"
-    },
-    {
-      "sha": "cfff718a",
-      "ts": 1777079344000,
-      "msg": "Apex v12.117: APP_VER bump (subagent backend)",
-      "project": "apex",
-      "ver": "12.117",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2a2a5452",
-      "ts": 1777079277000,
-      "msg": "Apex v12.116: feature flags - filter sidebar projects + apostrophe fix",
       "project": "apex",
       "ver": "12.116",
       "author": "claude-code"
