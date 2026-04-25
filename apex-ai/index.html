@@ -360,7 +360,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.166",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.167",ADMIN_ID="kdmc_admin";
 /* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
 var AX_LOCALES={
   MC:{name:"Monaco",flag:"🇲🇨",lang:"fr",currency:"EUR",timezone:"Europe/Monaco",emergency:"112"},
@@ -2087,19 +2087,86 @@ function axCrewMultiExpert(query,agentIds){
   });
 }
 /* v12.153 — Crew agents experts par competence (Kevin: 'concertation experte') */
+/* v12.167 — Outils dedies par expert (Kevin: 'augmenter qualite performance individuellement') */
 var AX_CREW_EXPERT={
-  "expert_finance":{name:"Expert Finance",ic:"💰",keywords:["finance","argent","investir","crypto","bourse","budget","economie","economique","revenu","mrr","p&l","comptabilite","cashflow","valuation"],system:"Tu es un expert finance senior 20 ans Goldman Sachs. Approche rigoureuse, chiffres precis, ROI calcule. Cite sources. Conteste les hypotheses molles. Reponds en francais, max 350 mots."},
-  "expert_legal":{name:"Expert Juridique",ic:"⚖",keywords:["loi","juridique","contrat","cgu","rgpd","clause","obligation","monaco","france","conformite","tribunal","jurisprudence","litige"],system:"Tu es avocat senior Monaco/France 25 ans. Cite articles precis, jurisprudence, risques. Conteste les zones grises. Reponds en francais, max 350 mots."},
-  "expert_dev":{name:"Expert Tech",ic:"💻",keywords:["code","programmation","architecture","api","securite","performance","bug","javascript","python","cloud","devops","stack","framework"],system:"Tu es CTO 15 ans, security-first. Cite best practices, OWASP, perf metrics. Conteste les solutions naives. Reponds en francais, max 350 mots."},
-  "expert_ux":{name:"Expert UX/Design",ic:"🎨",keywords:["ux","design","interface","ergonomie","mobile","accessibilite","figma","apple hig","material","wireframe","prototype"],system:"Tu es Lead Designer Apple/Airbnb 12 ans. Mobile-first, simplicite radicale. Conteste les ecrans surcharges. Reponds en francais, max 350 mots."},
-  "expert_marketing":{name:"Expert Marketing",ic:"📣",keywords:["marketing","seo","copywriting","conversion","funnel","client","acquisition","ads","instagram","tiktok","brand","campagne"],system:"Tu es CMO B2C 18 ans. ROAS focus, A/B test, croissance. Conteste les vanity metrics. Reponds en francais, max 350 mots."},
-  "expert_product":{name:"Expert Produit",ic:"🎯",keywords:["produit","feature","roadmap","kpi","mvp","priorite","user","besoin","valeur","backlog","retention"],system:"Tu es CPO Stripe/Notion. User-first, jobs-to-be-done. Conteste les features sans donnees utilisateur. Reponds en francais, max 350 mots."},
-  "expert_strategy":{name:"Expert Strategie",ic:"♟",keywords:["strategie","business","plan","analyse","swot","concurrence","marche","differenciation","vision","croissance"],system:"Tu es McKinsey Partner 20 ans. Frameworks structures, vision long-terme. Conteste les solutions tactiques court-terme. Reponds en francais, max 350 mots."},
-  "expert_security":{name:"Expert Securite",ic:"🛡",keywords:["securite","cyber","vulnerabilite","auth","encryption","gdpr","fraude","attaque","pentest","owasp","mfa"],system:"Tu es CISO ex-Stripe. Threat modeling, defense-in-depth. Conteste les implementations naives crypto/auth. Reponds en francais, max 350 mots."},
-  "expert_data":{name:"Expert Data",ic:"📊",keywords:["data","analyse","statistique","ml","ia","prediction","tableau","pivot","sql","dataset","modele"],system:"Tu es Data Scientist senior. Statistique rigoureuse, biais detectes. Conteste les correlations sans causation. Reponds en francais, max 350 mots."},
-  "expert_voice":{name:"Avocat du Diable",ic:"😈",keywords:[],always:true,system:"Tu joues l avocat du diable. Identifie 3 risques majeurs, 2 contre-arguments forts, 1 alternative radicale. Pas de complaisance. Reponds en francais, max 300 mots."},
-  "creative":{name:"Go Beyond",ic:"💡",keywords:[],system:"Tu es l agent Go Beyond. Tu proposes 1 SEULE chose surprenante que l utilisateur n a PAS demandee mais qui l aiderait fortement (feature adjacente, optimisation cachee, opportunite manquee). Bref, percutant, max 80 mots. Format: 'Bonus inattendu: [idee] - Pourquoi: [1 phrase].'"}
+  "expert_finance":{name:"Expert Finance",ic:"💰",keywords:["finance","argent","investir","crypto","bourse","budget","economie","economique","revenu","mrr","p&l","comptabilite","cashflow","valuation"],tools:["finance_calculate","web_search","calculate","get_user_data"],data_sources:["ax_fin","ax_expenses","K.fin"],prompt_extension:"Tu as acces a finance_calculate pour calculs precis (NPV, IRR, mensualites, ROI, marge, break-even). Utilise web_search pour cours bourse temps reel et taux de change. Cite toujours sources financieres (Bloomberg, FT, Les Echos, Reuters). Donne chiffres precis a 2 decimales.",system:"Tu es un expert finance senior 20 ans Goldman Sachs. Approche rigoureuse, chiffres precis, ROI calcule. Cite sources. Conteste les hypotheses molles. Reponds en francais, max 350 mots."},
+  "expert_legal":{name:"Expert Juridique",ic:"⚖",keywords:["loi","juridique","contrat","cgu","rgpd","clause","obligation","monaco","france","conformite","tribunal","jurisprudence","litige"],tools:["web_search","get_source"],data_sources:["loi_monaco","convention_sbm","CONVENTION","BULLETIN_CODES"],prompt_extension:"Reference systematique aux articles de loi (Code Monaco, Code du Travail FR, Convention SBM 2015, RGPD). Cite numeros articles precis (ex: Art. L1234-5 CdT). web_search pour jurisprudence recente (Cass. Soc., CJUE). Identifie risques juridiques chiffres.",system:"Tu es avocat senior Monaco/France 25 ans. Cite articles precis, jurisprudence, risques. Conteste les zones grises. Reponds en francais, max 350 mots."},
+  "expert_dev":{name:"Expert Tech",ic:"💻",keywords:["code","programmation","architecture","api","securite","performance","bug","javascript","python","cloud","devops","stack","framework"],tools:["code_execute","get_source","find_in_code","get_function_code","modify_css","inject_function"],data_sources:["ax_audit","ax_err_log"],prompt_extension:"Tu peux EXECUTER du code (JS sandbox via code_execute), LIRE le code source de l app (get_source, find_in_code, get_function_code), MODIFIER (modify_css, inject_function). Architecture clean code, tests unitaires, security-first. Cite OWASP Top 10, principes SOLID. Patterns concrets.",system:"Tu es CTO 15 ans, security-first. Cite best practices, OWASP, perf metrics. Conteste les solutions naives. Reponds en francais, max 350 mots."},
+  "expert_ux":{name:"Expert UX/Design",ic:"🎨",keywords:["ux","design","interface","ergonomie","mobile","accessibilite","figma","apple hig","material","wireframe","prototype"],tools:["modify_css","get_source","screenshot"],data_sources:["ax_ui_state","K.theme"],prompt_extension:"Tu peux modifier le CSS en direct via modify_css. Apple HCI guidelines + WCAG AAA + Material Design 3. Touch targets >=44px (Apple HIG). Animations 200ms cubic-bezier. Test 5 viewports (375/390/412/768/1200). Pense iPhone-first.",system:"Tu es Lead Designer Apple/Airbnb 12 ans. Mobile-first, simplicite radicale. Conteste les ecrans surcharges. Reponds en francais, max 350 mots."},
+  "expert_marketing":{name:"Expert Marketing",ic:"📣",keywords:["marketing","seo","copywriting","conversion","funnel","client","acquisition","ads","instagram","tiktok","brand","campagne"],tools:["web_search","calculate","get_user_data"],data_sources:["ax_referrals","ax_subscription_requests","PLANS","ax_user_usage"],prompt_extension:"Calcule MRR, CAC, LTV, churn, MoM growth, NPS via calculate. Cite outils marketing pro (HubSpot, Mixpanel, Plausible, Google Analytics 4, Meta Business). Funnels A/B, cohort analysis. ROAS focus, pas vanity metrics.",system:"Tu es CMO B2C 18 ans. ROAS focus, A/B test, croissance. Conteste les vanity metrics. Reponds en francais, max 350 mots."},
+  "expert_product":{name:"Expert Produit",ic:"🎯",keywords:["produit","feature","roadmap","kpi","mvp","priorite","user","besoin","valeur","backlog","retention"],tools:["get_app_info","list_functions","get_user_data"],data_sources:["ax_audit","ax_user_usage","K.messages"],prompt_extension:"Decisions produit data-driven (jamais opinion seule). Definis North Star Metric. Roadmap matrice impact x effort 2x2 (RICE/ICE scoring). Jobs-to-be-done framework. Cite Marty Cagan, Lenny Rachitsky.",system:"Tu es CPO Stripe/Notion. User-first, jobs-to-be-done. Conteste les features sans donnees utilisateur. Reponds en francais, max 350 mots."},
+  "expert_strategy":{name:"Expert Strategie",ic:"♟",keywords:["strategie","business","plan","analyse","swot","concurrence","marche","differenciation","vision","croissance"],tools:["web_search","calculate"],data_sources:[],prompt_extension:"Frameworks structures : MECE, 80/20 Pareto, BCG matrix, SWOT, Porter 5 forces, Blue Ocean Strategy. Toujours donnees chiffrees (TAM/SAM/SOM). Vision 3-5 ans. Cite HBR, McKinsey Quarterly.",system:"Tu es McKinsey Partner 20 ans. Frameworks structures, vision long-terme. Conteste les solutions tactiques court-terme. Reponds en francais, max 350 mots."},
+  "expert_security":{name:"Expert Securite",ic:"🛡",keywords:["securite","cyber","vulnerabilite","auth","encryption","gdpr","fraude","attaque","pentest","owasp","mfa"],tools:["get_source","find_in_code","get_user_data"],data_sources:["ax_security_alerts","ax_audit","ax_err_log"],prompt_extension:"OWASP Top 10 (2021), ISO 27001, NIST CSF, CIS Controls v8. Threat modeling STRIDE/DREAD. Audit code via find_in_code (XSS, injection, IDOR). Defense-in-depth. Cite CVE recents.",system:"Tu es CISO ex-Stripe. Threat modeling, defense-in-depth. Conteste les implementations naives crypto/auth. Reponds en francais, max 350 mots."},
+  "expert_data":{name:"Expert Data",ic:"📊",keywords:["data","analyse","statistique","ml","ia","prediction","tableau","pivot","sql","dataset","modele"],tools:["code_execute","calculate","get_user_data"],data_sources:["ax_user_usage","ax_audit","ax_telemetry_in"],prompt_extension:"Python pandas/numpy/scikit-learn via code_execute. Stats descriptives (mean/median/std/p25-p75/p90) + tests significativite (t-test, chi2, Mann-Whitney). Detection biais (selection, survivorship). Visualise via Chart.js.",system:"Tu es Data Scientist senior. Statistique rigoureuse, biais detectes. Conteste les correlations sans causation. Reponds en francais, max 350 mots."},
+  "expert_voice":{name:"Avocat du Diable",ic:"😈",keywords:[],always:true,tools:["web_search"],prompt_extension:"CONTESTE TOUT systematiquement. Pre-mortem (qu'est-ce qui pourrait mal tourner ?). Cherche cas concrets ou la solution proposee a ECHOUE dans d autres contextes (cite exemples reels). 3 risques majeurs + 2 contre-arguments + 1 alternative radicale.",system:"Tu joues l avocat du diable. Identifie 3 risques majeurs, 2 contre-arguments forts, 1 alternative radicale. Pas de complaisance. Reponds en francais, max 300 mots."},
+  "creative":{name:"Go Beyond",ic:"💡",keywords:[],tools:["web_search"],prompt_extension:"Pense LATERAL. Cite analogies cross-industries (ex: 'Comme Stripe a fait pour les paiements'). Framework SCAMPER (Substitute/Combine/Adapt/Modify/Put-to-other-use/Eliminate/Reverse). 'Et si...' systematique.",system:"Tu es l agent Go Beyond. Tu proposes 1 SEULE chose surprenante que l utilisateur n a PAS demandee mais qui l aiderait fortement (feature adjacente, optimisation cachee, opportunite manquee). Bref, percutant, max 80 mots. Format: 'Bonus inattendu: [idee] - Pourquoi: [1 phrase].'"}
 };
+/* v12.167 — Helpers d outils dedies pour experts */
+function axTools_calculate(expr){try{var r=Function('"use strict";return ('+String(expr).replace(/[^0-9+\-*/().,\s%eE]/g,'')+')')();return (typeof r==="number"&&isFinite(r))?r:"Calc invalide";}catch(_){return "Calc err";}}
+function axTools_finance_calculate(type,params){
+  try{
+    params=params||{};
+    if(type==="monthly_payment"){
+      var P=+params.principal,r=(+params.rate)/100/12,n=(+params.years)*12;
+      if(!P||!n)return 0;
+      if(!r)return +(P/n).toFixed(2);
+      return +((P*(r*Math.pow(1+r,n)))/(Math.pow(1+r,n)-1)).toFixed(2);
+    }
+    if(type==="npv"){
+      /* params={rate (%), cashflows:[c0,c1,...]} */
+      var rate=(+params.rate)/100,cf=params.cashflows||[],npv=0;
+      for(var i=0;i<cf.length;i++)npv+=(+cf[i])/Math.pow(1+rate,i);
+      return +npv.toFixed(2);
+    }
+    if(type==="irr"){
+      /* Newton-Raphson sur cashflows */
+      var cfs=params.cashflows||[];if(cfs.length<2)return 0;
+      var guess=0.1;
+      for(var k=0;k<100;k++){
+        var npv=0,d=0;
+        for(var j=0;j<cfs.length;j++){npv+=cfs[j]/Math.pow(1+guess,j);d+=-j*cfs[j]/Math.pow(1+guess,j+1);}
+        if(Math.abs(npv)<0.01)return +(guess*100).toFixed(4);
+        if(!d)break;
+        guess=guess-npv/d;
+      }
+      return +(guess*100).toFixed(4);
+    }
+    if(type==="roi"){var gain=+params.gain,cost=+params.cost;if(!cost)return 0;return +(((gain-cost)/cost)*100).toFixed(2);}
+    if(type==="break_even"){var fc=+params.fixed_cost,pu=+params.price_unit,vc=+params.variable_cost_unit;var m=pu-vc;if(m<=0)return "Marge negative";return Math.ceil(fc/m);}
+    if(type==="ltv"){var arpu=+params.arpu,churn=(+params.churn_monthly)/100;if(!churn)return 0;return +(arpu/churn).toFixed(2);}
+    if(type==="cac_payback"){var cac=+params.cac,arpu=+params.arpu,margin=(+params.gross_margin||100)/100;if(!arpu||!margin)return 0;return +(cac/(arpu*margin)).toFixed(2);}
+    if(type==="margin"){var rev=+params.revenue,cog=+params.cost;if(!rev)return 0;return +(((rev-cog)/rev)*100).toFixed(2);}
+    return "Type inconnu (monthly_payment/npv/irr/roi/break_even/ltv/cac_payback/margin)";
+  }catch(_){return "Erreur calcul finance";}
+}
+function axTools_describe(expertId){
+  try{
+    var ag=AX_CREW_EXPERT[expertId];if(!ag||!ag.tools||!ag.tools.length)return "";
+    var lines="\n\n=== OUTILS DEDIES (mentionne-les dans ton raisonnement) ===\n";
+    var defs={
+      finance_calculate:"finance_calculate(type, params) — calculs financiers precis (monthly_payment, npv, irr, roi, break_even, ltv, cac_payback, margin)",
+      web_search:"web_search(query) — recherche web temps reel pour sources externes",
+      calculate:"calculate(expr) — evaluateur arithmetique (+,-,*,/,(),%)",
+      get_user_data:"get_user_data() — donnees utilisateur (K.user, profil, usage)",
+      get_source:"get_source(file) — lecture du code source de l app",
+      code_execute:"code_execute(code) — execution sandbox JS/Python (resultats stats, calculs)",
+      find_in_code:"find_in_code(pattern) — recherche pattern dans codebase",
+      get_function_code:"get_function_code(name) — recupere code d une fonction",
+      modify_css:"modify_css(selector, props) — modification CSS live",
+      inject_function:"inject_function(name, code) — ajout fonction (admin only)",
+      screenshot:"screenshot() — capture viewport actuel",
+      get_app_info:"get_app_info() — version, taille, modules charges",
+      list_functions:"list_functions() — liste fonctions disponibles"
+    };
+    ag.tools.forEach(function(t){if(defs[t])lines+="- "+defs[t]+"\n";});
+    if(ag.data_sources&&ag.data_sources.length){
+      lines+="\n=== SOURCES DE DONNEES PRIORITAIRES ===\n";
+      ag.data_sources.forEach(function(d){lines+="- "+d+"\n";});
+    }
+    if(ag.prompt_extension)lines+="\n=== APPROCHE METIER ===\n"+ag.prompt_extension+"\n";
+    return lines;
+  }catch(_){return "";}
+}
 function _axExpertEnabled(id){var off=lg("ax_crew_expert_off",{});return !off[id];}
 function axCrewExpertToggle(id){var off=lg("ax_crew_expert_off",{});off[id]=!off[id];ls("ax_crew_expert_off",off);if(typeof toast==="function")toast("Expert "+(AX_CREW_EXPERT[id]?AX_CREW_EXPERT[id].name:id)+(off[id]?" desactive":" active"),"info");try{dc&&dc();}catch(_){}return !off[id];}
 function axDispatchExpertCrew(query){
@@ -2128,7 +2195,8 @@ function axCrewExpertConsult(expertId,query){
     if(!apiKey&&!isProxy){resolve("[Cle API manquante pour "+ag.name+"]");return;}
     var headers={"content-type":"application/json"};
     if(!isProxy){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true";}
-    var body={model:"claude-sonnet-4-6",max_tokens:1500,system:ag.system+"\n\nDONNE 1 IDEE FORTE + 1 OBJECTION. Si desaccord avec consensus probable, EXPRIME-LE clairement.",messages:[{role:"user",content:query}]};
+    var toolsCtx=(typeof axTools_describe==="function")?axTools_describe(expertId):"";
+    var body={model:"claude-sonnet-4-6",max_tokens:1500,system:ag.system+toolsCtx+"\n\nDONNE 1 IDEE FORTE + 1 OBJECTION. Si desaccord avec consensus probable, EXPRIME-LE clairement.",messages:[{role:"user",content:query}]};
     var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
     var to=setTimeout(function(){if(ctrl)try{ctrl.abort();}catch(_){}resolve("[Timeout "+ag.name+"]");},45000);
     var opts={method:"POST",headers:headers,body:JSON.stringify(body)};
