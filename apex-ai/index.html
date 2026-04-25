@@ -5692,6 +5692,16 @@ function vBackups(){
   h+='<div class="ax-setting-row"><span>Sauvegardes locales</span><strong>'+keys.length+' / 7</strong></div>';
   if(meta&&meta.size)h+='<div class="ax-setting-row"><span>Taille derniere</span><strong>'+Math.round(meta.size/1024)+' KB</strong></div>';
   h+='<button class="ax-btn ax-btn-primary" onclick="axBackupAll();dc()" style="width:100%;margin-top:8px">&#128190; Sauvegarder maintenant</button>';
+  h+='<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-outline" onclick="axDailyBackup();setTimeout(dc,500)" style="flex:1;min-width:140px;min-height:44px">&#128202; Backup complet (toutes cles)</button><button class="ax-btn ax-btn-outline" onclick="axShowHealthReport()" style="flex:1;min-width:140px;min-height:44px">&#128202; Rapport sante</button></div>';
+  h+='</div>';
+  /* v12.201 — Card historique quotidien cloud */
+  var dailyHist=lg("ax_backup_history",[]);
+  var lastDaily=parseInt(lg("ax_last_daily_backup",0),10)||0;
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue)"><h3>&#9729;&#65039; Backup quotidien cloud ('+dailyHist.length+'/30)</h3>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">Chaque jour, toutes tes cles ax_* sont copiees dans le stockage en ligne. Tu peux restaurer n\'importe quel jour.</div>';
+  h+='<div class="ax-setting-row"><span>Dernier backup quotidien</span><strong>'+(lastDaily?new Date(lastDaily).toLocaleString("fr-FR"):"jamais")+'</strong></div>';
+  if(!dailyHist.length){h+='<div style="font-size:11px;color:var(--ax-text-dim);padding:8px 0">Le premier backup se lance automatiquement 30 secondes apres ton arrivee.</div>';}
+  else{var sortedHist=dailyHist.slice().reverse();sortedHist.forEach(function(b){h+='<div class="ax-card" style="margin:6px 0;padding:8px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><div style="flex:1;min-width:120px"><strong>'+esc(b.date)+'</strong> <span class="ax-badge ax-badge-gold" style="font-size:9px">'+esc(b.version||"?")+'</span><div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">'+(b.count||0)+' cles &middot; '+Math.round((b.size||0)/1024)+' KB</div></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="ax-btn ax-btn-outline" onclick="axRestoreTestPreview(\''+esc(b.date)+'\')" style="font-size:11px;padding:8px 10px;min-height:44px">&#129514; Tester</button><button class="ax-btn ax-btn-outline" onclick="axDownloadDailyBackup(\''+esc(b.date)+'\')" style="font-size:11px;padding:8px 10px;min-height:44px">&#128229;</button><button class="ax-btn ax-btn-primary" onclick="axRestoreFromBackup(\''+esc(b.date)+'\')" style="font-size:11px;padding:8px 10px;min-height:44px">&#128260;</button></div></div></div>';});}
   h+='</div>';
   h+='<div class="ax-card"><h3>&#128194; Sauvegardes locales</h3>';
   if(!keys.length){
