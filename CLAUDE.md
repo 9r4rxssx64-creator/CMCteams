@@ -146,6 +146,90 @@ S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
 
 ---
 
+## 💾 RÈGLE PERMANENTE — RIEN PERDRE + SYNTHÈSE + SAUVEGARDE TEMPS RÉEL (Kevin 2026-04-25, ABSOLUE)
+
+> **"Toutes les infos que j'ai rentrées dans Apex, elles doivent y être sauvegardées toujours quand on ne les redemande plus. Ça fait 15 fois que je rentre les clés API. Ne faut pas que ce soit pareil partout, donc il faut surveiller que ça s'enregistre bien, soit sûr. Partout dans Apex, partout dans CMC Teams. Partout partout."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Triple sauvegarde obligatoire
+
+À chaque saisie/modification de donnée admin/user :
+1. **localStorage** immédiat (avec ls() qui sync Firebase si FB_FIX)
+2. **IndexedDB** shadow copy (plus persistant qu localStorage iOS)
+3. **Firebase** si clé dans FB_FIX (cross-device + restore auto)
+
+### 2. axVerifySave(key, expected_value) après chaque save
+
+```js
+function axVerifySave(key, expected){
+  // Lecture immédiate
+  var lsVal = localStorage.getItem(key);
+  if (lsVal !== expected) {
+    console.error("[SAVE FAIL] localStorage pas a jour pour "+key);
+    return {ok:false, where:"localStorage"};
+  }
+  // Vérif Firebase queue si applicable
+  if (typeof FB_FIX !== "undefined" && FB_FIX.indexOf(key) >= 0) {
+    var queue = lg("ax_sync_queue", {});
+    // soit dans la queue (en cours d'envoi), soit déjà envoyée
+  }
+  return {ok:true};
+}
+```
+
+Appel obligatoire après tout save : `axVerifySave(key, value)` → si échec, retry + alerte admin.
+
+### 3. Sentinelle persistence-watch
+
+Tourne 1×/heure :
+- Liste les clés critiques (ax_*_key, profils, settings)
+- Vérifie pour chacune : présent local + dans queue OU pushed Firebase
+- Si manquant local mais présent Firebase → restore silencieux
+- Si manquant les 2 → alerte rouge admin "Donnée X perdue"
+
+### 4. Auto-restore au boot 100% fiable
+
+Au login admin :
+- Check 30 clés critiques (toutes les API keys + paiement + profils)
+- Pour chaque manquante localement : fetch Firebase + restore
+- Si Firebase aussi vide : afficher modal "Reset détecté, ressaisir nécessaire" (pour qu'on sache que c'est PERDU et non oublié)
+
+### 5. Audit visible admin
+
+Vue "🔒 Persistence audit" :
+- Liste 50+ clés critiques
+- Pour chaque : ✅ local OK / ⚠️ Firebase only / ❌ perdue
+- Bouton "Backup tout maintenant" + "Restore Firebase"
+- Stats : "Aucune perte sur les 30 derniers jours"
+
+### 6. Test de non-régression à chaque release
+
+Avant push, automatique :
+- Saisir 10 clés test
+- Force purge cache simulée
+- Vérifier que toutes restored
+
+### 7. Triple redondance pour clés CRITIQUES
+
+Pour `ax_api_key`, `ax_shared_api_key`, `ax_paypal_me`, `ax_iban`, `ax_revolut_tag` :
+- localStorage
+- IndexedDB
+- Firebase
+- Cookies HTTP-only (TTL 1 an, secondaire)
+- Si Kevin réinstalle PWA → 3 sources possibles pour restaurer = ZÉRO PERTE
+
+### 8. Cross-app
+
+Apex et CMCteams partagent les profils utilisateurs essentiels via Firebase. Si Kevin change sa fiche dans Apex, CMCteams hérite automatiquement.
+
+**Test mental obligatoire avant chaque push** :
+*"Si Kevin réinstalle l'app maintenant, est-ce que TOUTES ses données sont récupérables sans intervention ?"*
+
+Si réponse NON → ajouter le mécanisme de restore.
+
+---
+
 ## 📷 RÈGLE PERMANENTE — SCAN & DICTÉE PARTOUT (Kevin 2026-04-25, ABSOLUE)
 
 > **"Quand je clique dans un champ à remplir, j'ai le moyen de lui dire ouvre la caméra ou je clique sur la caméra pour scanner un code, email, QR code, papier, mur, n'importe quoi. Reconnaît auto. Idem dictée vocale. Pas écrire, parler ou scanner."**
