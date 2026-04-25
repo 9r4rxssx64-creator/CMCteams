@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777142220157,
-  "total_commits": 256,
+  "updated_at": 1777148871943,
+  "total_commits": 275,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,174 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "a189f0ea",
+      "ts": 1777148857000,
+      "msg": "CMCteams v9.523: 55+ tests parser PDF (etendu de 22 -> 55+)",
+      "project": "cmcteams",
+      "ver": "9.523",
+      "author": "claude-code"
+    },
+    {
+      "sha": "747c76d1",
+      "ts": 1777148409000,
+      "msg": "CMCteams v9.521: infrastructure parser auto-learn (WIP)",
+      "project": "cmcteams",
+      "ver": "9.521",
+      "author": "claude-code"
+    },
+    {
+      "sha": "30eac8ad",
+      "ts": 1777146798000,
+      "msg": "Apex v12.241: nom+prenom+pass OBLIGATOIRES partout",
+      "project": "apex",
+      "ver": "12.241",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b0dde194",
+      "ts": 1777146232000,
+      "msg": "Apex v12.240: SECU FIX (audit expert externe 4 agents)",
+      "project": "apex",
+      "ver": "12.240",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d2904bdf",
+      "ts": 1777145940000,
+      "msg": "Apex v12.239: FIX URGENT login + theme admin",
+      "project": "apex",
+      "ver": "12.239",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ab1e93ad",
+      "ts": 1777145565000,
+      "msg": "Apex v12.238: Cuisine Pro (10 recettes classiques FR + 22 cuissons + conversions + 14 allergenes INCO + calories)",
+      "project": "apex",
+      "ver": "12.238",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2f954a99",
+      "ts": 1777145436000,
+      "msg": "Apex v12.237: Medical Pro (IMC + metabolisme + medicaments OTC + urgences SAMU + vaccins)",
+      "project": "apex",
+      "ver": "12.237",
+      "author": "claude-code"
+    },
+    {
+      "sha": "44ef6c91",
+      "ts": 1777145266000,
+      "msg": "Apex v12.236: URGENT FIX Laurence n'avait ni animations ni photos (axApplyUserTheme appele apres login + Laurence specifique)",
+      "project": "apex",
+      "ver": "12.236",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0de98732",
+      "ts": 1777144858000,
+      "msg": "Apex v12.235: Finance Pro (IR FR 2026 + credit immo + PV immo + PV mobilier + Monaco fiscal)",
+      "project": "apex",
+      "ver": "12.235",
+      "author": "claude-code"
+    },
+    {
+      "sha": "35d207da",
+      "ts": 1777144793000,
+      "msg": "Apex v12.234: agent finance pro en cours - work in progress",
+      "project": "apex",
+      "ver": "12.234",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f3000b1e",
+      "ts": 1777144760000,
+      "msg": "CLAUDE.md regle permanente 'NIVEAU EXPERT PRO PARTOUT' (Kevin: va plus loin pour tout, expert seulement)",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "6c9c4c68",
+      "ts": 1777144691000,
+      "msg": "Apex v12.233: Traducteur Pro 30 langues (cache + Claude Haiku + STT/TTS)",
+      "project": "apex",
+      "ver": "12.233",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d60a5b89",
+      "ts": 1777144351000,
+      "msg": "Apex v12.X: agent legal en cours",
+      "project": "apex",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "3710a389",
+      "ts": 1777144170000,
+      "msg": "Apex v12.229: Pack pro (conversions + calc beton + lune + meteo gratuit + 5 tools IA + dates pro)",
+      "project": "apex",
+      "ver": "12.229",
+      "author": "claude-code"
+    },
+    {
+      "sha": "22d94e73",
+      "ts": 1777143914000,
+      "msg": "tools/album-laurence.html: outil 1-clic upload photos diaporama Laurence (compression auto + push Firebase)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "50572e38",
+      "ts": 1777143853000,
+      "msg": "Apex v12.228 + CMCteams v9.520: Kevin DESARZENS admin profil integre cross-app (FB_FIX shared ax_admin_profile)",
+      "project": "apex",
+      "ver": "12.228",
+      "author": "claude-code"
+    },
+    {
+      "sha": "23cdb8b8",
+      "ts": 1777143563000,
+      "msg": "Apex v12.227: emojis Laurence (Kevin choisis 🫶🏻♥️😘💕 + 8 bulles)",
+      "project": "apex",
+      "ver": "12.227",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b9ae3e64",
+      "ts": 1777143377000,
+      "msg": "Apex v12.226: Vue personnalisee Laurence (bulles emoji flottantes + wallpaper + diaporama transitions + theme girly + commandes vocales)",
+      "project": "apex",
+      "ver": "12.226",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ade69325",
+      "ts": 1777142991000,
+      "msg": "GitHub Actions: re-push secrets Cloudflare apres deploy (optionnel via secrets CF_*)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "58ec1d3c",
+      "ts": 1777142499000,
+      "msg": "GitHub Actions: utilise cloudflare/wrangler-action officiel (resoudre code 10021 multipart format)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "392b01cf",
+      "ts": 1777142239000,
+      "msg": "Apex v12.225: Wake word \"Dis Apex\" pro + per-user + CGU bundle 1 clic toutes permissions",
+      "project": "apex",
+      "ver": "12.225",
+      "author": "claude-code"
+    },
     {
       "sha": "05ce17c5",
       "ts": 1777141989000,
@@ -799,174 +967,6 @@
       "msg": "Apex v12.160: URGENT FIX axGetLocaleInfo undefined (app crash)",
       "project": "apex",
       "ver": "12.160",
-      "author": "claude-code"
-    },
-    {
-      "sha": "634ebf16",
-      "ts": 1777114416000,
-      "msg": "Apex v12.159: URGENT auto-detect click failure + retry + escalade (Kevin)",
-      "project": "apex",
-      "ver": "12.159",
-      "author": "claude-code"
-    },
-    {
-      "sha": "418e2480",
-      "ts": 1777113522000,
-      "msg": "Apex v12.158: vAdminLinks - alternatives Mistral (OpenRouter + Together + Cohere)",
-      "project": "apex",
-      "ver": "12.158",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4dfb471e",
-      "ts": 1777112522000,
-      "msg": "Apex v12.157: fix Gemini URL (Google a change /app/apikey -> /apikey)",
-      "project": "apex",
-      "ver": "12.157",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0d53e8ed",
-      "ts": 1777112412000,
-      "msg": "CLAUDE_ACTIVITY regen apres CMCteams v9.504 feature flags etendus (~240 commits)",
-      "project": "docs",
-      "ver": "9.504",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2ca215b3",
-      "ts": 1777112381000,
-      "msg": "CLAUDE_ACTIVITY regen apres v9.504 CMCteams (feature flags ON/OFF)",
-      "project": "docs",
-      "ver": "9.504",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e24cd3d1",
-      "ts": 1777112365000,
-      "msg": "CMCteams v9.504: feature flags etendus QR badge + NFC + outils metier (ON/OFF admin)",
-      "project": "cmcteams",
-      "ver": "9.504",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d13268a9",
-      "ts": 1777112197000,
-      "msg": "CMCteams subagent intermediate (feature flags WIP)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "32639cca",
-      "ts": 1777112150000,
-      "msg": "CLAUDE_ACTIVITY regen apres Apex v12.156 (vAdminLinks solde live)",
-      "project": "docs",
-      "ver": "12.156",
-      "author": "claude-code"
-    },
-    {
-      "sha": "865dbf37",
-      "ts": 1777112127000,
-      "msg": "Apex v12.156: vAdminLinks - solde live + statut couleur a cote de chaque IA",
-      "project": "apex",
-      "ver": "12.156",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f2d96e02",
-      "ts": 1777111437000,
-      "msg": "Apex v12.155: vAdminLinks enrichi - Google Gemini + Mistral + DeepSeek + Perplexity + Grok signup/billing",
-      "project": "apex",
-      "ver": "12.155",
-      "author": "claude-code"
-    },
-    {
-      "sha": "51cf5fe5",
-      "ts": 1777111349000,
-      "msg": "CLAUDE_ACTIVITY regen apres v12.154 Apex enrichment + v9.503 CMCteams (~230 commits)",
-      "project": "docs",
-      "ver": "12.154",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7b78e3f9",
-      "ts": 1777111284000,
-      "msg": "Apex pending changes (subagent enrichment in progress)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "f8ac87c3",
-      "ts": 1777111238000,
-      "msg": "CMCteams v9.503: outils metier (jsPDF + QR + lazy-load)",
-      "project": "cmcteams",
-      "ver": "9.503",
-      "author": "claude-code"
-    },
-    {
-      "sha": "baaff5cd",
-      "ts": 1777111106000,
-      "msg": "CLAUDE.md: regle permanente enrichissement autonome outils (Kevin)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "2189bfd0",
-      "ts": 1777110388000,
-      "msg": "CLAUDE_ACTIVITY regen apres v12.153 voice + experts (~225 commits)",
-      "project": "docs",
-      "ver": "12.153",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4fefa9d6",
-      "ts": 1777110354000,
-      "msg": "Apex v12.153: voice commands universels (toutes fonctions activables a la voix)",
-      "project": "apex",
-      "ver": "12.153",
-      "author": "claude-code"
-    },
-    {
-      "sha": "56e0d794",
-      "ts": 1777110254000,
-      "msg": "Apex v12.153 — Concertation experte par competence (10 roles + avocat du diable)",
-      "project": "apex",
-      "ver": "12.153",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b1d8b1ee",
-      "ts": 1777110214000,
-      "msg": "MEMO_KEVIN_ACTIONS: tri par priorite + tache urgente #1 (Kevin demande)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "20b85346",
-      "ts": 1777109962000,
-      "msg": "Apex commit pending changes (subagent v12.151 services dashboard)",
-      "project": "multi",
-      "ver": "12.151",
-      "author": "claude-code"
-    },
-    {
-      "sha": "639e23fe",
-      "ts": 1777109926000,
-      "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "256b021e",
-      "ts": 1777109552000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.150 + v9.502 (~210 commits)",
-      "project": "docs",
-      "ver": "12.150",
       "author": "claude-code"
     }
   ]
