@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777078817408,
+  "updated_at": 1777079422910,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 130,
+  "total_commits": 134,
   "projects": [
     "apex",
     "backend",
@@ -24,7 +24,11 @@
     },
     {
       "name": "🎨 UX & Design",
-      "count": 9
+      "count": 10
+    },
+    {
+      "name": "🚂 Backend & Hosting",
+      "count": 8
     },
     {
       "name": "🔮 Autre",
@@ -35,20 +39,20 @@
       "count": 8
     },
     {
-      "name": "🚂 Backend & Hosting",
-      "count": 7
+      "name": "💳 Paiement & Abos",
+      "count": 5
     },
     {
       "name": "🎙 Voix & Audio",
       "count": 4
     },
     {
-      "name": "💳 Paiement & Abos",
+      "name": "📧 Email & Notif",
       "count": 4
     },
     {
-      "name": "📧 Email & Notif",
-      "count": 4
+      "name": "🤖 Agents & Automation",
+      "count": 3
     },
     {
       "name": "📚 Docs & Méthodologie",
@@ -63,15 +67,56 @@
       "count": 2
     },
     {
-      "name": "🤖 Agents & Automation",
-      "count": 2
-    },
-    {
       "name": "🌐 GitHub & Git",
       "count": 1
     }
   ],
   "commits": [
+    {
+      "sha": "82eb5173",
+      "ts": 1777079403000,
+      "msg": "Apex v12.116: Stripe Checkout integration (clients paient en ligne)",
+      "project": "apex",
+      "ver": "12.116",
+      "topic": "💳 Paiement & Abos",
+      "author": "claude-code"
+    },
+    {
+      "sha": "cfff718a",
+      "ts": 1777079344000,
+      "msg": "Apex v12.117: APP_VER bump (subagent backend)",
+      "project": "apex",
+      "ver": "12.117",
+      "topic": "🚂 Backend & Hosting",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2a2a5452",
+      "ts": 1777079277000,
+      "msg": "Apex v12.116: feature flags - filter sidebar projects + apostrophe fix",
+      "project": "apex",
+      "ver": "12.116",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8f022594",
+      "ts": 1777079142000,
+      "msg": "Apex v12.115: feature flags ON/OFF subagent (provisoire commit pour stop-hook)",
+      "project": "apex",
+      "ver": "12.115",
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b23e30d2",
+      "ts": 1777078913000,
+      "msg": "Apex v12.114 + CMCteams v9.478: tri commits par sujet/thematique",
+      "project": "apex",
+      "ver": "12.114",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
     {
       "sha": "a772715f",
       "ts": 1777078765000,
@@ -1105,51 +1150,6 @@
       "project": "multi",
       "ver": "12.19",
       "topic": "📚 Docs & Méthodologie",
-      "author": "claude-code"
-    },
-    {
-      "sha": "59d3e3ad",
-      "ts": 1776770274000,
-      "msg": "v12.18: Feed Claude Code -> Apex (bidirectionnel complet) (#140)",
-      "project": "multi",
-      "ver": "12.18",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "969b1d85",
-      "ts": 1776769916000,
-      "msg": "v12.17: Stabilite pro - messages user-friendly + regle docs + audit stabilite (#139)",
-      "project": "multi",
-      "ver": "12.17",
-      "topic": "📊 Worklog & Suivi",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f50530b2",
-      "ts": 1776769643000,
-      "msg": "v12.16: Fix crash K.kb.instructions.length undefined + K.kb normalise au load (#138)",
-      "project": "multi",
-      "ver": "12.16",
-      "topic": "🔧 Bug fixes",
-      "author": "claude-code"
-    },
-    {
-      "sha": "87e80911",
-      "ts": 1776769518000,
-      "msg": "v12.15: Assignation 2 taches securite a Apex (XSS a.fn + window.onerror) (#137)",
-      "project": "multi",
-      "ver": "12.15",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3ec0bbf1",
-      "ts": 1776740803000,
-      "msg": "v12.14: Audit autonome + journal permanent Claude<->Apex (Kevin 2026-04-21) (#136)",
-      "project": "multi",
-      "ver": "12.14",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     }
   ]
