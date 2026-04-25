@@ -3390,7 +3390,9 @@ var FB_FIX=["cmc_ov","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_aler
 // v9.454 — Memoire permanente CMCteams (Kevin 2026-04-21)
 "cmc_persistent_memory","ax_persistent_memory","cmc_user_prefs","cmc_facts_metier",
 // v9.482 — Niveaux de consommation IA par employe (parite Apex v12.121)
-"cmc_consumption_levels"];
+"cmc_consumption_levels",
+// v9.483 — Niveau IA global pour tous les employes (Kevin: simplifier)
+"cmc_employees_global_level"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -9108,25 +9110,30 @@ var CMC_CONSUMPTION_LEVELS={
   moyen:{name:"⚖️ Moyen (Sonnet)",model:"claude-sonnet-4-6",color:"#5aa8ff",desc:"Sonnet 4.6 — equilibre vitesse/qualite. Pour cadres, chefs, inspecteurs, superviseurs."},
   expert:{name:"⚡ Expert (Opus)",model:"claude-opus-4-7",color:"#e8b830",desc:"Opus 4.7 — meilleur raisonnement, analyse pointue. Pour admin uniquement par defaut."}
 };
+/* v9.483 — Kevin: "Non pour CMCteams inutile par employe. General employe suffit."
+   Admin (AID) -> toujours expert (verrouille).
+   Tous les autres employes -> 1 niveau global (cmc_employees_global_level), default "moyen". */
 function cmcGetConsumptionLevel(uid){
   uid=uid||(A.user&&A.user.id)||"";
-  var perUser=lg("cmc_consumption_levels",{});
-  if(perUser[uid])return perUser[uid];
   if(uid===AID)return "expert";
-  /* Cadres et chefs -> moyen par defaut (rotation rapide, plus de contexte metier) */
-  var emp=(A.employees||[]).find(function(e){return e.id===uid;});
-  if(emp&&(emp.chef||emp.cadre||emp.inspecteur||emp.superviseur||emp.family==="cadres"))return "moyen";
-  return "faible";
+  var lvl=localStorage.getItem("cmc_employees_global_level")||"moyen";
+  if(!CMC_CONSUMPTION_LEVELS[lvl])lvl="moyen";
+  return lvl;
 }
-function cmcSetConsumptionLevel(uid,level){
+function cmcSetEmployeesLevel(level){
   if(!A.user||A.user.id!==AID){toast("Admin uniquement");return;}
   if(!CMC_CONSUMPTION_LEVELS[level]){toast("Niveau invalide");return;}
-  var perUser=lg("cmc_consumption_levels",{});
-  perUser[uid]=level;
-  ls("cmc_consumption_levels",perUser);
-  if(typeof fbWrite==="function")try{fbWrite("cmc_consumption_levels",perUser);}catch(_){}
-  toast("Niveau "+CMC_CONSUMPTION_LEVELS[level].name+" pour "+uid);
-  try{_audit&&_audit("consumption_level",AID,uid,"",level);}catch(_){}
+  localStorage.setItem("cmc_employees_global_level",level);
+  if(typeof fbWrite==="function")try{fbWrite("cmc_employees_global_level",level);}catch(_){}
+  toast("Niveau "+CMC_CONSUMPTION_LEVELS[level].name+" applique a tous les employes");
+  try{_audit&&_audit("employees_global_level",AID,"all","",level);}catch(_){}
+  dc();
+}
+/* Backward-compat : ancienne API par employe (deprecated v9.483) */
+function cmcSetConsumptionLevel(uid,level){
+  if(!A.user||A.user.id!==AID){toast("Admin uniquement");return;}
+  if(uid===AID){toast("Admin verrouille en expert");return;}
+  cmcSetEmployeesLevel(level);
 }
 
 // IMPORTANT: sentinel reste autonome, NE PAS downgrade en faible (Kevin: env IA toujours expert)
