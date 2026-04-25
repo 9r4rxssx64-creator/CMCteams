@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routes import github, chat, pdf, auth, subscription
+from routes import github, chat, pdf, auth, subscription, services
 
 load_dotenv()
 
@@ -54,6 +54,7 @@ app.include_router(chat.router, prefix="/api/chat", tags=["AI chat"])
 app.include_router(pdf.router, prefix="/api/pdf", tags=["PDF parser"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(subscription.router, prefix="/api/subscriptions", tags=["Subscriptions"])
+app.include_router(services.router, prefix="/api/services", tags=["Services balances"])
 
 
 @app.get("/")
