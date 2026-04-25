@@ -322,7 +322,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.147",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.149",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -691,6 +691,143 @@ function vAdminLinks(){if(!K.user)return vLogin();var h='<div style="padding:16p
 // === MODULE: App Update (mise a jour PWA) ===
 function axCheckUpdate(){if(!("serviceWorker" in navigator))return;navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;reg.update().then(function(){toast("Verification mise a jour...","info");if(reg.waiting){reg.waiting.postMessage("skipWaiting");toast("Mise a jour disponible — rechargement...","ok");setTimeout(function(){location.reload();},1500);}else{toast("App a jour ("+APP_VER+")","ok");}});});}
 function axForceRefresh(){if("caches" in window){caches.keys().then(function(names){names.forEach(function(n){caches.delete(n);});}).then(function(){toast("Cache vide — rechargement...","ok");setTimeout(function(){location.reload(true);},1000);});}else{location.reload(true);}}
+
+// === MODULE: Multi-AI Providers (v12.148 — Kevin: 'tous les meilleurs, chacun son domaine') ===
+/* Liste centralisee des modeles IA + auto-routing par domaine.
+   Chaque modele declare: provider, cout (USD/M tokens), specialites, vitesse 1-10, qualite 1-10, fenetre contexte. */
+var AX_AI_PROVIDERS={
+  /* Anthropic Claude */
+  "claude-opus-4-7":{name:"Claude Opus 4.7",provider:"anthropic",cost_in:15,cost_out:75,specialties:["analyse","strategie","ecriture","raisonnement","expert"],speed:2,quality:10,context:200000},
+  "claude-sonnet-4-6":{name:"Claude Sonnet 4.6",provider:"anthropic",cost_in:3,cost_out:15,specialties:["chat","code","general","tools"],speed:5,quality:9,context:200000},
+  "claude-haiku-4-5-20251001":{name:"Claude Haiku 4.5",provider:"anthropic",cost_in:0.25,cost_out:1.25,specialties:["rapide","simple","planning","conversion"],speed:9,quality:7,context:200000},
+  /* OpenAI */
+  "gpt-4o":{name:"GPT-4o",provider:"openai",cost_in:5,cost_out:15,specialties:["multimodal","vision","image","audio"],speed:6,quality:9,context:128000},
+  "gpt-4o-mini":{name:"GPT-4o mini",provider:"openai",cost_in:0.15,cost_out:0.6,specialties:["rapide","fallback","simple"],speed:9,quality:7,context:128000},
+  "o1-preview":{name:"OpenAI o1",provider:"openai",cost_in:15,cost_out:60,specialties:["raisonnement","math","logique","sciences"],speed:1,quality:10,context:128000},
+  /* Google Gemini */
+  "gemini-2.0-flash":{name:"Gemini 2.0 Flash",provider:"google",cost_in:0.075,cost_out:0.3,specialties:["video","multimodal","rapide","longcontext"],speed:9,quality:8,context:1000000},
+  "gemini-1.5-pro":{name:"Gemini 1.5 Pro",provider:"google",cost_in:1.25,cost_out:5,specialties:["long_document","video","multimodal"],speed:5,quality:9,context:2000000},
+  /* Mistral (europeen RGPD) */
+  "mistral-large-latest":{name:"Mistral Large",provider:"mistral",cost_in:2,cost_out:6,specialties:["europe","rgpd","francais","general"],speed:7,quality:9,context:128000},
+  "mistral-small-latest":{name:"Mistral Small",provider:"mistral",cost_in:0.2,cost_out:0.6,specialties:["francais","rapide","cheap"],speed:9,quality:7,context:128000},
+  /* Perplexity (search-augmented) */
+  "sonar-pro":{name:"Perplexity Sonar Pro",provider:"perplexity",cost_in:3,cost_out:15,specialties:["recherche","actualite","sources","web_native"],speed:6,quality:9,context:128000},
+  /* DeepSeek (code expert) */
+  "deepseek-coder":{name:"DeepSeek Coder",provider:"deepseek",cost_in:0.14,cost_out:0.28,specialties:["code","programming","debug","developpement"],speed:7,quality:9,context:128000},
+  /* xAI Grok */
+  "grok-2":{name:"Grok 2",provider:"xai",cost_in:2,cost_out:10,specialties:["humour","actualite","twitter","x"],speed:6,quality:8,context:131072}
+};
+var AX_AI_PROVIDER_KEYS={anthropic:"ax_api_key",openai:"ax_openai_key",google:"ax_google_key",mistral:"ax_mistral_key",perplexity:"ax_perplexity_key",deepseek:"ax_deepseek_key",xai:"ax_xai_key"};
+function axAiProviderEnabled(prov){var t=lg("ax_ai_provider_toggle",{});if(t[prov]===false)return false;return true;}
+function axAiProviderSetEnabled(prov,on){var t=lg("ax_ai_provider_toggle",{});t[prov]=!!on;ls("ax_ai_provider_toggle",t);}
+function axPickModelByDomain(query,level){
+  level=level||"moyen";
+  var q=String(query||"").toLowerCase();
+  var domain="general";
+  if(/code|debug|programm|fonction|fix bug|refactor|api|fonction javascript/.test(q))domain="code";
+  else if(/recherche|actualite|news|aujourd hui|web|cherche sur|trouve|sources/.test(q))domain="recherche";
+  else if(/image|photo|video|multimedia|visuel|montre|regarde/.test(q))domain="multimodal";
+  else if(/raisonnement|logique|math|prouve|demontre|sciences|theoreme/.test(q))domain="raisonnement";
+  else if(/long.{0,10}document|analyse complete.{0,10}livre|tres long/.test(q))domain="long_document";
+  else if(/expert|profond|approfondi|complete|detaille|professionnel|strategie|analyse/.test(q))domain="expert";
+  var pick={
+    code:{economie:"deepseek-coder",moyen:"deepseek-coder",fort:"claude-sonnet-4-6"},
+    recherche:{economie:"sonar-pro",moyen:"sonar-pro",fort:"sonar-pro"},
+    multimodal:{economie:"gemini-2.0-flash",moyen:"gpt-4o",fort:"gpt-4o"},
+    raisonnement:{economie:"claude-sonnet-4-6",moyen:"claude-sonnet-4-6",fort:"o1-preview"},
+    long_document:{economie:"gemini-2.0-flash",moyen:"gemini-1.5-pro",fort:"gemini-1.5-pro"},
+    expert:{economie:"claude-sonnet-4-6",moyen:"claude-sonnet-4-6",fort:"claude-opus-4-7"},
+    general:{economie:"claude-haiku-4-5-20251001",moyen:"claude-sonnet-4-6",fort:"claude-sonnet-4-6"}
+  };
+  var modelId=(pick[domain]&&pick[domain][level])||"claude-sonnet-4-6";
+  var info=AX_AI_PROVIDERS[modelId];
+  if(info){
+    var prov=info.provider;
+    if(!axAiProviderEnabled(prov))modelId="claude-sonnet-4-6";
+    if(prov!=="anthropic"){
+      var keyName=AX_AI_PROVIDER_KEYS[prov]||"";
+      var hasKey=keyName&&!!localStorage.getItem(keyName);
+      if(!hasKey)modelId="claude-sonnet-4-6";
+    }
+  }
+  return modelId;
+}
+function vAIProviders(){
+  if(!axIsAdmin())return '<div style="padding:24px;text-align:center;color:var(--ax-text-dim)">Reserve a l\'administrateur.</div>';
+  var ids=Object.keys(AX_AI_PROVIDERS);
+  var byProv={};
+  ids.forEach(function(id){var info=AX_AI_PROVIDERS[id];if(!byProv[info.provider])byProv[info.provider]=[];byProv[info.provider].push({id:id,info:info});});
+  var h='<div style="padding:16px;max-width:980px;margin:0 auto">';
+  h+='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">🤖 IA Providers (multi-modeles)</h2>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Chaque IA a son domaine d\'expertise. APEX choisit la meilleure pour chaque demande. Tu peux activer/desactiver un fournisseur et configurer sa cle API.</div>';
+  var totalActive=0;ids.forEach(function(id){if(axAiProviderEnabled(AX_AI_PROVIDERS[id].provider))totalActive++;});
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);margin-bottom:14px"><div style="display:flex;gap:12px;flex-wrap:wrap"><div><strong>'+ids.length+'</strong> modeles</div><div><strong>'+totalActive+'</strong> actifs</div><div><strong>'+Object.keys(byProv).length+'</strong> fournisseurs</div></div></div>';
+  Object.keys(byProv).forEach(function(prov){
+    var on=axAiProviderEnabled(prov);
+    var keyName=AX_AI_PROVIDER_KEYS[prov]||"";
+    var hasKey=keyName&&!!localStorage.getItem(keyName);
+    h+='<div class="ax-card" style="border-left:4px solid '+(on?"var(--ax-green)":"var(--ax-text-dim)")+';margin-bottom:10px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+    h+='<h3 style="margin:0;text-transform:capitalize">'+esc(prov)+' <span class="ax-badge ax-badge-gold" style="font-size:10px">'+(hasKey?"✅ cle OK":"❌ cle absente")+'</span></h3>';
+    h+='<label class="ax-toggle"><input type="checkbox" '+(on?"checked":"")+' onchange="axAiProviderSetEnabled(\''+esc(prov)+'\',this.checked);dc()"><span class="slider"></span></label>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">';
+    h+='<button class="ax-btn ax-btn-outline" onclick="_axProviderSetKey(\''+esc(prov)+'\')" style="min-height:44px">🔑 '+(hasKey?"Modifier la cle":"Configurer la cle")+'</button>';
+    h+='<button class="ax-btn ax-btn-outline" onclick="_axProviderPing(\''+esc(prov)+'\')" style="min-height:44px">📡 Ping</button>';
+    h+='</div>';
+    byProv[prov].forEach(function(m){
+      var info=m.info;
+      h+='<div style="border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px;margin:6px 0;background:rgba(0,0,0,.18)">';
+      h+='<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><strong>'+esc(info.name)+'</strong>';
+      h+='<span style="font-size:11px;color:var(--ax-text-dim)">'+esc(m.id)+'</span></div>';
+      h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">Specialites: '+esc(info.specialties.join(", "))+'</div>';
+      h+='<div style="font-size:11px;margin-top:4px">';
+      h+='<span style="color:var(--ax-gold)">Qualite '+info.quality+'/10</span> · ';
+      h+='<span style="color:var(--ax-blue)">Vitesse '+info.speed+'/10</span> · ';
+      h+='<span style="color:var(--ax-green)">'+info.cost_in+'$/M in</span> · ';
+      h+='<span style="color:var(--ax-green)">'+info.cost_out+'$/M out</span> · ';
+      h+='<span style="color:var(--ax-text-dim)">'+(info.context/1000).toFixed(0)+'k ctx</span>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+  });
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);margin-top:14px"><h3>⚙️ Auto-routing</h3>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">APEX choisit automatiquement le meilleur modele selon le domaine de la question (code, recherche, image, raisonnement, long document, expert, general) et selon ton niveau de consommation (economie/moyen/fort).</div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap"><input id="ax-ai-test-q" class="ax-input" placeholder="Tape une question pour tester le routing..." style="flex:1;min-width:200px"><button class="ax-btn ax-btn-primary" onclick="_axProviderTestRouting()">🧪 Tester</button></div>';
+  h+='<div id="ax-ai-test-result" style="margin-top:8px;font-size:13px"></div>';
+  h+='</div></div>';
+  return h;
+}
+function _axProviderSetKey(prov){
+  if(!axIsAdmin())return;
+  var keyName=AX_AI_PROVIDER_KEYS[prov];
+  if(!keyName){toast("Provider inconnu","err");return;}
+  var current=localStorage.getItem(keyName)||"";
+  var v=prompt("Cle API "+prov+" ("+keyName+") :\n(laisse vide pour effacer)",current);
+  if(v===null)return;
+  if(!v.trim()){localStorage.removeItem(keyName);toast("Cle "+prov+" effacee","ok");}
+  else{localStorage.setItem(keyName,v.trim());toast("Cle "+prov+" enregistree","ok");}
+  dc();
+}
+function _axProviderPing(prov){
+  if(!axIsAdmin())return;
+  var keyName=AX_AI_PROVIDER_KEYS[prov];
+  var hasKey=keyName&&!!localStorage.getItem(keyName);
+  var enabled=axAiProviderEnabled(prov);
+  var msg=prov.toUpperCase()+" : "+(enabled?"actif":"desactive")+" · "+(hasKey?"cle configuree":"cle absente");
+  toast(msg,enabled&&hasKey?"ok":"warn",{force:true});
+}
+function _axProviderTestRouting(){
+  var el=document.getElementById("ax-ai-test-q");if(!el)return;
+  var q=el.value||"";
+  var lvl=(typeof axGetConsumptionLevel==="function")?axGetConsumptionLevel():"moyen";
+  var modelEco=axPickModelByDomain(q,"economie");
+  var modelMoy=axPickModelByDomain(q,"moyen");
+  var modelFort=axPickModelByDomain(q,"fort");
+  var out=document.getElementById("ax-ai-test-result");
+  if(!out)return;
+  out.innerHTML='<div style="padding:8px;background:rgba(255,255,255,.04);border-radius:8px"><div><strong>Niveau actuel :</strong> '+esc(lvl)+'</div><div>· Economie → <code>'+esc(modelEco)+'</code></div><div>· Moyen → <code>'+esc(modelMoy)+'</code></div><div>· Fort → <code>'+esc(modelFort)+'</code></div></div>';
+}
 
 // === MODULE: Guided Setup (premier lancement) ===
 function _checkFirstSetup(){if(!axIsAdmin())return;var proxy=localStorage.getItem("ax_proxy_url");var apiKey=localStorage.getItem("ax_api_key");if(proxy||apiKey)return;if(lg("ax_setup_done",false))return;if(!proxy&&!apiKey){setTimeout(function(){_showModal('<h2>\uD83D\uDE80 Configuration rapide</h2><p style="color:var(--ax-text-dim);font-size:13px">Pour utiliser KDMC, configurez votre acces IA :</p><div class="ax-card"><h3>Option A : Proxy (recommande)</h3><p style="font-size:12px;color:var(--ax-text-dim)">Plus securise. Votre cle API reste sur Cloudflare.</p><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-proxy" class="ax-input" placeholder="https://kdmc-proxy.xxx.workers.dev" style="flex:1"><button class="ax-btn ax-btn-primary" onclick="var v=document.getElementById(\'ax-setup-proxy\').value;if(v){localStorage.setItem(\'ax_proxy_url\',v);toast(\'Proxy configure\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><div class="ax-card"><h3>Option B : Cle API directe</h3><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-key" class="ax-input" type="password" placeholder="sk-ant-api03-..." style="flex:1"><button class="ax-btn ax-btn-outline" onclick="var v=document.getElementById(\'ax-setup-key\').value;if(v){_setApiKey(v);toast(\'OK\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true)" style="width:100%;margin-top:8px">Passer</button>');},1500);}}
@@ -1167,6 +1304,70 @@ function _axHealthCheckPermissions(){
     }).catch(function(){});
   });
 }
+/* v12.148 — Navigateur web intégré (Kevin: 'navigateur dans apex et cmcteams + vpn') */
+function vBrowser(){
+  if(!K.user)return vLogin();
+  var current=lg("ax_browser_url","https://duckduckgo.com");
+  var bookmarks=lg("ax_browser_bookmarks",[
+    {name:"DuckDuckGo",url:"https://duckduckgo.com",icon:"🦆"},
+    {name:"Wikipedia",url:"https://fr.wikipedia.org",icon:"📚"},
+    {name:"Anthropic",url:"https://www.anthropic.com",icon:"⚡"},
+    {name:"Maps OSM",url:"https://www.openstreetmap.org",icon:"🗺"},
+    {name:"Tor Browser",url:"https://www.torproject.org",icon:"🧅"},
+    {name:"VPN iOS guide",url:"https://support.apple.com/fr-fr/HT212929",icon:"🛡"}
+  ]);
+  var h='<div style="display:flex;flex-direction:column;height:100vh">';
+  h+='<div style="padding:8px;background:var(--ax-bg2);border-bottom:1px solid var(--ax-border);display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+  h+='<input id="ax-browser-url" class="ax-input" value="'+esc(current)+'" placeholder="https:// ou recherche" style="flex:1;min-width:140px;padding:10px 12px;font-size:14px" onkeydown="if(event.key===\'Enter\')axBrowserGo()">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="axBrowserGo()" style="padding:10px 14px">→</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axBrowserOpenExternal()" style="padding:10px 12px" title="Ouvrir Safari">↗</button>';
+  h+='<button class="ax-btn-icon" onclick="axBrowserBookmark()" title="Marque-page" style="width:40px;height:40px">⭐</button>';
+  h+='</div>';
+  h+='<div style="padding:6px 8px;background:rgba(232,184,48,.04);overflow-x:auto;white-space:nowrap;border-bottom:1px solid var(--ax-border)">';
+  bookmarks.forEach(function(b){h+='<button onclick="ls(\'ax_browser_url\',\''+esc(b.url)+'\');dc()" style="display:inline-block;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:14px;padding:4px 10px;margin-right:4px;color:var(--ax-text);font-size:11px;cursor:pointer">'+esc(b.icon||"🔗")+' '+esc(b.name)+'</button>';});
+  h+='</div>';
+  h+='<iframe id="ax-browser-frame" src="'+esc(current)+'" style="flex:1;border:0;background:#fff;width:100%;min-height:60vh" sandbox="allow-scripts allow-forms allow-same-origin allow-popups" referrerpolicy="no-referrer-when-downgrade"></iframe>';
+  h+='<div style="padding:6px 8px;background:var(--ax-bg2);border-top:1px solid var(--ax-border);font-size:10px;color:var(--ax-text-dim);text-align:center">⚠️ VPN dans PWA iOS impossible (sandbox sécu). Active VPN natif iOS (NordVPN/ExpressVPN/ProtonVPN) → actif partout dont Apex. Sites bloquant iframe: ↗ Safari.</div>';
+  h+='</div>';
+  return h;
+}
+function axBrowserGo(){
+  var inp=document.getElementById("ax-browser-url");
+  if(!inp)return;
+  var v=inp.value.trim();
+  if(!v)return;
+  if(!/^https?:\/\//i.test(v)&&!/^[a-z0-9]+\.[a-z]{2,}/i.test(v)){
+    v="https://duckduckgo.com/?q="+encodeURIComponent(v);
+  }else if(!/^https?:\/\//i.test(v))v="https://"+v;
+  ls("ax_browser_url",v);
+  var f=document.getElementById("ax-browser-frame");
+  if(f)f.src=v;
+  inp.value=v;
+  var hist=lg("ax_browser_history",[]);
+  hist.unshift({url:v,ts:Date.now()});
+  if(hist.length>200)hist=hist.slice(0,200);
+  ls("ax_browser_history",hist);
+}
+function axBrowserOpenExternal(){
+  var inp=document.getElementById("ax-browser-url");
+  if(!inp)return;
+  var v=inp.value.trim();
+  if(v)window.open(v,"_blank","noopener");
+}
+function axBrowserBookmark(){
+  var inp=document.getElementById("ax-browser-url");
+  if(!inp)return;
+  var url=inp.value.trim();
+  if(!url)return;
+  var name=prompt("Nom du marque-page :",url.replace(/^https?:\/\/(www\.)?/,"").split("/")[0]);
+  if(!name)return;
+  var bk=lg("ax_browser_bookmarks",[]);
+  bk.push({name:name,url:url,icon:"🔖"});
+  ls("ax_browser_bookmarks",bk);
+  toast("✓ Marque-page ajouté","ok");
+  dc();
+}
+
 function vReferral(){
   if(!K.user)return vLogin();
   var code=axGetMyReferralCode();
@@ -1940,7 +2141,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -2084,6 +2285,18 @@ var _autoModel=(function(){
   if(hasExpertiseKw||(hasComplexKw&&qLen>150))return "claude-opus-4-7";
   return "claude-sonnet-4-6";
 })();
+/* v12.148 — Surclasse via axPickModelByDomain si AX_AI_PROVIDERS dispo et model=auto */
+try{
+  if((!K.settings.model||K.settings.model==="auto")&&typeof AX_AI_PROVIDERS!=="undefined"&&typeof axPickModelByDomain==="function"){
+    var _lastUserMsg=cleanMsgs.filter(function(m){return m.role==="user";}).pop();
+    var _qStr=(_lastUserMsg&&typeof _lastUserMsg.content==="string")?_lastUserMsg.content:"";
+    var _lvl=(typeof axGetConsumptionLevel==="function")?axGetConsumptionLevel():"moyen";
+    var _picked=axPickModelByDomain(_qStr,_lvl);
+    /* On respecte le routing existant pour Anthropic, mais on peut basculer sur un autre modele Anthropic uniquement.
+       Les providers non-Anthropic (gpt/gemini/etc) ne sont pas supportes par ce endpoint Anthropic, on garde donc seulement les claude-* dans cette branche. */
+    if(_picked&&_picked.indexOf("claude-")===0)_autoModel=_picked;
+  }
+}catch(_pme){}
 var body={model:_autoModel,max_tokens:K.settings.maxTokens||4096,system:[{type:"text",text:_sysText,cache_control:{type:"ephemeral"}}],messages:cleanMsgs,tools:_toolsArr};var headers={"content-type":"application/json"};if(!isProxy){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true";}var fetchOpts={method:"POST",headers:headers,body:JSON.stringify(body)};if(_abortCtrl)fetchOpts.signal=_abortCtrl.signal;fetch(apiUrl,fetchOpts).then(function(r){clearTimeout(_fetchTimeout);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(_apiDone)return;_apiDone=true;window._apexRetryCount=0;K.isStreaming=false;var text="";var toolCalls=[];if(d&&d.content){for(var j=0;j<d.content.length;j++){if(d.content[j].text)text+=d.content[j].text;if(d.content[j].type==="tool_use")toolCalls.push(d.content[j]);}}if(toolCalls.length&&depth<5){var toolResults=toolCalls.map(function(tc){var res;try{res=axExecuteTool(tc.name,tc.input);}catch(te){res="Erreur outil "+tc.name+": "+(te&&te.message||te);}var content=(res&&typeof res.then==="function")?"(resultat async en cours — reessayez)":String(res==null?"":res);return{type:"tool_result",tool_use_id:tc.id,content:content};});if(text)K.messages.push({role:"assistant",content:text,ts:now()});var nextMsgs=cleanMsgs.concat([{role:"assistant",content:d.content},{role:"user",content:toolResults}]);K.isStreaming=true;dc();_callClaudeAPI(sysPrompt,nextMsgs,depth+1);}else{K.messages.push({role:"assistant",content:text||"(reponse vide — reessayez ou reformulez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();axTrackUsage(Math.round((text||"").length/4));axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(text);}}).catch(function(e){if(_apiDone)return;_apiDone=true;clearTimeout(_fetchTimeout);K.isStreaming=false;var errMsg=String(e&&e.message||e).slice(0,300);var friendly;if(errMsg.indexOf("aborted")>=0||errMsg.indexOf("AbortError")>=0)friendly="Pas de reponse. Verifie ton internet et reessaie.";else if(errMsg.indexOf("Tool names must be unique")>=0||errMsg.indexOf("invalid_request_error")>=0)friendly="Ca ne marche pas pour le moment. Je l'ai signale, un correctif arrive dans la prochaine mise a jour.";else if(errMsg.indexOf("401")>=0||errMsg.indexOf("authentication")>=0)friendly="Probleme d'acces. Verifie ta cle dans Reglages.";else if(errMsg.indexOf("429")>=0||errMsg.indexOf("rate")>=0)friendly="Trop de demandes. Attends quelques secondes.";else if(errMsg.indexOf("500")>=0||errMsg.indexOf("502")>=0||errMsg.indexOf("503")>=0)friendly="Le serveur IA est occupe. Reessaie dans 1 minute.";else if(errMsg.indexOf("network")>=0||errMsg.indexOf("fetch")>=0)friendly="Reseau indisponible. Verifie ta connexion.";else friendly="Un petit souci technique. Rechargement conseille.";_autoLearnFromError(errMsg);try{if(typeof _escalateToClaudeCode==="function"&&(errMsg.indexOf("Tool names")>=0||errMsg.indexOf("invalid_request_error")>=0))_escalateToClaudeCode({error:errMsg,version:APP_VER},"API "+errMsg.slice(0,100),"critical");}catch(_){}K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();});}catch(ex){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme technique, recharge l app",ts:now()});_saveMsgs();dc();}}
 function _streamReader(body,doneRef,markDone){var reader=body.getReader();var decoder=new TextDecoder();var fullText="";var buffer="";var toolBlocks=[];var curTool=null;var target=document.getElementById("ax-stream-target");function pump(){reader.read().then(function(result){if(result.done){markDone();if(toolBlocks.length){var toolResults=toolBlocks.map(function(tb){try{tb.input=JSON.parse(tb.inputJson||"{}}");}catch(pe){tb.input={};}return{type:"tool_result",tool_use_id:tb.id,content:String(axExecuteTool(tb.name,tb.input))};});if(fullText)K.messages.push({role:"assistant",content:fullText,ts:now()});K.isStreaming=true;dc();var nextMsgs=[];K.messages.forEach(function(m){if(typeof m.content==="string"&&m.role)nextMsgs.push({role:m.role==="user"?"user":"assistant",content:m.content});});nextMsgs.push({role:"user",content:toolResults});_callClaudeAPI(null,nextMsgs,1);}else{K.isStreaming=false;K.messages.push({role:"assistant",content:fullText||"(vide)",ts:now()});_saveMsgs();dc();_scrollChatBottom();axTrackUsage(Math.round((fullText||"").length/4));axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(fullText);}return;}buffer+=decoder.decode(result.value,{stream:true});var lines=buffer.split("\n");buffer=lines.pop()||"";for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line.startsWith("data:"))continue;var json=line.slice(5).trim();if(json==="[DONE]")continue;try{var ev=JSON.parse(json);if(ev.type==="content_block_start"&&ev.content_block&&ev.content_block.type==="tool_use"){curTool={id:ev.content_block.id,name:ev.content_block.name,inputJson:""};}if(ev.type==="content_block_delta"&&ev.delta){if(ev.delta.type==="text_delta"&&ev.delta.text){fullText+=ev.delta.text;if(target)target.innerHTML=renderMd(fullText);_scrollChatBottom();}if(ev.delta.type==="input_json_delta"&&ev.delta.partial_json&&curTool){curTool.inputJson+=ev.delta.partial_json;}}if(ev.type==="content_block_stop"&&curTool){toolBlocks.push(curTool);curTool=null;if(target)target.innerHTML=renderMd(fullText)+'<div style="color:var(--ax-gold);font-size:12px;margin-top:4px">\u2699 Execution: '+esc(toolBlocks[toolBlocks.length-1].name)+'...</div>';}}catch(pe){}}pump();}).catch(function(e){markDone();K.isStreaming=false;if(fullText){K.messages.push({role:"assistant",content:fullText,ts:now()});}else{K.messages.push({role:"assistant",content:"Un souci pendant la reponse, reessaie",ts:now()});}_saveMsgs();dc();});}pump();}
 
@@ -3762,6 +3975,8 @@ var APEX_COMMANDS=[
   {id:"scandoc",lb:"📄 Scanner document (OCR)",cat:"Action",act:function(){axScanDocument();}},
   /* v12.145 — Health Status admin */
   {id:"health",lb:"⚕️ Health Status (diagnostic)",cat:"Admin",adminOnly:true,act:function(){sv("health");}},
+  /* v12.148 — Navigateur web */
+  {id:"browser",lb:"🌐 Navigateur web",cat:"Principal",act:function(){sv("browser");}},
   /* v12.144 — Push notifications activation */
   {id:"act_enable_notif",lb:"🔔 Activer notifications",cat:"Action",act:function(){axPushPermission().then(function(ok){if(ok)axShowNotif("APEX","Notifications activées ✓");});}},
   {id:"act_choose_voice",lb:"🎙 Choisir voix",cat:"Action",act:function(){sv("settings");setTimeout(function(){var s=document.getElementById("ax-voice-preset");if(s)s.scrollIntoView({behavior:"smooth"});},300);}},
@@ -3771,6 +3986,7 @@ var APEX_COMMANDS=[
   {id:"adminworklog",lb:"⏱ Mon temps de travail (admin)",cat:"Admin",adminOnly:true,act:function(){sv("adminworklog");}},
   {id:"usersactivity",lb:"👥 Activité par utilisateur",cat:"Admin",adminOnly:true,act:function(){sv("usersactivity");}},
   {id:"consumptionlevels",lb:"⚙️ Niveau IA par utilisateur",cat:"Admin",adminOnly:true,act:function(){sv("consumptionlevels");}},
+  {id:"aiproviders",lb:"🤖 IA Providers (multi-modèles)",cat:"Admin",adminOnly:true,act:function(){sv("aiproviders");}},
   /* v12.115 — Feature flags ON/OFF */
   {id:"featureflags",lb:"🔘 Activer/Désactiver fonctions",cat:"Admin",adminOnly:true,act:function(){sv("featureflags");}},
   /* v12.141 — Parrainage */
