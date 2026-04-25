@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777084214220,
+  "updated_at": 1777109552855,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 183,
+  "total_commits": 188,
   "projects": [
     "apex",
     "backend",
@@ -12,7 +12,7 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 46
+      "count": 47
     },
     {
       "name": "⚡ IA & Performance",
@@ -20,11 +20,11 @@
     },
     {
       "name": "📅 Planning & Cadres",
-      "count": 19
+      "count": 21
     },
     {
       "name": "🎨 UX & Design",
-      "count": 13
+      "count": 14
     },
     {
       "name": "🤖 Agents & Automation",
@@ -35,16 +35,16 @@
       "count": 10
     },
     {
+      "name": "🚂 Backend & Hosting",
+      "count": 9
+    },
+    {
       "name": "💳 Paiement & Abos",
       "count": 9
     },
     {
       "name": "🔧 Bug fixes",
       "count": 9
-    },
-    {
-      "name": "🚂 Backend & Hosting",
-      "count": 8
     },
     {
       "name": "🎙 Voix & Audio",
@@ -72,6 +72,69 @@
     }
   ],
   "commits": [
+    {
+      "sha": "d0d5a7a9",
+      "ts": 1777109490000,
+      "msg": "Apex v12.150: bump version (multi-IA AX_AI_PROVIDERS + vAIProviders + auto-routing)",
+      "project": "apex",
+      "ver": "12.150",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f0f595da",
+      "ts": 1777109431000,
+      "msg": "CMCteams v9.502: navigateur web integre + iframe + VPN guide (parite Apex v12.149)",
+      "project": "cmcteams",
+      "ver": "9.502",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5ec011b0",
+      "ts": 1777109376000,
+      "msg": "Apex v12.149: navigateur web integre + iframe + VPN guide",
+      "project": "apex",
+      "ver": "12.149",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4b5d3510",
+      "ts": 1777109227000,
+      "msg": "Apex v12.147: stockage hybride pro (localStorage + IndexedDB + Railway)",
+      "project": "apex",
+      "ver": "12.147",
+      "topic": "🚂 Backend & Hosting",
+      "author": "claude-code"
+    },
+    {
+      "sha": "09ee399f",
+      "ts": 1777109189000,
+      "msg": "CMCteams v9.501: OCR scanner full + amelioration (Kevin: 'comme apex + ameliore a fond')",
+      "project": "cmcteams",
+      "ver": "9.501",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "7951e2ff",
+      "ts": 1777108205000,
+      "msg": "Apex v12.145: Health Status admin (diagnostic 1 ecran)",
+      "project": "apex",
+      "ver": "12.145",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "90b0c0b4",
+      "ts": 1777084214000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.144 (~190 commits, 16 sujets)",
+      "project": "docs",
+      "ver": "12.144",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "ca7bac52",
       "ts": 1777084197000,
@@ -1087,69 +1150,6 @@
       "project": "multi",
       "ver": null,
       "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4bd0925d",
-      "ts": 1777027853000,
-      "msg": "Apex v12.78 + CMC v9.465: Session \"Tout fix\" (Kevin demande) (#204)",
-      "project": "apex",
-      "ver": "12.78",
-      "topic": "🔧 Bug fixes",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9d9f9d7d",
-      "ts": 1777027471000,
-      "msg": "Apex v12.77 + docs: Crew multi-IA + security critique + BILAN_PRO + Dependabot/CodeQL (#203)",
-      "project": "apex",
-      "ver": "12.77",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "bf823896",
-      "ts": 1777026258000,
-      "msg": "Apex v12.74: Compteur connexions admin + auto-suggest FaceID post-login (#202)",
-      "project": "apex",
-      "ver": "12.74",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9443d28e",
-      "ts": 1777025696000,
-      "msg": "docs: CLAUDE_FEED.md MAJ session 2026-04-24 (6 PRs + lessons permanentes) (#201)",
-      "project": "multi",
-      "ver": null,
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "67a63ef5",
-      "ts": 1777025597000,
-      "msg": "v9.464 + v12.72 + v12.73: Whitelist auto-fix enrichi + Fix langues + Fix FaceID (#200)",
-      "project": "cmcteams",
-      "ver": "9.464",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0a603b15",
-      "ts": 1777024898000,
-      "msg": "v9.463 + v12.71: Pipeline autonome erreurs remontees + auto-fix IA (#199)",
-      "project": "cmcteams",
-      "ver": "9.463",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7ce58bd1",
-      "ts": 1777024352000,
-      "msg": "Apex v12.70: Acces Apex a son propre code (GitHub API) (#198)",
-      "project": "apex",
-      "ver": "12.70",
-      "topic": "🌐 GitHub & Git",
       "author": "claude-code"
     }
   ]
