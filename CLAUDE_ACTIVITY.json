@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777134490813,
-  "total_commits": 226,
+  "updated_at": 1777134855896,
+  "total_commits": 228,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "91d7369a",
+      "ts": 1777134845000,
+      "msg": "Apex v12.212 + CMCteams v9.516: Banque d'infos + synthese auto + sentinelle data-leak-watch",
+      "project": "apex",
+      "ver": "12.212",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6893d83f",
+      "ts": 1777134676000,
+      "msg": "Apex: ajustements partiel agent enrichissement (avant push cle Gemini)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "c810b4bd",
+      "ts": 1777134500000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres v12.211 (Apex tour iPhone + CGU bundle)",
+      "project": "docs",
+      "ver": "12.211",
+      "author": "claude-code"
+    },
     {
       "sha": "01a4b62a",
       "ts": 1777134480000,
@@ -943,30 +967,6 @@
       "msg": "Subagents commits intermediaires: Apex + CMCteams parallel work",
       "project": "multi",
       "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "150d6ccd",
-      "ts": 1777082190000,
-      "msg": "Apex v12.131: onboarding pro plein ecran + CSP IP services + referrals FB_FIX",
-      "project": "apex",
-      "ver": "12.131",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ade566ef",
-      "ts": 1777082086000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.130 (50+ commits)",
-      "project": "docs",
-      "ver": "12.130",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0e13b403",
-      "ts": 1777082074000,
-      "msg": "Apex v12.130: subagent commit intermediaire (parallel work)",
-      "project": "apex",
-      "ver": "12.130",
       "author": "claude-code"
     }
   ]
