@@ -1,13 +1,30 @@
 {
-  "updated_at": 1777123042357,
-  "total_commits": 227,
+  "updated_at": 1777123232962,
+  "total_commits": 229,
   "projects": [
     "apex",
+    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "dd70232f",
+      "ts": 1777123221000,
+      "msg": "Apex v12.198: Performance audit + virtualisation + debounce + lazy + CSS contain (objectif 60 FPS iPhone)",
+      "project": "apex",
+      "ver": "12.198",
+      "author": "claude-code"
+    },
+    {
+      "sha": "471a3537",
+      "ts": 1777123042000,
+      "msg": "Apex v12.197: Coffre refonte ULTRA CLAIRE + push notifs PWA iOS 16.4+",
+      "project": "apex",
+      "ver": "12.197",
+      "author": "claude-code"
+    },
     {
       "sha": "85c47f37",
       "ts": 1777122471000,
@@ -484,7 +501,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "multi",
+      "project": "backend",
       "ver": null,
       "author": "claude-code"
     },
@@ -950,22 +967,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.119 (138 commits, 16 sujets)",
       "project": "docs",
       "ver": "12.119",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b130ccfe",
-      "ts": 1777079883000,
-      "msg": "Apex v12.119: 13 moyens paiement + CSP fix crypto + iban perso/pro",
-      "project": "apex",
-      "ver": "12.119",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5271019d",
-      "ts": 1777079793000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.117 tutorial",
-      "project": "docs",
-      "ver": "12.117",
       "author": "claude-code"
     }
   ]
