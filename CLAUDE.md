@@ -1,6 +1,31 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.451 / Apex v12.11 (2026-04-21).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.474 / Apex v12.110 (2026-04-25).
+
+---
+
+## 📱 RÈGLE CRITIQUE — KEVIN TRAVAILLE SUR iPHONE (Kevin 2026-04-25 permanent)
+
+> **"Rappel toi tjs que je travail sur iPhone"**
+
+**Implications obligatoires sur CHAQUE feature** :
+- ❌ Pas de raccourcis clavier seuls (Cmd+K, Ctrl+F, etc.) → toujours doubler avec un bouton visible
+- ❌ Pas de `:hover` actions critiques → utiliser tap + long-press
+- ❌ Pas d'actions cachées sous focus/select → tout doit être tactile
+- ✅ Touch targets minimum 44×44px (Apple HIG)
+- ✅ Tester à 375px (iPhone SE) ET 390px (iPhone 14 Pro)
+- ✅ Bouton visible PARTOUT pour fonctionnalités importantes (palette, recherche, voix)
+- ✅ Safe-area-inset-bottom pour ne pas masquer sous home indicator
+- ✅ Pas de scroll horizontal sauf nav explicite (`overflow-x:auto`)
+- ✅ Font min 14px (sinon iOS zoom auto sur input)
+- ✅ PWA Safari iOS-compatible (test prioritaire)
+
+**Vérification à CHAQUE commit** :
+- "Cette feature marche-t-elle iPhone sans clavier ?"
+- "Est-ce qu'il y a un bouton tactile pour chaque action ?"
+- "Touch targets >= 44px ?"
+
+S'applique à Apex AI + CMCteams + futurs projets.
 
 ---
 
