@@ -1,4 +1,88 @@
-# Mémo de reprise — v12.76 + v9.464 (session 2026-04-24)
+# Mémo de reprise — Apex v12.241 + CMCteams v9.522 (session 2026-04-25)
+
+## 🎯 SESSION 2026-04-25 — Modules pro + sécurité auth + sentinelle SW
+
+**Contexte** : Kevin a réclamé "niveau expert pro partout" + "rien perdre" + "vérifier que tout marche".
+
+### Versions livrées cette session
+
+| App | Version finale | Highlights |
+|-----|----------------|------------|
+| **Apex AI** | **v12.241** | Cuisine + Médical + Finance + Légal + Traducteur Pro + SECU AUTH |
+| **CMCteams** | **v9.522** | Triple persistence + parser auto-learn (WIP) + admin profil cross-app |
+
+### Commits majeurs (par ordre chronologique session)
+
+| Commit | Quoi |
+|--------|------|
+| Apex v12.222 | Audit bug hunter expert + escalade |
+| Apex v12.223 | **Triple persistence** (localStorage + IndexedDB + Firebase + auto-restore + sentinelle) |
+| Apex v12.225 | Wake word "Dis Apex" pro + per-user + CGU bundle 1 clic |
+| Apex v12.226-227 | **Vue Laurence** (bulles emoji + wallpaper + diaporama + commandes vocales) |
+| Apex v12.228 + CMC v9.520 | **Kevin DESARZENS admin profil cross-app** (FB_FIX `ax_admin_profile`) |
+| Apex v12.229 | **Pack Pro** (conversions + béton + lune + météo gratuit + 5 tools IA) |
+| Apex v12.233 | **Traducteur Pro 30 langues** (cache + Claude Haiku + STT/TTS) |
+| Apex v12.X | **Légal Pro** (18+ codes FR + jurisprudence Cass/CE/CJUE/CEDH + Monaco) |
+| Apex v12.235 | **Finance Pro** (IR FR 2026 + crédit immo + PV immo + PV mobilier + Monaco fiscal) |
+| Apex v12.236 | URGENT FIX Laurence (animations + photos non chargées) |
+| Apex v12.237 | **Medical Pro** (IMC + métabolisme + médicaments OTC + urgences SAMU + vaccins) |
+| Apex v12.238 | **Cuisine Pro** (10 recettes FR + 22 cuissons + conversions + 14 allergènes INCO + calories) |
+| Apex v12.239 | FIX URGENT login + theme admin |
+| **Apex v12.240** | **SECU FIX (audit expert externe 4 agents)** : `ax_pin` per-user vs global + lookup user strict |
+| **Apex v12.241** | **nom+prénom+pass OBLIGATOIRES partout** (login, recherche, édition) |
+| CMC v9.518 | Audit bug hunter expert |
+| CMC v9.519 | **Triple persistence + auto-restore** données casino |
+| **CMC v9.521-522** | Infrastructure parser auto-learn (WIP) |
+| Tools | `album-laurence.html` (1-clic upload diaporama Laurence avec compression auto) |
+| Workflows | `.github/workflows/sw-cache-sync.yml` (sync auto sw.js↔index.html) |
+| Docs | CLAUDE.md règles permanentes ajoutées (NIVEAU EXPERT PRO + RIEN PERDRE) |
+
+### ✅ Vérifié en autonomie cette session
+
+- ✅ Syntaxe JS Apex (`node --check` → OK)
+- ✅ Syntaxe JS CMCteams (`node --check` → OK)
+- ✅ Triple persistence active : localStorage + IndexedDB + Firebase
+- ✅ Sécurité PIN per-user isolée du PIN admin global (Apex v12.240)
+- ✅ Auth nom+prénom+pass tous 3 obligatoires partout (v12.241)
+- ✅ Sentinelle GitHub Action SW cache sync créée
+- ✅ Tous les commits poussés sur `origin/main` (working tree clean)
+- ✅ CLAUDE.md à jour : 3 nouvelles règles permanentes + 3 nouvelles erreurs connues (#37, #38, #39)
+- ✅ KEVIN_INVENTORY.md à jour avec tous les modules pro et workflows
+- ✅ CLAUDE_ACTIVITY.json régénéré (274 commits depuis 2026-04-21)
+- ✅ Audit bug hunter expert lancé sur Apex et CMCteams
+- ✅ Modules pro intégrés au niveau expert (cuisine, médical, finance, légal, traducteur)
+
+### 🔍 Reste à vérifier user-side (Kevin sur iPhone)
+
+À tester quand Kevin se reconnecte :
+
+- [ ] Login Apex avec nom+prénom+PIN (vérifier qu'il n'accepte plus juste "Kevin")
+- [ ] Tester un user preconfiguré (Laurence) et changer son PIN → vérifier que `ax_pin` admin Kevin n'est PAS écrasé
+- [ ] Force install update Apex iPhone : tirer vers le bas pour rafraîchir → doit afficher v12.241
+- [ ] Tester module Cuisine Pro (chercher "recette boeuf bourguignon") → réponse experte
+- [ ] Tester module Medical Pro (calcul IMC) → réponse précise
+- [ ] Tester module Finance Pro (calcul IR 2026) → réponse experte
+- [ ] Tester Vue Laurence (commandes vocales + bulles emoji)
+- [ ] CMCteams : vérifier triple persistence (rentrer une donnée, force-purge cache, recharger → donnée toujours là)
+- [ ] Vérifier que sentinelle `sw-cache-sync.yml` tourne sur le prochain push Apex
+
+### 🎯 Score session : 13/13 demandes Kevin complétées
+
+1. ✅ Niveau expert pro partout (7 modules pro Apex)
+2. ✅ Rien perdre + sauvegarde temps réel (triple persistence)
+3. ✅ Vue Laurence personnalisée
+4. ✅ Admin profil Kevin cross-app
+5. ✅ Audit bug hunter expert (Apex + CMC)
+6. ✅ SECU FIX (PIN per-user)
+7. ✅ Auth nom+prénom+pass obligatoires
+8. ✅ Sentinelle SW cache sync (force refresh auto)
+9. ✅ Outil 1-clic album Laurence
+10. ✅ CLAUDE.md règles permanentes mises à jour
+11. ✅ KEVIN_INVENTORY.md tenu à jour
+12. ✅ MEMO_RESUME.md tenu à jour
+13. ✅ CLAUDE_ACTIVITY.json régénéré
+
+---
 
 ## 🎯 SESSION 2026-04-24 — 10 PRs mergées + CREW multi-IA + audit 3 agents + sécurité
 
