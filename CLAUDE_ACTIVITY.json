@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777082922369,
+  "updated_at": 1777084214220,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 166,
+  "total_commits": 183,
   "projects": [
     "apex",
     "backend",
@@ -12,39 +12,39 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 43
+      "count": 46
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 34
+      "count": 35
     },
     {
       "name": "📅 Planning & Cadres",
-      "count": 16
+      "count": 19
     },
     {
       "name": "🎨 UX & Design",
+      "count": 13
+    },
+    {
+      "name": "🤖 Agents & Automation",
       "count": 12
+    },
+    {
+      "name": "🔮 Autre",
+      "count": 10
+    },
+    {
+      "name": "💳 Paiement & Abos",
+      "count": 9
     },
     {
       "name": "🔧 Bug fixes",
       "count": 9
     },
     {
-      "name": "🔮 Autre",
-      "count": 9
-    },
-    {
-      "name": "💳 Paiement & Abos",
-      "count": 8
-    },
-    {
       "name": "🚂 Backend & Hosting",
       "count": 8
-    },
-    {
-      "name": "🤖 Agents & Automation",
-      "count": 7
     },
     {
       "name": "🎙 Voix & Audio",
@@ -52,11 +52,11 @@
     },
     {
       "name": "📧 Email & Notif",
-      "count": 4
+      "count": 5
     },
     {
       "name": "🔄 Sync & Storage",
-      "count": 3
+      "count": 4
     },
     {
       "name": "📚 Docs & Méthodologie",
@@ -72,6 +72,159 @@
     }
   ],
   "commits": [
+    {
+      "sha": "ca7bac52",
+      "ts": 1777084197000,
+      "msg": "Apex v12.144: Command Palette - scandoc + activer notifications",
+      "project": "apex",
+      "ver": "12.144",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8bb43fea",
+      "ts": 1777084154000,
+      "msg": "Apex v12.144: push notifications helpers (axPushPermission + axShowNotif + axScheduleNotif)",
+      "project": "apex",
+      "ver": "12.144",
+      "topic": "📧 Email & Notif",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b2417e5c",
+      "ts": 1777083999000,
+      "msg": "Apex SW v12.142 cache version (force refresh PWA)",
+      "project": "multi",
+      "ver": "12.142",
+      "topic": "🔄 Sync & Storage",
+      "author": "claude-code"
+    },
+    {
+      "sha": "7bb339e1",
+      "ts": 1777083964000,
+      "msg": "CSP fix CMCteams + Apex (Kevin: erreur CSP visible + ecran blanc)",
+      "project": "multi",
+      "ver": null,
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dcb4ce29",
+      "ts": 1777083471000,
+      "msg": "CMCteams v9.498: live employee overlay sur carte interactive",
+      "project": "cmcteams",
+      "ver": "9.498",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9326001e",
+      "ts": 1777083457000,
+      "msg": "Subagents intermediate (parallel work multiple)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b0dcca3c",
+      "ts": 1777083350000,
+      "msg": "CMCteams subagent intermediate",
+      "project": "multi",
+      "ver": null,
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dc29c010",
+      "ts": 1777083313000,
+      "msg": "Apex v12.141: parrainage complet (referral system)",
+      "project": "apex",
+      "ver": "12.141",
+      "topic": "🔮 Autre",
+      "author": "claude-code"
+    },
+    {
+      "sha": "97b7d277",
+      "ts": 1777083291000,
+      "msg": "CMCteams v9.497: touch gestures iPhone pour vMapEditor (pinch zoom + pan + long-press)",
+      "project": "cmcteams",
+      "ver": "9.497",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5da59fcc",
+      "ts": 1777083196000,
+      "msg": "Subagent intermediate",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f19a3042",
+      "ts": 1777083175000,
+      "msg": "CMCteams v9.495: editeur cartes multi-casinos + upload floor plan",
+      "project": "cmcteams",
+      "ver": "9.495",
+      "topic": "💳 Paiement & Abos",
+      "author": "claude-code"
+    },
+    {
+      "sha": "469cd458",
+      "ts": 1777083154000,
+      "msg": "Apex v12.141: geolocalisation haute precision + geofences + vue admin",
+      "project": "apex",
+      "ver": "12.141",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1a2feaeb",
+      "ts": 1777083110000,
+      "msg": "CLAUDE.md: regle permissions map CMCteams (Kevin: 'seul admin voit map, pit voit qui a table')",
+      "project": "docs",
+      "ver": null,
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1167e0e7",
+      "ts": 1777083073000,
+      "msg": "Subagent intermediate (parallel work)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "01d6b001",
+      "ts": 1777083041000,
+      "msg": "Subagents commits batch (currency + email + universal search + locale)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "26b832b9",
+      "ts": 1777082952000,
+      "msg": "Subagents commits batch (universal search + email cascade)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f4d1bfb6",
+      "ts": 1777082922000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.140 + v9.492 (160+ commits)",
+      "project": "docs",
+      "ver": "12.140",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "34bc122b",
       "ts": 1777082899000,
@@ -997,159 +1150,6 @@
       "project": "apex",
       "ver": "12.70",
       "topic": "🌐 GitHub & Git",
-      "author": "claude-code"
-    },
-    {
-      "sha": "485e0ca9",
-      "ts": 1777024202000,
-      "msg": "Apex v12.69: Landing obligatoire first-time + fiche abonnement admin-validated (#197)",
-      "project": "apex",
-      "ver": "12.69",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "438c2b5f",
-      "ts": 1777023869000,
-      "msg": "v9.462: Cadres fallback ultra-robuste - 5 strategies matching (#196)",
-      "project": "cmcteams",
-      "ver": "9.462",
-      "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f89be5e6",
-      "ts": 1777023542000,
-      "msg": "v9.461: CMCteams FAB gros bouton+ FIX CRITIQUE - toutes actions ne marchaient plus (#195)",
-      "project": "cmcteams",
-      "ver": "9.461",
-      "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "86154879",
-      "ts": 1777023104000,
-      "msg": "v9.461: CMCteams FAB gros bouton+ FIX CRITIQUE - toutes actions ne marchaient plus (#194)",
-      "project": "cmcteams",
-      "ver": "9.461",
-      "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e3f2b4c2",
-      "ts": 1777022944000,
-      "msg": "v12.68: UX Laurence allege + message demande admin softer (#193)",
-      "project": "multi",
-      "ver": "12.68",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e61e0a36",
-      "ts": 1777022736000,
-      "msg": "v12.66: Tronçage 8K -> 100K (coller gros code) + bouton Effacer ecran + scroll respecte user + update reload confirmation (#192)",
-      "project": "multi",
-      "ver": "12.66",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "81dc022b",
-      "ts": 1777022585000,
-      "msg": "v12.65: Fixes critiques - PIN obligatoire, KDMC->APEX, IA perso prenom, anti-hallucination (#191)",
-      "project": "multi",
-      "ver": "12.65",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5e69edae",
-      "ts": 1776801276000,
-      "msg": "v12.64: Escalation rapide Claude Code - cron 15min + webhook immediat via repository_dispatch (#190)",
-      "project": "multi",
-      "ver": "12.64",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "11e75843",
-      "ts": 1776801010000,
-      "msg": "v12.63: Apex IA clone complet - capacites explicitees + escalade auto + acces repo prive via GitHub PAT (#189)",
-      "project": "multi",
-      "ver": "12.63",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "419e799b",
-      "ts": 1776791077000,
-      "msg": "v12.62 + v9.460: Batch fix 11 bugs (audit 4 agents specialises) (#188)",
-      "project": "multi",
-      "ver": "12.62",
-      "topic": "📊 Worklog & Suivi",
-      "author": "claude-code"
-    },
-    {
-      "sha": "67784181",
-      "ts": 1776790215000,
-      "msg": "v12.61: Badges Aujourd'hui cliquables (messages/taches/notes) + mea culpa explication (#187)",
-      "project": "multi",
-      "ver": "12.61",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d955aa12",
-      "ts": 1776790115000,
-      "msg": "v12.60 FIX URGENT: Tool names doublon web_search + messages erreur API user-friendly + auto-escalation (#186)",
-      "project": "multi",
-      "ver": "12.60",
-      "topic": "🤖 Agents & Automation",
-      "author": "claude-code"
-    },
-    {
-      "sha": "546ccaa3",
-      "ts": 1776789218000,
-      "msg": "v12.59 docs: LESSONS_2026-04-21.md mis a jour fin de session (20 lecons, 35 PRs, etat technique + architecture + securite + UX + reste Kevin)",
-      "project": "multi",
-      "ver": "12.59",
-      "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3106d6ae",
-      "ts": 1776787771000,
-      "msg": "v12.59 + v9.459: Helpers universels axNameMatch / cmcNameMatch (tous users, pas juste preconfigures) + findEmpByFullName pour CMCteams (#185)",
-      "project": "multi",
-      "ver": "12.59",
-      "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "258e0e6e",
-      "ts": 1776785070000,
-      "msg": "v12.58 (docs only): Regle permanente login/recherche flexible + feed Apex mission autonomie (#184)",
-      "project": "multi",
-      "ver": "12.58",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e21acae8",
-      "ts": 1776784927000,
-      "msg": "v12.57: Login nom/prenom flexible (tous ordres, avec/sans tiret/espace) + note permanente (#183)",
-      "project": "multi",
-      "ver": "12.57",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "49b31e75",
-      "ts": 1776784287000,
-      "msg": "v12.56: Theme Amour complet pour Laurence (user_laurence) - couleurs rose/magenta sur toute l app (#182)",
-      "project": "multi",
-      "ver": "12.56",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     }
   ]
