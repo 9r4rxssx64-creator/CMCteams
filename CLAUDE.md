@@ -1316,25 +1316,37 @@ Avant merge première version :
 
 ---
 
-## 📌 DOSSIER DE TRAVAIL — Status au 2026-04-21 (7 PRs mergées cette session)
+## 📌 DOSSIER DE TRAVAIL — Status au 2026-04-25 (Apex v12.241 + CMCteams v9.522)
 
-**Écosystème autonome complet déployé** (CMCteams v9.451 + Apex v12.11) :
-- 23 agents CMC + 7 sentinelles + 16 sentinelles Apex = 46 watchers permanents
-- Pipeline autonomie cross-app : sentinelles → IA Apex → Claude Code outbox
-- Bridge IA Claude Haiku 4.5 avec whitelist 5 actions safe auto-exécutables
-- CGU universel FaceID + Micro + Géoloc (RGPD, révocable)
+**Session marathon 2026-04-25 — modules pro ajoutés** :
+- Apex Cuisine Pro (v12.238) : 10 recettes FR + 22 cuissons + conversions + 14 allergènes INCO + calories
+- Apex Medical Pro (v12.237) : IMC + métabolisme + médicaments OTC + urgences SAMU + vaccins
+- Apex Finance Pro (v12.235) : IR FR 2026 + crédit immo + PV immo + PV mobilier + Monaco fiscal
+- Apex Légal Pro (v12.X) : 18+ codes français + jurisprudence Cass/CE/CJUE/CEDH + Monaco
+- Apex Traducteur Pro (v12.233) : 30 langues + cache + Claude Haiku + STT/TTS
+- Apex Pack Pro (v12.229) : conversions + béton + lune + météo gratuit + 5 tools IA + dates pro
+- Apex Vue Laurence (v12.226-227) : bulles emoji + wallpaper + diaporama + commandes vocales
+- **Apex SECU FIX (v12.240)** : ax_pin per-user vs global + lookup user strict
+- **Apex AUTH FIX (v12.241)** : nom+prenom+pass tous 3 obligatoires partout
+- Apex Triple persistence (v12.223) : localStorage + IndexedDB + Firebase + auto-restore
+- CMCteams v9.519-522 : triple persistence + parser auto-learn (WIP)
+- Sentinelle GitHub Action `sw-cache-sync.yml` : sync auto sw.js↔index.html
 
 **Items dossier :**
 
-1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → v9.409-410 (fusion ins=sup) + parser fix v9.446 (regex permissive) + fallback v9.447/v9.449 (name-first anywhere) + fix apostrophes v9.451 (22/6', 19/2", 12h30/19') + agent `cadres-watch` v9.450 (détection auto + escalade)
-2. 🔄 **Organigramme SBM Monaco** : chercher exhaustivement (10 sources min), ajouter ROLES_SBM dans l'app, dropdown dans vEmps
-3. 🔄 **Fiches employés évolutives** : rôles/fonctions, dropdowns pour assigner
-4. 🔄 **Extraction complète PDF** : légendes, encadrés haut-droite (CP/AF/M/SS pleine période), couleurs de fond (PNL jaune), tous codes — ne rater aucune info
-5. 🔄 **Distinction fonds/couleurs/lettres** : ne jamais inventer (ex bug BORGIA), être strict
-6. 🔄 **Accumulation données** : chaque import enrichit, jamais efface
-7. 🔄 **Inspecteurs importés ont toujours horaires** : si le PDF les liste, c'est qu'ils bossent
-8. 🔄 **Vérification systématique à chaque commit** : agents + subagents audit croisé avant "done"
-9. 🔄 **Procédures du dossier à respecter** sans rappel — ce fichier + NOTES_USER + MEMO_RESUME = source de vérité
+1. ✅ Bugs inspecteurs/superviseurs sans team/horaire → v9.409-509 (parser ZÉRO erreur, 5 stratégies + 22 tests)
+2. ✅ **Organigramme SBM Monaco** : ROLES_SBM intégré + dropdown vEmps (session passée)
+3. 🔄 **Fiches employés évolutives** : rôles/fonctions partiels, à compléter cross-app
+4. 🔄 **Extraction complète PDF** : parser auto-learn v9.521-522 WIP (apprend les nouveaux codes)
+5. ✅ **Distinction fonds/couleurs/lettres** : règle stricte v9.461 (jamais inventer)
+6. ✅ **Accumulation données** : enrichissement v9.519 + triple persistence (jamais perdu)
+7. ✅ **Inspecteurs avec horaires** : v9.462+ multi-strategy garantit
+8. ✅ **Vérification systématique** : sentinelle import-watch + audit-watch
+9. ✅ **Procédures dossier respectées** : CLAUDE.md + NOTES_USER + MEMO_RESUME tenus à jour
+10. ✅ **Sécurité auth** (Apex v12.240-241) : ax_pin per-user + nom+prenom+pass obligatoires
+11. ✅ **Sentinelle SW cache sync** : `.github/workflows/sw-cache-sync.yml` créée
+12. ✅ **Triple persistence** : localStorage + IndexedDB + Firebase (Apex + CMCteams)
+13. ✅ **Niveau expert pro partout** : 7 modules pro Apex (cuisine/médical/finance/légal/traducteur/pack/admin)
 
 **Méthode de travail permanente** :
 - À chaque nouvelle demande Kevin → ajouter ici IMMÉDIATEMENT
@@ -2490,6 +2502,123 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
+## 🔄 RÈGLE PERMANENTE — SW CACHE_VERSION = APP_VER TOUJOURS (Kevin 2026-04-25, ABSOLUE)
+
+> **"Le force refresh, la mise à jour automatique pour la version, ça en fait partie."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets PWA futurs :
+
+### 1. Invariant strict
+
+`sw.js → CACHE_VERSION` DOIT toujours = `index.html → APP_VER` (préfixé par le nom d'app).
+
+- Apex : `CACHE_VERSION = 'apex-' + APP_VER` (ex: `apex-v12.241`)
+- CMCteams : `CACHE_VERSION = 'cmc-' + APP_VER` (ex: `cmc-v9.522`)
+
+### 2. Sentinelle GitHub Action
+
+`.github/workflows/sw-cache-sync.yml` tourne sur chaque push qui touche `apex-ai/index.html` ou `apex-ai/sw.js` :
+- Extrait APP_VER depuis index.html via grep
+- Extrait CACHE_VERSION depuis sw.js via grep
+- Si drift → sed le sw.js + commit auto `chore: sync sw.js CACHE_VERSION → vX.Y (auto)`
+- Permissions `contents: write` requises
+
+À dupliquer pour CMCteams : créer le même workflow ciblé sur `index.html` + `sw.js` racine.
+
+### 3. Pourquoi c'est critique
+
+Sans sync, le Service Worker garde l'ancien cache → Kevin voit l'ancienne version → "rien ne marche" → force-refresh manuel iPhone (geste pas évident en PWA installée).
+
+### 4. Test mental obligatoire avant chaque bump APP_VER
+
+*"Ai-je bumpé CACHE_VERSION dans sw.js aussi ?"*
+
+Si non → bumper avant de commit, OU laisser la sentinelle rattraper.
+
+---
+
+## 🔐 RÈGLE PERMANENTE — NOM + PRÉNOM + PASS OBLIGATOIRES PARTOUT (Kevin v12.241, 2026-04-25, ABSOLUE)
+
+> **Sécurité auth — découverte via audit expert externe 4 agents :**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Login = 3 champs obligatoires
+
+Tout login utilisateur DOIT exiger :
+1. **Prénom** (min 2 chars, normalisé)
+2. **Nom** (min 2 chars, normalisé)
+3. **Pass** (PIN 6+ chars OU mot de passe OU FaceID si déjà enrôlé)
+
+JAMAIS d'auth avec juste 1 champ (genre "tape ton nom"). JAMAIS de match substring partiel sur 1 token.
+
+### 2. Recherche/lookup user = même règle
+
+Tout `findUserByName`, `_checkPreconfiguredUser`, etc. exige :
+- Match exact (après normalisation accents/casse) sur prénom+nom (2 tokens min)
+- OU match avec confidence ≥0.95 ET 2 tokens minimum
+- JAMAIS substring sur 1 token court (≤4 chars) → risque impersonation (Laurent vs Laurence, Kev vs Kevin)
+
+### 3. Édition fiche user = vérif 3 champs
+
+Avant tout `axEditUser`, `cmcUpdateProfile`, etc. :
+- Confirmer prénom + nom + pass actuel valide
+- JAMAIS modifier une fiche en se basant uniquement sur l'ID session si action sensible (changement email, pass, role)
+
+### 4. Pourquoi c'est critique (audit v12.240 expert)
+
+Découvert : un attaquant pouvait taper "Kevin Desarz" sans PIN → devenait admin (regex match partiel). Fix complet en v12.240 + v12.241 obligatoirement appliqué partout.
+
+### 5. À auditer dans chaque app
+
+- Login flows (vLogin, vLoginStep*, axLogin, doLogin)
+- Search/filter users (vEmps, vPasswords, vPit)
+- Profile edit (vMonProfil, vEmps adminSetReg)
+- IA tool calls qui modifient un user (axEditUser, axImpersonate)
+
+---
+
+## 🔑 RÈGLE PERMANENTE — PIN PER-USER ≠ PIN ADMIN GLOBAL (Kevin v12.240, 2026-04-25, ABSOLUE)
+
+> **Découvert via audit expert externe — bug critique sécurité.**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs avec auth multi-user :
+
+### 1. Convention de nommage stricte
+
+| Donnée | Clé localStorage/Firebase |
+|--------|---------------------------|
+| **PIN admin global** | `ax_pin` / `cmc_admin_pin` (RÉSERVÉ admin uniquement) |
+| **PIN user X** | `ax_pin_<userId>` / `cmc_pin_<uid>` |
+| **Pass admin** | `ax_admin_pass` |
+| **Pass user X** | `ax_pass_<userId>` |
+
+### 2. Guard obligatoire dans tout flow PIN/pass change
+
+```js
+function axSetPin(userId, pinHash){
+  var key = (userId === ADMIN_ID) ? "ax_pin" : "ax_pin_" + userId;
+  ls(key, pinHash);
+}
+```
+
+JAMAIS écrire dans `ax_pin` si le user N'EST PAS l'admin global.
+
+### 3. Audit obligatoire à chaque release
+
+`grep -n 'ax_pin[^_]' apex-ai/index.html` → vérifier que CHAQUE écriture est admin-only.
+
+### 4. Pourquoi c'est critique
+
+Découvert v12.240 : Laurence change son PIN → écrit dans `ax_pin` → écrase le PIN admin Kevin. Impact :
+- Kevin ne peut plus se connecter admin
+- Laurence (involontairement) a maintenant accès admin
+- N'importe quel user pouvait reset le PIN admin
+
+Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiatement à tout projet futur multi-user.
+
+---
+
 ## Erreurs connues à NE PAS reproduire
 
 1. `table-layout:fixed` dans un conteneur scrollable ❌
@@ -2532,6 +2661,9 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 34. **Indicateur etat stale** (v9.447, 2026-04-20 nuit) — `_fbConnected=true` set uniquement dans le handler du snapshot initial `path==="/"`. Si un event put specifique arrivait avant, indicator bloque jaune. Firebase marchait mais UI mentait. **OBLIGATION** : tout indicateur d'etat binaire (connecte/deconnecte) doit etre mis a jour sur CHAQUE signe de vie (message recu, put event, reponse fetch OK), pas seulement sur l'etape d'initialisation formelle. ❌
 35. **CGU universel pour features sensibles** (v9.448 / v12.9, Kevin 2026-04-20 nuit) — ajout d'un helper `cmcCguAsk(feature, label, desc)` (Apex : `_cguAsk`) qui demande consentement une seule fois par feature, persiste dans localStorage. Wrappe les entry points : biometrie (webauthnLogin / axBiometricAuth), micro (sttStart / axSttToggle), geolocalisation (axGetLocation). Revocable via `cmcCguRevoke(feature)`. Pattern a appliquer a TOUS futurs projets qui accedent aux capteurs device. RGPD/user control respecte. ✅
 36. **Parser cadres : 1 strategie suffit pas** (v9.509, Kevin 2026-04-25 — ZERO ERREUR) — apres 7 tentatives v9.437→v9.451 sur le parser cadres/inspecteurs/superviseurs, Kevin disait toujours "ca ne marche pas". Cause racine : un parser monolithique (regex header + name match) echoue silencieusement sur les variations PDF SBM (bullets, accents, casse, ordre inverse, fragmentation PDF.js). **OBLIGATION** : pour TOUTE feature critique avec input variable (parsing, OCR, NLP), implementer (a) multi-strategy avec strategies cascade (v9.462 : nom_complet + ordre_inverse + surname_seul + fuzzy4 + next_line_aggreg), (b) suite tests automatises avec >=20 cas reels avant chaque release (`cmcImportTests` : 22 cas), (c) sentinelle dediee `import-watch` qui audite post-import et escalade Apex en cascade (5 strategies dans `_agentImportWatch`), (d) banner visualisation post-import (X/Y cadres OK + lien vAuditLog + bouton "Re-tenter"), (e) `cmc_import_log` (max 200) detaille pour diagnostiquer chaque echec. Code v9.509 : `_agentImportWatch`, `cmcImportTests` (22 cas), banner final dans `doImport`. Bouton "Tests parser" dans vImport admin. ✅
+37. **ax_pin global ecrase quand user change PIN** (Apex v12.240, Kevin 2026-04-25 — SECU CRITIQUE) — quand un user preconfigure (Laurence, etc.) changeait son PIN via le flow login/PIN, le code ecrivait dans `ax_pin` (la cle GLOBALE admin) au lieu d'une cle per-user. Resultat : **n'importe quel user pouvait reset/voler le PIN admin Kevin** + le user suivant ne pouvait plus se connecter avec son ancien PIN. Decouvert via audit expert externe 4 agents. **OBLIGATION** : tout PIN/credential per-user DOIT etre stocke dans `ax_pin_<userId>` (scope user). `ax_pin` est RESERVE strictement a l'admin global. Verifier dans tout flow `axChangePin`, `axSetPin`, `_checkPreconfiguredUser` qu'on ecrit dans la bonne cle. Fix v12.240 : isolation per-user + guard `if userId===ADMIN_ID write ax_pin else write ax_pin_<userId>`. ❌
+38. **Fallback `_checkPreconfiguredUser` substring trop permissif** (Apex v12.240, Kevin 2026-04-25 — SECU) — la fonction `_checkPreconfiguredUser` faisait un substring tolerant (`name.toLowerCase().includes(part)`) qui pouvait matcher "Laurent" sur la fiche "Laurence" ou "Kev" sur "Kevin DESARZENS" → impersonation possible. Decouvert via audit expert. **OBLIGATION** : pour toute fonction d'auth/lookup user, exiger MATCH EXACT (apres normalisation accents/casse) ou AU MOINS 2 tokens (prenom+nom) sur 2 mots minimum. JAMAIS substring partiel sur 1 token court. Fix v12.240 : tokens tries + match all + min length 3 par token. v12.241 : nom+prenom+pass tous 3 obligatoires partout (login, recherche, edition). ❌
+39. **Drift sw.js CACHE_VERSION vs APP_VER index.html** (Apex v12.X, recurrent) — quand on bumpe APP_VER dans `apex-ai/index.html` mais qu'on oublie de bumper `CACHE_VERSION` dans `apex-ai/sw.js`, le Service Worker continue a servir la vieille version. Kevin doit force-refresh manuellement → frustration recurrente. **OBLIGATION** : `CACHE_VERSION` doit TOUJOURS = `'apex-' + APP_VER`. Sentinelle GitHub Action `.github/workflows/sw-cache-sync.yml` rattrape automatiquement le drift sur chaque push (compare APP_VER vs CACHE_VERSION, sed le sw.js, commit `chore: sync sw.js CACHE_VERSION`). Pattern a appliquer aussi a CMCteams. ✅
 
 ---
 
@@ -2687,12 +2819,22 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ## Constantes
 
 ```javascript
+// CMCteams (référence index.html racine)
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.303";
+var APP_VER  = "v9.522";   // bumpé session 2026-04-25
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+
+// Apex AI (apex-ai/index.html)
+var APP_VER  = "v12.242";  // bumpé session 2026-04-25 (nom+prenom+pass obligatoires + agent parallèle)
+var ADMIN_ID = "kdmc_admin";
 ```
+
+**Versions vivantes** (lecture grep) :
+- CMCteams : voir `var APP_VER` ligne ~3365 dans `index.html`
+- Apex : voir `var APP_VER` ligne 385 dans `apex-ai/index.html`
+- Sentinelle `sw-cache-sync.yml` rattrape automatiquement le drift sw.js↔index.html
 
 ---
 
