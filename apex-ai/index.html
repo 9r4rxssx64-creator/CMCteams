@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.117",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.118",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -661,6 +661,22 @@ function axGetStripeLink(plan){
   var v=localStorage.getItem("ax_stripe_link_"+plan)||"";
   STRIPE_PAYMENT_LINKS[plan]=v;
   return v;
+}
+/* v12.118 — PayPal.me support (Kevin: 'Ajoute PayPal comme moyen, pas de societe encore') */
+function axGetPaypalMe(){
+  /* Format attendu: 'paypalme/KevinDESARZENS' (sans https) ou 'KevinDESARZENS' */
+  var v=localStorage.getItem("ax_paypal_me")||localStorage.getItem("ax_paypal_email")||"";
+  v=String(v||"").replace(/^"|"$/g,"").trim();
+  return v;
+}
+function axBuildPaypalLink(plan){
+  var p=PLANS[plan];if(!p||p.price<=0)return "";
+  var me=axGetPaypalMe();if(!me)return "";
+  /* Si c est un email (contient @) -> paypal.me ne marche pas, faut juste le username */
+  if(me.indexOf("@")>=0)return "";
+  /* Nettoyer le prefix paypalme/ s il y est */
+  me=me.replace(/^https?:\/\/(www\.)?paypal\.me\//i,"").replace(/^paypal\.me\//i,"").replace(/^paypalme\//i,"").replace(/\/+$/,"");
+  return "https://paypal.me/"+encodeURIComponent(me)+"/"+p.price+"EUR";
 }
 function axCheckQuota(action){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});if(plan.msgs_day>0&&usage.today>=plan.msgs_day){toast("Limite journaliere atteinte ("+plan.msgs_day+" msg). Passez au plan superieur !","warn");return false;}if(plan.msgs_month>0&&usage.month>=plan.msgs_month){toast("Limite mensuelle atteinte. Upgradez votre forfait !","warn");return false;}if(action==="finance"&&!plan.finance){toast("Finance Expert disponible a partir du plan Starter","warn");return false;}if(action==="domotique"&&!plan.domotique){toast("Domotique disponible a partir du plan Pro","warn");return false;}if(action==="offline"&&!plan.offline){toast("Mode offline disponible a partir du plan Pro","warn");return false;}if(action==="code"&&!plan.code){toast("Code interpreter disponible a partir du plan Starter","warn");return false;}return true;}
 function axGetPlanInfo(){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});return{plan:plan.name,price:plan.price,usage_today:usage.today+"/"+(plan.msgs_day>0?plan.msgs_day:"illimite"),usage_month:usage.month+"/"+(plan.msgs_month>0?plan.msgs_month:"illimite"),kb:K.kb.facts.length+"/"+(plan.kb_facts>0?plan.kb_facts:"illimite"),pct_day:plan.msgs_day>0?Math.round(usage.today/plan.msgs_day*100):0,pct_month:plan.msgs_month>0?Math.round(usage.month/plan.msgs_month*100):0};}
@@ -1360,7 +1376,7 @@ function vNav(){if(!K.user||K.view==="login"||K.view==="landing")return"";var co
 
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -1947,37 +1963,53 @@ function axSelectAndSubmitPlan(pk){
   var draft=lg("ax_sub_draft",null);
   if(!draft){toast("Fiche perso perdue. Recommence depuis le debut.","err");axOpenSubscribeForm();return;}
   var p=PLANS[pk];if(!p){toast("Forfait invalide","err");return;}
-  /* v12.116 — Stripe Checkout : si plan payant + Payment Link configure, on enchaine paiement */
   var isPaid=p.price>0;
   var stripeLink=isPaid?axGetStripeLink(pk):"";
-  var msgConfirm="Confirmer "+(p.name)+" a "+(p.price===0?"0€":p.price+"€"+(p.oneshot?" (une fois)":"/mois"))+" ?\n\n";
-  if(isPaid&&stripeLink){
-    msgConfirm+="Tu vas etre redirige vers la page de paiement securisee Stripe.\nApres paiement, ton compte sera active sous 5 min max.\nEn cas de probleme, contacte Kevin.";
-  }else if(isPaid&&!stripeLink){
-    msgConfirm+="Le paiement en ligne n'est pas encore disponible pour ce plan.\nKevin te contactera pour finaliser le paiement (24h max).";
-  }else{
-    msgConfirm+="Kevin validera manuellement ta demande (24h max).\nEn attendant, tu n'auras pas acces aux fonctions.";
+  var paypalLink=isPaid?axBuildPaypalLink(pk):"";
+  /* v12.118 — Multi-paiement: Stripe + PayPal au choix client (Kevin: pas encore societe, ajoute PayPal) */
+  if(isPaid&&(stripeLink||paypalLink)){
+    var ttl="Paiement "+p.name+" — "+p.price+"€"+(p.oneshot?" (une fois)":"/mois");
+    var html='<h3 style="margin-bottom:8px">'+esc(ttl)+'</h3>';
+    html+='<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:16px">Choisis ton moyen de paiement:</p>';
+    if(stripeLink){
+      html+='<button class="ax-btn ax-btn-primary" onclick="_axGoPay(\''+pk+'\',\'stripe\')" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px;background:linear-gradient(135deg,#635bff,#9d8aff);color:#fff">💳 Carte bancaire (Stripe) — '+p.price+'€</button>';
+    }
+    if(paypalLink){
+      html+='<button class="ax-btn ax-btn-primary" onclick="_axGoPay(\''+pk+'\',\'paypal\')" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px;background:linear-gradient(135deg,#0070ba,#003087);color:#fff">🅿 PayPal — '+p.price+'€</button>';
+    }
+    html+='<p style="font-size:11px;color:var(--ax-text-dim);text-align:center;margin-top:8px">Apres paiement, ton compte sera active sous 5 min max.</p>';
+    _showModal(html);
+    return;
   }
-  if(!confirm(msgConfirm))return;
-  /* On enregistre la demande AVANT de rediriger (sinon perte si l'utilisateur ne revient pas) */
-  axSubmitSubscription(draft,pk);
-  /* Redirection Stripe apres ecriture de la demande */
-  if(isPaid&&stripeLink){
-    setTimeout(function(){
-      try{
-        /* On encode email+nom dans l'URL pour pre-remplir Stripe Checkout */
-        var sep=stripeLink.indexOf("?")>=0?"&":"?";
-        var url=stripeLink+sep+"prefilled_email="+encodeURIComponent(draft.email||"")+"&client_reference_id="+encodeURIComponent((draft.email||"")+"|"+pk);
-        window.open(url,"_blank","noopener");
-        toast("Redirection vers le paiement Stripe...","ok");
-      }catch(e){
-        toast("Lien Stripe invalide. Kevin te contactera.","warn");
-      }
-    },600);
-  }else if(isPaid&&!stripeLink){
-    /* Plan payant mais pas de lien — fallback : admin contacte client manuellement */
+  if(isPaid&&!stripeLink&&!paypalLink){
+    if(!confirm("Confirmer "+p.name+" a "+p.price+"€"+(p.oneshot?" (une fois)":"/mois")+" ?\n\nAucun moyen de paiement configure. Kevin te contactera pour finaliser (24h max)."))return;
+    axSubmitSubscription(draft,pk);
     toast("Demande recue. Kevin te contactera pour le paiement.","ok");
+    return;
   }
+  /* Plan gratuit */
+  if(!confirm("Confirmer "+p.name+" (gratuit) ?\n\nKevin validera ta demande (24h max). En attendant, tu n'auras pas acces aux fonctions."))return;
+  axSubmitSubscription(draft,pk);
+}
+function _axGoPay(pk,method){
+  var draft=lg("ax_sub_draft",{});
+  axSubmitSubscription(draft,pk);
+  var c=document.getElementById("modal-container");if(c)c.innerHTML="";
+  setTimeout(function(){
+    try{
+      var url;
+      if(method==="stripe"){
+        var stripeLink=axGetStripeLink(pk);
+        var sep=stripeLink.indexOf("?")>=0?"&":"?";
+        url=stripeLink+sep+"prefilled_email="+encodeURIComponent(draft.email||"")+"&client_reference_id="+encodeURIComponent((draft.email||"")+"|"+pk);
+      }else if(method==="paypal"){
+        url=axBuildPaypalLink(pk);
+      }
+      if(!url){toast("Lien paiement invalide","err");return;}
+      window.open(url,"_blank","noopener");
+      toast("Redirection vers "+(method==="stripe"?"Stripe":"PayPal")+"...","ok");
+    }catch(e){toast("Erreur: "+String(e.message||e).slice(0,80),"err");}
+  },300);
 }
 function axSubmitSubscription(draft,plan){
   /* v12.83 — appele depuis axSelectAndSubmitPlan avec draft fiche + plan choisi */
@@ -2551,6 +2583,88 @@ function _axRefreshClaudeActivity(){
   }).catch(function(e){box.innerHTML='<p style="font-size:12px;color:var(--ax-red)">Pas accessible: '+esc(String(e.message||e))+'</p>';});
 }
 
+
+/* v12.115 — vUsersActivity : compteur par client/utilisateur (Kevin: 'compteur par personne client/employe/cadre') */
+function vUsersActivity(){
+  if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin uniquement</div></div>';
+  var reqs=lg("ax_subscription_requests",{})||{};
+  var profs=lg("ax_client_profiles",{})||{};
+  var users=lg("ax_users",{})||{};
+  var conns=lg("ax_connection_log",[])||[];
+  var connHist=lg("ax_connection_history",[])||[];
+  var audit=lg("ax_audit",[])||[];
+  var journal=lg("ax_journal",[])||[];
+  var clientLogs=lg("ax_client_logs",[])||[];
+  var locs=lg("ax_user_locations",{})||{};
+  var locHist=lg("ax_location_history",[])||[];
+  var seen={};
+  function addUser(uid,name,plan,role,email){if(!uid)return;if(!seen[uid])seen[uid]={uid:uid,name:name||uid,plan:plan||"-",role:role||"-",email:email||""};else{if(name&&seen[uid].name===uid)seen[uid].name=name;if(plan&&seen[uid].plan==="-")seen[uid].plan=plan;if(role&&seen[uid].role==="-")seen[uid].role=role;if(email&&!seen[uid].email)seen[uid].email=email;}}
+  addUser(ADMIN_ID,"Kevin DESARZENS","admin","admin","");
+  Object.keys(reqs).forEach(function(k){var r=reqs[k];addUser(r.uid||k,((r.prenom||"")+" "+(r.nom||"")).trim()||r.email||k,r.plan||"free","client",r.email||"");});
+  Object.keys(profs).forEach(function(k){var p=profs[k];addUser(k,p.name,p.plan,p.role,p.email);});
+  Object.keys(users).forEach(function(k){var u=users[k];addUser(k,u.name,u.plan,u.role,u.email);});
+  if(typeof PRECONFIGURED_USERS==="object"){Object.keys(PRECONFIGURED_USERS).forEach(function(k){var u=PRECONFIGURED_USERS[k];addUser(u.id,k,u.plan,u.role||"family","");});}
+  function evUid(e){return e&&(e.uid||e.userId||e.id||"");}
+  function pairHrs(logins,logouts){var t=0,L=logins.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0);}),O=logouts.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0);});L.forEach(function(li){var lo=O.find(function(x){return x.ts>li.ts;});if(lo){var d=lo.ts-li.ts;if(d>0&&d<24*3600000)t+=d;O=O.filter(function(x){return x.ts!==lo.ts;});}});return t;}
+  var rows=Object.keys(seen).map(function(uid){
+    var u=seen[uid];
+    var allConns=conns.filter(function(c){return evUid(c)===uid;}).concat(connHist.filter(function(c){return evUid(c)===uid;}));
+    var logins=allConns.filter(function(c){return c.type==="login"||c.event==="login";});
+    var logouts=allConns.filter(function(c){return c.type==="logout"||c.event==="logout";});
+    var ts=logins.map(function(l){return l.ts||0;}).filter(function(x){return x;});
+    var first=ts.length?Math.min.apply(null,ts):null;
+    var last=ts.length?Math.max.apply(null,ts):null;
+    var totalMs=pairHrs(logins,logouts);
+    var actsAud=audit.filter(function(a){return (a.who||a.uid||a.userId)===uid;}).length;
+    var actsJrn=journal.filter(function(a){return evUid(a)===uid;}).length;
+    var actsCli=clientLogs.filter(function(a){return evUid(a)===uid;}).length;
+    var actsTotal=actsAud+actsJrn+actsCli;
+    var topMap={};
+    audit.forEach(function(a){if((a.who||a.uid||a.userId)===uid){var k=a.action||a.type||"?";topMap[k]=(topMap[k]||0)+1;}});
+    journal.forEach(function(a){if(evUid(a)===uid){var k=a.action||a.type||a.kind||"?";topMap[k]=(topMap[k]||0)+1;}});
+    clientLogs.forEach(function(a){if(evUid(a)===uid){var k=a.action||a.type||"?";topMap[k]=(topMap[k]||0)+1;}});
+    var top5=Object.keys(topMap).map(function(k){return {k:k,c:topMap[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,5);
+    var geoLast=locs[uid]||null;
+    var geoStr="";
+    if(geoLast){geoStr=(geoLast.city||"")+(geoLast.country?", "+geoLast.country:"");if(!geoStr&&geoLast.lat)geoStr=geoLast.lat.toFixed(2)+", "+geoLast.lng.toFixed(2);}
+    if(!geoStr){var lh=locHist.filter(function(l){return (l.userId||l.uid)===uid;}).slice(-1)[0];if(lh){geoStr=(lh.city||"")+(lh.country?", "+lh.country:"");if(!geoStr&&lh.lat)geoStr=lh.lat.toFixed(2)+", "+lh.lng.toFixed(2);}}
+    return {uid:uid,name:u.name,plan:u.plan,role:u.role,email:u.email,first:first,last:last,nbLog:logins.length,totalMs:totalMs,actsTotal:actsTotal,top5:top5,geo:geoStr};
+  }).sort(function(a,b){return (b.last||0)-(a.last||0);});
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">👥 Activité par utilisateur</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:12px">Compteur par client : connexions, durée, actions, géolocalisation. Clique une carte pour les détails.</p>';
+  h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">';
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:22px;font-weight:800;color:var(--ax-gold)">'+rows.length+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Utilisateurs connus</div></div>';
+  h+='<div class="ax-card" style="text-align:center;padding:12px"><div style="font-size:22px;font-weight:800;color:var(--ax-blue)">'+rows.reduce(function(a,r){return a+r.nbLog;},0)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Connexions totales</div></div>';
+  h+='</div>';
+  if(!rows.length){h+='<div class="ax-empty"><div class="ax-empty-icon">👤</div><div class="ax-empty-text">Aucun utilisateur trouvé</div></div></div>';return h;}
+  rows.forEach(function(r,idx){
+    var hrs=(r.totalMs/3600000).toFixed(1);
+    var firstStr=r.first?new Date(r.first).toLocaleDateString("fr-FR"):"—";
+    var lastStr=r.last?new Date(r.last).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+    var planColor={"free":"#888","pro":"var(--ax-gold)","business":"var(--ax-purple)","lifetime":"var(--ax-green)","admin":"var(--ax-red)"}[r.plan]||"#888";
+    h+='<div class="ax-card" style="border-left:4px solid '+planColor+';margin-bottom:8px;cursor:pointer;min-height:44px" onclick="var d=document.getElementById(\'ax-ua-det-'+idx+'\');if(d){d.style.display=d.style.display===\'none\'?\'block\':\'none\';}">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">';
+    h+='<div style="flex:1;min-width:160px"><strong style="color:var(--ax-gold);font-size:14px">'+esc(r.name)+'</strong> <span class="ax-badge ax-badge-gold" style="font-size:9px">'+esc(r.plan)+'</span> <span class="ax-badge" style="background:rgba(90,168,255,.15);color:var(--ax-blue);font-size:9px;padding:2px 6px;border-radius:4px">'+esc(r.role)+'</span>';
+    h+='<div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">'+esc(r.uid)+(r.email?' · '+esc(r.email):'')+'</div></div>';
+    h+='<div style="text-align:right;font-size:11px;color:var(--ax-text-dim);min-width:90px"><div>📅 '+esc(firstStr)+'</div><div>🕒 '+esc(lastStr)+'</div></div>';
+    h+='</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px">';
+    h+='<div style="text-align:center;padding:6px;background:rgba(232,184,48,.06);border-radius:6px"><div style="font-size:16px;font-weight:800;color:var(--ax-gold)">'+r.nbLog+'</div><div style="font-size:9px;color:var(--ax-text-dim)">Connex.</div></div>';
+    h+='<div style="text-align:center;padding:6px;background:rgba(76,208,128,.06);border-radius:6px"><div style="font-size:16px;font-weight:800;color:var(--ax-green)">'+hrs+'h</div><div style="font-size:9px;color:var(--ax-text-dim)">Total</div></div>';
+    h+='<div style="text-align:center;padding:6px;background:rgba(90,168,255,.06);border-radius:6px"><div style="font-size:16px;font-weight:800;color:var(--ax-blue)">'+r.actsTotal+'</div><div style="font-size:9px;color:var(--ax-text-dim)">Actions</div></div>';
+    h+='</div>';
+    if(r.geo)h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:6px">📍 '+esc(r.geo)+'</div>';
+    h+='<div id="ax-ua-det-'+idx+'" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--ax-border)">';
+    if(r.top5.length){
+      h+='<div style="font-size:11px;font-weight:700;color:var(--ax-gold);text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px">🎯 Top 5 actions/sujets</div>';
+      var maxC=r.top5[0].c||1;
+      r.top5.forEach(function(t){var w=Math.round(t.c*100/maxC);h+='<div style="margin:3px 0"><div style="display:flex;justify-content:space-between;font-size:11px"><span>'+esc(t.k)+'</span><span style="color:var(--ax-gold);font-weight:700">'+t.c+'</span></div><div style="height:4px;background:var(--ax-bg-input);border-radius:2px"><div style="width:'+w+'%;height:100%;background:var(--ax-gold);border-radius:2px"></div></div></div>';});
+    }else{h+='<p style="font-size:11px;color:var(--ax-text-dim);font-style:italic">Aucune action enregistrée</p>';}
+    h+='</div></div>';
+  });
+  h+='</div>';return h;
+}
+
 /* v12.115 — FEATURE FLAGS (Kevin: 'toutes les fonctions avec bouton off on et si off disparait des chez tel ou tel') */
 var AX_FEATURES={
   'voice':{label:'🎙 Voix (TTS)',default:true,cat:'Interaction'},
@@ -2722,6 +2836,7 @@ var APEX_COMMANDS=[
   {id:"act_reset_users",lb:"🗑 Effacer comptes (garde Kevin+Laurence)",cat:"Action",adminOnly:true,act:function(){axResetAllUsers();}},
   /* v12.111 — Worklog Apex (admin uniquement) */
   {id:"adminworklog",lb:"⏱ Mon temps de travail (admin)",cat:"Admin",adminOnly:true,act:function(){sv("adminworklog");}},
+  {id:"usersactivity",lb:"👥 Activité par utilisateur",cat:"Admin",adminOnly:true,act:function(){sv("usersactivity");}},
   /* v12.115 — Feature flags ON/OFF */
   {id:"featureflags",lb:"🔘 Activer/Désactiver fonctions",cat:"Admin",adminOnly:true,act:function(){sv("featureflags");}}
 ];
