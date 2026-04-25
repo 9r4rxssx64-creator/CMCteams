@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777141531158,
-  "total_commits": 249,
+  "updated_at": 1777141794252,
+  "total_commits": 252,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,30 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "aed33969",
+      "ts": 1777141650000,
+      "msg": "Apex v12.222: Routage vPersistenceAudit + axNavigateTo persaudit (depuis agent persistence triple)",
+      "project": "apex",
+      "ver": "12.222",
+      "author": "claude-code"
+    },
+    {
+      "sha": "48da554c",
+      "ts": 1777141595000,
+      "msg": "Apex v12.222: Audit bug hunter expert - rapport complet bug-audit-2026-04-25",
+      "project": "apex",
+      "ver": "12.222",
+      "author": "claude-code"
+    },
+    {
+      "sha": "72a8bfa5",
+      "ts": 1777141575000,
+      "msg": "CMCteams v9.518: Audit bug hunter expert + rapport cmc-bug-audit-2026-04-25",
+      "project": "cmcteams",
+      "ver": "9.518",
+      "author": "claude-code"
+    },
     {
       "sha": "4ab5922b",
       "ts": 1777141458000,
@@ -943,30 +967,6 @@
       "msg": "Apex v12.147: stockage hybride pro (localStorage + IndexedDB + Railway)",
       "project": "apex",
       "ver": "12.147",
-      "author": "claude-code"
-    },
-    {
-      "sha": "09ee399f",
-      "ts": 1777109189000,
-      "msg": "CMCteams v9.501: OCR scanner full + amelioration (Kevin: 'comme apex + ameliore a fond')",
-      "project": "cmcteams",
-      "ver": "9.501",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7951e2ff",
-      "ts": 1777108205000,
-      "msg": "Apex v12.145: Health Status admin (diagnostic 1 ecran)",
-      "project": "apex",
-      "ver": "12.145",
-      "author": "claude-code"
-    },
-    {
-      "sha": "90b0c0b4",
-      "ts": 1777084214000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.144 (~190 commits, 16 sujets)",
-      "project": "docs",
-      "ver": "12.144",
       "author": "claude-code"
     }
   ]
