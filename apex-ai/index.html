@@ -3640,6 +3640,10 @@ var APEX_COMMANDS=[
   {id:"act_refresh",lb:"♻️ Forcer mise à jour app",cat:"Action",act:function(){if(typeof axForceRefresh==="function")axForceRefresh();else location.reload();}},
   {id:"act_paste_pat",lb:"🔑 Coller PAT GitHub",cat:"Action",adminOnly:true,act:function(){var p=prompt("Colle ton PAT GitHub:");if(p&&p.length>20){localStorage.setItem("ax_github_pat",p);toast("PAT enregistré","ok");}}},
   {id:"act_test_voice",lb:"🔊 Tester voix actuelle",cat:"Action",act:function(){axTtsSpeak("Bonjour, ceci est un test de la voix sélectionnée.");}},
+  /* v12.144 — Document scanner OCR */
+  {id:"scandoc",lb:"📄 Scanner document (OCR)",cat:"Action",act:function(){axScanDocument();}},
+  /* v12.144 — Push notifications activation */
+  {id:"act_enable_notif",lb:"🔔 Activer notifications",cat:"Action",act:function(){axPushPermission().then(function(ok){if(ok)axShowNotif("APEX","Notifications activées ✓");});}},
   {id:"act_choose_voice",lb:"🎙 Choisir voix",cat:"Action",act:function(){sv("settings");setTimeout(function(){var s=document.getElementById("ax-voice-preset");if(s)s.scrollIntoView({behavior:"smooth"});},300);}},
   /* v12.111 — Reset comptes (admin only) */
   {id:"act_reset_users",lb:"🗑 Effacer comptes (garde Kevin+Laurence)",cat:"Action",adminOnly:true,act:function(){axResetAllUsers();}},
