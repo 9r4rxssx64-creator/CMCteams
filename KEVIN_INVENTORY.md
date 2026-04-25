@@ -136,3 +136,14 @@
 | Worker URL | https://apex-push-worker.desarzens-kevin.workers.dev |
 | Health endpoint | https://apex-push-worker.desarzens-kevin.workers.dev/health |
 | Workers dashboard | https://dash.cloudflare.com/ffaca6f306a953f82834db0970f300f0/workers/services/view/apex-push-worker/production |
+
+---
+
+## 💳 PAIEMENTS (handles confirmés Kevin)
+
+| Service | Valeur | Lien public |
+|---|---|---|
+| 💎 Revolut Revtag | `@kdmc` | https://revolut.me/kdmc |
+| 🅿 PayPal.me | _(à coller)_ | _(paypal.me/...)_ |
+| ₿ Bitcoin | _(à coller dans Coffre)_ | — |
+| 🏦 IBAN | _(privé, dans Coffre)_ | — |
