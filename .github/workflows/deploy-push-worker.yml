@@ -1,13 +1,11 @@
 name: Deploy Apex Push Worker
 
 on:
-  # Auto-deploy quand le fichier change
   push:
     branches: [main]
     paths:
       - 'tools/cloudflare/apex-push-worker.js'
       - '.github/workflows/deploy-push-worker.yml'
-  # Trigger manuel depuis l'onglet Actions
   workflow_dispatch:
 
 permissions:
@@ -19,19 +17,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via Cloudflare API
+      - name: Auto-detect Account ID + Deploy
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID_OPT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ACCOUNT_ID" ]; then
-            echo "::error::Manque CLOUDFLARE_API_TOKEN ou CLOUDFLARE_ACCOUNT_ID dans Secrets"
+          set -e
+
+          if [ -z "$CF_API_TOKEN" ]; then
+            echo "::error::Manque CLOUDFLARE_API_TOKEN dans Secrets GitHub"
             exit 1
+          fi
+
+          # Si pas d'Account ID fourni, on l'auto-détecte
+          if [ -z "$CF_ACCOUNT_ID_OPT" ]; then
+            echo "→ Auto-détection Account ID via API..."
+            ACCOUNTS_JSON=$(curl -s \
+              "https://api.cloudflare.com/client/v4/accounts" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}")
+
+            SUCCESS=$(echo "$ACCOUNTS_JSON" | jq -r '.success')
+            if [ "$SUCCESS" != "true" ]; then
+              echo "::error::Token API invalide ou manque permission Account:Read"
+              echo "$ACCOUNTS_JSON" | jq '.errors // .'
+              exit 1
+            fi
+
+            CF_ACCOUNT_ID=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].id')
+            CF_ACCOUNT_NAME=$(echo "$ACCOUNTS_JSON" | jq -r '.result[0].name')
+            echo "✅ Compte détecté : $CF_ACCOUNT_NAME ($CF_ACCOUNT_ID)"
+          else
+            CF_ACCOUNT_ID="$CF_ACCOUNT_ID_OPT"
+            CF_ACCOUNT_NAME="(from secret)"
+            echo "→ Utilisation Account ID des secrets : $CF_ACCOUNT_ID"
           fi
 
           echo "→ Déploiement apex-push-worker..."
 
-          # Métadonnées du module ES
           cat > /tmp/metadata.json << EOF
           {
             "main_module": "worker.js",
@@ -39,7 +61,6 @@ jobs:
           }
           EOF
 
-          # PUT vers Cloudflare API
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
             -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/apex-push-worker" \
@@ -51,15 +72,18 @@ jobs:
           STATUS=$(echo "$RESPONSE" | tail -n1 | sed 's/HTTP_STATUS://')
 
           echo "Status: $STATUS"
-          echo "Body: $BODY"
+          echo "Body (500 first chars):"
+          echo "$BODY" | head -c 500
 
           if [ "$STATUS" = "200" ] || [ "$STATUS" = "201" ]; then
-            echo "::notice::✅ Déploiement réussi !"
             echo ""
-            echo "Test rapide :"
+            echo "::notice::✅ Déploiement réussi sur compte $CF_ACCOUNT_NAME !"
             sleep 3
-            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" || echo "Test fail (CORS depuis runner OK)"
+            echo ""
+            echo "→ Test /health (peut échouer depuis runner si propagation pas finie) :"
+            curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" || true
           else
+            echo ""
             echo "::error::❌ Déploiement échoué (HTTP $STATUS)"
             echo "$BODY"
             exit 1
