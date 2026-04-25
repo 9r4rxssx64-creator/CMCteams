@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.118",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.119",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -672,11 +672,29 @@ function axGetPaypalMe(){
 function axBuildPaypalLink(plan){
   var p=PLANS[plan];if(!p||p.price<=0)return "";
   var me=axGetPaypalMe();if(!me)return "";
-  /* Si c est un email (contient @) -> paypal.me ne marche pas, faut juste le username */
   if(me.indexOf("@")>=0)return "";
-  /* Nettoyer le prefix paypalme/ s il y est */
   me=me.replace(/^https?:\/\/(www\.)?paypal\.me\//i,"").replace(/^paypal\.me\//i,"").replace(/^paypalme\//i,"").replace(/\/+$/,"");
   return "https://paypal.me/"+encodeURIComponent(me)+"/"+p.price+"EUR";
+}
+/* v12.119 — Multi-paiement extensif (Kevin: 'mets max moyens, perso et pro') */
+var PAYMENT_METHODS=[
+  {id:"stripe",label:"💳 Carte (Stripe)",color:"#635bff",cat:"pro",info:"Visa/MC/Amex, 1.4%+0.25€",build:function(plan,draft){var v=localStorage.getItem("ax_stripe_link_"+plan)||"";if(!v)return"";var sep=v.indexOf("?")>=0?"&":"?";return v+sep+"prefilled_email="+encodeURIComponent(draft.email||"")+"&client_reference_id="+encodeURIComponent((draft.email||"")+"|"+plan);}},
+  {id:"paypal",label:"🅿 PayPal",color:"#0070ba",cat:"perso",info:"3%+0.35€, sans societe",build:function(plan,draft){return axBuildPaypalLink(plan);}},
+  {id:"revolut",label:"🟦 Revolut Pay",color:"#0075eb",cat:"perso",info:"~1%, instant",build:function(plan,draft){return localStorage.getItem("ax_revolut_link_"+plan)||localStorage.getItem("ax_revolut_link")||"";}},
+  {id:"lydia",label:"💸 Lydia",color:"#0a35ff",cat:"perso",info:"1.5%, mobile FR",build:function(plan,draft){var p=PLANS[plan];var ph=localStorage.getItem("ax_lydia_phone")||"";if(!ph)return"";return"https://lydia.me/pay?phone="+encodeURIComponent(ph)+"&amount="+p.price;}},
+  {id:"sumup",label:"💼 SumUp",color:"#0070d6",cat:"pro",info:"1.69%, lien paiement",build:function(plan,draft){return localStorage.getItem("ax_sumup_link_"+plan)||localStorage.getItem("ax_sumup_link")||"";}},
+  {id:"wise",label:"🌐 Wise",color:"#9fe870",cat:"perso",info:"~0.5%, multi-devises",build:function(plan,draft){return localStorage.getItem("ax_wise_link_"+plan)||localStorage.getItem("ax_wise_link")||"";}},
+  {id:"iban",label:"🏦 Virement IBAN",color:"#2e7d32",cat:"perso",info:"0% frais, 1-3j SEPA",build:function(plan,draft){var iban=localStorage.getItem("ax_iban")||"";if(!iban)return"";var p=PLANS[plan];var bic=localStorage.getItem("ax_bic")||"";var nom=localStorage.getItem("ax_iban_nom")||"Kevin DESARZENS";return"data:text/plain;charset=utf-8,"+encodeURIComponent("Virement SEPA - "+p.name+" - "+p.price+"EUR\nBeneficiaire: "+nom+"\nIBAN: "+iban+"\nBIC: "+bic+"\nLibelle: APEX-"+plan+"-"+(draft.email||"client"));}},
+  {id:"bitcoin",label:"₿ Bitcoin (BTC)",color:"#f7931a",cat:"crypto",info:"BIP21 URI, 0% frais",build:function(plan,draft){var addr=localStorage.getItem("ax_btc_address")||"";if(!addr)return"";var p=PLANS[plan];return"bitcoin:"+addr+"?amount="+(p.price/65000).toFixed(8)+"&label=APEX-"+plan;}},
+  {id:"ethereum",label:"⟠ Ethereum (ETH)",color:"#627eea",cat:"crypto",info:"EIP-681, gas variables",build:function(plan,draft){var addr=localStorage.getItem("ax_eth_address")||"";if(!addr)return"";var p=PLANS[plan];return"ethereum:"+addr+"?value="+Math.round(p.price/3500*1e18);}},
+  {id:"usdc",label:"💵 USDC stablecoin",color:"#2775ca",cat:"crypto",info:"Stable USD, TRC20 ~$1",build:function(plan,draft){var addr=localStorage.getItem("ax_usdc_address")||"";if(!addr)return"";return addr;}},
+  {id:"coinbase",label:"⬡ Coinbase Commerce",color:"#1652f0",cat:"crypto",info:"1%, multi-coins",build:function(plan,draft){return localStorage.getItem("ax_coinbase_charge_"+plan)||"";}},
+  {id:"paylib",label:"📲 Paylib",color:"#ff6633",cat:"perso",info:"Sogenactif, gratuit",build:function(plan,draft){return localStorage.getItem("ax_paylib_phone")?"https://paylib.fr/?numero="+encodeURIComponent(localStorage.getItem("ax_paylib_phone")):"";}},
+  {id:"zelle",label:"⚡ Zelle (US)",color:"#6d1ed4",cat:"perso",info:"USA only, 0%",build:function(plan,draft){var ph=localStorage.getItem("ax_zelle_phone")||"";return ph?"data:text/plain,"+encodeURIComponent("Zelle: "+ph):"";}}
+];
+function axGetEnabledPaymentMethods(plan){
+  var draft=lg("ax_sub_draft",{});
+  return PAYMENT_METHODS.map(function(m){var url="";try{url=m.build?m.build(plan,draft):"";}catch(_){url="";}return Object.assign({},m,{url:url,available:!!url});}).filter(function(m){return m.available;});
 }
 function axCheckQuota(action){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});if(plan.msgs_day>0&&usage.today>=plan.msgs_day){toast("Limite journaliere atteinte ("+plan.msgs_day+" msg). Passez au plan superieur !","warn");return false;}if(plan.msgs_month>0&&usage.month>=plan.msgs_month){toast("Limite mensuelle atteinte. Upgradez votre forfait !","warn");return false;}if(action==="finance"&&!plan.finance){toast("Finance Expert disponible a partir du plan Starter","warn");return false;}if(action==="domotique"&&!plan.domotique){toast("Domotique disponible a partir du plan Pro","warn");return false;}if(action==="offline"&&!plan.offline){toast("Mode offline disponible a partir du plan Pro","warn");return false;}if(action==="code"&&!plan.code){toast("Code interpreter disponible a partir du plan Starter","warn");return false;}return true;}
 function axGetPlanInfo(){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});return{plan:plan.name,price:plan.price,usage_today:usage.today+"/"+(plan.msgs_day>0?plan.msgs_day:"illimite"),usage_month:usage.month+"/"+(plan.msgs_month>0?plan.msgs_month:"illimite"),kb:K.kb.facts.length+"/"+(plan.kb_facts>0?plan.kb_facts:"illimite"),pct_day:plan.msgs_day>0?Math.round(usage.today/plan.msgs_day*100):0,pct_month:plan.msgs_month>0?Math.round(usage.month/plan.msgs_month*100):0};}
@@ -1972,50 +1990,62 @@ function axSelectAndSubmitPlan(pk){
   if(!draft){toast("Fiche perso perdue. Recommence depuis le debut.","err");axOpenSubscribeForm();return;}
   var p=PLANS[pk];if(!p){toast("Forfait invalide","err");return;}
   var isPaid=p.price>0;
-  var stripeLink=isPaid?axGetStripeLink(pk):"";
-  var paypalLink=isPaid?axBuildPaypalLink(pk):"";
-  /* v12.118 — Multi-paiement: Stripe + PayPal au choix client (Kevin: pas encore societe, ajoute PayPal) */
-  if(isPaid&&(stripeLink||paypalLink)){
+  /* v12.119 — Multi-paiement extensif via PAYMENT_METHODS dynamique */
+  var methods=isPaid?axGetEnabledPaymentMethods(pk):[];
+  if(isPaid&&methods.length){
     var ttl="Paiement "+p.name+" — "+p.price+"€"+(p.oneshot?" (une fois)":"/mois");
     var html='<h3 style="margin-bottom:8px">'+esc(ttl)+'</h3>';
     html+='<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:16px">Choisis ton moyen de paiement:</p>';
-    if(stripeLink){
-      html+='<button class="ax-btn ax-btn-primary" onclick="_axGoPay(\''+pk+'\',\'stripe\')" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px;background:linear-gradient(135deg,#635bff,#9d8aff);color:#fff">💳 Carte bancaire (Stripe) — '+p.price+'€</button>';
-    }
-    if(paypalLink){
-      html+='<button class="ax-btn ax-btn-primary" onclick="_axGoPay(\''+pk+'\',\'paypal\')" style="width:100%;padding:14px;font-size:15px;margin-bottom:10px;background:linear-gradient(135deg,#0070ba,#003087);color:#fff">🅿 PayPal — '+p.price+'€</button>';
-    }
+    /* Grouper par categorie */
+    var grouped={pro:[],perso:[],crypto:[]};
+    methods.forEach(function(m){(grouped[m.cat||"perso"]=grouped[m.cat||"perso"]||[]).push(m);});
+    var labels={pro:"💼 Pro",perso:"👤 Particulier",crypto:"🪙 Crypto"};
+    Object.keys(grouped).forEach(function(cat){
+      if(!grouped[cat].length)return;
+      html+='<div style="font-size:10px;font-weight:700;color:var(--ax-text-dim);text-transform:uppercase;margin:8px 0 4px;letter-spacing:1px">'+labels[cat]+'</div>';
+      grouped[cat].forEach(function(m){
+        html+='<button class="ax-btn ax-btn-primary" onclick="_axGoPay(\''+pk+'\',\''+m.id+'\')" style="width:100%;padding:12px;font-size:14px;margin-bottom:6px;background:linear-gradient(135deg,'+m.color+',#fff2);color:#fff;text-align:left;display:flex;justify-content:space-between;align-items:center"><span>'+esc(m.label)+'</span><span style="font-weight:700">'+p.price+'€</span></button>';
+        html+='<div style="font-size:10px;color:var(--ax-text-dim);margin:0 8px 8px;padding-left:8px">'+esc(m.info||"")+'</div>';
+      });
+    });
     html+='<p style="font-size:11px;color:var(--ax-text-dim);text-align:center;margin-top:8px">Apres paiement, ton compte sera active sous 5 min max.</p>';
     _showModal(html);
     return;
   }
-  if(isPaid&&!stripeLink&&!paypalLink){
+  if(isPaid&&!methods.length){
     if(!confirm("Confirmer "+p.name+" a "+p.price+"€"+(p.oneshot?" (une fois)":"/mois")+" ?\n\nAucun moyen de paiement configure. Kevin te contactera pour finaliser (24h max)."))return;
     axSubmitSubscription(draft,pk);
     toast("Demande recue. Kevin te contactera pour le paiement.","ok");
     return;
   }
-  /* Plan gratuit */
   if(!confirm("Confirmer "+p.name+" (gratuit) ?\n\nKevin validera ta demande (24h max). En attendant, tu n'auras pas acces aux fonctions."))return;
   axSubmitSubscription(draft,pk);
 }
-function _axGoPay(pk,method){
+function _axGoPay(pk,methodId){
   var draft=lg("ax_sub_draft",{});
   axSubmitSubscription(draft,pk);
   var c=document.getElementById("modal-container");if(c)c.innerHTML="";
   setTimeout(function(){
     try{
-      var url;
-      if(method==="stripe"){
-        var stripeLink=axGetStripeLink(pk);
-        var sep=stripeLink.indexOf("?")>=0?"&":"?";
-        url=stripeLink+sep+"prefilled_email="+encodeURIComponent(draft.email||"")+"&client_reference_id="+encodeURIComponent((draft.email||"")+"|"+pk);
-      }else if(method==="paypal"){
-        url=axBuildPaypalLink(pk);
+      var m=PAYMENT_METHODS.find(function(x){return x.id===methodId;});
+      if(!m){toast("Methode introuvable","err");return;}
+      var url=m.build?m.build(pk,draft):"";
+      if(!url){toast("Lien "+m.label+" invalide","err");return;}
+      /* Si data: URI -> creer un blob et trigger download/copy */
+      if(url.indexOf("data:")===0){
+        /* Pour IBAN/Zelle: copier dans le presse-papier + afficher */
+        var content=decodeURIComponent(url.split(",")[1]||"");
+        try{navigator.clipboard.writeText(content);}catch(_){}
+        _showModal('<h3>'+esc(m.label)+'</h3><pre style="background:var(--ax-bg-input);padding:12px;border-radius:6px;font-size:11px;white-space:pre-wrap;word-break:break-all">'+esc(content)+'</pre><p style="font-size:11px;color:var(--ax-green);margin-top:8px">✓ Copie dans le presse-papier</p>');
+        return;
       }
-      if(!url){toast("Lien paiement invalide","err");return;}
+      if(url.indexOf("bitcoin:")===0||url.indexOf("ethereum:")===0){
+        try{navigator.clipboard.writeText(url);}catch(_){}
+        _showModal('<h3>'+esc(m.label)+'</h3><pre style="background:var(--ax-bg-input);padding:12px;border-radius:6px;font-size:11px;word-break:break-all">'+esc(url)+'</pre><p style="font-size:11px;color:var(--ax-green);margin-top:8px">✓ URI copie. Colle dans ton wallet (Phantom, MetaMask, Revolut Crypto...).</p>');
+        return;
+      }
       window.open(url,"_blank","noopener");
-      toast("Redirection vers "+(method==="stripe"?"Stripe":"PayPal")+"...","ok");
+      toast("Redirection vers "+m.label+"...","ok");
     }catch(e){toast("Erreur: "+String(e.message||e).slice(0,80),"err");}
   },300);
 }
