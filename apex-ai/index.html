@@ -9945,6 +9945,102 @@ function _axLessonsExport(){
 }
 /* ============ FIN LESSONS LEARNED ============ */
 
+/* ============ RGPD / COOKIES BANNER + EXPORT/DELETE (v12.252 Kevin 2026-04-25) ============ */
+function axShowCookieBanner(){
+  try{
+    if(localStorage.getItem("ax_cookies_consent"))return;
+    if(document.getElementById("ax-cookie-banner"))return;
+    var b=document.createElement("div");
+    b.id="ax-cookie-banner";
+    b.setAttribute("role","dialog");
+    b.setAttribute("aria-label","Information cookies et donnees");
+    b.style.cssText="position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:99999;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);border:1px solid rgba(232,184,48,.4);border-radius:12px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.5);color:#e6e6df;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:10px;max-width:520px;margin:0 auto";
+    b.innerHTML=
+      '<div style="display:flex;align-items:flex-start;gap:8px">'+
+      '<span style="font-size:20px;flex-shrink:0">&#x1F36A;</span>'+
+      '<div style="flex:1;min-width:0">'+
+      '<strong style="color:#e8b830;display:block;margin-bottom:2px">Apex respecte tes donnees</strong>'+
+      '<span style="color:#bbb">Stockage local + Firebase chiffre (UE). Aucun cookie tiers, aucune publicite, aucun tracker.</span>'+
+      '</div></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button onclick="window.open(\'./cgu.html\',\'_blank\')" style="flex:1;min-width:80px;min-height:36px;padding:8px 12px;background:transparent;border:1px solid rgba(255,255,255,.2);color:#bbb;border-radius:8px;font-size:12px;cursor:pointer">CGU</button>'+
+      '<button onclick="window.open(\'./privacy.html\',\'_blank\')" style="flex:1;min-width:80px;min-height:36px;padding:8px 12px;background:transparent;border:1px solid rgba(255,255,255,.2);color:#bbb;border-radius:8px;font-size:12px;cursor:pointer">Confidentialite</button>'+
+      '<button onclick="axAcceptCookies()" style="flex:2;min-width:120px;min-height:36px;padding:8px 16px;background:linear-gradient(135deg,#e8b830,#c9a227);border:none;color:#0a0a18;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">Compris</button>'+
+      '</div>';
+    document.body.appendChild(b);
+  }catch(e){console.warn("[axShowCookieBanner]",e);}
+}
+function axAcceptCookies(){
+  try{
+    localStorage.setItem("ax_cookies_consent",JSON.stringify({ts:Date.now(),ver:APP_VER}));
+    var b=document.getElementById("ax-cookie-banner");
+    if(b){b.style.transition="opacity .3s,transform .3s";b.style.opacity="0";b.style.transform="translateY(20px)";setTimeout(function(){try{b.remove();}catch(_){}},350);}
+    if(typeof toast==="function")toast("Tu peux exporter ou supprimer tes donnees a tout moment dans Reglages","ok");
+  }catch(e){console.warn("[axAcceptCookies]",e);}
+}
+function axRevokeCookies(){
+  try{
+    localStorage.removeItem("ax_cookies_consent");
+    if(typeof toast==="function")toast("Consentement retire","info");
+    setTimeout(axShowCookieBanner,500);
+  }catch(_){}
+}
+function axExportMyData(){
+  try{
+    var data={app:"Apex AI",version:APP_VER,exported:new Date().toISOString(),user:K.user||null,settings:K.settings||{},conversations:K.conversations||[],messages:K.messages||[],kb:K.kb||{},finance:K.fin||{},tasks:lg("ax_tasks",[]),events:lg("ax_events",[]),contacts:lg("ax_contacts",[]),expenses:lg("ax_expenses",[]),habits:lg("ax_habits",[]),notes:lg("ax_notes",[]),diary:lg("ax_diary",[]),bookmarks:lg("ax_bookmarks_web",[]),profile:lg("ax_profile_"+(K.user?K.user.id:"anon"),{}),favorites:lg("ax_favorites",[]),goals:lg("ax_goals",[])};
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url;a.download="apex-mes-donnees-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    if(typeof toast==="function")toast("Tes donnees ont ete telechargees","ok");
+    try{if(typeof _audit==="function")_audit("rgpd_export",K.user?K.user.id:"?","export_my_data","");}catch(_){}
+  }catch(e){if(typeof toast==="function")toast("Erreur export: "+e.message,"err");}
+}
+function axDeleteMyData(){
+  try{
+    var msg="ATTENTION : cette action va effacer DEFINITIVEMENT toutes tes donnees locales :\n\n- Conversations + messages\n- Profil, parametres, preferences\n- Tasks, events, notes, contacts\n- Cle API et tokens\n- Backups locaux\n\nLa synchronisation Firebase ne sera pas effacee automatiquement. Pour cela, contacte support@apex-ai.fr.\n\nTaper SUPPRIMER pour confirmer :";
+    var c=prompt(msg);
+    if(c==null)return;
+    if(String(c).trim().toUpperCase()!=="SUPPRIMER"){if(typeof toast==="function")toast("Annule (mot incorrect)","info");return;}
+    try{if(typeof _audit==="function")_audit("rgpd_delete",K.user?K.user.id:"?","delete_my_data","localStorage cleared");}catch(_){}
+    var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("ax_")===0)keys.push(k);}
+    keys.forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});
+    try{if(typeof axDBClear==="function")axDBClear();}catch(_){}
+    if(typeof toast==="function")toast("Toutes tes donnees ont ete effacees","ok");
+    setTimeout(function(){location.reload();},1500);
+  }catch(e){if(typeof toast==="function")toast("Erreur suppression: "+e.message,"err");}
+}
+async function axStoreEncrypted(key,value,passphrase){
+  try{
+    if(!passphrase){var u=K&&K.user?K.user.id:"anon";passphrase="apex_"+u+"_"+(localStorage.getItem("ax_device_id")||"dev");}
+    if(typeof axEncryptSecret!=="function")return ls(key,value);
+    var ct=await axEncryptSecret(String(value),passphrase);
+    if(ct){ls(key+"_enc",ct);ls(key+"_v","aes-gcm-256");return true;}
+    return false;
+  }catch(e){console.warn("[axStoreEncrypted]",e);return ls(key,value);}
+}
+async function axReadEncrypted(key,passphrase){
+  try{
+    if(!passphrase){var u=K&&K.user?K.user.id:"anon";passphrase="apex_"+u+"_"+(localStorage.getItem("ax_device_id")||"dev");}
+    var ct=lg(key+"_enc",null);
+    if(!ct)return lg(key,null);
+    if(typeof axDecryptSecret!=="function")return null;
+    return await axDecryptSecret(ct,passphrase);
+  }catch(e){console.warn("[axReadEncrypted]",e);return null;}
+}
+try{
+  if(typeof window!=="undefined"){
+    if(document.readyState==="complete"||document.readyState==="interactive"){
+      setTimeout(axShowCookieBanner,2000);
+    }else{
+      document.addEventListener("DOMContentLoaded",function(){setTimeout(axShowCookieBanner,2500);});
+    }
+  }
+}catch(_){}
+/* ============ FIN RGPD / COOKIES ============ */
+
 </script>
 </body>
 </html>
