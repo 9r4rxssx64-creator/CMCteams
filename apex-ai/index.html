@@ -1062,6 +1062,18 @@ function _axOnWakeDetected(transcript){
   var lower=String(transcript||"").toLowerCase();
   var cmd=lower;
   axWakeWordList().forEach(function(w){var idx=lower.indexOf(w);if(idx>=0){var c=lower.slice(idx+w.length).trim();if(c.length<cmd.length||cmd===lower)cmd=c;}});
+  /* Speaker ID v12.266: try to identify who spoke (1s capture in background) */
+  var speakerInfo={userId:"unknown",score:0};
+  try{
+    if(typeof axMatchSpeaker==="function"){
+      axMatchSpeaker(1000).then(function(r){
+        speakerInfo=r||speakerInfo;
+        try{var sl=lg("ax_wake_speakers_log",[]);sl.push({ts:Date.now(),userId:speakerInfo.userId,score:speakerInfo.score,transcript:String(transcript).slice(0,100)});if(sl.length>100)sl=sl.slice(-100);ls("ax_wake_speakers_log",sl);}catch(_){}
+        if(speakerInfo.userId!=="unknown" && speakerInfo.userId!==(K.user&&K.user.id)){if(typeof toast==="function")toast("🎤 Voix reconnue: "+esc(speakerInfo.userId),"info",{duration:2500});}
+        else if(speakerInfo.userId==="unknown" && (lg("ax_voice_profiles_count",0)||0)>0){if(typeof toast==="function")toast("⚠️ Voix non reconnue","warn",{duration:2500});}
+      }).catch(function(){});
+    }
+  }catch(_){}
   try{
     var log=lg("ax_wake_log",[]);
     log.push({ts:Date.now(),ev:"trigger",transcript:String(transcript).slice(0,200),cmd:String(cmd).slice(0,200),uid:K.user?K.user.id:"?"});
