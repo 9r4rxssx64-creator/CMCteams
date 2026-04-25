@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777126948972,
-  "total_commits": 232,
+  "updated_at": 1777134085736,
+  "total_commits": 219,
   "projects": [
     "apex",
     "cmcteams",
@@ -8,6 +8,14 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "c8c6ca84",
+      "ts": 1777126949000,
+      "msg": "Apex v12.207 + KEVIN_INVENTORY.md: VAPID keys generees + inventaire complet de tous les fichiers/liens",
+      "project": "apex",
+      "ver": "12.207",
+      "author": "claude-code"
+    },
     {
       "sha": "7e60e6d4",
       "ts": 1777124328000,
@@ -958,14 +966,6 @@
       "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (parite Apex v12.107)",
       "project": "cmcteams",
       "ver": "9.485",
-      "author": "claude-code"
-    },
-    {
-      "sha": "6885d48e",
-      "ts": 1777081246000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.124 + v9.485 (146 commits, 16 sujets)",
-      "project": "docs",
-      "ver": "12.124",
       "author": "claude-code"
     }
   ]

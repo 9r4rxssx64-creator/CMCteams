@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Apex Push Worker — Deploy Tool</title>
+<style>
+:root{--gold:#c9a227;--gold2:#e8b830;--bg:#0e1530;--bg2:#080c1a;--border:rgba(232,184,48,.3);--text:#f8f8ff;--dim:#9ba8c4;--green:#5cd882;--red:#ff5858}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;padding:0;background:radial-gradient(ellipse at 50% 30%,var(--bg) 0%,var(--bg2) 60%,#040608 100%);color:var(--text);font-family:-apple-system,system-ui,sans-serif;min-height:100vh;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+.wrap{max-width:480px;margin:0 auto;padding:32px 20px}
+h1{font-size:32px;font-weight:900;letter-spacing:4px;margin:0 0 8px;background:linear-gradient(135deg,var(--gold),var(--gold2),#ffd860);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.sub{text-align:center;color:var(--dim);font-size:14px;margin-bottom:32px}
+.diamond{font-size:48px;text-align:center;margin-bottom:8px;color:var(--gold)}
+.card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:18px;margin:12px 0;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.step-title{font-size:13px;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}
+.help{font-size:12px;color:var(--dim);line-height:1.5;margin-bottom:12px}
+input[type="text"],input[type="password"]{width:100%;padding:14px 16px;font-size:16px;background:rgba(0,0,0,.3);color:var(--text);border:1px solid var(--border);border-radius:10px;font-family:ui-monospace,monospace;-webkit-appearance:none}
+input:focus{outline:none;border-color:var(--gold)}
+button{width:100%;padding:16px 20px;font-size:16px;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#040608;border:none;border-radius:12px;cursor:pointer;min-height:56px;margin-top:12px;transition:transform .1s ease}
+button:active{transform:scale(.96)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.ok{color:var(--green)}
+.err{color:var(--red)}
+.log{background:rgba(0,0,0,.4);padding:12px;border-radius:8px;font-family:ui-monospace,monospace;font-size:11px;line-height:1.5;max-height:240px;overflow-y:auto;border:1px solid var(--border);white-space:pre-wrap;word-break:break-word}
+a{color:var(--gold2);text-decoration:none}
+a:hover{text-decoration:underline}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(232,184,48,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.account-pick{padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;font-size:14px;margin:4px 0;cursor:pointer}
+.account-pick.active{background:rgba(232,184,48,.2);border-color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="diamond">✦</div>
+  <h1>APEX</h1>
+  <div class="sub">Déployeur Push Worker — 1 clic</div>
+
+  <div class="card">
+    <div class="step-title">Étape 1 — Token API Cloudflare</div>
+    <div class="help">
+      Crée un token API Cloudflare (5 sec) :<br>
+      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">→ Cloudflare Tokens</a><br>
+      → "Create Token"<br>
+      → Template "<b>Edit Cloudflare Workers</b>"<br>
+      → "Continue to summary" → "Create Token"<br>
+      → Copie le token (il apparaît UNE seule fois)<br>
+      → Colle ici-dessous.
+    </div>
+    <input type="password" id="cfToken" placeholder="Token Cloudflare (commence par...)" autocomplete="off">
+    <button onclick="loadAccounts()" id="btnLoad">Charger mes comptes Cloudflare</button>
+  </div>
+
+  <div class="card" id="accountsCard" style="display:none">
+    <div class="step-title">Étape 2 — Choisis ton compte</div>
+    <div class="help">Si plusieurs comptes, tape sur le bon.</div>
+    <div id="accountsList"></div>
+  </div>
+
+  <div class="card" id="deployCard" style="display:none">
+    <div class="step-title">Étape 3 — Déployer le code</div>
+    <div class="help">
+      Le code <b>apex-push-worker.js</b> sera téléchargé depuis GitHub et déployé sur ton Worker <b>apex-push-worker</b>.<br>
+      Tes 5 variables d'env (VAPID_*, FIREBASE_URL, ADMIN_TOKEN) sont déjà configurées — elles seront préservées.
+    </div>
+    <button onclick="deployWorker()" id="btnDeploy">🚀 Déployer Apex Push Worker</button>
+    <button onclick="testHealth()" class="outline" id="btnTest" style="display:none">✅ Tester /health</button>
+  </div>
+
+  <div class="card" id="logCard" style="display:none">
+    <div class="step-title">📋 Journal</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--dim)">
+    Token jamais sauvegardé · Tout reste en local navigateur · APEX ✦
+  </div>
+</div>
+
+<script>
+let TOKEN='', ACCOUNT_ID='', ACCOUNTS=[];
+const RAW_URL = 'https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/cloudflare/apex-push-worker.js';
+const SCRIPT_NAME = 'apex-push-worker';
+
+function log(msg, cls){
+  const logCard = document.getElementById('logCard');
+  const logEl = document.getElementById('log');
+  logCard.style.display='block';
+  const span = cls ? `<span class="${cls}">${msg}</span>` : msg;
+  logEl.innerHTML += span + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function loadAccounts(){
+  const t = document.getElementById('cfToken').value.trim();
+  if(!t){alert('Colle ton token Cloudflare');return;}
+  TOKEN = t;
+  const btn = document.getElementById('btnLoad');
+  btn.innerHTML = '<span class="spinner"></span> Chargement...';
+  btn.disabled = true;
+  log('→ Vérification du token...');
+  try {
+    const r = await fetch('https://api.cloudflare.com/client/v4/accounts', {
+      headers: {'Authorization':'Bearer '+TOKEN}
+    });
+    const data = await r.json();
+    if(!data.success){
+      log('❌ Token invalide : '+(data.errors?.[0]?.message||'inconnu'),'err');
+      btn.innerHTML='Charger mes comptes Cloudflare';btn.disabled=false;
+      return;
+    }
+    ACCOUNTS = data.result || [];
+    if(!ACCOUNTS.length){log('❌ Aucun compte trouvé','err');btn.innerHTML='Réessayer';btn.disabled=false;return;}
+    log('✅ '+ACCOUNTS.length+' compte(s) trouvé(s)','ok');
+    const list = document.getElementById('accountsList');
+    list.innerHTML = '';
+    ACCOUNTS.forEach((a,i)=>{
+      const div = document.createElement('div');
+      div.className='account-pick'+(i===0?' active':'');
+      div.innerHTML = '<b>'+a.name+'</b><br><small style="color:var(--dim)">ID: '+a.id+'</small>';
+      div.onclick = ()=>pickAccount(a.id, div);
+      list.appendChild(div);
+    });
+    if(ACCOUNTS.length===1) pickAccount(ACCOUNTS[0].id, list.querySelector('.account-pick'));
+    document.getElementById('accountsCard').style.display='block';
+    btn.innerHTML='✅ Compte chargé';
+  } catch(e){
+    log('❌ Erreur réseau : '+e.message,'err');
+    btn.innerHTML='Réessayer';btn.disabled=false;
+  }
+}
+
+function pickAccount(id, el){
+  ACCOUNT_ID = id;
+  document.querySelectorAll('.account-pick').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');
+  log('→ Compte sélectionné : '+id);
+  document.getElementById('deployCard').style.display='block';
+  // Vérifier si worker existe
+  checkWorker();
+}
+
+async function checkWorker(){
+  log('→ Vérification du worker apex-push-worker...');
+  const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, {
+    headers: {'Authorization':'Bearer '+TOKEN}
+  });
+  if(r.ok || r.status===200){
+    log('✅ Worker apex-push-worker trouvé','ok');
+  } else {
+    log('⚠️ Worker introuvable. Crée-le dans Cloudflare Dashboard d\'abord (cf. instructions)','err');
+  }
+}
+
+async function deployWorker(){
+  if(!ACCOUNT_ID){alert('Choisis un compte');return;}
+  const btn = document.getElementById('btnDeploy');
+  btn.innerHTML='<span class="spinner"></span> Déploiement...';
+  btn.disabled=true;
+  log('→ Téléchargement du code depuis GitHub...');
+  try {
+    const codeR = await fetch(RAW_URL+'?_t='+Date.now());
+    if(!codeR.ok)throw new Error('Impossible de récupérer le code GitHub : '+codeR.status);
+    const code = await codeR.text();
+    log('✅ Code téléchargé ('+code.length+' caractères)','ok');
+    log('→ Upload vers Cloudflare...');
+
+    // Cloudflare nouveau format : multipart pour modules ES
+    // Mais pour ES module simple on peut utiliser le format moderne
+    const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`;
+    const metadata = {
+      main_module: 'worker.js',
+      compatibility_date: new Date().toISOString().slice(0,10)
+    };
+    const fd = new FormData();
+    fd.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+    fd.append('worker.js', new Blob([code], {type:'application/javascript+module'}), 'worker.js');
+
+    const r = await fetch(url, {
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+TOKEN},
+      body: fd
+    });
+    const result = await r.json();
+    if(result.success){
+      log('✅ Déploiement réussi !','ok');
+      log('→ ID: '+result.result?.id);
+      log('→ Created: '+result.result?.created_on);
+      log('','');
+      log('🎉 Tu peux maintenant tester le worker :','ok');
+      log('https://apex-push-worker.desarzens-kevin.workers.dev/health');
+      document.getElementById('btnTest').style.display='block';
+      btn.innerHTML='✅ Déployé avec succès';
+    } else {
+      log('❌ Échec : '+(result.errors?.[0]?.message||'inconnu'),'err');
+      log(JSON.stringify(result.errors||result, null, 2));
+      btn.innerHTML='Réessayer';btn.disabled=false;
+    }
+  } catch(e){
+    log('❌ Erreur : '+e.message,'err');
+    btn.innerHTML='Réessayer';btn.disabled=false;
+  }
+}
+
+async function testHealth(){
+  log('→ Test /health...');
+  try {
+    const r = await fetch('https://apex-push-worker.desarzens-kevin.workers.dev/health');
+    const data = await r.json();
+    log('Réponse : '+JSON.stringify(data,null,2));
+    if(data.ok && data.configured){
+      log('✅ TOUT FONCTIONNE ! Notifications push prêtes.','ok');
+    } else if(data.ok){
+      log('⚠️ Worker répond mais pas configuré. Vérifie les variables.','err');
+    }
+  } catch(e){
+    log('❌ Erreur : '+e.message,'err');
+  }
+}
+</script>
+</body>
+</html>

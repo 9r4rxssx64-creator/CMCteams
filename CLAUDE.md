@@ -68,6 +68,70 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 🚀 RÈGLE PERMANENTE — TOUJOURS DÉPASSER LES ATTENTES (Kevin 2026-04-25, ABSOLUE)
+
+> **"Tu dois toujours continuer ton travail en arrière-plan aussi et te faire aider pour l'évolution. Continue toujours dans ce sens-là, pousse, va plus loin. Fais tout ce qu'on a prévu, sois sûr de ne jamais rien oublier. Et que tout fonctionne, fais vérifier. Rappelle-toi de tout ce qu'on a dit."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. Toujours travail en arrière-plan parallèle
+
+À chaque interaction :
+- Pendant que je réponds à Kevin sur un sujet, lancer 2-5 agents background sur sujets adjacents
+- Ne jamais laisser de moments creux sans progrès
+- Si une réponse simple, en profiter pour pousser 1 amélioration
+
+### 2. Faire vérifier par expert
+
+Pour chaque feature non triviale :
+- Lancer 1 agent reviewer indépendant qui audite le résultat
+- Lancer 1 agent test runner qui valide le comportement réel
+- Lancer 1 agent perf qui mesure l'impact
+- Si écart → corriger avant push
+
+### 3. Aller plus loin systématiquement
+
+À chaque demande Kevin :
+- Faire ce qu'il demande (niveau 1)
+- Ajouter 1-2 features adjacentes utiles non demandées (niveau 2)
+- Anticiper la prochaine demande probable (niveau 3)
+
+### 4. Ne rien oublier
+
+Mémoire externe obligatoire :
+- TodoWrite à chaque nouveau sujet
+- KEVIN_INVENTORY.md à chaque fichier créé
+- KEVIN_ACTIONS_TODO.md à chaque action utilisateur en attente
+- CLAUDE_ACTIVITY.json à chaque commit
+- À chaque nouvelle session : relire CLAUDE.md COMPLET en premier
+
+### 5. Vérifier que tout fonctionne
+
+Avant de dire "c'est fait" :
+- node --check (syntax)
+- WebFetch sur les URLs externes données
+- Test mental iPhone 375px du parcours complet
+- Diff git pour confirmer ce qui a été modifié
+- Pas de "ça devrait marcher" — du certain ou rien
+
+### 6. "Rappelle-toi" = re-vérifier toutes les règles
+
+Quand Kevin dit "rappelle-toi" → relire CLAUDE.md sections RÈGLE PERMANENTE et confirmer respect de chacune avant de répondre.
+
+### 7. Liste de check final avant chaque réponse
+
+- [ ] Vue iPhone (pas écran d'ordi) ?
+- [ ] Pas de jargon technique ?
+- [ ] Automation max appliquée ?
+- [ ] Agents background lancés si pertinent ?
+- [ ] URLs vérifiées ?
+- [ ] Mes règles permanentes respectées ?
+- [ ] KEVIN_INVENTORY mis à jour si nouveau fichier ?
+
+**Si une case non cochée → revoir la réponse avant d'envoyer.**
+
+---
+
 ## 📁 RÈGLE PERMANENTE — INVENTAIRE FICHIERS & LIENS AUTO (Kevin 2026-04-25, ABSOLUE)
 
 > **"Tout ce que tu crées, tu me rajoutes dans mes liens importés et suivis. Tu mets à jour régulièrement en autonomie automatiquement quand tu crées quelque chose. Tous les codes que tu as créés, tu me les laisses, que j'y ai accès au cas où avec le lien direct où est-ce qu'il faut aller pour le modifier."**

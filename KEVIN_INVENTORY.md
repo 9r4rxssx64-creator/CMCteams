@@ -106,3 +106,21 @@
 
 > Ce fichier est régénéré automatiquement à chaque commit important par Claude.
 > Si tu vois un fichier important manquant, dis-le-moi et j'enrichis le système.
+
+---
+
+## 🚀 NOUVEAU — Outil 1 clic Deploy Worker
+
+| Quoi | URL |
+|------|-----|
+| 🛠 **Deploy Worker (1 clic)** | https://9r4rxssx64-creator.github.io/CMCteams/tools/cloudflare/deploy-worker.html |
+
+**Comment l'utiliser** :
+1. Ouvre le lien sur iPhone Safari
+2. Crée un Token API Cloudflare → https://dash.cloudflare.com/profile/api-tokens
+   - "Create Token" → Template "Edit Cloudflare Workers"
+   - Copie le token
+3. Colle-le dans la page → "Charger mes comptes"
+4. Choisis ton compte → "Déployer Apex Push Worker"
+5. ✅ Le code remplace automatiquement Hello World
+6. Bouton "Tester /health" pour vérifier
