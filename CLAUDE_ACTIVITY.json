@@ -1,7 +1,6 @@
 {
-  "updated_at": 1777115424464,
-  "session_id": "kevin-2026-04-21-25",
-  "total_commits": 219,
+  "updated_at": 1777117054038,
+  "total_commits": 222,
   "projects": [
     "apex",
     "backend",
@@ -9,76 +8,85 @@
     "docs",
     "multi"
   ],
-  "topics": [
-    {
-      "name": "🔐 Sécurité & Auth",
-      "count": 54
-    },
-    {
-      "name": "⚡ IA & Performance",
-      "count": 46
-    },
-    {
-      "name": "📅 Planning & Cadres",
-      "count": 23
-    },
-    {
-      "name": "🎨 UX & Design",
-      "count": 17
-    },
-    {
-      "name": "🤖 Agents & Automation",
-      "count": 13
-    },
-    {
-      "name": "🔧 Bug fixes",
-      "count": 11
-    },
-    {
-      "name": "🔮 Autre",
-      "count": 10
-    },
-    {
-      "name": "🚂 Backend & Hosting",
-      "count": 10
-    },
-    {
-      "name": "💳 Paiement & Abos",
-      "count": 9
-    },
-    {
-      "name": "🎙 Voix & Audio",
-      "count": 8
-    },
-    {
-      "name": "📧 Email & Notif",
-      "count": 5
-    },
-    {
-      "name": "📊 Worklog & Suivi",
-      "count": 4
-    },
-    {
-      "name": "📚 Docs & Méthodologie",
-      "count": 4
-    },
-    {
-      "name": "🔄 Sync & Storage",
-      "count": 4
-    },
-    {
-      "name": "🌐 GitHub & Git",
-      "count": 1
-    }
-  ],
   "commits": [
+    {
+      "sha": "04c566d8",
+      "ts": 1777117032000,
+      "msg": "Apex v12.169 + CMCteams v9.506: Memoire pro + auto-learn + checklist obligatoire",
+      "project": "apex",
+      "ver": "12.169",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ea8e5ecd",
+      "ts": 1777116663000,
+      "msg": "Apex v12.168: Smart load-balancing tokens + alertes proactives + vTokenBalance",
+      "project": "apex",
+      "ver": "12.168",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ce843d08",
+      "ts": 1777116570000,
+      "msg": "Apex pending changes (subagent QA sentinelles in progress)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "5ffc8edb",
+      "ts": 1777116519000,
+      "msg": "CLAUDE.md regle agents boostes + Apex pending changes (sentinelles QA en cours)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "1a29effe",
+      "ts": 1777116466000,
+      "msg": "CMCteams v9.505b: vAgentsHealth auto-refresh (script via innerHTML inerte → setInterval direct)",
+      "project": "cmcteams",
+      "ver": "9.505",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9440e759",
+      "ts": 1777116387000,
+      "msg": "CMCteams v9.505: CMC_AGENT_TOOLS - 8 sentinelles avec outils metier dedies (subagent)",
+      "project": "cmcteams",
+      "ver": "9.505",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4096e4b1",
+      "ts": 1777116329000,
+      "msg": "Apex v12.167: Outils dedies par expert + helpers calculs financiers",
+      "project": "apex",
+      "ver": "12.167",
+      "author": "claude-code"
+    },
+    {
+      "sha": "379d3200",
+      "ts": 1777116221000,
+      "msg": "KEVIN_ACTIONS_TODO: mis a jour session v12.166 (3 priorites Kevin claires)",
+      "project": "multi",
+      "ver": "12.166",
+      "author": "claude-code"
+    },
+    {
+      "sha": "48238100",
+      "ts": 1777115424000,
+      "msg": "CLAUDE_ACTIVITY regen apres v12.166 actionable IA (~260 commits)",
+      "project": "docs",
+      "ver": "12.166",
+      "author": "claude-code"
+    },
     {
       "sha": "380de1c1",
       "ts": 1777115366000,
       "msg": "Apex v12.166: Reponses IA actionnables + concertation parallele",
       "project": "apex",
       "ver": "12.166",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -87,7 +95,6 @@
       "msg": "CLAUDE.md: regle permanente toujours depasser attentes (Kevin)",
       "project": "docs",
       "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -96,7 +103,6 @@
       "msg": "Apex pending changes (subagent actionable IA work in progress)",
       "project": "multi",
       "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -105,7 +111,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v12.165 (~250 commits)",
       "project": "docs",
       "ver": "12.165",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -114,7 +119,6 @@
       "msg": "Apex v12.165: bump cache + audit Settings (Kevin signal 'plus acces parametres')",
       "project": "apex",
       "ver": "12.165",
-      "topic": "📊 Worklog & Suivi",
       "author": "claude-code"
     },
     {
@@ -123,7 +127,6 @@
       "msg": "SW: bump cache version v12.164 (force fresh assets pour les fixes)",
       "project": "multi",
       "ver": "12.164",
-      "topic": "🔧 Bug fixes",
       "author": "claude-code"
     },
     {
@@ -132,7 +135,6 @@
       "msg": "Apex v12.164: Recherche Coffre + Universelle - fix DeepSeek non trouve",
       "project": "apex",
       "ver": "12.164",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -141,7 +143,6 @@
       "msg": "Apex v12.163: Coffre IA enrichi + Paiements perso (Kevin: clés manquantes)",
       "project": "apex",
       "ver": "12.163",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -150,7 +151,6 @@
       "msg": "Apex v12.162: fix navbar flottante (Kevin: 'navbar bouge monte/descend')",
       "project": "apex",
       "ver": "12.162",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -159,7 +159,6 @@
       "msg": "Apex v12.161: theme clair WCAG AAA contrast (Kevin urgent)",
       "project": "apex",
       "ver": "12.161",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -168,7 +167,6 @@
       "msg": "Subagent intermediate (theme/settings audit work)",
       "project": "multi",
       "ver": null,
-      "topic": "📊 Worklog & Suivi",
       "author": "claude-code"
     },
     {
@@ -177,7 +175,6 @@
       "msg": "Apex v12.160: URGENT FIX axGetLocaleInfo undefined (app crash)",
       "project": "apex",
       "ver": "12.160",
-      "topic": "🔧 Bug fixes",
       "author": "claude-code"
     },
     {
@@ -186,7 +183,6 @@
       "msg": "Apex v12.159: URGENT auto-detect click failure + retry + escalade (Kevin)",
       "project": "apex",
       "ver": "12.159",
-      "topic": "🔮 Autre",
       "author": "claude-code"
     },
     {
@@ -195,7 +191,6 @@
       "msg": "Apex v12.158: vAdminLinks - alternatives Mistral (OpenRouter + Together + Cohere)",
       "project": "apex",
       "ver": "12.158",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -204,7 +199,6 @@
       "msg": "Apex v12.157: fix Gemini URL (Google a change /app/apikey -> /apikey)",
       "project": "apex",
       "ver": "12.157",
-      "topic": "🔧 Bug fixes",
       "author": "claude-code"
     },
     {
@@ -213,7 +207,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres CMCteams v9.504 feature flags etendus (~240 commits)",
       "project": "docs",
       "ver": "9.504",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -222,7 +215,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v9.504 CMCteams (feature flags ON/OFF)",
       "project": "docs",
       "ver": "9.504",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -231,7 +223,6 @@
       "msg": "CMCteams v9.504: feature flags etendus QR badge + NFC + outils metier (ON/OFF admin)",
       "project": "cmcteams",
       "ver": "9.504",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -240,7 +231,6 @@
       "msg": "CMCteams subagent intermediate (feature flags WIP)",
       "project": "multi",
       "ver": null,
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -249,7 +239,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres Apex v12.156 (vAdminLinks solde live)",
       "project": "docs",
       "ver": "12.156",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -258,7 +247,6 @@
       "msg": "Apex v12.156: vAdminLinks - solde live + statut couleur a cote de chaque IA",
       "project": "apex",
       "ver": "12.156",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -267,7 +255,6 @@
       "msg": "Apex v12.155: vAdminLinks enrichi - Google Gemini + Mistral + DeepSeek + Perplexity + Grok signup/billing",
       "project": "apex",
       "ver": "12.155",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -276,7 +263,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v12.154 Apex enrichment + v9.503 CMCteams (~230 commits)",
       "project": "docs",
       "ver": "12.154",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -285,7 +271,6 @@
       "msg": "Apex pending changes (subagent enrichment in progress)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -294,7 +279,6 @@
       "msg": "CMCteams v9.503: outils metier (jsPDF + QR + lazy-load)",
       "project": "cmcteams",
       "ver": "9.503",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -303,7 +287,6 @@
       "msg": "CLAUDE.md: regle permanente enrichissement autonome outils (Kevin)",
       "project": "docs",
       "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -312,7 +295,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v12.153 voice + experts (~225 commits)",
       "project": "docs",
       "ver": "12.153",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -321,7 +303,6 @@
       "msg": "Apex v12.153: voice commands universels (toutes fonctions activables a la voix)",
       "project": "apex",
       "ver": "12.153",
-      "topic": "🎙 Voix & Audio",
       "author": "claude-code"
     },
     {
@@ -330,7 +311,6 @@
       "msg": "Apex v12.153 — Concertation experte par competence (10 roles + avocat du diable)",
       "project": "apex",
       "ver": "12.153",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -339,7 +319,6 @@
       "msg": "MEMO_KEVIN_ACTIONS: tri par priorite + tache urgente #1 (Kevin demande)",
       "project": "multi",
       "ver": null,
-      "topic": "📚 Docs & Méthodologie",
       "author": "claude-code"
     },
     {
@@ -348,7 +327,6 @@
       "msg": "Apex commit pending changes (subagent v12.151 services dashboard)",
       "project": "multi",
       "ver": "12.151",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -357,7 +335,6 @@
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
       "project": "backend",
       "ver": null,
-      "topic": "🚂 Backend & Hosting",
       "author": "claude-code"
     },
     {
@@ -366,7 +343,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.150 + v9.502 (~210 commits)",
       "project": "docs",
       "ver": "12.150",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -375,7 +351,6 @@
       "msg": "Apex v12.150: bump version (multi-IA AX_AI_PROVIDERS + vAIProviders + auto-routing)",
       "project": "apex",
       "ver": "12.150",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -384,7 +359,6 @@
       "msg": "CMCteams v9.502: navigateur web integre + iframe + VPN guide (parite Apex v12.149)",
       "project": "cmcteams",
       "ver": "9.502",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -393,7 +367,6 @@
       "msg": "Apex v12.149: navigateur web integre + iframe + VPN guide",
       "project": "apex",
       "ver": "12.149",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -402,7 +375,6 @@
       "msg": "Apex v12.147: stockage hybride pro (localStorage + IndexedDB + Railway)",
       "project": "apex",
       "ver": "12.147",
-      "topic": "🚂 Backend & Hosting",
       "author": "claude-code"
     },
     {
@@ -411,7 +383,6 @@
       "msg": "CMCteams v9.501: OCR scanner full + amelioration (Kevin: 'comme apex + ameliore a fond')",
       "project": "cmcteams",
       "ver": "9.501",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -420,7 +391,6 @@
       "msg": "Apex v12.145: Health Status admin (diagnostic 1 ecran)",
       "project": "apex",
       "ver": "12.145",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -429,7 +399,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.144 (~190 commits, 16 sujets)",
       "project": "docs",
       "ver": "12.144",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -438,7 +407,6 @@
       "msg": "Apex v12.144: Command Palette - scandoc + activer notifications",
       "project": "apex",
       "ver": "12.144",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -447,7 +415,6 @@
       "msg": "Apex v12.144: push notifications helpers (axPushPermission + axShowNotif + axScheduleNotif)",
       "project": "apex",
       "ver": "12.144",
-      "topic": "📧 Email & Notif",
       "author": "claude-code"
     },
     {
@@ -456,7 +423,6 @@
       "msg": "Apex SW v12.142 cache version (force refresh PWA)",
       "project": "multi",
       "ver": "12.142",
-      "topic": "🔄 Sync & Storage",
       "author": "claude-code"
     },
     {
@@ -465,7 +431,6 @@
       "msg": "CSP fix CMCteams + Apex (Kevin: erreur CSP visible + ecran blanc)",
       "project": "multi",
       "ver": null,
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -474,7 +439,6 @@
       "msg": "CMCteams v9.498: live employee overlay sur carte interactive",
       "project": "cmcteams",
       "ver": "9.498",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -483,7 +447,6 @@
       "msg": "Subagents intermediate (parallel work multiple)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -492,7 +455,6 @@
       "msg": "CMCteams subagent intermediate",
       "project": "multi",
       "ver": null,
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -501,7 +463,6 @@
       "msg": "Apex v12.141: parrainage complet (referral system)",
       "project": "apex",
       "ver": "12.141",
-      "topic": "🔮 Autre",
       "author": "claude-code"
     },
     {
@@ -510,7 +471,6 @@
       "msg": "CMCteams v9.497: touch gestures iPhone pour vMapEditor (pinch zoom + pan + long-press)",
       "project": "cmcteams",
       "ver": "9.497",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -519,7 +479,6 @@
       "msg": "Subagent intermediate",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -528,7 +487,6 @@
       "msg": "CMCteams v9.495: editeur cartes multi-casinos + upload floor plan",
       "project": "cmcteams",
       "ver": "9.495",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     },
     {
@@ -537,7 +495,6 @@
       "msg": "Apex v12.141: geolocalisation haute precision + geofences + vue admin",
       "project": "apex",
       "ver": "12.141",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -546,7 +503,6 @@
       "msg": "CLAUDE.md: regle permissions map CMCteams (Kevin: 'seul admin voit map, pit voit qui a table')",
       "project": "docs",
       "ver": null,
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -555,7 +511,6 @@
       "msg": "Subagent intermediate (parallel work)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -564,7 +519,6 @@
       "msg": "Subagents commits batch (currency + email + universal search + locale)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -573,7 +527,6 @@
       "msg": "Subagents commits batch (universal search + email cascade)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -582,7 +535,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.140 + v9.492 (160+ commits)",
       "project": "docs",
       "ver": "12.140",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -591,7 +543,6 @@
       "msg": "CMCteams v9.492: AUTO continuous tracking apres checkin (Kevin: 'automatiser')",
       "project": "cmcteams",
       "ver": "9.492",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -600,7 +551,6 @@
       "msg": "Apex v12.139: cascade emails auto (Kevin P1) — 4 emails + helper + admin Boite emails",
       "project": "apex",
       "ver": "12.139",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -609,7 +559,6 @@
       "msg": "Subagents commits batch (parallel work)",
       "project": "multi",
       "ver": null,
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -618,7 +567,6 @@
       "msg": "CMCteams v9.491+: visuel premium carte interactive (CSS luxe casino Monaco)",
       "project": "cmcteams",
       "ver": "9.491",
-      "topic": "🎙 Voix & Audio",
       "author": "claude-code"
     },
     {
@@ -627,7 +575,6 @@
       "msg": "Apex v12.136: backup nightly auto + restore + vue admin",
       "project": "apex",
       "ver": "12.136",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -636,7 +583,6 @@
       "msg": "Apex v12.133: SW pro-level (cache strategies + offline + push + bg sync)",
       "project": "apex",
       "ver": "12.133",
-      "topic": "🔄 Sync & Storage",
       "author": "claude-code"
     },
     {
@@ -645,7 +591,6 @@
       "msg": "Subagents commits intermediaires: Apex + CMCteams parallel work",
       "project": "multi",
       "ver": null,
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -654,7 +599,6 @@
       "msg": "Apex v12.131: onboarding pro plein ecran + CSP IP services + referrals FB_FIX",
       "project": "apex",
       "ver": "12.131",
-      "topic": "🔧 Bug fixes",
       "author": "claude-code"
     },
     {
@@ -663,7 +607,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.130 (50+ commits)",
       "project": "docs",
       "ver": "12.130",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -672,7 +615,6 @@
       "msg": "Apex v12.130: subagent commit intermediaire (parallel work)",
       "project": "apex",
       "ver": "12.130",
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -681,7 +623,6 @@
       "msg": "Apex v12.129: i18n etendu (AX_I18N FR/EN/IT) + auto-detect navigateur",
       "project": "apex",
       "ver": "12.129",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -690,7 +631,6 @@
       "msg": "Apex v12.127: SEO + Open Graph image + manifest pro (subagent SEO complete)",
       "project": "apex",
       "ver": "12.127",
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -699,7 +639,6 @@
       "msg": "Apex v12.128: SEO + acquisition (Open Graph complet + Twitter cards + JSON-LD WebApplication + manifest enrichi + bouton Installer Reglages)",
       "project": "apex",
       "ver": "12.128",
-      "topic": "🔮 Autre",
       "author": "claude-code"
     },
     {
@@ -708,7 +647,6 @@
       "msg": "Apex v12.126: SEO meta tags + Open Graph optimises (subagent SEO)",
       "project": "apex",
       "ver": "12.126",
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -717,7 +655,6 @@
       "msg": "Apex v12.125: polish pro (offline banner + button disabled state + spinner CSS)",
       "project": "apex",
       "ver": "12.125",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -726,7 +663,6 @@
       "msg": "CMCteams v9.486: breadcrumbs visibles (parite Apex v12.120)",
       "project": "cmcteams",
       "ver": "9.486",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -735,7 +671,6 @@
       "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (parite Apex v12.107)",
       "project": "cmcteams",
       "ver": "9.485",
-      "topic": "🎙 Voix & Audio",
       "author": "claude-code"
     },
     {
@@ -744,7 +679,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.124 + v9.485 (146 commits, 16 sujets)",
       "project": "docs",
       "ver": "12.124",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -753,7 +687,6 @@
       "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (subagent commit intermediaire)",
       "project": "cmcteams",
       "ver": "9.485",
-      "topic": "🎙 Voix & Audio",
       "author": "claude-code"
     },
     {
@@ -762,7 +695,6 @@
       "msg": "Apex v12.124: mode global niveau IA (Kevin: 'fonction generale, pas par client')",
       "project": "apex",
       "ver": "12.124",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -771,7 +703,6 @@
       "msg": "CMCteams v9.484: smart routing IA Haiku/Sonnet/Opus (parite Apex v12.121)",
       "project": "cmcteams",
       "ver": "9.484",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -780,7 +711,6 @@
       "msg": "Apex v12.123: affichage conso tokens dans fiches users + threshold admin",
       "project": "apex",
       "ver": "12.123",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -789,7 +719,6 @@
       "msg": "CMCteams v9.483: simplifier niveau IA en global employes (Kevin)",
       "project": "cmcteams",
       "ver": "9.483",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -798,7 +727,6 @@
       "msg": "CMCteams: ajout cmc_employees_global_level a FB_FIX (subagent en cours)",
       "project": "multi",
       "ver": null,
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -807,7 +735,6 @@
       "msg": "Apex v12.122: suivi conso par user + alerte admin si conso elevee",
       "project": "apex",
       "ver": "12.122",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -816,7 +743,6 @@
       "msg": "CMCteams v9.482: niveaux IA par employe (parite Apex v12.121)",
       "project": "cmcteams",
       "ver": "9.482",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -825,7 +751,6 @@
       "msg": "CLAUDE_ACTIVITY regen apres v9.481",
       "project": "docs",
       "ver": "9.481",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -834,7 +759,6 @@
       "msg": "CMCteams v9.481: pub Apex multi-endroits + toggles admin",
       "project": "cmcteams",
       "ver": "9.481",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -843,7 +767,6 @@
       "msg": "CMCteams v9.481: pub Apex multi-endroits subagent (commit intermediaire)",
       "project": "cmcteams",
       "ver": "9.481",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -852,7 +775,6 @@
       "msg": "CMCteams v9.480: pub Apex banner top accueil + popup admin-toggle",
       "project": "cmcteams",
       "ver": "9.480",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -861,7 +783,6 @@
       "msg": "Apex v12.121: niveaux IA par user (economie/moyen/fort) + admin Kevin fort",
       "project": "apex",
       "ver": "12.121",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -870,7 +791,6 @@
       "msg": "Apex v12.120: breadcrumbs visibles (UX intuitivite)",
       "project": "apex",
       "ver": "12.120",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -879,7 +799,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.119 (138 commits, 16 sujets)",
       "project": "docs",
       "ver": "12.119",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -888,7 +807,6 @@
       "msg": "Apex v12.119: 13 moyens paiement + CSP fix crypto + iban perso/pro",
       "project": "apex",
       "ver": "12.119",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     },
     {
@@ -897,7 +815,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.117 tutorial",
       "project": "docs",
       "ver": "12.117",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -906,7 +823,6 @@
       "msg": "Apex v12.117: vTutorial - mode d emploi clients selon plan",
       "project": "apex",
       "ver": "12.117",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     },
     {
@@ -915,7 +831,6 @@
       "msg": "CLAUDE_ACTIVITY.json: regen apres v12.115 + v9.479",
       "project": "docs",
       "ver": "12.115",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -924,7 +839,6 @@
       "msg": "Apex v12.115 + CMCteams v9.479: vUsersActivity tracker par utilisateur",
       "project": "apex",
       "ver": "12.115",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -933,7 +847,6 @@
       "msg": "Apex v12.118: PayPal.me en plus de Stripe (Kevin pas encore societe)",
       "project": "apex",
       "ver": "12.118",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     },
     {
@@ -942,7 +855,6 @@
       "msg": "CLAUDE_ACTIVITY: regen apres v12.116 Stripe",
       "project": "docs",
       "ver": "12.116",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -951,7 +863,6 @@
       "msg": "Apex v12.116: Stripe Checkout integration (clients paient en ligne)",
       "project": "apex",
       "ver": "12.116",
-      "topic": "💳 Paiement & Abos",
       "author": "claude-code"
     },
     {
@@ -960,7 +871,6 @@
       "msg": "Apex v12.117: APP_VER bump (subagent backend)",
       "project": "apex",
       "ver": "12.117",
-      "topic": "🚂 Backend & Hosting",
       "author": "claude-code"
     },
     {
@@ -969,7 +879,6 @@
       "msg": "Apex v12.116: feature flags - filter sidebar projects + apostrophe fix",
       "project": "apex",
       "ver": "12.116",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -978,7 +887,6 @@
       "msg": "Apex v12.115: feature flags ON/OFF subagent (provisoire commit pour stop-hook)",
       "project": "apex",
       "ver": "12.115",
-      "topic": "🤖 Agents & Automation",
       "author": "claude-code"
     },
     {
@@ -987,7 +895,6 @@
       "msg": "Apex v12.114 + CMCteams v9.478: tri commits par sujet/thematique",
       "project": "apex",
       "ver": "12.114",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     },
     {
@@ -996,7 +903,6 @@
       "msg": "CLAUDE.md: regle permanente maintenir CLAUDE_ACTIVITY.json a chaque commit",
       "project": "docs",
       "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -1005,7 +911,6 @@
       "msg": "Apex v12.113 + CMCteams v9.477: CLAUDE_ACTIVITY journal cross-app",
       "project": "apex",
       "ver": "12.113",
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -1014,7 +919,6 @@
       "msg": "CMCteams v9.476: FaceID auto-trigger ecran login (parite Apex v12.112)",
       "project": "cmcteams",
       "ver": "9.476",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -1023,7 +927,6 @@
       "msg": "Apex v12.112: FaceID priorite + auto-trigger sur ecran login",
       "project": "apex",
       "ver": "12.112",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -1032,7 +935,6 @@
       "msg": "Apex v12.111: dedup Settings/Vault + Reset users + Worklog cross-app",
       "project": "apex",
       "ver": "12.111",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -1041,7 +943,6 @@
       "msg": "CMCteams v9.475: Admin reorganise en 4 categories (vs 8)",
       "project": "cmcteams",
       "ver": "9.475",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     },
     {
@@ -1050,7 +951,6 @@
       "msg": "CLAUDE.md: regle critique iPhone-first (Kevin permanent)",
       "project": "docs",
       "ver": null,
-      "topic": "⚡ IA & Performance",
       "author": "claude-code"
     },
     {
@@ -1059,7 +959,6 @@
       "msg": "Apex v12.110: bouton palette iPhone visible (topbar)",
       "project": "apex",
       "ver": "12.110",
-      "topic": "🎨 UX & Design",
       "author": "claude-code"
     },
     {
@@ -1068,88 +967,6 @@
       "msg": "Apex v12.109: smart model routing auto Haiku/Sonnet (economie tokens)",
       "project": "apex",
       "ver": "12.109",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4318cc1f",
-      "ts": 1777077616000,
-      "msg": "CMCteams v9.474: vAdminTimework — compteur temps admin Kevin",
-      "project": "cmcteams",
-      "ver": "9.474",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "531c4541",
-      "ts": 1777077605000,
-      "msg": "Apex v12.108: Command Palette Cmd+K (UX fluidite top)",
-      "project": "apex",
-      "ver": "12.108",
-      "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "21469a74",
-      "ts": 1777077462000,
-      "msg": "Apex v12.108: section Backend & Hosting + OpenAI dans liens admin",
-      "project": "apex",
-      "ver": "12.108",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "11f338d5",
-      "ts": 1777077195000,
-      "msg": "Apex v12.106-107 + CMCteams v9.472-473: IA rapide + voix premium",
-      "project": "apex",
-      "ver": "12.106",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "af9f0d9d",
-      "ts": 1777076940000,
-      "msg": "Apex v12.105 + CMCteams v9.471: STRICT LOGIN GATE (validation admin obligatoire)",
-      "project": "apex",
-      "ver": "12.105",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "475140fe",
-      "ts": 1777074972000,
-      "msg": "CMCteams v9.470: chat IA passe par backend FastAPI Railway si configure",
-      "project": "cmcteams",
-      "ver": "9.470",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "92d9df8b",
-      "ts": 1777074837000,
-      "msg": "Update KEVIN_ACTIONS_TODO: Apex v12.104 + CMCteams v9.469 + backend deployed",
-      "project": "docs",
-      "ver": "12.104",
-      "topic": "🚂 Backend & Hosting",
-      "author": "claude-code"
-    },
-    {
-      "sha": "35416243",
-      "ts": 1777074772000,
-      "msg": "Apex v12.104 + CMCteams v9.469: bouton couper voix instant",
-      "project": "apex",
-      "ver": "12.104",
-      "topic": "🎙 Voix & Audio",
-      "author": "claude-code"
-    },
-    {
-      "sha": "fd3c25a4",
-      "ts": 1777074138000,
-      "msg": "Backend: retire nixpacks.toml (override casse pip install)",
-      "project": "backend",
-      "ver": null,
-      "topic": "🚂 Backend & Hosting",
       "author": "claude-code"
     }
   ]
