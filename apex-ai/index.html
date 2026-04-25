@@ -242,7 +242,8 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 @media(max-width:480px){.ax-sidebar{width:100%}.ax-canvas{width:100%;max-width:100%}.ax-modal{margin:0 8px;max-width:calc(100vw - 16px)}.ax-features{grid-template-columns:1fr}.ax-pricing>div{min-width:140px}}
 @media(min-width:768px){.ax-msg{max-width:70%}.ax-sidebar{width:320px}.ax-features{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1200px){#content{max-width:900px;margin:0 auto}.ax-msg{max-width:60%}.ax-features{grid-template-columns:repeat(3,1fr)}.ax-pricing{grid-template-columns:repeat(3,1fr)}}
-.ax-light{--ax-bg-flat:#f4f5fa;--ax-bg2:#ffffff;--ax-bg-card:rgba(255,255,255,.92);--ax-bg-input:rgba(0,0,20,.04);--ax-text:#1a1a2e;--ax-text-dim:#5a5a7a;--ax-glass:rgba(245,246,252,.92);--ax-border:rgba(180,140,40,.12);--ax-gold:#b08008;--ax-gold-bright:#c9a020;--ax-gold-soft:rgba(180,140,40,.08)}
+/* v12.159 — Light theme WCAG AAA contrast (Kevin: "trop clair, on n'y voit plus") */
+.ax-light{--ax-bg:#ffffff;--ax-bg-flat:#ffffff;--ax-bg2:#f5f5f8;--ax-bg-card:#ffffff;--ax-bg-input:#ffffff;--ax-text:#0a0a0f;--ax-text-dim:#3a3a45;--ax-glass:rgba(255,255,255,.96);--ax-border:#d0d0d8;--ax-gold:#a07a00;--ax-gold-bright:#a07a00;--ax-gold-soft:rgba(160,122,0,.10);--ax-blue:#0050b0;--ax-red:#b91c1c}
 .ax-light #topbar,.ax-light #navbar{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(248,249,254,.92));box-shadow:0 1px 8px rgba(0,0,0,.08)}
 .ax-light .ax-msg-user{background:linear-gradient(135deg,rgba(201,162,39,.12),rgba(201,162,39,.06));border-color:rgba(201,162,39,.2)}
 .ax-light .ax-msg-bot{background:rgba(255,255,255,.95);border-color:rgba(0,0,0,.08);border-left:3px solid rgba(176,128,8,.3);box-shadow:0 2px 8px rgba(0,0,0,.06)}
@@ -322,11 +323,29 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.158",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.160",ADMIN_ID="kdmc_admin";
+/* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
+var AX_LOCALES={
+  MC:{name:"Monaco",flag:"🇲🇨",lang:"fr",currency:"EUR",timezone:"Europe/Monaco",emergency:"112"},
+  FR:{name:"France",flag:"🇫🇷",lang:"fr",currency:"EUR",timezone:"Europe/Paris",emergency:"112"},
+  CH:{name:"Suisse",flag:"🇨🇭",lang:"fr",currency:"CHF",timezone:"Europe/Zurich",emergency:"112"},
+  IT:{name:"Italie",flag:"🇮🇹",lang:"it",currency:"EUR",timezone:"Europe/Rome",emergency:"112"},
+  GB:{name:"UK",flag:"🇬🇧",lang:"en",currency:"GBP",timezone:"Europe/London",emergency:"999"},
+  US:{name:"USA",flag:"🇺🇸",lang:"en",currency:"USD",timezone:"America/New_York",emergency:"911"},
+  ES:{name:"Espagne",flag:"🇪🇸",lang:"es",currency:"EUR",timezone:"Europe/Madrid",emergency:"112"},
+  DE:{name:"Allemagne",flag:"🇩🇪",lang:"de",currency:"EUR",timezone:"Europe/Berlin",emergency:"112"}
+};
+function axDetectLocale(){var stored=localStorage.getItem("ax_locale");if(stored&&AX_LOCALES[stored])return stored;try{var tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"";for(var c in AX_LOCALES){if(AX_LOCALES[c].timezone===tz)return c;}}catch(_){}return "MC";}
+function axGetLocaleInfo(){return AX_LOCALES[axDetectLocale()]||AX_LOCALES.MC;}
+function axSetLocale(c){if(!AX_LOCALES[c])return;localStorage.setItem("ax_locale",c);try{toast(AX_LOCALES[c].flag+" "+AX_LOCALES[c].name,"ok");}catch(_){}try{dc();}catch(_){}}
+function axLocaleSelector(){var cur=axDetectLocale();var h='<select class="ax-input" style="width:auto" onchange="axSetLocale(this.value)">';Object.keys(AX_LOCALES).forEach(function(c){h+='<option value="'+c+'"'+(cur===c?" selected":"")+'>'+AX_LOCALES[c].flag+' '+AX_LOCALES[c].name+'</option>';});return h+'</select>';}
+function axLocaleTime(){try{var i=axGetLocaleInfo();return new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:i.timezone});}catch(_){return new Date().toLocaleTimeString();}}
+function axLocaleDate(){try{var i=axGetLocaleInfo();return new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",timeZone:i.timezone});}catch(_){return new Date().toLocaleDateString();}}
+function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https://ipwho.is/").then(function(r){return r.json();}).then(function(d){if(d&&d.country_code&&AX_LOCALES[d.country_code]){localStorage.setItem("ax_locale",d.country_code);resolve(d.country_code);}else resolve(null);}).catch(function(){resolve(null);});});}
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -795,6 +814,112 @@ function axExportDashboardPDF(){
     return axExportPDF("Apex Dashboard",sections);
   }catch(e){try{toast("Export impossible","warn");}catch(_){}try{if(typeof _logErr==="function")_logErr("axExportDashboardPDF",e);}catch(_){}}
 }
+/* v12.159 — Auto-fix click failure (Kevin: 'detection + correction auto').
+   Monitor PASSIF des clics utilisateur. Si action attendue (sv, modal) n'aboutit pas,
+   declenche retry + escalade Claude Code si echec persistant. Ne casse JAMAIS le clic normal. */
+var _axClickWatch={lastClick:null,failures:[],lastView:null,fixingNow:false};
+function _axMonitorClick(e){
+  try{
+    var target=e.target;if(!target)return;
+    /* Skip inputs, textarea, links externes (clic legitime) */
+    if(target.tagName==="INPUT"||target.tagName==="TEXTAREA"||target.tagName==="SELECT"||target.isContentEditable)return;
+    /* Remonter au plus proche ancetre cliquable si on a clique sur un span/icon dedans */
+    var node=target;var depth=0;
+    while(node&&depth<4&&!node.getAttribute("onclick")&&node.tagName!=="BUTTON"&&node.tagName!=="A"){node=node.parentElement;depth++;}
+    if(!node)return;
+    var onclickAttr=String(node.getAttribute("onclick")||"");
+    /* On ne tracke que clics avec sv() — c'est ce qui peut "ne rien faire" silencieusement */
+    if(onclickAttr.indexOf("sv(")<0)return;
+    var click={
+      ts:Date.now(),
+      target:(node.tagName||"")+(node.id?"#"+node.id:"")+(node.className&&typeof node.className==="string"?"."+node.className.split(" ")[0]:""),
+      onclick:onclickAttr.slice(0,160),
+      view:K.view,
+      text:String(node.textContent||"").slice(0,50).trim()
+    };
+    _axClickWatch.lastClick=click;_axClickWatch.lastView=K.view;
+    setTimeout(function(){_axCheckClickResult(click);},2000);
+  }catch(_){/* monitor doit etre 100% silent */}
+}
+function _axCheckClickResult(click){
+  try{
+    if(!click||_axClickWatch.fixingNow)return;
+    var m=click.onclick.match(/sv\(['"](\w+)['"]/);
+    if(!m)return;
+    var expected=m[1];
+    /* Vue n'a pas change ET on est toujours sur la meme = echec */
+    if(K.view!==expected&&K.view===click.view){
+      _axRecordFailure(click);_axTriggerAutoFix(click,expected);
+    }
+  }catch(_){}
+}
+function _axRecordFailure(click){
+  try{
+    _axClickWatch.failures.push(click);
+    if(_axClickWatch.failures.length>50)_axClickWatch.failures.shift();
+    ls("ax_click_failures",_axClickWatch.failures);
+  }catch(_){}
+}
+function _axTriggerAutoFix(click,expected){
+  if(_axClickWatch.fixingNow)return;
+  _axClickWatch.fixingNow=true;
+  try{toast("Petit souci détecté, correction en cours...","warn",{force:true});}catch(_){}
+  /* Essai 1 : re-render */
+  try{if(typeof dc==="function")dc();}catch(_){}
+  /* Essai 2 : retry sv() apres 500ms */
+  setTimeout(function(){
+    try{if(typeof sv==="function")sv(expected);}catch(_){}
+    setTimeout(function(){
+      _axClickWatch.fixingNow=false;
+      if(K.view===expected){
+        try{toast("Corrigé. Vous pouvez réessayer.","ok",{force:true});}catch(_){}
+      }else{
+        /* Echec persistant -> escalade Claude Code */
+        try{
+          if(typeof _escalateToClaudeCode==="function"){
+            _escalateToClaudeCode({click:click,expectedView:expected,attempts:2,actualView:K.view},"Click failure persistent: "+click.target+" -> "+expected,"critical");
+          }
+        }catch(_){}
+        try{toast("Le bouton ne répond pas. Signalé. Rechargez l'app si besoin.","err",{force:true});}catch(_){}
+      }
+    },1500);
+  },500);
+}
+/* Bind global une seule fois (capture phase pour intercepter avant les handlers) */
+if(typeof window!=="undefined"&&!window.__axClickMonitorBound){
+  window.__axClickMonitorBound=true;
+  try{document.addEventListener("click",_axMonitorClick,true);}catch(_){}
+  try{_axClickWatch.failures=lg("ax_click_failures",[])||[];}catch(_){}
+}
+
+/* v12.159 — Vue admin: liste des echecs de clic detectes (lecture ax_click_failures) */
+function vClickFailures(){
+  if(!axIsAdmin())return'<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin uniquement</div></div>';
+  var fails=lg("ax_click_failures",[])||[];
+  var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:8px">🐛 Échecs de clics détectés</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:12px">Quand un utilisateur clique sur un bouton et que rien ne se passe, l\'événement est capturé ici. L\'auto-fix retry automatiquement avant d\'escalader.</p>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="dc();" style="flex:1;min-width:120px">🔄 Rafraîchir</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="if(confirm(\'Vider la liste ?\')){_axClickWatch.failures=[];ls(\'ax_click_failures\',[]);dc();}" style="flex:1;min-width:120px">🗑 Vider</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="if(typeof axForceRefresh===&quot;function&quot;)axForceRefresh();else location.reload();" style="flex:1;min-width:120px">♻️ Recharger app</button>';
+  h+='</div>';
+  h+='<div class="ax-card" style="margin-bottom:12px;text-align:center"><div style="font-size:24px;color:var(--ax-gold);font-weight:700">'+fails.length+'</div><div style="font-size:11px;color:var(--ax-text-dim)">échecs enregistrés (max 50)</div></div>';
+  if(!fails.length){h+='<div class="ax-empty"><div class="ax-empty-icon">✨</div><div class="ax-empty-text">Aucun échec — tous les clics fonctionnent</div></div></div>';return h;}
+  fails.slice().reverse().forEach(function(c,i){
+    var when=(typeof _timeAgo==="function")?_timeAgo(c.ts):new Date(c.ts).toLocaleString("fr-FR");
+    h+='<div class="ax-card" style="border-left:4px solid var(--ax-red);margin-bottom:8px;padding:10px">';
+    h+='<div style="font-size:11px;color:var(--ax-text-dim)">'+esc(when)+' · vue '+esc(c.view||"?")+'</div>';
+    h+='<div style="font-size:13px;margin-top:4px;font-weight:600">'+esc(c.text||"(sans texte)")+'</div>';
+    h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px;word-break:break-all">'+esc(c.target||"")+'</div>';
+    h+='<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px;word-break:break-all">onclick: '+esc(c.onclick||"")+'</div>';
+    h+='<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">';
+    h+='<button class="ax-btn ax-btn-outline" style="font-size:11px;padding:4px 8px" onclick="(function(){_axClickWatch.failures.splice('+(fails.length-1-i)+',1);ls(\'ax_click_failures\',_axClickWatch.failures);dc();})();">✓ Marquer corrigé</button>';
+    h+='</div>';
+    h+='</div>';
+  });
+  h+='</div>';return h;
+}
+
 /* Export PDF de la liste utilisateurs (vUsersActivity) */
 function axExportUsersActivityPDF(){
   try{
@@ -2489,7 +2614,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"settings":return vSettings();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -4320,6 +4445,7 @@ var APEX_COMMANDS=[
   {id:"links",lb:"🔗 Liens admin",cat:"Admin",adminOnly:true,act:function(){sv("links");}},
   {id:"connections",lb:"🌐 Connexions live",cat:"Admin",adminOnly:true,act:function(){sv("connections");}},
   {id:"errorslive",lb:"🐛 Erreurs live",cat:"Admin",adminOnly:true,act:function(){sv("errorslive");}},
+  {id:"clickfailures",lb:"🐛 Échecs de clics (admin)",cat:"Admin",adminOnly:true,act:function(){sv("clickfailures");}},
   {id:"crew",lb:"👨‍💼 Agents IA",cat:"Admin",adminOnly:true,act:function(){sv("crew");}},
   {id:"map",lb:"🗺 Carte admin",cat:"Admin",adminOnly:true,act:function(){sv("map");}},
   {id:"geolocation",lb:"📍 Géolocalisation",cat:"Admin",adminOnly:true,act:function(){sv("geolocation");}},
