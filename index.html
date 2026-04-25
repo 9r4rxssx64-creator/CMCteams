@@ -4597,27 +4597,36 @@ try{_rebuildIndexes();}catch(_){}
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
 var APP_VER="v9.541";
-// --- i18n minimal v9.534 — 30 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
+// --- i18n minimal v9.534 → v9.542 — 60 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
 var I18N_CRITICAL={
 fr:{
 "login.required":"Connecte-toi d'abord","login.welcome":"Bienvenue !","login.fail":"Identifiants invalides","login.logout":"Deconnecte",
-"err.generic":"Erreur, reessaie","err.network":"Reseau indisponible, verifie ta connexion","err.timeout":"Trop long, reessaie","err.server":"Serveur surcharge, reessaie dans 1 min","err.storage":"Memoire pleine, nettoyage en cours","err.permission":"Permission refusee","err.notfound":"Introuvable",
+"err.generic":"Erreur, reessaie","err.network":"Reseau indisponible, verifie ta connexion","err.timeout":"Trop long, reessaie","err.server":"Serveur surcharge, reessaie dans 1 min","err.storage":"Memoire pleine, nettoyage en cours","err.permission":"Permission refusee","err.notfound":"Introuvable","err.api":"Erreur API, reessaie","err.invalid_input":"Saisie invalide",
 "toast.copy":"Copie","toast.saved":"Enregistre","toast.deleted":"Supprime","toast.sent":"Envoye","toast.applied":"Applique","toast.cancelled":"Annule","toast.processing":"Traitement...","toast.empty":"Champ vide",
 "action.save":"Sauvegarder","action.cancel":"Annuler","action.delete":"Supprimer","action.copy":"Copier","action.send":"Envoyer","action.confirm":"Confirmer","action.close":"Fermer","action.retry":"Reessayer","action.next":"Suivant","action.back":"Retour",
+"btn.save":"Sauvegarder","btn.cancel":"Annuler","btn.close":"Fermer","btn.confirm":"Confirmer","btn.delete":"Supprimer","btn.add":"Ajouter","btn.edit":"Modifier","btn.remove":"Retirer","btn.options":"Options",
+"success.saved":"Enregistre avec succes","success.copied":"Copie dans le presse-papiers","success.sent":"Envoye avec succes","success.deleted":"Supprime avec succes",
+"label.search":"Rechercher","label.email":"Email","label.phone":"Telephone","label.pin":"Code PIN","label.name":"Nom","label.password":"Mot de passe","label.username":"Identifiant","label.date":"Date","label.time":"Heure",
 "voice.unavailable":"Reconnaissance vocale non disponible","camera.unavailable":"Camera non disponible","mic.unavailable":"Micro non disponible"
 },
 en:{
 "login.required":"Sign in first","login.welcome":"Welcome!","login.fail":"Invalid credentials","login.logout":"Logged out",
-"err.generic":"Error, please retry","err.network":"Network unavailable, check your connection","err.timeout":"Too long, please retry","err.server":"Server overloaded, retry in 1 min","err.storage":"Storage full, cleanup in progress","err.permission":"Permission denied","err.notfound":"Not found",
+"err.generic":"Error, please retry","err.network":"Network unavailable, check your connection","err.timeout":"Too long, please retry","err.server":"Server overloaded, retry in 1 min","err.storage":"Storage full, cleanup in progress","err.permission":"Permission denied","err.notfound":"Not found","err.api":"API error, please retry","err.invalid_input":"Invalid input",
 "toast.copy":"Copied","toast.saved":"Saved","toast.deleted":"Deleted","toast.sent":"Sent","toast.applied":"Applied","toast.cancelled":"Cancelled","toast.processing":"Processing...","toast.empty":"Empty field",
 "action.save":"Save","action.cancel":"Cancel","action.delete":"Delete","action.copy":"Copy","action.send":"Send","action.confirm":"Confirm","action.close":"Close","action.retry":"Retry","action.next":"Next","action.back":"Back",
+"btn.save":"Save","btn.cancel":"Cancel","btn.close":"Close","btn.confirm":"Confirm","btn.delete":"Delete","btn.add":"Add","btn.edit":"Edit","btn.remove":"Remove","btn.options":"Options",
+"success.saved":"Saved successfully","success.copied":"Copied to clipboard","success.sent":"Sent successfully","success.deleted":"Deleted successfully",
+"label.search":"Search","label.email":"Email","label.phone":"Phone","label.pin":"PIN","label.name":"Name","label.password":"Password","label.username":"Username","label.date":"Date","label.time":"Time",
 "voice.unavailable":"Voice recognition unavailable","camera.unavailable":"Camera unavailable","mic.unavailable":"Microphone unavailable"
 },
 it:{
 "login.required":"Accedi prima","login.welcome":"Benvenuto!","login.fail":"Credenziali non valide","login.logout":"Disconnesso",
-"err.generic":"Errore, riprova","err.network":"Rete non disponibile","err.timeout":"Troppo lungo, riprova","err.server":"Server sovraccarico","err.storage":"Memoria piena","err.permission":"Permesso negato","err.notfound":"Non trovato",
+"err.generic":"Errore, riprova","err.network":"Rete non disponibile","err.timeout":"Troppo lungo, riprova","err.server":"Server sovraccarico","err.storage":"Memoria piena","err.permission":"Permesso negato","err.notfound":"Non trovato","err.api":"Errore API, riprova","err.invalid_input":"Input non valido",
 "toast.copy":"Copiato","toast.saved":"Salvato","toast.deleted":"Eliminato","toast.sent":"Inviato","toast.applied":"Applicato","toast.cancelled":"Annullato","toast.processing":"Elaborazione...","toast.empty":"Campo vuoto",
 "action.save":"Salva","action.cancel":"Annulla","action.delete":"Elimina","action.copy":"Copia","action.send":"Invia","action.confirm":"Conferma","action.close":"Chiudi","action.retry":"Riprova","action.next":"Avanti","action.back":"Indietro",
+"btn.save":"Salva","btn.cancel":"Annulla","btn.close":"Chiudi","btn.confirm":"Conferma","btn.delete":"Elimina","btn.add":"Aggiungi","btn.edit":"Modifica","btn.remove":"Rimuovi","btn.options":"Opzioni",
+"success.saved":"Salvato con successo","success.copied":"Copiato negli appunti","success.sent":"Inviato con successo","success.deleted":"Eliminato con successo",
+"label.search":"Cerca","label.email":"Email","label.phone":"Telefono","label.pin":"PIN","label.name":"Nome","label.password":"Password","label.username":"Nome utente","label.date":"Data","label.time":"Ora",
 "voice.unavailable":"Riconoscimento vocale non disponibile","camera.unavailable":"Fotocamera non disponibile","mic.unavailable":"Microfono non disponibile"
 }
 };
