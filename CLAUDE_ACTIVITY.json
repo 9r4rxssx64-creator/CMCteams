@@ -1,14 +1,29 @@
 {
-  "updated_at": 1777124231209,
-  "total_commits": 239,
+  "updated_at": 1777126948972,
+  "total_commits": 232,
   "projects": [
     "apex",
-    "backend",
     "cmcteams",
     "docs",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "7e60e6d4",
+      "ts": 1777124328000,
+      "msg": "Apex v12.206: Login securite renforcee (Kevin: prenom seul OU nom seul interdit, exige prenom+nom OU email entier OU squashed)",
+      "project": "apex",
+      "ver": "12.206",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2dc90134",
+      "ts": 1777124243000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.201 (backup auto + health report)",
+      "project": "docs",
+      "ver": "12.201",
+      "author": "claude-code"
+    },
     {
       "sha": "aef93500",
       "ts": 1777124228000,
@@ -605,7 +620,7 @@
       "sha": "639e23fe",
       "ts": 1777109926000,
       "msg": "Backend: route /api/services/balances pour fetch soldes API server-side",
-      "project": "backend",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -950,22 +965,6 @@
       "ts": 1777081246000,
       "msg": "CLAUDE_ACTIVITY: regen apres v12.124 + v9.485 (146 commits, 16 sujets)",
       "project": "docs",
-      "ver": "12.124",
-      "author": "claude-code"
-    },
-    {
-      "sha": "214d6229",
-      "ts": 1777081230000,
-      "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (subagent commit intermediaire)",
-      "project": "cmcteams",
-      "ver": "9.485",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1be8321d",
-      "ts": 1777081183000,
-      "msg": "Apex v12.124: mode global niveau IA (Kevin: 'fonction generale, pas par client')",
-      "project": "apex",
       "ver": "12.124",
       "author": "claude-code"
     }

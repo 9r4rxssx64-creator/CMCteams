@@ -371,10 +371,11 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.206",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.207",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
-var AX_VAPID_PUBLIC="BEl62iUYgUivxIkv69yViEuiBIa1HI9hRmKvSzg_TvNh4zRDEtv2JzHE8MqQgqp7XeKQHEKZ4ETZiB2EW3YcQyc";
+/* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
+var AX_VAPID_PUBLIC="BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY";
 // REMPLACER par vraie cle quand backend deploye - generer via tools/cloudflare/gen-vapid.html
 /* v12.160 — URGENT FIX: stubs locales (Kevin: app crash 'axGetLocaleInfo undefined' + plus de messages 'rechargez') */
 var AX_LOCALES={

@@ -68,6 +68,51 @@ Si réponse non ou incertain → **vérifier d'abord, envoyer ensuite**.
 
 ---
 
+## 📁 RÈGLE PERMANENTE — INVENTAIRE FICHIERS & LIENS AUTO (Kevin 2026-04-25, ABSOLUE)
+
+> **"Tout ce que tu crées, tu me rajoutes dans mes liens importés et suivis. Tu mets à jour régulièrement en autonomie automatiquement quand tu crées quelque chose. Tous les codes que tu as créés, tu me les laisses, que j'y ai accès au cas où avec le lien direct où est-ce qu'il faut aller pour le modifier."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. À chaque fichier créé/modifié
+
+Mettre à jour automatiquement :
+- `KEVIN_INVENTORY.md` à la racine du repo (liste complète avec liens GitHub directs)
+- Section "📁 Mes codes & fichiers" dans Apex Réglages avec liens cliquables
+- Liens admin Apex (`vAdminLinks`) avec lien vers GitHub raw + GitHub edit
+
+### 2. Format de chaque entrée inventaire
+
+```
+[Nom fichier] | [Description simple] | [URL GitHub view] | [URL Raw] | [URL Edit]
+```
+
+### 3. URLs standard du repo
+
+- Repo : https://github.com/9r4rxssx64-creator/cmcteams
+- View file : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/{path}
+- Raw file : https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/{path}
+- Edit file : https://github.com/9r4rxssx64-creator/cmcteams/edit/main/{path}
+- GitHub Pages live : https://9r4rxssx64-creator.github.io/CMCteams/
+
+### 4. Auto-update
+
+- Helper `axInventoryUpdate(filename, description)` à appeler à chaque commit important
+- Sentinelle `inventory-watch` qui scanne la liste files dans le repo via API GitHub et signale les nouveaux non listés
+
+### 5. Vue Apex "📁 Mes codes" (admin only)
+
+- Liste tous les fichiers du repo classés par dossier
+- Pour chaque : Nom + description + 3 boutons "Voir" / "Brut" / "Modifier"
+- Search bar
+- Date dernière modif (depuis git log)
+
+### 6. CMCteams équivalent
+
+Vue similaire dans CMCteams admin pour tous ses fichiers/sentinelles/agents.
+
+---
+
 ## 🛡 RÈGLE PERMANENTE — AGENTS DÉDIÉS PARTOUT (Kevin 2026-04-25, ABSOLUE)
 
 > **"Dans n'importe quelle application. Toujours important. Il faut des agents dédiés, autonomes, experts avec tous les outils nécessaires pour la bonne fonctionnalité et la performance de ces gens-là, en plus de l'intelligence artificielle qui surveillera tout ça aussi, et qui préviendra qui corrigera qui s'adaptera."**
