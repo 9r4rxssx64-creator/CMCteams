@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.123",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.124",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -705,11 +705,16 @@ var CONSUMPTION_LEVELS={
 };
 function axGetConsumptionLevel(uid){
   uid=uid||(K.user&&K.user.id)||"";
-  /* Override par utilisateur si admin a configure */
+  /* v12.124 — Priorite: 1) Override per-user 2) Global mode 3) Defaults */
+  /* 1. Admin Kevin tjs fort (verrouille pour env IA fiabilite) */
+  if(uid===ADMIN_ID)return "fort";
+  /* 2. Override per-user si admin l a configure */
   var perUser=lg("ax_consumption_levels",{});
   if(perUser[uid])return perUser[uid];
-  /* Defaults: admin = fort, Laurence = moyen, autres = economie */
-  if(uid===ADMIN_ID)return "fort";
+  /* 3. Mode GLOBAL (Kevin: 'fonction generale, pas forcement par client') */
+  var globalLevel=localStorage.getItem("ax_consumption_global_level")||"";
+  if(globalLevel&&CONSUMPTION_LEVELS[globalLevel])return globalLevel;
+  /* 4. Defaults : Laurence = moyen, autres = economie */
   if(uid==="user_laurence")return "moyen";
   /* Premium clients (pro/business/enterprise) = moyen */
   var profs=lg("ax_client_profiles",{});
@@ -719,6 +724,22 @@ function axGetConsumptionLevel(uid){
     if(prof.plan==="pro")return "moyen";
   }
   return "economie";
+}
+/* v12.124 — Set niveau global pour TOUS clients (sauf overrides per-user) */
+function axSetGlobalConsumptionLevel(level){
+  if(!axIsAdmin()){toast("Admin uniquement","err");return;}
+  if(level==="auto"||!level){
+    localStorage.removeItem("ax_consumption_global_level");
+    if(typeof fbWrite==="function")try{fbWrite("ax_consumption_global_level","");}catch(_){}
+    toast("Mode auto active (defaults par plan)","ok");
+    dc();return;
+  }
+  if(!CONSUMPTION_LEVELS[level]){toast("Niveau invalide","err");return;}
+  localStorage.setItem("ax_consumption_global_level",level);
+  if(typeof fbWrite==="function")try{fbWrite("ax_consumption_global_level",level);}catch(_){}
+  toast("Niveau "+CONSUMPTION_LEVELS[level].name+" pour TOUS clients","ok");
+  _audit&&_audit("consumption_global",ADMIN_ID,level,"");
+  dc();
 }
 function axSetConsumptionLevel(uid,level){
   if(!axIsAdmin()){toast("Admin uniquement","err");return;}
