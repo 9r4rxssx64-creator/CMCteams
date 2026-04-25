@@ -953,6 +953,263 @@ S'applique : Apex (Studios), CMCteams (Workflows métier casino), tous projets f
 
 ---
 
+## 🧰 RÈGLE PERMANENTE — OUTILS AUTO-APPARENTS PAR CONTEXTE (Kevin 2026-04-25, ABSOLUE)
+
+> **"Lorsque on parle de traduction, il faut qu un outil apparaisse pour faire la fonction. Pareil pour le reste des fonction, video, musique etc. Pour avoir du choix dans les outils."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Détection contextuelle automatique
+
+À chaque message dans le chat IA, l'app DOIT :
+- Étendre `axDetectIntent(text)` / `cmcDetectIntent(text)` pour détecter mentions de catégories
+- Mots-clés FR/EN exhaustifs (synonymes, conjugaisons, fautes courantes)
+- Détection même si demande indirecte ("comment dire bonjour en japonais" → traduction)
+- Pas attendre demande explicite — anticiper
+
+### 2. Catalogue `TOOLS_CATALOG` par catégorie
+
+Structure obligatoire :
+```js
+TOOLS_CATALOG = {
+  traduction: [
+    {id:"deepl", name:"DeepL", tag:"pro", desc:"Traduction professionnelle 30 langues"},
+    {id:"google_trans", name:"Google Translate", tag:"pro", desc:"100+ langues"},
+    {id:"interprete_live", name:"Interprète temps réel", tag:"pro", desc:"Voix → voix instantané"},
+    {id:"yoda_speak", name:"Parle comme Yoda", tag:"fun", desc:"Inverser l'ordre des mots"},
+    {id:"pirate_lang", name:"Langage pirate", tag:"fun", desc:"Arrr matelot !"}
+  ],
+  video: [
+    {id:"capcut_studio", name:"Studio CapCut", tag:"pro"},
+    {id:"premiere_lite", name:"Mini Premiere", tag:"pro"},
+    {id:"meme_maker", name:"Créateur memes", tag:"fun"},
+    {id:"slow_mo", name:"Slow-mo cartoon", tag:"fun"},
+    {id:"face_swap", name:"Échange visages", tag:"fun"}
+  ],
+  musique: [...],
+  image: [...],
+  jeux: [...],
+  calcul: [...],
+  ...
+};
+```
+
+Chaque catégorie offre **3-5 outils minimum** : mix PRO + FUN.
+
+### 3. Bulle dorée flottante "Tu veux faire X ?"
+
+Quand intent détecté → affiche bulle non-intrusive :
+- Position bottom-right au-dessus du clavier
+- Liste 3-5 outils proposés (cards horizontales scrollables)
+- Tag visible `[PRO]` `[FUN]` sur chaque
+- Tap → ouvre l'outil direct
+- Swipe-down → dismiss (mémorisé pour cette intent)
+- Auto-dismiss après 15 sec si non utilisé
+
+### 4. Modal "Choisir l'outil" si plusieurs candidats
+
+Si ambiguïté (ex: "musique" peut être mixage / streaming / partition) :
+- Modal full-screen avec catégories en chips
+- Chaque catégorie déplie ses outils
+- Filter PRO / FUN / TOUS
+- Recherche live
+
+### 5. Shortcuts persistants
+
+Outils utilisés ≥3 fois → ajout auto à `vToolboxFavorites` (admin/user).
+Accès rapide depuis topbar (icône 🧰 → grille des favoris).
+
+### 6. Apprentissage des préférences
+
+`ax_tools_usage_log` (max 200) :
+- Tracker quel outil est choisi pour quelle intent
+- Si Kevin choisit toujours DeepL pour traduction → le mettre en 1er next time
+- Si pattern détecté (toujours fun le soir, pro le matin) → adapter
+
+### 7. Cross-app
+
+Apex et CMCteams partagent le `TOOLS_CATALOG` via FB_FIX `ax_tools_catalog_shared`.
+Nouvel outil ajouté côté Apex → CMCteams hérite si pertinent.
+
+**Test mental obligatoire avant chaque release** :
+*"Si l'utilisateur tape 'je veux faire X' (X = traduction/video/musique/etc.), est-ce que l'app propose immédiatement un choix de 3-5 outils PRO + FUN sans qu'il ait à chercher ?"*
+
+Si non → enrichir `TOOLS_CATALOG` + `axDetectIntent`.
+
+---
+
+## 🎭 RÈGLE PERMANENTE — DUAL PRO + FUN PARTOUT (Kevin 2026-04-25, ABSOLUE)
+
+> **"Que du professionnel expert et du fun, rigolo, sympa."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Chaque feature = 2 styles minimum
+
+Pour CHAQUE feature/outil ajouté, prévoir DEUX déclinaisons :
+
+- **Style PRO** : expert, sérieux, données vérifiées, sources officielles, terminologie métier exacte, mentions légales, prudence professionnelle
+- **Style FUN** : rigolo, sympa, ludique : memes / blagues / sons drôles / voix étranges / cartoon / emojis animés / bruitages
+
+Toggle simple `[PRO ⚙️] [FUN 🎉]` en haut de chaque outil. Mémorisé par feature.
+
+### 2. Tag visuel obligatoire sur chaque outil
+
+Chaque entrée du `TOOLS_CATALOG` a un tag :
+- `pro` (badge bleu marine ⚙️)
+- `fun` (badge orange/jaune 🎉)
+- `thematique` (badge violet 🎨, ex: Halloween, Noël, Saint-Valentin)
+- `mixte` (badge vert 🌈, fonctionne en pro ou fun selon mode)
+
+Filtres en haut de chaque vue catalogue : `[Tous] [Pro] [Fun] [Thématique]`.
+
+### 3. Exemples de dualité
+
+| Feature | Style PRO | Style FUN |
+|---------|-----------|-----------|
+| Traduction | DeepL avec contexte juridique | Yoda speak / pirate / louchébem |
+| TTS | Voix neutre Google WaveNet | Voix Mickey / Dark Vador / bébé |
+| Calcul | Calculatrice scientifique avec graphes | Calculatrice qui chante les résultats |
+| Calendrier | Vue agenda professionnel | Vue calendrier Pokémon / Star Wars |
+| Email | Template formel "Cordialement" | Template "Yo bro check ça" |
+| Logo | Branding Pantone strict | Logo "Comic Sans MS" exprès |
+| Meteo | Bulletin Météo France | Bulletin "Va pleuvoir comme vache qui pisse" |
+| Notes | Markdown avec sources | Notes en emoji rébus |
+
+### 4. Voix : 50+ proposées (PRO + FUN + Thématiques)
+
+Catalogue voix obligatoire :
+- **PRO** (10+) : Google WaveNet FR/EN, Azure Neural, ElevenLabs Pro voices, Web Speech natives système
+- **FUN** (20+) : Helium, Robot, Echo, Slow, Whisper, Drunk, Cartoon, Old Man, Chipmunk, Reverse, Auto-tune, Megaphone
+- **Thématiques** (16+) : Robot, Vieux, Bébé, Fantôme, Super-héros, Sorcier, Chat, Dragon, Clown, Chanteur, Présentateur, Commentateur sport, Endormi, Hyper-content, Triste, Colère
+
+### 5. Pas de feature 100% sérieuse OU 100% fun
+
+Interdiction de livrer un outil sans son pendant :
+- Si on ajoute un outil pro → ajouter dans la même PR au moins 1 variante fun (et inverse)
+- Sinon → pas mergeable
+
+### 6. Philosophie partagée Apex + CMCteams
+
+CMCteams (contexte casino pro) garde le mode PRO par défaut, mais propose FUN pour :
+- Anniversaires employés
+- Fêtes (Noël, Saint-Sylvestre, etc.)
+- Messages internes pause/détente
+- Onboarding nouveaux employés (mode ludique)
+
+Apex (multi-usage perso/pro) → toggle PRO/FUN visible partout.
+
+### 7. Mode "Surprise me"
+
+Bouton 🎲 dans chaque outil → tire au sort PRO ou FUN aléatoirement.
+Pour Kevin qui veut être surpris.
+
+**Test mental obligatoire avant chaque feature** :
+*"Cette feature a-t-elle ses 2 styles (PRO + FUN) ? Sinon, je ne livre pas."*
+
+---
+
+## 🎙 RÈGLE PERMANENTE — VOIX TOUJOURS DIVERSIFIÉES (Kevin 2026-04-25, ABSOLUE)
+
+> **"Revois encore les voix voir si il n'y a pas mieux, plus, plus drole."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Audit voix permanent à chaque release
+
+Avant chaque release majeure, vérifier disponibilité chez tous les providers :
+- **Web Speech API** (natif navigateur, gratuit, voix système iOS/Android/Mac/Win)
+- **ElevenLabs** (voix ultra-réalistes, clone vocal, multilingue)
+- **OpenAI TTS** (alloy, echo, fable, onyx, nova, shimmer)
+- **Google Cloud TTS** (WaveNet, Neural2, Studio voices)
+- **Azure Speech** (Neural voices 400+, styles émotion)
+- **Amazon Polly** (Neural, Generative)
+- **Coqui TTS** (open source, self-hosted)
+- **Bark** (Hugging Face, voix expressives)
+
+Sentinelle `voices-watch` tourne 1×/semaine → détecte nouvelles voix → propose ajout via `ax_claude_todo`.
+
+### 2. Effets audio Web Audio API (toujours dispo)
+
+Filtres applicables sur n'importe quelle voix :
+- `helium` (pitch +12 demi-tons)
+- `robot` (ring modulator + flanger)
+- `echo` (delay + feedback)
+- `slow` (playback rate 0.5)
+- `whisper` (low-pass + soft)
+- `drunk` (random pitch wobble)
+- `cartoon` (pitch +8 + chorus)
+- `oldman` (pitch -4 + reverb hall)
+- `chipmunk` (pitch +10 + speedup)
+- `reverse` (audio reversed)
+- `megaphone` (band-pass + distortion)
+- `underwater` (low-pass extrême)
+- `space` (long reverb + delay)
+- `phone` (band-pass 300-3400 Hz)
+
+### 3. Voix thématiques (16+ personnalités minimum)
+
+Catalogue obligatoire `VOICES_THEMATIC` :
+- 🤖 Robot
+- 👴 Vieux
+- 👶 Bébé
+- 👻 Fantôme
+- 🦸 Super-héros
+- 🧙 Sorcier
+- 🐱 Chat
+- 🐉 Dragon
+- 🤡 Clown
+- 🎤 Chanteur (auto-tune)
+- 📺 Présentateur JT
+- ⚽ Commentateur sport
+- 😴 Endormi (yawning)
+- 🎉 Hyper-content (rapide aigu)
+- 😢 Triste (lent grave)
+- 😡 Colère (fort vibrato)
+- ➕ Extensible (Pirate, Yoda, Maître Yoda, Dark Vador, etc.)
+
+### 4. Vue admin `vVoicesGallery`
+
+Vue dédiée :
+- Grille de toutes les voix dispo (PRO + FUN + Thématiques)
+- Bouton ▶ test 1-clic chaque voix sur un texte exemple
+- Slider pitch / speed / volume
+- Sélecteur effet à appliquer
+- Bouton "Définir comme défaut" par contexte (chat IA, alerte, lecture article, etc.)
+- Stats utilisation (top 10 voix les plus jouées)
+
+### 5. IA peut changer de personnalité vocale
+
+Tool IA `set_voice_personality(personality, [duration])` :
+- L'IA détecte le contexte ("Kevin est triste" → voix douce / "fête" → voix joyeuse)
+- Tool callable par l'IA dans tool use
+- Persiste pour la session ou X minutes
+- Logged dans `ax_voice_history`
+
+### 6. Voix par contexte automatique
+
+Auto-switch selon contexte :
+- Lecture article scientifique → voix PRO neutre
+- Lecture blague / meme → voix FUN cartoon
+- Annonce urgente → voix présentateur JT
+- Méditation / détente → voix calme reverb
+- Anniversaire employé CMCteams → voix chanteur
+- Halloween → voix fantôme/sorcier
+- Noël → voix Père Noël
+
+### 7. Cross-app + permanente
+
+Le catalogue voix est partagé Apex + CMCteams via FB_FIX `ax_voices_catalog`.
+Si Apex apprend nouvelle voix dispo → CMCteams hérite.
+
+### 8. Test mental obligatoire avant chaque release
+
+*"Ai-je vérifié si de nouvelles voix sont disponibles chez les providers ? Y a-t-il au moins 50 voix au total (PRO + FUN + Thématiques) ? L'utilisateur peut-il tester chaque voix en 1 clic ?"*
+
+Si non → enrichir avant push.
+
+---
+
 ## 👑 RÈGLE PERMANENTE — ADMIN-FIRST UX (Kevin 2026-04-25)
 
 > **"Fais ma première vue, la mon équipe toujours, l'équipe miroir ensuite, et fait un système de famille différent de celui qui tu as mis, plus simple, plus intuitif, plus clair, plus facile d'accès. Plus simple pour l'admin, ici comme ailleurs, toujours en général, faire au plus simple pour que les infos soient faciles d'accès, recherchées, que tout soit clair et fonctionnel et visuel pour l'admin."**
