@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777081239670,
+  "updated_at": 1777082086406,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 151,
+  "total_commits": 158,
   "projects": [
     "apex",
     "backend",
@@ -12,7 +12,7 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 40
+      "count": 41
     },
     {
       "name": "⚡ IA & Performance",
@@ -24,7 +24,11 @@
     },
     {
       "name": "🎨 UX & Design",
-      "count": 11
+      "count": 12
+    },
+    {
+      "name": "🔮 Autre",
+      "count": 9
     },
     {
       "name": "💳 Paiement & Abos",
@@ -35,24 +39,20 @@
       "count": 8
     },
     {
-      "name": "🔮 Autre",
-      "count": 8
-    },
-    {
       "name": "🔧 Bug fixes",
       "count": 8
     },
     {
+      "name": "🤖 Agents & Automation",
+      "count": 6
+    },
+    {
       "name": "🎙 Voix & Audio",
-      "count": 5
+      "count": 6
     },
     {
       "name": "📧 Email & Notif",
       "count": 4
-    },
-    {
-      "name": "🤖 Agents & Automation",
-      "count": 3
     },
     {
       "name": "📚 Docs & Méthodologie",
@@ -72,6 +72,87 @@
     }
   ],
   "commits": [
+    {
+      "sha": "0e13b403",
+      "ts": 1777082074000,
+      "msg": "Apex v12.130: subagent commit intermediaire (parallel work)",
+      "project": "apex",
+      "ver": "12.130",
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0e68c043",
+      "ts": 1777081981000,
+      "msg": "Apex v12.129: i18n etendu (AX_I18N FR/EN/IT) + auto-detect navigateur",
+      "project": "apex",
+      "ver": "12.129",
+      "topic": "🎨 UX & Design",
+      "author": "claude-code"
+    },
+    {
+      "sha": "67545070",
+      "ts": 1777081957000,
+      "msg": "Apex v12.127: SEO + Open Graph image + manifest pro (subagent SEO complete)",
+      "project": "apex",
+      "ver": "12.127",
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "94bfe407",
+      "ts": 1777081940000,
+      "msg": "Apex v12.128: SEO + acquisition (Open Graph complet + Twitter cards + JSON-LD WebApplication + manifest enrichi + bouton Installer Reglages)",
+      "project": "apex",
+      "ver": "12.128",
+      "topic": "🔮 Autre",
+      "author": "claude-code"
+    },
+    {
+      "sha": "54b1abe3",
+      "ts": 1777081771000,
+      "msg": "Apex v12.126: SEO meta tags + Open Graph optimises (subagent SEO)",
+      "project": "apex",
+      "ver": "12.126",
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a17fe4d0",
+      "ts": 1777081488000,
+      "msg": "Apex v12.125: polish pro (offline banner + button disabled state + spinner CSS)",
+      "project": "apex",
+      "ver": "12.125",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a91b73fa",
+      "ts": 1777081442000,
+      "msg": "CMCteams v9.486: breadcrumbs visibles (parite Apex v12.120)",
+      "project": "cmcteams",
+      "ver": "9.486",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "04036684",
+      "ts": 1777081320000,
+      "msg": "CMCteams v9.485: voix premium iOS + 20 presets fun (parite Apex v12.107)",
+      "project": "cmcteams",
+      "ver": "9.485",
+      "topic": "🎙 Voix & Audio",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6885d48e",
+      "ts": 1777081246000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.124 + v9.485 (146 commits, 16 sujets)",
+      "project": "docs",
+      "ver": "12.124",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "214d6229",
       "ts": 1777081230000,
@@ -1069,87 +1150,6 @@
       "project": "multi",
       "ver": "12.48",
       "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1b45baa2",
-      "ts": 1776781602000,
-      "msg": "v12.47: Plan Decouverte 24h gratuit + Contact Admin + Boite admin + Auto-log anomalies JS (#172)",
-      "project": "multi",
-      "ver": "12.47",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "fbbebaf9",
-      "ts": 1776781014000,
-      "msg": "v12.46: _CLAUDE_HANDOFF mis a jour (Apex IA = clone permanent Claude Code) avec 10 regles permanentes + 23 docs + 170 PRs (#171)",
-      "project": "multi",
-      "ver": "12.46",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3e7cc95f",
-      "ts": 1776780926000,
-      "msg": "v12.45: Fiche client + selecteur plan family/friend/gift/client + notif admin + compteurs connexion live + regle permanente expert autonomie (#170)",
-      "project": "multi",
-      "ver": "12.45",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ac10308f",
-      "ts": 1776780702000,
-      "msg": "v12.44 SECURITE CRITIQUE: Retire 14 champs dangereux + AES-GCM chiffrement + regle permanente jamais stocker seeds/banques (#169)",
-      "project": "multi",
-      "ver": "12.44",
-      "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "dc3ec17a",
-      "ts": 1776780423000,
-      "msg": "v12.43: Bilan general integre dans Apex + 11 nouvelles banques + retire nom perso pages publiques (#168)",
-      "project": "multi",
-      "ver": "12.43",
-      "topic": "🔮 Autre",
-      "author": "claude-code"
-    },
-    {
-      "sha": "10338f67",
-      "ts": 1776780159000,
-      "msg": "v12.42: Sources multiples + accumulation continue memoire + dedupe similarite (Kevin \"references differentes, sources differentes, tout s'accumule\") (#167)",
-      "project": "multi",
-      "ver": "12.42",
-      "topic": "📚 Docs & Méthodologie",
-      "author": "claude-code"
-    },
-    {
-      "sha": "cb6d473f",
-      "ts": 1776780071000,
-      "msg": "v12.41 + v9.457: Multi-angles IA obligatoire (Apex + CMCteams) + agents Crew verifient choix multiples + autonomie max (#166)",
-      "project": "multi",
-      "ver": "12.41",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "fd3ee7ca",
-      "ts": 1776779923000,
-      "msg": "v12.40: 12 nouveaux outils iOS/Android (Siri Shortcuts, Apple Pay, Haptic, NFC, Contact Picker, Web Share, Ambient Light, Wake Lock, Badge, Web OTP, Idle Detection) (#165)",
-      "project": "multi",
-      "ver": "12.40",
-      "topic": "🎙 Voix & Audio",
-      "author": "claude-code"
-    },
-    {
-      "sha": "39cc3da1",
-      "ts": 1776779771000,
-      "msg": "v12.39 + v9.456: GPS cooldown 5min + SW banner CMCteams + regle auto-refresh + permissions cache (#164)",
-      "project": "multi",
-      "ver": "12.39",
-      "topic": "📅 Planning & Cadres",
       "author": "claude-code"
     }
   ]
