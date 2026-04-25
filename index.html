@@ -31240,6 +31240,8 @@ var I18N={
 function t(key){return (I18N[_lang]||I18N.fr)[key]||(I18N.fr[key])||key;}
 // v9.536 — cmcT helper (utilise I18N_CRITICAL deja defini ligne 4557, voir i18n.md)
 function cmcT(key){try{var lang=(typeof _lang!=="undefined"&&_lang)||"fr";var d=(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL[lang])||(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL.fr)||{};return d[key]||(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL.fr&&I18N_CRITICAL.fr[key])||key;}catch(e){return key;}}
+// v9.542 — _cmcSafeCatch : helper pour remplacer catch(_){} silencieux par log auditable (admin only)
+function _cmcSafeCatch(ctx,e){try{var msg=String(e&&e.message||e||"unknown").slice(0,200);if(typeof console!=="undefined"&&console.warn)console.warn("[cmc-safe-catch]",ctx,msg);try{var log=lg("cmc_err_log",[]);log.push({ts:Date.now(),ctx:String(ctx||"").slice(0,40),err:msg});if(log.length>200)log=log.slice(-200);ls("cmc_err_log",log);}catch(__){}}catch(___){}}
 function setLang(lang){
   _lang=lang;localStorage.setItem("cmc_lang",lang);
   _ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":lang==="mn"?"fr-FR":"fr-FR";
