@@ -3552,7 +3552,7 @@ function vTokenBalance(){
 }
 
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"sentinelshealth":return vSentinelsHealth();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -8059,6 +8059,131 @@ function _agentDataLeakWatch(){
 }
 try{setInterval(_agentDataLeakWatch,3600000);}catch(_){}
 /* === fin v12.212 === */
+
+/* === v12.217 — Enrichissement profils auto + extraction NLP messages chat + cross-fiches === */
+function axExtractFromText(text){
+  if(!text||typeof text!=="string")return {};
+  var t=text.toLowerCase();
+  var res={};
+  try{
+    var em=text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);if(em)res.email=em[0];
+    var ph=text.match(/(?:\+\d{1,3}[\s.-]?)?(?:\(?\d{2,3}\)?[\s.-]?){2,4}\d{2,4}/);
+    if(ph&&ph[0].replace(/\D/g,"").length>=8)res.phone=ph[0].trim();
+    var dt=text.match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/);if(dt)res.birthdate=dt[0];
+    var addr=text.match(/\d+\s+(?:rue|avenue|av\.|boulevard|bd\.|impasse|chemin|all[eé]e|place|rte|route)\s+[\w\s\-']+/i);
+    if(addr)res.address=addr[0].trim();
+    var jobMatch=t.match(/(?:je\s+(?:suis|travaille comme)|je bosse comme)\s+([\w\sàâäéèêëïîôöùûüç\-']{3,30})/i);
+    if(jobMatch)res.job=jobMatch[1].trim();
+    var allergyMatch=t.match(/(?:je suis allergique\s+(?:a|au|aux)?\s*|allergique\s+(?:a|au|aux)?\s*)([\w\s,àâäéèêëïîôöùûüç\-']{3,40})/i);
+    if(allergyMatch)res.allergies=allergyMatch[1].trim();
+    var hobbyMatch=t.match(/(?:j['e]?aime|je fais\s+(?:du|de la|des))\s+([\w\s,àâäéèêëïîôöùûüç\-']{3,40})/i);
+    if(hobbyMatch)res.hobbies=hobbyMatch[1].trim();
+    var anniv=t.match(/(?:mon anniversaire|je suis n[eé](?:e)? le?)\s+([\w\s\dàâäéèêëïîôöùûüç\-']{3,40})/i);
+    if(anniv)res.birthday_text=anniv[1].trim();
+  }catch(_){}
+  return res;
+}
+
+function _enrichProfileFromMessage(text,userId){
+  if(!text||!userId)return;
+  try{
+    /* Opt-out admin via ax_data_enrichment_disabled */
+    if(lg("ax_data_enrichment_disabled",false))return;
+    var profile=lg("ax_profile_"+userId,{})||{};
+    var extracted=axExtractFromText(text);
+    /* Fallback : utiliser aussi l extracteur historique v12.212 si dispo */
+    try{if(typeof _axProfileExtractFromText==="function"){var ext2=_axProfileExtractFromText(text);Object.keys(ext2||{}).forEach(function(k){if(!extracted[k])extracted[k]=ext2[k];});}}catch(_){}
+    if(!Object.keys(extracted).length)return;
+    var newKeys=[];
+    Object.keys(extracted).forEach(function(k){
+      if(!profile[k])newKeys.push(k);
+      profile[k]=extracted[k];
+    });
+    if(!newKeys.length)return;
+    profile._lastEnriched=Date.now();
+    ls("ax_profile_"+userId,profile);
+    /* FB_PRE deja contient ax_profile_ (v12.x) — fbWrite par ls() suffit */
+    var log=lg("ax_data_enrichment_log",[])||[];
+    log.push({ts:Date.now(),userId:userId,fields:newKeys,src:"chat-live"});
+    if(log.length>500)log=log.slice(-500);
+    ls("ax_data_enrichment_log",log);
+    /* Cross-fiches : si email/phone deja vu dans autre profil → flag duplicate */
+    try{
+      if((extracted.email||extracted.phone)&&typeof axIsAdmin==="function"&&axIsAdmin()){
+        for(var i=0;i<localStorage.length;i++){
+          var k=localStorage.key(i);
+          if(k&&k.indexOf("ax_profile_")===0&&k!=="ax_profile_synthesis"&&k!=="ax_profile_"+userId){
+            var other=lg(k,{})||{};
+            if((extracted.email&&other.email===extracted.email)||(extracted.phone&&other.phone===extracted.phone)){
+              var dupes=lg("ax_data_enrichment_dupes",[])||[];
+              dupes.push({ts:Date.now(),uid1:userId,uid2:k.substring("ax_profile_".length),match:extracted.email?"email":"phone"});
+              if(dupes.length>100)dupes=dupes.slice(-100);
+              ls("ax_data_enrichment_dupes",dupes);
+              break;
+            }
+          }
+        }
+      }
+    }catch(_){}
+    if(typeof axIsAdmin==="function"&&axIsAdmin()&&newKeys.length>=1){
+      if(typeof toast==="function")toast("Profil enrichi : "+newKeys.join(", "),"info",{duration:3500});
+    }
+  }catch(_){}
+}
+
+/* Hook live : intercepte sendMessage si pas deja wrappe */
+(function(){
+  try{
+    if(typeof sendMessage!=="function"||sendMessage._enrichWrapped)return;
+    var orig=sendMessage;
+    sendMessage=function(){
+      try{
+        var args=Array.prototype.slice.call(arguments);
+        var text=typeof args[0]==="string"?args[0]:"";
+        var uid=(K&&K.user&&K.user.id)||lg("ax_uid","anon");
+        if(text&&uid)setTimeout(function(){_enrichProfileFromMessage(text,uid);},120);
+      }catch(_){}
+      return orig.apply(this,arguments);
+    };
+    sendMessage._enrichWrapped=true;
+  }catch(_){}
+})();
+
+/* Vue admin liste profils enrichis avec score completude */
+function vEnrichedProfiles(){
+  if(typeof axIsAdmin!=="function"||!axIsAdmin())return '<div class="ax-empty" style="padding:24px;text-align:center;color:var(--ax-text-dim)">&#128274; Reserve a l admin</div>';
+  var FIELDS=["email","phone","address","birthdate","job","allergies","hobbies","city","age","prenom","nom","birthday_text"];
+  var rows=[];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf("ax_profile_")===0&&k!=="ax_profile_synthesis"){
+        var uid=k.substring("ax_profile_".length);
+        if(!uid||uid.indexOf("_")>=0)continue;
+        var p=lg(k,{})||{};
+        var filled=0;FIELDS.forEach(function(f){if(p[f])filled++;});
+        var score=Math.round(filled*100/FIELDS.length);
+        rows.push({uid:uid,score:score,filled:filled,total:FIELDS.length,last:p._lastEnriched||0,profile:p});
+      }
+    }
+  }catch(_){}
+  rows.sort(function(a,b){return (b.last||0)-(a.last||0);});
+  var log=lg("ax_data_enrichment_log",[])||[];
+  var dupes=lg("ax_data_enrichment_dupes",[])||[];
+  var disabled=lg("ax_data_enrichment_disabled",false);
+  var h='<h2 style="color:var(--ax-gold);margin:12px 0">&#128209; Profils enrichis auto</h2>';
+  h+='<p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Extraction NLP en direct depuis chaque message chat. Email/tel/date naissance/adresse/metier/allergies/hobbies.</p>';
+  h+='<div class="ax-card" style="margin-bottom:14px"><div class="ax-setting-row"><span>Enrichissement actif</span><button class="ax-btn '+(disabled?"":"ax-btn-primary")+'" style="min-height:44px" onclick="ls(\'ax_data_enrichment_disabled\','+(!disabled)+');dc()">'+(disabled?"Activer":"Desactiver")+"</button></div></div>";
+  h+='<div class="ax-card" style="margin-bottom:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;font-size:13px"><span>&#128202; Profils : <b>'+rows.length+'</b></span><span>&#128221; Enrichissements : <b>'+log.length+'</b></span><span>&#9888;&#65039; Doublons : <b>'+dupes.length+'</b></span></div></div>';
+  if(!rows.length){h+='<div class="ax-empty" style="padding:24px;text-align:center;color:var(--ax-text-dim)">Aucun profil. Demarrer une conversation pour enrichir auto.</div>';return h;}
+  rows.forEach(function(r){
+    var col=r.score>=70?"#4ade80":r.score>=40?"#facc15":"#f87171";
+    var when=r.last?(new Date(r.last).toLocaleString("fr-FR")):"jamais";
+    h+='<div class="ax-card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><div style="font-weight:600">'+esc(r.uid.slice(0,16))+(r.uid.length>16?"&hellip;":"")+'</div><div style="color:var(--ax-text-dim);font-size:11px">'+r.filled+"/"+r.total+' champs &middot; maj '+esc(when)+'</div></div><div style="display:flex;gap:6px;align-items:center"><span style="background:'+col+';color:#000;padding:4px 10px;border-radius:12px;font-weight:700;font-size:12px">'+r.score+'%</span><button class="ax-btn" style="min-height:44px;min-width:44px" onclick="_kbViewProfile(\''+esc(r.uid)+'\')" title="Voir fiche">&#128065;</button><button class="ax-btn" style="min-height:44px;min-width:44px" onclick="axGenerateProfileSynthesis(\''+esc(r.uid)+'\');toast(\'Synthese generee\',\'ok\');dc()" title="Re-synthetiser">&#128260;</button></div></div></div>';
+  });
+  return h;
+}
+/* === fin v12.217 === */
 
 </script>
 </body>
