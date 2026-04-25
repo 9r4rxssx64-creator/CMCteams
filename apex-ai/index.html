@@ -9083,6 +9083,29 @@ function _axRunIdle(fn,timeout){
 }
 try{_axIntervalAdd(function(){_axRunIdle(_agentStorageWatch,3000);},600000,"storage-watch");}catch(_){}
 
+/* === v12.257 (Kevin 2026-04-25 "memoire pleine") — Cleanup AGRESSIF auto 30 min === */
+function _axMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_){}return u;}
+function axAggressiveCleanup(){
+  var before=_axMemoryUsedBytes();
+  try{
+    var caps={"ax_audit":100,"ax_silent_log":50,"ax_err_log":50,"ax_security_alerts":50,"ax_data_enrichment_log":50,"ax_data_enrichment_dupes":20,"ax_camera_scans":15,"ax_health_reports":3,"ax_agents_log":50,"ax_click_failures":20,"ax_click_slow":20,"ax_telemetry_in":40,"ax_claude_todo":20,"ax_handoff_journal":30,"ax_audit_log":80,"ax_lessons_learned":80,"ax_persistent_memory":150,"ax_notif_history":20,"ax_push_history":20,"ax_clipboard":15,"ax_devices":15,"ax_connection_history":40,"ax_login_history":20,"ax_admin_inbox":20,"ax_email_log":30,"ax_subscription_requests":20,"ax_blocked_actions":15,"ax_token_use":20,"ax_latency_log":40,"ax_bodyguard_log":40,"ax_user_telemetry":40,"ax_telemetry":40,"ax_location_history":40,"ax_geofence_log":40,"ax_table_presences":20,"ax_client_logs":40,"ax_activity_log":80,"ax_crew_history":40,"ax_import_log":40,"ax_camera_history":15,"ax_voice_history":15};
+    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_){}});
+    try{var convs=(K&&Array.isArray(K.conversations))?K.conversations:[];convs.forEach(function(c){try{var key="ax_msgs_"+c.id;var msgs=lg(key,[]);if(Array.isArray(msgs)&&msgs.length>100)ls(key,msgs.slice(-100));}catch(_){}});if(K&&Array.isArray(K.messages)&&K.messages.length>100){K.messages=K.messages.slice(-100);try{if(typeof _saveMsgs==="function")_saveMsgs();}catch(_){}}}catch(_){}
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||k.indexOf("ax_user_theme_")!==0)continue;try{var t=lg(k,null);if(t&&Array.isArray(t.photos)&&t.photos.length>5){t.photos=t.photos.slice(-5);ls(k,t);}}catch(_){}}}catch(_){}
+    try{var tel=lg("ax_telemetry_in",[]);if(Array.isArray(tel)){var cut=Date.now()-7*86400000;var trimmed=tel.filter(function(t){return!t.processed||(t.ts&&t.ts>cut);});if(trimmed.length<tel.length)ls("ax_telemetry_in",trimmed);}}catch(_){}
+    try{var todo=lg("ax_claude_todo",[]);if(Array.isArray(todo)){var cut2=Date.now()-7*86400000;var trim2=todo.filter(function(t){return t.status!=="resolved"||(t.ts&&t.ts>cut2);});if(trim2.length<todo.length)ls("ax_claude_todo",trim2);}}catch(_){}
+    try{for(var j=0;j<localStorage.length;j++){var kb=localStorage.key(j);if(kb&&kb.indexOf("ax_backup_")===0){var d=kb.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000)localStorage.removeItem(kb);}}}catch(_){}
+  }catch(_){}
+  var after=_axMemoryUsedBytes();
+  var freed=Math.max(0,before-after);
+  if(freed>100*1024&&typeof toast==="function"){try{toast("Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_){}}
+  return freed;
+}
+function _agentAggressiveAuto(){try{var used=_axMemoryUsedBytes();var pct=used/5242880*100;if(pct>80)_axRunIdle(axAggressiveCleanup,3000);}catch(_){}}
+try{_axIntervalAdd(_agentAggressiveAuto,1800000,"aggressive-30min");}catch(_){}
+try{setTimeout(_agentAggressiveAuto,8000);}catch(_){}
+try{if(typeof window!=="undefined")window.axAggressiveCleanup=axAggressiveCleanup;}catch(_){}
+
 /* === vStorageManage — vue admin enrichie avec actions claires === */
 function vStorageManage(){
   if(!K||!K.user)return (typeof vLogin==="function"?vLogin():"");
