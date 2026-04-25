@@ -322,11 +322,62 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.136",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.139",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus"];
+var FB_FIX=["ax_convs","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates"];
+/* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
+var AX_CURRENCIES={
+  EUR:{symbol:"€",name:"Euro",rate:1},
+  USD:{symbol:"$",name:"Dollar US",rate:1.08},
+  CHF:{symbol:"CHF",name:"Franc Suisse",rate:0.95},
+  GBP:{symbol:"£",name:"Livre Sterling",rate:0.85},
+  MAD:{symbol:"DH",name:"Dirham Marocain",rate:10.85},
+  AED:{symbol:"DH",name:"Dirham EAU",rate:3.95}
+};
+function axGetCurrency(){try{return localStorage.getItem("ax_currency")||"EUR";}catch(_){return "EUR";}}
+function axSetCurrency(code){if(!AX_CURRENCIES[code])return;try{localStorage.setItem("ax_currency",code);}catch(_){}if(typeof fbWrite==="function"){try{fbWrite("ax_currency",code);}catch(_){}}if(typeof toast==="function")toast("Devise: "+AX_CURRENCIES[code].name,"ok");if(typeof dc==="function")try{dc();}catch(_){}}
+function axFormatPrice(eur,opts){
+  opts=opts||{};
+  var code=axGetCurrency();
+  var cur=AX_CURRENCIES[code]||AX_CURRENCIES.EUR;
+  var amt=(Number(eur)||0)*(cur.rate||1);
+  var rounded=opts.round?String(Math.round(amt)):amt.toFixed(2);
+  var sym=cur.symbol;
+  if(sym==="$")return rounded+"$";
+  if(sym==="£")return rounded+"£";
+  if(sym==="€")return rounded+"€";
+  return rounded+" "+sym;
+}
+function axRefreshExchangeRates(){
+  try{
+    var last=(typeof lg==="function")?lg("ax_rates_ts",0):0;
+    var cached=(typeof lg==="function")?lg("ax_currency_rates",null):null;
+    if(cached){Object.keys(AX_CURRENCIES).forEach(function(c){if(c!=="EUR"&&cached[c])AX_CURRENCIES[c].rate=cached[c];});}
+    if(Date.now()-last<86400000)return;
+    fetch("https://api.exchangerate-api.com/v4/latest/EUR").then(function(r){return r.json();}).then(function(d){
+      if(!d||!d.rates)return;
+      Object.keys(AX_CURRENCIES).forEach(function(c){
+        if(c!=="EUR"&&d.rates[c])AX_CURRENCIES[c].rate=d.rates[c];
+      });
+      if(typeof ls==="function"){ls("ax_currency_rates",d.rates);ls("ax_rates_ts",Date.now());}
+    }).catch(function(){});
+  }catch(_){}
+}
+(function _axAutoDetectCurrency(){
+  try{
+    if(localStorage.getItem("ax_currency"))return;
+    var tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||"").toLowerCase();
+    var auto="EUR";
+    if(tz.indexOf("america")===0)auto="USD";
+    else if(tz.indexOf("london")>=0)auto="GBP";
+    else if(tz.indexOf("zurich")>=0)auto="CHF";
+    else if(tz.indexOf("casablanca")>=0)auto="MAD";
+    else if(tz.indexOf("dubai")>=0||tz.indexOf("abu_dhabi")>=0)auto="AED";
+    localStorage.setItem("ax_currency",auto);
+  }catch(_){}
+})();
 var FB_PRE=["ax_msgs_"];
 var FB_LOCAL=["ax_uid","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_pin_fails","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles"];
 var SESSION_TTL=24*60*60*1000;
@@ -411,9 +462,16 @@ var K={
 
 // --- Utilitaires ---
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
-function lg(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
-function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){if(e&&e.name==="QuotaExceededError"){_emergencyCleanup();try{localStorage.setItem(k,JSON.stringify(v));}catch(e2){toast("Stockage plein","err");}}}fbWrite(k,v);}
+// v12.133+ — Compression base64 simple pour valeurs > 5KB
+function _axCompress(str){try{return "B64:"+btoa(unescape(encodeURIComponent(str)));}catch(e){return str;}}
+function _axDecompress(str){if(typeof str==="string"&&str.indexOf("B64:")===0){try{return decodeURIComponent(escape(atob(str.slice(4))));}catch(e){return str.slice(4);}}return str;}
+function lg(k,fb){try{var v=localStorage.getItem(k);if(!v)return fb;v=_axDecompress(v);return JSON.parse(v);}catch(e){return fb;}}
+function ls(k,v){try{var s=JSON.stringify(v);if(s&&s.length>5000)s=_axCompress(s);localStorage.setItem(k,s);}catch(e){if(e&&e.name==="QuotaExceededError"){_emergencyCleanup();try{var s2=JSON.stringify(v);if(s2&&s2.length>5000)s2=_axCompress(s2);localStorage.setItem(k,s2);}catch(e2){if(typeof toast==="function")toast("Memoire pleine, nettoyage en cours","warn");}}}fbWrite(k,v);}
 function _emergencyCleanup(){var keys=Object.keys(localStorage).filter(function(k){return k.startsWith("ax_msgs_");});var convs=lg("ax_convs",[]).sort(function(a,b){return(a.ts||0)-(b.ts||0);});var removed=0;while(convs.length>3&&removed<10){var old=convs.shift();localStorage.removeItem("ax_msgs_"+old.id);removed++;}if(!removed){keys.sort();while(keys.length>3){localStorage.removeItem(keys.shift());}}}
+function _axCheckQuota(){try{var used=0;for(var k in localStorage){if(localStorage.hasOwnProperty(k))used+=(localStorage[k]||"").length+k.length;}var pct=(used*2/(5*1024*1024))*100;if(pct>80){var purgeKeys=["ax_audit","ax_silent_log","ax_bodyguard_log","ax_telemetry","ax_user_telemetry","ax_err_log","ax_location_history","ax_geofence_log","ax_table_presences","ax_client_logs","ax_connection_history","ax_activity_log"];purgeKeys.forEach(function(pk){var data=lg(pk,null);if(Array.isArray(data)&&data.length>50){ls(pk,data.slice(-50));}});Object.keys(localStorage).forEach(function(kk){if(kk.indexOf("ax_backup_")===0){var d=kk.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000)localStorage.removeItem(kk);}if(kk.indexOf("ax_activity_")===0){var data2=lg(kk,null);if(Array.isArray(data2)&&data2.length>200)ls(kk,data2.slice(-200));}});if(typeof toast==="function")toast("Memoire optimisee automatiquement","ok");}return Math.round(pct);}catch(e){return 0;}}
+function _axStorageStats(){try{var stats=[];var total=0;for(var k in localStorage){if(!localStorage.hasOwnProperty(k))continue;var v=localStorage[k]||"";var size=v.length+k.length;total+=size;stats.push({key:k,size:size,compressed:typeof v==="string"&&v.indexOf("B64:")===0});}stats.sort(function(a,b){return b.size-a.size;});return{stats:stats,total:total,pct:Math.round(total*2/(5*1024*1024)*100)};}catch(e){return{stats:[],total:0,pct:0};}}
+function _axCompressAll(){try{if(typeof axIsAdmin==="function"&&!axIsAdmin())return 0;var n=0;for(var k in localStorage){if(!localStorage.hasOwnProperty(k))continue;var v=localStorage[k];if(typeof v!=="string"||v.length<2000||v.indexOf("B64:")===0)continue;try{localStorage.setItem(k,_axCompress(v));n++;}catch(_){}}return n;}catch(e){return 0;}}
+function _axPurgeOld(){try{if(typeof axIsAdmin==="function"&&!axIsAdmin())return 0;var n=0;var keys=["ax_audit","ax_silent_log","ax_bodyguard_log","ax_telemetry","ax_user_telemetry","ax_err_log","ax_location_history","ax_geofence_log","ax_table_presences","ax_client_logs","ax_connection_history"];keys.forEach(function(pk){var data=lg(pk,null);if(Array.isArray(data)&&data.length>50){ls(pk,data.slice(-50));n++;}});Object.keys(localStorage).forEach(function(kk){if(kk.indexOf("ax_backup_")===0){var d=kk.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000){localStorage.removeItem(kk);n++;}}});return n;}catch(e){return 0;}}
 function now(){return Date.now();}
 function uid(){try{return crypto.randomUUID();}catch(e){return"ax-"+now()+"-"+Math.random().toString(36).slice(2,9);}}
 function touchSession(){localStorage.setItem("ax_lastact",String(now()));}
@@ -1523,7 +1581,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"backups":return vBackups();case"storage":return vStorage();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -2391,7 +2449,74 @@ function axTestEmailJS(){
     toast("Erreur reseau: "+e.message,"err");
   });
 }
-// v12.85 — Vue "en attente de validation" affichee quand user a soumis demande mais Kevin n'a pas encore valide
+/* v12.126 — CASCADE EMAILS AUTOMATIQUES (Kevin P1) : Helper + 4 emails + admin view */
+function _axReadVaultStr(k){var v=localStorage.getItem(k);if(!v)return"";try{var p=JSON.parse(v);return(typeof p==="string"?p:v).replace(/^"|"$/g,"");}catch(e){return String(v).replace(/^"|"$/g,"");}}
+function _axEmailLogAdd(entry){try{var log=lg("ax_email_log",[]);log.unshift(entry);if(log.length>500)log=log.slice(0,500);ls("ax_email_log",log);}catch(_){}}
+function _axEmailSend(to,subject,body,opts){
+  opts=opts||{};
+  var entry={id:"em_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,6),to:String(to||""),subject:String(subject||""),body:String(body||""),kind:opts.kind||"generic",ts:Date.now(),status:"pending"};
+  if(!entry.to||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.to)){entry.status="failed";entry.error="email_invalide";_axEmailLogAdd(entry);return Promise.resolve({ok:false,reason:"email_invalide"});}
+  var serviceId=_axReadVaultStr("ax_emailjs_serviceid"),templateId=_axReadVaultStr("ax_emailjs_templateid"),userId=_axReadVaultStr("ax_emailjs_userid");
+  if(!serviceId||!templateId||!userId){
+    entry.status="skipped";entry.error="emailjs_non_configure";_axEmailLogAdd(entry);
+    try{var sl=lg("ax_silent_log",[]);sl.push({msg:"Email saute (EmailJS non configure) : "+entry.subject,type:"info",ts:Date.now()});if(sl.length>200)sl=sl.slice(-200);ls("ax_silent_log",sl);}catch(_){}
+    return Promise.resolve({ok:false,reason:"emailjs_non_configure"});
+  }
+  return fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:serviceId,template_id:templateId,user_id:userId,template_params:{to_email:entry.to,to_name:opts.toName||"",subject:entry.subject,message:entry.body}})}).then(function(r){
+    if(r.ok){entry.status="sent";_axEmailLogAdd(entry);try{if(typeof axIsAdmin==="function"&&axIsAdmin())toast("Email envoye a "+entry.to,"ok");}catch(_){}try{_audit("email_sent",(K.user&&K.user.id)||"system",entry.kind,entry.to+" / "+entry.subject);}catch(_){}return{ok:true};}
+    return r.text().then(function(t){entry.status="failed";entry.error="http_"+r.status+":"+(t||"").slice(0,200);_axEmailLogAdd(entry);try{if(typeof axIsAdmin==="function"&&axIsAdmin())toast("Email echec ("+r.status+") - voir Boite emails","warn");}catch(_){}return{ok:false,reason:"http_"+r.status};});
+  }).catch(function(e){entry.status="failed";entry.error="network:"+(e&&e.message||String(e)).slice(0,200);_axEmailLogAdd(entry);return{ok:false,reason:"network"};});
+}
+function _axEmailWelcome(email,prenom,plan){var planName=(typeof PLANS!=="undefined"&&PLANS[plan]&&PLANS[plan].name)||plan||"";var body="Bonjour "+prenom+",\n\nMerci pour ton inscription a APEX AI ! "+(planName?"Tu as choisi le plan : "+planName+".\n\n":"")+"Ta demande est bien recue. Kevin la valide en moins de 24h.\n\nDes que c'est valide, tu recevras un autre email avec ton PIN d'acces.\n\nA tres vite,\n- Kevin / APEX AI";return _axEmailSend(email,"Bienvenue sur APEX AI - demande recue",body,{toName:prenom,kind:"welcome"});}
+function _axEmailApprovalPin(email,prenom,nom,plan,pin,loginUrl){var planName=(typeof PLANS!=="undefined"&&PLANS[plan]&&PLANS[plan].name)||plan||"";var body="Bonjour "+prenom+",\n\nTon inscription APEX est validee !\n\nPlan : "+planName+"\nPIN initial : "+pin+"\n\nConnecte-toi : "+loginUrl+"\nUtilise ton nom \""+prenom+" "+nom+"\" et le PIN ci-dessus.\n\nTu peux changer ton PIN dans Reglages apres la 1re connexion.\n\n- Kevin / APEX AI";return _axEmailSend(email,"APEX AI - ton compte est valide !",body,{toName:prenom+" "+nom,kind:"approval_pin"});}
+function _axEmailPaymentConfirmed(email,prenom,plan){var planName=(typeof PLANS!=="undefined"&&PLANS[plan]&&PLANS[plan].name)||plan||"";var body="Bonjour "+prenom+",\n\nMerci ! Ton paiement pour le plan "+planName+" est bien recu.\n\nTon abonnement est maintenant actif. Profite de toutes les fonctions premium.\n\nSi tu as une question, reponds simplement a cet email.\n\n- Kevin / APEX AI";return _axEmailSend(email,"APEX AI - paiement confirme, ton abonnement est actif",body,{toName:prenom,kind:"payment_confirmed"});}
+function _axEmailRenewalReminder(email,prenom,plan,daysLeft){var planName=(typeof PLANS!=="undefined"&&PLANS[plan]&&PLANS[plan].name)||plan||"";var dl=(typeof daysLeft==="number"?daysLeft:7);var body="Bonjour "+prenom+",\n\nTon abonnement APEX ("+planName+") se renouvelle dans "+dl+" jours.\n\nSi tu veux continuer sans interruption, aucune action n'est necessaire.\nSi tu souhaites changer de plan ou arreter, reponds a cet email avant la date.\n\nMerci de ta confiance,\n- Kevin / APEX AI";return _axEmailSend(email,"APEX AI - renouvellement dans "+dl+" jours",body,{toName:prenom,kind:"renewal_reminder"});}
+function axMarkSubscriptionPaid(reqId){
+  if(!axIsAdmin()){toast("Reserve admin","warn");return;}
+  var reqs=lg("ax_subscription_requests",{});var r=reqs[reqId];if(!r){toast("Demande introuvable","err");return;}
+  if(r.status!=="approved"&&r.status!=="paid"){toast("Doit etre approuve d abord","warn");return;}
+  if(r.status==="paid"){if(!confirm("Deja marque paye. Renvoyer email de confirmation ?"))return;}
+  else if(!confirm("Confirmer paiement de "+r.prenom+" "+r.nom+" ("+r.plan+") ?\n\nUn email de confirmation sera envoye."))return;
+  r.status="paid";r.paidTs=Date.now();r.paidBy=(K.user&&K.user.id)||"admin";reqs[reqId]=r;
+  ls("ax_subscription_requests",reqs);if(typeof fbWrite==="function")try{fbWrite("ax_subscription_requests",reqs);}catch(_){}
+  try{_audit("subscription_paid",(K.user&&K.user.id)||"admin",r.id,r.prenom+" "+r.nom+" / "+r.plan);}catch(_){}
+  if(r.email){_axEmailPaymentConfirmed(r.email,r.prenom,r.plan).then(function(res){if(res&&res.ok)toast("Paiement marque + email envoye","ok");else toast("Paiement marque (email non envoye : "+(res&&res.reason||"?")+")","warn");});}
+  else{toast("Paiement marque (pas d email)","ok");}
+  dc();
+}
+function axEmailResend(emailId){
+  if(!axIsAdmin()){toast("Admin uniquement","warn");return;}
+  var log=lg("ax_email_log",[]);var item=null;for(var i=0;i<log.length;i++)if(log[i].id===emailId){item=log[i];break;}
+  if(!item){toast("Email introuvable","err");return;}
+  toast("Renvoi en cours...","info");
+  _axEmailSend(item.to,item.subject,item.body,{toName:"",kind:item.kind||"resend"}).then(function(res){if(res&&res.ok){toast("Email renvoye","ok");dc();}else toast("Echec renvoi : "+(res&&res.reason||"?"),"err");});
+}
+function vEmailLog(){
+  if(!axIsAdmin())return'<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">Admin requis</div></div>';
+  var log=lg("ax_email_log",[]);var stats={sent:0,failed:0,skipped:0,pending:0};log.forEach(function(e){if(stats[e.status]!==undefined)stats[e.status]++;});
+  var ejsReady=!!(_axReadVaultStr("ax_emailjs_serviceid")&&_axReadVaultStr("ax_emailjs_templateid")&&_axReadVaultStr("ax_emailjs_userid"));
+  var h='<div style="padding:16px;max-width:760px;margin:0 auto"><h2 style="color:var(--ax-gold);margin-bottom:8px">&#128231; Boite emails ('+log.length+')</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Historique des emails automatiques envoyes par APEX (bienvenue, approbation, paiement, renouvellement).</p>';
+  if(!ejsReady)h+='<div class="ax-card" style="border-left:4px solid var(--ax-warn);background:rgba(245,158,11,.06);margin-bottom:12px"><strong>&#9888; EmailJS pas configure</strong><div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">Les emails ne partent pas. Configure les 3 cles dans Coffre-fort &gt; Emails (ax_emailjs_serviceid / templateid / userid) puis teste avec le bouton &laquo;Tester EmailJS&raquo; du Coffre-fort.</div></div>';
+  else h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:rgba(76,175,80,.06);margin-bottom:12px"><strong>&#10003; EmailJS pret</strong><div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">Envoyes : '+stats.sent+' &middot; Echec : '+stats.failed+' &middot; Sautes : '+stats.skipped+'</div></div>';
+  if(!log.length){h+='<div class="ax-empty"><div class="ax-empty-icon">&#128231;</div><div class="ax-empty-text">Aucun email envoye pour le moment</div></div></div>';return h;}
+  var kindLabels={welcome:"Bienvenue",approval_pin:"Approbation+PIN",payment_confirmed:"Paiement",renewal_reminder:"Renouvellement",resend:"Renvoi",generic:"Autre"};
+  log.slice(0,100).forEach(function(e){
+    var col=e.status==="sent"?"var(--ax-green)":e.status==="failed"?"var(--ax-red)":e.status==="skipped"?"var(--ax-warn)":"var(--ax-text-dim)";
+    var statusLbl=e.status==="sent"?"&#10003; Envoye":e.status==="failed"?"&#9888; Echec":e.status==="skipped"?"&#9197; Saute":"En cours";
+    var kindLbl=kindLabels[e.kind]||e.kind||"?";
+    var dt=new Date(e.ts||Date.now());
+    h+='<div class="ax-card" style="border-left:4px solid '+col+';margin-bottom:8px;padding:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;word-break:break-word">'+esc(e.subject||"(sans sujet)")+'</div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px;word-break:break-all">A : '+esc(e.to||"?")+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">'+dt.toLocaleString("fr-FR")+' &middot; <span class="ax-badge" style="background:rgba(0,0,0,.2);color:var(--ax-text-dim);font-size:9px">'+esc(kindLbl)+'</span> &middot; <span style="color:'+col+'">'+statusLbl+'</span></div>';
+    if(e.error)h+='<div style="font-size:10px;color:var(--ax-red);margin-top:2px;word-break:break-word">Erreur : '+esc(String(e.error).slice(0,160))+'</div>';
+    h+='</div>';
+    if(e.status==="failed"||e.status==="skipped")h+='<button class="ax-btn ax-btn-outline" onclick="axEmailResend(\''+esc(e.id)+'\')" style="padding:6px 10px;font-size:11px;min-height:36px;white-space:nowrap">&#8635; Renvoyer</button>';
+    h+='</div></div>';
+  });
+  if(log.length>100)h+='<p style="font-size:11px;color:var(--ax-text-dim);text-align:center;margin-top:8px">Affichage des 100 derniers (sur '+log.length+')</p>';
+  h+='</div>';
+  return h;
+}
+// v12.85 — Vue "en attente de validation" affichee quand user a soumis demande mais Kevin n\'a pas encore valide
 function vWaitingApproval(){
   var draft=lg("ax_sub_draft",null);
   var reqs=lg("ax_subscription_requests",{});
