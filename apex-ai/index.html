@@ -305,7 +305,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // KDMC v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.120",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.121",ADMIN_ID="kdmc_admin";
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
@@ -695,6 +695,71 @@ var PAYMENT_METHODS=[
 function axGetEnabledPaymentMethods(plan){
   var draft=lg("ax_sub_draft",{});
   return PAYMENT_METHODS.map(function(m){var url="";try{url=m.build?m.build(plan,draft):"";}catch(_){url="";}return Object.assign({},m,{url:url,available:!!url});}).filter(function(m){return m.available;});
+}
+
+/* v12.121 — Niveau consommation IA par utilisateur (Kevin: 'expert quand besoin, pas radin') */
+var CONSUMPTION_LEVELS={
+  economie:{name:"💰 Économie",desc:"Haiku 90% du temps. Sonnet seulement pour expertise demandee. Cout min.",color:"#4cd080"},
+  moyen:{name:"⚖️ Moyen",desc:"Sonnet par defaut. Haiku pour court. Opus si expertise specifique.",color:"#5aa8ff"},
+  fort:{name:"⚡ Fort",desc:"Sonnet/Opus. Le plus competent intervient. Cout libre.",color:"#e8b830"}
+};
+function axGetConsumptionLevel(uid){
+  uid=uid||(K.user&&K.user.id)||"";
+  /* Override par utilisateur si admin a configure */
+  var perUser=lg("ax_consumption_levels",{});
+  if(perUser[uid])return perUser[uid];
+  /* Defaults: admin = fort, Laurence = moyen, autres = economie */
+  if(uid===ADMIN_ID)return "fort";
+  if(uid==="user_laurence")return "moyen";
+  /* Premium clients (pro/business/enterprise) = moyen */
+  var profs=lg("ax_client_profiles",{});
+  var prof=profs[uid];
+  if(prof&&prof.plan){
+    if(prof.plan==="business"||prof.plan==="enterprise")return "fort";
+    if(prof.plan==="pro")return "moyen";
+  }
+  return "economie";
+}
+function axSetConsumptionLevel(uid,level){
+  if(!axIsAdmin()){toast("Admin uniquement","err");return;}
+  if(!CONSUMPTION_LEVELS[level]){toast("Niveau invalide","err");return;}
+  var perUser=lg("ax_consumption_levels",{});
+  perUser[uid]=level;
+  ls("ax_consumption_levels",perUser);
+  if(typeof fbWrite==="function")try{fbWrite("ax_consumption_levels",perUser);}catch(_){}
+  toast("Niveau "+CONSUMPTION_LEVELS[level].name+" pour "+uid,"ok");
+  _audit("consumption_level_set",ADMIN_ID,uid,level);
+}
+function vConsumptionLevels(){
+  if(!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin uniquement</div></div>';
+  var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px">⚙️ Niveau IA par utilisateur</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Definit la qualite/cout du modele IA selon l utilisateur. Plus eleve = plus competent mais plus cher.</p>';
+  /* Legende des 3 niveaux */
+  h+='<div class="ax-card"><h3>📋 Les 3 niveaux</h3>';
+  Object.keys(CONSUMPTION_LEVELS).forEach(function(k){var l=CONSUMPTION_LEVELS[k];h+='<div style="margin:8px 0;padding:8px;background:var(--ax-bg-input);border-radius:6px;border-left:3px solid '+l.color+'"><strong>'+l.name+'</strong><div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">'+esc(l.desc)+'</div></div>';});
+  h+='</div>';
+  /* Liste utilisateurs avec dropdown */
+  var users=[];
+  users.push({uid:ADMIN_ID,name:"Kevin DESARZENS (Admin)",def:"fort"});
+  users.push({uid:"user_laurence",name:"Laurence SAINT-POLIT",def:"moyen"});
+  var profs=lg("ax_client_profiles",{});
+  Object.keys(profs).forEach(function(uid){if(uid===ADMIN_ID||uid==="user_laurence")return;var p=profs[uid];users.push({uid:uid,name:p.name||uid,plan:p.plan||"free",def:axGetConsumptionLevel(uid)});});
+  var perUser=lg("ax_consumption_levels",{});
+  h+='<div class="ax-card"><h3>👥 Utilisateurs ('+users.length+')</h3>';
+  users.forEach(function(u){
+    var current=perUser[u.uid]||axGetConsumptionLevel(u.uid);
+    var cur=CONSUMPTION_LEVELS[current];
+    h+='<div class="ax-setting-row" style="flex-wrap:wrap"><div style="flex:1;min-width:140px"><strong>'+esc(u.name)+'</strong>';
+    if(u.plan)h+=' <span class="ax-badge ax-badge-gold" style="font-size:9px">'+esc(u.plan)+'</span>';
+    h+='<div style="font-size:10px;color:var(--ax-text-dim)">'+esc(u.uid)+'</div></div>';
+    h+='<select class="ax-input" style="width:auto;min-width:140px;background:'+(cur?cur.color:"var(--ax-bg-input)")+'33" onchange="axSetConsumptionLevel(\''+esc(u.uid)+'\',this.value);dc();">';
+    Object.keys(CONSUMPTION_LEVELS).forEach(function(k){h+='<option value="'+k+'"'+(current===k?" selected":"")+">"+CONSUMPTION_LEVELS[k].name+"</option>";});
+    h+='</select></div>';
+  });
+  h+='</div>';
+  h+='<div class="ax-card" style="background:rgba(232,184,48,.05);border-left:4px solid var(--ax-gold)"><h3>💡 Comment ca marche</h3><ul style="font-size:12px;line-height:1.6;color:var(--ax-text-dim);margin:0;padding-left:20px"><li><strong>Économie:</strong> Haiku 4.5 ($0.25/M tokens). Pour questions simples, planning, dictée.</li><li><strong>Moyen:</strong> Sonnet 4.6 ($3/M). Pour code, finance, conseils detailles.</li><li><strong>Fort:</strong> Opus 4.7 ($15/M). Pour expertise pointue, analyse profonde, recherche complexe.</li></ul><p style="font-size:11px;color:var(--ax-gold);margin-top:8px">Le routing intelligent garde toujours le bon modele pour la complexite. Niveau = limite max acceptable.</p></div>';
+  h+='</div>';
+  return h;
 }
 function axCheckQuota(action){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});if(plan.msgs_day>0&&usage.today>=plan.msgs_day){toast("Limite journaliere atteinte ("+plan.msgs_day+" msg). Passez au plan superieur !","warn");return false;}if(plan.msgs_month>0&&usage.month>=plan.msgs_month){toast("Limite mensuelle atteinte. Upgradez votre forfait !","warn");return false;}if(action==="finance"&&!plan.finance){toast("Finance Expert disponible a partir du plan Starter","warn");return false;}if(action==="domotique"&&!plan.domotique){toast("Domotique disponible a partir du plan Pro","warn");return false;}if(action==="offline"&&!plan.offline){toast("Mode offline disponible a partir du plan Pro","warn");return false;}if(action==="code"&&!plan.code){toast("Code interpreter disponible a partir du plan Starter","warn");return false;}return true;}
 function axGetPlanInfo(){var plan=PLANS[K.user?K.user.plan:"free"]||PLANS.free;var usage=lg("ax_usage",{today:0,month:0});return{plan:plan.name,price:plan.price,usage_today:usage.today+"/"+(plan.msgs_day>0?plan.msgs_day:"illimite"),usage_month:usage.month+"/"+(plan.msgs_month>0?plan.msgs_month:"illimite"),kb:K.kb.facts.length+"/"+(plan.kb_facts>0?plan.kb_facts:"illimite"),pct_day:plan.msgs_day>0?Math.round(usage.today/plan.msgs_day*100):0,pct_month:plan.msgs_month>0?Math.round(usage.month/plan.msgs_month*100):0};}
@@ -1410,7 +1475,7 @@ function _axBreadcrumb(){
 }
 function vMainContent(){var side=K.user?vSidebar():"";var canvas=K.user?vCanvas():"";return side+'<div id="content">'+_axBreadcrumb()+vMain()+"</div>"+canvas;}
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"history":return vAdminHistory();case"vault":return vVault();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"subscriptions":return vSubscriptionsAdmin();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"report":return vAdminReport();case"settings":return vSettings();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -1523,13 +1588,35 @@ var _toolsArr=(function(){var base=axIsAdmin()?_getToolDefs():_getToolDefs().fil
 /* v12.109 — Smart model routing (Kevin: 'IA consomme min tokens chacune mais tjs performante') */
 var _autoModel=(function(){
   if(K.settings.model&&K.settings.model!=="auto")return K.settings.model;
-  /* Auto-pick: query courte + pas tool intensive -> Haiku (12x moins cher), sinon Sonnet */
+  /* v12.121 — Smart routing avec niveau consommation par utilisateur (Kevin: 'pas radin, plus competent quand necessaire')
+     Niveaux: economie / moyen / fort
+     - economie: Haiku (90%) + Sonnet pour complexe (10%)
+     - moyen: Haiku simple, Sonnet defaut (60%), Opus pour expertise demandee (5%)
+     - fort: Sonnet defaut, Opus pour complexe/expert (40%)
+  */
   var lastUser=cleanMsgs.filter(function(m){return m.role==="user";}).pop();
   var qStr=(lastUser&&typeof lastUser.content==="string")?lastUser.content:"";
   var qLen=qStr.length;
-  var hasComplexKw=/\b(analyse|code|debug|architecture|strategie|recommand|expert|professionnel|complet|detaille|explique en detail)\b/i.test(qStr);
-  var hasMultipleSteps=/\b(d abord|ensuite|puis|enfin|step|etape \d)\b/i.test(qStr);
-  if(qLen<120&&!hasComplexKw&&!hasMultipleSteps&&depth===0)return "claude-haiku-4-5-20251001";
+  var hasComplexKw=/\b(analyse|code|debug|architecture|strategie|recommand|expert|professionnel|complet|detaille|explique en detail|approfondi|exhaustif|complexe)\b/i.test(qStr);
+  var hasExpertiseKw=/\b(expert|professionnel|approfondi|exhaustif|complet detaille|recherche|deep|niche|specialist|maitrise)\b/i.test(qStr);
+  var hasMultipleSteps=/\b(d abord|ensuite|puis|enfin|step|etape \d|premierement|deuxiemement)\b/i.test(qStr);
+  /* Lookup niveau utilisateur (admin Kevin = fort par defaut, autres = moyen) */
+  var consumLevel=axGetConsumptionLevel();
+  if(consumLevel==="economie"){
+    /* Mode econome: Haiku presque toujours, Sonnet seulement pour requetes vraiment complexes */
+    if(qLen<200&&!hasComplexKw&&!hasMultipleSteps&&depth===0)return "claude-haiku-4-5-20251001";
+    if(hasExpertiseKw||hasComplexKw)return "claude-sonnet-4-6";
+    return "claude-haiku-4-5-20251001";
+  }
+  if(consumLevel==="moyen"){
+    /* Mode equilibre: Sonnet defaut, Haiku pour simple, Opus rare */
+    if(qLen<80&&!hasComplexKw&&depth===0)return "claude-haiku-4-5-20251001";
+    if(hasExpertiseKw&&qLen>200)return "claude-opus-4-7";
+    return "claude-sonnet-4-6";
+  }
+  /* Mode fort: Sonnet/Opus, Haiku rare */
+  if(qLen<40&&!hasComplexKw&&depth===0)return "claude-haiku-4-5-20251001";
+  if(hasExpertiseKw||(hasComplexKw&&qLen>150))return "claude-opus-4-7";
   return "claude-sonnet-4-6";
 })();
 var body={model:_autoModel,max_tokens:K.settings.maxTokens||4096,system:[{type:"text",text:_sysText,cache_control:{type:"ephemeral"}}],messages:cleanMsgs,tools:_toolsArr};var headers={"content-type":"application/json"};if(!isProxy){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true";}var fetchOpts={method:"POST",headers:headers,body:JSON.stringify(body)};if(_abortCtrl)fetchOpts.signal=_abortCtrl.signal;fetch(apiUrl,fetchOpts).then(function(r){clearTimeout(_fetchTimeout);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(_apiDone)return;_apiDone=true;window._apexRetryCount=0;K.isStreaming=false;var text="";var toolCalls=[];if(d&&d.content){for(var j=0;j<d.content.length;j++){if(d.content[j].text)text+=d.content[j].text;if(d.content[j].type==="tool_use")toolCalls.push(d.content[j]);}}if(toolCalls.length&&depth<5){var toolResults=toolCalls.map(function(tc){var res;try{res=axExecuteTool(tc.name,tc.input);}catch(te){res="Erreur outil "+tc.name+": "+(te&&te.message||te);}var content=(res&&typeof res.then==="function")?"(resultat async en cours — reessayez)":String(res==null?"":res);return{type:"tool_result",tool_use_id:tc.id,content:content};});if(text)K.messages.push({role:"assistant",content:text,ts:now()});var nextMsgs=cleanMsgs.concat([{role:"assistant",content:d.content},{role:"user",content:toolResults}]);K.isStreaming=true;dc();_callClaudeAPI(sysPrompt,nextMsgs,depth+1);}else{K.messages.push({role:"assistant",content:text||"(reponse vide — reessayez ou reformulez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();axTrackUsage(Math.round((text||"").length/4));axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(text);}}).catch(function(e){if(_apiDone)return;_apiDone=true;clearTimeout(_fetchTimeout);K.isStreaming=false;var errMsg=String(e&&e.message||e).slice(0,300);var friendly;if(errMsg.indexOf("aborted")>=0||errMsg.indexOf("AbortError")>=0)friendly="Pas de reponse. Verifie ton internet et reessaie.";else if(errMsg.indexOf("Tool names must be unique")>=0||errMsg.indexOf("invalid_request_error")>=0)friendly="Ca ne marche pas pour le moment. Je l'ai signale, un correctif arrive dans la prochaine mise a jour.";else if(errMsg.indexOf("401")>=0||errMsg.indexOf("authentication")>=0)friendly="Probleme d'acces. Verifie ta cle dans Reglages.";else if(errMsg.indexOf("429")>=0||errMsg.indexOf("rate")>=0)friendly="Trop de demandes. Attends quelques secondes.";else if(errMsg.indexOf("500")>=0||errMsg.indexOf("502")>=0||errMsg.indexOf("503")>=0)friendly="Le serveur IA est occupe. Reessaie dans 1 minute.";else if(errMsg.indexOf("network")>=0||errMsg.indexOf("fetch")>=0)friendly="Reseau indisponible. Verifie ta connexion.";else friendly="Un petit souci technique. Rechargement conseille.";_autoLearnFromError(errMsg);try{if(typeof _escalateToClaudeCode==="function"&&(errMsg.indexOf("Tool names")>=0||errMsg.indexOf("invalid_request_error")>=0))_escalateToClaudeCode({error:errMsg,version:APP_VER},"API "+errMsg.slice(0,100),"critical");}catch(_){}K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();});}catch(ex){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme technique, recharge l app",ts:now()});_saveMsgs();dc();}}
@@ -2884,6 +2971,7 @@ var APEX_COMMANDS=[
   /* v12.111 — Worklog Apex (admin uniquement) */
   {id:"adminworklog",lb:"⏱ Mon temps de travail (admin)",cat:"Admin",adminOnly:true,act:function(){sv("adminworklog");}},
   {id:"usersactivity",lb:"👥 Activité par utilisateur",cat:"Admin",adminOnly:true,act:function(){sv("usersactivity");}},
+  {id:"consumptionlevels",lb:"⚙️ Niveau IA par utilisateur",cat:"Admin",adminOnly:true,act:function(){sv("consumptionlevels");}},
   /* v12.115 — Feature flags ON/OFF */
   {id:"featureflags",lb:"🔘 Activer/Désactiver fonctions",cat:"Admin",adminOnly:true,act:function(){sv("featureflags");}}
 ];
