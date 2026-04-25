@@ -3591,7 +3591,9 @@ var FB_FIX=["cmc_ov","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cm
 // cmc_parser_learning_log : audit decisions auto-learn (max 200)
 "cmc_pdf_fingerprints","cmc_learned_patterns","cmc_parser_learning_log",
 // v9.530 - Sync FB obligatoire (audit securite expert) : ax_pin_fails attaquable si seulement local
-"cmc_pin_fails","cmc_security_log"];
+"cmc_pin_fails","cmc_security_log",
+// v9.542 - Passation digitale entre tournees (Kevin 2026-04-25)
+"cmc_passations"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -4596,7 +4598,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.541";
+var APP_VER="v9.542";
 // --- i18n minimal v9.534 → v9.542 — 60 strings critiques FR/EN/IT (voir i18n.md, helper cmcT defini plus bas) ---
 var I18N_CRITICAL={
 fr:{

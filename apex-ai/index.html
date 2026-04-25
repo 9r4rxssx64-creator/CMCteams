@@ -2147,6 +2147,18 @@ function vAIProviders(){
     });
     h+='</div>';
   });
+  /* v12.264 — Selecteur fournisseur IA principal (Anthropic / OpenRouter / Failover auto) */
+  var _curProv=localStorage.getItem("ax_ai_provider")||"anthropic";
+  var _hasOR=!!localStorage.getItem("ax_openrouter_key");
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);margin-top:14px"><h3>🔀 Provider IA principal (v12.264)</h3>';
+  h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">Choisis le fournisseur d\'IA pour les reponses chat. OpenRouter donne acces a 200+ modeles via 1 cle. Failover auto bascule vers OpenRouter si Anthropic est indispo.</div>';
+  h+='<select class="ax-input" onchange="ls(\'ax_ai_provider\',this.value);toast(\'Provider IA: \'+this.value,\'ok\');dc();" style="width:100%;max-width:340px;min-height:44px">';
+  h+='<option value="anthropic"'+(_curProv==="anthropic"?" selected":"")+'>🤖 Anthropic Claude (defaut)</option>';
+  h+='<option value="openrouter"'+(_curProv==="openrouter"?" selected":"")+'>🔀 OpenRouter '+(_hasOR?"":" (cle manquante)")+'</option>';
+  h+='<option value="failover"'+(_curProv==="failover"?" selected":"")+'>♻️ Failover auto (Claude → OpenRouter)</option>';
+  h+='</select>';
+  if((_curProv==="openrouter"||_curProv==="failover")&&!_hasOR){h+='<div style="margin-top:8px;font-size:12px;color:var(--ax-orange,#e8a248)">⚠ Configure ax_openrouter_key dans Coffre pour activer OpenRouter.</div>';}
+  h+='</div>';
   h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);margin-top:14px"><h3>⚙️ Auto-routing</h3>';
   h+='<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">APEX choisit automatiquement le meilleur modele selon le domaine de la question (code, recherche, image, raisonnement, long document, expert, general) et selon ton niveau de consommation (economie/moyen/fort).</div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap"><input id="ax-ai-test-q" class="ax-input" placeholder="Tape une question pour tester le routing..." style="flex:1;min-width:200px"><button class="ax-btn ax-btn-primary" onclick="_axProviderTestRouting()">🧪 Tester</button></div>';
@@ -4522,6 +4534,44 @@ function axDiagnoseApiKey(){var r={local_ax_api_key:!!localStorage.getItem("ax_a
 function _promptApiKeyModal(retryFn){var diag=axDiagnoseApiKey();var html='<div style="max-width:420px"><h2 style="color:#c9a227;margin:0 0 12px 0">\uD83D\uDD11 Configure ta cle API Claude</h2><div style="padding:10px;background:rgba(255,88,88,.08);border-left:4px solid #ff5858;border-radius:6px;margin-bottom:12px;font-size:12px"><strong>Diagnostic (local, pas de reseau requis):</strong><ul style="margin:6px 0 0 0;padding-left:20px;font-size:11px"><li>localStorage ax_api_key: '+(diag.local_ax_api_key?"\u2705":"\u274C")+'</li><li>localStorage ax_shared_api_key: '+(diag.local_ax_shared_api_key?"\u2705":"\u274C")+'</li><li>Firebase URL configuree: '+(diag.fb_url_set?"\u2705":"\u274C")+'</li><li>En ligne: '+(diag.online?"\u2705":"\u274C")+'</li><li>Proxy Cloudflare: '+(diag.proxy_set?"\u2705":"\u274C non configure")+'</li></ul></div><p style="font-size:13px;margin:0 0 12px 0">Colle ta cle Claude ici (format <code>sk-ant-api03-...</code>) :</p><input id="ax-modal-apikey" type="password" class="ax-input" placeholder="sk-ant-api03-..." style="width:100%;font-family:var(--ax-mono);font-size:12px;margin-bottom:8px" autofocus><div style="display:flex;gap:8px;margin-top:12px"><button class="ax-btn ax-btn-primary" style="flex:1" onclick="(function(){var v=document.getElementById(\'ax-modal-apikey\').value.trim();if(!v||v.length<20){toast(\'Cle trop courte\',\'warn\');return;}if(v.indexOf(\'sk-\')!==0){if(!confirm(\'Cette cle ne commence pas par sk- ... Continuer quand meme ?\'))return;}localStorage.setItem(\'ax_api_key\',v);localStorage.setItem(\'ax_shared_api_key\',JSON.stringify(v));if(typeof fbWrite===\'function\')try{fbWrite(\'ax_shared_api_key\',v);}catch(_){}var mc=document.getElementById(\'modal-container\');if(mc)mc.innerHTML=\'\';toast(\'Cle enregistree \u2705\',\'ok\');if(typeof window.__axKeyRetry===\'function\'){setTimeout(window.__axKeyRetry,300);window.__axKeyRetry=null;}})()">\u2705 Enregistrer + relancer</button><button class="ax-btn ax-btn-outline" onclick="window.open(\'https://console.anthropic.com/settings/keys\',\'_blank\')">\uD83D\uDD17 Obtenir cle</button></div><p style="font-size:10px;color:var(--ax-text-dim);margin-top:12px">La cle est stockee localement + synchronisee Firebase pour tes autres appareils. Jamais envoyee ailleurs.</p></div>';if(retryFn)window.__axKeyRetry=retryFn;_showModal(html);}
 function _setApiKey(k){/* v12.220 - admin guard ajoute (audit bug-hunter) */if(typeof axIsAdmin==="function"&&!axIsAdmin())return;if(k){try{if(typeof ls==="function"){ls("ax_api_key",k);ls("ax_shared_api_key",k);}else{localStorage.setItem("ax_api_key",k);}}catch(_){localStorage.setItem("ax_api_key",k);}}else{try{localStorage.removeItem("ax_api_key");if(typeof fbWrite==="function")fbWrite("ax_api_key",null);}catch(_){}}}
 
+/* v12.264 — OpenRouter provider IA (200+ modeles via 1 cle).
+   _callOpenRouterAPI : helper minimal compat OpenAI chat-completions
+   _callAI : wrapper qui route entre Anthropic / OpenRouter / Failover selon ax_ai_provider */
+function _callOpenRouterAPI(sysPrompt,msgs,depth){
+  try{
+    depth=depth||0;
+    var key=localStorage.getItem("ax_openrouter_key")||"";
+    if(!key||key.length<10){K.isStreaming=false;K.messages.push({role:"assistant",content:"Cle OpenRouter manquante. Reglages > Coffre > ax_openrouter_key.",ts:now()});_saveMsgs();dc();return;}
+    /* Mapper modele Claude vers prefix OpenRouter */
+    var rawModel=(K.settings&&K.settings.model&&K.settings.model!=="auto")?K.settings.model:"claude-sonnet-4-6";
+    var orModel=rawModel;
+    if(/^claude-/.test(rawModel))orModel="anthropic/"+rawModel;
+    else if(/^gpt-/.test(rawModel))orModel="openai/"+rawModel;
+    else if(/^gemini-/.test(rawModel))orModel="google/"+rawModel;
+    else if(/^mistral|^mixtral/.test(rawModel))orModel="mistralai/"+rawModel;
+    else if(/^deepseek/.test(rawModel))orModel="deepseek/"+rawModel;
+    else if(rawModel.indexOf("/")<0)orModel="anthropic/claude-sonnet-4-5";
+    /* Cleanup messages : aplatit content non-string vers string (OpenRouter chat-completions n'aime pas tool_use blocks Anthropic) */
+    var clean=[];for(var i=Math.max(0,msgs.length-30);i<msgs.length;i++){var m=msgs[i];if(!m||!m.role||m.content==null)continue;var role=m.role==="user"?"user":"assistant";var c=m.content;if(typeof c==="string")clean.push({role:role,content:c.slice(0,100000)});else if(Array.isArray(c)){var t="";c.forEach(function(b){if(b&&b.type==="text"&&b.text)t+=b.text;else if(b&&typeof b==="string")t+=b;});if(t)clean.push({role:role,content:t.slice(0,100000)});}}
+    if(!clean.length)clean=[{role:"user",content:"Bonjour"}];
+    var body={model:orModel,messages:[{role:"system",content:(sysPrompt||_buildSystemPrompt()).slice(0,16000)}].concat(clean),max_tokens:K.settings.maxTokens||4096,temperature:K.settings.temperature||0.7,stream:false};
+    var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;var done=false;
+    var to=setTimeout(function(){if(done)return;done=true;if(ctrl)try{ctrl.abort();}catch(_){}K.isStreaming=false;K.messages.push({role:"assistant",content:"OpenRouter ne repond pas (timeout). Reessaie ou change de provider.",ts:now()});_saveMsgs();dc();},K.settings.apiTimeout||180000);
+    var opts={method:"POST",headers:{"Authorization":"Bearer "+key,"content-type":"application/json","HTTP-Referer":(location&&location.origin)||"https://9r4rxssx64-creator.github.io","X-Title":"Apex AI"},body:JSON.stringify(body)};
+    if(ctrl)opts.signal=ctrl.signal;
+    return fetch("https://openrouter.ai/api/v1/chat/completions",opts).then(function(r){clearTimeout(to);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(done)return;done=true;K.isStreaming=false;var text=(d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";K.messages.push({role:"assistant",content:text||"(reponse vide OpenRouter — reessayez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();try{axTrackUsage(Math.round((text||"").length/4));axGainXP(5);}catch(_){}if(K.settings.ttsEnabled&&typeof axTtsSpeak==="function")axTtsSpeak(text);return {content:text,usage:(d&&d.usage)||{}};}).catch(function(e){if(done)return;done=true;clearTimeout(to);K.isStreaming=false;var em=String(e&&e.message||e).slice(0,250);var friendly=em.indexOf("401")>=0?"Cle OpenRouter invalide. Verifie Reglages > Coffre.":em.indexOf("429")>=0?"OpenRouter : trop de demandes. Attends quelques secondes.":em.indexOf("network")>=0||em.indexOf("fetch")>=0?"Reseau indisponible.":"OpenRouter erreur : "+em;K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();throw e;});
+  }catch(ex){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme OpenRouter, recharge l'app",ts:now()});_saveMsgs();dc();}
+}
+function _callAI(sysPrompt,msgs,depth){
+  var prov=localStorage.getItem("ax_ai_provider")||"anthropic";
+  if(prov==="openrouter")return _callOpenRouterAPI(sysPrompt,msgs,depth);
+  if(prov==="failover"){
+    /* Essaie Claude, si echec basculer vers OpenRouter */
+    try{return _callClaudeAPI(sysPrompt,msgs,depth);}
+    catch(e){toast("Anthropic indispo, bascule OpenRouter","warn");return _callOpenRouterAPI(sysPrompt,msgs,depth);}
+  }
+  return _callClaudeAPI(sysPrompt,msgs,depth);
+}
 function _callClaudeAPI(sysPrompt,msgs,depth){try{depth=depth||0;var apiKey=_getApiKey();var backendUrl=(typeof _readBackendUrl==="function")?_readBackendUrl():"";var proxyUrl=localStorage.getItem("ax_proxy_url");var apiUrl=backendUrl?(backendUrl+"/api/chat/proxy"):(proxyUrl?proxyUrl.replace(/\/$/,""):"https://api.anthropic.com/v1/messages");var isProxy=apiUrl.indexOf("anthropic.com")<0;if(!apiKey&&!isProxy){if(navigator.onLine&&typeof _getApiKeyAsync==="function"){_getApiKeyAsync().then(function(k){if(k&&k.length>10){toast("J ai retrouve la cle, je relance...","ok");setTimeout(function(){_callClaudeAPI(sysPrompt,msgs,depth);},500);}else{K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();}});return;}K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();return;}var cleanMsgs=[];for(var i=Math.max(0,msgs.length-30);i<msgs.length;i++){var m=msgs[i];if(!m||!m.role||m.content==null)continue;var role=m.role==="user"?"user":"assistant";if(typeof m.content==="string"){cleanMsgs.push({role:role,content:m.content.slice(0,100000)});}else if(Array.isArray(m.content)){cleanMsgs.push({role:role,content:m.content});}}if(!cleanMsgs.length)cleanMsgs=[{role:"user",content:"Bonjour"}];var fullSystem=sysPrompt||_buildSystemPrompt();var _apiDone=false;var _abortCtrl=(typeof AbortController!=="undefined")?new AbortController():null;var _retryCount=window._apexRetryCount||0;var _timeoutMs=K.settings.apiTimeout||180000;var _fetchTimeout=setTimeout(function(){if(_apiDone)return;_apiDone=true;if(_abortCtrl)try{_abortCtrl.abort();}catch(ae){}K.isStreaming=false;/* v12.75 — Retry auto 1x avant de dire echec */if(_retryCount<1&&depth===0){window._apexRetryCount=_retryCount+1;toast("Pas de reponse en "+Math.round(_timeoutMs/1000)+"s, je ressaye...","warn");setTimeout(function(){_callClaudeAPI(sysPrompt,msgs,depth);},1500);return;}window._apexRetryCount=0;K.messages.push({role:"assistant",content:"La reponse prend plus de temps que prevu ("+Math.round(_timeoutMs/1000)+"s). Reessaie avec une demande plus courte ou verifie ta connexion. Je note le probleme pour ameliorer ensuite.",ts:now()});_saveMsgs();dc();/* Push telemetry */try{if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("api_timeout","warn","timeout apres "+_timeoutMs+"ms");}catch(_){}},_timeoutMs);/* v12.106 — Prompt caching Anthropic (gain 40-90% latence + cout) */
 var _sysText=fullSystem.slice(0,16000);
 var _toolsArr=(function(){var base=axIsAdmin()?_getToolDefs():_getToolDefs().filter(function(t){return t.name!=="app_action";});if(K.settings&&K.settings.webSearch){base=base.filter(function(t){return t.name!=="web_search";});base=base.concat([{type:"web_search_20250305",name:"web_search",max_uses:5}]);}var _seen={};base=base.filter(function(t){if(!t||!t.name||_seen[t.name])return false;_seen[t.name]=true;return true;});if(base.length){base[base.length-1]=Object.assign({},base[base.length-1],{cache_control:{type:"ephemeral"}});}return base;})();
