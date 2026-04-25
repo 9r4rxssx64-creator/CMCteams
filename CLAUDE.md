@@ -4,6 +4,40 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session 
 
 ---
 
+## 📒 RÈGLE PERMANENTE — Maintenir CLAUDE_ACTIVITY.json (Kevin 2026-04-25)
+
+> **"Ajoute toutes tes données sur mon temps de travail et met le à jour comme doit faire IA de Apex et dans CMCteams et tu mets à jour dedans chacun toi aussi au fur et à mesure"**
+
+À chaque commit que je fais sur ce repo, je DOIS régénérer `/home/user/CMCteams/CLAUDE_ACTIVITY.json` avec tous mes commits récents. Ce fichier est lu par les vues `vAdminWorklog` (Apex) et `vAdminTimework` (CMCteams) pour afficher mon activité à Kevin.
+
+**Script de régénération** (à lancer avant chaque commit important) :
+
+```bash
+python3 -c "
+import subprocess, json, re, time
+out = subprocess.check_output(['git','log','--pretty=format:%H|%at|%s','--since=2026-04-21'], text=True)
+commits = []
+for line in out.strip().split('\n'):
+    if not line: continue
+    h, ts, msg = line.split('|',2)
+    project='multi'
+    if msg.startswith('Apex v'): project='apex'
+    elif msg.startswith('CMCteams v') or msg.startswith('v9.'): project='cmcteams'
+    elif msg.startswith('Backend'): project='backend'
+    elif 'PRO ' in msg: project='backend'
+    elif msg.startswith('CLAUDE'): project='docs'
+    ver_match = re.search(r'v(\d+\.\d+)', msg)
+    ver = ver_match.group(1) if ver_match else None
+    commits.append({'sha':h[:8], 'ts':int(ts)*1000, 'msg':msg[:200], 'project':project, 'ver':ver, 'author':'claude-code'})
+data = {'updated_at': int(time.time()*1000), 'total_commits': len(commits), 'projects': sorted(set(c['project'] for c in commits)), 'commits': commits[:120]}
+json.dump(data, open('CLAUDE_ACTIVITY.json','w'), ensure_ascii=False, indent=2)
+"
+```
+
+À faire idéalement à chaque commit. Acceptable de batcher (1× par session).
+
+---
+
 ## 📱 RÈGLE CRITIQUE — KEVIN TRAVAILLE SUR iPHONE (Kevin 2026-04-25 permanent)
 
 > **"Rappel toi tjs que je travail sur iPhone"**
