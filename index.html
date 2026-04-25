@@ -10982,7 +10982,9 @@ var APP_AGENTS=[
   {id:"fb-rules-probe",label:"\ud83d\udd10 FB-Rules-Probe",icon:"\ud83d\udd10",interval:60*60*1000,run:_agentFbRulesProbe,desc:"Probe ecriture Firebase, log 403/permission"},
   {id:"autonomy-bridge",label:"\ud83d\udd17 Autonomy-Bridge",icon:"\ud83d\udd17",interval:15*60*1000,run:_agentAutonomyBridge,desc:"Verifie ax_telemetry_in + ax_claude_todo outbox"},
   // v9.509 (Kevin 2026-04-25 \u2014 ZERO ERREUR CADRES)
-  {id:"import-watch",label:"\ud83d\udcc4 Import-Watch",icon:"\ud83d\udcc4",interval:5*60*1000,run:_agentImportWatch,desc:"Sentinelle dediee : detecte cadres/chefs sans horaire post-import, 5 strategies cascade"}
+  {id:"import-watch",label:"\ud83d\udcc4 Import-Watch",icon:"\ud83d\udcc4",interval:5*60*1000,run:_agentImportWatch,desc:"Sentinelle dediee : detecte cadres/chefs sans horaire post-import, 5 strategies cascade"},
+  // v9.530 (Kevin 2026-04-25 \u2014 SECU ADMIN PIN HASH FORMAT)
+  {id:"cmc-admin-pin-watch",label:"\ud83d\udd10 Admin-Pin-Watch",icon:"\ud83d\udd10",interval:30*60*1000,run:_agentAdminPinWatch,desc:"Verifie format hash cmc_admin_pin >=20 chars + $ separators, alerte si format invalide"}
 ];
 // v9.419 — Event bus pour déclencher agents sur événements (pas juste interval)
 // Permet : post_import, post_save_ov, post_login, post_planning_change
