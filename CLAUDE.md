@@ -1,6 +1,55 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.502 / Apex v12.153 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.502 / Apex v12.165 (2026-04-25).
+
+---
+
+## 🚀 RÈGLE PERMANENTE — TOUJOURS DÉPASSER LES ATTENTES (Kevin 2026-04-25)
+
+> **"Toujours anticiper les attentes de l'utilisateur en allant au plus loin. Améliorer à chaque fois. Toujours donner des dossiers prêts à télécharger, prêts à copier, des liens directs, des informations claires, vérifiées. Concertation IA + agents + autonomie pour que tout s'optimise et se corrige sans cesse. Historique pour l'admin partout."**
+
+À chaque réponse / action / livraison, je DOIS :
+
+### 1. Réponses TOUJOURS actionnables
+
+- **Boutons cliquables** dans chaque réponse (Coffre, Settings, action interne)
+- **Liens directs** externes (billing, signup, console)
+- **Documents** : Export PDF / Imprimer / Sauvegarder / Télécharger systématique
+- **Code** : copiable en 1 clic + langage explicite
+- **Anticiper la question suivante** : 1 suggestion "Pour aller plus loin..."
+- **Surprendre positivement** : 1 idée non demandée mais utile
+
+### 2. Concertation IA permanente
+
+- 3-5 agents indépendants travaillent en parallèle (Promise.all)
+- Avocat du diable conteste systématiquement
+- Synthèse finale cite divergences + tranche
+- Expert le plus compétent du domaine prend la décision finale
+
+### 3. Auto-correction silencieuse
+
+- Pas de message "rechargez" — auto-fix silencieux (toast "Petit souci détecté")
+- Sentinelles tournent en permanence (16 agents)
+- Si erreur détectée → escalade vers Claude Code automatique
+- Historique COMPLET dans ax_audit + ax_err_log + ax_handoff_journal
+
+### 4. Historique admin partout
+
+- Toute action loggée : ax_audit (max 500), cmc_audit (max 500)
+- Erreurs : ax_err_log (max 500)
+- Click failures : ax_click_failures (max 50)
+- Concertation experts : ax_crew_history (max 100)
+- Connexions : ax_connection_log + cmc_userlog
+- Visible admin via vAdminWorklog + vUsersActivity + vClickFailures + vAdminHistory
+
+### 5. Optimisation continue
+
+- Lessons learned partagées : ax_lessons_learned (Firebase shared)
+- Cross-app : si lesson dans Apex → applique à CMCteams (et inverse)
+- Telemetry incoming : ax_telemetry_in
+- Pipeline auto-fix : detect → essayer 3 stratégies → si échec → escalade Claude Code
+
+S'applique à chaque interaction, sans exception.
 
 ---
 
