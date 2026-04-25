@@ -10,7 +10,7 @@
  * fallback via window online listener cote app).
  */
 
-const CACHE_VERSION  = 'apex-v12.142';
+const CACHE_VERSION  = 'apex-v12.165';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
