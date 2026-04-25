@@ -1,6 +1,6 @@
 {
-  "updated_at": 1777123232962,
-  "total_commits": 229,
+  "updated_at": 1777123439845,
+  "total_commits": 230,
   "projects": [
     "apex",
     "backend",
@@ -9,6 +9,22 @@
     "multi"
   ],
   "commits": [
+    {
+      "sha": "dcb0827c",
+      "ts": 1777123277000,
+      "msg": "CLAUDE.md: Regle permanente AUTOMATISATION TOTALE (Kevin: 'tout, tout, tout, tout le temps')",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "70330795",
+      "ts": 1777123238000,
+      "msg": "CLAUDE_ACTIVITY.json: refresh apres Apex v12.198 (perf pack iPhone)",
+      "project": "docs",
+      "ver": "12.198",
+      "author": "claude-code"
+    },
     {
       "sha": "dd70232f",
       "ts": 1777123221000,
@@ -951,22 +967,6 @@
       "msg": "Apex v12.121: niveaux IA par user (economie/moyen/fort) + admin Kevin fort",
       "project": "apex",
       "ver": "12.121",
-      "author": "claude-code"
-    },
-    {
-      "sha": "fe71f6c2",
-      "ts": 1777080062000,
-      "msg": "Apex v12.120: breadcrumbs visibles (UX intuitivite)",
-      "project": "apex",
-      "ver": "12.120",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a3ceba35",
-      "ts": 1777079994000,
-      "msg": "CLAUDE_ACTIVITY: regen apres v12.119 (138 commits, 16 sujets)",
-      "project": "docs",
-      "ver": "12.119",
       "author": "claude-code"
     }
   ]
