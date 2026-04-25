@@ -1,7 +1,7 @@
 {
-  "updated_at": 1777082086406,
+  "updated_at": 1777082922369,
   "session_id": "kevin-2026-04-21-25",
-  "total_commits": 158,
+  "total_commits": 166,
   "projects": [
     "apex",
     "backend",
@@ -12,19 +12,23 @@
   "topics": [
     {
       "name": "🔐 Sécurité & Auth",
-      "count": 41
+      "count": 43
     },
     {
       "name": "⚡ IA & Performance",
-      "count": 33
+      "count": 34
     },
     {
       "name": "📅 Planning & Cadres",
-      "count": 15
+      "count": 16
     },
     {
       "name": "🎨 UX & Design",
       "count": 12
+    },
+    {
+      "name": "🔧 Bug fixes",
+      "count": 9
     },
     {
       "name": "🔮 Autre",
@@ -39,28 +43,24 @@
       "count": 8
     },
     {
-      "name": "🔧 Bug fixes",
-      "count": 8
-    },
-    {
       "name": "🤖 Agents & Automation",
-      "count": 6
+      "count": 7
     },
     {
       "name": "🎙 Voix & Audio",
-      "count": 6
+      "count": 7
     },
     {
       "name": "📧 Email & Notif",
       "count": 4
     },
     {
-      "name": "📚 Docs & Méthodologie",
+      "name": "🔄 Sync & Storage",
       "count": 3
     },
     {
-      "name": "🔄 Sync & Storage",
-      "count": 2
+      "name": "📚 Docs & Méthodologie",
+      "count": 3
     },
     {
       "name": "📊 Worklog & Suivi",
@@ -72,6 +72,87 @@
     }
   ],
   "commits": [
+    {
+      "sha": "34bc122b",
+      "ts": 1777082899000,
+      "msg": "CMCteams v9.492: AUTO continuous tracking apres checkin (Kevin: 'automatiser')",
+      "project": "cmcteams",
+      "ver": "9.492",
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c8ddb21a",
+      "ts": 1777082856000,
+      "msg": "Apex v12.139: cascade emails auto (Kevin P1) — 4 emails + helper + admin Boite emails",
+      "project": "apex",
+      "ver": "12.139",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9c46b60f",
+      "ts": 1777082789000,
+      "msg": "Subagents commits batch (parallel work)",
+      "project": "multi",
+      "ver": null,
+      "topic": "🤖 Agents & Automation",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4e496609",
+      "ts": 1777082789000,
+      "msg": "CMCteams v9.491+: visuel premium carte interactive (CSS luxe casino Monaco)",
+      "project": "cmcteams",
+      "ver": "9.491",
+      "topic": "🎙 Voix & Audio",
+      "author": "claude-code"
+    },
+    {
+      "sha": "95bc3268",
+      "ts": 1777082675000,
+      "msg": "Apex v12.136: backup nightly auto + restore + vue admin",
+      "project": "apex",
+      "ver": "12.136",
+      "topic": "🔐 Sécurité & Auth",
+      "author": "claude-code"
+    },
+    {
+      "sha": "14cf0b6d",
+      "ts": 1777082634000,
+      "msg": "Apex v12.133: SW pro-level (cache strategies + offline + push + bg sync)",
+      "project": "apex",
+      "ver": "12.133",
+      "topic": "🔄 Sync & Storage",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9208d4f8",
+      "ts": 1777082564000,
+      "msg": "Subagents commits intermediaires: Apex + CMCteams parallel work",
+      "project": "multi",
+      "ver": null,
+      "topic": "📅 Planning & Cadres",
+      "author": "claude-code"
+    },
+    {
+      "sha": "150d6ccd",
+      "ts": 1777082190000,
+      "msg": "Apex v12.131: onboarding pro plein ecran + CSP IP services + referrals FB_FIX",
+      "project": "apex",
+      "ver": "12.131",
+      "topic": "🔧 Bug fixes",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ade566ef",
+      "ts": 1777082086000,
+      "msg": "CLAUDE_ACTIVITY: regen apres v12.130 (50+ commits)",
+      "project": "docs",
+      "ver": "12.130",
+      "topic": "⚡ IA & Performance",
+      "author": "claude-code"
+    },
     {
       "sha": "0e13b403",
       "ts": 1777082074000,
@@ -1069,87 +1150,6 @@
       "project": "multi",
       "ver": "12.56",
       "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "0dc3827f",
-      "ts": 1776784121000,
-      "msg": "v12.55b: Banner romantique pour Laurence (user_laurence) sur Dashboard Apex (#181)",
-      "project": "multi",
-      "ver": "12.55",
-      "topic": "🎨 UX & Design",
-      "author": "claude-code"
-    },
-    {
-      "sha": "219733ef",
-      "ts": 1776783726000,
-      "msg": "v12.55: Regle permanente pipeline autonomie cross-projet (Apex + CMCteams + futurs) (#180)",
-      "project": "multi",
-      "ver": "12.55",
-      "topic": "📅 Planning & Cadres",
-      "author": "claude-code"
-    },
-    {
-      "sha": "bb72f372",
-      "ts": 1776783620000,
-      "msg": "v12.54 + v9.458: Fiches cliquables + vue user temps reel + controles admin + CMCteams auto-reload preserve view (#179)",
-      "project": "multi",
-      "ver": "12.54",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "211aff7f",
-      "ts": 1776783105000,
-      "msg": "v12.53 AUDIT FIXES: FB_FIX 9 cles ajoutees + regex admin-only _execAppAction + detection suspecte enrichie + UX jargon retire (#178)",
-      "project": "multi",
-      "ver": "12.53",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3eab618d",
-      "ts": 1776782830000,
-      "msg": "v12.52: Rapports journaliers par user + historique chat + detection actions suspectes + alertes admin (#177)",
-      "project": "multi",
-      "ver": "12.52",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8a930260",
-      "ts": 1776782324000,
-      "msg": "v12.51: Geolocalisation continue pour admin/family/friend/gift dans Apex (CMCteams deja OK v9.214+) + safety micro NE coupe QUE audio/video (#176)",
-      "project": "multi",
-      "ver": "12.51",
-      "topic": "🔐 Sécurité & Auth",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e34de34d",
-      "ts": 1776782162000,
-      "msg": "v12.50: Langage simple UI (19 termes) + Safety micro iPhone/Android (stop auto quand app fermee/caChee) (#175)",
-      "project": "multi",
-      "ver": "12.50",
-      "topic": "🎙 Voix & Audio",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e60aeabb",
-      "ts": 1776781962000,
-      "msg": "v12.49 + GitHub Action: Pipeline escalation autonome Apex -> Claude Code (meme si Kevin offline) (#174)",
-      "project": "multi",
-      "ver": "12.49",
-      "topic": "⚡ IA & Performance",
-      "author": "claude-code"
-    },
-    {
-      "sha": "f7b0f42b",
-      "ts": 1776781777000,
-      "msg": "v12.48: Vault 'A configurer' pour champs vides + AxAutoHandleError (IA repare seule + escalade admin si recurrent 3x/h) + axClearChatScreen (nettoie ecran garde historique) + bouton Report bug client ",
-      "project": "multi",
-      "ver": "12.48",
-      "topic": "🔐 Sécurité & Auth",
       "author": "claude-code"
     }
   ]
