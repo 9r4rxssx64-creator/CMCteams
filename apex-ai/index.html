@@ -469,6 +469,23 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-lite-tour-btn-prim{background:var(--ax-gold);color:#000}
 .ax-lite-tour-btn-sec{background:rgba(255,255,255,.06);color:var(--ax-text);border:1px solid rgba(255,255,255,.1)}
 .ax-lite-empty{text-align:center;padding:40px 20px;color:var(--ax-text-dim);font-size:14px}
+/* v12.304 — Browser embed modal (Apex EXECUTE) */
+.ax-browser-overlay{position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);display:flex;align-items:stretch;justify-content:center;backdrop-filter:blur(4px);padding:max(20px,env(safe-area-inset-top)) 0 max(20px,env(safe-area-inset-bottom))}
+.ax-browser-frame{background:var(--ax-bg-flat);border:1px solid var(--ax-gold);border-radius:12px;width:100%;max-width:1100px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.ax-browser-bar{display:flex;gap:6px;padding:8px;background:var(--ax-bg-card);border-bottom:1px solid var(--ax-border);align-items:center}
+.ax-browser-btn{background:rgba(255,255,255,.06);border:1px solid var(--ax-border);color:var(--ax-text);width:44px;height:44px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ax-browser-btn:active{transform:scale(.94)}
+.ax-browser-url{flex:1;background:var(--ax-bg-input);border:1px solid var(--ax-border);color:var(--ax-text);padding:0 10px;height:44px;border-radius:8px;font-size:13px;min-width:0}
+.ax-browser-frame iframe{flex:1;border:none;background:#fff;width:100%;min-height:300px}
+.ax-browser-overlay-tools{position:absolute;bottom:max(16px,env(safe-area-inset-bottom));right:16px;display:flex;flex-direction:column;gap:8px;z-index:1}
+.ax-overlay-btn{background:linear-gradient(135deg,var(--ax-gold),#c9a227);color:#000;width:48px;height:48px;border-radius:50%;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(232,184,48,.4);display:flex;align-items:center;justify-content:center}
+.ax-overlay-btn:active{transform:scale(.94)}
+.ax-browser-overlay:fullscreen{padding:0}
+.ax-browser-overlay:fullscreen .ax-browser-frame{max-width:100%;border-radius:0;height:100vh}
+.ax-result-embed{position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+.ax-result-card{background:var(--ax-bg-flat);border:1px solid var(--ax-gold);border-radius:14px;padding:20px 22px;max-width:520px;width:100%;color:var(--ax-text);font-size:18px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.ax-result-card button{margin-top:14px;min-height:44px}
+@media (max-width:480px){.ax-browser-bar{padding:6px;gap:4px}.ax-browser-btn{width:40px;height:40px;font-size:14px}.ax-browser-url{height:40px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -500,7 +517,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.303",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.304",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -3228,6 +3245,277 @@ function axBrowserBookmark(){
   dc();
 }
 
+/* ============================================================ */
+/* v12.304 — APEX EXECUTE (Kevin 2026-04-26)                    */
+/* L IA n explique plus : elle EXECUTE direct.                  */
+/* "ouvre google" -> fenetre google s ouvre instantanement.     */
+/* "cherche meteo paris" -> resultats affiches.                 */
+/* ============================================================ */
+
+/* Registry features capabilities (separe de AX_CAPABILITIES_2026 qui scanne le navigateur) */
+var AX_CAPABILITIES=(typeof AX_CAPABILITIES!=="undefined"&&AX_CAPABILITIES)||[];
+try{
+  AX_CAPABILITIES.push({id:"browser_embed",icon:"🌐",label:"Navigateur integre",desc:"Ouvre un site web direct dans Apex (Dis Apex toujours actif)",since:"v12.304",route:null,keywords:["navigateur","browser","internet","site","web","url","ouvre"]});
+  AX_CAPABILITIES.push({id:"intent_exec",icon:"⚡",label:"Apex execute",desc:"Tape ouvre google / cherche meteo paris -> Apex execute direct",since:"v12.304",route:null,keywords:["execute","action","direct","ouvre","cherche","lance"]});
+}catch(_axCapsErr){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-caps-init",_axCapsErr);}
+
+/* Dictionnaire intents -> action. Premier match gagne. */
+var AX_EXEC_INTENTS=[
+  /* Navigateur generique */
+  {pattern:/^(?:ouvre|lance|montre|affiche)\s+(?:un\s+|le\s+)?(?:navigateur|browser|safari|chrome|firefox)\s*$/i,fn:function(){return axOpenBrowserEmbed("https://www.google.com");}},
+  /* Sites populaires (alias) : ouvre google, ouvre youtube, ouvre maps... */
+  {pattern:/^(?:ouvre|lance|montre|affiche|va\s+sur)\s+(?:le\s+|la\s+)?(google|youtube|gmail|maps|wikipedia|github|twitter|instagram|facebook|linkedin|reddit|tiktok|whatsapp|netflix|amazon|deezer|spotify|chatgpt|claude|anthropic)\s*$/i,fn:function(m){var sites={google:"https://www.google.com",youtube:"https://www.youtube.com",gmail:"https://mail.google.com",maps:"https://www.google.com/maps",wikipedia:"https://fr.wikipedia.org",github:"https://github.com",twitter:"https://twitter.com",instagram:"https://www.instagram.com",facebook:"https://www.facebook.com",linkedin:"https://www.linkedin.com",reddit:"https://www.reddit.com",tiktok:"https://www.tiktok.com",whatsapp:"https://web.whatsapp.com",netflix:"https://www.netflix.com",amazon:"https://www.amazon.fr",deezer:"https://www.deezer.com",spotify:"https://open.spotify.com",chatgpt:"https://chat.openai.com",claude:"https://claude.ai",anthropic:"https://www.anthropic.com"};return axOpenBrowserEmbed(sites[m[1].toLowerCase()]||"https://www.google.com");}},
+  /* Aller sur un site precis (domaine ou URL) */
+  {pattern:/^(?:va|aller|ouvre|montre|affiche)\s+(?:sur\s+)?(?:le\s+site\s+)?((?:https?:\/\/)?[a-z0-9][a-z0-9.-]+\.[a-z]{2,}(?:\/[\w\-?=&%.~+#:/]*)?)\s*$/i,fn:function(m){var url=m[1];if(!/^https?:\/\//i.test(url))url="https://"+url;return axOpenBrowserEmbed(url);}},
+  /* Recherche Google */
+  {pattern:/^(?:google|recherche\s+(?:sur\s+google\s+)?|cherche\s+sur\s+google\s+)(.+)$/i,fn:function(m){return axOpenBrowserEmbed("https://www.google.com/search?q="+encodeURIComponent(m[1].trim()));}},
+  /* YouTube musique/video */
+  {pattern:/^(?:youtube|joue|met|lance|mets)\s+(?:la\s+|une\s+|du\s+)?(?:musique|video|chanson|clip|son)\s+(?:de\s+)?(.+)$/i,fn:function(m){return axOpenBrowserEmbed("https://www.youtube.com/results?search_query="+encodeURIComponent(m[1].trim()));}},
+  {pattern:/^(?:youtube)\s+(.+)$/i,fn:function(m){return axOpenBrowserEmbed("https://www.youtube.com/results?search_query="+encodeURIComponent(m[1].trim()));}},
+  /* Wikipedia */
+  {pattern:/^(?:wikipedia|wiki)\s+(.+)$/i,fn:function(m){return axOpenBrowserEmbed("https://fr.wikipedia.org/wiki/"+encodeURIComponent(m[1].trim().replace(/\s+/g,"_")));}},
+  /* Maps */
+  {pattern:/^(?:montre|ouvre|affiche|cherche)\s+(?:la\s+)?(?:carte|maps|map|plan)\s+(?:de\s+|du\s+|des\s+)?(.+)$/i,fn:function(m){return axOpenBrowserEmbed("https://www.google.com/maps/search/"+encodeURIComponent(m[1].trim()));}},
+  /* Meteo */
+  {pattern:/^(?:montre|affiche|donne|quelle\s+est)\s+(?:la\s+)?meteo(?:\s+(?:de|pour|a|à)\s+(.+))?$/i,fn:function(m){var loc=(m[1]||"Monaco").trim();return axShowWeatherEmbed(loc);}},
+  {pattern:/^meteo(?:\s+(.+))?$/i,fn:function(m){var loc=(m[1]||"Monaco").trim();return axShowWeatherEmbed(loc);}},
+  /* Traduction */
+  {pattern:/^traduis?\s+(?:en\s+)?([a-zéèêçàâîïôöù]+)\s*[:?]?\s+(.+)$/i,fn:function(m){var lang=_axMapLangCode(m[1]);return axOpenBrowserEmbed("https://translate.google.com/?sl=auto&tl="+lang+"&text="+encodeURIComponent(m[2].trim()));}},
+  /* Calculatrice (eval safe) */
+  {pattern:/^(?:calcule|combien\s+font|combien\s+vaut|que\s+vaut|=)\s+([\d+\-*\/().\s,]+)\s*\??$/i,fn:function(m){return _axSafeCalc(m[1]);}},
+  /* Studios Apex */
+  {pattern:/^(?:ouvre|lance|montre|affiche|va\s+sur)\s+(?:le\s+|la\s+|une\s+)?(?:studio\s+)?(?:musique|mixage|mix|track)\s*$/i,fn:function(){if(typeof sv==="function"){sv("studiomusic");return true;}return null;}},
+  {pattern:/^(?:ouvre|lance|montre|affiche|va\s+sur)\s+(?:le\s+|la\s+)?(?:studio\s+)?(?:video|montage|film|clip)\s*$/i,fn:function(){if(typeof sv==="function"){sv("studiovideo");return true;}return null;}},
+  {pattern:/^(?:ouvre|lance|montre|affiche|va\s+sur)\s+(?:le\s+|la\s+)?(?:studio\s+)?(?:photo|camera|cam|scan)\s*$/i,fn:function(){if(typeof sv==="function"){sv("camerastudio");return true;}return null;}},
+  {pattern:/^(?:ouvre|lance|montre|affiche|va\s+sur)\s+(?:le\s+|la\s+)?(?:studio\s+)?(?:archi|architecture|plan(?:s)?|construction)\s*$/i,fn:function(){if(typeof sv==="function"){sv("architecture");return true;}return null;}},
+  {pattern:/^(?:ouvre|montre|affiche)\s+(?:le\s+)?traducteur\s*$/i,fn:function(){if(typeof sv==="function"){sv("translatorpro");return true;}return null;}},
+  /* Actions admin uniquement */
+  {pattern:/^(?:ouvre|montre|affiche)\s+(?:le\s+)?coffre\s*$/i,adminOnly:true,fn:function(){if(typeof sv==="function"){sv("vault");return true;}return null;}},
+  {pattern:/^(?:ouvre|montre|affiche)\s+(?:les\s+)?reglages\s*$/i,adminOnly:true,fn:function(){if(typeof sv==="function"){sv("settings");return true;}return null;}},
+  {pattern:/^(?:ouvre|montre|affiche)\s+(?:le\s+)?(?:dashboard|tableau\s+de\s+bord)\s*$/i,fn:function(){if(typeof sv==="function"){sv("dashboard");return true;}return null;}},
+  /* Recherche generique fallback */
+  {pattern:/^(?:cherche|trouve|recherche)\s+(.+)$/i,fn:function(m){return axWebSearchEmbed(m[1].trim());}}
+];
+
+/* Helper langues : nom francais -> code ISO 2 chars */
+function _axMapLangCode(input){
+  var t=String(input||"").toLowerCase().trim();
+  var map={"anglais":"en","english":"en","en":"en","espagnol":"es","spanish":"es","es":"es","italien":"it","italian":"it","it":"it","allemand":"de","german":"de","de":"de","portugais":"pt","portuguese":"pt","pt":"pt","russe":"ru","russian":"ru","ru":"ru","chinois":"zh","chinese":"zh","zh":"zh","japonais":"ja","japanese":"ja","ja":"ja","arabe":"ar","arabic":"ar","ar":"ar","francais":"fr","français":"fr","french":"fr","fr":"fr","neerlandais":"nl","dutch":"nl","nl":"nl","polonais":"pl","polish":"pl","pl":"pl","turc":"tr","turkish":"tr","tr":"tr","coreen":"ko","korean":"ko","ko":"ko","grec":"el","greek":"el","el":"el"};
+  if(map[t])return map[t];
+  return t.slice(0,2);
+}
+
+/* Calcul sécurisé (pas eval, parse manuel via Function) */
+function _axSafeCalc(expr){
+  try{
+    var clean=String(expr||"").replace(/[^0-9+\-*/().\s,]/g,"").replace(/,/g,".");
+    if(!clean.trim())return null;
+    var fn=new Function("return ("+clean+")");
+    var r=fn();
+    if(typeof r!=="number"||!isFinite(r))return null;
+    var val=Math.round(r*1000000)/1000000;
+    return axShowResultEmbed("🧮 "+esc(clean)+" = <strong style='color:var(--ax-gold);font-size:24px'>"+val+"</strong>");
+  }catch(e){return null;}
+}
+
+/* Detect + execute. Retourne {executed:bool, intent:int, result:any} ou null. */
+function axDetectAndExecute(text){
+  var t=String(text||"").trim();
+  if(!t||t.length<3)return null;
+  for(var i=0;i<AX_EXEC_INTENTS.length;i++){
+    var intent=AX_EXEC_INTENTS[i];
+    if(intent.adminOnly&&(typeof axIsAdmin!=="function"||!axIsAdmin()))continue;
+    var m=t.match(intent.pattern);
+    if(m){
+      try{
+        var result=intent.fn(m,t);
+        if(result===null||result===false)continue;
+        try{
+          if(typeof axRecordLesson==="function")axRecordLesson("intent","Exec auto match #"+i,"Pattern: "+String(intent.pattern).slice(0,80)+" / Text: "+t.slice(0,80),"info");
+        }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-lesson",_e);}
+        return {executed:true,intent:i,result:result};
+      }catch(e){
+        if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-intent-"+i,e);
+      }
+    }
+  }
+  return null;
+}
+
+/* ===== axOpenBrowserEmbed ===== */
+/* Ouvre une fenetre browser modale dans Apex (iframe sandboxee). */
+/* Whitelist scheme HTTPS uniquement. Wake word reste actif. */
+function axOpenBrowserEmbed(url){
+  var safeUrl=String(url||"").trim();
+  if(!safeUrl)return null;
+  if(!/^https?:\/\//i.test(safeUrl))safeUrl="https://"+safeUrl;
+  if(!/^https:\/\/[^\s<>"'`]+$/i.test(safeUrl)){
+    if(typeof toast==="function")toast("URL invalide ou non securisee","warn");
+    return null;
+  }
+  var existing=document.getElementById("ax-browser-modal");
+  if(existing)try{existing.remove();}catch(_){}
+  var modal=document.createElement("div");
+  modal.id="ax-browser-modal";
+  modal.className="ax-browser-overlay";
+  modal.setAttribute("role","dialog");
+  modal.setAttribute("aria-label","Navigateur integre Apex");
+  modal.innerHTML='<div class="ax-browser-frame">'+
+    '<div class="ax-browser-bar">'+
+      '<button class="ax-browser-btn" onclick="axCloseBrowserEmbed()" title="Fermer" aria-label="Fermer">✕</button>'+
+      '<button class="ax-browser-btn" onclick="var f=document.getElementById(\'ax-browser-iframe\');if(f)f.src=f.src" title="Recharger" aria-label="Recharger">↻</button>'+
+      '<input type="text" id="ax-browser-url-input" class="ax-browser-url" value="'+esc(safeUrl)+'" onkeydown="if(event.key===\'Enter\')axBrowserGoEmbed(this.value)" aria-label="URL">'+
+      '<button class="ax-browser-btn" onclick="axBrowserToggleFullscreen()" title="Plein ecran" aria-label="Plein ecran">⛶</button>'+
+      '<button class="ax-browser-btn" onclick="window.open(document.getElementById(\'ax-browser-iframe\').src,\'_blank\',\'noopener,noreferrer\')" title="Ouvrir Safari" aria-label="Ouvrir Safari">↗</button>'+
+    '</div>'+
+    '<iframe id="ax-browser-iframe" src="'+esc(safeUrl)+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="eager" allow="autoplay; fullscreen; clipboard-write; geolocation"></iframe>'+
+    '<div class="ax-browser-overlay-tools">'+
+      '<button class="ax-overlay-btn" onclick="(typeof axWakeWordToggle===\'function\')?axWakeWordToggle():axAssistantStart()" title="Dis Apex" aria-label="Dis Apex">🎙</button>'+
+      '<button class="ax-overlay-btn" onclick="axCloseBrowserEmbed();sv(\'chat\')" title="Retour chat" aria-label="Retour chat">💬</button>'+
+      '<button class="ax-overlay-btn" onclick="axCopyBrowserUrl()" title="Copier URL" aria-label="Copier URL">📋</button>'+
+      '<button class="ax-overlay-btn" onclick="axAskApexAboutBrowser()" title="Demander Apex" aria-label="Demander Apex">🤖</button>'+
+    '</div>'+
+    '</div>';
+  document.body.appendChild(modal);
+  /* Log history */
+  try{
+    var hist=lg("ax_browser_history",[]);
+    if(!Array.isArray(hist))hist=[];
+    hist.unshift({url:safeUrl,ts:Date.now(),via:"embed"});
+    if(hist.length>500)hist=hist.slice(0,500);
+    ls("ax_browser_history",hist);
+  }catch(_he){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-browser-history",_he);}
+  /* Detection iframe blocked (X-Frame-Options) : timeout 5s */
+  setTimeout(function(){
+    try{
+      var f=document.getElementById("ax-browser-iframe");
+      if(!f)return;
+      var blocked=false;
+      try{
+        if(f.contentDocument===null&&f.contentWindow===null)blocked=true;
+      }catch(_){blocked=true;}
+      if(blocked){
+        if(typeof toast==="function")toast("⚠ Site bloque l embed - ouverture Safari","warn");
+        try{window.open(safeUrl,"_blank","noopener,noreferrer");}catch(_){}
+      }
+    }catch(_){}
+  },5000);
+  /* Escape pour fermer */
+  setTimeout(function(){
+    try{
+      var input=document.getElementById("ax-browser-url-input");
+      if(input)input.blur();
+    }catch(_){}
+  },150);
+  return true;
+}
+
+function axCloseBrowserEmbed(){
+  var m=document.getElementById("ax-browser-modal");
+  if(m)try{m.remove();}catch(_){}
+}
+
+function axBrowserGoEmbed(url){
+  var f=document.getElementById("ax-browser-iframe");
+  var input=document.getElementById("ax-browser-url-input");
+  if(!f||!url)return;
+  var safe=String(url).trim();
+  if(!/^https?:\/\//i.test(safe)){
+    /* Si pas une URL claire, traite comme recherche */
+    if(/^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}/i.test(safe)){
+      safe="https://"+safe;
+    }else{
+      safe="https://www.google.com/search?q="+encodeURIComponent(safe);
+    }
+  }
+  if(!/^https:\/\//i.test(safe)){
+    if(typeof toast==="function")toast("URL non securisee","warn");
+    return;
+  }
+  f.src=safe;
+  if(input)input.value=safe;
+}
+
+function axBrowserToggleFullscreen(){
+  var modal=document.getElementById("ax-browser-modal");
+  if(!modal)return;
+  try{
+    if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+      if(modal.requestFullscreen)modal.requestFullscreen();
+      else if(modal.webkitRequestFullscreen)modal.webkitRequestFullscreen();
+    }else{
+      if(document.exitFullscreen)document.exitFullscreen();
+      else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+    }
+  }catch(e){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-browser-fullscreen",e);}
+}
+
+function axCopyBrowserUrl(){
+  var f=document.getElementById("ax-browser-iframe");
+  if(!f)return;
+  var url=f.src;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        if(typeof toast==="function")toast("URL copiee","ok");
+      }).catch(function(){
+        if(typeof toast==="function")toast("Copie impossible","warn");
+      });
+    }else if(typeof toast==="function")toast(url,"info");
+  }catch(_){}
+}
+
+function axAskApexAboutBrowser(){
+  var f=document.getElementById("ax-browser-iframe");
+  var url=f?f.src:"";
+  axCloseBrowserEmbed();
+  if(typeof sv==="function")sv("chat");
+  setTimeout(function(){
+    try{
+      var input=document.getElementById("ax-chat-input");
+      if(input){
+        input.value="Concernant la page "+url+" : ";
+        input.focus();
+      }
+    }catch(_){}
+  },300);
+}
+
+/* ===== axWebSearchEmbed ===== */
+/* Lance une recherche web. Pour l instant fallback sur Google embed. */
+/* TODO v12.305+: Anthropic web_search via tool use natif. */
+function axWebSearchEmbed(query){
+  var q=String(query||"").trim();
+  if(!q)return null;
+  return axOpenBrowserEmbed("https://www.google.com/search?q="+encodeURIComponent(q));
+}
+
+/* ===== axShowWeatherEmbed ===== */
+/* Ouvre Google search "meteo X" (fallback simple, riche visuellement). */
+function axShowWeatherEmbed(loc){
+  var l=String(loc||"Monaco").trim();
+  return axOpenBrowserEmbed("https://www.google.com/search?q=meteo+"+encodeURIComponent(l));
+}
+
+/* ===== axShowResultEmbed ===== */
+/* Affiche un resultat simple (calcul, info courte) en modal. */
+function axShowResultEmbed(htmlContent){
+  var existing=document.getElementById("ax-result-embed");
+  if(existing)try{existing.remove();}catch(_){}
+  var modal=document.createElement("div");
+  modal.id="ax-result-embed";
+  modal.className="ax-result-embed";
+  modal.setAttribute("role","dialog");
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  modal.innerHTML='<div class="ax-result-card">'+htmlContent+'<div><button class="ax-btn ax-btn-primary" onclick="document.getElementById(\'ax-result-embed\').remove()">OK</button></div></div>';
+  document.body.appendChild(modal);
+  return true;
+}
+
+/* ============================================================ */
+/* Fin v12.304 EXECUTE block                                    */
+/* ============================================================ */
+
 function vReferral(){
   if(!K.user)return vLogin();
   var code=axGetMyReferralCode();
@@ -5073,7 +5361,7 @@ function vChat(){if(!K.user)return vLogin();var msgs="";var _chatPageSize=200;va
 
 function _fmtTime(ts){if(!ts||isNaN(ts))return"";var d=new Date(ts);if(isNaN(d.getTime()))return"";return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 
-function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim())return;/* v12.269 - Si IA reflechit : queue le message au lieu de bloquer silencieusement */if(K.isStreaming){var queued=lg("ax_msg_queue",[]);queued.push({text:el.value.trim(),ts:Date.now()});if(queued.length>5)queued=queued.slice(-5);ls("ax_msg_queue",queued);try{toast("⏳ Apex reflechit. Ton message est en attente ("+queued.length+" en queue)","info");}catch(_){}return;}axHaptic();var text=el.value.trim();el.value="";if(typeof axVoiceExecute==="function"&&/^(hey |ok |dis )?(apex|ai)\s+/i.test(text)&&axVoiceExecute(text))return;if(_checkVoiceCommand(text))return;sendMessage(text);}
+function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim())return;/* v12.269 - Si IA reflechit : queue le message au lieu de bloquer silencieusement */if(K.isStreaming){var queued=lg("ax_msg_queue",[]);queued.push({text:el.value.trim(),ts:Date.now()});if(queued.length>5)queued=queued.slice(-5);ls("ax_msg_queue",queued);try{toast("⏳ Apex reflechit. Ton message est en attente ("+queued.length+" en queue)","info");}catch(_){}return;}axHaptic();var text=el.value.trim();el.value="";if(typeof axVoiceExecute==="function"&&/^(hey |ok |dis )?(apex|ai)\s+/i.test(text)&&axVoiceExecute(text))return;if(_checkVoiceCommand(text))return;/* v12.304 — APEX EXECUTE: si l intent matche, on execute direct + on log la demande comme message user. */try{if(typeof axDetectAndExecute==="function"){var _execRes=axDetectAndExecute(text);if(_execRes&&_execRes.executed){try{K.messages.push({role:"user",content:text,ts:typeof now==="function"?now():Date.now()});K.messages.push({role:"assistant",content:"⚡ J ai execute ta demande directement.",ts:typeof now==="function"?now():Date.now()});if(typeof _saveMsgs==="function")_saveMsgs();if(typeof dc==="function")dc();}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-record",_e);}return;}}}catch(_eExec){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-hook",_eExec);}sendMessage(text);}
 /* v12.269 - Process la queue messages quand IA finit de streamer */
 function _axProcessMsgQueue(){try{var q=lg("ax_msg_queue",[]);if(!q||!q.length)return;if(K.isStreaming)return;var next=q.shift();ls("ax_msg_queue",q);if(next&&next.text){toast("📤 Envoi message en queue","info");setTimeout(function(){sendMessage(next.text);},300);}}catch(_e){_axSafeCatch&&_axSafeCatch("ax-msg-queue",_e);}}
 
