@@ -4647,7 +4647,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.547";
+var APP_VER="v9.548";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8761,9 +8761,12 @@ var _toastQ=[],_toastBusy=false;
 function toast(msg,type,dur,undoFn){
   if(type===undefined)type="ok";
   var isAdm=A.user&&A.user.id===AID;
-  var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|cmc_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|SSE|evoluthion|audit/i.test(String(msg));
-  if(!isAdm&&technical){
-    try{var log=lg("cmc_silent_log",[]);log.push({msg:String(msg).slice(0,200),type:type,ts:Date.now()});if(log.length>200)log=log.slice(-200);ls("cmc_silent_log",log);}catch(_){}
+  var s=String(msg);
+  var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|cmc_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|SSE|evoluthion|audit/i.test(s);
+  /* v9.548 Kevin: filtre etendu erreurs JS techniques bas-niveau (rouges en bas) */
+  var jsErr=/^(undefined|null|NaN|TypeError|ReferenceError|SyntaxError|HTTP \d+|Failed to fetch|AbortError|QuotaExceeded|CORS|fetch failed|Network ?error|JSON\.parse|Unexpected token|Cannot read prop|of undefined|of null|is not a function|is not defined|Maximum call stack)/i.test(s);
+  if(!isAdm&&(technical||jsErr)){
+    try{var log=lg("cmc_silent_log",[]);log.push({msg:s.slice(0,200),type:type,ts:Date.now()});if(log.length>200)log=log.slice(-200);ls("cmc_silent_log",log);}catch(_){}
     return;
   }
   _toastQ.push({msg:msg,type:type,dur:dur||0,undoFn:undoFn||null});
@@ -34919,7 +34922,7 @@ window.addEventListener('storage',function(e){
   else if(e.key==='cmc_upload_enabled'){A.uploadEnabled=lg('cmc_upload_enabled',true);dcDebounced();} // v9.62
 });
 
-function _cmcAutoApplyUpdate(nw){if(document.getElementById('cmc-update-banner'))return;var banner=document.createElement('div');banner.id='cmc-update-banner';banner.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:10000;padding:10px 20px;border-radius:24px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px';banner.innerHTML='&#9851; Nouvelle version, mise a jour auto dans <span id=cmc-upd-cnt>10</span>s...';document.body.appendChild(banner);var seconds=10;var countdown=setInterval(function(){seconds--;var el=document.getElementById('cmc-upd-cnt');if(el)el.textContent=seconds;if(seconds<=0){clearInterval(countdown);_cmcPerformUpdate(nw);}},1000);}
+function _cmcAutoApplyUpdate(nw){/* v9.548 Kevin: MAJ auto SILENCIEUSE (aucun banner visible, reload invisible 800ms) */if(window._cmcSilentUpdated)return;window._cmcSilentUpdated=true;setTimeout(function(){_cmcPerformUpdate(nw);},800);}
 function _cmcPerformUpdate(nw){try{localStorage.setItem('cmc_pre_reload_view',(A&&A.view)||'accueil');localStorage.setItem('cmc_pre_reload_ts',String(Date.now()));}catch(_){}try{if(nw&&nw.postMessage)nw.postMessage('skipWaiting');}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}setTimeout(function(){location.reload();},300);}
 document.addEventListener('input',function(){try{localStorage.setItem('cmc_last_interaction',String(Date.now()));}catch(_){}},true);
 document.addEventListener('click',function(){try{localStorage.setItem('cmc_last_interaction',String(Date.now()));}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}},true);
