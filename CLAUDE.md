@@ -4,6 +4,159 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🎙 RÈGLE PERMANENTE — RECONNAISSANCE VOCALE PAR UTILISATEUR (Kevin 2026-04-26, ABSOLUE)
+
+> **"Apex doit reconnaître ma voix quand je dis 'Dis Apex'. Il doit savoir que c'est Kevin DESARZENS admin, même si je suis dans la vue d'un autre client. Il doit agir en tant qu'admin (changer vue, corriger, ajouter, modifier) en sachant sur quel compte je suis et sur lequel agir. Il doit reconnaître les voix de chaque utilisateur dans chaque compte et ne réagir qu'à son utilisateur (pas confondre avec entourage). Mémoriser les voix et accumuler des infos pour cibler de plus en plus. Au début enrôlement (phrase à enregistrer comme visio), ou au premier message chat l'IA capture la voix automatiquement et apprend au fur et à mesure. Tout automatisé."**
+
+**Règle absolue, prioritaire** — pour Apex (priorité), CMCteams si pertinent :
+
+### 1. Enrôlement vocal (voiceprint setup)
+
+Au premier login user OU à la demande user :
+- Modal "🎙 Enrôlement vocal" : "Pour qu'Apex reconnaisse SEULEMENT ta voix, dis cette phrase 3 fois : *'Apex, tu reconnais ma voix maintenant'*"
+- 3 enregistrements (3-5s chacun)
+- Extraction features audio via Web Audio API + lib MFCC (lazy CDN)
+- Moyenne vectorielle → `ax_voice_print_<uid>` (FB_LOCAL strict)
+- Threshold de similarité par défaut : 0.75 (cosine similarity)
+
+### 2. Architecture features extraction
+
+Utiliser bibliothèque `meyda` (CDN lazy load) pour extraire MFCC + spectral features :
+```js
+function _axExtractVoiceFeatures(audioBuffer){
+  // 26 MFCC + chroma + spectral centroid + ZCR + energy
+  return {
+    mfcc: meyda.extract("mfcc", audioBuffer), // 13 coefficients
+    chroma: meyda.extract("chroma", audioBuffer), // 12 bins
+    spectralCentroid: meyda.extract("spectralCentroid", audioBuffer),
+    zcr: meyda.extract("zcr", audioBuffer),
+    energy: meyda.extract("energy", audioBuffer),
+    pitchEstimate: _axEstimatePitch(audioBuffer) // YIN algorithm via pitchy
+  };
+}
+```
+
+Fallback simple si meyda KO :
+```js
+// Pitch + ZCR + énergie + spectral centroid via AnalyserNode FFT
+function _axSimpleFingerprint(audioBuffer){
+  // ~5 features, moins précis mais sans dépendance externe
+}
+```
+
+### 3. Identification au moment du wake word
+
+Quand user dit "Dis Apex" :
+1. Capture 2-3s audio après le trigger
+2. Extract features
+3. Compare avec TOUS les voiceprints stockés (`ax_voice_print_<uid>` pour chaque user)
+4. Trouve match avec similarity max
+5. Si max > threshold → identifie user
+6. Si max < threshold → "Désolé, voix non reconnue. Veux-tu enrôler ta voix ?"
+
+```js
+function axIdentifySpeaker(audioFeatures){
+  var voiceprints = {};
+  Object.keys(localStorage).forEach(function(k){
+    if(k.startsWith("ax_voice_print_")){
+      var uid = k.replace("ax_voice_print_","");
+      voiceprints[uid] = lg(k, null);
+    }
+  });
+  var bestMatch = null, bestScore = 0;
+  Object.keys(voiceprints).forEach(function(uid){
+    var score = _axCosineSimilarity(audioFeatures.mfcc, voiceprints[uid].mfcc);
+    if(score > bestScore){bestScore = score; bestMatch = uid;}
+  });
+  return bestScore > 0.75 ? {uid:bestMatch, score:bestScore} : null;
+}
+```
+
+### 4. Auto-apprentissage continu
+
+À chaque message vocal réussi (user identifié):
+- Update voiceprint avec moyenne pondérée (0.9 ancien + 0.1 nouveau)
+- Plus user parle, plus précis devient le print
+- Sentinelle `voice-quality-watch` audit hebdo : si score moyen < 0.85 → propose réenrôlement
+
+### 5. Mode admin Kevin dans vue Laurence
+
+Si Apex identifie Kevin (même si `K.user.id === user_laurence`) :
+- Toast discret "👑 Kevin admin reconnu"
+- Active mode admin temporaire pour cette commande
+- Kevin peut dire "Change la vue", "Modifie le profil de Laurence", "Ajoute X" → exécute en tant qu'admin
+- Audit log : `_audit("admin_voice_action_in_user_view", "Kevin a fait X dans vue Laurence")`
+- Pas de bascule permanente (la vue reste sur Laurence pour démo)
+
+```js
+function axHandleVoiceCommand(text, identifiedSpeaker){
+  if(!identifiedSpeaker) return;
+  var isKevin = identifiedSpeaker.uid === ADMIN_ID;
+  var currentViewUser = K.user && K.user.id;
+  
+  if(isKevin && currentViewUser !== ADMIN_ID){
+    // Mode admin Kevin dans vue impersonation
+    if(typeof toast==="function")toast("👑 Kevin admin reconnu - action admin","info");
+    // Execute commande en mode admin
+    return _axExecuteAdminVoiceCommand(text, currentViewUser);
+  }
+  // Sinon execute commande normale du user identifié
+  return axDetectAndExecute(text);
+}
+```
+
+### 6. Anti-confusion entourage
+
+Si Kevin est dans un café et quelqu'un d'autre dit "Dis Apex" :
+- Apex capture audio
+- Compare avec voiceprints
+- Si pas Kevin (ni autre user enrôlé) → IGNORE silencieusement
+- Pas de toast "voix non reconnue" (sinon spam dans bruit ambient)
+- Logs dans `ax_voice_unknown_attempts` (max 100) pour stats
+
+### 7. Enrôlement progressif au chat
+
+Si user n'a pas fait l'enrôlement modal :
+- Au premier message vocal → capture audio + extract features → store comme baseline `ax_voice_print_<uid>`
+- À chaque message vocal suivant → update moyenne pondérée
+- Après 5+ messages → précision suffisante pour identification fiable
+
+Notification discrète : "💡 Apex apprend ta voix. Dans 5 messages tu pourras dire 'Dis Apex' et il te reconnaîtra."
+
+### 8. Sécurité voiceprint
+
+`ax_voice_print_<uid>` :
+- **FB_LOCAL strict** (jamais sync Firebase — c'est biométrique)
+- Chiffré via `axEncryptSecret` avec passphrase locale
+- Backup uniquement dans IndexedDB shadow (pas Firebase)
+- Suppression au logout user (avec consentement)
+- RGPD : user peut "supprimer mon empreinte vocale" dans vRGPD
+
+### 9. UI dédiée vVoiceEnrollment
+
+Vue dédiée + lien dans vAllConfig + vRGPD :
+- Status enrôlement (✅ Fait / ⚪ À faire)
+- Bouton "Enrôler ma voix maintenant" (modal 3 enregistrements)
+- Bouton "Tester reconnaissance" → "Dis Dis Apex" → affiche score similarité
+- Bouton "Supprimer mon empreinte" → confirmation forte
+- Threshold ajustable (admin only)
+
+### 10. Limitations honnêtes (Kevin doit savoir)
+
+- Reconnaissance vocale browser limitée (pas niveau Apple Voice ID natif)
+- Précision ~85-90% en environnement calme
+- Bruit ambient → précision baisse
+- Voix similaires (jumeaux, imitation) → faux positifs possibles
+- Pour sécurité critique (auth) → FaceID/TouchID + voiceprint comme 2FA, pas voiceprint seul
+
+### 11. Test mental obligatoire
+
+> *"Si Kevin enrôle sa voix puis Laurence aussi. Kevin dit 'Dis Apex change la vue' dans vue Laurence → Apex reconnaît Kevin admin → exécute en mode admin. Si quelqu'un d'inconnu dit 'Dis Apex' → ignoré. Si Laurence dit 'Dis Apex' dans sa vue → Apex reconnaît Laurence → mode user normal."*
+
+S'applique à Apex en priorité.
+
+---
+
 ## 🔄 RÈGLE PERMANENTE — PIPELINE SELF-HEALING TOTAL CROSS-APP (Kevin 2026-04-26, ABSOLUE)
 
 > **"Tous les problèmes que CMCteams rencontre remontent sur Apex. Apex réagit, corrige, écoute, a des retours de tous les agents, toutes les fonctions cliquées sans réaction. Tous les agents dédiés pour chaque fonction font remonter à Apex. Apex corrige en toute autonomie. S'il n'y arrive pas, ça remonte à toi (Claude Code). Tu interviens si lui n'y arrive pas. Pareil dans Apex il s'autocorrige. Toujours en autonomie totale. Notes complètes. Dossiers mis à jour. Informations circulent et remontent et sont sauvegardées. Jamais perdre de données. Toujours s'enrichir, apprendre des erreurs, s'améliorer, aller plus loin."**
