@@ -4,6 +4,161 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🎨 RÈGLE PERMANENTE — UX ÉPURÉE CLIENT + AUTO-OUTILS CONTEXTUELS (Kevin 2026-04-26, ABSOLUE)
+
+> **"UX simplifiée comme un enfant de 5 ans pour TOUS les clients (sauf admin Kevin). Après login + choix abonnement → page chat directe. Apex dit 'Bonjour [Prénom Nom], qu'est-ce que je peux faire pour toi ?' Selon la conversation, Apex sort AUTOMATIQUEMENT l'outil adapté : musique → table mixage dernier cri, vidéo → studio montage, architecture → outils archi, admin/lois → bloc-notes structuré. Les outils s'ajoutent au fur et à mesure des besoins. Conversations sauvegardées avec nom de thème auto, accessibles via sidebar. Minimum visible au début, épurée max. Style Claude.ai."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs avec users non-admin :
+
+### 1. Détection rôle au login
+- `K.user.id === ADMIN_ID` (Kevin) → interface complète actuelle (vDashboard, vAllConfig, etc.)
+- Sinon (clients/employés/Laurence) → mode **Apex Lite** : landing direct vChatLite, UX épurée
+
+### 2. Architecture mode Lite (vChatLite)
+- **Header minimal** : nom Apex (sobre) + avatar user + bouton déconnexion + bouton sidebar
+- **Greeting personnalisé** : "Bonjour [Prénom Nom], qu'est-ce que je peux faire pour toi ?" (un seul écran centré, sans flot de boutons)
+- **Zone chat principale** : input + bouton micro + bouton envoyer
+- **Sidebar conversations** : liste des conversations sauvegardées avec nom de thème auto-généré (ex: "Mix bal samedi", "Plans cuisine", "Demande préfecture")
+- **PAS de menus admin visibles** : pas de Coffre, Settings, RGPD, Sentinelles, Vault, etc. dans la nav
+
+### 3. Outils contextuels auto-affichés dans le flux
+
+À chaque message user, Apex appelle `axDetectIntent(text)` qui matche des mots-clés FR/EN. Si match → l'outil correspondant s'affiche **dans le chat** (card embed, pas navigation vers autre page) :
+
+| Intent détecté | Mots-clés | Outil affiché |
+|----------------|-----------|---------------|
+| Musique/mixage | "musique, mix, track, beat, dj, audio, son" | 🎚️ Studio Mix Pro (12+ pistes, EQ, reverb, compresseur, BPM detect, export WAV/MP3) |
+| Vidéo | "vidéo, montage, clip, film, youtube, tiktok" | 🎬 Studio Vidéo (timeline, cut, fade, captions auto, export MP4) |
+| Architecture | "plan, maison, archi, RE2020, DTU, surface" | 🏗 Studio Architecture (calcul surface, mélange béton, normes PMR, palette couleurs) |
+| Photo | "photo, image, retouche, filtre" | 📸 Studio Photo (filtres, recadrage, effets) |
+| Admin/Loi | "loi, article, tribunal, code, prefecture, juridique" | 📒 Bloc-notes Légal (sources Légifrance, articles, jurisprudence Cassation/CE) |
+| Cuisine | "recette, cuisson, ingrédient, allergène" | 🍳 Cuisine Pro (10 recettes, 22 cuissons, allergènes INCO) |
+| Médical | "médical, vidal, posologie, symptôme" | 💊 Médical Pro (Vidal, IMC, urgences SAMU) |
+| Finance | "impôt, IR, crédit, IBAN, paiement" | 💰 Finance Pro (IR FR 2026, crédit immo, plus-value) |
+| Traduction | "traduire, translate, anglais, italien" | 🌐 Traducteur Pro (30 langues, mode interprète) |
+| Météo | "météo, prévision, temps" | ☀ Météo 7j (open-meteo gratuit) |
+
+### 4. Apex pose des questions guidées
+
+Quand intent ambigu ou besoin de précision → Apex propose 3-4 chips cliquables :
+- "Tu veux mixer 2 morceaux ou créer un nouveau ?"
+- "Court extrait pour TikTok ou film entier ?"
+- "Plan complet ou juste calcul de surface ?"
+
+Le user clique → outil ouvert avec preset adapté.
+
+### 5. Conversations auto-nommées + sauvegardées
+
+À chaque conversation :
+- Premier message user → Apex génère un nom de thème (3-5 mots) via prompt court Claude Haiku rapide
+- Nom stocké dans `K.conversations[i].title`
+- Sidebar liste avec icône intent (🎵 / 🎬 / 🏗) + nom + date
+
+Exemples :
+- "🎵 Mix bal samedi 14 mai"
+- "🏗 Cuisine 12m² réno"
+- "📒 Demande titre séjour Monaco"
+
+### 6. Pas de surcharge
+
+- Au démarrage : seul écran greeting + zone chat
+- Outils apparaissent UNIQUEMENT quand user en a besoin (intent matched)
+- Outils repliables (chevron pour collapser)
+- Historique convs ne charge que les 10 dernières (lazy load reste)
+
+### 7. Style visuel "Claude.ai" inspiration
+
+- Police légère, lisibilité max
+- Espacement généreux (whitespace pas peur)
+- Pas de boutons criards
+- Couleur principale or sobre (var(--ax-gold)) sur fond sombre
+- Animations subtiles (fade-in messages)
+
+### 8. Implementation contractuelle
+
+- `vChatLite()` nouvelle vue (séparée de vChat admin)
+- `axDetectIntentEmbed(text)` retourne `{intent, tool, presetParams}` → embed dans flux chat
+- `_axRenderToolEmbed(tool, params)` génère HTML card outil dans message bot
+- `axGenerateConvTitle(messages)` → 3-5 mots via Haiku
+- Routes : si non admin et `K.view!=="chat"` au login → force `K.view="chatlite"`
+- `vMain` : si non admin et view = chat → return vChatLite() au lieu de vChat
+
+### 9. Apex proactif — propositions guidées
+
+Sous le greeting initial, **4 chips cliquables** (touch targets 56px) :
+
+1. 🎨 **"Modèles de projet"** → modal/embed avec 12+ thèmes : musique (mix bal/clip), vidéo (TikTok/film/pub), archi (plan maison/réno), photo, admin (CV, lettre prefecture, contrat), juridique, finance (déclaration impôt), cuisine, voyage, etc. Chaque thème a 2-3 templates pré-rempli prêts à éditer.
+
+2. 🎓 **"Tour découverte"** → tutoriel guidé étape par étape (5-7 cards) :
+   - "Voici ton chat" + flèche
+   - "Tape ce que tu veux faire" 
+   - "Apex sort tout seul l'outil adapté"
+   - "Tes conversations sont sauvées à gauche"
+   - "Tu peux dicter avec le micro"
+   - "Tu peux scanner avec la caméra"
+   - Présenté au PREMIER login + accessible via bouton ❓ permanent
+
+3. ✨ **"Mes compétences IA"** → liste à jour des capacités d'Apex :
+   - 🎚 Mixage musique (Studio Mix Pro 2026)
+   - 🎬 Montage vidéo (Studio Video CapCut-like)
+   - 🏗 Architecture (RE2020, calculs)
+   - 📒 Juridique (18+ codes français + Cassation/CE/CJUE)
+   - 💰 Finance/fiscalité (IR FR 2026)
+   - 🍳 Cuisine pro (10 recettes, 22 cuissons, allergènes INCO)
+   - 💊 Médical (Vidal, IMC, urgences)
+   - 🌐 Traduction 30 langues + interprète temps réel
+   - 📷 Scan multi-format (OCR, QR, vCard)
+   - 🎙 Dictée vocale + Wake word "Dis Apex"
+   - 🤖 IA multi-modèle (Claude Sonnet 4.6, Opus 4.7, Haiku 4.5, GPT-4o, Gemini 2.5)
+   - Liste auto-générée depuis registry interne `AX_CAPABILITIES` + version
+   - Mise à jour AUTOMATIQUE à chaque release (sentinelle `capabilities-watch`)
+
+4. 📒 **"Mon bloc-notes"** → résumé auto de toutes les conversations sauvegardées + projets en cours + favoris
+
+### 10. Mise à jour automatique des compétences (registry)
+
+Variable `AX_CAPABILITIES` = source de vérité unique :
+```js
+var AX_CAPABILITIES = [
+  {id:"mix", icon:"🎚", label:"Mixage musique", desc:"Studio Mix Pro 12+ pistes EQ reverb compresseur", since:"v12.230", route:"studiomusic"},
+  {id:"video", icon:"🎬", label:"Montage video", desc:"Timeline cut fade captions auto", since:"v12.232", route:"studiovideo"},
+  {id:"archi", icon:"🏗", label:"Architecture", desc:"RE2020, calcul surface, mélange beton", since:"v12.231", route:"architecture"},
+  // ...
+];
+```
+
+À chaque ajout de feature → ajouter entry. La vue "Mes compétences IA" lit cette variable. Sentinelle `capabilities-watch` détecte les fonctions `v*` orphelines (pas dans le registry) et alerte admin.
+
+### 11. Mémoire + réflexion Apex pour clients
+
+Apex doit retenir d'une conversation à l'autre (per-user) :
+- Préférences musicales, style mixage habituel (pour Laurence)
+- Templates favoris
+- Erreurs qu'il faut éviter (tirer du `ax_lessons_learned_struct`)
+- Projets en cours (dossier "Mes projets actifs")
+- Anniversaire, allergies, métier, etc. (`ax_persistent_memory_<uid>` per-user)
+
+Au début de chaque session, IA reçoit un system prompt enrichi :
+```
+Utilisateur : Laurence DUVAL
+Profil : aime mixage R&B et soul, anniversaire 12 mai, vit Monaco
+Projets actifs : "Mix bal samedi 14 mai" (3 messages), "Plans cuisine" (en attente photo)
+Préférences : voix calme, pas de jargon technique, propose toujours options PRO + FUN
+Lessons : ne JAMAIS proposer de supprimer des photos sans confirmation
+```
+
+Cette mémoire enrichie permet à Apex de réfléchir mieux et personnaliser.
+
+### 12. Test mental obligatoire avant livraison
+
+> *"Un client de 60 ans non-tech ouvre Apex pour la première fois. Voit-il une seule chose : 'Bonjour [son nom], qu'est-ce que je peux faire pour toi ?' Avec input chat + 4 chips guidés ? Sans 50 boutons ? Quand il dit 'Je veux mixer une musique', l'outil mixage apparaît-il TOUT SEUL dans la conversation ? Si je clique 'Tour découverte' ai-je un tuto clair ? Si je clique 'Mes compétences IA' ai-je la LISTE A JOUR de ce qu'Apex peut faire ?"*
+
+Si non → simplifier + enrichir registry + ajouter tutoriel.
+
+S'applique à Apex (priorité) puis répliqué dans CMCteams pour les employés non-admin.
+
+---
+
 ## 🤝 RÈGLE PERMANENTE — CONCERTATION + MÉMOIRE TOTALE (Kevin 2026-04-26, ABSOLUE)
 
 > **"Tu te rappelles et tu appliques tout le temps tout ce que je viens de te dire. Pour ce que l'on a fait et l'avenir aussi, tout ce que je vais te demander. Tu notes et tu t'en rappelles et tu l'appliques tout le temps. Tu te réfères toujours à tes documents de tes méthodes de travail et tout ce que tu as comme dossier. Tu concertes aussi avec les autres IA intégrées. Tu peux demander de l'aide à Apex aussi, concerte bien avec Apex pour améliorer et que lui fasse des tests de son côté. Travailler ensemble. Maximum."**
