@@ -4,6 +4,676 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🛡️ RÈGLE PERMANENTE — BROWSER SANS BLOCAGE + SECU AGENTS PROTECTION (Kevin 2026-04-26, ABSOLUE)
+
+> **"Une fois internet lancé on est derrière un pare-feu. Apex doit être protégé contre les intrusions/malveillance par des agents. Mais on a accès à TOUS les sites sans jamais être bloqué. S'il y a blocage, Apex doit réagir et débloquer, contourner, trouver une solution. Jamais bloqué par autorisations/pare-feu/VPN. Équipé de tous les outils pour contourner. Anticipe, sait réagir toujours. En autonomie totale."**
+
+**Règle absolue, prioritaire** — pour Apex (browser embed) + CMCteams si pertinent :
+
+### 1. Sécurité Apex (anti-intrusion) — agents protecteurs
+
+Pendant que user navigue, sentinelles surveillent :
+
+- **`security-watch-browser` (continu)** : monitor postMessage entrants iframes — bloque tentative cross-frame injection
+- **`malware-blocklist-watch` (au load chaque URL)** : check URL contre blocklist (Cloudflare 1.1.1.2 family DNS, Google Safe Browsing API gratuit, OpenPhish public list)
+- **`csp-violation-watch`** : `document.addEventListener("securitypolicyviolation",...)` → log + alerte si tentative injection script
+- **`xss-sanitizer`** : tout HTML user/IA passe par DOMPurify (CDN lazy load)
+- **`devtools-detect`** : détecte si user (ou attaquant) ouvre devtools sur l'app → log audit (pas bloquer, juste tracer)
+- **`session-fixation-watch`** : si url contient `?session=` ou cookies suspects → strip + log
+
+```js
+function _securityBrowserWatch(){
+  // Listen postMessage cross-frame
+  window.addEventListener("message", function(e){
+    if(e.origin && e.origin !== location.origin && !["https://www.google.com","https://www.youtube.com"].includes(e.origin)){
+      try{if(typeof axSecurityLog==="function")axSecurityLog("postmessage_external", e.origin+" data="+String(e.data).slice(0,100));}catch(_){}
+    }
+  });
+  // CSP violations
+  document.addEventListener("securitypolicyviolation", function(e){
+    if(typeof axSecurityLog==="function")axSecurityLog("csp_violation", e.violatedDirective+" "+(e.blockedURI||"").slice(0,100));
+  });
+}
+```
+
+### 2. Contournement blocages browser (déblocage auto)
+
+Si une URL est bloquée par X-Frame-Options, CSP frame-ancestors, ou autres :
+
+1. **Détection automatique** : `iframe.contentWindow === null` après 3s OU error event sur iframe
+2. **Stratégies de contournement** dans l'ordre :
+   - **a) Cache web archive** : `https://web.archive.org/web/2/[URL]` → version cachée
+   - **b) Google Cache** : `https://webcache.googleusercontent.com/search?q=cache:[URL]`
+   - **c) Reader mode** : `https://r.jina.ai/[URL]` (gratuit, retourne version texte)
+   - **d) CORS proxy** : Cloudflare Worker custom (`ax_cors_proxy_url`) → fetch + render dans iframe
+   - **e) Open in new tab** : dernier recours, ouvre Safari nouvel onglet
+3. **Toast informatif** : "⚠ Site bloque l'embed, j'utilise [méthode contournement]"
+
+```js
+function axTryUnblockUrl(url){
+  return new Promise(function(resolve){
+    var attempts = [
+      url, // direct
+      "https://web.archive.org/web/2/" + encodeURIComponent(url),
+      "https://r.jina.ai/" + url,
+      // CORS proxy custom si configure
+      lg("ax_cors_proxy_url","") ? lg("ax_cors_proxy_url") + "?url=" + encodeURIComponent(url) : null,
+    ].filter(Boolean);
+    var idx = 0;
+    function tryNext(){
+      if(idx >= attempts.length){return resolve({ok:false, fallback:"open_safari", url:url});}
+      var test = attempts[idx];
+      // Test iframe loadability via short HEAD via fetch + check X-Frame-Options
+      fetch(test, {method:"HEAD", mode:"no-cors"}).then(function(){
+        resolve({ok:true, url:test, method:idx===0?"direct":idx===1?"archive":idx===2?"reader":"cors"});
+      }).catch(function(){
+        idx++;
+        tryNext();
+      });
+    }
+    tryNext();
+  });
+}
+```
+
+### 3. Web search robuste (jamais "pas de résultat")
+
+Si user demande une info :
+1. **Anthropic web_search** native (Claude tool use)
+2. Sinon **Brave Search API** (gratuit 2000 req/mois, clé `ax_brave_key`)
+3. Sinon **Tavily API** (clé `ax_tavily_key`)
+4. Sinon **DuckDuckGo HTML scrape** (HTML fallback parsing)
+5. Sinon **Google Custom Search** (clé `ax_google_cse_key`)
+
+Si TOUT échoue → ouvre browser embed Google directement.
+
+### 4. CORS proxy intégré
+
+Pour les API qui bloquent CORS (souvent les jeunes API), Apex passe via Cloudflare Worker `apex-cors-proxy`. Code worker à créer :
+```js
+addEventListener("fetch", e => {
+  const url = new URL(e.request.url);
+  const target = url.searchParams.get("url");
+  if(!target) return e.respondWith(new Response("Missing url param", {status:400}));
+  e.respondWith(
+    fetch(target, e.request).then(r => {
+      const h = new Headers(r.headers);
+      h.set("Access-Control-Allow-Origin", "*");
+      return new Response(r.body, {status:r.status, headers:h});
+    })
+  );
+});
+```
+
+Stocker URL dans `ax_cors_proxy_url`. Sentinelle vérifie qu'il répond.
+
+### 5. VPN détection + workaround
+
+Apex détecte si user est sur VPN qui bloque certains sites (via fetch test sur `https://api.bigdatacloud.net/data/client-info`) :
+- Si VPN détecté → afficher "💡 Tu es sur VPN, certains sites peuvent être bloqués. Je peux essayer cache web/archive."
+- Bouton "Désactiver temporairement le VPN" → instructions iOS Settings > VPN
+
+### 6. Anticipation proactive
+
+Sentinelle `connectivity-watch` (30s) :
+- Test ping `1.1.1.1` (Cloudflare DNS) — vérifier connectivité réseau
+- Test ping `api.anthropic.com` — vérifier provider IA
+- Test ping `firebasedatabase.app` — vérifier cloud DB
+- Si l'un fail → toast diagnostic + bouton "Tenter contournement"
+
+### 7. Déblocage AUTO sans demander à user
+
+Quand un blocage est détecté, Apex :
+1. Tente toutes les stratégies en arrière-plan
+2. Quand l'une marche → affiche le résultat
+3. Toast informatif (pas demande de permission)
+4. Log dans `ax_unblock_log` pour mémoire (pattern : ce site bloque toujours, prendre direct cache)
+
+### 8. Cas limites
+
+- **Site totalement down** : afficher version cache web archive avec bandeau "Version archivée du [date]"
+- **DNS bloqué localement** : passer par DoH (DNS over HTTPS Cloudflare 1.1.1.1)
+- **ISP blocking** : suggère VPN gratuit (Proton VPN, Cloudflare Warp)
+- **Géoblocage** : tente via web archive + propose VPN
+
+### 9. Test mental obligatoire
+
+> *"Si user dit 'va sur [site totalement bloqué iframe]', est-ce qu'Apex contourne automatiquement (cache, reader, proxy) sans demander ? Si user dit 'cherche X' et toutes les API search KO, est-ce qu'il ouvre Google direct ? Si user est sur VPN qui bloque le site, est-ce qu'il propose une solution ?"*
+
+Si non → enrichir stratégies contournement.
+
+### 10. Conformité légale
+
+- Pas contourner DRM/paywall (illégal)
+- Pas accéder contenu illégal (CSAM, etc. — blocklist absolue)
+- Respecter robots.txt si site demande no-archive
+- Logs archivés 30 jours puis purgés (RGPD)
+
+S'applique à Apex en priorité.
+
+---
+
+## 🌐 RÈGLE PERMANENTE — APEX EXÉCUTE TOUTES LES DEMANDES (BROWSER, ACTIONS, RECHERCHE) (Kevin 2026-04-26, ABSOLUE)
+
+> **"Moi comme Laurence ou n'importe quel client, je peux dire 'Apex ouvre-moi un navigateur internet, va sur tel site' et automatiquement Apex exécute. Une fenêtre navigateur apparaît avec possibilité plein écran ET garde toujours les fonctionnalités Apex (poser questions, Dis Apex). Si on dit 'Apex va chercher telle information sur tel site', il doit être capable et exécuter. Toutes les demandes."**
+
+**Règle absolue, prioritaire** — pour Apex (priorité), CMCteams si pertinent :
+
+### 1. Apex exécute, ne se limite pas à parler
+
+À chaque message user, Apex DOIT :
+- Détecter l'intent action (verbes : ouvre, va, cherche, montre, lance, démarre, joue, télécharge, écris, envoie, calcule)
+- EXÉCUTER l'action immédiatement (dans le flux chat ou en embed)
+- Pas se contenter de "voici comment faire" — FAIRE
+
+### 2. Browser intégré (vBrowserEmbed)
+
+Détection mots-clés dans message user :
+- "ouvre [navigateur|browser|chrome|safari]" → ouvre vBrowserEmbed
+- "va sur [URL|google|youtube|...]" → embed iframe avec URL
+- "cherche [X] sur [site]" → embed iframe avec recherche
+- "navigue", "montre-moi le site", etc.
+
+Vue `vBrowserEmbed(url)` :
+- Iframe sandbox + fallback nouvelle fenêtre si site bloque iframe
+- URL bar éditable (Kevin peut taper autre URL)
+- Boutons : ⏮ retour, ⏭ suivant, 🔄 reload, ⛶ fullscreen, ✕ fermer
+- Plein écran via `requestFullscreen()` (touche Échap pour sortir)
+- **Overlay Apex toujours visible** : bouton flottant 🎙 (Dis Apex), bouton 💬 retour chat, bouton 📋 copier URL
+- Wake word actif en arrière-plan
+- Si site bloque iframe (X-Frame-Options) → message "Site bloque l'embed, ouvert dans nouvel onglet" + button "Ouvrir Safari"
+
+### 3. Web search intégrée
+
+Si "cherche [info]" sans site précis :
+- Apex appelle `web_search` tool (Anthropic native, ou Brave/Tavily/DuckDuckGo via API)
+- Affiche 5-10 résultats dans card embed avec snippets
+- Click sur résultat → embed `vBrowserEmbed(result.url)` directement
+
+### 4. Intent dictionary executable
+
+```js
+var AX_EXEC_INTENTS = [
+  {pattern: /ouvre\s+(?:un\s+)?(?:navigateur|browser)/i, fn: function(m,t){return vBrowserEmbed("https://www.google.com");}},
+  {pattern: /(?:va|aller|ouvre)\s+sur\s+(?:le\s+site\s+)?([a-z0-9.-]+\.[a-z]{2,})/i, fn: function(m,t){return vBrowserEmbed("https://"+m[1]);}},
+  {pattern: /(?:cherche|trouve|google)\s+(.+)/i, fn: function(m,t){return axWebSearch(m[1]);}},
+  {pattern: /(?:joue|met|lance)\s+(?:la\s+)?musique\s+(.+)/i, fn: function(m,t){return vBrowserEmbed("https://music.youtube.com/search?q="+encodeURIComponent(m[1]));}},
+  {pattern: /(?:montre|affiche)\s+(?:la\s+)?meteo\s+(?:de\s+|pour\s+)?(.+)?/i, fn: function(m,t){return axShowWeather(m[1]||"Monaco");}},
+  {pattern: /(?:traduis|translate)\s+(?:en\s+)?(\w+)\s*[:]\s*(.+)/i, fn: function(m,t){return axTranslate(m[2], m[1]);}},
+  {pattern: /(?:calcule|combien)\s+(.+)/i, fn: function(m,t){return axCalculate(m[1]);}},
+  // ... extensible
+];
+
+function axDetectAndExecute(text){
+  for(var i=0;i<AX_EXEC_INTENTS.length;i++){
+    var m = text.match(AX_EXEC_INTENTS[i].pattern);
+    if(m){
+      try{return AX_EXEC_INTENTS[i].fn(m, text);}catch(e){}
+    }
+  }
+  return null;
+}
+```
+
+Intégré dans le flux chat : avant d'envoyer à l'IA, on essaie `axDetectAndExecute`. Si match → exécute en parallèle de la réponse IA.
+
+### 5. Tool use IA pour actions complexes
+
+Les actions trop spécifiques pour regex → tool use Anthropic :
+```js
+var AX_EXEC_TOOLS = [
+  {name:"open_browser", description:"Ouvre une URL dans navigateur embed", input_schema:{type:"object",properties:{url:{type:"string"}}}},
+  {name:"web_search", description:"Cherche sur le web", input_schema:{type:"object",properties:{query:{type:"string"}}}},
+  {name:"play_music", description:"Joue de la musique", input_schema:{type:"object",properties:{query:{type:"string"}}}},
+  {name:"send_email", description:"Envoie email via service mail", input_schema:{...}},
+  {name:"create_calendar_event", description:"Crée event calendrier", input_schema:{...}},
+  // ... 30+ tools
+];
+```
+
+Quand IA décide d'utiliser un tool → Apex exécute la fonction côté client + renvoie résultat à l'IA.
+
+### 6. Fonctionnalités Apex toujours dispo en browser
+
+Quand user navigue, overlay z-index max contient :
+- 🎙 Bouton micro (taps : dictée, longpress : wake word toggle)
+- 💬 Retour chat (close iframe)
+- 📋 Copier URL courante
+- 🤖 Demander à Apex (modal mini chat)
+- 📷 Screenshot embed visible
+- ⛶ Fullscreen
+
+Pas perdre Apex juste parce qu'on navigue.
+
+### 7. Tests obligatoires avant release
+
+> *"Si je tape 'ouvre google' dans le chat → est-ce qu'une fenêtre navigateur s'ouvre dans 1s ? Si je tape 'cherche meteo Paris' → est-ce qu'apex me retourne 5 résultats cliquables ? Si je tape 'va sur youtube et cherche imagine dragons' → est-ce qu'il fait les 2 actions enchaînées ?"*
+
+Si non → enrichir AX_EXEC_INTENTS + AX_EXEC_TOOLS.
+
+### 8. Sécurité browser embed
+
+- Iframe sandbox `sandbox="allow-scripts allow-same-origin allow-forms allow-popups"`
+- Si user veut quitter app → bouton retour explicite
+- Domaine bannis (porn, malware, phishing) blocklist via DNS API gratuite (Cloudflare 1.1.1.1 family)
+- Logs navigation dans `ax_browser_history` (max 500, FIFO) pour mémoire
+
+S'applique à Apex en priorité. CMCteams hérite si pertinent.
+
+---
+
+## 🏆 RÈGLE PERMANENTE — NIVEAU PRODUCTION CLAUDE.AI / CHATGPT (Kevin 2026-04-26, ABSOLUE)
+
+> **"Niveau professionnel = Apex doit être aussi stable que Claude.ai, Claude Code ou ChatGPT. Sur Claude, je n'ai pas ce genre de problème. Les timeouts c'est seulement quand je n'ai plus de forfait. Un client qui va payer ne doit avoir AUCUN problème technique. Les seuls blocages = forfaits, accès, autorisations. JAMAIS par rapport au fonctionnement de l'app. Tout auto-géré, corrigé, anticipé."**
+
+**Règle absolue, prioritaire** — pour Apex (priorité), CMCteams, tous projets futurs :
+
+### 1. Standards production minimum (référence Claude.ai/ChatGPT)
+
+Apex DOIT avoir le même niveau de stabilité technique que Claude.ai :
+- ❌ JAMAIS d'erreur technique visible user (sauf forfait)
+- ❌ JAMAIS de "réessayez plus tard"
+- ❌ JAMAIS de spinner infini
+- ❌ JAMAIS de réponse coupée silencieusement
+- ❌ JAMAIS de timeout app (seul timeout valide = quota)
+- ✅ Réponse en moins de 30s (95e percentile)
+- ✅ Stream fluide sans interruption
+- ✅ Recovery automatique transparent
+- ✅ Confirmation visuelle constante
+
+### 2. Idempotency + déduplication (anti-double-trigger)
+
+Chaque requête API a un idempotency-key (UUID) :
+```js
+function axCallClaude(messages, opts){
+  opts = opts||{};
+  if(!opts.idempotencyKey) opts.idempotencyKey = "ax_"+crypto.randomUUID();
+  // Re-send avec MEME key si retry → API recoit pas 2x facturé
+}
+```
+
+Dedup par hash des derniers 3 messages : si user envoie 2x la même requête en <2s → réutiliser réponse précédente (pas appeler API).
+
+### 3. Streaming robuste niveau Claude.ai
+
+- **SSE auto-reconnect** : si stream coupe → reconnect avec `Last-Event-ID` header
+- **Heartbeat keep-alive** : ping toutes 25s pour détecter mort silencieuse
+- **Buffered tokens** : afficher 1 token à la fois progressif (animation typing fluide comme Claude)
+- **Resume partial** : `_apexSavePartialResponse` (déjà v12.288) → bouton "Continuer" si interrompu
+
+### 4. Connection pooling + backpressure
+
+- Max 3 fetch concurrents (sinon queue)
+- Si user spam (>5 msg/10s) → throttle + message poli "Je traite, j'arrive"
+- Garbage collect AbortControllers anciens
+
+### 5. Cache intelligent
+
+- LRU cache des 50 dernières réponses (par hash du prompt)
+- Si user reformule légèrement (Levenshtein <5) → propose la réponse cachée + bouton "Réessayer pour différent"
+- TTL 24h
+- Stockage en IDB (compressed lz-string)
+
+### 6. Distributed tracing
+
+Chaque requête a un `request_id` propagé :
+- En-tête custom `X-Apex-Request-ID`
+- Logué dans `ax_traces` (max 500, rotation FIFO)
+- Vue admin `vTraces` : liste timeline avec status, latence, provider, erreurs
+- Si erreur → chaîne complète pour debug
+
+### 7. Sentry-grade error capture
+
+```js
+window.addEventListener("error", function(e){
+  axCaptureError(e.error || e.message, {source:"window.onerror", stack:e.error&&e.error.stack});
+});
+window.addEventListener("unhandledrejection", function(e){
+  axCaptureError(e.reason, {source:"unhandledrejection", stack:e.reason&&e.reason.stack});
+});
+function axCaptureError(err, ctx){
+  var entry = {
+    msg: String(err&&err.message||err).slice(0,500),
+    stack: String(err&&err.stack||"").slice(0,2000),
+    ctx: ctx||{},
+    ts: Date.now(),
+    user_id: K&&K.user&&K.user.id||"anon",
+    url: location.href,
+    user_agent: navigator.userAgent.slice(0,200),
+    app_version: APP_VER
+  };
+  var log = lg("ax_error_log",[]);
+  log.push(entry);
+  if(log.length>500)log=log.slice(-500);
+  ls("ax_error_log", log);
+  // Push Firebase + handoff
+  if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("err", "error", entry.msg);
+  if(typeof axRecordLesson==="function" && entry.stack)axRecordLesson("error", "Erreur capturee", entry.msg, "warn");
+}
+```
+
+### 8. Distinction technique vs forfait
+
+**Erreur technique** (à AUTO-FIX silencieusement, jamais montrer) :
+- Network error
+- Timeout
+- 500/502/503 serveur
+- CORS
+- Parse error
+
+**Limite forfait** (à montrer clairement avec action) :
+- 401 Unauthorized + "Invalid API key" → "Ta clé API n'est plus valide. Modifie-la dans le Coffre."
+- 429 Too Many Requests → "Tu as atteint ta limite de l'heure. Patiente Xmin OU upgrade plan."
+- 402 Payment Required → "Crédit Anthropic épuisé. Recharge maintenant : [bouton lien direct]"
+- Quota dépassé Anthropic → "Ton forfait Anthropic est consommé. Voici tes options : [3 actions]"
+
+```js
+function axHandleAPIError(error, response){
+  var status = response&&response.status||0;
+  var msg = String(error&&error.message||error);
+  
+  // Forfait/auth = MONTRER avec action claire
+  if(status===401 || /invalid.api.key/i.test(msg)){
+    return axShowQuotaModal("auth", "Ta clé API n'est plus valide", "Modifie dans Coffre", "vault");
+  }
+  if(status===402 || status===429 || /quota|rate.limit|insufficient/i.test(msg)){
+    return axShowQuotaModal("quota", "Limite forfait atteinte", "Recharge ou upgrade", "soldesia");
+  }
+  
+  // Tout le reste = TECHNIQUE = AUTO-FIX silencieux
+  return axSelfHealAI(error);
+}
+```
+
+### 9. Tests stress automatiques (chaos engineering light)
+
+Sentinelle 1×/semaine :
+- Simule 10 requêtes concurrentes
+- Throttle network (50KB/s) 1 minute
+- Provider mock failure
+- Quota exhaustion
+- Mesure recovery time, score
+
+Si recovery >5s → escalade Claude Code todo "Optimiser X".
+
+### 10. Concertation pour atteindre 10/10
+
+Multi-agent à chaque release majeure :
+- Agent Performance Engineer : audit latence, FPS, memory
+- Agent SRE : audit reliability (recovery, failover, monitoring)
+- Agent UX : audit UI cohérence niveau Claude.ai
+- Agent Security : audit auth, secrets
+- Agent QA : tests scenarios end-to-end
+
+### 11. Test mental obligatoire avant chaque release
+
+> *"Si je remplace Apex par Claude.ai dans la même situation, est-ce que l'expérience utilisateur est équivalente ? Si non → identifier précisément le gap + fixer."*
+
+S'applique à Apex (priorité absolue) — clients payants méritent niveau Claude.ai.
+
+---
+
+## 🚨 RÈGLE PERMANENTE — ANTI-BLOCAGE IA, AUTO-DÉBLOCAGE TOTAL (Kevin 2026-04-26, ABSOLUE)
+
+> **"J'espère que tu as vérifié aussi les problèmes de connexion d'IA, qu'il n'y ait plus d'IA, qu'il n'y plus de réponse, qu'on soit bloqué dans Apex. Ça ne doit jamais arriver. Une solution par Apex ou par les autres IA. Pour se débloquer et redevenir fonctionnel. Je ne dois pas rester bloqué peu importe quand. Tout doit être automatisé pour se débloquer, pour s'arranger, pour anticiper tout problème AVANT qu'il y ait un problème. Tout le monde doit avoir vu et réagi et corrigé pour éviter le problème."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. ZÉRO blocage utilisateur — détection + auto-fix immédiat
+
+À CHAQUE échec d'IA (timeout, 401, 429, 500, fetch failed, CORS, AbortError, network), Apex doit :
+
+1. **Détecter** dans la 1ʳᵉ seconde
+2. **Réessayer** automatiquement (3 tentatives backoff exponentiel 3s/8s/15s)
+3. **Failover IA** vers provider alternatif si échec persiste :
+   - Anthropic Claude indispo → bascule **OpenRouter** (clé saisie) → bascule **OpenAI GPT-4o** → bascule **Gemini 2.5 Pro** → bascule **Groq Llama 3.3 70B** (le moins cher rapide)
+   - Ordre configurable : `ax_failover_chain = ["anthropic","openrouter","openai","google","groq"]`
+4. **Réponse partielle** si stream coupé : sauvegarder le texte déjà reçu + bouton "Continuer"
+5. **Mode dégradé** : si TOUTES les IA échouent → réponse locale (KB, persistent_memory, capabilities) + "Je suis en mode hors-ligne, voici ce que je peux faire localement"
+
+### 2. Anticipation proactive (avant blocage)
+
+Sentinelles tournent EN PERMANENCE :
+
+- **`ai-health-watch` (5 min)** : pings successifs sur chaque provider configuré (HEAD ou requête minimale ~$0.0001). Si 2 échecs consécutifs → notification admin + bascule failover préemptif.
+- **`token-balance-watch` (1×/h)** : check solde Anthropic via API (si endpoint dispo) → si <5€ → alerte + propose recharge 1-clic
+- **`api-quota-watch` (10 min)** : check rate-limit headers (`x-ratelimit-remaining`) sur chaque réponse → si <10% → bascule provider
+- **`network-watch` (boot + visibility)** : ping kdmc-clients-default-rtdb → si offline → mode local
+
+### 3. Self-healing automatique
+
+`axSelfHealAI()` : appelée à chaque erreur, fait dans l'ordre :
+
+```js
+function axSelfHealAI(error){
+  // 1. Log erreur + telemetry vers Apex/CMC handoff
+  axRecordLesson("api","Erreur IA",error.message,"warn");
+  
+  // 2. Reset connexions (nouveau fetch, nouveau AbortController)
+  if(window._apexCurrentAbort) window._apexCurrentAbort.abort();
+  
+  // 3. Vérifier connectivité
+  if(!navigator.onLine) return showOfflineMode();
+  
+  // 4. Tester provider courant
+  return pingProvider(currentProvider).then(function(ok){
+    if(ok) return retryLastRequest();
+    
+    // 5. Failover provider alternatif
+    return failoverNext();
+  });
+}
+```
+
+### 4. Bouton "💥 Débloquer Apex" toujours visible
+
+Bouton rouge en bas-droite (z-index max), accessible depuis n'importe quelle vue :
+- Tap court → `axSelfHealAI()` reset connexions + retry
+- Tap long → modal "Diagnostic complet" : status providers / network / SW / cache + bouton "Force reset session"
+- Affiche "🟢 OK" sinon "🟠 X providers KO" sinon "🔴 BLOCAGE - tap pour fix"
+
+### 5. Concertation IA pour résoudre les bugs
+
+Quand Apex IA détecte qu'elle ne peut pas répondre, elle peut :
+- Demander à OpenRouter ou Gemini de répondre via tool use
+- Pousser le problème dans `ax_claude_todo` Firebase → GitHub Action déclenche Claude Code en autonomie
+- Cross-app : pousser dans `cmc_claude_todo` → CMCteams peut aussi remonter
+
+Multi-agent collaboration interne : 3-5 IA en parallèle pour les questions complexes (déjà existe via `axCrewExperts`).
+
+### 6. Tests réguliers (`ai-stress-test`)
+
+Sentinelle 1×/jour à 4h :
+- Ping chaque provider avec requête test
+- Mesure latence + succès
+- Si dégradation > 30% par rapport aux 7 derniers jours → alerte admin + push lesson
+
+### 7. CMCteams équivalent
+
+Mêmes mécanismes dans CMCteams avec `cmcSelfHealAI`, `cmc_failover_chain`, sentinelles équivalentes.
+
+### 8. Queue de messages utilisateur — JAMAIS de réponse vide
+
+> Kevin : "Pas de réponse dans le vide ou qu'il dit qu'il n'a pas compris ou qu'il n'y a plus d'API. Ça ne doit jamais arriver. Les questions sont mises en attente, tout notées jamais rien oublier et répondre au fur et à mesure. Il se débloque s'il doit être débloqué. Il prend en compte toutes les demandes même pendant qu'il réfléchit. Il les note et il agit après."
+
+#### a) Queue FIFO `K.pendingMessages` per-user
+
+Chaque message user va dans une queue persistée (`ax_pending_messages_<uid>`). Apex traite UN message à la fois mais l'utilisateur peut en envoyer plusieurs sans attendre.
+
+```js
+K.pendingMessages = []; // FIFO
+function axSendUserMessage(text, attachments){
+  // Toujours acker visuellement + persister
+  var msg = {id:Date.now()+Math.random(), text:text, attachments:attachments, ts:Date.now(), status:"pending"};
+  K.pendingMessages.push(msg);
+  ls("ax_pending_messages_"+(K.user&&K.user.id||"anon"), K.pendingMessages);
+  K.messages.push({role:"user",content:text,attachments:attachments});
+  dc(); // affiche immediatement
+  
+  // Si IA libre → traite. Sinon laisse en queue, sera processé apres
+  if(!K.isStreaming) axProcessPendingQueue();
+}
+
+function axProcessPendingQueue(){
+  if(K.isStreaming || !K.pendingMessages.length) return;
+  var next = K.pendingMessages[0];
+  next.status = "processing";
+  return axCallClaudeWithFailover(next.text).then(function(){
+    K.pendingMessages.shift();
+    ls("ax_pending_messages_"+K.user.id, K.pendingMessages);
+    setTimeout(axProcessPendingQueue, 100); // chain
+  }).catch(function(){
+    // axSelfHealAI prend le relais, retente plus tard
+    setTimeout(axProcessPendingQueue, 5000);
+  });
+}
+```
+
+#### b) Affichage UI de la queue
+
+Au-dessus de la zone de chat, badge discret : "📥 X messages en attente" cliquable → modal avec liste + bouton "Traiter maintenant" / "Annuler".
+
+Quand un message attend > 30s → afficher "Apex traite ta demande précédente, ton message est en file d'attente, j'y arrive 🔄"
+
+#### c) JAMAIS "je n'ai pas compris"
+
+Apex ne dit JAMAIS :
+- ❌ "Je n'ai pas compris ta demande"
+- ❌ "Pouvez-vous reformuler ?"
+- ❌ "API indisponible, réessayez plus tard"
+- ❌ Réponse vide / juste un point / silence
+
+Toujours :
+- ✅ "Je propose 3 interprétations : (1) tu veux X / (2) tu veux Y / (3) tu veux Z. Laquelle ?"
+- ✅ "Anthropic temporairement KO, je bascule sur OpenRouter — voici ma réponse via Gemini : [réponse]"
+- ✅ "Je n'ai pas accès au réseau là, mais en local je peux : [3 actions possibles]"
+
+System prompt enrichi : interdiction explicite de répondre vide.
+
+#### d) Persistance offline + reprise
+
+Si l'app perd connexion :
+- Messages user → queue persiste localStorage + IDB
+- Au retour online → `axProcessPendingQueue()` + notification "📥 J'ai traité tes 3 messages en attente. Voici les réponses : ..."
+
+#### e) Concurrent thinking + new input
+
+Pendant qu'Apex stream une réponse longue, Kevin peut :
+- Envoyer un nouveau message → queue (acker visuellement "j'ai bien noté, je m'en occupe après")
+- Cliquer "Stop streaming" → coupe stream actuel + traite tout de suite le nouveau
+
+### 9. Test mental obligatoire
+
+> *"Si Anthropic tombe maintenant, est-ce que Kevin peut continuer à utiliser Apex sans rien faire ? L'app bascule-t-elle automatiquement sur un autre provider ? Si Kevin envoie 5 messages d'affilée, sont-ils TOUS traités ? Apex dit-il un jour 'je n'ai pas compris' ou 'pas d'API' ? Si oui → reprendre."*
+
+S'applique systématiquement à toute interaction IA.
+
+---
+
+## 🎯 RÈGLE PERMANENTE — ZÉRO DOUBLON UX, SOURCE UNIQUE (Kevin 2026-04-26, ABSOLUE)
+
+> **"J'ai encore les doublons des infos pour les API, les machins. J'en ai dans les paramètres, j'en ai dans le coffre. UX pas assez poussée, pas assez ordonnée, pas assez de changements clairs et précis. Sans perdre d'information sans en manquer. Tout ce qu'il faut par rapport à notre utilisation, à tout ce qu'on a. Déjà rempli par toi. Avec toutes les informations que tu as et sauvegardé pour toujours dans Apex et CMCteams."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. UNE SEULE source de saisie par donnée
+
+Chaque clé/secret/credential a UN SEUL endroit d'édition autoritaire :
+
+| Type donnée | Source UNIQUE | Vues "lecture seule" | Action |
+|-------------|--------------|---------------------|--------|
+| Clés API IA (`ax_api_key`, `ax_openai_key`, `ax_gemini_key`, etc.) | **vVault** (Coffre) | vSettings, vAIProviders, vSoldesIA, vAllConfig | Lecture statut + bouton "Modifier dans Coffre" → navigateAndScroll |
+| Paiements (`ax_paypal_me`, `ax_revolut_tag`, `ax_iban`, `ax_btc_address`) | **vVault** | vAdminLinks, vSoldesIA | Idem |
+| Intégrations (`ax_github_token`, `ax_cloudflare_token`, `ax_push_worker_url`, etc.) | **vVault** | vAccountsBilling, vAllConfig | Idem |
+| Profil user (`ax_user_name`, email, lang, model, theme) | **vSettings** | vAllConfig (lecture) | Bouton "Modifier dans Réglages" |
+| Notifications (`ax_push_subs`, `ax_push_settings`) | **vSettings** | vAllConfig | Idem |
+
+**Aucune duplication d'input pour la même clé.** Si la donnée s'affiche dans 5 vues, elle s'édite dans 1 seule.
+
+### 2. Composant standardisé `axRenderCredentialReadonly(key, fallbackTo)`
+
+Au lieu d'écrire l'input 5 fois, fonction unique qui affiche :
+- Statut couleur (🟢 OK / ⚪ Non config / 🟠 Auto-rempli / 🔴 Requis)
+- Valeur masquée si secret (`sk-***...***ab12`)
+- Bouton "✏️ Modifier" → `axNavigateTo(fallbackTo)` qui ouvre vVault au bon scroll/highlight
+
+```js
+function axRenderCredentialReadonly(key, fallbackTo){
+  var v = lg(key, "");
+  var status = v ? "🟢 Configure" : "⚪ Non configure";
+  var masked = v ? (v.slice(0,4)+"***"+v.slice(-4)) : "—";
+  return '<div class="ax-cred-row">' +
+    '<span class="ax-cred-status">'+status+'</span>' +
+    '<code class="ax-cred-masked">'+esc(masked)+'</code>' +
+    '<button class="ax-btn ax-btn-outline" onclick="axNavigateTo(\''+fallbackTo+'\')">✏️ Modifier dans Coffre</button>' +
+    '</div>';
+}
+```
+
+### 3. Auto-fill au login user (toutes les infos déjà connues)
+
+Au premier login user (admin Kevin OU user pré-configuré), Apex DOIT auto-remplir toutes les infos qu'il connaît déjà. Ne JAMAIS demander une info que Kevin a déjà donnée historiquement.
+
+**Pour Kevin (admin)** — auto-rempli au boot si manquant :
+```
+ax_user_name = "Kevin DESARZENS"
+ax_user_email = "kevin.desarzens@gmail.com"
+ax_iban_nom = "Kevin DESARZENS"
+ax_revolut_tag = "@kdmc"
+ax_push_worker_url = "https://apex-push-worker.desarzens-kevin.workers.dev"
+ax_settings.lang = "fr"
+ax_settings.country = "Monaco"
+ax_settings.model = "claude-sonnet-4-6"
+ax_settings.theme = "dark"
+ax_settings.timezone = "Europe/Monaco"
+ax_settings.currency = "EUR"
+ax_vapid_public = "[clé publique générée v12.207]"
+ax_firebase_url = "https://kdmc-clients-default-rtdb.firebaseio.com"
+```
+
+Secrets JAMAIS auto-remplis (Anthropic key, OpenAI, etc.) — ces clés Kevin doit les coller une seule fois dans Coffre.
+
+**Pour Laurence et autres clients pré-configurés** : auto-fill leur profil (nom, prénom, email si fourni à l'inscription) via `PRECONFIGURED_USERS`.
+
+### 4. Sauvegarde permanente garantie
+
+Les données auto-remplies vont dans :
+- localStorage immédiat
+- IndexedDB shadow copy (Apex `axIdbSet`, CMCteams `cmcIdbSet`)
+- Firebase via FB_FIX (sauf identité user qui reste FB_LOCAL)
+- Backup quotidien Firebase
+
+Si Kevin réinstalle l'app → toutes les valeurs auto-rempli sont restaurées au boot via `axRestoreFromAll()` (sans qu'il ait à ressaisir).
+
+### 5. Sentinelle `dedup-watch` quotidienne
+
+Tourne 1×/jour. Audit :
+1. Pour chaque clé `ax_*_key|paypal|iban|revolut`, compter le nombre d'inputs HTML qui l'écrivent (`grep "id='ax-vault-...'\|onchange=\"ls('ax_..." apex-ai/index.html`)
+2. Si > 1 input pour la même clé → log warning "duplicate UI"
+3. Escalade Claude Code si > 3 doublons trouvés
+
+### 6. Test mental obligatoire avant chaque commit UX
+
+> *"Cette feature crée-t-elle un nouveau champ de saisie pour une donnée déjà éditable ailleurs ? Si oui → ANNULER l'input et utiliser axRenderCredentialReadonly. Sinon → OK."*
+
+Si non → reprendre.
+
+### 7. Plan déduplication progressive (à exécuter)
+
+À faire systématiquement dans toutes les vues existantes :
+1. **vSettings** : retirer tous les inputs `ax_*_key` → utiliser `axRenderCredentialReadonly`
+2. **vAIProviders** : pareil pour clés IA
+3. **vSoldesIA** : déjà OK (lecture seule)
+4. **vAccountsBilling** : retirer inputs paiement → lecture seule
+5. **vAllConfig** : déjà fait (sections cliquables vers vVault)
+6. **vAdminLinks** : retirer inputs → boutons navigate vers vVault
+
+Documenter la migration dans la version concernée.
+
+S'applique à Apex ET CMCteams.
+
+---
+
 ## 🎨 RÈGLE PERMANENTE — UX ÉPURÉE CLIENT + AUTO-OUTILS CONTEXTUELS (Kevin 2026-04-26, ABSOLUE)
 
 > **"UX simplifiée comme un enfant de 5 ans pour TOUS les clients (sauf admin Kevin). Après login + choix abonnement → page chat directe. Apex dit 'Bonjour [Prénom Nom], qu'est-ce que je peux faire pour toi ?' Selon la conversation, Apex sort AUTOMATIQUEMENT l'outil adapté : musique → table mixage dernier cri, vidéo → studio montage, architecture → outils archi, admin/lois → bloc-notes structuré. Les outils s'ajoutent au fur et à mesure des besoins. Conversations sauvegardées avec nom de thème auto, accessibles via sidebar. Minimum visible au début, épurée max. Style Claude.ai."**

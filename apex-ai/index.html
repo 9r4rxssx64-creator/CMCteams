@@ -65,6 +65,13 @@
 <script>
 // Sentry Loader — lazy-load, 0 impact perf initial
 (function(){var dsn=localStorage.getItem("ax_sentry_dsn");if(!dsn)return;var s=document.createElement("script");s.src="https://browser.sentry-cdn.com/8.43.0/bundle.min.js";s.crossOrigin="anonymous";s.onload=function(){if(window.Sentry){window.Sentry.init({dsn:dsn,tracesSampleRate:0.1,environment:"production",release:"apex-v12.216",ignoreErrors:["AbortError","ECONNRESET","ResizeObserver loop","Non-Error promise rejection"],initialScope:{tags:{component:"apex",admin:"U11804"}}});console.log("Sentry init OK");}};document.head.appendChild(s);})();
+// === v12.303 PRODUCTION-GRADE GLOBAL ERROR CAPTURE (Sentry-style, runs BEFORE any other init) ===
+(function(){
+  function _earlyCapture(err,ctx){try{var entry={id:"err_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),msg:String(err&&err.message||err||"unknown").slice(0,500),stack:String(err&&err.stack||"").slice(0,2000),ctx:ctx||{},ts:Date.now(),url:(location.href||"").slice(0,200),ua:(navigator.userAgent||"").slice(0,200)};var raw=localStorage.getItem("ax_error_log");var log=[];try{log=raw?JSON.parse(raw):[];if(!Array.isArray(log))log=[];}catch(_){log=[];}log.push(entry);if(log.length>500)log=log.slice(-500);try{localStorage.setItem("ax_error_log",JSON.stringify(log));}catch(_){}}catch(_){}}
+  window.addEventListener("error",function(e){_earlyCapture(e.error||new Error(e.message||"unknown"),{source:"window.onerror",filename:e.filename||"",lineno:e.lineno||0,colno:e.colno||0});},true);
+  window.addEventListener("unhandledrejection",function(e){_earlyCapture(e.reason,{source:"unhandledrejection"});},true);
+  window._axEarlyCapture=_earlyCapture;
+})();
 </script>
 <style>/* v12.188 GLOBAL PERF iPhone */*{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.ax-tab:active,.ax-btn:active,.ax-btn-icon:active,button:active{transform:scale(.96)!important;transition:transform .06s ease!important}
 :root{
@@ -274,6 +281,15 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-user-slideshow img{width:100%;height:100%;object-fit:cover;transition:opacity 1s ease}
 .ax-user-slideshow .ax-ss-close{position:absolute;top:4px;right:4px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 @keyframes axFadeIn{from{opacity:0}to{opacity:1}}
+/* v12.303 — Quota/Auth modal pro */
+.ax-quota-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:axFadeIn .2s ease-out}
+.ax-quota-modal{background:var(--ax-bg-card);border:1px solid var(--ax-gold);border-radius:16px;padding:28px 24px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 32px rgba(232,184,48,.18);animation:axFadeIn .25s ease-out}
+.ax-quota-modal .ax-quota-icon{font-size:52px;margin-bottom:14px;line-height:1}
+.ax-quota-modal h2{color:var(--ax-gold);font-size:22px;font-weight:800;margin:0 0 12px;letter-spacing:.5px}
+.ax-quota-modal p{color:var(--ax-text);font-size:15px;line-height:1.55;margin:0 0 22px;opacity:.95}
+.ax-quota-actions{display:flex;flex-direction:column;gap:10px}
+.ax-quota-actions .ax-btn{min-height:48px;font-size:14px;font-weight:600;padding:12px 16px;border-radius:10px;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .12s ease,box-shadow .15s ease}
+.ax-quota-actions .ax-btn:active{transform:scale(.97)}
 @keyframes axShimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
 @keyframes axBounce{0%,100%{transform:scale(1)}50%{transform:scale(.92)}}
 @keyframes axTyping{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
@@ -388,6 +404,71 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-perf-bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--ax-green),var(--ax-gold));transition:width .3s}
 .ax-virt-more{text-align:center;padding:12px;font-size:13px;color:var(--ax-text-dim);cursor:pointer;border-top:1px dashed rgba(232,184,48,.15)}
 .ax-virt-more:hover{color:var(--ax-gold)}
+/* v12.301 — vChatLite UX epuree client (Kevin 2026-04-26) */
+.ax-lite-shell{display:flex;flex-direction:column;height:100%;background:linear-gradient(180deg,#0a0e1f 0%,#0e1225 100%)}
+.ax-lite-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;min-height:48px;background:rgba(10,14,31,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(232,184,48,.08);position:sticky;top:0;z-index:10}
+.ax-lite-header .ax-lite-logo{font-family:Georgia,serif;font-size:20px;font-weight:600;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px}
+.ax-lite-header .ax-lite-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ax-text-dim)}
+.ax-lite-header .ax-lite-userbtn{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.15);color:var(--ax-text);font-size:13px;cursor:pointer;min-height:36px}
+.ax-lite-header .ax-lite-logout{width:36px;height:36px;border-radius:50%;background:rgba(255,88,88,.08);border:1px solid rgba(255,88,88,.15);color:var(--ax-red);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ax-lite-body{flex:1;overflow-y:auto;padding:0 12px;-webkit-overflow-scrolling:touch}
+.ax-lite-greeting{text-align:center;padding:48px 20px 24px;animation:axFadeIn .5s ease}
+.ax-lite-greeting h1{font-family:Georgia,Garamond,serif;font-size:28px;color:var(--ax-gold);margin:0 0 6px;font-weight:600;letter-spacing:.5px}
+.ax-lite-greeting p{color:var(--ax-text-dim);font-size:16px;margin:0 0 28px}
+.ax-lite-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:480px;margin:0 auto}
+.ax-lite-chip{background:rgba(232,184,48,.06);border:1px solid rgba(232,184,48,.18);border-radius:14px;padding:18px 14px;min-height:76px;cursor:pointer;color:var(--ax-text);font-size:14px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .2s ease;-webkit-tap-highlight-color:transparent;text-align:center}
+.ax-lite-chip:hover{background:rgba(232,184,48,.12);transform:translateY(-2px);border-color:rgba(232,184,48,.35)}
+.ax-lite-chip:active{transform:scale(.97)}
+.ax-lite-chip-icon{font-size:26px;line-height:1}
+.ax-lite-chip-label{font-size:13px;color:var(--ax-text)}
+.ax-lite-msg{margin:10px 0;padding:14px 16px;border-radius:14px;font-size:15px;line-height:1.6;animation:axFadeIn .25s ease;max-width:88%}
+.ax-lite-msg-user{background:rgba(232,184,48,.10);border:1px solid rgba(232,184,48,.22);margin-left:auto;color:var(--ax-text)}
+.ax-lite-msg-bot{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-right:auto;color:var(--ax-text)}
+.ax-lite-msg-name{font-size:11px;font-weight:700;color:var(--ax-text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.ax-tool-embed{margin:8px 0;padding:14px;background:rgba(232,184,48,.05);border-left:3px solid var(--ax-gold);border-radius:10px;display:flex;align-items:center;gap:12px;animation:axFadeIn .3s ease}
+.ax-tool-embed-icon{font-size:28px;flex-shrink:0}
+.ax-tool-embed-body{flex:1;min-width:0}
+.ax-tool-embed-title{font-size:14px;font-weight:700;color:var(--ax-gold);margin:0 0 2px}
+.ax-tool-embed-desc{font-size:12px;color:var(--ax-text-dim);margin:0}
+.ax-tool-embed-btn{padding:8px 14px;background:var(--ax-gold);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px;flex-shrink:0}
+.ax-lite-input-bar{padding:10px 12px;background:rgba(10,14,31,.92);border-top:1px solid rgba(232,184,48,.1);display:flex;gap:8px;align-items:flex-end;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.ax-lite-input{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(232,184,48,.2);border-radius:18px;color:var(--ax-text);padding:12px 16px;font-size:15px;resize:none;font-family:inherit;line-height:1.4;max-height:120px;-webkit-appearance:none}
+.ax-lite-input:focus{outline:none;border-color:var(--ax-gold);background:rgba(255,255,255,.08)}
+.ax-lite-iconbtn{width:44px;height:44px;border-radius:50%;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.18);color:var(--ax-text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.ax-lite-iconbtn:active{transform:scale(.92)}
+.ax-lite-sendbtn{width:48px;height:48px;border-radius:50%;background:var(--ax-gold);color:#000;font-size:20px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900}
+.ax-lite-sendbtn:active{transform:scale(.92)}
+.ax-lite-conv-strip{display:flex;gap:8px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid rgba(232,184,48,.05)}
+.ax-lite-conv-pill{padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;font-size:12px;color:var(--ax-text-dim);cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:32px;display:flex;align-items:center;gap:6px}
+.ax-lite-conv-pill.active{background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.35);color:var(--ax-gold)}
+.ax-lite-conv-pill:hover{background:rgba(255,255,255,.07)}
+.ax-lite-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:flex-end;justify-content:center;animation:axFadeIn .2s ease;padding:0}
+.ax-lite-modal-card{background:linear-gradient(180deg,#13182e,#0e1225);border-top:1px solid rgba(232,184,48,.2);border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;padding:0;animation:axSlideUp .3s ease}
+@keyframes axSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.ax-lite-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(232,184,48,.08);position:sticky;top:0;background:rgba(19,24,46,.95);backdrop-filter:blur(8px)}
+.ax-lite-modal-title{font-size:18px;font-weight:700;color:var(--ax-gold);margin:0}
+.ax-lite-modal-close{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.06);border:none;color:var(--ax-text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ax-lite-modal-body{padding:16px 20px 24px}
+.ax-lite-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:520px){.ax-lite-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:360px){.ax-lite-grid{grid-template-columns:1fr}}
+.ax-lite-card{background:rgba(232,184,48,.04);border:1px solid rgba(232,184,48,.15);border-radius:14px;padding:14px;cursor:pointer;text-align:center;transition:all .2s;min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.ax-lite-card:hover{background:rgba(232,184,48,.08);transform:translateY(-2px)}
+.ax-lite-card-icon{font-size:24px;line-height:1}
+.ax-lite-card-label{font-size:13px;font-weight:600;color:var(--ax-text)}
+.ax-lite-card-desc{font-size:11px;color:var(--ax-text-dim);line-height:1.3}
+.ax-lite-tour-card{background:rgba(232,184,48,.05);border:1px solid rgba(232,184,48,.15);border-radius:14px;padding:24px;text-align:center;animation:axFadeIn .3s ease}
+.ax-lite-tour-icon{font-size:48px;margin-bottom:12px}
+.ax-lite-tour-title{font-size:18px;font-weight:700;color:var(--ax-gold);margin:0 0 8px}
+.ax-lite-tour-text{font-size:14px;color:var(--ax-text);line-height:1.5;margin:0 0 20px}
+.ax-lite-tour-dots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
+.ax-lite-tour-dot{width:8px;height:8px;border-radius:50%;background:rgba(232,184,48,.2)}
+.ax-lite-tour-dot.active{background:var(--ax-gold)}
+.ax-lite-tour-actions{display:flex;gap:10px;justify-content:center}
+.ax-lite-tour-btn{padding:10px 20px;border-radius:10px;border:none;font-weight:700;cursor:pointer;min-height:44px;font-size:14px}
+.ax-lite-tour-btn-prim{background:var(--ax-gold);color:#000}
+.ax-lite-tour-btn-sec{background:rgba(255,255,255,.06);color:var(--ax-text);border:1px solid rgba(255,255,255,.1)}
+.ax-lite-empty{text-align:center;padding:40px 20px;color:var(--ax-text-dim);font-size:14px}
 </style>
 </head>
 <body>
@@ -419,7 +500,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.300",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.303",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
