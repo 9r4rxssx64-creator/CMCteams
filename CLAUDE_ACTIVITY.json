@@ -1,15 +1,30 @@
 {
-  "updated_at": 1777237143161,
-  "total_commits": 479,
+  "updated_at": 1777237506968,
+  "total_commits": 481,
   "projects": [
     "apex",
     "backend",
     "cmcteams",
     "docs",
-    "infra",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "d7072e95",
+      "ts": 1777237452000,
+      "msg": "Apex v12.333 : Fix audit externe pro 3 critiques (Schema.org + cap msgs 500 + remote check 10min)",
+      "project": "apex",
+      "ver": "12.333",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1391dc73",
+      "ts": 1777237177000,
+      "msg": "CLAUDE_ACTIVITY : sync 479 commits jusqu'a v12.332 + v9.558",
+      "project": "docs",
+      "ver": "12.332",
+      "author": "claude-code"
+    },
     {
       "sha": "94e87468",
       "ts": 1777236107000,
@@ -142,7 +157,7 @@
       "sha": "e2311a13",
       "ts": 1777230170000,
       "msg": "chore: sync handoff from Apex AI Firebase (auto bidirectional)",
-      "project": "infra",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -206,7 +221,7 @@
       "sha": "81c346b0",
       "ts": 1777226105000,
       "msg": "chore: sync handoff from Apex AI Firebase (auto bidirectional)",
-      "project": "infra",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -302,7 +317,7 @@
       "sha": "005ecaf9",
       "ts": 1777219742000,
       "msg": "chore: auto-bump APP_VER Apex->v12.312 (Pages cache invalidation)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.312",
       "author": "claude-code"
     },
@@ -334,7 +349,7 @@
       "sha": "dc709bbb",
       "ts": 1777219624000,
       "msg": "chore: sync handoff from Apex AI Firebase (auto bidirectional)",
-      "project": "infra",
+      "project": "multi",
       "ver": null,
       "author": "claude-code"
     },
@@ -382,7 +397,7 @@
       "sha": "afd3a514",
       "ts": 1777218339000,
       "msg": "chore: sync sw.js CACHE_VERSION -> v12.311 (auto)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.311",
       "author": "claude-code"
     },
@@ -446,7 +461,7 @@
       "sha": "ec2c9dcc",
       "ts": 1777218093000,
       "msg": "chore: auto-bump APP_VER Apex->v12.309 (Pages cache invalidation)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.309",
       "author": "claude-code"
     },
@@ -558,7 +573,7 @@
       "sha": "4901d1e0",
       "ts": 1777217413000,
       "msg": "chore: sync sw.js CACHE_VERSION -> v12.307 (auto)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.307",
       "author": "claude-code"
     },
@@ -662,7 +677,7 @@
       "sha": "c4819879",
       "ts": 1777216180000,
       "msg": "chore: sync sw.js CACHE_VERSION -> v12.303 (auto)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.303",
       "author": "claude-code"
     },
@@ -750,7 +765,7 @@
       "sha": "5db237f0",
       "ts": 1777215143000,
       "msg": "chore: auto-bump APP_VER Apex->v12.299 (Pages cache invalidation)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.299",
       "author": "claude-code"
     },
@@ -774,7 +789,7 @@
       "sha": "135c3f48",
       "ts": 1777215075000,
       "msg": "chore: auto-bump APP_VER Apex->v12.298 (Pages cache invalidation)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.298",
       "author": "claude-code"
     },
@@ -822,7 +837,7 @@
       "sha": "0a8ba42f",
       "ts": 1777214679000,
       "msg": "chore: auto-bump APP_VER Apex->v12.297 (Pages cache invalidation)",
-      "project": "infra",
+      "project": "multi",
       "ver": "12.297",
       "author": "claude-code"
     },
@@ -886,7 +901,7 @@
       "sha": "0fe945f2",
       "ts": 1777214136000,
       "msg": "chore: sync sw.js CACHE -> v9.550 (auto)",
-      "project": "infra",
+      "project": "multi",
       "ver": "9.550",
       "author": "claude-code"
     },
@@ -952,22 +967,6 @@
       "msg": "CMCteams v9.549 : SEO og + twitter cards + canonical + SESSION_TTL central + scroll watch (axes 9 + 6 + 1 vers 10/10)",
       "project": "cmcteams",
       "ver": "9.549",
-      "author": "claude-code"
-    },
-    {
-      "sha": "92a4d1bc",
-      "ts": 1777212981000,
-      "msg": "Apex v12.295 + CMCteams v9.548 : vague 8 Kevin (MAJ auto silencieuse + filtre toasts rouges + dashboard soldes IA + tarifs verifies)",
-      "project": "apex",
-      "ver": "12.295",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1cb44be9",
-      "ts": 1777212523000,
-      "msg": "Apex v12.294 : polish 10/10 (axStorageQuotaCheck explicite + CSP smart audit)",
-      "project": "apex",
-      "ver": "12.294",
       "author": "claude-code"
     }
   ]

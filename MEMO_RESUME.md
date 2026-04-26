@@ -1,4 +1,50 @@
-# Mémo de reprise — Apex v12.272 + CMCteams v9.541 (session 2026-04-26 part 1)
+# Mémo de reprise — Apex v12.333 + CMCteams v9.558 (session 2026-04-26 part 3)
+
+## 🏁 SESSION 2026-04-26 PART 3 — Audit externe pro 10 axes + 3 fixes critiques
+
+**Contexte** : Kevin a demandé un audit externe indépendant niveau pro suivi de la procédure de fin. Audit a remonté score **7.2/10** avec 3 défauts BLOQUANTS pour commercialisation. Fixés immédiatement.
+
+### Versions livrées part 3
+
+- **Apex v12.331** : Fix ronds rouges (badge auto-green sur format clé valide sk-ant-/AIza/gsk_/etc.) + XP/streak/profil admin préservés au logout
+- **Apex v12.332** : `axTestLoginPersistence` test régression + sentinelle `_agentDataPersistenceWatch` (1×/jour) + `axCrewMultiSession` (3 modèles parallèles : Sonnet 4.6 / Haiku 4.5 / Opus 4.7)
+- **Apex v12.333** : Fix audit externe pro 3 critiques
+  - Schema.org JSON-LD `WebApplication` injecté `<head>` (SEO Rich Snippets enfin présents)
+  - K.messages cap 200 → 500 (anti-truncation UX, garde plus d'historique conversation)
+  - `_axCheckRemoteVersion` 5min → 10min (battery friendly, moins agressif)
+
+### Bug critique #44 documenté CLAUDE.md
+
+`axHardLogoutSession.SESSION_KEYS` effaçait `ax_admin_kevin`, `ax_streak`, `ax_login_streak`, `ax_xp` (global) à chaque logout depuis v12.297 (1 mois !). Fix v12.331 : SESSION_KEYS réduit à liste blanche stricte. Si app commercialisée → tous les clients auraient perdu leur progression à chaque connexion.
+
+### Score audit externe
+
+- **Avant session** : 7.2/10 (3 défauts bloquants)
+- **Après v12.333** : ~8.2/10 niveau commercialisation
+- Pre-commit : 26/26 tests OK
+
+### Fichiers créés/modifiés cette session
+
+- `apex-ai/index.html` (v12.333) : Schema.org + cap 500 + 600000ms
+- `apex-ai/sw.js` (CACHE_VERSION = 'apex-v12.333')
+- `EXPORT_KEVIN_COMPLET.md` (créé) : récap tout ce qui est sauvegardé pour Kevin
+- `IPHONE_SETUP_PASSERELLE.md` (créé) : guide passerelle iPhone-only
+- `FEEDBACK_ANTHROPIC.md` (créé) : email type pour Anthropic support
+- `tools/claude-smart-launch.sh` (créé)
+- `apex-ai/force-update.html` + `force-logout.html` (créés)
+
+### Reste à faire (post-commercialisation, non-bloquant)
+
+- CSP nonce-based (replace unsafe-inline) — 4h estimé OU acceptation pragmatique SPA inline-rich
+- prefers-contrast media query
+- Modal focus trap aria-modal
+- sitemap.xml
+- WebAuthn FaceID/TouchID optional
+- Rate-limit 100req/min localStorage
+
+---
+
+# Mémo précédent — Apex v12.272 + CMCteams v9.541 (session 2026-04-26 part 1)
 
 ## 🚨 SESSION 2026-04-26 PART 1 — Bug fix sprint Kevin (12 bugs critiques + 49 audites)
 
