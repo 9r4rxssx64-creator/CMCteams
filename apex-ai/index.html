@@ -396,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.286",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.287",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -10943,6 +10943,66 @@ try{if(typeof window._axOriginalVMain==="undefined"&&typeof vMain==="function"){
 try{if(typeof axNavigateTo==="function"&&!window._axNavSportFunHooked){window._axNavSportFunHooked=true;var _origNavSF=axNavigateTo;window.axNavigateTo=function(target,opts){var t=String(target||"").toLowerCase().trim();var sportKw=["sport","sports","sportpro","fitness","calorie","calories","cardio","muscu","musculation","entrainement","seance"];var funKw=["fun","funpro","blague","blagues","devinette","devinettes","jeu","jeux","rigoler","drole","tupreferes","tu preferes","humour"];var i;for(i=0;i<sportKw.length;i++){if(t===sportKw[i]||t.indexOf(sportKw[i])>=0){if(typeof sv==="function")sv("sportpro");if(typeof toast==="function")toast("→ Sport","info");return true;}}for(i=0;i<funKw.length;i++){if(t===funKw[i]||t.indexOf(funKw[i])>=0){if(typeof sv==="function")sv("funpro");if(typeof toast==="function")toast("→ Fun","info");return true;}}return _origNavSF(target,opts);};}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-fun-pro",_e);}catch(__){}}
 try{if(typeof axExecuteTool==="function"&&!window._axExecSportFunHooked){window._axExecSportFunHooked=true;var _origExecSF=axExecuteTool;window.axExecuteTool=function(name,input){input=input||{};if(name==="sport_calc"){var r=axSportCalc(input.sport,input.duree_min||input.duree,input.poids);return r?JSON.stringify(r):"Sport non reconnu. Liste: "+AX_SPORT.sports.map(function(s){return s.id;}).join(", ");}if(name==="fun_random_blague")return axFunRandomBlague();if(name==="fun_random_devinette")return JSON.stringify(axFunRandomDevinette());return _origExecSF(name,input);};}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-fun-pro",_e);}catch(__){}}
 /* ============ FIN AX_SPORT + AX_FUN ============ */
+
+/* ============ v12.287 — FEEDBACK VISUEL ACTIONS (Kevin: "actions qui ne fonctionnent pas sans que rien ne se passe") ============ */
+/* _axActionWrap(label, fn) : wrapper toast + spinner pour toutes les actions importantes (sync ou async) */
+function _axActionWrap(label,fn,opts){opts=opts||{};var lbl=String(label||"Action").slice(0,80);var slowTimer=null;
+  try{if(typeof toast==="function"&&!opts.silent)toast("⏳ "+lbl+"...","info");}catch(_){}
+  slowTimer=setTimeout(function(){try{if(typeof toast==="function"&&!opts.silent)toast("⏳ "+lbl+" - patientez...","info",{duration:8000,force:true});}catch(_){}},3000);
+  var done=function(ok,result,err){if(slowTimer){clearTimeout(slowTimer);slowTimer=null;}
+    if(ok){try{if(typeof toast==="function"&&!opts.silent)toast("✅ "+lbl+" OK","ok");}catch(_){}try{if(typeof axHapticSuccess==="function")axHapticSuccess();}catch(_){}}
+    else{var em=String(err&&err.message||err||"erreur").slice(0,140);try{if(typeof toast==="function")toast("❌ "+lbl+" : "+em,"err",{force:true});}catch(_){}try{if(typeof axHapticError==="function")axHapticError();}catch(_){}_axRecordActionFailure(lbl,em);}
+    if(typeof opts.onComplete==="function")try{opts.onComplete(ok,result,err);}catch(_){}return result;};
+  try{var r=(typeof fn==="function")?fn():fn;
+    if(r&&typeof r.then==="function"){return r.then(function(v){return done(true,v,null);}).catch(function(e){done(false,null,e);throw e;});}
+    return done(true,r,null);
+  }catch(e){return done(false,null,e);}
+}
+/* _axBtnAction(button, label, fn) : disable + spinner sur button pendant l action */
+function _axBtnAction(btn,label,fn,opts){opts=opts||{};if(typeof btn==="string")btn=document.querySelector(btn);if(!btn)return _axActionWrap(label,fn,opts);
+  if(btn._axBusy)return;btn._axBusy=true;
+  var origHTML=btn.innerHTML,origDisabled=btn.disabled;
+  var safeLbl=(typeof esc==="function")?esc(String(label||"...")):String(label||"...").replace(/[<>&]/g,"");
+  btn.disabled=true;btn.innerHTML='<span style="display:inline-block;animation:axSpin 1s linear infinite">⟳</span> '+safeLbl;
+  var restore=function(){btn._axBusy=false;btn.innerHTML=origHTML;btn.disabled=origDisabled;};
+  return _axActionWrap(label,fn,Object.assign({},opts,{onComplete:function(ok,result,err){
+    if(ok){btn.innerHTML='✅ '+safeLbl;setTimeout(restore,1000);}
+    else{btn.innerHTML='❌ '+safeLbl;setTimeout(restore,2000);}
+    if(typeof opts.onComplete==="function")try{opts.onComplete(ok,result,err);}catch(_){}
+  }}));
+}
+/* Auto-bind boutons avec data-async="..." => execute window[fn] et wrappe */
+document.addEventListener("click",function(ev){try{var btn=ev.target&&ev.target.closest&&ev.target.closest("[data-async]");if(!btn||btn._axBusy)return;var fnName=btn.getAttribute("data-async");var lbl=btn.getAttribute("data-async-label")||(btn.textContent||"").trim().slice(0,40)||"Action";var fn=window[fnName];if(typeof fn!=="function")return;ev.preventDefault();ev.stopPropagation();_axBtnAction(btn,lbl,fn);}catch(_){}});
+/* _axRecordActionFailure : enregistre les echecs silencieux pour vActionFailures */
+function _axRecordActionFailure(ctx,msg){try{var log=(typeof lg==="function")?lg("ax_action_failures",[]):[];log.push({ts:Date.now(),ctx:String(ctx||"?").slice(0,80),msg:String(msg||"").slice(0,200),view:(typeof K!=="undefined"&&K&&K.view)||"?",user:(typeof K!=="undefined"&&K&&K.user&&K.user.id)||"anonymous"});if(log.length>50)log=log.slice(-50);if(typeof ls==="function")ls("ax_action_failures",log);
+  try{var recent=log.filter(function(e){return e.ctx===ctx&&Date.now()-e.ts<60000;});if(recent.length>=3&&typeof axIsAdmin==="function"&&axIsAdmin()&&typeof toast==="function"){toast("⚠ Probleme recurrent : "+ctx+" ("+recent.length+"x en 1min)","warn",{force:true,duration:8000});}}catch(_){}
+  try{var critical=/login|fbWrite|save|sync|backup|encrypt|decrypt|api|payment/i;if(critical.test(ctx)&&typeof axIsAdmin==="function"&&axIsAdmin()&&typeof toast==="function"){toast("⚠ Action incomplete : "+ctx,"warn",{force:true});}}catch(_){}
+}catch(_){}}
+/* Override _axSafeCatch pour aussi push dans ax_action_failures (en plus du _snLog existant) */
+try{if(typeof _axSafeCatch==="function"&&!window._axSafeCatchEnhanced){window._axSafeCatchEnhanced=true;var _origSafeCatch=_axSafeCatch;window._axSafeCatch=function(ctx,e){try{_origSafeCatch(ctx,e);}catch(_){}try{var em=String(e&&e.message||e||"unknown").slice(0,200);_axRecordActionFailure(ctx,em);}catch(_){}};}}catch(_){}
+/* vActionFailures : vue admin pour voir les actions qui echouent silencieusement */
+function vActionFailures(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Admin requis</div></div>';
+  var log=lg("ax_action_failures",[]);var safeEsc=function(s){return (typeof esc==="function")?esc(String(s)):String(s).replace(/[<>&]/g,"");};
+  var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:8px">⚠ Actions echouees ('+log.length+')</h2>';
+  h+='<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:12px">Liste des actions qui ont echoue silencieusement. Permet de detecter les boutons qui "ne font rien".</p>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><button class="ax-btn ax-btn-outline" onclick="ls(\'ax_action_failures\',[]);dc();toast(\'Vide\',\'ok\')">🗑 Vider</button><button class="ax-btn ax-btn-outline" onclick="dc()">🔄 Refresh</button></div>';
+  if(!log.length){h+='<div class="ax-empty" style="padding:30px;text-align:center;color:var(--ax-text-dim)"><div style="font-size:48px">✅</div><div style="font-size:14px;margin-top:8px">Aucune action echouee. Tout va bien.</div></div>';}
+  else{var grouped={};log.forEach(function(e){if(!grouped[e.ctx])grouped[e.ctx]={count:0,last:0,lastMsg:""};grouped[e.ctx].count++;if(e.ts>grouped[e.ctx].last){grouped[e.ctx].last=e.ts;grouped[e.ctx].lastMsg=e.msg;}});
+    var ctxs=Object.keys(grouped).sort(function(a,b){return grouped[b].count-grouped[a].count;});
+    h+='<div class="ax-card"><h3 style="margin-bottom:8px">Par contexte</h3>';ctxs.forEach(function(ctx){var g=grouped[ctx];var clr=g.count>=3?"var(--ax-red)":g.count>=2?"var(--ax-orange)":"var(--ax-text-dim)";h+='<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px"><strong style="color:'+clr+'">'+safeEsc(ctx)+'</strong> <span style="background:rgba(255,88,88,.15);color:var(--ax-red);padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">x'+g.count+'</span><div style="color:var(--ax-text-dim);margin-top:2px;font-family:var(--ax-mono);font-size:11px">'+safeEsc(g.lastMsg)+'</div><div style="color:var(--ax-text-dim);font-size:10px;margin-top:2px">'+new Date(g.last).toLocaleString("fr-FR")+'</div></div>';});h+='</div>';
+    h+='<div class="ax-card" style="margin-top:8px"><h3 style="margin-bottom:8px">Derniers ('+Math.min(20,log.length)+')</h3>';var slice=log.slice().reverse().slice(0,20);slice.forEach(function(e){h+='<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px"><strong>'+safeEsc(e.ctx)+'</strong> <span style="color:var(--ax-text-dim)">@ '+safeEsc(e.view)+'</span><div style="font-family:var(--ax-mono);color:var(--ax-text-dim);font-size:10px;margin-top:2px">'+safeEsc(e.msg)+'</div><div style="color:var(--ax-text-dim);font-size:9px;margin-top:1px">'+new Date(e.ts).toLocaleString("fr-FR")+'</div></div>';});h+='</div>';}
+  return h+'</div>';
+}
+/* Routing vActionFailures dans vMain (override final) */
+try{if(typeof vMain==="function"&&!window._axVMainFailures){window._axVMainFailures=true;var _origVMainFail=window.vMain||vMain;window.vMain=function(){if(typeof K!=="undefined"&&K&&K.view==="actionfailures")return vActionFailures();return _origVMainFail.apply(this,arguments);};}}catch(_e){try{_axSafeCatch&&_axSafeCatch("v-action-failures",_e);}catch(_){}}
+try{if(typeof axNavigateTo==="function"&&!window._axNavFailuresHooked){window._axNavFailuresHooked=true;var _origNavF=axNavigateTo;window.axNavigateTo=function(target,opts){var t=String(target||"").toLowerCase().trim();var kw=["actions echec","actions echouees","echecs","action failures","actionfailures","boutons casses","probleme bouton"];for(var i=0;i<kw.length;i++){if(t===kw[i]||t.indexOf(kw[i])>=0){if(typeof sv==="function")sv("actionfailures");if(typeof toast==="function")toast("→ Echecs actions","info");return true;}}return _origNavF(target,opts);};}}catch(_e){try{_axSafeCatch&&_axSafeCatch("v-action-failures-nav",_e);}catch(_){}}
+/* CSS spinner inline (axSpin) + page transition */
+try{if(!document.getElementById("ax-actionwrap-css")){var st=document.createElement("style");st.id="ax-actionwrap-css";st.textContent="@keyframes axSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}.ax-action-pending{opacity:.65;pointer-events:none}#content{transition:opacity .18s ease}";document.head.appendChild(st);}}catch(_){}
+/* Page transition fadeIn smooth apres sv() */
+try{if(typeof sv==="function"&&!window._axSvFadeHooked){window._axSvFadeHooked=true;var _origSvFade=sv;window.sv=function(v){var r=_origSvFade.apply(this,arguments);try{var c=document.getElementById("content");if(c){c.style.opacity="0";requestAnimationFrame(function(){c.style.opacity="1";});}}catch(_){}return r;};}}catch(_){}
+/* Expose helpers globalement */
+try{window._axActionWrap=_axActionWrap;window._axBtnAction=_axBtnAction;window._axRecordActionFailure=_axRecordActionFailure;window.vActionFailures=vActionFailures;}catch(_){}
+/* ============ FIN v12.287 FEEDBACK VISUEL ACTIONS ============ */
 
 </script>
 </body>
