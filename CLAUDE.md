@@ -4,6 +4,75 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🎯 RÈGLE PERMANENTE — CADRES UNIFIÉS + VISUEL PIT POUR COMPÉTENCES (Kevin 2026-04-26, ABSOLUE)
+
+> **"Si plus simple, mets tous les cadres ensemble et mets un visuel sur les pits seulement pour différencier les compétences."**
+
+**Règle absolue, prioritaire** — pour CMCteams parser PDF + vues :
+
+### 1. Cadres unifiés (1 seule section)
+
+Au lieu de 3 sections séparées dans le PDF parser (PIT BOSS / SUPERVISEUR / INSPECTEUR) :
+- **UNE seule section "CADRES"** contenant tous : pit boss + superviseurs + inspecteurs
+- Détection plus fiable du parser (1 header au lieu de 3)
+- Élimine la régression récurrente (CLAUDE.md erreurs #31/#32/#36)
+
+### 2. Visuel pit (différencier compétence)
+
+Pour ceux qui sont PIT BOSS spécifiquement (sous-ensemble des cadres) :
+- Badge visuel sur leur fiche : 🎯 ou ♔ ou un cadre doré
+- Couleur de bordure/fond distinctive (or)
+- Tag dans `emp.is_pit_boss = true`
+- Visible dans vEmps, vDeparts, vPlan
+
+### 3. Comment détecter pit boss dans le PDF unifié
+
+Heuristiques (dans l'ordre, premier match gagne) :
+1. Mention explicite "PIT BOSS" sur la même ligne que le nom
+2. Liste blanche dans `cmc_pit_boss_list` (admin peut éditer)
+3. Inférence par horaires (pit boss souvent tôt le matin / pré-ouverture casino)
+4. Si aucune → demander à l'admin via UI "Cocher les pit boss"
+
+### 4. Refactor parser
+
+```js
+// AVANT v9.X — 3 stratégies par section
+function _parseCadres_PitBoss(){...}
+function _parseCadres_Superviseur(){...}
+function _parseCadres_Inspecteur(){...}
+
+// APRÈS v9.557 — 1 stratégie unifiée + tag pit boss
+function _parseCadresUnifies(srcText, year, month){
+  var allCadres = _parseAnyCadre(srcText, year, month);
+  // Pour chacun, détecter si pit boss
+  Object.keys(allCadres).forEach(function(name){
+    allCadres[name].is_pit_boss = _detectIsPitBoss(name, srcText);
+  });
+  return allCadres;
+}
+```
+
+### 5. UI cohérente
+
+Dans vEmps, vDeparts, vPlan :
+- Liste cadres unique sans sous-sections
+- Pit boss marqués avec icône 🎯 ou couleur or distinctive
+- Filtre : "Voir seulement pit boss" + "Voir tous cadres"
+- Badge cliquable → ouvre fiche cadre avec sa rotation/horaires
+
+### 6. Compatibilité
+
+`is_pit_boss` est un nouveau champ — si absent → fallback ancien comportement (pas de visuel spécial).
+Migration auto : au boot, scanner `A.employees` et auto-détecter les pit boss via `cmc_pit_boss_list`.
+
+### 7. Test mental
+
+> *"Le parser PDF trouve TOUS les cadres dans une section unifiée (plus de bug 'pit boss manquant'). Les pit boss sont visuellement distinctifs (🎯 or). Kevin peut filtrer pit boss only / all cadres."*
+
+S'applique à CMCteams en priorité.
+
+---
+
 ## 🎙 RÈGLE PERMANENTE — RECONNAISSANCE VOCALE PAR UTILISATEUR (Kevin 2026-04-26, ABSOLUE)
 
 > **"Apex doit reconnaître ma voix quand je dis 'Dis Apex'. Il doit savoir que c'est Kevin DESARZENS admin, même si je suis dans la vue d'un autre client. Il doit agir en tant qu'admin (changer vue, corriger, ajouter, modifier) en sachant sur quel compte je suis et sur lequel agir. Il doit reconnaître les voix de chaque utilisateur dans chaque compte et ne réagir qu'à son utilisateur (pas confondre avec entourage). Mémoriser les voix et accumuler des infos pour cibler de plus en plus. Au début enrôlement (phrase à enregistrer comme visio), ou au premier message chat l'IA capture la voix automatiquement et apprend au fur et à mesure. Tout automatisé."**
