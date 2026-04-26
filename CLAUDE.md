@@ -4,6 +4,157 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🏆 RÈGLE PERMANENTE — NIVEAU PRODUCTION CLAUDE.AI / CHATGPT (Kevin 2026-04-26, ABSOLUE)
+
+> **"Niveau professionnel = Apex doit être aussi stable que Claude.ai, Claude Code ou ChatGPT. Sur Claude, je n'ai pas ce genre de problème. Les timeouts c'est seulement quand je n'ai plus de forfait. Un client qui va payer ne doit avoir AUCUN problème technique. Les seuls blocages = forfaits, accès, autorisations. JAMAIS par rapport au fonctionnement de l'app. Tout auto-géré, corrigé, anticipé."**
+
+**Règle absolue, prioritaire** — pour Apex (priorité), CMCteams, tous projets futurs :
+
+### 1. Standards production minimum (référence Claude.ai/ChatGPT)
+
+Apex DOIT avoir le même niveau de stabilité technique que Claude.ai :
+- ❌ JAMAIS d'erreur technique visible user (sauf forfait)
+- ❌ JAMAIS de "réessayez plus tard"
+- ❌ JAMAIS de spinner infini
+- ❌ JAMAIS de réponse coupée silencieusement
+- ❌ JAMAIS de timeout app (seul timeout valide = quota)
+- ✅ Réponse en moins de 30s (95e percentile)
+- ✅ Stream fluide sans interruption
+- ✅ Recovery automatique transparent
+- ✅ Confirmation visuelle constante
+
+### 2. Idempotency + déduplication (anti-double-trigger)
+
+Chaque requête API a un idempotency-key (UUID) :
+```js
+function axCallClaude(messages, opts){
+  opts = opts||{};
+  if(!opts.idempotencyKey) opts.idempotencyKey = "ax_"+crypto.randomUUID();
+  // Re-send avec MEME key si retry → API recoit pas 2x facturé
+}
+```
+
+Dedup par hash des derniers 3 messages : si user envoie 2x la même requête en <2s → réutiliser réponse précédente (pas appeler API).
+
+### 3. Streaming robuste niveau Claude.ai
+
+- **SSE auto-reconnect** : si stream coupe → reconnect avec `Last-Event-ID` header
+- **Heartbeat keep-alive** : ping toutes 25s pour détecter mort silencieuse
+- **Buffered tokens** : afficher 1 token à la fois progressif (animation typing fluide comme Claude)
+- **Resume partial** : `_apexSavePartialResponse` (déjà v12.288) → bouton "Continuer" si interrompu
+
+### 4. Connection pooling + backpressure
+
+- Max 3 fetch concurrents (sinon queue)
+- Si user spam (>5 msg/10s) → throttle + message poli "Je traite, j'arrive"
+- Garbage collect AbortControllers anciens
+
+### 5. Cache intelligent
+
+- LRU cache des 50 dernières réponses (par hash du prompt)
+- Si user reformule légèrement (Levenshtein <5) → propose la réponse cachée + bouton "Réessayer pour différent"
+- TTL 24h
+- Stockage en IDB (compressed lz-string)
+
+### 6. Distributed tracing
+
+Chaque requête a un `request_id` propagé :
+- En-tête custom `X-Apex-Request-ID`
+- Logué dans `ax_traces` (max 500, rotation FIFO)
+- Vue admin `vTraces` : liste timeline avec status, latence, provider, erreurs
+- Si erreur → chaîne complète pour debug
+
+### 7. Sentry-grade error capture
+
+```js
+window.addEventListener("error", function(e){
+  axCaptureError(e.error || e.message, {source:"window.onerror", stack:e.error&&e.error.stack});
+});
+window.addEventListener("unhandledrejection", function(e){
+  axCaptureError(e.reason, {source:"unhandledrejection", stack:e.reason&&e.reason.stack});
+});
+function axCaptureError(err, ctx){
+  var entry = {
+    msg: String(err&&err.message||err).slice(0,500),
+    stack: String(err&&err.stack||"").slice(0,2000),
+    ctx: ctx||{},
+    ts: Date.now(),
+    user_id: K&&K.user&&K.user.id||"anon",
+    url: location.href,
+    user_agent: navigator.userAgent.slice(0,200),
+    app_version: APP_VER
+  };
+  var log = lg("ax_error_log",[]);
+  log.push(entry);
+  if(log.length>500)log=log.slice(-500);
+  ls("ax_error_log", log);
+  // Push Firebase + handoff
+  if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("err", "error", entry.msg);
+  if(typeof axRecordLesson==="function" && entry.stack)axRecordLesson("error", "Erreur capturee", entry.msg, "warn");
+}
+```
+
+### 8. Distinction technique vs forfait
+
+**Erreur technique** (à AUTO-FIX silencieusement, jamais montrer) :
+- Network error
+- Timeout
+- 500/502/503 serveur
+- CORS
+- Parse error
+
+**Limite forfait** (à montrer clairement avec action) :
+- 401 Unauthorized + "Invalid API key" → "Ta clé API n'est plus valide. Modifie-la dans le Coffre."
+- 429 Too Many Requests → "Tu as atteint ta limite de l'heure. Patiente Xmin OU upgrade plan."
+- 402 Payment Required → "Crédit Anthropic épuisé. Recharge maintenant : [bouton lien direct]"
+- Quota dépassé Anthropic → "Ton forfait Anthropic est consommé. Voici tes options : [3 actions]"
+
+```js
+function axHandleAPIError(error, response){
+  var status = response&&response.status||0;
+  var msg = String(error&&error.message||error);
+  
+  // Forfait/auth = MONTRER avec action claire
+  if(status===401 || /invalid.api.key/i.test(msg)){
+    return axShowQuotaModal("auth", "Ta clé API n'est plus valide", "Modifie dans Coffre", "vault");
+  }
+  if(status===402 || status===429 || /quota|rate.limit|insufficient/i.test(msg)){
+    return axShowQuotaModal("quota", "Limite forfait atteinte", "Recharge ou upgrade", "soldesia");
+  }
+  
+  // Tout le reste = TECHNIQUE = AUTO-FIX silencieux
+  return axSelfHealAI(error);
+}
+```
+
+### 9. Tests stress automatiques (chaos engineering light)
+
+Sentinelle 1×/semaine :
+- Simule 10 requêtes concurrentes
+- Throttle network (50KB/s) 1 minute
+- Provider mock failure
+- Quota exhaustion
+- Mesure recovery time, score
+
+Si recovery >5s → escalade Claude Code todo "Optimiser X".
+
+### 10. Concertation pour atteindre 10/10
+
+Multi-agent à chaque release majeure :
+- Agent Performance Engineer : audit latence, FPS, memory
+- Agent SRE : audit reliability (recovery, failover, monitoring)
+- Agent UX : audit UI cohérence niveau Claude.ai
+- Agent Security : audit auth, secrets
+- Agent QA : tests scenarios end-to-end
+
+### 11. Test mental obligatoire avant chaque release
+
+> *"Si je remplace Apex par Claude.ai dans la même situation, est-ce que l'expérience utilisateur est équivalente ? Si non → identifier précisément le gap + fixer."*
+
+S'applique à Apex (priorité absolue) — clients payants méritent niveau Claude.ai.
+
+---
+
 ## 🚨 RÈGLE PERMANENTE — ANTI-BLOCAGE IA, AUTO-DÉBLOCAGE TOTAL (Kevin 2026-04-26, ABSOLUE)
 
 > **"J'espère que tu as vérifié aussi les problèmes de connexion d'IA, qu'il n'y ait plus d'IA, qu'il n'y plus de réponse, qu'on soit bloqué dans Apex. Ça ne doit jamais arriver. Une solution par Apex ou par les autres IA. Pour se débloquer et redevenir fonctionnel. Je ne dois pas rester bloqué peu importe quand. Tout doit être automatisé pour se débloquer, pour s'arranger, pour anticiper tout problème AVANT qu'il y ait un problème. Tout le monde doit avoir vu et réagi et corrigé pour éviter le problème."**
