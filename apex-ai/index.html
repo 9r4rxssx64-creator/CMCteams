@@ -520,7 +520,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.324",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.325",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -10213,6 +10213,14 @@ function axRunFullAudit(){
 try{setTimeout(function(){if(typeof axRunFullAudit==="function")axRunFullAudit();},10000);setInterval(function(){if(typeof axRunFullAudit==="function")axRunFullAudit();},3600000);}catch(_){}
 
 /* v12.319 — PASSERELLE INTERNE Apex (Kevin: jamais coupe, indicator visible, bouton 1-clic, auto-bascule mode economie) */
+
+
+/* v12.325 — SHIELD CLES CRITIQUES : detection auto perte + restore IDB/Firebase + notif Kevin */
+var AX_CRITICAL_KEYS_SHIELD = ["ax_api_key","ax_github_token","ax_openrouter_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_mistral_key","ax_deepseek_key","ax_perplexity_key","ax_paypal_me","ax_revolut_tag","ax_iban","ax_btc_address","ax_eth_address","ax_push_worker_url","ax_push_admin_token","ax_cloudflare_token","ax_pin","ax_admin_kevin"];
+function _axShieldSnapshot(){try{var snap={};AX_CRITICAL_KEYS_SHIELD.forEach(function(k){var v=localStorage.getItem(k);if(v&&v!=="null"&&v!=="\"\""){snap[k]={v:v,ts:Date.now()};}});if(Object.keys(snap).length){ls("ax_shield_snapshot",snap);try{if(typeof axIdbSet==="function")axIdbSet("ax_shield_snapshot",snap);}catch(_){}}return snap;}catch(_){return{};}}
+function _axShieldRestore(){try{var lost=[];var current=AX_CRITICAL_KEYS_SHIELD.filter(function(k){var v=localStorage.getItem(k);return!v||v==="null"||v==="\"\"";});if(!current.length)return{ok:true,restored:0};/* Tente restore depuis snapshot LS */var snap=lg("ax_shield_snapshot",{});current.forEach(function(k){if(snap[k]&&snap[k].v){try{localStorage.setItem(k,snap[k].v);lost.push({key:k,from:"ls_snapshot"});}catch(_){}}});/* Tente restore depuis IDB */if(typeof axIdbGet==="function"){axIdbGet("ax_shield_snapshot").then(function(idbSnap){if(!idbSnap)return;current.forEach(function(k){if(localStorage.getItem(k))return;if(idbSnap[k]&&idbSnap[k].v){try{localStorage.setItem(k,idbSnap[k].v);lost.push({key:k,from:"idb"});}catch(_){}}});});}/* Audit log + notif si clés critiques perdues */if(lost.length){try{var log=lg("ax_shield_log",[]);log.push({ts:Date.now(),lost:lost,restored:lost.length});if(log.length>50)log=log.slice(-50);ls("ax_shield_log",log);}catch(_){}if(typeof axNotifyKevin==="function")try{axNotifyKevin("🛡 Apex Shield","Restaure auto "+lost.length+" cle(s) critique(s) : "+lost.map(function(l){return l.key;}).join(", "));}catch(_){}}return{ok:true,restored:lost.length,lost:lost};}catch(e){return{ok:false,err:e.message};}}
+/* Snapshot toutes 5 min + auto-restore au boot */
+try{setTimeout(function(){_axShieldSnapshot();_axShieldRestore();},2000);setInterval(_axShieldSnapshot,300000);setInterval(_axShieldRestore,60000);}catch(_){}
 
 /* v12.323 — axMarkRecharge : Kevin recharge -> bascule auto mode performance + reset spend tracker */
 function axMarkRecharge(eurAmount){try{var amt=Number(eurAmount)||50;ls("ax_last_recharge_eur",amt);ls("ax_total_spend_eur",0);ls("ax_warned_low_balance",false);if(lg("ax_economy_mode",false)){ls("ax_economy_mode",false);if(typeof toast==="function")toast("✅ Recharge "+amt+"€ enregistree - bascule AUTO mode performance (Sonnet 4.6)","ok",{force:true,duration:8000});if(typeof axNotifyKevin==="function")try{axNotifyKevin("✅ Apex recharge","Bascule auto mode performance. Solde "+amt+"€");}catch(_){}}else{if(typeof toast==="function")toast("✅ Recharge "+amt+"€ enregistree","ok",{force:true});}try{if(typeof dc==="function")dc();}catch(_){}return true;}catch(e){return false;}}
