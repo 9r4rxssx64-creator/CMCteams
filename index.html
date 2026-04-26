@@ -3308,6 +3308,12 @@ function _cmcDecompress(str){if(typeof str!=="string")return str;if(str.indexOf(
 try{if(typeof window!=="undefined")setTimeout(_cmcLoadLZ,500);}catch(_e){_cmcSafeCatch("cmc-compress",_e);}
 function lg(k,fb){try{var v=localStorage.getItem(k);if(!v)return fb;v=_cmcDecompress(v);return JSON.parse(v);}catch(e){return fb;}}
 function ls(k,v){
+  /* v9.544 BUGFIX #18 audit : cap 500 enforce automatique pour cmc_audit + cmc_chat + cmc_userlog */
+  if(k==="cmc_audit"&&Array.isArray(v)&&v.length>500)v=v.slice(-500);
+  if(k==="cmc_chat"&&Array.isArray(v)&&v.length>500)v=v.slice(-500);
+  if(k==="cmc_userlog"&&Array.isArray(v)&&v.length>500)v=v.slice(-500);
+  if(k==="cmc_audit_security"&&Array.isArray(v)&&v.length>200)v=v.slice(-200);
+  if(k==="cmc_err_log"&&Array.isArray(v)&&v.length>200)v=v.slice(-200);
   var _lsOk=true;
   try{
     var s=JSON.stringify(v);
@@ -3789,6 +3795,9 @@ function empsByTeam(tid){return _empsTeamIndex[tid]||[];}
 function fbApplyData(k,v){
   k=fbRestoreKey(k);
   if(!fbShouldSync(k))return;
+  /* v9.544 BUGFIX #4 SECU : guard prototype injection via clés Firebase malicieuses */
+  if(k==="__proto__"||k==="constructor"||k==="prototype"||/[\.\$#\[\]]/.test(k))return;
+  /* v9.544 BUGFIX SECU : ne JAMAIS appliquer null-overwrite sur données critiques (sauf cmc_motd qui accepte effacement explicite ligne 3805) */
   // v9.68 — cmc_motd accepte null (effacement depuis un autre appareil)
   if(k==="cmc_motd"&&v===null){
     A.motd=null;
@@ -4604,7 +4613,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.543";
+var APP_VER="v9.544";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
