@@ -3630,7 +3630,7 @@ var FB_FIX=["cmc_ov","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cm
 // v9.454 — Memoire permanente CMCteams (Kevin 2026-04-21)
 "cmc_persistent_memory","ax_persistent_memory","cmc_user_prefs","cmc_facts_metier",
 // v9.506 — Memoire pro CMCteams : regles Kevin + handoff + workflow (parite Apex v12.169)
-"cmc_kevin_rules","cmc_user_instructions","cmc_workflow_checklist","cmc_handoff_journal","ax_kevin_rules","ax_lessons_learned","ax_handoff_journal",
+"cmc_kevin_rules","cmc_user_instructions","cmc_workflow_checklist","cmc_handoff_journal","ax_kevin_rules","ax_lessons_learned","ax_lessons_learned_struct","ax_handoff_journal",
 // v9.482 — Niveaux de consommation IA par employe (parite Apex v12.121)
 "cmc_consumption_levels",
 // v9.483 — Niveau IA global pour tous les employes (Kevin: simplifier)
@@ -11064,7 +11064,9 @@ function vCmcMemoryDashboard(){
   h+='</div>';
   return h;
 }
-function _cmcEscalate(ctx,reason){try{var todo=lg("ax_claude_todo",[]);todo.push({ts:Date.now(),src:"cmcteams",v:APP_VER,ctx:ctx,reason:reason,status:"pending"});if(todo.length>100)todo=todo.slice(-100);ls("ax_claude_todo",todo);return"escalated";}catch(e){return"err";}}
+function _cmcEscalate(ctx,reason){try{var todo=lg("ax_claude_todo",[]);todo.push({ts:Date.now(),src:"cmcteams",v:APP_VER,ctx:ctx,reason:reason,status:"pending"});if(todo.length>100)todo=todo.slice(-100);ls("ax_claude_todo",todo);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",todo);}catch(_){}return"escalated";}catch(e){return"err";}}
+/* v9.554 (Kevin 2026-04-26) — cmcRecordLesson : ecrit dans ax_lessons_learned_struct (cross-app FB_FIX). Apex IA et CMCteams partagent les memes lecons. */
+function cmcRecordLesson(category,title,text,severity){try{var lessons=lg("ax_lessons_learned_struct",[]);if(!Array.isArray(lessons))lessons=[];var id="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);lessons.unshift({id:id,category:category||"general",title:String(title||"").slice(0,120),text:String(text||"").slice(0,500),severity:severity||"info",src:"cmcteams",v:APP_VER,ts:Date.now()});if(lessons.length>100)lessons=lessons.slice(0,100);ls("ax_lessons_learned_struct",lessons);if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned_struct",lessons);}catch(_){}/* Aussi sync vers cmc_lessons_learned format historique */try{var local=lg("cmc_lessons_learned",[]);if(!Array.isArray(local))local=[];local.push("["+(category||"gen")+"] "+String(title||"").slice(0,80));if(local.length>80)local=local.slice(-80);ls("cmc_lessons_learned",local);}catch(_){}return id;}catch(_){return null;}}
 // v9.466 — Modal diag cadres pour iPhone (Kevin n a que iPhone, pas console Safari)
 function cmcShowCadresDiagPopup(){
   var diag=lg("cmc_cadres_fallback_diag",null);
