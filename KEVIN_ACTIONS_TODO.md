@@ -1,6 +1,17 @@
 # KEVIN_ACTIONS_TODO.md — Reste vraiment irréductible
 
-> Mis à jour 2026-04-25 (Apex v12.207+) — j'ai automatisé tout ce que je pouvais automatiser.
+> Mis à jour 2026-04-26 (Apex v12.334 + CMCteams v9.559) — j'ai automatisé tout ce que je pouvais automatiser.
+
+## 🆕 NOUVEAUX DOSSIERS PRÊTS À LIRE (2026-04-26)
+
+| Fichier | Contenu | Action Kevin |
+|---------|---------|--------------|
+| `EVALUATION_APEX_2026-04-26.md` | Note externe pro 8.2/10, points forts/faibles, valuation 1.2-2.5M€ | Lire 5 min |
+| `EVALUATION_CMCTEAMS_2026-04-26.md` | Audit CMC 7.9/10, valuation 800k-1.8M€ | Lire 3 min |
+| `BILAN_COMPETENCES_APEX.md` | Inventaire complet 55+ tools, 12 studios, scores par axe | Lire 5 min |
+| `FORFAITS_RECOMMANDES.md` | Grille tarifaire optimisée (Pro 19.99€ recommandé vs 4.99€ actuel) | Décider pricing |
+
+
 
 ---
 
