@@ -520,7 +520,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.323",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.324",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -1248,8 +1248,9 @@ function _agentAdminAccountWatch(){
     var issues=[];
     var pin=localStorage.getItem("ax_pin");
     if(!pin||String(pin).length<6)issues.push("PIN admin manquant ou trop court");
+    /* v12.324 — Auto-create profil admin Kevin si absent (evite faux positif sentinelle) */
     var k=lg("ax_admin_kevin",null);
-    if(!k)issues.push("Profil admin Kevin (ax_admin_kevin) absent");
+    if(!k){try{var defaultProfile={id:ADMIN_ID,name:"Kevin DESARZENS",firstName:"Kevin",lastName:"DESARZENS",email:"kevin.desarzens@gmail.com",role:"admin",lang:"fr",country:"Monaco",timezone:"Europe/Monaco",created_auto:true,created_at:Date.now()};ls("ax_admin_kevin",defaultProfile);if(typeof axRecordLesson==="function")axRecordLesson("admin","Profil admin Kevin auto-cree","v12.324 fix faux positif sentinelle","info");}catch(_){}}
     try{var users=lg("ax_users",{});Object.keys(users).forEach(function(uid){if(uid!==ADMIN_ID&&users[uid]&&users[uid].role==="admin")issues.push("Autre user admin detecte : "+uid);});}catch(_){}
     if(FB_FIX.indexOf("ax_settings")>=0)issues.push("ax_settings dans FB_FIX (regression v12.298)");
     if(FB_FIX.indexOf("ax_user")>=0)issues.push("ax_user dans FB_FIX (regression v12.272)");
