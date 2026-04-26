@@ -396,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.276",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.277",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -841,6 +841,8 @@ function _escalateToClaudeCode(context,reason,severity){try{var todo=lg("ax_clau
 function _triggerGitHubWorkflow(entry){var token=(localStorage.getItem("ax_github_token")||"").replace(/^"|"$/g,"");if(!token)return;var url="https://api.github.com/repos/9r4rxssx64-creator/CMCteams/dispatches";return fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify({event_type:"apex_escalation",client_payload:{reason:String(entry.reason||"").slice(0,200),severity:entry.severity,version:entry.apexVersion,ts:entry.ts}})}).then(function(r){if(r.ok){_snLog("github-dispatch","ok","Workflow Claude Code declenche immediatement (pas d attente cron 15min)");}else{_snLog("github-dispatch","warn","GitHub API "+r.status+" - fallback cron 15min");}}).catch(function(){});}
 function _markTodoResolved(ts,resolution){try{var todo=lg("ax_claude_todo",[]);var found=todo.find(function(t){return t.ts===ts;});if(found){found.status="resolved";found.resolvedAt=Date.now();found.resolution=resolution||"auto";ls("ax_claude_todo",todo);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",todo);}catch(_){}var lesson=lg("ax_lessons_learned",[]);lesson.push({ts:Date.now(),category:"auto-resolution",pattern:found.reason,solution:resolution,context:found.context});if(lesson.length>500)lesson=lesson.slice(-500);ls("ax_lessons_learned",lesson);if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",lesson);}catch(_){}return"resolved + lesson added";}return"ts not found";}catch(e){return"err: "+e;}}
 function flushSyncQueue(){_axSyncQueue=lg("ax_sync_queue",{});var keys=Object.keys(_axSyncQueue);if(!keys.length)return;keys.forEach(function(k){fbWrite(k,_axSyncQueue[k].v);delete _axSyncQueue[k];});ls("ax_sync_queue",_axSyncQueue);toast("Synchronisation terminee","info");}
+/* v12.277 - Auto-flush fbWrite queue 5 min (audit HIGH fix) */
+try{if(typeof _axIntervalAdd==="function")_axIntervalAdd(function(){try{var q=lg("ax_sync_queue",{});if(q&&Object.keys(q).length>=5&&navigator.onLine)flushSyncQueue();}catch(_){}}, 300000, "fb-queue-auto-flush-5min");}catch(_){}
 
 // --- Securite ---
 function axIsAdmin(){return K.user&&K.user.id===ADMIN_ID;}
