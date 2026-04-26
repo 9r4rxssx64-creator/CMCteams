@@ -1,6 +1,70 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.512 / Apex v12.191 (2026-04-25).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Apex v12.298 / CMC v9.551).
+
+---
+
+## 🤝 RÈGLE PERMANENTE — CONCERTATION + MÉMOIRE TOTALE (Kevin 2026-04-26, ABSOLUE)
+
+> **"Tu te rappelles et tu appliques tout le temps tout ce que je viens de te dire. Pour ce que l'on a fait et l'avenir aussi, tout ce que je vais te demander. Tu notes et tu t'en rappelles et tu l'appliques tout le temps. Tu te réfères toujours à tes documents de tes méthodes de travail et tout ce que tu as comme dossier. Tu concertes aussi avec les autres IA intégrées. Tu peux demander de l'aide à Apex aussi, concerte bien avec Apex pour améliorer et que lui fasse des tests de son côté. Travailler ensemble. Maximum."**
+
+**Règle absolue, prioritaire sur tout** — pour Apex, CMCteams, tous projets futurs et chaque interaction Kevin :
+
+### 1. Mémoire totale & application permanente
+
+À chaque interaction Kevin (sans exception) :
+- **Lire CLAUDE.md complet** au début de chaque session — toutes les règles permanentes
+- **Lire NOTES_USER.md** — infos métier & préférences
+- **Lire MEMO_RESUME.md** — état où on en est
+- **Lire KEVIN_ACTIONS_TODO.md** — tâches Kevin en attente
+- **Lire CLAUDE_HANDOFF.json** — communication bidirectionnelle Apex<>Claude
+- **Relire dossiers skills** : APPLE_IOS_SKILLS, ANDROID_SKILLS, GOOGLE_APIS, AUTOMATION_HUB, etc.
+
+Aucune règle Kevin ne doit être oubliée. Si je détecte un conflit entre 2 règles → revenir voir Kevin.
+
+### 2. Concertation avec autres IA (multi-agent)
+
+Pour CHAQUE tâche non triviale, je dois :
+- **Lancer 3-5 subagents Explore en parallèle** sur des angles différents (audit, perf, sécu, UX, créativité)
+- **Demander à Apex IA** de tester/valider via :
+  - `CLAUDE_HANDOFF.json` : écrire une demande de test → l'IA Apex de Kevin peut l'exécuter et reporter
+  - Firebase `ax_claude_todo` : pousser des tâches qu'Apex peut traiter en autonomie
+  - `ax_telemetry_in` : remonter des bugs détectés
+- **Crew d'experts** (5+ agents indépendants reviewers, debaters, devil's advocate) avant de livrer
+
+### 3. Travail collaboratif Apex<>Claude Code
+
+Apex peut faire des tests côté browser que je ne peux pas faire :
+- Vérifier qu'un bouton clique vraiment
+- Vérifier qu'une API répond (avec la vraie clé de Kevin)
+- Tester un workflow utilisateur complet
+- Mesurer FPS/latence réelle
+
+Pour exploiter ça :
+- À chaque feature livrée, créer un **test plan** dans `CLAUDE_HANDOFF.json` que l'IA Apex va exécuter
+- Apex pousse résultat dans `ax_handoff_journal` → moi je le lis dans la session suivante
+- Si test échoue → je fix + repush + retest
+
+### 4. Autonomie maximum
+
+- Ne jamais demander confirmation pour les évidences
+- Lancer les agents en parallèle dès qu'on identifie 2+ pistes non-dépendantes
+- Push direct sur main pour fixes critiques (sécu, debug bloquant Kevin)
+- GitHub Actions auto-merge.yml prend le relais pour les autres cas
+
+### 5. Bugs traçables
+
+Quand un bug est trouvé (par moi, agent, Kevin, Apex), il rentre :
+- Dans CLAUDE.md "Erreurs connues à NE PAS reproduire" (numéroté)
+- Dans `ax_lessons_learned_struct` Firebase (cross-app)
+- Dans CLAUDE_HANDOFF.json `notes_for_apex`
+- Avec fix appliqué + version + commit SHA
+
+### 6. Test mental obligatoire avant chaque réponse
+
+> *"Ai-je relu mes règles permanentes ? Ai-je lancé les subagents nécessaires ? Ai-je proposé que Apex teste de son côté ? Mon fix prend-il en compte tous les vecteurs identifiés (audit complet, pas partiel) ?"*
+
+Si non → reprendre.
 
 ---
 
