@@ -4,6 +4,186 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 👑 RÈGLE PERMANENTE — COMPTE ADMIN UNIQUE KEVIN + PERMISSIONS TIERED LAURENCE (Kevin 2026-04-26, ABSOLUE)
+
+> **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN 200807, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
+
+**Règle absolue, prioritaire** — pour Apex (compte admin Kevin), CMCteams (admin AID U11804) :
+
+### 1. Compte admin Kevin UNIQUE — tous aliases reconnus
+
+`ADMIN_ID` = `"kdmc_admin"` (Apex) / `"U11804"` (CMCteams). Le système doit reconnaître Kevin via TOUS ces aliases :
+
+```js
+var ADMIN_KEVIN_ALIASES = [
+  "Kevin DESARZENS",
+  "Kevin Desarzens",
+  "kevin desarzens",
+  "DESARZENS Kevin",
+  "Desarzens Kevin",
+  "Kevin",          // PRÉNOM SEUL admin (autorisé pour Kevin)
+  "kevin",
+  "DESARZENS",       // NOM SEUL admin
+  "Desarzens",
+  "kevin.desarzens@gmail.com",  // EMAIL
+  "kevin.desarzens",
+  "K DESARZENS",
+  "K. DESARZENS",
+  "KD",
+  "KDMC"
+];
+```
+
+Login : si user tape n'importe quel alias + PIN admin (200807, customizable) → identifie comme admin Kevin.
+
+### 2. PIN admin sécurisé
+
+PIN courant : `200807` (modifiable par Kevin via vSettings → "Changer PIN admin").
+
+Sécurité PIN admin :
+- Hash strict `axHashPin(pin, salt)` avec PBKDF2 100k iterations
+- Stocké dans `ax_pin` (clé GLOBAL admin, JAMAIS écrasée par PIN per-user)
+- Rate-limit progressif : 5 fails → 30s, 6 fails → 2min, 7 fails → 10min, 8 fails → 1h, 9 fails → 24h
+- Si 5+ fails consécutifs → notification push + email Kevin
+- Audit log obligatoire sur chaque tentative (success ou fail)
+
+### 3. _checkPreconfiguredUser strict pour Kevin
+
+```js
+function _isKevinAdmin(name){
+  if(!name) return false;
+  var n = String(name).trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim();
+  // Match exact alias
+  for(var i=0;i<ADMIN_KEVIN_ALIASES.length;i++){
+    var a = ADMIN_KEVIN_ALIASES[i].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim();
+    if(n === a) return true;
+  }
+  // Tokens : si TOUS les tokens du nom matchent un alias multi-mots
+  var tokens = n.split(/\s+/).filter(Boolean);
+  if(tokens.length >= 1){
+    for(var j=0;j<ADMIN_KEVIN_ALIASES.length;j++){
+      var aTokens = ADMIN_KEVIN_ALIASES[j].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim().split(/\s+/);
+      if(tokens.every(function(t){return aTokens.indexOf(t)>=0 && t.length>=4;})) return true;
+    }
+  }
+  return false;
+}
+
+function axLogin(name, pin){
+  // Si admin Kevin reconnu → check PIN admin global
+  if(_isKevinAdmin(name)){
+    if(axCheckPin(pin)){
+      K.user = {id:ADMIN_ID, name:"Kevin DESARZENS", email:"kevin.desarzens@gmail.com", role:"admin"};
+      // ... rest of login flow
+    }
+    return false;
+  }
+  // Sinon : check user pré-configuré (Laurence etc.)
+  ...
+}
+```
+
+### 4. Permissions tiered Laurence (et autres clients)
+
+Système 3 niveaux de permissions :
+
+#### Niveau A — Auto (Laurence fait sans demander)
+- Lire ses propres données
+- Modifier son profil (nom, email, photo, préférences)
+- Envoyer messages chat
+- Utiliser studios (musique, vidéo, archi, etc.)
+- Demander à l'IA, web search, browser embed
+- Gérer ses propres conversations
+- Activer/désactiver ses propres notifications
+- Wake word, voix, dictée
+
+#### Niveau B — Notifie Kevin (Laurence fait + Kevin reçoit info)
+- Connexion / déconnexion
+- Achat sur abonnement
+- Upload fichier > 5MB
+- Modification preferences importantes
+- Erreurs critiques rencontrées
+
+→ Push notif Kevin "Laurence vient de [action]"
+
+#### Niveau C — Demande validation Kevin (bloqué tant que Kevin pas validé)
+- **Effacement compte** (RGPD erase)
+- **Export données complet** (RGPD export)
+- **Modification email principal**
+- **Modification PIN/password**
+- **Achat > 50€**
+- **Suppression conversations historiques**
+- **Activation features beta**
+- **Connexion depuis nouveau device** (FaceID setup nouveau)
+
+→ Modal Laurence "En attente validation Kevin..." + push Kevin avec boutons "✅ Autoriser" / "❌ Refuser"
+
+```js
+var AX_PERMISSIONS_LAURENCE = {
+  auto: ["read_self", "edit_profile", "chat", "use_studios", "ai_query", "browser", "manage_convs", "manage_notifs", "voice"],
+  notify: ["login", "logout", "subscribe", "upload_large", "preferences_change", "error_critical"],
+  validate: ["erase_account", "export_data", "change_email", "change_pin", "purchase_above_50", "delete_history", "beta_features", "new_device"]
+};
+
+function axPermissionCheck(action){
+  if(!K.user) return {allowed:false};
+  if(K.user.id === ADMIN_ID) return {allowed:true};
+  var lvl = "auto";
+  if(AX_PERMISSIONS_LAURENCE.validate.indexOf(action)>=0) lvl = "validate";
+  else if(AX_PERMISSIONS_LAURENCE.notify.indexOf(action)>=0) lvl = "notify";
+  
+  if(lvl==="auto") return {allowed:true};
+  if(lvl==="notify") {
+    axNotifyKevin("Laurence: "+action);
+    return {allowed:true, notify:true};
+  }
+  // validate : push notif Kevin avec boutons + bloque action jusqu'à réponse
+  return {allowed:false, pending:true, requestId: axRequestKevinValidation(action)};
+}
+```
+
+### 5. Historique Laurence sur sa fiche admin
+
+Vue admin `vClientProfile(uid)` → onglet "📜 Historique" :
+- Toutes les actions Laurence (login, modification, achats, erreurs)
+- Filtres : tâches importantes / toutes / niveau A/B/C
+- Recherche, période
+- Export CSV
+
+Stocké dans `ax_user_activity_<uid>` (max 1000 entries FIFO, FB_FIX shared admin).
+
+### 6. Push notifications Kevin
+
+Quand action niveau B ou C → push notif via Cloudflare Worker (déjà déployé v12.203) :
+```js
+function axNotifyKevin(title, body, requestId){
+  var url = lg("ax_push_worker_url", "");
+  if(!url) return;
+  fetch(url+"/send", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+lg("ax_push_admin_token","")},
+    body: JSON.stringify({title:title, body:body, requestId:requestId, action_buttons:requestId?[{title:"✅",action:"approve_"+requestId},{title:"❌",action:"reject_"+requestId}]:[]})
+  });
+}
+```
+
+### 7. Sentinelle `admin-account-watch` quotidienne
+
+Vérifie :
+- Aucune autre fiche utilisateur n'a `role:"admin"` ou ID = ADMIN_ID
+- ADMIN_KEVIN_ALIASES couvre bien tous les aliases connus
+- PIN admin n'est pas dans format faible (≥4 chars, hash $iter$salt$hash)
+- Aucune contamination cross-user dans K.settings du compte admin
+- Si anomalie → alerte admin + log
+
+### 8. Test mental obligatoire
+
+> *"Si Kevin tape 'Kevin' + 200807 → reconnu admin ? OK. Si tape 'kevin.desarzens@gmail.com' + 200807 → reconnu admin ? OK. Si tape 'KD' + 200807 → reconnu admin ? OK. Si Laurence tape 'Kevin' + son PIN à elle → REFUSÉ ? OK. Si Laurence veut effacer son compte → demande Kevin ? OK. Si Laurence change son email → demande Kevin ? OK. Si Laurence ajoute un favori → fait sans demander ? OK."*
+
+S'applique à Apex (priorité) puis CMCteams (admin AID U11804 avec mêmes aliases Kevin DESARZENS).
+
+---
+
 ## 🛡️ RÈGLE PERMANENTE — BROWSER SANS BLOCAGE + SECU AGENTS PROTECTION (Kevin 2026-04-26, ABSOLUE)
 
 > **"Une fois internet lancé on est derrière un pare-feu. Apex doit être protégé contre les intrusions/malveillance par des agents. Mais on a accès à TOUS les sites sans jamais être bloqué. S'il y a blocage, Apex doit réagir et débloquer, contourner, trouver une solution. Jamais bloqué par autorisations/pare-feu/VPN. Équipé de tous les outils pour contourner. Anticipe, sait réagir toujours. En autonomie totale."**
