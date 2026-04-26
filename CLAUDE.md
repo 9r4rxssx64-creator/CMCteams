@@ -4,6 +4,110 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🎯 RÈGLE PERMANENTE — ZÉRO DOUBLON UX, SOURCE UNIQUE (Kevin 2026-04-26, ABSOLUE)
+
+> **"J'ai encore les doublons des infos pour les API, les machins. J'en ai dans les paramètres, j'en ai dans le coffre. UX pas assez poussée, pas assez ordonnée, pas assez de changements clairs et précis. Sans perdre d'information sans en manquer. Tout ce qu'il faut par rapport à notre utilisation, à tout ce qu'on a. Déjà rempli par toi. Avec toutes les informations que tu as et sauvegardé pour toujours dans Apex et CMCteams."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. UNE SEULE source de saisie par donnée
+
+Chaque clé/secret/credential a UN SEUL endroit d'édition autoritaire :
+
+| Type donnée | Source UNIQUE | Vues "lecture seule" | Action |
+|-------------|--------------|---------------------|--------|
+| Clés API IA (`ax_api_key`, `ax_openai_key`, `ax_gemini_key`, etc.) | **vVault** (Coffre) | vSettings, vAIProviders, vSoldesIA, vAllConfig | Lecture statut + bouton "Modifier dans Coffre" → navigateAndScroll |
+| Paiements (`ax_paypal_me`, `ax_revolut_tag`, `ax_iban`, `ax_btc_address`) | **vVault** | vAdminLinks, vSoldesIA | Idem |
+| Intégrations (`ax_github_token`, `ax_cloudflare_token`, `ax_push_worker_url`, etc.) | **vVault** | vAccountsBilling, vAllConfig | Idem |
+| Profil user (`ax_user_name`, email, lang, model, theme) | **vSettings** | vAllConfig (lecture) | Bouton "Modifier dans Réglages" |
+| Notifications (`ax_push_subs`, `ax_push_settings`) | **vSettings** | vAllConfig | Idem |
+
+**Aucune duplication d'input pour la même clé.** Si la donnée s'affiche dans 5 vues, elle s'édite dans 1 seule.
+
+### 2. Composant standardisé `axRenderCredentialReadonly(key, fallbackTo)`
+
+Au lieu d'écrire l'input 5 fois, fonction unique qui affiche :
+- Statut couleur (🟢 OK / ⚪ Non config / 🟠 Auto-rempli / 🔴 Requis)
+- Valeur masquée si secret (`sk-***...***ab12`)
+- Bouton "✏️ Modifier" → `axNavigateTo(fallbackTo)` qui ouvre vVault au bon scroll/highlight
+
+```js
+function axRenderCredentialReadonly(key, fallbackTo){
+  var v = lg(key, "");
+  var status = v ? "🟢 Configure" : "⚪ Non configure";
+  var masked = v ? (v.slice(0,4)+"***"+v.slice(-4)) : "—";
+  return '<div class="ax-cred-row">' +
+    '<span class="ax-cred-status">'+status+'</span>' +
+    '<code class="ax-cred-masked">'+esc(masked)+'</code>' +
+    '<button class="ax-btn ax-btn-outline" onclick="axNavigateTo(\''+fallbackTo+'\')">✏️ Modifier dans Coffre</button>' +
+    '</div>';
+}
+```
+
+### 3. Auto-fill au login user (toutes les infos déjà connues)
+
+Au premier login user (admin Kevin OU user pré-configuré), Apex DOIT auto-remplir toutes les infos qu'il connaît déjà. Ne JAMAIS demander une info que Kevin a déjà donnée historiquement.
+
+**Pour Kevin (admin)** — auto-rempli au boot si manquant :
+```
+ax_user_name = "Kevin DESARZENS"
+ax_user_email = "kevin.desarzens@gmail.com"
+ax_iban_nom = "Kevin DESARZENS"
+ax_revolut_tag = "@kdmc"
+ax_push_worker_url = "https://apex-push-worker.desarzens-kevin.workers.dev"
+ax_settings.lang = "fr"
+ax_settings.country = "Monaco"
+ax_settings.model = "claude-sonnet-4-6"
+ax_settings.theme = "dark"
+ax_settings.timezone = "Europe/Monaco"
+ax_settings.currency = "EUR"
+ax_vapid_public = "[clé publique générée v12.207]"
+ax_firebase_url = "https://kdmc-clients-default-rtdb.firebaseio.com"
+```
+
+Secrets JAMAIS auto-remplis (Anthropic key, OpenAI, etc.) — ces clés Kevin doit les coller une seule fois dans Coffre.
+
+**Pour Laurence et autres clients pré-configurés** : auto-fill leur profil (nom, prénom, email si fourni à l'inscription) via `PRECONFIGURED_USERS`.
+
+### 4. Sauvegarde permanente garantie
+
+Les données auto-remplies vont dans :
+- localStorage immédiat
+- IndexedDB shadow copy (Apex `axIdbSet`, CMCteams `cmcIdbSet`)
+- Firebase via FB_FIX (sauf identité user qui reste FB_LOCAL)
+- Backup quotidien Firebase
+
+Si Kevin réinstalle l'app → toutes les valeurs auto-rempli sont restaurées au boot via `axRestoreFromAll()` (sans qu'il ait à ressaisir).
+
+### 5. Sentinelle `dedup-watch` quotidienne
+
+Tourne 1×/jour. Audit :
+1. Pour chaque clé `ax_*_key|paypal|iban|revolut`, compter le nombre d'inputs HTML qui l'écrivent (`grep "id='ax-vault-...'\|onchange=\"ls('ax_..." apex-ai/index.html`)
+2. Si > 1 input pour la même clé → log warning "duplicate UI"
+3. Escalade Claude Code si > 3 doublons trouvés
+
+### 6. Test mental obligatoire avant chaque commit UX
+
+> *"Cette feature crée-t-elle un nouveau champ de saisie pour une donnée déjà éditable ailleurs ? Si oui → ANNULER l'input et utiliser axRenderCredentialReadonly. Sinon → OK."*
+
+Si non → reprendre.
+
+### 7. Plan déduplication progressive (à exécuter)
+
+À faire systématiquement dans toutes les vues existantes :
+1. **vSettings** : retirer tous les inputs `ax_*_key` → utiliser `axRenderCredentialReadonly`
+2. **vAIProviders** : pareil pour clés IA
+3. **vSoldesIA** : déjà OK (lecture seule)
+4. **vAccountsBilling** : retirer inputs paiement → lecture seule
+5. **vAllConfig** : déjà fait (sections cliquables vers vVault)
+6. **vAdminLinks** : retirer inputs → boutons navigate vers vVault
+
+Documenter la migration dans la version concernée.
+
+S'applique à Apex ET CMCteams.
+
+---
+
 ## 🎨 RÈGLE PERMANENTE — UX ÉPURÉE CLIENT + AUTO-OUTILS CONTEXTUELS (Kevin 2026-04-26, ABSOLUE)
 
 > **"UX simplifiée comme un enfant de 5 ans pour TOUS les clients (sauf admin Kevin). Après login + choix abonnement → page chat directe. Apex dit 'Bonjour [Prénom Nom], qu'est-ce que je peux faire pour toi ?' Selon la conversation, Apex sort AUTOMATIQUEMENT l'outil adapté : musique → table mixage dernier cri, vidéo → studio montage, architecture → outils archi, admin/lois → bloc-notes structuré. Les outils s'ajoutent au fur et à mesure des besoins. Conversations sauvegardées avec nom de thème auto, accessibles via sidebar. Minimum visible au début, épurée max. Style Claude.ai."**
