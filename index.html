@@ -4683,7 +4683,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.551";
+var APP_VER="v9.553";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -27666,6 +27666,55 @@ function empAutoSaveProfil(){
 // v9.102 — Auto-v\u00e9rification AUTOMATIQUE apr\u00e8s chaque import (sans intervention admin)
 // Lance les 4 audits + affiche un r\u00e9sum\u00e9 visuel dans #impAutoVerify + toast
 // v9.104 — Auto-vérif COMPLÈTE + auto-corrections safe + boutons manuels
+// v9.553 (Kevin 2026-04-26 URGENT BUG IMPORT) - Sentinelle post-import obligatoire.
+// Verifie qu'un import "ok" a vraiment applique des codes a >=50% des employes actifs.
+// Sinon : affiche alerte rouge + bouton re-tenter + telemetry escalade Apex.
+// Detecte les regressions silencieuses (ex: TypeError catch global avant fix v9.553).
+function _postValidateImport(iy,im,okCount,errCount,errLines){
+  try{
+    var key=iy+"-"+im;
+    var ov=A.overrides[key]||{};
+    var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
+    if(totalActive===0)return;
+    var withCodes=Object.keys(ov).filter(function(eid){
+      var dm=ov[eid]||{};
+      return Object.keys(dm).filter(function(d){return !!dm[d];}).length>0;
+    }).length;
+    var coverage=withCodes/totalActive;
+    var coveragePct=Math.round(coverage*100);
+    try{
+      var ilog=lg("cmc_import_log",[]);
+      ilog.push({ts:Date.now(),y:iy,m:im,totalActive:totalActive,withCodes:withCodes,
+        coveragePct:coveragePct,okCount:okCount,errCount:errCount,
+        agent:"post_validate",src:"_postValidateImport"});
+      if(ilog.length>200)ilog=ilog.slice(-200);
+      ls("cmc_import_log",ilog);
+    }catch(_){}
+    if(coverage<0.5){
+      try{if(typeof _pushTelemetryToApex==="function"){
+        _pushTelemetryToApex("import-watch","err",
+          "Import "+MFR[im]+" "+iy+" : seulement "+withCodes+"/"+totalActive+" emps avec codes ("+coveragePct+"%). Probable regression parser PDF.");
+      }}catch(_){}
+      var r=document.getElementById("impRes");
+      if(r){
+        var alertHtml='<div id="postValidateAlert" style="margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(224,64,64,.20),rgba(192,32,32,.10));border:2px solid #e04040;border-radius:12px;color:#ffe0e0">'
+          +'<div style="font-size:17px;font-weight:800;color:#ff6060;margin-bottom:8px">REGRESSION DETECTEE - Import probablement incomplet</div>'
+          +'<div style="font-size:14px;line-height:1.5;margin-bottom:10px">L\'import dit "OK" mais seulement <b>'+withCodes+' / '+totalActive+'</b> employes actifs ont des horaires ('+coveragePct+'%). Normalement >=80%.</div>'
+          +'<div style="font-size:13px;color:#ffb0b0;margin-bottom:10px">Causes possibles : (1) PDF mal copie-colle, (2) format PDF change, (3) bug parser. La sentinelle a deja escalade vers Apex.</div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +'<button onclick="document.getElementById(\'postValidateAlert\').remove();setTimeout(function(){_importInProgress=false;doImport();},100);" style="flex:1;min-width:160px;min-height:44px;padding:11px;background:rgba(201,162,39,.20);border:1px solid rgba(201,162,39,.6);color:#c9a227;border-radius:10px;cursor:pointer;font-weight:800">Re-tenter import</button>'
+          +'<button onclick="cmcImportTests()" style="flex:1;min-width:160px;min-height:44px;padding:11px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.6);color:#4aa0ff;border-radius:10px;cursor:pointer;font-weight:800">Tester parser</button>'
+          +'<button onclick="sv(\'auditlog\')" style="flex:1;min-width:160px;min-height:44px;padding:11px;background:rgba(160,96,255,.20);border:1px solid rgba(160,96,255,.6);color:#c080ff;border-radius:10px;cursor:pointer;font-weight:800">Voir audit</button>'
+          +'</div>'
+          +'</div>';
+        r.innerHTML+=alertHtml;
+      }
+      try{_audit("import_low_coverage",(A.user&&A.user.id)||"",MFR[im]+" "+iy,coveragePct+"%",withCodes+"/"+totalActive);}catch(_){}
+      try{toast("Import incomplet : "+coveragePct+"% des emps couverts","err",6000);}catch(_){}
+    }
+  }catch(_e){console.warn("[_postValidateImport] err",_e&&_e.message);}
+}
+
 function _autoVerifyAfterImport(iy,im){
   if(!A.user||A.user.id!==AID)return;
   var zone=document.getElementById("impAutoVerify");
@@ -30110,6 +30159,13 @@ function doImport(){
       _depSugg.push(emp);
     });
   })();
+  // v9.553 (Kevin 2026-04-26 URGENT BUG IMPORT) - FIX critique :
+  // notFoundNames etait UTILISE ligne suivante AVANT sa declaration (var hoisting -> undefined).
+  // -> undefined.slice() throw TypeError -> catch global affichait "Erreur import"
+  // SAUF que ls(cmc_ov) etait deja fait ligne 30089. Mais banner final + flush Firebase +
+  // runVerification + dc() JAMAIS atteints -> aucun horaire affiche apres "tout va bien".
+  // FIX : declarer notFoundNames AVANT son usage.
+  var notFoundNames=errLines.filter(function(l){return l.indexOf("INTROUVABLE")===0;}).map(function(l){return l.replace("INTROUVABLE (skipped): ","");});
   A.importSuggestions={newEmps:notFoundNames.slice(),possibleRetired:_depSugg};
   // Lancer la v\u00e9rification automatique
   var verif=runVerification(iy,im,refData);
@@ -30121,8 +30177,7 @@ function doImport(){
     ?" \u26a0\ufe0f "+verif.errors.length+" ERREUR(S) D\u00c9TECT\u00c9E(S) \u2014 voir onglet Aide"
     :" \u2705 V\u00e9rification OK \u2014 tous les horaires correspondent";
   var errPart=err?" \u00b7 <span style='color:#c9a227'>"+err+" employ\u00e9(s) introuvable(s)</span>":"";
-  // Afficher les noms introuvables
-  var notFoundNames=errLines.filter(function(l){return l.indexOf("INTROUVABLE")===0;}).map(function(l){return l.replace("INTROUVABLE (skipped): ","");});
+  // notFoundNames declare plus haut (v9.553 fix)
   var verifCol=verif.errors.length?"#c9a227":"#3a8a50";
   var errMsgs=verif.errors.length?verif.errors.slice(0,5).map(function(e){return esc(e.msg);}).join('<br>'):"";
   var plusMore=verif.errors.length>5?" <i>(+"+(verif.errors.length-5)+" autres)</i>":"";
