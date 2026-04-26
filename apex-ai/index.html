@@ -396,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.267",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.268",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -423,7 +423,7 @@ function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https:
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_admin_token","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log","ax_permissions_bundle","ax_user_theme","ax_pin_fails","ax_security_log","ax_claude_code_handoff"];
+var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin","ax_settings","ax_devices","ax_audit","ax_usage","ax_user","ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_cloudflare_token","ax_vercel_token","ax_agent_secret","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_admin_token","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log","ax_permissions_bundle","ax_user_theme","ax_pin_fails","ax_security_log","ax_claude_code_handoff","ax_profile_changes_log","ax_session_timeout","ax_2fa_settings","ax_fb_rate_limit"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -819,6 +819,7 @@ try{setTimeout(function(){if(navigator.onLine)axRestoreFromAll();},3500);_axInte
 // v12.8 — Pipeline autonomie : Apex AI traite la telemetry recue de CMCteams/autres apps
 function _processIncomingTelemetry(buffer){try{if(!Array.isArray(buffer)||!axIsAdmin())return;var changed=false;buffer.forEach(function(entry){if(!entry||entry.processed)return;if(entry.kind!=="err"&&entry.kind!=="warn")return;_snLog("telemetry-in","info","["+entry.src+"@"+entry.v+"] "+entry.id+": "+String(entry.msg).slice(0,80));_aiHandleIssue("cross-app-"+entry.src+"-"+entry.id,entry.kind,"["+entry.src+" "+entry.v+"] "+entry.msg);entry.processed=true;entry.processedBy=APP_VER;entry.processedAt=Date.now();changed=true;});if(changed)ls("ax_telemetry_in",buffer);}catch(e){_snLog("telemetry-in","err",String(e).slice(0,80));}}
 // v12.8 — Escalade Claude Code : si l'IA Apex ne sait pas resoudre, push dans outbox lu a la prochaine session Claude
+/** Push entry into ax_claude_todo Firebase queue for Claude Code worker. @param {Object} context. @param {string} reason. @param {string} severity normal|warn|critical. @returns {string} status */
 function _escalateToClaudeCode(context,reason,severity){try{var todo=lg("ax_claude_todo",[]);var sev=severity||"normal";/* v12.248 — sanitize secrets avant push Firebase */var safeCtx=(typeof _sanitizeSecrets==="function")?_sanitizeSecrets(context):context;var safeReason=(typeof _sanitizeSecrets==="function")?_sanitizeSecrets(String(reason||"")):String(reason||"");var safeErrs=lg("ax_err_log",[]).slice(0,5).map(function(e){var m=String(e.msg||"");return (typeof _sanitizeSecrets==="function")?_sanitizeSecrets(m):m;});var entry={ts:Date.now(),apexVersion:APP_VER,context:safeCtx,reason:safeReason,severity:sev,status:"pending",url:location.href,userAgent:navigator.userAgent.slice(0,100),userId:K.user?K.user.id:"anonymous",lastErrors:safeErrs,attempts:0};todo.push(entry);if(todo.length>100)todo=todo.slice(-100);ls("ax_claude_todo",todo);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",todo);}catch(_){}try{if(typeof axSecurityLog==="function")axSecurityLog("escalate_"+sev,String(safeReason).slice(0,120));}catch(_){}_snLog("escalate",sev==="critical"?"err":"info","→ Claude Code ["+sev+"]: "+String(safeReason).slice(0,80));if(sev==="critical"&&K.user&&K.user.id===ADMIN_ID){toast("Escalade critique envoyee a Claude Code","warn",{force:true});}if(sev==="critical")try{_triggerGitHubWorkflow(entry);}catch(_){}return"escalated";}catch(e){return"escalate-err: "+e;}}
 function _triggerGitHubWorkflow(entry){var token=(localStorage.getItem("ax_github_token")||"").replace(/^"|"$/g,"");if(!token)return;var url="https://api.github.com/repos/9r4rxssx64-creator/CMCteams/dispatches";return fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify({event_type:"apex_escalation",client_payload:{reason:String(entry.reason||"").slice(0,200),severity:entry.severity,version:entry.apexVersion,ts:entry.ts}})}).then(function(r){if(r.ok){_snLog("github-dispatch","ok","Workflow Claude Code declenche immediatement (pas d attente cron 15min)");}else{_snLog("github-dispatch","warn","GitHub API "+r.status+" - fallback cron 15min");}}).catch(function(){});}
 function _markTodoResolved(ts,resolution){try{var todo=lg("ax_claude_todo",[]);var found=todo.find(function(t){return t.ts===ts;});if(found){found.status="resolved";found.resolvedAt=Date.now();found.resolution=resolution||"auto";ls("ax_claude_todo",todo);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",todo);}catch(_){}var lesson=lg("ax_lessons_learned",[]);lesson.push({ts:Date.now(),category:"auto-resolution",pattern:found.reason,solution:resolution,context:found.context});if(lesson.length>500)lesson=lesson.slice(-500);ls("ax_lessons_learned",lesson);if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",lesson);}catch(_){}return"resolved + lesson added";}return"ts not found";}catch(e){return"err: "+e;}}
@@ -906,6 +907,7 @@ function axSetPin(pin){var h=axHashPin(pin);localStorage.setItem("ax_pin",JSON.s
 function axGetUserPin(uid){if(!uid)return null;return lg("ax_user_pin_"+uid,null);}
 /* v12.248 — atomic ax_pin_changed BEFORE write + read-back retry + axSecurityLog */
 function axSetUserPin(uid,pin){if(!uid||!pin)return false;try{ls("ax_pin_changed_"+uid,true);}catch(_e){_axSafeCatch("ax-setuserpin",_e);}var h=axHashPin(pin);ls("ax_user_pin_"+uid,h);var rb=lg("ax_user_pin_"+uid,null);if(rb!==h){try{ls("ax_user_pin_"+uid,h);}catch(_e){_axSafeCatch("ax-setuserpin",_e);}rb=lg("ax_user_pin_"+uid,null);}var ok=(rb===h);try{if(typeof axSecurityLog==="function")axSecurityLog("pin_change",ok?"ok":"write-mismatch",uid);}catch(_e){_axSafeCatch("ax-setuserpin",_e);}try{toast(ok?"PIN enregistre":"PIN partiel - reessaie","ok");}catch(_e){_axSafeCatch("ax-setuserpin",_e);}return ok;}
+/** @param {string} uid. @param {string} pin Plain text. @returns {boolean} true si hash match. */
 function axCheckUserPin(uid,pin){var h=axGetUserPin(uid);if(!h||!pin)return false;return axHashPin(pin)===h;}
 /* v12.248 — Sanitizer secrets (api keys, PIN, tokens) avant ecriture Firebase */
 function _sanitizeSecrets(obj){try{var seen=[];var rep=function(s){if(typeof s!=="string")return s;return s.replace(/sk-[A-Za-z0-9_\-]{20,}/g,"[REDACTED_KEY]").replace(/AIza[A-Za-z0-9_\-]{20,}/g,"[REDACTED_GOOGLE]").replace(/Bearer\s+[A-Za-z0-9_\-\.]+/gi,"Bearer [REDACTED]").replace(/pin[\s:=]+\d{4,}/gi,"pin=[REDACTED]").replace(/password[\s:=]+\S+/gi,"password=[REDACTED]").replace(/[A-Za-z0-9_\-]{40,}/g,"[REDACTED_TOKEN]");};var walk=function(v){if(v===null||v===undefined)return v;if(typeof v==="string")return rep(v);if(typeof v!=="object")return v;if(seen.indexOf(v)>=0)return"[Circular]";seen.push(v);if(Array.isArray(v))return v.map(walk);var out={};Object.keys(v).forEach(function(k){if(/key|token|pin|password|secret|salt|hash/i.test(k)){out[k]="[REDACTED]";}else{out[k]=walk(v[k]);}});return out;};return walk(obj);}catch(e){return"[sanitize-err]";}}
@@ -1689,6 +1691,7 @@ function _importVault(input){if(!input.files||!input.files[0])return;var pin=pro
 var _axSlideshowTimer=null;
 function axGetUserTheme(uid){if(!uid)return null;var t=lg("ax_user_theme_"+uid,null);if(!t&&uid==="user_laurence"){t={bubbles:["🫶🏻","♥️","😘","💕"],bubbleCount:8,bubbleSpeed:1,wallpaper:{url:"",enabled:false,opacity:0.3,blur:5},slideshow:{photos:[],enabled:false,transitions:["fade","bubble"],duration:5,size:"medium",position:{x:20,y:80}},colorTheme:"girly"};ls("ax_user_theme_"+uid,t);}return t;}
 function axSaveUserTheme(uid,theme){if(!uid||!theme)return;ls("ax_user_theme_"+uid,theme);try{if(typeof toast==="function")toast("Personnalisation sauvegardee","ok");}catch(_){}}
+/** Apply user theme (bubbles, wallpaper, slideshow). Admin Kevin always plain. @param {string} [uid] User id. @returns {void} */
 function axApplyUserTheme(uid){try{if(!uid){if(K&&K.user)uid=K.user.id;}if(!uid)return;/* v12.239 - Admin Kevin n a JAMAIS de theme perso (pas de coeurs, bulles, girly) */if(uid===ADMIN_ID){try{document.querySelectorAll(".ax-bubble-floating, .ax-user-wallpaper, .ax-user-slideshow").forEach(function(el){el.remove();});}catch(_){}try{document.body.classList.remove("ax-theme-love");}catch(_){}if(_axSlideshowTimer){try{clearInterval(_axSlideshowTimer);}catch(_){}_axSlideshowTimer=null;}try{var _adminT=lg("ax_user_theme_"+ADMIN_ID,null);if(_adminT){localStorage.removeItem("ax_user_theme_"+ADMIN_ID);if(typeof fbWrite==="function")fbWrite("ax_user_theme_"+ADMIN_ID,null);}}catch(_){}return;}var theme=axGetUserTheme(uid);try{document.querySelectorAll(".ax-bubble-floating, .ax-user-wallpaper, .ax-user-slideshow").forEach(function(el){el.remove();});}catch(_){}try{document.body.classList.remove("ax-theme-love");}catch(_){}if(_axSlideshowTimer){try{clearInterval(_axSlideshowTimer);}catch(_){}_axSlideshowTimer=null;}if(!theme)return;if(theme.colorTheme==="girly"||theme.colorTheme==="romantic"||theme.colorTheme==="playful"){try{document.body.classList.add("ax-theme-love");}catch(_){}}if(theme.bubbles&&theme.bubbles.length&&theme.bubbleCount>0){var n=Math.min(parseInt(theme.bubbleCount,10)||0,12);var spd=parseFloat(theme.bubbleSpeed||1)||1;for(var i=0;i<n;i++){var emoji=theme.bubbles[i%theme.bubbles.length];var el=document.createElement("div");el.className="ax-bubble-floating";el.textContent=emoji;el.style.fontSize="24px";el.style.opacity="0.55";el.style.left=(Math.random()*95)+"vw";el.style.top=(Math.random()*90)+"vh";el.style.animation="axFloat"+(i%4)+" "+((15+Math.random()*15)/spd)+"s infinite ease-in-out";el.style.animationDelay=(Math.random()*5)+"s";document.body.appendChild(el);}}if(theme.wallpaper&&theme.wallpaper.enabled&&theme.wallpaper.url){var wp=document.createElement("div");wp.className="ax-user-wallpaper";wp.style.backgroundImage='url("'+String(theme.wallpaper.url).replace(/"/g,"%22").replace(/'/g,"%27")+'")';wp.style.opacity=String(theme.wallpaper.opacity||0.3);wp.style.filter="blur("+(theme.wallpaper.blur||0)+"px)";document.body.appendChild(wp);}if(theme.slideshow&&theme.slideshow.enabled&&theme.slideshow.photos&&theme.slideshow.photos.length){_axStartSlideshow(theme.slideshow,uid);}}catch(e){console.warn("axApplyUserTheme:",e);}}
 function _axStartSlideshow(cfg,uid){try{if(_axSlideshowTimer){clearInterval(_axSlideshowTimer);_axSlideshowTimer=null;}if(!cfg||!cfg.photos||!cfg.photos.length)return;var sizes={small:160,medium:280,large:420};var size=sizes[cfg.size]||280;var pos=cfg.position||{x:20,y:80};var container=document.createElement("div");container.className="ax-user-slideshow";container.style.width=size+"px";container.style.height=size+"px";container.style.left=(parseInt(pos.x,10)||20)+"px";container.style.top=(parseInt(pos.y,10)||80)+"px";var img=document.createElement("img");img.alt="";container.appendChild(img);var btn=document.createElement("button");btn.className="ax-ss-close";btn.textContent="✕";btn.title="Fermer le diaporama";btn.onclick=function(ev){try{ev.stopPropagation();}catch(_){}try{container.remove();}catch(_){}if(_axSlideshowTimer){try{clearInterval(_axSlideshowTimer);}catch(_){}_axSlideshowTimer=null;}};container.appendChild(btn);document.body.appendChild(container);var idx=0;function nextSlide(){try{img.style.opacity="0";setTimeout(function(){try{img.src=cfg.photos[idx%cfg.photos.length];img.style.opacity="1";idx++;}catch(_){}},500);}catch(_){}}nextSlide();_axSlideshowTimer=setInterval(nextSlide,Math.max(2,parseInt(cfg.duration,10)||5)*1000);try{var drag=false,sx=0,sy=0,sl=0,st=0;function dStart(e){drag=true;var p=e.touches?e.touches[0]:e;sx=p.clientX;sy=p.clientY;sl=container.offsetLeft;st=container.offsetTop;}function dMove(e){if(!drag)return;var p=e.touches?e.touches[0]:e;if(e.preventDefault)try{e.preventDefault();}catch(_){}container.style.left=(sl+p.clientX-sx)+"px";container.style.top=(st+p.clientY-sy)+"px";}function dEnd(){if(!drag)return;drag=false;try{var t=axGetUserTheme(uid||(K.user&&K.user.id));if(t&&t.slideshow){t.slideshow.position={x:container.offsetLeft,y:container.offsetTop};axSaveUserTheme(uid||K.user.id,t);}}catch(_){}}container.addEventListener("touchstart",dStart,{passive:true});container.addEventListener("touchmove",dMove,{passive:false});container.addEventListener("touchend",dEnd);container.addEventListener("mousedown",dStart);document.addEventListener("mousemove",dMove);document.addEventListener("mouseup",dEnd);}catch(_){}}catch(e){console.warn("_axStartSlideshow:",e);}}
 function _axReadFileAsDataURL(file){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej("read error");};r.readAsDataURL(file);});}
@@ -2118,6 +2121,7 @@ function axPickModelByDomain(query,level){
 }
 /* v12.262 - Module Mes comptes & abos + Auto-clean chat + Historique recherche */
 var AX_BILLING_PROVIDERS=[{id:"anthropic",name:"Anthropic Claude",ic:"🤖",key:"ax_api_key",dash:"https://console.anthropic.com/settings/billing",live:false,note:"IA principale"},{id:"openai",name:"OpenAI",ic:"🟢",key:"ax_openai_key",dash:"https://platform.openai.com/usage",live:true,note:"GPT-4 / Whisper / DALL-E"},{id:"openrouter",name:"OpenRouter",ic:"🔀",key:"ax_openrouter_key",dash:"https://openrouter.ai/credits",live:true,note:"200+ IA via 1 cle"},{id:"gemini",name:"Google Gemini",ic:"💎",key:"ax_gemini_key",dash:"https://aistudio.google.com/app/apikey",live:false,note:"Gemini 2.0 Flash"},{id:"mistral",name:"Mistral",ic:"🌬️",key:"ax_mistral_key",dash:"https://console.mistral.ai/usage/",live:false,note:"Mistral Large 2"},{id:"groq",name:"Groq",ic:"⚡",key:"ax_groq_key",dash:"https://console.groq.com/settings/usage",live:false,note:"Inference rapide"},{id:"deepseek",name:"DeepSeek",ic:"🔍",key:"ax_deepseek_key",dash:"https://platform.deepseek.com/usage",live:false,note:"DeepSeek V3"},{id:"perplexity",name:"Perplexity",ic:"🌐",key:"ax_perplexity_key",dash:"https://www.perplexity.ai/settings/api",live:false,note:"Recherche web IA"},{id:"elevenlabs",name:"ElevenLabs",ic:"🎤",key:"ax_elevenlabs_key",dash:"https://elevenlabs.io/app/subscription",live:true,note:"Voix IA premium"},{id:"replicate",name:"Replicate",ic:"🔄",key:"ax_replicate_key",dash:"https://replicate.com/account/billing",live:false,note:"Modeles IA cloud"},{id:"runway",name:"Runway ML",ic:"🎬",key:"ax_runwayml_key",dash:"https://runwayml.com/account",live:false,note:"Generation video"},{id:"suno",name:"Suno",ic:"🎵",key:"ax_suno_key",dash:"https://suno.com/account",live:false,note:"Generation musique"},{id:"stripe",name:"Stripe",ic:"💳",key:"ax_stripe_secret",dash:"https://dashboard.stripe.com/balance",live:true,note:"Paiements"},{id:"cloudflare",name:"Cloudflare",ic:"☁️",key:"ax_cloudflare_token",dash:"https://dash.cloudflare.com/billing",live:false,note:"Workers + Pages"},{id:"firebase",name:"Firebase",ic:"🔥",key:null,dash:"https://console.firebase.google.com/project/cmcteams-c16ab/usage",live:false,note:"Realtime DB (Google)"},{id:"vercel",name:"Vercel",ic:"▲",key:"ax_vercel_token",dash:"https://vercel.com/dashboard/usage",live:false,note:"Hosting"},{id:"github",name:"GitHub",ic:"🐙",key:null,dash:"https://github.com/settings/billing/summary",live:false,note:"Repos + Actions"},{id:"telegram",name:"Telegram Bot",ic:"✈️",key:"ax_telegram_token",dash:"https://t.me/BotFather",live:false,note:"Gratuit"},{id:"emailjs",name:"EmailJS",ic:"📧",key:"ax_emailjs_userid",dash:"https://dashboard.emailjs.com/admin/account/usage",live:false,note:"200/mois gratuits"},{id:"sentry",name:"Sentry",ic:"🛡️",key:"ax_sentry_dsn",dash:"https://sentry.io/settings/account/quotas/",live:false,note:"Error tracking"},{id:"finnhub",name:"Finnhub",ic:"📈",key:"ax_finnhub_key",dash:"https://finnhub.io/dashboard",live:false,note:"Bourse API"},{id:"huggingface",name:"Hugging Face",ic:"🤗",key:"ax_huggingface_key",dash:"https://huggingface.co/settings/billing",live:false,note:"Modeles open"}];
+/** Live balance check via provider API (OpenAI/OpenRouter/ElevenLabs/Stripe). @param {Object} provider {id,key}. @returns {Promise<{ok,msg}>} */
 function axCheckBalanceLive(provider){var key=provider.key?lg(provider.key,""):null;if(!key)return Promise.resolve({ok:false,msg:"Cle non configuree"});var url,headers={};switch(provider.id){case "openai":url="https://api.openai.com/v1/usage?date="+new Date().toISOString().slice(0,10);headers["Authorization"]="Bearer "+key;break;case "openrouter":url="https://openrouter.ai/api/v1/auth/key";headers["Authorization"]="Bearer "+key;break;case "elevenlabs":url="https://api.elevenlabs.io/v1/user/subscription";headers["xi-api-key"]=key;break;case "stripe":url="https://api.stripe.com/v1/balance";headers["Authorization"]="Bearer "+key;break;default:return Promise.resolve({ok:false,msg:"Pas de live API - voir dashboard"});}return fetch(url,{headers:headers}).then(function(r){return r.json();}).then(function(d){var msg="";if(provider.id==="openrouter"&&d.data){msg="Reste: "+(d.data.limit_remaining||"?")+" / "+(d.data.limit||"?")+" $";}else if(provider.id==="elevenlabs"&&d.character_count!=null){msg=d.character_count+" / "+d.character_limit+" chars ("+(d.tier||"?")+")";}else if(provider.id==="stripe"&&d.available){msg=d.available[0]?(d.available[0].amount/100)+" "+String(d.available[0].currency||"").toUpperCase():"0";}else if(provider.id==="openai"&&d.total_usage!=null){msg="Today: "+(d.total_usage/100).toFixed(2)+" $";}else{msg=JSON.stringify(d).slice(0,100);}return{ok:true,msg:msg};}).catch(function(e){var em=String(e.message||e);if(em.indexOf("CORS")>=0||em.indexOf("Failed to fetch")>=0)return{ok:false,msg:"CORS bloque - voir dashboard"};return{ok:false,msg:em.slice(0,80)};});}
 function vAccountsBilling(){if(!axIsAdmin())return "<p>Admin requis</p>";var q=lg("_axBillQ","").toLowerCase();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">💳 Mes comptes & abos</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:12px">Pour Anthropic, Gemini, Mistral et la plupart : pas de solde via API. Clic 📊 Dashboard. Pour OpenAI/OpenRouter/Stripe/ElevenLabs : 🔍 Solde live.</p><input class="ax-input" placeholder="🔍 Filtrer..." oninput="ls(\'_axBillQ\',this.value);dc()" value="'+esc(q)+'" style="margin-bottom:12px">';AX_BILLING_PROVIDERS.forEach(function(p){if(q&&p.name.toLowerCase().indexOf(q)<0&&p.note.toLowerCase().indexOf(q)<0)return;var configured=p.key?!!lg(p.key,""):(p.id==="firebase"||p.id==="github");h+='<div class="ax-card" style="display:flex;align-items:center;gap:10px;padding:12px;margin-bottom:8px"><span style="font-size:28px">'+p.ic+'</span><div style="flex:1;min-width:0"><div style="font-weight:700">'+esc(p.name)+' '+(configured?'<span style="color:#4cd080;font-size:11px">✅</span>':'<span style="color:#ff5858;font-size:11px">❌</span>')+'</div><div style="font-size:11px;color:var(--ax-text-dim)">'+esc(p.note)+(p.live?' · Live':' · Dashboard')+'</div></div><div style="display:flex;flex-direction:column;gap:4px">'+(p.live&&configured?'<button class="ax-btn ax-btn-outline" style="font-size:10px;padding:6px;min-height:32px" onclick="axCheckBalanceLive(AX_BILLING_PROVIDERS.find(function(x){return x.id===\''+p.id+'\'})).then(function(r){toast((r.ok?\'✅ \':\'❌ \')+r.msg,r.ok?\'ok\':\'warn\',{force:true});})">🔍</button>':'')+'<a href="'+esc(p.dash)+'" target="_blank" rel="noopener" class="ax-btn ax-btn-primary" style="font-size:10px;padding:6px;min-height:32px;text-decoration:none;text-align:center">📊</a></div></div>';});h+='</div>';return h;}
 /* Auto-clean chat + recherche historique (Kevin: auto clean souvent + recherche visuel admin) */
@@ -3226,6 +3230,7 @@ function _sendGroupMsg(){var el=document.getElementById("ax-group-msg");if(!el||
 function _renderPrivateChat(targetId,targetName){var allDms=lg("ax_dms",[]);var msgs=allDms.filter(function(m){return(m.from===K.user.id&&m.to===targetId)||(m.to===K.user.id&&m.from===targetId);});var h='<div style="max-height:300px;overflow-y:auto;margin-bottom:8px">';if(!msgs.length)h+='<p style="color:var(--ax-text-dim);font-size:13px;text-align:center">Aucun message prive avec '+esc(targetName)+'</p>';msgs.slice(-30).forEach(function(m){var isMe=m.from===K.user.id;h+='<div class="ax-msg '+(isMe?"ax-msg-user":"ax-msg-bot")+'" style="max-width:80%"><div class="ax-name">'+(isMe?"Vous":esc(m.fromName||targetName))+'</div>'+esc(m.text)+'<div class="ax-time">'+_fmtTime(m.ts)+' \uD83D\uDD12</div></div>';});h+='</div><div style="display:flex;gap:6px"><input id="ax-dm-msg" class="ax-input" placeholder="Message prive a '+esc(targetName)+'... \uD83D\uDD12" onkeydown="if(event.key===\'Enter\')_sendDMTo(\''+esc(targetId)+'\')"><button class="ax-btn ax-btn-primary" onclick="_sendDMTo(\''+esc(targetId)+'\')" style="min-width:44px">\u27A4</button></div>';return h;}
 function _sendDMTo(targetId){var el=document.getElementById("ax-dm-msg");if(!el||!el.value.trim())return;axSendDM(targetId,el.value.trim());el.value="";dc();}
 function _renderAllDMs(){var dms=lg("ax_dms",[]);var h='<div style="max-height:400px;overflow-y:auto">';if(!dms.length)h+='<p style="color:var(--ax-text-dim);font-size:13px">Aucun DM</p>';dms.slice(-30).reverse().forEach(function(m){h+='<div class="ax-setting-row"><div><strong>'+esc(m.fromName||m.from)+'</strong> \u2192 '+esc(m.to)+'<div style="font-size:11px;color:var(--ax-text-dim)">'+esc(m.text.slice(0,60))+'</div></div><span style="font-size:10px;color:var(--ax-text-dim)">'+_timeAgo(m.ts)+'</span></div>';});h+='</div>';return h;}
+/** Start video call overlay (getUserMedia video+audio). @returns {void} */
 function _startVideoCall(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast(axT("camera.unavailable"),"warn");return;}navigator.mediaDevices.getUserMedia({video:true,audio:true}).then(function(stream){var overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center";overlay.innerHTML='<video id="ax-video-self" style="width:90%;max-width:400px;border-radius:12px;border:2px solid var(--ax-gold)" autoplay playsinline muted></video><p style="color:#fff;margin:12px;font-size:14px">\uD83D\uDCF9 Visio en cours — partagez l\'ecran avec les participants</p><div style="display:flex;gap:8px;margin-top:8px"><button onclick="this.parentNode.parentNode.remove()" class="ax-btn ax-btn-danger">\u274C Raccrocher</button><button onclick="axScreenshot()" class="ax-btn ax-btn-outline">\uD83D\uDCF8 Capture</button></div>';document.body.appendChild(overlay);var video=document.getElementById("ax-video-self");if(video){video.srcObject=stream;video.play();}overlay.querySelector(".ax-btn-danger").addEventListener("click",function(){stream.getTracks().forEach(function(t){t.stop();});});}).catch(function(e){toast("Erreur camera: "+e.message,"err");});}
 
 // === MODULE: Chat DM (messages prives entre utilisateurs) ===
@@ -4283,6 +4288,7 @@ function _snProfileWatch(){
   }catch(e){if(typeof _snLog==="function")_snLog("profile-watch","err",(e.message||"").slice(0,80));}
 }
 
+/** @param {string} name Nom+prenom (2 tokens min, normalized). @param {string} pin PIN 4+ chars. @returns {boolean} true si OK, false sinon. */
 function axLogin(name,pin){/* v12.241 - Defense en profondeur : nom+prenom obligatoires PARTOUT */var _axLogParts=String(name||"").trim().split(/[\s\-]+/).filter(function(t){return t.length>=2;});if(_axLogParts.length<2){toast("Nom ET prenom obligatoires","warn");return false;}if(!pin||String(pin).length<4){toast("Mot de passe obligatoire (4+ caracteres)","warn");return false;}/* v12.240 - User preconf : PIN saved (per-user) prevaut sur PIN default. Si pas saved → PIN default OK une fois. Aucun ne touche au PIN admin global ax_pin. */var _earlyPreconf=_checkPreconfiguredUser(name);var _earlyPinChanged=_earlyPreconf&&lg("ax_pin_changed_"+_earlyPreconf.id,false);var _earlyPreconfPinOk=false;if(_earlyPreconf){if(axCheckUserPin(_earlyPreconf.id,pin))_earlyPreconfPinOk=true;else if(_earlyPreconf.pin&&pin===_earlyPreconf.pin&&!_earlyPinChanged)_earlyPreconfPinOk=true;}if(!_earlyPreconfPinOk&&!axCheckPin(pin)){var fails=lg("ax_pin_fails",{count:0,until:0});fails.count++;var delays=[0,0,0,0,0,30000,120000,600000,3600000,86400000];var d=delays[Math.min(fails.count,delays.length-1)];if(d)fails.until=now()+d;ls("ax_pin_fails",fails);try{axBodyguardLog("pin_fail",name+" attempts="+fails.count);}catch(_e){_axSafeCatch("ax-login",_e);}try{if(typeof axSecurityLog==="function")axSecurityLog("pin_fail",String(name).slice(0,40)+" cnt="+fails.count);}catch(_e){_axSafeCatch("ax-login",_e);}toast("PIN incorrect","err");return false;}try{axBodyguardLog("login_success",name);}catch(_e){_axSafeCatch("ax-login",_e);}try{if(typeof axSecurityLog==="function")axSecurityLog("login_success",String(name).slice(0,40));}catch(_e){_axSafeCatch("ax-login",_e);}ls("ax_pin_fails",{count:0,until:0});var preconf=_earlyPreconf;if(preconf&&preconf.pin&&pin!==preconf.pin&&!lg("ax_pin_changed_"+( preconf.id),false)){toast("PIN incorrect","err");return false;}/* v12.87 — Reconnaissance Kevin etendue + PIN provisoire + FaceID auto (Kevin 2026-04-24) */
 var _nameNorm=String(name||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-_\s]+/g," ");
 var _isKevinByName=/\bkevin\b/.test(_nameNorm)||/\bdesarzen?s?\b/.test(_nameNorm);
@@ -4520,6 +4526,7 @@ function _fmtTime(ts){if(!ts||isNaN(ts))return"";var d=new Date(ts);if(isNaN(d.g
 
 function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim()||K.isStreaming)return;axHaptic();var text=el.value.trim();el.value="";if(typeof axVoiceExecute==="function"&&/^(hey |ok |dis )?(apex|ai)\s+/i.test(text)&&axVoiceExecute(text))return;if(_checkVoiceCommand(text))return;sendMessage(text);}
 
+/** Send user message to AI, dispatch crew, store + render. @param {string} text User text. @returns {void} */
 function sendMessage(text){if(!text)return;/* v12.83 — Enforcement strict : pas d'acces si pas valide par admin */if(typeof axEnforceAccessOrBlock==="function"&&!axEnforceAccessOrBlock("Chat IA"))return;if(K.isStreaming){var lastSt=+lg("ax_streaming_since",0);if(Date.now()-lastSt>30000){K.isStreaming=false;}else return;}ls("ax_streaming_since",Date.now());try{K.messages.push({role:"user",content:text,ts:now()});_saveMsgs();try{if(typeof axTrackActivity==="function")axTrackActivity("chat_send",{preview:text.slice(0,80)});}catch(_e){_axSafeCatch("send-message",_e);}/* v12.169 — Auto-extract Kevin rules */try{if(K.user&&K.user.id===ADMIN_ID&&typeof axExtractKevinRule==="function")axExtractKevinRule(text);}catch(_e){_axSafeCatch("send-message",_e);}/* v12.176 — Intent detection : si l user demande montage video/musique/prefecture etc -> propose studio */try{if(typeof axDetectIntent==="function"){var _intent=axDetectIntent(text);if(_intent&&_intent.studio){axProposeStudio(_intent.studio,_intent.params);/* v12.248 — bulle outil compact pour outils legers (traduction/calcul/meteo/blague/carte/image) */if(typeof _axShowToolBubble==="function"&&_intent.tool&&["traduction","meteo","calcul","blague","carte","image"].indexOf(_intent.studio)>=0){_axShowToolBubble(_intent);}}}}catch(_e){_axSafeCatch("send-message",_e);}if(text.length>50000){toast("Message long ("+Math.round(text.length/1000)+"K chars). L IA peut mettre plus de temps.","info");}dc();_scrollChatBottom();K.isStreaming=true;dc();var lastEmotion=K.messages.length?axDetectEmotion(typeof K.messages[K.messages.length-1].content==="string"?K.messages[K.messages.length-1].content:""):"neutre";var emotionInstr="";if(lastEmotion==="joie")emotionInstr=" L'utilisateur est content, sois enthousiaste.";else if(lastEmotion==="colere")emotionInstr=" L'utilisateur semble enerve, sois calme et comprehensif.";else if(lastEmotion==="tristesse")emotionInstr=" L'utilisateur semble triste, sois bienveillant et encourageant.";else if(lastEmotion==="peur")emotionInstr=" L'utilisateur semble inquiet, sois rassurant.";else if(lastEmotion==="amour")emotionInstr=" L'utilisateur exprime de l'affection, sois chaleureux.";/* v12.75 — CONCERTATION automatique si crewMode + question substantielle (Kevin: "concertation permanente") */var useCrew=(K.settings.crewMode!==false)&&text.length>=25&&!/^(bonjour|salut|hello|hi|merci|ok|oui|non|ciao|hola)\b/i.test(text.trim());var _startMain=function(extraCtx){var sysPrompt=_buildSystemPrompt()+"\n\n"+_getSmartContext()+emotionInstr+(extraCtx||"");var apiMsgs=[];K.messages.forEach(function(m){if(typeof m.content==="string"&&m.role){apiMsgs.push({role:m.role==="user"?"user":"assistant",content:m.content});}});_callClaudeAPI(sysPrompt,apiMsgs,0);};/* v12.153 — concertation experte (rôles spécialisés + avocat du diable) */if(useCrew && typeof axCrewExpertConcertation==="function" && text.length>=25){var _expertList=axDispatchExpertCrew(text);if(_expertList && _expertList.length){toast("Concertation experte ("+_expertList.map(function(e){return AX_CREW_EXPERT[e].ic+" "+AX_CREW_EXPERT[e].name;}).join(" + ")+")","info");axCrewExpertConcertation(text).then(function(opinions){var ctx=axBuildExpertContext(opinions);_startMain(ctx);}).catch(function(){_startMain("");});}else if(typeof axDispatchAgent==="function"){var primary=axDispatchAgent(text);if(primary!=="general"){var secondScores={};Object.keys(AX_CREW).forEach(function(aid){if(aid===primary||aid==="general")return;var sc=0;var q=text.toLowerCase();AX_CREW[aid].keywords.forEach(function(kw){if(q.indexOf(kw)>=0)sc+=1;});if(sc>=1)secondScores[aid]=sc;});var sortedSec=Object.keys(secondScores).sort(function(a,b){return secondScores[b]-secondScores[a];});var agentsToConsult=[primary];if(sortedSec.length)agentsToConsult.push(sortedSec[0]);toast("Concertation "+agentsToConsult.length+" experts ("+agentsToConsult.map(function(a){return AX_CREW[a].name;}).join(" + ")+")","info");Promise.all(agentsToConsult.map(function(aid){return axCrewConsult(aid,text);})).then(function(opinions){var ctx="\n\n=== AVIS D EXPERTS A CONSULTER avant de repondre (concertation) ===\n";opinions.forEach(function(op,i){ctx+="\n[Expert "+AX_CREW[agentsToConsult[i]].name+"]\n"+op+"\n";});ctx+="\n=== Consolide ces avis avec ton expertise. Si divergences, cite-les et tranche. ===";_startMain(ctx);}).catch(function(){_startMain("");});}else{_startMain("");}}else{_startMain("");}}else if(useCrew && typeof axDispatchAgent==="function"){var primary=axDispatchAgent(text);if(primary!=="general"){var secondScores={};Object.keys(AX_CREW).forEach(function(aid){if(aid===primary||aid==="general")return;var sc=0;var q=text.toLowerCase();AX_CREW[aid].keywords.forEach(function(kw){if(q.indexOf(kw)>=0)sc+=1;});if(sc>=1)secondScores[aid]=sc;});var sortedSec=Object.keys(secondScores).sort(function(a,b){return secondScores[b]-secondScores[a];});var agentsToConsult=[primary];if(sortedSec.length)agentsToConsult.push(sortedSec[0]);toast("Concertation "+agentsToConsult.length+" experts ("+agentsToConsult.map(function(a){return AX_CREW[a].name;}).join(" + ")+")","info");Promise.all(agentsToConsult.map(function(aid){return axCrewConsult(aid,text);})).then(function(opinions){var ctx="\n\n=== AVIS D EXPERTS A CONSULTER avant de repondre (concertation) ===\n";opinions.forEach(function(op,i){ctx+="\n[Expert "+AX_CREW[agentsToConsult[i]].name+"]\n"+op+"\n";});ctx+="\n=== Consolide ces avis avec ton expertise. Si divergences, cite-les et tranche. ===";_startMain(ctx);}).catch(function(){_startMain("");});}else{_startMain("");}}else{_startMain("");}}catch(__sendErr){K.isStreaming=false;var __em=String(__sendErr&&__sendErr.message||__sendErr).slice(0,200);var __friendly=__em.indexOf("undefined")>=0||__em.indexOf("null")>=0?"Erreur interne — rechargement necessaire. Reglages > Verifier MAJ, ou supprime et reinstalle l icone.":__em.indexOf("network")>=0||__em.indexOf("fetch")>=0?"Probleme reseau. Reessaye dans 10s.":"Erreur: "+__em;K.messages.push({role:"assistant",content:__friendly,ts:now()});_saveMsgs();dc();try{axJournalEntry&&axJournalEntry("apex-ai","sendMessage crash","","caught in sendMessage",__em,"check guards");}catch(_e){_axSafeCatch("send-message",_e);}}}
 
 // v12.13 — HANDOFF Claude Code → Apex AI (demande Kevin : "qu'elle soit toi, clone parfait, autonome")
@@ -4545,6 +4552,7 @@ function axRunAudit(scope){try{scope=scope||"apex";var findings=[];var log=lg("a
 
 /* v12.267 — HANDOFF Apex<>Claude Code (Kevin 2026-04-25) — collaboration autonome bidirectionnelle */
 function axHandoffDefault(){return {_meta:{purpose:"Communication bidirectionnelle Claude Code <-> Apex AI",format_version:1,owner:"Kevin DESARZENS",firebase_key:"ax_claude_code_handoff"},claude_code:{last_session:null,last_active_at:null,model:"claude-opus-4-7",active_branch:null,current_state:"idle",current_tasks:[],completed_today:[],blockers:[],notes_for_apex:[],questions_for_apex:[]},apex_ai:{last_active_at:null,working_on:[],ready_to_help:[],questions_for_claude:[],auto_actions_taken:[],notes_for_claude:[]},shared_state:{project_versions:{apex:APP_VER},score_global_audits:null,score_per_axis:{},last_audit_at:null,next_goals:[],kevin_priorities_today:[]},lessons_learned_summary:{ref:"ax_lessons_learned",total_lessons:null,categories:[],top_recent:[]}};}
+/** @returns {Object} ax_claude_code_handoff state (ou default). */
 function axHandoffGet(){try{var h=lg("ax_claude_code_handoff",null);if(!h||typeof h!=="object")h=axHandoffDefault();return h;}catch(e){return axHandoffDefault();}}
 function axHandoffSet(state){try{if(!state||typeof state!=="object")return false;state.apex_ai=state.apex_ai||{};state.apex_ai.last_active_at=new Date().toISOString();ls("ax_claude_code_handoff",state);return true;}catch(e){return false;}}
 function axHandoffNoteForClaude(note){try{var s=axHandoffGet();s.apex_ai=s.apex_ai||{};s.apex_ai.notes_for_claude=s.apex_ai.notes_for_claude||[];s.apex_ai.notes_for_claude.unshift({ts:Date.now(),note:String(note||"").slice(0,500),from:"apex-ai",appVer:APP_VER});if(s.apex_ai.notes_for_claude.length>50)s.apex_ai.notes_for_claude=s.apex_ai.notes_for_claude.slice(0,50);axHandoffSet(s);try{toast("Note envoyee a Claude Code","ok");}catch(_){}return true;}catch(e){return false;}}
@@ -4611,6 +4619,7 @@ function _callOpenRouterAPI(sysPrompt,msgs,depth){
     return fetch("https://openrouter.ai/api/v1/chat/completions",opts).then(function(r){clearTimeout(to);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(done)return;done=true;K.isStreaming=false;var text=(d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";K.messages.push({role:"assistant",content:text||"(reponse vide OpenRouter — reessayez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();try{axTrackUsage(Math.round((text||"").length/4));axGainXP(5);}catch(_){}if(K.settings.ttsEnabled&&typeof axTtsSpeak==="function")axTtsSpeak(text);return {content:text,usage:(d&&d.usage)||{}};}).catch(function(e){if(done)return;done=true;clearTimeout(to);K.isStreaming=false;var em=String(e&&e.message||e).slice(0,250);var friendly=em.indexOf("401")>=0?"Cle OpenRouter invalide. Verifie Reglages > Coffre.":em.indexOf("429")>=0?"OpenRouter : trop de demandes. Attends quelques secondes.":em.indexOf("network")>=0||em.indexOf("fetch")>=0?"Reseau indisponible.":"OpenRouter erreur : "+em;K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();throw e;});
   }catch(ex){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme OpenRouter, recharge l'app",ts:now()});_saveMsgs();dc();}
 }
+/** @param {string} sysPrompt System prompt. @param {Array} msgs Messages history. @param {number} depth Recursion depth (0). @returns {void} */
 function _callAI(sysPrompt,msgs,depth){
   var prov=localStorage.getItem("ax_ai_provider")||"anthropic";
   if(prov==="openrouter")return _callOpenRouterAPI(sysPrompt,msgs,depth);
@@ -8391,6 +8400,7 @@ var _aiHandleWhitelist={"flushSyncQueue":function(){try{if(typeof flushSyncQueue
 "clearStaleViews":function(){try{var cv=lg("ax_current_views",{});var cutoff=Date.now()-30*60000;var kept={};Object.keys(cv).forEach(function(k){if((cv[k].ts||0)>cutoff)kept[k]=cv[k];});ls("ax_current_views",kept);if(typeof fbWrite==="function")try{fbWrite("ax_current_views",kept);}catch(_){}return"views cleaned";}catch(e){return"erreur: "+e;}},
 "fbForceResync":function(){try{if(_fbEs){try{_fbEs.close();}catch(_){}_fbEs=null;}if(typeof fbStartListening==="function")setTimeout(fbStartListening,500);if(typeof fbLoadAll==="function")fbLoadAll();return"fb force resync scheduled";}catch(e){return"erreur: "+e;}},
 "retryPendingTodos":function(){try{var todos=lg("ax_claude_todo",[]);var stale=todos.filter(function(t){return t.status==="pending"&&Date.now()-(t.ts||0)>7200000;});stale.forEach(function(t){t.attempts=(t.attempts||0)+1;});ls("ax_claude_todo",todos);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",todos);}catch(_){}if(stale.length>0&&typeof _triggerGitHubWorkflow==="function")_triggerGitHubWorkflow({stale:stale.length,signal:"retry"});return"marked "+stale.length+" stale todos for retry";}catch(e){return"erreur: "+e;}}};
+/** Auto-fix sentinel issue via whitelist actions; escalate Claude Code if 3 attempts fail. @param {string} sentinelId. @param {string} severity. @param {string} finding. @returns {string} status */
 function _aiHandleIssue(sentinelId,severity,finding){
   try{
     if(!K.user||!axIsAdmin())return;
@@ -8628,7 +8638,7 @@ window.axOptimizeNow=axOptimizeNow;
   if(typeof vMain==="function"&&!vMain._axPerfPatched){
     var _origVMain=vMain;
     window.vMain=function(){
-      try{if(K&&K.view==="performance")return vPerformance();}catch(_){}
+      try{if(K&&K.view==="performance")return vPerformance();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-optimize-now",_e);}catch(__){}}
       return _origVMain.apply(this,arguments);
     };
     window.vMain._axPerfPatched=true;
@@ -8644,7 +8654,7 @@ window.axOptimizeNow=axOptimizeNow;
       try{
         var perfCard='<div class="ax-card" onclick="sv(\'performance\')" style="cursor:pointer;background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(90,168,255,.04));border:2px solid rgba(232,184,48,.5);box-shadow:0 4px 14px rgba(232,184,48,.15);margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">&#9889;</div><div style="flex:1"><div style="font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Performance &amp; Fluidite</div><div style="font-size:11px;color:var(--ax-text-dim);margin-top:3px">FPS live, render time, memoire, top vues lentes, optimisation 1-clic</div></div><div style="font-size:18px;color:var(--ax-gold)">&rarr;</div></div></div>';
         html=html.replace('Liens directs Admin</h2>','Liens directs Admin</h2>'+perfCard);
-      }catch(_){}
+      }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-optimize-now",_e);}catch(__){}}
       return html;
     };
     window.vAdminLinks._axPerfPatched=true;
@@ -8652,7 +8662,7 @@ window.axOptimizeNow=axOptimizeNow;
 })();
 
 /* 7) Image lazy-load auto sur tous les <img> non taggees */
-function _axLazyImages(){try{var imgs=document.querySelectorAll("img:not([loading])");for(var i=0;i<imgs.length;i++){imgs[i].setAttribute("loading","lazy");imgs[i].setAttribute("decoding","async");}}catch(_){}}
+function _axLazyImages(){try{var imgs=document.querySelectorAll("img:not([loading])");for(var i=0;i<imgs.length;i++){imgs[i].setAttribute("loading","lazy");imgs[i].setAttribute("decoding","async");}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-lazy-images",_e);}catch(__){}}}
 
 /* 7b) Virtualisation post-render : cap a 50 items dans sidebar conversations + bouton "Charger plus" */
 window._axSidebarCap=window._axSidebarCap||50;
@@ -8672,18 +8682,18 @@ function _axVirtSidebar(){
     /* inserer apres le dernier item visible */
     var last=items[window._axSidebarCap-1];
     if(last&&last.parentNode)last.parentNode.insertBefore(btn,last.nextSibling);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-virt-sidebar",_e);}catch(__){}}
 }
 
-(function(){if(typeof render==="function"&&!render._axLazyPatched){var _orig=render;window.render=function(){var r=_orig.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_){}return r;};window.render._axLazyPatched=true;}})();
-(function(){if(typeof dc==="function"&&!dc._axVirtPatched){var _origDc=dc;window.dc=function(){var r=_origDc.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_){}return r;};window.dc._axVirtPatched=true;}})();
+(function(){if(typeof render==="function"&&!render._axLazyPatched){var _orig=render;window.render=function(){var r=_orig.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-virt-sidebar",_e);}catch(__){}}return r;};window.render._axLazyPatched=true;}})();
+(function(){if(typeof dc==="function"&&!dc._axVirtPatched){var _origDc=dc;window.dc=function(){var r=_origDc.apply(this,arguments);try{requestAnimationFrame(function(){_axLazyImages();_axVirtSidebar();});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-virt-sidebar",_e);}catch(__){}}return r;};window.dc._axVirtPatched=true;}})();
 
 /* 8) Lessons learned cross-app */
 try{
   var _L=lg("ax_lessons_learned",[]);
   _L.push({ts:Date.now(),category:"perf",pattern:"App lente sur iPhone (Projets/Favoris)",solution:"v12.198: CSS contain + memoization 30s + debounce 150ms + virtualisation listes >50 + Promise.all x5 + image lazy-load + sentinelle perf-watch + vue admin Performance + bouton Optimiser. Cible iPhone: 60 FPS, render <200ms.",apexVersion:"v12.198"});
   if(_L.length>500)_L=_L.slice(-500);ls("ax_lessons_learned",_L);
-}catch(_){}
+}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-virt-sidebar",_e);}catch(__){}}
 
 /* v12.202 — Monitoring pro dashboard (score live + sentinelles + timeline + quick actions) */
 function axHealthScore(){
@@ -8691,7 +8701,7 @@ function axHealthScore(){
     var score=0;
     var status=lg("ax_credential_status",{});
     var greenCount=0;
-    try{Object.keys(status||{}).forEach(function(k){if(status[k]&&status[k].status==="green")greenCount++;});}catch(_){}
+    try{Object.keys(status||{}).forEach(function(k){if(status[k]&&status[k].status==="green")greenCount++;});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-health-score",_e);}catch(__){}}
     score+=Math.min(30,greenCount*3);
     var sentLog=lg("ax_silent_log",[]);
     if(!Array.isArray(sentLog))sentLog=[];
@@ -8726,7 +8736,7 @@ function vMonitoringPro(){
   h+='<div class="ax-card" style="text-align:center;border-left:4px solid '+color+';padding:24px"><div style="font-size:64px;line-height:1">'+emoji+'</div><div style="font-size:48px;font-weight:900;color:'+color+';margin:8px 0">'+score+'<span style="font-size:24px;color:var(--ax-text-dim)">/100</span></div><div style="font-size:16px;font-weight:700">'+esc(statusMsg)+'</div></div>';
   var cred=lg("ax_credential_status",{});
   var greenCred=0,totalCred=0;
-  try{Object.keys(cred||{}).forEach(function(k){totalCred++;if(cred[k]&&cred[k].status==="green")greenCred++;});}catch(_){}
+  try{Object.keys(cred||{}).forEach(function(k){totalCred++;if(cred[k]&&cred[k].status==="green")greenCred++;});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-monitoring-pro",_e);}catch(__){}}
   var errArr=lg("ax_err_log",[]);if(!Array.isArray(errArr))errArr=[];
   var errors24h=errArr.filter(function(e){return e&&e.ts&&(Date.now()-e.ts<86400000);}).length;
   var slowArr=lg("ax_click_slow",[]);if(!Array.isArray(slowArr))slowArr=[];
@@ -8746,7 +8756,7 @@ function vMonitoringPro(){
     aud.slice(0,10).forEach(function(a){if(a)events.push({ts:a.ts||0,type:"audit",msg:String((a.type||a.action||"")+" "+(a.what||a.target||"")).trim()});});
     sLog.slice(-10).forEach(function(s){if(s)events.push({ts:s.ts||0,type:s.lvl||s.type||"info",msg:"["+(s.id||"?")+"] "+String(s.msg||"")});});
     errArr.slice(0,10).forEach(function(e){if(e)events.push({ts:e.ts||0,type:"err",msg:String(e.msg||"").slice(0,80)});});
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-monitoring-pro",_e);}catch(__){}}
   events.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
   events=events.slice(0,15);
   h+='<div class="ax-card"><h3>📅 Activite recente</h3><div style="max-height:300px;overflow-y:auto">';
@@ -8783,7 +8793,7 @@ function _startMonitoringRefresh(){
     },30000);
   }catch(_){}
 }
-try{_startMonitoringRefresh();}catch(_){}
+try{_startMonitoringRefresh();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_start-monitoring-refresh",_e);}catch(__){}}
 
 function _agentHealthAlert(){
   try{
@@ -8796,7 +8806,7 @@ function _agentHealthAlert(){
     }
   }catch(_){}
 }
-try{_axIntervalAdd(_agentHealthAlert,600000,"agent-health-alert");}catch(_){}
+try{_axIntervalAdd(_agentHealthAlert,600000,"agent-health-alert");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-health-alert",_e);}catch(__){}}
 
 /* v12.208 — Agent securite dedie : detection anomalies + alertes critiques admin */
 function _agentSecurityWatch(){
@@ -8820,7 +8830,7 @@ function _agentSecurityWatch(){
       var lastNightWarn=lg("ax_night_warn_ts",0)||0;
       if(now-lastNightWarn>6*3600*1000){alerts.push({severity:"warning",type:"night_login",msg:"Connexion admin a "+hour+"h (atypique)"});ls("ax_night_warn_ts",now);}
     }
-    try{var totalSize=0;for(var i=0;i<localStorage.length;i++){totalSize+=(localStorage.getItem(localStorage.key(i))||"").length;}if(totalSize>4500000){alerts.push({severity:"warning",type:"storage_full",msg:"Stockage 90% plein"});}}catch(_){}
+    try{var totalSize=0;for(var i=0;i<localStorage.length;i++){totalSize+=(localStorage.getItem(localStorage.key(i))||"").length;}if(totalSize>4500000){alerts.push({severity:"warning",type:"storage_full",msg:"Stockage 90% plein"});}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-security-watch",_e);}catch(__){}}
     alerts.forEach(_handleSecurityAlert);
     return {alerts:alerts,ts:now};
   }catch(_){return null;}
@@ -8844,7 +8854,7 @@ function _handleSecurityAlert(alert){
         if(typeof toast==="function")toast(msg,"warn",{duration:6000});
       }
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_handle-security-alert",_e);}catch(__){}}
 }
 function vSecurityAlerts(){
   if(!K||!K.user||!axIsAdmin())return '<div class="ax-empty"><div class="ax-empty-icon">🔒</div><div class="ax-empty-text">Reserve admin</div></div>';
@@ -8878,13 +8888,13 @@ function vSecurityAlerts(){
 if(!window._secWatchStarted){
   window._secWatchStarted=true;
   try{setInterval(_agentSecurityWatch,30000);}catch(_){}
-  try{setTimeout(_agentSecurityWatch,5000);}catch(_){}
+  try{setTimeout(_agentSecurityWatch,5000);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-security-alerts",_e);}catch(__){}}
 }
 
 
 /* v12.209 — Onboarding tour iPhone-first + CGU bundle 1-clic permissions + axHapticConfirm + banner dashboard */
 function axIsIOSPWA(){try{return (window.matchMedia&&window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone)&&/iPad|iPhone|iPod/.test(navigator.userAgent);}catch(_){return false;}}
-function axHapticConfirm(msg){try{if(navigator.vibrate)navigator.vibrate(50);}catch(_){}try{if(typeof toast==="function")toast("✅ "+(msg||"OK"),"ok");}catch(_){}}
+function axHapticConfirm(msg){try{if(navigator.vibrate)navigator.vibrate(50);}catch(_){}try{if(typeof toast==="function")toast("✅ "+(msg||"OK"),"ok");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-haptic-confirm",_e);}catch(__){}}}
 var AX_TOUR_CARDS=[
   {icon:"✨",title:"Bienvenue sur Apex",text:"Apex est ton assistant IA premium.<br>Discute, organise, analyse — comme un vrai expert dans ta poche.",accent:"#e8b830"},
   {icon:"🔓",title:"Coffre auto-sauvegarde",text:"Tes cles, mots de passe, identifiants : chiffres et synchronises tout seul.<br><span style=\"color:#4cd080\">●</span> Pastille verte = tout est sauvegarde, restauration auto sur n\'importe quel appareil.",accent:"#4cd080"},
@@ -8932,11 +8942,11 @@ function axShowQuickTour(stepOverride,fromButton){
     html+='</div>';
     ov.innerHTML=html;
     document.body.appendChild(ov);
-    if(navigator.vibrate)try{navigator.vibrate(20);}catch(_){}
+    if(navigator.vibrate)try{navigator.vibrate(20);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-show-quick-tour",_e);}catch(__){}}
   }catch(e){if(typeof console!=="undefined")console.warn("[axShowQuickTour]",e);}
 }
-function axSkipQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_skipped_at",Date.now());}catch(_){}}
-function axCompleteQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_done",true);ls("ax_tour_step",0);if(typeof axHapticConfirm==="function")axHapticConfirm("Tour termine");if(typeof toast==="function")toast("Bienvenue sur Apex 🎉","ok");try{if(typeof axConfetti==="function")axConfetti(30);}catch(_){}try{dc();}catch(_){}}catch(_){}}
+function axSkipQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_skipped_at",Date.now());}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-skip-quick-tour",_e);}catch(__){}}}
+function axCompleteQuickTour(){try{var ov=document.getElementById("ax-tour-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);ls("ax_tour_done",true);ls("ax_tour_step",0);if(typeof axHapticConfirm==="function")axHapticConfirm("Tour termine");if(typeof toast==="function")toast("Bienvenue sur Apex 🎉","ok");try{if(typeof axConfetti==="function")axConfetti(30);}catch(_){}try{dc();}catch(_){}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-complete-quick-tour",_e);}catch(__){}}}
 
 function axRequestAllPermissions(){
   try{
@@ -8950,11 +8960,11 @@ function axRequestAllPermissions(){
     var i=0;var results={};
     function nextPerm(){
       if(i>=perms.length){
-        try{ls("ax_perm_results_"+(K.user&&K.user.id||"anon"),{ts:Date.now(),results:results});}catch(_){}
+        try{ls("ax_perm_results_"+(K.user&&K.user.id||"anon"),{ts:Date.now(),results:results});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("next-perm",_e);}catch(__){}}
         var ok=Object.keys(results).filter(function(k){return results[k]==="granted";}).length;
-        try{var ov=document.getElementById("ax-perm-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);}catch(_){}
+        try{var ov=document.getElementById("ax-perm-overlay");if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("next-perm",_e);}catch(__){}}
         if(typeof axHapticConfirm==="function")axHapticConfirm(ok+"/"+perms.length+" autorisations OK");
-        try{if(typeof toast==="function")toast("✅ "+ok+"/"+perms.length+" autorisations accordees","ok");}catch(_){}
+        try{if(typeof toast==="function")toast("✅ "+ok+"/"+perms.length+" autorisations accordees","ok");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("next-perm",_e);}catch(__){}}
         return;
       }
       var p=perms[i];
@@ -8991,7 +9001,7 @@ function axMaybeShowTourOnLogin(){
     var skipped=lg("ax_tour_skipped_at",0);
     if(skipped&&(Date.now()-skipped)<24*60*60*1000)return;
     setTimeout(function(){try{axShowQuickTour(0,false);}catch(_){}},2000);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-maybe-show-tour-on-login",_e);}catch(__){}}
 }
 function _axTourDashboardBanner(){
   try{
@@ -9008,7 +9018,7 @@ function _axTourDashboardBanner(){
     b.style.cssText="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(232,184,48,.04));border:1px solid rgba(232,184,48,.5);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;-webkit-tap-highlight-color:transparent";
     b.innerHTML='<div style="font-size:30px">🎯</div><div style="flex:1;min-width:160px"><div style="font-size:14px;font-weight:700;color:var(--ax-gold);margin-bottom:2px">Decouvre Apex en 1 minute</div><div style="font-size:12px;color:var(--ax-text-dim)">6 etapes simples : coffre, camera, studios, notifs, sentinelles.</div></div><button class="ax-btn ax-btn-primary" onclick="axShowQuickTour(0,true)" style="min-height:44px;font-weight:700">Demarrer</button><button class="ax-btn ax-btn-outline" onclick="ls(\'ax_tour_skipped_at\',Date.now());var x=document.getElementById(\'ax-tour-banner\');if(x&&x.parentNode)x.parentNode.removeChild(x);" style="min-height:44px" aria-label="Plus tard">✕</button>';
     firstH2.parentNode.insertBefore(b,firstH2.nextSibling);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-tour-dashboard-banner",_e);}catch(__){}}
 }
 try{
   var _axTourObs=new MutationObserver(function(){
@@ -9016,19 +9026,19 @@ try{
       if(typeof K==="undefined"||!K||!K.user)return;
       if(K.view!=="dashboard")return;
       _axTourDashboardBanner();
-    }catch(_){}
+    }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-tour-dashboard-banner",_e);}catch(__){}}
   });
   if(document.body)_axTourObs.observe(document.body,{childList:true,subtree:true});
   else document.addEventListener("DOMContentLoaded",function(){_axTourObs.observe(document.body,{childList:true,subtree:true});});
-}catch(_){}
+}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-tour-dashboard-banner",_e);}catch(__){}}
 try{
   var _axTourLoginInterval=setInterval(function(){try{if(K&&K.user&&axIsAdmin()){clearInterval(_axTourLoginInterval);axMaybeShowTourOnLogin();}}catch(_){}},1500);
   setTimeout(function(){try{clearInterval(_axTourLoginInterval);}catch(_){}},60000);
-}catch(_){}
+}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-tour-dashboard-banner",_e);}catch(__){}}
 
 /* === v12.212 — Banque d'infos + synthese auto + sentinelle data-leak-watch === */
 try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_profile_synthesis")<0)FB_FIX.push("ax_profile_synthesis");}catch(_){}
-try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_data_enrichment_log")<0)FB_FIX.push("ax_data_enrichment_log");}catch(_){}
+try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_data_enrichment_log")<0)FB_FIX.push("ax_data_enrichment_log");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-tour-dashboard-banner",_e);}catch(__){}}
 
 /* Lightweight extractor — patterns simples, fail-safe */
 function _axProfileExtractFromText(text){
@@ -9043,7 +9053,7 @@ function _axProfileExtractFromText(text){
     var hobby=t.match(/\b(?:j'aime|j['e]\s*adore|hobby\s*[:=]?\s*|passion\s*[:=]?\s*|loisirs?\s*[:=]?\s*)\s+([A-Za-zà-ÿ,\- ]{3,80})/i);if(hobby)out.hobbies=hobby[1].trim();
     var nm=t.match(/\b(?:je\s*m'appelle|mon\s*nom\s*est|moi\s*c'est)\s+([A-ZÀ-ÿ][a-zà-ÿ\-']{1,30})(?:\s+([A-ZÀ-ÿ][a-zà-ÿ\-']{1,30}))?/i);
     if(nm){out.prenom=nm[1];if(nm[2])out.nom=nm[2];}
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-profile-extract-from-text",_e);}catch(__){}}
   return out;
 }
 
@@ -9054,7 +9064,7 @@ function axGenerateProfileSynthesis(userId){
   try{
     var convs=(K&&K.conversations)||[];
     var allMsgs=[];
-    convs.forEach(function(c){try{var mm=lg("ax_msgs_"+c.id,[]);if(Array.isArray(mm))allMsgs=allMsgs.concat(mm);}catch(_){}});
+    convs.forEach(function(c){try{var mm=lg("ax_msgs_"+c.id,[]);if(Array.isArray(mm))allMsgs=allMsgs.concat(mm);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-generate-profile-synthesis",_e);}catch(__){}}});
     var userMsgs=allMsgs.filter(function(m){return m&&m.role==="user"&&typeof m.content==="string";}).slice(-30);
     userMsgs.forEach(function(m){
       var ext=_axProfileExtractFromText(m.content);
@@ -9062,7 +9072,7 @@ function axGenerateProfileSynthesis(userId){
     });
     profile._lastEnriched=Date.now();
     ls("ax_profile_"+userId,profile);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-generate-profile-synthesis",_e);}catch(__){}}
   var parts=[];
   if(profile.prenom||profile.nom)parts.push(((profile.prenom||"")+" "+(profile.nom||"")).trim());
   if(profile.age)parts.push(profile.age+" ans");
@@ -9076,7 +9086,7 @@ function axGenerateProfileSynthesis(userId){
   var all=lg("ax_profile_synthesis",{})||{};
   all[userId]={text:synthesis,ts:Date.now(),facts:Object.keys(profile).filter(function(k){return k.charAt(0)!=="_";}).length};
   ls("ax_profile_synthesis",all);
-  if(typeof fbWrite==="function")try{fbWrite("ax_profile_synthesis",all);}catch(_){}
+  if(typeof fbWrite==="function")try{fbWrite("ax_profile_synthesis",all);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-generate-profile-synthesis",_e);}catch(__){}}
   return synthesis;
 }
 
@@ -9091,11 +9101,11 @@ function axGenerateAllSyntheses(){
         if(uid&&uid.indexOf("_")<0)ids[uid]=true;
       }
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-generate-all-syntheses",_e);}catch(__){}}
   var arr=Object.keys(ids);
   arr.forEach(axGenerateProfileSynthesis);
   if(typeof toast==="function")toast("Syntheses generees : "+arr.length+" profils","ok");
-  try{if(typeof dc==="function")dc();}catch(_){}
+  try{if(typeof dc==="function")dc();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-generate-all-syntheses",_e);}catch(__){}}
   return arr.length;
 }
 
@@ -9107,7 +9117,7 @@ function axScheduleSyntheses(){
     }
   }catch(_){}
 }
-try{axScheduleSyntheses();}catch(_){}
+try{axScheduleSyntheses();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-schedule-syntheses",_e);}catch(__){}}
 
 function _filterKB(q){
   try{
@@ -9117,7 +9127,7 @@ function _filterKB(q){
       var s=(rows[i].getAttribute("data-search")||"").toLowerCase();
       rows[i].style.display=(!ql||s.indexOf(ql)>=0)?"":"none";
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_filter-k-b",_e);}catch(__){}}
 }
 
 function _kbViewProfile(uid){
@@ -9131,7 +9141,7 @@ function _kbViewProfile(uid){
     });
     h+='</div>';
     if(typeof _showModal==="function")_showModal(h);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_kb-view-profile",_e);}catch(__){}}
 }
 
 function _kbBriefing(uid){
@@ -9145,7 +9155,7 @@ function _kbBriefing(uid){
 }
 
 function _kbRegenerate(){
-  try{axGenerateAllSyntheses();}catch(_){}
+  try{axGenerateAllSyntheses();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_kb-regenerate",_e);}catch(__){}}
 }
 
 function vKnowledgeBank(){
@@ -9160,7 +9170,7 @@ function vKnowledgeBank(){
         if(uid&&uid.indexOf("_")<0){try{profiles[uid]=lg(k,{})||{};}catch(_){}}
       }
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-knowledge-bank",_e);}catch(__){}}
   var ids=Object.keys(profiles);
   var totalFields=15;
   var stats={total:ids.length,complete:0,partial:0,draft:0};
@@ -9225,7 +9235,7 @@ function _agentDataLeakWatch(){
           }
         });
         if(changed)try{ls("ax_msgs_"+c.id,msgs);}catch(_){}
-      }catch(_){}
+      }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-data-leak-watch",_e);}catch(__){}}
     });
     if(recovered>0){
       var log=lg("ax_data_enrichment_log",[])||[];
@@ -9236,7 +9246,7 @@ function _agentDataLeakWatch(){
     return {recovered:recovered};
   }catch(_){return {recovered:0};}
 }
-try{_axIntervalAdd(_agentDataLeakWatch,3600000,"data-leak-watch");}catch(_){}
+try{_axIntervalAdd(_agentDataLeakWatch,3600000,"data-leak-watch");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-data-leak-watch",_e);}catch(__){}}
 /* === fin v12.212 === */
 
 /* === v12.217 — Enrichissement profils auto + extraction NLP messages chat + cross-fiches === */
@@ -9259,7 +9269,7 @@ function axExtractFromText(text){
     if(hobbyMatch)res.hobbies=hobbyMatch[1].trim();
     var anniv=t.match(/(?:mon anniversaire|je suis n[eé](?:e)? le?)\s+([\w\s\dàâäéèêëïîôöùûüç\-']{3,40})/i);
     if(anniv)res.birthday_text=anniv[1].trim();
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-extract-from-text",_e);}catch(__){}}
   return res;
 }
 
@@ -9290,7 +9300,7 @@ function _enrichProfileFromMessage(text,userId){
     var profile=lg("ax_profile_"+userId,{})||{};
     var extracted=axExtractFromText(text);
     /* Fallback : utiliser aussi l extracteur historique v12.212 si dispo */
-    try{if(typeof _axProfileExtractFromText==="function"){var ext2=_axProfileExtractFromText(text);Object.keys(ext2||{}).forEach(function(k){if(!extracted[k])extracted[k]=ext2[k];});}}catch(_){}
+    try{if(typeof _axProfileExtractFromText==="function"){var ext2=_axProfileExtractFromText(text);Object.keys(ext2||{}).forEach(function(k){if(!extracted[k])extracted[k]=ext2[k];});}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_enrich-profile-from-message",_e);}catch(__){}}
     if(!Object.keys(extracted).length)return;
     var newKeys=[];
     Object.keys(extracted).forEach(function(k){
@@ -9322,11 +9332,11 @@ function _enrichProfileFromMessage(text,userId){
           }
         }
       }
-    }catch(_){}
+    }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_enrich-profile-from-message",_e);}catch(__){}}
     if(typeof axIsAdmin==="function"&&axIsAdmin()&&newKeys.length>=1){
       if(typeof toast==="function")toast("Profil enrichi : "+newKeys.join(", "),"info",{duration:3500});
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_enrich-profile-from-message",_e);}catch(__){}}
 }
 
 /* Hook live : intercepte sendMessage si pas deja wrappe */
@@ -9344,7 +9354,7 @@ function _enrichProfileFromMessage(text,userId){
       return orig.apply(this,arguments);
     };
     sendMessage._enrichWrapped=true;
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_enrich-profile-from-message",_e);}catch(__){}}
 })();
 
 /* Vue admin liste profils enrichis avec score completude */
@@ -9364,7 +9374,7 @@ function vEnrichedProfiles(){
         rows.push({uid:uid,score:score,filled:filled,total:FIELDS.length,last:p._lastEnriched||0,profile:p});
       }
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-enriched-profiles",_e);}catch(__){}}
   rows.sort(function(a,b){return (b.last||0)-(a.last||0);});
   var log=lg("ax_data_enrichment_log",[])||[];
   var dupes=lg("ax_data_enrichment_dupes",[])||[];
@@ -9412,7 +9422,7 @@ function axEmergencyCleanup(silent){
           ls(k,arr.slice(-caps[k]));
           freed+=saved;
         }
-      }catch(_){}
+      }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
     });
     /* Conversations : garder 30 dernieres + supprimer leurs messages */
     try{
@@ -9420,7 +9430,7 @@ function axEmergencyCleanup(silent){
       if(convs.length>30){
         var toDelete=convs.slice(0,convs.length-30);
         toDelete.forEach(function(c){
-          try{localStorage.removeItem("ax_msgs_"+c.id);}catch(_){}
+          try{localStorage.removeItem("ax_msgs_"+c.id);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
         });
         K.conversations=convs.slice(-30);
         if(typeof _saveConvs==="function")_saveConvs();
@@ -9437,7 +9447,7 @@ function axEmergencyCleanup(silent){
           }
         }catch(_){}
       });
-    }catch(_){}
+    }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
     /* Backups journaliers : garder 7 derniers */
     try{
       var keysToCheck=[];
@@ -9455,7 +9465,7 @@ function axEmergencyCleanup(silent){
           }
         }catch(_){}
       });
-    }catch(_){}
+    }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
     /* Activity logs anciens (ax_activity_<date>) : garder 14 jours */
     try{
       var oldActivity=[];
@@ -9470,38 +9480,38 @@ function axEmergencyCleanup(silent){
           if(dd.getTime()&&Date.now()-dd.getTime()>14*86400000){
             localStorage.removeItem(ka);freed++;
           }
-        }catch(_){}
+        }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
       });
     }catch(_){}
   }catch(_){}
   if(!silent&&typeof toast==="function"){
-    try{toast("Stockage allege : "+freed+" entrees nettoyees","ok",{force:true});}catch(_){}
+    try{toast("Stockage allege : "+freed+" entrees nettoyees","ok",{force:true});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
   }
   if(!silent&&typeof _getStorageUsed==="function"&&typeof toast==="function"){
-    setTimeout(function(){try{toast("Stockage actuel : "+_getStorageUsed(),"info",{force:true});}catch(_){}},1500);
+    setTimeout(function(){try{toast("Stockage actuel : "+_getStorageUsed(),"info",{force:true});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}},1500);
   }
   return freed;
 }
 /* Compatibilite : alias pour anciens appels */
-try{if(typeof window!=="undefined")window.axEmergencyCleanup=axEmergencyCleanup;}catch(_){}
+try{if(typeof window!=="undefined")window.axEmergencyCleanup=axEmergencyCleanup;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-emergency-cleanup",_e);}catch(__){}}
 
 /* Auto-cleanup au boot si > 70% plein (silent si <70%, visible si critique) */
 function _axCheckStorageOnBoot(){
   try{
     var used=0;
     for(var i=0;i<localStorage.length;i++){
-      try{used+=(localStorage.getItem(localStorage.key(i))||"").length;}catch(_){}
+      try{used+=(localStorage.getItem(localStorage.key(i))||"").length;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-check-storage-on-boot",_e);}catch(__){}}
     }
     var pct=used/5242880*100;
     if(pct>70){
       try{console.warn("[BOOT] Storage "+pct.toFixed(0)+"% — emergency cleanup auto");}catch(_){}
-      setTimeout(function(){try{axEmergencyCleanup(false);}catch(_){}},2000);
+      setTimeout(function(){try{axEmergencyCleanup(false);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-check-storage-on-boot",_e);}catch(__){}}},2000);
     }else if(pct>50){
       setTimeout(function(){try{axEmergencyCleanup(true);}catch(_){}},5000);
     }
   }catch(_){}
 }
-try{setTimeout(_axCheckStorageOnBoot,3000);}catch(_){}
+try{setTimeout(_axCheckStorageOnBoot,3000);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-check-storage-on-boot",_e);}catch(__){}}
 
 /* Sentinelle storage-watch — toutes les 10 min, auto-purge si > 80% */
 function _agentStorageWatch(){
@@ -9513,7 +9523,7 @@ function _agentStorageWatch(){
     }
     var pct=used/5242880*100;
     if(pct>80){
-      try{axEmergencyCleanup(true);}catch(_){}
+      try{axEmergencyCleanup(true);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-storage-watch",_e);}catch(__){}}
       try{
         var log=lg("ax_agents_log",[])||[];
         log.push({ts:Date.now(),agent:"storage-watch",sev:"warn",msg:"auto-purge "+pct.toFixed(0)+"%"});
@@ -9521,42 +9531,42 @@ function _agentStorageWatch(){
         ls("ax_agents_log",log);
       }catch(_){}
     }
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-storage-watch",_e);}catch(__){}}
 }
 /* Wrapper requestIdleCallback pour ne pas bloquer l UI */
 function _axRunIdle(fn,timeout){
   try{
     if(typeof requestIdleCallback==="function"){
-      requestIdleCallback(function(){try{fn();}catch(_){}},{timeout:timeout||5000});
+      requestIdleCallback(function(){try{fn();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-run-idle",_e);}catch(__){}}},{timeout:timeout||5000});
     }else{
       setTimeout(function(){try{fn();}catch(_){}},timeout||1000);
     }
   }catch(_){try{fn();}catch(__){}}
 }
-try{_axIntervalAdd(function(){_axRunIdle(_agentStorageWatch,3000);},600000,"storage-watch");}catch(_){}
+try{_axIntervalAdd(function(){_axRunIdle(_agentStorageWatch,3000);},600000,"storage-watch");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-run-idle",_e);}catch(__){}}
 
 /* === v12.257 (Kevin 2026-04-25 "memoire pleine") — Cleanup AGRESSIF auto 30 min === */
-function _axMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_){}return u;}
+function _axMemoryUsedBytes(){var u=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;u+=(localStorage.getItem(k)||"").length+k.length;}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-memory-used-bytes",_e);}catch(__){}}return u;}
 function axAggressiveCleanup(){
   var before=_axMemoryUsedBytes();
   try{
     var caps={"ax_audit":100,"ax_silent_log":50,"ax_err_log":50,"ax_security_alerts":50,"ax_data_enrichment_log":50,"ax_data_enrichment_dupes":20,"ax_camera_scans":15,"ax_health_reports":3,"ax_agents_log":50,"ax_click_failures":20,"ax_click_slow":20,"ax_telemetry_in":40,"ax_claude_todo":20,"ax_handoff_journal":30,"ax_audit_log":80,"ax_lessons_learned":80,"ax_persistent_memory":150,"ax_notif_history":20,"ax_push_history":20,"ax_clipboard":15,"ax_devices":15,"ax_connection_history":40,"ax_login_history":20,"ax_admin_inbox":20,"ax_email_log":30,"ax_subscription_requests":20,"ax_blocked_actions":15,"ax_token_use":20,"ax_latency_log":40,"ax_bodyguard_log":40,"ax_user_telemetry":40,"ax_telemetry":40,"ax_location_history":40,"ax_geofence_log":40,"ax_table_presences":20,"ax_client_logs":40,"ax_activity_log":80,"ax_crew_history":40,"ax_import_log":40,"ax_camera_history":15,"ax_voice_history":15};
-    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_){}});
-    try{var convs=(K&&Array.isArray(K.conversations))?K.conversations:[];convs.forEach(function(c){try{var key="ax_msgs_"+c.id;var msgs=lg(key,[]);if(Array.isArray(msgs)&&msgs.length>100)ls(key,msgs.slice(-100));}catch(_){}});if(K&&Array.isArray(K.messages)&&K.messages.length>100){K.messages=K.messages.slice(-100);try{if(typeof _saveMsgs==="function")_saveMsgs();}catch(_){}}}catch(_){}
-    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||k.indexOf("ax_user_theme_")!==0)continue;try{var t=lg(k,null);if(t&&Array.isArray(t.photos)&&t.photos.length>5){t.photos=t.photos.slice(-5);ls(k,t);}}catch(_){}}}catch(_){}
-    try{var tel=lg("ax_telemetry_in",[]);if(Array.isArray(tel)){var cut=Date.now()-7*86400000;var trimmed=tel.filter(function(t){return!t.processed||(t.ts&&t.ts>cut);});if(trimmed.length<tel.length)ls("ax_telemetry_in",trimmed);}}catch(_){}
-    try{var todo=lg("ax_claude_todo",[]);if(Array.isArray(todo)){var cut2=Date.now()-7*86400000;var trim2=todo.filter(function(t){return t.status!=="resolved"||(t.ts&&t.ts>cut2);});if(trim2.length<todo.length)ls("ax_claude_todo",trim2);}}catch(_){}
+    Object.keys(caps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>caps[k])ls(k,arr.slice(-caps[k]));}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}});
+    try{var convs=(K&&Array.isArray(K.conversations))?K.conversations:[];convs.forEach(function(c){try{var key="ax_msgs_"+c.id;var msgs=lg(key,[]);if(Array.isArray(msgs)&&msgs.length>100)ls(key,msgs.slice(-100));}catch(_){}});if(K&&Array.isArray(K.messages)&&K.messages.length>100){K.messages=K.messages.slice(-100);try{if(typeof _saveMsgs==="function")_saveMsgs();}catch(_){}}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||k.indexOf("ax_user_theme_")!==0)continue;try{var t=lg(k,null);if(t&&Array.isArray(t.photos)&&t.photos.length>5){t.photos=t.photos.slice(-5);ls(k,t);}}catch(_){}}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}
+    try{var tel=lg("ax_telemetry_in",[]);if(Array.isArray(tel)){var cut=Date.now()-7*86400000;var trimmed=tel.filter(function(t){return!t.processed||(t.ts&&t.ts>cut);});if(trimmed.length<tel.length)ls("ax_telemetry_in",trimmed);}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}
+    try{var todo=lg("ax_claude_todo",[]);if(Array.isArray(todo)){var cut2=Date.now()-7*86400000;var trim2=todo.filter(function(t){return t.status!=="resolved"||(t.ts&&t.ts>cut2);});if(trim2.length<todo.length)ls("ax_claude_todo",trim2);}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}
     try{for(var j=0;j<localStorage.length;j++){var kb=localStorage.key(j);if(kb&&kb.indexOf("ax_backup_")===0){var d=kb.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000)localStorage.removeItem(kb);}}}catch(_){}
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}
   var after=_axMemoryUsedBytes();
   var freed=Math.max(0,before-after);
-  if(freed>100*1024&&typeof toast==="function"){try{toast("Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_){}}
+  if(freed>100*1024&&typeof toast==="function"){try{toast("Memoire optimisee : "+Math.round(freed/1024)+" Ko liberes","ok");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-aggressive-cleanup",_e);}catch(__){}}}
   return freed;
 }
-function _agentAggressiveAuto(){try{var used=_axMemoryUsedBytes();var pct=used/5242880*100;if(pct>80)_axRunIdle(axAggressiveCleanup,3000);}catch(_){}}
+function _agentAggressiveAuto(){try{var used=_axMemoryUsedBytes();var pct=used/5242880*100;if(pct>80)_axRunIdle(axAggressiveCleanup,3000);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-aggressive-auto",_e);}catch(__){}}}
 try{_axIntervalAdd(_agentAggressiveAuto,1800000,"aggressive-30min");}catch(_){}
 try{setTimeout(_agentAggressiveAuto,8000);}catch(_){}
-try{if(typeof window!=="undefined")window.axAggressiveCleanup=axAggressiveCleanup;}catch(_){}
+try{if(typeof window!=="undefined")window.axAggressiveCleanup=axAggressiveCleanup;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_agent-aggressive-auto",_e);}catch(__){}}
 
 /* === vStorageManage — vue admin enrichie avec actions claires === */
 function vStorageManage(){
@@ -9579,10 +9589,10 @@ function vStorageManage(){
   h+='</div>';
   /* Actions principales */
   h+='<div class="ax-card" style="margin-bottom:12px"><h3 style="margin:0 0 10px">Actions</h3>';
-  h+='<button class="ax-btn ax-btn-primary" style="min-height:48px;width:100%;margin-bottom:8px;font-weight:700;font-size:14px" onclick="var n=axEmergencyCleanup(false);try{dc();}catch(_){}">&#129529; Nettoyer maintenant</button>';
+  h+='<button class="ax-btn ax-btn-primary" style="min-height:48px;width:100%;margin-bottom:8px;font-weight:700;font-size:14px" onclick="var n=axEmergencyCleanup(false);try{dc();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-storage-manage",_e);}catch(__){}}">&#129529; Nettoyer maintenant</button>';
   h+='<button class="ax-btn" style="min-height:44px;width:100%;margin-bottom:8px" onclick="try{var st=_axStorageStats();var rows=st.stats.map(function(r){return r.key+\' — \'+(Math.round(r.size/1024*10)/10)+\' Ko\';}).join(\'\\n\');alert(\'Toutes les cles (triees par taille) :\\n\\n\'+rows);}catch(e){alert(\'Erreur: \'+e);}">&#128202; Voir details (toutes les cles)</button>';
   h+='<button class="ax-btn" style="min-height:44px;width:100%;margin-bottom:8px" onclick="if(confirm(\'Cela exporte TOUT en fichier JSON puis vide le stockage. Continuer ?\')){try{var dump={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);dump[k]=localStorage.getItem(k);}var blob=new Blob([JSON.stringify(dump,null,2)],{type:\'application/json\'});var a=document.createElement(\'a\');a.href=URL.createObjectURL(blob);a.download=\'apex-backup-\'+new Date().toISOString().slice(0,10)+\'.json\';a.click();setTimeout(function(){if(confirm(\'Sauvegarde telechargee. Vider le stockage maintenant ?\')){localStorage.clear();location.reload();}},1500);}catch(e){alert(\'Erreur: \'+e);}}">&#128228; Tout sauvegarder puis vider</button>';
-  h+='<button class="ax-btn" style="min-height:44px;width:100%" onclick="try{var n=(typeof _axCompressAll===\'function\')?_axCompressAll():0;toast(n+\' cles compressees\',\'ok\');dc();}catch(_){}">&#128476;&#65039; Compresser les grosses cles</button>';
+  h+='<button class="ax-btn" style="min-height:44px;width:100%" onclick="try{var n=(typeof _axCompressAll===\'function\')?_axCompressAll():0;toast(n+\' cles compressees\',\'ok\');dc();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-storage-manage",_e);}catch(__){}}">&#128476;&#65039; Compresser les grosses cles</button>';
   h+='</div>';
   /* Top 10 plus grosses cles */
   h+='<div class="ax-card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">Top 10 plus grosses cles</h3>';
@@ -9599,7 +9609,7 @@ function vStorageManage(){
   h+='</div></div>';
   return h;
 }
-try{if(typeof window!=="undefined")window.vStorageManage=vStorageManage;}catch(_){}
+try{if(typeof window!=="undefined")window.vStorageManage=vStorageManage;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ctx-unknown",_e);}catch(__){}}
 
 /* === Reduction frequence setIntervals non-critiques (Kevin "lag, saccade") === */
 /* Backoff progressif : si app idle, espacer encore plus les agents */
@@ -9610,7 +9620,7 @@ try{
   });
 }catch(_){}
 function _axIsIdle(){return Date.now()-_axPerfMode.lastUserActivity>120000;}
-try{if(typeof window!=="undefined")window._axIsIdle=_axIsIdle;}catch(_){}
+try{if(typeof window!=="undefined")window._axIsIdle=_axIsIdle;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-is-idle",_e);}catch(__){}}
 /* === fin v12.218 === */
 
 
@@ -9642,13 +9652,13 @@ function axEnsureKevinAdminProfile(){
   var existing = lg("ax_admin_profile", null);
   if(!existing || !existing.cross_app_synced){
     ls("ax_admin_profile", KEVIN);
-    if(typeof fbWrite === "function") try{fbWrite("ax_admin_profile", KEVIN);}catch(_){}
+    if(typeof fbWrite === "function") try{fbWrite("ax_admin_profile", KEVIN);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-ensure-kevin-admin-profile",_e);}catch(__){}}
   }
   // Aussi creer le profil Kevin specifiquement
   var existingKevin = lg("ax_admin_kevin", null);
   if(!existingKevin){
     ls("ax_admin_kevin", KEVIN);
-    if(typeof fbWrite === "function") try{fbWrite("ax_admin_kevin", KEVIN);}catch(_){}
+    if(typeof fbWrite === "function") try{fbWrite("ax_admin_kevin", KEVIN);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-ensure-kevin-admin-profile",_e);}catch(__){}}
   }
   return KEVIN;
 }
@@ -9656,7 +9666,7 @@ function axGetKevinProfile(){
   return lg("ax_admin_profile", null) || lg("ax_admin_kevin", null);
 }
 // Auto-init au boot si admin
-try{ setTimeout(function(){if(typeof axIsAdmin==="function"&&axIsAdmin())axEnsureKevinAdminProfile();},2500); }catch(_){}
+try{ setTimeout(function(){if(typeof axIsAdmin==="function"&&axIsAdmin())axEnsureKevinAdminProfile();},2500); }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-get-kevin-profile",_e);}catch(__){}}
 
 /* ===== v12.229 — Pack pro: conversions + construction + lune + meteo + dates pro ===== */
 /* Conversions universelles (longueur, poids, volume, temperature, surface, vitesse, pression, energie, temps) */
@@ -10260,7 +10270,7 @@ function axLessonAdd(category, lesson, source, opts){
     }
     if(arr.length>200)arr=arr.slice(-200);
     ls("ax_lessons_learned",arr);
-    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-add",_e);}catch(__){}}
     /* v12.248 — Cross-app : ecrire AUSSI dans cmc_lessons_learned pour que CMCteams le voit comme natif */
     try{
       var cmcArr=lg("cmc_lessons_learned",[])||[];
@@ -10270,10 +10280,10 @@ function axLessonAdd(category, lesson, source, opts){
       ls("cmc_lessons_learned",cmcArr);
       if(typeof fbWrite==="function")fbWrite("cmc_lessons_learned",cmcArr);
     }catch(_){}
-    if(typeof _audit==="function")try{_audit("lesson_added",(K&&K.user&&K.user.id)||"system",entry.category,entry.lesson.slice(0,80));}catch(_){}
+    if(typeof _audit==="function")try{_audit("lesson_added",(K&&K.user&&K.user.id)||"system",entry.category,entry.lesson.slice(0,80));}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-add",_e);}catch(__){}}
     /* Toast admin si critique */
     if(sev==="critical"&&typeof axIsAdmin==="function"&&axIsAdmin()&&typeof toast==="function"){
-      try{toast("Nouvelle lecon critique ("+entry.category+")","warn",{duration:6000});}catch(_){}
+      try{toast("Nouvelle lecon critique ("+entry.category+")","warn",{duration:6000});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-add",_e);}catch(__){}}
     }
     return entry;
   }catch(e){return false;}
@@ -10297,7 +10307,7 @@ function axLessonRemove(ts){
     arr.splice(i,1);
     ls("ax_lessons_learned",arr);
     if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
-    if(typeof _audit==="function")try{_audit("lesson_removed",K.user.id,String(ts),"");}catch(_){}
+    if(typeof _audit==="function")try{_audit("lesson_removed",K.user.id,String(ts),"");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-remove",_e);}catch(__){}}
     return true;
   }catch(e){return false;}
 }
@@ -10312,7 +10322,7 @@ function axLessonMarkApplied(ts){
     e.appliedAt=e.applied?Date.now():null;
     ls("ax_lessons_learned",arr);
     if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
-    if(typeof _audit==="function")try{_audit("lesson_applied",K.user.id,String(ts),e.applied?"on":"off");}catch(_){}
+    if(typeof _audit==="function")try{_audit("lesson_applied",K.user.id,String(ts),e.applied?"on":"off");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-mark-applied",_e);}catch(__){}}
     return true;
   }catch(e){return false;}
 }
@@ -10326,7 +10336,7 @@ function axLessonIncrementApplied(ts,by){
     e.timesApplied=(e.timesApplied||0)+(by||1);
     e.lastApplied=Date.now();
     ls("ax_lessons_learned",arr);
-    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-increment-applied",_e);}catch(__){}}
     return true;
   }catch(e){return false;}
 }
@@ -10339,11 +10349,11 @@ function axLessonApplyByCategory(cat,by){
     if(!matches.length)return 0;
     matches.forEach(function(e){e.timesApplied=(e.timesApplied||0)+(by||1);e.lastApplied=Date.now();});
     ls("ax_lessons_learned",arr);
-    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",arr);}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-apply-by-category",_e);}catch(__){}}
     return matches.length;
   }catch(e){return 0;}
 }
-try{window.axLessonIncrementApplied=axLessonIncrementApplied;window.axLessonApplyByCategory=axLessonApplyByCategory;}catch(_){}
+try{window.axLessonIncrementApplied=axLessonIncrementApplied;window.axLessonApplyByCategory=axLessonApplyByCategory;}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-lesson-apply-by-category",_e);}catch(__){}}
 
 /* Detection nouvelle lesson critique au boot (toast 1x) */
 function _axCheckNewCriticalLessons(){
@@ -10355,7 +10365,7 @@ function _axCheckNewCriticalLessons(){
       return e&&e.sev==="critical"&&e.ts>lastSeen&&e.source&&e.source!=="apex";
     });
     if(newCrit.length&&typeof axIsAdmin==="function"&&axIsAdmin()&&typeof toast==="function"){
-      try{toast(newCrit.length+" nouvelle(s) lecon(s) critique(s) de "+newCrit[0].source,"warn",{duration:7000});}catch(_){}
+      try{toast(newCrit.length+" nouvelle(s) lecon(s) critique(s) de "+newCrit[0].source,"warn",{duration:7000});}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-check-new-critical-lessons",_e);}catch(__){}}
     }
     localStorage.setItem("ax_last_lesson_check",String(now));
     return newCrit.length;
@@ -10363,7 +10373,7 @@ function _axCheckNewCriticalLessons(){
 }
 /* Hook au boot apres axInit + recheck periodique */
 try{setTimeout(function(){try{_axCheckNewCriticalLessons();}catch(_){}},5000);}catch(_){}
-try{_axIntervalAdd(function(){try{_axCheckNewCriticalLessons();}catch(_){}},600000,"new-critical-lessons");}catch(_){}
+try{_axIntervalAdd(function(){try{_axCheckNewCriticalLessons();}catch(_){}},600000,"new-critical-lessons");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-check-new-critical-lessons",_e);}catch(__){}}
 
 /* Vue admin Lessons Learned */
 function vLessonsLearned(){
@@ -10509,7 +10519,7 @@ function axAcceptCookies(){
   try{
     localStorage.setItem("ax_cookies_consent",JSON.stringify({ts:Date.now(),ver:APP_VER}));
     var b=document.getElementById("ax-cookie-banner");
-    if(b){b.style.transition="opacity .3s,transform .3s";b.style.opacity="0";b.style.transform="translateY(20px)";setTimeout(function(){try{b.remove();}catch(_){}},350);}
+    if(b){b.style.transition="opacity .3s,transform .3s";b.style.opacity="0";b.style.transform="translateY(20px)";setTimeout(function(){try{b.remove();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-accept-cookies",_e);}catch(__){}}},350);}
     if(typeof toast==="function")toast("Tu peux exporter ou supprimer tes donnees a tout moment dans Reglages","ok");
   }catch(e){console.warn("[axAcceptCookies]",e);}
 }
@@ -10518,7 +10528,7 @@ function axRevokeCookies(){
     localStorage.removeItem("ax_cookies_consent");
     if(typeof toast==="function")toast("Consentement retire","info");
     setTimeout(axShowCookieBanner,500);
-  }catch(_){}
+  }catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-revoke-cookies",_e);}catch(__){}}
 }
 function axExportMyData(){
   try{
@@ -10530,7 +10540,7 @@ function axExportMyData(){
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(url);},1000);
     if(typeof toast==="function")toast("Tes donnees ont ete telechargees","ok");
-    try{if(typeof _audit==="function")_audit("rgpd_export",K.user?K.user.id:"?","export_my_data","");}catch(_){}
+    try{if(typeof _audit==="function")_audit("rgpd_export",K.user?K.user.id:"?","export_my_data","");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-export-my-data",_e);}catch(__){}}
   }catch(e){if(typeof toast==="function")toast("Erreur export: "+e.message,"err");}
 }
 function axDeleteMyData(){
@@ -10539,10 +10549,10 @@ function axDeleteMyData(){
     var c=prompt(msg);
     if(c==null)return;
     if(String(c).trim().toUpperCase()!=="SUPPRIMER"){if(typeof toast==="function")toast(axT("toast.cancelled"),"info");return;}
-    try{if(typeof _audit==="function")_audit("rgpd_delete",K.user?K.user.id:"?","delete_my_data","localStorage cleared");}catch(_){}
+    try{if(typeof _audit==="function")_audit("rgpd_delete",K.user?K.user.id:"?","delete_my_data","localStorage cleared");}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-delete-my-data",_e);}catch(__){}}
     var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("ax_")===0)keys.push(k);}
     keys.forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});
-    try{if(typeof axDBClear==="function")axDBClear();}catch(_){}
+    try{if(typeof axDBClear==="function")axDBClear();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-delete-my-data",_e);}catch(__){}}
     if(typeof toast==="function")toast("Toutes tes donnees ont ete effacees","ok");
     setTimeout(function(){location.reload();},1500);
   }catch(e){if(typeof toast==="function")toast("Erreur suppression: "+e.message,"err");}
@@ -10573,7 +10583,7 @@ try{
       document.addEventListener("DOMContentLoaded",function(){setTimeout(axShowCookieBanner,2500);});
     }
   }
-}catch(_){}
+}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ax-read-encrypted",_e);}catch(__){}}
 /* ============ FIN RGPD / COOKIES ============ */
 
 /* ============ AX_SPORT (v12.264 - module compact sport/fitness) ============ */
@@ -10581,8 +10591,8 @@ var AX_SPORT={sports:[{id:"course",nom:"Course a pied",kcal_h:600,emoji:"🏃"},
 function axSportCalc(sport,duree_min,poids){var s=AX_SPORT.sports.find(function(x){return x.id===String(sport||"").toLowerCase()||x.nom.toLowerCase().indexOf(String(sport||"").toLowerCase())>=0;});if(!s)return null;var d=Number(duree_min)||0;var p=Number(poids)||70;var ratio=p/70;var kcal=Math.round(s.kcal_h*(d/60)*ratio);return{sport:s.nom,emoji:s.emoji,duree_min:d,poids:p,kcal:kcal,kcal_h_base:s.kcal_h};}
 function axCardioZones(age){var fcMax=220-(Number(age)||30);return{fcMax:fcMax,echauffement:[Math.round(fcMax*0.5),Math.round(fcMax*0.6)],endurance:[Math.round(fcMax*0.6),Math.round(fcMax*0.7)],aerobie:[Math.round(fcMax*0.7),Math.round(fcMax*0.8)],seuil:[Math.round(fcMax*0.8),Math.round(fcMax*0.9)],max:[Math.round(fcMax*0.9),fcMax]};}
 function vSportPro(){var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">🏃 Sport &amp; Fitness</h2>';h+='<div class="ax-card"><h3>🧮 Calcul calories seance</h3><div style="display:grid;gap:8px"><select id="ax-sport-sel" class="ax-input">';AX_SPORT.sports.forEach(function(s){h+='<option value="'+esc(s.id)+'">'+esc(s.emoji+" "+s.nom)+' ('+s.kcal_h+' kcal/h)</option>';});h+='</select><input id="ax-sport-duree" class="ax-input" type="number" placeholder="Duree (minutes)" value="30"><input id="ax-sport-poids" class="ax-input" type="number" placeholder="Poids kg (optionnel)" value="70"><button class="ax-btn ax-btn-primary" onclick="_axSportRun()">Calculer</button><div id="ax-sport-result" style="padding:10px;background:rgba(232,184,48,.06);border-radius:6px;min-height:30px"></div></div></div>';h+='<div class="ax-card"><h3>❤ Zones cardio</h3><input id="ax-sport-age" class="ax-input" type="number" placeholder="Age" value="30"><button class="ax-btn ax-btn-outline" style="margin-top:6px" onclick="_axSportZones()">Calculer zones</button><div id="ax-sport-zones" style="padding:10px;margin-top:8px;background:rgba(255,80,80,.06);border-radius:6px;min-height:30px"></div></div>';h+='<div class="ax-card"><h3>📋 Catalogue sports ('+AX_SPORT.sports.length+')</h3><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">';AX_SPORT.sports.forEach(function(s){h+='<div style="padding:8px;background:rgba(255,255,255,.04);border-radius:6px;font-size:13px">'+esc(s.emoji+" "+s.nom)+'<br><small style="color:var(--ax-text-dim)">'+s.kcal_h+' kcal/h</small></div>';});h+='</div></div></div>';return h;}
-function _axSportRun(){try{var s=document.getElementById("ax-sport-sel").value;var d=document.getElementById("ax-sport-duree").value;var p=document.getElementById("ax-sport-poids").value;var r=axSportCalc(s,d,p);var box=document.getElementById("ax-sport-result");if(box&&r)box.innerHTML="<strong>"+esc(r.emoji+" "+r.sport)+"</strong><br>"+r.duree_min+" min - "+r.poids+" kg<br><span style=\"color:var(--ax-gold);font-size:18px\">"+r.kcal+" kcal brulees</span>";}catch(_){}}
-function _axSportZones(){try{var a=document.getElementById("ax-sport-age").value;var z=axCardioZones(a);var box=document.getElementById("ax-sport-zones");if(box)box.innerHTML="FC max: <strong>"+z.fcMax+"</strong> bpm<br>Echauffement: "+z.echauffement[0]+"-"+z.echauffement[1]+"<br>Endurance: "+z.endurance[0]+"-"+z.endurance[1]+"<br>Aerobie: "+z.aerobie[0]+"-"+z.aerobie[1]+"<br>Seuil: "+z.seuil[0]+"-"+z.seuil[1]+"<br>Max: "+z.max[0]+"-"+z.max[1];}catch(_){}}
+function _axSportRun(){try{var s=document.getElementById("ax-sport-sel").value;var d=document.getElementById("ax-sport-duree").value;var p=document.getElementById("ax-sport-poids").value;var r=axSportCalc(s,d,p);var box=document.getElementById("ax-sport-result");if(box&&r)box.innerHTML="<strong>"+esc(r.emoji+" "+r.sport)+"</strong><br>"+r.duree_min+" min - "+r.poids+" kg<br><span style=\"color:var(--ax-gold);font-size:18px\">"+r.kcal+" kcal brulees</span>";}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-sport-run",_e);}catch(__){}}}
+function _axSportZones(){try{var a=document.getElementById("ax-sport-age").value;var z=axCardioZones(a);var box=document.getElementById("ax-sport-zones");if(box)box.innerHTML="FC max: <strong>"+z.fcMax+"</strong> bpm<br>Echauffement: "+z.echauffement[0]+"-"+z.echauffement[1]+"<br>Endurance: "+z.endurance[0]+"-"+z.endurance[1]+"<br>Aerobie: "+z.aerobie[0]+"-"+z.aerobie[1]+"<br>Seuil: "+z.seuil[0]+"-"+z.seuil[1]+"<br>Max: "+z.max[0]+"-"+z.max[1];}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_ax-sport-zones",_e);}catch(__){}}}
 /* ============ AX_FUN (v12.264 - module compact blagues/devinettes) ============ */
 var AX_FUN={blagues:["Pourquoi les plongeurs plongent toujours en arriere ? Parce que sinon ils tombent dans le bateau !","Que dit un escargot quand il croise une limace ? Regarde, un nudiste !","Quel est le comble pour un electricien ? De ne pas etre au courant.","Pourquoi les poissons n aiment pas l ordi ? Parce qu ils ont peur du Net.","Que fait une fraise sur un cheval ? Tagada tagada !","Comment appelle-t-on un chat tombe dans un pot de peinture le jour de Noel ? Un chat-peint de Noel.","Quel est le sport le plus fruite ? La boxe, parce qu il y a des prunes.","Pourquoi les maths sont triste ? Parce qu elles ont trop de problemes.","Que dit un sapin qui arrive dans un bois ? Tiens, je connais personne ici.","Quel est le comble du jardinier ? Raconter des salades.","Comment appelle-t-on un chien sans pattes ? On l appelle pas, on va le chercher.","Quel fromage prefere les sorciers ? Le boursin (boursi non).","Pourquoi les abeilles ont les cheveux gras ? Parce qu elles ont des bee-rets.","Quel est l animal le plus heureux ? Le hibou, parce que sa femme est chouette.","C est quoi un chien grand reporter ? Un journalisteckel.","Que fait une vache qui ferme les yeux ? Du lait concentre.","Quel est le comble du facteur ? Perdre le nord.","Pourquoi les bananes ne se sentent jamais seules ? Parce qu elles vont en regime.","Que dit un oignon qui se cogne ? Aie !","Comment reconnait-on un informaticien extraverti ? Il regarde TES chaussures quand il te parle.","Quel est le comble pour un boulanger ? Avoir du pain sur la planche.","Que dit une imprimante au papier ? T es bourre toi !","Pourquoi les girafes n aiment pas les ascenseurs ? Trop bas pour leur cou.","Quel est le sport prefere des insectes ? Le criquet.","Comment fait-on pour rendre un poisson rouge bleu ? On lui coupe la respiration.","Que dit un mur a un autre mur ? On se retrouve au coin.","Pourquoi les plats sont gros ? Ils mangent leur soupe.","Quel est le fruit que les poissons detestent ? La peche.","Pourquoi les squelettes ne se battent pas ? Ils n ont pas de tripes.","C est l histoire d un papier qui tombe a l eau, il est mouille."],devinettes:[{q:"Je commence la nuit et je termine le matin, qui suis-je ?",r:"La lettre N"},{q:"Plus on en a, moins on pese, qu est-ce que c est ?",r:"Des trous"},{q:"Qu est-ce qui monte et descend sans bouger ?",r:"L escalier"},{q:"Je suis grand quand je suis jeune et petit quand je suis vieux, qui suis-je ?",r:"Une bougie"},{q:"On me casse avant de m utiliser, qui suis-je ?",r:"Un oeuf"},{q:"Je marche toute ma vie sans jamais courir, qui suis-je ?",r:"Une horloge"},{q:"Plus j en mets, moins je pese, qu est-ce que c est ?",r:"Un trou (encore !)"},{q:"Je suis dans le ciel mais pas dans le nuage, qui suis-je ?",r:"La lettre L"},{q:"Qu est-ce qui a des dents mais ne mord pas ?",r:"Un peigne"},{q:"Je peux voler sans ailes et pleurer sans yeux, qui suis-je ?",r:"Un nuage"},{q:"Quel objet a une bouche mais ne mange pas ?",r:"Une bouteille"},{q:"Quel mot devient plus court si on lui ajoute une syllabe ?",r:"Le mot court"},{q:"Plus on me prend, plus je grossis, qui suis-je ?",r:"Une photo"},{q:"Qu est-ce qui se brise quand on prononce son nom ?",r:"Le silence"},{q:"Quelle est la moitie de 8 ?",r:"3 (vertical) ou 0 (horizontal)"}],tu_preferes:["Tu preferes voler comme un oiseau ou nager comme un poisson ?","Tu preferes etre invisible ou pouvoir lire dans les pensees ?","Tu preferes vivre 100 ans en bonne sante ou 150 ans malade ?","Tu preferes la pizza ou les burgers a vie ?","Tu preferes etre tres riche mais seul ou pauvre mais entoure d amis ?","Tu preferes voyager dans le passe ou dans le futur ?","Tu preferes etre celebre ou anonyme ?","Tu preferes parler toutes les langues ou jouer de tous les instruments ?","Tu preferes chaud tout le temps ou froid tout le temps ?","Tu preferes pas de wifi ou pas de chocolat pendant 1 an ?","Tu preferes l ete eternel ou l hiver eternel ?","Tu preferes la mer ou la montagne ?","Tu preferes les chiens ou les chats ?","Tu preferes etre un super-heros ou un magicien ?","Tu preferes vivre sur Mars ou au fond de l ocean ?"]};
 function axFunRandomBlague(){return AX_FUN.blagues[Math.floor(Math.random()*AX_FUN.blagues.length)];}
@@ -10590,9 +10600,9 @@ function axFunRandomDevinette(){return AX_FUN.devinettes[Math.floor(Math.random(
 function axFunRandomTuPreferes(){return AX_FUN.tu_preferes[Math.floor(Math.random()*AX_FUN.tu_preferes.length)];}
 function vFunPro(){var tab=window._funTab||"blagues";var h='<div style="padding:16px"><h2 style="color:var(--ax-gold);margin-bottom:16px">😄 Fun &amp; Rigolade</h2>';h+='<div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto"><button class="ax-btn '+(tab==="blagues"?"ax-btn-primary":"ax-btn-outline")+'" onclick="window._funTab=\'blagues\';dc()">😂 Blagues</button><button class="ax-btn '+(tab==="devinettes"?"ax-btn-primary":"ax-btn-outline")+'" onclick="window._funTab=\'devinettes\';dc()">🤔 Devinettes</button><button class="ax-btn '+(tab==="tupreferes"?"ax-btn-primary":"ax-btn-outline")+'" onclick="window._funTab=\'tupreferes\';dc()">⚖ Tu preferes ?</button></div>';if(tab==="blagues"){var b=window._funCurBlague||axFunRandomBlague();h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold)"><div style="font-size:15px;line-height:1.6;padding:8px">'+esc(b)+'</div></div><button class="ax-btn ax-btn-primary" style="width:100%;margin-top:8px" onclick="window._funCurBlague=axFunRandomBlague();dc()">🎲 Suivante</button>';}else if(tab==="devinettes"){var dv=window._funCurDev||axFunRandomDevinette();var rev=window._funShowRep||false;h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue)"><div style="font-size:15px;line-height:1.6;padding:8px"><strong>❓ '+esc(dv.q)+'</strong></div>';if(rev)h+='<div style="padding:8px;margin-top:8px;background:rgba(80,200,120,.1);border-radius:6px;font-size:14px"><strong>💡 Reponse:</strong> '+esc(dv.r)+'</div>';h+='</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><button class="ax-btn ax-btn-outline" onclick="window._funShowRep=!window._funShowRep;dc()">'+(rev?"Cacher":"💡 Voir reponse")+'</button><button class="ax-btn ax-btn-primary" onclick="window._funCurDev=axFunRandomDevinette();window._funShowRep=false;dc()">🎲 Suivante</button></div>';}else{var tp=window._funCurTp||axFunRandomTuPreferes();h+='<div class="ax-card" style="border-left:4px solid var(--ax-orange)"><div style="font-size:16px;line-height:1.6;padding:12px;text-align:center">'+esc(tp)+'</div></div><button class="ax-btn ax-btn-primary" style="width:100%;margin-top:8px" onclick="window._funCurTp=axFunRandomTuPreferes();dc()">🎲 Suivante</button>';}h+='</div>';return h;}
 /* ============ Routing AX_SPORT + AX_FUN (v12.264) ============ */
-try{if(typeof window._axOriginalVMain==="undefined"&&typeof vMain==="function"){window._axOriginalVMain=vMain;window.vMain=function(){if(typeof K!=="undefined"&&K&&K.view==="sportpro")return vSportPro();if(typeof K!=="undefined"&&K&&K.view==="funpro")return vFunPro();return window._axOriginalVMain();};}}catch(_){}
-try{if(typeof axNavigateTo==="function"&&!window._axNavSportFunHooked){window._axNavSportFunHooked=true;var _origNavSF=axNavigateTo;window.axNavigateTo=function(target,opts){var t=String(target||"").toLowerCase().trim();var sportKw=["sport","sports","sportpro","fitness","calorie","calories","cardio","muscu","musculation","entrainement","seance"];var funKw=["fun","funpro","blague","blagues","devinette","devinettes","jeu","jeux","rigoler","drole","tupreferes","tu preferes","humour"];var i;for(i=0;i<sportKw.length;i++){if(t===sportKw[i]||t.indexOf(sportKw[i])>=0){if(typeof sv==="function")sv("sportpro");if(typeof toast==="function")toast("→ Sport","info");return true;}}for(i=0;i<funKw.length;i++){if(t===funKw[i]||t.indexOf(funKw[i])>=0){if(typeof sv==="function")sv("funpro");if(typeof toast==="function")toast("→ Fun","info");return true;}}return _origNavSF(target,opts);};}}catch(_){}
-try{if(typeof axExecuteTool==="function"&&!window._axExecSportFunHooked){window._axExecSportFunHooked=true;var _origExecSF=axExecuteTool;window.axExecuteTool=function(name,input){input=input||{};if(name==="sport_calc"){var r=axSportCalc(input.sport,input.duree_min||input.duree,input.poids);return r?JSON.stringify(r):"Sport non reconnu. Liste: "+AX_SPORT.sports.map(function(s){return s.id;}).join(", ");}if(name==="fun_random_blague")return axFunRandomBlague();if(name==="fun_random_devinette")return JSON.stringify(axFunRandomDevinette());return _origExecSF(name,input);};}}catch(_){}
+try{if(typeof window._axOriginalVMain==="undefined"&&typeof vMain==="function"){window._axOriginalVMain=vMain;window.vMain=function(){if(typeof K!=="undefined"&&K&&K.view==="sportpro")return vSportPro();if(typeof K!=="undefined"&&K&&K.view==="funpro")return vFunPro();return window._axOriginalVMain();};}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-fun-pro",_e);}catch(__){}}
+try{if(typeof axNavigateTo==="function"&&!window._axNavSportFunHooked){window._axNavSportFunHooked=true;var _origNavSF=axNavigateTo;window.axNavigateTo=function(target,opts){var t=String(target||"").toLowerCase().trim();var sportKw=["sport","sports","sportpro","fitness","calorie","calories","cardio","muscu","musculation","entrainement","seance"];var funKw=["fun","funpro","blague","blagues","devinette","devinettes","jeu","jeux","rigoler","drole","tupreferes","tu preferes","humour"];var i;for(i=0;i<sportKw.length;i++){if(t===sportKw[i]||t.indexOf(sportKw[i])>=0){if(typeof sv==="function")sv("sportpro");if(typeof toast==="function")toast("→ Sport","info");return true;}}for(i=0;i<funKw.length;i++){if(t===funKw[i]||t.indexOf(funKw[i])>=0){if(typeof sv==="function")sv("funpro");if(typeof toast==="function")toast("→ Fun","info");return true;}}return _origNavSF(target,opts);};}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-fun-pro",_e);}catch(__){}}
+try{if(typeof axExecuteTool==="function"&&!window._axExecSportFunHooked){window._axExecSportFunHooked=true;var _origExecSF=axExecuteTool;window.axExecuteTool=function(name,input){input=input||{};if(name==="sport_calc"){var r=axSportCalc(input.sport,input.duree_min||input.duree,input.poids);return r?JSON.stringify(r):"Sport non reconnu. Liste: "+AX_SPORT.sports.map(function(s){return s.id;}).join(", ");}if(name==="fun_random_blague")return axFunRandomBlague();if(name==="fun_random_devinette")return JSON.stringify(axFunRandomDevinette());return _origExecSF(name,input);};}}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-fun-pro",_e);}catch(__){}}
 /* ============ FIN AX_SPORT + AX_FUN ============ */
 
 </script>
