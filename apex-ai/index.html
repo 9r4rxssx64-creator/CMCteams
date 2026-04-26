@@ -521,7 +521,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.340",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.341",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -3684,12 +3684,23 @@ function axDetectAndExecute(text){
 /* ===== axOpenBrowserEmbed ===== */
 /* Ouvre une fenetre browser modale dans Apex (iframe sandboxee). */
 /* Whitelist scheme HTTPS uniquement. Wake word reste actif. */
+/* v12.341 — Blocklist sites connus pour bloquer iframe (X-Frame-Options/CSP) */
+var AX_NO_EMBED_HOSTS=["youtube.com","www.youtube.com","m.youtube.com","youtu.be","x.com","twitter.com","www.twitter.com","mobile.twitter.com","facebook.com","www.facebook.com","m.facebook.com","instagram.com","www.instagram.com","linkedin.com","www.linkedin.com","reddit.com","www.reddit.com","tiktok.com","www.tiktok.com","stackoverflow.com","amazon.fr","amazon.com","leboncoin.fr","ebay.fr","airbnb.fr","booking.com","wetransfer.com","drive.google.com","docs.google.com","mail.google.com","outlook.live.com","whatsapp.com","web.whatsapp.com","spotify.com","open.spotify.com","netflix.com","disneyplus.com"];
+function _axIsBlockedEmbed(u){try{var h=String(new URL(u).hostname||"").toLowerCase();return AX_NO_EMBED_HOSTS.indexOf(h)>=0;}catch(_){return false;}}
+function _axProposeAlternative(u){try{var url=new URL(u);var host=url.hostname.toLowerCase();if(/youtube\.com|youtu\.be/.test(host)){var vid=url.searchParams.get("v")||url.pathname.replace(/^\//,"").split("/")[0];if(vid&&vid.length<20&&vid.length>3)return "https://www.youtube.com/embed/"+vid;}if(/google\./.test(host))return null;return "https://r.jina.ai/"+u;}catch(_){return null;}}
+function _axShowEmbedBlockedModal(safeUrl){if(typeof _showModal!=="function"){if(typeof toast==="function")toast("Ce site bloque l integration. Ouverture Safari...","warn");try{window.open(safeUrl,"_blank","noopener,noreferrer");}catch(_){}return;}var alt=_axProposeAlternative(safeUrl);var host="";try{host=new URL(safeUrl).hostname;}catch(_){host=safeUrl.slice(0,60);}var html='<div style="padding:18px"><div style="font-size:48px;text-align:center;margin-bottom:8px">🚫</div><h2 style="text-align:center;margin:0 0 8px">Site non integrable</h2><p style="text-align:center;font-size:13px;color:var(--ax-text-dim);margin:0 0 16px;line-height:1.5"><b>'+esc(host)+'</b> interdit l affichage dans Apex (X-Frame-Options).<br>Choisis une alternative :</p>';if(alt)html+='<button class="ax-btn ax-btn-primary" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';axOpenBrowserEmbed(\''+esc(alt)+'\');" style="width:100%;min-height:48px;margin-bottom:8px;font-weight:700">🔄 Essayer version compatible</button>';html+='<button class="ax-btn ax-btn-primary" onclick="window.open(\''+esc(safeUrl)+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;min-height:48px;margin-bottom:8px;font-weight:700">↗ Ouvrir dans Safari</button>';html+='<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';axOpenBrowserEmbed(\'https://r.jina.ai/'+esc(safeUrl)+'\');" style="width:100%;min-height:44px;margin-bottom:8px">📖 Mode lecture (texte propre)</button>';html+='<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';axOpenBrowserEmbed(\'https://web.archive.org/web/2/'+esc(safeUrl)+'\');" style="width:100%;min-height:44px;margin-bottom:8px">🗂 Version archivee web.archive.org</button>';html+='<button class="ax-btn" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;min-height:44px;background:transparent;color:var(--ax-text-dim)">Annuler</button></div>';_showModal(html);}
+
 function axOpenBrowserEmbed(url){
   var safeUrl=String(url||"").trim();
   if(!safeUrl)return null;
   if(!/^https?:\/\//i.test(safeUrl))safeUrl="https://"+safeUrl;
   if(!/^https:\/\/[^\s<>"'`]+$/i.test(safeUrl)){
     if(typeof toast==="function")toast("URL invalide ou non securisee","warn");
+    return null;
+  }
+  /* v12.341 — Pre-check blocklist : si site connu pour bloquer iframe, propose alternatives au lieu de page blanche */
+  if(typeof _axIsBlockedEmbed==="function" && _axIsBlockedEmbed(safeUrl)){
+    if(typeof _axShowEmbedBlockedModal==="function")_axShowEmbedBlockedModal(safeUrl);
     return null;
   }
   var existing=document.getElementById("ax-browser-modal");
