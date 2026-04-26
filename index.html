@@ -1191,6 +1191,20 @@ if(!Object.entries)Object.entries=function(o){return Object.keys(o).map(function
 var MFR=["Janvier","F\u00e9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\u00fbt","Septembre","Octobre","Novembre","D\u00e9cembre"];
 var DS=["D","L","M","M","J","V","S"];
 var AID="U11804";
+// v9.546 — getAID() fallback dynamique : si U11804 absent mais autre admin existe (chef + family="admin"), utilise celui-la
+function getAID(){
+  try{
+    if(typeof A==="undefined"||!A||!A.employees||!A.employees.length)return AID;
+    // Si AID hardcode existe dans les employes → priorite
+    for(var i=0;i<A.employees.length;i++){if(A.employees[i].id===AID)return AID;}
+    // Sinon chercher autre admin (family="admin" ou chef + role admin)
+    for(var j=0;j<A.employees.length;j++){
+      var e=A.employees[j];
+      if(e&&(e.family==="admin"||e.role==="admin"||e.isAdmin===true))return e.id;
+    }
+  }catch(e){}
+  return AID;
+}
 // v9.103 — Couleurs calibrées sur le PDF SBM original (screenshots fournis par admin)
 // Palette : fonds clairs pastel (thème PDF imprimable) avec textes lisibles dark mode
 // bg = fond clair exact du PDF, c = couleur texte sur fond clair, b = bordure
@@ -4281,6 +4295,26 @@ function fbSaveUrl(){
 // ── Fin bloc Firebase ────────────────────────────────────────────────────────
 
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
+// v9.546 \u2014 escAttr : durci pour valeurs injectees dans attributs HTML (style, title, onclick, src...)
+// Strip caracteres dangereux + nul-bytes + retours ligne (cassent les attributs)
+function escAttr(s){
+  return String(s==null?"":s).replace(/[<>"'&\x00\r\n\t]/g,function(c){
+    return {"<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","&":"&amp;","\x00":"","\r":"&#13;","\n":"&#10;","\t":"&#9;"}[c];
+  });
+}
+// v9.546 \u2014 safeUrl : valide protocole, autorise http/https/data/blob/mailto/tel uniquement, bloque javascript:/vbscript:/data:text/html
+function safeUrl(u){
+  var s=String(u==null?"":u).trim();
+  if(!s)return "";
+  // Bloque javascript:, vbscript:, data:text/html (XSS classiques)
+  var lower=s.toLowerCase().replace(/[\s\x00-\x1f]+/g,"");
+  if(/^javascript:/i.test(lower)||/^vbscript:/i.test(lower)||/^data:text\/html/i.test(lower))return "#";
+  // Autorise http, https, data:image/*, data:video/*, data:audio/*, blob:, mailto:, tel:, # (anchor), / (relatif), ./ (relatif)
+  if(/^(https?:|data:image\/|data:video\/|data:audio\/|data:application\/pdf|blob:|mailto:|tel:|#|\/|\.\/)/i.test(s))return s;
+  // Sinon par defaut, prefixe avec https si ressemble a un domaine
+  if(/^[a-z0-9.-]+\.[a-z]{2,}/i.test(s))return "https://"+s;
+  return "#";
+}
 /* Encode un data URL (ou toute URL) pour insertion s\u00fbre dans CSS url("...") ou attribut src="..."
    Encode les caract\u00e8res pouvant casser l'attribut / la fonction CSS : " \ ( ) */
 function _safeUrl(u){return String(u||"").replace(/\\/g,"%5C").replace(/"/g,"%22").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29");}
@@ -4613,7 +4647,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.544";
+var APP_VER="v9.546";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10664,9 +10698,9 @@ function _sentinelSecurity(){
     // Session TTL
     var last=+lg("cmc_lastact",0);
     if(A.user&&last&&Date.now()-last>8*60*60*1000){findings.push("Session expirée — logout auto");if(_sentinelCanHeal("sec-sentinel")&&typeof doLogout==="function"){doLogout();}_sentinelLogFinding("sec-sentinel","warn","Session TTL forced logout");}
-    // PIN en clair
+    // PIN en clair / format invalide (v9.545 — validation stricte hash $iter$salt$hash)
     var pin=localStorage.getItem("cmc_admin_pin");
-    if(pin&&pin.length<20){findings.push("cmc_admin_pin semble en clair");_sentinelLogFinding("sec-sentinel","err","PIN en clair");}
+    if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&(pinStr.indexOf("$")<0||pinStr.length<32)){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
     // CSP présente ?
     if(!document.querySelector('meta[http-equiv="Content-Security-Policy"]')){findings.push("CSP meta absente");_sentinelLogFinding("sec-sentinel","err","CSP absente");}
     if(findings.length){agentAppendReport("sec-sentinel","warn",findings.join(" · "));}
@@ -12409,7 +12443,7 @@ function startPresenceHeartbeat(){
     if(lastAct>0&&(Date.now()-lastAct)>SESSION_TTL){
       console.info("Session expirée (heartbeat check).");doLogout();return;
     }
-    updatePresence();touchSession();
+    updatePresence(); // v9.545 — NE PAS appeler touchSession() ici (sinon TTL ne se declenche jamais)
     // v9.67 — Notification prochain shift dans 1h
     if(A.user&&isFeatureOn("countdown")){
       var _hn=new Date(),_hy=_hn.getFullYear(),_hm=_hn.getMonth(),_hd=_hn.getDate();
