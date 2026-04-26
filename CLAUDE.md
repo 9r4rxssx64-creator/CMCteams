@@ -4,6 +4,163 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🚨 RÈGLE PERMANENTE — ANTI-BLOCAGE IA, AUTO-DÉBLOCAGE TOTAL (Kevin 2026-04-26, ABSOLUE)
+
+> **"J'espère que tu as vérifié aussi les problèmes de connexion d'IA, qu'il n'y ait plus d'IA, qu'il n'y plus de réponse, qu'on soit bloqué dans Apex. Ça ne doit jamais arriver. Une solution par Apex ou par les autres IA. Pour se débloquer et redevenir fonctionnel. Je ne dois pas rester bloqué peu importe quand. Tout doit être automatisé pour se débloquer, pour s'arranger, pour anticiper tout problème AVANT qu'il y ait un problème. Tout le monde doit avoir vu et réagi et corrigé pour éviter le problème."**
+
+**Règle absolue, prioritaire** — pour Apex, CMCteams, tous projets futurs :
+
+### 1. ZÉRO blocage utilisateur — détection + auto-fix immédiat
+
+À CHAQUE échec d'IA (timeout, 401, 429, 500, fetch failed, CORS, AbortError, network), Apex doit :
+
+1. **Détecter** dans la 1ʳᵉ seconde
+2. **Réessayer** automatiquement (3 tentatives backoff exponentiel 3s/8s/15s)
+3. **Failover IA** vers provider alternatif si échec persiste :
+   - Anthropic Claude indispo → bascule **OpenRouter** (clé saisie) → bascule **OpenAI GPT-4o** → bascule **Gemini 2.5 Pro** → bascule **Groq Llama 3.3 70B** (le moins cher rapide)
+   - Ordre configurable : `ax_failover_chain = ["anthropic","openrouter","openai","google","groq"]`
+4. **Réponse partielle** si stream coupé : sauvegarder le texte déjà reçu + bouton "Continuer"
+5. **Mode dégradé** : si TOUTES les IA échouent → réponse locale (KB, persistent_memory, capabilities) + "Je suis en mode hors-ligne, voici ce que je peux faire localement"
+
+### 2. Anticipation proactive (avant blocage)
+
+Sentinelles tournent EN PERMANENCE :
+
+- **`ai-health-watch` (5 min)** : pings successifs sur chaque provider configuré (HEAD ou requête minimale ~$0.0001). Si 2 échecs consécutifs → notification admin + bascule failover préemptif.
+- **`token-balance-watch` (1×/h)** : check solde Anthropic via API (si endpoint dispo) → si <5€ → alerte + propose recharge 1-clic
+- **`api-quota-watch` (10 min)** : check rate-limit headers (`x-ratelimit-remaining`) sur chaque réponse → si <10% → bascule provider
+- **`network-watch` (boot + visibility)** : ping kdmc-clients-default-rtdb → si offline → mode local
+
+### 3. Self-healing automatique
+
+`axSelfHealAI()` : appelée à chaque erreur, fait dans l'ordre :
+
+```js
+function axSelfHealAI(error){
+  // 1. Log erreur + telemetry vers Apex/CMC handoff
+  axRecordLesson("api","Erreur IA",error.message,"warn");
+  
+  // 2. Reset connexions (nouveau fetch, nouveau AbortController)
+  if(window._apexCurrentAbort) window._apexCurrentAbort.abort();
+  
+  // 3. Vérifier connectivité
+  if(!navigator.onLine) return showOfflineMode();
+  
+  // 4. Tester provider courant
+  return pingProvider(currentProvider).then(function(ok){
+    if(ok) return retryLastRequest();
+    
+    // 5. Failover provider alternatif
+    return failoverNext();
+  });
+}
+```
+
+### 4. Bouton "💥 Débloquer Apex" toujours visible
+
+Bouton rouge en bas-droite (z-index max), accessible depuis n'importe quelle vue :
+- Tap court → `axSelfHealAI()` reset connexions + retry
+- Tap long → modal "Diagnostic complet" : status providers / network / SW / cache + bouton "Force reset session"
+- Affiche "🟢 OK" sinon "🟠 X providers KO" sinon "🔴 BLOCAGE - tap pour fix"
+
+### 5. Concertation IA pour résoudre les bugs
+
+Quand Apex IA détecte qu'elle ne peut pas répondre, elle peut :
+- Demander à OpenRouter ou Gemini de répondre via tool use
+- Pousser le problème dans `ax_claude_todo` Firebase → GitHub Action déclenche Claude Code en autonomie
+- Cross-app : pousser dans `cmc_claude_todo` → CMCteams peut aussi remonter
+
+Multi-agent collaboration interne : 3-5 IA en parallèle pour les questions complexes (déjà existe via `axCrewExperts`).
+
+### 6. Tests réguliers (`ai-stress-test`)
+
+Sentinelle 1×/jour à 4h :
+- Ping chaque provider avec requête test
+- Mesure latence + succès
+- Si dégradation > 30% par rapport aux 7 derniers jours → alerte admin + push lesson
+
+### 7. CMCteams équivalent
+
+Mêmes mécanismes dans CMCteams avec `cmcSelfHealAI`, `cmc_failover_chain`, sentinelles équivalentes.
+
+### 8. Queue de messages utilisateur — JAMAIS de réponse vide
+
+> Kevin : "Pas de réponse dans le vide ou qu'il dit qu'il n'a pas compris ou qu'il n'y a plus d'API. Ça ne doit jamais arriver. Les questions sont mises en attente, tout notées jamais rien oublier et répondre au fur et à mesure. Il se débloque s'il doit être débloqué. Il prend en compte toutes les demandes même pendant qu'il réfléchit. Il les note et il agit après."
+
+#### a) Queue FIFO `K.pendingMessages` per-user
+
+Chaque message user va dans une queue persistée (`ax_pending_messages_<uid>`). Apex traite UN message à la fois mais l'utilisateur peut en envoyer plusieurs sans attendre.
+
+```js
+K.pendingMessages = []; // FIFO
+function axSendUserMessage(text, attachments){
+  // Toujours acker visuellement + persister
+  var msg = {id:Date.now()+Math.random(), text:text, attachments:attachments, ts:Date.now(), status:"pending"};
+  K.pendingMessages.push(msg);
+  ls("ax_pending_messages_"+(K.user&&K.user.id||"anon"), K.pendingMessages);
+  K.messages.push({role:"user",content:text,attachments:attachments});
+  dc(); // affiche immediatement
+  
+  // Si IA libre → traite. Sinon laisse en queue, sera processé apres
+  if(!K.isStreaming) axProcessPendingQueue();
+}
+
+function axProcessPendingQueue(){
+  if(K.isStreaming || !K.pendingMessages.length) return;
+  var next = K.pendingMessages[0];
+  next.status = "processing";
+  return axCallClaudeWithFailover(next.text).then(function(){
+    K.pendingMessages.shift();
+    ls("ax_pending_messages_"+K.user.id, K.pendingMessages);
+    setTimeout(axProcessPendingQueue, 100); // chain
+  }).catch(function(){
+    // axSelfHealAI prend le relais, retente plus tard
+    setTimeout(axProcessPendingQueue, 5000);
+  });
+}
+```
+
+#### b) Affichage UI de la queue
+
+Au-dessus de la zone de chat, badge discret : "📥 X messages en attente" cliquable → modal avec liste + bouton "Traiter maintenant" / "Annuler".
+
+Quand un message attend > 30s → afficher "Apex traite ta demande précédente, ton message est en file d'attente, j'y arrive 🔄"
+
+#### c) JAMAIS "je n'ai pas compris"
+
+Apex ne dit JAMAIS :
+- ❌ "Je n'ai pas compris ta demande"
+- ❌ "Pouvez-vous reformuler ?"
+- ❌ "API indisponible, réessayez plus tard"
+- ❌ Réponse vide / juste un point / silence
+
+Toujours :
+- ✅ "Je propose 3 interprétations : (1) tu veux X / (2) tu veux Y / (3) tu veux Z. Laquelle ?"
+- ✅ "Anthropic temporairement KO, je bascule sur OpenRouter — voici ma réponse via Gemini : [réponse]"
+- ✅ "Je n'ai pas accès au réseau là, mais en local je peux : [3 actions possibles]"
+
+System prompt enrichi : interdiction explicite de répondre vide.
+
+#### d) Persistance offline + reprise
+
+Si l'app perd connexion :
+- Messages user → queue persiste localStorage + IDB
+- Au retour online → `axProcessPendingQueue()` + notification "📥 J'ai traité tes 3 messages en attente. Voici les réponses : ..."
+
+#### e) Concurrent thinking + new input
+
+Pendant qu'Apex stream une réponse longue, Kevin peut :
+- Envoyer un nouveau message → queue (acker visuellement "j'ai bien noté, je m'en occupe après")
+- Cliquer "Stop streaming" → coupe stream actuel + traite tout de suite le nouveau
+
+### 9. Test mental obligatoire
+
+> *"Si Anthropic tombe maintenant, est-ce que Kevin peut continuer à utiliser Apex sans rien faire ? L'app bascule-t-elle automatiquement sur un autre provider ? Si Kevin envoie 5 messages d'affilée, sont-ils TOUS traités ? Apex dit-il un jour 'je n'ai pas compris' ou 'pas d'API' ? Si oui → reprendre."*
+
+S'applique systématiquement à toute interaction IA.
+
+---
+
 ## 🎯 RÈGLE PERMANENTE — ZÉRO DOUBLON UX, SOURCE UNIQUE (Kevin 2026-04-26, ABSOLUE)
 
 > **"J'ai encore les doublons des infos pour les API, les machins. J'en ai dans les paramètres, j'en ai dans le coffre. UX pas assez poussée, pas assez ordonnée, pas assez de changements clairs et précis. Sans perdre d'information sans en manquer. Tout ce qu'il faut par rapport à notre utilisation, à tout ce qu'on a. Déjà rempli par toi. Avec toutes les informations que tu as et sauvegardé pour toujours dans Apex et CMCteams."**
