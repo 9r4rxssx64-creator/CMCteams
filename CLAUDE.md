@@ -4,6 +4,115 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🌐 RÈGLE PERMANENTE — APEX EXÉCUTE TOUTES LES DEMANDES (BROWSER, ACTIONS, RECHERCHE) (Kevin 2026-04-26, ABSOLUE)
+
+> **"Moi comme Laurence ou n'importe quel client, je peux dire 'Apex ouvre-moi un navigateur internet, va sur tel site' et automatiquement Apex exécute. Une fenêtre navigateur apparaît avec possibilité plein écran ET garde toujours les fonctionnalités Apex (poser questions, Dis Apex). Si on dit 'Apex va chercher telle information sur tel site', il doit être capable et exécuter. Toutes les demandes."**
+
+**Règle absolue, prioritaire** — pour Apex (priorité), CMCteams si pertinent :
+
+### 1. Apex exécute, ne se limite pas à parler
+
+À chaque message user, Apex DOIT :
+- Détecter l'intent action (verbes : ouvre, va, cherche, montre, lance, démarre, joue, télécharge, écris, envoie, calcule)
+- EXÉCUTER l'action immédiatement (dans le flux chat ou en embed)
+- Pas se contenter de "voici comment faire" — FAIRE
+
+### 2. Browser intégré (vBrowserEmbed)
+
+Détection mots-clés dans message user :
+- "ouvre [navigateur|browser|chrome|safari]" → ouvre vBrowserEmbed
+- "va sur [URL|google|youtube|...]" → embed iframe avec URL
+- "cherche [X] sur [site]" → embed iframe avec recherche
+- "navigue", "montre-moi le site", etc.
+
+Vue `vBrowserEmbed(url)` :
+- Iframe sandbox + fallback nouvelle fenêtre si site bloque iframe
+- URL bar éditable (Kevin peut taper autre URL)
+- Boutons : ⏮ retour, ⏭ suivant, 🔄 reload, ⛶ fullscreen, ✕ fermer
+- Plein écran via `requestFullscreen()` (touche Échap pour sortir)
+- **Overlay Apex toujours visible** : bouton flottant 🎙 (Dis Apex), bouton 💬 retour chat, bouton 📋 copier URL
+- Wake word actif en arrière-plan
+- Si site bloque iframe (X-Frame-Options) → message "Site bloque l'embed, ouvert dans nouvel onglet" + button "Ouvrir Safari"
+
+### 3. Web search intégrée
+
+Si "cherche [info]" sans site précis :
+- Apex appelle `web_search` tool (Anthropic native, ou Brave/Tavily/DuckDuckGo via API)
+- Affiche 5-10 résultats dans card embed avec snippets
+- Click sur résultat → embed `vBrowserEmbed(result.url)` directement
+
+### 4. Intent dictionary executable
+
+```js
+var AX_EXEC_INTENTS = [
+  {pattern: /ouvre\s+(?:un\s+)?(?:navigateur|browser)/i, fn: function(m,t){return vBrowserEmbed("https://www.google.com");}},
+  {pattern: /(?:va|aller|ouvre)\s+sur\s+(?:le\s+site\s+)?([a-z0-9.-]+\.[a-z]{2,})/i, fn: function(m,t){return vBrowserEmbed("https://"+m[1]);}},
+  {pattern: /(?:cherche|trouve|google)\s+(.+)/i, fn: function(m,t){return axWebSearch(m[1]);}},
+  {pattern: /(?:joue|met|lance)\s+(?:la\s+)?musique\s+(.+)/i, fn: function(m,t){return vBrowserEmbed("https://music.youtube.com/search?q="+encodeURIComponent(m[1]));}},
+  {pattern: /(?:montre|affiche)\s+(?:la\s+)?meteo\s+(?:de\s+|pour\s+)?(.+)?/i, fn: function(m,t){return axShowWeather(m[1]||"Monaco");}},
+  {pattern: /(?:traduis|translate)\s+(?:en\s+)?(\w+)\s*[:]\s*(.+)/i, fn: function(m,t){return axTranslate(m[2], m[1]);}},
+  {pattern: /(?:calcule|combien)\s+(.+)/i, fn: function(m,t){return axCalculate(m[1]);}},
+  // ... extensible
+];
+
+function axDetectAndExecute(text){
+  for(var i=0;i<AX_EXEC_INTENTS.length;i++){
+    var m = text.match(AX_EXEC_INTENTS[i].pattern);
+    if(m){
+      try{return AX_EXEC_INTENTS[i].fn(m, text);}catch(e){}
+    }
+  }
+  return null;
+}
+```
+
+Intégré dans le flux chat : avant d'envoyer à l'IA, on essaie `axDetectAndExecute`. Si match → exécute en parallèle de la réponse IA.
+
+### 5. Tool use IA pour actions complexes
+
+Les actions trop spécifiques pour regex → tool use Anthropic :
+```js
+var AX_EXEC_TOOLS = [
+  {name:"open_browser", description:"Ouvre une URL dans navigateur embed", input_schema:{type:"object",properties:{url:{type:"string"}}}},
+  {name:"web_search", description:"Cherche sur le web", input_schema:{type:"object",properties:{query:{type:"string"}}}},
+  {name:"play_music", description:"Joue de la musique", input_schema:{type:"object",properties:{query:{type:"string"}}}},
+  {name:"send_email", description:"Envoie email via service mail", input_schema:{...}},
+  {name:"create_calendar_event", description:"Crée event calendrier", input_schema:{...}},
+  // ... 30+ tools
+];
+```
+
+Quand IA décide d'utiliser un tool → Apex exécute la fonction côté client + renvoie résultat à l'IA.
+
+### 6. Fonctionnalités Apex toujours dispo en browser
+
+Quand user navigue, overlay z-index max contient :
+- 🎙 Bouton micro (taps : dictée, longpress : wake word toggle)
+- 💬 Retour chat (close iframe)
+- 📋 Copier URL courante
+- 🤖 Demander à Apex (modal mini chat)
+- 📷 Screenshot embed visible
+- ⛶ Fullscreen
+
+Pas perdre Apex juste parce qu'on navigue.
+
+### 7. Tests obligatoires avant release
+
+> *"Si je tape 'ouvre google' dans le chat → est-ce qu'une fenêtre navigateur s'ouvre dans 1s ? Si je tape 'cherche meteo Paris' → est-ce qu'apex me retourne 5 résultats cliquables ? Si je tape 'va sur youtube et cherche imagine dragons' → est-ce qu'il fait les 2 actions enchaînées ?"*
+
+Si non → enrichir AX_EXEC_INTENTS + AX_EXEC_TOOLS.
+
+### 8. Sécurité browser embed
+
+- Iframe sandbox `sandbox="allow-scripts allow-same-origin allow-forms allow-popups"`
+- Si user veut quitter app → bouton retour explicite
+- Domaine bannis (porn, malware, phishing) blocklist via DNS API gratuite (Cloudflare 1.1.1.1 family)
+- Logs navigation dans `ax_browser_history` (max 500, FIFO) pour mémoire
+
+S'applique à Apex en priorité. CMCteams hérite si pertinent.
+
+---
+
 ## 🏆 RÈGLE PERMANENTE — NIVEAU PRODUCTION CLAUDE.AI / CHATGPT (Kevin 2026-04-26, ABSOLUE)
 
 > **"Niveau professionnel = Apex doit être aussi stable que Claude.ai, Claude Code ou ChatGPT. Sur Claude, je n'ai pas ce genre de problème. Les timeouts c'est seulement quand je n'ai plus de forfait. Un client qui va payer ne doit avoir AUCUN problème technique. Les seuls blocages = forfaits, accès, autorisations. JAMAIS par rapport au fonctionnement de l'app. Tout auto-géré, corrigé, anticipé."**
