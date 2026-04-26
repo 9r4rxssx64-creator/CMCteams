@@ -32,6 +32,8 @@
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/icons/icon-512.png">
 <link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <link rel="alternate" hreflang="fr" href="https://9r4rxssx64-creator.github.io/CMCteams/">
+<link rel="alternate" hreflang="en" href="https://9r4rxssx64-creator.github.io/CMCteams/">
+<link rel="alternate" hreflang="it" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <link rel="alternate" hreflang="x-default" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <!-- v9.53 \u2014 Preconnect / DNS prefetch pour acc\u00e9l\u00e9rer les connexions Firebase / Anthropic / EmailJS / cdnjs -->
 <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
@@ -34948,7 +34950,7 @@ window.addEventListener('storage',function(e){
   else if(e.key==='cmc_upload_enabled'){A.uploadEnabled=lg('cmc_upload_enabled',true);dcDebounced();} // v9.62
 });
 
-function _cmcAutoApplyUpdate(nw){/* v9.548 Kevin: MAJ auto SILENCIEUSE (aucun banner visible, reload invisible 800ms) */if(window._cmcSilentUpdated)return;window._cmcSilentUpdated=true;setTimeout(function(){_cmcPerformUpdate(nw);},800);}
+function _cmcAutoApplyUpdate(nw){/* v9.551 Kevin: MAJ auto SILENCIEUSE + check online (pas de reload offline) */if(window._cmcSilentUpdated)return;if(typeof navigator!=="undefined"&&navigator.onLine===false){try{window.addEventListener("online",function(){if(!window._cmcSilentUpdated){window._cmcSilentUpdated=true;setTimeout(function(){_cmcPerformUpdate(nw);},800);}},{once:true});}catch(_){}return;}window._cmcSilentUpdated=true;setTimeout(function(){_cmcPerformUpdate(nw);},800);}
 function _cmcPerformUpdate(nw){try{localStorage.setItem('cmc_pre_reload_view',(A&&A.view)||'accueil');localStorage.setItem('cmc_pre_reload_ts',String(Date.now()));}catch(_){}try{if(nw&&nw.postMessage)nw.postMessage('skipWaiting');}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}setTimeout(function(){location.reload();},300);}
 document.addEventListener('input',function(){try{localStorage.setItem('cmc_last_interaction',String(Date.now()));}catch(_){}},true);
 document.addEventListener('click',function(){try{localStorage.setItem('cmc_last_interaction',String(Date.now()));}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}},true);
