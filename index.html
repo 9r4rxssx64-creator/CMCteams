@@ -12,7 +12,27 @@
 <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="Application de gestion de planning du Casino de Monte-Carlo \u2014 SBM">
+<meta name="description" content="CMCteams - Gestion des shifts et plannings du Casino de Monaco. Application interne SBM pour 258 employes.">
+<meta name="keywords" content="casino monaco, sbm, planning, shifts, blackjack, roulette, cmc, monte-carlo">
+<meta name="author" content="SBM Casino de Monte-Carlo">
+<!-- v9.549 - SEO Open Graph + Twitter Cards + canonical (axe SEO 9 -> 10/10) -->
+<meta property="og:title" content="CMCteams - Casino Monaco">
+<meta property="og:description" content="Application planning equipes Casino de Monaco">
+<meta property="og:image" content="https://9r4rxssx64-creator.github.io/CMCteams/icons/icon-512.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="CMCteams">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CMCteams">
+<meta name="twitter:description" content="Planning Casino de Monaco">
+<meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/icons/icon-512.png">
+<link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/">
+<link rel="alternate" hreflang="fr" href="https://9r4rxssx64-creator.github.io/CMCteams/">
+<link rel="alternate" hreflang="x-default" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <!-- v9.53 \u2014 Preconnect / DNS prefetch pour acc\u00e9l\u00e9rer les connexions Firebase / Anthropic / EmailJS / cdnjs -->
 <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -4647,7 +4667,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.548";
+var APP_VER="v9.549";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7247,7 +7267,11 @@ function hardReset(){
   if(_changed)ls("cmc_ov",A.overrides);
 }());
 // Restaurer la session depuis localStorage avec vérification d'expiration (8h d'inactivité)
-var SESSION_TTL=8*60*60*1000; // 8 heures en ms
+var SESSION_TTL=8*60*60*1000; // 8 heures en ms - constante centralisee v9.549
+try{console.log("[CMC] SESSION_TTL =",SESSION_TTL/3600000,"h");}catch(_){}
+/* v9.549 Kevin: sentinelle scroll horizontal (axe UX iPhone) - audit log si overflow detecte */
+function _cmcCheckHorizontalOverflow(){try{if(document.body&&document.body.scrollWidth>window.innerWidth+5){var els=[];try{document.querySelectorAll("*").forEach(function(e){if(e.scrollWidth>window.innerWidth+10)els.push(e.tagName+(e.className?"."+String(e.className).slice(0,30):""));});}catch(_){}var log=lg("cmc_audit",[]);log.push({ts:Date.now(),type:"horiz_overflow",bw:document.body.scrollWidth,iw:window.innerWidth,offenders:els.slice(0,5)});if(log.length>500)log=log.slice(-500);ls("cmc_audit",log);}}catch(_){}}
+try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontalOverflow,300000);}catch(_){}
 (function(){
   var uid=localStorage.getItem("cmc_uid");
   if(uid){
@@ -10731,7 +10755,7 @@ function _sentinelSecurity(){
     var findings=[];
     // Session TTL
     var last=+lg("cmc_lastact",0);
-    if(A.user&&last&&Date.now()-last>8*60*60*1000){findings.push("Session expirée — logout auto");if(_sentinelCanHeal("sec-sentinel")&&typeof doLogout==="function"){doLogout();}_sentinelLogFinding("sec-sentinel","warn","Session TTL forced logout");}
+    if(A.user&&last&&Date.now()-last>SESSION_TTL){findings.push("Session expirée — logout auto");if(_sentinelCanHeal("sec-sentinel")&&typeof doLogout==="function"){doLogout();}_sentinelLogFinding("sec-sentinel","warn","Session TTL forced logout");}
     // PIN en clair / format invalide (v9.545 — validation stricte hash $iter$salt$hash)
     var pin=localStorage.getItem("cmc_admin_pin");
     if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&(pinStr.indexOf("$")<0||pinStr.length<32)){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
@@ -11053,7 +11077,7 @@ function cmcSecurityLog(action,detail,uid){try{var log=lg("cmc_security_log",[])
 function _agentParserQuality(){try{var y=A.year,m=A.month;var active=A.employees.filter(function(e){return isEmpActive(e,y,m);});var pl=gpl(y,m)||{};var days=getDays(y,m);var tot=active.length*days,filled=0,unk=0;active.forEach(function(e){var row=pl[e.id]||{};for(var d=1;d<=days;d++){var c=row[d];if(c){filled++;if(!CODES[c])unk++;}}});var cov=tot?Math.round(filled/tot*100):0;if(cov<50){agentAppendReport("parser-quality","warn","Couverture "+cov+"% — import incomplet ?");_cmcEscalate({cov:cov,filled:filled,tot:tot,unk:unk,month:MFR[m]+" "+y},"Parser qualite basse");}else if(unk>5){agentAppendReport("parser-quality","warn",unk+" codes inconnus");}else{agentAppendReport("parser-quality","ok","Couverture "+cov+"% · "+unk+" codes inconnus");}}catch(e){agentAppendReport("parser-quality","err",(e.message||"").slice(0,100));}}
 function _agentErrorPattern(){try{var errs=lg("cmc_err_log",[])||[];var recent=errs.filter(function(e){return Date.now()-(e.ts||0)<3600000;});if(recent.length<=5){agentAppendReport("error-pattern","ok",recent.length+" erreurs dans 1h");return;}var pat={};recent.forEach(function(e){var k=(e.msg||"").slice(0,30);pat[k]=(pat[k]||0)+1;});var top=Object.keys(pat).sort(function(a,b){return pat[b]-pat[a];})[0];agentAppendReport("error-pattern","err",recent.length+" erreurs/h — top: '"+top+"' ×"+pat[top]);_cmcEscalate({patterns:pat,recent:recent.slice(0,10)},"Pattern erreur recurrent: "+top);}catch(e){agentAppendReport("error-pattern","err",(e.message||"").slice(0,100));}}
 function _agentPlanningIntegrity(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var bad=0,badCodes=[];Object.keys(pl).forEach(function(uid){var row=pl[uid]||{};for(var d=1;d<=days;d++){var c=row[d];if(c&&!CODES[c]){bad++;if(badCodes.indexOf(c)<0&&badCodes.length<5)badCodes.push(c);}}});if(bad){agentAppendReport("planning-integrity","warn",bad+" codes invalides: "+badCodes.join(", "));}else{agentAppendReport("planning-integrity","ok","Planning coherent "+MFR[m]+" "+y);}}catch(e){agentAppendReport("planning-integrity","err",(e.message||"").slice(0,100));}}
-function _agentSessionWatch(){try{if(!A.user)return;var last=+localStorage.getItem("cmc_lastact")||0;if(!last)return;var rem=8*60*60*1000-(Date.now()-last);if(rem<5*60*1000&&rem>0)agentAppendReport("session-watch","warn","Session expire "+Math.round(rem/60000)+"min");else agentAppendReport("session-watch","ok",Math.round(rem/60000)+"min restantes");}catch(e){agentAppendReport("session-watch","err",(e.message||"").slice(0,100));}}
+function _agentSessionWatch(){try{if(!A.user)return;var last=+localStorage.getItem("cmc_lastact")||0;if(!last)return;var rem=SESSION_TTL-(Date.now()-last);if(rem<5*60*1000&&rem>0)agentAppendReport("session-watch","warn","Session expire "+Math.round(rem/60000)+"min");else agentAppendReport("session-watch","ok",Math.round(rem/60000)+"min restantes");}catch(e){agentAppendReport("session-watch","err",(e.message||"").slice(0,100));}}
 function _agentSwSync(){try{if(!("serviceWorker" in navigator))return;navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;if(reg.waiting){agentAppendReport("sw-sync","warn","MAJ SW en attente");_cmcEscalate({appVer:APP_VER},"SW waiting - user reload requis");}else{agentAppendReport("sw-sync","ok","SW a jour");}}).catch(function(){});}catch(e){agentAppendReport("sw-sync","err",(e.message||"").slice(0,100));}}
 function _agentFbRulesProbe(){try{if(!FB_URL||!navigator.onLine){agentAppendReport("fb-rules-probe","ok","skip");return;}var tk="cmc_probe_"+Date.now();var u=FB_URL+"/cmcteams/"+tk+".json";fetch(u,{method:"PUT",body:JSON.stringify(1)}).then(function(r){if(r.status===403){agentAppendReport("fb-rules-probe","err","403 denied");_cmcEscalate({status:403,url:u},"FB 403 ecriture");}else if(r.ok){agentAppendReport("fb-rules-probe","ok","Ecriture OK");fetch(u,{method:"DELETE"}).catch(function(){});}else{agentAppendReport("fb-rules-probe","warn","HTTP "+r.status);}}).catch(function(e){agentAppendReport("fb-rules-probe","warn","fetch err");});}catch(e){agentAppendReport("fb-rules-probe","err",(e.message||"").slice(0,100));}}
 function _agentAutonomyBridge(){try{var inbox=lg("ax_telemetry_in",[])||[];var outbox=lg("ax_claude_todo",[])||[];var lessons=lg("cmc_lessons_learned",[])||[];var unp=inbox.filter(function(e){return e&&!e.processed;}).length;var pen=outbox.filter(function(t){return t&&t.status==="pending";}).length;
