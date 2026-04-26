@@ -201,6 +201,100 @@ S'applique systématiquement.
 
 ---
 
+## 🔒 RÈGLE PERMANENTE — LAURENCE ISOLATION TOTALE + HISTORIQUE COMPLET ADMIN (Kevin 2026-04-26, ABSOLUE)
+
+> **"Laurence n'a pas toutes les permissions. Elle peut interagir QUE dans sa page. Dans sa section à elle. Que dans sa partie à elle. Elle n'a pas de visibilité ailleurs. Ni les clients, ni admin. Elle peut modifier sa page à elle, intervenir dans sa page, faire des améliorations, des changements. Mais QUE dans sa partie à elle. Toujours retour admin des informations, des changements. De tout ce qui s'est passé y compris les questions, les projets. Je veux l'historique complet de tout le monde, tout le temps, mis à jour."**
+
+**Règle absolue, prioritaire** — pour Apex (Laurence + futurs clients), CMCteams (employés non-admin) :
+
+### 1. Isolation totale par utilisateur (sandbox)
+
+Laurence (et tout user non-admin) accède UNIQUEMENT à :
+- ✅ Sa propre vue chat (vChatLite)
+- ✅ Sa propre fiche profil (vMonProfil)
+- ✅ Ses propres conversations (`ax_msgs_<sa_conv_id>`)
+- ✅ Ses propres settings (`ax_settings_<son_uid>`)
+- ✅ Sa propre KB (`ax_kb_<son_uid>`)
+- ✅ Ses studios (utilisation, pas admin)
+- ✅ Son bloc-notes / favoris perso
+
+INTERDICTION ABSOLUE pour Laurence :
+- ❌ Vues admin (vAdmin, vDashboard, vClientAdmin, vConnections, vSentinels, etc.)
+- ❌ Voir liste autres clients
+- ❌ Voir données autres users
+- ❌ Voir Coffre admin
+- ❌ Voir réglages globaux
+- ❌ Voir audit/lessons/handoff
+- ❌ Voir ax_user_activity_<uid> autres users
+- ❌ Modifier paramètres app globaux
+
+### 2. Implementation guards stricts
+
+`axViewAllowed(view)` doit retourner `false` pour Laurence sur toute vue admin :
+
+```js
+var AX_VIEWS_USER_ALLOWED = [
+  "chat","chatlite","profile","favorites","goals","habits","tasks","notes","calendar",
+  "diary","shopping","contacts","expenses","mystats","tutorial","faq","changelog",
+  "studiomusic","studiovideo","studioprefecture","studiocv","studiofacture","studiocontrat",
+  "studiopresentation","studioclip","studiologo","studios","architecture","plantstudio",
+  "geostudio","buildingstudio","gardenlunarstudio","petstudio","scanstudio","camerastudio",
+  "translatorpro","medicalpro","cuisinepro","loisirspro","securiteperso","calendarsync",
+  "voicesgallery","voices","userpersonalization","wakeword","rgpd","mes-donnees",
+  "iospermissions","permissions","background","backgroundassistant","soldesia","soldes"
+];
+
+function axViewAllowed(view){
+  if(!K.user) return false;
+  if(K.user.id === ADMIN_ID) return true; // admin tout
+  // User normal : whitelist stricte
+  return AX_VIEWS_USER_ALLOWED.indexOf(view) >= 0;
+}
+```
+
+Si Laurence essaie d'aller sur une vue interdite → toast "Cette section est réservée à l'admin" + redirect chat.
+
+### 3. Historique COMPLET admin (toutes données users)
+
+Kevin doit voir TOUT ce que les users font, mais en RAPPORT pas en partage :
+- `ax_user_activity_<uid>` per-user (max 1000)
+- `ax_user_questions_<uid>` (questions posées à l'IA)
+- `ax_user_projects_<uid>` (projets actifs)
+- `ax_user_changes_<uid>` (changements profil/settings/préférences)
+- `ax_user_errors_<uid>` (erreurs rencontrées)
+- `ax_user_logs_<uid>` (login, navigation, clicks)
+
+Vue admin `vUserActivity(uid)` enrichie :
+- Tab "Vue d'ensemble" : KPI 24h/7j/30j (msg envoyés, projets, erreurs)
+- Tab "Conversations" : toutes ses convs (lecture seule)
+- Tab "Questions" : timeline questions IA
+- Tab "Projets" : actifs + archivés
+- Tab "Changements" : modifs profil/settings (chrono)
+- Tab "Erreurs" : si rencontrées
+- Tab "Validations en attente" : actions niveau C bloquées
+- Bouton "Exporter PDF complet" pour archive
+
+### 4. Push notif Kevin pour CHAQUE action significative Laurence
+
+Définir `AX_USER_NOTIFY_ACTIONS` (niveau B+C) : login, logout, projet créé, projet partagé, fichier upload, achat, error critical, validation demandée. → push Kevin via Cloudflare worker.
+
+Niveau A (auto, pas de push) : message chat normal, click bouton, navigation interne.
+
+### 5. Cross-app aussi (CMCteams)
+
+Mêmes principes pour employés CMCteams :
+- Employé voit que sa fiche, son planning, ses échanges, ses messages
+- Pas de `vEmps`, `vAdmin`, `vAuditLog`, `vUsersActivity` — ces vues sont admin only
+- Kevin reçoit historique complet de chaque employé sur sa fiche
+
+### 6. Test mental obligatoire
+
+> *"Si Laurence tape dans l'URL `?view=admin` ou `?view=clients` → est-ce qu'elle est bloquée ? Si Laurence ouvre devtools et tape `K.view='vault'; dc()` → est-ce que vChatLite reprend la main ? Si Laurence appelle `lg('ax_user_activity_<autre_uid>')` → vide ? Si Kevin va sur vUserActivity de Laurence → voit-il TOUT (questions, projets, erreurs, changements) ?"*
+
+Si non → renforcer guards + ajouter historique manquant.
+
+---
+
 ## 👑 RÈGLE PERMANENTE — COMPTE ADMIN UNIQUE KEVIN + PERMISSIONS TIERED LAURENCE (Kevin 2026-04-26, ABSOLUE)
 
 > **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN 200807, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
