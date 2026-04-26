@@ -4647,7 +4647,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.546";
+var APP_VER="v9.547";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7268,6 +7268,12 @@ var SESSION_TTL=8*60*60*1000; // 8 heures en ms
   }
 })();
 function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date.now()));}
+// v9.545 — Listeners activite reelle utilisateur (touch/click/scroll) refresh cmc_lastact
+// Sans ca, la session expire malgre l'app ouverte. Sentinelle TTL 5 min ci-dessous.
+(function(){try{var _evts=["click","keydown","touchstart","scroll"];var _lastTouch=0;function _onAct(){var n=Date.now();if(n-_lastTouch>30000){_lastTouch=n;touchSession();}}_evts.forEach(function(ev){try{document.addEventListener(ev,_onAct,{passive:true,capture:true});}catch(_){document.addEventListener(ev,_onAct,true);}});}catch(_){}
+// v9.545 — Sentinelle TTL 8h enforce : check toutes 5 min, doLogout si expire
+try{setInterval(function(){try{if(!A.user)return;var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0",10);if(lastAct>0&&Date.now()-lastAct>SESSION_TTL){console.info("[TTL] session 8h expiree -> logout auto");try{if(typeof toast==="function")toast("Session expiree apres 8h d'inactivite","warn");}catch(_){}doLogout();}}catch(_){}},5*60*1000);}catch(_){}
+})();
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);_rebuildIndexes();}
 // v9.67 — Firebase et sync queue différés APRÈS premier render (perf: first paint rapide)
 // fbInit() sera appelé par _deferredInit() après render()
@@ -9162,7 +9168,32 @@ function findEmpByName(nom,prenom,src){
       return prenom.indexOf(stored)===0;
     })||null;
   }
-  return searchSrc(src||A.employees)||searchSrc(DEF_EMP)||null;
+  var found=searchSrc(src||A.employees)||searchSrc(DEF_EMP)||null;
+  // v9.545 — Anti-collision homonymes : si plusieurs employes meme surname avec initiales courtes (<=2),
+  // detecter ambiguite et logger anomalie (ex: BORGIA L vs BORGIA T avec prenom incertain)
+  try{
+    var srcList=src||A.employees||[];
+    var sameSurname=srcList.filter(function(e){return e&&e.name&&e.name.indexOf(nomBase)===0;});
+    if(sameSurname.length>=2){
+      var matchingInits=sameSurname.filter(function(e){var stored=e.name.slice(nomBase.length).toUpperCase();return stored.length<=2&&cands.indexOf(stored)>=0;});
+      if(matchingInits.length>=2){
+        try{
+          var ki=(typeof getKnownIdentities==="function")?getKnownIdentities():{};
+          var keyTarget=(typeof _normNameKey==="function")?_normNameKey(nom+" "+prenom):(nom+" "+prenom).toUpperCase();
+          var knownEntry=ki[keyTarget];
+          var seenBefore=knownEntry&&knownEntry.count>=2;
+          if(!seenBefore){
+            var anom=lg("cmc_import_anomalies",[]);
+            anom.push({ts:Date.now(),pdfName:nom+" "+prenom,candidates:matchingInits.map(function(e){return e.name;}),reason:"homonym_collision",hint:"Ambiguite: "+matchingInits.length+" employes match '"+nom+" "+prenom+"'. Verifier prenom complet."});
+            if(anom.length>200)anom=anom.slice(-200);
+            ls("cmc_import_anomalies",anom);
+            console.warn("[findEmpByName collision]",nom,prenom,"matches",matchingInits.map(function(e){return e.name;}));
+          }
+        }catch(_e){}
+      }
+    }
+  }catch(_eo){}
+  return found;
 }
 // ═══════════════════════════════════════════════════════════════════════
 // v9.503 — Enrichissement libs (Kevin: "ajoute outils autonome ameliore competences")
