@@ -4683,7 +4683,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.555";
+var APP_VER="v9.556";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -28726,6 +28726,10 @@ function _cmcDetectStaleImports(){
   return stale;
 }
 
+// v9.556 — Mode replay silencieux : supprime dc() + banners + setTimeout dans doImport
+// Permet recovery batch sans flicker visuel (graffitis Kevin 2026-04-26)
+var _silentReplayMode=false;
+
 // Replay un import sans UI/dialog (admin, silencieux, aucune confirmation)
 function _cmcReplayImport(txt,year,month){
   if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
@@ -28746,8 +28750,11 @@ function _cmcReplayImport(txt,year,month){
   var _prevToast=window.toast;
   var _toastMsgs=[];
   window.toast=function(msg,type){_toastMsgs.push({msg:String(msg).slice(0,200),type:type||"ok"});};
+  // v9.556 — Active mode silencieux : doImport saute dc() + banners DOM + scrolls
+  _silentReplayMode=true;
   var ok=false,errMsg=null;
   try{doImport();ok=true;}catch(e){errMsg=e&&e.message||"unknown";}
+  finally{_silentReplayMode=false;}
   window.toast=_prevToast;
   // Cleanup DOM si on a cree les inputs
   if(madeTxt&&ta.parentNode)ta.parentNode.removeChild(ta);
@@ -28759,16 +28766,20 @@ function _cmcReplayImport(txt,year,month){
   return{ok:ok,errMsg:errMsg,ovCount:ovCount,toastMsgs:_toastMsgs};
 }
 
+// v9.556 — Guard re-entrance : evite double-execution si timer + boot tirent en parallele
+var _cmcAutoRecoveryRunning=false;
 // Auto-recovery au boot — admin only, rate limited 1h, defer 6s apres _loadState
 function _cmcAutoRecoverImports(){
   try{
     if(!A.user||A.user.id!==AID)return;
+    if(_cmcAutoRecoveryRunning)return; // anti-reentrance (boot+interval)
     // Rate limit : 1 recovery max par heure
     var last=lg("cmc_last_auto_recovery",0);
     if(typeof last==="object"&&last)last=last.ts||0;
     if(Date.now()-last<60*60*1000)return;
     var stale=_cmcDetectStaleImports();
     if(!stale.length)return;
+    _cmcAutoRecoveryRunning=true;
     console.info("[auto-recovery] "+stale.length+" planning(s) detecte(s) incomplet(s) — replay auto");
     var results=[];
     stale.forEach(function(s){
@@ -28796,13 +28807,14 @@ function _cmcAutoRecoverImports(){
         "Recovered "+results.filter(function(r){return r.ok;}).length+"/"+results.length+" plannings",
         {months:results.map(function(r){return r.monthKey;}),coverages_before:coveragesBefore,version:APP_VER});
     }}catch(_t){}
-    // Toast user-friendly + dc()
+    // Toast user-friendly + dc() debouncé (v9.556 — fix flicker "graffitis")
     var nOk=results.filter(function(r){return r.ok&&r.ovCount_after>r.ovCount_before;}).length;
     if(nOk>0){
       try{if(typeof toast==="function")toast("✅ "+nOk+" planning(s) restaure(s) automatiquement","ok",5000);}catch(_){}
-      // Push Firebase + re-render
+      // Push Firebase (sera echo via SSE → 1 dcDebounced)
       try{if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
-      try{if(typeof dc==="function")dc();}catch(_){}
+      // v9.556 — UN SEUL render debouncé en fin (evite cascade dc() pendant replay)
+      try{if(typeof dcDebounced==="function")dcDebounced();else if(typeof dc==="function")setTimeout(dc,16);}catch(_){}
       // Banner visible (stocke flag pour vAccueil)
       try{ls("cmc_auto_recovery_banner",{ts:Date.now(),count:nOk,results:results});}catch(_){}
     }
@@ -28810,6 +28822,7 @@ function _cmcAutoRecoverImports(){
     try{if(typeof _audit==="function")_audit("auto_recovery",AID,nOk+"/"+results.length+" mois",results.map(function(r){return r.monthKey;}).join(","),APP_VER);}catch(_){}
     return results;
   }catch(e){console.warn("[_cmcAutoRecoverImports]",e&&e.message);}
+  finally{_cmcAutoRecoveryRunning=false;}
 }
 
 // v9.123 — Nettoyage d'urgence des overrides (purge les codes non-reconnus)
@@ -30461,7 +30474,8 @@ function doImport(){
       +'</div>';
     r.innerHTML+=_dsHtml;
   }
-  dc();
+  // v9.556 — Mode silencieux (replay auto-recovery) : skip dc() pour eviter flicker
+  if(!_silentReplayMode){dc();}
   var _vLabel=_importVersion>1?' (v'+_importVersion+')':"";
   // Détection import incomplet : vérifier combien d'employés actifs ont 0 horaire ce mois
   var _ov2=A.overrides[key]||{};
@@ -30573,10 +30587,13 @@ function doImport(){
   // v9.553 (Kevin 2026-04-26) - SENTINELLE post-import : detecte regression silencieuse
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
-  setTimeout(function(){_autoVerifyAfterImport(iy,im);
-    // v9.128b — Scroll auto vers le rapport (UX: plus besoin de chercher où regarder)
-    setTimeout(function(){var z=document.getElementById("impAutoVerify");if(z)z.scrollIntoView({block:"center",behavior:"smooth"});},250);
-  },400);
+  // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
+  if(!_silentReplayMode){
+    setTimeout(function(){_autoVerifyAfterImport(iy,im);
+      // v9.128b — Scroll auto vers le rapport (UX: plus besoin de chercher où regarder)
+      setTimeout(function(){var z=document.getElementById("impAutoVerify");if(z)z.scrollIntoView({block:"center",behavior:"smooth"});},250);
+    },400);
+  }
   // v9.67 — Backup automatique après import (sauvegarde silencieuse dans Firebase)
   try{
     var _bk={ts:Date.now(),ver:APP_VER,month:MFR[im]+" "+iy,empCount:ok};
