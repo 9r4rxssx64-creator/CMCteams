@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.557";
+var APP_VER="v9.558";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6482,7 +6482,29 @@ var CMC_PARSER_TESTS=[
   // --- REJETS (3 cas nouveaux) ---
   {id:"X01",label:"Rejet ligne vide",input:"",expect:{rejectAsName:true}},
   {id:"X02",label:"Rejet juste numero",input:"123456",expect:{rejectAsName:true}},
-  {id:"X03",label:"Rejet juste un mot court",input:"OK",expect:{rejectAsName:true}}
+  {id:"X03",label:"Rejet juste un mot court",input:"OK",expect:{rejectAsName:true}},
+  // --- v9.557 (Kevin 2026-04-26 ZERO ERREUR CADRES) - Cadres SBM reels rates en v9.555 ---
+  {id:"N18",label:"Cadre FOUQUE V (initiale 1 lettre court)",input:"FOUQUE V",expect:{normalize:"FOUQUE V"}},
+  {id:"N19",label:"Cadre PLACENTI L (initiale 1 lettre)",input:"PLACENTI L",expect:{normalize:"PLACENTI L"}},
+  {id:"N20",label:"Cadre DOGLIOLO Y (initiale 1 lettre)",input:"DOGLIOLO Y",expect:{normalize:"DOGLIOLO Y"}},
+  {id:"N21",label:"Cadre MUS L (surname 3 chars - tres court)",input:"MUS L",expect:{normalize:"MUS L"}},
+  {id:"N22",label:"Cadre ETTORI M ordre normal historique",input:"ETTORI M",expect:{normalize:"ETTORI M"}},
+  {id:"N23",label:"Cadre BOUVIER JF (initiale double)",input:"BOUVIER JF",expect:{normalize:"BOUVIER JF"}},
+  {id:"N24",label:"Cadre PENNACINO JP (initiale double)",input:"PENNACINO JP",expect:{normalize:"PENNACINO JP"}},
+  {id:"N25",label:"Cadre DESI F (admin Kevin format compact)",input:"DESI F",expect:{normalize:"DESI F"}},
+  {id:"N26",label:"Cadre BORGIA T (homonyme)",input:"BORGIA T",expect:{normalize:"BORGIA T"}},
+  {id:"N27",label:"Cadre BORGIA L (homonyme - second)",input:"BORGIA L",expect:{normalize:"BORGIA L"}},
+  {id:"N28",label:"Cadre ordre inverse V FOUQUE PDF.js fragmente",input:"V FOUQUE",expect:{matchEmpSurname:"FOUQUE"}},
+  {id:"N29",label:"Cadre ordre inverse L MUS",input:"L MUS",expect:{matchEmpSurname:"MUS"}},
+  // --- v9.557 HEADERS SBM cadres avec bullets/arrows (PDF SBM reel) ---
+  {id:"H23",label:"Header arrow droite PIT BOSS",input:"▶ PIT BOSS",expect:{matchHeader:true,role:"pit"}},
+  {id:"H24",label:"Header diamond plein INSPECTEUR",input:"◆ INSPECTEUR",expect:{matchHeader:true,role:"sup"}},
+  {id:"H25",label:"Header tab + bullet square SUPERVISEUR",input:"\t▪ SUPERVISEUR",expect:{matchHeader:true,role:"sup"}},
+  {id:"H26",label:"Header circle ring CADRES",input:"◌ CADRES",expect:{matchHeader:true,role:"sup"}},
+  {id:"H27",label:"Header right-pointing PIT-BOSS tiret",input:"► PIT-BOSS",expect:{matchHeader:true,role:"pit"}},
+  // --- v9.557 ACCENTS et compose ---
+  {id:"A07",label:"Accent grave troisieme E",input:"BERTRANDÈRE M",expect:{normalize:"BERTRANDERE M"}},
+  {id:"A08",label:"Cadre prenom complet CHALENDARD",input:"CHALENDARD JOEL",expect:{normalize:"CHALENDARD JOEL"}}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
 // Normalise un nom : enleve accents, double espaces, ★, points entre initiales, uppercase
