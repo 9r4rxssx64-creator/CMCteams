@@ -4,6 +4,203 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🔄 RÈGLE PERMANENTE — PIPELINE SELF-HEALING TOTAL CROSS-APP (Kevin 2026-04-26, ABSOLUE)
+
+> **"Tous les problèmes que CMCteams rencontre remontent sur Apex. Apex réagit, corrige, écoute, a des retours de tous les agents, toutes les fonctions cliquées sans réaction. Tous les agents dédiés pour chaque fonction font remonter à Apex. Apex corrige en toute autonomie. S'il n'y arrive pas, ça remonte à toi (Claude Code). Tu interviens si lui n'y arrive pas. Pareil dans Apex il s'autocorrige. Toujours en autonomie totale. Notes complètes. Dossiers mis à jour. Informations circulent et remontent et sont sauvegardées. Jamais perdre de données. Toujours s'enrichir, apprendre des erreurs, s'améliorer, aller plus loin."**
+
+**Règle absolue, prioritaire** — pour Apex (orchestrateur central), CMCteams, tous projets futurs :
+
+### 1. Architecture Pipeline (3 niveaux)
+
+```
+┌─────────────────┐
+│  FONCTION CMC   │ (ex: import PDF, bouton, vue)
+└────────┬────────┘
+         │ Détection bug/non-réaction par agent dédié
+         ▼
+┌─────────────────┐    Niveau 1 : auto-fix local CMCteams
+│  AGENT LOCAL    │────► Si réussit : log + lesson learned
+│   CMCteams      │    Si échec ↓
+└────────┬────────┘
+         │ Push Firebase ax_telemetry_in
+         ▼
+┌─────────────────┐    Niveau 2 : Apex IA traite
+│   APEX IA       │────► Whitelist auto-fix : flushSync, cleanup,
+│ _aiHandleIssue  │     fbReconnect, resetStreaming, escalate
+└────────┬────────┘    Si réussit : push correctif Firebase + lesson
+         │ Si échec ↓
+         ▼
+┌─────────────────┐    Niveau 3 : Claude Code intervient
+│  CLAUDE CODE    │────► GitHub Action cron 2h poll ax_claude_todo
+│ ax_claude_todo  │     Lit issue → fix code → push commit + lesson
+└─────────────────┘    Auto-merge main → deploy Pages
+```
+
+### 2. Agents dédiés OBLIGATOIRES par fonction critique
+
+CMCteams DOIT avoir un agent dédié pour CHAQUE fonction critique :
+
+| Fonction | Agent dédié | Vérifie |
+|----------|------------|---------|
+| Import PDF | `_agentImportWatch` | Codes parsed > 50% employés actifs |
+| Login/Auth | `_agentSessionWatch` | Session valide, PIN format |
+| Firebase sync | `_agentFbHealth` | Connection SSE active, pas drift |
+| Chat DM | `_agentChatWatch` | Messages livrés, pas perdus |
+| Notifications | `_agentNotifWatch` | Permission granted, push reçu |
+| Échanges shifts | `_agentExchangeWatch` | Demandes traitées |
+| Présence | `_agentPresenceWatch` | Heartbeat 2min régulier |
+| Stockage | `_agentStorageWatch` | Quota < 80% |
+| Backup | `_agentBackupWatch` | Daily backup OK |
+| Erreurs | `_agentErrorWatch` | Pas pattern récurrent |
+
+Pareil dans Apex : `_axAgent*Watch` pour chaque fonction.
+
+### 3. Standard report agent (format obligatoire)
+
+Chaque agent rapporte UNIFORMÉMENT :
+```js
+function agentAppendReport(agentId, severity, msg, details, action){
+  // severity: "ok"|"warn"|"err"|"critical"
+  // action: {label, fn, auto:true/false, recordLesson:"category"}
+  var report = {
+    agentId: agentId,
+    severity: severity,
+    msg: String(msg).slice(0,200),
+    details: details||{},
+    action: action||null,
+    ts: Date.now(),
+    src: "cmc", // ou "apex"
+    v: APP_VER,
+    user: A.user&&A.user.id||"anon"
+  };
+  // Push dans cmc_agent_reports + telemetry vers Apex si severity!=ok
+  if(severity!=="ok") _pushTelemetryToApex(agentId, severity, msg, details);
+}
+```
+
+### 4. _pushTelemetryToApex (CMCteams) — push obligatoire
+
+```js
+function _pushTelemetryToApex(id, kind, msg, details){
+  if(typeof FB_FIX==="undefined" || FB_FIX.indexOf("ax_telemetry_in")<0) return;
+  var buf = lg("ax_telemetry_in", []);
+  buf.push({
+    id: id+"_"+Date.now(),
+    kind: kind,
+    msg: String(msg||"").slice(0,500),
+    details: details||{},
+    src: "cmcteams",
+    v: APP_VER,
+    user: A.user&&A.user.id||"anon",
+    ts: Date.now(),
+    processed: false
+  });
+  if(buf.length>200) buf = buf.slice(-200);
+  ls("ax_telemetry_in", buf);
+  // Sync Firebase pour qu'Apex le reçoive (FB_FIX)
+}
+```
+
+### 5. _aiHandleIssue (Apex) — auto-fix whitelist
+
+```js
+var AX_AUTOFIX_WHITELIST = [
+  "flushSyncQueue","emergencyCleanup","fbReconnect","resetStreaming",
+  "clearImportSnapshot","retryFailedRequest","resetSession","reloadKB"
+];
+
+function _aiHandleIssue(sentinelId, severity, finding, details){
+  var attempts = [];
+  for(var i=0;i<AX_AUTOFIX_WHITELIST.length;i++){
+    var action = AX_AUTOFIX_WHITELIST[i];
+    try{
+      var ok = window[action] && window[action]();
+      attempts.push({action:action, ok:ok});
+      if(ok){
+        // Reussi : log + lesson + STOP
+        axRecordLesson("auto-fix", sentinelId+" fixed by "+action, JSON.stringify(finding).slice(0,200), "info");
+        return {ok:true, fix:action, attempts:attempts};
+      }
+    }catch(e){
+      attempts.push({action:action, ok:false, err:e.message});
+    }
+  }
+  // Toutes tentatives échouent → escalade Claude Code
+  return _escalateToClaudeCode({sentinelId:sentinelId, finding:finding, attempts:attempts}, "Auto-fix exhausted", severity);
+}
+```
+
+### 6. _escalateToClaudeCode (Apex) — push GitHub Action
+
+```js
+function _escalateToClaudeCode(context, reason, severity){
+  var todo = lg("ax_claude_todo", []);
+  todo.push({
+    id: "todo_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
+    context: context,
+    reason: reason,
+    severity: severity||"warn",
+    src: "apex",
+    v: APP_VER,
+    ts: Date.now(),
+    status: "pending"
+  });
+  if(todo.length>50) todo = todo.slice(-50);
+  ls("ax_claude_todo", todo);
+  // Sync Firebase via FB_FIX → GitHub Action cron 2h va le récupérer
+  return {ok:false, escalated:true, todoId:todo[todo.length-1].id};
+}
+```
+
+### 7. GitHub Action `claude-todo-watcher.yml` (déjà existe)
+
+Cron 2h : poll Firebase `ax_claude_todo` → si critical pending > 30min → ouvre GitHub Issue avec context + assigne `claude-code`.
+
+Quand session Claude Code suivante : lit issue → fix → push commit + appelle `_markTodoResolved` pour fermer + ajoute lesson.
+
+### 8. Lessons learned cross-app
+
+`ax_lessons_learned_struct` (FB_FIX shared) :
+```js
+[
+  {id:"L_xxx", category:"import_pdf", title:"Parser cadres header sans anchor", text:"Sans ^ regex matche dans notes", severity:"critical", fix:"v9.444 + v9.446 anchor + bullet prefix", src:"cmc", ts:..., resolved:true},
+  {id:"L_yyy", category:"auth", title:"ax_user dans FB_FIX = leak", text:"Kevin reconnu Laurence", severity:"critical", fix:"v12.272 retire de FB_FIX + check ax_user.id===ax_uid", src:"apex", ts:..., resolved:true},
+  ...
+]
+```
+
+À chaque session Claude Code, lire les lessons + appliquer les patterns. Pas refaire les mêmes erreurs.
+
+### 9. Sauvegarde permanente (jamais perdre données)
+
+Triple persistence :
+- localStorage immédiat
+- IndexedDB shadow copy
+- Firebase via FB_FIX
+- Backup quotidien Firebase `ax_backup_<date>`
+
+Si une couche perdue → auto-restore depuis les autres.
+
+### 10. Test mental obligatoire avant chaque release
+
+> *"Si une fonction CMC se casse silencieusement (pas d'erreur visible), est-ce qu'un agent dédié le détecte ? Le rapporte à Apex ? Apex tente auto-fix ? Si échoue → Claude Code reçoit la todo et fixe à la prochaine session ? La lesson est ajoutée pour ne plus refaire l'erreur ?"*
+
+Si l'une de ces étapes manque → ajouter avant release.
+
+### 11. Application au bug import actuel (cas d'école)
+
+Bug : Kevin importe 3 plannings → "tout va bien" mais 0 horaires. Le pipeline DOIT :
+1. `_agentImportWatch` détecte cov < 50% → severity "critical"
+2. `_pushTelemetryToApex` envoie vers Apex
+3. Apex `_aiHandleIssue` essaie : retry parse / clearImportSnapshot / re-prompt user
+4. Si échec → escalade Claude Code via `ax_claude_todo`
+5. Claude Code (moi) lit todo + fixe le parser + push commit
+6. Lesson ajoutée : "v9.X parser cadres : pattern X ne match pas après changement format SBM"
+
+S'applique systématiquement.
+
+---
+
 ## 👑 RÈGLE PERMANENTE — COMPTE ADMIN UNIQUE KEVIN + PERMISSIONS TIERED LAURENCE (Kevin 2026-04-26, ABSOLUE)
 
 > **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN 200807, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
