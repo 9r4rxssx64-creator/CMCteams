@@ -517,7 +517,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.306",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.307",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -4993,8 +4993,9 @@ function _snProfileWatch(){
 
 /** @param {string} name Nom+prenom (2 tokens min, normalized). @param {string} pin PIN 4+ chars. @returns {boolean} true si OK, false sinon. */
 function axLogin(name,pin){/* v12.241 - Defense en profondeur : nom+prenom obligatoires PARTOUT */var _axLogParts=String(name||"").trim().split(/[\s\-]+/).filter(function(t){return t.length>=2;});if(_axLogParts.length<2){toast("Nom ET prenom obligatoires","warn");return false;}if(!pin||String(pin).length<4){toast("Mot de passe obligatoire (4+ caracteres)","warn");return false;}/* v12.240 - User preconf : PIN saved (per-user) prevaut sur PIN default. Si pas saved → PIN default OK une fois. Aucun ne touche au PIN admin global ax_pin. */var _earlyPreconf=_checkPreconfiguredUser(name);var _earlyPinChanged=_earlyPreconf&&lg("ax_pin_changed_"+_earlyPreconf.id,false);var _earlyPreconfPinOk=false;if(_earlyPreconf){if(axCheckUserPin(_earlyPreconf.id,pin))_earlyPreconfPinOk=true;else if(_earlyPreconf.pin&&pin===_earlyPreconf.pin&&!_earlyPinChanged)_earlyPreconfPinOk=true;}if(!_earlyPreconfPinOk&&!axCheckPin(pin)){var fails=lg("ax_pin_fails",{count:0,until:0});fails.count++;var delays=[0,0,0,0,0,30000,120000,600000,3600000,86400000];var d=delays[Math.min(fails.count,delays.length-1)];if(d)fails.until=now()+d;ls("ax_pin_fails",fails);try{axBodyguardLog("pin_fail",name+" attempts="+fails.count);}catch(_e){_axSafeCatch("ax-login",_e);}try{if(typeof axSecurityLog==="function")axSecurityLog("pin_fail",String(name).slice(0,40)+" cnt="+fails.count);}catch(_e){_axSafeCatch("ax-login",_e);}toast("PIN incorrect","err");return false;}try{axBodyguardLog("login_success",name);}catch(_e){_axSafeCatch("ax-login",_e);}try{if(typeof axSecurityLog==="function")axSecurityLog("login_success",String(name).slice(0,40));}catch(_e){_axSafeCatch("ax-login",_e);}ls("ax_pin_fails",{count:0,until:0});/* v12.297+v12.298 SECU LOGIN HARD RESET TOTAL : avant de set le nouveau user, on reset COMPLETEMENT la session precedente (anti-contamination theme/streak/device-trust) */try{if(typeof axHardLogoutSession==="function"){axHardLogoutSession();}else{["ax_user","ax_uid","ax_settings","ax_user_theme","ax_admin_profile","ax_streak","ax_streak_last_day","ax_login_streak","ax_device_trusted","ax_device_trusted_ts","ax_wake_word_active","ax_persona_active"].forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});try{if(document&&document.body){document.body.classList.remove("ax-light","ax-casino","ax-ocean","ax-sunset","ax-emerald","ax-theme-love","ax-hc");}}catch(_){}}}catch(_){}var preconf=_earlyPreconf;if(preconf&&preconf.pin&&pin!==preconf.pin&&!lg("ax_pin_changed_"+( preconf.id),false)){toast("PIN incorrect","err");return false;}/* v12.87 — Reconnaissance Kevin etendue + PIN provisoire + FaceID auto (Kevin 2026-04-24) */
-var _nameNorm=String(name||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-_\s]+/g," ");
-var _isKevinByName=/\bkevin\b/.test(_nameNorm)||/\bdesarzen?s?\b/.test(_nameNorm);
+/* v12.306 — Reconnaissance Kevin admin via ADMIN_KEVIN_ALIASES (whitelist stricte). */
+/* SECU CRITIQUE : Laurence tape "Kevin" + son PIN -> _isKevinAdmin OK MAIS axHashPin(pin)!==ax_pin -> REJETE. */
+var _isKevinByName=(typeof _isKevinAdmin==="function")?_isKevinAdmin(name):false;
 var _claimedAdmin=_isKevinByName;
 if(_claimedAdmin){
   var _storedPin=lg("ax_pin",null);
@@ -5002,7 +5003,8 @@ if(_claimedAdmin){
     /* PREMIER login admin : accepte PIN provisoire >=4 chars + enregistre AUTO */
     if(!pin||pin.length<4){toast("Choisis un PIN de 4+ chiffres (provisoire - tu pourras le changer)","warn");return false;}
     try{axSetPin(pin);}catch(_){}
-    toast("✓ PIN provisoire enregistre. Pense a le changer dans Reglages","info");
+    toast("PIN provisoire enregistre. Pense a le changer dans Reglages","info");
+    try{if(typeof axSecurityLog==="function")axSecurityLog("admin_pin_first_set",String(name).slice(0,40));}catch(_){}
     /* Proposer FaceID juste apres */
     if(window.PublicKeyCredential){
       setTimeout(function(){
@@ -5012,8 +5014,29 @@ if(_claimedAdmin){
     }
   }else{
     if(!pin||pin.length<4){toast("PIN admin obligatoire","err");return false;}
-    if(axHashPin(pin)!==_storedPin){toast("PIN admin incorrect","err");try{axBodyguardLog("admin_pin_fail",name+" pin rejected");}catch(_){}return false;}
+    if(axHashPin(pin)!==_storedPin){
+      /* SECU v12.306 : echec PIN admin -> rate limit + audit + alerte Kevin si 5+ fails */
+      var _af=lg("ax_admin_pin_fails",{count:0,until:0});
+      _af.count++;
+      var _afDelays=[0,0,0,0,0,30000,120000,600000,3600000,86400000];
+      var _afD=_afDelays[Math.min(_af.count,_afDelays.length-1)];
+      if(_afD)_af.until=Date.now()+_afD;
+      ls("ax_admin_pin_fails",_af);
+      try{axBodyguardLog("admin_pin_fail",name+" pin rejected cnt="+_af.count);}catch(_){}
+      try{if(typeof axSecurityLog==="function")axSecurityLog("admin_pin_fail",String(name).slice(0,40)+" cnt="+_af.count);}catch(_){}
+      if(_af.count>=5){
+        try{if(typeof axNotifyKevin==="function")axNotifyKevin("ALERTE SECU admin","Tentatives PIN admin: "+_af.count+" echecs depuis \u0027"+String(name).slice(0,40)+"\u0027 (UA: "+navigator.userAgent.slice(0,60)+")");}catch(_){}
+      }
+      toast("PIN admin incorrect","err");
+      return false;
+    }
+    /* PIN admin OK : reset compteur fails */
+    ls("ax_admin_pin_fails",{count:0,until:0});
   }
+  /* v12.306 : forcer K.user identite Kevin canonique (evite contamination cross-alias) */
+  K.user={id:ADMIN_ID,name:"Kevin DESARZENS",firstName:"Kevin",lastName:"DESARZENS",email:"kevin.desarzens@gmail.com",role:"admin",lang:"fr",plan:"enterprise",country:"Monaco",timezone:"Europe/Monaco"};
+  ls("ax_uid",ADMIN_ID);ls("ax_user",K.user);
+  try{if(typeof axSecurityLog==="function")axSecurityLog("admin_login_success_alias",String(name).slice(0,40));}catch(_){}
 }/* v12.105 — STRICT GATE: bloque login si pas admin, pas preconf, pas approuve (Kevin: "il ne faut pas qu il puisse utiliser l app avant validation") */
 if(!_claimedAdmin&&!preconf){
   var _subReq=axFindSubscriptionByName(name);
