@@ -520,7 +520,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.331",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.332",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -6157,6 +6157,13 @@ function _readGitHubPat(){
   function _rv(k){var v=localStorage.getItem(k);if(!v)return"";try{var p=JSON.parse(v);return(typeof p==="string"?p:v).replace(/^"|"$/g,"");}catch(e){return String(v).replace(/^"|"$/g,"");}}
   return _rv("ax_github_pat")||_rv("ax_github_token")||"";
 }
+
+/* v12.332 — DATA PERSISTENCE WATCH (anti-bug #44) + axTestLoginPersistence + axCrewMultiSession */
+function axTestLoginPersistence(){if(!K||!K.user||K.user.id!==ADMIN_ID)return Promise.resolve({admin:false});var critical={xp:lg("ax_xp_"+K.user.id,0),streak:lg("ax_login_streak_"+K.user.id,{count:0}).count,profil:!!lg("ax_admin_kevin",null),persistent_memory_count:(lg("ax_persistent_memory",[])||[]).length,kb_facts_count:((lg("ax_kb",{}).facts)||[]).length,audit_count:(lg("ax_audit",[])||[]).length,api_key_present:!!lg("ax_api_key","")};var SESSION_KEYS_BANNED=["ax_xp","ax_login_streak","ax_streak","ax_admin_kevin","ax_persistent_memory","ax_kb","ax_audit","ax_api_key","ax_github_token"];var srcCode=axHardLogoutSession.toString();var leaks=[];SESSION_KEYS_BANNED.forEach(function(k){var pattern='"'+k+'"';if(srcCode.indexOf(pattern)>=0&&srcCode.indexOf("SESSION_KEYS")<srcCode.indexOf(pattern)){var sectionStart=srcCode.indexOf("SESSION_KEYS");var sectionEnd=srcCode.indexOf("];",sectionStart);if(sectionEnd>0&&srcCode.substring(sectionStart,sectionEnd).indexOf(pattern)>=0)leaks.push(k);}});var report={ts:Date.now(),snapshot:critical,leaks:leaks,ok:leaks.length===0};var log=lg("ax_persistence_test_log",[]);log.push(report);if(log.length>20)log=log.slice(-20);ls("ax_persistence_test_log",log);if(!report.ok){if(typeof toast==="function")toast("⚠ TEST PERSISTENCE FAIL : "+leaks.length+" cle(s) effacee(s) au logout : "+leaks.join(", "),"err",{force:true,duration:10000});if(typeof axNotifyKevin==="function")try{axNotifyKevin("⚠ Anti-bug #44","Cles effacees au logout : "+leaks.join(", "));}catch(_){}if(typeof _escalateToClaudeCode==="function")try{_escalateToClaudeCode({test:"login_persistence",leaks:leaks},"Persistence test failed","critical");}catch(_){}}return Promise.resolve(report);}
+function _agentDataPersistenceWatch(){try{if(typeof axTestLoginPersistence==="function")axTestLoginPersistence();}catch(_){}}
+try{setTimeout(_agentDataPersistenceWatch,30000);setInterval(_agentDataPersistenceWatch,86400000);}catch(_){}
+function axCrewMultiSession(question){var apiKey=lg("ax_api_key","");if(!apiKey)return Promise.reject(new Error("Cle Anthropic Kdmc requise"));var models=["claude-sonnet-4-6","claude-haiku-4-5","claude-opus-4-7"];return Promise.all(models.map(function(m){return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":apiKey,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:m,max_tokens:1024,messages:[{role:"user",content:question}]})}).then(function(r){return r.json();}).then(function(d){return{model:m,answer:(d.content&&d.content[0]&&d.content[0].text)||"",tokens:(d.usage&&d.usage.output_tokens)||0};}).catch(function(e){return{model:m,error:String(e.message||e)};});})).then(function(results){var journal=lg("ax_handoff_journal",[]);journal.push({ts:Date.now(),type:"crew_multi_session",question:String(question||"").slice(0,200),results:results.map(function(r){return{model:r.model,preview:(r.answer||r.error||"").slice(0,100)};})});if(journal.length>200)journal=journal.slice(-200);ls("ax_handoff_journal",journal);return results;});}
+
 function axGithubReadFile(path,branch){
   /* v12.102 — Priorise backend FastAPI si configure (resout Safari PWA CORS + gere PAT cote serveur) */
   try{
