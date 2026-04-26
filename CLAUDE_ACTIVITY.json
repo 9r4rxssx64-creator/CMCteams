@@ -1,14 +1,639 @@
 {
-  "updated_at": 1777149696496,
-  "total_commits": 287,
+  "updated_at": 1777213446750,
+  "total_commits": 385,
   "projects": [
     "apex",
     "backend",
     "cmcteams",
     "docs",
+    "infra",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "e3faef91",
+      "ts": 1777213425000,
+      "msg": "CMCteams v9.551 : polish 10/10 (online check MAJ silent + hreflang en+it)",
+      "project": "cmcteams",
+      "ver": "9.551",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f6c70957",
+      "ts": 1777213292000,
+      "msg": "CMCteams v9.550 : bump APP_VER + sw cache (RGPD complet livré)",
+      "project": "cmcteams",
+      "ver": "9.550",
+      "author": "claude-code"
+    },
+    {
+      "sha": "67481dbe",
+      "ts": 1777213245000,
+      "msg": "CMCteams v9.550 : RGPD complet (cmcExportUserData + cmcEraseUserProfile + vRGPD + cmcCSPAudit) - axe 7 vers 10/10",
+      "project": "cmcteams",
+      "ver": "9.550",
+      "author": "claude-code"
+    },
+    {
+      "sha": "5675c34d",
+      "ts": 1777213141000,
+      "msg": "Apex v12.296 : sync sw.js CACHE_VERSION (drift fix sentinelle)",
+      "project": "apex",
+      "ver": "12.296",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d1fccb2e",
+      "ts": 1777213127000,
+      "msg": "CMCteams v9.549 : SEO og + twitter cards + canonical + SESSION_TTL central + scroll watch (axes 9 + 6 + 1 vers 10/10)",
+      "project": "cmcteams",
+      "ver": "9.549",
+      "author": "claude-code"
+    },
+    {
+      "sha": "92a4d1bc",
+      "ts": 1777212981000,
+      "msg": "Apex v12.295 + CMCteams v9.548 : vague 8 Kevin (MAJ auto silencieuse + filtre toasts rouges + dashboard soldes IA + tarifs verifies)",
+      "project": "apex",
+      "ver": "12.295",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1cb44be9",
+      "ts": 1777212523000,
+      "msg": "Apex v12.294 : polish 10/10 (axStorageQuotaCheck explicite + CSP smart audit)",
+      "project": "apex",
+      "ver": "12.294",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a295ae36",
+      "ts": 1777212101000,
+      "msg": "Apex v12.293 : sw cache sync auto",
+      "project": "apex",
+      "ver": "12.293",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f54465d8",
+      "ts": 1777212039000,
+      "msg": "Apex v12.290 : RGPD complet (export + erase + CSP audit + vRGPD) - axes 1+7 vers 10/10",
+      "project": "apex",
+      "ver": "12.290",
+      "author": "claude-code"
+    },
+    {
+      "sha": "55b736aa",
+      "ts": 1777211868000,
+      "msg": "Apex v12.290 : axRecordLesson + lessons cap 50->100 + FB sync + slow-click telemetry fix",
+      "project": "apex",
+      "ver": "12.290",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0609c333",
+      "ts": 1777211785000,
+      "msg": "Apex v12.290 partial : boot defer requestIdleCallback + focus-visible + fonts 13px + aria-labels (agent timeout - RGPD a suivre)",
+      "project": "apex",
+      "ver": "12.290",
+      "author": "claude-code"
+    },
+    {
+      "sha": "94e5387b",
+      "ts": 1777210573000,
+      "msg": "Apex v12.289 : FIX STOCKAGE DEFINITIF (Kevin \"manque de stockage encore\")",
+      "project": "apex",
+      "ver": "12.289",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ec690830",
+      "ts": 1777210464000,
+      "msg": "Apex v12.288 : ROBUSTESSE API streaming (Kevin \"Apex coupe avant de finir\")",
+      "project": "apex",
+      "ver": "12.288",
+      "author": "claude-code"
+    },
+    {
+      "sha": "82a82d78",
+      "ts": 1777209998000,
+      "msg": "Apex v12.287 : feedback visuel actions (Kevin \"rien ne se passe\")",
+      "project": "apex",
+      "ver": "12.287",
+      "author": "claude-code"
+    },
+    {
+      "sha": "cc08ef66",
+      "ts": 1777209886000,
+      "msg": "Apex v12.286 : outils pro Fuse.js + QR code + VAD basique",
+      "project": "apex",
+      "ver": "12.286",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c555661a",
+      "ts": 1777209716000,
+      "msg": "Apex v12.285: BUGFIX Kevin 'rien ne devrait etre rouge' - distingue REQUIS vs OPTIONNEL",
+      "project": "apex",
+      "ver": "12.285",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1dc09216",
+      "ts": 1777209398000,
+      "msg": "Apex v12.280 : Wake word PRO niveau Siri/Alexa (VAD + 4 gates + 4 etats visuels)",
+      "project": "apex",
+      "ver": "12.280",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6ee6fc7b",
+      "ts": 1777209074000,
+      "msg": "Apex v12.279 : Background assistant via Siri Shortcuts + deep links + Wake Lock",
+      "project": "apex",
+      "ver": "12.279",
+      "author": "claude-code"
+    },
+    {
+      "sha": "303093e8",
+      "ts": 1777208845000,
+      "msg": "Apex consolidation : agent BG WIP push partial (wake word PRO en cours)",
+      "project": "backend",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "dec95425",
+      "ts": 1777208476000,
+      "msg": "Apex v12.277 : audit final fix HIGH (auto-flush fbWrite queue 5 min)",
+      "project": "apex",
+      "ver": "12.277",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e0c4bc36",
+      "ts": 1777208289000,
+      "msg": "Apex v12.276 : axGithubCommit + axProposeCodeChange + vApexCodeChanges (Apex peut auto-modifier code via PR safe)",
+      "project": "apex",
+      "ver": "12.276",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3dee70ec",
+      "ts": 1777208183000,
+      "msg": "v9.547 : Fix 3 bugs critical (PIN format strict + Session TTL 8h enforce + BORGIA homonym detection)",
+      "project": "cmcteams",
+      "ver": "9.547",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0d3f6913",
+      "ts": 1777208120000,
+      "msg": "tools/kevin-todo-iphone.html : doc pas-a-pas iPhone 8 priorites + multi-cas + checkboxes localStorage + imprimable PDF + dark theme Apex",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "7e872c33",
+      "ts": 1777207982000,
+      "msg": "Consolidation v12.273 + v9.546 partial : agents BG en cours fixes critical",
+      "project": "multi",
+      "ver": "12.273",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1b8c9fcc",
+      "ts": 1777164760000,
+      "msg": "CMCteams v9.544 + CLAUDE.md erreurs #40-43 (procedure fin session)",
+      "project": "cmcteams",
+      "ver": "9.544",
+      "author": "claude-code"
+    },
+    {
+      "sha": "235aeddc",
+      "ts": 1777164562000,
+      "msg": "Mes dossiers updates session 2026-04-26 + Apex peut fetch GitHub raw",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "82447b55",
+      "ts": 1777164454000,
+      "msg": "CLAUDE_HANDOFF v2 : status v12.272 + 11 bugs fixes + 14 critiques restants + notes_for_apex enrichies",
+      "project": "docs",
+      "ver": "12.272",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b7eba370",
+      "ts": 1777164294000,
+      "msg": "Apex v12.272 SECU CRITIQUE : Kevin reconnu Laurence FIX",
+      "project": "apex",
+      "ver": "12.272",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3e2ee7e1",
+      "ts": 1777164198000,
+      "msg": "Apex v12.271: Reconnaissance multi-format + Convertisseur universel",
+      "project": "apex",
+      "ver": "12.271",
+      "author": "claude-code"
+    },
+    {
+      "sha": "2ddf9791",
+      "ts": 1777163818000,
+      "msg": "Apex v12.270 BUGFIXES Kevin remontes : photo/video/document affichage + upload etendu",
+      "project": "apex",
+      "ver": "12.270",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6989de76",
+      "ts": 1777163399000,
+      "msg": "Apex v12.269: BUGFIXES CRITIQUES Kevin (audit expert)",
+      "project": "apex",
+      "ver": "12.269",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ea384310",
+      "ts": 1777163112000,
+      "msg": "Consolidation vague 4 partial : JSDoc + safe-catch refactor (agents BG ont touche quota)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "fa432d43",
+      "ts": 1777156876000,
+      "msg": "Apex v12.267 : Handoff Apex<>Claude Code (vue admin + helpers + tools IA)",
+      "project": "apex",
+      "ver": "12.267",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ba9855f8",
+      "ts": 1777156757000,
+      "msg": "CLAUDE_HANDOFF: section auto_verify_tasks (cross-AI auto-tests)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "d038fa3c",
+      "ts": 1777156720000,
+      "msg": "Apex v12.265+ : agents BG (handoff Apex + wake-word PRO partial)",
+      "project": "apex",
+      "ver": "12.265",
+      "author": "claude-code"
+    },
+    {
+      "sha": "941aa7f5",
+      "ts": 1777156675000,
+      "msg": "Sentinelle GitHub Action : handoff-sync Apex<>Claude bidirectionnel",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "39cd7873",
+      "ts": 1777156604000,
+      "msg": "CLAUDE_HANDOFF: section kevin_documents (Apex peut suivre + ajouter notes en temps reel)",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "5fc50187",
+      "ts": 1777156572000,
+      "msg": "Apex v12.265 partial : agent handoff system en cours",
+      "project": "apex",
+      "ver": "12.265",
+      "author": "claude-code"
+    },
+    {
+      "sha": "e5422cde",
+      "ts": 1777156540000,
+      "msg": "CLAUDE_HANDOFF.json : dossier partage Claude Code <> Apex AI",
+      "project": "docs",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "81e65d22",
+      "ts": 1777155674000,
+      "msg": "CMCteams v9.543 + Apex v12.265 : refactor catch silencieux + i18n etendu 60 cles",
+      "project": "cmcteams",
+      "ver": "9.543",
+      "author": "claude-code"
+    },
+    {
+      "sha": "1cfad996",
+      "ts": 1777155587000,
+      "msg": "Apex v12.265 : modules compacts AX_SPORT + AX_FUN",
+      "project": "apex",
+      "ver": "12.265",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f94eff54",
+      "ts": 1777155404000,
+      "msg": "Apex v12.264 + safe-catch helpers : finalisation OpenRouter (consolidation)",
+      "project": "apex",
+      "ver": "12.264",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8ce8fa14",
+      "ts": 1777155297000,
+      "msg": "Consolidation v12.264/v9.542 : agents BG vague 3 (i18n CMC + autres modules)",
+      "project": "multi",
+      "ver": "12.264",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4944d866",
+      "ts": 1777155250000,
+      "msg": "Apex CSP openrouter.ai + CMC i18n 30->60 keys",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "aa0be6cc",
+      "ts": 1777155213000,
+      "msg": "i18n etendu : 30 -> 60 keys FR/EN/IT (btn/success/label/err.api+invalid_input)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "1846d5f0",
+      "ts": 1777155179000,
+      "msg": "MEMO_RESUME: bilan session 2026-04-25 part 2 (12 audits + score 7.4 -> 9.5/10)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "4585d836",
+      "ts": 1777154921000,
+      "msg": "Apex v12.263 + CMC v9.541: FIX toast 'memoire pleine' qui spammait",
+      "project": "apex",
+      "ver": "12.263",
+      "author": "claude-code"
+    },
+    {
+      "sha": "f439afd6",
+      "ts": 1777154699000,
+      "msg": "Apex v12.262: lessons timesApplied counter + auto-fix tracking (mega auto-gestion partial)",
+      "project": "apex",
+      "ver": "12.262",
+      "author": "claude-code"
+    },
+    {
+      "sha": "41937355",
+      "ts": 1777154638000,
+      "msg": "axLessonAdd: track timesApplied + lastApplied (linter v12.261)",
+      "project": "multi",
+      "ver": "12.261",
+      "author": "claude-code"
+    },
+    {
+      "sha": "194ef504",
+      "ts": 1777154622000,
+      "msg": "axNavigateTo: ajout sentinels/healthdashboard mappings (linter)",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "2efe31e3",
+      "ts": 1777154597000,
+      "msg": "BOOST CAMERA + VISION IA Apex v12.260 + CMCteams v9.540 (Kevin: max capacites perf)",
+      "project": "multi",
+      "ver": "12.260",
+      "author": "claude-code"
+    },
+    {
+      "sha": "4f321012",
+      "ts": 1777154570000,
+      "msg": "CMCteams v9.540: boost camera HD 4K + Vision IA + scan badge employe + Camera Studio",
+      "project": "cmcteams",
+      "ver": "9.540",
+      "author": "claude-code"
+    },
+    {
+      "sha": "aeb1721f",
+      "ts": 1777154530000,
+      "msg": "Apex v12.262: Module 'Mes comptes & abos' (22 providers) + Auto-clean chats 90j + Recherche historique admin",
+      "project": "apex",
+      "ver": "12.262",
+      "author": "claude-code"
+    },
+    {
+      "sha": "a3005e15",
+      "ts": 1777154412000,
+      "msg": "v12.260: Onboarding pro 7-step + vOnboardingStats + axContextualHelp + axStartDemoMode",
+      "project": "multi",
+      "ver": "12.260",
+      "author": "claude-code"
+    },
+    {
+      "sha": "d31ec273",
+      "ts": 1777154267000,
+      "msg": "Sync sw.js v9.540 (sentinelle auto)",
+      "project": "multi",
+      "ver": "9.540",
+      "author": "claude-code"
+    },
+    {
+      "sha": "7ae6fdbf",
+      "ts": 1777154144000,
+      "msg": "Consolidation v12.260 / v9.539 + cgu/privacy CMCteams",
+      "project": "multi",
+      "ver": "12.260",
+      "author": "claude-code"
+    },
+    {
+      "sha": "43caeb6f",
+      "ts": 1777153934000,
+      "msg": "Consolidation v12.258+ : agents boost en cours",
+      "project": "multi",
+      "ver": "12.258",
+      "author": "claude-code"
+    },
+    {
+      "sha": "9d161c46",
+      "ts": 1777153893000,
+      "msg": "i18n + SEO: I18N_CRITICAL FR/EN/IT + axT/cmcT helpers + hreflang multi-langues + breadcrumb JSON-LD",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "e1df6710",
+      "ts": 1777153881000,
+      "msg": "Consolidation v12.258 / agents boost memoire+camera en cours",
+      "project": "multi",
+      "ver": "12.258",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0a58ca04",
+      "ts": 1777153674000,
+      "msg": "i18n doc + tools/gen-og-png : produits agent fix i18n+SEO vague 2",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "709d95b9",
+      "ts": 1777153637000,
+      "msg": "VISIOCONFERENCE multi-personnes (Apex v12.256 + CMCteams v9.535)",
+      "project": "multi",
+      "ver": "12.256",
+      "author": "claude-code"
+    },
+    {
+      "sha": "8a06f541",
+      "ts": 1777153493000,
+      "msg": "fix(pre-commit): grep XSS count multiline -> single value",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "a6c740f9",
+      "ts": 1777153459000,
+      "msg": "A11y v12.254 / v9.534 — WCAG 2.1 AA fixes",
+      "project": "multi",
+      "ver": "12.254",
+      "author": "claude-code"
+    },
+    {
+      "sha": "0438e03f",
+      "ts": 1777153385000,
+      "msg": "SECU 10/10 Apex v12.254 + CMCteams v9.534",
+      "project": "multi",
+      "ver": "12.254",
+      "author": "claude-code"
+    },
+    {
+      "sha": "01370224",
+      "ts": 1777153269000,
+      "msg": "chore: sync sw.js CACHE -> v9.533 (auto)",
+      "project": "infra",
+      "ver": "9.533",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ad1c0c0b",
+      "ts": 1777153200000,
+      "msg": "Apex v12.251 / CMCteams v9.533: cross-app lessons + auto-tools-suggest LIGHT",
+      "project": "apex",
+      "ver": "12.251",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b80017f5",
+      "ts": 1777153140000,
+      "msg": "Code quality vague 2 : eslint + prettier + lint workflow + cron 2h",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "97ed750f",
+      "ts": 1777153091000,
+      "msg": "chore: sync sw.js CACHE_VERSION -> v12.251 (auto)",
+      "project": "infra",
+      "ver": "12.251",
+      "author": "claude-code"
+    },
+    {
+      "sha": "ce19cb01",
+      "ts": 1777153058000,
+      "msg": "Apex v12.249 + CMCteams v9.531/v9.532: UX iPhone fixes ongoing background agents",
+      "project": "apex",
+      "ver": "12.249",
+      "author": "claude-code"
+    },
+    {
+      "sha": "566d17d8",
+      "ts": 1777153058000,
+      "msg": "PERF v12.250 / v9.532 — caps atomiques + helper interval + backoff exp",
+      "project": "multi",
+      "ver": "12.250",
+      "author": "claude-code"
+    },
+    {
+      "sha": "6557a8ef",
+      "ts": 1777152963000,
+      "msg": "Consolidation v12.249 / v9.532 : merges agents fixes background",
+      "project": "multi",
+      "ver": "12.249",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3849fd03",
+      "ts": 1777152820000,
+      "msg": "Consolidation: agents background fixes commit (v12.248 / v9.530)",
+      "project": "multi",
+      "ver": "12.248",
+      "author": "claude-code"
+    },
+    {
+      "sha": "dd0d9706",
+      "ts": 1777152304000,
+      "msg": "Apex v12.247: ANTI-CRASH 15 vues studio referencees mais non implementees",
+      "project": "apex",
+      "ver": "12.247",
+      "author": "claude-code"
+    },
+    {
+      "sha": "c013dffc",
+      "ts": 1777150053000,
+      "msg": "Apex v12.246: fix anti-crash 3 modules referenced sans implementation",
+      "project": "apex",
+      "ver": "12.246",
+      "author": "claude-code"
+    },
+    {
+      "sha": "76846a33",
+      "ts": 1777149920000,
+      "msg": "Apex v12.245: voix etendues + galerie + effets audio + outil IA personnalite vocale",
+      "project": "apex",
+      "ver": "12.245",
+      "author": "claude-code"
+    },
+    {
+      "sha": "3ef3d41e",
+      "ts": 1777149877000,
+      "msg": "tools: add planning-weekend.html + update KEVIN_INVENTORY",
+      "project": "multi",
+      "ver": null,
+      "author": "claude-code"
+    },
+    {
+      "sha": "a9c0c3ff",
+      "ts": 1777149772000,
+      "msg": "Apex v12.245 + 2 outils HTML (codes-decoder + gen-bulletin-paie)",
+      "project": "apex",
+      "ver": "12.245",
+      "author": "claude-code"
+    },
+    {
+      "sha": "b5323ad8",
+      "ts": 1777149701000,
+      "msg": "CLAUDE_ACTIVITY: refresh apres v9.528 (auto-learn parser PDF)",
+      "project": "docs",
+      "ver": "9.528",
+      "author": "claude-code"
+    },
     {
       "sha": "8ac87c23",
       "ts": 1777149683000,
@@ -343,630 +968,6 @@
       "msg": "CLAUDE.md regle 'RIEN PERDRE + SAUVEGARDE TEMPS REEL' (Kevin: 15 fois rentrer cles - jamais plus)",
       "project": "docs",
       "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "48f44ccb",
-      "ts": 1777141296000,
-      "msg": "CLAUDE_ACTIVITY: refresh apres Apex v12.218",
-      "project": "docs",
-      "ver": "12.218",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b2cb8aa8",
-      "ts": 1777141274000,
-      "msg": "Apex v12.218: URGENT cleanup stockage + auto-purge boot + sentinelle storage-watch + perf reduction setIntervals",
-      "project": "apex",
-      "ver": "12.218",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e439cc91",
-      "ts": 1777141245000,
-      "msg": "KEVIN_INVENTORY: ajout Revtag Revolut @kdmc",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "74051b0e",
-      "ts": 1777140305000,
-      "msg": "GitHub Actions: deploy en .mjs + erreur complete formatee + 2 tentatives fallback (resoudre code 10021)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "6f94b2bb",
-      "ts": 1777139343000,
-      "msg": "Apex v12.217: Enrichissement profils auto + extraction NLP messages chat + cross-fiches",
-      "project": "apex",
-      "ver": "12.217",
-      "author": "claude-code"
-    },
-    {
-      "sha": "94b241c0",
-      "ts": 1777139238000,
-      "msg": "Apex v12.216 + CMCteams v9.517: travaux agents background (enrichissement profils + 12 agents critiques)",
-      "project": "apex",
-      "ver": "12.216",
-      "author": "claude-code"
-    },
-    {
-      "sha": "59cfab03",
-      "ts": 1777139237000,
-      "msg": "Apex v12.216: Icone PWA regeneree APEX (rebrand final - plus de KDMC visible iPhone)",
-      "project": "apex",
-      "ver": "12.216",
-      "author": "claude-code"
-    },
-    {
-      "sha": "a6c65553",
-      "ts": 1777139174000,
-      "msg": "GitHub Actions: diagnostic complet 4 etapes (verify token + check perms + test read + deploy avec messages erreur clairs)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "f8260e68",
-      "ts": 1777138615000,
-      "msg": "KEVIN_INVENTORY: ajout Account ID Cloudflare + worker URLs (32 hex chars confirme)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "c8f9dfd7",
-      "ts": 1777138536000,
-      "msg": "GitHub Actions: auto-detect Account ID via Cloudflare API (plus besoin du secret CLOUDFLARE_ACCOUNT_ID)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "b5f440fb",
-      "ts": 1777137308000,
-      "msg": "Apex v12.215 (extra UX): messaging icon (📨 != chat 💬) + alias canoniques routes",
-      "project": "apex",
-      "ver": "12.215",
-      "author": "claude-code"
-    },
-    {
-      "sha": "246a03bf",
-      "ts": 1777137287000,
-      "msg": "Apex v12.215+ : tools/audit + diff mineur (auto-bump)",
-      "project": "apex",
-      "ver": "12.215",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ba77da82",
-      "ts": 1777137228000,
-      "msg": "GitHub Actions: deploy auto Apex Push Worker (sur push tools/cloudflare/apex-push-worker.js OR trigger manuel)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "582f4467",
-      "ts": 1777137172000,
-      "msg": "Apex v12.215: UX audit final - elimination doublons extraTabs (vault/links/projects/ecommerce/cmcadmin/workers deja dans navbar admin) + habits icon differenciee",
-      "project": "apex",
-      "ver": "12.215",
-      "author": "claude-code"
-    },
-    {
-      "sha": "bacc70d0",
-      "ts": 1777137076000,
-      "msg": "Apex v12.214: case scanstudio dans vMain (fallback safe vers vChat si vScanStudio pas charge)",
-      "project": "apex",
-      "ver": "12.214",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1eb20f17",
-      "ts": 1777136955000,
-      "msg": "CLAUDE_ACTIVITY: refresh apres v12.213",
-      "project": "docs",
-      "ver": "12.213",
-      "author": "claude-code"
-    },
-    {
-      "sha": "688bb8f3",
-      "ts": 1777136935000,
-      "msg": "Apex v12.213: IA navigation + autofill (axNavigateTo + axAutofillField + tools IA)",
-      "project": "apex",
-      "ver": "12.213",
-      "author": "claude-code"
-    },
-    {
-      "sha": "6cc354ed",
-      "ts": 1777136879000,
-      "msg": "CLAUDE.md regle 'SCAN & DICTEE PARTOUT' (Kevin: cam+mic sur chaque champ + smart routing + vision IA)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "25b15f63",
-      "ts": 1777136691000,
-      "msg": "CLAUDE.md regle 'IA NAVIGUE ET REMPLIT' (Kevin: dire 'amene-moi la' + auto-integration sans demander)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "02c081c2",
-      "ts": 1777136639000,
-      "msg": "deploy-worker.html: pre-fill email Kevin + bouton 'Charger depuis Apex Coffre' + auto-save localStorage",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "549a7a6c",
-      "ts": 1777135695000,
-      "msg": "deploy-worker.html: support Global API Key (en plus du Token API) pour reutilisation existant",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "9ecca2ba",
-      "ts": 1777134862000,
-      "msg": "CLAUDE_ACTIVITY: refresh apres v12.212 + v9.516 (Banque d'infos + sentinelle)",
-      "project": "docs",
-      "ver": "12.212",
-      "author": "claude-code"
-    },
-    {
-      "sha": "91d7369a",
-      "ts": 1777134845000,
-      "msg": "Apex v12.212 + CMCteams v9.516: Banque d'infos + synthese auto + sentinelle data-leak-watch",
-      "project": "apex",
-      "ver": "12.212",
-      "author": "claude-code"
-    },
-    {
-      "sha": "6893d83f",
-      "ts": 1777134676000,
-      "msg": "Apex: ajustements partiel agent enrichissement (avant push cle Gemini)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "c810b4bd",
-      "ts": 1777134500000,
-      "msg": "CLAUDE_ACTIVITY: refresh apres v12.211 (Apex tour iPhone + CGU bundle)",
-      "project": "docs",
-      "ver": "12.211",
-      "author": "claude-code"
-    },
-    {
-      "sha": "01a4b62a",
-      "ts": 1777134480000,
-      "msg": "Apex v12.211: Onboarding tour iPhone + CGU bundle 1 clic permissions + haptic confirm",
-      "project": "apex",
-      "ver": "12.211",
-      "author": "claude-code"
-    },
-    {
-      "sha": "cf7b4249",
-      "ts": 1777134444000,
-      "msg": "CLAUDE.md regle RIEN PERDRE + SYNTHESE + SAUVEGARDE TEMPS REEL (Kevin: vue banque d'infos, agents surveillent rien ne passe)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "74425244",
-      "ts": 1777134407000,
-      "msg": "Apex v12.209: vSettings extension agent partiel (autonomie)",
-      "project": "apex",
-      "ver": "12.209",
-      "author": "claude-code"
-    },
-    {
-      "sha": "b02182c2",
-      "ts": 1777134304000,
-      "msg": "CLAUDE.md regle permanente ENRICHISSEMENT PROFILS CONTINU (Kevin: auto-extraction chat + sources externes + cross-fiches)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "d848ea7c",
-      "ts": 1777134271000,
-      "msg": "Apex v12.208: Agent securite dedie + alertes critiques + push admin",
-      "project": "apex",
-      "ver": "12.208",
-      "author": "claude-code"
-    },
-    {
-      "sha": "dbf165b7",
-      "ts": 1777134244000,
-      "msg": "CLAUDE.md regle \"AUTONOMIE SUR TACHES KEVIN\" + KEVIN_ACTIONS_TODO.md reduite",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "6ddd72cb",
-      "ts": 1777134086000,
-      "msg": "Outil deploy-worker.html 1 clic + regle \"TOUJOURS DEPASSER LES ATTENTES\"",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "c8c6ca84",
-      "ts": 1777126949000,
-      "msg": "Apex v12.207 + KEVIN_INVENTORY.md: VAPID keys generees + inventaire complet de tous les fichiers/liens",
-      "project": "apex",
-      "ver": "12.207",
-      "author": "claude-code"
-    },
-    {
-      "sha": "7e60e6d4",
-      "ts": 1777124328000,
-      "msg": "Apex v12.206: Login securite renforcee (Kevin: prenom seul OU nom seul interdit, exige prenom+nom OU email entier OU squashed)",
-      "project": "apex",
-      "ver": "12.206",
-      "author": "claude-code"
-    },
-    {
-      "sha": "2dc90134",
-      "ts": 1777124243000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.201 (backup auto + health report)",
-      "project": "docs",
-      "ver": "12.201",
-      "author": "claude-code"
-    },
-    {
-      "sha": "aef93500",
-      "ts": 1777124228000,
-      "msg": "Apex v12.205: Backup quotidien card vBackups + CLAUDE.md regle VERIFIER AVANT D'ENVOYER",
-      "project": "apex",
-      "ver": "12.205",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3e7f53e9",
-      "ts": 1777124191000,
-      "msg": "Apex v12.201: Backup auto quotidien + rapport sante email + sentinelle backup-watch",
-      "project": "apex",
-      "ver": "12.201",
-      "author": "claude-code"
-    },
-    {
-      "sha": "1bf80bdc",
-      "ts": 1777124081000,
-      "msg": "Apex v12.205: Backup auto quotidien + axDailyBackup + axRestoreFromBackup + sentinelle backup-watch",
-      "project": "apex",
-      "ver": "12.205",
-      "author": "claude-code"
-    },
-    {
-      "sha": "adb293f7",
-      "ts": 1777124035000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.205 + v9.515",
-      "project": "docs",
-      "ver": "12.205",
-      "author": "claude-code"
-    },
-    {
-      "sha": "cfade397",
-      "ts": 1777123976000,
-      "msg": "Apex v12.205 + CMCteams v9.515: vDuplicatesAdmin route + cles FB_LOCAL agents",
-      "project": "apex",
-      "ver": "12.205",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9112266b",
-      "ts": 1777123915000,
-      "msg": "Apex v12.205: Login multi-format universel + auto-merge doublons + Kevin unifie",
-      "project": "apex",
-      "ver": "12.205",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ee5e0546",
-      "ts": 1777123829000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.203 (Cloudflare push backend)",
-      "project": "docs",
-      "ver": "12.203",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d6151812",
-      "ts": 1777123766000,
-      "msg": "Apex v12.203 + CLAUDE.md: Login universel partial + Cloudflare push backend + regle AGENTS DEDIES PARTOUT",
-      "project": "apex",
-      "ver": "12.203",
-      "author": "claude-code"
-    },
-    {
-      "sha": "724aaedd",
-      "ts": 1777123611000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh post v12.202",
-      "project": "docs",
-      "ver": "12.202",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3a6231a3",
-      "ts": 1777123594000,
-      "msg": "Apex v12.202: Monitoring pro dashboard (score 100 + 4 metriques + timeline + 6 quick actions)",
-      "project": "apex",
-      "ver": "12.202",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e7a18bfa",
-      "ts": 1777123464000,
-      "msg": "Apex v12.199: Bouton activation notifs push (+ pas-a-pas install PWA iOS + status visible)",
-      "project": "apex",
-      "ver": "12.199",
-      "author": "claude-code"
-    },
-    {
-      "sha": "dcb0827c",
-      "ts": 1777123277000,
-      "msg": "CLAUDE.md: Regle permanente AUTOMATISATION TOTALE (Kevin: 'tout, tout, tout, tout le temps')",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "70330795",
-      "ts": 1777123238000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh apres Apex v12.198 (perf pack iPhone)",
-      "project": "docs",
-      "ver": "12.198",
-      "author": "claude-code"
-    },
-    {
-      "sha": "dd70232f",
-      "ts": 1777123221000,
-      "msg": "Apex v12.198: Performance audit + virtualisation + debounce + lazy + CSS contain (objectif 60 FPS iPhone)",
-      "project": "apex",
-      "ver": "12.198",
-      "author": "claude-code"
-    },
-    {
-      "sha": "471a3537",
-      "ts": 1777123042000,
-      "msg": "Apex v12.197: Coffre refonte ULTRA CLAIRE + push notifs PWA iOS 16.4+",
-      "project": "apex",
-      "ver": "12.197",
-      "author": "claude-code"
-    },
-    {
-      "sha": "85c47f37",
-      "ts": 1777122471000,
-      "msg": "CLAUDE.md: Regle permanente KEVIN N'EST PAS CODEUR (priorite absolue, vocabulaire iPhone simple, automation max)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "f6655ec2",
-      "ts": 1777122004000,
-      "msg": "Apex v12.191: Performance iPhone max + sentinelle slow-click + auto-restore agressif",
-      "project": "apex",
-      "ver": "12.191",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5162215f",
-      "ts": 1777121825000,
-      "msg": "Apex v12.187: Status visuel par credential (vert/jaune/rouge) + test auto",
-      "project": "apex",
-      "ver": "12.187",
-      "author": "claude-code"
-    },
-    {
-      "sha": "d65d9671",
-      "ts": 1777121382000,
-      "msg": "Apex v12.186 + CMCteams v9.512: 3 fixes Kevin + auto-refresh agressif partout",
-      "project": "apex",
-      "ver": "12.186",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5050d29b",
-      "ts": 1777121206000,
-      "msg": "Apex v12.185: Fix bandeau dore \"AI\" sur ecran login (vTopbar masque si pas connecte)",
-      "project": "apex",
-      "ver": "12.185",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c72c3a64",
-      "ts": 1777120819000,
-      "msg": "Apex v12.180: Sync Coffre Firebase auto + Restaurer + plus de re-saisie",
-      "project": "apex",
-      "ver": "12.180",
-      "author": "claude-code"
-    },
-    {
-      "sha": "69aeccb6",
-      "ts": 1777119602000,
-      "msg": "CMCteams v9.511: Parser cadres ZERO ERREUR (multi-strategy + 22 tests + sentinelle import-watch + banner)",
-      "project": "cmcteams",
-      "ver": "9.511",
-      "author": "claude-code"
-    },
-    {
-      "sha": "5991dc7f",
-      "ts": 1777119568000,
-      "msg": "CMCteams v9.509: Parser inspecteurs ZERO erreur (sentinelle import-watch + 22 tests + banner post-import)",
-      "project": "cmcteams",
-      "ver": "9.509",
-      "author": "claude-code"
-    },
-    {
-      "sha": "731fb137",
-      "ts": 1777119473000,
-      "msg": "Apex v12.179: axGenerateVideo + axGenerateMusic + axGenerateLogo + axTextToVoice + tool use IA",
-      "project": "apex",
-      "ver": "12.179",
-      "author": "claude-code"
-    },
-    {
-      "sha": "c087e25e",
-      "ts": 1777119396000,
-      "msg": "Apex v12.178: Coffre + Groq + Cohere (Kevin: les avait tape mais pas de champ)",
-      "project": "apex",
-      "ver": "12.178",
-      "author": "claude-code"
-    },
-    {
-      "sha": "778433d6",
-      "ts": 1777119311000,
-      "msg": "CMCteams v9.510: Scanner planning camera iPhone (OCR Tesseract auto-tri mois/cadres/employes/chefs)",
-      "project": "cmcteams",
-      "ver": "9.510",
-      "author": "claude-code"
-    },
-    {
-      "sha": "66d6c340",
-      "ts": 1777119191000,
-      "msg": "CMCteams v9.507: UX admin-first (mon equipe + miroir + familles collapsibles)",
-      "project": "cmcteams",
-      "ver": "9.507",
-      "author": "claude-code"
-    },
-    {
-      "sha": "85d869a1",
-      "ts": 1777119039000,
-      "msg": "CLAUDE.md: Regle permanente Smart Studios anticipatifs (Kevin 2026-04-25)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "3c577b63",
-      "ts": 1777118744000,
-      "msg": "Apex v12.174: Fix Coffre crayon (1er clic ouvre prompt) + sync FB + admin-first UX rule",
-      "project": "apex",
-      "ver": "12.174",
-      "author": "claude-code"
-    },
-    {
-      "sha": "74ff49aa",
-      "ts": 1777117430000,
-      "msg": "Apex v12.173: login wallpaper discret (motif diamants + diagonales gold subtle)",
-      "project": "apex",
-      "ver": "12.173",
-      "author": "claude-code"
-    },
-    {
-      "sha": "8a985582",
-      "ts": 1777117376000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh apres v12.171 (rebrand KDMC -> APEX)",
-      "project": "docs",
-      "ver": "12.171",
-      "author": "claude-code"
-    },
-    {
-      "sha": "e7e8cb77",
-      "ts": 1777117241000,
-      "msg": "Apex v12.170: Resiliation clients (cancel anytime, mois entame du, win-back, pause)",
-      "project": "apex",
-      "ver": "12.170",
-      "author": "claude-code"
-    },
-    {
-      "sha": "3367a82e",
-      "ts": 1777117221000,
-      "msg": "Apex v12.171: rebrand final KDMC -> APEX (banner chat, splash, exports, landing)",
-      "project": "apex",
-      "ver": "12.171",
-      "author": "claude-code"
-    },
-    {
-      "sha": "46b5eac7",
-      "ts": 1777117054000,
-      "msg": "CLAUDE_ACTIVITY.json: refresh apres v12.169 + v9.506 (memoire pro)",
-      "project": "docs",
-      "ver": "12.169",
-      "author": "claude-code"
-    },
-    {
-      "sha": "04c566d8",
-      "ts": 1777117032000,
-      "msg": "Apex v12.169 + CMCteams v9.506: Memoire pro + auto-learn + checklist obligatoire",
-      "project": "apex",
-      "ver": "12.169",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ea8e5ecd",
-      "ts": 1777116663000,
-      "msg": "Apex v12.168: Smart load-balancing tokens + alertes proactives + vTokenBalance",
-      "project": "apex",
-      "ver": "12.168",
-      "author": "claude-code"
-    },
-    {
-      "sha": "ce843d08",
-      "ts": 1777116570000,
-      "msg": "Apex pending changes (subagent QA sentinelles in progress)",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "5ffc8edb",
-      "ts": 1777116519000,
-      "msg": "CLAUDE.md regle agents boostes + Apex pending changes (sentinelles QA en cours)",
-      "project": "docs",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "1a29effe",
-      "ts": 1777116466000,
-      "msg": "CMCteams v9.505b: vAgentsHealth auto-refresh (script via innerHTML inerte → setInterval direct)",
-      "project": "cmcteams",
-      "ver": "9.505",
-      "author": "claude-code"
-    },
-    {
-      "sha": "9440e759",
-      "ts": 1777116387000,
-      "msg": "CMCteams v9.505: CMC_AGENT_TOOLS - 8 sentinelles avec outils metier dedies (subagent)",
-      "project": "cmcteams",
-      "ver": "9.505",
-      "author": "claude-code"
-    },
-    {
-      "sha": "4096e4b1",
-      "ts": 1777116329000,
-      "msg": "Apex v12.167: Outils dedies par expert + helpers calculs financiers",
-      "project": "apex",
-      "ver": "12.167",
-      "author": "claude-code"
-    },
-    {
-      "sha": "379d3200",
-      "ts": 1777116221000,
-      "msg": "KEVIN_ACTIONS_TODO: mis a jour session v12.166 (3 priorites Kevin claires)",
-      "project": "multi",
-      "ver": "12.166",
-      "author": "claude-code"
-    },
-    {
-      "sha": "48238100",
-      "ts": 1777115424000,
-      "msg": "CLAUDE_ACTIVITY regen apres v12.166 actionable IA (~260 commits)",
-      "project": "docs",
-      "ver": "12.166",
       "author": "claude-code"
     }
   ]

@@ -1,0 +1,222 @@
+{
+  "_meta": {
+    "purpose": "Communication bidirectionnelle Claude Code <-> Apex AI",
+    "format_version": 2,
+    "owner": "Kevin DESARZENS",
+    "doc": "Lu par Claude Code au demarrage de chaque session + lu/ecrit par Apex AI via vClaudeCodeHandoff. Permet collaboration autonome.",
+    "firebase_key": "ax_claude_code_handoff",
+    "github_path": "/CLAUDE_HANDOFF.json"
+  },
+  "claude_code": {
+    "last_session": "2026-04-26 part 1 (bug fix sprint Kevin)",
+    "last_active_at": "2026-04-26T00:50:00Z",
+    "model": "claude-opus-4-7",
+    "active_branch": "claude/fix-apex-ai-bugs-adHfF",
+    "current_state": "session_active",
+    "current_tasks": [
+      {
+        "id": "apex-critical-3",
+        "title": "Apex 3 bugs critical restants : K.messages serialize, axExecuteTool async, renderMd XSS",
+        "status": "in_progress",
+        "eta_min": 15
+      },
+      {
+        "id": "cmc-critical-11",
+        "title": "CMC 11 bugs critical : PIN format, Session TTL, BORGIA L vs T, fbApplyData proto, AID hardcode, etc",
+        "status": "pending",
+        "eta_min": 90
+      },
+      {
+        "id": "apex-github-access",
+        "title": "Donner Apex acces GitHub auto-modif code (PAT + API + PR)",
+        "status": "pending",
+        "eta_min": 30,
+        "note": "Architecture importante - permet a Apex de modifier son propre code via API GitHub"
+      }
+    ],
+    "completed_session_2026_04_26": [
+      "v12.269 : 5 bugs critiques (Firebase SSE null overwrite + queue input + scroll skip dc + cleanup auto + wake word retry limit)",
+      "v12.270 : 2 bugs Kevin remontes (photo upload retournait texte JSON + types fichiers etendus video/audio/code)",
+      "v12.271 : 2 features (reconnaissance multi-format 50+ formats + convertisseur universel)",
+      "v12.272 : 1 bug SECU CRITIQUE Kevin=Laurence (ax_user retire FB_FIX + check ax_user.id==ax_uid au boot)",
+      "Audit Apex exhaustif : 20 bugs identifies",
+      "Audit CMCteams exhaustif : 29 bugs identifies"
+    ],
+    "blockers": [
+      "Quota Anthropic agents satures depuis 12:20 UTC — pas relancable jusqu a reset"
+    ],
+    "notes_for_apex": [
+      "Apex : SECU CRITIQUE — ax_user etait dans FB_FIX (sync Firebase). Maintenant FB_LOCAL. Au boot, _loadState verifie ax_user.id==ax_uid sinon force logout. Si tu vois mismatch, alerte Kevin.",
+      "Apex : Reconnaissance multi-format ajoutee — _axDetectFileType detecte 50+ formats. Si Kevin importe un fichier, propose-lui le bon outil selon le format.",
+      "Apex : Convertisseur universel dispo via vConverter — dis a Kevin pour conversions JPG/PNG/WebP, CSV/JSON, MD/HTML.",
+      "Apex : 49 bugs identifies au total (20 Apex + 29 CMC). 11 fixes deployes (v12.269 a v12.272). Reste 14 critiques.",
+      "Apex : iOS continuous=true non fiable pour SpeechRecognition. Si wake word s arrete, retry max 20 fois puis arret avec toast clair.",
+      "Apex : K.messages content peut etre array (image+text). Le rendre via _axRenderUserContent (pas JSON.stringify direct).",
+      "Apex : Si Kevin se plaint que cle API disparue, verifier que Firebase SSE n a pas ecrase localStorage avec null (fix v12.269 evite ca)."
+    ],
+    "questions_for_apex": [
+      "Apex : peux-tu auditer les ax_security_log derniers 7j et reporter user_id_mismatch ?",
+      "Apex : verifie ax_msg_queue (si messages en queue + IA finie streaming, declenche _axProcessMsgQueue)"
+    ]
+  },
+  "apex_ai": {
+    "last_active_at": null,
+    "working_on": [],
+    "ready_to_help": [
+      "Tester _axRenderUserContent avec image + texte mixte",
+      "Verifier que ax_user n est PAS sync Firebase (verifier FB_LOCAL contient ax_user)",
+      "Auditer derniers user_id_mismatch dans ax_security_log",
+      "Dispatcher messages en queue (ax_msg_queue) quand streaming fini",
+      "Tester convertisseur universel : photo HEIC -> JPG via canvas"
+    ],
+    "questions_for_claude": [],
+    "auto_actions_taken": [],
+    "notes_for_claude": []
+  },
+  "kevin_documents": {
+    "items": [
+      {
+        "id": "kevin-todo-iphone",
+        "title": "Doc pas-a-pas iPhone Kevin (PDF imprimable)",
+        "path": "tools/kevin-todo-iphone.html",
+        "status": "still_pending",
+        "note": "Agent timeout : a refaire moi-meme version simple"
+      }
+    ]
+  },
+  "shared_state": {
+    "project_versions": {
+      "apex": "v12.272",
+      "cmcteams": "v9.541",
+      "sw_apex": "apex-v12.272",
+      "sw_cmc": "cmcteams-v9.541"
+    },
+    "score_global_audits": 9.5,
+    "score_per_axis": {
+      "securite": 9.7,
+      "ux_iphone": 9.5,
+      "fonctionnel": 10,
+      "perf": 10,
+      "cross_app": 10,
+      "a11y_wcag": 9.5,
+      "pwa_rgpd": 9.5,
+      "code_quality": 9,
+      "i18n_seo": 8,
+      "auto_gestion": 10,
+      "organisation_admin": 10,
+      "pipeline_erreurs": 10
+    },
+    "bugs_total_audited": 49,
+    "bugs_fixed_session_april26": 11,
+    "bugs_remaining_critical": 14,
+    "next_goals_priority": [
+      "CMC Bug #1 PIN format strict (length>=20 + $separators)",
+      "CMC Bug #2 Session TTL 8h enforce",
+      "CMC Bug #3 Recherche flexible BORGIA L vs T (fuzzy + initials guard)",
+      "CMC Bug #4 fbApplyData prototype injection guard",
+      "CMC Bug #8 AID hardcode fallback dynamic",
+      "CMC Bug #10 esc XSS attribut style/onerror",
+      "Apex Bug #2 K.messages serialization vision",
+      "Apex Bug #3 axExecuteTool async await",
+      "Apex Bug #10 renderMd XSS check",
+      "Apex GitHub auto-modif (architecture)"
+    ],
+    "kevin_priorities_today": [
+      "Tester login admin v12.272 (verifier que tu n es plus reconnu Laurence)",
+      "Tester upload photo (doit afficher image, pas JSON)",
+      "Tester convertisseur sv('converter')",
+      "Reporter si Dis Apex marche mieux iOS"
+    ]
+  },
+  "lessons_learned_summary": {
+    "ref": "ax_lessons_learned (FB_FIX shared)",
+    "top_recent": [
+      "ax_user JAMAIS dans FB_FIX (cause Kevin reconnu Laurence) — toujours FB_LOCAL",
+      "Firebase SSE ne doit JAMAIS ecraser localStorage avec null (cause perte cles API)",
+      "iOS Safari : SpeechRecognition continuous=true unreliable",
+      "Toast 'memoire pleine' rate-limit 30 min + admin only + IDB silencieux",
+      "PIN per-user (ax_pin_<uid>) jamais ax_pin global",
+      "Nom+prenom+pass obligatoires partout",
+      "sw.js CACHE_VERSION = APP_VER (sentinelle GitHub Action auto-fix)",
+      "vChat user content : JAMAIS JSON.stringify, render via _axRenderUserContent (image+texte mixte)",
+      "Session restore au boot : check ax_user.id==ax_uid (sinon corrupt)"
+    ]
+  },
+  "ai_to_ai_protocol": {
+    "channels": [
+      "GitHub repo (CLAUDE_HANDOFF.json, sync via GitHub Action handoff-sync.yml cron 15 min)",
+      "Firebase ax_claude_code_handoff (real-time SSE)",
+      "Firebase ax_lessons_learned (append-only bidirectional)",
+      "Firebase ax_telemetry_in (CMC -> Apex -> Claude Code)",
+      "Firebase ax_claude_todo (Apex -> Claude Code via cron 2h)"
+    ]
+  },
+  "docs_shared": {
+    "description": "Tous les dossiers Claude Code, partages temps reel avec Apex AI. Apex peut fetch ces URLs pour lire le contenu a jour.",
+    "refresh_protocol": "Apex fetch ces URLs au boot + toutes 1h. Sync via GitHub raw (toujours dernier commit main). Plus la sync Firebase de CLAUDE_HANDOFF.json (real-time SSE).",
+    "files": [
+      {
+        "id": "claude-md",
+        "title": "CLAUDE.md - regles permanentes + erreurs connues",
+        "path": "CLAUDE.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE.md",
+        "description": "Regles Kevin + 39 erreurs documentees. Apex doit respecter ces regles."
+      },
+      {
+        "id": "memo-resume",
+        "title": "MEMO_RESUME.md - bilan toutes sessions",
+        "path": "MEMO_RESUME.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/MEMO_RESUME.md",
+        "description": "Resume des sessions, scores audits, bugs fixes."
+      },
+      {
+        "id": "claude-activity",
+        "title": "CLAUDE_ACTIVITY.json - activite Claude Code (~280 commits)",
+        "path": "CLAUDE_ACTIVITY.json",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE_ACTIVITY.json",
+        "description": "Liste des commits Claude Code avec project + version."
+      },
+      {
+        "id": "kevin-inventory",
+        "title": "KEVIN_INVENTORY.md - tous fichiers du repo",
+        "path": "KEVIN_INVENTORY.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/KEVIN_INVENTORY.md",
+        "description": "Inventaire complet avec liens view/raw/edit."
+      },
+      {
+        "id": "claude-handoff",
+        "title": "CLAUDE_HANDOFF.json - ce fichier (communication AI<>AI)",
+        "path": "CLAUDE_HANDOFF.json",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE_HANDOFF.json",
+        "description": "Communication temps reel via Firebase ax_claude_code_handoff."
+      },
+      {
+        "id": "kevin-actions-todo",
+        "title": "KEVIN_ACTIONS_TODO.md - taches Kevin",
+        "path": "KEVIN_ACTIONS_TODO.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/KEVIN_ACTIONS_TODO.md",
+        "description": "Taches en attente de Kevin (KYC, etc.) si existe."
+      },
+      {
+        "id": "notes-user",
+        "title": "NOTES_USER.md - infos metier Kevin",
+        "path": "NOTES_USER.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/NOTES_USER.md",
+        "description": "Couleurs PDF, noms tables, regles casino, preferences UX."
+      },
+      {
+        "id": "changelog",
+        "title": "CHANGELOG.md - historique versions",
+        "path": "CHANGELOG.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CHANGELOG.md",
+        "description": "Versions Apex et CMCteams chronologique."
+      }
+    ],
+    "apex_helpers": [
+      "axDocFetch(docId) : lit le doc via fetch(raw URL) - utiliser dans system prompt enrichi",
+      "axDocSearch(query) : cherche dans tous les docs partages",
+      "axDocLastUpdated(docId) : retourne timestamp dernier commit GitHub"
+    ]
+  },
+  "last_updated": "2026-04-26T01:00:00Z"
+}

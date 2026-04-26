@@ -2759,6 +2759,40 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 ---
 
+## 💾 RÈGLE PERMANENTE — MEMOIRE MAX iPHONE (Kevin 2026-04-25, ABSOLUE)
+
+> **"Memoire pleine, ca arrive trop souvent."** — Kevin v12.260 / v9.538
+
+iPhone Safari PWA limite localStorage à ~5 Mo par origin. Pour repousser ce mur :
+
+### 1. Compression LZ-string UTF16 (lazy CDN)
+
+Apex (`_axCompress`/`_axDecompress`) et CMCteams (`_cmcCompress`/`_cmcDecompress`) utilisent `lz-string@1.5.0` via `https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js`, lazy-loadé au premier `ls()` write. Toute valeur JSON > 1 KB est compressée avec `compressToUTF16` et préfixée `__LZ__`. Gain typique : 50-70% vs texte brut. Backward compat : valeurs base64 (`B64:`) ou non-compressed lues normalement.
+
+### 2. IDB shadow auto-fallback
+
+Quand `QuotaExceededError` persiste après cleanup, écriture directe vers IndexedDB via `axIdbSet`/`cmcIdbSet`. IDB capacité ~50 MB-1 GB Safari iOS. Toast user-friendly "Stockage saturé — sauvegarde IDB" au lieu d'erreur technique.
+
+### 3. Cleanup AGRESSIF auto 30 min
+
+`axAggressiveCleanup()` (Apex) et `cmcAggressiveCleanup()` (CMC) tournent toutes les 30 min via `setInterval` quand quota > 80%. Trim caps stricts :
+- **Apex** : audit 100, err_log 50, silent_log 50, claude_todo 20, telemetry_in 40, lessons 80, persistent_memory 150, K.messages 100/conv, photos diaporama theme 5 max, telemetry processed > 7j retiré, claude_todo resolved > 7j retiré, backups > 7j supprimés.
+- **CMC** : cmc_chat 200, cmc_audit 100, cmc_userlog 100, cmc_pdf_fingerprints 30, cmc_learned_patterns 100, cmc_import_log 100, backups > 7j, verifications/comments > 12 mois.
+
+Toast user : "🚀 Memoire optimisee : X Ko liberes" si delta > 100 KB.
+
+### 4. Indicateur stockage visible
+
+Vue `vStorageManage` (Apex admin) : barre progressive Ko / 5120 Ko avec couleur vert (<60%) / jaune (60-80%) / rouge (>80%) + bouton "🧹 Nettoyer maintenant" qui appelle `axEmergencyCleanup`.
+
+### 5. Test mental obligatoire avant chaque release
+
+*"Si une donnée user dépasse 1 KB, est-elle compressée ? Si quota > 80%, le cleanup agressif tourne-t-il ?"*
+
+Si non → fixer avant push.
+
+---
+
 ## 🔄 RÈGLE PERMANENTE — SW CACHE_VERSION = APP_VER TOUJOURS (Kevin 2026-04-25, ABSOLUE)
 
 > **"Le force refresh, la mise à jour automatique pour la version, ça en fait partie."**
@@ -2921,6 +2955,14 @@ Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiateme
 37. **ax_pin global ecrase quand user change PIN** (Apex v12.240, Kevin 2026-04-25 — SECU CRITIQUE) — quand un user preconfigure (Laurence, etc.) changeait son PIN via le flow login/PIN, le code ecrivait dans `ax_pin` (la cle GLOBALE admin) au lieu d'une cle per-user. Resultat : **n'importe quel user pouvait reset/voler le PIN admin Kevin** + le user suivant ne pouvait plus se connecter avec son ancien PIN. Decouvert via audit expert externe 4 agents. **OBLIGATION** : tout PIN/credential per-user DOIT etre stocke dans `ax_pin_<userId>` (scope user). `ax_pin` est RESERVE strictement a l'admin global. Verifier dans tout flow `axChangePin`, `axSetPin`, `_checkPreconfiguredUser` qu'on ecrit dans la bonne cle. Fix v12.240 : isolation per-user + guard `if userId===ADMIN_ID write ax_pin else write ax_pin_<userId>`. ❌
 38. **Fallback `_checkPreconfiguredUser` substring trop permissif** (Apex v12.240, Kevin 2026-04-25 — SECU) — la fonction `_checkPreconfiguredUser` faisait un substring tolerant (`name.toLowerCase().includes(part)`) qui pouvait matcher "Laurent" sur la fiche "Laurence" ou "Kev" sur "Kevin DESARZENS" → impersonation possible. Decouvert via audit expert. **OBLIGATION** : pour toute fonction d'auth/lookup user, exiger MATCH EXACT (apres normalisation accents/casse) ou AU MOINS 2 tokens (prenom+nom) sur 2 mots minimum. JAMAIS substring partiel sur 1 token court. Fix v12.240 : tokens tries + match all + min length 3 par token. v12.241 : nom+prenom+pass tous 3 obligatoires partout (login, recherche, edition). ❌
 39. **Drift sw.js CACHE_VERSION vs APP_VER index.html** (Apex v12.X, recurrent) — quand on bumpe APP_VER dans `apex-ai/index.html` mais qu'on oublie de bumper `CACHE_VERSION` dans `apex-ai/sw.js`, le Service Worker continue a servir la vieille version. Kevin doit force-refresh manuellement → frustration recurrente. **OBLIGATION** : `CACHE_VERSION` doit TOUJOURS = `'apex-' + APP_VER`. Sentinelle GitHub Action `.github/workflows/sw-cache-sync.yml` rattrape automatiquement le drift sur chaque push (compare APP_VER vs CACHE_VERSION, sed le sw.js, commit `chore: sync sw.js CACHE_VERSION`). Pattern a appliquer aussi a CMCteams. ✅
+
+40. **`ax_user` JAMAIS dans FB_FIX (SECU CRITIQUE — Kevin reconnu Laurence)** (Apex v12.272, Kevin 2026-04-26) — `ax_user` etait dans `FB_FIX` (sync Firebase cross-device). Donc le `K.user` d'un device pollue tous les autres iPhone via SSE Firebase. À sa premiere connexion, Kevin etait reconnu Laurence parce que Firebase avait propage `ax_user = laurence` sur son iPhone. **OBLIGATION** : tout objet user/session/identite (`ax_user`, `cmc_user`, `ax_uid`, `cmc_uid`) DOIT etre dans `FB_LOCAL` (jamais sync Firebase). Validation au boot : `_loadState` verifie strict `K.user.id === ax_uid`, sinon force logout + nettoie + log audit `axSecurityLog("user_id_mismatch")`. ✅
+
+41. **Firebase SSE ecrase localStorage avec `null`** (Apex v12.269, Kevin 2026-04-26) — quand Firebase a une cle `null` ou supprimee, le SSE listener ecrasait localStorage avec `null`. Cause : Kevin perdait ses cles API a chaque session (Firebase null overwrite valid local value). **OBLIGATION** : dans le SSE handler, si `d.data === null` ET `localStorage.getItem(k)` non vide → GARDER la valeur locale + push vers Firebase pour reparer. Pattern correct : Firebase est SOURCE de verite seulement si non-null. ✅
+
+42. **vChat user content : JAMAIS `JSON.stringify` direct** (Apex v12.270, Kevin 2026-04-26) — quand un message user contient une image (`content` est un array `[{type:"image",source:{...}},{type:"text",text:"..."}]`), le code faisait `JSON.stringify(m.content)` et l'affichait comme texte brut → Kevin voyait du JSON brut au lieu de l'image. **OBLIGATION** : utiliser helper `_axRenderUserContent(content)` qui detecte array vs string + render `<img src=data:base64...>` pour images + `renderMd(part.text)` pour texte + handlers dedies pour video/document. Pattern reutilisable. ✅
+
+43. **iOS Safari `SpeechRecognition.continuous=true` non fiable** (Apex v12.269, Kevin 2026-04-26) — sur iPhone Safari, `_axWakeRecognition.continuous=true` se coupe apres 15-30s de silence. Le `onerror` no-speech se relancait jusqu'a 200x = boucle infinie + drain batterie. **OBLIGATION** : detecter iOS via `/iPhone|iPad|iPod/.test(navigator.userAgent)` → `continuous = !isiOS`. Limit retry no-speech a 20 max. Sur iOS, recovery via `onend` setTimeout 500ms qui restart. ✅
 
 ---
 
