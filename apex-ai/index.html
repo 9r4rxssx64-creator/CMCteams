@@ -520,7 +520,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.327",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.328",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -994,7 +994,7 @@ function axGithubCreateBranch(branchName){var token=lg("ax_github_token","");if(
 function axGithubCreatePR(branchName,title,body){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token manquant"));var repo="9r4rxssx64-creator/cmcteams";return fetch("https://api.github.com/repos/"+repo+"/pulls",{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify({title:title,body:body,head:branchName,base:"main"})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("PR HTTP "+r.status+": "+t.slice(0,200));});return r.json();}).then(function(d){return{ok:true,number:d.number,url:d.html_url};});}
 
 /** Workflow safe : Apex propose un changement code via PR. Validation guards stricts. */
-function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));var allowed=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","tools/album-laurence.html"];if(allowed.indexOf(filepath)<0)return Promise.reject(new Error("Fichier non autorise. Allowlist : "+allowed.join(", ")));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
+function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
 /* v12.306 — Vue admin "Mes aliases reconnus" (transparence Kevin) */
 function vAdminAliases(){
@@ -10223,7 +10223,65 @@ function _axShieldRestore(){try{var lost=[];var current=AX_CRITICAL_KEYS_SHIELD.
 try{setTimeout(function(){_axShieldSnapshot();_axShieldRestore();},2000);setInterval(_axShieldSnapshot,300000);setInterval(_axShieldRestore,60000);}catch(_){}
 
 /* v12.323 — axMarkRecharge : Kevin recharge -> bascule auto mode performance + reset spend tracker */
-function axMarkRecharge(eurAmount){try{var amt=Number(eurAmount)||50;ls("ax_last_recharge_eur",amt);ls("ax_total_spend_eur",0);ls("ax_warned_low_balance",false);ls("ax_economy_mode",false);/* v12.327 — Mode normal force (pas conditionnel) */if(typeof toast==="function")toast("✅ Recharge "+amt+"€ - mode performance actif","ok",{duration:3000});if(typeof axNotifyKevin==="function")try{axNotifyKevin("✅ Recharge "+amt+"€","Mode performance auto");}catch(_){}try{if(typeof dc==="function")dc();}catch(_){}return true;}catch(e){return false;}}
+function axMarkRecharge(eurAmount){try{var amt=Number(eurAmount)||50;ls("ax_last_recharge_eur",amt);ls("ax_total_spend_eur",0);ls("ax_warned_low_balance",false);ls("ax_economy_mode",false);
+/* v12.328 — APEX CODE AGENT MODE : les 5% manquants pour 100% Claude Code-equivalent */
+/* Permet a Apex de : lire repo / search code / lister branches/PRs/issues / trigger workflows / voir logs CI */
+
+/* 1. Lire un fichier du repo via GitHub API (n'importe quel path) */
+function axGithubReadFile(filepath, branch){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));branch=branch||"main";var url="https://api.github.com/repos/9r4rxssx64-creator/cmcteams/contents/"+encodeURIComponent(filepath)+"?ref="+branch;return fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).then(function(d){if(d.content){try{return atob(d.content.replace(/\s/g,""));}catch(e){return d.content;}}return "";});}
+
+/* 2. Search code dans le repo via GitHub Search API */
+function axGithubSearchCode(query){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));var url="https://api.github.com/search/code?q="+encodeURIComponent(query+" repo:9r4rxssx64-creator/cmcteams");return fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).then(function(d){return(d.items||[]).slice(0,20).map(function(it){return{path:it.path,score:it.score,url:it.html_url};});});}
+
+/* 3. Lister branches */
+function axGithubListBranches(){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/branches",{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){return r.json();}).then(function(d){return(d||[]).slice(0,50).map(function(b){return{name:b.name,sha:b.commit&&b.commit.sha&&b.commit.sha.slice(0,8)};});});}
+
+/* 4. Lister PRs */
+function axGithubListPRs(state){state=state||"open";var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/pulls?state="+state+"&per_page=20",{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){return r.json();}).then(function(d){return(d||[]).map(function(p){return{number:p.number,title:p.title,state:p.state,url:p.html_url,head:p.head&&p.head.ref};});});}
+
+/* 5. Lister issues */
+function axGithubListIssues(state){state=state||"open";var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/issues?state="+state+"&per_page=20",{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){return r.json();}).then(function(d){return(d||[]).filter(function(i){return!i.pull_request;}).map(function(i){return{number:i.number,title:i.title,state:i.state,url:i.html_url};});});}
+
+/* 6. Trigger workflow GitHub Actions */
+function axGithubTriggerWorkflow(filename, ref){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));ref=ref||"main";return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/"+filename+"/dispatches",{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify({ref:ref})}).then(function(r){return{ok:r.ok,status:r.status};});}
+
+/* 7. Lister runs Actions recents */
+function axGithubListRuns(){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/runs?per_page=10",{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){return r.json();}).then(function(d){return(d.workflow_runs||[]).map(function(w){return{id:w.id,name:w.name,status:w.status,conclusion:w.conclusion,branch:w.head_branch,url:w.html_url,createdAt:w.created_at};});});}
+
+/* 8. Diff entre 2 commits/branches */
+function axGithubCompare(base, head){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token GitHub manquant"));return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/compare/"+base+"..."+head,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json"}}).then(function(r){return r.json();}).then(function(d){return{ahead:d.ahead_by,behind:d.behind_by,files:(d.files||[]).map(function(f){return{filename:f.filename,changes:f.changes,additions:f.additions,deletions:f.deletions};})};});}
+
+/* 9. Multi-agent parallele : Apex peut consulter 3-5 IA en parallele (axCrewExperts existe deja, ajoute helper) */
+function axParallelMinds(question, models){models=models||["claude-sonnet-4-6","claude-opus-4-7","claude-haiku-4-5"];var apiKey=lg("ax_api_key","");if(!apiKey)return Promise.reject(new Error("Cle Anthropic manquante"));return Promise.all(models.map(function(m){return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":apiKey,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:m,max_tokens:1024,messages:[{role:"user",content:question}]})}).then(function(r){return r.json();}).then(function(d){var t=(d.content&&d.content[0]&&d.content[0].text)||"";return{model:m,answer:t};}).catch(function(e){return{model:m,error:String(e.message||e)};});}));}
+
+/* 10. Tool registry expose pour IA Apex (tool use) */
+var AX_CODE_TOOLS = [
+  {name:"github_read_file",description:"Read any file from repo via GitHub API",input_schema:{type:"object",properties:{filepath:{type:"string"},branch:{type:"string"}},required:["filepath"]}},
+  {name:"github_search_code",description:"Search code in repo",input_schema:{type:"object",properties:{query:{type:"string"}},required:["query"]}},
+  {name:"github_list_branches",description:"List all branches",input_schema:{type:"object",properties:{}}},
+  {name:"github_list_prs",description:"List PRs",input_schema:{type:"object",properties:{state:{type:"string",enum:["open","closed","all"]}}}},
+  {name:"github_list_issues",description:"List issues",input_schema:{type:"object",properties:{state:{type:"string",enum:["open","closed","all"]}}}},
+  {name:"github_trigger_workflow",description:"Trigger GitHub Actions workflow",input_schema:{type:"object",properties:{filename:{type:"string"},ref:{type:"string"}},required:["filename"]}},
+  {name:"github_list_runs",description:"List recent CI runs",input_schema:{type:"object",properties:{}}},
+  {name:"github_compare",description:"Diff between branches/commits",input_schema:{type:"object",properties:{base:{type:"string"},head:{type:"string"}},required:["base","head"]}},
+  {name:"parallel_minds",description:"Consult multiple AI models in parallel",input_schema:{type:"object",properties:{question:{type:"string"},models:{type:"array",items:{type:"string"}}},required:["question"]}}
+];
+function axExecuteCodeTool(name, input){
+  switch(name){
+    case "github_read_file": return axGithubReadFile(input.filepath, input.branch);
+    case "github_search_code": return axGithubSearchCode(input.query);
+    case "github_list_branches": return axGithubListBranches();
+    case "github_list_prs": return axGithubListPRs(input.state);
+    case "github_list_issues": return axGithubListIssues(input.state);
+    case "github_trigger_workflow": return axGithubTriggerWorkflow(input.filename, input.ref);
+    case "github_list_runs": return axGithubListRuns();
+    case "github_compare": return axGithubCompare(input.base, input.head);
+    case "parallel_minds": return axParallelMinds(input.question, input.models);
+    default: return Promise.reject(new Error("Tool inconnu : "+name));
+  }
+}
+
+/* v12.327 — Mode normal force (pas conditionnel) */if(typeof toast==="function")toast("✅ Recharge "+amt+"€ - mode performance actif","ok",{duration:3000});if(typeof axNotifyKevin==="function")try{axNotifyKevin("✅ Recharge "+amt+"€","Mode performance auto");}catch(_){}try{if(typeof dc==="function")dc();}catch(_){}return true;}catch(e){return false;}}
 /* Auto-detection recharge : si call API reussit apres erreur 429/402 ET mode eco actif -> propose bascule */
 function _axCheckAutoRecharge(){try{if(!lg("ax_economy_mode",false))return;/* v12.327 — AUTO mode perf si solde >15€ ET API OK */var bal=(typeof axEstimateRemainingBudget==="function")?axEstimateRemainingBudget():{remaining:0};var lastErr=lg("ax_last_quota_err_ts",0);var lastOk=lg("ax_last_api_ok_ts",0);var apiOk=lastOk>lastErr&&lastOk>Date.now()-300000;var soldeOk=bal.remaining>15;if(apiOk||soldeOk){ls("ax_economy_mode",false);if(soldeOk&&!apiOk)ls("ax_total_spend_eur",0);if(typeof toast==="function")toast("✅ Mode performance restaure (solde "+bal.remaining.toFixed(0)+"€)","ok",{duration:4000});if(typeof axNotifyKevin==="function")try{axNotifyKevin("✅ Apex repare","Mode performance auto active.");}catch(_){}}}catch(_){}}
 try{setInterval(_axCheckAutoRecharge,60000);setTimeout(_axCheckAutoRecharge,3000);}catch(_){}
