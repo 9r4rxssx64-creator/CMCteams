@@ -4683,7 +4683,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.555";
+var APP_VER="v9.556";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -21057,6 +21057,183 @@ function autoFillMissingCadres(year,month,opts){
   }
   return{filled:applied.length,applied:applied};
 }
+// v9.556 (Kevin 2026-04-26 URGENT 4 cadres rates) — Re-tenter parser cadres
+// Utilise cmc_import_src_<key> pour relancer le fallback v9.462 (5 strategies)
+// SANS reimporter tout le PDF. Ideal quand FOUQUE V/PLACENTI L/etc. ont rate
+// le premier passage et qu'on veut re-essayer avec les memes strategies.
+// Diagnostics enrichis : indique pour chaque cadre si NOM_INTROUVABLE_PDF ou PARSE_ECHEC.
+function _cmcRetryCadresParse(year,month){
+  if(!A.user||A.user.id!==AID){toast("⚠ Réservé admin","err");return null;}
+  var y=(typeof year==="number")?year:A.year;
+  var m=(typeof month==="number")?month:A.month;
+  var key=y+"-"+m;
+  var src=lg("cmc_import_src_"+key,null);
+  if(!src||!src.txt||src.txt.length<100){
+    toast("⚠ Aucune source PDF disponible pour "+(MFR&&MFR[m]?MFR[m]:m)+" "+y+" — reimportez le PDF","warn",6000);
+    return null;
+  }
+  var txt=src.txt;
+  var pl=gpl(y,m)||{};
+  var days=getDays(y,m);
+  var cadresKo=A.employees.filter(function(e){
+    if((e.family||"")!=="cadres")return false;
+    if(!isEmpActive(e,y,m))return false;
+    var row=pl[e.id]||{};
+    for(var d=1;d<=days;d++){if(row[d])return false;}
+    return true;
+  });
+  if(!cadresKo.length){toast("✅ Aucun cadre sans horaire — rien à re-tenter","ok");return{rescued:0,total:0};}
+  var ov=A.overrides[key]||(A.overrides[key]={});
+  var rawLines=txt.split(/\r?\n/);
+  var joinedLines=[];
+  for(var ji=0;ji<rawLines.length;ji++){
+    var cur=(rawLines[ji]||"").trim();
+    if(!cur){joinedLines.push(rawLines[ji]);continue;}
+    if(joinedLines.length>0 && /^[A-Z]{1,3}\.?(?:\s|$)/.test(cur) && /[A-Z]{3,}$/.test((joinedLines[joinedLines.length-1]||"").trim())){
+      joinedLines[joinedLines.length-1]+=" "+cur;
+    }else{
+      joinedLines.push(rawLines[ji]);
+    }
+  }
+  var pdfLines=joinedLines;
+  var textUC=txt.toUpperCase();
+  function matchCode(raw){
+    if(!raw)return null;
+    if(CODES[raw])return raw;
+    var stripped=raw.replace(/["'“”‘’]+/g,"");
+    if(CODES[stripped])return stripped;
+    var upper=stripped.toUpperCase();
+    if(CODES[upper])return upper;
+    var lowered=stripped.toLowerCase();
+    if(CODES[lowered])return lowered;
+    var slashed=stripped.replace(/[-–—]/g,"/");
+    if(CODES[slashed])return slashed;
+    if(CODES[slashed.toUpperCase()])return slashed.toUpperCase();
+    if(CODES[slashed.toLowerCase()])return slashed.toLowerCase();
+    return null;
+  }
+  var rescued=0,diag=[];
+  cadresKo.forEach(function(emp){
+    var empName=(emp.name||"").toUpperCase().trim();
+    if(!empName){diag.push({name:emp.name,result:"NOM_VIDE"});return;}
+    var empToks=empName.split(/\s+/);
+    var empSurn=empToks[0];
+    var empInit=empToks.slice(1).join(" ")||"";
+    if(textUC.indexOf(empSurn)<0){
+      diag.push({name:emp.name,result:"NOM_INTROUVABLE_PDF",hint:"Le nom \""+empSurn+"\" n'apparait nulle part dans le PDF source. Page tronquee ou PDF incomplet."});
+      return;
+    }
+    var nameEsc=empName.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    var surnEsc=empSurn.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    var strats=[
+      {name:"nom_complet",rx:new RegExp("\\b"+nameEsc+"\\b","i")},
+      {name:"ordre_inverse",rx:empInit?new RegExp("\\b"+empInit.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\.?\\s+"+surnEsc+"\\b","i"):null},
+      {name:"surname_seul",rx:new RegExp("\\b"+surnEsc+"\\b","i")},
+      {name:"ordre_inverse_relax",rx:empInit?new RegExp(empInit.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\.?\\s+"+surnEsc,"i"):null},
+      {name:"surname_fuzzy4",rx:surnEsc.length>=4?new RegExp("\\b"+surnEsc.substring(0,4),"i"):null}
+    ].filter(function(s){return s.rx;});
+    var matchedLines=[];
+    strats.forEach(function(strat){
+      for(var li=0;li<pdfLines.length;li++){
+        if(!strat.rx.test(pdfLines[li]))continue;
+        if(matchedLines.some(function(mm){return mm.li===li;}))continue;
+        matchedLines.push({li:li,strategy:strat.name});
+      }
+    });
+    if(matchedLines.length===0){
+      diag.push({name:emp.name,result:"PARSE_ECHEC_5_STRATEGIES",hint:"Surname trouve dans PDF mais 5 strategies ont echoue. PDF tres fragmente."});
+      return;
+    }
+    var appliedCount=0,usedStrat=null,usedLi=-1;
+    for(var mi=0;mi<matchedLines.length;mi++){
+      var li=matchedLines[mi].li;
+      var line=pdfLines[li];
+      if(matchedLines[mi].strategy==="surname_seul" && li+1<pdfLines.length){
+        line=line+" "+(pdfLines[li+1]||"");
+      }
+      var parts=line.split(/[\t|,;]+|\s{2,}/).map(function(s){return s.trim();}).filter(function(s){return s;});
+      var nameIdx=-1;
+      for(var pi=0;pi<parts.length;pi++){
+        var upperPart=parts[pi].toUpperCase();
+        if(upperPart===empName||upperPart.indexOf(empName)===0||empName.indexOf(upperPart)===0){nameIdx=pi;break;}
+        if(upperPart===empSurn||upperPart.indexOf(empSurn)===0){nameIdx=pi;break;}
+      }
+      if(nameIdx<0){
+        parts=line.split(/\s+/).map(function(s){return s.trim();}).filter(function(s){return s;});
+        for(var pi2=0;pi2<parts.length;pi2++){
+          var up=parts[pi2].toUpperCase();
+          if(up===empSurn||up.indexOf(empSurn)===0){
+            var skip=0;
+            if(pi2+1<parts.length && /^[A-Z]{1,3}\.?$/.test(parts[pi2+1])){skip=1;}
+            nameIdx=pi2+skip;
+            break;
+          }
+        }
+      }
+      if(nameIdx<0)continue;
+      var codeCols=parts.slice(nameIdx+1);
+      var cleanCols=[],foundFirstCode=false;
+      codeCols.forEach(function(raw){
+        var c=(raw||"").trim();
+        if(!c)return;
+        if(!foundFirstCode){
+          if(/^[\d*\-.]+$/.test(c))return;
+          if(/^[A-Z]{1,3}\.?$/.test(c)&&empInit&&empInit.replace(/\./,"").indexOf(c.replace(/\./,""))===0)return;
+          foundFirstCode=true;
+        }
+        cleanCols.push(c);
+      });
+      for(var di=0;di<Math.min(cleanCols.length,days);di++){
+        var raw2=(cleanCols[di]||"").trim();
+        if(!raw2)continue;
+        var cc=matchCode(raw2);
+        if(cc){
+          ov[emp.id]=ov[emp.id]||{};
+          if(!ov[emp.id][di+1]){
+            ov[emp.id][di+1]=cc;
+            appliedCount++;
+          }
+        }
+      }
+      if(appliedCount>0){usedStrat=matchedLines[mi].strategy;usedLi=li;break;}
+    }
+    if(appliedCount>0){
+      rescued++;
+      diag.push({name:emp.name,result:"OK",strategy:usedStrat,line:usedLi,codes:appliedCount});
+      try{var al=lg("cmc_audit",[]);al.push({ts:Date.now(),adminId:A.user.id,eid:emp.id,name:emp.name,year:y,month:m,src:"retry_cadres_v9.556_"+usedStrat,nSet:appliedCount});if(al.length>500)al=al.slice(-500);ls("cmc_audit",al);}catch(_e){}
+    }else{
+      diag.push({name:emp.name,result:"LIGNE_TROUVEE_AUCUN_CODE_VALIDE",hint:"Match dans PDF mais aucun code valide extrait. Verifiez codes du PDF."});
+    }
+  });
+  if(rescued>0){
+    ls("cmc_ov",A.overrides);
+    if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);
+    toast("✨ "+rescued+"/"+cadresKo.length+" cadre"+(rescued>1?"s":"")+" recupere"+(rescued>1?"s":"")+" via re-parse","ok",5000);
+    try{confetti(30);}catch(_){}
+    dc();
+  }else{
+    var introuv=diag.filter(function(d){return d.result==="NOM_INTROUVABLE_PDF";}).length;
+    var msg="⚠ Re-parse "+cadresKo.length+" cadre"+(cadresKo.length>1?"s":"")+" : 0 recupere";
+    if(introuv>0)msg+=" ("+introuv+" absent"+(introuv>1?"s":"")+" du PDF)";
+    toast(msg,"warn",8000);
+  }
+  try{ls("cmc_cadres_retry_diag",{ts:Date.now(),ver:"v9.556",y:y,m:m,total:cadresKo.length,rescued:rescued,diag:diag});}catch(_e){}
+  return{rescued:rescued,total:cadresKo.length,diag:diag};
+}
+function _cmcShowRetryDiag(){
+  if(!A.user||A.user.id!==AID)return;
+  var d=lg("cmc_cadres_retry_diag",null);
+  if(!d){toast("Aucun diagnostic disponible","info");return;}
+  var rows=(d.diag||[]).map(function(x){
+    var col=x.result==="OK"?"#5aaa70":(x.result==="NOM_INTROUVABLE_PDF"?"#e06060":"#e09848");
+    var ic=x.result==="OK"?"✅":(x.result==="NOM_INTROUVABLE_PDF"?"❌":"⚠");
+    return '<div style="padding:8px;margin:4px 0;background:rgba(255,255,255,.04);border-left:3px solid '+col+';border-radius:6px"><b style="color:'+col+'">'+ic+' '+esc(x.name)+'</b> — '+esc(x.result)+(x.hint?'<br><span style="font-size:12px;color:#a0c0a0">'+esc(x.hint)+'</span>':'')+(x.strategy?' <span style="font-size:11px;color:#8aa088">['+esc(x.strategy)+' L'+x.line+']</span>':'')+'</div>';
+  }).join("");
+  var w=window.open("","retryDiag","width=520,height=600");
+  if(!w){toast("Bloque par popup","warn");return;}
+  w.document.write('<html><head><title>Diagnostic re-parse cadres</title><style>body{background:#1a1f2a;color:#e0e8e0;font-family:system-ui,sans-serif;padding:14px;font-size:14px}h2{color:#c9a227}</style></head><body><h2>🔧 Diagnostic re-parse cadres '+esc((d.y||"")+"-"+(d.m||""))+'</h2><div style="margin-bottom:10px"><b>'+(d.rescued||0)+'/'+(d.total||0)+'</b> cadres recuperes</div>'+rows+'</body></html>');
+  w.document.close();
+}
 // v9.181 — Copier le planning du mois précédent (admin, gain de temps massif)
 // Strategy : pour chaque emp actif ET sans aucun code ce mois, on copie le mois précédent
 // en ajustant les jours (si mois N-1 avait 31j et mois N a 30j, on tronque)
@@ -28726,6 +28903,10 @@ function _cmcDetectStaleImports(){
   return stale;
 }
 
+// v9.556 — Mode replay silencieux : supprime dc() + banners + setTimeout dans doImport
+// Permet recovery batch sans flicker visuel (graffitis Kevin 2026-04-26)
+var _silentReplayMode=false;
+
 // Replay un import sans UI/dialog (admin, silencieux, aucune confirmation)
 function _cmcReplayImport(txt,year,month){
   if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
@@ -28746,8 +28927,11 @@ function _cmcReplayImport(txt,year,month){
   var _prevToast=window.toast;
   var _toastMsgs=[];
   window.toast=function(msg,type){_toastMsgs.push({msg:String(msg).slice(0,200),type:type||"ok"});};
+  // v9.556 — Active mode silencieux : doImport saute dc() + banners DOM + scrolls
+  _silentReplayMode=true;
   var ok=false,errMsg=null;
   try{doImport();ok=true;}catch(e){errMsg=e&&e.message||"unknown";}
+  finally{_silentReplayMode=false;}
   window.toast=_prevToast;
   // Cleanup DOM si on a cree les inputs
   if(madeTxt&&ta.parentNode)ta.parentNode.removeChild(ta);
@@ -28759,16 +28943,20 @@ function _cmcReplayImport(txt,year,month){
   return{ok:ok,errMsg:errMsg,ovCount:ovCount,toastMsgs:_toastMsgs};
 }
 
+// v9.556 — Guard re-entrance : evite double-execution si timer + boot tirent en parallele
+var _cmcAutoRecoveryRunning=false;
 // Auto-recovery au boot — admin only, rate limited 1h, defer 6s apres _loadState
 function _cmcAutoRecoverImports(){
   try{
     if(!A.user||A.user.id!==AID)return;
+    if(_cmcAutoRecoveryRunning)return; // anti-reentrance (boot+interval)
     // Rate limit : 1 recovery max par heure
     var last=lg("cmc_last_auto_recovery",0);
     if(typeof last==="object"&&last)last=last.ts||0;
     if(Date.now()-last<60*60*1000)return;
     var stale=_cmcDetectStaleImports();
     if(!stale.length)return;
+    _cmcAutoRecoveryRunning=true;
     console.info("[auto-recovery] "+stale.length+" planning(s) detecte(s) incomplet(s) — replay auto");
     var results=[];
     stale.forEach(function(s){
@@ -28796,13 +28984,14 @@ function _cmcAutoRecoverImports(){
         "Recovered "+results.filter(function(r){return r.ok;}).length+"/"+results.length+" plannings",
         {months:results.map(function(r){return r.monthKey;}),coverages_before:coveragesBefore,version:APP_VER});
     }}catch(_t){}
-    // Toast user-friendly + dc()
+    // Toast user-friendly + dc() debouncé (v9.556 — fix flicker "graffitis")
     var nOk=results.filter(function(r){return r.ok&&r.ovCount_after>r.ovCount_before;}).length;
     if(nOk>0){
       try{if(typeof toast==="function")toast("✅ "+nOk+" planning(s) restaure(s) automatiquement","ok",5000);}catch(_){}
-      // Push Firebase + re-render
+      // Push Firebase (sera echo via SSE → 1 dcDebounced)
       try{if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
-      try{if(typeof dc==="function")dc();}catch(_){}
+      // v9.556 — UN SEUL render debouncé en fin (evite cascade dc() pendant replay)
+      try{if(typeof dcDebounced==="function")dcDebounced();else if(typeof dc==="function")setTimeout(dc,16);}catch(_){}
       // Banner visible (stocke flag pour vAccueil)
       try{ls("cmc_auto_recovery_banner",{ts:Date.now(),count:nOk,results:results});}catch(_){}
     }
@@ -28810,6 +28999,7 @@ function _cmcAutoRecoverImports(){
     try{if(typeof _audit==="function")_audit("auto_recovery",AID,nOk+"/"+results.length+" mois",results.map(function(r){return r.monthKey;}).join(","),APP_VER);}catch(_){}
     return results;
   }catch(e){console.warn("[_cmcAutoRecoverImports]",e&&e.message);}
+  finally{_cmcAutoRecoveryRunning=false;}
 }
 
 // v9.123 — Nettoyage d'urgence des overrides (purge les codes non-reconnus)
@@ -30461,7 +30651,8 @@ function doImport(){
       +'</div>';
     r.innerHTML+=_dsHtml;
   }
-  dc();
+  // v9.556 — Mode silencieux (replay auto-recovery) : skip dc() pour eviter flicker
+  if(!_silentReplayMode){dc();}
   var _vLabel=_importVersion>1?' (v'+_importVersion+')':"";
   // Détection import incomplet : vérifier combien d'employés actifs ont 0 horaire ce mois
   var _ov2=A.overrides[key]||{};
@@ -30573,10 +30764,13 @@ function doImport(){
   // v9.553 (Kevin 2026-04-26) - SENTINELLE post-import : detecte regression silencieuse
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
-  setTimeout(function(){_autoVerifyAfterImport(iy,im);
-    // v9.128b — Scroll auto vers le rapport (UX: plus besoin de chercher où regarder)
-    setTimeout(function(){var z=document.getElementById("impAutoVerify");if(z)z.scrollIntoView({block:"center",behavior:"smooth"});},250);
-  },400);
+  // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
+  if(!_silentReplayMode){
+    setTimeout(function(){_autoVerifyAfterImport(iy,im);
+      // v9.128b — Scroll auto vers le rapport (UX: plus besoin de chercher où regarder)
+      setTimeout(function(){var z=document.getElementById("impAutoVerify");if(z)z.scrollIntoView({block:"center",behavior:"smooth"});},250);
+    },400);
+  }
   // v9.67 — Backup automatique après import (sauvegarde silencieuse dans Firebase)
   try{
     var _bk={ts:Date.now(),ver:APP_VER,month:MFR[im]+" "+iy,empCount:ok};
@@ -30910,8 +31104,9 @@ function doImport(){
       if(_final_cadresKo.length>0){
         _h8+='<div style="padding:8px 10px;background:rgba(224,96,96,.08);border-left:3px solid #e06060;border-radius:6px;margin-bottom:8px;font-size:13px;color:#e0a0a0"><b>Cadres rates :</b> '+_final_cadresKo.slice(0,8).map(function(e){return esc(e.name);}).join(", ")+(_final_cadresKo.length>8?" +"+(_final_cadresKo.length-8)+" autres":"")+'</div>';
         _h8+='<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +'<button onclick="_cmcRetryCadresParse(A.year,A.month);setTimeout(function(){_cmcShowRetryDiag();},800);" style="flex:1;min-width:160px;min-height:44px;padding:10px;background:rgba(255,176,32,.20);border:2px solid rgba(255,176,32,.7);color:#ffb020;border-radius:8px;cursor:pointer;font-weight:800">🔧 Re-tenter parser cadres (5 strategies)</button>'
           +'<button onclick="sv(\'auditlog\')" style="flex:1;min-width:160px;min-height:44px;padding:10px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;border-radius:8px;cursor:pointer;font-weight:700">📋 Voir Journal Audit</button>'
-          +'<button onclick="if(confirm(\'Re-tenter avec strategies alternatives ?\')){autoFillMissingCadres(A.year,A.month);setTimeout(function(){toast(\'Re-tentative effectuee\',\'ok\');dc();},500);}" style="flex:1;min-width:160px;min-height:44px;padding:10px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.5);color:#c9a227;border-radius:8px;cursor:pointer;font-weight:700">🔄 Re-tenter</button>'
+          +'<button onclick="if(confirm(\'Re-tenter copie mois precedent ?\')){autoFillMissingCadres(A.year,A.month);setTimeout(function(){toast(\'Re-tentative effectuee\',\'ok\');dc();},500);}" style="flex:1;min-width:160px;min-height:44px;padding:10px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.5);color:#c9a227;border-radius:8px;cursor:pointer;font-weight:700">🔄 Auto-remplir N-1</button>'
           +'</div>';
       }else{
         _h8+='<div style="font-size:12px;color:#a0c8a0">Tous les employes actifs ont au moins 1 horaire ce mois.</div>';
