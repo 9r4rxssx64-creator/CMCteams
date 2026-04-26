@@ -421,6 +421,30 @@ html[data-font-scale="xxl"]{font-size:24px}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 body.a11y-reduce-motion *,body.a11y-reduce-motion *::before,body.a11y-reduce-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+/* v9.557 (Kevin 2026-04-26 ANTI-FLICKER iPhone) — Mode econome iPhone : coupe les animations
+   gourmandes infinite qui scintillent sur Safari iOS PWA. Active automatiquement sur iPhone admin.
+   Garde les transitions (essentielles UX) mais supprime les animations infinite decoratives. */
+body.cmc-no-flicker .day-sun,
+body.cmc-no-flicker .xmas-snow,
+body.cmc-no-flicker .room-emp-dot,
+body.cmc-no-flicker .room-table-active,
+body.cmc-no-flicker .room-scan-line,
+body.cmc-no-flicker .sim-mode,
+body.cmc-no-flicker .sim-time-marker,
+body.cmc-no-flicker .sim-shift-cell,
+body.cmc-no-flicker .odot.on,
+body.cmc-no-flicker .nt.on em{animation:none!important}
+body.cmc-no-flicker[data-theme="nuit"] .sec-title,
+body.cmc-no-flicker[data-theme="nuit"] h1,
+body.cmc-no-flicker[data-theme="nuit"] h2{animation:none!important}
+body.cmc-no-flicker[data-theme="xmas"]::before,
+body.cmc-no-flicker[data-theme="xmas"]::after,
+body.cmc-no-flicker[data-theme="xmas"] .card::before{animation:none!important}
+body.cmc-no-flicker[data-theme="nuit"]::after{animation:none!important}
+body.cmc-no-flicker .xmas-snow{display:none!important}
+body.cmc-no-flicker .day-sun{display:none!important}
+body.cmc-no-flicker .room-scan-line{display:none!important}
+body.cmc-no-flicker .sync-badge{animation:none!important}
 /* Focus indicators renforcés (WCAG AAA) */
 body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outline-offset:3px!important;box-shadow:0 0 0 6px rgba(255,220,64,.3)!important}
 /* Skip link (WCAG) */
@@ -4683,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.556";
+var APP_VER="v9.557";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16270,9 +16294,24 @@ function cmcSetFeature(key,on){
   toast(lab+(on?" activée":" désactivée"));
   dc();
 }
+// v9.557 (Kevin 2026-04-26 ANTI-FLICKER) — Detection iPhone + mode econome
+// Active automatiquement la classe cmc-no-flicker sur iPhone pour eviter scintillements.
+// Override possible via cmc_animations_force=true dans Reglages admin.
+function _cmcApplyReducedMotion(){
+  try{
+    var ua=navigator.userAgent||"";
+    var isiOS=/iPhone|iPad|iPod/.test(ua);
+    var force=lg("cmc_animations_force",false); // admin can re-enable
+    var prefersReduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+    var shouldReduce=(isiOS&&!force)||prefersReduce;
+    if(shouldReduce){document.body.classList.add("cmc-no-flicker");}
+    else{document.body.classList.remove("cmc-no-flicker");}
+  }catch(_){}
+}
 // v9.389-392 — Thèmes saisonniers novateurs
 function applySeasonalTheme(){
   try{
+    _cmcApplyReducedMotion(); // v9.557 — re-applique a chaque cycle theme
     var f=getFeatureFlags();
     var month=new Date().getMonth();
     var theme=lg("cmc_theme","");
@@ -16315,6 +16354,8 @@ function applySeasonalTheme(){
     }
   }catch(_){}
 }
+// v9.557 — applique reduce-motion AU BOOT immediatement (avant tout theme)
+try{_cmcApplyReducedMotion();}catch(_){}
 setTimeout(applySeasonalTheme,500);
 setInterval(applySeasonalTheme,60*60*1000); // réévalue toutes les heures
 function toggleFeature(key){
@@ -28361,6 +28402,9 @@ function vImport(){
       <button class="btn" onclick="sv('parserlearning')" title="Apprentissage parser PDF : formats appris, patterns reusis, journal decisions (v9.527)" style="flex:0 0 auto;min-width:170px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;font-weight:700">
         \ud83d\udcda Apprentissage parser
       </button>
+      <button class="btn" onclick="_cmcRetryCadresParse(A.year,A.month);setTimeout(function(){_cmcShowRetryDiag();},800);" title="Re-tente parser cadres (5 strategies) sur le PDF source deja sauvegarde. Utile si FOUQUE V/PLACENTI L/etc. ratent le 1er passage (v9.557)." style="flex:0 0 auto;min-width:200px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(255,176,32,.20);border:2px solid rgba(255,176,32,.7);color:#ffb020;font-weight:800">
+        \ud83d\udd27 Re-tenter parser cadres
+      </button>
     </div>
     <div id="impRes" style="margin-top:10px;font-size:14px"></div>
     <div id="impRollback" style="margin-top:6px"></div>
@@ -35329,6 +35373,34 @@ function _deferredInit(){
   setInterval(function(){
     try{if(typeof _cmcAutoRecoverImports==="function")_cmcAutoRecoverImports();}catch(_e){}
   },60*60*1000);
+  // v9.557 (Kevin 2026-04-26 URGENT 4 cadres rates auto-fix)
+  // Re-tente automatiquement le parser cadres au boot si admin + cadres KO + source PDF dispo.
+  // Defer 12s : laisse fbLoadAll + applyData + sentinelles tourner avant.
+  // Strategie : silent (pas de toast bruyant si rescue OK, juste console).
+  setTimeout(function(){
+    try{
+      if(!A.user||A.user.id!==AID)return;
+      if(typeof _cmcRetryCadresParse!=="function")return;
+      var y=A.year,m=A.month;
+      var pl=gpl(y,m)||{};
+      var days=getDays(y,m);
+      var koCount=A.employees.filter(function(e){
+        if((e.family||"")!=="cadres")return false;
+        if(!isEmpActive(e,y,m))return false;
+        var row=pl[e.id]||{};
+        for(var d=1;d<=days;d++){if(row[d])return false;}
+        return true;
+      }).length;
+      var src=lg("cmc_import_src_"+y+"-"+m,null);
+      var lastRetry=lg("cmc_cadres_retry_diag",null);
+      var recent=lastRetry&&lastRetry.ts&&(Date.now()-lastRetry.ts<30*60*1000);
+      if(koCount>=1 && src && src.txt && src.txt.length>=100 && !recent){
+        console.info("[v9.557 boot auto-fix] "+koCount+" cadres KO + PDF source dispo, retry silent parse");
+        var res=_cmcRetryCadresParse(y,m);
+        if(res && res.rescued>0){console.info("[v9.557 boot auto-fix] rescued "+res.rescued+"/"+res.total);}
+      }
+    }catch(_e){console.warn("[v9.557 boot auto-fix]",_e&&_e.message);}
+  },12000);
 }
 // requestIdleCallback si disponible (attend que le browser ait fini le paint),
 // sinon setTimeout 80ms (bien après le premier paint à ~16ms)
