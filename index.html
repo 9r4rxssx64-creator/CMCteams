@@ -12797,6 +12797,7 @@ function vMain(){
     case"passation":  return vPassation(); // v9.540 - Passation digitale (form remplir)
     case"passations": return vPassationsList(); // v9.540 - Liste passations
     case"crossteamactivity": return isAdm?vCrossTeamActivity():""; // v9.540 - Stats cross-team
+    case"rgpd":case"mes-donnees":case"vie-privee": return vRGPD(); // v9.548 - RGPD complet (export + erase + CSP + droits)
     default: return vAccueil();
   }
 }
@@ -23651,6 +23652,7 @@ function vAdmin(){
     {ic:"\ud83d\udee1",lb:"Centre des sentinelles (12 agents)",fn:"sv('sentinelhub')"}, // v9.517
     {ic:"\ud83d\udd12",lb:"Audit sauvegarde triple (cl\u00e9s + donn\u00e9es)",fn:"sv('persaudit')"}, // v9.519
     {ic:"\ud83d\udcda",lb:"Lessons partagees Apex+CMCteams",fn:"sv('lessonscmc')"}, // v9.525 cross-app
+    {ic:"\ud83d\udd12",lb:"Vie privee & RGPD (export + effacement + CSP)",fn:"sv('rgpd')"}, // v9.548 RGPD 10/10
     {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier PIN admin":"Activer PIN admin",fn:"showPinSetup()"},
     {ic:"\ud83d\udd13",lb:"R\u00e9init. tous les mots de passe",fn:"adminResetAllPw()"},
 
@@ -35610,6 +35612,252 @@ try{
   }
 }catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("cmc-rgpd-card-h-t-m-l",_e);}catch(__){}}
 /* ============ FIN RGPD / COOKIES CMC ============ */
+
+/* ============ RGPD COMPLET v9.548 (Kevin 2026-04-26) — export + erase + vRGPD + CSP audit ============ */
+/* Cible : 10/10 conformite CNIL. Helpers + vue dediee + lien admin + protection Kevin admin. */
+
+// cmcExportUserData : RGPD droit d'acces + portabilite. JSON complet (pas de hash mdp).
+function cmcExportUserData(targetUid){
+  try{
+    var uid=targetUid||(A&&A.user?A.user.id:null);
+    if(!uid){if(typeof toast==="function")toast("Aucun utilisateur identifie","warn");return;}
+    var isAdm=A.user&&A.user.id===AID;
+    if(targetUid&&targetUid!==(A.user&&A.user.id)&&!isAdm){if(typeof toast==="function")toast("Acces refuse","err");return;}
+    var reg=(A.reg&&A.reg[uid])||{};
+    var emp=(A.employees||[]).find(function(e){return e.id===uid;})||null;
+    var planning={};
+    if(A.overrides){Object.keys(A.overrides).forEach(function(mk){var ov=A.overrides[mk];if(ov&&ov[uid])planning[mk]=ov[uid];});}
+    var userlog=(lg("cmc_userlog",[])||[]).filter(function(e){return e&&(e.uid===uid||e.id===uid);});
+    var audit=(lg("cmc_audit",[])||[]).filter(function(e){return e&&(e.eid===uid||e.adminId===uid);});
+    var chat=(A.chatMsgs||[]).filter(function(m){return m&&(m.uid===uid||m.to===uid);});
+    var exch=(A.exchanges||[]).filter(function(x){return x&&(x.uid===uid||x.partnerUid===uid);});
+    var consents={};
+    try{Object.keys(localStorage).forEach(function(k){if(k.indexOf("cmc_cgu_")===0)consents[k.replace("cmc_cgu_","")]=(localStorage.getItem(k)==="1");});}catch(_){}
+    var pwPresent=!!(A.passwords&&A.passwords[uid]);
+    var data={
+      app:"CMC Teams",
+      version:(typeof APP_VER!=="undefined"?APP_VER:"v9"),
+      exported_at:new Date().toISOString(),
+      user:{id:uid,name:emp?emp.name:(reg.nom||"")+" "+(reg.prenom||""),family:emp?emp.family:""},
+      profile:reg,
+      employee:emp,
+      planning_36_months:planning,
+      password:{present:pwPresent,hash_redacted:true},
+      connections_history:userlog,
+      audit_log:audit,
+      chat_messages:chat,
+      shift_exchanges:exch,
+      consents:consents,
+      rights_info:"RGPD Art. 15 (acces), Art. 20 (portabilite). Format JSON portable."
+    };
+    var json=JSON.stringify(data,null,2);
+    var blob=new Blob([json],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url;
+    a.download="cmcteams-export-"+uid+"-"+(new Date().toISOString().slice(0,10))+".json";
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){try{URL.revokeObjectURL(url);document.body.removeChild(a);}catch(_){}},500);
+    try{if(typeof _audit==="function")_audit("rgpd_export",uid,"export_user_data","size="+json.length);}catch(_){}
+    if(typeof toast==="function")toast("Tes donnees ont ete telechargees","ok");
+  }catch(e){if(typeof toast==="function")toast("Erreur export : "+(e&&e.message||"inconnue"),"err");}
+}
+
+// cmcEraseUserProfile : RGPD droit a l'oubli. Protection Kevin admin.
+function cmcEraseUserProfile(targetUid){
+  try{
+    var uid=targetUid||(A&&A.user?A.user.id:null);
+    if(!uid){if(typeof toast==="function")toast("Aucun utilisateur identifie","warn");return;}
+    if(uid===AID){if(typeof toast==="function")toast("Admin principal protege (effacement impossible)","err");return;}
+    var isAdm=A.user&&A.user.id===AID;
+    var isSelf=uid===(A.user&&A.user.id);
+    if(!isSelf&&!isAdm){if(typeof toast==="function")toast("Acces refuse","err");return;}
+    var emp=(A.employees||[]).find(function(e){return e.id===uid;});
+    var nm=emp?emp.name:uid;
+    var msg="ATTENTION : effacement DEFINITIF du compte\n\n"+nm+" ("+uid+")\n\nSeront effaces :\n- Profil (email, adresse, naissance, USBM, poste)\n- Mot de passe / PIN\n- Anonymisation des messages chat\n- Suppression historique connexions\n- Suppression entries audit perso\n- Synchronisation Firebase\n\nIRREVERSIBLE.\n\nTape EFFACER pour confirmer :";
+    var c=prompt(msg);
+    if(c==null)return;
+    if(String(c).trim().toUpperCase()!=="EFFACER"){if(typeof toast==="function")toast("Effacement annule","info");return;}
+    if(A.passwords&&A.passwords[uid]){delete A.passwords[uid];if(typeof ls==="function")ls("cmc_pw",A.passwords);}
+    if(A.reg&&A.reg[uid]){delete A.reg[uid];if(typeof ls==="function")ls("cmc_reg",A.reg);}
+    if(isAdm&&A.employees){
+      var idx=A.employees.findIndex(function(e){return e.id===uid;});
+      if(idx>=0){A.employees.splice(idx,1);if(typeof ls==="function")ls("cmc_e",A.employees);}
+    }
+    if(A.chatMsgs&&A.chatMsgs.length){
+      var changed=false;
+      A.chatMsgs.forEach(function(m){
+        if(m&&(m.uid===uid||m.to===uid)){
+          if(m.uid===uid){m.name="[Compte efface]";m.text="[Message efface RGPD]";changed=true;}
+          if(m.to===uid){m.toName="[Compte efface]";changed=true;}
+        }
+      });
+      if(changed&&typeof ls==="function")ls("cmc_chat",A.chatMsgs);
+    }
+    try{
+      var ul=(lg("cmc_userlog",[])||[]).filter(function(e){return!(e&&(e.uid===uid||e.id===uid));});
+      ls("cmc_userlog",ul);
+      var al=(lg("cmc_audit",[])||[]).filter(function(e){return!(e&&e.eid===uid&&e.adminId===uid);});
+      ls("cmc_audit",al);
+    }catch(_){}
+    try{
+      if(typeof fbWrite==="function"){
+        fbWrite("cmc_pw",A.passwords||{});
+        fbWrite("cmc_reg",A.reg||{});
+        if(isAdm)fbWrite("cmc_e",A.employees||[]);
+        fbWrite("cmc_chat",A.chatMsgs||[]);
+      }
+    }catch(_){}
+    try{
+      var localKeys=["cmc_pin_"+uid,"cmc_pass_"+uid];
+      localKeys.forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});
+    }catch(_){}
+    try{if(typeof _audit==="function")_audit("rgpd_erase",uid,nm,"profile_erased","");}catch(_){}
+    if(typeof toast==="function")toast("Compte "+nm+" efface (RGPD)","ok");
+    if(isSelf){
+      setTimeout(function(){
+        try{if(typeof doLogout==="function")doLogout();else{A.user=null;if(typeof sv==="function")sv("login");else location.reload();}}catch(_){location.reload();}
+      },1200);
+    }else{
+      if(typeof dc==="function")dc();
+    }
+  }catch(e){if(typeof toast==="function")toast("Erreur effacement : "+(e&&e.message||"inconnue"),"err");}
+}
+
+// cmcCSPAudit : audit securite CSP (parite Apex axCSPAudit)
+function cmcCSPAudit(){
+  var meta=document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+  var issues=[];
+  var csp=meta?meta.getAttribute("content"):"";
+  if(!csp){
+    issues.push({severity:"high",msg:"Aucune balise CSP detectee dans le HTML"});
+  }else{
+    if(csp.indexOf("unsafe-eval")>=0)issues.push({severity:"high",msg:"CSP autorise unsafe-eval (risque XSS)"});
+    if(csp.indexOf("unsafe-inline")>=0&&csp.indexOf("nonce-")<0&&csp.indexOf("'sha256-")<0)issues.push({severity:"info",msg:"CSP unsafe-inline sans nonce (acceptable SPA inline-rich)"});
+    if(csp.indexOf("default-src")<0)issues.push({severity:"med",msg:"CSP sans default-src (defense en profondeur reduite)"});
+    if(csp.indexOf("base-uri")<0)issues.push({severity:"info",msg:"CSP sans base-uri (recommande 'self')"});
+    if(csp.indexOf("frame-ancestors")<0)issues.push({severity:"info",msg:"CSP sans frame-ancestors (recommande 'none' ou 'self')"});
+  }
+  try{
+    var log=lg("cmc_audit",[])||[];
+    log.push({ts:Date.now(),adminId:(A&&A.user?A.user.id:"*"),action:"csp_audit",eid:"_system",name:"CSP",old:"",new:"issues="+issues.length});
+    if(log.length>500)log=log.slice(-500);
+    ls("cmc_audit",log);
+  }catch(_){}
+  return{ok:issues.length===0,issues:issues,csp_present:!!meta};
+}
+
+// vRGPD : vue dediee Vie privee (employe + admin)
+function vRGPD(){
+  var isAdm=A.user&&A.user.id===AID;
+  var uid=A.user?A.user.id:null;
+  if(!uid)return '<div class="page"><div class="card">Connecte-toi pour acceder a tes donnees.</div></div>';
+  var emp=(A.employees||[]).find(function(e){return e.id===uid;});
+  var nm=emp?emp.name:uid;
+  var consents=[];
+  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf("cmc_cgu_")===0){consents.push({key:k,feature:k.replace("cmc_cgu_",""),accepted:(localStorage.getItem(k)==="1")});}});}catch(_){}
+  var csp=cmcCSPAudit();
+  var rgpdLog=[];
+  if(isAdm){try{rgpdLog=(lg("cmc_audit",[])||[]).filter(function(e){return e&&(e.action==="rgpd_export"||e.action==="rgpd_erase"||e.action==="rgpd_delete");}).slice(-50).reverse();}catch(_){}}
+
+  var h='<div class="page" style="padding:14px;max-width:720px;margin:0 auto">';
+  h+='<div style="margin-bottom:14px">'
+    +'<div class="sec-title">&#x1F512; Vie privee &amp; RGPD</div>'
+    +'<div class="sec-sub">Tes donnees t\'appartiennent. Telecharge, modifie, efface quand tu veux.</div></div>';
+
+  // Card 1 : Export
+  h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #c9a227">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F4E5;</span><strong style="color:#c9a227;font-size:15px">Telecharger mes donnees</strong></div>'
+    +'<p style="font-size:13px;color:#bbb;margin:0 0 10px 0;line-height:1.5">JSON complet : profil, planning 36 mois, messages, connexions, consentements. Ton mot de passe n\'est PAS exporte (securite).</p>'
+    +'<button onclick="cmcExportUserData()" style="width:100%;min-height:48px;padding:12px;background:linear-gradient(135deg,#c9a227,#ffdc40);border:none;color:#0a1408;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">&#x1F4E5; Telecharger maintenant</button>'
+    +'</div>';
+
+  // Card 2 : Erase (sauf si Kevin admin)
+  if(uid===AID){
+    h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #888">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F510;</span><strong style="color:#bbb;font-size:15px">Compte admin protege</strong></div>'
+      +'<p style="font-size:13px;color:#999;margin:0;line-height:1.5">L\'admin principal ne peut pas etre efface (continuite operationnelle Casino Monaco).</p>'
+      +'</div>';
+  }else{
+    h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #ff5858">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F5D1;</span><strong style="color:#ff8888;font-size:15px">Effacer mon compte</strong></div>'
+      +'<p style="font-size:13px;color:#bbb;margin:0 0 10px 0;line-height:1.5">Definitif et irreversible. Profil + mot de passe effaces. Messages anonymises ([Compte efface]).</p>'
+      +'<button onclick="cmcEraseUserProfile()" style="width:100%;min-height:48px;padding:12px;background:linear-gradient(135deg,#ff5858,#cc3030);border:none;color:#fff;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">&#x1F5D1; Effacer definitivement</button>'
+      +'</div>';
+  }
+
+  // Card 3 : Consentements
+  h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #4cd080">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F4CB;</span><strong style="color:#4cd080;font-size:15px">Mes consentements ('+consents.length+')</strong></div>';
+  if(!consents.length){
+    h+='<p style="font-size:13px;color:#999;margin:0">Aucun consentement enregistre.</p>';
+  }else{
+    h+='<div style="display:flex;flex-direction:column;gap:6px">';
+    consents.forEach(function(c){
+      var col=c.accepted?"#4cd080":"#888";
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid rgba(255,255,255,.08)">'
+        +'<div style="flex:1;min-width:0"><div style="color:'+col+';font-weight:600;font-size:13px">'+esc(c.feature)+'</div><div style="font-size:11px;color:#888">'+(c.accepted?"Accepte":"Refuse")+'</div></div>'
+        +(c.accepted?'<button onclick="cmcCguRevoke(\''+esc(c.feature)+'\');setTimeout(function(){if(typeof dc===&quot;function&quot;)dc();},200)" style="min-height:36px;padding:6px 10px;background:rgba(255,88,88,.15);border:1px solid rgba(255,88,88,.4);color:#ff8888;border-radius:6px;font-size:12px;cursor:pointer">Revoquer</button>':'')
+        +'</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Card 4 : Mes droits RGPD
+  h+='<div class="card" style="margin-bottom:12px;padding:14px;background:rgba(201,162,39,.05);border-left:4px solid #c9a227">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F4D6;</span><strong style="color:#c9a227;font-size:15px">Mes droits RGPD</strong></div>'
+    +'<div style="font-size:13px;line-height:1.8;color:#ddd">'
+    +'<div><strong>&#x1F50D; Information</strong> : tu sais quelles donnees on collecte (profil, planning, messages).</div>'
+    +'<div><strong>&#x1F441; Acces</strong> : telecharge ton export JSON ci-dessus.</div>'
+    +'<div><strong>&#x270F;&#xFE0F; Rectification</strong> : modifie ton profil dans "Mon profil".</div>'
+    +'<div><strong>&#x1F5D1; Oubli</strong> : efface ton compte (sauf admin).</div>'
+    +'<div><strong>&#x1F4E6; Portabilite</strong> : export JSON portable (autres apps RH).</div>'
+    +'<div><strong>&#x270B; Opposition</strong> : revoque tes consentements ci-dessus.</div>'
+    +'</div>'
+    +'<p style="font-size:11px;color:#888;margin:10px 0 0 0">Application interne SBM. Donnees stockees navigateur + Firebase chiffre (UE). Aucun cookie tiers, aucune publicite. Contact admin : Kevin DESARZENS.</p>'
+    +'</div>';
+
+  if(isAdm){
+    h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid '+(csp.ok?"#4cd080":"#ffb84a")+'">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F6E1;</span><strong style="color:'+(csp.ok?"#4cd080":"#ffb84a")+';font-size:15px">Audit CSP (admin)</strong></div>';
+    if(csp.ok){
+      h+='<p style="font-size:13px;color:#4cd080;margin:0">CSP correcte (0 probleme).</p>';
+    }else{
+      h+='<p style="font-size:13px;color:#ffb84a;margin:0 0 8px 0">'+csp.issues.length+' probleme(s) detecte(s) :</p>'
+        +'<ul style="font-size:12px;color:#ddd;padding-left:20px;margin:0">';
+      csp.issues.forEach(function(i){h+='<li>['+esc(i.severity)+'] '+esc(i.msg)+'</li>';});
+      h+='</ul>';
+    }
+    h+='<button onclick="var r=cmcCSPAudit();if(typeof toast===&quot;function&quot;)toast(r.ok?&quot;CSP OK&quot;:r.issues.length+&quot; probleme(s)&quot;,r.ok?&quot;ok&quot;:&quot;warn&quot;);if(typeof dc===&quot;function&quot;)dc()" style="margin-top:10px;width:100%;min-height:40px;padding:8px;background:transparent;border:1px solid rgba(201,162,39,.4);color:#c9a227;border-radius:6px;font-size:13px;cursor:pointer">&#x1F504; Relancer audit CSP</button>'
+      +'</div>';
+
+    h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #88aaff">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F4DC;</span><strong style="color:#88aaff;font-size:15px">Historique RGPD (admin) &mdash; '+rgpdLog.length+'</strong></div>';
+    if(!rgpdLog.length){
+      h+='<p style="font-size:13px;color:#999;margin:0">Aucun export ni effacement enregistre.</p>';
+    }else{
+      h+='<div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">';
+      rgpdLog.forEach(function(e){
+        var dt=new Date(e.ts);
+        var dateStr=dt.toLocaleDateString("fr-FR")+" "+dt.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+        var iconAct=e.action==="rgpd_erase"||e.action==="rgpd_delete"?"&#x1F5D1;":"&#x1F4E5;";
+        var color=e.action==="rgpd_erase"||e.action==="rgpd_delete"?"#ff8888":"#c9a227";
+        h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(10,26,12,.2);border:1px solid #1e3020;border-radius:6px;font-size:12px">'
+          +'<span style="font-size:16px">'+iconAct+'</span>'
+          +'<div style="flex:1;min-width:0"><div style="color:'+color+';font-weight:600">'+esc(e.action)+' &middot; '+esc(e.name||e.eid||"?")+'</div><div style="color:#999;font-size:11px">'+dateStr+'</div></div>'
+          +'</div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  h+='<button class="btn ghost" onclick="sv(\'accueil\')" style="width:100%;min-height:44px;justify-content:center;margin-top:14px">&larr; Retour</button>';
+  h+='</div>';
+  return h;
+}
+/* ============ FIN RGPD COMPLET v9.548 ============ */
 
 </script>
 </body>
