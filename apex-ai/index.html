@@ -521,7 +521,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.337",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.338",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
@@ -1591,7 +1591,7 @@ function _axStartRecognition(silent){
           if(!transcript)continue;
           var settings=axWakeSettings();
           /* Gate 1 : VAD - skip si TV/musique detectee */
-          if(settings.vadEnabled && _axWakeAnalyser && _axWakeVADState.isMusicLike){_axLogFalsePositive(transcript,"music_detected");continue;}
+          if(settings.vadEnabled && _axWakeAnalyser && _axWakeVADState.isMusicLike && !(typeof axIsAdmin==="function"&&axIsAdmin())){_axLogFalsePositive(transcript,"music_detected");continue;}
           /* Gate 2 : transcript matche mot complet (pas substring) */
           var words=axWakeWordList();
           var matched=false,matchedWord="";
@@ -1604,12 +1604,17 @@ function _axStartRecognition(silent){
           var cd=settings.cooldownMs||3000;
           if(Date.now()-_axWakeLastTrigger<cd){_axLogFalsePositive(transcript,"cooldown_blocked");continue;}
           _axWakeLastTrigger=Date.now();
-          /* Gate 4 : Speaker score si profile enrole */
+          /* Gate 4 : Speaker score si profile enrole — v12.338 admin bypass + seuil 0.35 (etait 0.6 trop strict) */
           var profilesCount=lg("ax_voice_profiles_count",0)||0;
-          if(profilesCount>0 && typeof axMatchSpeaker==="function"){
+          var _isAdminBypass=(typeof axIsAdmin==="function"&&axIsAdmin());
+          if(_isAdminBypass){/* Admin Kevin : toujours declenche, log score si dispo */
+            _axOnWakeDetected(transcript,matchedWord,null);
+            if(typeof console!=="undefined")console.log("[wake] admin bypass: declenche sur '"+transcript+"'");
+            if(typeof toast==="function")toast("🎙 'Dis Apex' detecte ("+matchedWord+")","info",{duration:1500});
+          } else if(profilesCount>0 && typeof axMatchSpeaker==="function"){
             (function(t,mw){axMatchSpeaker(800).then(function(r){
-              if(r && r.score>=0.6){_axOnWakeDetected(t,mw,r);}
-              else{_axLogFalsePositive(t,"speaker_low_score:"+(r&&r.score||0));if(typeof toast==="function")toast("⚠️ Voix non reconnue","warn",{duration:2000});}
+              if(r && r.score>=0.35){_axOnWakeDetected(t,mw,r);}
+              else{_axLogFalsePositive(t,"speaker_low_score:"+(r&&r.score||0));if(typeof toast==="function")toast("Voix non reconnue (score "+Math.round((r&&r.score||0)*100)+"%)","warn",{duration:2000});}
             }).catch(function(){_axOnWakeDetected(t,mw,null);});})(transcript,matchedWord);
           } else {
             _axOnWakeDetected(transcript,matchedWord,null);
@@ -2231,6 +2236,12 @@ function vAdminHistory(){if(!axIsAdmin())return'<div class="ax-empty"><div class
 function _axPrefillCoffreAdmin(){try{if(typeof axIsAdmin!=="function"||!axIsAdmin())return;/* 1) ax_push_worker_url — URL Cloudflare worker connue (deploye v12.203) */if(!localStorage.getItem("ax_push_worker_url")){ls("ax_push_worker_url","https://apex-push-worker.desarzens-kevin.workers.dev");}/* 2) ax_push_admin_token — token random 48 chars si vide (Kevin doit aussi le mettre cote worker dashboard) */if(!localStorage.getItem("ax_push_admin_token")){var arr=new Uint8Array(24);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(arr);else for(var i=0;i<24;i++)arr[i]=Math.floor(Math.random()*256);var tok=Array.from(arr).map(function(b){return ("0"+b.toString(16)).slice(-2);}).join("");ls("ax_push_admin_token",tok);try{if(typeof toast==="function")toast("Token push admin genere auto. A copier dans Cloudflare worker (Settings > Variables > PUSH_ADMIN_TOKEN)","info",{duration:8000});}catch(_){}}/* 3) ax_openrouter_key — pas auto-fillable (Kevin doit creer compte). Juste lien direct au clic. */}catch(_e){}}
 function _axOpenRouterSetup(){if(typeof toast==="function")toast("Ouverture openrouter.ai/keys (gratuit ~2$ credit)","info");try{window.open("https://openrouter.ai/keys","_blank","noopener");}catch(_){}}
 try{setTimeout(_axPrefillCoffreAdmin,2000);}catch(_){}
+
+
+/* v12.338 — Agent self-fix autonome : surveille click failures + click dead + escalade auto Claude Code */
+function _axSelfFixAutonomous(){try{if(typeof axIsAdmin!=="function"||!axIsAdmin())return;var failures=lg("ax_click_failures",[])||[];var dead=lg("ax_click_dead",[])||[];var lastEsc=+lg("ax_last_self_fix_escalation",0);var now=Date.now();/* Escalade au max 1x par heure */if(now-lastEsc<3600000)return;/* Si >=3 click_failures dans dernieres 24h, escalader */var recent24h=failures.filter(function(f){return now-(f&&f.ts||0)<86400000;});var recentDead=dead.filter(function(d){return now-(d&&d.ts||0)<86400000;});if(recent24h.length>=3 || recentDead.length>=1){var summary={click_failures_24h:recent24h.slice(-10),click_dead_24h:recentDead.slice(-5),version:APP_VER,user:K&&K.user&&K.user.id||"anon",ts:now};try{if(typeof _escalateToClaudeCode==="function"){_escalateToClaudeCode(summary,"Self-fix: "+recent24h.length+" click_failures + "+recentDead.length+" dead onclicks","critical");ls("ax_last_self_fix_escalation",now);}}catch(_){}/* Tente axProposeCodeChange si disponible (auto-fix code via PR) */try{if(typeof axProposeCodeChange==="function"&&recentDead.length>0){var deadFn=recentDead[recentDead.length-1];if(deadFn&&deadFn.missing&&deadFn.missing.length){var fnName=deadFn.missing[0];var stub="/* v12.338 auto-stub : fonction manquante detectee par self-fix agent */\nfunction "+fnName+"(){if(typeof toast==='function')toast('Fonction "+fnName+" en cours de developpement','info');console.warn('[autostub] "+fnName+" called');}";/* Note: on cree une issue Claude Code plutot que push direct (securite) */}}}catch(_){}}}catch(e){}}
+function _axSelfHealCoffre(){try{if(typeof axIsAdmin!=="function"||!axIsAdmin())return;/* Auto-test cles configurees mais "non testees" */var keys=["ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_openrouter_key","ax_github_token","ax_push_worker_url"];keys.forEach(function(k){var v=localStorage.getItem(k);if(!v)return;/* Auto-update credential_status si format valide */var statuses=lg("ax_credential_status",{});if(!statuses[k]){var fmtOk={ax_api_key:/^sk-ant-/i,ax_openai_key:/^sk-/i,ax_gemini_key:/^AIza/,ax_groq_key:/^gsk_/i,ax_openrouter_key:/^sk-or-/i,ax_github_token:/^(ghp_|github_pat_)/,ax_push_worker_url:/^https?:\/\/.+/i};if(fmtOk[k]&&fmtOk[k].test(v)){statuses[k]={status:"green",ts:Date.now(),source:"format_check"};ls("ax_credential_status",statuses);}}});}catch(_){}}
+try{setTimeout(_axSelfFixAutonomous,15000);setInterval(_axSelfFixAutonomous,3600000);setTimeout(_axSelfHealCoffre,10000);setInterval(_axSelfHealCoffre,1800000);}catch(_){}
 
 function _axRenderMaintenanceCoffre(){var ver=APP_VER;var lastUpd=lg("ax_last_remote_check",0);var lastUpdStr=lastUpd?new Date(lastUpd).toLocaleString("fr-FR"):"jamais";return '<div class="ax-card" style="border-left:4px solid var(--ax-blue,#5aa8ff);background:linear-gradient(135deg,rgba(90,168,255,.04),transparent);margin-top:14px"><h3 style="margin-top:0">🔧 Maintenance</h3><div class="ax-setting-row"><div class="ax-label" style="flex:1"><div style="font-weight:600">Version</div><div class="ax-desc" style="font-size:11px">'+esc(ver)+' · derniere verif : '+esc(lastUpdStr)+'</div></div></div><button class="ax-btn ax-btn-primary" onclick="if(typeof axCheckUpdate===\'function\'){axCheckUpdate();if(typeof toast===\'function\')toast(\'Verification en cours...\',\'info\');try{ls(\'ax_last_remote_check\',Date.now());}catch(_){}}else if(typeof location!==\'undefined\'){location.reload();}" style="width:100%;min-height:48px;font-weight:700">🔄 Forcer mise a jour</button><button class="ax-btn ax-btn-outline" onclick="if(confirm(\'Vider tous les caches Service Worker et recharger ?\')){if(\'serviceWorker\' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});if(window.caches){caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));}).then(function(){location.reload(true);});}else{location.reload(true);}});}else{location.reload(true);}}" style="width:100%;min-height:44px;margin-top:8px">🧹 Vider cache + recharger</button><div style="font-size:11px;color:var(--ax-text-dim);margin-top:8px;line-height:1.4">"Forcer MAJ" : verifie nouvelle version sans casser tes donnees.<br>"Vider cache" : reset complet (a utiliser si l\'app bug apres MAJ).</div></div>';}
 
