@@ -517,7 +517,11 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.305",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.306",ADMIN_ID="kdmc_admin";
+/* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
+/* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
+var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","Kevin","kevin","DESARZENS","Desarzens","kevin.desarzens@gmail.com","kevin.desarzens","K DESARZENS","K. DESARZENS","K Desarzens","KD","KDMC","kdmc"];
+try{var _customKevinAliases=lg("ax_admin_kevin_aliases_custom",[]);_customKevinAliases.forEach(function(a){if(a&&typeof a==="string"&&ADMIN_KEVIN_ALIASES.indexOf(a)<0)ADMIN_KEVIN_ALIASES.push(a);});}catch(_){}
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -1005,6 +1009,11 @@ try{if(typeof _axIntervalAdd==="function")_axIntervalAdd(function(){try{var q=lg
 
 // --- Securite ---
 function axIsAdmin(){return K.user&&K.user.id===ADMIN_ID;}
+/* v12.306 — _isKevinAdmin(name) : retourne true si le nom matche un alias admin Kevin (sans verifier PIN). */
+/* SECU : separer la reconnaissance du nom (ici) du check PIN (axCheckPin dans axLogin). */
+function _isKevinAdmin(name){if(!name)return false;var n=String(name).trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim();if(!n)return false;for(var i=0;i<ADMIN_KEVIN_ALIASES.length;i++){var a=String(ADMIN_KEVIN_ALIASES[i]||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim();if(!a)continue;if(n===a)return true;}var nT=n.split(/\s+/).filter(function(t){return t.length>=4;});if(nT.length>=1){for(var j=0;j<ADMIN_KEVIN_ALIASES.length;j++){var aT=String(ADMIN_KEVIN_ALIASES[j]||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[\s\-_.@]+/g," ").trim().split(/\s+/).filter(Boolean);if(!aT.length)continue;var allMatch=nT.every(function(t){return aT.indexOf(t)>=0;});if(allMatch)return true;}}return false;}
+/* v12.306 — axNotifyKevin : push notif + log audit + inbox admin (best effort, fail silently) */
+function axNotifyKevin(title,body){try{if(typeof axSecurityLog==="function")axSecurityLog("notify_kevin",String(title||"").slice(0,60)+" : "+String(body||"").slice(0,160));}catch(_){}try{var inbox=lg("ax_admin_inbox",[]);inbox.push({ts:Date.now(),from:"system",fromName:"Securite Apex",subject:String(title||"Alerte").slice(0,100),message:String(body||"").slice(0,500),kind:"security_alert",status:"unread"});if(inbox.length>500)inbox=inbox.slice(-500);ls("ax_admin_inbox",inbox);if(typeof fbWrite==="function")try{fbWrite("ax_admin_inbox",inbox);}catch(_){}}catch(_){}try{if("Notification" in window&&Notification.permission==="granted"){new Notification(String(title||"Apex"),{body:String(body||"").slice(0,200),icon:"/apex-ai/og-image.svg",tag:"ax-secu-"+Date.now()});}}catch(_){}return true;}
 /* v12.243 - Mode famille (Laurence): UX simplifie enfantine, atterrissage chat, hamburger pour le reste */
 function _isFamilyUser(){if(!K.user||K.user.id===ADMIN_ID)return false;var p=(typeof _checkPreconfiguredUser==="function")?_checkPreconfiguredUser(K.user.name):null;return!!(p&&p.role==="family");}
 // v12.83 — Enforcement strict (Kevin : aucun acces avant validation admin + choix forfait)
