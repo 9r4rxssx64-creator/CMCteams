@@ -3651,7 +3651,7 @@ var FB_FIX=["cmc_ov","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cm
 // v9.542 - Passation digitale entre tournees (Kevin 2026-04-25)
 "cmc_passations"];
 // Préfixes pour clés dynamiques (mois/année)
-var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_"];
+var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
 /* v9.530 - cmc_pin_fails enleve de FB_LOCAL : doit sync FB pour resister clear localStorage */
 var FB_LOCAL=["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
@@ -4683,7 +4683,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.554";
+var APP_VER="v9.555";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -28666,6 +28666,13 @@ function _saveImportSnapshot(iy,im,sourceText){
     sourceLength:(sourceText||"").length
   };
   try{localStorage.setItem("cmc_import_snap_"+key,JSON.stringify(snap));}catch(e){console.warn("snapshot save:",e);}
+  // v9.555 — Persister le texte source PDF pour auto-recovery (Kevin URGENT)
+  // Stocke separe du snap pour eviter quota localStorage si gros PDF
+  try{
+    if(sourceText&&sourceText.length>0&&sourceText.length<2000000){
+      ls("cmc_import_src_"+key,{txt:sourceText,ts:Date.now(),year:iy,month:im});
+    }
+  }catch(e){console.warn("[import-src] save:",e&&e.message);}
   // v9.123 — Ajout à l'historique des imports (max 5 par mois)
   try{
     var histKey="cmc_import_history_"+key;
@@ -28683,6 +28690,128 @@ function _saveImportSnapshot(iy,im,sourceText){
     }catch(e){}}
   });
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// v9.555 — AUTO-RECOVERY IMPORTS (Kevin 2026-04-26 URGENT)
+// "Arrête de me dire de réimporter, fais en automatique"
+// Détecte les imports incomplets (cmc_ref_ existe mais overrides <50% ou vides)
+// + replay automatique au boot avec le texte source persisté (cmc_import_src_)
+// ═══════════════════════════════════════════════════════════════════════════
+function _cmcDetectStaleImports(){
+  if(!A.user||A.user.id!==AID)return[];
+  var stale=[],keys=[];
+  try{for(var k in localStorage){if(/^cmc_ref_\d{4}-\d+$/.test(k))keys.push(k);}}catch(_){return[];}
+  keys.forEach(function(k){
+    try{
+      var ref=lg(k,null);if(!ref||!ref.rows)return;
+      var matchKey=k.replace("cmc_ref_","");
+      var refRowCount=Object.keys(ref.rows||{}).length;
+      if(refRowCount===0)return;
+      var ov=(A.overrides||{})[matchKey]||{};
+      var ovRowCount=Object.keys(ov).filter(function(eid){var r=ov[eid]||{};return Object.keys(r).length>0;}).length;
+      // Coverage = ratio overrides / ref. Si < 0.5 → incomplet
+      var coverage=refRowCount>0?ovRowCount/refRowCount:0;
+      // Verifier qu'on a le texte source pour replayer
+      var src=lg("cmc_import_src_"+matchKey,null);
+      var hasSrc=!!(src&&src.txt&&src.txt.length>100);
+      // Skip si src trop vieux (>90j) OU mois trop ancien (>3 mois passes)
+      var srcAge=src&&src.ts?(Date.now()-src.ts):0;
+      var tooOldSrc=srcAge>90*24*60*60*1000;
+      if(coverage<0.5&&hasSrc&&!tooOldSrc){
+        var parts=matchKey.split("-");
+        stale.push({key:k,monthKey:matchKey,year:parseInt(parts[0]),month:parseInt(parts[1]),
+          coverage:coverage,refRowCount:refRowCount,ovRowCount:ovRowCount,srcLen:src.txt.length,srcTs:src.ts});
+      }
+    }catch(_e){console.warn("[stale-detect]",k,_e&&_e.message);}
+  });
+  return stale;
+}
+
+// Replay un import sans UI/dialog (admin, silencieux, aucune confirmation)
+function _cmcReplayImport(txt,year,month){
+  if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
+  if(!txt||txt.length<100)return{ok:false,reason:"src_too_short"};
+  var key=year+"-"+month;
+  // Injecte les valeurs dans les inputs cachés (doImport les lit)
+  // S'ils n'existent pas dans le DOM (vue non rendue), on les cree temporairement
+  var ta=document.getElementById("impTxt");
+  var sy=document.getElementById("impY");
+  var sm=document.getElementById("impM");
+  var madeTxt=false,madeY=false,madeM=false;
+  if(!ta){ta=document.createElement("textarea");ta.id="impTxt";ta.style.display="none";document.body.appendChild(ta);madeTxt=true;}
+  if(!sy){sy=document.createElement("input");sy.id="impY";sy.style.display="none";document.body.appendChild(sy);madeY=true;}
+  if(!sm){sm=document.createElement("input");sm.id="impM";sm.style.display="none";document.body.appendChild(sm);madeM=true;}
+  ta.value=txt;sy.value=String(year);sm.value=String(month);
+  window._lastImportText=txt;
+  // Suppress toasts user-facing pour replay silencieux
+  var _prevToast=window.toast;
+  var _toastMsgs=[];
+  window.toast=function(msg,type){_toastMsgs.push({msg:String(msg).slice(0,200),type:type||"ok"});};
+  var ok=false,errMsg=null;
+  try{doImport();ok=true;}catch(e){errMsg=e&&e.message||"unknown";}
+  window.toast=_prevToast;
+  // Cleanup DOM si on a cree les inputs
+  if(madeTxt&&ta.parentNode)ta.parentNode.removeChild(ta);
+  if(madeY&&sy.parentNode)sy.parentNode.removeChild(sy);
+  if(madeM&&sm.parentNode)sm.parentNode.removeChild(sm);
+  // Mesurer la coverage post-replay
+  var ov=(A.overrides||{})[key]||{};
+  var ovCount=Object.keys(ov).filter(function(eid){var r=ov[eid]||{};return Object.keys(r).length>0;}).length;
+  return{ok:ok,errMsg:errMsg,ovCount:ovCount,toastMsgs:_toastMsgs};
+}
+
+// Auto-recovery au boot — admin only, rate limited 1h, defer 6s apres _loadState
+function _cmcAutoRecoverImports(){
+  try{
+    if(!A.user||A.user.id!==AID)return;
+    // Rate limit : 1 recovery max par heure
+    var last=lg("cmc_last_auto_recovery",0);
+    if(typeof last==="object"&&last)last=last.ts||0;
+    if(Date.now()-last<60*60*1000)return;
+    var stale=_cmcDetectStaleImports();
+    if(!stale.length)return;
+    console.info("[auto-recovery] "+stale.length+" planning(s) detecte(s) incomplet(s) — replay auto");
+    var results=[];
+    stale.forEach(function(s){
+      try{
+        var src=lg("cmc_import_src_"+s.monthKey,null);
+        if(!src||!src.txt)return;
+        var res=_cmcReplayImport(src.txt,s.year,s.month);
+        results.push({monthKey:s.monthKey,monthLabel:(MFR&&MFR[s.month]?MFR[s.month]+" "+s.year:s.monthKey),
+          coverage_before:s.coverage,ovCount_before:s.ovRowCount,ovCount_after:res.ovCount,ok:res.ok,err:res.errMsg});
+      }catch(_e){console.warn("[auto-recovery] echec "+s.monthKey,_e&&_e.message);
+        results.push({monthKey:s.monthKey,ok:false,err:_e&&_e.message});}
+    });
+    // Log dans cmc_auto_recovery_log (max 50)
+    try{
+      var log=lg("cmc_auto_recovery_log",[]);
+      log.push({ts:Date.now(),user:A.user.id,results:results,count:results.length,version:APP_VER});
+      if(log.length>50)log=log.slice(-50);
+      ls("cmc_auto_recovery_log",log);
+    }catch(_l){}
+    ls("cmc_last_auto_recovery",{ts:Date.now(),count:results.length});
+    // Telemetrie Apex
+    try{if(typeof _pushTelemetryToApex==="function"){
+      var coveragesBefore=results.map(function(r){return r.coverage_before;});
+      _pushTelemetryToApex("auto-recovery","info",
+        "Recovered "+results.filter(function(r){return r.ok;}).length+"/"+results.length+" plannings",
+        {months:results.map(function(r){return r.monthKey;}),coverages_before:coveragesBefore,version:APP_VER});
+    }}catch(_t){}
+    // Toast user-friendly + dc()
+    var nOk=results.filter(function(r){return r.ok&&r.ovCount_after>r.ovCount_before;}).length;
+    if(nOk>0){
+      try{if(typeof toast==="function")toast("✅ "+nOk+" planning(s) restaure(s) automatiquement","ok",5000);}catch(_){}
+      // Push Firebase + re-render
+      try{if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
+      try{if(typeof dc==="function")dc();}catch(_){}
+      // Banner visible (stocke flag pour vAccueil)
+      try{ls("cmc_auto_recovery_banner",{ts:Date.now(),count:nOk,results:results});}catch(_){}
+    }
+    // Audit
+    try{if(typeof _audit==="function")_audit("auto_recovery",AID,nOk+"/"+results.length+" mois",results.map(function(r){return r.monthKey;}).join(","),APP_VER);}catch(_){}
+    return results;
+  }catch(e){console.warn("[_cmcAutoRecoverImports]",e&&e.message);}
+}
+
 // v9.123 — Nettoyage d'urgence des overrides (purge les codes non-reconnus)
 function _cleanOverridesNow(){
   if(!A.user||A.user.id!==AID)return{cleaned:0};
@@ -34995,6 +35124,16 @@ function _deferredInit(){
       if(crit>0){toast("\u26a0 "+crit+" conflit(s) critique(s) d\u00e9tect\u00e9(s) au chargement \u2014 voir Admin \u2192 Alertes","warn",6000);}
     }catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_deferred-init",_e);}catch(__){}}
   },6000);
+  // v9.555 \u2014 Auto-recovery imports (Kevin URGENT 2026-04-26)
+  // "Arrete de me dire de reimporter, fais en automatique"
+  // Defer 8s : laisse Firebase sync + cmc_import_src_ arriver via SSE
+  setTimeout(function(){
+    try{if(typeof _cmcAutoRecoverImports==="function")_cmcAutoRecoverImports();}catch(_e){console.warn("[auto-recovery boot]",_e&&_e.message);}
+  },8000);
+  // Sentinelle import-recovery-watch : 1x/h
+  setInterval(function(){
+    try{if(typeof _cmcAutoRecoverImports==="function")_cmcAutoRecoverImports();}catch(_e){}
+  },60*60*1000);
 }
 // requestIdleCallback si disponible (attend que le browser ait fini le paint),
 // sinon setTimeout 80ms (bien après le premier paint à ~16ms)
