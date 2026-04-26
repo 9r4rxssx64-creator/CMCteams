@@ -83,11 +83,77 @@ Exemples :
 - Routes : si non admin et `K.view!=="chat"` au login → force `K.view="chatlite"`
 - `vMain` : si non admin et view = chat → return vChatLite() au lieu de vChat
 
-### 9. Test mental obligatoire avant livraison
+### 9. Apex proactif — propositions guidées
 
-> *"Un client de 60 ans non-tech ouvre Apex pour la première fois. Voit-il une seule chose : 'Bonjour, qu'est-ce que je peux faire pour toi ?' Avec input chat ? Sans 50 boutons ? Quand il dit 'Je veux mixer une musique', l'outil mixage apparaît-il TOUT SEUL dans la conversation ?"*
+Sous le greeting initial, **4 chips cliquables** (touch targets 56px) :
 
-Si non → simplifier encore.
+1. 🎨 **"Modèles de projet"** → modal/embed avec 12+ thèmes : musique (mix bal/clip), vidéo (TikTok/film/pub), archi (plan maison/réno), photo, admin (CV, lettre prefecture, contrat), juridique, finance (déclaration impôt), cuisine, voyage, etc. Chaque thème a 2-3 templates pré-rempli prêts à éditer.
+
+2. 🎓 **"Tour découverte"** → tutoriel guidé étape par étape (5-7 cards) :
+   - "Voici ton chat" + flèche
+   - "Tape ce que tu veux faire" 
+   - "Apex sort tout seul l'outil adapté"
+   - "Tes conversations sont sauvées à gauche"
+   - "Tu peux dicter avec le micro"
+   - "Tu peux scanner avec la caméra"
+   - Présenté au PREMIER login + accessible via bouton ❓ permanent
+
+3. ✨ **"Mes compétences IA"** → liste à jour des capacités d'Apex :
+   - 🎚 Mixage musique (Studio Mix Pro 2026)
+   - 🎬 Montage vidéo (Studio Video CapCut-like)
+   - 🏗 Architecture (RE2020, calculs)
+   - 📒 Juridique (18+ codes français + Cassation/CE/CJUE)
+   - 💰 Finance/fiscalité (IR FR 2026)
+   - 🍳 Cuisine pro (10 recettes, 22 cuissons, allergènes INCO)
+   - 💊 Médical (Vidal, IMC, urgences)
+   - 🌐 Traduction 30 langues + interprète temps réel
+   - 📷 Scan multi-format (OCR, QR, vCard)
+   - 🎙 Dictée vocale + Wake word "Dis Apex"
+   - 🤖 IA multi-modèle (Claude Sonnet 4.6, Opus 4.7, Haiku 4.5, GPT-4o, Gemini 2.5)
+   - Liste auto-générée depuis registry interne `AX_CAPABILITIES` + version
+   - Mise à jour AUTOMATIQUE à chaque release (sentinelle `capabilities-watch`)
+
+4. 📒 **"Mon bloc-notes"** → résumé auto de toutes les conversations sauvegardées + projets en cours + favoris
+
+### 10. Mise à jour automatique des compétences (registry)
+
+Variable `AX_CAPABILITIES` = source de vérité unique :
+```js
+var AX_CAPABILITIES = [
+  {id:"mix", icon:"🎚", label:"Mixage musique", desc:"Studio Mix Pro 12+ pistes EQ reverb compresseur", since:"v12.230", route:"studiomusic"},
+  {id:"video", icon:"🎬", label:"Montage video", desc:"Timeline cut fade captions auto", since:"v12.232", route:"studiovideo"},
+  {id:"archi", icon:"🏗", label:"Architecture", desc:"RE2020, calcul surface, mélange beton", since:"v12.231", route:"architecture"},
+  // ...
+];
+```
+
+À chaque ajout de feature → ajouter entry. La vue "Mes compétences IA" lit cette variable. Sentinelle `capabilities-watch` détecte les fonctions `v*` orphelines (pas dans le registry) et alerte admin.
+
+### 11. Mémoire + réflexion Apex pour clients
+
+Apex doit retenir d'une conversation à l'autre (per-user) :
+- Préférences musicales, style mixage habituel (pour Laurence)
+- Templates favoris
+- Erreurs qu'il faut éviter (tirer du `ax_lessons_learned_struct`)
+- Projets en cours (dossier "Mes projets actifs")
+- Anniversaire, allergies, métier, etc. (`ax_persistent_memory_<uid>` per-user)
+
+Au début de chaque session, IA reçoit un system prompt enrichi :
+```
+Utilisateur : Laurence DUVAL
+Profil : aime mixage R&B et soul, anniversaire 12 mai, vit Monaco
+Projets actifs : "Mix bal samedi 14 mai" (3 messages), "Plans cuisine" (en attente photo)
+Préférences : voix calme, pas de jargon technique, propose toujours options PRO + FUN
+Lessons : ne JAMAIS proposer de supprimer des photos sans confirmation
+```
+
+Cette mémoire enrichie permet à Apex de réfléchir mieux et personnaliser.
+
+### 12. Test mental obligatoire avant livraison
+
+> *"Un client de 60 ans non-tech ouvre Apex pour la première fois. Voit-il une seule chose : 'Bonjour [son nom], qu'est-ce que je peux faire pour toi ?' Avec input chat + 4 chips guidés ? Sans 50 boutons ? Quand il dit 'Je veux mixer une musique', l'outil mixage apparaît-il TOUT SEUL dans la conversation ? Si je clique 'Tour découverte' ai-je un tuto clair ? Si je clique 'Mes compétences IA' ai-je la LISTE A JOUR de ce qu'Apex peut faire ?"*
+
+Si non → simplifier + enrichir registry + ajouter tutoriel.
 
 S'applique à Apex (priorité) puis répliqué dans CMCteams pour les employés non-admin.
 
