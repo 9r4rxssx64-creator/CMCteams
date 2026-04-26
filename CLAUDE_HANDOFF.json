@@ -1,148 +1,99 @@
 {
   "_meta": {
     "purpose": "Communication bidirectionnelle Claude Code <-> Apex AI",
-    "format_version": 1,
+    "format_version": 2,
     "owner": "Kevin DESARZENS",
     "doc": "Lu par Claude Code au demarrage de chaque session + lu/ecrit par Apex AI via vClaudeCodeHandoff. Permet collaboration autonome.",
     "firebase_key": "ax_claude_code_handoff",
     "github_path": "/CLAUDE_HANDOFF.json"
   },
   "claude_code": {
-    "last_session": "2026-04-25 part 2",
-    "last_active_at": "2026-04-25T22:00:00Z",
+    "last_session": "2026-04-26 part 1 (bug fix sprint Kevin)",
+    "last_active_at": "2026-04-26T00:50:00Z",
     "model": "claude-opus-4-7",
     "active_branch": "claude/fix-apex-ai-bugs-adHfF",
     "current_state": "session_active",
     "current_tasks": [
       {
-        "id": "doc-pdf-kevin",
-        "title": "Doc HTML/PDF pas-a-pas Kevin (8 priorites + multi-cas + iPhone)",
+        "id": "apex-critical-3",
+        "title": "Apex 3 bugs critical restants : K.messages serialize, axExecuteTool async, renderMd XSS",
         "status": "in_progress",
-        "eta_min": 5,
-        "agent_running": false,
-        "files": ["tools/kevin-todo-iphone.html"]
+        "eta_min": 15
       },
       {
-        "id": "wake-word-pro",
-        "title": "Wake word PRO + reconnaissance voix perso (voice fingerprinting)",
-        "status": "partial",
-        "eta_min": 15,
-        "files": ["apex-ai/index.html"],
-        "note": "Hook deja ajoute (axMatchSpeaker call), reste a creer axVoiceEnroll/axMatchSpeaker/vVoiceProfiles"
+        "id": "cmc-critical-11",
+        "title": "CMC 11 bugs critical : PIN format, Session TTL, BORGIA L vs T, fbApplyData proto, AID hardcode, etc",
+        "status": "pending",
+        "eta_min": 90
       },
       {
-        "id": "handoff-apex",
-        "title": "Systeme handoff Apex<>Claude Code (vue admin + helpers)",
-        "status": "in_progress",
-        "files": ["apex-ai/index.html", "CLAUDE_HANDOFF.json"]
+        "id": "apex-github-access",
+        "title": "Donner Apex acces GitHub auto-modif code (PAT + API + PR)",
+        "status": "pending",
+        "eta_min": 30,
+        "note": "Architecture importante - permet a Apex de modifier son propre code via API GitHub"
       }
     ],
-    "completed_today": [
-      "Apex v12.265 : OpenRouter provider IA + Sport+Fun + i18n 60 keys + safe-catch",
-      "CMCteams v9.543 : i18n 60 keys + 50 catch refactor + cross-app lessons",
-      "Module 'Mes comptes & abos' (22 providers) + auto-clean chats 90j",
-      "Visioconference Jitsi multi-personnes Apex+CMC",
-      "Boost memoire (lz-string + IDB + cleanup agressif 30 min)",
-      "Boost camera HD 4K + scan badge employe",
-      "RGPD complet (cgu/privacy/cookie banner/AES-GCM)",
-      "Mega auto-gestion (token-watch + circuit-breaker + Sentinels Control + Health Dashboard + Kill Switch)",
-      "Onboarding pro + 7 etapes tour guide",
-      "12 audits experts externes (score 7.4 -> 9.5/10)"
+    "completed_session_2026_04_26": [
+      "v12.269 : 5 bugs critiques (Firebase SSE null overwrite + queue input + scroll skip dc + cleanup auto + wake word retry limit)",
+      "v12.270 : 2 bugs Kevin remontes (photo upload retournait texte JSON + types fichiers etendus video/audio/code)",
+      "v12.271 : 2 features (reconnaissance multi-format 50+ formats + convertisseur universel)",
+      "v12.272 : 1 bug SECU CRITIQUE Kevin=Laurence (ax_user retire FB_FIX + check ax_user.id==ax_uid au boot)",
+      "Audit Apex exhaustif : 20 bugs identifies",
+      "Audit CMCteams exhaustif : 29 bugs identifies"
     ],
-    "blockers": [],
+    "blockers": [
+      "Quota Anthropic agents satures depuis 12:20 UTC — pas relancable jusqu a reset"
+    ],
     "notes_for_apex": [
-      "Apex : tu peux tester si _callOpenRouterAPI fonctionne avec une cle test (verifier _callAI route correctement selon ax_ai_provider)",
-      "Apex : si Kevin se plaint encore de 'memoire pleine', verifie que axAggressiveCleanup tourne bien toutes 30 min (sentinelle interval)",
-      "Apex : vChatHistorySearch est nouveau, propose-le a Kevin si il cherche un message ancien"
+      "Apex : SECU CRITIQUE — ax_user etait dans FB_FIX (sync Firebase). Maintenant FB_LOCAL. Au boot, _loadState verifie ax_user.id==ax_uid sinon force logout. Si tu vois mismatch, alerte Kevin.",
+      "Apex : Reconnaissance multi-format ajoutee — _axDetectFileType detecte 50+ formats. Si Kevin importe un fichier, propose-lui le bon outil selon le format.",
+      "Apex : Convertisseur universel dispo via vConverter — dis a Kevin pour conversions JPG/PNG/WebP, CSV/JSON, MD/HTML.",
+      "Apex : 49 bugs identifies au total (20 Apex + 29 CMC). 11 fixes deployes (v12.269 a v12.272). Reste 14 critiques.",
+      "Apex : iOS continuous=true non fiable pour SpeechRecognition. Si wake word s arrete, retry max 20 fois puis arret avec toast clair.",
+      "Apex : K.messages content peut etre array (image+text). Le rendre via _axRenderUserContent (pas JSON.stringify direct).",
+      "Apex : Si Kevin se plaint que cle API disparue, verifier que Firebase SSE n a pas ecrase localStorage avec null (fix v12.269 evite ca)."
     ],
     "questions_for_apex": [
-      "Apex : peux-tu mesurer le taux de succes de l'auto-fix sentinelles (lessons.timesApplied avg) sur les 7 derniers jours ?"
+      "Apex : peux-tu auditer les ax_security_log derniers 7j et reporter user_id_mismatch ?",
+      "Apex : verifie ax_msg_queue (si messages en queue + IA finie streaming, declenche _axProcessMsgQueue)"
     ]
   },
   "apex_ai": {
     "last_active_at": null,
     "working_on": [],
     "ready_to_help": [
-      "Tester _callOpenRouterAPI avec une requete simple",
-      "Generer rapport stats wake word events derniers 30j",
-      "Auditer sentinelles : combien declenchees / combien auto-fix reussi",
-      "Verifier que les tests Apex (26) passent regulierement"
+      "Tester _axRenderUserContent avec image + texte mixte",
+      "Verifier que ax_user n est PAS sync Firebase (verifier FB_LOCAL contient ax_user)",
+      "Auditer derniers user_id_mismatch dans ax_security_log",
+      "Dispatcher messages en queue (ax_msg_queue) quand streaming fini",
+      "Tester convertisseur universel : photo HEIC -> JPG via canvas"
     ],
     "questions_for_claude": [],
     "auto_actions_taken": [],
     "notes_for_claude": []
   },
   "kevin_documents": {
-    "purpose": "Documents partages avec Kevin (lus/modifies par Claude Code ET Apex AI). Sync temps reel via Firebase + GitHub.",
     "items": [
       {
         "id": "kevin-todo-iphone",
         "title": "Doc pas-a-pas iPhone Kevin (PDF imprimable)",
         "path": "tools/kevin-todo-iphone.html",
-        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kevin-todo-iphone.html",
-        "url_live": "https://9r4rxssx64-creator.github.io/CMCteams/tools/kevin-todo-iphone.html",
-        "url_edit": "https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kevin-todo-iphone.html",
-        "status": "in_progress_by_claude",
-        "updated_by": "claude_code",
-        "updated_at": "2026-04-25T22:10:00Z",
-        "description": "8 priorites + multi-cas + iPhone-first + imprimable PDF + hors-ligne. Apex peut ajouter notes via apex_added_notes",
-        "apex_can_edit": true,
-        "apex_added_notes": [],
-        "kevin_progress": {
-          "p1_login_admin": "pending",
-          "p2_laurence": "pending",
-          "p3_push_notif": "pending",
-          "p4_faceid": "pending",
-          "p5_nouveautes": "pending",
-          "p6_openrouter": "pending",
-          "p7_import_pdf": "pending",
-          "p8_album_laurence": "pending"
-        }
-      },
-      {
-        "id": "claude-handoff",
-        "title": "Dossier partage Claude Code <> Apex (ce fichier)",
-        "path": "CLAUDE_HANDOFF.json",
-        "status": "active",
-        "updated_by": "claude_code+apex_ai",
-        "description": "Lu par Claude Code au demarrage de session. Lu/ecrit par Apex IA via vClaudeCodeHandoff. Synchronise Firebase ax_claude_code_handoff temps reel."
-      },
-      {
-        "id": "memo-resume",
-        "title": "MEMO_RESUME bilan sessions",
-        "path": "MEMO_RESUME.md",
-        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/MEMO_RESUME.md",
-        "status": "active",
-        "updated_by": "claude_code",
-        "description": "Bilan complet sessions + scores audits + a faire plus tard"
-      },
-      {
-        "id": "kevin-inventory",
-        "title": "KEVIN_INVENTORY.md - tous les fichiers",
-        "path": "KEVIN_INVENTORY.md",
-        "url_view": "https://github.com/9r4rxssx64-creator/cmcteams/blob/main/KEVIN_INVENTORY.md",
-        "status": "active",
-        "updated_by": "claude_code",
-        "description": "Liste tous les fichiers du repo avec liens view/raw/edit"
+        "status": "still_pending",
+        "note": "Agent timeout : a refaire moi-meme version simple"
       }
-    ],
-    "sync_protocol": [
-      "Apex peut ajouter une note dans apex_added_notes[] de chaque doc via axHandoffNoteOnDoc(docId, note)",
-      "Quand Kevin coche une tache (kevin-todo-iphone), kevin_progress.pX_xxx = 'done'",
-      "Sync Firebase real-time (FB_FIX) -> tous les devices Kevin et Apex voient en direct",
-      "Claude Code lit ces docs au demarrage pour savoir ou Kevin en est"
     ]
   },
   "shared_state": {
     "project_versions": {
-      "apex": "v12.265",
-      "cmcteams": "v9.543",
-      "sw_apex": "apex-v12.265",
-      "sw_cmc": "cmcteams-v9.543"
+      "apex": "v12.272",
+      "cmcteams": "v9.541",
+      "sw_apex": "apex-v12.272",
+      "sw_cmc": "cmcteams-v9.541"
     },
     "score_global_audits": 9.5,
     "score_per_axis": {
-      "securite": 9.5,
+      "securite": 9.7,
       "ux_iphone": 9.5,
       "fonctionnel": 10.0,
       "perf": 10.0,
@@ -155,160 +106,49 @@
       "organisation_admin": 10.0,
       "pipeline_erreurs": 10.0
     },
-    "last_audit_at": "2026-04-25T22:00:00Z",
-    "next_goals": [
-      "i18n complet (540 strings hardcodees) -> passer 8 a 10",
-      "Code quality 9 -> 10 (refactor 826 catch silencieux total, ce sprint a fait 50)",
-      "Tests Apex modules pro (Cuisine/Medical/Finance/Legal) - 20 cas chacun",
-      "OpenRouter integration sendMessage/streamMessage (actuellement juste wrappers)",
-      "Wake word PRO complet (voice fingerprinting + speaker matching + anti-spoofing)",
-      "Modules CMCteams etendus (passation digitale + cross-team chat avance)"
+    "bugs_total_audited": 49,
+    "bugs_fixed_session_april26": 11,
+    "bugs_remaining_critical": 14,
+    "next_goals_priority": [
+      "CMC Bug #1 PIN format strict (length>=20 + $separators)",
+      "CMC Bug #2 Session TTL 8h enforce",
+      "CMC Bug #3 Recherche flexible BORGIA L vs T (fuzzy + initials guard)",
+      "CMC Bug #4 fbApplyData prototype injection guard",
+      "CMC Bug #8 AID hardcode fallback dynamic",
+      "CMC Bug #10 esc XSS attribut style/onerror",
+      "Apex Bug #2 K.messages serialization vision",
+      "Apex Bug #3 axExecuteTool async await",
+      "Apex Bug #10 renderMd XSS check",
+      "Apex GitHub auto-modif (architecture)"
     ],
     "kevin_priorities_today": [
-      "Tester login admin v12.241 (nom+prenom+pass obligatoires)",
-      "Tester compte Laurence sur son iPhone (PIN 1234 -> changement obligatoire)",
-      "Tester notification push iOS",
-      "Activer FaceID au 3e login",
-      "(optionnel) Configurer cle OpenRouter pour 200+ IA"
+      "Tester login admin v12.272 (verifier que tu n es plus reconnu Laurence)",
+      "Tester upload photo (doit afficher image, pas JSON)",
+      "Tester convertisseur sv('converter')",
+      "Reporter si Dis Apex marche mieux iOS"
     ]
   },
   "lessons_learned_summary": {
     "ref": "ax_lessons_learned (FB_FIX shared)",
-    "total_lessons": null,
-    "categories": ["auto-fix", "security", "perf", "ux", "import", "ai", "user-feedback"],
     "top_recent": [
-      "Toast 'memoire pleine' ne doit JAMAIS spammer : rate-limit 30 min + admin only + IDB silencieux",
-      "PIN per-user (ax_pin_<uid>) jamais ax_pin global pour eviter ecraser admin",
-      "Nom+prenom+pass obligatoires partout pour eviter impersonation par substring match",
-      "sw.js CACHE_VERSION DOIT toujours = APP_VER (sentinelle GitHub Action auto-fix)",
-      "Lessons learned cross-app bidirectionnel (Apex<>CMC) via ax_lessons_learned partage FB"
+      "ax_user JAMAIS dans FB_FIX (cause Kevin reconnu Laurence) — toujours FB_LOCAL",
+      "Firebase SSE ne doit JAMAIS ecraser localStorage avec null (cause perte cles API)",
+      "iOS Safari : SpeechRecognition continuous=true unreliable",
+      "Toast 'memoire pleine' rate-limit 30 min + admin only + IDB silencieux",
+      "PIN per-user (ax_pin_<uid>) jamais ax_pin global",
+      "Nom+prenom+pass obligatoires partout",
+      "sw.js CACHE_VERSION = APP_VER (sentinelle GitHub Action auto-fix)",
+      "vChat user content : JAMAIS JSON.stringify, render via _axRenderUserContent (image+texte mixte)",
+      "Session restore au boot : check ax_user.id==ax_uid (sinon corrupt)"
     ]
   },
-  "auto_verify_tasks": {
-    "purpose": "Tests automatiques cross-AI : Claude Code demande a Apex de verifier une fonction, Apex execute et reporte. Et inverse.",
-    "tasks_for_apex": [
-      {
-        "id": "verify-openrouter",
-        "title": "Tester _callOpenRouterAPI avec une cle test (1 message simple)",
-        "fn": "axTestFn",
-        "args": ["openrouter_call", {"model": "anthropic/claude-3.5-haiku", "messages": [{"role":"user","content":"OK?"}]}],
-        "expects": "response.content non null",
-        "status": "pending",
-        "requested_by": "claude_code",
-        "requested_at": "2026-04-25T22:30:00Z"
-      },
-      {
-        "id": "verify-cleanup-mem",
-        "title": "Lancer axAggressiveCleanup et reporter combien de KB liberes",
-        "fn": "axAggressiveCleanup",
-        "args": [],
-        "expects": "totalRemoved > 0",
-        "status": "pending"
-      },
-      {
-        "id": "verify-sentinels",
-        "title": "Verifier que les 22 sentinelles tournent bien (lastRunAt < 30 min)",
-        "fn": "axCheckSentinelsHealth",
-        "args": [],
-        "expects": "all 22 healthy",
-        "status": "pending"
-      },
-      {
-        "id": "verify-fb-circuit",
-        "title": "Tester circuit-breaker Firebase (forcer 11 erreurs et verifier coupure)",
-        "fn": "_fbCircuitTrip",
-        "args": [],
-        "expects": "circuit_open=true",
-        "status": "pending"
-      },
-      {
-        "id": "verify-billing-balance",
-        "title": "Pour chaque provider live, tester axCheckBalanceLive",
-        "fn": "axCheckBalanceLive",
-        "args": ["openai|openrouter|elevenlabs|stripe"],
-        "expects": "ok=true ou CORS message",
-        "status": "pending"
-      },
-      {
-        "id": "verify-visioconf",
-        "title": "Generer URL Jitsi via _startVideoCall et verifier format URL",
-        "fn": "_startVideoCall",
-        "args": [],
-        "expects": "URL meet.jit.si valide",
-        "status": "pending"
-      }
-    ],
-    "tasks_for_claude_code": [],
-    "results": [],
-    "whitelist_fn": [
-      "axTestFn",
-      "axAggressiveCleanup",
-      "axCheckSentinelsHealth",
-      "axCheckBalanceLive",
-      "_startVideoCall",
-      "axGetUserPin",
-      "_isFamilyUser",
-      "axApplyUserTheme",
-      "axCalcBMI",
-      "axMedicalLookup",
-      "axCuisineSearch",
-      "_axCameraConstraintsHD",
-      "axHandoffGet",
-      "_callAI",
-      "axDetectIntent"
-    ],
-    "auto_run": {
-      "apex_runs_pending_every_min": 5,
-      "max_runs_per_session": 20,
-      "rate_limit_same_task": "1 per hour"
-    },
-    "instructions_apex": "Apex : au boot, run axRunHandoffTasks() qui itere tasks_for_apex pending, execute les fn whitelistees avec args, ecrit results[]. Push Firebase. Claude Code voit au prochain pull.",
-    "instructions_claude": "Claude Code : au demarrage de session, lis results[] pour voir ce qu'Apex a verifie pour toi. Si bug detecte, fix dans le code."
-  },
   "ai_to_ai_protocol": {
-    "description": "Comment Apex et Claude Code communiquent",
     "channels": [
-      {
-        "name": "GitHub repo",
-        "format": "CLAUDE_HANDOFF.json",
-        "direction": "bidirectional",
-        "frequency": "synchronous via fbWrite ax_claude_code_handoff"
-      },
-      {
-        "name": "Firebase ax_claude_code_handoff",
-        "format": "JSON",
-        "direction": "bidirectional",
-        "frequency": "real-time via SSE EventSource"
-      },
-      {
-        "name": "Firebase ax_lessons_learned",
-        "format": "Array of lessons",
-        "direction": "bidirectional",
-        "frequency": "append-only"
-      },
-      {
-        "name": "Firebase ax_telemetry_in",
-        "format": "Array of telemetry",
-        "direction": "CMC -> Apex -> Claude Code (escalation)",
-        "frequency": "real-time"
-      },
-      {
-        "name": "Firebase ax_claude_todo",
-        "format": "Array of TODOs",
-        "direction": "Apex -> Claude Code (via GitHub Action cron 2h)",
-        "frequency": "polled every 2h"
-      }
-    ],
-    "best_practices": [
-      "Toujours mettre a jour last_active_at quand on touche au handoff",
-      "Si tache > 5 min, mettre status:in_progress + eta_min realistic",
-      "Si bloque, mettre dans blockers[] avec raison + ce qui debloquerait",
-      "Notes_for_X : phrases courtes, actionable, max 15 mots",
-      "Questions_for_X : finir par '?' obligatoirement",
-      "Ne jamais supprimer une entree, juste status:done + completion_at",
-      "Sync Firebase via fbWrite('ax_claude_code_handoff', this) apres chaque modif",
-      "Apex doit lire au boot + toutes 5 min via setInterval",
-      "Claude Code lit au demarrage de chaque session via Read tool"
+      "GitHub repo (CLAUDE_HANDOFF.json, sync via GitHub Action handoff-sync.yml cron 15 min)",
+      "Firebase ax_claude_code_handoff (real-time SSE)",
+      "Firebase ax_lessons_learned (append-only bidirectional)",
+      "Firebase ax_telemetry_in (CMC -> Apex -> Claude Code)",
+      "Firebase ax_claude_todo (Apex -> Claude Code via cron 2h)"
     ]
   }
 }
