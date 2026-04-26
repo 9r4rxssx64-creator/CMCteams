@@ -396,7 +396,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.279",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.280",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -1010,12 +1010,29 @@ function _cguAsk(feature,label,description){
 function axCguRevoke(feature){ls("ax_cgu_"+feature,"0");toast("Consentement « "+feature+" » revoque","ok");}
 function axCguStatus(){var out={};["biometric","microphone","geolocation","camera","notifications","wake_word_apex"].forEach(function(f){out[f]=lg("ax_cgu_"+f,"0")==="1";});return out;}
 
-/* ===== v12.225 — Wake word "Dis Apex" (Kevin 2026-04-25) ===== */
+/* ===== v12.278 — Wake word PRO (Kevin 2026-04-26) =====
+   Niveau Siri/Alexa : VAD Web Audio + 4 gates + indicateur visuel + conversation mode + anti-faux-positif TV/radio + auto-recovery 30 retries + Wake Lock background.
+   Sources : Web Audio API spec (W3C), MDN AnalyserNode, Apple HIG Voice, Google Assistant cooldown patterns. */
 var _axWakeWordActive=false;
 var _axWakeRecognition=null;
 var _axWakeRetries=0;
 var _axWakeLastTrigger=0;
+var _axWakeAudioCtx=null;
+var _axWakeAudioStream=null;
+var _axWakeAnalyser=null;
+var _axWakeFreqData=null;
+var _axWakeTimeData=null;
+var _axWakeVADInterval=null;
+var _axWakeVADState={speaking:false,energy:0,dominantFreq:0,stableTicks:0,history:[],voiceRatio:0,variance:0,isMusicLike:false};
+var _axWakeVisualState="off"; /* off | listening | detecting | recording */
+var _axWakeConversationMode=false;
+var _axWakeConversationTimeout=null;
+var _axWakePermCheckInterval=null;
+var _axWakeLock=null;
+var _axWakeBackoff=[1000,2000,5000,10000,30000];
 var WAKE_WORDS_DEFAULT=["apex","dis apex","ok apex","hey apex","ay apex","ape ex"];
+function axWakeSettings(){var s=lg("ax_wake_settings",null);if(s&&typeof s==="object")return s;return {vadSensibility:0.75,cooldownMs:3000,conversationMode:true,bgNotifications:false,vadEnabled:true};}
+function axWakeSettingsSet(patch){var s=axWakeSettings();Object.keys(patch||{}).forEach(function(k){s[k]=patch[k];});ls("ax_wake_settings",s);return s;}
 function axWakeWordList(){var c=lg("ax_wake_word_words",null);if(Array.isArray(c)&&c.length)return c;return WAKE_WORDS_DEFAULT.slice();}
 function axWakeWordSupported(){return ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);}
 function axWakeWordAllowedForUser(){
@@ -1031,59 +1048,101 @@ function axWakeWordAllowedForUser(){
     return false;
   }catch(e){return false;}
 }
+/* === VAD : Voice Activity Detection via Web Audio API ===
+   Source : MDN AnalyserNode (getByteFrequencyData/getByteTimeDomainData).
+   Detection : RMS energy + frequences voix 300-3400 Hz (range telephonie/parole humaine) + variance temporelle. */
+function _axVADStart(){
+  return new Promise(function(resolve,reject){
+    try{
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){reject(new Error("getUserMedia non supporte"));return;}
+      var AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC){reject(new Error("AudioContext non supporte"));return;}
+      navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}).then(function(stream){
+        _axWakeAudioStream=stream;
+        _axWakeAudioCtx=new AC();
+        var src=_axWakeAudioCtx.createMediaStreamSource(stream);
+        _axWakeAnalyser=_axWakeAudioCtx.createAnalyser();
+        _axWakeAnalyser.fftSize=1024;
+        _axWakeAnalyser.smoothingTimeConstant=0.6;
+        src.connect(_axWakeAnalyser);
+        _axWakeFreqData=new Uint8Array(_axWakeAnalyser.frequencyBinCount);
+        _axWakeTimeData=new Uint8Array(_axWakeAnalyser.fftSize);
+        _axWakeVADInterval=setInterval(_axVADAnalyze,50);
+        resolve(true);
+      }).catch(reject);
+    }catch(e){reject(e);}
+  });
+}
+function _axVADStop(){
+  if(_axWakeVADInterval){clearInterval(_axWakeVADInterval);_axWakeVADInterval=null;}
+  if(_axWakeAudioStream){try{_axWakeAudioStream.getTracks().forEach(function(t){t.stop();});}catch(_){}_axWakeAudioStream=null;}
+  if(_axWakeAudioCtx){try{_axWakeAudioCtx.close();}catch(_){}_axWakeAudioCtx=null;}
+  _axWakeAnalyser=null;_axWakeFreqData=null;_axWakeTimeData=null;
+  _axWakeVADState={speaking:false,energy:0,dominantFreq:0,stableTicks:0,history:[],voiceRatio:0,variance:0,isMusicLike:false};
+}
+function _axVADAnalyze(){
+  if(!_axWakeAnalyser||!_axWakeFreqData)return;
+  try{
+    _axWakeAnalyser.getByteFrequencyData(_axWakeFreqData);
+    _axWakeAnalyser.getByteTimeDomainData(_axWakeTimeData);
+    var sumSq=0;
+    for(var i=0;i<_axWakeTimeData.length;i++){var v=(_axWakeTimeData[i]-128)/128;sumSq+=v*v;}
+    var rms=Math.sqrt(sumSq/_axWakeTimeData.length);
+    var sr=(_axWakeAudioCtx&&_axWakeAudioCtx.sampleRate)||44100;
+    var binHz=sr/_axWakeAnalyser.fftSize;
+    var bin300=Math.floor(300/binHz),bin3400=Math.floor(3400/binHz);
+    var maxBin=0,maxVal=0,voiceBandEnergy=0,totalEnergy=0;
+    for(var b=0;b<_axWakeFreqData.length;b++){
+      var val=_axWakeFreqData[b];
+      totalEnergy+=val;
+      if(b>=bin300&&b<=bin3400)voiceBandEnergy+=val;
+      if(val>maxVal){maxVal=val;maxBin=b;}
+    }
+    var domFreq=maxBin*binHz;
+    var voiceRatio=totalEnergy>0?voiceBandEnergy/totalEnergy:0;
+    _axWakeVADState.history.push(rms);
+    if(_axWakeVADState.history.length>20)_axWakeVADState.history.shift();
+    var avg=_axWakeVADState.history.reduce(function(a,b){return a+b;},0)/_axWakeVADState.history.length;
+    var variance=0;
+    for(var h=0;h<_axWakeVADState.history.length;h++){variance+=Math.pow(_axWakeVADState.history[h]-avg,2);}
+    variance/=_axWakeVADState.history.length;
+    var settings=axWakeSettings();
+    var thresh=0.02*(2-settings.vadSensibility);
+    var speaking=(rms>thresh && voiceRatio>0.35 && variance>0.0001);
+    var isMusicLike=(variance<0.00005 && domFreq>2000 && voiceRatio<0.5 && rms>0.01);
+    if(isMusicLike){speaking=false;_axWakeVADState.stableTicks++;} else {_axWakeVADState.stableTicks=0;}
+    _axWakeVADState.speaking=speaking;
+    _axWakeVADState.energy=rms;
+    _axWakeVADState.dominantFreq=domFreq;
+    _axWakeVADState.voiceRatio=voiceRatio;
+    _axWakeVADState.variance=variance;
+    _axWakeVADState.isMusicLike=isMusicLike;
+    if(speaking && _axWakeVisualState==="listening"){_axSetVisualState("detecting");setTimeout(function(){if(_axWakeVisualState==="detecting"&&!_axWakeVADState.speaking)_axSetVisualState("listening");},800);}
+  }catch(e){console.warn("[VAD] analyze err:",e);}
+}
+function _axSetVisualState(state){
+  _axWakeVisualState=state;
+  try{var btn=document.getElementById("ax-wake-btn");if(btn)btn.setAttribute("data-state",state);}catch(_){}
+}
 function axWakeWordStart(silent){
   try{
     if(!axWakeWordSupported()){if(!silent)toast("Reconnaissance vocale non supportee sur ce navigateur","warn");return false;}
     if(_axWakeWordActive){if(!silent)toast("'Dis Apex' deja actif","info");return true;}
     if(typeof _cguAsk==="function" && !_cguAsk("wake_word_apex","Activer 'Dis Apex' (micro continu)","Apex ecoute ton micro en permanence pour reagir au mot 'Apex'. L'audio reste sur ton telephone, rien n'est envoye. Tu peux desactiver a tout moment depuis Reglages.")){return false;}
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    _axWakeRecognition=new SR();
-    try{_axWakeRecognition.lang=(K.settings&&K.settings.voiceLang)||"fr-FR";}catch(_){_axWakeRecognition.lang="fr-FR";}
-    /* v12.269 BUGFIX #5 wake word : iOS Safari ne supporte PAS continuous=true de maniere fiable */
-    var _isiOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-    _axWakeRecognition.continuous=!_isiOS;
-    _axWakeRecognition.interimResults=false;
-    _axWakeRecognition.onresult=function(event){
-      try{
-        var i=event.resultIndex;
-        for(var j=i;j<event.results.length;j++){
-          if(!event.results[j].isFinal)continue;
-          var transcript=String(event.results[j][0].transcript||"").toLowerCase().trim();
-          if(!transcript)continue;
-          var words=axWakeWordList();
-          var matched=false;
-          for(var w=0;w<words.length;w++){if(transcript.indexOf(words[w])>=0){matched=true;break;}}
-          if(matched){
-            if(Date.now()-_axWakeLastTrigger<2000)continue;
-            _axWakeLastTrigger=Date.now();
-            _axOnWakeDetected(transcript);
-          }
-        }
-      }catch(e){console.warn("[wake] onresult err:",e);}
-    };
-    _axWakeRecognition.onerror=function(e){
-      var err=e&&e.error?String(e.error):"unknown";
-      console.warn("[wake] error:",err);
-      if(err==="no-speech"||err==="audio-capture"||err==="network"){
-        _axWakeRetries++;
-        /* v12.269 BUGFIX #5 : limit retry a 20 (au lieu de 200) + alerter user */
-        if(_axWakeRetries<20){setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},1500);}
-        else{_axWakeWordActive=false;ls("ax_wake_word_active",false);if(typeof toast==="function")toast("⚠ 'Dis Apex' s est arrete (micro indispo). Relance dans Reglages > Wake Word","warn");}
-      }else if(err==="not-allowed"||err==="service-not-allowed"){
-        _axWakeWordActive=false;
-        ls("ax_wake_word_active",false);
-        if(typeof toast==="function")toast("Permission micro refusee. Active dans Reglages iOS > Safari > Micro","err",{force:true});
-      }
-    };
-    _axWakeRecognition.onend=function(){
-      if(_axWakeWordActive){
-        setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},500);
-      }
-    };
-    _axWakeRecognition.start();
     _axWakeWordActive=true;
     _axWakeRetries=0;
     ls("ax_wake_word_active",true);
+    var settings=axWakeSettings();
+    if(settings.vadEnabled){
+      _axVADStart().then(function(){_axStartRecognition(silent);}).catch(function(e){console.warn("[wake] VAD failed, fallback SR only:",e);_axStartRecognition(silent);});
+    } else {
+      _axStartRecognition(silent);
+    }
+    if("wakeLock" in navigator){navigator.wakeLock.request("screen").then(function(wl){_axWakeLock=wl;wl.addEventListener("release",function(){_axWakeLock=null;});}).catch(function(){});}
+    if(_axWakePermCheckInterval)clearInterval(_axWakePermCheckInterval);
+    _axWakePermCheckInterval=setInterval(_axWakeCheckPermission,300000);
+    document.addEventListener("visibilitychange",_axWakeOnVisibilityChange);
+    _axSetVisualState("listening");
     if(typeof toast==="function" && !silent)toast("👂 Apex ecoute 'Dis Apex' en arriere-plan","ok",{duration:5000});
     if(typeof navigator.vibrate==="function")try{navigator.vibrate(50);}catch(_){}
     try{var log=lg("ax_wake_log",[]);log.push({ts:Date.now(),ev:"start",uid:K.user?K.user.id:"?"});if(log.length>200)log=log.slice(-200);ls("ax_wake_log",log);}catch(_){}
@@ -1094,39 +1153,145 @@ function axWakeWordStart(silent){
     return false;
   }
 }
+function _axStartRecognition(silent){
+  try{
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    _axWakeRecognition=new SR();
+    try{_axWakeRecognition.lang=(K.settings&&K.settings.voiceLang)||"fr-FR";}catch(_){_axWakeRecognition.lang="fr-FR";}
+    var _isiOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+    _axWakeRecognition.continuous=!_isiOS;
+    _axWakeRecognition.interimResults=false;
+    _axWakeRecognition.onresult=function(event){
+      try{
+        var i=event.resultIndex;
+        for(var j=i;j<event.results.length;j++){
+          if(!event.results[j].isFinal)continue;
+          var transcript=String(event.results[j][0].transcript||"").toLowerCase().trim();
+          if(!transcript)continue;
+          var settings=axWakeSettings();
+          /* Gate 1 : VAD - skip si TV/musique detectee */
+          if(settings.vadEnabled && _axWakeAnalyser && _axWakeVADState.isMusicLike){_axLogFalsePositive(transcript,"music_detected");continue;}
+          /* Gate 2 : transcript matche mot complet (pas substring) */
+          var words=axWakeWordList();
+          var matched=false,matchedWord="";
+          for(var w=0;w<words.length;w++){
+            var rx=new RegExp("(^|\\s|[,;.!?])"+words[w].replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(\\s|$|[,;.!?])","i");
+            if(rx.test(transcript)){matched=true;matchedWord=words[w];break;}
+          }
+          if(!matched){if(_axWakeConversationMode){_axHandleConversationContinue(transcript);}continue;}
+          /* Gate 3 : Cooldown configurable */
+          var cd=settings.cooldownMs||3000;
+          if(Date.now()-_axWakeLastTrigger<cd){_axLogFalsePositive(transcript,"cooldown_blocked");continue;}
+          _axWakeLastTrigger=Date.now();
+          /* Gate 4 : Speaker score si profile enrole */
+          var profilesCount=lg("ax_voice_profiles_count",0)||0;
+          if(profilesCount>0 && typeof axMatchSpeaker==="function"){
+            (function(t,mw){axMatchSpeaker(800).then(function(r){
+              if(r && r.score>=0.6){_axOnWakeDetected(t,mw,r);}
+              else{_axLogFalsePositive(t,"speaker_low_score:"+(r&&r.score||0));if(typeof toast==="function")toast("⚠️ Voix non reconnue","warn",{duration:2000});}
+            }).catch(function(){_axOnWakeDetected(t,mw,null);});})(transcript,matchedWord);
+          } else {
+            _axOnWakeDetected(transcript,matchedWord,null);
+          }
+        }
+      }catch(e){console.warn("[wake] onresult err:",e);}
+    };
+    _axWakeRecognition.onerror=function(e){
+      var err=e&&e.error?String(e.error):"unknown";
+      console.warn("[wake] error:",err);
+      if(err==="no-speech"||err==="audio-capture"||err==="network"){
+        _axWakeRetries++;
+        if(_axWakeRetries<30){
+          var delay=_axWakeBackoff[Math.min(_axWakeRetries-1,_axWakeBackoff.length-1)];
+          setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},delay);
+        } else {
+          axWakeWordStop(true);
+          if(typeof toast==="function")toast("⚠ 'Dis Apex' arrete (micro indisponible). Touche le bouton pour relancer","warn",{force:true});
+        }
+      } else if(err==="not-allowed"||err==="service-not-allowed"){
+        axWakeWordStop(true);
+        if(typeof toast==="function")toast("Permission micro refusee. Active dans Reglages iOS > Safari > Micro","err",{force:true});
+      }
+    };
+    _axWakeRecognition.onend=function(){
+      if(_axWakeWordActive){
+        setTimeout(function(){if(_axWakeWordActive){try{_axWakeRecognition.start();}catch(_){}}},500);
+      }
+    };
+    _axWakeRecognition.start();
+  }catch(e){
+    console.warn("[wake] start recognition err:",e);
+    if(typeof toast==="function" && !silent)toast("Erreur SpeechRecognition: "+(e&&e.message?e.message:"?"),"err");
+  }
+}
+function _axWakeCheckPermission(){
+  try{
+    if(!navigator.permissions||!navigator.permissions.query)return;
+    navigator.permissions.query({name:"microphone"}).then(function(s){
+      if(s.state==="denied" && _axWakeWordActive){
+        axWakeWordStop(true);
+        if(typeof toast==="function")toast("⚠ Permission micro revoquee. Wake word arrete","warn",{force:true});
+      }
+    }).catch(function(){});
+  }catch(_){}
+}
+function _axWakeOnVisibilityChange(){
+  if(!_axWakeWordActive)return;
+  if(document.visibilityState==="visible"){
+    setTimeout(function(){
+      if(_axWakeWordActive && _axWakeRecognition){try{_axWakeRecognition.start();}catch(_){}}
+    },500);
+    if("wakeLock" in navigator && !_axWakeLock){navigator.wakeLock.request("screen").then(function(wl){_axWakeLock=wl;wl.addEventListener("release",function(){_axWakeLock=null;});}).catch(function(){});}
+  }
+}
+function _axLogFalsePositive(transcript,reason){
+  try{
+    var fp=lg("ax_wake_false_positives",[]);
+    fp.push({ts:Date.now(),transcript:String(transcript).slice(0,100),reason:reason||"unknown"});
+    if(fp.length>100)fp=fp.slice(-100);
+    ls("ax_wake_false_positives",fp);
+  }catch(_){}
+}
 function axWakeWordStop(silent){
   _axWakeWordActive=false;
   ls("ax_wake_word_active",false);
   if(_axWakeRecognition){try{_axWakeRecognition.onend=null;_axWakeRecognition.stop();}catch(_){}_axWakeRecognition=null;}
+  _axVADStop();
+  if(_axWakePermCheckInterval){clearInterval(_axWakePermCheckInterval);_axWakePermCheckInterval=null;}
+  if(_axWakeConversationTimeout){clearTimeout(_axWakeConversationTimeout);_axWakeConversationTimeout=null;}
+  _axWakeConversationMode=false;
+  if(_axWakeLock){try{_axWakeLock.release();}catch(_){}_axWakeLock=null;}
+  document.removeEventListener("visibilitychange",_axWakeOnVisibilityChange);
+  _axSetVisualState("off");
   if(typeof toast==="function" && !silent)toast("👂 'Dis Apex' desactive","info");
   try{var log=lg("ax_wake_log",[]);log.push({ts:Date.now(),ev:"stop",uid:K.user?K.user.id:"?"});if(log.length>200)log=log.slice(-200);ls("ax_wake_log",log);}catch(_){}
   try{if(typeof dc==="function")dc();}catch(_){}
 }
 function axWakeWordToggle(){if(_axWakeWordActive)axWakeWordStop();else axWakeWordStart();}
-function _axOnWakeDetected(transcript){
+function _axOnWakeDetected(transcript,matchedWord,speakerInfo){
   try{if(typeof navigator.vibrate==="function")navigator.vibrate([100,50,100]);}catch(_){}
+  _axSetVisualState("recording");
   if(typeof toast==="function")toast("🎙 Apex ecoute...","ok",{force:true,duration:3000});
   var lower=String(transcript||"").toLowerCase();
   var cmd=lower;
   axWakeWordList().forEach(function(w){var idx=lower.indexOf(w);if(idx>=0){var c=lower.slice(idx+w.length).trim();if(c.length<cmd.length||cmd===lower)cmd=c;}});
-  /* Speaker ID v12.266: try to identify who spoke (1s capture in background) */
-  var speakerInfo={userId:"unknown",score:0};
-  try{
-    if(typeof axMatchSpeaker==="function"){
-      axMatchSpeaker(1000).then(function(r){
-        speakerInfo=r||speakerInfo;
-        try{var sl=lg("ax_wake_speakers_log",[]);sl.push({ts:Date.now(),userId:speakerInfo.userId,score:speakerInfo.score,transcript:String(transcript).slice(0,100)});if(sl.length>100)sl=sl.slice(-100);ls("ax_wake_speakers_log",sl);}catch(_){}
-        if(speakerInfo.userId!=="unknown" && speakerInfo.userId!==(K.user&&K.user.id)){if(typeof toast==="function")toast("🎤 Voix reconnue: "+esc(speakerInfo.userId),"info",{duration:2500});}
-        else if(speakerInfo.userId==="unknown" && (lg("ax_voice_profiles_count",0)||0)>0){if(typeof toast==="function")toast("⚠️ Voix non reconnue","warn",{duration:2500});}
-      }).catch(function(){});
-    }
-  }catch(_){}
+  if(speakerInfo){
+    try{var sl=lg("ax_wake_speakers_log",[]);sl.push({ts:Date.now(),userId:speakerInfo.userId,score:speakerInfo.score,transcript:String(transcript).slice(0,100)});if(sl.length>100)sl=sl.slice(-100);ls("ax_wake_speakers_log",sl);}catch(_){}
+    if(speakerInfo.userId!=="unknown" && speakerInfo.userId!==(K.user&&K.user.id)){if(typeof toast==="function")toast("🎤 Voix reconnue: "+esc(speakerInfo.userId),"info",{duration:2500});}
+  }
   try{
     var log=lg("ax_wake_log",[]);
-    log.push({ts:Date.now(),ev:"trigger",transcript:String(transcript).slice(0,200),cmd:String(cmd).slice(0,200),uid:K.user?K.user.id:"?"});
+    log.push({ts:Date.now(),ev:"trigger",transcript:String(transcript).slice(0,200),cmd:String(cmd).slice(0,200),uid:K.user?K.user.id:"?",matchedWord:matchedWord||"?",speakerScore:speakerInfo?speakerInfo.score:null});
     if(log.length>200)log=log.slice(-200);
     ls("ax_wake_log",log);
   }catch(_){}
+  /* Mode conversation : apres reponse, ecoute follow-up 5s sans wake word */
+  var settings=axWakeSettings();
+  if(settings.conversationMode){
+    _axWakeConversationMode=true;
+    if(_axWakeConversationTimeout)clearTimeout(_axWakeConversationTimeout);
+    _axWakeConversationTimeout=setTimeout(function(){_axWakeConversationMode=false;if(_axWakeWordActive)_axSetVisualState("listening");},5000);
+  }
   if(cmd && cmd.length>3){
     if(typeof sendMessage==="function")sendMessage(cmd);
     else if(typeof axAssistantStart==="function")axAssistantStart();
@@ -1135,6 +1300,38 @@ function _axOnWakeDetected(transcript){
   } else if(typeof axSttToggle==="function"){
     axSttToggle();
   }
+  setTimeout(function(){if(_axWakeWordActive&&!_axWakeConversationMode)_axSetVisualState("listening");},2000);
+}
+function _axHandleConversationContinue(transcript){
+  if(!_axWakeConversationMode)return;
+  if(transcript.length<3)return;
+  _axWakeConversationMode=false;
+  if(_axWakeConversationTimeout){clearTimeout(_axWakeConversationTimeout);_axWakeConversationTimeout=null;}
+  if(typeof toast==="function")toast("🔄 Conversation continue","ok",{duration:1500});
+  if(typeof sendMessage==="function")sendMessage(transcript);
+  setTimeout(function(){if(_axWakeWordActive)_axSetVisualState("listening");},2000);
+}
+function axWakeWordTest(){
+  if(typeof toast==="function")toast("🧪 Test wake word lance...","info");
+  var results={vad:"?",sr:"?",permission:"?",profiles:"?"};
+  var AC=window.AudioContext||window.webkitAudioContext;
+  results.vad=AC?"OK":"NON SUPPORTE";
+  results.sr=axWakeWordSupported()?"OK":"NON SUPPORTE";
+  if(navigator.permissions&&navigator.permissions.query){
+    navigator.permissions.query({name:"microphone"}).then(function(s){
+      results.permission=s.state;
+      results.profiles=(lg("ax_voice_profiles_count",0)||0)+" profils";
+      var msg="Tests:\n• VAD: "+results.vad+"\n• SpeechRecognition: "+results.sr+"\n• Permission micro: "+results.permission+"\n• Profils voix: "+results.profiles;
+      if(typeof alert==="function")alert(msg);
+    }).catch(function(){
+      results.permission="indetermine";
+      if(typeof alert==="function")alert("Tests:\n• VAD: "+results.vad+"\n• SpeechRecognition: "+results.sr);
+    });
+  } else {
+    results.permission="API indispo";
+    if(typeof alert==="function")alert("Tests:\n• VAD: "+results.vad+"\n• SpeechRecognition: "+results.sr+"\n• Permission: "+results.permission);
+  }
+  return results;
 }
 function axWakeWordSetUser(userId,enabled,customWord){
   if(typeof axIsAdmin==="function" && !axIsAdmin()){toast("Reserve admin","warn");return false;}
@@ -1256,10 +1453,31 @@ function vWakeWordAdmin(){
   words.forEach(function(w){h+='<div class="ax-setting-row"><span>🔊 '+esc(w)+'</span><button class="ax-btn ax-btn-outline" onclick="axWakeWordRemoveCustom(\''+esc(w)+'\')" style="padding:4px 10px;font-size:11px">Retirer</button></div>';});
   h+='<div style="display:flex;gap:6px;margin-top:8px"><input id="ax-ww-newword" class="ax-input" placeholder="Ajouter un mot custom (chef, axel...)" style="flex:1"><button class="ax-btn ax-btn-primary" onclick="axWakeWordAddCustom(document.getElementById(\'ax-ww-newword\').value)" style="min-height:44px;min-width:44px">+</button></div>';
   h+='</div>';
-  /* Stats */
-  h+='<div class="ax-card" style="border-left:4px solid var(--ax-cyan,#5aa8ff)"><h3>📊 Statistiques</h3>';
-  h+='<div class="ax-setting-row"><span>Aujourd hui</span><strong>'+triggersToday+' declenchements</strong></div>';
+  /* v12.278 — Reglages avances PRO */
+  var _wws=axWakeSettings();
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold)"><h3>⚙️ Reglages avances PRO</h3>';
+  h+='<div class="ax-setting-row"><span>VAD (filtre intelligent)<div style="font-size:11px;color:var(--ax-text-dim)">Detecte parole vs bruit/musique</div></span><label class="ax-switch"><input type="checkbox" '+(_wws.vadEnabled?"checked":"")+' onchange="axWakeSettingsSet({vadEnabled:this.checked});toast(\'VAD \'+(this.checked?\'ON\':\'OFF\'),\'ok\');"><span class="ax-slider"></span></label></div>';
+  h+='<div style="padding:8px 0"><label style="font-size:13px">Sensibilite VAD : <strong id="ax-ww-sens-val">'+_wws.vadSensibility.toFixed(2)+'</strong></label><input type="range" min="0.5" max="0.95" step="0.05" value="'+_wws.vadSensibility+'" oninput="document.getElementById(\'ax-ww-sens-val\').textContent=parseFloat(this.value).toFixed(2);axWakeSettingsSet({vadSensibility:parseFloat(this.value)});" style="width:100%"><div style="font-size:10px;color:var(--ax-text-dim)">0.5 = plus permissif (plus faux positifs) / 0.95 = tres strict</div></div>';
+  h+='<div style="padding:8px 0"><label style="font-size:13px">Cooldown anti-spam : <strong id="ax-ww-cd-val">'+(_wws.cooldownMs/1000).toFixed(1)+'s</strong></label><input type="range" min="1000" max="10000" step="500" value="'+_wws.cooldownMs+'" oninput="document.getElementById(\'ax-ww-cd-val\').textContent=(this.value/1000).toFixed(1)+\'s\';axWakeSettingsSet({cooldownMs:parseInt(this.value)});" style="width:100%"><div style="font-size:10px;color:var(--ax-text-dim)">Temps minimum entre 2 detections</div></div>';
+  h+='<div class="ax-setting-row"><span>Mode appel mains-libres<div style="font-size:11px;color:var(--ax-text-dim)">Continue ecouter 5s apres reponse</div></span><label class="ax-switch"><input type="checkbox" '+(_wws.conversationMode?"checked":"")+' onchange="axWakeSettingsSet({conversationMode:this.checked});toast(\'Mode conversation \'+(this.checked?\'ON\':\'OFF\'),\'ok\');"><span class="ax-slider"></span></label></div>';
+  h+='<div class="ax-setting-row"><span>Notifications arriere-plan<div style="font-size:11px;color:var(--ax-text-dim)">Push silencieuse pour reactiver</div></span><label class="ax-switch"><input type="checkbox" '+(_wws.bgNotifications?"checked":"")+' onchange="axWakeSettingsSet({bgNotifications:this.checked});toast(\'Notif BG \'+(this.checked?\'ON\':\'OFF\'),\'ok\');"><span class="ax-slider"></span></label></div>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axWakeWordTest()" style="width:100%;margin-top:8px;min-height:44px">🧪 Tester le wake word</button>';
+  h+='</div>';
+  /* Stats PRO */
+  var fp=lg("ax_wake_false_positives",[]);
+  var fpToday=fp.filter(function(e){return (Date.now()-e.ts)<86400000;}).length;
+  var triggersAll=log.filter(function(e){return e.ev==="trigger";}).length;
+  var avgGapMs=0;
+  if(log.length>2){var gaps=[];for(var li=1;li<log.length;li++){if(log[li].ev==="trigger"&&log[li-1].ev==="trigger")gaps.push(log[li].ts-log[li-1].ts);}if(gaps.length)avgGapMs=gaps.reduce(function(a,b){return a+b;},0)/gaps.length;}
+  var successRate=triggersAll+fp.length>0?Math.round(100*triggersAll/(triggersAll+fp.length)):100;
+  h+='<div class="ax-card" style="border-left:4px solid var(--ax-cyan,#5aa8ff)"><h3>📊 Statistiques PRO</h3>';
+  h+='<div class="ax-setting-row"><span>Vrais positifs (auj.)</span><strong style="color:var(--ax-green)">'+triggersToday+'</strong></div>';
+  h+='<div class="ax-setting-row"><span>Faux positifs (auj.)</span><strong style="color:'+(fpToday>5?"var(--ax-red)":"var(--ax-text)")+'">'+fpToday+'</strong></div>';
+  h+='<div class="ax-setting-row"><span>Taux de reussite</span><strong>'+successRate+'%</strong></div>';
   h+='<div class="ax-setting-row"><span>100 dernieres minutes</span><strong>'+triggers100min+'</strong></div>';
+  h+='<div class="ax-setting-row"><span>Total declenchements</span><strong>'+triggersAll+'</strong></div>';
+  if(avgGapMs>0)h+='<div class="ax-setting-row"><span>Temps moyen entre 2</span><strong>'+Math.round(avgGapMs/1000)+'s</strong></div>';
+  h+='<div class="ax-setting-row"><span>Etat visuel actuel</span><strong>'+esc(_axWakeVisualState)+'</strong></div>';
   h+='</div>';
   /* Historique */
   h+='<div class="ax-card" style="border-left:4px solid var(--ax-text-dim)"><h3>Historique (50 derniers)</h3>';
@@ -4412,7 +4630,7 @@ function dcNow(){_dcRaf=0;render();}
 (function(){if(typeof render==="function"&&!render._axWrapped){var _origRender=render;window.render=function(){var t0=performance.now();try{return _origRender.apply(this,arguments);}finally{try{var dt=performance.now()-t0;if(typeof _axTrackRender==="function"&&K&&K.view)_axTrackRender(K.view,dt);if(dt>200&&typeof _snLog==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())_snLog("perf-watch","warn","render "+K.view+" "+Math.round(dt)+"ms");}catch(_){}}};window.render._axWrapped=true;}})();
 
 function _viewAsBanner(){if(!_viewAsUser)return"";return'<div style="background:var(--ax-gold);color:#000;text-align:center;padding:4px 8px;font-size:12px;font-weight:700">Vue: '+esc(K.user.name)+' <span onclick="axViewAsBack()" style="cursor:pointer;text-decoration:underline">Retour admin</span></div>';}
-function vTopbar(){if(!K.user||K.view==="login"||K.view==="landing"||K.view==="waiting"||K.view==="waitingApproval")return"";var online=navigator.onLine;var _tb=function(icon,onclick,title,extra){return'<button onclick="'+onclick+'" style="cursor:pointer;font-size:16px;width:40px;height:40px;border:none;background:rgba(232,184,48,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-text);border:1px solid rgba(232,184,48,.08);'+(extra||"")+'" title="'+title+'">'+icon+'</button>';};var menuBtn=K.user?_tb("&#9776;","toggleSidebar()","Historique","font-size:18px"):"";/* v12.98 — Bouton retour (Kevin) */var _mainViews=["chat","dashboard","login","landing"];var _canGoBack=K.user&&_viewHistory.length>0&&_mainViews.indexOf(K.view)<0;var backBtn=_canGoBack?_tb("&larr;","goBack()","Retour","font-size:18px;margin-right:4px"):"";var paletteBtn=K.user?_tb("\u26A1","axCommandPalette()","Commande rapide","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var searchBtn=K.user?_tb("\uD83D\uDD0D","_showUniversalSearch()","Recherche universelle (Cmd+F)","color:var(--ax-blue);background:rgba(90,168,255,.10);border-color:rgba(90,168,255,.25)")+" ":"";var assistBtn=K.user?_tb("\uD83C\uDF99\uFE0F","axAssistantStart()",_assistantListening?"Assistant actif":"Assistant vocal",_assistantListening?"color:var(--ax-red);animation:axPulse 1s infinite;background:rgba(255,88,88,.1);border-color:rgba(255,88,88,.2)":"")+" ":"";var wakeBtn=K.user?_tb(_axWakeWordActive?"\uD83D\uDC42":"\uD83C\uDF99","axWakeWordToggle()",_axWakeWordActive?"\u0027Dis Apex\u0027 actif - touche pour arreter":"Activer \u0027Dis Apex\u0027",_axWakeWordActive?"color:#4cd080;animation:axPulse 1.5s infinite;background:rgba(76,208,128,.12);border-color:rgba(76,208,128,.3)":"opacity:.65")+" ":"";var pomodoroBtn=_pomodoroDisplay();var canvasBtn="";/* v12.5 — Canvas button retire du topbar (Kevin 2026-04-20). Accessible via IA qui ouvre automatiquement un canvas quand elle genere du code. Evite bouton accidentel → ecran noir. */var shareBtn=K.user&&K.view==="chat"?_tb("\uD83D\uDCE4","axShareConversation()","Partager")+" ":"";/* v12.162 — Bouton Reglages topbar (Kevin: garantie acces toujours visible) */var settingsBtn=K.user?_tb("\u2699\uFE0F","sv('settings')","Reglages","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var logoutBtn=K.user?'<button onclick="axLogout()" style="cursor:pointer;font-size:14px;width:40px;height:40px;border:none;background:rgba(255,88,88,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-red);border:1px solid rgba(255,88,88,.1)" title="Deconnexion">&#10005;</button>':"";return _viewAsBanner()+_statusBar()+'<div id="topbar">'+menuBtn+' <div class="ax-logo">APEX <span>AI</span></div><div class="ax-status" style="display:flex;gap:6px;align-items:center">'+paletteBtn+searchBtn+assistBtn+wakeBtn+pomodoroBtn+" "+canvasBtn+shareBtn+settingsBtn+logoutBtn+"</div></div>";}
+function vTopbar(){if(!K.user||K.view==="login"||K.view==="landing"||K.view==="waiting"||K.view==="waitingApproval")return"";var online=navigator.onLine;var _tb=function(icon,onclick,title,extra){return'<button onclick="'+onclick+'" style="cursor:pointer;font-size:16px;width:40px;height:40px;border:none;background:rgba(232,184,48,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-text);border:1px solid rgba(232,184,48,.08);'+(extra||"")+'" title="'+title+'">'+icon+'</button>';};var menuBtn=K.user?_tb("&#9776;","toggleSidebar()","Historique","font-size:18px"):"";/* v12.98 — Bouton retour (Kevin) */var _mainViews=["chat","dashboard","login","landing"];var _canGoBack=K.user&&_viewHistory.length>0&&_mainViews.indexOf(K.view)<0;var backBtn=_canGoBack?_tb("&larr;","goBack()","Retour","font-size:18px;margin-right:4px"):"";var paletteBtn=K.user?_tb("\u26A1","axCommandPalette()","Commande rapide","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var searchBtn=K.user?_tb("\uD83D\uDD0D","_showUniversalSearch()","Recherche universelle (Cmd+F)","color:var(--ax-blue);background:rgba(90,168,255,.10);border-color:rgba(90,168,255,.25)")+" ":"";var assistBtn=K.user?_tb("\uD83C\uDF99\uFE0F","axAssistantStart()",_assistantListening?"Assistant actif":"Assistant vocal",_assistantListening?"color:var(--ax-red);animation:axPulse 1s infinite;background:rgba(255,88,88,.1);border-color:rgba(255,88,88,.2)":"")+" ":"";/* v12.278 — Wake button PRO 4 etats (off/listening/detecting/recording) */var _wkSt=_axWakeWordActive?(_axWakeVisualState||"listening"):"off";var _wkIcon=_wkSt==="off"?"\uD83C\uDF99":(_wkSt==="recording"?"\uD83D\uDD34":(_wkSt==="detecting"?"\uD83D\uDFE2":"\uD83D\uDC42"));var _wkColor=_wkSt==="off"?"opacity:.65":(_wkSt==="recording"?"color:#ff4444;animation:axPulse 0.8s infinite;background:rgba(255,68,68,.18);border-color:rgba(255,68,68,.4)":(_wkSt==="detecting"?"color:#4cd080;animation:axPulse 0.6s infinite;background:rgba(76,208,128,.20);border-color:rgba(76,208,128,.4)":"color:#ffd700;animation:axPulse 1.5s infinite;background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.3)"));var _wkTitle=_wkSt==="off"?"Activer \u0027Dis Apex\u0027":(_wkSt==="recording"?"Enregistrement commande...":(_wkSt==="detecting"?"Parole detectee...":"\u0027Dis Apex\u0027 actif - touche pour arreter"));var wakeBtn=K.user?'<button id="ax-wake-btn" data-state="'+_wkSt+'" onclick="axWakeWordToggle()" title="'+_wkTitle+'" style="cursor:pointer;font-size:16px;width:40px;height:40px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-text);transition:all .3s ease;'+_wkColor+'">'+_wkIcon+'</button> ':"";var pomodoroBtn=_pomodoroDisplay();var canvasBtn="";/* v12.5 — Canvas button retire du topbar (Kevin 2026-04-20). Accessible via IA qui ouvre automatiquement un canvas quand elle genere du code. Evite bouton accidentel → ecran noir. */var shareBtn=K.user&&K.view==="chat"?_tb("\uD83D\uDCE4","axShareConversation()","Partager")+" ":"";/* v12.162 — Bouton Reglages topbar (Kevin: garantie acces toujours visible) */var settingsBtn=K.user?_tb("\u2699\uFE0F","sv('settings')","Reglages","color:var(--ax-gold);background:rgba(232,184,48,.12);border-color:rgba(232,184,48,.3)")+" ":"";var logoutBtn=K.user?'<button onclick="axLogout()" style="cursor:pointer;font-size:14px;width:40px;height:40px;border:none;background:rgba(255,88,88,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ax-red);border:1px solid rgba(255,88,88,.1)" title="Deconnexion">&#10005;</button>':"";return _viewAsBanner()+_statusBar()+'<div id="topbar">'+menuBtn+' <div class="ax-logo">APEX <span>AI</span></div><div class="ax-status" style="display:flex;gap:6px;align-items:center">'+paletteBtn+searchBtn+assistBtn+wakeBtn+pomodoroBtn+" "+canvasBtn+shareBtn+settingsBtn+logoutBtn+"</div></div>";}
 
 
 /* v12.213 — Audit UX final (Kevin 2026-04-25): suppression des doublons (vault/links/projects/ecommerce/cmcadmin/workers deja presents en navbar admin). Habits passe en icone differenciee pour ne plus partager 🎯 avec Objectifs. */
