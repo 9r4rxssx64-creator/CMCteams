@@ -4,6 +4,155 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🛡️ RÈGLE PERMANENTE — BROWSER SANS BLOCAGE + SECU AGENTS PROTECTION (Kevin 2026-04-26, ABSOLUE)
+
+> **"Une fois internet lancé on est derrière un pare-feu. Apex doit être protégé contre les intrusions/malveillance par des agents. Mais on a accès à TOUS les sites sans jamais être bloqué. S'il y a blocage, Apex doit réagir et débloquer, contourner, trouver une solution. Jamais bloqué par autorisations/pare-feu/VPN. Équipé de tous les outils pour contourner. Anticipe, sait réagir toujours. En autonomie totale."**
+
+**Règle absolue, prioritaire** — pour Apex (browser embed) + CMCteams si pertinent :
+
+### 1. Sécurité Apex (anti-intrusion) — agents protecteurs
+
+Pendant que user navigue, sentinelles surveillent :
+
+- **`security-watch-browser` (continu)** : monitor postMessage entrants iframes — bloque tentative cross-frame injection
+- **`malware-blocklist-watch` (au load chaque URL)** : check URL contre blocklist (Cloudflare 1.1.1.2 family DNS, Google Safe Browsing API gratuit, OpenPhish public list)
+- **`csp-violation-watch`** : `document.addEventListener("securitypolicyviolation",...)` → log + alerte si tentative injection script
+- **`xss-sanitizer`** : tout HTML user/IA passe par DOMPurify (CDN lazy load)
+- **`devtools-detect`** : détecte si user (ou attaquant) ouvre devtools sur l'app → log audit (pas bloquer, juste tracer)
+- **`session-fixation-watch`** : si url contient `?session=` ou cookies suspects → strip + log
+
+```js
+function _securityBrowserWatch(){
+  // Listen postMessage cross-frame
+  window.addEventListener("message", function(e){
+    if(e.origin && e.origin !== location.origin && !["https://www.google.com","https://www.youtube.com"].includes(e.origin)){
+      try{if(typeof axSecurityLog==="function")axSecurityLog("postmessage_external", e.origin+" data="+String(e.data).slice(0,100));}catch(_){}
+    }
+  });
+  // CSP violations
+  document.addEventListener("securitypolicyviolation", function(e){
+    if(typeof axSecurityLog==="function")axSecurityLog("csp_violation", e.violatedDirective+" "+(e.blockedURI||"").slice(0,100));
+  });
+}
+```
+
+### 2. Contournement blocages browser (déblocage auto)
+
+Si une URL est bloquée par X-Frame-Options, CSP frame-ancestors, ou autres :
+
+1. **Détection automatique** : `iframe.contentWindow === null` après 3s OU error event sur iframe
+2. **Stratégies de contournement** dans l'ordre :
+   - **a) Cache web archive** : `https://web.archive.org/web/2/[URL]` → version cachée
+   - **b) Google Cache** : `https://webcache.googleusercontent.com/search?q=cache:[URL]`
+   - **c) Reader mode** : `https://r.jina.ai/[URL]` (gratuit, retourne version texte)
+   - **d) CORS proxy** : Cloudflare Worker custom (`ax_cors_proxy_url`) → fetch + render dans iframe
+   - **e) Open in new tab** : dernier recours, ouvre Safari nouvel onglet
+3. **Toast informatif** : "⚠ Site bloque l'embed, j'utilise [méthode contournement]"
+
+```js
+function axTryUnblockUrl(url){
+  return new Promise(function(resolve){
+    var attempts = [
+      url, // direct
+      "https://web.archive.org/web/2/" + encodeURIComponent(url),
+      "https://r.jina.ai/" + url,
+      // CORS proxy custom si configure
+      lg("ax_cors_proxy_url","") ? lg("ax_cors_proxy_url") + "?url=" + encodeURIComponent(url) : null,
+    ].filter(Boolean);
+    var idx = 0;
+    function tryNext(){
+      if(idx >= attempts.length){return resolve({ok:false, fallback:"open_safari", url:url});}
+      var test = attempts[idx];
+      // Test iframe loadability via short HEAD via fetch + check X-Frame-Options
+      fetch(test, {method:"HEAD", mode:"no-cors"}).then(function(){
+        resolve({ok:true, url:test, method:idx===0?"direct":idx===1?"archive":idx===2?"reader":"cors"});
+      }).catch(function(){
+        idx++;
+        tryNext();
+      });
+    }
+    tryNext();
+  });
+}
+```
+
+### 3. Web search robuste (jamais "pas de résultat")
+
+Si user demande une info :
+1. **Anthropic web_search** native (Claude tool use)
+2. Sinon **Brave Search API** (gratuit 2000 req/mois, clé `ax_brave_key`)
+3. Sinon **Tavily API** (clé `ax_tavily_key`)
+4. Sinon **DuckDuckGo HTML scrape** (HTML fallback parsing)
+5. Sinon **Google Custom Search** (clé `ax_google_cse_key`)
+
+Si TOUT échoue → ouvre browser embed Google directement.
+
+### 4. CORS proxy intégré
+
+Pour les API qui bloquent CORS (souvent les jeunes API), Apex passe via Cloudflare Worker `apex-cors-proxy`. Code worker à créer :
+```js
+addEventListener("fetch", e => {
+  const url = new URL(e.request.url);
+  const target = url.searchParams.get("url");
+  if(!target) return e.respondWith(new Response("Missing url param", {status:400}));
+  e.respondWith(
+    fetch(target, e.request).then(r => {
+      const h = new Headers(r.headers);
+      h.set("Access-Control-Allow-Origin", "*");
+      return new Response(r.body, {status:r.status, headers:h});
+    })
+  );
+});
+```
+
+Stocker URL dans `ax_cors_proxy_url`. Sentinelle vérifie qu'il répond.
+
+### 5. VPN détection + workaround
+
+Apex détecte si user est sur VPN qui bloque certains sites (via fetch test sur `https://api.bigdatacloud.net/data/client-info`) :
+- Si VPN détecté → afficher "💡 Tu es sur VPN, certains sites peuvent être bloqués. Je peux essayer cache web/archive."
+- Bouton "Désactiver temporairement le VPN" → instructions iOS Settings > VPN
+
+### 6. Anticipation proactive
+
+Sentinelle `connectivity-watch` (30s) :
+- Test ping `1.1.1.1` (Cloudflare DNS) — vérifier connectivité réseau
+- Test ping `api.anthropic.com` — vérifier provider IA
+- Test ping `firebasedatabase.app` — vérifier cloud DB
+- Si l'un fail → toast diagnostic + bouton "Tenter contournement"
+
+### 7. Déblocage AUTO sans demander à user
+
+Quand un blocage est détecté, Apex :
+1. Tente toutes les stratégies en arrière-plan
+2. Quand l'une marche → affiche le résultat
+3. Toast informatif (pas demande de permission)
+4. Log dans `ax_unblock_log` pour mémoire (pattern : ce site bloque toujours, prendre direct cache)
+
+### 8. Cas limites
+
+- **Site totalement down** : afficher version cache web archive avec bandeau "Version archivée du [date]"
+- **DNS bloqué localement** : passer par DoH (DNS over HTTPS Cloudflare 1.1.1.1)
+- **ISP blocking** : suggère VPN gratuit (Proton VPN, Cloudflare Warp)
+- **Géoblocage** : tente via web archive + propose VPN
+
+### 9. Test mental obligatoire
+
+> *"Si user dit 'va sur [site totalement bloqué iframe]', est-ce qu'Apex contourne automatiquement (cache, reader, proxy) sans demander ? Si user dit 'cherche X' et toutes les API search KO, est-ce qu'il ouvre Google direct ? Si user est sur VPN qui bloque le site, est-ce qu'il propose une solution ?"*
+
+Si non → enrichir stratégies contournement.
+
+### 10. Conformité légale
+
+- Pas contourner DRM/paywall (illégal)
+- Pas accéder contenu illégal (CSAM, etc. — blocklist absolue)
+- Respecter robots.txt si site demande no-archive
+- Logs archivés 30 jours puis purgés (RGPD)
+
+S'applique à Apex en priorité.
+
+---
+
 ## 🌐 RÈGLE PERMANENTE — APEX EXÉCUTE TOUTES LES DEMANDES (BROWSER, ACTIONS, RECHERCHE) (Kevin 2026-04-26, ABSOLUE)
 
 > **"Moi comme Laurence ou n'importe quel client, je peux dire 'Apex ouvre-moi un navigateur internet, va sur tel site' et automatiquement Apex exécute. Une fenêtre navigateur apparaît avec possibilité plein écran ET garde toujours les fonctionnalités Apex (poser questions, Dis Apex). Si on dit 'Apex va chercher telle information sur tel site', il doit être capable et exécuter. Toutes les demandes."**

@@ -65,6 +65,13 @@
 <script>
 // Sentry Loader — lazy-load, 0 impact perf initial
 (function(){var dsn=localStorage.getItem("ax_sentry_dsn");if(!dsn)return;var s=document.createElement("script");s.src="https://browser.sentry-cdn.com/8.43.0/bundle.min.js";s.crossOrigin="anonymous";s.onload=function(){if(window.Sentry){window.Sentry.init({dsn:dsn,tracesSampleRate:0.1,environment:"production",release:"apex-v12.216",ignoreErrors:["AbortError","ECONNRESET","ResizeObserver loop","Non-Error promise rejection"],initialScope:{tags:{component:"apex",admin:"U11804"}}});console.log("Sentry init OK");}};document.head.appendChild(s);})();
+// === v12.303 PRODUCTION-GRADE GLOBAL ERROR CAPTURE (Sentry-style, runs BEFORE any other init) ===
+(function(){
+  function _earlyCapture(err,ctx){try{var entry={id:"err_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),msg:String(err&&err.message||err||"unknown").slice(0,500),stack:String(err&&err.stack||"").slice(0,2000),ctx:ctx||{},ts:Date.now(),url:(location.href||"").slice(0,200),ua:(navigator.userAgent||"").slice(0,200)};var raw=localStorage.getItem("ax_error_log");var log=[];try{log=raw?JSON.parse(raw):[];if(!Array.isArray(log))log=[];}catch(_){log=[];}log.push(entry);if(log.length>500)log=log.slice(-500);try{localStorage.setItem("ax_error_log",JSON.stringify(log));}catch(_){}}catch(_){}}
+  window.addEventListener("error",function(e){_earlyCapture(e.error||new Error(e.message||"unknown"),{source:"window.onerror",filename:e.filename||"",lineno:e.lineno||0,colno:e.colno||0});},true);
+  window.addEventListener("unhandledrejection",function(e){_earlyCapture(e.reason,{source:"unhandledrejection"});},true);
+  window._axEarlyCapture=_earlyCapture;
+})();
 </script>
 <style>/* v12.188 GLOBAL PERF iPhone */*{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.ax-tab:active,.ax-btn:active,.ax-btn-icon:active,button:active{transform:scale(.96)!important;transition:transform .06s ease!important}
 :root{
@@ -274,6 +281,15 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-user-slideshow img{width:100%;height:100%;object-fit:cover;transition:opacity 1s ease}
 .ax-user-slideshow .ax-ss-close{position:absolute;top:4px;right:4px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 @keyframes axFadeIn{from{opacity:0}to{opacity:1}}
+/* v12.303 — Quota/Auth modal pro */
+.ax-quota-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:axFadeIn .2s ease-out}
+.ax-quota-modal{background:var(--ax-bg-card);border:1px solid var(--ax-gold);border-radius:16px;padding:28px 24px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 32px rgba(232,184,48,.18);animation:axFadeIn .25s ease-out}
+.ax-quota-modal .ax-quota-icon{font-size:52px;margin-bottom:14px;line-height:1}
+.ax-quota-modal h2{color:var(--ax-gold);font-size:22px;font-weight:800;margin:0 0 12px;letter-spacing:.5px}
+.ax-quota-modal p{color:var(--ax-text);font-size:15px;line-height:1.55;margin:0 0 22px;opacity:.95}
+.ax-quota-actions{display:flex;flex-direction:column;gap:10px}
+.ax-quota-actions .ax-btn{min-height:48px;font-size:14px;font-weight:600;padding:12px 16px;border-radius:10px;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .12s ease,box-shadow .15s ease}
+.ax-quota-actions .ax-btn:active{transform:scale(.97)}
 @keyframes axShimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
 @keyframes axBounce{0%,100%{transform:scale(1)}50%{transform:scale(.92)}}
 @keyframes axTyping{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
@@ -484,7 +500,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.301",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.303",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
