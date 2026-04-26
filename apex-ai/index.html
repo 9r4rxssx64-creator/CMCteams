@@ -108,7 +108,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--ax-bg-flat);co
 .ax-btn:disabled,.ax-btn[disabled],.ax-btn.ax-loading{opacity:.55;cursor:wait;pointer-events:none;filter:grayscale(.3)}
 .ax-btn.ax-loading::after{content:"";display:inline-block;width:14px;height:14px;margin-left:8px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:axSpin .7s linear infinite;vertical-align:middle}
 @keyframes axSpin{to{transform:rotate(360deg)}}
-.ax-offline-banner{position:fixed;top:0;left:0;right:0;z-index:10001;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;text-align:center;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.25);animation:axSlideDown .25s var(--ax-ease);display:flex;align-items:center;justify-content:center;gap:8px;padding-top:calc(6px + var(--ax-safe-t,0px))}
+.ax-offline-banner{position:fixed;top:0;left:0;right:0;z-index:10001;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.25);animation:axSlideDown .25s var(--ax-ease);display:flex;align-items:center;justify-content:center;gap:8px;padding-top:calc(6px + var(--ax-safe-t,0px))}
 @keyframes axSlideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
 body.ax-offline #topbar{margin-top:30px}
 .ax-btn-primary{background:linear-gradient(135deg,#e0b838,#f0d050,#d4a020);color:#08080f;box-shadow:0 6px 20px rgba(201,162,39,.35),inset 0 1px 0 rgba(255,255,255,.3);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
@@ -138,7 +138,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 .ax-msg{padding:14px 18px;border-radius:var(--ax-r);margin:8px 12px;max-width:85%;word-wrap:break-word;overflow-wrap:break-word;line-height:1.65;font-size:15px;box-shadow:0 2px 12px rgba(0,0,0,.15);animation:axFadeIn .3s var(--ax-ease);content-visibility:auto;contain-intrinsic-size:auto 80px}
 .ax-msg-user{background:linear-gradient(135deg,rgba(232,184,48,.22),rgba(232,184,48,.1));margin-left:auto;border-bottom-right-radius:6px;color:var(--ax-text);border:1px solid rgba(232,184,48,.25);box-shadow:0 4px 16px rgba(232,184,48,.08),inset 0 1px 2px rgba(255,255,255,.08)}
 .ax-msg-bot{background:linear-gradient(135deg,rgba(16,28,64,.65),rgba(24,40,80,.45));margin-right:auto;border-bottom-left-radius:6px;border:1px solid rgba(232,184,48,.12);border-left:3px solid rgba(232,184,48,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,.2),inset 0 1px 1px rgba(255,255,255,.04)}
-.ax-msg-system{background:rgba(232,184,48,.06);border:1px solid rgba(232,184,48,.1);text-align:center;color:var(--ax-gold);font-size:12px;max-width:100%;margin:10px auto;padding:8px 16px;border-radius:12px;font-weight:500;letter-spacing:.3px}
+.ax-msg-system{background:rgba(232,184,48,.06);border:1px solid rgba(232,184,48,.1);text-align:center;color:var(--ax-gold);font-size:13px;max-width:100%;margin:10px auto;padding:8px 16px;border-radius:12px;font-weight:500;letter-spacing:.3px}
 .ax-msg .ax-name{font-size:11px;font-weight:700;margin-bottom:4px;color:var(--ax-gold);text-transform:uppercase;letter-spacing:.5px;opacity:.7}
 .ax-msg .ax-time{font-size:10px;color:var(--ax-text-dim);margin-top:6px;display:flex;gap:6px;align-items:center}
 .ax-code{background:#0d0d18;border:1px solid rgba(255,255,255,.08);border-radius:var(--ax-r-sm);padding:12px;overflow-x:auto;font-family:var(--ax-mono);font-size:13px;line-height:1.5;position:relative;margin:8px 0}
@@ -183,7 +183,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 .ax-setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);transition:background .2s}
 .ax-setting-row:hover{background:rgba(255,255,255,.02);border-radius:8px;padding-left:8px;padding-right:8px}
 .ax-setting-row .ax-label{font-size:14px;display:flex;align-items:center;gap:8px}
-.ax-setting-row .ax-desc{font-size:11px;color:var(--ax-text-dim)}
+.ax-setting-row .ax-desc{font-size:13px;color:var(--ax-text-dim);line-height:1.45}
 .ax-fin-card{background:var(--ax-bg-card);border:1px solid var(--ax-border);border-radius:var(--ax-r);padding:16px;display:flex;align-items:center;justify-content:space-between}
 .ax-fin-up{color:var(--ax-green)}
 .ax-fin-down{color:var(--ax-red)}
@@ -333,7 +333,9 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-ocean{--ax-bg-flat:#081828;--ax-bg2:#0e2040;--ax-gold:#40c4e0;--ax-gold-bright:#60d8f0;--ax-blue:#40c4e0;--ax-border:rgba(64,196,224,.18);--ax-bg-card:rgba(14,32,64,.8)}
 .ax-sunset{--ax-bg-flat:#180808;--ax-bg2:#2a1212;--ax-gold:#ff6b35;--ax-gold-bright:#ff9055;--ax-border:rgba(255,107,53,.18);--ax-bg-card:rgba(42,18,18,.8)}
 .ax-emerald{--ax-bg-flat:#081a08;--ax-bg2:#103010;--ax-gold:#50c878;--ax-gold-bright:#70e098;--ax-border:rgba(80,200,120,.18);--ax-bg-card:rgba(16,48,16,.8)}
-:focus-visible{outline:2px solid var(--ax-gold);outline-offset:2px}
+/* v12.290 — focus-visible polyfill renforce Safari iOS + tous controls a11y WCAG 2.4.7 */
+:focus-visible,.ax-btn:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible,.ax-btn-icon:focus-visible,.ax-tab:focus-visible{outline:3px solid var(--ax-gold);outline-offset:2px;border-radius:6px}
+.ax-btn:focus:not(:focus-visible),button:focus:not(:focus-visible),input:focus:not(:focus-visible),textarea:focus:not(:focus-visible),a:focus:not(:focus-visible),.ax-btn-icon:focus:not(:focus-visible){outline:none}
 [role="button"]{cursor:pointer}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 @keyframes axNotifPulse{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
@@ -359,11 +361,11 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-tab,.ax-btn,.ax-btn-icon{transform:translateZ(0)}
 .ax-conv-item{contain:layout style paint}
 @media(max-width:480px){.ax-card{backdrop-filter:none;-webkit-backdrop-filter:none}.ax-sidebar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.ax-msg-bot{backdrop-filter:none;-webkit-backdrop-filter:none}}
-.ax-perf-row{display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid rgba(232,184,48,.06);font-size:12px}
+.ax-perf-row{display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid rgba(232,184,48,.06);font-size:13px}
 .ax-perf-row strong{color:var(--ax-text-dim);font-weight:600}
 .ax-perf-bar{height:4px;border-radius:2px;background:var(--ax-bg-input);overflow:hidden;margin-top:4px}
 .ax-perf-bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--ax-green),var(--ax-gold));transition:width .3s}
-.ax-virt-more{text-align:center;padding:12px;font-size:12px;color:var(--ax-text-dim);cursor:pointer;border-top:1px dashed rgba(232,184,48,.15)}
+.ax-virt-more{text-align:center;padding:12px;font-size:13px;color:var(--ax-text-dim);cursor:pointer;border-top:1px dashed rgba(232,184,48,.15)}
 .ax-virt-more:hover{color:var(--ax-gold)}
 </style>
 </head>
@@ -396,7 +398,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.289",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.290",ADMIN_ID="kdmc_admin";
 /* v12.199 - Push notifs iPhone PWA: VAPID public key (placeholder demo) */
 /* v12.203 - Backend Cloudflare push worker: voir tools/cloudflare/apex-push-worker.js + gen-vapid.html + DEPLOY-PUSH-WORKER.md */
 /* v12.207 — Cles VAPID generees pour Apex (genCryptoKeyPairSync ECDSA P-256). Public OK a partager. Private key cote Cloudflare Worker uniquement (jamais commit). */
@@ -818,7 +820,7 @@ function vPersistenceAudit(){
   h+='</div>';return h;
 }
 // Auto-restore au boot + sentinelle 10 min
-try{setTimeout(function(){if(navigator.onLine)axRestoreFromAll();},3500);_axIntervalAdd(_agentPersistenceWatch,600000,"persistence-watch");/* v12.269 BUGFIX #7 : auto-cleanup periodic 30 min + LZ check + msg queue process */_axIntervalAdd(function(){try{if(typeof _axDailyCleanup==="function")_axDailyCleanup();if(typeof axAggressiveCleanup==="function"){try{var used=(typeof _axMemoryUsedBytes==="function")?_axMemoryUsedBytes():0;if(used>4194304)axAggressiveCleanup();}catch(_){}}}catch(_){}}, 1800000, "auto-cleanup-30min");setTimeout(function(){try{if(typeof _axDailyCleanup==="function")_axDailyCleanup();}catch(_){}},60000);/* Boot LZ-string check */try{if(typeof _axLoadLZ==="function")_axLoadLZ();}catch(_){}/* Process msg queue quand IA finit streamer */_axIntervalAdd(function(){if(K&&!K.isStreaming&&typeof _axProcessMsgQueue==="function")_axProcessMsgQueue();},2000,"msg-queue-process");}catch(_){}
+try{/* v12.290 — Boot defer rapide via requestIdleCallback (fallback setTimeout 500ms) au lieu de 3500ms */var _axBootRestore=function(){if(navigator.onLine&&typeof axRestoreFromAll==="function")try{axRestoreFromAll();}catch(_){}};if(typeof requestIdleCallback==="function"){requestIdleCallback(_axBootRestore,{timeout:2000});}else{setTimeout(_axBootRestore,500);}_axIntervalAdd(_agentPersistenceWatch,600000,"persistence-watch");/* v12.269 BUGFIX #7 : auto-cleanup periodic 30 min + LZ check + msg queue process */_axIntervalAdd(function(){try{if(typeof _axDailyCleanup==="function")_axDailyCleanup();if(typeof axAggressiveCleanup==="function"){try{var used=(typeof _axMemoryUsedBytes==="function")?_axMemoryUsedBytes():0;if(used>4194304)axAggressiveCleanup();}catch(_){}}}catch(_){}}, 1800000, "auto-cleanup-30min");setTimeout(function(){try{if(typeof _axDailyCleanup==="function")_axDailyCleanup();}catch(_){}},60000);/* Boot LZ-string check */try{if(typeof _axLoadLZ==="function")_axLoadLZ();}catch(_){}/* Process msg queue quand IA finit streamer */_axIntervalAdd(function(){if(K&&!K.isStreaming&&typeof _axProcessMsgQueue==="function")_axProcessMsgQueue();},2000,"msg-queue-process");}catch(_){}
 
 /* v12.286 - OUTILS PRO Kevin : Fuse.js fuzzy + QR code lazy CDN */
 
@@ -1483,7 +1485,7 @@ function vWakeWordAdmin(){
   /* Mots */
   h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple)"><h3>Mots declencheurs</h3>';
   words.forEach(function(w){h+='<div class="ax-setting-row"><span>🔊 '+esc(w)+'</span><button class="ax-btn ax-btn-outline" onclick="axWakeWordRemoveCustom(\''+esc(w)+'\')" style="padding:4px 10px;font-size:11px">Retirer</button></div>';});
-  h+='<div style="display:flex;gap:6px;margin-top:8px"><input id="ax-ww-newword" class="ax-input" placeholder="Ajouter un mot custom (chef, axel...)" style="flex:1"><button class="ax-btn ax-btn-primary" onclick="axWakeWordAddCustom(document.getElementById(\'ax-ww-newword\').value)" style="min-height:44px;min-width:44px">+</button></div>';
+  h+='<div style="display:flex;gap:6px;margin-top:8px"><input id="ax-ww-newword" class="ax-input" placeholder="Ajouter un mot custom (chef, axel...)" style="flex:1" aria-label="Nouveau mot declencheur"><button class="ax-btn ax-btn-primary" onclick="axWakeWordAddCustom(document.getElementById(\'ax-ww-newword\').value)" style="min-height:44px;min-width:44px" aria-label="Ajouter mot declencheur">+</button></div>';
   h+='</div>';
   /* v12.278 — Reglages avances PRO */
   var _wws=axWakeSettings();
@@ -3068,10 +3070,10 @@ function vBrowser(){
   ]);
   var h='<div style="display:flex;flex-direction:column;height:100vh">';
   h+='<div style="padding:8px;background:var(--ax-bg2);border-bottom:1px solid var(--ax-border);display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
-  h+='<input id="ax-browser-url" class="ax-input" value="'+esc(current)+'" placeholder="https:// ou recherche" style="flex:1;min-width:140px;padding:10px 12px;font-size:14px" onkeydown="if(event.key===\'Enter\')axBrowserGo()">';
-  h+='<button class="ax-btn ax-btn-primary" onclick="axBrowserGo()" style="padding:10px 14px">→</button>';
-  h+='<button class="ax-btn ax-btn-outline" onclick="axBrowserOpenExternal()" style="padding:10px 12px" title="Ouvrir Safari">↗</button>';
-  h+='<button class="ax-btn-icon" onclick="axBrowserBookmark()" title="Marque-page" style="width:40px;height:40px">⭐</button>';
+  h+='<input id="ax-browser-url" class="ax-input" value="'+esc(current)+'" placeholder="https:// ou recherche" style="flex:1;min-width:140px;padding:10px 12px;font-size:14px" onkeydown="if(event.key===\'Enter\')axBrowserGo()" aria-label="URL ou recherche">';
+  h+='<button class="ax-btn ax-btn-primary" onclick="axBrowserGo()" style="padding:10px 14px" aria-label="Aller a l URL">→</button>';
+  h+='<button class="ax-btn ax-btn-outline" onclick="axBrowserOpenExternal()" style="padding:10px 12px" title="Ouvrir Safari" aria-label="Ouvrir dans Safari">↗</button>';
+  h+='<button class="ax-btn-icon" onclick="axBrowserBookmark()" title="Marque-page" style="width:40px;height:40px" aria-label="Ajouter aux marque-pages">⭐</button>';
   h+='</div>';
   h+='<div style="padding:6px 8px;background:rgba(232,184,48,.04);overflow-x:auto;white-space:nowrap;border-bottom:1px solid var(--ax-border)">';
   bookmarks.forEach(function(b){h+='<button onclick="ls(\'ax_browser_url\',\''+esc(b.url)+'\');dc()" style="display:inline-block;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:14px;padding:4px 10px;margin-right:4px;color:var(--ax-text);font-size:11px;cursor:pointer">'+esc(b.icon||"🔗")+' '+esc(b.name)+'</button>';});
@@ -3719,7 +3721,7 @@ function vMemoryDashboard(){
     mem.rules.slice(0,50).forEach(function(r,i){
       var t=(r&&r.text)||"";
       var d=r&&r.ts?new Date(r.ts).toLocaleDateString("fr-FR"):"";
-      h+='<div style="padding:10px;margin-bottom:6px;background:var(--ax-card-2,#1a1a1a);border-radius:8px;border-left:3px solid var(--ax-gold)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="flex:1;font-size:13px;line-height:1.4">'+esc(t)+'</div><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:10px;color:var(--ax-text-dim)">'+esc(d)+'</span><button onclick="(function(){var rules=lg(\'ax_kevin_rules\',[]);rules.splice('+i+',1);ls(\'ax_kevin_rules\',rules);if(typeof fbWrite===\'function\')try{fbWrite(\'ax_kevin_rules\',rules);}catch(_){}toast(\'Regle supprimee\',\'ok\');dc();})()" style="background:transparent;border:1px solid #555;color:#aaa;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;min-height:30px">🗑</button></div></div></div>';
+      h+='<div style="padding:10px;margin-bottom:6px;background:var(--ax-card-2,#1a1a1a);border-radius:8px;border-left:3px solid var(--ax-gold)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="flex:1;font-size:13px;line-height:1.4">'+esc(t)+'</div><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:10px;color:var(--ax-text-dim)">'+esc(d)+'</span><button onclick="(function(){var rules=lg(\'ax_kevin_rules\',[]);rules.splice('+i+',1);ls(\'ax_kevin_rules\',rules);if(typeof fbWrite===\'function\')try{fbWrite(\'ax_kevin_rules\',rules);}catch(_){}toast(\'Regle supprimee\',\'ok\');dc();})()" style="background:transparent;border:1px solid #555;color:#aaa;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:13px;min-height:30px" aria-label="Supprimer cette regle">🗑</button></div></div></div>';
     });
     h+='</div>';
   }
@@ -4145,7 +4147,8 @@ function vCrewExperts(){
   h+='</div>';return h;
 }
 
-function axAddLesson(lesson){var lessons=lg("ax_lessons_learned",[]);if(lessons.indexOf(lesson)>=0)return;lessons.push(lesson);if(lessons.length>50)lessons=lessons.slice(-50);ls("ax_lessons_learned",lessons);_audit("lesson_learned","system",lesson,"");}
+function axAddLesson(lesson){var lessons=lg("ax_lessons_learned",[]);if(lessons.indexOf(lesson)>=0)return;lessons.push(lesson);if(lessons.length>100)lessons=lessons.slice(-100);ls("ax_lessons_learned",lessons);if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned",lessons);}catch(_){}_audit("lesson_learned","system",lesson,"");}
+function axRecordLesson(category,title,text,severity){try{var lessons=lg("ax_lessons_learned_struct",[]);var id="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);lessons.unshift({id:id,category:category||"general",title:String(title||"").slice(0,120),text:String(text||"").slice(0,500),severity:severity||"info",src:"apex",v:APP_VER,ts:Date.now()});if(lessons.length>100)lessons=lessons.slice(0,100);ls("ax_lessons_learned_struct",lessons);if(typeof fbWrite==="function")try{fbWrite("ax_lessons_learned_struct",lessons);}catch(_){}axAddLesson("["+(category||"gen")+"] "+String(title||"").slice(0,80));return id;}catch(_){return null;}}
 function axLogChange(what,details){var changelog=lg("ax_auto_changelog",[]);changelog.unshift({what:what,details:details||"",ts:now(),ver:APP_VER});if(changelog.length>200)changelog=changelog.slice(0,200);ls("ax_auto_changelog",changelog);}
 function axGetChangelog(){return lg("ax_auto_changelog",[]);}
 function _predictiveAlert(){var errs=lg("ax_err_log",[]);var recent=errs.filter(function(e){return now()-e.ts<600000;});if(recent.length>=3){var patterns={};recent.forEach(function(e){var key=e.msg.slice(0,30);patterns[key]=(patterns[key]||0)+1;});Object.keys(patterns).forEach(function(k){if(patterns[k]>=2){toast("Pattern detecte: "+k.slice(0,20)+"...","warn");axAddLesson("Erreur recurrente: "+k.slice(0,40));}});}}
@@ -4651,7 +4654,7 @@ K.user={name:name,id:_claimedAdmin?ADMIN_ID:(preconf?preconf.id:"user_"+uid()),l
 function axLogout(){if(K.user){_audit("logout",K.user.id,K.user.name,"");_logConnection("logout");var presence=lg("ax_presence",{});Object.keys(presence).forEach(function(k){if(k.startsWith(K.user.id))presence[k].online=false;});ls("ax_presence",presence);}K.user=null;K.isStreaming=false;ls("ax_uid",null);if(_fbEs){_fbEs.close();_fbEs=null;}if(_pomodoroInterval){clearInterval(_pomodoroInterval);_pomodoroInterval=null;}if(_stopwatchInterval){clearInterval(_stopwatchInterval);_stopwatchInterval=null;}if(_meditationTimer){clearInterval(_meditationTimer);_meditationTimer=null;}axSttStop();axTtsStop();axWakeLockRelease();axAssistantStop();_globalIntervals.forEach(function(id){clearInterval(id);});_globalIntervals=[];_agents.forEach(function(a){a.active=false;});sv("login");}
 
 // --- Navigation ---
-function sv(v){var _svT0=performance.now();/* v12.188 - slow click sentinel */try{setTimeout(function(){var dt=performance.now()-_svT0;if(dt>500&&typeof axIsAdmin==="function"&&axIsAdmin()){var log=lg("ax_click_slow",[]);log.push({view:v,ms:Math.round(dt),ts:Date.now()});if(log.length>50)log=log.slice(-50);ls("ax_click_slow",log);if(dt>1500){try{if(typeof _pushTelemetryToApex==="function")_pushTelemetryToApex("slow-click","warn","sv("+v+") "+Math.round(dt)+"ms");}catch(_){}}}},0);}catch(_){}_viewHistory.push(K.view);K.view=v;try{if(K.user){var cv=lg("ax_current_views",{});cv[K.user.id]={view:v,name:K.user.name,plan:K.user.plan||"?",ts:Date.now()};ls("ax_current_views",cv);if(typeof fbWrite==="function")try{fbWrite("ax_current_views",cv);}catch(_){}}}catch(_){}render();var c=document.getElementById("content");if(c)c.scrollTop=0;var fab=document.getElementById("ax-fab");if(fab)fab.classList.toggle("hidden",v==="chat"||v==="login"||v==="landing"||!K.user);}
+function sv(v){var _svT0=performance.now();/* v12.188 - slow click sentinel */try{setTimeout(function(){var dt=performance.now()-_svT0;if(dt>500&&typeof axIsAdmin==="function"&&axIsAdmin()){var log=lg("ax_click_slow",[]);log.push({view:v,ms:Math.round(dt),ts:Date.now()});if(log.length>50)log=log.slice(-50);ls("ax_click_slow",log);if(dt>1500){try{if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("slow-click","warn","sv("+v+") "+Math.round(dt)+"ms");}catch(_){}}}},0);}catch(_){}_viewHistory.push(K.view);K.view=v;try{if(K.user){var cv=lg("ax_current_views",{});cv[K.user.id]={view:v,name:K.user.name,plan:K.user.plan||"?",ts:Date.now()};ls("ax_current_views",cv);if(typeof fbWrite==="function")try{fbWrite("ax_current_views",cv);}catch(_){}}}catch(_){}render();var c=document.getElementById("content");if(c)c.scrollTop=0;var fab=document.getElementById("ax-fab");if(fab)fab.classList.toggle("hidden",v==="chat"||v==="login"||v==="landing"||!K.user);}
 function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="chat";render();}
 var _dcRaf=0,_lastView="",_chatPageSize=50;
 function _throttle(fn,delay){var last=0;return function(){var n=now();if(n-last>=delay){last=n;fn.apply(this,arguments);}};}
@@ -6442,7 +6445,7 @@ function vSubscriptionsAdmin(){
     if(r.status==="approved"&&r.initPin){
       h+='<div style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);padding:8px 12px;border-radius:6px;margin-top:6px">';
       h+='<span style="font-size:11px;color:var(--ax-text-dim)">PIN initial :</span> <b style="font-family:monospace;color:var(--ax-gold);font-size:16px;letter-spacing:3px">'+esc(r.initPin)+'</b>';
-      h+=' <button onclick="navigator.clipboard.writeText(\''+esc(r.initPin)+'\');toast(\'PIN copie\',\'ok\')" style="padding:4px 8px;font-size:11px;background:rgba(201,162,39,.2);border:none;color:var(--ax-gold);border-radius:4px;margin-left:8px">📋</button>';
+      h+=' <button onclick="navigator.clipboard.writeText(\''+esc(r.initPin)+'\');toast(\'PIN copie\',\'ok\')" style="padding:4px 8px;font-size:11px;background:rgba(201,162,39,.2);border:none;color:var(--ax-gold);border-radius:4px;margin-left:8px" aria-label="Copier le PIN initial" title="Copier le PIN">📋</button>';
       h+='</div>';
       h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px">';
       h+='<button class="ax-btn ax-btn-outline" onclick="axOpenWhatsAppForUser(\''+r.id+'\')" style="padding:6px 8px;font-size:11px">📱 WA</button>';
