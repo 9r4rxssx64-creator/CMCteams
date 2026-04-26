@@ -1,4 +1,45 @@
-# Mémo de reprise — Apex v12.263 + CMCteams v9.541 (session 2026-04-25 part 2)
+# Mémo de reprise — Apex v12.272 + CMCteams v9.541 (session 2026-04-26 part 1)
+
+## 🚨 SESSION 2026-04-26 PART 1 — Bug fix sprint Kevin (12 bugs critiques + 49 audites)
+
+**Contexte** : Kevin remontre BEAUCOUP de bugs (chat saute, input bloqué, clés API perdues, photo retourne texte, "Dis Apex" cassé, mémoire saturée, fonctions auto cassées, et CRITIQUE : Apex l'a reconnu en Laurence à la 1ère connexion).
+
+### Score final session
+
+- **49 bugs identifiés** par 2 audits experts indépendants (Apex 20 + CMC 29)
+- **14 bugs CRITICAL** dont 1 sécurité (Kevin = Laurence)
+- **11 bugs FIXÉS** sur 14 critiques + 5 features ajoutées
+- Score sécu : 9.5 → 9.7
+
+### Versions livrées part 1
+
+- **Apex v12.269** : 5 bugs (FB SSE null overwrite + queue input + scroll dc + cleanup auto + wake word retry limit iOS)
+- **Apex v12.270** : 2 bugs Kevin (photo upload retournait JSON + types fichiers étendus video/audio/code)
+- **Apex v12.271** : 2 features (`_axDetectFileType` 50+ formats + `axConvertFile` universel JPG/PNG/CSV/JSON/MD/HTML)
+- **Apex v12.272** : 1 SÉCU CRITIQUE (Kevin reconnu Laurence FIX — `ax_user` retiré de FB_FIX + check `ax_user.id===ax_uid` au boot)
+
+### Bugs CRITIQUES restants (à finir)
+
+**Apex (3)** : K.messages serialization vision · axExecuteTool async pas await · renderMd XSS check
+
+**CMCteams (11)** : PIN format <20 char insuffisant · Session TTL 8h pas enforced · BORGIA L vs T flexible · fbApplyData prototype injection · QuotaExceeded spam · cmcParserAutoLearn MAX_FP=50 · Toast spam sync · AID hardcode U11804 · CODES validation · esc XSS attribut · cmcScanBadgeEmploye fallback
+
+### Architecture nouvelle
+
+- **`CLAUDE_HANDOFF.json`** : dossier partagé Apex ↔ Claude Code bidirectionnel temps réel (Firebase + GitHub Action)
+- **9 sentinelles GitHub** : sw-cache-sync (Apex+CMC) + claude-todo-watcher + handoff-sync + lint + auto-backup + tests + deploy + agent-cron
+- **Pre-commit hook** : node --check + 26 tests Apex obligatoires
+- **Reconnaissance multi-format** : 50+ formats détectés auto (image RAW/HEIC, video, audio, PDF, archive, ebook, vCard, ICS, GPX, 3D, code)
+- **Convertisseur universel** : JPG/PNG/WebP (canvas), CSV↔JSON, vCard/ICS/GPX→JSON, MD→HTML
+
+### Quota Anthropic
+
+- 9 agents vague 4+4b ont touché quota Anthropic (reset 12:20 UTC)
+- 1 seul agent par session pour rester en quota (Explore audit fonctionne)
+
+---
+
+# Mémo précédent — Apex v12.263 + CMCteams v9.541 (session 2026-04-25 part 2)
 
 ## 🎯 SESSION 2026-04-25 PART 2 — Audits experts + 10/10 partout
 

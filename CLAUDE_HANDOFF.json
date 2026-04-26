@@ -95,16 +95,16 @@
     "score_per_axis": {
       "securite": 9.7,
       "ux_iphone": 9.5,
-      "fonctionnel": 10.0,
-      "perf": 10.0,
-      "cross_app": 10.0,
+      "fonctionnel": 10,
+      "perf": 10,
+      "cross_app": 10,
       "a11y_wcag": 9.5,
       "pwa_rgpd": 9.5,
-      "code_quality": 9.0,
-      "i18n_seo": 8.0,
-      "auto_gestion": 10.0,
-      "organisation_admin": 10.0,
-      "pipeline_erreurs": 10.0
+      "code_quality": 9,
+      "i18n_seo": 8,
+      "auto_gestion": 10,
+      "organisation_admin": 10,
+      "pipeline_erreurs": 10
     },
     "bugs_total_audited": 49,
     "bugs_fixed_session_april26": 11,
@@ -150,5 +150,73 @@
       "Firebase ax_telemetry_in (CMC -> Apex -> Claude Code)",
       "Firebase ax_claude_todo (Apex -> Claude Code via cron 2h)"
     ]
-  }
+  },
+  "docs_shared": {
+    "description": "Tous les dossiers Claude Code, partages temps reel avec Apex AI. Apex peut fetch ces URLs pour lire le contenu a jour.",
+    "refresh_protocol": "Apex fetch ces URLs au boot + toutes 1h. Sync via GitHub raw (toujours dernier commit main). Plus la sync Firebase de CLAUDE_HANDOFF.json (real-time SSE).",
+    "files": [
+      {
+        "id": "claude-md",
+        "title": "CLAUDE.md - regles permanentes + erreurs connues",
+        "path": "CLAUDE.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE.md",
+        "description": "Regles Kevin + 39 erreurs documentees. Apex doit respecter ces regles."
+      },
+      {
+        "id": "memo-resume",
+        "title": "MEMO_RESUME.md - bilan toutes sessions",
+        "path": "MEMO_RESUME.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/MEMO_RESUME.md",
+        "description": "Resume des sessions, scores audits, bugs fixes."
+      },
+      {
+        "id": "claude-activity",
+        "title": "CLAUDE_ACTIVITY.json - activite Claude Code (~280 commits)",
+        "path": "CLAUDE_ACTIVITY.json",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE_ACTIVITY.json",
+        "description": "Liste des commits Claude Code avec project + version."
+      },
+      {
+        "id": "kevin-inventory",
+        "title": "KEVIN_INVENTORY.md - tous fichiers du repo",
+        "path": "KEVIN_INVENTORY.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/KEVIN_INVENTORY.md",
+        "description": "Inventaire complet avec liens view/raw/edit."
+      },
+      {
+        "id": "claude-handoff",
+        "title": "CLAUDE_HANDOFF.json - ce fichier (communication AI<>AI)",
+        "path": "CLAUDE_HANDOFF.json",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE_HANDOFF.json",
+        "description": "Communication temps reel via Firebase ax_claude_code_handoff."
+      },
+      {
+        "id": "kevin-actions-todo",
+        "title": "KEVIN_ACTIONS_TODO.md - taches Kevin",
+        "path": "KEVIN_ACTIONS_TODO.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/KEVIN_ACTIONS_TODO.md",
+        "description": "Taches en attente de Kevin (KYC, etc.) si existe."
+      },
+      {
+        "id": "notes-user",
+        "title": "NOTES_USER.md - infos metier Kevin",
+        "path": "NOTES_USER.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/NOTES_USER.md",
+        "description": "Couleurs PDF, noms tables, regles casino, preferences UX."
+      },
+      {
+        "id": "changelog",
+        "title": "CHANGELOG.md - historique versions",
+        "path": "CHANGELOG.md",
+        "raw": "https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CHANGELOG.md",
+        "description": "Versions Apex et CMCteams chronologique."
+      }
+    ],
+    "apex_helpers": [
+      "axDocFetch(docId) : lit le doc via fetch(raw URL) - utiliser dans system prompt enrichi",
+      "axDocSearch(query) : cherche dans tous les docs partages",
+      "axDocLastUpdated(docId) : retourne timestamp dernier commit GitHub"
+    ]
+  },
+  "last_updated": "2026-04-26T01:00:00Z"
 }
