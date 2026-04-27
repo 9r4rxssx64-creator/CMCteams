@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.388",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.389",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7507,6 +7507,97 @@ var AX_COFFRE_ESSENTIALS = ["ax_api_key","ax_groq_key","ax_gemini_key","ax_openr
 function axIsCoffreEssential(k){
   return AX_COFFRE_ESSENTIALS.indexOf(k) >= 0;
 }
+
+/* v12.389 - Apex scan le chat user pour detecter codes/cles colles + propose rangement automatique (Kevin "certains codes passeront par le chat") */
+function _axScanTextForCredentials(text){
+  if(!text || typeof text !== "string") return [];
+  var found = [];
+  var patterns = [
+    {regex:/\b(sk-ant-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_api_key", label:"Anthropic Claude"},
+    {regex:/\b(gsk_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_groq_key", label:"Groq Cloud (gratuit)"},
+    {regex:/\b(sk-or-[A-Za-z0-9_\-]{20,})\b/g, target:"ax_openrouter_key", label:"OpenRouter"},
+    {regex:/\b(AIza[A-Za-z0-9_\-]{30,})\b/g, target:"ax_gemini_key", label:"Google Gemini"},
+    {regex:/\b(xai-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_grok_key", label:"xAI Grok"},
+    {regex:/\b(pplx-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_perplexity_key", label:"Perplexity"},
+    {regex:/\b(ghp_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_github_token", label:"GitHub PAT"},
+    {regex:/\b(github_pat_[A-Za-z0-9_\-]{60,})\b/g, target:"ax_github_token", label:"GitHub Fine-grained PAT"},
+    {regex:/\b(hf_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_huggingface_key", label:"HuggingFace"},
+    {regex:/\b(r8_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_replicate_key", label:"Replicate"},
+    {regex:/\b(pk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_pub", label:"Stripe Public"},
+    {regex:/\b(sk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_secret", label:"Stripe Secret"},
+    {regex:/\b([0-9]{8,10}:[A-Za-z0-9_\-]{30,})\b/g, target:"ax_telegram_token", label:"Telegram Bot"},
+    {regex:/\b(0x[a-fA-F0-9]{40})\b/g, target:"ax_eth_address", label:"Adresse ETH"},
+    {regex:/\b(bc1[a-z0-9]{20,80})\b/g, target:"ax_btc_address", label:"Adresse BTC"}
+  ];
+  patterns.forEach(function(p){
+    var matches = text.match(p.regex);
+    if(matches){
+      matches.forEach(function(m){
+        if(found.find(function(f){return f.value === m;})) return;
+        found.push({value: m.trim(), target: p.target, label: p.label});
+      });
+    }
+  });
+  return found;
+}
+
+function _axProposeCredentialSave(detected){
+  if(!detected || !detected.length) return;
+  var html = '<div style="padding:18px;max-width:560px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Code(s) detecte(s)</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex a reconnu le format. Veux-tu enregistrer dans le Coffre ?</p>';
+  detected.forEach(function(d, i){
+    var maskedSample = d.value.slice(0, 6) + "..." + d.value.slice(-4);
+    html += '<div class="ax-card" style="margin-bottom:8px;border-left:4px solid var(--ax-gold)"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><strong>'+esc(d.label)+'</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace">'+esc(maskedSample)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Champ: '+esc(d.target)+'</div></div><button class="ax-btn ax-btn-primary" id="ax-cred-save-'+i+'" style="min-height:44px;padding:8px 16px;font-size:13px;font-weight:700">Enregistrer</button></div></div>';
+  });
+  html += '<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="width:100%;margin-top:10px;min-height:44px">Ignorer tout</button></div>';
+  if(typeof _showModal === "function"){
+    _showModal(html);
+    setTimeout(function(){
+      detected.forEach(function(d, i){
+        var btn = document.getElementById("ax-cred-save-"+i);
+        if(!btn) return;
+        btn.onclick = function(){
+          try{
+            ls(d.target, d.value);
+            if(typeof toast === "function") toast(d.label + " enregistre dans le Coffre", "ok", {duration:3000});
+            btn.disabled = true;
+            btn.textContent = "Enregistre OK";
+            btn.style.background = "rgba(92,216,130,.15)";
+            btn.style.color = "#5cd882";
+            /* auto-test live 1.5s plus tard */
+            setTimeout(function(){
+              if(typeof axCredTestLive === "function") axCredTestLive(d.target);
+            }, 1500);
+          }catch(e){
+            if(typeof toast === "function") toast("Erreur: "+String(e.message||e).slice(0,60), "err");
+          }
+        };
+      });
+    }, 100);
+  }
+}
+
+/* Hook dans _sendFromInput - scan le texte AVANT envoi a l IA */
+try{
+  if(typeof window !== "undefined" && !window._axChatScanInstalled){
+    window._axChatScanInstalled = true;
+    var _origSend = window.sendMessage;
+    if(typeof _origSend === "function"){
+      window.sendMessage = function(text){
+        try{
+          if(typeof axIsAdmin === "function" && axIsAdmin() && typeof text === "string"){
+            var detected = _axScanTextForCredentials(text);
+            if(detected.length > 0){
+              _axProposeCredentialSave(detected);
+              /* Si admin, on N envoie PAS le message a l IA pour eviter de leaker la cle aux logs API */
+              return;
+            }
+          }
+        }catch(_){}
+        return _origSend.apply(this, arguments);
+      };
+    }
+  }
+}catch(_){}
 
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
 
