@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.381",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.382",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7031,20 +7031,24 @@ function axShowDiagnostic(){
 
 /* v12.380 - Sentinelle integrite credentials (Kevin "personne ne s en est rendu compte, pas de message d erreur") */
 var _AX_CRED_PATTERNS={
-  ax_api_key:/^sk-ant-[A-Za-z0-9_\-]{40,}$/,
-  ax_openai_key:/^sk-[A-Za-z0-9]{40,}$/,
-  ax_gemini_key:/^AIza[A-Za-z0-9_\-]{35}$/,
-  ax_groq_key:/^gsk_[A-Za-z0-9]{50,}$/,
-  ax_openrouter_key:/^sk-or-[A-Za-z0-9_\-]{40,}$/,
-  ax_perplexity_key:/^pplx-[A-Za-z0-9]{40,}$/,
-  ax_grok_key:/^xai-[A-Za-z0-9_\-]{40,}$/,
-  ax_xai_key:/^xai-[A-Za-z0-9_\-]{40,}$/,
-  ax_huggingface_key:/^hf_[A-Za-z0-9]{30,}$/,
-  ax_replicate_key:/^r8_[A-Za-z0-9]{30,}$/,
-  ax_github_token:/^(ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82,})$/,
-  ax_telegram_token:/^[0-9]+:[A-Za-z0-9_\-]{30,}$/,
-  ax_stripe_pub:/^pk_(test|live)_[A-Za-z0-9]{20,}$/,
-  ax_stripe_secret:/^sk_(test|live)_[A-Za-z0-9]{20,}$/,
+  /* v12.382 - Patterns ELARGIS pour accepter les formats reels (- et _ inclus, longueurs flexibles) */
+  ax_api_key:/^sk-ant-[A-Za-z0-9_\-]{30,}$/,
+  ax_openai_key:/^sk-[A-Za-z0-9_\-]{20,}$/,
+  ax_gemini_key:/^AIza[A-Za-z0-9_\-]{30,}$/,
+  ax_groq_key:/^gsk_[A-Za-z0-9_\-]{30,}$/,
+  ax_openrouter_key:/^sk-or-[A-Za-z0-9_\-]{20,}$/,
+  ax_perplexity_key:/^pplx-[A-Za-z0-9_\-]{30,}$/,
+  ax_grok_key:/^xai-[A-Za-z0-9_\-]{30,}$/,
+  ax_xai_key:/^xai-[A-Za-z0-9_\-]{30,}$/,
+  ax_huggingface_key:/^hf_[A-Za-z0-9_\-]{20,}$/,
+  ax_replicate_key:/^r8_[A-Za-z0-9_\-]{20,}$/,
+  ax_github_token:/^(ghp_[A-Za-z0-9_\-]{30,}|github_pat_[A-Za-z0-9_\-]{60,})$/,
+  ax_telegram_token:/^[0-9]+:[A-Za-z0-9_\-]{20,}$/,
+  ax_stripe_pub:/^pk_(test|live)_[A-Za-z0-9_\-]{20,}$/,
+  ax_stripe_secret:/^sk_(test|live)_[A-Za-z0-9_\-]{20,}$/,
+  ax_cloudflare_token:/^[A-Za-z0-9_\-]{30,}$/,
+  ax_vercel_token:/^[A-Za-z0-9_\-]{20,}$/,
+  ax_elevenlabs_key:/^[A-Za-z0-9_\-]{20,}$/,
   ax_paypal_me:/^[a-zA-Z0-9_\-]{3,30}$/,
   ax_revolut_tag:/^@?[a-zA-Z0-9_]{3,30}$/,
   ax_iban:/^[A-Z]{2}[0-9]{2}[A-Z0-9]{8,30}$/,
@@ -7106,14 +7110,47 @@ try{
     Storage.prototype.setItem=function(k,v){
       try{
         if(_AX_CRED_PATTERNS[k]&&typeof v==='string'){
-          var r=_axValidateAndCleanCredential(k,v);
-          if(r.modified&&r.ok){v=r.cleaned;}
-          else if(r.modified&&!r.ok){
-            /* Format devient invalide apres clean -> log + bloquer ecriture corrompue */
-            try{var log=lg('ax_cred_corruption_log',[]);log.push({ts:Date.now(),hook:'setItem_blocked',key:k,reason:r.reason});if(log.length>50)log=log.slice(-50);_origSetItem.call(localStorage,'ax_cred_corruption_log',JSON.stringify(log));}catch(_){}
-            if(typeof toast==='function')toast('Ecriture cle '+k.replace('ax_','')+' bloquee (format invalide)','warn',{duration:5000});
-            return;
+          /* v12.382 - Le hook reçoit la version JSON.stringify, donc 'sk-ant-xxx' arrive comme '"sk-ant-xxx"'. On unwrap d abord. */
+          var inner=v;
+          try{var p=JSON.parse(v);if(typeof p==='string')inner=p;}catch(_){}
+          var r=_axValidateAndCleanCredential(k,inner);
+          /* v12.382 - Log DETAILE pour debug Kevin "Groq me rajoute des caracteres" */
+          try{
+            var dlog=lg('ax_cred_setitem_log',[]);
+            dlog.push({ts:Date.now(),key:k,recv_len:v.length,inner_len:inner.length,clean_len:r.cleaned.length,modified:r.modified,ok:r.ok,reason:r.reason,sample_recv:inner.slice(0,18)+'...',sample_clean:r.cleaned.slice(0,18)+'...'});
+            if(dlog.length>30)dlog=dlog.slice(-30);
+            _origSetItem.call(localStorage,'ax_cred_setitem_log',JSON.stringify(dlog));
+          }catch(_){}
+          /* Decision : si clean produit une version VALIDE, ecrire la clean (re-stringify). Sinon ecrire l input original sans modifier (pas bloquer, juste laisser passer pour ne pas perdre la saisie user) */
+          if(r.modified&&r.ok){
+            v=JSON.stringify(r.cleaned);
+            if(typeof toast==='function')toast('Cle '+k.replace('ax_','')+' nettoyee auto','ok',{duration:2000});
           }
+          /* v12.382 - On NE BLOQUE PLUS l ecriture si format invalide. On laisse passer + alerte. Sinon Kevin perd ses saisies. */
+          else if(!r.ok){
+            if(typeof toast==='function')toast('Cle '+k.replace('ax_','')+' format inhabituel - test live dans 2s','warn',{duration:4000});
+          }
+          /* v12.382 - AUTO-TEST LIVE 1.5s apres chaque save credential -> bulle passe verte/rouge auto + push GitHub si KO */
+          try{
+            if(window._axPostSaveTestTimer)clearTimeout(window._axPostSaveTestTimer);
+            window._axPostSaveTestTimer=setTimeout(function(){
+              try{
+                if(typeof axCredTestLive==='function'){
+                  var p=axCredTestLive(k);
+                  if(p&&typeof p.then==='function'){
+                    p.then(function(res){
+                      try{
+                        /* Si fail, push auto vers GitHub pour escalade Claude Code */
+                        if(res&&!res.ok&&typeof _axPushDiagnosticToGitHub==='function'){
+                          _axPushDiagnosticToGitHub({summary:{ok:0,warn:0,err:1,total:1},checks:{post_save_test:{key:k,result:res,saved_value_sample:String(inner).slice(0,16)+'...['+inner.length+'chars]'}},ts:Date.now(),version:typeof APP_VER!=='undefined'?APP_VER:'?'});
+                        }
+                      }catch(_){}
+                    }).catch(function(_){});
+                  }
+                }
+              }catch(_){}
+            },1500);
+          }catch(_){}
         }
       }catch(_){}
       return _origSetItem.call(this,k,v);
