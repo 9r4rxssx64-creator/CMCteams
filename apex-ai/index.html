@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.380",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.381",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7126,6 +7126,80 @@ try{if(typeof window!=='undefined'&&!window._axCredIntegrityScheduled){window._a
   setTimeout(function(){try{if(typeof _axCheckCredentialsIntegrity==='function')_axCheckCredentialsIntegrity();}catch(_){}}, 6000);
   setInterval(function(){try{if(typeof _axCheckCredentialsIntegrity==='function')_axCheckCredentialsIntegrity();}catch(_){}}, 1800000); /* 30 min */
 }}catch(_){}
+
+/* v12.381 - Deep clean credentials (Kevin "il rajoute des symboles aux codes a chaque fois", screenshot "cfut_Yi...caf" avec quotes parasites) */
+function _axDeepCleanCredentials(){
+  var report={ts:Date.now(),scanned:0,cleaned:[],blocked:[],errors:[]};
+  try{
+    var keys=Object.keys(_AX_CRED_PATTERNS||{});
+    keys.forEach(function(k){
+      try{
+        var rawStored=localStorage.getItem(k);if(!rawStored)return;
+        report.scanned++;
+        var raw=rawStored;
+        /* Niveau 1 : decode JSON en boucle (max 5 niveaux pour eviter loop) pour annuler les double/triple JSON.stringify accumules */
+        var depth=0;var prev=null;
+        while(depth<5&&typeof raw==='string'&&raw!==prev){
+          prev=raw;
+          try{var p=JSON.parse(raw);if(typeof p==='string')raw=p;else break;}catch(_){break;}
+          depth++;
+        }
+        if(typeof raw!=='string')raw=String(raw);
+        /* Niveau 2 : applique paste cleaner (smart quotes, NBSP, dash, ZWS) */
+        if(typeof _axCleanPasted==='function')raw=_axCleanPasted(raw);
+        /* Niveau 3 : strip quotes externes restantes (toutes variantes) */
+        for(var i=0;i<3;i++){
+          raw=raw.replace(/^[\"\'\u201C\u201D\u2018\u2019\u00AB\u00BB]+|[\"\'\u201C\u201D\u2018\u2019\u00AB\u00BB]+$/g,'');
+          raw=raw.trim();
+        }
+        /* Niveau 4 : strip whitespace internes pour cles binaires (token/key/secret/pub) */
+        if(/_key$|_token$|_secret$|_pub$|_address$/.test(k))raw=raw.replace(/\s+/g,'');
+        /* Validation finale */
+        var pattern=_AX_CRED_PATTERNS[k];
+        var valid=!pattern||pattern.test(raw);
+        var modified=raw!==rawStored;
+        if(modified){
+          if(valid){
+            /* Ecriture propre via Storage direct (bypass ls() qui re-stringify) */
+            try{
+              /* Use raw setItem (bypass our hook + JSON.stringify de ls()) en preservant juste la chaine brute encapsulee proprement */
+              var s=JSON.stringify(raw);
+              if(window._origSetItemRaw){window._origSetItemRaw.call(localStorage,k,s);}
+              else{localStorage.setItem(k,s);}
+              /* Sync FB pour propagation */
+              try{if(typeof fbWrite==='function'&&typeof fbShouldSync==='function'&&fbShouldSync(k))fbWrite(k,raw);}catch(_){}
+              report.cleaned.push({key:k,depth:depth,from_len:rawStored.length,to_len:s.length});
+            }catch(eW){report.errors.push({key:k,err:String(eW.message||eW).slice(0,80)});}
+          }else{
+            report.blocked.push({key:k,reason:'format_invalide_apres_clean',sample:raw.slice(0,16)+'...'});
+          }
+        }
+      }catch(e){report.errors.push({key:k,err:String(e.message||e).slice(0,100)});}
+    });
+    /* Log + alerte + auto-push */
+    try{var log=lg('ax_deep_clean_log',[]);log.push(report);if(log.length>30)log=log.slice(-30);ls('ax_deep_clean_log',log);}catch(_){}
+    if(report.cleaned.length>0){
+      if(typeof toast==='function')toast(report.cleaned.length+' cle(s) auto-corrigee(s) (quotes/symboles parasites retires)','ok',{force:true,duration:6000});
+    }
+    if(report.blocked.length>0){
+      if(typeof toast==='function')toast(report.blocked.length+' cle(s) corrompue(s) - re-saisis : '+report.blocked.map(function(b){return b.key.replace('ax_','');}).join(', '),'err',{force:true,duration:10000});
+    }
+    /* Auto-push GitHub si ya quelque chose */
+    if((report.cleaned.length>0||report.blocked.length>0)&&typeof _axPushDiagnosticToGitHub==='function'){
+      try{_axPushDiagnosticToGitHub({summary:{ok:report.scanned-report.blocked.length,warn:report.cleaned.length,err:report.blocked.length,total:report.scanned},checks:{deep_clean:report},ts:report.ts,version:typeof APP_VER!=='undefined'?APP_VER:'?'});}catch(_){}
+    }
+  }catch(_){}
+  return report;
+}
+
+/* Auto-run deep clean au boot 4s + sentinelle 1h */
+try{if(typeof window!=='undefined'&&!window._axDeepCleanScheduled){window._axDeepCleanScheduled=true;
+  setTimeout(function(){try{if(typeof _axDeepCleanCredentials==='function'&&typeof axIsAdmin==='function'&&axIsAdmin())_axDeepCleanCredentials();}catch(_){}}, 4000);
+  setInterval(function(){try{if(typeof _axDeepCleanCredentials==='function'&&typeof axIsAdmin==='function'&&axIsAdmin())_axDeepCleanCredentials();}catch(_){}}, 3600000); /* 1h */
+}}catch(_){}
+
+/* Sauvegarde reference setItem original (avant hook v12.380) pour bypass quand on veut */
+try{if(typeof window!=='undefined'&&!window._origSetItemRaw){window._origSetItemRaw=Storage.prototype.setItem;}}catch(_){}
 
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
 
