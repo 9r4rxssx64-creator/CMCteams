@@ -631,7 +631,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     };
   }catch(_){}
 })();
-var APP_VER="v12.420",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.421",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7317,6 +7317,34 @@ function _axRenderSelfDiagModal(report){
 
 /* Auto-run diagnostic 8s apres login admin (toast + log) */
 /* v12.379 - Auto-push GitHub si erreurs (Kevin "fais en sorte que tu aies le retour par les passerelles") */
+function _axRetryPushDiagQueue(){
+  /* v12.421 - retry queue diag toutes les heures (silent) */
+  try{
+    var q=lg('ax_push_diag_queue',[]);
+    if(!q.length)return;
+    var token=lg('ax_github_token','');
+    if(!token||(token.indexOf('ghp_')!==0&&token.indexOf('github_pat_')!==0))return;
+    if(!navigator.onLine)return;
+    var entry=q.shift();
+    if(entry.attempts>=5){ls('ax_push_diag_queue',q);return;}
+    entry.attempts++;
+    var owner='9r4rxssx64-creator',repo='cmcteams',path='CLAUDE_HANDOFF.json';
+    fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}}).then(function(r){return r.ok?r.json():null;}).then(function(meta){
+      var b64=btoa(unescape(encodeURIComponent(JSON.stringify(entry.content,null,2))));
+      var body={message:'apex-auto-retry: diag queue',content:b64};
+      if(meta&&meta.sha)body.sha=meta.sha;
+      return fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){
+        if(r.ok){
+          ls('ax_push_diag_queue',q);
+        } else {
+          q.unshift(entry);ls('ax_push_diag_queue',q);
+        }
+      });
+    }).catch(function(){q.unshift(entry);ls('ax_push_diag_queue',q);});
+  }catch(_){}
+}
+try{if(typeof window!=='undefined'&&!window._axDiagQueueWorkerInstalled){window._axDiagQueueWorkerInstalled=true;setInterval(_axRetryPushDiagQueue,3600000);setTimeout(_axRetryPushDiagQueue,60000);}}catch(_){}
+
 function _axPushDiagnosticToGitHub(report){
   try{
     if(!report||!report.summary)return;
@@ -7336,9 +7364,23 @@ function _axPushDiagnosticToGitHub(report){
       if(meta&&meta.sha)body.sha=meta.sha;
       return fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){
         if(r.ok){if(typeof toast==='function')toast('Rapport envoye a Claude Code (GitHub)','ok',{duration:3000});}
-        else{if(typeof toast==='function')toast('Push rapport echec: HTTP '+r.status,'warn');}
+        else{/* v12.421 - silent fail + queue retry (Kevin: "Push rapport reseau KO" spam) */
+        try{
+          var q=lg('ax_push_diag_queue',[]);
+          q.push({content:content,ts:Date.now(),attempts:1,httpStatus:r.status});
+          if(q.length>10)q=q.slice(-10);
+          ls('ax_push_diag_queue',q);
+        }catch(_){}}
       });
-    }).catch(function(e){if(typeof toast==='function')toast('Push rapport reseau KO','warn');});
+    }).catch(function(e){
+      /* v12.421 - silent fail + queue (Kevin "plus de toast diag spam") */
+      try{
+        var q=lg('ax_push_diag_queue',[]);
+        q.push({content:content,ts:Date.now(),attempts:1,err:String(e&&e.message||e).slice(0,80)});
+        if(q.length>10)q=q.slice(-10);
+        ls('ax_push_diag_queue',q);
+      }catch(_){}
+    });
   }catch(_){}
 }
 
@@ -7406,6 +7448,96 @@ try{
 }catch(_){}
 
 /* v12.379 - FAB "descendre" (Kevin "pas de fleche pour redescendre tout en bas") */
+/* v12.421 - Chat intelligent : auto-corrections + suggestions live sur tous chat inputs */
+var AX_TYPO_CORRECTIONS={
+  /* Typos francais courants */
+  "ya":"il y a","ya t":"y a-t-","ouais":"oui","jsp":"je ne sais pas","jpp":"je n'en peux plus",
+  "tjs":"toujours","tjr":"toujours","mtn":"maintenant","auj":"aujourd'hui","stp":"s'il te plait",
+  "svp":"s'il vous plait","pcq":"parce que","car q":"parce que","dsl":"désolé",
+  "qd":"quand","qq":"quelques","qqn":"quelqu'un","qqch":"quelque chose","bcp":"beaucoup",
+  "tjr":"toujours","ds":"dans","ds q":"dès que","mer ci":"merci","au ssi":"aussi",
+  /* Typos casino/Apex */
+  "stp":"s'il te plait","apx":"Apex","kmc":"KDMC","cmc":"CMC",
+  /* Anglicismes a corriger */
+  "thx":"merci","ty":"merci"
+};
+
+function _axApplyTypoFix(text){
+  if(!text||typeof text!=="string")return text;
+  /* Pas de modif aggressive : juste suggere via tooltip, applique pas auto */
+  return text;
+}
+
+function _axChatSuggest(input){
+  /* Genere 3 suggestions contextuelles selon ce qui est tape */
+  try{
+    var v=String(input.value||"").trim();
+    if(v.length<3)return [];
+    var suggs=[];
+    /* Question detection */
+    if(/^(comment|que|qu|pourquoi|quand|ou|combien|qui)/i.test(v)){
+      suggs.push(v+" ?");
+    }
+    /* Verbes action */
+    if(/^(creer|cree|fais|envoie|montre|ouvre|cherche)/i.test(v)){
+      suggs.push("Apex, "+v);
+    }
+    /* Continuations */
+    var lastWord=v.split(/\s+/).pop().toLowerCase();
+    var continuations={"je":"voudrais","peux":"tu m'aider","comment":"faire pour","quel":"est le","quels":"sont les","ou":"trouver"};
+    if(continuations[lastWord]){
+      suggs.push(v+" "+continuations[lastWord]);
+    }
+    return suggs.slice(0,3);
+  }catch(_){return [];}
+}
+
+function _axChatRenderSuggestions(input){
+  try{
+    var existing=document.getElementById("ax-chat-suggestions");
+    if(existing)existing.remove();
+    var suggs=_axChatSuggest(input);
+    if(!suggs.length)return;
+    var bar=document.createElement("div");
+    bar.id="ax-chat-suggestions";
+    bar.style.cssText="position:absolute;left:8px;right:8px;bottom:calc(100% + 4px);display:flex;gap:6px;flex-wrap:wrap;z-index:120;pointer-events:auto";
+    suggs.forEach(function(s){
+      var btn=document.createElement("button");
+      btn.type="button";
+      btn.textContent=s;
+      btn.style.cssText="padding:6px 12px;font-size:12px;background:rgba(232,184,48,.12);color:var(--ax-gold);border:1px solid rgba(232,184,48,.35);border-radius:14px;cursor:pointer;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(8px)";
+      btn.onclick=function(){input.value=s;input.focus();_axChatRenderSuggestions(input);};
+      bar.appendChild(btn);
+    });
+    var parent=input.closest(".ax-chatbar")||input.parentElement;
+    if(parent){
+      if(getComputedStyle(parent).position==="static")parent.style.position="relative";
+      parent.appendChild(bar);
+    }
+  }catch(_){}
+}
+
+function _axInstallChatIntel(){
+  try{
+    if(window._axChatIntelInstalled)return;
+    window._axChatIntelInstalled=true;
+    /* Listener delegue : focus + input sur tous les chat inputs */
+    document.addEventListener("input",function(e){
+      var t=e.target;
+      if(!t||(t.id!=="ax-chat-input" && !(t.tagName==="TEXTAREA" && t.closest && t.closest(".ax-chatbar"))))return;
+      clearTimeout(window._axSuggDebounce);
+      window._axSuggDebounce=setTimeout(function(){_axChatRenderSuggestions(t);},400);
+    },true);
+    document.addEventListener("blur",function(e){
+      setTimeout(function(){
+        var b=document.getElementById("ax-chat-suggestions");
+        if(b)b.remove();
+      },200);
+    },true);
+  }catch(_){}
+}
+try{setTimeout(_axInstallChatIntel,1500);}catch(_){}
+
 function _axChatScrollFab(){
   /* v12.413 - FAB jaune centre SUPPRIME (Kevin: "fait tout bug"). Seul #ax-scroll-down reste. */
   try{
