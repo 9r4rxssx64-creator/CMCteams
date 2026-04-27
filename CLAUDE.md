@@ -81,6 +81,19 @@ Pas de "Apex 10/10 partout" si en réalité 5/10 P0 corrigés.
 
 Si réponse "je crois que oui" → vérifier d'abord. Si "j'ai pas testé" → tester ou annoncer que c'est non testé.
 
+### 9. Tout fix de bug bumpe OBLIGATOIREMENT APP_VER + CACHE_VERSION sw.js
+
+❌ **JAMAIS** : corriger un bug en gardant la même version (`v12.365b` qui reste APP_VER="v12.365")
+✅ **TOUJOURS** : `Edit APP_VER` ET `Edit sw.js CACHE_VERSION` dans le MÊME commit que le fix
+
+**Cas vécu v12.365b → v12.366** : code corrigé localement mais APP_VER + CACHE_VERSION non bumpés. Sur iPhone Kevin a fait "🔄 Force MAJ" → SW Safari a vu CACHE_VERSION identique → cache servait l'ancien code cassé → "Apex ne marche encore plus, j'ai forcé la Maj mais toujours v365". 1h perdue + frustration Kevin "personne fait son travail".
+
+**Sentinelle obligatoire** : `.github/workflows/sw-cache-sync.yml` rattrape le drift automatiquement, mais ne pas s'y fier — bump à la main DANS le commit du fix, sinon le push intermédiaire reste cassé.
+
+**Test mental** : *"Avant push, j'ai bumpé APP_VER ? J'ai bumpé CACHE_VERSION ? Les deux numéros matchent ?"*
+
+Si réponse non aux 3 → re-bumper avant push.
+
 ---
 
 ## 🎯 RÈGLE PERMANENTE — CADRES UNIFIÉS + VISUEL PIT POUR COMPÉTENCES (Kevin 2026-04-26, ABSOLUE)
