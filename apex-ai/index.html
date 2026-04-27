@@ -316,7 +316,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 .ax-chatbar .ax-plus-btn:hover,.ax-chatbar .ax-plus-btn:active{background:var(--ax-bg-input);color:var(--ax-text);border-color:var(--ax-gold)}
 .ax-chatbar .ax-stop-btn{transition:none;animation:none}
 /* v12.372 — Bouton flottant "Nouveau message" style Claude Code (apparait quand user scrolle haut) */
-#ax-scroll-down{position:absolute;bottom:84px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--ax-bg-input);border:1px solid var(--ax-border);color:var(--ax-text);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:50;font-size:18px;transition:opacity .15s ease,transform .15s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#ax-scroll-down{position:absolute;bottom:110px;right:14px;width:44px;height:44px;border-radius:50%;background:rgba(20,28,48,.95);border:1.5px solid var(--ax-gold);color:var(--ax-gold);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:120;font-size:22px;font-weight:700;transition:opacity .15s ease,transform .15s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 #ax-scroll-down.visible{display:flex}
 #ax-scroll-down:hover,#ax-scroll-down:active{transform:translateY(-2px);background:var(--ax-gold);color:#0a0a0f;border-color:var(--ax-gold)}
 #ax-scroll-down .ax-scroll-badge{position:absolute;top:-4px;right:-4px;background:#ff5858;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px;min-width:14px;text-align:center}
@@ -546,7 +546,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.412",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.413",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3165,22 +3165,24 @@ function axCredTestLive(k){
   }catch(e){return Promise.resolve({ok:false,msg:String(e)});}
 }
 
-/* v12.369 — Boot auto-test des cles critiques apres 5s (sans bloquer login) */
+/* v12.413 — Boot auto-test ETENDU : toutes cles saisies (admin uniquement, espacement 2s, silencieux) */
 function _axCredHealthBootCheck(){
   try{
     if(!K||!K.user)return;
-    var critical=["ax_api_key","ax_openai_key","ax_openrouter_key","ax_github_token"];
+    if(typeof axIsAdmin==="function"&&!axIsAdmin())return; /* admin only */
+    /* Liste etendue : toutes cles testables live */
+    var testable=["ax_api_key","ax_openai_key","ax_openrouter_key","ax_gemini_key","ax_groq_key","ax_github_token","ax_telegram_token","ax_perplexity_key"];
     var statuses=lg("ax_credential_status",{});
     var staleMs=86400000; /* 24h */
     var queue=[];
-    critical.forEach(function(k){
+    testable.forEach(function(k){
       if(!localStorage.getItem(k))return;
       var s=statuses[k];
       if(!s||s.status!=="green"||(Date.now()-s.ts)>staleMs)queue.push(k);
     });
     if(!queue.length)return;
-    /* Espacé 1.5s entre chaque pour pas saturer reseau iPhone */
-    queue.forEach(function(k,i){setTimeout(function(){try{if(typeof axCredTestLive==="function")axCredTestLive(k);}catch(_){}},i*1500);});
+    /* Espace 2s entre chaque pour ne pas saturer reseau iPhone */
+    queue.forEach(function(k,i){setTimeout(function(){try{if(typeof axCredTestLive==="function")axCredTestLive(k);}catch(_){}},i*2000);});
   }catch(_){}
 }
 
@@ -7035,6 +7037,12 @@ try{
 
 /* v12.379 - FAB "descendre" (Kevin "pas de fleche pour redescendre tout en bas") */
 function _axChatScrollFab(){
+  /* v12.413 - FAB jaune centre SUPPRIME (Kevin: "fait tout bug"). Seul #ax-scroll-down reste. */
+  try{
+    var fab=document.getElementById('ax-chat-fab-down');
+    if(fab){fab.style.display='none';try{fab.remove();}catch(_){}}
+    return;
+  }catch(_){return;}
   try{
     var sc=document.getElementById('ax-chat-scroll');
     if(!sc){var fab=document.getElementById('ax-chat-fab-down');if(fab)fab.style.display='none';return;}
@@ -9109,12 +9117,26 @@ function _axScrollDownVisible(visible,unread){
   }catch(_){}
 }
 function _axScrollToBottomSmooth(){
+  /* v12.413 - Triple-scroll force + scrollIntoView dernier message + retry 300ms (DOM peut grandir) */
   try{
     var el=document.getElementById("ax-chat-scroll");if(!el)return;
-    el.scrollTo({top:el.scrollHeight,behavior:"smooth"});
-    _axScrollState.atBottom=true;_axScrollState.unread=0;
-    setTimeout(function(){_axScrollDownVisible(false,0);},250);
-  }catch(_){var el=document.getElementById("ax-chat-scroll");if(el)el.scrollTop=el.scrollHeight;}
+    var doScroll=function(){
+      try{
+        el.scrollTop=el.scrollHeight+9999;
+        var msgs=el.querySelectorAll(".ax-msg");
+        if(msgs.length){msgs[msgs.length-1].scrollIntoView({behavior:"auto",block:"end"});}
+      }catch(_){}
+    };
+    doScroll();
+    requestAnimationFrame(doScroll);
+    setTimeout(doScroll,150);
+    setTimeout(doScroll,300);
+    setTimeout(function(){
+      try{el.scrollTo({top:el.scrollHeight,behavior:"smooth"});}catch(_){}
+      _axScrollState.atBottom=true;_axScrollState.unread=0;
+      _axScrollDownVisible(false,0);
+    },450);
+  }catch(_){var el=document.getElementById("ax-chat-scroll");if(el)el.scrollTop=el.scrollHeight+9999;}
 }
 function _axInstallScrollDownWatcher(){
   try{
@@ -12576,13 +12598,13 @@ var _focusMode=false;
 function axToggleFocusMode(){_focusMode=!_focusMode;if(_focusMode){document.body.style.filter="grayscale(0.3)";axPomodoroStart(25);toast("Mode Focus active — 25min de concentration","ok");axWakeLockAcquire();}else{document.body.style.filter="";axPomodoroStop();axWakeLockRelease();toast("Mode Focus desactive","info");}dc();}
 
 // === MODULE: Statistiques conversation ===
-function _convStats(){if(K.messages.length<3)return"";var userMsgs=K.messages.filter(function(m){return m.role==="user";});var botMsgs=K.messages.filter(function(m){return m.role==="assistant";});var totalChars=K.messages.reduce(function(a,m){return a+(typeof m.content==="string"?m.content.length:0);},0);return'<div style="display:flex;gap:6px;padding:10px 14px;font-size:11px;color:var(--ax-text-dim);justify-content:center;align-items:center;background:rgba(232,184,48,.03);border-bottom:1px solid rgba(232,184,48,.08);flex-wrap:wrap"><span style="background:rgba(232,184,48,.1);color:var(--ax-gold);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDCAC '+K.messages.length+'</span><span style="background:rgba(90,168,255,.1);color:var(--ax-blue);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDC64 '+userMsgs.length+'</span><span style="background:rgba(76,208,128,.1);color:var(--ax-green);padding:3px 10px;border-radius:12px;font-weight:600">\u2726 '+botMsgs.length+'</span><span style="background:rgba(168,120,255,.1);color:var(--ax-purple);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDCDD ~'+Math.round(totalChars/1000)+'K</span></div>';}
+function _convStats(){/* v12.413 - cache si chat actif (Kevin: vue trop petite) */if(K.messages.length<8)return "";if(K.messages.length>=3)return "";var userMsgs=K.messages.filter(function(m){return m.role==="user";});var botMsgs=K.messages.filter(function(m){return m.role==="assistant";});var totalChars=K.messages.reduce(function(a,m){return a+(typeof m.content==="string"?m.content.length:0);},0);return'<div style="display:flex;gap:6px;padding:10px 14px;font-size:11px;color:var(--ax-text-dim);justify-content:center;align-items:center;background:rgba(232,184,48,.03);border-bottom:1px solid rgba(232,184,48,.08);flex-wrap:wrap"><span style="background:rgba(232,184,48,.1);color:var(--ax-gold);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDCAC '+K.messages.length+'</span><span style="background:rgba(90,168,255,.1);color:var(--ax-blue);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDC64 '+userMsgs.length+'</span><span style="background:rgba(76,208,128,.1);color:var(--ax-green);padding:3px 10px;border-radius:12px;font-weight:600">\u2726 '+botMsgs.length+'</span><span style="background:rgba(168,120,255,.1);color:var(--ax-purple);padding:3px 10px;border-radius:12px;font-weight:600">\uD83D\uDCDD ~'+Math.round(totalChars/1000)+'K</span></div>';}
 
 // === MODULE: Themes visuels casino ===
 var THEMES={dark:{name:"Sombre",bg:"#08080f",gold:"#c9a227"},light:{name:"Clair",bg:"#f5f5f0",gold:"#9a7a10"},casino:{name:"Casino Royal",bg:"#0a0a1a",gold:"#ffd700"},ocean:{name:"Ocean Monaco",bg:"#0a1628",gold:"#40c4e0"},sunset:{name:"Coucher de soleil",bg:"#1a0a0a",gold:"#ff6b35"},emerald:{name:"Emeraude",bg:"#0a1a0a",gold:"#50c878"}};
 
 // === MODULE: Raccourcis rapides accueil ===
-function _quickActions(){var actions=[{fn:"axDailyBriefing()",ic:"\u2600\uFE0F",lb:"Briefing",cl:"var(--ax-gold)"},{fn:"axToggleFocusMode()",ic:"\uD83C\uDFAF",lb:"Focus",cl:"var(--ax-red)"},{fn:"axSetAmbiance('cinema')",ic:"\uD83C\uDFAC",lb:"Cinema",cl:"var(--ax-purple)"},{fn:"axSetAmbiance('nuit')",ic:"\uD83C\uDF19",lb:"Nuit",cl:"var(--ax-blue)"},{fn:"axSetAmbiance('detente')",ic:"\uD83C\uDFB5",lb:"Detente",cl:"var(--ax-green)"}];return'<div style="display:flex;gap:8px;overflow-x:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+actions.map(function(a){return'<button class="ax-btn ax-btn-outline" onclick="'+a.fn+'" style="font-size:13px;padding:10px 16px;white-space:nowrap;flex-shrink:0;border-radius:20px;border-color:'+a.cl+';color:'+a.cl+';font-weight:600">'+a.ic+' '+a.lb+'</button>';}).join("")+'</div>';}
+function _quickActions(){/* v12.413 - cache si chat actif (Kevin: vue trop petite) */if(K&&K.messages&&K.messages.length>0)return "";var actions=[{fn:"axDailyBriefing()",ic:"\u2600\uFE0F",lb:"Briefing",cl:"var(--ax-gold)"},{fn:"axToggleFocusMode()",ic:"\uD83C\uDFAF",lb:"Focus",cl:"var(--ax-red)"},{fn:"axSetAmbiance('cinema')",ic:"\uD83C\uDFAC",lb:"Cinema",cl:"var(--ax-purple)"},{fn:"axSetAmbiance('nuit')",ic:"\uD83C\uDF19",lb:"Nuit",cl:"var(--ax-blue)"},{fn:"axSetAmbiance('detente')",ic:"\uD83C\uDFB5",lb:"Detente",cl:"var(--ax-green)"}];return'<div style="display:flex;gap:8px;overflow-x:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+actions.map(function(a){return'<button class="ax-btn ax-btn-outline" onclick="'+a.fn+'" style="font-size:13px;padding:10px 16px;white-space:nowrap;flex-shrink:0;border-radius:20px;border-color:'+a.cl+';color:'+a.cl+';font-weight:600">'+a.ic+' '+a.lb+'</button>';}).join("")+'</div>';}
 function _showWorldClocks(){_showModal('<h2>\uD83C\uDF0D Horloges mondiales</h2>'+_worldClocks());}
 
 // === MODULE: Raccourcis messages rapides ===
