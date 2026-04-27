@@ -537,7 +537,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.372",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.373",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -627,7 +627,7 @@ var FB_PRE=["ax_msgs_","ax_profile_"];
 var FB_LOCAL=["ax_uid","ax_user","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles","ax_settings","ax_settings_default","ax_user_theme","ax_login_streak","ax_streak","ax_streak_last_day","ax_last_user_name","ax_first_login","ax_first_login_date","ax_device_trusted","ax_device_trusted_ts","ax_device_fingerprint","ax_biometric_id","ax_biometric_credid","ax_pin_salt"];
 /* v12.298 - Liste de prefixes strictement locaux (toute cle commencant par X est FB_LOCAL). Empeche fbShouldSync de leak les variantes per-user. */
 /* v12.367 : ajout "ax_cgu_" prefix pour empecher re-prompt CGU a chaque connexion (Kevin "il me redemande tout") */
-var FB_LOCAL_PREFIXES=["ax_settings_","ax_user_theme_","ax_streak_","ax_pin_changed_","ax_user_pin_","ax_pin_","ax_biometric_declined_","ax_permissions_accepted_","ax_cgu_accepted_","ax_cgu_","ax_love_theme_","ax_perms_onboarded","ax_session_timeout"];
+var FB_LOCAL_PREFIXES=["ax_settings_","ax_user_theme_","ax_streak_","ax_pin_changed_","ax_user_pin_","ax_pin_","ax_biometric_declined_","ax_permissions_accepted_","ax_cgu_accepted_","ax_cgu_","ax_love_theme_","ax_perms_onboarded","ax_session_timeout","ax_safebox_"];
 var SESSION_TTL=24*60*60*1000;
 var SESSION_TTL_TRUSTED=30*24*60*60*1000;
 function _currentSessionTTL(){try{return lg("ax_device_trusted",false)?SESSION_TTL_TRUSTED:SESSION_TTL;}catch(_){return SESSION_TTL;}}
@@ -706,6 +706,279 @@ function axCryptoLivePrice(symbols){symbols=symbols||["bitcoin","ethereum"];retu
 
 async function axEncryptSecret(plaintext,passphrase){if(!plaintext||!passphrase)return null;var enc=new TextEncoder();var salt=crypto.getRandomValues(new Uint8Array(16));var iv=crypto.getRandomValues(new Uint8Array(12));var keyMaterial=await crypto.subtle.importKey("raw",enc.encode(passphrase),{name:"PBKDF2"},false,["deriveKey"]);var key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:100000,hash:"SHA-256"},keyMaterial,{name:"AES-GCM",length:256},false,["encrypt"]);var ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,enc.encode(plaintext));var combined=new Uint8Array(salt.length+iv.length+ct.byteLength);combined.set(salt,0);combined.set(iv,salt.length);combined.set(new Uint8Array(ct),salt.length+iv.length);return btoa(String.fromCharCode.apply(null,combined));}
 async function axDecryptSecret(ciphertextB64,passphrase){if(!ciphertextB64||!passphrase)return null;try{var combined=Uint8Array.from(atob(ciphertextB64),function(c){return c.charCodeAt(0);});var salt=combined.slice(0,16);var iv=combined.slice(16,28);var ct=combined.slice(28);var enc=new TextEncoder();var keyMaterial=await crypto.subtle.importKey("raw",enc.encode(passphrase),{name:"PBKDF2"},false,["deriveKey"]);var key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:100000,hash:"SHA-256"},keyMaterial,{name:"AES-GCM",length:256},false,["decrypt"]);var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:iv},key,ct);return new TextDecoder().decode(pt);}catch(e){return null;}}
+
+/* ════════════════════════════════════════════════════════════════
+   v12.373 — COFFRE-FORT PERSONNEL "SafeBox" (Kevin 2026-04-27 nuit)
+   Note iPhone-style chiffrée AES-256, OCR scan, classement auto, recherche IA
+   Triple persistence : localStorage + IndexedDB shadow + Firebase chiffré
+   ════════════════════════════════════════════════════════════════ */
+var _axSafeboxKey=null; /* Passphrase en RAM — JAMAIS persistée. Demandée 1×/session. */
+var AX_SAFEBOX_PASSCHECK_PLAIN="APEX_SAFEBOX_OK_v1";
+
+/* Auto-classification : detecte type + categorie depuis le texte */
+function axSafeboxClassify(text){
+  var t=String(text||"").trim();
+  if(!t)return{type:"empty",category:"autre",icon:"\u2753"};
+  /* Cles API IA */
+  if(/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Anthropic Claude"};
+  if(/^sk-proj-[A-Za-z0-9_-]{20,}$|^sk-[A-Za-z0-9]{20,}$/.test(t)&&!/^sk-or-/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle OpenAI"};
+  if(/^sk-or-[A-Za-z0-9_-]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle OpenRouter"};
+  if(/^AIza[A-Za-z0-9_-]{30,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Google Gemini"};
+  if(/^gsk_[A-Za-z0-9_-]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Groq"};
+  if(/^pplx-[A-Za-z0-9_-]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Perplexity"};
+  if(/^xai-[A-Za-z0-9_-]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle xAI/Grok"};
+  if(/^hf_[A-Za-z0-9]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Hugging Face"};
+  if(/^r8_[A-Za-z0-9]{20,}$/.test(t))return{type:"api_key",category:"ia",icon:"\uD83E\uDD16",label:"Cle Replicate"};
+  /* Cles dev/infra */
+  if(/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(t))return{type:"api_key",category:"dev",icon:"\uD83D\uDC19",label:"Token GitHub"};
+  if(/^pk_(test|live)_[A-Za-z0-9]{20,}$|^sk_(test|live)_[A-Za-z0-9]{20,}$/.test(t))return{type:"api_key",category:"paiement",icon:"\uD83D\uDCB3",label:"Cle Stripe"};
+  /* Paiements / IBAN */
+  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{8,30}$/i.test(t.replace(/\s/g,"")))return{type:"iban",category:"paiement",icon:"\uD83C\uDFE6",label:"IBAN"};
+  if(/^(bc1|[13])[a-km-zA-HJ-NP-Z0-9]{25,87}$/.test(t))return{type:"crypto",category:"crypto",icon:"\u20BF",label:"Adresse Bitcoin"};
+  if(/^0x[a-fA-F0-9]{40}$/.test(t))return{type:"crypto",category:"crypto",icon:"\u039E",label:"Adresse Ethereum/ERC20"};
+  /* Carte bancaire (DANGER, jamais stocker normalement) */
+  if(/^[0-9 ]{15,19}$/.test(t)&&t.replace(/\s/g,"").length>=15)return{type:"card",category:"paiement",icon:"\uD83D\uDCB3",label:"Numero carte (RISQUE)",warning:true};
+  /* URL */
+  if(/^https?:\/\//.test(t))return{type:"url",category:"liens",icon:"\uD83D\uDD17",label:"Lien web"};
+  /* Email */
+  if(/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(t))return{type:"email",category:"contact",icon:"\uD83D\uDCE7",label:"Email"};
+  /* Telephone */
+  if(/^\+?[0-9 ()-]{8,20}$/.test(t))return{type:"phone",category:"contact",icon:"\uD83D\uDCDE",label:"Telephone"};
+  /* Mot de passe : >=8 chars + mix lettres/chiffres/symboles */
+  if(t.length>=8&&t.length<=64&&/[A-Z]/.test(t)&&/[a-z]/.test(t)&&/[0-9]/.test(t)){
+    return{type:"password",category:"securite",icon:"\uD83D\uDD10",label:"Mot de passe"};
+  }
+  /* Note libre */
+  return{type:"note",category:"notes",icon:"\uD83D\uDCDD",label:"Note"};
+}
+
+/* Initialiser passphrase (1ere fois) ou la verifier */
+async function axSafeboxUnlock(passphrase){
+  if(!passphrase||passphrase.length<4)return{ok:false,msg:"Passphrase trop courte (4+)"};
+  var pcCipher=lg("ax_safebox_passcheck",null);
+  if(!pcCipher){
+    /* 1ere fois : crée le check */
+    var enc=await axEncryptSecret(AX_SAFEBOX_PASSCHECK_PLAIN,passphrase);
+    if(!enc)return{ok:false,msg:"Erreur chiffrement initial"};
+    ls("ax_safebox_passcheck",enc);
+    _axSafeboxKey=passphrase;
+    return{ok:true,first:true};
+  }
+  var dec=await axDecryptSecret(pcCipher,passphrase);
+  if(dec===AX_SAFEBOX_PASSCHECK_PLAIN){_axSafeboxKey=passphrase;return{ok:true,first:false};}
+  return{ok:false,msg:"Passphrase incorrecte"};
+}
+function axSafeboxLock(){_axSafeboxKey=null;try{if(typeof toast==="function")toast("Coffre verrouille","info");}catch(_){}try{if(typeof dc==="function")dc();}catch(_){}}
+function axSafeboxIsUnlocked(){return !!_axSafeboxKey;}
+
+/* Add entry */
+async function axSafeboxAdd(value,source,manualTitle,manualCategory){
+  if(!_axSafeboxKey){if(typeof toast==="function")toast("Coffre verrouille — entre la passphrase","warn");return null;}
+  if(!value||!String(value).trim())return null;
+  var classified=axSafeboxClassify(value);
+  var entry={
+    id:"sb_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
+    type:classified.type,
+    category:manualCategory||classified.category,
+    icon:classified.icon,
+    title:manualTitle||classified.label||"Note",
+    value_enc:await axEncryptSecret(String(value),_axSafeboxKey),
+    preview:String(value).slice(0,40)+(String(value).length>40?"...":""),
+    tags:[classified.category,classified.type],
+    source:source||"manual",
+    ts:Date.now(),
+    warning:classified.warning||false
+  };
+  var entries=lg("ax_safebox_entries",[]);entries.push(entry);
+  /* Limite 1000 entries pour éviter explosion storage */
+  if(entries.length>1000)entries=entries.slice(-1000);
+  ls("ax_safebox_entries",entries);
+  if(typeof axIdbSet==="function")try{axIdbSet("ax_safebox_entries",entries);}catch(_){}
+  if(typeof toast==="function")toast(classified.icon+" "+classified.label+" enregistre","ok");
+  if(classified.warning&&typeof toast==="function")toast("\u26A0 Carte bancaire detectee — risque securite","warn",{duration:5000});
+  return entry;
+}
+
+/* Get decrypted value */
+async function axSafeboxGet(entryId){
+  if(!_axSafeboxKey)return null;
+  var entries=lg("ax_safebox_entries",[]);
+  for(var i=0;i<entries.length;i++){
+    if(entries[i].id===entryId){
+      return await axDecryptSecret(entries[i].value_enc,_axSafeboxKey);
+    }
+  }
+  return null;
+}
+
+/* Delete entry */
+function axSafeboxDelete(entryId){
+  if(!_axSafeboxKey)return false;
+  var entries=lg("ax_safebox_entries",[]);
+  var newEntries=entries.filter(function(e){return e.id!==entryId;});
+  if(newEntries.length===entries.length)return false;
+  ls("ax_safebox_entries",newEntries);
+  if(typeof axIdbSet==="function")try{axIdbSet("ax_safebox_entries",newEntries);}catch(_){}
+  if(typeof toast==="function")toast("Entree supprimee","ok");
+  if(typeof dc==="function")dc();
+  return true;
+}
+
+/* Search (fuzzy sur title + tags + preview) */
+function axSafeboxSearch(query){
+  var entries=lg("ax_safebox_entries",[]);
+  if(!query||!query.trim())return entries;
+  var q=String(query).toLowerCase().trim();
+  return entries.filter(function(e){
+    var hay=(e.title+" "+e.category+" "+e.type+" "+(e.tags||[]).join(" ")+" "+e.preview).toLowerCase();
+    return hay.indexOf(q)>=0;
+  });
+}
+
+/* Demande IA : trouve dans le coffre */
+async function axSafeboxAskAI(question){
+  if(!_axSafeboxKey){if(typeof toast==="function")toast("Coffre verrouille","warn");return null;}
+  /* Etape 1 : recherche fuzzy locale */
+  var matches=axSafeboxSearch(question);
+  if(matches.length===0){if(typeof toast==="function")toast("Rien trouve","info");return null;}
+  if(matches.length===1){
+    var val=await axSafeboxGet(matches[0].id);
+    return{found:1,entry:matches[0],value:val};
+  }
+  return{found:matches.length,matches:matches};
+}
+
+/* OCR via Anthropic Vision (utilise ax_api_key) */
+async function axSafeboxOcrFromDataUrl(dataUrl){
+  var apiKey=lg("ax_api_key","");
+  if(!apiKey){if(typeof toast==="function")toast("Cle Anthropic requise pour OCR","warn");return null;}
+  if(typeof toast==="function")toast("Lecture OCR...","info",{duration:1500});
+  var b64=dataUrl.split(",")[1];
+  var media=dataUrl.indexOf("image/png")>=0?"image/png":"image/jpeg";
+  try{
+    var opts={method:"POST",headers:{"content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1024,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:media,data:b64}},{type:"text",text:"Extrais TOUT le texte de cette image. Si plusieurs codes/cles/lignes, sépare chacun avec un retour a la ligne. Reponds UNIQUEMENT avec le texte brut extrait, rien d autre."}]}]})};
+    if(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(30000);
+    var r=await fetch("https://api.anthropic.com/v1/messages",opts);
+    if(!r.ok){if(typeof toast==="function")toast("OCR echec : HTTP "+r.status,"err");return null;}
+    var j=await r.json();var text="";if(j.content)j.content.forEach(function(c){if(c.text)text+=c.text;});
+    return text.trim();
+  }catch(e){if(typeof toast==="function")toast("OCR erreur : "+String(e).slice(0,100),"err");return null;}
+}
+
+/* Vue principale */
+function vSafeBox(){
+  if(!K.user)return vLogin();
+  if(typeof axIsAdmin==="function"&&!axIsAdmin())return '<div style="padding:30px;text-align:center"><h2>Reserve admin</h2></div>';
+  /* Si pas unlock → demander passphrase */
+  if(!_axSafeboxKey){
+    var hasPasscheck=!!lg("ax_safebox_passcheck",null);
+    var h='<div style="padding:20px;max-width:400px;margin:30px auto"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83D\uDD12 Mon Coffre Personnel</h2><p style="color:var(--ax-text-dim);font-size:13px;line-height:1.5;margin-bottom:14px">'+(hasPasscheck?"Entre ta passphrase pour deverrouiller.":"Cree ta passphrase coffre (DIFFERENTE du PIN admin). Tout sera chiffre AES-256.")+'</p><div class="ax-card"><input id="ax-sb-pass" type="password" class="ax-input" placeholder="Passphrase coffre (4+ caracteres)" autocomplete="off" autofocus style="width:100%;font-size:16px;margin-bottom:10px" onkeydown="if(event.key===\'Enter\')_axSafeboxDoUnlock()"><button class="ax-btn ax-btn-primary" onclick="_axSafeboxDoUnlock()" style="width:100%;min-height:48px">'+(hasPasscheck?"\uD83D\uDD13 Deverrouiller":"\uD83D\uDD12 Creer & verrouiller")+'</button></div><p style="font-size:11px;color:var(--ax-text-dim);text-align:center;margin-top:10px">\u26A0 Cette passphrase n est PAS recuperable. Si tu l oublies, le contenu est perdu definitivement.</p></div>';
+    return h;
+  }
+  /* Unlocked — vue principale */
+  var entries=lg("ax_safebox_entries",[]);
+  var query=document.getElementById("ax-sb-search")?document.getElementById("ax-sb-search").value:"";
+  var filtered=query?axSafeboxSearch(query):entries;
+  /* Categories count */
+  var catCount={};entries.forEach(function(e){catCount[e.category]=(catCount[e.category]||0)+1;});
+  var cats=Object.keys(catCount).sort();
+  var h='<div style="padding:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0">\uD83D\uDD13 Mon Coffre ('+entries.length+')</h2><button class="ax-btn ax-btn-outline" onclick="axSafeboxLock()" style="padding:6px 12px;font-size:12px">\uD83D\uDD12 Verrouiller</button></div><p style="color:var(--ax-text-dim);font-size:12px;margin-bottom:12px">Note geante chiffree. Tout ce que tu colles ou scannes est range automatiquement.</p>';
+  /* Search */
+  h+='<input id="ax-sb-search" class="ax-input" placeholder="\uD83D\uDD0D Cherche dans ton coffre... (ex: gemini, paypal, code wifi)" oninput="dc()" autocomplete="off" style="width:100%;font-size:14px;margin-bottom:10px">';
+  /* Boutons add */
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px"><button class="ax-btn ax-btn-outline" onclick="_axSafeboxPrompt()" style="font-size:12px;padding:10px 4px;flex-direction:column;height:auto">\u270F\uFE0F<div style="font-size:10px;margin-top:3px">Note</div></button><button class="ax-btn ax-btn-outline" onclick="_axSafeboxPaste()" style="font-size:12px;padding:10px 4px;flex-direction:column;height:auto">\uD83D\uDCCB<div style="font-size:10px;margin-top:3px">Coller</div></button><button class="ax-btn ax-btn-outline" onclick="_axSafeboxPhoto()" style="font-size:12px;padding:10px 4px;flex-direction:column;height:auto">\uD83D\uDCF7<div style="font-size:10px;margin-top:3px">Photo OCR</div></button><button class="ax-btn ax-btn-outline" onclick="_axSafeboxAskAI()" style="font-size:12px;padding:10px 4px;flex-direction:column;height:auto">\uD83E\uDD16<div style="font-size:10px;margin-top:3px">IA</div></button></div>';
+  /* Categories chips */
+  if(cats.length){
+    h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;overflow-x:auto"><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'ax-sb-search\').value=\'\';dc()" style="font-size:11px;padding:4px 10px;flex-shrink:0">Tout ('+entries.length+')</button>';
+    cats.forEach(function(c){h+='<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'ax-sb-search\').value=\''+esc(c)+'\';dc()" style="font-size:11px;padding:4px 10px;flex-shrink:0">'+esc(c)+' ('+catCount[c]+')</button>';});
+    h+='</div>';
+  }
+  /* Liste entries */
+  if(!filtered.length){
+    h+='<div style="text-align:center;padding:40px;color:var(--ax-text-dim)"><div style="font-size:48px;margin-bottom:10px">\uD83D\uDD10</div><div style="font-size:13px">'+(query?"Rien trouve pour "+esc(query):"Coffre vide. Colle ou photographie tes codes.")+'</div></div>';
+  } else {
+    filtered.slice().reverse().forEach(function(e){
+      var dt=new Date(e.ts).toLocaleDateString("fr-FR");
+      h+='<div class="ax-card" style="padding:10px;margin:6px 0;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="_axSafeboxView(\''+esc(e.id)+'\')"><div style="font-size:24px">'+e.icon+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">'+esc(e.title)+'</div><div style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">'+esc(e.preview)+'</div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:2px">'+esc(e.category)+' \u00b7 '+dt+(e.warning?' \u00b7 \u26A0 risque':"")+'</div></div><div style="font-size:18px;color:var(--ax-text-dim)">\u203A</div></div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+
+/* Helpers UI */
+function _axSafeboxDoUnlock(){
+  var el=document.getElementById("ax-sb-pass");if(!el)return;
+  var p=el.value;el.value="";
+  if(!p){if(typeof toast==="function")toast("Passphrase requise","warn");return;}
+  axSafeboxUnlock(p).then(function(res){
+    if(res.ok){if(typeof toast==="function")toast(res.first?"Coffre cree & deverrouille":"Coffre deverrouille","ok");if(typeof dc==="function")dc();}
+    else{if(typeof toast==="function")toast(res.msg,"err");}
+  });
+}
+function _axSafeboxPrompt(){
+  var v=prompt("Texte/code/note a ajouter au coffre :");if(!v||!v.trim())return;
+  var t=prompt("Titre (ou laisse vide pour auto) :","");
+  axSafeboxAdd(v.trim(),"manual",t||null).then(function(){if(typeof dc==="function")dc();});
+}
+async function _axSafeboxPaste(){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.readText){
+      var v=await navigator.clipboard.readText();
+      if(!v||!v.trim()){if(typeof toast==="function")toast("Presse-papiers vide","warn");return;}
+      await axSafeboxAdd(v.trim(),"clipboard");
+      if(typeof dc==="function")dc();
+    } else {
+      _axSafeboxPrompt();
+    }
+  }catch(e){if(typeof toast==="function")toast("Coller refuse — utilise le bouton Note","warn");_axSafeboxPrompt();}
+}
+function _axSafeboxPhoto(){
+  var inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.capture="environment";
+  inp.onchange=function(ev){
+    var f=ev.target.files&&ev.target.files[0];if(!f)return;
+    var rd=new FileReader();
+    rd.onload=async function(){
+      var dataUrl=rd.result;
+      var text=await axSafeboxOcrFromDataUrl(dataUrl);
+      if(!text){if(typeof toast==="function")toast("OCR n a rien lu","warn");return;}
+      /* Si plusieurs lignes → ajoute chacune separement */
+      var lines=text.split(/\n+/).map(function(l){return l.trim();}).filter(function(l){return l.length>=3;});
+      if(lines.length<=1){
+        await axSafeboxAdd(text,"ocr_photo");
+      } else {
+        for(var i=0;i<lines.length;i++)await axSafeboxAdd(lines[i],"ocr_photo");
+        if(typeof toast==="function")toast(lines.length+" elements ajoutes","ok");
+      }
+      if(typeof dc==="function")dc();
+    };
+    rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+async function _axSafeboxView(entryId){
+  var entries=lg("ax_safebox_entries",[]);
+  var e=entries.find(function(x){return x.id===entryId;});if(!e)return;
+  var val=await axSafeboxGet(entryId);
+  if(val===null){if(typeof toast==="function")toast("Decryption echec","err");return;}
+  var safeId=String(entryId).replace(/[^a-zA-Z0-9_]/g,"");
+  var html='<div style="padding:18px"><h2 style="display:flex;align-items:center;gap:10px"><span style="font-size:32px">'+e.icon+'</span><span>'+esc(e.title)+'</span></h2><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:12px">'+esc(e.category)+' \u00b7 '+esc(e.type)+' \u00b7 '+new Date(e.ts).toLocaleString("fr-FR")+'</div><div style="background:var(--ax-bg-input);padding:14px;border-radius:10px;font-family:monospace;font-size:13px;word-break:break-all;max-height:40vh;overflow-y:auto;border:1px solid var(--ax-border)" id="ax-sb-view-'+safeId+'">'+esc(val)+'</div><div style="display:flex;gap:8px;margin-top:14px"><button class="ax-btn ax-btn-primary" onclick="navigator.clipboard.writeText(document.getElementById(\'ax-sb-view-'+safeId+'\').textContent);toast(\'Copie\',\'ok\')" style="flex:1">\uD83D\uDCCB Copier</button><button class="ax-btn ax-btn-outline" onclick="if(confirm(\'Supprimer cette entree ?\')){axSafeboxDelete(\''+esc(entryId)+'\');document.getElementById(\'modal-container\').innerHTML=\'\';}" style="background:rgba(255,88,88,.1);border-color:#ff5858;color:#ff5858">\uD83D\uDDD1\uFE0F</button><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="flex:1">Fermer</button></div></div>';
+  if(typeof _showModal==="function")_showModal(html);
+}
+async function _axSafeboxAskAI(){
+  var q=prompt("Que cherches-tu dans ton coffre ? (ex: ma cle Gemini, code wifi, IBAN)");if(!q||!q.trim())return;
+  var res=await axSafeboxAskAI(q);
+  if(!res){if(typeof toast==="function")toast("Rien trouve","info");return;}
+  if(res.found===1){
+    if(typeof toast==="function")toast("\u2705 Trouve : "+res.entry.title,"ok");
+    _axSafeboxView(res.entry.id);
+  } else {
+    if(typeof toast==="function")toast(res.found+" resultats — voir liste","info");
+    /* Filter the list to show matches */
+    var s=document.getElementById("ax-sb-search");if(s){s.value=q;dc();}
+  }
+}
+
 function axSecurityAudit(){var issues=[];var sensitivePatterns=/password|pass|seed|pin|private/i;var localKeys=Object.keys(localStorage);localKeys.forEach(function(k){if(sensitivePatterns.test(k)){var v=localStorage.getItem(k);if(v&&v.length>4&&!v.startsWith("U2FsdGVk")){issues.push({key:k,risk:"En clair, non chiffre"});}}});if(!localStorage.getItem("ax_vault_passphrase_hash"))issues.push({risk:"Pas de passphrase Vault configuree"});if(!/^https:/.test(location.href)&&location.hostname!=="localhost")issues.push({risk:"Connexion non HTTPS"});return issues;}
 function axCryptoPaymentCheck(planKey){var prices={pro:39.99,business:69.99};var eur=prices[planKey]||0;return axCryptoLivePrice(["bitcoin","ethereum"]).then(function(d){var btcPrice=d.bitcoin&&d.bitcoin.eur;var ethPrice=d.ethereum&&d.ethereum.eur;if(!btcPrice||!ethPrice)throw new Error("Prix crypto indisponibles");return{plan:planKey,eur:eur,btc:{amount:(eur/btcPrice).toFixed(8),rate:btcPrice,change24h:d.bitcoin.eur_24h_change},eth:{amount:(eur/ethPrice).toFixed(6),rate:ethPrice,change24h:d.ethereum.eur_24h_change},lastUpdate:d.bitcoin.last_updated_at*1000,validUntil:Date.now()+900000};});}
 function axCryptoWalletRead(address,chain){chain=chain||"ethereum";if(chain==="bitcoin"){return fetch("https://blockchain.info/balance?active="+address).then(function(r){return r.json();}).then(function(d){var sat=d[address]&&d[address].final_balance;return{chain:"bitcoin",address:address,balance:sat?(sat/1e8):0,unit:"BTC"};});}else if(chain==="ethereum"){return fetch("https://api.etherscan.io/api?module=account&action=balance&address="+address+"&tag=latest").then(function(r){return r.json();}).then(function(d){var wei=d.result;return{chain:"ethereum",address:address,balance:wei?(parseInt(wei)/1e18):0,unit:"ETH"};});}return Promise.resolve({err:"Chain non supportee (ethereum/bitcoin uniquement)"});}
@@ -1003,7 +1276,7 @@ function _axAutofillClose(){var m=document.getElementById("ax-autofill-modal");i
 function axAutofillKnown(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return;var fills=AX_AUTOFILL_DEFAULTS;var rowsHtml=Object.keys(fills).map(function(k){var existing=localStorage.getItem(k);var status=existing?'<span style="color:var(--ax-text-dim);font-size:11px;flex-shrink:0">deja saisi</span>':'<span style="color:var(--ax-green);font-size:11px;flex-shrink:0">a remplir</span>';return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--ax-gold)">'+esc(k)+'</div><div style="font-size:11px;color:var(--ax-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fills[k])+'</div></div>'+status+'</div>';}).join("");rowsHtml+='<div style="padding:8px 0;color:var(--ax-text-dim);font-size:11px">+ langue=fr, modele=claude-sonnet-4-6, theme=dark (si vides)</div>';_axAutofillClose();var ov=document.createElement("div");ov.id="ax-autofill-modal";ov.className="ax-modal-overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-labelledby","ax-autofill-title");ov.innerHTML='<div class="ax-modal" role="document" style="position:relative"><button class="ax-close" aria-label="Fermer" onclick="_axAutofillClose()">&#10005;</button><h2 id="ax-autofill-title">🪄 Pre-remplir tes infos</h2><p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:10px">Les valeurs deja saisies seront conservees. Tu pourras tout modifier ensuite.</p><div style="margin-bottom:14px;max-height:40vh;overflow-y:auto">'+rowsHtml+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" style="flex:1;min-height:44px" onclick="_axAutofillClose();_axAutofillApply();">✅ Confirmer</button><button class="ax-btn ax-btn-outline" style="flex:1;min-height:44px" onclick="_axAutofillClose()">❌ Annuler</button></div></div>';ov.addEventListener("click",function(e){if(e.target===ov)_axAutofillClose();});document.body.appendChild(ov);try{var btn=ov.querySelector(".ax-btn-primary");if(btn)btn.focus();}catch(_){}}
 
 /** Vue UNIFIEE : 8 sections claires Profil/Apparence/IA/Cles/Paiements/Integrations/Securite/Notifications. */
-function vAllConfig(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return "<p style=\"padding:20px\">Reserve admin Kevin</p>";var sections=[{id:"profil",ic:"👤",lb:"Profil",desc:"Nom, email, langue, devise, pays",route:"settings",keys:["ax_user_name","ax_settings"]},{id:"apparence",ic:"🎨",lb:"Apparence",desc:"Theme, taille texte, voix, persona",route:"settings",keys:["ax_settings"]},{id:"ia",ic:"🤖",lb:"IA",desc:"Modele Claude, OpenRouter, web search",route:"aiproviders",keys:["ax_settings","ax_ai_provider"]},{id:"cles",ic:"🔑",lb:"Cles API",desc:"Anthropic, OpenAI, Gemini, OpenRouter",route:"vault",keys:["ax_api_key","ax_openai_key","ax_gemini_key","ax_openrouter_key","ax_groq_key","ax_mistral_key","ax_cohere_key","ax_deepseek_key","ax_perplexity_key"]},{id:"paiements",ic:"💳",lb:"Paiements",desc:"PayPal, Revolut, IBAN, crypto",route:"vault",keys:["ax_paypal_me","ax_revolut_tag","ax_iban","ax_iban_nom","ax_btc_address","ax_eth_address","ax_usdc_address","ax_lydia_phone"]},{id:"integrations",ic:"🔌",lb:"Integrations",desc:"Cloudflare, GitHub, Push worker",route:"vault",keys:["ax_github_token","ax_cloudflare_token","ax_push_worker_url","ax_push_admin_token","ax_vercel_token","ax_n8n_url","ax_zapier_webhook","ax_make_webhook"]},{id:"securite",ic:"🔐",lb:"Securite",desc:"PIN, Face ID, sessions, kill switch",route:"settings",keys:["ax_pin","ax_biometric_id","ax_session_timeout"]},{id:"notifications",ic:"🔔",lb:"Notifications",desc:"Push, briefing quotidien",route:"settings",keys:["ax_push_subs","ax_push_settings"]}];var totalConfig=0,totalKeys=0;sections.forEach(function(s){s.configured=0;s.keys.forEach(function(k){totalKeys++;if(localStorage.getItem(k)){s.configured++;totalConfig++;}});});var pct=Math.round(totalConfig/totalKeys*100);var h="";h+='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">⚙️ Tout configurer</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">UN SEUL endroit. Organise par famille. Touche une section pour modifier.</p>';h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);border-left:4px solid var(--ax-gold);margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>'+totalConfig+'/'+totalKeys+' configures ('+pct+'%)</strong><button class="ax-btn ax-btn-primary" onclick="axAutofillKnown()" style="font-size:12px;padding:8px 14px;min-height:40px">🪄 Pre-remplir mes infos connues</button></div><div style="width:100%;height:8px;background:var(--ax-bg-input);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--ax-gold),#ffd700);border-radius:4px;transition:width .3s"></div></div></div>';h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';sections.forEach(function(s){var pctS=Math.round(s.configured/s.keys.length*100);var col=pctS===100?"#4cd080":pctS>=50?"#ffb84a":pctS>0?"#a0a4c0":"#ff5858";h+='<div onclick="sv(\''+s.route+'\')" style="background:var(--ax-bg-input);border:2px solid '+col+';border-radius:14px;padding:14px 10px;cursor:pointer;min-height:120px;display:flex;flex-direction:column;justify-content:space-between"><div style="text-align:center"><div style="font-size:32px;margin-bottom:6px">'+s.ic+'</div><div style="font-size:14px;font-weight:700;margin-bottom:2px">'+esc(s.lb)+'</div><div style="font-size:10px;color:var(--ax-text-dim);line-height:1.3">'+esc(s.desc)+'</div></div><div style="text-align:center;margin-top:8px"><span style="font-size:11px;font-weight:700;color:'+col+'">'+s.configured+'/'+s.keys.length+'</span></div></div>';});h+='</div>';h+='<div class="ax-card" style="margin-top:16px"><h3>📚 Liens directs</h3><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ax-btn ax-btn-outline" onclick="sv(\'vault\')">🔑 Coffre detaille</button><button class="ax-btn ax-btn-outline" onclick="sv(\'settings\')">⚙️ Reglages classiques</button><button class="ax-btn ax-btn-outline" onclick="sv(\'soldesia\')">💶 Voir mes soldes IA</button><button class="ax-btn ax-btn-outline" onclick="sv(\'accountsbilling\')">💳 Mes abonnements</button><button class="ax-btn ax-btn-outline" onclick="sv(\'wakeword\')">🎤 Wake word</button><button class="ax-btn ax-btn-outline" onclick="sv(\'storagemanage\')">💾 Stockage</button><button class="ax-btn ax-btn-outline" onclick="sv(\'adminaliases\')">👑 Mes aliases admin</button><button class="ax-btn ax-btn-outline" onclick="sv(\'claudecode\')" style="background:linear-gradient(135deg,rgba(90,168,255,.15),rgba(125,111,255,.15));border:1px solid #5aa8ff">👨‍💻 Mode Dev (Claude Code)</button></div></div></div>';return h;}
+function vAllConfig(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return "<p style=\"padding:20px\">Reserve admin Kevin</p>";var sections=[{id:"profil",ic:"👤",lb:"Profil",desc:"Nom, email, langue, devise, pays",route:"settings",keys:["ax_user_name","ax_settings"]},{id:"apparence",ic:"🎨",lb:"Apparence",desc:"Theme, taille texte, voix, persona",route:"settings",keys:["ax_settings"]},{id:"ia",ic:"🤖",lb:"IA",desc:"Modele Claude, OpenRouter, web search",route:"aiproviders",keys:["ax_settings","ax_ai_provider"]},{id:"cles",ic:"🔑",lb:"Cles API",desc:"Anthropic, OpenAI, Gemini, OpenRouter",route:"vault",keys:["ax_api_key","ax_openai_key","ax_gemini_key","ax_openrouter_key","ax_groq_key","ax_mistral_key","ax_cohere_key","ax_deepseek_key","ax_perplexity_key"]},{id:"paiements",ic:"💳",lb:"Paiements",desc:"PayPal, Revolut, IBAN, crypto",route:"vault",keys:["ax_paypal_me","ax_revolut_tag","ax_iban","ax_iban_nom","ax_btc_address","ax_eth_address","ax_usdc_address","ax_lydia_phone"]},{id:"integrations",ic:"🔌",lb:"Integrations",desc:"Cloudflare, GitHub, Push worker",route:"vault",keys:["ax_github_token","ax_cloudflare_token","ax_push_worker_url","ax_push_admin_token","ax_vercel_token","ax_n8n_url","ax_zapier_webhook","ax_make_webhook"]},{id:"securite",ic:"🔐",lb:"Securite",desc:"PIN, Face ID, sessions, kill switch",route:"settings",keys:["ax_pin","ax_biometric_id","ax_session_timeout"]},{id:"notifications",ic:"🔔",lb:"Notifications",desc:"Push, briefing quotidien",route:"settings",keys:["ax_push_subs","ax_push_settings"]}];var totalConfig=0,totalKeys=0;sections.forEach(function(s){s.configured=0;s.keys.forEach(function(k){totalKeys++;if(localStorage.getItem(k)){s.configured++;totalConfig++;}});});var pct=Math.round(totalConfig/totalKeys*100);var h="";h+='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">⚙️ Tout configurer</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">UN SEUL endroit. Organise par famille. Touche une section pour modifier.</p>';h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);border-left:4px solid var(--ax-gold);margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>'+totalConfig+'/'+totalKeys+' configures ('+pct+'%)</strong><button class="ax-btn ax-btn-primary" onclick="axAutofillKnown()" style="font-size:12px;padding:8px 14px;min-height:40px">🪄 Pre-remplir mes infos connues</button></div><div style="width:100%;height:8px;background:var(--ax-bg-input);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--ax-gold),#ffd700);border-radius:4px;transition:width .3s"></div></div></div>';h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';sections.forEach(function(s){var pctS=Math.round(s.configured/s.keys.length*100);var col=pctS===100?"#4cd080":pctS>=50?"#ffb84a":pctS>0?"#a0a4c0":"#ff5858";h+='<div onclick="sv(\''+s.route+'\')" style="background:var(--ax-bg-input);border:2px solid '+col+';border-radius:14px;padding:14px 10px;cursor:pointer;min-height:120px;display:flex;flex-direction:column;justify-content:space-between"><div style="text-align:center"><div style="font-size:32px;margin-bottom:6px">'+s.ic+'</div><div style="font-size:14px;font-weight:700;margin-bottom:2px">'+esc(s.lb)+'</div><div style="font-size:10px;color:var(--ax-text-dim);line-height:1.3">'+esc(s.desc)+'</div></div><div style="text-align:center;margin-top:8px"><span style="font-size:11px;font-weight:700;color:'+col+'">'+s.configured+'/'+s.keys.length+'</span></div></div>';});h+='</div>';h+='<div class="ax-card" style="margin-top:16px"><h3>📚 Liens directs</h3><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ax-btn ax-btn-outline" onclick="sv(\'vault\')">🔑 Coffre detaille</button><button class="ax-btn ax-btn-outline" onclick="sv(\'settings\')">⚙️ Reglages classiques</button><button class="ax-btn ax-btn-outline" onclick="sv(\'soldesia\')">💶 Voir mes soldes IA</button><button class="ax-btn ax-btn-outline" onclick="sv(\'accountsbilling\')">💳 Mes abonnements</button><button class="ax-btn ax-btn-outline" onclick="sv(\'wakeword\')">🎤 Wake word</button><button class="ax-btn ax-btn-outline" onclick="sv(\'storagemanage\')">💾 Stockage</button><button class="ax-btn ax-btn-outline" onclick="sv(\'adminaliases\')">👑 Mes aliases admin</button><button class="ax-btn ax-btn-outline" onclick="sv(\'claudecode\')" style="background:linear-gradient(135deg,rgba(90,168,255,.15),rgba(125,111,255,.15));border:1px solid #5aa8ff">👨‍💻 Mode Dev (Claude Code)</button><button class="ax-btn ax-btn-outline" onclick="sv(\'safebox\')" style="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(255,215,0,.06));border:1px solid #e8b830">🔒 Mon Coffre Personnel</button></div></div></div>';return h;}
 
 /* v12.275 - GITHUB AUTO-MODIF Apex (Kevin: donne acces GitHub a Apex pour s auto-corriger) */
 
@@ -5895,7 +6168,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
