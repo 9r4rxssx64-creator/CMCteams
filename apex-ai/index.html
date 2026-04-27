@@ -695,7 +695,84 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },2500);
   }catch(_){}
 })();
-var APP_VER="v12.423",ADMIN_ID="kdmc_admin";
+/* v12.424 - Boot cleanup agressif si quota iPhone > 70% (Kevin: "stockage iPhone plein") */
+(function(){
+  try{
+    if(window._axBoot424CleanupDone)return;
+    window._axBoot424CleanupDone=true;
+    setTimeout(function(){
+      try{
+        /* Estime quota localStorage utilise */
+        var total=0;
+        for(var i=0;i<localStorage.length;i++){
+          var k=localStorage.key(i);
+          if(k){total+=(k+(localStorage.getItem(k)||"")).length;}
+        }
+        var totalKb=Math.round(total/1024);
+        if(totalKb<3500)return; /* < 70% de 5120 KB iOS quota */
+        /* Trim agressif des logs volumineux */
+        var caps={
+          "ax_audit":80,
+          "ax_security_log":40,
+          "ax_unhandled_rejection":20,
+          "ax_click_failures":15,
+          "ax_err_log":40,
+          "ax_silent_log":40,
+          "ax_view_changes":15,
+          "ax_persistence_test_log":10,
+          "ax_daily_health_history":10,
+          "ax_telemetry_in":30,
+          "ax_telemetry_out":20,
+          "ax_browser_history":50,
+          "ax_camera_scans":15,
+          "ax_voice_unknown_attempts":20,
+          "ax_handoff_journal":30,
+          "ax_data_enrichment_log":30,
+          "ax_data_enrichment_dupes":20,
+          "ax_unblock_log":15,
+          "ax_silent_self_log":40,
+          "ax_silent_audit":30,
+          "ax_self_fix_attempts":15,
+          "ax_voice_history":30,
+          "ax_traces":40,
+          "ax_user_unknown_attempts":15,
+          "ax_silent_self_audit":30,
+          "ax_post_paste_log":20,
+          "ax_paste_log":30,
+          "ax_smart_camera_log":20,
+          "ax_session_log":30,
+          "ax_app_state_changes":20,
+          "ax_input_focused_log":10,
+          "ax_recovered_log":15,
+          "ax_repair_log":15,
+          "ax_kw_failed":20,
+          "ax_kw_success":30,
+          "ax_unknown_user_attempts":15,
+          "ax_msg_actions":40,
+          "ax_persistent_memory":120,
+          "ax_lessons_learned_struct":80
+        };
+        var trimmed=0;
+        Object.keys(caps).forEach(function(key){
+          try{
+            var v=lg(key,null);
+            if(Array.isArray(v) && v.length>caps[key]){
+              var trimToLen=caps[key];
+              var sliced=v.slice(-trimToLen);
+              ls(key,sliced);
+              trimmed+=v.length-trimToLen;
+            }
+          }catch(_){}
+        });
+        if(trimmed>0){
+          if(typeof toast==="function")toast("Stockage nettoye : "+trimmed+" entrees retirees","ok",{duration:2500});
+          if(typeof axSecurityLog==="function")axSecurityLog("v424_boot_cleanup",totalKb+" Kb -> trimmed "+trimmed);
+        }
+      }catch(_){}
+    },4000);
+  }catch(_){}
+})();
+var APP_VER="v12.424",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
