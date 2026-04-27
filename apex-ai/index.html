@@ -299,7 +299,13 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 @keyframes axTyping{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
 .ax-skeleton{background:linear-gradient(90deg,var(--ax-bg-input) 25%,rgba(255,255,255,.06) 50%,var(--ax-bg-input) 75%);background-size:400px 100%;animation:axShimmer 1.5s infinite linear;border-radius:var(--ax-r-sm);height:16px;margin:6px 0}
 .ax-btn:active{animation:axBounce .15s var(--ax-ease)}
-.ax-typing{display:flex;gap:4px;padding:6px 12px;align-items:center}.ax-typing span{width:4px;height:4px;border-radius:50%;background:var(--ax-text-dim);opacity:.6;animation:axTypingDot 1.4s infinite ease-in-out}
+.ax-typing{display:flex;gap:4px;padding:6px 12px;align-items:center}
+/* v12.379 - Inputs Coffre lisibles (Kevin "trop petit la case, agrandi") */
+.ax-vault-input,.ax-cred-input,input[id^="ax-vault-"],input[type="password"][class*="ax"]{font-family:ui-monospace,'SF Mono','Menlo',monospace !important;font-size:14px !important;min-height:52px !important;padding:14px 16px !important;width:100% !important;letter-spacing:.2px;word-break:break-all;overflow-wrap:anywhere}
+.ax-vault-input:focus,.ax-cred-input:focus{outline:2px solid var(--ax-gold,#c9a227);outline-offset:1px}
+/* v12.379 - FAB descendre fluide */
+#ax-chat-fab-down{transition:opacity .25s ease,transform .15s ease}
+#ax-chat-fab-down:active{transform:scale(.92)}.ax-typing span{width:4px;height:4px;border-radius:50%;background:var(--ax-text-dim);opacity:.6;animation:axTypingDot 1.4s infinite ease-in-out}
 .ax-typing span:nth-child(2){animation-delay:.2s}.ax-typing span:nth-child(3){animation-delay:.4s}
 @keyframes axTypingDot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:.9;transform:scale(1)}}
 /* v12.368 — chatbar style Claude.ai : layout aligne, padding cohérent, pas de pulse send */
@@ -537,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.378",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.379",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6902,7 +6908,126 @@ function _axRenderSelfDiagModal(report){
 }
 
 /* Auto-run diagnostic 8s apres login admin (toast + log) */
-try{if(typeof window!=='undefined'&&!window._axBootDiagScheduled){window._axBootDiagScheduled=true;setTimeout(function(){try{if(typeof axIsAdmin==='function'&&axIsAdmin()&&typeof axRunSelfDiagnostic==='function'){axRunSelfDiagnostic({showModal:false});}}catch(_){}}, 8000);}}catch(_){}
+/* v12.379 - Auto-push GitHub si erreurs (Kevin "fais en sorte que tu aies le retour par les passerelles") */
+function _axPushDiagnosticToGitHub(report){
+  try{
+    if(!report||!report.summary)return;
+    var token=lg('ax_github_token','');
+    if(!token||(token.indexOf('ghp_')!==0&&token.indexOf('github_pat_')!==0))return;
+    var owner='9r4rxssx64-creator',repo='cmcteams',path='CLAUDE_HANDOFF.json';
+    /* Get current sha */
+    fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}}).then(function(r){return r.ok?r.json():null;}).then(function(meta){
+      var content={
+        last_diagnostic:report,
+        ts:Date.now(),
+        version:typeof APP_VER!=='undefined'?APP_VER:'?',
+        notes_for_claude:'Diagnostic auto-pousse par Apex apres detection erreurs/warnings runtime. '+report.summary.err+' err, '+report.summary.warn+' warn, '+report.summary.ok+' ok.'
+      };
+      var b64=btoa(unescape(encodeURIComponent(JSON.stringify(content,null,2))));
+      var body={message:'apex-auto: diagnostic v'+content.version+' err='+report.summary.err+' warn='+report.summary.warn,content:b64};
+      if(meta&&meta.sha)body.sha=meta.sha;
+      return fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){
+        if(r.ok){if(typeof toast==='function')toast('Rapport envoye a Claude Code (GitHub)','ok',{duration:3000});}
+        else{if(typeof toast==='function')toast('Push rapport echec: HTTP '+r.status,'warn');}
+      });
+    }).catch(function(e){if(typeof toast==='function')toast('Push rapport reseau KO','warn');});
+  }catch(_){}
+}
+
+/* Auto-run diagnostic apres login admin (8s) + apres MAJ detectee */
+try{if(typeof window!=='undefined'&&!window._axBootDiagScheduled){window._axBootDiagScheduled=true;setTimeout(function(){try{
+  if(typeof axIsAdmin==='function'&&axIsAdmin()&&typeof axRunSelfDiagnostic==='function'){
+    var report=axRunSelfDiagnostic({showModal:false});
+    /* Si erreurs OU warnings -> modal + auto-push GitHub */
+    setTimeout(function(){try{
+      var s=report&&report.summary;
+      if(s&&(s.err>0||s.warn>2)){
+        if(typeof _axRenderSelfDiagModal==='function')_axRenderSelfDiagModal(report);
+        if(typeof _axPushDiagnosticToGitHub==='function')_axPushDiagnosticToGitHub(report);
+      }
+    }catch(_){}},800);
+  }
+}catch(_){}}, 8000);}}catch(_){}
+
+/* v12.379 - Paste cleaner global (Kevin "guillemets parasites quand je colle") */
+function _axCleanPasted(text){
+  if(!text)return '';
+  return String(text)
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g,'"')   /* smart double quotes -> " */
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g,"'")   /* smart single quotes -> ' */
+    .replace(/[\u00A0\u2007\u202F]/g,' ')                  /* NBSP variants -> space */
+    .replace(/[\u2013\u2014]/g,'-')                          /* en/em dash -> - */
+    .replace(/[\u200B-\u200D\uFEFF]/g,'')                  /* zero-width chars */
+    .replace(/\r\n?/g,'\n')                                /* CRLF -> LF */
+    .replace(/^[\s\u00A0]+|[\s\u00A0]+$/g,'');             /* trim */
+}
+
+/* Intercepteur global paste : nettoie automatiquement tous inputs/textarea Apex */
+try{
+  if(typeof document!=='undefined'&&!window._axPasteInstalled){
+    window._axPasteInstalled=true;
+    document.addEventListener('paste',function(e){
+      try{
+        var t=e.target;
+        if(!t||(t.tagName!=='INPUT'&&t.tagName!=='TEXTAREA'))return;
+        var raw=(e.clipboardData||window.clipboardData).getData('text');
+        if(!raw)return;
+        var clean=_axCleanPasted(raw);
+        if(clean===raw)return;
+        e.preventDefault();
+        var start=t.selectionStart||0;var end=t.selectionEnd||0;
+        var v=t.value||'';
+        t.value=v.slice(0,start)+clean+v.slice(end);
+        var newPos=start+clean.length;
+        try{t.selectionStart=t.selectionEnd=newPos;}catch(_){}
+        t.dispatchEvent(new Event('input',{bubbles:true}));
+        if(typeof toast==='function')toast('Colle nettoye (guillemets/espaces)','ok',{duration:1500});
+      }catch(_){}
+    },true);
+  }
+}catch(_){}
+
+/* v12.379 - FAB "descendre" (Kevin "pas de fleche pour redescendre tout en bas") */
+function _axChatScrollFab(){
+  try{
+    var sc=document.getElementById('ax-chat-scroll');
+    if(!sc){var fab=document.getElementById('ax-chat-fab-down');if(fab)fab.style.display='none';return;}
+    var dist=sc.scrollHeight-sc.scrollTop-sc.clientHeight;
+    var fab=document.getElementById('ax-chat-fab-down');
+    var shouldShow=dist>250;
+    if(!fab&&shouldShow){
+      fab=document.createElement('button');
+      fab.id='ax-chat-fab-down';
+      fab.setAttribute('aria-label','Descendre au dernier message');
+      fab.style.cssText='position:fixed;right:14px;bottom:140px;width:44px;height:44px;border-radius:50%;background:var(--ax-gold,#c9a227);color:#000;border:none;font-size:22px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:300;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1';
+      fab.textContent='\u2193';
+      fab.onclick=function(){var s=document.getElementById('ax-chat-scroll');if(s){s.scrollTo({top:s.scrollHeight,behavior:'smooth'});}};
+      document.body.appendChild(fab);
+    }
+    if(fab){fab.style.display=shouldShow?'flex':'none';}
+  }catch(_){}
+}
+
+/* Hook scroll listener + auto-update FAB */
+try{
+  if(typeof document!=='undefined'&&!window._axChatScrollListenerInstalled){
+    window._axChatScrollListenerInstalled=true;
+    document.addEventListener('scroll',function(e){
+      if(e.target&&e.target.id==='ax-chat-scroll')_axChatScrollFab();
+    },true);
+    setInterval(_axChatScrollFab,1000);
+  }
+}catch(_){}
+
+/* v12.379 - Lancement diagnostic manuel (bouton admin) */
+function axShowDiagnostic(){
+  try{
+    if(typeof axRunSelfDiagnostic!=='function'){if(typeof toast==='function')toast('Diagnostic indispo','warn');return;}
+    if(typeof toast==='function')toast('Lancement diagnostic complet...','info',{duration:1500});
+    var report=axRunSelfDiagnostic({showModal:true});
+    return report;
+  }catch(e){if(typeof toast==='function')toast('Erreur diag : '+String(e.message||e).slice(0,80),'err');}
+}
 
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
 
@@ -7182,7 +7307,7 @@ function _axInstallScrollDownWatcher(){
     }
   }catch(_){}
 }
-/* v12.330 scroll force amélioré */function _scrollChatBottom(force){var _f=function(){var el=document.getElementById("ax-chat-scroll");if(!el)return;if(!force){var distFromBottom=el.scrollHeight-el.scrollTop-el.clientHeight;/* v12.326 — Claude.ai-style : si user a scrolle vers le haut (>150px), on respecte sa position. Si pres du bas (<150px), suit le stream. */if(distFromBottom>150)return;}el.scrollTop=el.scrollHeight-el.clientHeight;};_f();/* v12.326 — un seul scroll, plus de double-tap aggressif */if(force)setTimeout(_f,50);}
+/* v12.379 - Scroll auto smooth + respecte user scroll up + FAB sync */function _scrollChatBottom(force){var _f=function(){var el=document.getElementById("ax-chat-scroll");if(!el)return;if(!force){var dist=el.scrollHeight-el.scrollTop-el.clientHeight;if(dist>250)return;/* user a scrolle haut, on respecte */}el.scrollTo({top:el.scrollHeight,behavior:force?"auto":"smooth"});try{if(typeof _axChatScrollFab==="function")_axChatScrollFab();}catch(_){}};_f();if(force)setTimeout(_f,50);}
 
 var PROMPT_LIBRARY=[{cat:"Productivite",prompts:["Redige un email professionnel pour...","Resume ce texte en 3 points cles","Traduis en anglais : ","Cree une liste de taches pour..."]},{cat:"Finance",prompts:["Analyse le cours de l'action AAPL","Calcule les interets composes de 10000 EUR a 5% sur 10 ans","Simule un pret immobilier de 300000 EUR a 3.5%","Compare ETF World vs S&P 500"]},{cat:"Code",prompts:["Ecris une fonction JavaScript qui...","Explique ce code : ","Corrige ce bug : ","Cree une API REST pour..."]},{cat:"Creative",prompts:["Ecris un post LinkedIn sur...","Genere 5 idees de contenu pour...","Redige une newsletter sur...","Cree un script video de 60 secondes sur..."]}];
 function axShowPromptLib(){var h='<h2>\uD83D\uDCDA Bibliotheque de prompts</h2>';PROMPT_LIBRARY.forEach(function(cat){h+='<div class="ax-card" style="margin:8px 0"><h3>'+esc(cat.cat)+'</h3>';cat.prompts.forEach(function(p){h+='<div class="ax-setting-row" style="cursor:pointer" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';sv(\'chat\');setTimeout(function(){var el=document.getElementById(\'ax-chat-input\');if(el){el.value=\''+esc(p).replace(/'/g,"\\'")+'\';el.focus();}},100)"><span style="font-size:13px">'+esc(p)+'</span><span style="color:var(--ax-text-dim)">\u2192</span></div>';});h+="</div>";});_showModal(h);}
