@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.389",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.391",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7512,22 +7512,71 @@ function axIsCoffreEssential(k){
 function _axScanTextForCredentials(text){
   if(!text || typeof text !== "string") return [];
   var found = [];
+  /* v12.391 - Liste etendue 50+ patterns (Kevin "complete au maximum") - ORDRE IMPORTANT : plus specifique avant generique */
   var patterns = [
+    /* === IA Providers (specifiques en premier pour eviter overlap sk-) === */
     {regex:/\b(sk-ant-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_api_key", label:"Anthropic Claude"},
-    {regex:/\b(gsk_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_groq_key", label:"Groq Cloud (gratuit)"},
+    {regex:/\b(sk-or-v1-[A-Za-z0-9_\-]{20,})\b/g, target:"ax_openrouter_key", label:"OpenRouter"},
     {regex:/\b(sk-or-[A-Za-z0-9_\-]{20,})\b/g, target:"ax_openrouter_key", label:"OpenRouter"},
-    {regex:/\b(AIza[A-Za-z0-9_\-]{30,})\b/g, target:"ax_gemini_key", label:"Google Gemini"},
+    {regex:/\b(gsk_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_groq_key", label:"Groq Cloud (gratuit)"},
+    {regex:/\b(AIzaSy[A-Za-z0-9_\-]{30,})\b/g, target:"ax_gemini_key", label:"Google Gemini"},
+    {regex:/\b(AIza[A-Za-z0-9_\-]{30,})\b/g, target:"ax_google_key", label:"Google API"},
     {regex:/\b(xai-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_grok_key", label:"xAI Grok"},
     {regex:/\b(pplx-[A-Za-z0-9_\-]{30,})\b/g, target:"ax_perplexity_key", label:"Perplexity"},
-    {regex:/\b(ghp_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_github_token", label:"GitHub PAT"},
-    {regex:/\b(github_pat_[A-Za-z0-9_\-]{60,})\b/g, target:"ax_github_token", label:"GitHub Fine-grained PAT"},
+    {regex:/\b(co-[A-Za-z0-9]{40,})\b/g, target:"ax_cohere_key", label:"Cohere"},
     {regex:/\b(hf_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_huggingface_key", label:"HuggingFace"},
     {regex:/\b(r8_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_replicate_key", label:"Replicate"},
-    {regex:/\b(pk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_pub", label:"Stripe Public"},
-    {regex:/\b(sk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_secret", label:"Stripe Secret"},
-    {regex:/\b([0-9]{8,10}:[A-Za-z0-9_\-]{30,})\b/g, target:"ax_telegram_token", label:"Telegram Bot"},
-    {regex:/\b(0x[a-fA-F0-9]{40})\b/g, target:"ax_eth_address", label:"Adresse ETH"},
-    {regex:/\b(bc1[a-z0-9]{20,80})\b/g, target:"ax_btc_address", label:"Adresse BTC"}
+    /* OpenAI generique (sk- mais pas sk-ant ni sk-or) - dernier */
+    {regex:/\b(sk-proj-[A-Za-z0-9_\-]{40,})\b/g, target:"ax_openai_key", label:"OpenAI (project)"},
+    {regex:/\b(sk-svcacct-[A-Za-z0-9_\-]{40,})\b/g, target:"ax_openai_key", label:"OpenAI (service)"},
+    /* === Dev / Cloud === */
+    {regex:/\b(ghp_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_github_token", label:"GitHub PAT classic"},
+    {regex:/\b(github_pat_[A-Za-z0-9_\-]{60,})\b/g, target:"ax_github_token", label:"GitHub Fine-grained PAT"},
+    {regex:/\b(gho_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_github_token", label:"GitHub OAuth"},
+    {regex:/\b(glpat-[A-Za-z0-9_\-]{20,})\b/g, target:"ax_gitlab_token", label:"GitLab PAT"},
+    {regex:/\b([A-Za-z0-9]{40})\b(?=.*cloudflare)/gi, target:"ax_cloudflare_token", label:"Cloudflare Token"},
+    {regex:/\b(cfut_[A-Za-z0-9_\-]{30,})\b/g, target:"ax_cloudflare_token", label:"Cloudflare User Token"},
+    /* === Paiements === */
+    {regex:/\b(pk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_pub", label:"Stripe Public Key"},
+    {regex:/\b(sk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_secret", label:"Stripe Secret Key"},
+    {regex:/\b(rk_(test|live)_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_restricted", label:"Stripe Restricted"},
+    {regex:/\b(whsec_[A-Za-z0-9_\-]{20,})\b/g, target:"ax_stripe_webhook", label:"Stripe Webhook Secret"},
+    {regex:/\bpaypal\.me\/([A-Za-z0-9_\-]{3,30})\b/gi, target:"ax_paypal_me", label:"PayPal.me handle"},
+    {regex:/\brevolut\.me\/([A-Za-z0-9_\-]{3,30})\b/gi, target:"ax_revolut_tag", label:"Revolut tag"},
+    {regex:/\b([A-Z]{2}\d{2}\s?[A-Z0-9\s]{16,30})\b/g, target:"ax_iban", label:"IBAN"},
+    /* === Crypto === */
+    {regex:/\b(0x[a-fA-F0-9]{40})\b/g, target:"ax_eth_address", label:"Adresse ETH/USDC ERC-20"},
+    {regex:/\b(bc1[a-z0-9]{20,80})\b/g, target:"ax_btc_address", label:"Adresse BTC bech32"},
+    {regex:/\b([13][a-km-zA-HJ-NP-Z0-9]{25,34})\b/g, target:"ax_btc_address", label:"Adresse BTC legacy"},
+    /* === Communications === */
+    {regex:/\b([0-9]{8,10}:[A-Za-z0-9_\-]{30,})\b/g, target:"ax_telegram_token", label:"Telegram Bot Token"},
+    {regex:/\b(SG\.[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{40,})\b/g, target:"ax_sendgrid_key", label:"SendGrid"},
+    {regex:/\b(AC[a-f0-9]{32})\b/gi, target:"ax_twilio_sid", label:"Twilio SID"},
+    {regex:/\bservice_([A-Za-z0-9]{8,})\b/g, target:"ax_emailjs_serviceid", label:"EmailJS Service ID"},
+    {regex:/\btemplate_([A-Za-z0-9]{8,})\b/g, target:"ax_emailjs_templateid", label:"EmailJS Template ID"},
+    /* === URLs Webhooks === */
+    {regex:/(https?:\/\/hooks\.zapier\.com\/hooks\/catch\/[A-Za-z0-9\/]+)/gi, target:"ax_zapier_webhook", label:"Zapier Webhook"},
+    {regex:/(https?:\/\/hook\.(eu1|us1|us2)\.make\.com\/[A-Za-z0-9]+)/gi, target:"ax_make_webhook", label:"Make Webhook"},
+    {regex:/(https?:\/\/[\w\-]+\.app\.n8n\.cloud\/webhook[\w\/\-]+)/gi, target:"ax_n8n_url", label:"n8n Webhook"},
+    {regex:/(https?:\/\/[\w\-]+\.workers\.dev[\w\/\-]*)/gi, target:"ax_push_worker_url", label:"Cloudflare Worker"},
+    {regex:/(https?:\/\/[\w\-\.]+\.firebaseio\.com)/gi, target:"ax_firebase_url", label:"Firebase RTDB URL"},
+    /* === Monitoring === */
+    {regex:/(https?:\/\/[a-f0-9]+@[\w\-\.]+\.ingest\.sentry\.io\/\d+)/gi, target:"ax_sentry_dsn", label:"Sentry DSN"},
+    {regex:/(https?:\/\/[a-f0-9]+@[\w\-\.]+\/\d+)/gi, target:"ax_sentry_dsn", label:"Sentry DSN (custom)"},
+    /* === Media / Audio === */
+    {regex:/\b(sk_[a-f0-9]{32,})\b/g, target:"ax_elevenlabs_key", label:"ElevenLabs"},
+    /* === Vercel / Hosting === */
+    {regex:/\b(prj_[A-Za-z0-9]{20,})\b/g, target:"ax_vercel_project", label:"Vercel Project"},
+    /* === Notion / Airtable === */
+    {regex:/\b(secret_[A-Za-z0-9_]{30,})\b/g, target:"ax_notion_token", label:"Notion Integration"},
+    {regex:/\b(pat[A-Za-z0-9]{14}\.[A-Za-z0-9]{60,})\b/g, target:"ax_airtable_token", label:"Airtable PAT"},
+    /* === Slack === */
+    {regex:/\b(xoxb-[\d]+-[\d]+-[A-Za-z0-9]+)\b/g, target:"ax_slack_bot", label:"Slack Bot Token"},
+    {regex:/\b(xoxp-[\d]+-[\d]+-[\d]+-[A-Za-z0-9]+)\b/g, target:"ax_slack_user", label:"Slack User Token"},
+    /* === Téléphones === */
+    {regex:/\b(\+\d{1,3}\s?\d{8,12})\b/g, target:"ax_lydia_phone", label:"Telephone international"},
+    /* === Email contact === */
+    {regex:/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g, target:"ax_user_email", label:"Email"}
   ];
   patterns.forEach(function(p){
     var matches = text.match(p.regex);
@@ -7594,6 +7643,148 @@ try{
           }
         }catch(_){}
         return _origSend.apply(this, arguments);
+      };
+    }
+  }
+}catch(_){}
+
+/* v12.390 - Multi-import OCR : photo / capture / fichier / camera (Kevin "il doit retrouver dans une photo le code, le lien, les identifiants") */
+function _axLoadTesseract(){
+  return new Promise(function(resolve, reject){
+    if(window.Tesseract) return resolve(window.Tesseract);
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = function(){ resolve(window.Tesseract); };
+    s.onerror = function(){ reject(new Error("Tesseract.js charge KO (reseau)")); };
+    document.head.appendChild(s);
+  });
+}
+
+function axOCRImage(blobOrDataUrl){
+  return new Promise(function(resolve){
+    try{
+      if(typeof toast === "function") toast("OCR en cours (peut prendre 5-15s)...", "info", {duration: 4000});
+      _axLoadTesseract().then(function(T){
+        T.recognize(blobOrDataUrl, "eng+fra", { logger: function(){} }).then(function(res){
+          var text = (res && res.data && res.data.text) || "";
+          if(typeof toast === "function") toast("OCR fini : "+text.length+" caracteres", "ok", {duration:2000});
+          resolve(text);
+        }).catch(function(e){
+          if(typeof toast === "function") toast("OCR echec : "+String(e.message||e).slice(0,80), "warn");
+          resolve("");
+        });
+      }).catch(function(e){
+        if(typeof toast === "function") toast("OCR indispo : "+String(e.message||e).slice(0,80), "warn");
+        resolve("");
+      });
+    }catch(e){ resolve(""); }
+  });
+}
+
+/* Hook paste image dans le chat input */
+try{
+  if(typeof document !== "undefined" && !window._axChatPasteImageInstalled){
+    window._axChatPasteImageInstalled = true;
+    document.addEventListener("paste", function(e){
+      try{
+        var t = e.target;
+        if(!t || (t.id !== "ax-chat-input" && !(t.closest && t.closest(".ax-chatbar")))) return;
+        if(!e.clipboardData || !e.clipboardData.items) return;
+        var items = e.clipboardData.items;
+        for(var i = 0; i < items.length; i++){
+          var item = items[i];
+          if(item.type && item.type.indexOf("image") === 0){
+            var blob = item.getAsFile();
+            if(!blob) continue;
+            e.preventDefault();
+            if(typeof toast === "function") toast("Image collee, lancement OCR...", "info", {duration:2000});
+            axOCRImage(blob).then(function(text){
+              if(text && typeof _axScanTextForCredentials === "function"){
+                var detected = _axScanTextForCredentials(text);
+                if(detected.length > 0){
+                  if(typeof _axProposeCredentialSave === "function") _axProposeCredentialSave(detected);
+                } else {
+                  if(typeof toast === "function") toast("Aucun code detecte dans l image", "warn", {duration:3000});
+                  /* Si pas de cred mais texte extrait, on l affiche dans le chat input pour edition manuelle */
+                  var inp = document.getElementById("ax-chat-input");
+                  if(inp && text.length < 5000){
+                    inp.value = (inp.value ? inp.value + "\n\n" : "") + text;
+                    if(typeof _axAutoGrowInput === "function") _axAutoGrowInput(inp);
+                  }
+                }
+              }
+            });
+            return;
+          }
+        }
+      }catch(_){}
+    }, true);
+  }
+}catch(_){}
+
+/* Bouton ajout dans menu chat : "Scanner code" (camera + OCR) */
+function axScanCodeFromCamera(){
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      if(typeof toast === "function") toast("Camera indispo sur ce device", "warn");
+      return;
+    }
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment";
+    input.style.display = "none";
+    input.onchange = function(e){
+      var file = e.target.files && e.target.files[0];
+      if(!file) return;
+      axOCRImage(file).then(function(text){
+        if(text && typeof _axScanTextForCredentials === "function"){
+          var detected = _axScanTextForCredentials(text);
+          if(detected.length > 0){
+            if(typeof _axProposeCredentialSave === "function") _axProposeCredentialSave(detected);
+          } else {
+            if(typeof toast === "function") toast("Aucun code detecte. Texte OCR : "+text.slice(0, 80)+"...", "warn", {duration:6000});
+          }
+        }
+      });
+    };
+    document.body.appendChild(input);
+    input.click();
+    setTimeout(function(){ try{ input.remove(); }catch(_){} }, 60000);
+  }catch(e){
+    if(typeof toast === "function") toast("Erreur camera : "+String(e.message||e).slice(0,80), "err");
+  }
+}
+
+/* Hook fichier upload : si image, OCR auto */
+try{
+  if(typeof window !== "undefined" && !window._axFileOCRInstalled){
+    window._axFileOCRInstalled = true;
+    var _origFileHandler = window._handleMultiFileUpload;
+    if(typeof _origFileHandler === "function"){
+      window._handleMultiFileUpload = function(input){
+        try{
+          var files = input && input.files;
+          if(files && files.length > 0){
+            for(var i = 0; i < files.length; i++){
+              var f = files[i];
+              if(f.type && f.type.indexOf("image") === 0 && typeof axIsAdmin === "function" && axIsAdmin()){
+                /* Lancer OCR sur l image - en parallele du upload normal */
+                (function(file){
+                  axOCRImage(file).then(function(text){
+                    if(text && typeof _axScanTextForCredentials === "function"){
+                      var detected = _axScanTextForCredentials(text);
+                      if(detected.length > 0 && typeof _axProposeCredentialSave === "function"){
+                        _axProposeCredentialSave(detected);
+                      }
+                    }
+                  });
+                })(f);
+              }
+            }
+          }
+        }catch(_){}
+        return _origFileHandler.apply(this, arguments);
       };
     }
   }
