@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.398",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.402",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6281,7 +6281,7 @@ function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="
 var _dcRaf=0,_lastView="",_chatPageSize=50;
 function _throttle(fn,delay){var last=0;return function(){var n=now();if(n-last>=delay){last=n;fn.apply(this,arguments);}};}
 function render(){var app=document.getElementById("app");if(!app)return;try{app.innerHTML=vTopbar()+vMainContent()+vNav();_lastView=K.view;_bindEvents();}catch(re){console.error("[RENDER CRASH]",re);try{app.innerHTML='<div id="topbar"><div class="ax-logo">APEX</div></div><div id="content" style="padding:40px;text-align:center;color:#fff"><h2 style="color:#c9a227">APEX</h2><p>Un souci technique. Essaie de recharger.</p><button class="ax-btn ax-btn-primary" onclick="location.reload()" style="margin-top:20px;padding:14px 28px">Recharger</button><p style="color:#999;font-size:11px;margin-top:20px">'+String(re.message||re).slice(0,100).replace(/</g,"&lt;")+'</p></div>';}catch(_){}}}
-function dc(){/* v12.395 - skip dc seulement si user TAPE activement (3s max + input non-vide) */ if(window._axInputFocused && Date.now()-(window._axInputFocusedAt||0)<3000){var _inp=document.getElementById("ax-chat-input");if(_inp && _inp.value && _inp.value.length>0){return;}} if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.395 - Force scroll bas si nouveau message recu (ts<3s) ou streaming */try{var _lastMsg=K&&K.messages&&K.messages[K.messages.length-1];var _isFresh=_lastMsg&&_lastMsg.ts&&(Date.now()-_lastMsg.ts<3000);if((_isFresh||K.isStreaming)&&document.getElementById("ax-chat-scroll")){var _fc=document.getElementById("ax-chat-scroll");setTimeout(function(){_fc.scrollTop=_fc.scrollHeight+9999;},50);}}catch(_){}/* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
+function dc(){/* v12.395 - skip dc seulement si user TAPE activement (3s max + input non-vide) */ if(window._axInputFocused && Date.now()-(window._axInputFocusedAt||0)<3000){var _inp=document.getElementById("ax-chat-input");if(_inp && _inp.value && _inp.value.length>0){return;}} if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.400 - Force scroll bas + scrollIntoView sur dernier element pour vraiment descendre tout en bas */try{var _lastMsg=K&&K.messages&&K.messages[K.messages.length-1];var _isFresh=_lastMsg&&_lastMsg.ts&&(Date.now()-_lastMsg.ts<5000);if((_isFresh||K.isStreaming)&&document.getElementById("ax-chat-scroll")){var _fc=document.getElementById("ax-chat-scroll");setTimeout(function(){if(_fc){_fc.scrollTop=_fc.scrollHeight+9999;var _msgs=_fc.querySelectorAll(".ax-msg");if(_msgs.length){_msgs[_msgs.length-1].scrollIntoView({behavior:"auto",block:"end"});}}},50);setTimeout(function(){if(_fc)_fc.scrollTop=_fc.scrollHeight+9999;},250);}}catch(_){}/* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
 function dcNow(){_dcRaf=0;render();}
 /* v12.198 — wrap render() pour mesurer le temps par vue (perf-watch) */
 (function(){if(typeof render==="function"&&!render._axWrapped){var _origRender=render;window.render=function(){var t0=performance.now();try{return _origRender.apply(this,arguments);}finally{try{var dt=performance.now()-t0;if(typeof _axTrackRender==="function"&&K&&K.view)_axTrackRender(K.view,dt);if(dt>200&&typeof _snLog==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())_snLog("perf-watch","warn","render "+K.view+" "+Math.round(dt)+"ms");}catch(_){}}};window.render._axWrapped=true;}})();
@@ -7590,6 +7590,122 @@ function _axScanTextForCredentials(text){
   return found;
 }
 
+function _axScanTextContextual(text){
+  /* v12.401 - Detection contextuelle : identifiants/mots de passe/reseaux sociaux (Kevin "tout reconnaitre") */
+  if(!text || typeof text !== "string") return [];
+  var found = [];
+  var lines = text.split(/\r?\n/);
+  /* Mapping mots-cles vers cle Coffre */
+  var serviceMap = {
+    /* === Reseaux sociaux === */
+    "instagram":"ax_instagram_user","insta":"ax_instagram_user","facebook":"ax_facebook_page","fb":"ax_facebook_page","twitter":"ax_twitter_user","x.com":"ax_twitter_user","tiktok":"ax_tiktok_user","youtube":"ax_youtube_channel","yt":"ax_youtube_channel","linkedin":"ax_linkedin_user","snapchat":"ax_snapchat_user","snap":"ax_snapchat_user","pinterest":"ax_pinterest_user","reddit":"ax_reddit_user","threads":"ax_threads_user","mastodon":"ax_mastodon_user","bluesky":"ax_bluesky_user",
+    /* === Email === */
+    "gmail":"ax_gmail_user","google mail":"ax_gmail_user","outlook":"ax_outlook_user","hotmail":"ax_outlook_user","icloud":"ax_icloud_user","apple id":"ax_apple_id","yahoo":"ax_yahoo_user","proton":"ax_proton_user","protonmail":"ax_proton_user","tutanota":"ax_tutanota_user",
+    /* === Communications === */
+    "discord":"ax_discord_user","whatsapp":"ax_whatsapp_phone","wa":"ax_whatsapp_phone","telegram":"ax_telegram_user","signal":"ax_signal_phone","slack":"ax_slack_user","teams":"ax_teams_user","zoom":"ax_zoom_user","meet":"ax_meet_user","skype":"ax_skype_user","viber":"ax_viber_phone","wechat":"ax_wechat_user",
+    /* === Streaming === */
+    "netflix":"ax_netflix_user","disney":"ax_disney_user","disney+":"ax_disney_user","prime video":"ax_prime_user","amazon prime":"ax_prime_user","apple tv":"ax_appletv_user","hulu":"ax_hulu_user","canal":"ax_canal_user","molotov":"ax_molotov_user","plex":"ax_plex_user",
+    /* === Music === */
+    "spotify":"ax_spotify_user","deezer":"ax_deezer_user","apple music":"ax_applemusic_user","tidal":"ax_tidal_user","soundcloud":"ax_soundcloud_user","youtube music":"ax_ytmusic_user",
+    /* === Cloud / Storage === */
+    "dropbox":"ax_dropbox_user","google drive":"ax_gdrive_user","onedrive":"ax_onedrive_user","mega":"ax_mega_user","pcloud":"ax_pcloud_user",
+    /* === Banque / Finance === */
+    "boursorama":"ax_boursorama_user","societe generale":"ax_sg_user","sg":"ax_sg_user","bnp":"ax_bnp_user","bnp paribas":"ax_bnp_user","credit agricole":"ax_ca_user","ca ":"ax_ca_user","caisse epargne":"ax_ce_user","cic":"ax_cic_user","credit mutuel":"ax_cm_user","cmb":"ax_cm_user","lcl":"ax_lcl_user","la banque postale":"ax_lbp_user","monabanq":"ax_monabanq_user","fortuneo":"ax_fortuneo_user","hello bank":"ax_hellobank_user","ing":"ax_ing_user","n26":"ax_n26_user","revolut":"ax_revolut_user","wise":"ax_wise_user","transferwise":"ax_wise_user","lydia":"ax_lydia_phone","paypal":"ax_paypal_user","sumup":"ax_sumup_user",
+    /* === Crypto exchanges === */
+    "binance":"ax_binance_user","kraken":"ax_kraken_user","coinbase":"ax_coinbase_user","crypto.com":"ax_crypto_user","kucoin":"ax_kucoin_user","okx":"ax_okx_user","bitstamp":"ax_bitstamp_user","gate.io":"ax_gateio_user",
+    /* === Gaming === */
+    "steam":"ax_steam_user","epic":"ax_epic_user","epic games":"ax_epic_user","xbox":"ax_xbox_user","psn":"ax_psn_user","playstation":"ax_psn_user","nintendo":"ax_nintendo_user","battle.net":"ax_battlenet_user","ubisoft":"ax_ubisoft_user","riot":"ax_riot_user","ea":"ax_ea_user","origin":"ax_ea_user","gog":"ax_gog_user","twitch":"ax_twitch_user",
+    /* === Productivity === */
+    "notion":"ax_notion_user","trello":"ax_trello_user","asana":"ax_asana_user","jira":"ax_jira_user","monday":"ax_monday_user","clickup":"ax_clickup_user","airtable":"ax_airtable_user","obsidian":"ax_obsidian_user","evernote":"ax_evernote_user",
+    /* === Dev === */
+    "github":"ax_github_user","gitlab":"ax_gitlab_user","bitbucket":"ax_bitbucket_user","stackoverflow":"ax_stackoverflow_user","npm":"ax_npm_user","docker":"ax_docker_user","vercel":"ax_vercel_user","netlify":"ax_netlify_user","heroku":"ax_heroku_user","render":"ax_render_user","railway":"ax_railway_user","fly.io":"ax_flyio_user","cloudflare":"ax_cloudflare_user",
+    /* === IA === */
+    "openai":"ax_openai_user","anthropic":"ax_anthropic_user","claude":"ax_anthropic_user","chatgpt":"ax_openai_user","huggingface":"ax_huggingface_user","midjourney":"ax_midjourney_user","leonardo":"ax_leonardo_user","runwayml":"ax_runwayml_user","suno":"ax_suno_user","elevenlabs":"ax_elevenlabs_user",
+    /* === Shopping === */
+    "amazon":"ax_amazon_user","ebay":"ax_ebay_user","cdiscount":"ax_cdiscount_user","fnac":"ax_fnac_user","leboncoin":"ax_lbc_user","vinted":"ax_vinted_user","zalando":"ax_zalando_user","aliexpress":"ax_aliexpress_user","shein":"ax_shein_user",
+    /* === Voyage === */
+    "booking":"ax_booking_user","airbnb":"ax_airbnb_user","abritel":"ax_abritel_user","tripadvisor":"ax_tripadvisor_user","skyscanner":"ax_skyscanner_user","expedia":"ax_expedia_user","sncf":"ax_sncf_user","oui.sncf":"ax_sncf_user","trainline":"ax_trainline_user","blablacar":"ax_blablacar_user","uber":"ax_uber_user","bolt":"ax_bolt_user","lyft":"ax_lyft_user",
+    /* === Mobilite / Casino === */
+    "casino monaco":"ax_casino_monaco_user","sbm":"ax_sbm_user","monte carlo":"ax_sbm_user","cmcteams":"ax_cmcteams_user","cmc":"ax_cmcteams_user",
+    /* === Admin / Etat === */
+    "ameli":"ax_ameli_user","caf":"ax_caf_user","impots":"ax_impots_user","france connect":"ax_franceconnect_user","fc":"ax_franceconnect_user","ants":"ax_ants_user","service public":"ax_servpub_user","mes droits":"ax_mesdroits_user","monaco":"ax_monaco_user","servicepublic.mc":"ax_monaco_user"
+  };
+  /* Patterns valeur */
+  var emailPat = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+  var phonePat = /(\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{2,4}[\s.-]?\d{2,4}[\s.-]?\d{0,4})/;
+  var handlePat = /@([A-Za-z0-9_.]{3,30})/;
+  var urlPat = /(https?:\/\/[^\s]+)/;
+  /* Scan ligne par ligne, garde contexte 3 lignes au-dessus */
+  for(var i=0; i<lines.length; i++){
+    var lower = lines[i].toLowerCase().trim();
+    if(!lower) continue;
+    /* Detect service in this line OR previous 2 */
+    var detectedService = null;
+    var ctxLine = "";
+    for(var c=0; c<=Math.min(2,i); c++){
+      var checkLower = (lines[i-c]||"").toLowerCase();
+      Object.keys(serviceMap).forEach(function(kw){
+        if(!detectedService && checkLower.indexOf(kw) >= 0){
+          detectedService = serviceMap[kw];
+          ctxLine = (lines[i-c]||"").trim().slice(0,40);
+        }
+      });
+      if(detectedService) break;
+    }
+    if(!detectedService) continue;
+    /* Cherche valeur dans cette ligne ou la suivante */
+    for(var v=0; v<=2 && (i+v)<lines.length; v++){
+      var line = lines[i+v];
+      /* User/Login pattern */
+      var userMatch = line.match(/(?:user|login|identifiant|compte|pseudo|username|nom)\s*[:=]?\s*([A-Za-z0-9._@-]+)/i);
+      if(userMatch && userMatch[1].length >= 3){
+        var val = userMatch[1].trim();
+        if(!found.find(function(f){return f.value === val && f.target === detectedService;})){
+          found.push({value:val, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (login)", context:"Label : '"+ctxLine+"'"});
+        }
+      }
+      /* Password pattern */
+      var passMatch = line.match(/(?:pass|password|mot\s*de\s*passe|mdp|pwd)\s*[:=]?\s*([\S]{6,})/i);
+      if(passMatch && passMatch[1].length >= 6){
+        var pkey = detectedService.replace("_user","_password").replace("_page","_password").replace("_channel","_password").replace("_phone","_password");
+        var pval = passMatch[1].trim();
+        if(!found.find(function(f){return f.value === pval && f.target === pkey;})){
+          found.push({value:pval, target:pkey, label:detectedService.replace("ax_","").replace(/_/g," ")+" (mot de passe)", context:"Label : '"+ctxLine+"'"});
+        }
+      }
+      /* Handle @username */
+      var handleMatch = line.match(handlePat);
+      if(handleMatch && !line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)){
+        var hval = "@"+handleMatch[1];
+        if(!found.find(function(f){return f.value === hval && f.target === detectedService;})){
+          found.push({value:hval, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (handle)", context:"Label : '"+ctxLine+"'"});
+        }
+      }
+      /* Email standalone si service est gmail/outlook/icloud */
+      if(/_user$/.test(detectedService) && /(gmail|outlook|icloud)/.test(detectedService)){
+        var emailMatch = line.match(emailPat);
+        if(emailMatch){
+          var eval2 = emailMatch[1].trim();
+          if(!found.find(function(f){return f.value === eval2 && f.target === detectedService;})){
+            found.push({value:eval2, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (email)", context:"Label : '"+ctxLine+"'"});
+          }
+        }
+      }
+      /* Phone si service est whatsapp/lydia/telegram */
+      if(/_phone$/.test(detectedService)){
+        var phoneMatch = line.match(phonePat);
+        if(phoneMatch){
+          var pval2 = phoneMatch[1].replace(/[\s.-]/g,"").trim();
+          if(pval2.length >= 8 && !found.find(function(f){return f.value === pval2 && f.target === detectedService;})){
+            found.push({value:pval2, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (phone)", context:"Label : '"+ctxLine+"'"});
+          }
+        }
+      }
+    }
+  }
+  return found;
+}
+
 function _axScanTextSmart(text){
   if(!text || typeof text !== "string") return [];
   /* v12.393 - Scan intelligent : blocks separes par lignes vides, label de service au-dessus, dedup target -> garde le DERNIER (Kevin "le dernier code est le bon") */
@@ -7712,9 +7828,51 @@ function _axTestBestCandidate(target, values){
   });
 }
 
+function _axAutoSaveAllCredentials(detected){
+  /* v12.400 - Auto-save TOTAL sans confirmation (Kevin "tout en autonomie totale") */
+  if(!detected || !detected.length) return false;
+  var autoSaveEnabled = lg("ax_auto_save_credentials", true);
+  if(!autoSaveEnabled) return false;
+  /* Save batch direct */
+  var results = {ok:0, ko:0, total:detected.length, details:[]};
+  detected.forEach(function(d){
+    try{ ls(d.target, d.value); }catch(_){}
+  });
+  if(typeof toast === "function") toast(detected.length + " codes auto-enregistres - tests live en cours...", "ok", {duration:3000, force:true});
+  /* Tests live espaces + bilan */
+  var pending = detected.length;
+  detected.forEach(function(d, i){
+    setTimeout(function(){
+      if(typeof axCredTestLive === "function"){
+        var p = axCredTestLive(d.target);
+        if(p && p.then){
+          p.then(function(res){
+            results.details.push({key:d.target, ok: !!res.ok, msg: res.msg||""});
+            if(res.ok) results.ok++; else results.ko++;
+            pending--;
+            if(pending === 0){
+              if(typeof toast === "function") toast("Bilan : "+results.ok+"/"+results.total+" valides"+(results.ko?" - "+results.ko+" KO (rollback auto si historique)":""), results.ko===0?"ok":"warn", {duration:6000, force:true});
+              if(results.ko > 0 && typeof _axPushDiagnosticToGitHub === "function"){
+                _axPushDiagnosticToGitHub({summary:{ok:results.ok,warn:0,err:results.ko,total:results.total},checks:{auto_save_batch:results},ts:Date.now(),version:typeof APP_VER!=="undefined"?APP_VER:"?"});
+              }
+            }
+          });
+        }
+      }
+    }, 500 + i*1500);
+  });
+  return true;
+}
+
 function _axProposeCredentialSave(detected){
   if(!detected || !detected.length) return;
+  /* v12.400 - Si auto-save total active (default true), court-circuit le modal */
+  if(typeof _axAutoSaveAllCredentials === "function" && _axAutoSaveAllCredentials(detected)) return;
   var html = '<div style="padding:18px;max-width:560px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Code(s) detecte(s)</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex a reconnu le format. Veux-tu enregistrer dans le Coffre ?</p>';
+  /* v12.399 - Bouton "Tout enregistrer" EN HAUT + tres visible (Kevin "donne moi le moyen tout valider d un coup") */
+  if(detected.length > 1){
+    html += '<button class="ax-btn ax-btn-primary" id="ax-cred-save-all-top" style="width:100%;min-height:60px;margin-bottom:14px;font-weight:700;font-size:16px;background:linear-gradient(135deg,#5cd882,#4ab06a);color:#000;box-shadow:0 4px 16px rgba(92,216,130,.3);border:none">TOUT ENREGISTRER ('+detected.length+' codes) en 1 clic</button>';
+  }
   detected.forEach(function(d, i){
     var maskedSample = d.value.slice(0, 6) + "..." + d.value.slice(-4);
     var ctxLine = d.context ? '<div style="font-size:10px;color:var(--ax-gold);margin-top:2px">'+esc(d.context)+'</div>' : '';
@@ -7735,22 +7893,51 @@ function _axProposeCredentialSave(detected){
   if(typeof _showModal === "function"){
     _showModal(html);
     setTimeout(function(){
-      var btnAll = document.getElementById("ax-cred-save-all");
+      var btnAll = document.getElementById("ax-cred-save-all") || document.getElementById("ax-cred-save-all-top");
+      var btnAllTop = document.getElementById("ax-cred-save-all-top");
       if(btnAll){
         btnAll.onclick = function(){
+          /* v12.399 - Save batch + tests live + rapport auto Claude Code */
+          var results = {ok:0, ko:0, total:detected.length, details:[]};
           detected.forEach(function(d, i){
             try{ ls(d.target, d.value); }catch(_){}
           });
-          if(typeof toast === "function") toast(detected.length + " cles enregistrees + tests live lances", "ok", {duration:4000});
-          /* Auto-test live each */
+          if(typeof toast === "function") toast(detected.length + " codes enregistres - test live de chacun en cours...", "ok", {duration:5000, force:true});
+          /* Auto-test live espace + collecte resultats */
+          var pending = detected.length;
           detected.forEach(function(d, i){
             setTimeout(function(){
-              if(typeof axCredTestLive === "function") axCredTestLive(d.target);
+              if(typeof axCredTestLive === "function"){
+                var p = axCredTestLive(d.target);
+                if(p && p.then){
+                  p.then(function(res){
+                    results.details.push({key:d.target, label:d.label, ok: !!res.ok, msg: res.msg||""});
+                    if(res.ok) results.ok++; else results.ko++;
+                    pending--;
+                    if(pending === 0){
+                      /* Toutes les tests termines : toast resume + push rapport */
+                      if(typeof toast === "function") toast("Bilan : "+results.ok+"/"+results.total+" valides, "+results.ko+" KO", results.ko===0?"ok":"warn", {duration:6000, force:true});
+                      if(results.ko > 0 && typeof _axPushDiagnosticToGitHub === "function"){
+                        _axPushDiagnosticToGitHub({
+                          summary:{ok:results.ok, warn:0, err:results.ko, total:results.total},
+                          checks:{batch_save_results: results},
+                          ts:Date.now(),
+                          version:typeof APP_VER!=="undefined"?APP_VER:"?",
+                          notes_for_claude:"Save batch Kevin : "+results.ko+"/"+results.total+" cles ne marchent pas live."
+                        });
+                      }
+                    }
+                  });
+                }
+              }
             }, 500 + i*1500);
           });
           document.getElementById("modal-container").innerHTML = "";
           if(typeof dc === "function") dc();
         };
+        if(btnAllTop && btnAllTop !== btnAll){
+          btnAllTop.onclick = btnAll.onclick;
+        }
       }
       detected.forEach(function(d, i){
         var btn = document.getElementById("ax-cred-save-"+i);
@@ -12616,7 +12803,7 @@ function _axSentinelMeta(){
   }catch(e){_snLog("sentinel-meta","err",String(e&&e.message||e).slice(0,100));}
 }
 try{if(typeof _axIntervalAdd==="function")_axIntervalAdd(_axSentinelMeta,3600000,"sentinel-meta");setTimeout(_axSentinelMeta,60000);}catch(_){}
-function _healthCheck(){var issues=[];if(!navigator.onLine)issues.push("offline");var memUsed=0;try{for(var hi=0;hi<localStorage.length;hi++)memUsed+=(localStorage.getItem(localStorage.key(hi))||"").length;}catch(ex){}if(memUsed>4500000)issues.push("storage-critical");if(!_fbEs&&navigator.onLine&&FB_URL)issues.push("firebase-down");if(!_getApiKey())issues.push("no-api-key");var recentErrs=lg("ax_err_log",[]).filter(function(er){return now()-er.ts<300000;});if(recentErrs.length>3)issues.push("error-storm");if(K.isStreaming&&K.messages.length){var lastMsg=K.messages[K.messages.length-1];if(lastMsg.ts&&now()-lastMsg.ts>45000){K.isStreaming=false;issues.push("streaming-stuck");K.messages.push({role:"assistant",content:"(IA debloquee automatiquement apres 45s — reessayez)",ts:now()});_saveMsgs();dc();}}_predictiveAlert();if(issues.length){var status=lg("ax_health_status",{ok:true});if(status.ok||!status.issues||status.issues.join(",")!==issues.join(",")){ls("ax_health_status",{ok:false,issues:issues,ts:now()});if(issues.indexOf("firebase-down")>=0)setTimeout(fbStartListening,2000);if(issues.indexOf("storage-critical")>=0)_emergencyCleanup();if(issues.indexOf("streaming-stuck")>=0)toast("IA debloquee","info");if(issues.indexOf("error-storm")>=0)toast("Erreurs detectees — auto-repair","warn");}}else{ls("ax_health_status",{ok:true,ts:now()});}}
+function _healthCheck(){var issues=[];if(!navigator.onLine)issues.push("offline");var memUsed=0;try{for(var hi=0;hi<localStorage.length;hi++)memUsed+=(localStorage.getItem(localStorage.key(hi))||"").length;}catch(ex){}if(memUsed>4500000)issues.push("storage-critical");if(!_fbEs&&navigator.onLine&&FB_URL)issues.push("firebase-down");if(!_getApiKey())issues.push("no-api-key");var recentErrs=lg("ax_err_log",[]).filter(function(er){return now()-er.ts<300000;});if(recentErrs.length>3)issues.push("error-storm");if(K.isStreaming&&K.messages.length){var lastMsg=K.messages[K.messages.length-1];if(lastMsg.ts&&now()-lastMsg.ts>45000){/* v12.400 - Au lieu de juste debloquer, tenter failover Groq/Gemini/OR auto */if(typeof _axTryFailoverChain==="function"){var msgsForFailover=K.messages.filter(function(m){return m.role&&typeof m.content==="string";}).slice(-10);if(_axTryFailoverChain(null,msgsForFailover,"Anthropic stuck 45s")){return;}}K.isStreaming=false;issues.push("streaming-stuck");K.messages.push({role:"assistant",content:"(IA debloquee - aucun provider failover dispo, ajoute Groq dans Coffre)",ts:now()});_saveMsgs();dc();}}_predictiveAlert();if(issues.length){var status=lg("ax_health_status",{ok:true});if(status.ok||!status.issues||status.issues.join(",")!==issues.join(",")){ls("ax_health_status",{ok:false,issues:issues,ts:now()});if(issues.indexOf("firebase-down")>=0)setTimeout(fbStartListening,2000);if(issues.indexOf("storage-critical")>=0)_emergencyCleanup();if(issues.indexOf("streaming-stuck")>=0)toast("IA debloquee","info");if(issues.indexOf("error-storm")>=0)toast("Erreurs detectees — auto-repair","warn");}}else{ls("ax_health_status",{ok:true,ts:now()});}}
 window.addEventListener("error",function(e){try{if(typeof axAutoHandleError==="function")axAutoHandleError("js_error",(e.message||"?")+" "+(e.filename||""));if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("js_error",(e.message||"?")+" "+(e.filename||""));}catch(_){}});window.addEventListener("unhandledrejection",function(e){try{if(typeof axLogClientAnomaly==="function")axLogClientAnomaly("promise_rejection",String(e.reason||"?").slice(0,200));}catch(_){}});
 function axForceStopAllMedia(){try{if(typeof _sttRecog!=="undefined"&&_sttRecog){try{_sttRecog.stop();}catch(_){}try{_sttRecog.abort();}catch(_){}_sttRecog=null;}}catch(_){}try{if(typeof _mediaRecorder!=="undefined"&&_mediaRecorder&&_mediaRecorder.state!=="inactive"){try{_mediaRecorder.stop();}catch(_){}_mediaRecorder=null;}}catch(_){}try{if(window._activeMediaStreams){window._activeMediaStreams.forEach(function(s){try{s.getTracks().forEach(function(t){if(t.kind==="audio"||t.kind==="video")t.stop();});}catch(_){}});window._activeMediaStreams=window._activeMediaStreams.filter(function(s){return s.active;});}}catch(_){}try{var mic=document.getElementById("ax-mic-btn");if(mic){mic.style.background="";mic.style.animation="";}}catch(_){}try{if(typeof _sttHideStatus==="function")_sttHideStatus();}catch(_){}}
 function axGeoShouldContinuous(){if(!K.user)return false;if(K.user.id===ADMIN_ID)return true;var prf=(typeof axClientProfileGet==="function")?axClientProfileGet(K.user.id):null;if(prf&&(prf.role==="family"||prf.role==="friend"||prf.role==="gift"))return true;return false;}
