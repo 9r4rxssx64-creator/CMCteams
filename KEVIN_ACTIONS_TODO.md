@@ -1,7 +1,116 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-> Mis à jour **2026-04-27 nuit** (Apex **v12.370** + CMCteams v9.559)
-> Session marathon : v12.336 → v12.370 (chat refondu, bulles live, Mode Dev ajoutés)
+> Mis à jour **2026-04-27 nuit2** (Apex **v12.424** + CMCteams v9.560)
+> Session marathon : v12.402 → v12.424 (audit pro 5 agents + 30 fixes + hotfix encryption)
+
+---
+
+## 🔐 v12.425 — RÉACTIVER ENCRYPTION FIREBASE EN AUTONOMIE TOTALE (Kevin: "il doit tout faire seul")
+
+> **Contexte** : v12.415 chiffrement AES-GCM Firebase pour clés API sensibles. Masterkey dérivée PIN admin = instable cross-device. Hotfix v12.423 désactive encryption push.
+>
+> **Demande Kevin** : Garder le principe **MAIS** Apex doit tout faire **automatiquement, sans intervention humaine**. Pas de modal "saisis passphrase". Auto-config silencieux.
+
+### Plan v12.425 - AUTONOMIE TOTALE
+
+1. **Génération masterkey AUTO au premier boot admin** :
+   - 32 bytes random via `crypto.getRandomValues`
+   - Stockage chiffré par PIN admin dans `ax_vault_master_v2` (localStorage)
+   - Backup Firebase chiffré (clé chiffrée par PIN, déchiffrable depuis tout device avec même PIN admin)
+   - Aucune saisie utilisateur requise
+
+2. **Cross-device sync auto** :
+   - Au boot d'un nouveau device : check si `ax_vault_master_v2` présent local
+   - Sinon → pull depuis Firebase (nécessite PIN admin déjà entré)
+   - Décrypt avec PIN → utilise masterkey
+   - Si PIN différent : modal **automatique** propose "Saisir PIN précédent pour migrer ?" sinon reset clés
+
+3. **Wrapper fbWrite/SSE handler** : encryption auto sans intervention
+
+4. **Auto-repair silencieux** :
+   - Boot scan détecte `__AXENC1__` blobs corrompus
+   - Tente décryption avec masterkey courante
+   - Si fail → essai migration depuis ancienne masterkey ax_vault_master_v1
+   - Si fail total → toast "Cle X ressaisir" + auto-link Coffre
+
+5. **Auto-detection clés mal placées** (déjà v12.401-411) maintenu :
+   - `_axScanTextContextual` détecte si clé `gsk_...` dans champ Grok
+   - `_axDiscoverServiceForUnknown` propose target field automatiquement
+   - User n'a qu'à valider en 1 tap (ou auto si confidence > 0.95)
+
+6. **Aucune action humaine requise** sauf cas de PIN reset critique
+
+### Fichiers à modifier
+- `apex-ai/index.html` : auto-init masterkey au login admin
+- `apex-ai/index.html` : wrappers encryption transparents
+- `apex-ai/index.html` : recovery flow silencieux
+
+### Estimation
+- 8h dev + tests cross-device (2 iPhones avec PIN identique vs différent)
+- Bump APP_VER v12.425 + sw.js sync
+
+---
+
+## 🌍 v12.426 — CORS PROXY POUR FLUX RSS ACTUALITÉS (mineur)
+
+> Erreur "chargement flux Monaco Info" visible v12.424. CORS bloque RSS depuis PWA.
+
+Solution :
+- `https://api.rss2json.com/v1/api.json?rss_url=...` (gratuit, CORS-friendly)
+- Ou Cloudflare Worker custom proxy
+- Effort : 30min
+
+---
+
+## 📝 NOTES DEBRIEF SESSION 2026-04-27 NUIT2
+
+### Audit pro 5 agents (Stripe/FAANG-grade) - scores réels
+
+| Axe | Score | vs benchmark | Top P0 |
+|-----|-------|--------------|--------|
+| Sécurité | 51/100 | Stripe 92+ | API keys plaintext, custom PIN KDF FNV1a, 0 SRI CDN |
+| Performance | 51/100 | Claude.ai 89 | LCP 5.2-6.8s, TTI 8.2s, monolithe 2.3MB |
+| UX/A11y | 62/100 | Apple 99 | 0% Dynamic Type, 0.5% ARIA, no reduced-motion |
+| Code | 52/100 | Stripe 88 | SQALE D, 504 catch silencieux, CC 45 _callClaudeAPI |
+| RGPD | 54/100 | EU 95+ | Firebase deletion JAMAIS (Art. 17 €20M risk) |
+| AI Act | 65/100 | EU 95+ | Disclosure agents auto manquante |
+| Functional | 78/100 | Linear 95+ | OK fonctionnel mais data lifecycle broken |
+
+### v12.424 fixes appliqués
+- DOMPurify 3.0.6 → 3.0.9 (bypasses fixed)
+- crossorigin+referrerpolicy sur tous CDN
+- Reduced-motion + Dynamic Type clamp + focus-visible WCAG AA
+- aria-live toast region (VoiceOver/TalkBack)
+- Send button debounce 300ms anti-spam
+- Cookie consent banner first-login (Art. 6-7 RGPD)
+- Voiceprint disclosure helper Art. 9 biométrie
+- Boot cleanup agressif si quota > 70% (35 logs caps stricts)
+
+### Bugs vécus + corrigés
+- **v12.422 cassait Apex** : caused encryption AES-GCM v12.415 illisible cross-device → hotfix v12.423
+- **Stockage iPhone plein** : 18 versions cumulees logs → boot cleanup v12.424
+- **Apostrophe FR innerHTML** : J'accepte cassait JS parser → "Accepter" sans apostrophe (erreur connue #48)
+
+### Auto-détection v12.401-411 marche très bien (Kevin valide)
+- Apex détecte clé Groq dans champ xAI Grok → propose move
+- Apex détecte api_key format inhabituel → test live + suggère
+- Apex propose recharge Groq quand quota épuisé
+- Apex bascule auto Anthropic quand Groq KO
+
+### Reste pour 95+/100 partout (~500h sur 12 semaines + 2 sem legal)
+- Refactor _callClaudeAPI CC 45→12 (20h)
+- Module split monolithe 2.3 MB → bundles lazy (50h)
+- WebAuthn registration/auth full (12h)
+- Firebase Auth migration vs custom PIN (5j)
+- E2E encryption client-side AES-256 avant Firebase push (3j)
+- Tests Jest unit/integration/E2E coverage 60%+ (50h)
+- Refactor 504 catch silencieux → _axSafeCatch logged (12h)
+- DPIA documentation RGPD Art. 35 (5j)
+- DPA signé avec Firebase/Google (5j legal)
+- DPO appointment (consultant externe)
+- Firebase deletion réelle Art. 17 droit oubli (2j)
+- Replace 179 innerHTML → DOMPurify systématique (16h)
+- ARIA labels massif WCAG 2.1 AA tous composants (1.5j)
 
 ---
 
