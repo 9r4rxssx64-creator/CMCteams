@@ -440,6 +440,18 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 #ax-mini-chat .mc-body{flex:1;overflow-y:auto;padding:12px;max-height:40vh;min-height:100px}
 #ax-mini-chat .mc-input{display:flex;gap:6px;padding:10px;border-top:1px solid rgba(232,184,48,.1)}
 #ax-mini-chat .mc-input textarea{flex:1;min-height:44px;max-height:80px;resize:none;font-size:16px}
+/* v12.422 UX - prefers-reduced-motion (anti motion sickness) */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+/* v12.422 UX - Dynamic Type clamp (60+ ans Kevin demande iOS Settings > Accessibility > Text Size) */
+@supports (font-size: clamp(1px, 1vw, 2px)){
+  body,.ax-msg,.ax-input,.ax-btn,.ax-card,.ax-setting-row,p,div,span,li{font-size:clamp(14px, 1rem + 0.2vw, 18px)}
+}
+/* v12.422 UX - Focus visible (WCAG 2.1 AA) */
+.ax-input:focus-visible,.ax-btn:focus-visible,button:focus-visible,a:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ax-gold) !important;outline-offset:2px !important;box-shadow:0 0 0 4px rgba(232,184,48,.18) !important}
+/* v12.422 UX - Contraste disabled buttons (sortir de opacity faible) */
+.ax-btn:disabled,button:disabled{color:rgba(255,255,255,.55) !important;background:rgba(232,184,48,.08) !important;opacity:1 !important;border-color:rgba(232,184,48,.18) !important;cursor:not-allowed}
 /* v12.414 UX - Touch targets 44px Apple HIG global */
 button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]{min-height:44px;min-width:44px}
 .ax-btn-icon{min-width:44px;min-height:44px}
@@ -631,7 +643,43 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     };
   }catch(_){}
 })();
-var APP_VER="v12.421",ADMIN_ID="kdmc_admin";
+/* v12.422 RGPD - Banneau consentement first-login (Art. 6-7 RGPD) */
+(function(){
+  try{
+    if(window._axRgpdBannerInstalled)return;
+    window._axRgpdBannerInstalled=true;
+    var showBanner=function(){
+      try{
+        if(lg("ax_rgpd_consent_v1",false))return;
+        if(document.getElementById("ax-rgpd-banner"))return;
+        var b=document.createElement("div");
+        b.id="ax-rgpd-banner";
+        b.setAttribute("role","dialog");
+        b.setAttribute("aria-label","Consentement RGPD");
+        b.style.cssText="position:fixed;left:8px;right:8px;bottom:calc(8px + var(--ax-safe-b,0px));max-width:520px;margin:0 auto;background:rgba(8,8,15,.97);color:#f0f0ff;border:1.5px solid rgba(232,184,48,.5);border-radius:14px;padding:14px;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,.6);font-size:13px;backdrop-filter:blur(20px)";
+        b.innerHTML='<strong style="color:#e8b830;font-size:14px;display:block;margin-bottom:6px">⚡ Tes donnees, ta confidentialite</strong><p style="margin:0 0 10px 0;line-height:1.4">Apex utilise stockage local (localStorage) + Firebase pour synchroniser tes conversations entre tes devices. Aucune publicite, aucun tracking tiers. Tes cles API sont chiffrees AES-256.</p><p style="margin:0 0 12px 0;font-size:11px;color:#b0b4d8">Voir <a href="privacy.html" target="_blank" style="color:#e8b830;text-decoration:underline">Privacy</a> et <a href="cgu.html" target="_blank" style="color:#e8b830;text-decoration:underline">CGU</a></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="ax-rgpd-accept" style="flex:1;min-height:44px;background:linear-gradient(135deg,#e8b830,#c9a227);color:#08080f;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;padding:10px 16px">Accepter</button><button id="ax-rgpd-decline" style="flex:0 0 auto;min-height:44px;background:transparent;color:#b0b4d8;border:1px solid rgba(232,184,48,.25);border-radius:10px;cursor:pointer;font-size:13px;padding:10px 14px">Non, plus tard</button></div>';
+        document.body.appendChild(b);
+        document.getElementById("ax-rgpd-accept").addEventListener("click",function(){
+          ls("ax_rgpd_consent_v1",{accepted:true,ts:Date.now(),version:typeof APP_VER!=="undefined"?APP_VER:"?"});
+          if(typeof axSecurityLog==="function")axSecurityLog("rgpd_consent","accepted");
+          b.remove();
+          if(typeof toast==="function")toast("Merci, consentement enregistre","ok",{duration:2500});
+        });
+        document.getElementById("ax-rgpd-decline").addEventListener("click",function(){
+          ls("ax_rgpd_consent_v1",{accepted:false,ts:Date.now()});
+          if(typeof axSecurityLog==="function")axSecurityLog("rgpd_consent","declined");
+          b.remove();
+        });
+      }catch(_){}
+    };
+    /* Apparait 3s apres login admin */
+    setInterval(function(){
+      if(K&&K.user&&!lg("ax_rgpd_consent_v1",false))showBanner();
+    },5000);
+  }catch(_){}
+})();
+
+var APP_VER="v12.422",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -1540,6 +1588,40 @@ function _axParallel(items,worker,batchSize){batchSize=batchSize||5;return new P
 
 // --- Toast ---
 /* v12.347 — Toast dedup 1500ms anti-spam login */window._axToastSeen=window._axToastSeen||{};
+/* v12.422 UX - aria-live region pour toasts (WCAG 4.1.3) */
+try{
+  if(typeof window!=="undefined" && !window._axToastAriaInstalled){
+    window._axToastAriaInstalled=true;
+    var ensureAriaRegion=function(){
+      try{
+        var existing=document.getElementById("ax-toast-region");
+        if(existing)return;
+        var r=document.createElement("div");
+        r.id="ax-toast-region";
+        r.setAttribute("aria-live","polite");
+        r.setAttribute("aria-atomic","true");
+        r.setAttribute("role","status");
+        r.style.cssText="position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden";
+        document.body.appendChild(r);
+      }catch(_){}
+    };
+    if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",ensureAriaRegion);}
+    else{ensureAriaRegion();}
+    /* Hook toast pour mirroir vers aria-live */
+    var _origToast=window.toast;
+    if(typeof _origToast==="function"){
+      window.toast=function(msg,kind,opts){
+        try{
+          var r=document.getElementById("ax-toast-region");
+          if(r){r.textContent=String(msg||"").slice(0,200);}
+        }catch(_){}
+        return _origToast.apply(this,arguments);
+      };
+    }
+  }
+}catch(_){}
+/* /v12.422 ax-toast-region-installed */
+
 function toast(msg,type,opts){try{if(msg&&!opts){var _dk=String(msg).slice(0,60)+"|"+(type||"");var _now=Date.now();if(window._axToastSeen[_dk]&&_now-window._axToastSeen[_dk]<1500)return;window._axToastSeen[_dk]=_now;if(Object.keys(window._axToastSeen).length>30){var _old=window._axToastSeen;window._axToastSeen={};Object.keys(_old).forEach(function(k){if(_now-_old[k]<3000)window._axToastSeen[k]=_old[k];});}}}catch(_){}if(!type)type="ok";var isAdm=(typeof axIsAdmin==="function")&&axIsAdmin();var s=String(msg);var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|ax_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|sync/i.test(s);/* v12.295 Kevin: filtre etendu erreurs JS techniques bas-niveau */var jsErr=/^(undefined|null|NaN|TypeError|ReferenceError|SyntaxError|HTTP \d+|Failed to fetch|AbortError|QuotaExceeded|CORS|fetch failed|Network ?error|JSON\.parse|Unexpected token|Cannot read prop|of undefined|of null|is not a function|is not defined|Maximum call stack)/i.test(s);if(!isAdm&&(technical||jsErr)&&!(opts&&opts.force)){try{var log=lg("ax_silent_log",[]);log.push({msg:s.slice(0,200),type:type,ts:Date.now()});if(log.length>200)log=log.slice(-200);ls("ax_silent_log",log);}catch(_){}return;}if(type==="ok")axHapticSuccess();if(type==="err")axHapticError();_toastQ.push({msg:msg,type:type});if(!_toastBusy)_toastNext();}
 function _toastNext(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=true;var item=_toastQ.shift();var el=document.createElement("div");el.className="ax-toast ax-toast-"+item.type;el.textContent=item.msg;el.setAttribute("role","alert");el.setAttribute("aria-live","polite");var c=document.getElementById("toast-container");if(c)c.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);_toastNext();},2500);}
 
@@ -1564,7 +1646,9 @@ function _axEncryptSecret(plaintext){try{if(!crypto||!crypto.subtle)return Promi
 function _axDecryptSecret(payload){try{if(!payload||typeof payload!=="string"||payload.indexOf(_AX_ENC_PREFIX)!==0)return Promise.resolve(payload);if(!crypto||!crypto.subtle)return Promise.resolve(payload);var raw=atob(payload.slice(_AX_ENC_PREFIX.length));var bytes=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);var iv=bytes.slice(0,12);var ct=bytes.slice(12);return _axGetMasterKey().then(function(key){return crypto.subtle.decrypt({name:"AES-GCM",iv:iv},key,ct).then(function(pt){return new TextDecoder().decode(pt);});}).catch(function(e){try{if(typeof axSecurityLog==="function")axSecurityLog("aes_decrypt_fail","payload="+String(payload).slice(0,30));}catch(_){}return payload;});}catch(_){return Promise.resolve(payload);}}
 function fbWrite(k,v,_retry){if(!FB_URL||!fbShouldSync(k))return;if(_fbCircuitCheck()){_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);return;}if(!_retry)_retry=0;/* v12_415_fix4b - encrypt sensitive secrets avant push Firebase */if(typeof _axIsSensitiveKey==="function"&&_axIsSensitiveKey(k)&&typeof v==="string"&&v.length>0&&v.indexOf(_AX_ENC_PREFIX)!==0){try{return _axEncryptSecret(v).then(function(encV){fbWrite._doFetch(k,encV,_retry);}).catch(function(){fbWrite._doFetch(k,v,_retry);});}catch(_){}}fbWrite._doFetch(k,v,_retry);}fbWrite._doFetch=function(k,v,_retry){var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);if(_fbCircuitConsecOpens>0&&_fbErrTs.length===0)_fbCircuitConsecOpens=0;}).catch(function(e){_fbCircuitTrip();if(_retry<_FB_BACKOFF.length){/* v12_415_fix4c - retry sans re-encrypt */setTimeout(function(){fbWrite._doFetch(k,v,_retry+1);},_FB_BACKOFF[_retry]);}else{_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);}});}
 function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
-function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{window._fbLastEvent=Date.now();var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");/* v12.298 SECU CRITIQUE : double guard SSE - bloquer toute cle LOCAL ou prefix LOCAL pousse par Firebase (anti-contamination cross-user Kevin/Laurence theme love rose) */var _isLocalKey=k&&FB_LOCAL.indexOf(k)>=0;if(!_isLocalKey&&k&&typeof FB_LOCAL_PREFIXES!=="undefined"&&FB_LOCAL_PREFIXES&&FB_LOCAL_PREFIXES.length){for(var _lpi=0;_lpi<FB_LOCAL_PREFIXES.length;_lpi++){if(k.indexOf(FB_LOCAL_PREFIXES[_lpi])===0){_isLocalKey=true;break;}}}if(_isLocalKey){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_local_blocked","Blocked LOCAL key from FB: "+String(k).slice(0,80));}catch(_){}try{if(FB_URL)fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{method:"DELETE"}).catch(function(){});}catch(_){}return;}if(k){/* v12.269 BUGFIX CRITIQUE : ne JAMAIS ecraser localStorage avec null Firebase (cause perte cles API Kevin). Ecrase seulement si vraie valeur. */if(d.data===null){var localVal=localStorage.getItem(k);if(localVal&&localVal!=="null"&&localVal!=="\"null\""){/* On garde notre valeur locale et on push vers Firebase pour reparer */try{if(typeof fbWrite==="function")fbWrite(k,JSON.parse(localVal));}catch(_e){_axSafeCatch&&_axSafeCatch("fb-sse-restore",_e);}return;}}/* v12_415_fix4d - decrypt sensitive secrets recus de Firebase */if(typeof _axIsSensitiveKey==="function"&&_axIsSensitiveKey(k)&&typeof d.data==="string"&&d.data.indexOf(_AX_ENC_PREFIX)===0){_axDecryptSecret(d.data).then(function(plain){try{localStorage.setItem(k,JSON.stringify(plain));}catch(_){}try{if(typeof _loadState==="function")_loadState();if(typeof dc==="function"&&!skipRender)dc();}catch(_){}});}else{try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}}/* v12.269 - Limite re-render : si chat actif ET event != chat keys, skip dc() pour eviter scroll saute */var skipRender=(K&&K.view==="chat"&&k.indexOf("ax_msgs_")<0&&k.indexOf("ax_convs")<0);_loadState();if(!skipRender)dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){_axSafeCatch&&_axSafeCatch("fb-sse",ex);}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}/* v12.248 - Reconnect base 30s + clamp 5min + jitter anti-thundering */var base=Math.min(30000*Math.pow(1.5,_fbRetries-1),300000);var jitter=Math.random()*2000;setTimeout(fbStartListening,base+jitter);};}
+function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}/* v12.422 PERF - Firebase SSE buffer cap anti-memoire (Kevin: 35MB save) */
+try{if(typeof window!=="undefined" && !window._axFbSseBufferCap){window._axFbSseBufferCap=true;var _fbMsgCount=0;var _origAddListener=EventSource.prototype.addEventListener;}}catch(_){}
+_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{window._fbLastEvent=Date.now();var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");/* v12.298 SECU CRITIQUE : double guard SSE - bloquer toute cle LOCAL ou prefix LOCAL pousse par Firebase (anti-contamination cross-user Kevin/Laurence theme love rose) */var _isLocalKey=k&&FB_LOCAL.indexOf(k)>=0;if(!_isLocalKey&&k&&typeof FB_LOCAL_PREFIXES!=="undefined"&&FB_LOCAL_PREFIXES&&FB_LOCAL_PREFIXES.length){for(var _lpi=0;_lpi<FB_LOCAL_PREFIXES.length;_lpi++){if(k.indexOf(FB_LOCAL_PREFIXES[_lpi])===0){_isLocalKey=true;break;}}}if(_isLocalKey){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_local_blocked","Blocked LOCAL key from FB: "+String(k).slice(0,80));}catch(_){}try{if(FB_URL)fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{method:"DELETE"}).catch(function(){});}catch(_){}return;}if(k){/* v12.269 BUGFIX CRITIQUE : ne JAMAIS ecraser localStorage avec null Firebase (cause perte cles API Kevin). Ecrase seulement si vraie valeur. */if(d.data===null){var localVal=localStorage.getItem(k);if(localVal&&localVal!=="null"&&localVal!=="\"null\""){/* On garde notre valeur locale et on push vers Firebase pour reparer */try{if(typeof fbWrite==="function")fbWrite(k,JSON.parse(localVal));}catch(_e){_axSafeCatch&&_axSafeCatch("fb-sse-restore",_e);}return;}}/* v12_415_fix4d - decrypt sensitive secrets recus de Firebase */if(typeof _axIsSensitiveKey==="function"&&_axIsSensitiveKey(k)&&typeof d.data==="string"&&d.data.indexOf(_AX_ENC_PREFIX)===0){_axDecryptSecret(d.data).then(function(plain){try{localStorage.setItem(k,JSON.stringify(plain));}catch(_){}try{if(typeof _loadState==="function")_loadState();if(typeof dc==="function"&&!skipRender)dc();}catch(_){}});}else{try{localStorage.setItem(k,JSON.stringify(d.data));}catch(ex){}}/* v12.269 - Limite re-render : si chat actif ET event != chat keys, skip dc() pour eviter scroll saute */var skipRender=(K&&K.view==="chat"&&k.indexOf("ax_msgs_")<0&&k.indexOf("ax_convs")<0);_loadState();if(!skipRender)dc();if(k==="ax_telemetry_in")_processIncomingTelemetry(d.data);}}}catch(ex){_axSafeCatch&&_axSafeCatch("fb-sse",ex);}};var _fbRetries=0;_fbEs.onerror=function(){if(_fbEs){_fbEs.close();_fbEs=null;}_fbRetries++;if(_fbRetries>30){console.warn("Firebase: abandon apres 30 tentatives");return;}/* v12.248 - Reconnect base 30s + clamp 5min + jitter anti-thundering */var base=Math.min(30000*Math.pow(1.5,_fbRetries-1),300000);var jitter=Math.random()*2000;setTimeout(fbStartListening,base+jitter);};}
 /* ========================================================
    v12.222 — TRIPLE PERSISTENCE (Kevin 2026-04-25)
    "Plus jamais re-saisir les cles API"
@@ -2959,6 +3043,25 @@ function axHasMyVoiceProfile(){try{var uid=(K&&K.user&&K.user.id)||"";if(!uid)re
 function _axExtractAudioFeatures(audioBuffer){return new Promise(function(resolve){try{var ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.decodeAudioData(audioBuffer.slice(0)).then(function(buf){var data=buf.getChannelData(0);var len=data.length;var sr=buf.sampleRate;/* Energy moyenne */var energy=0;for(var i=0;i<len;i++)energy+=data[i]*data[i];energy=Math.sqrt(energy/len);/* ZCR */var zcr=0;for(var k=1;k<len;k++)if((data[k-1]>=0)!==(data[k]>=0))zcr++;zcr=zcr/len;/* Pitch estime via autocorrelation simple */var maxLag=Math.floor(sr/80);var minLag=Math.floor(sr/400);var bestLag=0;var bestCorr=0;for(var lag=minLag;lag<=maxLag;lag+=2){var corr=0;for(var n=0;n<len-lag-1;n+=8){corr+=data[n]*data[n+lag];}if(corr>bestCorr){bestCorr=corr;bestLag=lag;}}var pitch=bestLag>0?sr/bestLag:0;/* Spectral centroid via FFT short-window */var fft=ctx.createAnalyser();fft.fftSize=2048;var src=ctx.createBufferSource();src.buffer=buf;src.connect(fft);src.start();var freqData=new Uint8Array(fft.frequencyBinCount);fft.getByteFrequencyData(freqData);var spectralSum=0,spectralWeighted=0;for(var f=0;f<freqData.length;f++){spectralSum+=freqData[f];spectralWeighted+=freqData[f]*f;}var centroid=spectralSum>0?spectralWeighted/spectralSum:0;src.stop();ctx.close();resolve({energy:energy,zcr:zcr,pitch:pitch,centroid:centroid});}).catch(function(e){resolve({energy:0,zcr:0,pitch:0,centroid:0,error:String(e)});});}catch(e){resolve({energy:0,zcr:0,pitch:0,centroid:0,error:String(e)});}});}
 
 function _axCosineSim(a,b){if(!a||!b)return 0;var keys=["energy","zcr","pitch","centroid"];var dot=0,na=0,nb=0;keys.forEach(function(k){var va=Number(a[k])||0,vb=Number(b[k])||0;dot+=va*vb;na+=va*va;nb+=vb*vb;});if(na===0||nb===0)return 0;return dot/(Math.sqrt(na)*Math.sqrt(nb));}
+
+/* v12.422 RGPD - Voiceprint disclosure consent (Art. 9 biometrie) */
+function _axVoiceprintRgpdConsent(){
+  try{
+    if(lg("ax_voiceprint_rgpd_v1",false))return Promise.resolve(true);
+    return new Promise(function(resolve){
+      try{
+        var ok=window.confirm("⚠ RGPD Art. 9 - Donnee biometrique\n\nL'enrollment vocal genere une empreinte (MFCC) qui constitue une DONNEE BIOMETRIQUE selon le RGPD Art. 9.\n\n- Stockee LOCALEMENT (jamais envoyee a un serveur)\n- Reversible : tu peux la supprimer a tout moment dans Reglages\n- Utilisee uniquement pour reconnaissance vocale 'Dis Apex'\n\nAcceptes-tu ?");
+        if(ok){
+          ls("ax_voiceprint_rgpd_v1",{accepted:true,ts:Date.now()});
+          if(typeof axSecurityLog==="function")axSecurityLog("voiceprint_rgpd_consent","accepted");
+        } else {
+          if(typeof axSecurityLog==="function")axSecurityLog("voiceprint_rgpd_consent","declined");
+        }
+        resolve(ok);
+      }catch(_){resolve(false);}
+    });
+  }catch(_){return Promise.resolve(false);}
+}
 
 function axEnrollVoice(){return new Promise(function(resolve,reject){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){if(typeof toast==="function")toast("Micro non disponible","err");reject(new Error("getUserMedia missing"));return;}if(!K||!K.user||!K.user.id){if(typeof toast==="function")toast("Connecte-toi d abord","warn");reject(new Error("not logged"));return;}if(typeof toast==="function")toast("🎤 Enregistrement 1/3 — dis : 'Dis Apex tu reconnais ma voix'","info",{force:true,duration:5000});var samples=[];var sampleIdx=0;var prompts=["Dis Apex tu reconnais ma voix","Apex active mode admin maintenant","Apex ouvre les reglages s il te plait"];function recordOne(){if(sampleIdx>=3){/* Moyenne features */var avgFeatures={energy:0,zcr:0,pitch:0,centroid:0};samples.forEach(function(f){avgFeatures.energy+=f.energy/3;avgFeatures.zcr+=f.zcr/3;avgFeatures.pitch+=f.pitch/3;avgFeatures.centroid+=f.centroid/3;});var profile={features:avgFeatures,samples:samples,uid:K.user.id,enrolled:Date.now(),version:APP_VER};ls("ax_voice_print_"+K.user.id,profile);ls("ax_voice_profiles_count",(lg("ax_voice_profiles_count",0)||0)+1);if(typeof toast==="function")toast("✅ Voix enrolee — Dis Apex te reconnaitra desormais","ok",{force:true,duration:5000});resolve(profile);return;}if(typeof toast==="function")toast("🎤 "+(sampleIdx+1)+"/3 — '"+prompts[sampleIdx]+"' (3s)","info",{force:true,duration:4000});navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}).then(function(stream){var mr=new MediaRecorder(stream);var chunks=[];mr.ondataavailable=function(e){chunks.push(e.data);};mr.onstop=function(){stream.getTracks().forEach(function(t){t.stop();});var blob=new Blob(chunks,{type:"audio/webm"});blob.arrayBuffer().then(function(buf){_axExtractAudioFeatures(buf).then(function(features){samples.push(features);sampleIdx++;setTimeout(recordOne,500);});});};mr.start();setTimeout(function(){if(mr.state==="recording")mr.stop();},3000);}).catch(function(e){if(typeof toast==="function")toast("Erreur micro: "+(e&&e.message||e),"err");reject(e);});}recordOne();});}
 
@@ -6639,7 +6742,7 @@ function axHardLogoutSession(){
   try{if(typeof axSecurityLog==="function")axSecurityLog("hard_logout_session","");}catch(_){}
 }
 
-function axLogout(){if(K.user){_audit("logout",K.user.id,K.user.name,"");_logConnection("logout");/* v12.297 : hard logout pour eviter contamination cross-user */try{if(typeof axHardLogoutSession==="function")axHardLogoutSession();}catch(_){}var presence=lg("ax_presence",{});Object.keys(presence).forEach(function(k){if(k.startsWith(K.user.id))presence[k].online=false;});ls("ax_presence",presence);}K.user=null;K.isStreaming=false;ls("ax_uid",null);if(_fbEs){_fbEs.close();_fbEs=null;}if(_pomodoroInterval){clearInterval(_pomodoroInterval);_pomodoroInterval=null;}if(_stopwatchInterval){clearInterval(_stopwatchInterval);_stopwatchInterval=null;}if(_meditationTimer){clearInterval(_meditationTimer);_meditationTimer=null;}axSttStop();axTtsStop();axWakeLockRelease();axAssistantStop();_globalIntervals.forEach(function(id){clearInterval(id);});_globalIntervals=[];_agents.forEach(function(a){a.active=false;});sv("login");}
+function axLogout(){if(K.user){_audit("logout",K.user.id,K.user.name,"");/* v12.422 SECU - Optional clear credentials cache sessionStorage on logout */try{var clearOnLogout=lg("ax_clear_creds_logout",false);if(clearOnLogout){try{sessionStorage.clear();}catch(_){}}}catch(_){}_logConnection("logout");/* v12.297 : hard logout pour eviter contamination cross-user */try{if(typeof axHardLogoutSession==="function")axHardLogoutSession();}catch(_){}var presence=lg("ax_presence",{});Object.keys(presence).forEach(function(k){if(k.startsWith(K.user.id))presence[k].online=false;});ls("ax_presence",presence);}K.user=null;K.isStreaming=false;ls("ax_uid",null);if(_fbEs){_fbEs.close();_fbEs=null;}if(_pomodoroInterval){clearInterval(_pomodoroInterval);_pomodoroInterval=null;}if(_stopwatchInterval){clearInterval(_stopwatchInterval);_stopwatchInterval=null;}if(_meditationTimer){clearInterval(_meditationTimer);_meditationTimer=null;}axSttStop();axTtsStop();axWakeLockRelease();axAssistantStop();_globalIntervals.forEach(function(id){clearInterval(id);});_globalIntervals=[];_agents.forEach(function(a){a.active=false;});sv("login");}
 
 // --- Navigation ---
 function sv(v){/* v12.404 - Log changements K.view pour debug "vue saute" */try{var _vlog=lg("ax_view_changes",[]);_vlog.push({from:K.view,to:v,ts:Date.now(),caller:(new Error()).stack?(new Error()).stack.split("\n")[2]||"":""});if(_vlog.length>30)_vlog=_vlog.slice(-30);ls("ax_view_changes",_vlog);}catch(_){}var _svT0=performance.now();/* v12.188 - slow click sentinel */try{setTimeout(function(){var dt=performance.now()-_svT0;if(dt>500&&typeof axIsAdmin==="function"&&axIsAdmin()){var log=lg("ax_click_slow",[]);log.push({view:v,ms:Math.round(dt),ts:Date.now()});if(log.length>50)log=log.slice(-50);ls("ax_click_slow",log);if(dt>1500){try{if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("slow-click","warn","sv("+v+") "+Math.round(dt)+"ms");}catch(_){}}}},0);}catch(_){}_viewHistory.push(K.view);K.view=v;try{if(K.user){var cv=lg("ax_current_views",{});cv[K.user.id]={view:v,name:K.user.name,plan:K.user.plan||"?",ts:Date.now()};ls("ax_current_views",cv);if(typeof fbWrite==="function")try{fbWrite("ax_current_views",cv);}catch(_){}}}catch(_){}render();var c=document.getElementById("content");if(c)c.scrollTop=0;var fab=document.getElementById("ax-fab");if(fab)fab.classList.toggle("hidden",v==="chat"||v==="login"||v==="landing"||!K.user);}
@@ -7025,6 +7128,23 @@ function _axRouteThroughCheapestProvider(sysPrompt, msgs){
   return false;
 }
 
+/* v12.422 PERF - Anti-spam click send button (Kevin: chaos eng test 100x/sec) */
+(function(){
+  try{
+    if(window._axSendDebounceInstalled)return;
+    window._axSendDebounceInstalled=true;
+    var _lastSendTs=0;
+    var _origSend=window._sendFromInput;
+    if(typeof _origSend==="function"){
+      window._sendFromInput=function(){
+        var now=Date.now();
+        if(now-_lastSendTs<300){return;}
+        _lastSendTs=now;
+        return _origSend.apply(this,arguments);
+      };
+    }
+  }catch(_){}
+})();
 function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim())return;/* v12.269 - Si IA reflechit : queue le message au lieu de bloquer silencieusement */if(K.isStreaming){var queued=lg("ax_msg_queue",[]);queued.push({text:el.value.trim(),ts:Date.now()});if(queued.length>5)queued=queued.slice(-5);ls("ax_msg_queue",queued);try{toast("⏳ Apex reflechit. Ton message est en attente ("+queued.length+" en queue)","info");}catch(_){}return;}axHaptic();var text=el.value.trim();el.value="";try{if(typeof _axApplyAutoMode==="function")_axApplyAutoMode(text);}catch(_){}/* v12.368 reset textarea height after send */try{var _ta=document.getElementById("ax-chat-input");if(_ta){_ta.style.height="auto";_ta.style.overflowY="hidden";}}catch(_){}if(typeof axVoiceExecute==="function"&&/^(hey |ok |dis )?(apex|ai)\s+/i.test(text)&&axVoiceExecute(text))return;if(_checkVoiceCommand(text))return;/* v12.352 — APEX EXECUTE: court-circuit IA UNIQUEMENT si intent fort (studio/url/calcul). Pour tout autre, laisse l'IA repondre normalement. */try{if(typeof axDetectAndExecute==="function"){var _execRes=axDetectAndExecute(text);/* Strict : il faut executed=true ET (actionType in [studio,url,calculator,timer]) ET ne pas matcher des mots ambigus */var _strongActions=["studio","url","navigate","open","calculator","timer","weather"];var _isStrong=_execRes&&_execRes.executed&&_execRes.action&&_strongActions.indexOf(String(_execRes.action).toLowerCase())>=0;if(_isStrong){try{K.messages.push({role:"user",content:text,ts:typeof now==="function"?now():Date.now()});K.messages.push({role:"assistant",content:"⚡ "+(_execRes.message||"J ai execute ta demande."),ts:typeof now==="function"?now():Date.now()});if(typeof _saveMsgs==="function")_saveMsgs();if(typeof dc==="function")dc();}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-record",_e);}return;}}}catch(_eExec){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-hook",_eExec);}sendMessage(text);}
 /* v12.269 - Process la queue messages quand IA finit de streamer */
 function _axProcessMsgQueue(){try{var q=lg("ax_msg_queue",[]);if(!q||!q.length)return;if(K.isStreaming)return;var next=q.shift();ls("ax_msg_queue",q);if(next&&next.text){toast("📤 Envoi message en queue","info");setTimeout(function(){sendMessage(next.text);},300);}}catch(_e){_axSafeCatch&&_axSafeCatch("ax-msg-queue",_e);}}
@@ -9666,7 +9786,7 @@ function searchConversations(query){if(!query)return[];var q=query.toLowerCase()
 
 // --- Markdown ---
 function _loadScript(url,onload,integrity){var s=document.createElement("script");s.src=url;if(integrity){s.integrity=integrity;s.crossOrigin="anonymous";}s.onload=onload||function(){};s.onerror=function(){toast("Erreur chargement CDN","err");};document.head.appendChild(s);return s;}
-function _loadPurify(){if(_purifyLoaded)return;_loadScript("https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js",function(){_purifyLoaded=true;});}
+function _loadPurify(){if(_purifyLoaded)return;_loadScript("https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js",function(){_purifyLoaded=true;});}
 function _sanitize(html){/* v12_415_fix1 - DOMPurify hardening : FORBID_TAGS + FORBID_ATTR explicites en plus de ALLOWLIST */if(typeof DOMPurify!=="undefined")return DOMPurify.sanitize(html,{ALLOWED_TAGS:["strong","em","code","pre","h1","h2","h3","ul","ol","li","a","br","div","span","table","th","td","tr","blockquote","button","img"],ALLOWED_ATTR:["href","target","class","id","style","aria-label","title","data-tip","data-cmd","data-faq","src","alt","loading"],FORBID_TAGS:["script","iframe","object","embed","form","input","meta","link","style","base","applet"],FORBID_ATTR:["onerror","onload","onclick","onmouseover","onfocus","onblur","onsubmit","onchange","onkeydown","onkeyup","onkeypress","oninput","ontoggle","onanimationend","onanimationstart","onanimationiteration","ontransitionend","onpointerdown","onpointerup","onpointermove","ondrag","ondragstart","ondragend","ondrop","onpaste","oncopy","oncut","oncontextmenu","onwheel","onscroll","formaction","srcdoc","action"]});/* v12.273 — fallback sanitize sans DOMPurify : strip handlers + javascript: + data: scripts */try{var s=String(html||"");/* Remove on* handlers */s=s.replace(/\s+on\w+\s*=\s*"[^"]*"/gi,"");s=s.replace(/\s+on\w+\s*=\s*'[^']*'/gi,"");s=s.replace(/\s+on\w+\s*=\s*[^\s>]+/gi,"");/* Strip javascript: */s=s.replace(/javascript\s*:/gi,"#blocked-");/* Strip script tags (split to avoid breaking HTML parser) */s=s.replace(new RegExp("<scr"+"ipt[\\s\\S]*?<\\/scr"+"ipt>","gi"),"");s=s.replace(new RegExp("<scr"+"ipt[^>]*>","gi"),"");/* Strip <iframe>, <object>, <embed> */s=s.replace(/<\/?(?:iframe|object|embed|form|input|meta|link)[^>]*>/gi,"");return s;}catch(e){return"";}}
 function renderMd(text){if(!text)return"";var h=esc(text);h=h.replace(/&lt;button[^&]{0,200}onclick=(?:&quot;|&#39;)(axOpenStudio|sv|axNavigateTo|axDetectAndExecute|axTryFailoverNow)\((?:&quot;|&#39;)([a-z0-9_\-:.\/]{1,60})(?:&quot;|&#39;)\)(?:&quot;|&#39;)[^&]{0,200}&gt;([^&<>]{1,80})&lt;\/button&gt;/gi,function(_m,fn,arg,label){var safeArg=String(arg).replace(/[^a-zA-Z0-9_\-:.\/]/g,"");var safeLabel=String(label).replace(/[<>]/g,"");return'<button class="ax-btn ax-btn-primary" style="min-height:44px;margin-top:8px;padding:10px 16px" onclick="'+fn+'(\''+safeArg+'\')">'+safeLabel+'</button>';});/* v12.314 — Re-render boutons IA whitelist */h=h.replace(/```(\w*)\n([\s\S]*?)```/g,function(m,lang,code){var id="cb"+Math.random().toString(36).slice(2,7);var langCls=lang?' class="language-'+lang+'"':"";return'<div class="ax-code"><button class="ax-copy" onclick="axCopyCode(\''+id+'\')">\uD83D\uDCCB Copier</button><pre><code id="'+id+'"'+langCls+">"+code+"</code></pre></div>";});if(!_hljsLoaded){axHljsLoad().then(function(){document.querySelectorAll(".ax-code code[class]").forEach(function(el){if(window.hljs)window.hljs.highlightElement(el);});});}else if(window.hljs){setTimeout(function(){document.querySelectorAll(".ax-code code[class]").forEach(function(el){if(!el.classList.contains("hljs"))window.hljs.highlightElement(el);});},50);}h=h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0" loading="lazy">');h=h.replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;font-family:var(--ax-mono);font-size:13px">$1</code>');h=h.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");h=h.replace(/\*([^*]+)\*/g,"<em>$1</em>");h=h.replace(/^### (.+)$/gm,"<h3>$1</h3>");h=h.replace(/^## (.+)$/gm,"<h2>$1</h2>");h=h.replace(/^# (.+)$/gm,"<h1>$1</h1>");h=h.replace(/^\- (.+)$/gm,"<li>$1</li>");h=h.replace(/(<li>.*<\/li>)/gs,"<ul>$1</ul>");h=h.replace(/\n/g,"<br>");return _sanitize(h);}
 
