@@ -62,6 +62,93 @@ Solution :
 
 ---
 
+## 🤖 v12.427 — APEX AUTONOMIE TOTALE : SAIT OÙ VA QUOI + CHERCHE/PREND CE QUI MANQUE (Kevin: "C'était d'ailleurs prévu comme ça")
+
+> **Vision Kevin** : Apex doit savoir **où va quoi** automatiquement (auto-classification déjà OK v12.401-411), **ET aussi chercher et prendre** ce qui lui manque. Acquisition autonome des clés/credentials manquants.
+
+### A. Sait où va quoi (déjà v12.401-411, à renforcer)
+
+- ✅ `_axScanTextContextual` (v12.401) : détecte service via patterns 130+ services
+- ✅ `_axDiscoverServiceForUnknown` (v12.411) : IA Anthropic/Groq propose target_field
+- ✅ Auto-relocate si clé Groq dans champ Grok → toast + bouton 1-tap déplacer
+- 🔄 **À renforcer v12.427** :
+  - Auto-relocate **silent** si confidence > 0.98 (pas demander confirmation)
+  - Mass-rebuild Coffre : audit toutes les clés, déplace toutes les mal-placées en 1 tap admin
+  - Apprentissage cross-session : mémorise patterns Kevin (ax_layout_learned)
+
+### B. Cherche et prend ce qui manque (NOUVEAU)
+
+#### B1. Détection besoin
+
+Quand Apex échoue avec une clé/credential manquant :
+- 401 / quota_epuise sur Anthropic → besoin recharge ou bascule provider
+- Groq absente → besoin nouvelle clé Groq
+- ax_paypal_me absent → besoin saisie PayPal pour facture
+- ax_iban absent → besoin saisie virement
+- ax_github_token absent → besoin pour push code
+- ax_brave_key absent → besoin web search
+- etc.
+
+#### B2. Acquisition autonome (browser embed + auto-install)
+
+Pour CHAQUE service manquant, Apex :
+1. **Ouvre browser embed** sur la page exacte du service (pre-positioned login)
+   - Groq → `https://console.groq.com/keys` (login Google/GitHub auto-detected)
+   - Anthropic → `https://console.anthropic.com/settings/keys`
+   - OpenAI → `https://platform.openai.com/api-keys`
+   - Gemini → `https://aistudio.google.com/apikey`
+   - Cloudflare → `https://dash.cloudflare.com/profile/api-tokens`
+   - Stripe → `https://dashboard.stripe.com/apikeys`
+   - GitHub → `https://github.com/settings/tokens`
+   - Brave Search → `https://api.search.brave.com/app/keys`
+
+2. **Guide step-by-step ultra-simple** (Kevin non-codeur, niveau enfant 12 ans)
+   - "1. Connecte-toi avec Google (1 tap)"
+   - "2. Clique 'Create API Key'"
+   - "3. Copie la clé (long press → Copier)"
+   - "4. Reviens ici → ta clé sera installée automatiquement"
+
+3. **Watch clipboard auto** :
+   - À chaque retour dans Apex (visibility change + clipboard.readText permission)
+   - Scan le contenu clipboard avec `_axScanTextContextual`
+   - Si match `gsk_xxx` (Groq) ou `sk-ant-xxx` (Anthropic) etc → auto-classify + auto-stocke dans bon champ
+   - Test live auto immediate
+   - Toast vert "✅ Clé Groq installée et fonctionnelle"
+   - Si test échec → "Clé invalide, recopie-la depuis le site"
+
+4. **Recovery link automatique** (déjà v12.412)
+   - 401 → modal regen
+   - 402 → modal recharge
+   - 429 → modal quota
+   - 5xx → modal status page
+   - Network → diagnostic auto
+
+5. **Fallback failover IA** (déjà v12.376)
+   - Anthropic 5xx repete 3× → bascule OpenRouter
+   - OpenRouter KO → bascule Groq
+   - Groq KO → bascule Gemini
+   - Tout KO → mode local + propose acquisition nouvelle clé via B2
+
+#### B3. Mémoire des sources (cross-session)
+
+`ax_acquisition_history` : pour chaque service obtenu, stocke :
+- Service name, date acquisition, méthode (browser embed / dictée / manuel)
+- Si Kevin réinstalle l'app, Apex sait quelles clés étaient configurées et propose de les re-acquérir
+
+### Effort estimé v12.427
+- Browser embed + page mapping 20+ services : 4h
+- Clipboard watcher + auto-classify (renforce v12.401-411) : 2h
+- UI guide step-by-step modale 12-year-old level : 2h
+- Tests E2E par service (Groq, Anthropic, etc.) : 2h
+- **Total** : ~10h dev
+
+### Bénéfice
+- Kevin n'a JAMAIS à savoir où chercher une clé
+- Apex propose le chemin direct + auto-install + auto-test
+- Vraie autonomie : "Apex marche pas → Apex se débloque seul"
+
+---
+
 ## 📝 NOTES DEBRIEF SESSION 2026-04-27 NUIT2
 
 ### Audit pro 5 agents (Stripe/FAANG-grade) - scores réels
