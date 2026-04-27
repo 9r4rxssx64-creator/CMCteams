@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.394",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.395",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6281,7 +6281,7 @@ function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="
 var _dcRaf=0,_lastView="",_chatPageSize=50;
 function _throttle(fn,delay){var last=0;return function(){var n=now();if(n-last>=delay){last=n;fn.apply(this,arguments);}};}
 function render(){var app=document.getElementById("app");if(!app)return;try{app.innerHTML=vTopbar()+vMainContent()+vNav();_lastView=K.view;_bindEvents();}catch(re){console.error("[RENDER CRASH]",re);try{app.innerHTML='<div id="topbar"><div class="ax-logo">APEX</div></div><div id="content" style="padding:40px;text-align:center;color:#fff"><h2 style="color:#c9a227">APEX</h2><p>Un souci technique. Essaie de recharger.</p><button class="ax-btn ax-btn-primary" onclick="location.reload()" style="margin-top:20px;padding:14px 28px">Recharger</button><p style="color:#999;font-size:11px;margin-top:20px">'+String(re.message||re).slice(0,100).replace(/</g,"&lt;")+'</p></div>';}catch(_){}}}
-function dc(){/* v12.384 - skip dc si input focused (anti-saut Kevin) */ if(window._axInputFocused && Date.now()-(window._axInputFocusedAt||0)<10000){return;} if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
+function dc(){/* v12.395 - skip dc seulement si user TAPE activement (3s max + input non-vide) */ if(window._axInputFocused && Date.now()-(window._axInputFocusedAt||0)<3000){var _inp=document.getElementById("ax-chat-input");if(_inp && _inp.value && _inp.value.length>0){return;}} if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.395 - Force scroll bas si nouveau message recu (ts<3s) ou streaming */try{var _lastMsg=K&&K.messages&&K.messages[K.messages.length-1];var _isFresh=_lastMsg&&_lastMsg.ts&&(Date.now()-_lastMsg.ts<3000);if((_isFresh||K.isStreaming)&&document.getElementById("ax-chat-scroll")){var _fc=document.getElementById("ax-chat-scroll");setTimeout(function(){_fc.scrollTop=_fc.scrollHeight+9999;},50);}}catch(_){}/* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
 function dcNow(){_dcRaf=0;render();}
 /* v12.198 — wrap render() pour mesurer le temps par vue (perf-watch) */
 (function(){if(typeof render==="function"&&!render._axWrapped){var _origRender=render;window.render=function(){var t0=performance.now();try{return _origRender.apply(this,arguments);}finally{try{var dt=performance.now()-t0;if(typeof _axTrackRender==="function"&&K&&K.view)_axTrackRender(K.view,dt);if(dt>200&&typeof _snLog==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())_snLog("perf-watch","warn","render "+K.view+" "+Math.round(dt)+"ms");}catch(_){}}};window.render._axWrapped=true;}})();
@@ -7040,12 +7040,12 @@ function _axChatScrollFab(){
       fab=document.createElement('button');
       fab.id='ax-chat-fab-down';
       fab.setAttribute('aria-label','Descendre au dernier message');
-      fab.style.cssText='position:fixed;right:14px;bottom:140px;width:44px;height:44px;border-radius:50%;background:var(--ax-gold,#c9a227);color:#000;border:none;font-size:22px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:300;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1';
+      fab.style.cssText='position:fixed;left:14px;bottom:120px;width:40px;height:40px;border-radius:50%;background:var(--ax-gold,#c9a227);color:#000;border:none;font-size:18px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:299;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;opacity:.85';
       fab.textContent='\u2193';
       fab.onclick=function(){var s=document.getElementById('ax-chat-scroll');if(s){/* v12.392 - double scroll force pour vraiment aller au bas (DOM peut grandir entre temps) */s.scrollTop=s.scrollHeight+9999;requestAnimationFrame(function(){s.scrollTop=s.scrollHeight+9999;setTimeout(function(){s.scrollTop=s.scrollHeight+9999;s.scrollTo({top:s.scrollHeight,behavior:'smooth'});},150);});}};
       document.body.appendChild(fab);
     }
-    if(fab){fab.style.display=shouldShow?'flex':'none';}
+    if(fab){var hideStreaming=(K&&K.isStreaming);fab.style.display=(shouldShow&&!hideStreaming)?'flex':'none';}
   }catch(_){}
 }
 
@@ -7639,26 +7639,30 @@ function _axScanTextSmart(text){
       }
     }
   });
-  /* Step 2 : dedup par target -> garde le DERNIER (regle Kevin v12.350+) */
+  /* v12.395 - Garde TOUS les candidats par target (Kevin "teste tous, garde celui qui marche") */
   var byTarget = {};
   raw.forEach(function(item, i){
     item.order = i;
-    if(!byTarget[item.target] || i > byTarget[item.target].order){
-      byTarget[item.target] = item;
+    if(!byTarget[item.target]) byTarget[item.target] = [];
+    byTarget[item.target].push(item);
+  });
+  /* Pour chaque target : si plusieurs candidats, on garde tous + flag candidates */
+  var result = [];
+  Object.keys(byTarget).forEach(function(t){
+    var arr = byTarget[t];
+    if(arr.length === 1){
+      result.push(arr[0]);
+    } else {
+      /* Plusieurs candidats : on garde le dernier comme "principal" + les autres dans candidates[] */
+      arr.sort(function(a,b){ return a.order - b.order; });
+      var primary = arr[arr.length - 1];
+      primary.candidates = arr.slice(0, -1).map(function(x){ return x.value; });
+      primary.allCandidates = arr.map(function(x){ return x.value; });
+      primary.candidatesCount = arr.length;
+      result.push(primary);
     }
   });
-  /* Marquer les anciens (skipped) */
-  var result = [];
-  Object.keys(byTarget).forEach(function(t){ result.push(byTarget[t]); });
-  /* Trier par ordre apparition */
   result.sort(function(a,b){ return a.order - b.order; });
-  /* Compter doublons */
-  var dupCount = raw.length - result.length;
-  if(dupCount > 0 && typeof toast === "function"){
-    setTimeout(function(){
-      toast(dupCount + " ancienne(s) cle(s) ignoree(s) (regle : la derniere ecrase la precedente)", "info", {duration:4000});
-    }, 500);
-  }
   return result;
 }
 
@@ -7674,13 +7678,54 @@ _axScanTextForCredentials = function(text){
   return raw;
 };
 
+function _axTestBestCandidate(target, values){
+  /* v12.395 - Teste sequentiellement chaque candidat, garde le premier qui marche (Kevin "teste tout en autonomie") */
+  return new Promise(function(resolve){
+    if(!values || !values.length){ resolve({ok:false, msg:"aucun candidat"}); return; }
+    var idx = 0;
+    var tried = [];
+    function tryNext(){
+      if(idx >= values.length){
+        if(typeof toast === "function") toast("Aucun des "+values.length+" candidats ne marche pour "+target.replace("ax_",""), "err", {duration:6000, force:true});
+        resolve({ok:false, msg:"all failed", tried:tried});
+        return;
+      }
+      var v = values[idx];
+      try{ ls(target, v); }catch(_){}
+      idx++;
+      if(typeof toast === "function") toast("Test candidat "+idx+"/"+values.length+" pour "+target.replace("ax_","")+"...", "info", {duration:1500});
+      if(typeof axCredTestLive === "function"){
+        axCredTestLive(target).then(function(res){
+          tried.push({value: v.slice(0,6)+"..."+v.slice(-4), ok: res.ok, msg: res.msg});
+          if(res.ok){
+            if(typeof toast === "function") toast("Candidat "+idx+" fonctionne ! Sauvegarde", "ok", {duration:3000, force:true});
+            resolve({ok:true, value:v, tried:tried, winner:idx});
+          } else {
+            tryNext();
+          }
+        }).catch(function(){ tryNext(); });
+      } else {
+        tryNext();
+      }
+    }
+    tryNext();
+  });
+}
+
 function _axProposeCredentialSave(detected){
   if(!detected || !detected.length) return;
   var html = '<div style="padding:18px;max-width:560px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Code(s) detecte(s)</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex a reconnu le format. Veux-tu enregistrer dans le Coffre ?</p>';
   detected.forEach(function(d, i){
     var maskedSample = d.value.slice(0, 6) + "..." + d.value.slice(-4);
     var ctxLine = d.context ? '<div style="font-size:10px;color:var(--ax-gold);margin-top:2px">'+esc(d.context)+'</div>' : '';
-    html += '<div class="ax-card" style="margin-bottom:8px;border-left:4px solid var(--ax-gold)"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><strong>'+esc(d.label)+'</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace">'+esc(maskedSample)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Champ: '+esc(d.target)+'</div>'+ctxLine+'</div><button class="ax-btn ax-btn-primary" id="ax-cred-save-'+i+'" style="min-height:44px;padding:8px 16px;font-size:13px;font-weight:700">Enregistrer</button></div></div>';
+    /* v12.395 - Affichage candidats multiples */
+    var candLine = "";
+    var btnLabel = "Enregistrer";
+    if(d.candidatesCount && d.candidatesCount > 1){
+      candLine = '<div style="font-size:10px;color:#5aa8ff;margin-top:2px">' + d.candidatesCount + ' candidats trouves - test auto sequentiel</div>';
+      btnLabel = "Tester " + d.candidatesCount + " candidats";
+    }
+    html += '<div class="ax-card" style="margin-bottom:8px;border-left:4px solid var(--ax-gold)"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><strong>'+esc(d.label)+'</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace">'+esc(maskedSample)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Champ: '+esc(d.target)+'</div>'+ctxLine+candLine+'</div><button class="ax-btn ax-btn-primary" id="ax-cred-save-'+i+'" style="min-height:44px;padding:8px 16px;font-size:13px;font-weight:700">'+btnLabel+'</button></div></div>';
   });
   /* v12.393 - Bouton "Tout enregistrer" si plusieurs clés détectées */
   if(detected.length > 1){
@@ -7712,13 +7757,30 @@ function _axProposeCredentialSave(detected){
         if(!btn) return;
         btn.onclick = function(){
           try{
+            /* v12.395 - Si plusieurs candidats, teste tous sequentiellement */
+            if(d.allCandidates && d.allCandidates.length > 1 && typeof _axTestBestCandidate === "function"){
+              btn.disabled = true;
+              btn.textContent = "Test en cours...";
+              _axTestBestCandidate(d.target, d.allCandidates.slice().reverse()).then(function(res){
+                if(res.ok){
+                  btn.textContent = "Bon code trouve (" + res.winner + "/" + d.allCandidates.length + ")";
+                  btn.style.background = "rgba(92,216,130,.15)";
+                  btn.style.color = "#5cd882";
+                } else {
+                  btn.textContent = "Aucun code valide";
+                  btn.style.background = "rgba(255,88,88,.15)";
+                  btn.style.color = "#ff5858";
+                  btn.disabled = false;
+                }
+              });
+              return;
+            }
             ls(d.target, d.value);
             if(typeof toast === "function") toast(d.label + " enregistre dans le Coffre", "ok", {duration:3000});
             btn.disabled = true;
             btn.textContent = "Enregistre OK";
             btn.style.background = "rgba(92,216,130,.15)";
             btn.style.color = "#5cd882";
-            /* auto-test live 1.5s plus tard */
             setTimeout(function(){
               if(typeof axCredTestLive === "function") axCredTestLive(d.target);
             }, 1500);
