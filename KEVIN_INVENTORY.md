@@ -1,7 +1,78 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-04-25** (post Apex v12.242 + CMCteams v9.522)
+> Dernière mise à jour : **2026-04-27 SOIR** (post Apex v12.403 — session marathon 67+ versions)
+
+## 🆕 SESSION 2026-04-27 SOIR — RÉCAP COMPLET (v12.376-v12.403)
+
+**3 audits subagents indépendants** :
+- **Code** (Agent Explore) : **9.2/10** production-ready
+- **UX** (Agent Explore scénarios) : **6.5/10** (2 risques = false positives audit)
+- **Sécurité** (Agent Explore) : **5.5/10** (OK perso Kevin, pas enterprise multi-user)
+
+**Audit syntaxe direct** : ✅ `node --check` OK + 26/26 tests + 21 fonctions critiques 1 def chacune (pas de duplication)
+
+### 🤖 Auto-detection credentials (LE GROS CHANTIER)
+
+Tu colles → Apex range automatiquement. **3 façons** :
+1. **Texte chat** : préfixe détecté (`gsk_`, `ghp_`, `sk-ant-`, `AIza`, `xai-`, etc.)
+2. **Photo/screenshot** : paste image → OCR Tesseract.js → scan → propose
+3. **Fichier upload** : si image → OCR auto
+
+**130+ services reconnus contextuellement** : IA (12), réseaux sociaux (12), email (8), comm (12), streaming (10), music (6), cloud (5), banques FR (19), crypto (8), gaming (11), productivity (9), dev (13), shopping (9), voyage (12), casino (5), admin État (8).
+
+### 💾 Auto-save TOTAL + historique + rollback
+
+- Toggle `ax_auto_save_credentials` (default true) → save batch sans confirmation
+- Tests live espacés 1.5s/clé + bilan + push GitHub si KO
+- Historique 10 entries par clé dans `ax_cred_history_<key>`
+- Si nouveau KO → modal "Restaurer ancien" → rollback vers dernier validated
+- Multi-candidats : si 3 GitHub PAT détectés → "Tester 3 candidats" séquentiel
+
+### ⚡ Failover IA cascade
+
+Anthropic → OpenRouter → Groq → Gemini auto sur :
+- Timeout (>180s)
+- 5xx serveur (≥3 fois en 5 min)
+- Network exhaust
+- **Stuck 45s** (`_healthCheck` v12.400)
+
+Watchdog 200s + badge "via Provider" topbar live.
+
+### 🎨 UX Claude.ai-style
+
+- Chatbar : "+" gauche, textarea milieu auto-grow, micro+envoi droite
+- Stop = carré blanc dans cercle rouge **fixe**
+- 3 dots subtils gris (au lieu cube doré clignotant)
+- Mode plan/code badge centré 1.5s fade
+- Modal saisie clé large 140px monospace
+- FAB ↓ centre 84px du bas (anti-collision streaming)
+- Anti-saut input + anti-scintille foreground 800ms
+
+### 🔍 Vues admin nouvelles
+
+- `?view=credlogs` → log setItem 30 + deep_clean 5
+- `?view=credhistory` → 10 entries par clé avec status ACTUEL/VALIDÉ/archivé
+- `?view=revocation` → helper liens directs (optionnel)
+
+### 📨 Passerelle Claude Code (push GitHub)
+
+- `_axPushDiagnosticToGitHub` via `ax_github_token`
+- `axSendReportToClaudeCode()` push manuel rapport complet
+- `axTestEachFunction()` test 50+ fonctions critiques + push si erreurs
+- Diagnostic auto au boot 8s
+
+### 📂 Fichiers MD nouveaux/modifiés
+
+| Fichier | État | Description |
+|---------|------|-------------|
+| `apex-ai/index.html` | v12.403 (2.24 MB) | App principale |
+| `apex-ai/sw.js` | apex-v12.403 | Cache version |
+| `WHATSAPP_CLONE_PROJECT.md` | NEW | Spec projet messaging séparé |
+| `APEX_CREDENTIAL_AUTO_FEATURE.md` | NEW (273 lignes) | Spec complète scan auto |
+| `MEMO_RESUME.md` | UPDATED | Session 2026-04-27 soir ajoutée |
+
+
 
 ## 🌐 LIENS RACINE
 
