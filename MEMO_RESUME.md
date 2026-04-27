@@ -1,4 +1,150 @@
-# Mémo de reprise — Apex v12.371 + CMCteams v9.560 (session 2026-04-27 marathon 35+ versions)
+# Mémo de reprise — Apex v12.402 + CMCteams v9.560 (session 2026-04-27 marathon 67+ versions)
+
+## 🌃 SESSION 2026-04-27 SOIR — v12.371 → v12.402 (31 versions, scan auto credentials + auto-save total + 130+ services)
+
+**État final stable** : v12.402 pushée, syntax OK + 26/26 tests OK, 21 fonctions critiques toutes définies (1 def chacune, pas de duplication).
+
+### Vue d'ensemble : 31 versions cohérentes en 4h
+
+| Version | Sujet principal |
+|---------|-----------------|
+| v12.376 | Failover automatique Anthropic→OpenRouter→Groq→Gemini (3 paths : timeout, 5xx, network) |
+| v12.377 | Watchdog 200s anti-blocage K.isStreaming + badge live provider topbar + bulles credentials 16px |
+| v12.378 | axRunSelfDiagnostic FONCTIONNEL 40+ tests runtime + fix bug audit K.lastProvider Groq/Gemini/OR |
+| v12.379 | Paste cleaner Unicode + FAB ↓ + auto-push diagnostic GitHub |
+| v12.380 | Sentinelle intégrité credentials (intuition Kevin = bug racine) + Storage.setItem hook |
+| v12.381 | Deep clean credentials (fix double JSON encoding cyclique) |
+| v12.382 | Patterns regex élargis (Groq + 9 autres) + hook ne bloque plus + auto-test live post-save |
+| v12.383 | Unicode strip exhaustif + ASCII strict tokens + vue admin vCredLogs |
+| v12.384 | Économie tokens (Groq auto) + anti-saut input + modal saisie large |
+| v12.385 | **FIX RACINE** `_vaultEditKey` lg() au lieu getItem (quotes empilées cycle vicieux) |
+| v12.386 | Helper révocation (vRevocation) — finalement inutile (clés tronquées dans screenshots) |
+| v12.387 | Fix `axCredTestLive` lg() au lieu getItem (test envoyait clé avec quotes → 401) |
+| v12.388 | Mode Essentiels Coffre par défaut + détection inversion Groq/xAI Grok/Anthropic |
+| v12.389 | Apex scan auto chat pour codes/clés + propose modal "Enregistrer" |
+| v12.390 | Multi-import OCR (photo/caméra/fichier) via Tesseract.js lazy CDN |
+| v12.391 | 50+ patterns reconnus (Anthropic, OpenAI, Stripe, GitHub, BTC, ETH, Slack, etc.) |
+| v12.392 | Fix FAB descendre (triple-scroll force) |
+| v12.393 | Scan smart multi-bloc + dedup + contexte + bouton "Tout enregistrer" |
+| v12.394 | Capacités x2-3 + archive IDB anciens messages (anti-purge brutale) |
+| v12.395 | FAB anti-collision + scroll auto fresh msg + dc skip 3s + multi-candidats test |
+| v12.396 | Anti-scintille au retour foreground + throttle SW update 10min |
+| v12.397 | FAB recentré + axSendReportToClaudeCode + axTestEachFunction + audit UI overlaps |
+| v12.398 | Historique credentials + rollback auto + vCredHistory |
+| v12.399 | Bouton "TOUT ENREGISTRER" en HAUT modal + bilan tests |
+| v12.400 | Auto-save TOTAL sans confirmation + fix _healthCheck 45s appelle failover Groq + scrollIntoView |
+| v12.401 | Détection contextuelle identifiants + mots de passe + 12 services initiaux |
+| v12.402 | serviceMap étendu massivement à **130+ services** (réseaux sociaux, banques, gaming, streaming, voyage, admin État, etc.) |
+
+### Architecture finale credentials (état v12.402)
+
+**Flux complet** :
+1. Kevin colle texte (chat) ou photo (paste image)
+2. OCR si image (Tesseract.js lazy)
+3. `_axScanTextForCredentials` (override) :
+   - Raw scan : 50+ patterns regex préfixe (gsk_, ghp_, sk-ant-, AIza, xai-, etc.)
+   - Contextual scan : 130+ services + détection label "user:/pass:/login:/etc"
+   - Merge sans doublon
+4. Si plusieurs blocs → `_axScanTextSmart` enrichit contexte (3 lignes au-dessus)
+5. Multi-candidats même target → flag `candidatesCount`, garde le dernier comme primary
+6. `_axProposeCredentialSave` :
+   - Si `ax_auto_save_credentials` true (default) → `_axAutoSaveAllCredentials` court-circuit modal
+   - Sinon modal avec bouton "TOUT ENREGISTRER" en haut
+7. Save batch + tests live espacés 1.5s/clé via `axCredTestLive`
+8. `_axTestBestCandidate` si plusieurs valeurs pour 1 target
+9. Toast bilan final + push GitHub si KO via `_axPushDiagnosticToGitHub`
+10. Hook Storage.setItem v12.380/382 valide format auto + log
+11. Hook ls() v12.398 archive ancien dans `ax_cred_history_<key>` (10 max)
+12. Override `axCredTestLive` v12.398 : si OK → mark validated, si KO → propose rollback
+
+**Vues admin** :
+- `?view=credlogs` → vCredLogs (setItem log 30 + deep_clean log 5)
+- `?view=credhistory` → vCredHistory (10 entries par clé avec status ACTUEL/VALIDÉ/archivé + bouton R restaurer)
+- `?view=revocation` → vRevocation (helper liens directs, optionnel)
+
+### Bugs racines fixés cette session
+
+1. **Double JSON encoding cyclique** (v12.381+v12.385+v12.387) :
+   `ls()` JSON.stringify systématique → quotes empilées à chaque save → API rejette → bulle rouge à tort.
+   Fix : `_axDeepCleanCredentials` boot 4s + sentinelle 1h. `_vaultEditKey` + `axCredTestLive` utilisent `lg()` parsé au lieu de `getItem` brut.
+
+2. **Patterns regex trop stricts** (v12.382) :
+   `gsk_[A-Za-z0-9]{50,}` excluait Groq avec `_` ou `-`. Élargi à `{30,}` + `_\\-` accepté.
+
+3. **Hook setItem bloquait Kevin** (v12.382) :
+   v12.380 retournait silencieusement si format invalide → Kevin perdait sa saisie.
+   Fix : laisse passer + alerte, ne bloque plus.
+
+4. **Anthropic timeout 45s sans failover** (v12.400) :
+   `_healthCheck` débloquait juste K.isStreaming sans tenter Groq/Gemini.
+   Fix : appelle `_axTryFailoverChain` au lieu de juste débloquer.
+
+5. **K.lastProvider pas tagué partout** (v12.378) :
+   v12.376 oubliait Groq/Gemini/OR success. Bug trouvé par audit subagent.
+   Fix : tag dans les 4 success paths.
+
+### Capacités scale (v12.394)
+
+- caps audit/logs x2-3 (audit:500, err_log:500, telemetry:300, etc.)
+- K.messages 500 → 2000 + archive IDB pour anciens
+- ax_notes 500 → 2000 + archive IDB
+- Cleanup auto fréquence 30min → 1h (moins agressif batterie)
+- Quota threshold 80% → 90%
+
+### Patterns reconnus v12.402 (130+ services)
+
+**Groupes** :
+- Réseaux sociaux : 12 (Insta, FB, X, TikTok, YouTube, LinkedIn, Snap, Pinterest, Reddit, Threads, Mastodon, Bluesky)
+- Email : 8 (Gmail, Outlook, iCloud, Apple ID, Yahoo, Proton, Tutanota)
+- Communications : 12 (Discord, WhatsApp, Telegram, Signal, Slack, Teams, Zoom, Meet, Skype, Viber, WeChat)
+- Streaming : 10 (Netflix, Disney+, Prime, Apple TV, Hulu, Canal, Molotov, Plex)
+- Music : 6 (Spotify, Deezer, Apple Music, Tidal, SoundCloud, YT Music)
+- Cloud : 5 (Dropbox, Google Drive, OneDrive, Mega, pCloud)
+- Banques FR : 19 (Boursorama, SG, BNP, CA, CE, CIC, CM, LCL, LBP, Monabanq, Fortuneo, Hello Bank, ING, N26, Revolut, Wise, Lydia, PayPal, SumUp)
+- Crypto exchanges : 8 (Binance, Kraken, Coinbase, Crypto.com, KuCoin, OKX, Bitstamp, Gate.io)
+- Gaming : 11 (Steam, Epic, Xbox, PSN, Nintendo, Battle.net, Ubisoft, Riot, EA, GOG, Twitch)
+- Productivity : 9 (Notion, Trello, Asana, Jira, Monday, ClickUp, Airtable, Obsidian, Evernote)
+- Dev : 13 (GitHub, GitLab, Bitbucket, npm, Docker, Vercel, Netlify, Heroku, Render, Railway, Fly.io, Cloudflare)
+- IA : 10 (OpenAI, Anthropic, HuggingFace, Midjourney, Leonardo, RunwayML, Suno, ElevenLabs)
+- Shopping : 9 (Amazon, eBay, Cdiscount, Fnac, LeBonCoin, Vinted, Zalando, AliExpress, SHEIN)
+- Voyage : 12 (Booking, Airbnb, Abritel, TripAdvisor, Skyscanner, Expedia, SNCF, Trainline, BlaBlaCar, Uber, Bolt, Lyft)
+- Casino/Mobilité : 5 (SBM, Casino Monaco, CMCteams)
+- Admin/État : 8 (Ameli, CAF, Impôts, France Connect, ANTS, Service Public)
+
+### Bugs UX restants détectés par audit subagent (à fix v12.403)
+
+1. **Mini-chat FAB ✦ vs FAB ↓** : Les 2 FABs peuvent chevaucher visuellement. À cacher mini-chat sur page chat.
+2. **Badge "via Provider"** : K.lastProvider tagué OK, badge topbar marche, mais pas dans header du chat lui-même.
+3. **Rollback v12.398** utilise `confirm()` natif iOS, pourrait être modal custom.
+
+### Audit syntaxe direct (v12.402)
+
+- HTML : 2 239 017 chars, 15 440 lignes
+- 3 blocks `<script>` combinés : 2 165 518 chars JS
+- ✅ `node --check` PASS
+- ✅ Pre-commit hook : 26/26 tests OK
+- ✅ 21 fonctions critiques toutes définies (1 def chacune)
+- 2 hooks Storage.setItem (lignes 7155 + 7480) — chaining intentionnel
+
+### Méthodes appliquées strictement (CLAUDE.md)
+
+- ✅ Validation pre-commit méthode IDENTIQUE (`''.join(blocks)` SANS séparateur)
+- ✅ Bump APP_VER + sw.js CACHE_VERSION dans MÊME commit (règle #9)
+- ✅ Subagents lancés pour audits (3 agents en parallèle pour le bilan final)
+- ✅ Honnêteté quand bugs détectés (mea culpa K.lastProvider v12.378)
+- ✅ Fix racine au lieu de symptôme (v12.385 lg() partout au lieu de getItem)
+- ✅ Anti-microcommits cascade : 31 versions mais sur features cohérentes (chacun 1 fix complet)
+
+### Leçons tirées
+
+1. **Toujours vérifier la couche d'abstraction** (`ls()` vs `getItem()`) avant de coder fix surface
+2. **Hook `Storage.prototype.setItem`** = solution propre intercepter toutes écritures
+3. **Subagents externes pour audit** = trouvent des bugs que le code review interne loupe
+4. **Auto-save sans confirmation** = OK si rollback automatique en cas d'erreur (v12.398)
+5. **Détection contextuelle** > regex strict pour identifiants/passwords variables
+6. **130+ patterns** : élargir massivement au lieu de demander à Kevin
+
+---
 
 ## 🌙 SESSION 2026-04-27 NUIT — v12.366 → v12.371 (refonte chat + bulles live + Mode Dev + Groq/Gemini direct)
 
