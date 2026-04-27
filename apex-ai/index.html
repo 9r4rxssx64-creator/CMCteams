@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.383",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.384",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6274,7 +6274,7 @@ function goBack(){if(_viewHistory.length)K.view=_viewHistory.pop();else K.view="
 var _dcRaf=0,_lastView="",_chatPageSize=50;
 function _throttle(fn,delay){var last=0;return function(){var n=now();if(n-last>=delay){last=n;fn.apply(this,arguments);}};}
 function render(){var app=document.getElementById("app");if(!app)return;try{app.innerHTML=vTopbar()+vMainContent()+vNav();_lastView=K.view;_bindEvents();}catch(re){console.error("[RENDER CRASH]",re);try{app.innerHTML='<div id="topbar"><div class="ax-logo">APEX</div></div><div id="content" style="padding:40px;text-align:center;color:#fff"><h2 style="color:#c9a227">APEX</h2><p>Un souci technique. Essaie de recharger.</p><button class="ax-btn ax-btn-primary" onclick="location.reload()" style="margin-top:20px;padding:14px 28px">Recharger</button><p style="color:#999;font-size:11px;margin-top:20px">'+String(re.message||re).slice(0,100).replace(/</g,"&lt;")+'</p></div>';}catch(_){}}}
-function dc(){if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
+function dc(){/* v12.384 - skip dc si input focused (anti-saut Kevin) */ if(window._axInputFocused && Date.now()-(window._axInputFocusedAt||0)<10000){return;} if(_dcRaf)return;_dcRaf=requestAnimationFrame(function(){_dcRaf=0;if(K.view===_lastView){var content=document.getElementById("content");if(content){/* v12.95 — preserve scroll chat pour eviter remontee */var _chatEl=document.getElementById("ax-chat-scroll");var _savedScroll=_chatEl?{top:_chatEl.scrollTop,height:_chatEl.scrollHeight,client:_chatEl.clientHeight}:null;/* v12.358 — preserve scroll bnav (Kevin: "barre du bas revient a gauche sans cesse") */var _navEl=document.getElementById("navbar");var _savedNavScroll=_navEl?_navEl.scrollLeft:0;/* v12.326 — preserve input chat (value/focus/cursor) Claude.ai-style */var _inputEl=document.getElementById("ax-chat-input");var _savedInput=_inputEl?{value:_inputEl.value,start:_inputEl.selectionStart,end:_inputEl.selectionEnd,focused:document.activeElement===_inputEl,height:_inputEl.style.height}:null;try{content.innerHTML=vMain();}catch(e){console.warn("dc error:",e);}_bindEvents();/* v12.358 — Restore scroll bnav */try{var _newNav=document.getElementById("navbar");if(_newNav&&_savedNavScroll>0)_newNav.scrollLeft=_savedNavScroll;}catch(_){}/* Restore scroll : si user etait pres du bas, scroll bas. Sinon garde position. *//* v12.330 — Force scroll bas si premier render OU pres du bas. Plus jamais remontee top. */var _newChat=document.getElementById("ax-chat-scroll");if(_newChat){if(_savedScroll){/* v12.336 — Si streaming: TOUJOURS scroll bas (Claude.ai-style). Si pas streaming et pres du bas (300px), scroll bas. Sinon respecte position. */var _isStreaming=K&&K.isStreaming;var _wasNearBottom=(_savedScroll.height-_savedScroll.top-_savedScroll.client)<300;if(_isStreaming||_wasNearBottom){_newChat.scrollTop=_newChat.scrollHeight;}else if(_savedScroll.top>50){_newChat.scrollTop=_savedScroll.top;}else{_newChat.scrollTop=_newChat.scrollHeight;}}else{/* Premier render chat: scroll bas */_newChat.scrollTop=_newChat.scrollHeight;}}/* v12.326 — Restore input value+cursor+focus apres re-render */if(_savedInput){var _newInput=document.getElementById("ax-chat-input");if(_newInput){if(_savedInput.value){_newInput.value=_savedInput.value;}if(_savedInput.height){_newInput.style.height=_savedInput.height;}if(_savedInput.focused){try{_newInput.focus();if(typeof _savedInput.start==="number"){_newInput.selectionStart=_savedInput.start;_newInput.selectionEnd=_savedInput.end;}}catch(_eFoc){}}}}return;}}render();});}
 function dcNow(){_dcRaf=0;render();}
 /* v12.198 — wrap render() pour mesurer le temps par vue (perf-watch) */
 (function(){if(typeof render==="function"&&!render._axWrapped){var _origRender=render;window.render=function(){var t0=performance.now();try{return _origRender.apply(this,arguments);}finally{try{var dt=performance.now()-t0;if(typeof _axTrackRender==="function"&&K&&K.view)_axTrackRender(K.view,dt);if(dt>200&&typeof _snLog==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())_snLog("perf-watch","warn","render "+K.view+" "+Math.round(dt)+"ms");}catch(_){}}};window.render._axWrapped=true;}})();
@@ -6606,15 +6606,39 @@ function _axShowModeBadge(mode){
 function _axApplyAutoMode(text){
   try{
     var mode = _axAutoModeDecide(text);
-    /* Persiste dans K.settings.modelOverride pour le prochain appel API */
-    if(mode === "plan"){
+    /* v12.384 - Force Groq gratuit pour questions simples (économie Anthropic forfait Kevin) */
+    var hasGroq = lg("ax_groq_key","").length > 10;
+    var hasAnth = lg("ax_api_key","").length > 10;
+    var len = (text||"").length;
+    /* Si question courte/simple ET Groq dispo → préférer Groq (gratuit Llama 3.3 70B) */
+    if(mode === "plan" && hasGroq && len < 200){
+      window._axRequestedProvider = "groq";
+      window._axRequestedTier = "light";
+    }
+    /* Sinon Sonnet/Anthropic pour analyses complexes */
+    else if(mode === "plan"){
+      window._axRequestedProvider = null;
       window._axRequestedTier = "light";
     } else {
-      window._axRequestedTier = null; /* default = use K.settings.model (Sonnet) */
+      window._axRequestedProvider = null;
+      window._axRequestedTier = null;
     }
     _axShowModeBadge(mode);
     return mode;
   }catch(_){return "code";}
+}
+
+/* v12.384 - Hook avant _callClaudeAPI : si _axRequestedProvider==="groq" ET clé dispo → bypass vers Groq */
+function _axRouteThroughCheapestProvider(sysPrompt, msgs){
+  try{
+    if(window._axRequestedProvider === "groq" && typeof _callGroqAPI === "function" && lg("ax_groq_key","").length > 10){
+      window._axRequestedProvider = null; /* reset après usage */
+      try{if(typeof toast === "function")toast("Routing eco vers Groq Llama 3.3 (gratuit)","info",{duration:2000});}catch(_){}
+      _callGroqAPI(sysPrompt, msgs, 0);
+      return true;
+    }
+  }catch(_){}
+  return false;
 }
 
 function _sendFromInput(){var el=document.getElementById("ax-chat-input");if(!el||!el.value.trim())return;/* v12.269 - Si IA reflechit : queue le message au lieu de bloquer silencieusement */if(K.isStreaming){var queued=lg("ax_msg_queue",[]);queued.push({text:el.value.trim(),ts:Date.now()});if(queued.length>5)queued=queued.slice(-5);ls("ax_msg_queue",queued);try{toast("⏳ Apex reflechit. Ton message est en attente ("+queued.length+" en queue)","info");}catch(_){}return;}axHaptic();var text=el.value.trim();el.value="";try{if(typeof _axApplyAutoMode==="function")_axApplyAutoMode(text);}catch(_){}/* v12.368 reset textarea height after send */try{var _ta=document.getElementById("ax-chat-input");if(_ta){_ta.style.height="auto";_ta.style.overflowY="hidden";}}catch(_){}if(typeof axVoiceExecute==="function"&&/^(hey |ok |dis )?(apex|ai)\s+/i.test(text)&&axVoiceExecute(text))return;if(_checkVoiceCommand(text))return;/* v12.352 — APEX EXECUTE: court-circuit IA UNIQUEMENT si intent fort (studio/url/calcul). Pour tout autre, laisse l'IA repondre normalement. */try{if(typeof axDetectAndExecute==="function"){var _execRes=axDetectAndExecute(text);/* Strict : il faut executed=true ET (actionType in [studio,url,calculator,timer]) ET ne pas matcher des mots ambigus */var _strongActions=["studio","url","navigate","open","calculator","timer","weather"];var _isStrong=_execRes&&_execRes.executed&&_execRes.action&&_strongActions.indexOf(String(_execRes.action).toLowerCase())>=0;if(_isStrong){try{K.messages.push({role:"user",content:text,ts:typeof now==="function"?now():Date.now()});K.messages.push({role:"assistant",content:"⚡ "+(_execRes.message||"J ai execute ta demande."),ts:typeof now==="function"?now():Date.now()});if(typeof _saveMsgs==="function")_saveMsgs();if(typeof dc==="function")dc();}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-record",_e);}return;}}}catch(_eExec){if(typeof _axSafeCatch==="function")_axSafeCatch("ax-exec-hook",_eExec);}sendMessage(text);}
@@ -7307,6 +7331,81 @@ function vCredLogs(){
   return h;
 }
 
+/* v12.384 - Modal custom saisie credential (Kevin "case trop petite", "fenetre sautille") */
+function axShowCredentialEditor(key, label, currentValue){
+  if(!key)return;
+  var v = currentValue||lg(key,"")||"";
+  if(typeof v !== "string")v = String(v);
+  var safeLabel = (typeof esc === "function") ? esc(label||key) : (label||key);
+  var safeKey = (typeof esc === "function") ? esc(key) : key;
+  var html = '<div style="padding:18px;max-width:600px">';
+  html += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">'+safeLabel+'</h2>';
+  html += '<p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Cle Coffre : <code>'+safeKey+'</code></p>';
+  html += '<textarea id="ax-cred-edit-input" style="width:100%;min-height:140px;font-family:ui-monospace,SF Mono,Menlo,monospace;font-size:14px;padding:14px;border-radius:10px;background:var(--ax-bg-input);color:var(--ax-text);border:2px solid var(--ax-border);box-sizing:border-box;word-break:break-all;overflow-wrap:anywhere;letter-spacing:.2px" placeholder="Colle la cle ici..." autocorrect="off" autocapitalize="off" spellcheck="false" autocomplete="off"></textarea>';
+  html += '<div id="ax-cred-edit-info" style="font-size:11px;color:var(--ax-text-dim);margin-top:6px;font-family:ui-monospace,monospace">0 caracteres</div>';
+  html += '<div style="display:flex;gap:8px;margin-top:14px"><button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="flex:1;min-height:48px">Annuler</button><button class="ax-btn ax-btn-primary" id="ax-cred-edit-save" style="flex:2;min-height:48px;font-weight:700">Enregistrer</button></div>';
+  html += '<button class="ax-btn ax-btn-outline" onclick="if(confirm(\'Effacer la cle ?\')){localStorage.removeItem(\''+safeKey+'\');document.getElementById(\'modal-container\').innerHTML=\'\';if(typeof toast===\'function\')toast(\'Cle effacee\',\'info\');if(typeof dc===\'function\')dc();}" style="width:100%;margin-top:8px;min-height:44px;color:#ff5858">Effacer la cle</button>';
+  html += '</div>';
+  if(typeof _showModal === "function"){
+    _showModal(html);
+    setTimeout(function(){
+      var ta = document.getElementById("ax-cred-edit-input");
+      var info = document.getElementById("ax-cred-edit-info");
+      var btn = document.getElementById("ax-cred-edit-save");
+      if(!ta || !btn) return;
+      ta.value = v;
+      var update = function(){
+        if(info) info.textContent = ta.value.length + " caracteres";
+      };
+      ta.addEventListener("input", update);
+      update();
+      ta.focus();
+      btn.onclick = function(){
+        var newVal = ta.value;
+        if(typeof _axCleanPasted === "function") newVal = _axCleanPasted(newVal);
+        if(typeof _axStripToAscii === "function" && /_key$|_token$|_secret$|_pub$|_address$/.test(key)){
+          newVal = _axStripToAscii(newVal);
+        }
+        try{
+          if(newVal){
+            ls(key, newVal);
+            if(typeof toast === "function")toast("Cle "+key.replace("ax_","")+" enregistree","ok",{duration:2000});
+          } else {
+            localStorage.removeItem(key);
+            if(typeof toast === "function")toast("Cle effacee","info");
+          }
+        }catch(e){
+          if(typeof toast === "function")toast("Erreur sauvegarde : "+String(e.message||e).slice(0,80),"err");
+        }
+        document.getElementById("modal-container").innerHTML = "";
+        if(typeof dc === "function") dc();
+      };
+    }, 100);
+  }
+}
+
+/* v12.384 - Anti-flicker input : suspend dc() pendant frappe focus input/textarea (Kevin "case sautille") */
+try{
+  if(typeof window !== "undefined" && !window._axInputFocusGuardInstalled){
+    window._axInputFocusGuardInstalled = true;
+    window._axInputFocused = false;
+    document.addEventListener("focusin", function(e){
+      try{
+        var t = e.target;
+        if(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")){
+          window._axInputFocused = true;
+          window._axInputFocusedAt = Date.now();
+        }
+      }catch(_){}
+    }, true);
+    document.addEventListener("focusout", function(e){
+      try{
+        setTimeout(function(){window._axInputFocused = false;}, 200);
+      }catch(_){}
+    }, true);
+  }
+}catch(_){}
+
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
 
 /* v12.371 — APPEL DIRECT GROQ (Llama 3.3 70B gratuit, ultra rapide) */
@@ -7471,7 +7570,7 @@ function _axTryFailoverChain(sysPrompt,msgs,reason){
   return false;
 }
 
-function _callClaudeAPI(sysPrompt,msgs,depth){try{if(typeof _axStartStreamWatchdog==="function")_axStartStreamWatchdog();}catch(_){}try{depth=depth||0;var apiKey=_getApiKey();var backendUrl=(typeof _readBackendUrl==="function")?_readBackendUrl():"";var proxyUrl=localStorage.getItem("ax_proxy_url");var apiUrl=backendUrl?(backendUrl+"/api/chat/proxy"):(proxyUrl?proxyUrl.replace(/\/$/,""):"https://api.anthropic.com/v1/messages");var isProxy=apiUrl.indexOf("anthropic.com")<0;if(!apiKey&&!isProxy){if(navigator.onLine&&typeof _getApiKeyAsync==="function"){_getApiKeyAsync().then(function(k){if(k&&k.length>10){toast("J ai retrouve la cle, je relance...","ok");setTimeout(function(){_callClaudeAPI(sysPrompt,msgs,depth);},500);}else{K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();}});return;}K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();return;}var cleanMsgs=[];for(var i=Math.max(0,msgs.length-30);i<msgs.length;i++){var m=msgs[i];if(!m||!m.role||m.content==null)continue;var role=m.role==="user"?"user":"assistant";if(typeof m.content==="string"){cleanMsgs.push({role:role,content:m.content.slice(0,100000)});}else if(Array.isArray(m.content)){cleanMsgs.push({role:role,content:m.content});}}if(!cleanMsgs.length)cleanMsgs=[{role:"user",content:"Bonjour"}];var fullSystem=sysPrompt||_buildSystemPrompt();var _apiDone=false;var _abortCtrl=(typeof AbortController!=="undefined")?new AbortController():null;window._apexCurrentAbort=_abortCtrl;window._apexExplicitStop=false;var _retryCount=window._apexRetryCount||0;var _timeoutMs=(typeof _apexAdaptiveTimeout==="function")?_apexAdaptiveTimeout(cleanMsgs,depth):(K.settings.apiTimeout||180000);try{if(typeof axSetStreamState==="function")axSetStreamState("prepare","Apex prepare...");}catch(_){}var _fetchTimeout=setTimeout(function(){if(_apiDone)return;_apiDone=true;if(_abortCtrl)try{_abortCtrl.abort();}catch(ae){}K.isStreaming=false;try{if(typeof axSetStreamState==="function")axSetStreamState("idle","");}catch(_){}/* v12.286 — Retry auto 2x avec backoff sur timeout */if(_retryCount<2&&depth===0){window._apexRetryCount=_retryCount+1;var backoff=_retryCount===0?1500:4000;try{if(typeof axSetStreamState==="function")axSetStreamState("retry","Reessai "+(_retryCount+1)+"/2");}catch(_){}toast("Pas de reponse en "+Math.round(_timeoutMs/1000)+"s, je ressaye...","warn");setTimeout(function(){K.isStreaming=true;try{if(typeof dc==="function")dc();}catch(_){}_callClaudeAPI(sysPrompt,msgs,depth);},backoff);return;}window._apexRetryCount=0;/* v12.376 — TIMEOUT failover CASCADE complet : Anthropic → OpenRouter → Groq → Gemini */if(depth===0&&typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Anthropic timeout"))return;K.messages.push({role:"assistant",content:"Aucune IA dispo : Anthropic timeout + aucune cle de secours configuree.\n\nAjoute UNE cle gratuite dans le Coffre pour failover auto :\n• Groq (gratuit, Llama 3.3) → https://console.groq.com/keys\n• OpenRouter (modeles gratuits) → https://openrouter.ai/keys\n• Google Gemini (1500/jour gratuit) → https://aistudio.google.com/apikey",ts:now()});_saveMsgs();dc();try{if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("api_timeout","warn","timeout apres "+_timeoutMs+"ms");}catch(_e){_axSafeCatch("call-claude",_e);}},_timeoutMs);/* v12.106 — Prompt caching Anthropic (gain 40-90% latence + cout) */
+function _callClaudeAPI(sysPrompt,msgs,depth){try{if(typeof _axStartStreamWatchdog==="function")_axStartStreamWatchdog();}catch(_){}/* v12.384 - Route Groq gratuit si auto-mode (eco) */if((depth||0)===0&&typeof _axRouteThroughCheapestProvider==="function"&&_axRouteThroughCheapestProvider(sysPrompt,msgs))return;try{depth=depth||0;var apiKey=_getApiKey();var backendUrl=(typeof _readBackendUrl==="function")?_readBackendUrl():"";var proxyUrl=localStorage.getItem("ax_proxy_url");var apiUrl=backendUrl?(backendUrl+"/api/chat/proxy"):(proxyUrl?proxyUrl.replace(/\/$/,""):"https://api.anthropic.com/v1/messages");var isProxy=apiUrl.indexOf("anthropic.com")<0;if(!apiKey&&!isProxy){if(navigator.onLine&&typeof _getApiKeyAsync==="function"){_getApiKeyAsync().then(function(k){if(k&&k.length>10){toast("J ai retrouve la cle, je relance...","ok");setTimeout(function(){_callClaudeAPI(sysPrompt,msgs,depth);},500);}else{K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();}});return;}K.isStreaming=false;_promptApiKeyModal(function(){_callClaudeAPI(sysPrompt,msgs,depth);});dc();return;}var cleanMsgs=[];for(var i=Math.max(0,msgs.length-30);i<msgs.length;i++){var m=msgs[i];if(!m||!m.role||m.content==null)continue;var role=m.role==="user"?"user":"assistant";if(typeof m.content==="string"){cleanMsgs.push({role:role,content:m.content.slice(0,100000)});}else if(Array.isArray(m.content)){cleanMsgs.push({role:role,content:m.content});}}if(!cleanMsgs.length)cleanMsgs=[{role:"user",content:"Bonjour"}];var fullSystem=sysPrompt||_buildSystemPrompt();var _apiDone=false;var _abortCtrl=(typeof AbortController!=="undefined")?new AbortController():null;window._apexCurrentAbort=_abortCtrl;window._apexExplicitStop=false;var _retryCount=window._apexRetryCount||0;var _timeoutMs=(typeof _apexAdaptiveTimeout==="function")?_apexAdaptiveTimeout(cleanMsgs,depth):(K.settings.apiTimeout||180000);try{if(typeof axSetStreamState==="function")axSetStreamState("prepare","Apex prepare...");}catch(_){}var _fetchTimeout=setTimeout(function(){if(_apiDone)return;_apiDone=true;if(_abortCtrl)try{_abortCtrl.abort();}catch(ae){}K.isStreaming=false;try{if(typeof axSetStreamState==="function")axSetStreamState("idle","");}catch(_){}/* v12.286 — Retry auto 2x avec backoff sur timeout */if(_retryCount<2&&depth===0){window._apexRetryCount=_retryCount+1;var backoff=_retryCount===0?1500:4000;try{if(typeof axSetStreamState==="function")axSetStreamState("retry","Reessai "+(_retryCount+1)+"/2");}catch(_){}toast("Pas de reponse en "+Math.round(_timeoutMs/1000)+"s, je ressaye...","warn");setTimeout(function(){K.isStreaming=true;try{if(typeof dc==="function")dc();}catch(_){}_callClaudeAPI(sysPrompt,msgs,depth);},backoff);return;}window._apexRetryCount=0;/* v12.376 — TIMEOUT failover CASCADE complet : Anthropic → OpenRouter → Groq → Gemini */if(depth===0&&typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Anthropic timeout"))return;K.messages.push({role:"assistant",content:"Aucune IA dispo : Anthropic timeout + aucune cle de secours configuree.\n\nAjoute UNE cle gratuite dans le Coffre pour failover auto :\n• Groq (gratuit, Llama 3.3) → https://console.groq.com/keys\n• OpenRouter (modeles gratuits) → https://openrouter.ai/keys\n• Google Gemini (1500/jour gratuit) → https://aistudio.google.com/apikey",ts:now()});_saveMsgs();dc();try{if(typeof _apexPushTelemetry==="function")_apexPushTelemetry("api_timeout","warn","timeout apres "+_timeoutMs+"ms");}catch(_e){_axSafeCatch("call-claude",_e);}},_timeoutMs);/* v12.106 — Prompt caching Anthropic (gain 40-90% latence + cout) */
 var _sysText=fullSystem.slice(0,16000);
 var _toolsArr=(function(){var base=axIsAdmin()?_getToolDefs():_getToolDefs().filter(function(t){return t.name!=="app_action";});if(K.settings&&K.settings.webSearch){base=base.filter(function(t){return t.name!=="web_search";});base=base.concat([{type:"web_search_20250305",name:"web_search",max_uses:5}]);}var _seen={};base=base.filter(function(t){if(!t||!t.name||_seen[t.name])return false;_seen[t.name]=true;return true;});if(base.length){base[base.length-1]=Object.assign({},base[base.length-1],{cache_control:{type:"ephemeral"}});}return base;})();
 /* v12.109 — Smart model routing (Kevin: 'IA consomme min tokens chacune mais tjs performante') */
