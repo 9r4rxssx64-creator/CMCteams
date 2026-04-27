@@ -603,7 +603,35 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     console.error=function(){var a=Array.prototype.slice.call(arguments).map(_redact);return _origError.apply(console,a);};
   }catch(_){}
 })();
-var APP_VER="v12.414",ADMIN_ID="kdmc_admin";
+/* v12.417 CODE Q - Storage.prototype.setItem trap global QuotaExceededError */
+(function(){
+  try{
+    if(window._axStorageQuotaTrap)return;
+    window._axStorageQuotaTrap=true;
+    var _origSet=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(k,v){
+      try{return _origSet.call(this,k,v);}
+      catch(e){
+        if(e&&(e.name==="QuotaExceededError"||(e.code&&(e.code===22||e.code===1014)))){
+          try{
+            if(typeof toast==="function")toast("Stockage iPhone plein, nettoyage auto","warn",{duration:2500});
+            if(typeof axAggressiveCleanup==="function"){axAggressiveCleanup();}
+            else if(typeof axEmergencyCleanup==="function"){axEmergencyCleanup();}
+            /* Retry une fois apres cleanup */
+            try{return _origSet.call(this,k,v);}catch(e2){
+              /* Fallback : push vers IDB en async (perte sync) */
+              try{if(typeof axIdbSet==="function")axIdbSet(k,JSON.parse(v)).catch(function(){});}catch(_){}
+              if(typeof axSecurityLog==="function")axSecurityLog("quota_exceeded_idb_fallback",k);
+            }
+          }catch(_){}
+          return undefined;
+        }
+        throw e;
+      }
+    };
+  }catch(_){}
+})();
+var APP_VER="v12.419",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3147,6 +3175,37 @@ function vVault(){if(!axIsAdmin()){return'<div class="ax-empty"><div class="ax-e
 function axCredStatus(){return lg("ax_credential_status",{});}
 function axCredSetStatus(k,status,msg){var s2=axCredStatus();s2[k]={status:status,ts:Date.now(),msg:msg||""};ls("ax_credential_status",s2);try{if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf("ax_credential_status")<0)FB_FIX.push("ax_credential_status");}catch(_){}}
 /* v12.369 — TEST LIVE des credentials (Kevin "il faut que les bulles servent a quelque chose") */
+/* v12.417 CODE QUALITY - axStorage wrapper safe (read/write avec triple persistence) */
+function axStorage(k, v){
+  try{
+    if(arguments.length === 1){
+      /* READ : try localStorage first, then IDB shadow */
+      var lsv = (typeof lg === "function") ? lg(k, undefined) : undefined;
+      if(typeof lsv !== "undefined" && lsv !== null && lsv !== "") return lsv;
+      /* Fallback IDB shadow async (best-effort, return undefined for sync API) */
+      try{
+        if(typeof axIdbGet === "function"){
+          axIdbGet(k).then(function(idbv){
+            if(typeof idbv !== "undefined" && idbv !== null){
+              try{ if(typeof ls === "function") ls(k, idbv); }catch(_){}
+            }
+          }).catch(function(){});
+        }
+      }catch(_){}
+      return lsv;
+    } else {
+      /* WRITE : localStorage + IDB shadow + FB if applicable */
+      try{ if(typeof ls === "function") ls(k, v); else localStorage.setItem(k, JSON.stringify(v)); }catch(_){}
+      try{ if(typeof axIdbSet === "function") axIdbSet(k, v).catch(function(){}); }catch(_){}
+      /* fbWrite already triggered by ls() if FB_FIX */
+      return true;
+    }
+  }catch(e){
+    try{ if(typeof axSecurityLog === "function") axSecurityLog("axStorage_err", String(e.message||e).slice(0,100)); }catch(_){}
+    return undefined;
+  }
+}
+
 function axCredTestLive(k){
   try{
     /* v12.387 BUG FIX : utiliser lg() pour retirer quotes JSON parasites + strip Unicode externe (sinon API recoit '"sk-ant-xxx"' avec quotes -> rejette -> bulle rouge a tort) */
@@ -3223,6 +3282,109 @@ function axCredTestLive(k){
 }
 
 /* v12.413 — Boot auto-test ETENDU : toutes cles saisies (admin uniquement, espacement 2s, silencieux) */
+/* v12.419 RELIABILITY - Sentinelle persistence-watch + auto-restore + watchdog */
+var AX_CRITICAL_KEYS=["ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_github_token","ax_user","ax_uid","ax_pin","ax_settings","ax_kb","ax_persistent_memory"];
+
+function _axPersistenceWatch(){
+  /* Verifie cles critiques chaque heure. Restore si manquant. */
+  try{
+    if(!K||!K.user)return;
+    var lastRun=lg("ax_persistence_watch_last",0);
+    if(Date.now()-lastRun<3600000)return; /* 1h cooldown */
+    ls("ax_persistence_watch_last",Date.now());
+    var missing=[],restored=[];
+    AX_CRITICAL_KEYS.forEach(function(k){
+      var v=localStorage.getItem(k);
+      if(!v||v==="null"||v==="\"\""){
+        missing.push(k);
+        /* Tentative restore : (a) IDB shadow (b) Firebase si FB_FIX */
+        if(typeof axIdbGet==="function"){
+          axIdbGet(k).then(function(idbv){
+            if(idbv){
+              try{localStorage.setItem(k,JSON.stringify(idbv));restored.push(k+" (idb)");}catch(_){}
+              if(typeof toast==="function" && k.indexOf("ax_user")<0)toast("Restored "+k.replace("ax_","")+" from IDB","ok",{duration:2000});
+            }
+          }).catch(function(){});
+        }
+      }
+    });
+    if(missing.length){
+      try{if(typeof axSecurityLog==="function")axSecurityLog("persistence_watch_missing",missing.join(","));}catch(_){}
+    }
+    if(restored.length){
+      try{if(typeof axSecurityLog==="function")axSecurityLog("persistence_watch_restored",restored.join(","));}catch(_){}
+    }
+  }catch(_){}
+}
+
+function _axWatchdogHeartbeat(){
+  /* Meta-sentinelle : ping toutes les 5min, alerte si pas de heartbeat depuis >15min */
+  try{
+    var now=Date.now();
+    var last=lg("ax_watchdog_last",0);
+    if(last && now-last>900000){
+      /* Plus de 15min sans heartbeat = sentinelle morte */
+      if(typeof axSecurityLog==="function")axSecurityLog("watchdog_revival","gap "+Math.round((now-last)/60000)+"min");
+      try{if(typeof toast==="function")toast("Sentinelles redemarrees","info",{duration:2000});}catch(_){}
+    }
+    ls("ax_watchdog_last",now);
+  }catch(_){}
+}
+
+function _axDailyHealthCheck(){
+  /* Report quotidien admin : metriques sante app */
+  try{
+    if(typeof axIsAdmin!=="function"||!axIsAdmin())return;
+    var lastRun=lg("ax_daily_health_last",0);
+    if(Date.now()-lastRun<86400000)return; /* 24h cooldown */
+    ls("ax_daily_health_last",Date.now());
+    var report={
+      ts:Date.now(),
+      v:APP_VER,
+      missing_creds:0,
+      ls_size_kb:0,
+      conv_count:K&&K.conversations?K.conversations.length:0,
+      msg_count:K&&K.messages?K.messages.length:0,
+      audit_size:0,
+      err_log_size:0
+    };
+    AX_CRITICAL_KEYS.forEach(function(k){if(!localStorage.getItem(k))report.missing_creds++;});
+    try{
+      var total=0;
+      for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);total+=(k+localStorage.getItem(k)).length;}
+      report.ls_size_kb=Math.round(total/1024);
+    }catch(_){}
+    try{report.audit_size=(lg("ax_audit",[])||[]).length;}catch(_){}
+    try{report.err_log_size=(lg("ax_error_log",[])||[]).length;}catch(_){}
+    var history=lg("ax_daily_health_history",[]);
+    history.push(report);
+    if(history.length>30)history=history.slice(-30);
+    ls("ax_daily_health_history",history);
+    /* Alert si quota > 80% (4096 KB sur 5120) */
+    if(report.ls_size_kb>4096){
+      try{if(typeof toast==="function")toast("Stockage > 80% : nettoyage recommande","warn",{duration:4000});}catch(_){}
+    }
+  }catch(_){}
+}
+
+/* Lanceur intervals (un seul setInterval consolide pour eviter empilement) */
+(function(){
+  try{
+    if(window._axReliabilitySchedulerInstalled)return;
+    window._axReliabilitySchedulerInstalled=true;
+    /* Heartbeat 5min */
+    setInterval(_axWatchdogHeartbeat,300000);
+    /* Persistence watch 1h */
+    setInterval(_axPersistenceWatch,3600000);
+    /* Daily health check 24h */
+    setInterval(_axDailyHealthCheck,86400000);
+    /* Premier run apres 30s (laisse le boot tranquille) */
+    setTimeout(function(){
+      try{_axWatchdogHeartbeat();_axPersistenceWatch();_axDailyHealthCheck();}catch(_){}
+    },30000);
+  }catch(_){}
+})();
+
 function _axCredHealthBootCheck(){
   try{
     if(!K||!K.user)return;
