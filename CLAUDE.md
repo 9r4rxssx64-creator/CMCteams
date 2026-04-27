@@ -22,6 +22,24 @@ Si 3+ commits dans la dernière heure pour corriger les commits précédents →
 ✅ `node --check` extraction JS du HTML AVANT `git commit`
 ✅ Si pre-commit échoue → fix EN LOCAL, pas de "v12.X44b" pour réparer
 
+**RÈGLE ABSOLUE v12.365 (Kevin: "Ça ne doit jamais plus arriver")** — Méthode de validation IDENTIQUE au pre-commit hook :
+
+`node --check` peut MENTIR si on combine les blocs `<script>` avec un séparateur (`\n//---\n`). Le pre-commit hook fait `''.join(blocks)` SANS séparateur — le contexte d'un script déborde sur le suivant et révèle des erreurs masquées (ex: `try{` sans `catch` à la fin).
+
+**MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT** :
+```bash
+python3 -c "
+import re
+html=open('apex-ai/index.html','r',encoding='utf-8').read()
+blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL)
+open('/tmp/apex_combined.js','w',encoding='utf-8').write(''.join(blocks))
+" && node --check /tmp/apex_combined.js
+```
+
+Cas vécu v12.365 : `try{...}` sans `catch` injecté → `node --check` avec séparateur a passé OK, pre-commit a planté, app crashait au boot ("Apex ne fonctionne plus" Kevin). Fix v12.365b.
+
+**JAMAIS push tant que `node --check` sur `combined SANS séparateur` ne passe pas.**
+
 ### 3. Audit QA Stripe-level AVANT déclarer "10/10"
 Quand Kevin demande "10/10", lancer un agent QA externe qui cherche les VRAIS bugs P0 :
 - Fetch sans timeout → hang infini
