@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.391",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.392",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7042,7 +7042,7 @@ function _axChatScrollFab(){
       fab.setAttribute('aria-label','Descendre au dernier message');
       fab.style.cssText='position:fixed;right:14px;bottom:140px;width:44px;height:44px;border-radius:50%;background:var(--ax-gold,#c9a227);color:#000;border:none;font-size:22px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:300;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1';
       fab.textContent='\u2193';
-      fab.onclick=function(){var s=document.getElementById('ax-chat-scroll');if(s){s.scrollTo({top:s.scrollHeight,behavior:'smooth'});}};
+      fab.onclick=function(){var s=document.getElementById('ax-chat-scroll');if(s){/* v12.392 - double scroll force pour vraiment aller au bas (DOM peut grandir entre temps) */s.scrollTop=s.scrollHeight+9999;requestAnimationFrame(function(){s.scrollTop=s.scrollHeight+9999;setTimeout(function(){s.scrollTop=s.scrollHeight+9999;s.scrollTo({top:s.scrollHeight,behavior:'smooth'});},150);});}};
       document.body.appendChild(fab);
     }
     if(fab){fab.style.display=shouldShow?'flex':'none';}
