@@ -1,6 +1,67 @@
-# Mémo de reprise — Apex v12.365 + CMCteams v9.560 (session 2026-04-27 marathon 30 versions)
+# Mémo de reprise — Apex v12.371 + CMCteams v9.560 (session 2026-04-27 marathon 35+ versions)
 
-## 🌙 SESSION 2026-04-27 — 30 versions Apex + audit qualité + tarifs en attente
+## 🌙 SESSION 2026-04-27 NUIT — v12.366 → v12.371 (refonte chat + bulles live + Mode Dev + Groq/Gemini direct)
+
+**État final stable** : v12.371 pushée, validation pre-commit identique OK, 26/26 tests OK.
+
+### 🆕 v12.366 → v12.371 (5 commits cohérents en suivant règle anti-microcommits)
+
+**v12.366** — Fix bump APP_VER+CACHE_VERSION oubli (force MAJ ne marchait pas v12.365b).
+→ Leçon CLAUDE.md règle #9 ajoutée : "Tout fix bug bumpe APP_VER **ET** sw.js CACHE_VERSION dans MÊME commit".
+
+**v12.367** — 5 fixes en 1 commit cohérent :
+- 3 P0 audit Stripe-level externe : `_getApiKeyAsync` sans `.catch()`, `fetch exchangerate` sans timeout, `axVpnDetect` 2 fetches sans timeout
+- Bug "à chaque connexion il me redemande tout" : `ax_perms_onboarded` retiré de SESSION_KEYS hardLogout + `"ax_cgu_"` ajouté à FB_LOCAL_PREFIXES
+- Bug "pas d'historique chat à la reco" : axLogin restore `K.conversations + K.activeConvId + K.messages` AVANT `newConversation()`
+
+**v12.368** — Refonte UI chat style Claude.ai :
+- Chatbar : "+" rond gauche (menu), textarea milieu auto-grow, micro+envoi droite
+- Photo+TTS+QR déplacés dans menu "+" (chatbar épuré)
+- Stop = carré blanc dans cercle rouge **fixe** (plus de pulse rouge clignotant)
+- Cube doré clignotant remplacé par 3 dots subtils style Claude.ai
+- Mode auto plan/code (Haiku light vs Sonnet code) avec badge centré 1.5s fade
+
+**v12.369** — Bulles credentials LIVE :
+- Pas de clé → ROUGE clair (était gris peu visible)
+- Format invalide → ROUGE
+- Format OK + non testé → JAUNE
+- Testé OK <24h → VERT (avec date)
+- Testé OK >24h → JAUNE staleness (à retest)
+- Testé KO → ROUGE avec message d'erreur précis (HTTP 401, 429, etc.)
+- TOUS cliquables → retest live à la demande
+- `axCredTestLive(k)` : endpoints réels (Anthropic POST /messages, OpenAI /models, OpenRouter /auth/key, Gemini /models, Groq /models, GitHub /user, Telegram getMe, Perplexity tiny, Push worker /health)
+- Boot trigger 5s après login → 4 clés critiques (Anthropic, OpenAI, OpenRouter, GitHub)
+
+**v12.370** — Mode Dev (joindre Claude Code via clé Anthropic) + Apex self-test :
+- Vue `vClaudeCodeMode` admin only (route `claudecode`/`devmode`/`dev`)
+- Utilise `ax_api_key` Anthropic Sonnet 4.6 avec system prompt orienté DEV
+- Failover quand abonnement Claude Code expire — Kevin peut continuer à me joindre
+- Historique 50 dernières demandes
+- Bouton Coffre si pas de clé
+- Sentinelle `_agentApexSelfTest` : 5 questions test 1×/jour (Haiku ~0.001€/run), escalade si <60%
+
+**v12.371** — Direct API Groq + Gemini + routing intelligent :
+- `_callGroqAPI` : Llama 3.3 70B (gratuit Groq, ultra rapide)
+- `_callGeminiAPI` : Gemini 2.0 Flash (1500 req/jour gratuit)
+- `_axPickAIProvider` : ordre Anthropic > Groq > Gemini > OpenRouter > OpenAI
+
+### 🚨 Leçon majeure session précédente (CLAUDE.md règle #2)
+
+**Bug v12.365** : injection `try{...}` sans `catch` dans `_axForceHealAllCredentials` → app crashait au boot. Pre-commit a détecté APRÈS push.
+
+**Cause** : `node --check` avec séparateur `\n//---\n` entre blocks `<script>` masquait l'erreur (chaque block validé indépendamment). Le pre-commit hook fait `''.join(blocks)` SANS séparateur → fail.
+
+**Fix permanent** : règle ajoutée dans `CLAUDE.md` section #2 — méthode validation IDENTIQUE pre-commit :
+```bash
+python3 -c "
+import re
+html=open('apex-ai/index.html','r',encoding='utf-8').read()
+blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL)
+open('/tmp/apex_combined.js','w',encoding='utf-8').write(''.join(blocks))
+" && node --check /tmp/apex_combined.js
+```
+
+### 35+ versions livrées (v12.336 → v12.371)
 
 **Contexte** : Session marathon. Kevin a remonté beaucoup de bugs UX + demande montée 10/10 + tarifs rentables Stripe-level. J'ai poussé 30 versions (v12.336 → v12.365b). Apex marche, mais Kevin trouve les marges plans pas assez généreuses → on verra demain.
 
