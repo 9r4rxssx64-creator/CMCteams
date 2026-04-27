@@ -4,6 +4,67 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Ape
 
 ---
 
+## 🎓 RÈGLE PERMANENTE — LEÇONS DE LA SESSION 18 VERSIONS (Kevin 2026-04-27, ABSOLUE)
+
+> **"Tire en des leçons que tu appliqueras et Apex aussi toujours."**
+> Suite à 18 versions Apex livrées en 6h (v12.336 → v12.354) avec bugs récurrents, microfixes en cascade, syntax errors poussées plusieurs fois.
+
+**Règle absolue, prioritaire** — pour Claude Code et Apex IA :
+
+### 1. Pas de microversions en cascade
+❌ **JAMAIS** : 18 versions en 6h qui corrigent les précédentes
+✅ **TOUJOURS** : 1-3 versions/jour MAX, batch de fixes cohérents
+
+Si 3+ commits dans la dernière heure pour corriger les commits précédents → STOP, audit complet.
+
+### 2. Validation syntaxe + tests AVANT push, JAMAIS après
+❌ Pousser puis voir pre-commit échouer
+✅ `node --check` extraction JS du HTML AVANT `git commit`
+✅ Si pre-commit échoue → fix EN LOCAL, pas de "v12.X44b" pour réparer
+
+### 3. Audit QA Stripe-level AVANT déclarer "10/10"
+Quand Kevin demande "10/10", lancer un agent QA externe qui cherche les VRAIS bugs P0 :
+- Fetch sans timeout → hang infini
+- localStorage.setItem dans SSE handler sans try/catch
+- Memory leaks (intervals, listeners non clearés)
+- Race conditions async
+- Promises sans .catch()
+- innerHTML user-controlled
+
+Le 10/10 = ZÉRO P0/P1, pas juste "5 features ajoutées".
+
+### 4. Reconnaître honnêtement quand pas au niveau
+❌ Continuer à pousser des versions en disant "voilà 10/10"
+✅ Quand Kevin dit "c'est pas pro" → reconnaître + audit + reprendre
+
+### 5. Apex aussi (cross-session memory)
+Apex doit utiliser systématiquement :
+- `axRecordLesson("category", title, text, severity)` après chaque erreur runtime
+- `ax_lessons_learned` lu au boot et injecté dans system prompt
+- `axJournalEntry` pour tracer chaque action significative
+- `_axSelfFixAutonomous` pour escalade Claude Code si pattern récurrent
+
+### 6. Faux positifs d'algorithmes = catastrophe utilisateur
+Cas vécu : détecteur `_axDetectOrphanViews` v12.350 → 152 faux positifs. Si Apex avait suivi, il aurait supprimé `vNav`, `vSidebar`, etc. = app cassée.
+
+**Règle** : avant qu'un algo automatique propose une suppression/modification → confidence ≥ 0.95 + whitelist système (vNav, vSidebar, vMain, etc.) + dry-run logging avant écriture.
+
+### 7. Commit messages = traçabilité réelle
+Chaque commit doit dire honnêtement :
+- Ce qui est CORRIGÉ (pas survendu)
+- Ce qui est SKIPPÉ (avec raison)
+- Ce qui RESTE en attente
+- Audit/test couverture
+
+Pas de "Apex 10/10 partout" si en réalité 5/10 P0 corrigés.
+
+### 8. Test mental obligatoire avant chaque commit
+> *"Si Kevin essaie cette feature dans 2 minutes, est-ce qu'elle marche ? Si non → pas push."*
+
+Si réponse "je crois que oui" → vérifier d'abord. Si "j'ai pas testé" → tester ou annoncer que c'est non testé.
+
+---
+
 ## 🎯 RÈGLE PERMANENTE — CADRES UNIFIÉS + VISUEL PIT POUR COMPÉTENCES (Kevin 2026-04-26, ABSOLUE)
 
 > **"Si plus simple, mets tous les cadres ensemble et mets un visuel sur les pits seulement pour différencier les compétences."**
