@@ -537,7 +537,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.377",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.378",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6799,6 +6799,111 @@ function _axTrackProviderUsage(provider,tokensIn,tokensOut,costEur){
     ls(k,u);
   }catch(_){}
 }
+/* v12.378 - Self-diagnostic FONCTIONNEL : Apex teste RUNTIME le comportement de chaque fonction critique (Kevin "le bon fonctionnement fonctions par fonction") */
+function axRunSelfDiagnostic(opts){
+  opts=opts||{};
+  var report={ts:Date.now(),version:typeof APP_VER!=='undefined'?APP_VER:'?',user:K&&K.user?(K.user.id+' / '+(K.user.name||'')):'anon',userAgent:(navigator.userAgent||'').slice(0,100),checks:{},summary:{ok:0,warn:0,err:0,total:0}};
+  function add(cat,name,status,msg,detail){
+    if(!report.checks[cat])report.checks[cat]={};
+    report.checks[cat][name]={status:status,msg:String(msg||'').slice(0,200),detail:detail||null};
+    report.summary.total++;report.summary[status==='ok'?'ok':status==='warn'?'warn':'err']++;
+  }
+  function tryFn(cat,name,fn,desc){try{var r=fn();if(r&&r.then&&typeof r.then==='function'){r.catch(function(e){add(cat,name,'err','async fail: '+String(e&&e.message||e).slice(0,80));});add(cat,name,'ok',(desc||'')+' (async)');}else{add(cat,name,'ok',desc||'OK');}return r;}catch(e){add(cat,name,'err',String(e&&e.message||e).slice(0,150));return null;}}
+  /* ============================================================
+     FUNCTIONAL TESTS - tests roundtrip qui valident le BON FONCTIONNEMENT
+     ============================================================ */
+  /* 1. CORE HELPERS */
+  tryFn('core','esc',function(){var sample='<'+'b>x<'+'/b>';var r=esc(sample);if(r.indexOf('&lt;')<0)throw new Error('esc ne escape pas');if(r.indexOf('<'+'b>')>=0)throw new Error('esc laisse passer tag');return r;},'esc HTML escape OK');
+  tryFn('core','ls_lg_roundtrip',function(){var k='ax_diag_rt_'+Date.now();ls(k,'hello');var v=lg(k,null);if(v!=='hello')throw new Error('readback "'+v+'"');try{localStorage.removeItem(k);}catch(_){}return v;},'ls/lg string roundtrip');
+  tryFn('core','ls_lg_object',function(){var k='ax_diag_obj_'+Date.now();ls(k,{a:1,b:'x'});var v=lg(k,null);if(!v||v.a!==1||v.b!=='x')throw new Error('object roundtrip cassé');try{localStorage.removeItem(k);}catch(_){}return v;},'ls/lg object roundtrip');
+  tryFn('core','lg_default',function(){var v=lg('ax_diag_inexistant_xyz_123',{def:true});if(!v||!v.def)throw new Error('default value not returned');return v;},'lg default value');
+  tryFn('core','toast_callable',function(){if(typeof toast!=='function')throw new Error('not function');return true;},'toast existe');
+  tryFn('core','dc_callable',function(){if(typeof dc!=='function')throw new Error('not function');return true;},'dc existe');
+  tryFn('core','render_callable',function(){if(typeof render!=='function')throw new Error('not function');return true;},'render existe');
+  /* 2. AUTH */
+  tryFn('auth','axIsAdmin_returns_bool',function(){var r=axIsAdmin();if(typeof r!=='boolean')throw new Error('returned '+typeof r);return r;},'axIsAdmin retourne boolean');
+  tryFn('auth','isKevinAdmin_kevin_match',function(){if(typeof _isKevinAdmin!=='function')throw new Error('fn missing');var r=_isKevinAdmin('Kevin DESARZENS');if(r!==true)throw new Error('Kevin DESARZENS not matched');return r;},'_isKevinAdmin matche "Kevin DESARZENS"');
+  tryFn('auth','isKevinAdmin_email_match',function(){if(typeof _isKevinAdmin!=='function')throw new Error('fn missing');var r=_isKevinAdmin('kevin.desarzens@gmail.com');if(r!==true)throw new Error('email not matched');return r;},'_isKevinAdmin matche email');
+  tryFn('auth','isKevinAdmin_reject_partial',function(){if(typeof _isKevinAdmin!=='function')throw new Error('fn missing');var r=_isKevinAdmin('Laurent');if(r===true)throw new Error('FAUX POSITIF Laurent matché comme Kevin !');return false;},'_isKevinAdmin rejette "Laurent"');
+  tryFn('auth','isKevinAdmin_reject_short',function(){if(typeof _isKevinAdmin!=='function')throw new Error('fn missing');var r=_isKevinAdmin('Kev');if(r===true)throw new Error('FAUX POSITIF "Kev" matché');return false;},'_isKevinAdmin rejette "Kev" tout seul');
+  tryFn('auth','axHardLogoutSession_fn',function(){if(typeof axHardLogoutSession!=='function')throw new Error('missing');return true;},'axHardLogoutSession definie');
+  tryFn('auth','axTestLoginPersistence_fn',function(){if(typeof axTestLoginPersistence!=='function')throw new Error('missing');return true;},'axTestLoginPersistence definie');
+  /* 3. CRYPTO */
+  tryFn('crypto','axEncryptDecrypt_roundtrip',function(){if(typeof axEncryptSecret!=='function'||typeof axDecryptSecret!=='function')throw new Error('helpers missing');var src='secret-'+Date.now();var p=axEncryptSecret(src,'pass123');if(p&&p.then){p.then(function(enc){return axDecryptSecret(enc,'pass123');}).then(function(dec){if(dec!==src)throw new Error('decrypt!=src');}).catch(function(e){throw e;});}return true;},'crypto AES roundtrip async');
+  /* 4. PROVIDER & FAILOVER */
+  tryFn('provider','providerLabel_returns_obj',function(){if(typeof _axProviderLabel!=='function')throw new Error('missing');var l=_axProviderLabel();if(!l||!l.name||!l.color)throw new Error('format invalide');return l;},'_axProviderLabel retourne {name,color}');
+  tryFn('provider','tryFailoverChain_fn',function(){if(typeof _axTryFailoverChain!=='function')throw new Error('missing');return true;},'_axTryFailoverChain definie');
+  tryFn('provider','callOpenRouter_fn',function(){if(typeof _callOpenRouterAPI!=='function')throw new Error('missing');return true;},'_callOpenRouterAPI definie');
+  tryFn('provider','callGroq_fn',function(){if(typeof _callGroqAPI!=='function')throw new Error('missing');return true;},'_callGroqAPI definie');
+  tryFn('provider','callGemini_fn',function(){if(typeof _callGeminiAPI!=='function')throw new Error('missing');return true;},'_callGeminiAPI definie');
+  tryFn('provider','startWatchdog_fn',function(){if(typeof _axStartStreamWatchdog!=='function')throw new Error('missing');return true;},'_axStartStreamWatchdog definie');
+  tryFn('provider','stopWatchdog_fn',function(){if(typeof _axStopStreamWatchdog!=='function')throw new Error('missing');return true;},'_axStopStreamWatchdog definie');
+  /* 5. CHAT UI */
+  tryFn('chat','autoGrowInput_fn',function(){if(typeof _axAutoGrowInput!=='function')throw new Error('missing');return true;},'_axAutoGrowInput definie');
+  tryFn('chat','autoModeDecide_returns_str',function(){if(typeof _axAutoModeDecide!=='function')throw new Error('missing');var r=_axAutoModeDecide('hi');if(r!=='plan'&&r!=='code')throw new Error('returned: '+r);return r;},'_axAutoModeDecide retourne plan/code');
+  tryFn('chat','autoMode_short_plan',function(){var r=_axAutoModeDecide('Bonjour');if(r!=='plan')throw new Error('short msg should be plan, got '+r);return r;},'short msg => plan tier');
+  tryFn('chat','autoMode_long_code',function(){var r=_axAutoModeDecide('Analyse cette architecture, propose un refactor complet avec arguments et trade-offs detailles');if(r!=='code')throw new Error('long analysis should be code, got '+r);return r;},'analyse longue => code tier');
+  tryFn('chat','sendMessage_fn',function(){if(typeof sendMessage!=='function')throw new Error('missing');return true;},'sendMessage definie');
+  tryFn('chat','stopStreaming_fn',function(){if(typeof axStopStreaming!=='function')throw new Error('missing');return true;},'axStopStreaming definie');
+  /* 6. CREDENTIALS */
+  tryFn('cred','credStatus_returns_obj',function(){if(typeof axCredStatus!=='function')throw new Error('missing');var r=axCredStatus();if(!r||typeof r!=='object')throw new Error('format invalide');return r;},'axCredStatus retourne objet');
+  tryFn('cred','credBadge_returns_html',function(){if(typeof axCredBadge!=='function')throw new Error('missing');var h=axCredBadge('ax_api_key');if(typeof h!=='string'||h.indexOf('<span')<0)throw new Error('html invalide');return true;},'axCredBadge retourne HTML <span>');
+  tryFn('cred','credTestLive_fn',function(){if(typeof axCredTestLive!=='function')throw new Error('missing');return true;},'axCredTestLive definie');
+  /* 7. STORAGE */
+  tryFn('storage','idb_roundtrip',function(){if(typeof axIdbSet!=='function'||typeof axIdbGet!=='function')throw new Error('helpers missing');var k='diag_'+Date.now();return axIdbSet(k,{ok:1}).then(function(){return axIdbGet(k);}).then(function(v){if(!v||v.ok!==1)throw new Error('idb readback fail');return true;});},'IndexedDB roundtrip');
+  /* 8. FIREBASE */
+  tryFn('fb','fbInit_fn',function(){if(typeof fbInit!=='function')throw new Error('missing');return true;},'fbInit definie');
+  tryFn('fb','fbWrite_fn',function(){if(typeof fbWrite!=='function')throw new Error('missing');return true;},'fbWrite definie');
+  tryFn('fb','fbStartListening_fn',function(){if(typeof fbStartListening!=='function')throw new Error('missing');return true;},'fbStartListening definie');
+  tryFn('fb','FB_URL_set',function(){if(typeof FB_URL!=='string'||FB_URL.length<10)throw new Error('FB_URL non configure: '+FB_URL);return FB_URL;},'FB_URL configure');
+  tryFn('fb','FB_LOCAL_includes_user',function(){if(typeof FB_LOCAL==='undefined')throw new Error('FB_LOCAL undefined');if(FB_LOCAL.indexOf('ax_user')<0)throw new Error('ax_user PAS dans FB_LOCAL = LEAK SECU');return true;},'ax_user en FB_LOCAL (anti-leak Kevin/Laurence)');
+  tryFn('fb','FB_LOCAL_includes_pin',function(){if(FB_LOCAL.indexOf('ax_pin')<0)throw new Error('ax_pin PAS dans FB_LOCAL');return true;},'ax_pin en FB_LOCAL (anti ecrasement)');
+  /* 9. VOICE */
+  tryFn('voice','SpeechRecog_avail','SpeechRecognition' in window||'webkitSpeechRecognition' in window?function(){return true;}:function(){throw new Error('non supporte');},'SpeechRecognition browser');
+  tryFn('voice','axSttToggle_fn',function(){if(typeof axSttToggle!=='function')throw new Error('missing');return true;},'axSttToggle definie');
+  /* 10. NETWORK */
+  tryFn('net','navigator_online',function(){return navigator.onLine===true;},'navigator.onLine = true');
+  /* 11. RUNTIME STATE */
+  tryFn('runtime','K_object',function(){if(typeof K!=='object'||!K)throw new Error('K non defini');return true;},'K objet present');
+  tryFn('runtime','APP_VER_format',function(){if(typeof APP_VER!=='string'||!/^v\d+\.\d+/.test(APP_VER))throw new Error('APP_VER format: '+APP_VER);return APP_VER;},'APP_VER format vX.Y');
+  tryFn('runtime','ADMIN_ID',function(){if(ADMIN_ID!=='kdmc_admin')throw new Error('ADMIN_ID="'+ADMIN_ID+'" attendu kdmc_admin');return true;},'ADMIN_ID = kdmc_admin');
+  /* 12. UI helpers */
+  tryFn('ui','sv_fn',function(){if(typeof sv!=='function')throw new Error('missing');return true;},'sv navigation');
+  tryFn('ui','showModal_fn',function(){if(typeof _showModal!=='function')throw new Error('missing');return true;},'_showModal');
+  tryFn('ui','renderMd_fn',function(){if(typeof renderMd!=='function')throw new Error('missing');var h=renderMd('**bold**');if(h.indexOf('<strong')<0&&h.indexOf('<b>')<0)throw new Error('markdown bold non rendu');return true;},'renderMd markdown bold');
+  /* Save log + push Firebase */
+  try{var log=lg('ax_self_diag_log',[]);log.push(report);if(log.length>20)log=log.slice(-20);ls('ax_self_diag_log',log);if(typeof fbWrite==='function')try{fbWrite('ax_self_diag_log',log);}catch(_){}}catch(_){}
+  /* Toast résultat */
+  try{var s=report.summary;var msg='Diagnostic : '+s.ok+'/'+s.total+' OK, '+s.warn+' avertissements, '+s.err+' erreurs';var lvl=s.err>0?'err':(s.warn>0?'warn':'ok');if(typeof toast==='function')toast(msg,lvl,{duration:6000,force:true});}catch(_){}
+  if(opts.showModal&&typeof _axRenderSelfDiagModal==='function'){try{_axRenderSelfDiagModal(report);}catch(_){}}
+  return report;
+}
+
+function _axRenderSelfDiagModal(report){
+  try{
+    var html='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Diagnostic Apex</h2>';
+    html+='<div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:12px">'+esc(report.version)+' | '+new Date(report.ts).toLocaleString('fr-FR')+'</div>';
+    var s=report.summary;
+    var bgGood=s.err===0&&s.warn===0?'rgba(92,216,130,.12)':(s.err>0?'rgba(255,88,88,.12)':'rgba(240,200,80,.12)');
+    html+='<div style="padding:12px;background:'+bgGood+';border-radius:8px;margin-bottom:14px;font-weight:600;font-size:14px">'+s.ok+' OK | '+s.warn+' avertissements | '+s.err+' erreurs <span style="opacity:.6;font-weight:400">('+s.total+' tests)</span></div>';
+    Object.keys(report.checks).forEach(function(cat){
+      html+='<div style="margin-bottom:14px"><div style="font-weight:700;color:var(--ax-gold);margin-bottom:6px;text-transform:uppercase;font-size:11px;letter-spacing:.7px">'+esc(cat)+'</div>';
+      Object.keys(report.checks[cat]).forEach(function(name){
+        var c=report.checks[cat][name];
+        var col=c.status==='ok'?'#5cd882':(c.status==='err'?'#ff5858':'#f0c850');
+        var ic=c.status==='ok'?'OK':(c.status==='err'?'ERR':'!');
+        html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px"><span style="display:inline-block;width:36px;height:20px;border-radius:4px;background:'+col+'22;color:'+col+';text-align:center;font-weight:700;font-size:10px;line-height:20px">'+ic+'</span><span style="flex:1;color:var(--ax-text);font-family:ui-monospace,monospace;font-size:11px">'+esc(name)+'</span><span style="color:var(--ax-text-dim);font-size:11px;text-align:right;max-width:180px">'+esc(c.msg)+'</span></div>';
+      });
+      html+='</div>';
+    });
+    html+='<button class="ax-btn ax-btn-primary" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;margin-top:12px;min-height:48px">Fermer</button>';
+    if(typeof _showModal==='function')_showModal(html);
+  }catch(e){if(typeof toast==='function')toast('Erreur affichage diag: '+String(e).slice(0,80),'err');}
+}
+
+/* Auto-run diagnostic 8s apres login admin (toast + log) */
+try{if(typeof window!=='undefined'&&!window._axBootDiagScheduled){window._axBootDiagScheduled=true;setTimeout(function(){try{if(typeof axIsAdmin==='function'&&axIsAdmin()&&typeof axRunSelfDiagnostic==='function'){axRunSelfDiagnostic({showModal:false});}}catch(_){}}, 8000);}}catch(_){}
+
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
 
 /* v12.371 — APPEL DIRECT GROQ (Llama 3.3 70B gratuit, ultra rapide) */
@@ -6827,6 +6932,8 @@ function _callGroqAPI(sysPrompt,msgs,depth){
     if(typeof axSetStreamState==="function")axSetStreamState("streaming","Groq Llama 3.3...");
     fetch("https://api.groq.com/openai/v1/chat/completions",optsG).then(function(r){clearTimeout(_toG);if(!r.ok)return r.text().then(function(t){throw new Error("Groq HTTP "+r.status+": "+t.slice(0,200));});return r.json();}).then(function(d){
       K.isStreaming=false;
+      /* v12.378 fix audit : tagger provider pour badge UI */
+      try{K.lastProvider="groq";ls("ax_last_provider","groq");if(typeof _axStopStreamWatchdog==="function")_axStopStreamWatchdog();}catch(_){}
       var resp=(d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"(reponse vide)";
       K.messages.push({role:"assistant",content:resp,ts:now()});_saveMsgs();dc();
       if(typeof axSetStreamState==="function")axSetStreamState("idle","");
@@ -6868,6 +6975,8 @@ function _callGeminiAPI(sysPrompt,msgs,depth){
     if(typeof axSetStreamState==="function")axSetStreamState("streaming","Gemini 2.0 Flash...");
     fetch(url,optsGe).then(function(r){clearTimeout(_toGe);if(!r.ok)return r.text().then(function(t){throw new Error("Gemini HTTP "+r.status+": "+t.slice(0,200));});return r.json();}).then(function(d){
       K.isStreaming=false;
+      /* v12.378 fix audit : tagger provider pour badge UI */
+      try{K.lastProvider="gemini";ls("ax_last_provider","gemini");if(typeof _axStopStreamWatchdog==="function")_axStopStreamWatchdog();}catch(_){}
       var resp="";try{resp=d.candidates[0].content.parts[0].text;}catch(_){resp="(reponse vide)";}
       K.messages.push({role:"assistant",content:resp,ts:now()});_saveMsgs();dc();
       if(typeof axSetStreamState==="function")axSetStreamState("idle","");
@@ -6915,7 +7024,7 @@ function _callOpenRouterAPI(sysPrompt,msgs,depth){
     var to=setTimeout(function(){if(done)return;done=true;if(ctrl)try{ctrl.abort();}catch(_){}K.isStreaming=false;K.messages.push({role:"assistant",content:"OpenRouter ne repond pas (timeout). Reessaie ou change de provider.",ts:now()});_saveMsgs();dc();},K.settings.apiTimeout||180000);
     var opts={method:"POST",headers:{"Authorization":"Bearer "+key,"content-type":"application/json","HTTP-Referer":(location&&location.origin)||"https://9r4rxssx64-creator.github.io","X-Title":"Apex AI"},body:JSON.stringify(body)};
     if(ctrl)opts.signal=ctrl.signal;
-    return fetch("https://openrouter.ai/api/v1/chat/completions",opts).then(function(r){clearTimeout(to);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(done)return;done=true;K.isStreaming=false;var text=(d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";K.messages.push({role:"assistant",content:text||"(reponse vide OpenRouter — reessayez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();try{axTrackUsage(Math.round((text||"").length/4));/* v12.319 - track spend EUR */try{var inT=Math.round(JSON.stringify(cleanMsgs).length/4);var outT=Math.round((text||"").length/4);var modelUsed=axGetPasserelleModel?axGetPasserelleModel():"claude-sonnet-4-6";var inUsd=modelUsed.indexOf("haiku")>=0?0.80:modelUsed.indexOf("opus")>=0?15:3;var outUsd=modelUsed.indexOf("haiku")>=0?4:modelUsed.indexOf("opus")>=0?75:15;var costUsd=(inT/1000000*inUsd)+(outT/1000000*outUsd);var costEur=costUsd*0.92;if(typeof axTrackSpend==="function")axTrackSpend(costEur);}catch(_){}axGainXP(5);}catch(_){}if(K.settings.ttsEnabled&&typeof axTtsSpeak==="function")axTtsSpeak(text);return {content:text,usage:(d&&d.usage)||{}};}).catch(function(e){if(done)return;done=true;clearTimeout(to);K.isStreaming=false;var em=String(e&&e.message||e).slice(0,250);var friendly=em.indexOf("401")>=0?"Cle OpenRouter invalide. Verifie Reglages > Coffre.":em.indexOf("429")>=0?"OpenRouter : trop de demandes. Attends quelques secondes.":em.indexOf("network")>=0||em.indexOf("fetch")>=0?"Reseau indisponible.":"OpenRouter erreur : "+em;K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();throw e;});
+    return fetch("https://openrouter.ai/api/v1/chat/completions",opts).then(function(r){clearTimeout(to);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});return r.json();}).then(function(d){if(done)return;done=true;K.isStreaming=false;/* v12.378 fix audit : tagger provider pour badge UI */try{K.lastProvider="openrouter";ls("ax_last_provider","openrouter");if(typeof _axStopStreamWatchdog==="function")_axStopStreamWatchdog();}catch(_){}var text=(d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";K.messages.push({role:"assistant",content:text||"(reponse vide OpenRouter — reessayez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();try{axTrackUsage(Math.round((text||"").length/4));/* v12.319 - track spend EUR */try{var inT=Math.round(JSON.stringify(cleanMsgs).length/4);var outT=Math.round((text||"").length/4);var modelUsed=axGetPasserelleModel?axGetPasserelleModel():"claude-sonnet-4-6";var inUsd=modelUsed.indexOf("haiku")>=0?0.80:modelUsed.indexOf("opus")>=0?15:3;var outUsd=modelUsed.indexOf("haiku")>=0?4:modelUsed.indexOf("opus")>=0?75:15;var costUsd=(inT/1000000*inUsd)+(outT/1000000*outUsd);var costEur=costUsd*0.92;if(typeof axTrackSpend==="function")axTrackSpend(costEur);}catch(_){}axGainXP(5);}catch(_){}if(K.settings.ttsEnabled&&typeof axTtsSpeak==="function")axTtsSpeak(text);return {content:text,usage:(d&&d.usage)||{}};}).catch(function(e){if(done)return;done=true;clearTimeout(to);K.isStreaming=false;var em=String(e&&e.message||e).slice(0,250);var friendly=em.indexOf("401")>=0?"Cle OpenRouter invalide. Verifie Reglages > Coffre.":em.indexOf("429")>=0?"OpenRouter : trop de demandes. Attends quelques secondes.":em.indexOf("network")>=0||em.indexOf("fetch")>=0?"Reseau indisponible.":"OpenRouter erreur : "+em;K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();throw e;});
   }catch(ex){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme OpenRouter, recharge l'app",ts:now()});_saveMsgs();dc();}
 }
 /** @param {string} sysPrompt System prompt. @param {Array} msgs Messages history. @param {number} depth Recursion depth (0). @returns {void} */
