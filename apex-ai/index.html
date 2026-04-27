@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.397",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.398",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6487,7 +6487,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -8059,6 +8059,163 @@ function axTestEachFunction(){
     });
   }
   return results;
+}
+
+/* v12.398 - Historique credentials + rollback auto si KO (Kevin "garder ancien si nouveau ne marche pas") */
+function _axArchiveCredential(key, value, meta){
+  if(!key || !value) return;
+  try{
+    var hk = "ax_cred_history_" + key;
+    var hist = lg(hk, []);
+    /* Eviter doublon : si dernier entry = meme value, juste maj status */
+    if(hist.length && hist[hist.length-1].value === value){
+      Object.assign(hist[hist.length-1], meta||{}, {ts: Date.now()});
+    } else {
+      hist.push(Object.assign({
+        value: value,
+        ts: Date.now(),
+        status: "archived",
+        source: "auto"
+      }, meta||{}));
+    }
+    /* Cap a 10 entries par cle (le plus ancien out) */
+    if(hist.length > 10) hist = hist.slice(-10);
+    ls(hk, hist);
+  }catch(_){}
+}
+
+function _axGetCredentialHistory(key){
+  return lg("ax_cred_history_" + key, []);
+}
+
+function _axMarkCredentialValid(key, value){
+  try{
+    var hk = "ax_cred_history_" + key;
+    var hist = lg(hk, []);
+    /* Trouve l entry avec cette value et marque validated */
+    var found = false;
+    for(var i = hist.length-1; i >= 0; i--){
+      if(hist[i].value === value){
+        hist[i].status = "validated";
+        hist[i].validatedAt = Date.now();
+        found = true;
+        break;
+      }
+    }
+    if(!found){
+      hist.push({value:value, ts:Date.now(), status:"validated", validatedAt:Date.now(), source:"test"});
+    }
+    if(hist.length > 10) hist = hist.slice(-10);
+    ls(hk, hist);
+  }catch(_){}
+}
+
+function _axRollbackCredential(key){
+  /* Cherche dans l historique le dernier credential "validated" et le restore */
+  try{
+    var hist = _axGetCredentialHistory(key);
+    var current = lg(key, "");
+    /* Cherche le dernier validated qui n'est PAS la valeur actuelle */
+    for(var i = hist.length-1; i >= 0; i--){
+      if(hist[i].status === "validated" && hist[i].value !== current){
+        ls(key, hist[i].value);
+        if(typeof toast === "function") toast("Rollback automatique : ancien code "+key.replace("ax_","")+" restaure (le nouveau ne marchait pas)", "warn", {duration:6000, force:true});
+        if(typeof axCredSetStatus === "function") axCredSetStatus(key, "yellow", "Rollback - test en cours...");
+        if(typeof axCredTestLive === "function") setTimeout(function(){ axCredTestLive(key); }, 1500);
+        return {ok:true, restored:hist[i].value, archivedFailed:current};
+      }
+    }
+    return {ok:false, msg:"aucun ancien validated trouve"};
+  }catch(e){ return {ok:false, msg:String(e.message||e)}; }
+}
+
+/* Hook ls() pour archiver l ancien AVANT d ecrire nouveau */
+try{
+  if(typeof window !== "undefined" && !window._axCredHistoryHookInstalled){
+    window._axCredHistoryHookInstalled = true;
+    var _origLs = window.ls;
+    if(typeof _origLs === "function"){
+      window.ls = function(k, v){
+        try{
+          if(typeof _AX_CRED_PATTERNS !== "undefined" && _AX_CRED_PATTERNS[k]){
+            var oldVal = lg(k, "");
+            if(oldVal && oldVal !== v && oldVal.length > 5){
+              /* Archive l ancien (peut-etre etait valide) */
+              _axArchiveCredential(k, oldVal, {status: "archived_on_replace"});
+            }
+          }
+        }catch(_){}
+        return _origLs.call(this, k, v);
+      };
+    }
+  }
+}catch(_){}
+
+/* Override axCredTestLive : si test OK -> mark validated, si KO -> propose rollback */
+try{
+  if(typeof axCredTestLive === "function" && !window._axCredTestLiveWrapped){
+    window._axCredTestLiveWrapped = true;
+    var _origTest = axCredTestLive;
+    window.axCredTestLive = function(k){
+      var p = _origTest(k);
+      if(p && typeof p.then === "function"){
+        return p.then(function(res){
+          try{
+            var current = lg(k, "");
+            if(res && res.ok && current){
+              _axMarkCredentialValid(k, current);
+            } else if(res && !res.ok && current){
+              /* Test KO : si historique a un validated different -> propose rollback */
+              var hist = _axGetCredentialHistory(k);
+              var hasValidated = hist.some(function(h){ return h.status === "validated" && h.value !== current; });
+              if(hasValidated && typeof toast === "function"){
+                setTimeout(function(){
+                  if(confirm("Le nouveau code "+k.replace("ax_","")+" ne marche pas. Restaurer l ancien qui marchait ?")){
+                    _axRollbackCredential(k);
+                    if(typeof dc === "function") dc();
+                  }
+                }, 1000);
+              }
+            }
+          }catch(_){}
+          return res;
+        });
+      }
+      return p;
+    };
+  }
+}catch(_){}
+
+/* Vue admin Historique credentials */
+function vCredHistory(){
+  if(!axIsAdmin()) return '<div style="padding:20px">Admin requis</div>';
+  var h = '<div style="padding:14px;max-width:760px;margin:0 auto"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Historique credentials</h2>';
+  h += '<p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex archive les anciens codes a chaque remplacement. Si nouveau code KO, il propose rollback automatique.</p>';
+  var anyHistory = false;
+  Object.keys(_AX_CRED_PATTERNS || {}).forEach(function(k){
+    var hist = _axGetCredentialHistory(k);
+    if(!hist.length) return;
+    anyHistory = true;
+    h += '<div class="ax-card" style="margin-bottom:10px"><h3 style="font-size:14px;margin-bottom:6px">'+esc(k.replace("ax_",""))+' <span style="font-size:10px;color:var(--ax-text-dim)">'+hist.length+' entrees</span></h3>';
+    var current = lg(k, "");
+    hist.slice().reverse().forEach(function(entry, i){
+      var isCurrent = entry.value === current;
+      var sample = (typeof _axMaskCredSample === "function") ? _axMaskCredSample(entry.value) : (entry.value.slice(0,6)+"..."+entry.value.slice(-4));
+      var col = isCurrent ? "#5cd882" : (entry.status === "validated" ? "#5aa8ff" : "#888");
+      var lbl = isCurrent ? "ACTUEL" : (entry.status === "validated" ? "VALIDE" : "archive");
+      h += '<div style="padding:6px 8px;background:rgba(255,255,255,.03);border-radius:6px;margin:4px 0;font-size:11px;font-family:ui-monospace,monospace;display:flex;align-items:center;gap:8px"><span style="color:'+col+';font-weight:700;font-size:9px">'+lbl+'</span><span style="flex:1">'+esc(sample)+'</span><span style="color:var(--ax-text-dim);font-size:10px">'+new Date(entry.ts).toLocaleString("fr-FR")+'</span>';
+      if(!isCurrent){
+        h += '<button class="ax-btn-icon" onclick="if(confirm(\'Restaurer ce code ?\')){ls(\''+esc(k)+'\',\''+esc(entry.value).replace(/\\/g,"\\\\").replace(/\'/g,"\\\'")+'\');if(typeof axCredTestLive===\'function\')axCredTestLive(\''+esc(k)+'\');dc();}" style="width:28px;height:28px;font-size:11px" title="Restaurer">R</button>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  if(!anyHistory){
+    h += '<div class="ax-empty"><div class="ax-empty-icon">H</div><div class="ax-empty-text">Aucun historique pour le moment. Apex archivera les anciens codes au prochain remplacement.</div></div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 function axStopStreaming(){try{if(!K.isStreaming){toast("Aucune reponse en cours","info");return;}if(window._apexCurrentAbort){try{window._apexCurrentAbort.abort();}catch(_){}window._apexExplicitStop=true;}K.isStreaming=false;axSetStreamState("idle","");if(typeof dc==="function")dc();toast("Reponse arretee","info");}catch(_){}}
