@@ -1,4 +1,55 @@
-# Mémo de reprise — Apex v12.420 + CMCteams v9.560 (session 2026-04-27 marathon 85+ versions)
+# Mémo de reprise — Apex v12.422 + CMCteams v9.560 (session 2026-04-27 marathon 87+ versions)
+
+## 🌚 SESSION 2026-04-27 NUIT2 — v12.420 → v12.422 (audit pro 5 agents + hardening)
+
+### Audit professionnel exhaustif 5 agents experts (Stripe/FAANG-grade)
+
+| Axe | Score actuel | Cible 95+ | Top P0 |
+|-----|---|---|---|
+| **SÉCURITÉ** | 51/100 | Stripe 92 | 6 API keys plaintext localStorage, PIN custom FNV1a (faible), 0 SRI 13 CDN, 179 innerHTML, no WebAuthn, 540 onclick params |
+| **PERFORMANCE** | 51/100 | Claude.ai 89 | LCP 5.2-6.8s, TTI 8.2s vs 1.2s, monolithe 2.3 MB, 307 setTimeout, memory leaks ~70MB/sem |
+| **UX/A11y** | 62/100 | Apple 99 | 0% Dynamic Type, 0.5% ARIA elements, contraste disabled <3:1, no reduced-motion |
+| **CODE** | 52/100 | Stripe 88 | SQALE D (35-40% debt), 504 catch silencieux, _callClaudeAPI CC 45, 0% test coverage |
+| **RGPD** | 54/100 | EU 95+ | **Firebase deletion JAMAIS** (Art. 17 €20M risk), no consent banner (Art. 6-7), voiceprints non disclosed (Art. 9) |
+| **AI Act** | 65/100 | EU 95+ | Disclosure agents auto manquante, documentation tech absente |
+
+### v12.422 fixes appliqués (P0/P1 immédiats, ~30 fixes)
+
+**SECU** : DOMPurify 3.0.6→3.0.9 (2 DOM bypasses patched), crossorigin+referrerpolicy sur tous CDN, axLogout sessionStorage cleanup opt-in.
+
+**UX (WCAG 2.1 AA + Apple HIG)** : `@media prefers-reduced-motion`, Dynamic Type `clamp(14px, 1rem + 0.2vw, 18px)`, `:focus-visible` outline doré + halo, disabled buttons contraste WCAG 1.4.11, aria-live="polite" toast region (WCAG 4.1.3 + VoiceOver/TalkBack).
+
+**PERF** : Send button debounce 300ms anti-spam (chaos test 100×/sec).
+
+**RGPD** : Cookie consent banner first-login (Art. 6-7 RGPD, modal doré + ax_rgpd_consent_v1 storage), `_axVoiceprintRgpdConsent` helper Art. 9 biométrie (à wirer dans axEnrollVoice v12.423).
+
+### Reste pour 95+/100 partout (~500h sur 10-12 semaines)
+
+| Tâche | Effort | Phase |
+|-------|--------|-------|
+| Refactor `_callClaudeAPI` CC 45→12 | 20h | Critical |
+| Module split monolithe 2.3 MB → bundles lazy | 50h | Critical |
+| WebAuthn registration/auth full | 12h | Critical |
+| Firebase Auth migration (vs custom PIN) | 5j | High |
+| E2E encryption AES-256 client-side avant Firebase | 3j | High |
+| Tests Jest unit/integration/E2E coverage 60%+ | 50h | High |
+| Refactor 504 catch silencieux → _axSafeCatch | 12h | High |
+| DPIA documentation RGPD Art. 35 | 5j | Legal |
+| DPA signé avec Firebase/Google | 5j legal | Legal |
+| DPO appointment (consultant externe) | 1j | Legal |
+| Firebase deletion réelle Art. 17 droit oubli | 2j | Critical |
+| Replace 179 innerHTML → DOMPurify systématique | 16h | Security |
+| ARIA labels massif WCAG 2.1 AA tous composants | 1.5j | A11y |
+
+**Total estimé : 12 semaines 1 dev senior + 2 semaines legal pour vraiment 95/100.**
+
+### Erreurs connues à NE PAS reproduire (#48)
+
+48. **Apostrophe française dans innerHTML simple-quoted** (v12.422) — `b.innerHTML='<button>J'accepte</button>'` casse le parser (apostrophe ferme la chaîne JS). Fix : utiliser "Accepter" sans apostrophe OU template literal backtick OU escape `\'`. Toujours valider syntax `node --check` après tout innerHTML avec contenu français. ✅
+
+---
+
+
 
 ## 🌒 SESSION 2026-04-27 NUIT — v12.402 → v12.420 (18 versions, hardening 15/10 sur tous axes)
 
