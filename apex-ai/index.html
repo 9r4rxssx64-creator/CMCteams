@@ -546,7 +546,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.404",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.405",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7867,6 +7867,91 @@ function _axAutoSaveAllCredentials(detected){
   });
   return true;
 }
+
+function axTestAllHistoryCandidates(key){
+  /* v12.405 - Teste TOUS les candidats historiques + actuel (Kevin "j'en ai 2 pour github, teste les 2 et garde le bon") */
+  if(!key) return Promise.resolve({ok:false,msg:"no key"});
+  try{
+    var hist = (typeof _axGetCredentialHistory === "function") ? _axGetCredentialHistory(key) : [];
+    var current = lg(key, "");
+    var seen = {};
+    var candidates = [];
+    /* Order : actuel d'abord, puis history du plus recent au plus ancien */
+    if(current && !seen[current]){ candidates.push(current); seen[current] = true; }
+    hist.slice().reverse().forEach(function(h){
+      if(h && h.value && !seen[h.value]){ candidates.push(h.value); seen[h.value] = true; }
+    });
+    if(!candidates.length) return Promise.resolve({ok:false,msg:"no candidates"});
+    if(typeof toast === "function") toast("Test "+candidates.length+" candidats pour "+key.replace("ax_","")+"...", "info", {duration:3000, force:true});
+    /* Test sequentiel : save + test live, premier OK gagne */
+    return new Promise(function(resolve){
+      var idx = 0;
+      var tried = [];
+      function tryNext(){
+        if(idx >= candidates.length){
+          if(typeof toast === "function") toast("Aucun des "+candidates.length+" candidats ne marche pour "+key.replace("ax_",""), "err", {duration:6000, force:true});
+          resolve({ok:false, tried:tried});
+          return;
+        }
+        var v = candidates[idx];
+        try{ ls(key, v); }catch(_){}
+        idx++;
+        if(typeof axCredTestLive === "function"){
+          var p = axCredTestLive(key);
+          if(p && p.then){
+            p.then(function(res){
+              tried.push({sample: v.slice(0,6)+"..."+v.slice(-4), ok: !!res.ok, msg: res.msg||""});
+              if(res.ok){
+                if(typeof _axMarkCredentialValid === "function") _axMarkCredentialValid(key, v);
+                if(typeof toast === "function") toast("Bon code trouve ("+idx+"/"+candidates.length+") pour "+key.replace("ax_","")+" - sauvegarde", "ok", {duration:5000, force:true});
+                if(typeof dc === "function") dc();
+                resolve({ok:true, value:v, winner:idx, tried:tried});
+              } else {
+                tryNext();
+              }
+            }).catch(function(){ tryNext(); });
+          } else { tryNext(); }
+        } else { tryNext(); }
+      }
+      tryNext();
+    });
+  }catch(e){ return Promise.resolve({ok:false,msg:String(e.message||e)}); }
+}
+
+/* v12.405 - Hook dans axCredTestLive : si test KO ET history multiple candidats → auto-test all */
+try{
+  if(typeof window !== "undefined" && !window._axAutoTestHistoryHook){
+    window._axAutoTestHistoryHook = true;
+    var _origCredTestLive = axCredTestLive;
+    window.axCredTestLive = function(k){
+      var p = _origCredTestLive(k);
+      if(p && typeof p.then === "function"){
+        return p.then(function(res){
+          try{
+            if(res && !res.ok && typeof _axGetCredentialHistory === "function"){
+              var hist = _axGetCredentialHistory(k);
+              if(hist && hist.length >= 2){
+                /* Plusieurs candidats history -> auto-test all (delay 2s pour laisser toast precedent passer) */
+                if(!window._axAutoTestingHistory){
+                  window._axAutoTestingHistory = true;
+                  setTimeout(function(){
+                    try{
+                      axTestAllHistoryCandidates(k).finally(function(){
+                        window._axAutoTestingHistory = false;
+                      });
+                    }catch(_){ window._axAutoTestingHistory = false; }
+                  }, 2000);
+                }
+              }
+            }
+          }catch(_){}
+          return res;
+        });
+      }
+      return p;
+    };
+  }
+}catch(_){}
 
 function _axProposeCredentialSave(detected){
   if(!detected || !detected.length) return;
