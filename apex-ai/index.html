@@ -537,7 +537,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.374",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.375",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -863,6 +863,156 @@ async function axSafeboxOcrFromDataUrl(dataUrl){
     var j=await r.json();var text="";if(j.content)j.content.forEach(function(c){if(c.text)text+=c.text;});
     return text.trim();
   }catch(e){if(typeof toast==="function")toast("OCR erreur : "+String(e).slice(0,100),"err");return null;}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   v12.375 — ASTRONOMIE & ASTROLOGIE (Kevin 2026-04-27 nuit, "va plus loin")
+   Calculs astronomiques sans API : phase lune Conway, sun/moon times,
+   constellations visibles selon lat/lon/heure. Astrologie : signes + traits.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Phase lune Conway algo (rapide, ±1 jour) */
+function axLunarPhase(date){
+  var d=date||new Date();
+  var year=d.getFullYear(),month=d.getMonth()+1,day=d.getDate();
+  var c=0,e=0,jd=0,b=0;
+  if(month<3){year--;month+=12;}
+  ++month;
+  c=365.25*year;e=30.6*month;jd=c+e+day-694039.09;jd/=29.5305882;b=parseInt(jd);jd-=b;
+  b=Math.round(jd*8);if(b>=8)b=0;
+  var phases=[
+    {n:"Nouvelle Lune",ic:"\uD83C\uDF11",t:"Bonne pour : démarrer projet, semer intentions"},
+    {n:"Premier Croissant",ic:"\uD83C\uDF12",t:"Bonne pour : action, courage, impulsion"},
+    {n:"Premier Quartier",ic:"\uD83C\uDF13",t:"Bonne pour : décisions, défis, croissance"},
+    {n:"Gibbeuse Croissante",ic:"\uD83C\uDF14",t:"Bonne pour : ajustement, perfectionnement"},
+    {n:"Pleine Lune",ic:"\uD83C\uDF15",t:"Bonne pour : bilan, célébration, lâcher-prise"},
+    {n:"Gibbeuse Décroissante",ic:"\uD83C\uDF16",t:"Bonne pour : gratitude, partage, transmission"},
+    {n:"Dernier Quartier",ic:"\uD83C\uDF17",t:"Bonne pour : pardon, libération, fin de cycle"},
+    {n:"Dernier Croissant",ic:"\uD83C\uDF18",t:"Bonne pour : repos, méditation, introspection"}
+  ];
+  return phases[b];
+}
+
+/* Lever/coucher soleil/lune approximatif (algorithme NOAA simplifié) */
+function axSunriseSunset(lat,lon,date){
+  /* Algo simplifié NOAA — précision ±5 min selon saison/latitude */
+  var d=date||new Date();
+  var dayOfYear=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+  /* Solar declination */
+  var decl=23.45*Math.sin((360/365*(dayOfYear-81))*Math.PI/180);
+  var latRad=lat*Math.PI/180;var declRad=decl*Math.PI/180;
+  var cosH=-Math.tan(latRad)*Math.tan(declRad);
+  if(cosH>1)return{rise:null,set:null,note:"Nuit polaire"};
+  if(cosH<-1)return{rise:null,set:null,note:"Jour polaire"};
+  var H=Math.acos(cosH)*180/Math.PI/15; /* hours from noon */
+  /* Equation of time correction (approx) */
+  var b=(2*Math.PI/365)*(dayOfYear-81);
+  var eot=9.87*Math.sin(2*b)-7.53*Math.cos(b)-1.5*Math.sin(b); /* minutes */
+  var solarNoonUTC=12-(lon/15)-(eot/60);
+  var riseUTC=solarNoonUTC-H;var setUTC=solarNoonUTC+H;
+  var tzOffsetH=-d.getTimezoneOffset()/60;
+  var fmt=function(h){h=h+tzOffsetH;while(h<0)h+=24;while(h>=24)h-=24;var hh=Math.floor(h),mm=Math.round((h-hh)*60);if(mm===60){hh++;mm=0;}return(hh<10?"0":"")+hh+":"+(mm<10?"0":"")+mm;};
+  return{rise:fmt(riseUTC),set:fmt(setUTC),declination:decl.toFixed(2),dayLength:(2*H).toFixed(2)+"h"};
+}
+
+/* Saisons astronomiques */
+function axCurrentSeason(lat){
+  var d=new Date();var m=d.getMonth()+1,day=d.getDate();
+  var north=lat>=0;
+  /* Equinoxes/solstices approx: 20 mars, 21 juin, 23 sept, 21 dec */
+  var seasons=north?
+    [{m:[3,4,5],n:"Printemps",ic:"\uD83C\uDF38"},{m:[6,7,8],n:"Été",ic:"\u2600\uFE0F"},{m:[9,10,11],n:"Automne",ic:"\uD83C\uDF42"},{m:[12,1,2],n:"Hiver",ic:"\u2744\uFE0F"}]:
+    [{m:[3,4,5],n:"Automne",ic:"\uD83C\uDF42"},{m:[6,7,8],n:"Hiver",ic:"\u2744\uFE0F"},{m:[9,10,11],n:"Printemps",ic:"\uD83C\uDF38"},{m:[12,1,2],n:"Été",ic:"\u2600\uFE0F"}];
+  for(var i=0;i<seasons.length;i++)if(seasons[i].m.indexOf(m)>=0)return seasons[i];
+  return seasons[0];
+}
+
+/* Constellations visibles à une heure/lieu donné (top 5 plus brillantes par saison/lat) */
+function axVisibleConstellations(lat,date){
+  var d=date||new Date();var month=d.getMonth()+1;
+  var hemisphere=lat>=0?"north":"south";
+  /* Tableau simplifié saisonnier hémisphère nord */
+  var byMonth={
+    "1":["Orion","Grand Chien (Sirius)","Taureau (Aldébaran)","Gémeaux","Cocher (Capella)"],
+    "2":["Orion","Grand Chien","Petit Chien (Procyon)","Lion","Hydre"],
+    "3":["Lion","Grande Ourse","Vierge","Bouvier (Arcturus)","Hydre"],
+    "4":["Lion","Vierge","Bouvier","Couronne Boréale","Grande Ourse"],
+    "5":["Bouvier","Vierge","Hercule","Couronne Boréale","Lyre (Vega)"],
+    "6":["Hercule","Lyre","Cygne (Deneb)","Aigle (Altaïr)","Scorpion (Antarès)"],
+    "7":["Lyre","Cygne","Aigle","Scorpion","Sagittaire"],
+    "8":["Cygne","Aigle","Sagittaire","Pégase","Capricorne"],
+    "9":["Pégase","Andromède","Persée","Cassiopée","Cygne"],
+    "10":["Pégase","Andromède","Persée","Cassiopée","Bélier"],
+    "11":["Andromède","Persée","Taureau","Bélier","Cassiopée"],
+    "12":["Orion","Taureau","Gémeaux","Cocher","Persée"]
+  };
+  var arr=byMonth[String(month)]||["Grande Ourse","Cassiopée","Orion"];
+  if(hemisphere==="south"){arr=["Croix du Sud","Centaure (Alpha Centauri)","Carène","Voile","Scorpion"];}
+  return arr;
+}
+
+/* Signes astrologiques (date naissance) */
+function axZodiacSign(birthDateString){
+  var d=new Date(birthDateString);if(isNaN(d.getTime()))return null;
+  var month=d.getMonth()+1,day=d.getDate();
+  var signs=[
+    {sign:"Capricorne",ic:"\u2651",elem:"Terre",from:[12,22],to:[1,19]},
+    {sign:"Verseau",ic:"\u2652",elem:"Air",from:[1,20],to:[2,18]},
+    {sign:"Poissons",ic:"\u2653",elem:"Eau",from:[2,19],to:[3,20]},
+    {sign:"Bélier",ic:"\u2648",elem:"Feu",from:[3,21],to:[4,19]},
+    {sign:"Taureau",ic:"\u2649",elem:"Terre",from:[4,20],to:[5,20]},
+    {sign:"Gémeaux",ic:"\u264A",elem:"Air",from:[5,21],to:[6,20]},
+    {sign:"Cancer",ic:"\u264B",elem:"Eau",from:[6,21],to:[7,22]},
+    {sign:"Lion",ic:"\u264C",elem:"Feu",from:[7,23],to:[8,22]},
+    {sign:"Vierge",ic:"\u264D",elem:"Terre",from:[8,23],to:[9,22]},
+    {sign:"Balance",ic:"\u264E",elem:"Air",from:[9,23],to:[10,22]},
+    {sign:"Scorpion",ic:"\u264F",elem:"Eau",from:[10,23],to:[11,21]},
+    {sign:"Sagittaire",ic:"\u2650",elem:"Feu",from:[11,22],to:[12,21]}
+  ];
+  for(var i=0;i<signs.length;i++){
+    var s=signs[i];
+    if((month===s.from[0]&&day>=s.from[1])||(month===s.to[0]&&day<=s.to[1])){return s;}
+  }
+  return signs[0]; /* Capricorne fallback */
+}
+
+/* Snapshot complet astronomie pour position+date (utilisé par Smart Camera ciel_etoiles + IA tool) */
+function axAstroSnapshot(lat,lon,date,birthDateUser){
+  var d=date||new Date();
+  var phase=axLunarPhase(d);
+  var sun=(typeof lat==="number"&&typeof lon==="number")?axSunriseSunset(lat,lon,d):null;
+  var season=(typeof lat==="number")?axCurrentSeason(lat):null;
+  var constel=(typeof lat==="number")?axVisibleConstellations(lat,d):null;
+  var zodiac=birthDateUser?axZodiacSign(birthDateUser):null;
+  return{
+    date:d.toISOString().slice(0,10),
+    time:d.toTimeString().slice(0,5),
+    lunar_phase:phase,
+    sun:sun,
+    season:season,
+    visible_constellations:constel,
+    user_zodiac:zodiac
+  };
+}
+
+/* IA tool : retourne snapshot astro pour question style "que vois-je dans le ciel ?" */
+function _iaTool_get_astro_now(input){
+  try{
+    var lat=input&&input.lat;var lon=input&&input.lon;
+    var birth=lg("ax_user_birthdate","")||(input&&input.birthDate);
+    if((typeof lat!=="number"||typeof lon!=="number")&&navigator.geolocation){
+      /* Async fallback : retourne snapshot sans geo si pas dispo synchrone */
+    }
+    var snap=axAstroSnapshot(lat,lon,new Date(),birth);
+    var lines=[];
+    lines.push("🌙 "+snap.lunar_phase.ic+" "+snap.lunar_phase.n);
+    lines.push("   "+snap.lunar_phase.t);
+    if(snap.sun&&snap.sun.rise){lines.push("☀ Lever soleil "+snap.sun.rise+" / Coucher "+snap.sun.set+" (jour "+snap.sun.dayLength+")");}
+    if(snap.season){lines.push("🍂 Saison : "+snap.season.ic+" "+snap.season.n);}
+    if(snap.visible_constellations){lines.push("⭐ Constellations visibles : "+snap.visible_constellations.join(", "));}
+    if(snap.user_zodiac){lines.push("♓ Ton signe : "+snap.user_zodiac.ic+" "+snap.user_zodiac.sign+" ("+snap.user_zodiac.elem+")");}
+    return lines.join("\n");
+  }catch(e){return "Erreur astro : "+String(e.message||e).slice(0,100);}
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -3720,7 +3870,7 @@ function vChangelog(){if(!K.user)return vLogin();var h='<div style="padding:16px
 
 // === MODULE: Plans & Quotas (systeme de forfaits) ===
 // v12.29 — Simplification 3 plans (Kevin 2026-04-21): free/pro/business. Suppression lifetime/starter/mid/enterprise.
-/* v12.364 — Naming Stripe-level Anthropic-style (Lite/Pro/Plus/Max) + Enterprise 999€/an + limites Kevin A+C */var PLANS={free:{name:"Gratuit",price:0,msgs_day:10,msgs_month:100,kb_facts:50,conversations:10,templates:"basic",personas:1,devices:1,finance:false,domotique:false,offline:false,code:false,voice:false,export:false,vision:false,web_search:false,identify_shop:false,agents:0,support:"aucun"},trial:{name:"Decouverte 24h",price:0,msgs_day:50,kb_facts:100,conversations:20,templates:"basic",personas:3,devices:1,finance:true,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:0,support:"aucun",trialHours:24},lite:{name:"Lite",price:9.99,msgs_day:50,msgs_month:1500,kb_facts:500,conversations:100,templates:"basic",personas:3,devices:2,finance:false,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:2,support:"email"},/* Alias retro-compat */starter:{name:"Lite",price:9.99,msgs_day:50,msgs_month:1500,kb_facts:500,conversations:100,templates:"basic",personas:3,devices:2,finance:false,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:2,support:"email"},pro:{name:"Pro",price:19.99,msgs_day:200,msgs_month:5000,kb_facts:5000,conversations:2000,templates:"all",personas:10,devices:5,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:10,support:"email 24h"},plus:{name:"Plus",price:49.99,msgs_day:500,msgs_month:15000,kb_facts:20000,conversations:10000,templates:"all",personas:10,devices:10,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:20,backup_realtime:true,multi_llm:true,support:"email prioritaire"},/* Alias retro-compat */premium:{name:"Plus",price:49.99,msgs_day:500,msgs_month:15000,kb_facts:20000,conversations:10000,templates:"all",personas:10,devices:10,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:20,backup_realtime:true,multi_llm:true,support:"email prioritaire"},max:{name:"Max",price:99.99,msgs_day:1500,msgs_month:30000,kb_facts:50000,conversations:20000,templates:"all",personas:10,devices:20,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"24/7 prioritaire"},/* Alias retro-compat */business:{name:"Max",price:99.99,msgs_day:1500,msgs_month:30000,kb_facts:50000,conversations:20000,templates:"all",personas:10,devices:20,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"24/7 prioritaire"},/* v12.364 — Enterprise 999€/an avec cap 100K msgs/mois (Kevin demande) */enterprise:{name:"Enterprise",price:999,annual:true,msgs_day:3500,msgs_month:100000,kb_facts:-1,conversations:-1,templates:"all",personas:-1,devices:-1,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"dedicated"},admin:{name:"👑 Admin",price:0,msgs_day:-1,msgs_month:-1,kb_facts:-1,conversations:-1,templates:"all",personas:-1,devices:-1,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"founder"}};
+/* v12.364 — Naming Stripe-level Anthropic-style (Lite/Pro/Plus/Max) + Enterprise 999€/an + limites Kevin A+C */var PLANS={free:{name:"Gratuit",price:0,msgs_day:200,msgs_month:5000,kb_facts:1000,conversations:200,templates:"all",personas:5,devices:3,finance:true,domotique:true,offline:false,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:5,support:"email"},trial:{name:"Decouverte 24h",price:0,msgs_day:50,kb_facts:100,conversations:20,templates:"basic",personas:3,devices:1,finance:true,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:0,support:"aucun",trialHours:24},lite:{name:"Lite",price:9.99,msgs_day:50,msgs_month:1500,kb_facts:500,conversations:100,templates:"basic",personas:3,devices:2,finance:false,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:2,support:"email"},/* Alias retro-compat */starter:{name:"Lite",price:9.99,msgs_day:50,msgs_month:1500,kb_facts:500,conversations:100,templates:"basic",personas:3,devices:2,finance:false,domotique:false,offline:false,code:true,voice:true,export:false,vision:true,web_search:false,identify_shop:false,agents:2,support:"email"},pro:{name:"Pro",price:19.99,msgs_day:200,msgs_month:5000,kb_facts:5000,conversations:2000,templates:"all",personas:10,devices:5,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:10,support:"email 24h"},plus:{name:"Plus",price:49.99,msgs_day:500,msgs_month:15000,kb_facts:20000,conversations:10000,templates:"all",personas:10,devices:10,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:20,backup_realtime:true,multi_llm:true,support:"email prioritaire"},/* Alias retro-compat */premium:{name:"Plus",price:49.99,msgs_day:500,msgs_month:15000,kb_facts:20000,conversations:10000,templates:"all",personas:10,devices:10,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:20,backup_realtime:true,multi_llm:true,support:"email prioritaire"},max:{name:"Max",price:99.99,msgs_day:1500,msgs_month:30000,kb_facts:50000,conversations:20000,templates:"all",personas:10,devices:20,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"24/7 prioritaire"},/* Alias retro-compat */business:{name:"Max",price:99.99,msgs_day:1500,msgs_month:30000,kb_facts:50000,conversations:20000,templates:"all",personas:10,devices:20,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"24/7 prioritaire"},/* v12.364 — Enterprise 999€/an avec cap 100K msgs/mois (Kevin demande) */enterprise:{name:"Enterprise",price:999,annual:true,msgs_day:3500,msgs_month:100000,kb_facts:-1,conversations:-1,templates:"all",personas:-1,devices:-1,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"dedicated"},admin:{name:"👑 Admin",price:0,msgs_day:-1,msgs_month:-1,kb_facts:-1,conversations:-1,templates:"all",personas:-1,devices:-1,finance:true,domotique:true,offline:true,code:true,voice:true,export:true,vision:true,web_search:true,identify_shop:true,agents:-1,backup_realtime:true,multi_llm:true,support:"founder"}};
 /* v12.116 — Stripe Payment Links (config admin via vStripeSetup) */
 var STRIPE_PAYMENT_LINKS={
   starter:localStorage.getItem("ax_stripe_link_starter")||"",
@@ -7482,7 +7632,7 @@ function axClipboardSync(text){var clip={text:text,ts:now(),deviceId:lg("ax_devi
 function axFileTransfer(base64,name,targetId){var CHUNK=200000;var chunks=[];for(var i=0;i<base64.length;i+=CHUNK)chunks.push(base64.slice(i,i+CHUNK));var transferId=uid();chunks.forEach(function(chunk,idx){var part={transferId:transferId,name:name,from:lg("ax_device_id","?"),to:targetId,ts:now(),chunk:idx,totalChunks:chunks.length,data:chunk};var key="ax_transfer_"+transferId+"_"+idx;ls(key,part);});toast("Fichier envoye ("+chunks.length+" parties, "+Math.round(base64.length/1024)+"KB)","ok");}
 
 // === MODULE: Monetisation ===
-function vLanding(){var h='<div class="ax-landing-hero"><div style="font-size:80px;margin-bottom:12px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite">\u2726</div><h1>APEX <span>AI</span></h1><p style="font-size:17px;max-width:520px">L\'assistant IA le plus puissant. Finance, code, voix, documents, domotique, multi-appareils.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px"><button class="ax-btn ax-btn-primary" onclick="axOpenSubscribeForm()" style="font-size:16px;padding:16px 36px;letter-spacing:.5px">\uD83D\uDE80 Commencer mon inscription</button><button class="ax-btn ax-btn-outline" onclick="document.querySelector(\'.ax-features\').scrollIntoView({behavior:\'smooth\'})" style="font-size:14px;padding:14px 24px">\u2193 Decouvrir</button></div><div style="display:flex;gap:16px;justify-content:center;margin-top:24px;font-size:12px;color:var(--ax-text-dim)"><span>\u2705 Gratuit</span><span>\u2705 Sans carte</span><span>\u2705 300+ actions</span></div><div style="text-align:center;margin-top:16px"><a href="#" onclick="axEnterLogin();return false" style="color:var(--ax-blue);font-size:13px">\uD83D\uDD11 Deja inscrit ? Se connecter</a></div></div>';var features=[{ic:"\uD83D\uDCAC",t:"Chat IA Premium",d:"Claude Sonnet/Opus, memoire persistante, outils et recherche web.",cl:"var(--ax-gold)"},{ic:"\uD83D\uDCB0",t:"Finance Expert",d:"NPV/IRR, portefeuille, watchlist, alertes prix, crypto.",cl:"var(--ax-green)"},{ic:"\uD83C\uDF99\uFE0F",t:"Assistant Vocal",d:"Dictee, lecture, 44 voix, mode continu type Siri.",cl:"var(--ax-blue)"},{ic:"\uD83D\uDCBB",t:"Code & Canvas",d:"Python+JS, sandbox, coloration syntaxique, preview.",cl:"var(--ax-purple)"},{ic:"\uD83C\uDFE0",t:"Domotique",d:"TV, clim, lumieres, volets. Broadlink IR + Smart TV WiFi.",cl:"var(--ax-cyan)"},{ic:"\uD83D\uDD12",t:"Securite 5 couches",d:"Chiffrement AES, PIN, audit, biometrie, kill switch.",cl:"var(--ax-red)"}];h+='<div class="ax-features" style="padding:24px 16px">';features.forEach(function(f){h+='<div class="ax-card" style="border-left:4px solid '+f.cl+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)"><div style="font-size:32px;margin-bottom:8px">'+f.ic+'</div><h3 style="color:'+f.cl+'">'+f.t+'</h3><p style="font-size:13px;color:var(--ax-text-dim)">'+f.d+'</p></div>';});h+='</div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83D\uDCB3 Tarifs</h2>';h+='<div style="overflow-x:auto;padding:0 8px"><div style="display:flex;gap:12px;min-width:900px;padding:8px 0">';var planOrder=["free","starter","pro","business","enterprise"];planOrder.forEach(function(pk){var p=PLANS[pk];if(!p)return;/* v12.93 safety */var featured=pk==="pro";h+='<div class="ax-price-card'+(featured?" featured":"")+'" style="flex:1;min-width:160px"><h3 style="color:'+(featured?"var(--ax-gold)":"var(--ax-text)")+'">'+p.name+'</h3><div class="ax-amount">'+(p.price===0?"0":axFormatPrice(p.price,{round:true}))+'</div><div class="ax-period">'+(p.oneshot?"paiement unique":"/ mois")+'</div><ul><li>'+(p.msgs_day>0?p.msgs_day:"Illimite")+' msg/jour</li><li>'+(p.msgs_month>0?Math.round(p.msgs_month/1000)+"K":"Illimite")+' msg/mois</li><li>'+(p.kb_facts>0?p.kb_facts:"Illimite")+' faits memoire</li><li>'+p.devices+' appareil'+(p.devices>1?"s":"")+'</li><li>'+p.personas+' personas</li>'+(p.finance?'<li>Finance Expert</li>':'')+''+(p.domotique?'<li>Domotique</li>':'')+''+(p.offline?'<li>Mode offline</li>':'')+''+(p.code?'<li>Code Python+JS</li>':'')+''+(pk==="enterprise"?'<li>API publique</li><li>Support dedie</li>':'')+'</ul><button class="ax-btn '+(featured?"ax-btn-primary":"ax-btn-outline")+'" onclick="axOpenSubscribeForm()">'+(p.price===0?"Choisir Gratuit":"Choisir "+p.name)+'</button></div>';});h+='</div></div>';h+='<div style="text-align:center;padding:8px 0"><button class="ax-btn ax-btn-outline" onclick="axOpenSubscribeForm()" style="font-size:13px">\uD83C\uDF81 Lifetime Pro — '+axFormatPrice(299,{round:true})+' (paiement unique, a vie)</button></div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83C\uDFC6 Pourquoi APEX ?</h2>';h+='<div class="ax-features" style="padding:0 16px 16px"><div class="ax-card"><h3>\uD83C\uDFC6 245+ actions autonomes</h3><p style="font-size:13px;color:var(--ax-text-dim)">ChatGPT en a 20. Claude.ai en a 10. APEX en a 245. L\'IA qui AGIT pour vous.</p></div><div class="ax-card"><h3>\uD83C\uDFE0 Domotique integree</h3><p style="font-size:13px;color:var(--ax-text-dim)">Controlez TV, clim, lumieres par la voix. Aucun concurrent ne le fait.</p></div><div class="ax-card"><h3>\uD83D\uDCB0 Finance Expert</h3><p style="font-size:13px;color:var(--ax-text-dim)">NPV, IRR, SMA, EMA, crypto, devises. Bloomberg pour '+axFormatPrice(9.99)+'/mois.</p></div><div class="ax-card"><h3>\u2708\uFE0F Mode offline</h3><p style="font-size:13px;color:var(--ax-text-dim)">IA locale Gemma — fonctionne SANS internet. Personne d\'autre ne l\'a.</p></div><div class="ax-card"><h3>\uD83E\uDDE0 S\'ameliore seule</h3><p style="font-size:13px;color:var(--ax-text-dim)">Self-improving AI. Vos reactions l\'entrainent. Plus vous l\'utilisez, meilleure elle devient.</p></div><div class="ax-card"><h3>\uD83D\uDCDA 30+ templates pro</h3><p style="font-size:13px;color:var(--ax-text-dim)">Contrats, factures, CV, business plan, landing page, API — prets a l\'emploi.</p></div></div>';h+='<h2 style="text-align:center;padding:24px 0 12px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--ax-blue),#40c4e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\u2694\uFE0F APEX vs Concurrence</h2>';h+='<div style="overflow-x:auto;padding:0 16px 24px"><table class="ax-md" style="width:100%;font-size:12px"><tr><th>Feature</th><th style="color:var(--ax-gold)">APEX</th><th>ChatGPT+</th><th>Claude</th><th>Gemini</th></tr><tr><td>Prix</td><td style="color:var(--ax-green);font-weight:700">Gratuit/'+axFormatPrice(9.99)+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td></tr><tr><td>Python + JS</td><td>\u2705</td><td>\u2705 (Python)</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Finance NPV/IRR</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Domotique</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Mode offline</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Self-modify</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Templates pro</td><td>\u2705 30+</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Actions autonomes</td><td>\u2705 245+</td><td>~20</td><td>~10</td><td>~15</td></tr></table></div>';h+=vShareButtons();h+='<div style="text-align:center;padding:24px;font-size:12px;color:var(--ax-text-dim)">\u00A9 2026 APEX — Kevin DESARZENS. Tous droits reserves.</div>';return h;}
+function vLanding(){var h='<div class="ax-landing-hero"><div style="font-size:80px;margin-bottom:12px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite">\u2726</div><h1>APEX <span>AI</span></h1><p style="font-size:17px;max-width:520px">L\'assistant IA le plus puissant. Finance, code, voix, documents, domotique, multi-appareils.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px"><button class="ax-btn ax-btn-primary" onclick="axOpenSubscribeForm()" style="font-size:16px;padding:16px 36px;letter-spacing:.5px">\uD83D\uDE80 Commencer mon inscription</button><button class="ax-btn ax-btn-outline" onclick="document.querySelector(\'.ax-features\').scrollIntoView({behavior:\'smooth\'})" style="font-size:14px;padding:14px 24px">\u2193 Decouvrir</button></div><div style="display:flex;gap:16px;justify-content:center;margin-top:24px;font-size:12px;color:var(--ax-text-dim)"><span>\u2705 Gratuit</span><span>\u2705 Sans carte</span><span>\u2705 300+ actions</span></div><div style="text-align:center;margin-top:16px"><a href="#" onclick="axEnterLogin();return false" style="color:var(--ax-blue);font-size:13px">\uD83D\uDD11 Deja inscrit ? Se connecter</a></div></div>';var features=[{ic:"\uD83D\uDCAC",t:"Chat IA Premium",d:"Claude Sonnet/Opus, memoire persistante, outils et recherche web.",cl:"var(--ax-gold)"},{ic:"\uD83D\uDCB0",t:"Finance Expert",d:"NPV/IRR, portefeuille, watchlist, alertes prix, crypto.",cl:"var(--ax-green)"},{ic:"\uD83C\uDF99\uFE0F",t:"Assistant Vocal",d:"Dictee, lecture, 44 voix, mode continu type Siri.",cl:"var(--ax-blue)"},{ic:"\uD83D\uDCBB",t:"Code & Canvas",d:"Python+JS, sandbox, coloration syntaxique, preview.",cl:"var(--ax-purple)"},{ic:"\uD83C\uDFE0",t:"Domotique",d:"TV, clim, lumieres, volets. Broadlink IR + Smart TV WiFi.",cl:"var(--ax-cyan)"},{ic:"\uD83D\uDD12",t:"Securite 5 couches",d:"Chiffrement AES, PIN, audit, biometrie, kill switch.",cl:"var(--ax-red)"}];h+='<div class="ax-features" style="padding:24px 16px">';features.forEach(function(f){h+='<div class="ax-card" style="border-left:4px solid '+f.cl+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)"><div style="font-size:32px;margin-bottom:8px">'+f.ic+'</div><h3 style="color:'+f.cl+'">'+f.t+'</h3><p style="font-size:13px;color:var(--ax-text-dim)">'+f.d+'</p></div>';});h+='</div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83D\uDCB3 Tarifs</h2>';h+='<div style="overflow-x:auto;padding:0 8px"><div style="display:flex;gap:12px;min-width:900px;padding:8px 0">';/* v12.375 — Tarifs en cours de finalisation : afficher SEULEMENT free pendant les tests collegues */ var planOrder=["free"];planOrder.forEach(function(pk){var p=PLANS[pk];if(!p)return;/* v12.93 safety */var featured=pk==="pro";h+='<div class="ax-price-card'+(featured?" featured":"")+'" style="flex:1;min-width:160px"><h3 style="color:'+(featured?"var(--ax-gold)":"var(--ax-text)")+'">'+p.name+'</h3><div class="ax-amount">'+(p.price===0?"0":axFormatPrice(p.price,{round:true}))+'</div><div class="ax-period">'+(p.oneshot?"paiement unique":"/ mois")+'</div><ul><li>'+(p.msgs_day>0?p.msgs_day:"Illimite")+' msg/jour</li><li>'+(p.msgs_month>0?Math.round(p.msgs_month/1000)+"K":"Illimite")+' msg/mois</li><li>'+(p.kb_facts>0?p.kb_facts:"Illimite")+' faits memoire</li><li>'+p.devices+' appareil'+(p.devices>1?"s":"")+'</li><li>'+p.personas+' personas</li>'+(p.finance?'<li>Finance Expert</li>':'')+''+(p.domotique?'<li>Domotique</li>':'')+''+(p.offline?'<li>Mode offline</li>':'')+''+(p.code?'<li>Code Python+JS</li>':'')+''+(pk==="enterprise"?'<li>API publique</li><li>Support dedie</li>':'')+'</ul><button class="ax-btn '+(featured?"ax-btn-primary":"ax-btn-outline")+'" onclick="axOpenSubscribeForm()">'+(p.price===0?"Choisir Gratuit":"Choisir "+p.name)+'</button></div>';});h+='</div></div>';h+='<div style="text-align:center;padding:8px 0"><button class="ax-btn ax-btn-outline" onclick="axOpenSubscribeForm()" style="font-size:13px">\uD83C\uDF81 Lifetime Pro — '+axFormatPrice(299,{round:true})+' (paiement unique, a vie)</button></div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83C\uDFC6 Pourquoi APEX ?</h2>';h+='<div class="ax-features" style="padding:0 16px 16px"><div class="ax-card"><h3>\uD83C\uDFC6 245+ actions autonomes</h3><p style="font-size:13px;color:var(--ax-text-dim)">ChatGPT en a 20. Claude.ai en a 10. APEX en a 245. L\'IA qui AGIT pour vous.</p></div><div class="ax-card"><h3>\uD83C\uDFE0 Domotique integree</h3><p style="font-size:13px;color:var(--ax-text-dim)">Controlez TV, clim, lumieres par la voix. Aucun concurrent ne le fait.</p></div><div class="ax-card"><h3>\uD83D\uDCB0 Finance Expert</h3><p style="font-size:13px;color:var(--ax-text-dim)">NPV, IRR, SMA, EMA, crypto, devises. Bloomberg pour '+axFormatPrice(9.99)+'/mois.</p></div><div class="ax-card"><h3>\u2708\uFE0F Mode offline</h3><p style="font-size:13px;color:var(--ax-text-dim)">IA locale Gemma — fonctionne SANS internet. Personne d\'autre ne l\'a.</p></div><div class="ax-card"><h3>\uD83E\uDDE0 S\'ameliore seule</h3><p style="font-size:13px;color:var(--ax-text-dim)">Self-improving AI. Vos reactions l\'entrainent. Plus vous l\'utilisez, meilleure elle devient.</p></div><div class="ax-card"><h3>\uD83D\uDCDA 30+ templates pro</h3><p style="font-size:13px;color:var(--ax-text-dim)">Contrats, factures, CV, business plan, landing page, API — prets a l\'emploi.</p></div></div>';h+='<h2 style="text-align:center;padding:24px 0 12px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--ax-blue),#40c4e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\u2694\uFE0F APEX vs Concurrence</h2>';h+='<div style="overflow-x:auto;padding:0 16px 24px"><table class="ax-md" style="width:100%;font-size:12px"><tr><th>Feature</th><th style="color:var(--ax-gold)">APEX</th><th>ChatGPT+</th><th>Claude</th><th>Gemini</th></tr><tr><td>Prix</td><td style="color:var(--ax-green);font-weight:700">Gratuit/'+axFormatPrice(9.99)+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td></tr><tr><td>Python + JS</td><td>\u2705</td><td>\u2705 (Python)</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Finance NPV/IRR</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Domotique</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Mode offline</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Self-modify</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Templates pro</td><td>\u2705 30+</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Actions autonomes</td><td>\u2705 245+</td><td>~20</td><td>~10</td><td>~15</td></tr></table></div>';h+=vShareButtons();h+='<div style="text-align:center;padding:24px;font-size:12px;color:var(--ax-text-dim)">\u00A9 2026 APEX — Kevin DESARZENS. Tous droits reserves.</div>';return h;}
 
 function axStripeCheckout(plan){var pubKey=localStorage.getItem("ax_stripe_pub");if(!pubKey){toast("Stripe non configure","warn");return;}toast("Redirection vers Stripe...","info");}
 
