@@ -1,4 +1,95 @@
-# Mémo de reprise — Apex v12.333 + CMCteams v9.558 (session 2026-04-26 part 3)
+# Mémo de reprise — Apex v12.365 + CMCteams v9.560 (session 2026-04-27 marathon 30 versions)
+
+## 🌙 SESSION 2026-04-27 — 30 versions Apex + audit qualité + tarifs en attente
+
+**Contexte** : Session marathon. Kevin a remonté beaucoup de bugs UX + demande montée 10/10 + tarifs rentables Stripe-level. J'ai poussé 30 versions (v12.336 → v12.365b). Apex marche, mais Kevin trouve les marges plans pas assez généreuses → on verra demain.
+
+### 🚨 Leçon majeure de la session (NOUVELLE règle CLAUDE.md)
+
+**Bug v12.365** : injection `try{...}` sans `catch` dans `_axForceHealAllCredentials` → app crashait au boot. Pre-commit a détecté APRÈS push.
+
+**Cause** : `node --check` avec séparateur `\n//---\n` entre blocks `<script>` masquait l'erreur (chaque block validé indépendamment). Le pre-commit hook fait `''.join(blocks)` SANS séparateur → fail.
+
+**Fix permanent** : règle ajoutée dans `CLAUDE.md` section #2 — méthode validation IDENTIQUE pre-commit :
+```bash
+python3 -c "
+import re
+html=open('apex-ai/index.html','r',encoding='utf-8').read()
+blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL)
+open('/tmp/apex_combined.js','w',encoding='utf-8').write(''.join(blocks))
+" && node --check /tmp/apex_combined.js
+```
+
+### 30 versions livrées (v12.336 → v12.365b)
+
+**UX & corrections** :
+- v12.336 : Audit code brut + bouton X tour + scroll bottom + click-watch agents
+- v12.337 : Auto-fix Coffre 3 alertes + Maintenance + Settings redirect
+- v12.338 : Wake word + self-fix autonome 24/7
+- v12.339 : Voiceprint exclusif (style Siri)
+- v12.340 : Bundle CGU + Tutoriel on/off + Demande feature
+- v12.341 : Browser blocklist X-Frame-Options
+- v12.342 : 9 _settingsXxx → redirect Coffre + Coffre direct bnav
+- v12.343 : Suppression card Settings doublon
+- v12.344 : Routing IA intelligent (3 modes)
+- v12.345 : 4 doublons Settings supprimés + version visible
+- v12.346 : Auto-diagnostic + bannière admin masquée
+- v12.347 : Anti-zoom iOS + touch HIG + toast dedup + autocorrect Coffre
+- v12.348 : APEX SELF-FIX UX runtime + Settings topbar retiré
+- v12.349 : APEX AUTONOMIE FINALE (axAutonomousFinish)
+- v12.350 : APEX LONG TERME (axLongTermFinish)
+- v12.351 : Détection orphelines RÉELLE + Auto-fix PR via axProposeCodeChange
+- v12.352 : Logo "AI" bleu retiré + intent execute strict
+- v12.353 : Compétences IA 10/10 (compréhension/élocution/orthographe + tout le reste)
+- v12.354 : Audit QA P0/P1 + boost "longueur d'avance + surprise positive"
+- v12.355 : XP per-user + Emergency storage + 3 doublons Settings retirés
+- v12.356 : Settings quick-jump menu
+- v12.357 : Settings refonte 9 familles + topbar sticky + boost rapidité IA
+- v12.358 : 5 fixes erreurs (cleanup top entries + memory iOS + faux positifs vKB/vCrackPass + bnav scroll)
+- v12.359 : Plan dédié 👑 Admin (au lieu Enterprise pour Kevin)
+- v12.360 : 45+ regex format axCredBadge + auto-heal red→green
+- v12.361 : Login sécurité stricte (nom+prénom OU email obligatoire)
+- v12.362 : PLANS rentables Free/Starter/Pro/Premium/Business + Annual/Enterprise
+- v12.363 : Routing client tier light forcé (95 % Haiku)
+- v12.364 : Naming Anthropic-style (Lite/Pro/Plus/Max) + Enterprise rétabli
+- v12.365 : Force heal credentials boot
+- v12.365b : Fix syntax catch manquant (Apex crashait → réparé)
+
+### Bugs identifiés AUDIT QA Stripe-level
+
+5 P0 bloquants (4 corrigés v12.354) :
+1. ✅ XSS via innerHTML (corrigé partiel)
+2. ✅ Fetch sans timeout (timeout 5s ipwho/ipify)
+3. ✅ _axDailyCleanup data loss (backup snapshot avant trim)
+4. ⏳ Race FB SSE + fbWrite (escaladé pour audit dédié)
+5. ✅ Memory leak intervals (cleanup zombies > 24h)
+
+### Tarifs : Kevin attend demain
+
+3 options proposées :
+- **A** : Tarifs réalistes (Lite 14,99 € / Pro 29,99 € / Plus 79,99 € / Max 149,99 € / Enterprise 4 999 €/an)
+- **B** : Limites resserrées (Lite 9,99 € 700 msg / Pro 19,99 € 2K / Plus 49,99 € 6K / Max 99,99 € 12K / Enterprise 999 €/an 35K)
+- **C** : Hybride pro (Lite 12,99 € 1K / Pro 24,99 € 3K / Plus 59,99 € 10K / Max 119,99 € 20K / Enterprise 1 999 €/an 60K)
+
+État commité v12.365b : tarifs intermédiaires (Lite 9,99 / Pro 19,99 / Plus 49,99 / Max 99,99 / Enterprise 999/an 100K cap), aliases retro-compat (starter/premium/business). Marges fines (+5 à +16 €/mois). À ajuster demain selon choix Kevin.
+
+### État final
+
+- **Apex v12.365b** : pre-commit 26/26 OK ✅, syntaxe validée méthode pre-commit
+- **CMCteams v9.560** : inchangé cette session
+- **CLAUDE.md** : règle validation IDENTIQUE pre-commit ajoutée (cas v12.365 documenté)
+- **CLAUDE_ACTIVITY.json** : sync 569 commits
+- **Git** : status propre, tout pushé sur `claude/fix-apex-ai-bugs-adHfF`
+
+### À faire demain (Kevin choisit)
+
+1. **Tarifs plans** : option A / B / C / autre
+2. **Audit QA** : peut-être finir les 5 P0 (race FB SSE)
+3. **Tests réels** sur iPhone une fois Force MAJ → vérifier ronds Coffre verts, plus de bulles rouges, bnav scroll préservé, auth sécurité stricte (Kevin DESARZENS / email seulement)
+
+---
+
+# Mémo précédent — Apex v12.333 + CMCteams v9.558 (session 2026-04-26 part 3)
 
 ## 🏁 SESSION 2026-04-26 PART 3 — Audit externe pro 10 axes + 3 fixes critiques
 
