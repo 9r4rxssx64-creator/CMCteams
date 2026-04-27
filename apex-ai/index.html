@@ -546,7 +546,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.411",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.412",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7892,6 +7892,13 @@ function axTestAllHistoryCandidates(key){
       function tryNext(){
         if(idx >= candidates.length){
           if(typeof toast === "function") toast("Aucun des "+candidates.length+" candidats ne marche pour "+key.replace("ax_",""), "err", {duration:6000, force:true});
+          /* v12.412 - Tous candidats KO → propose lien direct selon contexte erreur */
+          try{
+            var lastErr = tried.length ? (tried[tried.length-1].msg || "") : "";
+            var statusMatch = lastErr.match(/HTTP\\s+(\\d+)/i) || lastErr.match(/(\\d{3})/);
+            var status = statusMatch ? parseInt(statusMatch[1], 10) : 0;
+            if(typeof _axProposeRecoveryLink === "function") _axProposeRecoveryLink(key, lastErr, status);
+          }catch(_){}
           resolve({ok:false, tried:tried});
           return;
         }
@@ -8170,6 +8177,124 @@ function _axDiscoverServiceForUnknown(value, contextText){
       });
     }catch(e){ resolve(null); }
   });
+}
+
+var AX_SERVICE_RECOVERY_LINKS = {
+  ax_api_key: {name:"Anthropic Claude", regen:"https://console.anthropic.com/settings/keys", recharge:"https://console.anthropic.com/settings/billing", quota:"https://console.anthropic.com/settings/usage", status:"https://status.anthropic.com", docs:"https://docs.anthropic.com"},
+  ax_openai_key: {name:"OpenAI", regen:"https://platform.openai.com/api-keys", recharge:"https://platform.openai.com/account/billing/overview", quota:"https://platform.openai.com/usage", status:"https://status.openai.com", docs:"https://platform.openai.com/docs"},
+  ax_groq_key: {name:"Groq Cloud", regen:"https://console.groq.com/keys", recharge:"https://console.groq.com/settings/billing", quota:"https://console.groq.com/settings/usage", status:"https://groqstatus.com", docs:"https://console.groq.com/docs"},
+  ax_gemini_key: {name:"Google Gemini", regen:"https://aistudio.google.com/apikey", recharge:"https://aistudio.google.com/billing", quota:"https://aistudio.google.com/usage", status:"https://status.cloud.google.com", docs:"https://ai.google.dev/docs"},
+  ax_openrouter_key: {name:"OpenRouter", regen:"https://openrouter.ai/keys", recharge:"https://openrouter.ai/credits", quota:"https://openrouter.ai/activity", status:"https://status.openrouter.ai", docs:"https://openrouter.ai/docs"},
+  ax_grok_key: {name:"xAI Grok", regen:"https://console.x.ai/team/default/api-keys", recharge:"https://console.x.ai/team/default/billing", docs:"https://docs.x.ai"},
+  ax_xai_key: {name:"xAI Grok", regen:"https://console.x.ai/team/default/api-keys", recharge:"https://console.x.ai/team/default/billing", docs:"https://docs.x.ai"},
+  ax_perplexity_key: {name:"Perplexity", regen:"https://www.perplexity.ai/settings/api", recharge:"https://www.perplexity.ai/settings/api", docs:"https://docs.perplexity.ai"},
+  ax_cohere_key: {name:"Cohere", regen:"https://dashboard.cohere.com/api-keys", recharge:"https://dashboard.cohere.com/billing", docs:"https://docs.cohere.com"},
+  ax_mistral_key: {name:"Mistral", regen:"https://console.mistral.ai/api-keys", recharge:"https://console.mistral.ai/billing", docs:"https://docs.mistral.ai"},
+  ax_deepseek_key: {name:"DeepSeek", regen:"https://platform.deepseek.com/api_keys", recharge:"https://platform.deepseek.com/top_up", docs:"https://platform.deepseek.com/api-docs"},
+  ax_huggingface_key: {name:"HuggingFace", regen:"https://huggingface.co/settings/tokens", docs:"https://huggingface.co/docs"},
+  ax_replicate_key: {name:"Replicate", regen:"https://replicate.com/account/api-tokens", recharge:"https://replicate.com/account/billing", docs:"https://replicate.com/docs"},
+  ax_elevenlabs_key: {name:"ElevenLabs", regen:"https://elevenlabs.io/app/settings/api-keys", recharge:"https://elevenlabs.io/app/subscription", docs:"https://elevenlabs.io/docs"},
+  ax_github_token: {name:"GitHub PAT", regen:"https://github.com/settings/tokens/new", classic:"https://github.com/settings/tokens?type=classic", finegrained:"https://github.com/settings/personal-access-tokens/new", settings:"https://github.com/settings/tokens", docs:"https://docs.github.com/authentication"},
+  ax_gitlab_token: {name:"GitLab PAT", regen:"https://gitlab.com/-/profile/personal_access_tokens", docs:"https://docs.gitlab.com"},
+  ax_cloudflare_token: {name:"Cloudflare", regen:"https://dash.cloudflare.com/profile/api-tokens", docs:"https://developers.cloudflare.com/api"},
+  ax_vercel_token: {name:"Vercel", regen:"https://vercel.com/account/tokens", docs:"https://vercel.com/docs"},
+  ax_stripe_pub: {name:"Stripe Public", regen:"https://dashboard.stripe.com/apikeys", docs:"https://stripe.com/docs/api"},
+  ax_stripe_secret: {name:"Stripe Secret", regen:"https://dashboard.stripe.com/apikeys", docs:"https://stripe.com/docs/api"},
+  ax_telegram_token: {name:"Telegram Bot", regen:"https://t.me/BotFather", docs:"https://core.telegram.org/bots/api"},
+  ax_sendgrid_key: {name:"SendGrid", regen:"https://app.sendgrid.com/settings/api_keys", recharge:"https://app.sendgrid.com/account/billing", docs:"https://docs.sendgrid.com"},
+  ax_paypal_me: {name:"PayPal.me", regen:"https://www.paypal.com/paypalme/grab", docs:"https://www.paypal.com/paypalme"},
+  ax_revolut_tag: {name:"Revolut", regen:"https://revolut.me", docs:"https://www.revolut.com/help"},
+  ax_iban: {name:"IBAN", regen:"", docs:"https://www.iban.com/structure"},
+  ax_btc_address: {name:"Bitcoin", regen:"", docs:"https://bitcoin.org"},
+  ax_eth_address: {name:"Ethereum", regen:"", docs:"https://ethereum.org"},
+  ax_proxy_url: {name:"Proxy Anthropic", regen:"https://dash.cloudflare.com/workers-and-pages", docs:"https://developers.cloudflare.com/workers"},
+  ax_push_worker_url: {name:"Push Worker", regen:"https://dash.cloudflare.com/workers-and-pages", docs:"https://developers.cloudflare.com/workers"}
+};
+
+function _axDetectErrorContext(errorMsg, httpStatus){
+  var msg = String(errorMsg || "").toLowerCase();
+  if(httpStatus === 401 || /401|unauthorized|invalid.api.key|authentication_error/i.test(msg)) return "auth";
+  if(httpStatus === 402 || /402|payment.required|insufficient.credit|insufficient_quota|billing/i.test(msg)) return "credit";
+  if(httpStatus === 429 || /429|rate.limit|too.many.requests|quota.exceeded/i.test(msg)) return "quota";
+  if(httpStatus >= 500 || /5\d\d|server.error|service.unavailable|gateway/i.test(msg)) return "status";
+  if(/network|fetch|cors|timeout|abort|offline/i.test(msg)) return "network";
+  return "default";
+}
+
+function _axProposeRecoveryLink(key, errorMsg, httpStatus){
+  try{
+    if(!key) return;
+    var info = AX_SERVICE_RECOVERY_LINKS[key];
+    if(!info){
+      if(typeof toast === "function") toast("Service " + key.replace("ax_","") + " : pas de lien direct configuré, vérifie manuellement", "warn", {duration:5000});
+      return;
+    }
+    var ctx = _axDetectErrorContext(errorMsg, httpStatus);
+    var primaryUrl = "", primaryLabel = "", secondaryUrl = "", secondaryLabel = "";
+    if(ctx === "auth"){
+      primaryUrl = info.regen || info.docs || "";
+      primaryLabel = "Régénérer la clé";
+      secondaryUrl = info.docs || "";
+      secondaryLabel = "Documentation";
+    } else if(ctx === "credit"){
+      primaryUrl = info.recharge || info.regen || "";
+      primaryLabel = "Recharger crédit";
+      secondaryUrl = info.regen || "";
+      secondaryLabel = "Régénérer la clé";
+    } else if(ctx === "quota"){
+      primaryUrl = info.quota || info.recharge || info.regen || "";
+      primaryLabel = "Voir quota / upgrade";
+      secondaryUrl = info.status || "";
+      secondaryLabel = "Status service";
+    } else if(ctx === "status"){
+      primaryUrl = info.status || info.docs || "";
+      primaryLabel = "Status du service";
+      secondaryUrl = info.regen || "";
+      secondaryLabel = "Régénérer (si downtime)";
+    } else if(ctx === "network"){
+      primaryUrl = info.status || "";
+      primaryLabel = "Status réseau";
+      secondaryUrl = info.regen || "";
+      secondaryLabel = "Régénérer la clé";
+    } else {
+      primaryUrl = info.regen || info.docs || "";
+      primaryLabel = "Ouvrir paramètres";
+      secondaryUrl = info.docs || "";
+      secondaryLabel = "Documentation";
+    }
+    if(!primaryUrl){
+      if(typeof toast === "function") toast("Pas de lien direct disponible pour " + info.name, "warn");
+      return;
+    }
+    var ctxLabel = {auth:"Clé invalide", credit:"Crédit épuisé", quota:"Quota dépassé", status:"Service indisponible", network:"Problème réseau", "default":"Erreur"}[ctx];
+    var html = '<div style="padding:18px;max-width:480px">';
+    html += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Action requise : ' + esc(info.name) + '</h2>';
+    html += '<p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">Apex a testé tous les codes historiques sans succès.</p>';
+    html += '<div style="background:rgba(255,88,88,.08);border-left:3px solid #ff5858;padding:10px;border-radius:6px;margin-bottom:14px"><strong style="color:#ff5858">' + esc(ctxLabel) + '</strong>';
+    if(errorMsg) html += '<div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace;margin-top:4px">' + esc(String(errorMsg).slice(0, 120)) + '</div>';
+    html += '</div>';
+    html += '<a href="' + esc(primaryUrl) + '" target="_blank" rel="noopener" class="ax-btn ax-btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;text-decoration:none;font-weight:700;margin-bottom:8px">' + esc(primaryLabel) + ' →</a>';
+    if(secondaryUrl){
+      html += '<a href="' + esc(secondaryUrl) + '" target="_blank" rel="noopener" class="ax-btn ax-btn-outline" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;text-decoration:none;margin-bottom:8px">' + esc(secondaryLabel) + ' →</a>';
+    }
+    html += '<button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="width:100%;min-height:44px">Plus tard</button>';
+    html += '</div>';
+    if(typeof _showModal === "function") _showModal(html);
+    /* Log + push GitHub auto pour traçabilité */
+    try{
+      if(typeof _axPushDiagnosticToGitHub === "function"){
+        _axPushDiagnosticToGitHub({
+          summary:{ok:0, warn:0, err:1, total:1},
+          checks:{recovery_proposed:{key:key, service:info.name, context:ctx, primaryUrl:primaryUrl, errorMsg:String(errorMsg||"").slice(0,200)}},
+          ts:Date.now(),
+          version:typeof APP_VER!=="undefined"?APP_VER:"?",
+          notes_for_claude:"Recovery link propose Kevin: " + info.name + " (" + ctx + ")"
+        });
+      }
+    }catch(_){}
+  }catch(e){
+    if(typeof toast === "function") toast("Erreur recovery: " + String(e.message||e).slice(0,80), "err");
+  }
 }
 
 function _axProposeCredentialSave(detected, originalText){
