@@ -537,7 +537,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.373",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.374",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -863,6 +863,160 @@ async function axSafeboxOcrFromDataUrl(dataUrl){
     var j=await r.json();var text="";if(j.content)j.content.forEach(function(c){if(c.text)text+=c.text;});
     return text.trim();
   }catch(e){if(typeof toast==="function")toast("OCR erreur : "+String(e).slice(0,100),"err");return null;}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   v12.374 — SMART CAMERA INTELLIGENTE (Kevin 2026-04-27 nuit)
+   Photo/video → Vision IA + géoloc → reconnait sujet → action auto
+   Catégories : planning, document, code, objet, nature, lieu, vehicule, ciel, etc.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Récupère géoloc en silence (8s timeout) */
+function _axGetGeoQuiet(){
+  return new Promise(function(resolve){
+    if(!navigator.geolocation)return resolve(null);
+    var to=setTimeout(function(){resolve(null);},8000);
+    navigator.geolocation.getCurrentPosition(function(p){
+      clearTimeout(to);
+      resolve({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});
+    },function(){clearTimeout(to);resolve(null);},{enableHighAccuracy:false,timeout:7000,maximumAge:300000});
+  });
+}
+
+/* Reverse geocode (open-meteo + nominatim) sans clé API */
+async function _axReverseGeocode(lat,lon){
+  try{
+    var opts={};try{if(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(5000);}catch(_){}
+    var r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+lat+"&lon="+lon,opts);
+    if(!r.ok)return null;
+    var d=await r.json();
+    return{country:d.address&&d.address.country,city:d.address&&(d.address.city||d.address.town||d.address.village),display:d.display_name};
+  }catch(_){return null;}
+}
+
+/* SMART CAMERA — analyse photo+contexte via Vision IA, retourne {category, info, action} */
+async function axSmartCameraCapture(){
+  var apiKey=lg("ax_api_key","");
+  if(!apiKey||apiKey.indexOf("sk-ant-")<0){
+    if(typeof toast==="function")toast("Cle Anthropic requise pour Smart Camera","warn");
+    if(typeof sv==="function")sv("vault");
+    return;
+  }
+  /* Capture photo */
+  var inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.capture="environment";
+  inp.onchange=async function(ev){
+    var f=ev.target.files&&ev.target.files[0];if(!f)return;
+    if(typeof toast==="function")toast("\uD83D\uDCF8 Analyse en cours...","info",{duration:2000});
+    /* Lis photo + geoloc en parallele */
+    var rd=new FileReader();rd.onload=async function(){
+      var dataUrl=rd.result;var b64=dataUrl.split(",")[1];var media=dataUrl.indexOf("image/png")>=0?"image/png":"image/jpeg";
+      var geo=await _axGetGeoQuiet();
+      var place=null;if(geo)place=await _axReverseGeocode(geo.lat,geo.lon);
+      /* Construit contexte */
+      var ctx="";
+      if(geo){ctx+="Géolocalisation : "+geo.lat.toFixed(4)+","+geo.lon.toFixed(4)+" (précision "+Math.round(geo.acc)+"m).";}
+      if(place&&place.display)ctx+=" Lieu approximatif : "+place.display+".";
+      ctx+=" Date locale : "+new Date().toISOString().slice(0,10)+" "+new Date().toTimeString().slice(0,5)+".";
+      var sysPrompt="Tu es Apex Smart Camera. Analyse cette image et retourne un JSON structuré indiquant ce que c\'est et l action recommandée. NE retourne RIEN d autre que le JSON valide.\n\nFormat OBLIGATOIRE :\n{\n  \"category\": \"planning|document|code_api|carte_id|objet|nature|animal|plante|vehicule|monument|lieu|ciel_etoiles|texte_libre|personne|autre\",\n  \"subject\": \"description courte 5-15 mots\",\n  \"info\": \"infos vérifiées 2-4 phrases (date, espèce, modèle, lieu, contexte historique, etc.)\",\n  \"extracted\": \"texte/code/données extraites le cas échéant (vide sinon)\",\n  \"action\": \"add_to_safebox|add_to_planning|save_note|show_info|search_more|ask_user\",\n  \"alternatives\": [\"action_alt1\", \"action_alt2\"],\n  \"confidence\": 0.0_to_1.0,\n  \"sources\": \"sources sûres si pertinent (Wikipedia, IUCN, etc.)\"\n}\n\nSi tu doutes (confidence<0.7), mets action=\"ask_user\" et propose 2-3 alternatives claires.";
+      var userText="Voici la photo. Contexte : "+ctx+" Identifie et propose action.";
+      try{
+        var opts={method:"POST",headers:{"content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,system:sysPrompt,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:media,data:b64}},{type:"text",text:userText}]}]})};
+        if(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(45000);
+        var r=await fetch("https://api.anthropic.com/v1/messages",opts);
+        if(!r.ok){var et=await r.text();if(typeof toast==="function")toast("Vision IA echec : HTTP "+r.status,"err");return;}
+        var j=await r.json();var raw="";if(j.content)j.content.forEach(function(c){if(c.text)raw+=c.text;});
+        /* Parse JSON (strip code fences) */
+        var jsonStr=raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/```\s*$/,"").trim();
+        var firstBrace=jsonStr.indexOf("{");var lastBrace=jsonStr.lastIndexOf("}");
+        if(firstBrace>=0&&lastBrace>firstBrace)jsonStr=jsonStr.slice(firstBrace,lastBrace+1);
+        var result;try{result=JSON.parse(jsonStr);}catch(pe){
+          /* Fallback : affiche texte brut */
+          _axSmartCameraShowFallback(raw,dataUrl,geo,place);
+          return;
+        }
+        result._dataUrl=dataUrl;result._geo=geo;result._place=place;result._ts=Date.now();
+        _axSmartCameraShowResult(result);
+        /* Log dans historique */
+        var hist=lg("ax_smart_camera_history",[]);hist.push({ts:Date.now(),category:result.category,subject:result.subject,confidence:result.confidence,action:result.action});if(hist.length>100)hist=hist.slice(-100);ls("ax_smart_camera_history",hist);
+      }catch(e){
+        if(typeof toast==="function")toast("Smart Camera erreur : "+String(e&&e.message||e).slice(0,100),"err");
+      }
+    };rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* Fallback si IA ne renvoie pas JSON valide */
+function _axSmartCameraShowFallback(rawText,dataUrl,geo,place){
+  var html='<div style="padding:18px"><h2>\uD83D\uDCF8 Analyse Smart Camera</h2><img src="'+dataUrl+'" style="max-width:100%;max-height:200px;border-radius:10px;margin-bottom:10px"><div class="ax-md" style="background:var(--ax-bg-input);padding:12px;border-radius:8px;font-size:13px">'+(typeof renderMd==="function"?renderMd(rawText):esc(rawText))+'</div><button class="ax-btn ax-btn-primary" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="margin-top:14px;width:100%;min-height:48px">Fermer</button></div>';
+  if(typeof _showModal==="function")_showModal(html);
+}
+
+/* Affiche résultat structuré + propose action */
+function _axSmartCameraShowResult(r){
+  var conf=Math.round((r.confidence||0.5)*100);
+  var confColor=conf>=80?"#5cd882":conf>=60?"#f0c850":"#ff5858";
+  var actionLabel={
+    "add_to_safebox":"\uD83D\uDD12 Ajouter au coffre",
+    "add_to_planning":"\uD83D\uDCC5 Ajouter au planning",
+    "save_note":"\uD83D\uDCDD Sauver en note",
+    "show_info":"\u2139\uFE0F Voir plus d infos",
+    "search_more":"\uD83D\uDD0D Chercher plus",
+    "ask_user":"\u2754 Que veux-tu faire ?"
+  };
+  var primary=actionLabel[r.action]||"\u2728 Action";
+  var resultId="sc_"+Date.now();window["_axSmartCameraLast"+resultId]=r;
+  var html='<div style="padding:14px;max-height:80vh;overflow-y:auto"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 10px">\uD83D\uDCF8 Smart Camera</h2>';
+  html+='<img src="'+r._dataUrl+'" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:10px" alt="">';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="background:'+confColor+';color:#0a0a0f;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">'+conf+"% sur"+'</span><span style="font-size:11px;color:var(--ax-text-dim)">'+esc(r.category||"autre")+'</span></div>';
+  html+='<h3 style="margin:6px 0;font-size:16px">'+esc(r.subject||"Sujet identifié")+'</h3>';
+  if(r.info)html+='<div style="font-size:13px;line-height:1.5;color:var(--ax-text);margin-bottom:10px">'+esc(r.info)+'</div>';
+  if(r.extracted&&r.extracted.length>2)html+='<div style="background:var(--ax-bg-input);padding:10px;border-radius:8px;font-family:monospace;font-size:12px;margin-bottom:10px;word-break:break-all"><div style="font-size:10px;color:var(--ax-text-dim);margin-bottom:4px">Donnees extraites :</div>'+esc(r.extracted)+'</div>';
+  if(r._place&&r._place.display)html+='<div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:10px">\uD83D\uDCCD '+esc(r._place.display)+'</div>';
+  if(r.sources)html+='<div style="font-size:11px;color:var(--ax-text-dim);font-style:italic;margin-bottom:10px">Sources : '+esc(r.sources)+'</div>';
+  /* Boutons action */
+  html+='<div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">';
+  html+='<button class="ax-btn ax-btn-primary" onclick="_axSmartCameraExecute(\''+resultId+'\',\''+esc(r.action||"ask_user")+'\')" style="min-height:48px;font-weight:700">'+primary+'</button>';
+  if(r.alternatives&&r.alternatives.length){
+    r.alternatives.forEach(function(alt){if(alt&&alt!==r.action)html+='<button class="ax-btn ax-btn-outline" onclick="_axSmartCameraExecute(\''+resultId+'\',\''+esc(alt)+'\')" style="min-height:44px">'+(actionLabel[alt]||esc(alt))+'</button>';});
+  }
+  html+='<button class="ax-btn ax-btn-outline" onclick="_axSmartCameraExecute(\''+resultId+'\',\'ask_chat\')" style="min-height:44px">\uD83D\uDCAC Demander a Apex</button>';
+  html+='<button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="min-height:40px;color:var(--ax-text-dim)">Fermer</button>';
+  html+='</div></div>';
+  if(typeof _showModal==="function")_showModal(html);
+}
+
+/* Exécute action choisie */
+async function _axSmartCameraExecute(resultId,action){
+  var r=window["_axSmartCameraLast"+resultId];if(!r)return;
+  try{document.getElementById("modal-container").innerHTML="";}catch(_){}
+  if(action==="add_to_safebox"){
+    if(!_axSafeboxKey){if(typeof toast==="function")toast("Coffre verrouille — ouvre-le d abord","warn");if(typeof sv==="function")sv("safebox");return;}
+    var val=r.extracted||(r.subject+" — "+(r.info||""));
+    await axSafeboxAdd(val,"smart_camera",r.subject||null);
+    if(typeof toast==="function")toast("\u2705 Ajoute au coffre","ok");
+  } else if(action==="add_to_planning"||action==="save_note"){
+    var notes=lg("ax_notes",[]);
+    notes.push({id:"n_"+Date.now(),title:r.subject||"Smart Camera",content:(r.info||"")+(r.extracted?"\n\nDonnees :\n"+r.extracted:""),ts:Date.now(),source:"smart_camera"});
+    if(notes.length>500)notes=notes.slice(-500);ls("ax_notes",notes);
+    if(typeof toast==="function")toast("\u2705 Sauve en note","ok");
+  } else if(action==="show_info"||action==="search_more"){
+    /* Push message dans chat avec sujet+infos */
+    if(K&&K.messages){
+      var q="Photo Smart Camera : "+(r.subject||"sujet")+". Donne-moi plus d infos vérifiées (sources Wikipedia/officielles), contexte historique/scientifique selon le cas.";
+      K.messages.push({role:"user",content:q,ts:Date.now()});
+      if(typeof _saveMsgs==="function")_saveMsgs();
+      if(typeof sv==="function")sv("chat");
+      if(typeof sendMessage==="function")setTimeout(function(){sendMessage(q);},300);
+    }
+  } else if(action==="ask_chat"||action==="ask_user"){
+    /* Pose question à user dans chat */
+    if(typeof sv==="function")sv("chat");
+    var inp=document.getElementById("ax-chat-input");
+    if(inp){inp.value="A propos de ma photo de "+(r.subject||"qqch")+" : ";inp.focus();}
+  } else {
+    if(typeof toast==="function")toast("Action : "+action,"info");
+  }
 }
 
 /* Vue principale */
@@ -1276,7 +1430,7 @@ function _axAutofillClose(){var m=document.getElementById("ax-autofill-modal");i
 function axAutofillKnown(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return;var fills=AX_AUTOFILL_DEFAULTS;var rowsHtml=Object.keys(fills).map(function(k){var existing=localStorage.getItem(k);var status=existing?'<span style="color:var(--ax-text-dim);font-size:11px;flex-shrink:0">deja saisi</span>':'<span style="color:var(--ax-green);font-size:11px;flex-shrink:0">a remplir</span>';return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--ax-gold)">'+esc(k)+'</div><div style="font-size:11px;color:var(--ax-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fills[k])+'</div></div>'+status+'</div>';}).join("");rowsHtml+='<div style="padding:8px 0;color:var(--ax-text-dim);font-size:11px">+ langue=fr, modele=claude-sonnet-4-6, theme=dark (si vides)</div>';_axAutofillClose();var ov=document.createElement("div");ov.id="ax-autofill-modal";ov.className="ax-modal-overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-labelledby","ax-autofill-title");ov.innerHTML='<div class="ax-modal" role="document" style="position:relative"><button class="ax-close" aria-label="Fermer" onclick="_axAutofillClose()">&#10005;</button><h2 id="ax-autofill-title">🪄 Pre-remplir tes infos</h2><p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:10px">Les valeurs deja saisies seront conservees. Tu pourras tout modifier ensuite.</p><div style="margin-bottom:14px;max-height:40vh;overflow-y:auto">'+rowsHtml+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" style="flex:1;min-height:44px" onclick="_axAutofillClose();_axAutofillApply();">✅ Confirmer</button><button class="ax-btn ax-btn-outline" style="flex:1;min-height:44px" onclick="_axAutofillClose()">❌ Annuler</button></div></div>';ov.addEventListener("click",function(e){if(e.target===ov)_axAutofillClose();});document.body.appendChild(ov);try{var btn=ov.querySelector(".ax-btn-primary");if(btn)btn.focus();}catch(_){}}
 
 /** Vue UNIFIEE : 8 sections claires Profil/Apparence/IA/Cles/Paiements/Integrations/Securite/Notifications. */
-function vAllConfig(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return "<p style=\"padding:20px\">Reserve admin Kevin</p>";var sections=[{id:"profil",ic:"👤",lb:"Profil",desc:"Nom, email, langue, devise, pays",route:"settings",keys:["ax_user_name","ax_settings"]},{id:"apparence",ic:"🎨",lb:"Apparence",desc:"Theme, taille texte, voix, persona",route:"settings",keys:["ax_settings"]},{id:"ia",ic:"🤖",lb:"IA",desc:"Modele Claude, OpenRouter, web search",route:"aiproviders",keys:["ax_settings","ax_ai_provider"]},{id:"cles",ic:"🔑",lb:"Cles API",desc:"Anthropic, OpenAI, Gemini, OpenRouter",route:"vault",keys:["ax_api_key","ax_openai_key","ax_gemini_key","ax_openrouter_key","ax_groq_key","ax_mistral_key","ax_cohere_key","ax_deepseek_key","ax_perplexity_key"]},{id:"paiements",ic:"💳",lb:"Paiements",desc:"PayPal, Revolut, IBAN, crypto",route:"vault",keys:["ax_paypal_me","ax_revolut_tag","ax_iban","ax_iban_nom","ax_btc_address","ax_eth_address","ax_usdc_address","ax_lydia_phone"]},{id:"integrations",ic:"🔌",lb:"Integrations",desc:"Cloudflare, GitHub, Push worker",route:"vault",keys:["ax_github_token","ax_cloudflare_token","ax_push_worker_url","ax_push_admin_token","ax_vercel_token","ax_n8n_url","ax_zapier_webhook","ax_make_webhook"]},{id:"securite",ic:"🔐",lb:"Securite",desc:"PIN, Face ID, sessions, kill switch",route:"settings",keys:["ax_pin","ax_biometric_id","ax_session_timeout"]},{id:"notifications",ic:"🔔",lb:"Notifications",desc:"Push, briefing quotidien",route:"settings",keys:["ax_push_subs","ax_push_settings"]}];var totalConfig=0,totalKeys=0;sections.forEach(function(s){s.configured=0;s.keys.forEach(function(k){totalKeys++;if(localStorage.getItem(k)){s.configured++;totalConfig++;}});});var pct=Math.round(totalConfig/totalKeys*100);var h="";h+='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">⚙️ Tout configurer</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">UN SEUL endroit. Organise par famille. Touche une section pour modifier.</p>';h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);border-left:4px solid var(--ax-gold);margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>'+totalConfig+'/'+totalKeys+' configures ('+pct+'%)</strong><button class="ax-btn ax-btn-primary" onclick="axAutofillKnown()" style="font-size:12px;padding:8px 14px;min-height:40px">🪄 Pre-remplir mes infos connues</button></div><div style="width:100%;height:8px;background:var(--ax-bg-input);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--ax-gold),#ffd700);border-radius:4px;transition:width .3s"></div></div></div>';h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';sections.forEach(function(s){var pctS=Math.round(s.configured/s.keys.length*100);var col=pctS===100?"#4cd080":pctS>=50?"#ffb84a":pctS>0?"#a0a4c0":"#ff5858";h+='<div onclick="sv(\''+s.route+'\')" style="background:var(--ax-bg-input);border:2px solid '+col+';border-radius:14px;padding:14px 10px;cursor:pointer;min-height:120px;display:flex;flex-direction:column;justify-content:space-between"><div style="text-align:center"><div style="font-size:32px;margin-bottom:6px">'+s.ic+'</div><div style="font-size:14px;font-weight:700;margin-bottom:2px">'+esc(s.lb)+'</div><div style="font-size:10px;color:var(--ax-text-dim);line-height:1.3">'+esc(s.desc)+'</div></div><div style="text-align:center;margin-top:8px"><span style="font-size:11px;font-weight:700;color:'+col+'">'+s.configured+'/'+s.keys.length+'</span></div></div>';});h+='</div>';h+='<div class="ax-card" style="margin-top:16px"><h3>📚 Liens directs</h3><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ax-btn ax-btn-outline" onclick="sv(\'vault\')">🔑 Coffre detaille</button><button class="ax-btn ax-btn-outline" onclick="sv(\'settings\')">⚙️ Reglages classiques</button><button class="ax-btn ax-btn-outline" onclick="sv(\'soldesia\')">💶 Voir mes soldes IA</button><button class="ax-btn ax-btn-outline" onclick="sv(\'accountsbilling\')">💳 Mes abonnements</button><button class="ax-btn ax-btn-outline" onclick="sv(\'wakeword\')">🎤 Wake word</button><button class="ax-btn ax-btn-outline" onclick="sv(\'storagemanage\')">💾 Stockage</button><button class="ax-btn ax-btn-outline" onclick="sv(\'adminaliases\')">👑 Mes aliases admin</button><button class="ax-btn ax-btn-outline" onclick="sv(\'claudecode\')" style="background:linear-gradient(135deg,rgba(90,168,255,.15),rgba(125,111,255,.15));border:1px solid #5aa8ff">👨‍💻 Mode Dev (Claude Code)</button><button class="ax-btn ax-btn-outline" onclick="sv(\'safebox\')" style="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(255,215,0,.06));border:1px solid #e8b830">🔒 Mon Coffre Personnel</button></div></div></div>';return h;}
+function vAllConfig(){if(typeof axIsAdmin!=="function"||!axIsAdmin())return "<p style=\"padding:20px\">Reserve admin Kevin</p>";var sections=[{id:"profil",ic:"👤",lb:"Profil",desc:"Nom, email, langue, devise, pays",route:"settings",keys:["ax_user_name","ax_settings"]},{id:"apparence",ic:"🎨",lb:"Apparence",desc:"Theme, taille texte, voix, persona",route:"settings",keys:["ax_settings"]},{id:"ia",ic:"🤖",lb:"IA",desc:"Modele Claude, OpenRouter, web search",route:"aiproviders",keys:["ax_settings","ax_ai_provider"]},{id:"cles",ic:"🔑",lb:"Cles API",desc:"Anthropic, OpenAI, Gemini, OpenRouter",route:"vault",keys:["ax_api_key","ax_openai_key","ax_gemini_key","ax_openrouter_key","ax_groq_key","ax_mistral_key","ax_cohere_key","ax_deepseek_key","ax_perplexity_key"]},{id:"paiements",ic:"💳",lb:"Paiements",desc:"PayPal, Revolut, IBAN, crypto",route:"vault",keys:["ax_paypal_me","ax_revolut_tag","ax_iban","ax_iban_nom","ax_btc_address","ax_eth_address","ax_usdc_address","ax_lydia_phone"]},{id:"integrations",ic:"🔌",lb:"Integrations",desc:"Cloudflare, GitHub, Push worker",route:"vault",keys:["ax_github_token","ax_cloudflare_token","ax_push_worker_url","ax_push_admin_token","ax_vercel_token","ax_n8n_url","ax_zapier_webhook","ax_make_webhook"]},{id:"securite",ic:"🔐",lb:"Securite",desc:"PIN, Face ID, sessions, kill switch",route:"settings",keys:["ax_pin","ax_biometric_id","ax_session_timeout"]},{id:"notifications",ic:"🔔",lb:"Notifications",desc:"Push, briefing quotidien",route:"settings",keys:["ax_push_subs","ax_push_settings"]}];var totalConfig=0,totalKeys=0;sections.forEach(function(s){s.configured=0;s.keys.forEach(function(k){totalKeys++;if(localStorage.getItem(k)){s.configured++;totalConfig++;}});});var pct=Math.round(totalConfig/totalKeys*100);var h="";h+='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">⚙️ Tout configurer</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">UN SEUL endroit. Organise par famille. Touche une section pour modifier.</p>';h+='<div class="ax-card" style="background:linear-gradient(135deg,rgba(232,184,48,.08),transparent);border-left:4px solid var(--ax-gold);margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>'+totalConfig+'/'+totalKeys+' configures ('+pct+'%)</strong><button class="ax-btn ax-btn-primary" onclick="axAutofillKnown()" style="font-size:12px;padding:8px 14px;min-height:40px">🪄 Pre-remplir mes infos connues</button></div><div style="width:100%;height:8px;background:var(--ax-bg-input);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--ax-gold),#ffd700);border-radius:4px;transition:width .3s"></div></div></div>';h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';sections.forEach(function(s){var pctS=Math.round(s.configured/s.keys.length*100);var col=pctS===100?"#4cd080":pctS>=50?"#ffb84a":pctS>0?"#a0a4c0":"#ff5858";h+='<div onclick="sv(\''+s.route+'\')" style="background:var(--ax-bg-input);border:2px solid '+col+';border-radius:14px;padding:14px 10px;cursor:pointer;min-height:120px;display:flex;flex-direction:column;justify-content:space-between"><div style="text-align:center"><div style="font-size:32px;margin-bottom:6px">'+s.ic+'</div><div style="font-size:14px;font-weight:700;margin-bottom:2px">'+esc(s.lb)+'</div><div style="font-size:10px;color:var(--ax-text-dim);line-height:1.3">'+esc(s.desc)+'</div></div><div style="text-align:center;margin-top:8px"><span style="font-size:11px;font-weight:700;color:'+col+'">'+s.configured+'/'+s.keys.length+'</span></div></div>';});h+='</div>';h+='<div class="ax-card" style="margin-top:16px"><h3>📚 Liens directs</h3><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ax-btn ax-btn-outline" onclick="sv(\'vault\')">🔑 Coffre detaille</button><button class="ax-btn ax-btn-outline" onclick="sv(\'settings\')">⚙️ Reglages classiques</button><button class="ax-btn ax-btn-outline" onclick="sv(\'soldesia\')">💶 Voir mes soldes IA</button><button class="ax-btn ax-btn-outline" onclick="sv(\'accountsbilling\')">💳 Mes abonnements</button><button class="ax-btn ax-btn-outline" onclick="sv(\'wakeword\')">🎤 Wake word</button><button class="ax-btn ax-btn-outline" onclick="sv(\'storagemanage\')">💾 Stockage</button><button class="ax-btn ax-btn-outline" onclick="sv(\'adminaliases\')">👑 Mes aliases admin</button><button class="ax-btn ax-btn-outline" onclick="sv(\'claudecode\')" style="background:linear-gradient(135deg,rgba(90,168,255,.15),rgba(125,111,255,.15));border:1px solid #5aa8ff">👨‍💻 Mode Dev (Claude Code)</button><button class="ax-btn ax-btn-outline" onclick="sv(\'safebox\')" style="background:linear-gradient(135deg,rgba(232,184,48,.18),rgba(255,215,0,.06));border:1px solid #e8b830">🔒 Mon Coffre Personnel</button><button class="ax-btn ax-btn-outline" onclick="axSmartCameraCapture()" style="background:linear-gradient(135deg,rgba(180,90,255,.18),rgba(255,90,200,.06));border:1px solid #b45aff">📸 Smart Camera (Vision IA)</button></div></div></div>';return h;}
 
 /* v12.275 - GITHUB AUTO-MODIF Apex (Kevin: donne acces GitHub a Apex pour s auto-corriger) */
 
@@ -10157,7 +10311,7 @@ function _scrollChatTop(){var el=document.getElementById("ax-chat-scroll");if(el
 function _checkNewMsgIndicator(){var el=document.getElementById("ax-chat-scroll");if(!el)return"";if(el.scrollHeight-el.scrollTop-el.clientHeight>200){return'<div onclick="_scrollChatBottom()" style="position:sticky;bottom:60px;text-align:center;z-index:10"><button class="ax-btn ax-btn-primary" style="border-radius:20px;padding:6px 16px;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,.3)">\u2B07\uFE0F Nouveau message</button></div>';}return"";}
 
 // === MODULE: Chat Menu ===
-function _showChatMenu(){var h='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:20px">\u2795 Outils</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';/* v12.368 — Menu enrichi avec Photo et Voix (deplaces du chatbar) */ var _axTtsLabel=K.settings.ttsEnabled?"Voix ON":"Voix OFF"; var _axTtsIcon=K.settings.ttsEnabled?"\uD83D\uDD0A":"\uD83D\uDD07"; var tools=[{fn:"axShowPromptLib()",ic:"\uD83D\uDCDA",lb:"Prompts",cl:"var(--ax-gold)"},{fn:"_showQuickResponses()",ic:"\u26A1",lb:"Rapide",cl:"var(--ax-orange)"},{fn:"axShowTranslator()",ic:"\uD83C\uDF10",lb:"Traduire",cl:"var(--ax-blue)"},{fn:"document.getElementById('ax-file-input').click()",ic:"\uD83D\uDCCE",lb:"Fichier",cl:"var(--ax-green)"},{fn:"axCameraCapture()",ic:"\uD83D\uDCF7",lb:"Camera",cl:"var(--ax-purple)"},{fn:"axIdentifyAndShop()",ic:"\uD83D\uDED2",lb:"Identifier",cl:"var(--ax-purple)"},{fn:"axTtsMute()",ic:_axTtsIcon,lb:_axTtsLabel,cl:"var(--ax-cyan)"},{fn:"axShowQR()",ic:"\uD83D\uDCF1",lb:"QR Code",cl:"var(--ax-cyan)"},{fn:"if(confirm(\'Nettoyer l ecran ? (historique conserve)\'))axClearChatScreen()",ic:"\uD83E\uDDF9",lb:"Effacer ecran",cl:"var(--ax-red)"},{fn:"axCopyFullConversation()",ic:"\uD83D\uDCCB",lb:"Copier tout",cl:"var(--ax-blue)"}];tools.forEach(function(t){h+='<button class="ax-card" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';'+t.fn+'" style="padding:18px 10px;font-size:14px;text-align:center;cursor:pointer;border:1px solid rgba(232,184,48,.1);transition:all .2s"><div style="font-size:32px;margin-bottom:6px">'+t.ic+'</div><div style="font-size:12px;font-weight:600;color:'+t.cl+'">'+t.lb+'</div></button>';});h+='</div>';_showModal(h);}
+function _showChatMenu(){var h='<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:20px">\u2795 Outils</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';/* v12.368 — Menu enrichi avec Photo et Voix (deplaces du chatbar) */ var _axTtsLabel=K.settings.ttsEnabled?"Voix ON":"Voix OFF"; var _axTtsIcon=K.settings.ttsEnabled?"\uD83D\uDD0A":"\uD83D\uDD07"; var tools=[{fn:"axShowPromptLib()",ic:"\uD83D\uDCDA",lb:"Prompts",cl:"var(--ax-gold)"},{fn:"_showQuickResponses()",ic:"\u26A1",lb:"Rapide",cl:"var(--ax-orange)"},{fn:"axShowTranslator()",ic:"\uD83C\uDF10",lb:"Traduire",cl:"var(--ax-blue)"},{fn:"document.getElementById('ax-file-input').click()",ic:"\uD83D\uDCCE",lb:"Fichier",cl:"var(--ax-green)"},{fn:"axSmartCameraCapture()",ic:"\uD83D\uDCF8",lb:"Smart Camera",cl:"var(--ax-purple)"},{fn:"axIdentifyAndShop()",ic:"\uD83D\uDED2",lb:"Identifier",cl:"var(--ax-purple)"},{fn:"axTtsMute()",ic:_axTtsIcon,lb:_axTtsLabel,cl:"var(--ax-cyan)"},{fn:"axShowQR()",ic:"\uD83D\uDCF1",lb:"QR Code",cl:"var(--ax-cyan)"},{fn:"if(confirm(\'Nettoyer l ecran ? (historique conserve)\'))axClearChatScreen()",ic:"\uD83E\uDDF9",lb:"Effacer ecran",cl:"var(--ax-red)"},{fn:"axCopyFullConversation()",ic:"\uD83D\uDCCB",lb:"Copier tout",cl:"var(--ax-blue)"}];tools.forEach(function(t){h+='<button class="ax-card" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';'+t.fn+'" style="padding:18px 10px;font-size:14px;text-align:center;cursor:pointer;border:1px solid rgba(232,184,48,.1);transition:all .2s"><div style="font-size:32px;margin-bottom:6px">'+t.ic+'</div><div style="font-size:12px;font-weight:600;color:'+t.cl+'">'+t.lb+'</div></button>';});h+='</div>';_showModal(h);}
 
 // === MODULE: Theme auto par heure ===
 function _autoThemeByTime(){if(K.settings.theme!=="auto")return;var h=new Date().getHours();if(h>=22||h<6){document.body.classList.remove("ax-light","ax-casino","ax-ocean","ax-sunset","ax-emerald");}else if(h>=6&&h<20){document.body.classList.remove("ax-casino","ax-ocean","ax-sunset","ax-emerald");}}
