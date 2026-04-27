@@ -429,6 +429,49 @@ Si Kevin se logue avec son numéro tel reconnu → mode admin actif automatiquem
 
 ---
 
+## 🎭 Pseudos (validé Kevin 2026-04-27)
+
+**Règle** : dans Apex Chat, l'identité publique des users = **pseudo uniquement**, pas le vrai nom.
+
+### Fiche personne (champs)
+- Vrai nom + prénom (saisis au signup, **visibles uniquement par Kevin admin**)
+- Numéro de téléphone (vérifié SMS)
+- **Pseudo** (champ obligatoire, choisi par le user) — seul élément visible des autres users
+- Photo de profil (optionnelle, si non choisie → avatar généré IA selon pseudo)
+- Bio courte
+- Champs enrichis automatiquement (anniv, langues, intérêts, etc.) — admin only
+
+### Affichage chat (vue user normale)
+- Liste conversations : **pseudo + photo** (pas le vrai nom)
+- En-tête conversation : **pseudo**
+- Messages : **pseudo** auteur (groupes)
+- Mentions @ : **@pseudo**
+- Profil contact (clic sur pseudo) : pseudo + photo + bio + statut + actions (appeler, message, bloquer, signaler) — **vrai nom JAMAIS révélé**
+
+### Affichage chat (vue admin Kevin)
+- Liste : **pseudo (vrai nom)** entre parenthèses ou tooltip
+- En-tête : pseudo + accès direct fiche complète
+- **Clic sur pseudo n'importe où** → atterrit directement sur la **fiche complète** du user (vrai nom, prénom, tel, historique total, géoloc, devices, signalements, etc.)
+- Recherche admin par : pseudo OU vrai nom OU tel OU email
+- Onglet "Identités" admin : table croisée pseudo ↔ vrai nom (avec audit log)
+
+### Règles pseudo
+- Min 3 chars, max 20
+- Alphanumérique + tirets/underscores autorisés
+- Unique global (case-insensitive)
+- Modifiable 1 fois / 30 jours (anti-impersonation)
+- Suggestions auto basées sur prénom + chiffres si pseudo pris
+- Réservés interdits (apex, admin, kevin, support, system, etc.)
+
+### Implémentation
+- Champ `users.pseudo` dans D1 (UNIQUE INDEX)
+- API `GET /users/:pseudo` retourne profil public (pseudo + photo + bio)
+- API admin `GET /admin/users/:pseudo/full` retourne fiche complète
+- Front : composant `<UserPill pseudo={x} />` qui se comporte différemment selon `isAdmin`
+- Audit log à chaque clic admin sur pseudo (traçabilité)
+
+---
+
 ## 🔮 Questions critiques à trancher avec Kevin
 
 1. **DÉCISION CRITIQUE — modèle admin** :
