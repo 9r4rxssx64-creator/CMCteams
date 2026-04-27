@@ -543,7 +543,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.392",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.393",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7590,17 +7590,123 @@ function _axScanTextForCredentials(text){
   return found;
 }
 
+function _axScanTextSmart(text){
+  if(!text || typeof text !== "string") return [];
+  /* v12.393 - Scan intelligent : blocks separes par lignes vides, label de service au-dessus, dedup target -> garde le DERNIER (Kevin "le dernier code est le bon") */
+  var raw = _axScanTextForCredentials(text);
+  if(!raw.length) return [];
+  /* Step 1 : enrichir chaque match avec contexte (label de service trouve au-dessus dans les 3 lignes precedentes) */
+  var lines = text.split(/\r?\n/);
+  var labelHints = {
+    "github":"ax_github_token","gitlab":"ax_gitlab_token","openai":"ax_openai_key","anthropic":"ax_api_key","claude":"ax_api_key",
+    "groq":"ax_groq_key","gemini":"ax_gemini_key","google":"ax_google_key","grok":"ax_grok_key","xai":"ax_grok_key",
+    "perplexity":"ax_perplexity_key","cohere":"ax_cohere_key","huggingface":"ax_huggingface_key","replicate":"ax_replicate_key",
+    "stripe":"ax_stripe_secret","paypal":"ax_paypal_me","revolut":"ax_revolut_tag","iban":"ax_iban",
+    "cloudflare":"ax_cloudflare_token","vercel":"ax_vercel_token","netlify":"ax_netlify_token",
+    "openrouter":"ax_openrouter_key","mistral":"ax_mistral_key","deepseek":"ax_deepseek_key",
+    "telegram":"ax_telegram_token","sendgrid":"ax_sendgrid_key","twilio":"ax_twilio_sid","emailjs":"ax_emailjs_serviceid",
+    "elevenlabs":"ax_elevenlabs_key","sentry":"ax_sentry_dsn","slack":"ax_slack_bot",
+    "ethereum":"ax_eth_address","bitcoin":"ax_btc_address","btc":"ax_btc_address","eth":"ax_eth_address","usdc":"ax_usdc_address",
+    "n8n":"ax_n8n_url","zapier":"ax_zapier_webhook","make":"ax_make_webhook","firebase":"ax_firebase_url",
+    "notion":"ax_notion_token","airtable":"ax_airtable_token"
+  };
+  raw.forEach(function(item){
+    /* Trouver la ligne contenant la cle */
+    var lineIdx = -1;
+    for(var i=0; i<lines.length; i++){
+      if(lines[i].indexOf(item.value) >= 0){ lineIdx = i; break; }
+    }
+    item.context = "";
+    item.confidence = 1;
+    if(lineIdx > 0){
+      /* Regarder les 3 lignes au-dessus pour un label de service */
+      for(var j = Math.max(0, lineIdx-3); j < lineIdx; j++){
+        var lower = lines[j].toLowerCase().trim();
+        if(!lower) continue;
+        var matchedHint = null;
+        Object.keys(labelHints).forEach(function(hint){
+          if(lower.indexOf(hint) >= 0 && !matchedHint) matchedHint = hint;
+        });
+        if(matchedHint){
+          item.context = "Label trouve : '" + lines[j].trim().slice(0,40) + "'";
+          /* Si label suggere un autre target, le prefere si pattern est generique */
+          var hintTarget = labelHints[matchedHint];
+          if(hintTarget && hintTarget !== item.target && /^sk-[A-Za-z0-9]/.test(item.value)){
+            item.suggestedAlt = {target: hintTarget, label: matchedHint};
+          }
+          item.confidence = 1.2;
+        }
+      }
+    }
+  });
+  /* Step 2 : dedup par target -> garde le DERNIER (regle Kevin v12.350+) */
+  var byTarget = {};
+  raw.forEach(function(item, i){
+    item.order = i;
+    if(!byTarget[item.target] || i > byTarget[item.target].order){
+      byTarget[item.target] = item;
+    }
+  });
+  /* Marquer les anciens (skipped) */
+  var result = [];
+  Object.keys(byTarget).forEach(function(t){ result.push(byTarget[t]); });
+  /* Trier par ordre apparition */
+  result.sort(function(a,b){ return a.order - b.order; });
+  /* Compter doublons */
+  var dupCount = raw.length - result.length;
+  if(dupCount > 0 && typeof toast === "function"){
+    setTimeout(function(){
+      toast(dupCount + " ancienne(s) cle(s) ignoree(s) (regle : la derniere ecrase la precedente)", "info", {duration:4000});
+    }, 500);
+  }
+  return result;
+}
+
+/* Override _axScanTextForCredentials pour utiliser _axScanTextSmart en aval */
+var _axScanTextForCredentialsRaw = _axScanTextForCredentials;
+_axScanTextForCredentials = function(text){
+  var raw = _axScanTextForCredentialsRaw(text);
+  if(!raw.length) return raw;
+  /* Si plusieurs matches, dedup + enrichir */
+  if(raw.length > 1 || /\n[\s\S]*\n/.test(text)){
+    return _axScanTextSmart(text);
+  }
+  return raw;
+};
+
 function _axProposeCredentialSave(detected){
   if(!detected || !detected.length) return;
   var html = '<div style="padding:18px;max-width:560px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Code(s) detecte(s)</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex a reconnu le format. Veux-tu enregistrer dans le Coffre ?</p>';
   detected.forEach(function(d, i){
     var maskedSample = d.value.slice(0, 6) + "..." + d.value.slice(-4);
-    html += '<div class="ax-card" style="margin-bottom:8px;border-left:4px solid var(--ax-gold)"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><strong>'+esc(d.label)+'</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace">'+esc(maskedSample)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Champ: '+esc(d.target)+'</div></div><button class="ax-btn ax-btn-primary" id="ax-cred-save-'+i+'" style="min-height:44px;padding:8px 16px;font-size:13px;font-weight:700">Enregistrer</button></div></div>';
+    var ctxLine = d.context ? '<div style="font-size:10px;color:var(--ax-gold);margin-top:2px">'+esc(d.context)+'</div>' : '';
+    html += '<div class="ax-card" style="margin-bottom:8px;border-left:4px solid var(--ax-gold)"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><strong>'+esc(d.label)+'</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:ui-monospace,monospace">'+esc(maskedSample)+'</div><div style="font-size:10px;color:var(--ax-text-dim)">Champ: '+esc(d.target)+'</div>'+ctxLine+'</div><button class="ax-btn ax-btn-primary" id="ax-cred-save-'+i+'" style="min-height:44px;padding:8px 16px;font-size:13px;font-weight:700">Enregistrer</button></div></div>';
   });
+  /* v12.393 - Bouton "Tout enregistrer" si plusieurs clés détectées */
+  if(detected.length > 1){
+    html += '<button class="ax-btn ax-btn-primary" id="ax-cred-save-all" style="width:100%;min-height:48px;margin-top:8px;font-weight:700;background:linear-gradient(135deg,#5cd882,#4ab06a)">Tout enregistrer ('+detected.length+' cles)</button>';
+  }
   html += '<button class="ax-btn ax-btn-outline" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'" style="width:100%;margin-top:10px;min-height:44px">Ignorer tout</button></div>';
   if(typeof _showModal === "function"){
     _showModal(html);
     setTimeout(function(){
+      var btnAll = document.getElementById("ax-cred-save-all");
+      if(btnAll){
+        btnAll.onclick = function(){
+          detected.forEach(function(d, i){
+            try{ ls(d.target, d.value); }catch(_){}
+          });
+          if(typeof toast === "function") toast(detected.length + " cles enregistrees + tests live lances", "ok", {duration:4000});
+          /* Auto-test live each */
+          detected.forEach(function(d, i){
+            setTimeout(function(){
+              if(typeof axCredTestLive === "function") axCredTestLive(d.target);
+            }, 500 + i*1500);
+          });
+          document.getElementById("modal-container").innerHTML = "";
+          if(typeof dc === "function") dc();
+        };
+      }
       detected.forEach(function(d, i){
         var btn = document.getElementById("ax-cred-save-"+i);
         if(!btn) return;
