@@ -546,7 +546,7 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 // ========================================================
 // APEX v1.0 — Assistant IA Premium
 // ========================================================
-var APP_VER="v12.410",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.411",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -8048,8 +8048,148 @@ function axPushCredHistoryNow(){
   }
 }
 
-function _axProposeCredentialSave(detected){
-  if(!detected || !detected.length) return;
+function _axValidateDiscoveredTarget(target){
+  if(!target || typeof target !== "string") return false;
+  return /^ax_[a-z0-9_]{2,40}_(user|password|key|token|secret|address|phone|email|tag|url|id)$/.test(target);
+}
+
+function _axDiscoverRateOK(){
+  try{
+    var now = Date.now();
+    var calls = lg("ax_discover_calls", []);
+    calls = calls.filter(function(t){ return now - t < 3600000; });
+    ls("ax_discover_calls", calls);
+    return calls.length < 5;
+  }catch(_){ return true; }
+}
+
+function _axDiscoverTrackCall(){
+  try{
+    var calls = lg("ax_discover_calls", []);
+    calls.push(Date.now());
+    if(calls.length > 20) calls = calls.slice(-20);
+    ls("ax_discover_calls", calls);
+  }catch(_){}
+}
+
+function _axDiscoverServiceForUnknown(value, contextText){
+  return new Promise(function(resolve){
+    try{
+      if(!value || typeof value !== "string" || value.length < 8) return resolve(null);
+      if(!_axDiscoverRateOK()){
+        if(typeof toast === "function") toast("Limite auto-discovery (5/h) atteinte", "info", {duration:3000});
+        return resolve(null);
+      }
+      var cache = lg("ax_discovered_targets", {});
+      var cacheKey = (value.slice(0,8) + "..." + value.slice(-4)).toLowerCase();
+      if(cache[cacheKey]) return resolve(cache[cacheKey]);
+      var prompt = "Tu es un expert credential identification. Une valeur a ete saisie sans contexte. " +
+        "Identifie le service le plus probable et propose un target field localStorage au format ax_<service>_<type>. " +
+        "Reponds UNIQUEMENT en JSON sur une ligne, sans markdown, sans backticks.\n\n" +
+        "Format : {\"service\":\"NomService\",\"target\":\"ax_xxx_yyy\",\"type\":\"key|token|user|password|address|phone|email|tag|url|id\",\"confidence\":0.85,\"url\":\"https://...\"}\n\n" +
+        "type doit etre un de : key, token, user, password, address, phone, email, tag, url, id\n" +
+        "confidence entre 0 et 1\n\n" +
+        "Valeur (premiers 8 chars + 4 derniers, le reste masque) : " + value.slice(0,8) + "...[masked " + (value.length-12) + " chars]..." + value.slice(-4) + "\n" +
+        "Contexte texte autour : " + (contextText || "(aucun)").slice(0, 200) + "\n\n" +
+        "JSON :";
+      var apiKey = lg("ax_groq_key", "");
+      var url, opts;
+      if(apiKey && apiKey.length > 10){
+        url = "https://api.groq.com/openai/v1/chat/completions";
+        opts = {
+          method: "POST",
+          headers: {"Authorization": "Bearer " + apiKey, "Content-Type": "application/json"},
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [{role: "user", content: prompt}],
+            max_tokens: 200,
+            temperature: 0.3
+          })
+        };
+      } else {
+        var anthKey = lg("ax_api_key", "");
+        if(!anthKey || anthKey.indexOf("sk-ant-") !== 0){
+          if(typeof toast === "function") toast("Auto-discovery: clé Anthropic ou Groq requise", "warn");
+          return resolve(null);
+        }
+        url = "https://api.anthropic.com/v1/messages";
+        opts = {
+          method: "POST",
+          headers: {
+            "x-api-key": anthKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 200,
+            messages: [{role: "user", content: prompt}]
+          })
+        };
+      }
+      try{ if(typeof AbortSignal !== "undefined" && AbortSignal.timeout) opts.signal = AbortSignal.timeout(15000); }catch(_){}
+      _axDiscoverTrackCall();
+      if(typeof toast === "function") toast("Apex cherche le service...", "info", {duration:2500});
+      fetch(url, opts).then(function(r){ return r.json(); }).then(function(data){
+        try{
+          var text = "";
+          if(data && data.choices && data.choices[0] && data.choices[0].message) text = data.choices[0].message.content || "";
+          else if(data && data.content && data.content[0] && data.content[0].text) text = data.content[0].text || "";
+          var jsonMatch = text.match(/\{[\s\S]*\}/);
+          if(!jsonMatch) return resolve(null);
+          var result = JSON.parse(jsonMatch[0]);
+          if(!_axValidateDiscoveredTarget(result.target)){
+            if(typeof toast === "function") toast("Service detecte mais target invalide", "warn");
+            return resolve(null);
+          }
+          if(typeof result.confidence !== "number" || result.confidence < 0 || result.confidence > 1) result.confidence = 0.5;
+          var enriched = {
+            value: value,
+            target: result.target,
+            label: (result.service || "Service") + " (auto-discovered)",
+            confidence: result.confidence,
+            url: result.url || "",
+            type: result.type || "key",
+            discovered: true
+          };
+          cache[cacheKey] = enriched;
+          if(Object.keys(cache).length > 100){
+            var keys = Object.keys(cache);
+            for(var i = 0; i < keys.length - 100; i++) delete cache[keys[i]];
+          }
+          ls("ax_discovered_targets", cache);
+          resolve(enriched);
+        }catch(e){
+          if(typeof toast === "function") toast("Erreur parsing reponse IA", "warn");
+          resolve(null);
+        }
+      }).catch(function(e){
+        if(typeof toast === "function") toast("Auto-discovery indispo (reseau)", "warn");
+        resolve(null);
+      });
+    }catch(e){ resolve(null); }
+  });
+}
+
+function _axProposeCredentialSave(detected, originalText){
+  if(!detected || !detected.length){
+    /* v12.411 - Si scan vide, tenter auto-discovery via IA pour services inconnus */
+    if(originalText && typeof originalText === "string" && originalText.length > 8 && originalText.length < 500 && /[A-Za-z0-9]{12,}/.test(originalText) && typeof _axDiscoverServiceForUnknown === "function"){
+      var candidate = (originalText.match(/[A-Za-z0-9_\-]{12,}/) || [""])[0];
+      if(candidate.length >= 12){
+        _axDiscoverServiceForUnknown(candidate, originalText).then(function(d){
+          if(d && d.confidence >= 0.7){
+            if(typeof toast === "function") toast("Apex a identifie : " + d.label + " (confiance " + Math.round(d.confidence*100) + "%)", "ok", {duration:4000, force:true});
+            _axProposeCredentialSave([d], null);
+          } else if(d && d.confidence >= 0.4){
+            if(typeof toast === "function") toast("Apex pense que c est " + d.label + " (" + Math.round(d.confidence*100) + "% — confirme manuellement)", "warn", {duration:6000, force:true});
+          }
+        });
+      }
+    }
+    return;
+  }
   /* v12.400 - Si auto-save total active (default true), court-circuit le modal */
   if(typeof _axAutoSaveAllCredentials === "function" && _axAutoSaveAllCredentials(detected)) return;
   var html = '<div style="padding:18px;max-width:560px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Code(s) detecte(s)</h2><p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:14px">Apex a reconnu le format. Veux-tu enregistrer dans le Coffre ?</p>';
