@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.431",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.432",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3487,6 +3487,58 @@ function axTemplateUse(idx){
     },150);
     if(typeof toast==="function")toast("Template "+t.lb+" pret","ok",{duration:1500});
   }catch(e){if(typeof toast==="function")toast("Erreur template","err");}
+}
+
+/* v12.432 - GitHub access health check + auto-recovery */
+function axCheckGitHubAccess(silent){
+  return new Promise(function(resolve){
+    try{
+      var token = "";
+      try{ token = localStorage.getItem("ax_github_token") || ""; }catch(_e){}
+      try{ var p = JSON.parse(token); if(typeof p === "string") token = p; }catch(_e){}
+      if(!token || token.length < 20){
+        if(!silent && typeof toast === "function") toast("GitHub : pas de token, tape acquerir dans Coffre","warn",{duration:4000});
+        resolve({ok:false,reason:"no_token"});
+        return;
+      }
+      fetch("https://api.github.com/user", {
+        headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json"}
+      }).then(function(r){
+        if(r.status === 200){
+          if(!silent && typeof toast === "function") toast("GitHub OK","ok",{duration:2000});
+          try{ ls("ax_github_check_last_ts", Date.now()); ls("ax_github_check_last_ok", true); }catch(_e){}
+          resolve({ok:true,status:200});
+        } else if(r.status === 401){
+          if(typeof toast === "function") toast("Token GitHub expire ! Regenere sur github.com/settings/tokens","err",{duration:8000,force:true});
+          try{ ls("ax_github_check_last_ok", false); }catch(_e){}
+          /* Recovery link auto */
+          if(typeof _axProposeRecoveryLink === "function"){
+            try{ _axProposeRecoveryLink("ax_github_token", "Token expire", 401); }catch(_e){}
+          }
+          resolve({ok:false,reason:"expired",status:401});
+        } else if(r.status === 403){
+          if(typeof toast === "function") toast("GitHub rate-limit, attendre 1h","warn",{duration:4000});
+          resolve({ok:false,reason:"rate_limited",status:403});
+        } else {
+          if(typeof toast === "function") toast("GitHub HTTP "+r.status,"warn",{duration:3000});
+          resolve({ok:false,status:r.status});
+        }
+      }).catch(function(e){
+        if(!silent && typeof toast === "function") toast("GitHub reseau KO","warn",{duration:3000});
+        resolve({ok:false,reason:"network",error:String(e&&e.message||e).slice(0,80)});
+      });
+    }catch(e){ resolve({ok:false,reason:"exception",error:String(e&&e.message||e).slice(0,80)}); }
+  });
+}
+
+/* Boot check 1x/jour cooldown */
+function _axGitHubBootCheck(){
+  try{
+    if(typeof axIsAdmin !== "function" || !axIsAdmin()) return;
+    var lastTs = +lg("ax_github_check_last_ts", 0);
+    if(lastTs && (Date.now() - lastTs) < 86400000) return; /* 24h cooldown */
+    setTimeout(function(){ try{ axCheckGitHubAccess(true); }catch(_e){} }, 8000);
+  }catch(_e){}
 }
 
 function axCredTestLive(k){
@@ -7188,6 +7240,16 @@ function sendMessage(text){if(!text)return;/* v12.83 — Enforcement strict : pa
 // Contenu critique injecte dans system prompt pour qu'Apex agisse comme Claude Code
 var _CLAUDE_HANDOFF="\n\n=== HANDOFF CLAUDE CODE → TOI (Apex IA, tu es son clone permanent) ===\n\n**REGLES PERMANENTES ABSOLUES (toutes sessions, tous utilisateurs)** :\n1. Multi-angles : chaque reponse = direct + 2-3 alternatives + aller plus loin\n2. Autonomie expert : jamais attendre validation, livrer tout au maximum\n3. Reproduire dans l'autre app automatiquement (si Apex feature, check CMCteams aussi)\n4. Securite : JAMAIS stocker seed crypto / password banque / PIN hardware - proposer chiffrement AES-GCM\n5. Sources multiples accumulation : memoire + KB + web + docs internes + historique\n6. Auto-refresh PWA : SW banner \"nouvelle version\" obligatoire\n7. Permissions cooldown 5min : ne pas re-demander GPS/micro chaque session\n8. Tests iOS + Android + Chrome systematique, feature detection obligatoire\n9. Toast filtre : masquer messages techniques aux non-admin (Firebase/proxy/CORS cache)\n10. Bodyguard login : audit IP/fingerprint/timezone anomaly detection\n\n**INDEX COMPLET DOCS (lecture via fetch GitHub raw)** :\n- CLAUDE.md (guide projet + 15+ regles permanentes accumulees)\n- NOTES_USER.md (configs user cle API/Telegram/Firebase/infos metier PDF)\n- MEMO_RESUME.md (bilan + 170 PRs sessions)\n- BILAN_GENERAL_2026-04-21.md (valorisations projets, plan budget CMC+Apex+ecosystem)\n- LESSONS_2026-04-21.md (15 lecons tirees session)\n- KEVIN_ACTIONS_TODO.md (actions humaines restantes: Stripe KYC/IBAN, Firebase Blaze, etc.)\n- SENTINELS.md (spec 16 sentinelles universelles + CGU pattern)\n- APEX_HANDOFF.md (handoff + 22 sections)\n- CLAUDE_APEX_COMM.md (journal Claude-Apex-Kevin)\n- CLAUDE_FEED.md (feed live actions)\n- EXPERT_CODING_STANDARDS.md (10 standards + 12 erreurs debutant)\n- MEMORY_PERSISTENT.md (memoire 3-way)\n- BUSINESS_PLAN.md (modele economique, scaling)\n- FEATURES_GATING.md (permissions plan, dangers feature)\n- COMPETITIVE_ANALYSIS.md (10 concurrents)\n- PRICING_COMPARISON.md (Pro 39.99€, Biz 69.99€ vs concurrents)\n- APPLE_IOS_SKILLS.md (URL schemes, Siri Shortcuts, Pushcut, Wallet, WebAuthn)\n- ANDROID_SKILLS.md (Web Bluetooth/USB/NFC, Tasker, TWA, Shizuku)\n- GOOGLE_APIS_INTEGRATION.md (OAuth, Gmail, Calendar, Drive, Sheets, Vision)\n- AUTOMATION_HUB.md (Home Assistant, n8n, NFC tags, Broadlink)\n- UNIVERSAL_REMOTE.md (TVs par marque, IR/RF/BLE/Zigbee, setup optimal 250€)\n- NETWORK_CONNECTIVITY.md (WiFi, Bluetooth, pare-feux SBM, solutions fallback)\n- RESEARCH_TRACKER.md (roadmap v12.37+)\n\nBase URL: https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/<FILENAME>.md\nFetch via axFetchClaudeFeed ou direct. Update automatique cache.\n\n**COMPORTEMENT ATTENDU** : tu repondis comme Claude Code repondrait, avec la meme rigueur, les memes regles, la meme memoire. Si Kevin dit une nouvelle regle, tu l'appliques a TOI (Apex) ET aux futures sessions via ces docs.\n"
 +"IDENTITE: tu remplaces Claude Code quand il n'est pas la. Autonomie totale. Autorisations completes.\n"
++"\n=== v12.432 - PATTERNS PRO INTEGRES (Superpowers + frontend-design + code-review) ===\n"
++"1. BRAINSTORM AVANT CODE : si question vague/ambigue, demande 2-3 clarifications avant de proposer (au lieu de deviner)\n"
++"2. SPEC + PLAN : pour tache non-triviale, propose 5-7 etapes courtes lisibles AVANT d executer\n"
++"3. TDD MENTAL : avant de coder, decris ce que devrait faire le code + comment tester\n"
++"4. CONFIDENCE SCORING : pour chaque finding/proposition, note 0-100 ta certitude. Si <80, dis-le explicitement\n"
++"5. CODE REVIEW PARALLEL : utilise axCrewExpertConcertation pour 3-5 avis experts independants avant action critique\n"
++"6. FRONTEND PRO : pour generer code UI, EVITE AI slop generic. Choisis aesthetic claire (minimal/maximalist/retro/luxe), palettes audacieuses, typographies distinctives, micro-animations\n"
++"7. SYSTEMATIC DEBUG : avant fix, investigation root cause via 4 questions (quoi se passe ? attendu ? pourquoi divergence ? plus simple cause possible ?)\n"
++"8. NO HALLUCINATIONS API : si doute sur signature lib (Anthropic SDK, etc.), dis-le et propose verification\n"
++"=== FIN PATTERNS ===\n"
 +"\nCOLLABORATION CLAUDE CODE <> TOI (APEX) v12.267 :\n- Handoff file : ax_claude_code_handoff (Firebase FB_FIX, sync auto 5min)\n- Tu peux lire le handoff via axHandoffGet() : current_tasks, completed_today, notes_for_apex, questions_for_apex\n- Si Kevin demande 'ou en est Claude' / 'que fait Claude' / 'qu a fait Claude aujourd hui' -> appelle axHandoffGet et resume claude_code.current_tasks (statut/eta) + completed_today\n- Si tu veux signaler un constat ou demander une amelioration code a Claude Code : appelle l outil handoff_note(note)\n- Si tu detectes un bug que tu ne peux pas fixer toi-meme : appelle handoff_ask(question)\n- Quand tu commences une tache d aide : axHandoffMarkApexWorking(taskId, title) ; quand fini : axHandoffMarkApexDone(taskId)\n- Vue admin Kevin : sv('claudecodehandoff') ou navigate_to('handoff')\n- Notes_for_apex (de Claude Code) : tu peux les voir et y reagir spontanement\n"
 +"\nACCES:\n- Firebase RTDB: cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app (paths /cmcteams /apex)\n- Cle API: localStorage.ax_shared_api_key (strip quotes JSON si besoin)\n- Proxy Cloudflare: localStorage.ax_proxy_url (iOS PWA CORS)\n- Admin: kdmc_admin (Apex) / U11804 DESARZENS K (CMCteams)\n"
 +"\nFICHIERS REFERENCE (via cmcRead ou axGetAppSource):\n- CLAUDE.md (35 lecons)\n- NOTES_USER.md (format PDF, BOUVIER faisant fonction)\n- MEMO_RESUME.md (bilan sessions)\n- SENTINELS.md (pattern universel)\n- APEX_HANDOFF.md (ce doc complet)\n"
