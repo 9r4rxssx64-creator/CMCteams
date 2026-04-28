@@ -472,6 +472,50 @@ Si Kevin se logue avec son numéro tel reconnu → mode admin actif automatiquem
 
 ---
 
+## 📲 Inscription + Invitation SMS (validé Kevin 2026-04-27)
+
+### Inscription nouveaux users (style WhatsApp)
+- User saisit : nom + prénom + numéro de téléphone + pseudo
+- **Code SMS auto envoyé** sur le numéro saisi (Firebase Auth Phone, OTP 6 chiffres)
+- User colle le code → vérification numéro
+- Fiche créée auto + sauvegarde permanente
+- **iOS/Android auto-fill** du code SMS (natif système, pas de copier-coller manuel)
+- Resend SMS possible après 60 sec
+- Rate limit : 5 OTP/heure/IP (anti-spam)
+
+### Invitation par SMS depuis l'app (viralité)
+**Bouton "Inviter mes amis" dans l'app** (visible dès l'onboarding terminé) :
+1. User sélectionne un ou plusieurs contacts depuis son carnet d'adresses (avec permission Contacts)
+2. App génère un **code d'invitation unique** par contact invité (`https://apexchat.app/i/<code>`)
+3. **SMS envoyé** au contact via 2 stratégies cumulables :
+   - **Stratégie A (gratuite)** : `sms:` URL natif OS — ouvre l'app SMS du téléphone avec message pré-rempli, user appuie envoyer → coût 0€ pour Kevin (utilise forfait SMS du user)
+   - **Stratégie B (payante)** : envoi direct via Vonage/Twilio depuis le worker — Kevin paye ~0.04€/SMS, user n'a rien à faire
+4. **Template SMS pré-rempli** :
+   > "Salut ! J'utilise Apex Chat, une messagerie privée avec IA intégrée. Rejoins-moi : https://apexchat.app/i/AbC123"
+5. Lien d'invitation contient :
+   - User inviteur (pour tracking réseau viral)
+   - Récompense automatique : 5 amis invités qui s'inscrivent = 1 an Premium offert (audit marketing)
+
+### Tracking réseau viral (admin Kevin)
+- Vue admin : graphe des invitations (qui a invité qui, profondeur du réseau)
+- Stats par user : nb invités envoyés, nb acceptés, taux conversion
+- Détection super-ambassadeurs (invitent beaucoup) → récompense bonus
+- Détection patterns suspects (1 user invite 100 personnes en 1h = bot) → flag
+
+### Limitations
+- Max 50 invitations SMS par user / jour (anti-spam)
+- 1 même numéro ne peut être invité qu'une fois (si refuse → renvoi possible après 7 jours)
+- Si numéro déjà inscrit → pas de SMS, juste affiche "X est déjà sur Apex Chat"
+
+### Implémentation
+- Frontend : composant `<InviteFriends />` avec accès `navigator.contacts` (Web Contact Picker API) ou fallback manuel
+- Backend : endpoint `POST /invitations/create` génère code unique en D1
+- Worker SMS : `apex-sms-worker.workers.dev` qui appelle Vonage API (clé chiffrée) selon stratégie choisie
+- Page d'atterrissage `/i/<code>` : redirige vers App Store / Play Store / installation PWA selon device
+- Au signup, le code de l'invitation est lié → l'inviteur reçoit notif "X a accepté ton invitation"
+
+---
+
 ## 🔮 Questions critiques à trancher avec Kevin
 
 1. **DÉCISION CRITIQUE — modèle admin** :
