@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.442",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.443",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4414,6 +4414,166 @@ function axCreateSkill(name, fn, desc){
     ls("ax_custom_skills",skills);
     return {ok:true,name:name,total_skills:skills.length};
   }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* v12.443 - RGPD Art. 17 droit a l oubli REEL : axDeleteAccountTotal + UI + audit */
+
+function axDeleteAccountTotal(){
+  return new Promise(function(resolve){
+    try{
+      if(!K || !K.user){ if(typeof toast === "function") toast("Pas de user connecte","warn"); resolve({ok:false,reason:"no_user"}); return; }
+      var uid = K.user.id;
+      /* Triple confirmation */
+      if(!confirm("ETAPE 1/3 : Supprimer DEFINITIVEMENT toutes tes donnees Apex ?\n\nCette action est IRREVERSIBLE.")){ resolve({ok:false,reason:"cancel_step1"}); return; }
+      if(!confirm("ETAPE 2/3 : CONFIRMATION FINALE\n\nToutes tes conversations, cles API, profils, memoires seront supprimes du localStorage, IndexedDB ET Firebase.\n\nContinuer ?")){ resolve({ok:false,reason:"cancel_step2"}); return; }
+      var confirmation = prompt("ETAPE 3/3 : Tape EXACTEMENT le mot suivant pour confirmer : SUPPRIMER");
+      if(confirmation !== "SUPPRIMER"){ resolve({ok:false,reason:"cancel_step3_text"}); return; }
+      /* 1. Backup auto Art. 20 portability */
+      try{
+        var backup = {
+          ts: Date.now(),
+          version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+          user: K.user,
+          conversations: K.conversations || [],
+          messages: K.messages || [],
+          kb: K.kb || {},
+          fin: K.fin || {},
+          settings: lg("ax_settings",{}),
+          persistent_memory: lg("ax_persistent_memory",[]),
+          audit_log: lg("ax_audit",[]),
+          security_log: lg("ax_security_log",[])
+        };
+        var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "apex_export_rgpd_" + uid + "_" + new Date().toISOString().slice(0,10) + ".json";
+        a.click();
+        if(typeof toast === "function") toast("Backup telecharge avant suppression","info",{duration:3000});
+      }catch(_e){}
+      /* 2. Audit trail final AVANT suppression */
+      try{
+        var deletedTrace = {
+          uid: uid,
+          name: K.user.name || "?",
+          ts: Date.now(),
+          version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+          confirmation_method: "triple_modal_text_match",
+          backup_downloaded: true
+        };
+        var deletedLog = lg("ax_deleted_accounts_log",[]);
+        deletedLog.push(deletedTrace);
+        if(deletedLog.length > 100) deletedLog = deletedLog.slice(-100);
+        ls("ax_deleted_accounts_log", deletedLog);
+        ls("ax_account_deleted_" + uid, deletedTrace);
+        try{ if(typeof axSecurityLog === "function") axSecurityLog("account_deleted_total", uid + " v" + (typeof APP_VER !== "undefined" ? APP_VER : "?")); }catch(_e){}
+      }catch(_e){}
+      /* 3. Purge Firebase complete : pour chaque cle FB_FIX, push null */
+      try{
+        if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX) && typeof fbWrite === "function"){
+          FB_FIX.forEach(function(k){
+            try{
+              /* Skip ax_deleted_accounts_log et ax_account_deleted_<uid> pour audit trail */
+              if(k === "ax_deleted_accounts_log") return;
+              fbWrite(k, null);
+            }catch(_e){}
+          });
+        }
+        /* Purge clees per-user */
+        if(typeof fbWrite === "function"){
+          ["ax_msgs_", "ax_convs_", "ax_settings_", "ax_xp_", "ax_streak_", "ax_pin_", "ax_user_theme_"].forEach(function(prefix){
+            try{ fbWrite(prefix + uid, null); }catch(_e){}
+          });
+        }
+      }catch(_e){}
+      /* 4. Purge localStorage (preserve audit deleted) */
+      try{
+        var keysToRemove = [];
+        for(var i=0; i<localStorage.length; i++){
+          var k = localStorage.key(i);
+          if(!k) continue;
+          if(k === "ax_deleted_accounts_log") continue;
+          if(k.indexOf("ax_account_deleted_") === 0) continue;
+          if(k.indexOf("ax_consent_history") === 0) continue;
+          if(k.indexOf("ax_") === 0) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_e){} });
+      }catch(_e){}
+      /* 5. Purge IndexedDB */
+      try{
+        if(typeof indexedDB !== "undefined" && indexedDB.deleteDatabase){
+          var dbNames = ["apex_idb", "apex_shadow", "apex_messages_archive"];
+          dbNames.forEach(function(name){
+            try{ indexedDB.deleteDatabase(name); }catch(_e){}
+          });
+        }
+      }catch(_e){}
+      /* 6. Sentry user reset */
+      try{ if(window.Sentry && Sentry.setUser) Sentry.setUser(null); }catch(_e){}
+      /* 7. sessionStorage clear */
+      try{ sessionStorage.clear(); }catch(_e){}
+      /* 8. Toast + logout + reload */
+      if(typeof toast === "function") toast("Compte supprime - reload dans 3s","ok",{duration:3000,force:true});
+      setTimeout(function(){
+        try{
+          if(typeof axHardLogoutSession === "function") axHardLogoutSession();
+          if(typeof axLogout === "function") axLogout();
+        }catch(_e){}
+        try{ location.reload(); }catch(_e){}
+      }, 3000);
+      resolve({ok:true,uid:uid,deleted_at:Date.now()});
+    }catch(e){
+      if(typeof toast === "function") toast("Erreur suppression : " + (e.message||e),"err",{duration:5000});
+      resolve({ok:false,error:String(e.message||e)});
+    }
+  });
+}
+
+function axExportMyDataRGPD(){
+  /* Art. 20 RGPD portability - export sans suppression */
+  try{
+    if(!K || !K.user){ if(typeof toast === "function") toast("Pas de user","warn"); return; }
+    var data = {
+      generated_at: Date.now(),
+      version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+      legal_basis: "RGPD Art. 20 - Droit a la portabilite",
+      user: K.user,
+      conversations: K.conversations || [],
+      messages: K.messages || [],
+      kb: K.kb || {},
+      fin: K.fin || {},
+      settings: lg("ax_settings",{}),
+      persistent_memory: lg("ax_persistent_memory",[]),
+      audit: lg("ax_audit",[]),
+      consent_history: lg("ax_consent_history",[]),
+      acquisition_history: lg("ax_acquisition_history",[]),
+      vault_keys_count: (function(){var n=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k && /^ax_(api|openai|gemini|groq)_key$/.test(k))n++;}}catch(_e){}return n;})()
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "apex_mes_donnees_" + K.user.id + "_" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    if(typeof toast === "function") toast("Tes donnees exportees (RGPD Art. 20)","ok",{duration:3000});
+  }catch(e){ if(typeof toast === "function") toast("Erreur export : " + (e.message||e),"err"); }
+}
+
+function vRGPDDelete(){
+  if(!K || !K.user) return "<div style=\"padding:24px\">Pas connecte</div>";
+  var h = "<div style=\"padding:16px\"><h2>RGPD - Mes Donnees</h2>" +
+    "<div class=\"ax-card\" style=\"margin:12px 0;padding:14px;border-left:3px solid var(--ax-blue)\">" +
+    "<h3 style=\"color:var(--ax-blue);margin:0 0 8px 0\">Art. 20 - Portabilite</h3>" +
+    "<p style=\"font-size:13px;color:var(--ax-text-dim)\">Telecharge toutes tes donnees au format JSON exploitable.</p>" +
+    "<button class=\"ax-btn ax-btn-primary\" onclick=\"axExportMyDataRGPD()\" style=\"width:100%;min-height:48px\">Exporter mes donnees</button>" +
+    "</div>" +
+    "<div class=\"ax-card\" style=\"margin:12px 0;padding:14px;border-left:3px solid var(--ax-red)\">" +
+    "<h3 style=\"color:var(--ax-red);margin:0 0 8px 0\">Art. 17 - Droit a l oubli</h3>" +
+    "<p style=\"font-size:13px;color:var(--ax-text-dim)\">Suppression DEFINITIVE de toutes tes donnees : localStorage + IndexedDB + Firebase. Backup auto Art. 20 telecharge avant. Triple confirmation.</p>" +
+    "<button class=\"ax-btn\" onclick=\"axDeleteAccountTotal()\" style=\"width:100%;min-height:48px;background:var(--ax-red);color:#fff;border:none;font-weight:700\">Supprimer DEFINITIVEMENT mon compte</button>" +
+    "</div>" +
+    "<p style=\"font-size:11px;color:var(--ax-text-dim);text-align:center;margin-top:16px\">" +
+    "Apex respecte le RGPD. <a href=\"privacy.html\" target=\"_blank\" style=\"color:var(--ax-gold)\">Privacy Policy</a> + <a href=\"cgu.html\" target=\"_blank\" style=\"color:var(--ax-gold)\">CGU</a>" +
+    "</p></div>";
+  return h;
 }
 
 function axCheckGitHubAccess(silent){
