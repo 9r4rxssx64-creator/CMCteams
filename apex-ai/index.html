@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.438",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.439",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3746,6 +3746,34 @@ function axDeepDiagnose(){
 /* v12.438 - Dashboard outils + plugin-dev + greptile */
 
 /* PLUGIN-DEV : axPluginDevTemplate pour creer un plugin Claude Code */
+/* v12.439 - LINEAR : axLinearIssue creer issue Linear via GraphQL API */
+function axLinearIssue(teamKey, title, description){
+  return new Promise(function(resolve){
+    try{
+      var apiKey = lg("ax_linear_api_key","");
+      if(!apiKey || apiKey.length < 20){ resolve({ok:false,reason:"no_linear_key"}); return; }
+      var query = "mutation IssueCreate($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier url title } } }";
+      var input = {
+        title: String(title).slice(0,200),
+        description: String(description||"").slice(0,5000),
+        teamId: teamKey
+      };
+      fetch("https://api.linear.app/graphql", {
+        method:"POST",
+        headers:{"Authorization":apiKey,"Content-Type":"application/json"},
+        body:JSON.stringify({query:query,variables:{input:input}})
+      }).then(function(r){return r.json();}).then(function(d){
+        if(d && d.data && d.data.issueCreate && d.data.issueCreate.success){
+          var issue = d.data.issueCreate.issue;
+          resolve({ok:true,id:issue.id,identifier:issue.identifier,url:issue.url});
+        } else {
+          resolve({ok:false,error:d&&d.errors||"unknown"});
+        }
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
 function axPluginDevTemplate(name, type){
   try{
     var t = type || "skill";
