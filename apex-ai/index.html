@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.434",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.435",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3734,6 +3734,76 @@ function axDeepDiagnose(){
 /* ===== SUPERPOWERS PATTERNS ===== */
 
 /* Brainstorm mode : pose 2-3 clarifications avant de proposer */
+/* v12.435 - 4 derniers plugins integration */
+
+/* TYPESCRIPT-LSP : axTypeCheckMental via JSDoc parsing */
+function axTypeCheckMental(funcName){
+  try{
+    if(!funcName || typeof window[funcName] !== "function") return {ok:false,reason:"fn_introuvable"};
+    var src = window[funcName].toString();
+    /* Parse JSDoc tags */
+    var jsdocMatch = src.match(/\/\*\*([\s\S]*?)\*\//);
+    if(!jsdocMatch) return {ok:true,has_jsdoc:false,suggestion:"Ajouter JSDoc @param @returns"};
+    var jsdoc = jsdocMatch[1];
+    var params = (jsdoc.match(/@param\s+\{[^}]+\}\s+\w+/g) || []);
+    var returns = (jsdoc.match(/@returns?\s+\{[^}]+\}/g) || []).length > 0;
+    return {ok:true,has_jsdoc:true,params_typed:params.length,returns_typed:returns};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* SECURITY-GUIDANCE : axSecurityCheck OWASP scan rapide */
+function axSecurityCheck(){
+  try{
+    var issues = [];
+    /* A03 Injection : innerHTML sans esc */
+    var src = document.documentElement.outerHTML;
+    var rawInnerHtml = (src.match(/innerHTML\s*=/g) || []).length;
+    issues.push({owasp:"A03",finding:"innerHTML usage : "+rawInnerHtml+" occurrences",severity:rawInnerHtml > 50 ? "P1" : "ok"});
+    /* A02 Crypto : check crypto.subtle dispo */
+    if(!window.crypto || !window.crypto.subtle) issues.push({owasp:"A02",finding:"crypto.subtle indispo",severity:"P0"});
+    /* A07 Auth : check session_ttl */
+    var sessTtl = +lg("ax_session_timeout",0);
+    if(sessTtl > 30*86400000) issues.push({owasp:"A07",finding:"Session TTL > 30j ("+Math.round(sessTtl/86400000)+"j)",severity:"P2"});
+    /* A09 Logging : check audit log existe */
+    var audit = lg("ax_audit",[]);
+    if(audit.length < 5) issues.push({owasp:"A09",finding:"Audit log presque vide ("+audit.length+" entries)",severity:"P2"});
+    /* A05 Misconfig : check CSP */
+    var csp = document.querySelector("meta[http-equiv=Content-Security-Policy]");
+    if(csp && csp.content && csp.content.indexOf("unsafe-inline") >= 0) issues.push({owasp:"A05",finding:"CSP unsafe-inline",severity:"P1"});
+    return {ok:true,issues:issues,count:issues.length};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* COMMIT-COMMANDS : axCommitFormat conventional commits */
+function axCommitFormat(type, scope, subject){
+  try{
+    var validTypes = ["feat","fix","docs","style","refactor","perf","test","chore","build","ci","revert"];
+    if(validTypes.indexOf(type) < 0) return {ok:false,reason:"type_invalide",valid:validTypes};
+    var msg = type;
+    if(scope) msg += "(" + String(scope).slice(0,20) + ")";
+    msg += ": " + String(subject).slice(0,72);
+    return {ok:true,message:msg,length:msg.length,within_50:msg.length <= 50};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* FIGMA : axFigmaImport design tokens via API REST */
+function axFigmaImport(fileKey, token){
+  return new Promise(function(resolve){
+    try{
+      var t = token || lg("ax_figma_token","");
+      if(!t || t.length < 20){ resolve({ok:false,reason:"no_figma_token"}); return; }
+      fetch("https://api.figma.com/v1/files/"+encodeURIComponent(fileKey)+"/styles", {
+        headers:{"X-Figma-Token":t}
+      }).then(function(r){return r.json();}).then(function(d){
+        if(d && d.meta && d.meta.styles){
+          var tokens = d.meta.styles.map(function(s){return {name:s.name,type:s.style_type,key:s.key};});
+          resolve({ok:true,tokens:tokens,count:tokens.length});
+        } else { resolve({ok:false,error:d&&d.message||"unknown"}); }
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
 function axBrainstormMode(question){
   return new Promise(function(resolve){
     try{
