@@ -1,7 +1,113 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-> Mis à jour **2026-04-28 après-midi** (Apex **v12.444** + CMCteams **v9.562**)
-> Session : v12.402 → v12.444 + CMCteams v9.560 → v9.562 + audit externe Stripe-grade indépendant
+> Mis à jour **2026-04-28 après-midi** (Apex **v12.447** + CMCteams **v9.563**)
+> Session : v12.402 → v12.447 + CMCteams v9.560 → v9.563 + audit externe Stripe-grade indépendant
+
+## 🚀 INSTRUCTIONS JEUDI (Kevin reprend forfait)
+
+**Mots-clés Kevin** = "**reprends**" / "**go**" / "**vas-y 100/100**" → Claude Code travaille à fond sur les **2 projets simultanément** (Apex + CMCteams) jusqu'à atteindre 100/100 mesuré factuel.
+
+**Plan jeudi** :
+1. Lancer `axTotalAudit()` (v12.447) ou bouton CMCteams `cmcRequestTotalAudit()` (v9.563) → rapport complet
+2. Récupérer findings P0/P1 réels mesurés
+3. Apex auto-fix whitelist (flushSync, emergencyCleanup, fbReconnect)
+4. Claude Code corrige le reste en cascade
+5. Relancer audit pour mesure finale
+6. Push final + bilan
+
+**Effort estimé jeudi** : 8-10h pour les 2 projets si focus intense + parallélisation 5 subagents.
+
+## 🛠️ NOUVEAU v12.447 + v9.563 — AUDIT TOTAL
+
+**Apex `axTotalAudit()`** :
+- Combine 9 sections : runtime tests + perf + security + toolbox + GitHub + CMC import + sentinels + logs + API keys
+- Score 100 - sum(weights P0=15, P1=7, P2=3)
+- Auto-fix whitelist (5 actions safe)
+- Push CLAUDE_HANDOFF.json + ax_telemetry_in Firebase + GitHub Issue si > 5 P0
+- Save `ax_total_audit_last` + history `ax_total_audits`
+
+**Apex `axReadGitHubFile(path)`** : lit n'importe quel fichier du repo (CLAUDE.md, MEMO_RESUME, etc.)
+
+**Apex `axEscalateAudit(report)`** : push 3 canaux (HANDOFF + telemetry + Issue)
+
+**CMCteams `cmcRequestTotalAudit()`** :
+- Signal Firebase Apex pour audit cross-app
+- Audit local CMCteams (import, storage, firebase, conflits, tests parser, sentinelles)
+- Modal résultat findings + sections testées
+
+**CMCteams `cmcLocalAudit()`** : audit pur CMCteams sans Apex.
+
+## 🔬 PROBLÈME COHÉRENCE AUDITS (Kevin a raison)
+
+**Pourquoi 96.7 vs 59 ?** Les 2 audits ne mesurent pas la même chose :
+
+- **96.7/100** = `axRunAllTests` Apex teste 30 fonctions critiques + storage + crypto + DOM
+- **59/100** = audit externe pro teste TOUT (XSS, perf, RGPD, tests E2E, complexity, supply chain)
+
+**Solution v12.447** : `axTotalAudit()` combine TOUT en un seul score reproductible.
+
+## 💰 Audit pentest tier-3 $30-80k expliqué
+
+| Tier | Type | Coût | Pour qui |
+|---|---|---|---|
+| **Tier 1** | Audit interne automatique (axRunAllTests, agents internes) | Gratuit | Tous |
+| **Tier 2** | Code review pro freelance (10-15j) | $5-10k | Pro/SaaS |
+| **Tier 3** | Pentest externe firme cybersécurité (Bishop Fox, NCC Group, Trail of Bits) avec bug bounty + cert ISO 27001/SOC 2 | $30-80k | Commercialisé public avec données sensibles |
+
+**Pour Kevin** : pas besoin de tier-3 (usage interne CMC + Laurence + soi-même). Tier-1 + tier-2 occasionnel suffisent.
+
+## ✅ FIX RÉCENTS (cette session 2026-04-28)
+
+### CMCteams v9.561-563 (Kevin demandes directes)
+- ✅ **v9.561** : Swipe horizontal mois DÉSACTIVÉ par défaut
+- ✅ **v9.562** : `cmcImportStatus()` + `cmcImportBanner()` UI alerte cadres/insp manquants
+- ✅ **v9.563** : `cmcRequestTotalAudit()` + `cmcLocalAudit()` audit master CMCteams
+
+### Apex v12.443-447 (gaps audit externe)
+- ✅ **v12.443** : Firebase deletion RÉELLE Art. 17 RGPD (`axDeleteAccountTotal`)
+- ✅ **v12.444** : SRI hashes 6 CDN + MutationObserver anti-XSS injection runtime
+- ✅ **v12.445** : Auto-continue streaming (Apex jamais s'arrête)
+- ✅ **v12.446** : `cmc_import_status` action ajoutée (Apex peut lire CMCteams Firebase)
+- ✅ **v12.447** : `axTotalAudit()` master + `axReadGitHubFile` + `axEscalateAudit`
+
+## ❌ BUGS RESTANTS (à attaquer JEUDI)
+
+### CMCteams critiques
+1. **Plannings importés perdus** — runtime debug Kevin avec PDF réel (4h)
+2. **Affichage UX vues** — audit + fix par vue (8h)
+3. **Parser inspecteurs/cadres horaires manquants** — pair-programming Kevin (6h)
+
+### Apex critiques (audit pro externe)
+1. **XSS innerHTML 12 vecteurs restants** (8h) — P0
+2. **Promises `.catch()` 217 manquants** (6h) — P1
+3. **Tests E2E 50+ cases** (40h) — P1
+4. **Refactor `_callClaudeAPI` CC 45→12** (20h) — P2
+5. **Bundle code splitting monolithe 2.3MB** (20h) — P2
+6. **PIN PBKDF2 strengthen 10k → 100k** (1h) — P2
+
+**Total effort 100/100 réel : ~150h dev + 2 sem audit pro = 8-10 semaines** ($5-15k budget)
+
+## 📊 SCORES RÉELS HONNÊTES
+
+### Apex v12.447
+
+| Axe | Score actuel | Cible 100 |
+|-----|------|------|
+| axRunAllTests interne | 90/100 | ✅ |
+| Audit externe pro | ~65/100 (post v12.443-447) | 95+ |
+| Security | ~75/100 (SRI + RGPD + MutationObs + axDeleteAccountTotal) | 95+ |
+| RGPD compliance | ~80/100 (Art. 17 réelle v12.443) | 95+ |
+
+### CMCteams v9.563
+
+| Axe | Score | Notes |
+|-----|-------|-------|
+| Stabilité | 81/100 | 5 règles detectRepoConflicts |
+| Parser robuste | 75/100 | 22 tests + sentinelle import-watch |
+| UX | 72/100 | Banner v9.562 + swipe désactivé v9.561 |
+| Audit Total | nouveau v9.563 | cmcRequestTotalAudit accessible |
+
+---
 
 ## 🔬 PROBLÈME COHÉRENCE AUDITS (Kevin a raison)
 

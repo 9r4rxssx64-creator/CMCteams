@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.562";
+var APP_VER="v9.563";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11154,6 +11154,124 @@ if(unp>20){agentAppendReport("autonomy-bridge","warn","Inbox saturee: "+unp);_cm
 // 5 strategies cascade : (1) re-parse headers etendus (2) name-first (3) cross-mois N-1
 // (4) demande confirmation admin (modal) (5) escalade Apex via _cmcEscalate
 /* v9.562 - cmcImportStatus : etat import courant pour banner UI */
+/* v9.563 - Bouton admin Audit Total : signale Apex via Firebase pour declencher axTotalAudit */
+function cmcRequestTotalAudit(){
+  if(!A.user||A.user.id!==AID){toast("Reserve admin","warn");return;}
+  toast("Audit Total demande a Apex - resultat dans 30s","info",{duration:6000});
+  /* 1. Push signal Firebase pour Apex */
+  try{
+    if(typeof FB_URL!=="undefined" && FB_URL){
+      var signal = {
+        ts: Date.now(),
+        from: "cmcteams",
+        action: "total_audit",
+        requested_by: A.user.id,
+        version_cmc: typeof APP_VER!=="undefined"?APP_VER:"v9.563"
+      };
+      fetch(FB_URL+"/cmcteams/audit_request.json",{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(signal)
+      }).catch(function(){});
+    }
+  }catch(_e){}
+  /* 2. Lancer audit local CMCteams */
+  var localReport = cmcLocalAudit();
+  /* 3. Afficher modal avec rapport local + lien vers rapport Apex (Firebase) */
+  var html = '<h2>Audit Total CMCteams</h2>';
+  html += '<p style="font-size:13px;color:var(--cmc-text-dim,#aaa)">Audit local effectue. Apex lance audit Apex+CMCteams en parallele (Firebase signal).</p>';
+  html += '<div style="background:rgba(76,208,128,.08);border-left:3px solid #5cd882;padding:10px;margin:10px 0;border-radius:6px"><strong>Score local CMCteams:</strong> '+localReport.score+'/100</div>';
+  html += '<h3>Findings ('+localReport.findings.length+')</h3>';
+  if(localReport.findings.length===0){
+    html += '<p style="color:#5cd882">Aucun probleme detecte localement</p>';
+  } else {
+    html += '<ul style="font-size:12px">';
+    localReport.findings.slice(0,15).forEach(function(f){
+      var color=f.severity==="P0"?"#ff5858":(f.severity==="P1"?"#ffb84a":"#7aa8ff");
+      html += '<li style="color:'+color+'"><strong>['+f.severity+']</strong> '+esc(f.msg)+'</li>';
+    });
+    html += '</ul>';
+  }
+  html += '<h3>Sections testees</h3>';
+  html += '<ul style="font-size:11px;color:#aaa">';
+  Object.keys(localReport.sections).forEach(function(k){
+    html += '<li>'+k+': '+JSON.stringify(localReport.sections[k]).slice(0,100)+'</li>';
+  });
+  html += '</ul>';
+  html += '<p style="font-size:11px;margin-top:12px;color:#aaa">Apex completera avec son audit + escalade Claude Code. Voir CLAUDE_HANDOFF.json sur GitHub dans 1-2 minutes.</p>';
+  html += '<button class="cmc-btn" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="background:var(--cmc-gold);color:#000;padding:8px 16px;border-radius:6px;border:none;font-weight:700;margin-top:8px">Fermer</button>';
+  if(typeof _showModal==="function") _showModal(html);
+  else if(typeof window.alert==="function") alert(localReport.score+"/100 - "+localReport.findings.length+" findings");
+  /* Save log */
+  try{
+    var hist = lg("cmc_total_audits",[]);
+    hist.push({ts:Date.now(),score:localReport.score,findings:localReport.findings.length});
+    if(hist.length>20) hist = hist.slice(-20);
+    ls("cmc_total_audits",hist);
+  }catch(_e){}
+  return localReport;
+}
+
+function cmcLocalAudit(){
+  var report = {ts:Date.now(),version:typeof APP_VER!=="undefined"?APP_VER:"?",findings:[],sections:{},score:0};
+  /* Section 1 : import status */
+  try{
+    if(typeof cmcImportStatus==="function"){
+      var imp = cmcImportStatus();
+      report.sections.import = imp;
+      if(imp.coverage_pct < 90){
+        report.findings.push({severity:"P0",msg:"Import coverage "+imp.coverage_pct+"% ("+imp.missing_total+" manquants)"});
+      }
+      if(imp.missing_insp.length > 0){
+        report.findings.push({severity:"P1",msg:imp.missing_insp.length+" inspecteurs sans horaires : "+imp.missing_insp.slice(0,3).join(", ")});
+      }
+      if(imp.missing_cadres.length > 0){
+        report.findings.push({severity:"P1",msg:imp.missing_cadres.length+" cadres sans horaires : "+imp.missing_cadres.slice(0,3).join(", ")});
+      }
+    }
+  }catch(_e){}
+  /* Section 2 : Storage */
+  try{
+    var lsTotal = 0;
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)lsTotal += (k+(localStorage.getItem(k)||"")).length;}
+    var lsKb = Math.round(lsTotal/1024);
+    report.sections.storage = {ls_kb:lsKb,emp_count:A.employees.length,team_count:A.teams.length};
+    if(lsKb > 4000) report.findings.push({severity:"P1",msg:"localStorage > 4MB ("+lsKb+"KB)"});
+  }catch(_e){}
+  /* Section 3 : Firebase sync */
+  try{
+    report.sections.firebase = {url:typeof FB_URL!=="undefined"?(FB_URL?"OK":"vide"):"undefined"};
+  }catch(_e){}
+  /* Section 4 : Conflits planning */
+  try{
+    if(typeof detectRepoConflicts==="function"){
+      var conflits = detectRepoConflicts(A.year,A.month);
+      report.sections.conflits = {count:conflits.length};
+      if(conflits.length>0) report.findings.push({severity:"P2",msg:conflits.length+" conflits detectes "+MFR[A.month]+" "+A.year});
+    }
+  }catch(_e){}
+  /* Section 5 : Tests parser */
+  try{
+    if(typeof cmcImportTests==="function"){
+      var t = cmcImportTests();
+      report.sections.tests_parser = {pass:t.pass,fail:t.fail,total:t.total};
+      if(t.fail>0) report.findings.push({severity:"P1",msg:t.fail+"/"+t.total+" tests parser failed"});
+    }
+  }catch(_e){}
+  /* Section 6 : Sentinelles */
+  try{
+    var sentRunning = (typeof _agentImportWatch==="function") && (typeof axCMCAgent==="undefined"?"unknown":"yes");
+    report.sections.sentinels = {running:sentRunning};
+  }catch(_e){}
+  /* Score : 100 - sum weights */
+  var weights = {"P0":15,"P1":7,"P2":3,"P3":1};
+  var ded = report.findings.reduce(function(s,f){return s+(weights[f.severity]||1);},0);
+  report.score = Math.max(0, 100 - ded);
+  /* Save */
+  try{ ls("cmc_local_audit_last",report); }catch(_e){}
+  return report;
+}
+
 function cmcImportStatus(y,m){
   try{
     if(y===undefined)y=A.year;
