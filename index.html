@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.560";
+var APP_VER="v9.561";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12903,10 +12903,12 @@ function goBack(){
 }
 function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
-// v9.67 — Swipe horizontal pour changer de mois (planning, départs, monplanning)
+// v9.561 — Swipe horizontal DÉSACTIVÉ (Kevin: "ne doit pas changer de mois si je dirige à droite/gauche")
+// Kevin veut changer mois SEULEMENT via flèche en haut. Restaurable via lg("cmc_swipe_month_enabled",false)
 (function(){
   var _swX=0,_swY=0,_swOn=false;
   document.addEventListener("touchstart",function(e){
+    if(!lg("cmc_swipe_month_enabled",false))return; // v9.561 - opt-in (off par défaut)
     if(A.view!=="planning"&&A.view!=="departs"&&A.view!=="monplanning")return;
     _swX=e.touches[0].clientX;_swY=e.touches[0].clientY;_swOn=true;
   },{passive:true});
