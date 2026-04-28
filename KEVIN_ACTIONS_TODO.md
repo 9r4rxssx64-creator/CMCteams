@@ -3,6 +3,18 @@
 > Mis à jour **2026-04-28 après-midi** (Apex **v12.447** + CMCteams **v9.563**)
 > Session : v12.402 → v12.447 + CMCteams v9.560 → v9.563 + audit externe Stripe-grade indépendant
 
+## 🐛 NOUVEAUX BUGS SIGNALÉS 2026-04-28 (JEUDI à fixer)
+
+### Instabilité "éléments qui changent d'endroit tout seul"
+**Cause probable** : SSE Firebase écrase l'état local (cmc_ov, ax_settings, etc.) avec valeurs Firebase qui peuvent être stale ou différentes. UI re-render = changements visuels involontaires.
+**Fix v9.564 jeudi** : timestamp local > Firebase = ne pas écraser. Garde-fou plus strict.
+**Effort** : 4h
+
+### Reconnaissance "clapets"/codes/cadres incomplète
+**Récurrent** : v9.437→v9.562 ont essayé. Banner v9.562 alerte mais ne fixe pas le parser.
+**Fix jeudi** : pair-programming Kevin avec PDF réel pour identifier patterns qui échouent. PUIS modification ciblée parser cadres/inspecteurs.
+**Effort** : 6h runtime debugging
+
 ## 🚀 INSTRUCTIONS JEUDI (Kevin reprend forfait)
 
 **Mots-clés Kevin** = "**reprends**" / "**go**" / "**vas-y 100/100**" → Claude Code travaille à fond sur les **2 projets simultanément** (Apex + CMCteams) jusqu'à atteindre 100/100 mesuré factuel.
