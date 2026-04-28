@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.437",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.438",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3743,6 +3743,89 @@ function axDeepDiagnose(){
 /* v12.437 - atlassian + agent-sdk-dev + slack + explanatory-output integration */
 
 /* ATLASSIAN : axAtlassianJira creer issue Jira via REST API */
+/* v12.438 - Dashboard outils + plugin-dev + greptile */
+
+/* PLUGIN-DEV : axPluginDevTemplate pour creer un plugin Claude Code */
+function axPluginDevTemplate(name, type){
+  try{
+    var t = type || "skill";
+    return {
+      ok:true,
+      template:{
+        name:name||"my-plugin",
+        type:t,
+        manifest_json:{name:name,version:"0.1.0",description:"",author:"Kevin",license:"MIT",type:t},
+        skill_md_template:"# Skill: " + (name||"my-plugin") + "\n\n## Description\n\n## Usage\n\n## Examples",
+        commands_dir:"commands/",
+        skills_dir:"skills/"
+      },
+      next_steps:["Edit manifest.json","Write SKILL.md","Test via /plugin install local","Publish via marketplace"]
+    };
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* GREPTILE : alias de axSerenaSearch (recherche fonctions) */
+function axGreptileSearch(query, options){
+  try{
+    if(typeof axSerenaSearch === "function") return axSerenaSearch(query, options);
+    return {ok:false,reason:"axSerenaSearch_indispo"};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* DASHBOARD : axShowToolbox affiche tous les outils Apex disponibles */
+var AX_TOOLBOX_CATALOG = [
+  {category:"Auto-amelioration",tools:["axRunAllTests","axProfilePerf","axTestSandbox","axSelfReport","axDeepDiagnose","axRunSelfDiagnostic"]},
+  {category:"Plugins Workflow",tools:["axBrainstormMode","axPlanFeature","axTddMental","axDesignAesthetic","axCodeReviewParallel","axDetectComplexCode","axRalphLoop","axMaintainClaudeMd","axCreateSkill"]},
+  {category:"Plugins Integrations",tools:["axGitHubIssue","axGitHubPR","axProposeCodeChange","axE2ETest","axFigmaImport","axVercelDeploy","axSupabaseQuery","axAtlassianJira","axSlackWebhook","axCheckGitHubAccess"]},
+  {category:"Plugins Code Quality",tools:["axTypeCheckMental","axPyrightCheck","axSecurityCheck","axCommitFormat","axSerenaSearch","axGreptileSearch","axFetchLibDocs"]},
+  {category:"Plugins Helpers",tools:["axAgentSdkBuild","axExplanatoryMode","axPluginDevTemplate"]},
+  {category:"Failover IA",tools:["_axTryFailoverChain","_callClaudeAPI","_callGroqAPI","_callGeminiAPI","_callOpenRouterAPI"]},
+  {category:"Cred Acquisition",tools:["axAcquireKeyAuto","axCredTestLive","axTestAllHistoryCandidates","_axProposeRecoveryLink"]},
+  {category:"Sentinelles",tools:["_axPersistenceWatch","_axWatchdogHeartbeat","_axDailyHealthCheck","_axCredHealthBootCheck"]},
+  {category:"Stockage",tools:["axStorage","_axBoot424CleanupDone","ls","lg"]}
+];
+
+function axShowToolbox(){
+  try{
+    var totalTools = 0;
+    var availableTools = 0;
+    var details = [];
+    AX_TOOLBOX_CATALOG.forEach(function(cat){
+      var available = cat.tools.filter(function(t){return typeof window[t] === "function";});
+      totalTools += cat.tools.length;
+      availableTools += available.length;
+      details.push({category:cat.category,available:available.length,total:cat.tools.length,tools:available});
+    });
+    return {ok:true,available:availableTools,total:totalTools,coverage:Math.round(availableTools/totalTools*100),details:details};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* Vue admin vApexToolbox : liste tous les outils avec compteur visuel */
+function vApexToolbox(){
+  if(!K || !K.user) return "<div>Connecte-toi</div>";
+  if(typeof axIsAdmin !== "function" || !axIsAdmin()) return "<div style=\"padding:24px;text-align:center\">Vue admin uniquement</div>";
+  var report = axShowToolbox();
+  if(!report.ok) return "<div>Erreur: " + (report.error||"unknown") + "</div>";
+  var h = "<div style=\"padding:16px\"><h2>🛠 Apex Toolbox</h2>" +
+    "<div style=\"background:linear-gradient(135deg,rgba(76,208,128,.1),rgba(232,184,48,.05));border:1px solid rgba(76,208,128,.3);border-radius:14px;padding:16px;margin-bottom:16px\">" +
+    "<div style=\"font-size:32px;color:var(--ax-green);font-weight:700\">" + report.available + "/" + report.total + "</div>" +
+    "<div style=\"color:var(--ax-text-dim);font-size:14px\">Outils disponibles (" + report.coverage + "% coverage)</div>" +
+    "<div style=\"margin-top:8px;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden\">" +
+    "<div style=\"width:" + report.coverage + "%;height:100%;background:linear-gradient(90deg,var(--ax-green),var(--ax-gold));border-radius:4px\"></div>" +
+    "</div></div>";
+  report.details.forEach(function(d){
+    var pct = Math.round(d.available/d.total*100);
+    h += "<div class=\"ax-card\" style=\"margin:8px 0;padding:12px\"><h3 style=\"margin:0 0 8px 0;font-size:14px\">" + esc(d.category) + " <span style=\"background:rgba(232,184,48,.15);color:var(--ax-gold);padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700\">" + d.available + "/" + d.total + "</span></h3>";
+    h += "<div style=\"display:flex;flex-wrap:wrap;gap:6px\">";
+    d.tools.forEach(function(t){
+      h += "<code style=\"background:rgba(76,208,128,.1);color:var(--ax-green);padding:3px 8px;border-radius:6px;font-size:11px\">" + esc(t) + "</code>";
+    });
+    h += "</div></div>";
+  });
+  h += "</div>";
+  return h;
+}
+
 function axAtlassianJira(domain, projectKey, summary, description){
   return new Promise(function(resolve){
     try{
