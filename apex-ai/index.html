@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.433",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.434",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3727,6 +3727,286 @@ function axDeepDiagnose(){
     }
     return {tests: tests, perf: perf, findings: findings};
   });
+}
+
+/* v12.434 - INTEGRATION COMPLETE patterns 12 plugins Claude Code dans Apex */
+
+/* ===== SUPERPOWERS PATTERNS ===== */
+
+/* Brainstorm mode : pose 2-3 clarifications avant de proposer */
+function axBrainstormMode(question){
+  return new Promise(function(resolve){
+    try{
+      if(!question || question.length < 10){
+        resolve({ok:false,reason:"question_trop_courte"});
+        return;
+      }
+      var clarifications = [];
+      if(/comment|how/i.test(question)) clarifications.push("Quel est le contexte exact (qui, quand, ou) ?");
+      if(/peux|can|possible/i.test(question)) clarifications.push("Quel resultat final attendu ?");
+      if(/aide|help|besoin/i.test(question)) clarifications.push("Quelles contraintes (budget, temps, outils) ?");
+      if(clarifications.length === 0) clarifications.push("Quel est l objectif precis ?", "Quel format de reponse prefere ?", "Y a-t-il des contraintes specifiques ?");
+      resolve({ok:true,clarifications:clarifications.slice(0,3),question:question});
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* Plan feature : 5-7 etapes structurees AVANT execution */
+function axPlanFeature(name, scope){
+  try{
+    var phases = [
+      {phase:1,name:"Brainstorm",desc:"Comprendre le besoin reel"},
+      {phase:2,name:"Specification",desc:"Lister exigences fonctionnelles + non-fonctionnelles"},
+      {phase:3,name:"Plan",desc:"Decomposer en 3-7 sous-taches mesurables"},
+      {phase:4,name:"TDD Mental",desc:"Decrire comportement attendu + tests avant code"},
+      {phase:5,name:"Implementation",desc:"Coder en suivant le plan + commits incrementaux"},
+      {phase:6,name:"Review",desc:"axCodeReviewParallel avec 5 reviewers"},
+      {phase:7,name:"Deploy + Verify",desc:"Push + test runtime + monitoring 24h"}
+    ];
+    return {feature:name,scope:scope||"",phases:phases,start_ts:Date.now()};
+  }catch(e){ return {error:String(e.message||e)}; }
+}
+
+/* TDD mental : decris attendu + tests avant code */
+function axTddMental(intent){
+  try{
+    return {
+      what: "Quel comportement final attendu ?",
+      inputs: "Quels parametres en entree ?",
+      outputs: "Quel format/valeur de retour ?",
+      edge_cases: "Cas limites (vide, null, max, network down) ?",
+      tests: ["Happy path nominal","Edge case 1","Error handling"],
+      then: "Coder MAINTENANT en respectant ces tests"
+    };
+  }catch(e){ return {error:String(e.message||e)}; }
+}
+
+/* ===== FRONTEND-DESIGN PATTERNS ===== */
+
+/* Design aesthetic : choix direction artistique pour UI */
+var AX_AESTHETIC_DIRECTIONS = {
+  brutalist: {palette:["#000","#fff","#ffeb00"],fonts:["Courier New","monospace"],accent:"hard shadows"},
+  minimal: {palette:["#fafafa","#1a1a1a","#0066cc"],fonts:["Inter","system-ui"],accent:"whitespace"},
+  retrofuturist: {palette:["#0a0014","#ff00ff","#00ffff"],fonts:["Orbitron","monospace"],accent:"neon glow"},
+  luxury: {palette:["#08080f","#c9a227","#f0f0ff"],fonts:["Garamond","Georgia"],accent:"serif gold"},
+  organic: {palette:["#3d4f2c","#d4a574","#f5ebd5"],fonts:["Spectral","serif"],accent:"natural curves"},
+  playful: {palette:["#ff6b9d","#ffd166","#06d6a0"],fonts:["Comic Sans MS","Inter"],accent:"rounded bouncy"}
+};
+
+function axDesignAesthetic(direction){
+  try{
+    var d = AX_AESTHETIC_DIRECTIONS[direction] || AX_AESTHETIC_DIRECTIONS.luxury;
+    return {direction:direction||"luxury",palette:d.palette,fonts:d.fonts,accent:d.accent,note:"Choisis EXTREME aesthetic, evite AI slop generic"};
+  }catch(e){ return {error:String(e.message||e)}; }
+}
+
+/* ===== CONTEXT7 PATTERNS ===== */
+
+/* Fetch lib docs avec cache 24h pour eviter hallucinations API */
+function axFetchLibDocs(libName){
+  return new Promise(function(resolve){
+    try{
+      var cache = lg("ax_lib_docs_cache",{});
+      var key = String(libName).toLowerCase();
+      if(cache[key] && (Date.now() - cache[key].ts) < 86400000){
+        resolve({ok:true,cached:true,docs:cache[key].docs});
+        return;
+      }
+      /* Mapping libs connues -> URL doc raw */
+      var docsUrls = {
+        "anthropic":"https://docs.anthropic.com/en/api/messages",
+        "openai":"https://platform.openai.com/docs/api-reference",
+        "groq":"https://console.groq.com/docs/quickstart",
+        "gemini":"https://ai.google.dev/gemini-api/docs",
+        "stripe":"https://stripe.com/docs/api",
+        "firebase":"https://firebase.google.com/docs/database/rest/start"
+      };
+      var url = docsUrls[key];
+      if(!url){ resolve({ok:false,reason:"lib_inconnue"}); return; }
+      fetch(url).then(function(r){return r.text();}).then(function(text){
+        var snippet = text.slice(0,3000);
+        cache[key] = {ts:Date.now(),docs:snippet};
+        try{ ls("ax_lib_docs_cache",cache); }catch(_e){}
+        resolve({ok:true,cached:false,docs:snippet});
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* ===== CODE-REVIEW PATTERNS ===== */
+
+/* 5 reviewers parallel avec confidence scoring 0-100 */
+function axCodeReviewParallel(diff, context){
+  try{
+    /* Reuse axCrewExpertConcertation existant si dispo */
+    if(typeof axCrewExpertConcertation === "function" && diff && diff.length > 100){
+      return axCrewExpertConcertation("Review code change : " + (context||"") + "\n\n" + diff.slice(0,5000)).then(function(opinions){
+        return {ok:true,reviewers:5,opinions:opinions,confidence_threshold:80};
+      });
+    }
+    return Promise.resolve({ok:false,reason:"no_diff_ou_axCrew_indispo"});
+  }catch(e){ return Promise.resolve({ok:false,error:String(e.message||e)}); }
+}
+
+/* ===== CODE-SIMPLIFIER PATTERNS ===== */
+
+/* Detect code complexe : cyclomatic complexity > 10 */
+function axDetectComplexCode(funcName){
+  try{
+    if(!funcName || typeof window[funcName] !== "function") return {ok:false,reason:"fn_introuvable"};
+    var src = window[funcName].toString();
+    var ifCount = (src.match(/\bif\s*\(/g) || []).length;
+    var elseCount = (src.match(/\belse\b/g) || []).length;
+    var forCount = (src.match(/\bfor\s*\(/g) || []).length;
+    var whileCount = (src.match(/\bwhile\s*\(/g) || []).length;
+    var caseCount = (src.match(/\bcase\s+/g) || []).length;
+    var ternaryCount = (src.match(/\?\s*[^:]+:/g) || []).length;
+    var catchCount = (src.match(/\bcatch\s*\(/g) || []).length;
+    var cc = 1 + ifCount + elseCount + forCount + whileCount + caseCount + ternaryCount + catchCount;
+    var lines = (src.match(/\n/g) || []).length;
+    return {
+      ok:true,
+      function:funcName,
+      cyclomatic_complexity:cc,
+      lines:lines,
+      complex: cc > 10,
+      suggestion: cc > 20 ? "REFACTOR URGENT : decomposer en 3-5 sous-fonctions" : (cc > 10 ? "Considerer decomposition" : "OK")
+    };
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* ===== GITHUB PATTERNS ===== */
+
+/* Cree issue GitHub via API */
+function axGitHubIssue(title, body, labels){
+  return new Promise(function(resolve){
+    try{
+      var token = "";
+      try{ token = localStorage.getItem("ax_github_token") || ""; try{var p=JSON.parse(token);if(typeof p==="string")token=p;}catch(_e){} }catch(_e){}
+      if(!token || token.length < 20){ resolve({ok:false,reason:"no_token"}); return; }
+      fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/issues", {
+        method:"POST",
+        headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+        body:JSON.stringify({title:String(title).slice(0,200),body:String(body).slice(0,10000),labels:labels||["apex-auto"]})
+      }).then(function(r){return r.json();}).then(function(d){
+        if(d && d.number){ resolve({ok:true,number:d.number,url:d.html_url}); }
+        else { resolve({ok:false,error:d&&d.message||"unknown"}); }
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* ===== PLAYWRIGHT PATTERNS ===== */
+
+/* E2E test simulation via DOM events */
+function axE2ETest(scenario){
+  return new Promise(function(resolve){
+    try{
+      var steps = scenario && scenario.steps || [];
+      var results = [];
+      var i = 0;
+      function nextStep(){
+        if(i >= steps.length){ resolve({ok:true,steps:results,passed:results.filter(function(r){return r.ok;}).length,total:results.length}); return; }
+        var step = steps[i++];
+        try{
+          if(step.action === "click"){
+            var el = document.querySelector(step.selector);
+            if(el){ el.click(); results.push({step:i,ok:true,action:"click",target:step.selector}); }
+            else { results.push({step:i,ok:false,action:"click",error:"selector_not_found"}); }
+          } else if(step.action === "type"){
+            var el = document.querySelector(step.selector);
+            if(el){ el.value = step.value; el.dispatchEvent(new Event("input")); results.push({step:i,ok:true,action:"type"}); }
+            else { results.push({step:i,ok:false,action:"type",error:"selector_not_found"}); }
+          } else if(step.action === "wait"){
+            setTimeout(nextStep, step.ms || 500); return;
+          } else if(step.action === "assert"){
+            var el = document.querySelector(step.selector);
+            var actual = el ? (el.textContent || el.value || "") : "";
+            var expected = step.contains || "";
+            results.push({step:i,ok:actual.indexOf(expected) >= 0,action:"assert",expected:expected});
+          }
+        }catch(e){ results.push({step:i,ok:false,error:String(e.message||e)}); }
+        setTimeout(nextStep, 100);
+      }
+      nextStep();
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* ===== RALPH-LOOP PATTERNS ===== */
+
+/* Iterate jusqu a convergence (max 10 iterations) */
+function axRalphLoop(targetFn, targetCondition, maxIter){
+  return new Promise(function(resolve){
+    try{
+      var iter = 0;
+      var max = maxIter || 10;
+      var history = [];
+      function loop(){
+        if(iter >= max){ resolve({ok:false,reason:"max_iterations",history:history}); return; }
+        iter++;
+        try{
+          var result = typeof targetFn === "function" ? targetFn() : null;
+          history.push({iter:iter,result:result});
+          if(typeof targetCondition === "function" && targetCondition(result)){
+            resolve({ok:true,iterations:iter,result:result,history:history});
+            return;
+          }
+        }catch(e){
+          history.push({iter:iter,error:String(e.message||e)});
+        }
+        setTimeout(loop, 200);
+      }
+      loop();
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* ===== CLAUDE-MD-MANAGEMENT PATTERNS ===== */
+
+/* Update CLAUDE.md automatique avec nouvelle regle/lesson */
+function axMaintainClaudeMd(category, title, content){
+  return new Promise(function(resolve){
+    try{
+      var token = "";
+      try{ token = localStorage.getItem("ax_github_token") || ""; try{var p=JSON.parse(token);if(typeof p==="string")token=p;}catch(_e){} }catch(_e){}
+      if(!token || token.length < 20){ resolve({ok:false,reason:"no_token"}); return; }
+      var path = "CLAUDE.md";
+      fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/contents/"+path, {
+        headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json"}
+      }).then(function(r){return r.json();}).then(function(meta){
+        if(!meta || !meta.content){ resolve({ok:false,reason:"file_not_found"}); return; }
+        var current = atob(meta.content.replace(/\s/g,""));
+        var section = "\n\n## " + category + " - " + title + " (" + new Date().toISOString().slice(0,10) + ")\n\n" + content + "\n";
+        var updated = current + section;
+        var b64 = btoa(unescape(encodeURIComponent(updated)));
+        fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/contents/"+path, {
+          method:"PUT",
+          headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+          body:JSON.stringify({message:"docs: apex-auto update CLAUDE.md "+category,content:b64,sha:meta.sha})
+        }).then(function(r){
+          if(r.ok){ resolve({ok:true,added_section:category+"-"+title}); }
+          else { resolve({ok:false,error:"HTTP "+r.status}); }
+        }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* ===== SKILL-CREATOR PATTERNS ===== */
+
+/* Cree skill custom (fonction utilitaire memoire long-terme) */
+function axCreateSkill(name, fn, desc){
+  try{
+    if(!name || typeof fn !== "function") return {ok:false,reason:"name_or_fn_invalid"};
+    if(typeof window[name] !== "undefined") return {ok:false,reason:"name_already_exists"};
+    window[name] = fn;
+    var skills = lg("ax_custom_skills",[]);
+    skills.push({name:name,desc:desc||"",created_ts:Date.now()});
+    if(skills.length > 50) skills = skills.slice(-50);
+    ls("ax_custom_skills",skills);
+    return {ok:true,name:name,total_skills:skills.length};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
 }
 
 function axCheckGitHubAccess(silent){
