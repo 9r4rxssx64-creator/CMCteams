@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.561";
+var APP_VER="v9.562";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11153,6 +11153,63 @@ if(unp>20){agentAppendReport("autonomy-bridge","warn","Inbox saturee: "+unp);_cm
 // Detecte cadres/inspecteurs/superviseurs sans horaire APRES chaque import.
 // 5 strategies cascade : (1) re-parse headers etendus (2) name-first (3) cross-mois N-1
 // (4) demande confirmation admin (modal) (5) escalade Apex via _cmcEscalate
+/* v9.562 - cmcImportStatus : etat import courant pour banner UI */
+function cmcImportStatus(y,m){
+  try{
+    if(y===undefined)y=A.year;
+    if(m===undefined)m=A.month;
+    var pl=gpl(y,m)||{};
+    var days=getDays(y,m);
+    var total=0,withHoraires=0,missingCadres=[],missingInsp=[],missingChefs=[];
+    A.employees.forEach(function(e){
+      if(!isEmpActive(e,y,m))return;
+      total++;
+      var row=pl[e.id]||{};
+      var filled=0;
+      for(var d=1;d<=days;d++)if(row[d])filled++;
+      if(filled>0){withHoraires++;return;}
+      /* Categoriser par type */
+      if(e.role==="inspecteur"||e.role==="insp")missingInsp.push(e.name||e.id);
+      else if(e.family==="cadres"||e.role==="sup"||e.role==="pit")missingCadres.push(e.name||e.id);
+      else if(e.chef)missingChefs.push(e.name||e.id);
+    });
+    var status={
+      year:y,month:m,
+      total_emp:total,
+      with_horaires:withHoraires,
+      missing_total:total-withHoraires,
+      missing_cadres:missingCadres,
+      missing_insp:missingInsp,
+      missing_chefs:missingChefs,
+      coverage_pct:total?Math.round(withHoraires/total*100):0,
+      ts:Date.now()
+    };
+    return status;
+  }catch(e){return {error:String(e.message||e)};}
+}
+
+/* v9.562 - Banner UI alerte si import incomplete (admin only) */
+function cmcImportBanner(){
+  try{
+    if(!A.user||A.user.id!==AID)return "";
+    var st=cmcImportStatus();
+    if(!st||st.error)return "";
+    var crit=st.missing_cadres.length+st.missing_insp.length+st.missing_chefs.length;
+    if(crit===0)return "";
+    var name=MFR[st.month]+" "+st.year;
+    var h='<div style="background:linear-gradient(135deg,rgba(255,184,74,.15),rgba(255,88,88,.10));border:1.5px solid rgba(255,184,74,.5);border-radius:10px;padding:12px;margin:8px 0">';
+    h+='<strong style="color:#ffb84a;font-size:13px">⚠ Import incomplet '+esc(name)+' : '+crit+' cadres/inspecteurs/chefs sans horaires ('+st.coverage_pct+'%)</strong>';
+    if(st.missing_insp.length)h+='<div style="font-size:12px;margin-top:6px">Inspecteurs : '+esc(st.missing_insp.slice(0,5).join(", "))+(st.missing_insp.length>5?" +"+(st.missing_insp.length-5):"")+'</div>';
+    if(st.missing_cadres.length)h+='<div style="font-size:12px;margin-top:4px">Cadres/Sup : '+esc(st.missing_cadres.slice(0,5).join(", "))+(st.missing_cadres.length>5?" +"+(st.missing_cadres.length-5):"")+'</div>';
+    if(st.missing_chefs.length)h+='<div style="font-size:12px;margin-top:4px">Chefs : '+esc(st.missing_chefs.slice(0,5).join(", "))+(st.missing_chefs.length>5?" +"+(st.missing_chefs.length-5):"")+'</div>';
+    h+='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">';
+    h+='<button class="cmc-btn" onclick="sv(\'import\')" style="background:#ffb84a;color:#000;font-weight:700;padding:6px 12px;border-radius:6px;border:none;font-size:12px">Re-importer</button>';
+    h+='<button class="cmc-btn" onclick="if(typeof _agentImportWatch===\'function\')_agentImportWatch();toast(\'Audit lance\',\'ok\');" style="background:transparent;color:#ffb84a;border:1px solid #ffb84a;padding:6px 12px;border-radius:6px;font-size:12px">Audit ImportWatch</button>';
+    h+='</div></div>';
+    return h;
+  }catch(e){return "";}
+}
+
 function _agentImportWatch(){try{
   var y=A.year,m=A.month;
   var pl=gpl(y,m)||{};
