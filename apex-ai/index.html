@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.439",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.440",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3747,6 +3747,70 @@ function axDeepDiagnose(){
 
 /* PLUGIN-DEV : axPluginDevTemplate pour creer un plugin Claude Code */
 /* v12.439 - LINEAR : axLinearIssue creer issue Linear via GraphQL API */
+/* v12.440 - GitLab + chrome-devtools + hookify + playground */
+
+/* GITLAB : axGitlabIssue creer issue GitLab via REST API */
+function axGitlabIssue(projectId, title, description){
+  return new Promise(function(resolve){
+    try{
+      var token = lg("ax_gitlab_token","");
+      var instance = lg("ax_gitlab_instance","https://gitlab.com");
+      if(!token || token.length < 20){ resolve({ok:false,reason:"no_gitlab_token"}); return; }
+      fetch(instance + "/api/v4/projects/" + encodeURIComponent(projectId) + "/issues", {
+        method:"POST",
+        headers:{"PRIVATE-TOKEN":token,"Content-Type":"application/json"},
+        body:JSON.stringify({title:String(title).slice(0,200),description:String(description||"").slice(0,5000)})
+      }).then(function(r){return r.json();}).then(function(d){
+        if(d && d.iid){ resolve({ok:true,iid:d.iid,url:d.web_url}); }
+        else { resolve({ok:false,error:d&&d.message||"unknown"}); }
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* CHROME-DEVTOOLS-MCP : axDevtoolsInspect via Performance API + Console */
+function axDevtoolsInspect(){
+  try{
+    var info = {
+      ts:Date.now(),
+      user_agent:navigator.userAgent.slice(0,200),
+      screen:{w:screen.width,h:screen.height,pixelRatio:window.devicePixelRatio},
+      online:navigator.onLine,
+      cookies_enabled:navigator.cookieEnabled,
+      languages:navigator.languages
+    };
+    if(performance && performance.memory){
+      info.memory_mb = Math.round(performance.memory.usedJSHeapSize / 1048576);
+    }
+    info.dom_nodes = document.querySelectorAll("*").length;
+    info.event_listeners = "non-introspectable JS";
+    info.console_errors_count = lg("ax_error_log",[]).length;
+    return {ok:true,info:info};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* HOOKIFY : axHookify ajouter un hook event */
+function axHookify(eventName, handler, opts){
+  try{
+    if(!eventName || typeof handler !== "function") return {ok:false,reason:"invalid_args"};
+    var safeName = String(eventName).slice(0,50);
+    document.addEventListener(safeName, handler, opts || {});
+    var hooks = lg("ax_custom_hooks",[]);
+    hooks.push({event:safeName,registered_ts:Date.now()});
+    if(hooks.length > 50) hooks = hooks.slice(-50);
+    ls("ax_custom_hooks",hooks);
+    return {ok:true,event:safeName};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* PLAYGROUND : axPlayground evaluer code dans sandbox (alias axTestSandbox) */
+function axPlayground(code){
+  try{
+    if(typeof axTestSandbox === "function") return axTestSandbox(code, 5000);
+    return Promise.resolve({ok:false,reason:"axTestSandbox_indispo"});
+  }catch(e){ return Promise.resolve({ok:false,error:String(e.message||e)}); }
+}
+
 function axLinearIssue(teamKey, title, description){
   return new Promise(function(resolve){
     try{
