@@ -1,6 +1,47 @@
 # Mémo de reprise — Apex v12.442 + CMCteams v9.560 (session 2026-04-28 marathon 102+ versions)
 
-## 🌅 SESSION 2026-04-28 MATIN — v12.428 → v12.442 (15 versions, 30 plugins intégrés, score 96.7/100)
+## 🔬 AUDIT EXTERNE INDÉPENDANT 2026-04-28 (Senior Security/Quality Architect)
+
+**Score auto-évalué : 96.7/100** (axRunAllTests Apex)
+**Score audit externe RÉEL : 59/100** ❌ (gap -38%)
+
+### Détail par axe
+
+| Axe | Auto | Audit réel | Gap |
+|-----|------|------------|-----|
+| Security | 96.7 | **59** | -38% |
+| Performance | 96.7 | **62** | -35% |
+| UX/A11y | 96.7 | **71** | -26% |
+| Code Quality | 96.7 | **42** | -55% |
+| RGPD | 96.7 | **64** | -33% |
+| E2E Testing | 96.7 | **5** | -92% |
+
+### Pourquoi le gap
+
+`axRunAllTests` teste 20 fonctions critiques + 4 catégories infra. Mais **ZÉRO** test E2E réel, **ZÉRO** sécurité (XSS/CSRF/injection), **ZÉRO** stabilité multi-user. Le 96.7 est métrique narrowly definie, pas Stripe-grade audit complet.
+
+### Top 10 gaps RESTANTS (effort total ~126h)
+
+1. ✅ FAIT v12.443 : `axDeleteAccountTotal` Firebase Art. 17 RGPD (4h)
+2. ✅ FAIT v12.444 : SRI hashes CDN + MutationObserver anti-XSS (2h)
+3. ❌ XSS innerHTML 12 vecteurs restants (8h) — P0
+4. ❌ Promises `.catch()` coverage 217 manquants (6h) — P1
+5. ❌ E2E test suite 50+ cases (40h) — P1
+6. ❌ PIN PBKDF2 strengthen 10k → 100k (1h) — P2
+7. ❌ Refactor `dc()` CC=22 + `vMain()` CC=40 (12h) — P2
+8. ❌ Bundle code splitting monolithe 2.3MB (20h) — P2
+9. ❌ Voiceprint Art. 9 consent UI explicite (3h) — P3
+10. ❌ CMCteams test E2E coverage (30h) — P3
+
+### Verdict honnête
+
+- **Niveau usage Kevin/Laurence interne** : ✅ OUI (stable, fonctionnel, autonome)
+- **Niveau commercialisable public Stripe-grade absolu** : ❌ NON (gap 33-38% vs benchmarks)
+- **Délai réaliste pour vrai 100/100** : 10-12 semaines + audit pentest tier-3 ($80k budget)
+
+---
+
+## 🌅 SESSION 2026-04-28 MATIN — v12.428 → v12.444 (17 versions, 30 plugins intégrés, RGPD Art. 17 + XSS hardening)
 
 ### Score final mesuré factuellement par Apex lui-même
 
