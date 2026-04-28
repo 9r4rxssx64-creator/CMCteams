@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.436",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.437",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3740,6 +3740,80 @@ function axDeepDiagnose(){
 /* v12.436 - 4 derniers plugins integration : pyright-lsp + serena + vercel + supabase */
 
 /* PYRIGHT-LSP : axPyrightCheck pour scripts Python (CMCteams parsing) */
+/* v12.437 - atlassian + agent-sdk-dev + slack + explanatory-output integration */
+
+/* ATLASSIAN : axAtlassianJira creer issue Jira via REST API */
+function axAtlassianJira(domain, projectKey, summary, description){
+  return new Promise(function(resolve){
+    try{
+      var token = lg("ax_atlassian_token","");
+      var email = lg("ax_atlassian_email","");
+      if(!token || !email || !domain){ resolve({ok:false,reason:"missing_creds"}); return; }
+      var auth = btoa(email + ":" + token);
+      fetch("https://"+domain+".atlassian.net/rest/api/3/issue", {
+        method:"POST",
+        headers:{"Authorization":"Basic "+auth,"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({
+          fields:{
+            project:{key:projectKey},
+            summary:String(summary).slice(0,200),
+            description:{type:"doc",version:1,content:[{type:"paragraph",content:[{type:"text",text:String(description).slice(0,5000)}]}]},
+            issuetype:{name:"Task"}
+          }
+        })
+      }).then(function(r){return r.json();}).then(function(d){
+        if(d && d.key){ resolve({ok:true,key:d.key,url:"https://"+domain+".atlassian.net/browse/"+d.key}); }
+        else { resolve({ok:false,error:d&&d.errors||"unknown"}); }
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* AGENT-SDK-DEV : axAgentSdkBuild helper Anthropic SDK boilerplate */
+function axAgentSdkBuild(role, capabilities){
+  try{
+    var caps = capabilities || ["chat"];
+    var template = {
+      role:role||"general",
+      capabilities:caps,
+      systemPrompt:"Tu es un agent specialise role="+role+", capabilities="+caps.join(","),
+      tools:caps.map(function(c){return {name:c,description:"Capability "+c};}),
+      model:"claude-sonnet-4-6",
+      maxTokens:4096,
+      temperature:0.7
+    };
+    return {ok:true,template:template,note:"Boilerplate Anthropic Agent SDK ready"};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
+/* SLACK : axSlackWebhook post message via incoming webhook */
+function axSlackWebhook(text, channel){
+  return new Promise(function(resolve){
+    try{
+      var url = lg("ax_slack_webhook_url","");
+      if(!url || url.indexOf("https://hooks.slack.com") < 0){ resolve({ok:false,reason:"no_slack_webhook"}); return; }
+      fetch(url, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({text:String(text).slice(0,3000),channel:channel||"#general"})
+      }).then(function(r){
+        resolve({ok:r.ok,status:r.status});
+      }).catch(function(e){ resolve({ok:false,error:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false,error:String(e.message||e)}); }
+  });
+}
+
+/* EXPLANATORY-OUTPUT : axExplanatoryMode active mode verbeux pedagogique */
+function axExplanatoryMode(enable){
+  try{
+    var s = lg("ax_settings",{});
+    s.explanatory_mode = !!enable;
+    s.explanatory_format = "step-by-step + code samples + why explanations";
+    ls("ax_settings",s);
+    return {ok:true,enabled:!!enable,note:"system prompt enrichi pour explications detaillees"};
+  }catch(e){ return {ok:false,error:String(e.message||e)}; }
+}
+
 function axPyrightCheck(pythonCode){
   try{
     if(!pythonCode || typeof pythonCode !== "string") return {ok:false,reason:"code_invalide"};
