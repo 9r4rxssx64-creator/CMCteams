@@ -774,7 +774,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.432",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.433",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3490,6 +3490,245 @@ function axTemplateUse(idx){
 }
 
 /* v12.432 - GitHub access health check + auto-recovery */
+/* v12.433 - APEX SELF-WORKSHOP : outils pour autonomie totale auto-amelioration */
+
+/* Test 1 : Runner suite tests integree */
+function axRunAllTests(){
+  return new Promise(function(resolve){
+    try{
+      var tests = [];
+      var critical = ["sendMessage","_callClaudeAPI","_saveMsgs","dc","render","sv","toast","esc","ls","lg","axIsAdmin","fbInit","fbWrite","axStopStreaming","axRegenerate","axCopyMsg","_buildSystemPrompt","axDetectIntent","axCallClaude","axSelectAIModel","_axDetectComplexity","_axDetectDomain","axGetAIMode","axSetAIMode","_axDailyCleanup","axShield","axCheckUpdate","axHardLogoutSession","axTestLoginPersistence"];
+      critical.forEach(function(f){
+        tests.push({name:f, ok: typeof window[f] === "function", category:"critical_fn"});
+      });
+      /* Test storage */
+      try{
+        var testKey = "ax_test_" + Date.now();
+        ls(testKey, "ok");
+        var v = lg(testKey, "");
+        localStorage.removeItem(testKey);
+        tests.push({name:"localStorage_rw", ok: v === "ok", category:"storage"});
+      }catch(e){ tests.push({name:"localStorage_rw", ok: false, error: String(e.message||e), category:"storage"}); }
+      /* Test crypto.subtle */
+      tests.push({name:"crypto_subtle", ok: !!(window.crypto && window.crypto.subtle), category:"crypto"});
+      tests.push({name:"crypto_random", ok: !!(window.crypto && window.crypto.getRandomValues), category:"crypto"});
+      /* Test DOM */
+      tests.push({name:"dom_ready", ok: !!(document && document.body), category:"dom"});
+      tests.push({name:"app_div", ok: !!document.getElementById("app"), category:"dom"});
+      /* Test K state */
+      tests.push({name:"K_user", ok: !!(typeof K !== "undefined" && K.user), category:"state"});
+      tests.push({name:"K_messages", ok: !!(typeof K !== "undefined" && Array.isArray(K.messages)), category:"state"});
+      /* Test API keys configurees */
+      var anth = ""; try{ anth = localStorage.getItem("ax_api_key") || ""; }catch(_e){}
+      tests.push({name:"anthropic_key", ok: anth.indexOf("sk-ant-") === 0, category:"keys"});
+      var groq = ""; try{ groq = localStorage.getItem("ax_groq_key") || ""; }catch(_e){}
+      tests.push({name:"groq_key", ok: groq.indexOf("gsk_") === 0, category:"keys"});
+      /* Test Firebase */
+      tests.push({name:"firebase_url", ok: typeof FB_URL !== "undefined" && FB_URL.length > 10, category:"firebase"});
+      tests.push({name:"firebase_sse", ok: typeof _fbEs !== "undefined" && _fbEs !== null, category:"firebase"});
+      /* Test sentinelles */
+      tests.push({name:"sentinels_active", ok: typeof _axPersistenceWatch === "function", category:"sentinels"});
+      tests.push({name:"watchdog_active", ok: typeof _axWatchdogHeartbeat === "function", category:"sentinels"});
+      var passed = tests.filter(function(t){return t.ok;}).length;
+      var failed = tests.filter(function(t){return !t.ok;}).length;
+      var report = {
+        ts: Date.now(),
+        version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+        total: tests.length,
+        passed: passed,
+        failed: failed,
+        score: Math.round(passed/tests.length*100),
+        tests: tests
+      };
+      try{ ls("ax_self_tests_last", report); }catch(_e){}
+      resolve(report);
+    }catch(e){ resolve({error: String(e.message||e), tests:[]}); }
+  });
+}
+
+/* Test 2 : Profile Performance + Memory */
+function axProfilePerf(){
+  try{
+    var perf = {ts: Date.now()};
+    /* Memory (Chromium uniquement) */
+    if(performance && performance.memory){
+      perf.memory = {
+        used: performance.memory.usedJSHeapSize,
+        total: performance.memory.totalJSHeapSize,
+        limit: performance.memory.jsHeapSizeLimit
+      };
+    }
+    /* Navigation timing */
+    if(performance && performance.timing){
+      var t = performance.timing;
+      perf.timing = {
+        ttfb: t.responseStart - t.navigationStart,
+        dom_loaded: t.domContentLoadedEventEnd - t.navigationStart,
+        full_load: t.loadEventEnd - t.navigationStart
+      };
+    }
+    /* Web Vitals approximations */
+    if(performance && performance.getEntriesByType){
+      var paints = performance.getEntriesByType("paint");
+      paints.forEach(function(p){
+        if(p.name === "first-paint") perf.fp = Math.round(p.startTime);
+        if(p.name === "first-contentful-paint") perf.fcp = Math.round(p.startTime);
+      });
+      var nav = performance.getEntriesByType("navigation");
+      if(nav && nav[0]){
+        perf.dns = Math.round(nav[0].domainLookupEnd - nav[0].domainLookupStart);
+        perf.transfer_size = nav[0].transferSize;
+      }
+    }
+    /* DOM size */
+    perf.dom_nodes = document.querySelectorAll("*").length;
+    /* localStorage size */
+    var lsTotal = 0;
+    try{
+      for(var i=0; i<localStorage.length; i++){
+        var k = localStorage.key(i);
+        if(k){ lsTotal += (k + (localStorage.getItem(k) || "")).length; }
+      }
+    }catch(_e){}
+    perf.localstorage_kb = Math.round(lsTotal / 1024);
+    /* Intervals/timers actifs (estimation via _globalIntervals) */
+    if(typeof _globalIntervals !== "undefined"){
+      perf.intervals = (_globalIntervals && _globalIntervals.length) || 0;
+    }
+    /* Save */
+    try{ ls("ax_perf_last", perf); }catch(_e){}
+    return perf;
+  }catch(e){ return {error: String(e.message||e)}; }
+}
+
+/* Test 3 : Sandbox JS eval safe (iframe sandbox postMessage) */
+function axTestSandbox(code, timeoutMs){
+  return new Promise(function(resolve){
+    try{
+      timeoutMs = timeoutMs || 3000;
+      var iframe = document.createElement("iframe");
+      iframe.sandbox = "allow-scripts";
+      iframe.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:none";
+      var nonce = "ax-sandbox-" + Date.now();
+      var srcDoc = '<html><body><'+'script>(function(){try{var r=(function(){'+code+'})();window.parent.postMessage({nonce:"'+nonce+'",ok:true,result:String(r).slice(0,500)},"*");}catch(e){window.parent.postMessage({nonce:"'+nonce+'",ok:false,error:String(e.message||e).slice(0,300)},"*");}})();</'+'script></body></html>';
+      iframe.srcdoc = srcDoc;
+      var done = false;
+      var listener = function(ev){
+        if(done || !ev.data || ev.data.nonce !== nonce) return;
+        done = true;
+        window.removeEventListener("message", listener);
+        try{ document.body.removeChild(iframe); }catch(_e){}
+        resolve(ev.data);
+      };
+      window.addEventListener("message", listener);
+      document.body.appendChild(iframe);
+      setTimeout(function(){
+        if(done) return;
+        done = true;
+        window.removeEventListener("message", listener);
+        try{ document.body.removeChild(iframe); }catch(_e){}
+        resolve({nonce:nonce, ok:false, error:"timeout " + timeoutMs + "ms"});
+      }, timeoutMs);
+    }catch(e){ resolve({ok:false, error: String(e.message||e)}); }
+  });
+}
+
+/* Test 4 : Self-report complet pour Claude Code */
+function axSelfReport(){
+  return Promise.all([axRunAllTests(), Promise.resolve(axProfilePerf())]).then(function(results){
+    var tests = results[0];
+    var perf = results[1];
+    var report = {
+      generated_at: Date.now(),
+      version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+      user: K && K.user ? {id: K.user.id, name: (K.user.name || "").slice(0, 40)} : null,
+      tests: tests,
+      perf: perf,
+      audit_log: lg("ax_audit", []).slice(-20),
+      err_log: lg("ax_error_log", []).slice(-10),
+      unhandled: lg("ax_unhandled_rejection", []).slice(-10),
+      security_log: lg("ax_security_log", []).slice(-10),
+      lessons: lg("ax_lessons_learned", []).slice(-15),
+      acquisitions: lg("ax_acquisition_history", []).slice(-10),
+      recent_views: lg("ax_view_changes", []).slice(-10),
+      conversations_count: K && K.conversations ? K.conversations.length : 0,
+      messages_count: K && K.messages ? K.messages.length : 0
+    };
+    /* Push vers CLAUDE_HANDOFF.json via GitHub si token configure */
+    try{
+      var token = localStorage.getItem("ax_github_token") || "";
+      try{ var p = JSON.parse(token); if(typeof p === "string") token = p; }catch(_e){}
+      if(token && token.length > 20 && (token.indexOf("ghp_") === 0 || token.indexOf("github_pat_") === 0)){
+        var owner = "9r4rxssx64-creator";
+        var repo = "cmcteams";
+        var path = "CLAUDE_HANDOFF.json";
+        fetch("https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + path, {
+          headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json"}
+        }).then(function(r){return r.ok ? r.json() : null;}).then(function(meta){
+          var content = {
+            last_self_report: report,
+            ts: Date.now(),
+            notes_for_claude: "Apex self-report v" + report.version + " | tests " + report.tests.passed + "/" + report.tests.total + " (" + report.tests.score + "%) | LS " + (report.perf.localstorage_kb || "?") + " KB"
+          };
+          var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+          var body = {message: "apex-auto: self-report v" + report.version, content: b64};
+          if(meta && meta.sha) body.sha = meta.sha;
+          fetch("https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + path, {
+            method: "PUT",
+            headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "Content-Type": "application/json"},
+            body: JSON.stringify(body)
+          }).then(function(r){
+            if(r.ok && typeof toast === "function") toast("Self-report envoye a Claude Code","ok",{duration:3000});
+            else if(typeof toast === "function") toast("Self-report HTTP " + r.status,"warn");
+          }).catch(function(){
+            if(typeof toast === "function") toast("Self-report reseau KO (queue silent)","warn");
+            try{ var q = lg("ax_push_diag_queue",[]); q.push({content: content, ts: Date.now(), attempts: 1}); if(q.length > 10) q = q.slice(-10); ls("ax_push_diag_queue", q); }catch(_e){}
+          });
+        }).catch(function(){});
+      }
+    }catch(_e){}
+    /* Save local pour relecture */
+    try{ ls("ax_self_report_last", report); }catch(_e){}
+    return report;
+  });
+}
+
+/* Test 5 : Deep diagnose avec confidence scoring 0-100 */
+function axDeepDiagnose(){
+  return axRunAllTests().then(function(tests){
+    var findings = [];
+    /* Critique : score < 70% */
+    if(tests.score < 70){
+      findings.push({severity:"P0", confidence: 95, msg:"Tests passing only " + tests.score + "% (threshold 70)", category:"reliability"});
+    }
+    /* Memory leak suspect : LS > 4MB */
+    var perf = axProfilePerf();
+    if(perf.localstorage_kb && perf.localstorage_kb > 4000){
+      findings.push({severity:"P1", confidence: 90, msg:"localStorage > 4MB (" + perf.localstorage_kb + " KB) - cleanup auto si > 4500", category:"perf"});
+    }
+    /* DOM trop gros */
+    if(perf.dom_nodes > 5000){
+      findings.push({severity:"P1", confidence: 85, msg:"DOM " + perf.dom_nodes + " nodes (cible <3000)", category:"perf"});
+    }
+    /* TTFB > 1s */
+    if(perf.timing && perf.timing.ttfb > 1000){
+      findings.push({severity:"P2", confidence: 75, msg:"TTFB " + perf.timing.ttfb + "ms > 1000ms", category:"perf"});
+    }
+    /* Cles manquantes */
+    var anthOk = tests.tests.filter(function(t){return t.name === "anthropic_key" && t.ok;}).length > 0;
+    var groqOk = tests.tests.filter(function(t){return t.name === "groq_key" && t.ok;}).length > 0;
+    if(!anthOk && !groqOk){
+      findings.push({severity:"P0", confidence: 100, msg:"Aucune cle IA configuree (Anthropic + Groq vides)", category:"keys"});
+    }
+    /* Sentinelles inactives */
+    var sentOk = tests.tests.filter(function(t){return t.category === "sentinels" && t.ok;}).length;
+    if(sentOk < 2){
+      findings.push({severity:"P1", confidence: 80, msg:"Sentinelles incompletes (" + sentOk + "/2)", category:"sentinels"});
+    }
+    return {tests: tests, perf: perf, findings: findings};
+  });
+}
+
 function axCheckGitHubAccess(silent){
   return new Promise(function(resolve){
     try{
