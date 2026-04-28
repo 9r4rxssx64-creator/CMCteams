@@ -772,7 +772,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     },4000);
   }catch(_){}
 })();
-var APP_VER="v12.426",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.428",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7131,12 +7131,21 @@ function _axShowModeBadge(mode){
 function _axApplyAutoMode(text){
   try{
     var mode = _axAutoModeDecide(text);
-    /* v12.384 - Force Groq gratuit pour questions simples (économie Anthropic forfait Kevin) */
+    /* v12.428 - Anthropic prioritaire si dispo (Kevin: "Anthropic est connecte, doit basculer auto").
+       Groq UNIQUEMENT si Anthropic KO recemment (last_quota_err_ts < 1h) OU pas d Anthropic */
     var hasGroq = lg("ax_groq_key","").length > 10;
     var hasAnth = lg("ax_api_key","").length > 10;
     var len = (text||"").length;
-    /* Si question courte/simple ET Groq dispo → préférer Groq (gratuit Llama 3.3 70B) */
-    if(mode === "plan" && hasGroq && len < 200){
+    var anthrQuotaErrTs = +lg("ax_last_quota_err_ts",0);
+    var anthrRecentlyKO = anthrQuotaErrTs && (Date.now() - anthrQuotaErrTs) < 3600000;
+    var groqRecentlyKO = +lg("ax_groq_last_fail_ts",0) && (Date.now() - +lg("ax_groq_last_fail_ts",0)) < 600000;
+    /* Anthropic OK + dispo → Anthropic primary (par defaut) */
+    if(hasAnth && !anthrRecentlyKO){
+      window._axRequestedProvider = null;
+      window._axRequestedTier = mode === "plan" ? "fast" : "deep";
+    }
+    /* Anthropic KO recemment ET Groq OK → Groq fallback */
+    else if(hasGroq && !groqRecentlyKO && len < 200){
       window._axRequestedProvider = "groq";
       window._axRequestedTier = "light";
     }
@@ -9543,6 +9552,8 @@ function _callGroqAPI(sysPrompt,msgs,depth){
       clearTimeout(_toG);K.isStreaming=false;
       if(typeof axSetStreamState==="function")axSetStreamState("idle","");
       var msg=String(e&&e.message||e).slice(0,150);
+      /* v12.428 - Track Groq fail ts pour eviter re-routing pendant 10min */
+      try{ ls("ax_groq_last_fail_ts", Date.now()); }catch(_e){}
       /* v12.426 - FAILOVER AUTO Groq -> Anthropic/OpenRouter/Gemini si dispo (Kevin: "il reste bloque sur Groq, doit passer Claude") */
       try{
         var anthKey=lg("ax_api_key","");
