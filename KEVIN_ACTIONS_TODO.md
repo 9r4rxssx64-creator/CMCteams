@@ -1,7 +1,107 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-> Mis à jour **2026-04-28 après-midi** (Apex **v12.447** + CMCteams **v9.563**)
-> Session : v12.402 → v12.447 + CMCteams v9.560 → v9.563 + audit externe Stripe-grade indépendant
+> 🛑 **STOP SESSION 2026-04-29 (forfait Kevin épuisé)** — Apex **v12.450** poussée
+> Session précédente : v12.402 → v12.450 + CMCteams v9.560 → v9.563 + audit externe Stripe-grade
+
+---
+
+## 🔁 REPRISE SESSION (Jeudi quand forfait Kevin reprend)
+
+**Ordre exact où je m'arrête :**
+
+### ✅ Fait dans cette session (poussé sur `claude/fix-apex-ai-bugs-adHfF`)
+- **v12.449** : `axNeedsAttention(opts)` central — modal d'intervention ponctuelle. Pas d'indicateur permanent. Quand action requise → modal pop up → Kevin agit → modal close → tout reprend en automatique en arrière-plan. Dedup id 24h, queue FIFO si plusieurs.
+- **v12.449** : `axCheckPendingPRsForAttention()` poll GitHub PRs label `apex-auto` toutes les 30 min, déclenche modal si > 0 avec bouton "Merger toutes" (squash + throttle 800ms).
+- **v12.450** : `AX_AUTO_APPROVE_WHITELIST = [export_data, beta_features, biometric_register, share_account]` — auto-approuvé pour Laurence/preconfigured users (notify Kevin + audit log mais pas blocant). Reste validate strict : erase_account, change_email, change_password, change_pin, purchase_above_50, delete_history, new_device_setup, api_key_change.
+- **v12.450** : `axMonitorSubscriptions()` cron 6h — check quota Anthropic + presence failover (Groq/Gemini) + validations Laurence pending + storage > 80%. Si seuil critique → modal pop-up unique avec actions 1-clic recovery.
+- **`LETTRE_ANTHROPIC_DEBLOCAGE.md`** : 3 versions email/tweet/Discord pour demande déblocage forfait (poussée commit 5f8ae77).
+
+### 🚧 Préparé mais NON poussé (script prêt à appliquer)
+- **v12.451** : script `/tmp/apply_v12_451.py` complet, **NON exécuté**. Contenu :
+  - `axWhatsAppLink(phone, msg)` — génère `wa.me/<phone>?text=<msg>`
+  - `axWhatsAppSend(phone, msg)` — ouvre WhatsApp natif iOS
+  - `axWhatsAppOtpRequest(phone, name)` — code 6 digits TTL 10 min, ouvre WhatsApp Kevin avec message à transférer client
+  - `axWhatsAppOtpVerify(phone, code)` — valide code, max 5 attempts
+  - `axServiceClientAuto(question, phone, name)` — Apex IA répond, si confidence ≥ 0.85 propose envoi via WhatsApp Kevin avec axNeedsAttention modal
+  - Stockage : `ax_whatsapp_otps` (map per-phone), `ax_client_history_<phone>` per-client, `ax_kevin_whatsapp_phone` config
+  - Cleanup OTPs expirés auto
+
+### 📋 Nouvelles directives Kevin reçues JUSTE AVANT arrêt forfait (à intégrer)
+
+**Directive 1 — UX épurée mais pas tout retiré :**
+> *"quand je te dis de tout enlever, tu gardes quand même un peu mes demandes. Donc si tu veux déplacer les visuels dans une section où j'aurai tout qui se concerne les paramètres et caetera, oui pourquoi pas... Et dans ma partie paramètres ou statut des choses, me mets toujours en priorité les visuels de des choses importantes les actions principales que j'ai besoin de faire le plus souvent. Par exemple l'audit général poussé renforcé détaillé... me le mets en un bouton, en un seul bouton."*
+
+→ **À faire jeudi** : créer **vAdminCenter** (page paramètres centralisée) avec, en TOP priorité : bouton unique "🔍 Audit général expert" qui lance le `axTotalAudit` complet, render rapport HTML modal.
+
+**Directive 2 — Pattern drill-down clic :**
+> *"Quand je clique sur une fonction, une information, je veux apercevoir, aller dans l'information... je rentre dans les dossiers, sous-dossiers, et caetera, pour voir l'information et aller jusqu'au bout. Chaque fois que je clique, j'atterris dedans. Si je ne touche rien, elle disparaît. Je clique fermer, elle disparaît."*
+
+→ **À faire jeudi** : helper `axDrillIntoModal(content, title)` réutilisable. Tout chiffre/label affiché → cliquable → modal drill-down qui peut elle-même contenir des items cliquables (récursif). Modal auto-close après inactivité 30s OU clic extérieur OU bouton Fermer.
+
+**Directive 3 — WhatsApp pour validation clients (OTP) :**
+> *"Il faut que WhatsApp serve aussi à la validation des clients. La validation, ça fait par le numéro de téléphone, par mon WhatsApp en automatique, tout automatique. Avec un système de code... vérifie ce qui se fait pour validation inscription WhatsApp et tu fais la même chose."*
+
+→ **Codé v12.451** (`/tmp/apply_v12_451.py` prêt, à appliquer + tester).
+
+**Directive 4 — Mode lite Laurence adapté :**
+> *"Pour luxe de Laurence, tu gardes en tête ce que je t'ai dit, mais tu adaptes en A les gens au maximum etc."*
+
+→ **À faire jeudi** : confirmer mode lite vChatLite strict pour Laurence (pas de menus admin, sidebar projets seulement, comme Claude.ai). Auto-validations whitelist v12.450 déjà en place.
+
+**Directive 5 — Scaling sans dépendance :**
+> *"L'application doit être à niveau. Et n'ait besoin de rien rajouter de plus, de codage, de d'abonnement, de choses comme ça. Si demain engouement clients → je ferai les démarches juridiques."*
+
+→ **À faire jeudi** : `STACK_AUTONOMOUS.md` (inventaire stack gratuit suffisant 1000 clients), `CGU_PRO.md` + `CONTRAT_CLIENT.md` + `MENTIONS_LEGALES.md` templates legal-ready.
+
+### 🎯 Ordre exact reprise (mots-clés Kevin "reprends" / "go" / "100/100")
+
+1. **Appliquer v12.451** : `python3 /tmp/apply_v12_451.py` puis test syntax + commit + push
+2. **v12.452** : vAdminCenter centralisé + bouton unique "Audit général expert" en TOP
+3. **v12.453** : helper `axDrillIntoModal` + propagation pattern drill-down sur stats CMCteams + Apex
+4. **v12.454** : `STACK_AUTONOMOUS.md` + templates legal docs
+5. **Phase bugs** : 30+ bugs documentés section ci-dessous (login bulles, photo album crash, doublons UI, parser cadres CMCteams pair-programming)
+
+### Plan v12.452 détaillé (à coder jeudi)
+
+```
+vAdminCenter() :
+  - TOP CARD : bouton géant "🔍 Audit général expert"
+    onclick → axTotalAudit() complet 9 sections
+    → render rapport HTML modal drill-down
+    → si erreurs → bouton "Tout fixer" auto
+  - Section "Actions fréquentes" :
+    - Voir PRs en attente (count badge)
+    - Validations Laurence pending (count badge)
+    - Backup maintenant
+    - Vider cache / refresh PWA
+    - Tester failover IA
+  - Section "Paramètres" (drill-down cards) :
+    - Coffre clés API (drill → vVault)
+    - Permissions Laurence (drill → vPermissions)
+    - Comptes liés (drill → vAccountsBilling)
+    - WhatsApp Kevin config (drill → input ax_kevin_whatsapp_phone)
+    - Sentinelles (drill → vSentinelles)
+    - Logs / audit / handoff (drill → vAdminWorklog)
+  - Section "Système" (info live) :
+    - Version + dernière maj
+    - Stockage Ko / 5120 Ko + bouton clean
+    - Score audit dernier
+```
+
+### Plan v12.453 détaillé (drill-down)
+
+```js
+function axDrillIntoModal(opts){
+  /* opts = {title, contentFn, items:[{label,value,onClick}], closeOnIdle:30000} */
+  /* Crée modal full-screen, contenu cliquable, auto-close idle */
+}
+// Propagation :
+// - vAdminCenter cards
+// - CMCteams stats (cmcShowStatDetail v9.563 → ré-utilisé)
+// - Tout chiffre stats Apex → drill modal
+```
+
+---
 
 ## 🐛 NOUVEAUX BUGS SIGNALÉS 2026-04-28 (JEUDI à fixer)
 
