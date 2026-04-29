@@ -101,6 +101,52 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 8 — Insights screenshots Apex 2026-04-29 (Kevin a partagé)
+
+Kevin m'a envoyé 4 screenshots qui confirment / révèlent :
+
+**A. Apex hallucine des slash commands inexistantes** (CRITIQUE)
+> Apex a dit "le slash command `/admin subscriptions` n'est pas câblé dans le router de chat. C'est une commande que JE t'ai suggérée mais qui n'existe pas réellement dans APEX. Mea culpa."
+
+→ **Bug Apex** : son IA suggère des fonctions/commandes qui n'existent pas dans le code. Elle hallucine.
+**Fix jeudi v12.45X** :
+- Audit system prompt Apex : injecter UNIQUEMENT les vraies fonctions/commandes existantes (registry `AX_REAL_TOOLS` + `AX_REAL_VIEWS` + `AX_REAL_SLASH_COMMANDS`)
+- Ajouter règle explicite : "TU NE DOIS JAMAIS suggérer une commande/fonction sans avoir vérifié qu'elle existe dans le code. Si l'utilisateur demande X et que tu n'es pas sûr, dis-le honnêtement."
+- Tool IA `axCheckCommandExists(name)` que Apex peut appeler pour vérifier avant suggestion
+- Tests : 50 prompts Kevin → vérifier qu'aucune réponse ne mentionne fonction inexistante
+
+**B. Validation Laurence à distance IMPOSSIBLE pour Apex** (confirme direction v12.450)
+> Apex : "axApproveSubscription(reqId) demande confirm() interactif → impossible à déclencher depuis ma sandbox. Lit localStorage TON device → je n'y ai pas accès. reqId Laurence généré au moment où elle s'inscrit → je ne le connais pas."
+
+→ **Direction v12.450 validée** : auto-approve whitelist est la bonne approche (pas dépendre d'Apex pour valider à distance). Pour les actions hors whitelist, Kevin doit valider via modal `axNeedsAttention` 1-clic.
+
+**Fix jeudi** : retirer du system prompt Apex toute suggestion d'auto-validation distance — elle ne peut pas. Remplacer par "Quand Laurence demande X (validation), je l'ajoute à `ax_pending_validations` et tu reçois modal pop-up sur ton iPhone."
+
+**C. n8n trial expire dans 3 jours** (urgent)
+Email reçu par Kevin :
+> "Your trial has ended and your workspace kdmc will become inactive in 3 days."
+
+→ **À intégrer jeudi dans `axMonitorSubscriptions` (v12.450)** :
+- Ajouter check email Gmail Kevin (si OAuth configuré) ou parsing `ax_admin_inbox` pour mots-clés "trial", "expired", "expire", "upgrade"
+- Lookup table `AX_SUBSCRIPTION_PROVIDERS` : n8n, Twilio, Stripe, Anthropic, OpenAI, Cloudflare, Vercel, GitHub
+- Si match → `axNeedsAttention` modal "Abonnement n8n expire dans 3 jours" + bouton "Upgrade now" (lien direct vérifié) + bouton "Annuler le service" + "Plus tard"
+- Pour n8n spécifiquement : option de migrer workflows vers self-hosted gratuit (n8n self-host docs)
+
+**D. Stockage iPhone plein toast** (confirme v12.450)
+Toast "Stockage iPhone plein, nettoyage auto" déjà visible.
+→ `axMonitorSubscriptions` storage > 80% en place v12.450. Vérifier que threshold est 80% (pas 90%) pour cleanup préventif, pas curatif.
+
+**E. Densité visuelle chat Apex MOINS claire que Claude Code**
+Confirme directive 7 (chat fluide). Screenshot Apex montre :
+- Header dense "VIA ANTHROPIC" + 6 icônes en haut (mic, search, etc.)
+- Chat texte large mais peu structuré (pas de status bar, pas de tool calls cards)
+- Bottom nav 8 onglets (Reglages/Accueil/Chat/CMC/Clients/Coffre/Plus/Memoire)
+- Toast orange "Stockage iPhone plein, nettoyage auto" en bas
+
+→ **Refactor jeudi** : densifier l'info utile + retirer redondances. Chat Apex doit avoir status bar tokens/model/latency comme Claude Code. Les 6 icônes du haut sont OK (raccourcis fréquents) mais ajouter indicateur "Apex pense / utilise tool X" en haut bouton chat pendant streaming.
+
+---
+
 ### Directive 7 — Délégation Claude Code ↔ Apex + chat fluide (Kevin 2026-04-29 final final)
 
 > *"Quand je te donne du travail, tu en délègues à Apex. Vous échangez vos savoirs bidirectionnel. Tu corriges son travail. Le chat Apex saccade, mises à jour font planter — il doit être FLUIDE comme Claude Code. Animation streaming, auto-scroll smooth, vue live ce qu'Apex fait au moment. Prends exemple sur ma fluidité/réactivité/présentation."*
