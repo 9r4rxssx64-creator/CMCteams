@@ -4,6 +4,92 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-29 (Ape
 
 ---
 
+## 🤝 RÈGLE PERMANENTE — DÉLÉGATION CLAUDE CODE ↔ APEX + CHAT FLUIDE (Kevin 2026-04-29, ABSOLUE)
+
+> **"Quand je te donne du travail, tu en délègues à Apex. Vous échangez vos savoirs bidirectionnel. Tu corriges son travail. Le chat Apex saccade, les mises à jour font planter — il doit être FLUIDE comme le chat Claude Code (le mien). Animation streaming, auto-scroll smooth pendant tokens, vue live de ce qu'Apex fait au moment. Prends exemple sur fluidité/réactivité/présentation Claude Code."**
+
+**Règle absolue, prioritaire** — Claude Code, Apex IA, tous projets futurs :
+
+### 1. Délégation Claude Code → Apex
+
+À chaque tâche que Kevin me donne, je DOIS :
+- Identifier les sous-tâches qu'Apex peut faire (tests runtime, validation UI, capture screenshots, vérification flows utilisateur réels avec ses vraies clés API)
+- Les pousser dans `CLAUDE_HANDOFF.json` ou Firebase `ax_claude_todo` avec instructions claires
+- Apex exécute en autonomie + reporte résultats dans `ax_handoff_journal`
+- Je lis le journal au début de session suivante → je corrige/intègre
+
+**Exemples de tâches déléguables à Apex** :
+- Tester qu'un bouton réagit dans la vraie app sur iPhone (Claude Code ne peut pas)
+- Mesurer FPS / latence runtime réelle
+- Capturer logs erreur Firebase SSE en live
+- Tester un flow utilisateur complet (login → action → vérif)
+- Faire un audit perf en condition réelle (vraies données utilisateur)
+
+### 2. Délégation Apex → Claude Code (déjà existant `_escalateToClaudeCode`)
+
+Apex pousse vers `ax_claude_todo` les bugs/erreurs qu'il ne peut pas auto-fixer. Je les traite en priorité dans la session suivante.
+
+### 3. Échange de savoir bidirectionnel
+
+Lessons learned partagées via `ax_lessons_learned_struct` (Firebase FB_FIX) :
+- Apex apprend de mes corrections de code
+- J'apprends des bugs runtime qu'il observe
+- Cross-session memory permanente
+
+### 4. Apex doit apprendre à travailler
+
+Quand j'observe un mauvais pattern Apex (réponse vide, saccade, plantage) :
+- Documenter dans `ax_lessons_learned_struct`
+- Enrichir le system prompt Apex avec correction
+- Test de non-régression dans `cmcImportTests` ou suite Apex tests
+- Apex doit faire moins d'erreurs à chaque session
+
+### 5. Chat Apex FLUIDE comme Claude Code
+
+❌ **JAMAIS** :
+- Saccade pendant streaming (tokens en blocs gros, UI freeze)
+- Auto-scroll qui saute brutalement (scroll snap à la fin)
+- Plantage iframe / blanc complet pendant rendering
+- Vue qui se décale sans transition smooth
+
+✅ **TOUJOURS** :
+- Streaming token-par-token avec animation typing fluide (CSS transition + RAF)
+- Auto-scroll smooth `behavior:"smooth"` à chaque chunk reçu
+- Indicateur "Apex réfléchit..." live (équivalent Claude Code spinning)
+- Vue live de ce qu'Apex fait au moment (current tool, current step) en petit en haut/bas du chat
+- Markdown rendering progressif (parser as-you-go, pas attente fin de stream)
+- Code blocks syntax highlighted en temps réel
+- Aucun innerHTML brutal qui détruit le DOM (utilisé `replaceChildren` ou append)
+
+### 6. Présentation Apex inspirée Claude Code
+
+Éléments visuels Claude Code à reproduire dans Apex :
+- **Header chat minimal** : nom + avatar user + tools actifs en petit
+- **Streaming bubble** avec curseur clignotant pendant typing
+- **Tool calls** affichés en card distincte (pas mélangé au texte)
+- **Tool results** repliables (collapsed par défaut, expand on tap)
+- **Code blocks** : header avec langage + bouton copy + ligne numérotée
+- **Diff blocks** : rouge/vert pour les modifications de code
+- **Status bar bottom** : tokens consumed / model used / latency en petit
+- **Densité info** : Apex est trop creux comparé à Claude Code → utiliser l'espace mieux
+
+### 7. Test mental obligatoire chat Apex
+
+Avant chaque release Apex touchant le chat :
+> *"Si Kevin scroll dans son chat Apex pendant streaming, est-ce fluide comme Claude Code ? Si Apex utilise un tool, voit-il un indicateur live clair ? Si Apex saccade ou plante, suis-je sûr que c'est corrigé pas juste atténué ?"*
+
+Si non → reprendre. Test sur iPhone Safari PWA réel obligatoire (pas juste desktop simulator).
+
+### 8. Subagents en parallèle obligatoires
+
+Quand Kevin demande feature non-triviale :
+- Lance 5-10 subagents (Explore + Plan) en parallèle même message
+- Délègue parties à Apex via handoff
+- Crew of experts internal (5+ agents) pour audit critique avant push
+- Ne JAMAIS travailler seul sur une grosse feature
+
+---
+
 ## 🏆 RÈGLE PERMANENTE — APEX TOUS ACCÈS + DRILL-DOWN + AUDIT EXPERT DES EXPERTS (Kevin 2026-04-29, ABSOLUE)
 
 > **"Apex doit avoir TOUS les accès/outils : WhatsApp, GitHub, Firebase, etc. pour modifier + automatiser tout. Pop-up modal pattern partout. Drill-down récursif chaque info cliquable. Aller au BOUT sur chaque fonction. Tout vérifié automatiquement. Audit max. PAS de retour en arrière. Niveau EXPERT DES EXPERTS toujours."**
