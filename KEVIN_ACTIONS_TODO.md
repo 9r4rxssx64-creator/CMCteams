@@ -101,6 +101,109 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 10 — Swipe gestures + drill-down contextuel partout (Kevin 2026-04-29)
+
+> *"Chaque fois je dois balayer l'écran pour changer de vue, à droite ou à gauche. Et tu vois par exemple quand tu vois une commande exécutée, un fichier modifié, plus clair dans les écritures, quand je clique dessus j'ai le détail."*
+
+**Comportement Claude Code à reproduire dans Apex :**
+
+**A. Swipe gauche/droite pour navigation**
+- Swipe droite (depuis bord gauche) → revenir vue précédente (back gesture iOS standard)
+- Swipe gauche (depuis bord droit) → vue suivante / drawer actions
+- Swipe top→bottom sur header → fermer modal / dismiss
+- Swipe bottom→top sur card → expand détail
+- Touchgesture API + `Hammer.js` (lazy CDN) ou implémentation native `touchstart/touchmove/touchend` avec threshold 50px
+
+**Implémentation jeudi v12.45X :**
+```js
+function axInstallSwipeNav(){
+  var startX = 0, startY = 0;
+  document.addEventListener("touchstart", function(e){
+    if(e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    var dx = (e.changedTouches[0].clientX - startX);
+    var dy = (e.changedTouches[0].clientY - startY);
+    if(Math.abs(dx) > 60 && Math.abs(dy) < 40){
+      if(dx > 0 && startX < 30) axNavigateBack(); /* swipe right depuis bord gauche */
+      else if(dx < 0 && startX > window.innerWidth - 30) axNavigateForward();
+    }
+  }, {passive:true});
+}
+```
+
+Avec stack history pour back gesture (`K.viewStack`).
+
+**B. Tout élément exécuté/modifié = card cliquable détail**
+
+Pattern Claude Code : quand l'IA exécute une commande, modifie un fichier, fait un tool call → **affiche une card distincte** dans le chat avec :
+- Icône type (terminal / fichier / web / search / etc.)
+- Label court ("Edit /apex-ai/index.html" / "Bash: npm install" / "WebFetch: ...")
+- Status (running spinner / OK check / error rouge)
+- **Tap → expand détail full-screen** : commande complète, output, diff, stack trace si erreur
+
+**Composants à créer dans Apex jeudi :**
+
+```js
+function axRenderToolCallCard(toolName, params, status, result){
+  /* Card cliquable affichee dans le chat IA */
+  /* Tap → axDrillIntoModal avec :
+     - toolName (ex "axEditFile", "axBashRun", "axWebFetch")
+     - params formattes (json prettyfied)
+     - status (running/ok/err)
+     - result truncated si > 1000 chars + bouton "Voir tout"
+     - timestamp + duree execution */
+}
+
+function axRenderFileEditCard(filepath, oldContent, newContent){
+  /* Card "Modifie filepath" + diff bouton */
+  /* Tap → modal diff git-style rouge/vert + bouton "Annuler la modification" */
+}
+
+function axRenderBashCard(command, output, exitCode){
+  /* Card "$ command" + indicator success/err */
+  /* Tap → modal terminal output complet (pre/code monospace) */
+}
+
+function axRenderWebCard(url, statusCode, snippet){
+  /* Card "WebFetch url" + statut */
+  /* Tap → modal page rendue (iframe sandboxed) ou JSON brut */
+}
+
+function axRenderSearchCard(query, resultsCount){
+  /* Card "Search query" + count */
+  /* Tap → modal liste resultats cliquables */
+}
+```
+
+**Style cards** (inspiré Claude Code) :
+- Background subtil (rgba blanc 4%) bordure gauche colorée selon type
+- Police monospace pour technical content
+- Icône 18px + label + status compact
+- Hover/tap : scale 1.02 + shadow
+- Indicateur unread (point bleu) si nouveau résultat non vu
+
+**C. Drill-down récursif universel**
+
+Toute info affichée dans Apex doit être **cliquable et drill-down** vers détail :
+- Stat "12 employés actifs" → tap → liste 12 employés (cards)
+- Card employé → tap → fiche complète
+- Champ fiche (ex "12 ans expérience") → tap → historique carrière
+- Etc.
+
+Helper unique `axDrillIntoModal(opts)` documenté directive 6 + propagation **partout** où il y a un chiffre/label statique.
+
+**Audit jeudi avant refactor** : grep tous les `<span>` / `<div>` qui affichent un chiffre → vérifier qu'ils ont `onclick` drill-down. Sinon → ajouter.
+
+**Test mental Kevin avant push** :
+> *"Quand Apex exécute un tool, est-ce que je vois une card dans le chat (comme Claude Code) ? Si je tape dessus, ai-je le détail complet ? Si je swipe à droite depuis le bord gauche, est-ce que je reviens à la vue précédente fluide ?"*
+
+Si non aux 3 → reprendre.
+
+---
+
 ### Directive 9 — Référence design Claude Code app (Kevin 2026-04-29 screenshots)
 
 Kevin a partagé screenshots de SON app Claude Code mobile pour qu'Apex s'en inspire :
