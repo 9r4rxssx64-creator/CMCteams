@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.449",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.450",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2028,6 +2028,120 @@ function axCheckPendingPRsForAttention(){
   }catch(_){}
 })();
 
+/* v12.450 - Auto-approve whitelist (Kevin minimum d intervention pour Laurence). */
+var AX_AUTO_APPROVE_WHITELIST = ["export_data","beta_features","biometric_register","share_account"];
+try{var _custWl=lg("ax_auto_approve_whitelist_custom",null);if(Array.isArray(_custWl))AX_AUTO_APPROVE_WHITELIST=_custWl;}catch(_){}
+
+/* v12.450 - axMonitorSubscriptions : check quotas IA + abonnements + alerte modal si critique */
+function axMonitorSubscriptions(){
+  try{
+    if(!K || !K.user || K.user.id !== ADMIN_ID) return;
+    if(typeof axNeedsAttention !== "function") return;
+    var alerts = [];
+
+    /* Check Anthropic quota local (compteur tokens consommes session courante) */
+    try{
+      var anthRem = +lg("ax_anthropic_credit_remaining_eur", -1);
+      if(anthRem >= 0 && anthRem < 5){
+        alerts.push({
+          id: "anthropic_low_"+Math.floor(anthRem),
+          severity: anthRem < 1 ? "critical" : "warn",
+          title: "Credit Anthropic faible : "+anthRem.toFixed(2)+" EUR",
+          body: "Tu as moins de 5 EUR de credit Anthropic. Recharge maintenant pour eviter les coupures.",
+          actions: [
+            {label:"Recharger Anthropic", primary:true, fn:function(){ try{window.open("https://console.anthropic.com/settings/billing","_blank");}catch(_){} }},
+            {label:"Activer failover Groq", fn:function(){
+              try{ ls("ax_failover_chain", ["groq","gemini","anthropic"]); if(typeof toast==="function") toast("Failover groq prioritaire","ok"); }catch(_){}
+            }},
+            {label:"Plus tard", fn:function(){}}
+          ]
+        });
+      }
+    }catch(_){}
+
+    /* Check API key OpenAI/Groq presence (pour failover) */
+    try{
+      var hasGroq = lg("ax_groq_key","").length > 20;
+      var hasGemini = lg("ax_gemini_key","").length > 20;
+      var hasOpenai = lg("ax_openai_key","").length > 20;
+      var hasAnth = lg("ax_api_key","").length > 20 || lg("ax_shared_api_key","").length > 20;
+      if(hasAnth && !hasGroq && !hasGemini){
+        alerts.push({
+          id: "no_failover_keys",
+          severity: "warn",
+          title: "Pas de failover IA configure",
+          body: "Tu n as que la cle Anthropic. Si elle saute, Apex sera bloque. Configure Groq (gratuit illimite) en backup.",
+          dedupHours: 168, /* 1 semaine */
+          actions: [
+            {label:"Configurer Groq (gratuit)", primary:true, fn:function(){ try{window.open("https://console.groq.com/keys","_blank");}catch(_){} try{if(typeof sv==="function")sv("vault");}catch(_){} }},
+            {label:"Plus tard", fn:function(){}}
+          ]
+        });
+      }
+    }catch(_){}
+
+    /* Check pending validations (si Laurence en attente Kevin) */
+    try{
+      var pending = lg("ax_pending_validations", []);
+      if(Array.isArray(pending)){
+        var pend = pending.filter(function(p){return p && p.status === "pending";});
+        if(pend.length > 0){
+          alerts.push({
+            id: "validations_pending_"+pend.length,
+            severity: "info",
+            title: pend.length+" validation(s) Laurence en attente",
+            body: pend.slice(0,3).map(function(p){return p.userName+" demande "+p.action;}).join("\n"),
+            dedupHours: 12,
+            actions: [
+              {label:"Ouvrir admin validations", primary:true, fn:function(){ try{if(typeof sv==="function")sv("admin");}catch(_){} }},
+              {label:"Plus tard", fn:function(){}}
+            ]
+          });
+        }
+      }
+    }catch(_){}
+
+    /* Check stockage > 80% (declenche cleanup) */
+    try{
+      var totalKo = 0;
+      for(var k in localStorage){if(localStorage.hasOwnProperty(k)){totalKo += (localStorage[k]||"").length;}}
+      totalKo = totalKo / 1024;
+      if(totalKo > 4096){ /* > 80% du quota iOS Safari ~5 Mo */
+        alerts.push({
+          id: "storage_high",
+          severity: "warn",
+          title: "Stockage app eleve : "+Math.round(totalKo)+" Ko",
+          body: "Le stockage local est sature (limite iOS ~5 Mo). Lancer un cleanup auto ?",
+          dedupHours: 24,
+          actions: [
+            {label:"Nettoyer maintenant", primary:true, fn:function(){
+              try{ if(typeof axAggressiveCleanup === "function") axAggressiveCleanup(); else if(typeof axEmergencyCleanup === "function") axEmergencyCleanup(); }catch(_){}
+            }},
+            {label:"Plus tard", fn:function(){}}
+          ]
+        });
+      }
+    }catch(_){}
+
+    /* Lance les alertes (axNeedsAttention dedup deja en place) */
+    alerts.forEach(function(a){ try{ axNeedsAttention(a); }catch(_){} });
+  }catch(e){
+    try{console.error("[axMonitorSubscriptions]",e);}catch(_){}
+  }
+}
+
+/* Boot poller : check 30s apres login + toutes les 6h */
+(function(){
+  try{
+    if(window._axMonSubsInstalled) return;
+    window._axMonSubsInstalled = true;
+    setTimeout(function(){
+      try{ axMonitorSubscriptions(); }catch(_){}
+      setInterval(function(){ try{ axMonitorSubscriptions(); }catch(_){} }, 6 * 3600 * 1000);
+    }, 30000);
+  }catch(_){}
+})();
+
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
 /* v12.306 — Vue admin "Mes aliases reconnus" (transparence Kevin) */
@@ -2180,6 +2294,12 @@ function axPermissionCheck(action){
   try{axLogUserActivity(K.user.id,act,lvl);}catch(_){}
   if(lvl==="auto")return{allowed:true,level:"auto"};
   if(lvl==="notify"){try{var n=(K.user.name||K.user.id);axNotifyKevin("Activite info : "+n+" "+act,"Niveau B (info) — aucune action requise. User : "+n+", action : "+act);}catch(_){}return{allowed:true,level:"notify"};}
+  /* v12.450 — Whitelist auto-approve : actions validate non critiques auto-approuvees pour eviter spam Kevin */
+  if(lvl==="validate" && AX_AUTO_APPROVE_WHITELIST.indexOf(act)>=0){
+    try{var n2=(K.user.name||K.user.id);axNotifyKevin("Auto-approuve : "+n2+" "+act,"Action "+act+" auto-approuvee (whitelist v12.450). User : "+n2);}catch(_){}
+    try{if(typeof axSecurityLog==="function")axSecurityLog("validation_auto_approved",act+" by "+K.user.id,K.user.id);}catch(_){}
+    return{allowed:true,level:"validate_auto"};
+  }
   /* validate : push notif + bloque action */
   var requestId="perm_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
   try{axRequestKevinValidation(requestId,K.user.id,K.user.name||K.user.id,act);}catch(_){}
