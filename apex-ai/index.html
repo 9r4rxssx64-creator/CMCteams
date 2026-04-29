@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.448",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.449",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -1895,6 +1895,139 @@ function axGithubCreateBranch(branchName){var token=lg("ax_github_token","");if(
 function axGithubCreatePR(branchName,title,body){var token=lg("ax_github_token","");if(!token)return Promise.reject(new Error("Token manquant"));var repo="9r4rxssx64-creator/cmcteams";return fetch("https://api.github.com/repos/"+repo+"/pulls",{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify({title:title,body:body,head:branchName,base:"main"})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("PR HTTP "+r.status+": "+t.slice(0,200));});return r.json();}).then(function(d){return{ok:true,number:d.number,url:d.html_url};});}
 
 /** Workflow safe : Apex propose un changement code via PR. Validation guards stricts. */
+/* v12.449 - axNeedsAttention central : modal d intervention ponctuelle.
+   Kevin n a PAS d indicateur permanent. Quand action requise, modal s ouvre,
+   Kevin agit, modal se ferme, tout reprend en automatique en arriere plan. */
+
+window._axNeedsAttentionQueue = window._axNeedsAttentionQueue || [];
+window._axNeedsAttentionShown = window._axNeedsAttentionShown || {};
+
+function axNeedsAttention(opts){
+  /* opts = {id, severity:"critical"|"warn"|"info", title, body, actions:[{label,fn,primary}], dedupHours:24} */
+  try{
+    if(!opts || !opts.id) return false;
+    if(!K || !K.user || K.user.id !== ADMIN_ID) return false;
+    /* Dedup : si meme id deja affiche dans les X dernieres heures, skip */
+    var dedupMs = (opts.dedupHours||24) * 3600 * 1000;
+    var lastShown = window._axNeedsAttentionShown[opts.id] || 0;
+    if(Date.now() - lastShown < dedupMs) return false;
+    /* Si modal deja ouvert, queue */
+    var existing = document.getElementById("ax-needs-attention-modal");
+    if(existing){
+      window._axNeedsAttentionQueue.push(opts);
+      return true;
+    }
+    window._axNeedsAttentionShown[opts.id] = Date.now();
+    var sevColor = opts.severity === "critical" ? "#ff5858" : (opts.severity === "warn" ? "#ffaa3a" : "#5aa8ff");
+    var sevIcon = opts.severity === "critical" ? "!" : (opts.severity === "warn" ? "?" : "i");
+    var ov = document.createElement("div");
+    ov.id = "ax-needs-attention-modal";
+    ov.setAttribute("role","dialog");
+    ov.setAttribute("aria-modal","true");
+    ov.style.cssText = "position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);animation:axFadeIn .25s";
+    var card = document.createElement("div");
+    card.style.cssText = "background:linear-gradient(135deg,rgba(22,28,56,.98),rgba(16,22,48,.96));border:2px solid "+sevColor+";border-radius:16px;padding:20px;max-width:420px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.6);color:#fff";
+    var html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:'+sevColor+';color:#000;font-weight:900;font-size:18px;flex-shrink:0">'+sevIcon+'</span><strong style="font-size:16px;color:'+sevColor+'">'+esc(opts.title||"Intervention requise")+'</strong></div>';
+    if(opts.body) html += '<div style="font-size:14px;line-height:1.5;color:#cfd0e0;margin-bottom:16px">'+esc(opts.body)+'</div>';
+    html += '<div id="ax-needs-attention-actions" style="display:flex;flex-direction:column;gap:8px"></div>';
+    card.innerHTML = html;
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    var actionsDiv = card.querySelector("#ax-needs-attention-actions");
+    var actions = opts.actions || [{label:"OK", fn:function(){}, primary:true}];
+    actions.forEach(function(act){
+      var btn = document.createElement("button");
+      btn.className = "ax-btn" + (act.primary?" ax-btn-primary":"");
+      btn.style.cssText = "min-height:48px;font-weight:600;border-radius:10px;border:1px solid "+(act.primary?sevColor:"rgba(255,255,255,.18)")+";background:"+(act.primary?sevColor:"rgba(255,255,255,.06)")+";color:"+(act.primary?"#000":"#fff")+";cursor:pointer;padding:10px 16px";
+      btn.textContent = act.label;
+      btn.onclick = function(){
+        try{ if(typeof act.fn === "function") act.fn(); }catch(_e){}
+        ov.remove();
+        /* Lance le suivant en queue, si present */
+        setTimeout(function(){
+          if(window._axNeedsAttentionQueue.length){
+            var next = window._axNeedsAttentionQueue.shift();
+            delete window._axNeedsAttentionShown[next.id]; /* rejouer dedup */
+            axNeedsAttention(next);
+          }
+        }, 300);
+      };
+      actionsDiv.appendChild(btn);
+    });
+    return true;
+  }catch(e){
+    try{console.error("[axNeedsAttention]",e);}catch(_){}
+    return false;
+  }
+}
+
+function axCheckPendingPRsForAttention(){
+  /* Verifie PRs Apex auto-fix pending et declenche modal si > 0 */
+  try{
+    if(!K || !K.user || K.user.id !== ADMIN_ID) return;
+    var token = lg("ax_github_token","");
+    try{var p=JSON.parse(token);if(typeof p==="string")token=p;}catch(_e){}
+    if(!token || token.length < 20) return;
+    fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/pulls?state=open&per_page=100",{
+      headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json"}
+    }).then(function(r){return r.ok?r.json():[];}).then(function(d){
+      var prs = (d||[]).filter(function(pr){
+        var labels = (pr.labels||[]).map(function(l){return l.name;});
+        return labels.indexOf("apex-auto") >= 0 || (pr.title||"").indexOf("Apex auto-fix")===0;
+      });
+      try{ ls("ax_pending_prs_count", prs.length); }catch(_e){}
+      if(prs.length === 0) return;
+      var prList = prs.slice(0,3).map(function(pr){return "#"+pr.number+" "+(pr.title||"").slice(0,40);}).join("\n");
+      axNeedsAttention({
+        id: "pr_pending_"+prs.length,
+        severity: prs.length >= 3 ? "warn" : "info",
+        title: prs.length+" PR Apex en attente",
+        body: prList + (prs.length>3?"\n... et "+(prs.length-3)+" autres":"") + "\n\nMerger toutes maintenant ?",
+        dedupHours: 6,
+        actions: [
+          {label: "Merger toutes ("+prs.length+")", primary:true, fn:function(){
+            if(typeof toast==="function") toast("Merge en cours...","info",{duration:3000});
+            var merged = 0, errs = 0, total = prs.length;
+            function mergeNext(i){
+              if(i >= prs.length){
+                if(typeof toast==="function") toast(merged+"/"+total+" PR mergees"+(errs?" ("+errs+" erreurs)":""),"ok",{force:true,duration:4000});
+                return;
+              }
+              fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/pulls/"+prs[i].number+"/merge",{
+                method:"PUT",
+                headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+                body:JSON.stringify({merge_method:"squash"})
+              }).then(function(r){return r.json();}).then(function(d){
+                if(d && d.merged) merged++; else errs++;
+                setTimeout(function(){mergeNext(i+1);}, 800); /* throttle pour eviter rate limit */
+              }).catch(function(){errs++;mergeNext(i+1);});
+            }
+            mergeNext(0);
+          }},
+          {label: "Voir sur GitHub", fn:function(){
+            try{ window.open("https://github.com/9r4rxssx64-creator/cmcteams/pulls","_blank"); }catch(_){}
+          }},
+          {label: "Plus tard", fn:function(){}}
+        ]
+      });
+    }).catch(function(){});
+  }catch(_e){}
+}
+
+/* Boot poller : check 8s apres login + toutes les 30 min */
+(function(){
+  try{
+    if(window._axNeedsAttentionPollerInstalled) return;
+    window._axNeedsAttentionPollerInstalled = true;
+    setTimeout(function(){
+      try{ if(K && K.user && K.user.id === ADMIN_ID) axCheckPendingPRsForAttention(); }catch(_){}
+      setInterval(function(){
+        try{ if(K && K.user && K.user.id === ADMIN_ID) axCheckPendingPRsForAttention(); }catch(_){}
+      }, 30 * 60 * 1000);
+    }, 12000);
+  }catch(_){}
+})();
+
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
 /* v12.306 — Vue admin "Mes aliases reconnus" (transparence Kevin) */
