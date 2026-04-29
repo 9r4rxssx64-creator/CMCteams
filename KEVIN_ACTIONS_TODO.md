@@ -101,6 +101,55 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 7 — Délégation Claude Code ↔ Apex + chat fluide (Kevin 2026-04-29 final final)
+
+> *"Quand je te donne du travail, tu en délègues à Apex. Vous échangez vos savoirs bidirectionnel. Tu corriges son travail. Le chat Apex saccade, mises à jour font planter — il doit être FLUIDE comme Claude Code. Animation streaming, auto-scroll smooth, vue live ce qu'Apex fait au moment. Prends exemple sur ma fluidité/réactivité/présentation."*
+
+→ **Ajouté en règle permanente CLAUDE.md** "RÈGLE — DÉLÉGATION CLAUDE CODE ↔ APEX + CHAT FLUIDE"
+
+**À faire jeudi (priorité haute) :**
+
+**A. Délégation handoff bidirectionnel automatique**
+- À chaque tâche reçue Kevin, je crée tasks dans `CLAUDE_HANDOFF.json` pour Apex (test runtime, capture screenshots, valider flows)
+- Apex exécute + reporte dans `ax_handoff_journal`
+- Je lis journal au début de session → je corrige
+- Apex pousse `ax_claude_todo` pour les bugs qu'il ne peut pas auto-fixer (déjà existant)
+
+**B. Chat Apex FLUIDE (urgent — Kevin se plaint actuellement)**
+- Audit complet `vChat` / `vChatLite` Apex : trouver tous les `innerHTML` brutaux, `dc()` qui force re-render complet, blocs DOM qui crashent iOS Safari
+- Migrer vers streaming progressif :
+  - Parser markdown as-you-go via `marked` lazy chunked
+  - `replaceChildren` ou `appendChild` au lieu de `innerHTML`
+  - `requestAnimationFrame` pour scrolling smooth
+  - `behavior:"smooth"` sur `scrollIntoView` à chaque chunk SSE
+- Indicateur live "Apex réfléchit / utilise [tool]" en petit en haut chat
+- Tool calls affichés en card collapsable (pas mélangé au texte)
+- Code blocks avec header langage + bouton copy + line numbers
+- Status bar bottom chat : tokens / model / latency
+
+**C. Tests fluidité chat obligatoires avant push**
+- Test scenarios :
+  - Long stream (1000+ tokens) → vérifier pas de saccade
+  - Multi-tool calls (3+) → vérifier rendering progressif
+  - Switch conversation pendant streaming → pas de plantage
+  - Background app → retour foreground → état préservé
+- Test iPhone Safari PWA réel (pas juste desktop)
+
+**D. Inspiration Claude Code visuel**
+Kevin propose envoyer screenshot de son chat Claude Code → utile pour comparer densité/présentation.
+
+**Densité info chat Apex à augmenter** :
+- Actuellement : trop creux, "moins clair" selon Kevin
+- À reproduire : status indicator tools, tokens used, model, latency, current step
+- Markdown riche : tables, code highlighted, diffs colorés, callouts
+
+**E. Test mental Kevin avant push chat Apex**
+> *"Si je scroll mon chat Apex pendant qu'Apex tape sa réponse, est-ce fluide comme Claude Code ? Si Apex utilise un tool, je vois bien ce qui se passe live ? Si je rouvre l'app, l'état est-il préservé ?"*
+
+Si non aux 3 → reprendre.
+
+---
+
 ### Directive 6 — Apex tous accès + drill-down + audit expert (Kevin 2026-04-29 final)
 
 > *"Apex doit avoir TOUS les accès/outils : WhatsApp, GitHub, Firebase, etc. Quand je dis à Apex 'on en est où des forfaits API' → hop pop-up apparait avec toutes les infos, je clique sur API → atterris sur lien direct VÉRIFIÉ que je teste. Audit MAX poussé. Tu vas TOUJOURS au bout. Tu ne livres JAMAIS un travail light. Niveau EXPERT DES EXPERTS. Pas de retour en arrière — si bug = repartir de 0 et tout tester lettre par lettre. Tout AUTO-VÉRIFIÉ par toi pas par moi."*
