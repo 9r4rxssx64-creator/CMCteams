@@ -1,6 +1,125 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-26 (Apex v12.298 / CMC v9.551).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-29 (Apex v12.450 / CMC v9.563).
+
+---
+
+## 🏆 RÈGLE PERMANENTE — APEX TOUS ACCÈS + DRILL-DOWN + AUDIT EXPERT DES EXPERTS (Kevin 2026-04-29, ABSOLUE)
+
+> **"Apex doit avoir TOUS les accès/outils : WhatsApp, GitHub, Firebase, etc. pour modifier + automatiser tout. Pop-up modal pattern partout. Drill-down récursif chaque info cliquable. Aller au BOUT sur chaque fonction. Tout vérifié automatiquement. Audit max. PAS de retour en arrière. Niveau EXPERT DES EXPERTS toujours."**
+
+**Règle absolue, prioritaire sur tout** — Apex, CMCteams, tous projets futurs :
+
+### 1. Apex équipé tous outils + accès
+
+Apex DOIT avoir intégrés et fonctionnels :
+- **GitHub PAT** (`ax_github_token`) : lire/écrire/PR/merge/issues sur le repo
+- **Firebase admin SDK** (FB_FIX whitelist) : modifier toutes données partagées
+- **WhatsApp link/OTP** (`ax_kevin_whatsapp_phone`) : validation clients + service client
+- **Cloudflare Worker** (`ax_proxy_url`, `ax_push_worker_url`) : push notif + bridge API
+- **Anthropic API + failover Groq/Gemini/OpenAI** (multi-key)
+- **Brave/Tavily/DuckDuckGo Search** (web search)
+- **Web Speech API + Web Audio + Web Bluetooth + Web NFC**
+- **navigator.permissions** + tous capteurs (GPS, micro, caméra, notif, BLE, NFC)
+
+Si une feature manque un accès → demander en 1 modal `axNeedsAttention`, Kevin colle la valeur 1× → save persistent FB_FIX (ou FB_LOCAL si secret).
+
+### 2. Pattern pop-up modal pour TOUTE info / action
+
+Quand Kevin demande "on en est où des forfaits API ?" → modal s'ouvre instantanément avec :
+- Liste des API
+- Couleurs/bulles status (vert/orange/rouge)
+- **Chaque ligne cliquable** → drill-down vers détail
+- Sur détail API → bouton "Recharger" → ouvre lien direct **VÉRIFIÉ** (pas de lien mort)
+- Sur "Agent X a détecté Y" → clic → drill-down résultat agent complet
+
+**Pattern réutilisable** : helper `axDrillIntoModal({title, items[]})` où chaque item peut avoir `onClick` qui ouvre une autre modal récursive. Auto-close après inactivité 30s OU clic extérieur.
+
+### 3. Tous les liens VÉRIFIÉS avant affichage
+
+❌ **JAMAIS** afficher un lien sans le tester (HEAD/HTTP 200 dans les 24h dernières).
+✅ Sentinelle `link-validation-watch` quotidienne : test tous les liens dans `AX_OFFICIAL_LINKS` (recharges API, dashboards, supports). Si lien mort → mark `dead:true` + escalade Claude Code pour fix dans la prochaine session.
+
+```js
+var AX_OFFICIAL_LINKS = [
+  {id:"anthropic_billing", url:"https://console.anthropic.com/settings/billing", label:"Recharger Anthropic", lastVerified:0, alive:true},
+  {id:"openai_billing", url:"https://platform.openai.com/account/billing", label:"Recharger OpenAI", ...},
+  {id:"groq_keys", url:"https://console.groq.com/keys", label:"Configurer Groq", ...},
+  {id:"gemini_keys", url:"https://aistudio.google.com/apikey", label:"Configurer Gemini", ...},
+  {id:"cloudflare_workers", url:"https://dash.cloudflare.com/workers", label:"Cloudflare Workers", ...},
+  {id:"github_settings_tokens", url:"https://github.com/settings/tokens", label:"GitHub PAT", ...},
+  // ... 30+ liens
+];
+function axVerifyLink(linkId){ /* HEAD fetch, mark alive/dead, store ts */ }
+```
+
+### 4. Aller au BOUT — pas de travail "light"
+
+Quand Kevin demande une feature, Claude Code DOIT :
+- Lancer **5-10 subagents en parallèle** (Explore + Plan) sur tous les angles
+- Ne JAMAIS se contenter de la version minimum — toujours version expert
+- Si scope énorme → demander de l'aide via subagents même si ça prend 2 jours
+- **Test mental obligatoire** : *"Un expert pro du domaine paiyé 200€/h trouverait-il ce travail acceptable ?"*
+
+Si non → reprendre. Si oui → livrer.
+
+### 5. Tout AUTO-VÉRIFIÉ (Kevin ne doit pas vérifier)
+
+❌ Kevin ne doit PAS avoir à se balader dans l'app pour vérifier que chaque action marche.
+✅ À chaque feature livrée, Claude Code DOIT :
+- Lancer test scenario complet (login → action → resultat → cleanup)
+- Lancer audit cross-feature (impact sur autres modules)
+- Lancer 1 subagent QA externe indépendant
+- Si TOUT vert → push. Sinon → fix avant push.
+
+Sentinelles continues `feature-watch` : 1×/h, simulent les actions principales et alertent si dégradation.
+
+### 6. Audit MAX — toujours le plus poussé
+
+Quand Kevin demande "audit", Claude Code DOIT lancer le plus complet possible :
+- 9 sections minimum (runtime, perf, security, toolbox, GitHub, import, sentinelles, logs, API keys)
+- 5+ subagents en parallèle (Performance, Security, UX, Data, Code Quality)
+- Crew of experts internal : 5+ IA agents qui débattent + tranchent
+- Test mental simulation : 100 scenarios edge case
+- **JAMAIS** un audit "light" : toujours niveau Stripe/Anthropic/OpenAI
+
+Bouton unique "🔍 Audit général expert" dans `vAdminCenter` lance ce flow complet.
+
+### 7. PAS de retour en arrière — modifications sûres
+
+Règle absolue : **chaque modification ne casse RIEN du existant**.
+
+Avant chaque commit :
+- `node --check` sur combined `<script>` blocks SANS séparateur (règle v12.365)
+- 26 tests Apex passent
+- Audit cross-feature : aucune régression dans modules adjacents
+- Diff git lu intégralement
+
+Si un bug est introduit après push → **repartir de 0** :
+- Audit complet (lettre par lettre s'il faut)
+- Tester TOUTES les actions
+- Tous les agents
+- Tous les flows utilisateur
+- Même si ça prend 2 jours
+
+### 8. Niveau EXPERT DES EXPERTS toujours
+
+❌ JAMAIS dire "j'ai fait un travail light" / "je suis désolé" / "ce n'est pas parfait".
+✅ Toujours niveau expert pro freelance senior 200€/h.
+
+Test mental obligatoire avant chaque livraison :
+> *"Un expert mondial du domaine (sécurité, perf, UX, data, AI) trouverait-il ce travail acceptable ?"*
+
+Si non → reprendre jusqu'à oui. Pas de demi-mesure.
+
+### 9. Application universelle
+
+Cette règle s'applique à :
+- Apex (priorité absolue — clients payants méritent niveau Claude.ai/ChatGPT)
+- CMCteams (employés casino méritent même qualité)
+- Tous projets futurs Kevin
+- Mes propres réponses à Kevin
+- Les agents/sentinelles/IA internes
 
 ---
 
