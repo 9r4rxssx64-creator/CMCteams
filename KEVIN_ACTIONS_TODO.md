@@ -15,7 +15,116 @@
 **Fix jeudi** : pair-programming Kevin avec PDF réel pour identifier patterns qui échouent. PUIS modification ciblée parser cadres/inspecteurs.
 **Effort** : 6h runtime debugging
 
-## 🚀 INSTRUCTIONS JEUDI (Kevin reprend forfait)
+## 🚨 BUGS COMPLETS KEVIN 2026-04-28 SOIR (~30 bugs - SESSION JEUDI URGENTE)
+
+### APEX - Bugs critiques signalés par Kevin
+
+#### Page de connexion Apex
+1. ❌ **Bulles credentials visibles en bas de page connexion** → cacher tout fab/widget/banner sur vLogin
+2. ❌ **Page connexion non-scrollable** → ajouter `overflow-y:auto`
+3. ❌ **Carré email vert inutile** dans paramètres admin → retirer
+
+#### Compte Laurence (CRITIQUE - bloquée)
+4. ❌ **Laurence "en attente validation admin"** alors qu'elle est dans PRECONFIGURED_USERS → auto-validation
+5. ❌ **Pas de bouton admin pour valider** Laurence dans Apex → ajouter vAdmin
+6. ❌ **Apex Laurence : rien ne marche** (chat bloqué, IA répond pas, fonctions KO)
+7. ❌ **Laurence a accès aux paramètres admin** (Coffre, agents, sentinelles) → STRICT mode lite (juste chat + sidebar gauche projets comme Claude.ai)
+8. ❌ **Cœurs/amour Laurence trop amateur** → professionnaliser (sobre, élégant)
+
+#### UX/Navigation Apex
+9. ❌ **Doublons paramètres + Coffre** → audit + dédoublonnage systématique
+10. ❌ **Liens validation manquants** dans Apex
+11. ❌ **Manque flèche retour partout** dans toutes les vues
+12. ❌ **Infos cliquables ne mènent nulle part** (statistiques, encadrés, statuts)
+13. ❌ **Vue admin Apex confuse** (mélangée fonctions/info) → réorganiser pro
+14. ❌ **Trop d'infos dans premier écran** → épurer comme Claude.ai (chat + sidebar projets/discussions)
+15. ❌ **Code editor visible** alors que Kevin non-codeur → retirer (auto-géré + voix suffit)
+
+#### Stabilité/Performance Apex
+16. ❌ **Chat saute, remonte, change tout seul** → fix scroll position
+17. ❌ **Albums photos crash écran blanc** (10+ photos collées) → fix upload multi-fichiers + reconnaissance visages/lieux
+18. ❌ **Apex ne peut pas s'auto-modifier** (validation Laurence, ajout outils sandbox/widget vision) → étendre permissions Apex
+19. ❌ **Apex demande Kevin de coder dans console** → contradiction avec autonomie totale
+
+#### Notifications/Forfaits services tiers
+20. ❌ **N8n abonnement gratuit terminé** → notifier + proposer alternative
+21. ❌ **Widget conso temps réel API** (tokens, €) → ajouter
+22. ❌ **Indicateur visuel IA actives** (couleurs pour quelle IA travaille) admin only
+23. ❌ **Présentation/réactivité pas niveau Claude.ai/ChatGPT** → refonte UX pro
+
+### CMCteams - Bugs critiques
+
+#### Import + reconnaissance
+24. ❌ **Toujours problèmes import** (récurrent v9.437→v9.563, banner v9.562 alerte mais ne fixe pas)
+25. ❌ **Sup manquants** parfois après import
+26. ❌ **Pair-programming RUNTIME avec PDF Kevin réel** nécessaire pour identifier patterns qui échouent
+
+#### UX clic-pour-détails
+27. ❌ **Stats cliquables mais ne mènent pas aux détails** : "2 malades", "ceux qui travaillent", "en repos" → clic = listes employés
+28. ❌ **Toutes fonctions à vérifier une par une** par agents indépendants
+29. ❌ **Vue admin CMCteams confuse** (info/fonctions mélangées) → réorganiser pro
+30. ❌ **Publicité CMCteams basique** → pro avec outils
+
+### Demandes générales (toutes apps + futurs projets)
+
+#### Audit unifié
+31. ❌ **UN SEUL bouton "Audit général expert"** dans paramètres admin → lance audit poussé (multi-agents externes par axe) + Apex/Claude corrige + faire vérifier
+32. ❌ **Audit externe expert + ligne par ligne** par outils tiers (SonarCloud, ESLint strict, etc.)
+
+#### Routing IA gratuit prioritaire
+33. ❌ **Privilégier IA gratuites** (Groq, Gemini, OpenRouter free) tant qu'elles peuvent répondre. Quand quota épuisé → enchaîner suivante gratuite. Anthropic seulement si question complexe ou toutes gratuites épuisées
+34. ❌ **Historique général consultable** (mais auto-géré, pas action manuelle)
+35. ❌ **Retour Anthropic obligatoire** : Apex pousse résultat aux IA gratuites pour vérification
+
+#### Outils contextuels (tous projets)
+36. ❌ **Outils contextuels TOP** : musique → meilleure table mixage moderne. Convertisseur → meilleur outil. Toujours outil le plus performant, le plus récent, polyvalent, à la pointe
+37. ❌ **Mise à jour outils continue** → sentinelle vérifie nouveaux outils dispos, propose intégration
+
+#### CGU + sécurité
+38. ❌ **CGU simplifiées "comme entre amis"** mais sécurisées
+39. ❌ **Admin historique chat sur tous comptes** + moteur de recherche
+
+### Demandes futurs (à prévoir mais pas activer)
+
+40. **Forfaits clients** : prévoir Pro €X / Premium €Y / Enterprise €Z (Kevin valide quand on passe public)
+41. **Pubs Apex/CMCteams** : prévoir système (mais Kevin annonce quand activer)
+42. **Multi-utilisateurs** : famille/amis d'abord (test), puis clients (commerce)
+43. **Modèle Apex à dupliquer** pour futurs projets Kevin (note pattern)
+
+---
+
+## 📅 PLAN SESSION JEUDI 100/100 (forfait Kevin reprend)
+
+### Phase 1 — Quick wins (2h)
+- Fix v12.449 : page connexion Apex (cacher fab/banner + scrollable)
+- Fix v12.450 : Laurence auto-validation + retirer paramètres admin chez elle (mode lite strict)
+- Fix v12.451 : retirer carré email vert + bouton "Audit général expert" dans vSettings admin
+- Fix v9.564 : CMCteams stats cliquables (malades/repos/travaillent → listes)
+
+### Phase 2 — UX épuration (3h)
+- Apex Laurence/Client : juste chat + sidebar gauche (projets/discussions) comme Claude.ai
+- Retirer code editor + outils admin chez Laurence
+- Flèche retour partout
+- Dédoublonnage paramètres + Coffre
+
+### Phase 3 — Audit total externe (2h)
+- 5 agents externes parallèles : Security/Perf/UX/Code/Functional (chacun par axe)
+- Note réelle mesurée par axe
+- Top 30 findings priorisés P0/P1/P2
+
+### Phase 4 — Fix runtime CMCteams parser (2h)
+- Pair-programming Kevin avec PDF réel
+- Identifier patterns qui échouent vraiment
+- Fix ciblé + tests anti-régression
+
+### Phase 5 — Stabilité runtime Apex (2h)
+- Chat saute → fix scroll preserve
+- Albums photos crash → fix upload multi-fichiers + Vision API
+- Auto-modification Apex (sandbox eval JS) → permissions étendues
+
+**Total estimé jeudi : 11h focus intense parallélisé. Mots-clés Kevin = "reprends" / "go" / "vas-y 100/100" pour démarrer.**
+
+---
 
 **Mots-clés Kevin** = "**reprends**" / "**go**" / "**vas-y 100/100**" → Claude Code travaille à fond sur les **2 projets simultanément** (Apex + CMCteams) jusqu'à atteindre 100/100 mesuré factuel.
 
