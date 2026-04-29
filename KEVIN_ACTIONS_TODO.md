@@ -101,6 +101,119 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 11 — Référence vue Paramètres Claude app (Kevin 2026-04-29 screenshot)
+
+Kevin a partagé son écran **Paramètres** Claude pour référence design `vAdminCenter` Apex.
+
+**Structure observée (à reproduire) :**
+
+**Header :**
+- Bouton ✕ (gauche) | Titre "Paramètres" (centre) | Bouton ℹ︎ (droite)
+- Email user en haut blurred (privacy)
+
+**Sections groupées par bloc, séparées par fin trait gris :**
+
+**Bloc 1 — Compte**
+- 👤 Profil → chevron
+- 💲 Abonnement → "Forfait Max" + chevron *(NB: Kevin est sur **Max**, pas Max 20x — précision pour plan)*
+- 📈 Utilisation → chevron
+
+**Bloc 2 — Configuration IA**
+- ⚙ Capacités → chevron
+- 🔗 Connecteurs → chevron
+- 👥 Autorisations → chevron
+
+**Bloc 3 — Apparence/UX**
+- 🌙 Apparence → "Système" + chevron up/down (selector)
+- 🌐 Langue de la saisie vocale → "FR" + chevron
+- 🔔 Notifications → chevron
+- 🛡 Confidentialité → chevron
+- 🔗 Liens partagés → chevron
+
+**Bloc 4 — Préférences**
+- 📳 Retour haptique → toggle (bleu ON)
+
+**Bloc 5 — Compte (footer)**
+- ↗ Se déconnecter
+
+**Principes design :**
+
+1. **Icône à gauche** (24px monochrome) + **label** (16px regular) + **valeur/status à droite** (14px gris) + **chevron** ou **toggle**
+2. **Hauteur ligne uniforme** ~56px (touch target iOS 44px+ respecté)
+3. **Séparateurs très subtils** entre sections (1px gris très clair, pas hairline qui sature)
+4. **Pas d'icônes de couleurs criardes** — toutes monochromes alignées
+5. **Status à droite** en gris discret (pas de badges, pas de couleurs)
+6. **Ordre logique** : compte → configuration → apparence → préférences → déconnexion
+
+**À appliquer dans Apex `vAdminCenter` jeudi (v12.452) :**
+
+```js
+function vAdminCenter(){
+  return [
+    /* Header */
+    axRenderHeader({title:"Paramètres", left:{icon:"✕",fn:dc}, right:{icon:"ℹ",fn:axShowAbout}}),
+
+    /* TOP CARD : Audit général expert (Kevin priorité) */
+    axRenderActionCard({
+      icon:"🔍", label:"Audit général expert",
+      desc:"9 sections + 5 agents + crew experts", primary:true,
+      fn: function(){ axTotalAudit().then(axShowAuditReport); }
+    }),
+
+    /* Bloc 1 — Compte */
+    axRenderSettingGroup("Compte", [
+      {icon:"👤", label:"Profil", chevron:true, fn:function(){sv("profile");}},
+      {icon:"💲", label:"Abonnement IA", value:axGetCurrentPlanLabel(), chevron:true, fn:function(){sv("soldesia");}},
+      {icon:"📈", label:"Utilisation", chevron:true, fn:function(){sv("mystats");}}
+    ]),
+
+    /* Bloc 2 — Configuration IA */
+    axRenderSettingGroup("IA & connecteurs", [
+      {icon:"⚙", label:"Capacités", chevron:true, fn:function(){sv("capabilities");}},
+      {icon:"🔗", label:"Connecteurs", chevron:true, fn:function(){sv("connectors");}},
+      {icon:"👥", label:"Permissions Laurence", value:axGetPendingValidationsCount()+" en attente", chevron:true, fn:function(){sv("permissions");}},
+      {icon:"🔑", label:"Coffre clés API", chevron:true, fn:function(){sv("vault");}},
+      {icon:"📱", label:"WhatsApp service client", value:lg("ax_kevin_whatsapp_phone","")?"OK":"Non config", chevron:true, fn:function(){sv("whatsapp_config");}}
+    ]),
+
+    /* Bloc 3 — Apparence / UX */
+    axRenderSettingGroup("Apparence", [
+      {icon:"🌙", label:"Thème", value:lg("ax_theme","Système"), chevron:true, fn:function(){axShowThemePicker();}},
+      {icon:"🌐", label:"Langue", value:(lg("ax_settings",{}).lang||"FR").toUpperCase(), chevron:true, fn:function(){axShowLangPicker();}},
+      {icon:"🔔", label:"Notifications", chevron:true, fn:function(){sv("notifications");}},
+      {icon:"🛡", label:"Confidentialité / RGPD", chevron:true, fn:function(){sv("rgpd");}},
+      {icon:"🎙", label:"Voiceprint", value:lg("ax_voice_print_"+K.user.id)?"Enrôlée":"À faire", chevron:true, fn:function(){sv("voiceenrollment");}}
+    ]),
+
+    /* Bloc 4 — Système (admin only) */
+    axRenderSettingGroup("Système", [
+      {icon:"🔍", label:"Audit & sentinelles", chevron:true, fn:function(){sv("sentinels");}},
+      {icon:"📊", label:"Statut connexion / sync", chevron:true, fn:function(){sv("status");}},
+      {icon:"📁", label:"Mes codes / Backup", chevron:true, fn:function(){sv("storage");}},
+      {icon:"🔄", label:"Service Worker / Update", chevron:true, fn:function(){axCheckUpdate();}},
+      {icon:"📜", label:"Audit log / Lessons", chevron:true, fn:function(){sv("audit");}}
+    ]),
+
+    /* Bloc 5 — Compte (footer) */
+    axRenderSettingGroup("", [
+      {icon:"↗", label:"Se déconnecter", danger:true, fn:doLogout}
+    ])
+  ];
+}
+```
+
+Helpers à créer :
+- `axRenderSettingGroup(title, items[])` : section avec titre optionnel + lignes uniformes 56px
+- `axRenderSettingItem({icon, label, value, chevron, toggle, fn, danger})` : ligne standard avec touch target 56px
+- `axRenderActionCard(opts)` : card primaire mise en avant (audit général TOP)
+
+**Test mental Kevin avant push :**
+> *"Kevin ouvre vAdminCenter → voit-il TOP card Audit général expert ? Voit-il tous ses paramètres en groupes logiques ? Tap chaque ligne = drill-down naturel ? Hauteur lignes uniforme ? Pas de surcharge visuelle ?"*
+
+Si non aux 5 → reprendre.
+
+---
+
 ### Directive 10 — Swipe gestures + drill-down contextuel partout (Kevin 2026-04-29)
 
 > *"Chaque fois je dois balayer l'écran pour changer de vue, à droite ou à gauche. Et tu vois par exemple quand tu vois une commande exécutée, un fichier modifié, plus clair dans les écritures, quand je clique dessus j'ai le détail."*
