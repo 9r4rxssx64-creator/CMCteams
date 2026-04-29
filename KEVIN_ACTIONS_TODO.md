@@ -101,6 +101,65 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 9 — Référence design Claude Code app (Kevin 2026-04-29 screenshots)
+
+Kevin a partagé screenshots de SON app Claude Code mobile pour qu'Apex s'en inspire :
+
+**Interface principale (onglet Code) :**
+- Header minimal : burger menu (gauche) + "Code" (centre) + bouton + orange (droite)
+- Filtres en chips : `Tout 11` / `Action requise 0` / `Prêt pour révision` (counters intégrés)
+- Sections groupées par date : `Aujourd'hui` / `Hier` / `La semaine dernière`
+- **Cards** : icône status (16x16) à gauche + titre tronqué + sous-titre repo (cloud icon + slug)
+- Indicateur unread : **petit point bleu** sur l'icône status (subtile)
+- Pas de couleurs criardes, palette beige/blanc/gris doux + accent orange (bouton +)
+
+**Sidebar Claude (menu burger) :**
+- Header "Claude" en serif gros
+- 5 entrées primaires icônes + texte : Discussions / Projets / Artéfacts / **Code** (active highlighted) / Dispatch
+- Section `Récents` : derniers items texte simple (titre tronqué, pas d'icône)
+- Footer user identité : avatar initiales (KD) + nom (`Kevin Desarzens`) + bouton + (new)
+
+**Principes design à reproduire dans Apex :**
+
+1. **Densité + hiérarchie sans surcharge** — beaucoup d'info visible mais aérée par sections datées
+2. **Status indicators discrets** : point bleu unread, icônes status 16px (pas badges criards)
+3. **Filtres en chips top** avec counters intégrés (`Tout 11`, `Action requise 0`)
+4. **Cards uniformes** : padding constant, hierarchy titre/sous-titre, troncature elegante
+5. **Palette restreinte** : 1-2 couleurs accent max (Apex actuellement trop de or, bleu, rouge, vert mélangés)
+6. **Sections temporelles** (Aujourd'hui/Hier/Semaine) plus naturelles que catégories
+7. **Sidebar simple** : 5 entrées primaires max + Récents en dessous (pas 8-10 onglets bottom-nav)
+8. **Footer fixe identité user** discret, accessible toujours
+
+**À refactorer dans Apex jeudi (priorité haute, lié directive 7) :**
+
+**Chat principal vChat / vChatLite :**
+- Header simplifié : menu (gauche) + titre conversation (centre) + actions (droite)
+- Retirer les 6 icônes redondantes du haut Apex (mic/search/etc.) — déplacer en sidebar
+- Status bar bottom subtile : tokens used / model / latency en gris clair, comme Claude Code
+- Sidebar conversations : sections temporelles (Aujourd'hui / Hier / Semaine) au lieu de liste plate
+
+**Bottom nav 8 onglets actuel** :
+- Trop dense pour iPhone (Reglages/Accueil/Chat/CMC/Clients/Coffre/Plus/Memoire)
+- Refactor vers sidebar burger 5 entrées principales : Chat / Projets / Outils / Coffre / Réglages
+- "Plus/Memoire" → drill-down depuis Chat sidebar
+
+**Cards conversations** :
+- Format Claude Code reproduit : icône status 16px + titre + repo/contexte sous-titre
+- Point bleu unread
+- Tap → drill conversation
+- Long-press → menu contextuel (renommer, archiver, supprimer)
+
+**Filtres top chips** :
+- `Toutes 24` / `Action requise 3` / `Récentes` au-dessus de la liste
+- Counters live update
+
+**Test mental Kevin avant push** :
+> *"Si Kevin compare côte-à-côte son chat Claude Code et son chat Apex après refactor, les 2 sont-ils également clairs/aérés/professionnels ? La densité info est-elle similaire ? L'auto-scroll smooth est-il identique ?"*
+
+Si non aux 3 → reprendre.
+
+---
+
 ### Directive 8 — Insights screenshots Apex 2026-04-29 (Kevin a partagé)
 
 Kevin m'a envoyé 4 screenshots qui confirment / révèlent :
