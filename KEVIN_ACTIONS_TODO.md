@@ -101,6 +101,25 @@ function axDrillIntoModal(opts){
 // - Tout chiffre stats Apex → drill modal
 ```
 
+### Directive 6 — Apex tous accès + drill-down + audit expert (Kevin 2026-04-29 final)
+
+> *"Apex doit avoir TOUS les accès/outils : WhatsApp, GitHub, Firebase, etc. Quand je dis à Apex 'on en est où des forfaits API' → hop pop-up apparait avec toutes les infos, je clique sur API → atterris sur lien direct VÉRIFIÉ que je teste. Audit MAX poussé. Tu vas TOUJOURS au bout. Tu ne livres JAMAIS un travail light. Niveau EXPERT DES EXPERTS. Pas de retour en arrière — si bug = repartir de 0 et tout tester lettre par lettre. Tout AUTO-VÉRIFIÉ par toi pas par moi."*
+
+→ **Ajouté en règle permanente CLAUDE.md** "RÈGLE — APEX TOUS ACCÈS + DRILL-DOWN + AUDIT EXPERT DES EXPERTS"
+
+**À faire jeudi (priorité TOP) :**
+- `AX_OFFICIAL_LINKS` array : 30+ liens officiels (recharge Anthropic, OpenAI, Groq, Gemini, GitHub PAT, Cloudflare, Stripe, etc.)
+- `axVerifyLink(linkId)` : HEAD fetch + mark alive/dead + lastVerified timestamp
+- Sentinelle `link-validation-watch` quotidienne (auto-fix dead links via subagent Claude Code)
+- Pattern drill-down universel `axDrillIntoModal(opts)` réutilisable partout
+- Tool IA `axShowApiQuotaModal()` : Apex IA peut le déclencher quand Kevin demande "où en est mon forfait" → modal avec :
+  - Liste API (Anthropic, OpenAI, Groq, Gemini)
+  - Bulles couleur (vert/orange/rouge selon quota)
+  - Clic API → drill modal détail (consommation, expiry, recharge link vérifié)
+  - Bouton "Recharger" → ouvre lien officiel direct vérifié
+
+**Test mental Kevin avant push** : *"Si Kevin tape 'on en est où API' → modal apparait avec 4 API colorées. Il tape Anthropic → drill modal détail. Il tape Recharger → ouvre lien Anthropic billing vérifié. Tout en 3 taps max, sans qu'il ait à fouiller."*
+
 ---
 
 ## 🐛 NOUVEAUX BUGS SIGNALÉS 2026-04-28 (JEUDI à fixer)
