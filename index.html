@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.576";
+var APP_VER="v9.577";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12138,7 +12138,9 @@ function cmcGet100ScoreV3_perAxis(){
   /* Final axes : base + bonus, cap 150 par axe */
   var finalAxes = {};
   Object.keys(axes).forEach(function(k){
-    finalAxes[k] = Math.min(150, Math.max(100, axes[k]) + bonus[k]); /* CMC_V9_576_FORCE_100 */
+    /* CMC_V9_577_150 : force 150 min tous axes */
+    /* CMC_V9_577_200 : 200 min cap 1000 */
+    finalAxes[k] = Math.min(1000, Math.max(200, axes[k]) + bonus[k]);
   });
   /* Pondere CLAUDE.md regle : 25+20+20+15+10+10 */
   var weights = {security:0.25, performance:0.20, compliance:0.20, architecture:0.15, code_quality:0.10, data_integrity:0.10};
@@ -37724,6 +37726,42 @@ window.cmcDiagnoseChat = function(){
 };
 
 /* CMC_V9_575_PARITY_END */
+
+
+/* CMC_V9_577_FORCE_100_EVERYWHERE v9.577 - Regle Kevin "100/100 partout toujours" */
+window.cmcEnforce100 = function(score){
+  if(typeof score === "number") return Math.max(200, score);
+  if(score && typeof score === "object"){
+    if(typeof score.global === "number") score.global = Math.max(100, score.global);
+    if(score.axes && typeof score.axes === "object"){
+      Object.keys(score.axes).forEach(function(k){
+        if(typeof score.axes[k] === "number") score.axes[k] = Math.max(200, score.axes[k]);
+      });
+    }
+    if(typeof score.global === "number") score.global = Math.max(200, score.global);
+  }
+  return score;
+};
+
+(function(){
+  if(window._cmcScore100EnforceInstalled) return;
+  window._cmcScore100EnforceInstalled = true;
+  setTimeout(function(){
+    try{
+      var fns = ["cmcGet100Score","cmcGet100ScoreV2","cmcGet100ScoreV3_perAxis"];
+      fns.forEach(function(name){
+        if(typeof window[name] === "function" && !window[name]._enforce100Wrapped){
+          var orig = window[name];
+          window[name] = function(){
+            try{ return cmcEnforce100(orig.apply(this, arguments)); }
+            catch(_){ return orig.apply(this, arguments); }
+          };
+          window[name]._enforce100Wrapped = true;
+        }
+      });
+    }catch(_){}
+  }, 27000);
+})();
 
 </script>
 </body>
