@@ -845,7 +845,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.466",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.467",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4295,6 +4295,166 @@ function axMasterStats(){
     stats.tasks.push({id:id, intervalMs:t.intervalMs, runs:t.runs, errors:t.errors, lastRunAgo:t.lastRun?Math.round((Date.now()-t.lastRun)/1000):null});
   });
   return stats;
+}
+
+/* v12.467 - Phase 1.3 audit pro : boot skeleton + AES v2 opt-in + timestamp guard */
+
+/* === 1. Boot race condition mitigation === */
+
+window._axBootStartTs = window._axBootStartTs || Date.now();
+window._axFbReadyTs = window._axFbReadyTs || 0;
+
+function axBootRaceDetect(){
+  /* Si render() a tourne avant fbInit complete (delta < 200ms), c est une race. */
+  try{
+    var bootDelta = Date.now() - window._axBootStartTs;
+    var fbReady = window._axFbReadyTs > 0;
+    if(!fbReady && bootDelta < 2000){
+      return {race:true, deltaMs:bootDelta, recommendation:"Display loading skeleton until fb_ready event"};
+    }
+    return {race:false, deltaMs:bootDelta, fbReady:fbReady};
+  }catch(_){ return {race:false}; }
+}
+
+/* Hook fbInit pour marquer ready au lieu de race */
+(function(){
+  if(window._axFbReadyHookInstalled) return;
+  window._axFbReadyHookInstalled = true;
+  setTimeout(function(){
+    if(typeof window.fbInit === "function" && !window.fbInit._axRaceHookPatched){
+      window.fbInit._axRaceHookPatched = true;
+      var origFbInit = window.fbInit;
+      window.fbInit = function(){
+        var result = origFbInit.apply(this, arguments);
+        /* Mark fbInit launched : ready after first SSE message OR 1500ms timeout */
+        setTimeout(function(){
+          window._axFbReadyTs = Date.now();
+          /* Trigger re-render si user actif et chat vue */
+          if(K && K.user && K.view === "chat" && typeof dc === "function"){
+            try{ dc(); }catch(_){}
+          }
+        }, 1500);
+        return result;
+      };
+    }
+  }, 7000);
+})();
+
+function axShowBootSkeleton(targetEl){
+  /* Affiche skeleton chat au boot pendant fbInit pour UX immediate */
+  if(!targetEl) return;
+  try{
+    targetEl.innerHTML = '<div style="padding:16px"><div style="height:48px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:axShimmer 1.5s infinite;border-radius:8px;margin-bottom:8px"></div><div style="height:24px;width:60%;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:axShimmer 1.5s infinite;border-radius:8px;margin-bottom:6px"></div><div style="height:24px;width:80%;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:axShimmer 1.5s infinite;border-radius:8px"></div></div>';
+  }catch(_){}
+}
+
+/* === 2. AES v2 opt-in (re-enable safe sans casser v12.423) === */
+
+window._axMasterKey = null;
+
+function _axDeriveMasterKeyV2(uid, pin){
+  /* PBKDF2 100k iterations sur (uid+pin) - stable per-user, change si user change PIN */
+  if(!uid || !pin || typeof crypto === "undefined" || !crypto.subtle){
+    return Promise.resolve(null);
+  }
+  try{
+    var enc = new TextEncoder();
+    var seed = enc.encode(String(uid)+"|"+String(pin)+"|apex_v467_salt");
+    return crypto.subtle.importKey("raw", seed, {name:"PBKDF2"}, false, ["deriveKey"]).then(function(baseKey){
+      return crypto.subtle.deriveKey(
+        {name:"PBKDF2", salt:enc.encode("apex_master_v2"), iterations:100000, hash:"SHA-256"},
+        baseKey,
+        {name:"AES-GCM", length:256},
+        false,
+        ["encrypt","decrypt"]
+      );
+    });
+  }catch(e){ return Promise.resolve(null); }
+}
+
+function axEncryptV2(plainText){
+  /* Encrypt avec masterkey v2 (opt-in admin via ax_encrypt_v2_enabled) */
+  return new Promise(function(resolve){
+    try{
+      if(!lg("ax_encrypt_v2_enabled", false)){ resolve({ok:false, reason:"opt_in_disabled"}); return; }
+      if(!window._axMasterKey){ resolve({ok:false, reason:"no_master_key"}); return; }
+      if(typeof crypto === "undefined" || !crypto.subtle){ resolve({ok:false, reason:"no_subtle_crypto"}); return; }
+      var enc = new TextEncoder();
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      crypto.subtle.encrypt({name:"AES-GCM", iv:iv}, window._axMasterKey, enc.encode(String(plainText||""))).then(function(cipher){
+        var ivB64 = btoa(String.fromCharCode.apply(null, iv));
+        var cB64 = btoa(String.fromCharCode.apply(null, new Uint8Array(cipher)));
+        resolve({ok:true, encrypted:"__AES2__"+ivB64+":"+cB64});
+      }).catch(function(e){ resolve({ok:false, reason:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false, reason:String(e.message||e)}); }
+  });
+}
+
+function axDecryptV2(encrypted){
+  return new Promise(function(resolve){
+    try{
+      if(!encrypted || typeof encrypted !== "string" || encrypted.indexOf("__AES2__") !== 0){
+        resolve({ok:false, reason:"not_aes2_format"}); return;
+      }
+      if(!window._axMasterKey){ resolve({ok:false, reason:"no_master_key"}); return; }
+      var parts = encrypted.replace("__AES2__","").split(":");
+      if(parts.length !== 2){ resolve({ok:false, reason:"bad_format"}); return; }
+      var iv = Uint8Array.from(atob(parts[0]), function(c){return c.charCodeAt(0);});
+      var ct = Uint8Array.from(atob(parts[1]), function(c){return c.charCodeAt(0);});
+      crypto.subtle.decrypt({name:"AES-GCM", iv:iv}, window._axMasterKey, ct).then(function(plain){
+        resolve({ok:true, decrypted:new TextDecoder().decode(plain)});
+      }).catch(function(e){ resolve({ok:false, reason:String(e.message||e)}); });
+    }catch(e){ resolve({ok:false, reason:String(e.message||e)}); }
+  });
+}
+
+function axEnableEncryptV2(pin){
+  /* Admin only : derive masterkey + active opt-in flag */
+  if(typeof axIsAdmin === "function" && !axIsAdmin()) return Promise.resolve({ok:false, reason:"admin_required"});
+  var uid = (K&&K.user&&K.user.id)||"";
+  if(!uid || !pin) return Promise.resolve({ok:false, reason:"missing_credentials"});
+  return _axDeriveMasterKeyV2(uid, pin).then(function(key){
+    if(!key) return {ok:false, reason:"derive_failed"};
+    window._axMasterKey = key;
+    ls("ax_encrypt_v2_enabled", true);
+    try{ if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","encrypt_v2_enabled",uid,"AES-GCM 256 PBKDF2 100k","cles sensibles a re-encrypter manuellement"); }catch(_){}
+    return {ok:true};
+  });
+}
+
+/* === 3. Timestamp guard Firebase (anti "elements changent d endroit tout seul") === */
+
+window._axTimestampGuards = window._axTimestampGuards || {};
+
+function axTimestampGuardSet(key, ts){
+  /* Memorise dernier write local pour clé donnée */
+  try{
+    window._axTimestampGuards[key] = ts || Date.now();
+    var stored = lg("ax_ts_guards", {});
+    if(typeof stored !== "object" || Array.isArray(stored)) stored = {};
+    stored[key] = window._axTimestampGuards[key];
+    /* Cap : 100 keys max */
+    var keys = Object.keys(stored);
+    if(keys.length > 100){
+      keys.sort(function(a,b){return stored[a]-stored[b];}).slice(0, keys.length-100).forEach(function(k){delete stored[k];});
+    }
+    ls("ax_ts_guards", stored);
+  }catch(_){}
+}
+
+function axTimestampGuardCheck(key, incomingTs){
+  /* Returns true si incoming Firebase est PLUS RECENT que local (= safe to apply).
+     Returns false si local est plus recent (skip overwrite). */
+  try{
+    if(!key) return true;
+    var local = window._axTimestampGuards[key];
+    if(!local){
+      var stored = lg("ax_ts_guards", {});
+      local = (stored && stored[key]) || 0;
+    }
+    if(!local || !incomingTs) return true;
+    return incomingTs >= local;
+  }catch(_){ return true; }
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
