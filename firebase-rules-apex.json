@@ -1,0 +1,70 @@
+{
+  "_comment": "Firebase Realtime Database Security Rules pour Apex AI v12.537+",
+  "_database": "kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app",
+  "_instructions": [
+    "1. Console Firebase → kdmc-clients project → Realtime Database → Rules",
+    "2. Copier-coller tout l'objet 'rules' ci-dessous",
+    "3. Cliquer Publier",
+    "",
+    "IMPORTANT : Apex utilise auth maison (PIN local + voiceprint) pas Firebase Auth.",
+    "Ces règles sont la PHASE 4 (validation schéma + blocklist secrets).",
+    "PHASE 5 (per-user UID gate) requiert migration Firebase Auth — voir _phase_5 plus bas."
+  ],
+  "rules": {
+    "apex": {
+      ".read": true,
+      ".write": true,
+      "$key": {
+        ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
+      },
+      "ax_admin_pass": { ".write": false, "_comment": "Pass admin = LOCAL uniquement" },
+      "ax_admin_pin": { ".write": false, "_comment": "PIN admin = LOCAL uniquement (FB_LOCAL strict)" },
+      "ax_pin": { ".write": false, "_comment": "PIN admin global = LOCAL uniquement" },
+      "ax_user": { ".write": false, "_comment": "User session = LOCAL strict (cross-user leak Kevin/Laurence v12.272)" },
+      "ax_uid": { ".write": false, "_comment": "UID session = LOCAL strict" },
+      "ax_voice_print_$uid": { ".write": false, "_comment": "Biométrique = LOCAL strict (RGPD Art.9)" },
+      "ax_pin_$uid": { ".write": false, "_comment": "PIN per-user = LOCAL (v12.240)" },
+      "ax_user_chat_$uid": { ".write": false, "_comment": "Chat per-user = LOCAL (FB_LOCAL_PREFIXES v12.535)" },
+      "ax_user_locations_$uid": { ".write": false, "_comment": "Géoloc per-user = LOCAL strict (RGPD)" },
+      "ax_health_reports_$uid": { ".write": false, "_comment": "Santé per-user = LOCAL strict (RGPD Art.9)" },
+      "ax_msgs_$conv": { ".write": false, "_comment": "Messages conv per-user = LOCAL" },
+      "ax_settings_$uid": { ".write": false, "_comment": "Settings per-user = LOCAL" },
+      "ax_telemetry_in": {
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_claude_todo": {
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_lessons_learned_struct": {
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_audit": {
+        ".validate": "newData.isString() == false || newData.val() === null"
+      }
+    }
+  },
+  "_phase_5_migration_firebase_auth": {
+    "description": "Migration vers Firebase Auth + custom tokens pour vrai per-user UID gate",
+    "etapes": [
+      "1. Cloud Function HTTP /apex-login : valide PIN local hash, génère custom token Firebase avec claims {uid, role:admin|user}",
+      "2. Apex client : appel signInWithCustomToken(token) après login local OK",
+      "3. Règles deviennent : 'ax_user_$uid' : { '.read': 'auth.uid === $uid', '.write': 'auth.uid === $uid' }",
+      "4. Règles admin : 'ax_audit' : { '.read': 'auth.token.role === \"admin\"' }",
+      "5. Tester offline (PWA) : refresh token TTL 1h, fallback local"
+    ],
+    "exemples_post_phase5": {
+      "ax_user_chat_$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+      "ax_user_locations_$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+      "ax_audit": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

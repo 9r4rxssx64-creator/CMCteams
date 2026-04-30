@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.536",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.537",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -29370,6 +29370,116 @@ window.axGenCSPNonce = function(){
 };
 
 window.AX_CSP_NONCE = window.axGenCSPNonce();
+
+/* AX_V12_537_WIRING v12.537 - Wire helpers v12.536 reels (audit POST-FIX 47/100 vise 80+) */
+
+/* === A1. innerHTML interceptor global (opt-in default ON, preserve onclick Apex) === */
+(function(){
+  if(window._axInnerHTMLPatched) return;
+  if(typeof Element === "undefined" || !Element.prototype) return;
+  try{
+    if(localStorage.getItem("ax_safe_html_intercept") === null){
+      localStorage.setItem("ax_safe_html_intercept", "true");
+    }
+    if(localStorage.getItem("ax_safe_html_intercept") !== "true") return;
+  }catch(_){return;}
+  var nativeDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+  if(!nativeDescriptor || !nativeDescriptor.set) return;
+  var nativeSetter = nativeDescriptor.set;
+  Object.defineProperty(Element.prototype, "innerHTML", {
+    configurable: true,
+    enumerable: true,
+    get: nativeDescriptor.get,
+    set: function(html){
+      try{
+        var s = String(html==null?"":html);
+        /* Fast path : pas de patterns dangereux, passe direct (compat onclick Apex) */
+        if(s.length < 50 || (s.indexOf("<script")<0 && s.indexOf("javascript:")<0 && s.indexOf("vbscript:")<0 && s.indexOf("srcdoc")<0 && s.indexOf("formaction")<0 && s.indexOf("data:text/html")<0)){
+          nativeSetter.call(this, s);
+          return;
+        }
+        /* Strip ciblé patterns dangereux uniquement (preserve onclick existant) */
+        s = s.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+        s = s.replace(/<script[^>]*>/gi, "");
+        s = s.replace(/javascript\s*:/gi, "#blocked-js-");
+        s = s.replace(/vbscript\s*:/gi, "#blocked-vb-");
+        s = s.replace(/\ssrcdoc\s*=\s*("[^"]*"|'[^']*')/gi, "");
+        s = s.replace(/\sformaction\s*=\s*("[^"]*"|'[^']*')/gi, "");
+        s = s.replace(/data:text\/html/gi, "data:text/plain");
+        try{ if(typeof axSecurityLog==="function") axSecurityLog("html_sanitize_intercept", "stripped on "+(this.id||this.tagName||"?")); }catch(_){}
+        nativeSetter.call(this, s);
+      }catch(e){ try{ nativeSetter.call(this, ""); }catch(_){} }
+    }
+  });
+  window._axInnerHTMLPatched = true;
+})();
+
+/* === A2. axIsAdmin -> axIsAdminStrict (override post-boot pour 302 sites d'un coup) === */
+setTimeout(function(){
+  try{
+    if(window._axAdminHardened) return;
+    if(typeof window.axIsAdminStrict !== "function") return;
+    window._axIsAdminLoose = window.axIsAdmin;
+    window.axIsAdmin = window.axIsAdminStrict;
+    window._axAdminHardened = true;
+  }catch(_){}
+}, 200);
+
+/* === A3. Wire axRecordPinFail (intercept axCheckPin pour comptage centralise) === */
+setTimeout(function(){
+  try{
+    if(window._axCheckPinWrapped) return;
+    if(typeof window.axCheckPin !== "function") return;
+    var orig = window.axCheckPin;
+    window.axCheckPin = function(){
+      var ok = false;
+      try{ ok = orig.apply(this, arguments); }catch(_){ ok = false; }
+      try{
+        if(!ok && typeof axRecordPinFail==="function") axRecordPinFail();
+        else if(ok && typeof axResetPinFails==="function") axResetPinFails();
+      }catch(_){}
+      return ok;
+    };
+    window._axCheckPinWrapped = true;
+  }catch(_){}
+}, 500);
+
+/* === A4. LS encrypt opt-in TRUE par defaut + migration auto admin === */
+setTimeout(function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    if(localStorage.getItem("ax_ls_encrypt_enabled") === null){
+      ls("ax_ls_encrypt_enabled", true);
+    }
+    if(typeof axIsAdminStrict==="function" && axIsAdminStrict()){
+      if(!lg("ax_ls_encrypt_migrated", false) && typeof axMigrateLSEncrypt==="function"){
+        try{
+          axMigrateLSEncrypt();
+          ls("ax_ls_encrypt_migrated", true);
+        }catch(_){}
+      }
+    }
+  }catch(_){}
+}, 10000);
+
+/* === Audit hook : trace ecriture LS de cles critiques === */
+(function(){
+  if(window._axLsCriticalAudit) return;
+  var critical = ["ax_user","ax_uid","ax_admin_pass","ax_pin","ax_api_key","ax_shared_api_key","ax_ls_encrypt_enabled","ax_safe_html_intercept","ax_pin_fails"];
+  try{
+    var nativeSet = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(k, v){
+      try{
+        if(critical.indexOf(k)>=0 && typeof axSecurityLog==="function"){
+          axSecurityLog("ls_critical_write", k+" len="+(String(v||"").length));
+        }
+      }catch(_){}
+      return nativeSet.apply(this, arguments);
+    };
+    window._axLsCriticalAudit = true;
+  }catch(_){}
+})();
 
 </script>
 </body>
