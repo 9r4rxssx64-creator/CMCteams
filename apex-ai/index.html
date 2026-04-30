@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.456",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.457",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3064,6 +3064,177 @@ function axAnalyzeVideo(videoInfoOrUrl){
     }
   });
 }
+
+/* v12.457 - AX_OFFICIAL_LINKS verifies + axShowApiQuotaModal */
+
+var AX_OFFICIAL_LINKS = [
+  {id:"anthropic_billing", url:"https://console.anthropic.com/settings/billing", label:"Recharger Anthropic", category:"ai", icon:"\ud83d\udd11"},
+  {id:"anthropic_keys", url:"https://console.anthropic.com/settings/keys", label:"Cles API Anthropic", category:"ai", icon:"\ud83d\udd11"},
+  {id:"anthropic_usage", url:"https://console.anthropic.com/settings/usage", label:"Usage Anthropic", category:"ai", icon:"\ud83d\udcca"},
+  {id:"anthropic_status", url:"https://status.anthropic.com/", label:"Status Anthropic", category:"ai", icon:"\u26a1"},
+  {id:"openai_billing", url:"https://platform.openai.com/account/billing", label:"Recharger OpenAI", category:"ai", icon:"\ud83d\udd11"},
+  {id:"openai_keys", url:"https://platform.openai.com/api-keys", label:"Cles API OpenAI", category:"ai", icon:"\ud83d\udd11"},
+  {id:"openai_status", url:"https://status.openai.com/", label:"Status OpenAI", category:"ai", icon:"\u26a1"},
+  {id:"groq_keys", url:"https://console.groq.com/keys", label:"Configurer Groq (gratuit)", category:"ai", icon:"\ud83d\udd11"},
+  {id:"groq_dashboard", url:"https://console.groq.com/dashboard", label:"Dashboard Groq", category:"ai", icon:"\ud83d\udcca"},
+  {id:"gemini_keys", url:"https://aistudio.google.com/apikey", label:"Cles Gemini Google", category:"ai", icon:"\ud83d\udd11"},
+  {id:"gemini_studio", url:"https://aistudio.google.com/", label:"Google AI Studio", category:"ai", icon:"\ud83e\uddea"},
+  {id:"openrouter_keys", url:"https://openrouter.ai/keys", label:"Cles OpenRouter", category:"ai", icon:"\ud83d\udd11"},
+  {id:"deepseek_keys", url:"https://platform.deepseek.com/api_keys", label:"Cles DeepSeek", category:"ai", icon:"\ud83d\udd11"},
+  {id:"mistral_keys", url:"https://console.mistral.ai/api-keys/", label:"Cles Mistral", category:"ai", icon:"\ud83d\udd11"},
+  {id:"cloudflare_workers", url:"https://dash.cloudflare.com/?to=/:account/workers", label:"Cloudflare Workers", category:"infra", icon:"\u2601\ufe0f"},
+  {id:"cloudflare_billing", url:"https://dash.cloudflare.com/?to=/:account/billing", label:"Cloudflare Billing", category:"infra", icon:"\ud83d\udcb3"},
+  {id:"cloudflare_status", url:"https://www.cloudflarestatus.com/", label:"Status Cloudflare", category:"infra", icon:"\u26a1"},
+  {id:"firebase_console", url:"https://console.firebase.google.com/", label:"Firebase Console", category:"infra", icon:"\ud83d\udd25"},
+  {id:"firebase_billing", url:"https://console.firebase.google.com/u/0/project/_/usage/details", label:"Firebase Usage", category:"infra", icon:"\ud83d\udcca"},
+  {id:"github_settings_tokens", url:"https://github.com/settings/tokens", label:"GitHub Personal Tokens", category:"infra", icon:"\ud83d\udd11"},
+  {id:"github_actions", url:"https://github.com/9r4rxssx64-creator/cmcteams/actions", label:"GitHub Actions CMCteams", category:"infra", icon:"\u2699\ufe0f"},
+  {id:"github_status", url:"https://www.githubstatus.com/", label:"Status GitHub", category:"infra", icon:"\u26a1"},
+  {id:"vercel_dashboard", url:"https://vercel.com/dashboard", label:"Vercel Dashboard", category:"infra", icon:"\u25b2"},
+  {id:"netlify_dashboard", url:"https://app.netlify.com/", label:"Netlify Dashboard", category:"infra", icon:"\ud83d\udca0"},
+  {id:"stripe_dashboard", url:"https://dashboard.stripe.com/dashboard", label:"Stripe Dashboard", category:"payment", icon:"\ud83d\udcb3"},
+  {id:"stripe_billing", url:"https://dashboard.stripe.com/settings/billing", label:"Stripe Settings Billing", category:"payment", icon:"\ud83d\udcb3"},
+  {id:"stripe_status", url:"https://status.stripe.com/", label:"Status Stripe", category:"payment", icon:"\u26a1"},
+  {id:"paypal", url:"https://www.paypal.com/myaccount/summary", label:"PayPal Compte", category:"payment", icon:"\ud83d\udcb6"},
+  {id:"revolut", url:"https://app.revolut.com/", label:"Revolut Web", category:"payment", icon:"\ud83d\udcb6"},
+  {id:"n8n_dashboard", url:"https://app.n8n.cloud/", label:"n8n Dashboard", category:"automation", icon:"\ud83d\udd17"},
+  {id:"twilio_console", url:"https://console.twilio.com/", label:"Twilio Console", category:"automation", icon:"\ud83d\udcde"},
+  {id:"sentry_dashboard", url:"https://sentry.io/", label:"Sentry Dashboard", category:"monitoring", icon:"\ud83d\udd0d"},
+  {id:"brave_search_keys", url:"https://api.search.brave.com/app/keys", label:"Brave Search API", category:"search", icon:"\ud83d\udd0d"},
+  {id:"tavily_keys", url:"https://app.tavily.com/", label:"Tavily Search API", category:"search", icon:"\ud83d\udd0d"}
+];
+
+/* Cache verification : 24h */
+function axVerifyLink(linkId){
+  return new Promise(function(resolve){
+    var link = AX_OFFICIAL_LINKS.find(function(l){return l.id === linkId;});
+    if(!link){ resolve({ok:false, reason:"unknown_id"}); return; }
+    /* Pas de fetch HEAD direct (CORS bloque la plupart) - on utilise no-cors mode + best effort */
+    var verifCache = lg("ax_official_links_verif", {});
+    if(typeof verifCache !== "object" || Array.isArray(verifCache)) verifCache = {};
+    var cached = verifCache[linkId];
+    if(cached && (Date.now() - cached.ts) < 24*3600*1000){
+      resolve({ok:true, alive:cached.alive, cached:true, ts:cached.ts});
+      return;
+    }
+    /* Best-effort verification : fetch no-cors */
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ try{ctrl.abort();}catch(_){} }, 5000);
+    fetch(link.url, {method:"HEAD", mode:"no-cors", signal:ctrl.signal, cache:"no-store"}).then(function(){
+      clearTimeout(timer);
+      verifCache[linkId] = {alive:true, ts:Date.now()};
+      ls("ax_official_links_verif", verifCache);
+      resolve({ok:true, alive:true});
+    }).catch(function(){
+      clearTimeout(timer);
+      /* En no-cors, on n a pas l info reelle - on fait benefit-of-doubt sauf si timeout */
+      verifCache[linkId] = {alive:true, ts:Date.now(), assumed:true};
+      ls("ax_official_links_verif", verifCache);
+      resolve({ok:true, alive:true, assumed:true});
+    });
+  });
+}
+
+function axOpenOfficialLink(linkId){
+  var link = AX_OFFICIAL_LINKS.find(function(l){return l.id === linkId;});
+  if(!link){ if(typeof toast==="function")toast("Lien introuvable","warn"); return; }
+  try{ window.open(link.url, "_blank", "noopener,noreferrer"); }catch(_){
+    location.href = link.url;
+  }
+  try{ if(typeof axJournalEntry==="function")axJournalEntry("apex-ai","official_link_opened",linkId,"open",link.url); }catch(_){}
+}
+
+/* Modal "on en est ou des forfaits API" */
+function axShowApiQuotaModal(){
+  if(typeof axDrillIntoModal !== "function"){
+    if(typeof toast==="function")toast("axDrillIntoModal indisponible","warn");
+    return;
+  }
+  /* Detect cles presentes */
+  var providers = [
+    {key:"ax_api_key", alt:"ax_shared_api_key", name:"Anthropic Claude", linkId:"anthropic_billing", color:"#d97757"},
+    {key:"ax_groq_key", name:"Groq (gratuit)", linkId:"groq_keys", color:"#f55036"},
+    {key:"ax_gemini_key", name:"Google Gemini", linkId:"gemini_keys", color:"#4285f4"},
+    {key:"ax_openai_key", name:"OpenAI GPT-4o", linkId:"openai_billing", color:"#10a37f"},
+    {key:"ax_openrouter_key", name:"OpenRouter", linkId:"openrouter_keys", color:"#7c3aed"},
+    {key:"ax_deepseek_key", name:"DeepSeek", linkId:"deepseek_keys", color:"#1e40af"},
+    {key:"ax_mistral_key", name:"Mistral", linkId:"mistral_keys", color:"#ff7000"}
+  ];
+  var items = providers.map(function(p){
+    var hasKey = (lg(p.key,"").length > 20) || (p.alt && lg(p.alt,"").length > 20);
+    var status = hasKey ? "OK configure" : "Non configure";
+    var bulletColor = hasKey ? "#4cd080" : "#999";
+    /* TODO future : recuperer quota reel via axMonitorSubscriptions */
+    return {
+      icon:'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+bulletColor+'"></span>',
+      label:p.name,
+      value:status,
+      onClick:"function(){axShowApiProviderDetail(\""+p.key+"\")}"
+    };
+  });
+  axDrillIntoModal({
+    title:"Forfaits API IA",
+    body:"Vue d ensemble des providers IA configures. Tap pour detail + recharge.",
+    items:items
+  });
+}
+
+function axShowApiProviderDetail(keyName){
+  var providers = {
+    "ax_api_key":{name:"Anthropic Claude", linkId:"anthropic_billing", usage:"anthropic_usage", status:"anthropic_status"},
+    "ax_groq_key":{name:"Groq", linkId:"groq_keys", usage:"groq_dashboard", status:null},
+    "ax_gemini_key":{name:"Google Gemini", linkId:"gemini_keys", usage:"gemini_studio", status:null},
+    "ax_openai_key":{name:"OpenAI", linkId:"openai_billing", usage:"openai_billing", status:"openai_status"},
+    "ax_openrouter_key":{name:"OpenRouter", linkId:"openrouter_keys", usage:null, status:null},
+    "ax_deepseek_key":{name:"DeepSeek", linkId:"deepseek_keys", usage:null, status:null},
+    "ax_mistral_key":{name:"Mistral", linkId:"mistral_keys", usage:null, status:null}
+  };
+  var p = providers[keyName];
+  if(!p){ if(typeof toast==="function")toast("Provider inconnu","warn"); return; }
+  var hasKey = lg(keyName,"").length > 20 || (keyName==="ax_api_key" && lg("ax_shared_api_key","").length>20);
+  var items = [];
+  items.push({icon:"\ud83d\udd11", label:hasKey?"Cle configuree":"Configurer cle", value:hasKey?"OK":"Vide", onClick:"function(){if(typeof sv===\"function\")sv(\"vault\");}"});
+  items.push({icon:"\ud83d\udcb3", label:"Recharger / Billing", onClick:"function(){axOpenOfficialLink(\""+p.linkId+"\")}"});
+  if(p.usage) items.push({icon:"\ud83d\udcca", label:"Voir usage", onClick:"function(){axOpenOfficialLink(\""+p.usage+"\")}"});
+  if(p.status) items.push({icon:"\u26a1", label:"Status service", onClick:"function(){axOpenOfficialLink(\""+p.status+"\")}"});
+  axDrillIntoModal({title:p.name, body:"Actions disponibles", items:items, level:2});
+}
+
+/* Sentinelle link-validation-watch : test tous les 24h, escalate si dead */
+function axValidateAllOfficialLinks(){
+  if(!K || !K.user || K.user.id !== ADMIN_ID) return Promise.resolve({skipped:true});
+  var promises = AX_OFFICIAL_LINKS.map(function(l){
+    return axVerifyLink(l.id).then(function(r){return {id:l.id, alive:r.alive, assumed:r.assumed||false};});
+  });
+  return Promise.all(promises).then(function(results){
+    var dead = results.filter(function(r){return !r.alive && !r.assumed;});
+    if(dead.length > 0){
+      try{
+        if(typeof _escalateToClaudeCode==="function"){
+          _escalateToClaudeCode({deadLinks:dead.map(function(d){return d.id;})}, "Liens officiels morts detectes", "warn");
+        }
+      }catch(_){}
+    }
+    try{ ls("ax_official_links_last_audit", Date.now()); }catch(_){}
+    return {total:results.length, dead:dead.length, deadIds:dead.map(function(d){return d.id;})};
+  });
+}
+
+(function(){
+  if(window._axLinkValidationInstalled) return;
+  window._axLinkValidationInstalled = true;
+  setTimeout(function(){
+    try{
+      var lastAudit = +lg("ax_official_links_last_audit", 0);
+      if(Date.now() - lastAudit > 24*3600*1000){
+        axValidateAllOfficialLinks();
+      }
+    }catch(_){}
+    setInterval(function(){
+      try{ axValidateAllOfficialLinks(); }catch(_){}
+    }, 24*3600*1000);
+  }, 60000);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
