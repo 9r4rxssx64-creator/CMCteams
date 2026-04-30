@@ -20,21 +20,26 @@
 
 ---
 
-## 📦 11 PROJETS GÉRÉS
+## 📦 8 PROJETS GÉRÉS (Kevin 2026-04-30 : retrait IA-APEX, Cloudflare, Backend)
 
 | # | ID | Nom | Statut | Version | Localisation |
 |---|----|----|--------|---------|--------------|
-| 1 | `kdmc` | **APEX AI** | 🟢 Production | v12.547 | `apex-ai/` |
+| 1 | `kdmc` | **APEX AI** | 🟢 Production | v12.548 | `apex-ai/` |
 | 2 | `cmcteams` | **CMCteams** (casino Monaco) | 🟢 Production | v9.579 | `index.html` racine |
 | 3 | `apexchat` | **Apex Chat** (WhatsApp clone) | 🟠 Dév Mode A | v0.2 | `messaging-app/` |
 | 4 | `socialvideo` | **Social Video Pipeline** | 🟠 Dév Phase 3 | v0.3 | `tools/social/` |
 | 5 | `remote` | **Télécommande Universelle** | 🟢 Production | v1.2 | dans Apex AI |
 | 6 | `crackpass` | **CrackPass / Vault** | 🟢 Production | v1.1 | dans Apex AI |
-| 7 | `cloudflare` | **Cloudflare Tools** | 🟢 Production | v1.0 | `tools/cloudflare/` |
-| 8 | `backend` | **Backend Proxy** | 🟢 Production | v1.0 | `apex-ai/proxy-apex.js` |
-| 9 | `ekdmc` | **e-APEX** (e-commerce) | 🟠 Dév | v0.1 | TBD |
-| 10 | `bilan` | **Bilan Général** | 🟢 Production | live | `BILAN_PRO.md` + `vBilan` |
-| 11 | `iakdmc` | **IA-APEX** | ⚪ À démarrer | v0.0 | TBD |
+| 7 | `ekdmc` | **e-APEX** (e-commerce) | 🟠 Dév | v0.1 | TBD |
+| 8 | `bilan` | **Bilan Général** | 🟢 Production | live | `BILAN_PRO.md` + `vBilan` |
+
+### ⚙️ Outils & Infrastructure (pas projets, mais utilisés par projets ci-dessus)
+- **Cloudflare Tools** (`tools/cloudflare/`) : push worker + VAPID gen + deploy worker — utilisé par Apex AI + Apex Chat
+- **Backend Proxy** (`apex-ai/proxy-apex.js`) : proxy Cloudflare Worker Anthropic API (CORS iOS) — utilisé par Apex AI
+- **GitHub Actions** (`.github/workflows/`) : CI/CD + social-publish + social-scheduler + claude-todo-watcher
+
+### 🗄️ Archive (non-actifs)
+- **IA-APEX** : projet IA personnel à démarrer — archivé dans cette doc, pas dans vProjects (Kevin 2026-04-30)
 
 ---
 
