@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.529",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.530",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -28605,6 +28605,159 @@ window.axToggleLSEncrypt = function(enabled){
   }
   if(typeof toast === "function") toast(v ? "LS encrypt ACTIVE - migration en cours" : "LS encrypt OFF", "ok", {force:true, duration:3000});
   return v;
+};
+
+
+/* AX_V12_530_REAL_FIXES v12.530 - Storage iOS 127% + axIsAdmin hardening (audit P0) */
+
+/* === 1. axIsAdmin HARDENING : double-check localStorage vs RAM (audit P1 secu) === */
+window.axIsAdminStrict = function(){
+  if(!K || !K.user) return false;
+  try{
+    var ramId = K.user.id;
+    var lsId = localStorage.getItem("ax_uid");
+    if(typeof lsId === "string"){
+      try{ var p = JSON.parse(lsId); if(typeof p === "string") lsId = p; }catch(_){}
+    }
+    /* Match RAM === LS === ADMIN_ID */
+    return ramId === ADMIN_ID && lsId === ADMIN_ID;
+  }catch(_){ return false; }
+};
+
+/* === 2. Storage iOS emergency : si > 95% quota, purge agressif === */
+window.axStorageEmergencyCleanup = function(){
+  try{
+    var used = 0;
+    for(var k in localStorage){
+      if(localStorage.hasOwnProperty(k)) used += (k.length + (localStorage[k]||"").length) * 2;
+    }
+    var pct = Math.round((used / 5242880) * 100);
+    if(pct < 90) return {ok:true, pct:pct, action:"none"};
+
+    var freed = 0;
+    var purgeKeys = [];
+
+    /* Trim message arrays per conv (cap 200) */
+    for(var k in localStorage){
+      if(k.indexOf("ax_msgs_") === 0){
+        try{
+          var msgs = JSON.parse(localStorage.getItem(k) || "[]");
+          if(Array.isArray(msgs) && msgs.length > 200){
+            var before = localStorage.getItem(k).length;
+            msgs = msgs.slice(-200);
+            localStorage.setItem(k, JSON.stringify(msgs));
+            freed += before - localStorage.getItem(k).length;
+          }
+        }catch(_){}
+      }
+    }
+
+    /* Drop old audit/silent_log entries > 7 days */
+    var oldThreshold = Date.now() - 7*86400000;
+    ["ax_audit","ax_silent_log","ax_err_log","ax_breach_log","ax_security_log","ax_journal","ax_handoff_journal","ax_telemetry_in","ax_persistent_memory","ax_lessons_learned"].forEach(function(k){
+      try{
+        var arr = JSON.parse(localStorage.getItem(k) || "[]");
+        if(Array.isArray(arr) && arr.length > 50){
+          var before = localStorage.getItem(k).length;
+          arr = arr.filter(function(e){return e && (e.ts||0) > oldThreshold;}).slice(-100);
+          localStorage.setItem(k, JSON.stringify(arr));
+          freed += before - localStorage.getItem(k).length;
+        }
+      }catch(_){}
+    });
+
+    /* Drop backup snapshots > 3 days */
+    for(var k in localStorage){
+      if(k.indexOf("ax_backup_") === 0 || k.indexOf("ax_snapshot_") === 0){
+        try{
+          var entry = JSON.parse(localStorage.getItem(k));
+          if(entry && entry.ts && entry.ts < Date.now() - 3*86400000){
+            freed += localStorage.getItem(k).length;
+            localStorage.removeItem(k);
+            purgeKeys.push(k);
+          }
+        }catch(_){
+          /* parse fail = corrupt, drop */
+          freed += (localStorage.getItem(k)||"").length;
+          localStorage.removeItem(k);
+          purgeKeys.push(k);
+        }
+      }
+    }
+
+    /* Drop IRDB / IR codes large entries (re-fetchable) */
+    if((localStorage.getItem("ax_ir_codes")||"").length > 100000){
+      try{
+        var codes = JSON.parse(localStorage.getItem("ax_ir_codes")||"{}");
+        var keys = Object.keys(codes);
+        if(keys.length > 50){
+          /* Garde les 50 plus recents */
+          var sorted = keys.map(function(k){return {k:k, ts:codes[k].learned||0};}).sort(function(a,b){return b.ts-a.ts;});
+          var keep = {};
+          sorted.slice(0,50).forEach(function(e){keep[e.k] = codes[e.k];});
+          var before = localStorage.getItem("ax_ir_codes").length;
+          localStorage.setItem("ax_ir_codes", JSON.stringify(keep));
+          freed += before - localStorage.getItem("ax_ir_codes").length;
+        }
+      }catch(_){}
+    }
+
+    /* Recompute pct */
+    var usedAfter = 0;
+    for(var k in localStorage){
+      if(localStorage.hasOwnProperty(k)) usedAfter += (k.length + (localStorage[k]||"").length) * 2;
+    }
+    var pctAfter = Math.round((usedAfter / 5242880) * 100);
+
+    if(typeof toast === "function") toast("Storage cleanup : "+Math.round(freed/1024)+" Ko liberes ("+pct+"% -> "+pctAfter+"%)", "ok", {force:true, duration:4000});
+    if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","storage_emergency_cleanup",APP_VER, "freed="+Math.round(freed/1024)+"Ko pct="+pct+"->"+pctAfter, "v12.530 P0 perf fix");
+
+    return {ok:true, pct_before:pct, pct_after:pctAfter, freed_bytes:freed, purged_keys:purgeKeys.length};
+  }catch(e){
+    return {ok:false, msg:String(e.message||e).slice(0,80)};
+  }
+};
+
+/* Auto-trigger si > 95% au boot (deferred 8s) */
+(function(){
+  if(window._axStorageEmergencyScheduled) return;
+  window._axStorageEmergencyScheduled = true;
+  setTimeout(function(){
+    try{
+      var used = 0;
+      for(var k in localStorage){
+        if(localStorage.hasOwnProperty(k)) used += (k.length + (localStorage[k]||"").length) * 2;
+      }
+      var pct = Math.round((used / 5242880) * 100);
+      if(pct >= 95){
+        axStorageEmergencyCleanup();
+      }
+    }catch(_){}
+  }, 8000);
+})();
+
+/* Healthcheck UI helper */
+window.axStorageReport = function(){
+  try{
+    var used = 0, perKey = {};
+    for(var k in localStorage){
+      if(localStorage.hasOwnProperty(k)){
+        var size = (k.length + (localStorage[k]||"").length) * 2;
+        used += size;
+        perKey[k] = Math.round(size/1024);
+      }
+    }
+    var top10 = Object.keys(perKey).sort(function(a,b){return perKey[b]-perKey[a];}).slice(0,10);
+    var top10Detail = {};
+    top10.forEach(function(k){top10Detail[k] = perKey[k] + " Ko";});
+    return {
+      total_kb: Math.round(used/1024),
+      pct_quota: Math.round((used/5242880)*100),
+      total_keys: Object.keys(perKey).length,
+      top10_largest: top10Detail,
+      alert: used > 5242880 * 0.85 ? "CRITICAL" : used > 5242880 * 0.6 ? "WARN" : "OK"
+    };
+  }catch(_){ return {error:"unavailable"}; }
 };
 
 </script>
