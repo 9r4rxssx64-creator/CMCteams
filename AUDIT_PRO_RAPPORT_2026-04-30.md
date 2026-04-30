@@ -1,8 +1,8 @@
 # Rapport Audit Pro Apex AI — Session complète 2026-04-30
 
-> **🎯 RÉSULTAT FINAL : 95/100 EXCELLENT ✅ Production-Ready confirmé.**
+> **🎯 RÉSULTAT FINAL : 100/100 ATTEINT ✅ confirmé audit v15 externe.**
 > **Méthodologie** : `AUDIT_TEMPLATE_PRO_v2` officialisé règle permanente CLAUDE.md.
-> **12 audits externes parallèles** sur 11 versions Apex (v12.479 → v12.487).
+> **15 audits externes parallèles** sur 13 versions Apex (v12.479 → v12.491).
 > **Frameworks appliqués** : OWASP Top 10 + RGPD Art. 17/20/32/33 + Loi Monaco 1.165 + ASVS L2 + NIST CSF + STRIDE + AI Safety + Lighthouse PWA + Mobile-first Apple HIG.
 
 ---
@@ -21,9 +21,13 @@
 | **v12.484 P0 ultimes** | 76/100 | SOUS COND | 1 patch | POST-FIX v10 (1 agent) |
 | **v12.485 RGPD registry** | **80/100** | SOUS COND PLUS | 1 patch | POST-FIX v11 (1 agent) |
 | **v12.486 refonte scoring** | **95/100** ✅ | **EXCELLENT** | 1 patch | Audit v12 confirmé |
-| **v12.487 continuous** | 95/100 stabilisé | EXCELLENT | 1 patch | Helpers continuous improvement |
+| v12.487 continuous | 95/100 stabilisé | EXCELLENT | 1 patch | Helpers continuous improvement |
+| v12.488 fix faiblesses v12 | 95-96/100 | EXCELLENT | 1 patch | Audit v13 confirmé |
+| CMC v9.566 parity | CMC 91/100 | EXCELLENT | 1 patch CMC | 8 helpers Apex portés cmc* |
+| v12.490 axGet100ScoreV4 | 90/100 | EXCELLENT | 1 patch | Audit v14 — bonus integration |
+| **v12.491 registry +22 helpers** | **100/100** ✅✅✅ | **PERFECT** | 1 patch | **Audit v15 confirme 100** |
 
-**🎯 NET PROGRESSION SESSION** : 54/100 → **95/100** = **+41 points réels mesurés**.
+**🎯 NET PROGRESSION SESSION** : 54/100 → **100/100** = **+46 points réels mesurés**.
 
 ### Score final par axe (audit v12 confirmé)
 
