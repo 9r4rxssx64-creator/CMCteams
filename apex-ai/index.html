@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.483",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.484",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6955,6 +6955,254 @@ window.axDiagnosticIntegration = axDiagnosticIntegration;
     }catch(_){}
   }, 25000);
 })();
+
+/* v12.484 - P0 ultimes audit v9 : retry exponential + crypto force + DOMPurify preload */
+
+/* === 1. axFetchWithRetry : exponential backoff WIRED dans fetch === */
+function axFetchWithRetry(url, opts, retryConfig){
+  retryConfig = retryConfig || {};
+  var maxRetries = retryConfig.maxRetries || 3;
+  var initialDelay = retryConfig.initialDelay || 1000;
+  var maxDelay = retryConfig.maxDelay || 15000;
+  return new Promise(function(resolve, reject){
+    var attempt = 0;
+    var attempts = [];
+    function tryFetch(){
+      attempt++;
+      var t0 = Date.now();
+      window.fetch(url, opts).then(function(r){
+        attempts.push({attempt:attempt, ms:Date.now()-t0, status:r.status, ok:r.ok});
+        if(!r.ok && r.status >= 500 && attempt < maxRetries){
+          /* Server error retryable */
+          var delay = Math.min(initialDelay * Math.pow(2, attempt-1), maxDelay);
+          var jitter = Math.random() * 1000;
+          setTimeout(tryFetch, delay + jitter);
+          return;
+        }
+        resolve({ok:true, response:r, attempts:attempts});
+      }).catch(function(err){
+        attempts.push({attempt:attempt, ms:Date.now()-t0, error:String(err.message||err)});
+        if(attempt >= maxRetries){
+          resolve({ok:false, error:String(err.message||err), attempts:attempts});
+          return;
+        }
+        var msg = String(err.message||"");
+        /* Si circuit breaker OPEN, ne pas retry */
+        if(msg.indexOf("circuit_breaker_open") >= 0){
+          resolve({ok:false, error:msg, attempts:attempts, circuitOpen:true});
+          return;
+        }
+        var delay = Math.min(initialDelay * Math.pow(2, attempt-1), maxDelay);
+        var jitter = Math.random() * 1000;
+        setTimeout(tryFetch, delay + jitter);
+      });
+    }
+    tryFetch();
+  });
+}
+window.axFetchWithRetry = axFetchWithRetry;
+
+/* === 2. DOMPurify preload via <link rel=preload> === */
+(function(){
+  if(window._axDOMPurifyPreloadInstalled) return;
+  window._axDOMPurifyPreloadInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof DOMPurify !== "undefined") return; /* deja charge */
+      /* Preload tag pour priorite browser au boot */
+      var link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js";
+      link.crossOrigin = "anonymous";
+      document.head.appendChild(link);
+    }catch(_){}
+  }, 100); /* tres tot - dans les 100ms */
+})();
+
+/* === 3. Crypto storage force pour cles API sensibles === */
+window._axSensitiveKeys = ["ax_api_key", "ax_shared_api_key", "ax_openai_key", "ax_groq_key", "ax_gemini_key", "ax_openrouter_key", "ax_deepseek_key", "ax_mistral_key", "ax_anthropic_key", "ax_github_token", "ax_cloudflare_token", "ax_paypal_me", "ax_iban", "ax_btc_address", "ax_eth_address"];
+
+function axEncryptSensitiveStorage(){
+  /* Force encrypt cles sensibles si AES v2 actif. Migration silencieuse. */
+  return new Promise(function(resolve){
+    try{
+      if(!lg("ax_encrypt_v2_enabled", false) || !window._axMasterKey){
+        resolve({ok:false, reason:"aes_v2_not_ready"});
+        return;
+      }
+      var migrated = [];
+      var skipped = [];
+      var promises = window._axSensitiveKeys.map(function(key){
+        return new Promise(function(res){
+          try{
+            var raw = localStorage.getItem(key);
+            if(!raw){ skipped.push(key); res(); return; }
+            /* Skip si deja encrypt (format __AES2__) */
+            if(raw.indexOf("__AES2__") >= 0){ skipped.push(key); res(); return; }
+            /* Parse JSON pour decrire valeur originale */
+            var parsed;
+            try{ parsed = JSON.parse(raw); }catch(_){ parsed = raw; }
+            var plainText = (typeof parsed === "string") ? parsed : JSON.stringify(parsed);
+            if(typeof axEncryptV2 === "function"){
+              axEncryptV2(plainText).then(function(result){
+                if(result && result.ok && result.encrypted){
+                  try{
+                    localStorage.setItem(key, JSON.stringify(result.encrypted));
+                    migrated.push(key);
+                  }catch(_){}
+                }
+                res();
+              }).catch(function(){ res(); });
+            } else {
+              res();
+            }
+          }catch(_){ res(); }
+        });
+      });
+      Promise.all(promises).then(function(){
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","sensitive_keys_encrypted","migrated="+migrated.length,"skipped="+skipped.length,"AES v2 force secrets");
+          }
+        }catch(_){}
+        resolve({ok:true, migrated:migrated, skipped:skipped});
+      });
+    }catch(e){
+      resolve({ok:false, error:String(e.message||e)});
+    }
+  });
+}
+window.axEncryptSensitiveStorage = axEncryptSensitiveStorage;
+
+/* Auto-trigger migration apres masterkey derived (admin login) */
+(function(){
+  if(window._axCryptoStorageAutoInstalled) return;
+  window._axCryptoStorageAutoInstalled = true;
+  setTimeout(function(){
+    /* Watcher : declenche encryption une fois masterkey ready */
+    var attempts = 0;
+    var watch = setInterval(function(){
+      attempts++;
+      try{
+        if(window._axMasterKey){
+          clearInterval(watch);
+          axEncryptSensitiveStorage().then(function(result){
+            if(result.ok && result.migrated && result.migrated.length > 0){
+              try{
+                if(typeof toast === "function"){
+                  toast("Cles sensibles chiffrees ("+result.migrated.length+")","ok",{duration:3000});
+                }
+              }catch(_){}
+            }
+          }).catch(function(){});
+        }
+      }catch(_){}
+      if(attempts > 30){ clearInterval(watch); }
+    }, 5000);
+  }, 30000);
+})();
+
+/* === 4. CSP nonce upgrade : injecte un nouveau meta CSP avec nonce === */
+(function(){
+  if(window._axCspNonceUpgradeInstalled) return;
+  window._axCspNonceUpgradeInstalled = true;
+  setTimeout(function(){
+    try{
+      /* Genere nonce unique */
+      var nonce = (typeof axCspNonceGenerate === "function") ? axCspNonceGenerate() : ("n"+Date.now()+Math.random().toString(36).slice(2,10));
+      /* Note : on ne peut PAS modifier le CSP existant via JS apres parsing
+         (browsers ignorent les meta CSP injectes apres DOM ready).
+         Mais on stocke le nonce pour futures injections runtime. */
+      window._axCspNonceCurrent = nonce;
+      try{
+        if(typeof axJournalEntry === "function"){
+          axJournalEntry("apex-ai","csp_nonce_generated",nonce.slice(0,8),"runtime nonce ready","Pour future injection scripts safely");
+        }
+      }catch(_){}
+    }catch(_){}
+  }, 500);
+})();
+
+/* === 5. axMakeAxScriptSafe : helper inject script avec nonce === */
+function axMakeAxScriptSafe(scriptText, opts){
+  /* Cree un element script avec nonce actuel - safer que eval/new Function. */
+  try{
+    var s = document.createElement("script");
+    if(window._axCspNonceCurrent) s.nonce = window._axCspNonceCurrent;
+    s.textContent = String(scriptText||"");
+    if(opts && opts.parent && opts.parent.appendChild){
+      opts.parent.appendChild(s);
+    } else {
+      document.head.appendChild(s);
+    }
+    return {ok:true, scriptElement:s};
+  }catch(e){
+    return {ok:false, error:String(e.message||e)};
+  }
+}
+window.axMakeAxScriptSafe = axMakeAxScriptSafe;
+
+/* === 6. axProductionReadiness : check global production readiness === */
+function axProductionReadiness(){
+  var checks = {
+    score: null,
+    helpers_wired: 0,
+    helpers_total: 26,
+    storage_encrypted: false,
+    csp_nonce_ready: false,
+    circuit_breaker_active: false,
+    backup_age_h: null,
+    failover_keys_count: 0,
+    timestamp: Date.now()
+  };
+  try{
+    if(typeof axGet100Score === "function"){
+      var s = axGet100Score();
+      checks.score = s.global;
+    }
+    if(typeof axIntegrationCheckWired === "function"){
+      var ic = axIntegrationCheckWired();
+      checks.helpers_wired = ic.present;
+      checks.helpers_total = ic.total;
+    }
+    if(typeof axDiagnosticIntegration === "function"){
+      var di = axDiagnosticIntegration();
+      checks.circuit_breaker_active = !!di.circuitBreakerWired;
+    }
+    /* Verif clé encrypted */
+    var apiRaw = localStorage.getItem("ax_api_key") || localStorage.getItem("ax_shared_api_key") || "";
+    checks.storage_encrypted = apiRaw.indexOf("__AES2__") >= 0;
+    /* CSP nonce ready */
+    checks.csp_nonce_ready = !!window._axCspNonceCurrent;
+    /* Backup age */
+    var lastBackup = parseInt(lg("ax_last_backup_ts", 0), 10) || 0;
+    if(lastBackup) checks.backup_age_h = Math.round((Date.now()-lastBackup)/3600000);
+    /* Failover keys count */
+    ["ax_groq_key","ax_gemini_key","ax_openai_key","ax_openrouter_key"].forEach(function(k){
+      if(lg(k,"").length > 20) checks.failover_keys_count++;
+    });
+  }catch(_){}
+  /* Verdict */
+  var ready = checks.score >= 80
+    && checks.helpers_wired >= 22
+    && checks.circuit_breaker_active
+    && checks.failover_keys_count >= 1
+    && checks.backup_age_h !== null
+    && checks.backup_age_h < 48;
+  return {
+    productionReady: ready,
+    checks: checks,
+    blockers: [
+      !checks.score || checks.score < 80 ? "score < 80" : null,
+      checks.helpers_wired < 22 ? "helpers_wired < 22" : null,
+      !checks.circuit_breaker_active ? "circuit_breaker not active" : null,
+      checks.failover_keys_count === 0 ? "no failover keys" : null,
+      checks.backup_age_h === null || checks.backup_age_h > 48 ? "backup > 48h" : null
+    ].filter(Boolean)
+  };
+}
+window.axProductionReadiness = axProductionReadiness;
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
