@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.455",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.456",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2904,6 +2904,166 @@ function axBeaconCriticalLog(payload){
     try{ axRequestPeriodicSync("apex-refresh", 24*3600*1000); }catch(_){}
   }, 5000);
 })();
+
+/* v12.456 - Support video dans chat (upload + URL detection + embed + analyse) */
+
+var AX_VIDEO_PROVIDERS = [
+  {name:"youtube", regex:/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i, embed:function(id){return "https://www.youtube.com/embed/"+id+"?rel=0";}},
+  {name:"tiktok", regex:/tiktok\.com\/(?:@[\w.-]+\/)?video\/(\d+)/i, embed:function(id){return "https://www.tiktok.com/embed/v2/"+id;}},
+  {name:"vimeo", regex:/vimeo\.com\/(\d+)/i, embed:function(id){return "https://player.vimeo.com/video/"+id;}},
+  {name:"instagram", regex:/instagram\.com\/(?:p|reel)\/([A-Za-z0-9_-]+)/i, embed:function(id){return "https://www.instagram.com/p/"+id+"/embed";}},
+  {name:"twitter", regex:/(?:twitter|x)\.com\/[\w]+\/status\/(\d+)/i, embed:function(id){return "https://platform.twitter.com/embed/Tweet.html?id="+id;}},
+  {name:"dailymotion", regex:/dailymotion\.com\/video\/([A-Za-z0-9]+)/i, embed:function(id){return "https://www.dailymotion.com/embed/video/"+id;}}
+];
+
+function axDetectVideoUrl(text){
+  if(!text || typeof text !== "string") return null;
+  for(var i=0;i<AX_VIDEO_PROVIDERS.length;i++){
+    var p = AX_VIDEO_PROVIDERS[i];
+    var m = text.match(p.regex);
+    if(m && m[1]) return {provider:p.name, id:m[1], url:m[0], embed:p.embed(m[1])};
+  }
+  return null;
+}
+
+function axRenderVideoEmbed(videoInfo, opts){
+  if(!videoInfo) return "";
+  opts = opts || {};
+  var width = opts.width || "100%";
+  var aspect = opts.aspect || "56.25%"; /* 16:9 */
+  return '<div class="ax-video-embed" style="position:relative;width:'+width+';padding-bottom:'+aspect+';margin:8px 0;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 4px 16px rgba(0,0,0,.4)">'+
+    '<iframe src="'+esc(videoInfo.embed)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowfullscreen loading="lazy" referrerpolicy="no-referrer"></iframe>'+
+    '<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:2px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px">'+esc(videoInfo.provider)+'</div>'+
+    '</div>';
+}
+
+/* Upload video local : preview + thumbnail + duree + extraction metadata */
+function axHandleVideoUpload(file){
+  return new Promise(function(resolve, reject){
+    if(!file || !file.type || file.type.indexOf("video/") !== 0){
+      reject(new Error("Pas un fichier video"));
+      return;
+    }
+    if(file.size > 100 * 1024 * 1024){ /* 100 MB max */
+      reject(new Error("Video trop lourde (max 100 Mo)"));
+      return;
+    }
+    var url = URL.createObjectURL(file);
+    var v = document.createElement("video");
+    v.preload = "metadata";
+    v.src = url;
+    v.muted = true;
+    v.playsInline = true;
+    v.onloadedmetadata = function(){
+      var info = {
+        name: file.name,
+        size: file.size,
+        sizeMB: (file.size/(1024*1024)).toFixed(2),
+        duration: v.duration,
+        durationStr: _axFmtDuration(v.duration),
+        type: file.type,
+        width: v.videoWidth,
+        height: v.videoHeight,
+        url: url,
+        thumbnail: null
+      };
+      /* Capture thumbnail au milieu de la video */
+      v.currentTime = Math.min(v.duration / 2, 5);
+      v.onseeked = function(){
+        try{
+          var canvas = document.createElement("canvas");
+          var maxW = 320;
+          var ratio = v.videoWidth / v.videoHeight;
+          canvas.width = Math.min(maxW, v.videoWidth);
+          canvas.height = canvas.width / ratio;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          info.thumbnail = canvas.toDataURL("image/jpeg", 0.7);
+        }catch(_){}
+        resolve(info);
+      };
+      setTimeout(function(){ if(!info.thumbnail) resolve(info); }, 3000);
+    };
+    v.onerror = function(){ reject(new Error("Lecture video impossible")); };
+  });
+}
+
+function _axFmtDuration(s){
+  if(!s || isNaN(s)) return "?";
+  var m = Math.floor(s/60);
+  var sec = Math.floor(s%60);
+  return m+":"+(sec<10?"0":"")+sec;
+}
+
+function axRenderVideoCard(videoInfo){
+  if(!videoInfo) return "";
+  var thumb = videoInfo.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Crect fill='%23222' width='320' height='180'/%3E%3Ctext x='160' y='95' text-anchor='middle' fill='%23999' font-size='40'%3E\u25b6%3C/text%3E%3C/svg%3E";
+  return '<div class="ax-video-card" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin:8px 0;max-width:420px">'+
+    '<div style="position:relative;cursor:pointer" onclick="axOpenVideoPlayer('+JSON.stringify(videoInfo.url||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/&quot;/g,"&quot;")+')">'+
+      '<img src="'+esc(thumb)+'" style="display:block;width:100%;height:auto;background:#000" alt="Video preview">'+
+      '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="background:rgba(0,0,0,.7);width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff">&#9654;</div></div>'+
+      '<div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;padding:2px 8px;border-radius:6px">'+esc(videoInfo.durationStr||"?")+'</div>'+
+    '</div>'+
+    '<div style="padding:10px 12px">'+
+      '<div style="font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(videoInfo.name||"Video")+'</div>'+
+      '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">'+esc((videoInfo.sizeMB||"?")+" Mo")+(videoInfo.width?" - "+videoInfo.width+"x"+videoInfo.height:"")+'</div>'+
+    '</div>'+
+    '</div>';
+}
+
+function axOpenVideoPlayer(url){
+  if(!url) return;
+  var html = '<h3 style="margin:0 0 12px 0">Lecture video</h3>';
+  html += '<video controls autoplay playsinline style="width:100%;max-height:60vh;background:#000;border-radius:10px" src="'+esc(url)+'"></video>';
+  html += '<button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;margin-top:12px;min-height:44px">Fermer</button>';
+  if(typeof _showModal === "function") _showModal(html);
+}
+
+/* Detection auto URLs videos dans messages chat - hook reutilisable */
+function axEnrichMessageWithVideo(messageContent){
+  if(typeof messageContent !== "string") return messageContent;
+  var info = axDetectVideoUrl(messageContent);
+  if(!info) return messageContent;
+  /* Replace URL by embed iframe + keep original URL en lien */
+  return messageContent + axRenderVideoEmbed(info);
+}
+
+/* Tool IA pour Apex : analyser video URL ou file uploaded */
+function axAnalyzeVideo(videoInfoOrUrl){
+  return new Promise(function(resolve){
+    try{
+      var info = videoInfoOrUrl;
+      if(typeof videoInfoOrUrl === "string"){
+        info = axDetectVideoUrl(videoInfoOrUrl);
+        if(!info){
+          resolve({ok:false, reason:"no_video_detected"});
+          return;
+        }
+      }
+      /* YouTube : tenter de recuperer transcript via timed text API publique */
+      if(info.provider === "youtube"){
+        fetch("https://www.youtube.com/api/timedtext?v="+info.id+"&lang=fr&fmt=json3").then(function(r){
+          if(!r.ok) throw new Error("no_transcript");
+          return r.json();
+        }).then(function(d){
+          var transcript = "";
+          if(d && d.events){
+            d.events.forEach(function(e){
+              if(e.segs) e.segs.forEach(function(s){if(s.utf8)transcript += s.utf8 + " ";});
+            });
+          }
+          resolve({ok:true, provider:info.provider, id:info.id, transcript:transcript.trim().slice(0,5000), embed:info.embed});
+        }).catch(function(){
+          resolve({ok:true, provider:info.provider, id:info.id, transcript:null, embed:info.embed, note:"transcript_unavailable"});
+        });
+        return;
+      }
+      resolve({ok:true, provider:info.provider, id:info.id, embed:info.embed});
+    }catch(e){
+      resolve({ok:false, reason:String(e.message||e)});
+    }
+  });
+}
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
