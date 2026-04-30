@@ -4,10 +4,20 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Ape
 
 ---
 
-## 🎯 RÈGLE PERMANENTE — SCORE SUR TOUS LES AXES + TOUJOURS LE MAXIMUM (Kevin 2026-04-30, ABSOLUE)
+## 🎯 RÈGLE PERMANENTE — 100/100 RÉEL SUR TOUS LES AXES TOUJOURS (Kevin 2026-04-30, ABSOLUE)
 
 > **"Quand je te dis 100/100 ou 200/100 ou 150/100 etc c'est toujours sur TOUS LES AXES."**
 > **"Tu as compris l'idée. Toujours le maximum."** (Kevin 2026-04-30)
+> **"Donc monte à 100/100 réel chaque point"** (Kevin 2026-04-30)
+> **"Fais comme ça toujours 100/100 réel toujours"** (Kevin 2026-04-30)
+
+**RÉEL** = score audit externe sans complaisance, pas avec wrappers `Math.max(100, score)` (= Security Theater interdit CLAUDE.md).
+
+**Méthode obligatoire pour atteindre 100/100 réel chaque axe** :
+1. Audit externe via subagent (pas mes scores internes)
+2. Si axe < 100, identifier P0/P1 audit + fixer REELLEMENT (helpers vraiment wired)
+3. Re-audit pour vérifier que score grimpe
+4. **Pas de boost artificiel** : si Math.max() détecté, suspect Security Theater
 
 **Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs Kevin :
 
