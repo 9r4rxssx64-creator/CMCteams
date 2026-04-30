@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.499",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.500",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -1814,7 +1814,9 @@ window.axToggleQuietMode = function(enabled){
 function toast(msg,type,opts){
   /* AX_V12_499_QUIETMODE : skip toast non-critique pendant boot quiet (Kevin "ca doit disparaitre") */
   try{
-    if(typeof window._axIsQuietMode === "function" && window._axIsQuietMode() && type !== "err" && !(opts && opts.force)){
+    /* AX_V12_500_SILENT : intercepte aussi err si pattern auto-test (reseau/timeout, etc.) */
+    var _isAutoTestErr = type === "err" && /reseau\/timeout|format invalide|non testable|CORS bloque|HTTP \d|Saisi \(pas de test/i.test(String(msg||""));
+    if(typeof window._axIsQuietMode === "function" && window._axIsQuietMode() && (type !== "err" || _isAutoTestErr) && !(opts && opts.force)){
       var sLog = lg("ax_silent_log", []);
       sLog.push({msg:String(msg).slice(0,200), type:type||"ok", ts:Date.now(), reason:"quiet_boot"});
       if(sLog.length > 200) sLog = sLog.slice(-200);
@@ -11410,12 +11412,14 @@ function axCredTestLive(k){
     }
     return p.then(function(res){
       axCredSetStatus(k,res.ok?"green":"red",res.msg);
-      try{if(typeof toast==="function")toast((res.ok?"\u2705 ":"\u274C ")+k.replace(/^ax_/,"")+" : "+res.msg,res.ok?"ok":"err",{duration:res.ok?2500:5000});}catch(_){}
+      /* AX_V12_500_SILENT : respecter flag silent dans le success handler */
+      try{if(typeof toast==="function" && !silent)toast((res.ok?"\u2705 ":"\u274C ")+k.replace(/^ax_/,"")+" : "+res.msg,res.ok?"ok":"err",{duration:res.ok?2500:5000});}catch(_){}
       try{if(typeof dc==="function")dc();}catch(_){}
       return res;
     }).catch(function(e){
       axCredSetStatus(k,"red","Reseau/timeout : "+String(e&&e.message||e).slice(0,80));
-      try{if(typeof toast==="function")toast("\u274C "+k+" : reseau/timeout","err");}catch(_){}
+      /* AX_V12_500_SILENT : respecter flag silent (Kevin "❌ X : reseau/timeout" spam au boot) */
+      try{if(typeof toast==="function" && !silent)toast("\u274C "+k+" : reseau/timeout","err");}catch(_){}
       try{if(typeof dc==="function")dc();}catch(_){}
       return{ok:false,msg:"timeout"};
     });
