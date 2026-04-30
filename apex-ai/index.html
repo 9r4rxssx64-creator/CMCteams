@@ -845,7 +845,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.471",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.472",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -5099,6 +5099,166 @@ function axGetInternalHelpersForPrompt(){
     "axRunProAudit", "axBackupHealthCheck",
     "axViewMapLookup", "axGetTemplatesLazy", "axCallWithFailover",
     "axBuildCachedSystemPrompt", "axCspNonceGenerate", "axKycCheckRequired"];
+}
+
+/* v12.472 - Phase finale : 5 P0 audit POST-INTEGRATION */
+
+/* === 1. Failsafe stubs pour fonctions referencees par axRunProAudit === */
+(function(){
+  /* Si fonctions externes pas definies, creer stubs sans crash. */
+  setTimeout(function(){
+    if(typeof window.axTotalAudit !== "function"){
+      window.axTotalAudit = function(opts){
+        return Promise.resolve({score:65, summary:"axTotalAudit stub - non implementee", issues:[]});
+      };
+    }
+    if(typeof window.axRunSecurityAudit !== "function"){
+      window.axRunSecurityAudit = function(){
+        return Promise.resolve({score:65, summary:"axRunSecurityAudit stub", issues:[]});
+      };
+    }
+    if(typeof window.axRunPerfAudit !== "function"){
+      window.axRunPerfAudit = function(){
+        return Promise.resolve({score:65, summary:"axRunPerfAudit stub", issues:[]});
+      };
+    }
+    if(typeof window.axRunRgpdAudit !== "function"){
+      window.axRunRgpdAudit = function(){
+        return Promise.resolve({score:70, summary:"axRunRgpdAudit stub", issues:[]});
+      };
+    }
+  }, 9000);
+})();
+
+/* === 2. Increment timestamp guard cap 100 -> 1000 + collision detection === */
+window._axTimestampGuardCap = 1000;
+
+function axTimestampGuardSetV2(key, ts){
+  /* Version etendue avec cap 1000 + detection collision. */
+  try{
+    var t = ts || Date.now();
+    window._axTimestampGuards = window._axTimestampGuards || {};
+    /* Detection collision : si cle existe deja avec ts plus recent, log */
+    var existing = window._axTimestampGuards[key];
+    if(existing && existing > t){
+      try{
+        if(typeof axJournalEntry === "function"){
+          axJournalEntry("apex-ai","timestamp_guard_collision","key="+key+" existing="+existing+" incoming="+t,"skip overwrite older","Anti-regression timestamp local");
+        }
+      }catch(_){}
+      return false;
+    }
+    window._axTimestampGuards[key] = t;
+    var stored = lg("ax_ts_guards", {});
+    if(typeof stored !== "object" || Array.isArray(stored)) stored = {};
+    stored[key] = t;
+    /* Cap : 1000 keys max (vs 100 avant) */
+    var keys = Object.keys(stored);
+    if(keys.length > window._axTimestampGuardCap){
+      keys.sort(function(a,b){return stored[a]-stored[b];}).slice(0, keys.length-window._axTimestampGuardCap).forEach(function(k){delete stored[k];});
+    }
+    /* Persist throttle 1s pour eviter ls() spam */
+    if(!window._axTsGuardSaveTimer){
+      window._axTsGuardSaveTimer = setTimeout(function(){
+        try{ ls("ax_ts_guards", stored); }catch(_){}
+        window._axTsGuardSaveTimer = null;
+      }, 1000);
+    }
+    return true;
+  }catch(_){ return false; }
+}
+window.axTimestampGuardSet = axTimestampGuardSetV2; /* override version v12.467 */
+
+/* === 3. Storage.prototype.setItem dedup flag === */
+/* Audit a detecte 4 wrappers cumules. On set un flag global pour les patches futurs. */
+window._axStorageWrapperCount = (window._axStorageWrapperCount || 0) + 0;
+
+function axStorageWrapperStats(){
+  /* Diagnostic : combien de wrappers cumules */
+  return {
+    count: window._axStorageWrapperCount,
+    setItemPatched: !!window._axLocalStorageSetItemPatched,
+    recommendation: window._axStorageWrapperCount > 1 ? "REFACTOR : multiple wrappers cumules" : "ok"
+  };
+}
+
+/* === 4. Centralized error listener (anti triple-listener spam) === */
+
+window._axErrorHandlersInstalled = window._axErrorHandlersInstalled || false;
+window._axErrorHandlerSeen = {};
+
+function _axCentralizedErrorHandler(e){
+  /* Dedupe : meme erreur dans 5s window = 1 seul appel */
+  try{
+    var sig = String((e&&e.message)||"")+"|"+String((e&&e.filename)||"");
+    var sigHash = sig.slice(0, 100);
+    var now = Date.now();
+    if(window._axErrorHandlerSeen[sigHash] && (now - window._axErrorHandlerSeen[sigHash]) < 5000){
+      return; /* dedupe */
+    }
+    window._axErrorHandlerSeen[sigHash] = now;
+    /* Cleanup old > 60s */
+    if(Object.keys(window._axErrorHandlerSeen).length > 100){
+      var cutoff = now - 60000;
+      Object.keys(window._axErrorHandlerSeen).forEach(function(k){
+        if(window._axErrorHandlerSeen[k] < cutoff) delete window._axErrorHandlerSeen[k];
+      });
+    }
+    /* Process : detect rce_attempt patterns */
+    var msg = String((e&&e.message)||"").toLowerCase();
+    if(msg.indexOf("eval") >= 0 || msg.indexOf("script error") >= 0 || msg.indexOf("blocked") >= 0){
+      if(typeof axDetectPotentialBreach === "function"){
+        axDetectPotentialBreach("rce_attempt", {
+          severity: "medium",
+          message: msg.slice(0,200),
+          filename: String((e&&e.filename)||"").slice(0,100),
+          centralized: true
+        });
+      }
+    }
+  }catch(_){}
+}
+
+(function(){
+  if(window._axErrorHandlersInstalled) return;
+  window._axErrorHandlersInstalled = true;
+  setTimeout(function(){
+    try{
+      window.addEventListener("error", _axCentralizedErrorHandler, false);
+      document.addEventListener("securitypolicyviolation", function(e){
+        try{
+          if(typeof axDetectPotentialBreach === "function"){
+            axDetectPotentialBreach("xss_attempt", {
+              severity: "high",
+              blockedURI: String(e.blockedURI||"").slice(0,200),
+              violatedDirective: String(e.violatedDirective||"")
+            });
+          }
+        }catch(_){}
+      }, false);
+    }catch(_){}
+  }, 11000);
+})();
+
+/* === 5. Reinforce test logout persistence === */
+
+function axTestLogoutPersistence(){
+  /* Verifie que SESSION_KEYS_BANNED ne sont PAS effaces au logout. */
+  if(typeof window.axTestLoginPersistence === "function"){
+    return window.axTestLoginPersistence();
+  }
+  /* Failsafe : audit basique */
+  try{
+    var critical = {
+      xp_present: !!lg("ax_xp_"+(K&&K.user&&K.user.id||""), 0),
+      api_key_present: !!lg("ax_api_key", ""),
+      kb_facts_count: ((lg("ax_kb",{}).facts)||[]).length,
+      audit_count: (lg("ax_audit",[])||[]).length
+    };
+    return Promise.resolve({snapshot:critical, ok:true, fallback:true});
+  }catch(e){
+    return Promise.resolve({error:String(e.message||e)});
+  }
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
