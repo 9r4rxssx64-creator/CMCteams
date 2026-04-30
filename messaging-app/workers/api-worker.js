@@ -510,8 +510,9 @@ async function handleAdminCommand(request, env) {
   let result;
   switch (command) {
     case 'searchAllMessages':
+      // Mode A (Kevin 2026-04-30) : admin lit aussi le ciphertext (déchiffrement côté client avec clé maître)
       result = await env.APEX_CHAT_DB.prepare(
-        'SELECT id, conv_id, sender_id, ts, mime FROM messages WHERE ts > ? ORDER BY ts DESC LIMIT 100'
+        'SELECT id, conv_id, sender_id, ts, mime, ciphertext FROM messages WHERE ts > ? ORDER BY ts DESC LIMIT 100'
       ).bind(Date.now() - 7 * 86400000).all();
       break;
     case 'analyzeUser':

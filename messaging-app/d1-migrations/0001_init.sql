@@ -310,19 +310,23 @@ CREATE TABLE IF NOT EXISTS system_config (
 );
 
 -- ============================================================================
--- Initialisation des flags système (MODE_CONFIG par défaut = Option B)
+-- Initialisation des flags système (MODE_CONFIG par défaut = Option A)
 --
--- BASCULE B activée Day 1 (décision Kevin 2026-04-27) :
---   - Kevin admin NE LIT PLUS le contenu des messages (vrai E2E mathématique)
---   - Kevin voit METADATA only (qui→qui, quand, taille, signalements, géoloc, devices)
---   - Marketing 100% honnête : "Ultra-sécurisé E2E, serveur ET admin aveugles"
---   - ZÉRO risque pénal (E2E mathématique strict)
---   - Modération via signalements + IA pattern detection
+-- REVERT vers Mode A (décision Kevin 2026-04-30 : "Oui l'admin voit aussi les contenus") :
+--   - Kevin admin LIT TOUS les contenus messages (modération anti-spam/anti-scam)
+--   - Kevin invisible UI (rang invisible côté SQL) mais actif crypto (clé maître ajoutée au ratchet)
+--   - Pas de claim "serveur aveugle" / "mathématiquement incapable de déchiffrer"
+--   - Risque pénal accru si grand public — accepté par Kevin pour modération efficace
+--   - CGU variante A : "messagerie privée à invitation, admin a accès lecture pour modération"
+--
+-- HISTORIQUE :
+--   - 2026-04-27 : démarrage Mode B (E2E strict admin aveugle)
+--   - 2026-04-30 : RETOUR Mode A (admin lit contenus) — directive Kevin
 -- ============================================================================
 
 INSERT OR IGNORE INTO system_config (key, value, updated_at, updated_by) VALUES
-  ('ADMIN_MODE', 'B', strftime('%s','now')*1000, 'system'),                    -- A | B | C (B = vrai E2E grand public)
-  ('KEVIN_INVISIBLE_ADMIN', 'false', strftime('%s','now')*1000, 'system'),     -- false = pas de clé maître Kevin (vrai E2E)
+  ('ADMIN_MODE', 'A', strftime('%s','now')*1000, 'system'),                    -- A | B | C (A = Kevin admin lit contenus pour modération)
+  ('KEVIN_INVISIBLE_ADMIN', 'true', strftime('%s','now')*1000, 'system'),      -- true = invisible UI, mais clé maître Kevin ajoutée au ratchet (peut déchiffrer)
   ('AUTH_PROVIDER', 'firebase', strftime('%s','now')*1000, 'system'),          -- firebase | vonage
   ('TURN_PROVIDER', 'p2p-only', strftime('%s','now')*1000, 'system'),          -- p2p-only | local-coturn | cloudflare-calls
   ('IA_PROVIDER_PRIMARY', 'anthropic', strftime('%s','now')*1000, 'system'),

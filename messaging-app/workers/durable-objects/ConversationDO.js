@@ -38,7 +38,7 @@ export class ConversationDO {
       for (const row of (stmt.results || [])) config[row.key] = row.value;
       return config;
     } catch (e) {
-      return { KEVIN_INVISIBLE_ADMIN: 'false', ADMIN_MODE: 'B' };  // P0 FIX : default B
+      return { KEVIN_INVISIBLE_ADMIN: 'true', ADMIN_MODE: 'A' };  // Mode A actée Kevin 2026-04-30 : admin lit contenus, invisible UI
     }
   }
 
