@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.547",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.548",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30126,6 +30126,84 @@ window.axAuditApexProjectsTokens = function(){
   });
   return {present:present, missing:missing, total:AX_APEX_PROJECTS_TOKENS.length};
 };
+
+/* ============================================================
+   AX_V12_548 — Sentinelle projects-watch (audit hebdo auto chaque projet)
+   Centralisation Apex Projects : Apex IA audite seul + escalade Claude Code si besoin
+   ============================================================ */
+
+window.AX_PROJECTS_REGISTRY = [
+  {id:"apex-ai", name:"APEX AI", path:"apex-ai/index.html",
+    health_keys:["ax_api_key","ax_uid","ax_user"], required_tokens:["ax_api_key"]},
+  {id:"cmcteams", name:"CMCteams", path:"index.html",
+    health_keys:["cmc_uid","cmc_e","cmc_t"], required_tokens:[]},
+  {id:"apexchat", name:"Apex Chat", path:"messaging-app/index.html",
+    health_keys:[], required_tokens:["ax_kevin_whatsapp_phone"]},
+  {id:"socialvideo", name:"Social Video Pipeline", path:"tools/social/cli.js",
+    health_keys:["ax_social_jobs"], required_tokens:["ax_gh_pat","ax_gemini_key"]},
+  {id:"cloudflare", name:"Cloudflare Tools", path:"tools/cloudflare/",
+    health_keys:["ax_push_worker_url","ax_vapid_public"], required_tokens:["ax_cf_token"]},
+  {id:"backend", name:"Backend Proxy", path:"apex-ai/proxy-apex.js",
+    health_keys:["ax_proxy_url"], required_tokens:[]}
+];
+
+window.axProjectsAudit = function(){
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  var report = {ts:Date.now(), projects:[], summary:{ok:0, warn:0, err:0, missing_tokens:[]}};
+  AX_PROJECTS_REGISTRY.forEach(function(p){
+    var status = "ok"; var issues = [];
+    p.required_tokens.forEach(function(tk){
+      var v = lg(tk, "") || localStorage.getItem(tk);
+      if(!v || String(v).length < 4){
+        status = "warn";
+        issues.push("token_missing:" + tk);
+        if(report.summary.missing_tokens.indexOf(tk) < 0) report.summary.missing_tokens.push(tk);
+      }
+    });
+    p.health_keys.forEach(function(hk){
+      var v = localStorage.getItem(hk);
+      if(!v && p.required_tokens.length === 0){
+        if(status === "ok") status = "info";
+        issues.push("health_key_empty:" + hk);
+      }
+    });
+    report.projects.push({id:p.id, name:p.name, status:status, issues:issues});
+    if(status === "ok") report.summary.ok++;
+    else if(status === "warn") report.summary.warn++;
+    else report.summary.err++;
+  });
+  ls("ax_projects_last_audit", report);
+  /* Auto-fix tokens manquants → modal axNeedsAttention 1-clic */
+  if(report.summary.missing_tokens.length && typeof axNeedsAttention === "function"){
+    axNeedsAttention({
+      id: "projects_tokens_missing",
+      title: "Tokens manquants Apex Projects",
+      body: report.summary.missing_tokens.length + " tokens requis non configures : " + report.summary.missing_tokens.join(", "),
+      action: { label: "Voir Projets", run: function(){ if(typeof sv==="function") sv("projects"); } }
+    });
+  }
+  /* Escalade Claude Code si critique */
+  if(report.summary.err > 0 && typeof _escalateToClaudeCode === "function"){
+    try{ _escalateToClaudeCode({sentinelId:"projects-watch", report:report}, "Apex Projects: " + report.summary.err + " errors", "warn"); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("projects_escalate",_e,"warn");}
+  }
+  if(typeof axSecurityLog === "function") axSecurityLog("projects_audit", "ok="+report.summary.ok+" warn="+report.summary.warn+" err="+report.summary.err);
+  return report;
+};
+
+/* Auto-trigger hebdo (si > 7j depuis dernier audit) */
+setTimeout(function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var last = lg("ax_projects_last_audit", null);
+    var WEEK_MS = 7 * 86400000;
+    if(!last || (Date.now() - last.ts) > WEEK_MS){
+      if(typeof axIsAdminStrict === "function" && axIsAdminStrict()){
+        axProjectsAudit();
+      }
+    }
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("projects_audit_boot",_e,"warn");}
+}, 30000); /* 30s post-boot pour ne pas charger le boot */
 
 </script>
 </body>
