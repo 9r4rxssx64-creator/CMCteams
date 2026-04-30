@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.518",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.520",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6708,8 +6708,12 @@ window.axTouchAdminVisit = axTouchAdminVisit;
               if(String(_hk).toLowerCase()==="idempotency-key" || String(_hk).toLowerCase()==="x-idempotency-key"){_hasIdem=true;break;}
             }
             if(!_hasIdem){
-              var _idem = window._apexCurrentIdempotencyKey || (window._axGenIdempotencyKey && window._axGenIdempotencyKey());
-              if(_idem) opts.headers["Idempotency-Key"] = _idem;
+              /* AX_V12_520_EMERGENCY : Idempotency-Key opt-in (Kevin signale timeouts).
+                 Anthropic peut rejeter ce header en preflight CORS, causant timeouts. */
+              if(lg("ax_idempotency_enabled", false)){
+                var _idem = window._apexCurrentIdempotencyKey || (window._axGenIdempotencyKey && window._axGenIdempotencyKey());
+                if(_idem) opts.headers["Idempotency-Key"] = _idem;
+              }
             }
           }
         }catch(_){}
@@ -12810,6 +12814,217 @@ window.axToggleTtsAutoLang = function(enabled){
 
 /* AX_V12_518_TTS_LANG_END */
 
+/* AX_V12_519_CHAT_PARALLEL v12.519 - Chat parallele : background streaming + multi-tabs */
+
+window._axParallelStreams = window._axParallelStreams || {};
+
+/* Lance une conversation parallele en arriere-plan (pas dans K.messages, pas dans UI active).
+   Le resultat est stocke dans ax_parallel_results[id] et notifie via toast. */
+window.axChatParallel = function(prompt, opts){
+  opts = opts || {};
+  var id = opts.id || ("par_" + Date.now() + "_" + Math.random().toString(36).slice(2,7));
+  var apiKey = (typeof _getApiKey === "function") ? _getApiKey() : "";
+  var proxyUrl = lg("ax_proxy_url", "");
+  var apiUrl = proxyUrl ? proxyUrl.replace(/\/$/,"") : "https://api.anthropic.com/v1/messages";
+  var isProxy = apiUrl.indexOf("anthropic.com") < 0;
+
+  if(!apiKey && !isProxy){
+    return Promise.resolve({ok:false, msg:"Cle API manquante", id:id});
+  }
+
+  /* Marker actif */
+  window._axParallelStreams[id] = {
+    prompt: String(prompt||"").slice(0,200),
+    started: Date.now(),
+    status: "running"
+  };
+
+  var headers = {"content-type":"application/json"};
+  if(!isProxy){
+    headers["x-api-key"] = apiKey;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  /* Idempotency-Key v12.496 deja injectee par hook fetch global */
+
+  var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  var timeoutMs = opts.timeoutMs || 90000;
+  var to = setTimeout(function(){ if(ctrl) try{ctrl.abort();}catch(_){} }, timeoutMs);
+
+  var body = {
+    model: opts.model || "claude-haiku-4-5-20251001",
+    max_tokens: opts.maxTokens || 1024,
+    messages: [{role:"user", content: String(prompt||"")}]
+  };
+  if(opts.system) body.system = opts.system;
+
+  return fetch(apiUrl, {
+    method:"POST",
+    headers: headers,
+    body: JSON.stringify(body),
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function(r){
+    clearTimeout(to);
+    if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,200));});
+    return r.json();
+  }).then(function(d){
+    var text = "";
+    if(d && d.content){
+      d.content.forEach(function(c){if(c.text) text += c.text;});
+    }
+    /* Persist result */
+    var results = lg("ax_parallel_results", {});
+    results[id] = {
+      prompt: String(prompt||"").slice(0,500),
+      response: text.slice(0,5000),
+      ts: Date.now(),
+      duration_ms: Date.now() - window._axParallelStreams[id].started,
+      model: body.model,
+      tokens_approx: Math.round(text.length / 4)
+    };
+    /* Cap 50 entries */
+    var keys = Object.keys(results);
+    if(keys.length > 50){
+      keys.sort(function(a,b){return (results[a].ts||0) - (results[b].ts||0);}).slice(0, keys.length-50).forEach(function(k){delete results[k];});
+    }
+    ls("ax_parallel_results", results);
+    delete window._axParallelStreams[id];
+    if(typeof toast === "function") toast("Tache parallele OK : " + String(prompt||"").slice(0,40), "ok", {force:true, duration:4000});
+    if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","chat_parallel_done",APP_VER, id, text.length+" chars en "+results[id].duration_ms+"ms");
+    return {ok:true, id:id, response:text, result:results[id]};
+  }).catch(function(e){
+    clearTimeout(to);
+    delete window._axParallelStreams[id];
+    var em = String(e&&e.message||e).slice(0,80);
+    if(typeof toast === "function") toast("Tache parallele KO : " + em, "warn", {force:true, duration:4000});
+    return {ok:false, id:id, msg:em};
+  });
+};
+
+/* Lance plusieurs prompts en parallele - Promise.all */
+window.axChatParallelBatch = function(prompts, opts){
+  if(!Array.isArray(prompts) || prompts.length === 0) return Promise.resolve({ok:false, msg:"prompts vide"});
+  if(typeof toast === "function") toast(prompts.length + " taches en parallele lancees...", "info", {force:true, duration:3000});
+  return Promise.all(prompts.map(function(p, idx){
+    var pOpts = Object.assign({}, opts || {});
+    pOpts.id = (opts && opts.id ? opts.id+"_"+idx : "batch_"+Date.now()+"_"+idx);
+    return axChatParallel(p, pOpts);
+  })).then(function(results){
+    var ok = results.filter(function(r){return r.ok;}).length;
+    if(typeof toast === "function") toast("Batch parallele : "+ok+"/"+results.length+" OK", ok===results.length?"ok":"warn", {force:true, duration:4000});
+    return {ok:true, results:results, success:ok, total:results.length};
+  });
+};
+
+/* List active streams + recent results */
+window.axChatParallelStatus = function(){
+  var active = Object.keys(window._axParallelStreams || {}).map(function(id){
+    var s = window._axParallelStreams[id];
+    return {id:id, prompt:s.prompt, since_s: Math.round((Date.now() - s.started)/1000), status:s.status};
+  });
+  var results = lg("ax_parallel_results", {});
+  var recent = Object.keys(results).map(function(id){return Object.assign({id:id}, results[id]);}).sort(function(a,b){return (b.ts||0) - (a.ts||0);}).slice(0, 20);
+  return {active:active, recent_results:recent, active_count:active.length, total_results:Object.keys(results).length};
+};
+
+/* Vue admin : monitoring parallel + envoyer prompts */
+window.vChatParallel = function(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var status = axChatParallelStatus();
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">&#9889; Chat parallele</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Lance des taches IA en arriere-plan pendant que tu navigues. Resultat dans ax_parallel_results.</p>';
+
+  /* Active */
+  h += '<div class="ax-card" style="border-left:4px solid '+(status.active_count>0?"#e8b830":"#888")+'"><h3>&#127939; Active (' + status.active_count + ')</h3>';
+  if(status.active.length === 0){
+    h += '<p style="font-size:12px;color:var(--ax-text-dim)">Aucune tache en cours.</p>';
+  } else {
+    status.active.forEach(function(a){
+      h += '<div style="padding:8px;background:rgba(232,184,48,.1);border-radius:6px;margin-bottom:4px">';
+      h += '<div style="font-size:13px;font-weight:600">' + (typeof esc==="function"?esc(a.prompt):a.prompt) + '</div>';
+      h += '<div style="font-size:10px;color:var(--ax-text-dim)">Depuis ' + a.since_s + 's - ID: ' + a.id + '</div>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  /* Lancer prompt */
+  h += '<div class="ax-card"><h3>&#128640; Lancer tache parallele</h3>';
+  h += '<input id="ax-parallel-input" type="text" class="ax-input" placeholder="Prompt..." style="width:100%;margin-bottom:8px">';
+  h += '<select id="ax-parallel-model" class="ax-input" style="width:100%;margin-bottom:8px">';
+  h += '<option value="claude-haiku-4-5-20251001">Haiku (rapide, eco)</option>';
+  h += '<option value="claude-sonnet-4-6">Sonnet (qualite)</option>';
+  h += '<option value="claude-opus-4-7">Opus (max qualite, cher)</option>';
+  h += '</select>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="var p=document.getElementById(&quot;ax-parallel-input&quot;).value;var m=document.getElementById(&quot;ax-parallel-model&quot;).value;if(p)axChatParallel(p,{model:m}).then(function(){dc()})" style="width:100%;min-height:44px">&#9889; Lancer (background)</button>';
+  h += '</div>';
+
+  /* Resultats recents */
+  h += '<div class="ax-card"><h3>&#128203; Resultats recents (' + status.recent_results.length + ')</h3>';
+  if(status.recent_results.length === 0){
+    h += '<p style="font-size:12px;color:var(--ax-text-dim)">Aucun resultat. Lance une tache.</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">';
+    status.recent_results.forEach(function(r){
+      var when = r.ts ? new Date(r.ts).toLocaleString("fr-FR") : "?";
+      h += '<details style="padding:8px;background:var(--ax-bg-input);border-radius:6px"><summary style="cursor:pointer;font-size:12px"><b>' + (typeof esc==="function"?esc((r.prompt||"").slice(0,60)):(r.prompt||"").slice(0,60)) + '</b> <span style="color:var(--ax-text-dim);font-size:10px">' + when + ' &middot; ' + (r.duration_ms||0) + 'ms</span></summary>';
+      h += '<div style="font-size:12px;line-height:1.5;margin-top:8px;color:var(--ax-text)">' + (typeof esc==="function"?esc((r.response||"").slice(0,1500)):(r.response||"").slice(0,1500)) + '</div></details>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+};
+
+/* AX_V12_519_CHAT_PARALLEL_END */
+
+/* AX_V12_520_EMERGENCY v12.520 - Fix chat timeouts */
+
+window.axToggleIdempotency = function(enabled){
+  var v = (typeof enabled === "boolean") ? enabled : !lg("ax_idempotency_enabled", false);
+  ls("ax_idempotency_enabled", v);
+  if(typeof toast === "function") toast(v ? "Idempotency-Key ACTIF (anti-double-billing)" : "Idempotency-Key OFF (default - safe)", "ok", {force:true, duration:3000});
+  return v;
+};
+
+/* Diagnostic complet API */
+window.axDiagnoseChatTimeout = function(){
+  var apiKey = (typeof _getApiKey === "function") ? _getApiKey() : "";
+  var proxyUrl = lg("ax_proxy_url", "");
+  var report = {
+    api_key_present: !!apiKey,
+    api_key_format_ok: apiKey ? /^sk-ant-/.test(apiKey) : false,
+    api_key_length: apiKey ? apiKey.length : 0,
+    proxy_configured: !!proxyUrl,
+    online: typeof navigator !== "undefined" ? navigator.onLine : true,
+    fb_connected: (typeof _fbEs !== "undefined") ? !!_fbEs : false,
+    streaming_chat: lg("ax_streaming_chat", false),
+    idempotency_enabled: lg("ax_idempotency_enabled", false),
+    last_quota_err_ts: lg("ax_last_quota_err_ts", 0),
+    last_api_ok_ts: lg("ax_last_api_ok_ts", 0)
+  };
+  /* Recommandations */
+  var advice = [];
+  if(!report.api_key_present) advice.push("Cle API manquante - va dans Coffre");
+  else if(!report.api_key_format_ok) advice.push("Cle API format suspect - doit commencer par sk-ant-");
+  else if(report.api_key_length < 50) advice.push("Cle API trop courte (probablement coupee)");
+  if(!report.online) advice.push("Pas de reseau");
+  if(report.last_quota_err_ts && (Date.now() - report.last_quota_err_ts < 3600000)) advice.push("Quota Anthropic epuise recemment - recharge https://console.anthropic.com/settings/billing");
+  if(report.idempotency_enabled) advice.push("Idempotency-Key actif (peut causer timeouts) - axToggleIdempotency(false)");
+  if(report.streaming_chat) advice.push("Streaming SSE actif (peut timeout si proxy mal config) - axToggleStreamingChat(false)");
+  report.advice = advice;
+  return report;
+};
+
+/* AX_V12_520_EMERGENCY_END */
+
+
+
 
 
 
@@ -17284,7 +17499,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"voicesaudit":case"voixqualite":case"voicesquality":return vVoicesQualityAudit();case"audio":case"audiochathealth":case"chathealth":return vAudioChatHealth();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"voicesaudit":case"voixqualite":case"voicesquality":return vVoicesQualityAudit();case"audio":case"audiochathealth":case"chathealth":return vAudioChatHealth();case"parallel":case"chatparallel":case"taches":return vChatParallel();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -20164,7 +20379,7 @@ try{
     }
   }
 }catch(_pme2){}
-/* AX_V12_506_STREAMING : opt-in flag ax_streaming_chat default false */var _streamFlag=lg("ax_streaming_chat",false);var body={model:_autoModel,max_tokens:K.settings.maxTokens||4096,system:[{type:"text",text:_sysText,cache_control:{type:"ephemeral"}}],messages:cleanMsgs,tools:_toolsArr};if(_streamFlag)body.stream=true;var headers={"content-type":"application/json"};if(!isProxy){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true";}var fetchOpts={method:"POST",headers:headers,body:JSON.stringify(body)};if(_abortCtrl)fetchOpts.signal=_abortCtrl.signal;fetch(apiUrl,fetchOpts).then(function(r){clearTimeout(_fetchTimeout);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});/* AX_V12_506_STREAMING : si streaming actif et body stream, branche sur _processStream */if(_streamFlag && r.body && typeof _processStream === "function"){_apiDone=true;K.isStreaming=true;_processStream(r.body, depth, cleanMsgs, fullSystem);return null;}return r.json();}).then(function(d){if(_apiDone)return;_apiDone=true;window._apexRetryCount=0;K.isStreaming=false;K.lastProvider="anthropic";try{ls("ax_last_provider","anthropic");if(typeof _axStopStreamWatchdog==="function")_axStopStreamWatchdog();ls("ax_last_api_ok_ts",Date.now());if(typeof _axCheckAutoRecharge==="function")_axCheckAutoRecharge();}catch(_){}var text="";var toolCalls=[];if(d&&d.content){for(var j=0;j<d.content.length;j++){if(d.content[j].text)text+=d.content[j].text;if(d.content[j].type==="tool_use")toolCalls.push(d.content[j]);}}if(toolCalls.length&&depth<5){/* v12.273 — Await async tool results (Promise.all) avant de relancer l API */var toolPromises=toolCalls.map(function(tc){var res;try{res=axExecuteTool(tc.name,tc.input);}catch(te){res="Erreur outil "+tc.name+": "+(te&&te.message||te);}if(res&&typeof res.then==="function"){return res.then(function(v){return{type:"tool_result",tool_use_id:tc.id,content:String(v==null?"":v)};}).catch(function(e){return{type:"tool_result",tool_use_id:tc.id,content:"Erreur outil "+tc.name+": "+(e&&e.message||e)};});}return Promise.resolve({type:"tool_result",tool_use_id:tc.id,content:String(res==null?"":res)});});Promise.all(toolPromises).then(function(toolResults){if(text)K.messages.push({role:"assistant",content:text,ts:now()});var nextMsgs=cleanMsgs.concat([{role:"assistant",content:d.content},{role:"user",content:toolResults}]);K.isStreaming=true;dc();_callClaudeAPI(sysPrompt,nextMsgs,depth+1);}).catch(function(toolErr){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme outil — reessaye dans 10s.",ts:now()});_saveMsgs();dc();});}else{K.messages.push({role:"assistant",content:text||"(reponse vide — reessayez ou reformulez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();/* v12.321 — Track tokens + spend EUR (Anthropic) */try{var _outT=Math.round((text||"").length/4);axTrackUsage(_outT);var _inT=Math.round(JSON.stringify(cleanMsgs).length/4);var _modelUsed=(typeof axGetPasserelleModel==="function")?axGetPasserelleModel():(K.settings&&K.settings.model)||"claude-sonnet-4-6";var _inUsd=_modelUsed.indexOf("haiku")>=0?0.80:_modelUsed.indexOf("opus")>=0?15:3;var _outUsd=_modelUsed.indexOf("haiku")>=0?4:_modelUsed.indexOf("opus")>=0?75:15;var _costUsd=(_inT/1000000*_inUsd)+(_outT/1000000*_outUsd);var _costEur=_costUsd*0.92;if(typeof axTrackSpend==="function")axTrackSpend(_costEur);}catch(_eSpend){}axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(text);}}).catch(function(e){if(_apiDone)return;_apiDone=true;clearTimeout(_fetchTimeout);K.isStreaming=false;try{if(typeof axSetStreamState==="function")axSetStreamState("idle","");}catch(_){}var errMsg=String(e&&e.message||e).slice(0,300);/* v12.286 — Si stop explicite user, pas d erreur */if(window._apexExplicitStop){window._apexExplicitStop=false;return;}var is5xx=errMsg.indexOf("500")>=0||errMsg.indexOf("502")>=0||errMsg.indexOf("503")>=0||errMsg.indexOf("504")>=0;var isNetwork=errMsg.indexOf("network")>=0||errMsg.indexOf("fetch")>=0||errMsg.indexOf("Failed to fetch")>=0||errMsg.indexOf("NetworkError")>=0||errMsg.indexOf("Load failed")>=0||errMsg.indexOf("ERR_")>=0||errMsg.indexOf("ETIMEDOUT")>=0;var isAbort=errMsg.indexOf("aborted")>=0||errMsg.indexOf("AbortError")>=0;/* v12.286 — Retry auto reseau 2x avec backoff [3s, 8s] */if((isNetwork||isAbort)&&_retryCount<2&&depth===0&&!window._apexExplicitStop){window._apexRetryCount=_retryCount+1;var backoffNet=_retryCount===0?3000:8000;try{if(typeof axSetStreamState==="function")axSetStreamState("retry","Reseau coupe, ressaie "+(_retryCount+1)+"/2");}catch(_){}toast("Reseau coupe, je ressaye dans "+Math.round(backoffNet/1000)+"s...","warn");setTimeout(function(){if(navigator.onLine!==false){K.isStreaming=true;try{if(typeof dc==="function")dc();}catch(_){}_callClaudeAPI(sysPrompt,msgs,depth);}else{K.isStreaming=false;/* v12.376 — Reseau exhaust CASCADE Anthropic→OR→Groq→Gemini auto */if(typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Reseau Anthropic coupe"))return;K.messages.push({role:"assistant",content:"Reseau Anthropic coupe + aucune cle de secours configuree.\n\nVerifie wifi/4G puis reessaie, OU ajoute UNE cle gratuite :\n• Groq → https://console.groq.com/keys\n• OpenRouter → https://openrouter.ai/keys\n• Gemini → https://aistudio.google.com/apikey",ts:now()});_saveMsgs();dc();window._apexRetryCount=0;}},backoffNet);return;}window._apexRetryCount=0;/* Track Anthropic 5xx pour failover */try{if(errMsg.indexOf("402")>=0||errMsg.indexOf("429")>=0||/quota|insufficient|rate.limit/i.test(errMsg))ls("ax_last_quota_err_ts",Date.now());}catch(_){}if(is5xx&&!isProxy&&typeof _apexLogAnthError==="function")_apexLogAnthError();/* v12.376 — Failover 5xx CASCADE Anthropic → OpenRouter → Groq → Gemini auto si 3 fois en 5 min */if(is5xx&&typeof _apexShouldFailoverToOpenRouter==="function"&&_apexShouldFailoverToOpenRouter()&&depth===0&&typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Anthropic 5xx repete"))return;var friendly;if(isAbort)friendly="Reponse interrompue. Verifie ta connexion et reessaie.";else if(errMsg.indexOf("Tool names must be unique")>=0||errMsg.indexOf("invalid_request_error")>=0)friendly="Ca ne marche pas pour le moment. Je l'ai signale, un correctif arrive dans la prochaine mise a jour.";else if(errMsg.indexOf("401")>=0||errMsg.indexOf("authentication")>=0)friendly="Probleme d'acces. Verifie ta cle dans Reglages.";else if(errMsg.indexOf("429")>=0||errMsg.indexOf("rate")>=0)friendly="Trop de demandes. Attends quelques secondes.";else if(errMsg.indexOf("413")>=0||errMsg.indexOf("too large")>=0||errMsg.indexOf("max_tokens")>=0)friendly="Trop de texte d'un coup. Coupe ta question en plusieurs morceaux.";else if(is5xx)friendly="Le serveur IA est surcharge. Reessaie dans 1 minute (j ai deja retry "+_retryCount+"x).";else if(isNetwork)friendly="Reseau indisponible. Verifie wifi/4G et reessaie.";else friendly="Un petit souci technique : "+errMsg.slice(0,100)+". Reessaie ou recharge l app.";_autoLearnFromError(errMsg);try{if(typeof _escalateToClaudeCode==="function"&&(errMsg.indexOf("Tool names")>=0||errMsg.indexOf("invalid_request_error")>=0))_escalateToClaudeCode({error:errMsg,version:APP_VER},"API "+errMsg.slice(0,100),"critical");}catch(_){}/* v12.305 - production-grade modal pour forfait/auth */try{if(typeof axHandleAPIError==="function"){var statusMatch=errMsg.match(/HTTP\s+(\d+)/);var statusCode=statusMatch?parseInt(statusMatch[1],10):0;axHandleAPIError(e,{status:statusCode});}}catch(_){}K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();});}catch(ex){try{if(typeof axCaptureError==="function")axCaptureError(ex,{source:"_callClaudeAPI.outer"});}catch(_){}K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme technique, recharge l app",ts:now()});_saveMsgs();dc();}}
+/* AX_V12_506_STREAMING : opt-in flag ax_streaming_chat default false */var _streamFlag=lg("ax_streaming_chat",false);var body={model:_autoModel,max_tokens:K.settings.maxTokens||4096,system:[{type:"text",text:_sysText,cache_control:{type:"ephemeral"}}],messages:cleanMsgs,tools:_toolsArr};if(_streamFlag)body.stream=true;var headers={"content-type":"application/json"};if(!isProxy){headers["x-api-key"]=apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true";}var fetchOpts={method:"POST",headers:headers,body:JSON.stringify(body)};if(_abortCtrl)fetchOpts.signal=_abortCtrl.signal;fetch(apiUrl,fetchOpts).then(function(r){clearTimeout(_fetchTimeout);if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+": "+t.slice(0,300));});/* AX_V12_506_STREAMING : si streaming actif et body stream, branche sur _processStream */if(_streamFlag && r.body && typeof _processStream === "function"){_apiDone=true;K.isStreaming=true;_processStream(r.body, depth, cleanMsgs, fullSystem);return null;}return r.json();}).then(function(d){if(_apiDone)return;_apiDone=true;window._apexRetryCount=0;K.isStreaming=false;K.lastProvider="anthropic";try{ls("ax_last_provider","anthropic");if(typeof _axStopStreamWatchdog==="function")_axStopStreamWatchdog();ls("ax_last_api_ok_ts",Date.now());if(typeof _axCheckAutoRecharge==="function")_axCheckAutoRecharge();}catch(_){}var text="";var toolCalls=[];if(d&&d.content){for(var j=0;j<d.content.length;j++){if(d.content[j].text)text+=d.content[j].text;if(d.content[j].type==="tool_use")toolCalls.push(d.content[j]);}}if(toolCalls.length&&depth<5){/* v12.273 — Await async tool results (Promise.all) avant de relancer l API */var toolPromises=toolCalls.map(function(tc){var res;try{res=axExecuteTool(tc.name,tc.input);}catch(te){res="Erreur outil "+tc.name+": "+(te&&te.message||te);}if(res&&typeof res.then==="function"){return res.then(function(v){return{type:"tool_result",tool_use_id:tc.id,content:String(v==null?"":v)};}).catch(function(e){return{type:"tool_result",tool_use_id:tc.id,content:"Erreur outil "+tc.name+": "+(e&&e.message||e)};});}return Promise.resolve({type:"tool_result",tool_use_id:tc.id,content:String(res==null?"":res)});});Promise.all(toolPromises).then(function(toolResults){if(text)K.messages.push({role:"assistant",content:text,ts:now()});var nextMsgs=cleanMsgs.concat([{role:"assistant",content:d.content},{role:"user",content:toolResults}]);K.isStreaming=true;dc();_callClaudeAPI(sysPrompt,nextMsgs,depth+1);}).catch(function(toolErr){K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme outil — reessaye dans 10s.",ts:now()});_saveMsgs();dc();});}else{K.messages.push({role:"assistant",content:text||"(reponse vide — reessayez ou reformulez)",ts:now()});_saveMsgs();dc();_scrollChatBottom();/* v12.321 — Track tokens + spend EUR (Anthropic) */try{var _outT=Math.round((text||"").length/4);axTrackUsage(_outT);var _inT=Math.round(JSON.stringify(cleanMsgs).length/4);var _modelUsed=(typeof axGetPasserelleModel==="function")?axGetPasserelleModel():(K.settings&&K.settings.model)||"claude-sonnet-4-6";var _inUsd=_modelUsed.indexOf("haiku")>=0?0.80:_modelUsed.indexOf("opus")>=0?15:3;var _outUsd=_modelUsed.indexOf("haiku")>=0?4:_modelUsed.indexOf("opus")>=0?75:15;var _costUsd=(_inT/1000000*_inUsd)+(_outT/1000000*_outUsd);var _costEur=_costUsd*0.92;if(typeof axTrackSpend==="function")axTrackSpend(_costEur);}catch(_eSpend){}axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(text);}}).catch(function(e){if(_apiDone)return;_apiDone=true;clearTimeout(_fetchTimeout);K.isStreaming=false;try{if(typeof axSetStreamState==="function")axSetStreamState("idle","");}catch(_){}var errMsg=String(e&&e.message||e).slice(0,300);/* v12.286 — Si stop explicite user, pas d erreur */if(window._apexExplicitStop){window._apexExplicitStop=false;return;}var is5xx=errMsg.indexOf("500")>=0||errMsg.indexOf("502")>=0||errMsg.indexOf("503")>=0||errMsg.indexOf("504")>=0;var isNetwork=errMsg.indexOf("network")>=0||errMsg.indexOf("fetch")>=0||errMsg.indexOf("Failed to fetch")>=0||errMsg.indexOf("NetworkError")>=0||errMsg.indexOf("Load failed")>=0||errMsg.indexOf("ERR_")>=0||errMsg.indexOf("ETIMEDOUT")>=0;var isAbort=errMsg.indexOf("aborted")>=0||errMsg.indexOf("AbortError")>=0;/* v12.286 — Retry auto reseau 2x avec backoff [3s, 8s] */if((isNetwork||isAbort)&&_retryCount<2&&depth===0&&!window._apexExplicitStop){window._apexRetryCount=_retryCount+1;var backoffNet=_retryCount===0?3000:8000;try{if(typeof axSetStreamState==="function")axSetStreamState("retry","Reseau coupe, ressaie "+(_retryCount+1)+"/2");}catch(_){}toast("Reseau coupe, je ressaye dans "+Math.round(backoffNet/1000)+"s...","warn");setTimeout(function(){if(navigator.onLine!==false){K.isStreaming=true;try{if(typeof dc==="function")dc();}catch(_){}_callClaudeAPI(sysPrompt,msgs,depth);}else{K.isStreaming=false;/* v12.376 — Reseau exhaust CASCADE Anthropic→OR→Groq→Gemini auto */if(typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Reseau Anthropic coupe"))return;K.messages.push({role:"assistant",content:"Reseau Anthropic coupe + aucune cle de secours configuree.\n\nVerifie wifi/4G puis reessaie, OU ajoute UNE cle gratuite :\n• Groq → https://console.groq.com/keys\n• OpenRouter → https://openrouter.ai/keys\n• Gemini → https://aistudio.google.com/apikey",ts:now()});_saveMsgs();dc();window._apexRetryCount=0;}},backoffNet);return;}window._apexRetryCount=0;/* Track Anthropic 5xx pour failover */try{if(errMsg.indexOf("402")>=0||errMsg.indexOf("429")>=0||/quota|insufficient|rate.limit/i.test(errMsg))ls("ax_last_quota_err_ts",Date.now());}catch(_){}if(is5xx&&!isProxy&&typeof _apexLogAnthError==="function")_apexLogAnthError();/* v12.376 — Failover 5xx CASCADE Anthropic → OpenRouter → Groq → Gemini auto si 3 fois en 5 min */if(is5xx&&typeof _apexShouldFailoverToOpenRouter==="function"&&_apexShouldFailoverToOpenRouter()&&depth===0&&typeof _axTryFailoverChain==="function"&&_axTryFailoverChain(sysPrompt,msgs,"Anthropic 5xx repete"))return;var friendly;if(isAbort)friendly="Reponse interrompue. Verifie ta connexion et reessaie.";else if(errMsg.indexOf("Tool names must be unique")>=0||errMsg.indexOf("invalid_request_error")>=0)friendly="Ca ne marche pas pour le moment. Je l'ai signale, un correctif arrive dans la prochaine mise a jour.";else if(errMsg.indexOf("401")>=0||errMsg.indexOf("authentication")>=0)friendly="Probleme d'acces. Verifie ta cle dans Reglages.";else if(errMsg.indexOf("429")>=0||errMsg.indexOf("rate")>=0)friendly="Trop de demandes. Attends quelques secondes.";else if(errMsg.indexOf("413")>=0||errMsg.indexOf("too large")>=0||errMsg.indexOf("max_tokens")>=0)friendly="Trop de texte d'un coup. Coupe ta question en plusieurs morceaux.";else if(is5xx)friendly="Le serveur IA est surcharge. Reessaie dans 1 minute (j ai deja retry "+_retryCount+"x).";else if(isNetwork)friendly="Reseau indisponible. Verifie wifi/4G et reessaie. Tape axDiagnoseChatTimeout() en console pour diagnostic complet.";else friendly="Un petit souci technique : "+errMsg.slice(0,100)+". Reessaie ou recharge l app.";_autoLearnFromError(errMsg);try{if(typeof _escalateToClaudeCode==="function"&&(errMsg.indexOf("Tool names")>=0||errMsg.indexOf("invalid_request_error")>=0))_escalateToClaudeCode({error:errMsg,version:APP_VER},"API "+errMsg.slice(0,100),"critical");}catch(_){}/* v12.305 - production-grade modal pour forfait/auth */try{if(typeof axHandleAPIError==="function"){var statusMatch=errMsg.match(/HTTP\s+(\d+)/);var statusCode=statusMatch?parseInt(statusMatch[1],10):0;axHandleAPIError(e,{status:statusCode});}}catch(_){}K.messages.push({role:"assistant",content:friendly,ts:now()});_saveMsgs();dc();});}catch(ex){try{if(typeof axCaptureError==="function")axCaptureError(ex,{source:"_callClaudeAPI.outer"});}catch(_){}K.isStreaming=false;K.messages.push({role:"assistant",content:"Probleme technique, recharge l app",ts:now()});_saveMsgs();dc();}}
 function _streamReader(body,doneRef,markDone){var reader=body.getReader();var decoder=new TextDecoder();var fullText="";var buffer="";var toolBlocks=[];var curTool=null;var target=document.getElementById("ax-stream-target");function pump(){reader.read().then(function(result){if(result.done){markDone();if(toolBlocks.length){var toolResults=toolBlocks.map(function(tb){try{tb.input=JSON.parse(tb.inputJson||"{}}");}catch(pe){tb.input={};}return{type:"tool_result",tool_use_id:tb.id,content:String(axExecuteTool(tb.name,tb.input))};});if(fullText)K.messages.push({role:"assistant",content:fullText,ts:now()});K.isStreaming=true;/* v12.377 — pas de dc() mid-stream, anti-scintillement */var nextMsgs=[];/* v12.273 — preserve array content */K.messages.forEach(function(m){if(!m||!m.role||m.content==null)return;var role=m.role==="user"?"user":"assistant";if(typeof m.content==="string"){nextMsgs.push({role:role,content:m.content});}else if(Array.isArray(m.content)){nextMsgs.push({role:role,content:m.content});}});nextMsgs.push({role:"user",content:toolResults});_callClaudeAPI(null,nextMsgs,1);}else{K.isStreaming=false;K.messages.push({role:"assistant",content:fullText||"(vide)",ts:now()});_saveMsgs();dc();_scrollChatBottom();/* v12.321 — Track tokens + spend EUR (streaming Anthropic) */try{var _sOutT=Math.round((fullText||"").length/4);axTrackUsage(_sOutT);var _modelS=(typeof axGetPasserelleModel==="function")?axGetPasserelleModel():(K.settings&&K.settings.model)||"claude-sonnet-4-6";var _outUsdS=_modelS.indexOf("haiku")>=0?4:_modelS.indexOf("opus")>=0?75:15;var _costUsdS=(_sOutT/1000000*_outUsdS)*1.5;/* heuristique input ~50% output */var _costEurS=_costUsdS*0.92;if(typeof axTrackSpend==="function")axTrackSpend(_costEurS);}catch(_eSpendS){}axGainXP(5);if(K.settings.ttsEnabled)axTtsSpeak(fullText);}return;}buffer+=decoder.decode(result.value,{stream:true});var lines=buffer.split("\n");buffer=lines.pop()||"";for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line.startsWith("data:"))continue;var json=line.slice(5).trim();if(json==="[DONE]")continue;try{var ev=JSON.parse(json);if(ev.type==="content_block_start"&&ev.content_block&&ev.content_block.type==="tool_use"){curTool={id:ev.content_block.id,name:ev.content_block.name,inputJson:""};}if(ev.type==="content_block_delta"&&ev.delta){if(ev.delta.type==="text_delta"&&ev.delta.text){fullText+=ev.delta.text;if(target){/* v12.326 — throttle DOM render a 60fps (16ms) pour fluidite Claude.ai-style */var _nowT=Date.now();if(!window._axLastStreamRender||(_nowT-window._axLastStreamRender)>=33){window._axLastStreamRender=_nowT;target.innerHTML=renderMd(fullText);_scrollChatBottom();}else{/* update raw seulement, render au prochain tick */target.dataset.pending=fullText;clearTimeout(window._axStreamFlush);window._axStreamFlush=setTimeout(function(){var t=document.getElementById("ax-stream-target");if(t&&t.dataset.pending){t.innerHTML=renderMd(t.dataset.pending);_scrollChatBottom();}},50);}}}if(ev.delta.type==="input_json_delta"&&ev.delta.partial_json&&curTool){curTool.inputJson+=ev.delta.partial_json;}}if(ev.type==="content_block_stop"&&curTool){toolBlocks.push(curTool);curTool=null;if(target)target.innerHTML=renderMd(fullText)+'<div style="color:var(--ax-gold);font-size:12px;margin-top:4px">\u2699 Execution: '+esc(toolBlocks[toolBlocks.length-1].name)+'...</div>';}}catch(pe){}}pump();}).catch(function(e){markDone();K.isStreaming=false;if(fullText){K.messages.push({role:"assistant",content:fullText,ts:now()});}else{K.messages.push({role:"assistant",content:"Un souci pendant la reponse, reessaie",ts:now()});}_saveMsgs();dc();});}pump();}
 
 function _processStream(body,depth,msgs,sysPrompt){var reader=body.getReader();var decoder=new TextDecoder();var fullText="";var toolUseBlocks=[];var currentToolUse=null;var buffer="";var _lastTokenAt=Date.now();try{if(typeof axSetStreamState==="function")axSetStreamState("streaming","Apex tape...");}catch(_){}var _slowWarnTimer=setInterval(function(){if(!K.isStreaming){clearInterval(_slowWarnTimer);return;}if(Date.now()-_lastTokenAt>30000){try{if(typeof axSetStreamState==="function")axSetStreamState("streaming","Reponse longue, patience...");}catch(_){}}},5000);function read(){reader.read().then(function(result){if(result.done){clearInterval(_slowWarnTimer);_onStreamDone(fullText,toolUseBlocks,depth,msgs,sysPrompt);return;}_lastTokenAt=Date.now();buffer+=decoder.decode(result.value,{stream:true});var lines=buffer.split("\n");buffer=lines.pop()||"";for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line.startsWith("data: "))continue;var json=line.slice(6);if(json==="[DONE]")continue;try{var ev=JSON.parse(json);if(ev.type==="content_block_start"&&ev.content_block){if(ev.content_block.type==="tool_use"){currentToolUse={id:ev.content_block.id,name:ev.content_block.name,input_json:""};try{if(typeof axSetStreamState==="function")axSetStreamState("waiting_tool","Outil "+esc(ev.content_block.name||"?")+"...");}catch(_){}}if(ev.content_block.type==="thinking"){_updateStreamBubble('<div style="color:var(--ax-text-dim);font-size:12px;font-style:italic;border-left:2px solid var(--ax-gold);padding-left:8px;margin:4px 0">\uD83E\uDDE0 Reflexion...</div>'+renderMd(fullText));}}if(ev.type==="content_block_delta"&&ev.delta){if(ev.delta.type==="text_delta"&&ev.delta.text){fullText+=ev.delta.text;_updateStreamBubble(renderMd(fullText));}if(ev.delta.type==="thinking_delta"&&ev.delta.thinking){_updateStreamBubble('<div style="color:var(--ax-text-dim);font-size:12px;font-style:italic;border-left:2px solid var(--ax-gold);padding-left:8px;margin:4px 0">\uD83E\uDDE0 '+esc(ev.delta.thinking.slice(-150))+'</div>'+renderMd(fullText));}if(ev.delta.type==="input_json_delta"&&ev.delta.partial_json&&currentToolUse){currentToolUse.input_json+=ev.delta.partial_json;}}if(ev.type==="content_block_stop"&&currentToolUse){try{currentToolUse.input=JSON.parse(currentToolUse.input_json);}catch(pe){currentToolUse.input={};}toolUseBlocks.push(currentToolUse);currentToolUse=null;}}catch(pe){}}read();}).catch(function(e){clearInterval(_slowWarnTimer);K.isStreaming=false;try{if(typeof axSetStreamState==="function")axSetStreamState("idle","");}catch(_){}if(window._apexExplicitStop){window._apexExplicitStop=false;return;}var em=String(e&&e.message||e).slice(0,200);if(fullText&&fullText.length>10){try{if(typeof _apexSavePartialResponse==="function"){_apexSavePartialResponse(fullText,sysPrompt,msgs,em||"stream coupe");}else{K.messages.push({role:"assistant",content:fullText,ts:now()});}}catch(_){if(fullText)K.messages.push({role:"assistant",content:fullText,ts:now()});}}else{var friendly=em.indexOf("network")>=0||em.indexOf("fetch")>=0?"Reseau coupe pendant la reponse. Reessaie.":"Un souci pendant la reponse : "+em.slice(0,80)+". Reessaie.";K.messages.push({role:"assistant",content:friendly,ts:now()});}_saveMsgs();dc();});}read();}
