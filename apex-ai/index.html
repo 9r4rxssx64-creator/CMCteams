@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.513",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.514",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -12014,6 +12014,121 @@ window.vMacrosManager = function(){
 };
 
 /* AX_V12_513_MACROS_END */
+
+/* AX_V12_514_VOICE_WOL v12.514 - Voice multi-devices + Wake-on-LAN */
+
+/* Voice command patterns enrichis avec macros + rooms + devices types */
+window.AX_VOICE_DEVICE_PATTERNS = [
+  /* Macros */
+  {rx:/(?:lance|active|mode)\s+cinema/i, fn:function(){return axRunMacro("cinema");}},
+  {rx:/(?:bonne|bon)\s+nuit/i, fn:function(){return axRunMacro("bonne_nuit");}},
+  {rx:/(?:reveil|bonjour)/i, fn:function(){return axRunMacro("reveil");}},
+  {rx:/(?:mode|active)\s+travail/i, fn:function(){return axRunMacro("travail");}},
+  {rx:/(?:mode|active)\s+fete/i, fn:function(){return axRunMacro("fete");}},
+  {rx:/(?:je\s+pars|depart)/i, fn:function(){return axRunMacro("depart_maison");}},
+  {rx:/(?:j\s*arrive|arrivee)/i, fn:function(){return axRunMacro("arrivee_maison");}},
+  {rx:/(?:eteins?|coupe)\s+tout/i, fn:function(){return axRunMacro("tout_off");}},
+
+  /* Devices specifiques */
+  {rx:/(?:allume|active)\s+(?:la\s+)?tv/i, fn:function(){return axIRBlast("tv_power");}},
+  {rx:/(?:eteins?|stop)\s+(?:la\s+)?tv/i, fn:function(){return axIRBlast("tv_power");}},
+  {rx:/(?:allume|active)\s+(?:la\s+)?clim/i, fn:function(){return axIRBlast("ac_on");}},
+  {rx:/(?:eteins?|stop)\s+(?:la\s+)?clim/i, fn:function(){return axIRBlast("ac_off");}},
+  {rx:/(?:allume|active)\s+(?:la\s+)?lumi/i, fn:function(){return axIRBlast("light_on");}},
+  {rx:/(?:eteins?|stop)\s+(?:la\s+)?lumi/i, fn:function(){return axIRBlast("light_off");}},
+  {rx:/(?:ouvre)\s+(?:netflix)/i, fn:function(){return axIRBlast("tv_netflix");}},
+  {rx:/(?:ouvre)\s+(?:youtube)/i, fn:function(){return axIRBlast("tv_youtube");}},
+  {rx:/monte\s+(?:le\s+)?volume/i, fn:function(){return axIRBlast("tv_vol_up");}},
+  {rx:/baisse\s+(?:le\s+)?volume/i, fn:function(){return axIRBlast("tv_vol_down");}},
+
+  /* Per-room */
+  {rx:/(?:eteins?|coupe)\s+(?:le\s+)?salon/i, fn:function(){return axControlRoom("salon","off");}},
+  {rx:/(?:allume|active)\s+(?:le\s+)?salon/i, fn:function(){return axControlRoom("salon","power");}},
+  {rx:/(?:eteins?|coupe)\s+(?:la\s+)?chambre/i, fn:function(){return axControlRoom("chambre","off");}},
+  {rx:/(?:allume|active)\s+(?:la\s+)?chambre/i, fn:function(){return axControlRoom("chambre","power");}},
+  {rx:/(?:eteins?|coupe)\s+(?:la\s+)?cuisine/i, fn:function(){return axControlRoom("cuisine","off");}}
+];
+
+/* axVoiceProcessDevices : intercepte commande vocale device-related */
+window.axVoiceProcessDevices = function(text){
+  if(!text) return null;
+  var lower = String(text).toLowerCase();
+  for(var i=0;i<AX_VOICE_DEVICE_PATTERNS.length;i++){
+    var p = AX_VOICE_DEVICE_PATTERNS[i];
+    if(p.rx.test(lower)){
+      try{
+        var r = p.fn();
+        if(typeof toast === "function") toast("Commande vocale execute", "ok", {force:true, duration:2000});
+        return {ok:true, matched:p.rx.toString().slice(0,50), result:r};
+      }catch(e){
+        return {ok:false, msg:String(e.message||e).slice(0,60)};
+      }
+    }
+  }
+  return null;
+};
+
+/* Wake-on-LAN via Cloudflare Worker (browser ne peut pas faire UDP magic packet direct) */
+window.axWakeOnLANWorker = function(mac){
+  if(!mac) return Promise.resolve({ok:false, msg:"MAC manquante"});
+  /* Format MAC : XX:XX:XX:XX:XX:XX ou XX-XX-XX-XX-XX-XX */
+  var cleanMac = String(mac).replace(/[^0-9a-fA-F]/g, "");
+  if(cleanMac.length !== 12) return Promise.resolve({ok:false, msg:"MAC invalide ("+cleanMac.length+" chars)"});
+  var formatted = cleanMac.match(/.{2}/g).join(":");
+
+  /* 1. Essai via worker custom si configure */
+  var workerUrl = lg("ax_wol_worker_url", "");
+  if(workerUrl){
+    return fetch(workerUrl + "?mac=" + encodeURIComponent(formatted), {method:"POST"})
+      .then(function(r){return r.ok ? {ok:true, msg:"WoL envoye via worker"} : {ok:false, msg:"Worker HTTP "+r.status};})
+      .catch(function(e){return {ok:false, msg:String(e.message||e).slice(0,60)};});
+  }
+
+  /* 2. Fallback via Broadlink bridge si configure (certains supports WoL) */
+  var bridgeUrl = lg("ax_ir_url", "");
+  if(bridgeUrl){
+    return fetch(bridgeUrl + "/wol?mac=" + encodeURIComponent(formatted), {method:"POST"})
+      .then(function(r){return r.ok ? {ok:true, msg:"WoL via Broadlink bridge"} : {ok:false, msg:"Bridge ne supporte pas WoL"};})
+      .catch(function(){return {ok:false, msg:"WoL via bridge non disponible"};});
+  }
+
+  return Promise.resolve({ok:false, msg:"Configure ax_wol_worker_url ou installe bridge avec endpoint /wol"});
+};
+
+/* Persiste table MAC -> nom appareil pour WoL UI */
+window.axRegisterWOLDevice = function(name, mac){
+  var devices = lg("ax_wol_devices", {});
+  devices[name] = {mac:mac, name:name, ts:Date.now()};
+  ls("ax_wol_devices", devices);
+  if(typeof toast === "function") toast(name+" enregistre pour WoL", "ok", {force:true});
+  return true;
+};
+
+window.axWakeDevice = function(name){
+  var devices = lg("ax_wol_devices", {});
+  var d = devices[name];
+  if(!d) return Promise.resolve({ok:false, msg:"Device '"+name+"' non enregistre"});
+  if(typeof toast === "function") toast("Reveil "+name+" via WoL...", "info", {force:true});
+  return axWakeOnLANWorker(d.mac);
+};
+
+/* Hook axVoiceProcessDevices dans _processAssistantCommand si dispo */
+(function(){
+  var orig = window._processAssistantCommand;
+  if(typeof orig !== "function") return;
+  if(window._axVoiceDeviceHookInstalled) return;
+  window._axVoiceDeviceHookInstalled = true;
+  window._processAssistantCommand = function(text){
+    try{
+      var r = axVoiceProcessDevices(text);
+      if(r && r.ok) return r;
+    }catch(_){}
+    return orig.apply(this, arguments);
+  };
+})();
+
+/* AX_V12_514_VOICE_WOL_END */
+
 
 
 
