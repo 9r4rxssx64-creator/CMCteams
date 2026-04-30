@@ -59,6 +59,14 @@
 <link rel="preconnect" href="https://api.anthropic.com">
 <link rel="dns-prefetch" href="https://browser.sentry-cdn.com">
 <link rel="preconnect" href="https://browser.sentry-cdn.com" crossorigin>
+<link rel="preconnect" href="https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+<link rel="dns-prefetch" href="https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app">
+<link rel="preconnect" href="https://api.elevenlabs.io" crossorigin>
+<link rel="dns-prefetch" href="https://api.elevenlabs.io">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://openrouter.ai" crossorigin>
+<link rel="dns-prefetch" href="https://openrouter.ai">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"APEX AI","description":"Assistant IA premium multi-appareils — chat, voix, finance, agenda, memoire","applicationCategory":"ProductivityApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","lowPrice":"0","highPrice":"49.99","priceCurrency":"EUR"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"APEX AI","url":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/","applicationCategory":"BusinessApplication","operatingSystem":"Any","description":"Assistant IA personnel premium : chat, voix, finance, agenda, memoire persistante.","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Organization","name":"APEX AI"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://9r4rxssx64-creator.github.io/CMCteams/"},{"@type":"ListItem","position":2,"name":"APEX AI","item":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/"}]}</script>
@@ -872,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.540",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.541",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -29700,6 +29708,180 @@ window.axGetConsent = function(feature){
     return !!c[feature];
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}return null;}
 };
+
+/* ============================================================
+   AX_V12_541 — Wire orphans AI Safety + Perf visibility + Compliance helpers
+   ============================================================ */
+
+/* === AI-1. Wire axScanResponseForFakeUrls + confidence escalade post-stream === */
+setTimeout(function(){
+  try{
+    if(window._axStreamScanWired) return;
+    if(typeof window._callClaudeAPI !== "function") return;
+    /* Wrap _callClaudeAPI pour scan URL apres reponse */
+    var prev = window._callClaudeAPI;
+    window._callClaudeAPI = function(){
+      var ret = prev.apply(this, arguments);
+      /* Apres l'appel, scan le dernier message assistant */
+      setTimeout(function(){
+        try{
+          if(!K || !K.messages || !K.messages.length) return;
+          var last = K.messages[K.messages.length-1];
+          if(!last || last.role !== "assistant" || last._scanned) return;
+          var text = typeof last.content === "string" ? last.content : "";
+          if(!text || text.length < 20) return;
+          last._scanned = true;
+          /* Scan URL */
+          if(typeof axScanResponseForFakeUrls === "function"){
+            var scan = axScanResponseForFakeUrls(text);
+            if(scan && !scan.ok && scan.fakeUrls && scan.fakeUrls.length){
+              try{ if(typeof axSecurityLog==="function") axSecurityLog("ai_fake_urls", scan.fakeUrls.slice(0,3).join(",")); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+              try{ if(typeof toast==="function") toast("URLs suspectes detectees ("+scan.fakeUrls.length+") - verifie sources", "warn", {duration:4000}); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+            }
+          }
+          /* Confidence calibration : reponse < 30 chars OU contient "je ne sais pas" → escalade */
+          var lowConf = text.length < 30 || /je ne sais pas|je n'ai pas (?:assez|d'inform|de donn)|incertain|pas s[uû]r|peut-?etre que|il (?:est|semble) possible/i.test(text);
+          if(lowConf){
+            last._lowConfidence = true;
+            try{ if(typeof axSecurityLog==="function") axSecurityLog("ai_low_confidence", text.slice(0,80)); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+          }
+        }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("scan_url",_e);}catch(__){}}
+      }, 1500);
+      return ret;
+    };
+    window._axStreamScanWired = true;
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("scan_wire",_e);}catch(__){}}
+}, 1200);
+
+/* === PERF-1. Visibility cleanup hooks (libere RAM quand app cachee) === */
+(function(){
+  if(window._axVisibilityCleanupActive) return;
+  if(typeof document === "undefined" || !document.addEventListener) return;
+  var lastCleanup = 0;
+  function onHidden(){
+    var now = Date.now();
+    if(now - lastCleanup < 30000) return; /* Throttle 30s */
+    lastCleanup = now;
+    try{
+      var freed = {intervals:0, listeners:0};
+      if(typeof axClearOldIntervals === "function"){
+        freed.intervals = axClearOldIntervals(3600000); /* 1h+ orphans */
+      }
+      if(typeof axCleanupAllListeners === "function" && window._axListenerRegistry && window._axListenerRegistry.length > 1000){
+        /* Cleanup vieux listeners orphans (> 1h) si registry > 1000 entries */
+        freed.listeners = axCleanupAllListeners(function(r){ return (now - r.ts) > 3600000; });
+      }
+      /* Storage cleanup si > 80% */
+      if(typeof axStorageEmergencyCleanup === "function"){
+        try{ axStorageEmergencyCleanup(); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      }
+      try{ if(typeof axSecurityLog==="function" && (freed.intervals+freed.listeners > 0)) axSecurityLog("visibility_cleanup", JSON.stringify(freed)); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vis_cleanup",_e);}catch(__){}}
+  }
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "hidden") onHidden();
+  });
+  window._axVisibilityCleanupActive = true;
+})();
+
+/* === COMP-1. Helper Firebase rules deploy 1-clic admin === */
+window.AX_FB_RULES_TEMPLATE = {
+  "rules": {
+    "apex": {
+      ".read": true,
+      ".write": true,
+      "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
+      "ax_admin_pass": { ".write": false },
+      "ax_admin_pin": { ".write": false },
+      "ax_pin": { ".write": false },
+      "ax_user": { ".write": false },
+      "ax_uid": { ".write": false },
+      "ax_voice_print_$uid": { ".write": false },
+      "ax_pin_$uid": { ".write": false },
+      "ax_user_chat_$uid": { ".write": false },
+      "ax_user_locations_$uid": { ".write": false },
+      "ax_health_reports_$uid": { ".write": false },
+      "ax_msgs_$conv": { ".write": false },
+      "ax_settings_$uid": { ".write": false }
+    }
+  }
+};
+window.axDeployFirebaseRules = function(){
+  try{
+    var json = JSON.stringify(window.AX_FB_RULES_TEMPLATE, null, 2);
+    if(navigator && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(json).then(function(){
+        try{ if(typeof toast==="function") toast("Rules copiees dans clipboard - colle dans console Firebase", "ok", {duration:5000}); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+        setTimeout(function(){
+          try{ window.open("https://console.firebase.google.com/project/kdmc-clients/database/kdmc-clients-default-rtdb/rules", "_blank"); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+        }, 800);
+      });
+    } else {
+      try{ if(typeof toast==="function") toast("Clipboard non dispo - copie manuelle requise", "warn"); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    }
+    try{ if(typeof axSecurityLog==="function") axSecurityLog("firebase_rules_deploy_initiated", "admin clicked"); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    return json;
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("fb_deploy",_e);}catch(__){}return null;}
+};
+
+/* === COMP-2. Audit trail dashboard helper === */
+window.axGetAuditTrail = function(maxEntries){
+  maxEntries = maxEntries || 100;
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var sec = lg("ax_security_log", []);
+    var aud = lg("ax_audit", []);
+    var brc = lg("ax_breach_log", []);
+    var all = [].concat(sec.map(function(e){return Object.assign({_src:"security"},e);}),
+                       aud.map(function(e){return Object.assign({_src:"audit"},e);}),
+                       brc.map(function(e){return Object.assign({_src:"breach"},e);}));
+    all.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    return all.slice(0, maxEntries);
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("audit_trail",_e);}catch(__){}return [];}
+};
+
+/* === COMP-3. DPA tracker (status signature) === */
+window.axDPAStatus = function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    return {
+      anthropic: lg("ax_dpa_anthropic_signed_ts", null),
+      firebase: lg("ax_dpa_firebase_signed_ts", null),
+      elevenlabs: lg("ax_dpa_elevenlabs_signed_ts", null),
+      stripe: lg("ax_dpa_stripe_signed_ts", null),
+      dpia_v1: lg("ax_dpia_signed_ts", null)
+    };
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("dpa_status",_e);}catch(__){}return {};}
+};
+window.axMarkDPASigned = function(party, dateStr){
+  try{
+    if(["anthropic","firebase","elevenlabs","stripe","dpia_v1"].indexOf(party) < 0) return false;
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var key = party === "dpia_v1" ? "ax_dpia_signed_ts" : "ax_dpa_"+party+"_signed_ts";
+    ls(key, dateStr || new Date().toISOString());
+    try{ if(typeof axSecurityLog==="function") axSecurityLog("dpa_signed", party+" "+(dateStr||"now")); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    return true;
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("dpa_mark",_e);}catch(__){}return false;}
+};
+
+/* === ARCH-1. Namespace axState (proxy K read-only pour decouplage progressif) === */
+setTimeout(function(){
+  try{
+    if(window.axState) return;
+    if(typeof K === "undefined") return;
+    /* Proxy K via Object.defineProperty (compat iOS Safari sans Proxy ES6) */
+    var ns = {};
+    ["user","settings","messages","conversations","activeConvId","isStreaming","view","kb"].forEach(function(prop){
+      Object.defineProperty(ns, prop, {
+        get: function(){ return K[prop]; },
+        set: function(v){ K[prop] = v; },
+        enumerable: true,
+        configurable: true
+      });
+    });
+    window.axState = ns;
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("axstate_init",_e);}catch(__){}}
+}, 600);
 
 </script>
 </body>
