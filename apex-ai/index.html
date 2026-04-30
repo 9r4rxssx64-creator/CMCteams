@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.527",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.528",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -28368,6 +28368,118 @@ window.axGetRealisticScore = function(){
     }catch(_){}
   }, 5000);
 })();
+
+
+/* AX_V12_528_LEAK_FIX v12.528 - REAL FIX memory leak listeners (audit P0 perf 32/100) */
+/* Audit externe : 106 addEventListener vs 7 removeEventListener -> heap 40->150 MB en 20 min */
+
+/* GLOBAL : intercepter addEventListener pour TRACK auto + cleanup batch */
+(function(){
+  if(window._axListenerInterceptor) return;
+  window._axListenerInterceptor = true;
+  window._axTrackedListeners = window._axTrackedListeners || [];
+
+  /* Pour chaque target potentiel (window, document, body), wrap addEventListener */
+  function wrapTarget(target){
+    if(!target || target._axListenerWrapped) return;
+    target._axListenerWrapped = true;
+    var origAdd = target.addEventListener;
+    var origRem = target.removeEventListener;
+    target.addEventListener = function(event, handler, opts){
+      try{
+        window._axTrackedListeners.push({target:target, event:event, handler:handler, opts:opts, ts:Date.now()});
+        if(window._axTrackedListeners.length > 1000){
+          window._axTrackedListeners = window._axTrackedListeners.slice(-1000);
+        }
+      }catch(_){}
+      return origAdd.apply(this, arguments);
+    };
+    target.removeEventListener = function(event, handler, opts){
+      try{
+        window._axTrackedListeners = window._axTrackedListeners.filter(function(l){
+          return !(l.target === target && l.event === event && l.handler === handler);
+        });
+      }catch(_){}
+      return origRem.apply(this, arguments);
+    };
+  }
+
+  /* Wrap au boot (window + document) */
+  setTimeout(function(){
+    try{
+      if(typeof window !== "undefined") wrapTarget(window);
+      if(typeof document !== "undefined") wrapTarget(document);
+      if(document && document.body) wrapTarget(document.body);
+    }catch(_){}
+  }, 100);
+})();
+
+/* Cleanup batch agressif : tout ce qui n a pas un tag persistent */
+window.axCleanupAllOrphanListeners = function(){
+  var arr = window._axTrackedListeners || [];
+  var keepEvents = ["beforeunload","unload","pagehide","online","offline","DOMContentLoaded"];
+  var removed = 0;
+  var kept = [];
+  arr.forEach(function(l){
+    if(keepEvents.indexOf(l.event) >= 0){
+      kept.push(l);
+    } else {
+      try{ l.target.removeEventListener(l.event, l.handler, l.opts); removed++; }catch(_){}
+    }
+  });
+  window._axTrackedListeners = kept;
+  if(typeof toast === "function") toast("Cleanup listeners : "+removed+" retires, "+kept.length+" gardes", "ok", {force:true, duration:3000});
+  if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","listener_cleanup_batch",APP_VER, removed+" removed", "v12.528 P0 perf fix");
+  return {removed:removed, kept:kept.length};
+};
+
+/* Auto-cleanup : avant chaque dc() majeur, retirer listeners orphelins de modales fermees */
+window.axCleanupOrphanModalListeners = function(){
+  if(!window._axTrackedListeners) return 0;
+  var orphans = window._axTrackedListeners.filter(function(l){
+    /* Listener sur element DOM detached */
+    if(l.target && l.target.nodeType === 1 && !document.body.contains(l.target)) return true;
+    return false;
+  });
+  orphans.forEach(function(l){
+    try{ l.target.removeEventListener(l.event, l.handler, l.opts); }catch(_){}
+  });
+  window._axTrackedListeners = window._axTrackedListeners.filter(function(l){
+    return !(l.target && l.target.nodeType === 1 && !document.body.contains(l.target));
+  });
+  return orphans.length;
+};
+
+/* Run auto cleanup orphan modal listeners toutes 60s (low impact) */
+(function(){
+  if(window._axOrphanCleanupRunning) return;
+  window._axOrphanCleanupRunning = true;
+  setInterval(function(){
+    try{
+      var n = axCleanupOrphanModalListeners();
+      if(n > 0 && typeof axJournalEntry === "function") axJournalEntry("apex-ai","orphan_listeners_cleaned",APP_VER, n+" orphans removed", "auto cleanup 60s");
+    }catch(_){}
+  }, 60000);
+})();
+
+/* Healthcheck */
+window.axListenersHealth = function(){
+  var arr = window._axTrackedListeners || [];
+  var byEvent = {};
+  var byTargetType = {};
+  arr.forEach(function(l){
+    byEvent[l.event] = (byEvent[l.event]||0)+1;
+    var t = l.target === window ? "window" : l.target === document ? "document" : (l.target && l.target.tagName) || "unknown";
+    byTargetType[t] = (byTargetType[t]||0)+1;
+  });
+  return {
+    total: arr.length,
+    by_event: byEvent,
+    by_target: byTargetType,
+    alert_threshold: arr.length > 200 ? "WARN" : "OK",
+    oldest_age_ms: arr.length ? Date.now() - arr[0].ts : 0
+  };
+};
 
 </script>
 </body>
