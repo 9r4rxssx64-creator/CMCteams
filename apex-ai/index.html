@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.512",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.513",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -11790,6 +11790,232 @@ window.vSmartDiscoveryV2 = function(){
 
 /* AX_V12_512_DISCOVERY_V2_END */
 
+/* AX_V12_513_MACROS v12.513 - Macros multi-actions + Per-room (Kevin "va plus loin") */
+
+/* Catalogue macros par defaut. Editable par admin via vMacrosManager. */
+var AX_MACROS_DEFAULT = {
+  "tout_off": {
+    icon:"&#127797;", name:"Tout eteindre",
+    actions:[
+      {fn:"axIRBlast", args:["tv_power"]},
+      {fn:"axIRBlast", args:["ac_off"]},
+      {fn:"axIRBlast", args:["light_off"]},
+      {fn:"axTVCommand", args:["power"]}
+    ]
+  },
+  "cinema": {
+    icon:"&#127916;", name:"Mode Cinema",
+    actions:[
+      {fn:"axIRBlast", args:["light_off"]},
+      {fn:"axIRBlast", args:["tv_power"]},
+      {fn:"axSetTheme", args:["dark"]},
+      {fn:"axLocalDeviceControl", args:["silent"]}
+    ]
+  },
+  "reveil": {
+    icon:"&#9728;", name:"Reveil",
+    actions:[
+      {fn:"axIRBlast", args:["light_on"]},
+      {fn:"axIRBlast", args:["ac_on"]},
+      {fn:"axDailyBriefing", args:[]}
+    ]
+  },
+  "bonne_nuit": {
+    icon:"&#127769;", name:"Bonne nuit",
+    actions:[
+      {fn:"axIRBlast", args:["tv_power"]},
+      {fn:"axIRBlast", args:["light_off"]},
+      {fn:"axIRBlast", args:["ac_off"]},
+      {fn:"axSetTheme", args:["dark"]}
+    ]
+  },
+  "travail": {
+    icon:"&#128188;", name:"Mode Travail",
+    actions:[
+      {fn:"axIRBlast", args:["light_on"]},
+      {fn:"axSetTheme", args:["light"]},
+      {fn:"axPomodoroStart", args:[25]}
+    ]
+  },
+  "fete": {
+    icon:"&#127881;", name:"Mode Fete",
+    actions:[
+      {fn:"axIRBlast", args:["light_on"]},
+      {fn:"axSetTheme", args:["casino"]},
+      {fn:"axSpotifyPlaylist", args:["party"]}
+    ]
+  },
+  "depart_maison": {
+    icon:"&#128682;", name:"Depart maison",
+    actions:[
+      {fn:"axIRBlast", args:["tv_power"]},
+      {fn:"axIRBlast", args:["light_off"]},
+      {fn:"axIRBlast", args:["ac_off"]},
+      {fn:"axKillAllDevices", args:[]}
+    ]
+  },
+  "arrivee_maison": {
+    icon:"&#127968;", name:"Arrivee maison",
+    actions:[
+      {fn:"axIRBlast", args:["light_on"]},
+      {fn:"axIRBlast", args:["ac_on"]},
+      {fn:"axDailyBriefing", args:[]}
+    ]
+  }
+};
+window.AX_MACROS_DEFAULT = AX_MACROS_DEFAULT;
+
+/* Get macros (defaults merged with user-defined) */
+window.axGetMacros = function(){
+  var custom = lg("ax_macros_custom", {});
+  if(typeof custom !== "object" || Array.isArray(custom)) custom = {};
+  var merged = {};
+  Object.keys(AX_MACROS_DEFAULT).forEach(function(k){ merged[k] = AX_MACROS_DEFAULT[k]; });
+  Object.keys(custom).forEach(function(k){ merged[k] = custom[k]; });
+  return merged;
+};
+
+/* Run macro : execute toutes les actions sequentiellement (delay 200ms entre chaque) */
+window.axRunMacro = function(macroId){
+  var macros = axGetMacros();
+  var m = macros[macroId];
+  if(!m){
+    if(typeof toast === "function") toast("Macro '"+macroId+"' inconnue", "warn", {force:true});
+    return Promise.resolve({ok:false, msg:"unknown"});
+  }
+  if(typeof toast === "function") toast("Macro : " + (m.name||macroId) + " ("+m.actions.length+" actions)...", "info", {force:true, duration:3000});
+  var results = [];
+  return m.actions.reduce(function(prev, action){
+    return prev.then(function(){
+      return new Promise(function(resolve){
+        setTimeout(function(){
+          try{
+            var fn = window[action.fn];
+            if(typeof fn === "function"){
+              var r = fn.apply(null, action.args || []);
+              results.push({fn:action.fn, ok:true});
+              if(r && typeof r.then === "function"){ r.then(function(){resolve();}).catch(function(){resolve();}); }
+              else resolve();
+            } else {
+              results.push({fn:action.fn, ok:false, msg:"fn missing"});
+              resolve();
+            }
+          }catch(e){
+            results.push({fn:action.fn, ok:false, msg:String(e.message||e).slice(0,60)});
+            resolve();
+          }
+        }, 200);
+      });
+    });
+  }, Promise.resolve()).then(function(){
+    var ok = results.filter(function(r){return r.ok;}).length;
+    if(typeof toast === "function") toast("Macro "+m.name+" : "+ok+"/"+results.length+" actions OK", ok===results.length?"ok":"warn", {force:true, duration:4000});
+    if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","macro_run",APP_VER, macroId, ok+"/"+results.length+" OK");
+    return {ok:true, results:results};
+  });
+};
+
+/* Sauvegarder macro custom */
+window.axSaveMacro = function(macroId, macro){
+  if(!macroId || !macro || !macro.actions) return false;
+  var custom = lg("ax_macros_custom", {});
+  custom[macroId] = macro;
+  ls("ax_macros_custom", custom);
+  if(typeof toast === "function") toast("Macro '"+macroId+"' sauvee", "ok", {force:true});
+  return true;
+};
+
+/* Per-room : groupe d'appareils par piece */
+window.axGetRooms = function(){
+  var rooms = lg("ax_rooms", {});
+  if(typeof rooms !== "object" || Array.isArray(rooms)) rooms = {};
+  return rooms;
+};
+
+window.axAddDeviceToRoom = function(roomId, deviceIp){
+  var rooms = axGetRooms();
+  if(!rooms[roomId]) rooms[roomId] = {name:roomId, devices:[]};
+  if(rooms[roomId].devices.indexOf(deviceIp) < 0) rooms[roomId].devices.push(deviceIp);
+  ls("ax_rooms", rooms);
+  if(typeof toast === "function") toast(deviceIp+" ajoute a "+roomId, "ok", {force:true});
+  return true;
+};
+
+window.axControlRoom = function(roomId, cmd){
+  var rooms = axGetRooms();
+  var r = rooms[roomId];
+  if(!r) return Promise.resolve({ok:false, msg:"Room inconnu"});
+  var lastScan = lg("ax_last_lan_scan", null);
+  if(!lastScan || !lastScan.devices) return Promise.resolve({ok:false, msg:"Lance scan d'abord"});
+  var devicesInRoom = lastScan.devices.filter(function(d){return r.devices.indexOf(d.ip) >= 0;});
+  if(typeof toast === "function") toast("Commande "+cmd+" -> "+devicesInRoom.length+" devices dans "+r.name, "info", {force:true, duration:3000});
+  return Promise.all(devicesInRoom.map(function(d){
+    if(typeof axDeviceCommand === "function") return axDeviceCommand(d, cmd);
+    return Promise.resolve();
+  })).then(function(){
+    return {ok:true, count:devicesInRoom.length};
+  });
+};
+
+/* Vue admin : Macros & Rooms */
+window.vMacrosManager = function(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var macros = axGetMacros();
+  var rooms = axGetRooms();
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">&#127914; Macros & Pieces</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Combine plusieurs commandes en 1 clic. Groupe les appareils par piece.</p>';
+
+  /* Macros */
+  h += '<div class="ax-card"><h3>&#127914; Macros (' + Object.keys(macros).length + ')</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+  Object.keys(macros).forEach(function(mid){
+    var m = macros[mid];
+    h += '<button class="ax-btn ax-btn-outline" onclick="axRunMacro(&quot;'+mid+'&quot;)" style="min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">';
+    h += '<span style="font-size:24px">' + (m.icon||"&#127914;") + '</span>';
+    h += '<span style="font-size:12px">' + (typeof esc==="function"?esc(m.name||mid):m.name||mid) + '</span>';
+    h += '<span style="font-size:9px;color:var(--ax-text-dim)">' + (m.actions||[]).length + ' actions</span>';
+    h += '</button>';
+  });
+  h += '</div></div>';
+
+  /* Rooms */
+  h += '<div class="ax-card"><h3>&#127968; Pieces (' + Object.keys(rooms).length + ')</h3>';
+  if(Object.keys(rooms).length === 0){
+    h += '<p style="font-size:12px;color:var(--ax-text-dim);text-align:center;padding:14px">Aucune piece. Cree une piece via : axAddDeviceToRoom(&quot;salon&quot;, &quot;192.168.1.50&quot;)</p>';
+  } else {
+    Object.keys(rooms).forEach(function(rid){
+      var r = rooms[rid];
+      h += '<div style="padding:10px;background:var(--ax-bg-input);border-radius:8px;margin-bottom:8px">';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between"><strong>' + (r.name||rid) + '</strong><span style="font-size:11px;color:var(--ax-text-dim)">' + (r.devices||[]).length + ' appareils</span></div>';
+      h += '<div style="font-size:10px;color:var(--ax-text-dim);font-family:var(--ax-mono);margin-top:4px">' + (r.devices||[]).join(", ") + '</div>';
+      h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">';
+      ["power","off","play","pause","mute","vol_up","vol_down"].forEach(function(c){
+        h += '<button class="ax-btn ax-btn-outline" onclick="axControlRoom(&quot;'+rid+'&quot;,&quot;'+c+'&quot;)" style="font-size:10px;padding:4px 8px;min-height:28px">' + c + '</button>';
+      });
+      h += '</div></div>';
+    });
+  }
+  h += '</div>';
+
+  /* Console help */
+  h += '<div class="ax-card" style="background:rgba(74,154,255,.04);border-left:4px solid var(--ax-blue)"><h3>&#128270; API console</h3>';
+  h += '<pre style="font-size:11px;font-family:var(--ax-mono);background:var(--ax-bg-input);padding:8px;border-radius:6px;white-space:pre-wrap">';
+  h += 'axRunMacro("cinema")\n';
+  h += 'axSaveMacro("custom1", {icon:"&#127881;", name:"Mon macro", actions:[{fn:"axIRBlast",args:["tv_power"]}]})\n';
+  h += 'axAddDeviceToRoom("salon", "192.168.1.50")\n';
+  h += 'axControlRoom("salon", "off")';
+  h += '</pre></div>';
+
+  h += '</div>';
+  return h;
+};
+
+/* AX_V12_513_MACROS_END */
+
+
 
 
 function axTestCredential(k,silent){/* v12.387 BUG FIX : lg() au lieu getItem (anti-quotes) */var v=(typeof lg==="function")?lg(k,""):(localStorage.getItem(k)||"");if(typeof v!=="string")v=String(v||"");for(var _qi=0;_qi<3;_qi++){v=v.replace(/^["\u201C\u201D\u2018\u2019\u00AB\u00BB]+|["\u201C\u201D\u2018\u2019\u00AB\u00BB]+$/g,"");}v=v.trim();if(!v){if(!silent)toast("Aucune donnee a tester","warn");return Promise.resolve({ok:false,msg:"vide"});}/* Format validators (rapide, sans appel API) */var fmt={ax_btc_address:/^(bc1|[13])[a-km-zA-HJ-NP-Z0-9]{25,87}$/,ax_eth_address:/^0x[a-fA-F0-9]{40}$/,ax_usdc_address:/^0x[a-fA-F0-9]{40}$/,ax_iban:/^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/i,ax_paypal_me:/^[a-zA-Z0-9_-]{3,30}$/,ax_revolut_tag:/^@?[a-zA-Z0-9_]{3,30}$/,ax_lydia_phone:/^\+?[0-9 ]{8,20}$/};if(fmt[k]){var ok=fmt[k].test(v.trim());axCredSetStatus(k,ok?"green":"red",ok?"format OK":"format invalide");if(!silent)toast(ok?"\u2705 Format valide":"\u274C Format invalide","ok");return Promise.resolve({ok:ok,msg:ok?"format OK":"format invalide"});}/* API tests (avec proxy ou direct selon CORS) */var apiTests={ax_api_key:{url:"https://api.anthropic.com/v1/messages",method:"POST",headers:function(v){return{"x-api-key":v,"anthropic-version":"2023-06-01","content-type":"application/json"};},body:'{"model":"claude-haiku-4-5","max_tokens":1,"messages":[{"role":"user","content":"hi"}]}',expectStatus:[200,400]},ax_openai_key:{url:"https://api.openai.com/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_gemini_key:{url:"https://generativelanguage.googleapis.com/v1beta/models?key=",appendKey:true,expectStatus:[200]},ax_groq_key:{url:"https://api.groq.com/openai/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_cohere_key:{url:"https://api.cohere.com/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_mistral_key:{url:"https://api.mistral.ai/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_deepseek_key:{url:"https://api.deepseek.com/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_grok_key:{url:"https://api.x.ai/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_perplexity_key:{url:"https://api.perplexity.ai/chat/completions",method:"POST",headers:function(v){return{"Authorization":"Bearer "+v,"content-type":"application/json"};},body:'{"model":"sonar","messages":[{"role":"user","content":"hi"}],"max_tokens":1}',expectStatus:[200,400]},ax_openrouter_key:{url:"https://openrouter.ai/api/v1/models",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_replicate_key:{url:"https://api.replicate.com/v1/account",headers:function(v){return{"Authorization":"Token "+v};},expectStatus:[200]},ax_finnhub_key:{url:"https://finnhub.io/api/v1/quote?symbol=AAPL&token=",appendKey:true,expectStatus:[200]},ax_huggingface_key:{url:"https://huggingface.co/api/whoami-v2",headers:function(v){return{"Authorization":"Bearer "+v};},expectStatus:[200]},ax_elevenlabs_key:{url:"https://api.elevenlabs.io/v1/user",headers:function(v){return{"xi-api-key":v};},expectStatus:[200]}};var t=apiTests[k];if(!t){axCredSetStatus(k,"yellow","Test API non disponible");return Promise.resolve({ok:true,msg:"saisi"});}/* AX_V12_509 : skip fetch si API CORS-bloquee navigateur */if(window.axIsCORSBlocked && window.axIsCORSBlocked(k)){axCredSetStatus(k,"yellow","Format OK (CORS bloque browser)");if(!silent && typeof toast==="function")toast("\u2139 "+k.replace(/^ax_/,"")+" : format OK (CORS bloque, test reel impossible browser)","info",{duration:3500});return Promise.resolve({ok:true,msg:"CORS_blocked_format_only"});}var url=t.url+(t.appendKey?encodeURIComponent(v):"");var opts={method:t.method||"GET"};if(t.headers)opts.headers=t.headers(v);if(t.body)opts.body=t.body;var ctrl=new AbortController();setTimeout(function(){ctrl.abort();},15000);/* AX_V12_509 : 10s -> 15s pour APIs marginales 4G slow */opts.signal=ctrl.signal;return fetch(url,opts).then(function(r){var ok=t.expectStatus.indexOf(r.status)>=0;axCredSetStatus(k,ok?"green":"red",ok?"OK ("+r.status+")":"HTTP "+r.status);if(!silent)toast(ok?"\u2705 Cle valide":"\u274C Cle invalide ("+r.status+")",ok?"ok":"err");return{ok:ok,msg:"HTTP "+r.status};}).catch(function(e){var em=String(e.message||e).slice(0,50);if(em.indexOf("Failed to fetch")>=0||em.indexOf("CORS")>=0||em.indexOf("Network")>=0){axCredSetStatus(k,"yellow","CORS bloque - format OK");if(!silent)toast("\u26A0 CORS bloque (cle saisie)","warn");return{ok:true,msg:"CORS"};}axCredSetStatus(k,"red",em);if(!silent)toast("\u274C "+em,"err");return{ok:false,msg:em};});}
@@ -16258,7 +16484,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
