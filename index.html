@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.564";
+var APP_VER="v9.565";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23329,6 +23329,120 @@ function _liveKPI(icon,label,val,color,sub,clickKey){
     +'</div>';
 }
 // v9.212 — Modal liste des employés par catégorie (cliquable depuis vGestionLive)
+/* v9.565 - Helper generique cmcShowGenericStat + extensions showLiveList */
+
+function cmcShowGenericStat(opts){
+  /* opts = {title, icon, color, items[]} */
+  if(!opts || !opts.title) return;
+  var existing = document.getElementById("liveList");
+  if(existing) existing.remove();
+  var modal = document.createElement("div");
+  modal.id = "liveList";
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.76);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:10003;display:flex;align-items:center;justify-content:center;padding:18px";
+  modal.onclick = function(e){if(e.target===modal)modal.remove();};
+  var color = opts.color || "#c9a227";
+  var icon = opts.icon || "\ud83d\udcca";
+  var items = Array.isArray(opts.items) ? opts.items : [];
+  var body = '<div style="background:linear-gradient(180deg,rgba(18,28,16,.98),rgba(10,20,12,1));border:2px solid '+color+';border-radius:18px;max-width:520px;width:100%;max-height:86vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 40px '+color+'33">';
+  body += '<div style="padding:16px 22px;border-bottom:1px solid '+color+'40;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,'+color+'22,transparent)">';
+  body += '<span style="font-size:28px">'+icon+'</span>';
+  body += '<div style="flex:1"><div style="font-size:17px;font-weight:800;color:'+color+'">'+esc(opts.title)+'</div>';
+  body += '<div style="font-size:12px;color:#a0cca0;margin-top:2px">'+items.length+' resultat'+(items.length>1?"s":"")+'</div></div>';
+  body += '<button onclick="document.getElementById(\'liveList\').remove()" aria-label="Fermer" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer">\u2715</button>';
+  body += '</div><div style="flex:1;overflow-y:auto;padding:12px 16px">';
+  if(!items.length){
+    body += '<div role="status" aria-live="polite" style="padding:30px;text-align:center;color:#8aa088"><div style="font-size:36px;margin-bottom:8px">'+icon+'</div><div>Aucun resultat</div></div>';
+  } else {
+    items.forEach(function(it){
+      var click = it.onClick ? 'onclick="('+it.onClick+')();document.getElementById(\'liveList\').remove();"' : '';
+      var cursor = click ? "pointer" : "default";
+      body += '<div '+click+' style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(10,22,14,.5);border:1px solid '+color+'33;border-radius:8px;margin-bottom:5px;cursor:'+cursor+'">';
+      if(it.icon) body += '<span style="font-size:18px;flex-shrink:0">'+(it.icon||"")+'</span>';
+      body += '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">'+esc(it.label||"")+'</div>';
+      if(it.value !== undefined) body += '<div style="font-size:11px;color:#a0cca0;margin-top:2px">'+esc(String(it.value))+'</div>';
+      body += '</div>';
+      if(click) body += '<span style="color:'+color+';font-size:18px">&rsaquo;</span>';
+      body += '</div>';
+    });
+  }
+  body += '</div></div>';
+  modal.innerHTML = body;
+  document.body.appendChild(modal);
+}
+
+/* Extensions showLiveList types : delegue a showLiveList existant + nouvelles cles via cmcShowGenericStat */
+function cmcShowExtendedStat(key){
+  var now = new Date();
+  var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  var pl = (typeof gpl === "function") ? gpl(y,m) : {};
+  var active = (A && A.employees) ? A.employees.filter(function(e){return (typeof isEmpActive==="function") ? isEmpActive(e,y,m) : true;}) : [];
+  var items = [];
+
+  if(key === "heures_today"){
+    /* Total heures travaillees aujourd hui */
+    var working = active.filter(function(e){return (typeof isWork==="function") && isWork((pl[e.id]||{})[d]||"");});
+    var totalH = working.length * 8; /* approximation */
+    items = working.map(function(e){
+      var code = (pl[e.id]||{})[d] || "";
+      return {label:e.name||e.id, value:"Code: "+code+" - 8h"};
+    });
+    cmcShowGenericStat({title:"Heures travaillees aujourd hui ("+totalH+"h)", icon:"\u23f1\ufe0f", color:"#5aaaff", items:items});
+    return;
+  }
+
+  if(key === "anomalies_jour"){
+    /* Anomalies/conflits detectes pour aujourd hui */
+    var anomalies = [];
+    active.forEach(function(e){
+      var code = (pl[e.id]||{})[d] || "";
+      if(!code) anomalies.push({label:e.name||e.id, value:"Aucun code attribue", icon:"\u26a0\ufe0f"});
+      else if(/[?!]/.test(code)) anomalies.push({label:e.name||e.id, value:"Code suspect: "+code, icon:"\u26a0\ufe0f"});
+    });
+    cmcShowGenericStat({title:"Anomalies aujourd hui", icon:"\u26a0\ufe0f", color:"#ff8855", items:anomalies});
+    return;
+  }
+
+  if(key === "retards_mois"){
+    /* Retards / absences ponctuelles ce mois */
+    items = active.filter(function(e){
+      var emppl = pl[e.id] || {};
+      var hasRetard = false;
+      Object.keys(emppl).forEach(function(day){
+        var c = emppl[day];
+        if(c === "RT" || c === "RTD" || (c||"").indexOf("R") === 0 && day.match(/^[0-9]+$/)){ hasRetard = true; }
+      });
+      return hasRetard;
+    }).map(function(e){return {label:e.name||e.id, value:"Voir planning", onClick:"function(){if(typeof showEmpQuickProfile===\"function\")showEmpQuickProfile("+JSON.stringify(String(e.id||""))+");}"};});
+    cmcShowGenericStat({title:"Retards / absences ponctuelles", icon:"\u23f0", color:"#ffaa55", items:items});
+    return;
+  }
+
+  if(key === "total_active"){
+    items = active.map(function(e){return {label:e.name||e.id, value:e.team||"", icon:"\ud83d\udc64"};});
+    cmcShowGenericStat({title:"Total employes actifs", icon:"\ud83d\udc65", color:"#5aaa70", items:items});
+    return;
+  }
+
+  if(key === "today_summary"){
+    var w = active.filter(function(e){return (typeof isWork==="function") && isWork((pl[e.id]||{})[d]||"");}).length;
+    var r = active.filter(function(e){var c=(pl[e.id]||{})[d]||"";return c==="RH"||c==="R";}).length;
+    var l = active.filter(function(e){var c=(pl[e.id]||{})[d]||"";return c==="CP"||c==="CPS"||c==="CPM";}).length;
+    var s = active.filter(function(e){var c=(pl[e.id]||{})[d]||"";return c==="M"||c==="AT"||c==="MT";}).length;
+    items = [
+      {label:"En service", value:w+" employes", icon:"\u2705", onClick:"function(){showLiveList&&showLiveList(\"working\");}"},
+      {label:"En repos", value:r+" employes", icon:"\ud83d\ude34", onClick:"function(){showLiveList&&showLiveList(\"rest\");}"},
+      {label:"En conge", value:l+" employes", icon:"\ud83c\udfd6\ufe0f", onClick:"function(){showLiveList&&showLiveList(\"leave\");}"},
+      {label:"En maladie", value:s+" employes", icon:"\ud83e\ude7a", onClick:"function(){showLiveList&&showLiveList(\"sick\");}"},
+      {label:"Total actifs", value:active.length+" employes", icon:"\ud83d\udc65", onClick:"function(){cmcShowExtendedStat(\"total_active\");}"}
+    ];
+    cmcShowGenericStat({title:"Resume aujourd hui", icon:"\ud83d\udcca", color:"#c9a227", items:items});
+    return;
+  }
+
+  /* Fallback : delegate showLiveList existant */
+  if(typeof showLiveList === "function") showLiveList(key);
+}
+
 function showLiveList(key){
   var existing=document.getElementById("liveList");if(existing){existing.remove();return;}
   var now=new Date();var y=now.getFullYear(),m=now.getMonth(),d=now.getDate();
