@@ -845,7 +845,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.464",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.465",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3935,6 +3935,167 @@ function axCheckToolCallLimit(){
 }
 function axResetToolCallTurn(){
   window._axToolCallsThisTurn = 0;
+}
+
+/* v12.465 - Listeners centralised tracker + view memo (P0 audit fix) */
+
+window._axAttachedListeners = window._axAttachedListeners || [];
+window._axViewMemoCache = window._axViewMemoCache || {};
+window._axCurrentViewListenerScope = window._axCurrentViewListenerScope || "global";
+
+function axAddListener(el, evt, fn, opts){
+  /* Wrapper qui memorise le listener pour cleanup ulterieur. */
+  if(!el || !evt || typeof fn !== "function") return false;
+  try{
+    el.addEventListener(evt, fn, opts);
+    window._axAttachedListeners.push({
+      el: el,
+      evt: evt,
+      fn: fn,
+      opts: opts,
+      scope: window._axCurrentViewListenerScope,
+      addedAt: Date.now()
+    });
+    /* Cap : garder max 500 entries pour eviter croissance illimitee */
+    if(window._axAttachedListeners.length > 500){
+      var oldest = window._axAttachedListeners.shift();
+      try{
+        if(oldest && oldest.el && oldest.evt && oldest.fn){
+          oldest.el.removeEventListener(oldest.evt, oldest.fn, oldest.opts);
+        }
+      }catch(_){}
+    }
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function axCleanupViewListeners(scope){
+  /* Retire les listeners attaches a un scope view donne. */
+  scope = scope || window._axCurrentViewListenerScope;
+  if(!scope || scope === "global") return 0;
+  var cleaned = 0;
+  var remaining = [];
+  window._axAttachedListeners.forEach(function(entry){
+    if(entry && entry.scope === scope){
+      try{
+        if(entry.el && entry.evt && entry.fn){
+          entry.el.removeEventListener(entry.evt, entry.fn, entry.opts);
+          cleaned++;
+        }
+      }catch(_){}
+    } else {
+      remaining.push(entry);
+    }
+  });
+  window._axAttachedListeners = remaining;
+  return cleaned;
+}
+
+function axSetViewListenerScope(scope){
+  /* Bascule le scope avant render d une nouvelle vue. */
+  var prev = window._axCurrentViewListenerScope;
+  if(scope && scope !== prev){
+    /* Cleanup ancien scope avant changement (sauf global) */
+    if(prev && prev !== "global"){ axCleanupViewListeners(prev); }
+    window._axCurrentViewListenerScope = String(scope);
+  }
+  return prev;
+}
+
+/* axViewMemo : skip render si meme view + meme hash K state pertinent */
+function _axHashViewState(viewName){
+  /* Hash leger : view + qq champs critiques de K */
+  try{
+    var k = K || {};
+    var parts = [
+      String(viewName||""),
+      String((k.user&&k.user.id)||""),
+      String((k.messages||[]).length),
+      String((k.activeConvId)||""),
+      String((k.isStreaming)?"1":"0"),
+      String((k.theme)||(k.settings&&k.settings.theme)||"")
+    ];
+    return parts.join("|");
+  }catch(_){ return String(viewName||""); }
+}
+
+function axViewMemoCheck(viewName){
+  /* Retourne true si la view a deja ete rendue avec exactement le meme hash → skip render. */
+  try{
+    var h = _axHashViewState(viewName);
+    var cached = window._axViewMemoCache[viewName];
+    if(cached && cached.hash === h && (Date.now() - cached.ts) < 500){
+      /* Hit : meme state recent (< 500ms) → render skip */
+      return true;
+    }
+    return false;
+  }catch(_){ return false; }
+}
+
+function axViewMemoStore(viewName){
+  try{
+    window._axViewMemoCache[viewName] = {
+      hash: _axHashViewState(viewName),
+      ts: Date.now()
+    };
+    /* Cap : 30 vues max en cache */
+    var keys = Object.keys(window._axViewMemoCache);
+    if(keys.length > 30){
+      keys.slice(0, keys.length - 30).forEach(function(k){
+        delete window._axViewMemoCache[k];
+      });
+    }
+  }catch(_){}
+}
+
+function axViewMemoInvalidate(viewName){
+  if(viewName){
+    delete window._axViewMemoCache[viewName];
+  } else {
+    window._axViewMemoCache = {};
+  }
+}
+
+/* Hook navigation : invalide cache + cleanup listeners au changement de vue */
+(function(){
+  if(window._axViewListenerHookInstalled) return;
+  window._axViewListenerHookInstalled = true;
+  setTimeout(function(){
+    if(typeof window.sv !== "function") return;
+    if(window.sv._axViewListenerHookPatched) return;
+    window.sv._axViewListenerHookPatched = true;
+    var origSv = window.sv;
+    window.sv = function(view){
+      try{
+        if(K && K.view && view && K.view !== view){
+          axCleanupViewListeners(K.view);
+          axViewMemoInvalidate(K.view);
+          axSetViewListenerScope(view);
+        }
+      }catch(_){}
+      return origSv.apply(this, arguments);
+    };
+  }, 6000); /* apres autres patches sv */
+})();
+
+/* Diagnostic : retourne stats listeners pour debug */
+function axListenerStats(){
+  try{
+    var total = (window._axAttachedListeners || []).length;
+    var byScope = {};
+    var byEvent = {};
+    (window._axAttachedListeners || []).forEach(function(e){
+      var s = e.scope || "global";
+      var ev = e.evt || "?";
+      byScope[s] = (byScope[s]||0) + 1;
+      byEvent[ev] = (byEvent[ev]||0) + 1;
+    });
+    return {total:total, byScope:byScope, byEvent:byEvent, memoSize:Object.keys(window._axViewMemoCache||{}).length};
+  }catch(e){
+    return {error:String(e.message||e)};
+  }
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
