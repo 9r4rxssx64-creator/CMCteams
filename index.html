@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.572";
+var APP_VER="v9.573";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8844,8 +8844,45 @@ function confetti(n){
 var _toastQ=[],_toastBusy=false;
 // v9.53 \u2014 Toast system enrichi : 4 types (ok/err/warn/info) avec ic\u00f4nes et couleurs
 // v9.138 — Toast enrichi : type, dur\u00e9e custom, bouton Undo (mod\u00e8le premium Superhuman)
+
+/* CMC_V9_573_QUIET v9.573 - Master quiet mode (parity Apex v12.499) */
+(function(){
+  if(window._cmcQuietBootInit) return;
+  window._cmcQuietBootInit = true;
+  window._cmcBootStartMs = Date.now();
+  if(localStorage.getItem("cmc_quiet_mode") === null){
+    try{localStorage.setItem("cmc_quiet_mode", "true");}catch(_){}
+  }
+})();
+window._cmcIsQuietMode = function(){
+  try{
+    if(!lg("cmc_quiet_mode", true)) return false;
+    var since = Date.now() - (window._cmcBootStartMs || Date.now());
+    return since < 60000;
+  }catch(_){ return false; }
+};
+window.cmcToggleQuietMode = function(enabled){
+  try{
+    var v = (typeof enabled === "boolean") ? enabled : !lg("cmc_quiet_mode", true);
+    ls("cmc_quiet_mode", v);
+    if(!v) window._cmcBootStartMs = 0;
+    if(typeof toast === "function") toast(v ? "Mode calme ACTIVE (boot silencieux)" : "Mode calme DESACTIVE (toasts visibles)", v ? "ok" : "info", 3000);
+    return v;
+  }catch(_){ return true; }
+};
+
 function toast(msg,type,dur,undoFn){
   if(type===undefined)type="ok";
+  /* CMC_V9_573_QUIET : skip toast non-critique pendant boot quiet (parity Apex v12.499) */
+  try{
+    if(typeof window._cmcIsQuietMode === "function" && window._cmcIsQuietMode() && type !== "err"){
+      var sLog = lg("cmc_silent_log", []);
+      sLog.push({msg:String(msg).slice(0,200), type:type||"ok", ts:Date.now(), reason:"quiet_boot"});
+      if(sLog.length > 200) sLog = sLog.slice(-200);
+      ls("cmc_silent_log", sLog);
+      return;
+    }
+  }catch(_){}
   var isAdm=A.user&&A.user.id===AID;
   var s=String(msg);
   var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|cmc_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|SSE|evoluthion|audit/i.test(s);
