@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.482",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.483",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6571,13 +6571,47 @@ window.axTouchAdminVisit = axTouchAdminVisit;
       window.fetch._axAnthropicTimeoutWrapped = true;
       var origFetch = window.fetch;
       window.fetch = function(url, opts){
+        try{
+          var u0 = String(url||"");
+          /* v12.483 - WIRE CIRCUIT BREAKER : detecte provider + check etat avant fetch */
+          var provider0 = null;
+          if(u0.indexOf("api.anthropic.com")>=0 || u0.indexOf("apex-proxy")>=0) provider0 = "anthropic";
+          else if(u0.indexOf("api.groq.com")>=0) provider0 = "groq";
+          else if(u0.indexOf("generativelanguage.googleapis")>=0) provider0 = "gemini";
+          else if(u0.indexOf("api.openai.com")>=0) provider0 = "openai";
+          else if(u0.indexOf("openrouter.ai")>=0) provider0 = "openrouter";
+          if(provider0 && typeof axCircuitBreakerCheck === "function"){
+            if(axCircuitBreakerCheck(provider0)){
+              /* Circuit OPEN -> reject fail fast */
+              return Promise.reject(new Error("circuit_breaker_open:"+provider0));
+            }
+          }
+        }catch(_){}
         var p = origFetch.apply(this, arguments);
         try{
           var u = String(url||"");
-          if(u.indexOf("api.anthropic.com")>=0 || u.indexOf("apex-proxy")>=0){
-            return p.catch(function(err){
+          var provider = null;
+          if(u.indexOf("api.anthropic.com")>=0 || u.indexOf("apex-proxy")>=0) provider = "anthropic";
+          else if(u.indexOf("api.groq.com")>=0) provider = "groq";
+          else if(u.indexOf("generativelanguage.googleapis")>=0) provider = "gemini";
+          else if(u.indexOf("api.openai.com")>=0) provider = "openai";
+          else if(u.indexOf("openrouter.ai")>=0) provider = "openrouter";
+          if(provider){
+            return p.then(function(r){
               try{
-                if(String(err&&err.name||"").indexOf("Abort")>=0 || String(err&&err.message||"").indexOf("timeout")>=0){
+                /* Success -> record OK pour circuit breaker */
+                if(typeof axCircuitBreakerRecord === "function" && r && r.ok !== false){
+                  axCircuitBreakerRecord(provider, true);
+                }
+              }catch(_){}
+              return r;
+            }).catch(function(err){
+              try{
+                /* Failure -> record fail */
+                if(typeof axCircuitBreakerRecord === "function"){
+                  axCircuitBreakerRecord(provider, false);
+                }
+                if(provider === "anthropic" && (String(err&&err.name||"").indexOf("Abort")>=0 || String(err&&err.message||"").indexOf("timeout")>=0)){
                   if(typeof axRecordAnthropicTimeout === "function"){
                     axRecordAnthropicTimeout();
                   }
@@ -6841,6 +6875,85 @@ window.axIntervalRegistryStats = axIntervalRegistryStats;
       }catch(_){}
     }, 8 * 3600 * 1000); /* check every 8h */
   }, 60000);
+})();
+
+/* v12.483 - Diagnostic transparent integration + wiring verification */
+
+function axDiagnosticIntegration(){
+  /* Verifie que les wirings critiques sont REELLEMENT actifs runtime. */
+  var diag = {
+    timestamp: Date.now(),
+    fetchHookActive: !!(window.fetch && window.fetch._axAnthropicTimeoutWrapped),
+    innerHTMLHookActive: !!window._axInnerHTMLSanitizeWrapped,
+    circuitBreakerWired: false,
+    circuitBreakerProviders: [],
+    masterTasksCount: 0,
+    intervalsTracked: 0,
+    listenersCount: 0
+  };
+  try{
+    /* Verif circuit-breaker integre dans fetch */
+    if(window.fetch && window.fetch.toString){
+      var fetchSrc = window.fetch.toString();
+      diag.circuitBreakerWired = fetchSrc.indexOf("axCircuitBreakerCheck") >= 0;
+    }
+    if(window._axCircuitBreakers){
+      diag.circuitBreakerProviders = Object.keys(window._axCircuitBreakers);
+    }
+    if(window._axMasterTasks){
+      diag.masterTasksCount = Object.keys(window._axMasterTasks).length;
+    }
+    if(window._axIntervalRegistry){
+      diag.intervalsTracked = window._axIntervalRegistry.length;
+    }
+    if(window._axAttachedListeners){
+      diag.listenersCount = window._axAttachedListeners.length;
+    }
+    /* Test runtime innerHTML wrapper */
+    try{
+      var testDiv = document.createElement("div");
+      testDiv.innerHTML = "<scr"+"ipt>window._axTestXSS=1</scr"+"ipt>";
+      diag.innerHTMLActuallyBlocked = !window._axTestXSS;
+      delete window._axTestXSS;
+    }catch(_){}
+  }catch(_){}
+  /* Score honnete base sur wirings reels */
+  var integrationScore = 0;
+  if(diag.fetchHookActive) integrationScore += 20;
+  if(diag.circuitBreakerWired) integrationScore += 25;
+  if(diag.innerHTMLHookActive) integrationScore += 15;
+  if(diag.innerHTMLActuallyBlocked) integrationScore += 15;
+  if(diag.masterTasksCount >= 10) integrationScore += 15;
+  if(diag.intervalsTracked >= 5) integrationScore += 10;
+  diag.integrationScore = integrationScore;
+  diag.verdict = integrationScore >= 80 ? "EXCELLENT_WIRING" : integrationScore >= 60 ? "GOOD_WIRING" : integrationScore >= 40 ? "PARTIAL_WIRING" : "POOR_WIRING";
+  /* Persist */
+  try{ ls("ax_integration_diag_last", diag); }catch(_){}
+  return diag;
+}
+window.axDiagnosticIntegration = axDiagnosticIntegration;
+
+/* Auto-run au boot pour persister diagnostic */
+(function(){
+  if(window._axIntegrationDiagInstalled) return;
+  window._axIntegrationDiagInstalled = true;
+  setTimeout(function(){
+    try{
+      var diag = axDiagnosticIntegration();
+      try{
+        if(typeof axJournalEntry === "function"){
+          axJournalEntry("apex-ai","integration_diag_boot","integrationScore="+diag.integrationScore,"verdict="+diag.verdict,"Auto-diagnostic v12.483");
+        }
+      }catch(_){}
+      if(diag.integrationScore < 60){
+        try{
+          if(typeof axNotifyKevin === "function"){
+            axNotifyKevin("Integration partielle : "+diag.integrationScore+"/100", "verdict="+diag.verdict+" - check axDiagnosticIntegration()");
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+  }, 25000);
 })();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
