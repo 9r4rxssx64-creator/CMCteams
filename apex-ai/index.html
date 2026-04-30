@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.542",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.543",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -1698,7 +1698,65 @@ it:{
 };
 function axT(key){try{var lang=(typeof K!=="undefined"&&K&&K.settings&&K.settings.lang)||"fr";var dict=I18N_CRITICAL[lang]||I18N_CRITICAL.fr;return dict[key]||I18N_CRITICAL.fr[key]||key;}catch(e){return key;}}
 // v12.264 — _axSafeCatch : helper pour remplacer catch(_){} silencieux par log auditable (admin only)
-function _axSafeCatch(ctx,e){try{var msg=String(e&&e.message||e||"unknown").slice(0,200);if(typeof _snLog==="function")_snLog(String(ctx||"safe-catch").slice(0,40),"err",msg);else if(typeof console!=="undefined"&&console.warn)console.warn("[safe-catch]",ctx,msg);}catch(__){}}
+// AX_V12_543_LOGGER : Phase A1 grand chantier — etendu avec niveaux + persistence + rotation cap 200
+function _axSafeCatch(ctx,e,level){
+  try{
+    var msg=String(e&&e.message||e||"unknown").slice(0,200);
+    var stack=String(e&&e.stack||"").slice(0,500);
+    var lvl=String(level||"err");
+    var entry={ctx:String(ctx||"safe-catch").slice(0,40),msg:msg,level:lvl,ts:Date.now(),stack:stack,v:typeof APP_VER!=="undefined"?APP_VER:""};
+    // Persist with rotation cap 200 (audit trail sans bloat localStorage)
+    try{
+      var log=JSON.parse(localStorage.getItem("ax_safe_catch_log")||"[]");
+      log.push(entry);
+      if(log.length>200)log=log.slice(-200);
+      localStorage.setItem("ax_safe_catch_log",JSON.stringify(log));
+    }catch(__){}
+    // _snLog si dispo (sentinelles)
+    try{if(typeof _snLog==="function")_snLog(entry.ctx,lvl==="critical"?"err":lvl,msg);}catch(__){}
+    // Console pour dev (admin only via console)
+    try{
+      if(typeof console!=="undefined"){
+        if(lvl==="critical"&&console.error)console.error("[CRITICAL]",ctx,msg);
+        else if((lvl==="err"||lvl==="warn")&&console.warn)console.warn("["+lvl+"]",ctx,msg);
+      }
+    }catch(__){}
+    // axSecurityLog si critical (audit)
+    try{if(lvl==="critical"&&typeof axSecurityLog==="function")axSecurityLog("safecatch_critical",ctx+":"+msg);}catch(__){}
+  }catch(___){}
+}
+// AX_V12_543_LOGGER : helper wrap try/catch automatique. Usage: _axSafeRun("label", function(){ ... }, defaultValue)
+function _axSafeRun(label,fn,defaultVal){
+  if(typeof fn!=="function")return defaultVal;
+  try{return fn();}catch(e){_axSafeCatch(label,e,"warn");return defaultVal;}
+}
+window._axSafeRun=_axSafeRun;
+// AX_V12_543_LOGGER : helper async version (Promise-aware)
+function _axSafeRunAsync(label,fn,defaultVal){
+  if(typeof fn!=="function")return Promise.resolve(defaultVal);
+  try{
+    var r=fn();
+    if(r&&typeof r.then==="function"){
+      return r.catch(function(e){_axSafeCatch(label,e,"warn");return defaultVal;});
+    }
+    return Promise.resolve(r);
+  }catch(e){_axSafeCatch(label,e,"warn");return Promise.resolve(defaultVal);}
+}
+window._axSafeRunAsync=_axSafeRunAsync;
+// AX_V12_543_LOGGER : query log pour vue admin
+function axSafeCatchLogQuery(filter){
+  try{
+    var log=JSON.parse(localStorage.getItem("ax_safe_catch_log")||"[]");
+    if(!filter)return log;
+    return log.filter(function(e){
+      if(filter.level&&e.level!==filter.level)return false;
+      if(filter.ctx&&e.ctx.indexOf(filter.ctx)<0)return false;
+      if(filter.sinceMs&&Date.now()-e.ts>filter.sinceMs)return false;
+      return true;
+    });
+  }catch(_){return [];}
+}
+window.axSafeCatchLogQuery=axSafeCatchLogQuery;
 
 // --- Utilitaires ---
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;");}
