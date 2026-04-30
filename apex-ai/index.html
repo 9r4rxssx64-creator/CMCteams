@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.450",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.451",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2141,6 +2141,192 @@ function axMonitorSubscriptions(){
     }, 30000);
   }catch(_){}
 })();
+
+/* v12.451 - WhatsApp helpers : link generator + OTP request/verify + service client auto */
+
+/* Helper : genere URL wa.me click-to-chat avec message pre-rempli */
+function axWhatsAppLink(phone, msg){
+  /* phone format E.164 sans + : ex 33612345678 (FR), 37798765432 (Monaco) */
+  try{
+    var p = String(phone||"").replace(/[^0-9]/g,"");
+    if(!p || p.length < 8) return "";
+    var m = encodeURIComponent(String(msg||""));
+    return "https://wa.me/"+p+"?text="+m;
+  }catch(_){ return ""; }
+}
+
+/* Helper : ouvre WhatsApp avec message pre-rempli (mobile : ouvre app native, desktop : web) */
+function axWhatsAppSend(phone, msg){
+  var url = axWhatsAppLink(phone, msg);
+  if(!url){ if(typeof toast==="function") toast("Numero invalide","warn"); return false; }
+  try{ window.open(url,"_blank","noopener"); return true; }catch(_){ return false; }
+}
+
+/* OTP : genere code 6 chiffres, stocke avec TTL 10 min, ouvre WhatsApp Kevin pour envoyer au client */
+function axWhatsAppOtpRequest(clientPhone, clientName){
+  try{
+    var p = String(clientPhone||"").replace(/[^0-9]/g,"");
+    if(!p || p.length < 8){ if(typeof toast==="function") toast("Numero client invalide","warn"); return null; }
+    /* Code 6 chiffres aleatoire */
+    var code = "";
+    for(var i=0;i<6;i++) code += Math.floor(Math.random()*10);
+    var otp = {
+      code: code,
+      phone: p,
+      name: String(clientName||"").slice(0,80),
+      ts: Date.now(),
+      expires: Date.now() + 10*60*1000,
+      attempts: 0,
+      verified: false
+    };
+    /* Stocker dans une map per-phone */
+    var otps = lg("ax_whatsapp_otps", {}) || {};
+    if(typeof otps !== "object" || Array.isArray(otps)) otps = {};
+    otps[p] = otp;
+    /* Cleanup OTPs expires */
+    Object.keys(otps).forEach(function(k){
+      if(otps[k] && otps[k].expires < Date.now() - 3600000) delete otps[k];
+    });
+    ls("ax_whatsapp_otps", otps);
+    /* Compose message pour Kevin a transferer au client */
+    var kevinPhone = lg("ax_kevin_whatsapp_phone","");
+    var msgClient = "Code Apex AI : "+code+"\n\nValide 10 minutes. Reponds avec le code dans Apex pour activer ton compte.\n\nBienvenue !";
+    if(kevinPhone){
+      /* Ouvre WhatsApp Kevin avec message pret a transferer au client */
+      var prep = "[A transferer a "+(otp.name||p)+"] "+msgClient;
+      axWhatsAppSend(kevinPhone, prep);
+      if(typeof toast==="function") toast("Code "+code+" — transfere via ton WhatsApp","ok",{duration:5000,force:true});
+    } else {
+      /* Pas de numero Kevin configure, ouvrir directement WhatsApp client */
+      axWhatsAppSend(p, msgClient);
+      if(typeof toast==="function") toast("Code "+code+" envoye via WhatsApp","ok",{duration:4000});
+    }
+    try{if(typeof axSecurityLog==="function")axSecurityLog("otp_sent","Code OTP genere pour "+p+" ("+(otp.name||"sans nom")+")");}catch(_){}
+    return code;
+  }catch(e){
+    try{console.error("[axWhatsAppOtpRequest]",e);}catch(_){}
+    return null;
+  }
+}
+
+/* OTP : verifie code saisi par client */
+function axWhatsAppOtpVerify(clientPhone, codeInput){
+  try{
+    var p = String(clientPhone||"").replace(/[^0-9]/g,"");
+    var code = String(codeInput||"").replace(/[^0-9]/g,"");
+    if(!p || !code) return {ok:false, reason:"missing"};
+    var otps = lg("ax_whatsapp_otps", {}) || {};
+    var otp = otps[p];
+    if(!otp) return {ok:false, reason:"not_found"};
+    if(otp.verified) return {ok:false, reason:"already_used"};
+    if(otp.expires < Date.now()){ delete otps[p]; ls("ax_whatsapp_otps",otps); return {ok:false, reason:"expired"}; }
+    otp.attempts = (otp.attempts||0) + 1;
+    if(otp.attempts > 5){ delete otps[p]; ls("ax_whatsapp_otps",otps); return {ok:false, reason:"too_many_attempts"}; }
+    if(otp.code !== code){ ls("ax_whatsapp_otps", otps); return {ok:false, reason:"wrong_code", attemptsLeft: 5-otp.attempts}; }
+    /* Code valide */
+    otp.verified = true;
+    otp.verifiedAt = Date.now();
+    ls("ax_whatsapp_otps", otps);
+    try{if(typeof axSecurityLog==="function")axSecurityLog("otp_verified","Code OTP valide pour "+p);}catch(_){}
+    return {ok:true, phone:p, name:otp.name};
+  }catch(e){
+    try{console.error("[axWhatsAppOtpVerify]",e);}catch(_){}
+    return {ok:false, reason:"error"};
+  }
+}
+
+/* Service client automatise : Apex IA repond aux questions clients */
+function axServiceClientAuto(question, clientPhone, clientName){
+  return new Promise(function(resolve){
+    try{
+      var q = String(question||"").trim();
+      if(!q){ resolve({ok:false, reason:"empty"}); return; }
+      /* Historique conversation per-phone pour contexte */
+      var histKey = "ax_client_history_"+String(clientPhone||"unknown").replace(/[^0-9]/g,"");
+      var hist = lg(histKey, []);
+      if(!Array.isArray(hist)) hist = [];
+      hist.push({role:"user", content:q, ts:Date.now()});
+      /* Tente reponse via Apex IA si dispo */
+      var systemPrompt = "Tu es Apex Service Client pour Kevin DESARZENS (Casino Monaco). Reponds aux clients avec professionnalisme, francais clair, max 200 mots. Si tu n es pas sur, reponds 'Je transmets ta question a Kevin'.";
+      var apiKey = lg("ax_api_key","") || lg("ax_shared_api_key","");
+      if(typeof apiKey === "string" && apiKey.length > 20 && typeof fetch === "function"){
+        var msgs = hist.slice(-10).map(function(h){return {role:h.role, content:h.content};});
+        var url = lg("ax_proxy_url","") || "https://api.anthropic.com/v1/messages";
+        var headers = {"Content-Type":"application/json","anthropic-version":"2023-06-01"};
+        if(url.indexOf("api.anthropic.com")>=0) headers["x-api-key"] = apiKey;
+        else headers["Authorization"] = "Bearer "+apiKey;
+        fetch(url, {
+          method:"POST",
+          headers:headers,
+          body:JSON.stringify({
+            model: lg("ax_model","claude-haiku-4-5-20251001"),
+            max_tokens: 800,
+            system: systemPrompt,
+            messages: msgs
+          })
+        }).then(function(r){return r.ok?r.json():null;}).then(function(d){
+          if(!d || !d.content || !d.content.length){ resolve({ok:false, reason:"no_response"}); return; }
+          var answer = "";
+          d.content.forEach(function(c){ if(c.type==="text") answer += c.text; });
+          if(!answer){ resolve({ok:false, reason:"empty_response"}); return; }
+          /* Heuristique confidence : si reponse contient "je transmets" ou "kevin" = low confidence */
+          var lowConf = /je transmets|je dois verifier|kevin|incertain|pas sur/i.test(answer);
+          var confidence = lowConf ? 0.5 : 0.9;
+          hist.push({role:"assistant", content:answer, ts:Date.now(), confidence:confidence});
+          if(hist.length > 50) hist = hist.slice(-50);
+          ls(histKey, hist);
+          /* Si confidence haute, propose envoi auto via WhatsApp Kevin */
+          if(confidence >= 0.85){
+            /* Ouvre wa.me link Kevin pre-rempli avec reponse pour transfert client */
+            var kevinPhone = lg("ax_kevin_whatsapp_phone","");
+            if(kevinPhone){
+              var prep = "[A transferer a "+(clientName||clientPhone||"client")+"] "+answer;
+              /* Pas d ouverture auto, juste log + axNeedsAttention si Kevin actif */
+              if(typeof axNeedsAttention === "function" && K && K.user && K.user.id === ADMIN_ID){
+                axNeedsAttention({
+                  id:"sc_auto_"+Date.now(),
+                  severity:"info",
+                  title:"Reponse client prete (auto)",
+                  body:"Question : "+q.slice(0,100)+"\n\nReponse Apex : "+answer.slice(0,200),
+                  dedupHours: 0.01,
+                  actions: [
+                    {label:"Envoyer via WhatsApp", primary:true, fn:function(){ axWhatsAppSend(kevinPhone, prep); }},
+                    {label:"Modifier", fn:function(){
+                      try{ if(typeof sv==="function") sv("serviceclient"); }catch(_){}
+                    }},
+                    {label:"Plus tard", fn:function(){}}
+                  ]
+                });
+              }
+            }
+          }
+          resolve({ok:true, answer:answer, confidence:confidence, phone:clientPhone});
+        }).catch(function(){ resolve({ok:false, reason:"network"}); });
+      } else {
+        /* Pas de cle API : escalate Kevin direct */
+        if(typeof axNeedsAttention === "function" && K && K.user && K.user.id === ADMIN_ID){
+          axNeedsAttention({
+            id:"sc_manual_"+Date.now(),
+            severity:"warn",
+            title:"Question client a traiter",
+            body:"De : "+(clientName||clientPhone||"inconnu")+"\n\nQuestion : "+q.slice(0,300),
+            dedupHours: 0.01,
+            actions: [
+              {label:"Ouvrir Service Client", primary:true, fn:function(){
+                try{ if(typeof sv==="function") sv("serviceclient"); }catch(_){}
+              }},
+              {label:"Plus tard", fn:function(){}}
+            ]
+          });
+        }
+        resolve({ok:false, reason:"no_api_key", escalated:true});
+      }
+    }catch(e){
+      try{console.error("[axServiceClientAuto]",e);}catch(_){}
+      resolve({ok:false, reason:"error"});
+    }
+  });
+}
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
