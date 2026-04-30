@@ -176,29 +176,44 @@ async function callOpenAI(messages, systemPrompt, env, signal) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+// P0 FIX (audit) : failover PARALLEL race avec Promise.any et timeout 8s
+// Worst-case latency : 8s (au lieu de 150s en série)
 async function callIAFailover(messages, systemPrompt, env) {
   const providers = [
-    { name: 'anthropic', fn: callAnthropic },
-    { name: 'openrouter', fn: callOpenRouter },
-    { name: 'gemini', fn: callGemini },
-    { name: 'groq', fn: callGroq },
-    { name: 'openai', fn: callOpenAI }
+    { name: 'anthropic', fn: callAnthropic, hasKey: !!env.ANTHROPIC_API_KEY },
+    { name: 'openrouter', fn: callOpenRouter, hasKey: !!env.OPENROUTER_API_KEY },
+    { name: 'gemini', fn: callGemini, hasKey: !!env.GEMINI_API_KEY },
+    { name: 'groq', fn: callGroq, hasKey: !!env.GROQ_API_KEY },
+    { name: 'openai', fn: callOpenAI, hasKey: !!env.OPENAI_API_KEY }
   ];
 
-  const errors = [];
-  for (const { name, fn } of providers) {
+  const available = providers.filter(p => p.hasKey);
+  if (available.length === 0) throw new Error('Aucun provider IA configuré');
+
+  // Lance toutes les requêtes en parallèle avec timeout 8s chacune
+  const promises = available.map(({ name, fn }) => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);  // 30s timeout
-    try {
-      const result = await fn(messages, systemPrompt, env, controller.signal);
-      clearTimeout(timeout);
-      if (result) return { provider: name, content: result };
-    } catch (e) {
-      clearTimeout(timeout);
-      errors.push(`${name}: ${e.message}`);
-    }
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    return fn(messages, systemPrompt, env, controller.signal)
+      .then(result => {
+        clearTimeout(timeout);
+        if (!result) throw new Error('Empty response');
+        return { provider: name, content: result };
+      })
+      .catch(e => {
+        clearTimeout(timeout);
+        throw new Error(`${name}: ${e.message}`);
+      });
+  });
+
+  // Promise.any : retourne la PREMIÈRE qui réussit (le plus rapide gagne)
+  try {
+    return await Promise.any(promises);
+  } catch (aggregateError) {
+    // Toutes ont échoué
+    const errors = aggregateError.errors?.map(e => e.message).join('; ') || 'unknown';
+    throw new Error('Tous les providers IA ont échoué : ' + errors);
   }
-  throw new Error('Tous les providers IA ont échoué : ' + errors.join('; '));
 }
 
 // ============================================================================

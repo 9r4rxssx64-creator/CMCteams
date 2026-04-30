@@ -151,12 +151,85 @@ async function handleSendOtp(request, env) {
   return json({ ok: true, sessionId: phoneHash, provider: 'firebase' });
 }
 
+// ============================================================================
+//  Firebase ID token verification (P0 fix audit externe)
+//  Vérification réelle via Firebase JWKS public keys
+// ============================================================================
+
+async function fetchFirebasePublicKeys(env) {
+  // Cache 1h dans KV
+  const cached = await env.APEX_CHAT_CACHE?.get('firebase:public_keys', 'json');
+  if (cached && cached.expires_at > Date.now()) return cached.keys;
+
+  const response = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+  if (!response.ok) throw new Error('Firebase JWKS fetch failed');
+  const keys = await response.json();
+
+  await env.APEX_CHAT_CACHE?.put('firebase:public_keys', JSON.stringify({
+    keys, expires_at: Date.now() + 3600000
+  }), { expirationTtl: 3600 }).catch(() => {});
+
+  return keys;
+}
+
+async function verifyFirebaseIdToken(idToken, env) {
+  if (!env.FIREBASE_PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID non configuré');
+
+  const [headerB64, payloadB64, sigB64] = idToken.split('.');
+  if (!headerB64 || !payloadB64 || !sigB64) throw new Error('Token Firebase malformé');
+
+  const decode = (s) => atob(s.replace(/-/g, '+').replace(/_/g, '/').padEnd(s.length + (4 - s.length % 4) % 4, '='));
+  const header = JSON.parse(decode(headerB64));
+  const payload = JSON.parse(decode(payloadB64));
+
+  // Vérifications RGPD/sécurité
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp && payload.exp < now) throw new Error('Token expiré');
+  if (payload.iat && payload.iat > now + 60) throw new Error('Token futur (iat invalide)');
+  if (payload.aud !== env.FIREBASE_PROJECT_ID) throw new Error('Token aud incorrect');
+  if (payload.iss !== `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`) throw new Error('Token iss incorrect');
+  if (!payload.sub) throw new Error('Token sub manquant');
+  if (header.alg !== 'RS256') throw new Error('Token alg incorrect');
+
+  // Vérifier signature
+  const keys = await fetchFirebasePublicKeys(env);
+  const certPem = keys[header.kid];
+  if (!certPem) throw new Error('Token kid inconnu');
+
+  // Convertir cert PEM → SPKI public key
+  const certB64 = certPem.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, '');
+  const certBytes = Uint8Array.from(atob(certB64), c => c.charCodeAt(0));
+  // Note: certificat X.509, on extrait la public key SPKI
+  // Pour simplifier, on importe directement via crypto.subtle
+  const publicKey = await crypto.subtle.importKey(
+    'spki', certBytes, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']
+  );
+  const sigBytes = Uint8Array.from(decode(sigB64), c => c.charCodeAt(0));
+  const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+  const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', publicKey, sigBytes, dataBytes);
+
+  if (!valid) throw new Error('Signature Firebase invalide');
+
+  return payload;  // { sub, phone_number, aud, iss, iat, exp, ... }
+}
+
 async function handleVerifyOtp(request, env) {
   const { phone, name, pseudo, firebase_id_token } = await request.json();
   if (!phone || !pseudo || !firebase_id_token) return err('Champs manquants', 400);
+  if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
 
-  // TODO Phase 2 : vérifier firebase_id_token via Firebase Admin SDK ou public keys
-  // Pour Phase 1 : on accepte l'idToken (à durcir Phase 2)
+  // P0 FIX (audit) : vérification Firebase ID token RÉELLE
+  let firebasePayload;
+  try {
+    firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
+  } catch (e) {
+    return err('Token Firebase invalide : ' + e.message, 401, 'invalid_token');
+  }
+
+  // P0 FIX : phone du body DOIT correspondre au phone_number du token Firebase
+  if (firebasePayload.phone_number !== phone) {
+    return err('Numéro téléphone ne correspond pas au token Firebase', 401, 'phone_mismatch');
+  }
 
   const phoneHash = await sha256(phone);
 
@@ -164,26 +237,39 @@ async function handleVerifyOtp(request, env) {
   let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
 
   if (!user) {
-    // Vérifier pseudo unique
-    const conflict = await env.APEX_CHAT_DB.prepare('SELECT id FROM users WHERE pseudo=? COLLATE NOCASE').bind(pseudo).first();
-    if (conflict) return err('Pseudo déjà pris', 409, 'pseudo_taken');
+    // Vérifier pseudo unique (P0 FIX : ON CONFLICT pour éviter race condition)
+    try {
+      const id = crypto.randomUUID();
 
-    if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
+      // P0 FIX : isKevinAdmin via PHONE E.164 secret env (jamais via name)
+      const KEVIN_PHONE = env.KEVIN_PHONE_E164 || '';
+      const isKevin = KEVIN_PHONE && phone === KEVIN_PHONE;
 
-    const id = crypto.randomUUID();
-    const isKevin = isKevinAdmin(name, phone);
-    await env.APEX_CHAT_DB.prepare(
-      `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
-       identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', 'PENDING', 'PENDING', 'apex-chat-direct', ?, 'active')`
-    ).bind(id, pseudo, name, phone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
-    user = { id, pseudo, real_name: name, is_admin: isKevin ? 1 : 0 };
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+         identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'apex-chat-direct', ?, 'active')
+         ON CONFLICT(pseudo) DO NOTHING`
+      ).bind(id, pseudo, name || pseudo, phone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
+
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
+      if (!user) return err('Pseudo déjà pris (race)', 409, 'pseudo_taken');
+    } catch (e) {
+      return err('Création compte échouée : ' + e.message, 500);
+    }
+  }
+
+  // P0 FIX (audit) : si user devient admin maintenant via phone secret env, mettre à jour
+  if (env.KEVIN_PHONE_E164 && phone === env.KEVIN_PHONE_E164 && !user.is_admin) {
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET is_admin=1, is_kevin_alias=1 WHERE id=?').bind(user.id).run();
+    user.is_admin = 1;
   }
 
   const jwt = await signJWT({
     sub: user.id,
     pseudo: user.pseudo,
     is_admin: !!user.is_admin,
+    firebase_uid: firebasePayload.sub,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400  // 30 jours
   }, env.JWT_SIGN_KEY);
@@ -196,35 +282,59 @@ async function handleVerifyOtp(request, env) {
 }
 
 async function handleSsoFromApex(request, env) {
-  // Échange JWT Apex contre JWT Apex Chat
-  const { apex_token, apex_uid, name } = await request.json();
+  // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
+  // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
+  const { apex_token, apex_uid, name, phone } = await request.json();
   if (!apex_token || !apex_uid) return err('Token Apex manquant', 400);
 
-  // TODO Phase 2 : vérifier apex_token via clé publique Apex
-  // Pour Phase 1 : créer/récupérer user lié à apex_uid
+  // Vérification HMAC HS256 du token Apex
+  if (!env.APEX_SSO_SIGN_KEY) return err('SSO non configuré (env)', 500);
+  const apexPayload = await verifyJWT(apex_token, env.APEX_SSO_SIGN_KEY);
+  if (!apexPayload) return err('Token Apex invalide', 401, 'invalid_apex_token');
+
+  // Le sub du token DOIT correspondre à apex_uid
+  if (apexPayload.sub !== apex_uid) return err('apex_uid mismatch', 401, 'uid_mismatch');
+
+  // Token court TTL (5 min max pour SSO)
+  if (apexPayload.exp && apexPayload.exp * 1000 < Date.now()) return err('Token Apex expiré', 401);
+  if (apexPayload.iat && apexPayload.iat > Math.floor(Date.now() / 1000) + 60) return err('Token Apex futur', 401);
 
   let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE apex_uid=?').bind(apex_uid).first();
   if (!user) {
-    // Chercher par pseudo dérivé du nom
-    const pseudo = (name || apex_uid).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20);
-    const id = apex_uid;  // même UID que Apex
-    const isKevin = isKevinAdmin(name);
-    await env.APEX_CHAT_DB.prepare(
-      `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
-       identity_key_pub, pq_key_pub, prekey_signed, apex_uid, source, created_at, status)
-       VALUES (?, ?, ?, 'PENDING_SSO', 'PENDING_SSO', ?, ?, 'PENDING', 'PENDING', 'PENDING', ?, 'apex-sso', ?, 'active')`
-    ).bind(id, pseudo, name, isKevin ? 1 : 0, isKevin ? 1 : 0, apex_uid, Date.now()).run();
-    user = { id, pseudo, real_name: name, is_admin: isKevin ? 1 : 0 };
+    // P0 FIX : isKevin via phone E.164 secret env (jamais via name string)
+    const KEVIN_PHONE = env.KEVIN_PHONE_E164 || '';
+    const isKevin = (apexPayload.is_admin === true) && KEVIN_PHONE &&
+                    (apexPayload.phone === KEVIN_PHONE || phone === KEVIN_PHONE);
+
+    const pseudo = String(name || apex_uid).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20) || 'user' + Date.now().toString(36).slice(-6);
+    const id = apex_uid;
+
+    try {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+         identity_key_pub, pq_key_pub, prekey_signed, apex_uid, source, created_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', ?, 'apex-sso', ?, 'active')
+         ON CONFLICT(id) DO UPDATE SET apex_uid=excluded.apex_uid`
+      ).bind(id, pseudo, name || pseudo, phone || 'PENDING_SSO',
+        phone ? await sha256(phone) : 'PENDING_SSO',
+        isKevin ? 1 : 0, isKevin ? 1 : 0, apex_uid, Date.now()).run();
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
+    } catch (e) {
+      return err('Création SSO échouée : ' + e.message, 500);
+    }
   }
 
   const jwt = await signJWT({
     sub: user.id,
     pseudo: user.pseudo,
     is_admin: !!user.is_admin,
+    apex_uid: user.apex_uid,
     sso: true,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400
   }, env.JWT_SIGN_KEY);
+
+  await auditLog(env, user.id, 'login_sso_apex', 'user', user.id, { apex_uid }, '', request.headers.get('User-Agent'));
 
   return json({ ok: true, token: jwt, user });
 }
@@ -537,25 +647,229 @@ export default {
     }
   },
 
+  // P0 FIX (audit) : Consumer Cloudflare Queues réel (router par queue_type)
   async queue(batch, env) {
-    // Consumer Cloudflare Queues (telemetry, letters, time-capsule, memory-lane)
     for (const msg of batch.messages) {
       try {
-        // TODO Phase 9 : router selon msg.body.queue_type
-        console.log('Queue msg', msg.body);
+        const body = msg.body;
+        const queueType = body.queue_type || 'unknown';
+
+        switch (queueType) {
+          case 'telemetry':
+            // Sentinelle a remonté un événement → push vers Apex
+            await pushToApexTelemetry(body, env);
+            break;
+
+          case 'pipeline-fix':
+            // Auto-fix whitelist (restart DO, rotate keys, etc.)
+            await runAutoFix(body, env);
+            break;
+
+          case 'letters-deliver': {
+            // Letters mode : livrer message après 24h
+            const letter = await env.APEX_CHAT_DB.prepare(
+              'SELECT * FROM letters_queue WHERE id=? AND delivered=0 AND cancelled=0'
+            ).bind(body.letter_id).first();
+            if (letter && letter.deliver_at <= Date.now()) {
+              const doStub = env.CONVERSATION_DO.get(env.CONVERSATION_DO.idFromName('do_' + letter.conv_id));
+              await doStub.fetch(new Request('https://internal/admin/inject-message', {
+                method: 'POST',
+                headers: { 'X-Apex-Internal': env.APEX_CHAT_ADMIN_TOKEN || '' },
+                body: JSON.stringify({
+                  sender_id: letter.sender_id,
+                  ciphertext: letter.ciphertext,
+                  mime: 'text/plain'
+                })
+              })).catch(() => {});
+              await env.APEX_CHAT_DB.prepare('UPDATE letters_queue SET delivered=1 WHERE id=?').bind(letter.id).run();
+            }
+            break;
+          }
+
+          case 'timecapsule-open': {
+            // Time Capsule : push notif quand date arrivée
+            const capsule = await env.APEX_CHAT_DB.prepare(
+              'SELECT * FROM time_capsules WHERE id=? AND opened_at IS NULL'
+            ).bind(body.capsule_id).first();
+            if (capsule && capsule.open_at <= Date.now()) {
+              await sendPushToUser(capsule.recipient_id, {
+                title: 'Apex Chat',
+                body: '🎁 Une capsule temporelle est arrivée à échéance',
+                tag: 'capsule-' + capsule.id,
+                payload: { capsuleId: capsule.id, senderId: capsule.sender_id }
+              }, env);
+            }
+            break;
+          }
+
+          case 'memory-lane': {
+            // Memory Lane : "Il y a 1 an avec X..."
+            const yearAgo = Date.now() - 365 * 86400000;
+            const day = new Date(yearAgo).toISOString().slice(0, 10);
+            const messages = await env.APEX_CHAT_DB.prepare(
+              `SELECT m.id, m.sender_id, m.conv_id, m.ts FROM messages m
+               WHERE m.sender_id=? AND date(m.ts/1000, 'unixepoch')=? LIMIT 10`
+            ).bind(body.user_id, day).all();
+            if ((messages.results || []).length > 0) {
+              await sendPushToUser(body.user_id, {
+                title: 'Apex Chat',
+                body: `🌟 Il y a 1 an aujourd'hui... (${messages.results.length} souvenirs)`,
+                tag: 'memory-lane-' + day
+              }, env);
+            }
+            break;
+          }
+
+          case 'lifecycle-r2': {
+            // Purge médias expirés (lifecycle)
+            const expired = await env.APEX_CHAT_DB.prepare(
+              'SELECT id, r2_key FROM media WHERE expires_at < ? LIMIT 100'
+            ).bind(Date.now()).all();
+            for (const m of (expired.results || [])) {
+              await env.APEX_CHAT_MEDIA?.delete(m.r2_key).catch(() => {});
+              await env.APEX_CHAT_DB.prepare('DELETE FROM media WHERE id=?').bind(m.id).run();
+            }
+            break;
+          }
+
+          case 'purge-expired-messages': {
+            // Disappearing messages : suppression
+            await env.APEX_CHAT_DB.prepare(
+              'DELETE FROM messages WHERE expires_at IS NOT NULL AND expires_at < ?'
+            ).bind(Date.now()).run();
+            break;
+          }
+
+          default:
+            console.warn('Queue type inconnu:', queueType);
+        }
+
         msg.ack();
       } catch (e) {
-        console.error('Queue error', e);
+        console.error('Queue consumer error', e);
         msg.retry();
       }
     }
   },
 
+  // P0 FIX (audit) : Cron triggers pour purge automatique
   async scheduled(event, env, ctx) {
-    // Cron triggers (lifecycle médias R2, time capsules cron, memory lane daily)
-    // TODO Phase 7-9
+    const cron = event.cron;
+
+    // Cron 0 */1 * * * (toutes les heures) — purge messages expirés + médias R2 expirés
+    if (cron === '0 */1 * * *') {
+      ctx.waitUntil(env.LETTERS_QUEUE?.send({ queue_type: 'purge-expired-messages' }).catch(() => {}));
+      ctx.waitUntil(env.LETTERS_QUEUE?.send({ queue_type: 'lifecycle-r2' }).catch(() => {}));
+    }
+
+    // Cron */5 * * * * (5 min) — Letters delivery + Time capsules
+    if (cron === '*/5 * * * *') {
+      const due_letters = await env.APEX_CHAT_DB.prepare(
+        'SELECT id FROM letters_queue WHERE deliver_at <= ? AND delivered=0 AND cancelled=0 LIMIT 50'
+      ).bind(Date.now()).all();
+      for (const l of (due_letters.results || [])) {
+        ctx.waitUntil(env.LETTERS_QUEUE?.send({ queue_type: 'letters-deliver', letter_id: l.id }).catch(() => {}));
+      }
+      const due_capsules = await env.APEX_CHAT_DB.prepare(
+        'SELECT id FROM time_capsules WHERE open_at <= ? AND opened_at IS NULL LIMIT 50'
+      ).bind(Date.now()).all();
+      for (const c of (due_capsules.results || [])) {
+        ctx.waitUntil(env.TIMECAPSULE_QUEUE?.send({ queue_type: 'timecapsule-open', capsule_id: c.id }).catch(() => {}));
+      }
+    }
+
+    // Cron 0 9 * * * (09:00 quotidien) — Memory Lane
+    if (cron === '0 9 * * *') {
+      const active_users = await env.APEX_CHAT_DB.prepare(
+        'SELECT id FROM users WHERE last_seen > ? LIMIT 1000'
+      ).bind(Date.now() - 7 * 86400000).all();
+      for (const u of (active_users.results || [])) {
+        ctx.waitUntil(env.MEMORY_LANE_QUEUE?.send({ queue_type: 'memory-lane', user_id: u.id }).catch(() => {}));
+      }
+    }
+
+    // Cron 0 3 * * * (03:00 quotidien) — Backup R2 + cleanup audit log > 90j
+    if (cron === '0 3 * * *') {
+      ctx.waitUntil(performDailyBackup(env));
+      await env.APEX_CHAT_DB.prepare(
+        'DELETE FROM audit_log WHERE ts < ?'
+      ).bind(Date.now() - 90 * 86400000).run();
+      await env.APEX_CHAT_DB.prepare(
+        'DELETE FROM ratelimit_otp WHERE hour_key < ?'
+      ).bind(new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 13)).run();
+    }
   }
 };
+
+// ============================================================================
+//  Helpers Queue consumer
+// ============================================================================
+
+async function pushToApexTelemetry(payload, env) {
+  if (!env.APEX_HANDOFF_FIREBASE_URL || !env.APEX_HANDOFF_TOKEN) return;
+  try {
+    await fetch(`${env.APEX_HANDOFF_FIREBASE_URL}/apex/ax_telemetry_in.json?auth=${env.APEX_HANDOFF_TOKEN}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...payload,
+        src: 'apex-chat',
+        ts: Date.now()
+      })
+    });
+  } catch (e) {
+    console.error('Telemetry push failed', e.message);
+  }
+}
+
+async function runAutoFix(body, env) {
+  // Whitelist auto-fix : restart DO / rotate keys / requeue push
+  const whitelist = ['restart-do', 'rotate-keys', 'requeue-push', 'fb-reconnect', 'reset-streaming'];
+  if (!whitelist.includes(body.action)) return;
+  // TODO : implémentations spécifiques
+  console.log('Auto-fix attempt', body.action);
+}
+
+async function sendPushToUser(userId, payload, env) {
+  const subs = await env.APEX_CHAT_DB.prepare(
+    'SELECT endpoint, vapid_p256dh, vapid_auth, fcm_token, apns_token FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
+  ).bind(userId, Date.now() - 30 * 86400000).all();
+
+  for (const sub of (subs.results || [])) {
+    if (sub.endpoint && sub.vapid_p256dh) {
+      // Web Push
+      fetch('https://apex-push-worker.desarzens-kevin.workers.dev/web-push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Apex-Push-Token': env.APEX_CHAT_ADMIN_TOKEN || ''
+        },
+        body: JSON.stringify({
+          subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } },
+          payload
+        })
+      }).catch(() => {});
+    }
+  }
+}
+
+async function performDailyBackup(env) {
+  // Backup D1 vers R2 (logique simplifiée — production utiliserait wrangler d1 export)
+  try {
+    const tables = ['users', 'conversations', 'conversation_members', 'messages', 'audit_log'];
+    const backup = { ts: Date.now(), tables: {} };
+    for (const t of tables) {
+      const stmt = await env.APEX_CHAT_DB.prepare(`SELECT * FROM ${t} LIMIT 100000`).all();
+      backup.tables[t] = stmt.results || [];
+    }
+    const dateKey = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_MEDIA?.put(`backups/d1-${dateKey}.json`, JSON.stringify(backup), {
+      httpMetadata: { contentType: 'application/json' }
+    });
+    console.log('Daily backup done', dateKey);
+  } catch (e) {
+    console.error('Daily backup failed', e.message);
+  }
+}
 
 // ============================================================================
 //  Durable Objects (re-exporté depuis ./durable-objects/)

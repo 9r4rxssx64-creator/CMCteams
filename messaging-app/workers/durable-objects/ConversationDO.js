@@ -38,7 +38,31 @@ export class ConversationDO {
       for (const row of (stmt.results || [])) config[row.key] = row.value;
       return config;
     } catch (e) {
-      return { KEVIN_INVISIBLE_ADMIN: 'true', ADMIN_MODE: 'A' };
+      return { KEVIN_INVISIBLE_ADMIN: 'false', ADMIN_MODE: 'B' };  // P0 FIX : default B
+    }
+  }
+
+  // P0 FIX (audit) : vérification JWT HMAC-SHA256
+  async verifyJWT(token) {
+    if (!token || !this.env.JWT_SIGN_KEY) return null;
+    const [h, p, s] = token.split('.');
+    if (!h || !p || !s) return null;
+    try {
+      const key = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(this.env.JWT_SIGN_KEY),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+      );
+      const sigBytes = Uint8Array.from(
+        atob(s.replace(/-/g, '+').replace(/_/g, '/').padEnd(s.length + (4 - s.length % 4) % 4, '=')),
+        c => c.charCodeAt(0)
+      );
+      const valid = await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(`${h}.${p}`));
+      if (!valid) return null;
+      const payload = JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/').padEnd(p.length + (4 - p.length % 4) % 4, '=')));
+      if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+      return payload;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -63,14 +87,47 @@ export class ConversationDO {
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 
-    // Vérifier auth via query param ou header
+    // P0 FIX (audit) : vérification JWT obligatoire + check membership
     const token = url.searchParams.get('token');
-    const userId = url.searchParams.get('uid');
+    const claimedUserId = url.searchParams.get('uid');
     const deviceId = url.searchParams.get('did') || crypto.randomUUID();
 
-    if (!token || !userId) {
+    if (!token || !claimedUserId) {
       server.accept();
       server.close(1008, 'Auth required');
+      return new Response(null, { status: 101, webSocket: client });
+    }
+
+    // Vérifier JWT signature (HS256)
+    const jwtPayload = await this.verifyJWT(token);
+    if (!jwtPayload) {
+      server.accept();
+      server.close(1008, 'Invalid token');
+      return new Response(null, { status: 101, webSocket: client });
+    }
+
+    // Le claimed userId DOIT correspondre au sub du JWT
+    const userId = jwtPayload.sub;
+    if (claimedUserId !== userId) {
+      server.accept();
+      server.close(1008, 'UID mismatch');
+      return new Response(null, { status: 101, webSocket: client });
+    }
+
+    // Vérifier que le user est bien membre de cette conv (D1 query)
+    const convId = url.searchParams.get('conv') || this.state.id.toString();
+    try {
+      const member = await this.env.APEX_CHAT_DB.prepare(
+        'SELECT user_id, role FROM conversation_members WHERE conv_id=? AND user_id=?'
+      ).bind(convId, userId).first();
+      if (!member) {
+        server.accept();
+        server.close(1008, 'Not a member');
+        return new Response(null, { status: 101, webSocket: client });
+      }
+    } catch (e) {
+      server.accept();
+      server.close(1011, 'DB error');
       return new Response(null, { status: 101, webSocket: client });
     }
 
@@ -78,8 +135,11 @@ export class ConversationDO {
     this.sessions.set(server, {
       userId,
       deviceId,
+      convId,                    // P0 FIX : convId D1 réel (pas DO id)
       lastSeq: 0,
-      connectedAt: Date.now()
+      connectedAt: Date.now(),
+      messageCount: 0,           // pour rate limit
+      lastReset: Date.now()
     });
 
     // Send hello + last messages
@@ -127,22 +187,40 @@ export class ConversationDO {
     const session = this.sessions.get(ws);
     if (!session) return;
 
+    // P0 FIX (audit) : rate limit 100 messages/min/session
+    const now = Date.now();
+    if (now - session.lastReset > 60000) {
+      session.messageCount = 0;
+      session.lastReset = now;
+    }
+    if (msg.type === 'message') {
+      session.messageCount++;
+      if (session.messageCount > 100) {
+        return ws.send(JSON.stringify({ type: 'error', code: 'rate_limit',
+          message: 'Trop de messages, attends 1 minute' }));
+      }
+    }
+
     switch (msg.type) {
       case 'message': {
         // Nouveau message chiffré (ciphertext)
         if (!msg.ciphertext) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext required' }));
+        if (msg.ciphertext.length > 100000) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext too large (max 100KB)' }));
 
-        this.seq++;
-        await this.state.storage.put('seq', this.seq);
+        // P0 FIX (audit) : utiliser blockConcurrencyWhile pour seq atomic
+        await this.state.blockConcurrencyWhile(async () => {
+          this.seq++;
+          await this.state.storage.put('seq', this.seq);
+        });
 
         const messageId = crypto.randomUUID();
         const ts = Date.now();
 
         const messageRecord = {
           id: messageId,
-          conv_id: this.state.id.toString(),
+          conv_id: session.convId,        // P0 FIX (audit) : convId D1 réel (pas DO id)
           sender_id: session.userId,
-          ciphertext: msg.ciphertext,    // base64 ou hex
+          ciphertext: msg.ciphertext,
           mime: msg.mime || 'text/plain',
           ts,
           reply_to: msg.reply_to || null,

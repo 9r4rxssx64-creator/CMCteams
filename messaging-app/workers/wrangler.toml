@@ -116,6 +116,41 @@ JWT_ISSUER = "apex-chat"
 #   - APEX_HANDOFF_TOKEN      : auth pour push ax_telemetry_in
 #   - APEX_CHAT_ADMIN_TOKEN   : auth admin Kevin pour endpoints sensibles
 
+# Cron triggers (P0 FIX audit — purge automatique + jobs récurrents)
+[triggers]
+crons = [
+  "0 */1 * * *",     # toutes les heures : purge messages expirés + lifecycle R2
+  "*/5 * * * *",     # toutes les 5 min : Letters delivery + Time Capsules
+  "0 9 * * *",       # 09:00 quotidien : Memory Lane push
+  "0 3 * * *"        # 03:00 quotidien : Backup D1 + cleanup audit log >90j
+]
+
+# Queues consumers (P0 FIX audit — consume queues)
+[[queues.consumers]]
+queue = "apex-chat-telemetry"
+max_batch_size = 25
+max_batch_timeout = 10
+
+[[queues.consumers]]
+queue = "apex-chat-pipeline-fix"
+max_batch_size = 10
+max_batch_timeout = 30
+
+[[queues.consumers]]
+queue = "apex-chat-letters-deliver"
+max_batch_size = 50
+max_batch_timeout = 60
+
+[[queues.consumers]]
+queue = "apex-chat-timecapsule-open"
+max_batch_size = 50
+max_batch_timeout = 60
+
+[[queues.consumers]]
+queue = "apex-chat-memory-lane"
+max_batch_size = 25
+max_batch_timeout = 60
+
 # Routes
 [[routes]]
 pattern = "apex-chat-api.workers.dev/*"
