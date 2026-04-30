@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.453",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.455",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2707,6 +2707,202 @@ function axRenderToolCallCard(opts){
   style.id = "ax-drill-modal-css";
   style.textContent = "@keyframes axFadeIn{from{opacity:0}to{opacity:1}}@keyframes axFadeOut{from{opacity:1}to{opacity:0}}@keyframes axSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}";
   document.head.appendChild(style);
+})();
+
+/* v12.455 - Background sync iOS + Android complet (helpers + auto-init) */
+
+/* Detection capacites du device courant */
+function axCheckBackgroundCapabilities(){
+  var caps = {
+    serviceWorker: "serviceWorker" in navigator,
+    backgroundSync: false,
+    periodicSync: false,
+    push: "PushManager" in window,
+    wakeLock: "wakeLock" in navigator,
+    beacon: "sendBeacon" in navigator,
+    visibilityAPI: typeof document !== "undefined" && "visibilityState" in document,
+    online: typeof navigator !== "undefined" && "onLine" in navigator,
+    isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent || ""),
+    isAndroid: /Android/i.test(navigator.userAgent || ""),
+    isPWA: window.matchMedia && window.matchMedia("(display-mode:standalone)").matches
+  };
+  if(caps.serviceWorker && navigator.serviceWorker.ready){
+    return navigator.serviceWorker.ready.then(function(reg){
+      caps.backgroundSync = !!(reg && reg.sync);
+      caps.periodicSync = !!(reg && reg.periodicSync);
+      return caps;
+    }).catch(function(){return caps;});
+  }
+  return Promise.resolve(caps);
+}
+
+/* Register Background Sync tag (Chrome/Android) - fallback iOS via flushSyncQueue immediat */
+function axRegisterBackgroundSync(tag){
+  tag = tag || "apex-sync-queue";
+  if(!("serviceWorker" in navigator)) return Promise.resolve({ok:false, reason:"no_sw"});
+  return navigator.serviceWorker.ready.then(function(reg){
+    if(reg && reg.sync){
+      return reg.sync.register(tag).then(function(){
+        try{if(typeof axJournalEntry==="function")axJournalEntry("bg_sync_registered",tag);}catch(_){}
+        return {ok:true, tag:tag, native:true};
+      }).catch(function(e){
+        /* Fallback iOS : pas de Background Sync, on flush direct */
+        return _axFallbackBgSync(tag);
+      });
+    }
+    return _axFallbackBgSync(tag);
+  });
+}
+
+function _axFallbackBgSync(tag){
+  /* iOS / Safari fallback : on essaie maintenant, et au prochain online event */
+  try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+  try{
+    var pending = lg("ax_bg_sync_pending", []);
+    if(!Array.isArray(pending)) pending = [];
+    pending.push({tag:tag, ts:Date.now()});
+    if(pending.length > 50) pending = pending.slice(-50);
+    ls("ax_bg_sync_pending", pending);
+  }catch(_){}
+  return Promise.resolve({ok:true, tag:tag, native:false, fallback:"online_event"});
+}
+
+/* Register Periodic Sync (Chrome avec permission, iOS = fallback timer) */
+function axRequestPeriodicSync(tag, minIntervalMs){
+  tag = tag || "apex-refresh";
+  minIntervalMs = minIntervalMs || (24 * 3600 * 1000);
+  if(!("serviceWorker" in navigator) || !("permissions" in navigator)){
+    return Promise.resolve({ok:false, reason:"unsupported"});
+  }
+  return navigator.permissions.query({name:"periodic-background-sync"}).then(function(status){
+    if(status.state !== "granted") return {ok:false, reason:"permission_"+status.state};
+    return navigator.serviceWorker.ready.then(function(reg){
+      if(reg && reg.periodicSync){
+        return reg.periodicSync.register(tag, {minInterval:minIntervalMs}).then(function(){
+          return {ok:true, tag:tag, intervalMs:minIntervalMs, native:true};
+        }).catch(function(e){return {ok:false, reason:String(e.message||e)};});
+      }
+      return {ok:false, reason:"no_periodic_sync"};
+    });
+  }).catch(function(){return {ok:false, reason:"unsupported"};});
+}
+
+/* Wake Lock : empeche ecran de s eteindre pendant tache critique */
+window._axWakeLock = window._axWakeLock || null;
+function axRequestWakeLock(reason){
+  if(!("wakeLock" in navigator)) return Promise.resolve({ok:false, reason:"unsupported"});
+  if(window._axWakeLock) return Promise.resolve({ok:true, already:true});
+  return navigator.wakeLock.request("screen").then(function(lock){
+    window._axWakeLock = lock;
+    lock.addEventListener("release", function(){
+      window._axWakeLock = null;
+    });
+    try{if(typeof axJournalEntry==="function")axJournalEntry("wake_lock_acquired",String(reason||""));}catch(_){}
+    return {ok:true, reason:reason||""};
+  }).catch(function(e){return {ok:false, reason:String(e.message||e)};});
+}
+
+function axReleaseWakeLock(){
+  if(window._axWakeLock){
+    try{ window._axWakeLock.release(); }catch(_){}
+    window._axWakeLock = null;
+  }
+}
+
+/* Beacon : envoie logs critiques avant fermeture page (sync, non bloquant) */
+function axBeaconCriticalLog(payload){
+  if(!("sendBeacon" in navigator)) return false;
+  try{
+    var url = lg("ax_beacon_url","") || lg("ax_proxy_url","");
+    if(!url) return false;
+    var data = new Blob([JSON.stringify({
+      app:"apex",
+      v:typeof APP_VER!=="undefined"?APP_VER:"unknown",
+      uid:K&&K.user&&K.user.id||"anon",
+      ts:Date.now(),
+      payload:payload||{}
+    })], {type:"application/json"});
+    return navigator.sendBeacon(url, data);
+  }catch(_){return false;}
+}
+
+/* Listeners auto-install pour sync background fluide */
+(function(){
+  if(window._axBgSyncListenersInstalled) return;
+  window._axBgSyncListenersInstalled = true;
+
+  /* Online : flush queue + bascule UI vers connecte */
+  window.addEventListener("online", function(){
+    try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+    try{ if(typeof toast === "function") toast("Connexion retablie","ok",{duration:1500}); }catch(_){}
+    try{ if(typeof _checkSWUpdate === "function") _checkSWUpdate(); }catch(_){}
+    try{ if(typeof axHandoffPushFirebase === "function") axHandoffPushFirebase(); }catch(_){}
+  });
+
+  /* Offline : marque etat (pas de toast spam) */
+  window.addEventListener("offline", function(){
+    try{ if(typeof toast === "function") toast("Hors ligne — donnees mises en queue","info",{duration:2000}); }catch(_){}
+  });
+
+  /* Visibility change : si retour foreground, check updates + retry sync */
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible"){
+      try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+      try{ if(typeof _axCheckRemoteVersion === "function") _axCheckRemoteVersion(); }catch(_){}
+      try{ if(typeof updatePresence === "function") updatePresence(); }catch(_){}
+      /* Verif handoff Firebase a-t-il du retard */
+      try{
+        var lastHandoff = lg("ax_last_handoff_push", 0);
+        if(Date.now() - lastHandoff > 3600000){ /* > 1h */
+          if(typeof axHandoffPushFirebase === "function") axHandoffPushFirebase();
+        }
+      }catch(_){}
+    }
+  });
+
+  /* Pagehide : beacon final logs critiques (cleanup, errors, audit) */
+  window.addEventListener("pagehide", function(){
+    try{
+      var critical = {
+        action:"pagehide",
+        view:K&&K.view,
+        errCount:(lg("ax_err_log",[])||[]).length,
+        sentinelsAlerts:(lg("ax_admin_inbox",[])||[]).filter(function(i){return i&&i.status==="unread";}).length
+      };
+      axBeaconCriticalLog(critical);
+    }catch(_){}
+    /* Cleanup wake lock si actif */
+    axReleaseWakeLock();
+  });
+
+  /* Listen messages SW (sync flush request, notif click, etc.) */
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.addEventListener("message", function(e){
+      if(!e.data) return;
+      switch(e.data.type){
+        case "BG_SYNC_FLUSH":
+          try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+          try{ if(typeof axJournalEntry==="function")axJournalEntry("bg_sync_flush_received",""); }catch(_){}
+          break;
+        case "NOTIF_CLICK":
+          if(e.data.view && typeof sv === "function") sv(e.data.view);
+          break;
+        case "PUSH_SUB_CHANGE":
+          /* Re-subscribe push */
+          try{ if(typeof axSubscribePush === "function") axSubscribePush(); }catch(_){}
+          break;
+        case "CACHE_CLEARED":
+          try{ if(typeof toast === "function") toast("Cache nettoye","ok",{duration:1500}); }catch(_){}
+          break;
+      }
+    });
+  }
+
+  /* Auto-register background sync au boot */
+  setTimeout(function(){
+    try{ axRegisterBackgroundSync("apex-sync-queue"); }catch(_){}
+    try{ axRequestPeriodicSync("apex-refresh", 24*3600*1000); }catch(_){}
+  }, 5000);
 })();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
