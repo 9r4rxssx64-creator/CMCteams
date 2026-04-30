@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.479",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.480",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6592,6 +6592,98 @@ window.axTouchAdminVisit = axTouchAdminVisit;
     }
   }, 12000);
 })();
+
+/* v12.480 - DOMPurify auto-wrap (P0-CRIT 1 audit v7) */
+
+/* Intercept Element.prototype.innerHTML setter pour sanitize automatique
+   les contents qui contiennent des patterns suspects (script, on*, javascript:).
+   Approche prudente : NE PAS modifier le HTML genere par esc()/renderMd() qui
+   est deja safe. Cibler uniquement contents bruts user-controlled. */
+
+(function(){
+  if(window._axInnerHTMLSanitizeWrapped) return;
+  window._axInnerHTMLSanitizeWrapped = true;
+  setTimeout(function(){
+    try{
+      if(typeof Element === "undefined" || !Element.prototype) return;
+      /* Backup setter original */
+      var desc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+      if(!desc || !desc.set || desc.set._axSanitizeWrapped) return;
+      var origSet = desc.set;
+      var origGet = desc.get;
+      function safeInnerHTMLSet(html){
+        try{
+          var s = String(html||"");
+          /* Detection patterns suspects user-controlled : on retourne tel quel si "safe-like" */
+          /* Marker : si contient ax-*, esc-applied indicators, _sanitize wrapper deja applique = safe */
+          var alreadySafe = (s.indexOf("class=\"ax-") >= 0 || s.indexOf("data-ax-safe") >= 0);
+          /* Detection patterns dangereux */
+          var dangerous = /<script[\s>]|javascript:|on(?:error|load|click|focus|blur|mouseover|change|submit|input)\s*=/i.test(s);
+          if(dangerous && !alreadySafe){
+            /* Sanitize via _sanitize si dispo, sinon strip */
+            if(typeof window._sanitize === "function"){
+              s = window._sanitize(s);
+            } else if(typeof DOMPurify !== "undefined" && DOMPurify.sanitize){
+              s = DOMPurify.sanitize(s);
+            } else {
+              /* Fallback : strip script + on* handlers */
+              s = s.replace(/<script[\s\S]*?<\/script>/gi, "")
+                   .replace(/<script\b[^>]*>/gi, "")
+                   .replace(/javascript:/gi, "blocked-js:")
+                   .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "")
+                   .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, "");
+            }
+            try{
+              if(typeof axDetectPotentialBreach === "function"){
+                axDetectPotentialBreach("xss_attempt_blocked", {
+                  severity: "high",
+                  pattern: "innerHTML_dangerous_intercepted",
+                  excerpt: s.slice(0,100)
+                });
+              }
+            }catch(_){}
+          }
+          return origSet.call(this, s);
+        }catch(e){
+          /* Fallback : appel direct (anti-crash) */
+          try{ return origSet.call(this, String(html||"")); }catch(_){}
+        }
+      }
+      safeInnerHTMLSet._axSanitizeWrapped = true;
+      try{
+        Object.defineProperty(Element.prototype, "innerHTML", {
+          get: origGet,
+          set: safeInnerHTMLSet,
+          configurable: true,
+          enumerable: true
+        });
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","innerhtml_sanitize_wrapper_active","Element.prototype.innerHTML hooked","Auto-strip script + on* handlers","Anti-XSS automatique global");
+          }
+        }catch(_){}
+      }catch(definePropError){
+        /* Si Object.defineProperty echoue (Safari iOS old), fallback document.documentElement */
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","innerhtml_sanitize_failed",String(definePropError.message||""),"defineProperty refused","Anti-XSS via wrapper non disponible - fallback _sanitize manuel");
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+  }, 16000);
+})();
+
+/* Helper diagnostic : combien d innerHTML ont ete bloques */
+function axInnerHTMLSanitizeStats(){
+  try{
+    var log = lg("ax_breach_log", []);
+    if(!Array.isArray(log)) return {blocked:0};
+    var blocked = log.filter(function(b){return b && b.eventType === "xss_attempt_blocked";}).length;
+    return {blocked:blocked, total_breaches:log.length};
+  }catch(_){return {blocked:0, error:true};}
+}
+window.axInnerHTMLSanitizeStats = axInnerHTMLSanitizeStats;
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
