@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.457",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.458",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3234,6 +3234,251 @@ function axValidateAllOfficialLinks(){
       try{ axValidateAllOfficialLinks(); }catch(_){}
     }, 24*3600*1000);
   }, 60000);
+})();
+
+/* v12.458 - Magic spotlight global search */
+
+window._axSpotlightOpen = false;
+window._axTripleTapState = {count:0, lastTs:0};
+
+function axOpenSpotlight(){
+  if(window._axSpotlightOpen) return;
+  window._axSpotlightOpen = true;
+  var ov = document.createElement("div");
+  ov.id = "ax-spotlight-overlay";
+  ov.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:flex;flex-direction:column;align-items:center;padding-top:18vh;padding-left:16px;padding-right:16px;animation:axFadeIn .15s";
+  ov.innerHTML = '<div style="background:linear-gradient(135deg,rgba(22,28,56,.98),rgba(16,22,48,.96));border:1px solid rgba(232,184,48,.25);border-radius:18px;width:100%;max-width:560px;box-shadow:0 24px 64px rgba(0,0,0,.7);overflow:hidden">'+
+    '<input id="ax-spotlight-input" type="text" placeholder="Rechercher tout : conversations, vues, lessons, contacts..." autocomplete="off" autofocus style="width:100%;padding:18px 20px;font-size:18px;background:transparent;border:none;color:#fff;box-sizing:border-box;outline:none;border-bottom:1px solid rgba(255,255,255,.08)">'+
+    '<div id="ax-spotlight-results" style="max-height:60vh;overflow-y:auto"></div>'+
+    '<div style="padding:8px 16px;font-size:11px;color:var(--ax-text-dim);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between"><span>Echap pour fermer</span><span>Tap resultat pour ouvrir</span></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener("click", function(e){if(e.target === ov) axCloseSpotlight();});
+  var input = document.getElementById("ax-spotlight-input");
+  if(input){
+    input.addEventListener("input", function(){ axSpotlightSearch(input.value); });
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Escape"){ axCloseSpotlight(); return; }
+      if(e.key === "Enter"){
+        var first = document.querySelector("#ax-spotlight-results [data-spotlight-first]");
+        if(first) first.click();
+      }
+    });
+    setTimeout(function(){ try{input.focus();}catch(_){} }, 50);
+  }
+  axSpotlightSearch("");
+}
+
+function axCloseSpotlight(){
+  var ov = document.getElementById("ax-spotlight-overlay");
+  if(ov && ov.parentNode){
+    ov.style.animation = "axFadeOut .15s";
+    setTimeout(function(){
+      try{ov.parentNode.removeChild(ov);}catch(_){}
+      window._axSpotlightOpen = false;
+    }, 150);
+  } else {
+    window._axSpotlightOpen = false;
+  }
+}
+
+function _axFuzzyScore(query, target){
+  if(!query) return 1;
+  query = String(query).toLowerCase().trim();
+  target = String(target||"").toLowerCase();
+  if(!query) return 1;
+  if(target.indexOf(query) >= 0) return 100 - target.indexOf(query);
+  /* Subsequence match : tous les caracteres dans l ordre */
+  var qi = 0;
+  for(var i=0; i<target.length && qi<query.length; i++){
+    if(target[i] === query[qi]) qi++;
+  }
+  if(qi === query.length) return 50 - (target.length - query.length);
+  return 0;
+}
+
+function axSpotlightSearch(query){
+  var resultsEl = document.getElementById("ax-spotlight-results");
+  if(!resultsEl) return;
+  var allItems = [];
+
+  /* 1. Vues principales */
+  var views = [
+    {label:"Chat IA", view:"chat", icon:"\ud83d\udcac", category:"Vue"},
+    {label:"Centre admin (Reglages)", view:"admincenter", icon:"\u2699\ufe0f", category:"Vue"},
+    {label:"Coffre cles API", view:"vault", icon:"\ud83d\udd11", category:"Vue"},
+    {label:"Dashboard", view:"dashboard", icon:"\ud83d\udcca", category:"Vue"},
+    {label:"Soldes IA", view:"soldesia", icon:"\ud83d\udcb6", category:"Vue"},
+    {label:"Sentinelles", view:"sentinelshealth", icon:"\ud83d\udee1\ufe0f", category:"Vue"},
+    {label:"Lessons learned", view:"lessonslearned", icon:"\ud83d\udcda", category:"Vue"},
+    {label:"Notes", view:"notes", icon:"\ud83d\udcdd", category:"Vue"},
+    {label:"Taches", view:"tasks", icon:"\u2705", category:"Vue"},
+    {label:"Calendrier", view:"calendar", icon:"\ud83d\udcc5", category:"Vue"},
+    {label:"Contacts", view:"contacts", icon:"\ud83d\udc65", category:"Vue"},
+    {label:"Finance Pro", view:"financepro", icon:"\ud83d\udcb0", category:"Vue"},
+    {label:"Studios", view:"studios", icon:"\ud83c\udfa8", category:"Vue"},
+    {label:"Audit log", view:"adminworklog", icon:"\ud83d\udcdc", category:"Vue"},
+    {label:"Stockage", view:"storagemanage", icon:"\ud83d\udcbe", category:"Vue"},
+    {label:"RGPD / Mes donnees", view:"rgpd", icon:"\ud83d\udee1\ufe0f", category:"Vue"},
+    {label:"Backup", view:"backups", icon:"\ud83d\udcc1", category:"Vue"},
+    {label:"FAQ", view:"faq", icon:"\u2753", category:"Vue"},
+    {label:"Tutoriel", view:"tutorial", icon:"\ud83c\udf93", category:"Vue"},
+    {label:"Changelog", view:"changelog", icon:"\ud83d\udcc4", category:"Vue"},
+    {label:"Connections admin", view:"connections", icon:"\ud83d\udd17", category:"Vue"},
+    {label:"Clients", view:"clients", icon:"\ud83d\udc65", category:"Vue"},
+    {label:"Permissions Laurence", view:"permissions", icon:"\ud83d\udd13", category:"Vue"}
+  ];
+  views.forEach(function(v){
+    var score = _axFuzzyScore(query, v.label) + _axFuzzyScore(query, v.view);
+    if(score > 0 || !query){ allItems.push({score:score, type:"view", item:v}); }
+  });
+
+  /* 2. Actions rapides */
+  var actions = [
+    {label:"Audit general expert", icon:"\ud83d\udd0d", onClick:"axShowAuditGeneralExpert", category:"Action"},
+    {label:"Forfaits API IA (on en est ou)", icon:"\ud83d\udcb3", onClick:"axShowApiQuotaModal", category:"Action"},
+    {label:"Configurer WhatsApp Kevin", icon:"\ud83d\udcf1", onClick:"axShowWhatsAppConfig", category:"Action"},
+    {label:"Backup maintenant", icon:"\ud83d\udcc1", onClick:"function(){if(typeof axHandoffPushFirebase===\"function\")axHandoffPushFirebase();if(typeof toast===\"function\")toast(\"Backup en cours\",\"info\");}", category:"Action"},
+    {label:"Verifier mises a jour", icon:"\ud83d\udd04", onClick:"function(){if(typeof _axCheckRemoteVersion===\"function\")_axCheckRemoteVersion();else location.reload();}", category:"Action"},
+    {label:"Force refresh app", icon:"\u26a1", onClick:"function(){location.reload();}", category:"Action"},
+    {label:"Se deconnecter", icon:"\u2197", onClick:"doLogout", category:"Action", danger:true},
+    {label:"Capacites background sync", icon:"\ud83d\udd0d", onClick:"function(){if(typeof axCheckBackgroundCapabilities===\"function\"){axCheckBackgroundCapabilities().then(function(c){if(typeof axDrillIntoModal===\"function\")axDrillIntoModal({title:\"Capacites device\", html:\"<pre style=\\\"font-size:12px;color:#cfd0e0;white-space:pre-wrap\\\">\"+JSON.stringify(c,null,2)+\"</pre>\"});});}}", category:"Action"}
+  ];
+  actions.forEach(function(a){
+    var score = _axFuzzyScore(query, a.label);
+    if(score > 0 || !query){ allItems.push({score:score, type:"action", item:a}); }
+  });
+
+  /* 3. Liens officiels */
+  if(typeof AX_OFFICIAL_LINKS !== "undefined" && Array.isArray(AX_OFFICIAL_LINKS)){
+    AX_OFFICIAL_LINKS.forEach(function(l){
+      var score = _axFuzzyScore(query, l.label);
+      if(score > 0){ allItems.push({score:score, type:"link", item:{label:l.label, icon:l.icon, linkId:l.id, category:"Lien officiel"}}); }
+    });
+  }
+
+  /* 4. Conversations recentes */
+  try{
+    var convs = (K && K.conversations) ? K.conversations : [];
+    convs.slice(0,30).forEach(function(c){
+      if(!c) return;
+      var t = c.title || (c.messages && c.messages[0] && c.messages[0].content) || "Conversation";
+      if(typeof t !== "string") t = String(t).slice(0,80);
+      var score = _axFuzzyScore(query, t);
+      if(score > 0){ allItems.push({score:score, type:"conv", item:{label:t.slice(0,80), icon:"\ud83d\udcac", convId:c.id, category:"Conversation"}}); }
+    });
+  }catch(_){}
+
+  /* 5. Lessons learned */
+  try{
+    var lessons = lg("ax_lessons_learned_struct", []);
+    if(Array.isArray(lessons)){
+      lessons.slice(-30).forEach(function(l){
+        if(!l) return;
+        var t = l.title || l.text || "";
+        var score = _axFuzzyScore(query, t);
+        if(score > 0 && t){ allItems.push({score:score, type:"lesson", item:{label:t.slice(0,80), icon:"\ud83d\udca1", category:"Lesson"}}); }
+      });
+    }
+  }catch(_){}
+
+  /* 6. Templates pro */
+  try{
+    if(typeof TEMPLATES_PRO === "object" && TEMPLATES_PRO){
+      Object.keys(TEMPLATES_PRO).slice(0,5).forEach(function(cat){
+        var arr = TEMPLATES_PRO[cat];
+        if(!Array.isArray(arr)) return;
+        arr.slice(0,8).forEach(function(t,i){
+          if(!t || !t.name) return;
+          var score = _axFuzzyScore(query, t.name);
+          if(score > 0){ allItems.push({score:score, type:"template", item:{label:t.name, icon:t.icon||"\ud83d\udcc4", cat:cat, idx:i, category:"Template"}}); }
+        });
+      });
+    }
+  }catch(_){}
+
+  /* 7. Persistent memory facts (top 30) */
+  try{
+    var mem = lg("ax_persistent_memory", []);
+    if(Array.isArray(mem)){
+      mem.slice(-30).forEach(function(f){
+        if(!f) return;
+        var t = f.text || f.content || "";
+        var score = _axFuzzyScore(query, t);
+        if(score > 0 && t){ allItems.push({score:score, type:"memory", item:{label:t.slice(0,80), icon:"\ud83e\udde0", category:"Memoire"}}); }
+      });
+    }
+  }catch(_){}
+
+  /* Tri par score, top 50 */
+  allItems.sort(function(a,b){return b.score - a.score;});
+  var top = query ? allItems.slice(0,50) : allItems.filter(function(x){return x.type==="view"||x.type==="action";}).slice(0,30);
+
+  /* Render */
+  var html = "";
+  var byCategory = {};
+  top.forEach(function(it){
+    var c = it.item.category || "Autre";
+    if(!byCategory[c]) byCategory[c] = [];
+    byCategory[c].push(it);
+  });
+  var firstSet = false;
+  Object.keys(byCategory).forEach(function(cat){
+    html += '<div style="padding:8px 16px 4px;font-size:11px;font-weight:600;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:.5px">'+cat+'</div>';
+    byCategory[cat].forEach(function(it){
+      var i = it.item;
+      var click;
+      if(it.type === "view") click = "function(){axCloseSpotlight();if(typeof sv===\"function\")sv(\""+i.view+"\");}";
+      else if(it.type === "action") click = "function(){axCloseSpotlight();("+i.onClick+")();}";
+      else if(it.type === "link") click = "function(){axCloseSpotlight();axOpenOfficialLink(\""+i.linkId+"\");}";
+      else if(it.type === "conv") click = "function(){axCloseSpotlight();if(typeof axOpenConversation===\"function\")axOpenConversation(\""+i.convId+"\");else if(typeof sv===\"function\")sv(\"chat\");}";
+      else if(it.type === "template") click = "function(){axCloseSpotlight();if(typeof axUseTemplate===\"function\")axUseTemplate(\""+i.cat+"\","+i.idx+");}";
+      else click = "function(){axCloseSpotlight();}";
+      var firstAttr = !firstSet ? ' data-spotlight-first="1"' : '';
+      firstSet = true;
+      var color = i.danger ? "#ff5858" : "#fff";
+      html += '<div role="button" tabindex="0"'+firstAttr+' onclick="('+click+')();" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;color:'+color+';transition:background .12s" onmouseover="this.style.background=&quot;rgba(232,184,48,.12)&quot;" onmouseout="this.style.background=&quot;transparent&quot;">'+
+        '<span style="font-size:18px;width:24px;text-align:center">'+(i.icon||"&middot;")+'</span>'+
+        '<span style="flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.label||"")+'</span>'+
+        '<span style="color:var(--ax-text-dim);font-size:16px">&rsaquo;</span>'+
+        '</div>';
+    });
+  });
+  if(!html) html = '<div style="padding:24px;text-align:center;color:var(--ax-text-dim);font-size:13px">Aucun resultat pour "'+esc(query)+'"</div>';
+  resultsEl.innerHTML = html;
+}
+
+/* Triple-tap pour ouvrir spotlight (anywhere) */
+(function(){
+  if(window._axSpotlightTripleTapInstalled) return;
+  window._axSpotlightTripleTapInstalled = true;
+  document.addEventListener("touchstart", function(e){
+    /* Eviter declenchement dans inputs/textarea */
+    var tag = (e.target && e.target.tagName) || "";
+    if(tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable)) return;
+    var now = Date.now();
+    var st = window._axTripleTapState;
+    if(now - st.lastTs < 400){
+      st.count++;
+      if(st.count >= 3){
+        st.count = 0;
+        st.lastTs = 0;
+        try{ if(navigator.vibrate) navigator.vibrate([20,40,20]); }catch(_){}
+        axOpenSpotlight();
+        return;
+      }
+    } else {
+      st.count = 1;
+    }
+    st.lastTs = now;
+  }, {passive:true});
+  /* Cmd+K / Ctrl+K shortcut */
+  document.addEventListener("keydown", function(e){
+    if((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")){
+      e.preventDefault();
+      axOpenSpotlight();
+    }
+  });
 })();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
