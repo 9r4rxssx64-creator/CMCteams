@@ -4,6 +4,55 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Ape
 
 ---
 
+## 🚨 RÈGLE PERMANENTE — DECLARATION ≠ DEPLOYMENT (Kevin 2026-04-30, ABSOLUE)
+
+> **"Audit POST-FIX v3 a revele : 12/16 helpers ajoutes etaient orphelins. +5pts au lieu +40 estimes. Pattern Security Theater."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Audit POST-FIX systématique obligatoire
+
+Après chaque batch de 3-5 patches P0/P1, **lancer audit externe POST-FIX** pour mesurer écart réel vs estimé.
+- Si écart > 5 points → STOP nouveaux patches, INTEGRATION uniquement
+- Documenter écart comme lesson learned dans `ax_lessons_learned_struct`
+
+### 2. Helper P0/P1 = wired + opt-in true
+
+Tout helper sécurité/conformité critical DOIT :
+- Être wired dans le flow opérationnel réel (pas console-only)
+- Opt-in flag `true` par défaut (sauf raison explicite avec deadline migration)
+- Avoir un test runtime qui prouve activation
+- Commit message doit lister les points d'usage (lignes appelantes)
+
+### 3. Grep usage avant chaque commit
+
+Avant tout commit ajoutant un helper :
+```bash
+grep -c "axNouveauHelper(" apex-ai/index.html
+```
+Si < 2 (1 = définition seule) → INTEGRER ou SUPPRIMER. Pas de code mort.
+
+### 4. Pattern à interdire absolument
+
+❌ Ajouter `axHelperX` puis "TODO : intégrer plus tard"
+❌ Flag opt-in `false` par défaut sur fix sécurité Critical
+❌ Helper "console-accessible only" sans bouton UI ni intégration auto
+❌ Wrapper créé mais pas appliqué aux 130 hot spots existants
+
+### 5. Audit honnête sans complaisance
+
+Score réel exposé sans biais. Si estimation interne 96/100 et audit externe 54/100, l'écart de **42 points** est un signal critique de biais auto-évaluation.
+
+### 6. Monolith threshold
+
+> 15K lignes = refactor obligatoire. Apex à 20K lignes = dette critique.
+
+### 7. Application universelle
+
+Cette règle s'applique à : Apex, CMCteams, tous projets futurs Kevin.
+
+---
+
 ## 🎯 RÈGLE PERMANENTE — TEMPLATE AUDIT PRO OFFICIEL (Kevin 2026-04-30, ABSOLUE)
 
 > **"Tu t'en serviras à chaque audit et pour CMCteams, tous mes futurs projets aussi. À chaque fois que je te parlerai de faire un audit, tu feras celui-là. À moins que tu en connaisses un encore plus complet et plus détaillé."**
