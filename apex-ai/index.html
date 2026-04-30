@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.486",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.487",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -7512,6 +7512,144 @@ function axGet100ScoreV2(){
   };
 }
 window.axGet100ScoreV2 = axGet100ScoreV2;
+
+/* v12.487 - Continuous improvement final (production-ready badge + audit cron 24h) */
+
+/* === 1. axRunAuditAndApply via master scheduler 24h === */
+(function(){
+  if(window._axRunAuditAndApplyDailyInstalled) return;
+  window._axRunAuditAndApplyDailyInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof axMasterRegister !== "function") return;
+      axMasterRegister("audit_and_apply_daily", 24 * 60 * 60 * 1000, function(){
+        try{
+          if(typeof axIsAdmin !== "function" || !axIsAdmin()) return;
+          if(typeof axRunAuditAndApply !== "function") return;
+          axRunAuditAndApply().then(function(result){
+            if(result && result.ok){
+              try{
+                if(result.autoFixes && result.autoFixes.length > 0){
+                  if(typeof axJournalEntry === "function"){
+                    axJournalEntry("apex-ai","audit_apply_daily","fixes="+result.autoFixes.length, result.autoFixes.join(","), "Auto-improvement journalier");
+                  }
+                }
+              }catch(_){}
+            }
+          }).catch(function(){});
+        }catch(_){}
+      });
+    }catch(_){}
+  }, 45000);
+})();
+
+/* === 2. Production-ready badge UI helper === */
+function axShowProductionBadge(){
+  if(typeof axProductionReadiness !== "function") return null;
+  var report = axProductionReadiness();
+  /* Returns HTML badge (color + text) */
+  var color = report.productionReady ? "#4cd080" : (report.checks && report.checks.score >= 65 ? "#ffaa3a" : "#ff5858");
+  var label = report.productionReady ? "Production Ready" : (report.checks && report.checks.score >= 65 ? "Sous Condition" : "Not Ready");
+  var score = report.checks && report.checks.score ? report.checks.score : "?";
+  return '<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:'+color+';color:#08080f;border-radius:12px;font-size:11px;font-weight:700">'+
+    '<span style="width:8px;height:8px;border-radius:50%;background:#08080f;display:inline-block"></span>'+
+    label+' '+score+'/100'+
+    '</span>';
+}
+window.axShowProductionBadge = axShowProductionBadge;
+
+/* === 3. Continuous improvement notify Kevin si score chute === */
+window._axScoreHistory = window._axScoreHistory || [];
+
+function axTrackScoreHistory(){
+  try{
+    if(typeof axGet100Score === "function"){
+      var s = axGet100Score();
+      window._axScoreHistory.push({ts:Date.now(), score:s.global});
+      if(window._axScoreHistory.length > 100){
+        window._axScoreHistory = window._axScoreHistory.slice(-100);
+      }
+      try{ ls("ax_score_history", window._axScoreHistory); }catch(_){}
+      /* Detect chute > 5pts vs moyenne 10 derniers */
+      if(window._axScoreHistory.length >= 11){
+        var last = window._axScoreHistory[window._axScoreHistory.length-1];
+        var prev10 = window._axScoreHistory.slice(-11, -1);
+        var avg = prev10.reduce(function(sum, e){return sum + e.score;}, 0) / prev10.length;
+        if(last.score < avg - 5){
+          try{
+            if(typeof axNotifyKevin === "function"){
+              axNotifyKevin("Score chute alerte", "Actuel : "+last.score+"/100 vs moyenne 10 dern : "+Math.round(avg)+" (-"+Math.round(avg-last.score)+" pts)");
+            }
+          }catch(_){}
+        }
+      }
+    }
+  }catch(_){}
+}
+window.axTrackScoreHistory = axTrackScoreHistory;
+
+(function(){
+  if(window._axScoreTrackingInstalled) return;
+  window._axScoreTrackingInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof axMasterRegister !== "function") return;
+      axMasterRegister("score_tracking_6h", 6 * 60 * 60 * 1000, function(){
+        try{ axTrackScoreHistory(); }catch(_){}
+      });
+      /* Premier check 60s post-boot */
+      setTimeout(axTrackScoreHistory, 60000);
+    }catch(_){}
+  }, 50000);
+})();
+
+/* === 4. axApexFinalState : unified state check pour Kevin === */
+function axApexFinalState(){
+  var state = {
+    timestamp: Date.now(),
+    version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+    score: null,
+    scoreV2: null,
+    integration: null,
+    diagnostic: null,
+    productionReady: null,
+    healthy: null,
+    helpersWired: 0,
+    helpersTotal: 0
+  };
+  try{
+    if(typeof axGet100Score === "function"){
+      var s = axGet100Score();
+      state.score = s.global;
+    }
+    if(typeof axGet100ScoreV2 === "function"){
+      var s2 = axGet100ScoreV2();
+      state.scoreV2 = s2.global;
+    }
+    if(typeof axIntegrationCheckWired === "function"){
+      var ic = axIntegrationCheckWired();
+      state.integration = ic.coveragePercent;
+      state.helpersWired = ic.present;
+      state.helpersTotal = ic.total;
+    }
+    if(typeof axDiagnosticIntegration === "function"){
+      var di = axDiagnosticIntegration();
+      state.diagnostic = di.integrationScore;
+    }
+    if(typeof axProductionReadiness === "function"){
+      var pr = axProductionReadiness();
+      state.productionReady = pr.productionReady;
+    }
+    if(typeof axIsHealthy === "function"){
+      var h = axIsHealthy();
+      state.healthy = h.healthy;
+    }
+  }catch(_){}
+  state.bestScore = Math.max(state.score||0, state.scoreV2||0);
+  state.verdict = state.bestScore >= 90 ? "EXCELLENT" : state.bestScore >= 80 ? "OUI" : (state.bestScore >= 65 ? "SOUS_COND" : "NON");
+  return state;
+}
+window.axApexFinalState = axApexFinalState;
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
