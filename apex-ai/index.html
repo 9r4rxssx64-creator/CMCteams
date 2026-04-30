@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.459",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.460",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3605,6 +3605,124 @@ function _axIaToolCheckCommand(args){
       }
     }catch(_){}
   }, 3000);
+})();
+
+/* v12.460 - Predictive prefetching : Markov chain transitions vues */
+
+window._axNavTransitions = window._axNavTransitions || null;
+
+function _axLoadNavTransitions(){
+  if(window._axNavTransitions) return window._axNavTransitions;
+  try{
+    var stored = lg("ax_nav_transitions", null);
+    window._axNavTransitions = (stored && typeof stored === "object") ? stored : {};
+  }catch(_){
+    window._axNavTransitions = {};
+  }
+  return window._axNavTransitions;
+}
+
+function _axRecordNavTransition(fromView, toView){
+  if(!fromView || !toView || fromView === toView) return;
+  var t = _axLoadNavTransitions();
+  if(!t[fromView]) t[fromView] = {};
+  t[fromView][toView] = (t[fromView][toView] || 0) + 1;
+  /* Cap : si > 1000 transitions par vue, decay /2 */
+  var total = 0;
+  Object.keys(t[fromView]).forEach(function(k){total += t[fromView][k];});
+  if(total > 1000){
+    Object.keys(t[fromView]).forEach(function(k){
+      t[fromView][k] = Math.floor(t[fromView][k] / 2);
+      if(t[fromView][k] < 1) delete t[fromView][k];
+    });
+  }
+  /* Persist throttle 30s */
+  if(!window._axNavTransitionsSaveTimer){
+    window._axNavTransitionsSaveTimer = setTimeout(function(){
+      try{ ls("ax_nav_transitions", t); }catch(_){}
+      window._axNavTransitionsSaveTimer = null;
+    }, 30000);
+  }
+}
+
+function axPredictNextViews(currentView, topN){
+  topN = topN || 3;
+  var t = _axLoadNavTransitions();
+  var transitions = t[currentView];
+  if(!transitions) return [];
+  var arr = Object.keys(transitions).map(function(k){
+    return {view:k, count:transitions[k]};
+  });
+  arr.sort(function(a,b){return b.count - a.count;});
+  var total = 0;
+  arr.forEach(function(x){total += x.count;});
+  return arr.slice(0, topN).map(function(x){
+    return {view:x.view, prob:total ? (x.count/total) : 0, count:x.count};
+  });
+}
+
+window._axPrefetchedViews = window._axPrefetchedViews || {};
+
+function axPrefetchView(viewName){
+  if(!viewName) return;
+  /* Skip si deja prefetched recemment (< 60s) */
+  var last = window._axPrefetchedViews[viewName];
+  if(last && (Date.now() - last) < 60000) return;
+  /* Skip si view en cours */
+  if(K && K.view === viewName) return;
+  try{
+    /* Best effort : appel direct fonction view (genere HTML en cache memoire) */
+    var fnName = "v" + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+    if(typeof window[fnName] === "function"){
+      var idleCb = window.requestIdleCallback || function(cb){return setTimeout(cb, 100);};
+      idleCb(function(){
+        try{
+          var t0 = performance.now();
+          var html = window[fnName]();
+          window._axPrefetchedViews[viewName] = Date.now();
+          var dt = performance.now() - t0;
+          /* Log subtil pour audit */
+          try{ if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","prefetch_view",viewName,String(Math.round(dt))+"ms",""); }catch(_){}
+        }catch(_){}
+      });
+    }
+  }catch(_){}
+}
+
+function axTriggerPredictivePrefetch(){
+  if(!K || !K.user) return;
+  if(!K.view) return;
+  /* Skip si offline */
+  if(typeof navigator !== "undefined" && navigator.onLine === false) return;
+  /* Skip si streaming en cours (preserve perf) */
+  if(K.isStreaming) return;
+  var predictions = axPredictNextViews(K.view, 3);
+  predictions.forEach(function(p, i){
+    /* Stagger pour eviter pic CPU */
+    setTimeout(function(){ axPrefetchView(p.view); }, i * 200 + 500);
+  });
+}
+
+/* Patch sv() pour tracker transitions + trigger prefetch */
+(function(){
+  if(window._axPredictivePrefetchPatched) return;
+  if(typeof window.sv !== "function") return;
+  setTimeout(function(){
+    if(window._axPredictivePrefetchPatched) return;
+    window._axPredictivePrefetchPatched = true;
+    var origSv = window.sv;
+    window.sv = function(view){
+      try{
+        if(K && K.view && view && K.view !== view){
+          _axRecordNavTransition(K.view, view);
+        }
+      }catch(_){}
+      var result = origSv.apply(this, arguments);
+      /* Trigger prefetch apres 1.5s (laisse render finir) */
+      setTimeout(function(){ try{ axTriggerPredictivePrefetch(); }catch(_){} }, 1500);
+      return result;
+    };
+  }, 4000); /* Apres autres patches sv */
 })();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
