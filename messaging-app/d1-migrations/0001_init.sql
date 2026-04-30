@@ -345,16 +345,16 @@ INSERT OR IGNORE INTO users (
     'kdmc_admin',
     'kevin',
     'Kevin DESARZENS',
-    'PENDING_KEVIN',                            -- Kevin saisit son tel au 1er signup
+    'PENDING_KEVIN',                            -- Kevin saisit son tel au 1er signup SMS
     'PENDING_HASH',
-    'kevin.desarzens@gmail.com',
+    'kevind@monaco.mc',                         -- email Monaco principal (source: NOTES_USER)
     1, 1,
     9999999999000,                              -- premium illimité (admin)
     'fr', 'Europe/Monaco',
     'PENDING_KEY_GEN',
     'PENDING_KEY_GEN',
     'PENDING_KEY_GEN',
-    'kdmc_admin',                               -- même UID qu'Apex
+    'kdmc_admin',                               -- même UID qu'Apex (SSO cross-app)
     'apex-sso',
     strftime('%s','now')*1000,
     'active'
@@ -362,17 +362,54 @@ INSERT OR IGNORE INTO users (
   (
     'user_laurence',
     'laurence',
-    'Laurence',
-    'PENDING_LAURENCE',                         -- Laurence saisit son tel au 1er signup
+    'Laurence SAINT-POLIT',                     -- nom complet (épouse Kevin, source: NOTES_USER)
+    'PENDING_LAURENCE',                         -- Laurence saisit son tel au 1er signup SMS
     'PENDING_HASH',
-    NULL,
+    NULL,                                       -- email à confirmer
     0, 0,
-    9999999999000,                              -- premium illimité (cadeau Kevin)
+    9999999999000,                              -- premium illimité (cadeau Kevin, role=family)
     'fr', 'Europe/Monaco',
     'PENDING_KEY_GEN',
     'PENDING_KEY_GEN',
     'PENDING_KEY_GEN',
-    'user_laurence',
+    'user_laurence',                            -- même UID qu'Apex (SSO cross-app)
+    'apex-sso',
+    strftime('%s','now')*1000,
+    'active'
+  ),
+  -- Clients test pré-configurés (compte gratuit, PIN 2026 à changer 1er login)
+  (
+    'user_tardieu_sandrine',
+    'sandrine',
+    'Sandrine TARDIEU',
+    'PENDING_SANDRINE',
+    'PENDING_HASH',
+    NULL,
+    0, 0,
+    NULL,                                       -- pas premium (compte gratuit)
+    'fr', 'Europe/Monaco',
+    'PENDING_KEY_GEN',
+    'PENDING_KEY_GEN',
+    'PENDING_KEY_GEN',
+    'user_tardieu_sandrine',
+    'apex-sso',
+    strftime('%s','now')*1000,
+    'active'
+  ),
+  (
+    'user_tardieu_christophe',
+    'christophe',
+    'Christophe TARDIEU',
+    'PENDING_CHRISTOPHE',
+    'PENDING_HASH',
+    NULL,
+    0, 0,
+    NULL,
+    'fr', 'Europe/Monaco',
+    'PENDING_KEY_GEN',
+    'PENDING_KEY_GEN',
+    'PENDING_KEY_GEN',
+    'user_tardieu_christophe',
     'apex-sso',
     strftime('%s','now')*1000,
     'active'
