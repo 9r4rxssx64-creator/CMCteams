@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.461",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.462",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -919,7 +919,7 @@ var FB_PRE=["ax_msgs_","ax_profile_"];
 var FB_LOCAL=["ax_uid","ax_user","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles","ax_settings","ax_settings_default","ax_user_theme","ax_login_streak","ax_streak","ax_streak_last_day","ax_last_user_name","ax_first_login","ax_first_login_date","ax_device_trusted","ax_device_trusted_ts","ax_device_fingerprint","ax_biometric_id","ax_biometric_credid","ax_pin_salt"];
 /* v12.298 - Liste de prefixes strictement locaux (toute cle commencant par X est FB_LOCAL). Empeche fbShouldSync de leak les variantes per-user. */
 /* v12.367 : ajout "ax_cgu_" prefix pour empecher re-prompt CGU a chaque connexion (Kevin "il me redemande tout") */
-var FB_LOCAL_PREFIXES=["ax_settings_","ax_user_theme_","ax_streak_","ax_pin_changed_","ax_user_pin_","ax_pin_","ax_biometric_declined_","ax_permissions_accepted_","ax_cgu_accepted_","ax_cgu_","ax_love_theme_","ax_perms_onboarded","ax_session_timeout","ax_safebox_"];
+var FB_LOCAL_PREFIXES=["ax_settings_","ax_user_theme_","ax_streak_","ax_pin_changed_","ax_user_pin_","ax_pin_","ax_biometric_declined_","ax_permissions_accepted_","ax_cgu_accepted_","ax_cgu_","ax_love_theme_","ax_perms_onboarded","ax_session_timeout","ax_safebox_","ax_voice_print_","ax_biometric_audio_","ax_voiceprint_","ax_face_biometric_"];
 var SESSION_TTL=24*60*60*1000;
 var SESSION_TTL_TRUSTED=30*24*60*60*1000;
 function _currentSessionTTL(){try{return lg("ax_device_trusted",false)?SESSION_TTL_TRUSTED:SESSION_TTL;}catch(_){return SESSION_TTL;}}
@@ -3829,6 +3829,52 @@ function axHandleMultiPhotoUpload(fileList){
   });
 }
 
+/* v12.462 - Fix audit P0 : auto-flush sync queue + improvements RGPD */
+
+(function(){
+  if(window._axOnlineFlushInstalled) return;
+  window._axOnlineFlushInstalled = true;
+  /* Online event : flush queue immediat */
+  window.addEventListener("online", function(){
+    try{ if(typeof flushSyncQueue === "function"){ flushSyncQueue(); } }catch(_){}
+  });
+  /* Plus : interval safety net 5 min */
+  setInterval(function(){
+    try{
+      if(navigator.onLine && typeof flushSyncQueue === "function"){
+        var q = lg("ax_sync_queue",{});
+        if(q && Object.keys(q).length > 0){ flushSyncQueue(); }
+      }
+    }catch(_){}
+  }, 5 * 60 * 1000);
+})();
+
+/* v12.462 - Helper purge complete data per-user (RGPD Art. 17 + biometric clean) */
+function axPurgeUserBiometric(uid){
+  if(!uid) return;
+  try{
+    /* localStorage : trouve toutes cles biometric matching */
+    var prefixes = ["ax_voice_print_", "ax_biometric_audio_", "ax_voiceprint_", "ax_face_biometric_", "ax_client_history_"];
+    var toRemove = [];
+    for(var i=0; i<localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(!k) continue;
+      for(var pi=0; pi<prefixes.length; pi++){
+        if(k === prefixes[pi]+uid){ toRemove.push(k); break; }
+      }
+    }
+    toRemove.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_){} });
+    /* Firebase : push null pour chaque prefix */
+    if(typeof fbWrite === "function"){
+      prefixes.forEach(function(p){ try{ fbWrite(p+uid, null); }catch(_){} });
+    }
+    try{if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","biometric_purged",uid,prefixes.join(","),"RGPD compliance");}catch(_){}
+    return {ok:true, prefixes:prefixes, removed:toRemove.length};
+  }catch(e){
+    return {ok:false, error:String(e.message||e)};
+  }
+}
+
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
 /* v12.306 — Vue admin "Mes aliases reconnus" (transparence Kevin) */
@@ -4975,7 +5021,7 @@ try{window.axTokenUsageAdd=axTokenUsageAdd;}catch(_){}
 
 /* v12.295 — SW UPDATE SILENCIEUX (Kevin: rien ne doit s'afficher, MAJ auto invisible) */
 function _axShowUpdateBanner(){try{if(window._axSilentUpdated)return;window._axSilentUpdated=true;if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){navigator.serviceWorker.getRegistration().then(function(r){try{if(r&&r.waiting)r.waiting.postMessage("skipWaiting");}catch(_){}setTimeout(function(){try{location.reload();}catch(_){}},400);});}else{setTimeout(function(){try{location.reload();}catch(_){}},400);}}catch(_){}}
-try{if("serviceWorker" in navigator){navigator.serviceWorker.addEventListener("message",function(ev){try{/* v12_415_fix2 - origin check anti-XSS cross-origin */if(ev&&ev.origin&&ev.origin!==location.origin&&ev.origin!=="null")return;if(ev&&ev.data==="updateavailable")_axShowUpdateBanner();}catch(_){}});window.addEventListener("focus",function(){try{navigator.serviceWorker.getRegistration().then(function(r){if(r&&r.waiting)_axShowUpdateBanner();});}catch(_){}});setTimeout(function(){try{navigator.serviceWorker.getRegistration().then(function(r){if(r&&r.waiting)_axShowUpdateBanner();});}catch(_){}},8000);}}catch(_){}
+try{if("serviceWorker" in navigator){navigator.serviceWorker.addEventListener("message",function(ev){try{/* v12_415_fix2 - origin check anti-XSS cross-origin */if(ev&&ev.origin&&ev.origin!==location.origin)return;if(ev&&ev.data==="updateavailable")_axShowUpdateBanner();}catch(_){}});window.addEventListener("focus",function(){try{navigator.serviceWorker.getRegistration().then(function(r){if(r&&r.waiting)_axShowUpdateBanner();});}catch(_){}});setTimeout(function(){try{navigator.serviceWorker.getRegistration().then(function(r){if(r&&r.waiting)_axShowUpdateBanner();});}catch(_){}},8000);}}catch(_){}
 
 /* v12.261 — KILL SWITCH global */
 function axKillSwitchActivate(){if(!axIsAdmin())return false;if(!confirm("⚠️ KILL SWITCH ⚠️\n\nVa couper TOUTES les sentinelles, intervals et background jobs.\nPour reactiver : recharger l\'app.\n\nContinuer ?"))return false;try{ls("ax_kill_all",true);}catch(_){}try{(_globalIntervals||[]).forEach(function(it){try{if(it&&it.id!=null)clearInterval(it.id);else if(typeof it==="number")clearInterval(it);}catch(_){}});}catch(_){}try{if(_fbEs){_fbEs.close();_fbEs=null;}}catch(_){}try{if(window._axGeoWatchId!=null&&navigator.geolocation){navigator.geolocation.clearWatch(window._axGeoWatchId);window._axGeoWatchId=null;}}catch(_){}try{if(typeof axForceStopAllMedia==="function")axForceStopAllMedia();}catch(_){}try{_audit&&_audit("kill_switch_activated",K.user.id,"","all stopped");}catch(_){}try{toast("🚨 Tout est coupe. Recharger l\'app pour reactiver.","err",{duration:10000});}catch(_){}return true;}
@@ -5066,7 +5112,7 @@ function axPasteAndAnalyze(){return navigator.clipboard.read().then(function(ite
 var _rules=[];
 function axCreateRule(name,trigger,action,params){var rules=lg("ax_rules",[]);rules.push({id:uid(),name:name,trigger:trigger,action:action,params:params||{},enabled:true,ts:now(),fired:0});ls("ax_rules",rules);_rules=rules;return"Regle creee: SI "+trigger+" ALORS "+action;}
 function axListRules(){return lg("ax_rules",[]);}
-function axDeleteRule(id){var rules=lg("ax_rules",[]);rules=rules.filter(function(r){return r.id!==id&&r.name!==id;});ls("ax_rules",rules);_rules=rules;return"Regle supprimee";}
+function axDeleteRule(id){if(!axIsAdmin())return"Admin requis";var rules=lg("ax_rules",[]);rules=rules.filter(function(r){return r.id!==id&&r.name!==id;});ls("ax_rules",rules);_rules=rules;return"Regle supprimee";}
 function _checkRules(event){_rules=lg("ax_rules",[]);_rules.forEach(function(rule){if(!rule.enabled)return;var match=false;switch(rule.trigger){case"login":match=event==="login";break;case"morning":match=event==="morning"&&new Date().getHours()>=6&&new Date().getHours()<=9;break;case"evening":match=event==="evening"&&new Date().getHours()>=18;break;case"night":match=event==="night"&&new Date().getHours()>=22;break;case"offline":match=event==="offline";break;case"online":match=event==="online";break;case"low_battery":match=event==="battery"&&navigator.getBattery&&navigator.getBattery().then(function(b){return b.level<0.2;});break;case"new_message":match=event==="new_message";break;case"high_expense":match=event==="expense";break;}if(match){try{_execAppAction(rule.action,rule.params);rule.fired++;ls("ax_rules",_rules);_audit("rule_fired",rule.name,rule.action,"fired:"+rule.fired);}catch(e){}}});}
 
 // === MODULE: Admin History (stats globales) ===
@@ -6475,7 +6521,7 @@ function axDeleteAccountTotal(){
         }
         /* Purge clees per-user */
         if(typeof fbWrite === "function"){
-          ["ax_msgs_", "ax_convs_", "ax_settings_", "ax_xp_", "ax_streak_", "ax_pin_", "ax_user_theme_"].forEach(function(prefix){
+          ["ax_msgs_", "ax_convs_", "ax_settings_", "ax_xp_", "ax_streak_", "ax_pin_", "ax_user_theme_", "ax_voice_print_", "ax_biometric_audio_", "ax_voiceprint_", "ax_face_biometric_", "ax_client_history_"].forEach(function(prefix){
             try{ fbWrite(prefix + uid, null); }catch(_e){}
           });
         }
@@ -16617,7 +16663,7 @@ function axSetVariable(name,value){var setters={"K.settings.model":function(v){K
 function axModifyCSS(selector,property,value){try{var sheets=document.styleSheets;for(var i=0;i<sheets.length;i++){try{var rules=sheets[i].cssRules||sheets[i].rules;for(var j=0;j<rules.length;j++){if(rules[j].selectorText===selector){rules[j].style[property]=value;_audit("css_modify",K.user?K.user.id:"?",selector,property+":"+value);return"CSS modifie: "+selector+" { "+property+": "+value+" }";}}}catch(e){}}var style=document.createElement("style");style.textContent=selector+"{"+property+":"+value+"}";document.head.appendChild(style);_audit("css_add",K.user?K.user.id:"?",selector,property+":"+value);return"CSS ajoute: "+selector+" { "+property+": "+value+" }";}catch(e){return"Erreur CSS: "+e.message;}}
 function axInjectFunction(name,code){if(!axIsAdmin())return"Admin requis";try{var fn=new Function(code);window[name]=fn;_audit("fn_inject",K.user?K.user.id:"?",name,code.slice(0,100));return"Fonction "+name+" injectee avec succes";}catch(e){return"Erreur injection: "+e.message;}}
 function axAddTab(id,icon,label,htmlContent){extraTabs.push({id:id,ic:icon,lb:label});window["v_custom_"+id]=function(){return'<div style="padding:16px">'+htmlContent+"</div>";};_audit("tab_add",K.user?K.user.id:"?",id,label);dc();return"Onglet "+label+" ajoute";}
-function axRemoveTab(id){extraTabs=extraTabs.filter(function(t){return t.id!==id;});_audit("tab_remove",K.user?K.user.id:"?",id,"");dc();return"Onglet "+id+" supprime";}
+function axRemoveTab(id){if(!axIsAdmin())return"Admin requis";extraTabs=extraTabs.filter(function(t){return t.id!==id;});_audit("tab_remove",K.user?K.user.id:"?",id,"");dc();return"Onglet "+id+" supprime";}
 function axGetAppInfo(){return JSON.stringify({version:APP_VER,size:document.documentElement.outerHTML.length,modules:Object.keys(K).length,conversations:K.conversations.length,messages:K.messages.length,kb_facts:K.kb.facts.length,tools:_getToolDefs().length,actions:42,personas:PERSONAS.length,tabs_core:5,tabs_extra:extraTabs.length,theme:K.settings.theme,model:K.settings.model,lang:K.settings.lang,storage:_getStorageUsed(),online:navigator.onLine,xp:lg("ax_xp",0),achievements:lg("ax_achievements",[]).length});}
 // === MODULE: Telecommande universelle ===
 function vRemote(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-red),#ff4040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83C\uDFAE Telecommande</h2>';var irOk=!!localStorage.getItem("ax_ir_url");var tvOk=!!localStorage.getItem("ax_tv_ip");var haOk=!!localStorage.getItem("ax_ha_url");h+='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><span style="background:rgba('+(irOk?'76,208,128':'255,88,88')+',0.1);color:'+(irOk?'var(--ax-green)':'var(--ax-red)')+';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600">IR '+(irOk?'\u2705':'\u274C')+'</span><span style="background:rgba('+(tvOk?'76,208,128':'255,88,88')+',0.1);color:'+(tvOk?'var(--ax-green)':'var(--ax-red)')+';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600">TV '+(tvOk?'\u2705':'\u274C')+'</span><span style="background:rgba('+(haOk?'76,208,128':'255,88,88')+',0.1);color:'+(haOk?'var(--ax-green)':'var(--ax-red)')+';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600">HA '+(haOk?'\u2705':'\u274C')+'</span></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-red);background:linear-gradient(135deg,rgba(255,88,88,.04),transparent)"><h3>\uD83D\uDCFA TV / Box</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';var tvBtns=[{ic:"\u23FB",cmd:"tv_power",lb:"Power",cl:"var(--ax-red)"},{ic:"\uD83D\uDD07",cmd:"tv_mute",lb:"Mute",cl:"var(--ax-orange)"},{ic:"\uD83C\uDFE0",cmd:"tv_home",lb:"Home",cl:"var(--ax-blue)"},{ic:"\uD83D\uDD3A",cmd:"tv_vol_up",lb:"Vol +",cl:"var(--ax-green)"},{ic:"\uD83D\uDD3B",cmd:"tv_vol_down",lb:"Vol -",cl:"var(--ax-green)"},{ic:"\uD83D\uDD00",cmd:"tv_source",lb:"Source",cl:"var(--ax-purple)"},{ic:"N",cmd:"tv_netflix",lb:"Netflix",cl:"#e50914"},{ic:"\u25B6",cmd:"tv_youtube",lb:"YouTube",cl:"#ff0000"},{ic:"\u23EF",cmd:"tv_play",lb:"Play/Pause",cl:"var(--ax-gold)"}];tvBtns.forEach(function(b){h+='<button class="ax-btn" onclick="axIRBlast(\''+b.cmd+'\');axTVCommand(\''+b.cmd.replace("tv_","")+'\')" style="background:rgba(255,255,255,.05);color:var(--ax-text);border:2px solid '+b.cl+';font-size:16px;font-weight:700;padding:16px 8px;border-radius:12px;min-height:56px;flex-direction:column;gap:2px" title="'+b.lb+'"><span style="font-size:24px">'+b.ic+'</span><span style="font-size:10px;color:var(--ax-text-dim)">'+b.lb+'</span></button>';});h+='</div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);background:linear-gradient(135deg,rgba(90,168,255,.04),transparent)"><h3>\u2744\uFE0F Climatisation</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';var acBtns=[{ic:"\u2744\uFE0F",cmd:"ac_on",lb:"ON",cl:"var(--ax-blue)"},{ic:"\u26D4",cmd:"ac_off",lb:"OFF",cl:"var(--ax-red)"},{ic:"\uD83E\uDDCA",cmd:"ac_cool",lb:"Froid",cl:"var(--ax-cyan)"},{ic:"\uD83D\uDD25",cmd:"ac_heat",lb:"Chaud",cl:"var(--ax-orange)"},{ic:"\u2B06\uFE0F",cmd:"ac_temp_up",lb:"Temp +",cl:"var(--ax-red)"},{ic:"\u2B07\uFE0F",cmd:"ac_temp_down",lb:"Temp -",cl:"var(--ax-blue)"}];acBtns.forEach(function(b){h+='<button class="ax-btn" onclick="axIRBlast(\''+b.cmd+'\')" style="background:rgba(255,255,255,.05);color:var(--ax-text);border:2px solid '+b.cl+';font-size:16px;font-weight:700;padding:16px 8px;border-radius:12px;min-height:56px;flex-direction:column;gap:2px"><span style="font-size:24px">'+b.ic+'</span><span style="font-size:10px;color:var(--ax-text-dim)">'+b.lb+'</span></button>';});h+='</div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.04),transparent)"><h3>\uD83D\uDCA1 Lumieres & Volets</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';var homeBtns=[{ic:"\uD83D\uDCA1",cmd:"light_on",lb:"Lum ON",cl:"var(--ax-gold)"},{ic:"\uD83C\uDF11",cmd:"light_off",lb:"Lum OFF",cl:"var(--ax-text-dim)"},{ic:"\uD83C\uDF1E",cmd:"light_toggle",lb:"Toggle",cl:"var(--ax-orange)"},{ic:"\u2B06\uFE0F",cmd:"shutter_up",lb:"Volets \u2191",cl:"var(--ax-green)"},{ic:"\u2B07\uFE0F",cmd:"shutter_down",lb:"Volets \u2193",cl:"var(--ax-green)"},{ic:"\uD83C\uDF2C\uFE0F",cmd:"fan_on",lb:"Ventilo",cl:"var(--ax-cyan)"}];homeBtns.forEach(function(b){h+='<button class="ax-btn" onclick="axIRBlast(\''+b.cmd+'\')" style="background:rgba(255,255,255,.05);color:var(--ax-text);border:2px solid '+b.cl+';font-size:16px;font-weight:700;padding:16px 8px;border-radius:12px;min-height:56px;flex-direction:column;gap:2px"><span style="font-size:24px">'+b.ic+'</span><span style="font-size:10px;color:var(--ax-text-dim)">'+b.lb+'</span></button>';});h+='</div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple);background:linear-gradient(135deg,rgba(168,120,255,.06),transparent)"><h3>\uD83D\uDCF1 NFC / Scan tag proche (Android)</h3><p style="font-size:11px;color:var(--ax-text-dim);margin-bottom:10px">Lit tes propres tags NFC. <strong>Ne clone pas</strong> cartes SBM / paiement / jackpot (limite legale).</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="ax-btn ax-btn-outline" onclick="axNfcScan().then(function(r){if(r){_showModal(&quot;<h3>Tag NFC lu</h3><div style=padding:8px><div>Serial: <code>&quot;+esc(r.serial||&quot;?&quot;)+&quot;</code></div><pre style=font-size:10px;max-height:200px;overflow:auto;background:var(--ax-bg-input);padding:8px;border-radius:6px;margin-top:8px>&quot;+esc(JSON.stringify(r.records||[],null,2))+&quot;</pre></div>&quot;)}})">\uD83D\uDCF1 Scan tag</button><button class="ax-btn ax-btn-outline" onclick="var t=prompt(&quot;Texte sur le tag NFC:&quot;);if(t)axNfcWrite(t)">\u270F Ecrire</button></div></div>';
