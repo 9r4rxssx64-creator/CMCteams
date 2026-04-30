@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apex Chat — Charte Privée</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#08080f;color:#e8e8f0;font-family:system-ui,-apple-system,sans-serif;
+       padding:20px;line-height:1.7}
+  .wrap{max-width:780px;margin:0 auto}
+  h1{color:#c9a227;font-family:Georgia,serif;font-size:2em;letter-spacing:2px;margin:30px 0 10px}
+  h2{color:#c9a227;font-family:Georgia,serif;font-size:1.4em;margin:30px 0 10px;border-bottom:1px solid #2a2a35;padding-bottom:6px}
+  h3{color:#9aa;font-size:1em;margin:20px 0 6px}
+  a{color:#6a8aff}
+  .meta{color:#888;font-size:0.85em;margin-bottom:20px}
+  .info{background:#1a2a3a;border-left:3px solid #6a8aff;padding:12px 16px;margin:20px 0;border-radius:8px}
+  .ok{background:#1a3a1a;border-left:3px solid #5fcf5f;padding:12px 16px;margin:20px 0;border-radius:8px;color:#c0f0c0}
+  ul li{margin:8px 0}
+  .footer-back{margin-top:50px;padding:20px;background:#13131c;border-radius:14px;text-align:center}
+  .btn{display:inline-block;background:#c9a227;color:#08080f;padding:12px 24px;border-radius:14px;
+       text-decoration:none;font-weight:700;min-height:44px}
+  table{width:100%;border-collapse:collapse;margin:14px 0}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #2a2a35;font-size:0.92em}
+  th{color:#c9a227;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔒 Charte Privée</h1>
+<p class="meta">Apex Chat — Charte vie privée — En vigueur depuis le 27 avril 2026</p>
+
+<div class="ok">
+<strong>🛡 Notre promesse</strong> : tes messages sont chiffrés bout-en-bout. Nos serveurs ne peuvent <strong>jamais</strong> lire ce que tu écris ou ce qu'on t'envoie. Cette page t'explique exactement quelles données existent, où elles sont, et qui peut y accéder.
+</div>
+
+<h2>1. Ce que le serveur PEUT voir</h2>
+<table>
+<tr><th>Donnée</th><th>Pourquoi</th><th>Combien de temps</th></tr>
+<tr><td>Numéro de téléphone</td><td>Authentification + invitations</td><td>Tant que ton compte existe</td></tr>
+<tr><td>Pseudo</td><td>Identité publique dans l'app</td><td>Tant que ton compte existe</td></tr>
+<tr><td>Prénom + nom</td><td>Identité administrateur</td><td>Tant que ton compte existe</td></tr>
+<tr><td>Date dernière connexion</td><td>Présence "en ligne"</td><td>30 jours</td></tr>
+<tr><td>Liste de tes contacts (uid only)</td><td>Notifier "X est sur Apex Chat"</td><td>Tant que les liens existent</td></tr>
+<tr><td>Métadonnées messages (qui→qui, quand, taille)</td><td>Routage technique</td><td>30 jours</td></tr>
+<tr><td>Adresses IP (hashées)</td><td>Sécurité, anti-fraude</td><td>30 jours</td></tr>
+<tr><td>Type de device + OS + version app</td><td>Compatibilité, push notif</td><td>Tant que le device est enregistré</td></tr>
+</table>
+
+<h2>2. Ce que le serveur ne PEUT PAS voir</h2>
+<div class="info">
+Grâce au chiffrement <strong>PQXDH (post-quantum)</strong>, le serveur reçoit des données chiffrées qu'il est mathématiquement incapable de déchiffrer. Il ne voit donc <strong>jamais</strong> :
+<ul>
+  <li>Le contenu de tes messages (texte, photos, vidéos, audio)</li>
+  <li>Les fichiers que tu envoies</li>
+  <li>Le contenu de tes appels (audio, vidéo)</li>
+  <li>Tes notes vocales</li>
+  <li>Ta position GPS exacte</li>
+  <li>Tes voiceprints (signature vocale)</li>
+</ul>
+Si quelqu'un (hacker, gouvernement, employé indélicat) accède aux serveurs, il ne peut <strong>rien</strong> lire. C'est le principe du <strong>"serveur aveugle"</strong>.
+</div>
+
+<h2>3. Qui peut voir tes données ?</h2>
+<h3>Toi</h3>
+<p>Tout. Tu as accès à 100% de tes données via Réglages → Mes données + Exporter.</p>
+
+<h3>Tes contacts</h3>
+<p>Uniquement ce que tu choisis de partager : pseudo, photo, bio, statut "en ligne" (toggle par contact). Vrai nom <strong>jamais</strong> révélé.</p>
+
+<h3>L'administrateur (Kevin DESARZENS)</h3>
+<p>
+Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Le contenu chiffré reste protégé par le chiffrement bout-en-bout — l'administrateur ne lit pas tes messages dans l'absolu, mais peut intervenir en cas de signalement justifié.
+</p>
+
+<h3>Sous-traitants techniques</h3>
+<ul>
+  <li><strong>Cloudflare Inc.</strong> (hébergement) : voit le trafic technique chiffré, sans contenu</li>
+  <li><strong>Firebase / Google</strong> (auth téléphone) : voit ton numéro pour envoyer le SMS de vérification</li>
+  <li><strong>Vonage / Twilio</strong> (SMS invitations) : voit les numéros invités pour envoyer SMS</li>
+  <li><strong>Anthropic / OpenAI / autres IA</strong> : voit uniquement les requêtes IA que TU envoies (résumé, traduction). Ces requêtes ne sont jamais déclenchées sans ton consentement.</li>
+</ul>
+
+<h2>4. Cookies et stockage local</h2>
+<p>Apex Chat utilise <strong>localStorage + IndexedDB</strong> pour stocker tes données chiffrées sur ton téléphone. Pas de cookies de tracking, pas de pixels publicitaires, pas d'analytics tiers. Tes données ne quittent jamais ton téléphone sauf pour le serveur de routage (chiffré).</p>
+
+<h2>5. Tes droits RGPD</h2>
+<ul>
+  <li><strong>Droit d'accès</strong> : Réglages → Mes données → tu vois tout</li>
+  <li><strong>Droit à la portabilité</strong> : Réglages → Exporter (JSON + ZIP médias)</li>
+  <li><strong>Droit de rectification</strong> : Réglages → Profil → tu modifies</li>
+  <li><strong>Droit à l'effacement</strong> : Réglages → Supprimer mon compte → effacement sous 7 jours</li>
+  <li><strong>Droit d'opposition</strong> : tu peux refuser le partage avec sous-traitants techniques en désinstallant l'app</li>
+</ul>
+
+<h2>6. Mineurs</h2>
+<p>Apex Chat est interdit aux moins de 16 ans. Si tu es parent et que tu découvres que ton enfant utilise l'app, contacte-nous : nous supprimons le compte immédiatement.</p>
+
+<h2>7. Transferts internationaux</h2>
+<p>
+Les données de gestion peuvent transiter par les serveurs Cloudflare (UE + US) et Firebase (UE). Cloudflare est certifié RGPD avec clauses contractuelles types (SCCs). Le contenu chiffré bout-en-bout n'est lisible nulle part en clair côté serveur.
+</p>
+
+<h2>8. Failles de sécurité</h2>
+<p>
+En cas de faille de sécurité affectant les données personnelles (numéros, pseudos), tu seras notifié sous 72h conformément au RGPD. Le contenu de tes messages reste protégé par le chiffrement même en cas de faille serveur.
+</p>
+
+<h2>9. Contact RGPD</h2>
+<p>
+Délégué Protection des Données : Kevin DESARZENS<br>
+Email : <a href="mailto:kevin.desarzens@gmail.com?subject=RGPD%20Apex%20Chat">kevin.desarzens@gmail.com</a><br>
+Réclamation possible auprès de la CCIN (Monaco) : <a href="https://ccin.mc">ccin.mc</a>
+</p>
+
+<div class="footer-back">
+<a class="btn" href="./">Retour à Apex Chat</a>
+<p class="meta" style="margin-top:14px">Conditions générales : <a href="./cgu.html">cgu.html</a></p>
+</div>
+</div>
+</body>
+</html>
