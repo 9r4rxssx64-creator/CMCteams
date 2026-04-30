@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.517",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.518",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -12652,6 +12652,164 @@ window.axAudioPlay = function(dataUrl){
 })();
 
 /* AX_V12_517_AUDIO_MSG_END */
+
+/* AX_V12_518_TTS_LANG v12.518 - TTS multi-langues auto + Live transcription + Volume */
+
+/* === 1. Detection langue heuristique (pas de lib) === */
+window.axDetectTextLang = function(text){
+  if(!text || typeof text !== "string") return "fr-FR";
+  var t = text.toLowerCase().slice(0, 500);
+  /* Mots distinctifs par langue (heuristique simple) */
+  var signals = {
+    "en-US": /\b(the|and|that|this|with|from|have|been|will|would|could|should|about|because|hello|thanks|sorry)\b/gi,
+    "it-IT": /\b(che|sono|della|questo|essere|sono|grazie|prego|ciao|come|dove|perche|allora|quando)\b/gi,
+    "es-ES": /\b(que|este|para|esta|hola|gracias|porque|cuando|donde|tambien|pero|hasta|mucho)\b/gi,
+    "de-DE": /\b(der|die|das|und|ist|sie|sich|nicht|haben|werden|hallo|danke|bitte|morgen)\b/gi,
+    "pt-BR": /\b(que|para|este|esta|nao|com|por|tambem|obrigado|ola|porque|onde|quando)\b/gi,
+    "ja-JP": /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g,
+    "zh-CN": /[\u4e00-\u9fff]/g,
+    "ar-SA": /[\u0600-\u06ff]/g,
+    "ru-RU": /[\u0400-\u04ff]/g,
+    "ko-KR": /[\uac00-\ud7af]/g
+  };
+  var scores = {};
+  Object.keys(signals).forEach(function(lang){
+    var m = t.match(signals[lang]);
+    scores[lang] = m ? m.length : 0;
+  });
+  var best = Object.keys(scores).reduce(function(a,b){return scores[a] > scores[b] ? a : b;}, "fr-FR");
+  return scores[best] >= 2 ? best : "fr-FR"; /* Default FR si rien */
+};
+
+/* === 2. axTtsSpeak patch : auto-detect lang du texte si pas de preset specifique === */
+(function(){
+  var orig = window.axTtsSpeak;
+  if(typeof orig !== "function") return;
+  if(window._axTtsLangAutoHook) return;
+  window._axTtsLangAutoHook = true;
+  window.axTtsSpeak = function(text, opts){
+    opts = opts || {};
+    /* Si autoLang activee (default true) ET pas de preset force, detect lang */
+    if(lg("ax_tts_auto_lang", true) !== false && !opts.lang && !opts.forceLang){
+      var detected = axDetectTextLang(text);
+      var langPrefix = detected.slice(0, 2);
+      if(typeof window.speechSynthesis !== "undefined"){
+        var voices = window.speechSynthesis.getVoices() || [];
+        var candidates = voices.filter(function(v){return String(v.lang||"").toLowerCase().startsWith(langPrefix.toLowerCase());});
+        if(candidates.length > 0){
+          /* Tier sort */
+          if(typeof axVoiceQualityTier === "function"){
+            candidates.sort(function(a, b){return axVoiceQualityTier(b) - axVoiceQualityTier(a);});
+          }
+          /* Cancel + speak avec voix detectee */
+          window.speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance(String(text).replace(/<[^>]+>/g,"").slice(0,500));
+          u.voice = candidates[0];
+          u.lang = candidates[0].lang;
+          u.rate = (K && K.settings && K.settings.voiceRateOverride) || 1;
+          u.pitch = (K && K.settings && K.settings.voicePitchOverride) || 1;
+          u.volume = (K && K.settings && K.settings.voiceVolume) || 1;
+          window.speechSynthesis.speak(u);
+          return;
+        }
+      }
+    }
+    return orig.apply(this, arguments);
+  };
+})();
+
+/* === 3. Volume control TTS === */
+window.axTtsSetVolume = function(vol){
+  var v = Math.max(0, Math.min(1, parseFloat(vol)));
+  if(K && K.settings){
+    K.settings.voiceVolume = v;
+    if(typeof axSaveSettings === "function") axSaveSettings(K.settings);
+  }
+  if(typeof toast === "function") toast("Volume TTS : " + Math.round(v*100) + "%", "ok", {force:true, duration:2000});
+  return v;
+};
+
+/* === 4. Live transcription continue (Web Speech recognition) === */
+window._axLiveTranscript = null;
+
+window.axLiveTranscriptStart = function(opts){
+  opts = opts || {};
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ if(typeof toast === "function") toast("SpeechRecognition non supporte", "warn", {force:true}); return null; }
+  if(window._axLiveTranscript){ window._axLiveTranscript.stop(); }
+  var rec = new SR();
+  rec.lang = opts.lang || "fr-FR";
+  rec.continuous = !((/iPhone|iPad|iPod/.test(navigator.userAgent))); /* iOS continuous unstable */
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  var fullTranscript = "";
+  rec.onresult = function(e){
+    var interim = "";
+    for(var i = e.resultIndex; i < e.results.length; i++){
+      var transcript = e.results[i][0].transcript;
+      if(e.results[i].isFinal) fullTranscript += transcript + " ";
+      else interim += transcript;
+    }
+    if(typeof opts.onPartial === "function") opts.onPartial(interim);
+    if(typeof opts.onFinal === "function" && fullTranscript) opts.onFinal(fullTranscript.trim());
+    /* Update overlay si exists */
+    var overlay = document.getElementById("ax-live-transcript");
+    if(overlay) overlay.textContent = fullTranscript + " " + interim;
+  };
+  rec.onerror = function(e){
+    if(String(e.error||"") !== "no-speech"){
+      if(typeof toast === "function") toast("Transcription err : " + (e.error||"?"), "warn", {force:true});
+    }
+  };
+  rec.onend = function(){
+    if(opts.autoRestart && window._axLiveTranscript === rec){
+      try{ rec.start(); }catch(_){}
+    }
+  };
+  try{ rec.start(); }catch(e){
+    if(typeof toast === "function") toast("Transcription start err : " + e.message, "err", {force:true});
+    return null;
+  }
+  window._axLiveTranscript = rec;
+  if(typeof toast === "function") toast("Transcription en cours (langue " + rec.lang + ")", "info", {force:true, duration:2500});
+  return rec;
+};
+
+window.axLiveTranscriptStop = function(){
+  if(window._axLiveTranscript){
+    try{ window._axLiveTranscript.stop(); }catch(_){}
+    window._axLiveTranscript = null;
+    if(typeof toast === "function") toast("Transcription arretee", "ok", {force:true});
+  }
+};
+
+/* === 5. Affichage overlay live transcription === */
+window.axLiveTranscriptShowOverlay = function(){
+  var existing = document.getElementById("ax-live-transcript");
+  if(existing) return existing;
+  var div = document.createElement("div");
+  div.id = "ax-live-transcript";
+  div.style.cssText = "position:fixed;bottom:80px;left:14px;right:14px;background:rgba(232,184,48,.95);color:#000;padding:12px 14px;border-radius:14px;font-size:14px;font-weight:600;z-index:99998;max-height:120px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.4)";
+  div.textContent = "Ecoute en cours...";
+  document.body.appendChild(div);
+  return div;
+};
+
+window.axLiveTranscriptHideOverlay = function(){
+  var el = document.getElementById("ax-live-transcript");
+  if(el) el.remove();
+};
+
+/* === 6. axToggleTtsAutoLang ===*/
+window.axToggleTtsAutoLang = function(enabled){
+  var v = (typeof enabled === "boolean") ? enabled : !lg("ax_tts_auto_lang", true);
+  ls("ax_tts_auto_lang", v);
+  if(typeof toast === "function") toast(v ? "TTS auto-langue ACTIF" : "TTS auto-langue OFF", "ok", {force:true, duration:3000});
+  return v;
+};
+
+/* AX_V12_518_TTS_LANG_END */
+
 
 
 
