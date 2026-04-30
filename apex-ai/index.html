@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.514",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.515",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -12129,6 +12129,201 @@ window.axWakeDevice = function(name){
 
 /* AX_V12_514_VOICE_WOL_END */
 
+/* AX_V12_515_VOICES_QUALITY v12.515 - Qualite voix : Premium > Enhanced > Standard > Legacy */
+
+/* Tier scoring : retourne 5=Premium 4=Enhanced 3=Neural 2=Standard 1=Legacy 0=eSpeak */
+window.axVoiceQualityTier = function(voice){
+  if(!voice) return 0;
+  var n = String(voice.name||"").toLowerCase();
+  var u = String(voice.voiceURI||"").toLowerCase();
+  var nu = n + " " + u;
+  /* Apple Premium iOS : Aaron, Allison, Ava, Daniel, Karen, Moira, Nathan, Nicky, Samantha, Susan, Tom, Veena, Victoria + suffix Premium */
+  if(/(premium|aaron|allison|ava|nicky|samantha|tom|victoria|nathan|noelle).*premium/i.test(nu)) return 5;
+  if(/premium/i.test(nu)) return 5;
+  /* Apple Enhanced */
+  if(/enhanced|amplified/i.test(nu)) return 4;
+  /* Neural / WaveNet (Google) */
+  if(/neural|wavenet/i.test(nu)) return 3;
+  /* Apple/Google standard noms : daniel, thomas, marie, audrey, virginie, juliette, paul */
+  if(/(daniel|thomas|marie|audrey|virginie|juliette|paul|hortense|amelie|chantal)\b/i.test(n)) return 2;
+  /* Microsoft / standard */
+  if(/microsoft|google\s/i.test(n)) return 2;
+  /* eSpeak / Anc / legacy synth (TRES moche) */
+  if(/espeak|anc|compact|legacy|bahh|albert|alex.*compact/i.test(nu)) return 0;
+  /* Default standard */
+  return 1;
+};
+
+/* Liste deduplique + classee par qualite */
+window.axListSystemVoices = function(langFilter){
+  if(!("speechSynthesis" in window)) return [];
+  var voices = (typeof window!=="undefined" && window.speechSynthesis && typeof window.speechSynthesis.getVoices === "function") ? (window.speechSynthesis.getVoices() || []) : [];
+  if(langFilter){
+    voices = voices.filter(function(v){return String(v.lang||"").toLowerCase().startsWith(langFilter.toLowerCase());});
+  }
+  /* Dedup : meme name+lang -> garde celle avec voiceURI le plus court (souvent Premium) */
+  var seen = {};
+  var out = [];
+  voices.forEach(function(v){
+    var key = (v.name||"") + "|" + (v.lang||"");
+    if(!seen[key] || (v.voiceURI||"").length < seen[key].uri){
+      seen[key] = {voice:v, uri:(v.voiceURI||"").length};
+    }
+  });
+  Object.keys(seen).forEach(function(k){ out.push(seen[k].voice); });
+  /* Score qualite + tri descendant */
+  out = out.map(function(v){
+    return {
+      name: v.name,
+      lang: v.lang,
+      voiceURI: v.voiceURI,
+      localService: v.localService,
+      tier: axVoiceQualityTier(v),
+      voice: v
+    };
+  });
+  out.sort(function(a, b){ return b.tier - a.tier; });
+  return out;
+};
+
+/* Pick best voice for lang */
+window.axPickBestVoice = function(lang){
+  lang = lang || "fr-FR";
+  var prefix = lang.slice(0, 2).toLowerCase();
+  var voices = axListSystemVoices(prefix);
+  if(voices.length === 0) return null;
+  /* Filtre les legacy (tier 0) sauf si que ça */
+  var nonLegacy = voices.filter(function(v){return v.tier > 0;});
+  return (nonLegacy.length ? nonLegacy[0] : voices[0]).voice;
+};
+
+/* Filtre legacy par defaut (sauvegarde dans ax_voice_filter_legacy) */
+window.axVoiceFilterLegacy = function(enabled){
+  var v = (typeof enabled === "boolean") ? enabled : !lg("ax_voice_filter_legacy", true);
+  ls("ax_voice_filter_legacy", v);
+  if(typeof toast === "function") toast(v ? "Filtre voix legacy ACTIF (Premium prefere)" : "Filtre desactive (toutes voix)", "ok", {force:true, duration:3000});
+  return v;
+};
+
+/* Auto-pick best voice au boot SI voix actuelle est legacy ou inexistante */
+(function(){
+  if(window._axVoiceAutoPickInit) return;
+  window._axVoiceAutoPickInit = true;
+  if(!("speechSynthesis" in window)) return;
+  function tryAutoPick(){
+    var voices = (typeof window!=="undefined" && window.speechSynthesis && typeof window.speechSynthesis.getVoices === "function") ? (window.speechSynthesis.getVoices() || []) : [];
+    if(voices.length === 0) return false;
+    /* Si user a deja une voix preferee saisie, on respecte */
+    var saved = lg("ax_preferred_voice_uri", "");
+    if(saved){
+      var match = voices.find(function(v){return v.voiceURI === saved;});
+      if(match) return true;
+    }
+    /* Sinon pick best FR */
+    var best = axPickBestVoice("fr-FR");
+    if(best){
+      ls("ax_preferred_voice_uri", best.voiceURI);
+      if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","voice_auto_pick",APP_VER, best.name+" tier="+axVoiceQualityTier(best), "Auto-selected best FR voice at boot");
+      return true;
+    }
+    return false;
+  }
+  /* iOS getVoices async : retry (guard si window.speechSynthesis indispo en test env) */
+  try{
+    if(!tryAutoPick()){
+      if(typeof window !== "undefined" && window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined){
+        window.speechSynthesis.onvoiceschanged = function(){ tryAutoPick(); };
+      }
+      if(typeof setTimeout === "function"){
+        setTimeout(tryAutoPick, 1500);
+        setTimeout(tryAutoPick, 3000);
+      }
+    }
+  }catch(_){}
+})();
+
+/* Vue admin : liste voix systeme avec qualite */
+window.vVoicesQualityAudit = function(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var voices = axListSystemVoices();
+  var byTier = {5:[], 4:[], 3:[], 2:[], 1:[], 0:[]};
+  voices.forEach(function(v){ byTier[v.tier].push(v); });
+  var saved = lg("ax_preferred_voice_uri", "");
+
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">&#127911; Audit voix systeme</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Total : <b>' + voices.length + '</b> voix systeme uniques (apres dedup). Tier 5 = Premium, 0 = Legacy moche.</p>';
+
+  /* Stats */
+  h += '<div class="ax-card"><h3>&#128202; Distribution qualite</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">';
+  ["5","4","3","2","1","0"].forEach(function(t){
+    var label = {5:"Premium",4:"Enhanced",3:"Neural",2:"Standard",1:"Basic",0:"Legacy"}[t];
+    var color = {5:"#4cd080",4:"#9ad080",3:"#e8b830",2:"#ffb84a",1:"#ff8c4a",0:"#ff5858"}[t];
+    h += '<div style="text-align:center;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;border-top:3px solid '+color+'"><div style="font-size:20px;font-weight:900;color:'+color+'">'+byTier[t].length+'</div><div style="font-size:10px;color:var(--ax-text-dim)">'+label+'</div></div>';
+  });
+  h += '</div></div>';
+
+  /* Liste par tier */
+  ["5","4","3","2","1","0"].forEach(function(t){
+    if(byTier[t].length === 0) return;
+    var label = {5:"&#128081; Premium",4:"&#127942; Enhanced",3:"&#129504; Neural",2:"&#128172; Standard",1:"&#128214; Basic",0:"&#9760; Legacy (saccade)"}[t];
+    h += '<div class="ax-card"><h3>' + label + ' (' + byTier[t].length + ')</h3>';
+    h += '<div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto">';
+    byTier[t].forEach(function(v){
+      var isCurrent = v.voiceURI === saved;
+      h += '<div style="padding:8px;background:'+(isCurrent?"rgba(76,208,128,.15)":"var(--ax-bg-input)")+';border-radius:6px;border-left:3px solid '+(isCurrent?"#4cd080":"transparent")+';display:flex;align-items:center;gap:8px">';
+      h += '<div style="flex:1"><strong>' + (typeof esc==="function"?esc(v.name):v.name) + '</strong>' + (isCurrent?' &#9989; (selectionnee)':'');
+      h += '<div style="font-size:10px;color:var(--ax-text-dim);font-family:var(--ax-mono)">' + (typeof esc==="function"?esc(v.lang+" - "+(v.voiceURI||"").slice(0,40)):v.lang) + '</div></div>';
+      h += '<button class="ax-btn ax-btn-outline" onclick="axTestVoiceURI(&quot;'+(v.voiceURI||"").replace(/"/g,"")+'&quot;)" style="font-size:10px;padding:4px 8px;min-height:30px">&#9654; Test</button>';
+      h += '<button class="ax-btn ax-btn-primary" onclick="ls(&quot;ax_preferred_voice_uri&quot;,&quot;'+(v.voiceURI||"").replace(/"/g,"")+'&quot;);toast(&quot;Voix selectionnee : '+(typeof esc==="function"?esc(v.name):v.name)+'&quot;,&quot;ok&quot;,{force:true});dc()" style="font-size:10px;padding:4px 8px;min-height:30px">Choisir</button>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  });
+
+  /* iOS install premium voices guide */
+  if(byTier["5"].length === 0){
+    h += '<div class="ax-card" style="background:rgba(232,184,48,.08);border-left:4px solid var(--ax-gold)"><h3>&#128293; Aucune voix Premium detectee !</h3>';
+    h += '<p style="font-size:13px;line-height:1.6">Pour installer les voix Apple Premium (qualite humaine, gratuit) :</p>';
+    h += '<ol style="font-size:13px;line-height:1.7;padding-left:20px">';
+    h += '<li>Reglages iPhone &rarr; <b>Accessibilite</b></li>';
+    h += '<li>Contenu lu &rarr; <b>Voix</b></li>';
+    h += '<li>Francais &rarr; selectionne <b>Aurelie (Premium)</b> ou <b>Daniel (Premium)</b></li>';
+    h += '<li>Telecharge la voix Premium (~100 Mo)</li>';
+    h += '<li>Recharge Apex et reviens ici : la voix Premium apparaitra</li>';
+    h += '</ol></div>';
+  }
+
+  /* Auto-pick action */
+  h += '<div class="ax-card"><h3>&#128302; Actions</h3>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="var b=axPickBestVoice(&quot;fr-FR&quot;);if(b){ls(&quot;ax_preferred_voice_uri&quot;,b.voiceURI);toast(&quot;Auto-selected: &quot;+b.name,&quot;ok&quot;,{force:true});dc();}else{toast(&quot;Aucune voix FR&quot;,&quot;warn&quot;,{force:true});}" style="width:100%;min-height:48px">&#127919; Auto-selectionner meilleure voix FR</button>';
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+};
+
+/* Test voice URI */
+window.axTestVoiceURI = function(uri){
+  if(!("speechSynthesis" in window)) return;
+  var voices = (typeof window!=="undefined" && window.speechSynthesis && typeof window.speechSynthesis.getVoices === "function") ? (window.speechSynthesis.getVoices() || []) : [];
+  var v = voices.find(function(x){return x.voiceURI === uri;});
+  if(!v){ if(typeof toast==="function") toast("Voix introuvable", "warn"); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance("Bonjour, je suis Apex. Voici un test de cette voix.");
+  u.voice = v;
+  u.lang = v.lang;
+  u.rate = 1;
+  u.pitch = 1;
+  window.speechSynthesis.speak(u);
+};
+
+/* AX_V12_515_VOICES_QUALITY_END */
+
+
 
 
 
@@ -16599,7 +16794,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"voicesaudit":case"voixqualite":case"voicesquality":return vVoicesQualityAudit();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
@@ -20346,7 +20541,7 @@ function axVoiceEffect(utter,effect){if(!utter||!effect)return utter;try{switch(
 /* v12.244 — Cleanup any pending echo timers */
 var _ttsEchoTimers=[];
 function _ttsClearEchoes(){try{_ttsEchoTimers.forEach(function(t){clearTimeout(t);});_ttsEchoTimers=[];}catch(_){ }}
-function axTtsSpeak(text){if(!text||!("speechSynthesis" in window))return;window.speechSynthesis.cancel();_ttsClearEchoes();var preset=VOICE_PRESETS.find(function(v){return v.id===(K.settings.voicePreset||"default");})||VOICE_PRESETS[0];var clean=text.replace(/<[^>]+>/g,"").slice(0,500);_ttsUtter=new SpeechSynthesisUtterance(clean);_ttsUtter.lang=preset.lang;_ttsUtter.rate=preset.rate;_ttsUtter.pitch=preset.pitch;/* v12.244 — Application des effets audio si defini sur la voix */ if(preset.effect)axVoiceEffect(_ttsUtter,preset.effect);/* v12.244 — Override pitch/rate utilisateur */ if(K.settings.voicePitchOverride)_ttsUtter.pitch=Math.max(0.1,Math.min(2,_ttsUtter.pitch*K.settings.voicePitchOverride));if(K.settings.voiceRateOverride)_ttsUtter.rate=Math.max(0.1,Math.min(2,_ttsUtter.rate*K.settings.voiceRateOverride));var voices=window.speechSynthesis.getVoices();/* v12.107 — Selection intelligente voix premium iOS (Enhanced/Premium/Neural prefere) */
+function axTtsSpeak(text){if(!text||!("speechSynthesis" in window))return;window.speechSynthesis.cancel();_ttsClearEchoes();var preset=VOICE_PRESETS.find(function(v){return v.id===(K.settings.voicePreset||"default");})||VOICE_PRESETS[0];var clean=text.replace(/<[^>]+>/g,"").slice(0,500);_ttsUtter=new SpeechSynthesisUtterance(clean);_ttsUtter.lang=preset.lang;_ttsUtter.rate=preset.rate;_ttsUtter.pitch=preset.pitch;/* v12.244 — Application des effets audio si defini sur la voix */ if(preset.effect)axVoiceEffect(_ttsUtter,preset.effect);/* v12.244 — Override pitch/rate utilisateur */ if(K.settings.voicePitchOverride)_ttsUtter.pitch=Math.max(0.1,Math.min(2,_ttsUtter.pitch*K.settings.voicePitchOverride));if(K.settings.voiceRateOverride)_ttsUtter.rate=Math.max(0.1,Math.min(2,_ttsUtter.rate*K.settings.voiceRateOverride));var voices=window.speechSynthesis.getVoices();/* AX_V12_515 : utilise ax_preferred_voice_uri si saisi (auto-pick best au boot) */var _prefUri=lg("ax_preferred_voice_uri","");if(_prefUri){var _prefV=voices.find(function(v){return v.voiceURI===_prefUri;});if(_prefV){_ttsUtter.voice=_prefV;_ttsUtter.lang=_prefV.lang;}}/* v12.107 — Selection intelligente voix premium iOS (Enhanced/Premium/Neural prefere) */
 var langPrefix=preset.lang.slice(0,2);
 var sameLng=voices.filter(function(v){return v.lang.toLowerCase().startsWith(langPrefix.toLowerCase());});
 function _scoreVoice(v){var s=0;var n=(v.name||"").toLowerCase();if(preset.voiceName&&v.name===preset.voiceName)s+=100;if(n.indexOf("enhanced")>=0||n.indexOf("premium")>=0||n.indexOf("neural")>=0)s+=50;if(n.indexOf("(amelior")>=0||n.indexOf("(améliorée)")>=0)s+=50;if(n.indexOf("siri")>=0)s+=30;if(v.localService)s+=20;if(v.lang.toLowerCase()===preset.lang.toLowerCase())s+=10;if(preset.gender==="f"&&/aurelie|audrey|amelie|marie|nathalie|virginie|chloe|alice|julie|lea|emma|sophie|laura|samantha|fiona|ava|allison|susan|karen|moira|tessa|veena|kate|serena|carol|veronica/i.test(v.name))s+=15;if(preset.gender==="m"&&/thomas|sebastien|nicolas|jean|paul|pierre|antoine|julien|alex|daniel|fred|aaron|tom|albert|bruce|reed|ralph|martha|whisper/i.test(v.name))s+=15;return s;}
