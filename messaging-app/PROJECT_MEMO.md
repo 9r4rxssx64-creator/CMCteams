@@ -261,16 +261,148 @@ Cohérent avec règle CLAUDE.md "🔄 PIPELINE SELF-HEALING TOTAL CROSS-APP".
 
 ---
 
-## 📞 Identité admin Kevin (cohérence cross-app)
+## 📞 Identités pré-configurées (extraites des mémos NOTES_USER + KEVIN_INVENTORY)
 
-L'admin doit reconnaître Kevin via **tous les aliases** (règle CLAUDE.md "👑 COMPTE ADMIN UNIQUE KEVIN") :
-- Nom : DESARZENS Kevin / Kevin DESARZENS / Kevin / KD
-- Email : kevin.desarzens@gmail.com
-- Numéro : (à confirmer auprès Kevin)
-- PIN admin : 200807
-- ID cross-app : `kdmc_admin` (Apex) / `U11804` (CMCteams)
+### Kevin DESARZENS — Admin principal
+- **Email** : `kevind@monaco.mc` (email Monaco principal — source NOTES_USER)
+- **Téléphone interne casino** : 62224
+- **PIN admin** : `200807`
+- **Aliases reconnus** : Kevin / Kevin DESARZENS / DESARZENS Kevin / kevin desarzens / KD / KDMC
+- **ID cross-app** : `kdmc_admin` (Apex / Apex Chat) / `U11804` (CMCteams)
+- **Devices** : iPhone (principal, PWA Safari), Tablette Lenovo Android, Ordinateur
+- **Préférences** : Français uniquement, tutoiement, langage direct, ZÉRO invention de données
+- **Login flexible** : tous formats acceptés (ordre, casse, tirets, accents, espaces) — algorithme tokens triés + normalization
 
-Si Kevin se logue avec son numéro tel reconnu → mode admin actif automatiquement.
+### Laurence SAINT-POLIT — Famille
+- **Relation** : Épouse de Kevin
+- **Aliases reconnus** : Laurence / Laurence SAINT-POLIT / SAINT-POLIT Laurence / saint-polit laurence / saintpolit
+- **ID cross-app** : `user_laurence`
+- **Rôle** : `family` (peut modifier thème personnel, premium illimité cadeau Kevin)
+- **PIN** : à définir (changement forcé 1ère connexion)
+
+### Sandrine TARDIEU + Christophe TARDIEU — Clients test
+- **ID** : `user_tardieu_sandrine` + `user_tardieu_christophe`
+- **PIN** : `2026` (à changer 1ère connexion)
+- **Rôle** : `client` (compte gratuit)
+
+## 🌐 URLs et services existants à brancher (extraits KEVIN_INVENTORY)
+
+### URLs principales
+- **Apex live** : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/`
+- **CMCteams live** : `https://9r4rxssx64-creator.github.io/CMCteams/`
+- **Apex Chat (futur)** : `https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/`
+- **Repo** : `https://github.com/9r4rxssx64-creator/cmcteams`
+
+### Firebase RTDB partagé cross-app
+- **URL** : `https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app`
+- **Namespaces** :
+  - `/cmcteams` (CMCteams data)
+  - `/apex` (Apex AI data)
+  - `/apex_chat` (Apex Chat — à créer)
+- **Clés partagées critiques** :
+  - `/apex/ax_shared_api_key` : clé Anthropic partagée
+  - `/apex/ax_telemetry_in` : pipeline self-healing inbox
+  - `/apex/ax_claude_todo` : escalade Claude Code
+  - `/apex/ax_lessons_learned` : cross-app learnings
+  - `/apex/apex_chat_commands` : commandes IA Apex → Apex Chat (à créer)
+
+### Cloudflare Worker existant à réutiliser
+- **Push notifications** : `https://apex-push-worker.desarzens-kevin.workers.dev`
+  - Health endpoint : `/health`
+  - Account ID : `ffaca6f306a953f82834db0970f300f0`
+  - **VAPID PUBLIC** : `BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY`
+  - Apex Chat partagera ce worker (topics `user:<uid>` cross-app)
+
+### Proxy Cloudflare CORS iOS
+- Stockée dans `ax_proxy_url` localStorage côté Apex
+- **Règle critique** : TOUJOURS lire `ax_proxy_url` AVANT de hardcoder `api.anthropic.com` (cause bug "3 points infini" v12.365)
+
+### IA providers (failover chain Apex)
+1. **Anthropic** (primaire) via `ax_shared_api_key` Firebase ou `ax_proxy_url`
+2. **Groq** (gratuit) Llama 3.3 70B
+3. **Gemini** (gratuit limité) Google AI Studio
+4. **OpenRouter** (failover automatique)
+5. **OpenAI** (fallback)
+
+### Autres services configurés
+- **Telegram bot** : `@Kdmc_kevind_2026_bot` (chatId dans `ax_telegram_chatid`)
+- **EmailJS** : Gmail + Outlook `kevind@monaco.mc` + iCloud
+- **Sentry DSN** : Monitoring erreurs configuré
+- **Finnhub API Key** : Cours bourse
+- **Stripe** : à activer (KYC pending Kevin)
+- **Broadlink IR** : 42 commandes domotique pré-configurées
+- **Home Assistant** : URL locale `ax_ha_url`
+
+## 🎬 12 Studios Apex à exposer dans Apex Chat (mini-apps embedded)
+
+| Studio | Route | Capacités | Intégration Chat priorité |
+|--------|-------|-----------|---------------------------|
+| 🌐 **Traducteur** | `axOpenStudio('traducteur')` | 30 langues + STT/TTS + interprète temps réel | **PRIORITÉ ÉLEVÉE** : conv bilingue live |
+| 🍳 Cuisine | `axOpenStudio('cuisine')` | 10 recettes FR + 22 cuissons + allergènes INCO | Suggérer recettes contexte |
+| 🩺 Médical | `axOpenStudio('medical')` | IMC + métabolisme + Vidal + urgences SAMU | Conseil santé léger |
+| 💰 Finance | `axOpenStudio('finance')` | IR FR 2026 + crédit immo + Monaco fiscal | Calculs impôts |
+| ⚖ Légal | `axOpenStudio('legal')` | 18+ codes français + jurisprudence Cass/CE | Conseils légaux basiques |
+| 🎬 Vidéo | `axOpenStudio('video')` | Timeline + cut + captions auto + MP4 | Édition clips chat |
+| 📷 Scan OCR | `axOpenStudio('scan')` | OCR Tesseract + QR + barcodes + cartes visite | Identifier docs en chat |
+| 🔧 Pack Pro | `axOpenStudio('pack')` | Conversions + béton + lune + météo | Calculs utilitaires |
+| 🎵 Musique | `axOpenStudio('music')` | Studio Mix Pro 12+ pistes EQ reverb | Édition audio chat |
+| 🏗 Architecture | `axOpenStudio('archi')` | RE2020 + DTU + PMR + palette Pantone | Consultation pro |
+| 📒 Préfecture | `axOpenStudio('prefecture')` | Démarches FR + Monaco + 40+ templates | Documents officiels |
+| 🎨 Logo/Branding | `axOpenStudio('logo')` | Génération + Pantone + RAL + NCS | Création identité |
+
+**+ 55 tools autonomes** : web search, fetch_url, voice_memo, send_email, calendar_event, weather, crypto_price, stock_price, translate, tts_speak, geolocation, etc.
+
+## 🚨 Bugs critiques connus à NE PAS reproduire dans Apex Chat
+
+### Bug "3 points infini" (Apex v12.365 — résolu)
+**Symptômes** : IA n'a jamais répondu, fetch zombie, app bloquée.
+**Causes cumulatives** :
+1. Hardcoding URL `https://api.anthropic.com/v1/messages` au lieu de lire `ax_proxy_url` → CORS hang Safari iOS PWA
+2. Filter `typeof content === "string"` droppait `tool_use`/`tool_result`/image dans recursion → API recevait conv cassée
+3. Pas d'`AbortController` → fetch zombie après timeout
+
+**Règles permanentes Apex Chat** :
+- ✅ Lire `apex_proxy_url` AVANT de hardcoder URL
+- ✅ JAMAIS filter content array par `typeof === "string"` avant API
+- ✅ TOUJOURS `AbortController` + `signal.abort()` dans timeout
+- ✅ Pre-commit hook detect `catch(_){}` patterns vides
+
+### Pattern Apex critique : `_axSafeCatch(ctx, e)`
+Tout try/catch DOIT logger via `_axSafeCatch` (pas `catch(_){}` silencieux).
+
+### Smart-scroll bottom-anchor
+Préserver position user en chat (ne PAS jumper au bottom si user scroll up).
+
+### Stop bouton carré rouge fixe
+PAS de pulse clignotant (anti-épilepsie + ergonomie).
+
+### Bulles credentials live colorées
+Rouge KO / Jaune untested / Vert tested OK <24h + click retest.
+
+## 📝 Patterns Apex à porter directement
+
+### Pipeline chat
+```
+User input → axDetectIntent (42+ patterns auto-exec)
+           → _callClaudeAPI (failover Anthropic→Groq→Gemini→OpenRouter→OpenAI)
+           → K.messages queue FIFO (persistant, jamais perdu)
+           → Streaming SSE 30fps + smart-scroll
+           → Tool execution si needed
+           → K.conversations saved (localStorage + IDB + Firebase)
+```
+
+### Triple persistence boot
+```
+Boot → Restore localStorage → Restore IndexedDB (si gap) → Restore Firebase (si gap)
+JAMAIS localStorage.clear() sans whitelist `ax_*` + `apex_chat_*` keys
+```
+
+### Sentinelles auto-gestion (30+ Apex existantes à étendre Apex Chat)
+- `_axDailyCleanup` (cap logs/audit/msgs)
+- `_healthCheck` (state général 30s)
+- `_axCheckQuota` (cleanup proactif >80%)
+- `_axCheckRemoteVersion` (auto-update 10 min)
+- Telemetry digest 45s + error pattern detection 3 min
 
 ---
 
