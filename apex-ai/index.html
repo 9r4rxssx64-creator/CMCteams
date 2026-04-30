@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.509",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.510",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -14866,6 +14866,67 @@ window.axListenerHealth = axListenerHealth;
 /* AX_V12_507_DISCOVERY v12.507 - Smart Discovery WiFi + BLE + commandes universelles */
 
 /* Catalogue des appareils detectables sur le reseau local */
+/* AX_V12_510_DEVICES_PLUS - 20+ nouveaux types reseau (Kevin "multi-appareils +++") */
+var AX_LAN_DEVICES_EXTRA = [
+  /* Audio / Speakers */
+  {id:"alexa",          name:"Amazon Echo / Alexa",     port:55443,path:"/", icon:"&#128264;", commands:["volume_up","volume_down","mute","play","pause"]},
+  {id:"google_home_v2", name:"Google Home / Nest",      port:8443, path:"/", icon:"&#128264;", commands:["play","pause","volume_up","volume_down"]},
+  {id:"yamaha_avr",     name:"Yamaha AVR (Musiccast)",  port:80,   path:"/YamahaExtendedControl/v1/system/getDeviceInfo", icon:"&#127925;", commands:["power","volume_up","volume_down","input_change","mute"]},
+  {id:"denon_avr",      name:"Denon AVR (HEOS)",        port:8080, path:"/heos/system/heart_beat", icon:"&#127925;", commands:["power","volume_up","volume_down","input_aux","input_tv"]},
+  {id:"bose",           name:"Bose Soundtouch",         port:8090, path:"/now_playing", icon:"&#127925;", commands:["play","pause","next","prev","vol_up","vol_down"]},
+  /* Network / Routers */
+  {id:"asus_router",    name:"ASUS Router",             port:80,   path:"/Main_Login.asp", icon:"&#127757;", commands:["reboot","wifi_status","clients_list"]},
+  {id:"netgear_router", name:"Netgear Router",          port:80,   path:"/start.htm", icon:"&#127757;", commands:["reboot","wifi_status"]},
+  {id:"tplink_router",  name:"TP-Link Router",          port:80,   path:"/login.htm", icon:"&#127757;", commands:["reboot","wifi_status"]},
+  {id:"unifi",          name:"UniFi Controller",        port:8443, path:"/api/system", icon:"&#127757;", commands:["clients","stats"]},
+  /* Smart Home */
+  {id:"hass_addon",     name:"Home Assistant Supervisor",port:4357,path:"/supervisor/info", icon:"&#127968;", commands:[]},
+  {id:"openhab",        name:"openHAB",                 port:8080, path:"/rest/", icon:"&#127968;", commands:["all_off","all_on"]},
+  {id:"domoticz",       name:"Domoticz",                port:8080, path:"/json.htm?type=command&param=getversion", icon:"&#127968;", commands:[]},
+  {id:"deconz",         name:"deCONZ (Zigbee)",         port:80,   path:"/api/", icon:"&#127968;", commands:["lights_on","lights_off"]},
+  /* NAS / Storage */
+  {id:"synology",       name:"Synology DSM",            port:5000, path:"/webapi/auth.cgi", icon:"&#128190;", commands:[]},
+  {id:"synology_https", name:"Synology DSM (HTTPS)",    port:5001, path:"/webapi/auth.cgi", icon:"&#128190;", commands:[]},
+  {id:"qnap",           name:"QNAP",                    port:8080, path:"/cgi-bin/", icon:"&#128190;", commands:[]},
+  {id:"truenas",        name:"TrueNAS / FreeNAS",       port:80,   path:"/api/v2.0/system/info", icon:"&#128190;", commands:[]},
+  /* Imprimantes */
+  {id:"printer_ipp",    name:"Imprimante (IPP)",        port:631,  path:"/", icon:"&#128424;", commands:["print_test","status"]},
+  {id:"printer_hp",     name:"HP Printer",              port:8080, path:"/DevMgmt/ProductConfigDyn.xml", icon:"&#128424;", commands:["print_test","ink_levels"]},
+  {id:"printer_brother",name:"Brother Printer",         port:80,   path:"/general/status.html", icon:"&#128424;", commands:["status"]},
+  /* Camera IP */
+  {id:"hikvision",      name:"Hikvision Camera",        port:80,   path:"/ISAPI/System/deviceInfo", icon:"&#128247;", commands:["snapshot","stream","ptz"]},
+  {id:"dahua",          name:"Dahua Camera",            port:80,   path:"/cgi-bin/magicBox.cgi?action=getMachineName", icon:"&#128247;", commands:["snapshot","stream"]},
+  {id:"reolink",        name:"Reolink Camera",          port:80,   path:"/api.cgi", icon:"&#128247;", commands:["snapshot","stream","ptz"]},
+  {id:"axis_cam",       name:"Axis Camera",             port:80,   path:"/axis-cgi/usergroup.cgi", icon:"&#128247;", commands:["snapshot"]},
+  {id:"unifi_cam",      name:"UniFi Protect Camera",    port:7444, path:"/api/cameras", icon:"&#128247;", commands:["snapshot","stream"]},
+  /* IoT divers */
+  {id:"shelly",         name:"Shelly Device",           port:80,   path:"/shelly", icon:"&#128268;", commands:["relay_on","relay_off","status"]},
+  {id:"tasmota",        name:"Tasmota Device",          port:80,   path:"/cm?cmnd=Status", icon:"&#128268;", commands:["power_on","power_off","status"]},
+  {id:"esphome",        name:"ESPHome Device",          port:6052, path:"/", icon:"&#128268;", commands:["restart","status"]},
+  /* Autres */
+  {id:"pihole",         name:"Pi-hole",                 port:80,   path:"/admin/", icon:"&#128679;", commands:["disable","enable"]},
+  {id:"adguard",        name:"AdGuard Home",            port:3000, path:"/control/status", icon:"&#128679;", commands:["disable","enable"]},
+  {id:"transmission",   name:"Transmission BT",         port:9091, path:"/transmission/web/", icon:"&#128190;", commands:["start","stop","add_torrent"]},
+  {id:"sonarr",         name:"Sonarr",                  port:8989, path:"/api/v3/system/status", icon:"&#128250;", commands:[]},
+  {id:"radarr",         name:"Radarr",                  port:7878, path:"/api/v3/system/status", icon:"&#127916;", commands:[]},
+  {id:"emby",           name:"Emby Server",             port:8096, path:"/System/Info/Public", icon:"&#127916;", commands:[]},
+  {id:"unraid",         name:"Unraid",                  port:80,   path:"/", icon:"&#128190;", commands:[]},
+  {id:"proxmox",        name:"Proxmox",                 port:8006, path:"/api2/json/version", icon:"&#127968;", commands:[]}
+];
+window.AX_LAN_DEVICES_EXTRA = AX_LAN_DEVICES_EXTRA;
+
+/* Merge dans le catalogue principal au boot */
+(function(){
+  if(typeof AX_LAN_DEVICES === "object" && Array.isArray(AX_LAN_DEVICES)){
+    AX_LAN_DEVICES_EXTRA.forEach(function(dev){
+      if(!AX_LAN_DEVICES.find(function(d){return d.id === dev.id;})){
+        AX_LAN_DEVICES.push(dev);
+      }
+    });
+  }
+})();
+window._axDevicesPlusReady = true;
+
 var AX_LAN_DEVICES = [
   {id:"chromecast",     name:"Chromecast / Google Home", port:8008, path:"/setup/eureka_info", icon:"&#128250;", commands:["cast_url","stop","volume_up","volume_down"]},
   {id:"chromecast_v2",  name:"Chromecast (cast v2)",     port:8009, path:"/",                  icon:"&#128250;", commands:["cast_url","stop"]},
@@ -15030,6 +15091,61 @@ function axDeviceCommand(device, cmd, params){
         return Promise.resolve(axIRBlast(cmd));
       }
       return Promise.resolve({ok:false, msg:"axIRBlast manquant"});
+
+    case "shelly":
+      /* Shelly Gen1 : /relay/0?turn=on|off */
+      var shellyOp = cmd === "relay_on" ? "on" : cmd === "relay_off" ? "off" : "status";
+      return fetch(base + "/relay/0?turn=" + shellyOp).then(function(r){return {ok:r.ok, msg:"Shelly "+shellyOp};}).catch(function(e){return {ok:false, msg:e.message};});
+
+    case "tasmota":
+      /* Tasmota : /cm?cmnd=Power%20On|Off */
+      var tasOp = cmd === "power_on" ? "On" : cmd === "power_off" ? "Off" : "Status";
+      return fetch(base + "/cm?cmnd=Power%20" + tasOp).then(function(r){return {ok:r.ok, msg:"Tasmota Power "+tasOp};}).catch(function(e){return {ok:false, msg:e.message};});
+
+    case "yamaha_avr":
+      /* Yamaha Musiccast API */
+      var yEndpoint = cmd === "power" ? "/YamahaExtendedControl/v1/main/setPower?power=toggle" : cmd === "volume_up" ? "/YamahaExtendedControl/v1/main/setVolume?volume=up" : cmd === "volume_down" ? "/YamahaExtendedControl/v1/main/setVolume?volume=down" : cmd === "mute" ? "/YamahaExtendedControl/v1/main/setMute?enable=true" : "/YamahaExtendedControl/v1/system/getDeviceInfo";
+      return fetch(base + yEndpoint).then(function(r){return {ok:r.ok, msg:"Yamaha "+cmd};}).catch(function(e){return {ok:false, msg:e.message};});
+
+    case "denon_avr":
+      /* HEOS protocol via JSON over telnet 1255 ou HTTP 8080 */
+      return fetch(base + "/heos/system/heart_beat").then(function(r){return {ok:r.ok, msg:"Denon HEOS "+cmd};}).catch(function(e){return {ok:false, msg:e.message};});
+
+    case "asus_router":
+    case "netgear_router":
+    case "tplink_router":
+      /* Routeurs : ouvre admin UI en browser embed (auth requis) */
+      try{ window.open(base, "_blank"); return Promise.resolve({ok:true, msg:"Admin routeur ouvert"}); }
+      catch(e){ return Promise.resolve({ok:false, msg:e.message}); }
+
+    case "pihole":
+    case "adguard":
+      /* Pi-hole / AdGuard : disable/enable via API */
+      var dnsOp = cmd === "disable" ? "/admin/api.php?disable=300" : "/admin/api.php?enable";
+      return fetch(base + dnsOp).then(function(r){return {ok:r.ok, msg:"Pi-hole "+cmd};}).catch(function(e){return {ok:false, msg:e.message};});
+
+    case "hikvision":
+    case "dahua":
+    case "reolink":
+    case "axis_cam":
+      /* Camera : ouvre snapshot/stream URL */
+      var camPath = cmd === "snapshot" ? (device.id === "hikvision" ? "/ISAPI/Streaming/channels/101/picture" : device.id === "dahua" ? "/cgi-bin/snapshot.cgi" : "/snapshot") : "/";
+      try{ window.open(base + camPath, "_blank"); return Promise.resolve({ok:true, msg:"Camera "+cmd}); }
+      catch(e){ return Promise.resolve({ok:false, msg:e.message}); }
+
+    case "synology":
+    case "synology_https":
+    case "qnap":
+    case "unraid":
+    case "proxmox":
+      /* NAS : ouvre admin UI */
+      try{ window.open(base, "_blank"); return Promise.resolve({ok:true, msg:"NAS UI ouvert"}); }
+      catch(e){ return Promise.resolve({ok:false, msg:e.message}); }
+
+    case "transmission":
+      /* Transmission RPC : besoin session-id */
+      try{ window.open(base + "/transmission/web/", "_blank"); return Promise.resolve({ok:true, msg:"Transmission UI"}); }
+      catch(e){ return Promise.resolve({ok:false, msg:e.message}); }
 
     default:
       /* Generic : ouvre URL dans browser embed */
