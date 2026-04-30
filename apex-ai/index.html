@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.503",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.504",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -14637,6 +14637,98 @@ function vQuietStatus(){
 window.vQuietStatus = vQuietStatus;
 
 /* AX_V12_503_QUIET_UI_END */
+
+/* AX_V12_504_IRDB v12.504 - Bibliotheque IRDB community codes (10K codes IR) */
+
+/* Cherche dans le repo github.com/probonopd/irdb (open-source community DB) */
+function axIRDBSearch(brand, deviceType){
+  var query = encodeURIComponent((brand||"") + " " + (deviceType||""));
+  var url = "https://api.github.com/search/code?q=" + query + "+repo:probonopd/irdb+extension:csv&per_page=20";
+  var token = lg("ax_github_token","");
+  var headers = {"Accept":"application/vnd.github+json"};
+  if(token && token.length > 20) headers["Authorization"] = "Bearer " + token;
+  return fetch(url, {headers:headers}).then(function(r){
+    if(!r.ok) return {ok:false, status:r.status, msg:"GitHub API HTTP "+r.status};
+    return r.json();
+  }).then(function(d){
+    if(!d || !d.items) return {ok:false, msg:"Pas de resultats"};
+    var results = d.items.map(function(item){
+      return {
+        name: item.name,
+        path: item.path,
+        url: item.html_url,
+        rawUrl: "https://raw.githubusercontent.com/probonopd/irdb/master/" + item.path,
+        score: item.score
+      };
+    });
+    return {ok:true, results:results, total:d.total_count};
+  }).catch(function(e){
+    return {ok:false, msg:String(e&&e.message||e).slice(0,80)};
+  });
+}
+window.axIRDBSearch = axIRDBSearch;
+
+/* Charge un device IRDB depuis URL CSV - convertit en codes ax_ir_codes
+   Format IRDB CSV : functionname,protocol,device,subdevice,function */
+function axIRDBLoadDevice(rawUrl, prefix){
+  if(!rawUrl) return Promise.resolve({ok:false, msg:"URL manquante"});
+  prefix = prefix || "irdb_";
+  return fetch(rawUrl).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.text();
+  }).then(function(csv){
+    var lines = csv.split(/\r?\n/);
+    if(lines.length < 2) return {ok:false, msg:"CSV vide"};
+    var header = lines[0].toLowerCase().split(",");
+    var fnIdx = header.indexOf("functionname");
+    if(fnIdx < 0) fnIdx = 0;
+    var protoIdx = header.indexOf("protocol");
+    var devIdx = header.indexOf("device");
+    var subIdx = header.indexOf("subdevice");
+    var funIdx = header.indexOf("function");
+    var added = 0;
+    var codes = lg("ax_ir_codes", {});
+    if(typeof codes !== "object" || Array.isArray(codes)) codes = {};
+    for(var i=1;i<lines.length;i++){
+      var parts = lines[i].split(",");
+      if(parts.length < 2) continue;
+      var fnName = (parts[fnIdx]||"").trim().toLowerCase().replace(/[^a-z0-9_]/g,"_");
+      if(!fnName) continue;
+      var key = prefix + fnName;
+      /* Note : IRDB stocke protocol+codes, pas le hex Broadlink direct.
+         Le bridge HTTP doit traduire via lib pyIRC ou similaire. On stocke
+         le payload tel quel + flag irdb pour lecture future par bridge. */
+      codes[key] = {
+        irdb: true,
+        protocol: protoIdx >= 0 ? (parts[protoIdx]||"").trim() : "",
+        device: devIdx >= 0 ? (parts[devIdx]||"").trim() : "",
+        subdevice: subIdx >= 0 ? (parts[subIdx]||"").trim() : "",
+        functionCode: funIdx >= 0 ? (parts[funIdx]||"").trim() : "",
+        name: key,
+        cat: "irdb",
+        learned: Date.now()
+      };
+      added++;
+    }
+    ls("ax_ir_codes", codes);
+    if(typeof toast === "function") toast(added + " codes IRDB importes (prefix " + prefix + ")", "ok", {force:true, duration:5000});
+    return {ok:true, added:added, total:lines.length-1};
+  }).catch(function(e){
+    return {ok:false, msg:String(e&&e.message||e).slice(0,80)};
+  });
+}
+window.axIRDBLoadDevice = axIRDBLoadDevice;
+
+/* Liste les marques courantes pour Smart TV / AC dans IRDB */
+var AX_IRDB_BRANDS = {
+  tv: ["Samsung","LG","Sony","Philips","Panasonic","Sharp","Toshiba","Hisense","TCL","Hitachi","Vizio","Insignia","Element","RCA","Thomson","Clayton"],
+  ac: ["Daikin","Mitsubishi","LG","Samsung","Panasonic","Toshiba","Fujitsu","Carrier","Hitachi","Gree","Haier"],
+  stereo: ["Yamaha","Denon","Onkyo","Pioneer","Sony","Marantz","Bose"]
+};
+window.AX_IRDB_BRANDS = AX_IRDB_BRANDS;
+
+/* AX_V12_504_IRDB_END */
+
 
 
 
