@@ -1,6 +1,46 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-29 (Apex v12.450 / CMC v9.563).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Apex v12.465 / CMC v9.565).
+
+---
+
+## 🎯 RÈGLE PERMANENTE — TEMPLATE AUDIT PRO OFFICIEL (Kevin 2026-04-30, ABSOLUE)
+
+> **"Tu t'en serviras à chaque audit et pour CMCteams, tous mes futurs projets aussi. À chaque fois que je te parlerai de faire un audit, tu feras celui-là. À moins que tu en connaisses un encore plus complet et plus détaillé."**
+
+**Règle absolue** — Apex, CMCteams, tous projets futurs Kevin :
+
+À chaque demande d'audit (mots-clés "audit", "audit complet", "fais un audit", "audit général expert"), je DOIS :
+
+1. **Suivre AUDIT_TEMPLATE_PRO.md** à la racine du repo (template Big4 + OWASP ASVS L2 + NIST CSF + CIS Controls v8 + SOC2 + STRIDE + MITRE ATT&CK + Lighthouse PWA + AI Safety pour Apex spécifique)
+
+2. **Méthode obligatoire 6 phases** :
+   - Phase 0 : Setup (lire codebase + CLAUDE.md + lessons learned)
+   - Phase 1 : 5-6 agents Explore parallèles (sécu/perf/archi/code/AI safety/compliance)
+   - Phase 2 : Synthèse Plan agent + cross-référence findings
+   - Phase 3 : Vérification manuelle via grep avant tout fix
+   - Phase 4 : Application fixes (scripts idempotents + node --check + commit + push)
+   - Phase 5 : **Audit POST-FIX systématique** (relancer 5 agents pour mesurer impact réel)
+   - Phase 6 : Rapport markdown formel selon le template
+
+3. **Pondération scoring 6 axes obligatoire** :
+   - Sécurité 25% / Performance 20% / Conformité 20% / Architecture 15% / Code quality 10% / Data integrity 10%
+
+4. **Sévérités CVSS standard** :
+   - P0 Critical (CVSS ≥ 9.0) / P1 High (7.0-8.9) / P2 Medium (4.0-6.9) / P3 Low (< 4.0)
+
+5. **Verdict production-ready 3 niveaux** :
+   - ≥ 80/100 = OUI / 65-79 = SOUS CONDITION / < 65 = NON
+
+6. **AI Safety audit obligatoire** pour Apex (10 contrôles : alignment, hallucinations, prompt injection, jailbreak, data poisoning, tool abuse, privacy leak, refusal calibration, citation accuracy, confidence calibration)
+
+7. **Honnêteté radicale** : score réel exposé sans complaisance. Si écart estimation interne vs audit externe > 10 points, documenter comme lesson learned (`ax_lessons_learned_struct`).
+
+8. **Évolution permanente** : si Kevin trouve template encore plus puissant (FedRAMP High / DoD STIG / PCI-DSS L1) → intégrer immédiatement et bumper version template.
+
+S'applique à : Apex AI, CMCteams, e-Apex, e-KDMC, IA-KDMC, tout projet futur Kevin.
+
+---
 
 ---
 
