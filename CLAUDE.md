@@ -4,6 +4,33 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Ape
 
 ---
 
+## 📦 RÈGLE PERMANENTE — DISTINCTION PROJETS vs OUTILS/INFRA/VUES (Kevin 2026-04-30, ABSOLUE)
+
+> **"Ia apex ne sert a rien... enleve le projet de lapp ensuite cloudflare et backend ne sont pas des projets il me semble"** — Kevin 2026-04-30
+> **"Note que quand je te dis de tout mettre à jour tu ne dois pas aussi oublier bilan car ça aussi ce n'est pas un projet"** — Kevin 2026-04-30
+
+Quand Kevin parle de "projets" gérés par Apex, distinction stricte :
+
+### ✅ PROJETS (à lister dans `vProjects()` + `AX_PROJECTS_REGISTRY` + `APEX_PROJECTS.md`)
+Apps autonomes avec cycle de vie propre, déployées séparément, utilisateurs finaux :
+- APEX AI, CMCteams, Apex Chat, Social Video Pipeline, Télécommande, CrackPass, e-APEX
+
+### ❌ PAS PROJETS (à NE JAMAIS lister dans `vProjects()`)
+- **Outils internes** : Cloudflare Tools (push worker, VAPID gen, deploy worker)
+- **Infrastructure** : Backend Proxy (Cloudflare Worker proxy CORS), GitHub Actions
+- **Vues/Dashboards** : Bilan Général (`vBilan`), Audit, Sentinelles, Tokens
+- **Idées non démarrées** : IA-APEX (archivé pour mémoire dans APEX_PROJECTS.md uniquement)
+
+### Test mental obligatoire avant ajout dans vProjects()
+> *"Cet item est-il une APP autonome avec un cycle de vie propre, déployable séparément, avec des utilisateurs finaux ? Ou bien c'est un outil/vue/infra utilisé par d'autres projets ?"*
+
+Si OUI app autonome → vProjects.
+Si NON (outil/vue/infra) → APEX_PROJECTS.md section "⚙️ Outils & Infrastructure" uniquement.
+
+S'applique : Apex AI vProjects() + AX_PROJECTS_REGISTRY + APEX_PROJECTS.md + tous projets futurs.
+
+---
+
 ## 🎯 RÈGLE PERMANENTE — 100/100 RÉEL SUR TOUS LES AXES TOUJOURS (Kevin 2026-04-30, ABSOLUE)
 
 > **"Quand je te dis 100/100 ou 200/100 ou 150/100 etc c'est toujours sur TOUS LES AXES."**

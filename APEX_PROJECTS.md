@@ -20,26 +20,29 @@
 
 ---
 
-## 📦 8 PROJETS GÉRÉS (Kevin 2026-04-30 : retrait IA-APEX, Cloudflare, Backend)
+## 📦 7 PROJETS GÉRÉS (Kevin 2026-04-30 : retrait IA-APEX, Cloudflare, Backend, Bilan)
 
 | # | ID | Nom | Statut | Version | Localisation |
 |---|----|----|--------|---------|--------------|
-| 1 | `kdmc` | **APEX AI** | 🟢 Production | v12.548 | `apex-ai/` |
+| 1 | `kdmc` | **APEX AI** | 🟢 Production | v12.550 | `apex-ai/` |
 | 2 | `cmcteams` | **CMCteams** (casino Monaco) | 🟢 Production | v9.579 | `index.html` racine |
 | 3 | `apexchat` | **Apex Chat** (WhatsApp clone) | 🟠 Dév Mode A | v0.2 | `messaging-app/` |
 | 4 | `socialvideo` | **Social Video Pipeline** | 🟠 Dév Phase 3 | v0.3 | `tools/social/` |
 | 5 | `remote` | **Télécommande Universelle** | 🟢 Production | v1.2 | dans Apex AI |
 | 6 | `crackpass` | **CrackPass / Vault** | 🟢 Production | v1.1 | dans Apex AI |
 | 7 | `ekdmc` | **e-APEX** (e-commerce) | 🟠 Dév | v0.1 | TBD |
-| 8 | `bilan` | **Bilan Général** | 🟢 Production | live | `BILAN_PRO.md` + `vBilan` |
 
-### ⚙️ Outils & Infrastructure (pas projets, mais utilisés par projets ci-dessus)
-- **Cloudflare Tools** (`tools/cloudflare/`) : push worker + VAPID gen + deploy worker — utilisé par Apex AI + Apex Chat
-- **Backend Proxy** (`apex-ai/proxy-apex.js`) : proxy Cloudflare Worker Anthropic API (CORS iOS) — utilisé par Apex AI
-- **GitHub Actions** (`.github/workflows/`) : CI/CD + social-publish + social-scheduler + claude-todo-watcher
+### ⚙️ Outils, Infrastructure & Vues (PAS PROJETS, à NE PAS lister dans vProjects)
+> ⚠️ **RÈGLE PERMANENTE Kevin 2026-04-30** : ne JAMAIS ajouter ces items dans `vProjects()` ni dans `AX_PROJECTS_REGISTRY`. Ce sont des outils/vues/infra, pas des projets autonomes.
 
-### 🗄️ Archive (non-actifs)
-- **IA-APEX** : projet IA personnel à démarrer — archivé dans cette doc, pas dans vProjects (Kevin 2026-04-30)
+- **Cloudflare Tools** (`tools/cloudflare/`) : push worker + VAPID gen + deploy worker — outil utilisé par Apex AI + Apex Chat
+- **Backend Proxy** (`apex-ai/proxy-apex.js`) : proxy Cloudflare Worker Anthropic API (CORS iOS) — infrastructure
+- **Bilan Général** (`vBilan` + `BILAN_PRO.md`) : vue admin valorisations + plan budgétaire — vue dashboard, pas un projet
+- **GitHub Actions** (`.github/workflows/`) : CI/CD + social-publish + social-scheduler + claude-todo-watcher — automation
+- **Sentinelle projects-watch** : audit hebdo via `axProjectsAudit()` — fonction interne Apex AI
+
+### 🗄️ Archive (idées non-démarrées — info conservée historique)
+- **IA-APEX** : projet IA personnel à démarrer — jamais commencé, archivé pour mémoire
 
 ---
 
