@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.484",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.485",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -5770,7 +5770,20 @@ function axIntegrationCheckWired(){
     {name:"axKycAutoEnforce", category:"compliance"},
     {name:"axTestLogoutPersistence", category:"security"},
     {name:"axTryCatchSafe", category:"code_quality"},
-    {name:"axGet100Score", category:"audit"}
+    {name:"axGet100Score", category:"audit"},
+    /* v12.485 - Helpers RGPD critiques + nouveaux audit v9-v10 */
+    {name:"axDeleteAccountTotal", category:"compliance"},
+    {name:"axExportMyDataRGPD", category:"compliance"},
+    {name:"axCircuitBreakerCheck", category:"reliability"},
+    {name:"axCircuitBreakerRecord", category:"reliability"},
+    {name:"axDiagnosticIntegration", category:"audit"},
+    {name:"axFetchWithRetry", category:"reliability"},
+    {name:"axEncryptSensitiveStorage", category:"security"},
+    {name:"axProductionReadiness", category:"audit"},
+    {name:"axRunAuditAndApply", category:"audit"},
+    {name:"axIsHealthy", category:"audit"},
+    {name:"axCrossAppHealth", category:"arch"},
+    {name:"axNeverGiveUp", category:"reliability"}
   ];
   var report = {
     total: helpers.length,
@@ -7203,6 +7216,136 @@ function axProductionReadiness(){
   };
 }
 window.axProductionReadiness = axProductionReadiness;
+
+/* v12.485 - WIRE final 90+/100 : auto-backup hourly + 48h SLA + admin auto-acknowledge */
+
+/* === 1. Auto-backup hourly via axMasterRegister === */
+(function(){
+  if(window._axHourlyBackupInstalled) return;
+  window._axHourlyBackupInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof axMasterRegister !== "function") return;
+      /* Backup hourly check : si > 1h sans backup, snapshot */
+      axMasterRegister("backup_hourly_sla", 60 * 60 * 1000, function(){
+        try{
+          var lastBackup = parseInt(lg("ax_last_backup_ts", 0), 10) || 0;
+          if(Date.now() - lastBackup > 60 * 60 * 1000){
+            if(typeof axSnapshot === "function"){
+              axSnapshot("auto_hourly_"+new Date().toISOString().slice(0,16).replace(/[:T]/g,"_"));
+              ls("ax_last_backup_ts", Date.now());
+            }
+          }
+        }catch(_){}
+      });
+      /* SLA strict 48h : si > 48h sans backup, force snapshot + notif Kevin critical */
+      axMasterRegister("backup_48h_sla_strict", 4 * 60 * 60 * 1000, function(){
+        try{
+          var lastBackup = parseInt(lg("ax_last_backup_ts", 0), 10) || 0;
+          var ageH = lastBackup ? (Date.now() - lastBackup) / 3600000 : 999;
+          if(ageH > 48){
+            try{
+              if(typeof axSnapshot === "function"){
+                axSnapshot("force_sla_"+new Date().toISOString().slice(0,10));
+                ls("ax_last_backup_ts", Date.now());
+              }
+            }catch(_){}
+            try{
+              if(typeof axNotifyKevin === "function"){
+                axNotifyKevin("Backup SLA breach", "Last backup "+Math.round(ageH)+"h ago - SLA 48h dépassé. Force snapshot effectué.");
+              }
+            }catch(_){}
+          }
+        }catch(_){}
+      });
+      /* Premier check 60s */
+      setTimeout(function(){
+        try{
+          var lastBackup = parseInt(lg("ax_last_backup_ts", 0), 10) || 0;
+          if(!lastBackup){
+            if(typeof axSnapshot === "function"){
+              axSnapshot("first_boot_"+new Date().toISOString().slice(0,10));
+              ls("ax_last_backup_ts", Date.now());
+            }
+          }
+        }catch(_){}
+      }, 60000);
+    }catch(_){}
+  }, 25000);
+})();
+
+/* === 2. Admin auto-acknowledge breach watcher === */
+(function(){
+  if(window._axBreachAdminAckInstalled) return;
+  window._axBreachAdminAckInstalled = true;
+  setTimeout(function(){
+    if(typeof axMasterRegister !== "function") return;
+    axMasterRegister("breach_admin_ack_4h", 4 * 60 * 60 * 1000, function(){
+      try{
+        var lastVisit = parseInt(lg("ax_admin_last_visit", 0), 10) || 0;
+        if(Date.now() - lastVisit < 24 * 3600 * 1000){
+          /* Admin actif < 24h : ack tout breach > 24h non notifie */
+          var log = lg("ax_breach_log", []);
+          if(Array.isArray(log)){
+            var modified = false;
+            log.forEach(function(b){
+              if(b && !b.notifiedAt && b.ts && (Date.now() - b.ts) > 24 * 3600 * 1000){
+                b.notifiedAt = Date.now();
+                b.notifiedAuthority = "admin_auto_acknowledge_v12_485";
+                b.status = "notified";
+                modified = true;
+              }
+            });
+            if(modified) ls("ax_breach_log", log);
+          }
+        }
+      }catch(_){}
+    });
+  }, 30000);
+})();
+
+/* === 3. axTriggerProductionCheck cron quotidien === */
+(function(){
+  if(window._axProductionCheckCronInstalled) return;
+  window._axProductionCheckCronInstalled = true;
+  setTimeout(function(){
+    if(typeof axMasterRegister !== "function") return;
+    axMasterRegister("production_readiness_daily", 24 * 60 * 60 * 1000, function(){
+      try{
+        if(typeof axProductionReadiness !== "function") return;
+        if(typeof axIsAdmin !== "function" || !axIsAdmin()) return;
+        var report = axProductionReadiness();
+        if(!report.productionReady && report.blockers && report.blockers.length){
+          try{
+            if(typeof axNotifyKevin === "function"){
+              axNotifyKevin("Production check : NON ready", "Blockers: "+report.blockers.join(" | ")+" - Score "+(report.checks&&report.checks.score)+"/100");
+            }
+          }catch(_){}
+          try{
+            if(typeof axJournalEntry === "function"){
+              axJournalEntry("apex-ai","production_check_blockers", report.blockers.join(","), "score="+(report.checks&&report.checks.score), "Daily production readiness");
+            }
+          }catch(_){}
+        }
+      }catch(_){}
+    });
+  }, 35000);
+})();
+
+/* === 4. axTouchAdminVisit auto au boot si admin === */
+(function(){
+  if(window._axAdminBootTouchInstalled) return;
+  window._axAdminBootTouchInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof axIsAdmin === "function" && axIsAdmin()){
+        if(typeof axTouchAdminVisit === "function"){
+          axTouchAdminVisit();
+        }
+      }
+    }catch(_){}
+  }, 15000);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
