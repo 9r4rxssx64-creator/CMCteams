@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.535",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.536",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -28610,7 +28610,8 @@ window.axGetEncryptedLS = async function(k){
   window._axEncryptMigrationScheduled = true;
   setTimeout(function(){
     try{
-      if(typeof axIsAdmin === "function" && axIsAdmin() && lg("ax_ls_encrypt_enabled", false)){
+      /* AX_V12_536_SECU_HARDEN : LS encrypt ACTIVE par defaut (v12.536 Phase 3 securite) */
+      if(typeof axIsAdmin === "function" && axIsAdmin() && lg("ax_ls_encrypt_enabled", true)){
         axMigrateLSEncrypt();
       }
     }catch(_){}
@@ -29294,6 +29295,81 @@ window.axRestoreV535Backup = function(){
     try{ if(typeof axIsAdmin === "function" && axIsAdmin()) axMigrate535(); }catch(_){}
   }, 8000);
 })();
+
+
+/* AX_V12_536_SECU_HARDEN v12.536 - Phase 3 securite hardening */
+
+/* DOMPurify systematic wrapper (audit P0 : 137 sites innerHTML) */
+window.axSafeHTML = function(target, html){
+  if(!target) return;
+  try{
+    if(typeof DOMPurify !== "undefined" && DOMPurify.sanitize){
+      target.innerHTML = DOMPurify.sanitize(String(html||""), {
+        FORBID_TAGS:["script","iframe","object","embed","form"],
+        FORBID_ATTR:["onerror","onload","onclick","onmouseover","onfocus","onsubmit"]
+      });
+    } else {
+      /* Fallback : strip script + on* handlers */
+      var s = String(html||"");
+      s = s.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+      s = s.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "");
+      s = s.replace(/\s+on\w+\s*=\s*'[^']*'/gi, "");
+      s = s.replace(/javascript\s*:/gi, "#blocked-");
+      target.innerHTML = s;
+    }
+  }catch(_){ try{ target.textContent = String(html||""); }catch(__){} }
+};
+
+/* PIN rate-limit progressif (audit P2) */
+window.axCheckPinRateLimit = function(){
+  var lg = window.lg || function(k, d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var fails = lg("ax_pin_fails", {count:0, until:0});
+  if(fails.until && Date.now() < fails.until){
+    var remainSec = Math.ceil((fails.until - Date.now()) / 1000);
+    return {locked:true, remainSec:remainSec, reason:"cooldown"};
+  }
+  return {locked:false, count:fails.count||0};
+};
+
+window.axRecordPinFail = function(){
+  var lg = window.lg || function(k, d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var ls = window.ls || function(k, v){localStorage.setItem(k, JSON.stringify(v));};
+  var fails = lg("ax_pin_fails", {count:0, until:0});
+  fails.count = (fails.count||0) + 1;
+  /* Cooldown progressif : [0, 0, 0, 0, 0, 30s, 2min, 10min, 1h, 24h] */
+  var delays = [0, 0, 0, 0, 0, 30000, 120000, 600000, 3600000, 86400000];
+  var d = delays[Math.min(fails.count, delays.length-1)];
+  if(d) fails.until = Date.now() + d;
+  ls("ax_pin_fails", fails);
+  if(fails.count >= 5 && typeof axNotifyKevin === "function"){
+    try{ axNotifyKevin("Tentatives PIN echouees", fails.count + " fails consecutifs"); }catch(_){}
+  }
+  return fails;
+};
+
+window.axResetPinFails = function(){
+  var ls = window.ls || function(k, v){localStorage.setItem(k, JSON.stringify(v));};
+  ls("ax_pin_fails", {count:0, until:0});
+};
+
+/* Firebase SSE HMAC signature optionnelle (Phase 4) */
+window.axVerifyFbHmac = function(payload, signature){
+  /* Stub - vraie impl Phase 4 avec ax_firebase_hmac_secret */
+  var lg = window.lg || function(k, d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var secret = lg("ax_firebase_hmac_secret", "");
+  if(!secret) return true; /* Pas configure = pas de verification (compat) */
+  /* TODO: real HMAC-SHA256 verification Phase 4 */
+  return true;
+};
+
+/* CSP nonce generator (preparation Phase 4 CSP tightening) */
+window.axGenCSPNonce = function(){
+  var arr = new Uint8Array(16);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode.apply(null, arr));
+};
+
+window.AX_CSP_NONCE = window.axGenCSPNonce();
 
 </script>
 </body>
