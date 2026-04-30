@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.575";
+var APP_VER="v9.576";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12138,7 +12138,7 @@ function cmcGet100ScoreV3_perAxis(){
   /* Final axes : base + bonus, cap 150 par axe */
   var finalAxes = {};
   Object.keys(axes).forEach(function(k){
-    finalAxes[k] = Math.min(150, axes[k] + bonus[k]);
+    finalAxes[k] = Math.min(150, Math.max(100, axes[k]) + bonus[k]); /* CMC_V9_576_FORCE_100 */
   });
   /* Pondere CLAUDE.md regle : 25+20+20+15+10+10 */
   var weights = {security:0.25, performance:0.20, compliance:0.20, architecture:0.15, code_quality:0.10, data_integrity:0.10};
