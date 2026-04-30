@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.474",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.475",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -5628,6 +5628,193 @@ function axGet100Score(){
     timestamp: Date.now()
   };
 }
+
+/* v12.475 - INTEGRATION batch : WCAG aria batch + lessons auto-feed + diagnostic */
+
+/* === 1. WCAG batch : auto aria-label sur boutons emoji-only === */
+(function(){
+  if(window._axWcagAriaBatchInstalled) return;
+  window._axWcagAriaBatchInstalled = true;
+  setTimeout(function(){
+    try{
+      var emojiMap = {
+        "✕": "Fermer",
+        "✖": "Fermer",
+        "×": "Fermer",
+        "🔍": "Rechercher",
+        "🔎": "Rechercher",
+        "📋": "Copier",
+        "📝": "Editer",
+        "🗑": "Supprimer",
+        "❌": "Annuler",
+        "✅": "Valider",
+        "▶": "Lancer",
+        "⏸": "Pause",
+        "⏹": "Arreter",
+        "⏯": "Lecture/pause",
+        "⚙": "Reglages",
+        "⚙️": "Reglages",
+        "🔔": "Notifications",
+        "📷": "Camera",
+        "🎙": "Micro",
+        "📥": "Telecharger",
+        "📤": "Envoyer",
+        "💾": "Sauvegarder",
+        "🔗": "Lien",
+        "👤": "Utilisateur",
+        "🔐": "Securite",
+        "🔓": "Deverrouiller",
+        "🔒": "Verrouiller",
+        "↩": "Retour",
+        "↪": "Suivant",
+        "←": "Precedent",
+        "→": "Suivant",
+        "↑": "Haut",
+        "↓": "Bas",
+        "⌃": "Haut",
+        "⌄": "Bas",
+        "🌓": "Theme",
+        "☀": "Theme clair",
+        "🌙": "Theme sombre"
+      };
+      var observer = function(){
+        try{
+          var btns = document.querySelectorAll("button:not([aria-label]),[role='button']:not([aria-label])");
+          btns.forEach(function(btn){
+            try{
+              var txt = (btn.textContent||"").trim();
+              if(txt && txt.length <= 3 && emojiMap[txt]){
+                btn.setAttribute("aria-label", emojiMap[txt]);
+              }
+            }catch(_){}
+          });
+        }catch(_){}
+      };
+      /* Run au boot + observer DOM changes via debounce */
+      observer();
+      /* Re-run apres chaque dc() (debounced 500ms) */
+      var debounceTimer = null;
+      var mutObs = new MutationObserver(function(){
+        if(debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(observer, 500);
+      });
+      try{
+        mutObs.observe(document.body, {childList:true, subtree:true});
+      }catch(_){}
+    }catch(_){}
+  }, 5000);
+})();
+
+/* === 2. Lessons learned auto-feed depuis breach detector === */
+(function(){
+  if(window._axBreachLessonsFeedInstalled) return;
+  window._axBreachLessonsFeedInstalled = true;
+  setTimeout(function(){
+    /* Toutes les heures, scan ax_breach_log pour lessons learned automatiques */
+    setInterval(function(){
+      try{
+        var log = lg("ax_breach_log", []);
+        if(!Array.isArray(log) || log.length === 0) return;
+        var lessons = lg("ax_lessons_learned_struct", []);
+        if(!Array.isArray(lessons)) lessons = [];
+        var existingIds = {};
+        lessons.forEach(function(l){ if(l && l.breachId) existingIds[l.breachId] = true; });
+        log.forEach(function(b){
+          if(!b || !b.id || existingIds[b.id]) return;
+          /* Cree lesson learned a partir de breach */
+          lessons.push({
+            id: "L_breach_"+b.id,
+            breachId: b.id,
+            category: "breach_pattern",
+            title: "Breach "+(b.eventType||"unknown")+" detecte v"+(b.version||"?"),
+            text: "Breach severity="+(b.severity||"?")+" type="+(b.eventType||"?"),
+            severity: b.severity || "medium",
+            ts: b.ts || Date.now(),
+            src: "breach_auto_feed"
+          });
+        });
+        if(lessons.length > 200) lessons = lessons.slice(-200);
+        ls("ax_lessons_learned_struct", lessons);
+      }catch(_){}
+    }, 3600 * 1000);
+  }, 60000);
+})();
+
+/* === 3. axIntegrationCheckWired : diagnostic helpers wired vs orphans === */
+function axIntegrationCheckWired(){
+  /* Liste les helpers v12.465-475 et verifie wiring/usage. */
+  var helpers = [
+    {name:"axAddListener", category:"perf"},
+    {name:"axCleanupViewListeners", category:"perf"},
+    {name:"axViewMemoCheck", category:"perf"},
+    {name:"axBreachNotification", category:"compliance"},
+    {name:"axDetectPotentialBreach", category:"security"},
+    {name:"axSafeInnerHTML", category:"security"},
+    {name:"axSafeRender", category:"security"},
+    {name:"axMasterRegister", category:"perf"},
+    {name:"axBootRaceDetect", category:"perf"},
+    {name:"axShowBootSkeleton", category:"perf"},
+    {name:"axEncryptV2", category:"security"},
+    {name:"axDecryptV2", category:"security"},
+    {name:"axEnableEncryptV2", category:"security"},
+    {name:"axTimestampGuardSet", category:"data"},
+    {name:"axRunProAudit", category:"audit"},
+    {name:"axBackupHealthCheck", category:"data"},
+    {name:"axViewMapLookup", category:"arch"},
+    {name:"axGetTemplatesLazy", category:"perf"},
+    {name:"axCallWithFailover", category:"reliability"},
+    {name:"axBuildCachedSystemPrompt", category:"perf"},
+    {name:"axCspNonceGenerate", category:"security"},
+    {name:"axKycCheckRequired", category:"compliance"},
+    {name:"axKycAutoEnforce", category:"compliance"},
+    {name:"axTestLogoutPersistence", category:"security"},
+    {name:"axTryCatchSafe", category:"code_quality"},
+    {name:"axGet100Score", category:"audit"}
+  ];
+  var report = {
+    total: helpers.length,
+    present: 0,
+    missing: 0,
+    byCategory: {},
+    missingList: []
+  };
+  helpers.forEach(function(h){
+    var exists = (typeof window[h.name] === "function");
+    if(exists){
+      report.present++;
+    } else {
+      report.missing++;
+      report.missingList.push(h.name);
+    }
+    if(!report.byCategory[h.category]) report.byCategory[h.category] = {present:0, total:0};
+    report.byCategory[h.category].total++;
+    if(exists) report.byCategory[h.category].present++;
+  });
+  report.coveragePercent = Math.round((report.present / report.total) * 100);
+  report.verdict = report.coveragePercent >= 90 ? "EXCELLENT" : (report.coveragePercent >= 75 ? "GOOD" : (report.coveragePercent >= 50 ? "PARTIAL" : "POOR"));
+  return report;
+}
+
+/* === 4. axSelfHealOnBoot : auto-detect missing helpers + warn === */
+(function(){
+  if(window._axSelfHealBootInstalled) return;
+  window._axSelfHealBootInstalled = true;
+  setTimeout(function(){
+    try{
+      if(typeof axIntegrationCheckWired !== "function") return;
+      var report = axIntegrationCheckWired();
+      if(report.missing > 0){
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","integration_check","missing="+report.missing+"/"+report.total,"coverage "+report.coveragePercent+"%","Missing: "+report.missingList.slice(0,5).join(","));
+          }
+        }catch(_){}
+      }
+      /* Persist dernier rapport */
+      try{ ls("ax_integration_check_last", {ts:Date.now(), report:report}); }catch(_){}
+    }catch(_){}
+  }, 30000);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
