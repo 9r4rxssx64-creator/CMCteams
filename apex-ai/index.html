@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.451",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.452",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2326,6 +2326,198 @@ function axServiceClientAuto(question, clientPhone, clientName){
       resolve({ok:false, reason:"error"});
     }
   });
+}
+
+/* v12.452 - vAdminCenter centralise + helpers UI inspires Claude app */
+
+function axRenderSettingItem(item){
+  /* item = {icon, label, value?, chevron?, toggle?, fn, danger?} */
+  var icon = item.icon || "";
+  var label = esc(item.label || "");
+  var value = item.value !== undefined ? esc(String(item.value)) : "";
+  var rightSide = "";
+  if(item.toggle !== undefined){
+    var on = !!item.toggle;
+    rightSide = '<div class="ax-toggle" style="width:44px;height:24px;border-radius:12px;background:'+(on?"#5aa8ff":"rgba(255,255,255,.18)")+';position:relative;flex-shrink:0;transition:.2s"><div style="position:absolute;top:2px;left:'+(on?"22px":"2px")+';width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s"></div></div>';
+  } else if(item.chevron) {
+    rightSide = (value?'<span style="color:var(--ax-text-dim);font-size:13px;margin-right:6px">'+value+'</span>':"") + '<span style="color:var(--ax-text-dim);font-size:18px;line-height:1">&rsaquo;</span>';
+  } else if(value){
+    rightSide = '<span style="color:var(--ax-text-dim);font-size:13px">'+value+'</span>';
+  }
+  var color = item.danger ? "#ff5858" : "#fff";
+  var fnAttr = item.fn ? ('onclick="('+item.fn+')();"') : "";
+  return '<div role="button" tabindex="0" '+fnAttr+' style="display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:56px;cursor:pointer;color:'+color+';transition:background .15s" onmouseover="this.style.background=&quot;rgba(255,255,255,.04)&quot;" onmouseout="this.style.background=&quot;transparent&quot;">' +
+    '<span style="font-size:20px;width:24px;text-align:center;flex-shrink:0">'+icon+'</span>' +
+    '<span style="flex:1;font-size:15px;font-weight:500">'+label+'</span>' +
+    rightSide +
+    '</div>';
+}
+
+function axRenderSettingGroup(title, items){
+  if(!items || !items.length) return "";
+  var h = '<div class="ax-setting-group" style="margin-bottom:24px">';
+  if(title) h += '<div style="font-size:11px;font-weight:600;color:var(--ax-text-dim);text-transform:uppercase;letter-spacing:.5px;padding:0 16px 8px">'+esc(title)+'</div>';
+  h += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden">';
+  items.forEach(function(it,i){
+    if(i>0) h += '<div style="height:1px;background:rgba(255,255,255,.06);margin-left:52px"></div>';
+    h += axRenderSettingItem(it);
+  });
+  h += '</div></div>';
+  return h;
+}
+
+function axRenderActionCard(opts){
+  /* opts = {icon, label, desc, fn, primary?} */
+  var bg = opts.primary ? "linear-gradient(135deg,var(--ax-gold),#ffd860)" : "rgba(255,255,255,.06)";
+  var color = opts.primary ? "#08080f" : "#fff";
+  return '<div role="button" tabindex="0" onclick="('+opts.fn+')();" style="background:'+bg+';color:'+color+';padding:18px 20px;border-radius:16px;cursor:pointer;display:flex;align-items:center;gap:14px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.25)">'+
+    '<span style="font-size:32px">'+(opts.icon||"")+'</span>'+
+    '<div style="flex:1"><div style="font-size:17px;font-weight:700">'+esc(opts.label||"")+'</div>'+
+    (opts.desc?'<div style="font-size:12px;opacity:.85;margin-top:2px">'+esc(opts.desc)+'</div>':"")+
+    '</div><span style="font-size:22px;opacity:.7">&rsaquo;</span></div>';
+}
+
+function axShowAuditGeneralExpert(){
+  if(typeof toast==="function") toast("Audit general expert en cours...","info",{duration:2000});
+  if(typeof axTotalAudit !== "function"){
+    if(typeof toast==="function") toast("axTotalAudit indisponible","err");
+    return;
+  }
+  axTotalAudit({verbose:true}).then(function(report){
+    /* Afficher rapport HTML dans modal full */
+    var html = '<h2 style="margin:0 0 12px 0;color:var(--ax-gold)">Rapport audit expert</h2>';
+    html += '<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:12px">'+new Date().toLocaleString("fr-FR")+' - APEX '+APP_VER+'</div>';
+    if(report && typeof report === "object"){
+      var sections = report.sections || report;
+      Object.keys(sections).forEach(function(k){
+        var s = sections[k];
+        if(typeof s !== "object" || !s) return;
+        var sev = s.severity || (s.errors&&s.errors.length?"err":(s.warns&&s.warns.length?"warn":"ok"));
+        var sevColor = sev==="err"||sev==="critical"?"#ff5858":(sev==="warn"?"#ffaa3a":"#4cd080");
+        html += '<div style="background:rgba(255,255,255,.04);border-left:4px solid '+sevColor+';padding:12px;margin-bottom:8px;border-radius:8px">';
+        html += '<div style="font-weight:700;color:'+sevColor+'">'+esc(k)+'</div>';
+        if(s.summary) html += '<div style="font-size:13px;margin-top:4px">'+esc(s.summary)+'</div>';
+        if(s.score !== undefined) html += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">Score : '+s.score+'/100</div>';
+        if(s.issues && Array.isArray(s.issues)){
+          html += '<ul style="margin:6px 0 0 0;padding-left:18px;font-size:12px">';
+          s.issues.slice(0,5).forEach(function(iss){html+='<li>'+esc(typeof iss==="string"?iss:JSON.stringify(iss).slice(0,140))+'</li>';});
+          html += '</ul>';
+        }
+        html += '</div>';
+      });
+    } else {
+      html += '<pre style="white-space:pre-wrap;font-size:11px">'+esc(JSON.stringify(report,null,2).slice(0,3000))+'</pre>';
+    }
+    html += '<button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;margin-top:12px;min-height:44px">Fermer</button>';
+    if(typeof _showModal==="function") _showModal(html);
+    else if(typeof toast==="function") toast("Rapport: "+JSON.stringify(report).slice(0,200),"info",{duration:5000});
+  }).catch(function(e){
+    if(typeof toast==="function") toast("Audit echoue: "+(e.message||e),"err",{duration:4000});
+  });
+}
+
+function vAdminCenter(){
+  if(!K || !K.user || K.user.id !== ADMIN_ID){
+    return '<div style="padding:24px;text-align:center;color:var(--ax-text-dim)">Section reservee admin</div>';
+  }
+  var pendingValidations = 0;
+  try{ var pv = lg("ax_pending_validations",[]); if(Array.isArray(pv)) pendingValidations = pv.filter(function(p){return p && p.status==="pending";}).length; }catch(_){}
+  var pendingPRs = +lg("ax_pending_prs_count", 0);
+  var hasWa = lg("ax_kevin_whatsapp_phone","").length > 7;
+  var hasGroq = lg("ax_groq_key","").length > 20;
+  var hasGemini = lg("ax_gemini_key","").length > 20;
+  var hasAnth = (lg("ax_api_key","").length>20) || (lg("ax_shared_api_key","").length>20);
+  var hasVoice = !!lg("ax_voice_print_"+K.user.id, null);
+  var theme = lg("ax_theme","Systeme");
+  var lang = ((lg("ax_settings",{})||{}).lang || "FR").toUpperCase();
+  var planLabel = (typeof axGetCurrentPlanLabel==="function") ? axGetCurrentPlanLabel() : "Forfait Max";
+
+  var h = '<div style="padding:16px;max-width:540px;margin:0 auto">';
+  h += '<h2 style="font-size:24px;font-weight:800;margin:8px 0 20px 0">Centre admin</h2>';
+
+  /* TOP CARD : Audit general expert */
+  h += axRenderActionCard({
+    icon:"\ud83d\udd0d",
+    label:"Audit general expert",
+    desc:"9 sections + agents + crew experts",
+    fn:"axShowAuditGeneralExpert",
+    primary:true
+  });
+
+  /* Quick actions stats */
+  if(pendingPRs > 0 || pendingValidations > 0){
+    h += '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">';
+    if(pendingPRs > 0) h += '<div onclick="axCheckPendingPRsForAttention&&axCheckPendingPRsForAttention()" style="flex:1;min-width:140px;background:rgba(255,170,58,.1);border:1px solid rgba(255,170,58,.3);border-radius:12px;padding:12px;cursor:pointer"><div style="font-size:22px;font-weight:800;color:#ffaa3a">'+pendingPRs+'</div><div style="font-size:11px;color:var(--ax-text-dim)">PR Apex en attente</div></div>';
+    if(pendingValidations > 0) h += '<div onclick="sv&&sv(\'admin\')" style="flex:1;min-width:140px;background:rgba(90,168,255,.1);border:1px solid rgba(90,168,255,.3);border-radius:12px;padding:12px;cursor:pointer"><div style="font-size:22px;font-weight:800;color:#5aa8ff">'+pendingValidations+'</div><div style="font-size:11px;color:var(--ax-text-dim)">Validations Laurence</div></div>';
+    h += '</div>';
+  }
+
+  /* Bloc 1 - Compte */
+  h += axRenderSettingGroup("Compte", [
+    {icon:"\ud83d\udc64", label:"Profil", chevron:true, fn:"function(){sv(\'profile\');}"},
+    {icon:"\ud83d\udcb2", label:"Abonnement IA", value:planLabel, chevron:true, fn:"function(){sv(\'soldesia\');}"},
+    {icon:"\ud83d\udcc8", label:"Utilisation", chevron:true, fn:"function(){sv(\'mystats\');}"}
+  ]);
+
+  /* Bloc 2 - IA & connecteurs */
+  h += axRenderSettingGroup("IA & connecteurs", [
+    {icon:"\u2699\ufe0f", label:"Capacites IA", chevron:true, fn:"function(){sv(\'aiproviders\');}"},
+    {icon:"\ud83d\udd11", label:"Coffre cles API", value:hasAnth?"OK":"A config", chevron:true, fn:"function(){sv(\'vault\');}"},
+    {icon:"\ud83d\udd04", label:"Failover IA", value:(hasGroq||hasGemini)?"OK":"A config", chevron:true, fn:"function(){sv(\'aiproviders\');}"},
+    {icon:"\ud83d\udcf1", label:"WhatsApp service client", value:hasWa?"OK":"A config", chevron:true, fn:"function(){axShowWhatsAppConfig&&axShowWhatsAppConfig();}"},
+    {icon:"\ud83d\udc65", label:"Permissions Laurence", value:pendingValidations+" en attente", chevron:true, fn:"function(){sv(\'admin\');}"}
+  ]);
+
+  /* Bloc 3 - Apparence & UX */
+  h += axRenderSettingGroup("Apparence", [
+    {icon:"\ud83c\udf19", label:"Theme", value:theme, chevron:true, fn:"function(){if(typeof axShowThemePicker===\'function\')axShowThemePicker();else sv(\'settings\');}"},
+    {icon:"\ud83c\udf10", label:"Langue", value:lang, chevron:true, fn:"function(){sv(\'settings\');}"},
+    {icon:"\ud83d\udd14", label:"Notifications", chevron:true, fn:"function(){if(typeof requestNotifPermission===\'function\')requestNotifPermission();else sv(\'settings\');}"},
+    {icon:"\ud83d\udee1", label:"Confidentialite RGPD", chevron:true, fn:"function(){sv(\'rgpd\');}"},
+    {icon:"\ud83c\udf99", label:"Voiceprint", value:hasVoice?"Enrolee":"A faire", chevron:true, fn:"function(){sv(\'voicesgallery\');}"}
+  ]);
+
+  /* Bloc 4 - Systeme admin */
+  h += axRenderSettingGroup("Systeme", [
+    {icon:"\ud83d\udee0", label:"Sentinelles", chevron:true, fn:"function(){sv(\'sentinelshealth\');}"},
+    {icon:"\ud83d\udcca", label:"Statut connexion", chevron:true, fn:"function(){sv(\'healthdashboard\');}"},
+    {icon:"\ud83d\udcbe", label:"Stockage / Backup", chevron:true, fn:"function(){sv(\'storagemanage\');}"},
+    {icon:"\ud83d\udd04", label:"Service Worker / Update", chevron:true, fn:"function(){if(typeof _axCheckRemoteVersion===\'function\')_axCheckRemoteVersion();else location.reload();}"},
+    {icon:"\ud83d\udcdc", label:"Audit log", chevron:true, fn:"function(){sv(\'adminworklog\');}"},
+    {icon:"\ud83d\udcda", label:"Lessons learned", chevron:true, fn:"function(){sv(\'lessonslearned\');}"},
+    {icon:"\ud83d\udd17", label:"Liens admin", chevron:true, fn:"function(){sv(\'links\');}"}
+  ]);
+
+  /* Bloc 5 - footer */
+  h += axRenderSettingGroup("", [
+    {icon:"\u2197", label:"Se deconnecter", danger:true, fn:"doLogout"}
+  ]);
+
+  h += '</div>';
+  return h;
+}
+
+function axShowWhatsAppConfig(){
+  var current = lg("ax_kevin_whatsapp_phone","");
+  var html = '<h2 style="margin:0 0 12px 0">WhatsApp Kevin</h2>';
+  html += '<p style="font-size:13px;color:var(--ax-text-dim);margin:0 0 12px 0">Format E.164 sans + (ex Monaco : 33612345678 ou 37612345678). Apex genere des liens wa.me pour validation clients OTP + service client auto.</p>';
+  html += '<input id="ax-wa-input" type="tel" value="'+esc(current)+'" placeholder="33612345678" style="width:100%;padding:14px;font-size:16px;border-radius:10px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);color:#fff;box-sizing:border-box;margin-bottom:12px">';
+  html += '<button class="ax-btn ax-btn-primary" onclick="(function(){var v=document.getElementById(\'ax-wa-input\').value.replace(/[^0-9]/g,\'\');if(!v||v.length<8){toast&&toast(\'Numero invalide\',\'warn\');return;}ls(\'ax_kevin_whatsapp_phone\',v);toast&&toast(\'WhatsApp Kevin enregistre\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';})();" style="width:100%;min-height:48px;margin-bottom:8px">Enregistrer</button>';
+  html += '<button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';" style="width:100%;min-height:44px">Annuler</button>';
+  if(typeof _showModal==="function") _showModal(html);
+}
+
+function axGetCurrentPlanLabel(){
+  /* Detecte plan IA actuel via ax_active_plan ou cles presentes */
+  try{
+    var explicit = lg("ax_active_plan","");
+    if(explicit) return String(explicit);
+    var hasAnth = (lg("ax_api_key","").length>20) || (lg("ax_shared_api_key","").length>20);
+    if(hasAnth) return "Anthropic";
+    var hasGroq = lg("ax_groq_key","").length > 20;
+    if(hasGroq) return "Groq (gratuit)";
+    return "Aucun";
+  }catch(_){ return "Aucun"; }
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
@@ -8630,7 +8822,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
