@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.500",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.501",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -903,7 +903,7 @@ function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https:
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin",/* CRITICAL FIX v12.298: ax_settings RETIRE de FB_FIX (Kevin reconnu Laurence — theme love rose leak via SSE). Settings restent strictement locaux per-device per-user. */"ax_devices","ax_audit","ax_usage",/* CRITICAL FIX v12.272: ax_user RETIRE de FB_FIX (etait sync Firebase = bug Kevin reconnu Laurence) */"ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_lessons_learned_struct","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log","ax_permissions_bundle",/* v12.298 - ax_user_theme RETIRE (theme leak cross-user Kevin/Laurence) */"ax_pin_fails","ax_security_log","ax_claude_code_handoff","ax_profile_changes_log","ax_session_timeout","ax_2fa_settings","ax_fb_rate_limit","ax_apex_code_changes",/* v12.312 - Gap audit fix : CORS proxy generique pour APIs tierces (distinct de ax_proxy_url qui est le proxy Anthropic). Sync Firebase pour partage cross-device. */"ax_cors_proxy_url","ax_voice_profiles_count"];
+var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin",/* CRITICAL FIX v12.298: ax_settings RETIRE de FB_FIX (Kevin reconnu Laurence — theme love rose leak via SSE). Settings restent strictement locaux per-device per-user. */"ax_devices","ax_audit","ax_usage",/* CRITICAL FIX v12.272: ax_user RETIRE de FB_FIX (etait sync Firebase = bug Kevin reconnu Laurence) */"ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_lessons_learned_struct","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies","ax_user_locations","ax_user_chat","ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_ir_codes","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log","ax_permissions_bundle",/* v12.298 - ax_user_theme RETIRE (theme leak cross-user Kevin/Laurence) */"ax_pin_fails","ax_security_log","ax_claude_code_handoff","ax_profile_changes_log","ax_session_timeout","ax_2fa_settings","ax_fb_rate_limit","ax_apex_code_changes",/* v12.312 - Gap audit fix : CORS proxy generique pour APIs tierces (distinct de ax_proxy_url qui est le proxy Anthropic). Sync Firebase pour partage cross-device. */"ax_cors_proxy_url","ax_voice_profiles_count"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -14174,6 +14174,240 @@ function axIRLearn(name){var irUrl=localStorage.getItem("ax_ir_url");if(!irUrl)r
 function axIRListCommands(){var cmds={};Object.keys(BROADLINK_CMDS).forEach(function(k){var c=BROADLINK_CMDS[k];if(!cmds[c.cat])cmds[c.cat]=[];cmds[c.cat].push({id:k,name:c.name});});return cmds;}
 function axBroadlinkStatus(){var irUrl=localStorage.getItem("ax_ir_url");if(!irUrl)return Promise.resolve({configured:false});return fetch(irUrl+"/device").then(function(r){return r.json();}).then(function(d){return{configured:true,url:irUrl,device:d};}).catch(function(){return{configured:true,url:irUrl,reachable:false};});}
 
+/* AX_V12_501_BROADLINK v12.501 - Module complet Broadlink (Kevin "installe-le") */
+
+/* Auto-discovery : scan 192.168.x.0/24 en parallele port 8780 (broadlinkhttp default) */
+function axBroadlinkAutoDiscover(opts){
+  opts = opts || {};
+  var ports = opts.ports || [8780, 80, 8080, 7000];
+  var subnets = opts.subnets || ["192.168.0", "192.168.1", "192.168.2", "192.168.10", "10.0.0", "10.0.1"];
+  var timeoutMs = opts.timeout || 1500;
+  var found = [];
+  var scanned = 0;
+  var totalScans = subnets.length * ports.length * 4; /* 4 IPs prioritaires : .1, .2, .100, .200 */
+  /* On limite aux IPs probables pour ne pas saturer le reseau */
+  var prioIps = [1, 2, 100, 101, 150, 200, 254];
+
+  if(typeof toast === "function") toast("Recherche Broadlink sur le reseau (peut durer 10s)...", "info", {duration:8000, force:true});
+
+  return new Promise(function(resolve){
+    var promises = [];
+    subnets.forEach(function(sub){
+      ports.forEach(function(port){
+        prioIps.forEach(function(host){
+          var ip = sub + "." + host;
+          var url = "http://" + ip + ":" + port;
+          var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+          var to = setTimeout(function(){ if(ctrl) try{ctrl.abort();}catch(_){} }, timeoutMs);
+          var p = fetch(url + "/device", { mode: "cors", signal: ctrl ? ctrl.signal : undefined })
+            .then(function(r){
+              clearTimeout(to);
+              if(r.ok || r.status < 500) return r.text().then(function(t){
+                /* Verifie reponse contient marqueur Broadlink */
+                if(t && (t.indexOf("broadlink") >= 0 || t.indexOf("rm_pro") >= 0 || t.indexOf("device") >= 0 || r.headers.get("server"))){
+                  found.push({url: url, ip: ip, port: port, response: t.slice(0,200)});
+                }
+              });
+            })
+            .catch(function(){ clearTimeout(to); /* silent */ })
+            .finally(function(){ scanned++; });
+          promises.push(p);
+        });
+      });
+    });
+    Promise.all(promises).then(function(){
+      if(found.length > 0){
+        var first = found[0];
+        try{ ls("ax_ir_url", first.url); }catch(_){}
+        if(typeof toast === "function") toast("Broadlink trouve : " + first.url, "ok", {duration:5000, force:true});
+        if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","broadlink_discovered",APP_VER, first.url, "Auto-discovery success");
+        resolve({ok:true, found:found, primary: first.url});
+      } else {
+        if(typeof toast === "function") toast("Aucun Broadlink trouve. Verifie que broadlinkhttp est lance sur ton reseau.", "warn", {duration:8000, force:true});
+        resolve({ok:false, scanned:scanned, found:[]});
+      }
+    });
+  });
+}
+window.axBroadlinkAutoDiscover = axBroadlinkAutoDiscover;
+
+/* Stockage codes IR appris (sync Firebase via FB_FIX ax_ir_codes) */
+function axBroadlinkSaveCode(name, hexCode, category){
+  if(!name || !hexCode){ return false; }
+  var codes = lg("ax_ir_codes", {});
+  if(typeof codes !== "object" || Array.isArray(codes)) codes = {};
+  codes[name] = {
+    hex: String(hexCode),
+    cat: category || "custom",
+    learned: Date.now(),
+    name: name
+  };
+  ls("ax_ir_codes", codes);
+  if(typeof toast === "function") toast("Code '" + name + "' enregistre", "ok", {force:true, duration:3000});
+  if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","ir_code_learned",APP_VER, name, "Cat=" + (category||"custom"));
+  return true;
+}
+window.axBroadlinkSaveCode = axBroadlinkSaveCode;
+
+function axBroadlinkGetCodes(){
+  var codes = lg("ax_ir_codes", {});
+  if(typeof codes !== "object" || Array.isArray(codes)) codes = {};
+  return codes;
+}
+window.axBroadlinkGetCodes = axBroadlinkGetCodes;
+
+function axBroadlinkDeleteCode(name){
+  var codes = lg("ax_ir_codes", {});
+  if(codes[name]) {
+    delete codes[name];
+    ls("ax_ir_codes", codes);
+    if(typeof toast === "function") toast("Code '" + name + "' supprime", "ok", {force:true});
+    return true;
+  }
+  return false;
+}
+window.axBroadlinkDeleteCode = axBroadlinkDeleteCode;
+
+/* UI Remote complete (vue) */
+function vBroadlinkRemote(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var irUrl = lg("ax_ir_url", "");
+  var configured = !!irUrl;
+  var customCodes = axBroadlinkGetCodes();
+  var customCount = Object.keys(customCodes).length;
+
+  var h = '<div style="padding:14px;max-width:520px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">📺 Telecommande Universelle</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Broadlink RM/RM4/RM Pro via bridge HTTP. Apprend tes codes IR + commandes Clayton TV/Clim/Lumiere.</p>';
+
+  /* Status card */
+  h += '<div class="ax-card" style="border-left:4px solid ' + (configured ? "#4cd080" : "#ff5858") + ';margin-bottom:14px">';
+  h += '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:24px">' + (configured ? "✅" : "⚪") + '</div>';
+  h += '<div style="flex:1"><strong>' + (configured ? "Bridge configure" : "Bridge non configure") + '</strong>';
+  h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px;font-family:var(--ax-mono)">' + (irUrl || "Aucune URL") + '</div></div></div>';
+  h += '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axBroadlinkAutoDiscover()" style="flex:1;min-height:44px">🔍 Auto-decouverte reseau</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="var u=prompt(&quot;URL du bridge HTTP Broadlink:&quot;,&quot;http://192.168.1.100:8780&quot;);if(u){axIRConfig(u);dc();}" style="flex:1;min-height:44px">⚙ Configurer URL</button>';
+  h += '</div></div>';
+
+  if(!configured){
+    /* Bridge setup helper */
+    h += '<div class="ax-card" style="border-left:4px solid var(--ax-blue);background:linear-gradient(135deg,rgba(74,154,255,.06),transparent)">';
+    h += '<h3>🔧 Installation du bridge HTTP</h3>';
+    h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Le bridge tourne sur ton reseau (Raspberry Pi, ordi, NAS) et expose les commandes Broadlink en HTTP. Le browser ne peut pas faire UDP discovery directement.</p>';
+    h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 1 — Raspberry Pi / Linux / macOS :</div>';
+    h += '<code style="display:block;font-size:11px;font-family:var(--ax-mono);white-space:pre-wrap;color:var(--ax-text)">pip install broadlinkhttp\nbroadlinkhttp --host 0.0.0.0 --port 8780</code></div>';
+    h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 2 — Docker :</div>';
+    h += '<code style="display:block;font-size:11px;font-family:var(--ax-mono);white-space:pre-wrap;color:var(--ax-text)">docker run -d --net=host --name broadlinkhttp \\\n  -e PORT=8780 ghcr.io/molodencky/broadlinkhttp:latest</code></div>';
+    h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 3 — Home Assistant addon :</div>';
+    h += '<p style="font-size:11px;margin:0">Add-ons Store > rechercher "Broadlink HTTP" > Install + Start</p></div>';
+    h += '<button class="ax-btn ax-btn-outline" onclick="window.open(&quot;https://github.com/mjg59/python-broadlink&quot;,&quot;_blank&quot;)" style="width:100%;margin-top:10px;min-height:44px">📚 Documentation Broadlink</button>';
+    h += '</div>';
+  }
+
+  /* TV Remote */
+  h += '<div class="ax-card"><h3>📺 Telecommande TV (Clayton ou autre)</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">';
+  var tvBtns = [
+    {ic:"⏻", lbl:"Power", cmd:"tv_power", color:"#ff5858"},
+    {ic:"🔇", lbl:"Mute", cmd:"tv_mute"},
+    {ic:"🎚", lbl:"Source", cmd:"tv_source"},
+    {ic:"🔊", lbl:"Vol +", cmd:"tv_vol_up", color:"#4cd080"},
+    {ic:"📺", lbl:"Menu", cmd:"tv_menu"},
+    {ic:"🔉", lbl:"Vol -", cmd:"tv_vol_down"},
+    {ic:"📡", lbl:"Ch +", cmd:"tv_ch_up"},
+    {ic:"⬆", lbl:"Haut", cmd:"tv_up"},
+    {ic:"📡", lbl:"Ch -", cmd:"tv_ch_down"},
+    {ic:"⬅", lbl:"Gauche", cmd:"tv_left"},
+    {ic:"OK", lbl:"OK", cmd:"tv_ok", color:"var(--ax-gold)"},
+    {ic:"➡", lbl:"Droite", cmd:"tv_right"},
+    {ic:"↩", lbl:"Retour", cmd:"tv_back"},
+    {ic:"⬇", lbl:"Bas", cmd:"tv_down"},
+    {ic:"🏠", lbl:"Home", cmd:"tv_home"}
+  ];
+  tvBtns.forEach(function(b){
+    var col = b.color || "var(--ax-bg-input)";
+    h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;' + b.cmd + '&quot;)" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-color:' + col + '"><span style="font-size:18px">' + b.ic + '</span><span style="font-size:10px">' + b.lbl + '</span></button>';
+  });
+  h += '</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axIRBlast(&quot;tv_netflix&quot;)" style="min-height:44px;background:#e50914;border-color:#e50914;color:#fff">Netflix</button>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axIRBlast(&quot;tv_youtube&quot;)" style="min-height:44px;background:#ff0000;border-color:#ff0000;color:#fff">YouTube</button>';
+  h += '</div></div>';
+
+  /* AC Remote */
+  h += '<div class="ax-card"><h3>❄ Climatisation</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+  var acBtns = [
+    {ic:"⏻", lbl:"On", cmd:"ac_on", color:"#4cd080"},
+    {ic:"⏼", lbl:"Off", cmd:"ac_off", color:"#ff5858"},
+    {ic:"🌀", lbl:"Auto", cmd:"ac_auto"},
+    {ic:"❄", lbl:"Froid", cmd:"ac_cool", color:"#5aa8ff"},
+    {ic:"🔥", lbl:"Chaud", cmd:"ac_heat", color:"#ff8c4a"},
+    {ic:"💨", lbl:"Vent", cmd:"ac_fan"},
+    {ic:"➕", lbl:"Temp+", cmd:"ac_temp_up"},
+    {ic:"🌬", lbl:"Swing", cmd:"ac_swing"},
+    {ic:"➖", lbl:"Temp-", cmd:"ac_temp_down"}
+  ];
+  acBtns.forEach(function(b){
+    var col = b.color || "var(--ax-bg-input)";
+    h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;' + b.cmd + '&quot;)" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-color:' + col + '"><span style="font-size:18px">' + b.ic + '</span><span style="font-size:10px">' + b.lbl + '</span></button>';
+  });
+  h += '</div></div>';
+
+  /* Light Remote */
+  h += '<div class="ax-card"><h3>💡 Lumieres / Volets</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;light_on&quot;)" style="min-height:48px;border-color:#ffd700">💡 ON</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;light_off&quot;)" style="min-height:48px;border-color:#888">💤 OFF</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;shutter_up&quot;)" style="min-height:48px">⬆ Volet</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;shutter_down&quot;)" style="min-height:48px">⬇ Volet</button>';
+  h += '</div></div>';
+
+  /* Custom learned codes */
+  h += '<div class="ax-card"><h3>🎓 Mes codes appris (' + customCount + ')</h3>';
+  h += '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
+  h += '<button class="ax-btn ax-btn-primary" onclick="var n=prompt(&quot;Nom du code (ex: tv_power_clayton):&quot;);if(n){axIRLearn(n);}" style="flex:1;min-height:44px">🎓 Apprendre nouveau code</button>';
+  h += '</div>';
+  if(customCount > 0){
+    h += '<div style="display:flex;flex-direction:column;gap:6px">';
+    Object.keys(customCodes).forEach(function(name){
+      var code = customCodes[name];
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--ax-bg-input);border-radius:8px">';
+      h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;' + name + '&quot;)" style="flex:1;min-height:40px;justify-content:flex-start">▶ ' + esc(name) + ' <span style="opacity:.6;font-size:10px;margin-left:6px">[' + esc(code.cat||"custom") + ']</span></button>';
+      h += '<button class="ax-btn-icon" onclick="if(confirm(&quot;Supprimer &quot; + name + &quot; ?&quot;)){axBroadlinkDeleteCode(&quot;' + name + '&quot;);dc();}" style="width:40px;height:40px">🗑</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<p style="font-size:12px;color:var(--ax-text-dim);text-align:center">Aucun code appris. Touche "Apprendre nouveau code" pour ajouter ton premier code Clayton TV.</p>';
+  }
+  h += '</div>';
+
+  h += '</div>'; /* Fermeture div principale */
+  return h;
+}
+window.vBroadlinkRemote = vBroadlinkRemote;
+
+/* Wake up command : auto-discover si pas configure puis blast */
+function axBroadlinkSmartBlast(command){
+  var irUrl = lg("ax_ir_url", "");
+  if(!irUrl){
+    if(typeof toast === "function") toast("Broadlink non configure - lance auto-decouverte...", "info", {force:true});
+    return axBroadlinkAutoDiscover().then(function(r){
+      if(r.ok) return axIRBlast(command);
+      return Promise.resolve("Pas de Broadlink trouve");
+    });
+  }
+  return axIRBlast(command);
+}
+window.axBroadlinkSmartBlast = axBroadlinkSmartBlast;
+
+/* AX_V12_501_BROADLINK_END */
+
+
 // Smart Home Hub (Home Assistant compatible)
 var _haUrl="",_haToken="";
 function axSmartHomeConfig(url,token){_haUrl=url||localStorage.getItem("ax_ha_url")||"";_haToken=token||localStorage.getItem("ax_ha_token")||"";if(url)localStorage.setItem("ax_ha_url",url);if(token)localStorage.setItem("ax_ha_token",token);return"Smart Home configure: "+_haUrl;}
@@ -14863,7 +15097,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
