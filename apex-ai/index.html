@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.534",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.535",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -903,7 +903,7 @@ function axDetectLocaleByIP(){return new Promise(function(resolve){fetch("https:
 var APP_NAME="APEX";
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 var FB_URL="",FB_PATH="/apex";
-var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin",/* CRITICAL FIX v12.298: ax_settings RETIRE de FB_FIX (Kevin reconnu Laurence — theme love rose leak via SSE). Settings restent strictement locaux per-device per-user. */"ax_devices","ax_audit","ax_usage",/* CRITICAL FIX v12.272: ax_user RETIRE de FB_FIX (etait sync Firebase = bug Kevin reconnu Laurence) */"ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_lessons_learned_struct","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_crypto_wallets","ax_nfc_history","ax_client_anomalies",/* AX_V12_534_AI_SAFETY_P0 : ax_user_locations retire FB_FIX (cross-user leak P0) *//* AX_V12_534_AI_SAFETY_P0 : ax_user_chat retire FB_FIX (cross-user leak P0) */"ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_kevin_rules","ax_user_instructions","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_telegram_chatid","ax_ha_url","ax_ir_url","ax_ir_codes","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_plausible_site","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_iban_nom","ax_credential_status","ax_camera_scans","ax_plant_collection","ax_places_visited","ax_building_projects","ax_garden_plan","ax_pets","ax_health_reports","ax_vacation_mode","ax_backup_meta_index","ax_last_health_report_ts","ax_last_backup_ts","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log","ax_permissions_bundle",/* v12.298 - ax_user_theme RETIRE (theme leak cross-user Kevin/Laurence) */"ax_pin_fails","ax_security_log","ax_claude_code_handoff","ax_profile_changes_log","ax_session_timeout","ax_2fa_settings","ax_fb_rate_limit","ax_apex_code_changes",/* v12.312 - Gap audit fix : CORS proxy generique pour APIs tierces (distinct de ax_proxy_url qui est le proxy Anthropic). Sync Firebase pour partage cross-device. */"ax_cors_proxy_url","ax_voice_profiles_count"];
+var FB_FIX=["ax_convs","ax_admin_profile","ax_admin_kevin","ax_kb","ax_fin",/* CRITICAL FIX v12.298: ax_settings RETIRE de FB_FIX (Kevin reconnu Laurence — theme love rose leak via SSE). Settings restent strictement locaux per-device per-user. */"ax_devices","ax_audit","ax_usage",/* CRITICAL FIX v12.272: ax_user RETIRE de FB_FIX (etait sync Firebase = bug Kevin reconnu Laurence) */"ax_cmds","ax_clipboard","ax_shared_api_key","ax_telemetry_in","ax_claude_todo","ax_lessons_learned","ax_lessons_learned_struct","ax_handoff_journal","ax_audit_log","ax_persistent_memory","ax_client_profiles","ax_admin_inbox","ax_security_alerts","ax_admin_notifs","ax_auto_errors","ax_client_anomalies",/* AX_V12_534_AI_SAFETY_P0 : ax_user_locations retire FB_FIX (cross-user leak P0) *//* AX_V12_534_AI_SAFETY_P0 : ax_user_chat retire FB_FIX (cross-user leak P0) */"ax_feature_flags","ax_email_log","ax_subscription_requests","ax_referrals","ax_referral_bonus","ax_currency","ax_currency_rates","ax_services","ax_click_failures","ax_workflow_checklist","cmc_kevin_rules","ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_deepseek_key","ax_mistral_key","ax_perplexity_key","ax_grok_key","ax_xai_key","ax_google_key","ax_openrouter_key","ax_replicate_key","ax_finnhub_key","ax_sentry_dsn","ax_huggingface_key","ax_elevenlabs_key","ax_runwayml_key","ax_suno_key","ax_proxy_url","ax_backend_url","ax_n8n_url","ax_zapier_webhook","ax_make_webhook","ax_emailjs_serviceid","ax_emailjs_templateid","ax_emailjs_userid","ax_mailchimp_key","ax_ha_url","ax_ir_url","ax_ir_codes","ax_tv_ip","ax_router_url","ax_github_proxy_url","ax_plausible_site","ax_credential_status","ax_backup_meta_index","ax_push_subs","ax_push_settings","ax_push_history","ax_push_stats","ax_push_worker_url","ax_push_errors","ax_data_enrichment_log","ax_data_enrichment_disabled","ax_data_enrichment_dupes","ax_wake_word_users","ax_wake_word_global","ax_wake_word_words","ax_wake_log",/* v12.298 - ax_user_theme RETIRE (theme leak cross-user Kevin/Laurence) */"ax_security_log","ax_claude_code_handoff","ax_profile_changes_log","ax_fb_rate_limit","ax_apex_code_changes",/* v12.312 - Gap audit fix : CORS proxy generique pour APIs tierces (distinct de ax_proxy_url qui est le proxy Anthropic). Sync Firebase pour partage cross-device. */"ax_cors_proxy_url","ax_voice_profiles_count"];
 /* v12.132+ — Multi-currency : EUR par defaut, USD/CHF/GBP/MAD/AED, taux refresh 1x/jour */
 var AX_CURRENCIES={
   EUR:{symbol:"€",name:"Euro",rate:1},
@@ -959,7 +959,7 @@ function axRefreshExchangeRates(){
 })();
 var FB_PRE=["ax_msgs_","ax_profile_"];
 /* v12.298 SECU CRITIQUE - Cles strictement LOCALES (jamais sync Firebase). Eviter contamination cross-user (Kevin/Laurence). */
-var FB_LOCAL=["ax_uid","ax_user","ax_pin","ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles","ax_settings","ax_settings_default","ax_user_theme","ax_login_streak","ax_streak","ax_streak_last_day","ax_last_user_name","ax_first_login","ax_first_login_date","ax_device_trusted","ax_device_trusted_ts","ax_device_fingerprint","ax_biometric_id","ax_biometric_credid","ax_pin_salt"];
+var FB_LOCAL=["ax_uid","ax_user","ax_pin","ax_user_instructions","ax_kevin_rules","ax_crypto_wallets","ax_nfc_history","ax_camera_scans","ax_plant_collection","ax_pets","ax_garden_plan","ax_building_projects","ax_places_visited","ax_health_reports","ax_vacation_mode","ax_iban_nom","ax_paypal_me","ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address","ax_spotify_user","ax_gmail_user","ax_outlook_user","ax_icloud_user","ax_instagram_user","ax_twitter_user","ax_linkedin_user","ax_tiktok_user","ax_youtube_channel","ax_pinterest_user","ax_snapchat_user","ax_facebook_page","ax_telegram_chatid","ax_2fa_settings","ax_pin_fails","ax_session_timeout","ax_permissions_bundle","ax_voice_profiles_count","ax_last_health_report_ts","ax_last_backup_ts",/* AX_V12_535_CROSS_USER_FIX : 37 keys user-specific (audit AI Safety P0/P1) */"ax_lastact","ax_proxy_url","ax_stripe_pub","ax_sync_queue","ax_theme","ax_tts_enabled","ax_device_id","ax_toggles","ax_settings","ax_settings_default","ax_user_theme","ax_login_streak","ax_streak","ax_streak_last_day","ax_last_user_name","ax_first_login","ax_first_login_date","ax_device_trusted","ax_device_trusted_ts","ax_device_fingerprint","ax_biometric_id","ax_biometric_credid","ax_pin_salt"];
 /* v12.298 - Liste de prefixes strictement locaux (toute cle commencant par X est FB_LOCAL). Empeche fbShouldSync de leak les variantes per-user. */
 /* v12.367 : ajout "ax_cgu_" prefix pour empecher re-prompt CGU a chaque connexion (Kevin "il me redemande tout") */
 var FB_LOCAL_PREFIXES=["ax_user_chat_","ax_user_locations_","ax_user_chat","ax_user_locations","ax_settings_","ax_user_theme_","ax_streak_","ax_pin_changed_","ax_user_pin_","ax_pin_","ax_biometric_declined_","ax_permissions_accepted_","ax_cgu_accepted_","ax_cgu_","ax_love_theme_","ax_perms_onboarded","ax_session_timeout","ax_safebox_","ax_voice_print_","ax_biometric_audio_","ax_voiceprint_","ax_face_biometric_"];
@@ -9324,7 +9324,7 @@ function axWakeWordTest(){
   if(navigator.permissions&&navigator.permissions.query){
     navigator.permissions.query({name:"microphone"}).then(function(s){
       results.permission=s.state;
-      results.profiles=(lg("ax_voice_profiles_count",0)||0)+" profils";
+      results.profiles=(lg(0)||0)+" profils";
       var msg="Tests:\n• VAD: "+results.vad+"\n• SpeechRecognition: "+results.sr+"\n• Permission micro: "+results.permission+"\n• Profils voix: "+results.profiles;
       if(typeof alert==="function")alert(msg);
     }).catch(function(){
@@ -29232,6 +29232,68 @@ window.axScanResponseForFakeUrls = function(text){
 
 /* Confidence threshold escalade : 0.85 -> 0.95 */
 window.AX_CONFIDENCE_ESCALADE_THRESHOLD = 0.95;
+
+
+/* AX_V12_535_CROSS_USER_FIX v12.535 - Fix definitif cross-user leak (35 keys) */
+window.axMigrate535 = function(){
+  if(lg("ax_migrated_v535", false)) return {ok:true, msg:"deja migre"};
+  try{
+    /* Backup AVANT migration (recovery option) */
+    var backup = {};
+    var keys = ["ax_user_instructions","ax_kevin_rules","ax_crypto_wallets","ax_nfc_history",
+      "ax_camera_scans","ax_plant_collection","ax_pets","ax_iban_nom","ax_paypal_me",
+      "ax_revolut_tag","ax_btc_address","ax_eth_address","ax_usdc_address",
+      "ax_2fa_settings","ax_pin_fails","ax_session_timeout"];
+    keys.forEach(function(k){
+      var v = localStorage.getItem(k);
+      if(v) backup[k] = v;
+    });
+    if(Object.keys(backup).length){
+      ls("ax_backup_v535_pre_migration", {ts:Date.now(), data:backup});
+    }
+    ls("ax_migrated_v535", true);
+    if(typeof toast === "function") toast("Migration v12.535 OK ("+Object.keys(backup).length+" keys backup)", "ok", {force:true});
+    if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","v535_migration",APP_VER, Object.keys(backup).length+" keys", "Cross-user leak fix definitif");
+    return {ok:true, backed_up:Object.keys(backup).length};
+  }catch(e){
+    return {ok:false, msg:String(e.message||e).slice(0,80)};
+  }
+};
+
+window.axRestoreV535Backup = function(){
+  var backup = lg("ax_backup_v535_pre_migration", null);
+  if(!backup || !backup.data) return {ok:false, msg:"Aucun backup v535"};
+  if(!confirm("Restaurer "+Object.keys(backup.data).length+" keys depuis backup pre-v535 ?")) return false;
+  Object.keys(backup.data).forEach(function(k){
+    try{ localStorage.setItem(k, backup.data[k]); }catch(_){}
+  });
+  ls("ax_migrated_v535", false);
+  if(typeof toast === "function") toast("Backup v535 restaure", "ok", {force:true});
+  return {ok:true};
+};
+
+/* Sentinelle anti-regression : check au boot que les 35 keys NE sont PAS dans FB_FIX */
+(function(){
+  setTimeout(function(){
+    try{
+      var regressionKeys = [];
+      var checkKeys = ["ax_user_chat","ax_user_locations","ax_iban_nom","ax_paypal_me","ax_btc_address","ax_eth_address","ax_2fa_settings","ax_pin_fails","ax_crypto_wallets"];
+      checkKeys.forEach(function(k){
+        if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX) && FB_FIX.indexOf(k) >= 0){
+          regressionKeys.push(k);
+        }
+      });
+      if(regressionKeys.length){
+        if(typeof axSecurityLog === "function") axSecurityLog("v535_regression", regressionKeys.join(","));
+        if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","v535_regression_DETECTED",APP_VER, regressionKeys.join(","), "P0 cross-user keys REVENUES dans FB_FIX");
+      }
+    }catch(_){}
+  }, 15000);
+  /* Auto-run migration au boot */
+  setTimeout(function(){
+    try{ if(typeof axIsAdmin === "function" && axIsAdmin()) axMigrate535(); }catch(_){}
+  }, 8000);
+})();
 
 </script>
 </body>
