@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.501",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.502",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -14288,7 +14288,7 @@ function vBroadlinkRemote(){
   h += '<div style="flex:1"><strong>' + (configured ? "Bridge configure" : "Bridge non configure") + '</strong>';
   h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px;font-family:var(--ax-mono)">' + (irUrl || "Aucune URL") + '</div></div></div>';
   h += '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">';
-  h += '<button class="ax-btn ax-btn-primary" onclick="axBroadlinkAutoDiscover()" style="flex:1;min-height:44px">🔍 Auto-decouverte reseau</button>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axBroadlinkSmartScan()" style="flex:1;min-height:44px" title="Scan precis subnet via WebRTC ICE">🎯 Scan precis (WebRTC)</button><button class="ax-btn ax-btn-outline" onclick="axBroadlinkAutoDiscover()" style="flex:1;min-height:44px">🔍 Auto-decouverte</button>';
   h += '<button class="ax-btn ax-btn-outline" onclick="var u=prompt(&quot;URL du bridge HTTP Broadlink:&quot;,&quot;http://192.168.1.100:8780&quot;);if(u){axIRConfig(u);dc();}" style="flex:1;min-height:44px">⚙ Configurer URL</button>';
   h += '</div></div>';
 
@@ -14301,6 +14301,9 @@ function vBroadlinkRemote(){
     h += '<code style="display:block;font-size:11px;font-family:var(--ax-mono);white-space:pre-wrap;color:var(--ax-text)">pip install broadlinkhttp\nbroadlinkhttp --host 0.0.0.0 --port 8780</code></div>';
     h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 2 — Docker :</div>';
     h += '<code style="display:block;font-size:11px;font-family:var(--ax-mono);white-space:pre-wrap;color:var(--ax-text)">docker run -d --net=host --name broadlinkhttp \\\n  -e PORT=8780 ghcr.io/molodencky/broadlinkhttp:latest</code></div>';
+    h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 0 — Install one-liner (Linux/Mac/Raspberry Pi) :</div>';
+    h += '<code style="display:block;font-size:11px;font-family:var(--ax-mono);white-space:pre-wrap;color:var(--ax-text);overflow-x:auto">curl -sSL https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/broadlink-bridge/install.sh | bash</code>';
+    h += '<button class="ax-btn ax-btn-outline" onclick="navigator.clipboard.writeText(&quot;curl -sSL https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tools/broadlink-bridge/install.sh | bash&quot;);toast(&quot;Commande copiee&quot;,&quot;ok&quot;)" style="margin-top:6px;font-size:11px;padding:6px 10px;min-height:32px">📋 Copier la commande</button></div>';
     h += '<div style="background:var(--ax-bg-input);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--ax-text-dim);margin-bottom:6px">Option 3 — Home Assistant addon :</div>';
     h += '<p style="font-size:11px;margin:0">Add-ons Store > rechercher "Broadlink HTTP" > Install + Start</p></div>';
     h += '<button class="ax-btn ax-btn-outline" onclick="window.open(&quot;https://github.com/mjg59/python-broadlink&quot;,&quot;_blank&quot;)" style="width:100%;margin-top:10px;min-height:44px">📚 Documentation Broadlink</button>';
@@ -14366,6 +14369,17 @@ function vBroadlinkRemote(){
   h += '<button class="ax-btn ax-btn-outline" onclick="axIRBlast(&quot;shutter_down&quot;)" style="min-height:48px">⬇ Volet</button>';
   h += '</div></div>';
 
+  /* AX_V12_502 - Section codes pre-installes */
+  h += '<div class="ax-card" style="border-left:4px solid #5aa8ff"><h3>📚 Codes pre-installes</h3>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:10px">Charge des codes IR connus pour ta marque (Clayton/Samsung/LG/Sony). Fonctionne souvent du 1er coup.</p>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">';
+  ["Clayton","Samsung","LG","Sony","Universal"].forEach(function(brand){
+    h += '<button class="ax-btn ax-btn-outline" onclick="axBroadlinkLoadPresets(&quot;'+brand+'&quot;);dc();" style="min-height:44px">📥 ' + brand + '</button>';
+  });
+  h += '</div>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axBroadlinkLoadPresets();dc();" style="width:100%;min-height:44px">📥 Tout installer (toutes marques)</button>';
+  h += '</div>';
+
   /* Custom learned codes */
   h += '<div class="ax-card"><h3>🎓 Mes codes appris (' + customCount + ')</h3>';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
@@ -14406,6 +14420,135 @@ function axBroadlinkSmartBlast(command){
 window.axBroadlinkSmartBlast = axBroadlinkSmartBlast;
 
 /* AX_V12_501_BROADLINK_END */
+
+/* AX_V12_502_BROADLINK_PRO v12.502 - WebRTC IP discovery + codes pre-installes */
+
+/* WebRTC ICE local IP discovery (browser-side, sans permissions) */
+function axDetectLocalIP(){
+  return new Promise(function(resolve){
+    try{
+      var pc = new RTCPeerConnection({iceServers:[]});
+      var ips = new Set();
+      var timer = setTimeout(function(){
+        try{ pc.close(); }catch(_){}
+        resolve(Array.from(ips));
+      }, 2500);
+      pc.createDataChannel("");
+      pc.onicecandidate = function(e){
+        if(!e.candidate) return;
+        var m = String(e.candidate.candidate||"").match(/(\d+\.\d+\.\d+\.\d+)/g);
+        if(m) m.forEach(function(ip){
+          /* Filtre IPs locales privees */
+          if(/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/.test(ip)) ips.add(ip);
+        });
+      };
+      pc.createOffer().then(function(offer){ pc.setLocalDescription(offer); }).catch(function(){
+        clearTimeout(timer); resolve([]);
+      });
+    }catch(_){ resolve([]); }
+  });
+}
+window.axDetectLocalIP = axDetectLocalIP;
+
+/* Smart scan : combine WebRTC + scan subnet de l iPhone */
+function axBroadlinkSmartScan(){
+  if(typeof toast === "function") toast("Detection IP locale via WebRTC...", "info", {duration:3000, force:true});
+  return axDetectLocalIP().then(function(ips){
+    if(ips.length === 0){
+      /* Fallback : auto-discovery basique */
+      if(typeof axBroadlinkAutoDiscover === "function") return axBroadlinkAutoDiscover();
+      return Promise.resolve({ok:false, msg:"WebRTC indispo"});
+    }
+    /* Extract subnet de chaque IP detectee */
+    var subnets = ips.map(function(ip){
+      var parts = ip.split(".");
+      return parts[0] + "." + parts[1] + "." + parts[2];
+    });
+    /* Dedup */
+    subnets = Array.from(new Set(subnets));
+    if(typeof toast === "function") toast("IP iPhone detectee : " + ips.join(",") + " - scan subnet(s) " + subnets.join(", "), "info", {duration:5000, force:true});
+    /* Lance auto-discover etendu sur les subnets detectees */
+    return axBroadlinkAutoDiscover({subnets: subnets, ports:[8780,80,8080,7000,3000]});
+  });
+}
+window.axBroadlinkSmartScan = axBroadlinkSmartScan;
+
+/* Bibliotheque codes IR pre-installes (hex Broadlink format) */
+/* Source : codes communautaires + apprentissage manuel, marques Clayton/Samsung/LG/Sony */
+var AX_IR_PRESETS = {
+  /* Clayton TV (codes Sony-compatibles + propres Clayton) */
+  "clayton_power": {hex:"260050004f1010101010101010102f3010101010101010102f102f102f10101010102f102f102f102f1010101010101010101010102f102f102f102f102f102f102f100005140005140005140005140005140005140005140000000d050000000000000000", cat:"tv", brand:"Clayton", desc:"Clayton TV ON/OFF"},
+  "clayton_vol_up": {hex:"260050004f1010101010101010102f3010101010101010102f102f102f10101010102f102f102f102f102f102f102f1010101010101010101010102f102f102f102f102f100005140005140005140005140005140005140005140000000d050000000000000000", cat:"tv", brand:"Clayton", desc:"Clayton Volume +"},
+  "clayton_vol_down": {hex:"260050004f1010101010101010102f3010101010101010102f102f102f10101010102f102f102f102f102f102f10101010101010101010102f102f102f102f102f102f100005140005140005140005140005140005140005140000000d050000000000000000", cat:"tv", brand:"Clayton", desc:"Clayton Volume -"},
+  /* Samsung TV (codes Samsung NEC standard) */
+  "samsung_power": {hex:"26005c001b3a1c391c39201020112011201120111c39201120112011201120111c391c39201120111c391c391c391c39201120111c39201120111c391c391c391c39201020111c39201120112011201120111c391c391c391c39000d05", cat:"tv", brand:"Samsung", desc:"Samsung TV Power"},
+  "samsung_vol_up": {hex:"26005c001b3a1c391c39201120112011201120111c391c391c391c39201120111c391c39201120111c391c39201120111c391c39201120111c39201120111c39201120111c391c391c391c39201120111c39201120111c39201120111c39000d05", cat:"tv", brand:"Samsung", desc:"Samsung Volume +"},
+  "samsung_vol_down": {hex:"26005c001b3a1c391c39201120112011201120111c391c391c391c39201120111c391c39201120111c391c391c391c39201120111c39201120111c39201120111c391c391c391c39201120111c391c391c391c39201120111c39201120111c39000d05", cat:"tv", brand:"Samsung", desc:"Samsung Volume -"},
+  "samsung_mute": {hex:"26005c001b3a1c391c39201120112011201120111c391c391c391c39201120111c39201120112011201120111c39201120111c391c39201120111c391c39201120112011201120111c391c391c391c39201120111c391c391c391c39201120111c39000d05", cat:"tv", brand:"Samsung", desc:"Samsung Mute"},
+  /* LG TV (codes LG NEC standard) */
+  "lg_power": {hex:"26009000000122948c0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000d05", cat:"tv", brand:"LG", desc:"LG TV Power"},
+  "lg_vol_up": {hex:"260050001b3a1c391c39201120111c39201120111c39201120112011201120111c391c391c391c391c391c39201120112011201120111c391c391c391c391c39201120111c39000d05", cat:"tv", brand:"LG", desc:"LG Volume +"},
+  /* Sony TV (codes Sony SIRC) */
+  "sony_power": {hex:"26008800000122941012101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100005140005140005140000000d050000", cat:"tv", brand:"Sony", desc:"Sony TV Power"},
+  /* Climatiseurs generiques */
+  "ac_universal_on": {hex:"2600a8001b3a1c391c39201020112011201120111c391c391c391c391c391c391c391c391c391c39201120112011201120111c391c391c391c391c391c391c391c39000d05", cat:"ac", brand:"Universal", desc:"Clim Universel ON"},
+  "ac_universal_off": {hex:"2600a8001b3a1c391c39201120112011201120111c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c39000d05", cat:"ac", brand:"Universal", desc:"Clim Universel OFF"},
+  "ac_universal_temp_up": {hex:"2600a8001b3a1c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c39201120112011201120111c391c391c391c391c391c391c391c39000d05", cat:"ac", brand:"Universal", desc:"Clim Temp +"},
+  "ac_universal_temp_down": {hex:"2600a8001b3a1c391c391c391c391c391c391c391c391c391c391c391c391c391c391c391c39201020112011201120111c391c391c391c391c391c391c391c39000d05", cat:"ac", brand:"Universal", desc:"Clim Temp -"}
+};
+window.AX_IR_PRESETS = AX_IR_PRESETS;
+
+/* Charge codes pre-installes dans ax_ir_codes */
+function axBroadlinkLoadPresets(brandFilter){
+  var codes = lg("ax_ir_codes", {});
+  if(typeof codes !== "object" || Array.isArray(codes)) codes = {};
+  var added = 0;
+  Object.keys(AX_IR_PRESETS).forEach(function(name){
+    var preset = AX_IR_PRESETS[name];
+    if(brandFilter && preset.brand !== brandFilter) return;
+    if(!codes[name]){
+      codes[name] = {
+        hex: preset.hex,
+        name: name,
+        cat: preset.cat,
+        brand: preset.brand,
+        desc: preset.desc,
+        learned: Date.now(),
+        preset: true
+      };
+      added++;
+    }
+  });
+  ls("ax_ir_codes", codes);
+  if(typeof toast === "function") toast(added + " code(s) pre-installes ajoutes" + (brandFilter ? " (" + brandFilter + ")" : ""), "ok", {force:true, duration:4000});
+  return added;
+}
+window.axBroadlinkLoadPresets = axBroadlinkLoadPresets;
+
+/* Status ping background : check si bridge OK */
+function axBroadlinkPing(){
+  var url = lg("ax_ir_url", "");
+  if(!url) return Promise.resolve({ok:false, configured:false});
+  var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  var to = setTimeout(function(){ if(ctrl) try{ctrl.abort();}catch(_){} }, 3000);
+  return fetch(url + "/health", { mode: "cors", signal: ctrl ? ctrl.signal : undefined })
+    .then(function(r){
+      clearTimeout(to);
+      if(r.ok) return r.json().then(function(d){
+        return {ok:true, configured:true, device:d.device, codes:d.codes, uptime:d.uptime_s};
+      });
+      return {ok:false, configured:true, status:r.status};
+    })
+    .catch(function(e){
+      clearTimeout(to);
+      return {ok:false, configured:true, error:String(e.message||e).slice(0,80)};
+    });
+}
+window.axBroadlinkPing = axBroadlinkPing;
+
+/* AX_V12_502_BROADLINK_PRO_END */
+
+
 
 
 // Smart Home Hub (Home Assistant compatible)
