@@ -845,7 +845,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.469",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.470",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4802,6 +4802,146 @@ function axCallWithFailover(prompt, opts){
   }
 
   return tryProvider(0);
+}
+
+/* v12.470 - Phase 3.1 audit pro : prompt caching + CSP nonce + KYC stub */
+
+/* === 1. Anthropic prompt caching helper === */
+/* Permet -90% tokens en cachant le system prompt (165 KB) cote Anthropic.
+   Cache valide 5 min - excellent pour conversations multi-tours. */
+
+function axBuildCachedSystemPrompt(systemText, opts){
+  /* Returns format Anthropic compatible avec cache_control breakpoints. */
+  opts = opts || {};
+  if(!systemText){
+    return [];
+  }
+  var s = String(systemText);
+  /* Si > 1024 chars, on cache (rentable seulement au-dessus) */
+  if(s.length < 1024){
+    return [{type:"text", text:s}];
+  }
+  /* Split static (90% premier) vs dynamic (10% derniere partie : date/heure/user courant) */
+  var splitPoint = Math.floor(s.length * 0.9);
+  /* Trouve un saut de ligne propre proche du splitPoint */
+  var nl = s.lastIndexOf("\n\n", splitPoint);
+  if(nl > s.length * 0.7) splitPoint = nl;
+  var staticPart = s.slice(0, splitPoint);
+  var dynamicPart = s.slice(splitPoint);
+  return [
+    {type:"text", text:staticPart, cache_control:{type:"ephemeral"}},
+    {type:"text", text:dynamicPart}
+  ];
+}
+
+function axShouldUseCache(){
+  /* Active si admin a opt-in via flag */
+  return !!lg("ax_anthropic_cache_enabled", true); /* defaut ON pour economie */
+}
+
+/* === 2. CSP nonce helper (preparation retrait unsafe-inline) === */
+
+window._axCspNonce = window._axCspNonce || null;
+
+function axCspNonceGenerate(){
+  /* Nonce stable par session (regenere a chaque load page) */
+  if(window._axCspNonce) return window._axCspNonce;
+  try{
+    if(typeof crypto !== "undefined" && crypto.getRandomValues){
+      var arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      window._axCspNonce = btoa(String.fromCharCode.apply(null, arr)).replace(/[+/=]/g, "");
+    } else {
+      window._axCspNonce = "n"+Date.now()+Math.random().toString(36).slice(2,10);
+    }
+  }catch(_){
+    window._axCspNonce = "n"+Date.now();
+  }
+  return window._axCspNonce;
+}
+
+function axGetCspNonce(){
+  return window._axCspNonce || axCspNonceGenerate();
+}
+
+/* === 3. KYC helper stub (compliance audit pro) === */
+
+var KYC_THRESHOLD_EUR = 50;
+
+function axKycCheckRequired(amountEur, action){
+  /* Returns {required:bool, reason, action_needed} */
+  amountEur = parseFloat(amountEur) || 0;
+  if(amountEur <= KYC_THRESHOLD_EUR){
+    return {required:false, threshold:KYC_THRESHOLD_EUR};
+  }
+  /* KYC requis : check si user a deja ete KYC-validated */
+  var uid = (K&&K.user&&K.user.id)||"anon";
+  var kyc = lg("ax_kyc_"+uid, null);
+  if(kyc && kyc.validated && kyc.expires > Date.now()){
+    return {required:true, validated:true, validatedAt:kyc.validatedAt, expires:kyc.expires};
+  }
+  return {
+    required:true,
+    validated:false,
+    threshold:KYC_THRESHOLD_EUR,
+    reason:"Montant > "+KYC_THRESHOLD_EUR+" EUR : KYC obligatoire (loi anti-blanchiment)",
+    action_needed:"axKycInitiate(uid, amount, action)"
+  };
+}
+
+function axKycInitiate(uid, amount, action){
+  /* Stub : initie le flow KYC. Production : redirection PSP type Stripe Identity / Onfido. */
+  if(!uid) return {ok:false, reason:"missing_uid"};
+  try{
+    var kyc = {
+      uid: uid,
+      requestedAt: Date.now(),
+      amount: parseFloat(amount)||0,
+      action: String(action||"unknown"),
+      status: "pending",
+      validatedAt: null,
+      expires: null
+    };
+    ls("ax_kyc_request_"+uid, kyc);
+    /* Notif Kevin admin */
+    try{
+      if(typeof axNotifyKevin === "function"){
+        axNotifyKevin("KYC requis : "+uid, "Montant "+amount+"EUR action "+action+". Verifier identite.");
+      }
+    }catch(_){}
+    /* Audit security */
+    try{
+      if(typeof axSecurityLog === "function"){
+        axSecurityLog("kyc_initiated", uid+" amount="+amount+" action="+action);
+      }
+    }catch(_){}
+    return {ok:true, status:"pending", uid:uid};
+  }catch(e){
+    return {ok:false, error:String(e.message||e)};
+  }
+}
+
+function axKycValidate(uid, source){
+  /* Admin only : valide le KYC apres verification (ID + selfie via Stripe Identity). */
+  if(typeof axIsAdmin === "function" && !axIsAdmin()) return {ok:false, reason:"admin_required"};
+  if(!uid) return {ok:false, reason:"missing_uid"};
+  try{
+    var kyc = {
+      uid: uid,
+      validated: true,
+      validatedAt: Date.now(),
+      validatedBy: K&&K.user&&K.user.id,
+      source: String(source||"manual"),
+      expires: Date.now() + 365*24*3600*1000 /* 1 an */
+    };
+    ls("ax_kyc_"+uid, kyc);
+    /* Cleanup pending request */
+    try{ localStorage.removeItem("ax_kyc_request_"+uid); }catch(_){}
+    if(typeof axSecurityLog === "function") axSecurityLog("kyc_validated", uid+" by="+kyc.validatedBy+" source="+source);
+    return {ok:true, validUntil:new Date(kyc.expires).toISOString()};
+  }catch(e){
+    return {ok:false, error:String(e.message||e)};
+  }
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
