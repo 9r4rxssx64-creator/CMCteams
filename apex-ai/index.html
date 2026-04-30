@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.498",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.499",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -1781,7 +1781,48 @@ function _axParallel(items,worker,batchSize){batchSize=batchSize||5;return new P
 
 // --- Toast ---
 /* v12.347 — Toast dedup 1500ms anti-spam login */window._axToastSeen=window._axToastSeen||{};
-function toast(msg,type,opts){try{if(msg&&!opts){var _dk=String(msg).slice(0,60)+"|"+(type||"");var _now=Date.now();if(window._axToastSeen[_dk]&&_now-window._axToastSeen[_dk]<1500)return;window._axToastSeen[_dk]=_now;if(Object.keys(window._axToastSeen).length>30){var _old=window._axToastSeen;window._axToastSeen={};Object.keys(_old).forEach(function(k){if(_now-_old[k]<3000)window._axToastSeen[k]=_old[k];});}}}catch(_){}if(!type)type="ok";var isAdm=(typeof axIsAdmin==="function")&&axIsAdmin();var s=String(msg);var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|ax_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|sync/i.test(s);/* v12.295 Kevin: filtre etendu erreurs JS techniques bas-niveau */var jsErr=/^(undefined|null|NaN|TypeError|ReferenceError|SyntaxError|HTTP \d+|Failed to fetch|AbortError|QuotaExceeded|CORS|fetch failed|Network ?error|JSON\.parse|Unexpected token|Cannot read prop|of undefined|of null|is not a function|is not defined|Maximum call stack)/i.test(s);if(!isAdm&&(technical||jsErr)&&!(opts&&opts.force)){try{var log=lg("ax_silent_log",[]);log.push({msg:s.slice(0,200),type:type,ts:Date.now()});if(log.length>200)log=log.slice(-200);ls("ax_silent_log",log);}catch(_){}return;}if(type==="ok")axHapticSuccess();if(type==="err")axHapticError();_toastQ.push({msg:msg,type:type});if(!_toastBusy)_toastNext();}
+
+/* AX_V12_499_QUIETMODE v12.499 - Mode calme master (Kevin "ca doit disparaitre") */
+(function(){
+  if(window._axQuietBootInit) return;
+  window._axQuietBootInit = true;
+  window._axBootStartMs = Date.now();
+  /* Default quiet mode TRUE (Kevin opt-in pour bruit) */
+  if(localStorage.getItem("ax_quiet_mode") === null){
+    try{localStorage.setItem("ax_quiet_mode", "true");}catch(_){}
+  }
+})();
+window._axIsQuietMode = function(){
+  try{
+    if(!lg("ax_quiet_mode", true)) return false;
+    /* Quiet window : 60s apres boot (les toasts critiques apres ce delai passent) */
+    var since = Date.now() - (window._axBootStartMs || Date.now());
+    return since < 60000;
+  }catch(_){ return false; }
+};
+window.axToggleQuietMode = function(enabled){
+  try{
+    var v = (typeof enabled === "boolean") ? enabled : !lg("ax_quiet_mode", true);
+    ls("ax_quiet_mode", v);
+    /* Reset boot window pour effet immediat */
+    if(!v) window._axBootStartMs = 0;
+    if(typeof toast === "function") toast(v ? "Mode calme ACTIVE (boot silencieux)" : "Mode calme DESACTIVE (toasts visibles)", v ? "ok" : "info", {force:true, duration:3000});
+    return v;
+  }catch(_){ return true; }
+};
+
+function toast(msg,type,opts){
+  /* AX_V12_499_QUIETMODE : skip toast non-critique pendant boot quiet (Kevin "ca doit disparaitre") */
+  try{
+    if(typeof window._axIsQuietMode === "function" && window._axIsQuietMode() && type !== "err" && !(opts && opts.force)){
+      var sLog = lg("ax_silent_log", []);
+      sLog.push({msg:String(msg).slice(0,200), type:type||"ok", ts:Date.now(), reason:"quiet_boot"});
+      if(sLog.length > 200) sLog = sLog.slice(-200);
+      ls("ax_silent_log", sLog);
+      return;
+    }
+  }catch(_){}
+  try{if(msg&&!opts){var _dk=String(msg).slice(0,60)+"|"+(type||"");var _now=Date.now();if(window._axToastSeen[_dk]&&_now-window._axToastSeen[_dk]<1500)return;window._axToastSeen[_dk]=_now;if(Object.keys(window._axToastSeen).length>30){var _old=window._axToastSeen;window._axToastSeen={};Object.keys(_old).forEach(function(k){if(_now-_old[k]<3000)window._axToastSeen[k]=_old[k];});}}}catch(_){}if(!type)type="ok";var isAdm=(typeof axIsAdmin==="function")&&axIsAdmin();var s=String(msg);var technical=/Firebase|SSE|proxy|fetch|CORS|CSP|quota|cle api|api key|ax_|sentinel|telemetry|rate[- ]?limit|HTTP \d|worker|sync/i.test(s);/* v12.295 Kevin: filtre etendu erreurs JS techniques bas-niveau */var jsErr=/^(undefined|null|NaN|TypeError|ReferenceError|SyntaxError|HTTP \d+|Failed to fetch|AbortError|QuotaExceeded|CORS|fetch failed|Network ?error|JSON\.parse|Unexpected token|Cannot read prop|of undefined|of null|is not a function|is not defined|Maximum call stack)/i.test(s);if(!isAdm&&(technical||jsErr)&&!(opts&&opts.force)){try{var log=lg("ax_silent_log",[]);log.push({msg:s.slice(0,200),type:type,ts:Date.now()});if(log.length>200)log=log.slice(-200);ls("ax_silent_log",log);}catch(_){}return;}if(type==="ok")axHapticSuccess();if(type==="err")axHapticError();_toastQ.push({msg:msg,type:type});if(!_toastBusy)_toastNext();}
 function _toastNext(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=true;var item=_toastQ.shift();var el=document.createElement("div");el.className="ax-toast ax-toast-"+item.type;el.textContent=item.msg;el.setAttribute("role","alert");el.setAttribute("aria-live","polite");var c=document.getElementById("toast-container");if(c)c.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);_toastNext();},2500);}
 
 // --- Firebase ---
