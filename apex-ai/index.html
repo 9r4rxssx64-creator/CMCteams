@@ -845,7 +845,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.465",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.466",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4096,6 +4096,205 @@ function axListenerStats(){
   }catch(e){
     return {error:String(e.message||e)};
   }
+}
+
+/* v12.466 - Phase 1.2 : breach notif RGPD + safe innerHTML + master scheduler */
+
+/* === 1. axBreachNotification : RGPD Art. 33 (72h breach detection + notification) === */
+
+window._axBreachLog = window._axBreachLog || null;
+
+function axDetectPotentialBreach(eventType, details){
+  /* eventType : "auth_failure_burst", "data_leak", "unauthorized_access", "encryption_disabled",
+     "credential_dump", "xss_attempt", "csrf_attempt", "ssrf_attempt", "rce_attempt", "other" */
+  try{
+    var entry = {
+      id: "breach_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+      ts: Date.now(),
+      eventType: String(eventType||"other").slice(0,50),
+      details: details||{},
+      version: typeof APP_VER !== "undefined" ? APP_VER : "?",
+      uid: (K&&K.user&&K.user.id)||"anon",
+      status: "detected",
+      notifiedAt: null,
+      acknowledged: false,
+      severity: details && details.severity || "medium"
+    };
+    var log = lg("ax_breach_log", []);
+    if(!Array.isArray(log)) log = [];
+    log.push(entry);
+    if(log.length > 100) log = log.slice(-100);
+    ls("ax_breach_log", log);
+    /* Notif Kevin immediate (admin inbox) si severity critical */
+    if(entry.severity === "critical" || entry.severity === "high"){
+      try{
+        if(typeof axNotifyKevin === "function"){
+          axNotifyKevin("BREACH RGPD Art. 33 detecte", "Type : "+entry.eventType+" - 72h pour notifier l autorite. Voir vBreachLog.");
+        }
+      }catch(_){}
+      try{
+        if(typeof _escalateToClaudeCode === "function"){
+          _escalateToClaudeCode({breach:entry}, "RGPD Art. 33 breach detected", "critical");
+        }
+      }catch(_){}
+    }
+    /* Audit security */
+    try{
+      if(typeof axSecurityLog === "function"){
+        axSecurityLog("breach_detected", entry.eventType+" sev="+entry.severity);
+      }
+    }catch(_){}
+    return entry;
+  }catch(e){
+    try{console.error("[axDetectPotentialBreach]",e);}catch(_){}
+    return null;
+  }
+}
+
+function axMarkBreachNotified(breachId, authority){
+  try{
+    var log = lg("ax_breach_log", []);
+    if(!Array.isArray(log)) return false;
+    for(var i=0; i<log.length; i++){
+      if(log[i] && log[i].id === breachId){
+        log[i].notifiedAt = Date.now();
+        log[i].notifiedAuthority = String(authority||"CNIL").slice(0,80);
+        log[i].status = "notified";
+        ls("ax_breach_log", log);
+        return true;
+      }
+    }
+    return false;
+  }catch(_){ return false; }
+}
+
+function axBreachStats(){
+  /* Statistique pour tableau de bord admin : combien de breaches detectes,
+     non-notifies, au dela de 72h depuis detection (= violation RGPD) */
+  try{
+    var log = lg("ax_breach_log", []);
+    if(!Array.isArray(log)) return {total:0, unnotified:0, overdue72h:0};
+    var now = Date.now();
+    var stats = {total:log.length, unnotified:0, overdue72h:0, byType:{}};
+    log.forEach(function(b){
+      if(!b.notifiedAt) stats.unnotified++;
+      if(!b.notifiedAt && (now - b.ts) > 72*3600*1000) stats.overdue72h++;
+      var t = b.eventType || "other";
+      stats.byType[t] = (stats.byType[t]||0) + 1;
+    });
+    return stats;
+  }catch(_){ return {total:0, unnotified:0, overdue72h:0}; }
+}
+
+/* Auto-check 72h overdue toutes les heures - avertit Kevin si en retard */
+(function(){
+  if(window._axBreachWatchInstalled) return;
+  window._axBreachWatchInstalled = true;
+  setTimeout(function(){
+    var stats = axBreachStats();
+    if(stats.overdue72h > 0){
+      try{
+        if(typeof axNotifyKevin === "function"){
+          axNotifyKevin("URGENT : "+stats.overdue72h+" breach RGPD non notifies > 72h", "Violation Art. 33. Notifier CNIL immediatement.");
+        }
+      }catch(_){}
+    }
+    setInterval(function(){
+      try{
+        var s = axBreachStats();
+        if(s.overdue72h > 0 && typeof axNotifyKevin === "function"){
+          axNotifyKevin("URGENT : "+s.overdue72h+" breach > 72h non notifies", "Violation RGPD Art. 33");
+        }
+      }catch(_){}
+    }, 3600 * 1000);
+  }, 60000);
+})();
+
+/* === 2. axSafeInnerHTML : DOMPurify enforce wrapper === */
+
+function axSafeInnerHTML(el, html){
+  /* Wrapper safe pour innerHTML user-controlled. Lazy-load DOMPurify si absent. */
+  if(!el) return false;
+  try{
+    var safe = String(html||"");
+    if(typeof DOMPurify !== "undefined" && DOMPurify.sanitize){
+      safe = DOMPurify.sanitize(safe, {
+        ALLOWED_TAGS: ["a","b","i","em","strong","p","br","ul","ol","li","code","pre","span","div","h1","h2","h3","h4","table","tr","td","th","thead","tbody","img","button"],
+        ALLOWED_ATTR: ["href","title","class","style","alt","src","onclick","data-action","aria-label","role","tabindex","target","rel"],
+        FORBID_TAGS: ["script","iframe","object","embed","style","link","meta"],
+        FORBID_ATTR: ["onerror","onload","onfocus","onblur"]
+      });
+    } else {
+      /* Fallback : escape basique si DOMPurify pas chargee */
+      safe = safe.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+                 .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe\s*>/gi, "")
+                 .replace(/javascript:/gi, "blocked-js:")
+                 .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
+    }
+    el.innerHTML = safe;
+    return true;
+  }catch(e){
+    try{console.error("[axSafeInnerHTML]",e);}catch(_){}
+    /* Fallback ultime : textContent (neutralise totalement HTML) */
+    try{ el.textContent = String(html||""); }catch(_){}
+    return false;
+  }
+}
+
+/* === 3. axMasterScheduler simple consolidator === */
+
+window._axMasterTasks = window._axMasterTasks || {};
+window._axMasterTickerStarted = false;
+
+function axMasterRegister(taskId, intervalMs, fn, opts){
+  if(!taskId || typeof fn !== "function") return false;
+  opts = opts || {};
+  window._axMasterTasks[taskId] = {
+    fn: fn,
+    intervalMs: intervalMs,
+    lastRun: 0,
+    nextRun: Date.now() + (opts.firstRunDelay||0),
+    runs: 0,
+    errors: 0
+  };
+  if(!window._axMasterTickerStarted){
+    window._axMasterTickerStarted = true;
+    setInterval(function(){
+      var now = Date.now();
+      var tasks = window._axMasterTasks;
+      Object.keys(tasks).forEach(function(id){
+        var t = tasks[id];
+        if(!t) return;
+        if(now >= t.nextRun){
+          try{
+            t.fn();
+            t.runs++;
+            t.lastRun = now;
+          }catch(e){
+            t.errors++;
+            try{if(typeof _axSafeCatch === "function") _axSafeCatch("master_"+id, e);}catch(_){}
+          }
+          t.nextRun = now + t.intervalMs;
+        }
+      });
+    }, 30000);
+  }
+  return true;
+}
+
+function axMasterUnregister(taskId){
+  if(window._axMasterTasks[taskId]) delete window._axMasterTasks[taskId];
+  return true;
+}
+
+function axMasterStats(){
+  var stats = {tickerActive:!!window._axMasterTickerStarted, taskCount:0, tasks:[]};
+  Object.keys(window._axMasterTasks||{}).forEach(function(id){
+    var t = window._axMasterTasks[id];
+    stats.taskCount++;
+    stats.tasks.push({id:id, intervalMs:t.intervalMs, runs:t.runs, errors:t.errors, lastRunAgo:t.lastRun?Math.round((Date.now()-t.lastRun)/1000):null});
+  });
+  return stats;
 }
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
