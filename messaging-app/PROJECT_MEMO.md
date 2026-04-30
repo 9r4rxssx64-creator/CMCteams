@@ -516,6 +516,77 @@ Si Kevin se logue avec son numéro tel reconnu → mode admin actif automatiquem
 
 ---
 
+## 🔗 Intégration Apex ↔ Apex Chat (validé Kevin 2026-04-27)
+
+**Apex Chat n'est PAS une app isolée.** C'est un module intégré et auto-géré par Apex.
+
+### 1. SSO cross-app (auth partagée)
+- Compte Apex (kdmc_admin Kevin / Laurence) = compte Apex Chat automatique
+- Au premier accès Apex Chat depuis Apex, l'auth est transmise via postMessage + token JWT signé partagé
+- Pas besoin de re-saisir tel + SMS si déjà authentifié dans Apex
+- Token cross-app stocké dans Firebase clé `ax_chat_sso_token` (FB_LOCAL strict, jamais sync)
+
+### 2. Lien d'accès depuis Apex
+- Bouton "💬 Apex Chat" dans la nav Apex (user + admin)
+- Deep-link : `https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/?from=apex&token=<jwt>`
+- Protocole custom : `web+apexchat://open?conv=<id>`
+- Side-by-side : Apex peut ouvrir Apex Chat dans iframe modal pour multi-tasking
+
+### 3. Auto-gestion totale par Apex IA
+**Apex IA pilote Apex Chat en autonomie complète** :
+- Sentinelles Apex Chat poussent vers `ax_telemetry_in` Firebase (cross-app)
+- Apex IA `_aiHandleIssue` traite les anomalies Apex Chat (auto-fix whitelist : restart DO, rotate keys, requeue push)
+- Si Apex IA ne peut pas → escalade `ax_claude_todo` → GitHub Action `claude-todo-watcher.yml`
+- Apex IA peut envoyer **commandes** à Apex Chat via Firebase clé partagée `apex_chat_commands`
+  - `kickUser(uid, reason)`, `banUser(uid)`, `searchAllMessages(query)`, `geoTrace(uid)`, `exportConv(convId)`, `broadcastNotif(message)`, `summarizeConv(convId)`
+  - Côté Apex Chat, un poller worker récupère les commandes et exécute (avec confirmation 2-step pour destructifs)
+
+### 4. IA Apex partagée (pas de duplication)
+- Quand un user Apex Chat demande à l'IA (résumé, traduction, smart reply), l'app appelle directement l'IA Apex existante
+- Pas de quota séparé — utilise le quota Apex du user (Premium Apex = Premium Apex Chat)
+- Sytem prompt enrichi : Apex IA sait qu'elle peut être appelée depuis Apex Chat et ajuste le contexte (per-conversation memory)
+
+### 5. Mémoire partagée par contact
+- `ax_persistent_memory_<uid>` contient déjà la mémoire des contacts (apex)
+- Apex Chat ENRICHIT cette mémoire avec les conversations chat
+- Apex profil enrichi auto inclut maintenant : "Tu parles à Sophie sur Apex Chat depuis 3 mois, vous avez 47 conversations, anniv 12 mai, allergique fruits de mer..."
+
+### 6. Notifications cross-app
+- Notifications Apex et Apex Chat passent par le même push worker (`apex-push-worker.workers.dev`)
+- Topic unifié : `user:<uid>` reçoit notifs Apex + Apex Chat
+- Préférences notifs centralisées dans Apex Réglages
+
+### 7. Vue admin unifiée Kevin
+- Depuis le panel admin Apex (vUserActivity), Kevin voit aussi les données Apex Chat de chaque user
+- Onglet "Apex Chat" dans la fiche user : conversations, contacts, signalements, devices Apex Chat
+- Tools Apex IA admin étendus : `searchAllMessages` cherche aussi dans Apex Chat
+- Dashboard Apex monitoring : section "Apex Chat" avec compteurs live (users connectés Apex Chat, messages/min, appels en cours, sentinelles state)
+
+### 8. Self-healing en boucle fermée
+```
+[User Apex Chat] → bug détecté → sentinelle Apex Chat → CF Queue
+       ↓
+[Apex IA backend] → tente auto-fix → si KO → ax_telemetry_in (Firebase)
+       ↓
+[Apex IA Kevin device] → reçoit notif → tente fix avancé (whitelist) → si KO
+       ↓
+[ax_claude_todo Firebase] → GitHub Action cron 2h → ouvre Issue
+       ↓
+[Claude Code session suivante] → fix code → commit + push + lesson learned
+       ↓
+[Apex + Apex Chat] héritent automatiquement du fix au prochain SW update
+```
+
+**Tout en autonomie totale, Kevin n'intervient jamais sauf décision stratégique.**
+
+### 9. Implémentation technique
+- Module Apex `axChatModule.js` injecté dans `apex-ai/index.html` (à créer Phase 6)
+- Endpoint Apex Chat `/api/apex/sso-exchange` qui valide le JWT Apex et crée la session
+- Endpoint Apex Chat `/api/apex/commands` qui poll Firebase `apex_chat_commands` toutes les 30s
+- Bouton "💬 Apex Chat" ajouté à la nav Apex (apex-ai/index.html)
+
+---
+
 ## 🔮 Questions critiques à trancher avec Kevin
 
 1. **DÉCISION CRITIQUE — modèle admin** :

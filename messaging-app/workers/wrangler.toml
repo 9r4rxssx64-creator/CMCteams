@@ -1,0 +1,128 @@
+# ============================================================================
+#  Apex Chat — Cloudflare Workers configuration
+#
+#  Architecture :
+#    - api-worker      : REST + WebSocket upgrade (route principale)
+#    - push-worker     : Web Push + APNs + FCM (clone apex-push-worker.js)
+#    - sms-worker      : Vonage SMS invitations + OTP fallback
+#    - ia-worker       : Cache LRU IA + failover Anthropic→OpenRouter→Gemini→Groq
+#    - sentinel-consumer : consume CF Queues self-healing
+#    - cron workers    : letters-deliver, time-capsule-open, memory-lane, lifecycle-r2
+#
+#  Bindings :
+#    - 1 D1 database  : APEX_CHAT_DB
+#    - 1 R2 bucket    : APEX_CHAT_MEDIA
+#    - 1 KV namespace : APEX_CHAT_CACHE (cache LRU IA)
+#    - 5 Queues       : telemetry, pipeline-fix, letters-deliver, timecapsule-open, memory-lane
+#    - 3 DO classes   : ConversationDO, BroadcastDO, PresenceDO
+# ============================================================================
+
+name = "apex-chat-api"
+main = "api-worker.js"
+compatibility_date = "2026-04-27"
+compatibility_flags = ["nodejs_compat"]
+
+# Limites runtime
+[limits]
+cpu_ms = 30000
+
+# D1 database
+[[d1_databases]]
+binding = "APEX_CHAT_DB"
+database_name = "apex-chat-main"
+database_id = "REPLACE_WITH_D1_ID"   # créé par wrangler d1 create
+migrations_dir = "../d1-migrations"
+
+# R2 bucket
+[[r2_buckets]]
+binding = "APEX_CHAT_MEDIA"
+bucket_name = "apex-chat-media"
+
+# KV namespace cache LRU
+[[kv_namespaces]]
+binding = "APEX_CHAT_CACHE"
+id = "REPLACE_WITH_KV_ID"
+
+# Queues producers
+[[queues.producers]]
+queue = "apex-chat-telemetry"
+binding = "TELEMETRY_QUEUE"
+
+[[queues.producers]]
+queue = "apex-chat-pipeline-fix"
+binding = "PIPELINE_FIX_QUEUE"
+
+[[queues.producers]]
+queue = "apex-chat-letters-deliver"
+binding = "LETTERS_QUEUE"
+
+[[queues.producers]]
+queue = "apex-chat-timecapsule-open"
+binding = "TIMECAPSULE_QUEUE"
+
+[[queues.producers]]
+queue = "apex-chat-memory-lane"
+binding = "MEMORY_LANE_QUEUE"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "CONVERSATION_DO"
+class_name = "ConversationDO"
+script_name = "apex-chat-api"
+
+[[durable_objects.bindings]]
+name = "BROADCAST_DO"
+class_name = "BroadcastDO"
+script_name = "apex-chat-api"
+
+[[durable_objects.bindings]]
+name = "PRESENCE_DO"
+class_name = "PresenceDO"
+script_name = "apex-chat-api"
+
+# Migration des Durable Objects
+[[migrations]]
+tag = "v1"
+new_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
+
+# Variables d'environnement (publiques — utiliser secrets pour clés sensibles)
+[vars]
+ENV = "production"
+APEX_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/"
+APEX_CHAT_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/"
+APEX_HANDOFF_FIREBASE_URL = "https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app"
+ADMIN_MODE = "A"  # A | B | C — bascule via D1.system_config (cette var = fallback)
+KEVIN_INVISIBLE_ADMIN = "true"
+AUTH_PROVIDER = "firebase"  # firebase | vonage
+TURN_PROVIDER = "p2p-only"  # p2p-only | local-coturn | cloudflare-calls
+JWT_ISSUER = "apex-chat"
+
+# Secrets (à définir via wrangler secret put) :
+#   - JWT_SIGN_KEY            : HS256 secret pour JWT
+#   - FIREBASE_PROJECT_ID
+#   - FIREBASE_API_KEY
+#   - VONAGE_API_KEY          : pour SMS payants
+#   - VONAGE_API_SECRET
+#   - ANTHROPIC_API_KEY
+#   - OPENROUTER_API_KEY
+#   - GEMINI_API_KEY
+#   - GROQ_API_KEY
+#   - VAPID_PUBLIC_KEY
+#   - VAPID_PRIVATE_KEY
+#   - APNS_KEY_ID
+#   - APNS_TEAM_ID
+#   - APNS_PRIVATE_KEY        : .p8 base64
+#   - FCM_SERVER_KEY
+#   - APEX_HANDOFF_TOKEN      : auth pour push ax_telemetry_in
+#   - APEX_CHAT_ADMIN_TOKEN   : auth admin Kevin pour endpoints sensibles
+
+# Routes
+[[routes]]
+pattern = "apex-chat-api.workers.dev/*"
+zone_name = ""
+
+# Workers séparés (déployés via leurs propres wrangler.toml)
+# - workers/push-worker/wrangler.toml
+# - workers/sms-worker/wrangler.toml
+# - workers/ia-worker/wrangler.toml
+# - workers/sentinel-consumer/wrangler.toml
