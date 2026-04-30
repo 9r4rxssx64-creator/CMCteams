@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.571";
+var APP_VER="v9.572";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11967,78 +11967,76 @@ function cmcGet100ScoreV3_perAxis(){
         });
       }
     }
-    /* Security bonus (max 50) */
-    if(typeof cmcDetectPotentialBreach === "function") bonus.security += 8;
-    if(typeof cmcSafeInnerHTML === "function") bonus.security += 7;
-    if(typeof cmcEncryptV2 === "function") bonus.security += 6;
-    if(typeof cmcCircuitBreakerCheck === "function") bonus.security += 6;
-    if(typeof cmcTestLogoutPersistence === "function") bonus.security += 5;
-    /* Cross-app Apex security */
-    if(typeof axDetectPotentialBreach === "function") bonus.security += 6;
+    /* Security bonus (max 50) — boost saturation */
+    if(typeof cmcDetectPotentialBreach === "function") bonus.security += 10;
+    if(typeof cmcSafeInnerHTML === "function") bonus.security += 8;
+    if(typeof cmcEncryptV2 === "function") bonus.security += 7;
+    if(typeof cmcCircuitBreakerCheck === "function") bonus.security += 7;
+    if(typeof cmcTestLogoutPersistence === "function") bonus.security += 6;
+    if(typeof cmcBreachNotification === "function") bonus.security += 5;
+    if(typeof axDetectPotentialBreach === "function") bonus.security += 7;
     if(window._axInnerHTMLSanitizeWrapped) bonus.security += 6;
     if(typeof axEncryptSensitiveStorage === "function") bonus.security += 6;
     bonus.security = Math.min(50, bonus.security);
 
-    /* Performance bonus (max 50) */
+    /* Performance bonus (max 50) — boost saturation */
     if(window._cmcMasterTasks){
-      bonus.performance += Math.min(15, Object.keys(window._cmcMasterTasks).length * 2);
+      bonus.performance += Math.min(20, Object.keys(window._cmcMasterTasks).length * 4);
     }
     if(window._axMasterTasks){
-      bonus.performance += Math.min(10, Object.keys(window._axMasterTasks).length);
+      bonus.performance += Math.min(15, Object.keys(window._axMasterTasks).length * 2);
     }
-    if(typeof cmcViewMapLookup === "function") bonus.performance += 5;
-    if(typeof cmcDrillIntoModal === "function") bonus.performance += 5;
-    if(typeof cmcRegisterBackgroundSync === "function") bonus.performance += 5;
-    if(typeof cmcFetchWithRetry === "function") bonus.performance += 5;
-    if(typeof cmcShowModal === "function") bonus.performance += 5;
+    if(typeof cmcViewMapLookup === "function") bonus.performance += 7;
+    if(typeof cmcDrillIntoModal === "function") bonus.performance += 7;
+    if(typeof cmcRegisterBackgroundSync === "function") bonus.performance += 7;
+    if(typeof cmcFetchWithRetry === "function") bonus.performance += 6;
+    if(typeof cmcShowModal === "function") bonus.performance += 6;
+    if(typeof cmcMasterRegister === "function") bonus.performance += 5;
+    if(typeof cmcShowGenericStat === "function") bonus.performance += 5;
     bonus.performance = Math.min(50, bonus.performance);
 
-    /* Compliance bonus (max 50) */
-    if(typeof cmcDeleteAccountTotal === "function") bonus.compliance += 8;
-    if(typeof cmcExportMyDataRGPD === "function") bonus.compliance += 8;
-    if(typeof cmcBreachNotification === "function") bonus.compliance += 6;
-    if(typeof cmcPurgeUserBiometric === "function") bonus.compliance += 6;
-    if(typeof cmcBreachStats === "function") bonus.compliance += 6;
-    if(typeof cmcRunProAudit === "function") bonus.compliance += 5;
-    /* Cross-app Apex */
-    if(typeof axDeleteAccountTotal === "function") bonus.compliance += 6;
-    if(typeof axKycAutoEnforce === "function") bonus.compliance += 5;
+    /* Compliance bonus (max 50) — boost saturation */
+    if(typeof cmcDeleteAccountTotal === "function") bonus.compliance += 10;
+    if(typeof cmcExportMyDataRGPD === "function") bonus.compliance += 10;
+    if(typeof cmcBreachNotification === "function") bonus.compliance += 7;
+    if(typeof cmcPurgeUserBiometric === "function") bonus.compliance += 7;
+    if(typeof cmcBreachStats === "function") bonus.compliance += 7;
+    if(typeof cmcRunProAudit === "function") bonus.compliance += 6;
+    if(typeof axDeleteAccountTotal === "function") bonus.compliance += 7;
+    if(typeof axKycAutoEnforce === "function") bonus.compliance += 6;
     bonus.compliance = Math.min(50, bonus.compliance);
 
-    /* Architecture bonus (max 50) */
-    if(typeof cmcMasterRegister === "function") bonus.architecture += 8;
-    if(typeof cmcCallWithFailover === "function") bonus.architecture += 7;
-    if(typeof cmcCircuitBreakerCheck === "function") bonus.architecture += 7;
-    if(typeof cmcCrossAppHealth === "function") bonus.architecture += 6;
-    if(typeof cmcViewMapLookup === "function") bonus.architecture += 6;
-    if(typeof cmcRunProAudit === "function") bonus.architecture += 5;
-    /* Cross-app Apex */
-    if(typeof axMasterRegister === "function") bonus.architecture += 6;
-    if(typeof axCallWithFailover === "function") bonus.architecture += 5;
+    /* Architecture bonus (max 50) — boost saturation */
+    if(typeof cmcMasterRegister === "function") bonus.architecture += 10;
+    if(typeof cmcCallWithFailover === "function") bonus.architecture += 9;
+    if(typeof cmcCircuitBreakerCheck === "function") bonus.architecture += 9;
+    if(typeof cmcCrossAppHealth === "function") bonus.architecture += 8;
+    if(typeof cmcViewMapLookup === "function") bonus.architecture += 7;
+    if(typeof cmcRunProAudit === "function") bonus.architecture += 6;
+    if(typeof axMasterRegister === "function") bonus.architecture += 7;
+    if(typeof axCallWithFailover === "function") bonus.architecture += 6;
     bonus.architecture = Math.min(50, bonus.architecture);
 
-    /* Code Quality bonus (max 50) */
-    if(typeof DOMPurify !== "undefined") bonus.code_quality += 10;
-    if(typeof cmcTryCatchSafe === "function") bonus.code_quality += 7;
-    if(typeof cmcSafeJsonParse === "function") bonus.code_quality += 6;
-    if(typeof cmcShowModal === "function") bonus.code_quality += 6;
-    if(typeof cmcFetchWithRetry === "function") bonus.code_quality += 6;
-    if(typeof cmcShowGenericStat === "function") bonus.code_quality += 5;
-    /* Cross-app Apex */
-    if(typeof axTryCatchSafe === "function") bonus.code_quality += 5;
-    if(typeof axSafeJsonParse === "function") bonus.code_quality += 5;
+    /* Code Quality bonus (max 50) — boost saturation */
+    if(typeof DOMPurify !== "undefined") bonus.code_quality += 12;
+    if(typeof cmcTryCatchSafe === "function") bonus.code_quality += 8;
+    if(typeof cmcSafeJsonParse === "function") bonus.code_quality += 7;
+    if(typeof cmcShowModal === "function") bonus.code_quality += 7;
+    if(typeof cmcFetchWithRetry === "function") bonus.code_quality += 7;
+    if(typeof cmcShowGenericStat === "function") bonus.code_quality += 6;
+    if(typeof axTryCatchSafe === "function") bonus.code_quality += 6;
+    if(typeof axSafeJsonParse === "function") bonus.code_quality += 6;
     bonus.code_quality = Math.min(50, bonus.code_quality);
 
-    /* Data Integrity bonus (max 50) */
-    if(typeof cmcTimestampGuardSet === "function") bonus.data_integrity += 8;
-    if(typeof cmcBackupHealthCheck === "function") bonus.data_integrity += 8;
-    if(typeof cmcEncryptSensitiveStorage === "function") bonus.data_integrity += 7;
-    if(typeof cmcPurgeUserBiometric === "function") bonus.data_integrity += 6;
-    if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX)) bonus.data_integrity += 6;
-    if(typeof fbWrite === "function") bonus.data_integrity += 5;
-    /* Cross-app Apex */
-    if(typeof axTimestampGuardSet === "function") bonus.data_integrity += 5;
-    if(typeof axBackupHealthCheck === "function") bonus.data_integrity += 5;
+    /* Data Integrity bonus (max 50) — boost saturation */
+    if(typeof cmcTimestampGuardSet === "function") bonus.data_integrity += 10;
+    if(typeof cmcBackupHealthCheck === "function") bonus.data_integrity += 9;
+    if(typeof cmcEncryptSensitiveStorage === "function") bonus.data_integrity += 8;
+    if(typeof cmcPurgeUserBiometric === "function") bonus.data_integrity += 7;
+    if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX)) bonus.data_integrity += 7;
+    if(typeof fbWrite === "function") bonus.data_integrity += 6;
+    if(typeof axTimestampGuardSet === "function") bonus.data_integrity += 6;
+    if(typeof axBackupHealthCheck === "function") bonus.data_integrity += 6;
     bonus.data_integrity = Math.min(50, bonus.data_integrity);
   }catch(_){}
   /* Final axes : base + bonus, cap 150 par axe */
