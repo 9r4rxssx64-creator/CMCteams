@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.460",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.461",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3724,6 +3724,110 @@ function axTriggerPredictivePrefetch(){
     };
   }, 4000); /* Apres autres patches sv */
 })();
+
+/* v12.461 - Helper safe axHandlePhotoUpload (anti-crash) */
+
+function axHandlePhotoUpload(file){
+  return new Promise(function(resolve, reject){
+    try{
+      if(!file || !file.type || file.type.indexOf("image/") !== 0){
+        reject(new Error("Pas un fichier image"));
+        return;
+      }
+      if(file.size > 50 * 1024 * 1024){ /* 50 MB max */
+        reject(new Error("Image trop lourde (max 50 Mo)"));
+        return;
+      }
+      var reader = new FileReader();
+      reader.onerror = function(){ reject(new Error("Lecture fichier impossible")); };
+      reader.onload = function(){
+        try{
+          var dataUrl = reader.result;
+          if(!dataUrl || typeof dataUrl !== "string"){
+            reject(new Error("Donnees image invalides"));
+            return;
+          }
+          /* Compression si > 2 Mo via canvas */
+          if(file.size > 2 * 1024 * 1024){
+            var img = new Image();
+            img.onerror = function(){
+              /* Fallback : retourne dataUrl brut */
+              resolve({name:file.name, size:file.size, type:file.type, dataUrl:dataUrl, compressed:false});
+            };
+            img.onload = function(){
+              try{
+                var canvas = document.createElement("canvas");
+                var maxDim = 1920;
+                var ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
+                canvas.width = Math.round(img.width * ratio);
+                canvas.height = Math.round(img.height * ratio);
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                var compressed = canvas.toDataURL("image/jpeg", 0.82);
+                resolve({
+                  name:file.name,
+                  size:file.size,
+                  sizeMB:(file.size/(1024*1024)).toFixed(2),
+                  type:file.type,
+                  width:img.width,
+                  height:img.height,
+                  dataUrl:compressed,
+                  compressedSizeKB:Math.round(compressed.length / 1024),
+                  compressed:true
+                });
+              }catch(e){
+                /* Fallback */
+                resolve({name:file.name, size:file.size, type:file.type, dataUrl:dataUrl, compressed:false});
+              }
+            };
+            img.src = dataUrl;
+          } else {
+            /* Petit fichier : retourne tel quel */
+            resolve({
+              name:file.name,
+              size:file.size,
+              sizeMB:(file.size/(1024*1024)).toFixed(2),
+              type:file.type,
+              dataUrl:dataUrl,
+              compressed:false
+            });
+          }
+        }catch(e){
+          reject(e);
+        }
+      };
+      reader.readAsDataURL(file);
+    }catch(e){
+      reject(e);
+    }
+  });
+}
+
+function axHandleMultiPhotoUpload(fileList){
+  /* Traite plusieurs photos en serie pour eviter crash memoire */
+  return new Promise(function(resolve){
+    var files = Array.from(fileList || []).filter(function(f){return f && f.type && f.type.indexOf("image/") === 0;});
+    if(!files.length){ resolve({ok:true, photos:[], errors:[]}); return; }
+    var photos = [], errors = [];
+    var idx = 0;
+    function next(){
+      if(idx >= files.length){
+        resolve({ok:true, photos:photos, errors:errors});
+        return;
+      }
+      axHandlePhotoUpload(files[idx]).then(function(p){
+        photos.push(p);
+      }).catch(function(e){
+        errors.push({file:files[idx].name, error:String(e.message||e)});
+      }).then(function(){
+        idx++;
+        /* Pause 100ms entre photos pour eviter spike memoire iOS */
+        setTimeout(next, 100);
+      });
+    }
+    next();
+  });
+}
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
@@ -10080,7 +10184,7 @@ function toggleSidebar(){_sidebarOpen=!_sidebarOpen;render();}
 function _timeAgo(ts){if(!ts)return"";var d=now()-ts;if(d<60000)return"maintenant";if(d<3600000)return Math.floor(d/60000)+"min";if(d<86400000)return Math.floor(d/3600000)+"h";return Math.floor(d/86400000)+"j";}
 
 // --- Login ---
-function vLogin(){return'<div class="ax-login-bg" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:40px 20px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 28%,#0e1530 0%,#080c1a 55%,#040608 100%)"><div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 13px,rgba(255,255,255,.012) 13px,rgba(255,255,255,.012) 14px),repeating-linear-gradient(90deg,transparent,transparent 13px,rgba(255,255,255,.012) 13px,rgba(255,255,255,.012) 14px),repeating-linear-gradient(45deg,transparent,transparent 22px,rgba(201,162,39,.022) 22px,rgba(201,162,39,.022) 24px),repeating-linear-gradient(-45deg,transparent,transparent 22px,rgba(201,162,39,.022) 22px,rgba(201,162,39,.022) 24px);pointer-events:none;z-index:0"></div><svg viewBox="0 0 200 200" style="position:absolute;top:7%;left:50%;transform:translateX(-50%);width:300px;height:300px;opacity:.055;pointer-events:none;z-index:0" aria-hidden="true"><defs><linearGradient id="axLoginPyr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8b830"/><stop offset="1" stop-color="#c9a227" stop-opacity="0"/></linearGradient></defs><polygon points="100,20 180,170 20,170" fill="none" stroke="url(#axLoginPyr)" stroke-width="1"/><polygon points="100,55 150,160 50,160" fill="none" stroke="url(#axLoginPyr)" stroke-width=".8"/><polygon points="100,90 130,150 70,150" fill="none" stroke="url(#axLoginPyr)" stroke-width=".6"/></svg><div style="position:absolute;top:14px;left:18px;font-size:14px;color:rgba(201,162,39,.30);pointer-events:none;z-index:0">✦</div><div style="position:absolute;top:14px;right:18px;font-size:14px;color:rgba(201,162,39,.30);pointer-events:none;z-index:0">✦</div><div style="position:absolute;bottom:14px;left:18px;font-size:14px;color:rgba(201,162,39,.30);pointer-events:none;z-index:0">✦</div><div style="position:absolute;bottom:14px;right:18px;font-size:14px;color:rgba(201,162,39,.30);pointer-events:none;z-index:0">✦</div><div style="position:absolute;width:280px;height:280px;background:radial-gradient(circle,rgba(201,162,39,.05) 0%,transparent 70%);border-radius:50%;top:10%;left:5%;filter:blur(40px);pointer-events:none;z-index:0"></div><div style="position:absolute;width:220px;height:220px;background:radial-gradient(circle,rgba(90,168,255,.04) 0%,transparent 70%);border-radius:50%;bottom:15%;right:10%;filter:blur(30px);pointer-events:none;z-index:0"></div><div style="position:relative;z-index:1;text-align:center"><div style="font-size:72px;margin-bottom:16px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite;display:inline-block">\u2726</div><h1 style="font-size:36px;font-weight:900;letter-spacing:5px;margin-bottom:8px;background:linear-gradient(135deg,#c9a227,#e8b830,#f0c850,#e8b830,#ffd860,#c9a227);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:axGradientShift 8s ease infinite">APEX</h1><p style="color:var(--ax-text-dim);font-size:15px;margin-bottom:36px;letter-spacing:1px;font-weight:500">Intelligence Artificielle</p><div style="width:100%;max-width:360px"><input id="ax-login-name" class="ax-input" placeholder="Nom Prenom" style="margin-bottom:14px;padding:16px 18px;font-size:16px" aria-label="Nom Prenom"><input id="ax-login-pin" class="ax-input" type="password" placeholder="Mot de passe" style="margin-bottom:20px;padding:16px 18px;font-size:16px" aria-label="Mot de passe"><button class="ax-btn ax-btn-primary" onclick="_doLogin()" style="width:100%;padding:18px 24px;font-size:16px;font-weight:700;letter-spacing:1px;min-height:56px">\uD83D\uDD13 Connexion</button>'+(lg("ax_biometric_id",null)?'<button class="ax-btn ax-btn-primary" onclick="axBiometricLoginTry()" style="width:100%;padding:18px 24px;font-size:16px;font-weight:700;margin-top:10px;background:linear-gradient(135deg,#5aa8ff,#7dbcff);color:#fff">\uD83D\uDC64 Face ID / Touch ID (priorite)</button><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onerror="setTimeout(function(){if(window._axFaceIdTried)return;window._axFaceIdTried=true;try{if(typeof axBiometricLoginTry===\'function\')axBiometricLoginTry();}catch(_){}},400)" style="display:none">':'')+'<div style="display:flex;gap:8px;justify-content:center;margin-top:20px"><a href="#" onclick="sv(\'landing\');return false" style="color:var(--ax-blue);font-size:13px">Decouvrir</a><span style="color:var(--ax-text-dim)">|</span><a href="#" onclick="axForceRefresh();return false" style="color:var(--ax-text-dim);font-size:13px">\uD83D\uDD04 Mise a jour</a></div><div id="ax-bodyguard-hidden" style="display:none"></div><p style="text-align:center;margin-top:24px;font-size:14px;color:var(--ax-gold);opacity:.95;font-weight:700;letter-spacing:1px">'+APP_VER+'</p></div></div></div>';}
+function vLogin(){return'<div class="ax-login-bg" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100%;padding:40px 20px;position:relative;overflow-y:auto;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 28%,#0e1530 0%,#080c1a 55%,#040608 100%)"><div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 13px,rgba(255,255,255,.012) 13px,rgba(255,255,255,.012) 14px),repeating-linear-gradient(90deg,transparent,transparent 13px,rgba(255,255,255,.012) 13px,rgba(255,255,255,.012) 14px),repeating-linear-gradient(45deg,transparent,transparent 22px,rgba(201,162,39,.022) 22px,rgba(201,162,39,.022) 24px),repeating-linear-gradient(-45deg,transparent,transparent 22px,rgba(201,162,39,.022) 22px,rgba(201,162,39,.022) 24px);pointer-events:none;z-index:0"></div><svg viewBox="0 0 200 200" style="position:absolute;top:7%;left:50%;transform:translateX(-50%);width:300px;height:300px;opacity:.055;pointer-events:none;z-index:0" aria-hidden="true"><defs><linearGradient id="axLoginPyr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8b830"/><stop offset="1" stop-color="#c9a227" stop-opacity="0"/></linearGradient></defs><polygon points="100,20 180,170 20,170" fill="none" stroke="url(#axLoginPyr)" stroke-width="1"/><polygon points="100,55 150,160 50,160" fill="none" stroke="url(#axLoginPyr)" stroke-width=".8"/><polygon points="100,90 130,150 70,150" fill="none" stroke="url(#axLoginPyr)" stroke-width=".6"/></svg><div style="position:relative;z-index:1;text-align:center"><div style="font-size:72px;margin-bottom:16px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite;display:inline-block">\u2726</div><h1 style="font-size:36px;font-weight:900;letter-spacing:5px;margin-bottom:8px;background:linear-gradient(135deg,#c9a227,#e8b830,#f0c850,#e8b830,#ffd860,#c9a227);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:axGradientShift 8s ease infinite">APEX</h1><p style="color:var(--ax-text-dim);font-size:15px;margin-bottom:36px;letter-spacing:1px;font-weight:500">Intelligence Artificielle</p><div style="width:100%;max-width:360px"><input id="ax-login-name" class="ax-input" placeholder="Nom Prenom" style="margin-bottom:14px;padding:16px 18px;font-size:16px" aria-label="Nom Prenom"><input id="ax-login-pin" class="ax-input" type="password" placeholder="Mot de passe" style="margin-bottom:20px;padding:16px 18px;font-size:16px" aria-label="Mot de passe"><button class="ax-btn ax-btn-primary" onclick="_doLogin()" style="width:100%;padding:18px 24px;font-size:16px;font-weight:700;letter-spacing:1px;min-height:56px">\uD83D\uDD13 Connexion</button>'+(lg("ax_biometric_id",null)?'<button class="ax-btn ax-btn-primary" onclick="axBiometricLoginTry()" style="width:100%;padding:18px 24px;font-size:16px;font-weight:700;margin-top:10px;background:linear-gradient(135deg,#5aa8ff,#7dbcff);color:#fff">\uD83D\uDC64 Face ID / Touch ID (priorite)</button><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onerror="setTimeout(function(){if(window._axFaceIdTried)return;window._axFaceIdTried=true;try{if(typeof axBiometricLoginTry===\'function\')axBiometricLoginTry();}catch(_){}},400)" style="display:none">':'')+'<div style="display:flex;gap:8px;justify-content:center;margin-top:20px"><a href="#" onclick="sv(\'landing\');return false" style="color:var(--ax-blue);font-size:13px">Decouvrir</a><span style="color:var(--ax-text-dim)">|</span><a href="#" onclick="axForceRefresh();return false" style="color:var(--ax-text-dim);font-size:13px">\uD83D\uDD04 Mise a jour</a></div><div id="ax-bodyguard-hidden" style="display:none"></div><p style="text-align:center;margin-top:24px;font-size:14px;color:var(--ax-gold);opacity:.95;font-weight:700;letter-spacing:1px">'+APP_VER+'</p></div></div></div>';}
 function _doLogin(){var name=document.getElementById("ax-login-name");var pin=document.getElementById("ax-login-pin");var v=name?String(name.value||"").trim():"";if(!v){toast("Entre ton NOM et ton PRENOM","warn");if(name)name.focus();return;}/* v12.241 - Nom + prenom obligatoires PARTOUT (Kevin: tjs nom et prenom + pass) */var _parts=v.split(/[\s\-]+/).filter(function(t){return t.length>=2;});if(_parts.length<2){toast("Entre les 2 : NOM et PRENOM","warn");if(name)name.focus();return;}if(!pin||!pin.value||String(pin.value).length<4){toast("Entre ton mot de passe (4 caracteres minimum)","warn");if(pin)pin.focus();return;}axLogin(v,pin.value);}
 
 // --- Conversations ---
