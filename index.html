@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.573";
+var APP_VER="v9.574";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8870,6 +8870,65 @@ window.cmcToggleQuietMode = function(enabled){
     return v;
   }catch(_){ return true; }
 };
+
+
+/* CMC_V9_574_QSTATUS v9.574 - Vue Status quiet mode admin (parity Apex v12.503) */
+function vCmcQuietStatus(){
+  if(!A.user || A.user.id !== AID){
+    return '<div class="empty"><div class="empty-ic">&#128274;</div><div class="empty-t">Admin requis</div></div>';
+  }
+  var quietOn = lg("cmc_quiet_mode", true);
+  var silentLog = lg("cmc_silent_log", []);
+  if(!Array.isArray(silentLog)) silentLog = [];
+  silentLog = silentLog.slice(-50).reverse();
+  var bootMs = window._cmcBootStartMs || 0;
+  var sinceBoot = bootMs ? Math.round((Date.now() - bootMs)/1000) : 0;
+  var inBoot = bootMs && sinceBoot < 60;
+
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="margin-bottom:6px">&#128263; Mode calme CMCteams</h2>';
+  h += '<p style="font-size:12px;color:#888;margin-bottom:14px">Controle global du bruit CMCteams. Parity Apex v12.503.</p>';
+
+  /* Master toggle */
+  h += '<div class="card" style="border-left:4px solid ' + (quietOn ? "#4cd080" : "#888") + ';padding:14px;margin-bottom:14px;background:#0a1218;border-radius:8px">';
+  h += '<h3 style="margin-top:0">&#127769; Mode calme (boot)</h3>';
+  h += '<div style="display:flex;align-items:center;gap:12px;margin:10px 0">';
+  h += '<div style="font-size:24px">' + (quietOn ? "&#9989;" : "&#9898;") + '</div>';
+  h += '<div style="flex:1"><b>' + (quietOn ? "ACTIF (60s post-boot)" : "DESACTIVE") + '</b>';
+  h += '<div style="font-size:11px;color:#888;margin-top:4px">Filtre toasts non-critiques pendant 60s post-boot.</div>';
+  if(inBoot) h += '<div style="font-size:11px;color:#e8b830;margin-top:4px;font-weight:700">&#9203; Quiet active : ' + (60-sinceBoot) + 's restantes</div>';
+  h += '</div>';
+  h += '<button class="btn" onclick="cmcToggleQuietMode(' + (!quietOn) + ');dc()" style="min-height:44px;padding:8px 14px">' + (quietOn ? "Desactiver" : "Activer") + '</button>';
+  h += '</div></div>';
+
+  /* Quick actions */
+  h += '<div class="card" style="padding:14px;margin-bottom:14px;background:#0a1218;border-radius:8px"><h3 style="margin-top:0">&#129514; Actions</h3>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  h += '<button class="btn" onclick="window._cmcBootStartMs=Date.now();toast(&quot;Quiet relance 60s&quot;,&quot;ok&quot;);dc()" style="flex:1;min-height:44px">&#10227; Reset 60s</button>';
+  h += '<button class="btn" onclick="ls(&quot;cmc_silent_log&quot;,[]);toast(&quot;Log vide&quot;,&quot;ok&quot;);dc()" style="flex:1;min-height:44px">&#128465; Vider log</button>';
+  h += '</div></div>';
+
+  /* Silent log */
+  h += '<div class="card" style="padding:14px;background:#0a1218;border-radius:8px"><h3 style="margin-top:0">&#128203; Log silencieux (' + silentLog.length + ')</h3>';
+  if(silentLog.length === 0){
+    h += '<p style="font-size:12px;color:#888;text-align:center;padding:14px">Rien intercepte.</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:4px;max-height:400px;overflow-y:auto">';
+    silentLog.forEach(function(e){
+      var when = e.ts ? new Date(e.ts).toLocaleTimeString("fr-FR") : "?";
+      var col = e.type === "err" ? "#ff5858" : e.type === "warn" ? "#ffb84a" : "#4cd080";
+      h += '<div style="padding:6px 8px;background:#0e1820;border-radius:6px;border-left:3px solid ' + col + ';font-size:11px;display:flex;gap:8px">';
+      h += '<span style="color:#888;font-family:monospace;min-width:60px">' + when + '</span>';
+      h += '<span style="color:' + col + ';font-weight:700;text-transform:uppercase;font-size:9px;min-width:40px">' + (e.type||"ok") + '</span>';
+      h += '<span style="flex:1">' + (typeof esc === "function" ? esc(String(e.msg||"").slice(0,150)) : String(e.msg||"").slice(0,150)) + '</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+window.vCmcQuietStatus = vCmcQuietStatus;
 
 function toast(msg,type,dur,undoFn){
   if(type===undefined)type="ok";
