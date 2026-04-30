@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.506",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.507",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -14837,6 +14837,273 @@ window.axListenerHealth = axListenerHealth;
 
 /* AX_V12_505_LISTENERS_END */
 
+
+/* AX_V12_507_DISCOVERY v12.507 - Smart Discovery WiFi + BLE + commandes universelles */
+
+/* Catalogue des appareils detectables sur le reseau local */
+var AX_LAN_DEVICES = [
+  {id:"chromecast",     name:"Chromecast / Google Home", port:8008, path:"/setup/eureka_info", icon:"&#128250;", commands:["cast_url","stop","volume_up","volume_down"]},
+  {id:"chromecast_v2",  name:"Chromecast (cast v2)",     port:8009, path:"/",                  icon:"&#128250;", commands:["cast_url","stop"]},
+  {id:"roku",           name:"Roku TV",                  port:8060, path:"/query/device-info", icon:"&#128250;", commands:["power","home","play","pause","up","down","left","right","ok","back","netflix","youtube","vol_up","vol_down","mute"]},
+  {id:"airplay",        name:"AirPlay (Apple TV/HomePod)",port:7000, path:"/info",              icon:"&#127911;", commands:["play","pause","stop","volume"]},
+  {id:"airplay_alt",    name:"AirPlay (alt port)",       port:7100, path:"/info",              icon:"&#127911;", commands:["play","pause","stop"]},
+  {id:"hue",            name:"Philips Hue Bridge",       port:80,   path:"/api/0/config",       icon:"&#128161;", commands:["lights_on","lights_off","dim_up","dim_down","color"]},
+  {id:"sonos",          name:"Sonos",                    port:1400, path:"/xml/device_description.xml", icon:"&#127925;", commands:["play","pause","next","prev","vol_up","vol_down","mute"]},
+  {id:"sonos_alt",      name:"Sonos (alt)",              port:1443, path:"/xml/device_description.xml", icon:"&#127925;", commands:["play","pause"]},
+  {id:"home_assistant", name:"Home Assistant",           port:8123, path:"/api/",               icon:"&#127968;", commands:["all_off","all_on"]},
+  {id:"plex",           name:"Plex Media Server",        port:32400,path:"/identity",           icon:"&#127916;", commands:[]},
+  {id:"jellyfin",       name:"Jellyfin",                 port:8096, path:"/System/Info/Public", icon:"&#127916;", commands:[]},
+  {id:"samsung_tv",     name:"Samsung Smart TV",         port:8001, path:"/api/v2/",            icon:"&#128250;", commands:["power","vol_up","vol_down","netflix","youtube","mute"]},
+  {id:"lg_webos",       name:"LG WebOS TV",              port:3000, path:"/",                   icon:"&#128250;", commands:["power","vol_up","vol_down"]},
+  {id:"broadlink",      name:"Apex Broadlink Bridge",    port:8780, path:"/health",             icon:"&#128226;", commands:["learn","blast"]},
+  {id:"router",         name:"Routeur",                  port:80,   path:"/",                   icon:"&#127757;", commands:[]},
+  {id:"ipcam",          name:"IP Camera",                port:8554, path:"/",                   icon:"&#128247;", commands:[]},
+  {id:"node_red",       name:"Node-RED",                 port:1880, path:"/",                   icon:"&#128512;", commands:[]},
+  {id:"openwrt",        name:"OpenWrt LuCI",             port:80,   path:"/cgi-bin/luci/",      icon:"&#127757;", commands:[]}
+];
+window.AX_LAN_DEVICES = AX_LAN_DEVICES;
+
+/* Smart Discovery : combine WebRTC IP + port scan parallele + BLE */
+function axSmartDiscoverAll(opts){
+  opts = opts || {};
+  var foundDevices = [];
+  var scanned = 0;
+  var totalScans = 0;
+  var startTs = Date.now();
+
+  if(typeof toast === "function") toast("Decouverte multi-protocoles en cours...", "info", {duration:5000, force:true});
+
+  /* Etape 1 : detection IP locale via WebRTC */
+  var ipPromise = (typeof axDetectLocalIP === "function") ? axDetectLocalIP() : Promise.resolve([]);
+
+  return ipPromise.then(function(ips){
+    if(!ips || ips.length === 0){
+      ips = ["192.168.0.1","192.168.1.1","192.168.2.1","10.0.0.1"];
+    }
+    /* Extraire subnets */
+    var subnets = ips.map(function(ip){
+      var p = ip.split(".");
+      return p[0]+"."+p[1]+"."+p[2];
+    });
+    subnets = Array.from(new Set(subnets));
+
+    /* Etape 2 : Port scan parallele sur IPs prioritaires de chaque subnet */
+    var prioIps = [1, 2, 50, 100, 101, 150, 200, 254];
+    /* Scan limite pour eviter saturation : top 10 devices par defaut */
+    var devicesToScan = opts.devices || AX_LAN_DEVICES.slice(0, 10);
+    totalScans = subnets.length * prioIps.length * devicesToScan.length;
+
+    var promises = [];
+    subnets.forEach(function(sub){
+      prioIps.forEach(function(host){
+        var ip = sub + "." + host;
+        devicesToScan.forEach(function(dev){
+          var url = "http://" + ip + ":" + dev.port + dev.path;
+          var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+          var to = setTimeout(function(){ if(ctrl) try{ctrl.abort();}catch(_){} }, 1500);
+          var p = fetch(url, {mode:"cors", signal: ctrl ? ctrl.signal : undefined})
+            .then(function(r){
+              clearTimeout(to);
+              if(r.ok || r.status < 500){
+                return r.text().then(function(body){
+                  /* Verification fingerprint */
+                  var match = false;
+                  if(dev.id === "chromecast" && body.indexOf("eureka") >= 0) match = true;
+                  else if(dev.id === "roku" && body.indexOf("Roku") >= 0) match = true;
+                  else if(dev.id === "hue" && (body.indexOf("Philips") >= 0 || body.indexOf("hue") >= 0)) match = true;
+                  else if(dev.id === "sonos" && body.indexOf("Sonos") >= 0) match = true;
+                  else if(dev.id === "home_assistant" && body.indexOf("Home Assistant") >= 0) match = true;
+                  else if(dev.id === "plex" && body.indexOf("Plex") >= 0) match = true;
+                  else if(dev.id === "broadlink" && body.indexOf("apex-broadlink") >= 0) match = true;
+                  else if(dev.id === "samsung_tv") match = true; /* port specific */
+                  else if(dev.id === "lg_webos") match = true;
+                  else if(dev.id === "node_red" && body.indexOf("Node-RED") >= 0) match = true;
+                  else match = (r.status === 200); /* fallback : reachable */
+                  if(match){
+                    foundDevices.push({
+                      id: dev.id,
+                      name: dev.name,
+                      icon: dev.icon,
+                      ip: ip,
+                      port: dev.port,
+                      url: url,
+                      commands: dev.commands || [],
+                      bodyPreview: body.slice(0, 200)
+                    });
+                  }
+                });
+              }
+            })
+            .catch(function(){ clearTimeout(to); /* silent */ })
+            .finally(function(){ scanned++; });
+          promises.push(p);
+        });
+      });
+    });
+
+    return Promise.all(promises).then(function(){
+      var elapsed = Math.round((Date.now() - startTs) / 1000);
+      /* Persist */
+      try{
+        ls("ax_last_lan_scan", {ts: Date.now(), devices: foundDevices, ips: ips, scanned: scanned, elapsed: elapsed});
+      }catch(_){}
+      if(typeof toast === "function") toast(foundDevices.length + " appareils trouves en " + elapsed + "s (" + scanned + " IPs/ports scannes)", "ok", {force:true, duration:5000});
+      return {ok:true, devices: foundDevices, ips: ips, subnets: subnets, scanned: scanned, elapsed: elapsed};
+    });
+  });
+}
+window.axSmartDiscoverAll = axSmartDiscoverAll;
+
+/* Dispatcher commandes universelles */
+function axDeviceCommand(device, cmd, params){
+  if(!device || !device.ip || !cmd) return Promise.resolve({ok:false, msg:"device ou cmd manquant"});
+  params = params || {};
+  var base = "http://" + device.ip + ":" + device.port;
+
+  switch(device.id){
+    case "roku":
+      /* Roku ECP : POST /keypress/<cmd> */
+      var rokuMap = {power:"Power",home:"Home",play:"Play",pause:"Play",up:"Up",down:"Down",left:"Left",right:"Right",ok:"Select",back:"Back",vol_up:"VolumeUp",vol_down:"VolumeDown",mute:"VolumeMute"};
+      var rk = rokuMap[cmd] || cmd;
+      return fetch(base + "/keypress/" + rk, {method:"POST"})
+        .then(function(r){ return {ok:r.ok, status:r.status, msg:"Roku "+rk}; })
+        .catch(function(e){ return {ok:false, msg:String(e.message||e).slice(0,60)}; });
+
+    case "chromecast":
+    case "chromecast_v2":
+      if(cmd === "cast_url" && params.url){
+        return fetch(base + "/setup/eureka_info?content_url=" + encodeURIComponent(params.url), {method:"POST"})
+          .then(function(r){ return {ok:r.ok, msg:"Cast "+params.url}; })
+          .catch(function(e){ return {ok:false, msg:String(e.message||e).slice(0,60)}; });
+      }
+      return Promise.resolve({ok:false, msg:"Cast cmd "+cmd+" non implemente (full DIAL needed)"});
+
+    case "hue":
+      /* Hue API : besoin du username (token). Detect /api/0/config = unauthenticated */
+      if(cmd === "lights_on" || cmd === "lights_off"){
+        var hueUser = lg("ax_hue_user", "");
+        if(!hueUser) return Promise.resolve({ok:false, msg:"Hue user manquant. Cree-en un via Hue app puis ls(\"ax_hue_user\",\"...\")"});
+        var on = cmd === "lights_on";
+        return fetch(base + "/api/" + hueUser + "/groups/0/action", {
+          method:"PUT",
+          body: JSON.stringify({on: on})
+        }).then(function(r){ return {ok:r.ok, msg:"Hue "+(on?"ON":"OFF")}; }).catch(function(e){ return {ok:false, msg:e.message}; });
+      }
+      return Promise.resolve({ok:false, msg:"Hue cmd "+cmd+" non implemente"});
+
+    case "samsung_tv":
+    case "lg_webos":
+      /* Reuse axTVSendKey si dispo */
+      if(typeof axTVSendKey === "function"){
+        return Promise.resolve(axTVSendKey(cmd));
+      }
+      return Promise.resolve({ok:false, msg:"axTVSendKey manquant"});
+
+    case "broadlink":
+      /* Reuse axIRBlast */
+      if(typeof axIRBlast === "function"){
+        return Promise.resolve(axIRBlast(cmd));
+      }
+      return Promise.resolve({ok:false, msg:"axIRBlast manquant"});
+
+    default:
+      /* Generic : ouvre URL dans browser embed */
+      try{ window.open(base, "_blank"); return Promise.resolve({ok:true, msg:"Ouverture URL"}); }
+      catch(e){ return Promise.resolve({ok:false, msg:e.message}); }
+  }
+}
+window.axDeviceCommand = axDeviceCommand;
+
+/* Vue admin : Smart Discovery dashboard */
+function vSmartDiscovery(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var lastScan = lg("ax_last_lan_scan", null);
+  var bleDevices = lg("ax_ble_devices", []);
+  if(!Array.isArray(bleDevices)) bleDevices = [];
+
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">&#128270; Decouverte appareils</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Scanne tous les appareils dans les environs : WiFi LAN (Chromecast, Roku, AirPlay, Hue, Sonos, TV...) + Bluetooth LE.</p>';
+
+  /* Action buttons */
+  h += '<div class="ax-card"><h3>&#128226; Lancer scan</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axSmartDiscoverAll().then(function(r){toast(r.devices.length+&quot; appareils&quot;,&quot;ok&quot;,{force:true});dc()})" style="min-height:48px">&#128270; Scan WiFi LAN (10s)</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="if(typeof axBluetoothScan===\"function\")axBluetoothScan().then(function(){dc()})" style="min-height:48px">&#128268; Scan Bluetooth LE</button>';
+  h += '</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">';
+  h += '<button class="ax-btn ax-btn-outline" onclick="if(typeof axBroadlinkSmartScan===\"function\")axBroadlinkSmartScan().then(function(){dc()})" style="min-height:48px">&#128226; Scan Broadlink</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="var r=axNetworkInfo();alert(JSON.stringify(r,null,2))" style="min-height:48px">&#128279; Info reseau</button>';
+  h += '</div></div>';
+
+  /* WiFi LAN devices */
+  if(lastScan && lastScan.devices){
+    var when = lastScan.ts ? new Date(lastScan.ts).toLocaleString("fr-FR") : "?";
+    h += '<div class="ax-card"><h3>&#127757; WiFi LAN (' + lastScan.devices.length + ')</h3>';
+    h += '<p style="font-size:11px;color:var(--ax-text-dim);margin-bottom:10px">Scan : ' + when + ' &middot; ' + (lastScan.elapsed||0) + 's &middot; ' + (lastScan.scanned||0) + ' tests &middot; subnets ' + (lastScan.ips||[]).join(", ") + '</p>';
+    if(lastScan.devices.length === 0){
+      h += '<p style="font-size:12px;color:var(--ax-text-dim);text-align:center">Aucun appareil trouve. Verifie WiFi + lance "Scan WiFi LAN".</p>';
+    } else {
+      h += '<div style="display:flex;flex-direction:column;gap:8px">';
+      lastScan.devices.forEach(function(d, idx){
+        h += '<div style="padding:10px;background:var(--ax-bg-input);border-radius:8px;border-left:3px solid var(--ax-gold)">';
+        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+        h += '<span style="font-size:24px">' + (d.icon||"&#128241;") + '</span>';
+        h += '<div style="flex:1"><strong>' + esc(d.name) + '</strong><div style="font-size:11px;color:var(--ax-text-dim);font-family:var(--ax-mono)">' + esc(d.ip) + ':' + d.port + '</div></div>';
+        h += '<button class="ax-btn-icon" onclick="window.open(&quot;' + esc(d.url) + '&quot;,&quot;_blank&quot;)" style="width:36px;height:36px" title="Ouvrir URL">&#127760;</button>';
+        h += '</div>';
+        if(d.commands && d.commands.length){
+          h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">';
+          d.commands.slice(0, 8).forEach(function(c){
+            h += '<button class="ax-btn ax-btn-outline" onclick="axDeviceCommand(window.AX_LAN_DEVICES.find(function(x){return x.id===&quot;'+d.id+'&quot;}) ? Object.assign({},window.AX_LAN_DEVICES.find(function(x){return x.id===&quot;'+d.id+'&quot;}),{ip:&quot;'+d.ip+'&quot;}) : null, &quot;' + c + '&quot;)" style="font-size:11px;padding:4px 8px;min-height:32px">' + esc(c) + '</button>';
+          });
+          h += '</div>';
+        }
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+
+  /* Bluetooth devices */
+  h += '<div class="ax-card"><h3>&#128268; Bluetooth (' + bleDevices.length + ')</h3>';
+  if(bleDevices.length === 0){
+    h += '<p style="font-size:12px;color:var(--ax-text-dim);text-align:center">Aucun appareil BLE. Touche "Scan Bluetooth LE" pour scanner.</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:6px">';
+    bleDevices.slice(-15).forEach(function(d){
+      var when = d.ts ? new Date(d.ts).toLocaleString("fr-FR") : "?";
+      h += '<div style="padding:8px;background:var(--ax-bg-input);border-radius:8px;display:flex;align-items:center;gap:8px">';
+      h += '<span style="font-size:18px">&#128268;</span>';
+      h += '<div style="flex:1"><strong>' + esc(d.name||"Inconnu") + '</strong><div style="font-size:10px;color:var(--ax-text-dim);font-family:var(--ax-mono)">' + esc((d.id||"").slice(0,30)) + ' &middot; ' + when + '</div></div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  /* Capabilities device */
+  h += '<div class="ax-card" style="background:linear-gradient(135deg,rgba(74,154,255,.06),transparent);border-left:4px solid var(--ax-blue)"><h3>&#128241; Mon device</h3>';
+  var caps = [];
+  if("bluetooth" in navigator) caps.push("Bluetooth BLE");
+  if("usb" in navigator) caps.push("WebUSB");
+  if("serial" in navigator) caps.push("Web Serial");
+  if("hid" in navigator) caps.push("WebHID");
+  if("nfc" in navigator || "NDEFReader" in window) caps.push("Web NFC");
+  if(navigator.bluetooth) caps.push("Web Bluetooth");
+  h += '<div style="font-size:12px;color:var(--ax-text-dim);line-height:1.6">' + caps.join(" &middot; ") + '</div>';
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+}
+window.vSmartDiscovery = vSmartDiscovery;
+
+/* AX_V12_507_DISCOVERY_END */
+
 /* AX_V12_506_STREAMING v12.506 - Toggle streaming SSE Anthropic opt-in */
 window.axToggleStreamingChat = function(enabled){
   try{
@@ -15545,7 +15812,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return vSmartDiscovery();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';
