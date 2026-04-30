@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.563";
+var APP_VER="v9.564";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11155,6 +11155,108 @@ if(unp>20){agentAppendReport("autonomy-bridge","warn","Inbox saturee: "+unp);_cm
 // (4) demande confirmation admin (modal) (5) escalade Apex via _cmcEscalate
 /* v9.562 - cmcImportStatus : etat import courant pour banner UI */
 /* v9.563 - Bouton admin Audit Total : signale Apex via Firebase pour declencher axTotalAudit */
+/* v9.564 - Propagation Apex : drill-down universel + swipe + bg sync (parity) */
+
+window._cmcModalStack = window._cmcModalStack || [];
+window._cmcViewStack = window._cmcViewStack || [];
+
+function cmcDrillIntoModal(opts){
+  if(!opts) return;
+  var ov = document.createElement("div");
+  ov.className = "cmc-drill-modal";
+  ov.setAttribute("role","dialog");
+  var level = opts.level || (window._cmcModalStack.length + 1);
+  ov.style.cssText = "position:fixed;inset:0;z-index:"+(99990 + level)+";display:flex;align-items:flex-end;justify-content:center;padding:0;background:rgba(0,0,0,"+(0.5 + level*0.1)+");backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)";
+  var card = document.createElement("div");
+  card.style.cssText = "background:linear-gradient(180deg,#1a1a2e,#0f0f1e);border-top:1px solid rgba(232,184,48,.18);border-radius:20px 20px 0 0;padding:20px 16px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 -16px 48px rgba(0,0,0,.5);color:#fff";
+  var html = '<div style="width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 14px"></div>';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<strong style="font-size:18px;color:#c9a227">'+(opts.title||"Detail").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</strong>';
+  html += '<button onclick="cmcCloseDrillModal()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px">&times;</button>';
+  html += '</div>';
+  if(opts.body) html += '<div style="font-size:14px;line-height:1.6;color:#cfd0e0;margin-bottom:14px">'+String(opts.body).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</div>';
+  if(opts.html) html += opts.html;
+  if(Array.isArray(opts.items)){
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    opts.items.forEach(function(it){
+      var click = it.onClick ? 'onclick="('+it.onClick+')();"' : "";
+      html += '<div role="button" tabindex="0" '+click+' style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;cursor:'+(click?"pointer":"default")+'">';
+      if(it.icon) html += '<span style="font-size:20px">'+String(it.icon).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</span>';
+      html += '<div style="flex:1"><div style="font-size:14px;font-weight:600">'+String(it.label||"").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</div>';
+      if(it.value !== undefined) html += '<div style="font-size:12px;color:#999;margin-top:2px">'+String(it.value).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</div>';
+      html += '</div>';
+      if(click) html += '<span style="color:#999;font-size:18px">&rsaquo;</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  card.innerHTML = html;
+  ov.appendChild(card);
+  ov.addEventListener("click", function(e){if(e.target === ov) cmcCloseDrillModal();});
+  document.body.appendChild(ov);
+  window._cmcModalStack.push(ov);
+}
+
+function cmcCloseDrillModal(){
+  var top = window._cmcModalStack.pop();
+  if(top && top.parentNode){
+    try{ top.parentNode.removeChild(top); }catch(_){}
+  }
+}
+
+/* Swipe right depuis bord gauche = back gesture */
+(function(){
+  if(window._cmcSwipeNavInstalled) return;
+  window._cmcSwipeNavInstalled = true;
+  var startX = 0, startY = 0, swiping = false;
+  document.addEventListener("touchstart", function(e){
+    if(!e.touches || e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    swiping = startX < 30;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if(!swiping) return;
+    swiping = false;
+    var endX = e.changedTouches[0].clientX;
+    var endY = e.changedTouches[0].clientY;
+    if((endX - startX) > 80 && Math.abs(endY - startY) < 60){
+      if(window._cmcModalStack.length){
+        cmcCloseDrillModal();
+      } else if(window._cmcViewStack.length){
+        var prev = window._cmcViewStack.pop();
+        try{ if(typeof sv === "function") sv(prev); }catch(_){}
+      }
+      try{ if(navigator.vibrate) navigator.vibrate(10); }catch(_){}
+    }
+  }, {passive:true});
+})();
+
+/* Background sync iOS+Android (parity v12.455) */
+(function(){
+  if(window._cmcBgSyncInstalled) return;
+  window._cmcBgSyncInstalled = true;
+  window.addEventListener("online", function(){
+    try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+    try{ if(typeof toast === "function") toast("Connexion retablie","ok",{duration:1500}); }catch(_){}
+  });
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible"){
+      try{ if(typeof flushSyncQueue === "function") flushSyncQueue(); }catch(_){}
+      try{ if(typeof updatePresence === "function") updatePresence(); }catch(_){}
+    }
+  });
+  if("serviceWorker" in navigator){
+    setTimeout(function(){
+      navigator.serviceWorker.ready.then(function(reg){
+        if(reg && reg.sync){
+          try{ reg.sync.register("cmc-sync-queue"); }catch(_){}
+        }
+      }).catch(function(){});
+    }, 5000);
+  }
+})();
+
 function cmcRequestTotalAudit(){
   if(!A.user||A.user.id!==AID){toast("Reserve admin","warn");return;}
   toast("Audit Total demande a Apex - resultat dans 30s","info",{duration:6000});
