@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.515",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.516",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -12323,6 +12323,187 @@ window.axTestVoiceURI = function(uri){
 
 /* AX_V12_515_VOICES_QUALITY_END */
 
+/* AX_V12_516_CHAT_FLUIDE v12.516 - Chat fluidite + micros + HP + envoi/reception */
+
+/* ===== 1. Audit micros : choisir meilleur input audio ===== */
+window.axListMicrophones = function(){
+  if(typeof navigator === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices){
+    return Promise.resolve([]);
+  }
+  return navigator.mediaDevices.enumerateDevices().then(function(devices){
+    return devices.filter(function(d){return d.kind === "audioinput";}).map(function(d){
+      return {
+        id: d.deviceId,
+        label: d.label || "Micro " + d.deviceId.slice(0,8),
+        groupId: d.groupId
+      };
+    });
+  }).catch(function(){return [];});
+};
+
+/* Choix micro prefere (par label match : iPhone Microphone, AirPods, etc.) */
+window.axPickBestMicrophone = function(){
+  return axListMicrophones().then(function(mics){
+    if(mics.length === 0) return null;
+    /* Priorite : AirPods > iPhone built-in > default */
+    var prio = ["airpods", "iphone", "internal", "built-in", "default"];
+    for(var i=0;i<prio.length;i++){
+      var match = mics.find(function(m){return String(m.label).toLowerCase().indexOf(prio[i]) >= 0;});
+      if(match) return match;
+    }
+    return mics[0];
+  });
+};
+
+/* ===== 2. Audit haut-parleurs : choisir meilleur output audio ===== */
+window.axListSpeakers = function(){
+  if(typeof navigator === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices){
+    return Promise.resolve([]);
+  }
+  return navigator.mediaDevices.enumerateDevices().then(function(devices){
+    return devices.filter(function(d){return d.kind === "audiooutput";}).map(function(d){
+      return {
+        id: d.deviceId,
+        label: d.label || "HP " + d.deviceId.slice(0,8),
+        groupId: d.groupId
+      };
+    });
+  }).catch(function(){return [];});
+};
+
+/* ===== 3. Audit reseau pour reactivite chat ===== */
+window.axChatReactivityCheck = function(){
+  var net = (typeof navigator !== "undefined" && navigator.connection) ? navigator.connection : null;
+  var online = typeof navigator !== "undefined" ? navigator.onLine : true;
+  var fbConnected = (typeof _fbEs !== "undefined") ? !!_fbEs : false;
+  var apiKeyOk = (typeof _getApiKey === "function") ? !!_getApiKey() : false;
+  var streamingOn = lg("ax_streaming_chat", false);
+  return {
+    online: online,
+    type: net ? net.effectiveType : "unknown",
+    downlink: net ? net.downlink : null,
+    rtt: net ? net.rtt : null,
+    saveData: net ? net.saveData : false,
+    firebase_connected: fbConnected,
+    api_key_present: apiKeyOk,
+    streaming_chat: streamingOn,
+    voice_preferred: lg("ax_preferred_voice_uri", "") || null,
+    advice: (function(){
+      var a = [];
+      if(!online) a.push("Pas de reseau - active le wifi/4G");
+      if(net && net.effectiveType === "slow-2g") a.push("Reseau tres lent - utilise le mode eco IA");
+      if(!apiKeyOk) a.push("Configure une cle API dans Coffre");
+      if(!fbConnected && online) a.push("Firebase deconnecte - relance fbStartListening()");
+      if(!streamingOn) a.push("Streaming SSE off - active axToggleStreamingChat(true) pour 1er token <1s");
+      return a;
+    })()
+  };
+};
+
+/* ===== 4. Helpers fluidite chat ===== */
+
+/* Pre-load Anthropic connection (TCP warmup) au boot pour reduire latence 1er message */
+window.axChatPreconnect = function(){
+  if(window._axChatPreconnected) return;
+  window._axChatPreconnected = true;
+  try{
+    /* HEAD request leger pour ouvrir socket TCP/TLS keep-alive */
+    var url = lg("ax_proxy_url", "") || "https://api.anthropic.com";
+    fetch(url, {method:"HEAD", mode:"no-cors", cache:"no-store"}).catch(function(){});
+  }catch(_){}
+};
+
+/* Au boot Apex (5s apres login admin) : preconnect Anthropic */
+(function(){
+  if(window._axChatPreconnectInit) return;
+  window._axChatPreconnectInit = true;
+  if(typeof setTimeout === "function"){
+    setTimeout(function(){
+      try{
+        if(typeof axIsAdmin === "function" && axIsAdmin()){
+          axChatPreconnect();
+        }
+      }catch(_){}
+    }, 5000);
+  }
+})();
+
+/* ===== 5. Test latence chat reel ===== */
+window.axChatLatencyTest = function(){
+  var url = lg("ax_proxy_url", "") || "https://api.anthropic.com";
+  var start = Date.now();
+  return fetch(url, {method:"HEAD", mode:"no-cors", cache:"no-store"}).then(function(){
+    var ms = Date.now() - start;
+    return {ok:true, latency_ms:ms, target:url, qualite: ms<200?"excellent":ms<500?"bon":ms<1500?"moyen":"lent"};
+  }).catch(function(e){
+    return {ok:false, msg:String(e.message||e).slice(0,60)};
+  });
+};
+
+/* ===== 6. Vue admin : Audio + chat health ===== */
+window.vAudioChatHealth = function(){
+  if(typeof axIsAdmin === "function" && !axIsAdmin()){
+    return '<div class="ax-empty"><div class="ax-empty-icon">&#128274;</div><div class="ax-empty-text">PIN admin requis</div></div>';
+  }
+  var stats = axChatReactivityCheck();
+  var voicesCount = (typeof axListSystemVoices === "function") ? axListSystemVoices().length : 0;
+
+  var h = '<div style="padding:14px;max-width:780px;margin:0 auto">';
+  h += '<h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px">&#127911; Audio & Chat health</h2>';
+  h += '<p style="font-size:12px;color:var(--ax-text-dim);margin-bottom:14px">Audit des micros + haut-parleurs + fluidite chat + recommandations.</p>';
+
+  /* Reseau */
+  h += '<div class="ax-card" style="border-left:4px solid '+(stats.online?"#4cd080":"#ff5858")+'"><h3>&#128279; Reseau</h3>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:12px">';
+  h += '<div><b>Online :</b> ' + (stats.online?"&#9989; Oui":"&#10060; Non") + '</div>';
+  h += '<div><b>Type :</b> ' + stats.type + '</div>';
+  h += '<div><b>Downlink :</b> ' + (stats.downlink ? stats.downlink+" Mbps" : "?") + '</div>';
+  h += '<div><b>RTT :</b> ' + (stats.rtt ? stats.rtt+" ms" : "?") + '</div>';
+  h += '<div><b>API Anthropic :</b> ' + (stats.api_key_present?"&#9989; Cle OK":"&#10060; Manquante") + '</div>';
+  h += '<div><b>Firebase :</b> ' + (stats.firebase_connected?"&#9989; Connecte":"&#9888; Off") + '</div>';
+  h += '</div>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axChatLatencyTest().then(function(r){alert(&quot;Latence : &quot;+r.latency_ms+&quot;ms (&quot;+r.qualite+&quot;)&quot;);})" style="width:100%;margin-top:10px;min-height:44px">&#9889; Test latence chat</button>';
+  h += '</div>';
+
+  /* Streaming */
+  h += '<div class="ax-card" style="border-left:4px solid '+(stats.streaming_chat?"#4cd080":"#ffb84a")+'"><h3>&#128293; Streaming SSE</h3>';
+  h += '<div style="display:flex;align-items:center;gap:12px"><div style="font-size:24px">' + (stats.streaming_chat?"&#9989;":"&#9898;") + '</div>';
+  h += '<div style="flex:1"><b>' + (stats.streaming_chat?"ACTIF (1er token <1s)":"OFF (reponse en bloc 30s)") + '</b><div style="font-size:11px;color:var(--ax-text-dim)">v12.506 opt-in - active pour fluidite Claude.ai</div></div>';
+  h += '<button class="ax-btn ax-btn-' + (stats.streaming_chat?"outline":"primary") + '" onclick="axToggleStreamingChat(' + (!stats.streaming_chat) + ');dc()" style="min-width:100px;min-height:44px">' + (stats.streaming_chat?"Off":"On") + '</button>';
+  h += '</div></div>';
+
+  /* Micros */
+  h += '<div class="ax-card"><h3>&#127908; Micros disponibles</h3>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axListMicrophones().then(function(mics){var s=mics.map(function(m){return m.label;}).join(&quot;\n&quot;);alert(mics.length+&quot; micros :\n\n&quot;+s);})" style="width:100%;min-height:44px">&#127908; Lister micros (request permission)</button>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axPickBestMicrophone().then(function(m){if(m){toast(&quot;Best mic : &quot;+m.label,&quot;ok&quot;,{force:true});}else{toast(&quot;Aucun mic detecte&quot;,&quot;warn&quot;,{force:true});}})" style="width:100%;margin-top:6px;min-height:44px">&#127919; Auto-selectionner meilleur micro</button>';
+  h += '</div>';
+
+  /* HP */
+  h += '<div class="ax-card"><h3>&#128264; Haut-parleurs disponibles</h3>';
+  h += '<button class="ax-btn ax-btn-outline" onclick="axListSpeakers().then(function(sp){var s=sp.map(function(p){return p.label;}).join(&quot;\n&quot;);alert(sp.length+&quot; HP :\n\n&quot;+s);})" style="width:100%;min-height:44px">&#128264; Lister haut-parleurs</button>';
+  h += '</div>';
+
+  /* Voix */
+  h += '<div class="ax-card"><h3>&#127911; Voix systeme (' + voicesCount + ')</h3>';
+  h += '<div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">Voix actuelle : <code>' + (stats.voice_preferred || "Aucune (defaut)") + '</code></div>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="sv(&quot;voixqualite&quot;)" style="width:100%;min-height:44px">&#127911; Audit qualite voix (v12.515)</button>';
+  h += '</div>';
+
+  /* Recommandations */
+  if(stats.advice && stats.advice.length){
+    h += '<div class="ax-card" style="background:rgba(255,184,74,.08);border-left:4px solid var(--ax-orange)"><h3>&#128205; Recommandations</h3>';
+    h += '<ul style="font-size:13px;line-height:1.7;padding-left:20px">';
+    stats.advice.forEach(function(a){ h += '<li>' + (typeof esc==="function"?esc(a):a) + '</li>'; });
+    h += '</ul></div>';
+  }
+
+  h += '</div>';
+  return h;
+};
+
+/* AX_V12_516_CHAT_FLUIDE_END */
+
+
 
 
 
@@ -16794,7 +16975,7 @@ function vSoldesIA(){
   return h;
 }
 
-function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"voicesaudit":case"voixqualite":case"voicesquality":return vVoicesQualityAudit();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
+function vMain(){if(typeof axViewAllowed==="function"&&K.view&&!axViewAllowed(K.view)){toast("Cette fonction est désactivée par l\'admin","warn");K.view="dashboard";}switch(K.view){case"featureflags":return vFeatureFlags();case"airouting":return vAIRouting();case"selfdiag":case"diagnostic":return vSelfDiag();case"uxautofix":case"ux-fix":return vUXAutoFix();case"autonomous":case"autonomie":case"apex-autonomy":return vAutonomous();case"consumptionlevels":return vConsumptionLevels();case"login":return vLogin();case"landing":return vLanding();case"waitingApproval":return vWaitingApproval();case"adminworklog":return vAdminWorklog();case"usersactivity":return vUsersActivity();case"dashboard":return vDashboard();case"chat":return vChat();case"kb":return vKB();case"finance":return vFinance();case"financepro":return vFinancePro();case"devices":return vDevices();case"templates":return vTemplates();case"notes":return vNotes();case"tasks":return vTasks();case"calendar":return vCalendar();case"contacts":return vContacts();case"expenses":return vExpenses();case"mystats":return vMyStats();case"profile":return vProfile();case"shopping":return vShopping();case"goals":return vGoals();case"favorites":return vFavorites();case"faq":return vFAQ();case"tutorial":return vTutorial();case"changelog":return vChangelog();case"habits":return vHabits();case"news":return vNews();case"bookmarks":return vBookmarks();case"diary":return vDiary();case"messaging":return vAdminChat();case"live":return vLiveUsers();case"clients":return vClientAdmin();case"discovery":return vDiscovery();case"map":return vMapAdmin();case"geolocation":return vGeolocation();case"history":return vAdminHistory();case"vault":return vVault();case"credlogs":case"credentialslog":return vCredLogs();case"credhistory":case"history-cred":return vCredHistory();case"revocation":case"revoke":return vRevocation();case"claudecode":case"devmode":case"dev":return vClaudeCodeMode();case"safebox":case"coffrefort":case"coffre-perso":return vSafeBox();case"links":return vAdminLinks();case"broadlink":case"remote-tv":case"telecommande":return vBroadlinkRemote();case"quiet":case"modecalme":case"mode-calme":case"alertes-admin":return vQuietStatus();case"discovery":case"smartdiscovery":case"appareils":case"decouverte":return (typeof vSmartDiscoveryV2==="function")?vSmartDiscoveryV2():vSmartDiscovery();case"discoveryv2":case"discoveryadvanced":return vSmartDiscoveryV2();case"macros":case"ambiances":case"pieces":case"rooms":return vMacrosManager();case"voicesaudit":case"voixqualite":case"voicesquality":return vVoicesQualityAudit();case"audio":case"audiochathealth":case"chathealth":return vAudioChatHealth();case"remote":return vRemote();case"cryptoportfolio":return vCryptoPortfolio();case"bilan":return vBilan();case"clientprofile":return vClientProfileForm();case"contact":return vClientContact();case"adminbox":return vAdminInbox();case"reports":return vAdminReports();case"userreport":return vUserReport();case"music":return vMusic();case"crackpass":return vCrackPass();case"ecommerce":return vEcommerce();case"projects":return vProjects();case"workers":return vWorkers();case"codeeditor":return vCodeEditor();case"cmcadmin":return vCMCAdmin();case"appadmin":return vAppAdmin();case"duplicates":return vDuplicatesAdmin();case"analytics":return vAnalytics();case"subscriptions":return vSubscriptionsAdmin();case"emaillog":return vEmailLog();case"stripesetup":return vStripeSetup();case"errorslive":return vErrorsLive();case"clickfailures":return vClickFailures();case"connections":return vConnectionsAdmin();case"crew":return vCrewAgents();case"crewexperts":return vCrewExperts();case"report":return vAdminReport();case"backups":return vBackups();case"backupslist":return vBackups();/* v12.213 alias canonique */case"storage":return vStorage();case"storagemanage":return vStorageManage();case"storagedetails":return vStorageDetails();case"storagepro":return vStoragePro();case"aiproviders":return vAIProviders();case"memory":return vMemoryDashboard();case"tokenbalance":case"servicespro":return vTokenBalance();/* v12.213 alias canonique */case"soldesia":case"soldes":case"credits":case"rechargeia":return vSoldesIA();/* v12.294 dashboard euros + recharge 1-clic */case"sentinelshealth":return vSentinelsHealth();case"sentinelscontrol":return vSentinelsControl();case"healthdashboard":case"health-dashboard":return vHealthDashboard();case"persaudit":return vPersistenceAudit();case"securityalerts":return vSecurityAlerts();case"knowledgebank":return vKnowledgeBank();case"enrichedprofiles":return vEnrichedProfiles();case"settings":return vSettings();case"devicecaps":return vDeviceCapabilities();case"ioshacks":return vIosHacks();case"referral":return vReferral();case"health":return vHealth();case"browser":return vBrowser();case"voicecommands":return vVoiceCommands();case"voicesgallery":case"voices":return vVoicesGallery();case"studiovideo":return vStudioVideo();case"studiomusic":return vStudioMusic();case"studioprefecture":return vStudioPrefecture();case"studiocv":return vStudioCV();case"studiofacture":return vStudioFacture();case"studiocontrat":return vStudioContrat();case"studiopresentation":return vStudioPresentation();case"studioclip":return vStudioClip();case"studiologo":return vStudioLogo();case"studios":return vStudiosHub();case"architecture":case"archistudio":return vArchitectureStudio();case"plantstudio":return vPlantStudio();case"geostudio":return vGeoStudio();case"buildingstudio":return vBuildingStudio();case"gardenlunarstudio":return vGardenLunarStudio();case"petstudio":return vPetStudio();case"scanstudio":return (typeof vScanStudio==="function")?vScanStudio():vChat();case"camerastudio":return (typeof vCameraStudio==="function")?vCameraStudio():vChat();case"wakeword":return vWakeWordAdmin();case"userpersonalization":return vUserPersonalization();case"legallib":return vLegalLib();case"translatorpro":return vTranslatorPro();case"medicalpro":return vMedicalPro();case"cuisinepro":return vCuisinePro();case"lessonslearned":return vLessonsLearned();case"allconfig":case"tout":case"config":return vAllConfig();case"admincenter":case"reglages":case"parametres":return vAdminCenter();case"adminaliases":case"mes-aliases":case"mesaliases":case"aliases":return vAdminAliases();case"loisirspro":return vLoisirsPro();case"securiteperso":return vSecuritePerso();case"calendarsync":return vCalendarSync();case"onboardingstats":return vOnboardingStats();case"claudecodehandoff":case"handoff":return vClaudeCodeHandoff();case"autonomie":case"audit-apex":case"diagnostic":return vApexAutonomyAudit();case"rgpd":case"mes-donnees":case"mes donnees":return vRGPD();case"backgroundassistant":case"background":return vBackgroundAssistant();case"clienthistory":case"client-history":case"userhistory":return vClientHistory();default:if(typeof window["v_custom_"+K.view]==="function")return window["v_custom_"+K.view]();return vChat();}}
 // v12.8 — Compte-rendu admin central : historique autonomie + etat chaine IA+sentinelles
 function vAdminReport(){
   if(!axIsAdmin())return'<div style="padding:20px;text-align:center;color:var(--ax-text-dim)">Admin requis</div>';

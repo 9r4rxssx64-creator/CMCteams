@@ -10,7 +10,7 @@
  * Limitations iOS connues : pas de Background Sync API, fallback via window online.
  */
 
-const CACHE_VERSION = 'apex-v12.515';
+const CACHE_VERSION = 'apex-v12.516';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
