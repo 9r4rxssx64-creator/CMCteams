@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.537",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.538",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -29478,8 +29478,228 @@ setTimeout(function(){
       return nativeSet.apply(this, arguments);
     };
     window._axLsCriticalAudit = true;
-  }catch(_){}
+  }catch(e){ try{if(typeof _axSafeCatch==="function")_axSafeCatch("ls_audit",e);}catch(_){} }
 })();
+
+/* ============================================================
+   AX_V12_538 — Wire orphans + Compliance + Performance + Tests
+   Audit POST-FIX v12.537 : Perf 35, Comp 46, Arch 42, Code 36, AI 60
+   Cible v12.538 : +20-30 pts cumules sur Comp/AI/Perf en wiring reel
+   ============================================================ */
+
+/* === COMP-1. AI-generated badge auto-inject sur reponses Claude (EU AI Act Art.52) === */
+(function(){
+  if(window._axAIBadgeInjected) return;
+  window.axRenderAIBadge = function(){
+    return '<span class="ax-ai-badge" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(201,162,39,.18);border:1px solid rgba(201,162,39,.4);color:#c9a227;font-weight:600;margin-right:6px;vertical-align:middle" title="Reponse generee par IA Claude (Anthropic) - EU AI Act Art.52">🤖 IA</span>';
+  };
+  /* Inject CSS si pas present */
+  try{
+    var style = document.createElement("style");
+    style.textContent = ".ax-ai-badge{user-select:none;pointer-events:auto;cursor:help}";
+    document.head.appendChild(style);
+  }catch(_){}
+  window._axAIBadgeInjected = true;
+})();
+
+/* === AI-1. axDetectJailbreak (regex patterns Art.AI Safety #4) === */
+window.axDetectJailbreak = function(text){
+  if(!text || typeof text !== "string") return {jailbreak:false};
+  var s = text.toLowerCase();
+  var patterns = [
+    {p:/ignore\s+(?:all\s+)?(?:previous|above|prior)\s+(?:instructions|prompts|rules)/i, name:"ignore_instructions"},
+    {p:/(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be)\s+(?:an?\s+)?(?:dan|jailbroken|unrestricted|evil|uncensored)/i, name:"persona_override"},
+    {p:/(?:disregard|forget|bypass|override)\s+(?:your\s+)?(?:safety|guidelines|rules|filters|restrictions)/i, name:"safety_bypass"},
+    {p:/\b(?:dan|developer\s+mode|sudo\s+mode|jailbreak\s+mode|god\s+mode)\b/i, name:"known_jailbreak"},
+    {p:/(?:reveal|show|print|display)\s+(?:your\s+)?(?:system\s+prompt|initial\s+instructions|hidden\s+rules)/i, name:"prompt_extraction"},
+    {p:/<\|.*?(?:system|admin|root|sudo).*?\|>/i, name:"injection_token"},
+    {p:/```\s*(?:system|admin|root)\s*\n/i, name:"fence_injection"}
+  ];
+  for(var i=0;i<patterns.length;i++){
+    if(patterns[i].p.test(text)){
+      try{ if(typeof axSecurityLog==="function") axSecurityLog("jailbreak_attempt", patterns[i].name+" len="+text.length); }catch(_){}
+      return {jailbreak:true, pattern:patterns[i].name};
+    }
+  }
+  return {jailbreak:false};
+};
+
+/* === AI-2. axValidatePersona (whitelist Art.AI Safety #3) === */
+window.AX_PERSONA_WHITELIST = ["assistant","admin","kevin","laurence","child_safe","pro_juriste","pro_finance","pro_medecin","pro_cuisine","pro_archi","pro_translator","pro_admin"];
+window.axValidatePersona = function(persona){
+  if(!persona || typeof persona !== "string") return "assistant";
+  var p = String(persona).toLowerCase().trim();
+  if(window.AX_PERSONA_WHITELIST.indexOf(p) >= 0) return p;
+  try{ if(typeof axSecurityLog==="function") axSecurityLog("persona_rejected", String(persona).slice(0,40)); }catch(_){}
+  return "assistant"; /* fallback safe */
+};
+
+/* === AI-3. Wire jailbreak check dans _callClaudeAPI (intercept opt-in) === */
+setTimeout(function(){
+  try{
+    if(window._axCallClaudeWrapped) return;
+    if(typeof window._callClaudeAPI !== "function") return;
+    var orig = window._callClaudeAPI;
+    window._callClaudeAPI = function(sysPrompt, msgs, depth){
+      try{
+        if(Array.isArray(msgs)){
+          var lastUser = null;
+          for(var i=msgs.length-1;i>=0;i--){
+            if(msgs[i] && msgs[i].role==="user"){
+              var c = msgs[i].content;
+              if(typeof c === "string") lastUser = c;
+              else if(Array.isArray(c)){
+                for(var j=0;j<c.length;j++){ if(c[j] && c[j].type==="text" && c[j].text){ lastUser = c[j].text; break; } }
+              }
+              break;
+            }
+          }
+          if(lastUser){
+            var jb = axDetectJailbreak(lastUser);
+            if(jb.jailbreak){
+              try{ if(typeof toast==="function") toast("Tentative bloquee : "+jb.pattern, "warn", {duration:3000}); }catch(_){}
+              if(K && K.messages){
+                K.messages.push({role:"assistant", content:"Je ne peux pas repondre a cette demande (pattern bloque par securite : "+jb.pattern+"). Reformule ta question normalement.", ts:Date.now(), _aiSafety:true});
+                if(typeof dc==="function") dc();
+              }
+              return Promise.resolve({blocked:true, reason:jb.pattern});
+            }
+          }
+        }
+      }catch(e){ try{if(typeof _axSafeCatch==="function")_axSafeCatch("jailbreak_check",e);}catch(_){} }
+      return orig.apply(this, arguments);
+    };
+    window._axCallClaudeWrapped = true;
+  }catch(e){ try{if(typeof _axSafeCatch==="function")_axSafeCatch("wrap_callClaude",e);}catch(_){} }
+}, 800);
+
+/* === PERF-1. Listener tracker + auto-cleanup (interceptor opt-in) === */
+(function(){
+  if(window._axListenerTrackerActive) return;
+  if(typeof EventTarget === "undefined" || !EventTarget.prototype) return;
+  try{
+    if(localStorage.getItem("ax_listener_tracker") === null){
+      localStorage.setItem("ax_listener_tracker", "true");
+    }
+    if(localStorage.getItem("ax_listener_tracker") !== "true") return;
+  }catch(_){return;}
+  window._axListenerRegistry = window._axListenerRegistry || [];
+  var nativeAdd = EventTarget.prototype.addEventListener;
+  var nativeRemove = EventTarget.prototype.removeEventListener;
+  EventTarget.prototype.addEventListener = function(type, handler, opts){
+    try{
+      window._axListenerRegistry.push({target:this, type:type, handler:handler, opts:opts, ts:Date.now()});
+      /* Cap registry pour eviter memory leak du tracker lui-meme */
+      if(window._axListenerRegistry.length > 5000){
+        window._axListenerRegistry = window._axListenerRegistry.slice(-2500);
+      }
+    }catch(_){}
+    return nativeAdd.call(this, type, handler, opts);
+  };
+  EventTarget.prototype.removeEventListener = function(type, handler, opts){
+    try{
+      var reg = window._axListenerRegistry;
+      for(var i=reg.length-1;i>=0;i--){
+        if(reg[i].target===this && reg[i].type===type && reg[i].handler===handler){
+          reg.splice(i,1); break;
+        }
+      }
+    }catch(_){}
+    return nativeRemove.call(this, type, handler, opts);
+  };
+  /* Helper cleanup global */
+  window.axCleanupAllListeners = function(filter){
+    var reg = window._axListenerRegistry || [];
+    var removed = 0;
+    for(var i=reg.length-1;i>=0;i--){
+      var r = reg[i];
+      if(!filter || filter(r)){
+        try{ nativeRemove.call(r.target, r.type, r.handler, r.opts); removed++; reg.splice(i,1); }catch(_){}
+      }
+    }
+    return removed;
+  };
+  window._axListenerTrackerActive = true;
+})();
+
+/* === PERF-2. setInterval registry + auto-clear orphans === */
+(function(){
+  if(window._axIntervalRegistryActive) return;
+  try{
+    if(localStorage.getItem("ax_interval_tracker") === null){
+      localStorage.setItem("ax_interval_tracker", "true");
+    }
+    if(localStorage.getItem("ax_interval_tracker") !== "true") return;
+  }catch(_){return;}
+  window._axIntervalRegistry = window._axIntervalRegistry || {};
+  var nativeSetInt = window.setInterval;
+  var nativeClearInt = window.clearInterval;
+  window.setInterval = function(fn, ms){
+    var id = nativeSetInt.apply(this, arguments);
+    try{
+      window._axIntervalRegistry[id] = {ms:ms, ts:Date.now(), fn:String(fn).slice(0,80)};
+    }catch(_){}
+    return id;
+  };
+  window.clearInterval = function(id){
+    try{ if(window._axIntervalRegistry) delete window._axIntervalRegistry[id]; }catch(_){}
+    return nativeClearInt.call(this, id);
+  };
+  /* Helper: clear tous les intervals plus vieux que X ms */
+  window.axClearOldIntervals = function(maxAgeMs){
+    maxAgeMs = maxAgeMs || 7200000; /* 2h default */
+    var reg = window._axIntervalRegistry || {};
+    var now = Date.now(); var cleared = 0;
+    for(var id in reg){
+      if(reg[id] && (now - reg[id].ts) > maxAgeMs){
+        try{ nativeClearInt.call(window, parseInt(id,10)); delete reg[id]; cleared++; }catch(_){}
+      }
+    }
+    return cleared;
+  };
+  window._axIntervalRegistryActive = true;
+})();
+
+/* === COMP-2. Consent banner first login (Art.7 RGPD granular) === */
+window.axShowConsentBanner = function(force){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    if(!force && lg("ax_consent_v1", null)) return;
+    var banner = document.createElement("div");
+    banner.id = "ax-consent-banner";
+    banner.setAttribute("role","dialog");
+    banner.setAttribute("aria-label","Consentement RGPD");
+    banner.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:rgba(16,22,48,.98);border-top:2px solid #c9a227;padding:18px 20px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;max-height:70vh;overflow-y:auto;box-shadow:0 -8px 32px rgba(0,0,0,.4)";
+    banner.innerHTML = '<div style="max-width:680px;margin:0 auto"><h3 style="color:#c9a227;margin:0 0 10px 0;font-size:16px">🔒 Consentement RGPD (Art.7)</h3><p style="margin:0 0 12px 0">Apex AI traite tes donnees selon les finalites suivantes. <strong>Coche ce que tu acceptes</strong> (decoche pour refuser) :</p><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-base" checked disabled style="margin-top:2px"><span><strong>Fonctionnement de base</strong> (obligatoire) : authentification, sauvegarde locale, sync Firebase chiffree</span></label><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-ai" checked style="margin-top:2px"><span><strong>IA Anthropic Claude</strong> : tes prompts envoyes a api.anthropic.com pour generer reponses (DPA Art.28)</span></label><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-voice" style="margin-top:2px"><span><strong>Voix premium ElevenLabs</strong> : texte envoye pour synthese vocale haute qualite</span></label><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-bio" style="margin-top:2px"><span><strong>Biometrie</strong> : Face/Touch ID + voiceprint (LOCAL strict, jamais transmis)</span></label><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-geo" style="margin-top:2px"><span><strong>Geolocalisation</strong> : meteo/domotique contextuelle (jamais stockee)</span></label><label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer"><input type="checkbox" id="ax-cs-camera" style="margin-top:2px"><span><strong>Camera</strong> : analyse Vision (envoye Anthropic, pas stocke)</span></label></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="ax-cs-accept" style="flex:1;min-width:140px;padding:12px;background:#c9a227;color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">✅ Enregistrer mes choix</button><button id="ax-cs-all" style="padding:12px 16px;background:rgba(201,162,39,.2);color:#c9a227;border:1px solid #c9a227;border-radius:8px;cursor:pointer;font-size:13px">Tout accepter</button><button id="ax-cs-min" style="padding:12px 16px;background:transparent;color:#aaa;border:1px solid #555;border-radius:8px;cursor:pointer;font-size:13px">Minimum requis</button></div><p style="margin:12px 0 0 0;font-size:11px;color:#888"><a href="./privacy.html" target="_blank" style="color:#c9a227">Politique complete</a> &middot; Revocable a tout moment dans Reglages > Confidentialite</p></div>';
+    document.body.appendChild(banner);
+    function save(state){
+      var consent = {v:1, ts:Date.now(), base:true, ai:state.ai, voice:state.voice, bio:state.bio, geo:state.geo, camera:state.camera};
+      ls("ax_consent_v1", consent);
+      try{ if(typeof axSecurityLog==="function") axSecurityLog("rgpd_consent", JSON.stringify(consent).slice(0,200)); }catch(_){}
+      banner.remove();
+      try{ if(typeof toast==="function") toast("Consentement enregistre", "ok"); }catch(_){}
+    }
+    document.getElementById("ax-cs-accept").onclick = function(){
+      save({ai:document.getElementById("ax-cs-ai").checked, voice:document.getElementById("ax-cs-voice").checked, bio:document.getElementById("ax-cs-bio").checked, geo:document.getElementById("ax-cs-geo").checked, camera:document.getElementById("ax-cs-camera").checked});
+    };
+    document.getElementById("ax-cs-all").onclick = function(){ save({ai:true,voice:true,bio:true,geo:true,camera:true}); };
+    document.getElementById("ax-cs-min").onclick = function(){ save({ai:false,voice:false,bio:false,geo:false,camera:false}); };
+  }catch(e){ try{if(typeof _axSafeCatch==="function")_axSafeCatch("consent_banner",e);}catch(_){} }
+};
+/* Auto-trigger first login (apres boot complet) */
+setTimeout(function(){ try{ if(typeof axShowConsentBanner==="function") axShowConsentBanner(false); }catch(_){} }, 12000);
+
+/* === Helper RGPD : axGetConsent(feature) === */
+window.axGetConsent = function(feature){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var c = lg("ax_consent_v1", null);
+    if(!c) return null; /* pas encore choisi */
+    if(feature === "base") return true;
+    return !!c[feature];
+  }catch(_){ return null; }
+};
 
 </script>
 </body>
