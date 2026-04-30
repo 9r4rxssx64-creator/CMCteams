@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.458",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.459",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3479,6 +3479,132 @@ function axSpotlightSearch(query){
       axOpenSpotlight();
     }
   });
+})();
+
+/* v12.459 - Registry AX_REAL_TOOLS anti-hallucination */
+
+window._axRealToolsCache = null;
+window._axRealToolsCacheTs = 0;
+
+function axBuildRealToolsRegistry(){
+  /* Cache 5 min */
+  if(window._axRealToolsCache && (Date.now() - window._axRealToolsCacheTs) < 300000){
+    return window._axRealToolsCache;
+  }
+  var registry = {
+    views:[],
+    functions:[],
+    helpers:[],
+    aliases:[],
+    builtAt:Date.now()
+  };
+  /* Extract views from vMain switch via toString */
+  try{
+    if(typeof vMain === "function"){
+      var src = vMain.toString();
+      var caseMatches = src.match(/case\s*"([\w-]+)"/g) || [];
+      caseMatches.forEach(function(m){
+        var vname = m.match(/case\s*"([\w-]+)"/)[1];
+        if(registry.views.indexOf(vname) < 0) registry.views.push(vname);
+      });
+    }
+  }catch(_){}
+  /* Custom views via window["v_custom_*"] */
+  try{
+    Object.keys(window).forEach(function(k){
+      if(k.indexOf("v_custom_") === 0 && typeof window[k] === "function"){
+        var vname = k.replace("v_custom_","");
+        if(registry.views.indexOf(vname) < 0) registry.views.push(vname);
+      }
+    });
+  }catch(_){}
+  /* Functions ax* / cmc* / k* / sv / dc */
+  try{
+    Object.keys(window).forEach(function(k){
+      if(typeof window[k] !== "function") return;
+      if(/^(ax|cmc|_ax|_cmc)/.test(k)) registry.functions.push(k);
+      else if(/^(sv|dc|render|toast|esc|lg|ls|fbWrite|fbInit|axIsAdmin)$/.test(k)) registry.helpers.push(k);
+    });
+  }catch(_){}
+  /* Aliases sv known */
+  registry.aliases = [
+    "chat","admincenter","reglages","parametres","vault","dashboard","soldesia",
+    "settings","sentinelshealth","lessonslearned","notes","tasks","calendar",
+    "contacts","financepro","studios","adminworklog","storagemanage","rgpd",
+    "backups","faq","tutorial","changelog","connections","clients"
+  ];
+  window._axRealToolsCache = registry;
+  window._axRealToolsCacheTs = Date.now();
+  return registry;
+}
+
+function axCheckCommandExists(name){
+  /* Verifie si nom est une vue / fonction / alias reel */
+  if(!name) return {exists:false, reason:"empty"};
+  var n = String(name).trim().replace(/^\//,"");
+  var reg = axBuildRealToolsRegistry();
+  if(reg.views.indexOf(n) >= 0) return {exists:true, type:"view", name:n};
+  if(reg.aliases.indexOf(n) >= 0) return {exists:true, type:"alias", name:n};
+  if(reg.functions.indexOf(n) >= 0) return {exists:true, type:"function", name:n};
+  if(reg.helpers.indexOf(n) >= 0) return {exists:true, type:"helper", name:n};
+  /* Fuzzy : suggere proches */
+  var all = reg.views.concat(reg.aliases).concat(reg.functions).concat(reg.helpers);
+  var suggestions = [];
+  var nl = n.toLowerCase();
+  all.forEach(function(item){
+    var il = item.toLowerCase();
+    if(il.indexOf(nl) >= 0 || nl.indexOf(il) >= 0){
+      suggestions.push(item);
+    }
+  });
+  return {exists:false, reason:"not_found", suggestions:suggestions.slice(0,5)};
+}
+
+function axGetRealToolsForPrompt(){
+  /* Retourne string compact pour injection system prompt Apex IA */
+  var reg = axBuildRealToolsRegistry();
+  var lines = [];
+  lines.push("=== FONCTIONS / VUES REELLES DISPONIBLES (anti-hallucination) ===");
+  lines.push("Vues sv() valides : " + reg.views.slice(0,80).join(", "));
+  lines.push("Aliases courants : " + reg.aliases.join(", "));
+  lines.push("Top fonctions ax* : " + reg.functions.filter(function(f){return f.indexOf("ax")===0;}).slice(0,40).join(", "));
+  lines.push("");
+  lines.push("REGLE ABSOLUE ANTI-HALLUCINATION :");
+  lines.push("1. JAMAIS suggerer une fonction/vue qui n est pas dans cette liste.");
+  lines.push("2. Si user demande une feature inexistante : dis honnetement \"Cette fonction n existe pas encore. Je peux escalate Claude Code pour la creer.\"");
+  lines.push("3. JAMAIS inventer de slash command (ex /admin subscriptions).");
+  lines.push("4. Si tu as un doute -> appelle axCheckCommandExists(name) tool d abord.");
+  return lines.join("\n");
+}
+
+/* Tool callable from IA tool use - pour Apex IA verifie avant de suggerer */
+function _axIaToolCheckCommand(args){
+  var name = (args && args.name) || "";
+  var result = axCheckCommandExists(name);
+  return JSON.stringify(result);
+}
+
+/* Patch _buildSystemPrompt si dispo - injecte le registry */
+(function(){
+  if(window._axAntiHallucPatched) return;
+  window._axAntiHallucPatched = true;
+  setTimeout(function(){
+    try{
+      if(typeof _buildSystemPrompt === "function" && !_buildSystemPrompt._antiHallucPatched){
+        var orig = _buildSystemPrompt;
+        window._buildSystemPrompt = function(){
+          var s = orig.apply(this, arguments);
+          try{
+            if(typeof axGetRealToolsForPrompt === "function"){
+              s += "\n\n" + axGetRealToolsForPrompt();
+            }
+          }catch(_){}
+          return s;
+        };
+        window._buildSystemPrompt._antiHallucPatched = true;
+      }
+    }catch(_){}
+  }, 3000);
 })();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
