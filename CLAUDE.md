@@ -1,6 +1,30 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Apex v12.465 / CMC v9.565).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Apex v12.493 / CMC v9.571).
+
+---
+
+## 🎯 RÈGLE PERMANENTE — SCORE SUR TOUS LES AXES (Kevin 2026-04-30, ABSOLUE)
+
+> **"Quand je te dis 100/100 ou 200/100 ou 150/100 etc c'est toujours sur TOUS LES AXES."**
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs Kevin :
+
+Quand Kevin demande un score X/100 :
+- Ce X s'applique à **CHAQUE axe individuel** (security, performance, compliance, architecture, code_quality, data_integrity)
+- Pas seulement au score global pondéré
+- Tous axes doivent atteindre X minimum
+
+Exemples :
+- "100/100" → chaque axe ≥ 100
+- "150/100" → chaque axe ≥ 150 (formule étendue avec bonus excellence par-axe)
+- "200/100" → chaque axe ≥ 200 (formule à étendre encore)
+
+**Implémentation** : axGet100ScoreV6 / cmcGet100ScoreV3 utilisent base 100 + bonus excellence par-axe (max 50 → cap 150). Pour Kevin demandant 200, faut étendre formule (V7 avec bonus 0-100 par axe).
+
+**Pousse tout au maximum sans s'arrêter tant que pas atteint le maximum sur tous les axes par projet.**
+
+S'applique : Apex, CMCteams, e-Apex, e-KDMC, IA-KDMC, tout projet futur.
 
 ---
 
