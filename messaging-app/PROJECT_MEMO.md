@@ -15,6 +15,78 @@
 
 ---
 
+## 🚨 BASCULE OPTION B ACTIVÉE DAY 1 (Kevin 2026-04-27, ABSOLUE)
+
+> **"Fait déjà la bascule B. Ça change quoi ?"** — Kevin
+
+**Décision finale** : on démarre directement en **Option B (vrai E2E grand public)** au lieu de A.
+On n'attendra pas l'ampleur. On démarre **niveau pro entreprise** dès le Day 1.
+
+### Ce que ça change concrètement
+
+| Aspect | Option A (initial) | **Option B (active Day 1)** |
+|--------|-------------------|------------------------------|
+| Lecture messages Kevin | ✅ Voit tout côté client | ❌ **NE LIT PLUS** le contenu (mathématique) |
+| Données Kevin admin voit | Tout | Metadata only : qui→qui, quand, taille, signalements, géoloc opt-in, devices, KPI |
+| Risque pénal Kevin | Modéré (si grand public) | **ZÉRO** (E2E mathématique vrai) |
+| Marketing | "Privé entre nous" | **"🛡 Ultra-sécurisé E2E post-quantum, serveur ET admin aveugles"** (100% honnête) |
+| Modération | Kevin lit + intervient | Signalements users + IA détecte patterns (scam, phishing, harcèlement) |
+| Adoption grand public | Limitée | Illimitée (App Store + Play Store possible) |
+| Audit externe requis | Optionnel | **Obligatoire avant lancement public** |
+| Niveau qualité requis | Élevé | **Pro entreprise (banque/santé)** |
+
+### Implications techniques (déjà appliquées)
+
+1. **`d1-migrations/0001_init.sql`** :
+   - `ADMIN_MODE = 'B'`
+   - `KEVIN_INVISIBLE_ADMIN = 'false'`
+   - `conversation_members.kevin_invisible` reste défini (pour bascule future si besoin) mais inactif
+
+2. **Crypto Phase 2** :
+   - `addRecipientsToRatchet(conv, members)` n'ajoute **PAS** la clé maître Kevin
+   - Architecture E2E strict dès le Day 1
+   - Forward secrecy + post-compromise security garanties
+
+3. **Vue admin Kevin** :
+   - Onglet "Messages" → masqué (Kevin ne peut pas lire les contenus)
+   - Onglet "Activity" → metadata + qui parle à qui + fréquence
+   - Onglet "Signalements" → user reports prioritaires
+   - Onglet "Géolocalisation" → si user opt-in
+   - Onglet "Devices" → fingerprints + détection SIM swap
+   - Tools admin `searchAllMessages` → metadata only (sender_id, ts, mime, size — content vide)
+   - Tools `analyzeUser` → patterns d'usage, score risque IA, devices, signalements (pas contenu)
+
+4. **CGU** : variante B activée par défaut (à créer `cgu-b.html`)
+   - "Apex Chat utilise un chiffrement bout-en-bout post-quantum strict"
+   - "Le serveur ne peut JAMAIS lire vos messages — même nos administrateurs"
+   - "Modération via signalements users + IA détection patterns suspects"
+   - Conformité RGPD complète + DSA si > 50 users UE
+   - Aucune mention de "modération admin sur contenus" (impossible techniquement)
+
+### Comment Kevin garde le contrôle malgré E2E strict
+
+- ✅ Voit tous les KPI agrégés (users actifs, messages/min, conv populaires)
+- ✅ Voit toutes les métadonnées (qui parle à qui, quand, devices)
+- ✅ Reçoit tous les signalements users (et peut suspendre/bannir)
+- ✅ IA Apex détecte automatiquement patterns suspects (scam URLs, harcèlement, spam) et alerte Kevin
+- ✅ Peut kicker/bannir/suspendre n'importe qui (modération technique)
+- ✅ Voit les exports compliance trimestriels (audit trail metadata)
+- ✅ Pipeline self-healing autonome remonte tout vers Apex
+- ❌ Ne peut PAS lire le contenu des conversations
+- ❌ Ne peut PAS exporter une conv en clair sans accord users (impossible techniquement)
+
+### Marketing : positionnement final
+
+**Tagline** : "Apex Chat — La messagerie qui te rend plus intelligent, pas plus dépendant. Chiffrée comme Signal, vivante comme Discord, augmentée par l'IA Apex."
+
+**Différenciateurs vs concurrents** :
+1. **vs WhatsApp** : pas de Meta, vrai serveur aveugle, pas de pub jamais
+2. **vs Signal** : IA intégrée (résumé, traduction, smart reply), UX moderne
+3. **vs Telegram** : E2E par défaut (Telegram = opt-in only), pas centralisé Pavel Durov
+4. **vs iMessage** : multi-plateforme (iOS + Android + Web), open future
+
+---
+
 ## ✅ Décisions actées (NE PAS REPRENDRE)
 
 ### Auth (style WhatsApp)
@@ -716,6 +788,179 @@ JAMAIS localStorage.clear() sans whitelist `ax_*` + `apex_chat_*` keys
 - Endpoint Apex Chat `/api/apex/sso-exchange` qui valide le JWT Apex et crée la session
 - Endpoint Apex Chat `/api/apex/commands` qui poll Firebase `apex_chat_commands` toutes les 30s
 - Bouton "💬 Apex Chat" ajouté à la nav Apex (apex-ai/index.html)
+
+---
+
+## 🤖 Règles permanentes Apex/CMCteams héritées intégralement (Kevin 2026-04-27)
+
+> **"Les mêmes idées générales et + que dans les autres projets sur l'automatisation, l'autonomie etc"**
+
+Apex Chat hérite **toutes** les règles permanentes des projets Kevin :
+
+### 1. Pipeline self-healing cross-app total
+- Sentinelles → CF Queues → Apex `ax_telemetry_in` → `ax_claude_todo` → Claude Code
+- Auto-fix whitelist : restart DO, rotate keys, requeue push, fbReconnect, resetStreaming
+- 13 sentinelles dédiées (chat, auth, e2e, media, call, presence, storage, error, push, crypto, do, d1, r2)
+
+### 2. Triple persistence systématique
+- localStorage (rapide) + IndexedDB (résiste purge Safari) + D1 + R2 (cloud)
+- Backup quotidien R2 rétention 90j
+- Auto-restore au boot (gap detection)
+- JAMAIS `localStorage.clear()` sans whitelist `apex_chat_*`
+
+### 3. Anti-blocage IA total (failover transparent)
+- Anthropic → OpenRouter → Gemini → Groq → OpenAI → mode local
+- Cache LRU KV (60-70% hit rate, divise coûts par 7)
+- AbortController obligatoire (anti zombie fetch — bug Apex v12.365)
+- Queue messages user `K.pendingMessages` (jamais perdu)
+
+### 4. Profils enrichis automatiquement (continu)
+- NLP extraction : email, anniv, métier, langues, intérêts, allergies, famille
+- Cross-app sync avec Apex (même `apex_uid`)
+- Score complétude /100 visible admin
+- `ax_persistent_memory_<uid>` enrichi par Apex Chat conversations
+
+### 5. CGU 1 clic universel (style Apex `_cguAsk`)
+- Modal au premier accès feature (caméra, micro, géoloc, contacts, notif)
+- Persistence consentement per-user per-feature
+- Révocable à tout moment
+
+### 6. Reconnaissance vocale par utilisateur (voiceprint MFCC)
+- Enrôlement 3 enregistrements au signup (optionnel)
+- Wake word "Dis Apex Chat" sur device
+- Identification speaker (Kevin/Laurence/etc.) — anti-confusion entourage
+- Auto-apprentissage continu (moyenne pondérée 0.9 ancien + 0.1 nouveau)
+
+### 7. Compte admin unique Kevin reconnu via tous aliases
+- ADMIN_KEVIN_ALIASES : kevin, kevind@monaco.mc, kdmc, KD, Kevin DESARZENS, etc.
+- PIN admin 200807 (modifiable)
+- Login flexible (tous formats : ordre, casse, tirets, accents, espaces)
+- Algorithme tokens triés + normalization (jamais substring partiel sur 1 token court)
+
+### 8. Permissions tiered Laurence (et autres users non-admin)
+- Niveau A (auto) : lire ses données, modifier profil, chat, etc.
+- Niveau B (notifie Kevin) : login/logout, achat, upload large, prefs change
+- Niveau C (demande validation Kevin) : effacement compte, change email/PIN, achat >50€
+
+### 9. Niveau expert pro partout
+- Cohérence avec Apex (cuisine pro, médical pro, finance pro, légal pro, traducteur pro)
+- Standards : référence officielle (Légifrance, ANSM, Vidal, Pantone, etc.)
+- Mention prudence pour conseils juridiques/médicaux/fiscaux
+
+### 10. Toggles features partout (par contact / par groupe / par device)
+- Privacy-first defaults : tout off pour non-contacts, on pour contacts mutuels
+- Last seen, read receipts, stories visibility, online status
+- Disappearing timer par conv
+
+### 11. Auto-update force PWA (sentinelle SW cache sync)
+- `sw.js` `CACHE_VERSION = 'apex-chat-v' + APP_VER`
+- GitHub Action `sw-cache-sync.yml` rattrape drift automatique
+- Banner "🔄 Nouvelle version dispo" au reload (auto-detect)
+- `force-update.html` accessible depuis réglages
+
+### 12. Sauvegardes temps réel
+- Sync immédiat localStorage → IndexedDB → D1 (worker append)
+- Backup R2 quotidien automatique (cron worker)
+- Backup E2E iCloud/Drive optionnel (mnémonique BIP39)
+- Restoration multi-niveau au boot
+
+### 13. UX épurée niveau enfant 5 ans
+- Langage simple, pas de jargon technique côté user
+- Vocabulaire interdit : "fbWrite", "localStorage", "API", "Service Worker", etc.
+- Vocabulaire OK : "tirer pour rafraîchir", "ton message s'envoie", "sauvegardé"
+- Test mental obligatoire : "Si Kevin teste cette feature dans 2 minutes, est-ce qu'elle marche ?"
+
+### 14. Outils auto-apparents par contexte (intent detection)
+- Mots-clés FR/EN dans message → propose Studio adapté
+- Bulle dorée flottante "Tu veux faire X ?"
+- Liste 3-5 outils proposés (cards horizontales)
+- Cohérent avec Apex `axDetectIntent` (42+ patterns)
+
+### 15. Dual PRO + FUN partout
+- Toggle PRO ⚙️ / FUN 🎉 sur chaque feature
+- Voix : 50+ (PRO + FUN + thématiques)
+- Mode "Surprise me" 🎲
+
+### 16. Concertation IA + mémoire totale
+- Multi-angles à chaque réponse (3 angles minimum)
+- Mémoire persistante par contact (Apex Memo)
+- Lessons learned cross-app (Apex Chat → Apex)
+
+### 17. Vérification avant envoi (jamais "ça devrait marcher")
+- Syntax check JS avant chaque commit
+- Tests Cypress/Playwright e2e Phase 9
+- Audit externe Phase 9 obligatoire avant lancement public B
+
+### 18. Niveau Claude.ai/ChatGPT (zéro erreur visible user)
+- Idempotency-key sur chaque requête API
+- SSE streaming robuste auto-reconnect
+- Sentry-grade error capture (window.onerror + unhandledrejection)
+- Distinction technique (auto-fix silencieux) vs forfait (montrer avec action)
+- JAMAIS message technique brut affiché (table conversion)
+
+### 19. Inventaire fichiers et liens auto
+- `KEVIN_INVENTORY.md` racine repo mis à jour à chaque commit
+- Section "📁 Mes codes" Apex avec liens cliquables
+- Helper `axInventoryUpdate(filename, description)`
+
+### 20. Maintenir `CLAUDE_ACTIVITY.json`
+- Régénération à chaque session (commits avec catégorie)
+- Vue admin Apex `vAdminWorklog` lit ce fichier
+
+### 21. Reconnaître honnêtement quand pas au niveau
+- Si Kevin dit "c'est pas pro" → reconnaître + audit + reprendre
+- Pas de microversions cascadées (1-3 versions/jour MAX, batch fixes cohérents)
+- Audit QA externe avant déclarer "10/10"
+
+### 22. Tout fix bug bumpe APP_VER + CACHE_VERSION (sentinelle GitHub Action)
+- Édit `APP_VER` dans `index.html`
+- Édit `CACHE_VERSION` dans `sw.js` (sentinelle rattrape sinon)
+- Test mental : "Avant push, j'ai bumpé APP_VER ? CACHE_VERSION ?"
+
+### 23. Auto-gestion totale Apex IA cross-app
+- Apex IA pilote Apex Chat en autonomie (commands via Firebase)
+- Apex IA peut envoyer messages cross-app (notifications, alertes admin)
+- Apex IA peut moduler Apex Chat (kick, ban, broadcast, etc.) avec confirmation 2-step
+
+---
+
+## 🔄 Auto-update + Backups + Maj force temps réel (Kevin 2026-04-27)
+
+### Auto-update force
+- Service Worker `sw.js` détecte nouveau `CACHE_VERSION` → banner "🔄 Mise à jour dispo"
+- Bouton 1-clic "Mettre à jour maintenant" → `skipWaiting()` + `location.reload()`
+- Sentinelle GitHub Action `sw-cache-sync.yml` rattrape drift automatique
+- Page `/force-update.html` accessible depuis réglages (force unregister + caches.delete + reload)
+- Notification push à Kevin admin pour chaque nouvelle version déployée
+
+### Backups temps réel
+- **Triple persistence** synchrone : localStorage → IndexedDB → D1 (à chaque write important)
+- **Backup R2 quotidien** automatique : cron worker exécute `BACKUP DATABASE TO 'apex-chat-backup-YYYY-MM-DD.sql.gz'`
+- **Rétention** : 90 jours sur R2 (lifecycle auto)
+- **Backup E2E user** : opt-in iCloud/Drive avec mnémonique BIP39 12 mots
+- **Restauration** : `/api/restore` endpoint admin Kevin (avec audit log)
+- **Test restoration** : sentinelle `backup-watch` simule restore 1×/semaine
+
+### Sauvegardes temps réel par feature
+- **Messages** : flush D1 toutes les 5s via ConversationDO + cache local IDB immédiat
+- **Profils** : sync à chaque modification + push Firebase shared
+- **Conversations** : metadata sync continu + ciphertexts batch
+- **Médias** : upload R2 chunked (resume si coupé)
+- **Settings user** : sync localStorage → D1 → IndexedDB triple
+- **Présence** : heartbeat 30s + last_seen sync
+
+### Mises à jour temps réel (live UI)
+- WebSocket `ConversationDO` push events instantanément
+- Indicateurs "X est en train d'écrire" via WS broadcast
+- Read receipts en temps réel
+- Présence "en ligne" via `PresenceDO`
+- Notifications push hors-app pour user déconnecté
+
+### Cross-device sync temps réel
+- 1 user peut avoir N devices (table `push_subscriptions`)
+- Tous reçoivent les events WS en parallèle
+- Read receipts synchronisés cross-device
+- Logout d'un device → autres restent OK (kill switch admin Kevin possible)
 
 ---
 
