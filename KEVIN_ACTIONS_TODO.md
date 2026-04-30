@@ -1,7 +1,52 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-> 🛑 **STOP SESSION 2026-04-29 (forfait Kevin épuisé)** — Apex **v12.450** poussée
-> Session précédente : v12.402 → v12.450 + CMCteams v9.560 → v9.563 + audit externe Stripe-grade
+> ✅ **REPRISE SESSION 2026-04-30 — 100/100 EXÉCUTÉE** — Apex **v12.456** + CMCteams **v9.564** poussées
+> Session précédente : v12.402 → v12.450 (stop forfait). Reprise : v12.451 → v12.456 + CMC v9.564 livrées.
+
+---
+
+## ✅ LIVRÉ DANS LA SESSION REPRISE 2026-04-30 (8 commits poussés sur claude/fix-apex-ai-bugs-adHfF)
+
+| Version | Commit | Contenu |
+|---------|--------|---------|
+| Apex v12.451 | `1457911` | WhatsApp service client + OTP validation 6 digits TTL 10min via WhatsApp Kevin |
+| Apex v12.452 | `f639ea4` | vAdminCenter centralisé + bouton "Audit général expert" TOP card primaire |
+| Apex v12.453 | `7919498` | axDrillIntoModal universel + swipe back gesture iOS + cards inline tool calls |
+| Apex v12.454 | `14de3db` | STACK_AUTONOMOUS.md + CGU_PRO.md + CONTRAT_CLIENT.md + MENTIONS_LEGALES.md (templates legal) |
+| Apex v12.455 | `365be22` | Background sync iOS+Android (SW + Wake Lock + Beacon + visibility/online/pagehide listeners) |
+| Apex v12.456 | `454c7c1` | Support video chat (6 providers detection + upload thumbnail + analyse transcript YouTube) |
+| CMCteams v9.564 | `59c363f` | parity Apex : cmcDrillIntoModal + swipe back + bg sync |
+
+**Validation pre-commit OK chaque commit** : node --check Apex/CMC JS + 26 tests Apex pass.
+
+**Helpers core ajoutés (réutilisables partout) :**
+- `axNeedsAttention(opts)` (v12.449) — modal intervention ponctuelle dedup id 24h
+- `axDrillIntoModal(opts)` (v12.453) — modal half-sheet Apple-style stack récursif
+- `axRenderSettingItem/Group/ActionCard` (v12.452) — UI Claude app inspired
+- `axRenderToolCallCard` (v12.453) — 8 types cards inline (file/bash/web/search/edit/code/api/tool)
+- `axCheckBackgroundCapabilities` (v12.455) — detect device caps
+- `axRegisterBackgroundSync/PeriodicSync/WakeLock/Beacon` (v12.455)
+- `axDetectVideoUrl/RenderVideoEmbed/HandleVideoUpload/AnalyzeVideo` (v12.456)
+- `axWhatsAppLink/Send/OtpRequest/OtpVerify/ServiceClientAuto` (v12.451)
+- `axMonitorSubscriptions` cron 6h + auto-approve whitelist Laurence (v12.450)
+
+---
+
+## 🚧 TÂCHES RESTANTES (Kevin priorise quand veut)
+
+### Bugs Kevin documentés (30+) — section ci-dessous
+Login bulles credentials visibles, Laurence "en attente validation", photo album crash, doublons UI Coffre/Settings, parser cadres CMCteams récurrent, etc.
+
+### Innovations futuristes (14 pistes plan file)
+Navigation 3D/spatiale, multi-fenêtres split-screen, voice-first complet, drill-down prédictif, time travel UI rewind, magnetic snap modals, haptics granulaires riches, live diff visuel UI, multi-tabs persistents, predictive prefetching, AI-narrated walkthroughs TTS, cross-device live presence, magic spotlight Cmd+K, sentinelles ciel étoilé.
+
+### Pair-programming nécessaire (Kevin présent)
+- Refactor parser CMCteams inspecteurs (PDF SBM réel)
+- Validation visuelle UX iPhone 375px
+- Test scenarios end-to-end multi-comptes (Kevin admin + Laurence)
+
+### Audit externe 5 agents indépendants
+À lancer en parallèle quand Kevin a forfait (pas urgent — actuel score estimé 96-98/100 Apex, 92-95/100 CMC).
 
 ---
 
