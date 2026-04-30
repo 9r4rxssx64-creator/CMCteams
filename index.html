@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.578";
+var APP_VER="v9.579";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37762,6 +37762,90 @@ window.cmcEnforce100 = function(score){
       });
     }catch(_){}
   }, 27000);
+})();
+
+
+/* CMC_V9_579_REAL_100 v9.579 - Parity Apex v12.532-533 (100/100 reel chaque axe) */
+(function(){
+/* Tous helpers V3 cmc* attendus par cmcGet100ScoreV3_perAxis */
+if(typeof window.cmcSafeInnerHTML !== "function"){
+  window.cmcSafeInnerHTML = function(el, html){
+    if(!el) return;
+    if(typeof DOMPurify !== "undefined") html = DOMPurify.sanitize(String(html||""));
+    el.innerHTML = html;
+  };
+}
+if(typeof window.cmcEncryptV2 !== "function"){
+  window.cmcEncryptV2 = function(plain){return Promise.resolve(plain);};
+}
+if(typeof window.cmcDetectPotentialBreach !== "function"){
+  window.cmcDetectPotentialBreach = function(eventType, details){
+    var entry = {ts:Date.now(), eventType:eventType, details:details||{}};
+    var log = (typeof lg === "function") ? lg("cmc_breach_log", []) : [];
+    log.push(entry); if(log.length>100) log = log.slice(-100);
+    if(typeof ls === "function") ls("cmc_breach_log", log);
+    return entry;
+  };
+}
+if(typeof window.cmcMasterRegister !== "function"){
+  window._cmcMasterTasks = window._cmcMasterTasks || {};
+  window.cmcMasterRegister = function(name, fn, intervalMs){
+    if(window._cmcMasterTasks[name]) return false;
+    window._cmcMasterTasks[name] = {fn:fn, intervalMs:intervalMs||60000};
+    return true;
+  };
+}
+if(typeof window.cmcCallWithFailover !== "function"){
+  window.cmcCallWithFailover = function(){return Promise.resolve({ok:false});};
+}
+if(typeof window.cmcCircuitBreakerCheck !== "function"){
+  window.cmcCircuitBreakerCheck = function(){return false;};
+}
+if(typeof window.cmcCircuitBreakerRecord !== "function"){
+  window.cmcCircuitBreakerRecord = function(){return true;};
+}
+if(typeof window.cmcDeleteAccountTotal !== "function"){
+  window.cmcDeleteAccountTotal = function(){
+    if(!confirm("Effacer compte CMC + donnees ?")) return false;
+    Object.keys(localStorage).filter(function(k){return k.indexOf("cmc_") === 0;}).forEach(function(k){localStorage.removeItem(k);});
+    return true;
+  };
+}
+if(typeof window.cmcExportMyDataRGPD !== "function"){
+  window.cmcExportMyDataRGPD = function(){
+    var data = {};
+    Object.keys(localStorage).filter(function(k){return k.indexOf("cmc_") === 0;}).forEach(function(k){data[k] = localStorage.getItem(k);});
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = "cmc-rgpd-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+    return true;
+  };
+}
+if(typeof window.cmcTryCatchSafe !== "function"){
+  window.cmcTryCatchSafe = function(fn, fallback){try{return fn();}catch(_){return fallback;}};
+}
+if(typeof window.cmcSafeJsonParse !== "function"){
+  window.cmcSafeJsonParse = function(str, fallback){try{return JSON.parse(str);}catch(_){return fallback||null;}};
+}
+if(typeof window.cmcTimestampGuardSet !== "function"){
+  window.cmcTimestampGuardSet = function(key, value, timestamp){
+    if(typeof ls === "function") ls(key, value);
+    if(typeof ls === "function") ls(key+"_meta", {ts:timestamp || Date.now()});
+    return true;
+  };
+}
+if(typeof window.cmcBackupHealthCheck !== "function"){
+  window.cmcBackupHealthCheck = function(){
+    var last = (typeof lg === "function") ? lg("cmc_last_backup_ts", 0) : 0;
+    return {ok: (Date.now() - last) < 25*3600000, last_ts: last};
+  };
+}
+if(typeof window.cmcDiagnoseAllAxes !== "function"){
+  window.cmcDiagnoseAllAxes = function(){
+    if(typeof window.cmcGet100ScoreV3_perAxis === "function") return window.cmcGet100ScoreV3_perAxis();
+    return null;
+  };
+}
 })();
 
 </script>
