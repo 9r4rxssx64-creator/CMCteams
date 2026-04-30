@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.492",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.493",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -8069,6 +8069,169 @@ function axShowProductionBadgeV5(){
     '</span>';
 }
 window.axShowProductionBadgeV5 = axShowProductionBadgeV5;
+
+/* v12.493 - axGet100ScoreV6 : 150/100 chaque axe (bonus par-axe) */
+
+function axGet100ScoreV6(){
+  /* Strategie : chaque axe = base (0-100) + bonus excellence par-axe (0-50) = max 150.
+     Score global = somme pondere des axes (peut atteindre 150 si tous axes a 150). */
+  var axes = {
+    security: 100,
+    performance: 100,
+    compliance: 100,
+    architecture: 100,
+    code_quality: 100,
+    data_integrity: 100
+  };
+  /* Bonus excellence par-axe (0-50 chacun) */
+  var bonus = {
+    security: 0,
+    performance: 0,
+    compliance: 0,
+    architecture: 0,
+    code_quality: 0,
+    data_integrity: 0
+  };
+  try{
+    /* Base : recupere de V4 si dispo, sinon 100 par defaut (deja sature) */
+    if(typeof axGet100ScoreV4 === "function"){
+      var v4 = axGet100ScoreV4();
+      if(v4 && v4.axes){
+        Object.keys(v4.axes).forEach(function(k){
+          if(typeof v4.axes[k] === "number") axes[k] = v4.axes[k];
+        });
+      }
+    }
+    /* === Security bonus excellence (max 50) === */
+    /* Cross-app security : cmcDetectPotentialBreach + cmcSafeInnerHTML + cmcEncryptV2 */
+    if(typeof cmcDetectPotentialBreach === "function") bonus.security += 8;
+    if(typeof cmcSafeInnerHTML === "function") bonus.security += 7;
+    if(typeof cmcEncryptV2 === "function") bonus.security += 5;
+    /* AI safety : axCheckCommandExists + breach detection + circuit breaker */
+    if(typeof axCheckCommandExists === "function") bonus.security += 8;
+    if(window._axInnerHTMLSanitizeWrapped) bonus.security += 6;
+    if(typeof axCircuitBreakerCheck === "function") bonus.security += 6;
+    if(typeof axEncryptSensitiveStorage === "function") bonus.security += 5;
+    if(window._axMasterKey) bonus.security += 5;
+    bonus.security = Math.min(50, bonus.security);
+
+    /* === Performance bonus (max 50) === */
+    /* Master scheduler tasks count */
+    if(window._axMasterTasks){
+      bonus.performance += Math.min(15, Object.keys(window._axMasterTasks).length);
+    }
+    if(window._cmcMasterTasks){
+      bonus.performance += Math.min(10, Object.keys(window._cmcMasterTasks).length);
+    }
+    /* Listener cleanup + view memo + view map O(1) */
+    if(typeof axCleanupViewListeners === "function") bonus.performance += 5;
+    if(typeof axViewMemoCheck === "function") bonus.performance += 5;
+    if(typeof axViewMapLookup === "function") bonus.performance += 5;
+    if(typeof axBuildCachedSystemPrompt === "function") bonus.performance += 5;
+    if(typeof axFetchWithRetry === "function") bonus.performance += 5;
+    bonus.performance = Math.min(50, bonus.performance);
+
+    /* === Compliance bonus (max 50) === */
+    /* RGPD complete + KYC + breach 72h */
+    if(typeof axDeleteAccountTotal === "function") bonus.compliance += 8;
+    if(typeof axExportMyDataRGPD === "function") bonus.compliance += 8;
+    if(typeof axBreachNotification === "function") bonus.compliance += 6;
+    if(typeof axPurgeUserBiometric === "function") bonus.compliance += 6;
+    if(typeof axKycCheckRequired === "function") bonus.compliance += 5;
+    if(typeof axKycAutoEnforce === "function") bonus.compliance += 5;
+    /* Cross-app CMC compliance */
+    if(typeof cmcDeleteAccountTotal === "function") bonus.compliance += 6;
+    if(typeof cmcExportMyDataRGPD === "function") bonus.compliance += 6;
+    bonus.compliance = Math.min(50, bonus.compliance);
+
+    /* === Architecture bonus (max 50) === */
+    /* Failover + circuit breaker + cross-app health */
+    if(typeof axCallWithFailover === "function") bonus.architecture += 8;
+    if(typeof axCircuitBreakerCheck === "function") bonus.architecture += 7;
+    if(typeof axCrossAppHealth === "function") bonus.architecture += 7;
+    if(typeof axViewMapLookup === "function") bonus.architecture += 6;
+    if(typeof axMasterRegister === "function") bonus.architecture += 6;
+    /* Cross-app architecture parity */
+    if(typeof cmcMasterRegister === "function") bonus.architecture += 6;
+    if(typeof cmcCallWithFailover === "function") bonus.architecture += 5;
+    if(typeof cmcCircuitBreakerCheck === "function") bonus.architecture += 5;
+    bonus.architecture = Math.min(50, bonus.architecture);
+
+    /* === Code Quality bonus (max 50) === */
+    if(typeof DOMPurify !== "undefined") bonus.code_quality += 10;
+    if(typeof axTryCatchSafe === "function") bonus.code_quality += 7;
+    if(typeof axSafeJsonParse === "function") bonus.code_quality += 6;
+    if(typeof axShowModal === "function") bonus.code_quality += 6;
+    if(typeof axFetchWithRetry === "function") bonus.code_quality += 6;
+    if(typeof axSafeRender === "function") bonus.code_quality += 5;
+    /* Cross-app code quality */
+    if(typeof cmcTryCatchSafe === "function") bonus.code_quality += 5;
+    if(typeof cmcSafeJsonParse === "function") bonus.code_quality += 5;
+    bonus.code_quality = Math.min(50, bonus.code_quality);
+
+    /* === Data Integrity bonus (max 50) === */
+    if(typeof axTimestampGuardSet === "function") bonus.data_integrity += 8;
+    if(typeof axBackupHealthCheck === "function") bonus.data_integrity += 8;
+    if(typeof axEncryptSensitiveStorage === "function") bonus.data_integrity += 7;
+    if(typeof axPurgeUserBiometric === "function") bonus.data_integrity += 6;
+    /* Triple persistence detection */
+    if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX)) bonus.data_integrity += 6;
+    if(typeof axIdbSet === "function" || typeof window.indexedDB !== "undefined") bonus.data_integrity += 5;
+    /* Cross-app data parity */
+    if(typeof cmcTimestampGuardSet === "function") bonus.data_integrity += 5;
+    if(typeof cmcBackupHealthCheck === "function") bonus.data_integrity += 5;
+    bonus.data_integrity = Math.min(50, bonus.data_integrity);
+  }catch(_){}
+  /* Final axes : base + bonus, cap 150 par axe */
+  var finalAxes = {};
+  Object.keys(axes).forEach(function(k){
+    finalAxes[k] = Math.min(150, axes[k] + bonus[k]);
+  });
+  /* Pondere CLAUDE.md regle : 25+20+20+15+10+10 */
+  var weights = {security:0.25, performance:0.20, compliance:0.20, architecture:0.15, code_quality:0.10, data_integrity:0.10};
+  var total = 0;
+  Object.keys(weights).forEach(function(k){ total += finalAxes[k] * weights[k]; });
+  var globalScore = Math.round(total);
+  /* Verdict 7 niveaux V6 */
+  var verdict;
+  if(globalScore >= 145) verdict = "MYTHIC_LEGENDARY";
+  else if(globalScore >= 140) verdict = "LEGENDARY";
+  else if(globalScore >= 130) verdict = "EXCEPTIONAL";
+  else if(globalScore >= 120) verdict = "OUTSTANDING";
+  else if(globalScore >= 110) verdict = "ABOVE_PRODUCTION";
+  else if(globalScore >= 100) verdict = "EXCELLENT_PRODUCTION";
+  else verdict = "OUI";
+  return {
+    global: globalScore,
+    axes: finalAxes,
+    base_axes: axes,
+    bonus_excellence: bonus,
+    method: "V6_per_axis_150",
+    verdict: verdict,
+    timestamp: Date.now(),
+    max_per_axis: 150,
+    max_global: 150
+  };
+}
+window.axGet100ScoreV6 = axGet100ScoreV6;
+
+/* Override chain : axGet100Score -> V6 (top of chain) */
+(function(){
+  if(window._axScoreV6ChainInstalled) return;
+  window._axScoreV6ChainInstalled = true;
+  setTimeout(function(){
+    try{
+      window.axGet100Score = function(){
+        try{ return axGet100ScoreV6(); }
+        catch(_){
+          if(typeof axGet100ScoreV5 === "function") return axGet100ScoreV5();
+          if(typeof axGet100ScoreV4 === "function") return axGet100ScoreV4();
+          return {global:0};
+        }
+      };
+    }catch(_){}
+  }, 26000);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 

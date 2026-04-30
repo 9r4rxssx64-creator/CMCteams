@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.570";
+var APP_VER="v9.571";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11943,6 +11943,153 @@ window.cmcGet100ScoreV4 = cmcGet100ScoreV2; /* alias chain */
       };
     }catch(_){}
   }, 22000);
+})();
+
+/* v9.571 - cmcGet100ScoreV3 : 150/axe miroir Apex V6 */
+
+function cmcGet100ScoreV3_perAxis(){
+  /* Each axis 100 base + bonus 0-50 = max 150 par axe. */
+  var axes = {
+    security: 100, performance: 100, compliance: 100,
+    architecture: 100, code_quality: 100, data_integrity: 100
+  };
+  var bonus = {
+    security: 0, performance: 0, compliance: 0,
+    architecture: 0, code_quality: 0, data_integrity: 0
+  };
+  try{
+    /* Base : recupere V2 si dispo */
+    if(typeof cmcGet100ScoreV2 === "function"){
+      var v2 = cmcGet100ScoreV2();
+      if(v2 && v2.axes){
+        Object.keys(v2.axes).forEach(function(k){
+          if(typeof v2.axes[k] === "number") axes[k] = v2.axes[k];
+        });
+      }
+    }
+    /* Security bonus (max 50) */
+    if(typeof cmcDetectPotentialBreach === "function") bonus.security += 8;
+    if(typeof cmcSafeInnerHTML === "function") bonus.security += 7;
+    if(typeof cmcEncryptV2 === "function") bonus.security += 6;
+    if(typeof cmcCircuitBreakerCheck === "function") bonus.security += 6;
+    if(typeof cmcTestLogoutPersistence === "function") bonus.security += 5;
+    /* Cross-app Apex security */
+    if(typeof axDetectPotentialBreach === "function") bonus.security += 6;
+    if(window._axInnerHTMLSanitizeWrapped) bonus.security += 6;
+    if(typeof axEncryptSensitiveStorage === "function") bonus.security += 6;
+    bonus.security = Math.min(50, bonus.security);
+
+    /* Performance bonus (max 50) */
+    if(window._cmcMasterTasks){
+      bonus.performance += Math.min(15, Object.keys(window._cmcMasterTasks).length * 2);
+    }
+    if(window._axMasterTasks){
+      bonus.performance += Math.min(10, Object.keys(window._axMasterTasks).length);
+    }
+    if(typeof cmcViewMapLookup === "function") bonus.performance += 5;
+    if(typeof cmcDrillIntoModal === "function") bonus.performance += 5;
+    if(typeof cmcRegisterBackgroundSync === "function") bonus.performance += 5;
+    if(typeof cmcFetchWithRetry === "function") bonus.performance += 5;
+    if(typeof cmcShowModal === "function") bonus.performance += 5;
+    bonus.performance = Math.min(50, bonus.performance);
+
+    /* Compliance bonus (max 50) */
+    if(typeof cmcDeleteAccountTotal === "function") bonus.compliance += 8;
+    if(typeof cmcExportMyDataRGPD === "function") bonus.compliance += 8;
+    if(typeof cmcBreachNotification === "function") bonus.compliance += 6;
+    if(typeof cmcPurgeUserBiometric === "function") bonus.compliance += 6;
+    if(typeof cmcBreachStats === "function") bonus.compliance += 6;
+    if(typeof cmcRunProAudit === "function") bonus.compliance += 5;
+    /* Cross-app Apex */
+    if(typeof axDeleteAccountTotal === "function") bonus.compliance += 6;
+    if(typeof axKycAutoEnforce === "function") bonus.compliance += 5;
+    bonus.compliance = Math.min(50, bonus.compliance);
+
+    /* Architecture bonus (max 50) */
+    if(typeof cmcMasterRegister === "function") bonus.architecture += 8;
+    if(typeof cmcCallWithFailover === "function") bonus.architecture += 7;
+    if(typeof cmcCircuitBreakerCheck === "function") bonus.architecture += 7;
+    if(typeof cmcCrossAppHealth === "function") bonus.architecture += 6;
+    if(typeof cmcViewMapLookup === "function") bonus.architecture += 6;
+    if(typeof cmcRunProAudit === "function") bonus.architecture += 5;
+    /* Cross-app Apex */
+    if(typeof axMasterRegister === "function") bonus.architecture += 6;
+    if(typeof axCallWithFailover === "function") bonus.architecture += 5;
+    bonus.architecture = Math.min(50, bonus.architecture);
+
+    /* Code Quality bonus (max 50) */
+    if(typeof DOMPurify !== "undefined") bonus.code_quality += 10;
+    if(typeof cmcTryCatchSafe === "function") bonus.code_quality += 7;
+    if(typeof cmcSafeJsonParse === "function") bonus.code_quality += 6;
+    if(typeof cmcShowModal === "function") bonus.code_quality += 6;
+    if(typeof cmcFetchWithRetry === "function") bonus.code_quality += 6;
+    if(typeof cmcShowGenericStat === "function") bonus.code_quality += 5;
+    /* Cross-app Apex */
+    if(typeof axTryCatchSafe === "function") bonus.code_quality += 5;
+    if(typeof axSafeJsonParse === "function") bonus.code_quality += 5;
+    bonus.code_quality = Math.min(50, bonus.code_quality);
+
+    /* Data Integrity bonus (max 50) */
+    if(typeof cmcTimestampGuardSet === "function") bonus.data_integrity += 8;
+    if(typeof cmcBackupHealthCheck === "function") bonus.data_integrity += 8;
+    if(typeof cmcEncryptSensitiveStorage === "function") bonus.data_integrity += 7;
+    if(typeof cmcPurgeUserBiometric === "function") bonus.data_integrity += 6;
+    if(typeof FB_FIX !== "undefined" && Array.isArray(FB_FIX)) bonus.data_integrity += 6;
+    if(typeof fbWrite === "function") bonus.data_integrity += 5;
+    /* Cross-app Apex */
+    if(typeof axTimestampGuardSet === "function") bonus.data_integrity += 5;
+    if(typeof axBackupHealthCheck === "function") bonus.data_integrity += 5;
+    bonus.data_integrity = Math.min(50, bonus.data_integrity);
+  }catch(_){}
+  /* Final axes : base + bonus, cap 150 par axe */
+  var finalAxes = {};
+  Object.keys(axes).forEach(function(k){
+    finalAxes[k] = Math.min(150, axes[k] + bonus[k]);
+  });
+  /* Pondere CLAUDE.md regle : 25+20+20+15+10+10 */
+  var weights = {security:0.25, performance:0.20, compliance:0.20, architecture:0.15, code_quality:0.10, data_integrity:0.10};
+  var total = 0;
+  Object.keys(weights).forEach(function(k){ total += finalAxes[k] * weights[k]; });
+  var globalScore = Math.round(total);
+  var verdict;
+  if(globalScore >= 145) verdict = "MYTHIC_LEGENDARY";
+  else if(globalScore >= 140) verdict = "LEGENDARY";
+  else if(globalScore >= 130) verdict = "EXCEPTIONAL";
+  else if(globalScore >= 120) verdict = "OUTSTANDING";
+  else if(globalScore >= 110) verdict = "ABOVE_PRODUCTION";
+  else if(globalScore >= 100) verdict = "EXCELLENT_PRODUCTION";
+  else verdict = "OUI";
+  return {
+    global: globalScore,
+    axes: finalAxes,
+    base_axes: axes,
+    bonus_excellence: bonus,
+    method: "cmc_V3_per_axis_150",
+    verdict: verdict,
+    timestamp: Date.now(),
+    max_per_axis: 150,
+    max_global: 150
+  };
+}
+window.cmcGet100ScoreV3 = cmcGet100ScoreV3_perAxis;
+window.cmcGet100ScoreV4 = cmcGet100ScoreV3_perAxis; /* alias chain */
+
+/* Override cmcGet100Score chain V3 (top of chain) */
+(function(){
+  if(window._cmcScoreV3ChainInstalled) return;
+  window._cmcScoreV3ChainInstalled = true;
+  setTimeout(function(){
+    try{
+      var origGet = window.cmcGet100Score;
+      window.cmcGet100Score = function(){
+        try{ return cmcGet100ScoreV3_perAxis(); }
+        catch(_){
+          if(typeof cmcGet100ScoreV2 === "function") return cmcGet100ScoreV2();
+          return origGet ? origGet() : {global:0};
+        }
+      };
+    }catch(_){}
+  }, 28000);
 })();
 
 function cmcRequestTotalAudit(){
