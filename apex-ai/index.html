@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.546",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.547",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -24144,7 +24144,7 @@ function _ekdmcAddProduct(){var name=prompt("Nom du produit :");if(!name)return;
 function _ekdmcImportCSV(){toast("Import CSV: collez le contenu dans le chat","info");sv("chat");}
 
 // === MODULE: Hub Projets Kevin ===
-function vProjects(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83D\uDCC1 Mes Projets</h2>';var projects=[{id:"kdmc",name:"APEX AI",desc:"Assistant IA premium — cette app",icon:"\u2726",color:"var(--ax-gold)",url:"",ver:APP_VER,status:"Production",tab:"dashboard"},{id:"cmcteams",name:"CMCteams",desc:"Planning casino 258 employes",icon:"\uD83C\uDFB0",color:"var(--ax-red)",url:"https://9r4rxssx64-creator.github.io/CMCteams/",ver:"v9.454",status:"Production",tab:"cmcadmin"},{id:"remote",name:"Telecommande Universelle",desc:"TV/AC/lumieres/volets + scan devices proches",icon:"\uD83C\uDFAE",color:"#ff5858",url:"",ver:"v1.2",status:"Production",tab:"remote"},{id:"crackpass",name:"CrackPass / Vault",desc:"Generateur + testeur + recup MES appareils seulement",icon:"\uD83D\uDD10",color:"var(--ax-green)",url:"",ver:"v1.1",status:"Production",tab:"crackpass"},{id:"ekdmc",name:"e-APEX",desc:"E-commerce automatise",icon:"\uD83D\uDED2",color:"var(--ax-orange)",url:"",ver:"v0.1",status:"En developpement",tab:"ecommerce"},{id:"bilan",name:"\uD83D\uDCCA Bilan General",desc:"Valorisations + plan budgetaire CMCteams + Apex",icon:"\uD83D\uDCCA",color:"#ffd700",url:"",ver:"live",status:"Production",tab:"bilan"},{id:"iakdmc",name:"IA-APEX",desc:"Projet IA personnel",icon:"\uD83E\uDD16",color:"var(--ax-purple)",url:"",ver:"v0.0",status:"A demarrer",tab:""}];h+='<div style="display:grid;grid-template-columns:1fr;gap:12px">';projects.forEach(function(p){var statusBg=p.status==="Production"?"rgba(76,208,128,.1)":p.status==="En developpement"?"rgba(255,144,56,.1)":"rgba(148,152,192,.1)";var statusColor=p.status==="Production"?"var(--ax-green)":p.status==="En developpement"?"var(--ax-orange)":"var(--ax-text-dim)";h+='<div class="ax-card" style="border-left:4px solid '+p.color+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent);cursor:pointer" '+(p.tab?'onclick="sv(\''+p.tab+'\')"':'')+'><div style="display:flex;align-items:center;gap:12px"><div style="font-size:36px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border-radius:12px">'+p.icon+'</div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><strong style="font-size:16px;color:'+p.color+'">'+esc(p.name)+'</strong><span style="font-size:10px;background:'+statusBg+';color:'+statusColor+';padding:2px 8px;border-radius:8px;font-weight:600">'+p.status+'</span></div><div style="font-size:12px;color:var(--ax-text-dim);margin-top:2px">'+esc(p.desc)+'</div><div style="display:flex;gap:8px;margin-top:6px"><span style="font-size:10px;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;color:var(--ax-text-dim)">'+p.ver+'</span>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" style="font-size:10px;color:var(--ax-blue);text-decoration:none" onclick="event.stopPropagation()">\uD83D\uDD17 Ouvrir</a>':'')+'</div></div></div></div>';});h+='</div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.04),transparent);margin-top:12px"><h3>\uD83D\uDC19 Liens rapides</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83D\uDC19 GitHub</a><a href="https://9r4rxssx64-creator.github.io/CMCteams/" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83C\uDFB0 CMCteams</a><a href="https://console.firebase.google.com" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83D\uDD25 Firebase</a><a href="https://console.anthropic.com" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83E\uDD16 Anthropic</a></div></div></div>';return h;}
+function vProjects(){if(!K.user)return vLogin();var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83D\uDCC1 Mes Projets</h2>';var projects=[{id:"kdmc",name:"APEX AI",desc:"Assistant IA premium — cette app",icon:"\u2726",color:"var(--ax-gold)",url:"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/",ver:APP_VER,status:"Production",tab:"dashboard"},{id:"cmcteams",name:"CMCteams",desc:"Planning casino Monaco 258 employes",icon:"\uD83C\uDFB0",color:"var(--ax-red)",url:"https://9r4rxssx64-creator.github.io/CMCteams/",ver:"v9.579",status:"Production",tab:"cmcadmin"},{id:"apexchat",name:"Apex Chat",desc:"Messagerie privee WhatsApp clone (E2E + admin lecture Mode A)",icon:"\uD83D\uDCAC",color:"#25D366",url:"https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/",ver:"Mode A v0.2",status:"En developpement",tab:""},{id:"socialvideo",name:"Social Video Pipeline",desc:"Videos auto YT/TikTok/IG/FB (Gemini+FFmpeg+Edge TTS)",icon:"\uD83C\uDFAC",color:"#ff0050",url:"",ver:"v0.3 Phase 3",status:"En developpement",tab:"socialvideo"},{id:"remote",name:"Telecommande Universelle",desc:"TV/AC/lumieres/volets + scan devices proches",icon:"\uD83C\uDFAE",color:"#ff5858",url:"",ver:"v1.2",status:"Production",tab:"remote"},{id:"crackpass",name:"CrackPass / Vault",desc:"Generateur + testeur + recup MES appareils seulement",icon:"\uD83D\uDD10",color:"var(--ax-green)",url:"",ver:"v1.1",status:"Production",tab:"crackpass"},{id:"cloudflare",name:"Cloudflare Tools",desc:"Push worker + VAPID gen + deploy worker 1-clic",icon:"\u2601\uFE0F",color:"#F38020",url:"https://9r4rxssx64-creator.github.io/CMCteams/tools/cloudflare/deploy-worker.html",ver:"v1.0",status:"Production",tab:""},{id:"backend",name:"Backend Proxy",desc:"Cloudflare Worker proxy Anthropic API (CORS iOS)",icon:"\uD83D\uDD0C",color:"#9333EA",url:"",ver:"v1.0",status:"Production",tab:""},{id:"ekdmc",name:"e-APEX",desc:"E-commerce automatise",icon:"\uD83D\uDED2",color:"var(--ax-orange)",url:"",ver:"v0.1",status:"En developpement",tab:"ecommerce"},{id:"bilan",name:"\uD83D\uDCCA Bilan General",desc:"Valorisations + plan budgetaire CMCteams + Apex",icon:"\uD83D\uDCCA",color:"#ffd700",url:"",ver:"live",status:"Production",tab:"bilan"},{id:"iakdmc",name:"IA-APEX",desc:"Projet IA personnel",icon:"\uD83E\uDD16",color:"var(--ax-purple)",url:"",ver:"v0.0",status:"A demarrer",tab:""}];h+='<div style="display:grid;grid-template-columns:1fr;gap:12px">';projects.forEach(function(p){var statusBg=p.status==="Production"?"rgba(76,208,128,.1)":p.status==="En developpement"?"rgba(255,144,56,.1)":"rgba(148,152,192,.1)";var statusColor=p.status==="Production"?"var(--ax-green)":p.status==="En developpement"?"var(--ax-orange)":"var(--ax-text-dim)";h+='<div class="ax-card" style="border-left:4px solid '+p.color+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent);cursor:pointer" '+(p.tab?'onclick="sv(\''+p.tab+'\')"':'')+'><div style="display:flex;align-items:center;gap:12px"><div style="font-size:36px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border-radius:12px">'+p.icon+'</div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><strong style="font-size:16px;color:'+p.color+'">'+esc(p.name)+'</strong><span style="font-size:10px;background:'+statusBg+';color:'+statusColor+';padding:2px 8px;border-radius:8px;font-weight:600">'+p.status+'</span></div><div style="font-size:12px;color:var(--ax-text-dim);margin-top:2px">'+esc(p.desc)+'</div><div style="display:flex;gap:8px;margin-top:6px"><span style="font-size:10px;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;color:var(--ax-text-dim)">'+p.ver+'</span>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" style="font-size:10px;color:var(--ax-blue);text-decoration:none" onclick="event.stopPropagation()">\uD83D\uDD17 Ouvrir</a>':'')+'</div></div></div></div>';});h+='</div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.04),transparent);margin-top:12px"><h3>\uD83D\uDC19 Liens rapides</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83D\uDC19 GitHub</a><a href="https://9r4rxssx64-creator.github.io/CMCteams/" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83C\uDFB0 CMCteams</a><a href="https://console.firebase.google.com" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83D\uDD25 Firebase</a><a href="https://console.anthropic.com" target="_blank" class="ax-btn ax-btn-outline" style="text-decoration:none">\uD83E\uDD16 Anthropic</a></div></div></div>';return h;}
 
 // === MODULE: Code Editor intégré ===
 function vCodeEditor(){if(!axIsAdmin())return'<div class="ax-empty"><div class="ax-empty-icon">\uD83D\uDD12</div><div class="ax-empty-text">Admin requis</div></div>';var h='<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px">\uD83D\uDCBB Editeur de Code APEX</h2>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-blue);background:linear-gradient(135deg,rgba(90,168,255,.04),transparent)"><h3>\uD83D\uDD0D Chercher dans le code</h3><div style="display:flex;gap:8px"><input id="ax-code-search" class="ax-input" placeholder="Rechercher une fonction, variable, CSS..." style="flex:1" aria-label="Rechercher une fonction, variable, CSS..."><button class="ax-btn ax-btn-primary" onclick="_codeSearch()">\uD83D\uDD0D</button></div><div id="ax-code-results" style="margin-top:8px;font-family:var(--ax-mono);font-size:12px;max-height:200px;overflow-y:auto"></div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-gold);background:linear-gradient(135deg,rgba(232,184,48,.04),transparent)"><h3>\u270F\uFE0F CSS Live Editor</h3><textarea id="ax-css-editor" class="ax-input" style="min-height:150px;font-family:var(--ax-mono);font-size:12px" placeholder="Collez ou ecrivez du CSS ici..." aria-label="Collez ou ecrivez du CSS ici..."></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="ax-btn ax-btn-primary" onclick="_applyCSSEdit()">\u25B6\uFE0F Appliquer</button><button class="ax-btn ax-btn-outline" onclick="_loadCurrentCSS()">\uD83D\uDCE5 Charger CSS actuel</button></div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-green);background:linear-gradient(135deg,rgba(76,208,128,.04),transparent)"><h3>\uD83D\uDCCB Fonctions disponibles ('+axListFunctions().length+')</h3><div style="max-height:200px;overflow-y:auto;font-family:var(--ax-mono);font-size:11px;columns:2">';axListFunctions().forEach(function(fn){h+='<div style="padding:1px 0;cursor:pointer;color:var(--ax-blue)" onclick="_showFnCode(\''+esc(fn)+'\')">'+esc(fn)+'()</div>';});h+='</div></div>';h+='<div class="ax-card" style="border-left:4px solid var(--ax-purple);background:linear-gradient(135deg,rgba(168,120,255,.04),transparent)"><h3>\uD83D\uDCE4 Actions</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ax-btn ax-btn-outline" onclick="axExportAppCode()">\uD83D\uDCBE Exporter HTML</button><button class="ax-btn ax-btn-outline" onclick="_showModal(\'<h2>Variables globales</h2><pre style=font-size:11px>\'+esc(JSON.stringify({APP_VER:APP_VER,K_view:K.view,K_user:K.user?K.user.name:null,conversations:K.conversations.length,messages:K.messages.length,kb_facts:K.kb.facts.length,settings:K.settings,xp:lg(\\\"ax_xp\\\",0)},null,2))+\'</pre>\')">\uD83D\uDCCA Variables</button><button class="ax-btn ax-btn-outline" onclick="toast(\'Fonctions: \'+axListFunctions().length,\'info\')">\uD83D\uDD22 Compter</button></div></div></div>';return h;}
@@ -29954,6 +29954,178 @@ setTimeout(function(){
     window.axState = ns;
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("axstate_init",_e);}catch(__){}}
 }, 600);
+
+/* ============================================================
+   AX_V12_547 — APEX PROJECTS HUB : Social Video pipeline integration
+   Kevin demande centralisation tous projets dans Apex avec acces complets
+   ============================================================ */
+
+/* === SOCIAL VIDEO : helper dispatch GitHub Actions (Option B subagent) === */
+window.axCreateSocialVideo = function(opts){
+  opts = opts || {};
+  if(!K || !K.user || (typeof axIsAdminStrict === "function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    if(typeof toast === "function") toast("Reserve admin", "warn");
+    return Promise.resolve({ok:false, error:"not_admin"});
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  var token = lg("ax_gh_pat", "") || lg("ax_github_token", "");
+  if(!token){
+    if(typeof axNeedsAttention === "function"){
+      axNeedsAttention({
+        id: "social_pat_required",
+        title: "GitHub PAT requis pour Social Video",
+        body: "Ajoute un Personal Access Token GitHub avec scope 'workflow' pour declencher la generation video. Console : github.com/settings/tokens",
+        action: { label: "Configurer dans Coffre", run: function(){ if(typeof sv==="function") sv("vault"); } }
+      });
+    } else if(typeof toast === "function"){
+      toast("GitHub PAT manquant - Coffre > ax_gh_pat", "warn");
+    }
+    return Promise.resolve({ok:false, error:"no_pat"});
+  }
+  var workflow = opts.schedule ? "social-scheduler.yml" : "social-publish.yml";
+  var body = {
+    ref: "main",
+    inputs: {
+      niche: opts.niche || "betrayal-revenge",
+      format: opts.format || "long",
+      publish_platforms: opts.platform || "youtube",
+      topic: opts.topic || "",
+      language: opts.lang || "en",
+      template: opts.template || "narrative",
+      schedule_at: opts.schedule || ""
+    }
+  };
+  return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/" + workflow + "/dispatches", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    },
+    body: JSON.stringify(body)
+  }).then(function(r){
+    if(!r.ok) throw new Error("GitHub API " + r.status);
+    var jobs = lg("ax_social_jobs", []);
+    jobs.unshift({
+      id: "sj_" + Date.now(),
+      topic: opts.topic || opts.niche,
+      platform: opts.platform || "youtube",
+      format: opts.format || "long",
+      template: opts.template || "narrative",
+      status: "queued",
+      workflow: workflow,
+      ts: Date.now()
+    });
+    ls("ax_social_jobs", jobs.slice(0, 50));
+    if(typeof toast === "function") toast("Video en file (GitHub Actions)", "ok", {duration:4000});
+    if(typeof axSecurityLog === "function") axSecurityLog("social_video_dispatched", workflow + " " + (opts.topic||opts.niche));
+    return {ok:true};
+  }).catch(function(e){
+    if(typeof _axSafeCatch === "function") _axSafeCatch("axCreateSocialVideo", e, "warn");
+    if(typeof toast === "function") toast("Erreur dispatch: " + e.message, "err");
+    return {ok:false, error: e.message};
+  });
+};
+
+/* === Vue admin Social Video Pipeline === */
+window.vSocialVideo = function(){
+  if(!K || !K.user) return (typeof vLogin==="function") ? vLogin() : "";
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var jobs = lg("ax_social_jobs", []);
+  var token = lg("ax_gh_pat", "") || lg("ax_github_token", "");
+  var hasGemini = !!lg("ax_gemini_key", "");
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#ff0050,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">🎬 Social Video Pipeline</h2>';
+  h += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><button class="ax-btn ax-btn-primary" onclick="_axShowSocialVideoModal()" style="flex:1;min-height:48px">+ Nouvelle video</button><button class="ax-btn ax-btn-outline" onclick="window.open(\'https://github.com/9r4rxssx64-creator/cmcteams/actions\',\'_blank\')" style="min-height:48px">📊 Runs GitHub</button></div>';
+  /* Status tokens */
+  h += '<div class="ax-card" style="border-left:4px solid #ff0050;margin-bottom:12px"><h3>🔑 Acces & Tokens</h3><div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:13px">';
+  h += '<div style="display:flex;justify-content:space-between"><span>'+(token?"✅":"❌")+' GitHub PAT (workflow)</span>'+(token?'<code style="font-size:10px">****'+esc(token.slice(-4))+'</code>':'<button class="ax-btn ax-btn-outline" style="padding:2px 8px;font-size:11px" onclick="window.open(\'https://github.com/settings/tokens/new?scopes=workflow,repo&description=Apex-Social\',\'_blank\')">Generer</button>')+'</div>';
+  h += '<div style="display:flex;justify-content:space-between"><span>'+(hasGemini?"✅":"❌")+' Google Gemini (scripts IA)</span>'+(hasGemini?'<span style="color:var(--ax-green);font-size:11px">OK</span>':'<button class="ax-btn ax-btn-outline" style="padding:2px 8px;font-size:11px" onclick="window.open(\'https://aistudio.google.com/app/apikey\',\'_blank\')">Cle</button>')+'</div>';
+  h += '<div style="display:flex;justify-content:space-between"><span>📺 YouTube OAuth (publication)</span><button class="ax-btn ax-btn-outline" style="padding:2px 8px;font-size:11px" onclick="window.open(\'https://console.cloud.google.com/apis/credentials\',\'_blank\')">Setup</button></div>';
+  h += '<div style="display:flex;justify-content:space-between"><span>📘 Facebook Graph (Reels)</span><button class="ax-btn ax-btn-outline" style="padding:2px 8px;font-size:11px" onclick="window.open(\'https://developers.facebook.com/tools/explorer/\',\'_blank\')">Token</button></div>';
+  h += '<div style="display:flex;justify-content:space-between"><span>📷 Instagram Reels API</span><button class="ax-btn ax-btn-outline" style="padding:2px 8px;font-size:11px" onclick="window.open(\'https://developers.facebook.com/docs/instagram-api/getting-started\',\'_blank\')">Setup</button></div>';
+  h += '</div><p style="font-size:11px;color:var(--ax-text-dim);margin-top:8px">Tokens API publication → GitHub Secrets (Settings > Secrets > Actions). Apex stocke seulement le PAT.</p></div>';
+  /* Jobs queue */
+  h += '<div class="ax-card" style="border-left:4px solid #6a8aff"><h3>📦 File de jobs ('+jobs.length+')</h3>';
+  if(!jobs.length){
+    h += '<div style="text-align:center;padding:18px;color:var(--ax-text-dim);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🎬</div>Aucune video en cours.<br>Clique "+ Nouvelle video" pour demarrer.</div>';
+  } else {
+    jobs.slice(0, 10).forEach(function(j){
+      var statusColor = j.status==="queued"?"var(--ax-orange)":j.status==="completed"?"var(--ax-green)":j.status==="failed"?"var(--ax-red)":"var(--ax-blue)";
+      h += '<div style="background:rgba(255,255,255,.03);padding:10px;border-radius:8px;margin:6px 0;border-left:3px solid '+statusColor+'"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:13px">'+esc(j.topic||j.niche||"video")+'</strong><span style="font-size:10px;color:'+statusColor+';font-weight:600">'+esc(j.status)+'</span></div><div style="font-size:10px;color:var(--ax-text-dim);margin-top:4px">📺 '+esc(j.platform)+' · 📐 '+esc(j.format)+' · 📝 '+esc(j.template)+' · '+(typeof _timeAgo==="function"?_timeAgo(j.ts):new Date(j.ts).toLocaleString("fr-FR"))+'</div></div>';
+    });
+  }
+  h += '</div>';
+  /* Templates info */
+  h += '<div class="ax-card" style="border-left:4px solid var(--ax-gold);margin-top:12px"><h3>🎨 Templates disponibles</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px"><div>📚 narrative-storytelling</div><div>🎓 documentary</div><div>📋 listicle (Top-N)</div><div>📺 breaking-news</div><div>🎬 tutorial</div></div></div>';
+  return h + '</div>';
+};
+
+/* === Modal nouveau social video (form simple) === */
+window._axShowSocialVideoModal = function(){
+  var modal = document.getElementById("modal-container");
+  if(!modal){ if(typeof toast==="function") toast("Modal indisponible","warn"); return; }
+  var html = '<div style="padding:18px"><h2 style="color:#ff0050;margin:0 0 12px 0">🎬 Nouvelle video sociale</h2>';
+  html += '<label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Topic (optionnel, sinon Gemini choisit)</label><input id="ax-sv-topic" class="ax-input" placeholder="ex: 5 secrets de l investissement" style="width:100%;margin-bottom:6px">';
+  html += '<label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Niche</label><select id="ax-sv-niche" class="ax-input" style="width:100%;margin-bottom:6px"><option>betrayal-revenge</option><option>finance-lesson</option><option>mystery</option><option>history</option><option>tech-explainer</option></select>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div><label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Format</label><select id="ax-sv-format" class="ax-input" style="width:100%"><option value="long">Long (16:9)</option><option value="short">Short (9:16)</option></select></div><div><label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Template</label><select id="ax-sv-template" class="ax-input" style="width:100%"><option value="narrative">Narrative</option><option value="documentary">Documentary</option><option value="listicle">Listicle</option><option value="breaking-news">Breaking News</option><option value="tutorial">Tutorial</option></select></div></div>';
+  html += '<label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Plateforme</label><select id="ax-sv-platform" class="ax-input" style="width:100%;margin-bottom:6px"><option>youtube</option><option>youtube,facebook</option><option>youtube,facebook,instagram</option><option>instagram</option><option>facebook</option></select>';
+  html += '<label style="display:block;font-size:11px;color:var(--ax-text-dim);margin-top:8px">Langue</label><select id="ax-sv-lang" class="ax-input" style="width:100%;margin-bottom:14px"><option>en</option><option>fr</option><option>es</option><option>it</option><option>de</option><option>pt</option><option>ar</option><option>zh</option><option>ja</option></select>';
+  html += '<div style="display:flex;gap:8px"><button class="ax-btn ax-btn-primary" style="flex:1;min-height:48px" onclick="_axDispatchSocialVideo()">🚀 Lancer</button><button class="ax-btn ax-btn-outline" style="min-height:48px" onclick="document.getElementById(\'modal-container\').innerHTML=\'\'">Annuler</button></div></div>';
+  modal.innerHTML = html;
+};
+window._axDispatchSocialVideo = function(){
+  var topic = (document.getElementById("ax-sv-topic")||{}).value || "";
+  var niche = (document.getElementById("ax-sv-niche")||{}).value || "betrayal-revenge";
+  var format = (document.getElementById("ax-sv-format")||{}).value || "long";
+  var template = (document.getElementById("ax-sv-template")||{}).value || "narrative";
+  var platform = (document.getElementById("ax-sv-platform")||{}).value || "youtube";
+  var lang = (document.getElementById("ax-sv-lang")||{}).value || "en";
+  axCreateSocialVideo({topic:topic, niche:niche, format:format, template:template, platform:platform, lang:lang}).then(function(r){
+    if(r && r.ok){ var modal=document.getElementById("modal-container"); if(modal) modal.innerHTML=""; if(typeof dc==="function") dc(); }
+  });
+};
+
+/* === Wire route socialvideo dans vMain === */
+setTimeout(function(){
+  try{
+    var orig = window.vMain;
+    if(typeof orig !== "function" || window._axSocialRouteWired) return;
+    window.vMain = function(){
+      if(K && K.view === "socialvideo" && typeof vSocialVideo === "function") return vSocialVideo();
+      return orig.apply(this, arguments);
+    };
+    window._axSocialRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("socialroute_wire",_e,"warn");}
+}, 400);
+
+/* === Token registry etendu : ax_apex_projects_tokens === */
+window.AX_APEX_PROJECTS_TOKENS = [
+  {key:"ax_api_key", label:"Anthropic Claude API", url:"https://console.anthropic.com/settings/keys", required:true, project:"apex-ai"},
+  {key:"ax_gh_pat", label:"GitHub PAT (workflow)", url:"https://github.com/settings/tokens/new?scopes=workflow,repo&description=Apex", required:true, project:"all"},
+  {key:"ax_gemini_key", label:"Google Gemini AI", url:"https://aistudio.google.com/app/apikey", required:false, project:"socialvideo"},
+  {key:"ax_openrouter_key", label:"OpenRouter (failover IA)", url:"https://openrouter.ai/keys", required:false, project:"apex-ai"},
+  {key:"ax_groq_key", label:"Groq (failover IA gratuit)", url:"https://console.groq.com/keys", required:false, project:"apex-ai"},
+  {key:"ax_elevenlabs_key", label:"ElevenLabs (voix premium)", url:"https://elevenlabs.io/app/settings/api-keys", required:false, project:"apex-ai"},
+  {key:"ax_cf_token", label:"Cloudflare API Token", url:"https://dash.cloudflare.com/profile/api-tokens", required:false, project:"cloudflare"},
+  {key:"ax_youtube_oauth", label:"YouTube OAuth (publication)", url:"https://console.cloud.google.com/apis/credentials", required:false, project:"socialvideo"},
+  {key:"ax_fb_page_token", label:"Facebook Page Access Token", url:"https://developers.facebook.com/tools/explorer/", required:false, project:"socialvideo"},
+  {key:"ax_ig_user_id", label:"Instagram User ID", url:"https://developers.facebook.com/docs/instagram-api/getting-started", required:false, project:"socialvideo"},
+  {key:"ax_stripe_key", label:"Stripe (paiements)", url:"https://dashboard.stripe.com/apikeys", required:false, project:"apex-ai"},
+  {key:"ax_kevin_whatsapp_phone", label:"WhatsApp Kevin (OTP)", url:"https://wa.me/", required:false, project:"apex-chat"}
+];
+
+/* Helper : audit tokens manquants */
+window.axAuditApexProjectsTokens = function(){
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var missing = [], present = [];
+  AX_APEX_PROJECTS_TOKENS.forEach(function(t){
+    var v = lg(t.key, "") || localStorage.getItem(t.key);
+    if(v && String(v).length > 4) present.push(t);
+    else if(t.required) missing.push(t);
+  });
+  return {present:present, missing:missing, total:AX_APEX_PROJECTS_TOKENS.length};
+};
 
 </script>
 </body>
