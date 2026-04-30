@@ -829,7 +829,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.452",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.453",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2519,6 +2519,195 @@ function axGetCurrentPlanLabel(){
     return "Aucun";
   }catch(_){ return "Aucun"; }
 }
+
+/* v12.453 - axDrillIntoModal universel + swipe gestures + tool call cards */
+
+window._axModalStack = window._axModalStack || [];
+window._axViewStack = window._axViewStack || [];
+
+function axDrillIntoModal(opts){
+  /* opts = {title, body?, items?, html?, closeOnIdle?, level?} */
+  if(!opts) return;
+  var ov = document.createElement("div");
+  ov.className = "ax-drill-modal";
+  ov.setAttribute("role","dialog");
+  ov.setAttribute("aria-modal","true");
+  var level = opts.level || (window._axModalStack.length + 1);
+  ov.style.cssText = "position:fixed;inset:0;z-index:"+(99990 + level)+";display:flex;align-items:flex-end;justify-content:center;padding:0;background:rgba(0,0,0,"+(0.5 + level*0.1)+");-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:axFadeIn .2s";
+  var card = document.createElement("div");
+  card.style.cssText = "background:linear-gradient(180deg,rgba(22,28,56,.99),rgba(16,22,48,.97));border-top:1px solid rgba(232,184,48,.18);border-radius:20px 20px 0 0;padding:20px 16px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 -16px 48px rgba(0,0,0,.5);color:#fff;animation:axSlideUp .3s cubic-bezier(.22,1,.36,1)";
+  /* Drag handle */
+  var handle = '<div style="width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 14px"></div>';
+  /* Header */
+  var head = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  head += '<strong style="font-size:18px;color:var(--ax-gold)">'+esc(opts.title||"Detail")+'</strong>';
+  head += '<button onclick="axCloseDrillModal()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px">&times;</button>';
+  head += '</div>';
+  /* Content */
+  var content = "";
+  if(opts.body) content += '<div style="font-size:14px;line-height:1.6;color:#cfd0e0;margin-bottom:14px">'+esc(opts.body)+'</div>';
+  if(opts.html) content += opts.html;
+  if(Array.isArray(opts.items)){
+    content += '<div style="display:flex;flex-direction:column;gap:6px">';
+    opts.items.forEach(function(it,i){
+      var click = it.onClick ? 'onclick="('+it.onClick+')();"' : (it.drill ? 'onclick="axDrillIntoModal('+JSON.stringify(it.drill).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/&quot;/g,"&quot;")+');"' : '');
+      content += '<div role="button" tabindex="0" '+click+' style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;cursor:'+(click?"pointer":"default")+';transition:background .15s" onmouseover="this.style.background=&quot;rgba(255,255,255,.08)&quot;" onmouseout="this.style.background=&quot;rgba(255,255,255,.04)&quot;">';
+      if(it.icon) content += '<span style="font-size:20px;flex-shrink:0">'+esc(it.icon)+'</span>';
+      content += '<div style="flex:1"><div style="font-size:14px;font-weight:600">'+esc(it.label||"")+'</div>';
+      if(it.value !== undefined) content += '<div style="font-size:12px;color:var(--ax-text-dim);margin-top:2px">'+esc(String(it.value))+'</div>';
+      content += '</div>';
+      if(click) content += '<span style="color:var(--ax-text-dim);font-size:18px">&rsaquo;</span>';
+      content += '</div>';
+    });
+    content += '</div>';
+  }
+  card.innerHTML = handle + head + content;
+  /* Swipe down to close (touchstart/touchmove/touchend) */
+  var startY = 0, dragging = false, dragDelta = 0;
+  card.addEventListener("touchstart", function(e){
+    if(card.scrollTop > 0) return;
+    if(e.touches && e.touches.length === 1){
+      startY = e.touches[0].clientY;
+      dragging = true;
+    }
+  }, {passive:true});
+  card.addEventListener("touchmove", function(e){
+    if(!dragging) return;
+    dragDelta = e.touches[0].clientY - startY;
+    if(dragDelta > 0){
+      card.style.transform = "translateY("+dragDelta+"px)";
+    }
+  }, {passive:true});
+  card.addEventListener("touchend", function(){
+    if(!dragging) return;
+    dragging = false;
+    if(dragDelta > 80){
+      axCloseDrillModal();
+    } else {
+      card.style.transition = "transform .25s";
+      card.style.transform = "translateY(0)";
+      setTimeout(function(){card.style.transition = "";}, 250);
+    }
+    dragDelta = 0;
+  });
+  ov.appendChild(card);
+  /* Click hors card = close */
+  ov.addEventListener("click", function(e){
+    if(e.target === ov) axCloseDrillModal();
+  });
+  document.body.appendChild(ov);
+  window._axModalStack.push(ov);
+  /* Auto-close idle 30s sauf si user interagit */
+  var idleTimer = null;
+  if(opts.closeOnIdle !== false){
+    var resetIdle = function(){
+      if(idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(function(){
+        if(document.body.contains(ov)) axCloseDrillModal();
+      }, opts.closeOnIdle || 30000);
+    };
+    resetIdle();
+    ov.addEventListener("touchstart", resetIdle, {passive:true});
+    ov.addEventListener("mousemove", resetIdle, {passive:true});
+  }
+}
+
+function axCloseDrillModal(){
+  var top = window._axModalStack.pop();
+  if(top && top.parentNode){
+    top.style.animation = "axFadeOut .2s";
+    setTimeout(function(){
+      try{ top.parentNode.removeChild(top); }catch(_){}
+    }, 200);
+  }
+}
+
+/* Swipe right depuis bord gauche = back gesture iOS */
+(function(){
+  if(window._axSwipeNavInstalled) return;
+  window._axSwipeNavInstalled = true;
+  var startX = 0, startY = 0, startT = 0, swiping = false;
+  document.addEventListener("touchstart", function(e){
+    if(!e.touches || e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startT = Date.now();
+    /* Active swipe-back uniquement si geste depuis bord gauche < 30px */
+    swiping = startX < 30;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if(!swiping) return;
+    swiping = false;
+    var endX = e.changedTouches[0].clientX;
+    var endY = e.changedTouches[0].clientY;
+    var dx = endX - startX;
+    var dy = Math.abs(endY - startY);
+    var dt = Date.now() - startT;
+    /* swipe right rapide > 80px, peu vertical, < 800ms */
+    if(dx > 80 && dy < 60 && dt < 800){
+      /* Si modal ouverte -> ferme */
+      if(window._axModalStack.length){
+        axCloseDrillModal();
+      } else if(window._axViewStack.length){
+        var prev = window._axViewStack.pop();
+        try{ if(typeof sv === "function") sv(prev); }catch(_){}
+      } else {
+        /* Fallback : ouvre AdminCenter ou retour chat */
+        try{ if(typeof sv === "function") sv("chat"); }catch(_){}
+      }
+      /* Haptic feedback subtil */
+      try{ if(navigator.vibrate) navigator.vibrate(10); }catch(_){}
+    }
+  }, {passive:true});
+})();
+
+/* Tracking view stack pour back gesture */
+(function(){
+  if(window._axViewStackPatched) return;
+  if(typeof window.sv !== "function") return;
+  window._axViewStackPatched = true;
+  var origSv = window.sv;
+  window.sv = function(view){
+    try{
+      if(K && K.view && K.view !== view){
+        window._axViewStack.push(K.view);
+        if(window._axViewStack.length > 20) window._axViewStack = window._axViewStack.slice(-20);
+      }
+    }catch(_){}
+    return origSv.apply(this, arguments);
+  };
+})();
+
+/* Cards inline pour tool calls (style Claude Code) */
+function axRenderToolCallCard(opts){
+  /* opts = {kind, label, status?, params?, result?, fn?} */
+  var kind = String(opts.kind||"tool");
+  var icons = {
+    file:"\ud83d\udcc4", bash:"\u2328\ufe0f", web:"\ud83c\udf10", search:"\ud83d\udd0d",
+    edit:"\u270f\ufe0f", code:"\ud83d\udcbb", api:"\ud83d\udd0c", tool:"\u2699\ufe0f"
+  };
+  var icon = icons[kind] || icons.tool;
+  var status = opts.status || "ok";
+  var statusColor = status==="err"?"#ff5858":(status==="running"?"#ffaa3a":"#4cd080");
+  var statusIcon = status==="err"?"\u00d7":(status==="running"?"\u23f3":"\u2713");
+  var label = esc(opts.label||"Action");
+  var fn = opts.fn || ("axDrillIntoModal("+JSON.stringify({title:label, html:'<pre style=\"white-space:pre-wrap;font-size:12px;color:#cfd0e0\">'+esc(JSON.stringify(opts.params||{},null,2)+(opts.result?'\n\n--- Resultat ---\n'+JSON.stringify(opts.result,null,2):''))+'</pre>'})+")");
+  return '<div role="button" tabindex="0" onclick="'+fn+'" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;margin:4px 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+statusColor+';border-radius:8px;cursor:pointer;font-size:13px;max-width:100%;transition:background .15s" onmouseover="this.style.background=&quot;rgba(255,255,255,.08)&quot;" onmouseout="this.style.background=&quot;rgba(255,255,255,.04)&quot;">'+
+    '<span style="font-size:16px">'+icon+'</span>'+
+    '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</span>'+
+    '<span style="color:'+statusColor+';font-weight:700;font-size:14px">'+statusIcon+'</span>'+
+    '<span style="color:var(--ax-text-dim);font-size:14px">&rsaquo;</span>'+
+    '</div>';
+}
+
+/* CSS animations supplementaires */
+(function(){
+  if(document.getElementById("ax-drill-modal-css")) return;
+  var style = document.createElement("style");
+  style.id = "ax-drill-modal-css";
+  style.textContent = "@keyframes axFadeIn{from{opacity:0}to{opacity:1}}@keyframes axFadeOut{from{opacity:1}to{opacity:0}}@keyframes axSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}";
+  document.head.appendChild(style);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
