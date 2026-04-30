@@ -4707,7 +4707,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.574";
+var APP_VER="v9.575";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37683,6 +37683,47 @@ function vRGPD(){
   return h;
 }
 /* ============ FIN RGPD COMPLET v9.548 ============ */
+
+
+/* CMC_V9_575_PARITY v9.575 - Parity Apex (push + diag + RTC peer) */
+
+window.cmcRequestPushPermission = function(){
+  if(typeof Notification === "undefined") return Promise.resolve({ok:false, msg:"Notification absent"});
+  if(Notification.permission === "granted") return Promise.resolve({ok:true});
+  if(Notification.permission === "denied") return Promise.resolve({ok:false, msg:"Refuse"});
+  return Notification.requestPermission().then(function(p){return {ok:p==="granted", state:p};});
+};
+
+window.cmcSendLocalPush = function(title, body, opts){
+  opts = opts || {};
+  if(typeof Notification === "undefined" || Notification.permission !== "granted") return false;
+  try{
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.ready.then(function(reg){
+        reg.showNotification(String(title||"CMCteams"), {
+          body: String(body||"").slice(0,200),
+          icon: "/icon-192.png",
+          tag: opts.tag || "cmc-push-"+Date.now(),
+          vibrate: opts.vibrate || [200,100,200]
+        });
+      });
+      return true;
+    }
+  }catch(_){}
+  return false;
+};
+
+window.cmcDiagnoseChat = function(){
+  return {
+    online: typeof navigator !== "undefined" ? navigator.onLine : true,
+    fb_connected: (typeof _fbEs !== "undefined") ? !!_fbEs : false,
+    api_key_present: !!(typeof lg === "function" && lg("cmc_ia_key", "")),
+    quiet_mode: lg("cmc_quiet_mode", true),
+    silent_log_count: (lg("cmc_silent_log", []) || []).length
+  };
+};
+
+/* CMC_V9_575_PARITY_END */
 
 </script>
 </body>
