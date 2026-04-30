@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.475",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.476",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -5815,6 +5815,185 @@ function axIntegrationCheckWired(){
     }catch(_){}
   }, 30000);
 })();
+
+/* v12.476 - INTEGRATION batch : score-watch + failover auto + auto-cleanup */
+
+/* === 1. Sentinelle score-watch : alerte chute score < 80 === */
+(function(){
+  if(window._axScoreWatchInstalled) return;
+  window._axScoreWatchInstalled = true;
+  setTimeout(function(){
+    function checkScore(){
+      try{
+        if(typeof axGet100Score !== "function") return;
+        var report = axGet100Score();
+        var prev = lg("ax_score_last", null);
+        ls("ax_score_last", {ts:Date.now(), score:report.global, scores:report.scores});
+        if(prev && prev.score && (report.global < prev.score - 5)){
+          /* Chute > 5pts : alerte */
+          try{
+            if(typeof axNotifyKevin === "function"){
+              axNotifyKevin("Score Apex chute : "+report.global+"/100 (vs "+prev.score+")", "Verifier integration helpers");
+            }
+          }catch(_){}
+          try{
+            if(typeof _escalateToClaudeCode === "function"){
+              _escalateToClaudeCode({score:report, prev:prev}, "Score regression detected", "warn");
+            }
+          }catch(_){}
+        }
+        if(report.global < 80){
+          try{
+            if(typeof axJournalEntry === "function"){
+              axJournalEntry("apex-ai","score_below_80","global="+report.global,"alerte interne","Continuer INTEGRATION patches");
+            }
+          }catch(_){}
+        }
+      }catch(_){}
+    }
+    /* Premier check 60s post-boot */
+    setTimeout(checkScore, 60000);
+    /* Re-check toutes 12h */
+    setInterval(checkScore, 12 * 3600 * 1000);
+  }, 30000);
+})();
+
+/* === 2. Failover IA auto-trigger si Anthropic timeout 45s === */
+window._axAnthropicTimeouts = window._axAnthropicTimeouts || [];
+
+function axRecordAnthropicTimeout(){
+  /* A appeler dans handlers d erreur Anthropic. */
+  var now = Date.now();
+  window._axAnthropicTimeouts.push(now);
+  /* Garde uniquement < 5 min */
+  var cutoff = now - 5*60*1000;
+  window._axAnthropicTimeouts = window._axAnthropicTimeouts.filter(function(t){return t > cutoff;});
+  /* Si 3 timeouts en 5 min -> bascule chain failover groq prioritaire */
+  if(window._axAnthropicTimeouts.length >= 3){
+    try{
+      var chain = lg("ax_failover_chain", ["anthropic","groq","gemini"]);
+      if(Array.isArray(chain) && chain[0] === "anthropic"){
+        /* Bascule groq en tete */
+        ls("ax_failover_chain", ["groq","gemini","anthropic","openai"]);
+        try{
+          if(typeof toast === "function"){
+            toast("Failover IA : bascule Groq prioritaire (3 timeouts Anthropic)","info",{duration:3000});
+          }
+        }catch(_){}
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","failover_auto_trigger","3_anthropic_timeouts","chain reordered groq first","Anti-coupure user");
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+    window._axAnthropicTimeouts = [];
+  }
+}
+window.axRecordAnthropicTimeout = axRecordAnthropicTimeout;
+
+/* === 3. axViewMapLookup auto-hook fast-path optionnel === */
+function axViewMapLookupSafe(viewName){
+  /* Wrapper qui retourne fonction trouvee ou null. Safe sans crash. */
+  try{
+    if(typeof axViewMapLookup === "function"){
+      return axViewMapLookup(viewName);
+    }
+    /* Fallback : direct window lookup */
+    if(viewName){
+      var fnName = "v" + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+      if(typeof window[fnName] === "function") return window[fnName];
+    }
+  }catch(_){}
+  return null;
+}
+window.axViewMapLookupSafe = axViewMapLookupSafe;
+
+/* === 4. axIntegrationCheckCron hebdomadaire === */
+(function(){
+  if(window._axIntegrationCheckCronInstalled) return;
+  window._axIntegrationCheckCronInstalled = true;
+  setTimeout(function(){
+    /* Re-check integration toutes 7 jours */
+    setInterval(function(){
+      try{
+        if(typeof axIntegrationCheckWired === "function"){
+          var report = axIntegrationCheckWired();
+          if(report.coveragePercent < 90){
+            try{
+              if(typeof axNotifyKevin === "function"){
+                axNotifyKevin("Integration coverage : "+report.coveragePercent+"%", "Helpers manquants : "+report.missingList.slice(0,5).join(", "));
+              }
+            }catch(_){}
+          }
+        }
+      }catch(_){}
+    }, 7 * 24 * 3600 * 1000);
+  }, 90000);
+})();
+
+/* === 5. Auto-purge breach log > 90 jours (RGPD retention) === */
+(function(){
+  if(window._axBreachLogPurgeInstalled) return;
+  window._axBreachLogPurgeInstalled = true;
+  setTimeout(function(){
+    function purgeOldBreaches(){
+      try{
+        var log = lg("ax_breach_log", []);
+        if(!Array.isArray(log)) return;
+        var cutoff = Date.now() - 90 * 24 * 3600 * 1000;
+        var filtered = log.filter(function(b){return b && b.ts && b.ts > cutoff;});
+        if(filtered.length < log.length){
+          ls("ax_breach_log", filtered);
+          try{
+            if(typeof axJournalEntry === "function"){
+              axJournalEntry("apex-ai","breach_log_purge","retention_90j","removed="+(log.length - filtered.length),"RGPD compliance retention policy");
+            }
+          }catch(_){}
+        }
+      }catch(_){}
+    }
+    purgeOldBreaches();
+    setInterval(purgeOldBreaches, 24 * 3600 * 1000);
+  }, 120000);
+})();
+
+/* === 6. axIsHealthy : quick check global pour Apex IA === */
+function axIsHealthy(){
+  try{
+    var checks = {
+      score: 80,
+      online: typeof navigator !== "undefined" ? navigator.onLine : true,
+      storageOk: true,
+      breachOverdue: 0,
+      apiKeyOk: false,
+      lastBackupAge: null
+    };
+    if(typeof axGet100Score === "function"){
+      var s = axGet100Score();
+      checks.score = s.global;
+    }
+    if(typeof axBreachStats === "function"){
+      var bs = axBreachStats();
+      checks.breachOverdue = bs.overdue72h || 0;
+    }
+    var apiKey = lg("ax_api_key","") || lg("ax_shared_api_key","");
+    checks.apiKeyOk = apiKey && apiKey.length > 20;
+    var lastBackup = parseInt(lg("ax_last_backup_ts", 0), 10) || 0;
+    if(lastBackup) checks.lastBackupAge = Math.round((Date.now()-lastBackup)/3600000) + "h";
+    /* Storage check */
+    try{
+      var size = 0;
+      for(var k in localStorage){if(localStorage.hasOwnProperty(k)){size += (localStorage[k]||"").length;}}
+      checks.storageOk = (size/1024) < 4500; /* < 4.5 Mo */
+    }catch(_){}
+    var healthy = checks.score >= 75 && checks.online && checks.storageOk && checks.breachOverdue === 0;
+    return {healthy:healthy, checks:checks};
+  }catch(e){
+    return {healthy:false, error:String(e.message||e)};
+  }
+}
+window.axIsHealthy = axIsHealthy;
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
