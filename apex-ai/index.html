@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.496",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.497",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2008,6 +2008,8 @@ function axCheckPendingPRsForAttention(){
   /* Verifie PRs Apex auto-fix pending et declenche modal si > 0 */
   try{
     if(!K || !K.user || K.user.id !== ADMIN_ID) return;
+    /* AX_V12_497_QUIET : opt-in only (Kevin "ca doit disparaitre") */
+    if(!lg("ax_popup_alerts_enabled", false)) return;
     var token = lg("ax_github_token","");
     try{var p=JSON.parse(token);if(typeof p==="string")token=p;}catch(_e){}
     if(!token || token.length < 20) return;
@@ -2075,11 +2077,25 @@ function axCheckPendingPRsForAttention(){
 var AX_AUTO_APPROVE_WHITELIST = ["export_data","beta_features","biometric_register","share_account"];
 try{var _custWl=lg("ax_auto_approve_whitelist_custom",null);if(Array.isArray(_custWl))AX_AUTO_APPROVE_WHITELIST=_custWl;}catch(_){}
 
+/* AX_V12_497_QUIET v12.497 - Toggle pop-up alertes admin (Kevin "ca doit disparaitre") */
+function axTogglePopupAlerts(enabled){
+  try{
+    var v = (typeof enabled === "boolean") ? enabled : !lg("ax_popup_alerts_enabled", false);
+    ls("ax_popup_alerts_enabled", v);
+    if(typeof toast === "function") toast(v ? "Alertes pop-up ACTIVES (boot + 6h)" : "Alertes pop-up DESACTIVES (silence)", v ? "info" : "ok");
+    if(typeof axJournalEntry === "function") axJournalEntry("apex-ai","popup_alerts_toggle",APP_VER,String(v),"Kevin toggle alertes pop-up");
+    return v;
+  }catch(e){return false;}
+}
+window.axTogglePopupAlerts = axTogglePopupAlerts;
+
 /* v12.450 - axMonitorSubscriptions : check quotas IA + abonnements + alerte modal si critique */
 function axMonitorSubscriptions(){
   try{
     if(!K || !K.user || K.user.id !== ADMIN_ID) return;
     if(typeof axNeedsAttention !== "function") return;
+    /* AX_V12_497_QUIET : opt-in only, default off (Kevin "ca doit disparaitre") */
+    if(!lg("ax_popup_alerts_enabled", false)) return;
     var alerts = [];
 
     /* Check Anthropic quota local (compteur tokens consommes session courante) */
@@ -4152,8 +4168,10 @@ function axDetectPotentialBreach(eventType, details){
     log.push(entry);
     if(log.length > 100) log = log.slice(-100);
     ls("ax_breach_log", log);
-    /* Notif Kevin immediate (admin inbox) si severity critical */
-    if(entry.severity === "critical" || entry.severity === "high"){
+    /* AX_V12_497_QUIET : Notif Kevin SEULEMENT si CRITICAL (high = log silent dans vBreachLog).
+       Avant : high+critical declenchait push iPhone -> faux positifs xss_attempt boot.
+       Apres : Kevin consulte vBreachLog quand il veut, push UNIQUEMENT si critical. */
+    if(entry.severity === "critical"){
       try{
         if(typeof axNotifyKevin === "function"){
           axNotifyKevin("BREACH RGPD Art. 33 detecte", "Type : "+entry.eventType+" - 72h pour notifier l autorite. Voir vBreachLog.");
@@ -5235,11 +5253,13 @@ function _axCentralizedErrorHandler(e){
     var msg = String((e&&e.message)||"").toLowerCase();
     if(msg.indexOf("eval") >= 0 || msg.indexOf("script error") >= 0 || msg.indexOf("blocked") >= 0){
       if(typeof axDetectPotentialBreach === "function"){
+        /* AX_V12_497_QUIET : downgrade auto-detect a low. Confirme manuellement. */
         axDetectPotentialBreach("rce_attempt", {
-          severity: "medium",
+          severity: "low",
           message: msg.slice(0,200),
           filename: String((e&&e.filename)||"").slice(0,100),
-          centralized: true
+          centralized: true,
+          autodetect: true
         });
       }
     }
@@ -5255,10 +5275,12 @@ function _axCentralizedErrorHandler(e){
       document.addEventListener("securitypolicyviolation", function(e){
         try{
           if(typeof axDetectPotentialBreach === "function"){
+            /* AX_V12_497_QUIET : downgrade auto-detect CSP a low (faux positifs frequents). Confirme manuellement via vBreachLog. */
             axDetectPotentialBreach("xss_attempt", {
-              severity: "high",
+              severity: "low",
               blockedURI: String(e.blockedURI||"").slice(0,200),
-              violatedDirective: String(e.violatedDirective||"")
+              violatedDirective: String(e.violatedDirective||""),
+              autodetect: true
             });
           }
         }catch(_){}
@@ -12027,7 +12049,10 @@ function _axProviderTestRouting(){
 }
 
 // === MODULE: Guided Setup (premier lancement) ===
-function _checkFirstSetup(){if(!axIsAdmin())return;var proxy=localStorage.getItem("ax_proxy_url");var apiKey=localStorage.getItem("ax_api_key");if(proxy||apiKey)return;if(lg("ax_setup_done",false))return;if(!proxy&&!apiKey){setTimeout(function(){_showModal('<h2>\uD83D\uDE80 Configuration rapide</h2><p style="color:var(--ax-text-dim);font-size:13px">Pour utiliser APEX, configurez votre acces IA :</p><div class="ax-card"><h3>Option A : Proxy (recommande)</h3><p style="font-size:12px;color:var(--ax-text-dim)">Plus securise. Votre cle API reste sur Cloudflare.</p><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-proxy" class="ax-input" placeholder="https://kdmc-proxy.xxx.workers.dev" style="flex:1" aria-label="https://kdmc-proxy.xxx.workers.dev"><button class="ax-btn ax-btn-primary" onclick="var v=document.getElementById(\'ax-setup-proxy\').value;if(v){localStorage.setItem(\'ax_proxy_url\',v);toast(\'Proxy configure\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><div class="ax-card"><h3>Option B : Cle API directe</h3><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-key" class="ax-input" type="password" placeholder="sk-ant-api03-..." style="flex:1" aria-label="sk-ant-api03-..."><button class="ax-btn ax-btn-outline" onclick="var v=document.getElementById(\'ax-setup-key\').value;if(v){_setApiKey(v);toast(\'OK\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true)" style="width:100%;margin-top:8px">Passer</button>');},1500);}}
+function _checkFirstSetup(){if(!axIsAdmin())return;var proxy=localStorage.getItem("ax_proxy_url");var apiKey=localStorage.getItem("ax_api_key");if(proxy||apiKey)return;if(lg("ax_setup_done",false))return;
+  /* AX_V12_497_QUIET : si pop-up alerts off (default), juste log silent */
+  if(!lg("ax_popup_alerts_enabled", false)){try{if(typeof axJournalEntry==="function")axJournalEntry("apex-ai","first_setup_silent",APP_VER,"no key, popup disabled","User colle cle dans chat ou Coffre");}catch(_){}return;}
+  if(!proxy&&!apiKey){setTimeout(function(){_showModal('<h2>\uD83D\uDE80 Configuration rapide</h2><p style="color:var(--ax-text-dim);font-size:13px">Pour utiliser APEX, configurez votre acces IA :</p><div class="ax-card"><h3>Option A : Proxy (recommande)</h3><p style="font-size:12px;color:var(--ax-text-dim)">Plus securise. Votre cle API reste sur Cloudflare.</p><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-proxy" class="ax-input" placeholder="https://kdmc-proxy.xxx.workers.dev" style="flex:1" aria-label="https://kdmc-proxy.xxx.workers.dev"><button class="ax-btn ax-btn-primary" onclick="var v=document.getElementById(\'ax-setup-proxy\').value;if(v){localStorage.setItem(\'ax_proxy_url\',v);toast(\'Proxy configure\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><div class="ax-card"><h3>Option B : Cle API directe</h3><div style="display:flex;gap:8px;margin-top:8px"><input id="ax-setup-key" class="ax-input" type="password" placeholder="sk-ant-api03-..." style="flex:1" aria-label="sk-ant-api03-..."><button class="ax-btn ax-btn-outline" onclick="var v=document.getElementById(\'ax-setup-key\').value;if(v){_setApiKey(v);toast(\'OK\',\'ok\');document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true);dc();}">OK</button></div></div><button class="ax-btn ax-btn-ghost" onclick="document.getElementById(\'modal-container\').innerHTML=\'\';ls(\'ax_setup_done\',true)" style="width:100%;margin-top:8px">Passer</button>');},1500);}}
 
 // === MODULE: Firebase Integration enrichie ===
 function axFirebaseReadAll(){return fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(d){toast("Firebase: "+Object.keys(d||{}).length+" cles chargees","ok");return d;}).catch(function(e){toast("Firebase erreur: "+e.message,"err");return null;});}
