@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER="v12.480",ADMIN_ID="kdmc_admin";
+var APP_VER="v12.482",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -6684,6 +6684,164 @@ function axInnerHTMLSanitizeStats(){
   }catch(_){return {blocked:0, error:true};}
 }
 window.axInnerHTMLSanitizeStats = axInnerHTMLSanitizeStats;
+
+/* v12.481 - Circuit-breaker explicite multi-providers (P0-CRIT 2 audit v7) */
+
+window._axCircuitBreakers = window._axCircuitBreakers || {};
+
+function axCircuitBreakerCheck(provider){
+  /* Returns true si circuit OPEN (= ne pas tenter, fail fast). */
+  try{
+    var cb = window._axCircuitBreakers[provider];
+    if(!cb) return false; /* CLOSED, OK to try */
+    var now = Date.now();
+    if(cb.state === "open"){
+      if(now - cb.openedAt > 60000){
+        /* Half-open : test une requete */
+        cb.state = "half_open";
+        return false;
+      }
+      return true; /* OPEN, skip */
+    }
+    return false;
+  }catch(_){return false;}
+}
+
+function axCircuitBreakerRecord(provider, success){
+  try{
+    if(!window._axCircuitBreakers[provider]){
+      window._axCircuitBreakers[provider] = {failures:0, lastFailure:0, state:"closed", openedAt:0};
+    }
+    var cb = window._axCircuitBreakers[provider];
+    if(success){
+      cb.failures = 0;
+      cb.state = "closed";
+    } else {
+      cb.failures++;
+      cb.lastFailure = Date.now();
+      /* Open circuit si > 5 failures dans 5 min */
+      if(cb.failures >= 5 && Date.now() - cb.lastFailure < 5*60*1000){
+        cb.state = "open";
+        cb.openedAt = Date.now();
+        try{
+          if(typeof axJournalEntry === "function"){
+            axJournalEntry("apex-ai","circuit_breaker_open",provider,"5 failures/5min","Provider temporarily skipped 60s");
+          }
+        }catch(_){}
+        try{
+          if(typeof axNotifyKevin === "function"){
+            axNotifyKevin("Circuit-breaker "+provider, "Provider temporairement skip suite a 5 echecs");
+          }
+        }catch(_){}
+      }
+    }
+  }catch(_){}
+}
+
+function axCircuitBreakerStats(){
+  try{
+    var stats = {};
+    Object.keys(window._axCircuitBreakers||{}).forEach(function(p){
+      var cb = window._axCircuitBreakers[p];
+      stats[p] = {
+        state: cb.state,
+        failures: cb.failures,
+        openedAt: cb.openedAt ? new Date(cb.openedAt).toISOString() : null
+      };
+    });
+    return stats;
+  }catch(_){return {};}
+}
+window.axCircuitBreakerCheck = axCircuitBreakerCheck;
+window.axCircuitBreakerRecord = axCircuitBreakerRecord;
+window.axCircuitBreakerStats = axCircuitBreakerStats;
+
+/* v12.482 - Master ticker memory leak watch (P0-MOD 3 audit v7) */
+
+window._axIntervalRegistry = window._axIntervalRegistry || [];
+window._axTimeoutRegistry = window._axTimeoutRegistry || [];
+
+(function(){
+  if(window._axIntervalRegistryInstalled) return;
+  window._axIntervalRegistryInstalled = true;
+  setTimeout(function(){
+    try{
+      /* Wrapper setInterval pour tracker les intervals long-running */
+      if(typeof window.setInterval !== "function") return;
+      if(window.setInterval._axTracked) return;
+      var origSetInterval = window.setInterval;
+      window.setInterval = function(fn, ms){
+        var id = origSetInterval.apply(this, arguments);
+        try{
+          window._axIntervalRegistry.push({id:id, ms:ms, registeredAt:Date.now()});
+          /* Cap registry 200 (anti memory bloat lui-meme) */
+          if(window._axIntervalRegistry.length > 200){
+            window._axIntervalRegistry = window._axIntervalRegistry.slice(-200);
+          }
+        }catch(_){}
+        return id;
+      };
+      window.setInterval._axTracked = true;
+    }catch(_){}
+  }, 18000);
+})();
+
+function axIntervalRegistryStats(){
+  /* Returns combien d intervals trackes + age moyen */
+  try{
+    var reg = window._axIntervalRegistry || [];
+    var now = Date.now();
+    var stats = {
+      total: reg.length,
+      byMs: {},
+      oldestAge: 0,
+      averageAgeMin: 0
+    };
+    if(!reg.length) return stats;
+    var totalAge = 0;
+    reg.forEach(function(e){
+      var age = now - e.registeredAt;
+      totalAge += age;
+      if(age > stats.oldestAge) stats.oldestAge = age;
+      var msKey = e.ms < 60000 ? "<60s" : e.ms < 600000 ? "1-10min" : e.ms < 3600000 ? "10min-1h" : ">1h";
+      stats.byMs[msKey] = (stats.byMs[msKey]||0) + 1;
+    });
+    stats.averageAgeMin = Math.round(totalAge / reg.length / 60000);
+    stats.oldestAgeMin = Math.round(stats.oldestAge / 60000);
+    return stats;
+  }catch(_){return {error:true};}
+}
+window.axIntervalRegistryStats = axIntervalRegistryStats;
+
+/* Sentinelle session-long memory leak watch */
+(function(){
+  if(window._axSessionMemoryWatchInstalled) return;
+  window._axSessionMemoryWatchInstalled = true;
+  setTimeout(function(){
+    setInterval(function(){
+      try{
+        if(typeof axIntervalRegistryStats !== "function") return;
+        var stats = axIntervalRegistryStats();
+        if(stats && stats.total > 100){
+          /* Trop d intervals tracks : risque memory leak */
+          try{
+            if(typeof axJournalEntry === "function"){
+              axJournalEntry("apex-ai","memory_leak_warning","intervals="+stats.total,"oldest="+stats.oldestAgeMin+"min","Reduire intervals + clearInterval explicit");
+            }
+          }catch(_){}
+          /* Notify Kevin si > 200 (critical) */
+          if(stats.total > 200){
+            try{
+              if(typeof axNotifyKevin === "function"){
+                axNotifyKevin("Memory leak intervals", "Total: "+stats.total+" - oldest "+stats.oldestAgeMin+"min");
+              }
+            }catch(_){}
+          }
+        }
+      }catch(_){}
+    }, 8 * 3600 * 1000); /* check every 8h */
+  }, 60000);
+})();
 
 function axProposeCodeChange(filepath,oldContent,newContent,reason){if(typeof axIsAdmin!=="function"||!axIsAdmin())return Promise.reject(new Error("Admin requis"));/* v12.328 — Whitelist elargie pour permettre Apex de s auto-modifier */var allowedExact=["apex-ai/index.html","apex-ai/manifest.json","apex-ai/cgu.html","apex-ai/privacy.html","apex-ai/sw.js","apex-ai/og-image.svg","apex-ai/force-update.html","apex-ai/force-logout.html","CLAUDE.md","CLAUDE_HANDOFF.json","FEEDBACK_ANTHROPIC.md","IPHONE_SETUP_PASSERELLE.md","NOTES_USER.md","MEMO_RESUME.md","KEVIN_INVENTORY.md","KEVIN_ACTIONS_TODO.md"];var allowedPrefix=["apex-ai/icons/","tools/","docs/",".github/workflows/"];var fpOk=allowedExact.indexOf(filepath)>=0||allowedPrefix.some(function(p){return filepath.indexOf(p)===0;});if(!fpOk)return Promise.reject(new Error("Fichier non autorise. Format : apex-ai/* tools/* docs/* .github/workflows/* ou racine *.md"));if(!newContent||newContent.length>2*1024*1024)return Promise.reject(new Error("Content > 2 MB ou vide"));var dangerous=[/\beval\s*\(/,/\bnew\s+Function\b/,/document\.write\s*\(/,/window\.location\s*=/,/innerHTML\s*=\s*[\'"]\s*<script/];for(var i=0;i<dangerous.length;i++){if(dangerous[i].test(newContent))return Promise.reject(new Error("Pattern dangereux detecte : "+dangerous[i].source));}var diffLines=Math.abs((newContent.match(/\n/g)||[]).length-(String(oldContent||"").match(/\n/g)||[]).length);if(diffLines>100&&!confirm("Diff > "+diffLines+" lignes. Continuer ?"))return Promise.reject(new Error("User cancel"));var branchName="apex-auto-fix-"+Date.now().toString(36);return axGithubCreateBranch(branchName).then(function(){return axGithubCommit(filepath,newContent,"Apex auto-fix: "+reason,branchName);}).then(function(){return axGithubCreatePR(branchName,"Apex auto-fix: "+reason,"Auto-genere par Apex IA.\n\nReason: "+reason+"\nFile: "+filepath+"\nSize: "+newContent.length+" chars\nDiff lines: "+diffLines+"\n\nReview by Kevin requis.");}).then(function(pr){var log=lg("ax_apex_code_changes",[]);log.push({ts:Date.now(),file:filepath,reason:reason,prNumber:pr.number,prUrl:pr.url,status:"pending",size:newContent.length,lines:diffLines});if(log.length>100)log=log.slice(-100);ls("ax_apex_code_changes",log);if(typeof toast==="function")toast("🤖 Apex propose code change : PR #"+pr.number,"ok");return pr;}).catch(function(e){if(typeof toast==="function")toast("❌ "+String(e.message||e).slice(0,100),"err");throw e;});}
 
