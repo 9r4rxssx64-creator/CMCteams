@@ -15,12 +15,42 @@
 
 ---
 
-## 🚨 BASCULE OPTION B ACTIVÉE DAY 1 (Kevin 2026-04-27, ABSOLUE)
+## 🔄 RETOUR OPTION A — ADMIN VOIT LES CONTENUS (Kevin 2026-04-30, ABSOLUE)
 
-> **"Fait déjà la bascule B. Ça change quoi ?"** — Kevin
+> **"Oui l'admin voit aussi les contenus."** — Kevin 2026-04-30
 
-**Décision finale** : on démarre directement en **Option B (vrai E2E grand public)** au lieu de A.
-On n'attendra pas l'ampleur. On démarre **niveau pro entreprise** dès le Day 1.
+**Bascule définitive** : on REPASSE en **Option A** (admin lit tout). Mode B annulé.
+
+### Implications immédiates
+
+- ✅ Kevin admin voit **TOUS les contenus** des conversations (texte, images, fichiers)
+- ✅ Modération directe possible (intervention sur messages problématiques)
+- ❌ E2E strict mathématique abandonné (Kevin a clé maître / serveur peut lire)
+- ⚠️ Risque pénal accru si grand public (ex: hébergement contenus illégaux)
+- ⚠️ CGU à adapter : pas de mention "serveur aveugle" / "même nos administrateurs ne peuvent lire"
+- ⚠️ Marketing : pas de claim "post-quantum E2E strict"
+
+### Architecture technique à adapter
+
+1. **`d1-migrations/0001_init.sql`** : `ADMIN_MODE = 'A'`, `KEVIN_INVISIBLE_ADMIN = 'false'`
+2. **Crypto** : `addRecipientsToRatchet(conv, members)` ajoute la clé maître Kevin systematique
+3. **Vue admin Kevin** : onglet "Messages" affiche TOUS les contenus (re-activé)
+4. **Tools admin** : `searchAllMessages` retourne contenu complet (pas seulement metadata)
+5. **CGU** : variante A activée (cercle privé contractuel + admin a accès lecture)
+
+### Historique versions
+
+- 2026-04-27 : démarrage Option B (E2E strict admin aveugle) selon directive Kevin "Fait déjà la bascule B"
+- 2026-04-30 : **RETOUR Option A** selon directive Kevin "Oui l'admin voit aussi les contenus"
+
+---
+
+## 🚨 ARCHIVE — BASCULE OPTION B (Kevin 2026-04-27, ANNULÉE 2026-04-30)
+
+> **"Fait déjà la bascule B. Ça change quoi ?"** — Kevin (2026-04-27, **REVERTED**)
+
+~~**Décision finale** : on démarre directement en **Option B (vrai E2E grand public)** au lieu de A.~~
+~~On n'attendra pas l'ampleur. On démarre **niveau pro entreprise** dès le Day 1.~~
 
 ### Ce que ça change concrètement
 
