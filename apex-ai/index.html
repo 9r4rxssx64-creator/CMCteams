@@ -872,7 +872,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.544",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.545",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -11426,14 +11426,7 @@ function axCheckGitHubAccess(silent){
 }
 
 /* Boot check 1x/jour cooldown */
-function _axGitHubBootCheck(){
-  try{
-    if(typeof axIsAdmin !== "function" || !axIsAdmin()) return;
-    var lastTs = +lg("ax_github_check_last_ts", 0);
-    if(lastTs && (Date.now() - lastTs) < 86400000) return; /* 24h cooldown */
-    setTimeout(function(){ try{ axCheckGitHubAccess(true); }catch(_e){} }, 8000);
-  }catch(_e){}
-}
+/* AX_V12_545_DEAD_CODE_DELETED : _axGitHubBootCheck (0 refs, agent 4 confirme orphan) */
 
 function axCredTestLive(k){
   try{
@@ -17992,21 +17985,7 @@ function _axRenderProviderBadge(){
 try{if(typeof window!=='undefined'&&!window._axProviderBadgeInterval){window._axProviderBadgeInterval=setInterval(_axRenderProviderBadge,3000);}}catch(_e){_axSafeCatch("silent-catch",_e,"info");}
 
 /* v12.377 — Per-provider usage tracking (Kevin "combien de consommation par travail") */
-function _axTrackProviderUsage(provider,tokensIn,tokensOut,costEur){
-  try{
-    var k='ax_usage_'+(provider||'unknown');
-    var u=lg(k,{today:0,month:0,total:0,date:new Date().toISOString().slice(0,10),tokensIn:0,tokensOut:0,costEur:0});
-    var today=new Date().toISOString().slice(0,10);
-    if(u.date!==today){u.today=0;u.date=today;}
-    u.today+=(tokensIn||0)+(tokensOut||0);
-    u.month+=(tokensIn||0)+(tokensOut||0);
-    u.total+=(tokensIn||0)+(tokensOut||0);
-    u.tokensIn=(u.tokensIn||0)+(tokensIn||0);
-    u.tokensOut=(u.tokensOut||0)+(tokensOut||0);
-    u.costEur=(u.costEur||0)+(costEur||0);
-    ls(k,u);
-  }catch(_e){_axSafeCatch("silent-catch",_e,"info");}
-}
+/* AX_V12_545_DEAD_CODE_DELETED : _axTrackProviderUsage (0 refs, agent 4 confirme orphan) */
 /* v12.378 - Self-diagnostic FONCTIONNEL : Apex teste RUNTIME le comportement de chaque fonction critique (Kevin "le bon fonctionnement fonctions par fonction") */
 function axRunSelfDiagnostic(opts){
   opts=opts||{};
@@ -18899,121 +18878,7 @@ function _axScanTextForCredentials(text){
   return found;
 }
 
-function _axScanTextContextual(text){
-  /* v12.401 - Detection contextuelle : identifiants/mots de passe/reseaux sociaux (Kevin "tout reconnaitre") */
-  if(!text || typeof text !== "string") return [];
-  var found = [];
-  var lines = text.split(/\r?\n/);
-  /* Mapping mots-cles vers cle Coffre */
-  var serviceMap = {
-    /* === Reseaux sociaux === */
-    "instagram":"ax_instagram_user","insta":"ax_instagram_user","facebook":"ax_facebook_page","fb":"ax_facebook_page","twitter":"ax_twitter_user","x.com":"ax_twitter_user","tiktok":"ax_tiktok_user","youtube":"ax_youtube_channel","yt":"ax_youtube_channel","linkedin":"ax_linkedin_user","snapchat":"ax_snapchat_user","snap":"ax_snapchat_user","pinterest":"ax_pinterest_user","reddit":"ax_reddit_user","threads":"ax_threads_user","mastodon":"ax_mastodon_user","bluesky":"ax_bluesky_user",
-    /* === Email === */
-    "gmail":"ax_gmail_user","google mail":"ax_gmail_user","outlook":"ax_outlook_user","hotmail":"ax_outlook_user","icloud":"ax_icloud_user","apple id":"ax_apple_id","yahoo":"ax_yahoo_user","proton":"ax_proton_user","protonmail":"ax_proton_user","tutanota":"ax_tutanota_user",
-    /* === Communications === */
-    "discord":"ax_discord_user","whatsapp":"ax_whatsapp_phone","wa":"ax_whatsapp_phone","telegram":"ax_telegram_user","signal":"ax_signal_phone","slack":"ax_slack_user","teams":"ax_teams_user","zoom":"ax_zoom_user","meet":"ax_meet_user","skype":"ax_skype_user","viber":"ax_viber_phone","wechat":"ax_wechat_user",
-    /* === Streaming === */
-    "netflix":"ax_netflix_user","disney":"ax_disney_user","disney+":"ax_disney_user","prime video":"ax_prime_user","amazon prime":"ax_prime_user","apple tv":"ax_appletv_user","hulu":"ax_hulu_user","canal":"ax_canal_user","molotov":"ax_molotov_user","plex":"ax_plex_user",
-    /* === Music === */
-    "spotify":"ax_spotify_user","deezer":"ax_deezer_user","apple music":"ax_applemusic_user","tidal":"ax_tidal_user","soundcloud":"ax_soundcloud_user","youtube music":"ax_ytmusic_user",
-    /* === Cloud / Storage === */
-    "dropbox":"ax_dropbox_user","google drive":"ax_gdrive_user","onedrive":"ax_onedrive_user","mega":"ax_mega_user","pcloud":"ax_pcloud_user",
-    /* === Banque / Finance === */
-    "boursorama":"ax_boursorama_user","societe generale":"ax_sg_user","sg":"ax_sg_user","bnp":"ax_bnp_user","bnp paribas":"ax_bnp_user","credit agricole":"ax_ca_user","ca ":"ax_ca_user","caisse epargne":"ax_ce_user","cic":"ax_cic_user","credit mutuel":"ax_cm_user","cmb":"ax_cm_user","lcl":"ax_lcl_user","la banque postale":"ax_lbp_user","monabanq":"ax_monabanq_user","fortuneo":"ax_fortuneo_user","hello bank":"ax_hellobank_user","ing":"ax_ing_user","n26":"ax_n26_user","revolut":"ax_revolut_user","wise":"ax_wise_user","transferwise":"ax_wise_user","lydia":"ax_lydia_phone","paypal":"ax_paypal_user","sumup":"ax_sumup_user",
-    /* === Crypto exchanges === */
-    "binance":"ax_binance_user","kraken":"ax_kraken_user","coinbase":"ax_coinbase_user","crypto.com":"ax_crypto_user","kucoin":"ax_kucoin_user","okx":"ax_okx_user","bitstamp":"ax_bitstamp_user","gate.io":"ax_gateio_user",
-    /* === Gaming === */
-    "steam":"ax_steam_user","epic":"ax_epic_user","epic games":"ax_epic_user","xbox":"ax_xbox_user","psn":"ax_psn_user","playstation":"ax_psn_user","nintendo":"ax_nintendo_user","battle.net":"ax_battlenet_user","ubisoft":"ax_ubisoft_user","riot":"ax_riot_user","ea":"ax_ea_user","origin":"ax_ea_user","gog":"ax_gog_user","twitch":"ax_twitch_user",
-    /* === Productivity === */
-    "notion":"ax_notion_user","trello":"ax_trello_user","asana":"ax_asana_user","jira":"ax_jira_user","monday":"ax_monday_user","clickup":"ax_clickup_user","airtable":"ax_airtable_user","obsidian":"ax_obsidian_user","evernote":"ax_evernote_user",
-    /* === Dev === */
-    "github":"ax_github_user","gitlab":"ax_gitlab_user","bitbucket":"ax_bitbucket_user","stackoverflow":"ax_stackoverflow_user","npm":"ax_npm_user","docker":"ax_docker_user","vercel":"ax_vercel_user","netlify":"ax_netlify_user","heroku":"ax_heroku_user","render":"ax_render_user","railway":"ax_railway_user","fly.io":"ax_flyio_user","cloudflare":"ax_cloudflare_user",
-    /* === IA === */
-    "openai":"ax_openai_user","anthropic":"ax_anthropic_user","claude":"ax_anthropic_user","chatgpt":"ax_openai_user","huggingface":"ax_huggingface_user","midjourney":"ax_midjourney_user","leonardo":"ax_leonardo_user","runwayml":"ax_runwayml_user","suno":"ax_suno_user","elevenlabs":"ax_elevenlabs_user",
-    /* === Shopping === */
-    "amazon":"ax_amazon_user","ebay":"ax_ebay_user","cdiscount":"ax_cdiscount_user","fnac":"ax_fnac_user","leboncoin":"ax_lbc_user","vinted":"ax_vinted_user","zalando":"ax_zalando_user","aliexpress":"ax_aliexpress_user","shein":"ax_shein_user",
-    /* === Voyage === */
-    "booking":"ax_booking_user","airbnb":"ax_airbnb_user","abritel":"ax_abritel_user","tripadvisor":"ax_tripadvisor_user","skyscanner":"ax_skyscanner_user","expedia":"ax_expedia_user","sncf":"ax_sncf_user","oui.sncf":"ax_sncf_user","trainline":"ax_trainline_user","blablacar":"ax_blablacar_user","uber":"ax_uber_user","bolt":"ax_bolt_user","lyft":"ax_lyft_user",
-    /* === Mobilite / Casino === */
-    "casino monaco":"ax_casino_monaco_user","sbm":"ax_sbm_user","monte carlo":"ax_sbm_user","cmcteams":"ax_cmcteams_user","cmc":"ax_cmcteams_user",
-    /* === Admin / Etat === */
-    "ameli":"ax_ameli_user","caf":"ax_caf_user","impots":"ax_impots_user","france connect":"ax_franceconnect_user","fc":"ax_franceconnect_user","ants":"ax_ants_user","service public":"ax_servpub_user","mes droits":"ax_mesdroits_user","monaco":"ax_monaco_user","servicepublic.mc":"ax_monaco_user"
-  };
-  /* Patterns valeur */
-  var emailPat = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
-  var phonePat = /(\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{2,4}[\s.-]?\d{2,4}[\s.-]?\d{0,4})/;
-  var handlePat = /@([A-Za-z0-9_.]{3,30})/;
-  var urlPat = /(https?:\/\/[^\s]+)/;
-  /* Scan ligne par ligne, garde contexte 3 lignes au-dessus */
-  for(var i=0; i<lines.length; i++){
-    var lower = lines[i].toLowerCase().trim();
-    if(!lower) continue;
-    /* Detect service in this line OR previous 2 */
-    var detectedService = null;
-    var ctxLine = "";
-    for(var c=0; c<=Math.min(2,i); c++){
-      var checkLower = (lines[i-c]||"").toLowerCase();
-      Object.keys(serviceMap).forEach(function(kw){
-        if(!detectedService && checkLower.indexOf(kw) >= 0){
-          detectedService = serviceMap[kw];
-          ctxLine = (lines[i-c]||"").trim().slice(0,40);
-        }
-      });
-      if(detectedService) break;
-    }
-    if(!detectedService) continue;
-    /* Cherche valeur dans cette ligne ou la suivante */
-    for(var v=0; v<=2 && (i+v)<lines.length; v++){
-      var line = lines[i+v];
-      /* User/Login pattern */
-      var userMatch = line.match(/(?:user|login|identifiant|compte|pseudo|username|nom)\s*[:=]?\s*([A-Za-z0-9._@-]+)/i);
-      if(userMatch && userMatch[1].length >= 3){
-        var val = userMatch[1].trim();
-        if(!found.find(function(f){return f.value === val && f.target === detectedService;})){
-          found.push({value:val, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (login)", context:"Label : '"+ctxLine+"'"});
-        }
-      }
-      /* Password pattern */
-      var passMatch = line.match(/(?:pass|password|mot\s*de\s*passe|mdp|pwd)\s*[:=]?\s*([\S]{6,})/i);
-      if(passMatch && passMatch[1].length >= 6){
-        var pkey = detectedService.replace("_user","_password").replace("_page","_password").replace("_channel","_password").replace("_phone","_password");
-        var pval = passMatch[1].trim();
-        if(!found.find(function(f){return f.value === pval && f.target === pkey;})){
-          found.push({value:pval, target:pkey, label:detectedService.replace("ax_","").replace(/_/g," ")+" (mot de passe)", context:"Label : '"+ctxLine+"'"});
-        }
-      }
-      /* Handle @username */
-      var handleMatch = line.match(handlePat);
-      if(handleMatch && !line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)){
-        var hval = "@"+handleMatch[1];
-        if(!found.find(function(f){return f.value === hval && f.target === detectedService;})){
-          found.push({value:hval, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (handle)", context:"Label : '"+ctxLine+"'"});
-        }
-      }
-      /* Email standalone si service est gmail/outlook/icloud */
-      if(/_user$/.test(detectedService) && /(gmail|outlook|icloud)/.test(detectedService)){
-        var emailMatch = line.match(emailPat);
-        if(emailMatch){
-          var eval2 = emailMatch[1].trim();
-          if(!found.find(function(f){return f.value === eval2 && f.target === detectedService;})){
-            found.push({value:eval2, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (email)", context:"Label : '"+ctxLine+"'"});
-          }
-        }
-      }
-      /* Phone si service est whatsapp/lydia/telegram */
-      if(/_phone$/.test(detectedService)){
-        var phoneMatch = line.match(phonePat);
-        if(phoneMatch){
-          var pval2 = phoneMatch[1].replace(/[\s.-]/g,"").trim();
-          if(pval2.length >= 8 && !found.find(function(f){return f.value === pval2 && f.target === detectedService;})){
-            found.push({value:pval2, target:detectedService, label:detectedService.replace("ax_","").replace(/_/g," ")+" (phone)", context:"Label : '"+ctxLine+"'"});
-          }
-        }
-      }
-    }
-  }
-  return found;
-}
+/* AX_V12_545_DEAD_CODE_DELETED : _axScanTextContextual (115 LOC, 0 refs, agent 4 confirme) */
 
 function _axScanTextSmart(text){
   if(!text || typeof text !== "string") return [];
@@ -20357,15 +20222,7 @@ function _callGeminiAPI(sysPrompt,msgs,depth){
 }
 
 /* v12.371 — Routing intelligent : choisit le provider selon dispo + tier */
-function _axPickAIProvider(){
-  /* Ordre preference : Anthropic (Claude) > Groq > Gemini > OpenRouter > OpenAI */
-  if(localStorage.getItem("ax_api_key"))return "anthropic";
-  if(localStorage.getItem("ax_groq_key"))return "groq";
-  if(localStorage.getItem("ax_gemini_key"))return "gemini";
-  if(localStorage.getItem("ax_openrouter_key"))return "openrouter";
-  if(localStorage.getItem("ax_openai_key"))return "openai";
-  return null;
-}
+/* AX_V12_545_DEAD_CODE_DELETED : _axPickAIProvider (0 refs, agent 4 confirme orphan) */
 
 function _callOpenRouterAPI(sysPrompt,msgs,depth){
   try{
