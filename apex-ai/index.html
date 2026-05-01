@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.571",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.574",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,168 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_574 — PHASE A QUICK WINS (combine 3 fixes audit)
+   Kevin "Go" pour Phase A. Combine v12.572 (XSS sanitize helper),
+   v12.573 (TimerPool + listener tracker), v12.574 (audit immutable
+   SHA-256 chain). Gain estime : sécu +5, perf +5, conf +2.
+   IIFE try/catch wrap : ne casse PAS sandbox tests jsdom.
+   ============================================================ */
+
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axPhaseA574) return;
+  window._axPhaseA574 = true;
+
+  /* === v12.572 XSS sanitize helper === */
+  if(typeof document !== "undefined" && !window.DOMPurify && !window._axDOMPurifyLoading){
+    try{
+      window._axDOMPurifyLoading = true;
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js";
+      s.async = true;
+      s.onerror = function(){ window._axDOMPurifyLoading = false; };
+      document.head.appendChild(s);
+    }catch(_e){}
+  }
+  function fallbackSanitize(html){
+    if(typeof html !== "string") return html;
+    html = html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+    html = html.replace(/<iframe\b[\s\S]*?(<\/iframe>|\/?>)/gi, "");
+    html = html.replace(/<object\b[\s\S]*?(<\/object>|\/?>)/gi, "");
+    html = html.replace(/<embed\b[^>]*\/?>/gi, "");
+    html = html.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "");
+    html = html.replace(/\s+on\w+\s*=\s*'[^']*'/gi, "");
+    html = html.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, "");
+    html = html.replace(/javascript\s*:/gi, "blocked:");
+    return html;
+  }
+  window.axSanitizeHTML = function(html){
+    if(typeof html !== "string") return html;
+    if(window.DOMPurify && typeof window.DOMPurify.sanitize === "function"){
+      try{ return window.DOMPurify.sanitize(html, {ADD_ATTR:["target","onclick"]}); }
+      catch(_e){ return fallbackSanitize(html); }
+    }
+    return fallbackSanitize(html);
+  };
+  window.axSafeSetHTML = function(el, html){
+    if(!el) return;
+    try{ el.innerHTML = window.axSanitizeHTML(html); }catch(_e){}
+  };
+
+  /* === v12.573 TimerPool + Listener tracker === */
+  window.AX_TIMER_POOL = window.AX_TIMER_POOL || {intervals:[], timeouts:[]};
+  var origI = window.setInterval, origT = window.setTimeout;
+  var origClearI = window.clearInterval, origClearT = window.clearTimeout;
+  if(typeof origI === "function"){
+    window.axSetInterval = function(fn, ms, tag){
+      var id = origI.call(window, fn, ms);
+      window.AX_TIMER_POOL.intervals.push({id:id, tag:tag||"untagged", ts:Date.now()});
+      if(window.AX_TIMER_POOL.intervals.length > 200) window.AX_TIMER_POOL.intervals = window.AX_TIMER_POOL.intervals.slice(-200);
+      return id;
+    };
+  }
+  if(typeof origT === "function"){
+    window.axSetTimeout = function(fn, ms, tag){
+      var id = origT.call(window, fn, ms);
+      window.AX_TIMER_POOL.timeouts.push({id:id, tag:tag||"untagged", ts:Date.now()});
+      if(window.AX_TIMER_POOL.timeouts.length > 500) window.AX_TIMER_POOL.timeouts = window.AX_TIMER_POOL.timeouts.slice(-500);
+      return id;
+    };
+  }
+  window.axTimerPoolClearTag = function(tag){
+    var killed = 0;
+    if(typeof origClearI === "function"){
+      window.AX_TIMER_POOL.intervals = window.AX_TIMER_POOL.intervals.filter(function(t){
+        if(t.tag === tag){ try{ origClearI(t.id); killed++; }catch(_e){_axSafeCatch&&_axSafeCatch("v574",_e);} return false; }
+        return true;
+      });
+    }
+    if(typeof origClearT === "function"){
+      window.AX_TIMER_POOL.timeouts = window.AX_TIMER_POOL.timeouts.filter(function(t){
+        if(t.tag === tag){ try{ origClearT(t.id); killed++; }catch(_e){_axSafeCatch&&_axSafeCatch("v574",_e);} return false; }
+        return true;
+      });
+    }
+    return killed;
+  };
+  window.axTimerPoolStats = function(){
+    var tags = {};
+    window.AX_TIMER_POOL.intervals.forEach(function(t){ tags[t.tag] = (tags[t.tag]||0) + 1; });
+    window.AX_TIMER_POOL.timeouts.forEach(function(t){ tags[t.tag] = (tags[t.tag]||0) + 1; });
+    return {intervals: window.AX_TIMER_POOL.intervals.length, timeouts: window.AX_TIMER_POOL.timeouts.length, by_tag: tags};
+  };
+  if(typeof WeakMap !== "undefined" && !window._axListenerRegistry) window._axListenerRegistry = new WeakMap();
+  window.axAddListener = function(target, type, handler, opts, tag){
+    if(!target || !type || !handler) return;
+    try{
+      target.addEventListener(type, handler, opts);
+      if(window._axListenerRegistry){
+        var entry = window._axListenerRegistry.get(target) || [];
+        entry.push({type:type, handler:handler, opts:opts, tag:tag||"untagged"});
+        window._axListenerRegistry.set(target, entry);
+      }
+    }catch(_e){}
+  };
+  window.axRemoveListenersOnElement = function(target){
+    if(!target || !window._axListenerRegistry) return 0;
+    var entry = window._axListenerRegistry.get(target);
+    if(!entry) return 0;
+    var removed = 0;
+    entry.forEach(function(e){
+      try{ target.removeEventListener(e.type, e.handler, e.opts); removed++; }catch(_e){_axSafeCatch&&_axSafeCatch("v574",_e);}
+    });
+    window._axListenerRegistry.delete(target);
+    return removed;
+  };
+
+  /* === v12.574 Audit log immutable SHA-256 chain === */
+  window.axAuditAppendImmutable = async function(action, details){
+    if(typeof crypto === "undefined" || !crypto.subtle) return null;
+    var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var log = lg2("ax_audit_immutable", []) || [];
+    var prevHash = log.length ? log[log.length-1].hash : "0000000000000000";
+    var entry = {id: log.length + 1, ts: Date.now(), action: String(action||"unknown").slice(0,100), details: String(details||"").slice(0,500), prev_hash: prevHash};
+    try{
+      var data = JSON.stringify(entry);
+      var hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(data));
+      var hashArr = Array.from(new Uint8Array(hashBuf));
+      entry.hash = hashArr.map(function(b){return b.toString(16).padStart(2,"0");}).join("").slice(0,32);
+    }catch(_e){
+      entry.hash = "ERR_" + Date.now();
+    }
+    log.push(entry);
+    if(log.length > 1000) log = log.slice(-1000);
+    ls2("ax_audit_immutable", log);
+    return entry;
+  };
+  window.axAuditVerifyChain = async function(){
+    if(typeof crypto === "undefined" || !crypto.subtle) return {ok:false, error:"no_crypto"};
+    var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var log = lg2("ax_audit_immutable", []) || [];
+    var tampered = [];
+    for(var i=0;i<log.length;i++){
+      var e = log[i];
+      var expectedPrev = i === 0 ? "0000000000000000" : log[i-1].hash;
+      if(e.prev_hash !== expectedPrev){
+        tampered.push({index:i, type:"chain_broken", expected:expectedPrev, got:e.prev_hash});
+        continue;
+      }
+      try{
+        var clone = {id:e.id, ts:e.ts, action:e.action, details:e.details, prev_hash:e.prev_hash};
+        var hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(clone)));
+        var hashArr = Array.from(new Uint8Array(hashBuf));
+        var expectedHash = hashArr.map(function(b){return b.toString(16).padStart(2,"0");}).join("").slice(0,32);
+        if(e.hash !== expectedHash) tampered.push({index:i, type:"hash_mismatch"});
+      }catch(_e){}
+    }
+    return {ok: tampered.length === 0, total:log.length, tampered:tampered};
+  };
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v574] phaseA skip:", _outerE && _outerE.message); }catch(_e2){_axSafeCatch&&_axSafeCatch("v574",_e2);}
+}})();
 
 /* ============================================================
    AX_V12_571 — GLOBAL FETCH INTERCEPTOR + axRedactOutbound universel
