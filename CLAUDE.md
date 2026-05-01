@@ -4,6 +4,115 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-01 (Ape
 
 ---
 
+## 🧬 RÈGLE PERMANENTE — RECONNAISSANCE AUTO CREDENTIALS + AUTO-FETCH OUTILS (Kevin 2026-05-01, ABSOLUE)
+
+> **"Lorsqu'il aura tous les codes je veux qu'il récupère tout ce dont il a besoin, outils, liens etc et qu'il reconnaisse les codes, identifiants, sites, apps, etc automatiquement toujours."** — Kevin 2026-05-01
+
+**Règle absolue, prioritaire sur tout** — Apex priorité 1, CMCteams priorité 2 :
+
+### 1. Quand Kevin colle quelque chose dans Apex (n'importe où)
+
+Apex DOIT automatiquement :
+1. **Détecter le type** via regex `AX_CREDENTIAL_PATTERNS` (~30 services courants minimum)
+2. **Identifier le service** (Anthropic, OpenAI, Stripe, Brevo, GitHub, Cloudflare, Resend, Twilio, etc.)
+3. **Auto-stocker** dans la bonne clé Apex (`ax_<service>_key` standardisé)
+4. **Auto-tester** la validité via ping API minimal (~$0.0001)
+5. **Auto-fetch** les métadonnées (solde, quotas, plan, project_id, organization_id)
+6. **Auto-link** vers `AX_OFFICIAL_LINKS` (dashboard, billing, docs, support)
+7. **Auto-installer** outils nécessaires (libs CDN lazy, worker proxy si CORS)
+8. **Auto-renew watch** : sentinelle expiry detection + alerte avant déco
+9. **Auto-redact** dans tous les logs/audit/telemetry
+10. **Toast informatif** : "✅ Anthropic API key détectée + validée + Coffre + sentinelle solde activée"
+
+### 2. Patterns minimum à supporter
+
+```js
+var AX_CREDENTIAL_PATTERNS = {
+  anthropic_key: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/,
+  openai_key:    /^sk-[A-Za-z0-9]{40,}/,
+  google_api:    /^AIza[A-Za-z0-9_-]{33}$/,
+  github_pat:    /^ghp_[A-Za-z0-9]{36}$/,
+  github_fine:   /^github_pat_[A-Za-z0-9_]{82,}$/,
+  cloudflare:    /^[A-Za-z0-9_-]{40}$/, /* heuristique URL contexte */
+  stripe_sk:     /^sk_(live|test)_[A-Za-z0-9]{24,}/,
+  stripe_pk:     /^pk_(live|test)_[A-Za-z0-9]{24,}/,
+  brevo:         /^xkeysib-[a-f0-9]+-[A-Za-z0-9]+$/,
+  resend:        /^re_[A-Za-z0-9_]+$/,
+  groq:          /^gsk_[A-Za-z0-9]+$/,
+  perplexity:    /^pplx-[A-Za-z0-9]+$/,
+  deepl:         /^[a-f0-9-]+:fx$/,
+  airtable_pat:  /^pat[A-Za-z0-9.]+$/,
+  notion:        /^secret_[A-Za-z0-9]+$/,
+  replicate:     /^r8_[A-Za-z0-9]+$/,
+  slack_bot:     /^xox[bp]-[A-Za-z0-9-]+$/,
+  telegram_bot:  /^\d{8,}:[A-Za-z0-9_-]{35}$/,
+  vercel:        /^[A-Za-z0-9]{24}$/, /* contextuel */
+  aws_key:       /^AKIA[0-9A-Z]{16}$/,
+  /* Identifiants non-token */
+  email:         /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i,
+  iban:          /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/,
+  bic:           /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
+  siret:         /^\d{14}$/,
+  vat_eu:        /^[A-Z]{2}\d{8,12}$/,
+  phone_fr:      /^(\+?33|0)[1-9]\d{8}$/,
+  phone_monaco:  /^\+?377\d{8}$/,
+  btc_addr:      /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/,
+  eth_addr:      /^0x[a-fA-F0-9]{40}$/,
+  /* Cartes bleues : DETECTER pour AVERTIR Kevin (jamais stocker) */
+  card_visa_mc:  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/
+};
+```
+
+### 3. Helpers obligatoires
+
+- `axAutoIdentifyCredential(value)` → `{type, service, confidence, dashboard_url, docs_url, test_endpoint, scope_required}`
+- `axAutoStoreCredential(detected, value)` → store dans `ax_<service>_key` + audit + sentinelle activée
+- `axAutoTestCredential(detected, value)` → ping API + retourne `{valid, balance?, quota?, plan?, error?}`
+- `axAutoLinkServices(creds)` → mappe vers `AX_OFFICIAL_LINKS` registry (dashboard/billing/docs/support)
+- `axAutoEnrichCredential(value)` → orchestre les 4 ci-dessus en chaîne
+- Hook global : intercepteur de tous les `paste` events + tous les `<input>` qui changent + clipboard API monitor
+
+### 4. Clés sensibles INTERDITES de stockage
+
+Détecter MAIS ne JAMAIS stocker (rappeler règle Kevin v9.458) :
+- Cartes bleues complètes (PAN + CVV) → afficher "🚨 Carte bancaire détectée. Apex ne stocke JAMAIS de CB. Utilise Stripe Checkout / Apple Pay."
+- Seed phrases crypto (12/24 mots BIP39) → "🚨 Seed phrase détectée. Hardware wallet obligatoire."
+- Mots de passe bancaires plain → OAuth obligatoire
+
+### 5. Auto-recovery des outils nécessaires
+
+Quand un nouveau type est détecté :
+- Lazy-load lib via CDN (libsodium pour GitHub, jsonwebtoken pour OAuth, etc.)
+- Vérifier que CORS proxy est configuré sinon en proposer 1
+- Installer worker Cloudflare si nécessaire
+- Wire dans `AX_API_TOOLS` registry pour que l'IA puisse utiliser
+
+### 6. Sentinelle `credentials-watch` quotidienne
+
+- Re-test validité de chaque credential stocké
+- Alert si expiry < 30j
+- Re-fetch métadata (solde mis à jour)
+- Detect si lien dashboard est mort → escalade Claude Code
+
+### 7. UI cohérente
+
+- Vue admin `vCredentialsRegistry` : liste tous credentials connus (masqués `sk-***...***ab12`) + statut (🟢 valide / 🟡 expiry proche / 🔴 invalid) + bouton "Tester maintenant" + bouton "Recharger" (lien direct dashboard)
+- Notification push si credential devient invalide
+
+### 8. Test mental obligatoire
+
+> *"Si Kevin colle un nouveau token (ex: clé Resend qu'il vient de créer), Apex le reconnaît-il automatiquement ? Sait-il quel dashboard ouvrir si Kevin tape 'recharger Resend' ? Détecte-t-il l'expiry avant que ça plante ?"*
+
+Si non → enrichir `AX_CREDENTIAL_PATTERNS` + `AX_OFFICIAL_LINKS`.
+
+### 9. Apprentissage continu
+
+À chaque type non reconnu rencontré → log dans `ax_unknown_credentials` + escalade Claude Code via `ax_claude_todo` pour ajouter le pattern dans la prochaine session.
+
+S'applique : Apex (priorité absolue), CMCteams si pertinent.
+
+---
+
 ## 🛡 RÈGLE PERMANENTE — SÉCURITÉ AVANT AUTONOMIE TOTALE (Kevin 2026-05-01, ABSOLUE)
 
 > **"Quand Apex sera plus que sûr niveau sécurité, je collerai le reste de mes codes généraux et il pourra à ce moment-là tout faire et tout savoir en autonomie automatiquement. Mais je veux être sûr de la sécurité avant."** — Kevin 2026-05-01
