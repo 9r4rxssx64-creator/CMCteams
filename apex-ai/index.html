@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.640",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.645",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -3691,6 +3691,9 @@ function axSpotlightSearch(query){
       if(st.count >= 3){
         st.count = 0;
         st.lastTs = 0;
+        /* v645 GUARD : Kevin "doit s afficher que admin apres connexion" */
+        if(!window.K || !window.K.user) return;
+        if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()) return;
         try{ if(navigator.vibrate) navigator.vibrate([20,40,20]); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL3694",_e);}catch(__){}}
         axOpenSpotlight();
         return;
@@ -32793,14 +32796,15 @@ setTimeout(function(){
       if(attrs){
         var toRemove = [];
         for(var i=0;i<attrs.length;i++){
-          if(EVENT_ATTRS_RE.test(attrs[i].name)) toRemove.push(attrs[i].name);
+          if(EVENT_ATTRS_RE.test(attrs[i].name)){
+            /* v645 FIX : remove uniquement si valeur dangereuse explicite. Apex HTML safe. */
+            var v = attrs[i].value || "";
+            if(/javascript\s*:|eval\s*\(|document\.cookie|location\s*=|window\.location\s*=/i.test(v)){
+              toRemove.push(attrs[i].name);
+            }
+          }
         }
         for(var j=0;j<toRemove.length;j++){
-          /* Whitelist Apex onclick=ax* (legitimate handlers) */
-          if(toRemove[j] === "onclick"){
-            var v = node.getAttribute(toRemove[j]) || "";
-            if(v.indexOf("ax") === 0 || v.indexOf("_ax") === 0 || v.indexOf("function(") === 0) continue;
-          }
           node.removeAttribute(toRemove[j]);
           cleaned++;
         }
