@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.557",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.558",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30877,7 +30877,7 @@ window.axMoveCredentialOneClick = function(fromKey, toKey){
     /* Vide l ancienne (sauf si admin global comme ax_pin) */
     var protectedKeys = ["ax_pin", "ax_admin_pass", "ax_uid", "ax_user"];
     if(protectedKeys.indexOf(fromKey) < 0){
-      try{ localStorage.removeItem(fromKey); }catch(_){}
+      try{ localStorage.removeItem(fromKey); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
     }
     if(typeof toast==="function") toast("Cle deplacee : " + fromKey + " → " + toKey, "ok", {duration:4000});
     if(typeof axSecurityLog==="function") axSecurityLog("credential_moved", fromKey + "→" + toKey);
@@ -30901,16 +30901,31 @@ setTimeout(function(){
         if(typeof k === "string" && k.indexOf("ax_") === 0 && /key|token|pat/i.test(k)){
           if(typeof v === "string" && v.length > 8){
             var check = axDetectCredentialMismatch(v, k);
-            if(check && check.mismatch && typeof axNeedsAttention === "function"){
-              axNeedsAttention({
-                id: "credential_mismatch_" + k + "_" + Date.now(),
-                title: "Cle dans mauvais champ Coffre",
-                body: "Tu colles " + check.prefix + "... dans " + k + " mais la bonne case est " + check.correct_field + ". Je peux la déplacer en 1 clic.",
-                action: {
-                  label: "Déplacer maintenant",
-                  run: function(){ axMoveCredentialOneClick(k, check.correct_field); }
-                }
-              });
+            if(check && check.mismatch){
+              /* AX_V12_558_AUTONOMIE : si prefixe ULTRA-CLAIR (>=4 chars) → AUTO-MOVE sans demander Kevin */
+              var autoMovePrefixes = ["gsk_","xai-","sk-ant-","sk-or-","AIza","ghp_","ghs_","github_pat_","pplx-"];
+              var isAutoMoveable = autoMovePrefixes.indexOf(check.prefix) >= 0;
+              if(isAutoMoveable){
+                /* Auto-move silencieux + toast confirmation */
+                setTimeout(function(){
+                  try{
+                    axMoveCredentialOneClick(k, check.correct_field);
+                    if(typeof toast==="function") toast("Cle " + check.prefix + " deplacee auto vers " + check.correct_field, "ok", {duration:4000});
+                    if(typeof axSecurityLog==="function") axSecurityLog("credential_auto_moved", k+"→"+check.correct_field+" ("+check.prefix+")");
+                  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("auto_move",_e,"warn");}
+                }, 200);
+              } else if(typeof axNeedsAttention === "function"){
+                /* Sinon (prefixe ambigu) : modal Kevin pour confirmer */
+                axNeedsAttention({
+                  id: "credential_mismatch_" + k + "_" + Date.now(),
+                  title: "Cle dans mauvais champ Coffre",
+                  body: "Tu colles " + check.prefix + "... dans " + k + " mais la bonne case est " + check.correct_field + ". Je peux la déplacer en 1 clic.",
+                  action: {
+                    label: "Déplacer maintenant",
+                    run: function(){ axMoveCredentialOneClick(k, check.correct_field); }
+                  }
+                });
+              }
             }
           }
         }
@@ -30991,6 +31006,185 @@ setTimeout(function(){
     }, 120000); /* 2 min */
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("silent_loop_watcher_setup",_e,"warn");}
 }, 5000);
+
+/* ============================================================
+   AX_V12_558 — AUTONOMIE TOTALE (Kevin: "Toujours tout automatique partout tout le temps")
+   ============================================================ */
+
+/* === AUTO-FIX silent-catch loops par pattern reconnu === */
+window.AX_AUTOFIX_PATTERNS = {
+  "storage_quota": function(){
+    if(typeof axStorageEmergencyCleanup === "function") return axStorageEmergencyCleanup();
+    if(typeof axAggressiveCleanup === "function") return axAggressiveCleanup();
+    return false;
+  },
+  "network_error": function(){
+    if(typeof flushSyncQueue === "function") return flushSyncQueue();
+    return false;
+  },
+  "fb_disconnect": function(){
+    if(typeof fbStartListening === "function") return fbStartListening();
+    return false;
+  },
+  "stream_stuck": function(){
+    if(K) K.isStreaming = false;
+    if(window._apexCurrentAbort) try{window._apexCurrentAbort.abort();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    return true;
+  },
+  "listener_overflow": function(){
+    if(typeof axCleanupAllListeners === "function") return axCleanupAllListeners(function(r){return (Date.now() - r.ts) > 1800000;});
+    return false;
+  },
+  "interval_overflow": function(){
+    if(typeof axClearOldIntervals === "function") return axClearOldIntervals(3600000);
+    return false;
+  }
+};
+
+window.axAutoFixByPattern = function(ctxPattern){
+  if(!ctxPattern || typeof ctxPattern !== "string") return false;
+  var lower = ctxPattern.toLowerCase();
+  for(var key in AX_AUTOFIX_PATTERNS){
+    if(lower.indexOf(key.replace(/_/g, "")) >= 0 || lower.indexOf(key) >= 0){
+      try{
+        var ok = AX_AUTOFIX_PATTERNS[key]();
+        if(ok && typeof axSecurityLog === "function") axSecurityLog("auto_fix_applied", ctxPattern + "→" + key);
+        return ok;
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("auto_fix_pattern",_e,"warn");}
+    }
+  }
+  return false;
+};
+
+/* Wrap watcher silent-loop : essai auto-fix AVANT escalade Claude Code */
+setTimeout(function(){
+  try{
+    if(window._axAutoFixWired) return;
+    var origDiagnose = window.axDiagnoseSilentCatchLoop;
+    if(typeof origDiagnose !== "function") return;
+    window.axDiagnoseSilentCatchLoop = function(){
+      var diag = origDiagnose.apply(this, arguments);
+      if(diag && diag.loops && diag.loops.length){
+        diag.loops.forEach(function(loop){
+          /* Tentative auto-fix avant escalade */
+          var fixed = axAutoFixByPattern(loop.ctx);
+          if(fixed){
+            loop._auto_fixed = true;
+            if(typeof toast==="function") toast("Probleme '" + loop.ctx + "' corrige auto", "ok", {duration:3000});
+          }
+        });
+        /* Filtrer les loops auto-fixed avant escalade */
+        diag.loops = diag.loops.filter(function(l){return !l._auto_fixed;});
+      }
+      return diag;
+    };
+    window._axAutoFixWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("auto_fix_wire",_e,"warn");}
+}, 6000);
+
+/* === AUTO-RENEW Firebase custom token avant expiration === */
+setTimeout(function(){
+  try{
+    if(window._axTokenAutoRenew) return;
+    window._axTokenAutoRenew = setInterval(function(){
+      try{
+        var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+        var exp = lg("ax_firebase_token_exp", 0);
+        if(!exp) return;
+        var msUntilExp = exp - Date.now();
+        /* Renew si < 10 min restantes */
+        if(msUntilExp > 0 && msUntilExp < 600000){
+          if(typeof axFirebaseAuthSignIn === "function" && K && K.user && K.user.id){
+            var pinHash = lg("ax_pin", "") || lg("ax_pin_"+K.user.id, "");
+            if(pinHash){
+              axFirebaseAuthSignIn(K.user.id, pinHash);
+              if(typeof axSecurityLog==="function") axSecurityLog("token_auto_renewed", K.user.id);
+            }
+          }
+        }
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("token_renew_tick",_e,"info");}
+    }, 5*60*1000); /* check toutes les 5 min */
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("token_renew_setup",_e,"warn");}
+}, 8000);
+
+/* === AUTO-FAILOVER provider IA si quota epuisé === */
+window.axAutoFailoverProvider = function(currentProvider, error){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var quotaErrors = ["quota","rate_limit","429","insufficient","credit","exhausted"];
+    var msg = String(error && error.message || error || "").toLowerCase();
+    var isQuotaError = quotaErrors.some(function(q){return msg.indexOf(q) >= 0;});
+    if(!isQuotaError) return null;
+    /* Marker provider en cooldown 1h */
+    var cooldown = lg("ax_provider_cooldown", {});
+    cooldown[currentProvider] = Date.now() + 3600000;
+    ls("ax_provider_cooldown", cooldown);
+    /* Choisir prochain dispo */
+    var order = ["anthropic","openrouter","groq","gemini"];
+    var idx = order.indexOf(currentProvider);
+    for(var i=1; i<=order.length; i++){
+      var next = order[(idx+i) % order.length];
+      if(!cooldown[next] || cooldown[next] < Date.now()){
+        ls("ax_active_provider", next);
+        if(typeof toast==="function") toast("Bascule auto vers " + next + " (quota " + currentProvider + " atteint)", "info", {duration:5000});
+        if(typeof axSecurityLog==="function") axSecurityLog("auto_failover", currentProvider + "→" + next);
+        return next;
+      }
+    }
+    return null;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("auto_failover",_e,"warn"); return null;}
+};
+
+/* === AUTO-UPDATE Service Worker (force MAJ si nouvelle version) === */
+setTimeout(function(){
+  try{
+    if(window._axSwAutoUpdate) return;
+    if(!navigator.serviceWorker) return;
+    window._axSwAutoUpdate = setInterval(function(){
+      try{
+        navigator.serviceWorker.getRegistrations().then(function(regs){
+          regs.forEach(function(reg){
+            try{ reg.update(); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+          });
+        });
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("sw_update",_e,"info");}
+    }, 30*60*1000); /* toutes les 30 min */
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("sw_update_setup",_e,"warn");}
+}, 10000);
+
+/* === AUTO-FIX CI failures (sentinelle code-companion → axCodeAskClaudeToFix) === */
+setTimeout(function(){
+  try{
+    if(window._axCiAutoFixWired) return;
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    /* Watcher 1×/h : si > 3 CI failures recentes ET Apex Code Companion configure → auto-ask Claude */
+    window._axCiAutoFixWired = setInterval(function(){
+      try{
+        if(typeof axCodeListWorkflowRuns !== "function") return;
+        if(typeof _axGhToken !== "function" || !_axGhToken()) return;
+        if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return;
+        var lastAuto = lg("ax_ci_auto_fix_last", 0);
+        if(Date.now() - lastAuto < 3600*1000) return; /* Anti-spam 1h */
+        axCodeListWorkflowRuns(null, "failure").then(function(failures){
+          if(failures && failures.length >= 3){
+            var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+            ls("ax_ci_auto_fix_last", Date.now());
+            /* Pour chaque echec recent, ouvrir todo Claude Code via _escalateToClaudeCode */
+            if(typeof _escalateToClaudeCode === "function"){
+              _escalateToClaudeCode({
+                sentinelId: "ci-auto-fix",
+                failures_count: failures.length,
+                recent: failures.slice(0, 3).map(function(f){return {id:f.id, name:f.name, conclusion:f.conclusion};})
+              }, "CI failures " + failures.length + " runs - auto-fix needed", "warn");
+            }
+            if(typeof axSecurityLog==="function") axSecurityLog("ci_auto_fix_escalated", failures.length+" failures");
+          }
+        });
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ci_auto_fix",_e,"warn");}
+    }, 60*60*1000); /* 1h */
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("ci_auto_fix_setup",_e,"warn");}
+}, 12000);
 
 </script>
 </body>
