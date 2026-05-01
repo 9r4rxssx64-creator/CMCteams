@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.675",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.680",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33633,6 +33633,66 @@ setTimeout(function(){
    Kevin: "Apex ne fonctionne pas du tout correctement. Saute change
    de vue seul. Ne peux cliquer nul part"
    ============================================================ */
+
+/* ============================================================
+   AX_V12_680 — KILL MODALS AUTO + RATE-LIMIT TOAST STRICT (Kevin "l app plante")
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axKillSpamV680) return;
+  window._axKillSpamV680 = true;
+  setTimeout(function(){
+    try{
+      var orig = window.axNeedsAttention;
+      if(typeof orig !== "function" || orig._v680) return;
+      var wrapped = function(opts){
+        opts = opts || {};
+        var stack = (new Error()).stack || "";
+        var isManual = /onclick|HTMLElement|EventTarget|button/i.test(stack);
+        if(!isManual){
+          try{
+            var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+            var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+            var todo = lg("ax_claude_todo",[]) || [];
+            todo.push({id:"v680_modal_"+Date.now(),context:{title:opts.title,body:opts.body},reason:"axNeedsAttention auto silenced v680",severity:"info",ts:Date.now(),src:"apex_v680",status:"pending"});
+            if(todo.length>30) todo=todo.slice(-30);
+            ls("ax_claude_todo",todo);
+          }catch(_e){}
+          return;
+        }
+        return orig.apply(this, arguments);
+      };
+      wrapped._v680 = true;
+      window.axNeedsAttention = wrapped;
+    }catch(_e){}
+  }, 200);
+  setTimeout(function(){
+    try{
+      var origToast = window.toast;
+      if(typeof origToast !== "function" || origToast._v680) return;
+      var lastTs = {};
+      var RATE = 300000;
+      var wrapped = function(msg, severity, opts){
+        opts = opts || {};
+        if(opts.force) return origToast.apply(this, arguments);
+        var sev = severity || "info";
+        if(sev === "info" || sev === "ok" || sev === "success") return origToast.apply(this, arguments);
+        var msgStr = String(msg||"");
+        if(/Probleme recurrent|vL\d+|Cles corrompues|Cle manquante|Cle invalide|projets Firebase|projets KO/i.test(msgStr)){
+          try{ if(typeof console !== "undefined") console.warn("[v680 silenced spam]", msgStr); }catch(_e){}
+          return null;
+        }
+        var key = msgStr.slice(0,30) + "_" + sev;
+        var now = Date.now();
+        if(lastTs[key] && (now - lastTs[key]) < RATE) return null;
+        lastTs[key] = now;
+        return origToast.apply(this, arguments);
+      };
+      wrapped._v680 = true;
+      window.toast = wrapped;
+    }catch(_e){}
+  }, 300);
+}catch(_outerE){}})();
 
 /* ============================================================
    AX_V12_670 — PHASE 6 : Wire audit immutable + Validate KB + Listener cleanup
