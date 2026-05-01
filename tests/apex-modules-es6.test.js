@@ -277,6 +277,62 @@ function assert(cond, msg) {
     assert(r.has_citation === false, "false positive");
   });
 
+  /* ---------------- crypto-vault.js (v590) ---------------- */
+  const cv = await import(path.join("..", "apex-ai", "modules", "crypto-vault.js"));
+
+  await test("crypto-vault.encrypt + decrypt roundtrip", async () => {
+    const enc = await cv.encryptWithPassphrase("hello world", "secret123");
+    assert(typeof enc === "string" && enc.length > 0, "no ciphertext");
+    const dec = await cv.decryptWithPassphrase(enc, "secret123");
+    assert(dec === "hello world", "roundtrip broke: " + dec);
+  });
+
+  await test("crypto-vault.decrypt wrong passphrase returns null", async () => {
+    const enc = await cv.encryptWithPassphrase("secret", "good");
+    const dec = await cv.decryptWithPassphrase(enc, "bad");
+    assert(dec === null, "should fail with wrong pass");
+  });
+
+  await test("crypto-vault.maskSecret", () => {
+    const m = cv.maskSecret("sk-ant-api01-abc123def456ghi789");
+    assert(m.indexOf("***") >= 0, "no mask: " + m);
+    assert(m.length < 35, "too long: " + m);
+  });
+
+  await test("crypto-vault.maskSecret short", () => {
+    assert(cv.maskSecret("abc") === "***", "short should be ***");
+  });
+
+  await test("crypto-vault.randomNonce returns hex", () => {
+    const n = cv.randomNonce(8);
+    assert(/^[0-9a-f]+$/.test(n), "not hex: " + n);
+    assert(n.length === 16, "wrong length: " + n);
+  });
+
+  await test("crypto-vault.uuid4 format", () => {
+    const u = cv.uuid4();
+    assert(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(u), "bad uuid: " + u);
+  });
+
+  await test("crypto-vault.PBKDF2_ITERATIONS = 100k", () => {
+    assert(cv.PBKDF2_ITERATIONS_EXPORT === 100000, "wrong iter: " + cv.PBKDF2_ITERATIONS_EXPORT);
+  });
+
+  /* ---------------- fetch-utils.js (v590) ---------------- */
+  const fu = await import(path.join("..", "apex-ai", "modules", "fetch-utils.js"));
+
+  await test("fetch-utils.shouldSkipRedact anthropic", () => {
+    assert(fu.shouldSkipRedact("https://api.anthropic.com/v1/messages") === true, "should skip");
+  });
+
+  await test("fetch-utils.shouldSkipRedact non-api", () => {
+    assert(fu.shouldSkipRedact("https://example.com/webhook") === false, "shouldn't skip");
+  });
+
+  await test("fetch-utils.SKIP_REDACT_HOSTS includes 17", () => {
+    assert(fu.SKIP_REDACT_HOSTS.length >= 15, "only " + fu.SKIP_REDACT_HOSTS.length);
+  });
+
   /* ---------------- Module versions ---------------- */
   await test("modules expose VERSION", () => {
     assert(typeof sec.VERSION === "string", "security.VERSION");
@@ -284,6 +340,8 @@ function assert(cond, msg) {
     assert(typeof perf.VERSION === "string", "perf.VERSION");
     assert(typeof storage.VERSION === "string", "storage.VERSION");
     assert(typeof ai.VERSION === "string", "ai.VERSION");
+    assert(typeof cv.VERSION === "string", "crypto-vault.VERSION");
+    assert(typeof fu.VERSION === "string", "fetch-utils.VERSION");
   });
 
   /* ---------------- Bilan ---------------- */
