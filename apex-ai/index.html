@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.645",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.650",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33496,160 +33496,67 @@ setTimeout(function(){
 }})();
 
 /* ============================================================
-   AX_V12_640 — DESACTIVATION WRAP TOAST SILENT v635 (Kevin login bloque)
-   v635 wrappait toast() severity err/warn -> silent. Mais ca casse les
-   toasts user-facing legitimes (mot de passe incorrect, login fail).
-   v640 : revert le wrap, restaure toasts. Le rate-limit v565 reste actif
-   (1 toast/min par contexte, deja en place pour silent-catch). Auto-
-   escalade ax_claude_todo via window.onerror reste active (v635 hook
-   est ok, c est juste le wrap toast qui pose probleme).
+   AX_V12_650 — REPLACE v635+v640 (audit fonctionnel a revele race condition)
+   Audit Apex v645 : v640 setTimeout 100ms + v635 setTimeout 1000ms = race
+   = v635 re-wrap newToast → toast('err') invisible → login fail silencieux.
+   FIX v650 : NE WRAP PLUS toast() du tout. Laisser feedback user normal.
+   Garde uniquement window.onerror hook avec rate-limit + filter trivial errors.
    ============================================================ */
 (function(){try{
   if(typeof window === "undefined") return;
-  if(window._axRevertToastV640) return;
-  window._axRevertToastV640 = true;
-  /* Si v635 a wrap toast, on le revert. Le silent-catch reste rate-limite v565. */
-  setTimeout(function(){
+  if(window._axEscalateV650) return;
+  window._axEscalateV650 = true;
+  /* Filter erreurs triviales pour ne pas spam ax_claude_todo */
+  var TRIVIAL_RE = /ResizeObserver loop|Non-Error promise rejection|Script error\.?$|undefined is not a function$|Cannot read propert(y|ies) of (null|undefined)/i;
+  var lastEscalation = {}; /* {error_type: timestamp} */
+  var RATE_LIMIT_MS = 60000; /* 1 push/min/type */
+  var MAX_TODOS = 30; /* cap Firebase ax_claude_todo */
+  function shouldEscalate(message){
+    if(!message) return false;
+    if(TRIVIAL_RE.test(String(message))) return false;
+    var key = String(message).slice(0,80);
+    var now = Date.now();
+    if(lastEscalation[key] && (now - lastEscalation[key]) < RATE_LIMIT_MS) return false;
+    lastEscalation[key] = now;
+    return true;
+  }
+  function escalate(reason, ctx, severity){
     try{
-      if(window.toast && window.toast._v635){
-        /* Cherche l original via une chaine connue de toast() apex */
-        /* Pas de moyen propre de recup l original sans le storer. Plutot,
-           on remplace par un nouveau wrapper qui ne silencie RIEN, juste rate-limit */
-        var lastTs = {};
-        var RATE = 60000;
-        var newToast = function(msg, severity, opts){
-          opts = opts || {};
-          var key = String(msg||"").slice(0,50) + "_" + String(severity||"info");
-          var now = Date.now();
-          if(lastTs[key] && (now - lastTs[key]) < RATE && !opts.force) return;
-          lastTs[key] = now;
-          /* Affiche le toast directement via DOM (bypass wrap v635) */
-          if(typeof document === "undefined") return;
-          var c = document.getElementById("toast-container");
-          if(!c){
-            c = document.createElement("div");
-            c.id = "toast-container";
-            c.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none";
-            document.body.appendChild(c);
-          }
-          var t = document.createElement("div");
-          var bg = severity === "err" || severity === "critical" ? "#e74c3c" : (severity === "warn" ? "#e8b830" : (severity === "ok" || severity === "success" ? "#1a8" : "#5aa8ff"));
-          var color = severity === "warn" ? "#000" : "#fff";
-          t.style.cssText = "padding:12px 18px;background:"+bg+";color:"+color+";border-radius:10px;font-weight:600;font-size:14px;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.4);pointer-events:auto;animation:axToastSlide .3s ease";
-          t.textContent = String(msg||"").slice(0,200);
-          c.appendChild(t);
-          var dur = (opts.duration || 4000);
-          setTimeout(function(){ try{t.remove();}catch(_e){} }, dur);
-        };
-        newToast._v640 = true;
-        window.toast = newToast;
-      }
+      var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+      var todo = lg("ax_claude_todo", []) || [];
+      /* Cap STRICT 30 entries total (vs 50 v635) */
+      todo.push({
+        id: "v650_" + Date.now() + "_" + Math.random().toString(36).slice(2,5),
+        context: ctx || {},
+        reason: reason || "escalade auto",
+        severity: severity || "warn",
+        ts: Date.now(),
+        src: "apex_v650",
+        v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.650",
+        status: "pending"
+      });
+      if(todo.length > MAX_TODOS) todo = todo.slice(-MAX_TODOS);
+      ls("ax_claude_todo", todo);
     }catch(_e){}
-  }, 100);
-}catch(_outerE){}})();
-
-/* ============================================================
-   AX_V12_635 — SILENCE TOASTS ERREURS USER + AUTO-ESCALADE Claude Code
-   Kevin: "Arrete avec les toasts d erreurs ou pas d erreurs. Tout est
-   automatise je n ai pas besoin de savoir. Erreurs remontent auto a Apex
-   IA puis Claude Code. Apex corrige en autonomie + escalade silencieux."
-   ============================================================ */
-(function(){try{
-  if(typeof window === "undefined") return;
-  if(window._axSilenceToastsV635) return;
-  window._axSilenceToastsV635 = true;
-
-  /* Wrapper toast() : si severity err/warn -> silent (push ax_err_log + escalate) au lieu d afficher */
-  setTimeout(function(){
-    try{
-      var origToast = window.toast;
-      if(typeof origToast !== "function" || origToast._v635) return;
-      var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
-      var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
-      var wrapped = function(msg, severity, opts){
-        var sev = severity || "info";
-        opts = opts || {};
-        /* Toasts info/ok/success : passent normalement (Kevin veut juste savoir succes) */
-        if(sev === "info" || sev === "ok" || sev === "success"){
-          return origToast.apply(this, arguments);
-        }
-        /* Toasts err/warn : SILENT (pas d affichage user) + escalation auto */
-        try{
-          var log = lg2("ax_err_log", []) || [];
-          log.push({ts:Date.now(), sev:sev, msg:String(msg||"").slice(0,300), src:"toast_silenced_v635"});
-          if(log.length > 200) log = log.slice(-200);
-          ls2("ax_err_log", log);
-          /* Auto-escalate vers Claude Code via ax_claude_todo Firebase si critical */
-          if(sev === "err" || sev === "critical"){
-            var todo = lg2("ax_claude_todo", []) || [];
-            todo.push({
-              id: "v635_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
-              context: {silenced_toast:true, msg:String(msg||"").slice(0,300), sev:sev},
-              reason: "Toast erreur silenced - escalade auto Claude Code",
-              severity: sev === "critical" ? "critical" : "warn",
-              ts: Date.now(),
-              src: "apex_v635",
-              v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
-              status: "pending"
-            });
-            if(todo.length > 50) todo = todo.slice(-50);
-            ls2("ax_claude_todo", todo);
-          }
-          /* Push vers Firebase ax_telemetry_in pour Apex IA aussi */
-          if(typeof window._pushTelemetryToApex === "function"){
-            try{ window._pushTelemetryToApex("toast_silenced", sev, msg); }catch(_e1){}
-          }
-        }catch(_e2){}
-        /* Ne PAS afficher le toast a Kevin (silent) */
-        if(typeof console !== "undefined") console.warn("[v635 silenced]", sev, msg);
-        return null;
-      };
-      wrapped._v635 = true;
-      window.toast = wrapped;
-    }catch(_e){}
-  }, 1000);
-
-  /* Hook window.onerror + unhandledrejection : tout escalade silent vers Claude Code */
+  }
   try{
     var origOnError = window.onerror;
     window.onerror = function(message, source, lineno, colno, error){
       try{
-        var lg3 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
-        var ls3 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
-        var todo = lg3("ax_claude_todo", []) || [];
-        todo.push({
-          id: "v635_onerror_" + Date.now(),
-          context: {message:String(message||"").slice(0,200), source:String(source||"").slice(0,100), lineno:lineno, colno:colno, stack:(error&&error.stack||"").slice(0,500)},
-          reason: "window.onerror escalade auto v635",
-          severity: "warn",
-          ts: Date.now(),
-          src: "apex_onerror_v635",
-          v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
-          status: "pending"
-        });
-        if(todo.length > 50) todo = todo.slice(-50);
-        ls3("ax_claude_todo", todo);
+        if(shouldEscalate(message)){
+          escalate("window.onerror v650", {message:String(message||"").slice(0,200), source:String(source||"").slice(0,80), lineno:lineno, colno:colno, stack:(error&&error.stack||"").slice(0,400)}, "warn");
+        }
       }catch(_e){}
       if(typeof origOnError === "function") return origOnError.apply(this, arguments);
       return false;
     };
     window.addEventListener("unhandledrejection", function(e){
       try{
-        var lg4 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
-        var ls4 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
-        var todo = lg4("ax_claude_todo", []) || [];
-        todo.push({
-          id: "v635_promise_" + Date.now(),
-          context: {reason:String((e&&e.reason)||"").slice(0,300)},
-          reason: "unhandledrejection escalade auto v635",
-          severity: "warn",
-          ts: Date.now(),
-          src: "apex_promise_v635",
-          v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
-          status: "pending"
-        });
-        if(todo.length > 50) todo = todo.slice(-50);
-        ls4("ax_claude_todo", todo);
+        var msg = String((e&&e.reason&&e.reason.message)||(e&&e.reason)||"").slice(0,200);
+        if(shouldEscalate(msg)){
+          escalate("unhandledrejection v650", {reason:msg}, "warn");
+        }
       }catch(_e){}
     });
   }catch(_e){}
