@@ -4,6 +4,71 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-01 (Ape
 
 ---
 
+## 🔗 RÈGLE PERMANENTE — APEX CRÉE LES LIENS AUTO À CHAQUE NOUVEL AJOUT/DÉCOUVERTE (Kevin 2026-05-01, ABSOLUE)
+
+> **"Apex crée les liens automatiquement quand nouvelle découverte ou nouvel ajout."** — Kevin 2026-05-01
+
+**Règle absolue, prioritaire** — Apex priorité 1 :
+
+### 1. À chaque nouveau credential détecté/stocké → liens créés auto
+
+Quand `axAutoStoreCredential` ou `axCoffreSetupMissing` ou paste hook stocke un nouveau token :
+- **Auto-extend `AX_OFFICIAL_LINKS`** avec dashboard, billing, docs, support, status_page, api_keys_page
+- Push dans `ax_links_registry` (Firebase FB_FIX shared) avec `{service, dashboard_url, billing_url, docs_url, support_url, last_verified, alive}`
+- Re-test des liens existants quotidiennement (sentinelle `link-validation-watch`)
+- Si service inconnu → log `ax_unknown_services` + escalade Claude Code via `ax_claude_todo` pour ajouter pattern + URLs
+
+### 2. Sources de découverte qui déclenchent auto-création
+
+- Token collé/saisi dans Coffre
+- Token trouvé via `axScanVaultForToken`
+- Service mentionné dans chat IA (regex: "j'ai un compte X", "mon abonnement Y", "recharger Z")
+- URL visitée dans browser embed (extraire service via TLD)
+- Email reçu (sender domain)
+- Webhook configuré
+
+### 3. Patterns de découverte URL automatiques
+
+Si service inconnu (`anthropic`, `mistral`, etc. par exemple), Apex tente :
+- `https://console.{service}.com` (dashboard standard)
+- `https://app.{service}.com`
+- `https://dashboard.{service}.com`
+- `https://{service}.com/account/billing`
+- `https://docs.{service}.com`
+- `https://api.{service}.com/docs`
+- `https://status.{service}.com`
+- HEAD request pour valider chaque (mark `alive: true/false`)
+
+Si aucun ne répond → recherche web via `web_search` (tool Apex) avec query `"{service} api dashboard login"`.
+
+### 4. Helper réutilisable `axLinksAutoCreate(service)`
+
+Signature : `(serviceName) → Promise<{dashboard, billing, docs, support, status, alive_count}>`
+Stocke dans `ax_links_registry`. Réutilisable depuis n'importe quel point d'Apex.
+
+### 5. UI vue admin `vLinksRegistry`
+
+- Liste tous services connus + URLs + statut alive (🟢/🔴)
+- Filter par catégorie (AI / Banking / SaaS / Dev / Comms)
+- Bouton "Re-tester tous" + "Ajouter manuellement"
+- Click sur service → ouvre dashboard direct dans nouvel onglet
+
+### 6. Sentinelle `link-validation-watch` quotidienne
+
+- Re-test alive chaque lien (HEAD request)
+- Si dashboard/billing mort > 24h → notif push admin + escalade Claude Code
+- Stats hebdo : combien de services connus / alive / dead / unknown
+
+### 7. Test mental obligatoire
+
+> *"Quand Kevin colle un token Resend nouveau, Apex le détecte via pattern `re_*`, store dans `ax_resend_key`, ET crée automatiquement les entrées Resend dans `ax_links_registry` (dashboard, billing, docs) ET teste qu'elles répondent ?"*
+
+Si non → enrichir.
+
+S'applique : Apex priorité absolue.
+
+---
+
 ## 🧬 RÈGLE PERMANENTE — RECONNAISSANCE AUTO CREDENTIALS + AUTO-FETCH OUTILS (Kevin 2026-05-01, ABSOLUE)
 
 > **"Lorsqu'il aura tous les codes je veux qu'il récupère tout ce dont il a besoin, outils, liens etc et qu'il reconnaisse les codes, identifiants, sites, apps, etc automatiquement toujours."** — Kevin 2026-05-01

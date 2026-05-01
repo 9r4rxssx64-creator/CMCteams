@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.569",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.570",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32539,7 +32539,136 @@ setTimeout(function(){
 }, 1700);
 
 /* ============================================================
-   AX_V12_569 — PANIC MODE + bilan Coffre auto
+   AX_V12_570 — APEX CREE LIENS AUTO + AUTONOMIE TOTALE
+   Kevin: "Apex cree les liens automatiquement quand nouvelle
+   decouverte ou nouvel ajout" + "Tout automatique autonome"
+   ============================================================ */
+
+window.AX_OFFICIAL_LINKS = window.AX_OFFICIAL_LINKS || {};
+window.AX_LINK_PATTERNS = [
+  {tpl:"https://console.{s}.com", role:"dashboard"},
+  {tpl:"https://app.{s}.com", role:"dashboard"},
+  {tpl:"https://dashboard.{s}.com", role:"dashboard"},
+  {tpl:"https://{s}.com/account/billing", role:"billing"},
+  {tpl:"https://{s}.com/billing", role:"billing"},
+  {tpl:"https://docs.{s}.com", role:"docs"},
+  {tpl:"https://{s}.com/docs", role:"docs"},
+  {tpl:"https://api.{s}.com/docs", role:"docs"},
+  {tpl:"https://status.{s}.com", role:"status"},
+  {tpl:"https://{s}.com/support", role:"support"}
+];
+
+/* Crée + teste liens auto pour un service donne */
+window.axLinksAutoCreate = async function(serviceName, knownLinks){
+  if(!serviceName) return null;
+  var slug = serviceName.toLowerCase().replace(/[^a-z0-9]/g,"");
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  var registry = lg2("ax_links_registry", {}) || {};
+  var entry = registry[slug] || {service: serviceName, slug: slug, links: {}, ts: Date.now()};
+  /* Merge known links (du AX_SERVICE_REGISTRY pre-existant) */
+  if(knownLinks){
+    Object.keys(knownLinks).forEach(function(role){
+      if(knownLinks[role]) entry.links[role] = {url: knownLinks[role], alive: null, last_check: null};
+    });
+  }
+  /* Try patterns standards si pas deja dans entry */
+  for(var i=0;i<window.AX_LINK_PATTERNS.length;i++){
+    var p = window.AX_LINK_PATTERNS[i];
+    var url = p.tpl.replace("{s}", slug);
+    if(!entry.links[p.role]){
+      entry.links[p.role] = {url: url, alive: null, last_check: null, source:"pattern"};
+    }
+  }
+  /* HEAD test best-effort sur chaque lien (max 3 tests pour ne pas spam) */
+  var aliveCount = 0;
+  var testCount = 0;
+  var roles = Object.keys(entry.links);
+  for(var j=0;j<roles.length && testCount<3;j++){
+    var role = roles[j];
+    var link = entry.links[role];
+    if(link.last_check && Date.now() - link.last_check < 86400000) continue; /* skip si teste < 24h */
+    testCount++;
+    try{
+      var ctrl = new AbortController();
+      var timer = setTimeout(function(){ctrl.abort();}, 3000);
+      var r = await fetch(link.url, {method:"HEAD", mode:"no-cors", signal: ctrl.signal});
+      clearTimeout(timer);
+      link.alive = true;
+      aliveCount++;
+    }catch(_e){
+      link.alive = false;
+    }
+    link.last_check = Date.now();
+  }
+  entry.ts = Date.now();
+  registry[slug] = entry;
+  ls2("ax_links_registry", registry);
+  if(typeof axSecurityLog === "function") axSecurityLog("links_auto_created", serviceName + " (" + roles.length + " liens)");
+  return entry;
+};
+
+/* Hook auto : a chaque axAutoStoreCredential succes -> auto-create liens */
+setTimeout(function(){
+  if(window._axLinksHookWired) return;
+  window._axLinksHookWired = true;
+  var orig = window.axAutoStoreCredential;
+  if(typeof orig !== "function") return;
+  window.axAutoStoreCredential = function(detected, value){
+    var r = orig.apply(this, arguments);
+    if(r && r.ok && detected && detected.info && detected.info.service){
+      try{
+        window.axLinksAutoCreate(detected.info.service, {
+          dashboard: detected.info.dashboard,
+          billing: detected.info.billing,
+          docs: detected.info.docs,
+          support: detected.info.support
+        });
+      }catch(_e){}
+    }
+    return r;
+  };
+}, 2400);
+
+/* Vue admin ?view=links : registry liens decouverts */
+setTimeout(function(){
+  if(window._axLinksRegRouteWired) return;
+  window._axLinksRegRouteWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "links" || K.view === "linksregistry" || K.view === "axlinks")){
+      if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+        return '<div style="padding:24px;text-align:center;color:#aab">Reserve admin</div>';
+      }
+      var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var registry = lg2("ax_links_registry", {}) || {};
+      var slugs = Object.keys(registry);
+      var rows = slugs.map(function(slug){
+        var e = registry[slug];
+        var linkRows = Object.keys(e.links||{}).map(function(role){
+          var L = e.links[role];
+          var dot = L.alive === true ? "🟢" : L.alive === false ? "🔴" : "⚪";
+          return '<a href="'+L.url+'" target="_blank" style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#1a1a2a;color:#6a8aff;border-radius:6px;font-size:11px;text-decoration:none">'+dot+' '+role+'</a>';
+        }).join("");
+        return '<div style="margin:10px 0;padding:12px;background:#0f0f1a;border-radius:10px;border:1px solid #333">'+
+          '<b style="color:#c9a227">'+e.service+'</b><br>'+linkRows+
+          '</div>';
+      }).join("");
+      return '<div style="padding:20px;max-width:780px;margin:0 auto;color:#cdd">'+
+        '<h2 style="color:#c9a227;font-family:Georgia,serif">🔗 Registry liens Apex (auto)</h2>'+
+        '<p style="color:#aab;font-size:13px">'+slugs.length+' services decouverts. Apex cree les liens auto a chaque nouveau credential ajoute. Tap un lien pour ouvrir le dashboard/billing/docs.</p>'+
+        (rows || '<p style="color:#666;text-align:center;padding:20px">Aucun lien encore. Ajoute un credential dans le Coffre, Apex creera les liens automatiquement.</p>')+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 2500);
+
+/* AX_V12_569 — PANIC MODE + bilan Coffre auto
+   ============================================================ */
+/* ============================================================
+   AX_V12_569 PANIC MODE + bilan Coffre auto
    Kevin: "Apex ne fonctionne pas du tout correctement. Saute change
    de vue seul. Ne peux cliquer nul part"
    ============================================================ */
