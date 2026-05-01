@@ -1,6 +1,244 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Apex v12.493 / CMC v9.571).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-01 (Apex v12.564 / CMC v9.571).
+
+---
+
+## 🧬 RÈGLE PERMANENTE — RECONNAISSANCE AUTO CREDENTIALS + AUTO-FETCH OUTILS (Kevin 2026-05-01, ABSOLUE)
+
+> **"Lorsqu'il aura tous les codes je veux qu'il récupère tout ce dont il a besoin, outils, liens etc et qu'il reconnaisse les codes, identifiants, sites, apps, etc automatiquement toujours."** — Kevin 2026-05-01
+
+**Règle absolue, prioritaire sur tout** — Apex priorité 1, CMCteams priorité 2 :
+
+### 1. Quand Kevin colle quelque chose dans Apex (n'importe où)
+
+Apex DOIT automatiquement :
+1. **Détecter le type** via regex `AX_CREDENTIAL_PATTERNS` (~30 services courants minimum)
+2. **Identifier le service** (Anthropic, OpenAI, Stripe, Brevo, GitHub, Cloudflare, Resend, Twilio, etc.)
+3. **Auto-stocker** dans la bonne clé Apex (`ax_<service>_key` standardisé)
+4. **Auto-tester** la validité via ping API minimal (~$0.0001)
+5. **Auto-fetch** les métadonnées (solde, quotas, plan, project_id, organization_id)
+6. **Auto-link** vers `AX_OFFICIAL_LINKS` (dashboard, billing, docs, support)
+7. **Auto-installer** outils nécessaires (libs CDN lazy, worker proxy si CORS)
+8. **Auto-renew watch** : sentinelle expiry detection + alerte avant déco
+9. **Auto-redact** dans tous les logs/audit/telemetry
+10. **Toast informatif** : "✅ Anthropic API key détectée + validée + Coffre + sentinelle solde activée"
+
+### 2. Patterns minimum à supporter
+
+```js
+var AX_CREDENTIAL_PATTERNS = {
+  anthropic_key: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/,
+  openai_key:    /^sk-[A-Za-z0-9]{40,}/,
+  google_api:    /^AIza[A-Za-z0-9_-]{33}$/,
+  github_pat:    /^ghp_[A-Za-z0-9]{36}$/,
+  github_fine:   /^github_pat_[A-Za-z0-9_]{82,}$/,
+  cloudflare:    /^[A-Za-z0-9_-]{40}$/, /* heuristique URL contexte */
+  stripe_sk:     /^sk_(live|test)_[A-Za-z0-9]{24,}/,
+  stripe_pk:     /^pk_(live|test)_[A-Za-z0-9]{24,}/,
+  brevo:         /^xkeysib-[a-f0-9]+-[A-Za-z0-9]+$/,
+  resend:        /^re_[A-Za-z0-9_]+$/,
+  groq:          /^gsk_[A-Za-z0-9]+$/,
+  perplexity:    /^pplx-[A-Za-z0-9]+$/,
+  deepl:         /^[a-f0-9-]+:fx$/,
+  airtable_pat:  /^pat[A-Za-z0-9.]+$/,
+  notion:        /^secret_[A-Za-z0-9]+$/,
+  replicate:     /^r8_[A-Za-z0-9]+$/,
+  slack_bot:     /^xox[bp]-[A-Za-z0-9-]+$/,
+  telegram_bot:  /^\d{8,}:[A-Za-z0-9_-]{35}$/,
+  vercel:        /^[A-Za-z0-9]{24}$/, /* contextuel */
+  aws_key:       /^AKIA[0-9A-Z]{16}$/,
+  /* Identifiants non-token */
+  email:         /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i,
+  iban:          /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/,
+  bic:           /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
+  siret:         /^\d{14}$/,
+  vat_eu:        /^[A-Z]{2}\d{8,12}$/,
+  phone_fr:      /^(\+?33|0)[1-9]\d{8}$/,
+  phone_monaco:  /^\+?377\d{8}$/,
+  btc_addr:      /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/,
+  eth_addr:      /^0x[a-fA-F0-9]{40}$/,
+  /* Cartes bleues : DETECTER pour AVERTIR Kevin (jamais stocker) */
+  card_visa_mc:  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/
+};
+```
+
+### 3. Helpers obligatoires
+
+- `axAutoIdentifyCredential(value)` → `{type, service, confidence, dashboard_url, docs_url, test_endpoint, scope_required}`
+- `axAutoStoreCredential(detected, value)` → store dans `ax_<service>_key` + audit + sentinelle activée
+- `axAutoTestCredential(detected, value)` → ping API + retourne `{valid, balance?, quota?, plan?, error?}`
+- `axAutoLinkServices(creds)` → mappe vers `AX_OFFICIAL_LINKS` registry (dashboard/billing/docs/support)
+- `axAutoEnrichCredential(value)` → orchestre les 4 ci-dessus en chaîne
+- Hook global : intercepteur de tous les `paste` events + tous les `<input>` qui changent + clipboard API monitor
+
+### 4. Clés sensibles INTERDITES de stockage
+
+Détecter MAIS ne JAMAIS stocker (rappeler règle Kevin v9.458) :
+- Cartes bleues complètes (PAN + CVV) → afficher "🚨 Carte bancaire détectée. Apex ne stocke JAMAIS de CB. Utilise Stripe Checkout / Apple Pay."
+- Seed phrases crypto (12/24 mots BIP39) → "🚨 Seed phrase détectée. Hardware wallet obligatoire."
+- Mots de passe bancaires plain → OAuth obligatoire
+
+### 5. Auto-recovery des outils nécessaires
+
+Quand un nouveau type est détecté :
+- Lazy-load lib via CDN (libsodium pour GitHub, jsonwebtoken pour OAuth, etc.)
+- Vérifier que CORS proxy est configuré sinon en proposer 1
+- Installer worker Cloudflare si nécessaire
+- Wire dans `AX_API_TOOLS` registry pour que l'IA puisse utiliser
+
+### 6. Sentinelle `credentials-watch` quotidienne
+
+- Re-test validité de chaque credential stocké
+- Alert si expiry < 30j
+- Re-fetch métadata (solde mis à jour)
+- Detect si lien dashboard est mort → escalade Claude Code
+
+### 7. UI cohérente
+
+- Vue admin `vCredentialsRegistry` : liste tous credentials connus (masqués `sk-***...***ab12`) + statut (🟢 valide / 🟡 expiry proche / 🔴 invalid) + bouton "Tester maintenant" + bouton "Recharger" (lien direct dashboard)
+- Notification push si credential devient invalide
+
+### 8. Test mental obligatoire
+
+> *"Si Kevin colle un nouveau token (ex: clé Resend qu'il vient de créer), Apex le reconnaît-il automatiquement ? Sait-il quel dashboard ouvrir si Kevin tape 'recharger Resend' ? Détecte-t-il l'expiry avant que ça plante ?"*
+
+Si non → enrichir `AX_CREDENTIAL_PATTERNS` + `AX_OFFICIAL_LINKS`.
+
+### 9. Apprentissage continu
+
+À chaque type non reconnu rencontré → log dans `ax_unknown_credentials` + escalade Claude Code via `ax_claude_todo` pour ajouter le pattern dans la prochaine session.
+
+S'applique : Apex (priorité absolue), CMCteams si pertinent.
+
+---
+
+## 🛡 RÈGLE PERMANENTE — SÉCURITÉ AVANT AUTONOMIE TOTALE (Kevin 2026-05-01, ABSOLUE)
+
+> **"Quand Apex sera plus que sûr niveau sécurité, je collerai le reste de mes codes généraux et il pourra à ce moment-là tout faire et tout savoir en autonomie automatiquement. Mais je veux être sûr de la sécurité avant."** — Kevin 2026-05-01
+
+**Règle absolue, séquence imposée** — Apex priorité absolue :
+
+### 1. Avant que Kevin colle "le reste de ses codes généraux"
+
+Apex DOIT atteindre niveau sécurité audit externe ≥ 95/100 réel sur l'axe Sécurité, avec preuves opérationnelles :
+
+- ✅ `axRedactOutbound` wired sur TOUS les call sites IA (intercepteur fetch global)
+- ✅ Vault AES-GCM 256 + PBKDF2 100k iterations (audit)
+- ✅ Phase 5 Firebase Auth deployed (custom tokens RS256, rules `auth.uid` gate)
+- ✅ Rate-limiting PIN progressif (5/30s → 6/2min → 7/10min → 8/1h → 9/24h)
+- ✅ Bodyguard runtime actif (CSP violations + postMessage cross-frame)
+- ✅ Audit log immutable + tamper detection
+- ✅ Tokens chiffrés au repos (Coffre + IDB shadow)
+- ✅ Auto-redaction tokens dans logs/erreurs/telemetry
+- ✅ FB_LOCAL strict pour `ax_user`, `ax_uid`, `ax_voice_print_*`
+- ✅ Auto hard-logout si user_id mismatch détecté
+- ✅ Sentry-grade error capture sans leak secrets
+- ✅ Secrets via Cloudflare Worker proxy (pas direct au navigateur)
+- ✅ Pas de tokens dans `console.log` / `_axSilentLog` / Firebase audit
+- ✅ Sentinelle `secrets-leak-watch` quotidienne grep dans logs
+- ✅ Test pénétration cross-app (subagent QA externe simule attaques)
+
+### 2. Une fois niveau ≥ 95/100 atteint
+
+Kevin colle alors :
+- Tokens API restants (banques, paiements, SaaS pro)
+- Identifiants comptes (Apple ID, Google, services)
+- Documents sensibles (KBIS, KYC, contrats)
+- Backups historiques
+
+À ce moment seulement, Apex peut :
+- Tout faire en autonomie totale
+- Accéder à tous services Kevin
+- Modifier/déployer/configurer sans demande
+
+### 3. État actuel à confirmer par audit externe
+
+Avant que Kevin colle plus, je DOIS lancer audit sécurité externe (5 agents Explore parallèles : OWASP ASVS L2, NIST CSF, MITRE ATT&CK, CWE Top 25, secrets-detection scan complet).
+
+### 4. Test mental obligatoire avant chaque release
+
+> *"Si Kevin colle aujourd'hui sa CB principale dans Apex, est-ce qu'un attaquant peut la lire ? Via XSS ? Via fetch interception ? Via Firebase rules trop ouverts ? Via SSE leak ? Via audit log ? Via copy-paste IA ?"*
+
+Si réponse "peut-être" sur 1 vecteur → fix avant push.
+
+S'applique : Apex priorité 1, CMCteams priorité 2.
+
+---
+
+## 🖱 RÈGLE PERMANENTE — 1 CLIC + FENÊTRE + BOUTON DIRECT (Kevin 2026-05-01, ABSOLUE)
+
+> **"Je veux juste un clic à faire lorsque il faut mon action. Toujours avec fenêtre et bouton directe."** — Kevin 2026-05-01
+> **"Le plus simple pour moi le plus rapide et le plus sûr."** — Kevin 2026-05-01
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Quand action Kevin requise = MODAL APEX dédiée
+
+- Modal centrée fond sombre + titre clair
+- **1 bouton primaire** "Ouvrir [page]" (Kevin clique → window.open)
+- **1 input** pour coller (si secret/token, autocomplete=off, type=password)
+- **1 bouton** "Continuer" (validation finale)
+- **1 bouton** "Annuler" (discret)
+
+JAMAIS de window.open() automatique sans bouton visible. Kevin doit toujours décider quand la fenêtre s'ouvre.
+
+### 2. Apex automatise tout ce qui passe par API
+
+Kevin ne va JAMAIS sur 2+ pages externes pour la même tâche. Apex push secrets via API (GitHub libsodium encrypt + PUT), trigger workflows via API, monitor runs via API.
+
+Pattern : Kevin colle 1 token dans Apex → Apex fait tout le reste en chaîne.
+
+### 3. Helper réutilisable `axPromptPasteSecret(opts)`
+
+Signature : `{title, instruction, openLabel, openUrl, continueLabel}` → retourne `Promise<{ok, value, cancelled}>`.
+
+À utiliser pour TOUTE collecte de credential. Pas de prompt() natif (Kevin sur iPhone PWA = clavier saute).
+
+### 4. Helper réutilisable `axPushGitHubSecret(name, value, repo)`
+
+Encrypt avec libsodium-wrappers (CDN lazy) + PUT /repos/{repo}/actions/secrets/{name}. Permet d'éviter à Kevin d'aller sur GitHub Settings > Secrets manuellement.
+
+### 5. État visible TOUJOURS
+
+- Modal montre étape X/Y
+- Toast à chaque action réussie
+- Si erreur API → message simple ("Pousser secret a echoue, retry") + bouton retry
+
+### 6. Test mental obligatoire avant chaque flow setup/deploy
+
+> *"Pour cette tâche, combien de pages externes Kevin doit-il visiter ? Combien de copier-coller ? Si > 1 + < 2 → reprendre l'architecture, automatiser via API."*
+
+Si non simplifié → fixer avant push.
+
+S'applique : Apex (priorité absolue, déploiement workers / Phase 5 / OAuth providers), CMCteams (admin tools), tous projets futurs.
+
+---
+
+## 📦 RÈGLE PERMANENTE — DISTINCTION PROJETS vs OUTILS/INFRA/VUES (Kevin 2026-04-30, ABSOLUE)
+
+> **"Ia apex ne sert a rien... enleve le projet de lapp ensuite cloudflare et backend ne sont pas des projets il me semble"** — Kevin 2026-04-30
+> **"Note que quand je te dis de tout mettre à jour tu ne dois pas aussi oublier bilan car ça aussi ce n'est pas un projet"** — Kevin 2026-04-30
+
+Quand Kevin parle de "projets" gérés par Apex, distinction stricte :
+
+### ✅ PROJETS (à lister dans `vProjects()` + `AX_PROJECTS_REGISTRY` + `APEX_PROJECTS.md`)
+Apps autonomes avec cycle de vie propre, déployées séparément, utilisateurs finaux :
+- APEX AI, CMCteams, Apex Chat, Social Video Pipeline, Télécommande, CrackPass, e-APEX
+
+### ❌ PAS PROJETS (à NE JAMAIS lister dans `vProjects()`)
+- **Outils internes** : Cloudflare Tools (push worker, VAPID gen, deploy worker)
+- **Infrastructure** : Backend Proxy (Cloudflare Worker proxy CORS), GitHub Actions
+- **Vues/Dashboards** : Bilan Général (`vBilan`), Audit, Sentinelles, Tokens
+- **Idées non démarrées** : IA-APEX (archivé pour mémoire dans APEX_PROJECTS.md uniquement)
+
+### Test mental obligatoire avant ajout dans vProjects()
+> *"Cet item est-il une APP autonome avec un cycle de vie propre, déployable séparément, avec des utilisateurs finaux ? Ou bien c'est un outil/vue/infra utilisé par d'autres projets ?"*
+
+Si OUI app autonome → vProjects.
+Si NON (outil/vue/infra) → APEX_PROJECTS.md section "⚙️ Outils & Infrastructure" uniquement.
+
+S'applique : Apex AI vProjects() + AX_PROJECTS_REGISTRY + APEX_PROJECTS.md + tous projets futurs.
 
 ---
 

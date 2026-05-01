@@ -1,0 +1,25 @@
+name = "apex-auth-worker"
+main = "src/index.js"
+compatibility_date = "2026-04-30"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace pour rate-limiting (creer via : wrangler kv:namespace create AUTH_KV)
+# Apres creation, copier l ID retourne ici :
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT"
+
+# Variables d environnement (PUBLIQUES, pas sensibles)
+[vars]
+FIREBASE_PROJECT_ID = "kdmc-clients"
+
+# SECRETS (a configurer via : wrangler secret put NOM)
+# - FIREBASE_PRIVATE_KEY : depuis Firebase Console > Project Settings > Service Accounts > Generate new private key (JSON), copier la valeur "private_key"
+# - FIREBASE_CLIENT_EMAIL : depuis le meme JSON, valeur "client_email"
+#
+# Commande exacte :
+#   wrangler secret put FIREBASE_PRIVATE_KEY
+#   wrangler secret put FIREBASE_CLIENT_EMAIL
+
+[observability]
+enabled = true

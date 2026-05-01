@@ -1,0 +1,126 @@
+name: Social — Generate & Publish Daily Video
+
+on:
+  schedule:
+    # Tous les jours à 10h UTC (=> 12h Europe/Monaco)
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+    inputs:
+      niche:
+        description: "Niche (betrayal-revenge, mystery, finance-lesson, etc.)"
+        required: false
+        default: "betrayal-revenge"
+      format:
+        description: "Format (short, long)"
+        required: false
+        default: "long"
+      publish_platforms:
+        description: "Plateformes (comma: youtube,facebook,instagram)"
+        required: false
+        default: "youtube"
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install espeak-ng (TTS local)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y espeak-ng
+
+      - name: Install deps
+        working-directory: tools/social
+        run: npm install --no-audit --no-fund
+
+      - name: Generate video
+        working-directory: tools/social
+        env:
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+        run: |
+          NICHE="${{ github.event.inputs.niche || 'betrayal-revenge' }}"
+          FORMAT="${{ github.event.inputs.format || 'long' }}"
+
+          # Si on a Gemma, génère un nouveau script
+          if [ -n "$GOOGLE_AI_API_KEY" ]; then
+            node cli.js generate --ai-script --niche "$NICHE" --format "$FORMAT" || node cli.js generate --random --format "$FORMAT"
+          else
+            node cli.js generate --random --format "$FORMAT"
+          fi
+
+      - name: Publish to YouTube
+        if: contains(github.event.inputs.publish_platforms || 'youtube', 'youtube')
+        working-directory: tools/social
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          # Trouve la dernière vidéo générée
+          LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
+          if [ -n "$LATEST" ]; then
+            node cli.js publish --platform youtube --video "$LATEST" --privacy private
+          fi
+
+      - name: Extract + publish Shorts
+        if: ${{ github.event.inputs.format == 'long' }}
+        working-directory: tools/social
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          LATEST=$(ls -t output/*/*_long.mp4 2>/dev/null | head -1)
+          if [ -n "$LATEST" ]; then
+            node cli.js extract-shorts --video "$LATEST" --count 3
+            # Publie les shorts en private pour validation manuelle
+            for SHORT in $(ls "$(dirname $LATEST)/shorts/"*.mp4 2>/dev/null); do
+              node cli.js publish --platform youtube --video "$SHORT" --privacy private --short
+            done
+          fi
+
+      - name: Notify Telegram
+        if: always()
+        working-directory: tools/social
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+            STATUS="${{ job.status }}"
+            if [ "$STATUS" = "success" ]; then
+              MSG="✅ Vidéo générée + publiée (private pour validation)"
+            else
+              MSG="❌ Échec génération vidéo : $STATUS"
+            fi
+            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+              -d "chat_id=$TELEGRAM_CHAT_ID" \
+              -d "text=$MSG" \
+              -d "parse_mode=HTML"
+          fi
+
+      - name: Commit state changes
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tools/social/config/content-library.json 2>/dev/null || true
+          git add tools/social/output/_publish-log.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Pas de changements à commit"
+          else
+            git commit -m "auto: video generated + published $(date -u +%Y-%m-%d)"
+            git push
+          fi
