@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.556",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.557",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30820,6 +30820,177 @@ setTimeout(function(){
     window._axPhase5Wired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("phase5_wire",_e,"warn");}
 }, 1000);
+
+/* ============================================================
+   AX_V12_557 — Fix 2 bugs prod screenshots Kevin v12.545
+   Bug 1 : cle dans mauvais champ Coffre (Groq dans xAI Grok)
+   Bug 2 : silent-catch recurrent loop (9x en 1min)
+   ============================================================ */
+
+/* === BUG 1 : axDetectCredentialMismatch + axMoveCredentialOneClick === */
+
+/* Mapping prefixe -> bon champ Coffre */
+window.AX_CREDENTIAL_PREFIXES = {
+  "gsk_": "ax_groq_key",
+  "xai-": "ax_xai_grok_key",
+  "sk-ant-": "ax_api_key",
+  "sk-or-": "ax_openrouter_key",
+  "AIza": "ax_gemini_key",
+  "ghp_": "ax_github_token",
+  "ghs_": "ax_github_token",
+  "github_pat_": "ax_gh_pat",
+  "sk-": "ax_openai_key",
+  "co-": "ax_cohere_key",
+  "pplx-": "ax_perplexity_key",
+  "NY9CV": "ax_cohere_key",
+  "E5aZZ": "ax_mistral_key"
+};
+
+window.axDetectCredentialMismatch = function(value, currentKey){
+  if(!value || typeof value !== "string") return null;
+  var v = value.trim();
+  for(var prefix in AX_CREDENTIAL_PREFIXES){
+    if(v.indexOf(prefix) === 0){
+      var correctKey = AX_CREDENTIAL_PREFIXES[prefix];
+      if(currentKey && currentKey !== correctKey){
+        return {
+          mismatch: true,
+          prefix: prefix,
+          current_field: currentKey,
+          correct_field: correctKey,
+          value_preview: v.slice(0, 4) + "..." + v.slice(-4)
+        };
+      }
+    }
+  }
+  return {mismatch: false};
+};
+
+window.axMoveCredentialOneClick = function(fromKey, toKey){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var value = lg(fromKey, "");
+    if(!value){ if(typeof toast==="function")toast("Aucune valeur dans " + fromKey, "warn"); return false; }
+    /* Sauvegarde dans la bonne case */
+    ls(toKey, value);
+    /* Vide l ancienne (sauf si admin global comme ax_pin) */
+    var protectedKeys = ["ax_pin", "ax_admin_pass", "ax_uid", "ax_user"];
+    if(protectedKeys.indexOf(fromKey) < 0){
+      try{ localStorage.removeItem(fromKey); }catch(_){}
+    }
+    if(typeof toast==="function") toast("Cle deplacee : " + fromKey + " → " + toKey, "ok", {duration:4000});
+    if(typeof axSecurityLog==="function") axSecurityLog("credential_moved", fromKey + "→" + toKey);
+    if(typeof dc==="function") setTimeout(dc, 200);
+    return true;
+  }catch(_e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axMoveCredentialOneClick",_e,"warn");
+    return false;
+  }
+};
+
+/* Hook automatique : intercept ls() sur clés Coffre pour détecter mismatches au save */
+setTimeout(function(){
+  try{
+    if(window._axCredentialMismatchWired) return;
+    var origLs = window.ls;
+    if(typeof origLs !== "function") return;
+    window.ls = function(k, v){
+      var ret = origLs.apply(this, arguments);
+      try{
+        if(typeof k === "string" && k.indexOf("ax_") === 0 && /key|token|pat/i.test(k)){
+          if(typeof v === "string" && v.length > 8){
+            var check = axDetectCredentialMismatch(v, k);
+            if(check && check.mismatch && typeof axNeedsAttention === "function"){
+              axNeedsAttention({
+                id: "credential_mismatch_" + k + "_" + Date.now(),
+                title: "Cle dans mauvais champ Coffre",
+                body: "Tu colles " + check.prefix + "... dans " + k + " mais la bonne case est " + check.correct_field + ". Je peux la déplacer en 1 clic.",
+                action: {
+                  label: "Déplacer maintenant",
+                  run: function(){ axMoveCredentialOneClick(k, check.correct_field); }
+                }
+              });
+            }
+          }
+        }
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("credential_mismatch_hook",_e,"info");}
+      return ret;
+    };
+    window._axCredentialMismatchWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("credential_mismatch_setup",_e,"warn");}
+}, 1500);
+
+/* === BUG 2 : axDiagnoseSilentCatchLoop (anti-spam + escalade) === */
+
+window.axDiagnoseSilentCatchLoop = function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var log = lg("ax_safe_catch_log", []);
+    if(!Array.isArray(log) || log.length < 5) return null;
+    var now = Date.now();
+    var recent = log.filter(function(e){ return e && e.ts && (now - e.ts) < 60000; }); /* 1 min */
+    /* Compter occurrences par contexte */
+    var byCtx = {};
+    recent.forEach(function(e){ var c = e.ctx || "unknown"; byCtx[c] = (byCtx[c]||0) + 1; });
+    /* Identifier loops (>5x même contexte en 1 min) */
+    var loops = [];
+    Object.keys(byCtx).forEach(function(ctx){
+      if(byCtx[ctx] >= 5){
+        loops.push({ ctx: ctx, count: byCtx[ctx], samples: recent.filter(function(e){return e.ctx===ctx;}).slice(0,3) });
+      }
+    });
+    return {
+      total_recent: recent.length,
+      loops: loops,
+      ts: now
+    };
+  }catch(_e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axDiagnoseSilentCatchLoop",_e,"warn");
+    return null;
+  }
+};
+
+/* Auto-trigger toutes les 2 min : si loop détectée → escalade + axNeedsAttention */
+setTimeout(function(){
+  try{
+    if(window._axSilentCatchLoopWatcher) return;
+    window._axSilentCatchLoopWatcher = setInterval(function(){
+      try{
+        var diag = axDiagnoseSilentCatchLoop();
+        if(diag && diag.loops && diag.loops.length){
+          diag.loops.forEach(function(loop){
+            /* Anti-spam : 1 alert / loop / heure */
+            var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+            var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+            var alertKey = "ax_loop_alert_" + loop.ctx;
+            var lastAlert = lg(alertKey, 0);
+            if(Date.now() - lastAlert < 3600*1000) return;
+            ls(alertKey, Date.now());
+            /* Escalade Claude Code via ax_claude_todo */
+            if(typeof _escalateToClaudeCode === "function"){
+              _escalateToClaudeCode({
+                sentinelId: "silent-catch-loop",
+                loop: loop,
+                samples: loop.samples
+              }, "Silent-catch loop : " + loop.ctx + " (" + loop.count + "× en 1min)", "warn");
+            }
+            /* Modal admin */
+            if(typeof axNeedsAttention === "function"){
+              axNeedsAttention({
+                id: "silent_loop_" + loop.ctx,
+                title: "Erreur recurrente detectee",
+                body: "Le contexte '" + loop.ctx + "' echoue " + loop.count + "× en 1min. Claude Code va analyser.",
+                action: { label: "Voir log", run: function(){ if(typeof sv==="function") sv("apexcode"); } }
+              });
+            }
+            if(typeof axSecurityLog==="function") axSecurityLog("silent_catch_loop_detected", loop.ctx + " count=" + loop.count);
+          });
+        }
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("silent_loop_watcher_tick",_e,"warn");}
+    }, 120000); /* 2 min */
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("silent_loop_watcher_setup",_e,"warn");}
+}, 5000);
 
 </script>
 </body>
