@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.561",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.562",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32042,6 +32042,501 @@ setTimeout(function(){
     window._axAutonomyRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("autonomy_route",_e,"warn");}
 }, 1500);
+
+/* ============================================================
+   AX_V12_562 — APEX MASTER TOOLS : acces API complet pour Apex IA
+   Kevin: "Donne lui les outils, autorisations pour modifier, acceder, tester,
+   interroger, à tout (cloudflare, firebase et tout le reste). Qu il puisse
+   aussi s inscrire pour moi avec les codes et identifiants partout"
+   ============================================================ */
+
+window.AX_API_TOOLS = {
+  cloudflare: {
+    base: "https://api.cloudflare.com/client/v4",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Content-Type":"application/json"}; },
+    token_key: "ax_cf_token",
+    actions: {
+      list_workers: {method:"GET", path:"/accounts/{account_id}/workers/scripts"},
+      get_worker: {method:"GET", path:"/accounts/{account_id}/workers/scripts/{name}"},
+      deploy_worker: {method:"PUT", path:"/accounts/{account_id}/workers/scripts/{name}", contentType:"application/javascript"},
+      delete_worker: {method:"DELETE", path:"/accounts/{account_id}/workers/scripts/{name}"},
+      list_kv_namespaces: {method:"GET", path:"/accounts/{account_id}/storage/kv/namespaces"},
+      create_kv_namespace: {method:"POST", path:"/accounts/{account_id}/storage/kv/namespaces"},
+      kv_put: {method:"PUT", path:"/accounts/{account_id}/storage/kv/namespaces/{ns_id}/values/{key}"},
+      kv_get: {method:"GET", path:"/accounts/{account_id}/storage/kv/namespaces/{ns_id}/values/{key}"},
+      list_zones: {method:"GET", path:"/zones"},
+      list_dns_records: {method:"GET", path:"/zones/{zone_id}/dns_records"},
+      create_dns_record: {method:"POST", path:"/zones/{zone_id}/dns_records"},
+      worker_secret_put: {method:"PUT", path:"/accounts/{account_id}/workers/scripts/{name}/secrets"},
+      verify_token: {method:"GET", path:"/user/tokens/verify"}
+    }
+  },
+  firebase: {
+    base_pattern: "https://{project_id}-default-rtdb.europe-west1.firebasedatabase.app",
+    actions: {
+      read: {method:"GET", path:"/{path}.json"},
+      write: {method:"PUT", path:"/{path}.json"},
+      patch: {method:"PATCH", path:"/{path}.json"},
+      delete: {method:"DELETE", path:"/{path}.json"},
+      shallow: {method:"GET", path:"/{path}.json?shallow=true"}
+    }
+  },
+  github: {
+    base: "https://api.github.com",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Accept":"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28"}; },
+    token_key: "ax_gh_pat",
+    actions: {
+      get_file: {method:"GET", path:"/repos/{repo}/contents/{path}"},
+      put_file: {method:"PUT", path:"/repos/{repo}/contents/{path}"},
+      delete_file: {method:"DELETE", path:"/repos/{repo}/contents/{path}"},
+      list_branches: {method:"GET", path:"/repos/{repo}/branches"},
+      create_pr: {method:"POST", path:"/repos/{repo}/pulls"},
+      merge_pr: {method:"PUT", path:"/repos/{repo}/pulls/{num}/merge"},
+      list_runs: {method:"GET", path:"/repos/{repo}/actions/runs"},
+      dispatch_workflow: {method:"POST", path:"/repos/{repo}/actions/workflows/{name}/dispatches"},
+      get_user: {method:"GET", path:"/user"}
+    }
+  },
+  stripe: {
+    base: "https://api.stripe.com/v1",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Content-Type":"application/x-www-form-urlencoded"}; },
+    token_key: "ax_stripe_test_sk",
+    actions: {
+      list_products: {method:"GET", path:"/products"},
+      create_product: {method:"POST", path:"/products"},
+      list_prices: {method:"GET", path:"/prices"},
+      create_payment_intent: {method:"POST", path:"/payment_intents"},
+      list_charges: {method:"GET", path:"/charges"},
+      list_webhooks: {method:"GET", path:"/webhook_endpoints"},
+      create_webhook: {method:"POST", path:"/webhook_endpoints"},
+      account_info: {method:"GET", path:"/account"}
+    }
+  },
+  brevo: {
+    base: "https://api.brevo.com/v3",
+    auth: function(token){ return {"api-key":token, "Content-Type":"application/json", "Accept":"application/json"}; },
+    token_key: "ax_brevo_api_key",
+    actions: {
+      account_info: {method:"GET", path:"/account"},
+      send_email: {method:"POST", path:"/smtp/email"},
+      list_contacts: {method:"GET", path:"/contacts"},
+      create_contact: {method:"POST", path:"/contacts"},
+      get_smtp_stats: {method:"GET", path:"/smtp/statistics/aggregatedReport"}
+    }
+  },
+  netlify: {
+    base: "https://api.netlify.com/api/v1",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Content-Type":"application/json"}; },
+    token_key: "ax_netlify_token",
+    actions: {
+      list_sites: {method:"GET", path:"/sites"},
+      get_site: {method:"GET", path:"/sites/{site_id}"},
+      list_deploys: {method:"GET", path:"/sites/{site_id}/deploys"},
+      trigger_deploy: {method:"POST", path:"/sites/{site_id}/deploys"}
+    }
+  },
+  anthropic: {
+    base: "https://api.anthropic.com/v1",
+    auth: function(token){ return {"x-api-key":token, "anthropic-version":"2023-06-01", "Content-Type":"application/json"}; },
+    token_key: "ax_api_key",
+    actions: {
+      messages: {method:"POST", path:"/messages"}
+    }
+  },
+  openrouter: {
+    base: "https://openrouter.ai/api/v1",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Content-Type":"application/json"}; },
+    token_key: "ax_openrouter_key",
+    actions: {
+      models: {method:"GET", path:"/models"},
+      chat: {method:"POST", path:"/chat/completions"}
+    }
+  },
+  groq: {
+    base: "https://api.groq.com/openai/v1",
+    auth: function(token){ return {"Authorization":"Bearer "+token, "Content-Type":"application/json"}; },
+    token_key: "ax_groq_key",
+    actions: {
+      models: {method:"GET", path:"/models"},
+      chat: {method:"POST", path:"/chat/completions"}
+    }
+  },
+  gemini: {
+    base: "https://generativelanguage.googleapis.com/v1beta",
+    auth: function(token){ return {"x-goog-api-key":token, "Content-Type":"application/json"}; },
+    token_key: "ax_gemini_key",
+    actions: {
+      list_models: {method:"GET", path:"/models"},
+      generate: {method:"POST", path:"/models/{model}:generateContent"}
+    }
+  },
+  elevenlabs: {
+    base: "https://api.elevenlabs.io/v1",
+    auth: function(token){ return {"xi-api-key":token, "Content-Type":"application/json"}; },
+    token_key: "ax_elevenlabs_key",
+    actions: {
+      list_voices: {method:"GET", path:"/voices"},
+      tts: {method:"POST", path:"/text-to-speech/{voice_id}"},
+      user_info: {method:"GET", path:"/user"}
+    }
+  }
+};
+
+/* axMasterToolCall : appel generique a n importe quel service de la registry */
+window.axMasterToolCall = function(service, action, params, body){
+  if(!service || !action) return Promise.resolve({ok:false, error:"missing_service_or_action"});
+  var svc = AX_API_TOOLS[service];
+  if(!svc){ return Promise.resolve({ok:false, error:"unknown_service:"+service}); }
+  var act = svc.actions[action];
+  if(!act){ return Promise.resolve({ok:false, error:"unknown_action:"+action}); }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  /* Construct URL */
+  var base = svc.base;
+  if(svc.base_pattern){
+    var projectId = (params && params.project_id) || lg("ax_firebase_project_id", "kdmc-clients");
+    base = svc.base_pattern.replace("{project_id}", projectId);
+  }
+  var path = act.path;
+  if(params){
+    Object.keys(params).forEach(function(k){
+      path = path.replace("{"+k+"}", encodeURIComponent(params[k]));
+    });
+  }
+  var url = base + path;
+  /* Headers (auth si token configuré) */
+  var headers = {};
+  if(svc.auth && svc.token_key){
+    var token = lg(svc.token_key, "");
+    if(!token){
+      return Promise.resolve({ok:false, error:"no_token", token_key:svc.token_key, hint:"Configure dans Coffre Apex"});
+    }
+    headers = svc.auth(token);
+  }
+  if(act.contentType) headers["Content-Type"] = act.contentType;
+  /* Fetch */
+  var opts = {method: act.method, headers: headers};
+  if(body && act.method !== "GET" && act.method !== "DELETE"){
+    if(act.contentType && act.contentType.indexOf("javascript") >= 0){
+      opts.body = body; /* Raw JS pour Cloudflare deploy_worker */
+    } else if(headers["Content-Type"] && headers["Content-Type"].indexOf("urlencoded") >= 0){
+      opts.body = typeof body === "string" ? body : new URLSearchParams(body).toString();
+    } else {
+      opts.body = typeof body === "string" ? body : JSON.stringify(body);
+    }
+  }
+  var t0 = Date.now();
+  return fetch(url, opts).then(function(r){
+    return r.text().then(function(text){
+      var data = null;
+      try{ data = JSON.parse(text); }catch(_){ data = text; }
+      var result = {ok:r.ok, status:r.status, latency_ms:Date.now()-t0, data:data, service:service, action:action};
+      if(typeof axSecurityLog==="function") axSecurityLog("master_tool_call", service+":"+action+" status="+r.status);
+      return result;
+    });
+  }).catch(function(e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axMasterToolCall:"+service,e,"warn");
+    return {ok:false, error:e.message, service:service, action:action};
+  });
+};
+
+/* axAutoSignupService : inscription auto pour services avec API publique signup */
+window.AX_AUTO_SIGNUP = {
+  /* Services qui permettent inscription via API publique sans CB/SMS */
+  groq: {
+    note: "Inscription Groq necessite email + verification mail. API non publique - faut compte manuel",
+    manual_url: "https://console.groq.com/keys",
+    auto_capable: false
+  },
+  openrouter: {
+    note: "Inscription OpenRouter via OAuth Google/GitHub - faut interaction humaine",
+    manual_url: "https://openrouter.ai/keys",
+    auto_capable: false
+  },
+  gemini: {
+    note: "Inscription Google AI Studio gratuite mais necessite compte Google",
+    manual_url: "https://aistudio.google.com/apikey",
+    auto_capable: false
+  },
+  brevo: {
+    note: "Brevo accepte email + password (pas CB pour 300/jour), mais email verification",
+    manual_url: "https://www.brevo.com/",
+    auto_capable: false
+  }
+};
+
+window.axAutoSignupService = function(service, email){
+  /* Pour l instant : aucun service ne permet vraiment signup auto sans email verification */
+  /* Apex propose modal axNeedsAttention avec lien direct + suggere email */
+  var info = AX_AUTO_SIGNUP[service];
+  if(!info){ return Promise.resolve({ok:false, error:"unknown_service:"+service}); }
+  if(!info.auto_capable && typeof axNeedsAttention === "function"){
+    axNeedsAttention({
+      id: "signup_"+service,
+      title: "Inscription "+service+" requise",
+      body: info.note + "\n\nApex va t ouvrir le lien direct - inscris-toi avec ton email habituel + colle la cle dans Coffre apres.",
+      action: { label: "Ouvrir signup", run: function(){ window.open(info.manual_url, "_blank"); } }
+    });
+  }
+  return Promise.resolve({ok:false, auto_capable:info.auto_capable, manual_url:info.manual_url, note:info.note});
+};
+
+/* axRequestKevinPermission : si scope nécessite humain, demande 1-clic */
+window.axRequestKevinPermission = function(service, scope, reason){
+  if(typeof axNeedsAttention !== "function") return false;
+  axNeedsAttention({
+    id: "permission_"+service+"_"+scope,
+    title: "Permission requise : " + service,
+    body: "Apex demande l'autorisation pour : " + scope + "\nRaison : " + (reason || "action utilisateur") + "\n\nValide pour autoriser Apex à agir en autonomie sur ce scope.",
+    action: { label: "Autoriser", run: function(){
+      var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+      var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var perms = lg("ax_apex_permissions", {});
+      perms[service+":"+scope] = {granted:true, ts:Date.now()};
+      ls("ax_apex_permissions", perms);
+      if(typeof axSecurityLog === "function") axSecurityLog("permission_granted", service+":"+scope);
+    }}
+  });
+  return true;
+};
+
+window.axHasPermission = function(service, scope){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var perms = lg("ax_apex_permissions", {});
+    return !!(perms[service+":"+scope] && perms[service+":"+scope].granted);
+  }catch(_e){ return false; }
+};
+
+/* Vue admin : console master tools (test API direct) */
+window.vMasterTools = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">🛠 Apex Master Tools</h2>';
+  h += '<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">Apex IA peut interroger/modifier/tester ces 11 services API directement. Necessite tokens dans Coffre.</p>';
+  h += '<div style="display:grid;grid-template-columns:1fr;gap:8px">';
+  Object.keys(AX_API_TOOLS).forEach(function(svc){
+    var def = AX_API_TOOLS[svc];
+    var token = def.token_key ? lg(def.token_key, "") : "";
+    var tokenStatus = !def.token_key ? "ℹ️ Pas de token requis" : (token ? "✅ Token OK" : "❌ Token manquant ("+def.token_key+")");
+    var tokenColor = !def.token_key ? "var(--ax-blue)" : (token ? "var(--ax-green)" : "var(--ax-orange)");
+    h += '<div class="ax-card" style="border-left:4px solid '+tokenColor+'">';
+    h += '<h3>'+esc(svc)+' <span style="font-size:10px;font-weight:400">('+Object.keys(def.actions).length+' actions)</span></h3>';
+    h += '<div style="font-size:11px;color:'+tokenColor+'">'+tokenStatus+'</div>';
+    h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">Actions : '+Object.keys(def.actions).slice(0,5).join(", ")+(Object.keys(def.actions).length>5?"...":"")+'</div>';
+    if(!token && def.token_key){
+      h += '<button class="ax-btn ax-btn-outline" style="margin-top:6px;padding:4px 10px;font-size:11px" onclick="sv(\'vault\')">Configurer token Coffre</button>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  /* Permissions actuelles */
+  var perms = lg("ax_apex_permissions", {});
+  var permKeys = Object.keys(perms);
+  if(permKeys.length){
+    h += '<div class="ax-card" style="margin-top:14px;border-left:4px solid var(--ax-green)"><h3>🔓 Permissions accordees ('+permKeys.length+')</h3>';
+    permKeys.forEach(function(p){
+      h += '<div style="font-size:11px;font-family:monospace;padding:2px">'+esc(p)+' · '+(typeof _timeAgo==="function"?_timeAgo(perms[p].ts):new Date(perms[p].ts).toLocaleString("fr-FR"))+'</div>';
+    });
+    h += '</div>';
+  }
+  return h + '</div>';
+};
+
+setTimeout(function(){
+  try{
+    if(window._axMasterToolsRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "mastertools" || K.view === "apextools" || K.view === "api-tools") && typeof vMasterTools === "function") return vMasterTools();
+      return orig.apply(this, arguments);
+    };
+    window._axMasterToolsRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("master_tools_route",_e,"warn");}
+}, 1600);
+
+/* ============================================================
+   AX_V12_562_GUIDED — Orchestrator autonome avec ouverture page + auto-resume
+   Kevin: "ouvre auto la page directe + atterrir au bon endroit + reprend tout seul"
+   ============================================================ */
+
+/* Pattern central : ouvre URL, attend retour Kevin, retry callback en autonomie */
+window.axOpenAndAutoResume = function(url, instructionTitle, instructionBody, retryFn, opts){
+  opts = opts || {};
+  var timeout = opts.timeout || 900000; /* 15 min default */
+  var minDelay = opts.minDelay || 5000; /* 5s min entre ouverture et resume */
+  /* Ouvre la page directement */
+  try{ window.open(url, "_blank"); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+  /* Toast immediat */
+  if(typeof toast === "function") toast("📂 " + instructionTitle, "info", {duration: 6000, force: true});
+  /* Modal axNeedsAttention avec bouton manual override */
+  if(typeof axNeedsAttention === "function"){
+    axNeedsAttention({
+      id: "guided_" + Date.now(),
+      title: "📂 " + instructionTitle,
+      body: instructionBody + "\n\n✅ Apex reprend automatiquement quand tu reviens sur cette app.",
+      action: {
+        label: "C'est fait, continue maintenant",
+        run: function(){
+          if(typeof retryFn === "function"){
+            try{ retryFn(); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_retry_manual",_e,"warn");}
+          }
+        }
+      }
+    });
+  }
+  /* Auto-resume sur visibilitychange (Kevin revient) */
+  var resumed = false;
+  var t0 = Date.now();
+  function onVisibility(){
+    if(document.visibilityState === "visible" && !resumed && (Date.now() - t0) > minDelay){
+      resumed = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+      /* Petit délai pour laisser Kevin respirer */
+      setTimeout(function(){
+        if(typeof toast === "function") toast("🔄 Apex reprend automatiquement...", "info", {duration:3000});
+        if(typeof retryFn === "function"){
+          try{ retryFn(); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_retry_auto",_e,"warn");}
+        }
+        if(typeof axSecurityLog === "function") axSecurityLog("guided_auto_resumed", instructionTitle);
+      }, 1500);
+    }
+  }
+  document.addEventListener("visibilitychange", onVisibility);
+  /* Cleanup timeout */
+  setTimeout(function(){
+    if(!resumed) document.removeEventListener("visibilitychange", onVisibility);
+  }, timeout);
+};
+
+/* Master orchestrator : axGuidedDeployAll() lance le déploiement complet en autonomie */
+window.axGuidedDeployAll = function(){
+  if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return;
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var steps = [];
+  /* STEP 1 : GitHub PAT (necessaire pour dispatch workflow) */
+  steps.push({
+    id: "github_pat",
+    check: function(){ return !!(lg("ax_gh_pat", "") || lg("ax_github_token", "")); },
+    open_url: "https://github.com/settings/tokens/new?scopes=workflow,repo&description=Apex-Code-Companion",
+    title: "GitHub PAT requis",
+    body: "1) La page GitHub est ouverte\n2) Clique 'Generate token (classic)' EN BAS\n3) Copie le token (commence par 'ghp_')\n4) Reviens sur Apex - colle le dans Coffre cle 'ax_gh_pat'\n5) Apex reprend tout seul"
+  });
+  /* STEP 2 : Cloudflare API Token (necessaire pour deployer workers) */
+  steps.push({
+    id: "cf_token",
+    check: function(){ return !!lg("ax_cf_token", ""); },
+    open_url: "https://dash.cloudflare.com/profile/api-tokens",
+    title: "Cloudflare API Token requis",
+    body: "1) Page Cloudflare est ouverte\n2) Clique 'Create Token'\n3) Choisis template 'Edit Cloudflare Workers'\n4) Confirme - copie le token affiche\n5) Reviens sur Apex - colle dans Coffre cle 'ax_cf_token'\n6) Apex deploie automatiquement les 4 workers"
+  });
+  /* STEP 3 : Configurer Cloudflare API Token comme GitHub Secret (manuel UI) */
+  steps.push({
+    id: "gh_secret_cf",
+    check: function(){ return !!lg("ax_gh_secret_cf_done", false); },
+    open_url: "https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions/new",
+    title: "Coller Cloudflare token dans GitHub Secrets",
+    body: "1) Page GitHub Secrets est ouverte\n2) Name : CLOUDFLARE_API_TOKEN\n3) Secret : colle le Cloudflare token (etape 2)\n4) Clique 'Add secret'\n5) Reviens sur Apex - tape '?view=autonomy' OU clic ce bouton\n\n👉 Apex marquera l'etape comme faite et continuera"
+  });
+  /* STEP 4 : Trigger workflow deploy auto */
+  steps.push({
+    id: "deploy_workers",
+    check: function(){ return !!lg("ax_workers_deployed", false); },
+    open_url: "https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml",
+    title: "Lancer deploiement workers",
+    body: "Apex a tout pret. Va sur GitHub Actions :\n1) Clique 'Run workflow'\n2) Service : laisse 'all'\n3) Clique 'Run workflow'\n4) Attends 1-2 min pour que les 4 workers se deploient\n5) Reviens sur Apex - il auto-detecte les URLs"
+  });
+  /* Iteration sequentielle */
+  function nextStep(idx){
+    if(idx >= steps.length){
+      if(typeof toast === "function") toast("🎉 Tout deploye en autonomie !", "ok", {duration:5000, force:true});
+      var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+      ls("ax_guided_deploy_done", {ts:Date.now()});
+      /* Auto-discover URLs workers */
+      if(typeof axDiscoverCloudflareWorkers === "function"){
+        var subdomain = prompt("Quel est ton subdomain Cloudflare ? (visible dans tes URLs workers, genre 'desarzens' dans 'apex-push-worker.desarzens.workers.dev')");
+        if(subdomain) axDiscoverCloudflareWorkers(subdomain);
+      }
+      return;
+    }
+    var step = steps[idx];
+    if(step.check()){
+      if(typeof toast === "function") toast("✅ " + step.id + " OK, suite...", "ok");
+      setTimeout(function(){ nextStep(idx+1); }, 500);
+      return;
+    }
+    /* Bloque ici → ouvre page + auto-resume */
+    axOpenAndAutoResume(step.open_url, step.title, step.body, function(){
+      /* Re-check apres retour Kevin */
+      if(step.check()){
+        if(typeof toast === "function") toast("✅ Etape " + step.id + " reussie", "ok");
+        nextStep(idx+1);
+      } else {
+        /* Pas encore fait - re-ouvre */
+        if(typeof toast === "function") toast("⏳ Action pas encore detectee. Re-essaye...", "warn");
+        setTimeout(function(){ nextStep(idx); }, 3000);
+      }
+    });
+  }
+  nextStep(0);
+};
+
+/* Helper: declenche workflow GitHub auto pour deployer workers */
+window.axTriggerWorkerDeploy = function(service){
+  service = service || "all";
+  if(typeof axCodeDispatchWorkflow === "function"){
+    return axCodeDispatchWorkflow("deploy-cloudflare-workers.yml", {service:service, env:"production"});
+  }
+  /* Fallback : appel direct GitHub API */
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var token = lg("ax_gh_pat", "") || lg("ax_github_token", "");
+  if(!token){
+    axOpenAndAutoResume(
+      "https://github.com/settings/tokens/new?scopes=workflow,repo",
+      "GitHub PAT manquant",
+      "Cree un PAT (scope workflow,repo) et colle dans Coffre Apex 'ax_gh_pat'",
+      function(){ axTriggerWorkerDeploy(service); }
+    );
+    return Promise.resolve({ok:false,error:"no_pat"});
+  }
+  return fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml/dispatches", {
+    method: "POST",
+    headers: {"Authorization":"Bearer "+token, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+    body: JSON.stringify({ref:"main", inputs:{service:service, env:"production"}})
+  }).then(function(r){
+    if(r.ok){
+      if(typeof toast==="function") toast("Deploiement workers lance (GitHub Actions)","ok",{duration:4000});
+      if(typeof axSecurityLog==="function") axSecurityLog("workers_deploy_triggered", service);
+      return {ok:true};
+    }
+    return r.text().then(function(t){return {ok:false, status:r.status, body:t};});
+  }).catch(function(e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axTriggerWorkerDeploy",e,"warn");
+    return {ok:false, error:e.message};
+  });
+};
+
+/* Wire route : axGuidedDeploy view */
+setTimeout(function(){
+  try{
+    if(window._axGuidedRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "guideddeploy" || K.view === "deploy-auto" || K.view === "deploy-workers")){
+        /* Lance directement le orchestrator */
+        setTimeout(function(){ if(typeof axGuidedDeployAll === "function") axGuidedDeployAll(); }, 100);
+        return '<div style="padding:24px;text-align:center"><h2>🚀 Deploiement guide autonome</h2><p>Apex te guide etape par etape. Suis les modals.</p><button class="ax-btn ax-btn-primary" onclick="axGuidedDeployAll()" style="margin-top:14px">Re-lancer</button></div>';
+      }
+      return orig.apply(this, arguments);
+    };
+    window._axGuidedRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
+}, 1700);
 
 </script>
 </body>
