@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.665",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.670",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33633,6 +33633,72 @@ setTimeout(function(){
    Kevin: "Apex ne fonctionne pas du tout correctement. Saute change
    de vue seul. Ne peux cliquer nul part"
    ============================================================ */
+
+/* ============================================================
+   AX_V12_670 — PHASE 6 : Wire audit immutable + Validate KB + Listener cleanup
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axPhase6V670) return;
+  window._axPhase6V670 = true;
+  var KB_TRUSTED_SOURCES = ["legifrance.gouv.fr","service-public.fr","courdecassation.fr","conseil-etat.fr","curia.europa.eu","echr.coe.int","vidal.fr","ansm.sante.fr","has-sante.fr","ameli.fr","impots.gouv.fr","urssaf.fr","caf.fr","pole-emploi.fr","insee.fr","legimonaco.mc","gouv.mc","monaco.mc","cnil.fr","apdp.mc","europa.eu","anthropic.com","openai.com"];
+  window.axValidateKBSource = function(source, content){
+    if(!source && !content) return {valid: false, reason: "empty"};
+    var src = String(source || "").toLowerCase();
+    var ct = String(content || "");
+    for(var i=0;i<KB_TRUSTED_SOURCES.length;i++){
+      if(src.indexOf(KB_TRUSTED_SOURCES[i]) >= 0) return {valid: true, source_trusted: true, source: KB_TRUSTED_SOURCES[i]};
+      if(ct.toLowerCase().indexOf(KB_TRUSTED_SOURCES[i]) >= 0) return {valid: true, content_cites: KB_TRUSTED_SOURCES[i]};
+    }
+    return {valid: true, untrusted: true, warn: "Source non autoritaire"};
+  };
+  setTimeout(function(){
+    try{
+      function wrapWithAudit(fnName, action){
+        if(typeof window[fnName] !== "function" || window[fnName]._auditWrapped) return;
+        var orig = window[fnName];
+        window[fnName] = function(){
+          var r; try{ r = orig.apply(this, arguments); }catch(e){ throw e; }
+          try{
+            if(typeof window.axAuditAppendImmutable === "function"){
+              var a0 = arguments[0];
+              var d = (typeof a0 === "string") ? String(a0).slice(0,100) : (a0 ? "[obj]" : "");
+              window.axAuditAppendImmutable(action, d).catch(function(_e){});
+            }
+          }catch(_e){}
+          return r;
+        };
+        window[fnName]._auditWrapped = true;
+      }
+      wrapWithAudit("axSetPin", "pin_changed");
+      wrapWithAudit("axDeleteAccountTotal", "account_deleted");
+      wrapWithAudit("axBiometricRegister", "biometric_register");
+      wrapWithAudit("kbAdd", "kb_added");
+      wrapWithAudit("axHardLogoutSession", "logout_hard");
+      wrapWithAudit("axSafeboxLock", "vault_locked");
+      wrapWithAudit("axEncryptSecret", "secret_encrypted");
+    }catch(_e){}
+  }, 1500);
+  setTimeout(function(){
+    try{
+      if(typeof MutationObserver === "undefined") return;
+      var obs = new MutationObserver(function(muts){
+        for(var i=0;i<muts.length;i++){
+          var m = muts[i];
+          if(m.type === "childList" && m.removedNodes){
+            for(var j=0;j<m.removedNodes.length;j++){
+              var n = m.removedNodes[j];
+              if(n.nodeType === 1 && window.ApexPerf && window.ApexPerf.removeListenersOnElement){
+                try{ window.ApexPerf.removeListenersOnElement(n); }catch(_e){}
+              }
+            }
+          }
+        }
+      });
+      if(document.body) obs.observe(document.body, {childList:true, subtree:true});
+    }catch(_e){}
+  }, 2500);
+}catch(_outerE){}})();
 
 /* v12.660 PANIC MODE NEUTRALISE DEFINITIVEMENT (Kevin "tout est mort par panic mode")
    Audit interne : panic mode v569 tuait setInterval -> sentinelles mortes -> auto-fix
