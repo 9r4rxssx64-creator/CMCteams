@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.564",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.565",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,181 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_565 — DIAGNOSTIC CREDENTIALS + FIX SILENT-CATCH BOUCLE
+   Kevin 2026-05-01 : "Fais verifier apex pour les clefs.
+   Elles sont dans apex sur." + "rien ne fonctionne (silent-catch
+   16x/min)"
+   ============================================================ */
+
+/* 1. Rate-limit silent-catch : 1 toast par contexte par minute max */
+(function(){
+  var orig = window._axSafeCatch;
+  if(!orig || orig._v565) return;
+  var lastTs = {};
+  var RATE = 60000;
+  var wrapped = function(ctx, e, level){
+    try{ orig.call(this, ctx, e, level); }catch(__){}
+    var now = Date.now();
+    var key = String(ctx||"unknown");
+    if(lastTs[key] && (now - lastTs[key]) < RATE) return;
+    lastTs[key] = now;
+  };
+  wrapped._v565 = true;
+  window._axSafeCatch = wrapped;
+})();
+
+/* 2. Scan complet credentials dans Apex (localStorage + Coffre vault) */
+window.axDiagnoseAllCredentials = function(){
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var allKnown = [
+    {svc:"Anthropic Claude", keys:["ax_anthropic_key","ax_api_key"], dashboard:"https://console.anthropic.com/settings/billing"},
+    {svc:"OpenAI", keys:["ax_openai_key","ax_openai_proj_key"], dashboard:"https://platform.openai.com/account/billing"},
+    {svc:"Google Gemini", keys:["ax_gemini_key","ax_google_api_key"], dashboard:"https://aistudio.google.com/apikey"},
+    {svc:"Groq", keys:["ax_groq_key"], dashboard:"https://console.groq.com/keys"},
+    {svc:"OpenRouter", keys:["ax_openrouter_key"], dashboard:"https://openrouter.ai/keys"},
+    {svc:"Cohere", keys:["ax_cohere_key"], dashboard:"https://dashboard.cohere.com/api-keys"},
+    {svc:"DeepSeek", keys:["ax_deepseek_key"], dashboard:"https://platform.deepseek.com/api_keys"},
+    {svc:"Perplexity", keys:["ax_perplexity_key"], dashboard:"https://www.perplexity.ai/settings/api"},
+    {svc:"Mistral", keys:["ax_mistral_key"], dashboard:"https://console.mistral.ai/api-keys"},
+    {svc:"GitHub PAT", keys:["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"], dashboard:"https://github.com/settings/tokens", required_for:"Deploiement workers"},
+    {svc:"Cloudflare", keys:["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"], dashboard:"https://dash.cloudflare.com/profile/api-tokens", required_for:"Deploiement workers"},
+    {svc:"Stripe live", keys:["ax_stripe_sk_live","ax_stripe_key"], dashboard:"https://dashboard.stripe.com"},
+    {svc:"Stripe test", keys:["ax_stripe_sk_test"], dashboard:"https://dashboard.stripe.com/test"},
+    {svc:"Brevo", keys:["ax_brevo_key"], dashboard:"https://app.brevo.com"},
+    {svc:"Resend", keys:["ax_resend_key"], dashboard:"https://resend.com/overview"},
+    {svc:"Twilio", keys:["ax_twilio_token","ax_twilio_sid"], dashboard:"https://console.twilio.com"},
+    {svc:"Notion", keys:["ax_notion_key"], dashboard:"https://www.notion.so/my-integrations"},
+    {svc:"Airtable", keys:["ax_airtable_pat"], dashboard:"https://airtable.com/create/tokens"},
+    {svc:"Replicate", keys:["ax_replicate_key"], dashboard:"https://replicate.com/account/api-tokens"},
+    {svc:"DeepL", keys:["ax_deepl_key"], dashboard:"https://www.deepl.com/account"},
+    {svc:"Telegram bot", keys:["ax_telegram_bot_token"], dashboard:"https://t.me/BotFather"},
+    {svc:"Slack", keys:["ax_slack_bot_token"], dashboard:"https://api.slack.com/apps"},
+    {svc:"Vault passphrase", keys:["ax_vault_passphrase_hash"], dashboard:null, internal:true},
+    {svc:"Firebase", keys:["ax_firebase_url"], dashboard:"https://console.firebase.google.com"},
+    {svc:"VAPID push", keys:["ax_vapid_public","ax_push_worker_url"], dashboard:null, internal:true},
+    {svc:"Cloudflare proxy", keys:["ax_proxy_url","ax_cors_proxy_url"], dashboard:null, internal:true}
+  ];
+  var vault = {};
+  try{ vault = lg2("ax_vault", {}) || {}; }catch(_e){}
+  var found = [];
+  var missing = [];
+  allKnown.forEach(function(item){
+    var match = null;
+    for(var i=0;i<item.keys.length;i++){
+      var k = item.keys[i];
+      var v = lg2(k, "");
+      if(v && typeof v === "string" && v.length > 5){
+        match = {key: k, value: v, source: "localStorage"};
+        break;
+      }
+      if(vault[k] && typeof vault[k] === "string" && vault[k].length > 5){
+        match = {key: k, value: vault[k], source: "vault"};
+        break;
+      }
+      if(vault[k] && typeof vault[k] === "object" && vault[k].value && vault[k].value.length > 5){
+        match = {key: k, value: vault[k].value, source: "vault.encrypted"};
+        break;
+      }
+    }
+    if(match){
+      var v = match.value;
+      var masked = v.length > 8 ? (v.slice(0,4) + "***" + v.slice(-4)) : "***";
+      found.push({svc:item.svc, key:match.key, masked:masked, len:v.length, source:match.source, dashboard:item.dashboard, required_for:item.required_for, internal:item.internal});
+    } else {
+      missing.push({svc:item.svc, keys:item.keys, dashboard:item.dashboard, required_for:item.required_for});
+    }
+  });
+  /* Aussi chercher TOUTES les cles ax_* dans localStorage qu on n'a pas listees */
+  var unknown = [];
+  try{
+    for(var lk in localStorage){
+      if(!localStorage.hasOwnProperty(lk)) continue;
+      if(lk.indexOf("ax_") !== 0) continue;
+      if(/key|token|pat|secret|pass|api/i.test(lk)){
+        var alreadyListed = false;
+        allKnown.forEach(function(it){ if(it.keys.indexOf(lk) >= 0) alreadyListed = true; });
+        if(!alreadyListed){
+          var v = localStorage.getItem(lk) || "";
+          if(v.length > 8){
+            unknown.push({key: lk, len: v.length, masked: v.length > 12 ? v.slice(0,5)+"..."+v.slice(-3) : "***"});
+          }
+        }
+      }
+    }
+  }catch(_e){}
+  return {
+    found: found,
+    missing: missing,
+    unknown_extra: unknown,
+    summary: {
+      services_configured: found.length,
+      services_total: allKnown.length,
+      services_missing: missing.length,
+      unknown_keys_found: unknown.length
+    },
+    timestamp: Date.now()
+  };
+};
+
+/* Helper diagnostic erreurs recentes */
+window.axShowLastErrors = function(){
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var errs = (lg2("ax_err_log",[]) || []).slice(-25).reverse();
+  return errs;
+};
+
+/* Vue admin ?view=credscheck : affiche scan complet */
+setTimeout(function(){
+  if(window._axCredsCheckRouteWired) return;
+  window._axCredsCheckRouteWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "credscheck" || K.view === "checkcreds" || K.view === "diagcreds")){
+      if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+        return '<div style="padding:24px;text-align:center;color:#aab">Reserve admin</div>';
+      }
+      var diag = axDiagnoseAllCredentials();
+      var foundRows = diag.found.map(function(f){
+        var dashLink = f.dashboard ? '<a href="'+f.dashboard+'" target="_blank" style="color:#6a8aff;font-size:11px">📂 Dashboard</a>' : '';
+        var src = f.source === "vault.encrypted" ? "🔐" : f.source === "vault" ? "🗝" : "💾";
+        return '<tr><td style="padding:8px;border-bottom:1px solid #333">✅ <b>'+f.svc+'</b></td>'+
+               '<td style="padding:8px;border-bottom:1px solid #333;font-family:monospace;color:#888;font-size:12px">'+src+' '+f.masked+' ('+f.len+'c)</td>'+
+               '<td style="padding:8px;border-bottom:1px solid #333">'+dashLink+'</td></tr>';
+      }).join("");
+      var missingRows = diag.missing.map(function(m){
+        var prio = m.required_for ? '<span style="color:#e74c3c;font-size:11px">⚠ '+m.required_for+'</span>' : '<span style="color:#888;font-size:11px">optionnel</span>';
+        var dashLink = m.dashboard ? '<a href="'+m.dashboard+'" target="_blank" style="color:#6a8aff;font-size:11px">📂 Creer</a>' : '';
+        return '<tr><td style="padding:8px;border-bottom:1px solid #333">⏳ '+m.svc+'</td>'+
+               '<td style="padding:8px;border-bottom:1px solid #333">'+prio+'</td>'+
+               '<td style="padding:8px;border-bottom:1px solid #333">'+dashLink+'</td></tr>';
+      }).join("");
+      var unknownRows = (diag.unknown_extra||[]).map(function(u){
+        return '<tr><td style="padding:6px;color:#aab;font-family:monospace;font-size:12px">'+u.key+'</td><td style="padding:6px;color:#888">'+u.masked+'</td><td style="padding:6px;color:#666">'+u.len+'c</td></tr>';
+      }).join("");
+      return '<div style="padding:20px;max-width:780px;margin:0 auto">'+
+        '<h2 style="color:#c9a227;font-family:Georgia,serif">🔍 Verification credentials Apex</h2>'+
+        '<div style="background:#1a1a2a;border-radius:12px;padding:16px;margin:14px 0;color:#cdd;font-size:14px">'+
+        '<b>'+diag.summary.services_configured+'</b> services configures sur <b>'+diag.summary.services_total+'</b> connus. '+
+        diag.summary.services_missing+' manquants. '+diag.summary.unknown_keys_found+' cles non-cataloguees.'+
+        '</div>'+
+        '<h3 style="color:#1a8" >✅ Configures ('+diag.found.length+')</h3>'+
+        '<table style="width:100%;border-collapse:collapse;color:#cdd;font-size:13px"><tbody>'+(foundRows||'<tr><td style="padding:12px;color:#888">Aucun</td></tr>')+'</tbody></table>'+
+        '<h3 style="color:#e8b830;margin-top:24px">⏳ Manquants ('+diag.missing.length+')</h3>'+
+        '<table style="width:100%;border-collapse:collapse;color:#cdd;font-size:13px"><tbody>'+(missingRows||'<tr><td style="padding:12px;color:#888">Aucun</td></tr>')+'</tbody></table>'+
+        (unknownRows ? '<h3 style="color:#888;margin-top:24px">🔎 Autres cles trouvees ('+diag.unknown_extra.length+')</h3>'+
+        '<table style="width:100%;border-collapse:collapse;font-size:12px"><tbody>'+unknownRows+'</tbody></table>' : '')+
+        '<div style="margin-top:20px;text-align:center">'+
+        '<button onclick="if(typeof toast===\'function\')toast(\'Re-scan...\',\'info\');setTimeout(function(){if(typeof dc===\'function\')dc();},300)" style="padding:10px 20px;background:#1a1a2a;color:#c9a227;border:1px solid #c9a227;border-radius:8px;cursor:pointer;margin:0 6px">🔄 Re-scanner</button>'+
+        '<button onclick="if(typeof axDeployWorkers1Click===\'function\')axDeployWorkers1Click()" style="padding:10px 20px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:8px;cursor:pointer;margin:0 6px;font-weight:700">🚀 Deployer workers</button>'+
+        '</div>'+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 2100);
 
 /* ============================================================
    AX_V12_564 — DEPLOIEMENT 1-CLIC (Kevin 2026-05-01)
