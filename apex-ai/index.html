@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.600",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.605",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32671,6 +32671,87 @@ setTimeout(function(){
   }catch(_e){_axSafeCatch&&_axSafeCatch("v576_skip_link",_e);}
 }catch(_outerE){
   try{ if(typeof console !== "undefined") console.warn("[v576] skip:", _outerE && _outerE.message); }catch(_e){}
+}})();
+
+/* ============================================================
+   AX_V12_605 — PHASE 5 BATCH 2 : Wrap setInterval/setTimeout natifs
+   Audit perf v12.571 : 558 timers actifs (cible <30). Cause : pas de
+   tracker centralise + cleanup absent. Fix : wrap natif setInterval/
+   setTimeout pour auto-tracker dans pool global avec tag par caller.
+   Apres : axTimerPoolStats() montre tous les timers + caller stack +
+   cleanup batch possible via clearTagPattern.
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axTimerWrapV605) return;
+  window._axTimerWrapV605 = true;
+  if(typeof window.setInterval !== "function" || typeof window.setTimeout !== "function") return;
+  var origI = window.setInterval;
+  var origT = window.setTimeout;
+  /* Pool global tracker auto */
+  window._AX_TIMERS_AUTO = window._AX_TIMERS_AUTO || {intervals:[], timeouts:[], by_caller:{}};
+  function getCallerTag(){
+    try{
+      var stack = new Error().stack || "";
+      var lines = stack.split("\n");
+      /* Skip wrapper frames, find first non-internal caller */
+      for(var i=2;i<Math.min(lines.length, 8);i++){
+        var line = lines[i];
+        if(line.indexOf("ax_safe_wrap") >= 0) continue;
+        if(line.indexOf("setInterval") >= 0 || line.indexOf("setTimeout") >= 0) continue;
+        /* Extract function name + line */
+        var m = line.match(/at\s+(\S+)\s/);
+        if(m && m[1] && m[1] !== "<anonymous>") return m[1].slice(0, 30);
+        var m2 = line.match(/(\d+):\d+\)?$/);
+        if(m2) return "L" + m2[1];
+      }
+    }catch(_e){}
+    return "untagged";
+  }
+  window.setInterval = function(fn, ms){
+    var id = origI.apply(window, arguments);
+    var tag = getCallerTag();
+    window._AX_TIMERS_AUTO.intervals.push({id:id, tag:tag, ms:ms, ts:Date.now()});
+    if(window._AX_TIMERS_AUTO.intervals.length > 500) window._AX_TIMERS_AUTO.intervals = window._AX_TIMERS_AUTO.intervals.slice(-500);
+    window._AX_TIMERS_AUTO.by_caller[tag] = (window._AX_TIMERS_AUTO.by_caller[tag] || 0) + 1;
+    return id;
+  };
+  window.setTimeout = function(fn, ms){
+    var id = origT.apply(window, arguments);
+    var tag = getCallerTag();
+    /* Skip auto-cleanup pour timeouts courts < 100ms (debounces) */
+    if(typeof ms === "number" && ms < 100) return id;
+    window._AX_TIMERS_AUTO.timeouts.push({id:id, tag:tag, ms:ms, ts:Date.now()});
+    if(window._AX_TIMERS_AUTO.timeouts.length > 1000) window._AX_TIMERS_AUTO.timeouts = window._AX_TIMERS_AUTO.timeouts.slice(-1000);
+    window._AX_TIMERS_AUTO.by_caller[tag] = (window._AX_TIMERS_AUTO.by_caller[tag] || 0) + 1;
+    return id;
+  };
+  window.axTimersAutoStats = function(){
+    var pool = window._AX_TIMERS_AUTO;
+    /* Top 10 callers by frequency */
+    var top = Object.keys(pool.by_caller).map(function(k){return {tag:k, count:pool.by_caller[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0, 10);
+    return {
+      intervals: pool.intervals.length,
+      timeouts: pool.timeouts.length,
+      total: pool.intervals.length + pool.timeouts.length,
+      top_callers: top
+    };
+  };
+  window.axTimersClearByTag = function(tagPattern){
+    var killed = 0;
+    var re = (tagPattern instanceof RegExp) ? tagPattern : new RegExp(String(tagPattern), "i");
+    window._AX_TIMERS_AUTO.intervals = window._AX_TIMERS_AUTO.intervals.filter(function(t){
+      if(re.test(t.tag)){ try{ clearInterval(t.id); killed++; }catch(_e){} return false; }
+      return true;
+    });
+    window._AX_TIMERS_AUTO.timeouts = window._AX_TIMERS_AUTO.timeouts.filter(function(t){
+      if(re.test(t.tag)){ try{ clearTimeout(t.id); killed++; }catch(_e){} return false; }
+      return true;
+    });
+    return killed;
+  };
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v605] timer wrap skip:", _outerE && _outerE.message); }catch(_e){}
 }})();
 
 /* ============================================================
