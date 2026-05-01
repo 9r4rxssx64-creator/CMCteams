@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.615",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.620",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32671,6 +32671,93 @@ setTimeout(function(){
   }catch(_e){_axSafeCatch&&_axSafeCatch("v576_skip_link",_e);}
 }catch(_outerE){
   try{ if(typeof console !== "undefined") console.warn("[v576] skip:", _outerE && _outerE.message); }catch(_e){}
+}})();
+
+/* ============================================================
+   AX_V12_620 — PHASE 5 BATCH 4 : CSS anim reduce + audit wire +
+   auto-reactivate sentinelles
+   Kevin: "Apex doit aussi reactiver les sentinelles si ce n est pas
+   deja fait en toute autonomie"
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined" || typeof document === "undefined") return;
+  if(window._axPhase5B4V620) return;
+  window._axPhase5B4V620 = true;
+
+  /* === CSS : neutralise 22/23 animations infinies (perf) === */
+  try{
+    var style = document.createElement("style");
+    style.dataset.axAnimReduce = "v620";
+    style.textContent = [
+      "/* v620 anim reduce : keep logo + splash only */",
+      ".ax-skeleton, .ax-shimmer, .ax-typing span, .ax-loading span, .ax-glow, .ax-rainbow, .ax-notif-badge, .ax-love-banner, .ax-love-banner *",
+      "{animation-iteration-count: 2 !important; animation-duration: 1s !important}",
+      "/* Logo (axLogoShift) et splash (axDiamondGlow, axGradientShift) preserves */",
+      ".ax-logo, #ax-splash * {animation-iteration-count: infinite !important}"
+    ].join("\n");
+    if(document.head) document.head.appendChild(style);
+  }catch(_e){_axSafeCatch&&_axSafeCatch("v620_anim",_e);}
+
+  /* === Wire audit immutable sur 30+ nouveaux helpers === */
+  if(typeof window.axSecurityLog === "function" && !window.axSecurityLog._v620wrap){
+    var origLog2 = window.axSecurityLog;
+    var SENSITIVE_EXT = [
+      "biometric_consent_granted","biometric_consent_denied","biometric_register","biometric_unlock_success","biometric_unlock_fail",
+      "vault_passphrase_set","vault_passphrase_change","vault_export","vault_import",
+      "fb_url_changed","fb_admin_token_used","ai_provider_switched","ai_failover_triggered",
+      "rgpd_export_requested","rgpd_erase_requested","data_export_full","data_purge",
+      "kb_fact_added","kb_fact_removed","kb_purged",
+      "device_fingerprint_changed","device_paired","device_revoked",
+      "panic_mode_activated","panic_mode_deactivated","safe_mode_activated","safe_mode_deactivated",
+      "permission_granted","permission_denied","permission_revoked",
+      "subscription_changed","payment_received","quota_exceeded",
+      "tool_blocked","jailbreak_blocked","prompt_injection_blocked",
+      "cors_proxy_changed","worker_url_changed","webhook_registered","webhook_revoked",
+      "admin_action","admin_view_as","admin_secrets_modified",
+      "xss_node_removed_v610","auto_failover_provider","provider_quota_drained"
+    ];
+    var BASE_SENSITIVE = ["login","logout","logout_hard","auth_fail","pin_changed","pin_lockout","admin_promote","secret_pushed","github_secret_pushed","vault_unlocked","vault_locked","workers_deploy_triggered","workers_v3_deploy_triggered","workers_1click_deploy_triggered","credential_stored","auto_credential_stored","dangerous_credential_blocked","user_id_mismatch","sse_local_blocked","aes_decrypt_fail","jailbreak_detected"];
+    var ALL_SENSITIVE = BASE_SENSITIVE.concat(SENSITIVE_EXT);
+    var wrapped2 = function(action, details){
+      try{ origLog2.apply(this, arguments); }catch(_e1){_axSafeCatch&&_axSafeCatch("v620_origLog",_e1);}
+      try{
+        if(ALL_SENSITIVE.indexOf(String(action||"")) >= 0 && typeof window.axAuditAppendImmutable === "function"){
+          window.axAuditAppendImmutable(action, details).catch(function(_e){_axSafeCatch&&_axSafeCatch("v620_audit",_e);});
+        }
+      }catch(_e2){_axSafeCatch&&_axSafeCatch("v620_audit_wrap",_e2);}
+    };
+    wrapped2._v620wrap = true;
+    window.axSecurityLog = wrapped2;
+  }
+
+  /* === Auto-reactivate sentinelles si app stable 5 min === */
+  function tryReactivateSentinels(){
+    try{
+      if(localStorage.getItem("ax_panic_mode") !== "true") return; /* deja inactif */
+      /* Verifier stabilite : compter erreurs ax_err_log dans les 5 dernieres min */
+      var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var errs = lg2("ax_err_log", []) || [];
+      var fiveMinAgo = Date.now() - 300000;
+      var recentErrs = errs.filter(function(e){return e.ts && e.ts > fiveMinAgo;});
+      if(recentErrs.length > 5){
+        if(typeof console !== "undefined") console.log("[v620] Still " + recentErrs.length + " errors/5min, panic mode kept");
+        return;
+      }
+      /* Stable -> deactivate panic mode */
+      localStorage.removeItem("ax_panic_mode");
+      localStorage.removeItem("ax_safe_mode");
+      if(typeof window.axSecurityLog === "function") window.axSecurityLog("panic_mode_deactivated", "auto-reactivate after 5min stable");
+      if(typeof toast === "function") toast("✅ Sentinelles reactivees automatiquement (app stable)","ok",{duration:6000,force:true});
+      if(typeof console !== "undefined") console.log("[v620] App stable -> sentinelles reactivees auto");
+    }catch(_e){_axSafeCatch&&_axSafeCatch("v620_reactivate",_e);}
+  }
+  /* Schedule check every 5 min after boot */
+  setTimeout(function(){
+    tryReactivateSentinels();
+    setInterval(tryReactivateSentinels, 300000); /* 5 min */
+  }, 60000); /* first check 1 min after boot */
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v620] phase5b4 skip:", _outerE && _outerE.message); }catch(_e){}
 }})();
 
 /* ============================================================
