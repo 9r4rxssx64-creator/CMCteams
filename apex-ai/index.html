@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.635",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.640",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33490,6 +33490,59 @@ setTimeout(function(){
 }catch(_outerE){
   try{ if(typeof console !== "undefined") console.warn("[v630] auto-deploy skip:", _outerE && _outerE.message); }catch(_e5){}
 }})();
+
+/* ============================================================
+   AX_V12_640 — DESACTIVATION WRAP TOAST SILENT v635 (Kevin login bloque)
+   v635 wrappait toast() severity err/warn -> silent. Mais ca casse les
+   toasts user-facing legitimes (mot de passe incorrect, login fail).
+   v640 : revert le wrap, restaure toasts. Le rate-limit v565 reste actif
+   (1 toast/min par contexte, deja en place pour silent-catch). Auto-
+   escalade ax_claude_todo via window.onerror reste active (v635 hook
+   est ok, c est juste le wrap toast qui pose probleme).
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axRevertToastV640) return;
+  window._axRevertToastV640 = true;
+  /* Si v635 a wrap toast, on le revert. Le silent-catch reste rate-limite v565. */
+  setTimeout(function(){
+    try{
+      if(window.toast && window.toast._v635){
+        /* Cherche l original via une chaine connue de toast() apex */
+        /* Pas de moyen propre de recup l original sans le storer. Plutot,
+           on remplace par un nouveau wrapper qui ne silencie RIEN, juste rate-limit */
+        var lastTs = {};
+        var RATE = 60000;
+        var newToast = function(msg, severity, opts){
+          opts = opts || {};
+          var key = String(msg||"").slice(0,50) + "_" + String(severity||"info");
+          var now = Date.now();
+          if(lastTs[key] && (now - lastTs[key]) < RATE && !opts.force) return;
+          lastTs[key] = now;
+          /* Affiche le toast directement via DOM (bypass wrap v635) */
+          if(typeof document === "undefined") return;
+          var c = document.getElementById("toast-container");
+          if(!c){
+            c = document.createElement("div");
+            c.id = "toast-container";
+            c.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none";
+            document.body.appendChild(c);
+          }
+          var t = document.createElement("div");
+          var bg = severity === "err" || severity === "critical" ? "#e74c3c" : (severity === "warn" ? "#e8b830" : (severity === "ok" || severity === "success" ? "#1a8" : "#5aa8ff"));
+          var color = severity === "warn" ? "#000" : "#fff";
+          t.style.cssText = "padding:12px 18px;background:"+bg+";color:"+color+";border-radius:10px;font-weight:600;font-size:14px;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.4);pointer-events:auto;animation:axToastSlide .3s ease";
+          t.textContent = String(msg||"").slice(0,200);
+          c.appendChild(t);
+          var dur = (opts.duration || 4000);
+          setTimeout(function(){ try{t.remove();}catch(_e){} }, dur);
+        };
+        newToast._v640 = true;
+        window.toast = newToast;
+      }
+    }catch(_e){}
+  }, 100);
+}catch(_outerE){}})();
 
 /* ============================================================
    AX_V12_635 — SILENCE TOASTS ERREURS USER + AUTO-ESCALADE Claude Code
