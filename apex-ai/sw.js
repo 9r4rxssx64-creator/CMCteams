@@ -10,7 +10,7 @@
  * Limitations iOS connues : pas de Background Sync API, fallback via window online.
  */
 
-const CACHE_VERSION = 'apex-v12.590';
+const CACHE_VERSION = 'apex-v12.595';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
@@ -29,7 +29,9 @@ const PRECACHE_ASSETS = [
   './modules/storage.js',
   './modules/ai-safety.js',
   './modules/crypto-vault.js',
-  './modules/fetch-utils.js'
+  './modules/fetch-utils.js',
+  './modules/ui-helpers.js',
+  './modules/ai-providers.js'
 ];
 
 /* Domaines API : toujours network-first, jamais de cache long */
