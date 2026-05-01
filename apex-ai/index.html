@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.574",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.575",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,74 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_575 — PHASE B BATCH 1 : Wire audit + Jailbreak + WCAG + Confidence
+   Kevin "Continu jusqu a 100/100 reel chaque axe sans t arreter"
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axPhaseB1V575) return;
+  window._axPhaseB1V575 = true;
+  /* Wire audit immutable sur 20 actions sensibles */
+  if(typeof window.axSecurityLog === "function" && !window.axSecurityLog._v575wrap){
+    var origLog = window.axSecurityLog;
+    var SENSITIVE = ["login","logout","logout_hard","auth_fail","pin_changed","pin_lockout","admin_promote","secret_pushed","github_secret_pushed","vault_unlocked","vault_locked","workers_deploy_triggered","workers_v3_deploy_triggered","workers_1click_deploy_triggered","credential_stored","auto_credential_stored","dangerous_credential_blocked","user_id_mismatch","sse_local_blocked","aes_decrypt_fail","jailbreak_detected"];
+    var wrapped = function(action, details){
+      try{ origLog.apply(this, arguments); }catch(_e1){_axSafeCatch&&_axSafeCatch("v575_origLog",_e1);}
+      try{
+        if(SENSITIVE.indexOf(String(action||"")) >= 0 && typeof window.axAuditAppendImmutable === "function"){
+          window.axAuditAppendImmutable(action, details).catch(function(_e){_axSafeCatch&&_axSafeCatch("v575_audit",_e);});
+        }
+      }catch(_e2){_axSafeCatch&&_axSafeCatch("v575_audit_wrap",_e2);}
+    };
+    wrapped._v575wrap = true;
+    window.axSecurityLog = wrapped;
+  }
+  /* Jailbreak detection : use existing v538 axDetectJailbreak (don't override) */
+  /* Confidence calibration helper */
+  window.axCalibrateConfidence = function(response, opts){
+    if(typeof response !== "string") return response;
+    opts = opts || {};
+    var hedges = (response.match(/je\s+crois|peut[\s-]?etre|probablement|sans\s+garantie|environ/gi) || []).length;
+    if(hedges > 0) return response;
+    if(opts.factual_question && response.length < 30) return response + "\n\n_(Verifie cette info)_";
+    return response;
+  };
+  /* WCAG : prefers-reduced-motion respect global */
+  if(typeof matchMedia === "function" && typeof document !== "undefined"){
+    try{
+      var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if(reduceMotion && document.documentElement){
+        document.documentElement.setAttribute("data-reduce-motion", "true");
+        var styleEl = document.createElement("style");
+        styleEl.textContent = "[data-reduce-motion='true'] *{animation-duration:0.01s !important;animation-iteration-count:1 !important;transition-duration:0.01s !important}";
+        if(document.head) document.head.appendChild(styleEl);
+      }
+    }catch(_e){_axSafeCatch&&_axSafeCatch("v575_reduce_motion",_e);}
+  }
+  /* Modal biometric consent wrapper RGPD Art.9 */
+  window.axRequestBiometricConsent = function(purpose){
+    return new Promise(function(resolve){
+      var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+      var prev = lg2("ax_biometric_consent", {}) || {};
+      if(prev[purpose] && prev[purpose].granted){
+        resolve({ok:true, granted:true, cached:true});
+        return;
+      }
+      if(typeof confirm !== "function"){ resolve({ok:false}); return; }
+      var msg = "Consentement RGPD Art.9 (biometrie) pour : " + purpose + ".\n\nApex stocke localement chiffre AES-GCM 256, jamais sur serveur. Revocable Reglages > RGPD.\n\nAccepter ?";
+      var ok = confirm(msg);
+      prev[purpose] = {granted: ok, ts: Date.now()};
+      ls2("ax_biometric_consent", prev);
+      if(typeof window.axSecurityLog === "function") window.axSecurityLog("biometric_consent_" + (ok ? "granted" : "denied"), purpose);
+      resolve({ok:true, granted:ok});
+    });
+  };
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v575] skip:", _outerE && _outerE.message); }catch(_e){}
+}})();
 
 /* ============================================================
    AX_V12_574 — PHASE A QUICK WINS (combine 3 fixes audit)
