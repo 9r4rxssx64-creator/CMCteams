@@ -5213,6 +5213,33 @@ Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiateme
 
 44. **HARD LOGOUT EFFACE HISTORIQUE ADMIN (v12.297→v12.330, 1 mois ! INADMISSIBLE production)** (Kevin v12.331, 2026-04-26 — CRITIQUE COMMERCIAL) — `axHardLogoutSession.SESSION_KEYS` incluait `ax_admin_kevin`, `ax_streak`, `ax_streak_last_day`, `ax_login_streak`, `ax_xp` (global) → à CHAQUE login Kevin/user, perte XP/streak/profil. Si app commercialisée → TOUS clients auraient perdu leur progression à chaque connexion. Découvert seulement quand Kevin a vu "Niv.1 / 35 XP" au lieu de niveau plus haut. **OBLIGATION** : (a) tout reset au login DOIT être audité par scénario `login → logout → re-login → assert data critiques préservées`, (b) `axTestLoginPersistence` test régression automatique obligatoire avant chaque release, (c) sentinelle `data-persistence-watch` simule login/logout 1×/jour + alerte si perte détectée, (d) **liste BLANCHE stricte** des keys effacées au logout (jamais liste noire qui peut oublier), (e) per-user partout (`ax_xp_<uid>`, `ax_streak_<uid>`, etc. — pas de clés globales), (f) Test mental obligatoire AVANT chaque release : "Si je commercialise demain, est-ce qu'un client garde sa progression entre 2 connexions ?". Fix v12.331 : SESSION_KEYS réduit à `[ax_user, ax_uid, ax_lastact, ax_user_theme, ax_theme, ax_perms_onboarded, ax_pin_fails, ax_session_timeout, ax_device_*, ax_wake_word_active, ax_persona_active, ax_last_greeting_*]` uniquement. XP/streak/profil/persistent_memory/kb/audit/lessons PRÉSERVÉS définitivement. ❌→✅
 
+45. **RECIDIVE #33 — PR jamais mergee = deploiement fantome (v12.546→v12.564, 2026-05-01 — Kevin "rien ne fonctionne")** — Erreur #33 documentee depuis 2026-04-20 mais **REPRODUITE 6 jours plus tard sur la meme branche `claude/fix-apex-ai-bugs-adHfF`**. ~20 versions poussees (v12.546→v12.564) jamais mergees dans main → GitHub Pages deployant uniquement depuis main → Kevin bloque sur v12.545 alors que je croyais avoir fixe a v12.564. Cache Safari vide, force-update.html ouvert, PWA reinstallee : RIEN ne marche tant que la branche reste isolee. **CAUSE RACINE** : ne pas verifier au DEBUT de chaque session sur quelle branche le deploiement Pages se fait, et oublier de merger PR au fur et a mesure. **OBLIGATIONS RENFORCEES** : (a) **CHECKLIST OBLIGATOIRE debut de session** : `git log --oneline main..HEAD | wc -l` — si > 3 commits non mergés → MERGER IMMEDIATEMENT avant tout autre travail, (b) **Sentinelle GitHub Action** `branch-deployment-watch.yml` cron 2h qui ouvre issue auto si branche claude/* a > 5 commits non mergés vs main, (c) **Helper Apex** `axCheckMainBranchDivergence()` ping HEAD remote main APP_VER vs local APP_VER — toast warning admin si différent, (d) **Apres CHAQUE push reussi** : verifier que `origin/main` contient ce push (sinon trigger merge PR automatique), (e) **Lesson auto-ajoutee** dans `ax_lessons_learned_struct` Firebase au boot admin pour qu'Apex IA elle-meme rappelle la regle a chaque session. Fix v12.565 + PR #210 mergee. ❌→✅
+
+---
+
+## 🔁 CHECKLIST OBLIGATOIRE DEBUT DE SESSION (Kevin 2026-05-01, ABSOLUE)
+
+> Suite a la recidive de l'erreur #33 (v12.546→v12.564 = 20 versions perdues sur branche non mergee), checklist NON-NEGOCIABLE a executer dans la 1ere minute de chaque session :
+
+```bash
+# 1. Verifier sur quelle branche le deploiement Pages se fait
+cat .github/workflows/deploy.yml 2>/dev/null | grep -A2 "branches:"
+
+# 2. Compter les commits non merges entre HEAD et main
+git fetch origin main 2>/dev/null
+git log --oneline main..HEAD 2>/dev/null | wc -l
+
+# 3. Si > 3 commits non merges → MERGER avant tout
+git status && git log --oneline -5
+```
+
+**Action obligatoire selon resultat** :
+- 0-3 commits → continuer normal
+- 4-9 commits → merger en fin de tache courante
+- ≥ 10 commits → STOP TOUT, merger MAINTENANT avant nouveau travail
+
+Cette checklist DOIT etre executee aussi a mi-session si > 1h de travail.
+
 ---
 
 ## Recherche d'outils (ToolSearch)
