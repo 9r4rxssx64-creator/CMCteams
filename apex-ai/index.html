@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.660",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.665",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30239,6 +30239,10 @@ window.axProjectsAudit = function(){
     var status = "ok"; var issues = [];
     p.required_tokens.forEach(function(tk){
       var v = lg(tk, "") || localStorage.getItem(tk);
+      /* v665 : si valeur chiffree AXENC1: ou __AXENC1__, on considere token PRESENT (sera dechiffre via axGetTokenDecrypted a l usage) */
+      if(typeof v === "string" && (v.indexOf("AXENC1:") === 0 || v.indexOf("__AXENC1__") === 0)){
+        return; /* present, skip warn */
+      }
       if(!v || String(v).length < 4){
         status = "warn";
         issues.push("token_missing:" + tk);
@@ -30258,14 +30262,24 @@ window.axProjectsAudit = function(){
     else report.summary.err++;
   });
   ls("ax_projects_last_audit", report);
-  /* Auto-fix tokens manquants → modal axNeedsAttention 1-clic */
-  if(report.summary.missing_tokens.length && typeof axNeedsAttention === "function"){
-    axNeedsAttention({
-      id: "projects_tokens_missing",
-      title: "Tokens manquants Apex Projects",
-      body: report.summary.missing_tokens.length + " tokens requis non configures : " + report.summary.missing_tokens.join(", "),
-      action: { label: "Voir Projets", run: function(){ if(typeof sv==="function") sv("projects"); } }
-    });
+  /* v665 : Pas de modal axNeedsAttention auto (Kevin "tout doit etre auto, pas tannant").
+     Si tokens vraiment manquants -> log silent + escalade ax_claude_todo. */
+  if(report.summary.missing_tokens.length){
+    try{
+      var todo = lg("ax_claude_todo", []) || [];
+      todo.push({
+        id: "v665_tokens_" + Date.now(),
+        context: {missing: report.summary.missing_tokens},
+        reason: "axProjectsAudit detect tokens missing (silent escalade v665)",
+        severity: "warn",
+        ts: Date.now(),
+        src: "apex_v665",
+        v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.665",
+        status: "pending"
+      });
+      if(todo.length > 30) todo = todo.slice(-30);
+      ls("ax_claude_todo", todo);
+    }catch(_e){}
   }
   /* Escalade Claude Code si critique */
   if(report.summary.err > 0 && typeof _escalateToClaudeCode === "function"){
