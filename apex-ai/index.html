@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.553",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.554",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30737,6 +30737,89 @@ setTimeout(function(){
     }
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("code_quality_boot",_e,"warn");}
 }, 60000); /* 60s post-boot pour ne pas charger */
+
+/* ============================================================
+   AX_V12_554 — Phase 5 Firebase Auth (per-user UID gate)
+   Necessite deploiement Cloudflare Worker apex-auth-worker (voir PHASE5_DEPLOY.md)
+   ============================================================ */
+
+window.axFirebaseAuthSignIn = function(uid, pinHash){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var workerUrl = lg("ax_auth_worker_url", "");
+    if(!workerUrl){
+      if(typeof axNeedsAttention === "function"){
+        axNeedsAttention({
+          id:"phase5_worker_missing", title:"Phase 5 Firebase Auth non configuree",
+          body:"Deploie le Cloudflare Worker apex-auth-worker (guide PHASE5_DEPLOY.md) puis colle l URL dans Coffre cle ax_auth_worker_url.",
+          action:{label:"Voir guide", run:function(){ window.open("https://github.com/9r4rxssx64-creator/cmcteams/blob/main/PHASE5_DEPLOY.md", "_blank"); }}
+        });
+      }
+      return Promise.resolve({ok:false, error:"no_worker_url"});
+    }
+    return fetch(workerUrl + "/login", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({uid:uid, pin_hash:pinHash})
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.ok && d.custom_token){
+          var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+          ls("ax_firebase_custom_token", d.custom_token);
+          ls("ax_firebase_token_exp", Date.now() + (d.expires_in||3600)*1000);
+          if(typeof axSecurityLog==="function")axSecurityLog("phase5_login_ok", uid);
+          if(typeof toast==="function")toast("Phase 5 Firebase Auth OK","ok");
+          return {ok:true, uid:uid};
+        }
+        if(typeof toast==="function")toast("Phase 5 echec : "+(d.error||"unknown"),"err");
+        return {ok:false, error:d.error||"unknown"};
+      })
+      .catch(function(e){
+        if(typeof _axSafeCatch==="function")_axSafeCatch("axFirebaseAuthSignIn",e,"warn");
+        return {ok:false, error:e.message};
+      });
+  }catch(_e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axFirebaseAuthSignIn_outer",_e,"warn");
+    return Promise.resolve({ok:false, error:_e.message});
+  }
+};
+
+window.axFirebaseAuthIsValid = function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var token = lg("ax_firebase_custom_token", "");
+    var exp = lg("ax_firebase_token_exp", 0);
+    return !!(token && exp && Date.now() < exp);
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axFirebaseAuthIsValid",_e,"warn");return false;}
+};
+
+/* Auto-trigger Phase 5 sign-in apres login local reussi (si worker configure) */
+setTimeout(function(){
+  try{
+    if(window._axPhase5Wired) return;
+    var origLogin = window.axLogin;
+    if(typeof origLogin !== "function") return;
+    window.axLogin = function(name, pin){
+      var ok = origLogin.apply(this, arguments);
+      if(ok && K && K.user && K.user.id){
+        try{
+          var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+          var workerUrl = lg("ax_auth_worker_url", "");
+          if(workerUrl && typeof axFirebaseAuthSignIn === "function"){
+            var pinHash = lg("ax_pin", "") || lg("ax_pin_"+K.user.id, "");
+            if(pinHash){
+              setTimeout(function(){
+                axFirebaseAuthSignIn(K.user.id, pinHash);
+              }, 300);
+            }
+          }
+        }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("phase5_login_hook",_e,"info");}
+      }
+      return ok;
+    };
+    window._axPhase5Wired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("phase5_wire",_e,"warn");}
+}, 1000);
 
 </script>
 </body>
