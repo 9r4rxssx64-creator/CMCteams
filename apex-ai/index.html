@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.568",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.569",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,229 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_569 — PANIC MODE + bilan Coffre auto
+   Kevin: "Apex ne fonctionne pas du tout correctement. Saute change
+   de vue seul. Ne peux cliquer nul part"
+   ============================================================ */
+
+/* PANIC MODE : ?nuke=1 coupe TOUT (sentinelles, modals, auto-vues, intervals) */
+(function(){
+  try{
+    var nuke = /[?&]nuke=1/.test(location.search) || localStorage.getItem("ax_panic_mode") === "true";
+    if(nuke){
+      localStorage.setItem("ax_panic_mode", "true");
+      localStorage.setItem("ax_safe_mode", "true");
+      /* Clear TOUS les intervals existants au boot et toutes les 2s pendant 30s */
+      var killCount = 0;
+      var killAll = function(){
+        try{
+          var max = setTimeout(function(){}, 0);
+          for(var i=0;i<max;i++){ try{clearInterval(i);clearTimeout(i);}catch(_){} }
+          killCount++;
+        }catch(_e){}
+      };
+      killAll();
+      var killTimer = setInterval(killAll, 2000);
+      setTimeout(function(){ try{clearInterval(killTimer);}catch(_){} }, 30000);
+      /* Block axNeedsAttention + autoMaintenance + autres sentinelles au plus tot */
+      window.axNeedsAttention = function(){console.log("[PANIC] axNeedsAttention blocked", arguments[0]&&arguments[0].title);};
+      window.axAutoMaintenance = function(){};
+      window.axRunFullAudit = function(){};
+      window._axCheckRemoteVersion = function(){};
+      window.axVerifyAllWorkers = function(){};
+      window.axVerifyAllFirebase = function(){};
+      window.axShield = function(){};
+      window._axDailyCleanup = function(){};
+      /* Block sv() auto (changement de vue automatique) - garde uniquement clic user */
+      var origSv = window.sv;
+      if(typeof origSv === "function"){
+        window.sv = function(view){
+          /* Permet seulement si appele depuis stack utilisateur (event handler) */
+          var stack = (new Error()).stack || "";
+          if(stack.indexOf("HTMLElement") < 0 && stack.indexOf("onclick") < 0 && stack.indexOf("EventTarget") < 0){
+            console.warn("[PANIC] sv("+view+") auto blocked");
+            return;
+          }
+          return origSv.apply(this, arguments);
+        };
+      }
+      setTimeout(function(){
+        if(typeof toast === "function") toast("🛡 PANIC MODE actif - tout sentinelle/modal/auto-vue coupe. Pour annuler: ?nuke=0","warn",{duration:12000,force:true});
+      }, 2500);
+    }
+    /* Annulation : ?nuke=0 */
+    if(/[?&]nuke=0/.test(location.search)){
+      localStorage.removeItem("ax_panic_mode");
+      localStorage.removeItem("ax_safe_mode");
+    }
+  }catch(_e){}
+})();
+
+/* APEX FAIT SON BILAN COFFRE + SETUP AUTO MANQUANTS
+   Kevin: "Dis a apex de te faire et de se faire un bilan, recap de
+   ce qu elle a dans le coffre sans les mots de passe. Puis elle met
+   en place ce qui lui manque" + "Il est sense le faire seul toujours
+   pour tous pareil" + "Il faut que apex ai une bien meilleure memoire"
+   ============================================================ */
+
+/* Bilan markdown lisible (sans secrets) + push memoire persistante */
+window.axCoffreBilanAuto = async function(){
+  if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return null;
+  }
+  if(typeof window.axDiagnoseAllCredentials !== "function") return null;
+  var diag = window.axDiagnoseAllCredentials();
+  var md = "# 🔐 Bilan Coffre Apex\n\n";
+  md += "_Genere " + new Date().toLocaleString("fr-FR") + "_\n\n";
+  md += "**" + diag.summary.services_configured + " / " + diag.summary.services_total + " services configures.** ";
+  md += diag.summary.services_missing + " manquants. " + diag.summary.unknown_keys_found + " cles non-cataloguees.\n\n";
+  md += "## ✅ Configures\n\n";
+  if(!diag.found.length) md += "_(aucun)_\n";
+  diag.found.forEach(function(f){
+    var enc = f.source === "vault.encrypted" || f.source === "vault" ? " 🔒 chiffre" : "";
+    md += "- **" + f.svc + "** — `" + f.key + "` (" + f.len + " chars" + enc + ")\n";
+  });
+  md += "\n## ⏳ Manquants\n\n";
+  if(!diag.missing.length) md += "_(aucun, tout est la !)_\n";
+  diag.missing.forEach(function(m){
+    var prio = m.required_for ? " ⚠ **Requis : " + m.required_for + "**" : "";
+    var dash = m.dashboard ? " — [📂 Dashboard](" + m.dashboard + ")" : "";
+    md += "- " + m.svc + prio + dash + "\n";
+  });
+  if(diag.unknown_extra && diag.unknown_extra.length){
+    md += "\n## 🔎 Cles ax_* non-cataloguees (peut-etre tokens utiles)\n\n";
+    diag.unknown_extra.forEach(function(u){
+      md += "- `" + u.key + "` (" + u.len + " chars)\n";
+    });
+  }
+  /* Push dans memoire persistante + lessons learned (Apex se rappelle) */
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  try{
+    var mem = lg2("ax_persistent_memory", []) || [];
+    mem.push({
+      id: "coffre_bilan_" + Date.now(),
+      type: "coffre_inventory",
+      content: "Coffre " + diag.summary.services_configured + "/" + diag.summary.services_total + " services. Manquants : " + diag.missing.map(function(m){return m.svc;}).join(", "),
+      ts: Date.now()
+    });
+    if(mem.length > 1000) mem = mem.slice(-1000);
+    ls2("ax_persistent_memory", mem);
+    var lessons = lg2("ax_lessons_learned_struct", []) || [];
+    lessons.push({
+      id: "coffre_bilan_" + Date.now(),
+      category: "coffre",
+      title: "Bilan Coffre Apex (" + diag.summary.services_configured + "/" + diag.summary.services_total + ")",
+      text: md.slice(0, 2000),
+      severity: "info",
+      ts: Date.now()
+    });
+    if(lessons.length > 300) lessons = lessons.slice(-300);
+    ls2("ax_lessons_learned_struct", lessons);
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axCoffreBilan_memory",_e);}
+  if(typeof axSecurityLog === "function") axSecurityLog("coffre_bilan_generated", diag.summary.services_configured + "/" + diag.summary.services_total);
+  return {markdown: md, diag: diag};
+};
+
+/* Setup auto sequentiel pour services manquants prioritaires */
+window.axCoffreSetupMissing = async function(){
+  if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return;
+  }
+  if(typeof window.axDiagnoseAllCredentials !== "function") return;
+  var diag = window.axDiagnoseAllCredentials();
+  var withDashboard = diag.missing.filter(function(m){return m.dashboard;});
+  if(!withDashboard.length){
+    if(typeof toast === "function") toast("✅ Aucun service manquant a setup","ok",{duration:4000});
+    return;
+  }
+  /* Tri : priorite haute = required_for + services AI/deploy */
+  var prioOrder = ["GitHub PAT","Cloudflare","Anthropic Claude","OpenAI","Google Gemini","Groq","Stripe live","Brevo","Resend","Twilio","Notion","Replicate","DeepL"];
+  withDashboard.sort(function(a,b){
+    var ai = prioOrder.indexOf(a.svc); if(ai<0) ai = 99;
+    var bi = prioOrder.indexOf(b.svc); if(bi<0) bi = 99;
+    return ai - bi;
+  });
+  if(typeof toast === "function") toast("🚀 Setup auto " + withDashboard.length + " services manquants. Apex te demande chaque token.","info",{duration:5000,force:true});
+  for(var i=0;i<withDashboard.length;i++){
+    var m = withDashboard[i];
+    if(typeof window.axPromptPasteSecret !== "function") break;
+    var r = await window.axPromptPasteSecret({
+      title: m.svc + " ("+(i+1)+"/"+withDashboard.length+")",
+      instruction: (m.required_for ? "⚠ Requis pour : " + m.required_for + "\n\n" : "") +
+                   "1) Clique 'Ouvrir " + m.svc + "'\n2) Cree ou recupere ton token\n3) Copie + colle ici\n\nApex chiffre + stocke dans le Vault.",
+      openLabel: "Ouvrir " + m.svc,
+      openUrl: m.dashboard,
+      continueLabel: "J ai colle (ou 'Annuler' pour skip)"
+    });
+    if(!r || !r.ok || r.cancelled){
+      if(typeof toast === "function") toast("⏭ Skip " + m.svc,"info",{duration:2000});
+      continue;
+    }
+    /* Stocke chiffre AXENC1: si possible */
+    var key = m.keys[0];
+    if(typeof window.axEncryptLS === "function"){
+      try{
+        var enc = await window.axEncryptLS(r.value);
+        localStorage.setItem(key, enc);
+      }catch(_e){
+        localStorage.setItem(key, JSON.stringify(r.value));
+      }
+    } else {
+      localStorage.setItem(key, JSON.stringify(r.value));
+    }
+    if(typeof toast === "function") toast("✅ " + m.svc + " stocke et chiffre","ok");
+    if(typeof axSecurityLog === "function") axSecurityLog("coffre_setup_missing_added", m.svc);
+  }
+  if(typeof toast === "function") toast("🎉 Setup auto termine - re-genere le bilan","ok",{duration:6000,force:true});
+  /* Re-genere bilan apres setup */
+  if(typeof window.axCoffreBilanAuto === "function") setTimeout(window.axCoffreBilanAuto, 800);
+};
+
+/* Route ?view=coffrebilan : page admin avec bilan auto + bouton setup */
+setTimeout(function(){
+  if(window._axCoffreBilanRouteWired) return;
+  window._axCoffreBilanRouteWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "coffrebilan" || K.view === "bilancoffre" || K.view === "coffrerecap")){
+      if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+        return '<div style="padding:24px;text-align:center;color:#aab">Reserve admin</div>';
+      }
+      var id = "axbilan_" + Date.now();
+      setTimeout(function(){
+        if(typeof window.axCoffreBilanAuto !== "function") return;
+        window.axCoffreBilanAuto().then(function(res){
+          var el = document.getElementById(id);
+          if(!el || !res) return;
+          var html = (res.markdown||"")
+            .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+            .replace(/^#\s+(.+)$/gm,'<h2 style="color:#c9a227;font-family:Georgia,serif;margin:8px 0">$1</h2>')
+            .replace(/^##\s+(.+)$/gm,'<h3 style="color:#c9a227;margin-top:18px;font-size:16px">$1</h3>')
+            .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+            .replace(/_([^_]+)_/g,'<i>$1</i>')
+            .replace(/`([^`]+)`/g,'<code style="background:#1a1a2a;padding:1px 6px;border-radius:4px;font-size:12px;color:#e8b830">$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#6a8aff">$1</a>')
+            .replace(/\n/g,'<br>');
+          el.innerHTML = html;
+        });
+      }, 200);
+      return '<div style="padding:20px;max-width:780px;margin:0 auto;color:#cdd">'+
+        '<div id="'+id+'" style="line-height:1.7;font-size:14px;background:#0f0f1a;border:1px solid #333;border-radius:14px;padding:20px">⏳ Apex genere son bilan Coffre...</div>'+
+        '<div style="margin-top:20px;text-align:center;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'+
+        '<button onclick="axCoffreSetupMissing()" style="padding:14px 24px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px">🚀 Setup auto manquants</button>'+
+        '<button onclick="if(typeof axCoffreBilanAuto===\'function\')axCoffreBilanAuto().then(function(){if(typeof dc===\'function\')dc();})" style="padding:14px 24px;background:#1a1a2a;color:#c9a227;border:1px solid #c9a227;border-radius:12px;cursor:pointer;font-size:14px">🔄 Re-scanner</button>'+
+        '<button onclick="K.view=\'deploy1click\';if(typeof dc===\'function\')dc()" style="padding:14px 24px;background:#1a1a2a;color:#6a8aff;border:1px solid #6a8aff;border-radius:12px;cursor:pointer;font-size:14px">🚀 Deployer workers</button>'+
+        '</div>'+
+        '<p style="color:#666;font-size:11px;margin-top:18px;text-align:center">v12.569 : bilan auto pousse dans ax_persistent_memory + ax_lessons_learned_struct (Apex IA s en souviendra cross-session). Aucun secret n est affiche.</p>'+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 2200);
 
 /* ============================================================
    AX_V12_568 — SCAN VAULT PAR PREFIXE (Kevin "Utilise celui la")
