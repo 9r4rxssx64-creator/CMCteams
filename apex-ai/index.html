@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.560",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.561",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -31614,6 +31614,434 @@ setTimeout(function(){
     window._axAdminLinksRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("admin_links_route_wire",_e,"warn");}
 }, 1200);
+
+/* ============================================================
+   AX_V12_561 — Auto-verification workers Cloudflare/Firebase
+   Kevin: "Fais faire par Apex ou toi les verifications toujours"
+   ============================================================ */
+
+window.AX_WORKERS_REGISTRY = [
+  {id:"apex-push-worker", url_key:"ax_push_worker_url", health_path:"/health", required:false, label:"Push notifications iPhone"},
+  {id:"kdmc-proxy", url_key:"ax_proxy_url", health_path:"/", required:false, label:"Proxy Anthropic CORS iOS"},
+  {id:"apex-auth-worker", url_key:"ax_auth_worker_url", health_path:"/health", required:false, label:"Phase 5 Firebase Auth"},
+  {id:"chat-svc", url_key:"ax_chat_svc_url", health_path:"/health", required:false, label:"Chat IA proxy + failover"},
+  {id:"vault-svc", url_key:"ax_vault_svc_url", health_path:"/health", required:false, label:"Coffre secrets AES-GCM"},
+  {id:"sentinels-svc", url_key:"ax_sentinels_svc_url", health_path:"/health", required:false, label:"Sentinelles cron lundi 02h"}
+];
+
+window.axVerifyWorker = function(workerId){
+  return new Promise(function(resolve){
+    try{
+      var w = AX_WORKERS_REGISTRY.find(function(x){return x.id === workerId;});
+      if(!w){ resolve({id:workerId, ok:false, error:"unknown_worker"}); return; }
+      var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var url = lg(w.url_key, "");
+      if(!url){ resolve({id:workerId, ok:false, error:"no_url_configured", url_key:w.url_key, label:w.label}); return; }
+      var t0 = Date.now();
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      if(ctrl) setTimeout(function(){try{ctrl.abort();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}}, 10000);
+      fetch(url + w.health_path, {method:"GET", mode:"cors", signal: ctrl ? ctrl.signal : undefined})
+        .then(function(r){
+          var latency = Date.now() - t0;
+          if(r.ok){
+            return r.text().then(function(body){
+              resolve({id:workerId, ok:true, status:r.status, latency_ms:latency, url:url, body_preview:String(body).slice(0,200), label:w.label});
+            });
+          } else {
+            resolve({id:workerId, ok:false, status:r.status, latency_ms:latency, url:url, error:"http_"+r.status, label:w.label});
+          }
+        })
+        .catch(function(e){
+          resolve({id:workerId, ok:false, latency_ms:Date.now()-t0, url:url, error:e.message||"fetch_failed", label:w.label});
+        });
+    }catch(_e){
+      if(typeof _axSafeCatch==="function")_axSafeCatch("axVerifyWorker",_e,"warn");
+      resolve({id:workerId, ok:false, error:_e.message});
+    }
+  });
+};
+
+window.axVerifyAllWorkers = function(){
+  return Promise.all(AX_WORKERS_REGISTRY.map(function(w){return axVerifyWorker(w.id);}))
+    .then(function(results){
+      var summary = {ts:Date.now(), total:results.length, ok:0, missing_url:0, errors:0, latency_avg:0, results:results};
+      var totalLatency = 0, latencyCount = 0;
+      results.forEach(function(r){
+        if(r.ok){ summary.ok++; totalLatency += (r.latency_ms||0); latencyCount++; }
+        else if(r.error === "no_url_configured") summary.missing_url++;
+        else summary.errors++;
+      });
+      summary.latency_avg = latencyCount ? Math.round(totalLatency/latencyCount) : 0;
+      try{ if(typeof ls === "function") ls("ax_workers_health", summary); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      try{ if(typeof axSecurityLog === "function") axSecurityLog("workers_verify_all", "ok="+summary.ok+" missing="+summary.missing_url+" err="+summary.errors); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      return summary;
+    });
+};
+
+/* Vue admin status workers (avec couleurs) */
+window.vCloudflareStatus = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var last = lg("ax_workers_health", null);
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#F38020,#FF8800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">☁️ Cloudflare Workers Status</h2>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axVerifyAllWorkers().then(function(r){if(typeof toast===\'function\')toast(\'Audit OK: \'+r.ok+\'/\'+r.total+\' workers vivants\',\'ok\');setTimeout(function(){if(typeof dc===\'function\')dc();},500);})" style="width:100%;margin-bottom:14px">🔄 Re-verifier tous les workers</button>';
+  if(last){
+    var color = last.ok === last.total ? "var(--ax-green)" : last.errors > 0 ? "var(--ax-red)" : "var(--ax-orange)";
+    h += '<div class="ax-card" style="border-left:4px solid '+color+'"><h3>📊 Bilan global</h3>';
+    h += '<div style="font-size:13px">'+last.ok+'/'+last.total+' OK · '+last.missing_url+' non configures · '+last.errors+' erreurs · latence moy '+last.latency_avg+'ms</div>';
+    h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">Dernier audit : '+(typeof _timeAgo==="function"?_timeAgo(last.ts):new Date(last.ts).toLocaleString("fr-FR"))+'</div></div>';
+    h += '<div style="margin-top:12px">';
+    last.results.forEach(function(r){
+      var statusEmoji = r.ok ? "✅" : (r.error === "no_url_configured" ? "⚪" : "❌");
+      var bg = r.ok ? "rgba(76,208,128,.08)" : (r.error === "no_url_configured" ? "rgba(255,255,255,.04)" : "rgba(255,88,88,.08)");
+      h += '<div class="ax-card" style="background:'+bg+';margin-bottom:8px;padding:10px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center"><strong>'+statusEmoji+' '+esc(r.id)+'</strong>';
+      if(r.ok) h += '<span style="font-size:10px;color:var(--ax-green)">'+r.latency_ms+'ms</span>';
+      else if(r.error === "no_url_configured") h += '<span style="font-size:10px;color:var(--ax-text-dim)">URL manquante</span>';
+      else h += '<span style="font-size:10px;color:var(--ax-red)">'+esc(r.error||"err")+'</span>';
+      h += '</div>';
+      if(r.label) h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">'+esc(r.label)+'</div>';
+      if(r.url) h += '<div style="font-size:10px;font-family:monospace;color:var(--ax-blue);margin-top:4px;word-break:break-all">'+esc(r.url)+'</div>';
+      if(r.error === "no_url_configured"){
+        h += '<button class="ax-btn ax-btn-outline" style="margin-top:6px;padding:4px 10px;font-size:11px" onclick="sv(\'vault\')">Configurer dans Coffre</button>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<div class="ax-card" style="text-align:center;padding:24px"><div style="font-size:32px">⏳</div><p>Premier audit en cours, clique le bouton pour lancer</p></div>';
+  }
+  return h + '</div>';
+};
+
+/* Wire route */
+setTimeout(function(){
+  try{
+    if(window._axCloudflareRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "cloudflarestatus" || K.view === "workersstatus" || K.view === "cf-status") && typeof vCloudflareStatus === "function") return vCloudflareStatus();
+      return orig.apply(this, arguments);
+    };
+    window._axCloudflareRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("cf_status_route",_e,"warn");}
+}, 1300);
+
+/* Auto-trigger : verification workers au boot admin (45s post-boot) + interval 6h */
+setTimeout(function(){
+  try{
+    if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return;
+    axVerifyAllWorkers().then(function(summary){
+      /* Si erreurs critiques → notif modal Kevin */
+      if(summary.errors > 0 && typeof axNeedsAttention === "function"){
+        axNeedsAttention({
+          id: "workers_errors", title: summary.errors + " workers Cloudflare en erreur",
+          body: "Audit auto a detecte "+summary.errors+" workers KO. Voir details.",
+          action: { label: "Voir status", run: function(){ if(typeof sv==="function") sv("cloudflarestatus"); } }
+        });
+      }
+    });
+    /* Periodique 6h */
+    setInterval(function(){
+      if(typeof axIsAdminStrict==="function" && axIsAdminStrict()) axVerifyAllWorkers();
+    }, 6*3600*1000);
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("workers_audit_boot",_e,"warn");}
+}, 45000);
+
+/* axDiscoverCloudflareWorkers : essaye de deviner subdomain via test push-worker */
+window.axDiscoverCloudflareWorkers = function(subdomain){
+  if(!subdomain || typeof subdomain !== "string") return Promise.resolve({ok:false, error:"need_subdomain"});
+  var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  /* Tester chaque worker via subdomain */
+  var found = [];
+  return Promise.all(AX_WORKERS_REGISTRY.map(function(w){
+    var url = "https://" + w.id + "." + subdomain + ".workers.dev";
+    return fetch(url + w.health_path, {method:"GET"})
+      .then(function(r){
+        if(r.ok){
+          ls(w.url_key, url);
+          found.push({id:w.id, url:url});
+          if(typeof axSecurityLog === "function") axSecurityLog("worker_discovered", w.id+" → "+url);
+        }
+        return null;
+      }).catch(function(){ return null; });
+  })).then(function(){
+    if(typeof toast === "function" && found.length) toast(found.length+" workers decouverts auto","ok",{duration:4000});
+    return {ok:found.length>0, found:found};
+  });
+};
+
+/* === AUTO-VERIF FIREBASE (Kevin: pareil pour firebase) === */
+window.AX_FIREBASE_PROJECTS = [
+  {id:"kdmc-clients", url:"https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app", role:"apex", purpose:"App Apex AI + clients"},
+  {id:"cmcteams-c16ab", url:"https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app", role:"cmcteams", purpose:"App CMCteams casino"}
+];
+
+window.axVerifyFirebaseProject = function(project){
+  return new Promise(function(resolve){
+    try{
+      var t0 = Date.now();
+      /* Test simple : ping shallow root pour check connectivite + rules permissivity */
+      fetch(project.url + "/.json?shallow=true", {method:"GET"})
+        .then(function(r){
+          var latency = Date.now() - t0;
+          var status = {id:project.id, url:project.url, role:project.role, purpose:project.purpose, latency_ms:latency, status:r.status};
+          if(r.status === 200){
+            return r.text().then(function(body){
+              status.ok = true;
+              status.rules_open_read = true; /* Si shallow renvoie 200, rules autorisent lecture */
+              status.body_preview = String(body).slice(0,150);
+              resolve(status);
+            });
+          } else if(r.status === 401 || r.status === 403){
+            status.ok = true; /* Le projet existe mais rules strictes (Phase 5) */
+            status.rules_open_read = false;
+            status.note = "Rules strictes (auth requise) - Phase 5 OK";
+            resolve(status);
+          } else if(r.status === 404){
+            status.ok = false;
+            status.error = "project_not_found_or_db_disabled";
+            resolve(status);
+          } else {
+            status.ok = false;
+            status.error = "http_"+r.status;
+            resolve(status);
+          }
+        })
+        .catch(function(e){
+          resolve({id:project.id, url:project.url, ok:false, error:e.message||"fetch_failed"});
+        });
+    }catch(_e){
+      if(typeof _axSafeCatch==="function")_axSafeCatch("axVerifyFirebaseProject",_e,"warn");
+      resolve({id:project.id, ok:false, error:_e.message});
+    }
+  });
+};
+
+window.axVerifyAllFirebase = function(){
+  return Promise.all(AX_FIREBASE_PROJECTS.map(function(p){return axVerifyFirebaseProject(p);}))
+    .then(function(results){
+      var summary = {ts:Date.now(), total:results.length, ok:0, errors:0, results:results};
+      results.forEach(function(r){ if(r.ok) summary.ok++; else summary.errors++; });
+      try{ if(typeof ls === "function") ls("ax_firebase_health", summary); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      try{ if(typeof axSecurityLog === "function") axSecurityLog("firebase_verify_all", "ok="+summary.ok+" err="+summary.errors); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      return summary;
+    });
+};
+
+window.vFirebaseStatus = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var last = lg("ax_firebase_health", null);
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#FFA000,#F57C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">🔥 Firebase Status</h2>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axVerifyAllFirebase().then(function(r){if(typeof toast===\'function\')toast(\'Audit OK: \'+r.ok+\'/\'+r.total+\' projets vivants\',\'ok\');setTimeout(function(){if(typeof dc===\'function\')dc();},500);})" style="width:100%;margin-bottom:14px">🔄 Re-verifier tous les projets Firebase</button>';
+  if(last){
+    var color = last.ok === last.total ? "var(--ax-green)" : "var(--ax-red)";
+    h += '<div class="ax-card" style="border-left:4px solid '+color+'"><h3>📊 Bilan</h3>';
+    h += '<div style="font-size:13px">'+last.ok+'/'+last.total+' projets accessibles</div>';
+    h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">Audit : '+(typeof _timeAgo==="function"?_timeAgo(last.ts):new Date(last.ts).toLocaleString("fr-FR"))+'</div></div>';
+    h += '<div style="margin-top:12px">';
+    last.results.forEach(function(r){
+      var emoji = r.ok ? "✅" : "❌";
+      var bg = r.ok ? "rgba(76,208,128,.08)" : "rgba(255,88,88,.08)";
+      var rulesNote = r.rules_open_read === false ? "🔒 Rules strictes (Phase 5)" : (r.rules_open_read === true ? "🔓 Rules ouvertes (Phase 4)" : "");
+      h += '<div class="ax-card" style="background:'+bg+';margin-bottom:8px;padding:10px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center"><strong>'+emoji+' '+esc(r.id)+'</strong>';
+      if(r.ok) h += '<span style="font-size:10px;color:var(--ax-green)">'+(r.latency_ms||0)+'ms</span>';
+      else h += '<span style="font-size:10px;color:var(--ax-red)">'+esc(r.error||"err")+'</span>';
+      h += '</div>';
+      if(r.purpose) h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:2px">'+esc(r.purpose)+'</div>';
+      if(rulesNote) h += '<div style="font-size:11px;color:var(--ax-blue);margin-top:2px">'+rulesNote+'</div>';
+      if(r.note) h += '<div style="font-size:11px;color:var(--ax-blue);margin-top:2px">ℹ️ '+esc(r.note)+'</div>';
+      if(r.url) h += '<div style="font-size:10px;font-family:monospace;color:var(--ax-blue);margin-top:4px;word-break:break-all">'+esc(r.url)+'</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<div class="ax-card" style="text-align:center;padding:24px"><div style="font-size:32px">⏳</div><p>Premier audit en cours, clique le bouton</p></div>';
+  }
+  return h + '</div>';
+};
+
+setTimeout(function(){
+  try{
+    if(window._axFirebaseRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "firebasestatus" || K.view === "fb-status") && typeof vFirebaseStatus === "function") return vFirebaseStatus();
+      return orig.apply(this, arguments);
+    };
+    window._axFirebaseRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("fb_status_route",_e,"warn");}
+}, 1400);
+
+/* Auto-trigger Firebase audit boot admin + interval 6h */
+setTimeout(function(){
+  try{
+    if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return;
+    axVerifyAllFirebase().then(function(summary){
+      if(summary.errors > 0 && typeof axNeedsAttention === "function"){
+        axNeedsAttention({
+          id: "firebase_errors", title: summary.errors + " projets Firebase en erreur",
+          body: "Audit auto detecte "+summary.errors+" projets KO.",
+          action: { label: "Voir status", run: function(){ if(typeof sv==="function") sv("firebasestatus"); } }
+        });
+      }
+    });
+    setInterval(function(){
+      if(typeof axIsAdminStrict==="function" && axIsAdminStrict()) axVerifyAllFirebase();
+    }, 6*3600*1000);
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("firebase_audit_boot",_e,"warn");}
+}, 50000);
+
+/* === axInfraSummary : audit cumule Cloudflare + Firebase + projets pour Kevin === */
+window.axInfraSummary = function(){
+  return Promise.all([
+    typeof axVerifyAllWorkers === "function" ? axVerifyAllWorkers() : Promise.resolve(null),
+    typeof axVerifyAllFirebase === "function" ? axVerifyAllFirebase() : Promise.resolve(null),
+    typeof axProjectsAudit === "function" ? Promise.resolve(axProjectsAudit()) : Promise.resolve(null),
+    typeof axEkdmcStatus === "function" ? Promise.resolve(axEkdmcStatus()) : Promise.resolve(null)
+  ]).then(function(arr){
+    var summary = {
+      ts: Date.now(),
+      cloudflare: arr[0],
+      firebase: arr[1],
+      projects: arr[2],
+      ekdmc: arr[3]
+    };
+    try{ if(typeof ls === "function") ls("ax_infra_summary", summary); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    return summary;
+  });
+};
+
+/* ============================================================
+   AX_V12_561_AUTONOMIE — Apex fait TOUT en autonomie (Kevin: "Je veux que apex fasse tout ca pour moi en autonomie")
+   ============================================================ */
+
+/* Master orchestrator : axAutoMaintenance() lance TOUS les audits + auto-fix + escalade */
+window.axAutoMaintenance = function(){
+  if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return Promise.resolve({ok:false,reason:"not_admin"});
+  return Promise.all([
+    typeof axEnsureAdminEverywhere === "function" ? Promise.resolve(axEnsureAdminEverywhere()) : Promise.resolve(null),
+    typeof axVerifyAllWorkers === "function" ? axVerifyAllWorkers() : Promise.resolve(null),
+    typeof axVerifyAllFirebase === "function" ? axVerifyAllFirebase() : Promise.resolve(null),
+    typeof axProjectsAudit === "function" ? Promise.resolve(axProjectsAudit()) : Promise.resolve(null),
+    typeof axEkdmcAudit === "function" ? Promise.resolve(axEkdmcAudit()) : Promise.resolve(null),
+    typeof axCodeQualityAudit === "function" ? Promise.resolve(axCodeQualityAudit()) : Promise.resolve(null),
+    typeof axCodeCompanionAudit === "function" ? axCodeCompanionAudit() : Promise.resolve(null),
+    typeof axAutoConfigureAPIs === "function" ? Promise.resolve(axAutoConfigureAPIs()) : Promise.resolve(null),
+    typeof axDiagnoseSilentCatchLoop === "function" ? Promise.resolve(axDiagnoseSilentCatchLoop()) : Promise.resolve(null)
+  ]).then(function(results){
+    var report = {
+      ts: Date.now(),
+      admin_check: results[0],
+      cloudflare: results[1],
+      firebase: results[2],
+      projects: results[3],
+      ekdmc: results[4],
+      code_quality: results[5],
+      code_companion: results[6],
+      auto_config: results[7],
+      silent_loops: results[8]
+    };
+    try{ if(typeof ls === "function") ls("ax_auto_maintenance_last", report); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    /* Auto-fix patterns reconnus (silent loops) */
+    if(report.silent_loops && report.silent_loops.loops && typeof axAutoFixByPattern === "function"){
+      report.silent_loops.loops.forEach(function(loop){
+        try{ axAutoFixByPattern(loop.ctx); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      });
+    }
+    if(typeof axSecurityLog === "function") axSecurityLog("auto_maintenance_run", "ts="+report.ts);
+    return report;
+  });
+};
+
+/* Auto-trigger : daily à boot + interval 12h (admin only) */
+setTimeout(function(){
+  try{
+    if(window._axAutoMaintenanceWired) return;
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    /* Boot : si jamais run OU > 24h ago */
+    var last = lg("ax_auto_maintenance_last", null);
+    if(!last || (Date.now() - (last.ts||0)) > 24*3600*1000){
+      if(typeof axIsAdminStrict==="function" && axIsAdminStrict()){
+        axAutoMaintenance().then(function(r){
+          /* Discrete : pas de toast spam, juste audit log */
+        });
+      }
+    }
+    /* Periodique 12h */
+    setInterval(function(){
+      if(typeof axIsAdminStrict==="function" && axIsAdminStrict()) axAutoMaintenance();
+    }, 12*3600*1000);
+    window._axAutoMaintenanceWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("auto_maintenance_wire",_e,"warn");}
+}, 60000); /* 60s post-boot */
+
+/* Vue admin : affiche le dernier rapport autonomie */
+window.vAutonomyDashboard = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var last = lg("ax_auto_maintenance_last", null);
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">🤖 Apex Autonomie</h2>';
+  h += '<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">Apex fait tout pour toi : audits + auto-fix + escalade Claude Code. Aucune action Kevin.</p>';
+  h += '<button class="ax-btn ax-btn-primary" onclick="axAutoMaintenance().then(function(){if(typeof toast===\'function\')toast(\'Maintenance autonome OK\',\'ok\');setTimeout(function(){if(typeof dc===\'function\')dc();},500);})" style="width:100%;margin-bottom:14px">⚡ Lancer maintenance complete maintenant</button>';
+  if(last){
+    h += '<div class="ax-card"><h3>📊 Dernier rapport</h3><div style="font-size:11px;color:var(--ax-text-dim)">'+(typeof _timeAgo==="function"?_timeAgo(last.ts):new Date(last.ts).toLocaleString("fr-FR"))+'</div><div style="font-size:13px;line-height:1.8;margin-top:8px">';
+    if(last.cloudflare) h += '<div>☁️ Cloudflare : '+last.cloudflare.ok+'/'+last.cloudflare.total+' workers</div>';
+    if(last.firebase) h += '<div>🔥 Firebase : '+last.firebase.ok+'/'+last.firebase.total+' projets</div>';
+    if(last.projects) h += '<div>📁 Projets : '+last.projects.summary.ok+' OK / '+last.projects.summary.warn+' warns / '+last.projects.summary.err+' err</div>';
+    if(last.ekdmc) h += '<div>🛒 e-KDMC : '+(last.ekdmc.ready?"✅ ready":"⏳ "+last.ekdmc.tokens_missing.length+" tokens manquants")+'</div>';
+    if(last.code_quality && last.code_quality.jsdoc) h += '<div>🧹 Code Quality JSDoc : '+last.code_quality.jsdoc.coverage_pct+'%</div>';
+    if(last.silent_loops) h += '<div>🔄 Silent loops actuels : '+(last.silent_loops.loops?last.silent_loops.loops.length:0)+'</div>';
+    if(last.auto_config) h += '<div>🔑 Tokens API : '+last.auto_config.present+' configures / '+last.auto_config.missing+' manquants</div>';
+    if(last.admin_check) h += '<div>👑 Admin check : '+(last.admin_check.ok?"✅ OK":"❌ "+last.admin_check.reason)+'</div>';
+    h += '</div></div>';
+  } else {
+    h += '<div class="ax-card" style="text-align:center;padding:24px"><div style="font-size:32px">🤖</div><p>Pas encore de rapport. Clique le bouton.</p></div>';
+  }
+  /* Liste outils autonomes actifs */
+  h += '<div class="ax-card" style="margin-top:12px;border-left:4px solid var(--ax-gold)"><h3>⚙️ Sentinelles actives 24/7</h3><ul style="font-size:12px;line-height:1.8;padding-left:20px">';
+  h += '<li>axProjectsAudit (hebdo lundi)</li>';
+  h += '<li>axCodeCompanionAudit (hebdo, GitHub Actions failures)</li>';
+  h += '<li>axCodeQualityAudit (hebdo, JSDoc/complexity)</li>';
+  h += '<li>axEkdmcAudit (quotidien)</li>';
+  h += '<li>axVerifyAllWorkers (boot + 6h)</li>';
+  h += '<li>axVerifyAllFirebase (boot + 6h)</li>';
+  h += '<li>axAutoConfigureAPIs (quotidien)</li>';
+  h += '<li>axEnsureAdminEverywhere (5min)</li>';
+  h += '<li>axDiagnoseSilentCatchLoop (2min)</li>';
+  h += '<li>axCodeCompanionAudit auto-fix CI (1h)</li>';
+  h += '<li>Token Firebase auto-renew (5min)</li>';
+  h += '<li>SW auto-update (30min)</li>';
+  h += '<li>Auto-failover providers IA (continu)</li>';
+  h += '<li>Auto-move credentials wrong field (continu)</li>';
+  h += '<li>RGPD breach watcher (1h, escalade APDP auto)</li>';
+  h += '<li>axAutoMaintenance master (12h cumule tous)</li>';
+  h += '</ul></div>';
+  return h + '</div>';
+};
+
+setTimeout(function(){
+  try{
+    if(window._axAutonomyRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "autonomy" || K.view === "autonomie-apex" || K.view === "apex-autonomy") && typeof vAutonomyDashboard === "function") return vAutonomyDashboard();
+      return orig.apply(this, arguments);
+    };
+    window._axAutonomyRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("autonomy_route",_e,"warn");}
+}, 1500);
 
 </script>
 </body>
