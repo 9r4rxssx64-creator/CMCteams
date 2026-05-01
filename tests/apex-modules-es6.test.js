@@ -333,8 +333,79 @@ function assert(cond, msg) {
     assert(fu.SKIP_REDACT_HOSTS.length >= 15, "only " + fu.SKIP_REDACT_HOSTS.length);
   });
 
+  /* ---------------- ui-helpers.js (v595) ---------------- */
+  const ui = await import(path.join("..", "apex-ai", "modules", "ui-helpers.js"));
+
+  await test("ui-helpers.escHTML strips tags", () => {
+    assert(ui.escHTML("<script>") === "&lt;script&gt;", "not escaped");
+  });
+
+  await test("ui-helpers.escHTML quotes", () => {
+    const r = ui.escHTML('"hello"');
+    assert(r.indexOf("&quot;") >= 0, "quote not escaped: " + r);
+  });
+
+  await test("ui-helpers.escHTML null safe", () => {
+    assert(ui.escHTML(null) === "", "null should be empty");
+  });
+
+  await test("ui-helpers.formatBytes", () => {
+    assert(ui.formatBytes(1024) === "1.0 KB", "wrong format: " + ui.formatBytes(1024));
+    assert(ui.formatBytes(500).indexOf("B") > 0, "bytes wrong");
+  });
+
+  await test("ui-helpers.cx joins truthy", () => {
+    assert(ui.cx("a", null, false, "b") === "a b", "wrong: " + ui.cx("a", null, false, "b"));
+  });
+
+  await test("ui-helpers.truncate", () => {
+    assert(ui.truncate("hello world", 5) === "he...", "wrong: " + ui.truncate("hello world", 5));
+  });
+
+  await test("ui-helpers.parseQuery", () => {
+    const p = ui.parseQuery("?view=admin&id=123");
+    assert(p.view === "admin" && p.id === "123", "wrong: " + JSON.stringify(p));
+  });
+
+  await test("ui-helpers.formatRelativeTime recent", () => {
+    const r = ui.formatRelativeTime(Date.now() - 5000);
+    assert(r.indexOf("s") > 0, "wrong: " + r);
+  });
+
+  /* ---------------- ai-providers.js (v595) ---------------- */
+  const aip = await import(path.join("..", "apex-ai", "modules", "ai-providers.js"));
+
+  await test("ai-providers.PROVIDERS has 5 providers", () => {
+    assert(Object.keys(aip.PROVIDERS).length >= 5, "only " + Object.keys(aip.PROVIDERS).length);
+  });
+
+  await test("ai-providers.buildFailoverChain filters by available keys", () => {
+    const chain = aip.buildFailoverChain(["ax_anthropic_key", "ax_groq_key"]);
+    assert(chain.length === 2, "wrong count: " + chain.length);
+    assert(chain[0].id === "anthropic", "wrong order: " + chain[0].id);
+  });
+
+  await test("ai-providers.pickCheapest prefers free tier", () => {
+    const p = aip.pickCheapest(["ax_anthropic_key", "ax_groq_key"]);
+    assert(p && p.id === "groq", "should pick groq (free): " + (p && p.id));
+  });
+
+  await test("ai-providers.estimateCost", () => {
+    const c = aip.estimateCost("anthropic", 1000, 500);
+    assert(c > 0 && c < 1, "wrong cost: " + c);
+  });
+
+  await test("ai-providers.shouldUseCaching long prompt", () => {
+    const longPrompt = "x".repeat(10000);
+    assert(aip.shouldUseCaching(longPrompt) === true, "should cache");
+  });
+
+  await test("ai-providers.shouldUseCaching short prompt", () => {
+    assert(aip.shouldUseCaching("short") === false, "should not cache");
+  });
+
   /* ---------------- Module versions ---------------- */
-  await test("modules expose VERSION", () => {
+  await test("modules expose VERSION (9 modules)", () => {
     assert(typeof sec.VERSION === "string", "security.VERSION");
     assert(typeof creds.VERSION === "string", "credentials.VERSION");
     assert(typeof perf.VERSION === "string", "perf.VERSION");
@@ -342,6 +413,8 @@ function assert(cond, msg) {
     assert(typeof ai.VERSION === "string", "ai.VERSION");
     assert(typeof cv.VERSION === "string", "crypto-vault.VERSION");
     assert(typeof fu.VERSION === "string", "fetch-utils.VERSION");
+    assert(typeof ui.VERSION === "string", "ui-helpers.VERSION");
+    assert(typeof aip.VERSION === "string", "ai-providers.VERSION");
   });
 
   /* ---------------- Bilan ---------------- */
