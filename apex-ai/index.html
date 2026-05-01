@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.620",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.625",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33389,6 +33389,49 @@ setTimeout(function(){
   };
 }, 2500);
 
+/* ============================================================
+   AX_V12_625 — AUTO-DISABLE PANIC MODE (Kevin "desactive en autonomie")
+   Code SYNCHRONE qui s execute AVANT v569 PANIC MODE IIFE.
+   Detect panic mode actif depuis > 30 min (peu probable d etre encore
+   utile) -> auto-disable. Stocke timestamp d activation pour suivi.
+   Aussi : si Apex tourne deja en v12.625+, panic mode est obsolete
+   (les nouveaux fixes evitent les besoins du panic mode original).
+   ============================================================ */
+(function(){
+  try{
+    if(typeof localStorage === "undefined") return;
+    var panicActive = localStorage.getItem("ax_panic_mode") === "true";
+    if(!panicActive) return;
+    var tsStr = localStorage.getItem("ax_panic_mode_ts");
+    var ts = tsStr ? parseInt(tsStr, 10) : 0;
+    var now = Date.now();
+    var age = now - ts;
+    /* Auto-disable conditions : pas de timestamp OU age > 30 min OU URL contient ?nuke=0 */
+    var shouldDisable = !ts || age > 1800000 || /[?&]nuke=0/.test(location.search || "");
+    if(shouldDisable){
+      localStorage.removeItem("ax_panic_mode");
+      localStorage.removeItem("ax_safe_mode");
+      try{ if(typeof console !== "undefined") console.log("[v625] AUTO-DISABLE panic mode (age=" + Math.round(age/60000) + "min)"); }catch(_e){}
+      /* Toast info apres boot complet */
+      try{
+        setTimeout(function(){
+          if(typeof toast === "function"){
+            toast("✅ Mode panique desactive auto (Apex stable v12.625+)","ok",{duration:6000,force:true});
+          }
+          if(typeof window.axSecurityLog === "function"){
+            window.axSecurityLog("panic_mode_deactivated", "v625_auto_disable_age=" + Math.round(age/60000) + "min");
+          }
+        }, 4000);
+      }catch(_e){}
+    } else {
+      /* Garde actif mais memo timestamp */
+      if(!ts) localStorage.setItem("ax_panic_mode_ts", String(now));
+    }
+  }catch(_e){
+    try{ if(typeof console !== "undefined") console.warn("[v625] auto-disable panic skip:", _e && _e.message); }catch(__){}
+  }
+})();
+
 /* AX_V12_569 — PANIC MODE + bilan Coffre auto
    ============================================================ */
 /* ============================================================
@@ -33403,6 +33446,7 @@ setTimeout(function(){
     var nuke = /[?&]nuke=1/.test(location.search) || localStorage.getItem("ax_panic_mode") === "true";
     if(nuke){
       localStorage.setItem("ax_panic_mode", "true");
+      localStorage.setItem("ax_panic_mode_ts", String(Date.now())); /* v625 timestamp for auto-disable */
       localStorage.setItem("ax_safe_mode", "true");
       /* Clear TOUS les intervals existants au boot et toutes les 2s pendant 30s */
       var killCount = 0;
