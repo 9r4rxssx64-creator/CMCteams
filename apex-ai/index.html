@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.625",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.630",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -33388,6 +33388,103 @@ setTimeout(function(){
     return orig.apply(this, arguments);
   };
 }, 2500);
+
+/* ============================================================
+   AX_V12_630 — AUTONOMIE TOTALE : Auto-deploy workers manquants au boot
+   Kevin: "Automatise tout autonomie. Pareil pour tout ce que tu me demande"
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axAutoDeployV630) return;
+  window._axAutoDeployV630 = true;
+  function probeWorker(url, timeoutMs){
+    return new Promise(function(resolve){
+      try{
+        var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+        var timer = setTimeout(function(){ if(ctrl) try{ctrl.abort();}catch(_e1){_axSafeCatch&&_axSafeCatch("v630_abort",_e1);} resolve(false); }, timeoutMs || 3000);
+        fetch(url, {method:"HEAD", mode:"no-cors", signal: ctrl ? ctrl.signal : undefined})
+          .then(function(){ clearTimeout(timer); resolve(true); })
+          .catch(function(){ clearTimeout(timer); resolve(false); });
+      }catch(_e2){ resolve(false); }
+    });
+  }
+  window.axAutoDeployIfMissing = async function(){
+    if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()) return {ok:false, reason:"not_admin"};
+    var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var lastAuto = lg2("ax_auto_deploy_last", null);
+    if(lastAuto && lastAuto.ts && (Date.now() - lastAuto.ts) < 3600000){
+      return {ok:false, reason:"already_attempted_recently"};
+    }
+    var subdomain = lg2("ax_cf_subdomain", "desarzens-kevin");
+    var workersToCheck = [
+      {name:"apex-auth-worker", url:"https://apex-auth-worker." + subdomain + ".workers.dev/health"},
+      {name:"apex-chat-svc", url:"https://apex-chat-svc." + subdomain + ".workers.dev/health"},
+      {name:"apex-vault-svc", url:"https://apex-vault-svc." + subdomain + ".workers.dev/health"},
+      {name:"apex-sentinels-svc", url:"https://apex-sentinels-svc." + subdomain + ".workers.dev/health"}
+    ];
+    var results = await Promise.all(workersToCheck.map(function(w){
+      return probeWorker(w.url, 3000).then(function(alive){return {name:w.name, alive:alive};});
+    }));
+    var missing = results.filter(function(r){return !r.alive;});
+    if(!missing.length){
+      ls2("ax_auto_deploy_last", {ts:Date.now(), all_alive:true});
+      return {ok:true, all_alive:true, results:results};
+    }
+    if(typeof window.axGetTokenDecrypted !== "function") return {ok:false, reason:"no_decrypt_helper"};
+    var ghToken = await window.axGetTokenDecrypted(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+    var cfToken = await window.axGetTokenDecrypted(["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"]);
+    if(!ghToken){
+      ls2("ax_auto_deploy_last", {ts:Date.now(), reason:"no_gh_pat"});
+      return {ok:false, reason:"no_gh_pat", missing:missing};
+    }
+    if(!cfToken){
+      ls2("ax_auto_deploy_last", {ts:Date.now(), reason:"no_cf_token"});
+      return {ok:false, reason:"no_cf_token", missing:missing};
+    }
+    if(typeof toast === "function") toast("🤖 Apex deploie auto " + missing.length + " workers manquants...","info",{duration:6000,force:true});
+    if(typeof window.axPushGitHubSecret === "function"){
+      try{
+        var pushResult = await window.axPushGitHubSecret("CLOUDFLARE_API_TOKEN", cfToken);
+        if(!pushResult.ok){
+          ls2("ax_auto_deploy_last", {ts:Date.now(), reason:"push_secret_failed"});
+          return {ok:false, reason:"push_secret_failed", error:pushResult.error};
+        }
+      }catch(e){
+        ls2("ax_auto_deploy_last", {ts:Date.now(), reason:"push_secret_error"});
+        return {ok:false, reason:"push_secret_error", error:e.message};
+      }
+    }
+    try{
+      var fr = await fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml/dispatches", {
+        method: "POST",
+        headers: {"Authorization":"Bearer "+ghToken, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+        body: JSON.stringify({ref:"main", inputs:{service:"all", env:"production"}})
+      });
+      ls2("ax_auto_deploy_last", {ts:Date.now(), workflow_dispatched:fr.ok, status:fr.status});
+      if(fr.ok){
+        if(typeof toast === "function") toast("🎉 Deploiement auto lance ! 4 workers en cours (~2 min)","ok",{duration:10000,force:true});
+        if(typeof window.axSecurityLog === "function") window.axSecurityLog("workers_auto_deploy_v630_triggered", "missing=" + missing.map(function(m){return m.name;}).join(","));
+        return {ok:true, workflow_dispatched:true};
+      } else {
+        return {ok:false, reason:"workflow_dispatch_failed", status:fr.status};
+      }
+    }catch(e){
+      ls2("ax_auto_deploy_last", {ts:Date.now(), reason:"workflow_dispatch_error"});
+      return {ok:false, reason:"workflow_dispatch_error", error:e.message};
+    }
+  };
+  setTimeout(function(){
+    try{
+      if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()) return;
+      window.axAutoDeployIfMissing().then(function(r){
+        if(typeof console !== "undefined") console.log("[v630] auto-deploy result:", r);
+      }).catch(function(_e3){_axSafeCatch&&_axSafeCatch("v630_run",_e3);});
+    }catch(_e4){_axSafeCatch&&_axSafeCatch("v630_outer",_e4);}
+  }, 30000);
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v630] auto-deploy skip:", _outerE && _outerE.message); }catch(_e5){}
+}})();
 
 /* ============================================================
    AX_V12_625 — AUTO-DISABLE PANIC MODE (Kevin "desactive en autonomie")

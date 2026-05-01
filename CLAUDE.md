@@ -2800,6 +2800,57 @@ Si Apex apprend qu'un client a déménagé → CMCteams (s'il est employé aussi
 
 ---
 
+## 🤖 RÈGLE PERMANENTE — AUTOMATISE TOUT AUTONOMIE (Kevin 2026-05-01, RENFORCÉE)
+
+> **"Pareil pour tout ce que tu me demande. Automatise tout autonomie."** — Kevin 2026-05-01
+
+**Règle absolue, RENFORCÉE par Kevin** — applicable à TOUTE action future :
+
+### 1. Test mental obligatoire avant CHAQUE message à Kevin
+
+Avant d'écrire "tu dois cliquer X", "va sur Y", "tape Z" → me poser :
+
+1. **Apex peut-il le faire via API ?** (GitHub libsodium PUT secrets, Cloudflare API, Anthropic, etc.)
+2. **Apex peut-il le détecter automatiquement** (HEAD test, sentinelle au boot) ?
+3. **Apex peut-il l'exécuter sans demander confirmation** (whitelist auto-fix) ?
+
+Si OUI à au moins 1 → **Apex fait + Kevin n'a aucun clic**.
+
+### 2. Auto-detect + auto-act au boot
+
+Au boot admin, Apex DOIT scanner :
+- Tokens disponibles (axGetTokenDecrypted scan Vault)
+- Workers déployés (HEAD test cibles)
+- Secrets GitHub configurés (API GET /actions/secrets)
+- Sentinelles requises pour ses sentinelles
+
+Si gap détecté + tokens disponibles → fix auto (push secret, trigger workflow, configure proxy).
+
+### 3. Notification non-blocking
+
+Toast info passive ("✅ 4 workers déployés en arrière-plan") au lieu de modal blocking.
+
+### 4. Fallback chain
+
+Si action API échoue :
+- Retry 3× exponential backoff (axFetchWithRetry)
+- Failover provider alternatif si applicable
+- Escalade Claude Code via ax_claude_todo en dernier recours
+- JAMAIS demander à Kevin sans avoir essayé tout l'autonomie possible
+
+### 5. Application immédiate
+
+Cette règle s'applique à toutes mes futures réponses. Je n'écrirai plus :
+- ❌ "Va sur GitHub Settings"
+- ❌ "Tape ce lien"
+- ❌ "Clique sur Run workflow"
+
+Sauf si vraiment impossible côté Apex (KYC physique, paiement CB, signature manuscrite).
+
+S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
+
+---
+
 ## 🤝 RÈGLE PERMANENTE — AUTONOMIE SUR TÂCHES KEVIN (Kevin 2026-04-25, ABSOLUE)
 
 > **"Fais tout au maximum en autonomie. Laisse-moi ce qu'il t'est impossible de faire après avoir cherché d'autres manières. Vérifie dans ma liste si tu ne peux pas en faire maintenant avec des nouveaux outils, de nouveaux accès. Automatise tout mon travail au maximum, pareil dans toutes mes applications. Qu'il ne me demande pas de faire ci ou ça s'il peut le faire tout seul."**
