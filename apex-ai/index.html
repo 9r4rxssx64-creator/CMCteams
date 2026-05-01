@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.559",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.560",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -31487,6 +31487,133 @@ window.axAuditAdminRights = function(){
     return report;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axAuditAdminRights",_e,"warn"); return null;}
 };
+
+/* ============================================================
+   AX_V12_560 — Liens directs admin par projet (acces 1-clic Kevin)
+   Kevin: "Mets aussi lien direct par apex pour toutes les projets. En admin"
+   ============================================================ */
+
+window.AX_PROJECTS_ADMIN_LINKS = {
+  "apex-ai": [
+    {label:"App live", url:"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/", icon:"🚀"},
+    {label:"Dashboard admin", view:"dashboard", icon:"📊"},
+    {label:"Coffre", view:"vault", icon:"🔐"},
+    {label:"Apex Code Companion", view:"apexcode", icon:"💻"},
+    {label:"Audit projets", view:"projects", icon:"📁"},
+    {label:"Source GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/index.html", icon:"📦"},
+    {label:"Edit GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/edit/main/apex-ai/index.html", icon:"✏️"}
+  ],
+  "cmcteams": [
+    {label:"App live", url:"https://9r4rxssx64-creator.github.io/CMCteams/", icon:"🎰"},
+    {label:"Vue admin", url:"https://9r4rxssx64-creator.github.io/CMCteams/?view=cmcadmin", icon:"⚙️"},
+    {label:"Audit log", url:"https://9r4rxssx64-creator.github.io/CMCteams/?view=auditlog", icon:"📋"},
+    {label:"Source GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html", icon:"📦"},
+    {label:"Firebase RTDB", url:"https://console.firebase.google.com/u/0/project/cmcteams-c16ab/database/cmcteams-c16ab-default-rtdb/data", icon:"🔥"},
+    {label:"Firebase Rules", url:"https://console.firebase.google.com/u/0/project/cmcteams-c16ab/database/cmcteams-c16ab-default-rtdb/rules", icon:"🔒"}
+  ],
+  "apexchat": [
+    {label:"App live (Mode A)", url:"https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/", icon:"💬"},
+    {label:"Dashboard admin", url:"https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/?view=admin", icon:"📊"},
+    {label:"PROJECT_MEMO", url:"https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/PROJECT_MEMO.md", icon:"📖"},
+    {label:"D1 Migrations", url:"https://github.com/9r4rxssx64-creator/cmcteams/tree/main/messaging-app/d1-migrations", icon:"💾"},
+    {label:"Workers source", url:"https://github.com/9r4rxssx64-creator/cmcteams/tree/main/messaging-app/workers", icon:"⚡"}
+  ],
+  "socialvideo": [
+    {label:"Dashboard Apex", view:"socialvideo", icon:"🎬"},
+    {label:"Source GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/tree/main/tools/social", icon:"📦"},
+    {label:"Workflow runs", url:"https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/social-publish.yml", icon:"⚙️"},
+    {label:"Scheduler", url:"https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/social-scheduler.yml", icon:"⏰"},
+    {label:"YouTube Studio", url:"https://studio.youtube.com/", icon:"📺"},
+    {label:"FB Business Suite", url:"https://business.facebook.com/", icon:"📘"},
+    {label:"IG Business", url:"https://business.instagram.com/", icon:"📷"}
+  ],
+  "remote": [
+    {label:"Vue Apex", view:"remote", icon:"🎮"},
+    {label:"Source GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/index.html", icon:"📦"}
+  ],
+  "crackpass": [
+    {label:"Vue Apex", view:"crackpass", icon:"🔐"},
+    {label:"Vault Apex", view:"vault", icon:"🗝"}
+  ],
+  "ekdmc": [
+    {label:"Dashboard admin", view:"ekdmc", icon:"🛒"},
+    {label:"Boutique Digital Vault", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/stores/digital-vault/", icon:"💎"},
+    {label:"Boutique Tech Hub", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/stores/tech-hub/", icon:"🔧"},
+    {label:"Boutique Glow Wellness", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/stores/glow-wellness/", icon:"✨"},
+    {label:"Boutique Pawsome", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/stores/pawsome/", icon:"🐾"},
+    {label:"Boutique EcoCraft", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/stores/ecocraft/", icon:"🌿"},
+    {label:"Dashboard e-KDMC", url:"https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/dashboard/", icon:"📊"},
+    {label:"Stripe Dashboard", url:"https://dashboard.stripe.com/dashboard", icon:"💳"},
+    {label:"Stripe Webhooks", url:"https://dashboard.stripe.com/webhooks", icon:"🔗"},
+    {label:"Brevo (emails)", url:"https://app.brevo.com/", icon:"✉️"},
+    {label:"Netlify", url:"https://app.netlify.com/", icon:"💠"},
+    {label:"Source GitHub", url:"https://github.com/9r4rxssx64-creator/cmcteams/tree/main/_PROJECTS_KDMC/e-KDMC", icon:"📦"},
+    {label:"TODO Kevin", url:"https://github.com/9r4rxssx64-creator/cmcteams/blob/main/_PROJECTS_KDMC/e-KDMC/TODO_KEVIN.md", icon:"📝"}
+  ]
+};
+
+window.axOpenProjectAdminLink = function(projectId, linkIndex){
+  try{
+    if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+      if(typeof toast === "function") toast("Reserve admin","warn");
+      return false;
+    }
+    var links = AX_PROJECTS_ADMIN_LINKS[projectId];
+    if(!links || !links[linkIndex]){ if(typeof toast==="function") toast("Lien introuvable","err"); return false; }
+    var link = links[linkIndex];
+    if(link.url){
+      window.open(link.url, "_blank");
+      if(typeof axSecurityLog==="function") axSecurityLog("admin_link_opened", projectId+":"+link.label);
+    } else if(link.view && typeof sv === "function"){
+      sv(link.view);
+    }
+    return true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axOpenProjectAdminLink",_e,"warn"); return false;}
+};
+
+/* Vue admin liens directs : vAdminLinksProjects */
+window.vAdminLinksProjects = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,var(--ax-gold),var(--ax-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px">🔗 Liens directs admin par projet</h2>';
+  h += '<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">Acces 1-clic admin pour les 7 projets Apex. Tous testes + traces audit.</p>';
+  var projectsMeta = {
+    "apex-ai":{name:"APEX AI", icon:"✦", color:"var(--ax-gold)"},
+    "cmcteams":{name:"CMCteams", icon:"🎰", color:"var(--ax-red)"},
+    "apexchat":{name:"Apex Chat", icon:"💬", color:"#25D366"},
+    "socialvideo":{name:"Social Video", icon:"🎬", color:"#ff0050"},
+    "remote":{name:"Telecommande", icon:"🎮", color:"#ff5858"},
+    "crackpass":{name:"CrackPass", icon:"🔐", color:"var(--ax-green)"},
+    "ekdmc":{name:"e-KDMC", icon:"🛒", color:"var(--ax-orange)"}
+  };
+  Object.keys(AX_PROJECTS_ADMIN_LINKS).forEach(function(pid){
+    var meta = projectsMeta[pid] || {name:pid, icon:"📁", color:"var(--ax-gold)"};
+    var links = AX_PROJECTS_ADMIN_LINKS[pid];
+    h += '<div class="ax-card" style="border-left:4px solid '+meta.color+';margin-bottom:12px">';
+    h += '<h3>'+meta.icon+' '+esc(meta.name)+' <span style="font-size:11px;color:var(--ax-text-dim)">('+links.length+' liens)</span></h3>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">';
+    links.forEach(function(link, idx){
+      h += '<button class="ax-btn ax-btn-outline" style="padding:8px;font-size:12px;text-align:left" onclick="axOpenProjectAdminLink(\''+pid+'\','+idx+')">'+(link.icon||'🔗')+' '+esc(link.label)+'</button>';
+    });
+    h += '</div></div>';
+  });
+  return h + '</div>';
+};
+
+/* Wire route adminlinks dans vMain */
+setTimeout(function(){
+  try{
+    if(window._axAdminLinksRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "adminlinksprojects" || K.view === "projet-liens" || K.view === "directlinks") && typeof vAdminLinksProjects === "function") return vAdminLinksProjects();
+      return orig.apply(this, arguments);
+    };
+    window._axAdminLinksRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("admin_links_route_wire",_e,"warn");}
+}, 1200);
 
 </script>
 </body>
