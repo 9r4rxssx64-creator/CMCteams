@@ -6,3 +6,4 @@ package-lock.json
 tools/video/frames/
 tools/video/output/_palette.png
 tools/video/assets/*.png
+BRANCH_PATCH_FULL.patch
