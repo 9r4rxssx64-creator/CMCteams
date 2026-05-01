@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.562",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.563",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,400 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_563 — EMAIL INTEGRATION (Gmail + Outlook + IMAP)
+   Kevin: "Oui pour tous les mails, gmail Outlook etc"
+   + "trier organiser mes boites de receptions"
+   ============================================================ */
+
+window.AX_EMAIL_PROVIDERS = {
+  gmail: {
+    auth_url: "https://accounts.google.com/o/oauth2/v2/auth",
+    token_url: "https://oauth2.googleapis.com/token",
+    api_base: "https://gmail.googleapis.com/gmail/v1/users/me",
+    scope: "https://www.googleapis.com/auth/gmail.modify",
+    client_id_key: "ax_gmail_client_id",
+    client_id_setup_url: "https://console.cloud.google.com/apis/credentials/oauthclient",
+    response_type: "token", /* Implicit flow PWA-friendly */
+    label: "Gmail",
+    icon: "📧"
+  },
+  outlook: {
+    auth_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    token_url: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    api_base: "https://graph.microsoft.com/v1.0/me",
+    scope: "Mail.ReadWrite offline_access",
+    client_id_key: "ax_outlook_client_id",
+    client_id_setup_url: "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
+    response_type: "token",
+    label: "Outlook / Microsoft 365",
+    icon: "📨"
+  },
+  icloud: {
+    note: "iCloud Mail = IMAP only, requires app-specific password",
+    imap_host: "imap.mail.me.com:993",
+    imap_setup_url: "https://appleid.apple.com/account/manage",
+    label: "iCloud Mail (IMAP)",
+    icon: "☁️",
+    requires_imap_proxy: true /* Necessite Cloudflare Worker proxy IMAP */
+  }
+};
+
+/* OAuth lance flow pour Gmail/Outlook (implicit token) */
+window.axEmailAuth = function(provider){
+  if(!provider || !AX_EMAIL_PROVIDERS[provider]) return Promise.resolve({ok:false,error:"unknown_provider"});
+  var def = AX_EMAIL_PROVIDERS[provider];
+  if(def.requires_imap_proxy){
+    if(typeof axNeedsAttention === "function"){
+      axNeedsAttention({
+        id:"email_imap_"+provider, title:"iCloud IMAP requis",
+        body:"iCloud Mail necessite : 1) un mot de passe specifique app (Apple ID > Security > App-specific passwords), 2) un Cloudflare Worker proxy IMAP. Apex peut t'aider mais pas auto.",
+        action:{label:"Generer app password", run:function(){window.open(def.imap_setup_url,"_blank");}}
+      });
+    }
+    return Promise.resolve({ok:false, requires_setup:true});
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var clientId = lg(def.client_id_key, "");
+  if(!clientId){
+    /* Apex ouvre la page de creation OAuth client + auto-resume */
+    if(typeof axOpenAndAutoResume === "function"){
+      axOpenAndAutoResume(def.client_id_setup_url,
+        "Creer OAuth Client " + def.label,
+        "1) Page console " + def.label + " ouverte\n2) Cree un OAuth 2.0 Client ID (type: Web application)\n3) Redirect URI : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/oauth-callback.html\n4) Copie le Client ID\n5) Reviens sur Apex - colle dans Coffre cle " + def.client_id_key + "\n6) Apex relance OAuth tout seul",
+        function(){ axEmailAuth(provider); }
+      );
+    }
+    return Promise.resolve({ok:false, error:"no_client_id"});
+  }
+  /* Construire URL OAuth */
+  var redirectUri = window.location.origin + window.location.pathname.replace(/[^/]*$/, "") + "oauth-callback.html";
+  var authUrl = def.auth_url + "?" +
+    "client_id=" + encodeURIComponent(clientId) +
+    "&redirect_uri=" + encodeURIComponent(redirectUri) +
+    "&response_type=" + (def.response_type||"token") +
+    "&scope=" + encodeURIComponent(def.scope) +
+    "&state=" + encodeURIComponent(provider) +
+    "&prompt=consent";
+  /* Sauve provider attendu */
+  try{ localStorage.setItem("ax_oauth_pending_provider", provider); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+  /* Ouvre + auto-resume */
+  if(typeof axOpenAndAutoResume === "function"){
+    axOpenAndAutoResume(authUrl,
+      "Autoriser Apex " + def.label,
+      "1) Page " + def.label + " est ouverte\n2) Connecte-toi avec ton compte\n3) Clique 'Autoriser' pour donner acces lecture+ecriture mails\n4) Apex revient automatiquement",
+      function(){
+        /* Verifier si token est arrive */
+        var tokens = lg("ax_email_tokens", {});
+        if(tokens[provider] && tokens[provider].access_token){
+          if(typeof toast === "function") toast(def.icon + " " + def.label + " connecte !","ok",{duration:4000});
+          if(typeof axSecurityLog === "function") axSecurityLog("email_auth_ok", provider);
+        }
+      }
+    );
+  } else {
+    window.open(authUrl, "_blank");
+  }
+  return Promise.resolve({ok:true, url:authUrl});
+};
+
+/* axEmailRequest : wrapper generique pour API Gmail/Graph */
+window.axEmailRequest = function(provider, path, opts){
+  opts = opts || {};
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var def = AX_EMAIL_PROVIDERS[provider];
+  if(!def) return Promise.resolve({ok:false,error:"unknown_provider"});
+  var tokens = lg("ax_email_tokens", {});
+  var tk = tokens[provider];
+  if(!tk || !tk.access_token){
+    return Promise.resolve({ok:false, error:"not_authenticated", hint:"axEmailAuth(\""+provider+"\")"});
+  }
+  /* Verifier expiration */
+  if(tk.expires_in && tk.ts && (Date.now() - tk.ts > tk.expires_in*1000 - 60000)){
+    /* Token expire bientot - re-auth */
+    if(typeof toast === "function") toast(def.label + " token expire, re-auth...","warn");
+    return axEmailAuth(provider).then(function(){return {ok:false,error:"token_expired_reauth_needed"};});
+  }
+  var url = def.api_base + path;
+  var headers = {"Authorization":"Bearer "+tk.access_token, "Accept":"application/json"};
+  if(opts.body) headers["Content-Type"] = "application/json";
+  return fetch(url, {
+    method: opts.method || "GET",
+    headers: headers,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function(r){
+    return r.text().then(function(text){
+      var data = null;
+      try{ data = JSON.parse(text); }catch(_){ data = text; }
+      return {ok:r.ok, status:r.status, data:data};
+    });
+  }).catch(function(e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axEmailRequest:"+provider,e,"warn");
+    return {ok:false, error:e.message};
+  });
+};
+
+/* axEmailListInbox : lit emails recents */
+window.axEmailListInbox = function(provider, limit){
+  limit = limit || 20;
+  if(provider === "gmail"){
+    return axEmailRequest(provider, "/messages?maxResults="+limit+"&q=in:inbox").then(function(r){
+      if(!r.ok || !r.data || !r.data.messages) return r;
+      /* Fetch chaque message detail */
+      return Promise.all(r.data.messages.slice(0,limit).map(function(m){
+        return axEmailRequest(provider, "/messages/"+m.id+"?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date");
+      })).then(function(details){
+        var msgs = details.map(function(d){
+          if(!d.ok) return null;
+          var headers = (d.data.payload && d.data.payload.headers) || [];
+          var get = function(name){var h=headers.find(function(x){return x.name===name;});return h?h.value:"";};
+          return {id: d.data.id, threadId: d.data.threadId, snippet: d.data.snippet, from: get("From"), subject: get("Subject"), date: get("Date"), labels: d.data.labelIds||[]};
+        }).filter(Boolean);
+        return {ok:true, messages: msgs};
+      });
+    });
+  } else if(provider === "outlook"){
+    return axEmailRequest(provider, "/messages?$top="+limit+"&$select=id,subject,from,receivedDateTime,bodyPreview,categories");
+  }
+  return Promise.resolve({ok:false,error:"provider_not_supported"});
+};
+
+/* axEmailExtractCode : extrait code 6 chiffres OU lien validation */
+window.axEmailExtractCode = function(text){
+  if(!text) return null;
+  /* Code 6 chiffres */
+  var m6 = text.match(/\b(\d{6})\b/);
+  if(m6) return {type:"code", value:m6[1]};
+  /* Code 4 chiffres */
+  var m4 = text.match(/\b(\d{4})\b/);
+  if(m4) return {type:"code", value:m4[1]};
+  /* Lien verify/confirm/activate */
+  var mLink = text.match(/https?:\/\/[^\s<>"]*(?:verify|confirm|activate|validate|magic|signin)[^\s<>"]*/i);
+  if(mLink) return {type:"link", value:mLink[0]};
+  return null;
+};
+
+/* axEmailWaitForCode : poll jusqu'à trouver email matching */
+window.axEmailWaitForCode = function(provider, query, timeoutMs){
+  timeoutMs = timeoutMs || 180000; /* 3 min default */
+  var t0 = Date.now();
+  return new Promise(function(resolve){
+    var interval = setInterval(function(){
+      if(Date.now() - t0 > timeoutMs){
+        clearInterval(interval);
+        resolve({ok:false, error:"timeout"});
+        return;
+      }
+      axEmailListInbox(provider, 10).then(function(r){
+        if(!r.ok || !r.messages) return;
+        var match = r.messages.find(function(m){
+          var hay = (m.subject + " " + (m.snippet||"") + " " + (m.from||"")).toLowerCase();
+          return hay.indexOf(String(query).toLowerCase()) >= 0;
+        });
+        if(match){
+          clearInterval(interval);
+          /* Fetch full body */
+          if(provider === "gmail"){
+            axEmailRequest(provider, "/messages/"+match.id+"?format=full").then(function(d){
+              var body = "";
+              try{
+                /* Extraire body text */
+                var parts = (d.data.payload && d.data.payload.parts) || [d.data.payload];
+                parts.forEach(function(p){
+                  if(p.body && p.body.data){
+                    body += atob(p.body.data.replace(/-/g,"+").replace(/_/g,"/")) + "\n";
+                  }
+                });
+              }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+              var extracted = axEmailExtractCode(body || match.snippet);
+              resolve({ok:true, message:match, body:body.slice(0,2000), extracted:extracted});
+            });
+          } else {
+            var extracted = axEmailExtractCode(match.bodyPreview||match.snippet||"");
+            resolve({ok:true, message:match, extracted:extracted});
+          }
+        }
+      });
+    }, 5000); /* poll every 5s */
+  });
+};
+
+/* === ORGANISATION : trier / archiver / labelliser / supprimer === */
+window.axEmailMarkRead = function(provider, messageId){
+  if(provider === "gmail"){
+    return axEmailRequest(provider, "/messages/"+messageId+"/modify", {method:"POST", body:{removeLabelIds:["UNREAD"]}});
+  } else if(provider === "outlook"){
+    return axEmailRequest(provider, "/messages/"+messageId, {method:"PATCH", body:{isRead:true}});
+  }
+};
+window.axEmailArchive = function(provider, messageId){
+  if(provider === "gmail"){
+    return axEmailRequest(provider, "/messages/"+messageId+"/modify", {method:"POST", body:{removeLabelIds:["INBOX"]}});
+  } else if(provider === "outlook"){
+    return axEmailRequest(provider, "/messages/"+messageId+"/move", {method:"POST", body:{destinationId:"archive"}});
+  }
+};
+window.axEmailDelete = function(provider, messageId){
+  if(provider === "gmail"){
+    return axEmailRequest(provider, "/messages/"+messageId+"/trash", {method:"POST"});
+  } else if(provider === "outlook"){
+    return axEmailRequest(provider, "/messages/"+messageId, {method:"DELETE"});
+  }
+};
+window.axEmailLabel = function(provider, messageId, labelName){
+  if(provider === "gmail"){
+    /* Gmail : besoin labelId, lookup ou create */
+    return axEmailRequest(provider, "/labels").then(function(r){
+      if(!r.ok) return r;
+      var lbl = (r.data.labels||[]).find(function(l){return l.name===labelName;});
+      if(lbl){
+        return axEmailRequest(provider, "/messages/"+messageId+"/modify", {method:"POST", body:{addLabelIds:[lbl.id]}});
+      } else {
+        /* Create label */
+        return axEmailRequest(provider, "/labels", {method:"POST", body:{name:labelName, labelListVisibility:"labelShow", messageListVisibility:"show"}}).then(function(c){
+          if(c.ok && c.data.id){
+            return axEmailRequest(provider, "/messages/"+messageId+"/modify", {method:"POST", body:{addLabelIds:[c.data.id]}});
+          }
+          return c;
+        });
+      }
+    });
+  } else if(provider === "outlook"){
+    return axEmailRequest(provider, "/messages/"+messageId, {method:"PATCH", body:{categories:[labelName]}});
+  }
+};
+
+/* === TRI AUTO : règles déclaratives === */
+window.AX_EMAIL_TRIAGE_RULES = [
+  {id:"newsletter", match:{subject_regex:"unsubscribe|newsletter|digest|weekly|monthly", from_regex:"newsletter|digest|noreply"}, action:"archive_and_label", label:"Newsletters"},
+  {id:"invoice", match:{subject_regex:"invoice|facture|receipt|recu|payment confirm"}, action:"label", label:"Factures"},
+  {id:"otp", match:{subject_regex:"verify|verification|code|otp|confirm.*email|activate", recent_minutes:10}, action:"label", label:"Codes"},
+  {id:"social", match:{from_regex:"facebook|twitter|linkedin|instagram|tiktok"}, action:"archive_and_label", label:"Reseaux"},
+  {id:"github", match:{from_regex:"github|gitlab|bitbucket"}, action:"label", label:"Dev"},
+  {id:"shopping", match:{from_regex:"amazon|ebay|aliexpress|shein|cdiscount"}, action:"label", label:"Achats"},
+  {id:"banking", match:{from_regex:"bank|banque|revolut|paypal|stripe"}, action:"label", label:"Finance"},
+  {id:"spam_obvious", match:{subject_regex:"^(re: )?(viagra|loan|crypto.{0,30}gain|nigeria|inheritance|win.{0,20}prize)"}, action:"delete"}
+];
+
+window.axEmailAutoTriage = function(provider, opts){
+  opts = opts || {};
+  var maxMessages = opts.max || 50;
+  var dryRun = opts.dry_run || false;
+  return axEmailListInbox(provider, maxMessages).then(function(r){
+    if(!r.ok || !r.messages) return {ok:false, error:r.error};
+    var actions_planned = [];
+    r.messages.forEach(function(m){
+      var hayFrom = (m.from || "").toLowerCase();
+      var haySubj = (m.subject || "").toLowerCase();
+      AX_EMAIL_TRIAGE_RULES.forEach(function(rule){
+        if(actions_planned.find(function(a){return a.message_id===m.id;})) return; /* 1 action par msg */
+        var match = false;
+        if(rule.match.subject_regex && new RegExp(rule.match.subject_regex,"i").test(haySubj)) match = true;
+        if(rule.match.from_regex && new RegExp(rule.match.from_regex,"i").test(hayFrom)) match = true;
+        if(match){
+          actions_planned.push({message_id: m.id, rule_id: rule.id, action: rule.action, label: rule.label, subject: m.subject});
+        }
+      });
+    });
+    if(dryRun) return {ok:true, dry_run:true, planned: actions_planned};
+    /* Execute */
+    var promises = actions_planned.map(function(a){
+      if(a.action === "delete") return axEmailDelete(provider, a.message_id);
+      if(a.action === "archive_and_label"){
+        return Promise.all([axEmailArchive(provider, a.message_id), axEmailLabel(provider, a.message_id, a.label)]);
+      }
+      if(a.action === "label") return axEmailLabel(provider, a.message_id, a.label);
+      if(a.action === "archive") return axEmailArchive(provider, a.message_id);
+      return Promise.resolve({ok:true});
+    });
+    return Promise.all(promises).then(function(){
+      if(typeof toast === "function") toast("📧 " + actions_planned.length + " emails tries automatiquement", "ok", {duration:4000});
+      if(typeof axSecurityLog === "function") axSecurityLog("email_auto_triage", provider+":"+actions_planned.length);
+      return {ok:true, processed: actions_planned.length, actions: actions_planned};
+    });
+  });
+};
+
+/* Vue admin Email Integration */
+window.vEmailIntegration = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  var tokens = lg("ax_email_tokens", {});
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#EA4335,#4285F4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">📧 Email Integration</h2>';
+  h += '<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">Apex peut lire/trier/organiser/repondre aux emails Gmail, Outlook, iCloud (IMAP).</p>';
+  Object.keys(AX_EMAIL_PROVIDERS).forEach(function(pid){
+    var def = AX_EMAIL_PROVIDERS[pid];
+    var connected = !!(tokens[pid] && tokens[pid].access_token);
+    var color = connected ? "var(--ax-green)" : "var(--ax-orange)";
+    h += '<div class="ax-card" style="border-left:4px solid '+color+';margin-bottom:10px"><h3>'+def.icon+' '+esc(def.label)+'</h3>';
+    h += '<div style="font-size:12px;color:'+color+'">'+(connected?"✅ Connecte":"⚪ Non connecte")+'</div>';
+    if(def.note) h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">ℹ️ '+esc(def.note)+'</div>';
+    h += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">';
+    if(!connected){
+      h += '<button class="ax-btn ax-btn-primary" style="font-size:12px" onclick="axEmailAuth(\''+pid+'\')">Connecter</button>';
+    } else {
+      h += '<button class="ax-btn ax-btn-outline" style="font-size:12px" onclick="axEmailListInbox(\''+pid+'\').then(function(r){alert(r.ok?\'Inbox \'+(r.messages?r.messages.length:0)+\' messages\':\'Erreur: \'+r.error);});">📥 Lire inbox</button>';
+      h += '<button class="ax-btn ax-btn-outline" style="font-size:12px" onclick="axEmailAutoTriage(\''+pid+'\',{dry_run:true}).then(function(r){alert(\'Plan: \'+(r.planned?r.planned.length:0)+\' actions. Confirmer ?\');if(r.planned&&r.planned.length){if(confirm(\'Executer ?\'))axEmailAutoTriage(\''+pid+'\');}});">🤖 Tri auto</button>';
+    }
+    h += '</div></div>';
+  });
+  /* Regles tri */
+  h += '<div class="ax-card" style="border-left:4px solid var(--ax-gold);margin-top:14px"><h3>📋 Regles tri auto ('+AX_EMAIL_TRIAGE_RULES.length+')</h3>';
+  AX_EMAIL_TRIAGE_RULES.forEach(function(r){
+    h += '<div style="padding:6px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05)"><strong>'+esc(r.id)+'</strong> · '+esc(r.action)+(r.label?' → '+esc(r.label):'')+'</div>';
+  });
+  h += '</div>';
+  return h + '</div>';
+};
+
+setTimeout(function(){
+  try{
+    if(window._axEmailRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "emails" || K.view === "email-integration" || K.view === "inbox-apex") && typeof vEmailIntegration === "function") return vEmailIntegration();
+      return orig.apply(this, arguments);
+    };
+    window._axEmailRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("email_route",_e,"warn");}
+}, 1800);
+
+/* axAutoSignupServiceWithEmail : inscription auto + recup code via email */
+window.axAutoSignupServiceWithEmail = function(serviceUrl, email, provider){
+  provider = provider || "gmail";
+  if(typeof toast === "function") toast("Inscription " + serviceUrl + " en cours...","info",{duration:4000});
+  /* Apex ouvre la page signup, Kevin saisit email + clique signup, Apex attend code email */
+  axOpenAndAutoResume(serviceUrl,
+    "Inscription en cours",
+    "1) Page signup ouverte\n2) Saisis email : " + email + "\n3) Mot de passe (memorise!)\n4) Clique 'Sign up'\n5) Reviens - Apex va recuperer le code de validation auto via " + provider,
+    function(){
+      /* Apres retour Kevin, Apex polls Gmail pour code recent */
+      axEmailWaitForCode(provider, email.split("@")[0], 180000).then(function(r){
+        if(r.ok && r.extracted){
+          if(typeof toast === "function") toast("Code recu : " + r.extracted.value + " (auto-copie)", "ok", {duration:8000, force:true});
+          /* Auto-copy clipboard */
+          try{
+            if(navigator.clipboard) navigator.clipboard.writeText(r.extracted.value);
+          }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+          /* Re-ouvrir signup pour Kevin colle code */
+          axOpenAndAutoResume(serviceUrl,
+            "Code copie : " + r.extracted.value,
+            "Code copie dans clipboard ! Va a la page signup, colle le code (Cmd+V), valide.",
+            function(){
+              if(typeof toast === "function") toast("✅ Inscription terminee","ok");
+            }
+          );
+        } else {
+          if(typeof toast === "function") toast("⏳ Pas de code recu en 3 min, re-essaye manuellement","warn");
+        }
+      });
+    }
+  );
+};
 
 </script>
 </body>
