@@ -1,6 +1,6 @@
 # BRANCH RECAP — claude/ecommerce-automation-platform-Gprjk
 
-> Récapitulatif complet de la branche. Généré le 2026-04-18.
+> Récapitulatif complet de la branche. Mis à jour le 2026-05-01.
 > Auteur : Kevin DESARZENS (U11804) + Claude Code
 
 ---
@@ -79,14 +79,14 @@
 | `_shared/js/kdmc-core.js` | ✅ Créé | Utilitaires (esc, cart, auth, promo, analytics, SEO) |
 | `TODO_KEVIN.md` | ✅ Créé | Actions utilisateur (comptes Stripe, Brevo, Netlify...) |
 | `NOTES_USER.md` | ✅ Créé | Mémoire persistante + architecture APEX |
-| Store 1: Digital Vault | 🔧 En cours | Produits numériques (templates, ebooks, formations) |
-| Store 2: Tech Hub | 🔧 En cours | Accessoires tech (dropshipping) |
-| Store 3: Glow Wellness | 🔧 En cours | Beauté/bien-être |
-| Store 4: Pawsome | ⏳ Pending | Animaux |
-| Store 5: EcoCraft | ⏳ Pending | Éco-responsable |
-| Dashboard admin | ⏳ Pending | Vue unifiée toutes boutiques |
-| Fonctions serverless | ⏳ Pending | Stripe webhooks, emails, factures |
-| Agent automation | ⏳ Pending | Rapports, inventaire, paniers abandonnés |
+| Store 1: Digital Vault | ✅ Créé | 100 produits numériques (templates, ebooks, formations) — 82 KB |
+| Store 2: Tech Hub | ✅ Créé | 100 produits tech (dropshipping) — 70 KB |
+| Store 3: Glow Wellness | ✅ Créé | 100 produits beauté/bien-être — 83 KB |
+| Store 4: Pawsome | ✅ Créé | 100 produits animaux — 63 KB |
+| Store 5: EcoCraft | ✅ Créé | 100 produits éco-responsables — 68 KB |
+| Dashboard admin | ✅ Créé | Vue unifiée toutes boutiques — 16 KB |
+| Fonctions serverless | ✅ Créé | stripe-webhook.js, email-trigger.js, invoice-generate.js |
+| Agent automation | ✅ Créé | index.js — rapports, inventaire, paniers abandonnés, monitoring |
 
 ### 4. Méthodologie & Configuration
 
