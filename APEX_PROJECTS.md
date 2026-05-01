@@ -30,7 +30,7 @@
 | 4 | `socialvideo` | **Social Video Pipeline** | 🟠 Dév Phase 3 | v0.3 | `tools/social/` |
 | 5 | `remote` | **Télécommande Universelle** | 🟢 Production | v1.2 | dans Apex AI |
 | 6 | `crackpass` | **CrackPass / Vault** | 🟢 Production | v1.1 | dans Apex AI |
-| 7 | `ekdmc` | **e-APEX** (e-commerce) | 🟠 Dév | v0.1 | TBD |
+| 7 | `ekdmc` | **e-KDMC** (e-commerce 5 boutiques) | 🟠 Dév v0.3 | v0.3 | `_PROJECTS_KDMC/e-KDMC/` |
 
 ### ⚙️ Outils, Infrastructure & Vues (PAS PROJETS, à NE PAS lister dans vProjects)
 > ⚠️ **RÈGLE PERMANENTE Kevin 2026-04-30** : ne JAMAIS ajouter ces items dans `vProjects()` ni dans `AX_PROJECTS_REGISTRY`. Ce sont des outils/vues/infra, pas des projets autonomes.
@@ -136,6 +136,26 @@ Si auto-fix exhausted :
 - ⏳ 8 fichiers à adapter pour Mode A (subagent ac0260a plan livré)
 - ⏳ Frontend index.html + connexion workers
 - ⏳ Auth Firebase Phone Provider (SMS OTP 6 chiffres)
+
+### e-KDMC (v0.3 — récupéré depuis branche claude/ecommerce-automation-platform-Gprjk 2026-05-01)
+**Localisation** : `_PROJECTS_KDMC/e-KDMC/` (22 fichiers, 800 KB)
+**Composants livrés** :
+- ✅ 5 boutiques SPA (Digital Vault, Tech Hub, Glow Wellness, Pawsome, EcoCraft)
+  * `stores/<slug>/index.html` + `stores/<slug>/products.json` (~100 produits/boutique)
+- ✅ Dashboard admin (`dashboard/index.html`) — gestion centralisée 5 boutiques
+- ✅ Functions serverless :
+  * `functions/stripe-webhook.js` — handler paiements
+  * `functions/email-trigger.js` — Brevo (300 emails/jour gratuit)
+  * `functions/invoice-generate.js` — facturation auto PDF
+- ✅ Agent automation (`automation/agent/index.js`) — workflow 24/7
+- ✅ CSS/JS partagé (`_shared/css/kdmc-components.css` + `_shared/js/kdmc-core.js`)
+- ✅ Tools scripts (`tools/scripts/generate-products.js` + `generate-store.js`)
+- ⏳ Action Kevin requise (TODO_KEVIN.md) :
+  * Compte Stripe (mode test) + clés `pk_test_xxx` + `sk_test_xxx`
+  * Compte Brevo (300 emails/jour gratuit)
+  * Compte Netlify pour déploiement
+  * Domaines pour chaque boutique (~10-15€/an chacun)
+  * Projet Firebase dédié e-KDMC séparé de CMCteams
 
 ### Social Video Pipeline (v0.3 Phase 3)
 - ✅ Recovery depuis branche RvjYq (24 .js, 7000 LOC)
