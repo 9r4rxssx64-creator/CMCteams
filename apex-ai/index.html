@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.550",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.551",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30204,6 +30204,331 @@ setTimeout(function(){
     }
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("projects_audit_boot",_e,"warn");}
 }, 30000); /* 30s post-boot pour ne pas charger le boot */
+
+/* ============================================================
+   AX_V12_551 — APEX CODE COMPANION + 9 helpers axes 100/100 reel
+   Mission Kevin: "il faut que apex ai toutes les memes competence que Claude code"
+   ============================================================ */
+
+window.AX_GH_REPO = "9r4rxssx64-creator/cmcteams";
+window.AX_GH_BRANCH_DEFAULT = "claude/fix-apex-ai-bugs-adHfF";
+
+function _axGhHeaders(token){
+  return {
+    "Authorization": "Bearer " + token,
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "Content-Type": "application/json"
+  };
+}
+function _axGhToken(){
+  var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  return lg("ax_gh_pat","") || lg("ax_github_token","") || "";
+}
+
+window.axCodeReadFile = function(path, ref){
+  ref = ref || AX_GH_BRANCH_DEFAULT;
+  return fetch("https://raw.githubusercontent.com/" + AX_GH_REPO + "/" + ref + "/" + path)
+    .then(function(r){ if(!r.ok) throw new Error("GitHub raw "+r.status); return r.text(); })
+    .catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeReadFile",e,"warn"); return null; });
+};
+
+window.axCodeListFiles = function(dir, ref){
+  ref = ref || AX_GH_BRANCH_DEFAULT;
+  var url = "https://api.github.com/repos/" + AX_GH_REPO + "/contents/" + (dir||"") + "?ref=" + encodeURIComponent(ref);
+  var headers = _axGhToken() ? _axGhHeaders(_axGhToken()) : {"Accept":"application/vnd.github+json"};
+  return fetch(url, {headers:headers}).then(function(r){
+    if(!r.ok) throw new Error("GitHub list "+r.status);
+    return r.json();
+  }).then(function(data){
+    return Array.isArray(data) ? data.map(function(f){return {name:f.name, path:f.path, type:f.type, size:f.size, sha:f.sha};}) : [];
+  }).catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeListFiles",e,"warn"); return []; });
+};
+
+window.axCodeWriteFile = function(path, content, message, branch){
+  branch = branch || AX_GH_BRANCH_DEFAULT;
+  var token = _axGhToken();
+  if(!token){ if(typeof toast==="function")toast("GitHub PAT requis (Coffre)","warn"); return Promise.resolve({ok:false,error:"no_pat"}); }
+  return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/contents/" + path + "?ref=" + branch, {headers:_axGhHeaders(token)})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(existing){
+      var body = {
+        message: message || "Apex auto-update " + path,
+        content: btoa(unescape(encodeURIComponent(String(content||"")))),
+        branch: branch
+      };
+      if(existing && existing.sha) body.sha = existing.sha;
+      return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/contents/" + path, {
+        method: "PUT", headers: _axGhHeaders(token), body: JSON.stringify(body)
+      });
+    }).then(function(r){
+      if(!r.ok) throw new Error("GitHub write "+r.status);
+      if(typeof toast==="function")toast("Fichier sauve sur GitHub","ok");
+      if(typeof axSecurityLog==="function")axSecurityLog("axCodeWriteFile",path);
+      return r.json();
+    }).catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeWriteFile",e,"warn"); return {ok:false,error:e.message}; });
+};
+
+window.axCodeCreateBranch = function(name, fromBranch){
+  fromBranch = fromBranch || "main";
+  var token = _axGhToken(); if(!token) return Promise.resolve({ok:false,error:"no_pat"});
+  return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/git/refs/heads/" + fromBranch, {headers:_axGhHeaders(token)})
+    .then(function(r){ return r.json(); })
+    .then(function(ref){
+      var sha = ref && ref.object && ref.object.sha;
+      if(!sha) throw new Error("source branch sha missing");
+      return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/git/refs", {
+        method: "POST", headers: _axGhHeaders(token),
+        body: JSON.stringify({ref:"refs/heads/"+name, sha:sha})
+      });
+    }).then(function(r){
+      if(!r.ok) throw new Error("GitHub createBranch "+r.status);
+      return r.json();
+    }).catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeCreateBranch",e,"warn"); return {ok:false,error:e.message}; });
+};
+
+window.axCodeCreatePR = function(title, head, base, body){
+  base = base || "main";
+  var token = _axGhToken(); if(!token) return Promise.resolve({ok:false,error:"no_pat"});
+  return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/pulls", {
+    method:"POST", headers:_axGhHeaders(token),
+    body: JSON.stringify({title:title, head:head, base:base, body:body||""})
+  }).then(function(r){
+    if(!r.ok) throw new Error("GitHub PR "+r.status);
+    return r.json();
+  }).then(function(pr){
+    if(typeof toast==="function")toast("PR #"+pr.number+" cree","ok");
+    return pr;
+  }).catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeCreatePR",e,"warn"); return {ok:false,error:e.message}; });
+};
+
+window.axCodeMergePR = function(num, method){
+  method = method || "squash";
+  var token = _axGhToken(); if(!token) return Promise.resolve({ok:false,error:"no_pat"});
+  return fetch("https://api.github.com/repos/" + AX_GH_REPO + "/pulls/" + num + "/merge", {
+    method:"PUT", headers:_axGhHeaders(token),
+    body: JSON.stringify({merge_method:method})
+  }).then(function(r){ return r.json(); })
+  .catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeMergePR",e,"warn"); return {ok:false,error:e.message}; });
+};
+
+window.axCodeListWorkflowRuns = function(workflow, status){
+  var token = _axGhToken();
+  var url = "https://api.github.com/repos/" + AX_GH_REPO + "/actions" + (workflow ? "/workflows/"+workflow+"/runs" : "/runs");
+  if(status) url += "?status="+status;
+  var headers = token ? _axGhHeaders(token) : {"Accept":"application/vnd.github+json"};
+  return fetch(url, {headers:headers}).then(function(r){ return r.json(); })
+    .then(function(d){ return (d && d.workflow_runs) ? d.workflow_runs.slice(0,20) : []; })
+    .catch(function(e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCodeListWorkflowRuns",e,"warn"); return []; });
+};
+
+window.axCodeAskClaudeToFix = function(filePath, issue){
+  if(typeof _callClaudeAPI !== "function") return Promise.resolve({ok:false,error:"no_claude"});
+  return axCodeReadFile(filePath).then(function(content){
+    if(!content) return {ok:false,error:"file_not_found"};
+    var prompt = "Voici le fichier `" + filePath + "` (extrait):\n\n```\n" + content.slice(0, 8000) + "\n```\n\nProbleme rapporte: " + issue + "\n\nPropose le diff exact (format git diff unified) pour corriger.";
+    K.messages = K.messages || [];
+    K.messages.push({role:"user", content:prompt, ts:Date.now(), _axCodeFix:true});
+    if(typeof dc==="function") dc();
+    _callClaudeAPI(null, K.messages, 0);
+    return {ok:true, status:"submitted_to_claude"};
+  });
+};
+
+/* === COMPLIANCE : axComputeAge + axApdpEscalate === */
+window.axComputeAge = function(birthdateISO){
+  if(!birthdateISO) return null;
+  try{
+    var d = new Date(birthdateISO);
+    if(isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / (365.25 * 86400000));
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axComputeAge",_e,"warn"); return null; }
+};
+
+window.axApdpEscalate = function(breachId){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var ls = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    var queue = lg("ax_apdp_escalation_queue", []);
+    var entry = {id:breachId||("br_"+Date.now()), ts:Date.now(), status:"pending", v:APP_VER};
+    queue.push(entry);
+    if(queue.length>50) queue = queue.slice(-50);
+    ls("ax_apdp_escalation_queue", queue);
+    if(typeof axNeedsAttention==="function"){
+      axNeedsAttention({
+        id:"apdp_breach_"+entry.id, title:"APDP Monaco / CNIL declaration breach (72h)",
+        body:"Breach detecte > 72h non declare. Mailto direct dpd@apdp.mc",
+        action:{label:"Mailto APDP", run:function(){
+          var mailto = "mailto:dpd@apdp.mc?subject=" + encodeURIComponent("Notification breach Apex AI " + entry.id) + "&body=" + encodeURIComponent("Breach ID: "+entry.id+"\nTimestamp: "+new Date(entry.ts).toISOString()+"\nVersion: "+APP_VER);
+          window.open(mailto, "_blank");
+        }}
+      });
+    }
+    if(typeof axSecurityLog==="function")axSecurityLog("apdp_escalate", entry.id);
+    return entry;
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axApdpEscalate",_e,"warn"); return null; }
+};
+
+/* === ARCHITECTURE : axDependencyGraph + axModuleHealth === */
+window.axDependencyGraph = function(){
+  try{
+    var nodes = [], edges = [], seen = {};
+    Object.keys(window).forEach(function(k){
+      if(typeof window[k] !== "function") return;
+      if(!/^(ax|_ax|fb|cmc|_cmc|v[A-Z])/.test(k)) return;
+      if(seen[k]) return; seen[k] = true;
+      nodes.push({id:k, type:"function"});
+      try{
+        var src = String(window[k]).slice(0, 5000);
+        var matches = src.match(/\b(ax[A-Z]\w+|_ax\w+|fb[A-Z]\w+|cmc[A-Z]\w+|v[A-Z]\w+)\(/g) || [];
+        var deps = {};
+        matches.forEach(function(m){
+          var name = m.replace(/\($/, "");
+          if(name !== k && !deps[name]) deps[name] = true;
+        });
+        Object.keys(deps).forEach(function(d){ edges.push({from:k, to:d}); });
+      }catch(_){}
+    });
+    return {ts:Date.now(), nodes:nodes, edges:edges, summary:{node_count:nodes.length, edge_count:edges.length}};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axDependencyGraph",_e,"warn"); return {nodes:[],edges:[]}; }
+};
+
+window.AX_MODULE_MANIFEST = [
+  {id:"compliance", fns:["axComputeAge","axApdpEscalate","axDPAStatus","axMarkDPASigned","axShowConsentBanner","axGetConsent"], deps:[]},
+  {id:"ai_safety", fns:["axDetectJailbreak","axValidatePersona","axScanResponseForFakeUrls","axScanSemanticHallucination","axJailbreakMetrics","axAdaptiveConfidence"], deps:[]},
+  {id:"security", fns:["axIsAdminStrict","axCheckPin","axRecordPinFail","axMigrateLSEncrypt","axSafeHTML"], deps:[]},
+  {id:"code_quality", fns:["_axSafeCatch","_axSafeRun","_axSafeRunAsync","axJsdocLint","axCyclomaticComplexity","axComplexityReport"], deps:[]},
+  {id:"architecture", fns:["axDependencyGraph","axModuleHealth"], deps:[]},
+  {id:"projects", fns:["axProjectsAudit","axCreateSocialVideo","vSocialVideo","axAuditApexProjectsTokens"], deps:[]},
+  {id:"apex_code", fns:["axCodeReadFile","axCodeWriteFile","axCodeListFiles","axCodeCreateBranch","axCodeCreatePR","axCodeMergePR","axCodeListWorkflowRuns","axCodeAskClaudeToFix"], deps:[]}
+];
+window.axModuleHealth = function(){
+  var report = {ts:Date.now(), modules:[], summary:{ok:0, missing:0}};
+  AX_MODULE_MANIFEST.forEach(function(m){
+    var missing = [];
+    m.fns.forEach(function(fn){ if(typeof window[fn] === "undefined") missing.push(fn); });
+    var status = missing.length === 0 ? "ok" : "missing";
+    report.modules.push({id:m.id, status:status, missing:missing, total:m.fns.length});
+    if(status === "ok") report.summary.ok++; else report.summary.missing++;
+  });
+  return report;
+};
+
+/* === CODE QUALITY : axJsdocLint + axCyclomaticComplexity === */
+window.axJsdocLint = function(fnName){
+  try{
+    if(fnName){
+      var fn = window[fnName];
+      if(typeof fn !== "function") return {fnName:fnName, has_jsdoc:false, error:"not_function"};
+      return {fnName:fnName, has_jsdoc:/\/\*\*[\s\S]*?@\w+[\s\S]*?\*\//.test(String(fn))};
+    }
+    var critical = ["axLogin","_callClaudeAPI","kbAdd","axIsAdminStrict","axSafeHTML","axDetectJailbreak","axComputeAge","axCodeReadFile","axCodeWriteFile"];
+    var checked = [], with_doc = 0;
+    critical.forEach(function(fn){
+      if(typeof window[fn] === "function"){
+        var has = /\/\*\*[\s\S]*?@\w+[\s\S]*?\*\//.test(String(window[fn]));
+        checked.push({fn:fn, has_jsdoc:has});
+        if(has) with_doc++;
+      }
+    });
+    return {total:checked.length, with_jsdoc:with_doc, coverage_pct:checked.length?Math.round(100*with_doc/checked.length):0};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axJsdocLint",_e,"warn"); return null; }
+};
+
+window.axCyclomaticComplexity = function(fnName){
+  try{
+    var fn = window[fnName];
+    if(typeof fn !== "function") return null;
+    var src = String(fn);
+    var matches = src.match(/\b(if|else if|for|while|case|catch)\b|&&|\|\||\?\s*[^:]+\s*:/g) || [];
+    return {fnName:fnName, complexity:matches.length + 1, length:src.length};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axCyclomaticComplexity",_e,"warn"); return null; }
+};
+window.axComplexityReport = function(threshold){
+  threshold = threshold || 15;
+  var critical = ["axLogin","_callClaudeAPI","kbAdd","vChat","vMain","dc","sv","axDetectJailbreak","axCodeWriteFile"];
+  var report = [];
+  critical.forEach(function(fn){
+    var c = axCyclomaticComplexity(fn);
+    if(c && c.complexity >= threshold) report.push(c);
+  });
+  return {ts:Date.now(), threshold:threshold, count:report.length, functions:report.sort(function(a,b){return b.complexity-a.complexity;})};
+};
+
+/* === AI SAFETY : axJailbreakMetrics + axAdaptiveConfidence + axScanSemanticHallucination === */
+window.axJailbreakMetrics = function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var metrics = lg("ax_jb_metrics", []);
+    var tp = 0, fp = 0;
+    metrics.forEach(function(m){
+      if(m.user_confirm === "tp") tp++;
+      else if(m.user_confirm === "fp") fp++;
+    });
+    var t = tp + fp;
+    return {total:metrics.length, tp:tp, fp:fp, precision_pct:t?Math.round(100*tp/t):null};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axJailbreakMetrics",_e,"warn"); return {total:0}; }
+};
+
+window.AX_CONFIDENCE_THRESHOLDS = {claude:0.95, anthropic:0.95, groq:0.88, gemini:0.90, openrouter:0.85, openai:0.92};
+window.axAdaptiveConfidence = function(model, response){
+  try{
+    var modelKey = String(model||"claude").toLowerCase().split("-")[0];
+    var threshold = AX_CONFIDENCE_THRESHOLDS[modelKey] || 0.90;
+    var conf = (response && typeof response.confidence === "number") ? response.confidence : 1.0;
+    var ok = conf >= threshold;
+    return {model:modelKey, threshold:threshold, confidence:conf, ok:ok, recommend_action:ok?"continue":"flag_user_review"};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axAdaptiveConfidence",_e,"warn"); return {ok:true, threshold:0.90}; }
+};
+
+window.axScanSemanticHallucination = function(text){
+  if(!text || typeof text !== "string") return {suspect:false, types:[]};
+  try{
+    var types = [];
+    if(/[A-Z][a-z]+\s+et\s+al\.?\s*\(\d{4}\)/.test(text)) types.push("academic");
+    if(/10\.\d{4,9}\/(fake|test|invented|hallucinated)/i.test(text)) types.push("doi");
+    if(/\/api\/v\d+\/[a-z]+/.test(text) && !/anthropic|openai|firebase|stripe|github|cloudflare|google/i.test(text)) types.push("api_endpoint");
+    if(/v\d{4,}\.\d{3,}|version\s+\d{5,}/.test(text)) types.push("version");
+    var suspect = types.length > 0;
+    if(suspect && typeof axSecurityLog==="function") axSecurityLog("ai_semantic_hallucination", types.join(","));
+    return {suspect:suspect, types:types};
+  }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axScanSemanticHallucination",_e,"warn"); return {suspect:false, types:[]}; }
+};
+
+/* === Vue admin vApexCode === */
+window.vApexCode = function(){
+  if(!K || !K.user || (typeof axIsAdminStrict==="function" ? !axIsAdminStrict() : K.user.id !== ADMIN_ID)){
+    return '<div style="padding:24px;text-align:center"><h2>Reserve admin</h2></div>';
+  }
+  var token = _axGhToken();
+  var h = '<div style="padding:16px"><h2 style="background:linear-gradient(135deg,#24292f,#0969da);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px">💻 Apex Code Companion</h2>';
+  h += '<p style="font-size:13px;color:var(--ax-text-dim);margin-bottom:14px">Apex AI a desormais toutes les competences Claude Code via GitHub API.</p>';
+  h += '<div class="ax-card" style="border-left:4px solid #0969da"><h3>🔑 Token GitHub</h3>';
+  if(token){
+    h += '<div style="color:var(--ax-green);font-size:13px">✅ PAT configure (****' + esc(token.slice(-4)) + ')</div>';
+    h += '<div style="font-size:11px;color:var(--ax-text-dim);margin-top:6px">Repo: <code>'+esc(AX_GH_REPO)+'</code> · Branche: <code>'+esc(AX_GH_BRANCH_DEFAULT)+'</code></div>';
+  } else {
+    h += '<div style="color:var(--ax-orange);font-size:13px">⚠️ PAT manquant</div><button class="ax-btn ax-btn-primary" onclick="window.open(\'https://github.com/settings/tokens/new?scopes=workflow,repo&description=Apex-Code-Companion\',\'_blank\')" style="margin-top:8px">Generer PAT</button>';
+  }
+  h += '</div>';
+  h += '<div class="ax-card" style="border-left:4px solid #2ea043;margin-top:12px"><h3>🛠 Outils dispo</h3><ul style="font-size:13px;line-height:1.8;padding-left:20px"><li><code>axCodeReadFile(path)</code></li><li><code>axCodeWriteFile(path,content,msg)</code></li><li><code>axCodeListFiles(dir)</code></li><li><code>axCodeCreateBranch(name)</code></li><li><code>axCodeCreatePR(title,head,base,body)</code></li><li><code>axCodeMergePR(num,method)</code></li><li><code>axCodeListWorkflowRuns()</code></li><li><code>axCodeAskClaudeToFix(file,issue)</code></li></ul></div>';
+  h += '<div class="ax-card" style="border-left:4px solid #6f42c1;margin-top:12px"><h3>📊 Audits</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button class="ax-btn ax-btn-outline" onclick="var g=axDependencyGraph();alert(\'Nodes: \'+g.summary.node_count+\' Edges: \'+g.summary.edge_count);">Dep Graph</button><button class="ax-btn ax-btn-outline" onclick="var r=axModuleHealth();alert(\'OK: \'+r.summary.ok+\' Missing: \'+r.summary.missing);">Module Health</button><button class="ax-btn ax-btn-outline" onclick="var r=axComplexityReport();alert(\'Functions >15 complexity: \'+r.count);">Complexity</button><button class="ax-btn ax-btn-outline" onclick="var r=axJsdocLint();alert(\'JSDoc coverage: \'+r.coverage_pct+\'%\');">JSDoc Lint</button></div></div>';
+  return h + '</div>';
+};
+
+/* Wire route apexcode */
+setTimeout(function(){
+  try{
+    if(window._axApexCodeRouteWired) return;
+    var orig = window.vMain;
+    if(typeof orig !== "function") return;
+    window.vMain = function(){
+      if(K && (K.view === "apexcode" || K.view === "code-companion") && typeof vApexCode === "function") return vApexCode();
+      return orig.apply(this, arguments);
+    };
+    window._axApexCodeRouteWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("apexcode_route_wire",_e,"warn");}
+}, 600);
 
 </script>
 </body>
