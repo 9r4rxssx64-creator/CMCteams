@@ -919,7 +919,41 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.685",ADMIN_ID="kdmc_admin";
+/* ============================================================
+   AX_V12_690 SOFT-ROLLBACK : pre-set tous flags IIFE session
+   v12.564-v12.685 -> early-return -> Apex retourne au comportement
+   pre-session (plus de wraps qui cassent boutons/login/toasts).
+   Kevin: "Aucun bouton ne fonctionne. Bloque dans Coffre."
+   ============================================================ */
+(function(){
+  try{
+    if(typeof window === "undefined") return;
+    /* Marque tous mes IIFE wrappers comme deja executes -> ils early return */
+    window._axEscalateV650 = true;
+    window._axKillSpamV680 = true;
+    window._axRevertToastV640 = true;
+    window._axSilenceToastsV635 = true;
+    window._axMutationXssV610 = true;
+    window._axTimerWrapV605 = true;
+    /* GARDE Phase A (v574 helpers utiles : axSanitizeHTML, TimerPool defs, axAudit*) */
+    /* GARDE v575/576 (audit wire helpers) */
+    window._axCredentialPasteHooked = true;
+    window._axDeploy1ClickV3RouteWired = true;
+    window._axDeploy1ClickV2RouteWired = true;
+    window._axCredsCheckRouteWired = true;
+    window._axCoffreBilanRouteWired = true;
+    window._axLinksRegRouteWired = true;
+    window._axCredRegRouteWired = true;
+    window._axLinksHookWired = true;
+    window._axGuidedRouteWired = true;
+    window._axEmailHookWired = true;
+    window._axAutoDeployV630 = true;
+    window._axPasteCredentialHook = true;
+    /* Clean tout flag de panic mode */
+    try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
+  }catch(_e){}
+})();
+var APP_VER = "v12.690",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
