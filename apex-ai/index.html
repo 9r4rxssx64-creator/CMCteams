@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.566",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.567",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,122 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_567 — DECHIFFRAGE AUTO TOKENS VAULT (Kevin "le PAT est deja dans Apex")
+   Les tokens stockes en AXENC1: (chiffre LocalStorage) sont desormais auto-
+   dechiffres par axGetTokenDecrypted(keys) avant utilisation. axDeployWorkers1Click
+   passe en version async qui dechiffre tokens avant push GitHub Secrets.
+   ============================================================ */
+window.axGetTokenDecrypted = async function(keys){
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  if(typeof keys === "string") keys = [keys];
+  for(var i=0;i<keys.length;i++){
+    var raw = lg2(keys[i], "");
+    if(!raw || typeof raw !== "string" || raw.length < 5) continue;
+    /* AXENC1: prefix → dechiffre via axDecryptLS */
+    if(raw.indexOf("AXENC1:") === 0 && typeof window.axDecryptLS === "function"){
+      try{
+        var plain = await window.axDecryptLS(raw);
+        if(plain && plain !== raw && plain.length > 5) return plain;
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axGetTokenDecrypted_AXENC1",_e);}
+    }
+    /* __AXENC1__ prefix (master key device) → dechiffre via _axDecryptSecret */
+    if(raw.indexOf("__AXENC1__") === 0 && typeof window._axDecryptSecret === "function"){
+      try{
+        var plain2 = await window._axDecryptSecret(raw);
+        if(plain2 && plain2 !== raw && plain2.length > 5) return plain2;
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axGetTokenDecrypted_AXENC1__",_e);}
+    }
+    /* Plain text */
+    if(raw.indexOf("AXENC1:") !== 0 && raw.indexOf("__AXENC1__") !== 0) return raw;
+  }
+  /* Fallback: chercher dans Coffre vault */
+  try{
+    var vault = lg2("ax_vault", {}) || {};
+    for(var j=0;j<keys.length;j++){
+      var vv = vault[keys[j]];
+      if(!vv) continue;
+      var val = (typeof vv === "string") ? vv : (vv.value || vv.value_enc || "");
+      if(!val || val.length < 5) continue;
+      if(val.indexOf("AXENC1:") === 0 && typeof window.axDecryptLS === "function"){
+        var p = await window.axDecryptLS(val);
+        if(p && p !== val && p.length > 5) return p;
+      }
+      if(val.indexOf("__AXENC1__") === 0 && typeof window._axDecryptSecret === "function"){
+        var p2 = await window._axDecryptSecret(val);
+        if(p2 && p2 !== val && p2.length > 5) return p2;
+      }
+      if(val.indexOf("AXENC1:") !== 0 && val.indexOf("__AXENC1__") !== 0) return val;
+    }
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axGetTokenDecrypted_vault",_e);}
+  return null;
+};
+
+/* axDeployWorkers1Click v2 : passe par dechiffrage auto avant fallback modal */
+window.axDeployWorkers1ClickV2 = async function(){
+  if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return;
+  }
+  var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  if(typeof toast === "function") toast("🔍 Verification tokens (dechiffrage Vault)...","info",{duration:3500});
+  var ghToken = await axGetTokenDecrypted(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+  var cfToken = await axGetTokenDecrypted(["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"]);
+  if(ghToken && cfToken){
+    if(typeof toast === "function") toast("✅ Tokens trouves dans Apex (Vault) - deploiement auto","ok",{duration:4000});
+    /* Push secret + trigger workflow */
+    if(typeof toast === "function") toast("📤 Push CLOUDFLARE_API_TOKEN -> GitHub Secrets...","info",{duration:3500});
+    var pushResult = await window.axPushGitHubSecret("CLOUDFLARE_API_TOKEN", cfToken);
+    if(!pushResult.ok){
+      if(typeof toast === "function") toast("❌ Push secret echoue : "+(pushResult.error||pushResult.status||""),"err",{duration:8000,force:true});
+      return;
+    }
+    if(typeof toast === "function") toast("🚀 Lancement deploiement 4 workers...","info",{duration:4000,force:true});
+    try{
+      var fr = await fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml/dispatches", {
+        method: "POST",
+        headers: {"Authorization":"Bearer "+ghToken, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+        body: JSON.stringify({ref:"main", inputs:{service:"all", env:"production"}})
+      });
+      if(fr.ok){
+        ls2("ax_workers_deployed", {ts: Date.now()});
+        if(typeof toast === "function") toast("🎉 Deploiement lance ! 4 workers en cours (~2 min)","ok",{duration:12000,force:true});
+        if(typeof axSecurityLog === "function") axSecurityLog("workers_1click_v2_deploy_triggered","all");
+        setTimeout(function(){
+          try{ window.open("https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml","_blank"); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+        }, 2500);
+      }else{
+        var et = ""; try{ et = await fr.text(); }catch(_e){}
+        if(typeof toast === "function") toast("❌ Trigger echoue HTTP "+fr.status+(et?" - "+et.slice(0,80):""),"err",{duration:10000,force:true});
+      }
+    }catch(e){
+      if(typeof toast === "function") toast("❌ Erreur reseau : "+e.message,"err",{duration:6000});
+    }
+    return;
+  }
+  /* Sinon fallback ancien comportement (modal coller token) */
+  if(typeof toast === "function") toast("⚠ Tokens non trouves - fallback modal","warn",{duration:3500});
+  if(typeof window.axDeployWorkers1Click === "function") return window.axDeployWorkers1Click();
+};
+
+/* Override: route ?view=deploy1click utilise V2 par defaut */
+setTimeout(function(){
+  if(window._axDeploy1ClickV2RouteWired) return;
+  window._axDeploy1ClickV2RouteWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "deploy1click" || K.view === "deploy-1clic" || K.view === "deployworkers")){
+      return '<div style="padding:24px;text-align:center;max-width:520px;margin:0 auto">'+
+        '<h2 style="color:#c9a227;font-family:Georgia,serif;margin:0 0 12px">🚀 Deploiement 1-clic v2</h2>'+
+        '<p style="color:#aab;font-size:14px;line-height:1.5">Apex dechiffre automatiquement les tokens du Vault (AXENC1) puis deploie les 4 workers Cloudflare.</p>'+
+        '<button onclick="axDeployWorkers1ClickV2()" style="padding:18px 36px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:14px;font-weight:700;font-size:16px;cursor:pointer;margin-top:14px;box-shadow:0 8px 24px rgba(201,162,39,.3)">🚀 Deployer (auto-dechiffrage Vault)</button>'+
+        '<p style="color:#666;font-size:11px;margin-top:18px;line-height:1.5">v12.567 : utilise axGetTokenDecrypted pour lire AXENC1: + __AXENC1__. Si tokens non trouves -> fallback modal coller-token.</p>'+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 2000);
 
 /* ============================================================
    AX_V12_566 — SAFE MODE (Kevin "app saute, change de vue, marche pas")
