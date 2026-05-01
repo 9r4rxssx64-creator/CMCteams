@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.567",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.568",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,156 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_568 — SCAN VAULT PAR PREFIXE (Kevin "Utilise celui la")
+   Apex scan toutes les cles ax_* (chiffrees ou non) et trouve la valeur
+   qui commence par un prefixe donne (ex: 'github_pat_' ou la signature
+   exacte du PAT Kevin 'github_pat_11CAKMMMI0R7ITKFZT7W').
+   ============================================================ */
+
+/* Connaissance de la signature PAT Kevin (prefixe public, pas le secret) */
+window.AX_KEVIN_PAT_PREFIX = "github_pat_11CAKMMMI0R7ITKFZT7W";
+
+window.axScanVaultForToken = async function(prefixes){
+  if(typeof prefixes === "string") prefixes = [prefixes];
+  if(!prefixes || !prefixes.length) return null;
+  /* Iterate sur toutes les cles localStorage commencant par ax_ */
+  var keysToScan = [];
+  try{
+    for(var lk in localStorage){
+      if(!localStorage.hasOwnProperty(lk)) continue;
+      if(lk.indexOf("ax_") !== 0) continue;
+      keysToScan.push(lk);
+    }
+  }catch(_e){}
+  for(var i=0;i<keysToScan.length;i++){
+    var k = keysToScan[i];
+    try{
+      var raw = localStorage.getItem(k);
+      if(!raw || raw.length < 10) continue;
+      /* Strip JSON quotes */
+      var v = raw;
+      try{ var p = JSON.parse(raw); if(typeof p === "string") v = p; }catch(_je){}
+      var plain = v;
+      /* Dechiffre si AXENC1: */
+      if(v.indexOf("AXENC1:") === 0 && typeof window.axDecryptLS === "function"){
+        try{ plain = await window.axDecryptLS(v); }catch(_de){}
+      }
+      /* Dechiffre si __AXENC1__ */
+      if(v.indexOf("__AXENC1__") === 0 && typeof window._axDecryptSecret === "function"){
+        try{ plain = await window._axDecryptSecret(v); }catch(_de){}
+      }
+      if(!plain || typeof plain !== "string" || plain.length < 10) continue;
+      /* Match contre prefixes */
+      for(var j=0;j<prefixes.length;j++){
+        if(plain.indexOf(prefixes[j]) === 0){
+          return {key: k, value: plain, matched_prefix: prefixes[j], source: v.indexOf("AXENC1:") === 0 ? "vault_AXENC1" : (v.indexOf("__AXENC1__") === 0 ? "vault___AXENC1__" : "plaintext")};
+        }
+      }
+    }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axScanVaultForToken",_e);}
+  }
+  return null;
+};
+
+/* axDeployWorkers1ClickV3 : avec fallback scan par prefixe */
+window.axDeployWorkers1ClickV3 = async function(){
+  if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return;
+  }
+  var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  if(typeof toast === "function") toast("🔍 Apex cherche les tokens (scan Vault + dechiffrage)...","info",{duration:4000});
+  /* 1. Try cles connues d abord (axGetTokenDecrypted) */
+  var ghToken = null, cfToken = null;
+  if(typeof window.axGetTokenDecrypted === "function"){
+    ghToken = await window.axGetTokenDecrypted(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+    cfToken = await window.axGetTokenDecrypted(["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"]);
+  }
+  /* 2. Si gh manquant, scan par prefixe (signature Kevin OU generic github_pat_/ghp_) */
+  if(!ghToken){
+    var hit = await window.axScanVaultForToken([window.AX_KEVIN_PAT_PREFIX, "github_pat_", "ghp_"]);
+    if(hit){
+      ghToken = hit.value;
+      if(typeof toast === "function") toast("✅ PAT trouve via scan ("+hit.key+", "+hit.source+")","ok",{duration:4000});
+    }
+  }
+  /* 3. Si cf manquant, scan via heuristique (Cloudflare API token = 40 chars hex/base64 sans prefix specifique) */
+  if(!cfToken){
+    /* Cloudflare token n a pas de prefixe -> on demande modal */
+    if(typeof toast === "function") toast("⚠ Cloudflare token introuvable - modal coller","warn",{duration:4000});
+    if(typeof window.axPromptPasteSecret === "function"){
+      var r = await window.axPromptPasteSecret({
+        title: "Cloudflare API Token manquant",
+        instruction: "Apex n a pas trouve ton token Cloudflare dans le Vault.\n\n1) Clique 'Ouvrir Cloudflare'\n2) Reactive ton token 'Modifier Cloudflare Workers' (3 points -> Rouler) ou cree un nouveau\n3) Copie + colle ici",
+        openLabel: "Ouvrir Cloudflare",
+        openUrl: "https://dash.cloudflare.com/profile/api-tokens",
+        continueLabel: "J ai colle"
+      });
+      if(!r || !r.ok) return;
+      ls2("ax_cf_token", r.value);
+      cfToken = r.value;
+    }
+  }
+  if(!ghToken){
+    if(typeof toast === "function") toast("❌ GitHub PAT introuvable meme avec scan. Verifie qu il est dans Coffre.","err",{duration:8000,force:true});
+    return;
+  }
+  if(!cfToken){
+    if(typeof toast === "function") toast("❌ Cloudflare token toujours absent","err",{duration:6000,force:true});
+    return;
+  }
+  /* 4. Push secret + trigger workflow */
+  if(typeof toast === "function") toast("📤 Push CLOUDFLARE_API_TOKEN -> GitHub Secrets...","info",{duration:3500});
+  if(typeof window.axPushGitHubSecret !== "function"){
+    if(typeof toast === "function") toast("❌ axPushGitHubSecret indisponible (libsodium ?)","err",{duration:6000});
+    return;
+  }
+  var pushResult = await window.axPushGitHubSecret("CLOUDFLARE_API_TOKEN", cfToken);
+  if(!pushResult.ok){
+    if(typeof toast === "function") toast("❌ Push secret echoue : "+(pushResult.error||pushResult.status||""),"err",{duration:8000,force:true});
+    return;
+  }
+  if(typeof toast === "function") toast("🚀 Lancement deploiement 4 workers...","info",{duration:4000,force:true});
+  try{
+    var fr = await fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml/dispatches", {
+      method: "POST",
+      headers: {"Authorization":"Bearer "+ghToken, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+      body: JSON.stringify({ref:"main", inputs:{service:"all", env:"production"}})
+    });
+    if(fr.ok){
+      ls2("ax_workers_deployed", {ts: Date.now()});
+      if(typeof toast === "function") toast("🎉 Deploiement lance ! 4 workers en cours (~2 min)","ok",{duration:14000,force:true});
+      if(typeof axSecurityLog === "function") axSecurityLog("workers_v3_deploy_triggered","all");
+      setTimeout(function(){
+        try{ window.open("https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml","_blank"); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+      }, 2500);
+    }else{
+      var et = ""; try{ et = await fr.text(); }catch(_e){}
+      if(typeof toast === "function") toast("❌ Trigger echoue HTTP "+fr.status+(et?" - "+et.slice(0,80):""),"err",{duration:10000,force:true});
+    }
+  }catch(e){
+    if(typeof toast === "function") toast("❌ Erreur reseau : "+e.message,"err",{duration:6000});
+  }
+};
+
+/* Override route ?view=deploy1click pour utiliser V3 */
+setTimeout(function(){
+  if(window._axDeploy1ClickV3RouteWired) return;
+  window._axDeploy1ClickV3RouteWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "deploy1click" || K.view === "deploy-1clic" || K.view === "deployworkers")){
+      return '<div style="padding:24px;text-align:center;max-width:520px;margin:0 auto">'+
+        '<h2 style="color:#c9a227;font-family:Georgia,serif;margin:0 0 12px">🚀 Deploiement 1-clic v3</h2>'+
+        '<p style="color:#aab;font-size:14px;line-height:1.5">Apex dechiffre Vault + scan toutes les cles ax_* pour trouver le PAT par signature publique. Si Cloudflare token absent -> modal coller.</p>'+
+        '<button onclick="axDeployWorkers1ClickV3()" style="padding:18px 36px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:14px;font-weight:700;font-size:16px;cursor:pointer;margin-top:14px;box-shadow:0 8px 24px rgba(201,162,39,.3)">🚀 Deployer (scan + dechiffrage Vault)</button>'+
+        '<p style="color:#666;font-size:11px;margin-top:18px;line-height:1.5">v12.568 : axScanVaultForToken cherche par prefixes [PAT Kevin signature, github_pat_, ghp_]. Source affichee dans toast.</p>'+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 2050);
 
 /* ============================================================
    AX_V12_567 — DECHIFFRAGE AUTO TOKENS VAULT (Kevin "le PAT est deja dans Apex")
