@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.570",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.571",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,87 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_571 — GLOBAL FETCH INTERCEPTOR + axRedactOutbound universel
+   Audit secu v12.570 : axRedactOutbound 5% wired (1 callsite/7+) → 95%
+   code mort. Fix : intercepteur fetch global qui redact body + error
+   message sur TOUS les fetch sortants Apex.
+   Gain estime audit : +28 pts (42 → 70)
+   ============================================================ */
+(function(){
+  if(window._axFetchInterceptedV571) return;
+  window._axFetchInterceptedV571 = true;
+  if(typeof fetch !== "function") return;
+  var origFetch = window.fetch.bind(window);
+  function safeRedact(s){
+    if(!s || typeof s !== "string") return s;
+    if(typeof window._axRedactOutbound !== "function") return s;
+    try{ return window._axRedactOutbound(s); }catch(_e){ return s; }
+  }
+  /* Hosts dont on PRESERVE le body tel quel (sinon API call casse) */
+  var SKIP_REDACT_HOSTS = [
+    "api.anthropic.com",
+    "api.openai.com",
+    "api.x.ai",
+    "generativelanguage.googleapis.com",
+    "api.groq.com",
+    "openrouter.ai",
+    "api.cohere",
+    "api.deepseek.com",
+    "api.perplexity.ai",
+    "api.mistral.ai",
+    "api.github.com",
+    "api.cloudflare.com",
+    "firebasedatabase.app",
+    ".workers.dev",
+    "api.stripe.com",
+    "api.brevo.com",
+    "api.resend.com"
+  ];
+  function shouldSkip(url){
+    if(!url) return false;
+    var u = String(url);
+    for(var i=0;i<SKIP_REDACT_HOSTS.length;i++){
+      if(u.indexOf(SKIP_REDACT_HOSTS[i]) >= 0) return true;
+    }
+    return false;
+  }
+  window.fetch = function(input, init){
+    init = init || {};
+    var url = (typeof input === "string") ? input : (input && input.url) || "";
+    /* Pour API providers connus : NE PAS modifier body (ils ont besoin du token brut) */
+    if(!shouldSkip(url)){
+      try{
+        if(init.body && typeof init.body === "string"){
+          init.body = safeRedact(init.body);
+        }
+      }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("v571_redact_body",_e);}
+    }
+    return origFetch(input, init).catch(function(err){
+      /* Toujours redact error message (peut leak token dans stack) */
+      if(err && err.message){
+        try{ err.message = safeRedact(err.message); }catch(_e){}
+      }
+      throw err;
+    });
+  };
+  /* Patch console.error/warn pour redact aussi (logs Sentry-like) */
+  ["error","warn","log"].forEach(function(method){
+    var orig = console[method];
+    if(!orig || orig._v571) return;
+    console[method] = function(){
+      var args = Array.prototype.slice.call(arguments);
+      args = args.map(function(a){
+        if(typeof a === "string") return safeRedact(a);
+        if(a && a.message && typeof a.message === "string") a.message = safeRedact(a.message);
+        return a;
+      });
+      return orig.apply(console, args);
+    };
+    console[method]._v571 = true;
+  });
+})();
 
 /* ============================================================
    AX_V12_570 — APEX CREE LIENS AUTO + AUTONOMIE TOTALE
