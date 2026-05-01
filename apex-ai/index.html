@@ -919,7 +919,7 @@ try{
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.630",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.635",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -21646,7 +21646,7 @@ function axClipboardSync(text){var clip={text:text,ts:now(),deviceId:lg("ax_devi
 function axFileTransfer(base64,name,targetId){var CHUNK=200000;var chunks=[];for(var i=0;i<base64.length;i+=CHUNK)chunks.push(base64.slice(i,i+CHUNK));var transferId=uid();chunks.forEach(function(chunk,idx){var part={transferId:transferId,name:name,from:lg("ax_device_id","?"),to:targetId,ts:now(),chunk:idx,totalChunks:chunks.length,data:chunk};var key="ax_transfer_"+transferId+"_"+idx;ls(key,part);});toast("Fichier envoye ("+chunks.length+" parties, "+Math.round(base64.length/1024)+"KB)","ok");}
 
 // === MODULE: Monetisation ===
-function vLanding(){var h='<div class="ax-landing-hero"><div style="font-size:80px;margin-bottom:12px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite">\u2726</div><h1>APEX <span>AI</span></h1><p style="font-size:17px;max-width:520px">L\'assistant IA le plus puissant. Finance, code, voix, documents, domotique, multi-appareils.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px"><button class="ax-btn ax-btn-primary" onclick="axOpenSubscribeForm()" style="font-size:16px;padding:16px 36px;letter-spacing:.5px">\uD83D\uDE80 Commencer mon inscription</button><button class="ax-btn ax-btn-outline" onclick="document.querySelector(\'.ax-features\').scrollIntoView({behavior:\'smooth\'})" style="font-size:14px;padding:14px 24px">\u2193 Decouvrir</button></div><div style="display:flex;gap:16px;justify-content:center;margin-top:24px;font-size:12px;color:var(--ax-text-dim)"><span>\u2705 Gratuit</span><span>\u2705 Sans carte</span><span>\u2705 300+ actions</span></div><div style="text-align:center;margin-top:16px"><a href="#" onclick="axEnterLogin();return false" style="color:var(--ax-blue);font-size:13px">\uD83D\uDD11 Deja inscrit ? Se connecter</a></div></div>';var features=[{ic:"\uD83D\uDCAC",t:"Chat IA Premium",d:"Claude Sonnet/Opus, memoire persistante, outils et recherche web.",cl:"var(--ax-gold)"},{ic:"\uD83D\uDCB0",t:"Finance Expert",d:"NPV/IRR, portefeuille, watchlist, alertes prix, crypto.",cl:"var(--ax-green)"},{ic:"\uD83C\uDF99\uFE0F",t:"Assistant Vocal",d:"Dictee, lecture, 44 voix, mode continu type Siri.",cl:"var(--ax-blue)"},{ic:"\uD83D\uDCBB",t:"Code & Canvas",d:"Python+JS, sandbox, coloration syntaxique, preview.",cl:"var(--ax-purple)"},{ic:"\uD83C\uDFE0",t:"Domotique",d:"TV, clim, lumieres, volets. Broadlink IR + Smart TV WiFi.",cl:"var(--ax-cyan)"},{ic:"\uD83D\uDD12",t:"Securite 5 couches",d:"Chiffrement AES, PIN, audit, biometrie, kill switch.",cl:"var(--ax-red)"}];h+='<div class="ax-features" style="padding:24px 16px">';features.forEach(function(f){h+='<div class="ax-card" style="border-left:4px solid '+f.cl+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)"><div style="font-size:32px;margin-bottom:8px">'+f.ic+'</div><h3 style="color:'+f.cl+'">'+f.t+'</h3><p style="font-size:13px;color:var(--ax-text-dim)">'+f.d+'</p></div>';});h+='</div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83D\uDCB3 Tarifs</h2>';h+='<div style="overflow-x:auto;padding:0 8px"><div style="display:flex;gap:12px;min-width:900px;padding:8px 0">';/* v12.375 — Tarifs en cours de finalisation : afficher SEULEMENT free pendant les tests collegues */ var planOrder=["free"];planOrder.forEach(function(pk){var p=PLANS[pk];if(!p)return;/* v12.93 safety */var featured=pk==="pro";h+='<div class="ax-price-card'+(featured?" featured":"")+'" style="flex:1;min-width:160px"><h3 style="color:'+(featured?"var(--ax-gold)":"var(--ax-text)")+'">'+p.name+'</h3><div class="ax-amount">'+(p.price===0?"0":axFormatPrice(p.price,{round:true}))+'</div><div class="ax-period">'+(p.oneshot?"paiement unique":"/ mois")+'</div><ul><li>'+(p.msgs_day>0?p.msgs_day:"Illimite")+' msg/jour</li><li>'+(p.msgs_month>0?Math.round(p.msgs_month/1000)+"K":"Illimite")+' msg/mois</li><li>'+(p.kb_facts>0?p.kb_facts:"Illimite")+' faits memoire</li><li>'+p.devices+' appareil'+(p.devices>1?"s":"")+'</li><li>'+p.personas+' personas</li>'+(p.finance?'<li>Finance Expert</li>':'')+''+(p.domotique?'<li>Domotique</li>':'')+''+(p.offline?'<li>Mode offline</li>':'')+''+(p.code?'<li>Code Python+JS</li>':'')+''+(pk==="enterprise"?'<li>API publique</li><li>Support dedie</li>':'')+'</ul><button class="ax-btn '+(featured?"ax-btn-primary":"ax-btn-outline")+'" onclick="axOpenSubscribeForm()">'+(p.price===0?"Choisir Gratuit":"Choisir "+p.name)+'</button></div>';});h+='</div></div>';h+='<div style="text-align:center;padding:8px 0"><button class="ax-btn ax-btn-outline" onclick="axOpenSubscribeForm()" style="font-size:13px">\uD83C\uDF81 Lifetime Pro — '+axFormatPrice(299,{round:true})+' (paiement unique, a vie)</button></div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83C\uDFC6 Pourquoi APEX ?</h2>';h+='<div class="ax-features" style="padding:0 16px 16px"><div class="ax-card"><h3>\uD83C\uDFC6 245+ actions autonomes</h3><p style="font-size:13px;color:var(--ax-text-dim)">ChatGPT en a 20. Claude.ai en a 10. APEX en a 245. L\'IA qui AGIT pour vous.</p></div><div class="ax-card"><h3>\uD83C\uDFE0 Domotique integree</h3><p style="font-size:13px;color:var(--ax-text-dim)">Controlez TV, clim, lumieres par la voix. Aucun concurrent ne le fait.</p></div><div class="ax-card"><h3>\uD83D\uDCB0 Finance Expert</h3><p style="font-size:13px;color:var(--ax-text-dim)">NPV, IRR, SMA, EMA, crypto, devises. Bloomberg pour '+axFormatPrice(9.99)+'/mois.</p></div><div class="ax-card"><h3>\u2708\uFE0F Mode offline</h3><p style="font-size:13px;color:var(--ax-text-dim)">IA locale Gemma — fonctionne SANS internet. Personne d\'autre ne l\'a.</p></div><div class="ax-card"><h3>\uD83E\uDDE0 S\'ameliore seule</h3><p style="font-size:13px;color:var(--ax-text-dim)">Self-improving AI. Vos reactions l\'entrainent. Plus vous l\'utilisez, meilleure elle devient.</p></div><div class="ax-card"><h3>\uD83D\uDCDA 30+ templates pro</h3><p style="font-size:13px;color:var(--ax-text-dim)">Contrats, factures, CV, business plan, landing page, API — prets a l\'emploi.</p></div></div>';h+='<h2 style="text-align:center;padding:24px 0 12px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--ax-blue),#40c4e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\u2694\uFE0F APEX vs Concurrence</h2>';h+='<div style="overflow-x:auto;padding:0 16px 24px"><table class="ax-md" style="width:100%;font-size:12px"><tr><th>Feature</th><th style="color:var(--ax-gold)">APEX</th><th>ChatGPT+</th><th>Claude</th><th>Gemini</th></tr><tr><td>Prix</td><td style="color:var(--ax-green);font-weight:700">Gratuit/'+axFormatPrice(9.99)+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td></tr><tr><td>Python + JS</td><td>\u2705</td><td>\u2705 (Python)</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Finance NPV/IRR</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Domotique</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Mode offline</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Self-modify</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Templates pro</td><td>\u2705 30+</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Actions autonomes</td><td>\u2705 245+</td><td>~20</td><td>~10</td><td>~15</td></tr></table></div>';h+=vShareButtons();h+='<div style="text-align:center;padding:24px;font-size:12px;color:var(--ax-text-dim)">\u00A9 2026 APEX — Kevin DESARZENS. Tous droits reserves.</div>';return h;}
+function vLanding(){var h='<div class="ax-landing-hero"><div style="font-size:80px;margin-bottom:12px;animation:axFloatDiamond 3s ease-in-out infinite,axDiamondGlow 2.5s ease-in-out infinite">\u2726</div><h1>APEX <span>AI</span></h1><p style="font-size:17px;max-width:520px">L\'assistant IA le plus puissant. Finance, code, voix, documents, domotique, multi-appareils.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px"><button class="ax-btn ax-btn-primary" onclick="axOpenSubscribeForm()" style="font-size:16px;padding:16px 36px;letter-spacing:.5px">\uD83D\uDE80 Commencer mon inscription</button><button class="ax-btn ax-btn-outline" onclick="document.querySelector(\'.ax-features\').scrollIntoView({behavior:\'smooth\'})" style="font-size:14px;padding:14px 24px">\u2193 Decouvrir</button></div><div style="display:flex;gap:16px;justify-content:center;margin-top:24px;font-size:12px;color:var(--ax-text-dim)"><span>\u2705 Gratuit</span><span>\u2705 Sans carte</span><span>\u2705 300+ actions</span></div><div style="text-align:center;margin-top:16px"><a href="#" onclick="axEnterLogin();return false" style="color:var(--ax-blue);font-size:13px">\uD83D\uDD11 Deja inscrit ? Se connecter</a></div></div>';var features=[{ic:"\uD83D\uDCAC",t:"Chat IA Premium",d:"Claude Sonnet/Opus, memoire persistante, outils et recherche web.",cl:"var(--ax-gold)"},{ic:"\uD83D\uDCB0",t:"Finance Expert",d:"NPV/IRR, portefeuille, watchlist, alertes prix, crypto.",cl:"var(--ax-green)"},{ic:"\uD83C\uDF99\uFE0F",t:"Assistant Vocal",d:"Dictee, lecture, 44 voix, mode continu type Siri.",cl:"var(--ax-blue)"},{ic:"\uD83D\uDCBB",t:"Code & Canvas",d:"Python+JS, sandbox, coloration syntaxique, preview.",cl:"var(--ax-purple)"},{ic:"\uD83C\uDFE0",t:"Domotique",d:"TV, clim, lumieres, volets. Broadlink IR + Smart TV WiFi.",cl:"var(--ax-cyan)"},{ic:"\uD83D\uDD12",t:"Securite 5 couches",d:"Chiffrement AES, PIN, audit, biometrie, kill switch.",cl:"var(--ax-red)"}];h+='<div class="ax-features" style="padding:24px 16px">';features.forEach(function(f){h+='<div class="ax-card" style="border-left:4px solid '+f.cl+';background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)"><div style="font-size:32px;margin-bottom:8px">'+f.ic+'</div><h3 style="color:'+f.cl+'">'+f.t+'</h3><p style="font-size:13px;color:var(--ax-text-dim)">'+f.d+'</p></div>';});h+='</div>';h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83D\uDCB3 Tarifs</h2>';h+='<div style="overflow-x:auto;padding:0 8px"><div style="display:flex;gap:12px;min-width:900px;padding:8px 0">';/* v12.375 — Tarifs en cours de finalisation : afficher SEULEMENT free pendant les tests collegues */ var planOrder=["free"];planOrder.forEach(function(pk){var p=PLANS[pk];if(!p)return;/* v12.93 safety */var featured=pk==="pro";h+='<div class="ax-price-card'+(featured?" featured":"")+'" style="flex:1;min-width:160px"><h3 style="color:'+(featured?"var(--ax-gold)":"var(--ax-text)")+'">'+p.name+'</h3><div class="ax-amount">'+(p.price===0?"0":axFormatPrice(p.price,{round:true}))+'</div><div class="ax-period">'+(p.oneshot?"paiement unique":"/ mois")+'</div><ul><li>'+(p.msgs_day>0?p.msgs_day:"Illimite")+' msg/jour</li><li>'+(p.msgs_month>0?Math.round(p.msgs_month/1000)+"K":"Illimite")+' msg/mois</li><li>'+(p.kb_facts>0?p.kb_facts:"Illimite")+' faits memoire</li><li>'+p.devices+' appareil'+(p.devices>1?"s":"")+'</li><li>'+p.personas+' personas</li>'+(p.finance?'<li>Finance Expert</li>':'')+''+(p.domotique?'<li>Domotique</li>':'')+''+(p.offline?'<li>Mode offline</li>':'')+''+(p.code?'<li>Code Python+JS</li>':'')+''+(pk==="enterprise"?'<li>API publique</li><li>Support dedie</li>':'')+'</ul><button class="ax-btn '+(featured?"ax-btn-primary":"ax-btn-outline")+'" onclick="axOpenSubscribeForm()">'+(p.price===0?"Choisir Gratuit":"Choisir "+p.name)+'</button></div>';});h+='</div></div>';/* v635 — Lifetime Pro 299 retire (Kevin demande) */h+='<h2 style="text-align:center;padding:32px 0 12px;font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\uD83C\uDFC6 Pourquoi APEX ?</h2>';h+='<div class="ax-features" style="padding:0 16px 16px"><div class="ax-card"><h3>\uD83C\uDFC6 245+ actions autonomes</h3><p style="font-size:13px;color:var(--ax-text-dim)">ChatGPT en a 20. Claude.ai en a 10. APEX en a 245. L\'IA qui AGIT pour vous.</p></div><div class="ax-card"><h3>\uD83C\uDFE0 Domotique integree</h3><p style="font-size:13px;color:var(--ax-text-dim)">Controlez TV, clim, lumieres par la voix. Aucun concurrent ne le fait.</p></div><div class="ax-card"><h3>\uD83D\uDCB0 Finance Expert</h3><p style="font-size:13px;color:var(--ax-text-dim)">NPV, IRR, SMA, EMA, crypto, devises. Bloomberg pour '+axFormatPrice(9.99)+'/mois.</p></div><div class="ax-card"><h3>\u2708\uFE0F Mode offline</h3><p style="font-size:13px;color:var(--ax-text-dim)">IA locale Gemma — fonctionne SANS internet. Personne d\'autre ne l\'a.</p></div><div class="ax-card"><h3>\uD83E\uDDE0 S\'ameliore seule</h3><p style="font-size:13px;color:var(--ax-text-dim)">Self-improving AI. Vos reactions l\'entrainent. Plus vous l\'utilisez, meilleure elle devient.</p></div><div class="ax-card"><h3>\uD83D\uDCDA 30+ templates pro</h3><p style="font-size:13px;color:var(--ax-text-dim)">Contrats, factures, CV, business plan, landing page, API — prets a l\'emploi.</p></div></div>';h+='<h2 style="text-align:center;padding:24px 0 12px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--ax-blue),#40c4e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">\u2694\uFE0F APEX vs Concurrence</h2>';h+='<div style="overflow-x:auto;padding:0 16px 24px"><table class="ax-md" style="width:100%;font-size:12px"><tr><th>Feature</th><th style="color:var(--ax-gold)">APEX</th><th>ChatGPT+</th><th>Claude</th><th>Gemini</th></tr><tr><td>Prix</td><td style="color:var(--ax-green);font-weight:700">Gratuit/'+axFormatPrice(9.99)+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td><td>'+axFormatPrice(20,{round:true})+'</td></tr><tr><td>Python + JS</td><td>\u2705</td><td>\u2705 (Python)</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Finance NPV/IRR</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Domotique</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Mode offline</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Self-modify</td><td>\u2705</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Templates pro</td><td>\u2705 30+</td><td>\u274C</td><td>\u274C</td><td>\u274C</td></tr><tr><td>Actions autonomes</td><td>\u2705 245+</td><td>~20</td><td>~10</td><td>~15</td></tr></table></div>';h+=vShareButtons();h+='<div style="text-align:center;padding:24px;font-size:12px;color:var(--ax-text-dim)">\u00A9 2026 APEX — Kevin DESARZENS. Tous droits reserves.</div>';return h;}
 
 function axStripeCheckout(plan){var pubKey=localStorage.getItem("ax_stripe_pub");if(!pubKey){toast("Stripe non configure","warn");return;}toast("Redirection vers Stripe...","info");}
 
@@ -33476,14 +33476,128 @@ setTimeout(function(){
   };
   setTimeout(function(){
     try{
+      /* v635 GUARD : pas de race avec login - attendre K.user defini */
+      if(typeof window.K === "undefined" || !window.K || !window.K.user) return;
       if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()) return;
-      window.axAutoDeployIfMissing().then(function(r){
-        if(typeof console !== "undefined") console.log("[v630] auto-deploy result:", r);
+      Promise.race([
+        window.axAutoDeployIfMissing(),
+        new Promise(function(res){ setTimeout(function(){ res({ok:false, reason:"v635_timeout"}); }, 5000); })
+      ]).then(function(r){
+        if(typeof console !== "undefined") console.log("[v630/635] auto-deploy:", r);
       }).catch(function(_e3){_axSafeCatch&&_axSafeCatch("v630_run",_e3);});
     }catch(_e4){_axSafeCatch&&_axSafeCatch("v630_outer",_e4);}
   }, 30000);
 }catch(_outerE){
   try{ if(typeof console !== "undefined") console.warn("[v630] auto-deploy skip:", _outerE && _outerE.message); }catch(_e5){}
+}})();
+
+/* ============================================================
+   AX_V12_635 — SILENCE TOASTS ERREURS USER + AUTO-ESCALADE Claude Code
+   Kevin: "Arrete avec les toasts d erreurs ou pas d erreurs. Tout est
+   automatise je n ai pas besoin de savoir. Erreurs remontent auto a Apex
+   IA puis Claude Code. Apex corrige en autonomie + escalade silencieux."
+   ============================================================ */
+(function(){try{
+  if(typeof window === "undefined") return;
+  if(window._axSilenceToastsV635) return;
+  window._axSilenceToastsV635 = true;
+
+  /* Wrapper toast() : si severity err/warn -> silent (push ax_err_log + escalate) au lieu d afficher */
+  setTimeout(function(){
+    try{
+      var origToast = window.toast;
+      if(typeof origToast !== "function" || origToast._v635) return;
+      var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+      var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+      var wrapped = function(msg, severity, opts){
+        var sev = severity || "info";
+        opts = opts || {};
+        /* Toasts info/ok/success : passent normalement (Kevin veut juste savoir succes) */
+        if(sev === "info" || sev === "ok" || sev === "success"){
+          return origToast.apply(this, arguments);
+        }
+        /* Toasts err/warn : SILENT (pas d affichage user) + escalation auto */
+        try{
+          var log = lg2("ax_err_log", []) || [];
+          log.push({ts:Date.now(), sev:sev, msg:String(msg||"").slice(0,300), src:"toast_silenced_v635"});
+          if(log.length > 200) log = log.slice(-200);
+          ls2("ax_err_log", log);
+          /* Auto-escalate vers Claude Code via ax_claude_todo Firebase si critical */
+          if(sev === "err" || sev === "critical"){
+            var todo = lg2("ax_claude_todo", []) || [];
+            todo.push({
+              id: "v635_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+              context: {silenced_toast:true, msg:String(msg||"").slice(0,300), sev:sev},
+              reason: "Toast erreur silenced - escalade auto Claude Code",
+              severity: sev === "critical" ? "critical" : "warn",
+              ts: Date.now(),
+              src: "apex_v635",
+              v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
+              status: "pending"
+            });
+            if(todo.length > 50) todo = todo.slice(-50);
+            ls2("ax_claude_todo", todo);
+          }
+          /* Push vers Firebase ax_telemetry_in pour Apex IA aussi */
+          if(typeof window._pushTelemetryToApex === "function"){
+            try{ window._pushTelemetryToApex("toast_silenced", sev, msg); }catch(_e1){}
+          }
+        }catch(_e2){}
+        /* Ne PAS afficher le toast a Kevin (silent) */
+        if(typeof console !== "undefined") console.warn("[v635 silenced]", sev, msg);
+        return null;
+      };
+      wrapped._v635 = true;
+      window.toast = wrapped;
+    }catch(_e){}
+  }, 1000);
+
+  /* Hook window.onerror + unhandledrejection : tout escalade silent vers Claude Code */
+  try{
+    var origOnError = window.onerror;
+    window.onerror = function(message, source, lineno, colno, error){
+      try{
+        var lg3 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+        var ls3 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+        var todo = lg3("ax_claude_todo", []) || [];
+        todo.push({
+          id: "v635_onerror_" + Date.now(),
+          context: {message:String(message||"").slice(0,200), source:String(source||"").slice(0,100), lineno:lineno, colno:colno, stack:(error&&error.stack||"").slice(0,500)},
+          reason: "window.onerror escalade auto v635",
+          severity: "warn",
+          ts: Date.now(),
+          src: "apex_onerror_v635",
+          v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
+          status: "pending"
+        });
+        if(todo.length > 50) todo = todo.slice(-50);
+        ls3("ax_claude_todo", todo);
+      }catch(_e){}
+      if(typeof origOnError === "function") return origOnError.apply(this, arguments);
+      return false;
+    };
+    window.addEventListener("unhandledrejection", function(e){
+      try{
+        var lg4 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+        var ls4 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+        var todo = lg4("ax_claude_todo", []) || [];
+        todo.push({
+          id: "v635_promise_" + Date.now(),
+          context: {reason:String((e&&e.reason)||"").slice(0,300)},
+          reason: "unhandledrejection escalade auto v635",
+          severity: "warn",
+          ts: Date.now(),
+          src: "apex_promise_v635",
+          v: (typeof APP_VER !== "undefined") ? APP_VER : "v12.635",
+          status: "pending"
+        });
+        if(todo.length > 50) todo = todo.slice(-50);
+        ls4("ax_claude_todo", todo);
+      }catch(_e){}
+    });
+  }catch(_e){}
+}catch(_outerE){
+  try{ if(typeof console !== "undefined") console.warn("[v635] silence skip:", _outerE && _outerE.message); }catch(_e){}
 }})();
 
 /* ============================================================
