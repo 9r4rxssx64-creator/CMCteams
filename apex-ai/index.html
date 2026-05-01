@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.563",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.564",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,206 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_564 — DEPLOIEMENT 1-CLIC (Kevin 2026-05-01)
+   "Je veux juste un clic. Toujours fenetre + bouton direct."
+   "Le plus simple, le plus rapide, le plus sur."
+   "Apex a tout normalement (tokens deja dans Apex)."
+   ============================================================ */
+
+/* Helper: cherche un token dans plusieurs cles possibles + Coffre */
+window.axGetExistingToken = function(keys){
+  var lg2 = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+  if(typeof keys === "string") keys = [keys];
+  for(var i=0;i<keys.length;i++){
+    var v = lg2(keys[i], "");
+    if(v && typeof v === "string" && v.length > 10) return v;
+  }
+  try{
+    var vault = lg2("ax_vault", {}) || {};
+    for(var j=0;j<keys.length;j++){
+      var vv = vault[keys[j]];
+      if(vv && typeof vv === "string" && vv.length > 10) return vv;
+      if(vv && typeof vv === "object" && vv.value && vv.value.length > 10) return vv.value;
+    }
+  }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("axGetExistingToken_vault",_e);}catch(__){if(typeof _axSafeCatch==="function")_axSafeCatch("g",__);}}
+  return null;
+};
+
+/* Helper: encrypt + push secret GitHub via API (libsodium sealed box) */
+window.axPushGitHubSecret = async function(secretName, secretValue, repo){
+  repo = repo || "9r4rxssx64-creator/cmcteams";
+  var token = axGetExistingToken(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+  if(!token) return {ok:false, error:"github_pat_missing"};
+  if(!window.sodium){
+    await new Promise(function(res, rej){
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/libsodium-wrappers@0.7.13/dist/browsers/sodium.js";
+      s.onload = res;
+      s.onerror = function(){rej(new Error("sodium_load_failed"));};
+      document.head.appendChild(s);
+    });
+    if(window.sodium && window.sodium.ready) await window.sodium.ready;
+  }
+  try{
+    var keyResp = await fetch("https://api.github.com/repos/"+repo+"/actions/secrets/public-key", {
+      headers: {"Authorization":"Bearer "+token, "Accept":"application/vnd.github+json"}
+    });
+    if(!keyResp.ok) return {ok:false, error:"get_pubkey_"+keyResp.status};
+    var keyData = await keyResp.json();
+    var binkey = window.sodium.from_base64(keyData.key, window.sodium.base64_variants.ORIGINAL);
+    var binsec = window.sodium.from_string(secretValue);
+    var encBytes = window.sodium.crypto_box_seal(binsec, binkey);
+    var encB64 = window.sodium.to_base64(encBytes, window.sodium.base64_variants.ORIGINAL);
+    var putResp = await fetch("https://api.github.com/repos/"+repo+"/actions/secrets/"+secretName, {
+      method: "PUT",
+      headers: {"Authorization":"Bearer "+token, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+      body: JSON.stringify({encrypted_value: encB64, key_id: keyData.key_id})
+    });
+    if(putResp.ok && typeof axSecurityLog === "function") axSecurityLog("github_secret_pushed", secretName);
+    return {ok: putResp.ok, status: putResp.status};
+  }catch(e){
+    if(typeof _axSafeCatch==="function")_axSafeCatch("axPushGitHubSecret",e,"warn");
+    return {ok:false, error: e.message};
+  }
+};
+
+/* Helper: modal Apex generique pour coller un secret (1 bouton ouvrir + 1 input + 1 continuer) */
+window.axPromptPasteSecret = function(opts){
+  return new Promise(function(resolve){
+    var id = "axpaste_" + Date.now();
+    var ov = document.createElement("div");
+    ov.id = id;
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px";
+    var escH = function(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+    var title = escH(opts.title||"Action requise");
+    var instruction = escH(opts.instruction||"Colle le token ci-dessous").replace(/\n/g,"<br>");
+    var openLabel = escH(opts.openLabel||"Ouvrir la page");
+    var openUrl = opts.openUrl || "";
+    var continueLabel = escH(opts.continueLabel||"Continuer");
+    ov.innerHTML = '<div style="background:#0f0f1a;border:2px solid #c9a227;border-radius:18px;padding:24px;max-width:480px;width:100%;color:#fff;box-shadow:0 20px 60px rgba(201,162,39,.4)">'+
+      '<h2 style="color:#c9a227;font-family:Georgia,serif;margin:0 0 8px;font-size:22px">🔐 '+title+'</h2>'+
+      '<p style="color:#cdd;font-size:14px;line-height:1.5;margin:0 0 16px">'+instruction+'</p>'+
+      (openUrl ? '<button id="'+id+'_open" type="button" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,#6a8aff,#5a7adf);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:14px">📂 '+openLabel+'</button>' : '')+
+      '<input id="'+id+'_input" type="password" placeholder="Colle ici (long-press → Coller)" style="width:100%;box-sizing:border-box;padding:14px;background:#1a1a2a;color:#fff;border:1px solid #444;border-radius:10px;font-size:15px;font-family:monospace;margin-bottom:14px" autocomplete="off" autocorrect="off" spellcheck="false">'+
+      '<button id="'+id+'_ok" type="button" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer">✅ '+continueLabel+'</button>'+
+      '<button id="'+id+'_cancel" type="button" style="display:block;width:100%;padding:10px;background:transparent;color:#888;border:none;font-size:13px;cursor:pointer;margin-top:8px">Annuler</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var input = document.getElementById(id+"_input");
+    setTimeout(function(){try{input.focus();}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}}, 120);
+    var openBtn = document.getElementById(id+"_open");
+    if(openBtn){
+      openBtn.onclick = function(){ try{ window.open(openUrl, "_blank"); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);} };
+    }
+    document.getElementById(id+"_ok").onclick = function(){
+      var v = (input.value||"").trim();
+      if(!v){ input.style.borderColor="#e74c3c"; return; }
+      try{document.body.removeChild(ov);}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+      resolve({ok:true, value:v});
+    };
+    document.getElementById(id+"_cancel").onclick = function(){
+      try{document.body.removeChild(ov);}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+      resolve({ok:false, cancelled:true});
+    };
+    input.onkeydown = function(e){ if(e.key==="Enter") document.getElementById(id+"_ok").click(); };
+  });
+};
+
+/* Master 1-click : utilise tokens deja dans Apex, demande seulement ce qui manque */
+window.axDeployWorkers1Click = async function(){
+  if(typeof axIsAdminStrict === "function" && !axIsAdminStrict()){
+    if(typeof toast === "function") toast("Reserve admin","warn"); return;
+  }
+  var ls2 = window.ls || function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+  var ghToken = axGetExistingToken(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+  var cfToken = axGetExistingToken(["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"]);
+  if(typeof toast === "function"){
+    if(ghToken && cfToken) toast("✅ Tokens deja dans Apex - deploiement auto","ok",{duration:3000});
+    else toast("ℹ Apex demande seulement ce qui manque","info",{duration:3000});
+  }
+  if(!ghToken){
+    var r1 = await axPromptPasteSecret({
+      title: "GitHub PAT manquant",
+      instruction: "1) Clique 'Ouvrir GitHub'\n2) Tout est pre-rempli, clique 'Generate token' en bas\n3) Copie le token (commence par ghp_)\n4) Reviens ici, colle, clique Continuer",
+      openLabel: "Ouvrir GitHub",
+      openUrl: "https://github.com/settings/tokens/new?scopes=workflow,repo&description=Apex-Deploy",
+      continueLabel: "J'ai colle le PAT"
+    });
+    if(!r1.ok) return;
+    ls2("ax_gh_pat", r1.value);
+    ghToken = r1.value;
+  }
+  if(!cfToken){
+    var r2 = await axPromptPasteSecret({
+      title: "Cloudflare API Token manquant",
+      instruction: "Dernier token. Apex deploie ensuite sans toi.\n\n1) Clique 'Ouvrir Cloudflare'\n2) Create Token > Template 'Edit Cloudflare Workers'\n3) Continue > Create Token\n4) Copie le token affiche\n5) Reviens ici, colle, clique Continuer",
+      openLabel: "Ouvrir Cloudflare",
+      openUrl: "https://dash.cloudflare.com/profile/api-tokens",
+      continueLabel: "J'ai colle le Cloudflare token"
+    });
+    if(!r2.ok) return;
+    ls2("ax_cf_token", r2.value);
+    cfToken = r2.value;
+  }
+  if(typeof toast === "function") toast("📤 Push secret CLOUDFLARE_API_TOKEN vers GitHub...","info",{duration:3500});
+  var pushResult = await axPushGitHubSecret("CLOUDFLARE_API_TOKEN", cfToken);
+  if(!pushResult.ok){
+    if(typeof toast === "function") toast("❌ Push secret echoue : " + (pushResult.error||pushResult.status||""),"err",{duration:8000,force:true});
+    return;
+  }
+  if(typeof toast === "function") toast("✅ Secret pousse vers GitHub","ok");
+  if(typeof toast === "function") toast("🚀 Lancement deploiement 4 workers...","info",{duration:4000,force:true});
+  try{
+    var fr = await fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml/dispatches", {
+      method: "POST",
+      headers: {"Authorization":"Bearer "+ghToken, "Accept":"application/vnd.github+json", "Content-Type":"application/json"},
+      body: JSON.stringify({ref:"main", inputs:{service:"all", env:"production"}})
+    });
+    if(fr.ok){
+      ls2("ax_workers_deployed", {ts: Date.now()});
+      if(typeof toast === "function") toast("🎉 Deploiement lance ! 4 workers en cours (~2 min). Verifie Cloudflare dashboard.","ok",{duration:12000,force:true});
+      if(typeof axSecurityLog === "function") axSecurityLog("workers_1click_deploy_triggered","all");
+      setTimeout(function(){
+        try{ window.open("https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-cloudflare-workers.yml","_blank"); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+      }, 2500);
+    }else{
+      var et = ""; try{ et = await fr.text(); }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}
+      if(typeof toast === "function") toast("❌ Trigger echoue HTTP "+fr.status+" - "+(et||"").slice(0,80),"err",{duration:10000,force:true});
+    }
+  }catch(e){
+    if(typeof toast === "function") toast("❌ Erreur reseau : "+e.message,"err",{duration:6000});
+  }
+};
+
+/* Wire route ?view=deploy1click */
+setTimeout(function(){
+  if(window._axDeploy1ClickWired) return;
+  window._axDeploy1ClickWired = true;
+  var orig = window.vMain;
+  if(typeof orig !== "function") return;
+  window.vMain = function(){
+    if(window.K && (K.view === "deploy1click" || K.view === "deploy-1clic" || K.view === "deployworkers")){
+      var ghOk = !!axGetExistingToken(["ax_gh_pat","ax_github_token","ax_github_pat","ax_gh_token"]);
+      var cfOk = !!axGetExistingToken(["ax_cf_token","ax_cloudflare_token","ax_cloudflare_api_token"]);
+      var ghStatus = ghOk ? "✅ GitHub PAT deja dans Apex" : "⏳ GitHub PAT a fournir";
+      var cfStatus = cfOk ? "✅ Cloudflare token deja dans Apex" : "⏳ Cloudflare token a fournir";
+      var btnLabel = (ghOk && cfOk) ? "🚀 Deployer maintenant (vrai 1-clic)" : "🚀 Demarrer deploiement";
+      return '<div style="padding:24px;text-align:center;max-width:500px;margin:0 auto">'+
+        '<h2 style="color:#c9a227;font-family:Georgia,serif;margin:0 0 12px">🚀 Deploiement 1-clic</h2>'+
+        '<p style="color:#aab;font-size:14px;line-height:1.5">Apex deploie automatiquement les 4 workers Cloudflare manquants (auth, chat, vault, sentinels).</p>'+
+        '<div style="background:#1a1a2a;border-radius:12px;padding:16px;margin:18px 0;text-align:left;font-size:13px;color:#cdd">'+
+        '<div style="margin:8px 0">'+ghStatus+'</div>'+
+        '<div style="margin:8px 0">'+cfStatus+'</div>'+
+        '</div>'+
+        '<button onclick="axDeployWorkers1Click()" style="padding:16px 32px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:14px;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px;box-shadow:0 8px 24px rgba(201,162,39,.3)">'+btnLabel+'</button>'+
+        '<p style="color:#666;font-size:11px;margin-top:16px;line-height:1.5">Apex utilise les tokens deja dans le Coffre. Push automatique du secret GitHub via API + trigger workflow.</p>'+
+        '</div>';
+    }
+    return orig.apply(this, arguments);
+  };
+}, 1900);
 
 /* ============================================================
    AX_V12_563 — EMAIL INTEGRATION (Gmail + Outlook + IMAP)

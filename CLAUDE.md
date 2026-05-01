@@ -1,6 +1,108 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-04-30 (Apex v12.493 / CMC v9.571).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-01 (Apex v12.564 / CMC v9.571).
+
+---
+
+## 🛡 RÈGLE PERMANENTE — SÉCURITÉ AVANT AUTONOMIE TOTALE (Kevin 2026-05-01, ABSOLUE)
+
+> **"Quand Apex sera plus que sûr niveau sécurité, je collerai le reste de mes codes généraux et il pourra à ce moment-là tout faire et tout savoir en autonomie automatiquement. Mais je veux être sûr de la sécurité avant."** — Kevin 2026-05-01
+
+**Règle absolue, séquence imposée** — Apex priorité absolue :
+
+### 1. Avant que Kevin colle "le reste de ses codes généraux"
+
+Apex DOIT atteindre niveau sécurité audit externe ≥ 95/100 réel sur l'axe Sécurité, avec preuves opérationnelles :
+
+- ✅ `axRedactOutbound` wired sur TOUS les call sites IA (intercepteur fetch global)
+- ✅ Vault AES-GCM 256 + PBKDF2 100k iterations (audit)
+- ✅ Phase 5 Firebase Auth deployed (custom tokens RS256, rules `auth.uid` gate)
+- ✅ Rate-limiting PIN progressif (5/30s → 6/2min → 7/10min → 8/1h → 9/24h)
+- ✅ Bodyguard runtime actif (CSP violations + postMessage cross-frame)
+- ✅ Audit log immutable + tamper detection
+- ✅ Tokens chiffrés au repos (Coffre + IDB shadow)
+- ✅ Auto-redaction tokens dans logs/erreurs/telemetry
+- ✅ FB_LOCAL strict pour `ax_user`, `ax_uid`, `ax_voice_print_*`
+- ✅ Auto hard-logout si user_id mismatch détecté
+- ✅ Sentry-grade error capture sans leak secrets
+- ✅ Secrets via Cloudflare Worker proxy (pas direct au navigateur)
+- ✅ Pas de tokens dans `console.log` / `_axSilentLog` / Firebase audit
+- ✅ Sentinelle `secrets-leak-watch` quotidienne grep dans logs
+- ✅ Test pénétration cross-app (subagent QA externe simule attaques)
+
+### 2. Une fois niveau ≥ 95/100 atteint
+
+Kevin colle alors :
+- Tokens API restants (banques, paiements, SaaS pro)
+- Identifiants comptes (Apple ID, Google, services)
+- Documents sensibles (KBIS, KYC, contrats)
+- Backups historiques
+
+À ce moment seulement, Apex peut :
+- Tout faire en autonomie totale
+- Accéder à tous services Kevin
+- Modifier/déployer/configurer sans demande
+
+### 3. État actuel à confirmer par audit externe
+
+Avant que Kevin colle plus, je DOIS lancer audit sécurité externe (5 agents Explore parallèles : OWASP ASVS L2, NIST CSF, MITRE ATT&CK, CWE Top 25, secrets-detection scan complet).
+
+### 4. Test mental obligatoire avant chaque release
+
+> *"Si Kevin colle aujourd'hui sa CB principale dans Apex, est-ce qu'un attaquant peut la lire ? Via XSS ? Via fetch interception ? Via Firebase rules trop ouverts ? Via SSE leak ? Via audit log ? Via copy-paste IA ?"*
+
+Si réponse "peut-être" sur 1 vecteur → fix avant push.
+
+S'applique : Apex priorité 1, CMCteams priorité 2.
+
+---
+
+## 🖱 RÈGLE PERMANENTE — 1 CLIC + FENÊTRE + BOUTON DIRECT (Kevin 2026-05-01, ABSOLUE)
+
+> **"Je veux juste un clic à faire lorsque il faut mon action. Toujours avec fenêtre et bouton directe."** — Kevin 2026-05-01
+> **"Le plus simple pour moi le plus rapide et le plus sûr."** — Kevin 2026-05-01
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Quand action Kevin requise = MODAL APEX dédiée
+
+- Modal centrée fond sombre + titre clair
+- **1 bouton primaire** "Ouvrir [page]" (Kevin clique → window.open)
+- **1 input** pour coller (si secret/token, autocomplete=off, type=password)
+- **1 bouton** "Continuer" (validation finale)
+- **1 bouton** "Annuler" (discret)
+
+JAMAIS de window.open() automatique sans bouton visible. Kevin doit toujours décider quand la fenêtre s'ouvre.
+
+### 2. Apex automatise tout ce qui passe par API
+
+Kevin ne va JAMAIS sur 2+ pages externes pour la même tâche. Apex push secrets via API (GitHub libsodium encrypt + PUT), trigger workflows via API, monitor runs via API.
+
+Pattern : Kevin colle 1 token dans Apex → Apex fait tout le reste en chaîne.
+
+### 3. Helper réutilisable `axPromptPasteSecret(opts)`
+
+Signature : `{title, instruction, openLabel, openUrl, continueLabel}` → retourne `Promise<{ok, value, cancelled}>`.
+
+À utiliser pour TOUTE collecte de credential. Pas de prompt() natif (Kevin sur iPhone PWA = clavier saute).
+
+### 4. Helper réutilisable `axPushGitHubSecret(name, value, repo)`
+
+Encrypt avec libsodium-wrappers (CDN lazy) + PUT /repos/{repo}/actions/secrets/{name}. Permet d'éviter à Kevin d'aller sur GitHub Settings > Secrets manuellement.
+
+### 5. État visible TOUJOURS
+
+- Modal montre étape X/Y
+- Toast à chaque action réussie
+- Si erreur API → message simple ("Pousser secret a echoue, retry") + bouton retry
+
+### 6. Test mental obligatoire avant chaque flow setup/deploy
+
+> *"Pour cette tâche, combien de pages externes Kevin doit-il visiter ? Combien de copier-coller ? Si > 1 + < 2 → reprendre l'architecture, automatiser via API."*
+
+Si non simplifié → fixer avant push.
+
+S'applique : Apex (priorité absolue, déploiement workers / Phase 5 / OAuth providers), CMCteams (admin tools), tous projets futurs.
 
 ---
 
