@@ -69,6 +69,59 @@ S'applique : Apex priorité absolue.
 
 ---
 
+## 🛡 RÈGLE PERMANENTE — PROTECTION ≠ STABILITÉ (Kevin 2026-05-01, ABSOLUE)
+
+> Leçon brutale session 2026-05-01 : 25 versions empilées (v12.564→v12.660) de wrappers protecteurs (panic mode, silence toast, MutationObserver onclick, intercept fetch) qui se sont annulés mutuellement. Score sécu théorique 97/100, score fonctionnel réel 42/100. Login bloqué silencieusement. Boutons morts.
+
+**Règle absolue**, applicable à TOUTE session future Apex/CMCteams/futurs projets :
+
+### 1. AVANT d'ajouter un wrapper protecteur, vérifier AUTRES wrappers existants
+
+À chaque IIFE ou wrap (setInterval, fetch, toast, innerHTML setter, addEventListener) → grep `window\.<fn> = function|original\.\w+\.<fn> = function` AVANT de wrapper. Si déjà 1 wrap → ne pas en ajouter un 2e qui peut entrer en conflit (race condition).
+
+### 2. Une protection qui DÉSACTIVE une fonction = bug
+
+❌ Panic mode v569 désactivait `setInterval`/`setTimeout` → tuait toutes les sentinelles.
+❌ Silence toast v635 désactivait feedback erreur → login fail invisible.
+❌ MutationObserver v610 retirait `onclick=*` → bouton Connexion mort.
+
+**Règle** : une protection qui empêche le code legitime de s'exécuter est un bug pire que la menace dont elle protège.
+
+### 3. Audit POST-FIX OBLIGATOIRE après chaque batch de protections
+
+Ne JAMAIS empiler 5+ wrappers sans relancer audit fonctionnel (login + boutons + flow IA + chat). Si audit révèle régressions, REVERT avant d'ajouter d'autres protections.
+
+### 4. Test mental obligatoire avant chaque protection
+
+> *"Ce wrap peut-il faire que Kevin ne voie pas une erreur légitime ? Que Laurence ne puisse pas se connecter ? Qu'un bouton ne réagisse pas ? Si oui à 1+ → annuler ou ajouter guard explicite (`if(typeof origFn === 'function' && !origFn._myFlag)`)."*
+
+### 5. Modules ES6 DOIVENT être importés en prod (vs juste pre-cached)
+
+Erreur session : 9 modules ES6 (~1245 lignes) créés v580+, ajoutés au Service Worker pre-cache, exposés sur `window.Apex*`. **Mais index.html ne les importe JAMAIS** (les helpers legacy sont utilisés). 45KB code mort.
+
+**Règle** : si module ES6 créé → grep usage `window.ApexX.method` ou `import` dans le code consommateur. Si 0 usage → soit retirer le module, soit migrer le call site legacy vers le module.
+
+### 6. Sentinelles DÉCLARÉES vs WIRÉES vs TESTÉES
+
+3 niveaux Security Theater progressifs :
+- **Déclarée** : `axCreateLocalWorker("X", task)` exécuté au boot
+- **Wirée** : sentinelle effectue son `task` toutes N secondes (visible via `lg("ax_workers_init_v4")`)
+- **Testée** : preuve d'exécution réelle (logs `worker.results[]` récents, audit cumulatif)
+
+**Règle** : pour qu'une sentinelle compte dans le score audit, les 3 niveaux requis. Sinon = Security Theater (erreur #28 CLAUDE.md).
+
+### 7. Application immédiate
+
+Cette règle s'applique à toutes mes futures sessions. Avant chaque `window.X = function` wrap :
+1. Grep wraps existants
+2. Vérifier ordre d'exécution si setTimeout
+3. Tester scenario user (login, click, navigation)
+4. Audit POST-FIX si > 3 wrappers ajoutés
+
+S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
+
+---
+
 ## 🧬 RÈGLE PERMANENTE — RECONNAISSANCE AUTO CREDENTIALS + AUTO-FETCH OUTILS (Kevin 2026-05-01, ABSOLUE)
 
 > **"Lorsqu'il aura tous les codes je veux qu'il récupère tout ce dont il a besoin, outils, liens etc et qu'il reconnaisse les codes, identifiants, sites, apps, etc automatiquement toujours."** — Kevin 2026-05-01
