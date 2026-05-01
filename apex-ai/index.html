@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.551",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.552",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30387,7 +30387,7 @@ window.axDependencyGraph = function(){
           if(name !== k && !deps[name]) deps[name] = true;
         });
         Object.keys(deps).forEach(function(d){ edges.push({from:k, to:d}); });
-      }catch(_){}
+      }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
     });
     return {ts:Date.now(), nodes:nodes, edges:edges, summary:{node_count:nodes.length, edge_count:edges.length}};
   }catch(_e){ if(typeof _axSafeCatch==="function")_axSafeCatch("axDependencyGraph",_e,"warn"); return {nodes:[],edges:[]}; }
@@ -30529,6 +30529,119 @@ setTimeout(function(){
     window._axApexCodeRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("apexcode_route_wire",_e,"warn");}
 }, 600);
+
+/* ============================================================
+   AX_V12_552 — Performance quick wins (route preload + IO lazy imgs + sentinelle code-companion)
+   ============================================================ */
+
+window.AX_ROUTE_PRELOAD_HINTS = {
+  "vault": ["https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"],
+  "studiomusic": ["https://cdn.jsdelivr.net/npm/wavesurfer.js@7"],
+  "scanstudio": ["https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"],
+  "finance": ["https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"],
+  "music": ["https://cdn.jsdelivr.net/npm/wavesurfer.js@7"]
+};
+window.axPreloadHint = function(route){
+  try{
+    var urls = AX_ROUTE_PRELOAD_HINTS[route];
+    if(!urls || !urls.length) return;
+    if(!window._axPreloadedRoutes) window._axPreloadedRoutes = {};
+    if(window._axPreloadedRoutes[route]) return;
+    window._axPreloadedRoutes[route] = true;
+    urls.forEach(function(url){
+      var link = document.createElement("link");
+      link.rel = "preload"; link.as = "script";
+      link.href = url; link.crossOrigin = "anonymous";
+      document.head.appendChild(link);
+    });
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("axPreloadHint",_e,"info");}
+};
+
+setTimeout(function(){
+  try{
+    if(window._axPreloadHookWired) return;
+    var origSv = window.sv;
+    if(typeof origSv !== "function") return;
+    window.sv = function(v){
+      try{ if(typeof axPreloadHint === "function") axPreloadHint(v); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+      return origSv.apply(this, arguments);
+    };
+    window._axPreloadHookWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("preload_hook",_e,"warn");}
+}, 700);
+
+window.axLazyImageObserver = null;
+window._axInitLazyImageObserver = function(){
+  if(window.axLazyImageObserver) return;
+  if(typeof IntersectionObserver === "undefined") return;
+  try{
+    window.axLazyImageObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          var img = e.target;
+          if(img.dataset && img.dataset.src){
+            img.src = img.dataset.src;
+            delete img.dataset.src;
+            window.axLazyImageObserver.unobserve(img);
+          }
+        }
+      });
+    }, {rootMargin:"100px 0px"});
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("lazyimg_init",_e,"warn");}
+};
+window.axObserveLazyImages = function(rootEl){
+  if(!window.axLazyImageObserver) _axInitLazyImageObserver();
+  if(!window.axLazyImageObserver) return 0;
+  var imgs = (rootEl||document).querySelectorAll("img[data-src]");
+  var count = 0;
+  imgs.forEach(function(img){ window.axLazyImageObserver.observe(img); count++; });
+  return count;
+};
+setTimeout(function(){
+  try{
+    _axInitLazyImageObserver();
+    if(window._axLazyImgPolled) return;
+    window._axLazyImgPolled = true;
+    setInterval(function(){
+      try{ if(typeof axObserveLazyImages === "function") axObserveLazyImages(); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    }, 5000);
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("lazyimg_boot",_e,"warn");}
+}, 2000);
+
+window.axCodeCompanionAudit = function(){
+  try{
+    if(typeof axCodeListWorkflowRuns !== "function") return null;
+    return axCodeListWorkflowRuns(null, "failure").then(function(failures){
+      var report = {ts:Date.now(), failed_runs:failures.length, recent:failures.slice(0,5)};
+      if(typeof ls === "function") ls("ax_code_companion_audit", report);
+      if(failures.length > 3 && typeof axNeedsAttention === "function"){
+        axNeedsAttention({
+          id:"code_companion_failures", title:"GitHub Actions: " + failures.length + " runs en echec",
+          body:"Plusieurs workflows ont echoue. Verifier dans Apex Code Companion.",
+          action:{label:"Voir Apex Code", run:function(){ if(typeof sv==="function") sv("apexcode"); }}
+        });
+      }
+      if(typeof axSecurityLog === "function") axSecurityLog("code_companion_audit", "failures="+failures.length);
+      return report;
+    });
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("code_companion_audit",_e,"warn"); return null;}
+};
+setTimeout(function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var last = lg("ax_code_companion_audit", null);
+    if(!last || (Date.now() - last.ts) > 7*86400000){
+      if(typeof axIsAdminStrict === "function" && axIsAdminStrict() && typeof _axGhToken === "function" && _axGhToken()){
+        axCodeCompanionAudit();
+      }
+    }
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("code_companion_boot",_e,"warn");}
+}, 45000);
+
+window.axHotPathSafeRun = function(label, fn, defaultVal){
+  if(typeof _axSafeRun === "function") return _axSafeRun(label, fn, defaultVal);
+  try{ return fn(); }catch(e){ if(typeof _axSafeCatch==="function")_axSafeCatch(label,e,"info"); return defaultVal; }
+};
 
 </script>
 </body>
