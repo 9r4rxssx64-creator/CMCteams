@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.552",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.553",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4347,6 +4347,12 @@ function axBreachStats(){
         if(typeof axNotifyKevin === "function"){
           axNotifyKevin("URGENT : "+stats.overdue72h+" breach RGPD non notifies > 72h", "Violation Art. 33. Notifier CNIL immediatement.");
         }
+        /* AX_V12_553_RGPD_WIRE : escalade APDP Monaco/CNIL automatique pour chaque breach overdue */
+        if(typeof axApdpEscalate === "function" && stats.recent_breaches){
+          stats.recent_breaches.forEach(function(b){
+            if(b && b.id && (Date.now() - b.ts) > 72*3600*1000) axApdpEscalate(b.id);
+          });
+        }
       }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
     }
     setInterval(function(){
@@ -4354,6 +4360,12 @@ function axBreachStats(){
         var s = axBreachStats();
         if(s.overdue72h > 0 && typeof axNotifyKevin === "function"){
           axNotifyKevin("URGENT : "+s.overdue72h+" breach > 72h non notifies", "Violation RGPD Art. 33");
+        }
+        /* AX_V12_553_RGPD_WIRE : escalade APDP cron horaire */
+        if(s.overdue72h > 0 && typeof axApdpEscalate === "function" && s.recent_breaches){
+          s.recent_breaches.forEach(function(b){
+            if(b && b.id && (Date.now() - b.ts) > 72*3600*1000) axApdpEscalate(b.id);
+          });
         }
       }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
     }, 3600 * 1000);
@@ -30642,6 +30654,89 @@ window.axHotPathSafeRun = function(label, fn, defaultVal){
   if(typeof _axSafeRun === "function") return _axSafeRun(label, fn, defaultVal);
   try{ return fn(); }catch(e){ if(typeof _axSafeCatch==="function")_axSafeCatch(label,e,"info"); return defaultVal; }
 };
+
+/* ============================================================
+   AX_V12_553 — Wire 3 P0 residuels (audit POST-FIX v12.552 = 78/100 -> 91/100 cible)
+   ============================================================ */
+
+/* === P0-2. Wire axScanSemanticHallucination dans flux _callClaudeAPI === */
+setTimeout(function(){
+  try{
+    if(window._axSemanticHallucinationWired) return;
+    if(typeof window._callClaudeAPI !== "function") return;
+    var prev = window._callClaudeAPI;
+    window._callClaudeAPI = function(){
+      var ret = prev.apply(this, arguments);
+      /* Apres l appel, scan le dernier message assistant pour hallucinations semantiques */
+      setTimeout(function(){
+        try{
+          if(!K || !K.messages || !K.messages.length) return;
+          var last = K.messages[K.messages.length-1];
+          if(!last || last.role !== "assistant" || last._semanticScanned) return;
+          var text = typeof last.content === "string" ? last.content : "";
+          if(!text || text.length < 30) return;
+          last._semanticScanned = true;
+          if(typeof axScanSemanticHallucination === "function"){
+            var scan = axScanSemanticHallucination(text);
+            if(scan && scan.suspect && scan.types.length){
+              try{ if(typeof axSecurityLog==="function") axSecurityLog("ai_semantic_hallucination_wired", scan.types.join(",")); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+              try{ if(typeof toast==="function") toast("Possible hallucination detectee : " + scan.types.join(", ") + " - verifie sources", "warn", {duration:5000}); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+              last._hallucinationFlags = scan.types;
+            }
+          }
+          /* Aussi calibration confidence per-modele */
+          if(typeof axAdaptiveConfidence === "function" && K.settings && K.settings.model){
+            var calib = axAdaptiveConfidence(K.settings.model, {confidence: last._confidence || 1.0});
+            if(calib && !calib.ok){
+              last._lowAdaptiveConfidence = true;
+              try{ if(typeof axSecurityLog==="function") axSecurityLog("ai_adaptive_low_confidence", calib.model+":"+calib.threshold); }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+            }
+          }
+        }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("semantic_scan_wire",_e,"warn");}
+      }, 1800);
+      return ret;
+    };
+    window._axSemanticHallucinationWired = true;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("semantic_wire_setup",_e,"warn");}
+}, 1500);
+
+/* === P0-3. Sentinelle axCodeQualityAudit (hebdo lundi 2h, ou >7j depuis dernier) === */
+window.axCodeQualityAudit = function(){
+  try{
+    var report = {ts:Date.now(), jsdoc:null, complexity:null};
+    if(typeof axJsdocLint === "function") report.jsdoc = axJsdocLint();
+    if(typeof axComplexityReport === "function") report.complexity = axComplexityReport(15);
+    if(typeof axModuleHealth === "function") report.modules = axModuleHealth().summary;
+    if(typeof ls === "function") ls("ax_code_quality_audit", report);
+    /* Alert admin si seuils critiques */
+    var alerts = [];
+    if(report.jsdoc && report.jsdoc.coverage_pct < 50) alerts.push("JSDoc coverage " + report.jsdoc.coverage_pct + "% (cible 80%)");
+    if(report.complexity && report.complexity.count > 5) alerts.push(report.complexity.count + " fonctions > 15 complexity");
+    if(report.modules && report.modules.missing > 0) alerts.push(report.modules.missing + " modules avec helpers manquants");
+    if(alerts.length && typeof axNeedsAttention === "function"){
+      axNeedsAttention({
+        id:"code_quality_alerts",
+        title:"Code Quality : " + alerts.length + " alertes",
+        body: alerts.join(" · "),
+        action:{label:"Voir Apex Code", run:function(){ if(typeof sv==="function") sv("apexcode"); }}
+      });
+    }
+    if(typeof axSecurityLog === "function") axSecurityLog("code_quality_audit", "alerts="+alerts.length);
+    return report;
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("code_quality_audit",_e,"warn"); return null;}
+};
+/* Auto-trigger hebdo */
+setTimeout(function(){
+  try{
+    var lg = window.lg || function(k,d){var v=localStorage.getItem(k);return v?JSON.parse(v):d;};
+    var last = lg("ax_code_quality_audit", null);
+    if(!last || (Date.now() - last.ts) > 7*86400000){
+      if(typeof axIsAdminStrict === "function" && axIsAdminStrict()){
+        axCodeQualityAudit();
+      }
+    }
+  }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("code_quality_boot",_e,"warn");}
+}, 60000); /* 60s post-boot pour ne pas charger */
 
 </script>
 </body>
