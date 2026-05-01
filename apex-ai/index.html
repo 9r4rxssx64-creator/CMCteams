@@ -615,6 +615,33 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
 <div id="navbar"></div>
 </div>
 <div id="toast-container"></div>
+<script type="module">
+/* AX_V12_580 — Phase 4 : load ES6 modules + expose on window for backward compat */
+try{
+  Promise.allSettled([
+    import('./modules/security.js'),
+    import('./modules/credentials.js'),
+    import('./modules/perf.js')
+  ]).then(function(results){
+    if(results[0].status==='fulfilled') window.ApexSecurity = results[0].value;
+    if(results[1].status==='fulfilled') window.ApexCredentials = results[1].value;
+    if(results[2].status==='fulfilled') window.ApexPerf = results[2].value;
+    /* Backward-compat : alias les exports vers les noms historiques (override progressif) */
+    if(window.ApexSecurity){
+      if(!window.axSanitizeHTMLPure) window.axSanitizeHTMLPure = window.ApexSecurity.sanitizeHTMLStrict;
+      if(!window.axRedactPure) window.axRedactPure = window.ApexSecurity.redactSecrets;
+      if(!window.axHashSHA256Pure) window.axHashSHA256Pure = window.ApexSecurity.hashSHA256;
+    }
+    if(window.ApexPerf){
+      if(!window.axDebounce) window.axDebounce = window.ApexPerf.debounce;
+      if(!window.axThrottle) window.axThrottle = window.ApexPerf.throttle;
+    }
+    if(typeof console!=='undefined') console.log('[v580] ES6 modules loaded:', Object.keys({sec:window.ApexSecurity, creds:window.ApexCredentials, perf:window.ApexPerf}).filter(function(k){return window['Apex'+k.charAt(0).toUpperCase()+k.slice(1)];}));
+  });
+}catch(e){
+  if(typeof console!=='undefined') console.warn('[v580] ES6 modules load failed:', e && e.message);
+}
+</script>
 <button id="ax-fab" class="hidden" onclick="_toggleMiniChat()" title="Parler a l'IA" aria-label="Ouvrir le mini-chat APEX AI">&#10070;</button>
 <div id="ax-mini-chat" role="dialog" aria-label="Mini-chat APEX AI"><div class="mc-header"><h3>&#10070; APEX AI</h3><button onclick="_toggleMiniChat()" style="background:none;border:none;color:var(--ax-text-dim);font-size:18px;cursor:pointer" aria-label="Fermer le mini-chat" title="Fermer">&#10005;</button></div><div class="mc-body" id="ax-mc-body"></div><div class="mc-input"><textarea id="ax-mc-input" class="ax-input" placeholder="Question, ordre, commande..." autocorrect="off" autocapitalize="sentences" spellcheck="false" autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_mcSend()}" aria-label="Saisir un message pour APEX AI" aria-label="Question, ordre, commande..."></textarea><button class="ax-btn-icon ax-btn-primary" onclick="_mcSend()" style="width:40px;height:40px;border-radius:50%" aria-label="Envoyer le message">&#10148;</button></div></div>
 <script>
@@ -880,7 +907,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.578",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.580",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
