@@ -880,7 +880,7 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
     }
   }catch(_e){}
 })();
-var APP_VER = "v12.565",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.566",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -32537,6 +32537,68 @@ setTimeout(function(){
     window._axGuidedRouteWired = true;
   }catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("guided_route",_e,"warn");}
 }, 1700);
+
+/* ============================================================
+   AX_V12_566 — SAFE MODE (Kevin "app saute, change de vue, marche pas")
+   Active via ?safemode=1 ou localStorage ax_safe_mode=true
+   Desactive via ?safemode=0
+   Coupe toutes les sentinelles auto qui spamment l interface :
+   - axAutoMaintenance / axRunFullAudit / _axCheckRemoteVersion
+   - axNeedsAttention modals (3 successives chez Kevin = bascule vue)
+   - Auto-bascule en safe mode si > 5 modals axNeedsAttention en 60s
+   ============================================================ */
+(function(){
+  try{
+    /* Toggle via URL */
+    if(/[?&]safemode=0/.test(location.search)){
+      localStorage.removeItem("ax_safe_mode");
+      console.log("[v566] safe mode disabled via URL");
+    }
+    var safeMode = localStorage.getItem("ax_safe_mode") === "true" || /[?&]safemode=1/.test(location.search);
+    if(safeMode){
+      localStorage.setItem("ax_safe_mode", "true");
+      /* Block axNeedsAttention modals */
+      window.axNeedsAttention = function(){
+        console.log("[safemode] axNeedsAttention blocked", arguments);
+      };
+      /* Disable noisy auto sentinels apres boot */
+      setTimeout(function(){
+        try{
+          if(typeof window.axAutoMaintenance === "function") window.axAutoMaintenance = function(){console.log("[safemode] axAutoMaintenance blocked");};
+          if(typeof window.axRunFullAudit === "function") window.axRunFullAudit = function(){console.log("[safemode] axRunFullAudit blocked");};
+          if(typeof window._axCheckRemoteVersion === "function") window._axCheckRemoteVersion = function(){console.log("[safemode] _axCheckRemoteVersion blocked");};
+          if(typeof window.axVerifyAllWorkers === "function") window.axVerifyAllWorkers = function(){console.log("[safemode] axVerifyAllWorkers blocked");};
+          if(typeof window.axVerifyAllFirebase === "function") window.axVerifyAllFirebase = function(){console.log("[safemode] axVerifyAllFirebase blocked");};
+        }catch(_e){}
+      }, 800);
+      setTimeout(function(){
+        if(typeof toast === "function") toast("🛡 Mode safe actif - sentinelles auto coupees. Pour reactiver: ajoute ?safemode=0","info",{duration:8000,force:true});
+      }, 2000);
+    }
+    /* Auto-detection : >5 axNeedsAttention en 60s -> safe mode auto */
+    setTimeout(function(){
+      try{
+        var orig = window.axNeedsAttention;
+        if(typeof orig !== "function" || orig._v566wrap) return;
+        var ts = [];
+        var wrapped = function(opts){
+          var now = Date.now();
+          ts = ts.filter(function(t){return now-t<60000;});
+          ts.push(now);
+          if(ts.length > 5){
+            console.warn("[v566] >5 modals/min - auto safe mode");
+            localStorage.setItem("ax_safe_mode", "true");
+            if(typeof toast === "function") toast("🛡 Trop de modals (5+/min) - mode safe ACTIVE. Recharge l app pour appliquer.","warn",{duration:12000,force:true});
+            return;
+          }
+          return orig.apply(this, arguments);
+        };
+        wrapped._v566wrap = true;
+        window.axNeedsAttention = wrapped;
+      }catch(_e){}
+    }, 1500);
+  }catch(_e){}
+})();
 
 /* ============================================================
    AX_V12_565 — DIAGNOSTIC CREDENTIALS + FIX SILENT-CATCH BOUCLE
