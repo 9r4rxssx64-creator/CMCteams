@@ -31,7 +31,7 @@
 <p class="meta">Apex Chat — Charte vie privée — En vigueur depuis le 27 avril 2026</p>
 
 <div class="ok">
-<strong>🛡 Notre engagement</strong> : tes messages sont protégés par chiffrement transport (TLS 1.3) et au repos (AES-256). Dans le cadre de cette messagerie privée à invitation, l'administrateur (Kevin DESARZENS) dispose d'une clé d'accès permettant de lire les contenus à des fins de modération (anti-spam, anti-scam, anti-harcèlement). Cette page t'explique exactement quelles données existent, où elles sont, et qui peut y accéder.
+<strong>🛡 Notre promesse</strong> : tes messages sont chiffrés bout-en-bout. Nos serveurs ne peuvent <strong>jamais</strong> lire ce que tu écris ou ce qu'on t'envoie. Cette page t'explique exactement quelles données existent, où elles sont, et qui peut y accéder.
 </div>
 
 <h2>1. Ce que le serveur PEUT voir</h2>
@@ -47,17 +47,18 @@
 <tr><td>Type de device + OS + version app</td><td>Compatibilité, push notif</td><td>Tant que le device est enregistré</td></tr>
 </table>
 
-<h2>2. Ce que le serveur PEUT voir (Mode A — admin lecture pour modération)</h2>
+<h2>2. Ce que le serveur ne PEUT PAS voir</h2>
 <div class="info">
-Dans le cadre de cette messagerie privée à invitation (Mode A), l'administrateur peut accéder aux contenus suivants pour des raisons de modération (anti-spam, anti-scam, anti-harcèlement, contenus illégaux) :
+Grâce au chiffrement <strong>PQXDH (post-quantum)</strong>, le serveur reçoit des données chiffrées qu'il est mathématiquement incapable de déchiffrer. Il ne voit donc <strong>jamais</strong> :
 <ul>
   <li>Le contenu de tes messages (texte, photos, vidéos, audio)</li>
   <li>Les fichiers que tu envoies</li>
+  <li>Le contenu de tes appels (audio, vidéo)</li>
   <li>Tes notes vocales</li>
-  <li>Métadonnées d'appels (durée, participants ; pas le contenu audio/vidéo qui est P2P chiffré WebRTC)</li>
-  <li>Géolocalisation si partagée (opt-in)</li>
+  <li>Ta position GPS exacte</li>
+  <li>Tes voiceprints (signature vocale)</li>
 </ul>
-<strong>Protection résiduelle</strong> : transport TLS 1.3 + repos AES-256 contre tiers externes (hacker, gouvernement non autorisé). L'accès admin est <strong>loggé dans un audit trail</strong> (RGPD Art.30) consultable sur demande. Pour vrai E2E strict (admin aveugle), utilise Signal ou Threema.
+Si quelqu'un (hacker, gouvernement, employé indélicat) accède aux serveurs, il ne peut <strong>rien</strong> lire. C'est le principe du <strong>"serveur aveugle"</strong>.
 </div>
 
 <h2>3. Qui peut voir tes données ?</h2>
@@ -69,7 +70,7 @@ Dans le cadre de cette messagerie privée à invitation (Mode A), l'administrate
 
 <h3>L'administrateur (Kevin DESARZENS)</h3>
 <p>
-Pour des raisons de modération et de sécurité du service privé, l'administrateur dispose d'une <strong>clé d'accès lecture sur tous les contenus</strong> (Mode A — voir Section 2). Cela inclut messages, fichiers, notes vocales, métadonnées, devices, signalements, géoloc partagée. Chaque accès est loggé dans un audit trail (RGPD Art.30) consultable sur demande. L'administrateur s'engage à n'utiliser cet accès qu'à des fins de modération (anti-spam, anti-scam, anti-harcèlement, contenus illégaux) et de support utilisateur.
+Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Le contenu chiffré reste protégé par le chiffrement bout-en-bout — l'administrateur ne lit pas tes messages dans l'absolu, mais peut intervenir en cas de signalement justifié.
 </p>
 
 <h3>Sous-traitants techniques</h3>

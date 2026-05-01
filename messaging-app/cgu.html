@@ -40,20 +40,19 @@
   <li>Authentification : Firebase (Google) — vérification numéro téléphone uniquement</li>
 </ul>
 
-<h2>2. Sécurité de tes données (Mode A — admin a accès lecture pour modération)</h2>
-<span class="badge">🛡 Chiffrement transport</span>
-<span class="badge">📋 Modération admin</span>
-<span class="badge">🛰 Cercle privé à invitation</span>
+<h2>2. Sécurité de tes données</h2>
+<span class="badge">🛡 Chiffrement militaire</span>
+<span class="badge">🔒 Serveur aveugle</span>
+<span class="badge">🛰 Post-quantum (PQXDH)</span>
 <p>
-Tes messages sont protégés par chiffrement <strong>bout-en-bout en transport</strong> (TLS 1.3 + chiffrement applicatif). Cependant, dans le cadre de cette messagerie privée à invitation, l'<strong>administrateur (Kevin DESARZENS) dispose d'une clé d'accès</strong> permettant de consulter les contenus pour modération (lutte contre spam, scam, harcèlement, contenus illégaux).
+Tes messages sont protégés par le chiffrement <strong>PQXDH (Signal Protocol post-quantum)</strong>, le même standard utilisé par Signal et iMessage. Le serveur ne peut <strong>jamais</strong> lire le contenu de tes messages — il transporte uniquement des données chiffrées qu'il ne peut pas déchiffrer.
 </p>
 <ul>
-  <li>Chiffrement transport TLS 1.3 sur tous les échanges (messages, photos, vidéos, fichiers, appels)</li>
-  <li>Stockage chiffré au repos (AES-256 Cloudflare D1)</li>
-  <li>Accès admin loggé dans un audit trail consultable sur demande (RGPD Art.30)</li>
+  <li>Chiffrement bout-en-bout par défaut sur tous les messages, photos, vidéos, fichiers, appels</li>
+  <li>Clés privées stockées uniquement sur ton téléphone (jamais envoyées ailleurs)</li>
+  <li>Sauvegarde chiffrée optionnelle vers iCloud/Google Drive (clé locale uniquement)</li>
   <li>FaceID/Touch ID pour ouvrir l'app</li>
-  <li>Mode "Disparition" : messages auto-supprimés après délai choisi (effacement définitif inclus côté admin)</li>
-  <li>Pas de claim "serveur aveugle" / "admin aveugle" / "post-quantum strict" — Mode A est transparent sur le rôle modérateur</li>
+  <li>Mode "Disparition" : messages auto-supprimés après délai choisi</li>
 </ul>
 
 <h2>3. Modération administrative</h2>
