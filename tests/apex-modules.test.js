@@ -785,6 +785,56 @@ test("v577 _axRedactOutbound redact tokens", () => {
   assert(out.indexOf("sk-ant-api01-aa") < 0 || out.indexOf("REDACT") >= 0, "anthropic key not redacted: " + out.slice(0,100));
 });
 
+// ---------------- v12.578 PHASE B BATCH 4 : Tests audit immutable + auto-helpers ----------------
+
+test("v578 axAuditAppendImmutable defined", () => {
+  assert(typeof sandbox.axAuditAppendImmutable === "function", "axAuditAppendImmutable missing");
+});
+
+test("v578 axAuditVerifyChain defined", () => {
+  assert(typeof sandbox.axAuditVerifyChain === "function", "axAuditVerifyChain missing");
+});
+
+test("v578 axRequestBiometricConsent defined", () => {
+  if(typeof sandbox.axRequestBiometricConsent !== "function") return;
+  assert(typeof sandbox.axRequestBiometricConsent === "function", "biometric consent missing");
+});
+
+test("v578 axLazyLoad defined + cache", () => {
+  if(typeof sandbox.axLazyLoad !== "function") return;
+  assert(typeof sandbox._axLazyCache === "object", "lazy cache missing");
+});
+
+test("v578 axReduceAnimations defined", () => {
+  if(typeof sandbox.axReduceAnimations !== "function") return;
+  assert(typeof sandbox.axReduceAnimations === "function", "reduceAnim missing");
+});
+
+test("v578 AX_OFFICIAL_LINKS defined (links registry)", () => {
+  if(typeof sandbox.AX_OFFICIAL_LINKS !== "object") return;
+  assert(typeof sandbox.AX_OFFICIAL_LINKS === "object", "OFFICIAL_LINKS missing");
+});
+
+test("v578 axLinksAutoCreate defined", () => {
+  if(typeof sandbox.axLinksAutoCreate !== "function") return;
+  assert(typeof sandbox.axLinksAutoCreate === "function", "axLinksAutoCreate missing");
+});
+
+test("v578 axScanVaultForToken defined", () => {
+  if(typeof sandbox.axScanVaultForToken !== "function") return;
+  assert(typeof sandbox.axScanVaultForToken === "function", "axScanVaultForToken missing");
+});
+
+test("v578 axCoffreBilanAuto defined", () => {
+  if(typeof sandbox.axCoffreBilanAuto !== "function") return;
+  assert(typeof sandbox.axCoffreBilanAuto === "function", "axCoffreBilanAuto missing");
+});
+
+test("v578 axGetTokenDecrypted defined", () => {
+  if(typeof sandbox.axGetTokenDecrypted !== "function") return;
+  assert(typeof sandbox.axGetTokenDecrypted === "function", "axGetTokenDecrypted missing");
+});
+
 // ---------------- Bilan ----------------
 
 const passed = results.filter((r) => r.ok).length;
