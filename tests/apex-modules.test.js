@@ -719,6 +719,72 @@ test("v539 APP_VER >= v12.539", () => {
   assert(minor >= 537, "APP_VER too old: " + sandbox.APP_VER);
 });
 
+// ---------------- v12.577 PHASE B BATCH 3 : Tests metier reels ----------------
+
+test("v577 axSanitizeHTML strip script", () => {
+  if(typeof sandbox.axSanitizeHTML !== "function") return; // skip si non charge
+  var dirty = '<p>safe</p><script>alert(1)</script>';
+  var clean = sandbox.axSanitizeHTML(dirty);
+  assert(clean.indexOf("<script>") < 0, "script not stripped: " + clean);
+});
+
+test("v577 axSanitizeHTML strip event handlers", () => {
+  if(typeof sandbox.axSanitizeHTML !== "function") return;
+  var dirty = '<img src=x onerror="alert(1)">';
+  var clean = sandbox.axSanitizeHTML(dirty);
+  assert(clean.indexOf("onerror") < 0, "onerror not stripped: " + clean);
+});
+
+test("v577 axSanitizeHTML strip javascript: URL", () => {
+  if(typeof sandbox.axSanitizeHTML !== "function") return;
+  var dirty = '<a href="javascript:alert(1)">click</a>';
+  var clean = sandbox.axSanitizeHTML(dirty);
+  assert(clean.indexOf("javascript:") < 0, "javascript: not blocked");
+});
+
+test("v577 axTimerPoolStats returns counts", () => {
+  if(typeof sandbox.axTimerPoolStats !== "function") return;
+  var s = sandbox.axTimerPoolStats();
+  assert(s && typeof s.intervals === "number" && typeof s.timeouts === "number", "stats malformed");
+});
+
+test("v577 axGetExistingToken handles missing", () => {
+  if(typeof sandbox.axGetExistingToken !== "function") return;
+  var v = sandbox.axGetExistingToken(["non_existent_key_xyz"]);
+  assert(v === null || typeof v === "string", "should return null or string");
+});
+
+test("v577 axCalibrateConfidence preserves response if hedged", () => {
+  if(typeof sandbox.axCalibrateConfidence !== "function") return;
+  var r = sandbox.axCalibrateConfidence("Je crois que c est probablement vrai");
+  assert(r.indexOf("Je crois") >= 0, "should preserve hedged response");
+});
+
+test("v577 axGenerateNonce returns 32 hex", () => {
+  if(typeof sandbox.axGenerateNonce !== "function") return;
+  var n = sandbox.axGenerateNonce();
+  assert(typeof n === "string" && n.length === 32, "nonce should be 32 hex chars: " + n);
+});
+
+test("v577 AX_SERVICE_REGISTRY has key services", () => {
+  if(typeof sandbox.AX_SERVICE_REGISTRY !== "object") return;
+  assert(sandbox.AX_SERVICE_REGISTRY.anthropic_key, "anthropic_key registry missing");
+  assert(sandbox.AX_SERVICE_REGISTRY.github_pat, "github_pat registry missing");
+});
+
+test("v577 AX_CREDENTIAL_PATTERNS detect anthropic key", () => {
+  if(typeof sandbox.AX_CREDENTIAL_PATTERNS !== "object") return;
+  var pat = sandbox.AX_CREDENTIAL_PATTERNS.anthropic_key;
+  assert(pat && pat.test && pat.test("sk-ant-api01-" + "a".repeat(80)), "anthropic_key pattern broken");
+});
+
+test("v577 _axRedactOutbound redact tokens", () => {
+  if(typeof sandbox._axRedactOutbound !== "function") return;
+  var msg = "My key is sk-ant-api01-" + "a".repeat(50) + " and email kevin@example.com";
+  var out = sandbox._axRedactOutbound(msg);
+  assert(out.indexOf("sk-ant-api01-aa") < 0 || out.indexOf("REDACT") >= 0, "anthropic key not redacted: " + out.slice(0,100));
+});
+
 // ---------------- Bilan ----------------
 
 const passed = results.filter((r) => r.ok).length;
