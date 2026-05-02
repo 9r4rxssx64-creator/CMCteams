@@ -1051,7 +1051,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.715",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.725",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -13399,7 +13399,46 @@ function vAdminLinks(){if(!K.user)return vLogin();var h='<div style="padding:16p
 
 // === MODULE: App Update (mise a jour PWA) ===
 function axCheckUpdate(){if(!("serviceWorker" in navigator))return;navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;reg.update().then(function(){toast("Verification mise a jour...","info");if(reg.waiting){reg.waiting.postMessage("skipWaiting");toast("Mise a jour disponible — rechargement...","ok");setTimeout(function(){location.reload();},1500);}else{toast("App a jour ("+APP_VER+")","ok");}});});}
-function axForceRefresh(){if("caches" in window){caches.keys().then(function(names){names.forEach(function(n){caches.delete(n);});}).then(function(){toast("Cache vide — rechargement...","ok");setTimeout(function(){location.reload(true);},1000);});}else{location.reload(true);}}
+function axForceRefresh(){
+  /* v12.725 : meme logique que force-update.html avec timeout garanti 8s + SW unregister */
+  try{ if(typeof toast==="function") toast("Force MAJ... rechargement dans 8s max","ok",{force:true,duration:7000}); }catch(_e){}
+  var done=false;
+  function go(){
+    if(done) return;
+    done=true;
+    var url=location.pathname+"?_force="+Date.now();
+    try{ window.location.replace(url); }catch(_){ window.location.href=url; }
+  }
+  /* HARD timer 8s : redirect peu importe ce qui plante */
+  setTimeout(go, 8000);
+  /* withTimeout helper inline */
+  function withT(p, ms){
+    return Promise.race([p, new Promise(function(_r,reject){setTimeout(function(){reject(new Error("timeout"));},ms);})]);
+  }
+  /* Step 1 : unregister SW (3s timeout global) */
+  var step1=Promise.resolve();
+  try{
+    if("serviceWorker" in navigator){
+      step1=withT(navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){
+          return withT(r.unregister(),2000).catch(function(){});
+        }));
+      }),3000).catch(function(){});
+    }
+  }catch(_e){}
+  /* Step 2 : caches delete (3s timeout global) */
+  var step2=step1.then(function(){
+    try{
+      if("caches" in window){
+        return withT(caches.keys().then(function(keys){
+          return Promise.all(keys.map(function(k){return withT(caches.delete(k),1500).catch(function(){});}));
+        }),3000).catch(function(){});
+      }
+    }catch(_e){}
+  });
+  /* Step 3 : redirect dans 1s */
+  step2.then(function(){ setTimeout(go,1000); }).catch(function(){ setTimeout(go,1500); });
+}
 
 /* v12.154 — Enrichissement libs externes (Kevin: 'ajoute outils autonome') */
 function axLoadJsPDF(){
