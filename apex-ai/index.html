@@ -1073,15 +1073,30 @@ try{
             }
           }
         }
-        /* Bouton Connexion */
+        /* Bouton Connexion - v12.746 fallback ULTIME (Kevin "v12.745 bouton ne va pas plus loin") */
         var btnL=t.closest('button[onclick*="_doLogin"]');
         if(btnL){
           ev.preventDefault();ev.stopPropagation();
-          if(typeof window._doLogin==="function"){
-            try{window._doLogin();}
-            catch(err){_nucNotify("Erreur login: "+(err&&err.message||err),"err");}
-          }else{
-            _nucNotify("_doLogin manquant - touche Mise a jour","err");
+          var __nameInp=document.getElementById("ax-login-name");
+          var __pinInp=document.getElementById("ax-login-pin");
+          var __nameVal=__nameInp?String(__nameInp.value||"").trim():"";
+          var __pinVal=__pinInp?String(__pinInp.value||""):"";
+          if(!__nameVal){_nucNotify("Entre nom et prenom","warn");if(__nameInp)__nameInp.focus();return;}
+          if(__nameVal.split(/[\s\-]+/).filter(function(t){return t.length>=2;}).length<2){_nucNotify("Entre nom ET prenom (2 mots min)","warn");if(__nameInp)__nameInp.focus();return;}
+          if(__pinVal.length<4){_nucNotify("Entre ton mot de passe (4+ caracteres)","warn");if(__pinInp)__pinInp.focus();return;}
+          /* Tentative 1 : axLogin direct (bypass _doLogin et tous wrappers IIFE) */
+          var __ok=false;
+          try{
+            if(typeof window.axLogin==="function"){
+              var __r=window.axLogin(__nameVal,__pinVal);
+              if(__r) __ok=true;
+            }
+          }catch(__err1){_nucNotify("axLogin erreur: "+(__err1&&__err1.message||__err1).slice(0,80),"err");}
+          /* Tentative 2 : si axLogin echoue/throw, essaie _doLogin classique */
+          if(!__ok){
+            try{
+              if(typeof window._doLogin==="function") window._doLogin();
+            }catch(__err2){_nucNotify("_doLogin erreur: "+(__err2&&__err2.message||__err2).slice(0,80),"err");}
           }
           return;
         }
@@ -1184,7 +1199,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.745",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.746",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -35807,20 +35822,8 @@ setTimeout(function(){
   /* Run au boot + a chaque login */
   setTimeout(autoAcceptForCurrentUser, 500);
   setInterval(autoAcceptForCurrentUser, 5000);
-  /* Hook dans axLogin */
-  setTimeout(function(){
-    try{
-      if(typeof window.axLogin === "function" && !window.axLogin._axAutoAcceptHooked){
-        var orig = window.axLogin;
-        window.axLogin = function(){
-          var r = orig.apply(this, arguments);
-          if(r) setTimeout(autoAcceptForCurrentUser, 200);
-          return r;
-        };
-        window.axLogin._axAutoAcceptHooked = true;
-      }
-    }catch(_e){}
-  }, 3000);
+  /* v12.746 : hook axLogin SUPPRIME (Kevin "bouton Connexion ne va pas plus loin").
+     Auto-accept se fait via setInterval 5s qui suit K.user changes - pas besoin de wrap axLogin. */
 })();
 
 </script>
