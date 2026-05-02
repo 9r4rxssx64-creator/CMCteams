@@ -69,6 +69,63 @@ S'applique : Apex priorité absolue.
 
 ---
 
+## 🔄 RÈGLE PERMANENTE — RÉACTIVER CE QUI A ÉTÉ DÉSACTIVÉ + EXPLIQUER LANGAGE SIMPLE (Kevin 2026-05-02, ABSOLUE)
+
+> **"Tout ce que je te supprime et que j'avais demandé, pense à le remettre ensuite. Quand on désactive quelque chose, pense toujours à réactiver ce qu'on a désactivé si c'est nécessaire à l'application ou si c'est ce que j'avais demandé. Si c'est plus judicieux de l'enlever, il faut que tu me le dises et que tu m'expliques toujours en langage simple."** — Kevin 2026-05-02
+
+**Règle absolue, prioritaire** — Apex, CMCteams, tous projets futurs :
+
+### 1. Maintenir un "Registre de désactivations" mental + dans CLAUDE.md
+
+À chaque désactivation (supprime, commente, neutralise via flag), DOCUMENTER :
+- **Quoi** : nom de la fonction/feature/IIFE
+- **Quand** : version + date
+- **Pourquoi** : raison concrète (ex: "cassait le bouton Connexion")
+- **Plan retour** : "à réactiver" OU "supprimé définitivement (plus judicieux)"
+- **Si à réactiver** : conditions de retour (ex: "quand on a CSS nonce")
+
+### 2. Avant de finaliser une session, REVOIR le registre
+
+Pour chaque "à réactiver" :
+- L'app est-elle stable maintenant ?
+- Les conditions de retour sont-elles remplies ?
+- Si oui → REMETTRE proprement avec test
+- Si non → noter pour prochaine session avec deadline
+
+### 3. Pour chaque "supprimé définitivement", EXPLIQUER à Kevin en langage simple
+
+❌ JAMAIS : "v569 PANIC MODE supprimé pour cause race condition setInterval"
+✅ TOUJOURS : "J'ai supprimé le mode panique parce qu'il **tuait toutes les sentinelles** (les agents qui surveillent et auto-corrigent l'app). C'est plus judicieux car les sentinelles servent à la fois à **détecter les bugs** et à **les réparer**. La 'protection' coûtait plus que ce qu'elle protégeait."
+
+### 4. Test mental obligatoire avant chaque suppression définitive
+
+> *"Est-ce que cette suppression empêche Kevin d'avoir une fonctionnalité qu'il m'a explicitement demandée ? Si oui → ne pas supprimer, retravailler la fix. Si non (juste un wrap protecteur que j'ai introduit moi-même) → supprimer + expliquer."*
+
+### 5. Réactiver "à la louche" interdit
+
+❌ Réactiver tout ce qui a été désactivé d'un coup en fin de session = recréer le chaos.
+✅ Réactiver UN par UN, tester chaque, valider, suivant.
+
+### 6. Application immédiate — registre courant fin session 2026-05-02
+
+**Désactivés/supprimés cette session** :
+| Quoi | Pourquoi (langage simple) | Verdict |
+|---|---|---|
+| Mode panique (v569) | Tuait toutes les sentinelles | ❌ **Supprimé pour de bon** (mauvais design) |
+| MutationObserver XSS (v610) | Retirait les onclick = boutons morts | ❌ **Supprimé pour de bon** (mauvais design) |
+| Silence toast erreurs (v635) | Cachait "PIN incorrect" = login fail invisible | ❌ **Supprimé pour de bon** (mauvais design) |
+| Wrap toast v640 | Race avec v635 | ❌ **Supprimé pour de bon** |
+| Wrap toast v680 | Bypass `force:true` | ❌ **Supprimé pour de bon** |
+| Wrap setInterval/setTimeout (v605) | Surcharge boot | 🔄 **À réactiver propre** quand on a wraps testés |
+| Audit immutable wire 7 helpers (v670) | Async peut throw au boot | 🔄 **À réactiver** quand sync-safe |
+| Escalade `ax_claude_todo` window.onerror (v650) | Spam Firebase | 🔄 **À réactiver** avec rate-limit + filter testés |
+| Auto-deploy workers (v630) | Race avec login | 🔄 **À réactiver** avec guard K.user (v635 fix déjà essayé) |
+| Routes ?view=deploy1click/coffrebilan/links/credscheck | Liées à panic mode | 🔄 **À réactiver** quand panic mode est mort (✓ aujourd'hui) |
+
+S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
+
+---
+
 ## 📚 RÈGLE PERMANENTE — APEX RELIT TOUTE SA DOCUMENTATION AVANT CHAQUE RÉPONSE (Kevin 2026-05-02, ABSOLUE)
 
 > **"Avant chaque question, qu'il relise tous ses documents, sa méthode de travail, ses outils, tout ce qu'il a, etc. Avant chaque réponse, qu'il relise bien tout ce qu'il doit savoir, sur lui-même et sur ce qu'il a à l'intérieur, ses manières de travailler. Pour être sûr qu'il n'oublie rien, qu'il se rappelle de tout et qu'il sache comment travailler."** — Kevin 2026-05-02
