@@ -1243,7 +1243,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.759",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.760",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -31951,12 +31951,35 @@ window.axAutoIdentifyCredential = function(value){
       };
     }
   }
-  /* Patterns non-prefixes */
+  /* v12.760 Patterns non-prefixes ENRICHIS (Kevin "doit identifier les URL paypal.me/x, revolut, phones, etc") */
+  /* URLs paypal.me / paypal.com */
+  var mPP = v.match(/(?:https?:\/\/)?(?:www\.)?paypal\.me\/([a-zA-Z0-9_\-]+)/i);
+  if(mPP) return {type:"paypal_me",service:"paypal",correctKey:"ax_paypal_me",dashboard_url:"https://paypal.me/"+mPP[1],billing_url:"https://www.paypal.com/myaccount",docs_url:"https://developer.paypal.com",value_preview:v.slice(0,30),confidence:0.98};
+  /* URL revolut */
+  if(/(?:https?:\/\/)?(?:www\.)?revolut\.me\/([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"revolut_tag",service:"revolut",correctKey:"ax_revolut_tag",dashboard_url:"https://app.revolut.com",billing_url:"https://app.revolut.com",docs_url:"https://developer.revolut.com",confidence:0.95};
+  /* URL generique -> garde la ou elle est si key contient "url"/"webhook"/"endpoint" */
+  if(/^https?:\/\/[\w.\-]+(\/.*)?$/i.test(v)){
+    var dom = v.replace(/^https?:\/\//,"").split("/")[0].toLowerCase();
+    var domMap = {"discord.com":"ax_discord_webhook","slack.com":"ax_slack_webhook","hooks.zapier.com":"ax_zapier_webhook","hook.eu1.make.com":"ax_make_webhook","hook.us1.make.com":"ax_make_webhook"};
+    if(domMap[dom]) return {type:"webhook",service:dom,correctKey:domMap[dom],confidence:0.9};
+    return {type:"url",service:dom,value:v,confidence:0.7};
+  }
+  /* Email */
   if(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)) return {type:"email",value:v,confidence:1.0};
-  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(v.replace(/\s/g,""))) return {type:"iban",value:v,confidence:0.95};
-  if(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(v)) return {type:"btc_address",value:v,confidence:0.95};
-  if(/^0x[a-fA-F0-9]{40}$/.test(v)) return {type:"eth_address",value:v,confidence:0.95};
+  /* IBAN avec espaces (FR76 1234 5678...) ou compact */
+  var ibanCheck = v.replace(/\s/g,"");
+  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/i.test(ibanCheck)) return {type:"iban",service:"banque",correctKey:"ax_iban",value:v,confidence:0.95};
+  /* BTC / ETH addresses */
+  if(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(v)) return {type:"btc_address",service:"bitcoin",correctKey:"ax_btc_address",value:v,confidence:0.95};
+  if(/^0x[a-fA-F0-9]{40}$/.test(v)) return {type:"eth_address",service:"ethereum",correctKey:"ax_eth_address",value:v,confidence:0.95};
+  /* Telegram bot token */
   if(/^\d{8,}:[A-Za-z0-9_-]{35}$/.test(v)) return {type:"telegram_token",service:"telegram",correctKey:"ax_telegram_token",confidence:0.95};
+  /* Phone numbers FR/Monaco/international */
+  if(/^\+?(33|377)[\s\-]?[0-9](?:[\s\-]?\d){8}$/.test(v.replace(/\s/g,""))) return {type:"phone",service:"phone",correctKey:"ax_kevin_whatsapp_phone",value:v,confidence:0.85};
+  /* SIRET / SIREN */
+  if(/^\d{14}$/.test(v.replace(/\s/g,""))) return {type:"siret",service:"company",correctKey:"ax_siret",value:v,confidence:0.95};
+  /* @username (twitter, instagram, etc.) - faible confiance car ambigu */
+  if(/^@[a-zA-Z0-9_]{2,30}$/.test(v)) return {type:"social_handle",service:"social",value:v,confidence:0.5};
   return null;
 };
 
