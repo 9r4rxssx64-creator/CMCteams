@@ -1,5 +1,18 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔔 RAPPEL ACTIF Kevin (2026-05-02 session)
+
+### 🐾 OpenClaw — clé API à fournir
+**Status** : Apex v12.772 prêt à recevoir la clé. Card OpenClaw visible dans Coffre + 💳 Mes comptes & abos.
+**Action Kevin** :
+1. Aller sur https://openclaw.ai/ → créer/récupérer clé API
+2. Apex → Coffre → chercher "openclaw" → coller clé dans `ax_openclaw_key`
+3. Optionnel : URL endpoint custom dans `ax_openclaw_url`
+
+**Quand Kevin aura collé** : Claude Code wire OpenClaw dans le routeur multi-providers (failover après Anthropic, format Anthropic Messages compatible).
+
+---
+
 > ✅ **REPRISE SESSION 2026-04-30 — 100/100 EXÉCUTÉE** — Apex **v12.456** + CMCteams **v9.564** poussées
 > Session précédente : v12.402 → v12.450 (stop forfait). Reprise : v12.451 → v12.456 + CMC v9.564 livrées.
 
