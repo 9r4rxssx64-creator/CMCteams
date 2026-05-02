@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.584";
+var APP_VER="v9.585";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -29751,12 +29751,9 @@ function vImport(){
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){previewImport();},700)"></textarea>
-    <!-- v9.583 — Force replace ON par defaut (Kevin "tout se base sur le nouveau, pas chercher
-         similitudes avec ancien"). Decocher uniquement si on veut PRESERVER corrections manuelles. -->
-    <label style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:rgba(58,138,80,.10);border:1px solid rgba(58,138,80,.35);border-radius:10px;cursor:pointer;user-select:none">
-      <input type="checkbox" id="impForceReplace" checked style="width:20px;height:20px;accent-color:#5aaa70;cursor:pointer;flex-shrink:0">
-      <span style="font-size:13px;color:#5aaa70;font-weight:700;line-height:1.4">🔄 Effacer l'ancien planning et appliquer le nouveau <span style="font-weight:normal;color:#a0cca0">— recommandé. L'ancien est <b>archivé automatiquement</b> dans l'historique (consultable plus tard). Décocher uniquement si tu veux <b>fusionner</b> avec corrections manuelles existantes.</span></span>
-    </label>
+    <!-- v9.585 (Kevin "Automatise. Je n'ai pas besoin de garder l'ancien planning.") :
+         toggle SUPPRIME. Comportement automatique = nouveau ecrase TOUJOURS l'ancien.
+         Pas de friction utilisateur. Archive silencieuse en arriere-plan. -->
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn" onclick="previewImport()" style="flex:1;min-width:120px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.45);color:#8ab0e0;font-weight:700">
         \ud83d\udd0d Analyser
@@ -30808,46 +30805,34 @@ function doImport(){
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
   // des employés non présents dans ce nouvel import (permet de compléter un import incomplet)
   A.year=iy;A.month=im; // necessaire pour isEmpActive
-  // v9.583 (Kevin 2026-05-02) — Logique métier explicite Kevin :
-  // "Chaque mois, tout le monde peut changer d'équipe. Donc, je fais un nouvel import,
-  //  tu effaces tout l'ancien, tu le gardes en historique, mais tu l'effaces de là où il est,
-  //  et tu intègres le nouveau. Tout se base par rapport au nouveau, ne pas chercher de
-  //  similitudes avec les anciens."
-  // → Force replace par defaut ON, archive ancien dans cmc_history_<key>_<ts> avant wipe.
-  var _forceReplaceEl=document.getElementById("impForceReplace");
-  // Default ON : Kevin a explicitement demande "tout se base sur le nouveau". Si Kevin
-  // veut conserver corrections manuelles, il decoche le toggle (cas exceptionnel).
-  var _forceReplace=_forceReplaceEl?!!_forceReplaceEl.checked:true;
+  // v9.585 (Kevin "Automatise. Je n'ai pas besoin de garder l'ancien planning.") :
+  // AUTOMATIQUE TOUJOURS : nouveau import = ancien efface + archive silencieuse + nouveau remplit.
+  // Plus de toggle. Plus de friction. Pas de question. Tout se base sur le nouveau PDF.
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
-    // Toujours archiver l'ancien (historique reference, jamais perdu)
+    // Archive silencieuse en arriere-plan (historique conserve mais jamais affiche en surface).
     try{
       var _archKey="cmc_history_"+key+"_"+Date.now();
-      var _archive={
+      ls(_archKey,{
         ts:Date.now(),
         year:iy,month:im,
         ov:JSON.parse(JSON.stringify(A.overrides[key])),
         ref:lg("cmc_ref_"+key,null),
         verif:lg("cmc_verif_"+key,null),
         replacedBy:"import_"+(_importVersion||"?")
-      };
-      ls(_archKey,_archive);
-      // Cap : ne garder que 12 archives par mois (1 an de versions)
+      });
+      // Cap : 6 archives max par mois (anti-saturation localStorage iPhone 5MB)
       var _allArch=[];
       for(var _ki in localStorage){
         if(_ki.indexOf("cmc_history_"+key+"_")===0)_allArch.push(_ki);
       }
       _allArch.sort();
-      while(_allArch.length>12){
+      while(_allArch.length>6){
         try{localStorage.removeItem(_allArch.shift());}catch(_){}
       }
-      console.info("[doImport v9.583] Ancien planning "+key+" archive dans "+_archKey);
-    }catch(_archErr){console.warn("[doImport v9.583] archive err",_archErr);}
-    // Wipe pour forcer le nouveau PDF comme source de verite
-    if(_forceReplace){
-      A.overrides[key]={};
-      try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
-      console.info("[doImport v9.583] Force-replace ON -> A.overrides["+key+"] wipe avant parse");
-    }
+    }catch(_archErr){}
+    // Wipe systematique : nouveau PDF = source de verite unique
+    A.overrides[key]={};
+    try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
