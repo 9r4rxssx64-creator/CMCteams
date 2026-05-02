@@ -1040,39 +1040,25 @@ try{
     document.addEventListener("click",function(ev){
       try{
         var t=ev.target;if(!t||!t.closest)return;
-        /* v12.741 : ferme modal axNeedsAttention sur OK / Passer / Suivant / Fermer / ✕ / Annuler */
+        /* v12.749 Kevin "tous boutons morts dans chat" : capture-phase ne fait
+           QUELQUE CHOSE QUE pour les cas critiques. Si user deja loggé et hors
+           login/landing, on NE FAIT RIEN (pas de prevent, pas de stop) -> les
+           onclick HTML natifs s'executent normalement. */
+        var __isLogin = !K || !K.user || K.view==="login" || K.view==="landing";
+        /* Modal close (OK/Passer/etc) - seulement si modal visible */
         var btnOk=t.closest('button,a[role="button"]');
         if(btnOk){
-          var lbl=(btnOk.textContent||"").trim();
-          if(/^(OK|Passer|Suivant|Suivant\s*→|Fermer|Annuler|Plus\s*tard|✕|×)$/i.test(lbl)){
-            var modalRoot=btnOk.closest('#ax-needs-attention-modal,#ax-welcome-overlay,#ax-tour-overlay,[role="dialog"]');
-            if(modalRoot && modalRoot.parentNode){
+          var modalRoot=btnOk.closest('#ax-needs-attention-modal,#ax-welcome-overlay,#ax-tour-overlay');
+          if(modalRoot){
+            var lbl=(btnOk.textContent||"").trim();
+            if(/^(OK|Passer|Suivant|Suivant\s*→|Fermer|Annuler|Plus\s*tard|✕|×)$/i.test(lbl)){
               try{modalRoot.parentNode.removeChild(modalRoot);}catch(_e){}
-            }
-            /* Aussi modal-container */
-            var mc=document.getElementById("modal-container");
-            if(mc && btnOk.closest("#modal-container")){
-              try{mc.innerHTML="";}catch(_e){}
+              /* PAS de preventDefault - laisse onclick natif s'executer aussi */
             }
           }
         }
-        /* v12.740 : Bnav tabs (Reglages, Accueil, Chat, etc.) - force sv() direct */
-        var navTab=t.closest('#navbar .ax-tab[onclick*="sv("]');
-        if(navTab){
-          var oc=navTab.getAttribute("onclick")||"";
-          var mv=oc.match(/sv\(['"]([^'"]+)['"]/);
-          if(mv && mv[1]){
-            var view=mv[1];
-            if(typeof window.sv==="function" && K && K.view!==view){
-              ev.preventDefault();ev.stopPropagation();
-              try{window.sv(view);}catch(err){
-                /* sv throw : tente render direct */
-                try{K.view=view; if(typeof window.render==="function") window.render(); else if(typeof window.dc==="function") window.dc();}catch(_e2){}
-              }
-              return;
-            }
-          }
-        }
+        /* Si user logge, on ne fait QUE les fixes login - skip le reste */
+        if(!__isLogin) return;
         /* Bouton Connexion - v12.746 fallback ULTIME (Kevin "v12.745 bouton ne va pas plus loin") */
         var btnL=t.closest('button[onclick*="_doLogin"]');
         if(btnL){
@@ -1199,7 +1185,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.748",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.749",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -18426,9 +18412,26 @@ var _axStreamWatchdogTimer=null;
 function _axStartStreamWatchdog(){
   try{
     if(_axStreamWatchdogTimer)clearTimeout(_axStreamWatchdogTimer);
-    /* v12.747 Kevin "plus jamais de timeout ni reponse trop longue. Apex va au bout".
-       Watchdog desactive completement. Le stream va jusqu'au bout, eventuel abort manuel
-       seulement (bouton stop UI). Failover provider gere directement dans _callClaudeAPI. */
+    /* v12.749 Kevin "fleche envoi bloquee" : v747 desactiver watchdog laissait
+       K.isStreaming bloque a true a vie si reseau coupe -> bouton send mort.
+       Watchdog SOFT 5min : reset K.isStreaming = false sans abort ni message
+       chat. Apex va au bout; mais si vraiment 5min sans nouvelles, on debloque
+       l'UI silencieusement pour que Kevin puisse envoyer un nouveau message. */
+    _axStreamWatchdogTimer = setTimeout(function(){
+      try{
+        if(K && K.isStreaming){
+          K.isStreaming = false;
+          try{if(typeof axSetStreamState === "function") axSetStreamState("idle","");}catch(_e){}
+          try{if(typeof dc === "function") dc();}catch(_e){}
+          try{
+            var todo = lg("ax_claude_todo",[]);
+            todo.push({id:"stream_unblock_"+Date.now(),context:{},reason:"K.isStreaming stuck > 5min - debloque UI silent",severity:"info",src:"apex_stream",v:typeof APP_VER!=="undefined"?APP_VER:"?",ts:Date.now(),status:"pending"});
+            if(todo.length>50) todo = todo.slice(-50);
+            ls("ax_claude_todo", todo);
+          }catch(_e){}
+        }
+      }catch(_e){}
+    }, 300000);
     return;
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18043",_e);}catch(__){}}
 }
@@ -35766,6 +35769,39 @@ setTimeout(function(){
     axTestAllButtonsLive({quiet:true});
   }catch(_e){}
 }, 600000);
+
+/* v12.749 AUTO-UNSTUCK STREAM (Kevin "fleche envoi bloquee"): force K.isStreaming=false
+   au boot pour debloquer UI si l'app a redemarre pendant un stream. */
+(function(){
+  try{
+    setTimeout(function(){
+      try{
+        if(typeof K === "undefined") return;
+        if(K.isStreaming){
+          K.isStreaming = false;
+          try{if(typeof axSetStreamState === "function") axSetStreamState("idle","");}catch(_e){}
+          try{if(typeof dc === "function") dc();}catch(_e){}
+        }
+      }catch(_e){}
+    }, 1000);
+    /* + setInterval 60s : si K.isStreaming = true + dernier msg < 5min ago = OK
+       mais si K.isStreaming = true + dernier msg > 2min sans changement = stuck */
+    setInterval(function(){
+      try{
+        if(!K || !K.isStreaming) return;
+        var lastMsg = K.messages && K.messages.length ? K.messages[K.messages.length-1] : null;
+        if(!lastMsg || !lastMsg.ts) return;
+        var age = Date.now() - lastMsg.ts;
+        if(age > 180000){
+          /* Stream stuck > 3min : force unblock */
+          K.isStreaming = false;
+          try{if(typeof axSetStreamState === "function") axSetStreamState("idle","");}catch(_e){}
+          try{if(typeof dc === "function") dc();}catch(_e){}
+        }
+      }catch(_e){}
+    }, 60000);
+  }catch(_e){}
+})();
 
 /* v12.747 AUTO-RESUME (Kevin "si Apex coupe, au retour reprendre la ou il en etait pour
    chaque user, memoire intacte") : scan post-login K.messages pour trouver msg
