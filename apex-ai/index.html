@@ -1190,7 +1190,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.754",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.755",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -18884,6 +18884,22 @@ var _AX_CRED_PATTERNS={
   ax_eth_address:/^0x[a-fA-F0-9]{40}$/
 };
 
+/* v12.755 : helper filtre Reglages (fix oninput mal forme ligne 23267 qui faisait leak du JS dans le HTML) */
+window._axSettingsFilter = function(q){
+  try{
+    var els = document.querySelectorAll("#ax-set-fam .ax-card");
+    if(!q || q.length < 2){
+      Array.from(els).forEach(function(c){c.style.display = "";});
+      return;
+    }
+    var lower = String(q).toLowerCase();
+    Array.from(els).forEach(function(c){
+      var txt = (c.textContent || "").toLowerCase();
+      c.style.display = txt.indexOf(lower) >= 0 ? "" : "none";
+    });
+  }catch(_e){}
+};
+
 function _axValidateAndCleanCredential(key,value){
   if(!value||typeof value!=='string')return{ok:false,reason:'empty',cleaned:value};
   var cleaned=(typeof _axCleanPasted==='function')?_axCleanPasted(value):String(value).trim();
@@ -18904,11 +18920,13 @@ function _axValidateAndCleanCredential(key,value){
 
 function _axCheckCredentialsIntegrity(opts){
   opts=opts||{};
-  var report={ts:Date.now(),checked:0,clean_fixed:0,corrupted:[],modified:[]};
+  var report={ts:Date.now(),checked:0,clean_fixed:0,corrupted:[],modified:[],skipped_encrypted:0};
   try{
     Object.keys(_AX_CRED_PATTERNS).forEach(function(k){
       var v=localStorage.getItem(k);if(!v)return;
       try{var parsed=JSON.parse(v);v=typeof parsed==='string'?parsed:v;}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18513",_e);}catch(__){}}
+      /* v12.755 Kevin "Cles corrompues fausse alerte" : skip si chiffree AXENC1, c'est NORMAL */
+      if(typeof v === "string" && (v.indexOf("AXENC1:")===0 || v.indexOf("__AXENC1__")===0)){report.skipped_encrypted++;return;}
       report.checked++;
       var r=_axValidateAndCleanCredential(k,v);
       if(r.modified){
@@ -21346,60 +21364,107 @@ function axTotalAudit(opts){
     report.sections.sentinels_heartbeat = sentReport;
     if(sentReport.stale.length > 0) report.findings.push({severity:"P2",category:"sentinels",msg:sentReport.stale.length+" sentinelles staleyes 24h"});
   }catch(_e){}
-  /* Section 21 v12.750 : AUDIT CONFLITS INTERNES RUNTIME (Kevin "pourquoi audit n'a pas
-     remonte les conflits"). Detecte specifiquement les patterns qui CASSENT sans throw. */
+  /* Section 21 v12.755 : AUDIT CONFLITS INTERNES + AUTO-FIX (Kevin "audit doit AGIR pas
+     juste constater"). Detecte ET CORRIGE les patterns qui CASSENT sans throw. */
   try{
     var conflicts = {
       capture_listeners_count: 0,
-      window_onclick_handlers: 0,
       modals_visible_now: 0,
       k_isStreaming_stuck: false,
-      bnav_listeners_attached: 0,
       duplicate_iife_flags: [],
-      wrappers_chain_depth: {}
+      wrappers_chain_depth: {},
+      auto_fixes_applied: []
     };
-    /* K.isStreaming stuck ? */
+    /* CHECK + AUTO-FIX 1 : K.isStreaming stuck */
     try{
       if(K && K.isStreaming){
         var lastM = K.messages && K.messages.length ? K.messages[K.messages.length-1] : null;
-        if(lastM && lastM.ts && (Date.now() - lastM.ts) > 120000){
+        if(!lastM || !lastM.ts || (Date.now() - lastM.ts) > 120000){
           conflicts.k_isStreaming_stuck = true;
-          report.findings.push({severity:"P0",category:"runtime",msg:"K.isStreaming stuck depuis "+Math.round((Date.now()-lastM.ts)/60000)+"min - bouton envoi mort"});
+          /* AUTO-FIX : force unstuck */
+          K.isStreaming = false;
+          try{if(window._apexCurrentAbort) window._apexCurrentAbort.abort();}catch(_e){}
+          try{if(typeof axSetStreamState === "function") axSetStreamState("idle","");}catch(_e){}
+          try{if(typeof dc === "function") dc();}catch(_e){}
+          conflicts.auto_fixes_applied.push("force_unstuck_isStreaming");
+          report.findings.push({severity:"P0",category:"runtime",msg:"K.isStreaming etait stuck - AUTO-FIX applique"});
         }
       }
     }catch(_e){}
-    /* Modals visibles maintenant ? */
+    /* CHECK + AUTO-FIX 2 : Modals visibles bloquant clicks */
     try{
-      var modalIds = ["ax-needs-attention-modal","ax-welcome-overlay","ax-tour-overlay","modal-container"];
+      var modalIds = ["ax-needs-attention-modal","ax-welcome-overlay","ax-tour-overlay"];
+      var purged = 0;
       modalIds.forEach(function(id){
         var el = document.getElementById(id);
-        if(el && (id==="modal-container" ? el.innerHTML.length>0 : true)) conflicts.modals_visible_now++;
+        if(el){
+          conflicts.modals_visible_now++;
+          /* AUTO-FIX : purge si modal automatique (axNeedsAttention/welcome/tour) */
+          try{el.remove(); purged++;}catch(_e){}
+        }
       });
-      var dialogs = document.querySelectorAll('[role="dialog"]');
-      conflicts.modals_visible_now += Array.from(dialogs).filter(function(d){var s=window.getComputedStyle(d);return s.display!=="none"&&s.visibility!=="hidden";}).length;
-      if(conflicts.modals_visible_now > 0) report.findings.push({severity:"P1",category:"runtime",msg:conflicts.modals_visible_now+" modals visibles - peuvent bloquer clicks"});
+      /* Purge dialogs z-index >= 99000 */
+      try{
+        var dialogs = document.querySelectorAll('[role="dialog"]');
+        Array.from(dialogs).forEach(function(d){
+          try{
+            var s = window.getComputedStyle(d);
+            if(s.position === "fixed" && parseInt(s.zIndex||"0") >= 99000){
+              if(d.id !== "ax-pin-modal" && d.id !== "ax-quota-modal"){
+                d.remove();
+                purged++;
+              }
+            }
+          }catch(_e){}
+        });
+      }catch(_e){}
+      if(purged > 0){
+        conflicts.auto_fixes_applied.push("purged_"+purged+"_modals");
+        report.findings.push({severity:"P1",category:"runtime",msg:purged+" modals visibles purges - AUTO-FIX applique"});
+      }
     }catch(_e){}
-    /* IIFE flags doubles (deux IIFE qui pretendent installer la meme chose) */
+    /* CHECK 3 : IIFE flags (constat seulement, pas safe d'unwrap auto) */
     try{
       var iifeFlags = Object.keys(window).filter(function(k){return /^_ax.*Installed$/.test(k) || /^_ax.*Wired$/.test(k);});
-      conflicts.duplicate_iife_flags = iifeFlags;
+      conflicts.duplicate_iife_flags = iifeFlags.length;
       if(iifeFlags.length > 30) report.findings.push({severity:"P2",category:"runtime",msg:iifeFlags.length+" IIFE flags installes - debt boot"});
     }catch(_e){}
-    /* Wrappers chain depth pour fonctions critiques */
+    /* CHECK 4 : Wrappers chain depth pour fonctions critiques */
     try{
-      ["axLogin","sv","dc","render","toast","sendMessage"].forEach(function(fn){
+      ["axLogin","sv","dc","render","toast","sendMessage","_sendFromInput"].forEach(function(fn){
         var f = window[fn];
         if(typeof f === "function"){
-          /* Comptage approximatif : si toString contient "origLogin.apply" ou "orig.apply" */
-          var src = String(f).slice(0, 1000);
+          var src = String(f).slice(0, 1500);
           var depth = (src.match(/orig[A-Z]?\w*\.apply|origLogin\.apply|origSv\.apply|origDc\.apply/g)||[]).length;
           conflicts.wrappers_chain_depth[fn] = depth;
-          if(depth >= 3) report.findings.push({severity:"P1",category:"runtime",msg:fn+"() wrapper chain depth >= "+depth+" - fragile"});
+          if(depth >= 3){
+            report.findings.push({severity:"P1",category:"runtime",msg:fn+"() wrapper chain depth = "+depth+" - fragile"});
+            /* Escalade ax_claude_todo (Claude Code unwrap manuellement next session) */
+            try{
+              var todo = lg("ax_claude_todo",[]);
+              if(!todo.some(function(t){return t.id && t.id.indexOf("wrapper_unwrap_"+fn)===0;})){
+                todo.push({id:"wrapper_unwrap_"+fn+"_"+Date.now(),context:{fn:fn,depth:depth},reason:"Wrapper chain depth fragile sur "+fn,severity:"P1",src:"apex_audit",v:typeof APP_VER!=="undefined"?APP_VER:"?",ts:Date.now(),status:"pending"});
+                if(todo.length>50) todo = todo.slice(-50);
+                ls("ax_claude_todo",todo);
+              }
+            }catch(_e){}
+          }
         }
       });
     }catch(_e){}
+    /* CHECK + AUTO-FIX 5 : capture-phase listeners count (estimation via _axAttachedListeners) */
+    try{
+      if(window._axAttachedListeners && Array.isArray(window._axAttachedListeners)){
+        conflicts.capture_listeners_count = window._axAttachedListeners.filter(function(e){return e && e.opts && e.opts.capture;}).length;
+      }
+    }catch(_e){}
     report.sections.internal_conflicts = conflicts;
+    /* Si auto-fixes appliques, log audit */
+    if(conflicts.auto_fixes_applied.length > 0){
+      try{if(typeof axSecurityLog === "function") axSecurityLog("audit_auto_fixed", conflicts.auto_fixes_applied.join(", "));}catch(_e){}
+    }
   }catch(_e){}
+  /* Section 20 v12.747 : AUDIT STATIQUE EXTERNE (Kevin "audit ligne par ligne du code") */
   /* Section 20 v12.747 : AUDIT STATIQUE EXTERNE (Kevin "audit ligne par ligne du code") */
   try{
     var src = (typeof axGetAppSource === "function") ? axGetAppSource() : (document.documentElement.outerHTML || "");
@@ -23217,7 +23282,7 @@ function vStorage(){if(!K.user)return vLogin();if(!axIsAdmin())return '<div clas
 function vSettingsByFamily(){if(!K||!K.user)return typeof vLogin==="function"?vLogin():"<p>Login</p>";var isAdm=axIsAdmin();var u=K.user;var planInfo=(typeof axGetPlanInfo==="function")?axGetPlanInfo():null;var usage=lg("ax_usage",{today:0,month:0,total:0});/* AX_V12_500_XP_FIX : lire les 2 (per-user + global) et prendre max — bug Kevin Niv.4 header vs Niv.1 detail */
 var xp=Math.max((+lg("ax_xp_"+u.id,0))||0, (+lg("ax_xp",0))||0);var level=Math.floor(xp/100)+1;var streak=(typeof axGetStreak==="function")?axGetStreak():0;var stats=(typeof _axStorageStats==="function")?_axStorageStats():{pct:0};var convCount=K.conversations?K.conversations.length:0;var msgCount=K.messages?K.messages.length:0;var auditN=lg("ax_audit",[]).length;var errN=lg("ax_err_log",[]).length;var lessonN=lg("ax_lessons_learned",[]).length;
 var h='<div style="padding:14px;max-width:780px;margin:0 auto">';h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px"><h2 style="margin:0;background:linear-gradient(135deg,var(--ax-gold),#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">⚙ Reglages</h2><div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--ax-text-dim)">'+APP_VER+'</span><button class="ax-btn ax-btn-outline" onclick="if(typeof axCheckUpdate===\'function\')axCheckUpdate();else location.reload();" style="font-size:11px;padding:6px 10px;min-height:32px">🔄 MAJ</button></div></div>';
-h+='<input type="text" class="ax-input" placeholder="🔍 Rechercher un reglage..." oninput="(function(q){if(!q||q.length<2){document.querySelectorAll(\'#ax-set-fam .ax-card\').forEach(function(c){c.style.display=\'\';});return;}var lower=q.toLowerCase();document.querySelectorAll(\'#ax-set-fam .ax-card\').forEach(function(c){c.style.display=(c.textContent||\'\').toLowerCase().indexOf(lower) aria-label="🔍 Rechercher un reglage...">=0?\'\':\'none\';});})(this.value)" style="margin-bottom:14px;font-size:16px;min-height:44px">';
+h+='<input type="text" class="ax-input" aria-label="Rechercher un reglage" placeholder="🔍 Rechercher un reglage..." oninput="_axSettingsFilter(this.value)" style="margin-bottom:14px;font-size:16px;min-height:44px">';
 h+='<div id="ax-set-fam">';
 
 /* === FAMILLE 1 : 👤 COMPTE === */
