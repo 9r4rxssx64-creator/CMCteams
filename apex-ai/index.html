@@ -980,7 +980,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.700",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.705",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -30282,6 +30282,8 @@ window.AX_PROJECTS_REGISTRY = [
     health_keys:["ax_api_key","ax_uid","ax_user"], required_tokens:["ax_api_key"]},
   {id:"cmcteams", name:"CMCteams", path:"index.html",
     health_keys:["cmc_uid","cmc_e","cmc_t"], required_tokens:[]},
+  {id:"ekdmc", name:"e-KDMC v0.4", path:"_PROJECTS_KDMC/e-KDMC/dashboard/index.html",
+    health_keys:["ekdmc_setup_complete"], required_tokens:["ax_stripe_sk_live","ax_brevo_key"]},
   {id:"apexchat", name:"Apex Chat", path:"messaging-app/index.html",
     health_keys:[], required_tokens:["ax_kevin_whatsapp_phone"]},
   {id:"socialvideo", name:"Social Video Pipeline", path:"tools/social/cli.js",
