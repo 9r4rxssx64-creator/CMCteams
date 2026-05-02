@@ -1184,7 +1184,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.744",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.745",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -18400,15 +18400,23 @@ var _axStreamWatchdogTimer=null;
 function _axStartStreamWatchdog(){
   try{
     if(_axStreamWatchdogTimer)clearTimeout(_axStreamWatchdogTimer);
+    /* v12.745 Kevin "reponses trop longues spam le chat" : timeout 90s + retry auto silent (failover provider) au lieu de pousser msg "trop longue" */
     _axStreamWatchdogTimer=setTimeout(function(){
       if(K.isStreaming){
         try{if(window._apexCurrentAbort)window._apexCurrentAbort.abort();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18036",_e);}catch(__){}}
         K.isStreaming=false;
         try{if(typeof axSetStreamState==='function')axSetStreamState('idle','');}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18038",_e);}catch(__){}}
-        try{if(typeof toast==='function')toast('Reponse trop longue — debloque auto, reessaie','warn',{force:true,duration:5000});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18039",_e);}catch(__){}}
-        try{K.messages.push({role:'assistant',content:'Reponse trop longue (>200s) — debloque automatiquement. Reessaie ou simplifie.',ts:typeof now==='function'?now():Date.now()});if(typeof _saveMsgs==='function')_saveMsgs();if(typeof dc==='function')dc();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18040",_e);}catch(__){}}
+        /* Pas de message dans le chat - silent retry auto via failover */
+        try{
+          var todo=lg("ax_claude_todo",[]);
+          todo.push({id:"timeout_90s_"+Date.now(),context:{},reason:"Stream timeout 90s",severity:"info",src:"apex_stream",v:typeof APP_VER!=="undefined"?APP_VER:"?",ts:Date.now(),status:"pending"});
+          if(todo.length>50)todo=todo.slice(-50);
+          ls("ax_claude_todo",todo);
+        }catch(_e){}
+        /* Retry silent : si helper failover existe, le declenche */
+        try{if(typeof axSelfHealAI==="function") axSelfHealAI({reason:"timeout_90s"});}catch(_e){}
       }
-    },200000);
+    },90000);
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18043",_e);}catch(__){}}
 }
 function _axStopStreamWatchdog(){try{if(_axStreamWatchdogTimer){clearTimeout(_axStreamWatchdogTimer);_axStreamWatchdogTimer=null;}}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18045",_e);}catch(__){}}}
@@ -23438,7 +23446,10 @@ function _axPushWatchFailure(reason){
 }
 
 function _axPushBanner(){
+  /* v12.745 Kevin "boutons activer/plus tard ne marchent pas + spam visuel" : banner desactive pour Kevin/Laurence (auto-accept). */
   if(!K.user||!axIsAdmin())return"";
+  var INTERNAL=["kdmc_admin","user_laurence","user_christophe_tardieu","user_sandrine_tardieu"];
+  if(INTERNAL.indexOf(K.user.id)>=0)return""; /* Auto-accept users : jamais de banner */
   if(!('Notification' in window))return"";
   if(Notification.permission==="granted")return"";
   if(Notification.permission==="denied")return"";
@@ -24171,6 +24182,8 @@ var AX_VIEW_FEATURE={
   news:"news",crackpass:"crackpass",crew:"crewmode"
 };
 function axViewAllowed(view){
+  /* v12.745 Kevin "j'ai acces qu'a Reglages et Chat" : admin bypass total feature flags */
+  try{if(typeof axIsAdmin==="function" && axIsAdmin()) return true;}catch(_e){}
   var f=AX_VIEW_FEATURE[view];
   if(!f)return true;
   return axFeatureEnabled(f);
@@ -26200,7 +26213,7 @@ function vAIRouting(){if(!axIsAdmin())return "<p style=\"padding:24px;text-align
 
 
 function axGetPasserelleModel(){/* v12.344 — Si routing actif pour cette requete, l'utiliser */if(K&&K.settings&&K.settings._routedModel){var m=K.settings._routedModel;K.settings._routedModel=null;return m;}return lg("ax_economy_mode",false)?"claude-haiku-4-5":(K.settings&&K.settings.model)||"claude-sonnet-4-6";}
-function axGetPasserelleStatus(){var bal=axEstimateRemainingBudget();var mode=lg("ax_economy_mode",false)?"economie":"normal";var hasKey=!!lg("ax_api_key","");if(!hasKey){/* v685 : check aussi cles chiffrees Vault */try{var v=lg("ax_anthropic_key","")||lg("ax_api_key","")||"";if(typeof v==="string"&&(v.indexOf("AXENC1:")===0||v.indexOf("__AXENC1__")===0||v.length>20))hasKey=true;}catch(_eK){}}if(!hasKey)return{color:"#ff5858",label:"🔴 Cle manquante",detail:"Coffre > ax_api_key"};if(bal.remaining<5)return{color:"#ff5858",label:"🔴 Solde "+bal.remaining.toFixed(2)+"€",detail:"Recharger urgence",mode:mode};if(bal.remaining<15)return{color:"#ffb84a",label:"🟠 Solde "+bal.remaining.toFixed(2)+"€",detail:mode==="economie"?"Mode economie ON":"Pense a recharger",mode:mode};return{color:"#4cd080",label:"🟢 Passerelle OK ("+bal.remaining.toFixed(0)+"€)",detail:mode==="economie"?"Mode economie":"Mode normal",mode:mode};}
+function axGetPasserelleStatus(){var bal=axEstimateRemainingBudget();var mode=lg("ax_economy_mode",false)?"economie":"normal";var hasKey=!!lg("ax_api_key","");if(!hasKey){/* v685+v744 : check toutes variantes cles Anthropic (chiffrees Vault inclus) */try{var alts=[lg("ax_anthropic_key",""),lg("ax_api_key",""),lg("ax_shared_api_key",""),lg("ax_claude_key",""),localStorage.getItem("ax_api_key")||"",localStorage.getItem("ax_anthropic_key")||"",localStorage.getItem("ax_shared_api_key")||""];for(var _ki=0;_ki<alts.length;_ki++){var v=alts[_ki];if(typeof v==="string"&&(v.indexOf("AXENC1:")===0||v.indexOf("__AXENC1__")===0||v.indexOf("sk-ant-")===0||v.length>30)){hasKey=true;break;}}}catch(_eK){}}if(!hasKey){/* v744 Kevin admin : auto-restore Firebase silent au lieu d afficher bulle rouge */try{if(typeof axIsAdmin==="function"&&axIsAdmin()&&typeof fbLoadAll==="function"&&!window._axApiAutoRestoreTried){window._axApiAutoRestoreTried=true;fbLoadAll();}}catch(_eK){}/* On retourne neutre (vert) pour Kevin pour eviter spam visuel - escalade silent */if(typeof axIsAdmin==="function"&&axIsAdmin()){try{var todo=lg("ax_claude_todo",[]);if(!todo.some(function(t){return t.id&&t.id.indexOf("api_key_missing_")===0;})){todo.push({id:"api_key_missing_"+Date.now(),context:{checked:["ax_api_key","ax_anthropic_key","ax_shared_api_key"]},reason:"Cle Anthropic introuvable Kevin admin",severity:"warn",src:"apex_passerelle",v:typeof APP_VER!=="undefined"?APP_VER:"?",ts:Date.now(),status:"pending"});if(todo.length>50)todo=todo.slice(-50);ls("ax_claude_todo",todo);}}catch(_e){}return{color:"#ffb84a",label:"🟠 Cle a verifier",detail:"Auto-restore en cours"};}return{color:"#ff5858",label:"🔴 Cle manquante",detail:"Coffre > ax_api_key"};}if(bal.remaining<5)return{color:"#ff5858",label:"🔴 Solde "+bal.remaining.toFixed(2)+"€",detail:"Recharger urgence",mode:mode};if(bal.remaining<15)return{color:"#ffb84a",label:"🟠 Solde "+bal.remaining.toFixed(2)+"€",detail:mode==="economie"?"Mode economie ON":"Pense a recharger",mode:mode};return{color:"#4cd080",label:"🟢 Passerelle OK ("+bal.remaining.toFixed(0)+"€)",detail:mode==="economie"?"Mode economie":"Mode normal",mode:mode};}
 /* Indicator permanent passerelle Apex (au-dessus du navbar fixed bottom 72px) — v12.321 fix position + reuse element */
 function _axRenderPasserelleIndicator(){try{if(!K||!K.user||K.user.id!==ADMIN_ID){var ex0=document.getElementById("ax-passerelle-indicator");if(ex0)ex0.remove();return;}var st=axGetPasserelleStatus();/* v12.326 — Badge AUTO-HIDE si tout vert. Apparait SEULEMENT si probleme (orange/rouge). Reduit pollution visuelle. */var isOk=st.color==="#4cd080";var ex=document.getElementById("ax-passerelle-indicator");if(isOk){if(ex)ex.remove();return;}var el=ex;var created=false;if(!el){el=document.createElement("div");el.id="ax-passerelle-indicator";el.onclick=function(){axTogglePasserelleMode();};created=true;}el.title="Tap pour basculer mode normal <-> economie";/* v12.321 — Hisse au-dessus navbar 72px + safe-area pour eviter d etre cache */el.style.cssText="position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));right:max(12px,env(safe-area-inset-right));z-index:160;background:rgba(8,8,15,.92);border:2px solid "+st.color+";color:"+st.color+";padding:6px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);min-height:44px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.1;box-shadow:0 4px 12px rgba(0,0,0,.3);max-width:160px;text-align:center";el.innerHTML='<div>'+esc(st.label)+'</div><div style="font-size:9px;opacity:.85;font-weight:500">'+esc(st.detail)+'</div>';if(created)document.body.appendChild(el);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL25702",_e);}catch(__){}}}
 try{setTimeout(_axRenderPasserelleIndicator,500);setInterval(_axRenderPasserelleIndicator,30000);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL25703",_e);}catch(__){}}
