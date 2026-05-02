@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.585";
+var APP_VER="v9.586";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30805,34 +30805,30 @@ function doImport(){
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
   // des employés non présents dans ce nouvel import (permet de compléter un import incomplet)
   A.year=iy;A.month=im; // necessaire pour isEmpActive
-  // v9.585 (Kevin "Automatise. Je n'ai pas besoin de garder l'ancien planning.") :
-  // AUTOMATIQUE TOUJOURS : nouveau import = ancien efface + archive silencieuse + nouveau remplit.
-  // Plus de toggle. Plus de friction. Pas de question. Tout se base sur le nouveau PDF.
+  // v9.586 (Kevin "toujours mauvais import, ancienne equipe apres nouvel import")
+  // AUTOMATIQUE : ancien planning efface entierement (overrides + ref + verif) + cache gpl invalide.
+  // Pas de reset emp.team (risque perte donnees pour emp absents du nouveau PDF).
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
-    // Archive silencieuse en arriere-plan (historique conserve mais jamais affiche en surface).
+    // Archive silencieuse
     try{
       var _archKey="cmc_history_"+key+"_"+Date.now();
       ls(_archKey,{
-        ts:Date.now(),
-        year:iy,month:im,
+        ts:Date.now(),year:iy,month:im,
         ov:JSON.parse(JSON.stringify(A.overrides[key])),
         ref:lg("cmc_ref_"+key,null),
         verif:lg("cmc_verif_"+key,null),
         replacedBy:"import_"+(_importVersion||"?")
       });
-      // Cap : 6 archives max par mois (anti-saturation localStorage iPhone 5MB)
       var _allArch=[];
-      for(var _ki in localStorage){
-        if(_ki.indexOf("cmc_history_"+key+"_")===0)_allArch.push(_ki);
-      }
+      for(var _ki in localStorage){if(_ki.indexOf("cmc_history_"+key+"_")===0)_allArch.push(_ki);}
       _allArch.sort();
-      while(_allArch.length>6){
-        try{localStorage.removeItem(_allArch.shift());}catch(_){}
-      }
+      while(_allArch.length>6){try{localStorage.removeItem(_allArch.shift());}catch(_){}}
     }catch(_archErr){}
-    // Wipe systematique : nouveau PDF = source de verite unique
+    // Wipe TOTAL : overrides + verif + ref + cache
     A.overrides[key]={};
     try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
+    try{localStorage.removeItem("cmc_ref_"+key);}catch(_){}
+    try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
