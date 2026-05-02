@@ -991,6 +991,59 @@ try{
   }catch(_e){}
 })();
 /* ============================================================
+   AX_V12_758 NUCLEAR FAIL-SAFE - ALL BUTTONS (Kevin v756 "aucun bouton ne fonctionne dans toute l'app")
+   Document-level BUBBLE-PHASE (pas capture) listener qui DETECTE si un click button[onclick]
+   n'a produit aucune reaction, et FORCE l'execution de l'onclick via new Function().
+   Tourne en CONTINU post-login sans bloquer les listeners natifs.
+   ============================================================ */
+(function(){
+  try{
+    if(typeof document === "undefined" || !document.addEventListener) return;
+    if(window._axNuclearAllButtonsInstalled) return;
+    window._axNuclearAllButtonsInstalled = true;
+    document.addEventListener("click", function(ev){
+      try{
+        var el = ev.target && ev.target.closest && ev.target.closest("[onclick]");
+        if(!el) return;
+        if(ev.defaultPrevented) return; /* le natif a deja gere */
+        var oc = el.getAttribute("onclick");
+        if(!oc) return;
+        /* Skip si modal close button (deja gere) */
+        var lbl = (el.textContent||"").trim();
+        if(/^(OK|Passer|Suivant|Suivant\s*→|Fermer|Annuler|Plus\s*tard|✕|×)$/i.test(lbl) && el.closest('#ax-needs-attention-modal,#ax-welcome-overlay,#ax-tour-overlay')) return;
+        /* Capture etat avant 50ms */
+        var beforeView = window.K && window.K.view;
+        var beforeHash = (document.body && document.body.innerHTML||"").length;
+        var modalCountBefore = document.querySelectorAll('.ax-modal,[role="dialog"],#modal-container *').length;
+        var toastCountBefore = document.querySelectorAll(".ax-toast").length;
+        setTimeout(function(){
+          try{
+            var afterView = window.K && window.K.view;
+            var afterHash = (document.body && document.body.innerHTML||"").length;
+            var modalCountAfter = document.querySelectorAll('.ax-modal,[role="dialog"],#modal-container *').length;
+            var toastCountAfter = document.querySelectorAll(".ax-toast").length;
+            var reacted = (afterView !== beforeView) || (afterHash !== beforeHash) || (modalCountAfter > modalCountBefore) || (toastCountAfter > toastCountBefore);
+            if(reacted) return;
+            /* Click inert : force execution onclick */
+            try{
+              var fn = new Function("event","with(this){try{"+oc+"}catch(_e){}}");
+              fn.call(el, ev);
+            }catch(_e){}
+            /* Si onclick contient sv("X") essaie en plus sv direct */
+            try{
+              var mv = oc.match(/sv\(['"]([^'"]+)['"]/);
+              if(mv && mv[1] && typeof window.sv === "function" && window.K && window.K.view !== mv[1]){
+                window.sv(mv[1]);
+              }
+            }catch(_e){}
+          }catch(_e){}
+        }, 80);
+      }catch(_e){}
+    }, false); /* bubble phase, ne bloque rien */
+  }catch(_e){}
+})();
+
+/* ============================================================
    AX_V12_735 NUCLEAR LOGIN FIX (Kevin v730 "bouton Connexion ne fonctionne pas")
    Document-level capture-phase listener : intercepte CHAQUE click sur boutons
    critiques, contourne tous wrappers/IIFE foireux. Last resort fail-safe.
@@ -1190,7 +1243,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.757",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.758",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
