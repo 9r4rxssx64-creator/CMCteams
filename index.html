@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.589";
+var APP_VER="v9.590";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -31756,20 +31756,15 @@ function doImport(){
           if(typeof _audit==="function")_audit("cadre_role_change",(A.user&&A.user.id)||"import",emp.id,_oldRole||"",_contextCadreRole+" ("+_contextTeam+")");
         }
       }
-      // Stocker l'équipe du mois dans teamHistory (équipe peut changer chaque mois)
-      // v9.584 (Kevin "même équipe que mois dernier") — IMPORTANT : avant cette version, emp.team
-      // était PRÉSERVÉ pour DEF_EMP. Resultat : meme apres import nouveau PDF qui place Kevin
-      // dans une equipe differente, son emp.team restait fige -> vues affichaient ancienne equipe.
-      // Fix : mettre a jour emp.team pour TOUS si _contextTeam valide (pas "?"). Si parser echoue
-      // a detecter section -> _contextTeam reste null -> emp.team garde l'ancienne valeur (safe).
+      // v9.590 ROLLBACK v9.584 (Kevin "y en a qui sont tout seuls dans les equipes,
+      // les equipes ne sont plus du tout bonnes") : update emp.team pour DEF_EMP
+      // creait fragmentation des equipes quand parser ratait detection section.
+      // Retour comportement v9.583 : DEF_EMP garde leur team du code (stable),
+      // non-DEF_EMP suit _contextTeam. teamHistory[key] continue de tracer per-mois.
       if(_contextTeam){
         if(!emp.teamHistory)emp.teamHistory={};
         if(emp.teamHistory[key]!==_contextTeam){emp.teamHistory[key]=_contextTeam;_changed=true;}
-        // emp.team = source verite courante. Update meme pour DEF_EMP si _contextTeam est defini.
-        if(emp.team!==_contextTeam&&_contextTeam!=="?"&&_contextTeam){
-          emp.team=_contextTeam;
-          _changed=true;
-        }
+        if(!_isDefEmp&&emp.team!==_contextTeam){emp.team=_contextTeam;_changed=true;}
       }
       // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent) — PDF = source de vérité
       if(nameIdx===1&&p0raw){
