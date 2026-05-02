@@ -1297,7 +1297,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.769",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.770",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -19212,11 +19212,11 @@ try{
   }
 }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18593",_e);}catch(__){}}
 
-/* Run integrity check au boot 6s + apres chaque fbLoadAll + sentinelle 30 min */
+/* v12.770 Kevin "ca bloque au bout d un moment" : sentinelles cred 5min DESACTIVEES.
+   Run UNIQUEMENT au boot 4s puis plus jamais auto. Manuel via console si besoin. */
 try{if(typeof window!=='undefined'&&!window._axCredIntegrityScheduled){window._axCredIntegrityScheduled=true;
-  /* v12.757 Kevin "tout automatique TOUJOURS" : run integrity check au boot 4s + chaque 5min en arriere-plan, auto-fix continu silent */
   setTimeout(function(){try{if(typeof _axCheckCredentialsIntegrity==='function')_axCheckCredentialsIntegrity();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18597",_e);}catch(__){}}}, 4000);
-  setInterval(function(){try{if(typeof _axCheckCredentialsIntegrity==='function')_axCheckCredentialsIntegrity();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18598",_e);}catch(__){}}}, 300000); /* 5 min */
+  /* setInterval 5min DESACTIVE - pouvait bloquer UI thread iPhone */
   /* Aussi au retour foreground (visibilitychange) */
   if(typeof document !== "undefined" && document.addEventListener && !window._axCredVisListener){
     window._axCredVisListener = true;
@@ -27518,16 +27518,11 @@ window.axUltraCleanup = function(){
 try{setTimeout(_axCheckStorageProactive,1000);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL26567",_e);}catch(__){}}
 /* v12.741 : auto-trigger ULTRA si > 70% au boot + sentinelle 5min toujours active */
 try{setTimeout(function(){var u=(typeof _axMemoryUsedBytes==="function")?_axMemoryUsedBytes():0;var p=u/5242880*100;if(p>=70)try{axUltraCleanup();}catch(_e){}},3500);}catch(_e){}
+/* v12.770 Kevin "ca bloque au bout d un moment" : sentinelle ULTRA storage 5min DESACTIVEE */
 try{
   if(!window._axUltraSentinelInstalled){
     window._axUltraSentinelInstalled=true;
-    setInterval(function(){
-      try{
-        var u=(typeof _axMemoryUsedBytes==="function")?_axMemoryUsedBytes():0;
-        var p=u/5242880*100;
-        if(p>=75)try{axUltraCleanup();}catch(_e){}
-      }catch(_e){}
-    }, 300000); /* 5 min */
+    /* setInterval DESACTIVE */
   }
 }catch(_e){}
 /* v12.741 RUNTIME TRACKER : intercepte CHAQUE onclick exception en prod + escalade silent */
@@ -27582,18 +27577,11 @@ try{
 }catch(_e){}
 /* v12.743 : sentinelle audit boutons 30min - boot 10min (Kevin "audit bloque tous boutons") */
 try{
+  /* v12.770 Kevin "ca bloque au bout d un moment" : sentinelle audit boutons 30min DESACTIVEE.
+     Manuel via console window.axTestAllButtonsLive({force:true}). */
   if(!window._axBtnAuditSentinelInstalled){
     window._axBtnAuditSentinelInstalled=true;
-    setTimeout(function(){
-      try{if(K&&K.user&&K.user.role==="admin"&&typeof axTestAllButtonsLive==="function")axTestAllButtonsLive({quiet:true,autoFix:true});}catch(_e){}
-    }, 600000);
-    setInterval(function(){
-      try{
-        if(!K||!K.user||K.user.role!=="admin")return;
-        if(typeof axTestAllButtonsLive!=="function")return;
-        axTestAllButtonsLive({quiet:true,autoFix:true});
-      }catch(_e){}
-    }, 1800000); /* 30 min */
+    /* setTimeout 10min + setInterval 30min DESACTIVES */
   }
 }catch(_e){}
 /* v12.315 — Boot cleanup TRES agressif si proche limite (anti "manque de memoire") */try{setTimeout(function(){if(typeof axStorageQuotaCheck==="function"){var q=axStorageQuotaCheck();if(q&&q.pct>=70){if(typeof axAggressiveCleanup==="function")try{axAggressiveCleanup();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(q.pct>=85&&typeof axEmergencyCleanup==="function")try{axEmergencyCleanup(true);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(typeof toast==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())toast("Memoire libere ("+q.pct+" pourcent occupe)","info");}}},2500);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
@@ -36521,9 +36509,11 @@ setTimeout(function(){
       }
     }catch(_e){}
   }
-  /* Run au boot + a chaque login */
+  /* v12.770 Kevin "ca bloque au bout d un moment" : interval 5s DESACTIVE.
+     autoAcceptForCurrentUser tourne UNIQUEMENT au boot 500ms + 30s puis stop.
+     50000 boucles localStorage write/read par jour = potentielle cause ralentissement iPhone. */
   setTimeout(autoAcceptForCurrentUser, 500);
-  setInterval(autoAcceptForCurrentUser, 5000);
+  setTimeout(autoAcceptForCurrentUser, 30000);
   /* v12.746 : hook axLogin SUPPRIME (Kevin "bouton Connexion ne va pas plus loin").
      Auto-accept se fait via setInterval 5s qui suit K.user changes - pas besoin de wrap axLogin. */
 })();
