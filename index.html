@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.587";
+var APP_VER="v9.588";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30714,6 +30714,85 @@ function _statBox(label,value,color){
 // v9.413 — Extraction légendes PDF (Kevin 2026-04-19 : "ne rater aucune info, tous les encadrés, légendes, fonds")
 // Scanne le texte PDF pour patterns "CODE = Label", "CODE : Label", "CODE Label" fréquents en bas de planning
 // Enrichit _learnedCodes et accumule dans cmc_learned_legends (FB_FIX, source traçable)
+/**
+ * v9.588 (Kevin "Aucun employe ne peut disparaitre. Tout est marque dans le PDF, encadres a droite")
+ * Parse les ENCADRES status du PDF SBM (formation, CP, maladie, seminaire, AF, CDP, etc.)
+ * et assigne le bon code aux employes mentionnes dedans, pour TOUS les jours du mois.
+ *
+ * Strategie :
+ * 1. Recupere employes avec ZERO code pour le mois (apres parser principal)
+ * 2. Pour chaque, cherche son nom dans le texte source
+ * 3. Recupere le contexte (50 chars avant/apres le nom)
+ * 4. Detecte mot-cle status proche : FORMATION/AF, CP/CONGE, MALADIE/M, SEMINAIRE, RECUP/RH, etc.
+ * 5. Si match -> remplit tous les jours du mois avec ce code
+ * 6. Sinon -> log dans cmc_unassigned_employees pour audit admin
+ */
+function _parseEncadresStatuts(txt, key, year, month){
+  if(!txt||typeof txt!=="string")return {filled:0,unassigned:[]};
+  var pl=A.overrides[key]||{};
+  var days=getDays(year,month);
+  // Dict mots-cles -> code applique
+  var KEYWORD_CODE_MAP=[
+    {kw:/\bFORMATION\b/i,code:"AF",label:"Formation"},
+    {kw:/\bSEMINAIRE\b/i,code:"AF",label:"Séminaire"},
+    {kw:/\bAF\b/,code:"AF",label:"AF (formation/seminaire)"},
+    {kw:/\b(?:CP|CONGE\s*PAY[EÉ])\b/i,code:"CP",label:"Congés payés"},
+    {kw:/\bRECUP\b/i,code:"RH",label:"Récup"},
+    {kw:/\bMALADIE\b/i,code:"M",label:"Maladie"},
+    {kw:/\bACCIDENT\b/i,code:"AT",label:"Accident travail"},
+    {kw:/\bABSENCE\b/i,code:"ABS",label:"Absence"},
+    {kw:/\bPATERNITE\b/i,code:"PAT",label:"Paternité"},
+    {kw:/\bMATERNITE\b/i,code:"PAT",label:"Maternité"},
+    {kw:/\bRETRAIT/i,code:"R",label:"Retraite (à valider)"},
+    {kw:/\bAMENAG/i,code:"PAT",label:"Aménagé"}
+  ];
+  var txtUpper=txt.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  var filled=0,unassigned=[];
+  // Employes actifs sans aucun code pour ce mois
+  var emptyEmps=A.employees.filter(function(emp){
+    if(!isEmpActive(emp,year,month))return false;
+    var row=pl[emp.id]||{};
+    return Object.keys(row).filter(function(d){return !!row[d];}).length===0;
+  });
+  emptyEmps.forEach(function(emp){
+    var nm=(emp.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    if(!nm)return;
+    var toks=nm.split(/\s+/).filter(function(t){return t.length>=3;});
+    if(!toks.length){unassigned.push({id:emp.id,name:emp.name,reason:"name_too_short"});return;}
+    // Trouver index du nom dans le PDF (token principal = NOM de famille = toks[0])
+    var idx=txtUpper.indexOf(toks[0]);
+    if(idx<0){unassigned.push({id:emp.id,name:emp.name,reason:"name_not_in_pdf"});return;}
+    // Contexte : 200 chars avant + 200 chars apres le nom
+    var context=txtUpper.slice(Math.max(0,idx-200),Math.min(txtUpper.length,idx+200+nm.length));
+    // Detecter le mot-cle status le plus proche
+    var detectedCode=null,detectedLabel=null;
+    for(var ki=0;ki<KEYWORD_CODE_MAP.length;ki++){
+      if(KEYWORD_CODE_MAP[ki].kw.test(context)){
+        detectedCode=KEYWORD_CODE_MAP[ki].code;
+        detectedLabel=KEYWORD_CODE_MAP[ki].label;
+        break;
+      }
+    }
+    if(!detectedCode){
+      unassigned.push({id:emp.id,name:emp.name,reason:"no_status_keyword_near"});
+      return;
+    }
+    // Verifier que le code existe dans CODES (sinon learn it)
+    if(!CODES[detectedCode]&&typeof learnNewCode==="function"){
+      try{learnNewCode(detectedCode);}catch(_){}
+    }
+    // Remplir TOUS les jours du mois avec ce code
+    if(!A.overrides[key])A.overrides[key]={};
+    if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
+    for(var d=1;d<=days;d++){
+      A.overrides[key][emp.id][d]=detectedCode;
+    }
+    filled++;
+    console.info("[encadres v9.588] "+emp.name+" -> "+detectedCode+" ("+detectedLabel+")");
+  });
+  return {filled:filled,unassigned:unassigned};
+}
+
 function parseLegendsFromPdf(txt){
   if(!txt||typeof txt!=="string")return {found:0,enriched:0};
   var found=0,enriched=0;
@@ -32543,6 +32622,19 @@ function doImport(){
       }
     }
   }catch(_acfErr){}
+  // v9.588 (Kevin "aucun employe ne peut disparaitre") \u2014 extraction encadres status (formation/CP/maladie/etc.)
+  try{
+    if(typeof _parseEncadresStatuts==="function"){
+      var _encRes=_parseEncadresStatuts(txt,key,iy,im);
+      if(_encRes&&_encRes.filled>0){
+        var _rEnc=document.getElementById("impRes");
+        if(_rEnc){
+          _rEnc.innerHTML+='<div style="margin-top:8px;padding:10px;background:rgba(160,96,255,.08);border:1px solid rgba(160,96,255,.35);border-radius:8px;font-size:13px;color:#c080ff">\ud83d\udccb '+_encRes.filled+' employe'+(_encRes.filled>1?'s':'')+' detecte'+(_encRes.filled>1?'s':'')+' dans les encadres (formation/CP/maladie/etc.) auto-rempli'+(_encRes.filled>1?'s':'')+' avec le bon code statut</div>';
+        }
+        try{ls("cmc_unassigned_employees_"+key,_encRes.unassigned||[]);}catch(_){}
+      }
+    }
+  }catch(_encErr){console.warn("[doImport v9.588] _parseEncadresStatuts err",_encErr);}
   // v9.509 (Kevin 2026-04-25 ZERO ERREUR CADRES) Banner final post-import
   try{
     var _final_pl=gpl(iy,im)||{};
