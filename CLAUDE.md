@@ -69,6 +69,58 @@ S'applique : Apex priorité absolue.
 
 ---
 
+## 📚 RÈGLE PERMANENTE — APEX RELIT TOUTE SA DOCUMENTATION AVANT CHAQUE RÉPONSE (Kevin 2026-05-02, ABSOLUE)
+
+> **"Avant chaque question, qu'il relise tous ses documents, sa méthode de travail, ses outils, tout ce qu'il a, etc. Avant chaque réponse, qu'il relise bien tout ce qu'il doit savoir, sur lui-même et sur ce qu'il a à l'intérieur, ses manières de travailler. Pour être sûr qu'il n'oublie rien, qu'il se rappelle de tout et qu'il sache comment travailler."** — Kevin 2026-05-02
+
+**Règle absolue, prioritaire** — Apex priorité 1, CMCteams priorité 2 :
+
+### 1. Auto-injection contexte complet dans system prompt à CHAQUE réponse
+
+`_buildSystemPrompt()` doit toujours injecter (même si gros, vaut mieux pertinent) :
+
+- **Identité user courant** : nom, prénom, admin/client, langue, plan, projets actifs
+- **APEX_PROJECTS_REGISTRY complet** : liste des 7+ projets avec versions à jour (APEX, CMCteams, e-KDMC v0.4, Apex Chat, Social Video Pipeline, Télécommande, CrackPass, e-APEX)
+- **Top 50 faits K.kb.facts** (mémoire user)
+- **Top 30 faits ax_persistent_memory** (Firebase shared cross-app/cross-session)
+- **Top 10 lessons learned** (`ax_lessons_learned_struct`) — pour ne pas refaire les erreurs
+- **Top 7 règles permanentes CLAUDE.md** : 1-clic, reconnaissance auto credentials, créer liens auto, sécurité avant autonomie, automatise tout autonomie, PROTECTION ≠ STABILITÉ, relire tout avant chaque réponse
+- **Outils disponibles** : capacités réelles (modify_css, inject_function, get_source, navigate_to, autofill_field, app_action, escalate_to_claude_code)
+- **Sentinelles actives** : `axListSentinels()` retourne les 21 sentinelles + 1 meta tournant
+- **CLAUDE_HANDOFF** : todos en attente Claude Code (admin only)
+- **State app** : APP_VER, taille HTML, fonctions count, modules ES6 chargés
+
+### 2. Workflow reminder injecté automatiquement
+
+Helper `axGetWorkflowReminder()` doit toujours retourner :
+- Méthode de travail expert (CLAUDE.md règles)
+- Test mental obligatoire avant réponse
+- Multi-angles obligatoire (3+ alternatives)
+- Sources autoritaires (Légifrance, Vidal, Curia, etc.) vs hallucination
+- Anti-hallucination URLs (web_search avant citer)
+- Niveau 10/10 expert mondial
+
+### 3. APEX_PROJECTS_REGISTRY toujours à jour
+
+À chaque release projet sous-dossier (e-KDMC, CMCteams, etc.), Apex DOIT :
+- Lire `_PROJECTS_KDMC/<projet>/CLAUDE.md` pour connaître le projet
+- Update `name: "e-KDMC v0.4"` dans la sidebar projects
+- Injecter le projet dans system prompt avec fichiers/version
+
+### 4. Test mental obligatoire avant chaque release
+
+> *"Si Kevin demande à Apex 'tu as combien de projets actuellement ?', est-ce qu'Apex liste TOUS ses projets avec versions à jour incluant e-KDMC v0.4 + dernier état ? Si Apex doit refaire un audit, sait-il QUELLES erreurs ne pas refaire (lessons learned cross-session) ? Si Kevin demande 'rappelle-toi de la règle 1-clic', Apex peut citer la règle exacte ?"*
+
+Si non → enrichir system prompt + auto-injection.
+
+### 5. Application immédiate
+
+À chaque modification du code Apex IA, **relire ce système prompt** pour vérifier que les injections sont à jour.
+
+S'applique : Apex (priorité absolue), CMCteams si pertinent, tous projets futurs.
+
+---
+
 ## 🛡 RÈGLE PERMANENTE — PROTECTION ≠ STABILITÉ (Kevin 2026-05-01, ABSOLUE)
 
 > Leçon brutale session 2026-05-01 : 25 versions empilées (v12.564→v12.660) de wrappers protecteurs (panic mode, silence toast, MutationObserver onclick, intercept fetch) qui se sont annulés mutuellement. Score sécu théorique 97/100, score fonctionnel réel 42/100. Login bloqué silencieusement. Boutons morts.
