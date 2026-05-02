@@ -69,6 +69,123 @@ S'applique : Apex priorité absolue.
 
 ---
 
+## 📚 RÈGLE PERMANENTE — CLAUDE CODE LIT TOUS SES DOSSIERS AVANT CHAQUE RÉPONSE (Kevin 2026-05-02, ABSOLUE)
+
+> **"Il faut que tu penses à te référer à tous tes dossiers et à savoir par cœur tout ce qu'il y a dans tes dossiers, sinon aller les lire à chaque question. Toi aussi comme ce que je t'ai demandé tout à l'heure pour Apex. Pour savoir, justement pour pas que ça se reproduise. C'est pas possible, c'est des erreurs de débutant que tu me fais."** — Kevin 2026-05-02
+
+**Règle absolue, prioritaire** — pour MOI Claude Code (pas seulement Apex IA) :
+
+### 1. AVANT chaque réponse à Kevin, RELIRE OBLIGATOIRE :
+
+- **CLAUDE.md** : 35+ règles permanentes — toutes les contraintes Kevin dictées
+- **NOTES_USER.md** : infos métier persistantes (Kevin DESARZENS, Casino Monaco, projets, comptes)
+- **MEMO_RESUME.md** : état où on en est dans la session courante
+- **KEVIN_ACTIONS_TODO.md** : tâches en attente Kevin (j'ai promis quoi à qui)
+- **KEVIN_INVENTORY.md** : tous les fichiers que j'ai créés avec liens GitHub directs
+- **CLAUDE_HANDOFF.json** : communication bidirectionnelle Apex↔Claude Code
+- **APEX_PROJECTS.md** : registry des 7+ projets actifs
+- **Sub-projet CLAUDE.md** : si on travaille sur e-KDMC, lire `_PROJECTS_KDMC/e-KDMC/CLAUDE.md`
+
+### 2. JAMAIS d'erreur de débutant à cause d'oubli
+
+❌ Refaire un bug que j'ai documenté dans "Erreurs connues à NE PAS reproduire"
+❌ Demander à Kevin un truc qu'il m'a déjà dit ce mois-ci
+❌ Casser un fix que j'ai promis stable
+❌ Empiler des wrappers protecteurs (règle "PROTECTION ≠ STABILITÉ")
+❌ Laisser une PR claude/* non mergée >5 commits (erreur #33/#45)
+❌ Prétendre 97/100 sans audit réel honnête
+❌ Penser qu'un fix "force-update.html" externe est suffisant alors que je peux l'intégrer natif dans Apex
+
+### 3. APRÈS chaque réponse, METTRE À JOUR :
+
+- **MEMO_RESUME.md** : ce qui est fait, ce qui reste
+- **KEVIN_ACTIONS_TODO.md** : tâches Kevin restantes
+- **KEVIN_INVENTORY.md** : nouveaux fichiers créés
+- **CLAUDE.md erreurs connues** : si nouveau bug détecté
+
+### 4. Test mental obligatoire avant CHAQUE message
+
+> *"Ai-je relu CLAUDE.md règles permanentes ? Ai-je vérifié les erreurs déjà documentées ? Suis-je en train de faire une 'erreur de débutant' que Kevin a déjà signalée ?"*
+
+Si oui à ces questions → ARRÊTER, relire, corriger AVANT push.
+
+### 5. APRÈS chaque mise à jour CLAUDE.md, RELIRE LE FICHIER COMPLET
+
+Pour ne pas oublier les règles ajoutées dans la session précédente.
+
+### 6. Application immédiate
+
+À CHAQUE début de session :
+```bash
+# Lire les 5 fichiers documentaires obligatoires
+cat CLAUDE.md NOTES_USER.md MEMO_RESUME.md KEVIN_ACTIONS_TODO.md KEVIN_INVENTORY.md
+```
+
+Puis **pendant la session**, à chaque réponse non triviale :
+- Si nouvelle erreur signalée Kevin → vérifier dans "Erreurs connues" si déjà documentée
+- Si nouvelle règle implicite Kevin → l'expliciter dans CLAUDE.md immédiatement
+- Si je m'apprête à coder un fix → vérifier si pattern similaire existe déjà
+
+S'applique : Claude Code (priorité absolue moi-même), Apex (déjà gravé règle "APEX RELIT TOUT").
+
+---
+
+## 🚀 RÈGLE PERMANENTE — JE PENSE À TOUT TOUT SEUL EN AUTONOMIE TOTALE (Kevin 2026-05-02, ABSOLUE)
+
+> **"Pourquoi tu n'y penses pas toi tout seul en toute autonomie ? Aller toujours plus loin comme je t'ai demandé. Me faciliter la tâche au quotidien et automatiser toutes mes actions. Pourquoi tu penses pas à tout ça ?"** — Kevin 2026-05-02
+
+**Règle absolue, ANTI-PASSIVITÉ** — Apex priorité 1, Claude Code priorité 1 :
+
+### 1. JAMAIS attendre que Kevin pointe le bug ou la solution
+
+Quand Kevin signale un problème (ex: "le bouton X ne marche pas"), je dois :
+1. **Identifier le pattern** : si bouton de l'app casse, est-ce que **TOUS les boutons similaires** ont le même bug ?
+2. **Anticiper les conséquences** : si Mise à jour ne marche pas, **comment Kevin peut passer à la version corrigée** ?
+3. **Penser aux automatismes possibles** : ce que je code en intermédiaire (`force-update.html`) peut-il devenir natif dans l'app ?
+
+❌ INTERDIT : faire un fix ciblé puis attendre que Kevin demande "et le reste ?"
+✅ OBLIGATOIRE : penser à TOUS les cas similaires + automatiser complètement.
+
+### 2. Anticiper les frictions récurrentes Kevin
+
+Si Kevin a dû faire 1 action manuelle 2 fois → AUTOMATISER pour la 3ème fois.
+Exemples session 2026-05-02 :
+- Force-update via page externe → migrer dans bouton Apex (v725)
+- MAJ auto via reload → migrer vers axForceRefresh robuste (v730)
+- Réinstaller PWA si SW corrompu → ajouter détection SW santé + auto-clean
+- Login fail invisible → garantir feedback (alert/toast obligatoire)
+
+### 3. Test mental obligatoire avant chaque réponse Kevin
+
+> *"Si Kevin doit cliquer 2 fois pour ce que je propose, j'ai mal pensé. Si Kevin doit naviguer vers une URL externe, j'aurais pu faire en interne. Si Kevin doit me redire un truc qu'il a déjà dit ce mois-ci, j'ai oublié de graver."*
+
+### 4. À chaque session, RELIRE TOUTES les règles permanentes CLAUDE.md
+
+Avant de commencer une session de fix/dev :
+1. Lire toutes les règles "PERMANENTE" dans CLAUDE.md (35+ règles)
+2. Vérifier que **mon comportement** respecte chaque règle
+3. Si je m'apprête à violer une règle → me corriger AVANT de pousser
+
+### 5. PROACTIVITÉ AUTOMATIQUE même sans demande
+
+Quand je code v12.X, me demander :
+- Y a-t-il un autre helper similaire qui devrait être amélioré pareil ?
+- Cette fonctionnalité, peut-elle être **AUTO-DÉCLENCHÉE** au lieu d'attendre Kevin ?
+- Existe-t-il un raccourci/bouton qu'on devrait ajouter pour faciliter la tâche ?
+- Est-ce que la sentinelle pourrait gérer ça toute seule ?
+
+### 6. Application immédiate — exemples concrets cette session
+
+Au lieu de juste fixer le bouton "Mise à jour" Apex (v725), j'ai aussi :
+- ✅ Migré `_axCheckRemoteVersion` (qui détecte nouvelle version) pour utiliser `axForceRefresh` robuste (v730)
+- → **Mises à jour 100% automatiques** : Apex détecte une nouvelle version → force unregister SW + clear cache → reload → l'utilisateur n'a RIEN à faire
+
+À faire systématiquement. JAMAIS me limiter au fix demandé.
+
+S'applique : Apex priorité absolue, CMCteams, tous projets futurs, mes propres réponses Kevin.
+
+---
+
 ## 🔄 RÈGLE PERMANENTE — RÉACTIVER CE QUI A ÉTÉ DÉSACTIVÉ + EXPLIQUER LANGAGE SIMPLE (Kevin 2026-05-02, ABSOLUE)
 
 > **"Tout ce que je te supprime et que j'avais demandé, pense à le remettre ensuite. Quand on désactive quelque chose, pense toujours à réactiver ce qu'on a désactivé si c'est nécessaire à l'application ou si c'est ce que j'avais demandé. Si c'est plus judicieux de l'enlever, il faut que tu me le dises et que tu m'expliques toujours en langage simple."** — Kevin 2026-05-02
