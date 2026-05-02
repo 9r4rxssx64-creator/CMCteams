@@ -3891,12 +3891,16 @@ function fbApplyData(k,v){
   var vc;try{vc=JSON.parse(JSON.stringify(v));}catch(e){console.warn("fbApplyData: JSON invalide pour",k);return;}
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
-  if(k==="cmc_ov"){A.overrides=vc;}
+  // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
+  // (sinon vues affichent ancien planning même après nouvel import sur autre device)
+  if(k==="cmc_ov"){A.overrides=vc;try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}}
   else if(k==="cmc_e"){
     A.employees=Array.isArray(vc)?vc:Object.values(vc);
     // Dédupliquer par id (empêche les doublons provenant de Firebase ou inscription)
     var _seen={};A.employees=A.employees.filter(function(e){if(_seen[e.id])return false;_seen[e.id]=true;return true;});
     _rebuildIndexes(); // v9.191 — maj index O(1)
+    // v9.580 — Invalider _gplCache (gpl filtre par isEmpActive → dépend de A.employees)
+    try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
     // Race condition fix (v9.42) : en mode viewAs, A.user = employ\u00e9 visualis\u00e9, _viewAs = admin original.
     // Si l'employ\u00e9 visualis\u00e9 a \u00e9t\u00e9 supprim\u00e9 pendant sync Firebase, on retourne automatiquement au compte admin.
     var _userId=A.user?A.user.id:null;
@@ -4707,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.579";
+var APP_VER="v9.580";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -29729,6 +29733,11 @@ function vImport(){
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){previewImport();},700)"></textarea>
+    <!-- v9.580 — Toggle force replace : essentiel quand on importe un nouveau planning v2 du même mois -->
+    <label style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:rgba(224,152,72,.10);border:1px solid rgba(224,152,72,.35);border-radius:10px;cursor:pointer;user-select:none">
+      <input type="checkbox" id="impForceReplace" checked style="width:20px;height:20px;accent-color:#e09848;cursor:pointer;flex-shrink:0">
+      <span style="font-size:13px;color:#e09848;font-weight:700;line-height:1.4">🔄 Remplacer entièrement le mois sélectionné <span style="font-weight:normal;color:#a0cca0">— efface l'ancien planning avant d'importer le nouveau (recommandé pour PDF v2)</span></span>
+    </label>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn" onclick="previewImport()" style="flex:1;min-width:120px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.45);color:#8ab0e0;font-weight:700">
         \ud83d\udd0d Analyser
@@ -30770,6 +30779,16 @@ function doImport(){
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
   // des employés non présents dans ce nouvel import (permet de compléter un import incomplet)
   A.year=iy;A.month=im; // necessaire pour isEmpActive
+  // v9.580 (Kevin 2026-05-02) — MODE FORCE REPLACE : si "Remplacer entièrement" coché OU
+  // re-import du même mois → wipe A.overrides[key] AVANT parse pour que le nouveau PDF soit la source de vérité.
+  // Fix bug "ne reconnaît plus mon nouveau planning de mai v2" (employés non touchés gardaient ancien data).
+  var _forceReplaceEl=document.getElementById("impForceReplace");
+  var _forceReplace=_forceReplaceEl?!!_forceReplaceEl.checked:false;
+  if(_forceReplace&&A.overrides[key]){
+    A.overrides[key]={};
+    try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
+    console.info("[doImport v9.580] Force-replace ON → A.overrides["+key+"] wipé avant parse");
+  }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
   var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory};
