@@ -1126,7 +1126,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.736",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.737",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -35213,11 +35213,12 @@ window.axAutoSignupServiceWithEmail = function(serviceUrl, email, provider){
 window.axTestAllButtonsLive = function(opts){
   opts = opts || {};
   var quiet = opts.quiet !== false;
-  var autoFix = opts.autoFix !== false; /* default true */
+  var autoFix = opts.autoFix !== false;
+  var liveClick = !!opts.liveClick; /* niveau entreprise : simule un vrai click sur le DOM live (admin only, opt-in) */
   if(typeof document === "undefined") return Promise.resolve({ok:false,reason:"no_dom"});
   var VIEWS_TO_TEST = opts.views || ["login","accueil","dashboard","chat","vault","settings","admin","sentinels","monitoring","tools","apps","prefs"];
   if(!K || !K.user || K.user.role !== "admin") VIEWS_TO_TEST = ["login","chat"];
-  var results = {ts:Date.now(), v:APP_VER, total:0, ok:0, ko:0, missing:0, fixed:0, fails:[], by_view:{}};
+  var results = {ts:Date.now(), v:APP_VER, total:0, ok:0, ko:0, missing:0, fixed:0, reactive:0, inert:0, fails:[], by_view:{}};
   /* Auto-fix : si onclick="X()" et X absent, tente camelCase / ax+ prefix lookup */
   function _tryAutoFix(fnName){
     if(!fnName || typeof window[fnName] === "function") return null;
@@ -35277,11 +35278,36 @@ window.axTestAllButtonsLive = function(opts){
         }
         /* Tentative click reel : compile onclick comme function tolerant */
         try{
-          /* On NE click PAS (effets de bord). On verifie juste que onclick eval ne throw pas en parse */
           /* eslint-disable-next-line no-new-func */
           var fnTest = new Function("event","with(this){try{return ("+onclick+");}catch(_){return null;}}");
           fnTest.call(el, null);
           byView.ok++; results.ok++;
+          /* Niveau entreprise opt-in : simule click reel + verifie reaction DOM dans 200ms */
+          if(liveClick){
+            var beforeViewName = K && K.view;
+            var beforeHash = document.body && document.body.innerHTML ? document.body.innerHTML.length : 0;
+            var modalCountBefore = document.querySelectorAll(".ax-modal,.modal,[role='dialog'],#modal-container *").length;
+            var toastCountBefore = document.querySelectorAll(".ax-toast,.toast").length;
+            var svCalled = false; var origSv = window.sv;
+            try{ if(typeof origSv === "function") window.sv = function(v){svCalled=true; return origSv.apply(this,arguments);}; }catch(_e){}
+            try{ el.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true,view:window})); }catch(_e){}
+            (function(elRef,labelRef,beforeView,beforeH,modalB,toastB){
+              setTimeout(function(){
+                try{
+                  if(typeof origSv === "function") window.sv = origSv;
+                  var afterHash = document.body && document.body.innerHTML ? document.body.innerHTML.length : 0;
+                  var modalCountAfter = document.querySelectorAll(".ax-modal,.modal,[role='dialog'],#modal-container *").length;
+                  var toastCountAfter = document.querySelectorAll(".ax-toast,.toast").length;
+                  var viewChanged = (K && K.view) !== beforeView;
+                  var domChanged = afterHash !== beforeH;
+                  var modalOpened = modalCountAfter > modalB;
+                  var toastShown = toastCountAfter > toastB;
+                  if(svCalled || viewChanged || domChanged || modalOpened || toastShown){ results.reactive++; }
+                  else { results.inert++; results.fails.push({view:viewName,btn:labelRef.slice(0,30),reason:"inert_no_reaction"}); }
+                }catch(_e){}
+              }, 200);
+            })(el,label,beforeViewName,beforeHash,modalCountBefore,toastCountBefore);
+          }
         }catch(e){
           byView.ko++; results.ko++;
           var fail2 = {view:viewName, btn:label.slice(0,30), onclick:onclick.slice(0,80), reason:"throws", err:String(e.message||e).slice(0,120)};
