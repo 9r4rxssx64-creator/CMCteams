@@ -1012,9 +1012,42 @@ try{
         setTimeout(function(){try{el.remove();}catch(__){}},3000);
       }catch(_e){}
     }
+    /* v12.738 : Purge modals deja affiches au boot + tap n'importe ou pour fermer */
+    function _nucPurgeModals(){
+      try{
+        var ids=["ax-needs-attention-modal","ax-welcome-overlay","ax-tour-overlay","modal-container"];
+        for(var i=0;i<ids.length;i++){
+          var el=document.getElementById(ids[i]);
+          if(el && (ids[i]==="modal-container" ? el.innerHTML.length>0 : true)){
+            try{ if(ids[i]==="modal-container") el.innerHTML=""; else el.remove(); }catch(_e){}
+          }
+        }
+        /* Generic : tout overlay full-screen dialog */
+        var dialogs=document.querySelectorAll('[role="dialog"]:not(#ax-pin-modal)');
+        for(var j=0;j<dialogs.length;j++){
+          try{
+            var d=dialogs[j];
+            var s=window.getComputedStyle(d);
+            if(s.position==="fixed" && parseInt(s.zIndex||"0")>=99000){ d.remove(); }
+          }catch(_e){}
+        }
+      }catch(_e){}
+    }
+    /* Run au boot + a chaque seconde pendant 30s pour rattraper modals delayed */
+    setTimeout(_nucPurgeModals,500);
+    var _purgeT=setInterval(_nucPurgeModals,1500);
+    setTimeout(function(){try{clearInterval(_purgeT);}catch(_e){}},30000);
     document.addEventListener("click",function(ev){
       try{
         var t=ev.target;if(!t||!t.closest)return;
+        /* Force fermeture modal axNeedsAttention si bouton OK touche */
+        var btnOk=t.closest('button');
+        if(btnOk && /^OK$/i.test((btnOk.textContent||"").trim())){
+          var modalRoot=btnOk.closest('#ax-needs-attention-modal,[role="dialog"]');
+          if(modalRoot && modalRoot.parentNode){
+            try{modalRoot.parentNode.removeChild(modalRoot);}catch(_e){}
+          }
+        }
         /* Bouton Connexion */
         var btnL=t.closest('button[onclick*="_doLogin"]');
         if(btnL){
@@ -1126,7 +1159,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.737",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.738",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -2297,9 +2330,22 @@ window._axNeedsAttentionQueue = window._axNeedsAttentionQueue || [];
 window._axNeedsAttentionShown = window._axNeedsAttentionShown || {};
 
 function axNeedsAttention(opts){
-  /* opts = {id, severity:"critical"|"warn"|"info", title, body, actions:[{label,fn,primary}], dedupHours:24} */
+  /* v12.738 Kevin "bloque par modals auto" : neutralisation totale.
+     Tout devient silent escalade ax_claude_todo, jamais de modal bloquant. */
   try{
     if(!opts || !opts.id) return false;
+    var todo = (typeof lg === "function") ? lg("ax_claude_todo",[]) : [];
+    todo.push({id:"todo_attn_"+opts.id+"_"+Date.now(), context:opts, reason:opts.title||opts.id, severity:opts.severity||"warn", src:"apex_needs_attn", v:typeof APP_VER!=="undefined"?APP_VER:"?", ts:Date.now(), status:"pending"});
+    if(todo.length>50) todo = todo.slice(-50);
+    if(typeof ls === "function") ls("ax_claude_todo", todo);
+  }catch(_e){}
+  return true;
+}
+function _axNeedsAttentionLegacy(opts){
+  /* Conserve l'ancienne fonction au cas ou : invocable manuellement par opts.force=true */
+  try{
+    if(!opts || !opts.id) return false;
+    if(!opts.force) return false; /* off par defaut */
     if(!K || !K.user || K.user.id !== ADMIN_ID) return false;
     /* Dedup : si meme id deja affiche dans les X dernieres heures, skip */
     var dedupMs = (opts.dedupHours||24) * 3600 * 1000;
@@ -15101,8 +15147,15 @@ window.axFinishTour=function(){
   if(typeof toast==="function")toast("Tour termine, c est parti !","ok");
   if(typeof sv==="function")sv("chat");
 };
-/* Override the existing axShowWelcomeFlow to redirect to axQuickTour */
-window.axShowWelcomeFlow=function(stepOverride){return axQuickTour(stepOverride);};
+/* v12.738 Kevin "bloque par welcome auto" : welcome devient opt-in (force=true) */
+window.axShowWelcomeFlow=function(stepOverride,opts){
+  if(!opts || opts.force!==true){
+    /* Auto-trigger silencieux : marque tour vu et n'affiche rien */
+    try{if(typeof ls==="function"){ls("ax_tour_done",true);ls("ax_welcome_done",true);}}catch(_e){}
+    return;
+  }
+  return axQuickTour(stepOverride);
+};
 })();
 
 /* Contextual help — popover discret 1ere fois sur une feature */
