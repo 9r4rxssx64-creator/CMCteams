@@ -1199,7 +1199,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.746",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.747",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4486,7 +4486,16 @@ function axCleanupViewListeners(scope){
   var cleaned = 0;
   var remaining = [];
   window._axAttachedListeners.forEach(function(entry){
-    if(entry && entry.scope === scope){
+    /* v12.747 : NE JAMAIS nettoyer les listeners du navbar/bnav (audit externe agent 6 :
+       Kevin "j'ai acces qu'a Reglages et Chat" car cleanup tuait les listeners bnav) */
+    var isNavBar = false;
+    try{
+      if(entry && entry.el){
+        var el = entry.el;
+        isNavBar = (el.id === "navbar") || (el.classList && el.classList.contains("ax-tab")) || (el.closest && el.closest("#navbar"));
+      }
+    }catch(_e){}
+    if(entry && entry.scope === scope && !isNavBar){
       try{
         if(entry.el && entry.evt && entry.fn){
           entry.el.removeEventListener(entry.evt, entry.fn, entry.opts);
@@ -14740,6 +14749,8 @@ try{
 
 /* Dictionnaire intents -> action. Premier match gagne. */
 var AX_EXEC_INTENTS=[
+  /* v12.747 Kevin "fais ton audit" -> declenche axShowAuditGeneralExpert (axTotalAudit 20 sections) */
+  {pattern:/^(?:fais|lance|execute|run)\s+(?:ton|l\s+|un\s+)?audit(?:\s+general|\s+expert|\s+complet|\s+poussee|\s+poussé)?\s*$/i,fn:function(){if(typeof axShowAuditGeneralExpert==="function"){axShowAuditGeneralExpert();return"Audit general expert lance.";}else if(typeof axTotalAudit==="function"){axTotalAudit().then(function(r){if(typeof toast==="function")toast("Audit termine: "+r.score+"/100 "+(r.findings||[]).length+" findings","ok",{duration:5000});});return"Audit total demarre.";}return"Audit indisponible.";}},
   /* Navigateur generique */
   {pattern:/^(?:ouvre|lance|montre|affiche)\s+(?:un\s+|le\s+)?(?:navigateur|browser|safari|chrome|firefox)\s*$/i,fn:function(){return axOpenBrowserEmbed("https://www.google.com");}},
   /* Sites populaires (alias) : ouvre google, ouvre youtube, ouvre maps... */
@@ -18415,23 +18426,10 @@ var _axStreamWatchdogTimer=null;
 function _axStartStreamWatchdog(){
   try{
     if(_axStreamWatchdogTimer)clearTimeout(_axStreamWatchdogTimer);
-    /* v12.745 Kevin "reponses trop longues spam le chat" : timeout 90s + retry auto silent (failover provider) au lieu de pousser msg "trop longue" */
-    _axStreamWatchdogTimer=setTimeout(function(){
-      if(K.isStreaming){
-        try{if(window._apexCurrentAbort)window._apexCurrentAbort.abort();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18036",_e);}catch(__){}}
-        K.isStreaming=false;
-        try{if(typeof axSetStreamState==='function')axSetStreamState('idle','');}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18038",_e);}catch(__){}}
-        /* Pas de message dans le chat - silent retry auto via failover */
-        try{
-          var todo=lg("ax_claude_todo",[]);
-          todo.push({id:"timeout_90s_"+Date.now(),context:{},reason:"Stream timeout 90s",severity:"info",src:"apex_stream",v:typeof APP_VER!=="undefined"?APP_VER:"?",ts:Date.now(),status:"pending"});
-          if(todo.length>50)todo=todo.slice(-50);
-          ls("ax_claude_todo",todo);
-        }catch(_e){}
-        /* Retry silent : si helper failover existe, le declenche */
-        try{if(typeof axSelfHealAI==="function") axSelfHealAI({reason:"timeout_90s"});}catch(_e){}
-      }
-    },90000);
+    /* v12.747 Kevin "plus jamais de timeout ni reponse trop longue. Apex va au bout".
+       Watchdog desactive completement. Le stream va jusqu'au bout, eventuel abort manuel
+       seulement (bouton stop UI). Failover provider gere directement dans _callClaudeAPI. */
+    return;
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18043",_e);}catch(__){}}
 }
 function _axStopStreamWatchdog(){try{if(_axStreamWatchdogTimer){clearTimeout(_axStreamWatchdogTimer);_axStreamWatchdogTimer=null;}}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL18045",_e);}catch(__){}}}
@@ -21339,6 +21337,50 @@ function axTotalAudit(opts){
     });
     report.sections.sentinels_heartbeat = sentReport;
     if(sentReport.stale.length > 0) report.findings.push({severity:"P2",category:"sentinels",msg:sentReport.stale.length+" sentinelles staleyes 24h"});
+  }catch(_e){}
+  /* Section 20 v12.747 : AUDIT STATIQUE EXTERNE (Kevin "audit ligne par ligne du code") */
+  try{
+    var src = (typeof axGetAppSource === "function") ? axGetAppSource() : (document.documentElement.outerHTML || "");
+    var staticAudit = {
+      total_lines: src.split("\n").length,
+      total_kb: Math.round(src.length/1024),
+      functions_count: (src.match(/\bfunction\s+[a-zA-Z_$][\w$]*\s*\(/g)||[]).length,
+      window_reassignments: (src.match(/window\.[a-zA-Z_$][\w$]*\s*=\s*function/g)||[]).length,
+      iife_count: (src.match(/^\s*\(function\s*\(\)\s*\{/gm)||[]).length,
+      wrappers_chained: (src.match(/var\s+orig[A-Z][\w$]*\s*=\s*window\./g)||[]).length,
+      try_catch_silent: (src.match(/catch\s*\(\s*_\w*\s*\)\s*\{\s*\}/g)||[]).length,
+      setTimeout_count: (src.match(/\bsetTimeout\s*\(/g)||[]).length,
+      setInterval_count: (src.match(/\bsetInterval\s*\(/g)||[]).length,
+      clearTimeout_count: (src.match(/\bclearTimeout\s*\(/g)||[]).length,
+      clearInterval_count: (src.match(/\bclearInterval\s*\(/g)||[]).length,
+      eval_count: (src.match(/\beval\s*\(/g)||[]).length,
+      new_function_count: (src.match(/new\s+Function\s*\(/g)||[]).length,
+      innerhtml_concat: (src.match(/innerHTML\s*\+=/g)||[]).length,
+      console_logs: (src.match(/console\.(log|warn|error|debug)\s*\(/g)||[]).length
+    };
+    /* Calculs derived */
+    staticAudit.timer_orphans_setTimeout = Math.max(0, staticAudit.setTimeout_count - staticAudit.clearTimeout_count);
+    staticAudit.timer_orphans_setInterval = Math.max(0, staticAudit.setInterval_count - staticAudit.clearInterval_count);
+    /* Score sécurité, perf, code, archi, maint, stab */
+    staticAudit.scores = {
+      security: Math.max(0, 100 - staticAudit.innerhtml_concat - (staticAudit.eval_count*5) - (staticAudit.new_function_count*5)),
+      performance: Math.max(0, 100 - Math.floor(staticAudit.timer_orphans_setInterval/2) - Math.floor(staticAudit.timer_orphans_setTimeout/10)),
+      code_quality: Math.max(0, 100 - Math.floor(staticAudit.try_catch_silent/3) - Math.floor(staticAudit.window_reassignments/10)),
+      architecture: staticAudit.total_lines > 30000 ? 30 : (staticAudit.total_lines > 15000 ? 50 : 80),
+      maintainability: staticAudit.total_kb > 3000 ? 25 : (staticAudit.total_kb > 1500 ? 50 : 80),
+      stability: Math.max(0, 100 - staticAudit.try_catch_silent - Math.floor(staticAudit.wrappers_chained*2))
+    };
+    var avgScore = Object.keys(staticAudit.scores).reduce(function(s,k){return s+staticAudit.scores[k];},0) / 6;
+    staticAudit.real_score = Math.round(avgScore);
+    report.sections.external_static_audit = staticAudit;
+    /* Findings */
+    if(staticAudit.real_score < 50) report.findings.push({severity:"P0",category:"external_audit",msg:"Score audit externe brutal: "+staticAudit.real_score+"/100"});
+    else if(staticAudit.real_score < 70) report.findings.push({severity:"P1",category:"external_audit",msg:"Score audit externe brutal: "+staticAudit.real_score+"/100 (cible 95+)"});
+    if(staticAudit.timer_orphans_setInterval > 30) report.findings.push({severity:"P1",category:"external_audit",msg:staticAudit.timer_orphans_setInterval+" setInterval sans clearInterval (memory leak)"});
+    if(staticAudit.try_catch_silent > 100) report.findings.push({severity:"P1",category:"external_audit",msg:staticAudit.try_catch_silent+" catch silencieux (debug aveugle)"});
+    if(staticAudit.innerhtml_concat > 30) report.findings.push({severity:"P1",category:"external_audit",msg:staticAudit.innerhtml_concat+" innerHTML += (XSS risk)"});
+    if(staticAudit.window_reassignments > 500) report.findings.push({severity:"P2",category:"external_audit",msg:staticAudit.window_reassignments+" reassignations window (chaos)"});
+    if(staticAudit.eval_count + staticAudit.new_function_count > 5) report.findings.push({severity:"P1",category:"external_audit",msg:(staticAudit.eval_count+staticAudit.new_function_count)+" usages eval/new Function (security risk)"});
   }catch(_e){}
   /* Wait all + finalize */
   return Promise.all(promises).then(function(){
@@ -32156,15 +32198,10 @@ setTimeout(function(){
     setTimeout(function(){ axEnsureAdminEverywhere(); }, 200);
     /* Periodique 5 min */
     setInterval(function(){ axEnsureAdminEverywhere(); }, 5*60*1000);
-    /* Post-login : wrap axLogin */
-    var origLogin = window.axLogin;
-    if(typeof origLogin === "function"){
-      window.axLogin = function(){
-        var ok = origLogin.apply(this, arguments);
-        if(ok) setTimeout(function(){ axEnsureAdminEverywhere(); }, 500);
-        return ok;
-      };
-    }
+    /* v12.747 SUPPRIME wrap axLogin (audit externe v746 : wrapper t+2000ms capturait
+       le wrapper Phase 5 t+1000ms au lieu de l'original -> chaine cassee silencieuse
+       quand axEnsureAdminEverywhere throw -> Kevin "bouton Connexion ne fait rien").
+       L'auto-ensure tourne deja au boot (200ms), interval 5min et visibilitychange. */
     /* Visibilitychange (retour app foreground) */
     if(typeof document !== "undefined" && document.addEventListener){
       document.addEventListener("visibilitychange", function(){
