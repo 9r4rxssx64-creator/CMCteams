@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.582";
+var APP_VER="v9.583";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -29751,10 +29751,11 @@ function vImport(){
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){previewImport();},700)"></textarea>
-    <!-- v9.581 — Toggle force replace : OFF par defaut (safe). Kevin coche explicitement quand re-import v2 du meme mois. -->
-    <label style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:rgba(224,152,72,.10);border:1px solid rgba(224,152,72,.35);border-radius:10px;cursor:pointer;user-select:none">
-      <input type="checkbox" id="impForceReplace" style="width:20px;height:20px;accent-color:#e09848;cursor:pointer;flex-shrink:0">
-      <span style="font-size:13px;color:#e09848;font-weight:700;line-height:1.4">🔄 Remplacer entièrement le mois sélectionné <span style="font-weight:normal;color:#a0cca0">— à cocher uniquement si tu importes une <b>v2</b> et veux <b>effacer l'ancien planning</b> du même mois (sinon les corrections manuelles sont conservées)</span></span>
+    <!-- v9.583 — Force replace ON par defaut (Kevin "tout se base sur le nouveau, pas chercher
+         similitudes avec ancien"). Decocher uniquement si on veut PRESERVER corrections manuelles. -->
+    <label style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:rgba(58,138,80,.10);border:1px solid rgba(58,138,80,.35);border-radius:10px;cursor:pointer;user-select:none">
+      <input type="checkbox" id="impForceReplace" checked style="width:20px;height:20px;accent-color:#5aaa70;cursor:pointer;flex-shrink:0">
+      <span style="font-size:13px;color:#5aaa70;font-weight:700;line-height:1.4">🔄 Effacer l'ancien planning et appliquer le nouveau <span style="font-weight:normal;color:#a0cca0">— recommandé. L'ancien est <b>archivé automatiquement</b> dans l'historique (consultable plus tard). Décocher uniquement si tu veux <b>fusionner</b> avec corrections manuelles existantes.</span></span>
     </label>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn" onclick="previewImport()" style="flex:1;min-width:120px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.45);color:#8ab0e0;font-weight:700">
@@ -30754,12 +30755,22 @@ function doImport(){
   // Detecter mois/annee depuis le texte colle (pas juste le nom de fichier)
   (function(){
     var MOIS={"janvier":0,"fevrier":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11};
-    var s=txt.slice(0,800).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    // v9.583 (Kevin "pas dans la bonne equipe") \u2014 count occurrences (pas first-match) +
+    // respecter selection user en priorite. Bug : "Suite avril -> mai 2026" detectait avril.
+    var s=txt.slice(0,2000).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     var detM=-1,detY=-1;
-    // Regex avec word-boundary : "mai" ne doit pas matcher dans "mais"
-    var _mRe=new RegExp('\\b('+Object.keys(MOIS).join('|')+')\\b');
-    var _mMatch=s.match(_mRe);
-    if(_mMatch)detM=MOIS[_mMatch[1]];
+    var _counts={};Object.keys(MOIS).forEach(function(mn){_counts[mn]=0;});
+    var _mAllRe=new RegExp('\\b('+Object.keys(MOIS).join('|')+')\\b','g');
+    var _m;while((_m=_mAllRe.exec(s))!==null){_counts[_m[1]]++;}
+    var _topMonth=null,_topCount=0;
+    Object.keys(_counts).forEach(function(mn){if(_counts[mn]>_topCount){_topCount=_counts[mn];_topMonth=mn;}});
+    var _userMonthName=Object.keys(MOIS).filter(function(mn){return MOIS[mn]===im;})[0];
+    if(_userMonthName&&_counts[_userMonthName]>0){
+      // Kevin a selectionne un mois ET le PDF le mentionne -> respecter Kevin
+      detM=im;
+    }else if(_topMonth&&_topCount>=1){
+      detM=MOIS[_topMonth];
+    }
     // v9.371 — Fix regex année word-boundary (P0 audit)
     var ym=s.match(/\b(20(?:2[0-9]|3[0-9]))\b/);
     if(ym) detY=parseInt(ym[1]||ym[0]);
@@ -30797,15 +30808,46 @@ function doImport(){
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
   // des employés non présents dans ce nouvel import (permet de compléter un import incomplet)
   A.year=iy;A.month=im; // necessaire pour isEmpActive
-  // v9.580 (Kevin 2026-05-02) — MODE FORCE REPLACE : si "Remplacer entièrement" coché OU
-  // re-import du même mois → wipe A.overrides[key] AVANT parse pour que le nouveau PDF soit la source de vérité.
-  // Fix bug "ne reconnaît plus mon nouveau planning de mai v2" (employés non touchés gardaient ancien data).
+  // v9.583 (Kevin 2026-05-02) — Logique métier explicite Kevin :
+  // "Chaque mois, tout le monde peut changer d'équipe. Donc, je fais un nouvel import,
+  //  tu effaces tout l'ancien, tu le gardes en historique, mais tu l'effaces de là où il est,
+  //  et tu intègres le nouveau. Tout se base par rapport au nouveau, ne pas chercher de
+  //  similitudes avec les anciens."
+  // → Force replace par defaut ON, archive ancien dans cmc_history_<key>_<ts> avant wipe.
   var _forceReplaceEl=document.getElementById("impForceReplace");
-  var _forceReplace=_forceReplaceEl?!!_forceReplaceEl.checked:false;
-  if(_forceReplace&&A.overrides[key]){
-    A.overrides[key]={};
-    try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
-    console.info("[doImport v9.580] Force-replace ON → A.overrides["+key+"] wipé avant parse");
+  // Default ON : Kevin a explicitement demande "tout se base sur le nouveau". Si Kevin
+  // veut conserver corrections manuelles, il decoche le toggle (cas exceptionnel).
+  var _forceReplace=_forceReplaceEl?!!_forceReplaceEl.checked:true;
+  if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
+    // Toujours archiver l'ancien (historique reference, jamais perdu)
+    try{
+      var _archKey="cmc_history_"+key+"_"+Date.now();
+      var _archive={
+        ts:Date.now(),
+        year:iy,month:im,
+        ov:JSON.parse(JSON.stringify(A.overrides[key])),
+        ref:lg("cmc_ref_"+key,null),
+        verif:lg("cmc_verif_"+key,null),
+        replacedBy:"import_"+(_importVersion||"?")
+      };
+      ls(_archKey,_archive);
+      // Cap : ne garder que 12 archives par mois (1 an de versions)
+      var _allArch=[];
+      for(var _ki in localStorage){
+        if(_ki.indexOf("cmc_history_"+key+"_")===0)_allArch.push(_ki);
+      }
+      _allArch.sort();
+      while(_allArch.length>12){
+        try{localStorage.removeItem(_allArch.shift());}catch(_){}
+      }
+      console.info("[doImport v9.583] Ancien planning "+key+" archive dans "+_archKey);
+    }catch(_archErr){console.warn("[doImport v9.583] archive err",_archErr);}
+    // Wipe pour forcer le nouveau PDF comme source de verite
+    if(_forceReplace){
+      A.overrides[key]={};
+      try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
+      console.info("[doImport v9.583] Force-replace ON -> A.overrides["+key+"] wipe avant parse");
+    }
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
