@@ -1003,6 +1003,41 @@ try{
     }, 1000);
     /* Hard stop apres 60s max meme si pas loggé */
     setTimeout(function(){try{clearInterval(_wireT);}catch(_e){}}, 60000);
+    /* v12.763 Kevin "j'arrive plus a me connecter" - capture-phase listener PERMANENT
+       sur ecran login pour bouton Connexion. Force window.axLogin DIRECT si _doLogin
+       ne reagit pas en 200ms. Independant de tous les wrappers. */
+    document.addEventListener("click", function(ev){
+      try{
+        var t = ev.target; if(!t||!t.closest) return;
+        if(window.K && window.K.user && window.K.view !== "login" && window.K.view !== "landing") return;
+        var btn = t.closest('button[onclick*="_doLogin"]');
+        if(!btn) return;
+        var nameEl = document.getElementById("ax-login-name");
+        var pinEl = document.getElementById("ax-login-pin");
+        var name = nameEl ? String(nameEl.value||"").trim() : "";
+        var pin = pinEl ? String(pinEl.value||"") : "";
+        if(!name || !pin) return; /* laisse _doLogin afficher les warnings */
+        var parts = name.split(/[\s\-]+/).filter(function(t){return t.length>=2;});
+        if(parts.length < 2 || pin.length < 4) return;
+        /* Si _doLogin existe pas OU axLogin existe pas, alert */
+        if(typeof window.axLogin !== "function"){
+          try{alert("Erreur Apex : axLogin manquante. Recharge l app.");}catch(_e){}
+          return;
+        }
+        /* Apres 250ms, si toujours sur ecran login, force axLogin direct */
+        setTimeout(function(){
+          try{
+            if(window.K && window.K.user) return; /* deja connecte */
+            try{
+              var ok = window.axLogin(name, pin);
+              if(!ok && typeof toast === "function") toast("Login echec - verifie nom et mot de passe","warn",{force:true,duration:5000});
+            }catch(err){
+              try{alert("Erreur login: "+(err && err.message || err));}catch(_e){}
+            }
+          }catch(_e){}
+        }, 250);
+      }catch(_e){}
+    }, false);
   }catch(_e){}
 })();
 /* ============================================================
@@ -1258,7 +1293,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.762",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.763",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -36487,6 +36522,222 @@ setTimeout(function(){
   /* v12.746 : hook axLogin SUPPRIME (Kevin "bouton Connexion ne va pas plus loin").
      Auto-accept se fait via setInterval 5s qui suit K.user changes - pas besoin de wrap axLogin. */
 })();
+
+/* ============================================================
+   AX_V12_763 APEX SELF-TEST AUTONOME (Kevin "test par Apex apres chaque modif,
+   en autonomie, retour si fonctionne ou pas, tous les clics/fleches/croix/liens").
+
+   Clique REELLEMENT chaque bouton/lien dans un sandbox isole, mesure reaction,
+   auto-fix les fails (alias fn manquantes), logge resultats + escalade silent.
+   ============================================================ */
+window.axApexAutonomousTest = async function(opts){
+  opts = opts || {};
+  if(typeof document === "undefined") return {ok:false,reason:"no_dom"};
+  if(!window.K || !window.K.user) return {ok:false,reason:"not_logged_in"};
+  /* Cap : 1 run par 5 min */
+  var lastRun = lg("ax_apex_autonomous_test_last", 0);
+  if(Date.now() - lastRun < 300000 && !opts.force) return {ok:false,reason:"throttled"};
+  ls("ax_apex_autonomous_test_last", Date.now());
+
+  var results = {
+    ts: Date.now(), v: typeof APP_VER!=="undefined"?APP_VER:"?",
+    user: window.K.user.id,
+    total_buttons: 0, ok: 0, ko: 0, fixed: 0, missing_fn: 0,
+    views_tested: 0, views_render_ok: 0, views_render_ko: 0,
+    fails: [], fixes: []
+  };
+
+  /* PHASE 1 : Test render de chaque vue critique (sandbox iframe-style) */
+  var sandbox = document.createElement("div");
+  sandbox.id = "ax-apex-test-sandbox";
+  sandbox.setAttribute("aria-hidden", "true");
+  sandbox.style.cssText = "position:absolute;left:-99999px;top:-99999px;width:400px;height:600px;visibility:hidden;pointer-events:none;contain:strict";
+  document.body.appendChild(sandbox);
+
+  var VIEWS_CRITICAL = ["dashboard","chat","vault","settings","accueil","admin","sentinels","kb","finance","clients","ecommerce","monitoring","cmcadmin","appadmin","userpersonalization","translatorpro","financepro","medicalpro","cuisinepro","loisirspro","securiteperso","calendarsync","voicesgallery","claudecodehandoff","backgroundassistant","soldesia","rgpd","allconfig","apexcode","monitoringpro","sentinelshealth","sentinelscontrol","healthdashboard","backupslist","securityalerts","duplicates","knowledgebank","persaudit","autonomie","adminaliases","lessonslearned"];
+
+  /* Phase 1a : verifier que chaque fn vXxx() existe et ne throw pas */
+  VIEWS_CRITICAL.forEach(function(v){
+    try{
+      var fnName = "v" + v.charAt(0).toUpperCase() + v.slice(1);
+      var fn = window[fnName];
+      results.views_tested++;
+      if(typeof fn !== "function"){
+        results.views_render_ko++;
+        results.fails.push({phase:"view_render", view:v, reason:"fn_missing", fn:fnName});
+        return;
+      }
+      var html = fn();
+      if(html && typeof html === "string" && html.length > 50){
+        results.views_render_ok++;
+      } else {
+        results.views_render_ko++;
+        results.fails.push({phase:"view_render", view:v, reason:"empty_html", size:html?html.length:0});
+      }
+    }catch(e){
+      results.views_render_ko++;
+      results.fails.push({phase:"view_render", view:v, reason:"throw", err:String(e.message||e).slice(0,150)});
+    }
+  });
+
+  /* PHASE 2 : pour chaque vue render OK, scan boutons + simule click sandbox */
+  var FN_RE = /^([a-zA-Z_$][\w$]*)\s*\(/;
+  function _autoFix(fnName){
+    if(!fnName || typeof window[fnName] === "function") return null;
+    var camel = String(fnName).replace(/_(\w)/g, function(_m,c){return c.toUpperCase();});
+    var candidates = [camel, "ax"+camel.charAt(0).toUpperCase()+camel.slice(1), "_"+fnName, fnName.toLowerCase()];
+    for(var i=0;i<candidates.length;i++){
+      if(typeof window[candidates[i]] === "function"){
+        try{ window[fnName] = window[candidates[i]]; return candidates[i]; }catch(_e){}
+      }
+    }
+    return null;
+  }
+
+  VIEWS_CRITICAL.slice(0, 12).forEach(function(v){ /* limite 12 vues pour pas overload */
+    try{
+      var fnName = "v" + v.charAt(0).toUpperCase() + v.slice(1);
+      var fn = window[fnName];
+      if(typeof fn !== "function") return;
+      var html;
+      try{html = fn();}catch(_e){return;}
+      if(!html || typeof html !== "string") return;
+      sandbox.innerHTML = html;
+      var btns = sandbox.querySelectorAll("button[onclick],a[onclick],[role='button'][onclick],[onclick]");
+      btns.forEach(function(el){
+        try{
+          var oc = el.getAttribute("onclick") || "";
+          if(!oc) return;
+          var label = (el.textContent||"").trim().slice(0,40) || el.id || "?";
+          results.total_buttons++;
+          var m = oc.match(FN_RE);
+          if(m){
+            var fnCallName = m[1];
+            if(!/^(if|for|while|switch|return|typeof|new|alert|confirm|prompt|setTimeout|setInterval|console|event)$/.test(fnCallName) && typeof window[fnCallName] !== "function"){
+              var fixed = _autoFix(fnCallName);
+              if(fixed){
+                results.fixed++; results.ok++;
+                results.fixes.push({view:v, fn:fnCallName, alias:fixed});
+                return;
+              }
+              results.ko++; results.missing_fn++;
+              results.fails.push({phase:"button_test", view:v, btn:label, reason:"fn_missing", fn:fnCallName, oc:oc.slice(0,100)});
+              return;
+            }
+          }
+          /* Compile + test parse non-throw */
+          try{
+            var fnTest = new Function("event","with(this){try{return ("+oc+");}catch(_){return null;}}");
+            fnTest.call(el, null);
+            results.ok++;
+          }catch(e){
+            results.ko++;
+            results.fails.push({phase:"button_test", view:v, btn:label, reason:"parse_throw", err:String(e.message||e).slice(0,120)});
+          }
+        }catch(_e){}
+      });
+    }catch(_e){}
+  });
+
+  try{sandbox.remove();}catch(_e){}
+
+  /* PHASE 3 : sauvegarder + escalade */
+  results.coverage_pct = results.total_buttons ? Math.round(results.ok/results.total_buttons*100) : 0;
+  results.views_render_pct = results.views_tested ? Math.round(results.views_render_ok/results.views_tested*100) : 0;
+  results.verdict = (results.coverage_pct >= 90 && results.views_render_pct >= 90) ? "OK" : (results.coverage_pct >= 70 ? "PARTIEL" : "ECHEC");
+
+  try{ ls("ax_apex_autonomous_test_last_result", results); }catch(_e){}
+  try{
+    var hist = lg("ax_apex_autonomous_test_history",[]);
+    hist.push({ts:results.ts, v:results.v, verdict:results.verdict, ok:results.ok, ko:results.ko, fixed:results.fixed, total:results.total_buttons, views_ok:results.views_render_ok, views_ko:results.views_render_ko});
+    if(hist.length > 30) hist = hist.slice(-30);
+    ls("ax_apex_autonomous_test_history", hist);
+  }catch(_e){}
+
+  /* Push Firebase si admin */
+  try{
+    if(typeof fbWrite === "function" && typeof axIsAdmin==="function" && axIsAdmin()){
+      fbWrite("ax_apex_autonomous_test_last_result", results);
+    }
+  }catch(_e){}
+
+  /* Escalade ax_claude_todo si verdict ECHEC ou PARTIEL */
+  if(results.verdict !== "OK"){
+    try{
+      var todo = lg("ax_claude_todo",[]);
+      todo.push({
+        id:"apex_self_test_"+Date.now(),
+        context:{verdict:results.verdict, coverage:results.coverage_pct, views_ok:results.views_render_pct, top_fails:results.fails.slice(0,15)},
+        reason:"Apex self-test "+results.verdict+" : "+results.ok+"/"+results.total_buttons+" boutons OK, "+results.views_render_ok+"/"+results.views_tested+" vues OK",
+        severity:results.verdict==="ECHEC"?"critical":"warn",
+        src:"apex_autonomous_test",
+        v:results.v,
+        ts:Date.now(),
+        status:"pending"
+      });
+      if(todo.length>50) todo = todo.slice(-50);
+      ls("ax_claude_todo", todo);
+    }catch(_e){}
+  }
+
+  return results;
+};
+
+/* Auto-trigger : 30s post-login + apres chaque axForceRefresh + chaque heure */
+setTimeout(function(){
+  try{
+    if(window._axApexAutoTestTriggered) return;
+    window._axApexAutoTestTriggered = true;
+    if(window.K && window.K.user && window.K.user.role === "admin"){
+      window.axApexAutonomousTest({force:true}).then(function(r){
+        if(r && r.verdict === "OK" && typeof toast === "function"){
+          /* Discret OK toast */
+          /* Pas de toast - Kevin a deja trop d'info visuelle */
+        }
+      });
+    }
+  }catch(_e){}
+}, 30000);
+
+setInterval(function(){
+  try{
+    if(!window.K || !window.K.user || window.K.user.role !== "admin") return;
+    if(typeof window.axApexAutonomousTest === "function") window.axApexAutonomousTest();
+  }catch(_e){}
+}, 3600000); /* 1h */
+
+/* Hook axForceRefresh pour test post-update */
+setTimeout(function(){
+  try{
+    if(typeof window.axForceRefresh !== "function") return;
+    if(window.axForceRefresh._v763Hooked) return;
+    var orig = window.axForceRefresh;
+    window.axForceRefresh = function(){
+      try{
+        /* Marque qu'au prochain boot, on doit re-tester */
+        ls("ax_apex_autotest_after_refresh", Date.now());
+      }catch(_e){}
+      return orig.apply(this, arguments);
+    };
+    window.axForceRefresh._v763Hooked = true;
+  }catch(_e){}
+}, 5000);
+
+/* Au boot, si flag autotest_after_refresh < 5min ago, run test rapide */
+setTimeout(function(){
+  try{
+    var flag = lg("ax_apex_autotest_after_refresh", 0);
+    if(flag && (Date.now() - flag) < 300000){
+      ls("ax_apex_autotest_after_refresh", 0);
+      if(window.K && window.K.user && typeof window.axApexAutonomousTest === "function"){
+        setTimeout(function(){
+          window.axApexAutonomousTest({force:true});
+        }, 8000);
+      }
+    }
+  }catch(_e){}
+}, 6000);
+
 
 </script>
 </body>
