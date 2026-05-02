@@ -1,4 +1,59 @@
-# Mémo de reprise — Apex v12.770 + CMCteams v9.580 (session 2026-05-02)
+# Mémo de reprise — Apex v12.774 + CMCteams v9.593 (session 2026-05-02 longue)
+
+## 📋 RÉCAP COMPLET SESSION 2026-05-02 — bilan factuel
+
+### CMCteams : v9.580 → v9.593 (14 versions poussées)
+
+| Ver | Fix | État |
+|-----|-----|------|
+| v9.580 | Cache stale Firebase SSE → `gplInvalidate()` post fbApplyData(`cmc_ov`/`cmc_e`) + toggle force-replace UI | ✅ |
+| v9.581 | URGENT crash production : safety wrapper `vMain` + stubs `vParserIntelligence` / `vParserCompare` (référencés mais non définis → ReferenceError → freeze app) | ✅ |
+| v9.582 | Toggle force-replace → OFF par défaut (safer : si parser rate, données préservées) | ✅ remplacé par 583 |
+| v9.583 | Détection mois robuste : count occurrences (vs first-match) + scan 2000 chars + respect sélection user | ✅ |
+| v9.584 | ❌ **Causait fragmentation équipes BJ Éq.1=1 emp** — update emp.team pour DEF_EMP. Rolled back v9.590 | ❌ revert |
+| v9.585 | Toggle force-replace → ON par défaut (Kevin "tout se base sur le nouveau") | ✅ remplacé par 587 |
+| v9.586 | Wipe TOTAL : A.overrides[key] + cmc_verif + cmc_ref + gplInvalidate + archive `cmc_history_<key>_<ts>` (cap 6) | ✅ |
+| v9.587 | False-absent relax : check si nom dans texte source PDF (encadrés inclus) avant flag missing | ✅ |
+| v9.588 | `_parseEncadresStatuts` v1 — mots-clés français (FORMATION/MALADIE/...) | ❌ remplacé par 593 |
+| v9.589 | Confetti OFF par défaut (Kevin "scintille sautille") | ✅ |
+| v9.590 | ROLLBACK v9.584 update emp.team DEF_EMP (anti-fragmentation) | ✅ |
+| v9.591 | Force-update boot : compare APP_VER local vs serveur, reload forcé si diff. Indépendant SW updatefound iOS unreliable | ✅ |
+| v9.592 | ROLLBACK v9.591 autoFill historique (Kevin "ne JAMAIS inventer, ne JAMAIS copier historique") | ✅ |
+| v9.593 | `_parseEncadresStatuts` v2 — codes courts officiels SBM (CP/AF/M/MAL/SS/ABI/AT/PAT/CFL/CRH/CDP) + détection période "DU X AU Y" | ✅ FINAL |
+
+### Apex : v12.770 → v12.774 (4 versions poussées)
+
+| Ver | Fix |
+|-----|-----|
+| v12.771 | Bouton 🆘 RESCUE permanent (HTML pur, indépendant framework) — clear caches + unregister SW + reload |
+| v12.772 | OpenClaw intégré (FB_FIX `ax_openclaw_key`/`ax_openclaw_url` + 4 AX_OFFICIAL_LINKS + AX_BILLING_PROVIDERS card 🐾) |
+| v12.773 | 🔥 Fix "rien ne fonctionne" : 14 fonctions Studio référencées vMain mais non définies (vStudioMusic/Video/CV/Facture/etc.) → safety wrapper `vMain` try/catch + 14 stubs friendly + 1 wrapper vue erreur |
+| v12.774 | Force-update boot check (parité CMC v9.591) — 1 setTimeout unique 5s, AUCUN listener supplémentaire (respect règle Kevin v12.770 anti-loops) |
+
+### Règles Kevin gravées (rappels CLAUDE.md confirmés)
+
+1. **NE JAMAIS INVENTER** — pas copier historique, pas inventer pattern défaut. Si parser rate → alerter admin "verifier le PDF"
+2. **AUTOMATISE TOUT, AUTONOMIE TOTALE** — pas demander Kevin de retaper, pas de toggle, le système fait tout
+3. **NOUVEAU IMPORT = EFFACE ANCIEN + ARCHIVE HISTORIQUE** — chaque mois, équipes/horaires changent, historique = référence seulement
+4. **AUCUN EMPLOYÉ NE PEUT DISPARAÎTRE** — chacun a un statut (CP/AF/M/SS/ABI/AT/PAT) lu dans encadrés PDF, ou flagged needs_source
+5. **PROTECTION ≠ STABILITÉ** — pas empiler wrappers protecteurs (cause fragilité v12.546→564)
+6. **PDF SBM format documenté** (NOTES_USER.md L42-72) : col 1 téléphones internes ignore + col 2 nom + col 5+ codes avec apostrophes/quotes
+
+### Erreurs nouvelles identifiées cette session
+
+**À ajouter dans CLAUDE.md "Erreurs connues" #46-#50** :
+
+46. **Apex 14 fonctions Studio référencées dans vMain non définies** (v12.773 fix) — vStudioMusic/Video/CV/Facture/Contrat/Presentation/Clip/Logo + vPlantStudio/GeoStudio/BuildingStudio/GardenLunarStudio/PetStudio. Click sur un Studio → ReferenceError → crash app. **Pattern identique à erreur #45 CMCteams (vParserIntelligence)**. **OBLIGATION** : à chaque ajout case dans switch vMain/vMain CMC, vérifier que la fonction existe via `grep -q "function vXXX\b" index.html`. Sinon stub friendly + safety wrapper try/catch global.
+
+47. **CMCteams force-replace v9.585 ON par défaut était dangereux si parser rate** — wipe + parser rate certains employés = données perdues. v9.587 ajoute relax check (nom dans PDF source) avant flag absent. **OBLIGATION** : avant tout wipe destructif, sauvegarder dans archive (cmc_history_<key>_<ts>) + ne JAMAIS combiner wipe + autoFill historique.
+
+48. **autoFillMissingCadres copie historique = invention interdite** (v9.591 corrigé v9.592) — Kevin règle absolue : "tout se base sur le PDF, l'historique sert juste de référence". Si parser rate → strategy=needs_source + alerte admin, JAMAIS copier mois précédent. **OBLIGATION** : aucun autoFill automatique depuis cmc_history_*. Les archives sont consultables manuellement par admin uniquement.
+
+49. **`_parseEncadresStatuts` v1 cherchait mots français longs** (v9.588 → v9.593 corrigé) — FORMATION/MALADIE/RECUP/SEMINAIRE jamais dans PDF SBM réel. PDF utilise codes courts officiels : CP/AF/M/MAL/SS/ABI/AT/PAT/CFL/CRH/CDP avec période "DU X AU Y". **OBLIGATION** : avant toute extraction parser, lire NOTES_USER.md format réel + RÉFÉRENCE PDF screenshot fournis.
+
+50. **emp.team update pour DEF_EMP causait fragmentation équipes** (v9.584 → v9.590 rollback) — circular logic : `_contextTeam = emp.team` (DEF_EMP anchor) puis `emp.team = _contextTeam`. Si parser rate détection section, _contextTeam null → emp.team vidé → équipe perd ses membres. **OBLIGATION** : ne jamais update emp.team pour DEF_EMP automatiquement. Limite fondamentale : PDF SBM n'a pas de header "Équipe N" → admin doit changer team manuellement via Admin → Employés si déplacement réel.
+
+---
 
 ## 🎯 SESSION 2026-05-02 (reprise depuis branche `claude/fix-apex-ai-bugs-adHfF` instable)
 
