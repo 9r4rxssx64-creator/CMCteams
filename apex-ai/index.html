@@ -594,13 +594,77 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
 </style>
 </head>
 <body>
-<!-- v12.771 (Kevin "il n'y a aucun bouton qui fonctionne, repartir de 0 si necessaire") :
-     Bouton RESCUE permanent independant de tout le framework Apex. HTML pur + onclick inline.
-     Garantit qu'au minimum 1 bouton fonctionne TOUJOURS, meme si tout le reste est casse. -->
+<!-- v12.771 + v12.779 (Kevin "1 clic puis rebloque tout") :
+     Bouton RESCUE 2-en-1 : tap court = deblocage clics ponctuel (sans reload),
+     tap long = reset complet. HTML pur + onclick inline. Garantit qu'au minimum
+     1 bouton fonctionne TOUJOURS meme si le reste est casse. -->
+<script>
+window._axRescueClicks = function(){
+  try{
+    /* 1. Retire toutes les modals/overlays qui pourraient bloquer pointer-events */
+    var blockers = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn),.ax-overlay,#modal-container,.ax-toast-container,.ax-spotlight-overlay');
+    var removed = 0;
+    blockers.forEach(function(el){
+      try{
+        if(el.id === 'modal-container'){ el.innerHTML = ''; removed++; return; }
+        if(el.id === 'ax-rescue-btn') return;
+        var cs = window.getComputedStyle ? getComputedStyle(el) : {};
+        if(cs.position === 'fixed' || cs.position === 'absolute'){
+          el.style.pointerEvents = 'none';
+          el.style.display = 'none';
+          removed++;
+        }
+      }catch(_){}
+    });
+    /* 2. Reset pointer-events sur body et content */
+    try{ document.body.style.pointerEvents = 'auto'; }catch(_){}
+    try{ var c = document.getElementById('content'); if(c) c.style.pointerEvents = 'auto'; }catch(_){}
+    /* 3. Retire les overlays z-index extremes (sauf rescue) */
+    var allFixed = document.querySelectorAll('div,section');
+    allFixed.forEach(function(el){
+      try{
+        if(el.id === 'ax-rescue-btn') return;
+        var cs = getComputedStyle(el);
+        if(cs.position === 'fixed' && parseInt(cs.zIndex||'0',10) > 9999){
+          var rect = el.getBoundingClientRect();
+          /* Si overlay couvre +50% ecran, on cache */
+          if(rect.width * rect.height > window.innerWidth * window.innerHeight * 0.5){
+            el.style.pointerEvents = 'none';
+          }
+        }
+      }catch(_){}
+    });
+    /* 4. Force render fresh */
+    try{ if(typeof dc === 'function') dc(); }catch(_){}
+    /* 5. Toast confirmation */
+    try{
+      var t = document.createElement('div');
+      t.textContent = '✅ Clics debloque (' + removed + ' overlays)';
+      t.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#5aa8ff;color:#fff;padding:10px 18px;border-radius:10px;z-index:2147483646;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+      document.body.appendChild(t);
+      setTimeout(function(){ try{ t.remove(); }catch(_){} }, 2500);
+    }catch(_){}
+    return removed;
+  }catch(e){ return -1; }
+};
+window._axRescueFullReset = function(){
+  try{ if(!confirm('🆘 Reset Apex complet ?\n\n• Service Worker desinstalle\n• Caches effaces\n• App rechargee fraiche\n\nTes donnees (Coffre, profil, conversations, abonnement) sont PRESERVEES.')) return; }catch(_){}
+  try{ if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }); } }catch(_){}
+  try{ if('caches' in window){ caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }); } }catch(_){}
+  try{ ['ax_panic_mode','ax_panic_mode_ts','ax_safe_mode','ax_view'].forEach(function(k){ localStorage.removeItem(k); }); }catch(_){}
+  setTimeout(function(){ try{ location.href = location.pathname + '?_reset=' + Date.now(); }catch(_){ location.reload(); } }, 400);
+};
+window._axRescueLongPressTimer = null;
+window._axRescueIsLongPress = false;
+</script>
 <button id="ax-rescue-btn" type="button"
-  onclick="(function(){try{if(!confirm('🆘 Reset Apex complet ?\n\n• Service Worker desinstalle\n• Caches effaces\n• App rechargee fraiche\n\nTes donnees (Coffre, profil, conversations, abonnement) sont PRESERVEES.'))return;}catch(_){}try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}try{if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}try{['ax_panic_mode','ax_panic_mode_ts','ax_safe_mode','ax_view'].forEach(function(k){localStorage.removeItem(k);});}catch(_){}setTimeout(function(){try{location.href=location.pathname+'?_reset='+Date.now();}catch(_){location.reload();}},400);})();"
-  style="position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:2147483647;width:56px;height:56px;border-radius:28px;background:linear-gradient(135deg,#cc3030,#aa1010);color:#fff;border:2px solid rgba(255,255,255,.2);box-shadow:0 6px 20px rgba(204,48,48,.4);font-size:24px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0"
-  title="Reset Apex en cas de blocage (preserve donnees)" aria-label="Reset Apex en cas de blocage">🆘</button>
+  ontouchstart="window._axRescueIsLongPress=false;window._axRescueLongPressTimer=setTimeout(function(){window._axRescueIsLongPress=true;window._axRescueFullReset();},700);"
+  ontouchend="if(window._axRescueLongPressTimer)clearTimeout(window._axRescueLongPressTimer);if(!window._axRescueIsLongPress){window._axRescueClicks();}"
+  ontouchcancel="if(window._axRescueLongPressTimer)clearTimeout(window._axRescueLongPressTimer);"
+  onclick="if(!('ontouchstart' in window)){window._axRescueClicks();}"
+  oncontextmenu="event.preventDefault();window._axRescueFullReset();return false;"
+  style="position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:2147483647;width:56px;height:56px;border-radius:28px;background:linear-gradient(135deg,#cc3030,#aa1010);color:#fff;border:2px solid rgba(255,255,255,.2);box-shadow:0 6px 20px rgba(204,48,48,.4);font-size:24px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation"
+  title="Tap = debloquer clics · Long-press = reset complet" aria-label="Tap court = debloquer clics, long-press = reset complet">🆘</button>
 <a href="#app" class="skip-link" style="position:absolute;left:-9999px;top:0;background:var(--ax-gold,#e8b830);color:#000;padding:8px 12px;z-index:99999;text-decoration:none;font-weight:700" onfocus="this.style.left='8px'" onblur="this.style.left='-9999px'">Aller au contenu</a>
 
 <a href="#content" class="ax-skip-link">Aller au contenu</a>
@@ -1304,7 +1368,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.778",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.779",ADMIN_ID="kdmc_admin";
 /* v12.774 (parite CMCteams v9.591) - force update au boot : compare APP_VER local
    vs serveur. Si different -> clear caches + unregister SW + reload force.
    Independant du SW updatefound (unreliable iOS Safari PWA).
@@ -1322,8 +1386,8 @@ var APP_VER = "v12.778",ADMIN_ID="kdmc_admin";
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.778"){
-            console.info("[v12.778 force-update] local=v12.778 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.779"){
+            console.info("[v12.779 force-update] local=v12.779 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
