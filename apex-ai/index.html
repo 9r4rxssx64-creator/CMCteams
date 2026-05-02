@@ -1184,7 +1184,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.741",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.742",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -21206,6 +21206,117 @@ function axTotalAudit(opts){
       }
     }).catch(function(_e){}));
   }
+  /* Section 11 v12.742 : views render integrity (Kevin "audit le plus poussé") */
+  try{
+    var viewsToCheck = ["dashboard","chat","vault","settings","accueil","admin","sentinels","monitoring","kb","finance","clients","ecommerce","projects","workers","codeeditor","translatorpro","architecture","financepro","medicalpro","cuisinepro","loisirspro","securiteperso","calendarsync","voicesgallery","claudecodehandoff","backgroundassistant","soldesia","rgpd","allconfig","userpersonalization","apexcode","monitoringpro","sentinelshealth","sentinelscontrol","healthdashboard","backupslist","securityalerts","duplicates","knowledgebank","persaudit","autonomie","adminaliases","lessonslearned"];
+    var sandbox = document.createElement("div");
+    sandbox.style.cssText = "position:absolute;left:-99999px;width:400px;height:600px;visibility:hidden;pointer-events:none";
+    document.body.appendChild(sandbox);
+    var savedView = K && K.view;
+    var renderResults = {total:viewsToCheck.length, ok:0, empty:0, errors:0, fails:[]};
+    viewsToCheck.forEach(function(v){
+      try{
+        if(K) K.view = v;
+        var html = (typeof vMain === "function") ? vMain() : "";
+        if(html && html.length > 50) renderResults.ok++;
+        else { renderResults.empty++; renderResults.fails.push({view:v, reason:"empty_render", size:html?html.length:0}); }
+      }catch(e){
+        renderResults.errors++;
+        renderResults.fails.push({view:v, reason:"render_throw", err:String(e.message||e).slice(0,100)});
+      }
+    });
+    if(K) K.view = savedView;
+    try{ sandbox.remove(); }catch(_e){}
+    report.sections.views_render = renderResults;
+    if(renderResults.errors > 0) report.findings.push({severity:"P1",category:"views",msg:renderResults.errors+" vues throw a render"});
+    if(renderResults.empty > 5) report.findings.push({severity:"P2",category:"views",msg:renderResults.empty+" vues rendent vide ou minimal"});
+  }catch(_e){}
+  /* Section 12 v12.742 : memory leaks (intervals zombies, listeners) */
+  try{
+    var memCheck = {intervals:0,timeouts_active:0,event_listeners_tracked:0,dom_nodes:0,localStorage_kb:0};
+    if(window._globalIntervals && Array.isArray(window._globalIntervals)) memCheck.intervals = window._globalIntervals.length;
+    if(window._axEventListeners && Array.isArray(window._axEventListeners)) memCheck.event_listeners_tracked = window._axEventListeners.length;
+    if(document && document.querySelectorAll) memCheck.dom_nodes = document.querySelectorAll("*").length;
+    try{var u=0;for(var i=0;i<localStorage.length;i++){u+=(localStorage.getItem(localStorage.key(i))||"").length;}memCheck.localStorage_kb=Math.round(u/1024);}catch(_e){}
+    report.sections.memory = memCheck;
+    if(memCheck.intervals > 50) report.findings.push({severity:"P1",category:"memory",msg:memCheck.intervals+" intervals actifs (zombies probables)"});
+    if(memCheck.dom_nodes > 8000) report.findings.push({severity:"P2",category:"memory",msg:memCheck.dom_nodes+" DOM nodes (perf risk iPhone)"});
+    if(memCheck.localStorage_kb > 4500) report.findings.push({severity:"P0",category:"memory",msg:"localStorage "+memCheck.localStorage_kb+"KB - quota iOS proche"});
+  }catch(_e){}
+  /* Section 13 v12.742 : runtime onclick errors recents */
+  try{
+    var rtErrors = lg("ax_runtime_onclick_errors", []);
+    var recent24h = rtErrors.filter(function(e){return e.ts && (Date.now()-e.ts) < 86400000;});
+    var byLabel = {};
+    recent24h.forEach(function(e){byLabel[e.label] = (byLabel[e.label]||0)+1;});
+    var topErrors = Object.keys(byLabel).map(function(k){return {label:k,count:byLabel[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,10);
+    report.sections.runtime_onclick = {total_24h:recent24h.length, top_errors:topErrors};
+    if(recent24h.length > 10) report.findings.push({severity:"P1",category:"runtime",msg:recent24h.length+" erreurs onclick 24h - top: "+(topErrors[0]?topErrors[0].label:"?")});
+  }catch(_e){}
+  /* Section 14 v12.742 : firebase health */
+  try{
+    var fbHealth = {connected: !!window._fbEs, last_event_age_s: window._fbLastEvent ? Math.round((Date.now()-window._fbLastEvent)/1000) : null, circuit_open: !!window._fbCircuitOpen, queue_size: Object.keys(window._axSyncQueue||{}).length};
+    report.sections.firebase = fbHealth;
+    if(!fbHealth.connected) report.findings.push({severity:"P1",category:"firebase",msg:"Firebase SSE deconnecte"});
+    if(fbHealth.queue_size > 5) report.findings.push({severity:"P2",category:"firebase",msg:fbHealth.queue_size+" items en queue offline"});
+    if(fbHealth.circuit_open) report.findings.push({severity:"P1",category:"firebase",msg:"Firebase circuit breaker ouvert"});
+  }catch(_e){}
+  /* Section 15 v12.742 : service worker health */
+  if(typeof navigator !== "undefined" && navigator.serviceWorker){
+    promises.push(navigator.serviceWorker.getRegistration().then(function(reg){
+      var swHealth = {registered:!!reg, scope:reg?reg.scope:null, active:reg&&reg.active?reg.active.scriptURL:null, version_match:null};
+      report.sections.service_worker = swHealth;
+      if(!reg) report.findings.push({severity:"P2",category:"sw",msg:"Service Worker non enregistre"});
+    }).catch(function(){}));
+  }
+  /* Section 16 v12.742 : compliance CGU/RGPD */
+  try{
+    var compliance = {
+      cgu_accepted: !!lg("ax_permissions_accepted_"+(K&&K.user&&K.user.id||""), false),
+      audit_log_present: (lg("ax_audit",[])||[]).length > 0,
+      pin_set: !!localStorage.getItem("ax_pin"),
+      device_trusted: !!lg("ax_device_trusted", false)
+    };
+    report.sections.compliance = compliance;
+    if(!compliance.cgu_accepted) report.findings.push({severity:"P3",category:"compliance",msg:"CGU non acceptees"});
+    if(!compliance.pin_set) report.findings.push({severity:"P1",category:"compliance",msg:"PIN admin non defini"});
+  }catch(_e){}
+  /* Section 17 v12.742 : ES6 modules health */
+  try{
+    var modulesExpected = ["ApexSecurity","ApexCredentials","ApexPerf","ApexStorage","ApexAISafety","ApexCryptoVault","ApexFetchUtils","ApexUIHelpers","ApexProviders"];
+    var loaded = 0, missing = [];
+    modulesExpected.forEach(function(m){if(window[m]) loaded++; else missing.push(m);});
+    report.sections.es6_modules = {expected:modulesExpected.length, loaded:loaded, missing:missing};
+    if(missing.length > 0) report.findings.push({severity:"P2",category:"modules",msg:missing.length+" modules ES6 absents : "+missing.slice(0,3).join(",")});
+  }catch(_e){}
+  /* Section 18 v12.742 : duplicates detection (data integrity) */
+  try{
+    var dupReport = {convs_dup:0,kb_dup:0};
+    if(K && K.conversations){
+      var seenIds = {};
+      K.conversations.forEach(function(c){if(seenIds[c.id]) dupReport.convs_dup++; else seenIds[c.id]=true;});
+    }
+    if(K && K.kb && Array.isArray(K.kb.facts)){
+      var seenFacts = {};
+      K.kb.facts.forEach(function(f){var key=String(f.text||"").slice(0,50);if(seenFacts[key]) dupReport.kb_dup++; else seenFacts[key]=true;});
+    }
+    report.sections.data_integrity = dupReport;
+    if(dupReport.convs_dup > 0) report.findings.push({severity:"P3",category:"data",msg:dupReport.convs_dup+" conversations dupliquees"});
+    if(dupReport.kb_dup > 5) report.findings.push({severity:"P3",category:"data",msg:dupReport.kb_dup+" faits KB dupliques"});
+  }catch(_e){}
+  /* Section 19 v12.742 : sentinels heartbeat (toutes ont tourne 24h ?) */
+  try{
+    var sentReport = {total:0, ran_24h:0, stale:[]};
+    var workers = (typeof _localWorkers !== "undefined" && Array.isArray(_localWorkers)) ? _localWorkers : [];
+    sentReport.total = workers.length;
+    var cut = Date.now() - 86400000;
+    workers.forEach(function(w){
+      if(w.lastRun && w.lastRun > cut) sentReport.ran_24h++;
+      else if(w.active) sentReport.stale.push(w.name||w.task);
+    });
+    report.sections.sentinels_heartbeat = sentReport;
+    if(sentReport.stale.length > 0) report.findings.push({severity:"P2",category:"sentinels",msg:sentReport.stale.length+" sentinelles staleyes 24h"});
+  }catch(_e){}
   /* Wait all + finalize */
   return Promise.all(promises).then(function(){
     /* Score : 100 - sum(severity weights) */
