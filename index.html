@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.591";
+var APP_VER="v9.592";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22316,50 +22316,15 @@ function autoFillMissingCadres(year,month,opts){
     // Stratégie 1 : copier mois précédent si disponible (≥80%)
     var prevFilled=0;
     for(var pd=1;pd<=prevDays;pd++)if(prevRow[pd])prevFilled++;
-    // v9.591 (Kevin "16 cadres sans horaire alors qu'ils sont dans le PDF") :
-    // seuil descendu 80% -> 30% (cadre absent meme partiel mois precedent vaut mieux que rien).
-    // Si vraiment 0 jour rempli mois precedent, alors strategy=needs_source.
-    if(prevFilled>=Math.ceil(prevDays*0.30)){
-      strategy="copy_prev_month";
-      for(var d=1;d<=Math.min(days,prevDays);d++){
-        if(curRow[d])continue; // ne pas écraser les jours déjà présents
-        var c=prevRow[d];
-        if(!c)continue;
-        if(!CODES[c])continue;
-        curRow[d]=c;
-        auditLog.push({ts:Date.now(),adminId:A.user.id,eid:emp.id,name:emp.name,year:year,month:month,day:d,old:"",new:c,src:"auto_fill_copy"});
-        nSet++;
-      }
-    }else{
-      // v9.591 — Si meme pas 30% du mois precedent, fallback : recopier le pattern le plus
-      // recent disponible (n-2, n-3, etc.) jusqu'a 12 mois en arriere
-      var _foundSource=false;
-      for(var _back=2;_back<=12&&!_foundSource;_back++){
-        var _bM=month-_back,_bY=year;
-        while(_bM<0){_bM+=12;_bY--;}
-        var _bOv=(A.overrides||{})[_bY+"-"+_bM]||{};
-        var _bRow=_bOv[emp.id]||{};
-        var _bDays=getDays(_bY,_bM);
-        var _bFilled=0;
-        for(var _bd=1;_bd<=_bDays;_bd++)if(_bRow[_bd])_bFilled++;
-        if(_bFilled>=Math.ceil(_bDays*0.5)){
-          _foundSource=true;
-          strategy="copy_back_"+_back+"_months";
-          for(var _bd2=1;_bd2<=Math.min(days,_bDays);_bd2++){
-            if(curRow[_bd2])continue;
-            var _bc=_bRow[_bd2];
-            if(!_bc||!CODES[_bc])continue;
-            curRow[_bd2]=_bc;
-            auditLog.push({ts:Date.now(),adminId:A.user.id,eid:emp.id,name:emp.name,year:year,month:month,day:_bd2,old:"",new:_bc,src:"auto_fill_copy_back"});
-            nSet++;
-          }
-        }
-      }
-      if(!_foundSource){
-        strategy="needs_source";
-        nSet=0;
-      }
-    }
+    // v9.592 (Kevin "ne jamais inventer, ne jamais copier de l'historique. Chaque mois,
+    // nouveaux horaires pour tout le monde. L'historique sert UNIQUEMENT de reference.
+    // Reproduire IDENTIQUE par rapport au PDF import. Si parser rate -> alerter admin,
+    // pas inventer.")
+    // ROLLBACK v9.591 : retour au comportement strict. Si parser rate un cadre,
+    // strategy=needs_source -> banner alerte admin "verifier le PDF". JAMAIS copier
+    // automatique depuis mois precedent (cree donnees fictives non reelles).
+    strategy="needs_source";
+    nSet=0;
     if(nSet>0||strategy==="needs_source")applied.push({empId:emp.id,name:emp.name,strategy:strategy,nSet:nSet});
   });
   if(applied.length>0){
