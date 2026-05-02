@@ -246,7 +246,7 @@ textarea.ax-input{resize:vertical;min-height:48px;font-size:16px}
 .ax-code{background:#0d0d18;border:1px solid rgba(255,255,255,.08);border-radius:var(--ax-r-sm);padding:12px;overflow-x:auto;font-family:var(--ax-mono);font-size:13px;line-height:1.5;position:relative;margin:8px 0}
 .ax-code .ax-copy{position:absolute;top:6px;right:6px;padding:4px 10px;background:rgba(255,255,255,.08);border:none;border-radius:4px;color:var(--ax-text-dim);font-size:11px;cursor:pointer}
 .ax-code .ax-copy:hover{background:rgba(201,162,39,.2);color:var(--ax-gold)}
-#toast-container{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+#toast-container{position:fixed;top:max(64px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:92vw}
 .ax-toast{padding:12px 24px;border-radius:14px;font-size:13px;font-weight:600;animation:axSlideUp .3s var(--ax-ease);pointer-events:auto;text-align:center;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .ax-toast-ok{background:var(--ax-green);color:#fff}
 .ax-toast-err{background:var(--ax-red);color:#fff}
@@ -1159,7 +1159,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.738",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.739",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -11782,8 +11782,10 @@ function axCredTestLive(k){
     }
     v = v.trim();
     if(!v){
-      try{if(typeof toast==="function")toast("Aucune cle — va dans le Coffre","warn");}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL11529",_e);}catch(__){}}
-      try{if(typeof sv==="function")sv("vault");}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL11530",_e);}catch(__){}}
+      /* v12.739 Kevin "redirect coffre auto bloque le chat" :
+         marque rouge silent, plus de redirect ni toast force. Bulle reste rouge,
+         user clique manuellement dessus pour aller au coffre. */
+      try{axCredSetStatus(k,"red","Aucune cle saisie");}catch(_e){}
       return Promise.resolve({ok:false,msg:"empty"});
     }
     /* Indicate testing */
@@ -11953,6 +11955,12 @@ function _axDailyHealthCheck(){
 })();
 
 function _axCredHealthBootCheck(){
+  /* v12.739 Kevin "bulles rouges fausses + redirect coffre auto bloquant" :
+     desactive auto-trigger boot. Format check fait deja le job (axCredBadge),
+     pas besoin de hammer les API au boot et faux-positiver en CORS.
+     Tour relancable a la demande via window._axCredHealthBootCheck({force:true}).
+   */
+  if(!arguments.length || !arguments[0] || arguments[0].force !== true) return;
   try{
     if(!K||!K.user)return;
     if(typeof axIsAdmin==="function"&&!axIsAdmin())return; /* admin only */
