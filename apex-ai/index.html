@@ -594,6 +594,13 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
 </style>
 </head>
 <body>
+<!-- v12.771 (Kevin "il n'y a aucun bouton qui fonctionne, repartir de 0 si necessaire") :
+     Bouton RESCUE permanent independant de tout le framework Apex. HTML pur + onclick inline.
+     Garantit qu'au minimum 1 bouton fonctionne TOUJOURS, meme si tout le reste est casse. -->
+<button id="ax-rescue-btn" type="button"
+  onclick="(function(){try{if(!confirm('🆘 Reset Apex complet ?\n\n• Service Worker desinstalle\n• Caches effaces\n• App rechargee fraiche\n\nTes donnees (Coffre, profil, conversations, abonnement) sont PRESERVEES.'))return;}catch(_){}try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}try{if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}try{['ax_panic_mode','ax_panic_mode_ts','ax_safe_mode','ax_view'].forEach(function(k){localStorage.removeItem(k);});}catch(_){}setTimeout(function(){try{location.href=location.pathname+'?_reset='+Date.now();}catch(_){location.reload();}},400);})();"
+  style="position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:2147483647;width:56px;height:56px;border-radius:28px;background:linear-gradient(135deg,#cc3030,#aa1010);color:#fff;border:2px solid rgba(255,255,255,.2);box-shadow:0 6px 20px rgba(204,48,48,.4);font-size:24px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0"
+  title="Reset Apex en cas de blocage (preserve donnees)" aria-label="Reset Apex en cas de blocage">🆘</button>
 <a href="#app" class="skip-link" style="position:absolute;left:-9999px;top:0;background:var(--ax-gold,#e8b830);color:#000;padding:8px 12px;z-index:99999;text-decoration:none;font-weight:700" onfocus="this.style.left='8px'" onblur="this.style.left='-9999px'">Aller au contenu</a>
 
 <a href="#content" class="ax-skip-link">Aller au contenu</a>
@@ -1297,7 +1304,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.770",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.771",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
