@@ -1048,6 +1048,23 @@ try{
             try{modalRoot.parentNode.removeChild(modalRoot);}catch(_e){}
           }
         }
+        /* v12.740 : Bnav tabs (Reglages, Accueil, Chat, etc.) - force sv() direct */
+        var navTab=t.closest('#navbar .ax-tab[onclick*="sv("]');
+        if(navTab){
+          var oc=navTab.getAttribute("onclick")||"";
+          var mv=oc.match(/sv\(['"]([^'"]+)['"]/);
+          if(mv && mv[1]){
+            var view=mv[1];
+            if(typeof window.sv==="function" && K && K.view!==view){
+              ev.preventDefault();ev.stopPropagation();
+              try{window.sv(view);}catch(err){
+                /* sv throw : tente render direct */
+                try{K.view=view; if(typeof window.render==="function") window.render(); else if(typeof window.dc==="function") window.dc();}catch(_e2){}
+              }
+              return;
+            }
+          }
+        }
         /* Bouton Connexion */
         var btnL=t.closest('button[onclick*="_doLogin"]');
         if(btnL){
@@ -1159,7 +1176,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.739",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.740",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -26856,6 +26873,7 @@ function vStorageManage(){
   /* Actions principales */
   h+='<div class="ax-card" style="margin-bottom:12px"><h3 style="margin:0 0 10px">Actions</h3>';
   h+='<button class="ax-btn ax-btn-primary" style="min-height:48px;width:100%;margin-bottom:8px;font-weight:700;font-size:14px" onclick="var n=axEmergencyCleanup(false);try{dc();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-storage-manage",_e);}catch(__){}}">&#129529; Nettoyer maintenant</button>';
+  h+='<button class="ax-btn" style="min-height:48px;width:100%;margin-bottom:8px;font-weight:700;font-size:14px;background:linear-gradient(135deg,#ff5858,#cc3030);color:#fff" onclick="if(confirm(\'Nettoyage ULTRA va archiver les conversations >7j en IDB et reduire fortement les logs. Continuer ?\')){var f=axUltraCleanup();try{dc();}catch(_e){}}">&#9889; Nettoyage ULTRA (libere 50%+)</button>';
   h+='<button class="ax-btn" style="min-height:44px;width:100%;margin-bottom:8px" onclick="try{var st=_axStorageStats();var rows=st.stats.map(function(r){return r.key+\' — \'+(Math.round(r.size/1024*10)/10)+\' Ko\';}).join(\'\\n\');alert(\'Toutes les cles (triees par taille) :\\n\\n\'+rows);}catch(e){alert(\'Erreur: \'+e);}">&#128202; Voir details (toutes les cles)</button>';
   h+='<button class="ax-btn" style="min-height:44px;width:100%;margin-bottom:8px" onclick="if(confirm(\'Cela exporte TOUT en fichier JSON puis vide le stockage. Continuer ?\')){try{var dump={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);dump[k]=localStorage.getItem(k);}var blob=new Blob([JSON.stringify(dump,null,2)],{type:\'application/json\'});var a=document.createElement(\'a\');a.href=URL.createObjectURL(blob);a.download=\'apex-backup-\'+new Date().toISOString().slice(0,10)+\'.json\';a.click();setTimeout(function(){if(confirm(\'Sauvegarde telechargee. Vider le stockage maintenant ?\')){localStorage.clear();location.reload();}},1500);}catch(e){alert(\'Erreur: \'+e);}}">&#128228; Tout sauvegarder puis vider</button>';
   h+='<button class="ax-btn" style="min-height:44px;width:100%" onclick="try{var n=(typeof _axCompressAll===\'function\')?_axCompressAll():0;toast(n+\' cles compressees\',\'ok\');dc();}catch(_e){try{(typeof _axSafeCatch==="function"?_axSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("v-storage-manage",_e);}catch(__){}}">&#128476;&#65039; Compresser les grosses cles</button>';
@@ -26897,7 +26915,48 @@ function _axCheckStorageProactive(){
     }
   }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL26565",_e);}catch(__){}}
 }
-try{setTimeout(_axCheckStorageProactive,1000);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL26567",_e);}catch(__){}}/* v12.315 — Boot cleanup TRES agressif si proche limite (anti "manque de memoire") */try{setTimeout(function(){if(typeof axStorageQuotaCheck==="function"){var q=axStorageQuotaCheck();if(q&&q.pct>=70){if(typeof axAggressiveCleanup==="function")try{axAggressiveCleanup();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(q.pct>=85&&typeof axEmergencyCleanup==="function")try{axEmergencyCleanup(true);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(typeof toast==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())toast("Memoire libere ("+q.pct+" pourcent occupe)","info");}}},2500);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+/* v12.740 Kevin "stockage 90% apres nettoyage" : ULTRA cleanup. Archive convs >7j en IDB,
+   trim msgs a 30/conv (vs 100), trim TOUS les logs a 20 entries, supprime backups >3j. */
+window.axUltraCleanup = function(){
+  var before = (typeof _axMemoryUsedBytes==="function") ? _axMemoryUsedBytes() : 0;
+  try{
+    /* 1. Caps drastiques sur tous arrays */
+    var ultraCaps = {ax_audit:30,ax_silent_log:20,ax_err_log:20,ax_security_alerts:20,ax_data_enrichment_log:20,ax_camera_scans:5,ax_health_reports:1,ax_agents_log:20,ax_click_failures:10,ax_click_slow:10,ax_telemetry_in:20,ax_claude_todo:15,ax_handoff_journal:15,ax_lessons_learned:30,ax_persistent_memory:50,ax_notif_history:10,ax_clipboard:5,ax_devices:5,ax_connection_history:15,ax_login_history:10,ax_admin_inbox:10,ax_email_log:10,ax_subscription_requests:10,ax_token_use:10,ax_latency_log:15,ax_bodyguard_log:15,ax_user_telemetry:15,ax_telemetry:15,ax_location_history:15,ax_geofence_log:15,ax_table_presences:10,ax_client_logs:15,ax_activity_log:30,ax_crew_history:15,ax_import_log:15,ax_camera_history:5,ax_voice_history:5,ax_view_changes:10,ax_quota_history:10};
+    Object.keys(ultraCaps).forEach(function(k){try{var arr=lg(k,[]);if(Array.isArray(arr)&&arr.length>ultraCaps[k])ls(k,arr.slice(-ultraCaps[k]));}catch(_e){}});
+    /* 2. Archive convs >7j en IDB puis supprime du localStorage */
+    try{
+      var convs=(K&&Array.isArray(K.conversations))?K.conversations:[];
+      var cut=Date.now()-7*86400000;
+      var keep=[],archived=0;
+      convs.forEach(function(c){
+        if(c.ts && c.ts<cut){
+          /* Archive */
+          try{var msgsKey="ax_msgs_"+c.id;var msgs=lg(msgsKey,[]);if(typeof axIdbSet==="function"){axIdbSet("archive_"+msgsKey,msgs);}localStorage.removeItem(msgsKey);archived++;}catch(_e){}
+        } else { keep.push(c); }
+      });
+      if(archived>0 && K){K.conversations=keep;ls("ax_convs",keep);}
+      /* 3. Trim msgs actifs a 30/conv */
+      keep.forEach(function(c){try{var k2="ax_msgs_"+c.id;var m=lg(k2,[]);if(Array.isArray(m)&&m.length>30){if(typeof axIdbSet==="function")axIdbSet("archive_"+k2+"_"+Date.now(),m.slice(0,m.length-30));ls(k2,m.slice(-30));}}catch(_e){}});
+      if(K&&Array.isArray(K.messages)&&K.messages.length>30){K.messages=K.messages.slice(-30);if(typeof _saveMsgs==="function")try{_saveMsgs();}catch(_e){}}
+    }catch(_e){}
+    /* 4. Backups >3j supprimes */
+    try{var keys=Object.keys(localStorage);keys.forEach(function(kk){if(kk.indexOf("ax_backup_")===0){var d=kk.replace("ax_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>3*86400000)localStorage.removeItem(kk);}});}catch(_e){}
+    /* 5. Photos themes utilisateur trimees a 2 max */
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||k.indexOf("ax_user_theme_")!==0)continue;try{var t=lg(k,null);if(t&&Array.isArray(t.photos)&&t.photos.length>2){t.photos=t.photos.slice(-2);ls(k,t);}}catch(_e){}}}catch(_e){}
+    /* 6. Compression auto via _axCompressAll */
+    try{if(typeof _axCompressAll==="function")_axCompressAll();}catch(_e){}
+  }catch(_e){}
+  var after = (typeof _axMemoryUsedBytes==="function") ? _axMemoryUsedBytes() : 0;
+  var freed = Math.max(0, before-after);
+  if(freed>0 && typeof toast==="function"){
+    try{toast("Nettoyage ULTRA : "+Math.round(freed/1024)+" Ko liberes","ok",{duration:4000});}catch(_e){}
+  }
+  return freed;
+};
+try{setTimeout(_axCheckStorageProactive,1000);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL26567",_e);}catch(__){}}
+/* v12.740 : auto-trigger ULTRA si > 85% au boot */
+try{setTimeout(function(){var u=(typeof _axMemoryUsedBytes==="function")?_axMemoryUsedBytes():0;var p=u/5242880*100;if(p>=85)try{axUltraCleanup();}catch(_e){}},3500);}catch(_e){}
+/* v12.315 — Boot cleanup TRES agressif si proche limite (anti "manque de memoire") */try{setTimeout(function(){if(typeof axStorageQuotaCheck==="function"){var q=axStorageQuotaCheck();if(q&&q.pct>=70){if(typeof axAggressiveCleanup==="function")try{axAggressiveCleanup();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(q.pct>=85&&typeof axEmergencyCleanup==="function")try{axEmergencyCleanup(true);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}if(typeof toast==="function"&&typeof axIsAdmin==="function"&&axIsAdmin())toast("Memoire libere ("+q.pct+" pourcent occupe)","info");}}},2500);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
 
 var _agentStorage10minActive=false;
 function _agentStorage10min(){
