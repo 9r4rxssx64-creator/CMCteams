@@ -1184,7 +1184,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.743",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.744",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -35702,12 +35702,44 @@ setTimeout(function(){
   }catch(_e){}
 }, 600000);
 
-/* v12.743 AUTO-ACCEPT : Kevin (admin) + Laurence + autres internes - jamais de modal CGU/notif/bio.
-   Kevin "tout doit etre auto-accepte pour admin et Laurence, pas leur demander". */
+/* v12.744 AUTO-ACCEPT + DEVICE RECO : Kevin (admin) + Laurence + autres internes -
+   jamais de modal CGU/notif/bio. Kevin reconnu sur ses devices. Skip Discover/Landing.
+   Pour Laurence : Discover affiche 1 fois max. */
 (function(){
   if(window._axAutoAcceptInstalled) return;
   window._axAutoAcceptInstalled = true;
   var INTERNAL_USERS = ["kdmc_admin","user_laurence","user_christophe_tardieu","user_sandrine_tardieu"];
+  /* Fingerprint device : stable hash UA+screen+tz+lang */
+  function _axDeviceFingerprint(){
+    try{
+      var raw = (navigator.userAgent||"")+"|"+screen.width+"x"+screen.height+"|"+(Intl.DateTimeFormat().resolvedOptions().timeZone||"")+"|"+(navigator.language||"")+"|"+(navigator.platform||"");
+      var h = 0; for(var i=0;i<raw.length;i++){h = ((h<<5)-h+raw.charCodeAt(i))|0;}
+      return "dev_"+Math.abs(h).toString(36)+"_"+raw.length;
+    }catch(_e){return "dev_unknown";}
+  }
+  function _axRegisterKevinDevice(){
+    try{
+      if(!K || !K.user || K.user.id !== ADMIN_ID) return;
+      var fp = _axDeviceFingerprint();
+      var devices = lg("ax_kevin_devices", []);
+      var existing = devices.find(function(d){return d.fingerprint===fp;});
+      if(!existing){
+        devices.push({fingerprint:fp, ua:navigator.userAgent.slice(0,150), screen:screen.width+"x"+screen.height, platform:navigator.platform, first_seen:Date.now(), last_seen:Date.now(), trusted:true});
+        if(devices.length>20) devices = devices.slice(-20);
+        ls("ax_kevin_devices", devices);
+      } else {
+        existing.last_seen = Date.now();
+        ls("ax_kevin_devices", devices);
+      }
+    }catch(_e){}
+  }
+  window._axIsKevinDevice = function(){
+    try{
+      var fp = _axDeviceFingerprint();
+      var devices = lg("ax_kevin_devices", []);
+      return devices.some(function(d){return d.fingerprint===fp && d.trusted;});
+    }catch(_e){return false;}
+  };
   function autoAcceptForCurrentUser(){
     try{
       if(!K || !K.user || !K.user.id) return;
@@ -35729,7 +35761,9 @@ setTimeout(function(){
         "ax_welcome_done",
         "ax_onboard_done",
         "ax_pin_changed_"+uid,
-        "ax_device_trusted"
+        "ax_device_trusted",
+        "ax_landing_seen_"+uid,
+        "ax_discover_seen_"+uid
       ];
       keys.forEach(function(k){
         try{
@@ -35739,6 +35773,22 @@ setTimeout(function(){
           }
         }catch(_e){}
       });
+      /* Enregistre device Kevin */
+      if(uid === ADMIN_ID) _axRegisterKevinDevice();
+      /* Si on est sur landing alors qu'on est admin -> skip vers dashboard */
+      if(K.view === "landing" && uid === ADMIN_ID && typeof sv === "function"){
+        try{ sv("dashboard"); }catch(_e){}
+      }
+      /* Laurence : si landing seen -> skip auto. Sinon montre 1 fois et set flag */
+      if(K.view === "landing" && uid === "user_laurence"){
+        var seen = lg("ax_landing_seen_user_laurence", false);
+        if(seen && typeof sv === "function"){
+          try{ sv("chat"); }catch(_e){}
+        } else {
+          /* Marque vu pour la prochaine fois */
+          ls("ax_landing_seen_user_laurence", true);
+        }
+      }
     }catch(_e){}
   }
   /* Run au boot + a chaque login */
