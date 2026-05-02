@@ -484,6 +484,8 @@ body.ax-theme-love .ax-setting-row:hover{background:rgba(255,143,171,.06)}
 #ax-fab{position:fixed;bottom:calc(84px + var(--ax-safe-b));right:16px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ax-gold),#ffd860);color:#08080f;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 20px rgba(201,162,39,.4);z-index:150;transition:all .25s var(--ax-ease);border:none}
 #ax-fab:active{transform:scale(.9)}
 #ax-fab.hidden{display:none}
+/* v12.715 — Hide TOUS widgets quand pas connecte ou page login (Kevin "personne ne doit voir les bulles") */
+body.ax-on-login #ax-fab,body.ax-on-login #ax-mini-chat,body.ax-on-login #ax-chat-fab-down,body.ax-on-login #toast-container,body.ax-on-login .ax-status-bar,body.ax-on-login .ax-love-banner,body.ax-on-login [class*="ax-fab"],body.ax-on-login [class*="ax-bubble"]{display:none !important;visibility:hidden !important}
 #ax-mini-chat{position:fixed;bottom:calc(150px + var(--ax-safe-b));right:16px;width:calc(100vw - 32px);max-width:380px;max-height:60vh;background:linear-gradient(135deg,rgba(16,22,48,.97),rgba(12,16,36,.95));border:1.5px solid rgba(232,184,48,.2);border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.5);z-index:200;display:none;flex-direction:column;overflow:hidden;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 #ax-mini-chat.open{display:flex}
 #ax-mini-chat .mc-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(232,184,48,.1)}
@@ -920,6 +922,75 @@ try{
   }catch(_e){}
 })();
 /* ============================================================
+   AX_V12_715 HIDE WIDGETS sur login + Journal admin (Kevin "bulles + résumé")
+   ============================================================ */
+(function(){
+  try{
+    if(typeof document==="undefined")return;
+    /* Auto-toggle classe ax-on-login : detect via K.user + view */
+    function syncLoginClass(){
+      try{
+        var K=window.K;
+        var isLogin=(!K||!K.user)||(K&&(K.view==="login"||K.view==="landing"||K.view==="waiting"||K.view==="waitingApproval"));
+        if(document.body){
+          if(isLogin) document.body.classList.add("ax-on-login");
+          else document.body.classList.remove("ax-on-login");
+        }
+      }catch(_e){}
+    }
+    /* Run au DOMContentLoaded + toutes 1s pendant 30s (catch transitions) */
+    if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",syncLoginClass);
+    else syncLoginClass();
+    var t=setInterval(syncLoginClass,1000);
+    setTimeout(function(){try{clearInterval(t);}catch(_e){}},30000);
+    /* Hook dc() si dispo pour sync apres render */
+    setTimeout(function(){
+      try{
+        if(typeof window.dc==="function"&&!window.dc._v715){
+          var origDc=window.dc;
+          window.dc=function(){var r=origDc.apply(this,arguments);try{syncLoginClass();}catch(_e){}return r;};
+          window.dc._v715=true;
+        }
+      }catch(_e){}
+    },2000);
+    /* v715 BACKUP : addEventListener direct sur boutons login (bypass onclick au cas ou) */
+    function wireLoginButtons(){
+      try{
+        var btnLogin=document.querySelector('button[onclick*="_doLogin"]');
+        if(btnLogin&&!btnLogin._v715Wired){
+          btnLogin._v715Wired=true;
+          btnLogin.addEventListener("click",function(e){
+            try{
+              if(typeof window._doLogin==="function"){
+                window._doLogin();
+              } else {
+                alert("Apex: _doLogin manquant. Recharge l app (Mise a jour).");
+              }
+            }catch(err){
+              alert("Erreur login: "+(err&&err.message||err));
+            }
+          });
+        }
+        var btnDecouvrir=document.querySelector('a[onclick*="sv"][onclick*="landing"],button[onclick*="sv"][onclick*="landing"]');
+        if(btnDecouvrir&&!btnDecouvrir._v715Wired){
+          btnDecouvrir._v715Wired=true;
+          btnDecouvrir.addEventListener("click",function(e){
+            try{ if(typeof window.sv==="function") window.sv("landing"); }catch(err){}
+          });
+        }
+        var btnUpdate=document.querySelector('a[onclick*="axForceRefresh"],button[onclick*="axForceRefresh"]');
+        if(btnUpdate&&!btnUpdate._v715Wired){
+          btnUpdate._v715Wired=true;
+          btnUpdate.addEventListener("click",function(e){
+            try{ if(typeof window.axForceRefresh==="function") window.axForceRefresh(); else location.reload(true); }catch(err){location.reload(true);}
+          });
+        }
+      }catch(_e){}
+    }
+    setInterval(wireLoginButtons,1000);
+  }catch(_e){}
+})();
+/* ============================================================
    AX_V12_700 FORCE SW CLEAR (Kevin v695 iPhone bloque - SW cache stale)
    ============================================================ */
 (function(){
@@ -980,7 +1051,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.710",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.715",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
