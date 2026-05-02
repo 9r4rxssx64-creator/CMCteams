@@ -1293,7 +1293,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.767",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.768",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -36537,13 +36537,11 @@ setTimeout(function(){
   window._axDebugPanelInstalled = true;
   function _axDebugIsOn(){
     try{
-      if(window.__axDebugOff === true) return false; /* off explicit */
+      /* v12.768 Kevin "ne pas forcer admin a cliquer pour debug" : panel desactive
+         par defaut. Apex teste lui-meme via axApexProgrammaticClickTest. */
+      if(window.__axDebugOff === true) return false;
       if(window.__axDebugOn === true) return true;
-      /* v12.767 Kevin "rien marche" : force ON pour admin tant que Kevin diagnostique */
-      if(window.K && window.K.user && window.K.user.role === "admin") return true;
-      var fails = lg("ax_click_failures",[]);
-      var recent = fails.filter(function(f){return f.ts && (Date.now()-f.ts)<60000;});
-      return recent.length >= 5;
+      return false;
     }catch(_e){return false;}
   }
   function _axDebugRender(){
@@ -36815,6 +36813,179 @@ window.axApexAutonomousTest = async function(opts){
 
   return results;
 };
+
+/* ============================================================
+   AX_V12_768 PROGRAMMATIC CLICK TEST (Kevin "ne pas me demander de cliquer")
+   Apex dispatch event click sur boutons live (bnav, topbar, cards dashboard,
+   chatbar). Mesure : event recu ? handler execute ? K.view change ?
+   Detecte overlays bloquants via document.elementFromPoint.
+   Push resultat ax_apex_click_test + escalade auto.
+   ============================================================ */
+window.axApexProgrammaticClickTest = function(){
+  if(typeof document === "undefined") return Promise.resolve({ok:false,reason:"no_dom"});
+  if(!window.K || !window.K.user) return Promise.resolve({ok:false,reason:"not_logged_in"});
+  /* Cap 1 run/10 min */
+  var lastRun = lg("ax_programmatic_click_test_last", 0);
+  if(Date.now() - lastRun < 600000) return Promise.resolve({ok:false,reason:"throttled"});
+  ls("ax_programmatic_click_test_last", Date.now());
+
+  var report = {
+    ts: Date.now(), v: typeof APP_VER!=="undefined"?APP_VER:"?",
+    user: K.user.id, view_initial: K.view,
+    total: 0, click_received: 0, handler_ran: 0, overlay_blocking: 0,
+    overlays_detected: [], fails: [], details: []
+  };
+
+  /* Selectors a tester (boutons cles) */
+  var selectors = [
+    "#navbar .ax-tab[onclick*='sv(']",
+    "#topbar button[onclick]",
+    "#topbar a[onclick]",
+    ".ax-card[onclick]",
+    "#ax-chat-input ~ button",
+    "button[onclick*='_sendFromInput']",
+    "button[onclick*='axStopStreaming']",
+    "button[onclick*='axSttToggle']",
+    "button[onclick*='_showChatMenu']",
+    "button[onclick*='axCommandPalette']",
+    "button[onclick*='_showUniversalSearch']",
+    "button[onclick*='axLogout']",
+    "button[onclick*='toggleSidebar']",
+    "#ax-scroll-down"
+  ];
+
+  var clickedEls = [];
+  selectors.forEach(function(sel){
+    try{
+      var els = document.querySelectorAll(sel);
+      Array.from(els).forEach(function(el){
+        try{
+          if(clickedEls.indexOf(el) >= 0) return;
+          clickedEls.push(el);
+          var oc = el.getAttribute("onclick") || "";
+          var label = (el.textContent||"").trim().slice(0,30) || el.id || el.className.split(" ")[0];
+          var rect = el.getBoundingClientRect();
+          var inViewport = rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth && rect.width > 0 && rect.height > 0;
+          if(!inViewport) return; /* skip elements hors-ecran */
+
+          report.total++;
+          /* Test 1 : elementFromPoint au centre = on element OR overlay ? */
+          var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+          var topEl = document.elementFromPoint(cx, cy);
+          var overlay = null;
+          if(topEl && topEl !== el && !el.contains(topEl)){
+            /* Quelque chose au-dessus intercepte */
+            overlay = {
+              expected: el.tagName + (el.id?"#"+el.id:""),
+              actual: topEl.tagName + (topEl.id?"#"+topEl.id:"") + (topEl.className?"."+String(topEl.className).split(" ")[0]:""),
+              z: window.getComputedStyle(topEl).zIndex
+            };
+            report.overlay_blocking++;
+            report.overlays_detected.push({label:label, overlay:overlay});
+          }
+
+          /* Test 2 : dispatchEvent click - voir si event recu */
+          var eventReceived = false;
+          var listener = function(){eventReceived = true;};
+          el.addEventListener("click", listener, {once:true, capture:false});
+          var beforeView = K.view;
+          var beforeHash = (document.body && document.body.innerHTML||"").length;
+          try{
+            var ev = new MouseEvent("click", {bubbles:true, cancelable:true, view:window, clientX:cx, clientY:cy});
+            el.dispatchEvent(ev);
+            if(eventReceived) report.click_received++;
+          }catch(_e){}
+          /* Cleanup listener */
+          try{el.removeEventListener("click", listener);}catch(_e){}
+
+          /* Test 3 : apres 50ms, view changed ou DOM modified ? */
+          setTimeout(function(){
+            try{
+              var afterView = K.view;
+              var afterHash = (document.body && document.body.innerHTML||"").length;
+              var ran = (afterView !== beforeView) || (Math.abs(afterHash - beforeHash) > 100);
+              if(ran) report.handler_ran++;
+              else if(eventReceived) report.fails.push({label:label, sel:sel, reason:"event_received_but_no_reaction", oc:oc.slice(0,100), overlay:overlay});
+              else if(overlay) report.fails.push({label:label, sel:sel, reason:"overlay_blocking", oc:oc.slice(0,100), overlay:overlay});
+              else report.fails.push({label:label, sel:sel, reason:"no_event_received", oc:oc.slice(0,100)});
+            }catch(_e){}
+          }, 50);
+        }catch(_e){}
+      });
+    }catch(_e){}
+  });
+
+  /* Wait 200ms pour que tous les setTimeout aient run */
+  return new Promise(function(resolve){
+    setTimeout(function(){
+      try{
+        report.coverage_pct = report.total ? Math.round(report.handler_ran/report.total*100) : 0;
+        report.click_received_pct = report.total ? Math.round(report.click_received/report.total*100) : 0;
+        report.verdict = (report.coverage_pct >= 80) ? "OK" : (report.coverage_pct >= 50 ? "PARTIEL" : "ECHEC");
+        try{ls("ax_programmatic_click_test_last_result", report);}catch(_e){}
+        try{
+          var hist = lg("ax_programmatic_click_test_history",[]);
+          hist.push({ts:report.ts, v:report.v, verdict:report.verdict, total:report.total, click_received:report.click_received, handler_ran:report.handler_ran, overlay_blocking:report.overlay_blocking, top_fails:report.fails.slice(0,5)});
+          if(hist.length>20) hist = hist.slice(-20);
+          ls("ax_programmatic_click_test_history", hist);
+        }catch(_e){}
+        try{if(typeof fbWrite==="function"){fbWrite("ax_programmatic_click_test_last_result", report);}}catch(_e){}
+        /* Escalade systematique */
+        try{
+          var todo = lg("ax_claude_todo",[]);
+          todo.push({
+            id:"prog_click_test_"+Date.now(),
+            context:{verdict:report.verdict, coverage:report.coverage_pct, click_received:report.click_received_pct, overlays:report.overlays_detected.slice(0,10), top_fails:report.fails.slice(0,15)},
+            reason:"Apex programmatic click test "+report.verdict+" : "+report.handler_ran+"/"+report.total+" handlers run, "+report.overlay_blocking+" overlays bloquants",
+            severity:report.verdict==="ECHEC"?"critical":(report.verdict==="PARTIEL"?"warn":"info"),
+            src:"apex_programmatic_click",
+            v:report.v,
+            ts:Date.now(),
+            status:"pending"
+          });
+          if(todo.length>50) todo = todo.slice(-50);
+          ls("ax_claude_todo", todo);
+          if(typeof fbWrite === "function") fbWrite("ax_claude_todo", todo);
+        }catch(_e){}
+        /* GitHub Issue auto si ECHEC + token dispo */
+        try{
+          if(report.verdict === "ECHEC" && typeof axIsAdmin === "function" && axIsAdmin()){
+            var ghToken = lg("ax_github_token","") || lg("ax_gh_pat","");
+            if(ghToken && ghToken.indexOf("AXENC1")<0 && ghToken.length>20){
+              fetch("https://api.github.com/repos/9r4rxssx64-creator/cmcteams/issues",{
+                method:"POST",
+                headers:{"Authorization":"Bearer "+ghToken,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+                body:JSON.stringify({
+                  title:"[Programmatic Click Test ECHEC v"+report.v+"] "+report.coverage_pct+"% handlers run / "+report.overlay_blocking+" overlays",
+                  body:"```json\n"+JSON.stringify({verdict:report.verdict,coverage_pct:report.coverage_pct,click_received_pct:report.click_received_pct,total:report.total,handler_ran:report.handler_ran,overlay_blocking:report.overlay_blocking,overlays:report.overlays_detected.slice(0,10),top_fails:report.fails.slice(0,15)},null,2)+"\n```\n\nApex teste les boutons en autonomie. Claude Code : corriger les overlays bloquants ou handlers casses next session.",
+                  labels:["claude-code","auto-escalade","apex","clicks-broken"]
+                })
+              }).catch(function(){});
+            }
+          }
+        }catch(_e){}
+        resolve(report);
+      }catch(_e){resolve({ok:false, error:String(_e.message||_e)});}
+    }, 300);
+  });
+};
+
+/* Auto-trigger 60s post-login + chaque 1h */
+setTimeout(function(){
+  try{
+    if(window._axProgClickTestTriggered) return;
+    window._axProgClickTestTriggered = true;
+    if(window.K && window.K.user && window.K.user.role === "admin"){
+      window.axApexProgrammaticClickTest();
+    }
+  }catch(_e){}
+}, 60000);
+setInterval(function(){
+  try{
+    if(!window.K || !window.K.user || window.K.user.role !== "admin") return;
+    if(typeof window.axApexProgrammaticClickTest === "function") window.axApexProgrammaticClickTest();
+  }catch(_e){}
+}, 3600000);
 
 /* Auto-trigger : 30s post-login + apres chaque axForceRefresh + chaque heure */
 setTimeout(function(){
