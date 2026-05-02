@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.581";
+var APP_VER="v9.582";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -29751,10 +29751,10 @@ function vImport(){
     <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
       placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
       onpaste="setTimeout(function(){previewImport();},700)"></textarea>
-    <!-- v9.580 — Toggle force replace : essentiel quand on importe un nouveau planning v2 du même mois -->
+    <!-- v9.581 — Toggle force replace : OFF par defaut (safe). Kevin coche explicitement quand re-import v2 du meme mois. -->
     <label style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:rgba(224,152,72,.10);border:1px solid rgba(224,152,72,.35);border-radius:10px;cursor:pointer;user-select:none">
-      <input type="checkbox" id="impForceReplace" checked style="width:20px;height:20px;accent-color:#e09848;cursor:pointer;flex-shrink:0">
-      <span style="font-size:13px;color:#e09848;font-weight:700;line-height:1.4">🔄 Remplacer entièrement le mois sélectionné <span style="font-weight:normal;color:#a0cca0">— efface l'ancien planning avant d'importer le nouveau (recommandé pour PDF v2)</span></span>
+      <input type="checkbox" id="impForceReplace" style="width:20px;height:20px;accent-color:#e09848;cursor:pointer;flex-shrink:0">
+      <span style="font-size:13px;color:#e09848;font-weight:700;line-height:1.4">🔄 Remplacer entièrement le mois sélectionné <span style="font-weight:normal;color:#a0cca0">— à cocher uniquement si tu importes une <b>v2</b> et veux <b>effacer l'ancien planning</b> du même mois (sinon les corrections manuelles sont conservées)</span></span>
     </label>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn" onclick="previewImport()" style="flex:1;min-width:120px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.45);color:#8ab0e0;font-weight:700">
