@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.588";
+var APP_VER="v9.589";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8826,13 +8826,17 @@ function _updateFabVisibility(){var fab=document.getElementById("fab");if(!fab)r
   }catch(_){}
 })();
 // v9.170 — Confetti (succès marquants : congé approuvé, pointage sortie, etc.)
+// v9.589 (Kevin "pourquoi elle sautille pourquoi elle scintille pas normal") :
+// confetti DESACTIVES par defaut (creent reflows iPhone Safari = "sautille/scintille").
+// Re-activables via lg("cmc_confetti_enabled", false) -> true si Kevin veut les revoir.
 function confetti(n){
   try{
+    if(!lg("cmc_confetti_enabled",false))return; // v9.589 : OFF par defaut
     if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
     var layer=document.getElementById("confetti-layer");
     if(!layer){layer=document.createElement("div");layer.id="confetti-layer";document.body.appendChild(layer);}
     var colors=["#c9a227","#ffdc40","#5aaa70","#4a72a8","#c04080","#a060ff","#ff60a0"];
-    n=Math.min(n||50,120);
+    n=Math.min(n||50,60); // v9.589 : cap reduit 120 -> 60 (moins de particules = moins de reflows)
     for(var i=0;i<n;i++){
       var p=document.createElement("span");
       p.className="confetti-piece";
