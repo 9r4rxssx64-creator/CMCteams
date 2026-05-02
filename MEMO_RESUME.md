@@ -1,4 +1,97 @@
-# Mémo de reprise — Apex v12.442 + CMCteams v9.560 (session 2026-04-28 marathon 102+ versions)
+# Mémo de reprise — Apex v12.770 + CMCteams v9.580 (session 2026-05-02)
+
+## 🎯 SESSION 2026-05-02 (reprise depuis branche `claude/fix-apex-ai-bugs-adHfF` instable)
+
+### Contexte
+Kevin a basculé sur cette branche (`claude/test-699LQ`) parce que sur l'autre, je tournais en boucle sans répondre, parfois j'effaçais ses messages. Il a posé 3 questions dans ses captures d'écran :
+
+1. **CMCteams ne reconnaît plus son nouveau planning de mai v2** → "j'ai toujours la même équipe les mêmes horaires qu'avant" (problème étendu d'inspecteurs aux chefs/employés)
+2. **Apex** → "fais la meilleure solution pour du long terme professionnel entreprise" (refactor durable OU re-import progressif depuis presque 0)
+3. **Re-vérifier pourquoi import inspecteurs et le sien ne fonctionnent plus** (régression v9.509 cassée)
+
+### Fixes pushés cette session
+
+#### CMCteams v9.580 — fix import critique (Kevin priorité 1)
+**Root cause #1** : `_gplCache` non invalidé quand cmc_ov/cmc_e arrivent via Firebase SSE → vues affichaient ancien planning même après nouvel import (cache stale).
+**Root cause #2** : `A.overrides[key]` préservé sur re-import → seuls les employés "touched" par parser étaient wipés, les autres gardaient leurs vieilles données.
+
+**Fixes appliqués** :
+- `fbApplyData("cmc_ov" / "cmc_e")` → `gplInvalidate()` après réception SSE
+- `doImport` → toggle UI "🔄 Remplacer entièrement le mois" (checked par défaut) → wipe `A.overrides[key]` + `cmc_verif_key` AVANT parse quand activé
+- Bumped APP_VER + sw.js CACHE → v9.580 (sync forcée SW iPhone)
+
+Commit `4c46df8`, push `claude/test-699LQ` → auto-merge main → GitHub Pages deploy.
+
+#### Apex v12.770 — état actuel (rollback Kevin lui-même avant cette session)
+v12.769-770 = ROLLBACK des 4 sentinelles loops + listeners parasites + auto-fix toasts. Garde uniquement onclick HTML natifs. Stable mais minimaliste.
+
+**3.3 MB inline JS, 633 setInterval/setTimeout, 1 bloc script monolithe.**
+
+Les 4 sentinelles désactivées :
+- L19215 : credentials watch 5min
+- L27521 : ULTRA storage 5min
+- L27580 : audit boutons 30min
+- L36512 : autoAccept 5s → réduit à 2× boot
+
+---
+
+## 🏗 PLAN STRATÉGIQUE APEX — REFACTOR ES6 PROGRESSIF (multi-sessions)
+
+> Kevin demande "professionnel entreprise" mais sans loops/scintille/saccade. Le monolithe 3.3 MB est la racine du problème. Les 9 modules ES6 existent (`apex-ai/modules/*.js`, 1261 LOC) mais sont parallèles au monolithe (pas en remplacement).
+
+### Principes
+
+1. **Jamais casser le running** : chaque commit = app reste fonctionnelle
+2. **Migration UNIDIRECTIONNELLE** : monolithe → modules, jamais l'inverse
+3. **Backward-compat via window.\*** : pendant la migration, modules exposent leurs exports sur `window` pour que les call sites legacy fonctionnent
+4. **1 catégorie / commit** : ne pas mélanger plusieurs migrations (revert facile)
+5. **Tests obligatoires** : `node --check` + chargement manuel iPhone Safari après chaque commit
+6. **Pas de nouvelle feature** pendant la migration : freeze sur features tant que pas refactor terminé
+
+### Catégories à extraire (par ordre de priorité)
+
+| # | Module cible | LOC estimée | Risque | Pourquoi prioritaire |
+|---|--------------|-------------|--------|----------------------|
+| 1 | `audit-log.js` (silentLog, securityLog, bodyguardLog, errLog) | ~300 | Faible | Pure functions, appelées partout |
+| 2 | `storage.js` (étendre — ls/lg/lzCompress/IDB shadow) | ~400 | Faible | Module existe (133 LOC) |
+| 3 | `crypto.js` (étendre crypto-vault.js — encrypt/decrypt/PBKDF2) | ~250 | Faible | Existe (113 LOC) |
+| 4 | `firebase-sync.js` (fbInit, fbWrite, fbApplyData, FB_FIX, FB_LOCAL) | ~500 | Moyen | Cœur sync cross-device |
+| 5 | `ai-router.js` (callClaude, failover, providers) | ~600 | Moyen | Étendre ai-providers.js |
+| 6 | `ui-views.js` (vChat, vChatLite, vDashboard) | ~800 | Élevé | Logique vue + DOM |
+| 7 | `auth.js` (login, PIN, FaceID, viewAs) | ~400 | Moyen | Sensible sécurité |
+| 8 | `vault.js` (Coffre, encrypt/decrypt secrets) | ~300 | Faible | Partiel dans crypto-vault.js |
+| 9 | `intent-router.js` (axDetectIntent, AX_EXEC_INTENTS) | ~250 | Faible | Pure logic |
+| 10 | `tools-catalog.js` (TOOLS_CATALOG, axOpenStudio) | ~200 | Faible | Pure data |
+
+**Total estimé : 4000 LOC migrées → réduction monolithe ~65 KB minified.**
+
+### Sessions estimées
+
+- **Session 1** (3-4h) : audit-log.js + storage.js extension
+- **Session 2** (3-4h) : crypto.js + vault.js
+- **Session 3** (4-5h) : firebase-sync.js (le plus risqué)
+- **Session 4** (4-5h) : ai-router.js + intent-router.js
+- **Session 5** (3-4h) : auth.js + tools-catalog.js
+- **Session 6** (5-6h) : ui-views.js (le plus gros)
+- **Session 7** (2-3h) : verification + audit + cleanup
+
+**Total : ~25-30h sur 7 sessions = 1-2 semaines focalisées.**
+
+### Garde-fous obligatoires
+
+1. **Avant chaque commit** : `node --check` sur extraction JS combinée + `wc -l apex-ai/index.html` (doit décroître)
+2. **Test iPhone Safari PWA** par Kevin après chaque session
+3. **Sentinelle GitHub Action** : `sw-cache-sync.yml` rattrape drift CACHE_VERSION
+4. **PR auto-merge** : `auto-merge-claude.yml` merge claude/* → main
+
+### Recommandation
+
+**Refactor progressif (option A)** plutôt que rebuild from scratch (option B) :
+- ZÉRO risque de perdre features
+- Kevin teste à chaque étape sur iPhone réel
+- Revert facile si problème
+
+---
 
 ## 🔬 AUDIT EXTERNE INDÉPENDANT 2026-04-28 (Senior Security/Quality Architect)
 
