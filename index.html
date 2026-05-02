@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.592";
+var APP_VER="v9.593";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30725,24 +30725,17 @@ function _parseEncadresStatuts(txt, key, year, month){
   if(!txt||typeof txt!=="string")return {filled:0,unassigned:[]};
   var pl=A.overrides[key]||{};
   var days=getDays(year,month);
-  // Dict mots-cles -> code applique
-  var KEYWORD_CODE_MAP=[
-    {kw:/\bFORMATION\b/i,code:"AF",label:"Formation"},
-    {kw:/\bSEMINAIRE\b/i,code:"AF",label:"Séminaire"},
-    {kw:/\bAF\b/,code:"AF",label:"AF (formation/seminaire)"},
-    {kw:/\b(?:CP|CONGE\s*PAY[EÉ])\b/i,code:"CP",label:"Congés payés"},
-    {kw:/\bRECUP\b/i,code:"RH",label:"Récup"},
-    {kw:/\bMALADIE\b/i,code:"M",label:"Maladie"},
-    {kw:/\bACCIDENT\b/i,code:"AT",label:"Accident travail"},
-    {kw:/\bABSENCE\b/i,code:"ABS",label:"Absence"},
-    {kw:/\bPATERNITE\b/i,code:"PAT",label:"Paternité"},
-    {kw:/\bMATERNITE\b/i,code:"PAT",label:"Maternité"},
-    {kw:/\bRETRAIT/i,code:"R",label:"Retraite (à valider)"},
-    {kw:/\bAMENAG/i,code:"PAT",label:"Aménagé"}
-  ];
+  // v9.593 (Kevin "se referer aux dossiers + ne pas inventer + reproduire identique au PDF")
+  // Format encadres SBM (NOTES_USER ligne 86-112) :
+  //   Nom employe + code competences (.BRT, .BRTP, etc.)
+  //   Code etat plein periode : CP, AF, M / MAL, SS, ABI, AT, PAT, CFL
+  //   Periode "du X au Y" (ex: "1 au 31" = plein mois)
+  // -> on CHERCHE les codes courts officiels SBM dans le contexte autour du nom,
+  //    PAS les mots francais longs. Et on detecte la periode pour appliquer
+  //    UNIQUEMENT aux jours indiques (pas tout le mois automatiquement).
+  var SBM_STATUS_CODES=["CP","AF","M","MAL","SS","ABI","AT","PAT","CFL","CRH","CDP"];
   var txtUpper=txt.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
   var filled=0,unassigned=[];
-  // Employes actifs sans aucun code pour ce mois
   var emptyEmps=A.employees.filter(function(emp){
     if(!isEmpActive(emp,year,month))return false;
     var row=pl[emp.id]||{};
@@ -30750,39 +30743,53 @@ function _parseEncadresStatuts(txt, key, year, month){
   });
   emptyEmps.forEach(function(emp){
     var nm=(emp.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-    if(!nm)return;
+    if(!nm){unassigned.push({id:emp.id,name:emp.name,reason:"name_empty"});return;}
     var toks=nm.split(/\s+/).filter(function(t){return t.length>=3;});
     if(!toks.length){unassigned.push({id:emp.id,name:emp.name,reason:"name_too_short"});return;}
-    // Trouver index du nom dans le PDF (token principal = NOM de famille = toks[0])
-    var idx=txtUpper.indexOf(toks[0]);
-    if(idx<0){unassigned.push({id:emp.id,name:emp.name,reason:"name_not_in_pdf"});return;}
-    // Contexte : 200 chars avant + 200 chars apres le nom
-    var context=txtUpper.slice(Math.max(0,idx-200),Math.min(txtUpper.length,idx+200+nm.length));
-    // Detecter le mot-cle status le plus proche
-    var detectedCode=null,detectedLabel=null;
-    for(var ki=0;ki<KEYWORD_CODE_MAP.length;ki++){
-      if(KEYWORD_CODE_MAP[ki].kw.test(context)){
-        detectedCode=KEYWORD_CODE_MAP[ki].code;
-        detectedLabel=KEYWORD_CODE_MAP[ki].label;
-        break;
-      }
+    // Pour reduire faux match : chercher TOUS les tokens (NOM + initiale) consecutifs
+    var nmEsc=nm.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    var nmRe=new RegExp("\\b"+nmEsc+"\\b");
+    var nmM=nmRe.exec(txtUpper);
+    if(!nmM){
+      // fallback : nom de famille seul
+      var snEsc=toks[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+      nmM=(new RegExp("\\b"+snEsc+"\\b")).exec(txtUpper);
+      if(!nmM){unassigned.push({id:emp.id,name:emp.name,reason:"name_not_in_pdf"});return;}
+    }
+    var idx=nmM.index;
+    // Contexte 100 chars apres le nom (le code statut suit le nom typiquement)
+    var ctx=txtUpper.slice(idx,Math.min(txtUpper.length,idx+150));
+    // Chercher un code officiel SBM apres le nom
+    var detectedCode=null;
+    for(var ci=0;ci<SBM_STATUS_CODES.length;ci++){
+      var codeRe=new RegExp("\\b"+SBM_STATUS_CODES[ci]+"\\b");
+      if(codeRe.test(ctx)){detectedCode=SBM_STATUS_CODES[ci];break;}
     }
     if(!detectedCode){
-      unassigned.push({id:emp.id,name:emp.name,reason:"no_status_keyword_near"});
+      unassigned.push({id:emp.id,name:emp.name,reason:"no_sbm_code_near"});
       return;
     }
-    // Verifier que le code existe dans CODES (sinon learn it)
+    // Detecter periode "DU X AU Y" ou "X AU Y" ou "1 31"
+    // Si trouve : appliquer aux jours X..Y. Sinon : appliquer tout le mois.
+    var periodMatch=ctx.match(/\b(?:DU\s+)?(\d{1,2})\s+(?:AU\s+)?(\d{1,2})\b/);
+    var fromDay=1,toDay=days;
+    if(periodMatch){
+      var pf=parseInt(periodMatch[1]),pt=parseInt(periodMatch[2]);
+      if(pf>=1&&pf<=31&&pt>=1&&pt<=31&&pf<=pt){
+        fromDay=pf;toDay=Math.min(pt,days);
+      }
+    }
+    // Verifier le code dans CODES (apprendre si manquant)
     if(!CODES[detectedCode]&&typeof learnNewCode==="function"){
       try{learnNewCode(detectedCode);}catch(_){}
     }
-    // Remplir TOUS les jours du mois avec ce code
     if(!A.overrides[key])A.overrides[key]={};
     if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
-    for(var d=1;d<=days;d++){
+    for(var d=fromDay;d<=toDay;d++){
       A.overrides[key][emp.id][d]=detectedCode;
     }
     filled++;
-    console.info("[encadres v9.588] "+emp.name+" -> "+detectedCode+" ("+detectedLabel+")");
+    console.info("[encadres v9.593] "+emp.name+" -> "+detectedCode+" jours "+fromDay+"-"+toDay);
   });
   return {filled:filled,unassigned:unassigned};
 }
