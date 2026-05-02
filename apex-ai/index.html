@@ -1185,7 +1185,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.752",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.753",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -31673,7 +31673,117 @@ window.AX_CREDENTIAL_PREFIXES = {
   "co-": "ax_cohere_key",
   "pplx-": "ax_perplexity_key",
   "NY9CV": "ax_cohere_key",
-  "E5aZZ": "ax_mistral_key"
+  "E5aZZ": "ax_mistral_key",
+  "re_": "ax_resend_key",
+  "xkeysib-": "ax_brevo_key",
+  "r8_": "ax_replicate_key",
+  "hf_": "ax_huggingface_key",
+  "secret_": "ax_notion_key",
+  "pat": "ax_airtable_pat",
+  "xoxb-": "ax_slack_bot",
+  "xoxp-": "ax_slack_user",
+  "AKIA": "ax_aws_key",
+  "pk_live_": "ax_stripe_pub",
+  "pk_test_": "ax_stripe_test_pk",
+  "sk_live_": "ax_stripe_secret",
+  "sk_test_": "ax_stripe_test_sk"
+};
+
+/* v12.753 axAutoIdentifyCredential : pattern detection complete pour Kevin "reconnaissance auto codes" */
+window.axAutoIdentifyCredential = function(value){
+  if(!value || typeof value !== "string") return null;
+  var v = String(value).trim().replace(/^["']|["']$/g,"");
+  /* Match prefix table */
+  for(var prefix in window.AX_CREDENTIAL_PREFIXES){
+    if(v.indexOf(prefix) === 0){
+      var correctKey = window.AX_CREDENTIAL_PREFIXES[prefix];
+      var serviceMap = {
+        "ax_api_key":{service:"anthropic",dashboard:"https://console.anthropic.com",docs:"https://docs.anthropic.com",billing:"https://console.anthropic.com/settings/billing"},
+        "ax_openai_key":{service:"openai",dashboard:"https://platform.openai.com",docs:"https://platform.openai.com/docs",billing:"https://platform.openai.com/account/billing"},
+        "ax_groq_key":{service:"groq",dashboard:"https://console.groq.com",docs:"https://console.groq.com/docs",billing:"https://console.groq.com/settings/billing"},
+        "ax_gemini_key":{service:"gemini",dashboard:"https://aistudio.google.com",docs:"https://ai.google.dev/docs",billing:"https://console.cloud.google.com/billing"},
+        "ax_xai_grok_key":{service:"xai",dashboard:"https://console.x.ai",docs:"https://docs.x.ai",billing:"https://console.x.ai/team/default/billing"},
+        "ax_openrouter_key":{service:"openrouter",dashboard:"https://openrouter.ai",docs:"https://openrouter.ai/docs",billing:"https://openrouter.ai/credits"},
+        "ax_github_token":{service:"github",dashboard:"https://github.com/settings/tokens",docs:"https://docs.github.com",billing:"https://github.com/settings/billing"},
+        "ax_resend_key":{service:"resend",dashboard:"https://resend.com",docs:"https://resend.com/docs",billing:"https://resend.com/settings/billing"},
+        "ax_brevo_key":{service:"brevo",dashboard:"https://app.brevo.com",docs:"https://developers.brevo.com",billing:"https://app.brevo.com/billing/account"},
+        "ax_stripe_pub":{service:"stripe",dashboard:"https://dashboard.stripe.com",docs:"https://stripe.com/docs/api",billing:"https://dashboard.stripe.com/account/billing"},
+        "ax_stripe_secret":{service:"stripe",dashboard:"https://dashboard.stripe.com",docs:"https://stripe.com/docs/api",billing:"https://dashboard.stripe.com/account/billing"}
+      };
+      var meta = serviceMap[correctKey] || {service:correctKey.replace(/^ax_/,"").replace(/_key$/,""),dashboard:null,docs:null,billing:null};
+      return {
+        type:"api_key",
+        service:meta.service,
+        prefix:prefix,
+        correctKey:correctKey,
+        dashboard_url:meta.dashboard,
+        docs_url:meta.docs,
+        billing_url:meta.billing,
+        value_preview:v.slice(0,4)+"..."+v.slice(-4),
+        confidence:0.95
+      };
+    }
+  }
+  /* Patterns non-prefixes */
+  if(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)) return {type:"email",value:v,confidence:1.0};
+  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(v.replace(/\s/g,""))) return {type:"iban",value:v,confidence:0.95};
+  if(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(v)) return {type:"btc_address",value:v,confidence:0.95};
+  if(/^0x[a-fA-F0-9]{40}$/.test(v)) return {type:"eth_address",value:v,confidence:0.95};
+  if(/^\d{8,}:[A-Za-z0-9_-]{35}$/.test(v)) return {type:"telegram_token",service:"telegram",correctKey:"ax_telegram_token",confidence:0.95};
+  return null;
+};
+
+/* axAutoTestCredential : valide une cle via API ping (proxy CORS-aware) */
+window.axAutoTestCredential = function(detected, value){
+  return new Promise(function(resolve){
+    if(!detected || !detected.correctKey){return resolve({ok:false,msg:"unknown_type"});}
+    var k = detected.correctKey;
+    if(typeof axCredTestLive === "function"){
+      try{
+        /* axCredTestLive prend la cle stockee dans localStorage. On la stocke temporairement. */
+        var prev = localStorage.getItem(k);
+        try{localStorage.setItem(k, value);}catch(_e){}
+        axCredTestLive(k).then(function(r){
+          if(prev !== null && r && !r.ok) try{localStorage.setItem(k, prev);}catch(_e){}
+          resolve(r||{ok:false,msg:"no_result"});
+        }).catch(function(e){resolve({ok:false,msg:String(e&&e.message||e)});});
+      }catch(_e){resolve({ok:false,msg:"test_throw"});}
+    } else { resolve({ok:false,msg:"no_test_helper"}); }
+  });
+};
+
+/* axAutoEnrichCredential : orchestrate identify -> store -> test -> link en 1 call */
+window.axAutoEnrichCredential = async function(value){
+  var detected = window.axAutoIdentifyCredential(value);
+  if(!detected){return {ok:false, reason:"unknown_format"};}
+  var result = {detected:detected, stored:false, tested:null, linked:null};
+  /* Store */
+  if(detected.correctKey){
+    try{
+      ls(detected.correctKey, value);
+      result.stored = true;
+      if(typeof axSecurityLog === "function") axSecurityLog("credential_auto_stored", detected.service+" -> "+detected.correctKey);
+    }catch(_e){}
+  }
+  /* Test live (CORS-safe via proxy si dispo) */
+  if(detected.correctKey){
+    try{result.tested = await window.axAutoTestCredential(detected, value);}catch(_e){result.tested={ok:false,msg:"test_failed"};}
+  }
+  /* Auto-link services dans AX_OFFICIAL_LINKS */
+  if(detected.service && typeof window.axLinksAutoCreate === "function"){
+    try{
+      result.linked = await window.axLinksAutoCreate(detected.service, {
+        dashboard: detected.dashboard_url,
+        docs: detected.docs_url,
+        billing: detected.billing_url
+      });
+    }catch(_e){}
+  }
+  if(typeof toast === "function"){
+    if(result.tested && result.tested.ok) toast("✅ "+detected.service+" reconnu + valide + lie","ok",{duration:4000});
+    else if(result.stored) toast("✅ "+detected.service+" stocke (test impossible CORS)","info",{duration:3000});
+  }
+  return result;
 };
 
 window.axDetectCredentialMismatch = function(value, currentKey){
