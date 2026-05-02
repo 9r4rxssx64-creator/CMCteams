@@ -1304,7 +1304,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.776",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.778",ADMIN_ID="kdmc_admin";
 /* v12.774 (parite CMCteams v9.591) - force update au boot : compare APP_VER local
    vs serveur. Si different -> clear caches + unregister SW + reload force.
    Independant du SW updatefound (unreliable iOS Safari PWA).
@@ -1322,8 +1322,8 @@ var APP_VER = "v12.776",ADMIN_ID="kdmc_admin";
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.776"){
-            console.info("[v12.776 force-update] local=v12.776 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.778"){
+            console.info("[v12.778 force-update] local=v12.778 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
@@ -2344,6 +2344,149 @@ function _toastNext(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=tr
 // --- Firebase ---
 function fbShouldSync(k){if(!k)return false;if(FB_LOCAL.indexOf(k)>=0)return false;/* v12.298 - Bloque prefix FB_LOCAL_PREFIXES (settings, theme, streak per-user) AVANT toute logique de sync */if(typeof FB_LOCAL_PREFIXES!=="undefined"&&FB_LOCAL_PREFIXES&&FB_LOCAL_PREFIXES.length){for(var pi=0;pi<FB_LOCAL_PREFIXES.length;pi++){if(k.indexOf(FB_LOCAL_PREFIXES[pi])===0)return false;}}for(var i=0;i<FB_FIX.length;i++){if(k===FB_FIX[i])return true;if(k.indexOf(FB_FIX[i]+"_")===0)return true;}for(var i=0;i<FB_PRE.length;i++)if(k.indexOf(FB_PRE[i])===0)return true;return false;}
 function fbSanitizeKey(k){return k.replace(/\./g,"_dot_");}
+/* v12.777 (Kevin "fais et fais faire a Apex tout ce que tu me demandes") :
+   AUTO-HEAL boot - migrate plain key from ax_shared_api_key vers ax_api_key
+   si ax_api_key encrypted. Apex se repare seul, Kevin n'a rien a toucher.
+   Tourne au boot 1s + au focus (revient sur app). */
+function _axAutoHealApiKeyOnBoot(){
+  try{
+    var raw=localStorage.getItem("ax_api_key")||"";
+    var rawClean=raw.replace(/^"|"$/g,"");
+    var isEnc=rawClean.indexOf("AXENC1:")===0||rawClean.indexOf("__AXENC1__")===0;
+    var isPlain=rawClean.indexOf("sk-ant-")===0;
+    /* Si deja plain : rien a faire */
+    if(isPlain)return false;
+    /* Si encrypted : essayer decrypt avec passphrase + fallback shared */
+    var sharedRaw=localStorage.getItem("ax_shared_api_key")||"";
+    if(sharedRaw){
+      var sharedClean=sharedRaw;
+      try{var p=JSON.parse(sharedRaw);if(typeof p==="string")sharedClean=p;}catch(_){}
+      sharedClean=String(sharedClean).replace(/^"|"$/g,"");
+      if(sharedClean&&sharedClean.indexOf("sk-ant-")===0){
+        /* Plain dispo dans shared : auto-heal ax_api_key */
+        try{
+          localStorage.setItem("ax_api_key",sharedClean);
+          window._axDecryptedAnthropicKey=sharedClean;
+          if(typeof axSecurityLog==="function")axSecurityLog("auto_heal_apikey","plain shared->ax_api_key migrated");
+          if(typeof axJournalEntry==="function")axJournalEntry("apex-ai","Auto-heal API key","Boot detect ax_api_key encrypted","Fallback ax_shared_api_key plain","Cle plain migrate vers ax_api_key","v12.777 auto-heal boot");
+          return true;
+        }catch(_e){}
+      }
+    }
+    /* Pas de shared plain dispo -> trigger async decrypt si possible */
+    if(isEnc&&typeof _axDecryptSecret==="function"){
+      _axDecryptSecret(rawClean).then(function(plain){
+        if(plain&&plain.indexOf("sk-ant-")===0){
+          try{
+            localStorage.setItem("ax_api_key",plain);
+            window._axDecryptedAnthropicKey=plain;
+            if(typeof axSecurityLog==="function")axSecurityLog("auto_heal_apikey","async decrypt success");
+          }catch(_){}
+        }
+      }).catch(function(){});
+    }
+    return false;
+  }catch(_e){return false;}
+}
+/* Run boot 1s + visibility change (revient app apres switch tab/sleep) */
+try{setTimeout(_axAutoHealApiKeyOnBoot,1000);}catch(_){}
+try{document.addEventListener("visibilitychange",function(){if(!document.hidden){_axAutoHealApiKeyOnBoot();}});}catch(_){}
+
+/* v12.778 (Kevin "ce ne sont pas les bonnes cles qui sont collees, verifie") :
+   AUTO-DISPATCH des cles dans le bon slot. Decrypt chaque AXENC1 + detecte le
+   provider reel via prefixe + migre vers le bon slot si mismatched.
+   Apex repare ses propres erreurs de dispatch sans demander Kevin. */
+function _axAutoLocateApiKeys(){
+  try{
+    /* Mapping prefix plain -> slot canonique */
+    var SLOT_BY_PREFIX=[
+      {prefix:"sk-ant-",slot:"ax_api_key",name:"Anthropic"},
+      {prefix:"sk-or-",slot:"ax_openrouter_key",name:"OpenRouter"},
+      {prefix:"AIza",slot:"ax_gemini_key",name:"Gemini"},
+      {prefix:"gsk_",slot:"ax_groq_key",name:"Groq"},
+      {prefix:"xai-",slot:"ax_xai_grok_key",name:"xAI"},
+      {prefix:"co-",slot:"ax_cohere_key",name:"Cohere"},
+      {prefix:"pplx-",slot:"ax_perplexity_key",name:"Perplexity"},
+      {prefix:"r8_",slot:"ax_replicate_key",name:"Replicate"},
+      {prefix:"hf_",slot:"ax_huggingface_key",name:"HuggingFace"},
+      {prefix:"re_",slot:"ax_resend_key",name:"Resend"},
+      {prefix:"xkeysib-",slot:"ax_brevo_key",name:"Brevo"},
+      {prefix:"ghp_",slot:"ax_github_token",name:"GitHub"},
+      {prefix:"github_pat_",slot:"ax_gh_pat",name:"GitHub PAT"},
+      {prefix:"sk-",slot:"ax_openai_key",name:"OpenAI"} /* APRES sk-ant et sk-or */
+    ];
+    /* Slots a auditer (cles IA seulement) */
+    var KEY_SLOTS=["ax_api_key","ax_openai_key","ax_gemini_key","ax_groq_key","ax_cohere_key","ax_mistral_key","ax_deepseek_key","ax_perplexity_key","ax_openrouter_key","ax_xai_grok_key","ax_xai_key"];
+    function detectSlot(plain){
+      if(!plain||typeof plain!=="string")return null;
+      for(var i=0;i<SLOT_BY_PREFIX.length;i++){
+        if(plain.indexOf(SLOT_BY_PREFIX[i].prefix)===0)return SLOT_BY_PREFIX[i];
+      }
+      return null;
+    }
+    var migrations=[];
+    var promises=[];
+    KEY_SLOTS.forEach(function(currentSlot){
+      var raw=localStorage.getItem(currentSlot);
+      if(!raw)return;
+      var clean=raw.replace(/^"|"$/g,"");
+      try{var p=JSON.parse(clean);if(typeof p==="string")clean=p;}catch(_){}
+      clean=String(clean).replace(/^"|"$/g,"");
+      var isEnc=clean.indexOf("AXENC1:")===0||clean.indexOf("__AXENC1__")===0;
+      if(isEnc){
+        if(typeof _axDecryptSecret!=="function")return;
+        promises.push(_axDecryptSecret(clean).then(function(plain){
+          if(!plain||typeof plain!=="string")return;
+          var detected=detectSlot(plain);
+          if(detected&&detected.slot!==currentSlot){
+            /* MISMATCH ! La cle decryptee correspond a un autre slot */
+            migrations.push({from:currentSlot,to:detected.slot,name:detected.name,plainPreview:plain.slice(0,8)+"..."});
+            try{
+              localStorage.setItem(detected.slot,plain);
+              /* Effacer le slot d'origine SEULEMENT si vide ou pas de mismatch deja fait */
+              localStorage.removeItem(currentSlot);
+              if(typeof axSecurityLog==="function")axSecurityLog("auto_locate_apikey","migrated "+currentSlot+" -> "+detected.slot+" (detected: "+detected.name+")");
+            }catch(_){}
+          }
+        }).catch(function(){}));
+      }else{
+        /* Plain visible : verifier si match le slot */
+        var detected=detectSlot(clean);
+        if(detected&&detected.slot!==currentSlot){
+          migrations.push({from:currentSlot,to:detected.slot,name:detected.name,plainPreview:clean.slice(0,8)+"..."});
+          try{
+            localStorage.setItem(detected.slot,clean);
+            localStorage.removeItem(currentSlot);
+            if(typeof axSecurityLog==="function")axSecurityLog("auto_locate_apikey","migrated plain "+currentSlot+" -> "+detected.slot);
+          }catch(_){}
+        }
+      }
+    });
+    /* Attendre fin des decryptions, afficher resume si migrations */
+    Promise.all(promises).then(function(){
+      if(migrations.length>0){
+        try{
+          if(typeof toast==="function"&&typeof axIsAdmin==="function"&&axIsAdmin()){
+            toast("✨ "+migrations.length+" cle(s) auto-deplace(s) au bon slot (Apex auto-fix)","ok",{duration:5000,force:true});
+          }
+          if(typeof axJournalEntry==="function"){
+            axJournalEntry("apex-ai","Auto-locate API keys",
+              migrations.length+" cles mal placees detectees",
+              "Decrypt + detect prefix + migrate to canonical slot",
+              migrations.map(function(m){return m.from+"->"+m.to+" ("+m.name+")";}).join(", "),
+              "v12.778 dispatch auto cles, plus de mismatch slot");
+          }
+          if(typeof dc==="function")dc();
+        }catch(_){}
+      }
+    });
+    return migrations.length;
+  }catch(_e){return 0;}
+}
+/* Run boot 2s (apres _axAutoHealApiKeyOnBoot) + sur demand console */
+try{setTimeout(_axAutoLocateApiKeys,2000);}catch(_){}
+window._axAutoLocateApiKeys=_axAutoLocateApiKeys;
+
 function fbInit(){FB_URL=(localStorage.getItem("ax_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");if(!FB_URL)return;/* AX_FB_DEFER_V12_416 */setTimeout(function(){try{fbLoadAll();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1934",_e);}catch(__){}}try{fbStartListening();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}},100);/* v12.377 — Sentinelle boot : warn si aucune cle failover IA (anti-coupure jeudi) */
 try{setTimeout(function(){if(typeof axIsAdmin==='function'&&axIsAdmin()){var hOR=lg('ax_openrouter_key','').length>10;var hG=lg('ax_groq_key','').length>10;var hGm=lg('ax_gemini_key','').length>10;if(!hOR&&!hG&&!hGm){if(typeof toast==='function')toast('Aucune cle IA de secours. Si Anthropic tombe, ajoute Groq (gratuit) dans le Coffre.','warn',{force:true,duration:8000});}}},4000);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1935",_e);}catch(__){}}
 /* v12.180 - Auto-restore Coffre si admin et localStorage vide pour cles critiques */try{setTimeout(function(){if(typeof axIsAdmin==="function"&&axIsAdmin()){var critical=["ax_api_key","ax_gemini_key","ax_groq_key","ax_mistral_key","ax_deepseek_key","ax_finnhub_key","ax_paypal_me"];var emptyCount=critical.filter(function(k){return!localStorage.getItem(k);}).length;if(emptyCount>=2){console.log('[BOOT] '+emptyCount+'/'+critical.length+' cles vides, restore Firebase auto...');fbLoadAll();setTimeout(function(){var stillEmpty=critical.filter(function(k){return!localStorage.getItem(k);}).length;if(stillEmpty===emptyCount&&typeof toast==="function")toast("Aucune cle dans Firebase. Saisis-les dans Coffre, elles seront sauvegardees auto cette fois.","warn",{force:true,duration:8000});else if(stillEmpty<emptyCount&&typeof toast==="function")toast("\u2705 "+(emptyCount-stillEmpty)+" cles restaurees depuis Firebase","ok",{force:true});},2000);}}},2500);}catch(_e){_axSafeCatch("fb-init",_e);}}
