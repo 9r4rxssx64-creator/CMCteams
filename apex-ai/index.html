@@ -1293,7 +1293,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.766",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.767",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -4046,13 +4046,19 @@ function axSpotlightSearch(query){
       if(it.type === "view") click = "function(){axCloseSpotlight();if(typeof sv===\"function\")sv(\""+i.view+"\");}";
       else if(it.type === "action") click = "function(){axCloseSpotlight();("+i.onClick+")();}";
       else if(it.type === "link") click = "function(){axCloseSpotlight();axOpenOfficialLink(\""+i.linkId+"\");}";
-      else if(it.type === "conv") click = "function(){axCloseSpotlight();if(typeof axOpenConversation===\"function\")axOpenConversation(\""+i.convId+"\");else if(typeof sv===\"function\")sv(\"chat\");}";
-      else if(it.type === "template") click = "function(){axCloseSpotlight();if(typeof axUseTemplate===\"function\")axUseTemplate(\""+i.cat+"\","+i.idx+");}";
+      if(it.type === "view") click = "function(){axCloseSpotlight();if(typeof sv==='function')sv('"+i.view+"');}";
+      else if(it.type === "action") click = "function(){axCloseSpotlight();("+i.onClick+")();}";
+      else if(it.type === "link") click = "function(){axCloseSpotlight();axOpenOfficialLink('"+i.linkId+"');}";
+      else if(it.type === "conv") click = "function(){axCloseSpotlight();if(typeof axOpenConversation==='function')axOpenConversation('"+i.convId+"');else if(typeof sv==='function')sv('chat');}";
+      else if(it.type === "template") click = "function(){axCloseSpotlight();if(typeof axUseTemplate==='function')axUseTemplate('"+i.cat+"',"+i.idx+");}";
       else click = "function(){axCloseSpotlight();}";
       var firstAttr = !firstSet ? ' data-spotlight-first="1"' : '';
       firstSet = true;
       var color = i.danger ? "#ff5858" : "#fff";
-      html += '<div role="button" tabindex="0"'+firstAttr+' onclick="('+click+')();" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;color:'+color+';transition:background .12s" onmouseover="this.style.background=&quot;rgba(232,184,48,.12)&quot;" onmouseout="this.style.background=&quot;transparent&quot;">'+
+      /* v12.767 Kevin "spotlight liens marchent pas" : escape onclick attribute valeur via &quot; pour pas casser HTML */
+      var safeClick = "("+click+")();";
+      safeClick = safeClick.replace(/"/g, "&quot;");
+      html += '<div role="button" tabindex="0"'+firstAttr+' onclick="'+safeClick+'" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;color:'+color+';transition:background .12s">'+
         '<span style="font-size:18px;width:24px;text-align:center">'+(i.icon||"&middot;")+'</span>'+
         '<span style="flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.label||"")+'</span>'+
         '<span style="color:var(--ax-text-dim);font-size:16px">&rsaquo;</span>'+
@@ -36531,7 +36537,10 @@ setTimeout(function(){
   window._axDebugPanelInstalled = true;
   function _axDebugIsOn(){
     try{
+      if(window.__axDebugOff === true) return false; /* off explicit */
       if(window.__axDebugOn === true) return true;
+      /* v12.767 Kevin "rien marche" : force ON pour admin tant que Kevin diagnostique */
+      if(window.K && window.K.user && window.K.user.role === "admin") return true;
       var fails = lg("ax_click_failures",[]);
       var recent = fails.filter(function(f){return f.ts && (Date.now()-f.ts)<60000;});
       return recent.length >= 5;
@@ -36554,18 +36563,30 @@ setTimeout(function(){
       var lastClick = window._axDebugLastClick || {};
       var lastErr = (lg("ax_err_log",[])||[])[0] || {};
       var fails = (lg("ax_click_failures",[])||[]).filter(function(f){return f.ts && (Date.now()-f.ts)<60000;}).length;
-      var html = '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><strong style="color:#ff5858">DEBUG</strong><span onclick="window.__axDebugOn=false;document.getElementById(\'ax-debug-panel\').remove()" style="cursor:pointer;color:#fff">×</span></div>';
-      html += '<div>view: '+(K&&K.view||"?")+' / streaming: '+(K&&K.isStreaming?"ON":"off")+'</div>';
+      var counters = window._axDebugCounters || {};
+      var html = '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><strong style="color:#ff5858">DEBUG v'+(typeof APP_VER!=="undefined"?APP_VER:"?")+'</strong><span onclick="window.__axDebugOff=true;document.getElementById(\'ax-debug-panel\').remove()" style="cursor:pointer;color:#fff;padding:0 4px">×</span></div>';
+      html += '<div>view: <b>'+(K&&K.view||"?")+'</b> / stream: '+(K&&K.isStreaming?"<b style=color:red>ON</b>":"off")+'</div>';
+      html += '<div>events: touch='+(counters.touch||0)+' click='+(counters.click||0)+'</div>';
       html += '<div>fails 60s: '+fails+'</div>';
-      if(lastClick.label) html += '<div>click: '+esc(String(lastClick.label).slice(0,30))+' / '+esc(String(lastClick.tag||"?"))+'</div>';
-      if(lastClick.onclickFn) html += '<div>fn: '+esc(String(lastClick.onclickFn).slice(0,40))+' '+(lastClick.fnExists?"✓":"✗MISSING")+'</div>';
-      if(lastErr.msg) html += '<div style="color:#ffaa3a">err: '+esc(String(lastErr.msg).slice(0,80))+'</div>';
+      if(lastClick.label){
+        html += '<div style="border-top:1px solid #444;margin-top:3px;padding-top:3px">click: <b>'+esc(String(lastClick.label).slice(0,30))+'</b> ('+esc(String(lastClick.tag||"?"))+')</div>';
+        if(lastClick.onclickFn) html += '<div>fn: '+esc(String(lastClick.onclickFn).slice(0,40))+' '+(lastClick.fnExists?'<span style=color:lime>OK</span>':'<span style=color:red>MISSING</span>')+'</div>';
+        if(lastClick.onclick) html += '<div style="font-size:10px;color:#aaa;word-break:break-all">'+esc(String(lastClick.onclick).slice(0,80))+'</div>';
+      }
+      if(lastErr.msg) html += '<div style="color:#ffaa3a;border-top:1px solid #444;margin-top:3px;padding-top:3px">err: '+esc(String(lastErr.msg).slice(0,80))+'</div>';
       panel.innerHTML = html;
     }catch(_e){}
   }
-  /* Listener click qui CAPTURE chaque click avec details */
+  /* v12.767 : listener LOW-LEVEL qui catch tous events (touch + click) pour
+     compter combien arrivent au DOM. Si 0 click recu mais Kevin tap = overlay bloque. */
+  window._axDebugCounters = {touch:0, click:0, lastTouchTs:0, lastClickTs:0};
+  document.addEventListener("touchstart", function(){
+    try{window._axDebugCounters.touch++;window._axDebugCounters.lastTouchTs=Date.now();}catch(_e){}
+  }, true);
   document.addEventListener("click", function(ev){
     try{
+      window._axDebugCounters.click++;
+      window._axDebugCounters.lastClickTs=Date.now();
       var t = ev.target; if(!t) return;
       var node = t.closest && t.closest("[onclick],button,a,[role='button']");
       if(!node) return;
@@ -36582,7 +36603,7 @@ setTimeout(function(){
       };
       setTimeout(_axDebugRender, 100);
     }catch(_e){}
-  }, false);
+  }, true); /* CAPTURE phase pour catch en premier */
   /* Refresh panel chaque 2s */
   setInterval(_axDebugRender, 2000);
 })();
