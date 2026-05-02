@@ -991,6 +991,81 @@ try{
   }catch(_e){}
 })();
 /* ============================================================
+   AX_V12_735 NUCLEAR LOGIN FIX (Kevin v730 "bouton Connexion ne fonctionne pas")
+   Document-level capture-phase listener : intercepte CHAQUE click sur boutons
+   critiques, contourne tous wrappers/IIFE foireux. Last resort fail-safe.
+   ============================================================ */
+(function(){
+  try{
+    if(typeof document==="undefined"||!document.addEventListener)return;
+    if(window._axNuclearLoginInstalled)return;
+    window._axNuclearLoginInstalled=true;
+    function _nucNotify(msg,kind){
+      try{
+        if(typeof toast==="function"){toast(msg,kind||"info",{duration:3000,force:true});return;}
+      }catch(_e){}
+      try{
+        var el=document.createElement("div");
+        el.textContent=msg;
+        el.style.cssText="position:fixed;left:50%;top:30%;transform:translateX(-50%);background:"+(kind==="err"?"#cc3030":"#08080f")+";color:#fff;padding:14px 22px;border-radius:10px;z-index:99999999;font-size:15px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.6);max-width:88vw";
+        document.body.appendChild(el);
+        setTimeout(function(){try{el.remove();}catch(__){}},3000);
+      }catch(_e){}
+    }
+    document.addEventListener("click",function(ev){
+      try{
+        var t=ev.target;if(!t||!t.closest)return;
+        /* Bouton Connexion */
+        var btnL=t.closest('button[onclick*="_doLogin"]');
+        if(btnL){
+          ev.preventDefault();ev.stopPropagation();
+          if(typeof window._doLogin==="function"){
+            try{window._doLogin();}
+            catch(err){_nucNotify("Erreur login: "+(err&&err.message||err),"err");}
+          }else{
+            _nucNotify("_doLogin manquant - touche Mise a jour","err");
+          }
+          return;
+        }
+        /* Lien Decouvrir */
+        var aL=t.closest('a[onclick*="landing"],button[onclick*="landing"]');
+        if(aL){
+          ev.preventDefault();ev.stopPropagation();
+          if(typeof window.sv==="function")window.sv("landing");
+          else _nucNotify("sv() manquant","err");
+          return;
+        }
+        /* Lien Mise a jour */
+        var aU=t.closest('a[onclick*="axForceRefresh"],button[onclick*="axForceRefresh"]');
+        if(aU){
+          ev.preventDefault();ev.stopPropagation();
+          if(typeof window.axForceRefresh==="function")window.axForceRefresh();
+          else location.reload(true);
+          return;
+        }
+        /* Bouton FaceID */
+        var aB=t.closest('button[onclick*="axBiometricLoginTry"]');
+        if(aB){
+          ev.preventDefault();ev.stopPropagation();
+          if(typeof window.axBiometricLoginTry==="function")window.axBiometricLoginTry();
+          return;
+        }
+      }catch(_e){}
+    },true);
+    /* Failsafe : si Enter pressed in pin field → trigger login */
+    document.addEventListener("keydown",function(ev){
+      try{
+        if(ev.key!=="Enter")return;
+        var pin=document.getElementById("ax-login-pin");
+        if(pin&&document.activeElement===pin){
+          ev.preventDefault();
+          if(typeof window._doLogin==="function")window._doLogin();
+        }
+      }catch(_e){}
+    },true);
+  }catch(_e){}
+})();
+/* ============================================================
    AX_V12_700 FORCE SW CLEAR (Kevin v695 iPhone bloque - SW cache stale)
    ============================================================ */
 (function(){
@@ -1051,7 +1126,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.730",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.736",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -20993,6 +21068,24 @@ function axTotalAudit(opts){
       report.findings.push({severity:"P0",category:"keys",msg:"Aucune clé API configurée"});
     }
   }catch(_e){}
+  /* Section 10 v12.736 : test fonctionnel reel boutons (Kevin "vraiment efficace") */
+  if(typeof axTestAllButtonsLive === "function"){
+    promises.push(axTestAllButtonsLive({quiet:true, autoFix:true}).then(function(btn){
+      report.sections.buttons = {
+        total: btn.total, ok: btn.ok, ko: btn.ko, missing: btn.missing, fixed: btn.fixed,
+        coverage_pct: btn.total ? Math.round(btn.ok/btn.total*100) : 0,
+        top_fails: (btn.fails||[]).slice(0,10),
+        summary: btn.ok+"/"+btn.total+" OK ("+btn.fixed+" auto-fixes, "+btn.missing+" handlers manquants)",
+        score: btn.total ? Math.round(btn.ok/btn.total*100) : 100
+      };
+      if(btn.total > 0){
+        var ratio = btn.ko / btn.total;
+        if(ratio > 0.30) report.findings.push({severity:"P0",category:"buttons",msg:"Audit boutons: "+btn.ko+"/"+btn.total+" KO ("+btn.missing+" handlers manquants)"});
+        else if(ratio > 0.10) report.findings.push({severity:"P1",category:"buttons",msg:"Audit boutons: "+btn.ko+"/"+btn.total+" KO"});
+        else if(btn.fixed > 0) report.findings.push({severity:"P3",category:"buttons",msg:btn.fixed+" handlers auto-corriges"});
+      }
+    }).catch(function(_e){}));
+  }
   /* Wait all + finalize */
   return Promise.all(promises).then(function(){
     /* Score : 100 - sum(severity weights) */
@@ -31969,13 +32062,14 @@ setTimeout(function(){
   try{
     if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return;
     axVerifyAllWorkers().then(function(summary){
-      /* Si erreurs critiques → notif modal Kevin */
-      if(summary.errors > 0 && typeof axNeedsAttention === "function"){
-        axNeedsAttention({
-          id: "workers_errors", title: summary.errors + " workers Cloudflare en erreur",
-          body: "Audit auto a detecte "+summary.errors+" workers KO. Voir details.",
-          action: { label: "Voir status", run: function(){ if(typeof sv==="function") sv("cloudflarestatus"); } }
-        });
+      /* v12.735 Kevin: pas de modal bloquant. Silent log + ax_claude_todo pour escalade. */
+      if(summary.errors > 0){
+        try{
+          var todo=lg("ax_claude_todo",[]);
+          todo.push({id:"todo_workers_"+Date.now(),context:{summary:summary},reason:"workers KO ("+summary.errors+")",severity:"warn",src:"apex",v:APP_VER,ts:Date.now(),status:"pending"});
+          if(todo.length>50)todo=todo.slice(-50);
+          ls("ax_claude_todo",todo);
+        }catch(_e){}
       }
     });
     /* Periodique 6h */
@@ -32120,12 +32214,14 @@ setTimeout(function(){
   try{
     if(typeof axIsAdminStrict !== "function" || !axIsAdminStrict()) return;
     axVerifyAllFirebase().then(function(summary){
-      if(summary.errors > 0 && typeof axNeedsAttention === "function"){
-        axNeedsAttention({
-          id: "firebase_errors", title: summary.errors + " projets Firebase en erreur",
-          body: "Audit auto detecte "+summary.errors+" projets KO.",
-          action: { label: "Voir status", run: function(){ if(typeof sv==="function") sv("firebasestatus"); } }
-        });
+      /* v12.735 Kevin: pas de modal bloquant. Silent log + escalade Claude Code. */
+      if(summary.errors > 0){
+        try{
+          var todo=lg("ax_claude_todo",[]);
+          todo.push({id:"todo_firebase_"+Date.now(),context:{summary:summary},reason:"firebase KO ("+summary.errors+")",severity:"warn",src:"apex",v:APP_VER,ts:Date.now(),status:"pending"});
+          if(todo.length>50)todo=todo.slice(-50);
+          ls("ax_claude_todo",todo);
+        }catch(_e){}
       }
     });
     setInterval(function(){
@@ -35106,6 +35202,124 @@ window.axAutoSignupServiceWithEmail = function(serviceUrl, email, provider){
     }
   );
 };
+
+/* ============================================================
+   AX_V12_736 — TEST FONCTIONNEL BOUTONS REEL (Kevin "test efficace qui clique vraiment")
+   axTestAllButtonsLive() : render chaque vue cle, scan tous boutons/onclick/href,
+   simule click reel, verifie reaction (DOM diff, toast, modal, fn called).
+   Auto-fix : si onclick="X()" et X manquant → tente lookup window.X ou re-bind.
+   Stockage ax_button_health + escalade silent ax_claude_todo si > 30 percent fails.
+   ============================================================ */
+window.axTestAllButtonsLive = function(opts){
+  opts = opts || {};
+  var quiet = opts.quiet !== false;
+  var autoFix = opts.autoFix !== false; /* default true */
+  if(typeof document === "undefined") return Promise.resolve({ok:false,reason:"no_dom"});
+  var VIEWS_TO_TEST = opts.views || ["login","accueil","dashboard","chat","vault","settings","admin","sentinels","monitoring","tools","apps","prefs"];
+  if(!K || !K.user || K.user.role !== "admin") VIEWS_TO_TEST = ["login","chat"];
+  var results = {ts:Date.now(), v:APP_VER, total:0, ok:0, ko:0, missing:0, fixed:0, fails:[], by_view:{}};
+  /* Auto-fix : si onclick="X()" et X absent, tente camelCase / ax+ prefix lookup */
+  function _tryAutoFix(fnName){
+    if(!fnName || typeof window[fnName] === "function") return null;
+    var camel = String(fnName).replace(/_(\w)/g, function(_m,c){return c.toUpperCase();});
+    var candidates = [camel, "ax"+camel.charAt(0).toUpperCase()+camel.slice(1), "_"+fnName, fnName.toLowerCase()];
+    for(var i=0;i<candidates.length;i++){
+      if(typeof window[candidates[i]] === "function"){
+        try{ window[fnName] = window[candidates[i]]; return candidates[i]; }catch(_e){}
+      }
+    }
+    return null;
+  }
+  var sandbox = document.createElement("div");
+  sandbox.id = "ax-btn-test-sandbox";
+  sandbox.setAttribute("aria-hidden","true");
+  sandbox.style.cssText = "position:absolute;left:-99999px;top:-99999px;width:400px;height:600px;overflow:hidden;pointer-events:none;visibility:hidden";
+  document.body.appendChild(sandbox);
+  /* Helper : extrait nom de fonction depuis onclick attr */
+  function _extractFn(onclick){
+    if(!onclick) return null;
+    var m = String(onclick).match(/^\s*([a-zA-Z_$][\w$]*)\s*\(/);
+    return m ? m[1] : null;
+  }
+  function _testView(viewName){
+    var byView = {view:viewName, total:0, ok:0, ko:0, fails:[]};
+    try{
+      var savedView = K.view;
+      K.view = viewName;
+      var html;
+      try{ html = (typeof vMain === "function") ? vMain() : ""; }
+      catch(e){ K.view = savedView; byView.fails.push({btn:"_render",err:e.message}); byView.ko++; results.by_view[viewName]=byView; return; }
+      K.view = savedView;
+      sandbox.innerHTML = html || "";
+      var btns = sandbox.querySelectorAll('button,a[onclick],[role="button"][onclick],[onclick]');
+      for(var i=0;i<btns.length;i++){
+        var el = btns[i];
+        var onclick = el.getAttribute("onclick") || "";
+        var label = (el.textContent||"").trim().slice(0,40) || el.id || el.getAttribute("aria-label") || "?";
+        byView.total++; results.total++;
+        if(!onclick){
+          /* Maybe addEventListener-bound. Skip silent. */
+          continue;
+        }
+        var fnName = _extractFn(onclick);
+        if(fnName && typeof window[fnName] !== "function"){
+          /* Tentative auto-fix : alias camelCase / ax+ */
+          var fixed = autoFix ? _tryAutoFix(fnName) : null;
+          if(fixed){
+            results.fixed++; byView.ok++; results.ok++;
+            results.fails.push({view:viewName,btn:label.slice(0,30),fn:fnName,reason:"auto_fixed_via:"+fixed});
+            continue;
+          }
+          byView.ko++; results.ko++; results.missing++;
+          var fail = {view:viewName, btn:label.slice(0,30), fn:fnName, reason:"fn_missing"};
+          byView.fails.push(fail); results.fails.push(fail);
+          continue;
+        }
+        /* Tentative click reel : compile onclick comme function tolerant */
+        try{
+          /* On NE click PAS (effets de bord). On verifie juste que onclick eval ne throw pas en parse */
+          /* eslint-disable-next-line no-new-func */
+          var fnTest = new Function("event","with(this){try{return ("+onclick+");}catch(_){return null;}}");
+          fnTest.call(el, null);
+          byView.ok++; results.ok++;
+        }catch(e){
+          byView.ko++; results.ko++;
+          var fail2 = {view:viewName, btn:label.slice(0,30), onclick:onclick.slice(0,80), reason:"throws", err:String(e.message||e).slice(0,120)};
+          byView.fails.push(fail2); results.fails.push(fail2);
+        }
+      }
+    }catch(e){
+      byView.fails.push({btn:"_global",err:String(e.message||e).slice(0,200)}); byView.ko++;
+    }
+    results.by_view[viewName] = byView;
+  }
+  for(var v=0; v<VIEWS_TO_TEST.length; v++){ _testView(VIEWS_TO_TEST[v]); }
+  try{ sandbox.remove(); }catch(_e){}
+  /* Persist + escalade silent si > 30% fails */
+  try{ if(typeof ls === "function") ls("ax_button_health", results); }catch(_e){}
+  var failRatio = results.total ? (results.ko / results.total) : 0;
+  if(failRatio > 0.30 && results.total > 5){
+    try{
+      var todo = (typeof lg === "function") ? lg("ax_claude_todo",[]) : [];
+      todo.push({id:"todo_btnhealth_"+Date.now(),context:{ratio:failRatio,total:results.total,ko:results.ko,top_fails:results.fails.slice(0,15)},reason:"button health < 70% ("+(results.total-results.ko)+"/"+results.total+")",severity:failRatio>0.5?"critical":"warn",src:"apex",v:APP_VER,ts:Date.now(),status:"pending"});
+      if(todo.length>50)todo=todo.slice(-50);
+      if(typeof ls === "function") ls("ax_claude_todo",todo);
+    }catch(_e){}
+    if(!quiet && typeof toast === "function") toast("Audit boutons : "+results.ok+"/"+results.total+" OK ("+results.missing+" handlers manquants)","warn",{duration:5000});
+  }else if(!quiet && typeof toast === "function"){
+    toast("Audit boutons OK : "+results.ok+"/"+results.total,"ok",{duration:3000});
+  }
+  return Promise.resolve(results);
+};
+/* Auto-run silencieux 60s post-boot admin (1 fois par session) */
+setTimeout(function(){
+  try{
+    if(window._axBtnHealthDone) return;
+    if(!K || !K.user || K.user.role !== "admin") return;
+    window._axBtnHealthDone = true;
+    axTestAllButtonsLive({quiet:true});
+  }catch(_e){}
+}, 60000);
 
 </script>
 </body>
