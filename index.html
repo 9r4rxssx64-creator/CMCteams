@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.586";
+var APP_VER="v9.587";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26034,14 +26034,37 @@ function runAudit(y,m){
   Object.keys(CHEFS_T).forEach(function(tid){(CHEFS_T[tid]||[]).forEach(function(n){allDepartureNames.add(n);});});
   var defIds=new Set(DEF_EMP.map(function(e){return e.id;}));
   var results={absentDuPDF:[],sansHoraire:[],sansDeparture:[],ok:0,hasImport:importedIds.size>0};
+  // v9.587 (Kevin "20 employes absents alors que tout est dans le PDF, encadres a droite") :
+  // Avant : un emp etait flagge "absent" si pas dans importedIds (= rows extraites du grid).
+  // Bug : les emps en formation/CP/malade/vacances apparaissent dans les ENCADRES a droite
+  // du PDF (pas le grid principal) -> parser ne les attrape pas dans rows -> flagges absents
+  // a tort. Fix : relax = un emp est "absent" SEULEMENT si son nom n'apparait NULLE PART dans
+  // le texte source du PDF. S'il est mentionne (encadre ou ailleurs) -> pas flagge.
+  var _pdfSrc=lg("cmc_import_src_"+key,null);
+  var _pdfText=_pdfSrc&&_pdfSrc.text?String(_pdfSrc.text).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,""):"";
+  function _empNameInPdf(emp){
+    if(!_pdfText||!emp||!emp.name)return false;
+    var nm=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    var toks=nm.split(/\s+/).filter(function(t){return t.length>=3;});
+    if(!toks.length)return false;
+    // Tokens du nom (ex: "DESARZENS", "K") doivent TOUS apparaitre dans le PDF text
+    return toks.every(function(t){return _pdfText.indexOf(t)>=0;});
+  }
   A.employees.filter(function(emp){return isEmpActive(emp,y,m)&&defIds.has(emp.id);}).forEach(function(emp){
     var plRow=pl[emp.id]||{};
     var hasDays=Object.keys(plRow).some(function(d){return !!plRow[d];});
     var codes=Object.values(plRow);
     var codesSummary=codes.slice(0,10).join(' ');
-    // Absent du PDF
+    // Absent du PDF : flagge SEULEMENT si nom absent du texte source ET pas dans rows
     if(importedIds.size>0&&!importedIds.has(emp.id)){
-      // Chercher noms similaires dans la liste des importes
+      // v9.587 — verifier si nom apparait dans le PDF source (encadres inclus)
+      if(_pdfText&&_empNameInPdf(emp)){
+        // Nom present dans PDF (probablement dans encadre formation/CP/malade)
+        // -> pas absent, juste pas extrait par le parser principal
+        results.ok++;
+        return;
+      }
+      // Vraiment absent : nom n'apparait NULLE PART dans le PDF
       var suggestions=[];
       if(ref&&ref.rows){
         var allImportedEmps=[];
@@ -26051,7 +26074,7 @@ function runAudit(y,m){
         });
       }
       results.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team,
-        hasDays:false,codesSummary:'',suggestions:suggestions}); // toujours vide sans import
+        hasDays:false,codesSummary:'',suggestions:suggestions});
     } else {
       // OK : présent dans l'import avec données
       results.ok++;
