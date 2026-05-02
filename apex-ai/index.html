@@ -1199,7 +1199,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.747",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.748",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -35766,6 +35766,51 @@ setTimeout(function(){
     axTestAllButtonsLive({quiet:true});
   }catch(_e){}
 }, 600000);
+
+/* v12.747 AUTO-RESUME (Kevin "si Apex coupe, au retour reprendre la ou il en etait pour
+   chaque user, memoire intacte") : scan post-login K.messages pour trouver msg
+   incomplete:true et auto-relancer axResumePartialResponse silencieusement. */
+(function(){
+  if(window._axAutoResumeInstalled) return;
+  window._axAutoResumeInstalled = true;
+  function _axAutoResumeOnLogin(){
+    try{
+      if(!K || !K.user || !K.user.id) return;
+      if(K.isStreaming) return;
+      if(!K.messages || !Array.isArray(K.messages) || !K.messages.length) return;
+      /* Cherche dernier msg assistant incomplete < 24h */
+      for(var i=K.messages.length-1; i>=Math.max(0, K.messages.length-5); i--){
+        var m = K.messages[i];
+        if(m && m.role === "assistant" && m.incomplete && m.partialText){
+          var age = Date.now() - (m.ts||0);
+          if(age < 24*3600*1000){
+            /* Cap auto-resume 3 par conv pour eviter boucle infinie */
+            var key = "ax_auto_resume_count_"+(K.activeConvId||"main");
+            var cnt = lg(key, {count:0,date:""});
+            var today = new Date().toISOString().slice(0,10);
+            if(cnt.date !== today){cnt = {count:0,date:today};}
+            if(cnt.count >= 3) return;
+            cnt.count++; ls(key, cnt);
+            /* Auto-resume silencieux 3s post-boot */
+            setTimeout(function(){
+              try{
+                if(K.isStreaming) return;
+                if(typeof axResumePartialResponse === "function"){
+                  axResumePartialResponse(i);
+                  if(typeof axSecurityLog === "function") axSecurityLog("auto_resume_post_login", "msg_idx="+i+" age_min="+Math.round(age/60000));
+                }
+              }catch(_e){}
+            }, 3000);
+            return;
+          }
+        }
+      }
+    }catch(_e){}
+  }
+  /* Run au boot 1.5s + setInterval 30s pour catch les reconnexions */
+  setTimeout(_axAutoResumeOnLogin, 1500);
+  setInterval(_axAutoResumeOnLogin, 30000);
+})();
 
 /* v12.744 AUTO-ACCEPT + DEVICE RECO : Kevin (admin) + Laurence + autres internes -
    jamais de modal CGU/notif/bio. Kevin reconnu sur ses devices. Skip Discover/Landing.
