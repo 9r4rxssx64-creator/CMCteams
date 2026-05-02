@@ -1048,6 +1048,10 @@ try{
    ============================================================ */
 (function(){
   try{
+    /* v12.769 Kevin "rien marche" : ROLLBACK ce nuclear listener.
+       Hypothese : new Function(onclick) re-execute peut causer effets de bord.
+       Si Kevin re-confirme que ca marche pas, on saura que c'etait pas ca. */
+    return;
     if(typeof document === "undefined" || !document.addEventListener) return;
     if(window._axNuclearAllButtonsInstalled) return;
     window._axNuclearAllButtonsInstalled = true;
@@ -1293,7 +1297,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.768",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.769",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -21737,9 +21741,7 @@ function axTotalAudit(opts){
         report.autofixes.push({action:action,ok:false,error:String(e.message||e).slice(0,100)});
       }
     });
-    /* Toast résumé */
-    var msg = "Audit Total: "+report.score+"/100 | "+report.findings.length+" findings | "+report.autofixes.length+" auto-fixes";
-    /* AX_V12_508 : toast audit gate quiet mode + duration 3000 */if(typeof toast === "function") toast(msg, report.score>=80?"ok":(report.score>=60?"warn":"err"), {duration:3000,force:lg("ax_popup_alerts_enabled",false)});
+    /* v12.769 Kevin "Audit Total toast bloque tout" : SUPPRIME. Resultat dispo dans ax_total_audit_last + escalade auto. */
     /* Save local */
     try{ ls("ax_total_audit_last", report); }catch(_e){}
     /* Escalade auto Claude Code */
@@ -36970,8 +36972,9 @@ window.axApexProgrammaticClickTest = function(){
   });
 };
 
-/* Auto-trigger 60s post-login + chaque 1h */
-setTimeout(function(){
+/* v12.769 Auto-trigger DESACTIVE temporairement (Kevin "rien marche, hypothese
+   programmatic clicks dispatch causent effets de bord cycle vicieux"). */
+/* setTimeout(function(){
   try{
     if(window._axProgClickTestTriggered) return;
     window._axProgClickTestTriggered = true;
@@ -36985,7 +36988,7 @@ setInterval(function(){
     if(!window.K || !window.K.user || window.K.user.role !== "admin") return;
     if(typeof window.axApexProgrammaticClickTest === "function") window.axApexProgrammaticClickTest();
   }catch(_e){}
-}, 3600000);
+}, 3600000); */
 
 /* Auto-trigger : 30s post-login + apres chaque axForceRefresh + chaque heure */
 setTimeout(function(){
