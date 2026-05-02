@@ -1293,7 +1293,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.764",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.765",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -13864,7 +13864,7 @@ function _axRecordFailure(click){
 function _axTriggerAutoFix(click,expected){
   if(_axClickWatch.fixingNow)return;
   _axClickWatch.fixingNow=true;
-  try{toast("Petit souci détecté, correction en cours...","warn",{force:true});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13421",_e);}catch(__){}}
+  /* v12.765 Kevin "toast Petit souci bloque" : silent, pas de toast */
   /* Essai 1 : re-render */
   try{if(typeof dc==="function")dc();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13423",_e);}catch(__){}}
   /* Essai 2 : retry sv() apres 500ms */
@@ -13872,16 +13872,13 @@ function _axTriggerAutoFix(click,expected){
     try{if(typeof sv==="function")sv(expected);}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13426",_e);}catch(__){}}
     setTimeout(function(){
       _axClickWatch.fixingNow=false;
-      if(K.view===expected){
-        try{toast("Corrigé. Vous pouvez réessayer.","ok",{force:true});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13430",_e);}catch(__){}}
-      }else{
-        /* Echec persistant -> escalade Claude Code */
+      /* Echec persistant -> escalade silent */
+      if(K.view!==expected){
         try{
           if(typeof _escalateToClaudeCode==="function"){
-            _escalateToClaudeCode({click:click,expectedView:expected,attempts:2,actualView:K.view},"Click failure persistent: "+click.target+" -> "+expected,"critical");
+            _escalateToClaudeCode({click:click,expectedView:expected,attempts:2,actualView:K.view},"Click failure persistent: "+click.target+" -> "+expected,"warn");
           }
-        }catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13437",_e);}catch(__){}}
-        try{toast("Le bouton ne répond pas. Signalé. Rechargez l'app si besoin.","err",{force:true});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL13438",_e);}catch(__){}}
+        }catch(_e){}
       }
     },1500);
   },500);
@@ -36521,6 +36518,73 @@ setTimeout(function(){
   setInterval(autoAcceptForCurrentUser, 5000);
   /* v12.746 : hook axLogin SUPPRIME (Kevin "bouton Connexion ne va pas plus loin").
      Auto-accept se fait via setInterval 5s qui suit K.user changes - pas besoin de wrap axLogin. */
+})();
+
+/* ============================================================
+   AX_V12_765 DEBUG PANEL VISIBLE - Kevin "aucun bouton ne fonctionne dans Chat"
+   Panneau live en haut qui montre : dernier element clique, dernier error,
+   K.view, K.isStreaming. Activable via window.__axDebugOn = true (devtools)
+   ou auto si ax_click_failures > 5 dans dernieres 60s.
+   ============================================================ */
+(function(){
+  if(window._axDebugPanelInstalled) return;
+  window._axDebugPanelInstalled = true;
+  function _axDebugIsOn(){
+    try{
+      if(window.__axDebugOn === true) return true;
+      var fails = lg("ax_click_failures",[]);
+      var recent = fails.filter(function(f){return f.ts && (Date.now()-f.ts)<60000;});
+      return recent.length >= 5;
+    }catch(_e){return false;}
+  }
+  function _axDebugRender(){
+    try{
+      if(!_axDebugIsOn()){
+        var existing = document.getElementById("ax-debug-panel");
+        if(existing) existing.remove();
+        return;
+      }
+      var panel = document.getElementById("ax-debug-panel");
+      if(!panel){
+        panel = document.createElement("div");
+        panel.id = "ax-debug-panel";
+        panel.style.cssText = "position:fixed;top:max(48px,env(safe-area-inset-top));right:8px;z-index:99999;background:rgba(20,28,48,.95);border:2px solid #ff5858;border-radius:10px;padding:8px 12px;font-family:monospace;font-size:11px;color:#fff;max-width:90vw;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.6);pointer-events:auto";
+        document.body.appendChild(panel);
+      }
+      var lastClick = window._axDebugLastClick || {};
+      var lastErr = (lg("ax_err_log",[])||[])[0] || {};
+      var fails = (lg("ax_click_failures",[])||[]).filter(function(f){return f.ts && (Date.now()-f.ts)<60000;}).length;
+      var html = '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><strong style="color:#ff5858">DEBUG</strong><span onclick="window.__axDebugOn=false;document.getElementById(\'ax-debug-panel\').remove()" style="cursor:pointer;color:#fff">×</span></div>';
+      html += '<div>view: '+(K&&K.view||"?")+' / streaming: '+(K&&K.isStreaming?"ON":"off")+'</div>';
+      html += '<div>fails 60s: '+fails+'</div>';
+      if(lastClick.label) html += '<div>click: '+esc(String(lastClick.label).slice(0,30))+' / '+esc(String(lastClick.tag||"?"))+'</div>';
+      if(lastClick.onclickFn) html += '<div>fn: '+esc(String(lastClick.onclickFn).slice(0,40))+' '+(lastClick.fnExists?"✓":"✗MISSING")+'</div>';
+      if(lastErr.msg) html += '<div style="color:#ffaa3a">err: '+esc(String(lastErr.msg).slice(0,80))+'</div>';
+      panel.innerHTML = html;
+    }catch(_e){}
+  }
+  /* Listener click qui CAPTURE chaque click avec details */
+  document.addEventListener("click", function(ev){
+    try{
+      var t = ev.target; if(!t) return;
+      var node = t.closest && t.closest("[onclick],button,a,[role='button']");
+      if(!node) return;
+      var oc = node.getAttribute("onclick") || "";
+      var fnMatch = oc.match(/^([a-zA-Z_$][\w$]*)\s*\(/);
+      var fnName = fnMatch ? fnMatch[1] : null;
+      window._axDebugLastClick = {
+        label: (node.textContent||"").trim().slice(0,40) || node.id || "?",
+        tag: node.tagName,
+        onclick: oc.slice(0,120),
+        onclickFn: fnName,
+        fnExists: fnName ? typeof window[fnName] === "function" : null,
+        ts: Date.now()
+      };
+      setTimeout(_axDebugRender, 100);
+    }catch(_e){}
+  }, false);
+  /* Refresh panel chaque 2s */
+  setInterval(_axDebugRender, 2000);
 })();
 
 /* ============================================================
