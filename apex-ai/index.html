@@ -1243,7 +1243,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.760",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.761",ADMIN_ID="kdmc_admin";
 /* v12.306 — COMPTE ADMIN UNIQUE KEVIN : reconnaissance par TOUS les aliases (Kevin 2026-04-26) */
 /* SECU : seul ADMIN_ID est admin global. Recognition multi-alias mais PIN admin OBLIGATOIRE. */
 /* v12.361 — Securite : nom+prenom complet OU email seulement (Kevin demande "il faut nom et prenom ou mail pour me connecter seulement") */var ADMIN_KEVIN_ALIASES=["Kevin DESARZENS","Kevin Desarzens","kevin desarzens","DESARZENS Kevin","Desarzens Kevin","DESARZENS KEVIN","desarzens kevin","kevin.desarzens@gmail.com","kevin.desarzens"];
@@ -31951,35 +31951,121 @@ window.axAutoIdentifyCredential = function(value){
       };
     }
   }
-  /* v12.760 Patterns non-prefixes ENRICHIS (Kevin "doit identifier les URL paypal.me/x, revolut, phones, etc") */
-  /* URLs paypal.me / paypal.com */
+  /* v12.760+v12.761 Patterns non-prefixes ENRICHIS MAXIMAL (Kevin "enrichir au maximum") */
+  /* === DETECTION DANGEREUSE : Cartes bancaires + Seed phrases - AVERTIR JAMAIS STOCKER === */
+  if(/^\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}$/.test(v.replace(/\s/g,""))){
+    return {type:"card_bancaire",service:"bank",correctKey:null,danger:true,reason:"NE_PAS_STOCKER",value_preview:"****"+v.slice(-4),confidence:0.98};
+  }
+  /* Seed phrase BIP39 (12, 15, 18, 21, 24 mots) */
+  var words = v.trim().split(/\s+/);
+  if([12,15,18,21,24].indexOf(words.length) >= 0 && words.every(function(w){return /^[a-z]{3,8}$/.test(w);})){
+    return {type:"seed_phrase",service:"crypto",correctKey:null,danger:true,reason:"NE_PAS_STOCKER_HARDWARE_WALLET",value_preview:"["+words.length+" mots]",confidence:0.95};
+  }
+  /* === URLs spécifiques services === */
   var mPP = v.match(/(?:https?:\/\/)?(?:www\.)?paypal\.me\/([a-zA-Z0-9_\-]+)/i);
   if(mPP) return {type:"paypal_me",service:"paypal",correctKey:"ax_paypal_me",dashboard_url:"https://paypal.me/"+mPP[1],billing_url:"https://www.paypal.com/myaccount",docs_url:"https://developer.paypal.com",value_preview:v.slice(0,30),confidence:0.98};
-  /* URL revolut */
-  if(/(?:https?:\/\/)?(?:www\.)?revolut\.me\/([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"revolut_tag",service:"revolut",correctKey:"ax_revolut_tag",dashboard_url:"https://app.revolut.com",billing_url:"https://app.revolut.com",docs_url:"https://developer.revolut.com",confidence:0.95};
-  /* URL generique -> garde la ou elle est si key contient "url"/"webhook"/"endpoint" */
+  if(/(?:https?:\/\/)?(?:www\.)?revolut\.me\/([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"revolut_tag",service:"revolut",correctKey:"ax_revolut_tag",dashboard_url:"https://app.revolut.com",confidence:0.95};
+  if(/(?:https?:\/\/)?(?:www\.)?venmo\.com\/u\/([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"venmo",service:"venmo",correctKey:"ax_venmo_user",dashboard_url:"https://venmo.com",confidence:0.95};
+  if(/(?:https?:\/\/)?(?:www\.)?cash\.app\/\$([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"cashapp",service:"cashapp",correctKey:"ax_cashapp_tag",dashboard_url:"https://cash.app",confidence:0.95};
+  if(/(?:https?:\/\/)?(?:www\.)?wise\.com\/([a-zA-Z0-9_\-]+)/i.test(v)) return {type:"wise",service:"wise",correctKey:"ax_wise_user",dashboard_url:"https://wise.com",confidence:0.9};
+  if(/(?:https?:\/\/)?(?:www\.)?lydia-app\.com|lydia\.me/i.test(v)) return {type:"lydia",service:"lydia",correctKey:"ax_lydia_phone",dashboard_url:"https://lydia-app.com",confidence:0.9};
+  /* URL generique -> map domaines connus */
   if(/^https?:\/\/[\w.\-]+(\/.*)?$/i.test(v)){
-    var dom = v.replace(/^https?:\/\//,"").split("/")[0].toLowerCase();
-    var domMap = {"discord.com":"ax_discord_webhook","slack.com":"ax_slack_webhook","hooks.zapier.com":"ax_zapier_webhook","hook.eu1.make.com":"ax_make_webhook","hook.us1.make.com":"ax_make_webhook"};
-    if(domMap[dom]) return {type:"webhook",service:dom,correctKey:domMap[dom],confidence:0.9};
+    var dom = v.replace(/^https?:\/\//,"").split("/")[0].toLowerCase().replace(/^www\./,"");
+    var domMap = {
+      "discord.com":"ax_discord_webhook","discordapp.com":"ax_discord_webhook",
+      "slack.com":"ax_slack_webhook","hooks.slack.com":"ax_slack_webhook",
+      "hooks.zapier.com":"ax_zapier_webhook",
+      "hook.eu1.make.com":"ax_make_webhook","hook.us1.make.com":"ax_make_webhook","hook.eu2.make.com":"ax_make_webhook",
+      "n8n.io":"ax_n8n_url",
+      "home-assistant.io":"ax_ha_url","homeassistant.local":"ax_ha_url",
+      "console.anthropic.com":"ax_api_key_dashboard",
+      "platform.openai.com":"ax_openai_dashboard",
+      "console.groq.com":"ax_groq_dashboard",
+      "aistudio.google.com":"ax_gemini_dashboard",
+      "console.x.ai":"ax_xai_dashboard",
+      "openrouter.ai":"ax_openrouter_dashboard",
+      "github.com":"ax_github_url",
+      "gitlab.com":"ax_gitlab_url",
+      "bitbucket.org":"ax_bitbucket_url",
+      "dash.cloudflare.com":"ax_cloudflare_dashboard",
+      "vercel.com":"ax_vercel_dashboard",
+      "render.com":"ax_render_dashboard",
+      "netlify.app":"ax_netlify_dashboard","netlify.com":"ax_netlify_dashboard",
+      "firebase.google.com":"ax_firebase_dashboard","firebaseio.com":"ax_firebase_url",
+      "supabase.com":"ax_supabase_dashboard","supabase.co":"ax_supabase_url",
+      "dashboard.stripe.com":"ax_stripe_dashboard","stripe.com":"ax_stripe_dashboard",
+      "app.brevo.com":"ax_brevo_dashboard","brevo.com":"ax_brevo_dashboard",
+      "resend.com":"ax_resend_dashboard"
+    };
+    if(domMap[dom]) return {type:"webhook_or_dashboard",service:dom,correctKey:domMap[dom],confidence:0.9};
     return {type:"url",service:dom,value:v,confidence:0.7};
   }
-  /* Email */
-  if(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)) return {type:"email",value:v,confidence:1.0};
-  /* IBAN avec espaces (FR76 1234 5678...) ou compact */
-  var ibanCheck = v.replace(/\s/g,"");
-  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/i.test(ibanCheck)) return {type:"iban",service:"banque",correctKey:"ax_iban",value:v,confidence:0.95};
-  /* BTC / ETH addresses */
+  /* Email avec services identifies */
+  var mEmail = v.match(/^([a-z0-9._%+\-]+)@([a-z0-9.\-]+)\.([a-z]{2,})$/i);
+  if(mEmail){
+    var emailDom = (mEmail[2]+"."+mEmail[3]).toLowerCase();
+    var emailMap = {
+      "gmail.com":"ax_gmail_user","googlemail.com":"ax_gmail_user",
+      "outlook.com":"ax_outlook_user","hotmail.com":"ax_outlook_user","live.com":"ax_outlook_user","msn.com":"ax_outlook_user",
+      "icloud.com":"ax_icloud_user","me.com":"ax_icloud_user","mac.com":"ax_icloud_user",
+      "yahoo.com":"ax_yahoo_user","yahoo.fr":"ax_yahoo_user",
+      "monaco.mc":"ax_monaco_email",
+      "proton.me":"ax_proton_user","protonmail.com":"ax_proton_user"
+    };
+    return {type:"email",service:emailMap[emailDom]?emailDom.split(".")[0]:"email",correctKey:emailMap[emailDom]||null,value:v,confidence:1.0};
+  }
+  /* IBAN avec espaces (FR76 1234 5678...) ou compact - ALL countries */
+  var ibanCheck = v.replace(/\s/g,"").toUpperCase();
+  if(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(ibanCheck)){
+    var ibanCountry = ibanCheck.slice(0,2);
+    return {type:"iban",service:"banque",correctKey:"ax_iban",country:ibanCountry,value:v,confidence:0.95};
+  }
+  /* BIC/SWIFT */
+  if(/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(v.replace(/\s/g,"").toUpperCase())) return {type:"bic",service:"banque",correctKey:"ax_bic",value:v,confidence:0.9};
+  /* Crypto addresses étendus */
   if(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(v)) return {type:"btc_address",service:"bitcoin",correctKey:"ax_btc_address",value:v,confidence:0.95};
   if(/^0x[a-fA-F0-9]{40}$/.test(v)) return {type:"eth_address",service:"ethereum",correctKey:"ax_eth_address",value:v,confidence:0.95};
+  if(/^(L|M|3|ltc1)[a-km-zA-HJ-NP-Z0-9]{25,40}$/.test(v)) return {type:"ltc_address",service:"litecoin",correctKey:"ax_ltc_address",value:v,confidence:0.85};
+  if(/^[D|A][1-9A-HJ-NP-Za-km-z]{25,40}$/.test(v)) return {type:"doge_address",service:"dogecoin",correctKey:"ax_doge_address",value:v,confidence:0.7};
+  if(/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(v)) return {type:"xrp_address",service:"ripple",correctKey:"ax_xrp_address",value:v,confidence:0.85};
+  if(/^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(v)) return {type:"sol_address",service:"solana",correctKey:"ax_sol_address",value:v,confidence:0.7};
   /* Telegram bot token */
-  if(/^\d{8,}:[A-Za-z0-9_-]{35}$/.test(v)) return {type:"telegram_token",service:"telegram",correctKey:"ax_telegram_token",confidence:0.95};
+  if(/^\d{8,}:[A-Za-z0-9_\-]{35}$/.test(v)) return {type:"telegram_token",service:"telegram",correctKey:"ax_telegram_token",confidence:0.95};
+  /* Telegram chat id */
+  if(/^-?\d{6,15}$/.test(v) && v.length>=6 && v.length<=15 && !/^33|^377/.test(v)) return {type:"telegram_chatid",service:"telegram",correctKey:"ax_telegram_chatid",value:v,confidence:0.6};
   /* Phone numbers FR/Monaco/international */
-  if(/^\+?(33|377)[\s\-]?[0-9](?:[\s\-]?\d){8}$/.test(v.replace(/\s/g,""))) return {type:"phone",service:"phone",correctKey:"ax_kevin_whatsapp_phone",value:v,confidence:0.85};
-  /* SIRET / SIREN */
+  var phoneClean = v.replace(/[\s\-\.()]/g,"");
+  if(/^\+?(33|377)[1-9]\d{8}$/.test(phoneClean)) return {type:"phone_fr_monaco",service:"phone",correctKey:"ax_kevin_whatsapp_phone",value:v,confidence:0.9};
+  if(/^\+?[1-9]\d{7,14}$/.test(phoneClean)) return {type:"phone_intl",service:"phone",correctKey:"ax_phone",value:v,confidence:0.7};
+  /* SIRET / SIREN / VAT EU */
   if(/^\d{14}$/.test(v.replace(/\s/g,""))) return {type:"siret",service:"company",correctKey:"ax_siret",value:v,confidence:0.95};
-  /* @username (twitter, instagram, etc.) - faible confiance car ambigu */
-  if(/^@[a-zA-Z0-9_]{2,30}$/.test(v)) return {type:"social_handle",service:"social",value:v,confidence:0.5};
+  if(/^\d{9}$/.test(v.replace(/\s/g,""))) return {type:"siren",service:"company",correctKey:"ax_siren",value:v,confidence:0.7};
+  if(/^[A-Z]{2}\d{8,12}$/i.test(v.replace(/\s/g,""))) return {type:"vat_eu",service:"company",correctKey:"ax_vat",value:v,confidence:0.9};
+  /* Codes postaux FR */
+  if(/^(0[1-9]|[1-8]\d|9[0-8])\d{3}$/.test(v.replace(/\s/g,""))) return {type:"code_postal_fr",service:"address",value:v,confidence:0.7};
+  /* Latitude/Longitude */
+  if(/^-?\d{1,3}\.\d{3,},\s*-?\d{1,3}\.\d{3,}$/.test(v)) return {type:"gps_coords",service:"location",value:v,confidence:0.9};
+  /* @handle social */
+  if(/^@[a-zA-Z0-9_\.]{2,30}$/.test(v)) return {type:"social_handle",service:"social",value:v,confidence:0.5};
+  /* AWS Access Key */
+  if(/^AKIA[0-9A-Z]{16}$/.test(v)) return {type:"aws_access_key",service:"aws",correctKey:"ax_aws_key",dashboard_url:"https://console.aws.amazon.com/iam",confidence:0.98};
+  /* Slack tokens */
+  if(/^xox[bp]-[A-Za-z0-9\-]+$/.test(v)) return {type:"slack_token",service:"slack",correctKey:v.indexOf("xoxb-")===0?"ax_slack_bot":"ax_slack_user",dashboard_url:"https://api.slack.com/apps",confidence:0.95};
+  /* Discord token */
+  if(/^[MN][A-Za-z0-9_\-]{23}\.[A-Za-z0-9_\-]{6}\.[A-Za-z0-9_\-]{27,}$/.test(v)) return {type:"discord_token",service:"discord",correctKey:"ax_discord_token",confidence:0.9};
+  /* Notion integration token */
+  if(/^secret_[A-Za-z0-9]{40,}$/.test(v)) return {type:"notion_token",service:"notion",correctKey:"ax_notion_key",dashboard_url:"https://www.notion.so/my-integrations",confidence:0.95};
+  /* Airtable PAT */
+  if(/^pat[A-Za-z0-9]{14}\.[A-Za-z0-9]{40,}$/.test(v)) return {type:"airtable_pat",service:"airtable",correctKey:"ax_airtable_pat",dashboard_url:"https://airtable.com/create/tokens",confidence:0.95};
+  /* DeepL key (suffix :fx) */
+  if(/^[a-f0-9\-]+:fx$/i.test(v)) return {type:"deepl_key",service:"deepl",correctKey:"ax_deepl_key",dashboard_url:"https://www.deepl.com/account",confidence:0.95};
+  /* GitHub fine-grained PAT (très longs) */
+  if(/^github_pat_[A-Za-z0-9_]{82,}$/.test(v)) return {type:"github_pat_fine",service:"github",correctKey:"ax_gh_pat",dashboard_url:"https://github.com/settings/tokens",confidence:0.98};
+  /* UUID v4 (généralement IDs systeme, pas credential mais on l'identifie) */
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)) return {type:"uuid_v4",service:"system",value:v,confidence:0.9};
+  /* JWT token (3 parts base64-encoded) */
+  if(/^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]{20,}$/.test(v) && v.split(".").length === 3) return {type:"jwt",service:"jwt",value:v,confidence:0.85};
   return null;
 };
 
