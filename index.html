@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.580";
+var APP_VER="v9.581";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13982,6 +13982,24 @@ function _cmcBreadcrumb(){
   return '<div style="padding:6px 14px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.1);font-size:12px;display:flex;align-items:center;gap:8px"><a href="#" onclick="sv(\'accueil\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">🏠 Accueil</a><span style="color:#7a9a7a">›</span><strong style="color:#c9a227">'+esc(label)+'</strong></div>';
 }
 function vMain(){
+  // v9.581 (Kevin "erreur d'affichage Can't find variable") — safety wrapper :
+  // si une case route vers une fonction de vue non définie, on retourne une vue
+  // d'erreur claire au lieu de laisser le ReferenceError crasher l'app entiere.
+  try{return _vMainImpl();}
+  catch(_vMErr){
+    var _msg=String(_vMErr&&_vMErr.message||_vMErr).replace(/</g,"&lt;").slice(0,200);
+    console.error("[vMain] crash safe-catch :",_vMErr);
+    try{if(typeof _audit==="function")_audit("vmain_safe_catch","view="+A.view+" err="+_msg);}catch(_){}
+    return '<div class="card" style="padding:20px;border:2px solid #e06060;background:rgba(224,96,96,.1);border-radius:12px">'
+      +'<div style="font-size:18px;font-weight:800;color:#e06060;margin-bottom:8px">⚠ Vue temporairement indisponible</div>'
+      +'<div style="color:#e0a0a0;margin-bottom:12px;font-size:14px">L\'écran "<b>'+(A.view||"?")+'</b>" a rencontré une erreur. L\'application reste fonctionnelle.</div>'
+      +'<div style="color:#a0a0a0;margin-bottom:16px;font-size:12px;font-family:monospace">'+_msg+'</div>'
+      +'<button class="btn gold" onclick="sv(\'accueil\')" style="margin-right:8px">🏠 Accueil</button>'
+      +'<button class="btn" onclick="goBack()">↩ Retour</button>'
+      +'</div>';
+  }
+}
+function _vMainImpl(){
   var isAdm=A.user&&A.user.id===AID;
   switch(A.view){
     case"ocrhistory": return vOcrHistory();
@@ -14065,8 +14083,8 @@ function vMain(){
     case"knowledgebank": return isAdm?vCmcKnowledgeBank():""; // v9.516 — Banque d'infos clients
     case"sentinelhub":   return isAdm?vCmcSentinelHub():""; // v9.517 — 12 agents critiques
     case"persaudit":     return isAdm?vPersistenceAudit():""; // v9.519 — Triple persistence audit
-    case"parserintel":   return isAdm?vParserIntelligence():""; // v9.522 — Intelligence parser PDF
-    case"parsercompare": return isAdm?vParserCompare():""; // v9.522 — Comparer 2 imports
+    case"parserintel":   return isAdm?(typeof vParserIntelligence==="function"?vParserIntelligence():'<div class="card" style="padding:20px;text-align:center"><div style="font-size:18px;font-weight:700;color:#c9a227;margin-bottom:8px">🧠 Parser IA</div><div style="color:#a0cca0;margin-bottom:16px">Vue temporairement indisponible (fonction non chargée). Utilisez 📚 Apprentissage parser à la place.</div><button class="btn gold" onclick="sv(\'parserlearning\')">📚 Voir Apprentissage parser</button></div>'):""; // v9.581 — safety stub
+    case"parsercompare": return isAdm?(typeof vParserCompare==="function"?vParserCompare():'<div class="card" style="padding:20px;text-align:center"><div style="font-size:18px;font-weight:700;color:#c9a227;margin-bottom:8px">🔀 Comparer imports</div><div style="color:#a0cca0;margin-bottom:16px">Vue temporairement indisponible. Utilisez 📋 Audit pour voir l\'historique des imports.</div><button class="btn gold" onclick="sv(\'auditlog\')">📋 Voir Audit</button></div>'):""; // v9.581 — safety stub
     case"debug": return isAdm?vDebug():""; // v9.91
     case"ia":       return vIA();
     case"lessonscmc": return isAdm?vLessonsLearnedCmc():""; // v9.525 - Lessons partagees Apex+CMCteams
