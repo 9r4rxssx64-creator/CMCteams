@@ -481,5 +481,29 @@ describe('apex-v13-backend Worker (Jet 7 tests)', () => {
       const escalation = await env.ESCALATIONS.get('e:dispute_dp_x');
       expect(escalation).toBeTruthy();
     });
+
+    it('IDEMPOTENCY (Jet 7 P0-2) : double POST même event.id ne charge qu\'une fois', async () => {
+      const event = {
+        id: 'evt_idempotent_1',
+        type: 'checkout.session.completed',
+        data: { object: { client_reference_id: 'u_idem', metadata: { plan: 'pro' } } },
+      };
+      const req1 = await postWebhook(event);
+      const res1 = await worker.fetch(req1, env, {});
+      const data1 = await res1.json();
+      expect(data1.processed).toContain('upgrade_pro_u_idem');
+      /* 2e POST même event.id (Stripe retry) → already_processed */
+      const req2 = await postWebhook(event);
+      const res2 = await worker.fetch(req2, env, {});
+      const data2 = await res2.json();
+      expect(res2.status).toBe(200); /* Stripe attend 200 sinon retry */
+      expect(data2.processed).toBe('already_processed');
+    });
+
+    it('refuse webhook sans event.id', async () => {
+      const event = { type: 'checkout.session.completed', data: { object: {} } };
+      const res = await worker.fetch(await postWebhook(event), env, {});
+      expect(res.status).toBe(400);
+    });
   });
 });

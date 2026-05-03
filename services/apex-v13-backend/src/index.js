@@ -160,7 +160,15 @@ async function handleStripeWebhook(request, env, origin) {
   if (!valid) return jsonError(401, 'Invalid signature', null, origin);
 
   const event = JSON.parse(rawBody);
-  /* Stocke event pour audit trail */
+  if (!event.id) return jsonError(400, 'Missing event.id', null, origin);
+
+  /* Jet 7 fix audit P0-2 : idempotency anti double POST même event.id (Stripe retry).
+   * Stripe retry les webhooks si timeout/5xx → on doit dédupliquer côté serveur. */
+  const alreadyProcessed = await env.STRIPE_EVENTS.get(`e:${event.id}`);
+  if (alreadyProcessed) {
+    return jsonResponse({ received: true, processed: 'already_processed', eventId: event.id }, origin);
+  }
+  /* Stocke event POUR éviter retraitement (TTL 30j) */
   await env.STRIPE_EVENTS.put(`e:${event.id}`, rawBody, { expirationTtl: 86400 * 30 });
 
   /* Logique métier Jet 7 : update USER_PLANS KV (lu par client au login) */
