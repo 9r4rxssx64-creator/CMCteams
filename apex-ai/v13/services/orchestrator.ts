@@ -77,12 +77,21 @@ export const PROJECTS: readonly KevinProject[] = [
     toolsAvailable: ['iakdmc_lookup'],
   },
   /* Extensions v13.0.1 (Kevin demande "tous mes projets intégrés") */
+  /* Apex Chat EMBEDDED dans Apex AI (Kevin + Laurence + family) */
   {
-    id: 'apex_chat',
-    name: 'Apex Chat (PWA standalone)',
+    id: 'apex_chat_embedded',
+    name: 'Apex Chat (embedded admin/family)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#chat',
     firebasePath: 'apex/chat',
     toolsAvailable: ['chat_read', 'chat_export'],
+  },
+  /* Apex Chat STANDALONE pour amis/autres (avec pub Apex AI cross-promo) */
+  {
+    id: 'apex_chat_standalone',
+    name: 'Apex Chat Standalone (amis/clients)',
+    url: 'https://apex-chat.kdmc.fr/',
+    firebasePath: 'apex_chat_standalone',
+    toolsAvailable: ['chat_basic', 'chat_share'],
   },
   {
     id: 'social_video',

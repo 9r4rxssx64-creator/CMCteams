@@ -77,6 +77,26 @@ const HOUSE_ADS: ReadonlyArray<Omit<AdSlot, 'shown_count' | 'click_count' | 'ts_
     cta_label: 'Explorer',
     cta_url: '#studios',
   },
+  /* Cross-promotion Apex Chat standalone → Apex AI complet
+   * (Kevin demande : "Dans Apex Chat il y aura une pub pour Apex AI") */
+  {
+    id: 'apex_ai_full_promo',
+    position: 'chat_inline',
+    content_type: 'house',
+    title: '🚀 Découvre Apex AI complet',
+    description: 'Studios créatifs, voix premium, modules pro (médical, juridique, finance), orchestrateur multi-projets',
+    cta_label: 'Essayer Apex AI',
+    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+  },
+  {
+    id: 'apex_ai_pro_features',
+    position: 'chat_footer',
+    content_type: 'house',
+    title: '✨ Apex AI Pro vs Chat Standalone',
+    description: 'Mémoire illimitée, 42 outils IA, 25 capabilities, vision IA, marketplace agents',
+    cta_label: 'Voir les plans',
+    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#pricing',
+  },
 ];
 
 class AdsService {
