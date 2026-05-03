@@ -103,7 +103,9 @@ class FirebaseQueue {
   private async writeOne(entry: QueueEntry): Promise<boolean> {
     try {
       const { firebase } = await import('./firebase.js');
-      await firebase.write(entry.key, entry.value);
+      /* Option A audit subagent : passe entry.id comme idempotencyKey → Firebase skip
+       * si même write dans 60s (anti orphan post browser crash + replay queue) */
+      await firebase.write(entry.key, entry.value, { idempotencyKey: entry.id });
       return true;
     } catch (err: unknown) {
       logger.warn('fb-queue', `write failed ${entry.key} attempt ${entry.attempts}`, { err });

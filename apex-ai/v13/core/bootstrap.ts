@@ -46,13 +46,20 @@ async function bootstrap(): Promise<void> {
     isAdmin: false,
   };
 
-  /* 1. Logger + global error handlers + bodyguard CSP/postMessage + audit log immutable */
+  /* 1. Logger + global error handlers + bodyguard + audit log + observability + sentinelles */
   errors.installGlobalHandlers();
   const { bodyguard } = await import('@services/bodyguard.js');
   bodyguard.install();
   const { auditLog } = await import('@services/audit-log.js');
   auditLog.init();
   await auditLog.record('boot.start', { details: { ver: APP_VER } });
+  const { observability } = await import('@services/observability.js');
+  observability.init();
+  const { firebaseQueue } = await import('@services/firebase-queue.js');
+  firebaseQueue.init();
+  const { sentinels, registerCoreSentinels } = await import('@services/sentinels.js');
+  registerCoreSentinels();
+  sentinels.init();
   logger.info('boot', `APEX ${APP_VER} starting`, { ctx });
 
   /* 2. Feature detection */
