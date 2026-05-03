@@ -2,8 +2,8 @@
  * APEX v13 — Auth service
  *
  * Comptes pré-configurés préservés depuis v12.785 :
- * - Kevin DESARZENS (admin) : ADMIN_ID = 'kdmc_admin', aliases multiples
- * - Laurence SAINT-POLIT : permissions tiered
+ * - Kevin (DK admin) : ADMIN_ID = 'kdmc_admin', aliases multiples (reconnu privé, jamais affiché complet)
+ * - Laurence : permissions tiered
  * - Familles CMCteams : bj, roulettes, cmc, cadres
  *
  * PIN PBKDF2 200k iterations + WebAuthn FaceID (Jet 2).
@@ -38,9 +38,10 @@ interface PreconfiguredUser {
   family?: string;
 }
 
+/* Display names anonymisés (nom complet jamais affiché publiquement, juste prénom + initiales) */
 const PRECONFIGURED: PreconfiguredUser[] = [
-  { id: ADMIN_ID, name: 'Kevin DESARZENS', email: 'kevin.desarzens@gmail.com', isAdmin: true },
-  { id: 'laurence_sp', name: 'Laurence SAINT-POLIT', email: '', isAdmin: false },
+  { id: ADMIN_ID, name: 'Kevin (DK)', email: '', isAdmin: true },
+  { id: 'laurence_sp', name: 'Laurence', email: '', isAdmin: false },
 ];
 
 function normalize(s: string): string {

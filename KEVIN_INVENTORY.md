@@ -1,9 +1,53 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-04-27 SOIR** (post Apex v12.403 — session marathon 67+ versions)
+> Dernière mise à jour : **2026-05-03 14h** (Apex v13.0 Jet 1 canary déployé)
 
-## 🆕 SESSION 2026-04-27 SOIR — RÉCAP COMPLET (v12.376-v12.403)
+## 🆕 SESSION 2026-05-03 — APEX v13.0 REBUILD (Jet 1 livré + canary)
+
+### 🚀 Apex v13.0 — Architecture nouvelle entreprise commercialisable
+
+**URLs LIVE** :
+- Canary v13 : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ (test famille/amis)
+- Stable v12.785 : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/ (production Kevin actuelle)
+
+**Source code** :
+- Code v13 : https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai/v13
+- Build canary : https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai-v13
+
+**Stack technique** :
+- TypeScript strict (zero `any`) + Vite 6 + Vitest 2.1 + Playwright 1.49 + Tailwind 3.4 + DOMPurify
+- 8 modules core (bootstrap, store Proxy, router, di, logger, errors, memory, events)
+- 9 services (commerce, firebase, auth, vault, permissions, telemetry, ai-router, whatsapp, orchestrator)
+- 3 features lazy-loaded (chat ULTRA streaming, admin centre, landing/login)
+- 17/17 tests verts, bundle initial 6.65 KB gzipped (target ≤ 200 KB ✓)
+
+**Demandes Kevin intégrées** :
+- ✅ Toggle commercialisation admin (Kevin = bypass total, jamais bloqué)
+- ✅ Création comptes admin : famille / client_pro / client_free au choix
+- ✅ Confirmation WhatsApp via wa.me + OTP 6 digits
+- ✅ Qualité chat ULTRA (streaming token-par-token + queue messages)
+- ✅ Failover IA : Anthropic → OpenRouter → Groq → Gemini → OpenClaw
+
+**Préservation absolue (vérifié subagent indépendant)** :
+- ✅ CMCteams v9.549 intact
+- ✅ tools/ (9 fichiers) intact
+- ✅ services/ Cloudflare Workers (4) intact
+- ✅ KDMC + e-KDMC intact
+- ✅ Télécommande (18 fichiers) intact
+- ✅ 25 workflows GitHub intacts (+ 2 nouveaux : apex-v13-ci.yml + cross-app-preservation.yml)
+
+**4 audits indépendants effectués** :
+1. Audit interne Apex v13 : **62/100** (foundation solide, gaps coverage + sécurité à fixer Jet 2)
+2. Audit sécurité subagent : **15 P0/P1** (CSP nonce, Gemini API key URL, PIN timing, invite token, quota localStorage)
+3. Audit plan vs concurrents : **15 findings** dont 6 MUST-FIX (voice latency, mémoire executor, bench 2026)
+4. Audit préservation projets : **6/6 INTACTS**
+
+**Règle gravée 2026-05-03** : TEST EN LIVE EN PERMANENCE — script `apex-ai/v13/test-live.sh` à lancer après chaque modif (TS strict + Vitest + build + bundle + HTTP preview + canary sync).
+
+---
+
+## 🗂 SESSION 2026-04-27 SOIR — RÉCAP COMPLET (v12.376-v12.403)
 
 **3 audits subagents indépendants** :
 - **Code** (Agent Explore) : **9.2/10** production-ready

@@ -36,7 +36,7 @@ export function render(rootEl: HTMLElement): void {
         <form id="login-form" class="ax-form">
           <label>
             Nom et prénom
-            <input type="text" id="login-name" required minlength="3" autocomplete="name" placeholder="Ex: Kevin DESARZENS">
+            <input type="text" id="login-name" required minlength="3" autocomplete="name" placeholder="Ton prénom et nom">
           </label>
           <label>
             Code PIN
