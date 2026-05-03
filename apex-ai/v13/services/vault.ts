@@ -151,8 +151,11 @@ class Vault {
       logger.error('vault', 'autoStore persist failed', { err });
       return { ok: false, reason: 'Stockage saturé' };
     }
-    /* Auto-link : enrichit ax_links_registry */
+    /* Auto-link legacy : enrichit ax_links_registry old format */
     this.autoLink(detected);
+    /* WIRE links-registry : autoCreate avec HEAD verification + sentinelle re-test
+     * (règle CLAUDE.md absolue Kevin 2026-05-01 : axLinksAutoCreate). */
+    void this.autoCreateLink(detected);
     /* Auto-test si endpoint dispo (best-effort, non bloquant) */
     let valid: boolean | undefined;
     if (detected.testEndpoint) {
@@ -160,6 +163,22 @@ class Vault {
     }
     logger.info('vault', `Stored ${detected.name} → ${detected.storageKey}`, { valid });
     return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  /**
+   * Wire links-registry pour auto-création + auto-vérification HEAD
+   * (extraction service name depuis pattern.name).
+   */
+  private async autoCreateLink(pattern: CredentialPattern): Promise<void> {
+    try {
+      /* Service name depuis pattern.name : "Anthropic API" → "anthropic" */
+      const serviceName = pattern.name.toLowerCase().split(' ')[0] ?? '';
+      if (!serviceName) return;
+      const { linksRegistry } = await import('./links-registry.js');
+      await linksRegistry.autoCreate(serviceName);
+    } catch (err: unknown) {
+      logger.warn('vault', 'autoCreateLink failed', { err });
+    }
   }
 
   private autoLink(pattern: CredentialPattern): void {

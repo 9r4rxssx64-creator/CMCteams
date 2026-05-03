@@ -16,7 +16,9 @@
 import { errors } from '../core/errors.js';
 import { logger } from '../core/logger.js';
 
+import { chatFallback } from './chat-fallback.js';
 import { redactMessageContent } from './pii-redaction.js';
+import { tokensDashboard } from './tokens-dashboard.js';
 
 export type Provider = 'anthropic' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
 
@@ -198,12 +200,27 @@ class AIRouter {
     const chain = this.getChainOrder();
     let lastErr: Error | null = null;
 
+    /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
+    const inputTokensEstimate = Math.ceil(
+      JSON.stringify(redactedMessages).length / 4 + system.length / 4,
+    );
+    let outputTokensEstimate = 0;
+
+    /* Wrap onChunk pour count output tokens (visuel conso Kevin) */
+    const wrappedOnChunk = (chunk: StreamChunk): void => {
+      if (chunk.text) outputTokensEstimate += Math.ceil(chunk.text.length / 4);
+      onChunk(chunk);
+    };
+
     for (const provider of chain) {
       const key = this.getApiKey(provider);
       if (!key && provider !== 'gemini') continue;
       try {
-        await this.streamFromProvider(provider, key, redactedMessages, system, onChunk, ctrl.signal);
+        await this.streamFromProvider(provider, key, redactedMessages, system, wrappedOnChunk, ctrl.signal);
         this.currentAbort = null;
+        /* WIRE tokens-dashboard : enregistre conso après stream succès */
+        const modelName = this.getModelKey(provider);
+        tokensDashboard.record(provider, inputTokensEstimate, outputTokensEstimate, modelName);
         return; /* succès */
       } catch (err: unknown) {
         const e = err instanceof Error ? err : new Error(String(err));
@@ -219,7 +236,37 @@ class AIRouter {
     this.currentAbort = null;
     const finalErr = lastErr ?? new Error('Tous les providers IA indisponibles');
     errors.capture(finalErr);
+
+    /* WIRE chat-fallback : génère réponse actionnable au lieu de message vide
+     * (règle CLAUDE.md absolue : JAMAIS message vide) */
+    const userLastMsg = redactedMessages[redactedMessages.length - 1];
+    const userText =
+      typeof userLastMsg?.content === 'string'
+        ? userLastMsg.content
+        : JSON.stringify(userLastMsg?.content ?? '');
+    const fallback = chatFallback.generateFallback(userText, finalErr.message);
+    /* Stream le fallback en chunks pour cohérence UI typing animation */
+    onChunk({ text: fallback.text, done: false, provider: 'anthropic' });
+    onChunk({ text: '', done: true, provider: 'anthropic' });
     onError?.(new Error(errors.toUserMessage(finalErr)));
+  }
+
+  /**
+   * Map provider → model key pour pricing.
+   */
+  private getModelKey(provider: Provider): string {
+    switch (provider) {
+      case 'anthropic':
+        return 'anthropic_sonnet';
+      case 'groq':
+        return 'groq_llama';
+      case 'gemini':
+        return 'gemini_pro';
+      case 'openrouter':
+      case 'openclaw':
+      default:
+        return 'openrouter_default';
+    }
   }
 
   abort(): void {
