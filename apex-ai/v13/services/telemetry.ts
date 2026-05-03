@@ -107,7 +107,7 @@ class Telemetry {
     }
   }
 
-  private async tryAutoFix(entry: TelemetryEntry): Promise<{ ok: boolean; attempts: string[] }> {
+  private async tryAutoFix(_entry: TelemetryEntry): Promise<{ ok: boolean; attempts: string[] }> {
     const attempts: string[] = [];
     for (const [name, fn] of Object.entries(AUTOFIX_WHITELIST)) {
       try {
@@ -122,7 +122,7 @@ class Telemetry {
     return { ok: false, attempts };
   }
 
-  private async escalateToClaudeCode(entry: TelemetryEntry, attempts: string[]): Promise<void> {
+  private async escalateToClaudeCode(entry: TelemetryEntry, attempts: readonly string[]): Promise<void> {
     const todo: ClaudeTodo = {
       id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       context: { entry, attempts },

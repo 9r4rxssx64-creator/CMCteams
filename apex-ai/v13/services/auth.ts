@@ -59,11 +59,15 @@ class Auth {
   isKevinAdmin(name: string): boolean {
     const n = normalize(name);
     if (KEVIN_ALIASES.includes(n)) return true;
+    /* Email normalisé inclut "gmail com" en tokens — match si AU MOINS un alias contient
+       tous les tokens significatifs de l'input (kevin + desarzens) */
     const tokens = n.split(/\s+/).filter((t) => t.length >= 4);
     if (tokens.length < 1) return false;
+    /* Match si tokens input ⊇ tokens alias (input plus riche que alias OK) */
     return KEVIN_ALIASES.some((alias) => {
       const aliasTokens = alias.split(/\s+/).filter((t) => t.length >= 4);
-      return tokens.every((t) => aliasTokens.includes(t));
+      if (!aliasTokens.length) return false;
+      return aliasTokens.every((at) => tokens.includes(at));
     });
   }
 
