@@ -84,15 +84,20 @@ class VoicePrint {
     const data = audioBuffer.getChannelData(0);
     const sampleRate = audioBuffer.sampleRate;
 
-    /* Energy = RMS */
+    /* Energy = RMS — itération directe Float32Array (TypedArray garantit number) */
     let energy = 0;
-    for (let i = 0; i < data.length; i++) energy += data[i]! * data[i]!;
+    for (let i = 0; i < data.length; i++) {
+      const v = data[i] ?? 0;
+      energy += v * v;
+    }
     energy = Math.sqrt(energy / data.length);
 
     /* ZCR */
     let zcr = 0;
     for (let i = 1; i < data.length; i++) {
-      if ((data[i]! >= 0) !== (data[i - 1]! >= 0)) zcr++;
+      const cur = data[i] ?? 0;
+      const prev = data[i - 1] ?? 0;
+      if ((cur >= 0) !== (prev >= 0)) zcr++;
     }
     zcr /= data.length;
 
@@ -103,7 +108,11 @@ class VoicePrint {
     let bestCorr = 0;
     for (let lag = minLag; lag < maxLag && lag < data.length / 2; lag++) {
       let corr = 0;
-      for (let i = 0; i < data.length - lag; i++) corr += data[i]! * data[i + lag]!;
+      for (let i = 0; i < data.length - lag; i++) {
+        const a = data[i] ?? 0;
+        const b = data[i + lag] ?? 0;
+        corr += a * b;
+      }
       corr /= data.length - lag;
       if (corr > bestCorr) {
         bestCorr = corr;
@@ -117,7 +126,7 @@ class VoicePrint {
     const totalEnergy = magnitudes.reduce((s, m) => s + m, 0);
     let weightedSum = 0;
     for (let i = 0; i < magnitudes.length; i++) {
-      weightedSum += i * magnitudes[i]!;
+      weightedSum += i * (magnitudes[i] ?? 0);
     }
     const spectralCentroid = totalEnergy > 0 ? (weightedSum / totalEnergy) * (sampleRate / fftSize / 2) : 0;
 
@@ -126,7 +135,7 @@ class VoicePrint {
     let cumulative = 0;
     let rolloffBin = magnitudes.length - 1;
     for (let i = 0; i < magnitudes.length; i++) {
-      cumulative += magnitudes[i]!;
+      cumulative += magnitudes[i] ?? 0;
       if (cumulative >= threshold) {
         rolloffBin = i;
         break;
@@ -150,7 +159,7 @@ class VoicePrint {
       const limit = Math.min(fftSize, data.length);
       for (let n = 0; n < limit; n++) {
         const window = 0.5 - 0.5 * Math.cos((2 * Math.PI * n) / (fftSize - 1));
-        const sample = data[n]! * window;
+        const sample = (data[n] ?? 0) * window;
         const angle = (-2 * Math.PI * k * n) / fftSize;
         real += sample * Math.cos(angle);
         imag += sample * Math.sin(angle);
@@ -239,9 +248,11 @@ class VoicePrint {
     let normA = 0;
     let normB = 0;
     for (let i = 0; i < a.length; i++) {
-      dot += a[i]! * b[i]!;
-      normA += a[i]! * a[i]!;
-      normB += b[i]! * b[i]!;
+      const av = a[i] ?? 0;
+      const bv = b[i] ?? 0;
+      dot += av * bv;
+      normA += av * av;
+      normB += bv * bv;
     }
     if (normA === 0 || normB === 0) return 0;
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
