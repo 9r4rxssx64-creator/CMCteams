@@ -250,6 +250,7 @@ describe('observability guard ERROR PATH réel (Jet 7.8 anti-théâtre)', () => 
 
   it('guard non-Error throw (string) → capture msg = String(err)', async () => {
     await observability.guard('test.string.throw', () => {
+      // eslint-disable-next-line no-throw-literal
       throw 'pas un Error';
     });
     const buf = observability.getBuffer();
