@@ -47,6 +47,10 @@ id = "REPLACE_AFTER_CREATE"
 binding = "ESCALATIONS"
 id = "REPLACE_AFTER_CREATE"
 
+[[kv_namespaces]]
+binding = "USER_PLANS"
+id = "REPLACE_AFTER_CREATE"
+
 # Secrets (privés, à push via Wrangler) :
 #   wrangler secret put STRIPE_WEBHOOK_SECRET
 #   wrangler secret put ANTHROPIC_KEY

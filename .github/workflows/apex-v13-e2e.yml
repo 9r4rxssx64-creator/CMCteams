@@ -38,14 +38,17 @@ jobs:
       - name: TypeScript strict
         run: npx tsc --noEmit
 
-      - name: Vitest unit tests + coverage report
-        run: npx vitest run --coverage --reporter=verbose
+      - name: Vitest unit tests (HARD FAIL si tests rouges)
+        run: npx vitest run --reporter=verbose
+
+      - name: Vitest coverage report (informational, ne fail pas)
+        run: npx vitest run --coverage --reporter=basic
         continue-on-error: true
 
-      - name: Vite build
+      - name: Vite build (HARD FAIL si build casse)
         run: npx vite build
 
-      - name: Install Playwright browsers (Chromium only pour CI light)
+      - name: Install Playwright browsers (Chromium only)
         run: npx playwright install chromium
 
       - name: Start preview server (background)
@@ -54,9 +57,8 @@ jobs:
           sleep 5
           curl -sf http://localhost:4173/ > /dev/null || (echo "Preview server not responding" && exit 1)
 
-      - name: Run Playwright E2E
+      - name: Run Playwright E2E (HARD FAIL si E2E rouge)
         run: npx playwright test --project=chromium --reporter=line
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
@@ -65,4 +67,20 @@ jobs:
           name: playwright-report
           path: apex-ai/v13/playwright-report/
           retention-days: 7
-        continue-on-error: true
+
+  worker-tests:
+    name: Apex v13 Backend Worker tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/apex-v13-backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+      - name: Vitest Worker tests (HARD FAIL)
+        run: npx vitest run --reporter=verbose
