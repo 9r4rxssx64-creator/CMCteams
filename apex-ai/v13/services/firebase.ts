@@ -146,10 +146,27 @@ class Firebase {
     }
   }
 
+  /**
+   * Hash idempotency déterministe (Jet 6 fix audit P0-2 : try/catch crypto.subtle).
+   * Si crypto.subtle indisponible (iframe sandbox, SW reload, vieux browser) → fallback DJB2 32-bit.
+   * DJB2 ≠ cryptographique mais déterministe sur (key, value) = OK pour idempotency 60s window.
+   */
   private async hashIdempotency(key: string, value: unknown): Promise<string> {
     const data = key + ':' + JSON.stringify(value);
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
-    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+    try {
+      if (typeof crypto !== 'undefined' && crypto.subtle) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+        return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+      }
+    } catch (err: unknown) {
+      logger.warn('firebase', 'crypto.subtle failed, fallback DJB2', { err });
+    }
+    /* Fallback DJB2 hash (deterministic, 32-bit) */
+    let hash = 5381;
+    for (let i = 0; i < data.length; i++) {
+      hash = ((hash << 5) + hash + data.charCodeAt(i)) | 0;
+    }
+    return 'djb2_' + (hash >>> 0).toString(16).padStart(8, '0') + '_' + data.length.toString(16);
   }
 
   private recentlyWritten(key: string): boolean {

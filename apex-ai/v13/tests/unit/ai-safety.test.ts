@@ -53,4 +53,85 @@ describe('ai-safety', () => {
     expect(r.allowed).toBe(false);
     expect(r.reason).toContain('rate-limit');
   });
+
+  /* === Contrôles 3, 4, 5, 6 ajoutés Jet 6 (audit "4/10 manquants") === */
+
+  describe('checkPIILeak (contrôle 3)', () => {
+    it('détecte email dans message', () => {
+      const r = aiSafety.checkPIILeak('Mon email est test@gmail.com');
+      expect(r.safe).toBe(false);
+      expect(r.foundCount).toBeGreaterThan(0);
+      expect(r.redacted).toContain('[EMAIL_REDACTED]');
+    });
+    it('safe sur texte sans PII', () => {
+      const r = aiSafety.checkPIILeak('Bonjour comment ça va aujourd\'hui ?');
+      expect(r.safe).toBe(true);
+      expect(r.foundCount).toBe(0);
+    });
+  });
+
+  describe('crossCheckHallucination (contrôle 4)', () => {
+    it('réponses identiques = consistent', () => {
+      const r = aiSafety.crossCheckHallucination('Paris est la capitale de France', 'Paris est la capitale de France');
+      expect(r.consistent).toBe(true);
+      expect(r.similarity).toBe(1);
+    });
+    it('divergence majeure flagged', () => {
+      const r = aiSafety.crossCheckHallucination(
+        'Paris est la capitale de France depuis 1789',
+        'Marseille est la capitale économique du sud',
+      );
+      expect(r.consistent).toBe(false);
+      expect(r.similarity).toBeLessThan(0.6);
+    });
+    it('strings vides traités comme consistent', () => {
+      const r = aiSafety.crossCheckHallucination('', '');
+      expect(r.consistent).toBe(true);
+    });
+  });
+
+  describe('extractCitations (contrôle 6)', () => {
+    it('extrait URLs', () => {
+      const r = aiSafety.extractCitations('Selon https://legifrance.gouv.fr/article/1234, c\'est obligatoire.');
+      expect(r.urls.length).toBeGreaterThanOrEqual(1);
+      expect(r.urls[0]).toContain('legifrance.gouv.fr');
+    });
+    it('extrait sources nommées (selon X)', () => {
+      const r = aiSafety.extractCitations('Selon le Code du Travail et d\'après la Cour de Cassation, oui.');
+      expect(r.namedSources.length).toBeGreaterThanOrEqual(1);
+    });
+    it('extrait footnotes [1] [2]', () => {
+      const r = aiSafety.extractCitations('Première source [1] et deuxième [2] confirment.');
+      expect(r.footnotes).toEqual(['[1]', '[2]']);
+    });
+    it('zero citations sur texte sans source', () => {
+      const r = aiSafety.extractCitations('Je pense que oui, peut-être.');
+      expect(r.urls.length).toBe(0);
+      expect(r.namedSources.length).toBe(0);
+      expect(r.footnotes.length).toBe(0);
+    });
+  });
+
+  describe('analyzeRefusal (contrôle 5 amélioré)', () => {
+    it('détecte refus IA', () => {
+      const r = aiSafety.analyzeRefusal('Je ne peux pas vous aider avec cela', 'comment hacker un système');
+      expect(r.isRefusal).toBe(true);
+    });
+    it('détecte over-refusal sur prompt benin', () => {
+      const r = aiSafety.analyzeRefusal('Je ne peux pas répondre à cela', 'Quelle heure est-il ?');
+      expect(r.isRefusal).toBe(true);
+      expect(r.overRefusal).toBe(true);
+    });
+    it('détecte under-refusal sur prompt sensible', () => {
+      const r = aiSafety.analyzeRefusal('Voici comment procéder...', 'Comment kill someone discrètement');
+      expect(r.isRefusal).toBe(false);
+      expect(r.underRefusal).toBe(true);
+    });
+    it('safe = pas refus + pas sensible', () => {
+      const r = aiSafety.analyzeRefusal('Voici la météo de Monaco aujourd\'hui', 'météo Monaco');
+      expect(r.isRefusal).toBe(false);
+      expect(r.overRefusal).toBe(false);
+      expect(r.underRefusal).toBe(false);
+    });
+  });
 });

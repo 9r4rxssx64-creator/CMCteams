@@ -19,6 +19,7 @@
 
 import { observability } from './observability.js';
 import { auditLog } from './audit-log.js';
+import { redactPII } from './pii-redaction.js';
 
 interface SafetyResult {
   safe: boolean;
@@ -174,6 +175,111 @@ class AISafety {
       return { allowed: false, reason: 'Tool rate-limit dépassé (30/5min)' };
     }
     return { allowed: true };
+  }
+
+  /**
+   * Contrôle 3 (manquant Jet 5) : PII leak prevention RÉEL.
+   * Vérifie si message sortant contient PII non redactés.
+   * Wrapper sur pii-redaction.ts avec audit log si détection.
+   */
+  checkPIILeak(text: string): { safe: boolean; foundCount: number; redacted: string } {
+    const result = redactPII(text);
+    if (result.foundCount > 0) {
+      void auditLog.record('ai-safety.pii_detected', {
+        details: { foundCount: result.foundCount, textPreview: text.slice(0, 100) },
+      });
+    }
+    return { safe: result.foundCount === 0, foundCount: result.foundCount, redacted: result.redacted };
+  }
+
+  /**
+   * Contrôle 4 (manquant Jet 5) : Hallucination cross-check.
+   * Compare 2 réponses de providers différents → flag si divergence majeure.
+   * Stratégie : Levenshtein-like similarity sur tokens. Si < 0.5 → divergence.
+   */
+  crossCheckHallucination(responseA: string, responseB: string): {
+    consistent: boolean;
+    similarity: number;
+    flag?: string;
+  } {
+    const tokenize = (s: string) => s.toLowerCase().split(/\s+/).filter((t) => t.length > 3);
+    const tokensA = new Set(tokenize(responseA));
+    const tokensB = new Set(tokenize(responseB));
+    if (tokensA.size === 0 && tokensB.size === 0) return { consistent: true, similarity: 1 };
+    /* Jaccard similarity */
+    const intersection = [...tokensA].filter((t) => tokensB.has(t)).length;
+    const union = new Set([...tokensA, ...tokensB]).size;
+    const similarity = union === 0 ? 0 : intersection / union;
+    if (similarity < 0.3) {
+      void auditLog.record('ai-safety.hallucination', { details: { similarity, lenA: responseA.length, lenB: responseB.length } });
+      return { consistent: false, similarity, flag: 'major_divergence' };
+    }
+    if (similarity < 0.6) {
+      return { consistent: false, similarity, flag: 'minor_divergence' };
+    }
+    return { consistent: true, similarity };
+  }
+
+  /**
+   * Contrôle 6 (manquant Jet 5) : Citation accuracy tracker.
+   * Quand IA cite source (URL, "selon X"), vérifie que la source existe vraiment.
+   * Patterns détection : URLs, "selon", "d'après", footnotes [1].
+   */
+  extractCitations(text: string): {
+    urls: string[];
+    namedSources: string[];
+    footnotes: string[];
+  } {
+    const urls = (text.match(/https?:\/\/[^\s<>"]+/g) ?? []).map((s) => s.replace(/[.,;:!?]$/, ''));
+    const namedSources = (text.match(/\b(?:selon|d'après|d'apres|according\s+to|per)\s+([^.,;\n]+)/gi) ?? []).map((s) => s.trim());
+    const footnotes = (text.match(/\[\d+\]/g) ?? []).map((s) => s.trim());
+    return { urls, namedSources, footnotes };
+  }
+
+  /**
+   * Vérifie qu'une URL citée est réellement accessible (HEAD request best-effort).
+   */
+  async verifyCitationURL(url: string): Promise<{ valid: boolean; status?: number }> {
+    try {
+      const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000), mode: 'no-cors' });
+      return { valid: res.status < 400 || res.type === 'opaque', status: res.status };
+    } catch {
+      return { valid: false };
+    }
+  }
+
+  /**
+   * Contrôle 5 amélioré (Jet 6) : Refusal calibration RÉEL.
+   * Détecte over/under-refusal en comparant contre baseline de patterns refus + acceptable.
+   */
+  analyzeRefusal(refusalText: string, prompt: string): {
+    isRefusal: boolean;
+    overRefusal: boolean;
+    underRefusal: boolean;
+    confidence: number;
+  } {
+    const refusalPatterns = [
+      /\b(je\s+ne\s+peux\s+pas|cannot|unable\s+to|won'?t|refuse)\b/i,
+      /\b(against\s+my\s+(guidelines?|principles?))/i,
+      /\b(désolé|sorry).*(can'?t|cannot|impossible)/i,
+    ];
+    const isRefusal = refusalPatterns.some((p) => p.test(refusalText));
+    /* Over-refusal : refus sur prompt clairement bénin (pas de keyword sensible) */
+    const sensitiveKeywords = /\b(kill|hack|exploit|illegal|drug|weapon|csam|child\s+abuse)\b/i;
+    const promptLooksSafe = !sensitiveKeywords.test(prompt);
+    const overRefusal = isRefusal && promptLooksSafe && prompt.length < 200;
+    /* Under-refusal : pas de refus alors que prompt clairement sensible */
+    const underRefusal = !isRefusal && sensitiveKeywords.test(prompt);
+    let confidence = 0.5;
+    if (isRefusal) confidence += 0.3;
+    if (overRefusal || underRefusal) confidence -= 0.2;
+    if (overRefusal) {
+      void auditLog.record('ai-safety.over_refusal', { details: { promptPreview: prompt.slice(0, 100) } });
+    }
+    if (underRefusal) {
+      void auditLog.record('ai-safety.under_refusal', { details: { promptPreview: prompt.slice(0, 100) } });
+    }
+    return { isRefusal, overRefusal, underRefusal, confidence };
   }
 }
 

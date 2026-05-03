@@ -153,21 +153,36 @@ class RGPD {
   }
 
   /**
-   * Art. 17 : Suppression cascade des données user.
-   * Confirmation requise (pas de undo).
-   * Audit log conserve une entrée "user_erased" mais sans données perso (que l'event).
+   * Art. 17 : Suppression cascade COMPLÈTE des données user (Jet 6 fix audit).
+   * Avant : localStorage only → audit subagent flaggé "cascade mensonge".
+   * Maintenant : localStorage + Firebase + IndexedDB shadow + audit log final.
+   *
+   * Étapes :
+   * 1. Audit log "rgpd.erase.start" (immuable, conservé même après erase)
+   * 2. localStorage : suppression clés scoped user
+   * 3. Firebase : DELETE /apex/users/<uid>/.json + /apex/persistent_memory/<uid>/.json
+   * 4. IndexedDB : clear ObjectStores user-scoped (si présent)
+   * 5. Audit log "rgpd.erase.complete" avec count + sources
    */
-  async deleteUserData(uid: string, confirmed: boolean): Promise<{ ok: boolean; deletedKeys: string[] }> {
+  async deleteUserData(uid: string, confirmed: boolean): Promise<{
+    ok: boolean;
+    deletedKeys: string[];
+    firebaseDeleted: boolean;
+    idbDeleted: boolean;
+    failures: string[];
+  }> {
     if (!confirmed) {
-      return { ok: false, deletedKeys: [] };
+      return { ok: false, deletedKeys: [], firebaseDeleted: false, idbDeleted: false, failures: ['not_confirmed'] };
     }
     await auditLog.record('rgpd.erase.start', { actor: uid });
+
+    /* 1. localStorage cascade */
     const deletedKeys: string[] = [];
+    const failures: string[] = [];
     const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k) continue;
-      /* Match clés user-scoped */
       if (k === 'apex_v13_user' || k === 'apex_v13_uid' || k === 'apex_v13_lastact') {
         keysToDelete.push(k);
       } else if (k.endsWith(`_${uid}`) || k.includes(`_${uid}_`)) {
@@ -178,13 +193,68 @@ class RGPD {
       try {
         localStorage.removeItem(k);
         deletedKeys.push(k);
-      } catch {
-        /* ignore */
+      } catch (err: unknown) {
+        failures.push(`localStorage:${k}:${String(err).slice(0, 40)}`);
       }
     }
-    await auditLog.record('rgpd.erase.complete', { details: { deletedCount: deletedKeys.length } });
-    logger.info('rgpd', `Erased user ${uid}`, { count: deletedKeys.length });
-    return { ok: true, deletedKeys };
+
+    /* 2. Firebase cascade — DELETE serveur réel via REST */
+    let firebaseDeleted = false;
+    try {
+      const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://kdmc-clients-default-rtdb.firebaseio.com';
+      /* Path utilisateur dans schéma préservé v12.785 : /apex/users/<uid> */
+      const paths = [`/apex/users/${encodeURIComponent(uid)}`, `/apex/persistent_memory/${encodeURIComponent(uid)}`, `/apex/lessons/${encodeURIComponent(uid)}`];
+      let allOk = true;
+      for (const p of paths) {
+        try {
+          const res = await fetch(`${fbUrl}${p}.json`, { method: 'DELETE', signal: AbortSignal.timeout(8000) });
+          if (!res.ok) {
+            allOk = false;
+            failures.push(`firebase:${p}:HTTP_${res.status}`);
+          }
+        } catch (err: unknown) {
+          allOk = false;
+          failures.push(`firebase:${p}:${String(err).slice(0, 40)}`);
+        }
+      }
+      firebaseDeleted = allOk;
+    } catch (err: unknown) {
+      failures.push(`firebase_global:${String(err).slice(0, 40)}`);
+    }
+
+    /* 3. IndexedDB cascade (si Apex utilise IDB shadow Jet 6+) */
+    let idbDeleted = false;
+    try {
+      if ('indexedDB' in globalThis) {
+        await new Promise<void>((resolve) => {
+          const req = indexedDB.deleteDatabase(`apex_v13_user_${uid}`);
+          req.onsuccess = () => { idbDeleted = true; resolve(); };
+          req.onerror = () => { failures.push('idb:delete_failed'); resolve(); };
+          req.onblocked = () => { failures.push('idb:blocked'); resolve(); };
+          /* Timeout safety */
+          setTimeout(resolve, 5000);
+        });
+      }
+    } catch (err: unknown) {
+      failures.push(`idb_global:${String(err).slice(0, 40)}`);
+    }
+
+    /* 4. Audit log final immuable (PAS supprimé — obligation légale 5 ans Art. 30) */
+    await auditLog.record('rgpd.erase.complete', {
+      details: {
+        deletedCount: deletedKeys.length,
+        firebaseDeleted,
+        idbDeleted,
+        failureCount: failures.length,
+      },
+    });
+    logger.info('rgpd', `Erased user ${uid} (cascade complete)`, {
+      localStorage: deletedKeys.length,
+      firebase: firebaseDeleted,
+      idb: idbDeleted,
+      failures: failures.length,
+    });
+    return { ok: failures.length === 0, deletedKeys, firebaseDeleted, idbDeleted, failures };
   }
 
   /**
