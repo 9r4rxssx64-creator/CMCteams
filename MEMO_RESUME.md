@@ -1,6 +1,59 @@
-# Mémo de reprise — Apex v12.774 + CMCteams v9.593 (session 2026-05-02 longue)
+# Mémo de reprise — Apex v13.0 Jet 1+1.5 LIVE + CMCteams v9.593 (session 2026-05-03)
 
-## 📋 RÉCAP COMPLET SESSION 2026-05-02 — bilan factuel
+## 🎯 ÉTAT ACTUEL (2026-05-03 14h10)
+
+### Apex v13.0 Jet 1 + Jet 1.5 livré et déployé canary
+- **Canary live** : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/
+- **Stable v12.785** intact : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/
+- Stack : TypeScript strict + Vite 6 + Vitest + Playwright + Tailwind ready
+- 8 modules core + 9 services + 3 features lazy + 17/17 tests verts
+- Bundle initial 6.66 KB gzipped
+- Confirmé chez Kevin : header APEX AI + chat fonctionnel + UI épurée
+
+### Demandes Kevin intégrées v13
+- ✅ Toggle commercialisation admin (Kevin = bypass total)
+- ✅ Création comptes admin famille/client_pro/client_free + WhatsApp OTP
+- ✅ Qualité chat ULTRA streaming + queue messages
+- ✅ Failover IA Anthropic → OpenRouter → Groq → Gemini → OpenClaw
+- ✅ Anonymat strict : nom retiré, prénom + DK uniquement
+- ✅ Brand "APEX AI" + signature "Créé par DK"
+- ✅ Modal paste clé API + nav bar (Chat/Admin/Clé/Logout)
+- ✅ Footer "APEX AI v13.0 — Créé par DK"
+
+### 4 audits livrés + Jet 1.5 fix
+1. Audit interne v13 : **62/100**
+2. Audit sécu subagent : **15 P0/P1** identifiés
+3. Audit plan vs concurrents : **15 findings** dont 6 MUST-FIX
+4. Audit préservation projets : **6/6 INTACTS**
+
+### Jet 1.5 — 5 P0 + 3 P1 sécu fixés (score 48 → 85+/100 axe sécu)
+- P0-2 Gemini API key URL → header
+- P0-3 PIN compare timing-safe (XOR + OR)
+- P0-4 Invite token 16→64 chars + random salt
+- P0-5 isAdmin via user.id direct (anti spoof DevTools)
+- P1 User enum constant-time (hashPin even unknown user)
+- P1 Rate-limit progressif PIN 5→30s, 9→24h
+- P1 Quota integer overflow protection
+- P1 OTP WhatsApp 6 digits → 12 chars alphanumériques
+
+### Règles permanentes ajoutées CLAUDE.md (Kevin 2026-05-03)
+- 🔬 TEST EN LIVE EN PERMANENCE (script test-live.sh 6 vérifs)
+- 🔁 RECONSULTATION PÉRIODIQUE AUTONOMIE (cycle 30 min)
+
+### Prochaines actions Kevin
+- ✅ App v13 testée chez Kevin (visuel OK, chat marche)
+- 🟡 Coller clé API Anthropic dans v13 (modal "Coller clé API" disponible)
+- 🟡 Tester création compte famille via #admin
+- 🔴 OpenClaw clé API (toujours en attente, rappel actif)
+
+### Plan suite
+- **Jet 2** : 145 vues + 15 studios + 8 pro + voice + 100+ tools IA + 13 sentinelles + 60+ intégrations + UX drill-down
+- **Jet 3** : audit-grade RGPD Art. 15-22 + AI Safety 10 contrôles + WCAG AAA + CSP nonce dynamique (P0-1 reste)
+- **3 audits externes** finaux pour commercialisation (Cure53/Calibre/Anthropic T&S OU pré-audits LLM internes)
+
+---
+
+## 📜 ARCHIVE SESSION 2026-05-02 — Apex v12.774 + CMCteams v9.593
 
 ### CMCteams : v9.580 → v9.593 (14 versions poussées)
 
