@@ -274,7 +274,8 @@ class ChatRealtime {
       const all = JSON.parse(localStorage.getItem('apex_v13_chat_messages') ?? '[]') as ChatMessage[];
       const idx = all.findIndex((m) => m.id === messageId);
       if (idx < 0) return false;
-      const msg = all[idx]!;
+      const msg = all[idx];
+      if (!msg) return false;
       const reactions = { ...msg.reactions };
       const existing = reactions[emoji] ?? [];
       if (existing.includes(uid)) {
@@ -298,8 +299,9 @@ class ChatRealtime {
       const all = JSON.parse(localStorage.getItem('apex_v13_chat_messages') ?? '[]') as ChatMessage[];
       const idx = all.findIndex((m) => m.id === messageId);
       if (idx < 0) return false;
-      if (all[idx]!.sender_uid !== uid) return false;
-      all[idx] = { ...all[idx]!, content: newContent.slice(0, 5000), edited_ts: Date.now() };
+      const msg = all[idx];
+      if (!msg || msg.sender_uid !== uid) return false;
+      all[idx] = { ...msg, content: newContent.slice(0, 5000), edited_ts: Date.now() };
       localStorage.setItem('apex_v13_chat_messages', JSON.stringify(all));
       return true;
     } catch {
@@ -315,8 +317,9 @@ class ChatRealtime {
       const all = JSON.parse(localStorage.getItem('apex_v13_chat_messages') ?? '[]') as ChatMessage[];
       const idx = all.findIndex((m) => m.id === messageId);
       if (idx < 0) return false;
-      if (all[idx]!.sender_uid !== uid) return false;
-      all[idx] = { ...all[idx]!, deleted: true };
+      const msg = all[idx];
+      if (!msg || msg.sender_uid !== uid) return false;
+      all[idx] = { ...msg, deleted: true };
       localStorage.setItem('apex_v13_chat_messages', JSON.stringify(all));
       return true;
     } catch {

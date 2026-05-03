@@ -138,11 +138,38 @@ class BusinessIntelligence {
       });
     };
 
-    compareMetric('messages', this.countMessagesSince(currentStart), this.countMessagesSince(previousStart) - this.countMessagesSince(currentStart));
-    compareMetric('tokens', this.countTokensSince(currentStart), this.countTokensSince(previousStart) - this.countTokensSince(currentStart));
-    compareMetric('errors', this.countErrorsSince(currentStart), this.countErrorsSince(previousStart) - this.countErrorsSince(currentStart));
+    compareMetric('messages', this.countMessagesBetween(currentStart, now), this.countMessagesBetween(previousStart, currentStart));
+    compareMetric('tokens', this.countTokensBetween(currentStart, now), this.countTokensBetween(previousStart, currentStart));
+    compareMetric('errors', this.countErrorsBetween(currentStart, now), this.countErrorsBetween(previousStart, currentStart));
 
     return trends;
+  }
+
+  private countMessagesBetween(startTs: number, endTs: number): number {
+    try {
+      const all = JSON.parse(localStorage.getItem('apex_v13_chat_messages') ?? '[]') as Array<{ ts: number }>;
+      return all.filter((m) => m.ts >= startTs && m.ts < endTs).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  private countTokensBetween(startTs: number, endTs: number): number {
+    try {
+      const usage = JSON.parse(localStorage.getItem('apex_v13_token_usage_history') ?? '[]') as Array<{ ts: number; tokens: number }>;
+      return usage.filter((u) => u.ts >= startTs && u.ts < endTs).reduce((s, u) => s + u.tokens, 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  private countErrorsBetween(startTs: number, endTs: number): number {
+    try {
+      const obs = JSON.parse(localStorage.getItem('apex_v13_observability_buffer') ?? '[]') as Array<{ ts: number; level: string }>;
+      return obs.filter((o) => o.ts >= startTs && o.ts < endTs && o.level === 'error').length;
+    } catch {
+      return 0;
+    }
   }
 
   /**

@@ -51,7 +51,7 @@ class TokensDashboard {
    * Enregistre une utilisation de tokens (appelé par ai-router après chaque stream).
    */
   record(provider: string, inputTokens: number, outputTokens: number, model = 'anthropic_sonnet'): void {
-    const pricing = PRICING[model] ?? PRICING['openrouter_default']!;
+    const pricing = PRICING[model] ?? PRICING['openrouter_default'] ?? { input_per_1k: 0, output_per_1k: 0 };
     const cost = (inputTokens / 1000) * pricing.input_per_1k + (outputTokens / 1000) * pricing.output_per_1k;
     const key = `ax_token_usage_${provider}`;
     try {

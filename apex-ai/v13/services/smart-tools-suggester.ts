@@ -458,7 +458,7 @@ class SmartToolsSuggester {
     const candidates = DOMAIN_TOOLS.filter((t) => t.domain === domain);
     const filtered = includePremium ? candidates : candidates.filter((t) => !t.is_premium);
     if (filtered.length === 0) return null;
-    return [...filtered].sort((a, b) => b.rating - a.rating)[0]!;
+    return [...filtered].sort((a, b) => b.rating - a.rating)[0] ?? null;
   }
 
   /**

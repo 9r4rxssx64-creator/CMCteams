@@ -575,9 +575,11 @@ class VoicesRegistry {
    */
   randomVoice(category?: VoiceCategory): Voice {
     const candidates = category ? this.byCategory(category) : VOICES;
-    if (candidates.length === 0) return VOICES[0]!;
+    const fallback = VOICES[0];
+    if (!fallback) throw new Error('VOICES registry empty');
+    if (candidates.length === 0) return fallback;
     const idx = Math.floor(Math.random() * candidates.length);
-    return candidates[idx]!;
+    return candidates[idx] ?? fallback;
   }
 
   /**
@@ -665,8 +667,8 @@ class VoicesRegistry {
       const browserVoices = window.speechSynthesis.getVoices();
       const matchingVoice = browserVoices.find(
         (v) => v.lang.startsWith(utterance.lang.slice(0, 2)) &&
-          (voice!.gender === 'female' ? /female|woman|fr-fr-amelie|virginie/i.test(v.name) :
-           voice!.gender === 'male' ? /male|man|fr-fr-thomas|nicolas/i.test(v.name) : true),
+          (voice.gender === 'female' ? /female|woman|fr-fr-amelie|virginie/i.test(v.name) :
+           voice.gender === 'male' ? /male|man|fr-fr-thomas|nicolas/i.test(v.name) : true),
       );
       if (matchingVoice) utterance.voice = matchingVoice;
       window.speechSynthesis.speak(utterance);

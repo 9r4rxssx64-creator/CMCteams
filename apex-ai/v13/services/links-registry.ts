@@ -345,9 +345,10 @@ class LinksRegistry {
   async autoCreate(service: string): Promise<ServiceLink> {
     const lc = service.toLowerCase();
     /* Connu : utilise pré-configuré */
-    if (KNOWN_LINKS[lc]) {
+    const known = KNOWN_LINKS[lc];
+    if (known) {
       const link: ServiceLink = {
-        ...KNOWN_LINKS[lc]!,
+        ...known,
         alive: true,
         last_verified: Date.now(),
       };

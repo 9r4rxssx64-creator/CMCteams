@@ -82,9 +82,10 @@ class FeatureDeployment {
       const all = this.listFlags();
       const idx = all.findIndex((f) => f.id === flag.id);
       const now = Date.now();
+      const existing = idx >= 0 ? all[idx] : undefined;
       const full: FeatureFlag = {
         ...flag,
-        created_at: idx >= 0 ? all[idx]!.created_at : now,
+        created_at: existing?.created_at ?? now,
         updated_at: now,
       };
       if (idx >= 0) all[idx] = full;
@@ -160,8 +161,10 @@ class FeatureDeployment {
     const all = this.listFlags();
     const idx = all.findIndex((f) => f.id === featureId);
     if (idx < 0) return false;
-    all[idx]!.enabled = enabled;
-    all[idx]!.updated_at = Date.now();
+    const flag = all[idx];
+    if (!flag) return false;
+    flag.enabled = enabled;
+    flag.updated_at = Date.now();
     try {
       localStorage.setItem('apex_v13_feature_flags', JSON.stringify(all));
       void auditLog.record('feature.toggle', { details: { id: featureId, enabled } });
@@ -191,8 +194,10 @@ class FeatureDeployment {
     const all = this.listFlags();
     const idx = all.findIndex((f) => f.id === featureId);
     if (idx < 0) return false;
-    all[idx]!.scope = { type: 'rollout', pct };
-    all[idx]!.updated_at = Date.now();
+    const flag = all[idx];
+    if (!flag) return false;
+    flag.scope = { type: 'rollout', pct };
+    flag.updated_at = Date.now();
     try {
       localStorage.setItem('apex_v13_feature_flags', JSON.stringify(all));
       void auditLog.record('feature.rollout_pct', { details: { id: featureId, pct } });

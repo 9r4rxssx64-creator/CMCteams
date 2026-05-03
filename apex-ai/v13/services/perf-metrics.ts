@@ -152,7 +152,8 @@ class PerfMetrics {
     };
     /* Itère reverse pour avoir le plus récent */
     for (let i = this.metrics.length - 1; i >= 0; i--) {
-      const m = this.metrics[i]!;
+      const m = this.metrics[i];
+      if (!m) continue;
       if (!snapshot[m.name]) snapshot[m.name] = m;
     }
     return snapshot as Record<PerfMetric['name'], PerfMetric | null>;
@@ -201,12 +202,12 @@ class PerfMetrics {
     else if (score >= 40) grade = 'D';
     else grade = 'F';
     const formatted = (Object.entries(snap) as Array<[PerfMetric['name'], PerfMetric | null]>)
-      .filter(([, m]) => m !== null)
+      .filter((entry): entry is [PerfMetric['name'], PerfMetric] => entry[1] !== null)
       .map(([name, m]) => ({
         name,
-        value: name === 'CLS' ? m!.value.toFixed(3) : `${m!.value.toFixed(0)}ms`,
-        rating: m!.rating,
-        emoji: m!.rating === 'good' ? '🟢' : m!.rating === 'needs-improvement' ? '🟠' : '🔴',
+        value: name === 'CLS' ? m.value.toFixed(3) : `${m.value.toFixed(0)}ms`,
+        rating: m.rating,
+        emoji: m.rating === 'good' ? '🟢' : m.rating === 'needs-improvement' ? '🟠' : '🔴',
       }));
     return { score: `${score}/100`, grade, metrics: formatted };
   }
