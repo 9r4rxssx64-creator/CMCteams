@@ -232,3 +232,57 @@ describe('chat streamAssistantMessage + markdown (Jet 7.7)', () => {
     expect(scroll).not.toBeNull();
   });
 });
+
+describe('chat XSS RÉEL via renderMarkdownLight (Jet 7.8 anti-théâtre)', () => {
+  it('escapeHtml remplace < > & " et apostrophe', async () => {
+    const { escapeHtml } = await import('../../features/chat/index.js');
+    expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(escapeHtml('Tom & Jerry "say \'hi\'"')).toBe('Tom &amp; Jerry &quot;say &#39;hi&#39;&quot;');
+  });
+
+  it('renderMarkdownLight escape < > AVANT regex markdown (anti XSS)', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    const malveillant = '<script>alert("xss")</script>';
+    const out = renderMarkdownLight(malveillant);
+    /* Le tag <script> doit être échappé en &lt;script&gt; — JAMAIS rendu comme HTML actif */
+    expect(out).not.toContain('<script>');
+    expect(out).toContain('&lt;script&gt;');
+  });
+
+  it('renderMarkdownLight escape img onerror (XSS classique)', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    const xss = '<img src=x onerror=alert(1)>';
+    const out = renderMarkdownLight(xss);
+    expect(out).not.toMatch(/<img[^>]+onerror/);
+    expect(out).toContain('&lt;img');
+  });
+
+  it('renderMarkdownLight applique markdown bold sur texte safe', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    const out = renderMarkdownLight('**gras**');
+    expect(out).toContain('<strong>gras</strong>');
+  });
+
+  it('renderMarkdownLight applique italic + code inline + newline', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    expect(renderMarkdownLight('*italic*')).toContain('<em>italic</em>');
+    expect(renderMarkdownLight('`code`')).toContain('<code class="ax-code-inline">code</code>');
+    expect(renderMarkdownLight('ligne1\nligne2')).toContain('<br>');
+  });
+
+  it('renderMarkdownLight code block avec ``` escape contenu', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    const out = renderMarkdownLight('```\n<script>nope</script>\n```');
+    expect(out).toContain('<pre class="ax-code">');
+    expect(out).not.toContain('<script>nope</script>');
+  });
+
+  it('renderMarkdownLight évènements (onclick, onerror, onmouseover) tous échappés', async () => {
+    const { renderMarkdownLight } = await import('../../features/chat/index.js');
+    const evil = '<a onclick="evil()" onmouseover="hack()">click</a>';
+    const out = renderMarkdownLight(evil);
+    expect(out).not.toMatch(/<a[^>]+onclick/);
+    expect(out).not.toMatch(/<a[^>]+onmouseover/);
+    expect(out).toContain('&lt;a');
+  });
+});

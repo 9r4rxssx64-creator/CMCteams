@@ -34,11 +34,13 @@ const conversation: DisplayMessage[] = [];
 const queue: string[] = [];
 let isProcessing = false;
 
-function escapeHtml(s: string): string {
+/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
+export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
-function renderMarkdownLight(text: string): string {
+/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
+export function renderMarkdownLight(text: string): string {
   /* Markdown ultra-léger pour streaming progressif (gras, italique, code inline, code block) */
   let html = escapeHtml(text);
   html = html.replace(/```([\s\S]*?)```/g, (_, code: string) => `<pre class="ax-code"><code>${code}</code></pre>`);
