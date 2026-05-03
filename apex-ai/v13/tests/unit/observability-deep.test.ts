@@ -139,3 +139,66 @@ describe('observability deep tests', () => {
     });
   });
 });
+
+describe('observability guard branches (Jet 7.7)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    observability.init();
+  });
+
+  it('guard async fn return type Promise', async () => {
+    const r = await observability.guard('test', async () => {
+      return Promise.resolve({ data: 'async' });
+    });
+    expect((r as { data: string })?.data).toBe('async');
+  });
+
+  it('guard sync fn returnant non-promise', async () => {
+    const r = await observability.guard('test', () => 'sync-direct');
+    expect(r).toBe('sync-direct');
+  });
+
+  it('guard avec ctx context complexe enregistré', async () => {
+    await observability.guard('test', () => {
+      throw new Error('ctx error');
+    }, 'fb');
+    const buf = observability.getBuffer();
+    const last = buf.slice(-1)[0];
+    /* Stack présent dans context */
+    expect(last?.context?.stack).toBeDefined();
+  });
+
+  it('capture severities info/warn/error/critical', () => {
+    observability.capture('info', 'sev', 'info msg');
+    observability.capture('warn', 'sev', 'warn msg');
+    observability.capture('error', 'sev', 'error msg');
+    observability.capture('critical', 'sev', 'critical msg');
+    const buf = observability.getBuffer();
+    const sevEvents = buf.filter((e) => e.scope === 'sev');
+    expect(sevEvents.length).toBe(4);
+    expect(sevEvents.map((e) => e.level).sort()).toEqual(['critical', 'error', 'info', 'warn']);
+  });
+
+  it('flush schedule timer cancellable via re-call', async () => {
+    observability.capture('info', 't1', 'first');
+    observability.capture('info', 't2', 'reschedule');
+    /* Pas de throw, scheduleFlush gère re-call */
+    expect(observability.getBuffer().length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('rate-limit reset via fresh array post-cutoff', async () => {
+    /* Mix : 2 récents + 3 anciens (>10min) */
+    const now = Date.now();
+    const old = now - 11 * 60 * 1000;
+    localStorage.setItem('apex_v13_escalate_rate', JSON.stringify([old, old, old, now, now]));
+    const r = await observability.escalateToClaudeCode('mixed', 'warn', {});
+    /* 2 récents + 1 nouveau = 3 < 5 → autorisé */
+    expect(r).toBe(true);
+  });
+
+  it('escalate corrupted rate localStorage gracefull', async () => {
+    localStorage.setItem('apex_v13_escalate_rate', 'INVALID');
+    const r = await observability.escalateToClaudeCode('corrupt', 'warn', {});
+    expect(typeof r).toBe('boolean');
+  });
+});
