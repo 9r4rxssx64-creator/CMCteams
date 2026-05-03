@@ -11,15 +11,15 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="description" content="APEX AI v13 — Assistant IA personnel niveau entreprise commercialisable. Multi-providers, voice, studios créatifs, modules pro, vault chiffré.">
 
-  <!-- CSP Jet 1 : 'self' pour scripts/styles, hash inline OK via 'sha256-...' Jet 2 -->
-  <!-- NOTE Jet 2 : remplacer 'unsafe-inline' par 'sha256-XXX' calculés à build via Vite plugin -->
+  <!-- CSP Jet 2 : nonce dynamique (regen à chaque build via vite-csp-nonce-plugin) -->
+  <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-             style-src 'self' 'unsafe-inline';
+             script-src 'self' 'nonce-5536a100c2c79dceab3b4c60e47734aa' 'strict-dynamic' https: 'unsafe-inline';
+             style-src 'self' 'nonce-5536a100c2c79dceab3b4c60e47734aa' 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
-             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io;
+             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io https://api.github.com https://api.cloudflare.com https://api.stripe.com https://api.brevo.com https://api.resend.com https://api.replicate.com;
              worker-src 'self' blob:;
              frame-src 'self' https:;
              object-src 'none';
@@ -37,8 +37,8 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script type="module" crossorigin src="./core/main-DccZIa3D.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/css/main-BNM-bAvX.css">
+  <script nonce="5536a100c2c79dceab3b4c60e47734aa" type="module" crossorigin nonce="5536a100c2c79dceab3b4c60e47734aa" src="./main-D-tvw78T.js"></script>
+  <link nonce="5536a100c2c79dceab3b4c60e47734aa" rel="stylesheet" crossorigin href="./assets/css/main-BNM-bAvX.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -69,7 +69,7 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Fail-safe : si bundle ne charge pas dans 6s, montre rescue button -->
-  <script nonce="APEX_BOOT_NONCE">
+  <script nonce="5536a100c2c79dceab3b4c60e47734aa" nonce="5536a100c2c79dceab3b4c60e47734aa">
     setTimeout(function(){
       try{
         var root = document.getElementById('apex-root');

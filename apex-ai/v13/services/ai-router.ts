@@ -15,6 +15,7 @@
 
 import { logger } from '../core/logger.js';
 import { errors } from '../core/errors.js';
+import { redactMessageContent } from './pii-redaction.js';
 
 export type Provider = 'anthropic' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
 
@@ -182,6 +183,13 @@ class AIRouter {
       return;
     }
 
+    /* P1 fix : PII redaction outbound — filtre email/CB/IBAN/SS/passport/etc.
+     * AVANT envoi providers IA pour anti-leak data sensible. */
+    const redactedMessages = messages.map((m) => ({
+      ...m,
+      content: redactMessageContent(m.content) as ChatMessage['content'],
+    }));
+
     if (this.currentAbort) this.currentAbort.abort();
     const ctrl = new AbortController();
     this.currentAbort = ctrl;
@@ -193,7 +201,7 @@ class AIRouter {
       const key = this.getApiKey(provider);
       if (!key && provider !== 'gemini') continue;
       try {
-        await this.streamFromProvider(provider, key, messages, system, onChunk, ctrl.signal);
+        await this.streamFromProvider(provider, key, redactedMessages, system, onChunk, ctrl.signal);
         this.currentAbort = null;
         return; /* succès */
       } catch (err: unknown) {

@@ -221,24 +221,30 @@ export function render(rootEl: HTMLElement): void {
     });
   }
 
-  /* Paste API key handler (modal simple) */
+  /* Paste API key handler avec auto-detect 130+ patterns + auto-test + auto-link */
   const attachPasteKey = (sel: string) => {
     const btn = rootEl.querySelector<HTMLButtonElement>(sel);
     btn?.addEventListener('click', () => {
-      const value = prompt('Colle ta clé API (Anthropic sk-ant-..., OpenAI sk-..., Groq gsk_..., Gemini AIza..., GitHub ghp_...) :');
-      if (!value) return;
-      const detected = vault.detectPattern(value.trim());
-      if (!detected) {
-        alert('Format de clé non reconnu. Vérifie qu\'elle commence par sk-ant-, sk-, gsk_, AIza, ghp_, etc.');
-        return;
-      }
-      try {
-        localStorage.setItem(detected.key, value.trim());
-        alert(`✅ Clé ${detected.name} stockée. Tu peux maintenant écrire un message.`);
+      void (async () => {
+        const value = prompt(
+          'Colle ta clé / token / credential.\nApex détecte automatiquement le service et range au bon endroit.\n(Anthropic, OpenAI, Stripe, GitHub, Brevo, Cloudflare, Telegram, Notion, etc.)',
+        );
+        if (!value) return;
+        const result = await vault.autoStore(value);
+        if (result.forbidden) {
+          alert(
+            `🚨 ${result.pattern?.name}\n\nApex ne stocke JAMAIS ce type de donnée pour ta sécurité.\n\nUtilise plutôt :\n- Cartes : Stripe Checkout / Apple Pay\n- Seed phrases : hardware wallet (Ledger/Trezor)`,
+          );
+          return;
+        }
+        if (!result.ok) {
+          alert('Format non reconnu : ' + result.reason);
+          return;
+        }
+        const validMsg = result.valid === true ? '\n✅ Validé via ping API' : result.valid === false ? '\n⚠️ Ping API a échoué (clé invalide ou réseau)' : '';
+        alert(`✅ ${result.pattern?.name} stocké → ${result.pattern?.storageKey}${validMsg}\n\nDashboard : ${result.pattern?.dashboard ?? '—'}`);
         void render(rootEl);
-      } catch (err) {
-        alert('Erreur stockage : ' + (err instanceof Error ? err.message : String(err)));
-      }
+      })();
     });
   };
   attachPasteKey('#ax-paste-key');
