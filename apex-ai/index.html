@@ -1389,7 +1389,129 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.780",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.784",ADMIN_ID="kdmc_admin";
+
+/* v12.782 (Kevin "boutons s'enfoncent rien ne se passe") :
+   FAIL-SAFE NAV TAPS - delegation listener au document body, capture-phase
+   priorite, qui FORCE sv() au tap sur tout bouton/element nav avec onclick.
+   Independant des onclick HTML qui peuvent ne pas fire si handler global
+   stop la propagation. Capture phase = avant tout autre listener.
+   Plus reset _dcRaf si bloque + retry render. */
+(function _axFailSafeNavTaps(){
+  try{
+    if(window._axFailSafeNavInstalled) return;
+    window._axFailSafeNavInstalled = true;
+    /* Reset _dcRaf zombie au boot puis sur visibilitychange */
+    window._axResetDcLock = function(){
+      try{
+        if(typeof _dcRaf !== "undefined" && _dcRaf){ _dcRaf = 0; }
+        if(window._axDcDebounce){ try{ clearTimeout(window._axDcDebounce); }catch(_){} window._axDcDebounce = null; }
+      }catch(_){}
+    };
+    setTimeout(window._axResetDcLock, 500);
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden){ window._axResetDcLock(); }
+    });
+    /* Delegation listener PASSIVE bubble-phase - ne preventDefault rien, juste
+       fallback qui execute l'onclick si onclick HTML ne fire pas dans 50ms */
+    document.addEventListener("click", function(ev){
+      try{
+        var el = ev.target && ev.target.closest && ev.target.closest("[onclick]");
+        if(!el) return;
+        if(el.id === "ax-rescue-btn") return;
+        var oc = el.getAttribute("onclick") || "";
+        if(!oc) return;
+        /* Skip si modal close button (gere ailleurs) */
+        var lbl = (el.textContent||"").trim();
+        if(/^(OK|Annuler|Fermer|✕|×)$/i.test(lbl) && el.closest('.ax-modal,[role="dialog"]')) return;
+        /* Capture state avant 80ms */
+        var beforeView = window.K && window.K.view;
+        var beforeHash = (document.body && document.body.innerHTML.length || 0);
+        var modalCountBefore = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn)').length;
+        var toastCountBefore = document.querySelectorAll('.ax-toast').length;
+        setTimeout(function(){
+          try{
+            var afterView = window.K && window.K.view;
+            var afterHash = (document.body && document.body.innerHTML.length || 0);
+            var modalAfter = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn)').length;
+            var toastAfter = document.querySelectorAll('.ax-toast').length;
+            var reacted = (afterView !== beforeView) || (afterHash !== beforeHash) || (modalAfter > modalCountBefore) || (toastAfter > toastCountBefore);
+            if(reacted) return;
+            /* Click inert detected - reset locks puis force re-execution onclick */
+            window._axResetDcLock();
+            try{
+              var fn = new Function("event","with(this){try{"+oc+"}catch(_e){console.warn('[failsafe nav]',_e);}}");
+              fn.call(el, ev);
+            }catch(_e){}
+            /* Si onclick contient sv("X") essaie sv direct comme dernier recours */
+            try{
+              var mv = oc.match(/sv\(['"]([^'"]+)['"]/);
+              if(mv && mv[1] && typeof window.sv === "function" && window.K && window.K.view !== mv[1]){
+                window.sv(mv[1]);
+              }
+            }catch(_e){}
+            /* Force render apres */
+            try{ if(typeof render === "function") render(); }catch(_e){}
+          }catch(_e){}
+        }, 80);
+      }catch(_e){}
+    }, false); /* bubble phase, non-blocking */
+  }catch(_){}
+})();
+
+/* v12.781 (Kevin "boutons s'enfoncent rien ne se passe, autonomie") :
+   MINI-HUD DEBUG visible top-left admin only. Montre K state + last error
+   en temps reel. Activable via window._axHudOn = true (defaut false sauf si
+   localStorage ax_hud_on = "1"). Permet a Kevin de me reporter ce qu'il voit. */
+(function _axDebugHud(){
+  try{
+    if(window._axHudInstalled) return;
+    window._axHudInstalled = true;
+    var hudOn = localStorage.getItem("ax_hud_on") === "1";
+    if(!hudOn) return; /* Off par defaut, activer via ls("ax_hud_on","1") */
+    var hud = document.createElement("div");
+    hud.id = "ax-debug-hud";
+    hud.style.cssText = "position:fixed;top:max(8px,env(safe-area-inset-top));left:8px;z-index:2147483646;background:rgba(0,0,0,.85);color:#0f0;font-family:ui-monospace,monospace;font-size:10px;padding:6px 10px;border:1px solid #0f0;border-radius:6px;max-width:200px;line-height:1.3;pointer-events:none";
+    hud.textContent = "HUD init...";
+    var attach = function(){ try{ document.body && document.body.appendChild(hud); }catch(_){} };
+    if(document.body) attach(); else document.addEventListener("DOMContentLoaded", attach);
+    window._axHudUpdate = function(){
+      try{
+        var u = (typeof K!=="undefined" && K.user) ? (K.user.id||"?").slice(0,12) : "null";
+        var v = (typeof K!=="undefined") ? (K.view||"?") : "?";
+        var s = (typeof K!=="undefined") ? !!K.isStreaming : false;
+        var clicks = window._axDebugCounters && window._axDebugCounters.click || 0;
+        var lastClick = window._axDebugLastClick && window._axDebugLastClick.label || "-";
+        var lastErr = window._axHudLastErr || "-";
+        hud.innerHTML = "<b>v"+(APP_VER||"?").replace("v","")+"</b><br>view: "+v+"<br>user: "+u+"<br>stream: "+s+"<br>clicks: "+clicks+"<br>last: "+String(lastClick).slice(0,20)+"<br>err: "+String(lastErr).slice(0,30);
+      }catch(_){}
+    };
+    setInterval(window._axHudUpdate, 1000);
+    /* Capture errors */
+    window.addEventListener("error", function(e){
+      try{ window._axHudLastErr = (e.message||"").slice(0,40)+"@"+((e.lineno)||"?"); }catch(_){}
+    });
+    window.addEventListener("unhandledrejection", function(e){
+      try{ window._axHudLastErr = "promise:"+String(e.reason||"").slice(0,30); }catch(_){}
+    });
+    /* Wrap sv to log errors */
+    if(typeof window.sv === "function" && !window._axSvWrapped){
+      window._axSvWrapped = true;
+      var origSv = window.sv;
+      window.sv = function(v){
+        try{
+          window._axHudLastErr = "sv("+v+") OK";
+          return origSv.apply(this, arguments);
+        }catch(e){
+          window._axHudLastErr = "sv("+v+") "+String(e.message||e).slice(0,30);
+          throw e;
+        }
+      };
+    }
+  }catch(_){}
+})();
+window._axHudEnable = function(){ try{ localStorage.setItem("ax_hud_on","1"); location.reload(); }catch(_){} };
+window._axHudDisable = function(){ try{ localStorage.removeItem("ax_hud_on"); location.reload(); }catch(_){} };
 /* v12.774 (parite CMCteams v9.591) - force update au boot : compare APP_VER local
    vs serveur. Si different -> clear caches + unregister SW + reload force.
    Independant du SW updatefound (unreliable iOS Safari PWA).
@@ -1407,8 +1529,8 @@ var APP_VER = "v12.780",ADMIN_ID="kdmc_admin";
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.780"){
-            console.info("[v12.780 force-update] local=v12.780 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.784"){
+            console.info("[v12.784 force-update] local=v12.784 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
@@ -2587,10 +2709,77 @@ var _AX_ENC_PREFIX="__AXENC1__";
 function _axIsSensitiveKey(k){try{return _AX_SENSITIVE_KEY_RE.test(String(k||""));}catch(_){return false;}}
 function _axGetMasterKey(){try{var p=localStorage.getItem("ax_pin")||"apex-default-salt-v12415";var enc=new TextEncoder();return crypto.subtle.importKey("raw",enc.encode(p),{name:"PBKDF2"},false,["deriveKey"]).then(function(km){return crypto.subtle.deriveKey({name:"PBKDF2",salt:enc.encode("apex-secrets-v12415"),iterations:100000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);});}catch(e){return Promise.reject(e);}}
 function _axEncryptSecret(plaintext){try{if(!crypto||!crypto.subtle)return Promise.resolve(plaintext);var iv=crypto.getRandomValues(new Uint8Array(12));return _axGetMasterKey().then(function(key){var enc=new TextEncoder();return crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,enc.encode(String(plaintext))).then(function(ct){var combined=new Uint8Array(iv.length+ct.byteLength);combined.set(iv,0);combined.set(new Uint8Array(ct),iv.length);var b64="";for(var i=0;i<combined.length;i++)b64+=String.fromCharCode(combined[i]);return _AX_ENC_PREFIX+btoa(b64);});});}catch(_){return Promise.resolve(plaintext);}}
-function _axDecryptSecret(payload){try{if(!payload||typeof payload!=="string"||payload.indexOf(_AX_ENC_PREFIX)!==0)return Promise.resolve(payload);if(!crypto||!crypto.subtle)return Promise.resolve(payload);var raw=atob(payload.slice(_AX_ENC_PREFIX.length));var bytes=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);var iv=bytes.slice(0,12);var ct=bytes.slice(12);return _axGetMasterKey().then(function(key){return crypto.subtle.decrypt({name:"AES-GCM",iv:iv},key,ct).then(function(pt){return new TextDecoder().decode(pt);});}).catch(function(e){try{if(typeof axSecurityLog==="function")axSecurityLog("aes_decrypt_fail","payload="+String(payload).slice(0,30));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1949",_e);}catch(__){}}return payload;});}catch(_){return Promise.resolve(payload);}}
+/* v12.784 (Kevin "pourquoi tu oublies tout comme ca") - FIX RACINE
+   GLOBAL : _axDecryptSecret retournait `payload` (encrypted brut) sur echec
+   decrypt -> tous les callers ecrivaient AXENC1 en local. Maintenant retourne
+   null sur echec. Callers doivent check `if(plain)` avant de setItem. */
+function _axDecryptSecret(payload){
+  try{
+    /* Si pas un AXENC1, c'est du plain - retourner tel quel */
+    if(!payload||typeof payload!=="string"||payload.indexOf(_AX_ENC_PREFIX)!==0)return Promise.resolve(payload);
+    if(!crypto||!crypto.subtle)return Promise.resolve(null);
+    var raw=atob(payload.slice(_AX_ENC_PREFIX.length));
+    var bytes=new Uint8Array(raw.length);
+    for(var i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+    var iv=bytes.slice(0,12);
+    var ct=bytes.slice(12);
+    return _axGetMasterKey().then(function(key){
+      return crypto.subtle.decrypt({name:"AES-GCM",iv:iv},key,ct).then(function(pt){
+        return new TextDecoder().decode(pt);
+      });
+    }).catch(function(e){
+      try{if(typeof axSecurityLog==="function")axSecurityLog("aes_decrypt_fail","payload="+String(payload).slice(0,30));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1949",_e);}catch(__){}}
+      /* v12.784 : return null au lieu de payload pour empecher
+         re-encrypted overwrite local plain via setItem aveugle */
+      return null;
+    });
+  }catch(_){return Promise.resolve(null);}
+}
 function fbWrite(k,v,_retry){if(!FB_URL||!fbShouldSync(k))return;if(_fbCircuitCheck()){_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);return;}if(!_retry)_retry=0;/* v12.423 - encryption DESACTIVEE (Kevin: cles API plus marchent suite mismatch masterkey cross-device). Garde la decryption au pull pour recuperer les valeurs deja chiffrees. */fbWrite._doFetch(k,v,_retry);}fbWrite._doFetch=function(k,v,_retry){var url=FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json";fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error(r.status);if(_fbCircuitConsecOpens>0&&_fbErrTs.length===0)_fbCircuitConsecOpens=0;}).catch(function(e){_fbCircuitTrip();if(_retry<_FB_BACKOFF.length){/* v12_415_fix4c - retry sans re-encrypt */setTimeout(function(){fbWrite._doFetch(k,v,_retry+1);},_FB_BACKOFF[_retry]);}else{_axSyncQueue[k]={v:v,ts:now()};ls("ax_sync_queue",_axSyncQueue);}});}
 function fbLoadAll(){if(!FB_URL)return;fetch(FB_URL+FB_PATH+".json").then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(data){if(!data)return;Object.keys(data).forEach(function(k){var rk=k.replace(/_dot_/g,".");try{localStorage.setItem(rk,JSON.stringify(data[k]));}catch(e){}});_loadState();dc();}).catch(function(e){console.warn("fbLoadAll error:",e);});}
-function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{window._fbLastEvent=Date.now();var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");/* v12.298 SECU CRITIQUE : double guard SSE - bloquer toute cle LOCAL ou prefix LOCAL pousse par Firebase (anti-contamination cross-user Kevin/Laurence theme love rose) */var _isLocalKey=k&&FB_LOCAL.indexOf(k)>=0;if(!_isLocalKey&&k&&typeof FB_LOCAL_PREFIXES!=="undefined"&&FB_LOCAL_PREFIXES&&FB_LOCAL_PREFIXES.length){for(var _lpi=0;_lpi<FB_LOCAL_PREFIXES.length;_lpi++){if(k.indexOf(FB_LOCAL_PREFIXES[_lpi])===0){_isLocalKey=true;break;}}}if(_isLocalKey){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_local_blocked","Blocked LOCAL key from FB: "+String(k).slice(0,80));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1952",_e);}catch(__){}}try{if(FB_URL)fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{method:"DELETE"}).catch(function(){});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}return;}if(k){/* v12.269 BUGFIX CRITIQUE : ne JAMAIS ecraser localStorage avec null Firebase (cause perte cles API Kevin). Ecrase seulement si vraie valeur. */if(d.data===null){var localVal=localStorage.getItem(k);if(localVal&&localVal!=="null"&&localVal!=="\"null\""){/* On garde notre valeur locale et on push vers Firebase pour reparer */try{if(typeof fbWrite==="function")fbWrite(k,JSON.parse(localVal));}catch(_e){_axSafeCatch&&_axSafeCatch("fb-sse-restore",_e);}return;}}/* AX_V12_540_DATA_INTEGRITY (depuis P2XG9 v12.540) : timestamp guard SSE — si local ecrit < 2s, skip remote pour eviter race condition (P0 audit data integrity) */var _localWriteTs=window._axLastLocalWrite&&window._axLastLocalWrite[k];if(_localWriteTs&&Date.now()-_localWriteTs<2000){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_skip_recent_local",k+" age="+Math.round((Date.now()-_localWriteTs)/100)/10+"s");}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("sse_skip_log",_e,"info");}return;}/* v12_415_fix4d - decrypt sensitive secrets recus de Firebase */if(typeof _axIsSensitiveKey==="function"&&_axIsSensitiveKey(k)&&typeof d.data==="string"&&d.data.indexOf(_AX_ENC_PREFIX)===0){_axDecryptSecret(d.data).then(function(plain){try{localStorage.setItem(k,JSON.stringify(plain));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}try{if(typeof _loadState==="function")_loadState();if(typeof dc==="function"&&!skipRender)dc();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}});}else{
+function fbStartListening(){if(!FB_URL||_fbEs)return;var url=FB_URL+FB_PATH+".json";if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0){toast("\u26a0 Firebase bloque - domaine non autorise dans la console Firebase","err");console.error("[FB] 403 Host not in allowlist. Retirer restrictions domaine: console.cloud.google.com/apis/credentials");}});}}).catch(function(){});}_fbEs=new EventSource(url);_fbEs.onmessage=function(e){try{window._fbLastEvent=Date.now();var d=JSON.parse(e.data);if(d&&d.path&&d.data!==undefined){var k=d.path.replace(/^\//,"").replace(/_dot_/g,".");/* v12.298 SECU CRITIQUE : double guard SSE - bloquer toute cle LOCAL ou prefix LOCAL pousse par Firebase (anti-contamination cross-user Kevin/Laurence theme love rose) */var _isLocalKey=k&&FB_LOCAL.indexOf(k)>=0;if(!_isLocalKey&&k&&typeof FB_LOCAL_PREFIXES!=="undefined"&&FB_LOCAL_PREFIXES&&FB_LOCAL_PREFIXES.length){for(var _lpi=0;_lpi<FB_LOCAL_PREFIXES.length;_lpi++){if(k.indexOf(FB_LOCAL_PREFIXES[_lpi])===0){_isLocalKey=true;break;}}}if(_isLocalKey){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_local_blocked","Blocked LOCAL key from FB: "+String(k).slice(0,80));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("vL1952",_e);}catch(__){}}try{if(FB_URL)fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{method:"DELETE"}).catch(function(){});}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}return;}if(k){/* v12.269 BUGFIX CRITIQUE : ne JAMAIS ecraser localStorage avec null Firebase (cause perte cles API Kevin). Ecrase seulement si vraie valeur. */if(d.data===null){var localVal=localStorage.getItem(k);if(localVal&&localVal!=="null"&&localVal!=="\"null\""){/* On garde notre valeur locale et on push vers Firebase pour reparer */try{if(typeof fbWrite==="function")fbWrite(k,JSON.parse(localVal));}catch(_e){_axSafeCatch&&_axSafeCatch("fb-sse-restore",_e);}return;}}/* AX_V12_540_DATA_INTEGRITY (depuis P2XG9 v12.540) : timestamp guard SSE — si local ecrit < 2s, skip remote pour eviter race condition (P0 audit data integrity) */var _localWriteTs=window._axLastLocalWrite&&window._axLastLocalWrite[k];if(_localWriteTs&&Date.now()-_localWriteTs<2000){try{if(typeof axSecurityLog==="function")axSecurityLog("sse_skip_recent_local",k+" age="+Math.round((Date.now()-_localWriteTs)/100)/10+"s");}catch(_e){if(typeof _axSafeCatch==="function")_axSafeCatch("sse_skip_log",_e,"info");}return;}/* v12_415_fix4d + v12.783 (Kevin "les API ont encore bouge") - decrypt sensitive
+   secrets recus de Firebase. ROOT CAUSE bug "cles re-deviennent AXENC1" :
+   _axDecryptSecret retourne payload BRUT en cas d'echec decrypt (mismatch
+   masterkey cross-device, courant entre devices Kevin). Sans guard, le
+   payload AXENC1 reecrasait la version plain locale. v12.783 GUARD :
+   - Capture local plain AVANT decrypt
+   - Si decrypt retourne meme valeur que payload (= echec) ET local plain
+     valide -> SKIP overwrite, garder local
+   - Si decrypt retourne plain valid (sk-ant-/AIza/gsk_...) -> overwrite OK
+   - Sinon (decrypt undef ou empty) -> garder local */
+if(typeof _axIsSensitiveKey==="function"&&_axIsSensitiveKey(k)&&typeof d.data==="string"&&d.data.indexOf(_AX_ENC_PREFIX)===0){
+  /* v12.783 : capture local plain AVANT decrypt async */
+  var _localBeforeDecrypt = localStorage.getItem(k) || "";
+  var _localPlainCheck = _localBeforeDecrypt.replace(/^"|"$/g,"");
+  try{var _lp=JSON.parse(_localBeforeDecrypt);if(typeof _lp==="string")_localPlainCheck=_lp;}catch(_){}
+  _localPlainCheck = String(_localPlainCheck).replace(/^"|"$/g,"");
+  var _localIsValidPlain = _localPlainCheck && _localPlainCheck.indexOf("AXENC1:")!==0 && _localPlainCheck.indexOf("__AXENC1__")!==0 && (_localPlainCheck.indexOf("sk-")===0 || _localPlainCheck.indexOf("gsk_")===0 || _localPlainCheck.indexOf("AIza")===0 || _localPlainCheck.indexOf("xai-")===0 || _localPlainCheck.indexOf("co-")===0 || _localPlainCheck.indexOf("pplx-")===0 || _localPlainCheck.indexOf("re_")===0 || _localPlainCheck.length>=30);
+  _axDecryptSecret(d.data).then(function(plain){
+    /* v12.783 : verifier que decrypt a vraiment marche
+       Si plain == d.data (encrypted) OU plain commence par AXENC1 -> ECHEC decrypt
+       Si _localIsValidPlain -> garder local, ne PAS overwrite */
+    var _decryptFailed = !plain || plain === d.data || (typeof plain === "string" && (plain.indexOf("AXENC1:")===0 || plain.indexOf("__AXENC1__")===0));
+    if(_decryptFailed){
+      if(_localIsValidPlain){
+        /* Local est plain valide, decrypt Firebase echoue : KEEP local */
+        try{if(typeof axSecurityLog==="function")axSecurityLog("sse_decrypt_fail_keep_local","k="+k+" - local plain preserve");}catch(_){}
+        return;
+      }
+      /* Local pas valide non plus : ne rien ecrire, marquer corrupted */
+      try{if(typeof axSecurityLog==="function")axSecurityLog("sse_decrypt_fail_no_local","k="+k+" - both corrupted");}catch(_){}
+      return;
+    }
+    /* Decrypt reussi : verifier que plain est format API valide avant overwrite */
+    var _plainValidApi = (plain.indexOf("sk-")===0 || plain.indexOf("gsk_")===0 || plain.indexOf("AIza")===0 || plain.indexOf("xai-")===0 || plain.indexOf("co-")===0 || plain.indexOf("pplx-")===0 || plain.indexOf("re_")===0 || plain.length>=30);
+    if(!_plainValidApi && _localIsValidPlain){
+      /* Plain decrypt n'a pas le bon format ET local est OK : KEEP local */
+      try{if(typeof axSecurityLog==="function")axSecurityLog("sse_decrypt_invalid_keep_local","k="+k);}catch(_){}
+      return;
+    }
+    try{localStorage.setItem(k,JSON.stringify(plain));}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+    try{if(typeof _loadState==="function")_loadState();if(typeof dc==="function"&&!skipRender)dc();}catch(_e){try{if(typeof _axSafeCatch==="function")_axSafeCatch("g",_e);}catch(__){}}
+  });
+}else{
 /* v12.775 (Kevin "apres 1 message rien ne fonctionne, dispat des cles API problematique") :
    guard "plain wins over encrypted" - si k est cle API sensible ET local a une valeur plain
    sk-ant- ET Firebase pousse AXENC1 encrypted, GARDER plain (l'encrypted ecraserait la plain
