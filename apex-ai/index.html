@@ -601,6 +601,27 @@ button,.ax-btn,.ax-tab,[role="button"],input[type="button"],input[type="submit"]
 <script>
 window._axRescueClicks = function(){
   try{
+    /* v12.780 (Kevin "1 clic apres SOS puis rebloque, autres boutons s'enfoncent
+       mais rien ne se passe") : RESTORE K state si corrompu (K.user null cause
+       les onclick handlers a early-return). */
+    try{
+      if(typeof K !== "undefined" && (!K.user || !K.user.id)){
+        var savedUser = JSON.parse(localStorage.getItem("ax_user") || "null");
+        if(savedUser && savedUser.id){
+          K.user = savedUser;
+          console.info("[v12.780 rescue] K.user restored from ax_user localStorage:", savedUser.id);
+        }
+      }
+      /* Reset isStreaming si bloque true */
+      if(typeof K !== "undefined" && K.isStreaming === true){
+        K.isStreaming = false;
+        console.info("[v12.780 rescue] K.isStreaming reset false");
+      }
+      /* Force ax_uid coherent avec K.user.id */
+      if(typeof K !== "undefined" && K.user && K.user.id){
+        try{ localStorage.setItem("ax_uid", K.user.id); }catch(_){}
+      }
+    }catch(_eK){}
     /* 1. Retire toutes les modals/overlays qui pourraient bloquer pointer-events */
     var blockers = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn),.ax-overlay,#modal-container,.ax-toast-container,.ax-spotlight-overlay');
     var removed = 0;
@@ -1368,7 +1389,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.779",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.780",ADMIN_ID="kdmc_admin";
 /* v12.774 (parite CMCteams v9.591) - force update au boot : compare APP_VER local
    vs serveur. Si different -> clear caches + unregister SW + reload force.
    Independant du SW updatefound (unreliable iOS Safari PWA).
@@ -1386,8 +1407,8 @@ var APP_VER = "v12.779",ADMIN_ID="kdmc_admin";
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.779"){
-            console.info("[v12.779 force-update] local=v12.779 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.780"){
+            console.info("[v12.780 force-update] local=v12.780 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
@@ -2580,7 +2601,7 @@ try{
   var _localCur=localStorage.getItem(k);
   var _localPlain=_localCur&&_localCur.replace(/^"|"$/g,"");
   var _remoteIsEnc=typeof d.data==="string"&&(d.data.indexOf("AXENC1:")===0||d.data.indexOf("__AXENC1__")===0);
-  var _localIsPlain=_localPlain&&!_localPlain.indexOf("AXENC1:")&&!_localPlain.indexOf("__AXENC1__")&&(_localPlain.indexOf("sk-")===0||_localPlain.indexOf("gsk_")===0||_localPlain.indexOf("AIza")===0||_localPlain.indexOf("xai-")===0||_localPlain.length>=20);
+  var _localIsPlain=_localPlain&&_localPlain.indexOf("AXENC1:")!==0&&_localPlain.indexOf("__AXENC1__")!==0&&(_localPlain.indexOf("sk-")===0||_localPlain.indexOf("gsk_")===0||_localPlain.indexOf("AIza")===0||_localPlain.indexOf("xai-")===0||_localPlain.indexOf("co-")===0||_localPlain.indexOf("pplx-")===0||_localPlain.indexOf("re_")===0||_localPlain.length>=30);
   if(_isSensApiKey && _remoteIsEnc && _localIsPlain){
     /* Plain local plus utile que encrypted Firebase - skip overwrite */
     try{if(typeof axSecurityLog==="function")axSecurityLog("sse_skip_enc_overwrite_plain","k="+k+" - plain local preserve");}catch(_){}
