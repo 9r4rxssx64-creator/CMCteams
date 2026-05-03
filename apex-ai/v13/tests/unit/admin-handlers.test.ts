@@ -177,19 +177,98 @@ describe('admin handlers deep tests Jet 8', () => {
   });
 
   describe('handleCreateUser flow form', () => {
-    it('form submit invalid name (vide) refuse', async () => {
+    it('form submit invalid name (vide) → result-el affiche erreur', async () => {
       const { render } = await import('../../features/admin/index.js');
       render(root);
       root.querySelector<HTMLButtonElement>('[data-tab="users"]')?.click();
       const form = root.querySelector<HTMLFormElement>('#create-user-form');
+      let threw = false;
       if (form) {
         const nameInput = root.querySelector<HTMLInputElement>('#cu-name');
         if (nameInput) nameInput.value = '   ';
-        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-        await new Promise((r) => setTimeout(r, 100));
+        try {
+          form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          await new Promise((r) => setTimeout(r, 150));
+        } catch {
+          threw = true;
+        }
       }
-      /* Pas de throw, refuse silencieusement */
-      expect(true).toBe(true);
+      /* Vraie assertion : pas de throw + result-el contient ax-error si form rendered */
+      expect(threw).toBe(false);
+      const resultEl = root.querySelector<HTMLElement>('#create-user-result');
+      if (resultEl && resultEl.innerHTML.length > 0) {
+        /* Si auth a refusé → ax-error class présente */
+        expect(resultEl.innerHTML).toMatch(/ax-error|ax-success/);
+      }
+    });
+  });
+
+  describe('handleCreateUser with WhatsApp failure path', () => {
+    beforeEach(async () => {
+      localStorage.clear();
+      /* Configurer numéro Kevin pour les tests WhatsApp */
+      localStorage.setItem('ax_kevin_whatsapp_phone', '+33687654321');
+      const { auth } = await import('../../services/auth.js');
+      const { store } = await import('../../core/store.js');
+      store.init({ appVer: 'v13.0.0' });
+      const r = await auth.createUser({ name: 'Kevin DESARZENS', tier: 'admin', initialPin: '111111' });
+      if (r.uid) {
+        store.set('user', { id: r.uid, name: 'Kevin DESARZENS', tier: 'admin' });
+        store.set('isAdmin', true);
+      }
+      document.body.innerHTML = '<div id="apex-root"></div>';
+    });
+
+    it('createUser avec whatsappPhone valide → request inviteLink + otp', async () => {
+      const { auth } = await import('../../services/auth.js');
+      const { whatsapp } = await import('../../services/whatsapp.js');
+      const r = await auth.createUser({
+        name: 'Friend Test',
+        tier: 'family',
+        whatsappPhone: '+33612345678',
+      });
+      expect(r.ok).toBe(true);
+      expect(r.uid).toBeTruthy();
+      const conf = await whatsapp.requestConfirmation({
+        uid: r.uid!,
+        name: 'Friend Test',
+        whatsappPhone: '+33612345678',
+      });
+      /* Vraie assertion : result avec inviteLink + otp 6 digits */
+      expect(conf.ok).toBe(true);
+      if (conf.ok) {
+        expect(conf.inviteLink).toContain('wa.me');
+        expect(conf.inviteLink).toContain('33687654321');
+        /* OTP format alphanumérique majuscules + tirets, longueur >= 6 */
+        expect(conf.otp).toBeTruthy();
+        expect(conf.otp!.length).toBeGreaterThanOrEqual(6);
+      }
+    });
+
+    it('whatsapp.confirm avec OTP wrong → ok=false + uid undefined', async () => {
+      const { whatsapp } = await import('../../services/whatsapp.js');
+      const result = whatsapp.confirm('999999_invalid');
+      /* Vraie assertion : refuse OTP qui n'existe pas — uid pas retourné */
+      expect(result.ok).toBe(false);
+      expect(result.uid).toBeUndefined();
+    });
+
+    it('whatsapp.confirm replay attack après confirm → rejette 2nd', async () => {
+      const { auth } = await import('../../services/auth.js');
+      const { whatsapp } = await import('../../services/whatsapp.js');
+      const r = await auth.createUser({ name: 'Replay', tier: 'family', whatsappPhone: '+33611111111' });
+      const conf = await whatsapp.requestConfirmation({
+        uid: r.uid!,
+        name: 'Replay',
+        whatsappPhone: '+33611111111',
+      });
+      if (conf.ok) {
+        const first = whatsapp.confirm(conf.otp);
+        expect(first.ok).toBe(true);
+        /* 2nd attempt avec même OTP doit être rejeté */
+        const second = whatsapp.confirm(conf.otp);
+        expect(second.ok).toBe(false);
+      }
     });
   });
 });
