@@ -203,6 +203,94 @@ class VisionRecognition {
   }
 
   /**
+   * Capture caméra : MediaDevices getUserMedia → Blob image.
+   * (Wire UI Jet 8.1 — anti-théâtre P0)
+   */
+  async captureFromCamera(options: { facingMode?: 'user' | 'environment'; timeoutMs?: number } = {}): Promise<{
+    ok: boolean;
+    blob?: Blob;
+    dataUrl?: string;
+    reason?: string;
+  }> {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      return { ok: false, reason: 'MediaDevices API non disponible' };
+    }
+    const facingMode = options.facingMode ?? 'environment';
+    const timeoutMs = options.timeoutMs ?? 10_000;
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      /* Crée video element pour capture frame */
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+      await video.play();
+      /* Wait video metadata loaded */
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Video load timeout')), timeoutMs);
+        video.onloadedmetadata = () => {
+          clearTimeout(t);
+          resolve();
+        };
+      });
+      /* Capture frame via Canvas */
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85),
+      );
+      if (!blob) throw new Error('Blob creation failed');
+      const result: { ok: boolean; blob?: Blob; dataUrl?: string; reason?: string } = {
+        ok: true,
+        blob,
+        dataUrl,
+      };
+      void auditLog.record('vision.captured', {
+        details: { width: canvas.width, height: canvas.height, size: blob.size },
+      });
+      return result;
+    } catch (err: unknown) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason };
+    } finally {
+      /* Cleanup stream tracks (CRITIQUE : sinon caméra reste active) */
+      if (stream) {
+        for (const track of stream.getTracks()) track.stop();
+      }
+    }
+  }
+
+  /**
+   * Pipeline complet : captureFromCamera + classify + route.
+   * (Wire end-to-end : Kevin "tout en autonomie cross-app")
+   */
+  async captureAndProcess(
+    extractedText: string,
+    hint?: string,
+  ): Promise<{
+    capture: Awaited<ReturnType<VisionRecognition['captureFromCamera']>>;
+    recognition?: RecognitionResult;
+    routing?: Awaited<ReturnType<VisionRecognition['route']>>;
+  }> {
+    const capture = await this.captureFromCamera();
+    if (!capture.ok) return { capture };
+    /* Note : extracted_text vient en paramètre car OCR Tesseract.js est lazy chargé
+     * depuis CDN (200 KB) — la décision de l'invoquer est laissée au caller UI. */
+    const recognition = this.recognize(extractedText, hint);
+    const routing = await this.route(recognition);
+    return { capture, recognition, routing };
+  }
+
+  /**
    * Liste types de reconnaissance supportés (pour UI tutorial).
    */
   listSupportedTypes(): readonly { type: RecognitionType; example: string; emoji: string }[] {

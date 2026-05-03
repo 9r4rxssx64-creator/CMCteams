@@ -630,6 +630,67 @@ class VoicesRegistry {
   }
 
   /**
+   * TTS playback : speak text avec voix donnée (anti-théâtre wiring).
+   * - web_speech : utilise SpeechSynthesis API (toujours dispo browser)
+   * - web_audio_filter : applique pitch/rate via SpeechSynthesisUtterance
+   * - elevenlabs/google_wavenet/azure_neural : Jet 9 (nécessite backend API)
+   */
+  async speak(
+    text: string,
+    voiceId?: string,
+    options: { uid?: string } = {},
+  ): Promise<{ ok: boolean; provider?: string; reason?: string }> {
+    if (!text) return { ok: false, reason: 'text required' };
+    if (typeof window === 'undefined' || typeof window.speechSynthesis === 'undefined') {
+      return { ok: false, reason: 'SpeechSynthesis API non disponible' };
+    }
+
+    /* Détermine voix : explicit > user pref > default neutral */
+    let voice = voiceId ? this.byId(voiceId) : null;
+    if (!voice && options.uid) voice = this.getUserPreference(options.uid);
+    if (!voice) voice = this.byId('pro_neutral_fr');
+    if (!voice) return { ok: false, reason: 'No voice available' };
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = voice.language === 'multi' ? 'fr-FR' : voice.language;
+      /* Apply voice effects (pitch shift via semi-tons → ratio Web Speech) */
+      if (voice.effects?.pitch) {
+        utterance.pitch = Math.max(0, Math.min(2, 1 + voice.effects.pitch / 12));
+      }
+      if (voice.effects?.rate) {
+        utterance.rate = Math.max(0.1, Math.min(10, voice.effects.rate));
+      }
+      /* Find matching browser voice if available (Web Speech voices list) */
+      const browserVoices = window.speechSynthesis.getVoices();
+      const matchingVoice = browserVoices.find(
+        (v) => v.lang.startsWith(utterance.lang.slice(0, 2)) &&
+          (voice!.gender === 'female' ? /female|woman|fr-fr-amelie|virginie/i.test(v.name) :
+           voice!.gender === 'male' ? /male|man|fr-fr-thomas|nicolas/i.test(v.name) : true),
+      );
+      if (matchingVoice) utterance.voice = matchingVoice;
+      window.speechSynthesis.speak(utterance);
+      return { ok: true, provider: voice.provider };
+    } catch (err: unknown) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason };
+    }
+  }
+
+  /**
+   * Stop tous TTS en cours (cleanup).
+   */
+  stop(): void {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  /**
    * Audit anti-monotonie (Kevin règle CLAUDE.md).
    * Vérifie qu'il y a au moins 50 voix avec diversité catégories.
    */
