@@ -38,13 +38,11 @@ jobs:
       - name: TypeScript strict check
         run: npx tsc --noEmit
 
-      - name: ESLint
+      - name: ESLint (HARD FAIL Jet 7 fix audit P0-1)
         run: npx eslint . --ext .ts,.tsx --max-warnings 0
-        continue-on-error: true
 
-      - name: Vitest unit tests
+      - name: Vitest unit tests + coverage threshold ≥80% (HARD FAIL Jet 7 fix audit P0-3)
         run: npx vitest run --coverage
-        continue-on-error: true
 
       - name: Build production bundle
         run: npx vite build
