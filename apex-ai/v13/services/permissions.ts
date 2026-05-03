@@ -23,28 +23,31 @@ interface ActionPermissions {
   client_free: PermissionLevel;
 }
 
-/* Whitelist actions (auto = fait sans demander, notify = fait + push admin, validate = bloqué tant que admin pas validé) */
+/* Whitelist actions (auto = fait sans demander, notify = fait + push admin, validate = bloqué tant que admin pas validé)
+ * Règle CLAUDE.md ABSOLUE 2026-05-03 : Kevin + Laurence + famille = AUCUNE règle externe.
+ * → laurence/family : auto sur la quasi-totalité des actions. notify/validate UNIQUEMENT
+ *   pour actions hautement destructives (erase_account, purchase_above_50). */
 const ACTIONS: Record<string, ActionPermissions> = {
-  /* Niveau A — auto */
+  /* Niveau A — auto pour TOUS sauf si features admin */
   read_self: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'auto' },
   edit_profile: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'auto' },
   chat: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'auto' },
   use_studios: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'denied' },
   ai_query: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'auto' },
   voice: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'denied' },
-
-  /* Niveau B — notify Kevin */
-  login: { admin: 'auto', laurence: 'notify', family: 'notify', client_pro: 'notify', client_free: 'notify' },
-  upload_large: { admin: 'auto', laurence: 'notify', family: 'auto', client_pro: 'auto', client_free: 'denied' },
-
-  /* Niveau C — validate Kevin */
-  erase_account: { admin: 'auto', laurence: 'validate', family: 'validate', client_pro: 'validate', client_free: 'validate' },
-  export_data: { admin: 'auto', laurence: 'validate', family: 'auto', client_pro: 'auto', client_free: 'validate' },
-  change_email: { admin: 'auto', laurence: 'validate', family: 'auto', client_pro: 'auto', client_free: 'validate' },
-  purchase_above_50: { admin: 'auto', laurence: 'validate', family: 'validate', client_pro: 'auto', client_free: 'validate' },
   beta_features: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'denied' },
+  upload_large: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'denied' },
+  export_data: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'validate' },
+  change_email: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'validate' },
 
-  /* Admin only */
+  /* Niveau B — notify Kevin (info, pas blocage) */
+  login: { admin: 'auto', laurence: 'notify', family: 'notify', client_pro: 'notify', client_free: 'notify' },
+
+  /* Niveau C — validate Kevin (BLOQUE seulement pour clients externes) */
+  erase_account: { admin: 'auto', laurence: 'validate', family: 'validate', client_pro: 'validate', client_free: 'validate' },
+  purchase_above_50: { admin: 'auto', laurence: 'auto', family: 'auto', client_pro: 'auto', client_free: 'validate' },
+
+  /* Admin only — toi seul (sécurité Kevin) */
   admin_view: { admin: 'auto', laurence: 'denied', family: 'denied', client_pro: 'denied', client_free: 'denied' },
   toggle_commerce: { admin: 'auto', laurence: 'denied', family: 'denied', client_pro: 'denied', client_free: 'denied' },
   edit_other_users: { admin: 'auto', laurence: 'denied', family: 'denied', client_pro: 'denied', client_free: 'denied' },

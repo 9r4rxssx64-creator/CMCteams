@@ -46,21 +46,43 @@ async function bootstrap(): Promise<void> {
     isAdmin: false,
   };
 
-  /* 1. Logger + global error handlers + bodyguard + audit log + observability + sentinelles */
+  /* Jet 6 fix audit subagent : init SÉQUENTIEL avec error guard par-service.
+   * Avant : 6 services chargés parallèle sans guard → si 1 service crash au boot,
+   * tout l'app crash (E2E boot.spec.ts FAILED). */
   errors.installGlobalHandlers();
-  const { bodyguard } = await import('@services/bodyguard.js');
-  bodyguard.install();
-  const { auditLog } = await import('@services/audit-log.js');
-  auditLog.init();
-  await auditLog.record('boot.start', { details: { ver: APP_VER } });
-  const { observability } = await import('@services/observability.js');
-  observability.init();
-  const { firebaseQueue } = await import('@services/firebase-queue.js');
-  firebaseQueue.init();
-  const { sentinels, registerCoreSentinels } = await import('@services/sentinels.js');
-  registerCoreSentinels();
-  sentinels.init();
   logger.info('boot', `APEX ${APP_VER} starting`, { ctx });
+
+  /* Helper : init service avec guard, log warn si fail mais ne bloque pas le boot */
+  const safeInit = async (label: string, fn: () => Promise<void> | void): Promise<void> => {
+    try {
+      await fn();
+    } catch (err: unknown) {
+      logger.warn('boot', `Service init failed: ${label} (continuing degraded)`, { err });
+    }
+  };
+
+  await safeInit('bodyguard', async () => {
+    const { bodyguard } = await import('@services/bodyguard.js');
+    bodyguard.install();
+  });
+  await safeInit('audit-log', async () => {
+    const { auditLog } = await import('@services/audit-log.js');
+    auditLog.init();
+    await auditLog.record('boot.start', { details: { ver: APP_VER } });
+  });
+  await safeInit('observability', async () => {
+    const { observability } = await import('@services/observability.js');
+    observability.init();
+  });
+  await safeInit('firebase-queue', async () => {
+    const { firebaseQueue } = await import('@services/firebase-queue.js');
+    firebaseQueue.init();
+  });
+  await safeInit('sentinels', async () => {
+    const { sentinels, registerCoreSentinels } = await import('@services/sentinels.js');
+    registerCoreSentinels();
+    sentinels.init();
+  });
 
   /* 2. Feature detection */
   if (!('serviceWorker' in navigator)) {

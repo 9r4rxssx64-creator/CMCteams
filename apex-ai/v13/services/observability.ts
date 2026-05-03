@@ -144,8 +144,11 @@ class Observability {
       ts: Date.now(),
       status: 'pending',
     };
-    /* Retry 3x escalade push */
-    for (let i = 0; i < 3; i++) {
+    /* Jet 6 fix audit P0-3 : backoff exponentiel VRAI 200ms / 800ms / 3.2s
+     * (vs linéaire 100/200/300 = 600ms total qui ne laisse pas le temps à un transient
+     * GC localStorage de se résoudre). Total ici 4.2s = vraie résilience. */
+    const RETRY_DELAYS = [200, 800, 3200];
+    for (let i = 0; i < RETRY_DELAYS.length; i++) {
       try {
         const todos = JSON.parse(localStorage.getItem('ax_claude_todo') ?? '[]') as Array<typeof todo>;
         todos.push(todo);
@@ -155,22 +158,51 @@ class Observability {
         try {
           localStorage.setItem(rateKey, JSON.stringify(recent.slice(-10)));
         } catch {
-          /* ignore */
+          /* rate-limit persist non-critique, on continue */
         }
         return true;
       } catch (err: unknown) {
-        if (i === 2) {
-          /* Toutes tentatives échouées → fallback observability buffer (boucle contrôlée) */
-          this.capture('critical', 'escalate.failed', `ax_claude_todo push failed after 3 retries: ${String(err)}`, {
+        if (i === RETRY_DELAYS.length - 1) {
+          /* Tous retries échoués → fallback capture buffer avec ANTI-RECURSION flag.
+           * Si capture() ré-appelle escalateToClaudeCode (théoriquement impossible mais
+           * audit Jet 5 a flaggé "boucle infinie théorique"), le flag bloque. */
+          this.captureNoEscalate('critical', 'escalate.failed', `ax_claude_todo push failed after 3 retries (backoff exponentiel): ${String(err)}`, {
             originalReason: reason,
             originalContext: context,
           });
           return false;
         }
-        await new Promise((r) => setTimeout(r, 100 * (i + 1)));
+        const delay = RETRY_DELAYS[i] ?? 1000;
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
     return false;
+  }
+
+  /**
+   * Capture INTERNE sans déclencher escalade (anti-recursion guard).
+   * Utilisé dans le fallback escalateToClaudeCode.failed pour éviter boucle.
+   */
+  private captureNoEscalate(
+    level: ObservabilityEvent['level'],
+    scope: string,
+    msg: string,
+    context?: Record<string, unknown>,
+  ): void {
+    const event: ObservabilityEvent = {
+      id: `obs_internal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      ts: Date.now(),
+      level,
+      scope,
+      msg: msg.slice(0, 500),
+      ...(context && { context }),
+      attempts: 0,
+      status: 'pending',
+    };
+    this.buffer.push(event);
+    if (this.buffer.length > MAX_BUFFER) this.buffer = this.buffer.slice(-MAX_BUFFER);
+    /* Pas de persist() ici (peut throw aussi si quota plein) — l'event reste en mémoire seule.
+     * Acceptable car c'est un fallback critical déjà loggé. */
   }
 
   private async tryInitSentry(): Promise<void> {
