@@ -1,0 +1,16 @@
+{
+  "name": "apex-v13-backend",
+  "version": "1.0.0",
+  "description": "Apex v13 Backend Worker — Cloudflare Workers (idempotency, WebAuthn, Stripe webhooks, AI judge)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "kv:setup": "echo 'Run: wrangler kv:namespace create <NAME> for each KV (IDEMPOTENCY, RATE_LIMIT, WEBAUTHN, SESSIONS, STRIPE_EVENTS, ESCALATIONS)'"
+  },
+  "devDependencies": {
+    "wrangler": "^3.95.0"
+  }
+}
