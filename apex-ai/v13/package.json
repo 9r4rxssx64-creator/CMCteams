@@ -1,0 +1,77 @@
+{
+  "name": "apex-v13",
+  "private": true,
+  "version": "13.0.0-jet1",
+  "type": "module",
+  "description": "APEX AI v13 — Rebuild propre niveau entreprise commercialisable",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint . --ext .ts,.tsx,.js --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,css,html,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,css,html,md,json}\"",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "lighthouse": "lhci autorun",
+    "axe": "axe-core --include='./'",
+    "size": "size-limit",
+    "audit:all": "npm run typecheck && npm run lint && npm run test && npm run build && npm run size"
+  },
+  "dependencies": {
+    "dompurify": "^3.2.4",
+    "lucide-static": "^0.460.0",
+    "fuse.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/ui": "^2.1.0",
+    "axe-core": "^4.10.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "happy-dom": "^15.0.0",
+    "prettier": "^3.4.0",
+    "size-limit": "^11.1.0",
+    "@size-limit/preset-app": "^11.1.0",
+    "tailwindcss": "^3.4.0",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0",
+    "@lhci/cli": "^0.14.0"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.html",
+      "limit": "30 KB",
+      "name": "Shell HTML"
+    },
+    {
+      "path": "dist/assets/css/*.css",
+      "limit": "30 KB gzip",
+      "gzip": true,
+      "name": "CSS bundle"
+    },
+    {
+      "path": "dist/core/bootstrap-*.js",
+      "limit": "80 KB gzip",
+      "gzip": true,
+      "name": "Core bundle"
+    }
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

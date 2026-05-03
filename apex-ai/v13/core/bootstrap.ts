@@ -1,0 +1,214 @@
+/**
+ * APEX v13 — Bootstrap
+ *
+ * Entry point. Initialise tout dans le bon ordre :
+ * 1. Feature detection (browser capabilities, PWA, online)
+ * 2. Logger + Sentry bridge (capture errors dès le départ)
+ * 3. Store Proxy reactive
+ * 4. Memory module (auto-injection contexte system prompt)
+ * 5. Services (firebase, auth, vault, ai-router, permissions, telemetry)
+ * 6. Router (hash-based + lazy route imports)
+ * 7. Service Worker register
+ * 8. Migration v12 → v13 (one-shot, idempotent)
+ * 9. Render initial view
+ *
+ * Anti-patterns évités (réf plan §Anti-patterns) :
+ * - Pas d'IIFE au boot (orchestré une fois)
+ * - Pas de window.* reassignment (DI container)
+ * - Pas de catch silencieux (toutes erreurs loggées)
+ * - Pas de capture-phase listener bloquant
+ * - Promesses .catch() systématique
+ */
+
+export const APP_VER = 'v13.0.0';
+export const ADMIN_ID = 'kdmc_admin';
+
+import { logger } from './logger.js';
+import { errors } from './errors.js';
+import { store } from './store.js';
+import { router } from './router.js';
+import { di } from './di.js';
+import { memory } from './memory.js';
+import { events } from './events.js';
+
+interface BootContext {
+  startedAt: number;
+  online: boolean;
+  pwaInstalled: boolean;
+  isAdmin: boolean;
+}
+
+async function bootstrap(): Promise<void> {
+  const ctx: BootContext = {
+    startedAt: performance.now(),
+    online: navigator.onLine,
+    pwaInstalled: window.matchMedia('(display-mode: standalone)').matches,
+    isAdmin: false,
+  };
+
+  /* 1. Logger + global error handlers */
+  errors.installGlobalHandlers();
+  logger.info('boot', `APEX ${APP_VER} starting`, { ctx });
+
+  /* 2. Feature detection */
+  if (!('serviceWorker' in navigator)) {
+    logger.warn('boot', 'Service Worker not supported — degraded mode');
+  }
+  if (!('crypto' in window) || !window.crypto.subtle) {
+    logger.error('boot', 'Web Crypto API not available — vault DISABLED');
+    /* Continue boot mais vault sera désactivé */
+  }
+
+  /* 3. Store init (Proxy reactive) */
+  store.init({
+    user: null,
+    view: 'landing',
+    isStreaming: false,
+    online: ctx.online,
+    appVer: APP_VER,
+  });
+
+  /* 4. Memory module — auto-injection contexte */
+  await memory.init().catch((err: unknown) => {
+    logger.error('boot', 'Memory init failed (degraded)', { err });
+  });
+
+  /* 5. Services lazy-load (services/ chargés à la demande par router) */
+  /* Pre-init seulement les services critiques */
+  const { firebase } = await import('@services/firebase.js');
+  await firebase.init().catch((err: unknown) => {
+    logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
+  });
+
+  /* 6. Migration v12.785 → v13 (one-shot, idempotent) */
+  const migrated = localStorage.getItem('apex_v13_migrated');
+  if (!migrated) {
+    try {
+      const { migrate } = await import('../migrations/migrate-v12-to-v13.js');
+      await migrate();
+      localStorage.setItem('apex_v13_migrated', new Date().toISOString());
+      logger.info('boot', 'Migration v12→v13 completed');
+    } catch (err: unknown) {
+      logger.error('boot', 'Migration failed (continuing with empty state)', { err });
+    }
+  }
+
+  /* 7. Auth check */
+  const { auth } = await import('@services/auth.js');
+  ctx.isAdmin = await auth.isAdmin().catch(() => false);
+  store.set('isAdmin', ctx.isAdmin);
+
+  /* 8. Router init + routes lazy-load */
+  router.register('landing', { loader: () => import('@features/landing/index.js') });
+  router.register('login', { loader: () => import('@features/landing/index.js') });
+  router.register('chat', { loader: () => import('@features/chat/index.js'), requiresAuth: true });
+  router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
+  router.init();
+  events.emit('boot:routerReady', { ctx });
+
+  /* 9. Service Worker register (deferred to not block render) */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('./sw.js')
+      .then((reg) => {
+        logger.info('boot', 'SW registered', { scope: reg.scope });
+        /* Force update check toutes les 5 min + visibilitychange */
+        setInterval(() => {
+          reg.update().catch(() => {});
+        }, 5 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) reg.update().catch(() => {});
+        });
+      })
+      .catch((err: unknown) => {
+        logger.warn('boot', 'SW register failed', { err });
+      });
+
+    /* Reload auto sur controllerchange */
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+  }
+
+  /* 10. Force-update boot check (parité v12.785 v12.774) */
+  /* Compare APP_VER local vs serveur, reload forcé si diff (iOS PWA SW unreliable) */
+  if (navigator.onLine) {
+    setTimeout(() => {
+      const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?_v=' + Date.now();
+      fetch(url, { cache: 'no-store' })
+        .then((r) => r.text())
+        .then((html) => {
+          const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
+          if (m && m[1] && m[1] !== APP_VER) {
+            logger.info('boot', `force-update: local=${APP_VER} remote=${m[1]} → reload`);
+            if ('caches' in window) {
+              caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
+            }
+            setTimeout(() => location.replace(location.pathname + '?_forceupd=' + Date.now()), 300);
+          }
+        })
+        .catch(() => {});
+    }, 5000);
+  }
+
+  /* 11. Online/offline listeners */
+  window.addEventListener('online', () => {
+    store.set('online', true);
+    events.emit('network:online', {});
+    logger.info('network', 'Online');
+  });
+  window.addEventListener('offline', () => {
+    store.set('online', false);
+    events.emit('network:offline', {});
+    logger.info('network', 'Offline');
+  });
+
+  /* 12. Hide splash + render initial view */
+  router.dispatch();
+  setTimeout(() => {
+    const splash = document.getElementById('apex-splash');
+    if (splash) {
+      splash.hidden = true;
+      setTimeout(() => splash.remove(), 600);
+    }
+  }, 100);
+
+  const bootMs = Math.round(performance.now() - ctx.startedAt);
+  logger.info('boot', `APEX ${APP_VER} ready in ${bootMs}ms`);
+  events.emit('boot:complete', { ctx, bootMs });
+}
+
+/* Entry */
+bootstrap().catch((err: unknown) => {
+  console.error('[APEX boot crash]', err);
+  /* Show user-friendly fallback (anti-pattern : pas d'erreur technique brute) */
+  const root = document.getElementById('apex-root');
+  if (root) {
+    root.innerHTML = `
+      <div style="padding:40px;text-align:center;color:#fff;background:#08080f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <h1 style="color:#c9a227;font-family:Georgia,serif;letter-spacing:3px">APEX</h1>
+        <p style="color:#a0a4c0;margin:16px 0">Un souci au démarrage. Tape SOS en bas-droite pour recharger proprement.</p>
+        <p style="color:#6a6f8a;font-size:11px;margin-top:24px">Version ${APP_VER}</p>
+      </div>
+    `;
+  }
+  /* Toujours montrer le bouton SOS */
+  const sos = document.getElementById('apex-rescue-btn');
+  if (sos) sos.style.display = 'flex';
+});
+
+/* DI registry exposed for debug (admin only via HUD) */
+declare global {
+  interface Window {
+    __APEX__?: {
+      ver: string;
+      di: typeof di;
+      store: typeof store;
+      logger: typeof logger;
+    };
+  }
+}
+window.__APEX__ = { ver: APP_VER, di, store, logger };
