@@ -251,10 +251,23 @@ class DeviceContext {
     /* Already refused */
     if (existing?.accepted === false) return false;
 
-    /* Ask via window.confirm (UI later via modal-sheet — Jet 9 polish) */
-    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+    /* Wire admin-prompt modal-sheet (anti-pattern Kevin : pas confirm() natif iPhone PWA) */
     const desc = options.description ?? `Apex demande accès à ${feature}.`;
-    const accepted = window.confirm(`${desc}\n\nAccepter ?`);
+    let accepted = false;
+    try {
+      const { adminPrompt } = await import('./admin-prompt.js');
+      accepted = await adminPrompt.askConfirm({
+        title: `Accès ${feature}`,
+        message: desc,
+        primaryLabel: 'Accepter',
+        cancelLabel: 'Refuser',
+      });
+    } catch {
+      /* Fallback ultime si admin-prompt échoue (env test/SSR) : window.confirm */
+      if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+        accepted = window.confirm(`${desc}\n\nAccepter ?`);
+      }
+    }
     this.recordConsent(feature, accepted, options.ttlDays);
     return accepted;
   }
