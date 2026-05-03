@@ -261,6 +261,7 @@ export function render(rootEl: HTMLElement): void {
           aria-label="Message"
           autocomplete="off"
         ></textarea>
+        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary" aria-label="Envoyer">→</button>
       </form>
       <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
@@ -298,6 +299,69 @@ export function render(rootEl: HTMLElement): void {
       }
     });
   }
+
+  /* Camera handler (P0 audit gap : wire smart-camera réel) */
+  const cameraBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-camera');
+  cameraBtn?.addEventListener('click', () => {
+    haptic.tap();
+    void (async () => {
+      try {
+        const { smartCamera } = await import('../../services/smart-camera.js');
+        const { adminPrompt } = await import('../../services/admin-prompt.js');
+        const mode = await adminPrompt.askChoice('📷 Caméra', 'Choisis le mode :', [
+          { id: 'single', label: 'Photo simple', emoji: '📷', variant: 'primary' },
+          { id: 'burst', label: 'Rafale (5 photos)', emoji: '⚡', variant: 'ghost' },
+          { id: 'qr_live', label: 'Scanner QR/Code-barre', emoji: '⬛', variant: 'ghost' },
+          { id: 'video_record', label: 'Enregistrer vidéo (30s)', emoji: '🎬', variant: 'ghost' },
+        ]);
+        if (!mode) return;
+        if (mode === 'single') {
+          const r = await smartCamera.captureSingle();
+          if (!r.ok) {
+            toast.error(r.reason ?? 'Capture échouée');
+            return;
+          }
+          /* Affiche photo dans chat (data URL) */
+          const dataUrl = r.dataUrls?.[0];
+          if (dataUrl) {
+            const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+            if (scroll) {
+              const card = document.createElement('div');
+              card.className = 'ax-msg ax-msg-user ax-slide-up-fade';
+              card.innerHTML = `<img src="${dataUrl}" alt="Capture caméra" style="max-width:100%;border-radius:8px">`;
+              scroll.appendChild(card);
+              scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+            }
+            toast.success('Photo capturée');
+          }
+        } else if (mode === 'burst') {
+          const r = await smartCamera.captureBurst(5, 200);
+          toast.info(r.ok ? `${r.count} photos capturées` : (r.reason ?? 'Échec'));
+        } else if (mode === 'qr_live') {
+          await smartCamera.scanQrLive(
+            (codes) => {
+              for (const code of codes) toast.success(`📦 ${code.format}: ${code.rawValue.slice(0, 80)}`);
+            },
+            { durationMs: 15_000 },
+          );
+        } else if (mode === 'video_record') {
+          const start = await smartCamera.startVideoRecord(30_000);
+          if (!start.ok) {
+            toast.error(start.reason ?? 'Recording impossible');
+            return;
+          }
+          toast.info('🔴 Enregistrement 30s...');
+          setTimeout(() => {
+            void smartCamera.stopVideoRecord().then((stop) => {
+              if (stop.ok) toast.success(`Vidéo ${Math.round((stop.blob?.size ?? 0) / 1024)}KB`);
+            });
+          }, 30_000);
+        }
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Erreur caméra');
+      }
+    })();
+  });
 
   /* Paste API key handler avec auto-detect 130+ patterns + auto-test + auto-link
    * Path A repensé : modal-sheet half-bottom au lieu de prompt/alert bloquants */
