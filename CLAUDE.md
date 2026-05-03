@@ -4,6 +4,55 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-03 (Ape
 
 ---
 
+## 🔁 RÈGLE PERMANENTE — RECONSULTATION PÉRIODIQUE AUTONOMIE TOTALE (Kevin 2026-05-03, ABSOLUE)
+
+> **"Régulièrement, tu t'assures de n'avoir rien oublié. Tu reconsultes tous tes dossiers en toute autonomie automatiquement."** — Kevin 2026-05-03
+
+**Règle absolue, en cycle continu** — Claude Code priorité 1, Apex priorité 1 :
+
+### 1. Reconsultation systématique cycle 30 min OU après bloc d'actions
+
+Toutes les 30 min OU après chaque bloc cohérent de 5+ actions, je DOIS automatiquement :
+- Relire CLAUDE.md (37+ règles permanentes — vérifier que mon comportement les respecte)
+- Relire NOTES_USER.md (infos métier Kevin à jour)
+- Relire MEMO_RESUME.md (où j'en suis)
+- Relire KEVIN_ACTIONS_TODO.md (qu'attend Kevin de faire)
+- Relire KEVIN_INVENTORY.md (fichiers créés à jour)
+- Vérifier sub-projet CLAUDE.md si on travaille sur sous-dossier
+
+### 2. Auto-check rien d'oublié
+
+Test mental obligatoire :
+> *"Y a-t-il une règle Kevin que je n'applique pas en ce moment ? Y a-t-il un fichier que j'ai créé non listé dans KEVIN_INVENTORY ? Y a-t-il un commit non documenté dans MEMO_RESUME ? Y a-t-il une promesse à Kevin que je n'ai pas honorée ?"*
+
+Si oui à une question → ARRÊTER, corriger, mettre à jour AVANT de continuer.
+
+### 3. Mise à jour docs APRÈS chaque travail (autonomie)
+
+À chaque batch de modifs poussé :
+- Update KEVIN_INVENTORY.md (nouveaux fichiers + liens GitHub)
+- Update MEMO_RESUME.md (état courant)
+- Update KEVIN_ACTIONS_TODO.md (si nouvelles actions Kevin requises)
+- Update CLAUDE.md "Erreurs connues" si nouveau bug détecté
+- Update APEX_PROJECTS.md si projet touché
+
+### 4. Apex parité
+
+Apex aussi DOIT (via `axMaintainKevinDocs()`) reconsulter régulièrement :
+- `ax_persistent_memory` (cross-session)
+- `ax_lessons_learned_struct`
+- CLAUDE.md via fetch GitHub raw
+- KEVIN_ACTIONS_TODO via fetch
+
+### 5. Pas de répétition demandée par Kevin
+
+❌ INTERDIT : laisser Kevin redemander "tu as oublié X"
+✅ OBLIGATOIRE : me re-souvenir AVANT que Kevin ait à dire
+
+S'applique : Claude Code (priorité absolue), Apex v13 + cross-app, tous projets futurs.
+
+---
+
 ## 🔬 RÈGLE PERMANENTE — TEST EN LIVE EN PERMANENCE À CHAQUE ACTION (Kevin 2026-05-03, ABSOLUE PRIORITÉ 1)
 
 > **"À chaque création, à chaque nouvelle action que tu fais, fais tester, fais tester en live tout ton travail, en permanence pour être sûr de ne rien oublier et que tout fonctionne. Fais tout tester en permanence en live. Jusqu'à la fin du projet. Je ne te le répéterai pas, c'est important."** — Kevin 2026-05-03

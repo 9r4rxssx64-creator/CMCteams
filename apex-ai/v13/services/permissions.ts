@@ -2,8 +2,8 @@
  * APEX v13 — Permissions tiered (5 niveaux)
  *
  * Préservé de v12.785 (règle CLAUDE.md "compte admin unique Kevin + permissions tiered Laurence") :
- * - admin       : Kevin DESARZENS — tout autorisé (bypass commerce + permissions)
- * - laurence    : Laurence SAINT-POLIT — vue isolée + permissions tiered (auto/notify/validate)
+ * - admin       : Kevin (DK) — tout autorisé (bypass commerce + permissions)
+ * - laurence    : Laurence — vue isolée + permissions tiered (auto/notify/validate)
  * - family      : Famille Kevin — accès étendu sans admin
  * - client_pro  : Clients payants pro — features pro + studios premium
  * - client_free : Clients gratuits — features de base

@@ -16,6 +16,7 @@
 
 import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
+import { vault } from '../../services/vault.js';
 import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { errors } from '../../core/errors.js';
@@ -155,14 +156,24 @@ export function render(rootEl: HTMLElement): void {
   const user = store.get('user');
   const greeting = user ? `Bonjour ${user.name}, qu'est-ce que je peux faire pour toi ?` : 'Bienvenue dans Apex.';
 
+  const isAdmin = store.get('isAdmin');
+  const hasKey = aiRouter.hasAnyKey();
+
   rootEl.innerHTML = `
     <div class="ax-chat">
       <header class="ax-chat-header">
-        <h1>APEX</h1>
+        <h1>APEX <span style="font-size:0.6em;letter-spacing:1px;color:var(--ax-text-dim)">AI</span></h1>
         <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu">☰</button>
       </header>
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
+        ${!hasKey ? `
+          <div class="ax-info-card" style="margin:16px;">
+            <h3>🔑 Aucune clé API configurée</h3>
+            <p>Pour discuter avec Apex, ajoute une clé API IA. Coller une clé Anthropic, OpenAI, Groq ou Gemini :</p>
+            <button class="ax-btn ax-btn-primary" id="ax-paste-key">📋 Coller une clé API</button>
+          </div>
+        ` : ''}
       </div>
       <form class="ax-chat-input" id="ax-chat-form">
         <textarea
@@ -174,6 +185,15 @@ export function render(rootEl: HTMLElement): void {
         ></textarea>
         <button type="submit" class="ax-btn ax-btn-primary" aria-label="Envoyer">→</button>
       </form>
+      <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
+        <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">💬 Chat</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" onclick="location.hash=\'#admin\'">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav">🔑 Clé API</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav">🚪 Déconnexion</button>
+      </nav>
+      <footer style="text-align:center;padding:6px;font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg)">
+        APEX AI v13.0 — Créé par <strong style="color:var(--ax-gold)">DK</strong>
+      </footer>
     </div>
   `;
 
@@ -200,6 +220,38 @@ export function render(rootEl: HTMLElement): void {
       }
     });
   }
+
+  /* Paste API key handler (modal simple) */
+  const attachPasteKey = (sel: string) => {
+    const btn = rootEl.querySelector<HTMLButtonElement>(sel);
+    btn?.addEventListener('click', () => {
+      const value = prompt('Colle ta clé API (Anthropic sk-ant-..., OpenAI sk-..., Groq gsk_..., Gemini AIza..., GitHub ghp_...) :');
+      if (!value) return;
+      const detected = vault.detectPattern(value.trim());
+      if (!detected) {
+        alert('Format de clé non reconnu. Vérifie qu\'elle commence par sk-ant-, sk-, gsk_, AIza, ghp_, etc.');
+        return;
+      }
+      try {
+        localStorage.setItem(detected.key, value.trim());
+        alert(`✅ Clé ${detected.name} stockée. Tu peux maintenant écrire un message.`);
+        void render(rootEl);
+      } catch (err) {
+        alert('Erreur stockage : ' + (err instanceof Error ? err.message : String(err)));
+      }
+    });
+  };
+  attachPasteKey('#ax-paste-key');
+  attachPasteKey('#ax-paste-key-nav');
+
+  rootEl.querySelector<HTMLButtonElement>('#ax-logout-nav')?.addEventListener('click', () => {
+    if (confirm('Déconnexion ? (tes données restent sauvegardées)')) {
+      void import('../../services/auth.js').then((m) => {
+        m.auth.logout();
+        location.hash = '#landing';
+      });
+    }
+  });
 
   if (conversation.length) renderMessages(rootEl);
   logger.info('chat', 'Chat view rendered');
