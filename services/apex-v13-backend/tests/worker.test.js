@@ -684,3 +684,115 @@ describe('Stripe edge cases (Jet 7.7)', () => {
     expect(data.processed).toBeNull();
   });
 });
+
+describe('Stripe audit trail RÉEL (Jet 7.8 anti-théâtre)', () => {
+  let env;
+  beforeEach(() => {
+    env = createEnv();
+  });
+
+  async function signPayload(payload, secret) {
+    const ts = Math.floor(Date.now() / 1000);
+    const data = `${ts}.${payload}`;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+    const sigHex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    return `t=${ts},v1=${sigHex}`;
+  }
+
+  async function postWebhook(eventBody) {
+    const payload = JSON.stringify(eventBody);
+    const sig = await signPayload(payload, env.STRIPE_WEBHOOK_SECRET);
+    return new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+  }
+
+  it('TOUS events validés persistent dans STRIPE_EVENTS KV (audit trail)', async () => {
+    const event = {
+      id: 'evt_audit_1',
+      type: 'checkout.session.completed',
+      data: { object: { client_reference_id: 'u_audit', metadata: { plan: 'pro' } } },
+    };
+    await worker.fetch(await postWebhook(event), env, {});
+    /* Audit trail : event STOCKÉ (anti perte si traitement échoue) */
+    const stored = await env.STRIPE_EVENTS.get('e:evt_audit_1');
+    expect(stored).toBeTruthy();
+    /* Original payload exact préservé pour replay/debug */
+    expect(JSON.parse(stored).id).toBe('evt_audit_1');
+  });
+
+  it('event sans uid skip MAIS audit trail conservé (pas de perte)', async () => {
+    const event = {
+      id: 'evt_no_uid_audit',
+      type: 'customer.subscription.deleted',
+      data: { object: { id: 'sub_x', metadata: {} } },
+    };
+    await worker.fetch(await postWebhook(event), env, {});
+    /* Skip silencieux mais event quand même persisté pour audit Kevin admin */
+    const stored = await env.STRIPE_EVENTS.get('e:evt_no_uid_audit');
+    expect(stored).toBeTruthy();
+  });
+
+  it('checkout.session.completed met USER_PLANS + audit trail (atomic)', async () => {
+    const event = {
+      id: 'evt_atomic_1',
+      type: 'checkout.session.completed',
+      data: { object: { client_reference_id: 'u_atomic', metadata: { plan: 'pro' } } },
+    };
+    const res = await worker.fetch(await postWebhook(event), env, {});
+    const data = await res.json();
+    expect(data.processed).toContain('upgrade');
+    /* Atomicité : event + plan tous les deux persistés */
+    expect(await env.STRIPE_EVENTS.get('e:evt_atomic_1')).toBeTruthy();
+    expect(await env.USER_PLANS.get('p:u_atomic')).toBeTruthy();
+  });
+
+  it('event type unknown skip + 200 (forward compat) MAIS audit trail OK', async () => {
+    const event = {
+      id: 'evt_future_type',
+      type: 'random.future.event_2026',
+      data: { object: { something: 'new' } },
+    };
+    const res = await worker.fetch(await postWebhook(event), env, {});
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.processed).toBeNull();
+    /* Audit trail : event archivé même si pas traité (Kevin peut investiguer plus tard) */
+    expect(await env.STRIPE_EVENTS.get('e:evt_future_type')).toBeTruthy();
+  });
+
+  it('IDEMPOTENCY : 2nd POST same event.id ne ré-ajoute PAS d\'escalation', async () => {
+    /* invoice.payment_failed crée 1 escalation. 2nd POST → skip already_processed,
+     * NE doit PAS créer 2e escalation (anti spam Kevin) */
+    const event = {
+      id: 'evt_no_double_escalate',
+      type: 'invoice.payment_failed',
+      data: { object: { id: 'in_no_dup', metadata: { uid: 'u_dup' }, amount_due: 1000 } },
+    };
+    await worker.fetch(await postWebhook(event), env, {});
+    /* 1ère escalation */
+    const esc1 = await env.ESCALATIONS.get('e:payment_failed_in_no_dup');
+    expect(esc1).toBeTruthy();
+    /* 2nd POST identique → skip */
+    const res2 = await worker.fetch(await postWebhook(event), env, {});
+    const data2 = await res2.json();
+    expect(data2.processed).toBe('already_processed');
+    /* Pas de 2e escalation key (toujours la même) */
+    const esc2 = await env.ESCALATIONS.get('e:payment_failed_in_no_dup');
+    expect(esc2).toBe(esc1); /* même contenu, pas écrasé */
+  });
+});

@@ -202,3 +202,48 @@ describe('observability guard branches (Jet 7.7)', () => {
     expect(typeof r).toBe('boolean');
   });
 });
+
+describe('observability guard ERROR PATH réel (Jet 7.8 anti-théâtre)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    observability.init();
+  });
+
+  it('guard async throw → capture("error") avec stack', async () => {
+    const beforeBufLen = observability.getBuffer().length;
+    const r = await observability.guard('test.async.throw', async () => {
+      throw new Error('async error real');
+    }, 'fallback-async');
+    expect(r).toBe('fallback-async');
+    /* Buffer DOIT contenir le capture('error') déclenché par guard catch */
+    const buf = observability.getBuffer();
+    expect(buf.length).toBeGreaterThan(beforeBufLen);
+    const errorEvent = buf.find((e) => e.scope === 'test.async.throw' && e.level === 'error');
+    expect(errorEvent).toBeDefined();
+    expect(errorEvent?.msg).toBe('async error real');
+    /* Stack présent dans context */
+    expect(errorEvent?.context?.stack).toBeDefined();
+  });
+
+  it('guard sync throw → capture("error") avec context stack', async () => {
+    const r = await observability.guard('test.sync.throw', () => {
+      throw new Error('sync error real');
+    }, 99);
+    expect(r).toBe(99);
+    const buf = observability.getBuffer();
+    const errorEvent = buf.find((e) => e.scope === 'test.sync.throw');
+    expect(errorEvent).toBeDefined();
+    expect(errorEvent?.level).toBe('error');
+  });
+
+  it('guard non-Error throw (string) → capture msg = String(err)', async () => {
+    await observability.guard('test.string.throw', () => {
+      throw 'pas un Error';
+    });
+    const buf = observability.getBuffer();
+    const evt = buf.find((e) => e.scope === 'test.string.throw');
+    expect(evt?.msg).toBe('pas un Error');
+    /* Pas de stack car pas un Error instance */
+    expect(evt?.context?.stack).toBeUndefined();
+  });
+});
