@@ -655,8 +655,26 @@ window._axRescueClicks = function(){
         }
       }catch(_){}
     });
-    /* 4. Force render fresh */
-    try{ if(typeof dc === 'function') dc(); }catch(_){}
+    /* v12.785 : reset _dcRaf zombie + clear all timers debounce */
+    try{ if(typeof _dcRaf !== "undefined" && _dcRaf){ _dcRaf = 0; } }catch(_){}
+    try{ if(window._axDcDebounce){ clearTimeout(window._axDcDebounce); window._axDcDebounce = null; } }catch(_){}
+    /* v12.785 : retire tout element body-level fixed z-index>500 sauf rescue */
+    try{
+      var rootChildren = document.body.children;
+      for(var ci=0;ci<rootChildren.length;ci++){
+        var el = rootChildren[ci];
+        if(!el || el.id === "ax-rescue-btn" || el.id === "ax-debug-hud" || el.id === "app" || el.id === "toast-container" || el.id === "modal-container") continue;
+        try{
+          var cs = getComputedStyle(el);
+          if(cs.position === "fixed" && parseInt(cs.zIndex||"0",10) > 500){
+            el.style.pointerEvents = "none";
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+    /* 4. Force re-render via render() ET dc() */
+    try{ if(typeof render === 'function') render(); }catch(_){}
+    setTimeout(function(){ try{ if(typeof dc === 'function') dc(); }catch(_){} }, 50);
     /* 5. Toast confirmation */
     try{
       var t = document.createElement('div');
@@ -1389,7 +1407,7 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.784",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.785",ADMIN_ID="kdmc_admin";
 
 /* v12.782 (Kevin "boutons s'enfoncent rien ne se passe") :
    FAIL-SAFE NAV TAPS - delegation listener au document body, capture-phase
@@ -1467,8 +1485,16 @@ var APP_VER = "v12.784",ADMIN_ID="kdmc_admin";
   try{
     if(window._axHudInstalled) return;
     window._axHudInstalled = true;
+    /* v12.785 (Kevin "boutons s'enfoncent rien fonctionne") : HUD auto-on
+       admin Kevin par defaut pour permettre diagnostic visible. */
     var hudOn = localStorage.getItem("ax_hud_on") === "1";
-    if(!hudOn) return; /* Off par defaut, activer via ls("ax_hud_on","1") */
+    var isKevinAdmin = false;
+    try{ var u = JSON.parse(localStorage.getItem("ax_user")||"null"); isKevinAdmin = u && u.id === "kdmc_admin"; }catch(_){}
+    if(!hudOn && isKevinAdmin){
+      try{ localStorage.setItem("ax_hud_on","1"); }catch(_){}
+      hudOn = true;
+    }
+    if(!hudOn) return;
     var hud = document.createElement("div");
     hud.id = "ax-debug-hud";
     hud.style.cssText = "position:fixed;top:max(8px,env(safe-area-inset-top));left:8px;z-index:2147483646;background:rgba(0,0,0,.85);color:#0f0;font-family:ui-monospace,monospace;font-size:10px;padding:6px 10px;border:1px solid #0f0;border-radius:6px;max-width:200px;line-height:1.3;pointer-events:none";
@@ -1529,8 +1555,8 @@ window._axHudDisable = function(){ try{ localStorage.removeItem("ax_hud_on"); lo
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.784"){
-            console.info("[v12.784 force-update] local=v12.784 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.785"){
+            console.info("[v12.785 force-update] local=v12.785 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
