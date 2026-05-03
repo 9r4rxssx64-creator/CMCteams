@@ -17,20 +17,16 @@ export default defineConfig({
         '**/*.d.ts',
         /* Infrastructure bootstrap testée en E2E (Playwright) : */
         'core/bootstrap.ts',
-        /* Network-heavy services testés via mock fetch en intégration : */
-        'services/ai-router.ts',
-        'services/firebase.ts',
-        'services/firebase-queue.ts',
         /* Browser-API only testé via E2E iPhone réel : */
         'services/webauthn.ts',
         'services/bodyguard.ts',
       ],
       thresholds: {
-        /* Threshold sur services métier critiques (vault, auth, rgpd, ai-safety, etc.) */
-        lines: 75,
-        functions: 75,
-        branches: 70,
-        statements: 75,
+        /* Jet 7.9 : threshold relevé après tests massifs */
+        lines: 80,
+        functions: 80,
+        branches: 75,
+        statements: 80,
       },
     },
     setupFiles: ['./tests/setup.ts'],
