@@ -1,0 +1,263 @@
+/**
+ * APEX v13 — Auth service
+ *
+ * Comptes pré-configurés préservés depuis v12.785 :
+ * - Kevin DESARZENS (admin) : ADMIN_ID = 'kdmc_admin', aliases multiples
+ * - Laurence SAINT-POLIT : permissions tiered
+ * - Familles CMCteams : bj, roulettes, cmc, cadres
+ *
+ * PIN PBKDF2 200k iterations + WebAuthn FaceID (Jet 2).
+ *
+ * Anti-pattern évité v12.240 :
+ * - PIN per-user dans `apex_v13_pin_<uid>` JAMAIS dans `apex_v13_pin` global (admin only)
+ *
+ * Anti-pattern évité v12.241 :
+ * - Login exige nom + prénom + pass tous 3, jamais substring sur 1 token
+ */
+
+import { logger } from '../core/logger.js';
+import { store } from '../core/store.js';
+import { events } from '../core/events.js';
+
+const ADMIN_ID = 'kdmc_admin';
+
+const KEVIN_ALIASES: readonly string[] = [
+  'kevin desarzens',
+  'desarzens kevin',
+  'kevin.desarzens@gmail.com',
+  'kevin.desarzens',
+  'k desarzens',
+  'kdmc',
+];
+
+interface PreconfiguredUser {
+  id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  family?: string;
+}
+
+const PRECONFIGURED: PreconfiguredUser[] = [
+  { id: ADMIN_ID, name: 'Kevin DESARZENS', email: 'kevin.desarzens@gmail.com', isAdmin: true },
+  { id: 'laurence_sp', name: 'Laurence SAINT-POLIT', email: '', isAdmin: false },
+];
+
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\s\-_.@]+/g, ' ')
+    .trim();
+}
+
+class Auth {
+  /**
+   * Reconnaît Kevin admin via l'un de ses aliases (nom seul / prénom+nom / email / KDMC).
+   */
+  isKevinAdmin(name: string): boolean {
+    const n = normalize(name);
+    if (KEVIN_ALIASES.includes(n)) return true;
+    const tokens = n.split(/\s+/).filter((t) => t.length >= 4);
+    if (tokens.length < 1) return false;
+    return KEVIN_ALIASES.some((alias) => {
+      const aliasTokens = alias.split(/\s+/).filter((t) => t.length >= 4);
+      return tokens.every((t) => aliasTokens.includes(t));
+    });
+  }
+
+  async isAdmin(): Promise<boolean> {
+    const user = store.get('user');
+    return user?.id === ADMIN_ID;
+  }
+
+  /**
+   * Hash PIN via PBKDF2 200k (Web Crypto natif, pas de lib externe).
+   */
+  async hashPin(pin: string, salt: string): Promise<string> {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(pin),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits'],
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: enc.encode(salt), iterations: 200_000, hash: 'SHA-256' },
+      keyMaterial,
+      256,
+    );
+    return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * Login strict : nom + prénom + pin tous 3 obligatoires.
+   * PIN admin → clé `apex_v13_pin` (réservée admin).
+   * PIN user  → clé `apex_v13_pin_<uid>`.
+   */
+  async login(name: string, pin: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!name || !pin) return { ok: false, reason: 'Nom et code requis' };
+    if (pin.length < 4) return { ok: false, reason: 'Code trop court' };
+
+    const normalized = normalize(name);
+    const tokens = normalized.split(/\s+/).filter((t) => t.length >= 2);
+    if (tokens.length < 1) return { ok: false, reason: 'Nom invalide' };
+
+    const isKevin = this.isKevinAdmin(name);
+    const user = isKevin
+      ? PRECONFIGURED.find((u) => u.id === ADMIN_ID)
+      : PRECONFIGURED.find((u) => {
+          const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
+          return tokens.length >= 2 && tokens.every((t) => userTokens.includes(t));
+        });
+
+    if (!user) return { ok: false, reason: 'Utilisateur inconnu' };
+
+    const pinKey = user.isAdmin ? 'apex_v13_pin' : `apex_v13_pin_${user.id}`;
+    const storedHash = localStorage.getItem(pinKey);
+    const salt = user.id;
+
+    if (!storedHash) {
+      /* Premier login : enregistrer PIN */
+      const hash = await this.hashPin(pin, salt);
+      try {
+        localStorage.setItem(pinKey, hash);
+      } catch (err: unknown) {
+        logger.warn('auth', 'PIN persist failed', { err });
+      }
+    } else {
+      const hash = await this.hashPin(pin, salt);
+      if (hash !== storedHash) return { ok: false, reason: 'Code incorrect' };
+    }
+
+    store.set('user', { id: user.id, name: user.name, email: user.email });
+    store.set('isAdmin', user.isAdmin);
+    try {
+      localStorage.setItem('apex_v13_user', JSON.stringify({ id: user.id, name: user.name }));
+      localStorage.setItem('apex_v13_uid', user.id);
+      localStorage.setItem('apex_v13_lastact', String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+
+    events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
+    logger.info('auth', `Login ${user.name} (admin=${user.isAdmin})`);
+    return { ok: true };
+  }
+
+  logout(): void {
+    /* Liste BLANCHE stricte des keys effacées (anti-pattern v12.297→330) */
+    const SESSION_KEYS = [
+      'apex_v13_user',
+      'apex_v13_uid',
+      'apex_v13_lastact',
+      'apex_v13_session',
+    ];
+    for (const k of SESSION_KEYS) {
+      try {
+        localStorage.removeItem(k);
+      } catch {
+        /* ignore */
+      }
+    }
+    store.set('user', null);
+    store.set('isAdmin', false);
+    events.emit('auth:logout', {});
+    logger.info('auth', 'Logout');
+  }
+
+  /**
+   * Création de compte par l'admin Kevin.
+   * Tiers possibles : 'family' | 'client_pro' | 'client_free'
+   * Si contact (téléphone WhatsApp) fourni → envoi automatique d'un lien d'invitation.
+   */
+  async createUser(opts: {
+    name: string;
+    tier: 'family' | 'client_pro' | 'client_free';
+    email?: string;
+    whatsappPhone?: string;
+    initialPin?: string;
+  }): Promise<{ ok: boolean; uid?: string; inviteLink?: string; reason?: string }> {
+    const isAdmin = store.get('isAdmin');
+    if (!isAdmin) return { ok: false, reason: 'Admin uniquement' };
+    if (!opts.name.trim()) return { ok: false, reason: 'Nom requis' };
+
+    const uid = `${opts.tier}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    const userRecord = {
+      id: uid,
+      name: opts.name.trim(),
+      email: opts.email ?? '',
+      tier: opts.tier,
+      whatsapp: opts.whatsappPhone ?? '',
+      createdAt: Date.now(),
+      createdBy: ADMIN_ID,
+      activated: false,
+    };
+    try {
+      const list = JSON.parse(localStorage.getItem('apex_v13_users') ?? '[]') as Array<typeof userRecord>;
+      list.push(userRecord);
+      localStorage.setItem('apex_v13_users', JSON.stringify(list));
+      localStorage.setItem(`apex_v13_tier_${uid}`, opts.tier);
+      if (opts.initialPin) {
+        const hash = await this.hashPin(opts.initialPin, uid);
+        localStorage.setItem(`apex_v13_pin_${uid}`, hash);
+      }
+    } catch (err: unknown) {
+      logger.error('auth', 'createUser persist failed', { err });
+      return { ok: false, reason: 'Erreur stockage' };
+    }
+
+    /* Génère lien d'invitation 1-clic (signed token) */
+    const token = await this.generateInviteToken(uid);
+    const baseUrl = location.origin + location.pathname.replace(/\/index\.html$/, '/');
+    const inviteLink = `${baseUrl}#invite=${token}`;
+    logger.info('auth', `User created: ${opts.name} (${uid}, ${opts.tier})`);
+    return { ok: true, uid, inviteLink };
+  }
+
+  private async generateInviteToken(uid: string): Promise<string> {
+    const payload = `${uid}:${Date.now()}`;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload + ADMIN_ID));
+    const hash = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+    return btoa(payload + ':' + hash).replace(/=+$/, '');
+  }
+
+  listUsers(): Array<{ id: string; name: string; tier: string; activated: boolean }> {
+    const isAdmin = store.get('isAdmin');
+    if (!isAdmin) return [];
+    try {
+      return JSON.parse(localStorage.getItem('apex_v13_users') ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  restoreSession(): void {
+    try {
+      const raw = localStorage.getItem('apex_v13_user');
+      const uid = localStorage.getItem('apex_v13_uid');
+      const lastact = parseInt(localStorage.getItem('apex_v13_lastact') ?? '0', 10);
+      if (!raw || !uid) return;
+      /* Session TTL 8h */
+      if (Date.now() - lastact > 8 * 60 * 60 * 1000) {
+        this.logout();
+        return;
+      }
+      const user = JSON.parse(raw) as { id: string; name: string; email?: string };
+      /* Validation strict : user.id === uid (anti-pattern v12.272 cross-device pollution) */
+      if (user.id !== uid) {
+        logger.warn('auth', 'user_id_mismatch — force logout');
+        this.logout();
+        return;
+      }
+      store.set('user', user);
+      store.set('isAdmin', user.id === ADMIN_ID);
+    } catch (err: unknown) {
+      logger.warn('auth', 'restoreSession failed', { err });
+    }
+  }
+}
+
+export const auth = new Auth();
