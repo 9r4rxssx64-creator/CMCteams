@@ -84,24 +84,58 @@ class Firebase {
     return FB_LOCAL.some((prefix) => key === prefix || key.startsWith(prefix));
   }
 
-  async write(key: string, value: unknown): Promise<void> {
+  async write(key: string, value: unknown, opts?: { idempotencyKey?: string }): Promise<void> {
     if (this.isLocalOnly(key)) return;
     if (!this.shouldSync(key)) return;
     if (!this.connected) {
       this.queue.push({ key, value, ts: Date.now() });
       return;
     }
+    /* P0-4 fix audit subagent design : idempotency-key anti TOCTOU race
+     * Firebase RTDB ne supporte pas nativement Idempotency, on simule via "last-writer-wins
+     * with idempotency tag". Si même idempotencyKey vu < 60s → skip (anti double write
+     * post browser crash + replay queue). */
+    const idempotencyKey = opts?.idempotencyKey ?? `${key}:${JSON.stringify(value).slice(0, 64)}`;
+    if (this.recentlyWritten(idempotencyKey)) {
+      logger.debug('firebase', `Idempotent skip ${key}`);
+      return;
+    }
     try {
       const res = await fetch(`${this.url}/apex/${encodeURIComponent(key)}.json`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idempotencyKey },
         body: JSON.stringify(value),
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      this.recordWrite(idempotencyKey);
     } catch (err: unknown) {
       logger.warn('firebase', `Write failed for ${key} (queued)`, { err });
       this.queue.push({ key, value, ts: Date.now() });
+    }
+  }
+
+  /* Idempotency tracking — keys récents (60s window anti replay) */
+  private recentWrites = new Map<string, number>();
+
+  private recentlyWritten(key: string): boolean {
+    const ts = this.recentWrites.get(key);
+    if (!ts) return false;
+    if (Date.now() - ts > 60_000) {
+      this.recentWrites.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  private recordWrite(key: string): void {
+    this.recentWrites.set(key, Date.now());
+    /* GC entries > 60s */
+    if (this.recentWrites.size > 200) {
+      const cutoff = Date.now() - 60_000;
+      for (const [k, ts] of this.recentWrites) {
+        if (ts < cutoff) this.recentWrites.delete(k);
+      }
     }
   }
 
