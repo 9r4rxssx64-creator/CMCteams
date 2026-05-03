@@ -56,7 +56,7 @@ class Vault {
       ['deriveKey'],
     );
     return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 200_000, hash: 'SHA-256' },
+      { name: 'PBKDF2', salt: salt as BufferSource, iterations: 200_000, hash: 'SHA-256' },
       keyMaterial,
       { name: 'AES-GCM', length: 256 },
       false,
@@ -70,7 +70,11 @@ class Vault {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await this.deriveKey(pass, salt);
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plaintext));
+    const ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv as BufferSource },
+      key,
+      new TextEncoder().encode(plaintext) as BufferSource,
+    );
     const payload: EncryptedPayload = {
       v: 1,
       iv: this.b64(iv),
@@ -95,7 +99,11 @@ class Vault {
       const iv = this.b64decode(payload.iv);
       const ct = this.b64decode(payload.ct);
       const key = await this.deriveKey(pass, salt);
-      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      const plain = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv as BufferSource },
+        key,
+        ct as BufferSource,
+      );
       return new TextDecoder().decode(plain);
     } catch (err: unknown) {
       logger.warn('vault', 'decrypt failed (returning null)', { err });

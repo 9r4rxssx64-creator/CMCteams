@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#08080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="APEX">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="APEX AI v13 — Assistant IA personnel niveau entreprise commercialisable. Multi-providers, voice, studios créatifs, modules pro, vault chiffré.">
+
+  <!-- CSP strict (nonce-based, zéro unsafe-*) — réf plan rebuild §Sécurité -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' 'nonce-APEX_BOOT_NONCE' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+             style-src 'self' 'nonce-APEX_BOOT_NONCE';
+             img-src 'self' data: blob: https:;
+             font-src 'self' data:;
+             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io;
+             worker-src 'self' blob:;
+             frame-src 'self' https:;
+             object-src 'none';
+             base-uri 'self';
+             form-action 'self';
+             upgrade-insecure-requests;">
+
+  <title>APEX AI v13</title>
+
+  <link rel="manifest" href="./assets/json/manifest-CvqA42eb.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/apex-logo-192.png">
+
+
+  <!-- Preconnect critical providers -->
+  <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
+  <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+  <script type="module" crossorigin src="./core/main-DrFYkgzF.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/css/main-BNM-bAvX.css">
+</head>
+<body>
+  <!-- Splash minimal (visible <1s avant boot bundle) -->
+  <div id="apex-splash" aria-hidden="true">
+    <div class="apex-splash-logo">◆</div>
+    <div class="apex-splash-name">APEX</div>
+    <div class="apex-splash-bar"><div class="apex-splash-bar-fill"></div></div>
+  </div>
+
+  <!-- Root mount point -->
+  <div id="apex-root" role="main" aria-label="APEX AI"></div>
+
+  <!-- Fallback statique si bundle JS crash (ne JAMAIS reproduire l'erreur "écran blanc") -->
+  <noscript>
+    <div style="padding:40px;text-align:center;color:#fff;background:#08080f;min-height:100vh">
+      <h1 style="color:#c9a227;font-family:Georgia,serif">APEX AI</h1>
+      <p>JavaScript est requis pour utiliser APEX. Active-le dans ton navigateur.</p>
+    </div>
+  </noscript>
+
+  <!-- Bouton SOS rescue permanent (HTML pur, indépendant framework) -->
+  <!-- Préservé v12.771-779 — règle Kevin : "qu'au minimum 1 bouton fonctionne TOUJOURS" -->
+  <button id="apex-rescue-btn" type="button"
+    onclick="(function(){try{if(!confirm('Reset Apex complet ?\n\n• Service Worker desinstalle\n• Caches effaces\n• App rechargee fraiche\n\nTes donnees (Coffre, profil, conversations) sont PRESERVEES.'))return;}catch(_){};try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){};try{if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){};setTimeout(function(){try{location.href=location.pathname+'?_reset='+Date.now();}catch(_){location.reload();}},400);})();"
+    style="position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:2147483647;width:56px;height:56px;border-radius:28px;background:linear-gradient(135deg,#cc3030,#aa1010);color:#fff;border:2px solid rgba(255,255,255,.2);box-shadow:0 6px 20px rgba(204,48,48,.4);font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-weight:700;display:none;align-items:center;justify-content:center;padding:0;touch-action:manipulation;font-family:system-ui,sans-serif"
+    title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
+
+  <!-- Boot loader minimal — charge le bundle ES module Vite -->
+
+  <!-- Fail-safe : si bundle ne charge pas dans 6s, montre rescue button -->
+  <script nonce="APEX_BOOT_NONCE">
+    setTimeout(function(){
+      try{
+        var root = document.getElementById('apex-root');
+        if(!root || !root.innerHTML.trim()){
+          var btn = document.getElementById('apex-rescue-btn');
+          if(btn) btn.style.display = 'flex';
+          var splash = document.getElementById('apex-splash');
+          if(splash){
+            var hint = document.createElement('div');
+            hint.style.cssText = 'margin-top:16px;color:#a0a4c0;font-size:13px;text-align:center;max-width:300px;padding:0 20px';
+            hint.textContent = 'Chargement plus long que prévu. Tape SOS en bas-droite si bloqué.';
+            splash.appendChild(hint);
+          }
+        }
+      }catch(_){}
+    }, 6000);
+  </script>
+</body>
+</html>
