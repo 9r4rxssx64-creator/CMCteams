@@ -27,6 +27,10 @@ class Haptic {
     this.enabled = enabled;
   }
 
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   isAvailable(): boolean {
     return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
   }

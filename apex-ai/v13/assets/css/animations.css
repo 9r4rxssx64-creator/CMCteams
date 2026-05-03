@@ -191,8 +191,9 @@
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  /* P0 audit UX : 44x44 min Apple HIG (était 28×28) */
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -278,8 +279,9 @@
   border: 1px solid var(--ax-border);
   color: var(--ax-text);
   font-size: 18px;
-  width: 36px;
-  height: 36px;
+  /* P0 audit UX : 44x44 min Apple HIG (était 36×36) */
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -298,6 +300,15 @@
   -webkit-overflow-scrolling: touch;
   color: var(--ax-text);
   line-height: var(--ax-lh-normal);
+  /* P0 audit UX : padding-bottom adaptive iOS keyboard pour ne pas masquer input */
+  padding-bottom: max(var(--ax-s-3), env(safe-area-inset-bottom));
+  scroll-padding-bottom: 200px;
+}
+
+.ax-sheet-body input,
+.ax-sheet-body textarea {
+  /* iOS Safari : empêcher zoom auto si font-size < 16px */
+  font-size: max(16px, var(--ax-text-base));
 }
 
 .ax-sheet-actions {
@@ -370,9 +381,34 @@
   animation-delay: 0.3s;
 }
 
-/* ───────── Glow pulse (for important CTAs) ───────── */
+/* ───────── Glow pulse — utilisation purposeful uniquement
+ * Reservé aux états attention requise (CTA bloquant, erreur récupérable, offline indicator)
+ * NE PAS utiliser cosmétiquement (audit UX règle anti-théâtre) */
 .ax-glow-pulse {
   animation: ax-pulse-glow 2.4s ease-in-out infinite;
+}
+
+/* ───────── Status indicators ───────── */
+.ax-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: var(--ax-s-2);
+}
+
+.ax-status-online {
+  background: var(--ax-green);
+  box-shadow: 0 0 8px var(--ax-green);
+}
+
+.ax-status-offline {
+  background: var(--ax-text-muted);
+}
+
+.ax-status-error {
+  background: var(--ax-red);
+  animation: ax-pulse-glow 1.6s ease-in-out infinite;
 }
 
 /* ───────── Bounce-in (entrance) ───────── */

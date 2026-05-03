@@ -46,7 +46,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-landing">
       <div class="ax-landing-card ax-slide-up-fade">
         <div class="ax-landing-logo-wrap">
-          <h1 class="ax-landing-logo ax-glow-pulse">APEX</h1>
+          <h1 class="ax-landing-logo">APEX</h1>
           <span class="ax-landing-version">v13.0</span>
         </div>
         <p class="ax-landing-tagline">Ton assistant intelligent personnel</p>
