@@ -378,9 +378,10 @@ class MediaStudio {
     if (candidates.length === 0) return null;
 
     /* Filter par budget */
+    const maxBudget = options.maxBudgetUsd;
     const budgetFilter =
-      typeof options.maxBudgetUsd === 'number'
-        ? candidates.filter((p) => (p.pricing_per_request_usd ?? 0) <= options.maxBudgetUsd!)
+      typeof maxBudget === 'number'
+        ? candidates.filter((p) => (p.pricing_per_request_usd ?? 0) <= maxBudget)
         : candidates;
 
     /* Filter par clé API dispo */
@@ -408,7 +409,7 @@ class MediaStudio {
       if (qDiff !== 0) return qDiff;
       return (a.pricing_per_request_usd ?? 0) - (b.pricing_per_request_usd ?? 0);
     });
-    return sorted[0]!;
+    return sorted[0] ?? null;
   }
 
   /**
@@ -455,7 +456,9 @@ class MediaStudio {
       const all = JSON.parse(localStorage.getItem('apex_v13_media_jobs') ?? '[]') as MediaJob[];
       const idx = all.findIndex((j) => j.id === jobId);
       if (idx < 0) return false;
-      const merged: MediaJob = { ...all[idx]!, ...updates };
+      const existing = all[idx];
+      if (!existing) return false;
+      const merged: MediaJob = { ...existing, ...updates };
       if (updates.status === 'completed' || updates.status === 'failed') {
         merged.completed_at = Date.now();
         merged.duration_ms = merged.completed_at - merged.created_at;

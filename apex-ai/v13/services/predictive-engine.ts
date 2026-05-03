@@ -160,8 +160,9 @@ class PredictiveEngine {
     /* Transitions A → B (B exécuté < 5 min après A) */
     const transitions: Record<string, number> = {};
     for (let i = 1; i < history.length; i++) {
-      const prev = history[i - 1]!;
-      const curr = history[i]!;
+      const prev = history[i - 1];
+      const curr = history[i];
+      if (!prev || !curr) continue;
       if (curr.ts - prev.ts > 5 * 60 * 1000) continue;
       const key = `${prev.action_type}→${curr.action_type}`;
       transitions[key] = (transitions[key] ?? 0) + 1;

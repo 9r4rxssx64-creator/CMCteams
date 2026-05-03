@@ -238,7 +238,9 @@ class SubscriptionTiers {
    */
   getCurrentTier(uid: string | null): TierFeatures {
     const plan = commerce.getEffectivePlan(uid);
-    return this.getByPlan(plan) ?? TIERS[0]!;
+    const fallback = TIERS[0];
+    if (!fallback) throw new Error('TIERS registry empty');
+    return this.getByPlan(plan) ?? fallback;
   }
 
   /**
@@ -248,7 +250,8 @@ class SubscriptionTiers {
     const order: Plan[] = ['free', 'basic', 'pro', 'business'];
     const currentIdx = order.indexOf(currentPlan);
     if (currentIdx < 0 || currentIdx >= order.length - 1) return null;
-    const nextPlan = order[currentIdx + 1]!;
+    const nextPlan = order[currentIdx + 1];
+    if (!nextPlan) return null;
     return this.getByPlan(nextPlan);
   }
 

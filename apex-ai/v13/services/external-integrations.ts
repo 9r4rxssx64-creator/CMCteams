@@ -275,7 +275,8 @@ class ExternalIntegrations {
     if (candidates.length === 0) return null;
     /* Rotation simple : modulo timestamp */
     const idx = Math.floor(Date.now() / 60_000) % candidates.length;
-    const chosen = candidates[idx]!;
+    const chosen = candidates[idx];
+    if (!chosen) return null;
     /* Track impression */
     this.recordCrossPromoImpression(uid, chosen.id);
     return chosen;
@@ -309,8 +310,9 @@ class ExternalIntegrations {
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        const v = k ? localStorage.getItem(k) : null;
-        if (v) totalBytes += k!.length + v.length;
+        if (!k) continue;
+        const v = localStorage.getItem(k);
+        if (v) totalBytes += k.length + v.length;
       }
     } catch {
       /* ignore */
@@ -325,7 +327,9 @@ class ExternalIntegrations {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k?.startsWith('apex_v13_pending_messages_')) {
-          const arr = JSON.parse(localStorage.getItem(k)!) as unknown[];
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const arr = JSON.parse(raw) as unknown[];
           pendingTotal += arr.length;
         }
       }

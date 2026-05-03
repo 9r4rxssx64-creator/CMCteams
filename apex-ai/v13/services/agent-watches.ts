@@ -257,8 +257,9 @@ class AgentWatches {
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        const v = k ? localStorage.getItem(k) : null;
-        if (v) totalBytes += k!.length + v.length;
+        if (!k) continue;
+        const v = localStorage.getItem(k);
+        if (v) totalBytes += k.length + v.length;
       }
     } catch {
       return this.record('storage-watch', 'warn', 'Storage scan failed');

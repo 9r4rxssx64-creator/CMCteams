@@ -241,7 +241,11 @@ class SmartCamera {
     }
     return new Promise((resolve) => {
       const chunks: Blob[] = [];
-      const recorder = this.mediaRecorder!;
+      const recorder = this.mediaRecorder;
+      if (!recorder) {
+        resolve({ ok: false, reason: 'MediaRecorder disparu' });
+        return;
+      }
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };

@@ -77,6 +77,46 @@ describe('Business Intelligence (rapports auto)', () => {
       const trends = businessIntelligence.detectTrends('daily');
       expect(trends.every((t) => ['up', 'down', 'stable'].includes(t.direction))).toBe(true);
     });
+
+    it('detect direction "up" quand current > previous', () => {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      /* 2 messages dans la période précédente, 20 dans la période courante */
+      const previous = Array.from({ length: 2 }, (_, i) => ({ ts: now - dayMs - i * 1000, content: 'old' }));
+      const current = Array.from({ length: 20 }, (_, i) => ({ ts: now - i * 60 * 1000, content: 'new' }));
+      localStorage.setItem('apex_v13_chat_messages', JSON.stringify([...previous, ...current]));
+      const trends = businessIntelligence.detectTrends('daily');
+      const msgTrend = trends.find((t) => t.metric === 'messages');
+      expect(msgTrend?.direction).toBe('up');
+      expect(msgTrend?.pct_change).toBeGreaterThan(0);
+    });
+
+    it('detect direction "down" quand current < previous', () => {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      /* 30 erreurs dans la période précédente, 3 dans la période courante */
+      const previous = Array.from({ length: 30 }, (_, i) => ({ ts: now - dayMs - i * 1000, level: 'error' }));
+      const current = Array.from({ length: 3 }, (_, i) => ({ ts: now - i * 60 * 1000, level: 'error' }));
+      localStorage.setItem('apex_v13_observability_buffer', JSON.stringify([...previous, ...current]));
+      const trends = businessIntelligence.detectTrends('daily');
+      const errTrend = trends.find((t) => t.metric === 'errors');
+      expect(errTrend?.direction).toBe('down');
+      expect(errTrend?.pct_change).toBeLessThan(0);
+    });
+
+    it('detect direction "stable" quand variation < 5%', () => {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      /* 100 tokens previous, 102 tokens current (variation 2%) */
+      const usage = [
+        { ts: now - dayMs - 1000, tokens: 100 },
+        { ts: now - 1000, tokens: 102 },
+      ];
+      localStorage.setItem('apex_v13_token_usage_history', JSON.stringify(usage));
+      const trends = businessIntelligence.detectTrends('daily');
+      const tokTrend = trends.find((t) => t.metric === 'tokens');
+      expect(tokTrend?.direction).toBe('stable');
+    });
   });
 
   describe('detectAnomalies', () => {

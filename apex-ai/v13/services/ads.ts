@@ -190,15 +190,15 @@ class AdsService {
     const impressions = this.loadImpressions();
     const stats: Record<string, { shown_count: number; click_count: number; ctr: number }> = {};
     for (const imp of impressions) {
-      if (!stats[imp.ad_id]) {
-        stats[imp.ad_id] = { shown_count: 0, click_count: 0, ctr: 0 };
-      }
-      stats[imp.ad_id]!.shown_count++;
-      if (imp.clicked) stats[imp.ad_id]!.click_count++;
+      const entry = stats[imp.ad_id] ?? { shown_count: 0, click_count: 0, ctr: 0 };
+      entry.shown_count++;
+      if (imp.clicked) entry.click_count++;
+      stats[imp.ad_id] = entry;
     }
     /* Calcul CTR */
     for (const id in stats) {
-      const s = stats[id]!;
+      const s = stats[id];
+      if (!s) continue;
       s.ctr = s.shown_count > 0 ? Math.round((s.click_count / s.shown_count) * 1000) / 10 : 0;
     }
     return stats;
