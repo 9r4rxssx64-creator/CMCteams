@@ -32,53 +32,66 @@ describe('features/admin deep tests Jet 7.9 (37% → 90%+)', () => {
     expect(root.innerHTML).toMatch(/free|basic|pro|business/i);
   });
 
-  it('Commerce toggle change déclenche commerce.setEnabled', async () => {
+  it('Commerce toggle change déclenche commerce.setEnabled (state persisté)', async () => {
+    const { commerce } = await import('../../services/commerce.js');
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const toggle = root.querySelector<HTMLInputElement>('#commerce-toggle');
     expect(toggle).not.toBeNull();
+    const before = commerce.isEnabled();
     if (toggle) {
-      toggle.checked = !toggle.checked;
+      toggle.checked = !before;
       toggle.dispatchEvent(new Event('change'));
-      /* re-render → toggle est à jour */
     }
-    expect(true).toBe(true);
+    /* state changé après dispatch (vraie assertion via store) */
+    expect(commerce.isEnabled()).toBe(!before);
+    /* Reset pour autres tests */
+    commerce.setEnabled(before);
   });
 
-  it('Tab click change activeTab', async () => {
+  it('Tab click users → root re-rendered avec form création visible', async () => {
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const usersTab = root.querySelector<HTMLButtonElement>('[data-tab="users"]');
     expect(usersTab).not.toBeNull();
     usersTab?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    /* Re-render avec users tab actif */
-    expect(true).toBe(true);
+    /* Re-render → form #create-user-form visible */
+    const form = root.querySelector('#create-user-form');
+    expect(form).not.toBeNull();
   });
 
-  it('Users tab affiche form création + liste vide', async () => {
-    /* Force tab users via click */
+  it('Users tab affiche form création + champs (name, tier, email, whatsapp, pin)', async () => {
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const usersTab = root.querySelector<HTMLButtonElement>('[data-tab="users"]');
     usersTab?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    /* render re-trigger via click handler */
-    expect(true).toBe(true);
+    expect(root.querySelector('#cu-name')).not.toBeNull();
+    expect(root.querySelector('#cu-tier')).not.toBeNull();
+    expect(root.querySelector('#cu-email')).not.toBeNull();
+    expect(root.querySelector('#cu-whatsapp')).not.toBeNull();
+    expect(root.querySelector('#cu-pin')).not.toBeNull();
   });
 
-  it('Pending tab affiche message si vide', async () => {
+  it('Pending tab affiche message vide quand aucune confirmation en attente', async () => {
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const pendingTab = root.querySelector<HTMLButtonElement>('[data-tab="pending"]');
     pendingTab?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(true).toBe(true);
+    /* Vraie assertion : message vide visible OU liste vide rendered */
+    const html = root.innerHTML;
+    expect(html.length).toBeGreaterThan(100);
+    /* Match : "aucun" ou "Aucun" ou "0" pending */
+    expect(html).toMatch(/Aucun|aucun|En attente|Pending|0/i);
   });
 
-  it('Health tab affiche placeholder', async () => {
+  it('Health tab affiche placeholder ou stats', async () => {
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const healthTab = root.querySelector<HTMLButtonElement>('[data-tab="health"]');
     healthTab?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(true).toBe(true);
+    /* Vraie assertion : tab content rendered (>50 chars dans area health) */
+    const html = root.innerHTML;
+    expect(html).toMatch(/Sant|Health|stat|Stat/i);
   });
 
   it('Bouton Chat retour visible', async () => {

@@ -21,17 +21,29 @@ describe('observability deep tests', () => {
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it('init avec DSN invalide format → sentryReady false', () => {
+    it('init avec DSN invalide format → fetch jamais appelé pour Sentry', async () => {
       localStorage.setItem('ax_sentry_dsn', 'pas-un-dsn-valide');
+      const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
       observability.init();
-      /* Re-init reload mais format invalide → pas envoi */
-      expect(true).toBe(true);
+      observability.captureNoEscalate('error', 'test', 'DSN invalid scenario', {});
+      await new Promise((r) => setTimeout(r, 50));
+      /* Vraie assertion : Sentry endpoint pas appelé car DSN invalide */
+      const sentryCalls = spy.mock.calls.filter((c) => String(c[0]).includes('sentry.io'));
+      expect(sentryCalls.length).toBe(0);
+      spy.mockRestore();
     });
 
-    it('DSN valide format → sentryReady true (init)', () => {
+    it('DSN valide format ne throw pas + init OK', () => {
       localStorage.setItem('ax_sentry_dsn', 'https://abc123@sentry.io/12345');
-      observability.init();
-      expect(true).toBe(true);
+      let threw = false;
+      try {
+        observability.init();
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      /* getDLQ accessible après init = init OK */
+      expect(Array.isArray(observability.getDLQ())).toBe(true);
     });
   });
 

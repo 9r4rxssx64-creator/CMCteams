@@ -21,9 +21,19 @@ describe('bodyguard service (tests Jet 6.5)', () => {
     expect(() => document.dispatchEvent(event)).not.toThrow();
   });
 
-  it('postMessage handler installé', () => {
+  it('postMessage handler installé : event externe ne throw pas', () => {
     bodyguard.install();
-    /* Vérification indirecte : l'installation ne throw pas et n'a pas d'effet de bord visible */
-    expect(true).toBe(true);
+    let threw = false;
+    try {
+      /* Simule postMessage externe (origin différent) */
+      const event = new MessageEvent('message', {
+        data: { type: 'unknown', payload: { evil: true } },
+        origin: 'https://attacker.example.com',
+      });
+      window.dispatchEvent(event);
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
   });
 });

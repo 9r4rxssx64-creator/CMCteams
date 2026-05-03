@@ -41,13 +41,20 @@ describe('features/landing deep tests Jet 7.9 (47% → 90%+)', () => {
     const pinInput = root.querySelector<HTMLInputElement>('#login-pin')!;
     nameInput.value = 'Inconnu';
     pinInput.value = '12345';
-    /* Wait Promise.all events */
-    const event = new Event('submit', { bubbles: true, cancelable: true });
-    form.dispatchEvent(event);
-    /* Login fail → error message dans #login-error */
-    await new Promise((r) => setTimeout(r, 100));
-    /* ne throw pas */
-    expect(true).toBe(true);
+    let threw = false;
+    try {
+      const event = new Event('submit', { bubbles: true, cancelable: true });
+      form.dispatchEvent(event);
+      await new Promise((r) => setTimeout(r, 150));
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
+    /* Vraie assertion : message erreur user-friendly affiché OU form encore présent */
+    const errorEl = root.querySelector('#login-error');
+    if (errorEl) {
+      expect(errorEl.textContent?.length ?? 0).toBeGreaterThan(0);
+    }
   });
 
   it('invite token URL hash → message info detected', async () => {
