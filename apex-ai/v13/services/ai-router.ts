@@ -128,7 +128,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
         return null;
       }
     },
-    headers: () => ({ 'content-type': 'application/json' }),
+    /* P0-2 fix : header x-goog-api-key au lieu de query string (anti leak proxy/log) */
+    headers: (apiKey) => ({ 'content-type': 'application/json', 'x-goog-api-key': apiKey }),
   },
   openclaw: {
     endpoint: 'https://api.openclaw.io/v1/chat/completions' /* placeholder, à confirmer quand Kevin fournit clé */,
@@ -241,7 +242,8 @@ class AIRouter {
     signal: AbortSignal,
   ): Promise<void> {
     const cfg = PROVIDERS[provider];
-    const url = provider === 'gemini' ? `${cfg.endpoint}?key=${apiKey}&alt=sse` : cfg.endpoint;
+    /* P0-2 fix : Gemini key DANS le header (déjà ci-dessus), URL ne contient QUE alt=sse */
+    const url = provider === 'gemini' ? `${cfg.endpoint}?alt=sse` : cfg.endpoint;
     const res = await fetch(url, {
       method: 'POST',
       headers: cfg.headers(apiKey),

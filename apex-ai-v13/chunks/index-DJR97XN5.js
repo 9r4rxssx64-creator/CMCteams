@@ -1,4 +1,4 @@
-import{c as m}from"./commerce-BRBChWAr.js";import{auth as g}from"./auth-nEvETl4b.js";import{l as c,s as h}from"../core/main-qFy8xv_B.js";import{firebase as x}from"./firebase-C9v4hRGR.js";class b{OTP_TTL=1440*60*1e3;getKevinWhatsApp(){return localStorage.getItem("ax_kevin_whatsapp_phone")??""}async requestConfirmation(n){const t=this.getKevinWhatsApp();if(!t)return{ok:!1,reason:"Numéro Kevin WhatsApp non configuré"};const a=this.generateOTP(),i={uid:n.uid,name:n.name,whatsapp:n.whatsappPhone,otp:a,createdAt:Date.now(),expiresAt:Date.now()+this.OTP_TTL,confirmed:!1};try{const o=JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]");o.push(i),localStorage.setItem("apex_v13_pending_confirms",JSON.stringify(o))}catch(o){c.warn("whatsapp","persist failed",{err:o})}x.write("apex_v13_pending_confirms",i);const r=encodeURIComponent(`Bonjour Kevin, je suis ${n.name}. Voici mon code d'inscription Apex : ${a}`),l=`https://wa.me/${t.replace(/[^\d]/g,"")}?text=${r}`;return c.info("whatsapp",`Confirmation requested for ${n.name}`,{otp:a}),{ok:!0,inviteLink:l,otp:a}}confirm(n){try{const t=JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]"),a=t.find(s=>s.otp===n&&!s.confirmed&&s.expiresAt>Date.now());if(!a)return{ok:!1};a.confirmed=!0,localStorage.setItem("apex_v13_pending_confirms",JSON.stringify(t));const i=JSON.parse(localStorage.getItem("apex_v13_users")??"[]"),r=i.find(s=>s.id===a.uid);return r&&(r.activated=!0,localStorage.setItem("apex_v13_users",JSON.stringify(i))),c.info("whatsapp",`Confirmed ${a.name}`),{ok:!0,uid:a.uid}}catch(t){return c.error("whatsapp","confirm failed",{err:t}),{ok:!1}}}listPending(){try{return JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]").filter(t=>!t.confirmed&&t.expiresAt>Date.now())}catch{return[]}}generateOTP(){const n=crypto.getRandomValues(new Uint8Array(3)),t=n[0]<<16|n[1]<<8|n[2];return String(t%1e6).padStart(6,"0")}}const f=new b;let v="commerce";function d(e){return e.replace(/[&<>"']/g,n=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[n]??n)}function y(){const e=m.isEnabled();return`
+import{c as m}from"./commerce-_12-aUfV.js";import{auth as g}from"./auth-C43EcZBY.js";import{l as c,s as h}from"../core/main-DccZIa3D.js";import{firebase as x}from"./firebase-B1CrdiG4.js";class b{OTP_TTL=1440*60*1e3;getKevinWhatsApp(){return localStorage.getItem("ax_kevin_whatsapp_phone")??""}async requestConfirmation(a){const t=this.getKevinWhatsApp();if(!t)return{ok:!1,reason:"Numéro Kevin WhatsApp non configuré"};const n=this.generateOTP(),i={uid:a.uid,name:a.name,whatsapp:a.whatsappPhone,otp:n,createdAt:Date.now(),expiresAt:Date.now()+this.OTP_TTL,confirmed:!1};try{const o=JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]");o.push(i),localStorage.setItem("apex_v13_pending_confirms",JSON.stringify(o))}catch(o){c.warn("whatsapp","persist failed",{err:o})}x.write("apex_v13_pending_confirms",i);const s=encodeURIComponent(`Bonjour Kevin, je suis ${a.name}. Voici mon code d'inscription Apex : ${n}`),l=`https://wa.me/${t.replace(/[^\d]/g,"")}?text=${s}`;return c.info("whatsapp",`Confirmation requested for ${a.name}`,{otp:n}),{ok:!0,inviteLink:l,otp:n}}confirm(a){try{const t=JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]"),n=t.find(r=>r.otp===a&&!r.confirmed&&r.expiresAt>Date.now());if(!n)return{ok:!1};n.confirmed=!0,localStorage.setItem("apex_v13_pending_confirms",JSON.stringify(t));const i=JSON.parse(localStorage.getItem("apex_v13_users")??"[]"),s=i.find(r=>r.id===n.uid);return s&&(s.activated=!0,localStorage.setItem("apex_v13_users",JSON.stringify(i))),c.info("whatsapp",`Confirmed ${n.name}`),{ok:!0,uid:n.uid}}catch(t){return c.error("whatsapp","confirm failed",{err:t}),{ok:!1}}}listPending(){try{return JSON.parse(localStorage.getItem("apex_v13_pending_confirms")??"[]").filter(t=>!t.confirmed&&t.expiresAt>Date.now())}catch{return[]}}generateOTP(){const a=crypto.getRandomValues(new Uint8Array(9)),t="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let n="";for(let i=0;i<12;i++){const s=a[i%a.length];n+=t[(s??0)%t.length]}return n.slice(0,6)+"-"+n.slice(6)}}const f=new b;let v="commerce";function d(e){return e.replace(/[&<>"']/g,a=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[a]??a)}function y(){const e=m.isEnabled();return`
     <div class="ax-admin-section">
       <h2>Commercialisation</h2>
       <p class="ax-muted">
@@ -22,7 +22,7 @@ import{c as m}from"./commerce-BRBChWAr.js";import{auth as g}from"./auth-nEvETl4b
         </ul>
       </div>
     </div>
-  `}function $(){const e=g.listUsers(),n=e.map(t=>`
+  `}function $(){const e=g.listUsers(),a=e.map(t=>`
       <li class="ax-user-row">
         <span class="ax-user-name">${d(t.name)}</span>
         <span class="ax-tier-badge ax-tier-${t.tier}">${t.tier}</span>
@@ -67,7 +67,7 @@ import{c as m}from"./commerce-BRBChWAr.js";import{auth as g}from"./auth-nEvETl4b
       <div id="create-user-result"></div>
 
       <h2>Comptes existants (${e.length})</h2>
-      <ul class="ax-user-list">${n||`<li class="ax-muted">Aucun compte créé pour l'instant</li>`}</ul>
+      <ul class="ax-user-list">${a||`<li class="ax-muted">Aucun compte créé pour l'instant</li>`}</ul>
     </div>
   `}function w(){const e=f.listPending();return e.length?`
     <div class="ax-admin-section">
@@ -87,22 +87,22 @@ import{c as m}from"./commerce-BRBChWAr.js";import{auth as g}from"./auth-nEvETl4b
         <h2>Confirmations en attente</h2>
         <p class="ax-muted">Aucune confirmation à valider.</p>
       </div>
-    `}function S(){return`
+    `}function C(){return`
     <div class="ax-admin-section">
       <h2>État de santé</h2>
       <p class="ax-muted">Sentinelles + providers IA — Jet 2 enrichira avec dashboard live.</p>
     </div>
-  `}function _(){return[["commerce","💳 Commerce"],["users","👥 Comptes"],["pending","📨 En attente"],["health","🩺 Santé"]].map(([n,t])=>`
-      <button class="ax-tab ${v===n?"ax-tab-active":""}" data-tab="${n}">${t}</button>
-    `).join("")}function C(){switch(v){case"commerce":return y();case"users":return $();case"pending":return w();case"health":return S()}}function A(e){e.querySelectorAll("[data-tab]").forEach(a=>{a.addEventListener("click",()=>{v=a.dataset.tab,u(e)})});const n=e.querySelector("#commerce-toggle");n&&n.addEventListener("change",()=>{m.setEnabled(n.checked),u(e)});const t=e.querySelector("#create-user-form");t&&t.addEventListener("submit",a=>{a.preventDefault(),k(e)}),e.querySelectorAll("[data-user-plan]").forEach(a=>{a.addEventListener("change",()=>{const i=a.dataset.userPlan;m.setUserPlan(i,a.value),c.info("admin",`Plan ${a.value} → ${i}`)})}),e.querySelectorAll("[data-confirm-otp]").forEach(a=>{a.addEventListener("click",()=>{const i=a.dataset.confirmOtp,r=f.confirm(i);r.ok&&(c.info("admin",`Confirmed user ${r.uid}`),u(e))})})}async function k(e){const n=e.querySelector("#cu-name")?.value.trim()??"",t=e.querySelector("#cu-tier")?.value??"family",a=e.querySelector("#cu-email")?.value.trim()??"",i=e.querySelector("#cu-whatsapp")?.value.trim()??"",r=e.querySelector("#cu-pin")?.value??"",s=await g.createUser({name:n,tier:t,...a&&{email:a},...i&&{whatsappPhone:i},...r&&{initialPin:r}}),l=e.querySelector("#create-user-result");if(!l)return;if(!s.ok||!s.uid){l.innerHTML=`<div class="ax-error">${d(s.reason??"Erreur")}</div>`;return}let o="";if(i){const p=await f.requestConfirmation({uid:s.uid,name:n,whatsappPhone:i});p.ok&&p.inviteLink&&(o=`
+  `}function _(){return[["commerce","💳 Commerce"],["users","👥 Comptes"],["pending","📨 En attente"],["health","🩺 Santé"]].map(([a,t])=>`
+      <button class="ax-tab ${v===a?"ax-tab-active":""}" data-tab="${a}">${t}</button>
+    `).join("")}function S(){switch(v){case"commerce":return y();case"users":return $();case"pending":return w();case"health":return C()}}function A(e){e.querySelectorAll("[data-tab]").forEach(n=>{n.addEventListener("click",()=>{v=n.dataset.tab,u(e)})});const a=e.querySelector("#commerce-toggle");a&&a.addEventListener("change",()=>{m.setEnabled(a.checked),u(e)});const t=e.querySelector("#create-user-form");t&&t.addEventListener("submit",n=>{n.preventDefault(),k(e)}),e.querySelectorAll("[data-user-plan]").forEach(n=>{n.addEventListener("change",()=>{const i=n.dataset.userPlan;m.setUserPlan(i,n.value),c.info("admin",`Plan ${n.value} → ${i}`)})}),e.querySelectorAll("[data-confirm-otp]").forEach(n=>{n.addEventListener("click",()=>{const i=n.dataset.confirmOtp,s=f.confirm(i);s.ok&&(c.info("admin",`Confirmed user ${s.uid}`),u(e))})})}async function k(e){const a=e.querySelector("#cu-name")?.value.trim()??"",t=e.querySelector("#cu-tier")?.value??"family",n=e.querySelector("#cu-email")?.value.trim()??"",i=e.querySelector("#cu-whatsapp")?.value.trim()??"",s=e.querySelector("#cu-pin")?.value??"",r=await g.createUser({name:a,tier:t,...n&&{email:n},...i&&{whatsappPhone:i},...s&&{initialPin:s}}),l=e.querySelector("#create-user-result");if(!l)return;if(!r.ok||!r.uid){l.innerHTML=`<div class="ax-error">${d(r.reason??"Erreur")}</div>`;return}let o="";if(i){const p=await f.requestConfirmation({uid:r.uid,name:a,whatsappPhone:i});p.ok&&p.inviteLink&&(o=`
         <a href="${p.inviteLink}" target="_blank" rel="noopener" class="ax-btn ax-btn-primary">
           📨 Envoyer le code via WhatsApp
         </a>
         <p class="ax-muted">Code OTP : <code>${p.otp}</code></p>
       `)}l.innerHTML=`
     <div class="ax-success">
-      Compte créé : <strong>${d(n)}</strong> (${t})
-      <p>Lien d'invitation : <input type="text" readonly value="${s.inviteLink??""}" onclick="this.select()" style="width:100%"></p>
+      Compte créé : <strong>${d(a)}</strong> (${t})
+      <p>Lien d'invitation : <input type="text" readonly value="${r.inviteLink??""}" onclick="this.select()" style="width:100%"></p>
       ${o}
     </div>
   `,u(e)}function u(e){if(!h.get("isAdmin")){e.innerHTML=`
@@ -117,7 +117,7 @@ import{c as m}from"./commerce-BRBChWAr.js";import{auth as g}from"./auth-nEvETl4b
         <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">← Chat</button>
       </header>
       <nav class="ax-tabs">${_()}</nav>
-      <div class="ax-admin-content">${C()}</div>
+      <div class="ax-admin-content">${S()}</div>
     </div>
   `,A(e)}export{u as render};
-//# sourceMappingURL=index-B0uJ4vRq.js.map
+//# sourceMappingURL=index-DJR97XN5.js.map

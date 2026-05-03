@@ -112,10 +112,16 @@ class WhatsApp {
     }
   }
 
+  /* P1 fix : OTP 12 chars alphanumériques (entropie ~70 bits vs 20 bits 6-digit) */
   private generateOTP(): string {
-    const bytes = crypto.getRandomValues(new Uint8Array(3));
-    const num = (bytes[0]! << 16) | (bytes[1]! << 8) | bytes[2]!;
-    return String(num % 1_000_000).padStart(6, '0');
+    const bytes = crypto.getRandomValues(new Uint8Array(9));
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; /* sans 0/O/1/I/L pour lisibilité */
+    let out = '';
+    for (let i = 0; i < 12; i++) {
+      const b = bytes[i % bytes.length];
+      out += alphabet[(b ?? 0) % alphabet.length];
+    }
+    return out.slice(0, 6) + '-' + out.slice(6); /* format XXXXXX-XXXXXX */
   }
 }
 

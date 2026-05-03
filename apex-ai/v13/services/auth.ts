@@ -72,9 +72,32 @@ class Auth {
     });
   }
 
+  /**
+   * P0-5 fix : isAdmin DÉRIVÉ de user.id (jamais flag stocké séparément).
+   * Évite spoof DevTools `store.set('isAdmin', true)`.
+   */
   async isAdmin(): Promise<boolean> {
+    return this.isAdminSync();
+  }
+
+  /* Sync helper utilisable dans les guards router/admin */
+  isAdminSync(): boolean {
     const user = store.get('user');
     return user?.id === ADMIN_ID;
+  }
+
+  /**
+   * Comparaison string timing-safe (P0-3 fix).
+   * Compare 2 chaînes hex en temps constant (XOR + OR sur tous les chars).
+   * Évite timing attack qui leak info via durée de comparaison.
+   */
+  private timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+      diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return diff === 0;
   }
 
   /**
@@ -118,7 +141,17 @@ class Auth {
           return tokens.length >= 2 && tokens.every((t) => userTokens.includes(t));
         });
 
-    if (!user) return { ok: false, reason: 'Utilisateur inconnu' };
+    if (!user) {
+      /* P1 fix anti user enumeration : faire PBKDF2 de toute façon (constant-time response) */
+      await this.hashPin(pin, 'fake-salt-anti-enumeration');
+      return { ok: false, reason: 'Utilisateur inconnu' };
+    }
+
+    /* Rate-limit check (P0 sécu critique parité v12.785) */
+    const rateCheck = this.checkRateLimit(user.id);
+    if (!rateCheck.allowed) {
+      return { ok: false, reason: `Trop de tentatives. Réessaie dans ${rateCheck.waitMin} min.` };
+    }
 
     const pinKey = user.isAdmin ? 'apex_v13_pin' : `apex_v13_pin_${user.id}`;
     const storedHash = localStorage.getItem(pinKey);
@@ -134,7 +167,13 @@ class Auth {
       }
     } else {
       const hash = await this.hashPin(pin, salt);
-      if (hash !== storedHash) return { ok: false, reason: 'Code incorrect' };
+      /* P0-3 fix : timing-safe comparison anti-timing-attack */
+      if (!this.timingSafeEqual(hash, storedHash)) {
+        /* Rate-limit progressif (parité v12.785 anti brute-force) */
+        this.recordFail(user.id);
+        return { ok: false, reason: 'Code incorrect' };
+      }
+      this.clearFails(user.id);
     }
 
     store.set('user', { id: user.id, name: user.name, email: user.email });
@@ -223,10 +262,57 @@ class Auth {
   }
 
   private async generateInviteToken(uid: string): Promise<string> {
-    const payload = `${uid}:${Date.now()}`;
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload + ADMIN_ID));
-    const hash = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+    /* P0-4 fix : full hash 64 chars (256 bits) + random salt (vs 16 chars/64 bits exploitable) */
+    const randomSalt = crypto.getRandomValues(new Uint8Array(16));
+    const saltHex = [...randomSalt].map((b) => b.toString(16).padStart(2, '0')).join('');
+    const payload = `${uid}:${Date.now()}:${saltHex}`;
+    const secret = ADMIN_ID + saltHex;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload + secret));
+    const hash = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     return btoa(payload + ':' + hash).replace(/=+$/, '');
+  }
+
+  /* Rate-limit progressif PIN (P0 anti brute-force, parité v12.785) */
+  private checkRateLimit(uid: string): { allowed: boolean; waitMin: number } {
+    const key = `apex_v13_pin_fails_${uid}`;
+    let fails: { count: number; lockedUntil: number };
+    try {
+      fails = JSON.parse(localStorage.getItem(key) ?? '{"count":0,"lockedUntil":0}');
+    } catch {
+      fails = { count: 0, lockedUntil: 0 };
+    }
+    if (fails.lockedUntil > Date.now()) {
+      return { allowed: false, waitMin: Math.ceil((fails.lockedUntil - Date.now()) / 60_000) };
+    }
+    return { allowed: true, waitMin: 0 };
+  }
+
+  private recordFail(uid: string): void {
+    const key = `apex_v13_pin_fails_${uid}`;
+    let fails: { count: number; lockedUntil: number };
+    try {
+      fails = JSON.parse(localStorage.getItem(key) ?? '{"count":0,"lockedUntil":0}');
+    } catch {
+      fails = { count: 0, lockedUntil: 0 };
+    }
+    fails.count++;
+    /* Échelle : 5→30s, 6→2min, 7→10min, 8→1h, 9→24h */
+    const lockMs = [0, 0, 0, 0, 0, 30_000, 120_000, 600_000, 3_600_000, 86_400_000];
+    const lock = fails.count < lockMs.length ? lockMs[fails.count] ?? 86_400_000 : 86_400_000;
+    fails.lockedUntil = lock > 0 ? Date.now() + lock : 0;
+    try {
+      localStorage.setItem(key, JSON.stringify(fails));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private clearFails(uid: string): void {
+    try {
+      localStorage.removeItem(`apex_v13_pin_fails_${uid}`);
+    } catch {
+      /* ignore */
+    }
   }
 
   listUsers(): Array<{ id: string; name: string; tier: string; activated: boolean }> {

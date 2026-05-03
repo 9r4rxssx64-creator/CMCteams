@@ -111,7 +111,9 @@ class Commerce {
     const key = `apex_v13_msgcount_${uid}_${today}`;
     let count = 0;
     try {
-      count = parseInt(localStorage.getItem(key) ?? '0', 10);
+      const raw = parseInt(localStorage.getItem(key) ?? '0', 10);
+      /* P1 fix integer overflow + clamp 0 ≤ count ≤ limit (anti bypass via gros nombres) */
+      count = Math.max(0, Math.min(limits.msgPerDay, isNaN(raw) ? 0 : raw));
     } catch {
       /* ignore */
     }
