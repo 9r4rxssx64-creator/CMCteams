@@ -1,0 +1,48 @@
+name: Lighthouse CI Apex v13
+
+on:
+  pull_request:
+    paths:
+      - 'apex-ai/v13/**'
+      - 'apex-ai-v13/**'
+  push:
+    branches: [main]
+    paths:
+      - 'apex-ai-v13/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
+      - name: Wait for Pages deployment
+        run: sleep 60
+      - name: Run Lighthouse
+        run: |
+          lhci autorun --collect.url=https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ \
+            --collect.numberOfRuns=2 \
+            --assert.assertions.categories:performance=0.85 \
+            --assert.assertions.categories:accessibility=0.90 \
+            --assert.assertions.categories:best-practices=0.90 \
+            --assert.assertions.categories:seo=0.85 \
+            --upload.target=temporary-public-storage
+        continue-on-error: true
+      - name: Lighthouse budget check (informational)
+        run: |
+          echo "Budget cibles Jet 5 :"
+          echo "- Performance ≥ 85"
+          echo "- Accessibility ≥ 90"
+          echo "- Best Practices ≥ 90"
+          echo "- SEO ≥ 85"
+          echo "- LCP < 2.5s, INP < 200ms, CLS < 0.1"

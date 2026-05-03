@@ -91,11 +91,9 @@ class Firebase {
       this.queue.push({ key, value, ts: Date.now() });
       return;
     }
-    /* P0-4 fix audit subagent design : idempotency-key anti TOCTOU race
-     * Firebase RTDB ne supporte pas nativement Idempotency, on simule via "last-writer-wins
-     * with idempotency tag". Si même idempotencyKey vu < 60s → skip (anti double write
-     * post browser crash + replay queue). */
-    const idempotencyKey = opts?.idempotencyKey ?? `${key}:${JSON.stringify(value).slice(0, 64)}`;
+    /* Jet 5 fix : idempotency hash IMMUTABLE sha256(key+value) — survie post-crash.
+     * Si caller fournit idempotencyKey explicite → respect, sinon hash déterministe. */
+    const idempotencyKey = opts?.idempotencyKey ?? (await this.hashIdempotency(key, value));
     if (this.recentlyWritten(idempotencyKey)) {
       logger.debug('firebase', `Idempotent skip ${key}`);
       return;
@@ -115,14 +113,52 @@ class Firebase {
     }
   }
 
-  /* Idempotency tracking — keys récents (60s window anti replay) */
+  /* P0 fix Jet 5 audit subagent : recentWrites PERSISTÉ localStorage
+   * (vs Map en mémoire seule = perte post-crash → double-write).
+   * Hash déterministe sha256(key + JSON.stringify(value)) immutable entre reloads. */
   private recentWrites = new Map<string, number>();
+  private recentWritesLoaded = false;
+
+  private loadRecentWrites(): void {
+    if (this.recentWritesLoaded) return;
+    this.recentWritesLoaded = true;
+    try {
+      const raw = localStorage.getItem('apex_v13_idempotency');
+      if (raw) {
+        const obj = JSON.parse(raw) as Record<string, number>;
+        const cutoff = Date.now() - 60_000;
+        for (const [k, ts] of Object.entries(obj)) {
+          if (ts >= cutoff) this.recentWrites.set(k, ts);
+        }
+      }
+    } catch {
+      /* ignore corruption */
+    }
+  }
+
+  private persistRecentWrites(): void {
+    try {
+      const obj: Record<string, number> = {};
+      for (const [k, ts] of this.recentWrites) obj[k] = ts;
+      localStorage.setItem('apex_v13_idempotency', JSON.stringify(obj));
+    } catch {
+      /* ignore quota */
+    }
+  }
+
+  private async hashIdempotency(key: string, value: unknown): Promise<string> {
+    const data = key + ':' + JSON.stringify(value);
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  }
 
   private recentlyWritten(key: string): boolean {
+    this.loadRecentWrites();
     const ts = this.recentWrites.get(key);
     if (!ts) return false;
     if (Date.now() - ts > 60_000) {
       this.recentWrites.delete(key);
+      this.persistRecentWrites();
       return false;
     }
     return true;
@@ -137,6 +173,7 @@ class Firebase {
         if (ts < cutoff) this.recentWrites.delete(k);
       }
     }
+    this.persistRecentWrites();
   }
 
   async read<T>(key: string): Promise<T | null> {
