@@ -176,6 +176,29 @@ class ApexToolsDispatcher {
           params['severity'] as string,
           params['category'] as string | undefined,
         );
+      /* === v13.0.1 +10 tools === */
+      case 'weather':
+        return this.weather(params['location'] as string, params['days'] as number | undefined);
+      case 'news_headlines':
+        return this.newsHeadlines(
+          params['category'] as string | undefined,
+          params['country'] as string | undefined,
+        );
+      case 'market_data':
+        return this.marketData(params['type'] as string, params['symbol'] as string);
+      case 'scrape_url':
+        return this.scrapeUrl(params['url'] as string);
+      case 'detect_intent':
+        return this.detectIntent(params['text'] as string);
+      case 'sentinels_status':
+        return this.sentinelsStatus();
+      case 'perf_metrics':
+        return this.perfMetricsSnapshot();
+      case 'voice_command':
+      case 'screen_share':
+      case 'multi_llm_consensus':
+        /* Browser API only / orchestrator complexe — placeholder safe */
+        return { placeholder: true, message: `Tool ${toolName} disponible côté UI (browser API).` };
       case 'edit_file':
       case 'commit_push':
       case 'run_test':
@@ -704,6 +727,171 @@ class ApexToolsDispatcher {
     } catch {
       return { ok: false, total: 0 };
     }
+  }
+
+  /* === Implémentations v13.0.1 (+10 tools) === */
+
+  private async weather(location: string, days = 5): Promise<unknown> {
+    /* Open-Meteo gratuit, pas de clé requise. Utilise géocoding free pour location → lat/lon */
+    if (!location) throw new Error('location required');
+    /* 1. Geocoding */
+    const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=fr`;
+    const geo = await fetch(geocodeUrl, { signal: AbortSignal.timeout(8000) });
+    if (!geo.ok) throw new Error(`Geocoding HTTP ${geo.status}`);
+    const geoData = (await geo.json()) as { results?: Array<{ latitude: number; longitude: number; name: string }> };
+    const place = geoData.results?.[0];
+    if (!place) return { error: 'Lieu introuvable', location };
+    /* 2. Forecast */
+    const fdays = Math.min(7, Math.max(1, days));
+    const fcUrl = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=${fdays}`;
+    const fc = await fetch(fcUrl, { signal: AbortSignal.timeout(8000) });
+    if (!fc.ok) throw new Error(`Forecast HTTP ${fc.status}`);
+    const fcData = (await fc.json()) as { daily: Record<string, unknown[]> };
+    return {
+      location: place.name,
+      lat: place.latitude,
+      lon: place.longitude,
+      days: fdays,
+      forecast: fcData.daily,
+    };
+  }
+
+  private async newsHeadlines(category = 'general', country = 'fr'): Promise<unknown> {
+    /* Tente NewsAPI si clé, sinon RSS Le Monde France 24 publics */
+    const newsApiKey = localStorage.getItem('ax_newsapi_key');
+    if (newsApiKey) {
+      try {
+        const url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=${newsApiKey}&pageSize=10`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+          const data = (await res.json()) as { articles?: unknown[] };
+          return { provider: 'newsapi', articles: data.articles ?? [] };
+        }
+      } catch {
+        /* fallback */
+      }
+    }
+    /* Fallback : retourne notice configuration */
+    return {
+      provider: 'fallback',
+      message: `Configurer ax_newsapi_key pour news ${category}/${country}`,
+    };
+  }
+
+  private async marketData(type: string, symbol: string): Promise<unknown> {
+    if (!symbol) throw new Error('symbol required');
+    if (type === 'crypto') {
+      /* CoinGecko free API */
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(symbol.toLowerCase())}&vs_currencies=usd,eur&include_24hr_change=true`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
+      const data = (await res.json()) as Record<string, { usd: number; eur: number; usd_24h_change: number }>;
+      return { type: 'crypto', symbol: symbol.toLowerCase(), price: data[symbol.toLowerCase()] ?? null };
+    }
+    if (type === 'stock' || type === 'forex') {
+      const finnhubKey = localStorage.getItem('ax_finnhub_key');
+      if (!finnhubKey) {
+        return { type, symbol, message: 'Configurer ax_finnhub_key pour stocks/forex' };
+      }
+      const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${finnhubKey}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}`);
+      return { type, symbol, ...(await res.json()) };
+    }
+    throw new Error(`Type market inconnu: ${type}`);
+  }
+
+  private async scrapeUrl(url: string): Promise<{
+    title: string;
+    description: string;
+    text: string;
+    word_count: number;
+  }> {
+    if (!url.startsWith('http')) throw new Error('URL invalide');
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const html = await res.text();
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i);
+    const stripped = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 5000);
+    return {
+      title: titleMatch?.[1] ?? '',
+      description: descMatch?.[1] ?? '',
+      text: stripped,
+      word_count: stripped.split(/\s+/).filter(Boolean).length,
+    };
+  }
+
+  private detectIntent(text: string): { intent: string; confidence: number; suggested_tool?: string } {
+    if (!text) return { intent: 'unknown', confidence: 0 };
+    const lc = text.toLowerCase();
+    /* Patterns ordonnés par spécificité */
+    const PATTERNS: Array<{ regex: RegExp; intent: string; tool?: string }> = [
+      { regex: /(ouvre|lance|montre).*(navigateur|browser|google)/, intent: 'open_browser', tool: 'web_fetch' },
+      { regex: /(traduis|traduit|translate)\s+(?:en\s+)?(\w+)/, intent: 'translate', tool: 'translate' },
+      { regex: /(meteo|météo|pluie|temperature|temps)/, intent: 'weather', tool: 'weather' },
+      { regex: /(news|actualit|actu)/, intent: 'news', tool: 'news_headlines' },
+      { regex: /(crypto|bitcoin|ethereum|btc|eth)/, intent: 'crypto_price', tool: 'market_data' },
+      { regex: /(action|stock|bourse|cours)/, intent: 'stock_price', tool: 'market_data' },
+      { regex: /(cherche|recherche|trouve|google)/, intent: 'web_search', tool: 'web_search' },
+      { regex: /(scanne|scan|ocr)/, intent: 'ocr', tool: 'ocr_scan' },
+      { regex: /(qr|code\s+qr)/, intent: 'qr_generate', tool: 'qr_generate' },
+      { regex: /(facture|invoice)/, intent: 'studio_facture' },
+      { regex: /(cv|curriculum|resume)/, intent: 'studio_cv' },
+      { regex: /(musique|mix|track|chanson)/, intent: 'studio_music' },
+      { regex: /(video|montage|clip)/, intent: 'studio_video' },
+      { regex: /(plan|architecture|maison)/, intent: 'studio_archi' },
+      { regex: /(loi|article|code\s+civil|jurisprudence)/, intent: 'legal_kb' },
+      { regex: /(impot|impôt|ir|fiscal)/, intent: 'finance_calc', tool: 'finance_calculate' },
+      { regex: /(iban|virement|paiement)/, intent: 'finance_iban', tool: 'finance_calculate' },
+      { regex: /(rdv|rendez-vous|calendrier|agenda)/, intent: 'calendar', tool: 'create_calendar_event' },
+      { regex: /(envoie.*email|mail|message)/, intent: 'send_email', tool: 'send_email' },
+      { regex: /(audit|verifie|check)/, intent: 'audit_self', tool: 'audit_self' },
+      { regex: /(memoire|rappelle|souviens)/, intent: 'memory_recall', tool: 'memory_recall' },
+      { regex: /(deconnexion|logout|déconnecte)/, intent: 'logout' },
+      { regex: /(bonjour|salut|hello|hi)/, intent: 'greeting' },
+      { regex: /(aide|help|sos)/, intent: 'help' },
+    ];
+    for (const p of PATTERNS) {
+      if (p.regex.test(lc)) {
+        const result: { intent: string; confidence: number; suggested_tool?: string } = {
+          intent: p.intent,
+          confidence: 0.85,
+        };
+        if (p.tool) result.suggested_tool = p.tool;
+        return result;
+      }
+    }
+    return { intent: 'unknown', confidence: 0.3 };
+  }
+
+  private async sentinelsStatus(): Promise<unknown> {
+    const { sentinels } = await import('./sentinels.js');
+    const list = sentinels.list();
+    return {
+      total: list.length,
+      enabled: list.filter((s) => s.enabled).length,
+      sentinels: list.map((s) => ({
+        id: s.id,
+        name: s.name,
+        enabled: s.enabled,
+        last_run: s.lastRun ?? 0,
+        last_result: s.lastResult ?? null,
+      })),
+    };
+  }
+
+  private async perfMetricsSnapshot(): Promise<unknown> {
+    const { perfMetrics } = await import('./perf-metrics.js');
+    return {
+      ...perfMetrics.formatForUI(),
+      score_breakdown: perfMetrics.getScore().details,
+    };
   }
 }
 

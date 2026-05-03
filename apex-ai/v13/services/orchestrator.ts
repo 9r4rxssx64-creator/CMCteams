@@ -29,8 +29,18 @@ export interface KevinProject {
 
 export const PROJECTS: readonly KevinProject[] = [
   {
+    id: 'apex',
+    name: 'APEX AI v13',
+    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+    firebasePath: 'apex',
+    toolsAvailable: [
+      'audit_self', 'memory_recall', 'memory_add', 'lesson_record',
+      'self_improve', 'project_status', 'sentinels_status', 'perf_metrics',
+    ],
+  },
+  {
     id: 'cmcteams',
-    name: 'CMCteams',
+    name: 'CMCteams (Casino Monaco)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/',
     firebasePath: 'cmcteams',
     toolsAvailable: ['cmc_read', 'cmc_write_motd', 'cmc_get_admin_profile'],
@@ -39,32 +49,53 @@ export const PROJECTS: readonly KevinProject[] = [
     id: 'telecommande',
     name: 'Télécommande KDMC',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/',
-    toolsAvailable: ['telecommande_send'],
+    toolsAvailable: ['telecommande_send', 'telecommande_status'],
   },
   {
     id: 'crackpass',
-    name: 'CrackPass',
+    name: 'CrackPass (générateur passwords)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/tools/codes-decoder.html',
     toolsAvailable: ['crackpass_check', 'crackpass_generate'],
   },
   {
     id: 'kdmc',
-    name: 'KDMC',
+    name: 'KDMC (hub central)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/',
     toolsAvailable: ['kdmc_stats'],
   },
   {
     id: 'ekdmc',
-    name: 'e-KDMC',
+    name: 'e-KDMC (marketplace)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/',
     firebasePath: 'ekdmc',
     toolsAvailable: ['ekdmc_stats', 'ekdmc_orders'],
   },
   {
     id: 'iakdmc',
-    name: 'IA-KDMC',
+    name: 'IA-KDMC (référence archive)',
     url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/IA-KDMC/',
     toolsAvailable: ['iakdmc_lookup'],
+  },
+  /* Extensions v13.0.1 (Kevin demande "tous mes projets intégrés") */
+  {
+    id: 'apex_chat',
+    name: 'Apex Chat (PWA standalone)',
+    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#chat',
+    firebasePath: 'apex/chat',
+    toolsAvailable: ['chat_read', 'chat_export'],
+  },
+  {
+    id: 'social_video',
+    name: 'Social Video Pipeline',
+    url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/social-video/',
+    toolsAvailable: ['video_studio', 'social_publish'],
+  },
+  {
+    id: 'eapex',
+    name: 'e-APEX (commerce admin)',
+    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#admin',
+    firebasePath: 'eapex',
+    toolsAvailable: ['eapex_stats', 'eapex_subscriptions'],
   },
 ];
 
