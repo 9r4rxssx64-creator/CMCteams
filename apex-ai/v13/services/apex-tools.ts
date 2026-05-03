@@ -29,6 +29,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 
 export interface ApexTool {

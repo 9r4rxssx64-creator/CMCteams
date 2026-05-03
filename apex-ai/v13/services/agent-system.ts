@@ -20,6 +20,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { apexToolsDispatch } from './apex-tools-dispatch.js';
 import { auditLog } from './audit-log.js';
 

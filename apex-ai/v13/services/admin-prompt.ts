@@ -19,11 +19,12 @@
  * - 1 clic max pour action standard
  */
 
+import { haptic } from '../ui/haptic.js';
 import { modalSheet } from '../ui/modal-sheet.js';
+import { toast } from '../ui/toast.js';
+
 import { auditLog } from './audit-log.js';
 import { firebase } from './firebase.js';
-import { haptic } from '../ui/haptic.js';
-import { toast } from '../ui/toast.js';
 
 export interface AdminPromptOptions {
   title: string;
