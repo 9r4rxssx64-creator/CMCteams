@@ -102,14 +102,75 @@ class Observability {
     this.dlq = [];
     this.persist();
     let replayed = 0;
-    let failed = 0;
+    const failed = 0;
     for (const event of items) {
       event.status = 'pending';
       event.attempts = 0;
       this.buffer.push(event);
+      replayed++;
     }
     await this.flush();
     return { replayed, failed };
+  }
+
+  /**
+   * Escalade Claude Code RESILIENT (Jet 5 fix audit) :
+   * - retry 3x si push localStorage échoue (quota/corruption)
+   * - fallback observability buffer si toutes tentatives échouent (boucle contrôlée)
+   * - rate-limit max 5 escalades / 10 min (anti spam)
+   */
+  async escalateToClaudeCode(reason: string, severity: 'warn' | 'critical', context: Record<string, unknown>): Promise<boolean> {
+    /* Rate-limit check */
+    const rateKey = 'apex_v13_escalate_rate';
+    let recent: number[] = [];
+    try {
+      recent = JSON.parse(localStorage.getItem(rateKey) ?? '[]') as number[];
+    } catch {
+      /* ignore */
+    }
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    recent = recent.filter((t) => t > cutoff);
+    if (recent.length >= 5) {
+      this.capture('warn', 'escalate.rate_limited', `Escalade rate limit hit (${recent.length}/5 in 10min)`);
+      return false;
+    }
+    const todo = {
+      id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      context,
+      reason,
+      severity,
+      src: 'apex',
+      v: 'v13.0.0',
+      ts: Date.now(),
+      status: 'pending',
+    };
+    /* Retry 3x escalade push */
+    for (let i = 0; i < 3; i++) {
+      try {
+        const todos = JSON.parse(localStorage.getItem('ax_claude_todo') ?? '[]') as Array<typeof todo>;
+        todos.push(todo);
+        const trimmed = todos.length > 50 ? todos.slice(-50) : todos;
+        localStorage.setItem('ax_claude_todo', JSON.stringify(trimmed));
+        recent.push(Date.now());
+        try {
+          localStorage.setItem(rateKey, JSON.stringify(recent.slice(-10)));
+        } catch {
+          /* ignore */
+        }
+        return true;
+      } catch (err: unknown) {
+        if (i === 2) {
+          /* Toutes tentatives échouées → fallback observability buffer (boucle contrôlée) */
+          this.capture('critical', 'escalate.failed', `ax_claude_todo push failed after 3 retries: ${String(err)}`, {
+            originalReason: reason,
+            originalContext: context,
+          });
+          return false;
+        }
+        await new Promise((r) => setTimeout(r, 100 * (i + 1)));
+      }
+    }
+    return false;
   }
 
   private async tryInitSentry(): Promise<void> {
