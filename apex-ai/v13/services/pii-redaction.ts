@@ -29,18 +29,23 @@ const PII_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; replace: string
   /* Téléphone FR / Monaco / international */
   { name: 'phone_fr', regex: /\b(?:\+?33|0)[1-9](?:[\s.-]?\d{2}){4}\b/g, replace: '[TEL_REDACTED]' },
   { name: 'phone_monaco', regex: /\b\+?377[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2}\b/g, replace: '[TEL_REDACTED]' },
-  /* Sécu sociale FR (15 chiffres avec format) */
+  /* Sécu sociale FR (15 chiffres avec format STRICT — réduit false positives) */
   {
     name: 'ss_fr',
-    regex: /\b[12]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{3}\s?\d{3}\s?\d{2}\b/g,
+    regex: /\b[12]\s\d{2}\s\d{2}\s(?:0[1-9]|1[0-2]|2A|2B|9[5-9])\s\d{3}\s\d{3}\s\d{2}\b/g,
     replace: '[SS_REDACTED]',
   },
-  /* Passeport FR (9 chars, 2 lettres + 7 chiffres ou similaire) */
+  /* Passeport FR (9 chars : 2 chiffres + 2 lettres + 5 chiffres — format strict) */
   { name: 'passport_fr', regex: /\b\d{2}[A-Z]{2}\d{5}\b/g, replace: '[PASSPORT_REDACTED]' },
-  /* CNI FR (12 chiffres) */
-  { name: 'cni_fr', regex: /\b\d{12}\b/g, replace: '[CNI_REDACTED]' },
-  /* SIRET */
-  { name: 'siret', regex: /\b\d{14}\b/g, replace: '[SIRET_REDACTED]' },
+  /* CNI FR — format strict 12 chiffres consécutifs SANS espaces (pas tout 12 chiffres aléatoire)
+   * Anti-false-positive audit : "12 chiffres" matchait n'importe quel n° tél/sécu mal formaté */
+  /* Désactivé Jet 3 — false positives élevés. Sera activé après whitelist user-confirm Jet 3.5 */
+  /* SIRET — strict 14 chiffres consécutifs précédés "SIRET" ou "siret" pour réduire false positives */
+  {
+    name: 'siret',
+    regex: /(?:SIRET[:\s]*)\d{14}\b/gi,
+    replace: 'SIRET: [SIRET_REDACTED]',
+  },
   /* TVA EU */
   { name: 'vat_eu', regex: /\b[A-Z]{2}\d{8,12}\b/g, replace: '[VAT_REDACTED]' },
   /* API keys (defense en profondeur, déjà couvert logger) */
