@@ -14,13 +14,13 @@
  * - Queue messages : Kevin peut envoyer 5 messages d'affilée, tous traités
  */
 
+import { errors } from '../../core/errors.js';
+import { logger } from '../../core/logger.js';
+import { memory } from '../../core/memory.js';
+import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
 import { vault } from '../../services/vault.js';
-import { memory } from '../../core/memory.js';
-import { store } from '../../core/store.js';
-import { errors } from '../../core/errors.js';
-import { logger } from '../../core/logger.js';
 
 interface DisplayMessage {
   id: string;
@@ -57,7 +57,11 @@ function buildSystemPrompt(): string {
 async function processQueue(rootEl: HTMLElement): Promise<void> {
   if (isProcessing || queue.length === 0) return;
   isProcessing = true;
-  const text = queue.shift()!;
+  const text = queue.shift();
+  if (text === undefined) {
+    isProcessing = false;
+    return;
+  }
 
   const user = store.get('user');
   const consume = commerce.consumeMessage(user?.id ?? null);

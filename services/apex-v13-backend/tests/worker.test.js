@@ -14,7 +14,9 @@ function createMockKV() {
     },
     async put(key, value, opts = {}) {
       store.set(key, value);
-      if (opts.expirationTtl) {
+      /* TTL : clamp à MAX_INT32 ms (Node setTimeout > 2^31-1 wrap → exécute immédiat).
+       * Pour tests, on simule juste sans vraiment expirer (suffisant pour valider logique). */
+      if (opts.expirationTtl && opts.expirationTtl < 2_000_000) {
         setTimeout(() => store.delete(key), opts.expirationTtl * 1000);
       }
     },

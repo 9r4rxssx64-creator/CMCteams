@@ -13,8 +13,9 @@
  * AbortController sur chaque fetch (pas de zombie).
  */
 
-import { logger } from '../core/logger.js';
 import { errors } from '../core/errors.js';
+import { logger } from '../core/logger.js';
+
 import { redactMessageContent } from './pii-redaction.js';
 
 export type Provider = 'anthropic' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
@@ -265,7 +266,7 @@ class AIRouter {
     const decoder = new TextDecoder();
     let buffer = '';
 
-    /* eslint-disable no-await-in-loop */
+     
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -284,7 +285,7 @@ class AIRouter {
         if (text) onChunk({ text, done: false, provider });
       }
     }
-    /* eslint-enable no-await-in-loop */
+     
     onChunk({ text: '', done: true, provider });
   }
 }

@@ -13,8 +13,9 @@
  * acceptable pour PWA statique (rotation à chaque déploiement).
  */
 
-import type { Plugin } from 'vite';
 import { randomBytes } from 'node:crypto';
+
+import type { Plugin } from 'vite';
 
 export function cspNonceDynamic(): Plugin {
   let nonce = '';

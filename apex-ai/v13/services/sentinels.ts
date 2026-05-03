@@ -19,6 +19,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { observability } from './observability.js';
 
 export interface Sentinel {

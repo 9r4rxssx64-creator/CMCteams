@@ -69,14 +69,20 @@ class Memory {
   async init(): Promise<void> {
     if (this.initialized) return;
     this.initialized = true;
-    /* Charge depuis localStorage v13, fallback v12 si migration pas encore tournée */
+    this.reload();
+  }
+
+  /* Force re-load depuis localStorage (utile post-migration + tests) */
+  reload(): void {
     try {
       const rawFacts = localStorage.getItem('apex_v13_facts');
-      if (rawFacts) this.facts = JSON.parse(rawFacts) as Fact[];
+      this.facts = rawFacts ? (JSON.parse(rawFacts) as Fact[]) : [];
       const rawLessons = localStorage.getItem('apex_v13_lessons');
-      if (rawLessons) this.lessons = JSON.parse(rawLessons) as Lesson[];
+      this.lessons = rawLessons ? (JSON.parse(rawLessons) as Lesson[]) : [];
     } catch (err: unknown) {
       logger.warn('memory', 'Hydratation partielle', { err });
+      this.facts = [];
+      this.lessons = [];
     }
     logger.info('memory', `Loaded ${this.facts.length} facts, ${this.lessons.length} lessons`);
   }

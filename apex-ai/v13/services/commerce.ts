@@ -16,9 +16,9 @@
  * Kevin admin → bypass illimité tous plans.
  */
 
-import { store } from '../core/store.js';
 import { events } from '../core/events.js';
 import { logger } from '../core/logger.js';
+import { store } from '../core/store.js';
 
 export type Plan = 'free' | 'basic' | 'pro' | 'business' | 'admin';
 

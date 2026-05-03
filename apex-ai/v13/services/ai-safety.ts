@@ -17,10 +17,10 @@
  * 10. Domain-specific safety   : finance (anti-fraud), broadlink (no auto), credentials (no exfil)
  */
 
-import { observability } from './observability.js';
 import { auditLog } from './audit-log.js';
-import { redactPII } from './pii-redaction.js';
 import { backend } from './backend.js';
+import { observability } from './observability.js';
+import { redactPII } from './pii-redaction.js';
 
 interface SafetyResult {
   safe: boolean;

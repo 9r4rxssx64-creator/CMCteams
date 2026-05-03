@@ -8,11 +8,11 @@
  * - Health   : status providers IA + sentinelles
  */
 
-import { commerce, type Plan } from '../../services/commerce.js';
-import { auth } from '../../services/auth.js';
-import { whatsapp } from '../../services/whatsapp.js';
-import { store } from '../../core/store.js';
 import { logger } from '../../core/logger.js';
+import { store } from '../../core/store.js';
+import { auth } from '../../services/auth.js';
+import { commerce, type Plan } from '../../services/commerce.js';
+import { whatsapp } from '../../services/whatsapp.js';
 
 type Tab = 'commerce' | 'users' | 'pending' | 'health';
 
@@ -204,7 +204,8 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   rootEl.querySelectorAll<HTMLSelectElement>('[data-user-plan]').forEach((select) => {
     select.addEventListener('change', () => {
-      const uid = select.dataset['userPlan']!;
+      const uid = select.dataset['userPlan'] ?? '';
+      if (!uid) return;
       commerce.setUserPlan(uid, select.value as Plan);
       logger.info('admin', `Plan ${select.value} → ${uid}`);
     });
@@ -212,7 +213,8 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-confirm-otp]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const otp = btn.dataset['confirmOtp']!;
+      const otp = btn.dataset['confirmOtp'] ?? '';
+      if (!otp) return;
       const result = whatsapp.confirm(otp);
       if (result.ok) {
         logger.info('admin', `Confirmed user ${result.uid}`);

@@ -16,6 +16,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { firebase } from './firebase.js';
 
 export interface KevinProject {

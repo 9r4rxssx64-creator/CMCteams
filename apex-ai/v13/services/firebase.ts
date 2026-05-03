@@ -16,8 +16,8 @@
  * - FB_LOCAL strict pour user/uid/voice_print
  */
 
-import { logger } from '../core/logger.js';
 import { events } from '../core/events.js';
+import { logger } from '../core/logger.js';
 
 const FB_DEFAULT = 'https://kdmc-clients-default-rtdb.firebaseio.com';
 

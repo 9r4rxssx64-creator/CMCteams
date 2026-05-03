@@ -29,12 +29,13 @@ class Backend {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (opts.auth) headers['Authorization'] = `Bearer ${opts.auth}`;
-      const res = await fetch(`${base}${path}`, {
+      const init: RequestInit = {
         method: opts.method ?? 'POST',
         headers,
-        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
         signal: AbortSignal.timeout(8000),
-      });
+      };
+      if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
+      const res = await fetch(`${base}${path}`, init);
       if (!res.ok) {
         logger.warn('backend', `${path} returned ${res.status}`);
         return { fallback: true };
