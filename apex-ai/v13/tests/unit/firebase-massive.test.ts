@@ -350,13 +350,13 @@ describe('firebase massive coverage Jet 8', () => {
           threw = true;
         }
         expect(threw).toBe(false);
-        /* Vraie assertion : le PUT contient un X-Idempotency-Key préfixé djb2_ */
+        /* Vraie assertion (anti-théâtre P2 audit) : PUT call OBLIGATOIRE + X-Idempotency-Key OBLIGATOIRE */
         const writeCall = fetchSpy.mock.calls.find((c) => (c[1] as RequestInit)?.method === 'PUT');
-        if (writeCall) {
-          const headers = (writeCall[1] as RequestInit).headers as Record<string, string>;
-          /* Soit DJB2 fallback détectable par préfixe, soit hash sha256 32 chars (selon timing mock) */
-          expect(headers['X-Idempotency-Key']).toBeTruthy();
-        }
+        expect(writeCall).toBeDefined();
+        const headers = (writeCall![1] as RequestInit).headers as Record<string, string>;
+        expect(headers['X-Idempotency-Key']).toBeTruthy();
+        /* DJB2 fallback : préfixe djb2_ OU hash hex 32 chars */
+        expect(headers['X-Idempotency-Key']).toMatch(/^(djb2_[a-f0-9_]+|[a-f0-9]{32})$/);
         digestSpy.mockRestore();
         fetchSpy.mockRestore();
       }

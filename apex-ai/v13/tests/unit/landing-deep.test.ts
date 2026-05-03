@@ -32,29 +32,28 @@ describe('features/landing deep tests Jet 7.9 (47% → 90%+)', () => {
     expect(pinInput?.type).toBe('password');
   });
 
-  it('login form submit handler attaché', async () => {
+  it('login form submit appelle auth.login (vrai handler attaché, pas cosmétique)', async () => {
+    const { auth } = await import('../../services/auth.js');
+    const loginSpy = vi.spyOn(auth, 'login').mockResolvedValue({ ok: false, reason: 'Identifiants invalides' });
     const { render } = await import('../../features/landing/index.js');
     render(root);
     const form = root.querySelector<HTMLFormElement>('#login-form')!;
-    /* Submit avec valeurs invalides : doit déclencher login fail */
     const nameInput = root.querySelector<HTMLInputElement>('#login-name')!;
     const pinInput = root.querySelector<HTMLInputElement>('#login-pin')!;
     nameInput.value = 'Inconnu';
     pinInput.value = '12345';
-    let threw = false;
-    try {
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      form.dispatchEvent(event);
-      await new Promise((r) => setTimeout(r, 150));
-    } catch {
-      threw = true;
-    }
-    expect(threw).toBe(false);
-    /* Vraie assertion : message erreur user-friendly affiché OU form encore présent */
-    const errorEl = root.querySelector('#login-error');
-    if (errorEl) {
-      expect(errorEl.textContent?.length ?? 0).toBeGreaterThan(0);
-    }
+    const event = new Event('submit', { bubbles: true, cancelable: true });
+    form.dispatchEvent(event);
+    await new Promise((r) => setTimeout(r, 200));
+    /* Vraie assertion P3 audit : auth.login() appelé avec name+pin du form */
+    expect(loginSpy).toHaveBeenCalled();
+    const callArgs = loginSpy.mock.calls[0];
+    expect(callArgs).toBeDefined();
+    /* loginSpy reçoit name + pin */
+    const argStr = JSON.stringify(callArgs);
+    expect(argStr).toContain('Inconnu');
+    expect(argStr).toContain('12345');
+    loginSpy.mockRestore();
   });
 
   it('invite token URL hash → message info detected', async () => {
