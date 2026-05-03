@@ -1,0 +1,411 @@
+/* APEX v13 — Animations premium repensées
+ * Toast slide-down, Modal half-sheet slide-up, ripple, glow pulse, fade
+ * Pour DÉPASSER Claude.ai/ChatGPT en mobile-first iPhone PWA.
+ */
+
+/* ───────── Keyframes ───────── */
+@keyframes ax-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ax-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes ax-slide-down {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ax-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ax-slide-up-fade {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ax-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 184, 48, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px 8px rgba(232, 184, 48, 0);
+  }
+}
+
+@keyframes ax-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ax-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ax-bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ax-typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
+
+/* ───────── Toast ───────── */
+.ax-toast-container {
+  position: fixed;
+  top: calc(var(--ax-safe-t) + var(--ax-s-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--ax-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-s-2);
+  pointer-events: none;
+  width: min(420px, calc(100vw - var(--ax-s-6)));
+}
+
+.ax-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ax-s-3);
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-bg-glass);
+  backdrop-filter: var(--ax-blur);
+  -webkit-backdrop-filter: var(--ax-blur);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r-md);
+  box-shadow: var(--ax-shadow-lg);
+  color: var(--ax-text);
+  font-size: var(--ax-text-sm);
+  cursor: pointer;
+  min-height: 44px;
+  transform: translateY(-20px);
+  opacity: 0;
+  transition:
+    transform var(--ax-d-normal) var(--ax-ease-spring),
+    opacity var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-toast-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.ax-toast-leaving {
+  transform: translateY(-20px) scale(0.95);
+  opacity: 0;
+}
+
+.ax-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.ax-toast-info .ax-toast-icon {
+  background: var(--ax-blue-soft);
+  color: var(--ax-blue);
+}
+
+.ax-toast-success .ax-toast-icon {
+  background: var(--ax-green-soft);
+  color: var(--ax-green);
+}
+
+.ax-toast-warn .ax-toast-icon {
+  background: var(--ax-orange-soft);
+  color: var(--ax-orange);
+}
+
+.ax-toast-error .ax-toast-icon {
+  background: var(--ax-red-soft);
+  color: var(--ax-red);
+}
+
+.ax-toast-text {
+  flex: 1;
+  line-height: var(--ax-lh-snug);
+}
+
+.ax-toast-close {
+  background: transparent;
+  border: none;
+  color: var(--ax-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-toast-close:hover {
+  background: var(--ax-bg-flat);
+  color: var(--ax-text);
+}
+
+/* ───────── Modal half-sheet ───────── */
+.ax-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ax-bg-overlay);
+  backdrop-filter: var(--ax-blur-sm);
+  -webkit-backdrop-filter: var(--ax-blur-sm);
+  z-index: var(--ax-z-modal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--ax-d-normal) var(--ax-ease);
+}
+
+.ax-sheet-overlay.ax-sheet-visible {
+  opacity: 1;
+}
+
+.ax-sheet {
+  width: min(640px, 100%);
+  max-height: 90vh;
+  background: var(--ax-bg-card);
+  border-radius: var(--ax-r-xl) var(--ax-r-xl) 0 0;
+  border-top: 1px solid var(--ax-border);
+  box-shadow: var(--ax-shadow-xl);
+  padding: var(--ax-s-3) var(--ax-s-5) calc(var(--ax-safe-b) + var(--ax-s-5));
+  transform: translateY(100%);
+  transition: transform var(--ax-d-normal) var(--ax-ease-spring);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ax-sheet.ax-sheet-up {
+  transform: translateY(0);
+}
+
+.ax-sheet.ax-sheet-down {
+  transform: translateY(100%);
+}
+
+.ax-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--ax-border-strong);
+  border-radius: 2px;
+  margin: var(--ax-s-1) auto var(--ax-s-3);
+  flex-shrink: 0;
+}
+
+.ax-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--ax-s-3);
+  border-bottom: 1px solid var(--ax-border);
+  margin-bottom: var(--ax-s-4);
+  flex-shrink: 0;
+}
+
+.ax-sheet-title {
+  font-size: var(--ax-text-xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--ax-text);
+}
+
+.ax-sheet-close {
+  background: var(--ax-bg-flat);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-text);
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-sheet-close:hover {
+  background: var(--ax-bg-input);
+}
+
+.ax-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  color: var(--ax-text);
+  line-height: var(--ax-lh-normal);
+}
+
+.ax-sheet-actions {
+  display: flex;
+  gap: var(--ax-s-3);
+  margin-top: var(--ax-s-5);
+  padding-top: var(--ax-s-4);
+  border-top: 1px solid var(--ax-border);
+  flex-shrink: 0;
+}
+
+.ax-sheet-actions .ax-btn {
+  flex: 1;
+}
+
+/* ───────── Skeleton loading ───────── */
+.ax-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--ax-bg-flat) 0%,
+    var(--ax-bg-card) 50%,
+    var(--ax-bg-flat) 100%
+  );
+  background-size: 200% 100%;
+  animation: ax-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--ax-r-sm);
+  height: 16px;
+}
+
+.ax-skeleton-line {
+  height: 14px;
+  margin-bottom: var(--ax-s-2);
+}
+
+.ax-skeleton-line:nth-child(2) {
+  width: 80%;
+}
+.ax-skeleton-line:nth-child(3) {
+  width: 60%;
+}
+
+.ax-skeleton-card {
+  padding: var(--ax-s-4);
+  background: var(--ax-bg-card);
+  border-radius: var(--ax-r);
+  border: 1px solid var(--ax-border);
+}
+
+/* ───────── Typing indicator ───────── */
+.ax-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--ax-s-2) var(--ax-s-3);
+}
+
+.ax-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ax-gold);
+  animation: ax-typing-dot 1.2s ease-in-out infinite;
+}
+
+.ax-typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ax-typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ───────── Glow pulse (for important CTAs) ───────── */
+.ax-glow-pulse {
+  animation: ax-pulse-glow 2.4s ease-in-out infinite;
+}
+
+/* ───────── Bounce-in (entrance) ───────── */
+.ax-bounce-in {
+  animation: ax-bounce-in var(--ax-d-normal) var(--ax-ease-spring) both;
+}
+
+/* ───────── Slide-up-fade (cards entrance) ───────── */
+.ax-slide-up-fade {
+  animation: ax-slide-up-fade var(--ax-d-normal) var(--ax-ease-out) both;
+}
+
+/* ───────── Spinner ───────── */
+.ax-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--ax-border);
+  border-top-color: var(--ax-gold);
+  border-radius: 50%;
+  animation: ax-spin 0.8s linear infinite;
+}
+
+/* ───────── Reduced motion : skip animations ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .ax-toast,
+  .ax-sheet,
+  .ax-skeleton,
+  .ax-typing-dot,
+  .ax-glow-pulse,
+  .ax-bounce-in,
+  .ax-slide-up-fade,
+  .ax-spinner {
+    animation: none !important;
+    transition: none !important;
+  }
+}
