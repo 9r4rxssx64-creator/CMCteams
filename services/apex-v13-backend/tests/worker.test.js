@@ -509,3 +509,178 @@ describe('apex-v13-backend Worker (Jet 7 tests)', () => {
     });
   });
 });
+
+describe('Stripe edge cases (Jet 7.7)', () => {
+  let env;
+  beforeEach(() => {
+    env = createEnv();
+  });
+
+  async function signPayload(payload, secret) {
+    const ts = Math.floor(Date.now() / 1000);
+    const data = `${ts}.${payload}`;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+    const sigHex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    return `t=${ts},v1=${sigHex}`;
+  }
+
+  it('refuse signature avec mauvais secret HMAC', async () => {
+    const payload = JSON.stringify({ id: 'evt_wrong_secret', type: 'checkout.session.completed' });
+    const sig = await signPayload(payload, 'wrong_secret');
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+    const res = await worker.fetch(req, env, {});
+    expect(res.status).toBe(401);
+  });
+
+  it('refuse signature header malformé sans t= ou v1=', async () => {
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': 'malformed_no_keys',
+      },
+      body: '{}',
+    });
+    const res = await worker.fetch(req, env, {});
+    expect(res.status).toBe(401);
+  });
+
+  it('refuse webhook payload non-JSON', async () => {
+    const sig = await signPayload('not_json_at_all', env.STRIPE_WEBHOOK_SECRET);
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: 'not_json_at_all',
+    });
+    const res = await worker.fetch(req, env, {});
+    /* JSON.parse throw → 500 ou 400 selon error path */
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('subscription.updated synchronise expiresAt + cancelAtPeriodEnd', async () => {
+    await env.USER_PLANS.put('p:u_sub', JSON.stringify({ plan: 'pro' }));
+    const futureTs = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = {
+      id: 'evt_sub_update_1',
+      type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_x',
+        metadata: { uid: 'u_sub' },
+        current_period_end: futureTs,
+        cancel_at_period_end: true,
+      }},
+    };
+    const payload = JSON.stringify(event);
+    const sig = await signPayload(payload, env.STRIPE_WEBHOOK_SECRET);
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+    const res = await worker.fetch(req, env, {});
+    const data = await res.json();
+    expect(data.processed).toContain('update_u_sub');
+    const stored = JSON.parse(await env.USER_PLANS.get('p:u_sub'));
+    expect(stored.cancelAtPeriodEnd).toBe(true);
+    expect(stored.expiresAt).toBeGreaterThan(Date.now());
+  });
+
+  it('event sans uid dans metadata fait skip silencieux', async () => {
+    const event = {
+      id: 'evt_no_uid_skip',
+      type: 'customer.subscription.deleted',
+      data: { object: { id: 'sub_no_uid', metadata: {} } },
+    };
+    const payload = JSON.stringify(event);
+    const sig = await signPayload(payload, env.STRIPE_WEBHOOK_SECRET);
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+    const res = await worker.fetch(req, env, {});
+    expect(res.status).toBe(200); /* webhook reçu */
+    const data = await res.json();
+    expect(data.received).toBe(true);
+  });
+
+  it('invoice.payment_failed sans uid metadata fait skip', async () => {
+    const event = {
+      id: 'evt_invoice_no_uid',
+      type: 'invoice.payment_failed',
+      data: { object: { id: 'in_no_uid', amount_due: 1000 } },
+    };
+    const payload = JSON.stringify(event);
+    const sig = await signPayload(payload, env.STRIPE_WEBHOOK_SECRET);
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+    const res = await worker.fetch(req, env, {});
+    expect(res.status).toBe(200);
+  });
+
+  it('event type inconnu fait skip silencieux (forward compat)', async () => {
+    const event = {
+      id: 'evt_unknown_type',
+      type: 'random.future.event',
+      data: { object: {} },
+    };
+    const payload = JSON.stringify(event);
+    const sig = await signPayload(payload, env.STRIPE_WEBHOOK_SECRET);
+    const req = new Request('https://test/stripe/webhook', {
+      method: 'POST',
+      headers: {
+        'Origin': 'http://localhost:4173',
+        'CF-Connecting-IP': '127.0.0.1',
+        'Content-Type': 'application/json',
+        'Stripe-Signature': sig,
+      },
+      body: payload,
+    });
+    const res = await worker.fetch(req, env, {});
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.received).toBe(true);
+    expect(data.processed).toBeNull();
+  });
+});
