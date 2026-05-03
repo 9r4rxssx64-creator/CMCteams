@@ -113,4 +113,24 @@ describe('features/admin deep tests Jet 7.9 (37% → 90%+)', () => {
     /* Pas de <script> tag */
     expect(root.innerHTML).not.toContain('<script>');
   });
+
+  it('user tier non whitelist → fallback client_free + escape (P1 audit XSS)', async () => {
+    /* Setup : forcer un user avec tier "<script>" dans localStorage */
+    const malicious = [
+      {
+        id: 'u_malicious',
+        name: 'Hacker',
+        tier: '<script>alert(1)</script>',
+        activated: true,
+      },
+    ];
+    localStorage.setItem('apex_v13_users', JSON.stringify(malicious));
+    const { render } = await import('../../features/admin/index.js');
+    render(root);
+    root.querySelector<HTMLButtonElement>('[data-tab="users"]')?.click();
+    /* Vraie assertion : pas de <script> tag actif dans innerHTML */
+    expect(root.innerHTML).not.toContain('<script>alert(1)</script>');
+    /* Fallback : tier doit être "client_free" (whitelist) ou échappé */
+    expect(root.innerHTML).toMatch(/ax-tier-(client_free|admin|family|client_pro)/);
+  });
 });

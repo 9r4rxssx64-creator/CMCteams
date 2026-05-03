@@ -84,6 +84,17 @@ class ModalSheet {
     requestAnimationFrame(() => {
       overlay.classList.add('ax-sheet-visible');
       sheet.classList.add('ax-sheet-up');
+      /* P0 audit UX iOS : auto-focus input/textarea + scrollIntoView pour keyboard ne masque pas */
+      const firstInput = sheet.querySelector<HTMLElement>(
+        'input:not([type="hidden"]), textarea, select',
+      );
+      if (firstInput) {
+        firstInput.focus();
+        /* iOS Safari : scroll input into view quand keyboard apparaît */
+        setTimeout(() => {
+          firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 350);
+      }
     });
 
     haptic.medium();

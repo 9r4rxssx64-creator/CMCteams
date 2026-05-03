@@ -20,7 +20,7 @@ describe('UI Haptic feedback (Jet 8 path A)', () => {
     vibrateSpy = vi.spyOn(navigator, 'vibrate').mockImplementation(() => true);
   });
 
-  describe('isAvailable + setEnabled', () => {
+  describe('isAvailable + setEnabled + isEnabled (P0 audit UX)', () => {
     it('isAvailable true si navigator.vibrate dispo', () => {
       expect(haptic.isAvailable()).toBe(true);
     });
@@ -36,6 +36,14 @@ describe('UI Haptic feedback (Jet 8 path A)', () => {
       haptic.setEnabled(true);
       haptic.tap();
       expect(vibrateSpy).toHaveBeenCalled();
+    });
+
+    it('isEnabled() retourne état courant (getter public)', () => {
+      haptic.setEnabled(true);
+      expect(haptic.isEnabled()).toBe(true);
+      haptic.setEnabled(false);
+      expect(haptic.isEnabled()).toBe(false);
+      haptic.setEnabled(true);
     });
   });
 

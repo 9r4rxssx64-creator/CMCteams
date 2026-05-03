@@ -55,21 +55,26 @@ function renderCommerceTab(): string {
 
 function renderUsersTab(): string {
   const users = auth.listUsers();
+  /* Tier whitelist anti-XSS — fix audit UX P1 */
+  const ALLOWED_TIERS = new Set(['admin', 'family', 'client_pro', 'client_free']);
   const list = users
     .map(
-      (u) => `
+      (u) => {
+        const safeTier = ALLOWED_TIERS.has(u.tier) ? u.tier : 'client_free';
+        return `
       <li class="ax-user-row">
         <span class="ax-user-name">${escapeHtml(u.name)}</span>
-        <span class="ax-tier-badge ax-tier-${u.tier}">${u.tier}</span>
+        <span class="ax-tier-badge ax-tier-${safeTier}">${escapeHtml(safeTier)}</span>
         ${u.activated ? '<span class="ax-badge ax-badge-ok">activé</span>' : '<span class="ax-badge ax-badge-pending">en attente</span>'}
-        <select data-user-plan="${u.id}" class="ax-select-sm">
+        <select data-user-plan="${escapeHtml(u.id)}" class="ax-select-sm">
           <option value="free">free</option>
           <option value="basic">basic</option>
           <option value="pro">pro</option>
           <option value="business">business</option>
         </select>
       </li>
-    `,
+    `;
+      },
     )
     .join('');
 
