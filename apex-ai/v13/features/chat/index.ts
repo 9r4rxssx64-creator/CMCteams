@@ -21,6 +21,9 @@ import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
 import { vault } from '../../services/vault.js';
+import { haptic } from '../../ui/haptic.js';
+import { modalSheet } from '../../ui/modal-sheet.js';
+import { toast } from '../../ui/toast.js';
 
 interface DisplayMessage {
   id: string;
@@ -146,10 +149,24 @@ function renderMessages(rootEl: HTMLElement): void {
   if (!scroll) return;
   const html = conversation
     .map((m) => {
-      const cursor = m.streaming ? '<span class="ax-cursor">▌</span>' : '';
+      /* Streaming indicator amélioré : typing dots animés si pas encore de texte, sinon cursor blink */
+      let trail = '';
+      if (m.streaming) {
+        if (m.text.length === 0) {
+          trail = `
+            <span class="ax-typing" aria-label="Apex réfléchit">
+              <span class="ax-typing-dot"></span>
+              <span class="ax-typing-dot"></span>
+              <span class="ax-typing-dot"></span>
+            </span>
+          `;
+        } else {
+          trail = '<span class="ax-cursor">▌</span>';
+        }
+      }
       return `
-        <div class="ax-msg ax-msg-${m.role}" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${renderMarkdownLight(m.text)}${cursor}</div>
+        <div class="ax-msg ax-msg-${m.role} ax-slide-up-fade" data-msg-id="${m.id}">
+          <div class="ax-msg-body">${renderMarkdownLight(m.text)}${trail}</div>
         </div>
       `;
     })
@@ -227,42 +244,92 @@ export function render(rootEl: HTMLElement): void {
     });
   }
 
-  /* Paste API key handler avec auto-detect 130+ patterns + auto-test + auto-link */
+  /* Paste API key handler avec auto-detect 130+ patterns + auto-test + auto-link
+   * Path A repensé : modal-sheet half-bottom au lieu de prompt/alert bloquants */
   const attachPasteKey = (sel: string) => {
     const btn = rootEl.querySelector<HTMLButtonElement>(sel);
     btn?.addEventListener('click', () => {
-      void (async () => {
-        const value = prompt(
-          'Colle ta clé / token / credential.\nApex détecte automatiquement le service et range au bon endroit.\n(Anthropic, OpenAI, Stripe, GitHub, Brevo, Cloudflare, Telegram, Notion, etc.)',
-        );
-        if (!value) return;
-        const result = await vault.autoStore(value);
-        if (result.forbidden) {
-          alert(
-            `🚨 ${result.pattern?.name}\n\nApex ne stocke JAMAIS ce type de donnée pour ta sécurité.\n\nUtilise plutôt :\n- Cartes : Stripe Checkout / Apple Pay\n- Seed phrases : hardware wallet (Ledger/Trezor)`,
-          );
-          return;
-        }
-        if (!result.ok) {
-          alert('Format non reconnu : ' + result.reason);
-          return;
-        }
-        const validMsg = result.valid === true ? '\n✅ Validé via ping API' : result.valid === false ? '\n⚠️ Ping API a échoué (clé invalide ou réseau)' : '';
-        alert(`✅ ${result.pattern?.name} stocké → ${result.pattern?.storageKey}${validMsg}\n\nDashboard : ${result.pattern?.dashboard ?? '—'}`);
-        void render(rootEl);
-      })();
+      haptic.tap();
+      const sheet = modalSheet.open({
+        title: '🔑 Coller ta clé API',
+        content: `
+          <p style="margin:0 0 16px;color:var(--ax-text-dim)">
+            Apex détecte automatiquement le service (Anthropic, OpenAI, Stripe, GitHub, etc.) et la range au bon endroit.
+          </p>
+          <textarea id="ax-paste-input" rows="3"
+            placeholder="Colle ici ta clé / token / credential"
+            style="width:100%;padding:12px;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);font-family:var(--ax-font-mono);font-size:13px"
+            autofocus spellcheck="false" autocomplete="off"></textarea>
+          <p class="ax-muted" style="margin-top:8px">130+ patterns reconnus · 0 stockage des données interdites (CB, seed)</p>
+        `,
+        actions: [
+          {
+            label: 'Annuler',
+            variant: 'ghost',
+            onClick: () => {
+              haptic.tap();
+              sheet.close();
+            },
+          },
+          {
+            label: 'Coller + ranger',
+            variant: 'primary',
+            onClick: () => {
+              const input = document.getElementById('ax-paste-input') as HTMLTextAreaElement | null;
+              const value = input?.value.trim() ?? '';
+              if (!value) {
+                toast.warn('Colle une clé d\'abord');
+                return;
+              }
+              sheet.close();
+              void (async () => {
+                const result = await vault.autoStore(value);
+                if (result.forbidden) {
+                  haptic.error();
+                  toast.error(`${result.pattern?.name} : Apex ne stocke jamais ce type de donnée pour ta sécurité.`, { duration: 6000 });
+                  return;
+                }
+                if (!result.ok) {
+                  haptic.warning();
+                  toast.warn('Format non reconnu : ' + (result.reason ?? 'inconnu'));
+                  return;
+                }
+                haptic.success();
+                const validMsg = result.valid === true ? ' ✅ validée' : result.valid === false ? ' ⚠️ ping échoué' : '';
+                toast.success(`${result.pattern?.name} rangée${validMsg}`);
+                void render(rootEl);
+              })();
+            },
+          },
+        ],
+      });
     });
   };
   attachPasteKey('#ax-paste-key');
   attachPasteKey('#ax-paste-key-nav');
 
   rootEl.querySelector<HTMLButtonElement>('#ax-logout-nav')?.addEventListener('click', () => {
-    if (confirm('Déconnexion ? (tes données restent sauvegardées)')) {
-      void import('../../services/auth.js').then((m) => {
-        m.auth.logout();
-        location.hash = '#landing';
-      });
-    }
+    haptic.tap();
+    const sheet = modalSheet.open({
+      title: 'Déconnexion ?',
+      content: '<p>Tes données restent sauvegardées (Coffre, conversations, profil).</p>',
+      actions: [
+        { label: 'Annuler', variant: 'ghost', onClick: () => sheet.close() },
+        {
+          label: 'Déconnecter',
+          variant: 'danger',
+          onClick: () => {
+            haptic.medium();
+            sheet.close();
+            void import('../../services/auth.js').then((m) => {
+              m.auth.logout();
+              toast.info('Déconnecté');
+              location.hash = '#landing';
+            });
+          },
+        },
+      ],
+    });
   });
 
   if (conversation.length) renderMessages(rootEl);
