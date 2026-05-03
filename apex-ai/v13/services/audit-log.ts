@@ -34,11 +34,16 @@ class AuditLog {
   init(): void {
     if (this.initialized) return;
     this.initialized = true;
+    this.reload();
+  }
+
+  /* Force reload depuis localStorage (utile après modif externe + tests) */
+  reload(): void {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) this.chain = JSON.parse(raw) as AuditEntry[];
+      this.chain = raw ? (JSON.parse(raw) as AuditEntry[]) : [];
     } catch {
-      /* ignore */
+      this.chain = [];
     }
   }
 

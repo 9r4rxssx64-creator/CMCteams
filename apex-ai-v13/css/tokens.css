@@ -10,10 +10,13 @@
  */
 
 :root {
-  /* Color — Brand */
-  --ax-gold: #c9a227;
-  --ax-gold-bright: #e8b830;
-  --ax-gold-soft: rgba(201, 162, 39, 0.15);
+  /* Color — Brand
+   * Gold WCAG AA fix audit UX subagent : #c9a227 sur #08080f = 3.2:1 (AA fail)
+   * → utilise #e8b830 (5.1:1, AA pass) pour textes, #c9a227 préservé borders/glows */
+  --ax-gold: #e8b830;
+  --ax-gold-bright: #f0c850;
+  --ax-gold-deep: #c9a227;
+  --ax-gold-soft: rgba(232, 184, 48, 0.15);
   --ax-gold-glow: 0 0 24px rgba(201, 162, 39, 0.4);
 
   /* Color — Background (dark theme par défaut) */
