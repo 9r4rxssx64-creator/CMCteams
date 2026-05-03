@@ -11,11 +11,12 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="description" content="APEX AI v13 — Assistant IA personnel niveau entreprise commercialisable. Multi-providers, voice, studios créatifs, modules pro, vault chiffré.">
 
-  <!-- CSP strict (nonce-based, zéro unsafe-*) — réf plan rebuild §Sécurité -->
+  <!-- CSP Jet 1 : 'self' pour scripts/styles, hash inline OK via 'sha256-...' Jet 2 -->
+  <!-- NOTE Jet 2 : remplacer 'unsafe-inline' par 'sha256-XXX' calculés à build via Vite plugin -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-APEX_BOOT_NONCE' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-             style-src 'self' 'nonce-APEX_BOOT_NONCE';
+             script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+             style-src 'self' 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
              connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io;
