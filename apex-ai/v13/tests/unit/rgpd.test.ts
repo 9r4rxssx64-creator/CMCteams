@@ -66,13 +66,49 @@ describe('rgpd service (tests réels Jet 6 — cascade Firebase)', () => {
       fetchSpy.mockRestore();
     });
 
-    it('cascade utilise méthode DELETE (vs PUT/GET)', async () => {
+    it('cascade utilise méthode DELETE pour les 3 paths principaux', async () => {
+      /* Note Jet 6.5 : phase verify ajoute des GET sur les 3 paths après DELETE.
+       * On vérifie qu'il y a au moins 3 DELETE (cascade principale). */
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('null'));
       await rgpd.deleteUserData('u_method', true);
-      for (const call of fetchSpy.mock.calls) {
+      const deleteCalls = fetchSpy.mock.calls.filter((call) => {
         const init = call[1] as RequestInit | undefined;
-        if (init) expect(init.method).toBe('DELETE');
-      }
+        return init?.method === 'DELETE';
+      });
+      expect(deleteCalls.length).toBeGreaterThanOrEqual(3);
+      fetchSpy.mockRestore();
+    });
+
+    it('verify phase confirme paths Firebase vides (Jet 6.5 atomicité)', async () => {
+      /* Mock GET retourne "null" (path vide après DELETE) */
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((url, init) => {
+        const method = (init as RequestInit | undefined)?.method ?? 'GET';
+        if (method === 'DELETE') return Promise.resolve(new Response('null', { status: 200 }));
+        return Promise.resolve(new Response('null', { status: 200 }));
+      });
+      const r = await rgpd.deleteUserData('u_verify', true);
+      expect(r.firebaseDeleted).toBe(true);
+      /* Verify phase = au moins 3 GET supplémentaires */
+      const getCalls = fetchSpy.mock.calls.filter((call) => {
+        const method = (call[1] as RequestInit | undefined)?.method ?? 'GET';
+        return method === 'GET';
+      });
+      expect(getCalls.length).toBeGreaterThanOrEqual(3);
+      fetchSpy.mockRestore();
+    });
+
+    it('verify phase détecte orphan + flag failure', async () => {
+      /* Mock : DELETE OK mais GET retourne data (orphan) */
+      let getCalls = 0;
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((url, init) => {
+        const method = (init as RequestInit | undefined)?.method ?? 'GET';
+        if (method === 'DELETE') return Promise.resolve(new Response('null', { status: 200 }));
+        getCalls++;
+        if (getCalls <= 3) return Promise.resolve(new Response('{"orphan":"data"}', { status: 200 }));
+        return Promise.resolve(new Response('null', { status: 200 }));
+      });
+      const r = await rgpd.deleteUserData('u_orphan', true);
+      expect(r.failures.some((f) => f.startsWith('verify_orphan:'))).toBe(true);
       fetchSpy.mockRestore();
     });
 
