@@ -465,6 +465,127 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'A',
   },
+  /* === Extension v13.0.1 : +10 outils (Kevin "plus poussé") === */
+  {
+    name: 'weather',
+    description: 'Météo 7 jours via Open-Meteo (gratuit, sans clé). Lat/lon ou nom ville.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'Ex: Monaco, Paris, lat,lon' },
+        days: { type: 'number', description: 'Nombre jours forecast (1-7)' },
+      },
+      required: ['location'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'news_headlines',
+    description: 'Dernières news via NewsAPI (clé optionnelle) ou RSS publics.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', enum: ['general', 'tech', 'business', 'sports', 'health', 'science'] },
+        country: { type: 'string', description: 'Code ISO 2 lettres (fr, us, etc.)' },
+      },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'market_data',
+    description: 'Prix temps réel : crypto (CoinGecko gratuit) ou stocks (Finnhub clé optionnelle).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['crypto', 'stock', 'forex'] },
+        symbol: { type: 'string', description: 'Ex: BTC, ETH, AAPL, EUR/USD' },
+      },
+      required: ['type', 'symbol'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'scrape_url',
+    description: 'Extraction structurée d\'une page web (titre, méta, body texte). Pas exec JS.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL HTTPS' },
+      },
+      required: ['url'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'voice_command',
+    description: 'Reconnaissance vocale Web Speech API + intent matching (ouvrir/lancer/chercher).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        lang: { type: 'string', description: 'Code lang (fr-FR, en-US)' },
+        timeout_sec: { type: 'number', description: 'Timeout micro 5-30s' },
+      },
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'screen_share',
+    description: 'Capture screen via getDisplayMedia (sandbox iframe) pour debug visuel ou présentation.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        duration_sec: { type: 'number', description: 'Durée enregistrement max' },
+      },
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'multi_llm_consensus',
+    description: 'Lance 3 LLM en parallèle (Claude+GPT+Groq) sur même prompt → vote consensus + confidence.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string' },
+        providers: { type: 'string', description: 'Comma-separated (default: anthropic,openrouter,groq)' },
+      },
+      required: ['prompt'],
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'detect_intent',
+    description: 'NLP intent detection sur message user (chat/search/admin/studio_X). Retourne intent + confidence.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+      },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'sentinels_status',
+    description: 'État des 13 sentinelles 24/7 (token-watch, backup-watch, error-watch, etc.) + lastResult.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'perf_metrics',
+    description: 'Snapshot Web Vitals (LCP/INP/CLS/FCP/TTFB) + score Lighthouse runtime.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
