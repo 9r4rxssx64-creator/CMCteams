@@ -34,6 +34,8 @@ export interface VoiceFingerprint {
   pitch_avg: number;
   zcr_avg: number;
   energy_avg: number;
+  spectral_centroid_avg?: number;
+  spectral_rolloff_avg?: number;
   samples_count: number;
   enrolled_at: number;
   last_match: number;
@@ -69,28 +71,35 @@ class VoicePrint {
   }
 
   /**
-   * Calcule fingerprint simplifié depuis AudioBuffer.
-   * (Jet 9 enrichira avec meyda MFCC + chroma + spectral centroid)
+   * Calcule fingerprint enrichi (Jet 8.1+ : pitch + ZCR + RMS + spectral centroid + spectral rolloff).
+   * (Jet 9 enrichira encore avec meyda MFCC 13 coefficients + chroma 12 bins)
    */
-  computeFingerprint(audioBuffer: AudioBuffer): { pitch: number; zcr: number; energy: number } {
+  computeFingerprint(audioBuffer: AudioBuffer): {
+    pitch: number;
+    zcr: number;
+    energy: number;
+    spectral_centroid: number;
+    spectral_rolloff: number;
+  } {
     const data = audioBuffer.getChannelData(0);
-    /* Energy = RMS (moyenne quadratique) */
+    const sampleRate = audioBuffer.sampleRate;
+
+    /* Energy = RMS */
     let energy = 0;
     for (let i = 0; i < data.length; i++) energy += data[i]! * data[i]!;
     energy = Math.sqrt(energy / data.length);
 
-    /* Zero Crossing Rate : nombre de fois que le signal change de signe */
+    /* ZCR */
     let zcr = 0;
     for (let i = 1; i < data.length; i++) {
       if ((data[i]! >= 0) !== (data[i - 1]! >= 0)) zcr++;
     }
     zcr /= data.length;
 
-    /* Pitch estimate : autocorrélation simple (Jet 9 → YIN algorithm via pitchy) */
+    /* Pitch via autocorrélation */
     let pitch = 0;
-    const sampleRate = audioBuffer.sampleRate;
-    const minLag = Math.floor(sampleRate / 500); /* 500 Hz = pitch max attendu */
-    const maxLag = Math.floor(sampleRate / 80); /* 80 Hz = pitch min */
+    const minLag = Math.floor(sampleRate / 500);
+    const maxLag = Math.floor(sampleRate / 80);
     let bestCorr = 0;
     for (let lag = minLag; lag < maxLag && lag < data.length / 2; lag++) {
       let corr = 0;
@@ -102,7 +111,53 @@ class VoicePrint {
       }
     }
 
-    return { pitch, zcr, energy };
+    /* Spectral features via FFT simplifié (DFT light pour chunks 256-512) */
+    const fftSize = Math.min(512, Math.pow(2, Math.floor(Math.log2(data.length))));
+    const magnitudes = this.computeMagnitudeSpectrum(data, fftSize);
+    const totalEnergy = magnitudes.reduce((s, m) => s + m, 0);
+    let weightedSum = 0;
+    for (let i = 0; i < magnitudes.length; i++) {
+      weightedSum += i * magnitudes[i]!;
+    }
+    const spectralCentroid = totalEnergy > 0 ? (weightedSum / totalEnergy) * (sampleRate / fftSize / 2) : 0;
+
+    /* Spectral rolloff (85% energy threshold) */
+    const threshold = totalEnergy * 0.85;
+    let cumulative = 0;
+    let rolloffBin = magnitudes.length - 1;
+    for (let i = 0; i < magnitudes.length; i++) {
+      cumulative += magnitudes[i]!;
+      if (cumulative >= threshold) {
+        rolloffBin = i;
+        break;
+      }
+    }
+    const spectralRolloff = (rolloffBin / magnitudes.length) * (sampleRate / 2);
+
+    return { pitch, zcr, energy, spectral_centroid: spectralCentroid, spectral_rolloff: spectralRolloff };
+  }
+
+  /**
+   * DFT simplifié (magnitude spectrum, pas de FFT optimisée — OK pour chunks petits).
+   */
+  private computeMagnitudeSpectrum(data: Float32Array, fftSize: number): number[] {
+    const magnitudes: number[] = [];
+    const halfSize = fftSize / 2;
+    /* Window Hann pour smoother FFT */
+    for (let k = 0; k < halfSize; k++) {
+      let real = 0;
+      let imag = 0;
+      const limit = Math.min(fftSize, data.length);
+      for (let n = 0; n < limit; n++) {
+        const window = 0.5 - 0.5 * Math.cos((2 * Math.PI * n) / (fftSize - 1));
+        const sample = data[n]! * window;
+        const angle = (-2 * Math.PI * k * n) / fftSize;
+        real += sample * Math.cos(angle);
+        imag += sample * Math.sin(angle);
+      }
+      magnitudes.push(Math.sqrt(real * real + imag * imag));
+    }
+    return magnitudes;
   }
 
   /**
@@ -110,12 +165,14 @@ class VoicePrint {
    */
   async enroll(uid: string, audioSamples: AudioBuffer[]): Promise<{ ok: boolean; reason?: string }> {
     if (audioSamples.length < 1) return { ok: false, reason: 'Aucun sample audio' };
-    /* Calcule fingerprints + moyenne */
+    /* Calcule fingerprints enrichis + moyenne (5 features) */
     const fps = audioSamples.map((s) => this.computeFingerprint(s));
     const avg = {
       pitch_avg: fps.reduce((s, f) => s + f.pitch, 0) / fps.length,
       zcr_avg: fps.reduce((s, f) => s + f.zcr, 0) / fps.length,
       energy_avg: fps.reduce((s, f) => s + f.energy, 0) / fps.length,
+      spectral_centroid_avg: fps.reduce((s, f) => s + f.spectral_centroid, 0) / fps.length,
+      spectral_rolloff_avg: fps.reduce((s, f) => s + f.spectral_rolloff, 0) / fps.length,
     };
     const print: VoiceFingerprint = {
       uid,
@@ -146,10 +203,16 @@ class VoicePrint {
 
     let best: VoiceMatchResult = { uid: null, score: 0, confident: false };
     for (const print of allPrints) {
-      const score = this.cosineSimilarity(
-        [fp.pitch, fp.zcr, fp.energy],
-        [print.pitch_avg, print.zcr_avg, print.energy_avg],
-      );
+      /* Cosine similarity sur 5 dimensions (vs 3 avant) — plus précis Jet 8.1 */
+      const printVec = [
+        print.pitch_avg,
+        print.zcr_avg,
+        print.energy_avg,
+        print.spectral_centroid_avg ?? 0,
+        print.spectral_rolloff_avg ?? 0,
+      ];
+      const sampleVec = [fp.pitch, fp.zcr, fp.energy, fp.spectral_centroid, fp.spectral_rolloff];
+      const score = this.cosineSimilarity(sampleVec, printVec);
       if (score > best.score) {
         best = {
           uid: print.uid,
@@ -189,18 +252,20 @@ class VoicePrint {
    */
   private updatePrintWithSample(
     uid: string,
-    fp: { pitch: number; zcr: number; energy: number },
+    fp: { pitch: number; zcr: number; energy: number; spectral_centroid: number; spectral_rolloff: number },
     score: number,
   ): void {
     try {
       const raw = localStorage.getItem(`ax_voice_print_${uid}`);
       if (!raw) return;
       const print = JSON.parse(raw) as VoiceFingerprint;
-      /* Moyenne pondérée 0.9 ancien + 0.1 nouveau */
+      /* Moyenne pondérée 0.9 ancien + 0.1 nouveau (5 dimensions) */
       const weight = 0.1;
       print.pitch_avg = print.pitch_avg * (1 - weight) + fp.pitch * weight;
       print.zcr_avg = print.zcr_avg * (1 - weight) + fp.zcr * weight;
       print.energy_avg = print.energy_avg * (1 - weight) + fp.energy * weight;
+      print.spectral_centroid_avg = (print.spectral_centroid_avg ?? 0) * (1 - weight) + fp.spectral_centroid * weight;
+      print.spectral_rolloff_avg = (print.spectral_rolloff_avg ?? 0) * (1 - weight) + fp.spectral_rolloff * weight;
       print.samples_count++;
       print.last_match = Date.now();
       print.match_score_avg =
