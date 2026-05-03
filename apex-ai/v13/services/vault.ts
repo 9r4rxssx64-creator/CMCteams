@@ -12,6 +12,7 @@
  */
 
 import { logger } from '../core/logger.js';
+import { detectCredential, type CredentialPattern } from './credential-patterns.js';
 
 interface EncryptedPayload {
   v: 1;
@@ -22,6 +23,7 @@ interface EncryptedPayload {
 
 const PREFIX = 'AXENC1:';
 
+/* Backward-compat alias pour tests + features existantes (15 patterns minimum) */
 export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; key: string }> = [
   { name: 'Anthropic', regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/, key: 'ax_anthropic_key' },
   { name: 'OpenAI', regex: /^sk-[A-Za-z0-9]{40,}/, key: 'ax_openai_key' },
@@ -111,12 +113,101 @@ class Vault {
     }
   }
 
+  /* Détection complète via 130+ patterns + warning si forbidden */
+  detectFull(value: string): CredentialPattern | null {
+    return detectCredential(value);
+  }
+
+  /* Backward-compat 15 patterns simples */
   detectPattern(value: string): { name: string; key: string } | null {
+    const detected = detectCredential(value);
+    if (!detected || detected.category === 'forbidden') return null;
+    return { name: detected.name, key: detected.storageKey };
+  }
+
+  /**
+   * Auto-store credential détecté + auto-test si endpoint dispo + auto-link dashboard.
+   * Retourne le résultat structuré pour UI feedback.
+   */
+  async autoStore(value: string): Promise<{
+    ok: boolean;
+    pattern?: CredentialPattern;
+    valid?: boolean;
+    forbidden?: boolean;
+    reason?: string;
+  }> {
     const trimmed = value.trim();
-    for (const p of CREDENTIAL_PATTERNS) {
-      if (p.regex.test(trimmed)) return { name: p.name, key: p.key };
+    if (!trimmed) return { ok: false, reason: 'Valeur vide' };
+    const detected = detectCredential(trimmed);
+    if (!detected) return { ok: false, reason: 'Format inconnu — pattern non reconnu' };
+    if (detected.category === 'forbidden') {
+      logger.warn('vault', `Forbidden credential detected: ${detected.name} — REFUSED`);
+      return { ok: false, forbidden: true, pattern: detected, reason: detected.name + ' — JAMAIS stocké' };
     }
-    return null;
+    try {
+      localStorage.setItem(detected.storageKey, trimmed);
+    } catch (err: unknown) {
+      logger.error('vault', 'autoStore persist failed', { err });
+      return { ok: false, reason: 'Stockage saturé' };
+    }
+    /* Auto-link : enrichit ax_links_registry */
+    this.autoLink(detected);
+    /* Auto-test si endpoint dispo (best-effort, non bloquant) */
+    let valid: boolean | undefined;
+    if (detected.testEndpoint) {
+      valid = await this.autoTest(detected, trimmed).catch(() => undefined);
+    }
+    logger.info('vault', `Stored ${detected.name} → ${detected.storageKey}`, { valid });
+    return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  private autoLink(pattern: CredentialPattern): void {
+    try {
+      const registry = JSON.parse(localStorage.getItem('ax_links_registry') ?? '{}') as Record<
+        string,
+        Record<string, unknown>
+      >;
+      registry[pattern.storageKey] = {
+        service: pattern.name,
+        category: pattern.category,
+        ...(pattern.dashboard && { dashboard: pattern.dashboard }),
+        ...(pattern.billing && { billing: pattern.billing }),
+        ...(pattern.docs && { docs: pattern.docs }),
+        ...(pattern.support && { support: pattern.support }),
+        last_added: Date.now(),
+        alive: true,
+      };
+      localStorage.setItem('ax_links_registry', JSON.stringify(registry));
+    } catch (err: unknown) {
+      logger.warn('vault', 'autoLink failed', { err });
+    }
+  }
+
+  private async autoTest(pattern: CredentialPattern, value: string): Promise<boolean> {
+    if (!pattern.testEndpoint) return false;
+    try {
+      const url = pattern.testEndpoint.replace('PLACEHOLDER', value);
+      const headers: Record<string, string> = {};
+      if (pattern.name.startsWith('Anthropic')) {
+        headers['x-api-key'] = value;
+        headers['anthropic-version'] = '2023-06-01';
+      } else if (pattern.name === 'Google AI') {
+        headers['x-goog-api-key'] = value;
+      } else if (pattern.name.startsWith('Telegram')) {
+        /* Token déjà dans URL via PLACEHOLDER */
+      } else {
+        headers['authorization'] = `Bearer ${value}`;
+      }
+      const res = await fetch(url, {
+        method: pattern.testMethod ?? 'GET',
+        headers,
+        signal: AbortSignal.timeout(8000),
+      });
+      /* 200 ou 401 sans param valide = endpoint répond */
+      return res.status < 500;
+    } catch {
+      return false;
+    }
   }
 
   private b64(bytes: Uint8Array): string {

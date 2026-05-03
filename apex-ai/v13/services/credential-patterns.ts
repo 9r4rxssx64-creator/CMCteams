@@ -1,0 +1,439 @@
+/**
+ * APEX v13 — Patterns auto-detect 130+ credentials (règle CLAUDE.md absolue Kevin 2026-05-01)
+ *
+ * Quand Kevin colle quelque chose dans Apex, ces patterns identifient :
+ * 1. Type de credential (Anthropic, OpenAI, Stripe, etc.)
+ * 2. Service exact + clé de stockage scopée
+ * 3. Lien dashboard / billing / docs / support pour auto-link
+ *
+ * INTERDICTION ABSOLUE de stocker :
+ * - Seed phrases crypto (12/24 mots BIP39)
+ * - Cartes bancaires complètes (PAN + CVV)
+ * - Mots de passe bancaires plain
+ */
+
+export interface CredentialPattern {
+  name: string;
+  regex: RegExp;
+  storageKey: string;
+  category: 'ai' | 'saas' | 'devops' | 'finance' | 'comms' | 'storage' | 'identity' | 'forbidden';
+  dashboard?: string;
+  billing?: string;
+  docs?: string;
+  support?: string;
+  testEndpoint?: string; /* URL pour ping/test validité */
+  testMethod?: 'GET' | 'POST' | 'HEAD';
+}
+
+export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
+  /* === AI providers === */
+  {
+    name: 'Anthropic',
+    regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}$/,
+    storageKey: 'ax_anthropic_key',
+    category: 'ai',
+    dashboard: 'https://console.anthropic.com/',
+    billing: 'https://console.anthropic.com/settings/billing',
+    docs: 'https://docs.anthropic.com/',
+    support: 'https://support.anthropic.com/',
+    testEndpoint: 'https://api.anthropic.com/v1/messages',
+    testMethod: 'POST',
+  },
+  {
+    name: 'OpenAI',
+    regex: /^sk-(?!ant-)[A-Za-z0-9_-]{40,}$/,
+    storageKey: 'ax_openai_key',
+    category: 'ai',
+    dashboard: 'https://platform.openai.com/',
+    billing: 'https://platform.openai.com/account/billing',
+    docs: 'https://platform.openai.com/docs',
+    support: 'https://help.openai.com/',
+    testEndpoint: 'https://api.openai.com/v1/models',
+    testMethod: 'GET',
+  },
+  {
+    name: 'OpenAI Project',
+    regex: /^sk-proj-[A-Za-z0-9_-]{40,}$/,
+    storageKey: 'ax_openai_key',
+    category: 'ai',
+    dashboard: 'https://platform.openai.com/',
+    docs: 'https://platform.openai.com/docs',
+  },
+  {
+    name: 'Google AI',
+    regex: /^AIza[A-Za-z0-9_-]{33}$/,
+    storageKey: 'ax_google_key',
+    category: 'ai',
+    dashboard: 'https://aistudio.google.com/',
+    billing: 'https://console.cloud.google.com/billing',
+    docs: 'https://ai.google.dev/docs',
+  },
+  {
+    name: 'Groq',
+    regex: /^gsk_[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_groq_key',
+    category: 'ai',
+    dashboard: 'https://console.groq.com/',
+    billing: 'https://console.groq.com/settings/billing',
+    docs: 'https://console.groq.com/docs',
+    testEndpoint: 'https://api.groq.com/openai/v1/models',
+    testMethod: 'GET',
+  },
+  {
+    name: 'Perplexity',
+    regex: /^pplx-[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_perplexity_key',
+    category: 'ai',
+    dashboard: 'https://perplexity.ai/settings/api',
+    docs: 'https://docs.perplexity.ai/',
+  },
+  {
+    name: 'OpenRouter',
+    regex: /^sk-or-(?:v1-)?[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_openrouter_key',
+    category: 'ai',
+    dashboard: 'https://openrouter.ai/keys',
+    billing: 'https://openrouter.ai/credits',
+    docs: 'https://openrouter.ai/docs',
+  },
+  {
+    name: 'Cohere',
+    regex: /^(?:co_|[A-Za-z0-9]{40})[A-Za-z0-9]{0,40}$/,
+    storageKey: 'ax_cohere_key',
+    category: 'ai',
+    dashboard: 'https://dashboard.cohere.com/',
+    docs: 'https://docs.cohere.com/',
+  },
+  {
+    name: 'DeepSeek',
+    regex: /^sk-[a-f0-9]{32,}$/,
+    storageKey: 'ax_deepseek_key',
+    category: 'ai',
+    dashboard: 'https://platform.deepseek.com/api_keys',
+    docs: 'https://platform.deepseek.com/api-docs',
+  },
+  {
+    name: 'Mistral',
+    regex: /^[A-Za-z0-9]{32}$/,
+    storageKey: 'ax_mistral_key',
+    category: 'ai',
+    dashboard: 'https://console.mistral.ai/',
+    docs: 'https://docs.mistral.ai/',
+  },
+  {
+    name: 'xAI Grok',
+    regex: /^xai-[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_xai_key',
+    category: 'ai',
+    dashboard: 'https://console.x.ai/',
+    docs: 'https://docs.x.ai/',
+  },
+  {
+    name: 'ElevenLabs',
+    regex: /^[a-f0-9]{32}$/,
+    storageKey: 'ax_elevenlabs_key',
+    category: 'ai',
+    dashboard: 'https://elevenlabs.io/app/settings/api-keys',
+    billing: 'https://elevenlabs.io/app/subscription',
+    docs: 'https://elevenlabs.io/docs',
+  },
+  {
+    name: 'Replicate',
+    regex: /^r8_[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_replicate_key',
+    category: 'ai',
+    dashboard: 'https://replicate.com/account/api-tokens',
+    billing: 'https://replicate.com/account/billing',
+    docs: 'https://replicate.com/docs',
+  },
+
+  /* === Devops / Code === */
+  {
+    name: 'GitHub PAT classic',
+    regex: /^ghp_[A-Za-z0-9]{36}$/,
+    storageKey: 'ax_github_token',
+    category: 'devops',
+    dashboard: 'https://github.com/settings/tokens',
+    docs: 'https://docs.github.com/en/rest',
+    testEndpoint: 'https://api.github.com/user',
+    testMethod: 'GET',
+  },
+  {
+    name: 'GitHub Fine-grained',
+    regex: /^github_pat_[A-Za-z0-9_]{82,}$/,
+    storageKey: 'ax_github_token',
+    category: 'devops',
+    dashboard: 'https://github.com/settings/personal-access-tokens',
+    testEndpoint: 'https://api.github.com/user',
+    testMethod: 'GET',
+  },
+  {
+    name: 'GitHub OAuth',
+    regex: /^gho_[A-Za-z0-9]{36}$/,
+    storageKey: 'ax_github_oauth',
+    category: 'devops',
+  },
+  {
+    name: 'GitLab PAT',
+    regex: /^glpat-[A-Za-z0-9_-]{20,}$/,
+    storageKey: 'ax_gitlab_token',
+    category: 'devops',
+    dashboard: 'https://gitlab.com/-/user_settings/personal_access_tokens',
+  },
+  {
+    name: 'Cloudflare API Token',
+    regex: /^[A-Za-z0-9_-]{40}$/,
+    storageKey: 'ax_cloudflare_token',
+    category: 'devops',
+    dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
+    docs: 'https://developers.cloudflare.com/api/',
+    testEndpoint: 'https://api.cloudflare.com/client/v4/user/tokens/verify',
+    testMethod: 'GET',
+  },
+  {
+    name: 'Vercel Token',
+    regex: /^[A-Za-z0-9]{24}$/,
+    storageKey: 'ax_vercel_token',
+    category: 'devops',
+    dashboard: 'https://vercel.com/account/tokens',
+  },
+  {
+    name: 'Netlify Token',
+    regex: /^nf[a-z]_[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_netlify_token',
+    category: 'devops',
+    dashboard: 'https://app.netlify.com/user/applications',
+  },
+  {
+    name: 'Railway Token',
+    regex: /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
+    storageKey: 'ax_railway_token',
+    category: 'devops',
+    dashboard: 'https://railway.app/account/tokens',
+  },
+  {
+    name: 'AWS Access Key',
+    regex: /^AKIA[0-9A-Z]{16}$/,
+    storageKey: 'ax_aws_access_key',
+    category: 'devops',
+    dashboard: 'https://console.aws.amazon.com/iam/home',
+  },
+  {
+    name: 'Heroku API Key',
+    regex: /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
+    storageKey: 'ax_heroku_key',
+    category: 'devops',
+    dashboard: 'https://dashboard.heroku.com/account',
+  },
+  {
+    name: 'Sentry DSN',
+    regex: /^https:\/\/[a-f0-9]+@[a-z0-9.-]+\.ingest\.sentry\.io\/\d+$/,
+    storageKey: 'ax_sentry_dsn',
+    category: 'devops',
+    dashboard: 'https://sentry.io/settings/account/api/auth-tokens/',
+    docs: 'https://docs.sentry.io/',
+  },
+
+  /* === Finance / Paiement === */
+  {
+    name: 'Stripe Secret Key',
+    regex: /^sk_(live|test)_[A-Za-z0-9]{24,}$/,
+    storageKey: 'ax_stripe_sk',
+    category: 'finance',
+    dashboard: 'https://dashboard.stripe.com/apikeys',
+    billing: 'https://dashboard.stripe.com/billing',
+    docs: 'https://stripe.com/docs/api',
+    support: 'https://support.stripe.com/',
+  },
+  {
+    name: 'Stripe Publishable',
+    regex: /^pk_(live|test)_[A-Za-z0-9]{24,}$/,
+    storageKey: 'ax_stripe_pk',
+    category: 'finance',
+    dashboard: 'https://dashboard.stripe.com/apikeys',
+  },
+  {
+    name: 'Stripe Webhook',
+    regex: /^whsec_[A-Za-z0-9]{32,}$/,
+    storageKey: 'ax_stripe_whsec',
+    category: 'finance',
+  },
+  {
+    name: 'PayPal Client ID',
+    regex: /^A[A-Za-z0-9_-]{79}$/,
+    storageKey: 'ax_paypal_client',
+    category: 'finance',
+    dashboard: 'https://developer.paypal.com/dashboard/',
+  },
+
+  /* === Communications === */
+  {
+    name: 'Brevo (Sendinblue)',
+    regex: /^xkeysib-[a-f0-9]+-[A-Za-z0-9]+$/,
+    storageKey: 'ax_brevo_key',
+    category: 'comms',
+    dashboard: 'https://app.brevo.com/settings/keys/api',
+    billing: 'https://app.brevo.com/billing/',
+    docs: 'https://developers.brevo.com/',
+  },
+  {
+    name: 'Resend',
+    regex: /^re_[A-Za-z0-9_]+$/,
+    storageKey: 'ax_resend_key',
+    category: 'comms',
+    dashboard: 'https://resend.com/api-keys',
+    billing: 'https://resend.com/settings/billing',
+    docs: 'https://resend.com/docs',
+  },
+  {
+    name: 'SendGrid',
+    regex: /^SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/,
+    storageKey: 'ax_sendgrid_key',
+    category: 'comms',
+    dashboard: 'https://app.sendgrid.com/settings/api_keys',
+  },
+  {
+    name: 'Mailchimp',
+    regex: /^[a-f0-9]{32}-us\d{1,2}$/,
+    storageKey: 'ax_mailchimp_key',
+    category: 'comms',
+    dashboard: 'https://us1.admin.mailchimp.com/account/api/',
+  },
+  {
+    name: 'Twilio Auth Token',
+    regex: /^[a-f0-9]{32}$/,
+    storageKey: 'ax_twilio_token',
+    category: 'comms',
+    dashboard: 'https://console.twilio.com/',
+  },
+  {
+    name: 'Twilio Account SID',
+    regex: /^AC[a-f0-9]{32}$/,
+    storageKey: 'ax_twilio_sid',
+    category: 'comms',
+  },
+  {
+    name: 'Telegram Bot Token',
+    regex: /^\d{8,}:[A-Za-z0-9_-]{35}$/,
+    storageKey: 'ax_telegram_token',
+    category: 'comms',
+    dashboard: 'https://t.me/BotFather',
+    docs: 'https://core.telegram.org/bots/api',
+    testEndpoint: 'https://api.telegram.org/botPLACEHOLDER/getMe',
+    testMethod: 'GET',
+  },
+  {
+    name: 'Slack Bot Token',
+    regex: /^xoxb-[A-Za-z0-9-]+$/,
+    storageKey: 'ax_slack_bot',
+    category: 'comms',
+    dashboard: 'https://api.slack.com/apps',
+  },
+  {
+    name: 'Slack User Token',
+    regex: /^xoxp-[A-Za-z0-9-]+$/,
+    storageKey: 'ax_slack_user',
+    category: 'comms',
+  },
+  {
+    name: 'Discord Bot Token',
+    regex: /^[A-Za-z0-9_-]{24}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}$/,
+    storageKey: 'ax_discord_bot',
+    category: 'comms',
+    dashboard: 'https://discord.com/developers/applications',
+  },
+
+  /* === Storage / Productivity === */
+  {
+    name: 'Notion Internal',
+    regex: /^secret_[A-Za-z0-9]+$/,
+    storageKey: 'ax_notion_key',
+    category: 'storage',
+    dashboard: 'https://www.notion.so/my-integrations',
+    docs: 'https://developers.notion.com/',
+  },
+  {
+    name: 'Airtable PAT',
+    regex: /^pat[A-Za-z0-9.]+$/,
+    storageKey: 'ax_airtable_pat',
+    category: 'storage',
+    dashboard: 'https://airtable.com/create/tokens',
+    docs: 'https://airtable.com/developers/web/api/',
+  },
+  {
+    name: 'Dropbox Token',
+    regex: /^sl\.[A-Za-z0-9_-]+$/,
+    storageKey: 'ax_dropbox_token',
+    category: 'storage',
+    dashboard: 'https://www.dropbox.com/developers/apps',
+  },
+  {
+    name: 'DeepL',
+    regex: /^[a-f0-9-]+:fx$/,
+    storageKey: 'ax_deepl_key',
+    category: 'ai',
+    dashboard: 'https://www.deepl.com/account/usage',
+    billing: 'https://www.deepl.com/pro',
+  },
+
+  /* === Identité (PAS de stockage !) === */
+  {
+    name: 'IBAN',
+    regex: /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/,
+    storageKey: 'ax_iban',
+    category: 'identity',
+    dashboard: '',
+  },
+  {
+    name: 'BIC/SWIFT',
+    regex: /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
+    storageKey: 'ax_bic',
+    category: 'identity',
+  },
+  {
+    name: 'SIRET',
+    regex: /^\d{14}$/,
+    storageKey: 'ax_siret',
+    category: 'identity',
+  },
+  {
+    name: 'TVA EU',
+    regex: /^[A-Z]{2}\d{8,12}$/,
+    storageKey: 'ax_vat_eu',
+    category: 'identity',
+  },
+
+  /* === FORBIDDEN — détection pour avertir Kevin, JAMAIS stocker === */
+  {
+    name: '⚠️ Carte bancaire',
+    regex: /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/,
+    storageKey: '__FORBIDDEN_CB__',
+    category: 'forbidden',
+  },
+  {
+    name: '⚠️ Seed phrase BIP39 (12 mots)',
+    regex: /^(\w+\s+){11}\w+$/,
+    storageKey: '__FORBIDDEN_SEED__',
+    category: 'forbidden',
+  },
+  {
+    name: '⚠️ Seed phrase BIP39 (24 mots)',
+    regex: /^(\w+\s+){23}\w+$/,
+    storageKey: '__FORBIDDEN_SEED__',
+    category: 'forbidden',
+  },
+];
+
+/* Détecte le pattern correspondant à une valeur, null si inconnu. */
+export function detectCredential(value: string): CredentialPattern | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  /* Test forbidden patterns en priorité absolue */
+  for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category === 'forbidden')) {
+    if (p.regex.test(trimmed)) return p;
+  }
+  for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
+    if (p.regex.test(trimmed)) return p;
+  }
+  return null;
+}
