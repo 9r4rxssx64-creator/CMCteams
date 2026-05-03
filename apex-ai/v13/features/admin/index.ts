@@ -13,6 +13,8 @@ import { store } from '../../core/store.js';
 import { auth } from '../../services/auth.js';
 import { commerce, type Plan } from '../../services/commerce.js';
 import { whatsapp } from '../../services/whatsapp.js';
+import { haptic } from '../../ui/haptic.js';
+import { toast } from '../../ui/toast.js';
 
 type Tab = 'commerce' | 'users' | 'pending' | 'health';
 
@@ -181,6 +183,7 @@ function renderContent(): string {
 function attachHandlers(rootEl: HTMLElement): void {
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      haptic.selection();
       activeTab = btn.dataset['tab'] as Tab;
       void render(rootEl);
     });
@@ -189,7 +192,9 @@ function attachHandlers(rootEl: HTMLElement): void {
   const toggle = rootEl.querySelector<HTMLInputElement>('#commerce-toggle');
   if (toggle) {
     toggle.addEventListener('change', () => {
+      haptic.medium();
       commerce.setEnabled(toggle.checked);
+      toast.success(`Commercialisation ${toggle.checked ? 'activée' : 'désactivée'}`);
       void render(rootEl);
     });
   }
@@ -213,12 +218,18 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-confirm-otp]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      haptic.tap();
       const otp = btn.dataset['confirmOtp'] ?? '';
       if (!otp) return;
       const result = whatsapp.confirm(otp);
       if (result.ok) {
+        haptic.success();
+        toast.success('Compte activé');
         logger.info('admin', `Confirmed user ${result.uid}`);
         void render(rootEl);
+      } else {
+        haptic.error();
+        toast.error('Code OTP invalide ou expiré');
       }
     });
   });
@@ -234,6 +245,12 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   const whatsappPhone = rootEl.querySelector<HTMLInputElement>('#cu-whatsapp')?.value.trim() ?? '';
   const pin = rootEl.querySelector<HTMLInputElement>('#cu-pin')?.value ?? '';
 
+  if (!name || name.length < 2) {
+    haptic.warning();
+    toast.warn('Nom complet requis (min 2 caractères)');
+    return;
+  }
+
   const result = await auth.createUser({
     name,
     tier,
@@ -244,9 +261,14 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   const resultEl = rootEl.querySelector<HTMLElement>('#create-user-result');
   if (!resultEl) return;
   if (!result.ok || !result.uid) {
-    resultEl.innerHTML = `<div class="ax-error">${escapeHtml(result.reason ?? 'Erreur')}</div>`;
+    haptic.error();
+    const reason = result.reason ?? 'Erreur création';
+    resultEl.innerHTML = `<div class="ax-error">${escapeHtml(reason)}</div>`;
+    toast.error(reason);
     return;
   }
+  haptic.success();
+  toast.success(`Compte ${name} créé`);
 
   let waLink = '';
   if (whatsappPhone) {

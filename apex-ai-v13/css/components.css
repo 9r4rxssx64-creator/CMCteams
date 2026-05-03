@@ -368,8 +368,10 @@
   gap: var(--ax-s-2);
   margin-bottom: var(--ax-s-6);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid var(--ax-border);
   padding-bottom: var(--ax-s-2);
+  scroll-snap-type: x proximity;
 }
 
 .ax-tab {
@@ -381,12 +383,24 @@
   font-weight: 500;
   white-space: nowrap;
   min-height: var(--ax-touch-min);
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    background var(--ax-d-fast) var(--ax-ease),
+    color var(--ax-d-fast) var(--ax-ease),
+    border-color var(--ax-d-fast) var(--ax-ease),
+    transform var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-tab:active {
+  transform: scale(0.96);
 }
 
 .ax-tab-active {
   background: var(--ax-gold-soft);
   color: var(--ax-gold-bright);
   border-color: var(--ax-border-gold);
+  box-shadow: 0 0 0 1px var(--ax-border-gold), 0 4px 12px rgba(232, 184, 48, 0.1);
 }
 
 .ax-admin-section {
