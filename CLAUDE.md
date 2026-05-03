@@ -1,6 +1,48 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-01 (Apex v12.564 / CMC v9.571).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-03 (Apex v13.0 Jet 1 canary / CMC v9.593).
+
+---
+
+## 🔬 RÈGLE PERMANENTE — TEST EN LIVE EN PERMANENCE À CHAQUE ACTION (Kevin 2026-05-03, ABSOLUE PRIORITÉ 1)
+
+> **"À chaque création, à chaque nouvelle action que tu fais, fais tester, fais tester en live tout ton travail, en permanence pour être sûr de ne rien oublier et que tout fonctionne. Fais tout tester en permanence en live. Jusqu'à la fin du projet. Je ne te le répéterai pas, c'est important."** — Kevin 2026-05-03
+
+**Règle absolue, NON-NÉGOCIABLE jusqu'à la fin de tout projet** — Claude Code priorité 1, Apex priorité 1 :
+
+### 1. Après CHAQUE création/modification → lancer test live
+
+Pour Apex v13 : `bash apex-ai/v13/test-live.sh` — 6 vérifications :
+- T1 TypeScript strict (`tsc --noEmit`)
+- T2 Vitest unit tests
+- T3 Vite build production
+- T4 Bundle size budget (< 50 KB initial gzipped)
+- T5 Preview HTTP 200 (HTML + JS bundle réellement servis)
+- T6 Canary deploy sync
+
+Exit 0 obligatoire. Si fail = STOP, fix avant push.
+
+### 2. Après CHAQUE push → vérifier live URL
+
+Curl URL prod après chaque déploiement. Si 404 dans 5 min → investigate workflow, ne PAS attendre Kevin.
+
+### 3. JAMAIS pousser sans avoir testé
+
+❌ INTERDIT : commit + push sans avoir lancé test-live.sh
+❌ INTERDIT : déclarer "c'est fait" sans avoir vérifié URL live
+❌ INTERDIT : attendre que Kevin signale un bug
+
+### 4. Subagent audit silencieux si modif > 200 lignes
+
+Lancer `Explore` parallèle pour code review indépendant. Détecte ce que MOI Claude Code aurais raté.
+
+### 5. Test mental obligatoire avant CHAQUE action
+
+> *"Si je commit ça, est-ce que (1) le build passe ? (2) les tests passent ? (3) l'URL live restera 200 OK ? (4) Kevin pourra utiliser sans rien faire de spécial ?"*
+
+Si une réponse = "je crois que oui" sans vérif → ARRÊTER, vérifier d'abord.
+
+S'applique : Apex v13.0 (priorité absolue), CMCteams futurs commits, tous projets futurs Kevin.
 
 ---
 
