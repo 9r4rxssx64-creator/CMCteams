@@ -1389,7 +1389,75 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.781",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.782",ADMIN_ID="kdmc_admin";
+
+/* v12.782 (Kevin "boutons s'enfoncent rien ne se passe") :
+   FAIL-SAFE NAV TAPS - delegation listener au document body, capture-phase
+   priorite, qui FORCE sv() au tap sur tout bouton/element nav avec onclick.
+   Independant des onclick HTML qui peuvent ne pas fire si handler global
+   stop la propagation. Capture phase = avant tout autre listener.
+   Plus reset _dcRaf si bloque + retry render. */
+(function _axFailSafeNavTaps(){
+  try{
+    if(window._axFailSafeNavInstalled) return;
+    window._axFailSafeNavInstalled = true;
+    /* Reset _dcRaf zombie au boot puis sur visibilitychange */
+    window._axResetDcLock = function(){
+      try{
+        if(typeof _dcRaf !== "undefined" && _dcRaf){ _dcRaf = 0; }
+        if(window._axDcDebounce){ try{ clearTimeout(window._axDcDebounce); }catch(_){} window._axDcDebounce = null; }
+      }catch(_){}
+    };
+    setTimeout(window._axResetDcLock, 500);
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden){ window._axResetDcLock(); }
+    });
+    /* Delegation listener PASSIVE bubble-phase - ne preventDefault rien, juste
+       fallback qui execute l'onclick si onclick HTML ne fire pas dans 50ms */
+    document.addEventListener("click", function(ev){
+      try{
+        var el = ev.target && ev.target.closest && ev.target.closest("[onclick]");
+        if(!el) return;
+        if(el.id === "ax-rescue-btn") return;
+        var oc = el.getAttribute("onclick") || "";
+        if(!oc) return;
+        /* Skip si modal close button (gere ailleurs) */
+        var lbl = (el.textContent||"").trim();
+        if(/^(OK|Annuler|Fermer|✕|×)$/i.test(lbl) && el.closest('.ax-modal,[role="dialog"]')) return;
+        /* Capture state avant 80ms */
+        var beforeView = window.K && window.K.view;
+        var beforeHash = (document.body && document.body.innerHTML.length || 0);
+        var modalCountBefore = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn)').length;
+        var toastCountBefore = document.querySelectorAll('.ax-toast').length;
+        setTimeout(function(){
+          try{
+            var afterView = window.K && window.K.view;
+            var afterHash = (document.body && document.body.innerHTML.length || 0);
+            var modalAfter = document.querySelectorAll('.ax-modal,[role="dialog"]:not(#ax-rescue-btn)').length;
+            var toastAfter = document.querySelectorAll('.ax-toast').length;
+            var reacted = (afterView !== beforeView) || (afterHash !== beforeHash) || (modalAfter > modalCountBefore) || (toastAfter > toastCountBefore);
+            if(reacted) return;
+            /* Click inert detected - reset locks puis force re-execution onclick */
+            window._axResetDcLock();
+            try{
+              var fn = new Function("event","with(this){try{"+oc+"}catch(_e){console.warn('[failsafe nav]',_e);}}");
+              fn.call(el, ev);
+            }catch(_e){}
+            /* Si onclick contient sv("X") essaie sv direct comme dernier recours */
+            try{
+              var mv = oc.match(/sv\(['"]([^'"]+)['"]/);
+              if(mv && mv[1] && typeof window.sv === "function" && window.K && window.K.view !== mv[1]){
+                window.sv(mv[1]);
+              }
+            }catch(_e){}
+            /* Force render apres */
+            try{ if(typeof render === "function") render(); }catch(_e){}
+          }catch(_e){}
+        }, 80);
+      }catch(_e){}
+    }, false); /* bubble phase, non-blocking */
+  }catch(_){}
+})();
 
 /* v12.781 (Kevin "boutons s'enfoncent rien ne se passe, autonomie") :
    MINI-HUD DEBUG visible top-left admin only. Montre K state + last error
@@ -1461,8 +1529,8 @@ window._axHudDisable = function(){ try{ localStorage.removeItem("ax_hud_on"); lo
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.781"){
-            console.info("[v12.781 force-update] local=v12.781 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.782"){
+            console.info("[v12.782 force-update] local=v12.782 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
