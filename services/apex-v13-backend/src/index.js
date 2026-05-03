@@ -72,6 +72,8 @@ export default {
           return await handleEscalate(request, env, origin);
         case '/ai/judge':
           return await handleAIJudge(request, env, origin);
+        case '/plan/get':
+          return await handlePlanGet(request, env, origin);
         default:
           return jsonError(404, 'Endpoint not found', url.pathname, origin);
       }
@@ -158,19 +160,108 @@ async function handleStripeWebhook(request, env, origin) {
   if (!valid) return jsonError(401, 'Invalid signature', null, origin);
 
   const event = JSON.parse(rawBody);
-  /* Stocke event pour traitement asynchrone */
-  await env.STRIPE_EVENTS.put(`e:${event.id}`, rawBody, { expirationTtl: 86400 });
+  /* Stocke event pour audit trail */
+  await env.STRIPE_EVENTS.put(`e:${event.id}`, rawBody, { expirationTtl: 86400 * 30 });
 
-  /* Routing event types */
-  switch (event.type) {
-    case 'checkout.session.completed':
-      /* TODO Jet 7 : update user plan dans Firebase */
-      break;
-    case 'customer.subscription.deleted':
-      /* TODO Jet 7 : downgrade user à free */
-      break;
+  /* Logique métier Jet 7 : update USER_PLANS KV (lu par client au login) */
+  const result = { received: true, processed: null };
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data?.object ?? {};
+        const uid = session.client_reference_id ?? session.metadata?.uid;
+        const plan = session.metadata?.plan ?? mapPriceToPlan(session.line_items?.data?.[0]?.price?.id);
+        if (uid && plan) {
+          await env.USER_PLANS.put(`p:${uid}`, JSON.stringify({
+            plan,
+            stripeCustomerId: session.customer,
+            stripeSubscriptionId: session.subscription,
+            activatedAt: Date.now(),
+            expiresAt: null,
+          }));
+          result.processed = `upgrade_${plan}_${uid}`;
+        }
+        break;
+      }
+      case 'customer.subscription.updated': {
+        const sub = event.data?.object ?? {};
+        const uid = sub.metadata?.uid;
+        if (uid) {
+          const existing = await env.USER_PLANS.get(`p:${uid}`);
+          const data = existing ? JSON.parse(existing) : { plan: 'free' };
+          data.expiresAt = sub.current_period_end ? sub.current_period_end * 1000 : null;
+          data.cancelAtPeriodEnd = sub.cancel_at_period_end ?? false;
+          await env.USER_PLANS.put(`p:${uid}`, JSON.stringify(data));
+          result.processed = `update_${uid}`;
+        }
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data?.object ?? {};
+        const uid = sub.metadata?.uid;
+        if (uid) {
+          await env.USER_PLANS.put(`p:${uid}`, JSON.stringify({
+            plan: 'free',
+            downgradedAt: Date.now(),
+            previousSubscriptionId: sub.id,
+          }));
+          result.processed = `downgrade_${uid}`;
+        }
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data?.object ?? {};
+        const uid = invoice.metadata?.uid ?? invoice.subscription_details?.metadata?.uid;
+        if (uid) {
+          /* Push escalation pour Kevin admin */
+          await env.ESCALATIONS.put(`e:payment_failed_${invoice.id}`, JSON.stringify({
+            id: `payment_failed_${invoice.id}`,
+            reason: 'Stripe invoice.payment_failed',
+            severity: 'critical',
+            context: { uid, invoiceId: invoice.id, amount: invoice.amount_due },
+            ts: Date.now(),
+          }), { expirationTtl: 7 * 86400 });
+          result.processed = `payment_failed_${uid}`;
+        }
+        break;
+      }
+      case 'charge.dispute.created': {
+        const dispute = event.data?.object ?? {};
+        await env.ESCALATIONS.put(`e:dispute_${dispute.id}`, JSON.stringify({
+          id: `dispute_${dispute.id}`,
+          reason: 'Stripe charge.dispute.created',
+          severity: 'critical',
+          context: { disputeId: dispute.id, amount: dispute.amount, reason: dispute.reason },
+          ts: Date.now(),
+        }), { expirationTtl: 7 * 86400 });
+        result.processed = `dispute_${dispute.id}`;
+        break;
+      }
+    }
+  } catch (err) {
+    /* Le webhook a été reçu et signé OK, mais traitement métier a fail.
+     * On retourne 200 pour éviter retry Stripe + log pour Kevin. */
+    result.processError = String(err).slice(0, 200);
   }
-  return jsonResponse({ received: true }, origin);
+  return jsonResponse(result, origin);
+}
+
+/* Map Stripe Price ID → plan Apex (à configurer via Stripe Dashboard + env vars) */
+function mapPriceToPlan(priceId) {
+  const PRICE_MAP = {
+    /* À remplir Kevin : price_basic_xxx → 'basic', price_pro_xxx → 'pro', etc. */
+  };
+  return PRICE_MAP[priceId] ?? 'free';
+}
+
+/* Endpoint /plan/get : client lit son plan actuel au boot (synced via Stripe webhooks) */
+async function handlePlanGet(request, env, origin) {
+  const url = new URL(request.url);
+  const uid = url.searchParams.get('uid');
+  if (!uid) return jsonError(400, 'uid query param required', null, origin);
+  const data = await env.USER_PLANS.get(`p:${uid}`);
+  if (!data) return jsonResponse({ plan: 'free', source: 'default' }, origin);
+  return jsonResponse({ ...JSON.parse(data), source: 'stripe_synced' }, origin);
 }
 
 /**

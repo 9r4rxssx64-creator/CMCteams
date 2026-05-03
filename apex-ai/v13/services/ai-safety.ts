@@ -20,6 +20,7 @@
 import { observability } from './observability.js';
 import { auditLog } from './audit-log.js';
 import { redactPII } from './pii-redaction.js';
+import { backend } from './backend.js';
 
 interface SafetyResult {
   safe: boolean;
@@ -228,6 +229,43 @@ class AISafety {
       return { consistent: false, similarity, method: 'jaccard_heuristic', flag: 'minor_divergence' };
     }
     return { consistent: true, similarity, method: 'jaccard_heuristic' };
+  }
+
+  /**
+   * Contrôle 4 amélioré (Jet 7) : Hallucination check SÉMANTIQUE via backend LLM judge.
+   * Si backend Cloudflare Worker configuré → appel `/ai/judge` Claude Haiku pour vraie analyse sémantique.
+   * Sinon → fallback Jaccard heuristic côté client.
+   *
+   * Usage : `await aiSafety.crossCheckHallucinationSmart(prompt, respA, respB)`
+   * Le résultat inclut `method: 'llm_judge_haiku' | 'jaccard_heuristic'` pour traçabilité.
+   */
+  async crossCheckHallucinationSmart(
+    promptOriginal: string,
+    responseA: string,
+    responseB: string,
+  ): Promise<{
+    consistent: boolean | null;
+    confidence?: number;
+    similarity?: number;
+    method: 'llm_judge_haiku' | 'jaccard_heuristic';
+    reason?: string;
+    flag?: string;
+  }> {
+    /* Try backend LLM judge en priorité */
+    if (backend.isConfigured()) {
+      const r = await backend.aiJudge(promptOriginal, responseA, responseB);
+      if (!r.fallback && r.consistent !== null) {
+        return {
+          consistent: r.consistent,
+          ...(typeof r.confidence === 'number' && { confidence: r.confidence }),
+          method: 'llm_judge_haiku',
+          ...(r.reason && { reason: r.reason }),
+        };
+      }
+    }
+    /* Fallback Jaccard côté client */
+    const heuristic = this.crossCheckHallucination(responseA, responseB);
+    return heuristic;
   }
 
   /**

@@ -135,3 +135,37 @@ describe('ai-safety', () => {
     });
   });
 });
+
+describe('crossCheckHallucinationSmart (Jet 7 - integration backend + fallback)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('utilise Jaccard fallback si backend pas configuré', async () => {
+    const r = await aiSafety.crossCheckHallucinationSmart('Q?', 'rep A', 'rep A');
+    expect(r.method).toBe('jaccard_heuristic');
+    expect(r.consistent).toBe(true);
+  });
+
+  it('appelle backend LLM judge si configuré', async () => {
+    localStorage.setItem('apex_v13_backend_url', 'https://test.workers.dev');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({
+        consistent: true, confidence: 0.95, reason: 'same fact', method: 'llm_judge_haiku',
+      }), { status: 200 }),
+    );
+    const r = await aiSafety.crossCheckHallucinationSmart('Q?', 'A', 'B');
+    expect(r.method).toBe('llm_judge_haiku');
+    expect(r.consistent).toBe(true);
+    expect(r.confidence).toBe(0.95);
+    fetchSpy.mockRestore();
+  });
+
+  it('fallback Jaccard si backend retourne erreur', async () => {
+    localStorage.setItem('apex_v13_backend_url', 'https://test.workers.dev');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('backend down'));
+    const r = await aiSafety.crossCheckHallucinationSmart('Q?', 'rep A', 'rep A');
+    expect(r.method).toBe('jaccard_heuristic');
+    fetchSpy.mockRestore();
+  });
+});
