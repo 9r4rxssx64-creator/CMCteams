@@ -294,6 +294,46 @@
   color: var(--ax-text);
 }
 
+.ax-msg-tool {
+  align-self: stretch;
+  margin: var(--ax-s-2) var(--ax-s-3);
+}
+
+.ax-tool-card {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-s-3);
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: linear-gradient(135deg, var(--ax-gold-soft), rgba(232, 184, 48, 0.05));
+  border: 1px solid var(--ax-border-gold);
+  border-radius: var(--ax-r-md);
+  box-shadow: var(--ax-shadow-md);
+}
+
+.ax-tool-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ax-tool-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ax-tool-info strong {
+  color: var(--ax-gold-bright);
+  font-size: var(--ax-text-base);
+}
+
+.ax-tool-card .ax-btn {
+  flex-shrink: 0;
+}
+
 .ax-cursor {
   display: inline-block;
   color: var(--ax-gold);

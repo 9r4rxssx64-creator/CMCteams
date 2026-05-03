@@ -59,6 +59,57 @@ function buildSystemPrompt(): string {
   return memory.buildSystemPromptContext(user);
 }
 
+/**
+ * Détecte intent dans message user → propose meilleur outil sur bureau
+ * (Kevin règle CLAUDE.md : "outils auto-apparents par contexte").
+ */
+async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<void> {
+  try {
+    const { apexToolsDispatch } = await import('../../services/apex-tools-dispatch.js');
+    const intentRes = await apexToolsDispatch.execute('detect_intent', { text }, 'admin');
+    if (!intentRes.ok || !intentRes.result) return;
+    const intent = (intentRes.result as { intent?: string; confidence?: number }).intent;
+    const confidence = (intentRes.result as { confidence?: number }).confidence ?? 0;
+    if (!intent || intent === 'unknown' || confidence < 0.7) return;
+
+    const { smartToolsSuggester } = await import('../../services/smart-tools-suggester.js');
+    const tool = smartToolsSuggester.suggestForIntent(intent);
+    if (!tool) return;
+
+    /* Toast non-intrusif "🎯 Outil détecté : Studio Mix" */
+    const { toast } = await import('../../ui/toast.js');
+    toast.info(`${tool.emoji} ${tool.name} disponible — tape pour ouvrir`, { duration: 5000 });
+
+    /* Track usage potentiel */
+    const user = store.get('user');
+    if (user?.id) smartToolsSuggester.recordUsage(tool.id, user.id);
+    /* Render bubble suggested tool dans chat */
+    pushSuggestedTool(rootEl, tool);
+  } catch (err: unknown) {
+    /* Silent fail — non-bloquant pour chat */
+    logger.warn('chat', 'detectAndSuggestTool failed', { err });
+  }
+}
+
+function pushSuggestedTool(rootEl: HTMLElement, tool: { emoji: string; name: string; description: string; cta_label: string; cta_target: string }): void {
+  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+  if (!scroll) return;
+  const card = document.createElement('div');
+  card.className = 'ax-msg ax-msg-tool ax-slide-up-fade';
+  card.innerHTML = `
+    <div class="ax-tool-card">
+      <div class="ax-tool-icon">${tool.emoji}</div>
+      <div class="ax-tool-info">
+        <strong>${escapeHtml(tool.name)}</strong>
+        <p style="margin:4px 0 0;color:var(--ax-text-dim);font-size:13px">${escapeHtml(tool.description)}</p>
+      </div>
+      <button class="ax-btn ax-btn-primary ax-btn-sm" onclick="location.hash='${escapeHtml(tool.cta_target)}'">${escapeHtml(tool.cta_label)}</button>
+    </div>
+  `;
+  scroll.appendChild(card);
+  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+}
+
 async function processQueue(rootEl: HTMLElement): Promise<void> {
   if (isProcessing || queue.length === 0) return;
   isProcessing = true;
@@ -75,6 +126,10 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     isProcessing = false;
     return;
   }
+
+  /* WIRE smart-tools-suggester : detect intent + propose outil sur bureau
+   * (Kevin demande explicite : "musique → studio mix sur bureau") */
+  void detectAndSuggestTool(text, rootEl);
 
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
