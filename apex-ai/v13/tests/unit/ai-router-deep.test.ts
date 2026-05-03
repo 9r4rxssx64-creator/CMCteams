@@ -18,10 +18,16 @@ describe('ai-router deep tests (Jet 7.9)', () => {
     expect(aiRouter.hasAnyKey()).toBe(true);
   });
 
-  it('abort sans stream actif no-op', () => {
-    aiRouter.abort();
-    aiRouter.abort(); /* idempotent */
-    expect(true).toBe(true);
+  it('abort sans stream actif no-op (idempotent, no throw)', () => {
+    let threw = false;
+    try {
+      aiRouter.abort();
+      aiRouter.abort();
+      aiRouter.abort();
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
   });
 
   it('stream onError appelé si pas de clé API', async () => {

@@ -63,55 +63,87 @@ describe('Errors handler (core/errors.ts)', () => {
   });
 
   describe('capture', () => {
-    it('capture Error increment errorCount', () => {
-      errors.capture(new Error('test capture 1'));
-      /* Pas de throw, log via logger interne */
-      expect(true).toBe(true);
+    it('capture Error ne throw pas + logger.error appelé', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
+      let threw = false;
+      try {
+        errors.capture(new Error('test capture 1'));
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      expect(spy).toHaveBeenCalled();
+      const callArg = spy.mock.calls[0]?.[1];
+      expect(callArg).toBe('test capture 1');
+      spy.mockRestore();
     });
 
-    it('capture string converti en Error', () => {
+    it('capture string converti en Error (message identique)', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
       errors.capture('error as string');
-      expect(true).toBe(true);
+      expect(spy).toHaveBeenCalled();
+      expect(spy.mock.calls[0]?.[1]).toBe('error as string');
+      spy.mockRestore();
     });
 
-    it('capture avec context partial', () => {
+    it('capture avec context propage url/line dans logger meta', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
       errors.capture(new Error('with ctx'), {
         source: 'manual',
         url: 'https://test.com',
         line: 42,
       });
-      expect(true).toBe(true);
+      const meta = spy.mock.calls[0]?.[2] as Record<string, unknown>;
+      expect(meta).toBeTruthy();
+      expect(meta['url']).toBe('https://test.com');
+      expect(meta['line']).toBe(42);
+      expect(meta['source']).toBe('manual');
+      spy.mockRestore();
     });
 
     it('triggerRescue affiche SOS button après 10 errors', () => {
       const sos = document.getElementById('apex-rescue-btn') as HTMLButtonElement;
       sos.style.display = 'none';
-      /* Capture 10+ erreurs successives */
       for (let i = 0; i < 11; i++) {
         errors.capture(new Error(`err ${i}`));
       }
       expect(sos.style.display).toBe('flex');
       expect(sos.style.background).toContain('ff5858');
+      expect(sos.title).toContain('SOS');
     });
 
-    it('triggerRescue safe si SOS button absent', () => {
+    it('triggerRescue gracefull si SOS button absent (no throw)', () => {
       document.body.innerHTML = '';
-      /* Pas de throw même sans bouton SOS */
-      for (let i = 0; i < 11; i++) {
-        errors.capture(new Error('no SOS button'));
+      let threw = false;
+      try {
+        for (let i = 0; i < 11; i++) {
+          errors.capture(new Error('no SOS button'));
+        }
+      } catch {
+        threw = true;
       }
-      expect(true).toBe(true);
+      expect(threw).toBe(false);
+      /* SOS button toujours absent */
+      expect(document.getElementById('apex-rescue-btn')).toBeNull();
     });
   });
 
   describe('installGlobalHandlers', () => {
-    it('installGlobalHandlers est idempotent', () => {
+    it('installGlobalHandlers idempotent (2e call no-op via flag installed)', () => {
       errors.installGlobalHandlers();
-      errors.installGlobalHandlers(); /* 2e call no-op */
-      expect(true).toBe(true);
+      const before = window.onerror;
+      errors.installGlobalHandlers();
+      const after = window.onerror;
+      /* 2e call ne réinstalle pas → pas de double bind */
+      expect(after).toBe(before);
     });
 
-    it('window error handler capture event.error', () => {
+    it('window error event → capture appelé sans throw', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
       errors.installGlobalHandlers();
       const event = new ErrorEvent('error', {
         error: new Error('window onerror test'),
@@ -121,25 +153,34 @@ describe('Errors handler (core/errors.ts)', () => {
         colno: 10,
       });
       window.dispatchEvent(event);
-      /* Event traité sans throw */
-      expect(true).toBe(true);
+      /* Event capture forwarded to logger.error */
+      const found = spy.mock.calls.some((c) => String(c[1]).includes('window onerror'));
+      expect(found).toBe(true);
+      spy.mockRestore();
     });
 
-    it('unhandledrejection capture la reason', () => {
+    it('unhandledrejection avec Error → reason logged', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
       errors.installGlobalHandlers();
-      /* Simulate unhandledrejection event */
       const event = new Event('unhandledrejection') as Event & { reason?: unknown };
       event.reason = new Error('promise rejection');
       window.dispatchEvent(event);
-      expect(true).toBe(true);
+      const found = spy.mock.calls.some((c) => String(c[1]).includes('promise rejection'));
+      expect(found).toBe(true);
+      spy.mockRestore();
     });
 
-    it('unhandledrejection avec reason string', () => {
+    it('unhandledrejection avec reason string → converti en Error message', async () => {
+      const { logger } = await import('../../core/logger.js');
+      const spy = vi.spyOn(logger, 'error');
       errors.installGlobalHandlers();
       const event = new Event('unhandledrejection') as Event & { reason?: unknown };
       event.reason = 'string reason';
       window.dispatchEvent(event);
-      expect(true).toBe(true);
+      const found = spy.mock.calls.some((c) => String(c[1]).includes('string reason'));
+      expect(found).toBe(true);
+      spy.mockRestore();
     });
   });
 });

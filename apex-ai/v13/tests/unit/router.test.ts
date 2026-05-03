@@ -23,19 +23,30 @@ describe('Router hash (core/router.ts)', () => {
     store.set('isAdmin', false);
   });
 
-  it('register accepte route avec loader', () => {
-    router.register('test-route', {
-      loader: async () => ({ render: () => undefined }),
-    });
-    /* Pas d'erreur thrown */
-    expect(true).toBe(true);
+  it('register accepte route avec loader (sans throw)', () => {
+    let threw = false;
+    try {
+      router.register('test-route', {
+        loader: async () => ({ render: () => undefined }),
+      });
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
   });
 
-  it('init attache hashchange listener', () => {
-    router.init();
-    /* Idempotent : 2e init sans erreur */
-    router.init();
-    expect(true).toBe(true);
+  it('init idempotent : 2 calls sans throw + listener installé une seule fois', () => {
+    let threw = false;
+    try {
+      router.init();
+      router.init();
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
+    /* Test fonctionnel : navigate fonctionne après init */
+    router.navigate('idem-test');
+    expect(location.hash).toBe('#idem-test');
   });
 
   it('navigate change location.hash', () => {
