@@ -158,7 +158,8 @@ class AgentWatches {
   }
 
   /**
-   * Agent 5 : Notification permissions.
+   * Agent 5 : Notification permissions + push subscriptions check.
+   * Wire avec push-notifications service (anti-théâtre).
    */
   notifWatch(): AgentReport {
     if (typeof Notification === 'undefined') {
@@ -174,7 +175,30 @@ class AgentWatches {
         state: 'default',
       });
     }
-    return this.record('notif-watch', 'ok', 'Notif granted');
+    /* Wire push-notifications : check subscription + rate-limit usage */
+    let pushStats: { total_subscriptions: number; sent_today: number; rate_limit_per_day: number } | null = null;
+    try {
+      const subs = JSON.parse(localStorage.getItem('apex_v13_push_subscriptions') ?? '[]') as unknown[];
+      const log = JSON.parse(localStorage.getItem('apex_v13_push_sent_log') ?? '[]') as Array<{ ts: number }>;
+      const todayStart = new Date().setHours(0, 0, 0, 0);
+      pushStats = {
+        total_subscriptions: subs.length,
+        sent_today: log.filter((e) => e.ts >= todayStart).length,
+        rate_limit_per_day: 20,
+      };
+      if (pushStats.sent_today >= 18) {
+        return this.record(
+          'notif-watch',
+          'warn',
+          `Rate limit push proche (${pushStats.sent_today}/20)`,
+          { ...pushStats },
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+    const details: Record<string, unknown> = pushStats ? { ...pushStats } : {};
+    return this.record('notif-watch', 'ok', 'Notif granted', details);
   }
 
   /**
