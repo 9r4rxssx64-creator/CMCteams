@@ -1389,7 +1389,61 @@ try{
     try{ localStorage.removeItem("ax_panic_mode"); localStorage.removeItem("ax_panic_mode_ts"); localStorage.removeItem("ax_safe_mode"); }catch(_e){}
   }catch(_e){}
 })();
-var APP_VER = "v12.780",ADMIN_ID="kdmc_admin";
+var APP_VER = "v12.781",ADMIN_ID="kdmc_admin";
+
+/* v12.781 (Kevin "boutons s'enfoncent rien ne se passe, autonomie") :
+   MINI-HUD DEBUG visible top-left admin only. Montre K state + last error
+   en temps reel. Activable via window._axHudOn = true (defaut false sauf si
+   localStorage ax_hud_on = "1"). Permet a Kevin de me reporter ce qu'il voit. */
+(function _axDebugHud(){
+  try{
+    if(window._axHudInstalled) return;
+    window._axHudInstalled = true;
+    var hudOn = localStorage.getItem("ax_hud_on") === "1";
+    if(!hudOn) return; /* Off par defaut, activer via ls("ax_hud_on","1") */
+    var hud = document.createElement("div");
+    hud.id = "ax-debug-hud";
+    hud.style.cssText = "position:fixed;top:max(8px,env(safe-area-inset-top));left:8px;z-index:2147483646;background:rgba(0,0,0,.85);color:#0f0;font-family:ui-monospace,monospace;font-size:10px;padding:6px 10px;border:1px solid #0f0;border-radius:6px;max-width:200px;line-height:1.3;pointer-events:none";
+    hud.textContent = "HUD init...";
+    var attach = function(){ try{ document.body && document.body.appendChild(hud); }catch(_){} };
+    if(document.body) attach(); else document.addEventListener("DOMContentLoaded", attach);
+    window._axHudUpdate = function(){
+      try{
+        var u = (typeof K!=="undefined" && K.user) ? (K.user.id||"?").slice(0,12) : "null";
+        var v = (typeof K!=="undefined") ? (K.view||"?") : "?";
+        var s = (typeof K!=="undefined") ? !!K.isStreaming : false;
+        var clicks = window._axDebugCounters && window._axDebugCounters.click || 0;
+        var lastClick = window._axDebugLastClick && window._axDebugLastClick.label || "-";
+        var lastErr = window._axHudLastErr || "-";
+        hud.innerHTML = "<b>v"+(APP_VER||"?").replace("v","")+"</b><br>view: "+v+"<br>user: "+u+"<br>stream: "+s+"<br>clicks: "+clicks+"<br>last: "+String(lastClick).slice(0,20)+"<br>err: "+String(lastErr).slice(0,30);
+      }catch(_){}
+    };
+    setInterval(window._axHudUpdate, 1000);
+    /* Capture errors */
+    window.addEventListener("error", function(e){
+      try{ window._axHudLastErr = (e.message||"").slice(0,40)+"@"+((e.lineno)||"?"); }catch(_){}
+    });
+    window.addEventListener("unhandledrejection", function(e){
+      try{ window._axHudLastErr = "promise:"+String(e.reason||"").slice(0,30); }catch(_){}
+    });
+    /* Wrap sv to log errors */
+    if(typeof window.sv === "function" && !window._axSvWrapped){
+      window._axSvWrapped = true;
+      var origSv = window.sv;
+      window.sv = function(v){
+        try{
+          window._axHudLastErr = "sv("+v+") OK";
+          return origSv.apply(this, arguments);
+        }catch(e){
+          window._axHudLastErr = "sv("+v+") "+String(e.message||e).slice(0,30);
+          throw e;
+        }
+      };
+    }
+  }catch(_){}
+})();
+window._axHudEnable = function(){ try{ localStorage.setItem("ax_hud_on","1"); location.reload(); }catch(_){} };
+window._axHudDisable = function(){ try{ localStorage.removeItem("ax_hud_on"); location.reload(); }catch(_){} };
 /* v12.774 (parite CMCteams v9.591) - force update au boot : compare APP_VER local
    vs serveur. Si different -> clear caches + unregister SW + reload force.
    Independant du SW updatefound (unreliable iOS Safari PWA).
@@ -1407,8 +1461,8 @@ var APP_VER = "v12.780",ADMIN_ID="kdmc_admin";
           var m=(html||"").match(/var\s+APP_VER\s*=\s*["']([^"']+)["']/);
           if(!m)return;
           var remoteVer=m[1];
-          if(remoteVer&&remoteVer!=="v12.780"){
-            console.info("[v12.780 force-update] local=v12.780 remote="+remoteVer+" -> reload");
+          if(remoteVer&&remoteVer!=="v12.781"){
+            console.info("[v12.781 force-update] local=v12.781 remote="+remoteVer+" -> reload");
             try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
             try{if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){}
             setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
