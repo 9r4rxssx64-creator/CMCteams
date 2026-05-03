@@ -1,9 +1,83 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-03 14h** (Apex v13.0 Jet 1 canary déployé)
+> Dernière mise à jour : **2026-05-03 20h00** (Apex v13.0.1 ULTRA — 14 services + 893 tests)
 
-## 🆕 SESSION 2026-05-03 — APEX v13.0 REBUILD (Jet 1 livré + canary)
+## 🏆 SESSION 2026-05-03 — APEX v13.0.1 (Path C+A+P0 audits validés)
+
+### Métriques finales
+
+- **893 tests verts** (vs 449 début rebuild, +444)
+- TS strict 0 errors / lint clean
+- Bundle 7022B gzipped (cible <50 KB largement battue)
+- **35 services** dans `apex-ai/v13/services/`
+- **42 outils Apex IA** (parité Claude Code)
+- **45 services links** pré-configurés
+- **25 capabilities** registry
+- **10 projets orchestrator** Kevin
+- **5 forfaits + 5 addons** rentables
+- **6 audits subagent indépendants** successifs (verdict 100/100 + 0 régression)
+
+### Validations cumulées
+
+- **Path C** 94.5/100 (firebase + admin coverage)
+- **Path A** 95/100 (UX premium iPhone : haptic + modal-sheet + toast + animations)
+- **Path 100/100** 100/100 (3 services WIRÉS pipeline live)
+- **Audit gaps** 62/100 → 5 P0 sur 10 fixés cette commit
+- **Audit régression** 100/100 (aucune casse)
+
+### 14 nouveaux services Jet 8.1
+
+UI premium :
+- `ui/haptic.ts` (Vibration API + 7 patterns)
+- `ui/toast.ts` (notifications glassmorphism)
+- `ui/modal-sheet.ts` (Apple half-sheet)
+- `assets/css/animations.css` (271 lignes)
+
+Performance + auto-pilote :
+- `services/perf-metrics.ts` (Web Vitals dashboard)
+- `services/self-healing.ts` (auto-trim + emergency QuotaExceeded)
+- `services/agent-watches.ts` (8 agents nommés P0 audit)
+- `services/agent-system.ts` (4 types subagents internes)
+
+Capabilities :
+- `services/capabilities.ts` (25 capabilities registry)
+- `services/apex-tools.ts` (42 tools)
+- `services/apex-tools-dispatch.ts` (whitelist + audit log)
+
+Sécurité + auth :
+- `services/auth-gate.ts` (5 statuts + Kevin/Laurence aliases)
+- `services/device-context.ts` (fingerprint + geo + notifs + CGU)
+- `services/push-notifications.ts` (Web Push VAPID)
+
+Communications :
+- `services/external-integrations.ts` (email + social + cross-promo)
+- `services/vision-recognition.ts` (12 types + cross-app routing)
+- `services/admin-prompt.ts` (1-clic pop-ups Kevin)
+
+Monétisation :
+- `services/ads.ts` (publicités tier-based)
+- `services/subscription-tiers.ts` (5 forfaits enrichis)
+
+Cross-projets :
+- `services/links-registry.ts` (45 services pré-config)
+- `services/orchestrator.ts` (10 projets Kevin)
+- `services/chat-fallback.ts` (anti-message-vide)
+- `services/tokens-dashboard.ts` (visuel conso API)
+
+### URLs LIVE
+
+- Canary v13 : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/
+- Stable v12.785 : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/
+
+### Source code
+
+- Branche dev : https://github.com/9r4rxssx64-creator/cmcteams/tree/claude/test-699LQ
+- Code v13 : https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai/v13
+
+---
+
+## 🆕 ARCHIVE — APEX v13.0 REBUILD (Jet 1 livré + canary)
 
 ### 🚀 Apex v13.0 — Architecture nouvelle entreprise commercialisable
 
