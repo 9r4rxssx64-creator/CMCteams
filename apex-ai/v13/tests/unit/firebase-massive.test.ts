@@ -82,15 +82,26 @@ describe('firebase massive coverage Jet 8', () => {
     it('write HTTP 500 → push dans queue (retry plus tard)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('error', { status: 500 }));
       await firebase.write('apex_v13_facts', [{ retry: true }]);
-      /* Pas de throw, queué pour retry */
-      expect(true).toBe(true);
+      /* Vraie assertion : le PUT a bien été tenté (au moins 1 call PUT) */
+      const putCalls = fetchSpy.mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT');
+      expect(putCalls.length).toBeGreaterThanOrEqual(1);
+      /* Pas de throw — le caller ne reçoit pas d'exception */
       fetchSpy.mockRestore();
     });
 
-    it('write timeout → push dans queue', async () => {
+    it('write timeout → push dans queue (pas de throw)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('AbortError timeout'));
-      await firebase.write('apex_v13_facts', [{ timeout: true }]);
-      expect(true).toBe(true);
+      let threw = false;
+      try {
+        await firebase.write('apex_v13_facts', [{ timeout: true }]);
+      } catch {
+        threw = true;
+      }
+      /* Vraie assertion : write swallow l'erreur, queue + log warning seulement */
+      expect(threw).toBe(false);
+      /* PUT call attempted */
+      const putCalls = fetchSpy.mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT');
+      expect(putCalls.length).toBeGreaterThanOrEqual(1);
       fetchSpy.mockRestore();
     });
 
@@ -137,12 +148,19 @@ describe('firebase massive coverage Jet 8', () => {
       fetchSpy.mockRestore();
     });
 
-    it('write si offline → push queue', async () => {
-      /* Sans init, connected=false */
+    it('write si offline → push queue (zero fetch PUT)', async () => {
+      /* Force offline via init ping fail */
+      const offlineSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+      await firebase.init();
+      offlineSpy.mockRestore();
+      expect(firebase.isConnected()).toBe(false);
+
+      /* Maintenant write : doit bypass fetch totalement */
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
       await firebase.write('apex_v13_facts', [{ offline: true }]);
-      /* Pas de fetch car offline */
-      expect(true).toBe(true);
+      /* Aucun PUT car connected=false → straight to queue */
+      const putCalls = fetchSpy.mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT');
+      expect(putCalls.length).toBe(0);
       fetchSpy.mockRestore();
     });
   });
@@ -180,6 +198,135 @@ describe('firebase massive coverage Jet 8', () => {
       fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('timeout'));
       const r = await firebase.read('apex_v13_facts');
       expect(r).toBeNull();
+      fetchSpy.mockRestore();
+    });
+  });
+
+  describe('SSE EventSource + applyRemoteChange (anti-pattern v12 plain wins)', () => {
+    /* Mock EventSource minimal pour tester startSSE + put events */
+    class MockEventSource {
+      static instances: MockEventSource[] = [];
+      url: string;
+      listeners: Record<string, ((e: Event) => void)[]> = {};
+      onerror: (() => void) | null = null;
+      onopen: (() => void) | null = null;
+      readyState = 0;
+      constructor(url: string) {
+        this.url = url;
+        MockEventSource.instances.push(this);
+      }
+      addEventListener(type: string, fn: (e: Event) => void) {
+        (this.listeners[type] ??= []).push(fn);
+      }
+      close() {
+        this.readyState = 2;
+      }
+      /* Test helpers */
+      _firePut(path: string, data: unknown) {
+        const event = new MessageEvent('put', { data: JSON.stringify({ path, data }) });
+        (this.listeners['put'] ?? []).forEach((fn) => fn(event));
+      }
+      _fireOpen() {
+        if (this.onopen) this.onopen();
+      }
+      _fireError() {
+        if (this.onerror) this.onerror();
+      }
+    }
+
+    beforeEach(() => {
+      MockEventSource.instances = [];
+      (globalThis as unknown as { EventSource: typeof MockEventSource }).EventSource = MockEventSource;
+    });
+
+    it('init connected → startSSE crée EventSource', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      expect(MockEventSource.instances.length).toBeGreaterThanOrEqual(1);
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      expect(sse.url).toContain('/apex.json');
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE put event → applyRemoteChange écrit localStorage', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      sse._firePut('/apex_v13_facts', [{ remote: true }]);
+      const stored = localStorage.getItem('apex_v13_facts');
+      expect(stored).toBeTruthy();
+      expect(stored).toContain('remote');
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE put data=null avec valeur locale → SKIP (plain wins guard)', async () => {
+      localStorage.setItem('apex_v13_facts', JSON.stringify([{ local: 'preserve' }]));
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      sse._firePut('/apex_v13_facts', null);
+      /* Plain wins : la valeur locale doit rester intacte */
+      const stored = localStorage.getItem('apex_v13_facts');
+      expect(stored).toContain('local');
+      expect(stored).toContain('preserve');
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE put sur FB_LOCAL key → SKIP (jamais écrit)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      const before = localStorage.getItem('apex_v13_user');
+      sse._firePut('/apex_v13_user', { id: 'malicious_remote' });
+      const after = localStorage.getItem('apex_v13_user');
+      /* FB_LOCAL : jamais touché par remote */
+      expect(after).toBe(before);
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE onerror → connected=false + auto-reconnect setTimeout', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      vi.useFakeTimers();
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      sse._fireError();
+      expect(firebase.isConnected()).toBe(false);
+      /* setTimeout 5s pour reconnect — advance timers */
+      vi.advanceTimersByTime(5001);
+      /* Nouvelle instance EventSource créée */
+      expect(MockEventSource.instances.length).toBeGreaterThanOrEqual(2);
+      vi.useRealTimers();
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE onopen → connected=true + flushQueue', async () => {
+      /* Setup : init offline → write se met en queue */
+      const offlineSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+      await firebase.init();
+      offlineSpy.mockRestore();
+      await firebase.write('apex_v13_facts', [{ queued: true }]);
+
+      /* Re-init connected pour avoir un SSE */
+      const onlineSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('null', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      sse._fireOpen();
+      expect(firebase.isConnected()).toBe(true);
+      onlineSpy.mockRestore();
+    });
+
+    it('SSE put avec JSON corrompu → catch error gracefull (pas de throw)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      const corruptedEvent = new MessageEvent('put', { data: 'not_valid_json{{{' });
+      let threw = false;
+      try {
+        (sse.listeners['put'] ?? []).forEach((fn) => fn(corruptedEvent));
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
       fetchSpy.mockRestore();
     });
   });
