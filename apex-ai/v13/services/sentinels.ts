@@ -155,7 +155,39 @@ export const sentinels = new SentinelsManager();
 
 /* === Sentinelles MVP Jet 4 (5 critiques registered au boot) === */
 
+/**
+ * Wire les 8 agents-watches dédiés (P0 audit gaps anti-théâtre).
+ * Lance le cycle agentWatches.runAll() périodiquement via une sentinelle wrapper.
+ */
+export function registerAgentWatchesSentinel(): void {
+  sentinels.register({
+    id: 'agent-watches-runner',
+    name: 'Agent Watches (8 agents nommés)',
+    desc: 'Run cycle complet agent-watches : import/session/fb/chat/notif/exchange/presence/storage',
+    intervalMs: 5 * 60 * 1000, /* Toutes les 5 min */
+    check: async () => {
+      const { agentWatches } = await import('./agent-watches.js');
+      const reports = await agentWatches.runAll();
+      const critical = reports.filter((r) => r.severity === 'critical').length;
+      const errs = reports.filter((r) => r.severity === 'err').length;
+      const warns = reports.filter((r) => r.severity === 'warn').length;
+      if (critical > 0) {
+        return { ok: false, msg: `${critical} agents critical`, details: { critical, errs, warns } };
+      }
+      if (errs > 0) {
+        return { ok: false, msg: `${errs} agents en erreur`, details: { errs, warns } };
+      }
+      if (warns > 0) {
+        return { ok: true, msg: `${warns} agents warn (non bloquant)`, details: { warns } };
+      }
+      return { ok: true, msg: `${reports.length} agents tous OK` };
+    },
+  });
+}
+
 export function registerCoreSentinels(): void {
+  /* Wire les 8 agent-watches en premier (anti-théâtre P0 audit) */
+  registerAgentWatchesSentinel();
   /* 1. token-balance-watch : monitor solde providers (1h) */
   sentinels.register({
     id: 'token-balance-watch',

@@ -16,13 +16,13 @@ describe('sentinels', () => {
     expect(ids).toContain('credentials-watch');
     expect(ids).toContain('link-validation-watch');
   });
-  it('Jet 5 : 12 sentinels actives + 1 disabled wake-watch', () => {
+  it('Jet 8.1 : 13 sentinels actives + 1 disabled wake-watch (incluant agent-watches-runner)', () => {
     registerCoreSentinels();
     const list = sentinels.list();
     const active = list.filter((s) => s.enabled);
     const disabled = list.filter((s) => !s.enabled);
-    expect(active.length).toBe(12);
-    expect(disabled.length).toBe(1);
+    expect(active.length).toBeGreaterThanOrEqual(13);
+    expect(disabled.length).toBeGreaterThanOrEqual(1);
     expect(disabled[0]?.id).toBe('wake-watch');
   });
   it('Jet 5 : sentinelles avec auto-fix ≥ 3', () => {

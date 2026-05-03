@@ -203,12 +203,54 @@ class AuthGate {
   }
 
   /**
-   * Détecte qui est ce user (admin / laurence / family / unknown).
+   * Détecte qui est ce user (admin / laurence / known_client / unknown).
+   * Kevin + Laurence reconnus toujours, autres clients via aliases registry persistante.
    */
-  detectUserType(name: string): 'admin_kevin' | 'laurence' | 'unknown' {
+  detectUserType(name: string): 'admin_kevin' | 'laurence' | 'known_client' | 'unknown' {
     if (this.isAdminKevinAlias(name)) return 'admin_kevin';
     if (this.isLaurenceAlias(name)) return 'laurence';
+    if (this.findClientByAlias(name)) return 'known_client';
     return 'unknown';
+  }
+
+  /**
+   * Enregistre aliases pour un client (créé par admin Kevin) :
+   * Casse libre, accents, ordre prénom/nom — REGLE Kevin v9.458 universelle.
+   */
+  registerUserAliases(uid: string, aliases: readonly string[]): void {
+    if (uid === ADMIN_KEVIN_ID) return; /* Kevin protégé */
+    try {
+      const all = JSON.parse(localStorage.getItem('apex_v13_user_aliases') ?? '{}') as Record<string, string[]>;
+      all[uid] = [...new Set(aliases)];
+      localStorage.setItem('apex_v13_user_aliases', JSON.stringify(all));
+      void auditLog.record('aliases.registered', { details: { uid, count: aliases.length } });
+    } catch (err: unknown) {
+      logger.warn('auth-gate', 'registerUserAliases failed', { err });
+    }
+  }
+
+  /**
+   * Trouve user uid par alias (universel).
+   */
+  findClientByAlias(name: string): string | null {
+    if (!name) return null;
+    try {
+      const all = JSON.parse(localStorage.getItem('apex_v13_user_aliases') ?? '{}') as Record<string, string[]>;
+      for (const [uid, aliases] of Object.entries(all)) {
+        if (this.matchAliases(name, aliases)) return uid;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  /**
+   * Matching universel public : reconnaît n'importe quel user via aliases connus.
+   * (Kevin demande : "tout le monde, pas que moi/Laurence")
+   */
+  matchUserByAliases(name: string, aliases: readonly string[]): boolean {
+    return this.matchAliases(name, aliases);
   }
 
   /**
