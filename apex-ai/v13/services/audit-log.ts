@@ -49,7 +49,8 @@ class AuditLog {
 
   async record(action: string, opts: { actor?: string; target?: string; details?: Record<string, unknown> } = {}): Promise<void> {
     if (!this.initialized) this.init();
-    const prevHash = this.chain.length ? this.chain[this.chain.length - 1]!.hash : '0';
+    const lastEntry = this.chain[this.chain.length - 1];
+    const prevHash = lastEntry ? lastEntry.hash : '0';
     const entry: AuditEntry = {
       ts: Date.now(),
       actor: opts.actor ?? 'system',
@@ -73,7 +74,8 @@ class AuditLog {
     if (!this.initialized) this.init();
     let prevHash = '0';
     for (let i = 0; i < this.chain.length; i++) {
-      const entry = this.chain[i]!;
+      const entry = this.chain[i];
+      if (!entry) continue;
       if (entry.prevHash !== prevHash) return { valid: false, brokenAt: i };
       const expected = await this.computeHash({ ...entry, hash: '' });
       if (entry.hash !== expected) return { valid: false, brokenAt: i };

@@ -1,5 +1,7 @@
-import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
+
+import { defineConfig } from 'vite';
+
 import { cspNonceDynamic } from './vite-csp-nonce-plugin.js';
 
 export default defineConfig({

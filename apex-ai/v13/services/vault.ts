@@ -12,6 +12,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { detectCredential, type CredentialPattern } from './credential-patterns.js';
 
 interface EncryptedPayload {

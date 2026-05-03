@@ -23,13 +23,13 @@
 export const APP_VER = 'v13.0.0';
 export const ADMIN_ID = 'kdmc_admin';
 
-import { logger } from './logger.js';
-import { errors } from './errors.js';
-import { store } from './store.js';
-import { router } from './router.js';
 import { di } from './di.js';
-import { memory } from './memory.js';
+import { errors } from './errors.js';
 import { events } from './events.js';
+import { logger } from './logger.js';
+import { memory } from './memory.js';
+import { router } from './router.js';
+import { store } from './store.js';
 
 interface BootContext {
   startedAt: number;

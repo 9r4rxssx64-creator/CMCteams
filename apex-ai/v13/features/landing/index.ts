@@ -5,8 +5,8 @@
  * Token d'invitation depuis URL hash (#invite=...) → pré-remplit nom.
  */
 
-import { auth } from '../../services/auth.js';
 import { router } from '../../core/router.js';
+import { auth } from '../../services/auth.js';
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -16,8 +16,8 @@ function parseInviteToken(): { uid: string; name?: string } | null {
   const m = location.hash.match(/invite=([A-Za-z0-9+/=]+)/);
   if (!m || !m[1]) return null;
   try {
-    const decoded = atob(m[1]);
-    const [uid, _ts, _hash] = decoded.split(':');
+    const decoded = atob(m[1] ?? '');
+    const uid = decoded.split(':')[0];
     if (uid) return { uid };
   } catch {
     /* ignore */

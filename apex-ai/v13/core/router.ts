@@ -7,10 +7,10 @@
  * Anti-pattern évité : pas de switch K.view géant 90+ cases (v12.785 monolithe).
  */
 
-import { logger } from './logger.js';
-import { events } from './events.js';
-import { store } from './store.js';
 import { errors } from './errors.js';
+import { events } from './events.js';
+import { logger } from './logger.js';
+import { store } from './store.js';
 
 type RouteLoader = () => Promise<{ render: (root: HTMLElement) => void | Promise<void> }>;
 

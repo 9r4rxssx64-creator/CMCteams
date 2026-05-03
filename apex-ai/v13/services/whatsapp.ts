@@ -14,6 +14,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { firebase } from './firebase.js';
 
 interface PendingConfirmation {

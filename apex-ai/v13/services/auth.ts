@@ -15,9 +15,9 @@
  * - Login exige nom + prénom + pass tous 3, jamais substring sur 1 token
  */
 
+import { events } from '../core/events.js';
 import { logger } from '../core/logger.js';
 import { store } from '../core/store.js';
-import { events } from '../core/events.js';
 
 const ADMIN_ID = 'kdmc_admin';
 

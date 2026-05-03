@@ -11,6 +11,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 
 const RP_ID = location.hostname; /* Relying Party ID = origin actuel */
