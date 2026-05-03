@@ -4,6 +4,63 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-03 (Ape
 
 ---
 
+## 🔍 RÈGLE PERMANENTE — AUDIT EXTÉRIEUR INDÉPENDANT EN CONTINU (Kevin 2026-05-03, ABSOLUE PRIORITÉ 1)
+
+> **"Je t'ai dit de t'accompagner tout au long de ton travail par les audits extérieurs, les agents extérieurs, externes, indépendants de chaque acte, chaque point, pour justement arrêter des notes estimatives d'estimation et avoir du réel en permanence au fur et à mesure que tu avances dans ton travail pour avoir optimiser ton travail dès la première création. Et être sûr d'être au bon niveau demandé attendu."** — Kevin 2026-05-03
+
+**Règle absolue, NON-NÉGOCIABLE** — Claude Code priorité 1, Apex priorité 1 :
+
+### 1. INTERDICTION ABSOLUE des notes estimatives
+
+❌ JAMAIS dire "score estimé X/100" ou "j'estime que..."
+❌ JAMAIS calcul de score interne sans validation subagent
+✅ Score = celui mesuré par subagent indépendant, sans complaisance
+
+### 2. À CHAQUE acte/point/feature/commit → subagent audit en parallèle OBLIGATOIRE
+
+Pas seulement à la fin du jet. À chaque batch de modifs :
+- Avant push : subagent Explore audite le diff + score réel
+- Après push : subagent vérifie deploy + comportement runtime
+- Si score < 80/100 → fix avant continuer
+- Si score < 60/100 → STOP, refonte
+
+### 3. Patterns d'audit continu
+
+```
+Après modif security-critical (auth, vault, crypto) → subagent OWASP ASVS L2
+Après modif UI (chat, admin, landing)              → subagent UX vs Claude.ai
+Après modif perf (bundle, lazy, SW)                → subagent Lighthouse audit
+Après modif data (Firebase, store, IDB)            → subagent integrity audit
+Après modif feature complete                       → subagent end-to-end audit
+```
+
+### 4. Crew d'experts internal
+
+5+ subagents en parallèle pour features non-triviales :
+- code-reviewer (qualité)
+- security-auditor (OWASP)
+- ux-tester (mobile-first)
+- perf-analyst (bundle/runtime)
+- compliance-checker (RGPD/AI safety)
+
+Synthèse : si 1+ flag critical → fix avant push.
+
+### 5. Application immédiate
+
+À partir de maintenant, à CHAQUE commit Jet 3+ :
+- Subagent audit lancé en parallèle (background)
+- Push attendu jusqu'à validation subagent
+- Score réel inclus dans le commit message
+- Findings P0/P1 fixés AVANT push si possible
+
+### 6. Test mental obligatoire
+
+> *"Avant de déclarer ce travail terminé, ai-je un avis subagent INDÉPENDANT qui valide ? Si non → lancer subagent maintenant."*
+
+S'applique : Apex v13.0+ (priorité absolue), CMCteams futurs commits, tous projets futurs Kevin.
+
+---
+
 ## 🔁 RÈGLE PERMANENTE — RECONSULTATION PÉRIODIQUE AUTONOMIE TOTALE (Kevin 2026-05-03, ABSOLUE)
 
 > **"Régulièrement, tu t'assures de n'avoir rien oublié. Tu reconsultes tous tes dossiers en toute autonomie automatiquement."** — Kevin 2026-05-03
