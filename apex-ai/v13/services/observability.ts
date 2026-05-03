@@ -233,9 +233,23 @@ class Observability {
         continue;
       }
       event.attempts++;
-      const ok = this.sentryReady ? await this.sendToSentry(event) : true; /* no-op si pas Sentry */
-      if (ok) {
-        event.status = 'sent';
+      /* Jet 6.5 fix audit (subagent flag "Sentry stub") :
+       * Si Sentry NOT configured (pas de DSN) → events restent en buffer
+       *   (pas mark sent). Permet au dev/admin de les voir via getBuffer().
+       *   Au cap MAX_RETRIES → DLQ pour replay manuel.
+       * Si Sentry configured + send OK → mark sent (cleanup).
+       * Si Sentry configured + send fail → reste pending, retry next flush. */
+      if (this.sentryReady) {
+        const ok = await this.sendToSentry(event);
+        if (ok) event.status = 'sent';
+      } else {
+        /* Sans Sentry, on plafonne attempts pour éviter retry infini.
+         * Events s'accumulent en buffer (visible via getBuffer admin). */
+        if (event.attempts >= MAX_RETRIES) {
+          event.status = 'dlq';
+          this.dlq.push(event);
+          if (this.dlq.length > MAX_DLQ) this.dlq = this.dlq.slice(-MAX_DLQ);
+        }
       }
     }
     /* Cleanup events sent (garde DLQ + pending uniquement en buffer) */

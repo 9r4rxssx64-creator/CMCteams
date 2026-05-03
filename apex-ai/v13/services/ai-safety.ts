@@ -193,31 +193,41 @@ class AISafety {
   }
 
   /**
-   * Contrôle 4 (manquant Jet 5) : Hallucination cross-check.
-   * Compare 2 réponses de providers différents → flag si divergence majeure.
-   * Stratégie : Levenshtein-like similarity sur tokens. Si < 0.5 → divergence.
+   * Contrôle 4 : Hallucination cross-check — HEURISTIQUE LÉGÈRE (pas sémantique LLM).
+   *
+   * AUDIT HONNÊTE Jet 6.5 :
+   * - Jaccard similarity sur tokens > 3 chars (intersection / union)
+   * - PAS de vraie compréhension sémantique (pas d'embedding, pas d'LLM call)
+   * - Faux positifs possibles : paraphrases avec synonyms peuvent être flagged divergent
+   * - Faux négatifs possibles : 2 réponses fausses concordantes (même hallucination)
+   *
+   * Use case réel : signal early warning si 2 providers donnent réponses
+   * complètement différentes. À combiner avec verifyCitationURL pour validation.
+   *
+   * Pour vraie hallucination detection sémantique → backend LLM judge (Jet 7+).
    */
   crossCheckHallucination(responseA: string, responseB: string): {
     consistent: boolean;
     similarity: number;
+    method: 'jaccard_heuristic';
     flag?: string;
   } {
     const tokenize = (s: string) => s.toLowerCase().split(/\s+/).filter((t) => t.length > 3);
     const tokensA = new Set(tokenize(responseA));
     const tokensB = new Set(tokenize(responseB));
-    if (tokensA.size === 0 && tokensB.size === 0) return { consistent: true, similarity: 1 };
+    if (tokensA.size === 0 && tokensB.size === 0) return { consistent: true, similarity: 1, method: 'jaccard_heuristic' };
     /* Jaccard similarity */
     const intersection = [...tokensA].filter((t) => tokensB.has(t)).length;
     const union = new Set([...tokensA, ...tokensB]).size;
     const similarity = union === 0 ? 0 : intersection / union;
     if (similarity < 0.3) {
-      void auditLog.record('ai-safety.hallucination', { details: { similarity, lenA: responseA.length, lenB: responseB.length } });
-      return { consistent: false, similarity, flag: 'major_divergence' };
+      void auditLog.record('ai-safety.hallucination', { details: { similarity, lenA: responseA.length, lenB: responseB.length, method: 'jaccard_heuristic' } });
+      return { consistent: false, similarity, method: 'jaccard_heuristic', flag: 'major_divergence' };
     }
     if (similarity < 0.6) {
-      return { consistent: false, similarity, flag: 'minor_divergence' };
+      return { consistent: false, similarity, method: 'jaccard_heuristic', flag: 'minor_divergence' };
     }
-    return { consistent: true, similarity };
+    return { consistent: true, similarity, method: 'jaccard_heuristic' };
   }
 
   /**

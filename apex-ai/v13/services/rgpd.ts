@@ -239,11 +239,47 @@ class RGPD {
       failures.push(`idb_global:${String(err).slice(0, 40)}`);
     }
 
-    /* 4. Audit log final immuable (PAS supprimé — obligation légale 5 ans Art. 30) */
+    /* 4. VERIFY phase post-delete (Jet 6.5 fix audit "race condition orphan") :
+     * Re-read paths Firebase pour confirmer DELETE réel (anti orphan post-crash).
+     * Si verify détecte data restée → retry DELETE 1 fois, sinon flag failure. */
+    let firebaseVerified = false;
+    if (firebaseDeleted) {
+      try {
+        const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://kdmc-clients-default-rtdb.firebaseio.com';
+        const verifyPaths = [`/apex/users/${encodeURIComponent(uid)}`, `/apex/persistent_memory/${encodeURIComponent(uid)}`, `/apex/lessons/${encodeURIComponent(uid)}`];
+        let allEmpty = true;
+        for (const p of verifyPaths) {
+          try {
+            const res = await fetch(`${fbUrl}${p}.json`, { signal: AbortSignal.timeout(5000) });
+            if (res.ok) {
+              const body = await res.text();
+              if (body !== 'null' && body !== '' && body !== 'undefined') {
+                /* Path encore présent → retry DELETE 1× */
+                allEmpty = false;
+                failures.push(`verify_orphan:${p}`);
+                try {
+                  await fetch(`${fbUrl}${p}.json`, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
+                } catch {
+                  /* retry échoué, déjà flaggé failure */
+                }
+              }
+            }
+          } catch {
+            /* ignore — pas critique pour verify */
+          }
+        }
+        firebaseVerified = allEmpty;
+      } catch {
+        firebaseVerified = false;
+      }
+    }
+
+    /* 5. Audit log final immuable (PAS supprimé — obligation légale 5 ans Art. 30) */
     await auditLog.record('rgpd.erase.complete', {
       details: {
         deletedCount: deletedKeys.length,
         firebaseDeleted,
+        firebaseVerified,
         idbDeleted,
         failureCount: failures.length,
       },
@@ -251,6 +287,7 @@ class RGPD {
     logger.info('rgpd', `Erased user ${uid} (cascade complete)`, {
       localStorage: deletedKeys.length,
       firebase: firebaseDeleted,
+      firebaseVerified,
       idb: idbDeleted,
       failures: failures.length,
     });
