@@ -68,6 +68,9 @@ export function render(rootEl: HTMLElement): void {
           </button>
         </form>
         <div id="login-error" aria-live="polite" aria-atomic="true"></div>
+        <button type="button" id="login-reset-pin" class="ax-btn ax-btn-ghost ax-btn-block" style="margin-top:12px;font-size:13px">
+          🔑 J'ai oublié mon code PIN
+        </button>
         <p class="ax-landing-footer ax-muted">
           🔒 Local-first · End-to-end · Zero tracking
         </p>
@@ -80,6 +83,43 @@ export function render(rootEl: HTMLElement): void {
     e.preventDefault();
     haptic.tap();
     void handleLogin(rootEl);
+  });
+
+  /* Reset PIN handler : efface PIN admin/user pour permettre re-init au prochain login */
+  const resetBtn = rootEl.querySelector<HTMLButtonElement>('#login-reset-pin');
+  resetBtn?.addEventListener('click', () => {
+    haptic.medium();
+    const nameInput = rootEl.querySelector<HTMLInputElement>('#login-name');
+    const enteredName = nameInput?.value.trim() ?? '';
+    if (!enteredName) {
+      const errEl = rootEl.querySelector<HTMLDivElement>('#login-error');
+      if (errEl) errEl.innerHTML = '<div class="ax-alert ax-alert-warn">Tape ton nom et prénom d\'abord, puis tap "🔑 J\'ai oublié mon code PIN"</div>';
+      return;
+    }
+    if (!confirm(`Réinitialiser le code PIN pour "${enteredName}" ?\n\n` +
+      '• Ton PIN actuel sera EFFACÉ\n' +
+      '• Tu pourras créer un nouveau PIN au prochain login\n' +
+      '• Tes données (Coffre, conversations, profil) sont PRÉSERVÉES\n\n' +
+      'Continuer ?')) return;
+    /* Anti-énumération : on efface le PIN admin ET tous les PINs per-user matchant */
+    try {
+      localStorage.removeItem('apex_v13_pin');
+      localStorage.removeItem('apex_v13_pin_kdmc_admin');
+      /* Nettoie aussi les rate-limit fails pour redémarrer propre */
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('apex_v13_pin_fails_')) keys.push(k);
+      }
+      for (const k of keys) localStorage.removeItem(k);
+    } catch { /* ignore */ }
+    const errEl = rootEl.querySelector<HTMLDivElement>('#login-error');
+    if (errEl) errEl.innerHTML = '<div class="ax-alert ax-alert-success">✅ PIN réinitialisé. Tape ton nouveau code PIN puis Se connecter.</div>';
+    const pinInput = rootEl.querySelector<HTMLInputElement>('#login-pin');
+    if (pinInput) {
+      pinInput.value = '';
+      pinInput.focus();
+    }
   });
 
   /* Auto-focus nom (mobile-friendly : pas keyboard pop sur iPhone si pas user gesture, mais OK desktop) */
