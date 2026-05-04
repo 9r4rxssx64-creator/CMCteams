@@ -165,7 +165,51 @@ async function bootstrap(): Promise<void> {
       refreshing = true;
       window.location.reload();
     });
+
+    /* SW message handler (push_resubscribed, notification_clicked) */
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      const data = e.data as { type?: string; endpoint?: string; url?: string } | null;
+      if (!data?.type) return;
+      if (data.type === 'push_resubscribed') {
+        logger.info('push', 'SW auto-resubscribed', { endpoint: data.endpoint?.slice(0, 60) });
+        events.emit('push:resubscribed', { endpoint: data.endpoint });
+      } else if (data.type === 'notification_clicked') {
+        events.emit('notification:clicked', { url: data.url });
+      }
+    });
   }
+
+  /* 9ter. Services bootstrap : wire tous les services orphelins (anti-pattern Declaration ≠ Deployment) */
+  void import('@services/services-bootstrap.js')
+    .then(({ bootstrapServices }) => {
+      const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? null;
+      return bootstrapServices(uid);
+    })
+    .then((results) => {
+      const ok = results.filter((r) => r.ok).length;
+      logger.info('boot', `services-bootstrap : ${ok}/${results.length} OK`);
+    })
+    .catch((err: unknown) => {
+      logger.warn('boot', 'services-bootstrap failed (non-blocking)', { err });
+    });
+
+  /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android) */
+  void import('@services/push-auto-init.js')
+    .then(({ pushAutoInit }) => {
+      const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+      return pushAutoInit.autoInit(uid);
+    })
+    .then((status) => {
+      logger.info('push', 'auto-init complete', {
+        env: status.environment,
+        subscribed: status.subscribed,
+        needs_install: status.needs_install_guide,
+      });
+      events.emit('push:status', status);
+    })
+    .catch((err: unknown) => {
+      logger.warn('push', 'auto-init failed (non-blocking)', { err });
+    });
 
   /* 10. Force-update boot check (parité v12.785 v12.774) */
   /* Compare APP_VER local vs serveur, reload forcé si diff (iOS PWA SW unreliable) */
