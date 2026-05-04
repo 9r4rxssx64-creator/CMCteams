@@ -397,6 +397,15 @@ class MemoryBridge {
   }
 
   /**
+   * Reset interne — usage tests uniquement (réinitialise cache mémoire singleton).
+   */
+  _resetForTests(): void {
+    this.status.clear();
+    this.statusLoaded = false;
+    this.disableAutoSync();
+  }
+
+  /**
    * Active auto-sync interne (toutes intervalMs).
    * Idempotent — appelle stop avant de re-start.
    */
