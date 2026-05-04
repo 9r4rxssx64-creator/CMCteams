@@ -466,6 +466,21 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const supported = deviceControl.listAllSupported();
       logger.info('services-bootstrap', `device-control : ${env.isiOS ? 'iOS' : env.isAndroid ? 'Android' : 'Desktop'} ${env.isPWA ? 'PWA' : 'browser'}, ${supported.length} capabilities`);
     }),
+
+    /* Sprint 6 NEW : network-scan (LAN discovery + device interaction) */
+    safeInit('network-scan', async () => {
+      const { networkScan } = await import('./network-scan.js');
+      const known = networkScan.listKnownDevices();
+      logger.info('services-bootstrap', `network-scan : ${known.length} known devices in cache`);
+    }),
+
+    /* Sprint 6 NEW : badge-cloner (NFC RFID multi-format Android Chrome only) */
+    safeInit('badge-cloner', async () => {
+      const { badgeCloner } = await import('./badge-cloner.js');
+      const caps = badgeCloner.getCapabilities();
+      const stored = badgeCloner.listBadges();
+      logger.info('services-bootstrap', `badge-cloner : NFC=${caps.nfc_read ? 'OK' : 'NO'}, ${stored.length} badges stockés`);
+    }),
   ];
 
   const results = await Promise.all(tasks);
