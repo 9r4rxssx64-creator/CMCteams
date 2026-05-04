@@ -175,6 +175,18 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const { externalIntegrations } = await import('./external-integrations.js');
       if (uid) externalIntegrations.listEmailAccounts(uid);
     }),
+
+    /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
+       (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
+    safeInit('storage-compressor', async () => {
+      const { storageCompressor } = await import('./storage-compressor.js');
+      const status = storageCompressor.getQuotaStatus();
+      logger.info('services-bootstrap', `storage : ${status.used_mb}MB / 5MB (${status.severity})`);
+      if (status.severity !== 'ok') {
+        const result = await storageCompressor.migrateAllToCompressed();
+        logger.info('services-bootstrap', `storage compressé : ${result.migrated} clés, ${(result.saved_bytes / 1024).toFixed(1)} KB libérés`);
+      }
+    }),
   ];
 
   const results = await Promise.all(tasks);
