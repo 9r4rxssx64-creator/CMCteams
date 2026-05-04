@@ -227,6 +227,85 @@ class ApexToolsDispatcher {
           capabilities: deviceControl.listAllSupported(),
         };
       }
+      /* === NETWORK SCAN LAN (80+ device probes) === */
+      case 'scan_network':
+      case 'scan_lan':
+      case 'devices_lan': {
+        const { networkScan } = await import('./network-scan.js');
+        return await networkScan.scan({ useCache: params['useCache'] !== false });
+      }
+      case 'local_ip': {
+        const { networkScan } = await import('./network-scan.js');
+        const ip = await networkScan.getLocalIP();
+        return { ok: ip !== null, local_ip: ip };
+      }
+      case 'open_lan_device': {
+        const { networkScan } = await import('./network-scan.js');
+        const ip = params['ip'] as string ?? '';
+        const port = (params['port'] as number | undefined) ?? 80;
+        return await networkScan.openDeviceUI({
+          ip, port, type: 'unknown', service: 'manual',
+          last_seen: Date.now(),
+        });
+      }
+      /* === BADGE CLONER (60+ formats NFC/RFID) === */
+      case 'scan_badge':
+      case 'badge_scan': {
+        const { badgeCloner } = await import('./badge-cloner.js');
+        return await badgeCloner.scanBadge();
+      }
+      case 'list_badges': {
+        const { badgeCloner } = await import('./badge-cloner.js');
+        return await badgeCloner.listBadgesAsync();
+      }
+      case 'clone_badge_to_tag': {
+        const { badgeCloner } = await import('./badge-cloner.js');
+        return await badgeCloner.cloneBadgeToNewTag(params['badge_id'] as string ?? '');
+      }
+      case 'badge_to_qr': {
+        const { badgeCloner } = await import('./badge-cloner.js');
+        return await badgeCloner.generateQRCodeFromBadge(params['badge_id'] as string ?? '');
+      }
+      /* === CARD EMULATOR (18 hardware devices) === */
+      case 'list_emulators': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return {
+          supported: cardEmulator.listSupported(),
+          capabilities: cardEmulator.getBrowserCapabilities(),
+          status: cardEmulator.getStatus(),
+        };
+      }
+      case 'connect_flipper_usb': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return await cardEmulator.connectFlipperUSB();
+      }
+      case 'connect_flipper_ble': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return await cardEmulator.connectFlipperBLE();
+      }
+      case 'connect_proxmark': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return await cardEmulator.connectProxmarkSerial();
+      }
+      case 'connect_chameleon': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return await cardEmulator.connectChameleonSerial();
+      }
+      case 'emulate_badge': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        const opts = typeof params['duration_sec'] === 'number' ? { duration_sec: params['duration_sec'] } : undefined;
+        return await cardEmulator.emulateBadge(params['badge_id'] as string ?? '', opts);
+      }
+      case 'emulator_command':
+      case 'emulator_cmd': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        return await cardEmulator.sendCommand(params['cmd'] as string ?? '');
+      }
+      case 'emulator_disconnect': {
+        const { cardEmulator } = await import('./card-emulator.js');
+        await cardEmulator.disconnect();
+        return { ok: true };
+      }
       /* === DEVICE TOOLS COMPLETS (49 supplémentaires — Kevin demande TOUS) === */
       case 'device_notification':
       case 'notification': {
