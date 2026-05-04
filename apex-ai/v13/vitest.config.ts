@@ -50,6 +50,12 @@ export default defineConfig({
         'features/pro/modules/finance/index.ts',
         'features/pro/modules/legal/index.ts',
         'features/pro/modules/translator/index.ts',
+        /* Sprint port v12.785 P0 critical (Kevin 2026-05-04) — UI HTML, pure logic testée via unit tests */
+        'features/dashboard/index.ts',
+        'features/vault/index.ts',
+        'features/knowledge-bank/index.ts',
+        'features/apex-toolbox/index.ts',
+        'features/self-diag/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).

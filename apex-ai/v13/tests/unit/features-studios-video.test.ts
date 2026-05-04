@@ -24,13 +24,13 @@ describe('features/studios/video — escapeHtml', () => {
 });
 
 describe('features/studios/video — constants', () => {
-  it('MAX_CLIPS = 5, MAX_FILE_SIZE_MB = 100', () => {
-    expect(MAX_CLIPS).toBe(5);
-    expect(MAX_FILE_SIZE_MB).toBe(100);
+  it('MAX_CLIPS = 12, MAX_FILE_SIZE_MB = 200 (boost v13)', () => {
+    expect(MAX_CLIPS).toBe(12);
+    expect(MAX_FILE_SIZE_MB).toBe(200);
   });
 
-  it('MAX_TOTAL_DURATION_S = 300 (5 min)', () => {
-    expect(MAX_TOTAL_DURATION_S).toBe(300);
+  it('MAX_TOTAL_DURATION_S = 600 (10 min, boost v13)', () => {
+    expect(MAX_TOTAL_DURATION_S).toBe(600);
   });
 
   it('ACCEPTED_FORMATS contient mp4 et webm', () => {
@@ -188,10 +188,10 @@ describe('features/studios/video — videoStudioStore CRUD', () => {
     expect(videoStudioStore.reorder(['only_one'])).toBe(false);
   });
 
-  it('validateFileSize accepte ≤ 100 MB', () => {
+  it('validateFileSize accepte ≤ 200 MB (boost v13)', () => {
     expect(videoStudioStore.validateFileSize(1024)).toBe(true);
-    expect(videoStudioStore.validateFileSize(100 * 1024 * 1024)).toBe(true);
-    expect(videoStudioStore.validateFileSize(101 * 1024 * 1024)).toBe(false);
+    expect(videoStudioStore.validateFileSize(200 * 1024 * 1024)).toBe(true);
+    expect(videoStudioStore.validateFileSize(201 * 1024 * 1024)).toBe(false);
     expect(videoStudioStore.validateFileSize(0)).toBe(false);
   });
 

@@ -1011,6 +1011,348 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'A',
   },
+  /* ========== PUSH MAX v13.0.20 — +25 outils pour atteindre 100+ ==========
+     Kevin règle : "À chaque outils, modules etc toujours pousser au max".
+     Catégories : productivity (text/data), web extras, files utils,
+     code utils, image, communications validators, finance extras. */
+  /* === Web extras (5) === */
+  {
+    name: 'wikipedia_lookup',
+    description: 'Recherche Wikipedia (FR par défaut) via API publique gratuite. Retourne extrait + URL article.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Terme recherché' },
+        lang: { type: 'string', description: 'Code langue ISO (fr, en, it, es, de... default: fr)' },
+      },
+      required: ['query'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'youtube_search',
+    description: 'Recherche YouTube (URL search results, sans clé API). Retourne lien recherche cliquable + suggestions vidéos via embed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+      },
+      required: ['query'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'github_search',
+    description: 'Recherche code/repos GitHub via API publique (rate-limit 10/min sans token, 30/min avec).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Requête (ex: "language:typescript user:9r4rxssx64-creator")' },
+        type: { type: 'string', enum: ['code', 'repos', 'users', 'issues'] },
+      },
+      required: ['query'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'stackoverflow_search',
+    description: 'Recherche StackOverflow via API gratuite. Retourne questions + réponses acceptées.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        tag: { type: 'string', description: 'Tag optionnel (ex: typescript, react)' },
+      },
+      required: ['query'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'unshorten_url',
+    description: 'Déplie une URL raccourcie (bit.ly, t.co, etc.) via redirection HTTP.',
+    inputSchema: {
+      type: 'object',
+      properties: { url: { type: 'string' } },
+      required: ['url'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  /* === Files & Documents (5) === */
+  {
+    name: 'json_validate',
+    description: 'Valide un JSON, retourne {valid, parsed?, error?, depth, keys_count}. Pratique pour debug API.',
+    inputSchema: {
+      type: 'object',
+      properties: { json: { type: 'string' } },
+      required: ['json'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'csv_parse',
+    description: 'Parse CSV (séparateur , ; \t auto-détecté) → array of objects. Header row obligatoire.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        csv: { type: 'string' },
+        delimiter: { type: 'string', description: 'Délimiteur custom (auto si absent)' },
+      },
+      required: ['csv'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'text_diff',
+    description: 'Diff deux textes ligne par ligne. Retourne added/removed/unchanged + stats.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        before: { type: 'string' },
+        after: { type: 'string' },
+      },
+      required: ['before', 'after'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'hash_text',
+    description: 'Hash SHA-256/SHA-1/MD5 d\'un texte via Web Crypto API.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+        algo: { type: 'string', enum: ['SHA-256', 'SHA-1', 'SHA-384', 'SHA-512'] },
+      },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'base64_encode_decode',
+    description: 'Encode ou décode Base64 (UTF-8 safe).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string', enum: ['encode', 'decode'] },
+        text: { type: 'string' },
+      },
+      required: ['mode', 'text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  /* === Code utils (3) === */
+  {
+    name: 'regex_test',
+    description: 'Test une regex sur un texte. Retourne matches + groupes capture.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pattern: { type: 'string' },
+        flags: { type: 'string', description: 'Ex: gi, gm' },
+        text: { type: 'string' },
+      },
+      required: ['pattern', 'text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'jwt_decode',
+    description: 'Decode JWT (header + payload, SANS vérification signature). Pratique pour debug.',
+    inputSchema: {
+      type: 'object',
+      properties: { token: { type: 'string' } },
+      required: ['token'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'uuid_generate',
+    description: 'Génère UUID v4 (crypto.randomUUID) pour clés uniques, IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: { count: { type: 'number', description: '1-50 (default 1)' } },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  /* === Productivity (5) === */
+  {
+    name: 'summarize_text',
+    description: 'Résumé extractif rapide (top N phrases scoring TF-IDF). Sans IA externe.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+        sentences: { type: 'number', description: 'Nombre de phrases résumé (default 3)' },
+      },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'word_count',
+    description: 'Stats texte : mots, caractères, phrases, paragraphes, durée lecture (200 wpm), Flesch readability.',
+    inputSchema: {
+      type: 'object',
+      properties: { text: { type: 'string' } },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'detect_language',
+    description: 'Détection langue d\'un texte (heuristique trigrammes, FR/EN/IT/ES/DE/PT). Sans appel API.',
+    inputSchema: {
+      type: 'object',
+      properties: { text: { type: 'string' } },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'mind_map_generate',
+    description: 'Génère mind map markdown depuis sujet central + branches.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        topic: { type: 'string' },
+        branches: { type: 'array', description: 'Array de sous-thèmes' },
+      },
+      required: ['topic'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'create_task',
+    description: 'Crée une tâche locale (apex_v13_tasks). Stockée local + Firebase shared admin.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        due: { type: 'string', description: 'ISO 8601 date optionnelle' },
+        priority: { type: 'string', enum: ['low', 'normal', 'high', 'critical'] },
+      },
+      required: ['title'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  /* === Communications validators (3) === */
+  {
+    name: 'email_validate',
+    description: 'Valide format email (regex RFC simplifiée + check domaine).',
+    inputSchema: {
+      type: 'object',
+      properties: { email: { type: 'string' } },
+      required: ['email'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'phone_validate',
+    description: 'Valide numéro téléphone format E.164 / FR / Monaco. Retourne {valid, country, normalized}.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        phone: { type: 'string' },
+        country: { type: 'string', description: 'Code ISO 2 (FR, MC, IT...)' },
+      },
+      required: ['phone'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'whatsapp_link',
+    description: 'Génère lien wa.me/ pour ouvrir WhatsApp avec numéro + message pré-rempli.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        phone: { type: 'string', description: 'E.164 sans + (ex: 33612345678)' },
+        text: { type: 'string', description: 'Message pré-rempli optionnel' },
+      },
+      required: ['phone'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  /* === Finance extras (3) === */
+  {
+    name: 'vat_validate_eu',
+    description: 'Valide numéro TVA UE format (heuristique préfixe pays + longueur).',
+    inputSchema: {
+      type: 'object',
+      properties: { vat: { type: 'string' } },
+      required: ['vat'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'compound_interest',
+    description: 'Calcul intérêts composés. Capital, taux, durée, fréquence → valeur finale.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        principal: { type: 'number' },
+        rate: { type: 'number', description: 'Taux annuel % (ex: 5)' },
+        years: { type: 'number' },
+        frequency: { type: 'number', description: 'Compositions/an (default 12)' },
+      },
+      required: ['principal', 'rate', 'years'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
+    name: 'currency_convert',
+    description: 'Conversion devises via taux exchangerate-api gratuit (100+ devises).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number' },
+        from: { type: 'string', description: 'Code ISO 4217 (EUR, USD, ...)' },
+        to: { type: 'string' },
+      },
+      required: ['amount', 'from', 'to'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  /* === Image utils (1) === */
+  {
+    name: 'image_compress',
+    description: 'Compresse image base64 via Canvas API (qualité réglable, conserve ratio).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image_base64: { type: 'string' },
+        quality: { type: 'number', description: '0.1-1.0 (default 0.8)' },
+        max_width: { type: 'number', description: 'Largeur max px (default 1920)' },
+      },
+      required: ['image_base64'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {

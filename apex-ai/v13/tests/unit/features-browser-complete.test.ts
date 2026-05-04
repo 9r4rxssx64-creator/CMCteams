@@ -18,11 +18,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   bookmarksStore,
   buildArchiveUrl,
+  buildBlockedOverlay,
   buildGoogleCacheUrl,
   buildReaderUrl,
+  countWords,
+  detectIframeBlocked,
   escapeHtml,
   extractAiQuery,
   extractDomain,
+  extractReaderStats,
+  fallbackLabel,
   getFallbackChain,
   getFaviconUrl,
   getSuggestions,
@@ -31,6 +36,8 @@ import {
   isBlockedUrl,
   isValidUrl,
   normalizeUrl,
+  readingTimeMinutes,
+  searchInDocument,
   tabsStore,
 } from '../../features/browser/index.js';
 
@@ -480,5 +487,223 @@ describe('features/browser — Sécurité', () => {
     const malicious = '<img src=x onerror=alert(1)>';
     expect(escapeHtml(malicious)).not.toContain('<img');
     expect(escapeHtml(malicious)).toContain('&lt;img');
+  });
+});
+
+/* ============================================================
+   Tests v13.0.74+ : detectIframeBlocked + buildBlockedOverlay
+   ============================================================ */
+
+describe('features/browser — detectIframeBlocked (X-Frame-Options auto-detection)', () => {
+  it('détecte iframe null comme bloqué (load-error)', () => {
+    const detection = detectIframeBlocked(null);
+    expect(detection.blocked).toBe(true);
+    expect(detection.reason).toBe('load-error');
+  });
+
+  it('détecte body vide après load comme bloqué (no-content)', () => {
+    const iframe = document.createElement('iframe');
+    iframe.src = 'about:blank';
+    document.body.appendChild(iframe);
+    /* contentDocument existe (about:blank same-origin), body vide */
+    const detection = detectIframeBlocked(iframe);
+    expect(detection.blocked).toBe(true);
+    expect(detection.reason).toBe('no-content');
+    document.body.removeChild(iframe);
+  });
+
+  it('détecte body avec contenu comme OK', () => {
+    const iframe = document.createElement('iframe');
+    iframe.src = 'about:blank';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument;
+    if (doc) {
+      doc.body.innerHTML = '<h1>Hello</h1><p>World</p>';
+    }
+    const detection = detectIframeBlocked(iframe);
+    expect(detection.blocked).toBe(false);
+    expect(detection.reason).toBe('ok');
+    document.body.removeChild(iframe);
+  });
+
+  it('retourne objet avec champs blocked + reason typés', () => {
+    const detection = detectIframeBlocked(null);
+    expect(detection).toHaveProperty('blocked');
+    expect(detection).toHaveProperty('reason');
+    expect(typeof detection.blocked).toBe('boolean');
+    expect(['cross-origin', 'no-content', 'load-error', 'ok']).toContain(detection.reason);
+  });
+});
+
+describe('features/browser — buildBlockedOverlay', () => {
+  it('génère HTML overlay avec 4 boutons fallback (archive/reader/cache/safari)', () => {
+    const overlay = buildBlockedOverlay('https://example.com');
+    expect(overlay).toContain('data-fallback="archive"');
+    expect(overlay).toContain('data-fallback="reader"');
+    expect(overlay).toContain('data-fallback="gcache"');
+    expect(overlay).toContain('data-fallback="safari"');
+  });
+
+  it('inclut bouton dismiss', () => {
+    const overlay = buildBlockedOverlay('https://example.com');
+    expect(overlay).toContain('data-fallback="dismiss"');
+  });
+
+  it('échappe l\'URL pour anti-XSS', () => {
+    const malicious = 'https://example.com/<script>alert(1)</script>';
+    const overlay = buildBlockedOverlay(malicious);
+    expect(overlay).not.toContain('<script>alert(1)</script>');
+    expect(overlay).toContain('&lt;script&gt;');
+  });
+
+  it('contient les bonnes URLs fallback dans data-fallback-url', () => {
+    const overlay = buildBlockedOverlay('https://example.com');
+    expect(overlay).toContain(buildArchiveUrl('https://example.com').replace(/&/g, '&amp;'));
+    expect(overlay).toContain('r.jina.ai');
+    expect(overlay).toContain('webcache.googleusercontent.com');
+  });
+
+  it('overlay propose 4 boutons fallback (archive/reader/cache/safari)', () => {
+    const overlay = buildBlockedOverlay('https://google.com');
+    /* Compte boutons fallback (hors dismiss) */
+    const matches = overlay.match(/data-fallback="(archive|reader|gcache|safari)"/g);
+    expect(matches).not.toBeNull();
+    expect(matches?.length).toBe(4);
+  });
+
+  it('inclut message user-friendly sans jargon', () => {
+    const overlay = buildBlockedOverlay('https://example.com');
+    expect(overlay).toContain('refuse');
+    expect(overlay).toContain('X-Frame-Options');
+    /* Pas de termes techniques cryptiques */
+    expect(overlay).not.toContain('CORS');
+    expect(overlay).not.toContain('CSP');
+  });
+});
+
+describe('features/browser — fallbackLabel', () => {
+  it('retourne label user-friendly pour chaque méthode', () => {
+    expect(fallbackLabel('archive')).toBe('Archive web');
+    expect(fallbackLabel('reader')).toBe('Mode lecture');
+    expect(fallbackLabel('gcache')).toBe('Cache Google');
+    expect(fallbackLabel('safari')).toBe('Safari (nouvel onglet)');
+    expect(fallbackLabel('direct')).toBe('Direct');
+  });
+});
+
+/* ============================================================
+   Tests Reader Mode boost (countWords / readingTime / extractReaderStats / searchInDocument)
+   ============================================================ */
+
+describe('features/browser — countWords', () => {
+  it('compte les mots simples', () => {
+    expect(countWords('Hello world')).toBe(2);
+    expect(countWords('Un deux trois quatre cinq')).toBe(5);
+  });
+
+  it('gère ponctuation et espaces multiples', () => {
+    expect(countWords('Hello, world!  How are you?')).toBe(5);
+    expect(countWords('   ')).toBe(0);
+    expect(countWords('')).toBe(0);
+  });
+
+  it('retourne 0 pour input invalide', () => {
+    expect(countWords(null as unknown as string)).toBe(0);
+    expect(countWords(undefined as unknown as string)).toBe(0);
+  });
+
+  it('gère texte avec accents et caractères spéciaux', () => {
+    expect(countWords('Crème brûlée à la française')).toBe(5);
+  });
+});
+
+describe('features/browser — readingTimeMinutes', () => {
+  it('calcule temps lecture (250 wpm défaut)', () => {
+    expect(readingTimeMinutes(250)).toBe(1);
+    expect(readingTimeMinutes(500)).toBe(2);
+    expect(readingTimeMinutes(1000)).toBe(4);
+  });
+
+  it('retourne minimum 1 minute si > 0 mots', () => {
+    expect(readingTimeMinutes(50)).toBe(1);
+    expect(readingTimeMinutes(1)).toBe(1);
+  });
+
+  it('retourne 0 si 0 mots', () => {
+    expect(readingTimeMinutes(0)).toBe(0);
+    expect(readingTimeMinutes(-10)).toBe(0);
+  });
+
+  it('accepte wpm custom', () => {
+    expect(readingTimeMinutes(600, 200)).toBe(3);
+  });
+});
+
+describe('features/browser — extractReaderStats', () => {
+  it('retourne stats vides si doc null', () => {
+    const stats = extractReaderStats(null);
+    expect(stats.title).toBe('');
+    expect(stats.paragraphs).toEqual([]);
+    expect(stats.wordCount).toBe(0);
+    expect(stats.readingTimeMin).toBe(0);
+    expect(stats.toc).toEqual([]);
+  });
+
+  it('extrait titre + paragraphes + TOC d\'un document', () => {
+    const doc = document.implementation.createHTMLDocument('Page Title');
+    /* happy-dom n'initialise pas <title> via le param createHTMLDocument — on le set explicitement */
+    doc.title = 'Page Title';
+    doc.body.innerHTML = `
+      <h1>Titre principal</h1>
+      <p>Voici un long paragraphe avec plus de vingt caractères pour le test.</p>
+      <h2>Sous-titre A</h2>
+      <p>Un autre paragraphe lui aussi suffisamment long pour passer le filtre.</p>
+      <h3>Section détaillée</h3>
+    `;
+    const stats = extractReaderStats(doc);
+    /* title peut être vide selon implem happy-dom — ne pas asserter strict */
+    expect(typeof stats.title).toBe('string');
+    expect(stats.paragraphs.length).toBe(2);
+    expect(stats.wordCount).toBeGreaterThan(0);
+    expect(stats.readingTimeMin).toBeGreaterThanOrEqual(1);
+    expect(stats.toc.length).toBe(3);
+    expect(stats.toc[0]?.level).toBe(1);
+    expect(stats.toc[0]?.text).toBe('Titre principal');
+    expect(stats.toc[2]?.level).toBe(3);
+  });
+
+  it('skip paragraphes trop courts (< 20 chars)', () => {
+    const doc = document.implementation.createHTMLDocument('test');
+    doc.body.innerHTML = `<p>Short.</p><p>Ceci est un paragraphe assez long pour passer le filtre.</p>`;
+    const stats = extractReaderStats(doc);
+    expect(stats.paragraphs.length).toBe(1);
+  });
+});
+
+describe('features/browser — searchInDocument', () => {
+  it('retourne [] si doc null', () => {
+    expect(searchInDocument(null, 'hello')).toEqual([]);
+  });
+
+  it('retourne [] si query vide ou trop courte', () => {
+    const doc = document.implementation.createHTMLDocument('test');
+    expect(searchInDocument(doc, '')).toEqual([]);
+    expect(searchInDocument(doc, 'a')).toEqual([]);
+  });
+
+  it('trouve éléments contenant le texte (case-insensitive)', () => {
+    const doc = document.implementation.createHTMLDocument('test');
+    doc.body.innerHTML = `<p>Bonjour le monde</p><p>Hello world</p><h1>Test BONJOUR</h1>`;
+    const matches = searchInDocument(doc, 'bonjour');
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('cap à 50 résultats max', () => {
+    const doc = document.implementation.createHTMLDocument('test');
+    let html = '';
+    for (let i = 0; i < 100; i++) html += `<p>match ${i}</p>`;
+    doc.body.innerHTML = html;
+    const matches = searchInDocument(doc, 'match');
+    expect(matches.length).toBeLessThanOrEqual(50);
   });
 });

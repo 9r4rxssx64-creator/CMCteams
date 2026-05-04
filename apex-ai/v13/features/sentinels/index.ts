@@ -1,14 +1,19 @@
 /**
  * APEX v13 — Feature Sentinels (admin only).
  * Liste sentinelles 24/7 actives + status + last result + auto-run buttons.
- * Sprint 3 P0#10 : enrichi (était stub minimal).
+ * Boost MAX (2026-05-04) : utilise sentinels-registry typé + métriques perf affichées.
  */
 
 import { logger } from '../../core/logger.js';
 
 export async function render(rootEl: HTMLElement): Promise<void> {
   const { sentinels } = await import('../../services/sentinels.js');
+  const { sentinelsRegistry, bootstrapSentinelsRegistry } = await import('../../services/sentinels-registry.js');
+  /* Idempotent — booste vers 18+ sentinelles si pas déjà fait */
+  bootstrapSentinelsRegistry();
   const list = sentinels.list();
+  const status = sentinelsRegistry.getStatus();
+  const metrics = sentinelsRegistry.getMetrics();
   const okCount = list.filter((s) => s.lastResult?.ok).length;
   const warnCount = list.filter((s) => s.lastResult && !s.lastResult.ok).length;
   const pendingCount = list.filter((s) => !s.lastResult).length;
@@ -17,10 +22,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     <div class="ax-page" style="padding:16px;max-width:900px;margin:0 auto">
       <h1 style="margin:0 0 8px;color:#c9a227">🛡 Sentinelles 24/7</h1>
       <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
-        ${list.length} watchers actifs ·
+        ${list.length} watchers (${status.running} active) ·
         <span style="color:#22cc77">✅ ${okCount} OK</span> ·
         <span style="color:#ffaa00">⚠️ ${warnCount} WARN</span> ·
         <span style="color:#888">⏳ ${pendingCount} PENDING</span>
+      </p>
+      <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:12px">
+        📊 Métriques : ${metrics.totalRuns} runs · avg ${metrics.avgDurationMs}ms · auto-fix ${metrics.totalAutoFixSuccess}✅ / ${metrics.totalAutoFixFailures}❌
       </p>
 
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">

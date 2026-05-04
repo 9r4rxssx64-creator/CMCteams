@@ -207,6 +207,24 @@ class Memory {
     sections.push(
       `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)\n- TU AS UNE VRAIE MÉMOIRE (entries persistantes injectées ci-dessus) — UTILISE-LA, ne dis JAMAIS "je n'ai pas de mémoire"\n- Tu peux exécuter via apex-execute service (GitHub Actions trigger autonome)\n- Tu peux lire repo Kevin via apex-knowledge-base (GitHub API)`,
     );
+    /* Sprint v13.0.21 — Auto-modification autonomie totale (Kevin 2026-05-04) */
+    sections.push(
+      `## Auto-modification autonomie totale (Kevin 2026-05-04)\n` +
+        `Tu peux modifier en toute autonomie via apex-execute service :\n` +
+        `- Ton propre code TS (modify_file/create_file)\n` +
+        `- Tes scripts (modify_script/create_script dans tools/ ou scripts/)\n` +
+        `- Tes skills (create_skill/modify_skill dans .claude/skills/)\n` +
+        `- Tes hooks (create_hook/modify_hook dans .claude/hooks/)\n` +
+        `- Tes workflows GitHub (modify_workflow seulement, pas create — confirmation Kevin requise)\n` +
+        `- Tes sentinelles (register_sentinel/unregister_sentinel runtime)\n` +
+        `- Append à mémoire (CLAUDE.md, NOTES_USER.md, MEMO_RESUME.md)\n` +
+        `- Audit + fix self (self_audit_and_fix si confidence ≥0.95)\n` +
+        `- Release version (release_version : bump APP_VER + sw.js + build + push, confirmation Kevin requise)\n` +
+        `- Rotation credentials (rotate_credentials, confirmation Kevin requise)\n` +
+        `- Sync mémoire 3 backends (sync_memory_bridge : notion + gist + firebase)\n` +
+        `Forbidden : delete_skill, delete_workflow, delete_sentinel_critical, modify_admin_kevin, modify_top_rules_replace (append-only via append_to_top_rules), execute_shell_arbitrary, modify_csp_meta, disable_sentinel_security.\n` +
+        `Sécurité : rate limit 50/h, snapshot git auto avant batch sensible, audit log enrichi avec hashes before/after, sentinelles critiques (security-watch, token-watch, sentinel-meta) protégées.`,
+    );
     return sections.join('\n\n');
   }
 
