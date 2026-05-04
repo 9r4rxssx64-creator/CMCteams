@@ -513,12 +513,41 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
     }),
 
     /* KDMC projects registry : pre-load metadata pour injection IA system prompt
-       (règle Kevin 2026-05-04 : "Apex doit connaître TOUS projets internes pour autonomie totale") */
+       (règle Kevin 2026-05-04 : "Apex doit connaître TOUS projets internes pour autonomie totale")
+       Expose globalThis.kdmcProjectsRegistry pour anti-circular dep core/memory.ts */
     safeInit('kdmc-projects-registry', async () => {
       const { kdmcProjectsRegistry } = await import('./kdmc-projects-registry.js');
+      (globalThis as unknown as { kdmcProjectsRegistry: typeof kdmcProjectsRegistry }).kdmcProjectsRegistry =
+        kdmcProjectsRegistry;
       const total = kdmcProjectsRegistry.count();
       const active = kdmcProjectsRegistry.countActive();
       logger.info('services-bootstrap', `kdmc-projects-registry : ${total} projets (${active} actifs/wip)`);
+    }),
+
+    /* Apex Execute : pont autonome IA → Claude Code via GitHub Actions
+       (règle Kevin 2026-05-04 : "Apex doit pouvoir tout faire en autonomie totale")
+       Whitelist 8 tâches (modify_file, create_file, run_test, run_lint, audit_repo,
+       deploy_canary, backup_user_data, restore_from_backup), 4 INTERDITES */
+    safeInit('apex-execute', async () => {
+      const { apexExecute } = await import('./apex-execute.js');
+      const stats = apexExecute.getStats();
+      const purged = apexExecute.purgeOld();
+      logger.info('services-bootstrap',
+        `apex-execute : ${stats.total} executions, ${stats.success_rate}% success, purged ${purged} old`);
+    }),
+
+    /* Apex Knowledge Base : RAG-like via GitHub API
+       (règle Kevin 2026-05-04 : "Apex doit tout connaître pour tout faire")
+       Cherche code + lit fichiers + commits + issues + PRs dans repos Kevin
+       Expose globalThis pour anti-circular dep core/memory.ts */
+    safeInit('apex-knowledge-base', async () => {
+      const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+      apexKnowledgeBase.init();
+      (globalThis as unknown as { apexKnowledgeBase: typeof apexKnowledgeBase }).apexKnowledgeBase =
+        apexKnowledgeBase;
+      const stats = apexKnowledgeBase.getStats();
+      logger.info('services-bootstrap',
+        `apex-knowledge-base : ${stats.repos} repos, ${stats.index_entries} fichiers indexés, token=${stats.has_token ? 'OK' : 'NO'}`);
     }),
 
     /* Sprint 7 P0 : baseline anti-régression réelle (Kevin règle "ne plus régresser, réel toujours") */

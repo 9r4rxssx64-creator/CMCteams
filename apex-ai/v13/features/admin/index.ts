@@ -10,13 +10,16 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.js';
+import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
 import { auth } from '../../services/auth.js';
 import { commerce, type Plan } from '../../services/commerce.js';
+import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/kdmc-projects-registry.js';
 import { whatsapp } from '../../services/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
-type Tab = 'commerce' | 'users' | 'pending' | 'health';
+type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge';
 
 let activeTab: Tab = 'commerce';
 
@@ -156,12 +159,67 @@ function renderHealthTab(): string {
   `;
 }
 
+function renderProjectsTab(): string {
+  const projects = kdmcProjectsRegistry.list();
+  const total = kdmcProjectsRegistry.count();
+  const active = kdmcProjectsRegistry.countActive();
+
+  const STATUSES: ProjectStatus[] = ['active', 'wip', 'archived'];
+  const items = projects
+    .map((p) => {
+      const safeStatus = STATUSES.includes(p.status) ? p.status : 'archived';
+      const stack = p.tech_stack.slice(0, 4).map((s) => escapeHtml(s)).join(', ');
+      return `
+        <li class="ax-project-row" data-project-id="${escapeHtml(p.id)}">
+          <div class="ax-project-head">
+            <strong>${escapeHtml(p.name)}</strong>
+            <span class="ax-badge ax-badge-${safeStatus}">${escapeHtml(safeStatus)}</span>
+            <code class="ax-project-version">${escapeHtml(p.version)}</code>
+          </div>
+          <p class="ax-muted">${escapeHtml(p.description)}</p>
+          <p class="ax-project-stack"><em>stack:</em> ${stack || '—'}</p>
+          <p class="ax-project-links">
+            <a href="${escapeHtml(p.deploy_url)}" target="_blank" rel="noopener">🚀 Live</a>
+            ·
+            <a href="${escapeHtml(p.repo_url)}" target="_blank" rel="noopener">📦 Repo</a>
+            · <span class="ax-muted">🛡 ${p.sentinels_count} sentinelles</span>
+          </p>
+          <div class="ax-project-edit">
+            <input type="text" data-project-version="${escapeHtml(p.id)}"
+                   value="${escapeHtml(p.version)}" placeholder="vX.Y" maxlength="20"
+                   class="ax-input-sm" autocomplete="off">
+            <select data-project-status="${escapeHtml(p.id)}" class="ax-select-sm">
+              <option value="active" ${p.status === 'active' ? 'selected' : ''}>active</option>
+              <option value="wip" ${p.status === 'wip' ? 'selected' : ''}>wip</option>
+              <option value="archived" ${p.status === 'archived' ? 'selected' : ''}>archived</option>
+            </select>
+            <button class="ax-btn ax-btn-sm" data-project-save="${escapeHtml(p.id)}">💾</button>
+          </div>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <div class="ax-admin-section">
+      <h2>📦 Projets KDMC (${total} — ${active} actifs/wip)</h2>
+      <p class="ax-muted">
+        Source de vérité injectée dans le system prompt IA Apex. Modifie version/statut → Apex le sait au prochain message.
+      </p>
+      <ul class="ax-project-list">${items || '<li class="ax-muted">Aucun projet enregistré</li>'}</ul>
+    </div>
+  `;
+}
+
 function renderTabs(): string {
   const tabs: Array<[Tab, string]> = [
     ['commerce', '💳 Commerce'],
     ['users', '👥 Comptes'],
     ['pending', '📨 En attente'],
     ['health', '🩺 Santé'],
+    ['projects', '📦 Projets KDMC'],
+    ['executions', '⚙ Exécutions'],
+    ['knowledge', '📚 Base connaissances'],
   ];
   return tabs
     .map(
@@ -170,6 +228,79 @@ function renderTabs(): string {
     `,
     )
     .join('');
+}
+
+function renderExecutionsTab(): string {
+  const executions = apexExecute.listPendingExecutions({ limit: 30 });
+  const stats = apexExecute.getStats();
+  const allowed = apexExecute.listAllowedTasks();
+  const forbidden = apexExecute.listForbiddenTasks();
+
+  const STATUS_BADGES: Record<string, string> = {
+    pending: 'pending',
+    dispatched: 'wip',
+    running: 'wip',
+    completed: 'ok',
+    failed: 'error',
+    cancelled: 'archived',
+    timeout: 'error',
+  };
+
+  const items = executions
+    .map((req: ExecutionRequest) => {
+      const safeStatus = STATUS_BADGES[req.status] ?? 'archived';
+      const date = new Date(req.ts_created).toLocaleString();
+      const duration = req.duration_ms ? `${Math.round(req.duration_ms / 1000)}s` : '—';
+      const wfLink = req.workflow_run_url
+        ? `<a href="${escapeHtml(req.workflow_run_url)}" target="_blank" rel="noopener">🔗 Workflow</a>`
+        : '<span class="ax-muted">—</span>';
+      const canCancel = req.status === 'pending' || req.status === 'dispatched';
+      return `
+        <li class="ax-execution-row" data-exec-id="${escapeHtml(req.id)}">
+          <div class="ax-exec-head">
+            <code class="ax-exec-id">${escapeHtml(req.id.slice(0, 18))}</code>
+            <span class="ax-badge ax-badge-${safeStatus}">${escapeHtml(req.status)}</span>
+            <strong>${escapeHtml(req.task)}</strong>
+          </div>
+          <p class="ax-muted">📅 ${escapeHtml(date)} · ⏱ ${escapeHtml(duration)} · 🚀 ${escapeHtml(req.src)} · 👤 ${escapeHtml(req.initiated_by)}</p>
+          ${req.error ? `<p class="ax-error">⚠ ${escapeHtml(req.error.slice(0, 200))}</p>` : ''}
+          <p class="ax-exec-actions">
+            ${wfLink}
+            ${canCancel ? ` · <button class="ax-btn ax-btn-sm" data-exec-cancel="${escapeHtml(req.id)}">✕ Annuler</button>` : ''}
+            · <button class="ax-btn ax-btn-sm" data-exec-poll="${escapeHtml(req.id)}">🔄 Refresh</button>
+          </p>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <div class="ax-admin-section">
+      <h2>🤖 Exécutions autonomes (apex-execute)</h2>
+      <p class="ax-muted">
+        Pont autonome IA → Claude Code via GitHub Actions. Apex IA peut exécuter du code réel
+        (modify_file, run_test, deploy_canary…) en dispatchant un workflow CI qui utilise Claude Code Action.
+      </p>
+      <div class="ax-info-card">
+        <h3>📊 Stats</h3>
+        <ul>
+          <li><strong>Total</strong> : ${stats.total}</li>
+          <li><strong>En cours</strong> : ${stats.pending} pending / ${stats.running} running</li>
+          <li><strong>Terminées</strong> : ${stats.completed} ✅ · ${stats.failed} ❌ · ${stats.cancelled} 🚫</li>
+          <li><strong>Success rate</strong> : ${stats.success_rate}%</li>
+          <li><strong>Avg duration</strong> : ${Math.round(stats.avg_duration_ms / 1000)}s</li>
+        </ul>
+      </div>
+      <div class="ax-info-card">
+        <h3>✅ Tâches autorisées (${allowed.length})</h3>
+        <p>${allowed.map((t) => `<code>${escapeHtml(t)}</code>`).join(' · ')}</p>
+        <h3>🚫 Tâches INTERDITES (${forbidden.length})</h3>
+        <p class="ax-muted">${forbidden.map((t) => `<code>${escapeHtml(t)}</code>`).join(' · ')}</p>
+      </div>
+      <h3>📋 Historique récent</h3>
+      <ul class="ax-execution-list">${items || '<li class="ax-muted">Aucune exécution pour l\'instant.</li>'}</ul>
+    </div>
+  `;
 }
 
 function renderContent(): string {
@@ -182,7 +313,67 @@ function renderContent(): string {
       return renderPendingTab();
     case 'health':
       return renderHealthTab();
+    case 'projects':
+      return renderProjectsTab();
+    case 'executions':
+      return renderExecutionsTab();
+    case 'knowledge':
+      return renderKnowledgeTab();
   }
+}
+
+function renderKnowledgeTab(): string {
+  const repos = apexKnowledgeBase.listRepos();
+  const stats = apexKnowledgeBase.getStats();
+  const reposHtml = repos
+    .map(
+      (r) => `
+      <li class="ax-repo-row">
+        <code>${escapeHtml(r)}</code>
+        ${repos.length > 1 ? `<button class="ax-btn ax-btn-sm" data-remove-repo="${escapeHtml(r)}">Retirer</button>` : ''}
+      </li>
+    `,
+    )
+    .join('');
+  return `
+    <div class="ax-admin-section">
+      <h2>📚 Base de connaissances Kevin</h2>
+      <p class="ax-muted">
+        Apex peut chercher full-text dans le code de tes repos GitHub via API
+        (5000 req/h authenticated, cache 1h).
+      </p>
+
+      <div class="ax-info-card">
+        <strong>État :</strong> ${stats.repos} repos · ${stats.cache_entries} entrées cache · ${stats.index_entries} fichiers indexés
+        <br>
+        <strong>Token GitHub :</strong> ${stats.has_token ? '✅ configuré' : '⚪ Configure ax_github_token dans le Coffre pour 5000 req/h'}
+      </div>
+
+      <h3>Repos suivis</h3>
+      <ul class="ax-repo-list">${reposHtml || '<li class="ax-muted">Aucun repo configuré</li>'}</ul>
+
+      <form id="add-repo-form" class="ax-form">
+        <label>
+          <span>Ajouter un repo (format : owner/repo)</span>
+          <input type="text" id="kb-add-repo" placeholder="kevin/MyProject"
+                 maxlength="100" autocomplete="off" class="ax-input">
+        </label>
+        <button type="submit" class="ax-btn ax-btn-primary">Ajouter</button>
+      </form>
+
+      <h3>Recherche dans le code</h3>
+      <form id="kb-search-form" class="ax-form">
+        <input type="text" id="kb-search-query" placeholder="Cherche dans tes repos..."
+               maxlength="200" autocomplete="off" class="ax-input">
+        <button type="submit" class="ax-btn ax-btn-primary">Chercher</button>
+      </form>
+      <div id="kb-search-results" class="ax-kb-results"></div>
+
+      <div class="ax-actions">
+        <button class="ax-btn ax-btn-sm" id="kb-clear-cache">🧹 Vider le cache</button>
+      </div>
+    </div>
+  `;
 }
 
 function attachHandlers(rootEl: HTMLElement): void {
@@ -221,6 +412,32 @@ function attachHandlers(rootEl: HTMLElement): void {
     });
   });
 
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-project-save]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      haptic.tap();
+      const id = btn.dataset['projectSave'] ?? '';
+      if (!id) return;
+      const verEl = rootEl.querySelector<HTMLInputElement>(`[data-project-version="${CSS.escape(id)}"]`);
+      const statusEl = rootEl.querySelector<HTMLSelectElement>(`[data-project-status="${CSS.escape(id)}"]`);
+      const newVersion = (verEl?.value ?? '').trim();
+      const newStatus = (statusEl?.value ?? 'active') as ProjectStatus;
+      if (!newVersion) {
+        toast.warn('Version requise');
+        return;
+      }
+      const ok = kdmcProjectsRegistry.update(id, { version: newVersion, status: newStatus });
+      if (ok) {
+        haptic.success();
+        toast.success(`${id} → ${newVersion} (${newStatus})`);
+        logger.info('admin', `Project ${id} updated`, { version: newVersion, status: newStatus });
+        void render(rootEl);
+      } else {
+        haptic.error();
+        toast.error('Update échoué');
+      }
+    });
+  });
+
   rootEl.querySelectorAll<HTMLButtonElement>('[data-confirm-otp]').forEach((btn) => {
     btn.addEventListener('click', () => {
       haptic.tap();
@@ -238,6 +455,118 @@ function attachHandlers(rootEl: HTMLElement): void {
       }
     });
   });
+
+  /* Apex execute : cancel + poll handlers */
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-cancel]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      haptic.tap();
+      const id = btn.dataset['execCancel'] ?? '';
+      if (!id) return;
+      const ok = apexExecute.cancelExecution(id);
+      if (ok) {
+        haptic.success();
+        toast.success('Exécution annulée');
+        void render(rootEl);
+      } else {
+        haptic.warning();
+        toast.warn('Annulation impossible');
+      }
+    });
+  });
+
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-poll]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      haptic.tap();
+      const id = btn.dataset['execPoll'] ?? '';
+      if (!id) return;
+      void apexExecute.pollResult(id).then((req) => {
+        if (req) {
+          toast.success(`Statut : ${req.status}`);
+          void render(rootEl);
+        } else {
+          toast.warn('Exécution introuvable');
+        }
+      });
+    });
+  });
+
+  /* ========== Knowledge Base handlers ========== */
+  const addRepoForm = rootEl.querySelector<HTMLFormElement>('#add-repo-form');
+  if (addRepoForm) {
+    addRepoForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      haptic.tap();
+      const input = rootEl.querySelector<HTMLInputElement>('#kb-add-repo');
+      const value = input?.value.trim() ?? '';
+      if (!value) {
+        toast.warn('Indique un repo');
+        return;
+      }
+      const r = apexKnowledgeBase.addRepo(value);
+      if (r.ok) {
+        haptic.success();
+        toast.success(`Repo ajouté : ${value}`);
+        void render(rootEl);
+      } else {
+        haptic.error();
+        toast.error(r.reason ?? 'Erreur ajout repo');
+      }
+    });
+  }
+
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-remove-repo]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      haptic.tap();
+      const repo = btn.dataset['removeRepo'] ?? '';
+      if (!repo) return;
+      apexKnowledgeBase.removeRepo(repo);
+      toast.success(`Repo retiré : ${repo}`);
+      void render(rootEl);
+    });
+  });
+
+  const searchForm = rootEl.querySelector<HTMLFormElement>('#kb-search-form');
+  if (searchForm) {
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      haptic.tap();
+      const queryInput = rootEl.querySelector<HTMLInputElement>('#kb-search-query');
+      const resultsEl = rootEl.querySelector<HTMLDivElement>('#kb-search-results');
+      const query = queryInput?.value.trim() ?? '';
+      if (!query || !resultsEl) return;
+      resultsEl.innerHTML = '<p class="ax-muted">Recherche en cours...</p>';
+      void apexKnowledgeBase.searchCode(query).then((results) => {
+        if (results.length === 0) {
+          resultsEl.innerHTML = '<p class="ax-muted">Aucun résultat (configure ax_github_token pour augmenter la limite).</p>';
+          return;
+        }
+        const itemsHtml = results
+          .slice(0, 20)
+          .map(
+            (r) => `
+            <li class="ax-kb-result">
+              <a href="${escapeHtml(r.htmlUrl)}" target="_blank" rel="noopener">
+                <code>${escapeHtml(r.path)}</code>
+              </a>
+              <span class="ax-muted">${escapeHtml(r.repo)} · score ${r.score.toFixed(2)}</span>
+            </li>
+          `,
+          )
+          .join('');
+        resultsEl.innerHTML = `<ul class="ax-kb-results-list">${itemsHtml}</ul>`;
+      });
+    });
+  }
+
+  const clearCacheBtn = rootEl.querySelector<HTMLButtonElement>('#kb-clear-cache');
+  if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', () => {
+      haptic.tap();
+      const r = apexKnowledgeBase.clearCache();
+      toast.success(`Cache vidé : ${r.cleared} entrées`);
+      void render(rootEl);
+    });
+  }
 }
 
 async function handleCreateUser(rootEl: HTMLElement): Promise<void> {

@@ -185,6 +185,20 @@ class Memory {
         sections.push(`## Clés API configurées (${configured.length}/${apiKeys.length})\n${configured.map((k) => `- ${k.replace('ax_', '').replace('_key', '').replace('_token', '')}`).join('\n')}`);
       }
     } catch { /* skip */ }
+    /* Knowledge base (RAG GitHub API) — injection via globalThis pour anti-circular dep */
+    try {
+      const kb = (globalThis as unknown as {
+        apexKnowledgeBase?: { formatForSystemPrompt: () => string };
+      }).apexKnowledgeBase;
+      if (kb && typeof kb.formatForSystemPrompt === 'function') {
+        sections.push(kb.formatForSystemPrompt());
+      } else {
+        /* Fallback : lecture directe localStorage (services pas encore init) */
+        const reposRaw = localStorage.getItem('ax_kdmc_repos');
+        const repos = reposRaw ? (JSON.parse(reposRaw) as string[]) : ['9r4rxssx64-creator/CMCteams'];
+        sections.push(`📚 Base de connaissances Kevin (GitHub API): ${repos.length} repos configurés. Outils: search_repo_code, read_repo_file, list_repo_files, get_recent_commits, get_repo_readme.`);
+      }
+    } catch { /* skip */ }
     sections.push(
       `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)\n- TU AS UNE VRAIE MÉMOIRE (entries persistantes injectées ci-dessus) — UTILISE-LA, ne dis JAMAIS "je n'ai pas de mémoire"\n- Tu peux exécuter via apex-execute service (GitHub Actions trigger autonome)\n- Tu peux lire repo Kevin via apex-knowledge-base (GitHub API)`,
     );
