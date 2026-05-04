@@ -434,6 +434,30 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const learned = unknownCredentialResolver.listLearned();
       logger.info('services-bootstrap', `credential-resolver : ${learned.length} patterns appris`);
     }),
+
+    /* P0 : observability install (perf observers + error tracking runtime) */
+    safeInit('observability', async () => {
+      const { observability } = await import('./observability.js');
+      observability.init();
+    }),
+
+    /* P0 : bodyguard runtime security install (CSP violations, postMessage cross-frame) */
+    safeInit('bodyguard', async () => {
+      const { bodyguard } = await import('./bodyguard.js');
+      bodyguard.install();
+    }),
+
+    /* P0 : sentinels 24/7 watchers init (ai-health-watch, token-balance-watch, etc.) */
+    safeInit('sentinels', async () => {
+      const { sentinels } = await import('./sentinels.js');
+      sentinels.init();
+    }),
+
+    /* P0 : firebase-queue offline writes init */
+    safeInit('firebase-queue', async () => {
+      const { firebaseQueue } = await import('./firebase-queue.js');
+      firebaseQueue.init();
+    }),
   ];
 
   const results = await Promise.all(tasks);
