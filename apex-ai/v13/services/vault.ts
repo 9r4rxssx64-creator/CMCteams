@@ -310,6 +310,8 @@ class Vault {
       if (pattern.name.startsWith('Anthropic')) {
         headers['x-api-key'] = value;
         headers['anthropic-version'] = '2023-06-01';
+        headers['anthropic-dangerous-direct-browser-access'] = 'true';
+        headers['content-type'] = 'application/json';
       } else if (pattern.name === 'Google AI') {
         headers['x-goog-api-key'] = value;
       } else if (pattern.name.startsWith('Telegram')) {
@@ -317,12 +319,24 @@ class Vault {
       } else {
         headers['authorization'] = `Bearer ${value}`;
       }
-      const res = await fetch(url, {
+      /* Anthropic /v1/messages POST exige body minimal pour valider la clé */
+      let body: string | undefined;
+      if (pattern.name.startsWith('Anthropic') && pattern.testMethod === 'POST') {
+        body = JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'hi' }],
+        });
+      }
+      const fetchOpts: RequestInit = {
         method: pattern.testMethod ?? 'GET',
         headers,
         signal: AbortSignal.timeout(8000),
-      });
-      /* 200 ou 401 sans param valide = endpoint répond */
+      };
+      if (body) fetchOpts.body = body;
+      const res = await fetch(url, fetchOpts);
+      /* 200 = OK, 400 = malformed body OK (clé valide), 401 = clé invalide, 4xx autre = OK clé répond */
+      if (res.status === 401 || res.status === 403) return false;
       return res.status < 500;
     } catch {
       return false;
