@@ -234,7 +234,30 @@ class Vault {
   }> {
     const trimmed = value.trim();
     if (!trimmed) return { ok: false, reason: 'Valeur vide' };
-    const detected = detectCredential(trimmed);
+    let detected = detectCredential(trimmed);
+    /* Si format inconnu : tente résolution autonome via heuristiques + web search (Kevin règle "tout autonome") */
+    if (!detected) {
+      try {
+        const { unknownCredentialResolver } = await import('./unknown-credential-resolver.js');
+        const resolved = await unknownCredentialResolver.tryIdentify(trimmed);
+        if (resolved) {
+          /* Crée pattern synthétique pour traiter comme credential standard */
+          detected = {
+            name: resolved.service,
+            regex: new RegExp(resolved.pattern_learned ?? '.+'),
+            storageKey: resolved.storage_key,
+            category: 'ai',
+            dashboard: resolved.dashboard_url,
+            ...(resolved.billing_url && { billing: resolved.billing_url }),
+          } as CredentialPattern;
+          /* Apprentissage : ajoute pattern + escalade Claude Code */
+          await unknownCredentialResolver.learn(trimmed, resolved);
+          logger.info('vault', `autoStore : format inconnu résolu autonome → ${resolved.service} (${resolved.confidence})`);
+        }
+      } catch (err: unknown) {
+        logger.warn('vault', 'unknown-resolver failed', { err });
+      }
+    }
     if (!detected) return { ok: false, reason: 'Format inconnu — pattern non reconnu' };
     if (detected.category === 'forbidden') {
       logger.warn('vault', `Forbidden credential detected: ${detected.name} — REFUSED`);
