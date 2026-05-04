@@ -470,3 +470,38 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 
 > Ce fichier est régénéré automatiquement à chaque commit important par Claude.
 > Si tu vois un fichier important manquant, dis-le-moi et j'enrichis le système.
+
+## 🆕 SPRINT 8 v13.0.63 (2026-05-04) — Autonomie max
+
+### Services nouveaux
+- `services/memory-bridge.ts` : Notion/GitHub Gist/Firebase RTDB sync auto 5min
+- `services/network-scan.ts` : LAN scan 80+ device probes
+- `services/badge-cloner.ts` : NFC RFID 60+ formats (NDEF, MIFARE, HID, Vigik, EMV...)
+- `services/card-emulator.ts` : 18 émulateurs hardware (Flipper Zero, Proxmark, Chameleon)
+- `services/apex-self-audit.ts` : 6 axes audit + auto-fix + escalade webhook
+- `services/persistent-memory-store.ts` : 5000 entries, sync Firebase auto
+- `services/context-loader.ts` : pre-warm contexte IA
+- `services/session-logger.ts` : tracking sessions
+- `services/claude-bridge.ts` : escalade Apex ↔ Claude Code
+
+### Pipeline audit GRATUIT (n8n payant remplacé)
+- `tools/apex-audit-pipeline/apex_audit_escalator.py` (Python CLI)
+- `tools/apex-audit-pipeline/apex_audit_pipeline.n8n.json` (workflow n8n optionnel)
+- `tools/apex-audit-pipeline/schema.sql` (PostgreSQL apex_escalades table)
+- `.github/workflows/apex-audit-escalate.yml` (GitHub Actions GRATUIT)
+
+### Page de secours PWA
+- `apex-ai/v13/update.html` : reset MAJ 1-clic (purge SW + caches sans toucher données)
+- URL : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/update.html
+
+### Routes nouvelles Apex
+- `#remote` : Télécommande Universelle (LAN + badge + émulateurs)
+- `#sentinels`, `#browser`, `#crypto`, `#domotique`, `#workflow`, `#settings`
+
+### Stats v13.0.63
+- 2551 tests verts (vs baseline 1537)
+- coverage 84.29% statements / 76.70% branches / 91.76% functions
+- 70 services wired bootstrap (vs 22 avant)
+- 14 routes router (vs 7 avant)
+- 62 tools IA registry (vs 45 avant)
+- TS strict 0 errors, ESLint 0 warnings
