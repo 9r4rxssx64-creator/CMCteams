@@ -369,19 +369,49 @@ export function render(rootEl: HTMLElement): void {
       recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = 'fr-FR';
+      let lastFinalTranscript = '';
+      let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+      const SILENCE_MS = 1500; /* 1.5s de silence après dernier mot → auto-submit */
       recognition.onresult = (e: Event) => {
-        const evt = e as Event & { results: { [key: number]: { [key: number]: { transcript: string } } }; resultIndex: number };
+        const evt = e as Event & {
+          results: { [key: number]: { [key: number]: { transcript: string }; isFinal: boolean } };
+          resultIndex: number;
+        };
         let transcript = '';
+        let hasFinal = false;
         for (let i = evt.resultIndex; i < (evt.results as unknown as { length: number }).length; i++) {
           const result = evt.results[i];
-          if (result?.[0]) transcript += result[0].transcript;
+          if (result?.[0]) {
+            transcript += result[0].transcript;
+            if (result.isFinal) hasFinal = true;
+          }
         }
         const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
         if (ta) ta.value = transcript;
+        if (hasFinal) {
+          lastFinalTranscript = transcript;
+          /* Reset silence timer à chaque mot final */
+          if (silenceTimer) clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => {
+            /* Auto-submit après silence Kevin règle "envoie la question automatiquement" */
+            if (lastFinalTranscript.trim().length > 0 && recognitionActive) {
+              try { recognition?.stop(); } catch { /* ignore */ }
+              const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+              form?.requestSubmit();
+            }
+          }, SILENCE_MS);
+        }
       };
       recognition.onend = () => {
         recognitionActive = false;
         if (micBtn) micBtn.style.background = '';
+        if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+        /* Si dictée stoppée et texte final non-envoyé, auto-submit */
+        const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+        if (lastFinalTranscript.trim().length > 0 && ta && ta.value.trim() === lastFinalTranscript.trim()) {
+          const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+          form?.requestSubmit();
+        }
       };
       recognition.onerror = (e: Event) => {
         const errEvt = e as Event & { error?: string };
