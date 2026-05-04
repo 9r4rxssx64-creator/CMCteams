@@ -322,6 +322,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* Service lifecycle manager : registry init/destroy hooks (anti memory leak) */
+    safeInit('service-lifecycle', async () => {
+      const { lifecycle } = await import('./service-lifecycle.js');
+      const stats = lifecycle.getStats();
+      logger.info('services-bootstrap', `lifecycle : ${stats.running} running, ${stats.total_intervals_tracked} intervals tracked`);
+    }),
+
     /* Push auto-init : ceinture+bretelles avec wiring bootstrap.ts (idempotent) */
     safeInit('push-auto-init', async () => {
       const { pushAutoInit } = await import('./push-auto-init.js');
