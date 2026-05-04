@@ -116,7 +116,7 @@ class WhatsApp {
   /* P1 fix : OTP 12 chars alphanumériques (entropie ~70 bits vs 20 bits 6-digit) */
   private generateOTP(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(9));
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; /* sans 0/O/1/I/L pour lisibilité */
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; /* sans 0/O/1/I/L pour lisibilité (fix bug v13.0.80 — L était présent) */
     let out = '';
     for (let i = 0; i < 12; i++) {
       const b = bytes[i % bytes.length];

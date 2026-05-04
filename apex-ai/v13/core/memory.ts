@@ -200,6 +200,30 @@ class Memory {
         );
       }
     } catch { /* skip */ }
+    /* v13.0.80 Kevin "WhatsApp est fonctionnel, validations clients fonctionnent" :
+     * Apex IA DOIT savoir que WhatsApp est dispo + flow OTP validation comptes clients */
+    try {
+      const whatsappPhone = localStorage.getItem('ax_kevin_whatsapp_phone');
+      if (whatsappPhone) {
+        sections.push(
+          `## 💬 WhatsApp activé (validation clients/comptes)\n` +
+            `Numéro Kevin WhatsApp configuré : ${whatsappPhone.replace(/(\d{2})\d+(\d{2})/, '$1***$2')}\n\n` +
+            `Flow validation auto :\n` +
+            `1. Nouveau client crée compte → \`whatsapp.requestConfirmation()\` génère OTP 12 chars\n` +
+            `2. Lien wa.me généré → client envoie OTP à Kevin via WhatsApp\n` +
+            `3. Kevin confirme OTP dans vAdmin → \`whatsapp.confirm(otp)\` active compte\n` +
+            `4. \`whatsapp_link\` tool dispo pour générer liens wa.me partout\n\n` +
+            `Apex peut exécuter requestConfirmation() en autonomie pour tout nouveau compte client.`,
+        );
+      } else {
+        sections.push(
+          `## ⚠️ WhatsApp non configuré\n` +
+            `Kevin doit coller son numéro WhatsApp pour activer validations clients OTP.\n` +
+            `Format : +33XXXXXXXXX → store \`ax_kevin_whatsapp_phone\`.\n` +
+            `Si Kevin demande "active WhatsApp", utilise vault.setKey('ax_kevin_whatsapp_phone', value).`,
+        );
+      }
+    } catch { /* skip */ }
     /* Knowledge base (RAG GitHub API) — injection via globalThis pour anti-circular dep */
     try {
       const kb = (globalThis as unknown as {
