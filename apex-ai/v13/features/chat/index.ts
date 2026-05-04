@@ -288,6 +288,7 @@ export function render(rootEl: HTMLElement): void {
       <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
         <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">💬 Chat</button>
         ${isAdmin ? '<button class="ax-btn ax-btn-sm" onclick="location.hash=\'#admin\'">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" onclick="location.hash='#settings'">🔧 Réglages</button>
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav">🔑 Clé API</button>
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav">🚪 Déconnexion</button>
       </nav>
@@ -700,6 +701,15 @@ export function render(rootEl: HTMLElement): void {
   /* Bouton Paramètres ⚙️ : ouvre modal settings (clés API + mode routing + reco)
    * Fix Kevin v13.0.40 "rien ne se passe quand on tape sur paramètres" */
   const settingsBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-settings');
+  if (!settingsBtn) {
+    /* Fallback : event delegation si bouton pas wired (ex: re-render) */
+    rootEl.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('#ax-chat-settings')) {
+        location.hash = '#settings';
+      }
+    });
+  }
   settingsBtn?.addEventListener('click', () => {
     haptic.tap();
     void (async () => {
