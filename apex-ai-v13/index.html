@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.0.0">
+<html lang="fr" data-theme="dark" data-app-ver="v13.0.28">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,8 +15,8 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-391bac8332c6fc3c63a084592c3e028a' 'strict-dynamic' https: 'unsafe-inline';
-             style-src 'self' 'nonce-391bac8332c6fc3c63a084592c3e028a' 'unsafe-inline';
+             script-src 'self' 'nonce-aeda58956b72c353faa927e56c7b2386' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-aeda58956b72c353faa927e56c7b2386';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
              connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io https://api.github.com https://api.cloudflare.com https://api.stripe.com https://api.brevo.com https://api.resend.com https://api.replicate.com;
@@ -37,8 +37,8 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="391bac8332c6fc3c63a084592c3e028a" type="module" crossorigin nonce="391bac8332c6fc3c63a084592c3e028a" src="./main-yFcZhtpp.js"></script>
-  <link nonce="391bac8332c6fc3c63a084592c3e028a" rel="stylesheet" crossorigin href="./assets/css/main-CMv3GwIe.css">
+  <script nonce="aeda58956b72c353faa927e56c7b2386" type="module" crossorigin src="./core/main-CfiDO_LS.js"></script>
+  <link nonce="aeda58956b72c353faa927e56c7b2386" rel="stylesheet" crossorigin href="./assets/css/main-BEeSXdcc.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -53,39 +53,21 @@
 
   <!-- Fallback statique si bundle JS crash (ne JAMAIS reproduire l'erreur "écran blanc") -->
   <noscript>
-    <div style="padding:40px;text-align:center;color:#fff;background:#08080f;min-height:100vh">
-      <h1 style="color:#c9a227;font-family:Georgia,serif">APEX AI</h1>
+    <div class="apex-noscript-fallback">
+      <h1>APEX AI</h1>
       <p>JavaScript est requis pour utiliser APEX. Active-le dans ton navigateur.</p>
     </div>
   </noscript>
 
   <!-- Bouton SOS rescue permanent (HTML pur, indépendant framework) -->
   <!-- Préservé v12.771-779 — règle Kevin : "qu'au minimum 1 bouton fonctionne TOUJOURS" -->
+  <!-- v13.0.13 : onclick + style externalisés vers rescue.js + rescue.css (CSP strict) -->
   <button id="apex-rescue-btn" type="button"
-    onclick="(function(){try{if(!confirm('Reset Apex complet ?\n\n• Service Worker desinstalle\n• Caches effaces\n• App rechargee fraiche\n\nTes donnees (Coffre, profil, conversations) sont PRESERVEES.'))return;}catch(_){};try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}}catch(_){};try{if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){};setTimeout(function(){try{location.href=location.pathname+'?_reset='+Date.now();}catch(_){location.reload();}},400);})();"
-    style="position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:2147483647;width:56px;height:56px;border-radius:28px;background:linear-gradient(135deg,#cc3030,#aa1010);color:#fff;border:2px solid rgba(255,255,255,.2);box-shadow:0 6px 20px rgba(204,48,48,.4);font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-weight:700;display:none;align-items:center;justify-content:center;padding:0;touch-action:manipulation;font-family:system-ui,sans-serif"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
 
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
-  <!-- Fail-safe : si bundle ne charge pas dans 6s, montre rescue button -->
-  <script nonce="391bac8332c6fc3c63a084592c3e028a" nonce="391bac8332c6fc3c63a084592c3e028a">
-    setTimeout(function(){
-      try{
-        var root = document.getElementById('apex-root');
-        if(!root || !root.innerHTML.trim()){
-          var btn = document.getElementById('apex-rescue-btn');
-          if(btn) btn.style.display = 'flex';
-          var splash = document.getElementById('apex-splash');
-          if(splash){
-            var hint = document.createElement('div');
-            hint.style.cssText = 'margin-top:16px;color:#a0a4c0;font-size:13px;text-align:center;max-width:300px;padding:0 20px';
-            hint.textContent = 'Chargement plus long que prévu. Tape SOS en bas-droite si bloqué.';
-            splash.appendChild(hint);
-          }
-        }
-      }catch(_){}
-    }, 6000);
-  </script>
+  <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
+  <script nonce="aeda58956b72c353faa927e56c7b2386" src="./assets/js/rescue.js"></script>
 </body>
 </html>

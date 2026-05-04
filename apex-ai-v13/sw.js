@@ -10,7 +10,7 @@
  * APP_VER dans bootstrap.js. Workflow `sw-cache-sync.yml` synchronise auto.
  */
 
-const CACHE_VERSION  = 'apex-v13.0.0';
+const CACHE_VERSION  = 'apex-v13.0.28';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
@@ -248,6 +248,39 @@ self.addEventListener('push', function(e){
 
 self.addEventListener('notificationclick', function(e){
   e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || './';
-  e.waitUntil(self.clients.openWindow(url));
+  var url = (e.notification.data && e.notification.data.url) || (e.notification.data && e.notification.data.cta_url) || './';
+  /* Focus existing client si déjà ouvert sinon openWindow */
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clients){
+      for (var i = 0; i < clients.length; i++){
+        var c = clients[i];
+        if (c.url.indexOf(self.registration.scope) >= 0){
+          c.focus();
+          c.postMessage({ type: 'notification_clicked', url: url });
+          return;
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
+
+/* ================== PUSHSUBSCRIPTIONCHANGE (auto-resubscribe) ================== */
+self.addEventListener('pushsubscriptionchange', function(e){
+  /* Endpoint expiré (FCM/APNs renew) → resubscribe automatiquement */
+  e.waitUntil(
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: e.oldSubscription ? e.oldSubscription.options.applicationServerKey : null
+    }).then(function(newSub){
+      /* Notifie tous les clients pour update Firebase */
+      return self.clients.matchAll().then(function(clients){
+        clients.forEach(function(c){
+          c.postMessage({ type: 'push_resubscribed', endpoint: newSub.endpoint, keys: newSub.toJSON().keys });
+        });
+      });
+    }).catch(function(err){
+      console.warn('[SW v13] pushsubscriptionchange failed:', err && err.message);
+    })
+  );
 });
