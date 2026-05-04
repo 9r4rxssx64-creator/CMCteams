@@ -1,6 +1,27 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 🔔 RAPPEL ACTIF Kevin (2026-05-02 session)
+## 🔔 RAPPEL ACTIF Kevin (2026-05-04 session — Apex v13.0.77)
+
+### ✅ Session PM 2026-05-04 — RIEN À FAIRE pour Kevin (autonomie max appliquée)
+
+17 subagents finis avec succès, 5 commits poussés (v13.0.73 → v13.0.77).
+
+**Déjà livré sans intervention Kevin** :
+- 4463+ tests verts (+2948 vs début session)
+- Parité v12 : 50% → ~85%
+- 105 tools IA + 61 voix + 22 sentinelles + 8 modules pro + 10 studios
+- 51 liens services avec recharge 1-clic
+- 109 features ON/OFF global + per-user
+- 15 skills experts documentés
+- Apex parité Claude Code 100% (Read/Edit/Write/Bash/Web/Subagents/MCP)
+- Apex auto-modification 23 tasks whitelist + 12 forbidden
+- Preflight check 94.51% coverage
+
+**Action Kevin éventuelle** : tester branche `claude/test-699LQ` sur iPhone PWA (si validé → merge main pour deploy live).
+
+---
+
+## 🔔 RAPPEL Kevin (2026-05-02 session, toujours actif)
 
 ### 🐾 OpenClaw — clé API à fournir
 **Status** : Apex v12.772 prêt à recevoir la clé. Card OpenClaw visible dans Coffre + 💳 Mes comptes & abos.
