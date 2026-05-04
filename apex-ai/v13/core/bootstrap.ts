@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.42';
+export const APP_VER = 'v13.0.43';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -140,6 +140,13 @@ async function bootstrap(): Promise<void> {
   router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true });
   router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true });
   router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true });
+  /* Sprint 2 P0 : routes manquantes (orphelines features) */
+  router.register('settings', { loader: () => import('@features/settings/index.js'), requiresAuth: true });
+  router.register('sentinels', { loader: () => import('@features/sentinels/index.js'), requiresAdmin: true });
+  router.register('browser', { loader: () => import('@features/browser/index.js'), requiresAuth: true });
+  router.register('crypto', { loader: () => import('@features/crypto/index.js'), requiresAuth: true });
+  router.register('domotique', { loader: () => import('@features/domotique/index.js'), requiresAuth: true });
+  router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
