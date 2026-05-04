@@ -20,6 +20,12 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Ape
 
 **Chaque axe DOIT atteindre 20/20 = 100/100 réel** (audit subagent, pas estimé).
 
+> **Précision Kevin 2026-05-04** : "100/100 réel chaque axe c'est TOUT à 100% réel partout. Maximum"
+> — Donc coverage 100% statements + 100% branches + 100% functions + 100% lines.
+> — Tests : 100% verts, ESLint 0 warnings, TS strict 0 errors.
+> — Bundle : optimisé au max, perf maximale.
+> — Aucune métrique en dessous de 100% ou maximum théorique acceptable.
+
 ### 2. INTERDICTION de passer à autre chose tant que 100/100 pas atteint
 
 ❌ JAMAIS : nouvelle feature si axe courant < 20/20
