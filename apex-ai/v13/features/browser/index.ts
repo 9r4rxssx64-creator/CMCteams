@@ -22,6 +22,8 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { store } from '../../core/store.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 
 /* ============================================================
    Types
@@ -725,6 +727,13 @@ export function getSuggestions(input: string, limit = 8): Suggestion[] {
    ============================================================ */
 
 export function render(rootEl: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
+  const user = store.get('user') as { id?: string } | null;
+  const uid = user?.id;
+  if (!isFeatureEnabled('browser.iframe', uid)) {
+    rootEl.innerHTML = renderDisabledNotice('browser.iframe');
+    return;
+  }
   const tabs = tabsStore.load();
   const activeTabId = tabsStore.getActive();
   /* Reuse last URL or open Google as default */

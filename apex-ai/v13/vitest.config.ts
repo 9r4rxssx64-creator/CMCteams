@@ -65,6 +65,8 @@ export default defineConfig({
         'features/pro/modules/business/index.ts',
         'features/pro/modules/education/index.ts',
         'features/pro/modules/certifications/index.ts',
+        /* Sprint 9 Kevin v13.0.21 — admin-toggles UI HTML, logique testée via service */
+        'features/admin-toggles/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).

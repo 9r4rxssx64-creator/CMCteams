@@ -260,11 +260,13 @@ class Vault {
       logger.warn('vault', 'setKey localStorage failed (quota?)', { err, storageKey });
     }
     /* 2. IDB shadow (résiste clear cache Safari) */
-    try {
-      await this.writeKeyToIdb(storageKey, encrypted);
-      persisted.idb = true;
-    } catch (err: unknown) {
-      logger.warn('vault', 'setKey IDB failed', { err, storageKey });
+    if ('indexedDB' in globalThis) {
+      try {
+        await this.writeKeyToIdb(storageKey, encrypted);
+        persisted.idb = true;
+      } catch (err: unknown) {
+        logger.warn('vault', 'setKey IDB failed', { err, storageKey });
+      }
     }
     /* 3. Firebase backup chiffré (survit réinstallation PWA + cross-device) */
     try {
@@ -309,7 +311,7 @@ class Vault {
   }
 
   private async writeKeyToIdb(storageKey: string, value: string): Promise<void> {
-    if (!('indexedDB' in window)) return;
+    if (!('indexedDB' in globalThis)) return;
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.open('apex_v13_vault_shadow', 1);
       req.onupgradeneeded = (): void => {
@@ -323,15 +325,21 @@ class Vault {
           const store = tx.objectStore('keys');
           store.put(value, storageKey);
           tx.oncomplete = (): void => { db.close(); resolve(); };
-          tx.onerror = (): void => { db.close(); reject(tx.error); };
-        } catch (e: unknown) { db.close(); reject(e as Error); }
+          tx.onerror = (): void => {
+            db.close();
+            reject(tx.error ?? new Error('idb tx failed'));
+          };
+        } catch (e: unknown) {
+          db.close();
+          reject(e instanceof Error ? e : new Error(String(e)));
+        }
       };
-      req.onerror = (): void => reject(req.error);
+      req.onerror = (): void => reject(req.error ?? new Error('idb open failed'));
     });
   }
 
   private async readKeyFromIdb(storageKey: string): Promise<string | null> {
-    if (!('indexedDB' in window)) return null;
+    if (!('indexedDB' in globalThis)) return null;
     return new Promise<string | null>((resolve) => {
       try {
         const req = indexedDB.open('apex_v13_vault_shadow', 1);

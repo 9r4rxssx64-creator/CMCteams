@@ -28,6 +28,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
 
 export interface MixTrack {
   id: string;
@@ -483,6 +484,11 @@ export const musicStudioStore = new MusicStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
+  if (!isFeatureEnabled('studio.music', uid)) {
+    rootEl.innerHTML = renderDisabledNotice('studio.music');
+    return;
+  }
   const tracks = musicStudioStore.list();
   const lufsTarget = musicStudioStore.getMasterLufsTarget();
 

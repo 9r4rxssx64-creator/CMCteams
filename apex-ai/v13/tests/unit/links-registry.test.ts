@@ -191,10 +191,12 @@ describe('Links Registry (auto-create + verification)', () => {
       expect(linksRegistry.getRechargeLink('xx_unknown')).toBeNull();
     });
 
-    it('fallback chain : si pas billing → plans_url → api_keys → dashboard', async () => {
-      /* telegram n'a pas billing → fallback dashboard (BotFather) */
+    it('fallback chain : si pas billing → plans_url → api_keys → dashboard', () => {
+      /* telegram n'a pas billing → fallback api_keys (BotFather) qui est aussi le dashboard */
       const url = linksRegistry.getRechargeLink('telegram');
-      expect(url).toContain('telegram') /* bot father link */;
+      expect(url).toBeTruthy();
+      expect(url!.startsWith('https://')).toBe(true);
+      expect(url).toContain('BotFather'); /* api_keys_page = dashboard pour Telegram */
     });
   });
 
