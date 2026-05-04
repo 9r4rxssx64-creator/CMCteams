@@ -32,6 +32,11 @@ export default defineConfig({
         'features/domotique/index.ts',
         'features/workflow/index.ts',
         'features/laurence/index.ts',
+        /* Sprint port v12 (Kevin 2026-05-04) — UI HTML, pure logic testée séparément */
+        'features/notes/index.ts',
+        'features/calendar/index.ts',
+        'features/billing/index.ts',
+        'features/calculators/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
