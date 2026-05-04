@@ -317,6 +317,18 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* Consumption monitor : check budgets + notif admin 1-clic recharge si dépassement
+       (règle Kevin 2026-05-04 : info live conso + notif lien recharge par IA + abo) */
+    safeInit('consumption-monitor', async () => {
+      const { consumptionMonitor } = await import('./consumption-monitor.js');
+      consumptionMonitor.recordSnapshot(); /* Snapshot boot pour graph 30j */
+      if (uid) {
+        const all = await consumptionMonitor.checkAndNotify(uid);
+        const alerted = all.filter((s) => s.severity !== 'ok' && s.budget_eur_month > 0);
+        logger.info('services-bootstrap', `consumption : ${alerted.length} alertes / ${all.length} services`);
+      }
+    }),
+
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
        (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
     safeInit('storage-compressor', async () => {
