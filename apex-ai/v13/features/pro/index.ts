@@ -189,8 +189,22 @@ class ProModulesHub {
           mod.render(root);
           return;
         }
+        case 'business': {
+          const mod = await import('./modules/business/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'education': {
+          const mod = await import('./modules/education/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'certifications': {
+          const mod = await import('./modules/certifications/index.js');
+          mod.render(root);
+          return;
+        }
         default:
-          /* business / education / certifications : pas encore portés → fallback minimal */
           break;
       }
     } catch (e) {

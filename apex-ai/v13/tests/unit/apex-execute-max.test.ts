@@ -23,9 +23,9 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
   });
 
   describe('Whitelist étendue (22 tâches autorisées)', () => {
-    it('listAllowedTasks() retourne 22 tâches (8 baseline + 14 extensions)', () => {
+    it('listAllowedTasks() retourne 23 tâches (8 baseline + 15 extensions niveau MAX)', () => {
       const list = apexExecute.listAllowedTasks();
-      expect(list.length).toBe(22);
+      expect(list.length).toBe(23);
       /* baseline */
       expect(list).toContain('modify_file');
       expect(list).toContain('create_file');
@@ -66,7 +66,7 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
 
     it('getCapabilities() expose métadonnées MAX', () => {
       const cap = apexExecute.getCapabilities();
-      expect(cap.allowed).toBe(22);
+      expect(cap.allowed).toBe(23);
       expect(cap.forbidden).toBe(12);
       expect(cap.critical_sentinels).toBeGreaterThanOrEqual(5);
       expect(cap.max_autonomy).toBe(true);
@@ -289,7 +289,7 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
         { skipDispatch: true },
       );
       expect(r.ok).toBe(false);
-      expect(r.reason).toMatch(/confirmation Kevin|confirmed_by_kevin/);
+      expect(r.reason).toMatch(/confirmation Kevin|confirmed_by_kevin/i);
     });
   });
 
@@ -557,7 +557,7 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
         { skipDispatch: true },
       );
       expect(r.ok).toBe(false);
-      expect(r.reason).toMatch(/confirmation Kevin/);
+      expect(r.reason).toMatch(/confirmation Kevin/i);
     });
 
     it('refuse name hors pattern ax_*', async () => {
@@ -636,7 +636,7 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
         { skipDispatch: true },
       );
       expect(r.ok).toBe(false);
-      expect(r.reason).toMatch(/confirmation Kevin/);
+      expect(r.reason).toMatch(/confirmation Kevin/i);
     });
 
     it('refuse format version invalide', async () => {

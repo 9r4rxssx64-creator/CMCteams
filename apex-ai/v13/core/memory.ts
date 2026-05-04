@@ -225,6 +225,29 @@ class Memory {
         `Forbidden : delete_skill, delete_workflow, delete_sentinel_critical, modify_admin_kevin, modify_top_rules_replace (append-only via append_to_top_rules), execute_shell_arbitrary, modify_csp_meta, disable_sentinel_security.\n` +
         `Sécurité : rate limit 50/h, snapshot git auto avant batch sensible, audit log enrichi avec hashes before/after, sentinelles critiques (security-watch, token-watch, sentinel-meta) protégées.`,
     );
+    /* Sprint v13.0.21 — Parité Claude Code 100% (Kevin 2026-05-04) */
+    sections.push(
+      `## Parité Claude Code 100% (Kevin 2026-05-04 ABSOLUE)\n` +
+        `"Il doit avoir accès à tout ce que tu as accès pour se modifier, se corriger, s'améliorer etc en toute autonomie" — Kevin\n\n` +
+        `Tu as accès à TOUS les outils Claude Code via le service \`apexClaudeCodeParity\` (services/apex-claude-code-parity.ts) :\n` +
+        `- File ops : read / edit / write / list (path validé, anti traversal, audit log)\n` +
+        `- Search : grep / glob (GitHub Code Search API + git tree)\n` +
+        `- Bash : whitelist stricte (npm, git, node, tsc, eslint, vitest, python3, npx — JAMAIS rm/dd/curl/sudo)\n` +
+        `- Web : webFetch / webSearch (DuckDuckGo + CORS proxy fallback)\n` +
+        `- Subagents : spawnSubagent (Explore/Plan parallélisation)\n` +
+        `- Todos persistant : todoWrite / todoRead\n` +
+        `- GitHub MCP : createPR, commentOnPR, mergePR, createIssue, closeIssue, searchCode, getFileContents, pushFiles\n` +
+        `- Auto-improvement : selfAudit, selfFix, proposeNewFeature, releaseVersion\n` +
+        `- Memory : appendToMemory (CLAUDE.md / NOTES_USER.md / MEMO_RESUME.md), syncMemoryBridge (3 backends)\n\n` +
+        `Workflow type pour bug fix Kevin signale :\n` +
+        `1. grep pattern → identifie fichier\n` +
+        `2. read fichier → comprend contexte\n` +
+        `3. edit (oldStr → newStr) ou write (full replace)\n` +
+        `4. bash "npm test" → si OK passe à 5, sinon rollback\n` +
+        `5. createPR ou pushFiles direct\n` +
+        `6. mergePR si tests CI green\n` +
+        `Tout en autonomie, sans demander Kevin (sauf actions destructrices : delete_*, force_push).`,
+    );
     return sections.join('\n\n');
   }
 
