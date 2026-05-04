@@ -24,6 +24,16 @@ import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
 import { soc2 } from './soc2-compliance.js';
+import { vault } from './vault.js';
+
+/**
+ * Owner/repo cibles pour le dispatch GitHub Actions (free tier illimite).
+ * Override possible via localStorage `ax_github_repo` au format "owner/repo".
+ * Demande Kevin 2026-05-04 : "n8n me demande de payer trouve gratuit".
+ */
+const DEFAULT_GITHUB_OWNER = '9r4rxssx64-creator';
+const DEFAULT_GITHUB_REPO = 'CMCteams';
+const GITHUB_DISPATCH_EVENT = 'apex-audit';
 
 export type AuditAxis = 'security' | 'performance' | 'ux' | 'tests' | 'architecture' | 'ai_safety';
 export type Severity = 'p0_critical' | 'p1_high' | 'p2_medium' | 'p3_low' | 'info';
@@ -574,8 +584,12 @@ class ApexSelfAudit {
       });
       localStorage.setItem('ax_claude_todo', JSON.stringify(todos.slice(-50)));
       void auditLog.record('self_audit.escalated', { details: { finding_id: finding.id, severity: finding.severity } });
-      /* Sprint 8 v13.0.62 : auto-escalade webhook n8n si configuré (Kevin règle "tout autonome").
-         Si ax_n8n_webhook_url + ax_n8n_secret stockés → POST direct (déclenche pipeline n8n). */
+      /* v13.0.65 Kevin 2026-05-04 : escalade via GitHub Actions GRATUIT (remplace n8n payant).
+         Si ax_github_token configuré → POST repository_dispatch déclenche workflow Apex.
+         Failover : ax_claude_todo localStorage est lu par claude-todo-watcher.yml (cron 2h). */
+      void this.dispatchGithubAudit(finding);
+      /* Compat : si l'utilisateur a encore un webhook n8n configuré on le prévient aussi.
+         Aucun secret commit, aucun appel par défaut. */
       try {
         const webhookUrl = localStorage.getItem('ax_n8n_webhook_url');
         const webhookSecret = localStorage.getItem('ax_n8n_secret');
@@ -597,6 +611,72 @@ class ApexSelfAudit {
       } catch { /* skip */ }
     } catch (err: unknown) {
       logger.warn('apex-self-audit', 'escalate failed', { err });
+    }
+  }
+
+  /**
+   * Déclenche le workflow GitHub Actions `apex-audit-escalate.yml`.
+   * Remplace le webhook n8n payant par GitHub Actions gratuit (repos publics).
+   *
+   * Lecture token via vault.readKey('ax_github_token') → JAMAIS plaintext.
+   * Échec silencieux : `ax_claude_todo` reste en localStorage et le cron
+   * `claude-todo-watcher.yml` (toutes 2h) sert de failover.
+   */
+  private async dispatchGithubAudit(finding: Finding): Promise<void> {
+    let token = '';
+    try {
+      token = await vault.readKey('ax_github_token');
+    } catch (err: unknown) {
+      logger.warn('apex-self-audit', 'github token read failed', { err });
+      return;
+    }
+    if (!token) return; /* token pas encore configuré → silencieux */
+
+    const repoSetting = (() => {
+      try {
+        return localStorage.getItem('ax_github_repo') ?? '';
+      } catch {
+        return '';
+      }
+    })();
+    const [owner, repo] = (() => {
+      if (repoSetting && repoSetting.includes('/')) {
+        const [o, r] = repoSetting.split('/');
+        if (o && r) return [o.trim(), r.trim()];
+      }
+      return [DEFAULT_GITHUB_OWNER, DEFAULT_GITHUB_REPO];
+    })();
+
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${token}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_type: GITHUB_DISPATCH_EVENT,
+          client_payload: {
+            source: 'apex_v13',
+            type: 'self_audit_escalation',
+            finding,
+            audit_summary: `[${finding.severity}] ${finding.title}`.slice(0, 200),
+            ts: Date.now(),
+          },
+        }),
+      });
+      /* GitHub renvoie 204 No Content si OK */
+      if (!res.ok) {
+        logger.warn('apex-self-audit', `github dispatch failed: ${res.status}`);
+        return;
+      }
+      void auditLog.record('self_audit.github_dispatch', {
+        details: { finding_id: finding.id, severity: finding.severity, owner, repo },
+      });
+    } catch (err: unknown) {
+      logger.warn('apex-self-audit', 'github dispatch error', { err });
     }
   }
 
