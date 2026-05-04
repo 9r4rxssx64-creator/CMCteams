@@ -241,7 +241,10 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-chat">
       <header class="ax-chat-header">
         <h1>APEX <span style="font-size:0.6em;letter-spacing:1px;color:var(--ax-text-dim)">AI</span></h1>
-        <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu">☰</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="ax-btn ax-btn-icon" id="ax-chat-settings" aria-label="Paramètres" title="Paramètres">⚙️</button>
+          <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
+        </div>
       </header>
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
@@ -624,6 +627,133 @@ export function render(rootEl: HTMLElement): void {
         }
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Erreur caméra');
+      }
+    })();
+  });
+
+  /* Menu hamburger ☰ : drawer modal avec navigation rapide
+   * Fix Kevin v13.0.40 "le bouton paramètres et les trois traits ne fonctionnent pas" */
+  const menuBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-menu');
+  menuBtn?.addEventListener('click', () => {
+    haptic.tap();
+    const isAdminUser = store.get('isAdmin');
+    const sheet = modalSheet.open({
+      title: '☰ Menu',
+      content: `
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="ax-btn ax-btn-primary" data-menu-nav="chat" style="width:100%;text-align:left;padding:14px">💬 Chat</button>
+          ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="admin" style="width:100%;text-align:left;padding:14px">👑 Centre Admin</button>' : ''}
+          <button class="ax-btn ax-btn-primary" data-menu-nav="studios" style="width:100%;text-align:left;padding:14px">🎨 Studios</button>
+          <button class="ax-btn ax-btn-primary" data-menu-nav="pro" style="width:100%;text-align:left;padding:14px">💼 Pro</button>
+          <button class="ax-btn" data-menu-action="paste-key" style="width:100%;text-align:left;padding:14px">🔑 Coller une clé API</button>
+          <button class="ax-btn" data-menu-action="logout" style="width:100%;text-align:left;padding:14px;color:#ff6666">🚪 Déconnexion</button>
+        </div>
+      `,
+      actions: [
+        { label: 'Fermer', variant: 'ghost', onClick: () => sheet.close() },
+      ],
+    });
+    /* Wire boutons du drawer après render */
+    setTimeout(() => {
+      document.querySelectorAll<HTMLButtonElement>('[data-menu-nav]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset['menuNav'] ?? '';
+          haptic.tap();
+          sheet.close();
+          if (target) location.hash = `#${target}`;
+        });
+      });
+      document.querySelectorAll<HTMLButtonElement>('[data-menu-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset['menuAction'] ?? '';
+          haptic.tap();
+          sheet.close();
+          if (action === 'paste-key') {
+            /* Trigger paste flow réutilisant la modal existante */
+            rootEl.querySelector<HTMLButtonElement>('#ax-paste-key-nav')?.click();
+          } else if (action === 'logout') {
+            rootEl.querySelector<HTMLButtonElement>('#ax-logout-nav')?.click();
+          }
+        });
+      });
+    }, 50);
+  });
+
+  /* Bouton Paramètres ⚙️ : ouvre modal settings (clés API + mode routing + reco)
+   * Fix Kevin v13.0.40 "rien ne se passe quand on tape sur paramètres" */
+  const settingsBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-settings');
+  settingsBtn?.addEventListener('click', () => {
+    haptic.tap();
+    void (async () => {
+      try {
+        const { aiRoutingPolicy } = await import('../../services/ai-routing-policy.js');
+        const status = aiRoutingPolicy.getStatus();
+        const recos = aiRoutingPolicy.recommendActions();
+        const recosHtml = recos.length
+          ? recos
+              .map(
+                (r) => `
+              <li style="margin:4px 0">
+                <span style="color:${r.priority === 'high' ? '#ff6666' : r.priority === 'medium' ? '#ffaa00' : '#a0a4c0'}">●</span>
+                ${escapeHtml(r.action)}
+                ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:#c9a227">→</a>` : ''}
+              </li>
+            `,
+              )
+              .join('')
+          : '<li style="color:#22cc77">✅ Tout est configuré au mieux</li>';
+        const sheet = modalSheet.open({
+          title: '⚙️ Paramètres',
+          content: `
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div>
+                <h4 style="margin:0 0 6px;color:#c9a227">Routing IA</h4>
+                <label style="display:block;margin:6px 0">
+                  Mode :
+                  <select id="ax-settings-mode" style="margin-left:8px;padding:6px;background:#1a1a2e;color:#fff;border:1px solid #c9a227;border-radius:4px">
+                    <option value="auto" ${status.mode === 'auto' ? 'selected' : ''}>Auto (intelligent)</option>
+                    <option value="economy" ${status.mode === 'economy' ? 'selected' : ''}>Économie (gratuit d'abord)</option>
+                    <option value="premium" ${status.mode === 'premium' ? 'selected' : ''}>Premium (Anthropic toujours)</option>
+                  </select>
+                </label>
+                <p style="margin:6px 0;color:#a0a4c0;font-size:12px">
+                  Anthropic : <span style="color:${status.anthropic_health === 'ok' ? '#22cc77' : status.anthropic_health === 'warn' ? '#ffaa00' : '#ff6666'}">${status.anthropic_health}</span>
+                  · Gratuits dispo : ${status.free_providers_available.length}
+                  · Payants dispo : ${status.paid_providers_available.length}
+                </p>
+              </div>
+              <div>
+                <h4 style="margin:0 0 6px;color:#c9a227">Clés API</h4>
+                <button type="button" class="ax-btn ax-btn-primary" id="ax-settings-paste-key" style="width:100%">🔑 Coller une clé API</button>
+              </div>
+              <div>
+                <h4 style="margin:0 0 6px;color:#c9a227">Recommandations</h4>
+                <ul style="margin:0;padding-left:18px;font-size:13px">${recosHtml}</ul>
+              </div>
+            </div>
+          `,
+          actions: [
+            { label: 'Fermer', variant: 'ghost', onClick: () => sheet.close() },
+          ],
+        });
+        /* Wire mode select + paste-key trigger */
+        setTimeout(() => {
+          const modeSelect = document.getElementById('ax-settings-mode') as HTMLSelectElement | null;
+          modeSelect?.addEventListener('change', () => {
+            const newMode = modeSelect.value as 'auto' | 'economy' | 'premium' | 'forced';
+            aiRoutingPolicy.setMode(newMode);
+            toast.success(`Mode routing : ${newMode}`);
+            haptic.medium();
+          });
+          const pasteBtn = document.getElementById('ax-settings-paste-key') as HTMLButtonElement | null;
+          pasteBtn?.addEventListener('click', () => {
+            sheet.close();
+            rootEl.querySelector<HTMLButtonElement>('#ax-paste-key-nav')?.click();
+          });
+        }, 50);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'erreur';
+        toast.error(`Paramètres indisponibles : ${msg}`);
       }
     })();
   });

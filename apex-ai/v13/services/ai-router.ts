@@ -16,8 +16,9 @@
 import { errors } from '../core/errors.js';
 import { logger } from '../core/logger.js';
 
+import { auditLog } from './audit-log.js';
 import { chatFallback } from './chat-fallback.js';
-import { redactMessageContent } from './pii-redaction.js';
+import { redactMessageContent, redactPII } from './pii-redaction.js';
 import { tokensDashboard } from './tokens-dashboard.js';
 
 export type Provider = 'anthropic' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
@@ -207,17 +208,31 @@ class AIRouter {
     }
 
     /* P1 fix : PII redaction outbound — filtre email/CB/IBAN/SS/passport/etc.
-     * AVANT envoi providers IA pour anti-leak data sensible. */
-    const redactedMessages = messages.map((m) => ({
-      ...m,
-      content: redactMessageContent(m.content) as ChatMessage['content'],
-    }));
+     * AVANT envoi providers IA pour anti-leak data sensible.
+     * Jet 13.0.40 : audit log si PII détecté (SOC2 trail). */
+    let totalPiiFound = 0;
+    const redactedMessages = messages.map((m) => {
+      if (typeof m.content === 'string') {
+        const r = redactPII(m.content);
+        totalPiiFound += r.foundCount;
+        return { ...m, content: r.redacted };
+      }
+      return { ...m, content: redactMessageContent(m.content) as ChatMessage['content'] };
+    });
+    if (totalPiiFound > 0) {
+      void auditLog.record('ai.pii_redacted_outbound', {
+        details: { count: totalPiiFound, messages_count: messages.length },
+      });
+      logger.info('ai-router', `PII redacted outbound: ${totalPiiFound} occurrences`);
+    }
 
     if (this.currentAbort) this.currentAbort.abort();
     const ctrl = new AbortController();
     this.currentAbort = ctrl;
 
-    const chain = this.getChainOrder();
+    /* Wire ai-routing-policy : policy.decide() respecte mode (auto/economy/premium/forced)
+     * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
+    const chain = await this.buildPolicyAwareChain(messages);
     let lastErr: Error | null = null;
 
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
@@ -308,6 +323,59 @@ class AIRouter {
       /* ignore */
     }
     return DEFAULT_CHAIN;
+  }
+
+  /**
+   * Wire ai-routing-policy : décide primary + fallback chain selon
+   * mode (auto/economy/premium/forced), domain détecté, budget Anthropic.
+   * Map policy.ProviderId → router.Provider (drop providers non supportés).
+   * Fallback sur DEFAULT_CHAIN si policy indisponible.
+   */
+  private async buildPolicyAwareChain(messages: ChatMessage[]): Promise<readonly Provider[]> {
+    try {
+      const { aiRoutingPolicy } = await import('./ai-routing-policy.js');
+      /* Détecte domain depuis dernier message user (heuristique policy) */
+      const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+      const userText =
+        typeof lastUser?.content === 'string'
+          ? lastUser.content
+          : JSON.stringify(lastUser?.content ?? '');
+      const domain = aiRoutingPolicy.detectDomain(userText);
+      const estimatedTokens = Math.ceil(JSON.stringify(messages).length / 4);
+      const decision = aiRoutingPolicy.decide(domain, estimatedTokens);
+      logger.info('ai-router', 'policy decision', {
+        domain,
+        primary: decision.primary,
+        reason: decision.reason,
+        fallback_count: decision.fallback_chain.length,
+      });
+      /* Map policy ProviderId → router Provider (filtre supportés) */
+      const supported: readonly Provider[] = ['anthropic', 'openrouter', 'groq', 'gemini', 'openclaw'];
+      const mapToRouter = (p: string): Provider | null => {
+        if ((supported as readonly string[]).includes(p)) return p as Provider;
+        /* Providers policy non implémentés ai-router : openai, deepseek, cohere, mistral, perplexity
+         * → fallback vers openrouter (proxy universel) si dispo */
+        if (['openai', 'deepseek', 'cohere', 'mistral', 'perplexity'].includes(p)) return 'openrouter';
+        return null;
+      };
+      const ordered: Provider[] = [];
+      const seen = new Set<Provider>();
+      const push = (p: string): void => {
+        const mapped = mapToRouter(p);
+        if (mapped && !seen.has(mapped)) {
+          seen.add(mapped);
+          ordered.push(mapped);
+        }
+      };
+      push(decision.primary);
+      for (const f of decision.fallback_chain) push(f);
+      /* Append legacy chain in queue pour garantir failover total même si policy ne couvre pas tout */
+      for (const p of this.getChainOrder()) push(p);
+      return ordered.length > 0 ? ordered : DEFAULT_CHAIN;
+    } catch (err: unknown) {
+      logger.warn('ai-router', 'policy unavailable, fallback DEFAULT_CHAIN', { err });
+      return this.getChainOrder();
+    }
   }
 
   private async streamFromProvider(
