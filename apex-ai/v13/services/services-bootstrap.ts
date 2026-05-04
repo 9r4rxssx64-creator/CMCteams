@@ -306,6 +306,22 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `push-notifications : ${stats.total_subscriptions} subs`);
     }),
 
+    /* SOC2 compliance : record event boot + verify integrity */
+    safeInit('soc2-compliance', async () => {
+      const { soc2 } = await import('./soc2-compliance.js');
+      const integrity = await soc2.verifyIntegrity();
+      logger.info('services-bootstrap', `soc2 : ${integrity.total} events, integrity=${integrity.ok}`);
+    }),
+
+    /* Secret scanner : scan + auto-migrate plaintext credentials */
+    safeInit('secret-scanner', async () => {
+      const { secretScanner } = await import('./secret-scanner.js');
+      const r = await secretScanner.autoMigrate();
+      if (r.migrated > 0) {
+        logger.info('services-bootstrap', `secret-scanner : ${r.migrated} secrets migrés vers chiffré`);
+      }
+    }),
+
     /* Push auto-init : ceinture+bretelles avec wiring bootstrap.ts (idempotent) */
     safeInit('push-auto-init', async () => {
       const { pushAutoInit } = await import('./push-auto-init.js');
