@@ -259,6 +259,79 @@ class PushNotifications {
     }
   }
 
+  /**
+   * Envoie push SERVEUR (app fermée OK iOS+Android) via Cloudflare Worker apex-push-worker.
+   * Différent de send() qui est local-only.
+   *
+   * Configuration requise :
+   * - localStorage 'apex_v13_push_worker_url' (ex: https://apex-push.workers.dev)
+   * - localStorage 'apex_v13_push_admin_token' (Bearer)
+   *
+   * @returns ok=true si worker a accepté la requête (pas garantie de delivery iOS APNs)
+   */
+  async sendServerPush(
+    targetUids: readonly string[],
+    payload: { title: string; body: string; url?: string; tag?: string; urgent?: boolean },
+  ): Promise<{ ok: boolean; status?: number; reason?: string }> {
+    const workerUrl = localStorage.getItem('apex_v13_push_worker_url');
+    const adminToken = localStorage.getItem('apex_v13_push_admin_token');
+    if (!workerUrl) return { ok: false, reason: 'apex_v13_push_worker_url non configuré' };
+    if (!adminToken) return { ok: false, reason: 'apex_v13_push_admin_token absent' };
+    /* Rate limit côté client : check tous les uids */
+    for (const uid of targetUids) {
+      if (!this.canSend(uid)) return { ok: false, reason: `Rate limit ${RATE_LIMIT_PER_DAY}/jour pour ${uid}` };
+    }
+    try {
+      const resp = await fetch(`${workerUrl.replace(/\/$/, '')}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          userIds: targetUids,
+          payload: {
+            title: payload.title,
+            body: payload.body,
+            ...(payload.url && { url: payload.url }),
+            ...(payload.tag && { tag: payload.tag }),
+            ...(payload.urgent && { requireInteraction: true }),
+          },
+        }),
+      });
+      /* Record sent dans log local pour rate limit + audit */
+      for (const uid of targetUids) {
+        this.recordSent(uid, {
+          id: `server_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          title: payload.title,
+          body: payload.body,
+          ts: Date.now(),
+          urgent: payload.urgent ?? false,
+        });
+      }
+      void auditLog.record('push.server_sent', { details: { targets: targetUids.length, status: resp.status } });
+      return { ok: resp.ok, status: resp.status };
+    } catch (err: unknown) {
+      const reason = err instanceof Error ? err.message : String(err);
+      logger.warn('push-notifications', 'sendServerPush failed', { err });
+      return { ok: false, reason };
+    }
+  }
+
+  /**
+   * Test endpoint Cloudflare worker (ping /health).
+   */
+  async testWorkerHealth(): Promise<{ ok: boolean; reason?: string }> {
+    const workerUrl = localStorage.getItem('apex_v13_push_worker_url');
+    if (!workerUrl) return { ok: false, reason: 'worker_url absent' };
+    try {
+      const resp = await fetch(`${workerUrl.replace(/\/$/, '')}/health`);
+      return { ok: resp.ok };
+    } catch (err: unknown) {
+      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   private urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
