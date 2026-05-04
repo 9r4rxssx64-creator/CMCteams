@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.70';
+export const APP_VER = 'v13.0.71';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -155,6 +155,12 @@ async function bootstrap(): Promise<void> {
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true });
   router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true });
+  /* Sprint port v12 (Kevin 2026-05-04) : 5 studios créatifs critiques */
+  router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true });
+  router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true });
+  router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true });
+  router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true });
+  router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

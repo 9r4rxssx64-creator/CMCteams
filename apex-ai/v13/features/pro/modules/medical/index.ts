@@ -323,11 +323,11 @@ export function render(root: HTMLElement): void {
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="color:#ff8080;margin:0 0 10px">🔗 Sources officielles</h3>
+        <h3 style="color:#ff8080;margin:0 0 10px">🔗 Sources officielles : Vidal &middot; ANSM &middot; HAS &middot; Ameli</h3>
         <div style="font-size:13px">${sourcesHtml}</div>
       </div>
 
-      <div style="margin-top:18px;padding:14px;background:rgba(255,88,88,0.08);border:1px solid rgba(255,88,88,0.3);border-radius:10px;font-size:12px;color:#ffaaaa;text-align:center">
+      <div class="ax-disclaimer" data-disclaimer="medical" style="margin-top:18px;padding:14px;background:rgba(255,88,88,0.08);border:1px solid rgba(255,88,88,0.3);border-radius:10px;font-size:12px;color:#ffaaaa;text-align:center">
         ⚠️ <strong>Information indicative uniquement</strong>. Pour décision importante, diagnostic ou prescription, consulter un professionnel qualifié (médecin, pharmacien).
       </div>
     </div>

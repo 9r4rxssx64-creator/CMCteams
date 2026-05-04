@@ -152,11 +152,24 @@ export function render(root: HTMLElement): void {
       <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `;
-  /* Wire click sur cards → toast info Sprint 5 enrichissement contenu */
+  /* Studios créatifs réels disponibles (route vers feature dédiée) */
+  const STUDIO_ROUTES: Partial<Record<StudioId, string>> = {
+    music: 'studio-music',
+    video: 'studio-video',
+    cv: 'studio-cv',
+    facture: 'studio-invoice',
+    contrat: 'studio-contract',
+  };
+  /* Wire click sur cards → route si dispo, sinon placeholder */
   root.querySelectorAll<HTMLDivElement>('.ax-studio-card').forEach((card) => {
     card.addEventListener('click', () => {
-      const id = card.dataset['studio'];
+      const id = card.dataset['studio'] as StudioId | undefined;
       if (!id) return;
+      const route = STUDIO_ROUTES[id];
+      if (route) {
+        window.location.hash = route;
+        return;
+      }
       void (async () => {
         const { toast } = await import('../../ui/toast.js');
         const studio = STUDIOS.find((s) => s.id === id);
