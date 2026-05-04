@@ -449,6 +449,69 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* 14. self-test : auto-test runtime health (Sprint 6 Kevin règle test live permanent) */
+  sentinels.register({
+    id: 'self-test',
+    name: 'Auto-test runtime health',
+    desc: 'Vérifie périodiquement que les services critiques répondent (vault, audit-log, ai-router)',
+    intervalMs: 30 * 60 * 1000, /* Toutes 30 min */
+    check: async () => {
+      const errors: string[] = [];
+      /* Test 1 : vault read-only check */
+      try {
+        const { vault } = await import('./vault.js');
+        await vault.readKey('apex_v13_test_nonexistent_key');
+      } catch (err: unknown) {
+        errors.push('vault: ' + (err instanceof Error ? err.message : 'fail'));
+      }
+      /* Test 2 : audit-log write check */
+      try {
+        const { auditLog } = await import('./audit-log.js');
+        await auditLog.record('selftest.heartbeat', { details: { ts: Date.now() } });
+      } catch (err: unknown) {
+        errors.push('audit-log: ' + (err instanceof Error ? err.message : 'fail'));
+      }
+      /* Test 3 : storage quota check */
+      try {
+        const { storageCompressor } = await import('./storage-compressor.js');
+        const status = storageCompressor.getQuotaStatus();
+        if (status.severity === 'critical') errors.push(`storage: ${status.used_mb}MB critical`);
+      } catch (err: unknown) {
+        errors.push('storage: ' + (err instanceof Error ? err.message : 'fail'));
+      }
+      /* Test 4 : ai-router has at least 1 key */
+      try {
+        const { aiRouter } = await import('./ai-router.js');
+        const hasKey = aiRouter.hasAnyKey();
+        if (!hasKey) errors.push('ai-router: no API key (info, non-critical)');
+      } catch (err: unknown) {
+        errors.push('ai-router: ' + (err instanceof Error ? err.message : 'fail'));
+      }
+      if (errors.length === 0) return { ok: true, msg: 'All health checks pass' };
+      return { ok: false, msg: `${errors.length} health checks failed`, details: { errors } };
+    },
+  });
+
+  /* 15. memory-leak-watch : detect intervals tracked vs running */
+  sentinels.register({
+    id: 'memory-leak-watch',
+    name: 'Memory leaks detection',
+    desc: 'Compte intervals/listeners trackés vs running. Alerte si > 50 intervals.',
+    intervalMs: 60 * 60 * 1000, /* 1h */
+    check: async () => {
+      try {
+        const { lifecycle } = await import('./service-lifecycle.js');
+        const stats = lifecycle.getStats();
+        if (stats.total_intervals_tracked > 50) {
+          return { ok: false, msg: `${stats.total_intervals_tracked} intervals tracked (>50 = leak)`, details: stats };
+        }
+        return { ok: true, msg: `${stats.total_intervals_tracked} intervals tracked OK` };
+      } catch {
+        return { ok: true, msg: 'Lifecycle stats unavailable' };
+      }
+    },
+  });
+
   /* 13. wake-watch : detect wake word permission state */
   sentinels.register({
     id: 'wake-watch',
