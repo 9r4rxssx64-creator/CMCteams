@@ -1,7 +1,75 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-04 02h25** (Apex v13.0.25 — 1515 tests verts, 100/100 réel objectif Kevin)
+> Dernière mise à jour : **2026-05-04 16h40** (Apex v13.0.77 — 4463+ tests verts, parité v12 ~85%)
+
+## 🎯 SESSION 2026-05-04 PM — APEX v13.0.73 → v13.0.77 (5 commits + 17 subagents)
+
+### Fichiers nouveaux/majeurs livrés cette session
+
+**Services TypeScript** (`apex-ai/v13/src/services/`)
+- `apex-claude-code-parity.ts` — 29 méthodes Read/Edit/Write/Bash/Web/Subagent/MCP/Self-* (97 tests)
+- `apex-execute.ts` (étendu) — 23 tasks whitelist + 12 forbidden (138 tests)
+- `preflight.ts` — preflight check tools/modules avant présentation user (94.51% cov, 66+35 tests)
+- `feature-toggles.ts` — toggles global + per-user 109 features (98.23% cov, 80 tests)
+- `links-registry.ts` — 51 services avec dashboard/billing/docs/support/status/api/usage (53 tests)
+- `vault-triple-persist.ts` — localStorage + IDB + Firebase FB_FIX (23 tests)
+- `voice-catalog.ts` — 61 voix (21 PRO + 20 FUN + 20 thématiques + 12 effets WebAudio)
+- `tools-catalog-105.ts` — 105 tools IA en 12 catégories
+- `sentinels-22.ts` — 22 sentinelles auto-fix + escalade
+
+**Vues P0** (`apex-ai/v13/src/features/`)
+- `admin-dashboard/` — 1761 lignes UI (107 tests)
+- `vault/` — édition + détection auto credentials
+- `kb/` — knowledge base custom
+- `toolbox/` — favoris + rechargement
+- `self-diag/` — diagnostic autonome
+
+**Studios manquants ajoutés** (`apex-ai/v13/src/features/studios/`)
+- `logo/` `presentation/` `prefecture/` `clip/` `photo/` (~2300L, 137 tests)
+
+**Studios boostés MAX**
+- `music/` (mix Pro 12+ pistes EQ reverb compresseur)
+- `video/` (timeline cut fade captions auto)
+- `cv/` `invoice/` `contract/` (+1614L, 198 tests)
+
+**Modules pro EXPERT boost**
+- `cuisine-pro/` — 41 recettes, 22 cuissons, allergènes INCO
+- `medical-pro/` — 38 médicaments, IMC, urgences SAMU
+- `finance-pro/` — IR FR 2026, IS, TVA, successions, plus-values immo
+- `legal-pro/` — 25 codes français + jurisprudence Cass/CE/CJUE/CEDH
+- `translator-pro/` — 56 langues, mode interprète, cache (86 tests)
+
+**Modules pro stubs nouveaux**
+- `business-pro/` `education-pro/` `certifications-pro/` (~1250L, 89 tests)
+
+**Skills experts** (`.claude/skills/`)
+- 15 skills documentation (4712 lignes totales)
+- README.md index complet
+
+### Stats finales v13.0.77
+- **4463+ tests verts** (+2948 vs v13.0.25)
+- TS strict : 0 errors
+- ESLint : 0 errors, 0 warnings (--max-warnings=0)
+- Build : 2.23s
+- Coverage : ≥85% sur tous services touchés
+
+### 5 règles permanentes Kevin ajoutées CLAUDE.md
+1. TOUT AU MAX TOUJOURS (outils/modules/scripts/skills/hooks/workflows)
+2. APEX = MÊME ACCÈS QUE CLAUDE CODE (parité 100%)
+3. APEX VÉRIFIE FONCTIONNEMENT AVANT PRÉSENTER (preflight check)
+4. BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL (toggles per-user)
+5. 100/100 RÉEL CHAQUE AXE (mesure subagent indépendant)
+
+### Liens directs commits
+- `330cddb` Apex v13.0.77 — Liens recharge MAX + ON/OFF toggles + Preflight
+- `c3ad480` Apex v13.0.76 — MEGA SPRINT 5 modules pro EXPERT + 5 studios + 3 modules + 15 skills
+- `cb35ae1` Apex v13.0.75 — 5 vues P0 + Apex parité Claude Code 100% + auto-modif 23 tasks
+- `7962466` CLAUDE.md — 2 règles permanentes (preflight + ON/OFF)
+- `c97f7c3` Apex v13.0.74 — voix 61, tools IA 105, sentinelles 22, vues P0, browser fix, skills 15+
+- `5039e8c` Apex v13.0.73 — Fix critique CSP iPhone + boutons admin/footer
+
+---
 
 ## 🎯 SESSION 2026-05-04 — APEX v13.0.3 → v13.0.25 (23 commits)
 

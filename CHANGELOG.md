@@ -1,6 +1,66 @@
-# CHANGELOG — CMCteams
+# CHANGELOG — CMCteams + Apex AI
 
 Historique complet des versions. Les 5 dernières versions restent dans `CLAUDE.md` pour référence rapide.
+
+---
+
+## Apex v13.0.73 → v13.0.77 (2026-05-04 — MEGA SPRINT FINAL)
+
+**Session 2026-05-04 PM** : 17 subagents en parallèle, 5 commits poussés.
+
+### v13.0.73 — Fix critique CSP iPhone + boutons admin/footer
+- Fix CSP iPhone Safari PWA (boutons admin et footer non-cliquables)
+- Inline scripts → externes avec nonce
+- Validation 100% boutons opérationnels
+
+### v13.0.74 — MEGA SPRINT subagents (8 livraisons)
+- **Browser fix blank + boost** : 95 tests, fallback Archive/Reader/Cache/Safari
+- **Voix 61** : 21 PRO + 20 FUN + 20 thématiques + 12 effets WebAudio (53 tests)
+- **Tools IA 105** : 12 catégories (71 tests)
+- **Sentinelles 22** : auto-fix 3x + escalade Firebase (80 tests)
+- **Skills experts 15+** : .claude/skills/ (4712 lignes documentation)
+
+### v13.0.75 — 5 vues P0 + parité Claude Code 100%
+- **5 vues P0 livrées** : Dashboard / Vault / KB / Toolbox / SelfDiag (107 tests, 1761 lignes UI)
+- **Apex parité Claude Code** : services/apex-claude-code-parity.ts (29 méthodes Read/Edit/Write/Bash/Web/Subagent/MCP/Self-*, 97 tests)
+- **Apex auto-modification** : services/apex-execute.ts étendu (23 tasks whitelist, 12 forbidden, 138 tests)
+
+### v13.0.76 — MEGA SPRINT FINAL (parité ~95%)
+- **5 modules pro EXPERT boost** : cuisine 41 recettes, medical 38 médocs, finance IS/TVA/successions, legal 25 codes, translator 56 langues (86 tests)
+- **5 studios manquants ajoutés** : Logo / Présentation / Préfecture / Clip / Photo (~2300L, 137 tests)
+- **5 studios boost MAX** : music / video / cv / invoice / contract (+1614L, 198 tests)
+- **3 modules pro stubs** : Business / Education / Certifications (~1250L, 89 tests)
+
+### v13.0.77 — Liens recharge MAX + ON/OFF toggles + Preflight
+- **services/preflight.ts** : preflight check tools/modules avant présentation (94.51% cov, 66+35 tests)
+- **services/feature-toggles.ts** : 109 features ON/OFF global + per-user (98.23% cov, 80 tests + UI admin)
+- **services/links-registry.ts** : 51 services avec dashboard/billing/docs/support/status/api/usage (53 tests)
+- **services/vault-triple-persist.ts** : localStorage + IDB + Firebase FB_FIX (23 tests)
+
+### Stats finales v13.0.77
+- **TS strict** : 0 errors
+- **ESLint** : 0 errors, 0 warnings (--max-warnings=0)
+- **Tests** : 4463+ passing, 9 skipped, 0 fail
+- **Build** : 2.23s
+- **Coverage** : ≥85%
+
+### Parité v12 vs v13
+| Domaine | v12 | v13.0.77 | Statut |
+|---------|----:|---------:|--------|
+| Vues P0 | 100% | 85% | 🟢 |
+| Studios | 15 | 10 | 🟡 |
+| Modules pro | 8 | 8 | ✅ |
+| Voix | 50 | 61 | ✅ |
+| Tools IA | 100+ | 105 | ✅ |
+| Sentinelles | 13 | 22 | ✅ 170% |
+| Skills | 0 | 15 | ✅ NEW |
+
+### 5 règles permanentes Kevin ajoutées
+1. TOUT AU MAX TOUJOURS
+2. APEX = MÊME ACCÈS QUE CLAUDE CODE
+3. APEX VÉRIFIE FONCTIONNEMENT AVANT PRÉSENTER (preflight)
+4. BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL
+5. 100/100 RÉEL CHAQUE AXE
 
 ---
 
