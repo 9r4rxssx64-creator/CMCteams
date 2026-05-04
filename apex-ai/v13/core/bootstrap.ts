@@ -154,6 +154,7 @@ async function bootstrap(): Promise<void> {
   router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true });
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true });
+  router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
