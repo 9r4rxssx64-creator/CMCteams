@@ -531,7 +531,42 @@ class Vault {
       valid = await this.autoTest(detected, trimmed).catch(() => undefined);
     }
     logger.info('vault', `Stored ${detected.name} → ${detected.storageKey}`, { valid });
+    /* v13.0.79 (Kevin "qu'il les garde en mémoire aussi") : ajoute à ax_persistent_memory
+     * pour que Apex IA SACHE quelles clés Kevin a configurées (sans exposer valeur).
+     * Persiste cross-session, sync Firebase, injecté system prompt. */
+    void this.rememberCredentialConfigured(detected, valid);
     return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  /**
+   * Persiste fact "Kevin a configuré [Service]" dans ax_persistent_memory.
+   * Apex IA système prompt lit ces facts → sait ses outils dispo.
+   */
+  private async rememberCredentialConfigured(pattern: CredentialPattern, valid: boolean | undefined): Promise<void> {
+    try {
+      const validTag = valid === true ? '✅ validée' : valid === false ? '⚠️ ping échec' : '❓ non testée';
+      const fact = {
+        category: 'credentials',
+        text: `Kevin a configuré ${pattern.name} (clé chiffrée AES-GCM-256, ${validTag}). Dashboard: ${pattern.dashboard ?? 'n/a'}. Storage: ${pattern.storageKey}.`,
+        importance: 90,
+        ts: Date.now(),
+      };
+      const KEY = 'apex_v13_persistent_memory';
+      const raw = localStorage.getItem(KEY);
+      const entries = raw ? (JSON.parse(raw) as Array<{ category: string; text: string; importance: number; ts: number }>) : [];
+      /* Dédupe par storageKey : retire ancienne entrée pour ce service avant d'ajouter nouvelle */
+      const filtered = entries.filter((e) => !e.text.includes(pattern.storageKey));
+      filtered.push(fact);
+      /* Cap 5000 entrées (FIFO) */
+      const capped = filtered.length > 5000 ? filtered.slice(-5000) : filtered;
+      localStorage.setItem(KEY, JSON.stringify(capped));
+      /* Sync Firebase si dispo (best-effort) */
+      void import('./firebase.js').then(async ({ firebase }) => {
+        await firebase.write('apex_v13_persistent_memory', capped).catch(() => { /* offline OK */ });
+      }).catch(() => { /* skip */ });
+    } catch (err: unknown) {
+      logger.warn('vault', 'rememberCredentialConfigured failed', { err });
+    }
   }
 
   /**

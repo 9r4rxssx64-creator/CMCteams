@@ -179,12 +179,25 @@ class Memory {
       const isAndroid = /Android/.test(ua);
       sections.push(`## Device courant\n${isiOS ? '📱 iOS' : isAndroid ? '🤖 Android' : '🖥 Desktop'} · Online: ${typeof navigator !== 'undefined' && navigator.onLine ? 'oui' : 'non'}`);
     } catch { /* skip */ }
-    /* Tokens API disponibles (sans exposer valeur) */
+    /* v13.0.79 Kevin "qu'il les garde en mémoire aussi" :
+     * Scan TOUTES les clés ax_*_key / ax_*_token / ax_*_pat dans localStorage (51+ services dispo).
+     * Apex IA sait ainsi exhaustivement quels outils Kevin a configurés. */
     try {
-      const apiKeys = ['ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key', 'ax_openrouter_key', 'ax_github_token'];
-      const configured = apiKeys.filter((k) => !!localStorage.getItem(k));
-      if (configured.length > 0) {
-        sections.push(`## Clés API configurées (${configured.length}/${apiKeys.length})\n${configured.map((k) => `- ${k.replace('ax_', '').replace('_key', '').replace('_token', '')}`).join('\n')}`);
+      const allKeys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && /^ax_[a-z0-9_]+_(key|token|pat|sk|pk|secret)$/.test(k) && localStorage.getItem(k)) {
+          allKeys.push(k);
+        }
+      }
+      if (allKeys.length > 0) {
+        const services = allKeys.map((k) =>
+          k.replace(/^ax_/, '').replace(/_(?:key|token|pat|sk|pk|secret)$/, '').replace(/_/g, ' '),
+        );
+        sections.push(
+          `## 🔐 Clés API Kevin configurées (${allKeys.length} services disponibles)\n${services.map((s) => `- ${s}`).join('\n')}\n\n` +
+            `Apex peut utiliser ces services en autonomie. Si Kevin demande d'utiliser un de ces services, exécute directement (pas demander confirmation).`,
+        );
       }
     } catch { /* skip */ }
     /* Knowledge base (RAG GitHub API) — injection via globalThis pour anti-circular dep */
