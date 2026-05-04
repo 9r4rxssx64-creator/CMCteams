@@ -40,7 +40,42 @@ function parseInviteToken(): { uid: string; name?: string } | null {
   return null;
 }
 
+/**
+ * Tente auto-login si device connu + last user identifié.
+ * Kevin règle "S'il reconnaît mon appareil, il ne me demande pas connexion".
+ */
+async function tryAutoLogin(): Promise<boolean> {
+  try {
+    const lastUid = localStorage.getItem('apex_v13_last_known_uid');
+    const lastName = localStorage.getItem('apex_v13_last_known_name');
+    const deviceTrusted = localStorage.getItem('apex_v13_device_trusted_v1');
+    if (!lastUid || !lastName || !deviceTrusted) return false;
+    /* Device fingerprint check */
+    const { deviceContext } = await import('../../services/device-context.js');
+    const fp = await deviceContext.getFingerprint();
+    if (fp.device_id !== deviceTrusted) {
+      /* Device a changé — purge trusted, force re-login */
+      localStorage.removeItem('apex_v13_device_trusted_v1');
+      return false;
+    }
+    /* Login transparent sans PIN (device trusted) */
+    const { auth } = await import('../../services/auth.js');
+    const r = await auth.loginTrusted(lastUid, lastName);
+    if (r.ok) {
+      router.navigate('chat');
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
 export function render(rootEl: HTMLElement): void {
+  /* Auto-login background si device connu (non bloquant) */
+  void tryAutoLogin().then((logged) => {
+    if (logged) toast.success('🔐 Reconnu automatiquement (device trusted)');
+  });
   const invite = parseInviteToken();
   rootEl.innerHTML = `
     <div class="ax-landing">

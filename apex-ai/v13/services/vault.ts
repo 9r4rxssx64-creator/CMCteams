@@ -75,7 +75,21 @@ class Vault {
   private async getDeviceBoundPassphrase(): Promise<string> {
     const KEY = 'apex_v13_device_passphrase_v1';
     const cached = localStorage.getItem(KEY);
-    if (cached) return cached;
+    if (cached) {
+      /* Backup en IDB pour résilience clear Safari */
+      void this.backupPassphraseToIdb(cached);
+      return cached;
+    }
+    /* Tente restore depuis IDB (survit clear localStorage Safari) */
+    try {
+      const fromIdb = await this.restorePassphraseFromIdb();
+      if (fromIdb) {
+        try {
+          localStorage.setItem(KEY, fromIdb);
+        } catch { /* quota */ }
+        return fromIdb;
+      }
+    } catch { /* ignore */ }
     /* Génère + persiste device-bound (256 bits aléatoires base64) */
     const random = crypto.getRandomValues(new Uint8Array(32));
     const pass = btoa(String.fromCharCode(...random));
@@ -84,7 +98,62 @@ class Vault {
     } catch {
       /* Quota plein, fallback en mémoire seulement */
     }
+    /* Backup IDB pour survivre clear Safari */
+    void this.backupPassphraseToIdb(pass);
     return pass;
+  }
+
+  private async backupPassphraseToIdb(pass: string): Promise<void> {
+    try {
+      if (!('indexedDB' in window)) return;
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open('apex_v13_secure', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('passphrase')) db.createObjectStore('passphrase');
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('passphrase', 'readwrite');
+            const store = tx.objectStore('passphrase');
+            store.put(pass, 'device_v1');
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => { db.close(); reject(tx.error); };
+          } catch (e) { db.close(); reject(e); }
+        };
+        req.onerror = () => reject(req.error);
+      });
+    } catch { /* ignore */ }
+  }
+
+  private async restorePassphraseFromIdb(): Promise<string | null> {
+    try {
+      if (!('indexedDB' in window)) return null;
+      return await new Promise<string | null>((resolve) => {
+        const req = indexedDB.open('apex_v13_secure', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('passphrase')) db.createObjectStore('passphrase');
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('passphrase', 'readonly');
+            const store = tx.objectStore('passphrase');
+            const getReq = store.get('device_v1');
+            getReq.onsuccess = () => {
+              db.close();
+              resolve(typeof getReq.result === 'string' ? getReq.result : null);
+            };
+            getReq.onerror = () => { db.close(); resolve(null); };
+          } catch { db.close(); resolve(null); }
+        };
+        req.onerror = () => resolve(null);
+      });
+    } catch {
+      return null;
+    }
   }
 
   /**

@@ -205,6 +205,106 @@
   flex: 0 0 auto;
 }
 
+/* ============ CHAT INPUT LAYOUT FIX ============ */
+/* Fix Kevin v13.0.36 : textarea s'affichait en vertical (1 char/ligne)
+   parce que les 5 boutons icon (mic/wake/attach/camera/send) saturaient flex-row.
+   Solution : textarea flex:1 prend tout l'espace, boutons icon flex-shrink:0 + wrap row 2 si overflow */
+.ax-chat-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  align-items: flex-end;
+  border-top: 1px solid rgba(201, 162, 39, 0.2);
+  background: rgba(20, 20, 35, 0.95);
+}
+
+.ax-chat-input textarea {
+  flex: 1 1 200px;
+  min-width: 180px;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ax-chat-input textarea:focus {
+  outline: none;
+  border-color: #c9a227;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ax-chat-input .ax-btn-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  font-size: 18px;
+  cursor: pointer;
+  color: #c9a227;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.ax-chat-input .ax-btn-icon:hover {
+  background: rgba(201, 162, 39, 0.25);
+}
+.ax-chat-input .ax-btn-icon:active {
+  transform: scale(0.92);
+}
+
+.ax-chat-input .ax-btn-primary {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a227, #e8b830);
+  color: #000;
+  font-weight: 700;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+.ax-chat-input .ax-btn-primary:active { transform: scale(0.94); }
+
+/* Mobile compact : icon 36px sur petit écran */
+@media (max-width: 380px) {
+  .ax-chat-input .ax-btn-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 16px;
+  }
+  .ax-chat-input .ax-btn-primary {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+}
+
 /* Reduce motion respect */
 @media (prefers-reduced-motion: reduce) {
   .ax-drilldown,

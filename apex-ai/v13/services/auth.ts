@@ -182,6 +182,10 @@ class Auth {
       localStorage.setItem('apex_v13_user', JSON.stringify({ id: user.id, name: user.name }));
       localStorage.setItem('apex_v13_uid', user.id);
       localStorage.setItem('apex_v13_lastact', String(Date.now()));
+      /* Persist last known + trust device (Kevin règle "reconnaît mon appareil") */
+      localStorage.setItem('apex_v13_last_known_uid', user.id);
+      localStorage.setItem('apex_v13_last_known_name', user.name);
+      void this.trustCurrentDevice();
     } catch {
       /* ignore */
     }
@@ -189,6 +193,57 @@ class Auth {
     events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
     logger.info('auth', `Login ${user.name} (admin=${user.isAdmin})`);
     return { ok: true };
+  }
+
+  /**
+   * Login transparent sans PIN — uniquement si device est déjà trusted (auto-login).
+   * Kevin règle : "S'il reconnaît mon appareil, il ne me demande pas connexion".
+   * Sécurité : vérifie device fingerprint match avec apex_v13_device_trusted_v1.
+   */
+  async loginTrusted(uid: string, name: string): Promise<{ ok: boolean; reason?: string }> {
+    try {
+      const trusted = localStorage.getItem('apex_v13_device_trusted_v1');
+      if (!trusted) return { ok: false, reason: 'Device non trusted' };
+      const { deviceContext } = await import('./device-context.js');
+      const fp = await deviceContext.getFingerprint();
+      if (fp.device_id !== trusted) return { ok: false, reason: 'Device fingerprint mismatch' };
+
+      const user = PRECONFIGURED.find((u) => u.id === uid);
+      if (!user) return { ok: false, reason: 'User unknown' };
+
+      store.set('user', { id: user.id, name: name || user.name, email: user.email });
+      store.set('isAdmin', user.isAdmin);
+      try {
+        localStorage.setItem('apex_v13_user', JSON.stringify({ id: user.id, name: name || user.name }));
+        localStorage.setItem('apex_v13_uid', user.id);
+        localStorage.setItem('apex_v13_lastact', String(Date.now()));
+      } catch { /* ignore */ }
+      events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
+      logger.info('auth', `loginTrusted ${name || user.name} (admin=${user.isAdmin})`);
+      return { ok: true };
+    } catch (err: unknown) {
+      logger.warn('auth', 'loginTrusted failed', { err });
+      return { ok: false, reason: 'Auto-login failed' };
+    }
+  }
+
+  /**
+   * Marque le device courant comme trusted (skip PIN au prochain démarrage).
+   * Stocke device_id fingerprint dans apex_v13_device_trusted_v1.
+   */
+  private async trustCurrentDevice(): Promise<void> {
+    try {
+      const { deviceContext } = await import('./device-context.js');
+      const fp = await deviceContext.getFingerprint();
+      localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Révoque le trust device courant (force PIN au prochain login).
+   */
+  untrustCurrentDevice(): void {
+    try { localStorage.removeItem('apex_v13_device_trusted_v1'); } catch { /* ignore */ }
   }
 
   logout(): void {
