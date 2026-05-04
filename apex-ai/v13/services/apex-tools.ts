@@ -602,6 +602,143 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'A',
   },
+  /* ========== DEVICE CONTROL TOOLS (Kevin règle pilotage iOS/Android) ========== */
+  {
+    name: 'partage_contenu',
+    description: 'Partage natif iOS/Android (URL, texte, fichiers) via navigator.share. Utilise quand user dit "partage", "envoie", "share".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        text: { type: 'string' },
+        url: { type: 'string' },
+      },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'vibrer',
+    description: 'Vibration haptique iPhone/Android (Android only physiquement, iOS ignore silencieusement).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pattern: { type: 'array', description: 'Durées ms (ex: [100,50,100])' },
+      },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'ma_position',
+    description: 'Coordonnées GPS via navigator.geolocation. Demande permission une fois.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'batterie',
+    description: 'Niveau batterie + en charge (Android Chrome only).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'parler',
+    description: 'TTS Web Speech (synthèse vocale). Voix native iOS/Android. Utilise quand user dit "lis-moi", "dis-moi", "parle".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+        voice: { type: 'string', description: 'Nom voix optionnel' },
+        lang: { type: 'string', description: 'fr-FR par défaut' },
+        rate: { type: 'number', description: '0.5-2 (1 par défaut)' },
+      },
+      required: ['text'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'ouvrir_maps',
+    description: 'Ouvre Apple Maps (iOS) ou Google Maps avec adresse/coords. Utilise quand user dit "va à", "itinéraire", "carte".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        address: { type: 'string' },
+        coords: { type: 'string', description: 'lat,lon' },
+      },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'appeler',
+    description: 'Ouvre app téléphone iOS/Android avec numéro pré-rempli (tel:URI).',
+    inputSchema: {
+      type: 'object',
+      properties: { number: { type: 'string' } },
+      required: ['number'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'B',
+  },
+  {
+    name: 'sms',
+    description: 'Ouvre app SMS iOS/Android avec destinataire + message pré-rempli (sms:URI).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        number: { type: 'string' },
+        body: { type: 'string' },
+      },
+      required: ['number'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'B',
+  },
+  {
+    name: 'mail',
+    description: 'Ouvre app Mail iOS/Android avec destinataire + sujet + corps pré-rempli (mailto:URI).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        to: { type: 'string' },
+        subject: { type: 'string' },
+        body: { type: 'string' },
+      },
+      required: ['to'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'B',
+  },
+  {
+    name: 'mes_photos',
+    description: 'Sélection multiple photos galerie iPhone/Android via input file. Utilise quand user dit "trie mes photos", "mes photos".',
+    inputSchema: {
+      type: 'object',
+      properties: { max: { type: 'number', description: 'Max nombre photos' } },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'tri_photos',
+    description: 'Analyse EXIF photos (date, GPS, caméra) et regroupe par date YYYY-MM.',
+    inputSchema: {
+      type: 'object',
+      properties: { files: { type: 'array', description: 'Array File objects' } },
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'detect_device',
+    description: 'Detect environnement (iOS/Android/Desktop, PWA standalone ou browser) + capabilities supportées.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
