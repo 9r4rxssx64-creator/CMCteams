@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.19';
+export const APP_VER = 'v13.0.20';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -139,6 +139,7 @@ async function bootstrap(): Promise<void> {
   router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
   router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true });
   router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true });
+  router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
