@@ -108,6 +108,60 @@ class Vault {
     return this.decrypt(encrypted, devicePass);
   }
 
+  /**
+   * UNIVERSAL READER : lit localStorage + déchiffre AXENC1: si présent.
+   * SOURCE UNIQUE pour tout call site qui veut lire une clé API.
+   * Anti-pattern v13.0.12 : call sites lisaient raw → recevaient AXENC1: chiffré.
+   * Fix v13.0.16 : tous les services migrent vers vault.readKey().
+   */
+  async readKey(storageKey: string): Promise<string> {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return '';
+      if (raw.startsWith(PREFIX)) {
+        const decrypted = await this.decryptAuto(raw);
+        return decrypted ?? '';
+      }
+      return raw;
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * Masque une clé pour affichage UI (préserve début + fin pour identification).
+   * Toujours appliqué APRÈS readKey() — jamais sur AXENC1: brut.
+   * Exemple : "sk-ant-api03-AbCd...x9z2" → "sk-an***...x9z2"
+   */
+  maskKey(plaintext: string): string {
+    if (!plaintext) return '';
+    if (plaintext.length <= 8) return '***';
+    return plaintext.slice(0, 5) + '***' + plaintext.slice(-4);
+  }
+
+  /**
+   * Lit + masque en une opération (helper UI).
+   */
+  async readMasked(storageKey: string): Promise<string> {
+    const plain = await this.readKey(storageKey);
+    return this.maskKey(plain);
+  }
+
+  /**
+   * Status brut sans déchiffrement (sync, rapide pour UI status).
+   * Retourne 'configured' / 'empty' / 'encrypted' / 'plaintext_legacy'
+   */
+  getKeyStatus(storageKey: string): 'configured' | 'empty' | 'encrypted' | 'plaintext_legacy' {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return 'empty';
+      if (raw.startsWith(PREFIX)) return 'encrypted';
+      return 'plaintext_legacy'; /* À migrer vers chiffré */
+    } catch {
+      return 'empty';
+    }
+  }
+
   async encrypt(plaintext: string, passphrase?: string): Promise<string> {
     const pass = passphrase ?? this.passphrase;
     if (!pass) throw new Error('Vault passphrase not set');

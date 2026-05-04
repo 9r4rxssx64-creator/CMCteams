@@ -195,7 +195,8 @@ export function registerCoreSentinels(): void {
     desc: 'Vérifie solde Anthropic/OpenAI et alerte si < 5€ restant',
     intervalMs: 60 * 60 * 1000,
     check: async () => {
-      const anthropic = localStorage.getItem('ax_anthropic_key');
+      const { vault } = await import('./vault.js');
+      const anthropic = await vault.readKey('ax_anthropic_key');
       if (!anthropic) return { ok: true, msg: 'No Anthropic key configured' };
       /* Anthropic n'expose pas balance via API public, on vérifie juste que la clé répond */
       try {

@@ -376,6 +376,46 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     billing: 'https://www.deepl.com/pro',
   },
 
+  /* === Push Notifications (VAPID + Apex Cloudflare Worker) === */
+  {
+    name: 'VAPID Public Key',
+    regex: /^B[A-Za-z0-9_-]{86}$/,
+    storageKey: 'ax_vapid_public',
+    category: 'saas',
+    dashboard: 'https://dash.cloudflare.com/?to=/:account/workers',
+  },
+  {
+    name: 'VAPID Private Key',
+    regex: /^[A-Za-z0-9_-]{43}$/,
+    storageKey: 'ax_vapid_private',
+    category: 'saas',
+    dashboard: 'https://dash.cloudflare.com/?to=/:account/workers',
+  },
+  {
+    name: 'Apex Push Admin Token',
+    regex: /^[A-Za-z0-9_-]{40,128}$/,
+    storageKey: 'apex_v13_push_admin_token',
+    category: 'saas',
+    dashboard: 'https://dash.cloudflare.com/?to=/:account/workers',
+  },
+  {
+    name: 'Apex Push Worker URL',
+    regex: /^https:\/\/[a-z0-9-]+\.workers\.dev\/?$/,
+    storageKey: 'apex_v13_push_worker_url',
+    category: 'saas',
+    dashboard: 'https://dash.cloudflare.com/?to=/:account/workers',
+  },
+
+  /* === Stripe restricted keys (rk_live_*, rk_test_*) === */
+  {
+    name: 'Stripe Restricted Key',
+    regex: /^rk_(live|test)_[A-Za-z0-9]{24,}$/,
+    storageKey: 'ax_stripe_rk',
+    category: 'finance',
+    dashboard: 'https://dashboard.stripe.com/apikeys',
+    billing: 'https://dashboard.stripe.com/billing',
+  },
+
   /* === Identité (PAS de stockage !) === */
   {
     name: 'IBAN',
