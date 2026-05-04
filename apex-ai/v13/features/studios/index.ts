@@ -136,18 +136,44 @@ export const studiosHub = new StudiosHub();
  */
 export function render(root: HTMLElement): void {
   const cards = STUDIOS.map((s) => `
-    <div class="ax-studio-card" data-studio="${s.id}">
-      <div class="ax-studio-card-emoji">${s.emoji}</div>
-      <div class="ax-studio-card-label">${s.label}</div>
-      <div class="ax-studio-card-desc">${s.description}</div>
-      ${s.premium ? '<span class="ax-badge-premium">PRO</span>' : ''}
+    <div class="ax-studio-card" data-studio="${s.id}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
+      <div class="ax-studio-card-emoji" style="font-size:36px">${s.emoji}</div>
+      <div class="ax-studio-card-label" style="font-weight:700;color:#c9a227;margin-top:8px">${s.label}</div>
+      <div class="ax-studio-card-desc" style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${s.description}</div>
+      ${s.premium ? '<span class="ax-badge-premium" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-top:8px;display:inline-block">PRO</span>' : ''}
     </div>
   `).join('');
   root.innerHTML = `
-    <div class="ax-studios-hub">
-      <h1>🎨 Studios créatifs</h1>
-      <p class="ax-subtitle">${STUDIOS.length} studios pour créer, monter, designer</p>
-      <div class="ax-studios-grid">${cards}</div>
+    <div class="ax-studios-hub" style="padding:16px;max-width:900px;margin:0 auto">
+      <h1 style="color:#c9a227">🎨 Studios créatifs</h1>
+      <p class="ax-subtitle" style="color:var(--ax-text-dim)">${STUDIOS.length} studios pour créer, monter, designer</p>
+      <div class="ax-studios-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px">${cards}</div>
+      <div id="ax-studio-detail" style="margin-top:24px"></div>
+      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `;
+  /* Wire click sur cards → toast info Sprint 5 enrichissement contenu */
+  root.querySelectorAll<HTMLDivElement>('.ax-studio-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.dataset['studio'];
+      if (!id) return;
+      void (async () => {
+        const { toast } = await import('../../ui/toast.js');
+        const studio = STUDIOS.find((s) => s.id === id);
+        if (!studio) return;
+        toast.info(`${studio.emoji} ${studio.label} — ouverture Sprint 5`);
+        const detail = root.querySelector<HTMLDivElement>('#ax-studio-detail');
+        if (detail) {
+          detail.innerHTML = `
+            <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:24px;text-align:center">
+              <div style="font-size:64px">${studio.emoji}</div>
+              <h2 style="color:#c9a227;margin:8px 0">${studio.label}</h2>
+              <p style="color:var(--ax-text-dim);margin:0">${studio.description}</p>
+              <p style="margin-top:16px;font-size:13px;color:#888">Studio en cours de développement (Sprint 5).</p>
+            </div>
+          `;
+        }
+      })();
+    });
+  });
 }
