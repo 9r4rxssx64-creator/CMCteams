@@ -739,6 +739,145 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'client_free',
     impactLevel: 'A',
   },
+  /* ========== NETWORK SCAN LAN (Kevin demande pilotage WiFi) ========== */
+  {
+    name: 'scan_network',
+    description: 'Scan LAN complet (WebRTC ICE → IP locale + subnet + 80+ device probes : Hue, Sonos, Plex, NAS, caméras, imprimantes, IoT). Retourne devices trouvés.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        useCache: { type: 'string', description: 'Si "false" force rescan (default true cache 5 min)' },
+      },
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'local_ip',
+    description: 'Découvre IP locale via WebRTC ICE candidate.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'open_lan_device',
+    description: 'Ouvre UI HTTP d\'un device LAN dans nouvel onglet (window.open).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ip: { type: 'string', description: 'IP du device (ex: 192.168.1.50)' },
+        port: { type: 'number', description: 'Port HTTP (default 80)' },
+      },
+      required: ['ip'],
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  /* ========== BADGE CLONER NFC/RFID (60+ formats) ========== */
+  {
+    name: 'scan_badge',
+    description: 'Lecture NFC tag (Android Chrome only). 60+ formats reconnus (NDEF, MIFARE, NTAG, FeliCa, ISO14443/15693, HID Prox, Vigik, EMV, etc.).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'list_badges',
+    description: 'Liste tous les badges scannés (chiffrés AES-GCM via vault).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'clone_badge_to_tag',
+    description: 'Clone badge stocké dans nouveau tag NFC vierge (Android Chrome write).',
+    inputSchema: {
+      type: 'object',
+      properties: { badge_id: { type: 'string' } },
+      required: ['badge_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'badge_to_qr',
+    description: 'Génère QR code équivalent du badge (alternative scanners QR/NFC).',
+    inputSchema: {
+      type: 'object',
+      properties: { badge_id: { type: 'string' } },
+      required: ['badge_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  /* ========== CARD EMULATOR (18 hardware devices) ========== */
+  {
+    name: 'list_emulators',
+    description: 'Liste 18 émulateurs hardware supportés (Flipper Zero USB+BLE, Proxmark3, ChameleonMini, ACR122, OMNIKEY, HydraNFC, RFIDler, M5Stick, ESP32+PN532, MagSpoof, Apex Companion App iOS/Android) + capabilities browser.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'connect_flipper_usb',
+    description: 'Connecte Flipper Zero via WebUSB (Vendor 0x0483).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'connect_flipper_ble',
+    description: 'Connecte Flipper Zero via Web Bluetooth (Service UUID 8fe5b3d5-...).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'connect_proxmark',
+    description: 'Connecte Proxmark3 Easy/RDV4 via WebSerial.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'connect_chameleon',
+    description: 'Connecte ChameleonMini via WebSerial CDC ACM.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'emulate_badge',
+    description: 'Émule badge stocké via device connecté (Flipper, Proxmark, Chameleon, etc.). Délègue commandes spécifiques.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        badge_id: { type: 'string' },
+        duration_sec: { type: 'number', description: 'Durée émulation (default 60s)' },
+      },
+      required: ['badge_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
+  },
+  {
+    name: 'emulator_command',
+    description: 'Envoie commande RAW au device émulateur connecté (ex Proxmark "hf mfu read", Flipper "rfid emulate").',
+    inputSchema: {
+      type: 'object',
+      properties: { cmd: { type: 'string' } },
+      required: ['cmd'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'emulator_disconnect',
+    description: 'Déconnecte device émulateur en cours.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
