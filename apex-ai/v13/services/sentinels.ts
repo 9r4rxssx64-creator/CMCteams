@@ -449,6 +449,42 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* 13b. anti-regression-watch : alerte si tests/coverage baissent vs baseline (Kevin règle "ne plus régresser") */
+  sentinels.register({
+    id: 'anti-regression-watch',
+    name: 'Anti-régression scores',
+    desc: 'Compare snapshot scores actuel vs baseline persisté. Alerte si baisse.',
+    intervalMs: 24 * 60 * 60 * 1000, /* 1× par jour */
+    check: async () => {
+      try {
+        const baseline = JSON.parse(localStorage.getItem('apex_v13_score_baseline') ?? '{}') as {
+          tests_count?: number; coverage_statements?: number; coverage_branches?: number;
+          coverage_functions?: number; coverage_lines?: number; ts?: number;
+        };
+        const current = JSON.parse(localStorage.getItem('apex_v13_score_current') ?? '{}') as typeof baseline;
+        if (!current.tests_count || !baseline.tests_count) {
+          return { ok: true, msg: 'No baseline yet (sera défini au prochain commit)' };
+        }
+        const regressions: string[] = [];
+        if ((current.tests_count ?? 0) < baseline.tests_count) {
+          regressions.push(`tests ${baseline.tests_count} → ${current.tests_count}`);
+        }
+        if ((current.coverage_statements ?? 0) < (baseline.coverage_statements ?? 0)) {
+          regressions.push(`statements ${baseline.coverage_statements}% → ${current.coverage_statements}%`);
+        }
+        if ((current.coverage_branches ?? 0) < (baseline.coverage_branches ?? 0)) {
+          regressions.push(`branches ${baseline.coverage_branches}% → ${current.coverage_branches}%`);
+        }
+        if (regressions.length > 0) {
+          return { ok: false, msg: `RÉGRESSION détectée : ${regressions.join(', ')}`, details: { regressions } };
+        }
+        return { ok: true, msg: 'Pas de régression vs baseline' };
+      } catch {
+        return { ok: true, msg: 'Anti-regression check skipped' };
+      }
+    },
+  });
+
   /* 14. self-test : auto-test runtime health (Sprint 6 Kevin règle test live permanent) */
   sentinels.register({
     id: 'self-test',
