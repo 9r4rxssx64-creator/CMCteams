@@ -37,6 +37,7 @@ export default defineConfig({
         'features/calendar/index.ts',
         'features/billing/index.ts',
         'features/calculators/index.ts',
+        'features/archive/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
