@@ -58,20 +58,20 @@ class ApexSelfAudit {
   /**
    * Lance audit complet (6 axes parallèles + auto-fix + escalade).
    */
-  async runFullAudit(): Promise<AuditReport> {
+  async runFullAudit(brutal = false): Promise<AuditReport> {
     const start = Date.now();
     const id = `audit_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    void auditLog.record('self_audit.started', { details: { id } });
-    void soc2.record('integrity.audit_chain_verified', 'system', { type: 'self_audit', id });
+    void auditLog.record('self_audit.started', { details: { id, brutal } });
+    void soc2.record('integrity.audit_chain_verified', 'system', { type: 'self_audit', id, brutal });
 
-    /* 6 audits en parallèle */
+    /* 6 audits en parallèle (mode brutal = checks supplémentaires + sévérité bumpée) */
     const [security, performance, ux, tests, architecture, aiSafety] = await Promise.all([
-      this.auditSecurity(),
-      this.auditPerformance(),
-      this.auditUX(),
-      this.auditTests(),
-      this.auditArchitecture(),
-      this.auditAISafety(),
+      this.auditSecurity(brutal),
+      this.auditPerformance(brutal),
+      this.auditUX(brutal),
+      this.auditTests(brutal),
+      this.auditArchitecture(brutal),
+      this.auditAISafety(brutal),
     ]);
 
     const allFindings: Finding[] = [
@@ -134,7 +134,7 @@ class ApexSelfAudit {
 
   /* === Audits par axe === */
 
-  private async auditSecurity(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditSecurity(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* 1. Vault tokens chiffrés ? */
     try {
@@ -181,11 +181,57 @@ class ApexSelfAudit {
       }
     } catch { /* skip */ }
 
+    /* MODE BRUTAL : checks supplémentaires sécurité */
+    if (brutal) {
+      /* Brut 1 : check rate-limit configuré */
+      try {
+        const failsKeys = Object.keys(localStorage).filter((k) => k.startsWith('apex_v13_pin_fails_'));
+        if (failsKeys.length > 3) {
+          findings.push(this.makeFinding('security', 'p1_high',
+            `${failsKeys.length} compteurs rate-limit actifs`,
+            'Plusieurs users ont eu des fails PIN — possible brute force tentative',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+      /* Brut 2 : check device trusted présence */
+      try {
+        const trusted = localStorage.getItem('apex_v13_device_trusted_v1');
+        if (!trusted) {
+          findings.push(this.makeFinding('security', 'p2_medium',
+            'Device non trusted',
+            'Auto-login désactivé → user doit retaper PIN à chaque session',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+      /* Brut 3 : vérifier que vault.getDeviceBoundPassphrase a backup IDB */
+      try {
+        const idbBackup = await new Promise<boolean>((resolve) => {
+          if (!('indexedDB' in window)) return resolve(false);
+          const req = indexedDB.open('apex_v13_secure', 1);
+          req.onsuccess = () => {
+            try {
+              const db = req.result;
+              const tx = db.transaction('passphrase', 'readonly');
+              const get = tx.objectStore('passphrase').get('device_v1');
+              get.onsuccess = () => { db.close(); resolve(typeof get.result === 'string'); };
+              get.onerror = () => { db.close(); resolve(false); };
+            } catch { resolve(false); }
+          };
+          req.onerror = () => resolve(false);
+        });
+        if (!idbBackup) {
+          findings.push(this.makeFinding('security', 'p1_high',
+            'Vault passphrase pas backup IDB',
+            'Risque perte clés API si user efface historique Safari',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+    }
     const score = Math.max(0, 20 - findings.length * 2);
     return { score, findings };
   }
 
-  private async auditPerformance(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditPerformance(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* 1. localStorage quota */
     try {
@@ -229,11 +275,46 @@ class ApexSelfAudit {
       }
     } catch { /* skip */ }
 
+    /* MODE BRUTAL : checks performance supplémentaires */
+    if (brutal) {
+      /* Brut 1 : taille DOM */
+      const domSize = document.querySelectorAll('*').length;
+      if (domSize > 2000) {
+        findings.push(this.makeFinding('performance', 'p2_medium',
+          `DOM trop large (${domSize} éléments)`,
+          'Reflow + style recalc lents iPhone',
+          'no_action'));
+      }
+      /* Brut 2 : LCP via Performance API */
+      try {
+        const entries = performance.getEntriesByType('paint');
+        for (const e of entries) {
+          if (e.name === 'largest-contentful-paint' && e.startTime > 2500) {
+            findings.push(this.makeFinding('performance', 'p1_high',
+              `LCP lent : ${Math.round(e.startTime)}ms`,
+              'Cible Web Vitals < 2500ms (Good)',
+              'no_action'));
+          }
+        }
+      } catch { /* skip */ }
+      /* Brut 3 : compteur Service Worker actif */
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          if (regs.length === 0) {
+            findings.push(this.makeFinding('performance', 'p1_high',
+              'Service Worker absent',
+              'Pas de cache offline → app lente démarrage cold',
+              'no_action'));
+          }
+        }
+      } catch { /* skip */ }
+    }
     const score = Math.max(0, 20 - findings.length * 2);
     return { score, findings };
   }
 
-  private async auditUX(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditUX(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* 1. Boutons critiques touch-target 44px+ */
     try {
@@ -262,11 +343,49 @@ class ApexSelfAudit {
       }
     }
 
+    /* MODE BRUTAL : checks UX supplémentaires */
+    if (brutal) {
+      /* Brut 1 : 145 vues v12 manquantes (audit subagent v13.0.35) */
+      const v12ViewsExpected = 145;
+      const v13RoutesActual = ['chat', 'admin', 'laurence', 'studios', 'pro'].length;
+      if (v13RoutesActual < v12ViewsExpected * 0.5) {
+        findings.push(this.makeFinding('ux', 'p0_critical',
+          `${v12ViewsExpected - v13RoutesActual} vues v12 manquantes`,
+          `v13 a ${v13RoutesActual} vues vs ${v12ViewsExpected} v12.785`,
+          'no_action'));
+      }
+      /* Brut 2 : touch targets < 44px Apple HIG */
+      const tooSmall = document.querySelectorAll<HTMLElement>('button, a[href]');
+      let smallCount = 0;
+      tooSmall.forEach((btn) => {
+        const rect = btn.getBoundingClientRect();
+        if ((rect.width < 44 || rect.height < 44) && btn.offsetParent !== null) smallCount++;
+      });
+      if (smallCount > 10) {
+        findings.push(this.makeFinding('ux', 'p1_high',
+          `${smallCount} boutons < 44px Apple HIG`,
+          'Touch targets non-conformes iPhone',
+          'no_action'));
+      }
+      /* Brut 3 : font-size < 14px (zoom auto iOS sur input) */
+      const inputs = document.querySelectorAll<HTMLElement>('input, textarea');
+      let smallFontInputs = 0;
+      inputs.forEach((i) => {
+        const fs = parseFloat(getComputedStyle(i).fontSize);
+        if (fs < 14) smallFontInputs++;
+      });
+      if (smallFontInputs > 0) {
+        findings.push(this.makeFinding('ux', 'p1_high',
+          `${smallFontInputs} inputs font-size < 14px`,
+          'iOS Safari zoom auto au focus → UX cassée',
+          'no_action'));
+      }
+    }
     const score = Math.max(0, 20 - findings.length);
     return { score, findings };
   }
 
-  private async auditTests(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditTests(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* Lecture coverage stats (si dispo dans localStorage après run vitest) */
     /* Note : vitest ne run pas en runtime browser, donc on check juste lessons_learned */
@@ -280,11 +399,32 @@ class ApexSelfAudit {
           'add_regression_tests'));
       }
     } catch { /* skip */ }
+    /* MODE BRUTAL : checks tests supplémentaires */
+    if (brutal) {
+      /* Brut 1 : couverture < 95% = critical */
+      try {
+        const coverage = JSON.parse(localStorage.getItem('apex_v13_coverage_stats') ?? '{}') as {
+          statements?: number; branches?: number; functions?: number; lines?: number;
+        };
+        if (coverage.statements && coverage.statements < 95) {
+          findings.push(this.makeFinding('tests', 'p1_high',
+            `Coverage statements ${coverage.statements}% < 95%`,
+            'Cible 100% Kevin règle',
+            'no_action'));
+        }
+        if (coverage.branches && coverage.branches < 90) {
+          findings.push(this.makeFinding('tests', 'p1_high',
+            `Coverage branches ${coverage.branches}% < 90%`,
+            'Cible 100% Kevin règle',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+    }
     const score = Math.max(0, 20 - findings.length * 2);
     return { score, findings };
   }
 
-  private async auditArchitecture(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditArchitecture(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* 1. Services bootstrap stats */
     try {
@@ -297,11 +437,38 @@ class ApexSelfAudit {
           'restart_failed_services'));
       }
     } catch { /* skip */ }
+    /* MODE BRUTAL : checks architecture supplémentaires */
+    if (brutal) {
+      /* Brut 1 : Bundle size > 50KB */
+      try {
+        const perfRes = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        const totalJsSize = perfRes
+          .filter((r) => r.name.endsWith('.js'))
+          .reduce((acc, r) => acc + (r.transferSize || 0), 0);
+        if (totalJsSize > 50 * 1024) {
+          findings.push(this.makeFinding('architecture', 'p2_medium',
+            `Bundle JS ${Math.round(totalJsSize / 1024)}KB > 50KB`,
+            'Cible Kevin règle perf',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+      /* Brut 2 : nombre services bootstrap */
+      try {
+        const { lifecycle } = await import('./service-lifecycle.js');
+        const stats = lifecycle.getStats();
+        if (stats.total === 0) {
+          findings.push(this.makeFinding('architecture', 'p0_critical',
+            'Aucun service initialisé',
+            'service-lifecycle stats.total = 0 → bootstrap KO',
+            'restart_failed_services'));
+        }
+      } catch { /* skip */ }
+    }
     const score = Math.max(0, 20 - findings.length * 2);
     return { score, findings };
   }
 
-  private async auditAISafety(): Promise<{ score: number; findings: Finding[] }> {
+  private async auditAISafety(brutal = false): Promise<{ score: number; findings: Finding[] }> {
     const findings: Finding[] = [];
     /* 1. ai-routing-policy mode + clés */
     try {
@@ -320,6 +487,30 @@ class ApexSelfAudit {
           'switch_to_economy_mode'));
       }
     } catch { /* skip */ }
+    /* MODE BRUTAL : checks AI Safety supplémentaires */
+    if (brutal) {
+      /* Brut 1 : PII redaction wired ai-router ? */
+      try {
+        const { aiRouter } = await import('./ai-router.js');
+        if (typeof aiRouter !== 'object' || aiRouter === null) {
+          findings.push(this.makeFinding('ai_safety', 'p0_critical',
+            'AI router not initialized',
+            'Service ai-router non chargé → IA inaccessible',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+      /* Brut 2 : context-loader injecté system prompt ? */
+      try {
+        const { contextLoader } = await import('./context-loader.js');
+        const ctx = await contextLoader.load();
+        if (ctx.rules.length === 0) {
+          findings.push(this.makeFinding('ai_safety', 'p1_high',
+            'Context-loader vide',
+            'Règles permanentes pas injectées system prompt',
+            'no_action'));
+        }
+      } catch { /* skip */ }
+    }
     const score = Math.max(0, 20 - findings.length * 2);
     return { score, findings };
   }
