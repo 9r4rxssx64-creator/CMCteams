@@ -22,12 +22,12 @@ export default defineConfig({
         'services/bodyguard.ts',
       ],
       thresholds: {
-        /* Sprint 6 Kevin v13.0.55 : seuils relevés (anti-régression strict).
+        /* Sprint 8 Kevin v13.0.60 : seuils relevés (anti-régression strict).
            Si baisse → CI fail. JAMAIS abaisser ces valeurs. */
-        lines: 83,
-        functions: 90,
-        branches: 75,
-        statements: 83,
+        lines: 84,
+        functions: 91,
+        branches: 76,
+        statements: 84,
       },
     },
     setupFiles: ['./tests/setup.ts'],

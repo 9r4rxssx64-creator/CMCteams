@@ -498,11 +498,11 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         };
         /* Met à jour current depuis APP_VER (live) */
         const current = {
-          tests_count: 2367, /* MIS A JOUR à chaque commit */
-          coverage_statements: 83.33,
-          coverage_branches: 75.13,
-          coverage_functions: 91.12,
-          coverage_lines: 83.33,
+          tests_count: 2551, /* MIS A JOUR à chaque commit (anti-régression Kevin) */
+          coverage_statements: 84.29,
+          coverage_branches: 76.70,
+          coverage_functions: 91.76,
+          coverage_lines: 84.29,
           ts: Date.now(),
         };
         localStorage.setItem('apex_v13_score_current', JSON.stringify(current));
