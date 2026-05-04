@@ -1,8 +1,19 @@
 # 📁 APEX PROJECTS — Registry central tous projets Kevin
 
-> Mis à jour 2026-04-30 (Apex v12.547)
+> Mis à jour 2026-05-04 (Apex v13.0.77 / CMCteams v9.593)
 > Source de vérité unique pour tous les projets gérés par Apex AI.
 > Apex IA peut consulter ce fichier en autonomie via `cmcRead("APEX_PROJECTS.md")`.
+
+## 🆕 STATUS MAJ 2026-05-04 — Apex v13.0.77 livré
+
+- **Apex v13** : 4463+ tests verts, parité v12 ~85%, branche `claude/test-699LQ` canary
+- **17 subagents** finis cette session (5 commits v13.0.73 → v13.0.77)
+- **Parité Claude Code 100%** : Apex peut Read/Edit/Write/Bash/Web/Subagents/MCP
+- **Auto-modification** : 23 tasks whitelist Apex + 12 forbidden (sécurité)
+- **Preflight check** : Apex vérifie outils/modules avant présenter user
+- **109 features** ON/OFF global + per-user
+- **51 services** liens recharge avec dashboard/billing/docs/support/status/api/usage
+- **15 skills experts** documentés .claude/skills/ (4712 lignes)
 
 ---
 
@@ -24,8 +35,9 @@
 
 | # | ID | Nom | Statut | Version | Localisation |
 |---|----|----|--------|---------|--------------|
-| 1 | `kdmc` | **APEX AI** | 🟢 Production | v12.550 | `apex-ai/` |
-| 2 | `cmcteams` | **CMCteams** (casino Monaco) | 🟢 Production | v9.579 | `index.html` racine |
+| 1 | `kdmc` | **APEX AI v13** | 🟢 Canary | v13.0.77 | `apex-ai/v13/` (claude/test-699LQ) |
+| 1b | `kdmc-v12` | **APEX AI v12** | 🟢 Production stable | v12.785 | `apex-ai/` |
+| 2 | `cmcteams` | **CMCteams** (casino Monaco) | 🟢 Production | v9.593 | `index.html` racine |
 | 3 | `apexchat` | **Apex Chat** (WhatsApp clone) | 🟠 Dév Mode A | v0.2 | `messaging-app/` |
 | 4 | `socialvideo` | **Social Video Pipeline** | 🟠 Dév Phase 3 | v0.3 | `tools/social/` |
 | 5 | `remote` | **Télécommande Universelle** | 🟢 Production | v1.2 | dans Apex AI |

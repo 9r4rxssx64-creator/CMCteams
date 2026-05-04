@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.77';
+export const APP_VER = 'v13.0.78';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -69,6 +69,11 @@ async function bootstrap(): Promise<void> {
     const { auditLog } = await import('@services/audit-log.js');
     auditLog.init();
     await auditLog.record('boot.start', { details: { ver: APP_VER } });
+  });
+  await safeInit('auto-backup', async () => {
+    /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto */
+    const { autoBackup } = await import('@services/auto-backup.js');
+    await autoBackup.init();
   });
   await safeInit('observability', async () => {
     const { observability } = await import('@services/observability.js');
@@ -179,6 +184,8 @@ async function bootstrap(): Promise<void> {
   router.register('knowledge-bank', { loader: () => import('@features/knowledge-bank/index.js'), requiresAuth: true });
   router.register('apex-toolbox', { loader: () => import('@features/apex-toolbox/index.js'), requiresAuth: true });
   router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
+  /* Sprint 9 Kevin v13.0.77+ — Auto-Backup admin (règle "ne jamais rien perdre") */
+  router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

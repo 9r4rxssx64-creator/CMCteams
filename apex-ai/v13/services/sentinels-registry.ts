@@ -565,6 +565,84 @@ class SentinelsRegistry {
       },
     });
 
+    /* 18. auto-backup-watch (1h) — snapshot quotidien 3h UTC + hebdo dimanche 4h UTC + cleanup > 30j
+     * (Kevin règle "ne jamais rien perdre" 2026-05-04, niveau enterprise SOC2). */
+    sentinelsManager.register({
+      id: 'auto-backup-watch',
+      name: 'Backup Auto 24/7',
+      desc: 'Snapshot quotidien 3h UTC + hebdo dimanche 4h UTC + cleanup > 30 jours',
+      intervalMs: 60 * 60 * 1000, /* check 1h, mais snapshot uniquement à 3h UTC */
+      check: async () => {
+        try {
+          const { autoBackup } = await import('./auto-backup.js');
+          const now = new Date();
+          const hour = now.getUTCHours();
+          const day = now.getUTCDay(); /* 0=dimanche */
+          /* Hebdo dimanche 4h UTC : full state + Firebase remote */
+          if (day === 0 && hour === 4) {
+            const backup = await autoBackup.snapshot('weekly');
+            return {
+              ok: true,
+              msg: `Backup hebdo ${backup.id} OK (${(backup.size_bytes / 1024).toFixed(1)} KB)`,
+              details: { id: backup.id, type: 'weekly', size: backup.size_bytes },
+            };
+          }
+          /* Quotidien 3h UTC */
+          if (hour === 3) {
+            const backup = await autoBackup.snapshot('daily');
+            return {
+              ok: true,
+              msg: `Backup quotidien ${backup.id} OK (${(backup.size_bytes / 1024).toFixed(1)} KB)`,
+              details: { id: backup.id, type: 'daily', size: backup.size_bytes },
+            };
+          }
+          /* Heartbeat heures non-trigger : cleanup + stats */
+          const cleaned = await autoBackup.cleanup();
+          const stats = autoBackup.getStats();
+          if (stats.last_backup_age_h > 26 && stats.total_backups === 0) {
+            return {
+              ok: false,
+              msg: 'Aucun backup disponible (run manual urgent)',
+              details: { stats },
+            };
+          }
+          if (stats.last_backup_age_h > 48) {
+            return {
+              ok: false,
+              msg: `Dernière backup ${stats.last_backup_age_h}h (>48h critical)`,
+              details: { stats },
+            };
+          }
+          return {
+            ok: true,
+            msg: `${stats.total_backups} backups (cleaned ${cleaned.deleted})`,
+            details: { stats, cleaned: cleaned.deleted },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-backup-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Si quota localStorage saturé → cleanup agressif */
+        try {
+          const { autoBackup } = await import('./auto-backup.js');
+          const cleaned = await autoBackup.cleanup();
+          return {
+            ok: cleaned.deleted > 0,
+            msg: `Cleanup auto-fix : ${cleaned.deleted} backups supprimés`,
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-fix failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
     /* 17. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',

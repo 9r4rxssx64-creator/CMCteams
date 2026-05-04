@@ -468,12 +468,53 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
 export function detectCredential(value: string): CredentialPattern | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  /* Test forbidden patterns en priorité absolue */
+  /* Test forbidden patterns en priorité absolue (full match) */
   for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category === 'forbidden')) {
     if (p.regex.test(trimmed)) return p;
   }
+  /* Full match d'abord (clé seule) */
   for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
     if (p.regex.test(trimmed)) return p;
   }
+  /* Fallback : si Kevin colle multi-line / JSON / contexte, scan le premier match trouvé
+   * (permissif, fix Kevin v13.0.78 "il s'affole pas reconnu") */
+  const lines = trimmed.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+  for (const line of lines) {
+    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
+      if (p.regex.test(line)) return p;
+    }
+  }
   return null;
+}
+
+/**
+ * Détecte TOUTES les clés API dans un texte multi-credentials (scanne chaque ligne/segment).
+ * Utile quand Kevin colle plusieurs clés d'un coup ou un fichier .env complet.
+ * Returns: Array de {pattern, value} pour chaque match unique trouvé.
+ */
+export function detectAllCredentials(text: string): Array<{ pattern: CredentialPattern; value: string }> {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const results: Array<{ pattern: CredentialPattern; value: string }> = [];
+  const seen = new Set<string>();
+  /* Split sur whitespace, virgules, point-virgules, retours ligne, =, : (formats .env / JSON) */
+  const tokens = trimmed.split(/[\s,;=:"'`]+/).map((s) => s.trim()).filter(Boolean);
+  /* Aussi tester le texte entier (full match) en premier */
+  const fullMatch = detectCredential(trimmed);
+  if (fullMatch) {
+    results.push({ pattern: fullMatch, value: trimmed });
+    seen.add(fullMatch.storageKey);
+  }
+  /* Puis chaque token */
+  for (const token of tokens) {
+    if (token.length < 16) continue; /* skip très courts (pas un vrai token) */
+    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden' && p.category !== 'identity')) {
+      if (p.regex.test(token) && !seen.has(p.storageKey)) {
+        results.push({ pattern: p, value: token });
+        seen.add(p.storageKey);
+        break;
+      }
+    }
+  }
+  return results;
 }

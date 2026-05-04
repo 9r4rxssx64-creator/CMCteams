@@ -285,12 +285,13 @@ export function render(rootEl: HTMLElement): void {
           style="display:none">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
-      <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat">💬 Chat</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="settings">🔧 Réglages</button>
-        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav">🔑 Clé API</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav">🚪 Déconnexion</button>
+      <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:44px;padding:8px 14px">💬 Chat</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:44px;padding:8px 14px">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:44px;padding:8px 14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:44px;padding:8px 14px">🔧 Réglages</button>
+        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px">🔑 Clé API</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px;color:#ff6666">🚪 Déconnexion</button>
       </nav>
       <footer style="text-align:center;padding:6px;font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg)">
         APEX AI v13.0 — Créé par <strong style="color:var(--ax-gold)">DK</strong>
@@ -305,23 +306,30 @@ export function render(rootEl: HTMLElement): void {
       e.preventDefault();
       const value = textarea.value.trim();
       if (!value) return;
-      /* P0 SÉCU : anti-erreur Kevin — détecte clé API collée dans chat → ouvre modal vault */
+      /* P0 SÉCU v13.0.78 Kevin "il s'affole pas reconnu" :
+       * Bulk detect → store toutes clés trouvées (multi-line, .env, JSON OK) */
       void (async () => {
-        const { detectCredential } = await import('../../services/credential-patterns.js');
-        const detected = detectCredential(value);
-        if (detected && detected.category !== 'forbidden' && detected.category !== 'identity') {
-          /* C'est une clé API/token → ouvre modal Coller au lieu d'envoyer dans chat */
+        const { detectAllCredentials } = await import('../../services/credential-patterns.js');
+        const detected = detectAllCredentials(value);
+        if (detected.length > 0) {
           textarea.value = '';
+          textarea.style.height = 'auto';
           const { vault } = await import('../../services/vault.js');
-          const result = await vault.autoStore(value);
-          if (result.ok && result.pattern) {
-            toast.success(`🔑 ${result.pattern.name} détectée + chiffrée + stockée`);
-          } else {
-            toast.error(result.reason ?? 'Erreur stockage clé');
+          const result = await vault.autoStoreBulk(value);
+          if (result.stored.length > 0) {
+            const names = result.stored.map((s) => s.pattern.name).join(', ');
+            toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) AES-GCM-256 : ${names}`, { duration: 6000 });
+          }
+          if (result.forbidden.length > 0) {
+            const names = result.forbidden.map((f) => f.pattern.name).join(', ');
+            toast.error(`🚫 ${names} JAMAIS stocké (sécu Kevin)`, { duration: 8000 });
+          }
+          if (result.failed > 0 && result.stored.length === 0) {
+            toast.warn(`⚠️ ${result.failed} format inconnu — ouvre 🔐 Coffre pour coller manuellement`, { duration: 8000 });
           }
           return;
         }
-        /* Pas une clé → message normal */
+        /* Pas de clé → message normal */
         textarea.value = '';
         textarea.style.height = 'auto';
         queue.push(value);
@@ -338,22 +346,28 @@ export function render(rootEl: HTMLElement): void {
         form.requestSubmit();
       }
     });
-    /* Auto-detect paste : si user colle une clé API → bloque + auto-store chiffré */
+    /* Auto-detect paste v13.0.78 : multi-clés bulk store (.env, JSON, multi-line) */
     textarea.addEventListener('paste', (e) => {
       const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
       if (!pasted) return;
       void (async () => {
-        const { detectCredential } = await import('../../services/credential-patterns.js');
-        const detected = detectCredential(pasted);
-        if (detected && detected.category !== 'forbidden' && detected.category !== 'identity') {
+        const { detectAllCredentials } = await import('../../services/credential-patterns.js');
+        const detected = detectAllCredentials(pasted);
+        if (detected.length > 0) {
           e.preventDefault();
           textarea.value = '';
           const { vault } = await import('../../services/vault.js');
-          const result = await vault.autoStore(pasted);
-          if (result.ok && result.pattern) {
-            toast.success(`🔑 ${result.pattern.name} détectée auto + chiffrée AES-GCM-256`);
-          } else {
-            toast.error(result.reason ?? 'Erreur stockage');
+          const result = await vault.autoStoreBulk(pasted);
+          if (result.stored.length > 0) {
+            const names = result.stored.map((s) => s.pattern.name).join(', ');
+            toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) auto AES-GCM-256 : ${names}`, { duration: 6000 });
+          }
+          if (result.forbidden.length > 0) {
+            const names = result.forbidden.map((f) => f.pattern.name).join(', ');
+            toast.error(`🚫 ${names} JAMAIS stocké (règle sécu)`, { duration: 8000 });
+          }
+          if (result.failed > 0 && result.stored.length === 0) {
+            toast.warn(`Format inconnu — ouvre 🔐 Coffre pour coller manuellement`, { duration: 6000 });
           }
         }
       })();

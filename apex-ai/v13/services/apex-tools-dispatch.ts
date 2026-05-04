@@ -27,6 +27,91 @@ export interface ToolExecResult {
 }
 
 class ApexToolsDispatcher {
+  /* P0 fix audit Cure53/NCC : event delegation singleton.
+     Au lieu d'attacher un listener par bouton modal (memory leak car les modals
+     sont fréquemment ouverts/fermés), on a UN SEUL listener `click` sur document.body
+     qui dispatch via data-attribute `data-tool-action`.
+     - Pas de cleanup individuel à gérer.
+     - 1 listener total, peu importe le nombre de modals ouverts. */
+  private delegationInstalled = false;
+  private delegationAbort: AbortController | null = null;
+  /* Référence vers le listener pour double-cleanup (AbortController + removeEventListener
+     explicite — certains environnements browser/test ne respectent pas signal). */
+  private delegationListener: EventListener | null = null;
+  /* Map d'actions actives → handler. Key = `data-tool-action` value. */
+  private toolActionHandlers = new Map<string, (el: Element, ev: Event) => void>();
+
+  /**
+   * Installe le listener de délégation unique (idempotent).
+   * Appelé lazily à la 1re utilisation d'openUrlModal ou de tout consumer event-delegation.
+   */
+  private installDelegation(): void {
+    if (this.delegationInstalled) return;
+    if (typeof document === 'undefined') return;
+    this.delegationAbort = new AbortController();
+    const listener: EventListener = (ev) => {
+      const target = ev.target as Element | null;
+      if (!target) return;
+      const actionEl = target.closest<HTMLElement>('[data-tool-action]');
+      if (!actionEl) return;
+      const action = actionEl.dataset['toolAction'];
+      if (!action) return;
+      const handler = this.toolActionHandlers.get(action);
+      if (handler) handler(actionEl, ev);
+    };
+    this.delegationListener = listener;
+    document.body.addEventListener('click', listener, { signal: this.delegationAbort.signal });
+    this.delegationInstalled = true;
+  }
+
+  /**
+   * Enregistre un handler pour un `data-tool-action` donné.
+   * Si un handler existait déjà, il est remplacé (no leak).
+   * Retourne fonction unregister pour cleanup explicite si voulu.
+   */
+  private registerToolAction(action: string, handler: (el: Element, ev: Event) => void): () => void {
+    this.installDelegation();
+    this.toolActionHandlers.set(action, handler);
+    return () => {
+      const current = this.toolActionHandlers.get(action);
+      if (current === handler) this.toolActionHandlers.delete(action);
+    };
+  }
+
+  /**
+   * Cleanup public — appelable au logout/shutdown.
+   * Désinstalle le listener de délégation + clear handlers.
+   * Double-cleanup : AbortController.abort() + removeEventListener explicite
+   * (certains tests/runtimes ne respectent pas le signal automatiquement).
+   */
+  destroy(): void {
+    if (this.delegationAbort) {
+      try { this.delegationAbort.abort(); } catch { /* ignore */ }
+      this.delegationAbort = null;
+    }
+    if (this.delegationListener && typeof document !== 'undefined') {
+      try { document.body.removeEventListener('click', this.delegationListener); } catch { /* ignore */ }
+    }
+    this.delegationListener = null;
+    this.delegationInstalled = false;
+    this.toolActionHandlers.clear();
+  }
+
+  /**
+   * Audit helper : compte d'actions de délégation enregistrées.
+   * Exposé pour tests (vérifier qu'on n'accumule pas de handlers fantômes).
+   */
+  getActiveDelegationActionCount(): number {
+    return this.toolActionHandlers.size;
+  }
+
+  /**
+   * True si la délégation document est installée (1 seul listener total).
+   */
+  isDelegationInstalled(): boolean {
+    return this.delegationInstalled;
+  }
+
   /**
    * Exécute un tool avec validation tier + audit log + retry.
    * Si tool requires_validation=true, retourne validation_token au lieu d'exécuter.
@@ -833,8 +918,8 @@ class ApexToolsDispatcher {
               ${fullUrl.replace(/[<>"']/g, '')}
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
-              <button class="ax-btn ax-btn-secondary" id="ax-openurl-internal">📱 Ouvrir dans Apex</button>
-              <button class="ax-btn ax-btn-primary" id="ax-openurl-external">🌐 Ouvrir Safari</button>
+              <button class="ax-btn ax-btn-secondary" data-tool-action="openurl-internal">📱 Ouvrir dans Apex</button>
+              <button class="ax-btn ax-btn-primary" data-tool-action="openurl-external">🌐 Ouvrir Safari</button>
             </div>
           </div>
         `,
@@ -846,23 +931,23 @@ class ApexToolsDispatcher {
           },
         ],
       });
-      /* Wire boutons après ouverture (modal-sheet inject content) */
-      setTimeout(() => {
-        const internalBtn = document.getElementById('ax-openurl-internal');
-        const externalBtn = document.getElementById('ax-openurl-external');
-        internalBtn?.addEventListener('click', () => {
-          sheet.close();
-          /* Stocke URL pour browser embed + navigate */
-          try {
-            localStorage.setItem('apex_v13_browser_last_url', fullUrl);
-          } catch { /* skip */ }
-          location.hash = '#browser';
-        });
-        externalBtn?.addEventListener('click', () => {
-          sheet.close();
-          window.open(fullUrl, '_blank', 'noopener,noreferrer');
-        });
-      }, 100);
+      /* P0 fix audit Cure53/NCC : event delegation au lieu d'addEventListener par bouton.
+         1 listener global sur document.body via installDelegation() — pas de leak par modal. */
+      const unregInternal = this.registerToolAction('openurl-internal', () => {
+        sheet.close();
+        try {
+          localStorage.setItem('apex_v13_browser_last_url', fullUrl);
+        } catch { /* skip */ }
+        if (typeof location !== 'undefined') location.hash = '#browser';
+        unregInternal();
+        unregExternal();
+      });
+      const unregExternal = this.registerToolAction('openurl-external', () => {
+        sheet.close();
+        if (typeof window !== 'undefined') window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        unregInternal();
+        unregExternal();
+      });
       return { ok: true, url: fullUrl, opened: true };
     } catch (err: unknown) {
       logger.warn('apex-tools', 'openUrlModal failed', { err });

@@ -13,7 +13,7 @@
 
 import { logger } from '../core/logger.js';
 
-import { detectCredential, type CredentialPattern } from './credential-patterns.js';
+import { detectCredential, detectAllCredentials, type CredentialPattern } from './credential-patterns.js';
 
 interface EncryptedPayload {
   v: 1;
@@ -532,6 +532,55 @@ class Vault {
     }
     logger.info('vault', `Stored ${detected.name} → ${detected.storageKey}`, { valid });
     return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  /**
+   * BULK auto-store : Kevin colle multiple clés (.env, JSON, multi-line texte).
+   * v13.0.78 fix : "il s'affole pas reconnu" — scan tous les tokens, store chacun.
+   */
+  async autoStoreBulk(value: string): Promise<{
+    stored: Array<{ pattern: CredentialPattern; valid?: boolean }>;
+    forbidden: Array<{ pattern: CredentialPattern }>;
+    failed: number;
+    total: number;
+  }> {
+    const detected = detectAllCredentials(value);
+    if (detected.length === 0) {
+      /* Fallback : essaie autoStore simple sur le texte trimmed (rétrocompat) */
+      const single = await this.autoStore(value);
+      if (single.ok && single.pattern) {
+        return {
+          stored: [{ pattern: single.pattern, ...(single.valid !== undefined && { valid: single.valid }) }],
+          forbidden: [],
+          failed: 0,
+          total: 1,
+        };
+      }
+      if (single.forbidden && single.pattern) {
+        return { stored: [], forbidden: [{ pattern: single.pattern }], failed: 0, total: 1 };
+      }
+      return { stored: [], forbidden: [], failed: 1, total: 1 };
+    }
+    const stored: Array<{ pattern: CredentialPattern; valid?: boolean }> = [];
+    const forbidden: Array<{ pattern: CredentialPattern }> = [];
+    let failed = 0;
+    for (const { pattern, value: rawValue } of detected) {
+      const result = await this.autoStore(rawValue);
+      if (result.ok && result.pattern) {
+        stored.push({ pattern: result.pattern, ...(result.valid !== undefined && { valid: result.valid }) });
+      } else if (result.forbidden && result.pattern) {
+        forbidden.push({ pattern: result.pattern });
+      } else {
+        failed++;
+        logger.warn('vault', `autoStoreBulk : pattern ${pattern.name} échec`, { reason: result.reason });
+      }
+    }
+    logger.info('vault', `autoStoreBulk : ${stored.length}/${detected.length} clés stockées`, {
+      stored: stored.map((s) => s.pattern.name),
+      forbidden: forbidden.map((f) => f.pattern.name),
+      failed,
+    });
+    return { stored, forbidden, failed, total: detected.length };
   }
 
   /**

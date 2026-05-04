@@ -37,6 +37,8 @@ class Toast {
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
     el.setAttribute('aria-atomic', 'true');
+    /* P0 Kevin v13.0.78 — inline fallback si CSS bundle stale (cache iPhone) */
+    el.style.cssText = 'position:fixed;top:env(safe-area-inset-top,16px);left:50%;transform:translateX(-50%);z-index:99998;display:flex;flex-direction:column;gap:8px;padding:8px;max-width:96vw;pointer-events:none';
     document.body.appendChild(el);
     this.container = el;
     return el;
@@ -54,6 +56,14 @@ class Toast {
     el.className = `ax-toast ax-toast-${level}${premiumClass}`;
     el.id = id;
     el.setAttribute('role', 'alert');
+    /* Inline fallback styles — garantit visible même si CSS bundle stale */
+    const bgColors: Record<ToastLevel, string> = {
+      success: 'rgba(34,204,119,0.95)',
+      error: 'rgba(255,91,91,0.95)',
+      warn: 'rgba(255,170,0,0.95)',
+      info: 'rgba(20,20,35,0.95)',
+    };
+    el.style.cssText = `pointer-events:auto;display:flex;align-items:center;gap:10px;padding:12px 16px;background:${bgColors[level] ?? 'rgba(20,20,35,0.95)'};color:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.3);max-width:100%;font-size:14px;line-height:1.4;font-family:system-ui,-apple-system,sans-serif;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:axToastSlide 250ms ease-out`;
 
     const icon = this.getIcon(level);
     el.innerHTML = `

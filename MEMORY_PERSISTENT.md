@@ -35,15 +35,27 @@
 | Broadlink IR | ✅ Configuré | domotique |
 | Home Assistant | ✅ URL locale | `ax_ha_url` |
 
-## 📊 ÉTAT DES PROJETS (live)
+## 📊 ÉTAT DES PROJETS (live — MAJ 2026-05-04)
 
 | Projet | Version | État | Notes |
 |--------|---------|------|-------|
-| **CMCteams** | v9.453 | Production | 258 employés, planning casino Monaco |
-| **Apex AI** | v12.23 | Production | Ex-KDMC AI, renommé 2026-04-21 |
-| **e-KDMC** | v0.1 | Dev | E-commerce, pas encore démarré |
+| **CMCteams** | v9.593 | Production | 258 employés, planning casino Monaco |
+| **Apex AI v12** | v12.785 | Production stable | Live https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/ |
+| **Apex AI v13** | v13.0.77 | Canary (claude/test-699LQ) | TS strict + Vite 6 + 4463+ tests, parité v12 ~85% |
+| **e-KDMC** | v0.3 | Dev | 5 boutiques + dashboard + functions, en attente Stripe/Brevo Kevin |
+| **Apex Chat** | v0.2 | Dev Mode A | messaging-app/, 8 fichiers à adapter |
+| **Social Video** | v0.3 | Dev Phase 3 | Recovery branche RvjYq, en attente tokens |
 | **Remote** | Intégré Apex | Production | IR/TV/HA/MQTT |
 | **CrackPass** | Intégré Apex | Production | Gén/test MDP |
+
+## 🏆 RÈGLES PERMANENTES KEVIN AJOUTÉES (2026-05-04 PM)
+
+5 nouvelles règles Apex priorité 1 :
+1. **TOUT AU MAX TOUJOURS** — outils/modules/scripts/skills/hooks/workflows livrés au niveau expert pro 200€/h
+2. **APEX = MÊME ACCÈS QUE CLAUDE CODE** — parité 100% (Read/Edit/Write/Bash/Web/Subagents/MCP)
+3. **APEX VÉRIFIE FONCTIONNEMENT AVANT PRÉSENTER** — preflight check obligatoire
+4. **BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL** — toggles per-user (109 features)
+5. **100/100 RÉEL CHAQUE AXE** — mesure subagent indépendant, pas estimé
 
 ## 🧠 DÉCISIONS PRODUIT PRISES (à respecter)
 

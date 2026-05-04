@@ -112,6 +112,10 @@ class Firebase {
   private connected = false;
   private sse: EventSource | null = null;
   private queue: Array<{ key: string; value: unknown; ts: number }> = [];
+  /* P0 fix audit Cure53/NCC : tracker tous les listeners SSE pour removeEventListener au disconnect.
+     EventSource.close() seul ne suffit pas — les listeners persistent en mémoire si on
+     redémarre l'EventSource via startSSE() (memory leak documenté Mozilla). */
+  private sseListeners: Array<{ type: string; listener: EventListener }> = [];
 
   async init(): Promise<void> {
     try {
@@ -302,17 +306,22 @@ class Firebase {
   }
 
   private startSSE(): void {
-    if (this.sse) this.sse.close();
+    /* Cleanup tout SSE précédent (close + remove listeners) avant d'en recréer un nouveau */
+    this.cleanupSSE();
     try {
       this.sse = new EventSource(`${this.url}/apex.json`);
-      this.sse.addEventListener('put', (event) => {
+      const putListener: EventListener = (event) => {
         try {
           const data = JSON.parse((event as MessageEvent).data) as { path: string; data: unknown };
           this.applyRemoteChange(data.path, data.data);
         } catch (err: unknown) {
           logger.warn('firebase', 'SSE parse error', { err });
         }
-      });
+      };
+      this.sse.addEventListener('put', putListener);
+      /* Track le listener pour pouvoir l'enlever proprement au disconnect/restart. */
+      this.sseListeners.push({ type: 'put', listener: putListener });
+
       this.sse.onerror = () => {
         this.connected = false;
         events.emit('network:offline', {});
@@ -326,6 +335,40 @@ class Firebase {
     } catch (err: unknown) {
       logger.error('firebase', 'SSE start failed', { err });
     }
+  }
+
+  /**
+   * Cleanup interne SSE : remove explicite des listeners trackés + close + reset handlers + reset state.
+   * Utilisé par startSSE() (avant nouveau EventSource) et disconnect() (cleanup public).
+   */
+  private cleanupSSE(): void {
+    if (this.sse) {
+      for (const { type, listener } of this.sseListeners) {
+        try { this.sse.removeEventListener(type, listener); } catch { /* ignore */ }
+      }
+      try { this.sse.onerror = null; } catch { /* ignore */ }
+      try { this.sse.onopen = null; } catch { /* ignore */ }
+      try { this.sse.close(); } catch { /* ignore */ }
+      this.sse = null;
+    }
+    this.sseListeners = [];
+  }
+
+  /**
+   * Disconnect public — appelable au logout / shutdown / page unload.
+   * Idempotent. Garantit qu'aucun listener SSE n'est laissé orphelin.
+   */
+  disconnect(): void {
+    this.cleanupSSE();
+    this.connected = false;
+  }
+
+  /**
+   * Audit helper : compte les listeners SSE actuellement attachés.
+   * Exposé pour tests + debug.
+   */
+  getActiveSSEListenerCount(): number {
+    return this.sseListeners.length;
   }
 
   /**
