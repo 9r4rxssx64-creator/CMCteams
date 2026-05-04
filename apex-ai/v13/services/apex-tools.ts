@@ -145,6 +145,21 @@ const APEX_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'open_url',
+    description: 'Ouvre une URL dans modal pop-up Apex avec 2 boutons 1-clic : "Ouvrir dans Apex" (browser embed) ou "Ouvrir Safari" (nouvel onglet). Kevin règle CLAUDE.md "1 CLIC + FENÊTRE + BOUTON DIRECT". Utilise quand user dit "ouvre Google", "va sur tel site", "navigue vers...".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL ou domaine (https:// ajouté auto si manquant)' },
+        label: { type: 'string', description: 'Label affiché dans titre modal (optionnel)' },
+        description: { type: 'string', description: 'Description courte (optionnel)' },
+      },
+      required: ['url'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
     name: 'run_lint',
     description: 'Lance ESLint sur le repo. Retourne erreurs + warnings.',
     inputSchema: { type: 'object', properties: {} },
