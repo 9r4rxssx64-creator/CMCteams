@@ -548,6 +548,53 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* 16. memory-bridge-watch : vérifie sync OK des backends externes (Kevin règle mémoire persistante) */
+  sentinels.register({
+    id: 'memory-bridge-watch',
+    name: 'Memory bridge sync externe',
+    desc: 'Vérifie sync Notion/Firebase/Gist OK + alerte si > 24h sans sync',
+    intervalMs: 60 * 60 * 1000, /* 1h */
+    check: async () => {
+      try {
+        const { memoryBridge } = await import('./memory-bridge.js');
+        const health = memoryBridge.getHealth();
+        if (health.backends_configured === 0) {
+          return { ok: true, msg: 'Aucun backend configuré (mode local-only)' };
+        }
+        if (health.recent_failures >= 3) {
+          return {
+            ok: false,
+            msg: `${health.recent_failures} échecs sync récents (24h)`,
+            details: { failures: health.recent_failures },
+          };
+        }
+        if (health.last_sync_age_ms > 0 && health.last_sync_age_ms > 24 * 60 * 60 * 1000) {
+          return {
+            ok: false,
+            msg: `Pas de sync depuis ${Math.floor(health.last_sync_age_ms / 3_600_000)}h`,
+            details: { age_ms: health.last_sync_age_ms },
+          };
+        }
+        return { ok: true, msg: `${health.backends_configured} backends, dernière sync OK` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'Memory bridge check failed: ' + (err instanceof Error ? err.message : 'fail') };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { memoryBridge } = await import('./memory-bridge.js');
+        const results = await memoryBridge.runAutoSync();
+        const ok = results.filter((r) => r.ok).length;
+        return {
+          ok: ok > 0,
+          msg: `Re-sync attempted : ${ok}/${results.length} OK`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'Re-sync failed: ' + (err instanceof Error ? err.message : 'fail') };
+      }
+    },
+  });
+
   /* 13. wake-watch : detect wake word permission state */
   sentinels.register({
     id: 'wake-watch',
@@ -568,5 +615,5 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (12 active + 1 disabled wake-watch)`);
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (13 active + 1 disabled wake-watch)`);
 }

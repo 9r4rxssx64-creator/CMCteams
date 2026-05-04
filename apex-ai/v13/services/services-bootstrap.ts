@@ -490,6 +490,28 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `card-emulator : USB=${caps.web_usb ? 'OK' : 'NO'}, Serial=${caps.web_serial ? 'OK' : 'NO'}, BLE=${caps.web_bluetooth ? 'OK' : 'NO'}, NFC=${caps.web_nfc ? 'OK' : 'NO'} — ${supported.length} émulateurs supportés`);
     }),
 
+    /* Memory bridge : init auto-sync vers backends externes (Notion / Firebase / Gist / n8n)
+       (règle Kevin 2026-05-04 : mémoire persistante externe + auto-escalade audit) */
+    safeInit('memory-bridge', async () => {
+      const { memoryBridge } = await import('./memory-bridge.js');
+      const health = memoryBridge.getHealth();
+      logger.info('services-bootstrap',
+        `memory-bridge : ${health.backends_configured} backends, ${health.recent_failures} récents fails`);
+      /* Restore depuis Firebase au boot si uid disponible */
+      if (uid) {
+        try {
+          const r = await memoryBridge.restoreFromBackend('firebase');
+          if (r.ok && r.entries > 0) {
+            logger.info('services-bootstrap', `memory-bridge : restored ${r.entries} entries depuis Firebase`);
+          }
+        } catch { /* skip — backend offline OK */ }
+      }
+      /* Activate auto-sync uniquement si au moins 1 backend configuré */
+      if (health.backends_configured > 0) {
+        memoryBridge.enableAutoSync();
+      }
+    }),
+
     /* Sprint 7 P0 : baseline anti-régression réelle (Kevin règle "ne plus régresser, réel toujours") */
     safeInit('baseline-anti-regression', async () => {
       try {

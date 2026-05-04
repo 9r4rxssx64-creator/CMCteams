@@ -33,7 +33,8 @@ export interface MemoryEntry {
 }
 
 const STORAGE_KEY = 'apex_v13_persistent_memory';
-const MAX_ENTRIES = 1000;
+/* Sprint 8 v13.0.63 : push à fond mémoire (Kevin "va plus loin pousse à fond") */
+const MAX_ENTRIES = 5000; /* 1000 → 5000 (compresse via storage-compressor LZ-string si quota) */
 const IDB_NAME = 'apex_v13_memory';
 const IDB_STORE = 'entries';
 
@@ -196,6 +197,12 @@ class PersistentMemoryStore {
     } catch (err: unknown) {
       logger.warn('persistent-memory', 'IDB persist failed', { err });
     }
+    /* Sprint 8 v13.0.63 : push Firebase auto (Kevin "tout autonome, mémoire jamais perdue").
+       FB_FIX inclut ax_persistent_memory → sync via firebase.write. */
+    try {
+      const { firebase } = await import('./firebase.js');
+      await firebase.write(STORAGE_KEY, entries).catch(() => { /* offline OK */ });
+    } catch { /* skip */ }
   }
 
   private async loadFromIdb(): Promise<MemoryEntry[]> {
