@@ -458,6 +458,14 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const { firebaseQueue } = await import('./firebase-queue.js');
       firebaseQueue.init();
     }),
+
+    /* Sprint 3 NEW : device-control (50+ APIs iOS/Android pour piloter device) */
+    safeInit('device-control', async () => {
+      const { deviceControl } = await import('./device-control.js');
+      const env = deviceControl.detectDevice();
+      const supported = deviceControl.listAllSupported();
+      logger.info('services-bootstrap', `device-control : ${env.isiOS ? 'iOS' : env.isAndroid ? 'Android' : 'Desktop'} ${env.isPWA ? 'PWA' : 'browser'}, ${supported.length} capabilities`);
+    }),
   ];
 
   const results = await Promise.all(tasks);
