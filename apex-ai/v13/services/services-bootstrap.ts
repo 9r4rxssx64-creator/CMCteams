@@ -512,6 +512,15 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* KDMC projects registry : pre-load metadata pour injection IA system prompt
+       (règle Kevin 2026-05-04 : "Apex doit connaître TOUS projets internes pour autonomie totale") */
+    safeInit('kdmc-projects-registry', async () => {
+      const { kdmcProjectsRegistry } = await import('./kdmc-projects-registry.js');
+      const total = kdmcProjectsRegistry.count();
+      const active = kdmcProjectsRegistry.countActive();
+      logger.info('services-bootstrap', `kdmc-projects-registry : ${total} projets (${active} actifs/wip)`);
+    }),
+
     /* Sprint 7 P0 : baseline anti-régression réelle (Kevin règle "ne plus régresser, réel toujours") */
     safeInit('baseline-anti-regression', async () => {
       try {

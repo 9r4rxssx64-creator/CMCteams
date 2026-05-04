@@ -122,12 +122,32 @@ class Memory {
       .slice(-10)
       .reverse();
 
+    /* Sprint 8 v13.0.65 : ENRICHISSEMENT MÉMOIRE PERMANENTE Kevin
+       (Apex IA disait "pas de mémoire entre sessions" → fix : load persistent-memory
+       + tools dispo + capabilities device + version courante) */
     const sections: string[] = [];
-    sections.push(`# APEX v13.0 — Contexte système`);
+    sections.push(`# APEX v13.0 — Contexte système COMPLET (auto-injecté chaque message)`);
     if (currentUser) sections.push(`## Utilisateur courant\n${currentUser.name} (id: ${currentUser.id})`);
-    sections.push(
-      `## Projets Kevin (préservés)\n${KEVIN_PROJECTS.map((p) => `- ${p.name} : ${p.description}`).join('\n')}`,
-    );
+    /* Injection KDMC projects registry (metadata riche : version, status, tech_stack, deploy_url)
+       Fallback gracieux sur KEVIN_PROJECTS legacy si registry non chargé (boot précoce). */
+    let kdmcSection = '';
+    try {
+      const mod = (globalThis as unknown as {
+        kdmcProjectsRegistry?: { formatForSystemPrompt: () => string };
+      });
+      if (mod.kdmcProjectsRegistry) {
+        kdmcSection = mod.kdmcProjectsRegistry.formatForSystemPrompt();
+      }
+    } catch {
+      /* silencieux : fallback sur KEVIN_PROJECTS legacy ci-dessous */
+    }
+    if (kdmcSection) {
+      sections.push(kdmcSection);
+    } else {
+      sections.push(
+        `## Projets Kevin (préservés)\n${KEVIN_PROJECTS.map((p) => `- ${p.name} : ${p.description}`).join('\n')}`,
+      );
+    }
     sections.push(`## Règles permanentes prioritaires\n${TOP_RULES.map((r, i) => `${i + 1}. ${r}`).join('\n')}`);
     if (topFacts.length) {
       sections.push(`## Top facts mémoire (${topFacts.length})\n${topFacts.map((f) => `- [${f.category}] ${f.text}`).join('\n')}`);
@@ -137,8 +157,36 @@ class Memory {
         `## Lessons learned critiques\n${topLessons.map((l) => `- [${l.category}] ${l.title} : ${l.text}`).join('\n')}`,
       );
     }
+    /* Charge persistent-memory-store (5000 entries cross-session, sync Firebase) */
+    try {
+      const persistentRaw = localStorage.getItem('apex_v13_persistent_memory');
+      if (persistentRaw) {
+        const persistentEntries = JSON.parse(persistentRaw) as Array<{ category: string; text: string; importance: number; ts: number }>;
+        if (Array.isArray(persistentEntries) && persistentEntries.length > 0) {
+          const top = persistentEntries
+            .sort((a, b) => (b.importance ?? 50) - (a.importance ?? 50))
+            .slice(0, 50);
+          sections.push(`## Mémoire persistante cross-session (${persistentEntries.length} entries totales, top 50)\n${top.map((e) => `- [${e.category ?? 'fact'}] ${e.text}`).join('\n')}`);
+        }
+      }
+    } catch { /* skip */ }
+    /* Capabilities device (iOS/Android/Desktop) */
+    try {
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const isiOS = /iPad|iPhone|iPod/.test(ua);
+      const isAndroid = /Android/.test(ua);
+      sections.push(`## Device courant\n${isiOS ? '📱 iOS' : isAndroid ? '🤖 Android' : '🖥 Desktop'} · Online: ${typeof navigator !== 'undefined' && navigator.onLine ? 'oui' : 'non'}`);
+    } catch { /* skip */ }
+    /* Tokens API disponibles (sans exposer valeur) */
+    try {
+      const apiKeys = ['ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key', 'ax_openrouter_key', 'ax_github_token'];
+      const configured = apiKeys.filter((k) => !!localStorage.getItem(k));
+      if (configured.length > 0) {
+        sections.push(`## Clés API configurées (${configured.length}/${apiKeys.length})\n${configured.map((k) => `- ${k.replace('ax_', '').replace('_key', '').replace('_token', '')}`).join('\n')}`);
+      }
+    } catch { /* skip */ }
     sections.push(
-      `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)`,
+      `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)\n- TU AS UNE VRAIE MÉMOIRE (entries persistantes injectées ci-dessus) — UTILISE-LA, ne dis JAMAIS "je n'ai pas de mémoire"\n- Tu peux exécuter via apex-execute service (GitHub Actions trigger autonome)\n- Tu peux lire repo Kevin via apex-knowledge-base (GitHub API)`,
     );
     return sections.join('\n\n');
   }
