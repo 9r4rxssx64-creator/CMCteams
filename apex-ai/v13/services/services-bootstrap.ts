@@ -216,6 +216,58 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       redactPII(''); /* Pre-compile regexes */
     }),
 
+    /* Permissions : pre-load tier user actuel */
+    safeInit('permissions', async () => {
+      const { permissions } = await import('./permissions.js');
+      permissions.getTier();
+    }),
+
+    /* Capabilities : pre-load registry features dispo */
+    safeInit('capabilities', async () => {
+      const { capabilities } = await import('./capabilities.js');
+      capabilities.list();
+    }),
+
+    /* Device context : pre-load device fingerprint + consent state */
+    safeInit('device-context', async () => {
+      const { deviceContext } = await import('./device-context.js');
+      deviceContext.listConsents();
+    }),
+
+    /* Commerce : pre-load plans + facturation cache */
+    safeInit('commerce', async () => {
+      const { commerce } = await import('./commerce.js');
+      if (uid) commerce.getEffectivePlan(uid);
+    }),
+
+    /* Chat realtime : init listeners événements */
+    safeInit('chat-realtime', async () => {
+      await import('./chat-realtime.js');
+    }),
+
+    /* Credential patterns : import pour détection paste auto */
+    safeInit('credential-patterns', async () => {
+      const { CREDENTIAL_PATTERNS } = await import('./credential-patterns.js');
+      logger.info('services-bootstrap', `credential-patterns : ${CREDENTIAL_PATTERNS.length} patterns dispo`);
+    }),
+
+    /* Secure storage : init device-bound encryption ready */
+    safeInit('secure-storage', async () => {
+      await import('./secure-storage.js');
+    }),
+
+    /* File converter : warm up MIME types */
+    safeInit('file-converter', async () => {
+      const { fileConverter } = await import('./file-converter.js');
+      fileConverter.listSupportedFormats();
+    }),
+
+    /* Media studio : pre-load providers list */
+    safeInit('media-studio', async () => {
+      const { mediaStudio } = await import('./media-studio.js');
+      mediaStudio.list();
+    }),
+
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
        (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
     safeInit('storage-compressor', async () => {
