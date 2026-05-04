@@ -1,6 +1,77 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Apex v13.0.20 / CMC v9.593).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Apex v13.0.73 / CMC v9.593).
+
+---
+
+## 🚀 RÈGLE PERMANENTE — TOUT AU MAX TOUJOURS (Kevin 2026-05-04, ABSOLUE)
+
+> **"À chaque outils, modules etc toujours pousser au max. Boot tjs tout au max"** — Kevin 2026-05-04
+> **"Pousse au max son script, skill, hook etc toujours"** — Kevin 2026-05-04 (extension)
+
+**Règle absolue, non-négociable, prioritaire** — Apex, CMCteams, tous projets futurs Kevin :
+
+### 1. À chaque création/modification : niveau MAX
+
+S'applique à : outils, modules, features, vues, helpers, **scripts (Node/Shell/Python/CI), skills (.claude/skills/), hooks (.claude/hooks/, GitHub Actions, Apex sentinelles), commands custom (.claude/commands/), workflows (.github/workflows/), agents prompts**.
+
+Chaque création DOIT être livrée au niveau MAXIMUM possible :
+- ❌ JAMAIS version "basique" / "minimaliste" / "on verra après"
+- ❌ JAMAIS livraison à 30%/50%/80% du potentiel
+- ✅ TOUJOURS niveau expert pro freelance senior 200€/h
+- ✅ TOUJOURS toutes les sous-features auxquelles un expert penserait
+- ✅ TOUJOURS dépasser le brief Kevin (anticiper besoins adjacents)
+
+### 2. Boot toujours TOUT au max
+
+Au boot Apex :
+- TOUS modules pro chargés (lazy ok mais TOUS dispo)
+- TOUS studios accessibles
+- TOUS providers IA testés (Anthropic + 4 failover min)
+- TOUTES sentinelles actives (13 min)
+- TOUTES voix dispo (50+)
+- TOUS tools IA registry chargés (100+)
+- TOUTES KB intégrées dispo
+- TOUS bridges cross-app actifs (CMC, KDMC, Télécommande)
+- TOUT auto-detect actif (devices, credentials, services)
+
+### 3. Exemples de "au max" par domaine
+
+**Studio Music** : pas juste mix 3 pistes — 12+ pistes avec EQ multi-bandes, reverb/delay/chorus/flanger/phaser, compresseur master multi-band, limiter LUFS, noise gate, auto-tune, sidechain, stem separation, export WAV24/MP3-320/FLAC, BPM auto-sync.
+
+**Module Cuisine** : pas juste 5 recettes — 50+ recettes FR + internationales, 30+ cuissons précises, 14+ allergènes INCO, calories/macros/vitamines/index glycémique, plans menus 7j, liste courses auto, substitutions diet, sommellerie, modes keto/paleo/medit/DASH/IF.
+
+**Module Legal** : pas juste 5 codes — 25+ codes français + jurisprudence Cass/CE/CJUE/CEDH + Constitution + 40+ templates lettres + calculs prescription/indemnités + procédures.
+
+**Browser** : pas iframe simple — multi-tab, bookmarks, history, anti-CORS chain (archive/reader/cache/safari), AI search, reader mode, share, screenshot, fullscreen, voice overlay.
+
+**Auth** : pas juste PIN — PIN PBKDF2 200k + WebAuthn FaceID + biométrie vocale per-user + 5 niveaux permissions + WebAuthn YubiKey + magic link email + recovery questions + audit log immutable.
+
+**Skills (.claude/skills/)** : pas juste un .md — frontmatter complet (description, model, tools), exemples concrets, anti-patterns interdits, validation post-action, intégration avec autres skills, tool restrictions intelligentes.
+
+**Hooks (.claude/hooks/, GitHub Actions, Apex sentinelles)** : pas juste un trigger — validation entrée + sortie, retry logic backoff exponentiel, fallback chain, audit log, métriques perf, alerting si échec, auto-fix whitelist, escalade si auto-fix fail.
+
+**Scripts (Node/Shell/Python/CI)** : pas juste un one-liner — argparse + help, dry-run mode, idempotence, error handling complet, logging structuré, exit codes proprement gérés, tests, doc usage en haut.
+
+**Commands custom** : pas juste un alias — multi-step workflow, output formaté, undo possible, integration avec autres commands.
+
+**Workflows GitHub Actions** : pas juste un build — matrix testing (Node 20/22, OS Ubuntu/Mac), cache npm, parallel jobs, artifacts upload, status badges, notification Slack/Discord/Telegram, auto-merge eligible, perf benchmark gate, security scan (semgrep/codeql/gitleaks).
+
+### 4. Test mental obligatoire avant chaque livraison
+
+> *"Cette feature est-elle au MAX du potentiel actuel des APIs/outils disponibles ? Un expert mondial du domaine trouverait-il une fonctionnalité manquante évidente ?"*
+
+Si réponse "il manque X" → ajouter X avant livraison. Pas de demi-mesure.
+
+### 5. Application immédiate
+
+À chaque subagent lancé : briefer "AU MAXIMUM" explicitement avec liste exhaustive features expertes attendues.
+
+À chaque commit : grep "TODO|FIXME|hack|temporary|simple|basic" — si match, enrichir avant push.
+
+À chaque feature ajoutée : update `AX_CAPABILITIES` registry (max-niveau) + system prompt IA (Apex sait ses pleines compétences).
+
+S'applique : Apex (priorité absolue), CMCteams, e-KDMC, IA-KDMC, tous projets futurs.
 
 ---
 

@@ -52,6 +52,8 @@ const KEVIN_PROJECTS: Project[] = [
 
 /* 7 règles permanentes CLAUDE.md prioritaires (extraites) */
 const TOP_RULES: readonly string[] = [
+  'TOUT AU MAX TOUJOURS — chaque outil/module/feature au niveau expert pro 200€/h, jamais demi-mesure',
+  'Boot toujours TOUT au max : tous modules pro, studios, providers IA, sentinelles, voix, tools IA, KB, bridges actifs',
   '1-clic + fenêtre + bouton direct (Kevin n\'a jamais 2 actions à enchaîner)',
   'Reconnaissance auto credentials + auto-fetch outils (130+ patterns)',
   'Apex crée les liens auto à chaque nouvel ajout/découverte',
@@ -199,6 +201,9 @@ class Memory {
         sections.push(`📚 Base de connaissances Kevin (GitHub API): ${repos.length} repos configurés. Outils: search_repo_code, read_repo_file, list_repo_files, get_recent_commits, get_repo_readme.`);
       }
     } catch { /* skip */ }
+    sections.push(
+      `## Règle Kevin TOUT AU MAX (PRIORITÉ ABSOLUE 2026-05-04)\n- Chaque outil/module/feature/script/skill/hook poussé au niveau expert pro 200€/h\n- Boot toujours TOUT au max : modules pro, studios, providers IA failover, sentinelles, voix, tools IA, KB, bridges\n- Jamais demi-mesure ("basique"/"minimal"/"on verra après" interdits)\n- Test mental : un expert mondial du domaine trouverait-il une feature manquante évidente ? Si oui → ajoute avant livraison`,
+    );
     sections.push(
       `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)\n- TU AS UNE VRAIE MÉMOIRE (entries persistantes injectées ci-dessus) — UTILISE-LA, ne dis JAMAIS "je n'ai pas de mémoire"\n- Tu peux exécuter via apex-execute service (GitHub Actions trigger autonome)\n- Tu peux lire repo Kevin via apex-knowledge-base (GitHub API)`,
     );
