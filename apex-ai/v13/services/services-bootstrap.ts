@@ -268,6 +268,44 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       mediaStudio.list();
     }),
 
+    /* Agent system : pre-load active tasks + history */
+    safeInit('agent-system', async () => {
+      const { agentSystem } = await import('./agent-system.js');
+      const stats = agentSystem.getStats();
+      logger.info('services-bootstrap', `agent-system : ${stats.active} actifs / ${stats.completed} done`);
+    }),
+
+    /* Backend : check configuration Cloudflare worker */
+    safeInit('backend', async () => {
+      const { backend } = await import('./backend.js');
+      const configured = backend.isConfigured();
+      logger.info('services-bootstrap', `backend : ${configured ? 'configuré' : 'non configuré'}`);
+    }),
+
+    /* Chat fallback : pre-load templates */
+    safeInit('chat-fallback', async () => {
+      await import('./chat-fallback.js');
+    }),
+
+    /* Voice print : check Web Audio API support */
+    safeInit('voice-print', async () => {
+      const { voicePrint } = await import('./voice-print.js');
+      const supported = voicePrint.isSupported();
+      logger.info('services-bootstrap', `voice-print : ${supported ? 'supporté' : 'non supporté'}`);
+    }),
+
+    /* Vision recognition : pre-load classifier */
+    safeInit('vision-recognition', async () => {
+      await import('./vision-recognition.js');
+    }),
+
+    /* Push notifications : pre-load subscriptions cache */
+    safeInit('push-notifications', async () => {
+      const { pushNotifications } = await import('./push-notifications.js');
+      const stats = pushNotifications.getStats();
+      logger.info('services-bootstrap', `push-notifications : ${stats.total_subscriptions} subs`);
+    }),
+
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
        (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
     safeInit('storage-compressor', async () => {
