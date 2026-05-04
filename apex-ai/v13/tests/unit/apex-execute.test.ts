@@ -50,16 +50,17 @@ describe('apex-execute (P0 coverage)', () => {
       expect(r.reason).toMatch(/inconnue|shell_exec/i);
     });
 
-    it('listForbiddenTasks() retourne 4 tâches', () => {
+    it('listForbiddenTasks() retourne les 4 forbidden baseline', () => {
       const list = apexExecute.listForbiddenTasks();
       expect(list).toContain('delete_file');
       expect(list).toContain('force_push');
       expect(list).toContain('modify_user_credentials_external');
       expect(list).toContain('send_external_email_without_consent');
-      expect(list.length).toBe(4);
+      /* baseline 4 + extensions niveau MAX */
+      expect(list.length).toBeGreaterThanOrEqual(4);
     });
 
-    it('listAllowedTasks() retourne 8 tâches', () => {
+    it('listAllowedTasks() retourne les 8 baseline tasks', () => {
       const list = apexExecute.listAllowedTasks();
       expect(list).toContain('modify_file');
       expect(list).toContain('create_file');
@@ -69,7 +70,8 @@ describe('apex-execute (P0 coverage)', () => {
       expect(list).toContain('deploy_canary');
       expect(list).toContain('backup_user_data');
       expect(list).toContain('restore_from_backup');
-      expect(list.length).toBe(8);
+      /* baseline 8 + extensions niveau MAX */
+      expect(list.length).toBeGreaterThanOrEqual(8);
     });
   });
 

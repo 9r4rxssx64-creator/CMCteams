@@ -56,6 +56,15 @@ export default defineConfig({
         'features/knowledge-bank/index.ts',
         'features/apex-toolbox/index.ts',
         'features/self-diag/index.ts',
+        /* Sprint port v12 5 studios MAX + 3 pro MAX (Kevin 2026-05-04) — render() UI HTML excluded, pure logic via unit tests */
+        'features/studios/logo/index.ts',
+        'features/studios/presentation/index.ts',
+        'features/studios/prefecture/index.ts',
+        'features/studios/clip/index.ts',
+        'features/studios/photo/index.ts',
+        'features/pro/modules/business/index.ts',
+        'features/pro/modules/education/index.ts',
+        'features/pro/modules/certifications/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).

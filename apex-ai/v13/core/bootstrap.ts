@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.73';
+export const APP_VER = 'v13.0.75';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -163,6 +163,16 @@ async function bootstrap(): Promise<void> {
   router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true });
   router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true });
   router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true });
+  /* Sprint port v12 (Kevin 2026-05-04) : 5 studios MAX (logo, presentation, prefecture, clip, photo) */
+  router.register('studio-logo', { loader: () => import('@features/studios/logo/index.js'), requiresAuth: true });
+  router.register('studio-presentation', { loader: () => import('@features/studios/presentation/index.js'), requiresAuth: true });
+  router.register('studio-prefecture', { loader: () => import('@features/studios/prefecture/index.js'), requiresAuth: true });
+  router.register('studio-clip', { loader: () => import('@features/studios/clip/index.js'), requiresAuth: true });
+  router.register('studio-photo', { loader: () => import('@features/studios/photo/index.js'), requiresAuth: true });
+  /* Sprint port v12 (Kevin 2026-05-04) : 3 modules pro MAX (business, education, certifications) */
+  router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true });
+  router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true });
+  router.register('pro-certifications', { loader: () => import('@features/pro/modules/certifications/index.js'), requiresAuth: true });
   /* Sprint port v12.785 P0 critical (Kevin 2026-05-04) : 5 vues admin/audit/coffre */
   router.register('dashboard', { loader: () => import('@features/dashboard/index.js'), requiresAuth: true });
   router.register('vault', { loader: () => import('@features/vault/index.js'), requiresAdmin: true });

@@ -206,10 +206,20 @@ class Vault {
    * SOURCE UNIQUE pour tout call site qui veut lire une clé API.
    * Anti-pattern v13.0.12 : call sites lisaient raw → recevaient AXENC1: chiffré.
    * Fix v13.0.16 : tous les services migrent vers vault.readKey().
+   * Fix v13.0.20+ Kevin "clés API pas en mémoire" : fallback IDB si localStorage vide.
    */
   async readKey(storageKey: string): Promise<string> {
     try {
-      const raw = localStorage.getItem(storageKey);
+      let raw = localStorage.getItem(storageKey);
+      /* Fallback IDB shadow (résiste clear localStorage Safari) */
+      if (!raw) {
+        const fromIdb = await this.readKeyFromIdb(storageKey);
+        if (fromIdb) {
+          raw = fromIdb;
+          /* Re-hydrate localStorage pour accès rapide ultérieur */
+          try { localStorage.setItem(storageKey, fromIdb); } catch { /* quota */ }
+        }
+      }
       if (!raw) return '';
       if (raw.startsWith(PREFIX)) {
         const decrypted = await this.decryptAuto(raw);
@@ -219,6 +229,134 @@ class Vault {
     } catch {
       return '';
     }
+  }
+
+  /**
+   * SET KEY : persiste en triple redondance (localStorage + IDB shadow + Firebase backup chiffré).
+   * Fix v13.0.20+ Kevin "Apex oublie les clés entre sessions".
+   * Garantit que la clé survit à : clear cache, réinstallation PWA, switch device.
+   */
+  async setKey(storageKey: string, plaintext: string): Promise<{ ok: boolean; persisted: { local: boolean; idb: boolean; firebase: boolean } }> {
+    const persisted = { local: false, idb: false, firebase: false };
+    if (!plaintext) {
+      try {
+        localStorage.removeItem(storageKey);
+        persisted.local = true;
+      } catch { /* ignore */ }
+      return { ok: true, persisted };
+    }
+    let encrypted: string;
+    try {
+      encrypted = await this.encryptAuto(plaintext);
+    } catch (err: unknown) {
+      logger.error('vault', 'setKey encrypt failed', { err, storageKey });
+      return { ok: false, persisted };
+    }
+    /* 1. localStorage (immédiat) */
+    try {
+      localStorage.setItem(storageKey, encrypted);
+      persisted.local = true;
+    } catch (err: unknown) {
+      logger.warn('vault', 'setKey localStorage failed (quota?)', { err, storageKey });
+    }
+    /* 2. IDB shadow (résiste clear cache Safari) */
+    try {
+      await this.writeKeyToIdb(storageKey, encrypted);
+      persisted.idb = true;
+    } catch (err: unknown) {
+      logger.warn('vault', 'setKey IDB failed', { err, storageKey });
+    }
+    /* 3. Firebase backup chiffré (survit réinstallation PWA + cross-device) */
+    try {
+      const { firebase, FB_FIX } = await import('./firebase.js');
+      if (FB_FIX.includes(storageKey)) {
+        await firebase.write(storageKey, encrypted);
+        persisted.firebase = true;
+      }
+    } catch (err: unknown) {
+      logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
+    }
+    logger.info('vault', `setKey ${storageKey} persisted`, persisted);
+    return { ok: persisted.local || persisted.idb, persisted };
+  }
+
+  /**
+   * Restore explicite depuis Firebase (appelé par firebase.init au boot).
+   * Si localStorage vide ET Firebase a la clé → restore + decrypt + re-hydrate IDB.
+   */
+  async restoreFromFirebase(storageKey: string, encryptedFromFb: string): Promise<boolean> {
+    if (!encryptedFromFb || typeof encryptedFromFb !== 'string') return false;
+    try {
+      /* Vérifier que ça déchiffre bien (sinon on n'écrit pas une corruption) */
+      let plaintext: string | null = null;
+      if (encryptedFromFb.startsWith(PREFIX)) {
+        plaintext = await this.decryptAuto(encryptedFromFb);
+      } else {
+        plaintext = encryptedFromFb; /* legacy plaintext */
+      }
+      if (plaintext === null) {
+        logger.warn('vault', 'restoreFromFirebase decrypt failed', { storageKey });
+        return false;
+      }
+      try { localStorage.setItem(storageKey, encryptedFromFb); } catch { /* quota */ }
+      try { await this.writeKeyToIdb(storageKey, encryptedFromFb); } catch { /* idb fail */ }
+      logger.info('vault', `restoreFromFirebase OK ${storageKey}`);
+      return true;
+    } catch (err: unknown) {
+      logger.warn('vault', 'restoreFromFirebase failed', { err, storageKey });
+      return false;
+    }
+  }
+
+  private async writeKeyToIdb(storageKey: string, value: string): Promise<void> {
+    if (!('indexedDB' in window)) return;
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open('apex_v13_vault_shadow', 1);
+      req.onupgradeneeded = (): void => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+      };
+      req.onsuccess = (): void => {
+        const db = req.result;
+        try {
+          const tx = db.transaction('keys', 'readwrite');
+          const store = tx.objectStore('keys');
+          store.put(value, storageKey);
+          tx.oncomplete = (): void => { db.close(); resolve(); };
+          tx.onerror = (): void => { db.close(); reject(tx.error); };
+        } catch (e: unknown) { db.close(); reject(e as Error); }
+      };
+      req.onerror = (): void => reject(req.error);
+    });
+  }
+
+  private async readKeyFromIdb(storageKey: string): Promise<string | null> {
+    if (!('indexedDB' in window)) return null;
+    return new Promise<string | null>((resolve) => {
+      try {
+        const req = indexedDB.open('apex_v13_vault_shadow', 1);
+        req.onupgradeneeded = (): void => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+        };
+        req.onsuccess = (): void => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('keys', 'readonly');
+            const store = tx.objectStore('keys');
+            const getReq = store.get(storageKey);
+            getReq.onsuccess = (): void => {
+              db.close();
+              resolve(typeof getReq.result === 'string' ? getReq.result : null);
+            };
+            getReq.onerror = (): void => { db.close(); resolve(null); };
+          } catch { db.close(); resolve(null); }
+        };
+        req.onerror = (): void => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
   }
 
   /**
