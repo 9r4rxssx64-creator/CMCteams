@@ -338,6 +338,14 @@ class Vault {
     try {
       const encrypted = await this.encryptAuto(trimmed);
       localStorage.setItem(detected.storageKey, encrypted);
+      /* Sprint 8 v13.0.61 P0 BUG FIX : push Firebase backup chiffré pour SURVIVRE clear cache iPhone
+         (Kevin règle "ne plus jamais perdre clé API"). FB_FIX whitelist déjà inclut storageKey. */
+      void import('./firebase.js').then(async ({ firebase, FB_FIX }) => {
+        if (FB_FIX.includes(detected.storageKey)) {
+          await firebase.write(detected.storageKey, encrypted).catch(() => { /* offline OK, queue flush */ });
+          logger.info('vault', `🔐 ${detected.storageKey} backup Firebase OK (survit clear cache)`);
+        }
+      }).catch(() => { /* offline OK */ });
     } catch (err: unknown) {
       logger.error('vault', 'autoStore encrypt+persist failed', { err });
       return { ok: false, reason: 'Chiffrement ou stockage échoué' };

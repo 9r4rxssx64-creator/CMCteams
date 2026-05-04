@@ -209,7 +209,8 @@ class SmartCamera {
   /**
    * Video recording (MediaRecorder API).
    */
-  async startVideoRecord(maxDurationMs = 30_000, facing: FacingMode = 'environment'): Promise<{
+  /* Kevin v13.0.61 : pas de limite vidéo (était 30s). 0 = illimité jusqu'à stopVideoRecord manuel. */
+  async startVideoRecord(maxDurationMs = 0, facing: FacingMode = 'environment'): Promise<{
     ok: boolean;
     reason?: string;
   }> {
@@ -220,10 +221,12 @@ class SmartCamera {
       this.currentStream = await this.openStream(facing, true);
       this.mediaRecorder = new MediaRecorder(this.currentStream, { mimeType: 'video/webm' });
       this.mediaRecorder.start();
-      /* Auto-stop après maxDurationMs */
-      setTimeout(() => {
-        if (this.mediaRecorder?.state === 'recording') this.mediaRecorder.stop();
-      }, maxDurationMs);
+      /* Auto-stop UNIQUEMENT si maxDurationMs > 0 (sinon illimité, user stop manuellement) */
+      if (maxDurationMs > 0) {
+        setTimeout(() => {
+          if (this.mediaRecorder?.state === 'recording') this.mediaRecorder.stop();
+        }, maxDurationMs);
+      }
       return { ok: true };
     } catch (err: unknown) {
       return { ok: false, reason: err instanceof Error ? err.message : String(err) };
