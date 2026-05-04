@@ -30,6 +30,23 @@ export const FB_FIX: readonly string[] = [
   'ax_persistent_memory',
   'ax_links_registry',
   'ax_audit',
+  /* Sprint 8 : backup vault keys chiffrées (survit clear cache iPhone) */
+  'apex_v13_anthropic_key',
+  'apex_v13_openai_key',
+  'apex_v13_groq_key',
+  'apex_v13_gemini_key',
+  'apex_v13_openrouter_key',
+  'ax_anthropic_key',
+  'ax_openai_key',
+  'ax_groq_key',
+  'ax_google_key',
+  'ax_openrouter_key',
+  'ax_deepl_key',
+  'ax_resend_key',
+  'ax_brevo_key',
+  'ax_stripe_key',
+  'ax_github_token',
+  'ax_cloudflare_token',
 ];
 
 export const FB_LOCAL: readonly string[] = [
@@ -70,10 +87,38 @@ class Firebase {
 
     if (this.connected) this.startSSE();
     this.flushQueue();
+    /* Sprint 8 : restore vault keys depuis Firebase si localStorage vide
+       (Kevin règle "ne plus perdre clé API après clear cache iPhone") */
+    if (this.connected) void this.restoreVaultKeysFromFirebase();
   }
 
   isConnected(): boolean {
     return this.connected;
+  }
+
+  /**
+   * Sprint 8 : Restore clés API chiffrées depuis Firebase vers localStorage si manquantes.
+   * Survit "Effacer historique Safari" complet iPhone.
+   */
+  private async restoreVaultKeysFromFirebase(): Promise<void> {
+    const VAULT_KEYS = FB_FIX.filter((k) => k.endsWith('_key') || k.endsWith('_token'));
+    let restored = 0;
+    for (const key of VAULT_KEYS) {
+      try {
+        if (localStorage.getItem(key)) continue; /* Déjà présent local */
+        const url = `${this.url}/apex/${key}.json`;
+        const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        if (!r.ok) continue;
+        const value = await r.json() as unknown;
+        if (typeof value === 'string' && value.length > 0) {
+          localStorage.setItem(key, value);
+          restored++;
+        }
+      } catch { /* skip */ }
+    }
+    if (restored > 0) {
+      logger.info('firebase', `🔄 ${restored} clés API restorées depuis Firebase backup`);
+    }
   }
 
   shouldSync(key: string): boolean {
