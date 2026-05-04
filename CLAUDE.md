@@ -1,6 +1,62 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-03 (Apex v13.0 Jet 6 / CMC v9.593).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Apex v13.0.20 / CMC v9.593).
+
+---
+
+## 🎯 RÈGLE PERMANENTE — 100/100 RÉEL CHAQUE AXE AVANT TOUT (Kevin 2026-05-04, PRIORITÉ ULTIME)
+
+> **"100/100 réel chaque axe d'abord ensuite tout le reste et tu ne t'arrêtes seulement quand tu auras atteint ce but en autonomie et automatisé toujours tous au maximum rappelle toi et note le"** — Kevin 2026-05-04
+
+**Règle ABSOLUE NON-NÉGOCIABLE — PRIORITÉ ULTIME sur toute autre demande** :
+
+### 1. 5 axes /20 mesurés par audit subagent indépendant
+
+- **Sécurité** /20 (vault AES-GCM 256, CSP strict, WebAuthn, PII redaction, rate-limit, secrets chiffrés)
+- **Performance** /20 (bundle gzip < 50KB, build < 1s, tests rapides, no memory leaks)
+- **Tests Coverage RÉEL** /20 (statements > 95%, branches > 90%, E2E + unit)
+- **Architecture** /20 (services wirés, anti Declaration ≠ Deployment, 0 code mort)
+- **UX Premium** /20 (design innovant, mobile-first, animations soignées, drill-down)
+
+**Chaque axe DOIT atteindre 20/20 = 100/100 réel** (audit subagent, pas estimé).
+
+### 2. INTERDICTION de passer à autre chose tant que 100/100 pas atteint
+
+❌ JAMAIS : nouvelle feature si axe courant < 20/20
+❌ JAMAIS : "on verra après pour ce gap"
+✅ TOUJOURS : itérer commit + audit + re-itérer jusqu'à 20/20 réel sur chaque axe
+
+### 3. Autonomie + Automation MAXIMUM
+
+- Subagents PARALLÈLES pour audit + fix simultané
+- Tests live à chaque modif
+- Commit + push autonome (pas attendre validation)
+- Bump APP_VER + sw.js auto
+- Notif Kevin SEULEMENT si action humaine indispensable
+
+### 4. Méthode itérative
+
+1. Audit subagent mesure axes /20
+2. Identifier P0 du plus faible axe
+3. Fix + test + commit + push
+4. Re-audit
+5. Si pas 20/20 → retour étape 2
+6. Si 20/20 partout → STOP, prévenir Kevin
+
+### 5. Application immédiate (départ v13.0.20)
+
+État dernier audit : 91/100 brutal
+- Sécu 18 → 20 (gaps : OAuth Gmail/Outlook, WebAuthn mocking complet)
+- Perf 19 → 20 (bundle ultra-optimisé)
+- Tests 19 → 20 (coverage 95%+ tous services)
+- Archi 18 → 20 (services lazy → wirés)
+- UX 17 → 20 (design global innovant chaque vue)
+
+### 6. Test mental à CHAQUE commit
+
+> *"Cette modif fait-elle progresser au moins UN axe vers 20/20 réel ? Si non → STOP. Si oui → push + audit."*
+
+S'applique : Apex v13.0.20+, CMCteams, tous projets futurs.
 
 ---
 
