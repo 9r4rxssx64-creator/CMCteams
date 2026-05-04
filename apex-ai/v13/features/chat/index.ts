@@ -417,10 +417,12 @@ export function render(rootEl: HTMLElement): void {
             style="width:100%;padding:12px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent">
             📋 Coller automatiquement depuis presse-papiers
           </button>
-          <textarea id="ax-paste-input" rows="3"
+          <textarea id="ax-paste-input" rows="4"
             placeholder="Ou colle ici manuellement (long press → Coller)"
-            style="width:100%;padding:12px;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);font-family:var(--ax-font-mono);font-size:13px"
-            autofocus spellcheck="false" autocomplete="off"></textarea>
+            style="width:100%;padding:14px;background:#1a1a2e;border:2px solid #c9a227;border-radius:10px;color:#ffffff !important;-webkit-text-fill-color:#ffffff;font-family:'Courier New',monospace;font-size:14px;line-height:1.5;box-sizing:border-box;resize:vertical;min-height:90px"
+            autofocus spellcheck="false" autocomplete="off"
+            autocapitalize="off" autocorrect="off"
+            inputmode="text"></textarea>
           <div id="ax-paste-preview" style="margin-top:8px;padding:8px;background:rgba(201,162,39,0.08);border-radius:6px;font-size:12px;color:#c9a227;display:none">
             <span id="ax-paste-detection"></span>
           </div>
