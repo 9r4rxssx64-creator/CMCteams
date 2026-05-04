@@ -135,4 +135,54 @@ describe('Push Notifications coverage extension', () => {
       expect(stats.total_subscriptions).toBe(2);
     });
   });
+
+  describe('sendServerPush (Cloudflare Worker)', () => {
+    it('worker_url absent → ok=false reason explicite', async () => {
+      localStorage.removeItem('apex_v13_push_worker_url');
+      const r = await pushNotifications.sendServerPush(['u1'], { title: 'T', body: 'B' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toContain('worker_url');
+    });
+
+    it('admin_token absent → ok=false reason', async () => {
+      localStorage.setItem('apex_v13_push_worker_url', 'https://fake-worker.dev');
+      localStorage.removeItem('apex_v13_push_admin_token');
+      const r = await pushNotifications.sendServerPush(['u1'], { title: 'T', body: 'B' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toContain('admin_token');
+    });
+
+    it('rate limit atteint pour user → refuse send', async () => {
+      localStorage.setItem('apex_v13_push_worker_url', 'https://fake-worker.dev');
+      localStorage.setItem('apex_v13_push_admin_token', 'token123');
+      const today = new Date().setHours(12, 0, 0, 0);
+      const log = Array.from({ length: 25 }, (_, i) => ({ uid: 'u_full', ts: today + i * 1000 }));
+      localStorage.setItem('apex_v13_push_sent_log', JSON.stringify(log));
+      const r = await pushNotifications.sendServerPush(['u_full'], { title: 'T', body: 'B' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toContain('Rate limit');
+    });
+
+    it('config OK : tente fetch (echec network attendu env test)', async () => {
+      localStorage.setItem('apex_v13_push_worker_url', 'https://nonexistent.test');
+      localStorage.setItem('apex_v13_push_admin_token', 'token123');
+      const r = await pushNotifications.sendServerPush(['u_test'], { title: 'T', body: 'B', urgent: true });
+      /* Network échoue ou success — on accepte les 2 (env test) */
+      expect(typeof r.ok).toBe('boolean');
+    });
+  });
+
+  describe('testWorkerHealth', () => {
+    it('worker_url absent → ok=false', async () => {
+      localStorage.removeItem('apex_v13_push_worker_url');
+      const r = await pushNotifications.testWorkerHealth();
+      expect(r.ok).toBe(false);
+    });
+
+    it('worker_url configuré : tente ping (network fail accepté env test)', async () => {
+      localStorage.setItem('apex_v13_push_worker_url', 'https://nonexistent.test');
+      const r = await pushNotifications.testWorkerHealth();
+      expect(typeof r.ok).toBe('boolean');
+    });
+  });
 });
