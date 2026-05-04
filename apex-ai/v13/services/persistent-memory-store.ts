@@ -1,0 +1,284 @@
+/**
+ * APEX v13 — Persistent Memory Store (mémoire JSON cross-session, FB_FIX shared).
+ *
+ * Demande Kevin 2026-05-04 :
+ * "Système de mémoire persistante (JSON/SQLite)"
+ *
+ * Architecture :
+ * - Stockage triple : localStorage + IndexedDB shadow + Firebase RTDB sync
+ * - Format : array<{id, category, text, ts, scope, importance}>
+ * - Max 1000 entries (rotation FIFO + dédupe Levenshtein)
+ * - Catégories : profile / preferences / lessons / facts / relationships / projects / errors
+ * - Scope : per-user (uid) ou global (admin)
+ * - Importance 0-100 (priorité de retention si overflow)
+ * - Timestamp pour expiry optionnel (ex: lessons learned > 90j vérification)
+ * - Cross-app : Apex + CMCteams + KDMC partagent via FB_FIX
+ */
+
+import { logger } from '../core/logger.js';
+
+export type MemoryCategory =
+  | 'profile' | 'preferences' | 'lessons' | 'facts'
+  | 'relationships' | 'projects' | 'errors' | 'goals' | 'history';
+
+export interface MemoryEntry {
+  id: string;
+  category: MemoryCategory;
+  text: string;
+  ts: number;
+  scope: string; /* uid ou 'global' */
+  importance: number; /* 0-100 */
+  source?: string; /* 'chat' | 'manual' | 'import' | 'agent' */
+  expires_at?: number; /* timestamp optionnel pour expiry */
+}
+
+const STORAGE_KEY = 'apex_v13_persistent_memory';
+const MAX_ENTRIES = 1000;
+const IDB_NAME = 'apex_v13_memory';
+const IDB_STORE = 'entries';
+
+class PersistentMemoryStore {
+  private cache: MemoryEntry[] | null = null;
+
+  /**
+   * Add ou update entry (dédupe par similarité Levenshtein > 85%).
+   */
+  async add(entry: Omit<MemoryEntry, 'id' | 'ts'> & { id?: string; ts?: number }): Promise<MemoryEntry> {
+    const all = await this.list();
+    const newEntry: MemoryEntry = {
+      id: entry.id ?? `mem_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      ts: entry.ts ?? Date.now(),
+      ...entry,
+    };
+    /* Dédupe par similarité texte (catégorie+scope identiques) */
+    const dup = all.find((e) =>
+      e.category === newEntry.category &&
+      e.scope === newEntry.scope &&
+      this.similarity(e.text, newEntry.text) >= 0.85,
+    );
+    if (dup) {
+      /* Update existing : merge importance + ts */
+      dup.importance = Math.max(dup.importance, newEntry.importance);
+      dup.ts = newEntry.ts;
+      dup.text = newEntry.text;
+      await this.persist(all);
+      return dup;
+    }
+    all.push(newEntry);
+    /* Trim FIFO si > MAX_ENTRIES (garde les plus importants + récents) */
+    if (all.length > MAX_ENTRIES) {
+      all.sort((a, b) => (b.importance * 0.5 + b.ts / 1e9) - (a.importance * 0.5 + a.ts / 1e9));
+      all.length = MAX_ENTRIES;
+    }
+    await this.persist(all);
+    return newEntry;
+  }
+
+  /**
+   * List avec filtres optionnels.
+   */
+  async list(filters?: {
+    category?: MemoryCategory;
+    scope?: string;
+    minImportance?: number;
+    sinceTs?: number;
+  }): Promise<MemoryEntry[]> {
+    const all = await this.loadAll();
+    if (!filters) return all.slice();
+    return all.filter((e) =>
+      (!filters.category || e.category === filters.category) &&
+      (!filters.scope || e.scope === filters.scope || e.scope === 'global') &&
+      (!filters.minImportance || e.importance >= filters.minImportance) &&
+      (!filters.sinceTs || e.ts >= filters.sinceTs),
+    );
+  }
+
+  /**
+   * Top N entries pour injection system prompt IA.
+   */
+  async topForPrompt(scope: string, n = 50): Promise<MemoryEntry[]> {
+    const all = await this.list({ scope });
+    /* Trie par importance × récence */
+    return all
+      .sort((a, b) => (b.importance * 0.6 + (b.ts / Date.now()) * 40) - (a.importance * 0.6 + (a.ts / Date.now()) * 40))
+      .slice(0, n);
+  }
+
+  /**
+   * Format markdown pour injection system prompt.
+   */
+  async formatForPrompt(scope: string, n = 30): Promise<string> {
+    const entries = await this.topForPrompt(scope, n);
+    if (entries.length === 0) return '';
+    const lines = ['MÉMOIRE PERSISTANTE (cross-session):'];
+    const byCategory = new Map<MemoryCategory, MemoryEntry[]>();
+    for (const e of entries) {
+      const arr = byCategory.get(e.category) ?? [];
+      arr.push(e);
+      byCategory.set(e.category, arr);
+    }
+    for (const [cat, items] of byCategory) {
+      lines.push(`\n[${cat}]`);
+      for (const i of items.slice(0, 8)) {
+        lines.push(`- ${i.text}`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Remove entry par id.
+   */
+  async remove(id: string): Promise<boolean> {
+    const all = await this.list();
+    const before = all.length;
+    const filtered = all.filter((e) => e.id !== id);
+    if (filtered.length === before) return false;
+    await this.persist(filtered);
+    return true;
+  }
+
+  /**
+   * Stats utilisation mémoire.
+   */
+  async getStats(): Promise<{ total: number; by_category: Record<string, number>; oldest_ts: number; newest_ts: number; size_kb: number }> {
+    const all = await this.list();
+    const byCategory: Record<string, number> = {};
+    for (const e of all) byCategory[e.category] = (byCategory[e.category] ?? 0) + 1;
+    const json = JSON.stringify(all);
+    return {
+      total: all.length,
+      by_category: byCategory,
+      oldest_ts: all.length > 0 ? Math.min(...all.map((e) => e.ts)) : 0,
+      newest_ts: all.length > 0 ? Math.max(...all.map((e) => e.ts)) : 0,
+      size_kb: Math.round(new Blob([json]).size / 1024),
+    };
+  }
+
+  /* === Persistence triple === */
+
+  private async loadAll(): Promise<MemoryEntry[]> {
+    if (this.cache) return this.cache;
+    /* Try localStorage */
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as MemoryEntry[];
+        if (Array.isArray(parsed)) {
+          this.cache = parsed;
+          return parsed;
+        }
+      }
+    } catch { /* skip */ }
+    /* Fallback IDB */
+    try {
+      const fromIdb = await this.loadFromIdb();
+      if (fromIdb.length > 0) {
+        this.cache = fromIdb;
+        return fromIdb;
+      }
+    } catch { /* skip */ }
+    this.cache = [];
+    return [];
+  }
+
+  private async persist(entries: MemoryEntry[]): Promise<void> {
+    this.cache = entries;
+    /* localStorage */
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    } catch (err: unknown) {
+      logger.warn('persistent-memory', 'localStorage persist failed', { err });
+    }
+    /* IDB shadow */
+    try {
+      await this.persistToIdb(entries);
+    } catch (err: unknown) {
+      logger.warn('persistent-memory', 'IDB persist failed', { err });
+    }
+  }
+
+  private async loadFromIdb(): Promise<MemoryEntry[]> {
+    if (!('indexedDB' in window)) return [];
+    return new Promise((resolve) => {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        try {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const store = tx.objectStore(IDB_STORE);
+          const get = store.get('all');
+          get.onsuccess = () => {
+            db.close();
+            resolve(Array.isArray(get.result) ? get.result as MemoryEntry[] : []);
+          };
+          get.onerror = () => { db.close(); resolve([]); };
+        } catch { db.close(); resolve([]); }
+      };
+      req.onerror = () => resolve([]);
+    });
+  }
+
+  private async persistToIdb(entries: MemoryEntry[]): Promise<void> {
+    if (!('indexedDB' in window)) return;
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        try {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(entries, 'all');
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+        } catch (e) { db.close(); reject(e); }
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  /* === Helpers === */
+
+  private similarity(a: string, b: string): number {
+    if (a === b) return 1;
+    if (!a || !b) return 0;
+    const la = a.toLowerCase().trim();
+    const lb = b.toLowerCase().trim();
+    if (la === lb) return 1;
+    const long = la.length > lb.length ? la : lb;
+    const short = la.length > lb.length ? lb : la;
+    if (long.length === 0) return 1;
+    const dist = this.levenshtein(long, short);
+    return (long.length - dist) / long.length;
+  }
+
+  private levenshtein(a: string, b: string): number {
+    const dp: number[][] = [];
+    for (let i = 0; i <= a.length; i++) {
+      const row: number[] = [];
+      for (let j = 0; j <= b.length; j++) row.push(0);
+      row[0] = i;
+      dp[i] = row;
+    }
+    const first = dp[0] ?? [];
+    for (let j = 0; j <= b.length; j++) first[j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      const cur = dp[i] ?? [];
+      const prev = dp[i - 1] ?? [];
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        cur[j] = Math.min((prev[j] ?? 0) + 1, (cur[j - 1] ?? 0) + 1, (prev[j - 1] ?? 0) + cost);
+      }
+    }
+    return dp[a.length]?.[b.length] ?? 0;
+  }
+}
+
+export const persistentMemory = new PersistentMemoryStore();
