@@ -574,6 +574,27 @@ class ApexSelfAudit {
       });
       localStorage.setItem('ax_claude_todo', JSON.stringify(todos.slice(-50)));
       void auditLog.record('self_audit.escalated', { details: { finding_id: finding.id, severity: finding.severity } });
+      /* Sprint 8 v13.0.62 : auto-escalade webhook n8n si configuré (Kevin règle "tout autonome").
+         Si ax_n8n_webhook_url + ax_n8n_secret stockés → POST direct (déclenche pipeline n8n). */
+      try {
+        const webhookUrl = localStorage.getItem('ax_n8n_webhook_url');
+        const webhookSecret = localStorage.getItem('ax_n8n_secret');
+        if (webhookUrl && webhookSecret) {
+          void fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-KDMC-Token': webhookSecret,
+            },
+            body: JSON.stringify({
+              source: 'apex_v13',
+              type: 'self_audit_escalation',
+              finding,
+              ts: Date.now(),
+            }),
+          }).catch(() => { /* offline OK */ });
+        }
+      } catch { /* skip */ }
     } catch (err: unknown) {
       logger.warn('apex-self-audit', 'escalate failed', { err });
     }
