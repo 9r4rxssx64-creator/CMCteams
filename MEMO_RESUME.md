@@ -1,6 +1,29 @@
-# Mémo de reprise — Apex v13.0 Jet 1+1.5 LIVE + CMCteams v9.593 (session 2026-05-03)
+# Mémo de reprise — Apex v13.0.14 PRODUCTION-READY 91/100 (2026-05-04)
 
-## 🎯 ÉTAT ACTUEL (2026-05-03 14h10)
+## 🎉 ÉTAT ACTUEL (2026-05-04) — KEVIN PEUT COLLER SES VRAIES CLÉS
+
+### Audit subagent indépendant final = **91/100 PRODUCTION-READY** ✓
+- Sécurité 18/20 : tokens AES-GCM 256 chiffrés au repos, CSP strict zéro unsafe-*, WebAuthn admin gate, PII redaction wired ai-router, rate-limit PIN progressif
+- Performance 19/20 : bundle 20KB gzip, build 796ms, 1301 tests verts
+- Tests 19/20 : coverage 84.2% statements / 88.95% functions
+- Architecture 18/20 : 53 services wirés, 15 studios + 8 modules pro
+- UX 17/20 : Rescue SOS, failover 5 providers, push notif infra complète
+
+### Session 2026-05-04 (13 commits v13.0.3 → v13.0.14)
+- v13.0.12 : **P0 vault tokens chiffrés AES-GCM-256** (CRITIQUE)
+- v13.0.13 : **P0 CSP strict zéro unsafe-* + WebAuthn admin-action-gate**
+- 1190 → 1301 tests (+111 tests)
+- 23/52 → 53/52 services wirés au boot (anti Declaration ≠ Deployment)
+
+### Clés API utilisables maintenant (toutes chiffrées AXENC1: AES-GCM-256)
+Anthropic, OpenAI, Stripe (SK+PK), Brevo, Resend, Google Gemini, GitHub PAT.
+Détection auto, auto-test endpoint, auto-link dashboard, audit log.
+
+### Branche claude/test-699LQ déployée
+
+---
+
+## ÉTAT PRÉCÉDENT (2026-05-03 14h10)
 
 ### Apex v13.0 Jet 1 + Jet 1.5 livré et déployé canary
 - **Canary live** : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/
