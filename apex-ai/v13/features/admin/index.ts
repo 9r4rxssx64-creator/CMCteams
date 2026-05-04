@@ -6,6 +6,8 @@
  * - Users    : créer compte client/ami/famille + WhatsApp confirmation OTP
  * - Pending  : confirmations en attente (OTP reçus à valider)
  * - Health   : status providers IA + sentinelles
+ * - Bilan    : bilan financier live (Sprint port v12 — CLAUDE.md règle vBilan)
+ * - Conso    : consommation IA temps réel (Sprint port v12)
  */
 
 import { logger } from '../../core/logger.js';
@@ -19,7 +21,7 @@ import { whatsapp } from '../../services/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
-type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge';
+type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge' | 'bilan' | 'consumption';
 
 let activeTab: Tab = 'commerce';
 
@@ -220,6 +222,8 @@ function renderTabs(): string {
     ['projects', '📦 Projets KDMC'],
     ['executions', '⚙ Exécutions'],
     ['knowledge', '📚 Base connaissances'],
+    ['bilan', '📊 Bilan'],
+    ['consumption', '💰 Conso IA'],
   ];
   return tabs
     .map(
@@ -319,6 +323,37 @@ function renderContent(): string {
       return renderExecutionsTab();
     case 'knowledge':
       return renderKnowledgeTab();
+    case 'bilan':
+      return '<div id="ax-admin-mount-bilan" class="ax-admin-section"><p class="ax-muted">Chargement du bilan financier…</p></div>';
+    case 'consumption':
+      return '<div id="ax-admin-mount-consumption" class="ax-admin-section"><p class="ax-muted">Chargement consommation IA…</p></div>';
+  }
+}
+
+/**
+ * Mount lazy-loaded admin sub-views (financial-bilan, consumption-dashboard).
+ * Wires existing orphan modules into admin tabs (anti-pattern Declaration ≠ Deployment).
+ */
+async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
+  const mountBilan = rootEl.querySelector<HTMLElement>('#ax-admin-mount-bilan');
+  if (mountBilan) {
+    try {
+      const mod = (await import('./financial-bilan.js')) as { render: (el: HTMLElement) => void };
+      mod.render(mountBilan);
+    } catch (err) {
+      logger.warn('admin', 'financial-bilan render failed', { err });
+      mountBilan.innerHTML = '<p class="ax-muted">Bilan indisponible (module ko)</p>';
+    }
+  }
+  const mountConsumption = rootEl.querySelector<HTMLElement>('#ax-admin-mount-consumption');
+  if (mountConsumption) {
+    try {
+      const mod = (await import('./consumption-dashboard.js')) as { render: (el: HTMLElement) => void };
+      mod.render(mountConsumption);
+    } catch (err) {
+      logger.warn('admin', 'consumption-dashboard render failed', { err });
+      mountConsumption.innerHTML = '<p class="ax-muted">Consommation indisponible (module ko)</p>';
+    }
   }
 }
 
@@ -650,4 +685,8 @@ export function render(rootEl: HTMLElement): void {
     </div>
   `;
   attachHandlers(rootEl);
+  /* Mount lazy admin views (bilan, consumption) — fire and forget, errors logged */
+  if (activeTab === 'bilan' || activeTab === 'consumption') {
+    void mountLazyAdminView(rootEl);
+  }
 }

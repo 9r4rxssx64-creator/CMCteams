@@ -286,9 +286,9 @@ export function render(rootEl: HTMLElement): void {
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
       <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
-        <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">💬 Chat</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" onclick="location.hash=\'#admin\'">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" onclick="location.hash='#settings'">🔧 Réglages</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat">💬 Chat</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="settings">🔧 Réglages</button>
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav">🔑 Clé API</button>
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav">🚪 Déconnexion</button>
       </nav>
@@ -923,6 +923,22 @@ export function render(rootEl: HTMLElement): void {
   };
   attachPasteKey('#ax-paste-key');
   attachPasteKey('#ax-paste-key-nav');
+
+  /* Sprint 8 v13.0.69 P0 BUG FIX (Kevin "boutons header/footer marchent pas") :
+     Event delegation global pour [data-nav-route="..."] qui replace onclick CSP-blocked.
+     iOS Safari + CSP strict bloquent inline onclick. Solution : addEventListener listener
+     unique sur rootEl qui catch tous boutons quand cliqués (avant ET après re-render). */
+  rootEl.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const navBtn = target.closest('[data-nav-route]') as HTMLElement | null;
+    if (navBtn) {
+      const route = navBtn.dataset['navRoute'];
+      if (route) {
+        haptic.tap();
+        location.hash = '#' + route;
+      }
+    }
+  });
 
   rootEl.querySelector<HTMLButtonElement>('#ax-logout-nav')?.addEventListener('click', () => {
     haptic.tap();
