@@ -28,6 +28,8 @@ interface SheetOptions {
   content: string;
   actions?: SheetAction[];
   dismissable?: boolean;
+  /** Premium drag-to-dismiss (Kevin v13 UX premium). Default true. */
+  draggable?: boolean;
 }
 
 interface SheetHandle {
@@ -144,9 +146,73 @@ class ModalSheet {
       });
     }
 
+    /* Drag-to-dismiss premium (Kevin v13 UX premium iOS-style)
+     * Touch sur drag-handle → suit le doigt → si > 100px : dismiss
+     * Sinon → snap back to top */
+    if (opts.draggable !== false && opts.dismissable !== false) {
+      this.attachDragToDismiss(sheet, close);
+    }
+
     const handle: SheetHandle = { el: overlay, close };
     this.active = handle;
     return handle;
+  }
+
+  /**
+   * iOS-style drag-to-dismiss sur drag-handle.
+   * Pointer events (cross-platform touch + mouse).
+   */
+  private attachDragToDismiss(sheet: HTMLElement, close: () => void): void {
+    const dragHandle = sheet.querySelector<HTMLElement>('.ax-sheet-handle');
+    if (!dragHandle) return;
+    /* Étendre la zone de drag pour mobile (44px min Apple HIG) */
+    dragHandle.style.padding = '12px';
+    dragHandle.style.cursor = 'grab';
+    dragHandle.style.touchAction = 'none';
+
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    const onPointerDown = (e: PointerEvent): void => {
+      isDragging = true;
+      startY = e.clientY;
+      currentY = e.clientY;
+      dragHandle.style.cursor = 'grabbing';
+      dragHandle.setPointerCapture?.(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent): void => {
+      if (!isDragging) return;
+      currentY = e.clientY;
+      const delta = currentY - startY;
+      /* Empêcher glissement vers le haut */
+      const translateY = Math.max(0, delta);
+      sheet.style.transform = `translateY(${translateY}px)`;
+      sheet.style.transition = 'none';
+    };
+
+    const onPointerUp = (e: PointerEvent): void => {
+      if (!isDragging) return;
+      isDragging = false;
+      dragHandle.style.cursor = 'grab';
+      dragHandle.releasePointerCapture?.(e.pointerId);
+      sheet.style.transition = '';
+      const delta = currentY - startY;
+      if (delta > 100) {
+        /* Threshold dépassé → dismiss */
+        haptic.tap();
+        close();
+      } else {
+        /* Snap back */
+        sheet.style.transform = '';
+      }
+    };
+
+    dragHandle.addEventListener('pointerdown', onPointerDown);
+    dragHandle.addEventListener('pointermove', onPointerMove);
+    dragHandle.addEventListener('pointerup', onPointerUp);
+    dragHandle.addEventListener('pointercancel', onPointerUp);
   }
 
   closeAll(): void {

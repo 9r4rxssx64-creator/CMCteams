@@ -431,6 +431,164 @@
   animation: ax-spin 0.8s linear infinite;
 }
 
+/* ───────── PREMIUM v13 Kevin redesign UX ───────── */
+
+/* Success burst (confetti style) */
+@keyframes ax-success-burst {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ax-success-burst {
+  animation: ax-success-burst var(--ax-d-normal) var(--ax-ease-spring) both;
+}
+
+/* Error shake (invalid input) */
+@keyframes ax-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.ax-error-shake {
+  animation: ax-error-shake 0.4s var(--ax-ease) both;
+}
+
+/* Slide-up-fade premium (entrance card) */
+@keyframes ax-slide-up-fade-premium {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ax-slide-up-fade-premium {
+  animation: ax-slide-up-fade-premium var(--ax-d-normal) var(--ax-ease-out) both;
+}
+
+/* Stagger entrance (cards en cascade) */
+.ax-stagger > * {
+  animation: ax-slide-up-fade-premium var(--ax-d-normal) var(--ax-ease-out) both;
+}
+.ax-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.ax-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.ax-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.ax-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.ax-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.ax-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.ax-stagger > *:nth-child(7) { animation-delay: 360ms; }
+.ax-stagger > *:nth-child(8) { animation-delay: 420ms; }
+.ax-stagger > *:nth-child(n+9) { animation-delay: 480ms; }
+
+/* Float (background subtle) */
+@keyframes ax-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+}
+
+.ax-float {
+  animation: ax-float 4s ease-in-out infinite;
+}
+
+/* Gradient shift (premium gold animated) */
+@keyframes ax-gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.ax-gradient-animate {
+  background-size: 200% 200%;
+  animation: ax-gradient-shift 8s var(--ax-ease) infinite;
+}
+
+/* Reveal (slide depuis cote) */
+@keyframes ax-reveal-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ax-reveal-right {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ax-reveal-left {
+  animation: ax-reveal-left var(--ax-d-normal) var(--ax-ease-out) both;
+}
+
+.ax-reveal-right {
+  animation: ax-reveal-right var(--ax-d-normal) var(--ax-ease-out) both;
+}
+
+/* Scale-in (modal entrance) */
+@keyframes ax-scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ax-scale-in {
+  animation: ax-scale-in var(--ax-d-fast) var(--ax-ease-spring) both;
+}
+
+/* Lift hover effect */
+.ax-lift {
+  transition:
+    transform var(--ax-d-fast) var(--ax-ease-out),
+    box-shadow var(--ax-d-fast) var(--ax-ease-out);
+}
+
+.ax-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ax-shadow-lg);
+}
+
+.ax-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--ax-shadow-sm);
+}
+
 /* ───────── Reduced motion : skip animations ───────── */
 @media (prefers-reduced-motion: reduce) {
   .ax-toast,
@@ -440,8 +598,20 @@
   .ax-glow-pulse,
   .ax-bounce-in,
   .ax-slide-up-fade,
-  .ax-spinner {
+  .ax-slide-up-fade-premium,
+  .ax-stagger > *,
+  .ax-spinner,
+  .ax-success-burst,
+  .ax-error-shake,
+  .ax-float,
+  .ax-gradient-animate,
+  .ax-reveal-left,
+  .ax-reveal-right,
+  .ax-scale-in {
     animation: none !important;
     transition: none !important;
+  }
+  .ax-lift:hover {
+    transform: none !important;
   }
 }

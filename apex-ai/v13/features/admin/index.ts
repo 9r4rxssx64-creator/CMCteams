@@ -412,6 +412,22 @@ function renderKnowledgeTab(): string {
 }
 
 function attachHandlers(rootEl: HTMLElement): void {
+  /* Nav route delegation (CSP strict — replaces inline onclick) */
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-nav-route]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      haptic.tap();
+      const route = btn.dataset['navRoute'] ?? 'chat';
+      window.location.hash = '#' + route;
+    });
+  });
+
+  /* Select-all delegation for input click (CSP strict) */
+  rootEl.querySelectorAll<HTMLInputElement>('[data-action="select-all"]').forEach((input) => {
+    input.addEventListener('click', () => {
+      input.select();
+    });
+  });
+
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       haptic.selection();
@@ -655,7 +671,7 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   resultEl.innerHTML = `
     <div class="ax-success">
       Compte créé : <strong>${escapeHtml(name)}</strong> (${tier})
-      <p>Lien d'invitation : <input type="text" readonly value="${result.inviteLink ?? ''}" onclick="this.select()" style="width:100%"></p>
+      <p>Lien d'invitation : <input type="text" readonly value="${result.inviteLink ?? ''}" data-action="select-all" style="width:100%"></p>
       ${waLink}
     </div>
   `;
@@ -678,7 +694,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-admin">
       <header class="ax-admin-header">
         <h1>Centre Admin</h1>
-        <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">← Chat</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat">← Chat</button>
       </header>
       <nav class="ax-tabs">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>

@@ -17,7 +17,14 @@ type ToastLevel = 'info' | 'success' | 'warn' | 'error';
 interface ToastOptions {
   duration?: number;
   haptic?: boolean;
+  premium?: boolean;
 }
+
+/**
+ * Queue stack max — au-delà, dismiss le plus ancien (FIFO).
+ * Évite spam visuel si app pousse 50 toasts d'un coup.
+ */
+const MAX_TOAST_STACK = 5;
 
 class Toast {
   private container: HTMLElement | null = null;
@@ -39,9 +46,12 @@ class Toast {
     const id = `toast-${++this.idCounter}-${Date.now()}`;
     const duration = opts.duration ?? 3000;
     const useHaptic = opts.haptic ?? true;
+    const premium = opts.premium ?? false;
 
     const el = document.createElement('div');
-    el.className = `ax-toast ax-toast-${level}`;
+    /* Premium variant : colored borders + glass blur (Kevin v13 redesign) */
+    const premiumClass = premium ? ' ax-toast-premium' : '';
+    el.className = `ax-toast ax-toast-${level}${premiumClass}`;
     el.id = id;
     el.setAttribute('role', 'alert');
 
@@ -49,16 +59,36 @@ class Toast {
     el.innerHTML = `
       <span class="ax-toast-icon">${icon}</span>
       <span class="ax-toast-text"></span>
-      <button class="ax-toast-close" aria-label="Fermer">×</button>
+      <button class="ax-toast-close" aria-label="Fermer" type="button">×</button>
     `;
     /* Set text safely (no innerHTML for user message) */
     const textEl = el.querySelector<HTMLElement>('.ax-toast-text');
     if (textEl) textEl.textContent = message;
 
-    /* Click anywhere to dismiss */
-    el.addEventListener('click', () => this.dismiss(id));
+    /* Bouton fermer dédié (P0 audit UX premium — visible touch target 44px) */
+    const closeBtn = el.querySelector<HTMLButtonElement>('.ax-toast-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dismiss(id);
+      });
+    }
 
-    this.getContainer().appendChild(el);
+    /* Click anywhere autre que close → dismiss */
+    el.addEventListener('click', (e) => {
+      if (e.target instanceof HTMLElement && e.target.closest('.ax-toast-close')) return;
+      this.dismiss(id);
+    });
+
+    /* Queue stack management : si trop de toasts ACTIFS (non leaving), retire le plus ancien.
+     * Synchrone : on enlève immédiatement du DOM pour respecter MAX_TOAST_STACK strict. */
+    const container = this.getContainer();
+    const active = container.querySelectorAll<HTMLElement>('.ax-toast:not(.ax-toast-leaving)');
+    if (active.length >= MAX_TOAST_STACK) {
+      const oldest = active[0];
+      if (oldest) oldest.remove();
+    }
+    container.appendChild(el);
 
     /* Trigger entrance animation */
     requestAnimationFrame(() => {
@@ -114,6 +144,30 @@ class Toast {
 
   error(message: string, opts?: ToastOptions): string {
     return this.show(message, 'error', opts);
+  }
+
+  /**
+   * Premium variant (glassmorphism + colored border-left).
+   * Idéal pour notifications importantes/branded.
+   */
+  premium(message: string, level: ToastLevel = 'info', opts: ToastOptions = {}): string {
+    return this.show(message, level, { ...opts, premium: true });
+  }
+
+  /**
+   * Count of toasts currently displayed (queue stack).
+   * Vérifie via DOM réel (au cas où container détaché par test reset).
+   */
+  count(): number {
+    if (typeof document === 'undefined') return 0;
+    return document.querySelectorAll('.ax-toast-container .ax-toast').length;
+  }
+
+  /**
+   * Stack max constant (Kevin v13 premium queue management).
+   */
+  getMaxStack(): number {
+    return MAX_TOAST_STACK;
   }
 
   private getIcon(level: ToastLevel): string {

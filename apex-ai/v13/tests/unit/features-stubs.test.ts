@@ -20,7 +20,7 @@ describe('features stubs render coverage', () => {
       mod.render(root);
       expect(root.querySelector('#ax-browser-iframe')).toBeTruthy();
       expect(root.querySelector('#ax-browser-url')).toBeTruthy();
-      expect(root.querySelector('#ax-browser-go')).toBeTruthy();
+      expect(root.querySelector('[data-action="go"]')).toBeTruthy();
     });
 
     it('render utilise URL google par défaut quand localStorage vide', async () => {
@@ -42,7 +42,7 @@ describe('features stubs render coverage', () => {
       const mod = await import('../../features/browser/index.js');
       mod.render(root);
       const input = root.querySelector<HTMLInputElement>('#ax-browser-url');
-      const goBtn = root.querySelector<HTMLButtonElement>('#ax-browser-go');
+      const goBtn = root.querySelector<HTMLButtonElement>('[data-action="go"]');
       const iframe = root.querySelector<HTMLIFrameElement>('#ax-browser-iframe');
       if (input) input.value = 'https://wikipedia.org';
       goBtn?.click();
@@ -73,7 +73,7 @@ describe('features stubs render coverage', () => {
       const mod = await import('../../features/browser/index.js');
       mod.render(root);
       const input = root.querySelector<HTMLInputElement>('#ax-browser-url');
-      const goBtn = root.querySelector<HTMLButtonElement>('#ax-browser-go');
+      const goBtn = root.querySelector<HTMLButtonElement>('[data-action="go"]');
       if (input) input.value = '   ';
       goBtn?.click();
       /* Pas changé */
@@ -84,7 +84,7 @@ describe('features stubs render coverage', () => {
       const mod = await import('../../features/browser/index.js');
       mod.render(root);
       const input = root.querySelector<HTMLInputElement>('#ax-browser-url');
-      const goBtn = root.querySelector<HTMLButtonElement>('#ax-browser-go');
+      const goBtn = root.querySelector<HTMLButtonElement>('[data-action="go"]');
       if (input) input.value = 'no-protocol.com';
       goBtn?.click();
       expect(localStorage.getItem('apex_v13_browser_last_url')).toBe('https://no-protocol.com');

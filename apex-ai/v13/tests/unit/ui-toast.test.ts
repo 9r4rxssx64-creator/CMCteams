@@ -123,4 +123,103 @@ describe('UI Toast notifications (Jet 8 path A)', () => {
       expect(document.body.querySelector(`#${id}`)).toBeNull();
     });
   });
+
+  /* ─────── Tests redesign UX premium (Kevin v13 2026-05-04) ─────── */
+  describe('Premium variant (Kevin v13 redesign UX premium)', () => {
+    it('premium() shortcut adds ax-toast-premium class', () => {
+      toast.premium('Premium notif', 'success');
+      const t = document.body.querySelector('.ax-toast');
+      expect(t?.classList.contains('ax-toast-premium')).toBe(true);
+      expect(t?.classList.contains('ax-toast-success')).toBe(true);
+    });
+
+    it('show() with premium:true adds ax-toast-premium class', () => {
+      toast.show('Branded', 'info', { premium: true });
+      const t = document.body.querySelector('.ax-toast');
+      expect(t?.classList.contains('ax-toast-premium')).toBe(true);
+    });
+
+    it('default (premium:false) does NOT add ax-toast-premium', () => {
+      toast.show('Default', 'info');
+      const t = document.body.querySelector('.ax-toast');
+      expect(t?.classList.contains('ax-toast-premium')).toBe(false);
+    });
+
+    it('premium variant respects level (warn)', () => {
+      toast.premium('Attention', 'warn');
+      const t = document.body.querySelector('.ax-toast');
+      expect(t?.classList.contains('ax-toast-premium')).toBe(true);
+      expect(t?.classList.contains('ax-toast-warn')).toBe(true);
+    });
+  });
+
+  describe('Dismiss button (visible Kevin v13 premium)', () => {
+    it('close button has type=button (not submit)', () => {
+      toast.show('Closable');
+      const closeBtn = document.body.querySelector<HTMLButtonElement>('.ax-toast-close');
+      expect(closeBtn?.type).toBe('button');
+    });
+
+    it('close button has aria-label=Fermer', () => {
+      toast.show('Closable');
+      const closeBtn = document.body.querySelector('.ax-toast-close');
+      expect(closeBtn?.getAttribute('aria-label')).toBe('Fermer');
+    });
+
+    it('clicking close button dismisses toast', () => {
+      const id = toast.show('Closable');
+      const closeBtn = document.body.querySelector<HTMLButtonElement>(`#${id} .ax-toast-close`);
+      closeBtn?.click();
+      vi.advanceTimersByTime(310);
+      expect(document.body.querySelector(`#${id}`)).toBeNull();
+    });
+
+    it('clicking close button stops propagation (no double dismiss)', () => {
+      const id = toast.show('Closable');
+      const t = document.body.querySelector<HTMLElement>(`#${id}`);
+      const closeBtn = t?.querySelector<HTMLButtonElement>('.ax-toast-close');
+      /* Spy sur dismiss pour vérifier appel unique */
+      const dismissSpy = vi.spyOn(toast, 'dismiss');
+      closeBtn?.click();
+      expect(dismissSpy).toHaveBeenCalledWith(id);
+      expect(dismissSpy).toHaveBeenCalledTimes(1);
+      dismissSpy.mockRestore();
+    });
+  });
+
+  describe('Queue stack management (Kevin v13 premium)', () => {
+    it('count() returns 0 when empty', () => {
+      expect(toast.count()).toBe(0);
+    });
+
+    it('count() returns N after N shows', () => {
+      toast.show('A');
+      toast.show('B');
+      toast.show('C');
+      expect(toast.count()).toBe(3);
+    });
+
+    it('getMaxStack() returns the configured max', () => {
+      const max = toast.getMaxStack();
+      expect(max).toBeGreaterThan(0);
+      expect(typeof max).toBe('number');
+    });
+
+    it('stack max enforced — old toasts dismissed FIFO when limit reached', () => {
+      const max = toast.getMaxStack();
+      /* Push max+2 toasts. Le tout premier doit être dismissé. */
+      const ids: string[] = [];
+      for (let i = 0; i < max + 2; i++) {
+        ids.push(toast.show(`T${i}`));
+      }
+      /* Avant transition cleanup, on a max ou max-1 toasts visibles dans le DOM */
+      vi.advanceTimersByTime(50);
+      const visibleCount = document.body.querySelectorAll('.ax-toast').length;
+      /* Le 1er toast doit être en train d'être leaving (ou parti) */
+      expect(visibleCount).toBeLessThanOrEqual(max);
+      /* Avancer pour finir cleanup */
+      vi.advanceTimersByTime(310);
+      expect(document.body.querySelector(`#${ids[0]}`)).toBeNull();
+    });
+  });
 });
