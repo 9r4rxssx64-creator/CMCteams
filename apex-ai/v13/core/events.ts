@@ -17,6 +17,9 @@ export interface EventMap {
   'route:change': { from: string; to: string };
   'store:change': { key: string; value: unknown };
   'commerce:toggle': { enabled: boolean };
+  'push:resubscribed': { endpoint: string | undefined };
+  'push:status': { environment: string; subscribed: boolean; needs_install_guide: boolean };
+  'notification:clicked': { url: string | undefined };
   [k: `custom:${string}`]: unknown;
 }
 
