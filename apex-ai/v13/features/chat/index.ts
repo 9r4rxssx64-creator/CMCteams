@@ -410,13 +410,20 @@ export function render(rootEl: HTMLElement): void {
       const sheet = modalSheet.open({
         title: '🔑 Coller ta clé API',
         content: `
-          <p style="margin:0 0 16px;color:var(--ax-text-dim)">
+          <p style="margin:0 0 12px;color:var(--ax-text-dim)">
             Apex détecte automatiquement le service (Anthropic, OpenAI, Stripe, GitHub, etc.) et la range au bon endroit.
           </p>
+          <button type="button" id="ax-paste-clipboard-btn"
+            style="width:100%;padding:12px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent">
+            📋 Coller automatiquement depuis presse-papiers
+          </button>
           <textarea id="ax-paste-input" rows="3"
-            placeholder="Colle ici ta clé / token / credential"
+            placeholder="Ou colle ici manuellement (long press → Coller)"
             style="width:100%;padding:12px;background:var(--ax-bg-input);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);font-family:var(--ax-font-mono);font-size:13px"
             autofocus spellcheck="false" autocomplete="off"></textarea>
+          <div id="ax-paste-preview" style="margin-top:8px;padding:8px;background:rgba(201,162,39,0.08);border-radius:6px;font-size:12px;color:#c9a227;display:none">
+            <span id="ax-paste-detection"></span>
+          </div>
           <p class="ax-muted" style="margin-top:8px">130+ patterns reconnus · 0 stockage des données interdites (CB, seed)</p>
         `,
         actions: [
@@ -435,7 +442,7 @@ export function render(rootEl: HTMLElement): void {
               const input = document.getElementById('ax-paste-input') as HTMLTextAreaElement | null;
               const value = input?.value.trim() ?? '';
               if (!value) {
-                toast.warn('Colle une clé d\'abord');
+                toast.warn('⚠️ Textarea vide — utilise "📋 Coller automatiquement" ou long press dans le rectangle blanc');
                 return;
               }
               sheet.close();
@@ -448,7 +455,7 @@ export function render(rootEl: HTMLElement): void {
                 }
                 if (!result.ok) {
                   haptic.warning();
-                  toast.warn('Format non reconnu : ' + (result.reason ?? 'inconnu'));
+                  toast.warn('Format non reconnu : ' + (result.reason ?? 'inconnu') + ` (taille ${value.length} chars, début: "${value.slice(0, 12)}...")`, { duration: 8000 });
                   return;
                 }
                 haptic.success();
@@ -460,6 +467,71 @@ export function render(rootEl: HTMLElement): void {
           },
         ],
       });
+      /* Wire bouton "📋 Coller automatiquement" via Clipboard API */
+      setTimeout(() => {
+        const clipboardBtn = document.getElementById('ax-paste-clipboard-btn') as HTMLButtonElement | null;
+        const input = document.getElementById('ax-paste-input') as HTMLTextAreaElement | null;
+        const preview = document.getElementById('ax-paste-preview') as HTMLDivElement | null;
+        const detectionEl = document.getElementById('ax-paste-detection') as HTMLSpanElement | null;
+        clipboardBtn?.addEventListener('click', async () => {
+          haptic.tap();
+          try {
+            if (!navigator.clipboard?.readText) {
+              toast.warn('Clipboard API non supportée. Long press dans le textarea → Coller manuellement.');
+              return;
+            }
+            const text = await navigator.clipboard.readText();
+            const trimmed = text.trim();
+            if (!trimmed) {
+              toast.warn('Presse-papiers vide. Copie d\'abord ta clé puis tap ce bouton.');
+              return;
+            }
+            if (input) input.value = trimmed;
+            /* Auto-detect immédiat pour preview */
+            const { detectCredential } = await import('../../services/credential-patterns.js');
+            const detected = detectCredential(trimmed);
+            if (preview && detectionEl) {
+              if (detected) {
+                detectionEl.textContent = `✅ Détecté : ${detected.name} (${trimmed.length} chars)`;
+                preview.style.display = 'block';
+                preview.style.background = 'rgba(34,204,119,0.1)';
+                preview.style.color = '#22cc77';
+              } else {
+                detectionEl.textContent = `⚠️ Format inconnu (${trimmed.length} chars, début "${trimmed.slice(0, 15)}...")`;
+                preview.style.display = 'block';
+                preview.style.background = 'rgba(255,170,0,0.1)';
+                preview.style.color = '#ffaa00';
+              }
+            }
+            toast.success('Clé collée — vérifie + tap "Coller + ranger"');
+            haptic.medium();
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'erreur';
+            toast.warn(`Permission presse-papiers refusée. Long press dans le textarea blanc → Coller. (${msg})`);
+          }
+        });
+        /* Live detection au paste/input dans textarea */
+        input?.addEventListener('input', async () => {
+          const value = input.value.trim();
+          if (!value || !preview || !detectionEl) {
+            if (preview) preview.style.display = 'none';
+            return;
+          }
+          const { detectCredential } = await import('../../services/credential-patterns.js');
+          const detected = detectCredential(value);
+          if (detected) {
+            detectionEl.textContent = `✅ Détecté : ${detected.name} (${value.length} chars)`;
+            preview.style.display = 'block';
+            preview.style.background = 'rgba(34,204,119,0.1)';
+            preview.style.color = '#22cc77';
+          } else {
+            detectionEl.textContent = `⚠️ Format inconnu (${value.length} chars)`;
+            preview.style.display = 'block';
+            preview.style.background = 'rgba(255,170,0,0.1)';
+            preview.style.color = '#ffaa00';
+          }
+        });
+      }, 100);
     });
   };
   attachPasteKey('#ax-paste-key');
