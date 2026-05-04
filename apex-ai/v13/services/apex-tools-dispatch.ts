@@ -127,10 +127,14 @@ class ApexToolsDispatcher {
       case 'apex_self_audit':
       case 'self_audit':
       case 'audit':
-      case 'fais_ton_audit': {
-        /* Kevin règle : "fais ton audit" → audit complet 6 axes + auto-fix + escalade */
+      case 'fais_ton_audit':
+      case 'audit_brutal':
+      case 'fais_audit_brutal': {
+        /* Kevin règle : "fais ton audit" → audit complet 6 axes + auto-fix + escalade
+           Mode brutal = checks supplémentaires + sévérité bumpée + 145 vues v12 manquantes */
         const { apexSelfAudit } = await import('./apex-self-audit.js');
-        const report = await apexSelfAudit.runFullAudit();
+        const brutal = toolName === 'audit_brutal' || toolName === 'fais_audit_brutal' || params['brutal'] === true;
+        const report = await apexSelfAudit.runFullAudit(brutal);
         return apexSelfAudit.formatReportMarkdown(report);
       }
       case 'read_file':
