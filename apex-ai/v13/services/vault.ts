@@ -67,6 +67,47 @@ class Vault {
     );
   }
 
+  /**
+   * Génère une passphrase device-bound stable (fallback si user n'a pas set la sienne).
+   * NB : moins sécurisé qu'une passphrase user explicite, mais > plaintext.
+   * À upgrader vers vraie passphrase user dès que possible (modal Vault).
+   */
+  private async getDeviceBoundPassphrase(): Promise<string> {
+    const KEY = 'apex_v13_device_passphrase_v1';
+    const cached = localStorage.getItem(KEY);
+    if (cached) return cached;
+    /* Génère + persiste device-bound (256 bits aléatoires base64) */
+    const random = crypto.getRandomValues(new Uint8Array(32));
+    const pass = btoa(String.fromCharCode(...random));
+    try {
+      localStorage.setItem(KEY, pass);
+    } catch {
+      /* Quota plein, fallback en mémoire seulement */
+    }
+    return pass;
+  }
+
+  /**
+   * Encrypt avec fallback auto device-bound passphrase si user n'a pas set la sienne.
+   * Garantit chiffrement TOUJOURS (vs encrypt() qui throw sans passphrase).
+   */
+  async encryptAuto(plaintext: string): Promise<string> {
+    const pass = this.passphrase ?? (await this.getDeviceBoundPassphrase());
+    return this.encrypt(plaintext, pass);
+  }
+
+  /**
+   * Decrypt avec fallback device-bound (essaie passphrase user puis device-bound).
+   */
+  async decryptAuto(encrypted: string): Promise<string | null> {
+    if (this.passphrase) {
+      const r = await this.decrypt(encrypted, this.passphrase);
+      if (r !== null) return r;
+    }
+    const devicePass = await this.getDeviceBoundPassphrase();
+    return this.decrypt(encrypted, devicePass);
+  }
+
   async encrypt(plaintext: string, passphrase?: string): Promise<string> {
     const pass = passphrase ?? this.passphrase;
     if (!pass) throw new Error('Vault passphrase not set');
@@ -145,11 +186,15 @@ class Vault {
       logger.warn('vault', `Forbidden credential detected: ${detected.name} — REFUSED`);
       return { ok: false, forbidden: true, pattern: detected, reason: detected.name + ' — JAMAIS stocké' };
     }
+    /* P0 SÉCU CRITIQUE : chiffrement systématique au repos (audit v13.0.10).
+       Avant : localStorage en plaintext = clés visibles DevTools.
+       Après : AES-GCM 256 + PBKDF2 200k via encryptAuto (passphrase user OU device-bound). */
     try {
-      localStorage.setItem(detected.storageKey, trimmed);
+      const encrypted = await this.encryptAuto(trimmed);
+      localStorage.setItem(detected.storageKey, encrypted);
     } catch (err: unknown) {
-      logger.error('vault', 'autoStore persist failed', { err });
-      return { ok: false, reason: 'Stockage saturé' };
+      logger.error('vault', 'autoStore encrypt+persist failed', { err });
+      return { ok: false, reason: 'Chiffrement ou stockage échoué' };
     }
     /* Auto-link legacy : enrichit ax_links_registry old format */
     this.autoLink(detected);

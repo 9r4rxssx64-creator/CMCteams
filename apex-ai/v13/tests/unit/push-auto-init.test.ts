@@ -146,4 +146,34 @@ describe('Push Auto-Init (autonome iOS+Android app fermée)', () => {
       expect(true).toBe(true);
     });
   });
+
+  describe('checkPushConfig (P0 audit gap fix)', () => {
+    it('rien set → ready_for_prod=false + 3 warnings', () => {
+      localStorage.removeItem('ax_vapid_public');
+      localStorage.removeItem('apex_v13_push_worker_url');
+      localStorage.removeItem('apex_v13_push_admin_token');
+      const cfg = pushAutoInit.checkPushConfig();
+      expect(cfg.ready_for_prod).toBe(false);
+      expect(cfg.warnings.length).toBe(3);
+    });
+
+    it('tout set → ready_for_prod=true sans warnings', () => {
+      localStorage.setItem('ax_vapid_public', 'B'.repeat(64));
+      localStorage.setItem('apex_v13_push_worker_url', 'https://apex-push.workers.dev');
+      localStorage.setItem('apex_v13_push_admin_token', 'admin-token-secret-32chars-min');
+      const cfg = pushAutoInit.checkPushConfig();
+      expect(cfg.ready_for_prod).toBe(true);
+      expect(cfg.warnings.length).toBe(0);
+    });
+
+    it('vapid_set / worker_url_set / admin_token_set tracking', () => {
+      localStorage.setItem('ax_vapid_public', 'B'.repeat(64));
+      localStorage.removeItem('apex_v13_push_worker_url');
+      localStorage.removeItem('apex_v13_push_admin_token');
+      const cfg = pushAutoInit.checkPushConfig();
+      expect(cfg.vapid_set).toBe(true);
+      expect(cfg.worker_url_set).toBe(false);
+      expect(cfg.admin_token_set).toBe(false);
+    });
+  });
 });
