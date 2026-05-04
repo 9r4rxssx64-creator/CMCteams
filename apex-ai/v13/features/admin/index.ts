@@ -225,10 +225,11 @@ function renderTabs(): string {
     ['bilan', '📊 Bilan'],
     ['consumption', '💰 Conso IA'],
   ];
+  /* v13.0.81 fix Kevin "icônes superposées texte" iPhone : flex-shrink:0 + nowrap + min-width 44px */
   return tabs
     .map(
       ([id, label]) => `
-      <button class="ax-tab ${activeTab === id ? 'ax-tab-active' : ''}" data-tab="${id}">${label}</button>
+      <button class="ax-tab ${activeTab === id ? 'ax-tab-active' : ''}" data-tab="${id}" style="flex-shrink:0;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;border-radius:10px;cursor:pointer">${label}</button>
     `,
     )
     .join('');
@@ -696,7 +697,7 @@ export function render(rootEl: HTMLElement): void {
         <h1>Centre Admin</h1>
         <button class="ax-btn ax-btn-sm" data-nav-route="chat">← Chat</button>
       </header>
-      <nav class="ax-tabs">${renderTabs()}</nav>
+      <nav class="ax-tabs" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px;border-bottom:1px solid var(--ax-border);scrollbar-width:thin">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>
     </div>
   `;

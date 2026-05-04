@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.0.80">
+<html lang="fr" data-theme="dark" data-app-ver="v13.0.81">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,8 +15,8 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-01729bd45747f0d3d22bfb1d15fd9b58' 'strict-dynamic' https:;
-             style-src 'self' 'nonce-01729bd45747f0d3d22bfb1d15fd9b58' 'unsafe-inline';
+             script-src 'self' 'nonce-1462cac757c04ed4d56f9cf3b9bbdeb6' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-1462cac757c04ed4d56f9cf3b9bbdeb6' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -38,8 +38,8 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="01729bd45747f0d3d22bfb1d15fd9b58" type="module" crossorigin src="./core/main-CZnL79Kv.js"></script>
-  <link nonce="01729bd45747f0d3d22bfb1d15fd9b58" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
+  <script nonce="1462cac757c04ed4d56f9cf3b9bbdeb6" type="module" crossorigin src="./core/main-DTTu8ZLV.js"></script>
+  <link nonce="1462cac757c04ed4d56f9cf3b9bbdeb6" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -69,6 +69,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="01729bd45747f0d3d22bfb1d15fd9b58" src="./assets/js/rescue.js"></script>
+  <script nonce="1462cac757c04ed4d56f9cf3b9bbdeb6" src="./assets/js/rescue.js"></script>
 </body>
 </html>

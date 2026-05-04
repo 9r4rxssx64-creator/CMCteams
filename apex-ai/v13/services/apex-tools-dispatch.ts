@@ -871,6 +871,19 @@ class ApexToolsDispatcher {
           (params['quality'] as number | undefined) ?? 0.8,
           (params['max_width'] as number | undefined) ?? 1920,
         );
+      /* === Autonomie totale Kevin 2026-05-04 ===
+         Apex IA exécute tâches sur services externes (envoie email, crée issue,
+         transfer paiement, post message) via clés API Kevin déjà configurées. */
+      case 'execute_task_on_service':
+      case 'execute_task_service':
+      case 'autonomie_execute_service':
+        return this.executeTaskOnService(
+          params['service'] as string,
+          params['task'] as string,
+          (params['params'] as Record<string, unknown> | undefined) ?? {},
+        );
+      case 'list_task_on_service_handlers':
+        return { handlers: this.listExecuteTaskHandlers() };
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }
@@ -2286,6 +2299,581 @@ class ApexToolsDispatcher {
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
+  }
+
+  /* ============================================================================
+   * EXECUTE TASK ON SERVICE — Autonomie totale Kevin 2026-05-04
+   *
+   * Apex IA exécute des tâches concrètes sur services Kevin (clé API configurée).
+   * Ex : send_email Resend, create_issue GitHub, transfer Stripe, post Telegram.
+   *
+   * Sécurité :
+   * - Whitelist stricte de services + actions
+   * - Toute action audit-loggée
+   * - Pas d'exécution si clé non configurée (vault.readKey vide)
+   * - Pas de delete/destruction sans confirmation explicite (params.confirm=true)
+   * ============================================================================ */
+
+  /**
+   * Liste des handlers disponibles (pour list_task_on_service_handlers tool).
+   */
+  listExecuteTaskHandlers(): string[] {
+    return [
+      'github', 'stripe', 'resend', 'telegram', 'brevo',
+      'openai', 'anthropic', 'vercel', 'cloudflare', 'paypal',
+      'discord', 'slack', 'notion', 'airtable', 'shopify',
+    ];
+  }
+
+  /**
+   * Dispatcher service → handler. Retourne {ok, result?, error?}.
+   */
+  async executeTaskOnService(
+    service: string,
+    task: string,
+    params: Record<string, unknown>,
+  ): Promise<{ ok: boolean; service: string; task: string; result?: unknown; error?: string; duration_ms?: number }> {
+    const start = Date.now();
+    if (!service) return { ok: false, service: '', task, error: 'service required' };
+    if (!task) return { ok: false, service, task: '', error: 'task required' };
+    const normSvc = service.toLowerCase().trim();
+    const normTask = task.toLowerCase().trim();
+
+    /* Audit log avant exécution */
+    void auditLog.record('execute_task_on_service.start', {
+      details: { service: normSvc, task: normTask, params: this.sanitizeForAudit(params) },
+    });
+
+    try {
+      let result: unknown;
+      switch (normSvc) {
+        case 'github':
+          result = await this.handleGithubTask(normTask, params);
+          break;
+        case 'stripe':
+          result = await this.handleStripeTask(normTask, params);
+          break;
+        case 'resend':
+          result = await this.handleResendTask(normTask, params);
+          break;
+        case 'telegram':
+          result = await this.handleTelegramTask(normTask, params);
+          break;
+        case 'brevo':
+        case 'sendinblue':
+          result = await this.handleBrevoTask(normTask, params);
+          break;
+        case 'openai':
+          result = await this.handleOpenaiTask(normTask, params);
+          break;
+        case 'anthropic':
+          result = await this.handleAnthropicTask(normTask, params);
+          break;
+        case 'vercel':
+          result = await this.handleVercelTask(normTask, params);
+          break;
+        case 'cloudflare':
+          result = await this.handleCloudflareTask(normTask, params);
+          break;
+        case 'paypal':
+          result = await this.handlePaypalTask(normTask, params);
+          break;
+        case 'discord':
+          result = await this.handleDiscordTask(normTask, params);
+          break;
+        case 'slack':
+          result = await this.handleSlackTask(normTask, params);
+          break;
+        case 'notion':
+          result = await this.handleNotionTask(normTask, params);
+          break;
+        case 'airtable':
+          result = await this.handleAirtableTask(normTask, params);
+          break;
+        case 'shopify':
+          result = await this.handleShopifyTask(normTask, params);
+          break;
+        default:
+          throw new Error(`Service non supporté : ${normSvc}. Services dispo : ${this.listExecuteTaskHandlers().join(', ')}`);
+      }
+      const duration = Date.now() - start;
+      void auditLog.record('execute_task_on_service.success', {
+        details: { service: normSvc, task: normTask, duration_ms: duration },
+      });
+      return { ok: true, service: normSvc, task: normTask, result, duration_ms: duration };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      void auditLog.record('execute_task_on_service.failed', {
+        details: { service: normSvc, task: normTask, error: msg },
+      });
+      return { ok: false, service: normSvc, task: normTask, error: msg, duration_ms: Date.now() - start };
+    }
+  }
+
+  /**
+   * Sanitise params pour audit log (retire fields sensibles).
+   */
+  private sanitizeForAudit(params: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    const sensitiveKeys = new Set(['password', 'secret', 'token', 'api_key', 'apikey', 'card', 'cvv', 'pin']);
+    for (const [k, v] of Object.entries(params)) {
+      if (sensitiveKeys.has(k.toLowerCase())) {
+        out[k] = '[REDACTED]';
+      } else if (typeof v === 'string' && v.length > 200) {
+        out[k] = v.slice(0, 200) + '...';
+      } else {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+
+  /* === Handler GitHub (issues, comments, PRs, repo_dispatch) === */
+  private async handleGithubTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_github_token');
+    if (!token) throw new Error('ax_github_token non configuré (Coffre)');
+    const repo = (params['repo'] as string | undefined) ?? '9r4rxssx64-creator/CMCteams';
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    if (task === 'create_issue' || task === 'issue_create') {
+      const body = JSON.stringify({
+        title: String(params['title'] ?? '').slice(0, 256),
+        body: String(params['body'] ?? '').slice(0, 65536),
+        labels: Array.isArray(params['labels']) ? params['labels'] : [],
+      });
+      const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'add_comment' || task === 'comment_issue') {
+      const issueNum = Number(params['issue_number']);
+      if (!issueNum) throw new Error('issue_number required');
+      const res = await fetch(`https://api.github.com/repos/${repo}/issues/${issueNum}/comments`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ body: String(params['body'] ?? '') }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'merge_pr' || task === 'merge_pull_request') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour merge_pr');
+      const prNum = Number(params['pr_number']);
+      const res = await fetch(`https://api.github.com/repos/${repo}/pulls/${prNum}/merge`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ merge_method: params['merge_method'] ?? 'squash' }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'dispatch_workflow' || task === 'trigger_action') {
+      const workflowId = String(params['workflow'] ?? '');
+      const ref = String(params['ref'] ?? 'main');
+      const inputs = (params['inputs'] as Record<string, unknown>) ?? {};
+      const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflowId}/dispatches`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ ref, inputs }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return { ok: true, dispatched: workflowId };
+    }
+    throw new Error(`Task GitHub inconnue : ${task}`);
+  }
+
+  /* === Handler Stripe (charges, refunds, transfers) === */
+  private async handleStripeTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const sk = await vault.readKey('ax_stripe_sk');
+    if (!sk) throw new Error('ax_stripe_sk non configuré');
+    const headers = {
+      Authorization: `Bearer ${sk}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (task === 'create_payment_intent' || task === 'create_payment') {
+      const body = new URLSearchParams({
+        amount: String(params['amount'] ?? 0),
+        currency: String(params['currency'] ?? 'eur'),
+        description: String(params['description'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/payment_intents', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'refund' || task === 'create_refund') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour refund');
+      const body = new URLSearchParams({
+        payment_intent: String(params['payment_intent'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/refunds', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'transfer' || task === 'create_transfer') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour transfer');
+      const body = new URLSearchParams({
+        amount: String(params['amount'] ?? 0),
+        currency: String(params['currency'] ?? 'eur'),
+        destination: String(params['destination'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/transfers', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Stripe inconnue : ${task}`);
+  }
+
+  /* === Handler Resend (email) === */
+  private async handleResendTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_resend_key');
+    if (!key) throw new Error('ax_resend_key non configuré');
+    if (task === 'send_email' || task === 'send') {
+      const body = JSON.stringify({
+        from: String(params['from'] ?? 'apex@kdmc.local'),
+        to: Array.isArray(params['to']) ? params['to'] : [String(params['to'] ?? '')],
+        subject: String(params['subject'] ?? '').slice(0, 200),
+        html: params['html'] ? String(params['html']) : undefined,
+        text: params['text'] ? String(params['text']) : undefined,
+      });
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Resend HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Resend inconnue : ${task}`);
+  }
+
+  /* === Handler Telegram (envoi message bot) === */
+  private async handleTelegramTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_telegram_token');
+    if (!token) throw new Error('ax_telegram_token non configuré');
+    if (task === 'send_message' || task === 'send') {
+      const chatId = String(params['chat_id'] ?? params['chatId'] ?? '');
+      if (!chatId) throw new Error('chat_id required');
+      const body = JSON.stringify({
+        chat_id: chatId,
+        text: String(params['text'] ?? '').slice(0, 4096),
+        parse_mode: params['parse_mode'] ?? 'Markdown',
+      });
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Telegram HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'get_me' || task === 'verify') {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) throw new Error(`Telegram HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Telegram inconnue : ${task}`);
+  }
+
+  /* === Handler Brevo (transactional email) === */
+  private async handleBrevoTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_brevo_key');
+    if (!key) throw new Error('ax_brevo_key non configuré');
+    if (task === 'send_email' || task === 'send_transactional') {
+      const body = JSON.stringify({
+        sender: { email: String(params['from'] ?? 'apex@kdmc.local'), name: 'Apex' },
+        to: Array.isArray(params['to']) ? params['to'] : [{ email: String(params['to'] ?? '') }],
+        subject: String(params['subject'] ?? '').slice(0, 200),
+        htmlContent: params['html'] ? String(params['html']) : undefined,
+        textContent: params['text'] ? String(params['text']) : undefined,
+      });
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': key, 'Content-Type': 'application/json', accept: 'application/json' },
+        body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Brevo HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Brevo inconnue : ${task}`);
+  }
+
+  /* === Handler OpenAI === */
+  private async handleOpenaiTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_openai_key');
+    if (!key) throw new Error('ax_openai_key non configuré');
+    if (task === 'chat' || task === 'completion' || task === 'ask') {
+      const body = JSON.stringify({
+        model: params['model'] ?? 'gpt-4o-mini',
+        messages: Array.isArray(params['messages'])
+          ? params['messages']
+          : [{ role: 'user', content: String(params['prompt'] ?? '') }],
+        max_tokens: params['max_tokens'] ?? 1024,
+      });
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task OpenAI inconnue : ${task}`);
+  }
+
+  /* === Handler Anthropic === */
+  private async handleAnthropicTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_anthropic_key');
+    if (!key) throw new Error('ax_anthropic_key non configuré');
+    if (task === 'message' || task === 'chat' || task === 'ask') {
+      const body = JSON.stringify({
+        model: params['model'] ?? 'claude-sonnet-4-5',
+        max_tokens: params['max_tokens'] ?? 1024,
+        messages: Array.isArray(params['messages'])
+          ? params['messages']
+          : [{ role: 'user', content: String(params['prompt'] ?? '') }],
+      });
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body, signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`Anthropic HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Anthropic inconnue : ${task}`);
+  }
+
+  /* === Handler Vercel (deploy, env vars) === */
+  private async handleVercelTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_vercel_token');
+    if (!token) throw new Error('ax_vercel_token non configuré');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    if (task === 'list_projects' || task === 'projects') {
+      const res = await fetch('https://api.vercel.com/v9/projects', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Vercel HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_deployments') {
+      const projectId = String(params['project_id'] ?? '');
+      const url = projectId ? `https://api.vercel.com/v6/deployments?projectId=${projectId}` : 'https://api.vercel.com/v6/deployments';
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`Vercel HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Vercel inconnue : ${task}`);
+  }
+
+  /* === Handler Cloudflare (DNS, Workers) === */
+  private async handleCloudflareTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_cloudflare_token');
+    if (!token) throw new Error('ax_cloudflare_token non configuré');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    if (task === 'verify_token' || task === 'verify') {
+      const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_zones') {
+      const res = await fetch('https://api.cloudflare.com/client/v4/zones', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'purge_cache') {
+      const zoneId = String(params['zone_id'] ?? '');
+      if (!zoneId) throw new Error('zone_id required');
+      const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ purge_everything: true }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Cloudflare inconnue : ${task}`);
+  }
+
+  /* === Handler PayPal (orders, payouts) === */
+  private async handlePaypalTask(task: string, _params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const clientId = await vault.readKey('ax_paypal_client');
+    const clientSecret = await vault.readKey('ax_paypal_secret');
+    if (!clientId || !clientSecret) throw new Error('ax_paypal_client + ax_paypal_secret non configurés');
+    /* OAuth token */
+    const auth = btoa(`${clientId}:${clientSecret}`);
+    if (task === 'get_token' || task === 'oauth') {
+      const res = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'grant_type=client_credentials',
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`PayPal HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task PayPal inconnue : ${task}`);
+  }
+
+  /* === Handler Discord (webhooks) === */
+  private async handleDiscordTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    if (task === 'webhook_send' || task === 'send') {
+      const webhookUrl = (params['webhook_url'] as string) ?? await vault.readKey('ax_discord_webhook');
+      if (!webhookUrl) throw new Error('webhook_url ou ax_discord_webhook required');
+      const body = JSON.stringify({
+        content: String(params['content'] ?? '').slice(0, 2000),
+        username: params['username'] ?? 'Apex',
+      });
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok && res.status !== 204) throw new Error(`Discord HTTP ${res.status}`);
+      return { ok: true, status: res.status };
+    }
+    throw new Error(`Task Discord inconnue : ${task}`);
+  }
+
+  /* === Handler Slack === */
+  private async handleSlackTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    if (task === 'send_message' || task === 'send') {
+      const token = await vault.readKey('ax_slack_bot');
+      if (!token) throw new Error('ax_slack_bot non configuré');
+      const body = JSON.stringify({
+        channel: String(params['channel'] ?? ''),
+        text: String(params['text'] ?? '').slice(0, 4000),
+      });
+      const res = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Slack HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Slack inconnue : ${task}`);
+  }
+
+  /* === Handler Notion === */
+  private async handleNotionTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_notion_key');
+    if (!key) throw new Error('ax_notion_key non configuré');
+    const headers = {
+      Authorization: `Bearer ${key}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    };
+    if (task === 'create_page' || task === 'add_page') {
+      const body = JSON.stringify({
+        parent: { database_id: String(params['database_id'] ?? '') },
+        properties: (params['properties'] as Record<string, unknown>) ?? {},
+      });
+      const res = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Notion HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'search') {
+      const body = JSON.stringify({ query: String(params['query'] ?? '') });
+      const res = await fetch('https://api.notion.com/v1/search', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Notion HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Notion inconnue : ${task}`);
+  }
+
+  /* === Handler Airtable === */
+  private async handleAirtableTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const pat = await vault.readKey('ax_airtable_pat');
+    if (!pat) throw new Error('ax_airtable_pat non configuré');
+    const baseId = String(params['base_id'] ?? '');
+    const tableName = String(params['table'] ?? '');
+    if (!baseId || !tableName) throw new Error('base_id + table required');
+    const headers = { Authorization: `Bearer ${pat}`, 'Content-Type': 'application/json' };
+    if (task === 'list_records' || task === 'list') {
+      const res = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`, {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Airtable HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'create_record' || task === 'create') {
+      const body = JSON.stringify({
+        records: [{ fields: (params['fields'] as Record<string, unknown>) ?? {} }],
+      });
+      const res = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`, {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Airtable HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Airtable inconnue : ${task}`);
+  }
+
+  /* === Handler Shopify === */
+  private async handleShopifyTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_shopify_token');
+    if (!token) throw new Error('ax_shopify_token non configuré');
+    const shop = String(params['shop'] ?? '');
+    if (!shop) throw new Error('shop (myshopify domain) required');
+    const headers = { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' };
+    if (task === 'list_products' || task === 'products') {
+      const res = await fetch(`https://${shop}/admin/api/2024-01/products.json?limit=20`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Shopify HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_orders' || task === 'orders') {
+      const res = await fetch(`https://${shop}/admin/api/2024-01/orders.json?limit=20`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Shopify HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Shopify inconnue : ${task}`);
   }
 }
 

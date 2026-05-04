@@ -1353,6 +1353,28 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'client_free',
     impactLevel: 'A',
   },
+  {
+    name: 'execute_task_on_service',
+    description: 'Exécute tâche concrète sur service externe Kevin (clé API vault). Services supportés : github, stripe, resend, telegram, brevo, openai, anthropic, vercel, cloudflare, paypal, discord, slack, notion, airtable, shopify. Autonomie totale Kevin 2026-05-04.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        service: { type: 'string', description: 'Nom service (github | stripe | resend | telegram | brevo | openai | anthropic | vercel | cloudflare | paypal | discord | slack | notion | airtable | shopify)' },
+        task: { type: 'string', description: 'Tâche : send_email, create_issue, send_message, etc. Voir docs handler.' },
+        params: { type: 'object', description: 'Paramètres tâche (to, subject, amount, repo, channel, etc.). Actions destructives exigent confirm:true.' },
+      },
+      required: ['service', 'task'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'list_task_on_service_handlers',
+    description: 'Liste services supportés par execute_task_on_service.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
