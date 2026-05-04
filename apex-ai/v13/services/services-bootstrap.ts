@@ -306,6 +306,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `push-notifications : ${stats.total_subscriptions} subs`);
     }),
 
+    /* Push auto-init : ceinture+bretelles avec wiring bootstrap.ts (idempotent) */
+    safeInit('push-auto-init', async () => {
+      const { pushAutoInit } = await import('./push-auto-init.js');
+      const env = pushAutoInit.detectEnvironment();
+      logger.info('services-bootstrap', `push-auto-init : env=${env}`);
+    }),
+
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
        (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
     safeInit('storage-compressor', async () => {
