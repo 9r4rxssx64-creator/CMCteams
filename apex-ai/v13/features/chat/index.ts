@@ -257,13 +257,20 @@ export function render(rootEl: HTMLElement): void {
         <textarea
           id="ax-chat-text"
           rows="1"
-          placeholder="Écris, dicte 🎙 ou scanne 📷"
+          placeholder="Écris, dicte ou scanne — colle aussi photos/vidéos/docs"
           aria-label="Message"
           autocomplete="off"
         ></textarea>
+        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
+        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
         <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary" aria-label="Envoyer">→</button>
+        <input type="file" id="ax-chat-file-input" multiple
+          accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
+          style="display:none">
       </form>
+      <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
       <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass)">
         <button class="ax-btn ax-btn-sm" onclick="location.hash='#chat'">💬 Chat</button>
         ${isAdmin ? '<button class="ax-btn ax-btn-sm" onclick="location.hash=\'#admin\'">⚙️ Admin</button>' : ''}
@@ -337,6 +344,196 @@ export function render(rootEl: HTMLElement): void {
       })();
     });
   }
+
+  /* Mic handler : dictée vocale Web Speech API */
+  const micBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-mic');
+  let recognition: { start: () => void; stop: () => void; onresult: ((e: Event) => void) | null; onend: (() => void) | null; onerror: ((e: Event) => void) | null; continuous: boolean; interimResults: boolean; lang: string } | null = null;
+  let recognitionActive = false;
+  micBtn?.addEventListener('click', () => {
+    haptic.tap();
+    const SR = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition
+            ?? (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+    if (!SR) {
+      toast.warn('Dictée vocale non supportée par ton navigateur');
+      return;
+    }
+    if (recognitionActive && recognition) {
+      recognition.stop();
+      recognitionActive = false;
+      micBtn.style.background = '';
+      return;
+    }
+    try {
+      recognition = new (SR as new () => typeof recognition)() as typeof recognition;
+      if (!recognition) return;
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'fr-FR';
+      recognition.onresult = (e: Event) => {
+        const evt = e as Event & { results: { [key: number]: { [key: number]: { transcript: string } } }; resultIndex: number };
+        let transcript = '';
+        for (let i = evt.resultIndex; i < (evt.results as unknown as { length: number }).length; i++) {
+          const result = evt.results[i];
+          if (result?.[0]) transcript += result[0].transcript;
+        }
+        const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+        if (ta) ta.value = transcript;
+      };
+      recognition.onend = () => {
+        recognitionActive = false;
+        if (micBtn) micBtn.style.background = '';
+      };
+      recognition.onerror = (e: Event) => {
+        const errEvt = e as Event & { error?: string };
+        toast.warn(`Dictée erreur : ${errEvt.error ?? 'inconnu'}`);
+        recognitionActive = false;
+        if (micBtn) micBtn.style.background = '';
+      };
+      recognition.start();
+      recognitionActive = true;
+      micBtn.style.background = 'linear-gradient(135deg,#ff4444,#cc2222)';
+      haptic.medium();
+      toast.success('🎙 Parle maintenant — re-tap 🎙 pour arrêter');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'erreur';
+      toast.warn(`Dictée fail : ${msg}`);
+    }
+  });
+
+  /* Wake word "Dis Apex" : SpeechRecognition continuous */
+  const wakeBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-wake');
+  wakeBtn?.addEventListener('click', () => {
+    haptic.tap();
+    void (async () => {
+      try {
+        const { voicePrint } = await import('../../services/voice-print.js');
+        if (!voicePrint.isSupported()) {
+          toast.warn('Wake word non supporté par ton navigateur');
+          return;
+        }
+        if (voicePrint.isListening()) {
+          voicePrint.stopWakeWord();
+          if (wakeBtn) wakeBtn.style.background = '';
+          toast.success('Wake word arrêté');
+          return;
+        }
+        const r = voicePrint.startWakeWord((transcript: string) => {
+          const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+          if (ta) {
+            ta.value = transcript;
+            const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+            form?.requestSubmit();
+          }
+        });
+        if (r.ok && wakeBtn) {
+          wakeBtn.style.background = 'linear-gradient(135deg,#22cc77,#1a9a5a)';
+          toast.success('👂 "Dis Apex" actif — parle quand tu veux');
+        } else {
+          toast.warn(`Wake word fail : ${r.reason ?? 'inconnu'}`);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'erreur';
+        toast.warn(`Wake word erreur : ${msg}`);
+      }
+    })();
+  });
+
+  /* File attach : input file + drag-drop + paste image clipboard */
+  const attachBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-attach');
+  const fileInput = rootEl.querySelector<HTMLInputElement>('#ax-chat-file-input');
+  const attachmentsDiv = rootEl.querySelector<HTMLDivElement>('#ax-chat-attachments');
+  attachBtn?.addEventListener('click', () => {
+    haptic.tap();
+    fileInput?.click();
+  });
+
+  const renderAttachment = (file: File): void => {
+    if (!attachmentsDiv) return;
+    attachmentsDiv.style.display = 'block';
+    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+    const icon = file.type.startsWith('image/') ? '🖼️'
+      : file.type.startsWith('video/') ? '🎬'
+      : file.type.startsWith('audio/') ? '🎵'
+      : file.type.includes('pdf') ? '📄'
+      : file.type.includes('zip') || file.type.includes('rar') || file.type.includes('7z') ? '📦'
+      : '📎';
+    const div = document.createElement('div');
+    div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:#c9a227';
+    div.innerHTML = `${icon} ${file.name.slice(0, 30)}${file.name.length > 30 ? '...' : ''} (${sizeMB} MB)`;
+    attachmentsDiv.appendChild(div);
+  };
+
+  fileInput?.addEventListener('change', () => {
+    const files = Array.from(fileInput.files ?? []);
+    if (files.length === 0) return;
+    haptic.success();
+    for (const file of files) {
+      renderAttachment(file);
+      void (async () => {
+        try {
+          const { fileConverter } = await import('../../services/file-converter.js');
+          const r = await fileConverter.ingest(file, 'admin');
+          if (r.ok) toast.success(`✅ ${file.name} ingéré`);
+          else toast.warn(`Ingest fail : ${r.reason ?? file.name}`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'erreur';
+          toast.warn(`File error : ${msg}`);
+        }
+      })();
+    }
+    fileInput.value = '';
+  });
+
+  /* Drag & drop sur zone chat */
+  const chatBody = rootEl.querySelector<HTMLElement>('.ax-chat-body, #ax-chat-form');
+  if (chatBody) {
+    chatBody.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      chatBody.style.background = 'rgba(201,162,39,0.1)';
+    });
+    chatBody.addEventListener('dragleave', () => {
+      chatBody.style.background = '';
+    });
+    chatBody.addEventListener('drop', (e) => {
+      e.preventDefault();
+      chatBody.style.background = '';
+      const dropEvent = e as DragEvent;
+      const files = Array.from(dropEvent.dataTransfer?.files ?? []);
+      for (const file of files) {
+        renderAttachment(file);
+        void (async () => {
+          try {
+            const { fileConverter } = await import('../../services/file-converter.js');
+            await fileConverter.ingest(file, 'admin');
+            toast.success(`📎 ${file.name} ajouté`);
+          } catch { /* ignore */ }
+        })();
+      }
+    });
+  }
+
+  /* Paste image/file depuis clipboard (Ctrl+V image) */
+  const ta2 = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+  ta2?.addEventListener('paste', (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items ?? [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          renderAttachment(file);
+          void (async () => {
+            try {
+              const { fileConverter } = await import('../../services/file-converter.js');
+              await fileConverter.ingest(file, 'admin');
+              toast.success(`📋 ${file.name || 'media collé'} ajouté`);
+            } catch { /* ignore */ }
+          })();
+        }
+      }
+    }
+  });
 
   /* Camera handler (P0 audit gap : wire smart-camera réel) */
   const cameraBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-camera');
