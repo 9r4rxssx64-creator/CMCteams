@@ -193,6 +193,35 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </div>
       </div>
 
+      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+        <h2 style="margin:0 0 8px;font-size:16px">🌐 Scan réseau LAN (80+ devices)</h2>
+        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Discover Hue Bridge, Sonos, Plex, NAS, caméras IP, imprimantes, IoT...</p>
+        <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-lan" style="width:100%">🔍 Scanner mon réseau WiFi</button>
+        <div id="ax-remote-lan-results" style="margin-top:12px"></div>
+      </div>
+
+      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+        <h2 style="margin:0 0 8px;font-size:16px">🪪 Badge NFC/RFID (60+ formats)</h2>
+        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Carte travail, transport, café, accès. NDEF/MIFARE/HID/Vigik...</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-badge" ${!hasNFC ? 'disabled' : ''}>📲 Scanner badge</button>
+          <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-remote-list-badges">📋 Mes badges</button>
+        </div>
+        <div id="ax-remote-badges-list" style="margin-top:12px"></div>
+      </div>
+
+      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+        <h2 style="margin:0 0 8px;font-size:16px">📡 Émulateurs hardware (18 supportés)</h2>
+        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Flipper Zero (USB+BLE), Proxmark3, Chameleon, ACR122U, OMNIKEY...</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-usb">🐬 Flipper USB</button>
+          <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-ble">📶 Flipper BLE</button>
+          <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-proxmark">🔬 Proxmark3</button>
+          <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-chameleon">🦎 Chameleon</button>
+        </div>
+        <div id="ax-remote-emulator-status" style="margin-top:12px;font-size:12px;color:var(--ax-text-dim)"></div>
+      </div>
+
       <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `;
@@ -277,6 +306,111 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       else toast.warn(r.reason ?? 'Partage annulé');
     })();
   });
+
+  /* === SCAN LAN === */
+  rootEl.querySelector<HTMLButtonElement>('#ax-remote-scan-lan')?.addEventListener('click', () => {
+    void (async () => {
+      const { toast } = await import('../../ui/toast.js');
+      const { networkScan } = await import('../../services/network-scan.js');
+      toast.info('🔍 Scan LAN en cours (peut prendre 30-60s)...');
+      const result = await networkScan.scan();
+      const out = rootEl.querySelector<HTMLDivElement>('#ax-remote-lan-results');
+      if (!out) return;
+      if (!result.ok) {
+        out.innerHTML = `<p style="color:#ffaa00;font-size:13px">⚠️ ${result.reason ?? 'Scan échoué'}</p>`;
+        return;
+      }
+      out.innerHTML = `
+        <p style="font-size:12px;color:#22cc77;margin:0 0 8px">📍 IP locale : ${result.local_ip} · Subnet : ${result.subnet} · ${result.devices.length} devices</p>
+        ${result.devices.map((d) => `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong style="color:#c9a227">${d.service}</strong>
+              <div style="font-size:11px;color:var(--ax-text-dim)">${d.ip}:${d.port} ${d.vendor ? '· ' + d.vendor : ''}</div>
+            </div>
+            <button class="ax-btn ax-btn-sm" data-lan-ip="${d.ip}" data-lan-port="${d.port}" style="padding:4px 8px;font-size:11px">Ouvrir →</button>
+          </div>
+        `).join('')}
+      `;
+      out.querySelectorAll<HTMLButtonElement>('[data-lan-ip]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const ip = btn.dataset['lanIp'];
+          const port = parseInt(btn.dataset['lanPort'] ?? '80', 10);
+          if (ip) window.open(`http://${ip}:${port}/`, '_blank', 'noopener,noreferrer');
+        });
+      });
+      toast.success(`✅ ${result.devices.length} devices trouvés`);
+    })();
+  });
+
+  /* === BADGE SCAN === */
+  rootEl.querySelector<HTMLButtonElement>('#ax-remote-scan-badge')?.addEventListener('click', () => {
+    void (async () => {
+      const { toast } = await import('../../ui/toast.js');
+      const { badgeCloner } = await import('../../services/badge-cloner.js');
+      toast.info('📲 Approche un tag NFC...');
+      const r = await badgeCloner.scanBadge();
+      if (r.ok && r.badge) {
+        await badgeCloner.storeBadge(r.badge, prompt('Nom du badge ?', 'Badge ' + new Date().toLocaleDateString()) ?? '');
+        toast.success(`✅ Badge ${r.badge.format} stocké`);
+      } else {
+        toast.warn(r.reason ?? 'Scan échoué');
+      }
+    })();
+  });
+
+  rootEl.querySelector<HTMLButtonElement>('#ax-remote-list-badges')?.addEventListener('click', () => {
+    void (async () => {
+      const { badgeCloner } = await import('../../services/badge-cloner.js');
+      const list = await badgeCloner.listBadgesAsync();
+      const out = rootEl.querySelector<HTMLDivElement>('#ax-remote-badges-list');
+      if (!out) return;
+      if (list.length === 0) {
+        out.innerHTML = `<p style="font-size:13px;color:var(--ax-text-dim)">Aucun badge stocké</p>`;
+        return;
+      }
+      out.innerHTML = list.map((b) => `
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px">
+          <strong style="color:#c9a227">${b.label ?? b.format}</strong>
+          <div style="font-size:11px;color:var(--ax-text-dim)">UID: ${b.uid ?? 'n/a'} · ${new Date(b.scanned_at).toLocaleString()}</div>
+        </div>
+      `).join('');
+    })();
+  });
+
+  /* === ÉMULATEURS HARDWARE === */
+  const updateEmulatorStatus = async (): Promise<void> => {
+    const { cardEmulator } = await import('../../services/card-emulator.js');
+    const status = cardEmulator.getStatus();
+    const el = rootEl.querySelector<HTMLDivElement>('#ax-remote-emulator-status');
+    if (!el) return;
+    if (status.connected) {
+      el.innerHTML = `🟢 Connecté : <strong>${status.device}</strong> (${status.connection}) · ${status.uptime_sec}s`;
+    } else {
+      el.textContent = '⚪ Aucun émulateur connecté';
+    }
+  };
+  void updateEmulatorStatus();
+
+  const wireConnect = (selector: string, method: 'connectFlipperUSB' | 'connectFlipperBLE' | 'connectProxmarkSerial' | 'connectChameleonSerial'): void => {
+    rootEl.querySelector<HTMLButtonElement>(selector)?.addEventListener('click', () => {
+      void (async () => {
+        const { toast } = await import('../../ui/toast.js');
+        const { cardEmulator } = await import('../../services/card-emulator.js');
+        const r = await cardEmulator[method]();
+        if (r.ok) {
+          toast.success('✅ Connecté');
+          await updateEmulatorStatus();
+        } else {
+          toast.warn(r.reason ?? 'Connexion échouée');
+        }
+      })();
+    });
+  };
+  wireConnect('#ax-remote-flipper-usb', 'connectFlipperUSB');
+  wireConnect('#ax-remote-flipper-ble', 'connectFlipperBLE');
+  wireConnect('#ax-remote-proxmark', 'connectProxmarkSerial');
+  wireConnect('#ax-remote-chameleon', 'connectChameleonSerial');
 
   logger.info('feature-remote', `rendered ${DEVICE_CARDS.length} device cards`);
 }
