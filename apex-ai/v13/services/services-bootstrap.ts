@@ -374,6 +374,66 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         logger.info('services-bootstrap', `storage compressé : ${result.migrated} clés, ${(result.saved_bytes / 1024).toFixed(1)} KB libérés`);
       }
     }),
+
+    /* === SPRINT 1 P0 : Wire 8 services critiques orphelins (audit subagent v13.0.40) === */
+
+    /* P0 : audit-log init + record boot event (ring buffer setup) */
+    safeInit('audit-log', async () => {
+      const { auditLog } = await import('./audit-log.js');
+      void auditLog.record('boot.services_started', { details: { ts: Date.now(), uid: uid ?? 'anon' } });
+    }),
+
+    /* P0 : context-loader pre-warm (charge règles + facts pour system prompt IA) */
+    safeInit('context-loader', async () => {
+      const { contextLoader } = await import('./context-loader.js');
+      const ctx = await contextLoader.load(uid ?? 'global');
+      logger.info('services-bootstrap', `context-loader : ${ctx.rules.length} règles, ${ctx.user_facts.length} facts`);
+    }),
+
+    /* P0 : persistent-memory-store init cache (charge depuis localStorage + IDB shadow) */
+    safeInit('persistent-memory-store', async () => {
+      const { persistentMemory } = await import('./persistent-memory-store.js');
+      const stats = await persistentMemory.getStats();
+      logger.info('services-bootstrap', `persistent-memory : ${stats.total} entries (${stats.size_kb}KB)`);
+    }),
+
+    /* P0 : vault triple persistence lifecycle (force backup IDB au boot) */
+    safeInit('vault-lifecycle', async () => {
+      const { vault } = await import('./vault.js');
+      /* Force lecture/init passphrase device-bound → trigger backupPassphraseToIdb */
+      await vault.encryptAuto('boot_check_' + Date.now());
+    }),
+
+    /* P0 : claude-bridge init stats (lecture pending todos) */
+    safeInit('claude-bridge', async () => {
+      const { claudeBridge } = await import('./claude-bridge.js');
+      const stats = claudeBridge.getStats();
+      logger.info('services-bootstrap', `claude-bridge : ${stats.todos_pending} pending (${stats.todos_critical_pending} critical)`);
+    }),
+
+    /* P0 : session-logger start session si user logged */
+    safeInit('session-logger', async () => {
+      if (!uid) return;
+      const { sessionLogger } = await import('./session-logger.js');
+      const userJson = localStorage.getItem('apex_v13_user');
+      const userName = userJson ? (JSON.parse(userJson) as { name?: string }).name ?? 'unknown' : 'unknown';
+      const isAdmin = uid === 'kdmc_admin';
+      await sessionLogger.startSession(uid, userName, isAdmin);
+    }),
+
+    /* P0 : apex-self-audit warm cache (preload audit reports list) */
+    safeInit('apex-self-audit', async () => {
+      const { apexSelfAudit } = await import('./apex-self-audit.js');
+      const reports = apexSelfAudit.listReports();
+      logger.info('services-bootstrap', `apex-self-audit : ${reports.length} reports historiques`);
+    }),
+
+    /* P0 : unknown-credential-resolver lessons learned (charge patterns appris) */
+    safeInit('unknown-credential-resolver', async () => {
+      const { unknownCredentialResolver } = await import('./unknown-credential-resolver.js');
+      const learned = unknownCredentialResolver.listLearned();
+      logger.info('services-bootstrap', `credential-resolver : ${learned.length} patterns appris`);
+    }),
   ];
 
   const results = await Promise.all(tasks);
