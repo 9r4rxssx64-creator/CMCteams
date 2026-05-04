@@ -137,6 +137,20 @@ class ApexToolsDispatcher {
         const report = await apexSelfAudit.runFullAudit(brutal);
         return apexSelfAudit.formatReportMarkdown(report);
       }
+      case 'open_url':
+      case 'open_browser':
+      case 'navigate':
+      case 'ouvre_url':
+      case 'ouvre':
+      case 'va_sur': {
+        /* Kevin règle CLAUDE.md "1 CLIC + FENÊTRE + BOUTON DIRECT" :
+           Ouvre modal pop-up avec lien direct cliquable (pas window.open auto sans confirm) */
+        return this.openUrlModal(
+          params['url'] as string ?? params['target'] as string ?? '',
+          params['label'] as string | undefined,
+          params['description'] as string | undefined,
+        );
+      }
       case 'read_file':
         return this.readFile(params['path'] as string, params['branch'] as string | undefined);
       case 'web_fetch':
@@ -243,6 +257,72 @@ class ApexToolsDispatcher {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const content = await res.text();
     return { content, size: content.length };
+  }
+
+  /**
+   * Kevin règle "1 CLIC + FENÊTRE + BOUTON DIRECT" :
+   * Ouvre modal pop-up avec lien direct cliquable (pas window.open auto).
+   * IA appelle ce tool quand user dit "ouvre Google", "va sur tel site", etc.
+   */
+  private async openUrlModal(url: string, label?: string, description?: string): Promise<{ ok: boolean; url: string; opened: boolean }> {
+    const cleanUrl = url.trim();
+    if (!cleanUrl) return { ok: false, url: '', opened: false };
+    /* Préfixe https:// si manquant */
+    const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+    /* Domain pour label par défaut */
+    let domain = fullUrl;
+    try {
+      domain = new URL(fullUrl).hostname.replace(/^www\./, '');
+    } catch { /* skip */ }
+    const labelText = label ?? domain;
+    const descText = description ?? `Ouvre ${domain} dans un nouvel onglet`;
+    /* Ouvre modal-sheet UI (Kevin règle 1-clic) */
+    try {
+      const { modalSheet } = await import('../ui/modal-sheet.js');
+      const sheet = modalSheet.open({
+        title: `🌐 ${labelText}`,
+        content: `
+          <div style="padding:8px 0">
+            <p style="margin:0 0 16px;color:var(--ax-text-dim)">${descText}</p>
+            <div style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.3);border-radius:8px;padding:12px;font-family:monospace;font-size:13px;word-break:break-all;color:#c9a227">
+              ${fullUrl.replace(/[<>"']/g, '')}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
+              <button class="ax-btn ax-btn-secondary" id="ax-openurl-internal">📱 Ouvrir dans Apex</button>
+              <button class="ax-btn ax-btn-primary" id="ax-openurl-external">🌐 Ouvrir Safari</button>
+            </div>
+          </div>
+        `,
+        actions: [
+          {
+            label: 'Annuler',
+            variant: 'ghost',
+            onClick: () => { sheet.close(); },
+          },
+        ],
+      });
+      /* Wire boutons après ouverture (modal-sheet inject content) */
+      setTimeout(() => {
+        const internalBtn = document.getElementById('ax-openurl-internal');
+        const externalBtn = document.getElementById('ax-openurl-external');
+        internalBtn?.addEventListener('click', () => {
+          sheet.close();
+          /* Stocke URL pour browser embed + navigate */
+          try {
+            localStorage.setItem('apex_v13_browser_last_url', fullUrl);
+          } catch { /* skip */ }
+          location.hash = '#browser';
+        });
+        externalBtn?.addEventListener('click', () => {
+          sheet.close();
+          window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        });
+      }, 100);
+      return { ok: true, url: fullUrl, opened: true };
+    } catch (err: unknown) {
+      logger.warn('apex-tools', 'openUrlModal failed', { err });
+      return { ok: false, url: fullUrl, opened: false };
+    }
   }
 
   private async webFetch(url: string): Promise<{ content: string; status: number }> {
@@ -899,7 +979,11 @@ class ApexToolsDispatcher {
     const lc = text.toLowerCase();
     /* Patterns ordonnés par spécificité */
     const PATTERNS: Array<{ regex: RegExp; intent: string; tool?: string }> = [
-      { regex: /(ouvre|lance|montre).*(navigateur|browser|google)/, intent: 'open_browser', tool: 'web_fetch' },
+      /* Kevin règle "1-clic ouverture URL" : extract domaine si URL/site mentionné */
+      { regex: /(ouvre|va|navigue|ouvrir|aller|montre).*(https?:\/\/[^\s]+)/i, intent: 'open_url', tool: 'open_url' },
+      { regex: /(ouvre|va|navigue|ouvrir|aller|montre).*\b([a-z0-9-]+\.(com|fr|io|net|org|app|dev|ai|co))\b/i, intent: 'open_url', tool: 'open_url' },
+      { regex: /(ouvre|lance|montre).*(navigateur|browser|google|chrome|safari)/i, intent: 'open_browser', tool: 'open_url' },
+      { regex: /(va|navigue)\s+sur\s+(.+)/i, intent: 'open_url', tool: 'open_url' },
       { regex: /(traduis|traduit|translate)\s+(?:en\s+)?(\w+)/, intent: 'translate', tool: 'translate' },
       { regex: /(meteo|météo|pluie|temperature|temps)/, intent: 'weather', tool: 'weather' },
       { regex: /(news|actualit|actu)/, intent: 'news', tool: 'news_headlines' },

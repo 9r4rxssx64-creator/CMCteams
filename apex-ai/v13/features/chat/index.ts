@@ -72,6 +72,17 @@ async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<
     const confidence = (intentRes.result as { confidence?: number }).confidence ?? 0;
     if (!intent || intent === 'unknown' || confidence < 0.7) return;
 
+    /* Kevin règle "1-clic ouverture URL" : si intent = open_url → trigger directement modal pop-up
+       avec lien direct cliquable (pas window.open auto sans confirmation) */
+    if (intent === 'open_url' || intent === 'open_browser') {
+      /* Extract URL ou domain depuis text */
+      const urlMatch = text.match(/(https?:\/\/[^\s]+)/i);
+      const domainMatch = text.match(/\b([a-z0-9-]+\.(com|fr|io|net|org|app|dev|ai|co))\b/i);
+      const url = urlMatch?.[1] ?? domainMatch?.[1] ?? 'https://www.google.com';
+      void apexToolsDispatch.execute('open_url', { url }, 'admin');
+      return;
+    }
+
     const { smartToolsSuggester } = await import('../../services/smart-tools-suggester.js');
     const tool = smartToolsSuggester.suggestForIntent(intent);
     if (!tool) return;
