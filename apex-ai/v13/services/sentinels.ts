@@ -135,6 +135,23 @@ class SentinelsManager {
         }
       }
     }, 60_000);
+    /* Sprint 3 P0 : track interval pour cleanup possible (anti memory leak) */
+    const t = this.runTimer;
+    if (t !== null) {
+      void import('./service-lifecycle.js').then(({ lifecycle }) => {
+        lifecycle.trackInterval('sentinels', t as unknown as ReturnType<typeof setInterval>);
+      }).catch(() => { /* skip */ });
+    }
+  }
+
+  /**
+   * Stop le scheduler (usage debug ou hot reload).
+   */
+  stop(): void {
+    if (this.runTimer !== null) {
+      clearInterval(this.runTimer);
+      this.runTimer = null;
+    }
   }
 
   private persist(): void {

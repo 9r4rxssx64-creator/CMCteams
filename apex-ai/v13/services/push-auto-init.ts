@@ -240,6 +240,10 @@ class PushAutoInit {
     this.heartbeatTimer = setInterval(() => {
       void this.heartbeatCheck(uid);
     }, HEARTBEAT_INTERVAL_MS);
+    /* Sprint 3 P0 : track interval pour cleanup possible */
+    void import('./service-lifecycle.js').then(({ lifecycle }) => {
+      if (this.heartbeatTimer !== null) lifecycle.trackInterval('push-auto-init', this.heartbeatTimer);
+    }).catch(() => { /* skip */ });
   }
 
   stopHeartbeat(): void {

@@ -80,9 +80,12 @@ class SelfHealing {
       }
     };
 
-    /* Cycle GC périodique 1×/h */
+    /* Cycle GC périodique 1×/h (tracked anti memory leak) */
     if (typeof setInterval !== 'undefined') {
-      setInterval(() => void this.runHealCycle(), 60 * 60 * 1000);
+      const t = setInterval(() => void this.runHealCycle(), 60 * 60 * 1000);
+      void import('./service-lifecycle.js').then(({ lifecycle }) => {
+        lifecycle.trackInterval('self-healing', t);
+      }).catch(() => { /* skip */ });
     }
 
     /* Run once au boot */
