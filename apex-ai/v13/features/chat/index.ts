@@ -283,10 +283,28 @@ export function render(rootEl: HTMLElement): void {
       e.preventDefault();
       const value = textarea.value.trim();
       if (!value) return;
-      textarea.value = '';
-      textarea.style.height = 'auto';
-      queue.push(value);
-      void processQueue(rootEl);
+      /* P0 SÉCU : anti-erreur Kevin — détecte clé API collée dans chat → ouvre modal vault */
+      void (async () => {
+        const { detectCredential } = await import('../../services/credential-patterns.js');
+        const detected = detectCredential(value);
+        if (detected && detected.category !== 'forbidden' && detected.category !== 'identity') {
+          /* C'est une clé API/token → ouvre modal Coller au lieu d'envoyer dans chat */
+          textarea.value = '';
+          const { vault } = await import('../../services/vault.js');
+          const result = await vault.autoStore(value);
+          if (result.ok && result.pattern) {
+            toast.success(`🔑 ${result.pattern.name} détectée + chiffrée + stockée`);
+          } else {
+            toast.error(result.reason ?? 'Erreur stockage clé');
+          }
+          return;
+        }
+        /* Pas une clé → message normal */
+        textarea.value = '';
+        textarea.style.height = 'auto';
+        queue.push(value);
+        void processQueue(rootEl);
+      })();
     });
     textarea.addEventListener('input', () => {
       textarea.style.height = 'auto';
@@ -297,6 +315,26 @@ export function render(rootEl: HTMLElement): void {
         e.preventDefault();
         form.requestSubmit();
       }
+    });
+    /* Auto-detect paste : si user colle une clé API → bloque + auto-store chiffré */
+    textarea.addEventListener('paste', (e) => {
+      const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
+      if (!pasted) return;
+      void (async () => {
+        const { detectCredential } = await import('../../services/credential-patterns.js');
+        const detected = detectCredential(pasted);
+        if (detected && detected.category !== 'forbidden' && detected.category !== 'identity') {
+          e.preventDefault();
+          textarea.value = '';
+          const { vault } = await import('../../services/vault.js');
+          const result = await vault.autoStore(pasted);
+          if (result.ok && result.pattern) {
+            toast.success(`🔑 ${result.pattern.name} détectée auto + chiffrée AES-GCM-256`);
+          } else {
+            toast.error(result.reason ?? 'Erreur stockage');
+          }
+        }
+      })();
     });
   }
 
