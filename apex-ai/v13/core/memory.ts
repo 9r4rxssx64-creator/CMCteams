@@ -242,6 +242,58 @@ class Memory {
       `## Règle Kevin TOUT AU MAX (PRIORITÉ ABSOLUE 2026-05-04)\n- Chaque outil/module/feature/script/skill/hook poussé au niveau expert pro 200€/h\n- Boot toujours TOUT au max : modules pro, studios, providers IA failover, sentinelles, voix, tools IA, KB, bridges\n- Jamais demi-mesure ("basique"/"minimal"/"on verra après" interdits)\n- Test mental : un expert mondial du domaine trouverait-il une feature manquante évidente ? Si oui → ajoute avant livraison`,
     );
     sections.push(
+      `## 🏗 ARCHITECTURE APEX v13 RÉELLE (OBLIGATOIRE — pas inventer)\n` +
+        `Repo: 9r4rxssx64-creator/CMCteams · branche: claude/test-699LQ · path: apex-ai/v13/\n\n` +
+        `**Layout dossiers (TypeScript strict, Web Components vanilla, PAS React)** :\n` +
+        `- \`apex-ai/v13/features/<slug>/index.ts\` : vues/écrans (PAS src/modules/, PAS .tsx)\n` +
+        `- \`apex-ai/v13/services/<name>.ts\` : services métier (vault, auth, firebase, whatsapp, etc.)\n` +
+        `- \`apex-ai/v13/core/<name>.ts\` : bootstrap, router, store, memory, logger, errors, di, events\n` +
+        `- \`apex-ai/v13/ui/<name>.ts\` : composants UI réutilisables (modal-sheet, toast, haptic, loading)\n` +
+        `- \`apex-ai/v13/tests/unit/<name>.test.ts\` : tests Vitest (PAS Jest, PAS @testing-library/react)\n\n` +
+        `**Stack autorisé** :\n` +
+        `- Vite 6 + TypeScript strict (\`exactOptionalPropertyTypes\`, \`noUncheckedIndexedAccess\`)\n` +
+        `- Vanilla DOM API (document.createElement, innerHTML avec escapeHtml, addEventListener)\n` +
+        `- Firebase RTDB (whitelist FB_FIX dans services/firebase.ts) — PAS Firestore directement\n` +
+        `- Vault chiffré AES-GCM 256 + PBKDF2 200k pour secrets (services/vault.ts)\n` +
+        `- DOMPurify pour user content (déjà bundled)\n` +
+        `- WebCrypto natif + Web Audio API (PAS de lib lourde sauf lazy-load)\n\n` +
+        `**Pattern view standard** :\n` +
+        `\`\`\`ts\n` +
+        `// features/clients/index.ts\n` +
+        `export function render(rootEl: HTMLElement): void {\n` +
+        `  rootEl.innerHTML = \`<div class="ax-page">...</div>\`;\n` +
+        `  attachHandlers(rootEl);\n` +
+        `}\n` +
+        `function attachHandlers(rootEl: HTMLElement): void {\n` +
+        `  rootEl.querySelector('#btn')?.addEventListener('click', () => { /* ... */ });\n` +
+        `}\n` +
+        `\`\`\`\n\n` +
+        `**Pattern service standard** :\n` +
+        `\`\`\`ts\n` +
+        `// services/whatsapp.ts (existe déjà — réutilise via import { whatsapp } from './whatsapp.js')\n` +
+        `class WhatsApp {\n` +
+        `  async requestConfirmation(opts): Promise<{ok, inviteLink, otp}> { /* ... */ }\n` +
+        `  confirm(otp): {ok, uid?} { /* ... */ }\n` +
+        `}\n` +
+        `export const whatsapp = new WhatsApp();\n` +
+        `\`\`\`\n\n` +
+        `**Pour OTP WhatsApp clients** : SERVICE EXISTE DÉJÀ dans \`services/whatsapp.ts\`. UTILISE-le, ne réinvente pas. Wire dans nouvelle vue \`features/clients/index.ts\` :\n` +
+        `\`\`\`ts\n` +
+        `import { whatsapp } from '../../services/whatsapp.js';\n` +
+        `const r = await whatsapp.requestConfirmation({uid, name, whatsappPhone});\n` +
+        `// r.inviteLink → window.open(r.inviteLink) ou clipboard.writeText\n` +
+        `\`\`\`\n\n` +
+        `**Routes ajout** : \`core/bootstrap.ts\` ligne ~155 \`router.register('clients', { loader: () => import('@features/clients/index.js'), requiresAuth: true });\`\n\n` +
+        `**INTERDICTIONS strictes** :\n` +
+        `- ❌ \`src/modules/\` (architecture inexistante v13)\n` +
+        `- ❌ \`.tsx\` / JSX / React (zero React dans v13)\n` +
+        `- ❌ \`@testing-library/react\` / Jest (Vitest only)\n` +
+        `- ❌ \`@octokit/rest\` direct (utiliser apex-knowledge-base service)\n` +
+        `- ❌ \`firebase/firestore\` rules direct (FB_FIX whitelist suffit)\n` +
+        `- ❌ Inventer fichiers nouveaux quand service existant fait le job (whatsapp, vault, links-registry, etc.)\n\n` +
+        `**Avant de proposer un plan** : lis \`apex-ai/v13/services/\` pour voir ce qui existe déjà via apex-knowledge-base GitHub API.`,
+    );
+    sections.push(
       `## Comportement attendu\n- Jamais d'erreur technique brute affichée user\n- Réponse 1-clic avec bouton direct\n- Multi-angles + alternatives\n- Anti-hallucination (vérifie avant citer)\n- TU AS UNE VRAIE MÉMOIRE (entries persistantes injectées ci-dessus) — UTILISE-LA, ne dis JAMAIS "je n'ai pas de mémoire"\n- Tu peux exécuter via apex-execute service (GitHub Actions trigger autonome)\n- Tu peux lire repo Kevin via apex-knowledge-base (GitHub API)\n\n## ⚠️ KEVIN ADMIN = TOUS DROITS (règle CLAUDE.md ABSOLUE 2026-05-03)\n` +
         `Kevin (kdmc_admin) = ADMIN. Aucune règle externe RGPD/sécurité ne s'applique à SES propres données perso.\n` +
         `Si Kevin envoie SON numéro téléphone, SON email, SON adresse, SES coordonnées bancaires, SES tokens API → STOCKE-LES via vault.autoStore() / autoStoreBulk(). N'AFFOLE PAS, ne refuse PAS, ne dis PAS "STOP numéro détecté".\n` +
