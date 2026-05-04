@@ -151,6 +151,280 @@ class ApexToolsDispatcher {
           params['description'] as string | undefined,
         );
       }
+      /* === DEVICE CONTROL TOOLS (61 méthodes iOS/Android — Kevin règle pilotage) === */
+      case 'device_share':
+      case 'partage_contenu': {
+        const { deviceControl } = await import('./device-control.js');
+        const sharePayload: { title?: string; text?: string; url?: string } = {};
+        if (typeof params['title'] === 'string') sharePayload.title = params['title'];
+        if (typeof params['text'] === 'string') sharePayload.text = params['text'];
+        if (typeof params['url'] === 'string') sharePayload.url = params['url'];
+        return deviceControl.shareContent(sharePayload);
+      }
+      case 'device_vibrate':
+      case 'vibrer': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.vibrate(params['pattern'] as number | number[] ?? [100, 50, 100]);
+      }
+      case 'device_geolocation':
+      case 'ma_position': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.getGeolocation();
+      }
+      case 'device_battery':
+      case 'batterie': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.getBatteryStatus();
+      }
+      case 'device_clipboard_read':
+      case 'lire_presse_papiers': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.pasteFromClipboard();
+      }
+      case 'device_clipboard_write':
+      case 'copier': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.copyToClipboard(params['text'] as string ?? '');
+      }
+      case 'device_speak':
+      case 'parler':
+      case 'tts': {
+        const { deviceControl } = await import('./device-control.js');
+        const speakOpts: { voiceName?: string; rate?: number; lang?: string } = {};
+        if (typeof params['voice'] === 'string') speakOpts.voiceName = params['voice'];
+        if (typeof params['rate'] === 'number') speakOpts.rate = params['rate'];
+        if (typeof params['lang'] === 'string') speakOpts.lang = params['lang'];
+        return deviceControl.speakText(params['text'] as string ?? '', speakOpts);
+      }
+      case 'device_open_maps':
+      case 'ouvrir_maps':
+      case 'plan': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openMaps(params['address'] as string | undefined ?? params['coords'] as string | undefined ?? '');
+      }
+      case 'device_open_phone':
+      case 'appeler': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openPhone(params['number'] as string ?? '');
+      }
+      case 'device_open_sms':
+      case 'sms': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openSMS(params['number'] as string ?? '', params['body'] as string | undefined);
+      }
+      case 'device_get_photos':
+      case 'mes_photos': {
+        const { deviceControl } = await import('./device-control.js');
+        const photoOpts: { maxCount?: number } = {};
+        if (typeof params['max'] === 'number') photoOpts.maxCount = params['max'];
+        return deviceControl.getPhotosFromGallery(photoOpts);
+      }
+      case 'device_detect':
+      case 'detect_device': {
+        const { deviceControl } = await import('./device-control.js');
+        return {
+          environment: deviceControl.detectDevice(),
+          capabilities: deviceControl.listAllSupported(),
+        };
+      }
+      /* === DEVICE TOOLS COMPLETS (49 supplémentaires — Kevin demande TOUS) === */
+      case 'device_notification':
+      case 'notification': {
+        const { deviceControl } = await import('./device-control.js');
+        const titlePerm = params['title'] as string ?? 'Apex';
+        const notifOpts: NotificationOptions = {};
+        if (typeof params['body'] === 'string') notifOpts.body = params['body'];
+        return deviceControl.showNotification(titlePerm, notifOpts);
+      }
+      case 'device_request_notification':
+      case 'permission_notif': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestNotificationPermission();
+      }
+      case 'device_wake_lock':
+      case 'wake_lock': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestWakeLock();
+      }
+      case 'device_release_wake_lock': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.releaseWakeLock();
+      }
+      case 'device_network_info':
+      case 'reseau': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.getNetworkInfo();
+      }
+      case 'device_storage_estimate':
+      case 'stockage': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.getStorageEstimate();
+      }
+      case 'device_persistent_storage': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestPersistentStorage();
+      }
+      case 'device_camera':
+      case 'camera': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestCamera({
+          video: true,
+          audio: params['audio'] as boolean | undefined ?? false,
+        });
+      }
+      case 'device_listen_speech':
+      case 'dictee': {
+        const { deviceControl } = await import('./device-control.js');
+        const speechOpts: { lang?: string; continuous?: boolean; onResult?: (text: string, isFinal: boolean) => void } = {};
+        if (typeof params['lang'] === 'string') speechOpts.lang = params['lang'];
+        if (typeof params['continuous'] === 'boolean') speechOpts.continuous = params['continuous'];
+        speechOpts.onResult = (text: string) => logger.info('apex-tools', 'speech', { text: text.slice(0, 100) });
+        return deviceControl.listenSpeech(speechOpts);
+      }
+      case 'device_list_media': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.listMediaDevices();
+      }
+      case 'device_motion':
+      case 'mouvement': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestDeviceMotion((ev) => logger.info('apex-tools', 'motion', { x: ev.acceleration?.x, y: ev.acceleration?.y, z: ev.acceleration?.z }));
+      }
+      case 'device_orientation':
+      case 'orientation': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestDeviceOrientation((ev) => logger.info('apex-tools', 'orientation', { alpha: ev.alpha, beta: ev.beta, gamma: ev.gamma }));
+      }
+      case 'device_ambient_light':
+      case 'lumiere_ambiante': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.watchAmbientLight((lux) => logger.info('apex-tools', 'ambient', { lux }));
+      }
+      case 'device_proximity': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.watchProximity((p) => logger.info('apex-tools', 'proximity', { p }));
+      }
+      case 'device_bluetooth':
+      case 'bluetooth_pair': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestBluetoothDevice(
+          (params['filters'] as ReadonlyArray<Record<string, unknown>> | undefined) ?? [{ services: ['battery_service'] }],
+        );
+      }
+      case 'device_bluetooth_paired':
+      case 'bluetooth_list': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.listPairedBluetooth();
+      }
+      case 'device_nfc_read':
+      case 'nfc_lire': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestNFCRead((records) => {
+          logger.info('apex-tools', 'nfc_records', { count: records.length });
+        });
+      }
+      case 'device_nfc_write':
+      case 'nfc_ecrire': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestNFCWrite([{
+          recordType: 'text',
+          data: params['text'] as string ?? '',
+        }]);
+      }
+      case 'device_usb': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestUSBDevice((params['filters'] as ReadonlyArray<Record<string, unknown>> | undefined) ?? []);
+      }
+      case 'device_serial': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestSerial();
+      }
+      case 'device_hid': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.requestHID((params['filters'] as ReadonlyArray<Record<string, unknown>> | undefined) ?? []);
+      }
+      case 'device_pick_files':
+      case 'choisir_fichiers': {
+        const { deviceControl } = await import('./device-control.js');
+        const pickOpts: { accept?: string; multiple?: boolean } = {};
+        if (typeof params['accept'] === 'string') pickOpts.accept = params['accept'];
+        if (typeof params['multiple'] === 'boolean') pickOpts.multiple = params['multiple'];
+        return deviceControl.pickFiles(pickOpts);
+      }
+      case 'device_pick_directory': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.pickDirectory();
+      }
+      case 'device_share_files': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.shareFiles((params['files'] as File[] | undefined) ?? []);
+      }
+      case 'device_open_mail':
+      case 'mail': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openMail(
+          params['to'] as string ?? '',
+          params['subject'] as string | undefined,
+          params['body'] as string | undefined,
+        );
+      }
+      case 'device_open_facetime':
+      case 'facetime': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openFaceTime(params['contact'] as string ?? '');
+      }
+      case 'device_open_calendar':
+      case 'calendrier': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openCalendar();
+      }
+      case 'device_open_health':
+      case 'sante': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openHealth();
+      }
+      case 'device_open_settings':
+      case 'reglages_ios': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openSettings();
+      }
+      case 'device_open_shortcuts':
+      case 'raccourcis': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openShortcuts(params['name'] as string ?? '');
+      }
+      case 'device_open_camera_app': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openCamera();
+      }
+      case 'device_open_music':
+      case 'musique': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openMusic(params['track'] as string | undefined ?? '');
+      }
+      case 'device_open_podcasts':
+      case 'podcasts': {
+        const { deviceControl } = await import('./device-control.js');
+        return deviceControl.openPodcasts();
+      }
+      case 'device_recent_photos':
+      case 'photos_recentes': {
+        const { deviceControl } = await import('./device-control.js');
+        const days = (params['days'] as number | undefined) ?? 7;
+        const photoCount = (params['count'] as number | undefined) ?? 20;
+        return deviceControl.getRecentPhotos(days, photoCount);
+      }
+      case 'device_tri_photos_date':
+      case 'tri_photos': {
+        const { deviceControl } = await import('./device-control.js');
+        const files = (params['files'] as File[] | undefined) ?? [];
+        const metadatas = await Promise.all(files.map(async (f) => {
+          const r = await deviceControl.analyzePhoto(f);
+          return r.data;
+        }));
+        const valid = metadatas.filter((m): m is NonNullable<typeof m> => m !== undefined);
+        return deviceControl.triPhotosByDate(valid);
+      }
       case 'read_file':
         return this.readFile(params['path'] as string, params['branch'] as string | undefined);
       case 'web_fetch':

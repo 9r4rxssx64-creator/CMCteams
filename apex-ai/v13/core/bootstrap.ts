@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.46';
+export const APP_VER = 'v13.0.47';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -147,6 +147,8 @@ async function bootstrap(): Promise<void> {
   router.register('crypto', { loader: () => import('@features/crypto/index.js'), requiresAuth: true });
   router.register('domotique', { loader: () => import('@features/domotique/index.js'), requiresAuth: true });
   router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true });
+  /* Sprint 3 NEW : Télécommande Universelle (UNIVERSAL_REMOTE.md, intègre device-control) */
+  router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
