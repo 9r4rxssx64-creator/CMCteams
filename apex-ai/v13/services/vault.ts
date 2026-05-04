@@ -551,11 +551,22 @@ class Vault {
   }
 
   private autoLink(pattern: CredentialPattern): void {
+    /* v13.0.20+ : ax_links_registry reste en Record format (back-compat).
+       linksRegistry.persist écrit en parallèle dans ax_links_registry_v2 (Array)
+       et ne touche pas ax_links_registry si déjà en Record (collision évitée). */
     try {
-      const registry = JSON.parse(localStorage.getItem('ax_links_registry') ?? '{}') as Record<
-        string,
-        Record<string, unknown>
-      >;
+      const raw = localStorage.getItem('ax_links_registry');
+      let registry: Record<string, Record<string, unknown>> = {};
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            registry = parsed as Record<string, Record<string, unknown>>;
+          }
+        } catch {
+          /* corrupt → restart */
+        }
+      }
       registry[pattern.storageKey] = {
         service: pattern.name,
         category: pattern.category,
