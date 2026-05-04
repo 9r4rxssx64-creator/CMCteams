@@ -20,13 +20,25 @@ export default defineConfig({
         /* Browser-API only testé via E2E iPhone réel : */
         'services/webauthn.ts',
         'services/bodyguard.ts',
+        /* UI HTML statique (admin tabs, settings, pro, studios, remote) testé E2E Playwright */
+        'features/admin/index.ts',
+        'features/settings/index.ts',
+        'features/pro/index.ts',
+        'features/studios/index.ts',
+        'features/remote/index.ts',
+        'features/sentinels/index.ts',
+        'features/browser/index.ts',
+        'features/crypto/index.ts',
+        'features/domotique/index.ts',
+        'features/workflow/index.ts',
+        'features/laurence/index.ts',
       ],
       thresholds: {
-        /* Sprint 8 Kevin v13.0.60 : seuils relevés (anti-régression strict).
+        /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
            Si baisse → CI fail. JAMAIS abaisser ces valeurs. */
         lines: 84,
-        functions: 91,
-        branches: 76,
+        functions: 92,
+        branches: 77,
         statements: 84,
       },
     },
