@@ -124,6 +124,15 @@ class ApexToolsDispatcher {
    */
   private async dispatch(toolName: string, params: Record<string, unknown>): Promise<unknown> {
     switch (toolName) {
+      case 'apex_self_audit':
+      case 'self_audit':
+      case 'audit':
+      case 'fais_ton_audit': {
+        /* Kevin règle : "fais ton audit" → audit complet 6 axes + auto-fix + escalade */
+        const { apexSelfAudit } = await import('./apex-self-audit.js');
+        const report = await apexSelfAudit.runFullAudit();
+        return apexSelfAudit.formatReportMarkdown(report);
+      }
       case 'read_file':
         return this.readFile(params['path'] as string, params['branch'] as string | undefined);
       case 'web_fetch':
@@ -434,8 +443,57 @@ class ApexToolsDispatcher {
         logger.warn('apex-tools', 'DeepL failed', { err });
       }
     }
-    /* Fallback Claude Haiku via ai-router (placeholder Jet 9) */
-    return { translated: text, provider: 'fallback (configure ax_deepl_key)' };
+    /* Fallback Gemini Flash (gratuit 1M tokens/jour, 100+ langues) */
+    const geminiKey = await vault.readKey('ax_google_key');
+    if (geminiKey) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: `Traduis ce texte en ${targetLang} (réponse: traduction seule, rien d'autre):\n\n${text}` }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 4000 },
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+          const out = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (out) return { translated: out, provider: 'gemini-flash-2.0' };
+        }
+      } catch (err: unknown) {
+        logger.warn('apex-tools', 'Gemini translate failed', { err });
+      }
+    }
+    /* Fallback Claude (paid mais qualité top) */
+    const anthropicKey = await vault.readKey('ax_anthropic_key');
+    if (anthropicKey) {
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': anthropicKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: `Traduis ce texte en ${targetLang} (réponse: traduction seule):\n\n${text}` }],
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { content?: Array<{ text?: string }> };
+          const out = data.content?.[0]?.text?.trim();
+          if (out) return { translated: out, provider: 'claude-haiku' };
+        }
+      } catch (err: unknown) {
+        logger.warn('apex-tools', 'Claude translate failed', { err });
+      }
+    }
+    return { translated: text, provider: 'fallback_no_provider' };
   }
 
   private async escalateHuman(action: string, urgency: string, context?: string): Promise<{ ok: boolean; ts: number }> {

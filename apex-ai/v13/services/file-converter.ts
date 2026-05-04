@@ -42,14 +42,24 @@ export type FileCategory =
   | 'unknown';
 
 export type FileFormat =
-  | 'png' | 'jpg' | 'webp' | 'avif' | 'gif' | 'svg' | 'heic'
-  | 'mp4' | 'webm' | 'mov' | 'avi' | 'mkv'
-  | 'mp3' | 'wav' | 'ogg' | 'flac' | 'm4a'
-  | 'pdf' | 'docx' | 'doc' | 'odt' | 'rtf' | 'txt' | 'md' | 'html'
-  | 'xlsx' | 'xls' | 'csv' | 'ods'
+  /* Images : PNG / JPG / WebP / AVIF / GIF / SVG / HEIC / TIFF / BMP / RAW iPhone DNG / ICO */
+  | 'png' | 'jpg' | 'webp' | 'avif' | 'gif' | 'svg' | 'heic' | 'heif' | 'tiff' | 'bmp' | 'dng' | 'raw' | 'ico'
+  /* Vidéos : MP4 / WebM / MOV / AVI / MKV / FLV / WMV / 3GP / M4V */
+  | 'mp4' | 'webm' | 'mov' | 'avi' | 'mkv' | 'flv' | 'wmv' | '3gp' | 'm4v'
+  /* Audio : MP3 / WAV / OGG / FLAC / M4A / AAC / OPUS / WMA / AIFF */
+  | 'mp3' | 'wav' | 'ogg' | 'flac' | 'm4a' | 'aac' | 'opus' | 'wma' | 'aiff'
+  /* Documents texte : PDF / DOCX / DOC / ODT / RTF / TXT / MD / HTML / EPUB / TEX */
+  | 'pdf' | 'docx' | 'doc' | 'odt' | 'rtf' | 'txt' | 'md' | 'html' | 'epub' | 'tex'
+  /* Spreadsheets : XLSX / XLS / CSV / ODS / TSV / NUMBERS */
+  | 'xlsx' | 'xls' | 'csv' | 'ods' | 'tsv' | 'numbers'
+  /* Présentations : PPTX / PPT / ODP / KEY */
   | 'pptx' | 'ppt' | 'odp' | 'key'
-  | 'zip' | 'rar' | '7z' | 'tar' | 'gz'
-  | 'js' | 'ts' | 'json' | 'xml' | 'yaml'
+  /* Archives : ZIP / RAR / 7Z / TAR / GZ / BZ2 / XZ */
+  | 'zip' | 'rar' | '7z' | 'tar' | 'gz' | 'bz2' | 'xz'
+  /* Code : JS / TS / JSON / XML / YAML / TOML / SQL / PY / RB / GO / RS / JAVA / C / CPP / PHP / SH / CSS / SCSS */
+  | 'js' | 'ts' | 'json' | 'xml' | 'yaml' | 'toml' | 'sql' | 'py' | 'rb' | 'go' | 'rs' | 'java' | 'c' | 'cpp' | 'php' | 'sh' | 'css' | 'scss'
+  /* Data : DB / SQLITE / GEOJSON / KML / VCF (vCard) / ICS (iCal) */
+  | 'db' | 'sqlite' | 'geojson' | 'kml' | 'vcf' | 'ics'
   | 'unknown';
 
 export interface FileMetadata {
@@ -68,25 +78,47 @@ export interface FileMetadata {
 }
 
 const FORMAT_BY_EXT: Record<string, FileFormat> = {
-  png: 'png', jpg: 'jpg', jpeg: 'jpg', webp: 'webp', avif: 'avif', gif: 'gif', svg: 'svg', heic: 'heic',
-  mp4: 'mp4', webm: 'webm', mov: 'mov', avi: 'avi', mkv: 'mkv',
-  mp3: 'mp3', wav: 'wav', ogg: 'ogg', flac: 'flac', m4a: 'm4a',
-  pdf: 'pdf', docx: 'docx', doc: 'doc', odt: 'odt', rtf: 'rtf', txt: 'txt', md: 'md', html: 'html',
-  xlsx: 'xlsx', xls: 'xls', csv: 'csv', ods: 'ods',
+  /* Images */
+  png: 'png', jpg: 'jpg', jpeg: 'jpg', webp: 'webp', avif: 'avif', gif: 'gif', svg: 'svg', heic: 'heic', heif: 'heif',
+  tiff: 'tiff', tif: 'tiff', bmp: 'bmp', dng: 'dng', raw: 'raw', ico: 'ico',
+  /* Vidéos */
+  mp4: 'mp4', webm: 'webm', mov: 'mov', avi: 'avi', mkv: 'mkv', flv: 'flv', wmv: 'wmv', '3gp': '3gp', m4v: 'm4v',
+  /* Audio */
+  mp3: 'mp3', wav: 'wav', ogg: 'ogg', flac: 'flac', m4a: 'm4a', aac: 'aac', opus: 'opus', wma: 'wma', aiff: 'aiff',
+  /* Docs */
+  pdf: 'pdf', docx: 'docx', doc: 'doc', odt: 'odt', rtf: 'rtf', txt: 'txt', md: 'md', html: 'html', htm: 'html',
+  epub: 'epub', tex: 'tex',
+  /* Spreadsheets */
+  xlsx: 'xlsx', xls: 'xls', csv: 'csv', ods: 'ods', tsv: 'tsv', numbers: 'numbers',
+  /* Presentations */
   pptx: 'pptx', ppt: 'ppt', odp: 'odp', key: 'key',
-  zip: 'zip', rar: 'rar', '7z': '7z', tar: 'tar', gz: 'gz',
-  js: 'js', ts: 'ts', json: 'json', xml: 'xml', yaml: 'yaml', yml: 'yaml',
+  /* Archives */
+  zip: 'zip', rar: 'rar', '7z': '7z', tar: 'tar', gz: 'gz', bz2: 'bz2', xz: 'xz',
+  /* Code */
+  js: 'js', mjs: 'js', cjs: 'js', ts: 'ts', tsx: 'ts', jsx: 'js',
+  json: 'json', xml: 'xml', yaml: 'yaml', yml: 'yaml', toml: 'toml',
+  sql: 'sql', py: 'py', rb: 'rb', go: 'go', rs: 'rs', java: 'java',
+  c: 'c', h: 'c', cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp',
+  php: 'php', sh: 'sh', bash: 'sh', zsh: 'sh',
+  css: 'css', scss: 'scss', sass: 'scss',
+  /* Data */
+  db: 'db', sqlite: 'sqlite', sqlite3: 'sqlite',
+  geojson: 'geojson', kml: 'kml', vcf: 'vcf', ics: 'ics',
 };
 
 const CATEGORY_BY_FORMAT: Record<FileFormat, FileCategory> = {
-  png: 'image', jpg: 'image', webp: 'image', avif: 'image', gif: 'image', svg: 'image', heic: 'image',
-  mp4: 'video', webm: 'video', mov: 'video', avi: 'video', mkv: 'video',
-  mp3: 'audio', wav: 'audio', ogg: 'audio', flac: 'audio', m4a: 'audio',
-  pdf: 'document', docx: 'document', doc: 'document', odt: 'document', rtf: 'document', txt: 'document', md: 'document', html: 'document',
-  xlsx: 'spreadsheet', xls: 'spreadsheet', csv: 'spreadsheet', ods: 'spreadsheet',
+  png: 'image', jpg: 'image', webp: 'image', avif: 'image', gif: 'image', svg: 'image', heic: 'image', heif: 'image',
+  tiff: 'image', bmp: 'image', dng: 'image', raw: 'image', ico: 'image',
+  mp4: 'video', webm: 'video', mov: 'video', avi: 'video', mkv: 'video', flv: 'video', wmv: 'video', '3gp': 'video', m4v: 'video',
+  mp3: 'audio', wav: 'audio', ogg: 'audio', flac: 'audio', m4a: 'audio', aac: 'audio', opus: 'audio', wma: 'audio', aiff: 'audio',
+  pdf: 'document', docx: 'document', doc: 'document', odt: 'document', rtf: 'document', txt: 'document', md: 'document', html: 'document', epub: 'document', tex: 'document',
+  xlsx: 'spreadsheet', xls: 'spreadsheet', csv: 'spreadsheet', ods: 'spreadsheet', tsv: 'spreadsheet', numbers: 'spreadsheet',
   pptx: 'presentation', ppt: 'presentation', odp: 'presentation', key: 'presentation',
-  zip: 'archive', rar: 'archive', '7z': 'archive', tar: 'archive', gz: 'archive',
-  js: 'code', ts: 'code', json: 'data', xml: 'data', yaml: 'data',
+  zip: 'archive', rar: 'archive', '7z': 'archive', tar: 'archive', gz: 'archive', bz2: 'archive', xz: 'archive',
+  js: 'code', ts: 'code', sql: 'code', py: 'code', rb: 'code', go: 'code', rs: 'code', java: 'code',
+  c: 'code', cpp: 'code', php: 'code', sh: 'code', css: 'code', scss: 'code',
+  json: 'data', xml: 'data', yaml: 'data', toml: 'data',
+  db: 'data', sqlite: 'data', geojson: 'data', kml: 'data', vcf: 'data', ics: 'data',
   unknown: 'unknown',
 };
 
