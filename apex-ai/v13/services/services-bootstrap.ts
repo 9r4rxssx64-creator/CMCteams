@@ -317,6 +317,17 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* AI routing policy : décide provider intelligent (free-first + Anthropic priority)
+       (règle Kevin 2026-05-04 : priorise gratuits performants, Anthropic toujours OP priorité) */
+    safeInit('ai-routing-policy', async () => {
+      const { aiRoutingPolicy } = await import('./ai-routing-policy.js');
+      const status = aiRoutingPolicy.getStatus();
+      const recos = aiRoutingPolicy.recommendActions();
+      logger.info('services-bootstrap',
+        `ai-routing : mode=${status.mode}, free=${status.free_providers_available.length}, paid=${status.paid_providers_available.length}, recos=${recos.length}`,
+      );
+    }),
+
     /* Consumption monitor : check budgets + notif admin 1-clic recharge si dépassement
        (règle Kevin 2026-05-04 : info live conso + notif lien recharge par IA + abo) */
     safeInit('consumption-monitor', async () => {
