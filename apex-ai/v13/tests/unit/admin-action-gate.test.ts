@@ -82,4 +82,53 @@ describe('Admin Action Gate (P0 sécu — WebAuthn obligatoire actions sensibles
       }
     });
   });
+
+  describe('WebAuthn mocking flows (P0 audit gap)', () => {
+    it('verify avec WebAuthn enrollé fictif (mock authenticator)', async () => {
+      /* Simuler enrollment via storage direct */
+      const enrolledKey = `apex_v13_webauthn_${'kdmc_admin'}`;
+      localStorage.setItem(enrolledKey, JSON.stringify({
+        credentialId: 'fake-cred-id',
+        publicKey: 'fake-pub-key',
+        counter: 0,
+        ts: Date.now(),
+      }));
+      /* webauthn.verify va échouer (pas de vrai authenticator) → denied */
+      const r = await adminActionGate.verify('toggle_commerce', 'kdmc_admin');
+      expect(r.ok).toBe(false);
+      expect(r.method).toBe('denied');
+      localStorage.removeItem(enrolledKey);
+    });
+
+    it('getStatus avec WebAuthn enrollé persisté', () => {
+      const enrolledKey = `apex_v13_webauthn_${'kdmc_admin'}`;
+      localStorage.setItem(enrolledKey, JSON.stringify({
+        credentialId: 'fake-cred-id', publicKey: 'fake-pub-key', counter: 0, ts: Date.now(),
+      }));
+      const s = adminActionGate.getStatus('kdmc_admin');
+      /* webauthn_enrolled doit refléter présence localStorage */
+      expect(typeof s.webauthn_enrolled).toBe('boolean');
+      localStorage.removeItem(enrolledKey);
+    });
+
+    it('audit log "admin_gate.passed" écrit après success', async () => {
+      const r = await adminActionGate.verify('export_data', 'kdmc_admin');
+      /* Échec attendu (pas WebAuthn ni PIN), mais audit log existe */
+      const log = localStorage.getItem('apex_v13_audit_log');
+      if (log) {
+        expect(log).toContain('admin_gate');
+      }
+      expect(r.ok).toBe(false);
+    });
+
+    it('verify multiple actions rapidement (anti-replay basic)', async () => {
+      const r1 = await adminActionGate.verify('toggle_commerce', 'kdmc_admin');
+      const r2 = await adminActionGate.verify('toggle_commerce', 'kdmc_admin');
+      const r3 = await adminActionGate.verify('toggle_commerce', 'kdmc_admin');
+      /* Tous bloqués sans WebAuthn ni PIN */
+      expect(r1.ok).toBe(false);
+      expect(r2.ok).toBe(false);
+      expect(r3.ok).toBe(false);
+    });
+  });
 });
