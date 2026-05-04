@@ -27,6 +27,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
 
 export type TransitionKind = 'none' | 'fade' | 'cut' | 'slide' | 'dissolve' | 'wipe' | 'zoom';
 export type AspectRatio = 'original' | '16:9' | '9:16' | '1:1' | '4:3' | '21:9';
@@ -566,6 +567,11 @@ export const videoStudioStore = new VideoStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
+  if (!isFeatureEnabled('studio.video', uid)) {
+    rootEl.innerHTML = renderDisabledNotice('studio.video');
+    return;
+  }
   const clips = videoStudioStore.list();
   const total = calcTotalDuration(clips);
   const aspect = videoStudioStore.getAspectRatio();
