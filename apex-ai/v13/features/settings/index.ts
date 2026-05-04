@@ -40,6 +40,15 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
+        <h2 style="margin:0 0 12px;font-size:16px">📊 Conso API temps réel + détection anomalies</h2>
+        <p style="margin:0 0 8px;color:var(--ax-text-dim);font-size:13px">
+          Apex surveille ta conso et détecte si une clé est utilisée anormalement (potentielle compromission).
+        </p>
+        <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="width:100%;margin-bottom:8px">🔍 Scanner toutes mes API maintenant</button>
+        <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
+      </div>
+
+      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
         <h2 style="margin:0 0 12px;font-size:16px">🔐 Compte</h2>
         <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="width:100%">Se déconnecter</button>
       </div>
@@ -79,6 +88,35 @@ export function render(rootEl: HTMLElement): void {
       logger.warn('feature-settings', 'memory-bridge wire failed', { err });
     }
   })();
+  /* Sprint 8 v13.0.71 : Wire consumption-anomaly-detector (Kevin demande conso temps réel) */
+  rootEl.querySelector<HTMLButtonElement>('#ax-conso-scan')?.addEventListener('click', () => {
+    void (async () => {
+      try {
+        const { consumptionAnomalyDetector } = await import('../../services/consumption-anomaly-detector.js');
+        const reports = consumptionAnomalyDetector.scanAllVerbose();
+        const out = rootEl.querySelector<HTMLDivElement>('#ax-conso-results');
+        if (!out) return;
+        out.innerHTML = reports.map((r) => {
+          const color = r.severity === 'critical' ? '#ff4444'
+            : r.severity === 'high' ? '#ff8844'
+            : r.severity === 'medium' ? '#ffaa00'
+            : r.severity === 'low' ? '#88aaff' : '#22cc77';
+          const icon = r.severity === 'critical' ? '🚨'
+            : r.severity === 'high' ? '⚠️'
+            : r.severity === 'medium' ? '🟡'
+            : r.severity === 'low' ? '🔵' : '✅';
+          return `<div style="background:rgba(255,255,255,0.03);border-left:3px solid ${color};padding:8px 12px;margin-top:6px;border-radius:4px">
+            <strong style="color:${color}">${icon} ${r.service}</strong>
+            <div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${r.reason}</div>
+            <div style="font-size:11px;margin-top:4px">${r.recommended_action}</div>
+            ${r.recharge_url ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><a href="${r.recharge_url}" target="_blank" rel="noopener" style="color:#c9a227;font-size:11px">💳 Recharge →</a> <a href="${r.rotate_url}" target="_blank" rel="noopener" style="color:#c9a227;font-size:11px">🔄 Rotate →</a></div>` : ''}
+          </div>`;
+        }).join('');
+      } catch (err: unknown) {
+        logger.warn('feature-settings', 'conso scan failed', { err });
+      }
+    })();
+  });
   rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout')?.addEventListener('click', () => {
     void (async () => {
       const { auth } = await import('../../services/auth.js');
