@@ -26,18 +26,16 @@ export function cspNonceDynamic(): Plugin {
       nonce = randomBytes(16).toString('hex');
     },
     transformIndexHtml(html) {
-      /* Remplace placeholder dans CSP meta + injecte nonce sur scripts/links */
+      /* 1. Remplace placeholder APEX_BOOT_NONCE dans CSP meta + scripts existants */
       let out = html.replace(/APEX_BOOT_NONCE/g, nonce);
-      /* Vite injecte <script type="module" crossorigin src="..."> sans nonce.
-       * On les cible et ajoute nonce="XXX". */
-      out = out.replace(
-        /<script([^>]*?)src="\.\/(?:core|chunks|assets)\//g,
-        `<script$1nonce="${nonce}" src="./$&`.replace('$&', '').replace('<script', '<script') ||
-          `<script$1nonce="${nonce}" src="./`,
-      );
-      /* Plus simple via regex propre : ajoute nonce sur tous les <script> et <link rel="stylesheet"> */
-      out = out.replace(/<script(\s)/g, `<script nonce="${nonce}"$1`);
-      out = out.replace(/<link rel="stylesheet"(\s)/g, `<link nonce="${nonce}" rel="stylesheet"$1`);
+      /* 2. Ajoute nonce UNIQUEMENT sur <script>/<link rel="stylesheet"> qui n'en ont pas déjà
+       *    (anti-doublon : Vite injecte parfois ses propres scripts sans nonce) */
+      out = out.replace(/<script(?![^>]*\bnonce=)(\s[^>]*?)?>/g, (m, attrs) => {
+        return `<script nonce="${nonce}"${attrs ?? ''}>`;
+      });
+      out = out.replace(/<link(?![^>]*\bnonce=)(\s[^>]*?)\brel="stylesheet"([^>]*)>/g, (_m, before, after) => {
+        return `<link nonce="${nonce}"${before}rel="stylesheet"${after}>`;
+      });
       return out;
     },
   };
