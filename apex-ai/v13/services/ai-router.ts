@@ -349,6 +349,16 @@ class AIRouter {
         reason: decision.reason,
         fallback_count: decision.fallback_chain.length,
       });
+      /* SOC2 audit trail : policy decision (sécu trace pour compliance) */
+      void auditLog.record('ai.routing_policy_decision', {
+        details: {
+          domain,
+          primary: decision.primary,
+          reason: decision.reason,
+          fallback_count: decision.fallback_chain.length,
+          tokens: estimatedTokens,
+        },
+      });
       /* Map policy ProviderId → router Provider (filtre supportés) */
       const supported: readonly Provider[] = ['anthropic', 'openrouter', 'groq', 'gemini', 'openclaw'];
       const mapToRouter = (p: string): Provider | null => {
