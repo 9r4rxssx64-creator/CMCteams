@@ -4,6 +4,119 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Ape
 
 ---
 
+## 🧪 RÈGLE PERMANENTE — APEX VÉRIFIE LE FONCTIONNEMENT AVANT DE PRÉSENTER (Kevin 2026-05-04, ABSOLUE)
+
+> **"Comme il doit vérifier le fonctionnement des outils et modules avant de les présenter"** — Kevin 2026-05-04
+
+**Règle absolue, prioritaire** — Apex priorité 1 :
+
+### 1. Pre-flight test obligatoire avant chaque présentation user
+
+Quand Apex propose un outil/module à Kevin/user, AVANT d'afficher :
+1. Test de santé du tool (ping endpoint, test cas d'usage simple)
+2. Vérifier permissions (clé API présente, quota dispo, validité token)
+3. Vérifier dépendances (lib chargée, worker connecté, IDB ouverte)
+4. Si fail → ne pas présenter l'outil OU présenter avec warning + auto-fix proposé
+
+### 2. Test mental obligatoire avant chaque présentation
+
+> *"Si Kevin clique sur ce bouton/feature, est-ce que ça marche RÉELLEMENT à 100% ? Ai-je vérifié le path complet (UI → API → résultat) ?"*
+
+Si réponse non/incertain → tester d'abord, présenter ensuite.
+
+### 3. Implementation
+
+`services/preflight.ts` :
+- `preflightCheck(toolName)` retourne `{ok, ready, missingDeps?, error?, autoFixAvailable?}`
+- Lazy-test à l'ouverture du module (pas au boot tout — coûteux)
+- Cache 5min par tool (pas re-check à chaque clic)
+- Si auto-fix possible (ex: charger lib manquante) → propose en 1 clic
+
+### 4. UI feedback
+
+- 🟢 = tool prêt (testé OK)
+- 🟡 = tool partiel (warning + bouton "Auto-fix")
+- 🔴 = tool indispo (error + lien recharge / install)
+
+### 5. S'applique à tous
+
+Tous les studios, modules pro, tools IA, browser, voice, sentinelles → preflight check avant présentation user.
+
+---
+
+## 🔘 RÈGLE PERMANENTE — BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL (Kevin 2026-05-04, ABSOLUE)
+
+> **"Rappel toi aussi les boutons admin onoff pour tout et tout le monde. Général et individuel"** — Kevin 2026-05-04
+
+**Règle absolue, prioritaire** — Apex priorité 1, CMCteams aussi :
+
+### 1. Chaque feature/tool/sentinelle/module DOIT avoir 2 toggles
+
+- **Toggle GLOBAL** (admin Kevin) : ON/OFF pour TOUS les users (kill switch)
+- **Toggle PER-USER** (admin Kevin) : ON/OFF par utilisateur précis (Laurence, clients pros, free)
+
+### 2. Stockage
+
+```ts
+// Global
+ax_feature_toggle_global = { 'voice': true, 'browser': true, 'studios.music': true, ... }
+
+// Per-user
+ax_feature_toggle_user_<uid> = { 'voice': false, 'studios.video': true, ... }
+```
+
+Resolution priority : per-user override > global > default(true).
+
+### 3. UI admin
+
+Vue `vAdminToggles` (ou intégré vAdminCenter) :
+- Liste alphabétique 100+ features (chat/browser/voice/15 studios/8 pro/13 sentinelles/100+ tools IA/etc.)
+- Pour chaque : toggle GLOBAL + bouton "Per-user..." → modal liste users avec toggle par user
+- Search bar
+- "Désactiver tout" / "Activer tout" (kill switch global)
+- "Reset défauts"
+- Audit log à chaque toggle
+
+### 4. Helper
+
+```ts
+export function isFeatureEnabled(featureId: string, userId?: string): boolean {
+  // Check per-user first
+  if (userId) {
+    const userToggles = lg(`ax_feature_toggle_user_${userId}`, {});
+    if (userToggles[featureId] !== undefined) return userToggles[featureId];
+  }
+  // Fallback global
+  const globalToggles = lg('ax_feature_toggle_global', {});
+  if (globalToggles[featureId] !== undefined) return globalToggles[featureId];
+  // Default ON
+  return true;
+}
+```
+
+### 5. Wire dans chaque feature
+
+Au début de `render(rootEl)` :
+```ts
+if (!isFeatureEnabled('studios.music', currentUserId)) {
+  return rootEl.innerHTML = `<div>🚫 Studio Music désactivé par admin Kevin</div>`;
+}
+```
+
+### 6. Sentinelles aussi
+
+`sentinelsRegistry.start(id)` doit checker `isFeatureEnabled('sentinel.token-watch', userId)` avant de tourner.
+
+### 7. Test mental
+
+> *"Si Kevin veut désactiver le studio music UNIQUEMENT pour Laurence (toujours actif pour autres), peut-il le faire en 1 clic ? Si Kevin veut désactiver le browser pour TOUT LE MONDE en 1 clic ?"*
+
+Si non → enrichir.
+
+S'applique : Apex (priorité), CMCteams.
+
+---
+
 ## 🤖 RÈGLE PERMANENTE — APEX = MÊME ACCÈS QUE CLAUDE CODE (Kevin 2026-05-04, ABSOLUE)
 
 > **"Apex est capable maintenant de modifier son code, son script, skill, hooks etc en toute autonomie"** — Kevin 2026-05-04
