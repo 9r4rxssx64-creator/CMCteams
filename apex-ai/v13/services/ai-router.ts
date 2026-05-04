@@ -163,12 +163,31 @@ const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openrouter', 'groq', '
 class AIRouter {
   private currentAbort: AbortController | null = null;
 
+  /**
+   * Lecture sync brute (peut être chiffrée AXENC1: si stockée via vault.autoStore).
+   * Préférer getApiKeyDecrypted() async pour usage AI calls.
+   */
   getApiKey(provider: Provider): string {
     return localStorage.getItem(PROVIDERS[provider].keyName) ?? '';
   }
 
+  /**
+   * Lecture async avec déchiffrement auto si AXENC1: prefix.
+   */
+  async getApiKeyDecrypted(provider: Provider): Promise<string> {
+    const raw = this.getApiKey(provider);
+    if (!raw) return '';
+    if (raw.startsWith('AXENC1:')) {
+      const { vault } = await import('./vault.js');
+      const decrypted = await vault.decryptAuto(raw);
+      return decrypted ?? '';
+    }
+    return raw;
+  }
+
   hasAnyKey(): boolean {
-    return DEFAULT_CHAIN.some((p) => this.getApiKey(p));
+    /* Vérifie présence non-vide raw (chiffrée ou non) */
+    return DEFAULT_CHAIN.some((p) => this.getApiKey(p).length > 0);
   }
 
   /**
@@ -213,7 +232,8 @@ class AIRouter {
     };
 
     for (const provider of chain) {
-      const key = this.getApiKey(provider);
+      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos) */
+      const key = await this.getApiKeyDecrypted(provider);
       if (!key && provider !== 'gemini') continue;
       try {
         await this.streamFromProvider(provider, key, redactedMessages, system, wrappedOnChunk, ctrl.signal);

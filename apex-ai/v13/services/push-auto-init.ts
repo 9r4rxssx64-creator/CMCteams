@@ -54,6 +54,37 @@ class PushAutoInit {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   /**
+   * Vérifie config VAPID public key + worker URL (P0 audit gap).
+   * Retourne diagnostic admin pour UI alert.
+   */
+  checkPushConfig(): {
+    vapid_set: boolean;
+    worker_url_set: boolean;
+    admin_token_set: boolean;
+    ready_for_prod: boolean;
+    warnings: readonly string[];
+  } {
+    const warnings: string[] = [];
+    const vapidKey = localStorage.getItem('ax_vapid_public') ?? '';
+    const workerUrl = localStorage.getItem('apex_v13_push_worker_url') ?? '';
+    const adminToken = localStorage.getItem('apex_v13_push_admin_token') ?? '';
+    const vapidSet = vapidKey.length > 30;
+    const workerUrlSet = workerUrl.startsWith('http');
+    const adminTokenSet = adminToken.length > 10;
+    if (!vapidSet) warnings.push('ax_vapid_public manquant (utilise default placeholder = push réelle KO)');
+    if (!workerUrlSet) warnings.push('apex_v13_push_worker_url manquant (sendServerPush KO)');
+    if (!adminTokenSet) warnings.push('apex_v13_push_admin_token manquant (sendServerPush KO)');
+    const readyForProd = vapidSet && workerUrlSet && adminTokenSet;
+    return {
+      vapid_set: vapidSet,
+      worker_url_set: workerUrlSet,
+      admin_token_set: adminTokenSet,
+      ready_for_prod: readyForProd,
+      warnings,
+    };
+  }
+
+  /**
    * Détecte l'environnement précis (iOS PWA vs browser, Android, desktop).
    */
   detectEnvironment(): PushEnvironment {

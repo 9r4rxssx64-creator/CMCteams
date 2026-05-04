@@ -310,7 +310,11 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
     safeInit('push-auto-init', async () => {
       const { pushAutoInit } = await import('./push-auto-init.js');
       const env = pushAutoInit.detectEnvironment();
-      logger.info('services-bootstrap', `push-auto-init : env=${env}`);
+      const cfg = pushAutoInit.checkPushConfig();
+      logger.info('services-bootstrap', `push-auto-init : env=${env}, ready_prod=${cfg.ready_for_prod}`);
+      if (!cfg.ready_for_prod) {
+        for (const w of cfg.warnings) logger.warn('services-bootstrap', `push: ${w}`);
+      }
     }),
 
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
