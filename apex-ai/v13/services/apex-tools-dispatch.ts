@@ -251,8 +251,9 @@ class ApexToolsDispatcher {
 
   private async webSearch(query: string, maxResults = 5): Promise<{ results: unknown[]; provider: string }> {
     if (!query) throw new Error('query required');
-    /* Brave Search API si configuré */
-    const braveKey = localStorage.getItem('ax_brave_key');
+    const { vault } = await import('./vault.js');
+    /* Brave Search API si configuré (déchiffré via vault.readKey si AXENC1:) */
+    const braveKey = await vault.readKey('ax_brave_key');
     if (braveKey) {
       try {
         const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}`;
@@ -268,8 +269,8 @@ class ApexToolsDispatcher {
         logger.warn('apex-tools', 'Brave search failed', { err });
       }
     }
-    /* Tavily fallback */
-    const tavilyKey = localStorage.getItem('ax_tavily_key');
+    /* Tavily fallback (déchiffré) */
+    const tavilyKey = await vault.readKey('ax_tavily_key');
     if (tavilyKey) {
       try {
         const res = await fetch('https://api.tavily.com/search', {
@@ -414,8 +415,9 @@ class ApexToolsDispatcher {
   }
 
   private async translate(text: string, targetLang: string): Promise<{ translated: string; provider: string }> {
-    /* DeepL si key configurée */
-    const deeplKey = localStorage.getItem('ax_deepl_key');
+    const { vault } = await import('./vault.js');
+    /* DeepL si key configurée (déchiffré) */
+    const deeplKey = await vault.readKey('ax_deepl_key');
     if (deeplKey) {
       try {
         const res = await fetch('https://api-free.deepl.com/v2/translate', {
@@ -758,8 +760,9 @@ class ApexToolsDispatcher {
   }
 
   private async newsHeadlines(category = 'general', country = 'fr'): Promise<unknown> {
-    /* Tente NewsAPI si clé, sinon RSS Le Monde France 24 publics */
-    const newsApiKey = localStorage.getItem('ax_newsapi_key');
+    const { vault } = await import('./vault.js');
+    /* Tente NewsAPI si clé, sinon RSS Le Monde France 24 publics (déchiffré) */
+    const newsApiKey = await vault.readKey('ax_newsapi_key');
     if (newsApiKey) {
       try {
         const url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=${newsApiKey}&pageSize=10`;
@@ -790,7 +793,8 @@ class ApexToolsDispatcher {
       return { type: 'crypto', symbol: symbol.toLowerCase(), price: data[symbol.toLowerCase()] ?? null };
     }
     if (type === 'stock' || type === 'forex') {
-      const finnhubKey = localStorage.getItem('ax_finnhub_key');
+      const { vault } = await import('./vault.js');
+      const finnhubKey = await vault.readKey('ax_finnhub_key');
       if (!finnhubKey) {
         return { type, symbol, message: 'Configurer ax_finnhub_key pour stocks/forex' };
       }

@@ -72,4 +72,64 @@ describe('Vault autoStore encryption (P0 sécu fix)', () => {
     expect(r.ok).toBe(false);
     expect(r.reason).toContain('Format inconnu');
   });
+
+  describe('vault.readKey universal reader (P0 v13.0.16)', () => {
+    it('lit AXENC1: chiffré et déchiffre auto', async () => {
+      const original = 'sk-ant-api03-' + 'X'.repeat(95);
+      await vault.autoStore(original);
+      const read = await vault.readKey('ax_anthropic_key');
+      expect(read).toBe(original);
+    });
+
+    it('lit valeur plaintext legacy sans déchiffrer', async () => {
+      localStorage.setItem('ax_legacy_test', 'plaintext-value-not-encrypted');
+      const read = await vault.readKey('ax_legacy_test');
+      expect(read).toBe('plaintext-value-not-encrypted');
+    });
+
+    it('clé absente → string vide (pas null)', async () => {
+      const read = await vault.readKey('ax_inexistant');
+      expect(read).toBe('');
+    });
+  });
+
+  describe('vault.maskKey UI affichage (P0 anti-AXENC1 leak)', () => {
+    it('masque préserve début + fin pour identification', () => {
+      const masked = vault.maskKey('sk-ant-api03-AbCdEfGhIjKl9z2');
+      expect(masked).toContain('sk-an');
+      expect(masked).toContain('9z2');
+      expect(masked).toContain('***');
+      /* JAMAIS la valeur complète */
+      expect(masked).not.toBe('sk-ant-api03-AbCdEfGhIjKl9z2');
+    });
+
+    it('masque court < 8 chars → ***', () => {
+      expect(vault.maskKey('abc')).toBe('***');
+      expect(vault.maskKey('')).toBe('');
+    });
+
+    it('readMasked combine readKey + maskKey', async () => {
+      const original = 'sk-ant-api03-' + 'Y'.repeat(95);
+      await vault.autoStore(original);
+      const masked = await vault.readMasked('ax_anthropic_key');
+      expect(masked).toContain('***');
+      expect(masked).not.toContain('AXENC1'); /* JAMAIS le prefix dans UI */
+    });
+  });
+
+  describe('vault.getKeyStatus sync (UI status sans déchiffrer)', () => {
+    it('clé absente → empty', () => {
+      expect(vault.getKeyStatus('ax_absent')).toBe('empty');
+    });
+
+    it('clé chiffrée AXENC1: → encrypted', async () => {
+      await vault.autoStore('sk-ant-api03-' + 'Z'.repeat(95));
+      expect(vault.getKeyStatus('ax_anthropic_key')).toBe('encrypted');
+    });
+
+    it('clé plaintext legacy → plaintext_legacy (à migrer)', () => {
+      localStorage.setItem('ax_legacy_plain', 'old-format-key');
+      expect(vault.getKeyStatus('ax_legacy_plain')).toBe('plaintext_legacy');
+    });
+  });
 });
