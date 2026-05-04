@@ -149,6 +149,11 @@ async function bootstrap(): Promise<void> {
   router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true });
   /* Sprint 3 NEW : Télécommande Universelle (UNIVERSAL_REMOTE.md, intègre device-control) */
   router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true });
+  /* Sprint port v12 (Kevin 2026-05-04) : 4 features critiques manquantes */
+  router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true });
+  router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true });
+  router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true });
+  router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
