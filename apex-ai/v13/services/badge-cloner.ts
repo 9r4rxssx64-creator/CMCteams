@@ -33,8 +33,50 @@ import { logger } from '../core/logger.js';
 import { auditLog } from './audit-log.js';
 import { vault } from './vault.js';
 
-export type BadgeFormat = 'ndef_text' | 'ndef_url' | 'ndef_mime' | 'ndef_uri' | 'ndef_external'
-  | 'iso14443' | 'mifare_classic' | 'mifare_ultralight' | 'felica' | 'unknown';
+export type BadgeFormat =
+  /* NDEF NFC Forum */
+  | 'ndef_text' | 'ndef_url' | 'ndef_mime' | 'ndef_uri' | 'ndef_external'
+  | 'ndef_smart_poster' | 'ndef_signature' | 'ndef_aar'
+  /* ISO 14443 (proximity 13.56MHz) */
+  | 'iso14443a' | 'iso14443b'
+  /* MIFARE famille NXP */
+  | 'mifare_classic_1k' | 'mifare_classic_4k' | 'mifare_classic_mini'
+  | 'mifare_ultralight' | 'mifare_ultralight_c' | 'mifare_ultralight_ev1'
+  | 'mifare_desfire_ev1' | 'mifare_desfire_ev2' | 'mifare_desfire_ev3'
+  | 'mifare_plus_s' | 'mifare_plus_x'
+  /* NTAG NXP */
+  | 'ntag203' | 'ntag210' | 'ntag212' | 'ntag213' | 'ntag215' | 'ntag216'
+  | 'ntag413_dna' | 'ntag424_dna'
+  /* FeliCa Sony (transit Asia, payment) */
+  | 'felica_lite' | 'felica_lite_s' | 'felica_standard'
+  /* Vicinity 15693 */
+  | 'iso15693' | 'icode_sli' | 'icode_slix' | 'tag_it_hf'
+  /* HID Prox / iCLASS (access control US) */
+  | 'hid_prox' | 'hid_iclass' | 'hid_iclass_se' | 'hid_iclass_seos'
+  | 'hid_corporate1000' | 'hid_indala' | 'hid_awid'
+  /* Faible fréquence 125 kHz */
+  | 'em4100' | 'em4102' | 'em4200' | 'em4305' | 'em4450'
+  | 't5577' | 'q5' | 'fdx_b' | 'fdx_a' | 'hitag1' | 'hitag2' | 'hitags'
+  /* Indala / Motorola */
+  | 'indala_64' | 'indala_224' | 'paradox' | 'awid' | 'pyramid'
+  /* Vigik (France immeubles) */
+  | 'vigik_125khz' | 'vigik_iso14443'
+  /* Hexact / Cogelec / Intratone (interphones France) */
+  | 'hexact' | 'cogelec' | 'intratone' | 'urmet'
+  /* Transit Europe */
+  | 'navigo' | 'oyster' | 'octopus' | 'ov_chipkaart' | 'opus' | 'mobib'
+  | 'calypso' | 'tnp_mifare'
+  /* Payment / Banking */
+  | 'emv_visa' | 'emv_mastercard' | 'emv_amex' | 'paypass' | 'paywave'
+  /* Identité officielle */
+  | 'icao_passport' | 'cnis_carte_id' | 'german_perso' | 'mrtd'
+  /* Gaming / Loyalty */
+  | 'amiibo' | 'skylanders' | 'lego_dimensions' | 'disney_infinity'
+  /* Crypto / Hardware wallets */
+  | 'yubikey_nfc' | 'fido2_nfc' | 'tap_signer' | 'satscard'
+  /* Apple / Google Pay */
+  | 'apple_wallet_pass' | 'google_wallet_pass'
+  | 'unknown';
 
 export interface ScannedBadge {
   id: string;
