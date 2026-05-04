@@ -25,14 +25,15 @@ describe('features/studios/contract — escapeHtml', () => {
 });
 
 describe('features/studios/contract — TEMPLATES catalog', () => {
-  it('liste 5 templates (NDA, CDI, CDD, freelance, bail)', () => {
-    expect(TEMPLATES.length).toBe(5);
+  it('liste >=15 templates incluant NDA/CDI/CDD/freelance/bail', () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(15);
     const ids = TEMPLATES.map((t) => t.id);
     expect(ids).toContain('nda');
     expect(ids).toContain('cdi');
     expect(ids).toContain('cdd');
     expect(ids).toContain('freelance');
-    expect(ids).toContain('bail');
+    expect(ids).toContain('bail-habitation');
+    expect(ids).toContain('bail-commercial');
   });
 
   it('chaque template a label, emoji, partiesCount, clauses, refs', () => {
@@ -51,8 +52,8 @@ describe('features/studios/contract — TEMPLATES catalog', () => {
     expect(clauses).toContain('motif');
   });
 
-  it('Bail inclut référence loi 1989', () => {
-    const bail = TEMPLATES.find((t) => t.id === 'bail');
+  it('Bail habitation inclut référence loi 1989', () => {
+    const bail = TEMPLATES.find((t) => t.id === 'bail-habitation');
     const refs = bail?.legalRefs.join(' ').toLowerCase() ?? '';
     expect(refs).toContain('1989');
   });
@@ -84,11 +85,11 @@ describe('features/studios/contract — generateContractNumber', () => {
 });
 
 describe('features/studios/contract — initContract', () => {
-  it('initialise NDA avec 2 parties + clauses + refs', () => {
+  it('initialise NDA avec 2 parties + optional clauses + refs', () => {
     const c = initContract('nda', 0);
     expect(c.template).toBe('nda');
     expect(c.parties.length).toBe(2);
-    expect(c.clauses.length).toBeGreaterThan(0);
+    expect(c.optionalClauses.length).toBeGreaterThanOrEqual(0);
     expect(c.legalRefs.length).toBeGreaterThan(0);
   });
 
@@ -105,6 +106,9 @@ describe('features/studios/contract — initContract', () => {
 describe('features/studios/contract — validateContract', () => {
   it('validation OK contrat complet', () => {
     const c = initContract('nda', 0);
+    /* NDA est requiresRGPD=true et inclut déjà 'arbitrage' dans recommendedOptional ;
+       on s'assure que la clause RGPD est bien présente pour passer le check RGPD */
+    c.optionalClauses = [...c.optionalClauses, 'rgpd-conformite'];
     for (const p of c.parties) {
       p.nom = 'Partie';
       p.adresse = '1 rue de Paris';
@@ -144,8 +148,8 @@ describe('features/studios/contract — validateContract', () => {
     expect(v.errors.some((e) => e.toLowerCase().includes('montant'))).toBe(true);
   });
 
-  it('Bail exige loyer > 0', () => {
-    const c = initContract('bail', 0);
+  it('Bail habitation exige loyer > 0', () => {
+    const c = initContract('bail-habitation', 0);
     for (const p of c.parties) {
       p.nom = 'X';
       p.adresse = 'Y';

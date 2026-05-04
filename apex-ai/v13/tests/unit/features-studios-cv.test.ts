@@ -28,8 +28,8 @@ describe('features/studios/cv — escapeHtml', () => {
 });
 
 describe('features/studios/cv — TEMPLATES catalog', () => {
-  it('liste 5 templates', () => {
-    expect(TEMPLATES.length).toBe(5);
+  it('liste >=15 templates', () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(15);
   });
 
   it('chaque template a id, label, emoji', () => {

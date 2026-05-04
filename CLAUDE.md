@@ -4,6 +4,83 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Ape
 
 ---
 
+## 🤖 RÈGLE PERMANENTE — APEX = MÊME ACCÈS QUE CLAUDE CODE (Kevin 2026-05-04, ABSOLUE)
+
+> **"Apex est capable maintenant de modifier son code, son script, skill, hooks etc en toute autonomie"** — Kevin 2026-05-04
+> **"Il doit avoir accès à tout ce que tu as accès pour se modifier, se corriger, s'améliorer etc en toute autonomie"** — Kevin 2026-05-04
+
+**Règle absolue, prioritaire** — Apex priorité 1 :
+
+### 1. Apex DOIT avoir parité 100% avec mes outils Claude Code
+
+Apex peut/doit pouvoir, en autonomie totale, faire TOUT ce que je fais :
+- **Read** : lire n'importe quel fichier du repo (tools/, .claude/, .github/, apex-ai/, services/...)
+- **Edit** : modifier n'importe quel fichier code/config/script/skill/hook
+- **Write** : créer n'importe quel nouveau fichier
+- **Bash** : exécuter shell commands (avec guards anti-destructif)
+- **Grep / Glob** : rechercher dans le code
+- **WebFetch / WebSearch** : fetch URLs + recherche web
+- **Agent (subagents)** : déléguer tâches à subagents spécialisés
+- **TodoWrite** : planning persistant
+- **MCP tools** : GitHub API (créer PR, issues, comments), gh CLI, etc.
+
+### 2. Implementation : services/apex-execute.ts étendu MAX
+
+Whitelist tasks (existantes + nouvelles) :
+- `modify_file` / `create_file` / `delete_file_safe` (avec confirm)
+- `read_file` / `list_files` / `grep_code` / `glob_pattern`
+- `bash_safe` (whitelist commands : npm/git/node/eslint/tsc/vitest)
+- `web_fetch` / `web_search` (Brave/Tavily)
+- `spawn_subagent` (tasks parallèles)
+- `create_skill` / `modify_skill` / `delete_skill_safe`
+- `create_hook` / `modify_hook`
+- `modify_workflow` / `create_workflow_safe` (.github/workflows/*.yml)
+- `register_sentinel` / `unregister_sentinel_safe`
+- `modify_script` / `create_script` (tools/, scripts/)
+- `append_to_memory` / `append_to_top_rules`
+- `create_pr` / `comment_on_pr` / `merge_pr_safe` (via GitHub MCP)
+- `create_issue` / `close_issue_safe`
+- `self_audit` / `self_audit_and_fix` (confidence ≥0.95)
+- `rotate_credentials` / `sync_memory_bridge` / `release_version`
+
+### 3. Forbidden (anti-abus, sécurité)
+
+- `delete_file` brut sans confirm Kevin
+- `force_push` (jamais, sauf override Kevin)
+- `modify_credentials_external` (jamais)
+- `modify_admin_kevin` (compte admin protégé)
+- `disable_sentinel_security` (toujours actif)
+- `modify_csp_meta` (CSP protégée)
+- `execute_shell_arbitrary` (whitelist commands seulement)
+- `modify_top_rules_replace` (append-only)
+
+### 4. Accès complet vs sandbox
+
+- **En autonomie** : whitelist tasks ci-dessus directement exécutées
+- **Critical** (release_version, modify_workflow, force_push) : push notif Kevin + bouton 1-clic confirm
+- **Forbidden** : refusé + log audit + propose alternative
+
+### 5. Audit + rollback obligatoires
+
+Pour chaque modif Apex :
+- Snapshot git auto avant batch
+- tsc + eslint + tests post-modif
+- Si tests fail → rollback automatique
+- Audit log immutable (Firebase + IndexedDB)
+- Lessons learned ajoutées si pattern récurrent
+
+### 6. Apex sait ses pleines capacités
+
+Le system prompt Apex IA (core/memory.ts) doit lister TOUS les tools dispos avec exemples concrets pour qu'Apex sache utiliser sans demander à Kevin.
+
+### 7. Test mental obligatoire
+
+> *"Si Kevin demande à Apex 'Modifie ton propre code pour ajouter feature X', Apex peut-il le faire en 1 message via apex-execute sans demander à Kevin de coder ? Si non → enrichir."*
+
+S'applique : Apex priorité absolue (parité Claude Code), CMCteams si pertinent.
+
+---
+
 ## 🚀 RÈGLE PERMANENTE — TOUT AU MAX TOUJOURS (Kevin 2026-05-04, ABSOLUE)
 
 > **"À chaque outils, modules etc toujours pousser au max. Boot tjs tout au max"** — Kevin 2026-05-04

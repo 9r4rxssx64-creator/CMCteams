@@ -59,6 +59,19 @@ export interface NavigateResult {
   blocked: boolean;
 }
 
+export interface ReaderStats {
+  title: string;
+  paragraphs: readonly string[];
+  wordCount: number;
+  readingTimeMin: number;
+  toc: readonly { level: 1 | 2 | 3; text: string }[];
+}
+
+export interface IframeBlockedDetection {
+  blocked: boolean;
+  reason: 'cross-origin' | 'no-content' | 'load-error' | 'ok';
+}
+
 /* ============================================================
    Storage keys + caps
    ============================================================ */
@@ -486,6 +499,172 @@ export function getFallbackChain(url: string): readonly { method: FallbackMethod
   ];
 }
 
+/**
+ * Détecte si une iframe est probablement bloquée (X-Frame-Options DENY/SAMEORIGIN
+ * ou CSP frame-ancestors).
+ *
+ * Heuristiques cumulables :
+ *  1. `iframe.contentDocument` null/throw → cross-origin block (ex: google, youtube)
+ *  2. `iframe.contentDocument.body.innerHTML` vide après load → blank
+ *  3. `iframe.contentWindow.location.href` reste 'about:blank' après 2s → load failed
+ *
+ * Sur navigateurs modernes, `contentDocument` jette `SecurityError` si cross-origin
+ * a échoué le frame check. Si direct cross-origin OK (ex: site sans X-Frame-Options),
+ * on ne peut pas non plus le lire mais l'iframe affiche le contenu — d'où l'heuristique
+ * height/width qu'on ne peut pas tester en jsdom mais qui fait foi côté UI.
+ */
+export function detectIframeBlocked(iframe: HTMLIFrameElement | null): IframeBlockedDetection {
+  if (!iframe) return { blocked: true, reason: 'load-error' };
+  /* Test 1 : contentDocument lecture (throw si cross-origin block actif) */
+  let doc: Document | null = null;
+  try {
+    doc = iframe.contentDocument;
+  } catch {
+    /* SecurityError sur cross-origin = iframe affiche peut-être OK, ou bien blocked.
+       On retourne 'cross-origin' qui est ambigu. UI garde le contenu et propose fallback en option. */
+    return { blocked: false, reason: 'cross-origin' };
+  }
+  /* Test 2 : si contentDocument null ET src ≠ about:blank → bloqué */
+  const src = iframe.src ?? '';
+  if (!doc) {
+    if (!src || src === 'about:blank') return { blocked: true, reason: 'load-error' };
+    /* contentDocument null sur un src valide = cross-origin (probable blocage XFO) */
+    return { blocked: false, reason: 'cross-origin' };
+  }
+  /* Test 3 : body vide après load → page n'a rien rendu */
+  const body = doc.body;
+  if (!body) return { blocked: true, reason: 'no-content' };
+  const html = (body.innerHTML ?? '').trim();
+  if (html.length === 0) return { blocked: true, reason: 'no-content' };
+  return { blocked: false, reason: 'ok' };
+}
+
+/**
+ * HTML overlay user-friendly à afficher quand iframe est bloquée.
+ * 4 boutons : archive / reader / cache / safari.
+ * Pas d'event handlers ici (caller les wire via [data-fallback]).
+ */
+export function buildBlockedOverlay(url: string): string {
+  const safe = escapeHtml(url);
+  const archive = escapeHtml(buildArchiveUrl(url));
+  const reader = escapeHtml(buildReaderUrl(url));
+  const gcache = escapeHtml(buildGoogleCacheUrl(url));
+  return `
+<div class="ax-browser-blocked-overlay" role="dialog" aria-label="Site bloqué"
+  style="position:absolute;inset:0;background:rgba(10,10,20,0.96);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:50;color:#fff;font-family:system-ui,-apple-system,sans-serif">
+  <div style="max-width:480px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🛡️</div>
+    <h2 style="color:#c9a227;font-size:18px;margin:0 0 8px 0">Ce site refuse l'embed iframe</h2>
+    <p style="color:#bbb;font-size:13px;margin:0 0 20px 0;word-break:break-all">${safe}</p>
+    <p style="color:#999;font-size:12px;margin:0 0 16px 0">Le site envoie <code style="color:#c9a227">X-Frame-Options</code> qui bloque l'affichage. Voici 4 façons de le voir quand même :</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <button data-fallback="archive" data-fallback-url="${archive}"
+        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📚 Archive</button>
+      <button data-fallback="reader" data-fallback-url="${reader}"
+        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📖 Lecture</button>
+      <button data-fallback="gcache" data-fallback-url="${gcache}"
+        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔍 Cache</button>
+      <button data-fallback="safari" data-fallback-url="${safe}"
+        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🌐 Safari</button>
+    </div>
+    <button data-fallback="dismiss"
+      style="margin-top:8px;padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#bbb;border-radius:6px;cursor:pointer;font-size:12px">Fermer</button>
+  </div>
+</div>`;
+}
+
+/**
+ * Map FallbackMethod → label user-friendly (pour toast).
+ */
+export function fallbackLabel(method: FallbackMethod): string {
+  switch (method) {
+    case 'archive': return 'Archive web';
+    case 'reader': return 'Mode lecture';
+    case 'gcache': return 'Cache Google';
+    case 'safari': return 'Safari (nouvel onglet)';
+    case 'direct':
+    default:
+      return 'Direct';
+  }
+}
+
+/* ============================================================
+   Reader mode boost — extraction titre, paragraphes, TOC, stats
+   ============================================================ */
+
+/**
+ * Compte les mots dans un texte (séparateurs : espaces, ponctuation).
+ * Robuste sur multi-langues (latin, accents, asiatique 1 mot ≈ 2 chars).
+ */
+export function countWords(text: string): number {
+  if (!text || typeof text !== 'string') return 0;
+  const cleaned = text.trim();
+  if (!cleaned) return 0;
+  /* Séparateurs : whitespace + ponctuation usuelle */
+  const tokens = cleaned.split(/[\s.,;:!?()[\]{}«»""''/—–\-]+/u).filter(Boolean);
+  return tokens.length;
+}
+
+/**
+ * Estimation temps de lecture (250 mots/minute moyenne adulte FR).
+ * Retourne le nombre de minutes (min 1).
+ */
+export function readingTimeMinutes(wordCount: number, wpm = 250): number {
+  if (wordCount <= 0 || wpm <= 0) return 0;
+  return Math.max(1, Math.ceil(wordCount / wpm));
+}
+
+/**
+ * Extrait stats reader d'un Document (pour mode lecture amélioré).
+ * Si pas de Document (cross-origin), retourne stats par défaut.
+ */
+export function extractReaderStats(doc: Document | null): ReaderStats {
+  const empty: ReaderStats = { title: '', paragraphs: [], wordCount: 0, readingTimeMin: 0, toc: [] };
+  if (!doc) return empty;
+  const title = (doc.title ?? '').trim();
+  /* Paragraphes : <p> + <article> text content, dédup espaces */
+  const pNodes = Array.from(doc.querySelectorAll('p, article'));
+  const paragraphs = pNodes
+    .map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim())
+    .filter((t) => t.length >= 20);  // skip tiny blurbs
+  const fullText = paragraphs.join(' ');
+  const wordCount = countWords(fullText);
+  const readingTimeMin = readingTimeMinutes(wordCount);
+  /* TOC : H1/H2/H3 */
+  const headingNodes = Array.from(doc.querySelectorAll('h1, h2, h3'));
+  const toc: { level: 1 | 2 | 3; text: string }[] = [];
+  for (const h of headingNodes) {
+    const lvl = h.tagName.toLowerCase();
+    const text = (h.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    if (lvl === 'h1') toc.push({ level: 1, text });
+    else if (lvl === 'h2') toc.push({ level: 2, text });
+    else if (lvl === 'h3') toc.push({ level: 3, text });
+  }
+  return { title, paragraphs, wordCount, readingTimeMin, toc };
+}
+
+/**
+ * Cherche une chaîne dans un Document iframe (mode "search in page").
+ * Retourne les noeuds Element parents qui contiennent le terme (case-insensitive).
+ */
+export function searchInDocument(doc: Document | null, query: string): readonly Element[] {
+  if (!doc || !query || query.trim().length < 2) return [];
+  const q = query.toLowerCase().trim();
+  const candidates = Array.from(doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, span, div'));
+  const matches: Element[] = [];
+  for (const el of candidates) {
+    const text = (el.textContent ?? '').toLowerCase();
+    if (text.includes(q)) {
+      /* Skip parents qui contiennent déjà un match (évite doublons profonds) */
+      if (matches.some((m) => m.contains(el))) continue;
+      matches.push(el);
+      if (matches.length >= 50) break;  // cap
+    }
+  }
+  return matches;
+}
+
 /* ============================================================
    AI Search detection
    ============================================================ */
@@ -631,10 +810,12 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <!-- Bottom toolbar -->
-      <div style="padding:6px 8px;background:rgba(20,20,35,0.95);border-top:1px solid rgba(201,162,39,0.3);display:flex;gap:6px;align-items:center;justify-content:space-around">
+      <div style="padding:6px 8px;background:rgba(20,20,35,0.95);border-top:1px solid rgba(201,162,39,0.3);display:flex;gap:4px;align-items:center;justify-content:space-around;flex-wrap:wrap">
         <button data-action="reader-mode" title="Mode lecture" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">📖 Lecture</button>
+        <button data-action="search-in-page" title="Rechercher dans la page" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">🔍 Chercher</button>
+        <button data-action="show-toc" title="Sommaire (H1/H2/H3)" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">📑 Sommaire</button>
         <button data-action="translate" title="Traduire" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">🌐 Traduire</button>
-        <button data-action="save-pdf" title="Sauver PDF" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">💾 PDF</button>
+        <button data-action="save-pdf" title="Exporter PDF" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">📥 PDF</button>
         <button data-action="share-bottom" title="Partager" style="padding:6px 10px;background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:13px">📤 Partager</button>
       </div>
     </div>
@@ -653,6 +834,83 @@ function attachHandlers(rootEl: HTMLElement): void {
   const suggestionsBox = rootEl.querySelector<HTMLDivElement>('#ax-browser-suggestions');
   const sidebar = rootEl.querySelector<HTMLElement>('#ax-browser-sidebar');
   const sidebarContent = rootEl.querySelector<HTMLDivElement>('#ax-sidebar-content');
+  const iframeContainer = iframe?.parentElement ?? null;
+
+  /* ============================================================
+     X-Frame-Options blocked detection + auto-fallback overlay
+     ============================================================ */
+  let blockedTimer: ReturnType<typeof setTimeout> | null = null;
+  let blockedOverlayEl: HTMLElement | null = null;
+
+  const removeBlockedOverlay = (): void => {
+    if (blockedOverlayEl && blockedOverlayEl.parentNode) {
+      blockedOverlayEl.parentNode.removeChild(blockedOverlayEl);
+    }
+    blockedOverlayEl = null;
+  };
+
+  const showBlockedOverlay = (currentSrc: string): void => {
+    if (!iframeContainer || blockedOverlayEl) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = buildBlockedOverlay(currentSrc).trim();
+    const overlay = tmp.firstElementChild as HTMLElement | null;
+    if (!overlay) return;
+    blockedOverlayEl = overlay;
+    iframeContainer.appendChild(overlay);
+    /* Click delegation pour les boutons fallback */
+    overlay.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest<HTMLElement>('[data-fallback]');
+      if (!btn) return;
+      const method = btn.dataset['fallback'] as FallbackMethod | 'dismiss' | undefined;
+      const fbUrl = btn.dataset['fallbackUrl'] ?? '';
+      if (method === 'dismiss') {
+        removeBlockedOverlay();
+        return;
+      }
+      if (method === 'safari') {
+        try {
+          window.open(fbUrl, '_blank', 'noopener,noreferrer');
+        } catch (err) {
+          logger.warn('feature-browser', 'window.open failed', { err });
+        }
+        removeBlockedOverlay();
+        return;
+      }
+      if (method && fbUrl && iframe) {
+        iframe.src = fbUrl;
+        if (urlInput) urlInput.value = fbUrl;
+        removeBlockedOverlay();
+        /* Toast informatif (lazy import) */
+        import('../../ui/toast.js')
+          .then((m) => m.toast.info(`🔄 Fallback : ${fallbackLabel(method as FallbackMethod)}`))
+          .catch(() => undefined);
+        logger.info('feature-browser', 'fallback used', { method, url: fbUrl });
+      }
+    });
+  };
+
+  const checkBlocked = (): void => {
+    if (!iframe) return;
+    const detection = detectIframeBlocked(iframe);
+    if (detection.blocked) {
+      showBlockedOverlay(iframe.src);
+      logger.info('feature-browser', 'iframe blocked detected', { reason: detection.reason });
+    }
+  };
+
+  if (iframe) {
+    iframe.addEventListener('load', () => {
+      removeBlockedOverlay();
+      if (blockedTimer) clearTimeout(blockedTimer);
+      /* Attendre 2s post-load pour laisser le content render */
+      blockedTimer = setTimeout(checkBlocked, 2000);
+    });
+    iframe.addEventListener('error', () => {
+      logger.warn('feature-browser', 'iframe error event');
+      showBlockedOverlay(iframe.src);
+    });
+  }
 
   const navigate = (rawUrl: string): void => {
     if (!rawUrl) return;
@@ -900,10 +1158,81 @@ function handleAction(action: string, ctx: ActionContext): void {
       break;
     }
     case 'save-pdf': {
+      /* Export PDF via window.print() avec CSS print pour rendu propre.
+         Si cross-origin → on print la page parent (limitation browser). */
       try {
-        iframe?.contentWindow?.print();
+        const win = iframe?.contentWindow;
+        if (win) {
+          win.print();
+        } else {
+          window.print();
+        }
+        import('../../ui/toast.js').then((m) => m.toast.info('📥 Export PDF lancé')).catch(() => undefined);
       } catch (err) {
         logger.warn('feature-browser', 'print failed', { err });
+        try {
+          window.print();
+        } catch {
+          /* skip */
+        }
+      }
+      break;
+    }
+    case 'search-in-page': {
+      /* Prompt user pour query, puis recherche dans iframe (si same-origin). */
+      const query = window.prompt('Rechercher dans la page :', '');
+      if (!query || query.trim().length < 2) break;
+      try {
+        const doc = iframe?.contentDocument ?? null;
+        const results = searchInDocument(doc, query);
+        if (results.length === 0) {
+          import('../../ui/toast.js').then((m) => m.toast.warn(`Aucun résultat pour "${query}"`)).catch(() => undefined);
+        } else {
+          /* Scroll vers le 1er match + highlight visible */
+          const first = results[0];
+          if (first && 'scrollIntoView' in first) {
+            (first as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            (first as HTMLElement).style.outline = '3px solid #c9a227';
+            setTimeout(() => {
+              if (first instanceof HTMLElement) first.style.outline = '';
+            }, 3000);
+          }
+          import('../../ui/toast.js').then((m) => m.toast.success(`${results.length} résultat(s) trouvé(s)`)).catch(() => undefined);
+        }
+      } catch (err) {
+        logger.warn('feature-browser', 'search-in-page cross-origin', { err });
+        import('../../ui/toast.js').then((m) => m.toast.warn('Recherche impossible (site cross-origin)')).catch(() => undefined);
+      }
+      break;
+    }
+    case 'show-toc': {
+      try {
+        const doc = iframe?.contentDocument ?? null;
+        const stats = extractReaderStats(doc);
+        if (stats.toc.length === 0) {
+          import('../../ui/toast.js').then((m) => m.toast.info('Aucun titre H1/H2/H3 trouvé')).catch(() => undefined);
+          break;
+        }
+        /* Affiche un mini panel TOC dans le sidebar */
+        const sidebarEl = rootEl.querySelector<HTMLElement>('#ax-browser-sidebar');
+        const sidebarContent = rootEl.querySelector<HTMLDivElement>('#ax-sidebar-content');
+        if (sidebarEl && sidebarContent) {
+          sidebarEl.style.display = 'flex';
+          sidebarContent.innerHTML = `
+            <div style="padding:8px">
+              <h3 style="color:#c9a227;font-size:14px;margin:0 0 8px 0">📑 Sommaire</h3>
+              <p style="color:#999;font-size:11px;margin:0 0 8px 0">${stats.wordCount} mots • ${stats.readingTimeMin} min de lecture</p>
+              <ul style="list-style:none;padding:0;margin:0">
+                ${stats.toc.map((h) => `
+                  <li style="padding:4px 0;padding-left:${(h.level - 1) * 12}px;color:#fff;font-size:${14 - h.level}px;border-bottom:1px solid rgba(201,162,39,0.1)">
+                    ${escapeHtml(h.text)}
+                  </li>`).join('')}
+              </ul>
+            </div>`;
+        }
+      } catch (err) {
+        logger.warn('feature-browser', 'show-toc cross-origin', { err });
+        import('../../ui/toast.js').then((m) => m.toast.warn('TOC impossible (site cross-origin)')).catch(() => undefined);
       }
       break;
     }

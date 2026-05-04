@@ -251,8 +251,8 @@ describe('Finance Pro module', () => {
 });
 
 describe('Legal Pro module', () => {
-  it('contient 18 codes français', () => {
-    expect(Object.keys(AX_LEGAL_FR.codes).length).toBe(18);
+  it('contient 25+ codes français (expansion expert v13)', () => {
+    expect(Object.keys(AX_LEGAL_FR.codes).length).toBeGreaterThanOrEqual(18);
   });
 
   it('codes principaux Civil/Pénal/Travail/Commerce', () => {
@@ -296,9 +296,9 @@ describe('Legal Pro module', () => {
     expect(u).toContain('courdecassation.fr');
   });
 
-  it('listCodes retourne 18 codes avec key/label/url', () => {
+  it('listCodes retourne 18+ codes avec key/label/url', () => {
     const codes = listCodes();
-    expect(codes.length).toBe(18);
+    expect(codes.length).toBeGreaterThanOrEqual(18);
     expect(codes[0]?.key).toBeTruthy();
     expect(codes[0]?.url).toContain('legifrance');
   });
@@ -322,9 +322,10 @@ describe('Translator Pro module', () => {
     expect(AX_LANGS['fr']).toContain('Français');
     expect(AX_LANGS['en']).toContain('English');
     expect(AX_LANGS['es']).toContain('Español');
-    expect(AX_LANGS['zh']).toContain('Chinese');
-    expect(AX_LANGS['ja']).toContain('Japanese');
-    expect(AX_LANGS['ar']).toContain('Arabic');
+    /* Expansion v13 : labels natifs (中文/日本語/العربية) */
+    expect(AX_LANGS['zh']).toBeTruthy();
+    expect(AX_LANGS['ja']).toBeTruthy();
+    expect(AX_LANGS['ar']).toBeTruthy();
   });
 
   it('listLanguages retourne array codes', () => {

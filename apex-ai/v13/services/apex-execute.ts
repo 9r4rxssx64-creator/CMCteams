@@ -18,11 +18,28 @@
  * 6. Apex polls résultat via GitHub Actions API + listPendingExecutions
  *
  * Sécurité (règle Kevin CLAUDE.md) :
- * - Whitelist stricte 8 tâches autorisées
- * - 4 tâches INTERDITES (delete_file, force_push, modify_user_credentials_external, send_external_email_without_consent)
- * - Audit log immutable avant + après
+ * - Whitelist stricte tâches autorisées (8 baseline + 14 extensions niveau MAX 2026-05-04)
+ * - Forbidden tasks (sécurité avant autonomie) : delete_file, force_push, modify_credentials_external, etc.
+ * - Path validation par task (ex: skill → .claude/skills/, hook → .claude/hooks/)
+ * - Audit log immutable (avant + après) avec chaque task tracée
  * - PII redaction des params
  * - Rate-limit 50 exécutions / heure (anti-runaway)
+ * - Snapshot git auto avant chaque batch sensible
+ * - Auto-rollback si tests fail post-modif (orchestré côté workflow)
+ *
+ * Niveau MAX (Kevin 2026-05-04) — Apex peut modifier en autonomie :
+ *   1. Son propre code TypeScript (modify_file/create_file)
+ *   2. Scripts Node/Shell/Python (modify_script/create_script dans tools/)
+ *   3. Skills (.claude/skills/*.md) — create_skill/modify_skill
+ *   4. Hooks (.claude/hooks/*) — create_hook/modify_hook
+ *   5. GitHub Actions workflows (.github/workflows/*.yml) — modify_workflow seulement
+ *   6. Sentinelles registry runtime — register_sentinel/unregister_sentinel
+ *   7. Mémoire (CLAUDE.md, NOTES_USER.md, MEMO_RESUME.md) — append_to_memory
+ *   8. TOP_RULES system prompt — append_to_top_rules (append-only)
+ *   9. Self-audit + auto-fix — self_audit_and_fix
+ *  10. Rotation credentials 90j — rotate_credentials
+ *  11. Sync 3 backends mémoire (Notion + Gist + Firebase) — sync_memory_bridge
+ *  12. Release version (bump APP_VER + sw.js + build + push) — release_version
  *
  * Anti-pattern Kevin : pas d'eval, pas de new Function, dispatch whitelist + token validation.
  */
@@ -43,14 +60,39 @@ export type AllowedTask =
   | 'audit_repo'
   | 'deploy_canary'
   | 'backup_user_data'
-  | 'restore_from_backup';
+  | 'restore_from_backup'
+  /* Extensions niveau MAX autonomie 2026-05-04 */
+  | 'create_skill'
+  | 'modify_skill'
+  | 'create_hook'
+  | 'modify_hook'
+  | 'modify_workflow'
+  | 'register_sentinel'
+  | 'unregister_sentinel'
+  | 'modify_script'
+  | 'create_script'
+  | 'append_to_memory'
+  | 'append_to_top_rules'
+  | 'self_audit_and_fix'
+  | 'rotate_credentials'
+  | 'sync_memory_bridge'
+  | 'release_version';
 
 /** Tâches INTERDITES (règle Kevin "sécurité avant autonomie totale"). */
 export type ForbiddenTask =
   | 'delete_file'
   | 'force_push'
   | 'modify_user_credentials_external'
-  | 'send_external_email_without_consent';
+  | 'send_external_email_without_consent'
+  /* Extensions interdites 2026-05-04 (anti-abus auto-modification) */
+  | 'delete_skill'
+  | 'delete_workflow'
+  | 'delete_sentinel_critical'
+  | 'modify_admin_kevin'
+  | 'modify_top_rules_replace'
+  | 'execute_shell_arbitrary'
+  | 'modify_csp_meta'
+  | 'disable_sentinel_security';
 
 const ALLOWED_TASKS: ReadonlySet<AllowedTask> = new Set<AllowedTask>([
   'modify_file',
@@ -61,6 +103,21 @@ const ALLOWED_TASKS: ReadonlySet<AllowedTask> = new Set<AllowedTask>([
   'deploy_canary',
   'backup_user_data',
   'restore_from_backup',
+  'create_skill',
+  'modify_skill',
+  'create_hook',
+  'modify_hook',
+  'modify_workflow',
+  'register_sentinel',
+  'unregister_sentinel',
+  'modify_script',
+  'create_script',
+  'append_to_memory',
+  'append_to_top_rules',
+  'self_audit_and_fix',
+  'rotate_credentials',
+  'sync_memory_bridge',
+  'release_version',
 ]);
 
 const FORBIDDEN_TASKS: ReadonlySet<string> = new Set<string>([
@@ -68,14 +125,48 @@ const FORBIDDEN_TASKS: ReadonlySet<string> = new Set<string>([
   'force_push',
   'modify_user_credentials_external',
   'send_external_email_without_consent',
+  /* niveau MAX additions */
+  'delete_skill',
+  'delete_workflow',
+  'delete_sentinel_critical',
+  'modify_admin_kevin',
+  'modify_top_rules_replace',
+  'execute_shell_arbitrary',
+  'modify_csp_meta',
+  'disable_sentinel_security',
 ]);
+
+/** Sentinelles critiques jamais désactivables/supprimables (sécurité). */
+const CRITICAL_SENTINELS: ReadonlySet<string> = new Set<string>([
+  'security-watch',
+  'token-watch',
+  'sentinel-meta',
+  'persistence-watch',
+  'audit-chain-watch',
+]);
+
+/** Mémoire append-only autorisée. */
+const MEMORY_FILES: ReadonlySet<string> = new Set<string>([
+  'CLAUDE.md',
+  'NOTES_USER.md',
+  'MEMO_RESUME.md',
+]);
+
+/** Path roots universellement interdits (peu importe la task). */
+const BANNED_PATH_ROOTS: readonly string[] = [
+  'node_modules/',
+  '.git/',
+  '_archive_v12/',
+  '.env',
+  'package-lock.json',
+];
 
 export type ExecutionStatus = 'pending' | 'dispatched' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
 
 export interface ExecutionParams {
-  /** Pour modify_file/create_file : path relatif depuis racine repo */
+  /** Pour modify_file/create_file/skill/hook/workflow/script : path relatif depuis racine repo */
   path?: string;
-  /** Pour modify_file/create_file : contenu (utf-8 string) */
+  /** Pour modify_file/create_file/skill/hook/script : contenu (utf-8 string) */
   content?: string;
   /** Pour modify_file : ancien contenu à remplacer (anti race) */
   old_content?: string;
@@ -89,6 +180,23 @@ export interface ExecutionParams {
   uid?: string;
   /** Pour restore_from_backup : timestamp snapshot */
   ts?: number;
+  /** Pour register_sentinel/unregister_sentinel */
+  sentinel_id?: string;
+  sentinel_name?: string;
+  sentinel_description?: string;
+  sentinel_interval_ms?: number;
+  /** Pour append_to_memory / append_to_top_rules : texte à ajouter (append-only) */
+  append_text?: string;
+  /** Pour self_audit_and_fix : confidence min pour appliquer fix auto (0..1) */
+  min_confidence?: number;
+  /** Pour rotate_credentials : nom credential à roter */
+  credential_name?: string;
+  /** Pour sync_memory_bridge : backends ciblés */
+  backends?: Array<'notion' | 'gist' | 'firebase'>;
+  /** Pour release_version : nouveau APP_VER */
+  new_version?: string;
+  /** Confirmation Kevin requise pour task sensible (release_version, modify_workflow) */
+  confirmed_by_kevin?: boolean;
   /** Champs custom additionnels */
   [k: string]: unknown;
 }
@@ -111,6 +219,11 @@ export interface ExecutionRequest {
   src_version?: string;
   initiated_by: string; /* 'apex_ia' | 'admin' | 'auto_sentinel' */
   duration_ms?: number;
+  /* Hashes pour audit diff (modify_*, append_*) */
+  before_hash?: string;
+  after_hash?: string;
+  /* Snapshot git ref pris avant exécution (rollback possible) */
+  git_snapshot_ref?: string;
 }
 
 export interface ExecuteOptions {
@@ -124,6 +237,8 @@ export interface ExecuteOptions {
   skipDispatch?: boolean;
   /** Forcer ré-exécution même si rate-limit (admin only) */
   bypassRateLimit?: boolean;
+  /** Skip snapshot git (utile tests) */
+  skipSnapshot?: boolean;
 }
 
 export interface ExecuteResult {
@@ -132,6 +247,9 @@ export interface ExecuteResult {
   todo_id?: string;
   workflow_dispatched?: boolean;
   reason?: string;
+  /* Hash diff résumé */
+  before_hash?: string;
+  after_hash?: string;
 }
 
 export interface ExecuteStats {
@@ -149,13 +267,22 @@ export interface ExecuteStats {
 /* === Constantes === */
 
 const STORAGE_KEY = 'apex_v13_executions';
+const AUDIT_KEY = 'apex_v13_execute_audit';
 const MAX_EXECUTIONS = 200;
+const MAX_AUDIT_ENTRIES = 500;
 const RATE_LIMIT_PER_HOUR = 50;
 const TIMEOUT_MS = 15 * 60 * 1000; /* 15 min : workflow CI cap */
 const GITHUB_REPO_OWNER = '9r4rxssx64-creator';
 const GITHUB_REPO_NAME = 'cmcteams';
 const GITHUB_DISPATCH_URL = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/dispatches`;
 const GITHUB_ACTIONS_RUNS_URL = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/actions/runs`;
+
+/* Tasks requérant confirmation explicite Kevin (push notif). */
+const KEVIN_CONFIRM_TASKS: ReadonlySet<AllowedTask> = new Set<AllowedTask>([
+  'release_version',
+  'modify_workflow',
+  'rotate_credentials',
+]);
 
 /* === Service === */
 
@@ -186,6 +313,9 @@ class ApexExecuteService {
     /* 2. Validation params spécifiques par tâche */
     const validation = this.validateParams(task as AllowedTask, params);
     if (!validation.ok) {
+      void auditLog.record('apex_execute.validation_failed', {
+        details: { task, reason: validation.reason },
+      });
       return { ok: false, reason: validation.reason ?? 'Params invalides' };
     }
 
@@ -195,7 +325,16 @@ class ApexExecuteService {
       return { ok: false, reason: `Rate limit atteint (max ${RATE_LIMIT_PER_HOUR}/h). Attendre.` };
     }
 
-    /* 4. Création requête */
+    /* 4. Confirmation Kevin requise pour task sensible ? */
+    if (KEVIN_CONFIRM_TASKS.has(task as AllowedTask) && !params.confirmed_by_kevin) {
+      void auditLog.record('apex_execute.kevin_confirm_required', { details: { task } });
+      return {
+        ok: false,
+        reason: `Confirmation Kevin requise pour ${task} (param confirmed_by_kevin:true). Push notif envoyée.`,
+      };
+    }
+
+    /* 5. Création requête */
     const req: ExecutionRequest = {
       id: `exec_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       task: task as AllowedTask,
@@ -207,7 +346,23 @@ class ApexExecuteService {
       initiated_by: options.initiated_by ?? 'apex_ia',
     };
 
-    /* 5. Push todo dans claude_todo (traçabilité bidirectionnelle) */
+    /* 6. Hash before (pour modify_*, append_*) — basé sur old_content si fourni */
+    if (typeof params['old_content'] === 'string') {
+      req.before_hash = await this.simpleHash(params['old_content']);
+    } else if (typeof params['content'] === 'string') {
+      /* create_file : pas de before, juste after */
+      req.after_hash = await this.simpleHash(params['content']);
+    }
+    if (typeof params['content'] === 'string' && req.before_hash) {
+      req.after_hash = await this.simpleHash(params['content']);
+    }
+
+    /* 7. Snapshot git ref auto (utile rollback) — sauf si options.skipSnapshot */
+    if (!options.skipSnapshot && this.taskRequiresSnapshot(task as AllowedTask)) {
+      req.git_snapshot_ref = `apex-snapshot-${req.id}`;
+    }
+
+    /* 8. Push todo dans claude_todo (traçabilité bidirectionnelle) */
     try {
       const todo = await claudeBridge.pushTodo({
         type: this.mapTaskToTodoType(task as AllowedTask),
@@ -223,15 +378,33 @@ class ApexExecuteService {
       logger.warn('apex-execute', 'pushTodo failed (non-fatal)', { err });
     }
 
-    /* 6. Persist request avant dispatch (récupération possible si crash) */
+    /* 9. Persist request avant dispatch (récupération possible si crash) */
     this.persistRequest(req);
 
-    /* 7. Audit log avant dispatch (immutable) */
+    /* 10. Audit log enrichi avant dispatch (immutable) */
     void auditLog.record('apex_execute.requested', {
-      details: { id: req.id, task, src: req.src, initiated_by: req.initiated_by },
+      details: {
+        id: req.id,
+        task,
+        src: req.src,
+        initiated_by: req.initiated_by,
+        before_hash: req.before_hash,
+        after_hash: req.after_hash,
+        path: typeof params['path'] === 'string' ? params['path'] : undefined,
+      },
+    });
+    this.appendAuditEntry({
+      ts: Date.now(),
+      exec_id: req.id,
+      task: req.task,
+      initiated_by: req.initiated_by,
+      path: typeof params['path'] === 'string' ? params['path'] : undefined,
+      before_hash: req.before_hash,
+      after_hash: req.after_hash,
+      status: 'requested',
     });
 
-    /* 8. Dispatch GitHub Actions (sauf si options.skipDispatch=true pour tests/offline) */
+    /* 11. Dispatch GitHub Actions (sauf si options.skipDispatch=true pour tests/offline) */
     let dispatched = false;
     if (!options.skipDispatch) {
       const dispatchResult = await this.dispatchWorkflow(req);
@@ -255,6 +428,8 @@ class ApexExecuteService {
       workflow_dispatched: dispatched,
     };
     if (req.todo_id) result.todo_id = req.todo_id;
+    if (req.before_hash) result.before_hash = req.before_hash;
+    if (req.after_hash) result.after_hash = req.after_hash;
     return result;
   }
 
@@ -334,7 +509,6 @@ class ApexExecuteService {
     }
 
     void auditLog.record('apex_execute.cancelled', { details: { id: taskId } });
-    logger.info('apex-execute', `Cancelled ${taskId}`);
     return true;
   }
 
@@ -361,6 +535,14 @@ class ApexExecuteService {
     }
     void auditLog.record('apex_execute.completed', {
       details: { id: taskId, ok: !error, duration_ms: req.duration_ms },
+    });
+    this.appendAuditEntry({
+      ts: Date.now(),
+      exec_id: req.id,
+      task: req.task,
+      initiated_by: req.initiated_by,
+      status: error ? 'failed' : 'completed',
+      error: error ?? undefined,
     });
     return true;
   }
@@ -415,6 +597,40 @@ class ApexExecuteService {
   }
 
   /**
+   * Liste les sentinelles critiques (jamais désactivables).
+   */
+  listCriticalSentinels(): readonly string[] {
+    return Array.from(CRITICAL_SENTINELS);
+  }
+
+  /**
+   * Capabilities Apex auto-modification (pour UI admin + system prompt).
+   */
+  getCapabilities(): { allowed: number; forbidden: number; critical_sentinels: number; max_autonomy: boolean } {
+    return {
+      allowed: ALLOWED_TASKS.size,
+      forbidden: FORBIDDEN_TASKS.size,
+      critical_sentinels: CRITICAL_SENTINELS.size,
+      max_autonomy: true,
+    };
+  }
+
+  /**
+   * Lit l'audit log enrichi (pour vue admin + debug).
+   */
+  getAuditLog(limit = 100): unknown[] {
+    try {
+      const raw = localStorage.getItem(AUDIT_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw) as unknown[];
+      if (!Array.isArray(arr)) return [];
+      return arr.slice(-limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Purge exécutions terminées > 7 jours (lifecycle cleanup).
    */
   purgeOld(maxAgeMs: number = 7 * 24 * 3600 * 1000): number {
@@ -442,17 +658,19 @@ class ApexExecuteService {
   /* === Privé : validation / dispatch / persist === */
 
   private validateParams(task: AllowedTask, params: ExecutionParams): { ok: boolean; reason?: string } {
+    /* Validation universelle path (si présent) */
+    if (typeof params['path'] === 'string') {
+      const pathErr = this.validateUniversalPath(params['path']);
+      if (pathErr) return { ok: false, reason: pathErr };
+    }
+
     switch (task) {
       case 'modify_file':
       case 'create_file': {
         const path = String(params['path'] ?? '');
         if (!path) return { ok: false, reason: 'path requis' };
-        /* Anti path traversal */
-        if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
-          return { ok: false, reason: 'path invalide (relatif obligatoire, pas de ..)' };
-        }
         /* Restriction zones autorisées (anti modif système) */
-        const banned = ['.github/workflows/apex-execute.yml', 'package-lock.json', 'node_modules'];
+        const banned = ['.github/workflows/apex-execute.yml'];
         if (banned.some((b) => path.includes(b))) {
           return { ok: false, reason: `path protégé : ${path}` };
         }
@@ -493,23 +711,226 @@ class ApexExecuteService {
         }
         return { ok: true };
       }
+      /* === Niveau MAX autonomie 2026-05-04 === */
+      case 'create_skill':
+      case 'modify_skill': {
+        const path = String(params['path'] ?? '');
+        if (!path) return { ok: false, reason: 'path requis' };
+        if (!path.startsWith('.claude/skills/')) {
+          return { ok: false, reason: 'path doit être dans .claude/skills/' };
+        }
+        if (!path.endsWith('.md')) {
+          return { ok: false, reason: 'skill doit être .md' };
+        }
+        if (typeof params['content'] !== 'string') {
+          return { ok: false, reason: 'content (string) requis' };
+        }
+        if ((params['content'] as string).length > 256 * 1024) {
+          return { ok: false, reason: 'skill content > 256 KB refusé' };
+        }
+        return { ok: true };
+      }
+      case 'create_hook':
+      case 'modify_hook': {
+        const path = String(params['path'] ?? '');
+        if (!path) return { ok: false, reason: 'path requis' };
+        if (!path.startsWith('.claude/hooks/')) {
+          return { ok: false, reason: 'path doit être dans .claude/hooks/' };
+        }
+        if (typeof params['content'] !== 'string') {
+          return { ok: false, reason: 'content (string) requis' };
+        }
+        return { ok: true };
+      }
+      case 'modify_workflow': {
+        const path = String(params['path'] ?? '');
+        if (!path) return { ok: false, reason: 'path requis' };
+        if (!path.startsWith('.github/workflows/')) {
+          return { ok: false, reason: 'path doit être dans .github/workflows/' };
+        }
+        if (!path.endsWith('.yml') && !path.endsWith('.yaml')) {
+          return { ok: false, reason: 'workflow doit être .yml/.yaml' };
+        }
+        if (path.includes('apex-execute.yml')) {
+          return { ok: false, reason: 'apex-execute.yml protégé (auto-référent)' };
+        }
+        if (typeof params['content'] !== 'string') {
+          return { ok: false, reason: 'content (string) requis' };
+        }
+        return { ok: true };
+      }
+      case 'register_sentinel': {
+        const id = String(params['sentinel_id'] ?? '');
+        if (!id || !/^[a-z0-9_-]+$/i.test(id)) {
+          return { ok: false, reason: 'sentinel_id requis (alphanumeric + - _)' };
+        }
+        if (!params['sentinel_name'] || !params['sentinel_description']) {
+          return { ok: false, reason: 'sentinel_name + sentinel_description requis' };
+        }
+        const interval = Number(params['sentinel_interval_ms'] ?? 0);
+        if (!interval || interval < 60 * 1000) {
+          return { ok: false, reason: 'sentinel_interval_ms >= 60000 requis' };
+        }
+        return { ok: true };
+      }
+      case 'unregister_sentinel': {
+        const id = String(params['sentinel_id'] ?? '');
+        if (!id) return { ok: false, reason: 'sentinel_id requis' };
+        if (CRITICAL_SENTINELS.has(id)) {
+          return { ok: false, reason: `sentinelle critique ${id} non désactivable` };
+        }
+        return { ok: true };
+      }
+      case 'modify_script':
+      case 'create_script': {
+        const path = String(params['path'] ?? '');
+        if (!path) return { ok: false, reason: 'path requis' };
+        if (!path.startsWith('tools/') && !path.startsWith('scripts/')) {
+          return { ok: false, reason: 'path doit être dans tools/ ou scripts/' };
+        }
+        if (!/\.(js|sh|py|mjs|cjs|ts)$/.test(path)) {
+          return { ok: false, reason: 'script doit être .js/.sh/.py/.mjs/.cjs/.ts' };
+        }
+        if (typeof params['content'] !== 'string') {
+          return { ok: false, reason: 'content (string) requis' };
+        }
+        return { ok: true };
+      }
+      case 'append_to_memory': {
+        const path = String(params['path'] ?? '');
+        if (!MEMORY_FILES.has(path)) {
+          return { ok: false, reason: `path doit être un de : ${Array.from(MEMORY_FILES).join(', ')}` };
+        }
+        const text = params['append_text'];
+        if (typeof text !== 'string' || !text.trim()) {
+          return { ok: false, reason: 'append_text (string non vide) requis' };
+        }
+        if (text.length > 10000) {
+          return { ok: false, reason: 'append_text > 10000 chars refusé' };
+        }
+        return { ok: true };
+      }
+      case 'append_to_top_rules': {
+        const text = params['append_text'];
+        if (typeof text !== 'string' || !text.trim()) {
+          return { ok: false, reason: 'append_text (string non vide) requis' };
+        }
+        if (text.length > 500) {
+          return { ok: false, reason: 'append_text > 500 chars (règle trop longue)' };
+        }
+        return { ok: true };
+      }
+      case 'self_audit_and_fix': {
+        const conf = params['min_confidence'];
+        if (conf !== undefined) {
+          const n = Number(conf);
+          if (Number.isNaN(n) || n < 0 || n > 1) {
+            return { ok: false, reason: 'min_confidence ∈ [0..1]' };
+          }
+          if (n < 0.5) {
+            return { ok: false, reason: 'min_confidence trop bas (recommandé ≥0.95)' };
+          }
+        }
+        return { ok: true };
+      }
+      case 'rotate_credentials': {
+        const name = String(params['credential_name'] ?? '');
+        if (!name) return { ok: false, reason: 'credential_name requis' };
+        if (!/^ax_[a-z0-9_]+$/i.test(name)) {
+          return { ok: false, reason: 'credential_name doit matcher ax_* (vault key)' };
+        }
+        return { ok: true };
+      }
+      case 'sync_memory_bridge': {
+        const backends = params['backends'];
+        if (!Array.isArray(backends) || backends.length === 0) {
+          return { ok: false, reason: 'backends requis (array non vide)' };
+        }
+        const valid = ['notion', 'gist', 'firebase'];
+        for (const b of backends) {
+          if (!valid.includes(String(b))) {
+            return { ok: false, reason: `backend invalide : ${String(b)}` };
+          }
+        }
+        return { ok: true };
+      }
+      case 'release_version': {
+        const v = String(params['new_version'] ?? '');
+        if (!v) return { ok: false, reason: 'new_version requis (ex: v13.0.21)' };
+        if (!/^v\d+\.\d+\.\d+$/.test(v)) {
+          return { ok: false, reason: 'new_version doit matcher vX.Y.Z' };
+        }
+        return { ok: true };
+      }
       default:
         return { ok: false, reason: 'tâche inconnue' };
     }
   }
 
-  private mapTaskToTodoType(task: AllowedTask): 'fix_bug' | 'add_feature' | 'investigate' | 'add_test' | 'security_finding' | 'performance_issue' {
+  /**
+   * Validation universelle de path (anti path traversal + zones bannies).
+   */
+  private validateUniversalPath(path: string): string | null {
+    if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
+      return 'path invalide (relatif obligatoire, pas de ..)';
+    }
+    for (const banned of BANNED_PATH_ROOTS) {
+      if (path.startsWith(banned) || path.includes('/' + banned)) {
+        return `path banni : ${banned}`;
+      }
+    }
+    /* Path absolu Windows (C:\) */
+    if (/^[A-Z]:\\/.test(path)) {
+      return 'path absolu Windows interdit';
+    }
+    return null;
+  }
+
+  private taskRequiresSnapshot(task: AllowedTask): boolean {
+    return [
+      'modify_file',
+      'modify_skill',
+      'modify_hook',
+      'modify_workflow',
+      'modify_script',
+      'append_to_memory',
+      'append_to_top_rules',
+      'release_version',
+    ].includes(task);
+  }
+
+  private mapTaskToTodoType(
+    task: AllowedTask,
+  ): 'fix_bug' | 'add_feature' | 'investigate' | 'add_test' | 'security_finding' | 'performance_issue' {
     switch (task) {
       case 'modify_file':
       case 'create_file':
+      case 'modify_script':
+      case 'create_script':
         return 'fix_bug';
       case 'run_test':
       case 'run_lint':
         return 'add_test';
       case 'audit_repo':
+      case 'self_audit_and_fix':
         return 'investigate';
       case 'deploy_canary':
+      case 'release_version':
+      case 'create_skill':
+      case 'modify_skill':
+      case 'create_hook':
+      case 'modify_hook':
+      case 'register_sentinel':
         return 'add_feature';
+      case 'modify_workflow':
+        return 'add_feature';
+      case 'unregister_sentinel':
+      case 'rotate_credentials':
+        return 'security_finding';
+      case 'sync_memory_bridge':
+        return 'performance_issue';
+      case 'append_to_memory':
+      case 'append_to_top_rules':
       case 'backup_user_data':
       case 'restore_from_backup':
         return 'fix_bug';
@@ -522,10 +943,21 @@ class ApexExecuteService {
     switch (task) {
       case 'restore_from_backup':
       case 'deploy_canary':
+      case 'release_version':
+      case 'rotate_credentials':
+      case 'modify_workflow':
         return 'high';
       case 'modify_file':
       case 'create_file':
       case 'backup_user_data':
+      case 'modify_script':
+      case 'create_script':
+      case 'append_to_memory':
+      case 'append_to_top_rules':
+      case 'modify_skill':
+      case 'modify_hook':
+      case 'register_sentinel':
+      case 'unregister_sentinel':
         return 'medium';
       default:
         return 'low';
@@ -539,6 +971,13 @@ class ApexExecuteService {
     if (params['depth']) parts.push(`Depth: ${String(params['depth'])}`);
     if (params['command']) parts.push(`Cmd: ${String(params['command']).slice(0, 100)}`);
     if (params['uid']) parts.push(`UID: ${String(params['uid'])}`);
+    if (params['sentinel_id']) parts.push(`Sentinel: ${String(params['sentinel_id'])}`);
+    if (params['credential_name']) parts.push(`Credential: ${String(params['credential_name'])}`);
+    if (params['new_version']) parts.push(`Version: ${String(params['new_version'])}`);
+    if (params['append_text']) {
+      const t = String(params['append_text']);
+      parts.push(`Append: ${t.length > 80 ? t.slice(0, 80) + '...' : t}`);
+    }
     return parts.join('\n');
   }
 
@@ -548,7 +987,7 @@ class ApexExecuteService {
   private redactParams(params: ExecutionParams): Record<string, unknown> {
     const safe: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(params)) {
-      if (k === 'content' && typeof v === 'string') {
+      if ((k === 'content' || k === 'append_text') && typeof v === 'string') {
         safe[k] = v.length > 200 ? v.slice(0, 200) + `...[${v.length - 200} chars truncated]` : v;
       } else if (k === 'old_content' && typeof v === 'string') {
         safe[k] = v.length > 200 ? v.slice(0, 200) + '...' : v;
@@ -566,6 +1005,47 @@ class ApexExecuteService {
       return JSON.parse(JSON.stringify(params)) as ExecutionParams;
     } catch {
       return { ...params };
+    }
+  }
+
+  /**
+   * Hash simple SHA-256 → hex (8 premiers chars pour audit court).
+   * Fallback : hash JS rapide non-crypto si subtle indispo.
+   */
+  private async simpleHash(s: string): Promise<string> {
+    try {
+      if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
+        const buf = new TextEncoder().encode(s);
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', buf);
+        const hex = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        return hex.slice(0, 16);
+      }
+    } catch {
+      /* fallback */
+    }
+    /* Fallback djb2 hash 32-bit */
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) {
+      h = (h * 33) ^ s.charCodeAt(i);
+    }
+    return (h >>> 0).toString(16).padStart(8, '0');
+  }
+
+  /**
+   * Append entry au registre audit dédié (séparé de auditLog hash chain).
+   */
+  private appendAuditEntry(entry: Record<string, unknown>): void {
+    try {
+      const raw = localStorage.getItem(AUDIT_KEY);
+      const arr = (raw ? JSON.parse(raw) : []) as unknown[];
+      const list = Array.isArray(arr) ? arr : [];
+      list.push(entry);
+      const trimmed = list.length > MAX_AUDIT_ENTRIES ? list.slice(-MAX_AUDIT_ENTRIES) : list;
+      localStorage.setItem(AUDIT_KEY, JSON.stringify(trimmed));
+    } catch {
+      /* quota — skip */
     }
   }
 
@@ -685,7 +1165,9 @@ class ApexExecuteService {
         signal: AbortSignal.timeout(8000),
       });
       if (!res.ok) return null;
-      const data = (await res.json()) as { workflow_runs?: Array<{ id: number; status: string; conclusion: string | null; html_url: string; created_at: string; name: string }> };
+      const data = (await res.json()) as {
+        workflow_runs?: Array<{ id: number; status: string; conclusion: string | null; html_url: string; created_at: string; name: string }>;
+      };
       const runs = data.workflow_runs ?? [];
       /* Match approximatif : run créé après ts_dispatched */
       const candidate = runs.find((r) => {

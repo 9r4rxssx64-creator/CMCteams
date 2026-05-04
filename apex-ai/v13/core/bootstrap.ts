@@ -79,8 +79,10 @@ async function bootstrap(): Promise<void> {
     firebaseQueue.init();
   });
   await safeInit('sentinels', async () => {
-    const { sentinels, registerCoreSentinels } = await import('@services/sentinels.js');
-    registerCoreSentinels();
+    const { sentinels } = await import('@services/sentinels.js');
+    const { bootstrapSentinelsRegistry } = await import('@services/sentinels-registry.js');
+    /* Boost MAX : enregistre 13 core + 4 extras (capabilities/tools/persistence/sentinel-meta) = 17+ */
+    bootstrapSentinelsRegistry();
     sentinels.init();
   });
 
@@ -161,6 +163,12 @@ async function bootstrap(): Promise<void> {
   router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true });
   router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true });
   router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true });
+  /* Sprint port v12.785 P0 critical (Kevin 2026-05-04) : 5 vues admin/audit/coffre */
+  router.register('dashboard', { loader: () => import('@features/dashboard/index.js'), requiresAuth: true });
+  router.register('vault', { loader: () => import('@features/vault/index.js'), requiresAdmin: true });
+  router.register('knowledge-bank', { loader: () => import('@features/knowledge-bank/index.js'), requiresAuth: true });
+  router.register('apex-toolbox', { loader: () => import('@features/apex-toolbox/index.js'), requiresAuth: true });
+  router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
