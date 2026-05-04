@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.55';
+export const APP_VER = 'v13.0.56';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -258,8 +258,10 @@ async function bootstrap(): Promise<void> {
       forceUpdateChecking = false;
     }
   };
-  /* Trigger boot après 2s (laisse splash finir) */
-  setTimeout(() => void forceUpdateCheck(), 2000);
+  /* Trigger immédiat boot (Kevin v13.0.56 "MAJ auto ne marche pas" — agressif) */
+  setTimeout(() => void forceUpdateCheck(), 500);
+  /* Trigger second boot après splash full chargé */
+  setTimeout(() => void forceUpdateCheck(), 3000);
   /* Trigger visibilitychange (Kevin revient sur Safari après screen off) */
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void forceUpdateCheck();

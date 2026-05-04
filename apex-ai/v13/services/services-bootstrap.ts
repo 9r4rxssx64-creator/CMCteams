@@ -481,6 +481,14 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const stored = badgeCloner.listBadges();
       logger.info('services-bootstrap', `badge-cloner : NFC=${caps.nfc_read ? 'OK' : 'NO'}, ${stored.length} badges stockés`);
     }),
+
+    /* Sprint 7 NEW : card-emulator (multi-device Flipper/Proxmark/Chameleon/...) */
+    safeInit('card-emulator', async () => {
+      const { cardEmulator } = await import('./card-emulator.js');
+      const caps = cardEmulator.getBrowserCapabilities();
+      const supported = cardEmulator.listSupported();
+      logger.info('services-bootstrap', `card-emulator : USB=${caps.web_usb ? 'OK' : 'NO'}, Serial=${caps.web_serial ? 'OK' : 'NO'}, BLE=${caps.web_bluetooth ? 'OK' : 'NO'}, NFC=${caps.web_nfc ? 'OK' : 'NO'} — ${supported.length} émulateurs supportés`);
+    }),
   ];
 
   const results = await Promise.all(tasks);
