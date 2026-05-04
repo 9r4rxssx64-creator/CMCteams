@@ -201,20 +201,31 @@ export const proModulesHub = new ProModulesHub();
  */
 export function render(root: HTMLElement): void {
   const cards = PRO_MODULES.map((m) => `
-    <div class="ax-pro-card" data-module="${m.id}">
-      <div class="ax-pro-card-emoji">${m.emoji}</div>
-      <div class="ax-pro-card-label">${m.label}</div>
-      <div class="ax-pro-card-desc">${m.description}</div>
-      <div class="ax-pro-card-sources">${m.sources_autoritaires.slice(0, 2).join(' · ')}</div>
-      ${m.premium ? '<span class="ax-badge-premium">PRO</span>' : ''}
-      ${m.prudence_disclaimer ? '<span class="ax-badge-warning">⚠️</span>' : ''}
+    <div class="ax-pro-card" data-module="${m.id}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
+      <div class="ax-pro-card-emoji" style="font-size:36px">${m.emoji}</div>
+      <div class="ax-pro-card-label" style="font-weight:700;color:#c9a227;margin-top:8px">${m.label}</div>
+      <div class="ax-pro-card-desc" style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${m.description}</div>
+      <div class="ax-pro-card-sources" style="font-size:11px;color:#888;margin-top:8px">${m.sources_autoritaires.slice(0, 2).join(' · ')}</div>
+      ${m.premium ? '<span class="ax-badge-premium" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">PRO</span>' : ''}
+      ${m.prudence_disclaimer ? '<span class="ax-badge-warning" style="display:inline-block;margin-left:6px">⚠️</span>' : ''}
     </div>
   `).join('');
   root.innerHTML = `
-    <div class="ax-pro-hub">
-      <h1>💼 Modules Pro Expert</h1>
-      <p class="ax-subtitle">${PRO_MODULES.length} modules avec sources autoritaires</p>
-      <div class="ax-pro-grid">${cards}</div>
+    <div class="ax-pro-hub" style="padding:16px;max-width:900px;margin:0 auto">
+      <h1 style="color:#c9a227">💼 Modules Pro Expert</h1>
+      <p class="ax-subtitle" style="color:var(--ax-text-dim)">${PRO_MODULES.length} modules avec sources autoritaires</p>
+      <div class="ax-pro-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px">${cards}</div>
+      <div id="ax-pro-detail" style="margin-top:24px"></div>
+      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `;
+  /* Wire click sur cards → render module detail */
+  root.querySelectorAll<HTMLDivElement>('.ax-pro-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.dataset['module'] as ProModuleId | undefined;
+      if (!id) return;
+      const detail = root.querySelector<HTMLDivElement>('#ax-pro-detail');
+      if (detail) void proModulesHub.render(id, detail);
+    });
+  });
 }
