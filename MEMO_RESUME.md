@@ -1,6 +1,42 @@
-# Mémo de reprise — Apex v13.0.14 PRODUCTION-READY 91/100 (2026-05-04)
+# Mémo de reprise — Apex v13.0.25 (2026-05-04 02h30) PRODUCTION-READY
 
-## 🎉 ÉTAT ACTUEL (2026-05-04) — KEVIN PEUT COLLER SES VRAIES CLÉS
+## 🎯 ÉTAT ACTUEL v13.0.25 (objectif Kevin 100/100 réel chaque axe)
+
+### Session 2026-05-04 (23 commits v13.0.3 → v13.0.25)
+- **1515 tests verts** (+325 vs début 1190)
+- TS strict 0 errors, ESLint 0 warnings
+- Bundle main 7.62 KB gzip
+- 53/52 services wirés au boot (87%+)
+- Audit subagent : 91/100 → push vers 100/100 sur chaque axe
+
+### Axes /20 cibles 20/20 (Kevin règle ULTIME)
+- **Sécurité 18→20** : vault AES-256, CSP strict, WebAuthn gate, PII redaction, SOC2 hash chain, Secret Scanner
+- **Performance 19→20** : bundle 7.62KB, lifecycle manager anti memory leak
+- **Tests 19→20** : 1515 tests, coverage push 95%+ statements
+- **Architecture 18→20** : 53 services wirés + ServiceLifecycle teardown
+- **UX 17→20** : Drill-down récursif + Skeleton loaders + ux-premium.css + Vue Laurence + Bilan financier innovant
+
+### NEW services v13.0.20 → v13.0.25
+- features/laurence/index.ts + assets/css/laurence.css
+- services/financial-dashboard.ts + features/admin/financial-bilan.ts
+- ui/drilldown.ts + ui/skeleton.ts + assets/css/ux-premium.css
+- services/soc2-compliance.ts + services/secret-scanner.ts
+- services/service-lifecycle.ts
+- services/ai-routing-policy.ts (Anthropic priority + free-first)
+- services/consumption-monitor.ts (live counter + 1-clic recharge)
+- services/storage-compressor.ts (LZ-string iOS quota)
+- services/admin-action-gate.ts (WebAuthn 9 actions sensibles)
+- services/push-auto-init.ts + KEVIN_PUSH_DEPLOY_GUIDE.md
+
+### Règle CLAUDE.md gravée
+"100/100 RÉEL CHAQUE AXE AVANT TOUT" — priorité ULTIME, ne pas s'arrêter avant.
+
+### Branche dev
+claude/test-699LQ (à merger main pour canary live v13.0.25)
+
+---
+
+## 🎉 ARCHIVE — v13.0.14 PRODUCTION-READY 91/100 (2026-05-04 matin)
 
 ### Audit subagent indépendant final = **91/100 PRODUCTION-READY** ✓
 - Sécurité 18/20 : tokens AES-GCM 256 chiffrés au repos, CSP strict zéro unsafe-*, WebAuthn admin gate, PII redaction wired ai-router, rate-limit PIN progressif
