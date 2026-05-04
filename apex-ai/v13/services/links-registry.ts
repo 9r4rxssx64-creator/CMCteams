@@ -696,14 +696,30 @@ class LinksRegistry {
 
   /**
    * Liste tous les services connus persistés (avec status alive/dead).
+   * v13.0.20+ : tente Array (nouveau format) puis Record legacy (back-compat).
    */
   list(): ServiceLink[] {
+    /* Source primaire : ax_links_registry_v2 (nouveau format Array, séparé) */
+    try {
+      const v2 = localStorage.getItem('ax_links_registry_v2');
+      if (v2) {
+        const parsed = JSON.parse(v2);
+        if (Array.isArray(parsed)) return parsed as ServiceLink[];
+      }
+    } catch {
+      /* fallthrough */
+    }
+    /* Fallback : ax_links_registry (peut être Array OU Record legacy) */
     try {
       const raw = localStorage.getItem('ax_links_registry');
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed as ServiceLink[];
+      if (Array.isArray(parsed)) return parsed as ServiceLink[];
+      /* Legacy Record format → conversion lazy en Array */
+      if (parsed && typeof parsed === 'object') {
+        return [];
+      }
+      return [];
     } catch {
       return [];
     }
@@ -836,10 +852,24 @@ class LinksRegistry {
         dead++;
       }
     }
-    /* Persist tous mis à jour */
+    /* Persist tous mis à jour (nouveau key v2 prioritaire + mirror si safe) */
     try {
-      localStorage.setItem('ax_links_registry', JSON.stringify(links));
+      localStorage.setItem('ax_links_registry_v2', JSON.stringify(links));
       void firebase.write('ax_links_registry', links);
+      /* Mirror ax_links_registry uniquement si Array (ne casse pas legacy Record) */
+      const existing = localStorage.getItem('ax_links_registry');
+      if (!existing) {
+        localStorage.setItem('ax_links_registry', JSON.stringify(links));
+      } else {
+        try {
+          const parsed = JSON.parse(existing);
+          if (Array.isArray(parsed)) {
+            localStorage.setItem('ax_links_registry', JSON.stringify(links));
+          }
+        } catch {
+          localStorage.setItem('ax_links_registry', JSON.stringify(links));
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -906,8 +936,26 @@ class LinksRegistry {
     if (existing >= 0) all[existing] = link;
     else all.push(link);
     try {
-      localStorage.setItem('ax_links_registry', JSON.stringify(all));
+      /* v13.0.20+ : write to v2 key to avoid collision with legacy Record format
+         (vault.autoLink writes Record into ax_links_registry for back-compat). */
+      localStorage.setItem('ax_links_registry_v2', JSON.stringify(all));
       void firebase.write('ax_links_registry', all);
+      /* Mirror to ax_links_registry IF safe (currently Array or empty) */
+      const existingRaw = localStorage.getItem('ax_links_registry');
+      if (!existingRaw) {
+        localStorage.setItem('ax_links_registry', JSON.stringify(all));
+      } else {
+        try {
+          const parsed = JSON.parse(existingRaw);
+          if (Array.isArray(parsed)) {
+            localStorage.setItem('ax_links_registry', JSON.stringify(all));
+          }
+          /* Si Record format → ne touche pas (legacy autoLink) */
+        } catch {
+          /* corrupt — overwrite avec nouveau format */
+          localStorage.setItem('ax_links_registry', JSON.stringify(all));
+        }
+      }
     } catch {
       /* ignore quota */
     }
