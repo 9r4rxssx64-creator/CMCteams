@@ -580,6 +580,40 @@ class ApexToolsDispatcher {
       case 'multi_llm_consensus':
         /* Browser API only / orchestrator complexe — placeholder safe */
         return { placeholder: true, message: `Tool ${toolName} disponible côté UI (browser API).` };
+      case 'execute_task': {
+        /* Apex IA → Claude Code Action GitHub (autonomie totale) */
+        const { apexExecute } = await import('./apex-execute.js');
+        const task = String(params['task'] ?? '');
+        const taskParams = (params['params'] as Record<string, unknown>) ?? {};
+        return apexExecute.requestExecution(task, taskParams as Record<string, unknown>, {
+          src: 'apex',
+          initiated_by: 'apex_ia',
+        });
+      }
+      case 'list_executions': {
+        const { apexExecute } = await import('./apex-execute.js');
+        const filterOpts: { status?: 'pending'; task?: 'modify_file'; limit?: number } = {};
+        if (params['status']) filterOpts.status = params['status'] as 'pending';
+        if (params['task']) filterOpts.task = params['task'] as 'modify_file';
+        if (typeof params['limit'] === 'number') filterOpts.limit = params['limit'];
+        return apexExecute.listPendingExecutions(filterOpts);
+      }
+      case 'poll_execution': {
+        const { apexExecute } = await import('./apex-execute.js');
+        const id = String(params['task_id'] ?? '');
+        if (!id) throw new Error('task_id requis');
+        return apexExecute.pollResult(id);
+      }
+      case 'cancel_execution': {
+        const { apexExecute } = await import('./apex-execute.js');
+        const id = String(params['task_id'] ?? '');
+        if (!id) throw new Error('task_id requis');
+        return { ok: apexExecute.cancelExecution(id) };
+      }
+      case 'execute_stats': {
+        const { apexExecute } = await import('./apex-execute.js');
+        return apexExecute.getStats();
+      }
       case 'edit_file':
       case 'commit_push':
       case 'run_test':
@@ -594,6 +628,54 @@ class ApexToolsDispatcher {
         /* Tools nécessitant Cloudflare Worker bridge ou capacités browser
          * → return placeholder (à wirer Jet 9 quand backend prêt) */
         return { placeholder: true, message: `Tool ${toolName} nécessite worker bridge (Jet 9)` };
+      /* ========== APEX KNOWLEDGE BASE (RAG GitHub API) ========== */
+      case 'search_repo_code': {
+        const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+        const query = typeof params['query'] === 'string' ? params['query'] : '';
+        const repo = typeof params['repo'] === 'string' && params['repo'] ? params['repo'] : undefined;
+        if (!query) throw new Error('query required');
+        const results = repo
+          ? await apexKnowledgeBase.searchCode(query, repo)
+          : await apexKnowledgeBase.searchCode(query);
+        return { query, repo: repo ?? '9r4rxssx64-creator/CMCteams', total: results.length, results };
+      }
+      case 'read_repo_file': {
+        const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+        const path = typeof params['path'] === 'string' ? params['path'] : '';
+        const repo = typeof params['repo'] === 'string' && params['repo'] ? params['repo'] : undefined;
+        if (!path) throw new Error('path required');
+        const file = repo
+          ? await apexKnowledgeBase.getFile(path, repo)
+          : await apexKnowledgeBase.getFile(path);
+        if (!file) return { found: false, path, repo: repo ?? '9r4rxssx64-creator/CMCteams' };
+        return { found: true, ...file };
+      }
+      case 'list_repo_files': {
+        const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+        const directory = typeof params['directory'] === 'string' ? params['directory'] : '';
+        const repo = typeof params['repo'] === 'string' && params['repo'] ? params['repo'] : undefined;
+        const list = repo
+          ? await apexKnowledgeBase.listFiles(directory, repo)
+          : await apexKnowledgeBase.listFiles(directory);
+        return { directory, repo: repo ?? '9r4rxssx64-creator/CMCteams', total: list.length, files: list };
+      }
+      case 'get_recent_commits': {
+        const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+        const limit = typeof params['limit'] === 'number' ? params['limit'] : 10;
+        const repo = typeof params['repo'] === 'string' && params['repo'] ? params['repo'] : undefined;
+        const commits = repo
+          ? await apexKnowledgeBase.getRecentCommits(limit, repo)
+          : await apexKnowledgeBase.getRecentCommits(limit);
+        return { repo: repo ?? '9r4rxssx64-creator/CMCteams', total: commits.length, commits };
+      }
+      case 'get_repo_readme': {
+        const { apexKnowledgeBase } = await import('./apex-knowledge-base.js');
+        const repo = typeof params['repo'] === 'string' && params['repo'] ? params['repo'] : undefined;
+        const readme = repo
+          ? await apexKnowledgeBase.getReadme(repo)
+          : await apexKnowledgeBase.getReadme();
+        return { repo: repo ?? '9r4rxssx64-creator/CMCteams', found: !!readme, content: readme ?? '' };
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

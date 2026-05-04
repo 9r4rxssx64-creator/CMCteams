@@ -878,6 +878,139 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'A',
   },
+  /* ========== APEX KNOWLEDGE BASE (RAG GitHub API) ==========
+     Kevin règle 2026-05-04 : "Apex doit tout connaître pour tout faire".
+     5 tools pour fouiller le code Kevin (CMCteams + projets ajoutés par UI). */
+  {
+    name: 'search_repo_code',
+    description: 'Cherche full-text dans le code source d\'un repo Kevin via GitHub Code Search API. Retourne paths + scores (max 20 résultats). Cache 1h anti rate-limit.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Requête full-text (ex: "addRepo function")' },
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+      required: ['query'],
+    },
+    minTier: 'laurence',
+    impactLevel: 'A',
+  },
+  {
+    name: 'read_repo_file',
+    description: 'Lit le contenu complet d\'un fichier d\'un repo Kevin via GitHub contents API. Décode base64 → string UTF-8.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Chemin relatif depuis racine repo (ex: apex-ai/v13/core/store.ts)' },
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+      required: ['path'],
+    },
+    minTier: 'laurence',
+    impactLevel: 'A',
+  },
+  {
+    name: 'list_repo_files',
+    description: 'Liste les fichiers d\'un répertoire d\'un repo (1 niveau profondeur, type file/dir).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        directory: { type: 'string', description: 'Chemin répertoire (default: racine repo)' },
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+    },
+    minTier: 'laurence',
+    impactLevel: 'A',
+  },
+  {
+    name: 'get_recent_commits',
+    description: 'Liste les N derniers commits d\'un repo (default 10, max 100). Inclut sha, message, auteur, date.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Nombre de commits (1-100, default 10)' },
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+    },
+    minTier: 'laurence',
+    impactLevel: 'A',
+  },
+  {
+    name: 'get_repo_readme',
+    description: 'Récupère le README d\'un repo Kevin (markdown brut, décodé base64).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+    },
+    minTier: 'laurence',
+    impactLevel: 'A',
+  },
+  /* ========== APEX EXECUTE (pont autonome IA → Claude Code via GitHub Actions) ==========
+     Kevin règle 2026-05-04 : "Apex doit pouvoir tout faire en autonomie totale".
+     Whitelist 8 tâches sécurisées + 4 INTERDITES. Audit log immutable. */
+  {
+    name: 'execute_task',
+    description: 'Exécute autonome via Claude Code Action GitHub : modify_file, create_file, run_test, run_lint, audit_repo, deploy_canary, backup_user_data, restore_from_backup. INTERDIT : delete_file, force_push, modify_user_credentials_external, send_external_email_without_consent. Niveau C = validation Kevin obligatoire.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Type de tâche autorisée (whitelist sécurité)',
+          enum: ['modify_file', 'create_file', 'run_test', 'run_lint', 'audit_repo', 'deploy_canary', 'backup_user_data', 'restore_from_backup'],
+        },
+        params: { type: 'object', description: 'Paramètres spécifiques (path, content, env, depth, uid, ts...)' },
+      },
+      required: ['task', 'params'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
+  },
+  {
+    name: 'list_executions',
+    description: 'Liste exécutions autonomes en cours/récentes (apex-execute). Filtres par statut, tâche, projet source.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['pending', 'dispatched', 'running', 'completed', 'failed', 'cancelled', 'timeout'] },
+        task: { type: 'string' },
+        limit: { type: 'number' },
+      },
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'poll_execution',
+    description: 'Vérifie le résultat d\'une exécution autonome (statut + url workflow GitHub).',
+    inputSchema: {
+      type: 'object',
+      properties: { task_id: { type: 'string', description: 'ID exécution (exec_xxx)' } },
+      required: ['task_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'cancel_execution',
+    description: 'Annule une exécution pending/dispatched. Si workflow déjà running, le CI termine normalement.',
+    inputSchema: {
+      type: 'object',
+      properties: { task_id: { type: 'string' } },
+      required: ['task_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'execute_stats',
+    description: 'Stats apex-execute : total, success rate, avg duration, breakdown par tâche.',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
