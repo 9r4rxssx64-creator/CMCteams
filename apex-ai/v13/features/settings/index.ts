@@ -31,6 +31,15 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
+        <h2 style="margin:0 0 12px;font-size:16px">🧠 Mémoire externe</h2>
+        <p style="margin:0 0 8px;color:var(--ax-text-dim);font-size:13px">
+          Backup mémoire vers Notion / GitHub Gist / Firebase. Tokens lus depuis le Coffre.
+        </p>
+        <div id="ax-memory-bridge-status" style="margin:8px 0;font-size:13px;color:var(--ax-text-dim)"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="width:100%">Sync maintenant</button>
+      </div>
+
+      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
         <h2 style="margin:0 0 12px;font-size:16px">🔐 Compte</h2>
         <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="width:100%">Se déconnecter</button>
       </div>
@@ -38,6 +47,38 @@ export function render(rootEl: HTMLElement): void {
       <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `;
+  /* Wire memory-bridge section : status read-only + sync button */
+  void (async () => {
+    try {
+      const { memoryBridge } = await import('../../services/memory-bridge.js');
+      const statusEl = rootEl.querySelector<HTMLElement>('#ax-memory-bridge-status');
+      const syncBtn = rootEl.querySelector<HTMLButtonElement>('#ax-memory-bridge-sync');
+      const refreshStatus = (): void => {
+        if (!statusEl) return;
+        const health = memoryBridge.getHealth();
+        const allStatus = memoryBridge.getStatus();
+        const lastOk = allStatus.filter((s) => s.last_success).length;
+        statusEl.textContent =
+          `${health.backends_configured} backends configurés · ${lastOk}/${allStatus.length} dernier sync OK`;
+      };
+      refreshStatus();
+      syncBtn?.addEventListener('click', () => {
+        void (async () => {
+          if (syncBtn) syncBtn.disabled = true;
+          const results = await memoryBridge.runAutoSync();
+          const ok = results.filter((r) => r.ok).length;
+          const { toast } = await import('../../ui/toast.js');
+          if (results.length === 0) toast.warn('Aucun backend configuré');
+          else if (ok === results.length) toast.success(`Sync OK (${ok}/${results.length})`);
+          else toast.warn(`Sync partielle (${ok}/${results.length})`);
+          refreshStatus();
+          if (syncBtn) syncBtn.disabled = false;
+        })();
+      });
+    } catch (err: unknown) {
+      logger.warn('feature-settings', 'memory-bridge wire failed', { err });
+    }
+  })();
   rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout')?.addEventListener('click', () => {
     void (async () => {
       const { auth } = await import('../../services/auth.js');

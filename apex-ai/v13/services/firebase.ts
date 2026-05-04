@@ -30,6 +30,8 @@ export const FB_FIX: readonly string[] = [
   'ax_persistent_memory',
   'ax_links_registry',
   'ax_audit',
+  /* Sprint 8 v13.0.63 : ajout ax_persistent_memory + apex_v13_persistent_memory pour sync auto cloud */
+  'apex_v13_persistent_memory',
   /* Sprint 8 : backup vault keys chiffrées (survit clear cache iPhone) */
   'apex_v13_anthropic_key',
   'apex_v13_openai_key',
