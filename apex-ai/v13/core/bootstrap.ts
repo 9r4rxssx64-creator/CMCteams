@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.56';
+export const APP_VER = 'v13.0.57';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -231,8 +231,19 @@ async function bootstrap(): Promise<void> {
     if (forceUpdateChecking || !navigator.onLine) return;
     forceUpdateChecking = true;
     try {
-      const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?_v=' + Date.now();
-      const r = await fetch(url, { cache: 'no-store' });
+      /* Trigger SW.update() en parallèle (force le SW à check sa propre nouvelle version) */
+      if ('serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg) void reg.update();
+        } catch { /* skip */ }
+      }
+      /* Bypass SW : fetch direct avec cache: reload + URL absolue + dummy query */
+      const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?__forceupd=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2);
+      const r = await fetch(url, {
+        cache: 'reload', /* iOS Safari respecte 'reload' pour bypass cache */
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+      });
       const html = await r.text();
       const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
       if (m?.[1] && m[1] !== APP_VER) {
@@ -250,10 +261,13 @@ async function bootstrap(): Promise<void> {
             await Promise.all(ks.map((k) => caches.delete(k)));
           }
         } catch { /* ignore */ }
-        setTimeout(() => location.replace(location.pathname + '?_forceupd=' + Date.now()), 300);
+        /* Hard reload avec query buster pour forcer fetch fresh index.html */
+        setTimeout(() => {
+          location.replace(location.pathname + '?_forceupd=' + Date.now() + '&_v=' + (m[1] ?? 'new'));
+        }, 300);
       }
-    } catch {
-      /* ignore */
+    } catch (err: unknown) {
+      logger.warn('boot', 'force-update check failed', { err });
     } finally {
       forceUpdateChecking = false;
     }
