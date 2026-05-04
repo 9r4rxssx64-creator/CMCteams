@@ -152,13 +152,49 @@ class ProModulesHub {
   }
 
   /**
-   * Render UI minimaliste réelle (pas placeholder).
+   * Render module : délègue vers l'implémentation v13 si disponible (cuisine,
+   * medical, finance, legal, translator), sinon UI minimaliste avec disclaimer.
    */
   async render(id: ProModuleId, root: HTMLElement): Promise<void> {
     const def = this.byId(id);
     if (!def) {
       logger.warn('pro-modules', `Unknown module: ${id}`);
       return;
+    }
+    /* Délégation vers modules v13 portés depuis v12 (Kevin sprint 2026-05-04). */
+    try {
+      switch (id) {
+        case 'cuisine': {
+          const mod = await import('./modules/cuisine/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'medical': {
+          const mod = await import('./modules/medical/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'finance': {
+          const mod = await import('./modules/finance/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'legal': {
+          const mod = await import('./modules/legal/index.js');
+          mod.render(root);
+          return;
+        }
+        case 'translator': {
+          const mod = await import('./modules/translator/index.js');
+          mod.render(root);
+          return;
+        }
+        default:
+          /* business / education / certifications : pas encore portés → fallback minimal */
+          break;
+      }
+    } catch (e) {
+      logger.error('pro-modules', `module load failed ${id}: ${e instanceof Error ? e.message : String(e)}`);
     }
     const sourcesHtml = def.sources_autoritaires.map((s) => `<span class="ax-source">${s}</span>`).join(' ');
     const capsHtml = def.capabilities.map((c) => `<span class="ax-cap">${c}</span>`).join(' ');

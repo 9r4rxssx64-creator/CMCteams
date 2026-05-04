@@ -239,7 +239,10 @@ export function render(rootEl: HTMLElement): void {
   const uid = user?.id ?? 'anon';
   let cv = cvStudioStore.load(uid);
   if (!cv) {
-    cv = initCV('classique', { prenom: user?.firstName, nom: user?.lastName });
+    const initOpts: { prenom?: string; nom?: string } = {};
+    if (user?.firstName) initOpts.prenom = user.firstName;
+    if (user?.lastName) initOpts.nom = user.lastName;
+    cv = initCV('classique', initOpts);
     cvStudioStore.save(uid, cv);
   }
   const completeness = calcCompleteness(cv);

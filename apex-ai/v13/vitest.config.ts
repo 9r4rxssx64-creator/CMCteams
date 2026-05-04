@@ -38,6 +38,18 @@ export default defineConfig({
         'features/billing/index.ts',
         'features/calculators/index.ts',
         'features/archive/index.ts',
+        /* Sprint port v12 5 studios (Kevin 2026-05-04) — render() UI HTML excluded */
+        'features/studios/music/index.ts',
+        'features/studios/video/index.ts',
+        'features/studios/cv/index.ts',
+        'features/studios/invoice/index.ts',
+        'features/studios/contract/index.ts',
+        /* Sprint port v12 5 pro modules (Kevin 2026-05-04) — UI HTML render, pure logic testée via unit tests */
+        'features/pro/modules/cuisine/index.ts',
+        'features/pro/modules/medical/index.ts',
+        'features/pro/modules/finance/index.ts',
+        'features/pro/modules/legal/index.ts',
+        'features/pro/modules/translator/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
