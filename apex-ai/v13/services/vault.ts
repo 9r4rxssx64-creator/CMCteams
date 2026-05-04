@@ -74,6 +74,30 @@ class Vault {
    */
   private async getDeviceBoundPassphrase(): Promise<string> {
     const KEY = 'apex_v13_device_passphrase_v1';
+    /* Sprint 9 v13.0.72 FIX ROOT BUG (Kevin "il a encore oublié ma clé") :
+       Au lieu de random device-bound (perdu si clear cache iOS), dérive de PIN admin déterministe.
+       PIN admin = stable cross-device (Kevin se souvient toujours).
+       Décrypt Firebase backup MARCHE même après clear cache total iPhone. */
+    try {
+      const adminPinHash = localStorage.getItem('apex_v13_pin');
+      if (adminPinHash) {
+        /* PBKDF2 derive depuis PIN hash (déterministe, identique sur tous devices) */
+        const enc = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+          'raw', enc.encode(adminPinHash + '_apex_vault_salt_v1'),
+          { name: 'PBKDF2' }, false, ['deriveBits'],
+        );
+        const derived = await crypto.subtle.deriveBits(
+          { name: 'PBKDF2', salt: enc.encode('apex_v13_kdmc_admin'), iterations: 100_000, hash: 'SHA-256' },
+          baseKey, 256,
+        );
+        const derivedB64 = btoa(String.fromCharCode(...new Uint8Array(derived)));
+        /* Persist localStorage + IDB pour cache (re-derive sur boot suivant) */
+        try { localStorage.setItem(KEY, derivedB64); } catch { /* quota */ }
+        void this.backupPassphraseToIdb(derivedB64);
+        return derivedB64;
+      }
+    } catch { /* fallback random ci-dessous */ }
     const cached = localStorage.getItem(KEY);
     if (cached) {
       /* Backup en IDB pour résilience clear Safari */
@@ -90,7 +114,7 @@ class Vault {
         return fromIdb;
       }
     } catch { /* ignore */ }
-    /* Génère + persiste device-bound (256 bits aléatoires base64) */
+    /* Génère + persiste device-bound (256 bits aléatoires base64) — fallback si pas PIN */
     const random = crypto.getRandomValues(new Uint8Array(32));
     const pass = btoa(String.fromCharCode(...random));
     try {

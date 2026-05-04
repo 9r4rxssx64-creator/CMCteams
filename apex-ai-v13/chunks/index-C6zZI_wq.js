@@ -1,0 +1,34 @@
+import{l as x,s as y}from"../core/main-DP3eEiok.js";const g=12,A=2,b=50;function m(e){return e.replace(/[&<>"']/g,i=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[i]??i)}function k(e){return{id:`track_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name:e.trim().slice(0,100),buffer:null,volume:.8,pan:0,muted:!1,eq:{low:0,lowMid:0,mid:0,highMid:0,high:0}}}function $(e){if(!e||e.duration<2)return 120;const i=e.getChannelData(0),t=e.sampleRate,a=Math.floor(t/10),n=[];for(let s=0;s<i.length;s+=a){let u=0;const h=Math.min(s+a,i.length);for(let f=s;f<h;f++){const v=i[f]??0;u+=v*v}n.push(u/a)}if(n.length===0)return 120;const r=n.reduce((s,u)=>s+u,0)/n.length*1.5;let l=0;for(const s of n)s>r&&l++;if(l===0)return 120;const c=Math.round(l/e.duration*60);return c<60||c>200?120:c}function q(e){const i=e.numberOfChannels,t=e.sampleRate,a=e.length*i*2+44,n=new ArrayBuffer(a),o=new DataView(n);let r=0;const l=c=>{for(let s=0;s<c.length;s++)o.setUint8(r++,c.charCodeAt(s))};l("RIFF"),o.setUint32(r,a-8,!0),r+=4,l("WAVE"),l("fmt "),o.setUint32(r,16,!0),r+=4,o.setUint16(r,1,!0),r+=2,o.setUint16(r,i,!0),r+=2,o.setUint32(r,t,!0),r+=4,o.setUint32(r,t*i*2,!0),r+=4,o.setUint16(r,i*2,!0),r+=2,o.setUint16(r,16,!0),r+=2,l("data"),o.setUint32(r,e.length*i*2,!0),r+=4;for(let c=0;c<e.length;c++)for(let s=0;s<i;s++){const u=Math.max(-1,Math.min(1,e.getChannelData(s)[c]??0)),h=u<0?u*32768:u*32767;o.setInt16(r,h,!0),r+=2}return new Blob([n],{type:"audio/wav"})}class M{tracks=[];list(){return this.tracks}add(i){if(this.tracks.length>=g)return x.warn("studio-music","max tracks reached",{count:this.tracks.length}),null;const t=k(i);return this.tracks.push(t),t}remove(i){const t=this.tracks.length;return this.tracks=this.tracks.filter(a=>a.id!==i),this.tracks.length<t}update(i,t){const a=this.tracks.find(n=>n.id===i);return a?(t.volume!==void 0&&(a.volume=Math.max(0,Math.min(1,t.volume))),t.pan!==void 0&&(a.pan=Math.max(-1,Math.min(1,t.pan))),t.muted!==void 0&&(a.muted=t.muted),t.name!==void 0&&(a.name=t.name.slice(0,100)),!0):!1}setBuffer(i,t){const a=this.tracks.find(n=>n.id===i);return a?(a.buffer=t,!0):!1}clear(){this.tracks=[]}count(){return this.tracks.length}validateFileSize(i){return i>0&&i<=b*1024*1024}}const d=new M;function p(e){y.get("user")?.id;const t=d.list(),a=t.length>0?t.map(n=>`
+        <div class="ax-mix-track" data-track-id="${m(n.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <strong style="color:#c9a227">${m(n.name)}</strong>
+            <button class="ax-btn ax-btn-sm" data-action="remove-track" data-track-id="${m(n.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666;min-height:32px">Supprimer</button>
+          </div>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" min="0" max="100" value="${Math.round(n.volume*100)}" data-action="volume" data-track-id="${m(n.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" min="-100" max="100" value="${Math.round(n.pan*100)}" data-action="pan" data-track-id="${m(n.id)}" style="width:100%;min-height:32px"></label>
+          <button class="ax-btn ax-btn-sm" data-action="mute" data-track-id="${m(n.id)}" style="margin-top:8px;min-height:36px;${n.muted?"background:#ff6666;color:#fff":""}">${n.muted?"🔇 Muet":"🔊 Audible"}</button>
+        </div>
+      `).join(""):'<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucune piste. Ajoute ta première !</p>';e.innerHTML=`
+    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h1 style="margin:0;color:#c9a227">🎚 Studio Mix Pro</h1>
+        <span style="color:var(--ax-text-dim);font-size:13px">${t.length}/${g} pistes</span>
+      </header>
+
+      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+        <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Mixe 2 à ${g} pistes audio. EQ 5 bandes, reverb, compresseur, export WAV.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="ax-btn ax-btn-primary" id="ax-mix-add-track" style="min-height:44px">➕ Ajouter une piste</button>
+          <input type="file" id="ax-mix-upload" accept="audio/*" multiple style="display:none">
+          <button class="ax-btn" id="ax-mix-upload-btn" style="min-height:44px">📂 Importer fichiers</button>
+          <button class="ax-btn" id="ax-mix-export-wav" style="min-height:44px">💾 Export WAV</button>
+          <button class="ax-btn" id="ax-mix-clear" style="min-height:44px;color:#ff6666">🗑 Tout effacer</button>
+        </div>
+      </div>
+
+      <div id="ax-mix-tracks">${a}</div>
+
+      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+    </div>
+  `,w(e)}function w(e,i){e.querySelector("#ax-mix-add-track")?.addEventListener("click",()=>{const t=d.add(`Piste ${d.count()+1}`);t&&(x.info("studio-music","track added",{id:t.id}),p(e))}),e.querySelector("#ax-mix-upload-btn")?.addEventListener("click",()=>{e.querySelector("#ax-mix-upload")?.click()}),e.querySelector("#ax-mix-upload")?.addEventListener("change",t=>{const a=t.target.files;if(a){for(const n of Array.from(a)){if(!d.validateFileSize(n.size)){x.warn("studio-music","file too big",{size:n.size,name:n.name});continue}d.add(n.name)&&x.info("studio-music","file imported",{name:n.name})}p(e)}}),e.querySelector("#ax-mix-clear")?.addEventListener("click",()=>{d.clear(),p(e)}),e.querySelectorAll('[data-action="remove-track"]').forEach(t=>{t.addEventListener("click",()=>{const a=t.dataset.trackId;a&&d.remove(a)&&p(e)})}),e.querySelectorAll('[data-action="volume"]').forEach(t=>{t.addEventListener("input",()=>{const a=t.dataset.trackId;a&&d.update(a,{volume:parseInt(t.value,10)/100})})}),e.querySelectorAll('[data-action="pan"]').forEach(t=>{t.addEventListener("input",()=>{const a=t.dataset.trackId;a&&d.update(a,{pan:parseInt(t.value,10)/100})})}),e.querySelectorAll('[data-action="mute"]').forEach(t=>{t.addEventListener("click",()=>{const a=t.dataset.trackId;if(!a)return;const n=d.list().find(o=>o.id===a);n&&(d.update(a,{muted:!n.muted}),p(e))})})}export{b as MAX_FILE_SIZE_MB,g as MAX_TRACKS,A as MIN_TRACKS,k as createTrack,$ as detectBPM,q as encodeWav,m as escapeHtml,d as musicStudioStore,p as render};
+//# sourceMappingURL=index-C6zZI_wq.js.map
