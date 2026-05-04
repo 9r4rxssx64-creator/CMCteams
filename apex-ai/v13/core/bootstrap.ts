@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.33';
+export const APP_VER = 'v13.0.34';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -214,26 +214,51 @@ async function bootstrap(): Promise<void> {
       logger.warn('push', 'auto-init failed (non-blocking)', { err });
     });
 
-  /* 10. Force-update boot check (parité v12.785 v12.774) */
-  /* Compare APP_VER local vs serveur, reload forcé si diff (iOS PWA SW unreliable) */
-  if (navigator.onLine) {
-    setTimeout(() => {
+  /* 10. Force-update auto agressif (Kevin règle "Maj force auto oubli pas")
+     iOS Safari PWA SW updatefound unreliable → fetch APP_VER remote + reload forcé.
+     Trigger : boot 2s + visibilitychange + focus + cron 5min */
+  let forceUpdateChecking = false;
+  const forceUpdateCheck = async (): Promise<void> => {
+    if (forceUpdateChecking || !navigator.onLine) return;
+    forceUpdateChecking = true;
+    try {
       const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?_v=' + Date.now();
-      fetch(url, { cache: 'no-store' })
-        .then((r) => r.text())
-        .then((html) => {
-          const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
-          if (m && m[1] && m[1] !== APP_VER) {
-            logger.info('boot', `force-update: local=${APP_VER} remote=${m[1]} → reload`);
-            if ('caches' in window) {
-              caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
-            }
-            setTimeout(() => location.replace(location.pathname + '?_forceupd=' + Date.now()), 300);
+      const r = await fetch(url, { cache: 'no-store' });
+      const html = await r.text();
+      const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
+      if (m?.[1] && m[1] !== APP_VER) {
+        logger.info('boot', `🔄 force-update: local=${APP_VER} → remote=${m[1]} — reload imminent`);
+        /* Unregister SW + clear caches → reload fresh */
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((reg) => reg.unregister()));
           }
-        })
-        .catch(() => {});
-    }, 5000);
-  }
+        } catch { /* ignore */ }
+        try {
+          if ('caches' in window) {
+            const ks = await caches.keys();
+            await Promise.all(ks.map((k) => caches.delete(k)));
+          }
+        } catch { /* ignore */ }
+        setTimeout(() => location.replace(location.pathname + '?_forceupd=' + Date.now()), 300);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      forceUpdateChecking = false;
+    }
+  };
+  /* Trigger boot après 2s (laisse splash finir) */
+  setTimeout(() => void forceUpdateCheck(), 2000);
+  /* Trigger visibilitychange (Kevin revient sur Safari après screen off) */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void forceUpdateCheck();
+  });
+  /* Trigger focus (Kevin tap sur l'onglet Safari) */
+  window.addEventListener('focus', () => void forceUpdateCheck());
+  /* Cron 5 min en background */
+  setInterval(() => void forceUpdateCheck(), 5 * 60 * 1000);
 
   /* 11. Online/offline listeners */
   window.addEventListener('online', () => {
