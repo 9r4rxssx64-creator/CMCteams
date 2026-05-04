@@ -176,6 +176,46 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       if (uid) externalIntegrations.listEmailAccounts(uid);
     }),
 
+    /* AI router : init failover chain providers */
+    safeInit('ai-router', async () => {
+      const { aiRouter } = await import('./ai-router.js');
+      const hasKey = aiRouter.hasAnyKey();
+      logger.info('services-bootstrap', `ai-router : ${hasKey ? 'clé(s) configurée(s)' : 'aucune clé'}`);
+    }),
+
+    /* Self healing : install error catchers + emergency trim */
+    safeInit('self-healing', async () => {
+      const { selfHealing } = await import('./self-healing.js');
+      selfHealing.install();
+    }),
+
+    /* Orchestrator : pre-load registry projets Kevin */
+    safeInit('orchestrator', async () => {
+      const { orchestrator } = await import('./orchestrator.js');
+      const projects = orchestrator.listProjects();
+      logger.info('services-bootstrap', `orchestrator : ${projects.length} projets Kevin connus`);
+    }),
+
+    /* RGPD : pre-load opt-out states pour user actuel */
+    safeInit('rgpd', async () => {
+      const { rgpd } = await import('./rgpd.js');
+      if (uid) {
+        const optedOut = rgpd.isOptedOut(uid);
+        logger.info('services-bootstrap', `rgpd : opt-out=${optedOut} pour ${uid}`);
+      }
+    }),
+
+    /* Telemetry : démarre collecte + sync queue */
+    safeInit('telemetry', async () => {
+      await import('./telemetry.js');
+    }),
+
+    /* PII redaction : pre-warm patterns regex */
+    safeInit('pii-redaction', async () => {
+      const { redactPII } = await import('./pii-redaction.js');
+      redactPII(''); /* Pre-compile regexes */
+    }),
+
     /* Storage compressor : migration auto valeurs > 1KB vers compression UTF16
        (iOS PWA 5MB quota fix — règle Kevin MEMOIRE MAX iPHONE) */
     safeInit('storage-compressor', async () => {
