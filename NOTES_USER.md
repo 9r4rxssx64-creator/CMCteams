@@ -1099,3 +1099,48 @@ Smart-router masque AUTOMATIQUEMENT les providers avec score ≤ 10 (KO persiste
 - **Photos / scan** : GPT-4o vision auto-routé
 - **Email rapide** : Groq pour latence < 500ms
 
+
+## 🎙 Wake Word "Dis Apex" — Flow apprentissage progressif (Kevin 2026-05-07)
+
+**Principe Kevin** : "Au début il écoute tout le monde puis il affine pour finir exclusif utilisateur"
+
+### 4 phases du voiceprint Kevin
+
+| Phase | Samples | Comportement Apex |
+|---|---|---|
+| 🟢 **OUVERT** | 0-3 | Accepte TOUTE voix qui dit "Dis Apex" — collecte baseline + apprentissage rapide |
+| 🟡 **APPRENTISSAGE** | 4-9 | Threshold faible 0.50 — accepte voix similaires + averti si grosse divergence |
+| 🟠 **AFFINAGE** | 10-19 | Threshold moyen 0.65 — commence à filtrer voix très différentes (TV en fond, collègue qui passe) |
+| 🔴 **EXCLUSIF** | 20+ | Threshold strict 0.75-0.85 — **n'accepte QUE Kevin** (anti-confusion entourage) |
+
+### Logique threshold dynamique
+
+```ts
+function getThreshold(samples_count: number): number {
+  if (samples_count < 4)  return 0.0;   // Accepte tout
+  if (samples_count < 10) return 0.50;  // Apprentissage
+  if (samples_count < 20) return 0.65;  // Affinage
+  return 0.85;                          // Exclusif strict
+}
+```
+
+### Avantage UX
+
+- **Démarrage immédiat** : Kevin commence à utiliser "Dis Apex" tout de suite, pas d'enrôlement préalable obligatoire
+- **Précision progressive** : à chaque utilisation, Apex apprend mieux la voix Kevin
+- **Auto-exclusivité** : quand assez de samples accumulés (~20), Apex devient automatiquement exclusif sans intervention
+- **Anti-confusion entourage** : à partir de 20 samples, voix télé / conversations / collègues IGNORÉES silencieusement
+
+### UI feedback Kevin
+
+Dans Réglages → "🎙 Voice Bio" :
+- Barre progression "Apprentissage voix : 12/20 samples (60%)"
+- Toggle "Mode exclusif anticipé" : si activé, force exclusivité dès 10 samples
+- Bouton "🔄 Ré-enrôler ma voix" si reset souhaité (RGPD)
+
+### Si plusieurs users (Laurence, clients)
+
+- Chaque user a son propre voiceprint progressif
+- Mode admin Kevin : si Kevin reconnu (via son voiceprint) dans la vue d'un autre user → bascule mode admin temp
+- Kevin admin a la PRIORITÉ même dans la vue Laurence (sa voix override)
+
