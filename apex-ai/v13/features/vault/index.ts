@@ -23,6 +23,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
@@ -31,6 +32,14 @@ import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/mul
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeVaultScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeVaultScope?.cleanup();
+  activeVaultScope = null;
+}
 
 /**
  * Échappement HTML strict (XSS-safe).
@@ -449,6 +458,9 @@ export function formatRelativeTime(ts: number): string {
 let activeQuery = '';
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeVaultScope?.cleanup();
+  activeVaultScope = createCleanupScope('vault');
   const isAdmin = store.get('isAdmin') as boolean | undefined;
   if (!isAdmin) {
     rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 style="color:#c9a227">🔒 Coffre admin</h2><p style="color:#a0a4c0">Cette section est réservée à l'admin Kevin.</p></div>`;
@@ -561,7 +573,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-vault-search');
   if (searchEl) {
     let debounce: ReturnType<typeof setTimeout> | null = null;
-    searchEl.addEventListener('input', () => {
+    activeVaultScope!.bind(searchEl, 'input', () => {
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         activeQuery = searchEl.value.trim();
@@ -647,14 +659,14 @@ function attachHandlers(rootEl: HTMLElement): void {
 function attachCardHandlers(rootEl: HTMLElement): void {
   /* Per-card actions */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="test"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const credId = btn.dataset['credId'] ?? '';
       void onTestKey(rootEl, credId, btn);
     });
   });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="recharge"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const url = btn.dataset['rechargeUrl'] ?? '';
       const service = btn.dataset['service'] ?? '';
@@ -662,28 +674,28 @@ function attachCardHandlers(rootEl: HTMLElement): void {
     });
   });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="discover-links"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const service = btn.dataset['service'] ?? '';
       void onDiscoverLinks(rootEl, service, btn);
     });
   });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const credId = btn.dataset['credId'] ?? '';
       openEditModal(rootEl, credId);
     });
   });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const credId = btn.dataset['credId'] ?? '';
       onDeleteKey(rootEl, credId);
     });
   });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="add-to-cat"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeVaultScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const catId = btn.dataset['catId'] ?? '';
       openAddModal(rootEl, catId);

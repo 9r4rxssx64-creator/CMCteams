@@ -16,10 +16,19 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { autoBackup, type Backup, type BackupStats } from '../../services/auto-backup.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeBackupScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeBackupScope?.cleanup();
+  activeBackupScope = null;
+}
 
 /* ============================================================
    Helpers
@@ -260,6 +269,9 @@ function renderImportModal(): string {
    ============================================================ */
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeBackupScope?.cleanup();
+  activeBackupScope = createCleanupScope('admin-backup');
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
@@ -300,7 +312,7 @@ export function render(rootEl: HTMLElement): void {
 function attachHandlers(rootEl: HTMLElement): void {
   /* Snapshot now */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="snapshot-now"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       void (async (): Promise<void> => {
         haptic.tap();
         try {
@@ -317,7 +329,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Export */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="export-config"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       void (async (): Promise<void> => {
         haptic.tap();
         try {
@@ -338,7 +350,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Import */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="import-config"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       haptic.tap();
       openImportModal(rootEl);
     });
@@ -346,7 +358,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Cleanup now */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="cleanup-now"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       void (async (): Promise<void> => {
         haptic.tap();
         try {
@@ -366,7 +378,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* View row actions */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       const id = btn.dataset['view'];
       if (!id) return;
       haptic.tap();
@@ -381,7 +393,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Restore */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-restore]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       const id = btn.dataset['restore'];
       if (!id) return;
       const ok = confirm(`Restaurer le backup ${id} ? Cette action écrase l'état actuel.\n\nUn backup pre-rollback automatique sera créé avant.`);
@@ -405,7 +417,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Delete */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeBackupScope!.bind(btn, 'click', () => {
       const id = btn.dataset['delete'];
       if (!id) return;
       const ok = confirm(`Supprimer définitivement le backup ${id} ?`);
@@ -433,7 +445,7 @@ function openViewModal(_rootEl: HTMLElement, backup: Backup): void {
   const modal = div.firstElementChild as HTMLElement | null;
   if (!modal) return;
   document.body.appendChild(modal);
-  modal.addEventListener('click', (e) => {
+  activeBackupScope!.bind(modal, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target === modal) {
       closeModal();
@@ -453,7 +465,7 @@ function openImportModal(rootEl: HTMLElement): void {
   const modal = div.firstElementChild as HTMLElement | null;
   if (!modal) return;
   document.body.appendChild(modal);
-  modal.addEventListener('click', (e) => {
+  activeBackupScope!.bind(modal, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target === modal) {
       closeModal();
