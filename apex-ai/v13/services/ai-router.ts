@@ -781,10 +781,33 @@ class AIRouter {
   }
 
   /**
+   * v13.3.33 (Kevin "teste et garde ce qui marche le mieux") :
+   * Détecte task type depuis dernier message user pour smart-router affinity.
+   * - "explique", "pourquoi", "raisonne" → reasoning
+   * - "code", "fonction", "bug", "fix" → code
+   * - "résume vite", "rapide", "court" → fast
+   * - "moins cher", "économique", "free" → cheap
+   * - défaut → creative (générique)
+   */
+  private detectTaskType(text: string): import('./smart-router.js').TaskType {
+    const t = text.toLowerCase();
+    if (/\b(code|fonction|bug|fix|debug|refactor|typescript|javascript|python|rust)\b/.test(t)) return 'code';
+    if (/\b(explique|pourquoi|raisonne|analyse|comprends|déduire|logique)\b/.test(t)) return 'reasoning';
+    if (/\b(rapide|vite|court|résume|résumer|summary)\b/.test(t)) return 'fast';
+    if (/\b(moins cher|économique|free|gratuit|cheap|budget)\b/.test(t)) return 'cheap';
+    return 'creative';
+  }
+
+  /**
    * Wire ai-routing-policy : décide primary + fallback chain selon
    * mode (auto/economy/premium/forced), domain détecté, budget Anthropic.
    * Map policy.ProviderId → router.Provider (drop providers non supportés).
    * Fallback sur DEFAULT_CHAIN si policy indisponible.
+   *
+   * v13.3.33 — Smart Router prefix : avant d'appeler policy, on demande à
+   * smartRouter le best provider courant (multi-critères : latence/quota/
+   * qualité/uptime). Si dispo et différent de policy.primary → prefix.
+   * Garde 100% backward-compat : si smart-router KO, fallback policy normal.
    */
   private async buildPolicyAwareChain(messages: ChatMessage[]): Promise<readonly Provider[]> {
     try {
@@ -832,6 +855,30 @@ class AIRouter {
           ordered.push(mapped);
         }
       };
+      /* v13.3.33 — Smart Router prefix.
+       * Si smartRouter dispose d'un best provider scored > 70 ET supporté ai-router,
+       * on le met en TÊTE devant decision.primary. Override admin (Kevin "force X")
+       * géré via getOverride() dans smartRouter — bypass tout. */
+      try {
+        const { smartRouter } = await import('./smart-router.js');
+        const taskType = this.detectTaskType(userText);
+        const smartBest = await smartRouter.getBest(taskType);
+        const smartScore = await smartRouter.scoreProvider(smartBest);
+        const mappedSmart = mapToRouter(smartBest);
+        /* Seuil 50/100 : si data trop neuve ou tout faible, on laisse policy gérer */
+        if (mappedSmart && smartScore.total >= 50) {
+          push(mappedSmart);
+          logger.info('ai-router', 'smart-router prefix', {
+            best: smartBest,
+            score: smartScore.total,
+            mapped: mappedSmart,
+            taskType,
+          });
+        }
+      } catch (err: unknown) {
+        logger.warn('ai-router', 'smart-router unavailable, fallback policy only', { err });
+      }
+
       push(decision.primary);
       for (const f of decision.fallback_chain) push(f);
       /* Append legacy chain in queue pour garantir failover total même si policy ne couvre pas tout */

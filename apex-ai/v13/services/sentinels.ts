@@ -1048,5 +1048,39 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (15 active + 1 disabled wake-watch)`);
+  /* 22. smart-router-watch : ping multi-providers IA toutes 30 min + recalcul scoring.
+   *     Kevin v13.3.33 (2026-05-07) : "teste et garde ce qui marche le mieux,
+   *     le plus de crédit etc. AUTOMATIQUE AUTONOME TOUJOURS."
+   *     - Ping all 10 providers (anthropic, openai, groq, gemini, mistral, cohere,
+   *       xai, perplexity, deepseek, openrouter)
+   *     - Update samples ring buffer (7j) + stats agrégées
+   *     - Si best provider change → log audit + lesson
+   *     - Recommandations économiques calculées au passage */
+  sentinels.register({
+    id: 'smart-router-watch',
+    name: 'Smart Router multi-critères',
+    desc: 'Ping 10 providers IA toutes 30 min + scoring latence/quota/qualité/uptime',
+    intervalMs: 30 * 60 * 1000 /* 30 min */,
+    check: async () => {
+      try {
+        const { smartRouter } = await import('./smart-router.js');
+        await smartRouter.pingAllProviders();
+        const ranked = await smartRouter.rankProviders();
+        const top3 = ranked.slice(0, 3).map((r) => `${r.provider}(${r.score.total})`).join(', ');
+        const recos = await smartRouter.getRecommendations();
+        return {
+          ok: true,
+          msg: `Top 3 : ${top3}${recos.length > 0 ? ` | ${recos.length} reco(s) éco` : ''}`,
+          details: {
+            top3: ranked.slice(0, 3).map((r) => ({ provider: r.provider, score: r.score.total })),
+            recommendations: recos,
+          },
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'smart-router fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (16 active + 1 disabled wake-watch)`);
 }
