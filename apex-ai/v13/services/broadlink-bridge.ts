@@ -100,25 +100,30 @@ const COMMON_IR_CODES_TV: Record<string, string> = {
  * Helpers HTTP
  * ============================================================================ */
 
+type FetchBroadlinkResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; status?: number; error: string; reason: 'cors_blocked' | 'http_error' | 'network' | 'timeout' };
+
 async function fetchBroadlink<T>(
   path: string,
   options: { method?: 'GET' | 'POST'; headers?: Record<string, string>; body?: unknown } = {},
-): Promise<{ ok: boolean; data?: T; status?: number; error?: string; reason?: 'cors_blocked' | 'http_error' | 'network' | 'timeout' }> {
+): Promise<FetchBroadlinkResult<T>> {
   const proxyUrl = localStorage.getItem(STORAGE_PROXY) ?? '';
   const baseUrl = proxyUrl || BROADLINK_API_BASE;
   const url = `${baseUrl}${path}`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    const resp = await fetch(url, {
+    const init: RequestInit = {
       method: options.method ?? 'GET',
       headers: {
         'content-type': 'application/json',
         ...(options.headers ?? {}),
       },
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: ctrl.signal,
-    });
+    };
+    if (options.body !== undefined) init.body = JSON.stringify(options.body);
+    const resp = await fetch(url, init);
     clearTimeout(timer);
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
@@ -177,15 +182,15 @@ class BroadlinkBridge {
     }>('/appsync/group/v2/login', { method: 'POST', body });
     if (!r.ok) {
       logger.warn('broadlink-bridge', 'login failed', { reason: r.reason, error: r.error });
-      void auditLog.record('broadlink.login.fail', { details: { reason: r.reason ?? 'unknown', email } });
-      return { ok: false, error: r.error ?? 'login fail', token: undefined };
+      void auditLog.record('broadlink.login.fail', { details: { reason: r.reason, email } });
+      return { ok: false, error: r.error };
     }
-    const status = r.data?.status;
+    const status = r.data.status;
     if (status !== 0) {
-      return { ok: false, error: r.data?.msg ?? `Status non-zero: ${String(status)}` };
+      return { ok: false, error: r.data.msg ?? `Status non-zero: ${String(status)}` };
     }
-    const token = r.data?.data?.loginsession;
-    const userId = r.data?.data?.userid;
+    const token = r.data.data?.loginsession;
+    const userId = r.data.data?.userid;
     if (!token) {
       return { ok: false, error: 'Aucun token retourné par Broadlink' };
     }
@@ -197,7 +202,9 @@ class BroadlinkBridge {
     } catch { /* quota */ }
     void auditLog.record('broadlink.login.success', { details: { email } });
     logger.info('broadlink-bridge', 'login success', { email, hasToken: true });
-    return { ok: true, token, userId };
+    const out: BroadlinkLoginResult = { ok: true, token };
+    if (userId) out.userId = userId;
+    return out;
   }
 
   /**
@@ -246,7 +253,7 @@ class BroadlinkBridge {
       logger.warn('broadlink-bridge', 'listDevices fail', { reason: r.reason });
       return [];
     }
-    const endpoints = r.data?.data?.endpoints ?? [];
+    const endpoints = r.data.data?.endpoints ?? [];
     const devices: BroadlinkDevice[] = endpoints.map((e) => ({
       id: e.endpointId ?? '',
       name: e.friendlyname ?? 'Device sans nom',
@@ -288,10 +295,16 @@ class BroadlinkBridge {
     );
     if (!r.ok) {
       void auditLog.record('broadlink.send_ir.fail', { details: { deviceId, reason: r.reason } });
-      return { ok: false, error: r.error, reason: r.reason };
+      /* Map fetchBroadlink reason to BroadlinkSendIRResult reason
+       * (no_token et invalid_device sont traités plus haut, donc ici les mêmes reasons réseau s'appliquent) */
+      const reason: BroadlinkSendIRResult['reason'] =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return { ok: false, error: r.error, reason };
     }
-    if (r.data?.status !== 0) {
-      return { ok: false, error: r.data?.msg ?? 'Status non-zero', reason: 'http_error' };
+    if (r.data.status !== 0) {
+      return { ok: false, error: r.data.msg ?? 'Status non-zero', reason: 'http_error' };
     }
     void auditLog.record('broadlink.send_ir.success', { details: { deviceId, codeLen: irHex.length } });
     return { ok: true };
@@ -346,8 +359,8 @@ class BroadlinkBridge {
    */
   async status(): Promise<{ configured: boolean; email?: string; deviceCount: number; proxyUrl?: string }> {
     const token = await vault.readKey(STORAGE_TOKEN);
-    const email = localStorage.getItem(STORAGE_EMAIL) ?? undefined;
-    const proxyUrl = localStorage.getItem(STORAGE_PROXY) ?? undefined;
+    const email = localStorage.getItem(STORAGE_EMAIL);
+    const proxyUrl = localStorage.getItem(STORAGE_PROXY);
     let deviceCount = 0;
     try {
       const raw = localStorage.getItem(STORAGE_DEVICES);
@@ -356,25 +369,58 @@ class BroadlinkBridge {
         deviceCount = cached.devices?.length ?? 0;
       }
     } catch { /* ignore */ }
-    return {
+    const out: { configured: boolean; email?: string; deviceCount: number; proxyUrl?: string } = {
       configured: !!token,
-      email,
       deviceCount,
-      proxyUrl,
     };
+    if (email) out.email = email;
+    if (proxyUrl) out.proxyUrl = proxyUrl;
+    return out;
   }
 
   /**
    * Reset config Broadlink (logout).
+   * Clear complet : localStorage + IDB shadow direct (anti-rehydration).
    */
   async reset(): Promise<void> {
-    await vault.setKey(STORAGE_TOKEN, '');
     try {
+      localStorage.removeItem(STORAGE_TOKEN);
       localStorage.removeItem(STORAGE_EMAIL);
       localStorage.removeItem(STORAGE_USERID);
       localStorage.removeItem(STORAGE_DEVICES);
     } catch { /* ignore */ }
+    /* Clear IDB shadow vault directement pour empêcher rehydration via readKey */
+    await this.clearIdbShadow(STORAGE_TOKEN);
     void auditLog.record('broadlink.reset', {});
+  }
+
+  private async clearIdbShadow(storageKey: string): Promise<void> {
+    if (!('indexedDB' in globalThis)) return;
+    await new Promise<void>((resolve) => {
+      try {
+        const req = indexedDB.open('apex_v13_vault_shadow', 1);
+        req.onupgradeneeded = (): void => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+        };
+        req.onsuccess = (): void => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('keys', 'readwrite');
+            const store = tx.objectStore('keys');
+            store.delete(storageKey);
+            tx.oncomplete = (): void => { db.close(); resolve(); };
+            tx.onerror = (): void => { db.close(); resolve(); };
+          } catch {
+            db.close();
+            resolve();
+          }
+        };
+        req.onerror = (): void => resolve();
+      } catch {
+        resolve();
+      }
+    });
   }
 
   /**

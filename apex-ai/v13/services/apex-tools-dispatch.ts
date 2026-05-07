@@ -1312,6 +1312,72 @@ class ApexToolsDispatcher {
           stats: apexMetaMarketplace.getStats(),
         };
       }
+      /* v13.3.51 — Vision device + Broadlink (Kevin 2026-05-07 "rien fait avec mes photos") */
+      case 'analyze_device_image': {
+        const { visionDeviceAnalyze } = await import('./vision-device-analyze.js');
+        const dataUrl = typeof params['image_data_url'] === 'string' ? params['image_data_url'] : undefined;
+        const b64 = typeof params['image_base64'] === 'string' ? params['image_base64'] : undefined;
+        if (!dataUrl && !b64) throw new Error('image_data_url ou image_base64 requis');
+        const forceType = typeof params['force_type'] === 'string' ? params['force_type'] : 'auto';
+        const input = dataUrl ? { imageDataUrl: dataUrl } : { imageBase64: b64! };
+        if (forceType === 'broadlink_account') {
+          const r = await visionDeviceAnalyze.analyzeBroadlinkAccount(input);
+          return { ok: true, type: 'broadlink_account', ...r };
+        }
+        if (forceType === 'smart_tv') {
+          const r = await visionDeviceAnalyze.analyzeSmartTV(input);
+          return { ok: true, type: 'smart_tv', ...r };
+        }
+        const r = await visionDeviceAnalyze.autoDetectAndAnalyze(input);
+        return { ok: true, ...r };
+      }
+      case 'setup_broadlink_from_image': {
+        const { visionDeviceAnalyze } = await import('./vision-device-analyze.js');
+        const { broadlinkBridge } = await import('./broadlink-bridge.js');
+        const dataUrl = typeof params['image_data_url'] === 'string' ? params['image_data_url'] : undefined;
+        const b64 = typeof params['image_base64'] === 'string' ? params['image_base64'] : undefined;
+        if (!dataUrl && !b64) throw new Error('image_data_url ou image_base64 requis');
+        const input = dataUrl ? { imageDataUrl: dataUrl } : { imageBase64: b64! };
+        const analysis = await visionDeviceAnalyze.analyzeBroadlinkAccount(input);
+        if (!analysis.token) {
+          return {
+            ok: false,
+            reason: 'no_token_visible',
+            message: 'Aucun token visible dans l\'image. Connecte-toi via la vue ?view=broadlink-setup avec email + password.',
+            analysis,
+          };
+        }
+        const setupResult = await broadlinkBridge.setToken(analysis.token, analysis.email);
+        return {
+          ok: setupResult.ok,
+          token_stored: setupResult.ok,
+          email: analysis.email,
+          devices_detected: analysis.devices?.length ?? 0,
+          devices: analysis.devices,
+        };
+      }
+      case 'broadlink_list_devices': {
+        const { broadlinkBridge } = await import('./broadlink-bridge.js');
+        const force = params['force_refresh'] === true;
+        const devices = await broadlinkBridge.listDevices(force);
+        return { ok: true, count: devices.length, devices };
+      }
+      case 'broadlink_send_ir': {
+        const { broadlinkBridge } = await import('./broadlink-bridge.js');
+        const deviceId = typeof params['device_id'] === 'string' ? params['device_id'] : '';
+        let irHex = typeof params['ir_hex'] === 'string' ? params['ir_hex'] : '';
+        const learnedName = typeof params['learned_name'] === 'string' ? params['learned_name'] : '';
+        if (!irHex && learnedName && deviceId) {
+          const codes = await broadlinkBridge.getLearnedCodes(deviceId);
+          const found = codes.find((c) => c.name === learnedName);
+          if (found) irHex = found.ir_hex;
+        }
+        if (!deviceId || !irHex) {
+          return { ok: false, error: 'device_id + (ir_hex ou learned_name avec code appris) requis' };
+        }
+        const r = await broadlinkBridge.sendIR(deviceId, irHex);
+        return r;
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }
