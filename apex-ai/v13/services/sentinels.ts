@@ -892,5 +892,112 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (13 active + 1 disabled wake-watch)`);
+  /* 17. memory-watch (Kevin 2026-05-07 v13.3.27) :
+   * Audit mémoire long-terme par user, compress si > 1000 facts/user, dédupe lessons. */
+  sentinels.register({
+    id: 'memory-watch',
+    name: 'Mémoire long-terme audit',
+    desc: 'Audit memory size par user + compression si >1000 facts + cleanup lessons dupliquées',
+    intervalMs: 24 * 60 * 60 * 1000, /* 1× par jour */
+    check: async () => {
+      try {
+        const { persistentMemoryStore } = await import('./persistent-memory-store.js');
+        const all = await persistentMemoryStore.list();
+        const byUser = new Map<string, number>();
+        for (const e of all) byUser.set(e.scope, (byUser.get(e.scope) ?? 0) + 1);
+
+        const oversized: string[] = [];
+        for (const [uid, count] of byUser) {
+          if (count > 1000) oversized.push(`${uid}:${count}`);
+        }
+
+        let lessonsCount = 0;
+        try {
+          const raw = localStorage.getItem('ax_lessons_learned_struct');
+          if (raw) lessonsCount = (JSON.parse(raw) as unknown[]).length;
+        } catch { /* skip */ }
+
+        const report = {
+          ts: Date.now(),
+          total_facts: all.length,
+          users_count: byUser.size,
+          oversized_users: oversized,
+          lessons_count: lessonsCount,
+        };
+        try {
+          const log = JSON.parse(localStorage.getItem('ax_memory_audit_log') ?? '[]') as unknown[];
+          log.push(report);
+          localStorage.setItem('ax_memory_audit_log', JSON.stringify(log.slice(-30)));
+        } catch { /* quota */ }
+
+        if (oversized.length > 0) {
+          return {
+            ok: false,
+            msg: `${oversized.length} user(s) > 1000 facts (${oversized.slice(0, 3).join(', ')}…)`,
+            details: report as unknown as Record<string, unknown>,
+          };
+        }
+        if (lessonsCount > 200) {
+          return {
+            ok: false,
+            msg: `${lessonsCount} lessons (>200 → cleanup recommandé)`,
+            details: report as unknown as Record<string, unknown>,
+          };
+        }
+        return {
+          ok: true,
+          msg: `${all.length} facts (${byUser.size} users) · ${lessonsCount} lessons OK`,
+          details: report as unknown as Record<string, unknown>,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'memory-watch failed: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { persistentMemoryStore } = await import('./persistent-memory-store.js');
+        const all = await persistentMemoryStore.list();
+        const byUser = new Map<string, typeof all>();
+        for (const e of all) {
+          const arr = byUser.get(e.scope) ?? [];
+          arr.push(e);
+          byUser.set(e.scope, arr);
+        }
+        let removed = 0;
+        for (const [uid, entries] of byUser) {
+          if (entries.length <= 1000) continue;
+          /* Garde top 100 par importance, supprime le reste */
+          const keep = entries.sort((a, b) => b.importance - a.importance).slice(0, 100);
+          const toRemove = entries.filter((e) => !keep.includes(e));
+          for (const e of toRemove) {
+            await persistentMemoryStore.remove(e.id);
+            removed++;
+          }
+          logger.info('memory-watch', `compressed ${uid}: ${entries.length} → 100 (top importance)`);
+        }
+        /* Dédupe lessons (similarité title 85%) */
+        try {
+          const raw = localStorage.getItem('ax_lessons_learned_struct');
+          if (raw) {
+            const arr = JSON.parse(raw) as Array<{ category: string; title: string }>;
+            const seen = new Set<string>();
+            const dedup = arr.filter((l) => {
+              const key = `${l.category}::${l.title.slice(0, 60).toLowerCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            const dedupedCount = arr.length - dedup.length;
+            localStorage.setItem('ax_lessons_learned_struct', JSON.stringify(dedup.slice(-200)));
+            removed += dedupedCount;
+          }
+        } catch { /* skip */ }
+        return { ok: removed > 0, msg: `Compressed ${removed} entries` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'autofix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (14 active + 1 disabled wake-watch)`);
 }

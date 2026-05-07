@@ -475,6 +475,381 @@ class Memory {
       logger.warn('memory', 'persist failed (quota?)', { err });
     }
   }
+
+  /* ============================================================
+   * v13.3.27 — MÉMOIRE LONG TERME + RELECTURE PROFONDE TOUS DOCS
+   * Kevin 2026-05-07 (règle ABSOLUE) :
+   * "Apex doit reprendre tous ses documents, savoir exactement
+   *  toute l'histoire pour chaque personne. Mémoire à long terme.
+   *  Son savoir doit s'améliorer au fur et à mesure."
+   * ============================================================ */
+
+  /**
+   * Sync docs racine repo (CLAUDE.md, NOTES_USER, MEMO_RESUME, KEVIN_INVENTORY,
+   * KEVIN_ACTIONS_TODO, MEMORY_PERSISTENT, APEX_HANDOFF, CLAUDE_FEED) au boot.
+   * Cache 6h dans IndexedDB pour éviter rate limit GitHub.
+   */
+  async syncDocsAtBoot(opts?: { forceRefresh?: boolean }): Promise<{
+    synced: number;
+    skipped: number;
+    failed: number;
+    docs: Record<string, { content: string; ts: number; size: number }>;
+  }> {
+    const REPO_RAW = 'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/';
+    const DOC_FILES = [
+      'CLAUDE.md',
+      'NOTES_USER.md',
+      'MEMO_RESUME.md',
+      'KEVIN_INVENTORY.md',
+      'KEVIN_ACTIONS_TODO.md',
+      'MEMORY_PERSISTENT.md',
+      'APEX_HANDOFF.md',
+      'CLAUDE_FEED.md',
+    ];
+    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; /* 6h */
+    const cacheKey = 'apex_v13_docs_cache';
+    const force = opts?.forceRefresh === true;
+
+    let cache: Record<string, { content: string; ts: number; size: number }> = {};
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) cache = JSON.parse(raw) as typeof cache;
+    } catch {
+      cache = {};
+    }
+
+    let synced = 0;
+    let skipped = 0;
+    let failed = 0;
+    const now = Date.now();
+
+    for (const doc of DOC_FILES) {
+      const cached = cache[doc];
+      if (!force && cached && now - cached.ts < CACHE_TTL_MS) {
+        skipped++;
+        continue;
+      }
+      try {
+        const res = await fetch(REPO_RAW + doc, {
+          method: 'GET',
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) {
+          failed++;
+          continue;
+        }
+        const content = await res.text();
+        cache[doc] = { content, ts: now, size: content.length };
+        synced++;
+      } catch (err: unknown) {
+        logger.warn('memory.syncDocs', `fetch ${doc} failed`, { err });
+        failed++;
+      }
+    }
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(cache));
+    } catch {
+      /* quota — pas critique, sera retenté next boot */
+    }
+
+    logger.info('memory.syncDocs', `Synced ${synced}, skipped ${skipped}, failed ${failed}`);
+    return { synced, skipped, failed, docs: cache };
+  }
+
+  /**
+   * Lit le cache docs synchronisés (sans fetch).
+   * Utilisé par buildSystemPromptDeep() pour injecter règles + handoff dans IA.
+   */
+  getDocsContext(): Record<string, { content: string; ts: number; size: number }> {
+    try {
+      const raw = localStorage.getItem('apex_v13_docs_cache');
+      if (!raw) return {};
+      return JSON.parse(raw) as Record<string, { content: string; ts: number; size: number }>;
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Extract facts critiques d'un message user via NLP simple regex.
+   * Pousse dans persistentMemoryStore (per-user) avec timestamp + source.
+   *
+   * Patterns détectés :
+   * - Anniversaires : "mon anniv le 12 mai", "j'ai 35 ans"
+   * - Préférences : "j'aime X", "je préfère Y", "je déteste Z"
+   * - Allergies : "je suis allergique à X"
+   * - Projets : "je travaille sur X", "mon projet Y"
+   * - Relations : "ma femme/mari/enfant/collègue X"
+   * - Lieu : "j'habite X", "je vis à Y"
+   * - Métier : "je suis [métier]"
+   *
+   * NE STOCKE PAS : CB, mots de passe, seed phrases (cf. règle Kevin SECU).
+   */
+  async extractFactsFromMessage(text: string, userId: string): Promise<{
+    extracted: number;
+    facts: Array<{ category: string; text: string; importance: number }>;
+  }> {
+    if (!text || text.length < 5) return { extracted: 0, facts: [] };
+
+    const facts: Array<{ category: string; text: string; importance: number }> = [];
+    const t = text.toLowerCase();
+
+    /* INTERDIT — patterns sensibles (skip auto-extract) */
+    const FORBIDDEN = [
+      /\b(?:\d[ -]*?){13,19}\b/, /* CB */
+      /\bsk-(?:ant|proj)?[A-Za-z0-9_-]{20,}/i, /* tokens API */
+      /\b(?:[a-z]+\s+){11}[a-z]+\b/, /* seed phrase 12 mots BIP39 approx */
+    ];
+    if (FORBIDDEN.some((re) => re.test(text))) {
+      logger.warn('memory.extract', 'forbidden pattern detected, skip extraction');
+      return { extracted: 0, facts: [] };
+    }
+
+    /* Anniversaire / âge */
+    const ageMatch = /(?:j'ai|jai|ai)\s+(\d{1,2})\s+ans/.exec(t);
+    if (ageMatch?.[1]) {
+      facts.push({ category: 'profile', text: `Âge : ${ageMatch[1]} ans`, importance: 70 });
+    }
+    const annivMatch = /(?:anniv(?:ersaire)?|né\s+le|naiss(?:ance)?)\s+(?:le\s+)?(\d{1,2})\s+([a-zéûô]+)/i.exec(text);
+    if (annivMatch?.[1] && annivMatch[2]) {
+      facts.push({ category: 'profile', text: `Anniversaire : ${annivMatch[1]} ${annivMatch[2]}`, importance: 80 });
+    }
+
+    /* Préférences */
+    const likeMatches = text.matchAll(/(?:j'aime|j'adore|je préfère|j'apprécie)\s+(?:le\s+|la\s+|les\s+|l'|du\s+|de\s+la\s+)?([a-zà-ÿ\s]{3,40}?)(?:\.|,|;|!|\?|$)/gi);
+    for (const m of likeMatches) {
+      if (m[1]) facts.push({ category: 'preferences', text: `Aime : ${m[1].trim()}`, importance: 50 });
+    }
+    const dislikeMatches = text.matchAll(/(?:je déteste|je n'aime pas|j'évite)\s+(?:le\s+|la\s+|les\s+|l'|du\s+)?([a-zà-ÿ\s]{3,40}?)(?:\.|,|;|!|\?|$)/gi);
+    for (const m of dislikeMatches) {
+      if (m[1]) facts.push({ category: 'preferences', text: `N'aime pas : ${m[1].trim()}`, importance: 50 });
+    }
+
+    /* Allergies — importance haute (santé) */
+    const allergyMatch = /allergique\s+(?:à\s+|au\s+|aux\s+|à\s+l')?([a-zà-ÿ\s]{3,40}?)(?:\.|,|;|!|\?|$)/i.exec(text);
+    if (allergyMatch?.[1]) {
+      facts.push({ category: 'profile', text: `⚠️ Allergie : ${allergyMatch[1].trim()}`, importance: 95 });
+    }
+
+    /* Projets actifs */
+    const projectMatches = text.matchAll(/(?:je travaille sur|mon projet|je développe|je construis)\s+(?:le\s+|la\s+|un\s+|une\s+)?([a-zA-Zà-ÿ0-9\s]{3,50}?)(?:\.|,|;|!|\?|$)/gi);
+    for (const m of projectMatches) {
+      if (m[1]) facts.push({ category: 'projects', text: `Projet actif : ${m[1].trim()}`, importance: 75 });
+    }
+
+    /* Relations */
+    const relMatches = text.matchAll(/(?:ma\s+(?:femme|épouse|fille|sœur|mère|maman|cousine)|mon\s+(?:mari|époux|fils|frère|père|papa|cousin|collègue|ami|copain))\s+([A-ZÀ-Ÿ][a-zà-ÿ]+)/g);
+    for (const m of relMatches) {
+      if (m[0] && m[1]) facts.push({ category: 'relationships', text: `${m[0].trim()}`, importance: 70 });
+    }
+
+    /* Adresse / ville */
+    const cityMatch = /(?:j'habite|je vis|je réside)\s+(?:à\s+|au\s+|en\s+|dans\s+)?([A-ZÀ-Ÿ][a-zà-ÿ\-]{2,30}(?:\s+[A-ZÀ-Ÿ][a-zà-ÿ\-]+)?)/.exec(text);
+    if (cityMatch?.[1]) {
+      facts.push({ category: 'profile', text: `Lieu : ${cityMatch[1].trim()}`, importance: 65 });
+    }
+
+    /* Métier */
+    const jobMatch = /(?:je suis|je travaille comme|mon métier)\s+(?:un\s+|une\s+)?([a-zà-ÿ\-]{4,30})(?:\.|,|;|!|\?|\s+(?:à|au|chez|dans))/.exec(t);
+    if (jobMatch?.[1] && !['très', 'pas', 'plus', 'fait', 'sur', 'allergique', 'sûr'].includes(jobMatch[1])) {
+      facts.push({ category: 'profile', text: `Métier : ${jobMatch[1].trim()}`, importance: 70 });
+    }
+
+    /* Push dans persistentMemoryStore (per-user scope) */
+    if (facts.length > 0) {
+      try {
+        const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+        for (const f of facts) {
+          await persistentMemoryStore.add({
+            category: f.category as 'profile' | 'preferences' | 'projects' | 'relationships' | 'facts',
+            text: f.text,
+            scope: userId || 'global',
+            importance: f.importance,
+            source: 'chat',
+          });
+        }
+      } catch (err: unknown) {
+        logger.warn('memory.extract', 'persist fail', { err });
+      }
+    }
+
+    return { extracted: facts.length, facts };
+  }
+
+  /**
+   * Record session learning (append à ax_lessons_learned_struct shared cross-app).
+   * Permet à Apex + CMCteams + KDMC de partager les leçons via Firebase FB_FIX.
+   */
+  async recordSessionLearning(
+    category: string,
+    title: string,
+    text: string,
+    severity: Lesson['severity'] = 'warn',
+  ): Promise<void> {
+    /* Add à mémoire locale */
+    this.recordLesson(category, title, text, severity);
+
+    /* Push à store cross-app shared */
+    try {
+      const lessonsRaw = localStorage.getItem('ax_lessons_learned_struct');
+      const arr = lessonsRaw ? (JSON.parse(lessonsRaw) as Array<Record<string, unknown>>) : [];
+      arr.push({
+        id: `L_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        category,
+        title: title.slice(0, 120),
+        text: text.slice(0, 500),
+        severity,
+        src: 'apex',
+        ts: Date.now(),
+        resolved: false,
+      });
+      /* Cap 200 + dédupe par similarité title */
+      const dedup: Array<Record<string, unknown>> = [];
+      const seen = new Set<string>();
+      for (const l of arr.slice(-200).reverse()) {
+        const key = `${String(l.category)}::${String(l.title).slice(0, 50).toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          dedup.unshift(l);
+        }
+      }
+      localStorage.setItem('ax_lessons_learned_struct', JSON.stringify(dedup));
+    } catch (err: unknown) {
+      logger.warn('memory.recordLearning', 'shared store fail', { err });
+    }
+  }
+
+  /**
+   * Build admin cross-user knowledge — agrège facts/lessons de tous les users.
+   * Réservé à Kevin admin (kdmc_admin) — règle CLAUDE.md "savoir de tous".
+   * Anonymise les détails sensibles (préférences/allergies sont marquées per-user).
+   */
+  async buildAdminCrossUserKnowledge(): Promise<string> {
+    try {
+      const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const all = await persistentMemoryStore.list();
+      /* Group par scope (user) */
+      const byUser = new Map<string, typeof all>();
+      for (const e of all) {
+        const arr = byUser.get(e.scope) ?? [];
+        arr.push(e);
+        byUser.set(e.scope, arr);
+      }
+      const lines: string[] = ['## 👑 Cross-user knowledge (admin Kevin only)'];
+      for (const [uid, entries] of byUser) {
+        const top = entries
+          .filter((e) => e.importance >= 60)
+          .sort((a, b) => b.importance - a.importance)
+          .slice(0, 8);
+        if (top.length === 0) continue;
+        lines.push(`### User ${uid} (${entries.length} entries)`);
+        for (const e of top) {
+          lines.push(`- [${e.category}/${e.importance}] ${e.text}`);
+        }
+      }
+      return lines.length > 1 ? lines.join('\n') : '';
+    } catch (err: unknown) {
+      logger.warn('memory.adminCross', 'failed', { err });
+      return '';
+    }
+  }
+
+  /**
+   * Build system prompt DEEP — version enrichie avec docs sync + cross-knowledge.
+   *
+   * Sources injectées (capées pour rester sous limite tokens) :
+   * 1. buildSystemPromptContext() existant (architecture, identité, tools)
+   * 2. CLAUDE.md (top 5000 chars règles permanentes)
+   * 3. NOTES_USER.md (top 3000 chars infos métier Kevin)
+   * 4. MEMORY_PERSISTENT.md (top 2000 chars facts cross-session)
+   * 5. APEX_HANDOFF.md (top 2000 chars communication bidirectionnelle)
+   * 6. KEVIN_ACTIONS_TODO.md (top 1500 chars actions en attente)
+   * 7. Top 50 facts user courant (persistent_memory_<uid>)
+   * 8. Top 30 facts shared cross-app (persistent_memory scope=global)
+   * 9. Top 10 lessons learned critiques (ax_lessons_learned_struct)
+   * 10. Si admin Kevin : ajout résumés cross-user knowledge
+   */
+  async buildSystemPromptDeep(currentUser: { id: string; name: string } | null): Promise<string> {
+    const baseContext = this.buildSystemPromptContext(currentUser);
+    const sections: string[] = [baseContext];
+
+    /* Charge cache docs (synchronisés en arrière-plan, pas de fetch ici pour perf) */
+    const docs = this.getDocsContext();
+
+    const cap = (s: string, max: number) => (s.length > max ? s.slice(0, max) + '\n[…tronqué pour limite tokens]' : s);
+
+    if (docs['CLAUDE.md']?.content) {
+      sections.push(`## 📜 CLAUDE.md — Règles permanentes (top 5000 chars)\n${cap(docs['CLAUDE.md'].content, 5000)}`);
+    }
+    if (docs['NOTES_USER.md']?.content) {
+      sections.push(`## 📝 NOTES_USER.md — Infos métier Kevin\n${cap(docs['NOTES_USER.md'].content, 3000)}`);
+    }
+    if (docs['MEMORY_PERSISTENT.md']?.content) {
+      sections.push(`## 🧠 MEMORY_PERSISTENT.md — Facts cross-session\n${cap(docs['MEMORY_PERSISTENT.md'].content, 2000)}`);
+    }
+    if (docs['APEX_HANDOFF.md']?.content) {
+      sections.push(`## 🤝 APEX_HANDOFF.md — Communication Apex↔Claude Code\n${cap(docs['APEX_HANDOFF.md'].content, 2000)}`);
+    }
+    if (docs['KEVIN_ACTIONS_TODO.md']?.content) {
+      sections.push(`## ✅ KEVIN_ACTIONS_TODO.md — Actions Kevin en attente\n${cap(docs['KEVIN_ACTIONS_TODO.md'].content, 1500)}`);
+    }
+
+    /* Top 50 facts user courant + Top 30 shared */
+    try {
+      const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const all = await persistentMemoryStore.list();
+      if (currentUser) {
+        const userFacts = all
+          .filter((e) => e.scope === currentUser.id)
+          .sort((a, b) => b.importance - a.importance)
+          .slice(0, 50);
+        if (userFacts.length > 0) {
+          sections.push(
+            `## 🧠 Mémoire long-terme user courant (${currentUser.name}, ${userFacts.length} facts)\n${userFacts.map((f) => `- [${f.category}/${f.importance}] ${f.text}`).join('\n')}`,
+          );
+        }
+      }
+      const sharedFacts = all
+        .filter((e) => e.scope === 'global')
+        .sort((a, b) => b.importance - a.importance)
+        .slice(0, 30);
+      if (sharedFacts.length > 0) {
+        sections.push(
+          `## 🌐 Facts cross-app shared (top ${sharedFacts.length})\n${sharedFacts.map((f) => `- [${f.category}] ${f.text}`).join('\n')}`,
+        );
+      }
+    } catch {
+      /* persistent store indispo */
+    }
+
+    /* Top 10 lessons cross-app */
+    try {
+      const lessonsRaw = localStorage.getItem('ax_lessons_learned_struct');
+      if (lessonsRaw) {
+        const arr = JSON.parse(lessonsRaw) as Array<{ category: string; title: string; severity: string; resolved: boolean }>;
+        const critical = arr
+          .filter((l) => (l.severity === 'critical' || l.severity === 'warn') && !l.resolved)
+          .slice(-10)
+          .reverse();
+        if (critical.length > 0) {
+          sections.push(
+            `## ⚠️ Lessons cross-app non résolues (top ${critical.length})\n${critical.map((l) => `- [${l.category}/${l.severity}] ${l.title}`).join('\n')}`,
+          );
+        }
+      }
+    } catch {
+      /* skip */
+    }
+
+    /* Admin Kevin = cross-user knowledge */
+    if (currentUser && currentUser.id === 'kdmc_admin') {
+      const adminKnowledge = await this.buildAdminCrossUserKnowledge();
+      if (adminKnowledge) sections.push(adminKnowledge);
+    }
+
+    return sections.join('\n\n');
+  }
 }
 
 export const memory = new Memory();

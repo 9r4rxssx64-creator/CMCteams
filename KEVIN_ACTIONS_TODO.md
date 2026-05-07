@@ -1,5 +1,35 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🆕 v13.3.26 / v9.601 — Pipeline temps-réel Apex↔Claude Code (Kevin 2026-05-07 19h)
+
+**Demande Kevin** : "Fait le pipeline, comme ça tu pourras avoir les erreurs directement
+sans que je fasse les allers-retours sans cesse. Il faut qu'il y ait une conférence
+entre vous 2. En toute autonomie, en automatique."
+
+**Livré cette session (v13.3.26 / v9.601)** :
+- ✅ `claude-todo-watcher.yml` cron 2h → **5min** + repository_dispatch immédiat
+- ✅ Workflow push `/apex/ax_claude_alerts/` Firebase si critique → visible Apex
+- ✅ Apex `claudeBridge.escalateNow(todo)` POST `/repos/.../dispatches` (vault GitHub PAT) — déclenche workflow instantanément, retry 3× backoff
+- ✅ Apex SSE listener `ax_handoff_journal` (FB_FIX) → auto-résout todos quand Claude Code écrit `action='fixed'`
+- ✅ Toast doré Apex `claude_bridge:handoff_received` event (UI hook prêt)
+- ✅ CMCteams listener `ax_cmc_planning_pending` (FB_FIX) + toast doré 1-clic admin Kevin → import direct dans `vImport`
+- ✅ CMCteams marque `processed:true` Firebase après import/dismiss
+
+**Reste à faire (Partie E — non bloquant) — next session** :
+- ⏳ Mode "conférence" persistant chat Apex ↔ Claude Code via `/apex/claude_chat/messages/`
+  - Apex peut poster questions ad-hoc à Claude (pas seulement todos)
+  - Claude répond en éditant le fichier Firebase
+  - Vue admin `?view=claude-chat` (admin only) avec affichage SSE live
+  - Format `{role: 'apex'|'claude', text, ts, id}`, FIFO 100 messages
+- ⏳ Toast UI Apex pour `claude_bridge:handoff_received` (event émis OK, juste à câbler dans `notification.ts` ou similaire)
+- ⏳ Tests E2E pipeline complet (push critique → workflow déclenché → handoff revient → toast affiché)
+
+**Action Kevin pour activer le pipeline** :
+1. Admin Coffre → vérifier `ax_github_token` (PAT) configuré avec scope `repo` + `workflow`
+2. Tester : générer un faux todo critical via console Apex `claudeBridge.pushTodo({severity:'critical', title:'TEST', description:'pipeline test', type:'investigate', src:'apex'})` → workflow GitHub doit se déclencher dans <30s
+
+---
+
 ## 🆕 v13.3.21 fix decrypt failed (Kevin 2026-05-07 19:03 — bug commercial critique)
 
 **Symptôme Kevin** : Coffre admin → 22 codes stockés, 7 invalides (rouge), bouton

@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.25';
+export const APP_VER = 'v13.3.27';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -150,6 +150,11 @@ async function bootstrap(): Promise<void> {
   await memory.init().catch((err: unknown) => {
     logger.error('boot', 'Memory init failed (degraded)', { err });
   });
+  /* v13.3.27 (Kevin 2026-05-07) : sync docs racine repo en arrière-plan (cache 6h).
+   * Non-bloquant : permet à buildSystemPromptDeep() d'avoir docs frais à dispo. */
+  void memory.syncDocsAtBoot().catch((err: unknown) => {
+    logger.warn('boot', 'Docs sync at boot failed (continuing)', { err });
+  });
 
   /* 5. Services lazy-load (services/ chargés à la demande par router) */
   /* Pre-init seulement les services critiques */
@@ -202,6 +207,8 @@ async function bootstrap(): Promise<void> {
   router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true });
   /* Sprint v13.3.25 (Kevin 2026-05-07) : Cross-platform device capabilities dashboard */
   router.register('device', { loader: () => import('@features/device-capabilities/index.js'), requiresAuth: true });
+  /* Sprint v13.3.27 (Kevin 2026-05-07) : Vue Knowledge — mémoire long-terme + cross-user admin */
+  router.register('knowledge', { loader: () => import('@features/knowledge/index.js'), requiresAuth: true });
   /* Sprint port v12 (Kevin 2026-05-04) : 5 studios créatifs critiques */
   router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true });
   router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true });
