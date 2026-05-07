@@ -256,6 +256,15 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
       </section>
 
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:260ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔄</span> Mise à jour</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+          Si Apex reste bloqué sur une ancienne version malgré le reload (bug Safari iOS PWA cache), force le reset complet : Service Worker + caches + reload propre vers la dernière version.
+        </p>
+        <div id="ax-force-update-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-force-update-btn" style="${btnFullWidthStyle};background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3)">🔄 Force reset PWA + reload</button>
+      </section>
+
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:280ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔐</span> Compte</h2>
         <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:#ff5b5b;border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
@@ -339,6 +348,43 @@ export function render(rootEl: HTMLElement): void {
       const { auth } = await import('../../services/auth.js');
       auth.logout();
       location.hash = '#login';
+    })();
+  });
+
+  /* Force update PWA — fix bug Safari iOS cache tenace (Kevin 2026-05-07) */
+  const forceUpdateBtn = rootEl.querySelector<HTMLButtonElement>('#ax-force-update-btn');
+  const forceUpdateStatus = rootEl.querySelector<HTMLElement>('#ax-force-update-status');
+  if (forceUpdateBtn && activeSettingsScope) activeSettingsScope.bind(forceUpdateBtn, 'click', () => {
+    void (async () => {
+      const updateStatus = (msg: string): void => {
+        if (forceUpdateStatus) forceUpdateStatus.textContent = msg;
+      };
+      forceUpdateBtn.disabled = true;
+      forceUpdateBtn.textContent = '⏳ Reset en cours…';
+      try {
+        updateStatus('🔍 Désinstallation Service Workers…');
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+          updateStatus(`✅ ${regs.length} SW désinstallés`);
+        }
+        updateStatus('🔍 Vidage caches PWA…');
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (const k of keys) await caches.delete(k);
+          updateStatus(`✅ ${keys.length} caches vidés`);
+        }
+        updateStatus('✅ Reset terminé. Rechargement dans 2s…');
+        const { toast } = await import('../../ui/toast.js');
+        toast.info('🔄 Reset OK — reload imminent');
+        setTimeout(() => {
+          location.href = location.pathname + '?_forceupd=1&_reset=' + Date.now();
+        }, 2000);
+      } catch (err) {
+        updateStatus(`❌ Erreur : ${String(err)}`);
+        forceUpdateBtn.disabled = false;
+        forceUpdateBtn.textContent = '🔄 Force reset PWA + reload';
+      }
     })();
   });
   /* Wire voice section : auto-read toggle + voice list (61 voix) + test ▶ + définir comme défaut.
