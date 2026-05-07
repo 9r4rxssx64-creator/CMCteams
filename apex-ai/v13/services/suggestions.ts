@@ -36,10 +36,23 @@ interface CategoryRule {
   suggestions: FollowUpSuggestion[];
 }
 
-/* Catalogue heuristique : 14 catégories de patterns connus */
+/* Catalogue heuristique : 14 catégories de patterns connus.
+ * NOTE : ordre IMPORTANT — la première règle qui match est utilisée.
+ * Les catégories spécifiques (juridique avec "Code civil") doivent passer AVANT
+ * les génériques (code/programmation). */
 const CATEGORY_RULES: CategoryRule[] = [
   {
-    keywords: /\b(code|fonction|class|method|bug|debug|typescript|javascript|python|java|rust|go)\b/i,
+    /* Juridique en premier (le mot "Code" peut apparaître dans "Code civil",
+     * doit pas matcher la règle "code/programmation") */
+    keywords: /\b(loi|article|tribunal|jurisprudence|cassation|conseil d'état|juridique|code (civil|pénal|du travail|de procédure))\b/i,
+    suggestions: [
+      { label: 'Jurisprudence ?', prompt: 'Donne-moi 3 décisions de jurisprudence récentes sur ce sujet', emoji: '⚖️' },
+      { label: 'Cas pratique', prompt: 'Donne-moi un cas pratique d\'application de cet article', emoji: '📖' },
+      { label: 'Démarches ?', prompt: 'Quelles démarches concrètes pour faire valoir ce droit ?', emoji: '📋' },
+    ],
+  },
+  {
+    keywords: /\b(code [a-z]+\.[a-z]+|fonction|class|method|bug|debug|typescript|javascript|python|java|rust|nodejs|npm)\b/i,
     suggestions: [
       { label: 'Optimiser ?', prompt: 'Comment optimiser ce code (perf + lisibilité) ?', emoji: '⚡' },
       { label: 'Tests unitaires', prompt: 'Écris-moi les tests unitaires correspondants', emoji: '🧪' },
@@ -52,14 +65,6 @@ const CATEGORY_RULES: CategoryRule[] = [
       { label: 'Variantes ?', prompt: 'Quelles sont les variantes possibles de cette recette ?', emoji: '🍴' },
       { label: 'Allergènes ?', prompt: 'Liste les allergènes INCO de cette recette', emoji: '⚠️' },
       { label: 'Vins assortis ?', prompt: 'Quels vins/boissons accompagnent ce plat ?', emoji: '🍷' },
-    ],
-  },
-  {
-    keywords: /\b(loi|article|code|tribunal|jurisprudence|cassation|conseil d'état|juridique)\b/i,
-    suggestions: [
-      { label: 'Jurisprudence ?', prompt: 'Donne-moi 3 décisions de jurisprudence récentes sur ce sujet', emoji: '⚖️' },
-      { label: 'Cas pratique', prompt: 'Donne-moi un cas pratique d\'application de cet article', emoji: '📖' },
-      { label: 'Démarches ?', prompt: 'Quelles démarches concrètes pour faire valoir ce droit ?', emoji: '📋' },
     ],
   },
   {

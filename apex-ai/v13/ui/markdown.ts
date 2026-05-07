@@ -30,16 +30,6 @@ export function escapeHtml(s: string): string {
 }
 
 /**
- * Détecte le langage d'un bloc code à partir du fence ```lang.
- * Retourne 'plain' si rien.
- */
-function detectLang(fence: string): string {
-  const m = fence.match(/^```([a-z0-9_+-]+)?/i);
-  if (m && m[1]) return m[1].toLowerCase();
-  return 'plain';
-}
-
-/**
  * Render un bloc code avec header (langage + bouton copy).
  */
 function renderCodeBlock(lang: string, code: string): string {
@@ -71,7 +61,9 @@ function renderCodeBlock(lang: string, code: string): string {
  */
 function renderTable(rows: string[][]): string {
   if (rows.length < 2) return '';
-  const [header, sepRow, ...body] = rows;
+  const header: string[] = rows[0] ?? [];
+  const sepRow: string[] = rows[1] ?? [];
+  const body: string[][] = rows.slice(2);
   const aligns = sepRow.map((c) => {
     const t = c.trim();
     if (t.startsWith(':') && t.endsWith(':')) return 'center';
@@ -184,7 +176,7 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
   const out: string[] = [];
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i];
+    const line: string = lines[i] ?? '';
     /* Placeholder ligne entière */
     if (/^__AX_(CB|TBL)_\d+__$/.test(line.trim())) {
       out.push(line.trim());
@@ -193,10 +185,10 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
     }
     /* Headings */
     const hMatch = line.match(/^(#{1,6})\s+(.+)$/);
-    if (hMatch) {
+    if (hMatch && hMatch[1] && hMatch[2]) {
       const level = hMatch[1].length;
       const sizes = [22, 19, 17, 15, 14, 13];
-      const fontSize = sizes[level - 1];
+      const fontSize = sizes[level - 1] ?? 14;
       out.push(
         `<h${level} style="font-size:${fontSize}px;font-weight:700;margin:14px 0 6px;` +
           `color:#e8b830;line-height:1.3">${renderInline(hMatch[2].trim())}</h${level}>`,
@@ -213,8 +205,8 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
     /* Blockquote */
     if (!opts.noQuotes && line.startsWith('>')) {
       const quoteLines: string[] = [];
-      while (i < lines.length && lines[i].startsWith('>')) {
-        quoteLines.push(lines[i].replace(/^>\s?/, ''));
+      while (i < lines.length && (lines[i] ?? '').startsWith('>')) {
+        quoteLines.push((lines[i] ?? '').replace(/^>\s?/, ''));
         i++;
       }
       out.push(
@@ -228,8 +220,8 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
     /* Unordered list */
     if (/^[-*+]\s+/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
-        items.push(lines[i].replace(/^[-*+]\s+/, ''));
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i] ?? '')) {
+        items.push((lines[i] ?? '').replace(/^[-*+]\s+/, ''));
         i++;
       }
       out.push(
@@ -242,8 +234,8 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
     /* Ordered list */
     if (/^\d+\.\s+/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
-        items.push(lines[i].replace(/^\d+\.\s+/, ''));
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i] ?? '')) {
+        items.push((lines[i] ?? '').replace(/^\d+\.\s+/, ''));
         i++;
       }
       out.push(
@@ -264,10 +256,10 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
     i++;
     while (
       i < lines.length &&
-      lines[i].trim() !== '' &&
-      !/^(#{1,6}\s|>|[-*+]\s|\d+\.\s|[-*_]{3,}\s*$|__AX_)/.test(lines[i])
+      (lines[i] ?? '').trim() !== '' &&
+      !/^(#{1,6}\s|>|[-*+]\s|\d+\.\s|[-*_]{3,}\s*$|__AX_)/.test(lines[i] ?? '')
     ) {
-      paraLines.push(lines[i]);
+      paraLines.push(lines[i] ?? '');
       i++;
     }
     out.push(
@@ -290,15 +282,15 @@ export function renderMarkdownEnriched(text: string, opts: MarkdownRenderOptions
  * À appeler une fois après render. Idempotent (check data-wired flag).
  */
 export function wireMarkdownActions(container: HTMLElement): void {
-  if (container.dataset.markdownWired === '1') return;
-  container.dataset.markdownWired = '1';
+  if (container.dataset['markdownWired'] === '1') return;
+  container.dataset['markdownWired'] = '1';
   container.addEventListener('click', (e) => {
     const target = e.target as HTMLElement | null;
     if (!target) return;
     /* Bouton copy code */
     const copyBtn = target.closest<HTMLElement>('.ax-codeblock-copy');
     if (copyBtn) {
-      const id = copyBtn.dataset.target;
+      const id = copyBtn.dataset['target'];
       if (!id) return;
       const code = container.querySelector<HTMLElement>(`#${id}`);
       if (!code) return;

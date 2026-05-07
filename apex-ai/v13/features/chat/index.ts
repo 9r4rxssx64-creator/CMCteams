@@ -812,8 +812,9 @@ async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
   /* Trouve la dernière paire user → assistant */
   let lastUserText = '';
   for (let i = conversation.length - 1; i >= 0; i--) {
-    if (conversation[i].role === 'user') {
-      lastUserText = conversation[i].text;
+    const m = conversation[i];
+    if (m && m.role === 'user') {
+      lastUserText = m.text;
       break;
     }
   }
@@ -823,21 +824,22 @@ async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
   }
   /* Remove la dernière réponse assistant */
   for (let i = conversation.length - 1; i >= 0; i--) {
-    if (conversation[i].role === 'assistant') {
+    const m = conversation[i];
+    if (m && m.role === 'assistant') {
+      conversation.splice(i, 1);
+      break;
+    }
+  }
+  /* Remove le user message correspondant aussi (re-poussé par processQueue) */
+  for (let i = conversation.length - 1; i >= 0; i--) {
+    const m = conversation[i];
+    if (m && m.role === 'user' && m.text === lastUserText) {
       conversation.splice(i, 1);
       break;
     }
   }
   renderMessages(rootEl);
-  /* Re-queue le user message — flag _isRegen pour pas re-push user dans conversation */
   queue.push(lastUserText);
-  /* Note: processQueue va re-push user — on remove le user juste avant */
-  for (let i = conversation.length - 1; i >= 0; i--) {
-    if (conversation[i].role === 'user' && conversation[i].text === lastUserText) {
-      conversation.splice(i, 1);
-      break;
-    }
-  }
   void processQueue(rootEl);
   toast.info('🔄 Régénération en cours…');
 }
@@ -912,7 +914,7 @@ function showSlashAutocomplete(rootEl: HTMLElement, prefix: string): void {
   /* Wire clicks */
   panel.querySelectorAll<HTMLElement>('.ax-slash-item').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const name = btn.dataset.slashName;
+      const name = btn.dataset['slashName'];
       if (!name) return;
       const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
       if (ta) {
@@ -1188,7 +1190,7 @@ function renderMessages(rootEl: HTMLElement): void {
   let lastAssistantNonStreamingIdx = -1;
   for (let i = conversation.length - 1; i >= 0; i--) {
     const m = conversation[i];
-    if (m.role === 'assistant' && !m.streaming && m.text.trim().length > 0) {
+    if (m && m.role === 'assistant' && !m.streaming && m.text.trim().length > 0) {
       lastAssistantNonStreamingIdx = i;
       break;
     }
@@ -1215,7 +1217,7 @@ function renderMessages(rootEl: HTMLElement): void {
       /* v13.3.48 — Follow-up chips uniquement sur DERNIER message assistant terminé */
       let followUps = '';
       if (idx === lastAssistantNonStreamingIdx && isFollowUpsEnabled()) {
-        const lastUser = [...conversation].reverse().find((mm) => mm.role === 'user')?.text;
+        const lastUser = [...conversation].reverse().find((mm) => mm && mm.role === 'user')?.text;
         followUps = renderFollowUps(generateFollowUps(m.text, lastUser));
       }
       /* Pendant streaming : markdown light, hors : enrichi */
