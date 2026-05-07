@@ -16,7 +16,19 @@
 import { errors } from '../core/errors.js';
 import { logger } from '../core/logger.js';
 
-import { apexToolsDispatch } from './apex-tools-dispatch.js';
+/* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch (102KB raw / 27KB gzip) lazy-loadé
+ * uniquement quand un tool_use est détecté dans la réponse Claude (loop boucle 530).
+ * Évite preload boot pour 99% des requests qui n'utilisent pas tools. */
+type ApexToolsDispatchInstance = {
+  execute: (name: string, input: unknown, tier: string) => Promise<{ ok: boolean; result?: unknown; error?: string }>;
+};
+let _apexToolsDispatch: ApexToolsDispatchInstance | null = null;
+async function loadApexToolsDispatch(): Promise<ApexToolsDispatchInstance> {
+  if (_apexToolsDispatch) return _apexToolsDispatch;
+  const mod = await import('./apex-tools-dispatch.js');
+  _apexToolsDispatch = mod.apexToolsDispatch as ApexToolsDispatchInstance;
+  return _apexToolsDispatch;
+}
 import { apexTools } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
 import { chatFallback } from './chat-fallback.js';
@@ -523,6 +535,8 @@ class AIRouter {
       }
       currentMessages.push({ role: 'assistant', content: assistantContent });
 
+      /* P0-3 PERF : lazy-load au 1er tool_use uniquement (évite 27KB gzip boot) */
+      const apexToolsDispatch = await loadApexToolsDispatch();
       const toolResults = await Promise.all(
         result.streamResult.toolUses.map(async (tu) => {
           const tier = resolveUserTier();

@@ -1149,7 +1149,8 @@ export function render(rootEl: HTMLElement): void {
       : '📎';
     const div = document.createElement('div');
     div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:#c9a227';
-    div.innerHTML = `${icon} ${file.name.slice(0, 30)}${file.name.length > 30 ? '...' : ''} (${sizeMB} MB)`;
+    /* P0 SECU XSS : escape file.name (vient de file picker = source externe) */
+    div.textContent = `${icon} ${file.name.slice(0, 30)}${file.name.length > 30 ? '...' : ''} (${sizeMB} MB)`;
     attachmentsDiv.appendChild(div);
   };
 

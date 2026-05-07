@@ -223,10 +223,13 @@ class Vault {
       if (!raw) return '';
       if (raw.startsWith(PREFIX)) {
         const decrypted = await this.decryptAuto(raw);
+        this.audit('read', { target: storageKey, details: { encrypted: true, ok: decrypted !== null } });
         return decrypted ?? '';
       }
+      this.audit('read', { target: storageKey, details: { encrypted: false } });
       return raw;
-    } catch {
+    } catch (err: unknown) {
+      this.audit('read_error', { target: storageKey, details: { err: String(err).slice(0, 200) } });
       return '';
     }
   }
@@ -243,6 +246,7 @@ class Vault {
         localStorage.removeItem(storageKey);
         persisted.local = true;
       } catch { /* ignore */ }
+      this.audit('delete', { target: storageKey });
       return { ok: true, persisted };
     }
     let encrypted: string;
@@ -279,6 +283,7 @@ class Vault {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
+    this.audit('set', { target: storageKey, details: persisted });
     return { ok: persisted.local || persisted.idb, persisted };
   }
 
@@ -804,6 +809,16 @@ class Vault {
     const out = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
+  }
+
+  /**
+   * Wire RGPD Art. 32 — auditLog forensic trail des opérations vault sensibles.
+   * Lazy import (évite circular dep) + non-blocking (audit-log KO ne casse rien).
+   */
+  private audit(action: string, opts: { target?: string; details?: Record<string, unknown> } = {}): void {
+    void import('./audit-log.js')
+      .then(({ auditLog }) => auditLog.record(`vault.${action}`, opts))
+      .catch(() => { /* non-blocking */ });
   }
 }
 

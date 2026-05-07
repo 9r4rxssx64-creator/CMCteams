@@ -385,7 +385,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     const el = rootEl.querySelector<HTMLDivElement>('#ax-remote-emulator-status');
     if (!el) return;
     if (status.connected) {
-      el.innerHTML = `🟢 Connecté : <strong>${status.device}</strong> (${status.connection}) · ${status.uptime_sec}s`;
+      /* P0 SECU XSS : status.device + connection viennent de WebSocket (source externe) */
+      el.replaceChildren();
+      el.append('🟢 Connecté : ');
+      const strong = document.createElement('strong');
+      strong.textContent = String(status.device ?? '');
+      el.appendChild(strong);
+      el.append(` (${String(status.connection ?? '')}) · ${Number(status.uptime_sec) || 0}s`);
     } else {
       el.textContent = '⚪ Aucun émulateur connecté';
     }

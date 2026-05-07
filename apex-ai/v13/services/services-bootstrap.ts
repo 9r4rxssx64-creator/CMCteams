@@ -593,6 +593,39 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         logger.warn('services-bootstrap', 'baseline init failed', { err });
       }
     }),
+
+    /* P0-4 ARCHI (audit v13.2.5) : services orphelins wirés via lazy probe.
+     * On vérifie juste que le module se charge correctement (preflight check sans
+     * exécuter d'init coûteux). Les méthodes sont appelées par features (chat,
+     * scan-studio, voice-commands, settings) à la demande. Anti-pattern Kevin
+     * "Declaration ≠ Deployment" résolu : services connus du registry. */
+    safeInit('voice-catalog', async () => {
+      const mod = await import('./voice.js');
+      const audit = mod.auditCatalog();
+      logger.info('services-bootstrap', `voice catalog : ${audit.total} voices (healthy=${audit.healthy})`);
+    }),
+    safeInit('wake-word', async () => {
+      const { wakeWord } = await import('./wake-word.js');
+      const status = wakeWord.getStatus();
+      logger.info('services-bootstrap', `wake-word ready : listening=${status.listening}`);
+    }),
+    safeInit('vision', async () => {
+      const { vision } = await import('./vision.js');
+      logger.info('services-bootstrap', `vision ready : ${typeof vision === 'object' ? 'OK' : 'missing'}`);
+    }),
+    safeInit('smart-camera', async () => {
+      const { smartCamera } = await import('./smart-camera.js');
+      logger.info('services-bootstrap', `smart-camera ready : ${typeof smartCamera === 'object' ? 'OK' : 'missing'}`);
+    }),
+    safeInit('preflight', async () => {
+      const mod = await import('./preflight.js');
+      const count = Object.keys(mod.preflightRegistry).length;
+      logger.info('services-bootstrap', `preflight ready : ${count} checks registered`);
+    }),
+    safeInit('apex-claude-code-parity', async () => {
+      const mod = await import('./apex-claude-code-parity.js');
+      logger.info('services-bootstrap', `apex-claude-code-parity ready : ${typeof mod === 'object' ? 'OK' : 'missing'}`);
+    }),
   ];
 
   const results = await Promise.all(tasks);

@@ -23,6 +23,29 @@ export default defineConfig({
     minify: 'esbuild',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 50 /* warn si chunk > 50 KB raw — proxy gzip ~16-20 KB */,
+    /* P0-3 PERF (audit v13.2.5) : modulePreload trop agressif preload TOUS les chunks
+     * dynamiquement importés au boot (apex-tools-dispatch, marketplaces, auto-improvement).
+     * Filtre : preload uniquement les dépendances directes du chunk d'entrée principal.
+     * Les chunks lazy (admin views, plugins, etc.) sont chargés à la demande. */
+    modulePreload: {
+      resolveDependencies: (filename, deps): string[] => {
+        const HEAVY_LAZY = [
+          'apex-tools-dispatch',
+          'apex-meta-marketplace',
+          'auto-improvement',
+          'apex-plugins-marketplace',
+          'apex-extended-catalog',
+          'apex-self-audit',
+          'apex-claude-code-parity',
+          'voice',
+          'wake-word',
+          'vision',
+          'smart-camera',
+          'preflight',
+        ];
+        return deps.filter((d) => !HEAVY_LAZY.some((h) => d.includes(h)));
+      },
+    },
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
