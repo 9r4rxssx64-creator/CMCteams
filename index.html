@@ -4844,7 +4844,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.603";
+var APP_VER="v9.604";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11688,6 +11688,47 @@ function cmcCloseDrillModal(){
     try{ top.parentNode.removeChild(top); }catch(_){}
   }
 }
+
+/* v9.604 — Drilldown stats cliquables vEmps : titre + chips compteurs ouvrent modal liste */
+function cmcDrillEmpsKpi(kind){
+  try{
+    var emps=A.employees||[];
+    var year=A.year,mo=A.month;
+    var filtered=[],title="";
+    if(kind==="total"){
+      filtered=emps.filter(function(e){return isEmpActive(e,year,mo);});
+      title="Employés actifs ("+filtered.length+")";
+    } else if(kind==="online"){
+      var ons={};try{(getOnlineUsers()||[]).forEach(function(u){ons[u.uid]=true;});}catch(_){}
+      filtered=emps.filter(function(e){return ons[e.id];});
+      title="En ligne maintenant ("+filtered.length+")";
+    } else if(kind==="senior"){
+      filtered=emps.filter(function(e){return isEmpActive(e,year,mo)&&e.senior;});
+      title="Seniors ★ ("+filtered.length+")";
+    } else if(kind==="retired"){
+      filtered=emps.filter(function(e){return e.retired||(e.toMo&&new Date(e.toMo)<=new Date());});
+      title="Retraités ("+filtered.length+")";
+    }
+    var items=filtered.slice(0,200).map(function(e){
+      var reg=A.reg[e.id]||{};
+      var label=(reg.prenom||"")+" "+(reg.nom||e.name||"");
+      return {
+        icon:e.senior?"⭐":"👤",
+        label:label.trim()||e.name||e.id,
+        value:(e.team||"—")+(reg.poste?" · "+reg.poste:""),
+        onClick:"function(){cmcCloseDrillModal();editEmpId='"+e.id+"';sv('employees');}"
+      };
+    });
+    cmcDrillIntoModal({
+      title:title,
+      body:filtered.length>200?"Aperçu 200 premiers / "+filtered.length+" total":"",
+      items:items
+    });
+  }catch(e){
+    try{toast("Drilldown indisponible : "+e.message);}catch(_){}
+  }
+}
+try{if(typeof window!=="undefined")window.cmcDrillEmpsKpi=cmcDrillEmpsKpi;}catch(_){}
 
 /* Swipe right depuis bord gauche = back gesture */
 (function(){
@@ -21595,13 +21636,15 @@ function vDeparts(){
       h+='</div></div>';
     }
   }
-  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+  /* v9.604 \u2014 Sticky header vDeparts : nav mois toujours visible pendant scroll */
+  h+='<div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
     +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
     +'<div style="flex:1;text-align:center">'
     +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts</div>'
     +'<div style="font-size:14px;color:#a0cca0">Rotation par \u00e9quipe</div></div>'
     +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
-    +'</div>'
+    +'</div></div>'
     +(isAdm?'<button onclick="sv(\'teams\')" style="width:100%;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:9px;padding:10px;font-size:16px;color:#c9a227;font-weight:700;cursor:pointer;margin-bottom:10px">\ud83d\udc51 G\u00e9rer les chefs d\u2019\u00e9quipe \u2192</button>':"");
   // Séparateur "Ma section" pour admin et non-admin (seulement si équipe valide) — v9.58
   if(myTeam&&gt(myTeam)&&_depPri.length){
@@ -27721,9 +27764,11 @@ function vEmps(){
   });
   var selCount=Object.keys(A.bulkSelected).filter(function(k){return A.bulkSelected[k];}).length;
   var isBulk=A.bulkMode===true;
+  /* v9.604 \u2014 Sticky header vEmps + titre cliquable drilldown */
   var h=`<div class="page"${isBulk?' style="padding-bottom:120px"':''}>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div><div class="sec-title">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s${isBulk?' \u00b7 <span style="color:#c9a227">'+selCount+' s\u00e9lectionn\u00e9'+(selCount>1?'s':'')+'</span>':''}</div></div>
+  <div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px 6px 4px;margin:-4px -4px 10px -4px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div><div class="sec-title" style="cursor:pointer" onclick="cmcDrillEmpsKpi('total')" title="Cliquer pour voir tous les employ\u00e9s">Employ\u00e9s</div><div class="sec-sub">${A.employees.length} enregistr\u00e9s${isBulk?' \u00b7 <span style="color:#c9a227">'+selCount+' s\u00e9lectionn\u00e9'+(selCount>1?'s':'')+'</span>':''}</div></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="sv('passwords')" style="font-size:14px;padding:7px 11px;flex-shrink:0">\ud83d\udd11 Mots de passe</button>
       <button class="btn ghost" onclick="if(confirm('Attribuer automatiquement les secteurs selon les comp\u00e9tences ?\\n\\n\u2022 E \u2192 Europ\u00e9en\\n\u2022 P/P+ avec marqueur rose \ud83c\udf38 \u2192 Groupe ouvert\\n\u2022 P/P+ seul \u2192 Baccara\\n\\nLes employ\u00e9s sans comp\u00e9tences ne seront pas touch\u00e9s.'))reassignAllFamiliesByComp()" style="font-size:14px;padding:7px 11px;flex-shrink:0" title="R\u00e9attribue baccara/europ\u00e9en/groupe ouvert selon les comp\u00e9tences P/P+/E et le marqueur rose">\ud83c\udfaf Attribuer secteurs</button>
@@ -27732,8 +27777,9 @@ function vEmps(){
       <button class="btn ghost" onclick="cmcScanBadgeEmploye()" style="font-size:14px;padding:7px 11px;flex-shrink:0" title="Scanner un badge employé : photo → IA extrait nom/prénom/rôle/matricule + match auto">📛 Scan badge</button>
     </div>
   </div>
-  <input id="empQIn" class="inp" style="margin-bottom:10px;min-height:44px" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USM\u2026" value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">
-  ${isBulk?`<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+  <input id="empQIn" class="inp" style="margin-bottom:0;min-height:44px" placeholder="\ud83d\udd0d Nom, pr\u00e9nom, matricule, email, USM\u2026" value="${esc(A.empQ)}" oninput="searchInput('empQ',this.value,'empQIn')">
+  </div>
+  ${isBulk?`<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;margin-top:10px">
     <button onclick="bulkSelectAll(${JSON.stringify(filt.map(function(e){return e.id;})).replace(/"/g,'&quot;')})" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:6px;padding:5px 11px;font-size:13px;color:#c9a227;cursor:pointer;font-weight:700;min-height:44px">\u2713 Tout s\u00e9lectionner (${filt.length})</button>
     <button onclick="bulkClear()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 11px;font-size:13px;color:#a0cca0;cursor:pointer;min-height:44px">\u2715 Tout d\u00e9s\u00e9lect.</button>
   </div>`:''}`;
