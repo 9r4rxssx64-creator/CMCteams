@@ -40,15 +40,37 @@ export interface VoiceFingerprint {
   enrolled_at: number;
   last_match: number;
   match_score_avg: number;
+  /* v13.3.43 (Kevin 2026-05-07 "exclusivité user") :
+   * Confidence score (0-1) basé sur samples_count (max après 20 samples).
+   * Tracking false-positives/negatives pour calibration auto. */
+  confidence_score?: number;
+  false_positive_count?: number;
+  false_negative_count?: number;
+  last_calibration?: number;
 }
 
 export interface VoiceMatchResult {
   uid: string | null;
   score: number;
   confident: boolean;
+  /* v13.3.43 : confidence du voiceprint matché (pas just score similarity) */
+  print_confidence?: number;
+  /* v13.3.43 : flag spécial Kevin admin reconnu (pour mode admin temp) */
+  isKevinAdmin?: boolean;
 }
 
 const SIMILARITY_THRESHOLD_DEFAULT = 0.75;
+/* v13.3.43 : nombre de samples pour atteindre confidence 1.0 (linéaire) */
+const CONFIDENCE_FULL_AT_SAMPLES = 20;
+/* v13.3.43 : kevin admin uid (pour mode admin reconnu dans vue Laurence) */
+const ADMIN_UID = 'kdmc_admin';
+/* v13.3.43 : log unknown attempts (max 100 FIFO, FB_LOCAL strict) */
+const UNKNOWN_ATTEMPTS_KEY = 'ax_voice_unknown_attempts';
+const UNKNOWN_ATTEMPTS_MAX = 100;
+/* v13.3.43 : settings (toggle exclusif default ON, calibration interval 30j) */
+const EXCLUSIVE_MODE_KEY = 'ax_voice_exclusive_mode';
+const CALIBRATION_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; /* 30 jours */
+const CALIBRATION_LOW_CONFIDENCE = 0.85;
 
 /* Variantes phonétiques étendues — Web Speech API FR confond souvent "dis"/"dit"/"dix",
  * "apex"/"apexs"/"appex"/"hapex"/"dispex" (concat) selon micro/débit. */
