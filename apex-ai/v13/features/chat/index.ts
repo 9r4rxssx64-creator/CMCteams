@@ -965,6 +965,18 @@ export function render(rootEl: HTMLElement): void {
         textarea.style.height = 'auto';
         queue.push(value);
         void processQueue(rootEl);
+        /* v13.3.19 — Bridge Apex → CMCteams (règle Kevin 2026-05-07 §8) :
+         * détecte planning SBM collé dans le chat → push Firebase pour
+         * que CMCteams (admin Kevin) propose un import 1-clic. */
+        void (async () => {
+          try {
+            const { detectAndPushIfPlanning } = await import('../../services/cmc-planning-bridge.js');
+            const r = await detectAndPushIfPlanning(value, 'chat');
+            if (r && r.push.ok && r.push.id) {
+              toast.info(`📋 Planning détecté → envoyé à CMCteams (id: ${r.push.id})`, { duration: 5000 });
+            }
+          } catch { /* non-bloquant */ }
+        })();
       })();
     });
     textarea.addEventListener('input', () => {
@@ -985,6 +997,18 @@ export function render(rootEl: HTMLElement): void {
       const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
       if (!pasted) return;
       /* PAS de preventDefault — le paste passe normalement (texte normal OK). */
+      /* v13.3.19 — Bridge Apex → CMCteams sur paste (règle Kevin 2026-05-07 §8) :
+       * détecte planning SBM collé directement, push Firebase, toast info.
+       * Indépendant du flow credential : tourne en parallèle. */
+      void (async () => {
+        try {
+          const { detectAndPushIfPlanning } = await import('../../services/cmc-planning-bridge.js');
+          const r = await detectAndPushIfPlanning(pasted, 'paste');
+          if (r && r.push.ok && r.push.id) {
+            toast.info(`📋 Planning détecté → envoyé à CMCteams (id: ${r.push.id})`, { duration: 5000 });
+          }
+        } catch { /* non-bloquant */ }
+      })();
       void (async () => {
         const { detectAllCredentials } = await import('../../services/credential-patterns.js');
         const detected = detectAllCredentials(pasted);

@@ -292,9 +292,8 @@ export function registerCoreSentinels(): void {
   /* 4. credentials-watch : re-test tokens validity (24h)
    * Fix v13.3.18 (Kevin v13.3.16 rapport "0 credentials present alors que 10 clés collées") :
    * - Utilise vault.readKey() au lieu de localStorage.getItem brut (gère AXENC1: chiffré + IDB fallback)
-   * - Scan élargi (Anthropic + OpenAI + Groq + Gemini + GitHub + Cloudflare + Stripe + Twilio + Brevo + Resend)
-   * - Retry/backoff implicite via vault qui réessaye IDB si localStorage vide
-   * - Si 0 trouvé après scan complet → délaye 5s puis retry 1× (cas early-boot avant firebase.init).
+   * - Scan élargi (Anthropic + OpenAI + Groq + Gemini + GitHub + Cloudflare + Stripe + Twilio + Brevo + Resend + Pinecone + Perplexity + Replicate + ElevenLabs + DeepL + Mistral)
+   * - vault.readKey() retry implicite IDB si localStorage vide (gère cas early-boot)
    */
   sentinels.register({
     id: 'credentials-watch',
@@ -312,20 +311,16 @@ export function registerCoreSentinels(): void {
         const { vault } = await import('./vault.js');
         const present: string[] = [];
         for (const k of SCAN_KEYS) {
-          const v = await vault.readKey(k);
-          if (v && v.length > 5) present.push(k);
-        }
-        /* Retry once if 0 — sentinelles may run before firebase.init */
-        if (present.length === 0) {
-          await new Promise((r) => setTimeout(r, 5000));
-          for (const k of SCAN_KEYS) {
+          try {
             const v = await vault.readKey(k);
-            if (v && v.length > 5 && !present.includes(k)) present.push(k);
+            if (v && v.length > 5) present.push(k);
+          } catch {
+            /* skip key on error, continue scan */
           }
         }
         return {
           ok: true,
-          msg: `${present.length}/${SCAN_KEYS.length} credentials présents`,
+          msg: `${present.length}/${SCAN_KEYS.length} credentials present`,
           details: { keys: present, scanned: SCAN_KEYS.length },
         };
       } catch (err: unknown) {
