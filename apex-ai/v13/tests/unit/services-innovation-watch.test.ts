@@ -420,4 +420,72 @@ describe('services/innovation-watch — veille technologique 24/7', () => {
       expect(localStorage.getItem(STATS_KEY)).toBeNull();
     });
   });
+
+  /* === v13.3.41 mission INNOVATION-COMM === */
+
+  describe('notifyKevinOnCriticalGain', () => {
+    it('skip notification si gain < threshold 50%', async () => {
+      const upd: TechUpdate = {
+        id: 'u1',
+        category: 'lib-npm',
+        name: 'low-gain',
+        recommendation: 'upgrade-soon',
+        detectedAt: Date.now(),
+        estimatedGain: { perf: 10 },
+      };
+      const r = await innovationWatch.notifyKevinOnCriticalGain(upd);
+      expect(r.notified).toBe(false);
+      expect(r.reason).toContain('threshold');
+    });
+
+    it('notifie + push dans ax_claude_todo si gain ≥ 50%', async () => {
+      const upd: TechUpdate = {
+        id: 'u-big',
+        category: 'lib-npm',
+        name: 'huge-update',
+        recommendation: 'upgrade-asap',
+        detectedAt: Date.now(),
+        estimatedGain: { perf: 60, capabilities: 70 },
+      };
+      const r = await innovationWatch.notifyKevinOnCriticalGain(upd);
+      expect(r.notified).toBe(true);
+      const todoRaw = localStorage.getItem('ax_claude_todo');
+      expect(todoRaw).toBeTruthy();
+      const todoList = JSON.parse(todoRaw ?? '[]') as Array<{ id: string; gain_pct: number }>;
+      const found = todoList.find((t) => t.id === 'inno_u-big');
+      expect(found).toBeDefined();
+      expect(found?.gain_pct).toBe(70);
+    });
+  });
+
+  describe('detectMajorModelRelease', () => {
+    it('détecte Claude 5 release (anthropic)', async () => {
+      const update = await innovationWatch.detectMajorModelRelease('anthropic', [
+        'claude-3-5-sonnet',
+        'claude-5-opus',
+      ]);
+      expect(update).toBeDefined();
+      expect(update?.recommendation).toBe('upgrade-asap');
+      expect(update?.name).toBe('claude-5-opus');
+      expect(update?.estimatedGain?.capabilities).toBeGreaterThanOrEqual(50);
+    });
+
+    it('skip si modèle déjà connu (même version)', async () => {
+      /* 1er call → enregistre v3 comme max */
+      await innovationWatch.detectMajorModelRelease('openai', ['gpt-3', 'gpt-3.5']);
+      /* 2e call → skip car maxMajor n'a pas grimpé */
+      const r2 = await innovationWatch.detectMajorModelRelease('openai', ['gpt-3', 'gpt-3.5']);
+      expect(r2).toBeNull();
+    });
+
+    it('retourne null si provider unknown', async () => {
+      const r = await innovationWatch.detectMajorModelRelease('unknownAI', ['random-model']);
+      expect(r).toBeNull();
+    });
+
+    it('retourne null si aucun pattern match', async () => {
+      const r = await innovationWatch.detectMajorModelRelease('anthropic', ['no-claude-here']);
+      expect(r).toBeNull();
+    });
+  });
 });

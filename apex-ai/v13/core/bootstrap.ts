@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.38';
+export const APP_VER = 'v13.3.41';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -221,6 +221,8 @@ async function bootstrap(): Promise<void> {
   router.register('landing', { loader: () => import('@features/landing/index.js') });
   router.register('login', { loader: () => import('@features/landing/index.js') });
   router.register('chat', { loader: () => import('@features/chat/index.js'), requiresAuth: true });
+  /* v13.3.41 (mission INNOVATION-COMM) : onboarding 5 steps premier login */
+  router.register('onboarding', { loader: () => import('@features/onboarding/index.js'), requiresAuth: true });
   router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
   router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
   router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true });

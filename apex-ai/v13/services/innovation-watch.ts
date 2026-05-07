@@ -492,6 +492,130 @@ class InnovationWatch {
   }
 
   /**
+   * Notif Kevin si gain critique détecté (≥50% perf/cost/capabilities).
+   * v13.3.41 (mission INNOVATION-COMM) — Kevin règle :
+   * "Si gain ≥ 50% → notif push admin Kevin 'je recommande migration'".
+   * Best-effort : push-notifications + ax_claude_todo Firebase + audit log.
+   */
+  async notifyKevinOnCriticalGain(update: TechUpdate): Promise<{ notified: boolean; reason?: string }> {
+    const maxGain = Math.max(
+      update.estimatedGain?.perf ?? 0,
+      update.estimatedGain?.cost ?? 0,
+      update.estimatedGain?.capabilities ?? 0,
+    );
+    if (maxGain < AUTO_UPDATE_GAIN_THRESHOLD) {
+      return { notified: false, reason: `gain ${maxGain}% < threshold ${AUTO_UPDATE_GAIN_THRESHOLD}%` };
+    }
+    const title = `💡 Innovation : ${update.name}`;
+    const body = `Gain ${maxGain}% (${update.recommendation}). Migration recommandée.`;
+    /* 1. Push notification (best-effort, no-throw) */
+    try {
+      const { pushNotifications } = await import('./push-notifications.js');
+      const adminUid = 'kdmc_admin';
+      if (typeof (pushNotifications as unknown as { send?: unknown }).send === 'function') {
+        await (pushNotifications as unknown as {
+          send: (uid: string, n: { title: string; body: string; urgent: boolean }) => Promise<unknown>;
+        }).send(adminUid, { title, body, urgent: false });
+      }
+    } catch {
+      /* push optional */
+    }
+    /* 2. Push dans ax_claude_todo Firebase shared (Kevin pipeline règle) */
+    try {
+      const todoEntry = {
+        id: `inno_${update.id}`,
+        type: 'innovation_recommendation',
+        title,
+        body,
+        update_id: update.id,
+        gain_pct: maxGain,
+        ts: Date.now(),
+        status: 'pending',
+        src: 'innovation-watch',
+      };
+      const raw = localStorage.getItem('ax_claude_todo');
+      const list = raw ? (JSON.parse(raw) as unknown[]) : [];
+      if (Array.isArray(list)) {
+        list.push(todoEntry);
+        const trimmed = list.slice(-100);
+        localStorage.setItem('ax_claude_todo', JSON.stringify(trimmed));
+      }
+    } catch {
+      /* ignore */
+    }
+    /* 3. Audit log */
+    try {
+      const { auditLog } = await import('./audit-log.js');
+      await auditLog.record('innovation.notify-kevin', {
+        details: { id: update.id, name: update.name, gain: maxGain, recommendation: update.recommendation },
+      });
+    } catch {
+      /* optional */
+    }
+    logger.info('innovation-watch', `Kevin notified for ${update.name} (gain ${maxGain}%)`);
+    return { notified: true };
+  }
+
+  /**
+   * Détecte les nouveaux modèles IA majeurs (e.g. Claude 5, GPT-6, Gemini 3).
+   * Compare model IDs récents vs historique connus → flag CRITICAL si nouveau majeur.
+   */
+  async detectMajorModelRelease(provider: string, models: readonly string[]): Promise<TechUpdate | null> {
+    const KNOWN_MAJORS: Record<string, RegExp> = {
+      anthropic: /claude-(\d+)/i,
+      openai: /(?:gpt|o)-?(\d+)/i,
+      gemini: /gemini-(\d+(?:\.\d+)?)/i,
+      mistral: /mistral-(?:large-)?(\d+)/i,
+    };
+    const re = KNOWN_MAJORS[provider.toLowerCase()];
+    if (!re) return null;
+    let maxMajor = 0;
+    let matchedId = '';
+    for (const m of models) {
+      const r = re.exec(m);
+      if (r && r[1]) {
+        const v = parseFloat(r[1]);
+        if (v > maxMajor) {
+          maxMajor = v;
+          matchedId = m;
+        }
+      }
+    }
+    if (maxMajor === 0 || !matchedId) return null;
+    /* Storage clef "highest version vu" */
+    const storageKey = `apex_v13_innovation_max_${provider}`;
+    let prevMax = 0;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) prevMax = parseFloat(raw) || 0;
+    } catch {
+      /* ignore */
+    }
+    if (maxMajor <= prevMax) return null;
+    /* Persiste */
+    try {
+      localStorage.setItem(storageKey, String(maxMajor));
+    } catch {
+      /* ignore */
+    }
+    /* Crée update CRITICAL */
+    const update: TechUpdate = {
+      id: genId('ai-provider-major', provider),
+      category: 'ai-provider',
+      name: matchedId,
+      latestVersion: String(maxMajor),
+      currentVersion: String(prevMax || 'inconnu'),
+      recommendation: 'upgrade-asap',
+      detectedAt: Date.now(),
+      status: 'pending',
+      estimatedGain: { capabilities: 80, perf: 30 },
+      details: `Nouveau modèle majeur ${provider} v${maxMajor} détecté`,
+    };
+    logger.info('innovation-watch', `Major model release detected: ${provider} v${maxMajor} (${matchedId})`);
+    return update;
+  }
+
+  /**
    * Auto-update si gain >= 50% ET pas breaking-changes ET confidence >= 0.95.
    * Aujourd'hui : marque applied (les vrais bumps deps sont via PR).
    */

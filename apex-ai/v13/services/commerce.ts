@@ -88,6 +88,79 @@ class Commerce {
   }
 
   /**
+   * Détails publics des plans (pour landing page commerciale).
+   * v13.3.41 (mission INNOVATION-COMM) — Préparation e-Apex commercialisable.
+   */
+  getPlansForLanding(): ReadonlyArray<{
+    id: Plan;
+    name: string;
+    pricePerMonth: number;
+    features: readonly string[];
+    cta: string;
+    featured?: boolean;
+  }> {
+    return [
+      {
+        id: 'free',
+        name: 'Free',
+        pricePerMonth: 0,
+        features: [
+          '50 messages IA/jour',
+          '1 studio au choix',
+          'Voix Web Speech système',
+          'Coffre chiffré AES-GCM 256',
+          'Mémoire long terme',
+        ],
+        cta: 'Commencer gratuit',
+      },
+      {
+        id: 'basic',
+        name: 'Basic',
+        pricePerMonth: 9,
+        features: [
+          '500 messages IA/jour',
+          '5 studios premium',
+          'Voix premium (ElevenLabs)',
+          'Browser intégré',
+          '27 sentinelles auto-fix',
+          'Multi-provider failover',
+        ],
+        cta: 'Choisir Basic',
+        featured: true,
+      },
+      {
+        id: 'pro',
+        name: 'Pro',
+        pricePerMonth: 29,
+        features: [
+          'Messages IA illimités',
+          'Tous studios + 8 pro experts',
+          '60 voix premium',
+          'API publique',
+          'Marketplace plugins',
+          'Workflows automatiques',
+          'Support prioritaire',
+        ],
+        cta: 'Choisir Pro',
+      },
+      {
+        id: 'business',
+        name: 'Business',
+        pricePerMonth: -1, /* sur devis */
+        features: [
+          'Tout Pro inclus',
+          'Multi-user (équipes)',
+          'White-label',
+          'Marketplace commission 30%',
+          'SSO + admin org',
+          'SLA 99.9%',
+        ],
+        cta: 'Nous contacter',
+      },
+    ];
+  }
+
+  /**
    * Gate d'accès feature : retourne true si user peut utiliser, false si paywall à montrer.
    * Admin Kevin → toujours true.
    */
