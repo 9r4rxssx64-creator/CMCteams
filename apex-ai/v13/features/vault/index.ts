@@ -471,34 +471,92 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <style>
+      /* v13.3.22 UX iPhone PWA fix Kevin "j'ai dû descendre la page on voit plus le haut" :
+       * Header + search bar STICKY robustes (top:0 sans interférence padding parent).
+       * Compact-mode auto via class .ax-vault-scrolled (ajoutée en JS au scroll > 80px).
+       * Bottom safe-area + FAB floating "Tester tout" si scrollé loin. */
       .ax-vault-page button:active { transform: scale(0.96); }
       .ax-vault-page details[open] > summary .ax-chevron { transform: rotate(180deg); }
       .ax-cred-card:hover { transform: translateY(-2px); border-color: rgba(232,184,48,0.3) !important; }
+      .ax-vault-sticky-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        margin: 0 -16px;
+        padding: 0 16px;
+        background: rgba(8,8,15,0.96);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-bottom: 1px solid rgba(201,162,39,0.15);
+        transition: padding 200ms ease, box-shadow 200ms ease;
+      }
+      .ax-vault-page.ax-vault-scrolled .ax-vault-sticky-wrap {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      }
+      .ax-vault-page.ax-vault-scrolled .ax-vault-stats { display: none; }
+      .ax-vault-page.ax-vault-scrolled .ax-vault-h1 { font-size: 18px; }
+      .ax-vault-page.ax-vault-scrolled .ax-vault-search-row {
+        margin-top: 6px;
+        padding-bottom: 6px;
+      }
+      .ax-vault-fab {
+        position: fixed;
+        right: 16px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+        z-index: 18;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg,#c9a227,#e8b830);
+        color: #000;
+        font-size: 22px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(201,162,39,0.45);
+        opacity: 0;
+        transform: translateY(16px) scale(0.9);
+        pointer-events: none;
+        transition: opacity 220ms ease, transform 220ms cubic-bezier(0.16,1,0.3,1);
+      }
+      .ax-vault-page.ax-vault-scrolled .ax-vault-fab {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
       @media (prefers-reduced-motion: reduce) {
-        .ax-cred-card { transition: none !important; }
+        .ax-cred-card, .ax-vault-sticky-wrap, .ax-vault-fab { transition: none !important; }
         .ax-vault-page button:active { transform: none !important; }
       }
     </style>
-    <div class="ax-vault-page" style="padding:env(safe-area-inset-top,16px) 16px env(safe-area-inset-bottom,80px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+    <div class="ax-vault-page" style="padding:env(safe-area-inset-top,16px) 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
 
-      <header style="position:sticky;top:0;z-index:10;background:rgba(8,8,15,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:12px 0;margin:-16px -16px 16px;border-bottom:1px solid rgba(201,162,39,0.15)">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 16px;flex-wrap:wrap">
-          <h1 style="margin:0;font-size:24px;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700">🔐 Coffre Codes</h1>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="ax-vault-add-manual" style="padding:8px 14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">+ Ajouter</button>
-            <button id="ax-vault-test-all" style="padding:8px 14px;background:rgba(201,162,39,0.1);color:#c9a227;border:1px solid rgba(201,162,39,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Tester tout</button>
+      <div class="ax-vault-sticky-wrap">
+        <header style="padding:12px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <h1 class="ax-vault-h1" style="margin:0;font-size:24px;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;transition:font-size 200ms ease">🔐 Coffre Codes</h1>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="ax-vault-add-manual" style="padding:8px 14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">+ Ajouter</button>
+              <button id="ax-vault-test-all" style="padding:8px 14px;background:rgba(201,162,39,0.1);color:#c9a227;border:1px solid rgba(201,162,39,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Tester tout</button>
+            </div>
           </div>
-        </div>
-        <div style="display:flex;gap:14px;padding:8px 16px 0;font-size:12px;color:#aaa;flex-wrap:wrap">
-          <span>📊 ${stats.total} codes</span>
-          <span style="color:#22cc77">🟢 ${stats.active} actifs</span>
-          <span style="color:#ffaa00">🟡 ${stats.failing} dégradés</span>
-          <span style="color:#ff5b5b">🔴 ${stats.invalid} invalides</span>
-        </div>
-      </header>
+          <div class="ax-vault-stats" style="display:flex;gap:14px;padding:8px 0 0;font-size:12px;color:#aaa;flex-wrap:wrap">
+            <span>📊 ${stats.total} codes</span>
+            <span style="color:#22cc77">🟢 ${stats.active} actifs</span>
+            <span style="color:#ffaa00">🟡 ${stats.failing} dégradés</span>
+            <span style="color:#ff5b5b">🔴 ${stats.invalid} invalides</span>
+          </div>
+        </header>
 
-      <input type="text" id="ax-vault-search" value="${escapeHtml(activeQuery)}" placeholder="🔍 Chercher un service..."
-        style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#fff;font-size:15px;margin-bottom:14px;box-sizing:border-box;-webkit-appearance:none;min-height:44px">
+        <div class="ax-vault-search-row" style="padding-bottom:12px;transition:padding 200ms ease">
+          <input type="text" id="ax-vault-search" value="${escapeHtml(activeQuery)}" placeholder="🔍 Chercher un service..."
+            style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#fff;font-size:15px;box-sizing:border-box;-webkit-appearance:none;min-height:44px">
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
 
       <section style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));border:1px solid rgba(232,184,48,0.18);border-radius:14px;padding:14px;margin-bottom:14px">
         <h3 style="margin:0 0 8px;font-size:13px;color:#e8b830;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">🔍 Auto-détection rapide</h3>
@@ -525,13 +583,55 @@ export function render(rootEl: HTMLElement): void {
         <span style="opacity:0.7">FB_LOCAL strict pour ax_pin/ax_user · jamais de plaintext en backup</span>
       </p>
 
+      <button id="ax-vault-fab" class="ax-vault-fab" type="button" aria-label="Tester toutes les clés" title="Tester toutes les clés">🔄</button>
       <div id="ax-vault-modal-root"></div>
     </div>
   `;
 
   renderCategories(rootEl);
   attachHandlers(rootEl);
+  attachScrollUx(rootEl);
   logger.info('feature-vault', `rendered (${stats.total} entries)`);
+}
+
+/**
+ * v13.3.22 UX iPhone PWA — auto compact-mode header au scroll + FAB.
+ * Listener scroll passif (perf) + threshold 80px + cleanup auto via scope.
+ */
+function attachScrollUx(rootEl: HTMLElement): void {
+  const page = rootEl.querySelector<HTMLElement>('.ax-vault-page');
+  const fab = rootEl.querySelector<HTMLButtonElement>('#ax-vault-fab');
+  if (!page) return;
+
+  let lastY = 0;
+  let raf = 0;
+  const onScroll = (): void => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      if (y === lastY) return;
+      lastY = y;
+      if (y > 80) page.classList.add('ax-vault-scrolled');
+      else page.classList.remove('ax-vault-scrolled');
+    });
+  };
+  if (activeVaultScope) {
+    activeVaultScope.bind(window, 'scroll', onScroll, { passive: true });
+  } else {
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+  /* Initial state */
+  onScroll();
+
+  /* FAB → trigger "Tester tout" handler (réutilise listener du bouton header) */
+  if (fab && activeVaultScope) {
+    activeVaultScope.bind(fab, 'click', () => {
+      haptic.tap();
+      const headerBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-test-all');
+      headerBtn?.click();
+    });
+  }
 }
 
 function renderCategories(rootEl: HTMLElement): void {

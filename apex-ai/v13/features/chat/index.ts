@@ -925,7 +925,7 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px">🔑 Clé API</button>
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px;color:#ff6666">🚪 Déconnexion</button>
       </nav>
-      <footer style="text-align:center;padding:6px;font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg)">
+      <footer style="text-align:center;padding:6px 6px calc(env(safe-area-inset-bottom,0px) + 6px);font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0">
         APEX AI ${APP_VER} — Créé par <strong style="color:var(--ax-gold)">DK</strong>
       </footer>
     </div>
