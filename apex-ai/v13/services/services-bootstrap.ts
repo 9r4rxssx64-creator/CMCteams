@@ -608,6 +608,28 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const { wakeWord } = await import('./wake-word.js');
       const status = wakeWord.getStatus();
       logger.info('services-bootstrap', `wake-word ready : listening=${status.listening}`);
+      /* Fix v13.3.18 (Kevin v13.3.16 rapport "wake-word disabled") :
+       * Auto-start pour admin Kevin si feature toggle ax_wake_word_active!=false.
+       * Permission micro implicite via Web Speech API (consent au premier prompt browser).
+       * Skip si déjà listening, ou si user pas admin, ou si toggle explicit OFF. */
+      try {
+        const flag = localStorage.getItem('ax_wake_word_active');
+        const explicitOff = flag === 'false' || flag === '0' || flag === 'off';
+        if (!status.listening && !explicitOff) {
+          const { auth } = await import('./auth.js');
+          const isAdmin = await auth.isAdmin().catch(() => false);
+          if (isAdmin) {
+            const result = await wakeWord.start();
+            if (result.started) {
+              logger.info('services-bootstrap', 'wake-word auto-started (admin Kevin)');
+            } else {
+              logger.warn('services-bootstrap', `wake-word auto-start skipped: ${result.reason ?? 'unknown'}`);
+            }
+          }
+        }
+      } catch (err: unknown) {
+        logger.warn('services-bootstrap', 'wake-word auto-start failed (continuing)', { err });
+      }
     }),
     safeInit('vision', async () => {
       const { vision } = await import('./vision.js');
