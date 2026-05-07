@@ -13,7 +13,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import type { TechUpdate, InnovationCategory } from '../../services/innovation-watch.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeInnovationScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeInnovationScope?.cleanup();
+  activeInnovationScope = null;
+}
 
 const CATEGORY_LABELS: Record<InnovationCategory, string> = {
   'ai-provider': '🤖 IA Provider',
@@ -60,6 +69,9 @@ function recoBadge(reco: TechUpdate['recommendation']): string {
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeInnovationScope?.cleanup();
+  activeInnovationScope = createCleanupScope('innovation');
   const { innovationWatch } = await import('../../services/innovation-watch.js');
   const stats = innovationWatch.getStats();
   const updates = innovationWatch.getUpdates();
@@ -147,7 +159,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   `;
 
   /* Wire scan now */
-  rootEl.querySelector<HTMLButtonElement>('#ax-inno-scan')?.addEventListener('click', () => {
+  const scanBtn = rootEl.querySelector<HTMLButtonElement>('#ax-inno-scan');
+  if (scanBtn && activeInnovationScope) activeInnovationScope.bind(scanBtn, 'click', () => {
     void (async () => {
       const { toast } = await import('../../ui/toast.js');
       toast.info('Scan en cours…');
@@ -162,12 +175,14 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   });
 
   /* Wire refresh */
-  rootEl.querySelector<HTMLButtonElement>('#ax-inno-refresh')?.addEventListener('click', () => {
+  const refreshBtn = rootEl.querySelector<HTMLButtonElement>('#ax-inno-refresh');
+  if (refreshBtn && activeInnovationScope) activeInnovationScope.bind(refreshBtn, 'click', () => {
     void render(rootEl);
   });
 
   /* Wire reset */
-  rootEl.querySelector<HTMLButtonElement>('#ax-inno-reset')?.addEventListener('click', () => {
+  const resetBtn = rootEl.querySelector<HTMLButtonElement>('#ax-inno-reset');
+  if (resetBtn && activeInnovationScope) activeInnovationScope.bind(resetBtn, 'click', () => {
     void (async () => {
       const { toast } = await import('../../ui/toast.js');
       if (typeof confirm === 'function' && !confirm('Reset historique innovation watch ?')) return;
@@ -179,7 +194,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* Wire apply / skip per row */
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-inno-apply').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInnovationScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['id'];
         if (!id) return;
@@ -192,7 +207,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-inno-skip').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInnovationScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['id'];
         if (!id) return;

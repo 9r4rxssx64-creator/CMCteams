@@ -17,6 +17,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import {
   apexMetaMarketplace,
   type MarketplaceCategory,
@@ -24,6 +25,14 @@ import {
   type MarketplaceProvider,
   META_MARKETPLACE_CATALOG,
 } from '../../services/apex-meta-marketplace.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeMetaScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeMetaScope?.cleanup();
+  activeMetaScope = null;
+}
 
 const CATEGORY_LABELS: Record<MarketplaceCategory, string> = {
   'ai-ml': '🤖 IA / ML',
@@ -210,18 +219,21 @@ function rerender(): void {
 
 function attachHandlers(): void {
   if (!mountEl) return;
+  /* P1-6 : scope listeners pour anti-leak SPA navigation */
+  activeMetaScope?.cleanup();
+  activeMetaScope = createCleanupScope('meta-marketplace');
 
   const searchInput = mountEl.querySelector<HTMLInputElement>('#meta-mkt-search');
   const searchBtn = mountEl.querySelector<HTMLButtonElement>('#meta-mkt-search-btn');
   if (searchInput) {
-    searchInput.addEventListener('keydown', (ev) => {
+    activeMetaScope!.bind(searchInput, 'keydown', (ev) => {
       if (ev.key === 'Enter') {
         void performSearch(searchInput.value, state.category);
       }
     });
   }
   if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
+    activeMetaScope!.bind(searchBtn, 'click', () => {
       const q = searchInput?.value ?? '';
       void performSearch(q, state.category);
     });
@@ -229,7 +241,7 @@ function attachHandlers(): void {
 
   /* Catégories chips */
   mountEl.querySelectorAll<HTMLButtonElement>('[data-meta-mkt-cat]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeMetaScope!.bind(btn, 'click', () => {
       const cat = btn.dataset['metaMktCat'] ?? '';
       const newCat = cat ? (cat as MarketplaceCategory) : null;
       if (state.query) {
@@ -243,7 +255,7 @@ function attachHandlers(): void {
 
   /* Install buttons */
   mountEl.querySelectorAll<HTMLButtonElement>('[data-meta-mkt-install]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    activeMetaScope!.bind(btn, 'click', async () => {
       const raw = btn.dataset['metaMktInstall'] ?? '';
       const [providerId, ...rest] = raw.split('|');
       const itemId = rest.join('|');
