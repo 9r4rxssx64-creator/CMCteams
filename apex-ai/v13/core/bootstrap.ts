@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.52';
+export const APP_VER = 'v13.3.53';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -279,6 +279,8 @@ async function bootstrap(): Promise<void> {
   router.register('broadlink-setup', { loader: () => import('@features/broadlink-setup/index.js'), requiresAdmin: true });
   /* v13.3.52 Kevin 2026-05-07 — IoT Providers framework (eWeLink/Tuya/Hue/Sonos/HA + custom) */
   router.register('iot-providers', { loader: () => import('@features/iot-providers/index.js'), requiresAdmin: true });
+  /* v13.3.53 (Kevin 2026-05-07 23h55) : Multi-Source Extract History — admin only */
+  router.register('multi-source-history', { loader: () => import('@features/multi-source-history/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

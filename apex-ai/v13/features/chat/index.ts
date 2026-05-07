@@ -1652,7 +1652,22 @@ export function render(rootEl: HTMLElement): void {
       void (async () => {
         const { detectAllCredentials } = await import('../../services/credential-patterns.js');
         const detected = detectAllCredentials(pasted);
-        if (detected.length === 0) return; /* Texte normal, on laisse */
+        if (detected.length === 0) {
+          /* v13.3.53 — Texte sans credential MAIS peut contenir URLs/emails/IPs : multi-source */
+          if (/(https?:\/\/|@|\d+\.\d+\.\d+\.\d+|[0-9A-F]{2}[:-][0-9A-F]{2})/i.test(pasted) && pasted.length > 20) {
+            try {
+              const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+              const result = await multiSourceAnalyze.analyzeText(pasted);
+              if (result.extracted_count > 0) {
+                const r = await multiSourceAnalyze.installAll(result, { test: false });
+                if (r.installed > 0) {
+                  toast.info(`🔗 ${r.installed} élément(s) extrait(s) (URLs/emails/IPs)`, { duration: 5000 });
+                }
+              }
+            } catch { /* non-bloquant */ }
+          }
+          return; /* Texte normal, on laisse */
+        }
         /* Credential détecté : clear textarea (efface valeur visible) + chiffre */
         textarea.value = '';
         const { vault } = await import('../../services/vault.js');
@@ -1668,6 +1683,15 @@ export function render(rootEl: HTMLElement): void {
         if (result.failed > 0 && result.stored.length === 0) {
           toast.warn(`Format inconnu — ouvre 🔐 Coffre pour coller manuellement`, { duration: 6000 });
         }
+        /* v13.3.53 — Multi-source pour extraire AUSSI URLs/sites/emails de la même paste */
+        try {
+          const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+          const msResult = await multiSourceAnalyze.analyzeText(pasted);
+          const sites = msResult.items.filter((it) => it.type === 'site');
+          if (sites.length > 0) {
+            await multiSourceAnalyze.installAll({ ...msResult, items: sites }, { test: false });
+          }
+        } catch { /* non-bloquant */ }
       })();
     });
   }
@@ -1984,6 +2008,28 @@ export function render(rootEl: HTMLElement): void {
         } catch { /* ignore createObjectURL fail */ }
         /* v13.3.51 — Auto-vision device sur upload image */
         void autoAnalyzeDeviceImage(file, rootEl);
+        /* v13.3.53 — Multi-Source EXHAUSTIVE extraction (Kevin règle 2026-05-07 23h55) :
+         * "1 source peut contenir N éléments — extraire TOUT + étudier + tester + installer".
+         * Image upload → Claude Vision → credentials/URLs/IPs/MACs/device IDs → vault + linksRegistry. */
+        void (async () => {
+          try {
+            const reader = new FileReader();
+            reader.onload = async () => {
+              const dataUrl = reader.result as string;
+              const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+              toast.info('🔍 Analyse multi-source en cours...', { duration: 3000 });
+              const result = await multiSourceAnalyze.analyzeImage(dataUrl);
+              if (result.extracted_count === 0) return;
+              const installRes = await multiSourceAnalyze.installAll(result, { test: true });
+              const safe = result.extracted_count - result.items.filter((it) => it.forbidden).length;
+              const msg = `✅ ${installRes.installed}/${safe} installés · ${installRes.tested_ok} testés OK${installRes.failed.length ? ` · ${installRes.failed.length} fail` : ''}`;
+              toast.success(msg, { duration: 8000 });
+            };
+            reader.readAsDataURL(file);
+          } catch (err) {
+            logger.warn('chat', 'multi-source analyze image failed', { err });
+          }
+        })();
       }
       void (async () => {
         try {

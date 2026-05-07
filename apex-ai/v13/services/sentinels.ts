@@ -1179,5 +1179,34 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (16 active + 1 disabled wake-watch)`);
+  /* v13.3.53 service-knowledge-watch (Kevin "étudier sites/liens/codes") :
+   * Re-fetch 1×/sem chaque service connu (study-service.ts) pour détecter
+   * changements de pricing / docs / capabilities. Notif si > 50% changement prix. */
+  sentinels.register({
+    id: 'service-knowledge-watch',
+    name: 'Connaissance services',
+    desc: 'Refresh hebdo des services étudiés (pricing, capabilities, alternatives)',
+    intervalMs: 7 * 24 * 60 * 60 * 1000,
+    check: async () => {
+      try {
+        const { studyService } = await import('./study-service.js');
+        const known = studyService.listKnown();
+        if (known.length === 0) return { ok: true, msg: 'Aucun service étudié pour le moment' };
+        return {
+          ok: true,
+          msg: `${known.length} services connus, last refresh dans 7j`,
+          details: { count: known.length, services: known.slice(0, 5).map((s) => s.service_name) },
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'service-knowledge-watch fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+    autoFix: async () => {
+      const { studyService } = await import('./study-service.js');
+      const r = await studyService.refreshAll();
+      return { ok: r.errors.length === 0, msg: `Refreshed ${r.refreshed} services` };
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (17 active + 1 disabled wake-watch)`);
 }
