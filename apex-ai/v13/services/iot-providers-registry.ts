@@ -357,7 +357,7 @@ export const BUILTIN_PROVIDERS: readonly IoTProvider[] = [
     endpoints: {
       list_devices: { method: 'POST', path: '/interface/device/list' },
       send_command: { method: 'POST', path: '/device/relay/control', body_template: { id: '{device_id}', channel: 0, turn: '{action}' } },
-      get_state: { method: 'POST', path: '/device/status', body_template: { id: '{device_id}' } },
+      get_state: { method: 'POST', path: '/device/status?id={device_id}' },
     },
     credential_keys: ['ax_shelly_server', 'ax_shelly_auth_key'],
     test_endpoint: '/interface/device/list',
@@ -378,7 +378,7 @@ export const BUILTIN_PROVIDERS: readonly IoTProvider[] = [
     },
     endpoints: {
       list_devices: { method: 'GET', path: '/cm?cmnd=Status%200' },
-      send_command: { method: 'GET', path: '/cm?cmnd={command}' },
+      send_command: { method: 'GET', path: '/cm?cmnd={command}', body_template: {} },
       get_state: { method: 'GET', path: '/cm?cmnd=State' },
     },
     credential_keys: ['ax_tasmota_base_url', 'ax_tasmota_user', 'ax_tasmota_password'],
