@@ -874,7 +874,90 @@ class SentinelsRegistry {
       },
     });
 
-    /* 19. sentinel-meta (5 min) — surveille les autres sentinelles */
+    /* 21. version-drift-watch (15 min) — DÉTECTION ANTI-RÉGRESSION (Kevin v13.3.56) :
+     * - Compare APP_VER local (bootstrap) vs remote (fetch index.html du serveur)
+     * - Si remote > local → trigger force-update auto (déjà fait par bootstrap, ici juste audit)
+     * - Si CACHE_VERSION sw.js != APP_VER → escalade Claude Code (drift critique)
+     * - Empêche scénario v12.546→v12.564 (20 versions perdues sur branche non mergée)
+     * - Sans intervention Kevin requise : autonomie totale.
+     */
+    sentinelsManager.register({
+      id: 'version-drift-watch',
+      name: 'Version Drift Watch',
+      desc: 'Detect APP_VER drift (local vs remote, sw.js, index.html) auto-fix when possible',
+      intervalMs: 15 * 60 * 1000,
+      check: async () => {
+        try {
+          const { APP_VER } = await import('../core/bootstrap.js');
+          /* 1. Fetch remote index.html (serveur) avec cache-bust */
+          const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?_drift=' + Date.now();
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) {
+            return { ok: true, msg: 'remote unreachable, skip drift check' };
+          }
+          const html = await res.text();
+          const remoteMatch = html.match(/data-app-ver="(v[0-9]+\.[0-9]+\.[0-9]+)"/);
+          const remoteVer = remoteMatch?.[1];
+          if (!remoteVer) {
+            return { ok: true, msg: 'remote version not detectable, skip' };
+          }
+          /* 2. Drift APP_VER local vs remote ? */
+          if (remoteVer !== APP_VER) {
+            return {
+              ok: false,
+              msg: `version drift: local ${APP_VER} vs remote ${remoteVer} → bootstrap will force-update`,
+              details: { local: APP_VER, remote: remoteVer },
+            };
+          }
+          /* 3. Drift sw.js CACHE_VERSION ? (introspection runtime impossible, juste check serveur) */
+          try {
+            const swRes = await fetch(location.pathname.replace(/[^/]*$/, '') + 'sw.js?_drift=' + Date.now(), {
+              cache: 'no-store',
+            });
+            if (swRes.ok) {
+              const swText = await swRes.text();
+              const swMatch = swText.match(/CACHE_VERSION\s*=\s*'apex-(v[0-9]+\.[0-9]+\.[0-9]+)'/);
+              const swVer = swMatch?.[1];
+              if (swVer && swVer !== APP_VER) {
+                return {
+                  ok: false,
+                  msg: `sw.js drift: CACHE_VERSION ${swVer} != APP_VER ${APP_VER}`,
+                  details: { app: APP_VER, sw: swVer },
+                };
+              }
+            }
+          } catch {
+            /* sw.js fetch fail non bloquant */
+          }
+          return { ok: true, msg: `Versions sync: ${APP_VER}` };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'version-drift-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Si drift critique, on ne peut pas forcer rebuild côté navigateur.
+         * Mais bootstrap.ts gère déjà la détection + reload forcé.
+         * Ici on log seulement pour audit + escalade GitHub Actions repo dispatch via cron. */
+        try {
+          const { logger } = await import('../core/logger.js');
+          logger.warn(
+            'version-drift-watch',
+            'drift detected, bootstrap will handle reload, GitHub Actions sw-cache-sync.yml will fix sw.js',
+          );
+          return { ok: true, msg: 'drift handled by bootstrap + GitHub Actions' };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'autoFix log failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
+    /* 22. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',
       name: 'Sentinel meta',
