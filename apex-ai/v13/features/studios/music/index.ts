@@ -27,8 +27,17 @@
  */
 
 import { logger } from '../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeMusicScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeMusicScope?.cleanup();
+  activeMusicScope = null;
+}
 
 export interface MixTrack {
   id: string;
@@ -742,6 +751,9 @@ class MusicStudioStore {
 export const musicStudioStore = new MusicStudioStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeMusicScope?.cleanup();
+  activeMusicScope = createCleanupScope('studios-music');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
@@ -842,7 +854,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="remove-track"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeMusicScope!.bind(btn, 'click', () => {
       const id = btn.dataset['trackId'];
       if (!id) return;
       if (musicStudioStore.remove(id)) render(rootEl);
@@ -850,7 +862,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="volume"]').forEach((slider) => {
-    slider.addEventListener('input', () => {
+    activeMusicScope!.bind(slider, 'input', () => {
       const id = slider.dataset['trackId'];
       if (!id) return;
       musicStudioStore.update(id, { volume: parseInt(slider.value, 10) / 100 });
@@ -858,7 +870,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="pan"]').forEach((slider) => {
-    slider.addEventListener('input', () => {
+    activeMusicScope!.bind(slider, 'input', () => {
       const id = slider.dataset['trackId'];
       if (!id) return;
       musicStudioStore.update(id, { pan: parseInt(slider.value, 10) / 100 });
@@ -866,7 +878,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="pitch"]').forEach((slider) => {
-    slider.addEventListener('input', () => {
+    activeMusicScope!.bind(slider, 'input', () => {
       const id = slider.dataset['trackId'];
       if (!id) return;
       musicStudioStore.update(id, { pitchSemitones: parseInt(slider.value, 10) });
@@ -874,7 +886,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="reverb"]').forEach((slider) => {
-    slider.addEventListener('input', () => {
+    activeMusicScope!.bind(slider, 'input', () => {
       const id = slider.dataset['trackId'];
       if (!id) return;
       musicStudioStore.updateEffects(id, { reverbWet: parseInt(slider.value, 10) / 100 });
@@ -882,7 +894,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="mute"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeMusicScope!.bind(btn, 'click', () => {
       const id = btn.dataset['trackId'];
       if (!id) return;
       const t = musicStudioStore.list().find((x) => x.id === id);
@@ -893,7 +905,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="solo"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeMusicScope!.bind(btn, 'click', () => {
       const id = btn.dataset['trackId'];
       if (!id) return;
       const t = musicStudioStore.list().find((x) => x.id === id);
