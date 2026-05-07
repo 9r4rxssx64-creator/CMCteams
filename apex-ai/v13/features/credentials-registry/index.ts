@@ -17,9 +17,9 @@
  *  - listener-cleanup scope (anti-leak SPA)
  */
 
-import { logger } from '../../core/logger.js';
-import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { escapeHtml } from '../../core/html-safe.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { credentialsAudit, type CredentialAuditEntry, type CredentialsAuditReport } from '../../services/credentials-audit.js';
 import { haptic } from '../../ui/haptic.js';

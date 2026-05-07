@@ -367,6 +367,16 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     docs: 'https://platform.deepseek.com/api-docs',
   },
   {
+    /* Pinecone vector DB — RAG mémoire sémantique Apex (mcp-memory-stub.ts).
+     * v13.3.59 (Kevin 2026-05-08 00:44) : pattern manquant — ajout pour autoStore. */
+    name: 'Pinecone',
+    regex: /^pcsk_[A-Za-z0-9_]{40,}$/,
+    storageKey: 'ax_pinecone_key',
+    category: 'ai',
+    dashboard: 'https://app.pinecone.io/',
+    docs: 'https://docs.pinecone.io/',
+  },
+  {
     name: 'Mistral',
     regex: /^[A-Za-z0-9]{32}$/,
     storageKey: 'ax_mistral_key',
