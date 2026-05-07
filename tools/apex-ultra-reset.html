@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Apex — ULTRA Reset</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#08080f;color:#fff;font-family:-apple-system,'Helvetica Neue',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+.box{max-width:460px;width:100%;text-align:center}
+h1{font-family:Georgia,serif;color:#dc2626;font-size:32px;margin:0 0 8px;letter-spacing:2px}
+.sub{color:#a0a4b8;font-size:13px;margin:0 0 16px;line-height:1.5}
+.warn{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#ff6666;padding:12px 16px;border-radius:10px;margin:16px 0;font-size:13px;line-height:1.5;text-align:left}
+.step{background:#12121d;border:1px solid #2a2a3a;border-radius:14px;padding:14px 16px;margin:8px 0;text-align:left;font-size:13px;line-height:1.4}
+.step.done{border-color:#3acc5e;background:#0e1a14}
+.step.err{border-color:#cc3a3a;background:#1a0e0e}
+.step-title{font-weight:700;color:#c9a227;margin-bottom:2px;font-size:13px}
+.step-msg{color:#a0a4b8;font-size:12px}
+.btn{display:inline-block;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:18px 32px;border-radius:28px;text-decoration:none;font-weight:700;font-size:16px;border:0;cursor:pointer;margin:16px 8px;min-height:54px;min-width:240px}
+.btn:active{transform:scale(.96)}
+.btn-2{background:linear-gradient(135deg,#c9a227,#e8b830);color:#000}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid #c9a227;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log{font-family:SF Mono,Menlo,monospace;font-size:10px;color:#6a6f8a;margin-top:16px;text-align:left;max-height:120px;overflow-y:auto;background:#0a0a13;padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-word;display:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>⚠ ULTRA RESET</h1>
+  <p class="sub">Apex bloqué sur ancienne version ?<br>Cet outil efface TOUT et force la dernière version.</p>
+
+  <div class="warn">
+    <strong>⚠ ATTENTION</strong> : Cet outil efface TOUTES les données Apex sur cet iPhone (storage + IDB + caches + SW + cookies). Tu devras te reconnecter et re-coller tes clés API. À utiliser SEULEMENT si force-reset normal ne marche pas.
+  </div>
+
+  <div id="status"></div>
+
+  <button id="go" class="btn">⚠ ULTRA RESET (efface tout)</button>
+  <a id="open" class="btn btn-2" style="display:none" href="../apex-ai-v13/?_ultra=1">✅ Ouvrir Apex frais →</a>
+
+  <div id="log" class="log"></div>
+</div>
+
+<script>
+var L = document.getElementById('log');
+var S = document.getElementById('status');
+var btnGo = document.getElementById('go');
+var btnOpen = document.getElementById('open');
+
+function log(msg){
+  console.log(msg);
+  L.style.display = 'block';
+  L.textContent += msg + '\n';
+  L.scrollTop = L.scrollHeight;
+}
+
+function step(title, status, msg){
+  var d = document.createElement('div');
+  d.className = 'step ' + (status === 'ok' ? 'done' : status === 'err' ? 'err' : '');
+  d.innerHTML = '<div class="step-title">' + (status === 'ok' ? '✅' : status === 'err' ? '⚠' : '<span class="spinner"></span>') + ' ' + title + '</div><div class="step-msg">' + (msg || '...') + '</div>';
+  S.appendChild(d);
+  return d;
+}
+
+async function ultraReset(){
+  if (!confirm('⚠ ULTRA RESET\n\nEfface TOUTES les données Apex sur cet iPhone. Tu devras te reconnecter.\n\nContinuer ?')) return;
+  btnGo.disabled = true;
+  btnGo.textContent = '⚠ ULTRA RESET en cours…';
+  btnGo.style.opacity = '0.6';
+  S.innerHTML = '';
+
+  // 1. Unregister TOUS SW
+  var s1 = step('Désinstaller TOUS Service Workers', 'progress');
+  try {
+    if ('serviceWorker' in navigator) {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      log('SW trouvés: ' + regs.length);
+      for (var i = 0; i < regs.length; i++) {
+        log('Unregister: ' + (regs[i].scope || 'unknown'));
+        await regs[i].unregister();
+      }
+      s1.className = 'step done';
+      s1.querySelector('.step-title').innerHTML = '✅ ' + regs.length + ' SW supprimés';
+      s1.querySelector('.step-msg').textContent = 'Tous Service Workers désinstallés';
+    }
+  } catch(e) { s1.className = 'step err'; log('SW err: ' + e.message); }
+
+  // 2. Clear ALL caches
+  var s2 = step('Vider TOUS caches', 'progress');
+  try {
+    if ('caches' in window) {
+      var keys = await caches.keys();
+      log('Caches: ' + keys.join(', '));
+      for (var j = 0; j < keys.length; j++) await caches.delete(keys[j]);
+      s2.className = 'step done';
+      s2.querySelector('.step-title').innerHTML = '✅ ' + keys.length + ' caches vidés';
+    }
+  } catch(e) { s2.className = 'step err'; log('Cache err: ' + e.message); }
+
+  // 3. Clear localStorage Apex (préserve autres apps)
+  var s3 = step('Effacer localStorage Apex', 'progress');
+  try {
+    var apexKeys = [];
+    for (var k = 0; k < localStorage.length; k++) {
+      var key = localStorage.key(k);
+      if (key && (key.startsWith('apex_v13_') || key.startsWith('ax_') || key.startsWith('cmc_'))) {
+        apexKeys.push(key);
+      }
+    }
+    log('Keys to clear: ' + apexKeys.length);
+    for (var m = 0; m < apexKeys.length; m++) localStorage.removeItem(apexKeys[m]);
+    s3.className = 'step done';
+    s3.querySelector('.step-title').innerHTML = '✅ ' + apexKeys.length + ' clés effacées';
+  } catch(e) { s3.className = 'step err'; log('LS err: ' + e.message); }
+
+  // 4. Clear IndexedDB
+  var s4 = step('Effacer IndexedDB Apex', 'progress');
+  try {
+    if ('indexedDB' in window && indexedDB.databases) {
+      var dbs = await indexedDB.databases();
+      log('DBs: ' + dbs.map(d => d.name).join(', '));
+      for (var n = 0; n < dbs.length; n++) {
+        if (dbs[n].name && (dbs[n].name.includes('apex') || dbs[n].name.includes('cmc'))) {
+          await new Promise(function(res){
+            var req = indexedDB.deleteDatabase(dbs[n].name);
+            req.onsuccess = req.onerror = req.onblocked = function(){res();};
+          });
+          log('DB deleted: ' + dbs[n].name);
+        }
+      }
+    }
+    s4.className = 'step done';
+    s4.querySelector('.step-title').innerHTML = '✅ IDB Apex effacé';
+  } catch(e) { s4.className = 'step err'; log('IDB err: ' + e.message); }
+
+  // 5. Clear sessionStorage
+  var s5 = step('Effacer sessionStorage', 'progress');
+  try {
+    sessionStorage.clear();
+    s5.className = 'step done';
+    s5.querySelector('.step-title').innerHTML = '✅ sessionStorage vidé';
+  } catch(e) { s5.className = 'step err'; }
+
+  // 6. Test version
+  var s6 = step('Test version distante', 'progress');
+  try {
+    var bust = '?_t=' + Date.now() + '&_ultra=1';
+    var r = await fetch('../apex-ai-v13/index.html' + bust, { cache: 'no-store', headers: {'Cache-Control': 'no-cache'} });
+    var html = await r.text();
+    var m = html.match(/data-app-ver="(v[\d.]+)"/);
+    var ver = m ? m[1] : 'inconnu';
+    log('Version distante: ' + ver);
+    s6.className = 'step done';
+    s6.querySelector('.step-title').innerHTML = '✅ ' + ver + ' disponible';
+  } catch(e) { s6.className = 'step err'; log('Fetch err: ' + e.message); }
+
+  step('Reset terminé', 'ok', 'Apex va s\'ouvrir frais. Reconnecte-toi avec prénom + nom + 6 chiffres.');
+
+  btnGo.style.display = 'none';
+  btnOpen.style.display = 'inline-block';
+
+  setTimeout(function(){
+    location.replace('../apex-ai-v13/?_ultra=1&_t=' + Date.now());
+  }, 4000);
+}
+
+btnGo.addEventListener('click', ultraReset);
+</script>
+</body>
+</html>
