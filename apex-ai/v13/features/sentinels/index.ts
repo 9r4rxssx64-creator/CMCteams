@@ -66,7 +66,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             const msg = s.lastResult?.msg ?? 'Pas encore exécuté';
             const ageMin = s.lastResult ? Math.round((Date.now() - s.lastResult.ts) / 60000) : null;
             return `
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer" class="ax-sent-row" data-sent-id="${s.id}">
                 <td style="padding:10px;font-size:13px">
                   <strong>${escapeHtml(s.name)}</strong>
                   <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(s.desc)}</div>
@@ -77,7 +77,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                   ${ageMin !== null ? `<div style="font-size:10px;color:#888">il y a ${ageMin}min</div>` : ''}
                 </td>
                 <td style="padding:10px;text-align:right">
-                  <button class="ax-btn ax-btn-sm ax-sent-run" data-sent-id="${s.id}" style="padding:4px 10px;font-size:11px">▶️</button>
+                  <button class="ax-btn ax-btn-sm ax-sent-run" data-sent-id="${s.id}" style="padding:4px 10px;font-size:11px" aria-label="Exécuter ${escapeHtml(s.name)}">▶️</button>
                 </td>
               </tr>
             `;
@@ -113,7 +113,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* Wire run individual */
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-sent-run').forEach((btn) => {
-    activeSentinelsScope!.bind(btn, 'click', () => {
+    activeSentinelsScope!.bind(btn, 'click', (e) => {
+      e.stopPropagation(); /* don't bubble to row click */
       void (async () => {
         const id = btn.dataset['sentId'];
         if (!id) return;
@@ -121,6 +122,49 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         const r = await sentinels.runOne(id);
         toast[r?.ok ? 'success' : 'warn'](`${id}: ${r?.msg ?? 'KO'}`);
         await render(rootEl);
+      })();
+    });
+  });
+
+  /* v13.3.57 PUSH-100 : drilldown récursif sur clic row sentinelle.
+   * Click row → modal détail avec config + last result + run history. */
+  rootEl.querySelectorAll<HTMLTableRowElement>('.ax-sent-row').forEach((row) => {
+    activeSentinelsScope!.bind(row, 'click', () => {
+      void (async () => {
+        const id = row.dataset['sentId'];
+        if (!id) return;
+        const sent = list.find((s) => s.id === id);
+        if (!sent) return;
+        const { drillDown } = await import('../../ui/drilldown.js');
+        const mountId = 'ax-drilldown-mount-sentinels';
+        let mount = document.getElementById(mountId);
+        if (!mount) {
+          mount = document.createElement('div');
+          mount.id = mountId;
+          document.body.appendChild(mount);
+        }
+        drillDown.open({
+          id: `sent-${id}`,
+          title: `🛡 ${sent.name}`,
+          content: () => {
+            const lastOk = sent.lastResult?.ok;
+            const lastMsg = sent.lastResult?.msg ?? '—';
+            const lastTs = sent.lastResult ? new Date(sent.lastResult.ts).toLocaleString('fr-FR') : '—';
+            return `
+              <div style="padding:8px">
+                <p style="margin:0 0 12px;color:var(--ax-text-dim)">${escapeHtml(sent.desc)}</p>
+                <table style="width:100%;font-size:13px">
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">ID</td><td><code>${escapeHtml(sent.id)}</code></td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Interval</td><td>${Math.round(sent.intervalMs / 1000)}s</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernier statut</td><td>${lastOk === undefined ? '⏳ Pending' : lastOk ? '✅ OK' : '⚠️ WARN'}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernier message</td><td>${escapeHtml(lastMsg)}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernière exec</td><td>${escapeHtml(lastTs)}</td></tr>
+                </table>
+              </div>
+            `;
+          },
+          data: { sentinelId: id },
+        }, mount);
       })();
     });
   });

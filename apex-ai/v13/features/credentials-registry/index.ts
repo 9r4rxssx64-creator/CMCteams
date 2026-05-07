@@ -200,8 +200,8 @@ function renderEntry(e: CredentialAuditEntry): string {
   ].join(' ');
 
   return `
-    <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
-                    border-radius:10px;padding:14px;margin-bottom:8px">
+    <article data-cred-detail="${escapeHtml(e.storage_key)}" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
+                    border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -342,7 +342,8 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Test credential individuel */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-test]').forEach((btn) => {
-    activeRegistryScope!.bind(btn, 'click', () => {
+    activeRegistryScope!.bind(btn, 'click', (e) => {
+      e.stopPropagation(); /* don't bubble to article click */
       const key = btn.dataset['test'];
       if (!key) return;
       haptic.tap();
@@ -361,6 +362,54 @@ function attachHandlers(rootEl: HTMLElement): void {
           btn.textContent = original ?? '🧪 Tester';
           btn.disabled = false;
         }
+      })();
+    });
+  });
+
+  /* v13.3.57 PUSH-100 : drilldown récursif sur clic article credential.
+   * Click article → modal détail credential (storage_key, encrypted, last test, recommendations) */
+  rootEl.querySelectorAll<HTMLElement>('[data-cred-detail]').forEach((article) => {
+    activeRegistryScope!.bind(article, 'click', (ev) => {
+      /* Si clic sur bouton interne (test/recover/dashboard/billing) → ne pas drilldown */
+      const target = ev.target as HTMLElement;
+      if (target.closest('button, a')) return;
+      void (async () => {
+        const storageKey = article.dataset['credDetail'];
+        if (!storageKey || !currentReport) return;
+        const entry = currentReport.entries.find((c) => c.storage_key === storageKey);
+        if (!entry) return;
+        const { drillDown } = await import('../../ui/drilldown.js');
+        const mountId = 'ax-drilldown-mount-credentials';
+        let mount = document.getElementById(mountId);
+        if (!mount) {
+          mount = document.createElement('div');
+          mount.id = mountId;
+          document.body.appendChild(mount);
+        }
+        drillDown.open({
+          id: `cred-${storageKey}`,
+          title: `🔑 ${entry.service_name}`,
+          content: () => {
+            const status = STATUS_COLORS[entry.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown;
+            return `
+              <div style="padding:8px">
+                <table style="width:100%;font-size:13px">
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Service</td><td>${escapeHtml(entry.service_name)}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Storage key</td><td><code>${escapeHtml(entry.storage_key)}</code></td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Catégorie</td><td>${escapeHtml(entry.category)}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Statut</td><td style="color:${status.color}">${status.icon} ${status.label}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Chiffré</td><td>${entry.encrypted ? '🔒 AES-GCM-256' : '⚠️ Non chiffré'}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Configuré</td><td>${entry.configured ? '✅ Oui' : '⚪ Non'}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Aperçu</td><td><code>${escapeHtml(entry.preview)}</code></td></tr>
+                  ${entry.dashboard_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Dashboard</td><td><a href="${escapeHtml(entry.dashboard_url)}" target="_blank" rel="noopener" style="color:#c9a227">${escapeHtml(entry.dashboard_url)}</a></td></tr>` : ''}
+                  ${entry.billing_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Billing</td><td><a href="${escapeHtml(entry.billing_url)}" target="_blank" rel="noopener" style="color:#c9a227">${escapeHtml(entry.billing_url)}</a></td></tr>` : ''}
+                </table>
+                ${entry.status_detail ? `<p style="margin:12px 0 0;color:#ff6b6b;font-size:12px">⚠️ ${escapeHtml(entry.status_detail)}</p>` : ''}
+              </div>
+            `;
+          },
+          data: { storageKey },
+        }, mount);
       })();
     });
   });
