@@ -5,7 +5,7 @@
 
 /* === Handler Telegram (envoi message bot) === */
 export async function handleTelegramTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const token = await vault.readKey('ax_telegram_token');
   if (!token) throw new Error('ax_telegram_token non configuré');
   if (task === 'send_message' || task === 'send') {
@@ -36,7 +36,7 @@ export async function handleTelegramTask(task: string, params: Record<string, un
 
 /* === Handler Discord (webhooks) === */
 export async function handleDiscordTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   if (task === 'webhook_send' || task === 'send') {
     const webhookUrl = (params['webhook_url'] as string) ?? await vault.readKey('ax_discord_webhook');
     if (!webhookUrl) throw new Error('webhook_url ou ax_discord_webhook required');
@@ -57,7 +57,7 @@ export async function handleDiscordTask(task: string, params: Record<string, unk
 
 /* === Handler Slack === */
 export async function handleSlackTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   if (task === 'send_message' || task === 'send') {
     const token = await vault.readKey('ax_slack_bot');
     if (!token) throw new Error('ax_slack_bot non configuré');
@@ -78,7 +78,7 @@ export async function handleSlackTask(task: string, params: Record<string, unkno
 
 /* === Handler Resend (email) === */
 export async function handleResendTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const key = await vault.readKey('ax_resend_key');
   if (!key) throw new Error('ax_resend_key non configuré');
   if (task === 'send_email' || task === 'send') {
@@ -102,7 +102,7 @@ export async function handleResendTask(task: string, params: Record<string, unkn
 
 /* === Handler Brevo (transactional email) === */
 export async function handleBrevoTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const key = await vault.readKey('ax_brevo_key');
   if (!key) throw new Error('ax_brevo_key non configuré');
   if (task === 'send_email' || task === 'send_transactional') {

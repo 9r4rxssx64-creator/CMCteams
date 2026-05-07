@@ -5,7 +5,7 @@
 
 /* === Handler OpenAI === */
 export async function handleOpenaiTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const key = await vault.readKey('ax_openai_key');
   if (!key) throw new Error('ax_openai_key non configuré');
   if (task === 'chat' || task === 'completion' || task === 'ask') {
@@ -29,7 +29,7 @@ export async function handleOpenaiTask(task: string, params: Record<string, unkn
 
 /* === Handler Anthropic === */
 export async function handleAnthropicTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const key = await vault.readKey('ax_anthropic_key');
   if (!key) throw new Error('ax_anthropic_key non configuré');
   if (task === 'message' || task === 'chat' || task === 'ask') {

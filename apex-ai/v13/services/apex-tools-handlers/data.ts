@@ -5,7 +5,7 @@
 
 /* === Handler Notion === */
 export async function handleNotionTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const key = await vault.readKey('ax_notion_key');
   if (!key) throw new Error('ax_notion_key non configuré');
   const headers = {
@@ -37,7 +37,7 @@ export async function handleNotionTask(task: string, params: Record<string, unkn
 
 /* === Handler Airtable === */
 export async function handleAirtableTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const pat = await vault.readKey('ax_airtable_pat');
   if (!pat) throw new Error('ax_airtable_pat non configuré');
   const baseId = String(params['base_id'] ?? '');
@@ -66,7 +66,7 @@ export async function handleAirtableTask(task: string, params: Record<string, un
 
 /* === Handler Shopify === */
 export async function handleShopifyTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const token = await vault.readKey('ax_shopify_token');
   if (!token) throw new Error('ax_shopify_token non configuré');
   const shop = String(params['shop'] ?? '');

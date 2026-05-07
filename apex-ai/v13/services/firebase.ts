@@ -31,6 +31,10 @@ export const FB_FIX: readonly string[] = [
   'ax_claude_alerts',
   /* Bridge Apex → CMCteams planning autonome (Kevin 2026-05-07 v9.601) */
   'ax_cmc_planning_pending',
+  /* Admin commands cross-device (Kevin 2026-05-08 v13.3.64) — reset PIN, etc.
+     Apex IA push command via tool reset_user_pin → iPhone target SSE listener
+     applique action + marque processed. */
+  'ax_admin_commands_pending',
   'ax_lessons_learned_struct',
   'ax_persistent_memory',
   'ax_links_registry',

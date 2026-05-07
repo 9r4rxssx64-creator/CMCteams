@@ -5,7 +5,7 @@
 
 /* === Handler Vercel (deploy, env vars) === */
 export async function handleVercelTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const token = await vault.readKey('ax_vercel_token');
   if (!token) throw new Error('ax_vercel_token non configuré');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -28,7 +28,7 @@ export async function handleVercelTask(task: string, params: Record<string, unkn
 
 /* === Handler Cloudflare (DNS, Workers) === */
 export async function handleCloudflareTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const token = await vault.readKey('ax_cloudflare_token');
   if (!token) throw new Error('ax_cloudflare_token non configuré');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
