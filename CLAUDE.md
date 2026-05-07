@@ -1,6 +1,144 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.27 / CMC v9.601).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.51 / CMC v9.602).
+
+---
+
+## 🔍 RÈGLE ABSOLUE — RECONNAISSANCE MULTI-SOURCE EXHAUSTIVE (Kevin 2026-05-07, ULTIME)
+
+> **"Même principe toujours pour les nouveaux codes ou identifiants, photos, notes, docs etc collés source possible. Doit reconnaître les codes, identifiants, sites etc autonome et installer le lien pour connexion et pilotage complet toujours auto. Peut avoir plusieurs codes, sites, identifiants sur même source donc bien analyser tout toujours."** — Kevin 2026-05-07
+
+**Règle MAÎTRESSE qui complète "Reconnaissance auto credentials"** — Apex priorité absolue :
+
+### 1. À CHAQUE source collée (photo / note / doc / capture / texte) Apex DOIT
+
+1. **Analyser EXHAUSTIVEMENT** (vision IA + regex + NLP) — pas juste 1ère trouvaille
+2. **Extraire TOUS les éléments** présents :
+   - Tokens API (toutes les clés visibles)
+   - Identifiants (email, login, username, account_id)
+   - Sites/services mentionnés (URLs, dashboards)
+   - Numéros de série / device IDs
+   - Mots de passe / PINs (avec rappel "JAMAIS stocker en clair")
+   - Adresses (IBAN, BTC, ETH, MAC, IP)
+3. **Pour CHAQUE élément** :
+   - Détecter le type/service (regex `AX_CREDENTIAL_PATTERNS` 130+ patterns)
+   - Stocker chiffré AES-GCM-256 dans `ax_<service>_key` ou champ approprié
+   - Créer entrée `ax_links_registry` avec dashboard/billing/docs/support
+   - Tester validité (ping API) si possible
+   - Activer pilotage si applicable (Broadlink, Hue, eWeLink, SmartLife)
+4. **Toast récap** : "✅ N éléments détectés et configurés : Anthropic key, GitHub PAT, eWeLink email, IP TV Clayton..."
+
+### 2. Multi-extraction obligatoire (pas seulement 1ère trouvaille)
+
+Exemples concrets :
+- **Photo compte Broadlink** : peut contenir TOKEN + 5 device IDs + email + dashboard URL → tout extraire
+- **Note "mes codes"** : peut contenir 10 clés API différentes → toutes extraire
+- **Capture écran SmartLife** : peut contenir client_id + client_secret + 3 device IDs + region → tout extraire
+- **PDF facture provider** : peut contenir email + customer_id + plan + montant → tout enregistrer dans persistent_memory
+- **Screenshot router config** : SSID + password + IP locale + MAC → tout configurer pour scan LAN
+
+### 3. Auto-install lien + pilotage
+
+Pour CHAQUE service/device détecté :
+1. Si registry connu (eWeLink/Tuya/Broadlink/Hue/Sonos/HomeAssistant) → activer auto via `iotRegistry.install()`
+2. Si pas connu → tenter découverte URL (console.<service>.com, app.<service>.com, dashboard.<service>.com) + recherche web
+3. Tester connexion (ping endpoint) si credentials suffisants
+4. Si OK → ajout dans liste devices/services pilotables Apex
+5. Vue `?view=device` ou `?view=iot-providers` enrichie automatiquement
+
+### 4. Implementation `multiSourceAnalyze.ts` (nouveau service)
+
+```ts
+interface MultiSourceResult {
+  type: 'image' | 'text' | 'pdf' | 'url' | 'note';
+  source_preview: string; // Premiers 200 chars / image hash
+  extractions: {
+    credentials: { type: string; storage_key: string; stored: boolean }[];
+    devices: { provider: string; device_id: string; configured: boolean }[];
+    sites: { service: string; dashboard_url: string; added_to_registry: boolean }[];
+    metadata: Record<string, string>; // Email, plan, customer_id, etc.
+  };
+  total_items: number;
+  auto_configured_count: number;
+  errors: string[];
+}
+
+multiSourceAnalyze.analyzeImage(imageBase64) → multi-extraction
+multiSourceAnalyze.analyzeText(text) → idem
+multiSourceAnalyze.analyzeURL(url) → fetch + parse
+multiSourceAnalyze.installAll(result) → triple persistence + iotRegistry.install + ax_links_registry
+```
+
+### 5. Apex IA prompt enrichi
+
+System prompt Apex doit inclure :
+> "Quand user colle une source (image/texte/doc), TU ES OBLIGÉ d'analyser exhaustivement et extraire TOUS les éléments visibles : credentials, identifiants, devices, sites. Pour chaque élément, créer entrée registry + tester + configurer pilotage. Ne pas se contenter de la première trouvaille. Multi-extraction obligatoire."
+
+### 6. Test mental obligatoire
+
+> *"Si Kevin colle une photo qui contient 5 informations différentes (token + email + device_id + IP + URL), Apex extrait-il les 5 ? Tente-t-il configuration de chacun ? Toast récap correct ?"*
+
+Si non → enrichir multiSourceAnalyze.
+
+### 7. Étude approfondie sites / liens / codes (Kevin 2026-05-07 23h55)
+
+> **"Et étudier les sites, liens, codes etc"** — Kevin 2026-05-07
+
+Pas juste extraire — Apex DOIT étudier chaque élément détecté :
+
+**Pour chaque SITE détecté** :
+1. Fetch homepage + parse meta description + Open Graph
+2. Detect API docs URL (`/docs`, `/api`, `/developers`, `/dev`)
+3. Detect pricing page → extract plans + tarifs
+4. Detect status page (`status.<domain>`)
+5. Detect login/signup endpoints
+6. Stocke dans `ax_services_knowledge_<service>` : `{name, description, api_url, pricing, status_url, capabilities, last_studied}`
+7. Si service nouveau → escalade `ax_claude_todo` pour add pattern dans `AX_CREDENTIAL_PATTERNS`
+
+**Pour chaque LIEN dashboard/console** :
+1. Fetch + analyse interface (Apex IA vision si screenshot disponible)
+2. Detect navigation principale (settings, billing, API keys, devices)
+3. Map vers actions Apex : "Recharger Anthropic" → click direct sur billing tab
+4. Stocke `ax_dashboard_navigation_<service>` pour 1-clic auto-fill futur
+
+**Pour chaque CODE/TOKEN détecté** :
+1. Identifier le service précis (Anthropic vs OpenAI vs OpenRouter via prefix)
+2. Identifier la version (api03 = v3, sk-proj = projects API, etc.)
+3. Identifier les scopes/permissions (header check, /me endpoint, etc.)
+4. Stocker `ax_credential_metadata_<key>` : `{service, version, scopes, expiry_estimate, plan_detected, region}`
+
+**Implementation `studyService.ts`** :
+```ts
+interface ServiceStudy {
+  service_name: string;
+  homepage: string;
+  api_url?: string;
+  pricing?: { plan: string; price: string }[];
+  status_url?: string;
+  console_url?: string;
+  capabilities: string[]; // e.g. ['chat', 'vision', 'audio', 'embeddings']
+  api_format: 'rest' | 'graphql' | 'sse' | 'websocket';
+  rate_limits?: string;
+  free_tier?: string;
+  competitors?: string[]; // Auto-detect 3-5 alternatives
+  studied_at: number;
+}
+
+studyService.studyByURL(url) → ServiceStudy
+studyService.studyByCredential(token) → ServiceStudy (infer service)
+studyService.compareToAlternatives(service) → recommendations
+```
+
+**Sentinelle `service-knowledge-watch`** (1×/sem) :
+- Re-fetch chaque service connu pour update pricing / capabilities (peut changer)
+- Push update dans `ax_services_knowledge_<service>`
+- Notif Kevin si changement majeur prix (-50% ou +50%)
+
+S'applique : Apex priorité absolue, CMCteams si pertinent.
+
+---
+
+
 
 ---
 
