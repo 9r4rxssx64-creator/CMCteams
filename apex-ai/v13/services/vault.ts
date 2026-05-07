@@ -87,7 +87,12 @@ class Vault {
       }).catch(() => { /* IDB miss — alerte Kevin ci-dessous */ });
       /* Alerte Kevin (best-effort) */
       void import('./kevin-alerts.js').then(({ kevinAlerts }) => {
-        kevinAlerts.send(`🚨 Code ${key.replace('ax_', '').replace('_key', '').replace('_token', '')} effacé (autre onglet ou devtools). Auto-restore tenté depuis IDB.`).catch(() => { /* ignore */ });
+        const svc = key.replace('ax_', '').replace('_key', '').replace('_token', '');
+        void kevinAlerts.alertKevin({
+          severity: 'warn',
+          title: `🚨 Code ${svc} effacé`,
+          body: 'Autre onglet ou devtools. Auto-restore tenté depuis IDB.',
+        }).catch(() => { /* ignore */ });
       }).catch(() => { /* ignore */ });
     });
     /* 2. Polling 30s — vérifie credentials critiques toujours présentes */
