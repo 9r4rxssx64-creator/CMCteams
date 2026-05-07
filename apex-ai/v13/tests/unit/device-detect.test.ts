@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { deviceDetect } from '../../services/device-detect.js';
 
-/** Helper : mock UA + force re-detect cache */
+/** Helper : mock UA + force re-detect cache (invalide cache au prochain detect()) */
 function mockUA(ua: string, platform = '', extra: Partial<Navigator> = {}): void {
   Object.defineProperty(navigator, 'userAgent', {
     value: ua,
@@ -31,6 +31,8 @@ function mockUA(ua: string, platform = '', extra: Partial<Navigator> = {}): void
       configurable: true,
     });
   }
+  /* Force cache invalidation pour qu'isiOS/recommendedFeatures voient le mock */
+  deviceDetect.detect(true);
 }
 
 describe('Device Detect (cross-platform)', () => {

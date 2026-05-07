@@ -396,7 +396,7 @@ class DeviceDetect {
       timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
 
       /* Security */
-      isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : false,
+      isSecureContext: typeof window !== 'undefined' ? Boolean(window.isSecureContext) : false,
       hasCSP: this.detectCSP(),
     };
   }
