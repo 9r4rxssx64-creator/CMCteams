@@ -615,7 +615,29 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
       }
     },
     (err) => {
-      assistantMsg.text = errors.toUserMessage(err) + ' (Apex bascule sur le mode hors-ligne — réessaie dans un instant.)';
+      const userMsg = errors.toUserMessage(err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const recoverable = /timeout|abort|fetch failed|network|5\d{2}|rate.?limit|429/i.test(errMsg);
+      logger.warn('chat', 'AI stream error', { errMsg, recoverable, userText: text.slice(0, 80) });
+      /* Auto-retry 1× après 3s si erreur récupérable ET pas de texte déjà streamé (Kevin règle "ZÉRO blocage user") */
+      if (recoverable && !assistantMsg.text) {
+        assistantMsg.text = `${userMsg} ⏳ Retry auto dans 3s…`;
+        renderMessages(rootEl);
+        setTimeout(() => {
+          /* Cleanup placeholder + re-queue user message */
+          const idx = conversation.indexOf(assistantMsg);
+          if (idx >= 0) conversation.splice(idx, 1);
+          delete assistantMsg.streaming;
+          store.set('isStreaming', false);
+          queue.unshift(text);
+          isProcessing = false;
+          void processQueue(rootEl);
+        }, 3000);
+        return;
+      }
+      /* Erreur non récupérable OU réponse partielle déjà reçue → message clair */
+      const suffix = assistantMsg.text ? ' (réponse partielle préservée)' : '';
+      assistantMsg.text = userMsg + suffix;
       delete assistantMsg.streaming;
       store.set('isStreaming', false);
       renderMessages(rootEl);
