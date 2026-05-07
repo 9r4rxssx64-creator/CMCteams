@@ -383,7 +383,7 @@ export function renderCredentialCard(c: CredentialDisplay): string {
   const recharge = c.rechargeUrl ?? '';
   const alias = c.alias ? `<span style="color:#888;font-size:11px">— ${escapeHtml(c.alias)}</span>` : '';
   const logoTag = c.logoUrl
-    ? `<img src="${escapeHtml(c.logoUrl)}" alt="" style="width:24px;height:24px;border-radius:6px" onerror="this.style.display='none'">`
+    ? `<img src="${escapeHtml(c.logoUrl)}" alt="" loading="lazy" decoding="async" style="width:24px;height:24px;border-radius:6px" onerror="this.style.display='none'">`
     : '';
   const meta: string[] = [];
   if (c.addedAt) meta.push(`Ajouté ${formatRelativeTime(c.addedAt)}`);
