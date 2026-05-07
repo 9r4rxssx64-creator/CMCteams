@@ -38,11 +38,28 @@ interface PreconfiguredUser {
   family?: string;
 }
 
-/* Display names anonymisés (nom complet jamais affiché publiquement, juste prénom + initiales) */
+/* Display names anonymisés (nom complet jamais affiché publiquement, juste prénom + initiales).
+ * v13.3.62 (Kevin 2026-05-08 01:50) : Laurence aliases étendus pour matcher
+ * "Laurence Saint-Polit", "Saint-Polit Laurence", "laurence sp", etc. */
 const PRECONFIGURED: PreconfiguredUser[] = [
   { id: ADMIN_ID, name: 'Kevin (DK)', email: '', isAdmin: true },
-  { id: 'laurence_sp', name: 'Laurence', email: '', isAdmin: false },
+  { id: 'laurence_sp', name: 'Laurence Saint-Polit', email: '', isAdmin: false },
 ];
+
+/* v13.3.62 — Aliases supplémentaires per-user pour matching tolérant.
+ * Si user tape n'importe quel alias → match user. */
+const USER_ALIASES: Record<string, string[]> = {
+  laurence_sp: [
+    'laurence',
+    'laurence saint polit',
+    'saint polit laurence',
+    'laurence sp',
+    'sp laurence',
+    'saint polit',
+    'mme saint polit',
+    'mme laurence',
+  ],
+};
 
 function normalize(s: string): string {
   return s
@@ -137,14 +154,34 @@ class Auth {
     const user = isKevin
       ? PRECONFIGURED.find((u) => u.id === ADMIN_ID)
       : PRECONFIGURED.find((u) => {
-          /* v13.3.61 fix CRITIQUE Kevin "Laurence Utilisateur inconnu" :
-           * AVANT : exigeait MIN 2 tokens (prénom seul rejeté → "Utilisateur inconnu").
-           * APRÈS : 1 token suffit si match exact prénom OU nom (pour Laurence "Laurence" OK).
-           * 2 tokens reste accepté (variations "saint polit laurence", etc.). */
-          const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
-          if (tokens.length === 0 || userTokens.length === 0) return false;
-          /* Match si tous les tokens input sont dans userTokens (1+ tokens OK) */
-          return tokens.every((t) => userTokens.includes(t));
+          /* v13.3.62 fix Kevin "elle tape nom et prénom mais marche pas" :
+           * Matching EXHAUSTIF avec 4 stratégies cumulatives :
+           * 1. Match exact alias normalisé
+           * 2. Match tokens input ⊆ alias tokens (input plus court OK)
+           * 3. Match alias tokens ⊆ input tokens (input plus riche OK)
+           * 4. Match au moins 1 token significatif commun (fuzzy fallback) */
+          const aliases = USER_ALIASES[u.id] ?? [normalize(u.name)];
+          const inputN = normalize(name);
+
+          /* Stratégie 1 : match exact alias */
+          if (aliases.includes(inputN)) return true;
+
+          /* Stratégies 2-4 : tokens */
+          for (const alias of aliases) {
+            const aliasTokens = alias.split(/\s+/).filter((t) => t.length >= 3);
+            if (aliasTokens.length === 0) continue;
+
+            /* 2. tokens input ⊆ alias tokens */
+            if (tokens.length > 0 && tokens.every((t) => aliasTokens.includes(t))) return true;
+
+            /* 3. alias tokens ⊆ input tokens (input contient TOUS les mots de l'alias) */
+            if (aliasTokens.every((at) => tokens.includes(at))) return true;
+
+            /* 4. Au moins 1 token significatif commun (fallback fuzzy) */
+            const common = tokens.filter((t) => aliasTokens.includes(t));
+            if (common.length >= 1 && tokens.length <= 4) return true;
+          }
+          return false;
         });
 
     if (!user) {
