@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.1.5">
+<html lang="fr" data-theme="dark" data-app-ver="v13.2.0">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,8 +15,8 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-2960077a815828e9bde8fa76d0d4d6f1' 'strict-dynamic' https:;
-             style-src 'self' 'nonce-2960077a815828e9bde8fa76d0d4d6f1' 'unsafe-inline';
+             script-src 'self' 'nonce-52f5e1db9180d69a3c2dc6c7d5a1c637' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-52f5e1db9180d69a3c2dc6c7d5a1c637' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -38,11 +38,11 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="2960077a815828e9bde8fa76d0d4d6f1" type="module" crossorigin src="./core/main-B9qBV3DR.js"></script>
+  <script nonce="52f5e1db9180d69a3c2dc6c7d5a1c637" type="module" crossorigin src="./core/main-BFzZUyqY.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-B17vNBOa.js">
   <link rel="modulepreload" crossorigin href="./chunks/apex-tools-registry-7n7rHbkq.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-dispatch-BJXQdXc9.js">
-  <link nonce="2960077a815828e9bde8fa76d0d4d6f1" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-dispatch-CaDfuOTY.js">
+  <link nonce="52f5e1db9180d69a3c2dc6c7d5a1c637" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -72,6 +72,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="2960077a815828e9bde8fa76d0d4d6f1" src="./assets/js/rescue.js"></script>
+  <script nonce="52f5e1db9180d69a3c2dc6c7d5a1c637" src="./assets/js/rescue.js"></script>
 </body>
 </html>
