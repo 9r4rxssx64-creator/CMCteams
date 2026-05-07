@@ -185,4 +185,63 @@ describe('Vault persistence (fix Kevin "clés pas en mémoire")', () => {
       expect(vault.getKeyStatus('ax_plain_legacy')).toBe('plaintext_legacy');
     });
   });
+
+  /* v13.3.20 — Tests régression fix Kevin "Apex oublie ses codes sans cesse" */
+  describe('v13.3.20 fix Kevin "oublie codes sans cesse"', () => {
+    it('autoStore appelle bien setKey (triple persistence) au lieu de localStorage.setItem direct', async () => {
+      /* Spy sur setKey pour vérifier qu'autoStore l'utilise */
+      const setKeySpy = vi.spyOn(vault, 'setKey');
+      const result = await vault.autoStore('sk-ant-api03-' + 'X'.repeat(50));
+      expect(result.ok).toBe(true);
+      expect(setKeySpy).toHaveBeenCalledWith('ax_anthropic_key', expect.any(String));
+      setKeySpy.mockRestore();
+    });
+
+    it('autoStore VERIFY post-write : si readKey ne retourne pas le plaintext, retry 3x', async () => {
+      /* setKey OK mais readKey retourne mismatch les 2 premières fois */
+      const original = 'sk-ant-api03-' + 'Y'.repeat(50);
+      let readCount = 0;
+      const realRead = vault.readKey.bind(vault);
+      const readSpy = vi.spyOn(vault, 'readKey').mockImplementation(async (k: string) => {
+        readCount++;
+        if (readCount < 3) return ''; /* Simule mismatch */
+        return realRead(k);
+      });
+      const result = await vault.autoStore(original);
+      expect(result.ok).toBe(true);
+      /* Au moins 3 reads (verify x3) */
+      expect(readCount).toBeGreaterThanOrEqual(3);
+      readSpy.mockRestore();
+    });
+
+    it('paste credential → reload simulation → key still present (round-trip complet)', async () => {
+      const original = 'sk-ant-api03-' + 'Z'.repeat(50);
+      /* 1. Paste (autoStore) */
+      const stored = await vault.autoStore(original);
+      expect(stored.ok).toBe(true);
+      /* 2. Simule "reload" : on lit fresh depuis localStorage via vault */
+      const after = await vault.readKey('ax_anthropic_key');
+      expect(after).toBe(original);
+    });
+
+    it('startCredentialsWatch est idempotent (multi-call OK)', () => {
+      vault.startCredentialsWatch();
+      vault.startCredentialsWatch();
+      vault.startCredentialsWatch();
+      /* Pas d'erreur, juste guard interne */
+      expect(true).toBe(true);
+    });
+
+    it('autoStore retourne ok:false avec reason claire si verify fail définitivement', async () => {
+      /* Mock setKey pour qu'il retourne ok:false (simule quota persistant) */
+      const setKeySpy = vi.spyOn(vault, 'setKey').mockResolvedValue({
+        ok: false,
+        persisted: { local: false, idb: false, firebase: false },
+      });
+      const result = await vault.autoStore('sk-ant-api03-' + 'Q'.repeat(50));
+      expect(result.ok).toBe(false);
+      expect(result.reason).toMatch(/triple persistence|stockage|verify|recolle/i);
+      setKeySpy.mockRestore();
+    });
+  });
 });

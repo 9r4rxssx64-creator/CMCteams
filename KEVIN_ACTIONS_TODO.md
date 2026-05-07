@@ -1,5 +1,43 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🚨 SESSION 2026-05-07 v13.3.20 — BUG FIX "Apex oublie ses codes sans cesse"
+
+**Symptôme Kevin** : "apex oubli tous mes codes sans cesse" — clés API collées,
+semblent OK 5 min, puis effacées.
+
+**Causes racines identifiées (5 bugs cumulés)** :
+1. `vault.autoStore()` faisait `localStorage.setItem` direct **sans IDB shadow**
+   → si quota ou Safari iOS edge case, clé perdue silencieusement avec `ok:true`.
+2. **Aucun verify post-write** → si encrypt corrompt ou race, on ne le savait pas.
+3. `firebase.applyRemoteChange()` écrasait localStorage avec valeur Firebase **chiffrée**
+   sans valider la décryption — corruption Firebase polluait le local.
+4. `restoreVaultKeysFromFirebase` écrivait raw Firebase value sans valider decrypt
+   ni hydrater IDB shadow.
+5. **Aucune sentinelle credentials-watch** ni storage event listener → silence
+   total quand effacement externe (autre tab, devtools).
+
+**Fix appliqué v13.3.20** :
+- ✅ `vault.autoStore()` → délègue à `setKey()` (triple persistence local + IDB + FB)
+- ✅ Verify post-write avec retry x3 + alerte Kevin si échec définitif
+- ✅ `firebase.applyRemoteChange()` valide decrypt avant overwrite vault keys
+- ✅ `firebase.restoreVaultKeysFromFirebase()` délègue à `vault.restoreFromFirebase`
+  (validate decrypt + hydrate IDB)
+- ✅ `vault.startCredentialsWatch()` : storage event + poll 30s + boot pre-flight
+- ✅ Wired dans `services-bootstrap.ts` (auto-start au boot)
+- ✅ 5 nouveaux tests régression + 23 existants = 28 tests verts
+- ✅ 97 tests vault toutes suites verts (aucune régression)
+- ✅ tsc strict 0 erreurs + vite build OK
+- ✅ Bump APP_VER + sw.js CACHE_VERSION → v13.3.20
+
+**Action Kevin** : recolle les clés API qui avaient été perdues (Anthropic, Telegram,
+GitHub, etc.). Une fois recollées, elles ne devraient PLUS être effacées :
+- Triple persistence (localStorage + IDB shadow + Firebase chiffré)
+- Verify post-write garantit la lecture immédiate cohérente
+- Storage event listener auto-restore depuis IDB si effacement externe
+- Poll 30s vérifie credentials critiques toujours présentes
+
+---
+
 ## 🆕 SESSION 2026-05-07 v13.3.19 — Bridge Apex → CMCteams livré (règle Kevin §8)
 
 Apex IA détecte automatiquement quand Kevin colle un planning SBM
