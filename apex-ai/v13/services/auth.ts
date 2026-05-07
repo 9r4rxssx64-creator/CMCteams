@@ -21,13 +21,16 @@ import { store } from '../core/store.js';
 
 const ADMIN_ID = 'kdmc_admin';
 
+/* v13.3.65 fix Kevin "trop risqué — seulement nom+prénom et inversement, pas seulement prénom.
+ * Pour tout le monde pareil toujours" :
+ * Aliases courts (juste 'kevin' ou 'kdmc' seul) RETIRÉS pour cohérence avec Laurence.
+ * Sécurité : MIN 2 tokens obligatoires pour TOUS users (Kevin + Laurence + clients). */
 const KEVIN_ALIASES: readonly string[] = [
   'kevin desarzens',
   'desarzens kevin',
   'kevin.desarzens@gmail.com',
-  'kevin.desarzens',
-  'k desarzens',
-  'kdmc',
+  'kevin desarzens kdmc',
+  'kdmc desarzens',
 ];
 
 interface PreconfiguredUser {
@@ -46,20 +49,9 @@ const PRECONFIGURED: PreconfiguredUser[] = [
   { id: 'laurence_sp', name: 'Laurence Saint-Polit', email: '', isAdmin: false },
 ];
 
-/* v13.3.62 — Aliases supplémentaires per-user pour matching tolérant.
- * Si user tape n'importe quel alias → match user. */
-const USER_ALIASES: Record<string, string[]> = {
-  laurence_sp: [
-    'laurence',
-    'laurence saint polit',
-    'saint polit laurence',
-    'laurence sp',
-    'sp laurence',
-    'saint polit',
-    'mme saint polit',
-    'mme laurence',
-  ],
-};
+/* v13.3.65 : USER_ALIASES retirés.
+ * Sécurité Kevin "tout le monde pareil — pas seulement prénom" : matching strict
+ * sur PRECONFIGURED.name uniquement (2 tokens minimum, ordre indifférent). */
 
 function normalize(s: string): string {
   return s
@@ -72,19 +64,23 @@ function normalize(s: string): string {
 
 class Auth {
   /**
-   * Reconnaît Kevin admin via l'un de ses aliases (nom seul / prénom+nom / email / KDMC).
+   * Reconnaît Kevin admin via aliases (prénom+nom obligatoires, ordre indifférent).
+   *
+   * v13.3.65 fix sécurité Kevin "Pour tout le monde pareil toujours — pas seulement prénom" :
+   * Avant : 'kevin' ou 'kdmc' seul matchait → risque impersonation.
+   * Après : MIN 2 tokens obligatoires (kevin + desarzens en n'importe quel ordre).
    */
   isKevinAdmin(name: string): boolean {
     const n = normalize(name);
     if (KEVIN_ALIASES.includes(n)) return true;
-    /* Email normalisé inclut "gmail com" en tokens — match si AU MOINS un alias contient
-       tous les tokens significatifs de l'input (kevin + desarzens) */
+    /* Email normalisé inclut "gmail com" en tokens */
     const tokens = n.split(/\s+/).filter((t) => t.length >= 4);
-    if (tokens.length < 1) return false;
+    /* Sécurité : min 2 tokens (prénom + nom obligatoires) */
+    if (tokens.length < 2) return false;
     /* Match si tokens input ⊇ tokens alias (input plus riche que alias OK) */
     return KEVIN_ALIASES.some((alias) => {
       const aliasTokens = alias.split(/\s+/).filter((t) => t.length >= 4);
-      if (!aliasTokens.length) return false;
+      if (aliasTokens.length < 2) return false; /* Cohérence : alias avec min 2 tokens */
       return aliasTokens.every((at) => tokens.includes(at));
     });
   }
@@ -154,34 +150,26 @@ class Auth {
     const user = isKevin
       ? PRECONFIGURED.find((u) => u.id === ADMIN_ID)
       : PRECONFIGURED.find((u) => {
-          /* v13.3.62 fix Kevin "elle tape nom et prénom mais marche pas" :
-           * Matching EXHAUSTIF avec 4 stratégies cumulatives :
-           * 1. Match exact alias normalisé
-           * 2. Match tokens input ⊆ alias tokens (input plus court OK)
-           * 3. Match alias tokens ⊆ input tokens (input plus riche OK)
-           * 4. Match au moins 1 token significatif commun (fuzzy fallback) */
-          const aliases = USER_ALIASES[u.id] ?? [normalize(u.name)];
-          const inputN = normalize(name);
-
-          /* Stratégie 1 : match exact alias */
-          if (aliases.includes(inputN)) return true;
-
-          /* Stratégies 2-4 : tokens */
-          for (const alias of aliases) {
-            const aliasTokens = alias.split(/\s+/).filter((t) => t.length >= 3);
-            if (aliasTokens.length === 0) continue;
-
-            /* 2. tokens input ⊆ alias tokens */
-            if (tokens.length > 0 && tokens.every((t) => aliasTokens.includes(t))) return true;
-
-            /* 3. alias tokens ⊆ input tokens (input contient TOUS les mots de l'alias) */
-            if (aliasTokens.every((at) => tokens.includes(at))) return true;
-
-            /* 4. Au moins 1 token significatif commun (fallback fuzzy) */
-            const common = tokens.filter((t) => aliasTokens.includes(t));
-            if (common.length >= 1 && tokens.length <= 4) return true;
-          }
-          return false;
+          /* v13.3.65 fix Kevin "trop risqué — seulement prénom+nom et inversement, pas juste prénom".
+           *
+           * SÉCURITÉ : matching STRICT avec 2 conditions cumulatives :
+           * 1. MIN 2 tokens input (prénom+nom obligatoire, pas juste prénom seul)
+           * 2. ALL user tokens must be in input (full name match, ordre indifférent)
+           *
+           * Test mental :
+           * - "Laurence Saint-Polit" → MATCH ✓ (tous user tokens présents)
+           * - "Saint-Polit Laurence" → MATCH ✓ (ordre indifférent)
+           * - "Laurence Saint Polit, Mme" → MATCH ✓ (tous user tokens dans input + extras)
+           * - "Laurence" seul → REJET ✓ (sécurité — length < 2)
+           * - "Laurence Saint" → REJET ✓ (manque 'polit')
+           * - "Marc Saint-Polit" → REJET ✓ (manque 'laurence')
+           */
+          if (tokens.length < 2) return false; /* Sécurité Kevin : prénom seul refusé */
+          const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
+          if (userTokens.length === 0) return false;
+          const inputSet = new Set(tokens);
+          /* TOUS les tokens du nom user doivent être présents dans l'input (ordre indifférent) */
+          return userTokens.every((ut) => inputSet.has(ut));
         });
 
     if (!user) {
