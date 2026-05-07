@@ -437,6 +437,14 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* v13.3.64 — Admin commands listener (Kevin 2026-05-08).
+       Tourne sur iPhone target user (ex: Laurence). Reçoit commands SSE Firebase
+       issued par Kevin admin (reset PIN, etc.) et applique localement. */
+    safeInit('admin-commands-listener', async () => {
+      const { adminCommandsListener } = await import('./admin-commands-listener.js');
+      adminCommandsListener.startListening();
+    }),
+
     /* P0 : claude-bridge init stats (lecture pending todos) +
        v13.3.60 FINAL-100 : start SSE listener pour pipeline temps-réel
        (Apex IA reçoit handoff Claude Code → toast doré UI). */

@@ -5,7 +5,7 @@
 
 /* === Handler GitHub (issues, comments, PRs, repo_dispatch) === */
 export async function handleGithubTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const token = await vault.readKey('ax_github_token');
   if (!token) throw new Error('ax_github_token non configuré (Coffre)');
   const repo = (params['repo'] as string | undefined) ?? '9r4rxssx64-creator/CMCteams';

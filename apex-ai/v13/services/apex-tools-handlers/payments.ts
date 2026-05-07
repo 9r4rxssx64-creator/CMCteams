@@ -5,7 +5,7 @@
 
 /* === Handler Stripe (charges, refunds, transfers) === */
 export async function handleStripeTask(task: string, params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const sk = await vault.readKey('ax_stripe_sk');
   if (!sk) throw new Error('ax_stripe_sk non configuré');
   const headers = {
@@ -53,7 +53,7 @@ export async function handleStripeTask(task: string, params: Record<string, unkn
 
 /* === Handler PayPal (orders, payouts) === */
 export async function handlePaypalTask(task: string, _params: Record<string, unknown>): Promise<unknown> {
-  const { vault } = await import('./vault.js');
+  const { vault } = await import('../vault.js');
   const clientId = await vault.readKey('ax_paypal_client');
   const clientSecret = await vault.readKey('ax_paypal_secret');
   if (!clientId || !clientSecret) throw new Error('ax_paypal_client + ax_paypal_secret non configurés');

@@ -2,7 +2,7 @@
  * P1 SECU (audit v13.2.7) : tests core/html-safe.ts (escapeHtml + sanitizeHtml + sanitizeUrl).
  */
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, sanitizeHtml, sanitizeUrl } from '../../core/html-safe.js';
+import { escapeHtml, sanitizeHtml, sanitizeUrl, safeSetHTML, stripDangerousHtml } from '../../core/html-safe.js';
 
 describe('html-safe (P1 SECU XSS)', () => {
   describe('escapeHtml', () => {
@@ -111,6 +111,81 @@ describe('html-safe (P1 SECU XSS)', () => {
     it('preserve contenu textuel sans XSS', async () => {
       const safe = await sanitizeHtml('Hello world');
       expect(safe).toContain('Hello world');
+    });
+  });
+
+  describe('stripDangerousHtml (synchronous strip)', () => {
+    it('retire <script>', () => {
+      const r = stripDangerousHtml('<p>OK</p><script>alert(1)</script>');
+      expect(r).not.toMatch(/<script/i);
+      expect(r).toContain('<p>OK</p>');
+    });
+
+    it('retire <iframe>', () => {
+      const r = stripDangerousHtml('<div>X</div><iframe src="evil.com"></iframe>');
+      expect(r).not.toMatch(/<iframe/i);
+    });
+
+    it('retire on* event handlers (double-quoted)', () => {
+      const r = stripDangerousHtml('<img src="x.png" onerror="alert(1)">');
+      expect(r).not.toMatch(/onerror=/i);
+    });
+
+    it('retire on* event handlers (single-quoted)', () => {
+      const r = stripDangerousHtml("<img src='x.png' onclick='alert(1)'>");
+      expect(r).not.toMatch(/onclick=/i);
+    });
+
+    it('neutralise javascript: dans href', () => {
+      const r = stripDangerousHtml('<a href="javascript:alert(1)">x</a>');
+      expect(r).not.toMatch(/javascript:/i);
+    });
+
+    it('neutralise data:text/html', () => {
+      const r = stripDangerousHtml('<a href="data:text/html,<script>x</script>">x</a>');
+      expect(r).not.toMatch(/data:text\/html/i);
+    });
+
+    it('preserve contenu safe', () => {
+      const r = stripDangerousHtml('<p>Hello <strong>world</strong></p>');
+      expect(r).toContain('<p>');
+      expect(r).toContain('<strong>');
+      expect(r).toContain('Hello');
+    });
+
+    it('handle empty/null', () => {
+      expect(stripDangerousHtml('')).toBe('');
+    });
+  });
+
+  describe('safeSetHTML (DOM helper)', () => {
+    it('strips XSS et set innerHTML', () => {
+      const el = document.createElement('div');
+      safeSetHTML(el, '<p>OK</p><script>alert(1)</script>');
+      expect(el.innerHTML).not.toMatch(/<script/i);
+      expect(el.innerHTML).toContain('OK');
+    });
+
+    it('handle null element sans crash', () => {
+      expect(() => safeSetHTML(null, '<p>x</p>')).not.toThrow();
+      expect(() => safeSetHTML(undefined, '<p>x</p>')).not.toThrow();
+    });
+
+    it('handle null/undefined html', () => {
+      const el = document.createElement('div');
+      el.innerHTML = '<p>existing</p>';
+      safeSetHTML(el, null);
+      expect(el.innerHTML).toBe('');
+      el.innerHTML = '<p>existing</p>';
+      safeSetHTML(el, undefined);
+      expect(el.innerHTML).toBe('');
+    });
+
+    it('preserve safe HTML', () => {
+      const el = document.createElement('div');
+      safeSetHTML(el, '<p>Hello <strong>world</strong></p>');
+      expect(el.innerHTML).toContain('Hello');
+      expect(el.innerHTML).toContain('<strong>');
     });
   });
 });

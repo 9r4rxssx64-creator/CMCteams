@@ -2176,6 +2176,31 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'laurence',
     impactLevel: 'A',
   },
+  /* v13.3.64 — Admin reset PIN cross-device via Firebase command (Kevin 2026-05-08).
+     Kevin admin chat → "Apex reset PIN Laurence" → Apex IA appelle ce tool →
+     push command Firebase → iPhone target SSE listener → reset auto + toast.
+     ImpactLevel C : admin only, validation token système gère sécurité. */
+  {
+    name: 'reset_user_pin',
+    description:
+      'Reset le PIN d\'un user (admin Kevin only). Pousse une command Firebase ; iPhone du target la reçoit via SSE et exécute le reset local (clear PIN + reload). Aucune action manuelle de Kevin requise après l\'appel.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target_uid: {
+          type: 'string',
+          description: 'User ID cible (ex: laurence_sp). DOIT être un user pré-configuré non admin.',
+        },
+        reason: {
+          type: 'string',
+          description: 'Raison du reset (oubli PIN, test, etc.) — affichée dans audit log.',
+        },
+      },
+      required: ['target_uid'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
+  },
 ];
 
 class ApexToolsRegistry {
