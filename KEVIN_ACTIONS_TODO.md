@@ -1,5 +1,50 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🆕 SESSION 2026-05-07 v13.3.19 — Bridge Apex → CMCteams livré (règle Kevin §8)
+
+Apex IA détecte automatiquement quand Kevin colle un planning SBM
+(MAI 2026 / BJ Éq. / PIT BOSS / SUPERVISEUR / INSPECTEUR) dans le chat
+ou via paste → push asynchrone Firebase `ax_cmc_planning_pending/<id>`.
+
+**Livré côté Apex (v13.3.19)** :
+- ✅ `apex-ai/v13/services/cmc-planning-bridge.ts` (helpers + cap 50KB sécurité)
+- ✅ Wired dans `features/chat/index.ts` (submit + paste handlers)
+- ✅ Toast info `"📋 Planning détecté → envoyé à CMCteams (id: ...)"`
+- ✅ 20 tests unitaires verts (`tests/unit/cmc-planning-bridge.test.ts`)
+- ✅ Bump APP_VER + sw.js CACHE_VERSION → `v13.3.19`
+
+**Action restante côté CMCteams** (next session — autre agent) :
+- [ ] Implémenter SSE listener dans `index.html` racine sur la clé Firebase
+      `ax_cmc_planning_pending` (path Firebase : `apex-default-rtdb/ax_cmc_planning_pending/*`,
+      mais le bridge écrit via `firebase.write` dans `/apex/ax_cmc_planning_pending/<id>`,
+      donc **l'écoute CMC doit se faire sur `/apex/ax_cmc_planning_pending.json`** via REST/SSE
+      avec filtre `processed === false`).
+- [ ] Si admin Kevin connecté ET document non `processed` → toast doré
+      `"📥 Apex a envoyé un planning, importer ?"` avec bouton 1-clic.
+- [ ] Bouton 1-clic → injecte `payload.raw_text` dans la textarea de `vImport`
+      puis appelle `doImport()` (avec MERGE règle Kevin 2026-05-07 §1).
+- [ ] Après traitement → marquer `processed: true` + `processed_at: ts` côté CMC
+      pour éviter rejouer.
+- [ ] Si `truncated === true` (texte > 50 KB), prévenir Kevin "Planning tronqué,
+      colle directement dans CMC pour la version complète."
+
+**Schéma payload** (référence pour le listener CMC) :
+```js
+{
+  id: "pln_<ts>_<rand>",
+  raw_text: "<texte planning, ≤50000 chars>",
+  source: "chat" | "paste" | "voice",
+  ts: <ms epoch>,
+  from_apex: true,
+  processed: false,
+  detected_at: "ISO date",
+  truncated: <bool>,
+  original_size: <int>
+}
+```
+
+---
+
 ## 🆕 SESSION 2026-05-07 v13.3.18 — 2 credentials supplémentaires + OAuth optionnels
 
 Suite au rapport Apex IA "20 manques systémiques" (v13.3.16), **2 clés** restent à coller via Coffre :
