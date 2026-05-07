@@ -116,7 +116,7 @@ export const CATEGORIES: ReadonlyArray<CategoryDef> = [
     label: '📨 Communications',
     serviceMatchers: [
       'telegram', 'discord', 'slack', 'brevo', 'resend', 'twilio',
-      'sendgrid', 'mailchimp', 'whatsapp', 'email',
+      'sendgrid', 'mailchimp', 'whatsapp',
     ],
     patternCategories: ['comms'],
   },
@@ -165,14 +165,23 @@ export const CATEGORIES: ReadonlyArray<CategoryDef> = [
 ];
 
 /**
- * Map service ID → catégorie UI. Premier match gagne, fallback "other".
+ * Map service ID → catégorie UI. Match le PLUS LONG mot-clé gagne (préfère
+ * "kevin" sur "email" pour kevin_email). Fallback "other".
  */
 export function classifyService(service: string, patternCat?: CredentialPattern['category']): string {
   const lc = service.toLowerCase();
+  let best: { catId: string; matchLen: number } | null = null;
   for (const cat of CATEGORIES) {
     if (cat.id === 'other') continue;
-    if (cat.serviceMatchers.some((m) => lc.includes(m))) return cat.id;
+    for (const m of cat.serviceMatchers) {
+      if (lc.includes(m)) {
+        if (!best || m.length > best.matchLen) {
+          best = { catId: cat.id, matchLen: m.length };
+        }
+      }
+    }
   }
+  if (best) return best.catId;
   if (patternCat) {
     for (const cat of CATEGORIES) {
       if (cat.patternCategories.includes(patternCat)) return cat.id;

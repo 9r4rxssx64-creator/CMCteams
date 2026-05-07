@@ -13989,7 +13989,32 @@ function vMain(){
   // v9.581 (Kevin "erreur d'affichage Can't find variable") — safety wrapper :
   // si une case route vers une fonction de vue non définie, on retourne une vue
   // d'erreur claire au lieu de laisser le ReferenceError crasher l'app entiere.
-  try{return _vMainImpl();}
+  // v9.595 (Kevin 2026-05-07 "ça revient sur la page d'accueil des fois") :
+  // si la vue retourne "" (cas non-admin sur vue admin), on affiche un message
+  // clair "Accès admin requis" plutôt que de laisser un main vide qui casse l'UX.
+  try{
+    var _out=_vMainImpl();
+    if(_out===""||_out==null){
+      var _isAdm=A.user&&A.user.id===AID;
+      if(!_isAdm){
+        return '<div class="card" style="padding:20px;border:1px solid #c9a22755;background:rgba(201,162,39,.08);border-radius:12px;margin:14px;text-align:center">'
+          +'<div style="font-size:42px;margin-bottom:6px">🔒</div>'
+          +'<div style="font-size:18px;font-weight:800;color:#c9a227;margin-bottom:8px">Section admin</div>'
+          +'<div style="color:#c0d0b8;margin-bottom:16px;font-size:14px">Cette page est réservée à l\'administrateur. Tu peux retourner à l\'accueil.</div>'
+          +'<button class="btn gold" onclick="sv(\'accueil\')">🏠 Retour à l\'accueil</button>'
+          +'</div>';
+      }
+      // Admin mais vue retourne "" — anomalie, on log + retour accueil
+      try{if(typeof _audit==="function")_audit("vmain_empty","view="+A.view);}catch(_){}
+      return '<div class="card" style="padding:20px;border:1px solid #80808055;background:rgba(128,128,128,.08);border-radius:12px;margin:14px">'
+        +'<div style="font-size:18px;font-weight:800;color:#a0a0a0;margin-bottom:8px">📭 Page vide</div>'
+        +'<div style="color:#c0d0b8;margin-bottom:16px;font-size:14px">La vue "<b>'+esc(A.view||"?")+'</b>" n\'a renvoyé aucun contenu. Cela peut être temporaire.</div>'
+        +'<button class="btn gold" onclick="sv(\'accueil\')">🏠 Accueil</button>'
+        +' <button class="btn" onclick="goBack()" style="margin-left:6px">↩ Retour</button>'
+        +'</div>';
+    }
+    return _out;
+  }
   catch(_vMErr){
     var _msg=String(_vMErr&&_vMErr.message||_vMErr).replace(/</g,"&lt;").slice(0,200);
     console.error("[vMain] crash safe-catch :",_vMErr);
