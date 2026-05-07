@@ -238,6 +238,87 @@ class CredentialsAudit {
   }
 
   /**
+   * v13.3.36 (Kevin 2026-05-07 — credentials-watch alerte "1/16 enregistrés") :
+   *
+   * Sync vault → registry persistant `ax_credentials_registry`.
+   *
+   * Problème observé : Vault contient 10 clés mais registry n'en référence qu'1.
+   * Cause : registry n'est pas re-synchronisé après chaque vault.setKey, et
+   * la sentinelle credentials-watch lit le registry pour son décompte.
+   *
+   * Cette méthode :
+   *   1. Scan tous les CREDENTIAL_PATTERNS via vault.readKey
+   *   2. Construit un snapshot {storage_key, configured, encrypted, ts}
+   *   3. Persiste dans `ax_credentials_registry` (FB_FIX optionnel)
+   *
+   * Idempotent : multi-call OK. Appelé au boot + après chaque vault.setKey.
+   */
+  async syncFromVault(): Promise<{ ok: boolean; total: number; configured: number; ts: number }> {
+    const ts = Date.now();
+    try {
+      const report = await this.runFullAudit();
+      const snapshot = report.entries.map((e) => ({
+        storage_key: e.storage_key,
+        service_name: e.service_name,
+        category: e.category,
+        configured: e.configured,
+        encrypted: e.encrypted,
+        status: e.status,
+        last_synced: ts,
+      }));
+      const payload = {
+        ts,
+        total: report.total_patterns,
+        configured: report.configured_count,
+        encrypted: report.encrypted_count,
+        firebase_backup: report.firebase_backup_count,
+        security_score: report.security_score,
+        entries: snapshot,
+      };
+      try {
+        localStorage.setItem('ax_credentials_registry', JSON.stringify(payload));
+      } catch (err: unknown) {
+        logger.warn('credentials-audit', 'syncFromVault localStorage failed', { err });
+      }
+      logger.info('credentials-audit', `syncFromVault OK : ${report.configured_count}/${report.total_patterns} configurés`);
+      return {
+        ok: true,
+        total: report.total_patterns,
+        configured: report.configured_count,
+        ts,
+      };
+    } catch (err: unknown) {
+      logger.error('credentials-audit', 'syncFromVault failed', { err });
+      return { ok: false, total: 0, configured: 0, ts };
+    }
+  }
+
+  /**
+   * v13.3.36 — Lit le registry persisté (cache rapide pour sentinelle credentials-watch
+   * sans recomputer audit complet à chaque tick).
+   * Retourne null si pas encore syncé.
+   */
+  readRegistry(): {
+    ts: number;
+    total: number;
+    configured: number;
+    encrypted: number;
+    firebase_backup: number;
+    security_score: number;
+    entries: Array<{ storage_key: string; service_name: string; category: string; configured: boolean; encrypted: boolean; status: string; last_synced: number }>;
+  } | null {
+    try {
+      const raw = localStorage.getItem('ax_credentials_registry');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed as ReturnType<CredentialsAudit['readRegistry']>;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Test ping API live pour vérifier validité d'une clé.
    * Best-effort : appelle pattern.testEndpoint si défini, sinon retourne 'unknown'.
    */

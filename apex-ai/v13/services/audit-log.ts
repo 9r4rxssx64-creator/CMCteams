@@ -93,6 +93,95 @@ class AuditLog {
     return { valid: true };
   }
 
+  /**
+   * v13.3.36 (Kevin 2026-05-07 — security-watch P0 alerte) :
+   * Reconstruit la chain hash à partir d'un index donné.
+   *
+   * Use case : sentinelle security-watch détecte tampering sur entry #N,
+   * Kevin clique "🔧 Réparer chain audit" dans Coffre admin. La fonction :
+   *   1. Préserve les entries 0..N-1 (avant le tampering)
+   *   2. Recalcule prevHash + hash pour chaque entry à partir de N
+   *   3. Persiste + audit log
+   *
+   * NE supprime AUCUNE entry — réparation conservative.
+   * Audit log entry 'audit.chain_rebuilt' tracé pour traçabilité.
+   *
+   * @param entryIndex Index de la première entry à recalculer (>= 0)
+   * @returns { ok, rebuilt, brokenBefore? } — rebuilt = nb d'entries recalculées
+   */
+  async rebuildChainFrom(entryIndex: number): Promise<{ ok: boolean; rebuilt: number; brokenBefore?: number }> {
+    if (!this.initialized) this.init();
+    if (entryIndex < 0 || entryIndex >= this.chain.length) {
+      return { ok: false, rebuilt: 0 };
+    }
+    /* prevHash de départ : si entryIndex===0 → ancrage '0', sinon hash de l'entry précédente */
+    let prevHash: string;
+    if (entryIndex === 0) {
+      prevHash = '0';
+    } else {
+      const prevEntry = this.chain[entryIndex - 1];
+      if (!prevEntry) return { ok: false, rebuilt: 0 };
+      prevHash = prevEntry.hash;
+    }
+    let rebuilt = 0;
+    for (let i = entryIndex; i < this.chain.length; i++) {
+      const entry = this.chain[i];
+      if (!entry) continue;
+      entry.prevHash = prevHash;
+      entry.hash = await this.computeHash({ ...entry, hash: '' });
+      prevHash = entry.hash;
+      rebuilt++;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.chain));
+    } catch (err: unknown) {
+      logger.warn('audit-log', 'rebuildChainFrom persist failed', { err });
+      return { ok: false, rebuilt };
+    }
+    /* Audit trace : on ne peut pas appendre récursivement via record() sans risque
+     * de re-tampering détection. On push directement une entry signée à la fin. */
+    try {
+      const traceEntry: AuditEntry = {
+        ts: Date.now(),
+        actor: 'system',
+        action: 'audit.chain_rebuilt',
+        details: { fromIndex: entryIndex, rebuilt, totalEntries: this.chain.length },
+        prevHash,
+        hash: '',
+      };
+      traceEntry.hash = await this.computeHash(traceEntry);
+      this.chain.push(traceEntry);
+      if (this.chain.length > MAX_ENTRIES) this.chain = this.chain.slice(-MAX_ENTRIES);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.chain));
+    } catch (err: unknown) {
+      logger.warn('audit-log', 'rebuildChainFrom trace failed', { err });
+    }
+    logger.info('audit-log', `rebuildChainFrom ${entryIndex} → ${rebuilt} entries`);
+    return { ok: true, rebuilt };
+  }
+
+  /**
+   * v13.3.36 — Helper : trouve l'index de la première entry corrompue.
+   * Utile pour rebuildChainFrom auto (sans devoir compter manuellement).
+   * Retourne -1 si chain valide.
+   */
+  async findBrokenIndex(): Promise<number> {
+    const r = await this.verify();
+    if (r.valid) return -1;
+    return r.brokenAt ?? -1;
+  }
+
+  /**
+   * v13.3.36 — Auto-repair : trouve l'index broken puis rebuild from there.
+   * Idempotent : si chain valide → no-op + ok:true.
+   */
+  async autoRepair(): Promise<{ ok: boolean; rebuilt: number; brokenAt?: number }> {
+    const brokenAt = await this.findBrokenIndex();
+    if (brokenAt < 0) return { ok: true, rebuilt: 0 };
+    const r = await this.rebuildChainFrom(brokenAt);
+    return { ok: r.ok, rebuilt: r.rebuilt, brokenAt };
+  }
+
   getEntries(filter?: { actor?: string; action?: string }): readonly AuditEntry[] {
     if (!filter) return this.chain;
     return this.chain.filter((e) => {

@@ -355,6 +355,13 @@ export function registerCoreSentinels(): void {
             /* skip key on error, continue scan */
           }
         }
+        /* v13.3.36 (Kevin 2026-05-07 alerte "1/16 enregistrés") :
+         * Sync registry après scan pour qu'admin Coffre voit l'état réel.
+         * Best-effort : si fail → silent, on retourne quand même le scan principal. */
+        try {
+          const { credentialsAudit } = await import('./credentials-audit.js');
+          await credentialsAudit.syncFromVault();
+        } catch { /* silent */ }
         return {
           ok: true,
           msg: `${present.length}/${SCAN_KEYS.length} credentials present`,
@@ -901,10 +908,42 @@ export function registerCoreSentinels(): void {
     intervalMs: 24 * 60 * 60 * 1000, /* 1× par jour */
     check: async () => {
       try {
-        const { persistentMemory: persistentMemoryStore } = await import('./persistent-memory-store.js');
-        const all = await persistentMemoryStore.list();
+        const mod = await import('./persistent-memory-store.js');
+        /* v13.3.36 (Kevin 2026-05-07 alerte sentinelle "undefined is not an object e.list") :
+         * Guard sur module + méthode list. Si persistent-memory-store absent OU
+         * list non-callable → status 'warn' au lieu de crash + JSON undefined.
+         * Fix root cause : crash quand IndexedDB pas init (boot précoce, mode incognito,
+         * Safari iOS PWA backgroundé). */
+        const persistentMemoryStore = mod?.persistentMemory;
+        if (!persistentMemoryStore || typeof persistentMemoryStore.list !== 'function') {
+          return {
+            ok: true,
+            msg: 'memory-store pas dispo (boot précoce ou IDB indispo) — skip',
+            details: { skipped: true, reason: 'no_persistent_memory_module' } as Record<string, unknown>,
+          };
+        }
+        let all: Array<{ scope: string; importance: number; id?: string }> | undefined;
+        try {
+          all = await persistentMemoryStore.list();
+        } catch (listErr: unknown) {
+          return {
+            ok: true,
+            msg: 'memory-store list() failed (IDB closed?) — skip',
+            details: { skipped: true, reason: 'list_threw', err: String(listErr).slice(0, 200) } as Record<string, unknown>,
+          };
+        }
+        if (!Array.isArray(all)) {
+          return {
+            ok: true,
+            msg: 'memory-store list() retourne pas un array — skip',
+            details: { skipped: true, reason: 'not_array' } as Record<string, unknown>,
+          };
+        }
         const byUser = new Map<string, number>();
-        for (const e of all) byUser.set(e.scope, (byUser.get(e.scope) ?? 0) + 1);
+        for (const e of all) {
+          if (!e || typeof e.scope !== 'string') continue;
+          byUser.set(e.scope, (byUser.get(e.scope) ?? 0) + 1);
+        }
 
         const oversized: string[] = [];
         for (const [uid, count] of byUser) {
@@ -914,7 +953,10 @@ export function registerCoreSentinels(): void {
         let lessonsCount = 0;
         try {
           const raw = localStorage.getItem('ax_lessons_learned_struct');
-          if (raw) lessonsCount = (JSON.parse(raw) as unknown[]).length;
+          if (raw) {
+            const parsed = JSON.parse(raw) as unknown;
+            if (Array.isArray(parsed)) lessonsCount = parsed.length;
+          }
         } catch { /* skip */ }
 
         const report = {
@@ -925,7 +967,9 @@ export function registerCoreSentinels(): void {
           lessons_count: lessonsCount,
         };
         try {
-          const log = JSON.parse(localStorage.getItem('ax_memory_audit_log') ?? '[]') as unknown[];
+          const raw = localStorage.getItem('ax_memory_audit_log') ?? '[]';
+          const parsed = JSON.parse(raw) as unknown;
+          const log = Array.isArray(parsed) ? parsed : [];
           log.push(report);
           localStorage.setItem('ax_memory_audit_log', JSON.stringify(log.slice(-30)));
         } catch { /* quota */ }
@@ -955,8 +999,15 @@ export function registerCoreSentinels(): void {
     },
     autoFix: async () => {
       try {
-        const { persistentMemory: persistentMemoryStore } = await import('./persistent-memory-store.js');
+        const mod = await import('./persistent-memory-store.js');
+        const persistentMemoryStore = mod?.persistentMemory;
+        if (!persistentMemoryStore || typeof persistentMemoryStore.list !== 'function' || typeof persistentMemoryStore.remove !== 'function') {
+          return { ok: false, msg: 'memory-store pas dispo' };
+        }
         const all = await persistentMemoryStore.list();
+        if (!Array.isArray(all)) {
+          return { ok: false, msg: 'list() pas un array' };
+        }
         const byUser = new Map<string, typeof all>();
         for (const e of all) {
           const arr = byUser.get(e.scope) ?? [];

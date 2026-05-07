@@ -594,6 +594,13 @@ class Vault {
     }
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
     this.audit('set', { target: storageKey, details: persisted });
+    /* v13.3.36 (Kevin 2026-05-07 alerte sentinelle "1/16 credentials enregistrés") :
+     * Sync registry après chaque setKey pour que credentials-watch reflète l'état réel.
+     * Best-effort : si fail (boot précoce, IDB indispo) → silent. */
+    try {
+      const { credentialsAudit } = await import('./credentials-audit.js');
+      void credentialsAudit.syncFromVault();
+    } catch { /* silent — registry sync best-effort */ }
     return { ok: persisted.local || persisted.idb, persisted };
   }
 

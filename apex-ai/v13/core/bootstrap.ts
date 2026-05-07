@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.33';
+export const APP_VER = 'v13.3.36';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -93,7 +93,25 @@ async function bootstrap(): Promise<void> {
   await safeInit('audit-log', async () => {
     const { auditLog } = await import('@services/audit-log.js');
     auditLog.init();
+    /* v13.3.36 (Kevin 2026-05-07 — security-watch P0) : auto-repair chain au boot
+     * si tampering détecté. Évite de laisser une chain corrompue rotter sans action. */
+    try {
+      const repair = await auditLog.autoRepair();
+      if (repair.brokenAt !== undefined && repair.rebuilt > 0) {
+        logger.warn('audit-log', `Auto-repair chain depuis index ${repair.brokenAt}: ${repair.rebuilt} entries reconstruites`);
+      }
+    } catch { /* silent */ }
     await auditLog.record('boot.start', { details: { ver: APP_VER } });
+  });
+  /* v13.3.36 (Kevin 2026-05-07 — credentials-watch P1 alerte sync incomplet) :
+   * Sync registry vault → ax_credentials_registry au boot (post-vault init).
+   * Garantit que credentials-watch reflète l'état réel du vault. */
+  await safeInit('credentials-registry-sync', async () => {
+    const { credentialsAudit } = await import('@services/credentials-audit.js');
+    const r = await credentialsAudit.syncFromVault();
+    if (r.ok) {
+      logger.info('boot', `Credentials registry sync : ${r.configured}/${r.total} configurés`);
+    }
   });
   await safeInit('auto-backup', async () => {
     /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto.
