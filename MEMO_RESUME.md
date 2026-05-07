@@ -1,6 +1,34 @@
-# Mémo de reprise — Apex v13.3.27 / CMC v9.600 (2026-05-07 19h45)
+# Mémo de reprise — Apex v13.3.32 / CMC v9.600 (2026-05-07 21h45)
 
-## 🎯 ÉTAT ACTUEL v13.3.27 — Mémoire long-terme + relecture profonde docs
+## 🎯 ÉTAT ACTUEL v13.3.32 — DELIVERY MAX autonomie (wirage final Kevin règles)
+
+### Phase DELIVERY MAX (subagent P, 2026-05-07 21h45)
+
+Kevin demande : *"Fais tout ce qu'il demande pour s'améliorer. Tu aurais déjà dû le faire."*
+
+**Wirage essentiels enfin connectés** (les fonctions existaient mais n'étaient pas appelées) :
+1. `extractFactsFromMessage` WIRE dans chat handler — Apex APPREND vraiment de chaque message user maintenant
+2. `buildSystemPromptDeep` async WIRE dans `aiRouter.stream` — chaque turn IA reçoit docs + facts + lessons + cross-user
+3. `memory.initBootDefaults()` nouveau — auto-remplit Identité Kevin (12 facts) → **fix Coffre Identité Kevin (0) vide**
+4. Auto-rappel règles permanentes (regex "automatise"/"100/100"/"max") → push lessons pour next session
+5. **Auto-test runner** — `services/auto-test-runner.ts` : 7 smoke tests + scheduleAutoRun() daily + lessons si fails
+6. **SOS rescue button** — `ui/sos-rescue.ts` : bouton flottant bottom-right TOUT LE TEMPS visible (1-clic auto-fix, long-press diagnostic)
+7. **HUD debug live** — `ui/hud-debug.ts` : overlay top-right admin Kevin only (APP_VER + facts + Ko + AI/net + FPS, refresh 2s)
+
+### Stats v13.3.32
+
+- TS strict : **0 errors**
+- Tests : **6026 passed** / 9 skipped / 245 files (267s)
+- Build : 6-8s
+- Bundle main : ~60 KB / gzip 22 KB
+- Dist sync canary : OK (`apex-ai-v13/` → v13.3.32, sw.js CACHE_VERSION = `apex-v13.3.32`)
+
+### Branche dev
+`claude/test-699LQ` — push attendu après commit
+
+---
+
+## ÉTAT ANTÉRIEUR v13.3.27 — Mémoire long-terme + relecture profonde docs
 
 ### Session 2026-05-07 (17 commits + subagents A-O)
 

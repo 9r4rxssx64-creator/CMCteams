@@ -147,4 +147,3 @@ Gross margin : ...`,required:!1},{id:"go_to_market",label:"Go-to-Market",emoji:"
       </ul>
     </div>
   `;n.innerHTML=e}export{w as BMC_BLOCKS,b as BUSINESS_PLAN_SECTIONS,c as KPIS,F as MARKETING_4P,O as MARKETING_7P_EXTENSION,V as OKR_TEMPLATE,L as PESTEL_FACTORS,G as PITCH_DECK_SLIDES,B as PORTER_FIVE_FORCES,l as PRICING_STRATEGIES,_ as calcArpu,v as calcBep,q as calcCac,S as calcCashRunway,j as calcChurn,P as calcLtv,y as calcLtvCacRatio,A as calcMargeBrute,x as calcMrrToArr,C as calcRoi,M as calcVan,D as classifyBcg,E as emptySwot,a as escapeHtml,R as findKpi,T as findPlanSection,I as findPricingStrategy,k as generateCashFlowForecast,f as kpisByCategory,N as render};
-//# sourceMappingURL=index-B2qANu6-.js.map

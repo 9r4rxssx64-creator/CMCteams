@@ -24,4 +24,3 @@ import{l as p}from"./monitoring-WiO5ZBU9.js";function l(t){return t.replace(/[&<
       <p style="color:var(--ax-text-dim);font-size:12px">UI interactive disponible Sprint 5 — fonctions calcul exposées via API <code>calcIR2026()</code>, <code>calcIMC()</code>, etc.</p>
     </div>
   `:""}export{s as CALCULATORS,f as UNIT_CONVERSIONS,I as calcCreditMensualite,v as calcIMC,M as calcIR2026,_ as calcPlusValueImmo,j as convertTemperature,C as convertUnit,l as escapeHtml,y as isValidBic,b as isValidIban,A as render};
-//# sourceMappingURL=index-tzbulSJF.js.map

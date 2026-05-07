@@ -22,4 +22,3 @@ import{l as e}from"./monitoring-WiO5ZBU9.js";function t(r){r.innerHTML=`
       <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `,e.info("feature-crypto","rendered")}export{t as render};
-//# sourceMappingURL=index-D3xOYdp3.js.map

@@ -1,7 +1,45 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-07 19h45** (Apex v13.3.27 / CMC v9.600 — mémoire long-terme + 17 livraisons session)
+> Dernière mise à jour : **2026-05-07 21h45** (Apex v13.3.32 / CMC v9.600 — DELIVERY MAX autonomie)
+
+## 🆕 SESSION 2026-05-07 — APEX v13.3.27 → v13.3.32 — DELIVERY MAX (autonomie Kevin règles)
+
+### Phase autonomy max (subagent P)
+
+**Apex** v13.3.30+ wirages essentiels enfin connectés :
+- Wire `extractFactsFromMessage` (NLP regex per-user) dans chat handler (auto-push facts critiques `ax_persistent_memory_<uid>`)
+- Wire `buildSystemPromptDeep` dans chaque turn IA (docs racine + facts + lessons + cross-user)
+- `memory.initBootDefaults()` : auto-remplit Identité Kevin admin (12 facts profile/preferences/projects/relationships) au boot — **fix Coffre Identité (0) vide**
+- Auto-rappel règles permanentes : détection mots-clés "automatise", "100/100", "tout au max" → push lessons → injecte au prochain turn
+- Auto-test runner quotidien : 7 smoke tests services critiques (memory, persistent-memory, vault, ai-router, feature-toggles, storage, network) avec history 50 runs FIFO
+- SOS rescue button permanent (bottom-right, tap=auto-fix, long-press=diagnostic complet) avec status pastille verte/jaune/rouge
+- HUD debug live admin Kevin only (overlay top-right APP_VER + facts + Ko + AI/net + FPS) + click=panel complet
+
+### Fichiers nouveaux v13.3.32
+
+- `apex-ai/v13/services/auto-test-runner.ts` (NEW, ~280 lignes) : runner smoke tests + scheduling daily + history log + record lessons si fails
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/auto-test-runner.ts
+- `apex-ai/v13/ui/sos-rescue.ts` (NEW, ~210 lignes) : bouton SOS flottant + auto-heal + modal diagnostic
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/ui/sos-rescue.ts
+- `apex-ai/v13/ui/hud-debug.ts` (NEW, ~165 lignes) : overlay debug temps réel admin only
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/ui/hud-debug.ts
+
+### Fichiers étendus v13.3.32
+
+- `apex-ai/v13/core/memory.ts` (+ `initBootDefaults` méthode pour Kevin admin auto-remplit)
+- `apex-ai/v13/core/bootstrap.ts` (wire initBootDefaults + mount sos/hud + scheduleAutoRun timeout 1.5s)
+- `apex-ai/v13/features/chat/index.ts` (wire `buildSystemPromptDeep` async + `autoExtractAndLearn` non-bloquant)
+
+### Stats v13.3.32 (DELIVERY MAX)
+
+- TS strict : **0 errors**
+- Tests : **6026 passed / 9 skipped / 245 files** (267s)
+- Build : 6-8s, dist sync `apex-ai-v13/` OK
+- CACHE_VERSION sw.js : `apex-v13.3.32`
+- Bundle main : ~60 KB / gzip 22 KB
+
+---
 
 ## 🆕 SESSION 2026-05-07 — APEX v13.3.18 → v13.3.27 + CMC v9.598 → v9.600
 
