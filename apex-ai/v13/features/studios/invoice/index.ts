@@ -25,7 +25,16 @@
  */
 
 import { logger } from '../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeInvoiceScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeInvoiceScope?.cleanup();
+  activeInvoiceScope = null;
+}
 
 export type InvoiceType = 'devis' | 'facture' | 'relance' | 'acompte' | 'solde' | 'avoir';
 export type Currency = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'MAD';
@@ -679,6 +688,9 @@ class InvoiceStudioStore {
 export const invoiceStudioStore = new InvoiceStudioStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeInvoiceScope?.cleanup();
+  activeInvoiceScope = createCleanupScope('studios-invoice');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   const invoices = invoiceStudioStore.load(uid);
@@ -736,7 +748,7 @@ export function render(rootEl: HTMLElement): void {
 
 function attachHandlers(rootEl: HTMLElement, uid: string): void {
   rootEl.querySelectorAll<HTMLElement>('[data-create]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const type = btn.dataset['create'] as InvoiceType;
       const inv = invoiceStudioStore.create(uid, type);
       if (inv) {
@@ -747,7 +759,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="remove"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const id = btn.dataset['invoiceId'];
       if (!id) return;
       if (invoiceStudioStore.remove(uid, id)) render(rootEl);
@@ -755,7 +767,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="export-pdf"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const id = btn.dataset['invoiceId'];
       if (!id) return;
       logger.info('studio-invoice', 'export PDF requested', { id });
@@ -763,7 +775,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="export-facturx"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const id = btn.dataset['invoiceId'];
       if (!id) return;
       const all = invoiceStudioStore.load(uid);
@@ -775,7 +787,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="credit-note"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const id = btn.dataset['invoiceId'];
       if (!id) return;
       if (invoiceStudioStore.createCreditNote(uid, id)) render(rootEl);
@@ -783,7 +795,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="generate-recurrence"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeInvoiceScope!.bind(btn, 'click', () => {
       const id = btn.dataset['invoiceId'];
       if (!id) return;
       if (invoiceStudioStore.generateRecurrence(uid, id)) render(rootEl);

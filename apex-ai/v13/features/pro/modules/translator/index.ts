@@ -22,6 +22,15 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeTranslatorScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeTranslatorScope?.cleanup();
+  activeTranslatorScope = null;
+}
 
 export const AX_LANGS: Readonly<Record<string, string>> = {
   /* Langue locale Kevin (Casino Monaco) — TOUJOURS en tête */
@@ -658,6 +667,9 @@ function setPreferredTarget(tgt: string): void {
  * Render UI premium Translator Pro.
  */
 export function render(root: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeTranslatorScope?.cleanup();
+  activeTranslatorScope = createCleanupScope('translator');
   const prefTgt = getPreferredTarget();
   const optionsHtml = Object.keys(AX_LANGS)
     .map((k) => `<option value="${k}"${prefTgt === k ? ' selected' : ''}>${AX_LANGS[k]}</option>`)
@@ -691,11 +703,12 @@ export function render(root: HTMLElement): void {
   const inEl = root.querySelector<HTMLTextAreaElement>('#trIn');
   const outEl = root.querySelector<HTMLDivElement>('#trOut');
 
-  tgtSel?.addEventListener('change', () => {
+  if (tgtSel && activeTranslatorScope) activeTranslatorScope.bind(tgtSel, 'change', () => {
     if (tgtSel.value) setPreferredTarget(tgtSel.value);
   });
 
-  root.querySelector<HTMLButtonElement>('#trDoBtn')?.addEventListener('click', () => {
+  const doBtn = root.querySelector<HTMLButtonElement>('#trDoBtn');
+  if (doBtn && activeTranslatorScope) activeTranslatorScope.bind(doBtn, 'click', () => {
     if (!inEl || !outEl || !tgtSel) return;
     const text = inEl.value.trim();
     if (!text) return;
@@ -707,14 +720,16 @@ export function render(root: HTMLElement): void {
     });
   });
 
-  root.querySelector<HTMLButtonElement>('#trCopyBtn')?.addEventListener('click', () => {
+  const copyBtn = root.querySelector<HTMLButtonElement>('#trCopyBtn');
+  if (copyBtn && activeTranslatorScope) activeTranslatorScope.bind(copyBtn, 'click', () => {
     const t = outEl?.textContent ?? '';
     if (t && typeof navigator !== 'undefined' && navigator.clipboard) {
       void navigator.clipboard.writeText(t);
     }
   });
 
-  root.querySelector<HTMLButtonElement>('#trSpeakBtn')?.addEventListener('click', () => {
+  const speakBtn = root.querySelector<HTMLButtonElement>('#trSpeakBtn');
+  if (speakBtn && activeTranslatorScope) activeTranslatorScope.bind(speakBtn, 'click', () => {
     const t = outEl?.textContent ?? '';
     const lang = tgtSel?.value ?? 'en';
     if (!t) return;
@@ -726,7 +741,8 @@ export function render(root: HTMLElement): void {
     }
   });
 
-  root.querySelector<HTMLButtonElement>('#trClearCacheBtn')?.addEventListener('click', () => {
+  const clearCacheBtn = root.querySelector<HTMLButtonElement>('#trClearCacheBtn');
+  if (clearCacheBtn && activeTranslatorScope) activeTranslatorScope.bind(clearCacheBtn, 'click', () => {
     clearCache();
     if (outEl) outEl.textContent = '🗑 Cache vidé';
   });
