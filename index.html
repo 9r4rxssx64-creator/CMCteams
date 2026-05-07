@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.596";
+var APP_VER="v9.597";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6656,39 +6656,44 @@ function _cmcDetectHeaderRole(s){
   return {match:true,role:null};
 }
 // v9.521 — Runner unique partage par cmcImportTests + cmcImportTestRunAll
+// v9.597 fix Kevin 2026-05-07 : V96D-V96K cassés (tc.expect undefined sur customCheck-only).
+// Bug : `tc.expect.matchHeader` throw TypeError si tc.expect=undefined → tous les tests
+// avec customCheck (sans expect) tombaient en "undefined is not an object".
+// Fix : `var ex = tc.expect || {}` puis utiliser ex.* partout.
 function _cmcRunParserTests(){
   var results=[],pass=0,fail=0;
   CMC_PARSER_TESTS.forEach(function(tc){
     var ok=true,err="";
+    var ex=tc.expect||{};
     try{
       var inp=tc.input||"";
       // --- Header detection ---
-      if(typeof tc.expect.matchHeader!=="undefined"){
+      if(typeof ex.matchHeader!=="undefined"){
         var hd=_cmcDetectHeaderRole(inp);
-        if(hd.match!==tc.expect.matchHeader){ok=false;err="header match="+hd.match+" expected="+tc.expect.matchHeader;}
-        if(ok&&tc.expect.role){
-          if(hd.role!==tc.expect.role){ok=false;err="role="+hd.role+" expected="+tc.expect.role;}
+        if(hd.match!==ex.matchHeader){ok=false;err="header match="+hd.match+" expected="+ex.matchHeader;}
+        if(ok&&ex.role){
+          if(hd.role!==ex.role){ok=false;err="role="+hd.role+" expected="+ex.role;}
         }
       }
       // --- Match employe exact ---
-      if(typeof tc.expect.matchEmp!=="undefined"){
-        var emp=(A.employees||[]).find(function(e){return e.name===tc.expect.matchEmp;});
-        if(!emp){ok=true;err="(skipped: "+tc.expect.matchEmp+" absent DB)";}
+      if(typeof ex.matchEmp!=="undefined"){
+        var emp=(A.employees||[]).find(function(e){return e.name===ex.matchEmp;});
+        if(!emp){ok=true;err="(skipped: "+ex.matchEmp+" absent DB)";}
       }
       // --- Match employe par nom de famille ---
-      if(typeof tc.expect.matchEmpSurname!=="undefined"){
-        var sn=tc.expect.matchEmpSurname;
+      if(typeof ex.matchEmpSurname!=="undefined"){
+        var sn=ex.matchEmpSurname;
         var found=(A.employees||[]).some(function(e){return (e.name||"").split(/\s+/)[0]===sn;});
         if(!found){ok=true;err="(skipped: "+sn+" absent DB)";}
       }
       // --- Code valide dans CODES ---
-      if(typeof tc.expect.validCode!=="undefined"){
+      if(typeof ex.validCode!=="undefined"){
         var c=inp.replace(/[∕⁄／]/g,"/");
         var v=!!CODES[c]||!!CODES[c.replace(/["'“”‘’]+$/,"")];
-        if(v!==tc.expect.validCode){ok=false;err="code valid="+v+" expected="+tc.expect.validCode;}
+        if(v!==ex.validCode){ok=false;err="code valid="+v+" expected="+ex.validCode;}
       }
       // --- Normalisation nom ---
-      if(typeof tc.expect.normalize!=="undefined"){
+      if(typeof ex.normalize!=="undefined"){
         var nz=_cmcNormalizeName(inp);
         if(nz!==tc.expect.normalize){ok=false;err="norm='"+nz+"' expected='"+tc.expect.normalize+"'";}
       }

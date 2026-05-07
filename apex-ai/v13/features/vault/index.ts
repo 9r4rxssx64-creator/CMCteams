@@ -584,13 +584,15 @@ function attachHandlers(rootEl: HTMLElement): void {
   }
 
   /* "+ Ajouter" header button */
-  rootEl.querySelector<HTMLButtonElement>('#ax-vault-add-manual')?.addEventListener('click', () => {
+  const addBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-add-manual');
+  if (addBtn && activeVaultScope) activeVaultScope.bind(addBtn, 'click', () => {
     haptic.tap();
     openAddModal(rootEl);
   });
 
   /* "🔄 Tester tout" */
-  rootEl.querySelector<HTMLButtonElement>('#ax-vault-test-all')?.addEventListener('click', () => {
+  const testAllBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-test-all');
+  if (testAllBtn && activeVaultScope) activeVaultScope.bind(testAllBtn, 'click', () => {
     void (async () => {
       haptic.tap();
       toast.info('Test de toutes les clés en cours…');
@@ -606,7 +608,8 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   /* Auto-detect paste */
-  rootEl.querySelector<HTMLButtonElement>('#ax-vault-paste-btn')?.addEventListener('click', () => {
+  const pasteBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-paste-btn');
+  if (pasteBtn && activeVaultScope) activeVaultScope.bind(pasteBtn, 'click', () => {
     void (async () => {
       haptic.tap();
       const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-vault-paste');
@@ -638,7 +641,8 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   /* Export JSON */
-  rootEl.querySelector<HTMLButtonElement>('#ax-vault-export')?.addEventListener('click', () => {
+  const exportBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-export');
+  if (exportBtn && activeVaultScope) activeVaultScope.bind(exportBtn, 'click', () => {
     haptic.tap();
     const json = exportVaultJson(listVaultEntries());
     const blob = new Blob([json], { type: 'application/json' });
@@ -867,14 +871,15 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
       </div>
     </div>
   `;
-  root.querySelector<HTMLButtonElement>('#ax-vault-modal-close')?.addEventListener('click', () => closeModal(rootEl));
+  (() => { const __b = root.querySelector<HTMLButtonElement>('#ax-vault-modal-close'); if (__b && activeVaultScope) activeVaultScope.bind(__b, 'click', () => closeModal(rootEl)); })();
   /* Click outside */
   const dialog = root.querySelector<HTMLDivElement>('[role="dialog"]');
-  dialog?.addEventListener('click', (e) => {
+  if (dialog && activeVaultScope) activeVaultScope.bind(dialog, 'click', (e) => {
     if (e.target === dialog) closeModal(rootEl);
   });
   /* Auto-detect button */
-  root.querySelector<HTMLButtonElement>('#ax-vault-add-detect')?.addEventListener('click', () => {
+  const addDetectBtn = root.querySelector<HTMLButtonElement>('#ax-vault-add-detect');
+  if (addDetectBtn && activeVaultScope) activeVaultScope.bind(addDetectBtn, 'click', () => {
     void (async () => {
       haptic.tap();
       const valueEl = root.querySelector<HTMLTextAreaElement>('#ax-vault-add-value');
@@ -899,7 +904,8 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
     })();
   });
   /* Save */
-  root.querySelector<HTMLButtonElement>('#ax-vault-add-save')?.addEventListener('click', () => {
+  const addSaveBtn = root.querySelector<HTMLButtonElement>('#ax-vault-add-save');
+  if (addSaveBtn && activeVaultScope) activeVaultScope.bind(addSaveBtn, 'click', () => {
     void (async () => {
       haptic.tap();
       const service = root.querySelector<HTMLInputElement>('#ax-vault-add-service')?.value.trim() ?? '';
@@ -960,9 +966,10 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
       </div>
     </div>
   `;
-  root.querySelector<HTMLButtonElement>('#ax-vault-modal-close')?.addEventListener('click', () => closeModal(rootEl));
-  root.querySelector<HTMLButtonElement>('#ax-vault-edit-cancel')?.addEventListener('click', () => closeModal(rootEl));
-  root.querySelector<HTMLButtonElement>('#ax-vault-edit-save')?.addEventListener('click', () => {
+  (() => { const __b = root.querySelector<HTMLButtonElement>('#ax-vault-modal-close'); if (__b && activeVaultScope) activeVaultScope.bind(__b, 'click', () => closeModal(rootEl)); })();
+  (() => { const __c = root.querySelector<HTMLButtonElement>('#ax-vault-edit-cancel'); if (__c && activeVaultScope) activeVaultScope.bind(__c, 'click', () => closeModal(rootEl)); })();
+  const editSaveBtn = root.querySelector<HTMLButtonElement>('#ax-vault-edit-save');
+  if (editSaveBtn && activeVaultScope) activeVaultScope.bind(editSaveBtn, 'click', () => {
     void (async () => {
       haptic.tap();
       const newValue = root.querySelector<HTMLTextAreaElement>('#ax-vault-edit-value')?.value.trim() ?? '';
