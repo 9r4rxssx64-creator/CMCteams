@@ -251,6 +251,8 @@ async function bootstrap(): Promise<void> {
   router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
   /* Sprint 9 Kevin v13.0.77+ — Auto-Backup admin (règle "ne jamais rien perdre") */
   router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
+  /* v13.3.33 Kevin 2026-05-07 — Smart IA Router multi-critères (latence/quota/qualité/uptime) */
+  router.register('smart-router', { loader: () => import('@features/smart-router/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
