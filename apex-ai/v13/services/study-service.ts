@@ -160,7 +160,10 @@ class StudyService {
   async studyByURL(url: string): Promise<ServiceStudy> {
     const u = new URL(url);
     const host = u.hostname.replace(/^www\./, '');
-    const service = host.split('.')[0] ?? host;
+    /* Si subdomain (api.x.com / console.x.com / dash.x.com) → utilise le second-level (x).
+     * Sinon utilise le premier label (x.com → x). */
+    const parts = host.split('.');
+    const service = parts.length >= 3 ? (parts[parts.length - 2] ?? parts[0] ?? host) : (parts[0] ?? host);
     /* Cache hit ? */
     const cached = this.getKnown(service);
     if (cached && Date.now() - cached.studied_at < STUDY_TTL_MS) {
@@ -217,11 +220,11 @@ class StudyService {
     const study: ServiceStudy = {
       service_name: slug,
       homepage: pattern?.dashboard ?? `https://${slug}.com`,
-      docs_url: pattern?.docs,
-      console_url: pattern?.dashboard,
       capabilities: [],
       studied_at: Date.now(),
     };
+    if (pattern?.docs) study.docs_url = pattern.docs;
+    if (pattern?.dashboard) study.console_url = pattern.dashboard;
     this.persistKnowledge(slug, study);
     return study;
   }
