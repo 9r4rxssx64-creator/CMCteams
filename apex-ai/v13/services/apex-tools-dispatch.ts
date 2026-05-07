@@ -1148,6 +1148,71 @@ class ApexToolsDispatcher {
         else result = await imageTransform.stylize(url, prompt ?? '');
         return result;
       }
+      /* === Marketplace Plugins (Kevin 2026-05-04 — Apex peut s'auto-étendre) === */
+      case 'marketplace_list_installed': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const installed = apexPluginsMarketplace.list({ status: 'installed' });
+        return {
+          count: installed.length,
+          plugins: installed.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            tools: p.apex_tools ?? [],
+          })),
+          stats: apexPluginsMarketplace.getStats(),
+        };
+      }
+      case 'marketplace_search': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const query = String(params['query'] ?? '');
+        const max = typeof params['max'] === 'number' ? (params['max'] as number) : 30;
+        const results = apexPluginsMarketplace.search(query, max);
+        return {
+          query,
+          count: results.length,
+          plugins: results.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            source: p.source,
+            status: apexPluginsMarketplace.getStatusOf(p.id),
+            pwa_compatible: p.pwa_compatible,
+            value: p.estimated_value,
+            url: p.url,
+          })),
+        };
+      }
+      case 'marketplace_install': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const pluginId = String(params['plugin_id'] ?? '');
+        if (!pluginId) throw new Error('plugin_id requis');
+        const result = await apexPluginsMarketplace.install(pluginId);
+        return result;
+      }
+      case 'marketplace_recommend': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const category = params['category'] as string | undefined;
+        const max = typeof params['max'] === 'number' ? (params['max'] as number) : 20;
+        const minValue = (params['min_value'] as 'critical' | 'high' | 'medium' | 'low' | undefined) ?? 'medium';
+        const recos = apexPluginsMarketplace.recommendForUser({
+          ...(category && { category: category as never }),
+          max,
+          minValue,
+        });
+        return {
+          count: recos.length,
+          recommendations: recos.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            value: p.estimated_value,
+            requires_api_key: p.api_key_service ?? null,
+          })),
+        };
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

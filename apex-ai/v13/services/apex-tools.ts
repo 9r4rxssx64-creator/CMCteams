@@ -1874,6 +1874,55 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'family',
     impactLevel: 'B',
   },
+  /* === Marketplace Plugins (Kevin 2026-05-04 — recense ~196 plugins Anthropic / MCP / community) === */
+  {
+    name: 'marketplace_list_installed',
+    description: 'Liste tous les plugins actuellement installés dans Apex (catalog + runtime).',
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'marketplace_search',
+    description: 'Recherche fuzzy dans le catalog (~196 plugins) par nom / tag / description.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Mot-clé recherché (ex: "github", "memory", "rag")' },
+        max: { type: 'number', description: 'Nombre max de résultats (default 30)' },
+      },
+      required: ['query'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'marketplace_install',
+    description: 'Installe un plugin du catalog. Vérifie pwa_compatible + clé API requise. Niveau B (Kevin notifié).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        plugin_id: { type: 'string', description: 'ID plugin (ex: "github", "supabase", "exa")' },
+      },
+      required: ['plugin_id'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'marketplace_recommend',
+    description: 'Liste les plugins recommandés pour Kevin (PWA-compatible + valeur ≥ medium, pas installés).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', description: 'Filtre catégorie (ex: "memory", "vector-rag")' },
+        max: { type: 'number', description: 'Nombre max (default 20)' },
+        min_value: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] as const },
+      },
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
 ];
 
 class ApexToolsRegistry {
