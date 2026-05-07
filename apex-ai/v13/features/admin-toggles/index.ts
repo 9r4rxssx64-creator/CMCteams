@@ -17,6 +17,7 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import {
   featureToggles,
   type FeatureCategory,
@@ -49,6 +50,12 @@ let currentSearchQuery = '';
 let currentUserFilter: string | null = null; /* uid si on édite per-user, null = global */
 
 /** Reset module state — utile pour tests d'isolation */
+/* P1-6 : appelé par router lors du teardown view → retire tous les listeners. */
+export function dispose(): void {
+  activeScope?.cleanup();
+  activeScope = null;
+}
+
 export function _resetState(): void {
   currentSearchQuery = '';
   currentUserFilter = null;
@@ -287,11 +294,20 @@ export function render(rootEl: HTMLElement): void {
    Event handlers
    ============================================================ */
 
+/* P1-6 (audit v13.2.5) : scope listener pour anti-leak SPA navigation.
+ * Tous les listeners attachés via attachHandlers() sont retirés au dispose(). */
+let activeScope: CleanupScope | null = null;
+
 function attachHandlers(rootEl: HTMLElement): void {
+  /* Re-render → cleanup ancien scope d'abord */
+  activeScope?.cleanup();
+  const scope = createCleanupScope('admin-toggles');
+  activeScope = scope;
+
   /* Search live */
   const searchInput = rootEl.querySelector<HTMLInputElement>('#ax-toggles-search');
   if (searchInput) {
-    searchInput.addEventListener('input', () => {
+    scope.bind(searchInput, 'input', () => {
       currentSearchQuery = searchInput.value;
       render(rootEl);
       /* Restore focus + caret */
@@ -306,7 +322,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   /* User filter */
   const userFilter = rootEl.querySelector<HTMLSelectElement>('#ax-toggles-user-filter');
   if (userFilter) {
-    userFilter.addEventListener('change', () => {
+    scope.bind(userFilter, 'change', () => {
       currentUserFilter = userFilter.value || null;
       haptic.selection();
       render(rootEl);
@@ -315,7 +331,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Toggle ON/OFF feature individuel */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    scope.bind(btn, 'click', () => {
       const id = btn.dataset['toggle'];
       if (!id) return;
       haptic.tap();
@@ -334,7 +350,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Per-user modal */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-per-user]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    scope.bind(btn, 'click', () => {
       const id = btn.dataset['perUser'];
       if (!id) return;
       haptic.tap();
@@ -344,7 +360,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Bulk actions */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    scope.bind(btn, 'click', () => {
       const action = btn.dataset['action'];
       switch (action) {
         case 'enable-all':
@@ -411,8 +427,9 @@ function openPerUserModal(rootEl: HTMLElement, featureId: string): void {
   if (!modal) return;
   document.body.appendChild(modal);
 
-  /* Click delegate inside modal */
-  modal.addEventListener('click', (e) => {
+  /* P1-6 : modal click delegate via scope (auto-cleanup quand modal détruit) */
+  const modalScope = activeScope ?? createCleanupScope('admin-toggles-modal');
+  modalScope.bind(modal, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target === modal) {
       closePerUserModal();
