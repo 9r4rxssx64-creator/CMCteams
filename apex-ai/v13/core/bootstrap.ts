@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.50';
+export const APP_VER = 'v13.3.51';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -275,6 +275,8 @@ async function bootstrap(): Promise<void> {
   router.register('smart-router', { loader: () => import('@features/smart-router/index.js'), requiresAdmin: true });
   /* v13.3.43 Kevin 2026-05-07 — Voice Bio reconnaissance vocale exclusive user */
   router.register('voice-bio', { loader: () => import('@features/voice-bio/index.js'), requiresAuth: true });
+  /* v13.3.51 Kevin 2026-05-07 — Broadlink Setup (vision device + IR control) */
+  router.register('broadlink-setup', { loader: () => import('@features/broadlink-setup/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

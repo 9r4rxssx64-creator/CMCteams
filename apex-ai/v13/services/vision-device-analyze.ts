@@ -151,13 +151,30 @@ function dataUrlToBase64(dataUrl: string): string {
   return dataUrl;
 }
 
+/** Forme libre du JSON renvoyé par Claude (champs optionnels). */
+interface ParsedVisionJson {
+  email?: unknown;
+  token?: unknown;
+  devices?: unknown;
+  mac?: unknown;
+  ip?: unknown;
+  ssid?: unknown;
+  brand?: unknown;
+  model?: unknown;
+  ir_codes?: unknown;
+  type?: unknown;
+  extracted_fields?: unknown;
+  raw_text?: unknown;
+  confidence?: unknown;
+}
+
 /** Parse robuste : JSON pur, JSON dans markdown, ou texte brut. */
-function parseJsonResponse(text: string): Record<string, unknown> | null {
+function parseJsonResponse(text: string): ParsedVisionJson | null {
   const trimmed = text.trim();
   /* 1. JSON pur */
   if (trimmed.startsWith('{')) {
     try {
-      return JSON.parse(trimmed) as Record<string, unknown>;
+      return JSON.parse(trimmed) as ParsedVisionJson;
     } catch {
       /* fallthrough */
     }
@@ -166,7 +183,7 @@ function parseJsonResponse(text: string): Record<string, unknown> | null {
   const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (fenceMatch && fenceMatch[1]) {
     try {
-      return JSON.parse(fenceMatch[1].trim()) as Record<string, unknown>;
+      return JSON.parse(fenceMatch[1].trim()) as ParsedVisionJson;
     } catch {
       /* fallthrough */
     }
@@ -175,7 +192,7 @@ function parseJsonResponse(text: string): Record<string, unknown> | null {
   const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
-      return JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+      return JSON.parse(jsonMatch[0]) as ParsedVisionJson;
     } catch {
       /* fallthrough */
     }
@@ -213,10 +230,10 @@ class VisionDeviceAnalyze {
       out.devices = parsed.devices.map((d): { id?: string; name?: string; mac?: string; type?: string } => {
         const device = d as Record<string, unknown>;
         const o: { id?: string; name?: string; mac?: string; type?: string } = {};
-        if (typeof device.id === 'string') o.id = device.id;
-        if (typeof device.name === 'string') o.name = device.name;
-        if (typeof device.mac === 'string') o.mac = device.mac;
-        if (typeof device.type === 'string') o.type = device.type;
+        if (typeof device['id'] === 'string') o.id = device['id'];
+        if (typeof device['name'] === 'string') o.name = device['name'];
+        if (typeof device['mac'] === 'string') o.mac = device['mac'];
+        if (typeof device['type'] === 'string') o.type = device['type'];
         return o;
       });
     }
@@ -289,7 +306,8 @@ class VisionDeviceAnalyze {
         : 'unknown';
     const extracted: Record<string, string> = {};
     if (parsed.extracted_fields && typeof parsed.extracted_fields === 'object') {
-      for (const [k, v] of Object.entries(parsed.extracted_fields)) {
+      const fields = parsed.extracted_fields as Record<string, unknown>;
+      for (const [k, v] of Object.entries(fields)) {
         if (typeof v === 'string' && v) extracted[k] = v;
         else if (typeof v === 'number') extracted[k] = String(v);
       }
