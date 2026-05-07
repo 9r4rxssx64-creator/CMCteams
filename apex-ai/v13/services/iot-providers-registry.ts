@@ -13,7 +13,7 @@
  *
  * Architecture :
  * - Pattern registry : chaque provider implémente IoTProvider (descripteur déclaratif)
- *   + IoTProviderClient (implémentation runtime).
+ *   + ProviderClient (implémentation runtime).
  * - 6 providers BUILTIN_PROVIDERS pré-enregistrés (eWeLink/Tuya/Broadlink/Hue/Sonos/HA).
  * - Custom providers ajoutables runtime (persistés `ax_iot_custom_providers`).
  * - Credentials stockés chiffrés via vault (clés `ax_<provider>_*`).
@@ -59,6 +59,8 @@ export type IoTProviderCategory =
 
 export type IoTAuthFormat = 'bearer' | 'basic' | 'api_key' | 'jwt' | 'oauth2' | 'session';
 
+export type IoTHttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+
 export interface IoTProvider {
   id: string;
   name: string;
@@ -81,10 +83,10 @@ export interface IoTProvider {
   };
   /** Endpoints templates (relative paths, body templates). */
   endpoints: {
-    login?: { method: 'POST'; path: string; body_template: Record<string, unknown> };
-    list_devices: { method: 'GET' | 'POST'; path: string };
-    send_command: { method: 'POST'; path: string; body_template: Record<string, unknown> };
-    get_state?: { method: 'GET'; path: string };
+    login?: { method: IoTHttpMethod; path: string; body_template: Record<string, unknown> };
+    list_devices: { method: IoTHttpMethod; path: string };
+    send_command: { method: IoTHttpMethod; path: string; body_template: Record<string, unknown> };
+    get_state?: { method: IoTHttpMethod; path: string };
   };
   /** Clés vault attendues (ex: ['ax_ewelink_email','ax_ewelink_password']). */
   credential_keys: string[];
@@ -107,12 +109,19 @@ export interface IoTDevice {
   capabilities?: string[];
 }
 
+export type IoTConnectionReason =
+  | 'no_credentials'
+  | 'cors_blocked'
+  | 'http_error'
+  | 'invalid_credentials'
+  | 'network';
+
 export interface IoTConnectionResult {
   ok: boolean;
   latency_ms?: number;
   devices_count?: number;
   error?: string;
-  reason?: 'no_credentials' | 'cors_blocked' | 'http_error' | 'invalid_credentials' | 'network';
+  reason?: IoTConnectionReason;
 }
 
 export interface IoTInstallInput {
@@ -130,10 +139,12 @@ export interface IoTInstallResult {
   error?: string;
 }
 
+export type IoTSendCommandReason = 'no_provider' | 'no_credentials' | 'cors_blocked' | 'http_error' | 'network';
+
 export interface IoTSendCommandResult {
   ok: boolean;
   error?: string;
-  reason?: 'no_provider' | 'no_credentials' | 'cors_blocked' | 'http_error' | 'network';
+  reason?: IoTSendCommandReason;
 }
 
 /* ============================================================================
@@ -144,20 +155,49 @@ const CUSTOM_PROVIDERS_KEY = 'ax_iot_custom_providers';
 const PROXY_KEY = 'ax_iot_proxy_url';
 const FETCH_TIMEOUT_MS = 8000;
 
-/* Régions multi-providers (eWeLink + Tuya) */
-const EWELINK_REGION_MAP: Record<string, string> = {
+/* Régions multi-providers (eWeLink + Tuya).
+ * Structure typée explicitement pour éviter les avertissements
+ * noPropertyAccessFromIndexSignature. */
+const EWELINK_REGION_MAP: Readonly<Record<string, string>> = {
   us: 'https://us-apia.coolkit.cc',
   eu: 'https://eu-apia.coolkit.cc',
   as: 'https://as-apia.coolkit.cc',
   cn: 'https://cn-apia.coolkit.cn',
 };
+const EWELINK_DEFAULT = 'https://eu-apia.coolkit.cc';
 
-const TUYA_REGION_MAP: Record<string, string> = {
+const TUYA_REGION_MAP: Readonly<Record<string, string>> = {
   us: 'https://openapi.tuyaus.com',
   eu: 'https://openapi.tuyaeu.com',
   cn: 'https://openapi.tuyacn.com',
   in: 'https://openapi.tuyain.com',
 };
+const TUYA_DEFAULT = 'https://openapi.tuyaeu.com';
+
+/* Helper safe pour Record<string,string> (évite les warnings noUncheckedIndexedAccess) */
+function pickRegion(map: Readonly<Record<string, string>>, region: string | null, fallback: string): string {
+  if (!region) return fallback;
+  const v = map[region];
+  return typeof v === 'string' && v.length > 0 ? v : fallback;
+}
+
+function readLocalStorage(key: string): string {
+  if (typeof localStorage === 'undefined') return '';
+  try {
+    return localStorage.getItem(key) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeLocalStorage(key: string, value: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* quota */
+  }
+}
 
 /* ============================================================================
  * Builtin providers — 6 majeurs préinstallés
@@ -308,14 +348,14 @@ export const BUILTIN_PROVIDERS: readonly IoTProvider[] = [
  * ============================================================================ */
 
 interface FetchResultOk<T> { ok: true; data: T; status: number; latency_ms: number }
-interface FetchResultErr { ok: false; status?: number; error: string; reason: IoTConnectionResult['reason']; latency_ms: number }
+interface FetchResultErr { ok: false; status?: number; error: string; reason: IoTConnectionReason; latency_ms: number }
 type FetchResult<T> = FetchResultOk<T> | FetchResultErr;
 
 async function fetchIot<T>(
   url: string,
-  options: { method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; headers?: Record<string, string>; body?: unknown } = {},
+  options: { method?: IoTHttpMethod; headers?: Record<string, string>; body?: unknown } = {},
 ): Promise<FetchResult<T>> {
-  const proxy = (typeof localStorage !== 'undefined' ? localStorage.getItem(PROXY_KEY) : null) ?? '';
+  const proxy = readLocalStorage(PROXY_KEY);
   const finalUrl = proxy ? `${proxy.replace(/\/$/, '')}/?url=${encodeURIComponent(url)}` : url;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
@@ -356,46 +396,83 @@ interface ProviderClient {
   sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult>;
 }
 
+/* Helper builder install result avec exact optional types (exactOptionalPropertyTypes:true) */
+function buildInstallResult(
+  providerId: string,
+  ok: boolean,
+  options: { error?: string; devicesFound?: number } = {},
+): IoTInstallResult {
+  const r: IoTInstallResult = { ok, provider_id: providerId };
+  if (options.error !== undefined) r.error = options.error;
+  if (options.devicesFound !== undefined) r.devices_found = options.devicesFound;
+  return r;
+}
+
+function buildConnResult(ok: boolean, options: { error?: string; reason?: IoTConnectionReason; latencyMs?: number; devicesCount?: number } = {}): IoTConnectionResult {
+  const r: IoTConnectionResult = { ok };
+  if (options.error !== undefined) r.error = options.error;
+  if (options.reason !== undefined) r.reason = options.reason;
+  if (options.latencyMs !== undefined) r.latency_ms = options.latencyMs;
+  if (options.devicesCount !== undefined) r.devices_count = options.devicesCount;
+  return r;
+}
+
+function buildSendResult(ok: boolean, options: { error?: string; reason?: IoTSendCommandReason } = {}): IoTSendCommandResult {
+  const r: IoTSendCommandResult = { ok };
+  if (options.error !== undefined) r.error = options.error;
+  if (options.reason !== undefined) r.reason = options.reason;
+  return r;
+}
+
+function pickStr(creds: Record<string, string>, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = creds[k];
+    if (typeof v === 'string' && v.length > 0) return v;
+  }
+  return '';
+}
+
 /* --- eWeLink client --- */
 class EWeLinkClient implements ProviderClient {
   private getBase(): string {
-    const region = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_ewelink_region') : null) ?? 'eu';
-    return EWELINK_REGION_MAP[region] ?? EWELINK_REGION_MAP.eu;
+    const region = readLocalStorage('ax_ewelink_region') || 'eu';
+    return pickRegion(EWELINK_REGION_MAP, region, EWELINK_DEFAULT);
   }
 
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const email = input.credentials.email ?? input.credentials.username ?? '';
-    const password = input.credentials.password ?? '';
-    if (!email || !password) return { ok: false, provider_id: 'ewelink', error: 'email + password requis' };
-    if (input.region) {
-      try { localStorage.setItem('ax_ewelink_region', input.region); } catch { /* quota */ }
+    const email = pickStr(input.credentials, 'email', 'username');
+    const password = pickStr(input.credentials, 'password');
+    if (!email || !password) {
+      return buildInstallResult('ewelink', false, { error: 'email + password requis' });
     }
+    if (input.region) writeLocalStorage('ax_ewelink_region', input.region);
     const url = `${this.getBase()}/v2/user/login`;
     const body = { email, password, countryCode: '+33' };
     const r = await fetchIot<{ data?: { at?: string; user?: { apikey?: string } }; error?: number; msg?: string }>(url, {
       method: 'POST',
       body,
     });
-    if (!r.ok) return { ok: false, provider_id: 'ewelink', error: r.error };
-    if (r.data.error && r.data.error !== 0) return { ok: false, provider_id: 'ewelink', error: r.data.msg ?? `error ${r.data.error}` };
+    if (!r.ok) return buildInstallResult('ewelink', false, { error: r.error });
+    if (r.data.error !== undefined && r.data.error !== 0) {
+      return buildInstallResult('ewelink', false, { error: r.data.msg ?? `error ${r.data.error}` });
+    }
     const token = r.data.data?.at;
-    if (!token) return { ok: false, provider_id: 'ewelink', error: 'Pas de token retourné' };
-    try { localStorage.setItem('ax_ewelink_email', email); } catch { /* quota */ }
+    if (!token) return buildInstallResult('ewelink', false, { error: 'Pas de token retourné' });
+    writeLocalStorage('ax_ewelink_email', email);
     await vault.setKey('ax_ewelink_password', password);
     await vault.setKey('ax_ewelink_token', token);
-    const devices = await this.listDevices().catch(() => []);
-    return { ok: true, provider_id: 'ewelink', devices_found: devices.length };
+    const devices = await this.listDevices().catch(() => [] as IoTDevice[]);
+    return buildInstallResult('ewelink', true, { devicesFound: devices.length });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const token = await vault.readKey('ax_ewelink_token').catch(() => '');
-    if (!token) return { ok: false, reason: 'no_credentials', error: 'Token eWeLink manquant' };
+    if (!token) return buildConnResult(false, { reason: 'no_credentials', error: 'Token eWeLink manquant' });
     const r = await fetchIot<{ data?: { thingList?: unknown[] } }>(`${this.getBase()}/v2/device/thing`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    const out: IoTConnectionResult = { ok: true, latency_ms: r.latency_ms, devices_count: r.data.data?.thingList?.length ?? 0 };
-    return out;
+    if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
+    return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: r.data.data?.thingList?.length ?? 0 });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
@@ -419,7 +496,7 @@ class EWeLinkClient implements ProviderClient {
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
     const token = await vault.readKey('ax_ewelink_token').catch(() => '');
-    if (!token) return { ok: false, reason: 'no_credentials', error: 'Pas connecté à eWeLink' };
+    if (!token) return buildSendResult(false, { reason: 'no_credentials', error: 'Pas connecté à eWeLink' });
     const r = await fetchIot<{ error?: number; msg?: string }>(
       `${this.getBase()}/v2/device/thing/control`,
       {
@@ -428,60 +505,63 @@ class EWeLinkClient implements ProviderClient {
         body: { thingList: [{ itemType: 1, id: deviceId, params: command }] },
       },
     );
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    if (r.data.error && r.data.error !== 0) return { ok: false, reason: 'http_error', error: r.data.msg ?? `error ${r.data.error}` };
-    return { ok: true };
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    if (r.data.error !== undefined && r.data.error !== 0) {
+      return buildSendResult(false, { reason: 'http_error', error: r.data.msg ?? `error ${r.data.error}` });
+    }
+    return buildSendResult(true);
   }
 }
 
 /* --- Tuya / SmartLife client --- */
 class TuyaClient implements ProviderClient {
   private getBase(): string {
-    const region = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_tuya_region') : null) ?? 'eu';
-    return TUYA_REGION_MAP[region] ?? TUYA_REGION_MAP.eu;
+    const region = readLocalStorage('ax_tuya_region') || 'eu';
+    return pickRegion(TUYA_REGION_MAP, region, TUYA_DEFAULT);
   }
 
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const clientId = input.credentials.client_id ?? input.credentials.access_id ?? '';
-    const clientSecret = input.credentials.client_secret ?? input.credentials.access_secret ?? '';
-    const uid = input.credentials.uid ?? '';
-    const accessToken = input.credentials.access_token ?? input.credentials.token ?? '';
-    if (!clientId || !clientSecret) return { ok: false, provider_id: 'tuya', error: 'client_id + client_secret requis' };
-    if (input.region) {
-      try { localStorage.setItem('ax_tuya_region', input.region); } catch { /* quota */ }
-    }
+    const clientId = pickStr(input.credentials, 'client_id', 'access_id');
+    const clientSecret = pickStr(input.credentials, 'client_secret', 'access_secret');
+    const uid = pickStr(input.credentials, 'uid');
+    const accessToken = pickStr(input.credentials, 'access_token', 'token');
+    if (!clientId || !clientSecret) return buildInstallResult('tuya', false, { error: 'client_id + client_secret requis' });
+    if (input.region) writeLocalStorage('ax_tuya_region', input.region);
     await vault.setKey('ax_tuya_client_id', clientId);
     await vault.setKey('ax_tuya_client_secret', clientSecret);
-    if (uid) {
-      try { localStorage.setItem('ax_tuya_uid', uid); } catch { /* quota */ }
-    }
+    if (uid) writeLocalStorage('ax_tuya_uid', uid);
     if (accessToken) await vault.setKey('ax_tuya_access_token', accessToken);
-    /* Note : signature Tuya HMAC-SHA256 requiert plus que client_id/secret.
-     * Pour MVP, on fait confiance au token fourni si présent.
-     * Sinon on tente endpoint token (gateway permet le grant_type=1). */
     const test = await this.testConnection();
-    return { ok: test.ok, provider_id: 'tuya', error: test.error, devices_found: test.devices_count };
+    return buildInstallResult('tuya', test.ok, {
+      ...(test.error !== undefined ? { error: test.error } : {}),
+      ...(test.devices_count !== undefined ? { devicesFound: test.devices_count } : {}),
+    });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const token = await vault.readKey('ax_tuya_access_token').catch(() => '');
     const clientId = await vault.readKey('ax_tuya_client_id').catch(() => '');
-    if (!token && !clientId) return { ok: false, reason: 'no_credentials', error: 'Tuya credentials manquants' };
-    /* Light ping : list devices si uid + token présents, sinon endpoint /v1.0/token */
-    const uid = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_tuya_uid') : null) ?? '';
+    if (!token && !clientId) return buildConnResult(false, { reason: 'no_credentials', error: 'Tuya credentials manquants' });
+    const uid = readLocalStorage('ax_tuya_uid');
     if (token && uid) {
       const r = await fetchIot<{ result?: unknown[]; success?: boolean }>(`${this.getBase()}/v1.0/users/${uid}/devices`, {
         headers: { access_token: token },
       });
-      if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-      return { ok: true, latency_ms: r.latency_ms, devices_count: Array.isArray(r.data.result) ? r.data.result.length : 0 };
+      if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
+      return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: Array.isArray(r.data.result) ? r.data.result.length : 0 });
     }
-    return { ok: !!clientId, latency_ms: 0, devices_count: 0 };
+    return buildConnResult(!!clientId, { latencyMs: 0, devicesCount: 0 });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
     const token = await vault.readKey('ax_tuya_access_token').catch(() => '');
-    const uid = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_tuya_uid') : null) ?? '';
+    const uid = readLocalStorage('ax_tuya_uid');
     if (!token || !uid) return [];
     const r = await fetchIot<{ result?: Array<{ id?: string; name?: string; category?: string; online?: boolean }> }>(
       `${this.getBase()}/v1.0/users/${uid}/devices`,
@@ -501,10 +581,10 @@ class TuyaClient implements ProviderClient {
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
     const token = await vault.readKey('ax_tuya_access_token').catch(() => '');
-    if (!token) return { ok: false, reason: 'no_credentials', error: 'Pas connecté à Tuya' };
-    /* Tuya commands format : [{code, value}] */
-    const commands = Array.isArray(command.commands)
-      ? command.commands
+    if (!token) return buildSendResult(false, { reason: 'no_credentials', error: 'Pas connecté à Tuya' });
+    const cmds = command['commands'];
+    const commands = Array.isArray(cmds)
+      ? cmds
       : Object.entries(command).map(([code, value]) => ({ code, value }));
     const r = await fetchIot<{ success?: boolean; msg?: string }>(
       `${this.getBase()}/v1.0/devices/${deviceId}/commands`,
@@ -514,39 +594,45 @@ class TuyaClient implements ProviderClient {
         body: { commands },
       },
     );
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    if (r.data.success === false) return { ok: false, reason: 'http_error', error: r.data.msg ?? 'Tuya refusé' };
-    return { ok: true };
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    if (r.data.success === false) return buildSendResult(false, { reason: 'http_error', error: r.data.msg ?? 'Tuya refusé' });
+    return buildSendResult(true);
   }
 }
 
 /* --- Broadlink client (réutilise broadlinkBridge) --- */
 class BroadlinkClient implements ProviderClient {
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const email = input.credentials.email ?? '';
-    const password = input.credentials.password ?? '';
-    const token = input.credentials.token ?? '';
+    const email = pickStr(input.credentials, 'email');
+    const password = pickStr(input.credentials, 'password');
+    const token = pickStr(input.credentials, 'token');
     if (token) {
-      const r = await broadlinkBridge.setToken(token, email);
-      if (!r.ok) return { ok: false, provider_id: 'broadlink', error: 'setToken failed' };
+      const r = await broadlinkBridge.setToken(token, email || undefined);
+      if (!r.ok) return buildInstallResult('broadlink', false, { error: 'setToken failed' });
     } else {
-      if (!email || !password) return { ok: false, provider_id: 'broadlink', error: 'email + password requis (ou token)' };
+      if (!email || !password) return buildInstallResult('broadlink', false, { error: 'email + password requis (ou token)' });
       const r = await broadlinkBridge.login(email, password);
-      if (!r.ok) return { ok: false, provider_id: 'broadlink', error: r.error };
+      if (!r.ok) return buildInstallResult('broadlink', false, r.error !== undefined ? { error: r.error } : {});
     }
-    const devices = await broadlinkBridge.listDevices(true).catch(() => []);
-    return { ok: true, provider_id: 'broadlink', devices_found: devices.length };
+    const devices = await broadlinkBridge.listDevices(true).catch(() => [] as BroadlinkDevice[]);
+    return buildInstallResult('broadlink', true, { devicesFound: devices.length });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const status = await broadlinkBridge.status();
-    if (!status.configured) return { ok: false, reason: 'no_credentials', error: 'Broadlink pas configuré' };
-    const devices = await broadlinkBridge.listDevices().catch(() => []);
-    return { ok: true, devices_count: devices.length, latency_ms: 0 };
+    if (!status.configured) return buildConnResult(false, { reason: 'no_credentials', error: 'Broadlink pas configuré' });
+    const devices = await broadlinkBridge.listDevices().catch(() => [] as BroadlinkDevice[]);
+    return buildConnResult(true, { devicesCount: devices.length, latencyMs: 0 });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
-    const list: BroadlinkDevice[] = await broadlinkBridge.listDevices().catch(() => []);
+    const list: BroadlinkDevice[] = await broadlinkBridge.listDevices().catch(() => [] as BroadlinkDevice[]);
     return list.map((d) => ({
       provider: 'broadlink',
       device_id: d.id,
@@ -558,53 +644,53 @@ class BroadlinkClient implements ProviderClient {
   }
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
-    const irHex = String(command.ir_hex ?? command.code ?? '');
-    if (!irHex) return { ok: false, reason: 'http_error', error: 'ir_hex manquant pour Broadlink' };
+    const irHexRaw = command['ir_hex'] ?? command['code'];
+    const irHex = typeof irHexRaw === 'string' ? irHexRaw : '';
+    if (!irHex) return buildSendResult(false, { reason: 'http_error', error: 'ir_hex manquant pour Broadlink' });
     const r = await broadlinkBridge.sendIR(deviceId, irHex);
     if (!r.ok) {
-      const reason: IoTSendCommandResult['reason'] =
+      const reason: IoTSendCommandReason =
         r.reason === 'cors_blocked' ? 'cors_blocked'
         : r.reason === 'no_token' ? 'no_credentials'
         : r.reason === 'http_error' ? 'http_error'
         : 'network';
-      return { ok: false, reason, error: r.error };
+      return buildSendResult(false, { reason, ...(r.error !== undefined ? { error: r.error } : {}) });
     }
-    return { ok: true };
+    return buildSendResult(true);
   }
 }
 
 /* --- Hue client (LAN bridge ou cloud) --- */
 class HueClient implements ProviderClient {
   private getBaseAndAuth(): { base: string; username: string; cloud: boolean } {
-    const ip = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_hue_bridge_ip') : null) ?? '';
-    const username = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_hue_username') : null) ?? '';
+    const ip = readLocalStorage('ax_hue_bridge_ip');
+    const username = readLocalStorage('ax_hue_username');
     if (ip) return { base: `http://${ip}`, username, cloud: false };
     return { base: 'https://api.meethue.com/route', username, cloud: true };
   }
 
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const ip = input.credentials.bridge_ip ?? input.credentials.ip ?? '';
-    const username = input.credentials.username ?? input.credentials.user ?? '';
-    const oauthToken = input.credentials.oauth_token ?? input.credentials.token ?? '';
-    if (!username && !oauthToken) return { ok: false, provider_id: 'hue', error: 'username (LAN) ou oauth_token (cloud) requis' };
-    if (ip) {
-      try { localStorage.setItem('ax_hue_bridge_ip', ip); } catch { /* quota */ }
-    }
-    if (username) {
-      try { localStorage.setItem('ax_hue_username', username); } catch { /* quota */ }
-    }
+    const ip = pickStr(input.credentials, 'bridge_ip', 'ip');
+    const username = pickStr(input.credentials, 'username', 'user');
+    const oauthToken = pickStr(input.credentials, 'oauth_token', 'token');
+    if (!username && !oauthToken) return buildInstallResult('hue', false, { error: 'username (LAN) ou oauth_token (cloud) requis' });
+    if (ip) writeLocalStorage('ax_hue_bridge_ip', ip);
+    if (username) writeLocalStorage('ax_hue_username', username);
     if (oauthToken) await vault.setKey('ax_hue_oauth_token', oauthToken);
     const test = await this.testConnection();
-    return { ok: test.ok, provider_id: 'hue', error: test.error, devices_found: test.devices_count };
+    return buildInstallResult('hue', test.ok, {
+      ...(test.error !== undefined ? { error: test.error } : {}),
+      ...(test.devices_count !== undefined ? { devicesFound: test.devices_count } : {}),
+    });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const { base, username } = this.getBaseAndAuth();
-    if (!username) return { ok: false, reason: 'no_credentials', error: 'Username Hue manquant' };
+    if (!username) return buildConnResult(false, { reason: 'no_credentials', error: 'Username Hue manquant' });
     const r = await fetchIot<Record<string, unknown>>(`${base}/api/${username}/lights`);
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    const count = typeof r.data === 'object' ? Object.keys(r.data).length : 0;
-    return { ok: true, latency_ms: r.latency_ms, devices_count: count };
+    if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
+    const count = typeof r.data === 'object' && r.data !== null ? Object.keys(r.data).length : 0;
+    return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: count });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
@@ -624,52 +710,56 @@ class HueClient implements ProviderClient {
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
     const { base, username } = this.getBaseAndAuth();
-    if (!username) return { ok: false, reason: 'no_credentials', error: 'Hue pas configuré' };
+    if (!username) return buildSendResult(false, { reason: 'no_credentials', error: 'Hue pas configuré' });
     const r = await fetchIot<unknown>(`${base}/api/${username}/lights/${deviceId}/state`, {
       method: 'PUT',
       body: command,
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    return { ok: true };
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    return buildSendResult(true);
   }
 }
 
 /* --- Sonos client (cloud OAuth2) --- */
 class SonosClient implements ProviderClient {
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const token = input.credentials.token ?? input.credentials.access_token ?? '';
-    const household = input.credentials.household ?? input.credentials.household_id ?? '';
-    if (!token) return { ok: false, provider_id: 'sonos', error: 'access_token Sonos requis (OAuth2)' };
+    const token = pickStr(input.credentials, 'token', 'access_token');
+    const household = pickStr(input.credentials, 'household', 'household_id');
+    if (!token) return buildInstallResult('sonos', false, { error: 'access_token Sonos requis (OAuth2)' });
     await vault.setKey('ax_sonos_token', token);
-    if (household) {
-      try { localStorage.setItem('ax_sonos_household', household); } catch { /* quota */ }
-    }
+    if (household) writeLocalStorage('ax_sonos_household', household);
     const test = await this.testConnection();
-    return { ok: test.ok, provider_id: 'sonos', error: test.error, devices_found: test.devices_count };
+    return buildInstallResult('sonos', test.ok, {
+      ...(test.error !== undefined ? { error: test.error } : {}),
+      ...(test.devices_count !== undefined ? { devicesFound: test.devices_count } : {}),
+    });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const token = await vault.readKey('ax_sonos_token').catch(() => '');
-    if (!token) return { ok: false, reason: 'no_credentials', error: 'Sonos token manquant' };
+    if (!token) return buildConnResult(false, { reason: 'no_credentials', error: 'Sonos token manquant' });
     const r = await fetchIot<{ households?: Array<{ id: string }> }>('https://api.ws.sonos.com/control/api/v1/households', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
+    if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
     const count = r.data.households?.length ?? 0;
-    /* Persist 1er household si pas configuré */
     if (count > 0) {
-      const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_sonos_household') : null) ?? '';
+      const stored = readLocalStorage('ax_sonos_household');
       const firstId = r.data.households?.[0]?.id;
-      if (!stored && firstId) {
-        try { localStorage.setItem('ax_sonos_household', firstId); } catch { /* quota */ }
-      }
+      if (!stored && firstId) writeLocalStorage('ax_sonos_household', firstId);
     }
-    return { ok: true, latency_ms: r.latency_ms, devices_count: count };
+    return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: count });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
     const token = await vault.readKey('ax_sonos_token').catch(() => '');
-    const household = (typeof localStorage !== 'undefined' ? localStorage.getItem('ax_sonos_household') : null) ?? '';
+    const household = readLocalStorage('ax_sonos_household');
     if (!token || !household) return [];
     const r = await fetchIot<{ groups?: Array<{ id?: string; name?: string }> }>(
       `https://api.ws.sonos.com/control/api/v1/households/${household}/groups`,
@@ -688,45 +778,54 @@ class SonosClient implements ProviderClient {
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
     const token = await vault.readKey('ax_sonos_token').catch(() => '');
-    if (!token) return { ok: false, reason: 'no_credentials', error: 'Sonos pas configuré' };
-    const action = String(command.action ?? 'play');
+    if (!token) return buildSendResult(false, { reason: 'no_credentials', error: 'Sonos pas configuré' });
+    const actionRaw = command['action'];
+    const action = typeof actionRaw === 'string' ? actionRaw : 'play';
     const r = await fetchIot<unknown>(`https://api.ws.sonos.com/control/api/v1/groups/${deviceId}/playback/${action}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: {},
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    return { ok: true };
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    return buildSendResult(true);
   }
 }
 
 /* --- Home Assistant client --- */
 class HomeAssistantClient implements ProviderClient {
   private getBase(): string {
-    return ((typeof localStorage !== 'undefined' ? localStorage.getItem('ax_ha_url') : null) ?? '').replace(/\/$/, '');
+    return readLocalStorage('ax_ha_url').replace(/\/$/, '');
   }
 
   async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    const url = input.credentials.url ?? input.credentials.ha_url ?? '';
-    const token = input.credentials.token ?? input.credentials.access_token ?? '';
-    if (!url || !token) return { ok: false, provider_id: 'home-assistant', error: 'url + token (LLAT) requis' };
-    try { localStorage.setItem('ax_ha_url', url); } catch { /* quota */ }
+    const url = pickStr(input.credentials, 'url', 'ha_url');
+    const token = pickStr(input.credentials, 'token', 'access_token');
+    if (!url || !token) return buildInstallResult('home-assistant', false, { error: 'url + token (LLAT) requis' });
+    writeLocalStorage('ax_ha_url', url);
     await vault.setKey('ax_ha_token', token);
     const test = await this.testConnection();
-    return { ok: test.ok, provider_id: 'home-assistant', error: test.error, devices_found: test.devices_count };
+    return buildInstallResult('home-assistant', test.ok, {
+      ...(test.error !== undefined ? { error: test.error } : {}),
+      ...(test.devices_count !== undefined ? { devicesFound: test.devices_count } : {}),
+    });
   }
 
   async testConnection(): Promise<IoTConnectionResult> {
     const base = this.getBase();
     const token = await vault.readKey('ax_ha_token').catch(() => '');
-    if (!base || !token) return { ok: false, reason: 'no_credentials', error: 'Home Assistant URL + token manquants' };
+    if (!base || !token) return buildConnResult(false, { reason: 'no_credentials', error: 'Home Assistant URL + token manquants' });
     const r = await fetchIot<{ message?: string }>(`${base}/api/`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    /* listDevices pour count exact */
-    const devices = await this.listDevices().catch(() => []);
-    return { ok: true, latency_ms: r.latency_ms, devices_count: devices.length };
+    if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
+    const devices = await this.listDevices().catch(() => [] as IoTDevice[]);
+    return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: devices.length });
   }
 
   async listDevices(): Promise<IoTDevice[]> {
@@ -740,32 +839,141 @@ class HomeAssistantClient implements ProviderClient {
     if (!r.ok) return [];
     return r.data
       .filter((e) => /^(light|switch|climate|media_player|cover|fan|lock)\./.test(e.entity_id ?? ''))
-      .map((e) => ({
-        provider: 'home-assistant',
-        device_id: e.entity_id ?? '',
-        name: e.attributes?.friendly_name ?? e.entity_id ?? 'HA entity',
-        type: (e.entity_id ?? '').split('.')[0] ?? 'unknown',
-        online: e.state !== 'unavailable',
-        capabilities: ['on_off'],
-      }));
+      .map((e) => {
+        const entityId = e.entity_id ?? '';
+        const splitParts = entityId.split('.');
+        const domain = splitParts[0] ?? 'unknown';
+        return {
+          provider: 'home-assistant',
+          device_id: entityId,
+          name: e.attributes?.friendly_name ?? entityId ?? 'HA entity',
+          type: domain,
+          online: e.state !== 'unavailable',
+          capabilities: ['on_off'],
+        };
+      });
   }
 
   async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
     const base = this.getBase();
     const token = await vault.readKey('ax_ha_token').catch(() => '');
-    if (!base || !token) return { ok: false, reason: 'no_credentials', error: 'Home Assistant pas configuré' };
-    const domain = (deviceId.split('.')[0] ?? 'homeassistant');
-    const service = String(command.service ?? command.action ?? 'toggle');
+    if (!base || !token) return buildSendResult(false, { reason: 'no_credentials', error: 'Home Assistant pas configuré' });
+    const splitParts = deviceId.split('.');
+    const domain = splitParts[0] ?? 'homeassistant';
+    const serviceRaw = command['service'] ?? command['action'];
+    const service = typeof serviceRaw === 'string' ? serviceRaw : 'toggle';
     const body: Record<string, unknown> = { entity_id: deviceId, ...command };
-    delete body.service;
-    delete body.action;
+    delete body['service'];
+    delete body['action'];
     const r = await fetchIot<unknown>(`${base}/api/services/${domain}/${service}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body,
     });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    return { ok: true };
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    return buildSendResult(true);
+  }
+}
+
+/* ============================================================================
+ * Generic provider client (pour custom providers ajoutés runtime)
+ * ============================================================================ */
+
+class GenericProviderClient implements ProviderClient {
+  constructor(private provider: IoTProvider) {}
+
+  private getBase(): string {
+    return this.provider.api?.base_url ?? '';
+  }
+
+  private async getAuthHeader(): Promise<Record<string, string>> {
+    if (!this.provider.api) return {};
+    for (const k of this.provider.credential_keys) {
+      const v = await vault.readKey(k).catch(() => '');
+      if (v) {
+        const headerName = this.provider.api.auth_header;
+        const fmt = this.provider.api.auth_format;
+        if (fmt === 'bearer') return { [headerName]: `Bearer ${v}` };
+        if (fmt === 'basic') return { [headerName]: `Basic ${v}` };
+        return { [headerName]: v };
+      }
+    }
+    return {};
+  }
+
+  async install(input: IoTInstallInput): Promise<IoTInstallResult> {
+    for (const [k, v] of Object.entries(input.credentials)) {
+      const matchingKey = this.provider.credential_keys.find((ck) => ck.includes(k));
+      if (matchingKey) await vault.setKey(matchingKey, v);
+    }
+    const test = await this.testConnection();
+    return buildInstallResult(this.provider.id, test.ok, {
+      ...(test.error !== undefined ? { error: test.error } : {}),
+      ...(test.devices_count !== undefined ? { devicesFound: test.devices_count } : {}),
+    });
+  }
+
+  async testConnection(): Promise<IoTConnectionResult> {
+    const base = this.getBase();
+    if (!base) return buildConnResult(false, { reason: 'no_credentials', error: 'Provider sans api.base_url' });
+    const headers = await this.getAuthHeader();
+    if (Object.keys(headers).length === 0) return buildConnResult(false, { reason: 'no_credentials', error: 'Aucun credential stocké' });
+    const r = await fetchIot<unknown>(`${base}${this.provider.test_endpoint}`, { headers });
+    if (!r.ok) return buildConnResult(false, { reason: r.reason, error: r.error });
+    return buildConnResult(true, { latencyMs: r.latency_ms, devicesCount: 0 });
+  }
+
+  async listDevices(): Promise<IoTDevice[]> {
+    const base = this.getBase();
+    if (!base) return [];
+    const headers = await this.getAuthHeader();
+    const ep = this.provider.endpoints.list_devices;
+    const r = await fetchIot<unknown>(`${base}${ep.path}`, { method: ep.method, headers });
+    if (!r.ok) return [];
+    const raw = r.data;
+    let arr: unknown[] = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw !== null && typeof raw === 'object') {
+      const obj = raw as Record<string, unknown>;
+      if (Array.isArray(obj['devices'])) arr = obj['devices'];
+      else if (Array.isArray(obj['result'])) arr = obj['result'];
+      else if (Array.isArray(obj['data'])) arr = obj['data'];
+    }
+    return arr.slice(0, 50).map((d, i) => {
+      const o = (d ?? {}) as Record<string, unknown>;
+      return {
+        provider: this.provider.id,
+        device_id: String(o['id'] ?? o['device_id'] ?? o['entity_id'] ?? `dev${i}`),
+        name: String(o['name'] ?? o['friendly_name'] ?? `Device ${i}`),
+        type: String(o['type'] ?? o['category'] ?? 'unknown'),
+        online: o['online'] !== false && o['state'] !== 'unavailable',
+        capabilities: ['on_off'],
+      };
+    });
+  }
+
+  async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
+    const base = this.getBase();
+    if (!base) return buildSendResult(false, { reason: 'no_provider', error: 'Provider sans base_url' });
+    const headers = await this.getAuthHeader();
+    const ep = this.provider.endpoints.send_command;
+    const path = ep.path.replace('{device_id}', deviceId);
+    const body = { ...ep.body_template, ...command, device_id: deviceId };
+    const r = await fetchIot<unknown>(`${base}${path}`, { method: ep.method, headers, body });
+    if (!r.ok) {
+      const reason: IoTSendCommandReason =
+        r.reason === 'cors_blocked' ? 'cors_blocked'
+        : r.reason === 'http_error' ? 'http_error'
+        : 'network';
+      return buildSendResult(false, { reason, error: r.error });
+    }
+    return buildSendResult(true);
   }
 }
 
@@ -792,16 +1000,14 @@ class IoTRegistry {
   }
 
   private loadCustomProviders(): void {
-    if (typeof localStorage === 'undefined') return;
+    const raw = readLocalStorage(CUSTOM_PROVIDERS_KEY);
+    if (!raw) return;
     try {
-      const raw = localStorage.getItem(CUSTOM_PROVIDERS_KEY);
-      if (!raw) return;
       const arr = JSON.parse(raw) as IoTProvider[];
       if (!Array.isArray(arr)) return;
       for (const p of arr) {
         if (p && p.id && !this.providers.has(p.id)) {
           this.providers.set(p.id, p);
-          /* Custom providers utilisent un client générique basé sur leur descripteur */
           this.clients.set(p.id, new GenericProviderClient(p));
         }
       }
@@ -811,14 +1017,9 @@ class IoTRegistry {
   }
 
   private persistCustomProviders(): void {
-    if (typeof localStorage === 'undefined') return;
     const builtinIds = new Set(BUILTIN_PROVIDERS.map((p) => p.id));
     const custom = Array.from(this.providers.values()).filter((p) => !builtinIds.has(p.id));
-    try {
-      localStorage.setItem(CUSTOM_PROVIDERS_KEY, JSON.stringify(custom));
-    } catch {
-      /* quota */
-    }
+    writeLocalStorage(CUSTOM_PROVIDERS_KEY, JSON.stringify(custom));
   }
 
   /** Retourne tous les providers (builtin + custom). */
@@ -865,9 +1066,9 @@ class IoTRegistry {
    */
   async configureProvider(input: IoTInstallInput): Promise<IoTInstallResult> {
     const provider = this.providers.get(input.provider_id);
-    if (!provider) return { ok: false, provider_id: input.provider_id, error: 'Provider inconnu' };
+    if (!provider) return buildInstallResult(input.provider_id, false, { error: 'Provider inconnu' });
     const client = this.clients.get(input.provider_id);
-    if (!client) return { ok: false, provider_id: input.provider_id, error: 'Client provider non disponible' };
+    if (!client) return buildInstallResult(input.provider_id, false, { error: 'Client provider non disponible' });
     const r = await client.install(input);
     if (r.ok) {
       void auditLog.record('iot.provider.configure', {
@@ -884,7 +1085,7 @@ class IoTRegistry {
   /** Test connexion légère un provider (status badge). */
   async testConnection(providerId: string): Promise<IoTConnectionResult> {
     const client = this.clients.get(providerId);
-    if (!client) return { ok: false, reason: 'no_credentials', error: `Provider inconnu: ${providerId}` };
+    if (!client) return buildConnResult(false, { reason: 'no_credentials', error: `Provider inconnu: ${providerId}` });
     return client.testConnection();
   }
 
@@ -916,10 +1117,10 @@ class IoTRegistry {
     command: Record<string, unknown>,
   ): Promise<IoTSendCommandResult> {
     const client = this.clients.get(providerId);
-    if (!client) return { ok: false, reason: 'no_provider', error: `Provider inconnu: ${providerId}` };
+    if (!client) return buildSendResult(false, { reason: 'no_provider', error: `Provider inconnu: ${providerId}` });
     const r = await client.sendCommand(deviceId, command);
     void auditLog.record(r.ok ? 'iot.send_command.success' : 'iot.send_command.fail', {
-      details: { provider_id: providerId, device_id: deviceId, command_keys: Object.keys(command), error: r.error },
+      details: { provider_id: providerId, device_id: deviceId, command_keys: Object.keys(command), error: r.error ?? null },
     });
     return r;
   }
@@ -934,96 +1135,6 @@ class IoTRegistry {
       results.push({ provider, status });
     }
     return results;
-  }
-}
-
-/* ============================================================================
- * Generic provider client (pour custom providers ajoutés runtime)
- * ============================================================================ */
-
-class GenericProviderClient implements ProviderClient {
-  constructor(private provider: IoTProvider) {}
-
-  private getBase(): string {
-    return this.provider.api?.base_url ?? '';
-  }
-
-  private async getAuthHeader(): Promise<Record<string, string>> {
-    if (!this.provider.api) return {};
-    /* Tente de lire le 1er credential connu (token > access_token > username) */
-    for (const k of this.provider.credential_keys) {
-      const v = await vault.readKey(k).catch(() => '');
-      if (v) {
-        const headerName = this.provider.api.auth_header;
-        const fmt = this.provider.api.auth_format;
-        if (fmt === 'bearer') return { [headerName]: `Bearer ${v}` };
-        if (fmt === 'basic') return { [headerName]: `Basic ${v}` };
-        return { [headerName]: v };
-      }
-    }
-    return {};
-  }
-
-  async install(input: IoTInstallInput): Promise<IoTInstallResult> {
-    /* Stocke chaque credential fourni dans la clé attendue */
-    for (const [k, v] of Object.entries(input.credentials)) {
-      const matchingKey = this.provider.credential_keys.find((ck) => ck.includes(k));
-      if (matchingKey) await vault.setKey(matchingKey, v);
-    }
-    const test = await this.testConnection();
-    return { ok: test.ok, provider_id: this.provider.id, error: test.error, devices_found: test.devices_count };
-  }
-
-  async testConnection(): Promise<IoTConnectionResult> {
-    const base = this.getBase();
-    if (!base) return { ok: false, reason: 'no_credentials', error: 'Provider sans api.base_url' };
-    const headers = await this.getAuthHeader();
-    if (Object.keys(headers).length === 0) return { ok: false, reason: 'no_credentials', error: 'Aucun credential stocké' };
-    const r = await fetchIot<unknown>(`${base}${this.provider.test_endpoint}`, { headers });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    return { ok: true, latency_ms: r.latency_ms, devices_count: 0 };
-  }
-
-  async listDevices(): Promise<IoTDevice[]> {
-    const base = this.getBase();
-    if (!base) return [];
-    const headers = await this.getAuthHeader();
-    const ep = this.provider.endpoints.list_devices;
-    const r = await fetchIot<unknown>(`${base}${ep.path}`, { method: ep.method, headers });
-    if (!r.ok) return [];
-    /* Heuristique : si data est un array, on map. Sinon on cherche .devices ou .result. */
-    const raw = r.data;
-    let arr: unknown[] = [];
-    if (Array.isArray(raw)) arr = raw;
-    else if (raw && typeof raw === 'object') {
-      const obj = raw as Record<string, unknown>;
-      if (Array.isArray(obj.devices)) arr = obj.devices;
-      else if (Array.isArray(obj.result)) arr = obj.result;
-      else if (Array.isArray(obj.data)) arr = obj.data;
-    }
-    return arr.slice(0, 50).map((d, i) => {
-      const o = (d ?? {}) as Record<string, unknown>;
-      return {
-        provider: this.provider.id,
-        device_id: String(o.id ?? o.device_id ?? o.entity_id ?? `dev${i}`),
-        name: String(o.name ?? o.friendly_name ?? `Device ${i}`),
-        type: String(o.type ?? o.category ?? 'unknown'),
-        online: o.online !== false && o.state !== 'unavailable',
-        capabilities: ['on_off'],
-      };
-    });
-  }
-
-  async sendCommand(deviceId: string, command: Record<string, unknown>): Promise<IoTSendCommandResult> {
-    const base = this.getBase();
-    if (!base) return { ok: false, reason: 'no_provider', error: 'Provider sans base_url' };
-    const headers = await this.getAuthHeader();
-    const ep = this.provider.endpoints.send_command;
-    const path = ep.path.replace('{device_id}', deviceId);
-    const body = { ...ep.body_template, ...command, device_id: deviceId };
-    const r = await fetchIot<unknown>(`${base}${path}`, { method: ep.method, headers, body });
-    if (!r.ok) return { ok: false, reason: r.reason, error: r.error };
-    return { ok: true };
   }
 }
 

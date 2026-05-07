@@ -225,9 +225,9 @@ function wireEvents(rootEl: HTMLElement): void {
     if (!target) return;
     const btn = target.closest('[data-action]') as HTMLElement | null;
     if (!btn) return;
-    const action = btn.dataset.action ?? '';
-    const providerId = btn.dataset.providerId ?? '';
-    const deviceId = btn.dataset.deviceId ?? '';
+    const action = btn.dataset['action'] ?? '';
+    const providerId = btn.dataset['providerId'] ?? '';
+    const deviceId = btn.dataset['deviceId'] ?? '';
     if (action === 'install') void handleInstall(providerId, rootEl);
     else if (action === 'test') void handleTest(providerId);
     else if (action === 'refresh-all') void handleRefreshAll(rootEl);
@@ -270,7 +270,7 @@ async function handleInstall(providerId: string, rootEl: HTMLElement): Promise<v
   const bg = host.querySelector('[data-modal-bg="1"]') as HTMLElement | null;
   bg?.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
-    if (t.dataset.modalBg === '1' || t.dataset.modalClose === '1') host.innerHTML = '';
+    if (t.dataset['modalBg'] === '1' || t.dataset['modalClose'] === '1') host.innerHTML = '';
   });
   const form = host.querySelector('#iot-install-form') as HTMLFormElement | null;
   form?.addEventListener('submit', (e) => {
