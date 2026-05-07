@@ -19,6 +19,15 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeMedicalScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeMedicalScope?.cleanup();
+  activeMedicalScope = null;
+}
 
 export interface OtcMedicament {
   dci: string;
@@ -1079,6 +1088,9 @@ export function searchUrgences(query: string): Array<{ symptome: string; action:
  * Render UI premium Medical Pro avec disclaimer légal.
  */
 export function render(root: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeMedicalScope?.cleanup();
+  activeMedicalScope = createCleanupScope('medical');
   const urgencesHtml = Object.keys(AX_MEDICAL_FR.urgences)
     .map((k) => {
       const u = AX_MEDICAL_FR.urgences[k];
@@ -1148,7 +1160,7 @@ export function render(root: HTMLElement): void {
 
   const calcBtn = root.querySelector<HTMLButtonElement>('#medCalcBtn');
   if (calcBtn) {
-    calcBtn.addEventListener('click', () => {
+    activeMedicalScope!.bind(calcBtn, 'click', () => {
       const p = parseFloat(root.querySelector<HTMLInputElement>('#medP')?.value ?? '') || 0;
       const tCm = parseFloat(root.querySelector<HTMLInputElement>('#medT')?.value ?? '') || 0;
        
@@ -1174,7 +1186,7 @@ export function render(root: HTMLElement): void {
 
   const lookupBtn = root.querySelector<HTMLButtonElement>('#medLookupBtn');
   if (lookupBtn) {
-    lookupBtn.addEventListener('click', () => {
+    activeMedicalScope!.bind(lookupBtn, 'click', () => {
       const m = root.querySelector<HTMLInputElement>('#medMed')?.value ?? '';
       const out = root.querySelector<HTMLDivElement>('#medMedResult');
       if (!out || !m) return;

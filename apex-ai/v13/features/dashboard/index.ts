@@ -18,8 +18,17 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { haptic } from '../../ui/haptic.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeDashboardScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeDashboardScope?.cleanup();
+  activeDashboardScope = null;
+}
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -418,6 +427,9 @@ export async function loadRechargeLinks(
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeDashboardScope?.cleanup();
+  activeDashboardScope = createCleanupScope('dashboard');
   const user = store.get('user') as { name?: string; id?: string } | null;
   const greeting = user?.name ? `Bonjour ${user.name}` : 'Bonjour';
 
@@ -525,7 +537,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* Wire navigation buttons (CSP strict) */
   rootEl.querySelectorAll<HTMLElement>('[data-route]').forEach((el) => {
-    el.addEventListener('click', () => {
+    activeDashboardScope!.bind(el, 'click', () => {
       haptic.tap();
       const route = el.dataset['route'];
       if (route) window.location.hash = '#' + route;
