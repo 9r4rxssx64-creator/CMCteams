@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.41';
+export const APP_VER = 'v13.3.45';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -273,6 +273,8 @@ async function bootstrap(): Promise<void> {
   router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
   /* v13.3.33 Kevin 2026-05-07 — Smart IA Router multi-critères (latence/quota/qualité/uptime) */
   router.register('smart-router', { loader: () => import('@features/smart-router/index.js'), requiresAdmin: true });
+  /* v13.3.43 Kevin 2026-05-07 — Voice Bio reconnaissance vocale exclusive user */
+  router.register('voice-bio', { loader: () => import('@features/voice-bio/index.js'), requiresAuth: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
