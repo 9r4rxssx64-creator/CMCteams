@@ -374,16 +374,24 @@ class CapabilitiesRegistry {
 
   /**
    * Audit orphans : capabilities listées mais tools manquants dans apex-tools registry.
+   * Sprint 13.3.17 fix : `tools_used` recense aussi des services internes (ai-router,
+   * voice, vault, sentinels...) qui ne sont pas exposés comme apex-tools mais sont
+   * tout aussi présents. Whitelist pour ne pas les compter comme orphans.
    */
   auditOrphans(): { orphans: string[]; coverage_pct: number } {
     const apexToolNames = new Set(apexTools.list().map((t) => t.name));
+    const KNOWN_INTERNAL_SERVICES = new Set<string>([
+      'ai-router', 'ai-safety', 'voice', 'studios', 'vault', 'credential-patterns',
+      'webauthn', 'rgpd', 'pro_modules', 'tokens-dashboard', 'commerce',
+      'whatsapp', 'orchestrator', 'agent-system', 'sentinels', 'perf-metrics',
+    ]);
     const orphans: string[] = [];
     let total = 0;
     let matched = 0;
     for (const cap of this.list()) {
       for (const t of cap.tools_used) {
         total++;
-        if (apexToolNames.has(t)) matched++;
+        if (apexToolNames.has(t) || KNOWN_INTERNAL_SERVICES.has(t)) matched++;
         else if (!orphans.includes(t)) orphans.push(t);
       }
     }

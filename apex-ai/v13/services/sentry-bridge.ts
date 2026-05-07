@@ -252,6 +252,26 @@ class SentryBridge {
     return this.sdk !== null;
   }
 
+  /**
+   * Test sender — envoie 1 event "info" pour vérifier que le sink répond.
+   * Idempotent (rate-limit applied). Retourne le résultat structuré.
+   * Fix v13.3.18 (Kevin v13.3.16 rapport "Sentry bridge wired mais pas testé").
+   */
+  async sendTestEvent(): Promise<{ ok: boolean; sink: 'sdk' | 'worker' | 'fallback-buffer' | 'none'; reason?: string }> {
+    if (!this.initialized) await this.init();
+    if (!this.dsn && !this.workerEndpoint) {
+      return { ok: false, sink: 'none', reason: 'No DSN or worker endpoint configured' };
+    }
+    const msg = `Apex test event ${new Date().toISOString()}`;
+    try {
+      this.captureMessage(msg, 'info', { source: 'sendTestEvent', test: true });
+      const sink: 'sdk' | 'worker' | 'fallback-buffer' = this.sdk ? 'sdk' : (this.workerEndpoint ? 'worker' : 'fallback-buffer');
+      return { ok: true, sink };
+    } catch (err: unknown) {
+      return { ok: false, sink: 'none', reason: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   resetForTests(): void {
     this.initialized = false;
     this.dsn = null;

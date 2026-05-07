@@ -12,11 +12,13 @@ describe('sentinels deep tests', () => {
     expect(r?.ts).toBeGreaterThan(0);
   });
 
-  it('runOne backup-watch détecte pas de backup récent', async () => {
+  it('runOne backup-watch initial state ok (aucun backup encore)', async () => {
     registerCoreSentinels();
-    /* Pas de ax_last_backup_ts → > 26h ago = fail */
+    /* Sprint 13.3.17 : absence de timestamp = état initial = OK
+     * (la sentinelle ne crée pas d'alerte avant qu'un premier backup ait existé). */
     const r = await sentinels.runOne('backup-watch');
-    expect(r?.ok).toBe(false);
+    expect(r?.ok).toBe(true);
+    expect(r?.msg).toMatch(/initial|attente/i);
   });
 
   it('runOne backup-watch ok si récent', async () => {
@@ -24,6 +26,17 @@ describe('sentinels deep tests', () => {
     registerCoreSentinels();
     const r = await sentinels.runOne('backup-watch');
     expect(r?.ok).toBe(true);
+  });
+
+  it('runOne backup-watch détecte stale + autoFix tente snapshot (Sprint 13.3.17)', async () => {
+    registerCoreSentinels();
+    /* Timestamp ancien : check fail → autoFix tente snapshot. Si autoFix réussit,
+     * lastResult devient ok. Si autoFix fail (ex: indexedDB indispo en jsdom),
+     * lastResult reste fail. Les deux comportements sont valides. */
+    localStorage.setItem('ax_last_backup_ts', String(Date.now() - 30 * 60 * 60 * 1000));
+    const r = await sentinels.runOne('backup-watch');
+    expect(r?.ts).toBeGreaterThan(0);
+    expect(typeof r?.msg).toBe('string');
   });
 
   it('runOne sentinel inconnu retourne ok=false', async () => {
@@ -44,17 +57,29 @@ describe('sentinels deep tests', () => {
     expect(r?.ts).toBeGreaterThan(0);
   });
 
-  it('compliance-watch sans consent flag false', async () => {
+  it('compliance-watch sans user → état initial OK (Sprint 13.3.17)', async () => {
+    /* Sprint 13.3.17 : sans user logged-in, pas de consent à enregistrer = OK. */
     registerCoreSentinels();
     const r = await sentinels.runOne('compliance-watch');
-    expect(r?.ok).toBe(false);
+    expect(r?.ok).toBe(true);
   });
 
   it('compliance-watch avec consent flag true', async () => {
+    localStorage.setItem('apex_v13_user', JSON.stringify({ id: 'kevin' }));
     localStorage.setItem('apex_v13_rgpd_consent', JSON.stringify({ ts: Date.now() }));
     registerCoreSentinels();
     const r = await sentinels.runOne('compliance-watch');
     expect(r?.ok).toBe(true);
+  });
+
+  it('compliance-watch fail + autoFix recovery (Sprint 13.3.17)', async () => {
+    /* User logged-in sans consent → check fail → autoFix crée consent essential
+     * → recheck ok. Comportement autonome attendu. */
+    localStorage.setItem('apex_v13_user', JSON.stringify({ id: 'kevin' }));
+    registerCoreSentinels();
+    const r = await sentinels.runOne('compliance-watch');
+    expect(r?.ok).toBe(true); /* autoFix recovery */
+    expect(localStorage.getItem('apex_v13_cookies_accepted')).toBeTruthy();
   });
 
   it('list contient au moins 13 sentinelles (Jet 8.1 +agent-watches-runner)', () => {

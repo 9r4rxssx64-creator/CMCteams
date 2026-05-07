@@ -282,6 +282,15 @@ class InnovationWatch {
           if (data.time !== undefined) update.releaseDate = Date.parse(data.time);
           const gain = await this.compareGain('lib-npm', pkg.current ?? '0.0.0', data.version);
           if (gain) update.estimatedGain = gain;
+          /* Fix v13.3.18 (Kevin v13.3.16 rapport "14 updates pending → 0 appliquées") :
+           * Promo recommendation à 'upgrade-asap' si non-breaking ET gain ≥ threshold
+           * → débloque auto-apply gating (avant : tous étaient 'upgrade-soon' = jamais appliqués). */
+          if (cmp !== 'breaking' && gain) {
+            const maxGain = Math.max(gain.perf ?? 0, gain.cost ?? 0, gain.capabilities ?? 0);
+            if (maxGain >= AUTO_UPDATE_GAIN_THRESHOLD) {
+              update.recommendation = 'upgrade-asap';
+            }
+          }
           updates.push(update);
         }
       } catch (err: unknown) {

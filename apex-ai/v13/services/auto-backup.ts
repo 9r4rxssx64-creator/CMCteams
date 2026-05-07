@@ -264,6 +264,14 @@ class AutoBackup {
     /* Update index */
     this.addToIndex(id);
 
+    /* Sprint 13.3.17 fix : tag last backup ts pour sentinelle backup-watch
+     * (sentinels.ts:256 lit cette clé pour vérifier âge < 26h). */
+    try {
+      localStorage.setItem('ax_last_backup_ts', String(ts));
+    } catch {
+      /* ignore quota — backup déjà persisté de toute façon */
+    }
+
     /* Push Firebase si type=weekly (cross-device backup remote) */
     if (type === 'weekly') {
       void this.pushToFirebaseRemote(backup);

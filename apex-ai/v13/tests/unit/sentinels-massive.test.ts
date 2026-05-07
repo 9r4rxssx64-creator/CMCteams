@@ -236,19 +236,30 @@ describe('sentinels massive coverage Jet 8 final', () => {
       }
     });
 
-    it('compliance-watch fail si pas de consent RGPD', async () => {
+    it('compliance-watch sans user → état initial OK (Sprint 13.3.17)', async () => {
       registerCoreSentinels();
-      localStorage.removeItem('apex_v13_rgpd_consent');
+      /* Sprint 13.3.17 : pas de user logged → pas de consent à tracer = OK. */
       const result = await sentinels.runOne('compliance-watch');
-      expect(result?.ok).toBe(false);
-      expect(result?.msg).toContain('Consent');
+      expect(result?.ok).toBe(true);
     });
 
     it('compliance-watch OK si consent enregistré', async () => {
       registerCoreSentinels();
+      localStorage.setItem('apex_v13_user', JSON.stringify({ id: 'kevin' }));
       localStorage.setItem('apex_v13_rgpd_consent', JSON.stringify({ accepted: true, ts: Date.now() }));
       const result = await sentinels.runOne('compliance-watch');
       expect(result?.ok).toBe(true);
+    });
+
+    it('compliance-watch user logged sans consent → autoFix crée consent par défaut (Sprint 13.3.17)', async () => {
+      registerCoreSentinels();
+      localStorage.setItem('apex_v13_user', JSON.stringify({ id: 'kevin' }));
+      localStorage.removeItem('apex_v13_rgpd_consent');
+      localStorage.removeItem('apex_v13_cookies_accepted');
+      const result = await sentinels.runOne('compliance-watch');
+      /* AutoFix recovery : consent essential par défaut enregistré */
+      expect(result?.ok).toBe(true);
+      expect(localStorage.getItem('apex_v13_cookies_accepted')).toBeTruthy();
     });
 
     it('conflict-watch returns ok=true si pas de queue', async () => {
