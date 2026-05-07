@@ -53,6 +53,18 @@ class Errors {
       ...ctx,
     });
 
+    /* Forward to Sentry runtime monitoring (audit Kevin v13.1.0).
+     * Lazy import pour éviter cycle + ne pas bloquer si module pas encore chargé. */
+    void import('../services/sentry-bridge.js')
+      .then(({ sentryBridge }) => {
+        if (sentryBridge.isInitialized()) {
+          sentryBridge.captureException(error, ctx as Record<string, unknown>);
+        }
+      })
+      .catch(() => {
+        /* Sentry indispo → on a déjà loggé ci-dessus */
+      });
+
     if (this.errorCount >= this.maxErrorsBeforeRescue) {
       this.triggerRescue();
     }

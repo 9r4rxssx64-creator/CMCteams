@@ -179,6 +179,18 @@ class Memory {
       const isAndroid = /Android/.test(ua);
       sections.push(`## Device courant\n${isiOS ? '📱 iOS' : isAndroid ? '🤖 Android' : '🖥 Desktop'} · Online: ${typeof navigator !== 'undefined' && navigator.onLine ? 'oui' : 'non'}`);
     } catch { /* skip */ }
+    /* Sprint v13.0.74 — Tenant courant (multi-tenant SaaS commercialisable Kevin 2026-05-04)
+       Injection via globalThis pour anti-circular dep (services/tenant.ts → audit-log → ...) */
+    if (currentUser) {
+      try {
+        const tm = (globalThis as unknown as {
+          tenantManager?: { formatForSystemPrompt: (uid: string) => string };
+        }).tenantManager;
+        if (tm && typeof tm.formatForSystemPrompt === 'function') {
+          sections.push(tm.formatForSystemPrompt(currentUser.id));
+        }
+      } catch { /* skip */ }
+    }
     /* v13.0.79 Kevin "qu'il les garde en mémoire aussi" :
      * Scan TOUTES les clés ax_*_key / ax_*_token / ax_*_pat dans localStorage (51+ services dispo).
      * Apex IA sait ainsi exhaustivement quels outils Kevin a configurés. */

@@ -146,6 +146,74 @@ export const AX_FINANCE_FR = {
     cotisations_sociales_salarie: 0.13,
     salaire_min_2026: 11.65,
   },
+  /* boost v13 — Données financières expert supplémentaires */
+  smic: {
+    horaire_brut_2026: 11.88,
+    mensuel_brut_35h: 1801.80,
+    mensuel_net_35h: 1426.30,
+    annuel_brut: 21621.60,
+  },
+  plafond_securite_sociale: {
+    annuel_2026: 47100,
+    mensuel_2026: 3925,
+    horaire_2026: 25.93,
+  },
+  /** Crypto FR : flat tax PFU 30% (Art 150 VH bis CGI) */
+  crypto: {
+    pfu: 0.30,
+    pfu_ir: 0.128,
+    pfu_ps: 0.172,
+    seuil_franchise: 305, /* < 305€ exonéré */
+    abattement_residence_principale: 0,
+  },
+  /** Indices boursiers principaux (référence 2026) */
+  indices_bourse: {
+    cac40: 'France 40 plus grandes capitalisations',
+    sbf120: 'France 120 valeurs',
+    eurostoxx50: 'Europe 50 grandes capitalisations',
+    sp500: 'USA 500 grandes capitalisations',
+    nasdaq100: 'USA tech 100',
+    dowjones: 'USA 30 industriels',
+    ftse100: 'Royaume-Uni 100',
+    dax40: 'Allemagne 40',
+    nikkei225: 'Japon 225',
+    msci_world: 'Monde 1500 valeurs',
+  } as Record<string, string>,
+  /** Régimes retraite spécifiques + complémentaires */
+  regimes_retraite: {
+    regime_general: 'CNAV (privés salariés)',
+    msa: 'MSA (agricoles)',
+    rsi_ssi: 'SSI (indépendants)',
+    cnavpl: 'CNAVPL (professions libérales)',
+    cnbf: 'CNBF (avocats)',
+    fonction_publique: 'CNRACL/SRE (fonctionnaires)',
+    agirc_arrco: 'AGIRC-ARRCO (complémentaire cadres + non cadres)',
+    ircantec: 'IRCANTEC (contractuels publics)',
+    enim: 'ENIM (marins)',
+  } as Record<string, string>,
+  /** Aides sociales France 2026 (montants approximatifs) */
+  aides_sociales: {
+    rsa_socle_celibataire: 635.71,
+    rsa_socle_couple: 953.57,
+    prime_activite_max_celibataire: 595,
+    apl_zone_1_celibataire_max: 350,
+    aah_max_2026: 1016.05,
+    asi_aspa_celibataire: 1012.02,
+    pajemploi_complement_garde: 530,
+    bourse_etudiant_echelon_7: 6335,
+    minimum_vieillesse_aspa_couple: 1571.16,
+  } as Record<string, number>,
+  /** Indices Insee inflation 2025-2026 */
+  indices_economiques: {
+    inflation_2024_pct: 2.0,
+    inflation_2025_estim_pct: 1.8,
+    chomage_2026_pct: 7.4,
+    croissance_pib_2026_pct: 1.1,
+    smic_revalorisation_2026_pct: 1.13,
+    livret_a_taux_2026: 0.025,
+    ldds_taux_2026: 0.025,
+    pel_taux_2026: 0.0175,
+  } as Record<string, number>,
 } as const;
  
 
@@ -522,6 +590,138 @@ export function calcPensionRetraite(
      
     decote_pct: Math.round(decote * 10000) / 100,
   };
+}
+
+/* boost v13 — Helpers finance experts supplementaires */
+
+/**
+ * Calcul plus-value crypto FR (PFU 30%).
+ * Selon barème ou flat tax PFU au choix du contribuable.
+ */
+export function calcPvCrypto(prix_vente: number, prix_achat: number, frais: number = 0): {
+  pv_brute: number;
+  pv_imposable: number;
+  ir_pfu: number;
+  ps: number;
+  total_impot: number;
+  net: number;
+} {
+  const pvBrute = prix_vente - prix_achat - frais;
+  if (pvBrute <= AX_FINANCE_FR.crypto.seuil_franchise) {
+    return { pv_brute: pvBrute, pv_imposable: 0, ir_pfu: 0, ps: 0, total_impot: 0, net: pvBrute };
+  }
+  const ir = pvBrute * AX_FINANCE_FR.crypto.pfu_ir;
+  const ps = pvBrute * AX_FINANCE_FR.crypto.pfu_ps;
+  const total = ir + ps;
+  return {
+    pv_brute: pvBrute,
+    pv_imposable: pvBrute,
+    ir_pfu: Math.round(ir),
+    ps: Math.round(ps),
+    total_impot: Math.round(total),
+    net: Math.round(pvBrute - total),
+  };
+}
+
+/**
+ * Conversion brut -> net mensuel salarie privé (estimation simplifiée).
+ */
+export function calcSalaireNetEstimation(brut_mensuel: number, statut: 'cadre' | 'non_cadre' = 'non_cadre'): {
+  brut: number;
+  charges_salariales: number;
+  net_avant_impot: number;
+  charges_pct: number;
+} {
+  const taux = AX_FINANCE_FR.charges_salariales[statut];
+  const charges = brut_mensuel * taux;
+  return {
+    brut: brut_mensuel,
+    charges_salariales: Math.round(charges),
+    net_avant_impot: Math.round(brut_mensuel - charges),
+    charges_pct: taux * 100,
+  };
+}
+
+/**
+ * Calcul intérêts composés (épargne avec versement initial).
+ */
+export function calcInteretsComposes(capital_initial: number, taux_annuel: number, duree_annees: number, versement_mensuel: number = 0): {
+  capital_final: number;
+  interets_total: number;
+  versements_total: number;
+} {
+  const tauxMensuel = taux_annuel / 12;
+  const nbMois = duree_annees * 12;
+  let capital = capital_initial;
+  let totalVersements = capital_initial;
+  for (let i = 0; i < nbMois; i++) {
+    capital = capital * (1 + tauxMensuel) + versement_mensuel;
+    totalVersements += versement_mensuel;
+  }
+  return {
+    capital_final: Math.round(capital * 100) / 100,
+    interets_total: Math.round((capital - totalVersements) * 100) / 100,
+    versements_total: Math.round(totalVersements * 100) / 100,
+  };
+}
+
+/**
+ * Capacité d'épargne mensuelle compatible règle 50/30/20.
+ */
+export function calc503020(revenu_mensuel_net: number): {
+  besoins_50pct: number;
+  loisirs_30pct: number;
+  epargne_20pct: number;
+} {
+  return {
+    besoins_50pct: Math.round(revenu_mensuel_net * 0.5),
+    loisirs_30pct: Math.round(revenu_mensuel_net * 0.3),
+    epargne_20pct: Math.round(revenu_mensuel_net * 0.2),
+  };
+}
+
+/**
+ * Capacité retraite : projection rente mensuelle estimée à âge légal.
+ */
+export function calcRetraiteEstimation(salaire_brut_annuel: number, annees_cotisation: number, _age_actuel: number, age_depart: number): {
+  trimestres_acquis: number;
+  trimestres_manquants: number;
+  rente_mensuelle_estim: number;
+  taux_plein: boolean;
+} {
+  const trimAcquis = annees_cotisation * 4;
+  const trimManquants = Math.max(0, AX_FINANCE_FR.retraite.duree_assurance_taux_plein_trimestres - trimAcquis);
+  const tauxPlein = trimManquants === 0 || age_depart >= AX_FINANCE_FR.retraite.age_taux_plein_sans_decote;
+  /* Estimation : 50% du salaire moyen 25 meilleures années si taux plein */
+  let renteAnnuelle = (salaire_brut_annuel * 0.5);
+  if (!tauxPlein) {
+    const decote = trimManquants * AX_FINANCE_FR.retraite.decote_par_trimestre_manquant;
+    renteAnnuelle *= (1 - Math.min(0.25, decote));
+  }
+  return {
+    trimestres_acquis: trimAcquis,
+    trimestres_manquants: trimManquants,
+    rente_mensuelle_estim: Math.round(renteAnnuelle / 12),
+    taux_plein: tauxPlein,
+  };
+}
+
+/**
+ * Conversion devise simplifiée (taux fixe 2026 estimé).
+ */
+export const TAUX_CHANGE_2026: Record<string, number> = {
+  EUR_USD: 1.08, EUR_GBP: 0.84, EUR_CHF: 0.95, EUR_JPY: 168, EUR_CAD: 1.46, EUR_AUD: 1.65,
+  EUR_CNY: 7.85, EUR_INR: 90, EUR_BRL: 5.5, EUR_RUB: 100,
+  USD_EUR: 0.93, USD_GBP: 0.78, USD_CHF: 0.88, USD_JPY: 156,
+};
+
+export function convertirDevise(montant: number, from: string, to: string): number | null {
+  if (from === to) return montant;
+  const direct = TAUX_CHANGE_2026[`${from}_${to}`];
+  if (direct) return Math.round(montant * direct * 100) / 100;
+  const inverse = TAUX_CHANGE_2026[`${to}_${from}`];
+  if (inverse) return Math.round((montant / inverse) * 100) / 100;
+  return null;
 }
 
 /**

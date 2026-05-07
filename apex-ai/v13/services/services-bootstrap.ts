@@ -164,6 +164,24 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `subscription-tiers : ${tiers.length} tiers publics`);
     }),
 
+    /* Tenant manager : multi-tenant SaaS commercialisable (Kevin v13.0.74)
+       Expose globalThis.tenantManager pour anti-circular dep core/memory.ts */
+    safeInit('tenant', async () => {
+      const { tenantManager } = await import('./tenant.js');
+      tenantManager.init();
+      (globalThis as unknown as { tenantManager: typeof tenantManager }).tenantManager = tenantManager;
+      const all = uid ? tenantManager.listAll(uid) : [];
+      logger.info('services-bootstrap', `tenant : ${all.length} tenants connus`);
+    }),
+
+    /* Stripe Billing : Checkout + Portal + webhooks (Kevin v13.0.74)
+       4 plans (free/basic/pro/business) + usage tracking */
+    safeInit('stripe-billing', async () => {
+      const { stripeBilling } = await import('./stripe-billing.js');
+      const plans = stripeBilling.listPlans();
+      logger.info('services-bootstrap', `stripe-billing : ${plans.length} plans configurés`);
+    }),
+
     /* Voices registry : pre-warm browser voices async */
     safeInit('voices-registry', async () => {
       const { voicesRegistry } = await import('./voices-registry.js');

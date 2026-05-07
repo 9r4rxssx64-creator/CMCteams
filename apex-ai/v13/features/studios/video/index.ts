@@ -29,9 +29,9 @@ import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
 
-export type TransitionKind = 'none' | 'fade' | 'cut' | 'slide' | 'dissolve' | 'wipe' | 'zoom';
-export type AspectRatio = 'original' | '16:9' | '9:16' | '1:1' | '4:3' | '21:9';
-export type LutPreset = 'none' | 'cinema' | 'vintage' | 'bw' | 'sepia' | 'teal-orange' | 'cool' | 'warm' | 'noir';
+export type TransitionKind = 'none' | 'fade' | 'cut' | 'slide' | 'dissolve' | 'wipe' | 'zoom' | 'glitch' | 'morph' | 'flash' | 'spin' | 'shutter' | 'iris' | 'whip_pan' | 'crossfade' | 'film_burn' | 'glitch_rgb' | 'cube_3d' | 'reveal_circle' | 'split_horizontal' | 'split_vertical';
+export type AspectRatio = 'original' | '16:9' | '9:16' | '1:1' | '4:3' | '21:9' | '2.39:1' | '5:4' | '3:2';
+export type LutPreset = 'none' | 'cinema' | 'vintage' | 'bw' | 'sepia' | 'teal-orange' | 'cool' | 'warm' | 'noir' | 'cyberpunk' | 'anime' | 'kodak_portra' | 'fuji_velvia' | 'matrix_green' | 'wes_anderson' | 'la_la_land' | 'blade_runner' | 'desaturated' | 'high_contrast' | 'pastel' | 'gold_rush' | 'tropical';
 export type WatermarkPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 export type CropFormat = 'auto-tiktok' | 'auto-youtube' | 'auto-ig' | 'auto-cinema' | 'manual';
 
@@ -86,7 +86,7 @@ export interface VideoClip {
   stabilize: boolean;
 }
 
-export const MAX_CLIPS = 12;
+export const MAX_CLIPS = 16; /* boost v13 : 12 → 16 clips timeline */
 export const MAX_FILE_SIZE_MB = 200;
 export const MAX_TOTAL_DURATION_S = 600; /* 10 min */
 export const ACCEPTED_FORMATS: readonly string[] = [
@@ -97,7 +97,47 @@ export const SUPPORTED_LANGS: readonly string[] = [
   'fr', 'en', 'es', 'it', 'de', 'pt', 'nl', 'ru', 'pl', 'ar',
   'zh', 'ja', 'ko', 'tr', 'sv', 'da', 'no', 'fi', 'el', 'he',
   'hi', 'th', 'vi', 'id', 'ms', 'cs', 'hu', 'ro', 'uk', 'bg',
+  /* boost v13 : +20 langues sous-titres pro */
+  'ca', 'eu', 'gl', 'cy', 'ga', 'sk', 'sl', 'hr', 'sr', 'lt',
+  'lv', 'et', 'is', 'mt', 'sq', 'mk', 'be', 'ka', 'hy', 'az',
 ] as const;
+
+/* boost v13 — Streaming platform export presets (codec/bitrate/resolution recommendations) */
+export const STREAMING_PRESETS = {
+  youtube_4k: { codec: 'h265', bitrate: 35000, resolution: '3840x2160', fps: 30, aspect: '16:9' },
+  youtube_1080p: { codec: 'h264', bitrate: 8000, resolution: '1920x1080', fps: 30, aspect: '16:9' },
+  youtube_shorts: { codec: 'h264', bitrate: 6000, resolution: '1080x1920', fps: 30, aspect: '9:16' },
+  tiktok: { codec: 'h264', bitrate: 5000, resolution: '1080x1920', fps: 30, aspect: '9:16' },
+  instagram_reels: { codec: 'h264', bitrate: 5000, resolution: '1080x1920', fps: 30, aspect: '9:16' },
+  instagram_post: { codec: 'h264', bitrate: 4000, resolution: '1080x1080', fps: 30, aspect: '1:1' },
+  instagram_story: { codec: 'h264', bitrate: 4000, resolution: '1080x1920', fps: 30, aspect: '9:16' },
+  twitter: { codec: 'h264', bitrate: 5000, resolution: '1280x720', fps: 30, aspect: '16:9' },
+  linkedin: { codec: 'h264', bitrate: 5000, resolution: '1920x1080', fps: 30, aspect: '16:9' },
+  vimeo_4k: { codec: 'h265', bitrate: 30000, resolution: '3840x2160', fps: 30, aspect: '16:9' },
+  facebook: { codec: 'h264', bitrate: 4000, resolution: '1280x720', fps: 30, aspect: '16:9' },
+  cinema_dcp: { codec: 'jpeg2000', bitrate: 250000, resolution: '4096x2160', fps: 24, aspect: '2.39:1' },
+} as const;
+
+/* boost v13 — Watermark animation presets */
+export const WATERMARK_ANIMATIONS = {
+  none: { duration: 0, type: 'static' },
+  fade_in: { duration: 1000, type: 'fade' },
+  slide_in: { duration: 800, type: 'slide' },
+  zoom_pulse: { duration: 1500, type: 'pulse' },
+  rotate_360: { duration: 2000, type: 'rotate' },
+  bounce: { duration: 1200, type: 'bounce' },
+} as const;
+
+/* boost v13 — Speed ramp presets (slow-mo et fast professionnels) */
+export const SPEED_RAMP_PRESETS = {
+  slow_mo_30: { speed: 0.3, label: 'Slow-mo 30%' },
+  slow_mo_50: { speed: 0.5, label: 'Slow-mo 50%' },
+  super_slow: { speed: 0.1, label: 'Super slow 10%' },
+  normal: { speed: 1, label: 'Vitesse normale' },
+  speed_2x: { speed: 2, label: 'Accéléré 2×' },
+  speed_4x: { speed: 4, label: 'Accéléré 4×' },
+  timelapse_8x: { speed: 8, label: 'Timelapse 8×' },
+} as const;
 
 export const ASPECT_RATIOS: Record<Exclude<AspectRatio, 'original'>, { w: number; h: number }> = {
   '16:9': { w: 1920, h: 1080 },
@@ -105,6 +145,9 @@ export const ASPECT_RATIOS: Record<Exclude<AspectRatio, 'original'>, { w: number
   '1:1': { w: 1080, h: 1080 },
   '4:3': { w: 1440, h: 1080 },
   '21:9': { w: 2560, h: 1080 },
+  '2.39:1': { w: 2580, h: 1080 }, /* CinemaScope */
+  '5:4': { w: 1350, h: 1080 },
+  '3:2': { w: 1620, h: 1080 },
 };
 
 export function escapeHtml(s: string): string {
@@ -271,9 +314,152 @@ export function applyLutPreset(r: number, g: number, b: number, preset: LutPrese
         const gray = (0.299 * r + 0.587 * g + 0.114 * b) > 128 ? 255 : 0;
         return { r: clamp(gray), g: clamp(gray), b: clamp(gray) };
       })();
+    /* boost v13 : 13 nouveaux LUT presets cinéma */
+    case 'cyberpunk':
+      return { r: clamp(r * 0.85 + 30), g: clamp(g * 0.7), b: clamp(b * 1.4) };
+    case 'anime':
+      return { r: clamp(r * 1.1 + 5), g: clamp(g * 1.05 + 10), b: clamp(b * 1.15) };
+    case 'kodak_portra':
+      /* Portrait warm tones */
+      return { r: clamp(r * 1.08 + 8), g: clamp(g * 1.0), b: clamp(b * 0.95 - 5) };
+    case 'fuji_velvia':
+      /* Saturated landscape */
+      return { r: clamp(r * 1.15), g: clamp(g * 1.18), b: clamp(b * 1.05) };
+    case 'matrix_green':
+      return { r: clamp(r * 0.4), g: clamp(g * 1.3 + 20), b: clamp(b * 0.4) };
+    case 'wes_anderson':
+      /* Pastel symétrie */
+      return { r: clamp(r * 0.95 + 30), g: clamp(g * 0.92 + 25), b: clamp(b * 0.88 + 20) };
+    case 'la_la_land':
+      /* Magenta/Cyan dreamy */
+      return { r: clamp(r * 1.05 + 10), g: clamp(g * 0.92), b: clamp(b * 1.12 + 8) };
+    case 'blade_runner':
+      /* Orange + Teal contrast extrême */
+      return { r: clamp(r * 1.2 - 10), g: clamp(g * 0.85), b: clamp(b * 1.1 - 5) };
+    case 'desaturated':
+      return ((): { r: number; g: number; b: number } => {
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        return { r: clamp(r * 0.4 + gray * 0.6), g: clamp(g * 0.4 + gray * 0.6), b: clamp(b * 0.4 + gray * 0.6) };
+      })();
+    case 'high_contrast':
+      return { r: clamp((r - 128) * 1.5 + 128), g: clamp((g - 128) * 1.5 + 128), b: clamp((b - 128) * 1.5 + 128) };
+    case 'pastel':
+      return { r: clamp(r * 0.7 + 76), g: clamp(g * 0.7 + 76), b: clamp(b * 0.7 + 76) };
+    case 'gold_rush':
+      return { r: clamp(r * 1.15 + 15), g: clamp(g * 1.05 + 5), b: clamp(b * 0.7) };
+    case 'tropical':
+      return { r: clamp(r * 1.05), g: clamp(g * 1.15 + 10), b: clamp(b * 1.1) };
     default:
       return { r, g, b };
   }
+}
+
+/* boost v13 — Helpers vidéo experts pros */
+
+/**
+ * Generate WebVTT subtitle file from caption clips.
+ * Format standard W3C compatible Vimeo / YouTube / HTML5.
+ */
+export function generateWebVtt(clips: readonly VideoClip[]): string {
+  let vtt = 'WEBVTT\n\n';
+  let cursor = 0;
+  for (let i = 0; i < clips.length; i++) {
+    const c = clips[i];
+    if (!c || !c.caption) { cursor += (c?.end ?? 0) - (c?.start ?? 0); continue; }
+    const dur = (c.end - c.start) / Math.max(0.25, c.speed);
+    const start = formatVttTime(cursor);
+    const end = formatVttTime(cursor + dur);
+    vtt += `${i + 1}\n${start} --> ${end}\n${c.caption}\n\n`;
+    cursor += dur;
+  }
+  return vtt;
+}
+
+/**
+ * Generate SRT subtitle file (legacy mais universellement supporté).
+ */
+export function generateSrt(clips: readonly VideoClip[]): string {
+  let srt = '';
+  let cursor = 0;
+  let idx = 1;
+  for (const c of clips) {
+    if (!c.caption) { cursor += (c.end - c.start) / Math.max(0.25, c.speed); continue; }
+    const dur = (c.end - c.start) / Math.max(0.25, c.speed);
+    const start = formatSrtTime(cursor);
+    const end = formatSrtTime(cursor + dur);
+    srt += `${idx}\n${start} --> ${end}\n${c.caption}\n\n`;
+    cursor += dur;
+    idx++;
+  }
+  return srt;
+}
+
+/**
+ * Format secondes → HH:MM:SS.mmm WebVTT.
+ */
+export function formatVttTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds * 1000) % 1000);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+}
+
+/**
+ * Format secondes → HH:MM:SS,mmm SRT (virgule au lieu de point).
+ */
+export function formatSrtTime(seconds: number): string {
+  return formatVttTime(seconds).replace('.', ',');
+}
+
+/**
+ * Calcul du bitrate optimal pour atteindre une taille fichier cible (Mo).
+ */
+export function calcOptimalBitrate(durationSec: number, targetSizeMb: number, audioBitrateKbps = 128): number {
+  if (durationSec <= 0) return 0;
+  const totalBitsBudget = targetSizeMb * 8 * 1024 * 1024;
+  const audioBits = audioBitrateKbps * 1024 * durationSec;
+  const videoBits = totalBitsBudget - audioBits;
+  const videoKbps = Math.max(500, Math.floor(videoBits / durationSec / 1024));
+  return videoKbps;
+}
+
+/**
+ * Suggère preset streaming optimal selon plateforme cible + format.
+ */
+export function suggestStreamingPreset(platform: keyof typeof STREAMING_PRESETS): { codec: string; bitrate: number; resolution: string; fps: number; aspect: string } {
+  return STREAMING_PRESETS[platform] ?? STREAMING_PRESETS.youtube_1080p;
+}
+
+/**
+ * Check si un clip dépasse les limites recommandées (e.g. TikTok < 60s).
+ */
+export function checkPlatformConstraints(durationSec: number, platform: 'tiktok' | 'instagram_reels' | 'youtube_shorts' | 'twitter'): { ok: boolean; maxSec: number; reason?: string } {
+  const limits = { tiktok: 180, instagram_reels: 90, youtube_shorts: 60, twitter: 140 };
+  const max = limits[platform] ?? 600;
+  return {
+    ok: durationSec <= max,
+    maxSec: max,
+    reason: durationSec > max ? `Trop long pour ${platform} (${durationSec}s > ${max}s)` : '',
+  };
+}
+
+/**
+ * Calcule grille rule of thirds pour positionnement watermark / focus.
+ */
+export function calcRuleOfThirds(width: number, height: number): { lines: { x1: number; y1: number; x2: number; y2: number }[]; intersections: { x: number; y: number }[] } {
+  const x1 = width / 3, x2 = (width / 3) * 2;
+  const y1 = height / 3, y2 = (height / 3) * 2;
+  return {
+    lines: [
+      { x1, y1: 0, x2: x1, y2: height },
+      { x1: x2, y1: 0, x2: x2, y2: height },
+      { x1: 0, y1, x2: width, y2: y1 },
+      { x1: 0, y1: y2, x2: width, y2: y2 },
+    ],
+    intersections: [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x1, y: y2 }, { x: x2, y: y2 }],
+  };
 }
 
 /**

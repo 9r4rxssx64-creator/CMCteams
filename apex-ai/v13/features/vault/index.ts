@@ -152,32 +152,42 @@ let activeCategory: CredentialPattern['category'] | 'all' = 'all';
 let configuredOnly = false;
 let searchQuery = '';
 
-function renderEntryRow(e: VaultEntry): string {
+function renderEntryRow(e: VaultEntry, idx = 0): string {
   const meta = STATUS_META[e.status];
+  const linkBase = 'display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);text-decoration:none;border-radius:8px;font-size:11px;font-weight:500;border:1px solid rgba(255,255,255,0.06);transition:all 160ms cubic-bezier(0.16,1,0.3,1)';
   const links = [];
-  if (e.pattern.dashboard) links.push(`<a href="${escapeHtml(e.pattern.dashboard)}" target="_blank" rel="noopener" class="ax-vault-link">📊 Dashboard</a>`);
-  if (e.pattern.billing) links.push(`<a href="${escapeHtml(e.pattern.billing)}" target="_blank" rel="noopener" class="ax-vault-link">💳 Billing</a>`);
-  if (e.pattern.docs) links.push(`<a href="${escapeHtml(e.pattern.docs)}" target="_blank" rel="noopener" class="ax-vault-link">📖 Docs</a>`);
-  if (e.pattern.support) links.push(`<a href="${escapeHtml(e.pattern.support)}" target="_blank" rel="noopener" class="ax-vault-link">🆘 Support</a>`);
+  if (e.pattern.dashboard) links.push(`<a href="${escapeHtml(e.pattern.dashboard)}" target="_blank" rel="noopener" style="${linkBase}">📊 Dashboard</a>`);
+  if (e.pattern.billing) links.push(`<a href="${escapeHtml(e.pattern.billing)}" target="_blank" rel="noopener" style="${linkBase}">💳 Billing</a>`);
+  if (e.pattern.docs) links.push(`<a href="${escapeHtml(e.pattern.docs)}" target="_blank" rel="noopener" style="${linkBase}">📖 Docs</a>`);
+  if (e.pattern.support) links.push(`<a href="${escapeHtml(e.pattern.support)}" target="_blank" rel="noopener" style="${linkBase}">🆘 Support</a>`);
+
+  /* Category color palette for badge */
+  const catColors: Record<string, string> = {
+    ai: '106,138,255', saas: '160,96,255', devops: '34,204,119', finance: '232,184,48',
+    comms: '255,107,157', storage: '79,214,224', identity: '255,170,0',
+  };
+  const catRgb = catColors[e.pattern.category] ?? '160,160,180';
+  const btnBase = 'min-height:36px;padding:8px 12px;font-size:12px;font-weight:600;border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 160ms cubic-bezier(0.16,1,0.3,1);border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85)';
 
   return `
-    <li class="ax-vault-row" data-vault-key="${escapeHtml(e.pattern.storageKey)}"
-      style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:12px;margin-bottom:8px;border-left:3px solid ${escapeHtml(meta.color)}">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="font-size:14px">${meta.icon}</span>
-            <strong style="color:#fff;font-size:14px">${escapeHtml(e.pattern.name)}</strong>
-            <span style="background:rgba(${e.pattern.category === 'ai' ? '90,168,255' : '168,120,255'},.15);color:#a0a4c0;font-size:10px;padding:2px 6px;border-radius:4px;text-transform:uppercase">${escapeHtml(e.pattern.category)}</span>
+    <li class="ax-vault-row ax-modernized-card" data-vault-key="${escapeHtml(e.pattern.storageKey)}"
+      style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:10px;border-left:3px solid ${escapeHtml(meta.color)};animation:ax-fade-up 280ms cubic-bezier(0.16,1,0.3,1) ${30 + idx * 20}ms backwards;transition:all 200ms cubic-bezier(0.16,1,0.3,1)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:18px;filter:drop-shadow(0 2px 4px ${escapeHtml(meta.color)}55)">${meta.icon}</span>
+            <strong style="color:#fff;font-size:14px;letter-spacing:-0.01em">${escapeHtml(e.pattern.name)}</strong>
+            <span style="display:inline-block;background:rgba(${catRgb},0.15);color:rgba(${catRgb},1);font-size:10px;padding:3px 8px;border-radius:24px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;border:1px solid rgba(${catRgb},0.25)">${escapeHtml(e.pattern.category)}</span>
+            <span style="display:inline-block;padding:2px 8px;background:rgba(${meta.color === '#22cc77' ? '34,204,119' : meta.color === '#ffaa00' ? '255,170,0' : '160,160,180'},0.12);color:${escapeHtml(meta.color)};border-radius:24px;font-size:10px;font-weight:700;letter-spacing:0.04em">${escapeHtml(meta.label)}</span>
           </div>
-          <code style="font-size:11px;color:#888;display:block">${escapeHtml(e.pattern.storageKey)}</code>
-          ${e.masked ? `<code style="font-size:12px;color:${escapeHtml(meta.color)};display:block;margin-top:2px">${escapeHtml(e.masked)}</code>` : ''}
-          <div style="margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px">${links.join(' · ')}</div>
+          <code style="font-size:11px;color:rgba(255,255,255,0.4);display:block;font-family:ui-monospace,'SF Mono',Menlo,monospace">${escapeHtml(e.pattern.storageKey)}</code>
+          ${e.masked ? `<code style="font-size:13px;color:${escapeHtml(meta.color)};display:block;margin-top:4px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-weight:600">${escapeHtml(e.masked)}</code>` : ''}
+          ${links.length > 0 ? `<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">${links.join('')}</div>` : ''}
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          ${e.status !== 'empty' ? `<button class="ax-btn ax-btn-sm" data-vault-test="${escapeHtml(e.pattern.storageKey)}" style="font-size:11px">🧪 Tester</button>` : ''}
-          <button class="ax-btn ax-btn-sm" data-vault-edit="${escapeHtml(e.pattern.storageKey)}" style="font-size:11px">${e.status === 'empty' ? '➕ Ajouter' : '✏️ Modifier'}</button>
-          ${e.status !== 'empty' ? `<button class="ax-btn ax-btn-sm ax-btn-danger" data-vault-remove="${escapeHtml(e.pattern.storageKey)}" style="font-size:11px;background:rgba(255,88,88,.15);color:#ff5858">🗑</button>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
+          ${e.status !== 'empty' ? `<button class="ax-bounce-tap" data-vault-test="${escapeHtml(e.pattern.storageKey)}" style="${btnBase}">🧪 Tester</button>` : ''}
+          <button class="ax-bounce-tap" data-vault-edit="${escapeHtml(e.pattern.storageKey)}" style="${btnBase};${e.status === 'empty' ? 'background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border-color:transparent' : ''}">${e.status === 'empty' ? '➕ Ajouter' : '✏️ Modifier'}</button>
+          ${e.status !== 'empty' ? `<button class="ax-bounce-tap" data-vault-remove="${escapeHtml(e.pattern.storageKey)}" style="${btnBase};background:rgba(255,91,91,0.12);color:#ff5b5b;border-color:rgba(255,91,91,0.25)">🗑</button>` : ''}
         </div>
       </div>
     </li>`;
@@ -190,12 +200,15 @@ function renderCategoryFilter(): string {
   ];
   return categories
     .map(
-      (c) => `
-      <button class="ax-vault-cat-btn ${activeCategory === c.id ? 'ax-tab-active' : ''}"
-        data-vault-cat="${escapeHtml(c.id)}"
-        style="background:${activeCategory === c.id ? 'rgba(201,162,39,.15)' : 'transparent'};color:${activeCategory === c.id ? '#c9a227' : '#a0a4c0'};border:1px solid rgba(201,162,39,.3);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer">
-        ${escapeHtml(c.label)}
-      </button>`,
+      (c) => {
+        const isActive = activeCategory === c.id;
+        return `
+        <button class="ax-vault-cat-btn ax-bounce-tap ${isActive ? 'ax-tab-active' : ''}"
+          data-vault-cat="${escapeHtml(c.id)}"
+          style="background:${isActive ? 'linear-gradient(135deg,#c9a227,#e8b830)' : 'rgba(255,255,255,0.04)'};color:${isActive ? '#000' : 'rgba(255,255,255,0.7)'};border:1px solid ${isActive ? 'transparent' : 'rgba(255,255,255,0.08)'};padding:8px 14px;border-radius:24px;font-size:12px;font-weight:${isActive ? '700' : '500'};cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1);white-space:nowrap">
+          ${escapeHtml(c.label)}
+        </button>`;
+      },
     )
     .join('');
 }
@@ -220,52 +233,82 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   };
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <header style="margin-bottom:20px">
-        <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">🔐 Coffre-fort</h1>
-        <p style="color:#a0a4c0;margin:0;font-size:13px">
-          ${stats.configured}/${stats.total} clés configurées · ${stats.encrypted} chiffrées AES-GCM 256
-        </p>
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(232,184,48,0.25) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      }
+      .ax-bounce-tap { transition: transform 120ms cubic-bezier(0.16,1,0.3,1); }
+      .ax-bounce-tap:active { transform: scale(0.95); }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card { animation: none !important; transition: none !important; }
+        .ax-modernized-card:hover { transform: none !important; }
+        .ax-bounce-tap { transition: none !important; }
+      }
+    </style>
+    <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
+        <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">🔐 Coffre-fort</h1>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(34,204,119,0.1);border:1px solid rgba(34,204,119,0.2);border-radius:24px">
+            <span style="width:6px;height:6px;background:#22cc77;border-radius:50%;box-shadow:0 0 8px #22cc77"></span>
+            <span style="color:#22cc77;font-size:12px;font-weight:600">${stats.configured}/${stats.total} configurées</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(232,184,48,0.1);border:1px solid rgba(232,184,48,0.25);border-radius:24px">
+            <span style="font-size:12px">🔐</span>
+            <span style="color:#e8b830;font-size:12px;font-weight:600">${stats.encrypted} chiffrées AES-256</span>
+          </div>
+        </div>
       </header>
 
-      <section style="margin-bottom:16px;background:rgba(20,20,35,0.6);border:1px solid rgba(201,162,39,.2);border-radius:14px;padding:14px">
-        <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">🔍 Auto-detect</h3>
-        <p style="color:#a0a4c0;font-size:12px;margin:0 0 8px">Colle ici n'importe quelle clé API. Apex la reconnait automatiquement et la stocke dans la bonne case.</p>
+      <section class="ax-modernized-card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(232,184,48,0.18);border-radius:16px;padding:18px;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 80ms backwards;transition:all 240ms cubic-bezier(0.16,1,0.3,1)">
+        <h3 style="margin:0 0 8px;font-size:13px;color:#e8b830;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;display:flex;align-items:center;gap:6px">🔍 Auto-détection</h3>
+        <p style="color:rgba(255,255,255,0.6);font-size:13px;margin:0 0 12px;line-height:1.5">Colle ici n'importe quelle clé API. Apex la reconnaît automatiquement et la range au bon endroit.</p>
         <textarea id="ax-vault-paste" placeholder="Colle ta clé ici (ex: sk-ant-api03-..., AIzaSy..., re_...)"
-          style="width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px;font-family:monospace;font-size:12px;min-height:60px;resize:vertical"></textarea>
-        <button id="ax-vault-paste-btn" class="ax-btn ax-btn-primary" style="margin-top:8px;font-size:13px">🔍 Détecter & stocker</button>
-        <div id="ax-vault-paste-result" style="margin-top:8px"></div>
+          style="width:100%;background:rgba(0,0,0,0.35);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:13px;line-height:1.5;min-height:72px;resize:vertical;box-sizing:border-box;-webkit-appearance:none;transition:all 160ms"></textarea>
+        <button id="ax-vault-paste-btn" class="ax-bounce-tap" style="margin-top:10px;padding:12px 22px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 160ms">🔍 Détecter & stocker</button>
+        <div id="ax-vault-paste-result" style="margin-top:10px"></div>
       </section>
 
-      <section style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <section style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 120ms backwards">
         <input id="ax-vault-search" type="text" placeholder="🔍 Filtre par nom/clé..." value="${escapeHtml(searchQuery)}"
-          style="flex:1;min-width:200px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:13px">
-        <label style="display:flex;align-items:center;gap:6px;color:#a0a4c0;font-size:12px;cursor:pointer">
-          <input type="checkbox" id="ax-vault-configured-only" ${configuredOnly ? 'checked' : ''}>
+          style="flex:1;min-width:220px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);color:#fff;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:11px 14px;font-size:14px;min-height:44px;-webkit-appearance:none;transition:all 160ms">
+        <label style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.7);font-size:13px;cursor:pointer;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 160ms">
+          <input type="checkbox" id="ax-vault-configured-only" ${configuredOnly ? 'checked' : ''} style="cursor:pointer;accent-color:#e8b830">
           Configurées uniquement
         </label>
       </section>
 
-      <section style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
+      <section style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 160ms backwards">
         ${renderCategoryFilter()}
       </section>
 
       <section style="margin-bottom:24px">
         <ul style="list-style:none;padding:0;margin:0">
-          ${filtered.length > 0 ? filtered.map(renderEntryRow).join('') : '<li style="text-align:center;padding:30px;color:#888">Aucun credential pour ces filtres.</li>'}
+          ${filtered.length > 0 ? filtered.map((e, i) => renderEntryRow(e, i)).join('') : `
+            <li style="text-align:center;padding:48px 24px;background:linear-gradient(135deg,rgba(20,20,35,0.5),rgba(14,14,28,0.3));border:1px solid rgba(255,255,255,0.06);border-radius:14px">
+              <div style="font-size:32px;opacity:0.5;margin-bottom:10px">🔍</div>
+              <div style="color:rgba(255,255,255,0.6);font-size:14px">Aucun credential pour ces filtres.</div>
+            </li>`}
         </ul>
       </section>
 
-      <section style="background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px;margin-bottom:16px">
-        <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">💾 Backup & Restore</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="ax-vault-export" class="ax-btn ax-btn-sm">📥 Exporter coffre (JSON)</button>
-          <button id="ax-vault-passphrase" class="ax-btn ax-btn-sm">🔑 Changer passphrase</button>
+      <section class="ax-modernized-card" style="background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:18px;transition:all 200ms">
+        <h3 style="margin:0 0 12px;color:#e8b830;font-size:13px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">💾 Backup & Restore</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button id="ax-vault-export" class="ax-bounce-tap" style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;min-height:42px;-webkit-tap-highlight-color:transparent;transition:all 160ms">📥 Exporter coffre (JSON)</button>
+          <button id="ax-vault-passphrase" class="ax-bounce-tap" style="padding:10px 16px;background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;min-height:42px;-webkit-tap-highlight-color:transparent;transition:all 160ms">🔑 Changer passphrase</button>
         </div>
       </section>
 
-      <p style="text-align:center;color:#666;font-size:11px">
-        🛡 Sécurité : AES-GCM 256 + PBKDF2 200k iterations · Audit log immutable · JAMAIS Firebase pour ax_pin/ax_user.
+      <p style="text-align:center;color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.02em;line-height:1.6;padding:16px;background:rgba(255,255,255,0.02);border-radius:12px">
+        🛡 <strong style="color:rgba(255,255,255,0.6)">Sécurité</strong> : AES-GCM 256 + PBKDF2 200k iterations · Audit log immutable<br>
+        <span style="opacity:0.7">JAMAIS Firebase pour ax_pin/ax_user (FB_LOCAL strict)</span>
       </p>
     </div>
   `;

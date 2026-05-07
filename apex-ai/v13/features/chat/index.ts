@@ -31,6 +31,11 @@ interface DisplayMessage {
   text: string;
   ts: number;
   streaming?: boolean;
+  /* P0 Kevin v13.1.0 : pills tool_use discrètes inline pendant streaming.
+     Au lieu de cards massives, on affiche `🔧 [name]` en pill horizontal
+     puis `✅ N opérations` quand done. */
+  toolPills?: { name: string; status: 'running' | 'done' }[];
+  toolBatchCount?: number;
 }
 
 const conversation: DisplayMessage[] = [];
@@ -171,6 +176,24 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     messages,
     buildSystemPrompt(),
     (chunk) => {
+      /* P0 Kevin v13.1.0 : tool_use pills discrètes inline (pas card massive) */
+      if (chunk.type === 'tool_use_start' && chunk.toolName) {
+        if (!assistantMsg.toolPills) assistantMsg.toolPills = [];
+        assistantMsg.toolPills.push({ name: chunk.toolName, status: 'running' });
+        updateAssistantBubble(rootEl, assistantMsg);
+        return;
+      }
+      if (chunk.type === 'tool_use_done') {
+        /* Marque toutes les pills running comme done (batch terminé) */
+        if (assistantMsg.toolPills) {
+          for (const pill of assistantMsg.toolPills) {
+            if (pill.status === 'running') pill.status = 'done';
+          }
+        }
+        assistantMsg.toolBatchCount = (assistantMsg.toolBatchCount ?? 0) + (chunk.toolCount ?? 0);
+        updateAssistantBubble(rootEl, assistantMsg);
+        return;
+      }
       if (chunk.text) {
         assistantMsg.text += chunk.text;
         updateAssistantBubble(rootEl, assistantMsg);
@@ -198,10 +221,46 @@ function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
   renderMessages(rootEl);
 }
 
+/**
+ * Génère le HTML des pills tool_use pour un message.
+ * Pill discret horizontal `🔧 [name]` quand running, `▶ N opérations` quand done.
+ * Style inline minimal (Kevin règle : "pas de card massive").
+ *
+ * Exposé pour tests (anti-XSS + render).
+ */
+export function renderToolPills(msg: DisplayMessage): string {
+  if (!msg.toolPills || msg.toolPills.length === 0) return '';
+  const allDone = msg.toolPills.every((p) => p.status === 'done');
+  const pillStyle =
+    'padding:4px 8px;background:rgba(201,162,39,0.1);border-radius:8px;' +
+    'font-size:11px;color:var(--ax-gold);display:inline-block;margin:4px 4px 4px 0;';
+  /* Si tout terminé → résumé compact "▶ N opérations" repliable */
+  if (allDone) {
+    const count = msg.toolBatchCount ?? msg.toolPills.length;
+    const labels = msg.toolPills.map((p) => escapeHtml(p.name)).join(', ');
+    return (
+      `<details class="ax-tool-pills" style="margin:4px 0;">` +
+      `<summary style="${pillStyle}cursor:pointer;">▶ ${count} opération${count > 1 ? 's' : ''}</summary>` +
+      `<div style="font-size:11px;color:#888;padding:4px 8px;">${labels}</div>` +
+      `</details>`
+    );
+  }
+  /* En cours : pills inline `🔧 [name]` */
+  return msg.toolPills
+    .map((p) => {
+      const icon = p.status === 'running' ? '🔧' : '✅';
+      return `<span class="ax-tool-pill" style="${pillStyle}">${icon} ${escapeHtml(p.name)}</span>`;
+    })
+    .join('');
+}
+
 function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage): void {
   const bubble = rootEl.querySelector(`[data-msg-id="${msg.id}"] .ax-msg-body`);
   if (bubble) {
-    bubble.innerHTML = renderMarkdownLight(msg.text) + (msg.streaming ? '<span class="ax-cursor">▌</span>' : '');
+    bubble.innerHTML =
+      renderToolPills(msg) +
+      renderMarkdownLight(msg.text) +
+      (msg.streaming ? '<span class="ax-cursor">▌</span>' : '');
     /* Auto-scroll smooth */
     const scroll = rootEl.querySelector('.ax-chat-scroll');
     if (scroll) scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
@@ -230,9 +289,10 @@ function renderMessages(rootEl: HTMLElement): void {
           trail = '<span class="ax-cursor">▌</span>';
         }
       }
+      const pills = renderToolPills(m);
       return `
-        <div class="ax-msg ax-msg-${m.role} ax-slide-up-fade" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${renderMarkdownLight(m.text)}${trail}</div>
+        <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
+          <div class="ax-msg-body">${pills}${renderMarkdownLight(m.text)}${trail}</div>
         </div>
       `;
     })
@@ -249,10 +309,110 @@ export function render(rootEl: HTMLElement): void {
   const hasKey = aiRouter.hasAnyKey();
 
   rootEl.innerHTML = `
-    <div class="ax-chat">
+    <style>
+      .ax-chat-header {
+        background: linear-gradient(180deg,rgba(20,20,35,0.95),rgba(14,14,28,0.85));
+        backdrop-filter: blur(20px) saturate(140%);
+        -webkit-backdrop-filter: blur(20px) saturate(140%);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .ax-chat-header h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        background: linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-family: Georgia, serif;
+        letter-spacing: -0.015em;
+      }
+      .ax-chat-header .ax-btn-icon {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.85);
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 12px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 160ms cubic-bezier(0.16,1,0.3,1);
+        -webkit-tap-highlight-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ax-chat-header .ax-btn-icon:hover {
+        background: rgba(232,184,48,0.12);
+        border-color: rgba(232,184,48,0.3);
+        transform: translateY(-1px);
+      }
+      .ax-chat-greeting {
+        text-align: center;
+        padding: 32px 20px 20px;
+        font-size: clamp(20px,4vw,26px);
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
+        font-family: Georgia, serif;
+        letter-spacing: -0.015em;
+        line-height: 1.4;
+        animation: ax-fade-up 480ms cubic-bezier(0.16,1,0.3,1) backwards;
+      }
+      .ax-chat-greeting::after {
+        content: '';
+        display: block;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg,transparent,#e8b830,transparent);
+        margin: 16px auto 0;
+        opacity: 0.6;
+      }
+      .ax-info-card {
+        background: linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(232,184,48,0.18);
+        border-radius: 16px;
+        padding: 20px;
+        animation: ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards;
+      }
+      .ax-info-card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #e8b830;
+        letter-spacing: -0.01em;
+      }
+      .ax-info-card p {
+        margin: 0 0 14px;
+        color: rgba(255,255,255,0.65);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-msg.ax-modernized-msg {
+        animation: ax-fade-up 240ms cubic-bezier(0.16,1,0.3,1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-chat-greeting, .ax-info-card, .ax-modernized-msg { animation: none !important; }
+      }
+    </style>
+    <div class="ax-chat ax-modernized-card">
       <header class="ax-chat-header">
-        <h1>APEX <span style="font-size:0.6em;letter-spacing:1px;color:var(--ax-text-dim)">AI</span></h1>
-        <div style="display:flex;gap:6px;align-items:center">
+        <h1>APEX <span style="font-size:0.55em;letter-spacing:0.15em;color:rgba(255,255,255,0.4);font-weight:400">AI</span></h1>
+        <div style="display:flex;gap:8px;align-items:center">
           <button class="ax-btn ax-btn-icon" id="ax-chat-settings" aria-label="Paramètres" title="Paramètres">⚙️</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
         </div>
@@ -260,10 +420,10 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
         ${!hasKey ? `
-          <div class="ax-info-card" style="margin:16px;">
+          <div class="ax-info-card ax-modernized-card" style="margin:16px;">
             <h3>🔑 Aucune clé API configurée</h3>
-            <p>Pour discuter avec Apex, ajoute une clé API IA. Coller une clé Anthropic, OpenAI, Groq ou Gemini :</p>
-            <button class="ax-btn ax-btn-primary" id="ax-paste-key">📋 Coller une clé API</button>
+            <p>Pour discuter avec Apex, colle une clé API IA. Apex détecte automatiquement Anthropic, OpenAI, Groq ou Gemini.</p>
+            <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:12px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;width:100%;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)">📋 Coller une clé API</button>
           </div>
         ` : ''}
       </div>

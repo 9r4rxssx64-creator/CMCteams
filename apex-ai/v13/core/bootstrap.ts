@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.82';
+export const APP_VER = 'v13.0.83';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -61,6 +61,13 @@ async function bootstrap(): Promise<void> {
     }
   };
 
+  /* Sentry monitoring runtime (audit Kevin v13.1.0 production-grade).
+   * Init AVANT bodyguard pour capturer toute erreur boot.
+   * Lazy-load SDK seulement si DSN configuré dans vault (0 KB overhead sinon). */
+  await safeInit('sentry', async () => {
+    const { sentryBridge } = await import('@services/sentry-bridge.js');
+    await sentryBridge.init();
+  });
   await safeInit('bodyguard', async () => {
     const { bodyguard } = await import('@services/bodyguard.js');
     bodyguard.install();

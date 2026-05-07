@@ -16,6 +16,8 @@
 import { errors } from '../core/errors.js';
 import { logger } from '../core/logger.js';
 
+import { apexToolsDispatch } from './apex-tools-dispatch.js';
+import { apexTools } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
 import { chatFallback } from './chat-fallback.js';
 import { redactMessageContent, redactPII } from './pii-redaction.js';
@@ -28,19 +30,79 @@ export interface ChatMessage {
   content: string | Array<{ type: string; [k: string]: unknown }>;
 }
 
+/**
+ * Stream chunk émis vers UI.
+ * - `text`: texte assistant streaming (par défaut, type non précisé)
+ * - `type: 'tool_use_start'`: début bloc tool_use Anthropic (UI affiche pill 🔧 [name])
+ * - `type: 'tool_use_done'`: tools terminés (UI résume "✅ N opérations")
+ *   `count` = nombre d'outils exécutés dans cette itération
+ */
 export interface StreamChunk {
   text: string;
   done: boolean;
   provider: Provider;
+  type?: 'text' | 'tool_use_start' | 'tool_use_done';
+  toolName?: string;
+  toolCount?: number;
 }
+
+/**
+ * Event normalisé retourné par `parseSSE` : soit du texte, soit un événement tool_use.
+ * Les providers non-Anthropic retournent uniquement `{ kind: 'text' }`.
+ */
+type SSEEvent =
+  | { kind: 'text'; text: string }
+  | { kind: 'tool_use_start'; index: number; id: string; name: string }
+  | { kind: 'tool_use_delta'; index: number; partial_json: string }
+  | { kind: 'content_block_stop'; index: number }
+  | { kind: 'message_delta'; stop_reason: string | null };
 
 interface ProviderConfig {
   endpoint: string;
   keyName: string;
   model: string;
-  buildBody: (messages: ChatMessage[], system: string) => unknown;
-  parseSSE: (data: string) => string | null;
+  buildBody: (messages: ChatMessage[], system: string, opts?: { withTools?: boolean }) => unknown;
+  parseSSE: (data: string) => SSEEvent | null;
   headers: (apiKey: string) => Record<string, string>;
+}
+
+/**
+ * Bloc tool_use Anthropic accumulé pendant le streaming.
+ * Construit progressivement via `content_block_start` + N × `content_block_delta` (input_json_delta) + `content_block_stop`.
+ */
+interface ToolUseAccumulator {
+  index: number;
+  id: string;
+  name: string;
+  inputJson: string;
+}
+
+/**
+ * Résultat d'une itération de stream provider : texte assistant accumulé + tools détectés.
+ */
+interface ProviderStreamResult {
+  assistantText: string;
+  toolUses: Array<{ id: string; name: string; input: Record<string, unknown> }>;
+  stopReason: string | null;
+}
+
+/**
+ * Map provider Apex tier → user.
+ * Détermine quels tools sont injectés dans le body Anthropic.
+ */
+function resolveUserTier(): 'admin' | 'laurence' | 'family' | 'client_pro' | 'client_free' {
+  /* Lecture sync défensive : pas d'import dynamique pour éviter cycle. */
+  try {
+    const raw = localStorage.getItem('apex_v13_user');
+    if (raw) {
+      const parsed = JSON.parse(raw) as { id?: string } | null;
+      if (parsed?.id === 'kdmc_admin') return 'admin';
+      if (parsed?.id === 'laurence_sp') return 'laurence';
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'client_free';
 }
 
 const PROVIDERS: Record<Provider, ProviderConfig> = {
@@ -48,17 +110,118 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     endpoint: 'https://api.anthropic.com/v1/messages',
     keyName: 'ax_anthropic_key',
     model: 'claude-sonnet-4-6',
-    buildBody: (messages, system) => ({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      stream: true,
-      system,
-      messages: messages.filter((m) => m.role !== 'system'),
-    }),
+    buildBody: (messages, system, opts) => {
+      /* P0 wire CRITIQUE Kevin v13.1.0 : injection des 105 tools APEX dans le body
+         Anthropic — sans cela, l'API ne sait pas quels tools existent et Apex
+         hallucine "list_repo_files(...)" en texte au lieu d'émettre un vrai
+         tool_use block. Format Anthropic : { name, description, input_schema }.
+         tool_choice: omis (laissé "auto" par défaut — Claude décide).
+
+         P0 PROMPT CACHE Kevin v13.1.0 (audit) : active `cache_control: ephemeral`
+         sur :
+         - Le bloc system (toujours stable, ~8K tokens system prompt) → 90% baisse coût + 85% TTFT.
+         - Les anciens messages historique conversation (stables, plus relus).
+         Les 2 derniers messages NE sont PAS cachés (mouvants — on cache pas ce qui change).
+         Le minimum Anthropic pour cacher un bloc est 1024 tokens (Sonnet) ou 2048 (Haiku) ;
+         on tag sans condition, l'API ignore silencieusement les blocs trop courts.
+         Doc : https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+         Header `anthropic-beta: prompt-caching-2024-07-31` non requis depuis 2024-09 (GA).
+      */
+      const filteredMessages = messages.filter((m) => m.role !== 'system');
+      /* On cache les messages "anciens" (jusqu'à length-2) seulement s'ils sont stables.
+         Les 2 derniers messages restent en clair (le current user msg + dernière assistant). */
+      const cacheBoundary = Math.max(0, filteredMessages.length - 2);
+      const cachedMessages = filteredMessages.map((m, i) => {
+        if (i < cacheBoundary && typeof m.content === 'string' && m.content.length > 0) {
+          return {
+            role: m.role,
+            content: [
+              {
+                type: 'text',
+                text: m.content,
+                cache_control: { type: 'ephemeral' },
+              },
+            ],
+          };
+        }
+        return m;
+      });
+      const body: Record<string, unknown> = {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        stream: true,
+        /* system bloc structuré + cache_control ephemeral (gain massif sur prompt long stable) */
+        system: [
+          {
+            type: 'text',
+            text: system,
+            cache_control: { type: 'ephemeral' },
+          },
+        ],
+        messages: cachedMessages,
+      };
+      if (opts?.withTools) {
+        const tier = resolveUserTier();
+        const tools = apexTools.toAnthropicFormat(tier);
+        if (tools.length > 0) body['tools'] = tools;
+      }
+      return body;
+    },
     parseSSE: (data) => {
       try {
-        const j = JSON.parse(data) as { type?: string; delta?: { text?: string } };
-        if (j.type === 'content_block_delta' && j.delta?.text) return j.delta.text;
+        const j = JSON.parse(data) as {
+          type?: string;
+          index?: number;
+          delta?: {
+            type?: string;
+            text?: string;
+            partial_json?: string;
+            stop_reason?: string;
+          };
+          content_block?: {
+            type?: string;
+            id?: string;
+            name?: string;
+          };
+        };
+        const t = j.type;
+        if (t === 'content_block_start' && j.content_block) {
+          const cb = j.content_block;
+          if (cb.type === 'tool_use' && typeof cb.id === 'string' && typeof cb.name === 'string') {
+            return {
+              kind: 'tool_use_start',
+              index: j.index ?? 0,
+              id: cb.id,
+              name: cb.name,
+            };
+          }
+          /* content_block_start text → no event (la suite arrive via content_block_delta) */
+          return null;
+        }
+        if (t === 'content_block_delta' && j.delta) {
+          const d = j.delta;
+          if (d.type === 'text_delta' && typeof d.text === 'string') {
+            return { kind: 'text', text: d.text };
+          }
+          if (d.type === 'input_json_delta' && typeof d.partial_json === 'string') {
+            return {
+              kind: 'tool_use_delta',
+              index: j.index ?? 0,
+              partial_json: d.partial_json,
+            };
+          }
+          /* legacy fallback (anciens SDK) — text directement sur delta */
+          if (typeof d.text === 'string') {
+            return { kind: 'text', text: d.text };
+          }
+          return null;
+        }
+        if (t === 'content_block_stop') {
+          return { kind: 'content_block_stop', index: j.index ?? 0 };
+        }
+        if (t === 'message_delta' && j.delta) {
+          return { kind: 'message_delta', stop_reason: j.delta.stop_reason ?? null };
+        }
       } catch {
         /* ignore */
       }
@@ -83,7 +246,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     parseSSE: (data) => {
       try {
         const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
-        return j.choices?.[0]?.delta?.content ?? null;
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
       } catch {
         return null;
       }
@@ -105,7 +269,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     parseSSE: (data) => {
       try {
         const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
-        return j.choices?.[0]?.delta?.content ?? null;
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
       } catch {
         return null;
       }
@@ -129,7 +294,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     parseSSE: (data) => {
       try {
         const j = JSON.parse(data) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-        return j.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+        const text = j.candidates?.[0]?.content?.parts?.[0]?.text;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
       } catch {
         return null;
       }
@@ -148,7 +314,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     parseSSE: (data) => {
       try {
         const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
-        return j.choices?.[0]?.delta?.content ?? null;
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
       } catch {
         return null;
       }
@@ -159,6 +326,18 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     }),
   },
 };
+
+/**
+ * Limite anti-boucle infinie pour le tool_use loop.
+ * Si Claude continue d'appeler des tools après 10 itérations, on coupe.
+ */
+const MAX_TOOL_USE_ITERATIONS = 10;
+
+/**
+ * Providers qui supportent l'injection de tools côté API.
+ * Pour les autres, on stream du texte sans tools (compat fallback chain).
+ */
+const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropic']);
 
 const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openrouter', 'groq', 'gemini', 'openclaw'];
 
@@ -233,7 +412,6 @@ class AIRouter {
     /* Wire ai-routing-policy : policy.decide() respecte mode (auto/economy/premium/forced)
      * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
     const chain = await this.buildPolicyAwareChain(messages);
-    let lastErr: Error | null = null;
 
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
     const inputTokensEstimate = Math.ceil(
@@ -247,30 +425,113 @@ class AIRouter {
       onChunk(chunk);
     };
 
-    for (const provider of chain) {
-      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos) */
-      const key = await this.getApiKeyDecrypted(provider);
-      if (!key && provider !== 'gemini') continue;
-      try {
-        await this.streamFromProvider(provider, key, redactedMessages, system, wrappedOnChunk, ctrl.signal);
+    /* P0 wire CRITIQUE Kevin v13.1.0 : tool_use loop.
+       Boucle jusqu'à 10 itérations max — Claude peut chaîner tools (ex:
+       list_repo_files puis read_repo_file puis edit_file). À chaque iter :
+       1. Stream le provider (avec tools si Anthropic)
+       2. Si tool_uses détectés → exécute via apexToolsDispatch + ajoute aux messages
+       3. Si pas de tool_use → end_turn, sortie boucle */
+    const currentMessages: ChatMessage[] = [...redactedMessages];
+    let lastErr: Error | null = null;
+    let lastProvider: Provider = 'anthropic';
+
+    for (let iter = 0; iter < MAX_TOOL_USE_ITERATIONS; iter++) {
+      const result = await this.streamWithFailover(
+        chain,
+        currentMessages,
+        system,
+        wrappedOnChunk,
+        ctrl.signal,
+      );
+
+      if (result.status === 'aborted') {
         this.currentAbort = null;
-        /* WIRE tokens-dashboard : enregistre conso après stream succès */
-        const modelName = this.getModelKey(provider);
-        tokensDashboard.record(provider, inputTokensEstimate, outputTokensEstimate, modelName);
-        return; /* succès */
-      } catch (err: unknown) {
-        const e = err instanceof Error ? err : new Error(String(err));
-        if (e.name === 'AbortError') {
-          this.currentAbort = null;
-          return;
-        }
-        lastErr = e;
-        logger.warn('ai-router', `${provider} failed, trying next`, { err: e.message });
+        return;
       }
+      if (result.status === 'error') {
+        lastErr = result.error;
+        break; /* failover épuisé, sortie boucle pour fallback */
+      }
+
+      lastProvider = result.provider;
+
+      /* WIRE tokens-dashboard : enregistre conso après stream succès */
+      const modelName = this.getModelKey(result.provider);
+      tokensDashboard.record(result.provider, inputTokensEstimate, outputTokensEstimate, modelName);
+
+      /* Si pas de tool_use, c'est terminé — émet done final + sortie. */
+      if (result.streamResult.toolUses.length === 0) {
+        this.currentAbort = null;
+        wrappedOnChunk({ text: '', done: true, provider: result.provider });
+        return;
+      }
+
+      /* Provider non-Anthropic ne supporte pas les tools — sortie même si stop_reason
+         indique tool_use (ne devrait pas arriver, défense en profondeur). */
+      if (!PROVIDERS_WITH_TOOLS.has(result.provider)) {
+        logger.warn('ai-router', 'tool_use ignoré : provider non supporté', { provider: result.provider });
+        this.currentAbort = null;
+        wrappedOnChunk({ text: '', done: true, provider: result.provider });
+        return;
+      }
+
+      /* Exécute les tools en parallèle, accumule assistant+tools dans messages */
+      const assistantContent: Array<{ type: string; [k: string]: unknown }> = [];
+      if (result.streamResult.assistantText) {
+        assistantContent.push({ type: 'text', text: result.streamResult.assistantText });
+      }
+      for (const tu of result.streamResult.toolUses) {
+        assistantContent.push({ type: 'tool_use', id: tu.id, name: tu.name, input: tu.input });
+      }
+      currentMessages.push({ role: 'assistant', content: assistantContent });
+
+      const toolResults = await Promise.all(
+        result.streamResult.toolUses.map(async (tu) => {
+          const tier = resolveUserTier();
+          try {
+            const exec = await apexToolsDispatch.execute(tu.name, tu.input, tier);
+            const content = exec.ok
+              ? JSON.stringify(exec.result ?? null)
+              : `Error: ${exec.error ?? 'Tool execution failed'}`;
+            return {
+              type: 'tool_result' as const,
+              tool_use_id: tu.id,
+              content,
+              is_error: !exec.ok,
+            };
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'unknown';
+            return {
+              type: 'tool_result' as const,
+              tool_use_id: tu.id,
+              content: `Error: ${msg}`,
+              is_error: true,
+            };
+          }
+        }),
+      );
+      currentMessages.push({ role: 'user', content: toolResults });
+
+      /* Notify UI que le batch de tools est terminé */
+      wrappedOnChunk({
+        text: '',
+        done: false,
+        provider: result.provider,
+        type: 'tool_use_done',
+        toolCount: result.streamResult.toolUses.length,
+      });
+    }
+
+    /* Sortie naturelle : tool_use loop terminée OU failover échoué */
+    if (!lastErr) {
+      /* Loop terminée par succès ou MAX_ITER atteint — final done chunk */
+      this.currentAbort = null;
+      wrappedOnChunk({ text: '', done: true, provider: lastProvider });
+      return;
     }
 
     this.currentAbort = null;
-    const finalErr = lastErr ?? new Error('Tous les providers IA indisponibles');
+    const finalErr = lastErr;
     errors.capture(finalErr);
 
     /* WIRE chat-fallback : génère réponse actionnable au lieu de message vide
@@ -285,6 +546,42 @@ class AIRouter {
     onChunk({ text: fallback.text, done: false, provider: 'anthropic' });
     onChunk({ text: '', done: true, provider: 'anthropic' });
     onError?.(new Error(errors.toUserMessage(finalErr)));
+  }
+
+  /**
+   * Exécute UNE itération du failover : essaie chaque provider de la chain
+   * jusqu'à un succès. Retourne le résultat structuré (texte + tools).
+   * - aborted=true si AbortError reçu
+   * - error=Error si tous providers ont échoué
+   * - sinon { streamResult, provider }
+   */
+  private async streamWithFailover(
+    chain: readonly Provider[],
+    messages: ChatMessage[],
+    system: string,
+    onChunk: (chunk: StreamChunk) => void,
+    signal: AbortSignal,
+  ): Promise<
+    | { status: 'aborted' }
+    | { status: 'error'; error: Error }
+    | { status: 'ok'; streamResult: ProviderStreamResult; provider: Provider }
+  > {
+    let lastErr: Error | null = null;
+    for (const provider of chain) {
+      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos) */
+      const key = await this.getApiKeyDecrypted(provider);
+      if (!key && provider !== 'gemini') continue;
+      try {
+        const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
+        return { status: 'ok', streamResult, provider };
+      } catch (err: unknown) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        if (e.name === 'AbortError') return { status: 'aborted' };
+        lastErr = e;
+        logger.warn('ai-router', `${provider} failed, trying next`, { err: e.message });
+      }
+    }
+    return { status: 'error', error: lastErr ?? new Error('Tous les providers IA indisponibles') };
   }
 
   /**
@@ -388,6 +685,13 @@ class AIRouter {
     }
   }
 
+  /**
+   * Stream une seule itération provider : émet text chunks + accumule tool_uses.
+   * Retourne ProviderStreamResult avec assistantText accumulé + tool_uses détectés.
+   *
+   * Note : NE émet PAS de chunk `done: true` final — c'est le rôle de la boucle
+   * stream() qui orchestre tool_use loop. Si tools, on continue ; sinon, done.
+   */
   private async streamFromProvider(
     provider: Provider,
     apiKey: string,
@@ -395,14 +699,15 @@ class AIRouter {
     system: string,
     onChunk: (chunk: StreamChunk) => void,
     signal: AbortSignal,
-  ): Promise<void> {
+  ): Promise<ProviderStreamResult> {
     const cfg = PROVIDERS[provider];
     /* P0-2 fix : Gemini key DANS le header (déjà ci-dessus), URL ne contient QUE alt=sse */
     const url = provider === 'gemini' ? `${cfg.endpoint}?alt=sse` : cfg.endpoint;
+    const withTools = PROVIDERS_WITH_TOOLS.has(provider);
     const res = await fetch(url, {
       method: 'POST',
       headers: cfg.headers(apiKey),
-      body: JSON.stringify(cfg.buildBody(messages, system)),
+      body: JSON.stringify(cfg.buildBody(messages, system, { withTools })),
       signal,
     });
     if (!res.ok) throw new Error(`${provider} HTTP ${res.status}`);
@@ -412,7 +717,35 @@ class AIRouter {
     const decoder = new TextDecoder();
     let buffer = '';
 
-     
+    /* Accumulateurs pour result final */
+    let assistantText = '';
+    const toolAccumulators = new Map<number, ToolUseAccumulator>();
+    const completedToolUses: Array<{ id: string; name: string; input: Record<string, unknown> }> = [];
+    let stopReason: string | null = null;
+
+    const finalizeBlock = (index: number): void => {
+      const acc = toolAccumulators.get(index);
+      if (!acc) return;
+      let parsed: Record<string, unknown> = {};
+      if (acc.inputJson.length > 0) {
+        try {
+          const v = JSON.parse(acc.inputJson) as unknown;
+          if (v && typeof v === 'object' && !Array.isArray(v)) {
+            parsed = v as Record<string, unknown>;
+          }
+        } catch {
+          /* JSON malformé du modèle — log mais continue avec input vide
+             (Apex tools dispatch reçoit {} et peut renvoyer une erreur claire) */
+          logger.warn('ai-router', 'tool_use input JSON parse failed', {
+            tool: acc.name,
+            json: acc.inputJson.slice(0, 200),
+          });
+        }
+      }
+      completedToolUses.push({ id: acc.id, name: acc.name, input: parsed });
+      toolAccumulators.delete(index);
+    };
+
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -424,15 +757,52 @@ class AIRouter {
         if (!line || !line.startsWith('data:')) continue;
         const data = line.slice(5).trim();
         if (data === '[DONE]') {
-          onChunk({ text: '', done: true, provider });
-          return;
+          /* Pas de done chunk ici — la boucle stream() gère la finalisation */
+          return { assistantText, toolUses: completedToolUses, stopReason };
         }
-        const text = cfg.parseSSE(data);
-        if (text) onChunk({ text, done: false, provider });
+        const ev = cfg.parseSSE(data);
+        if (!ev) continue;
+
+        switch (ev.kind) {
+          case 'text':
+            assistantText += ev.text;
+            onChunk({ text: ev.text, done: false, provider, type: 'text' });
+            break;
+          case 'tool_use_start':
+            toolAccumulators.set(ev.index, {
+              index: ev.index,
+              id: ev.id,
+              name: ev.name,
+              inputJson: '',
+            });
+            /* UI : pill 🔧 [name] discrète */
+            onChunk({
+              text: '',
+              done: false,
+              provider,
+              type: 'tool_use_start',
+              toolName: ev.name,
+            });
+            break;
+          case 'tool_use_delta': {
+            const acc = toolAccumulators.get(ev.index);
+            if (acc) acc.inputJson += ev.partial_json;
+            break;
+          }
+          case 'content_block_stop':
+            finalizeBlock(ev.index);
+            break;
+          case 'message_delta':
+            if (ev.stop_reason !== null) stopReason = ev.stop_reason;
+            break;
+          default:
+            break;
+        }
       }
     }
-     
-    onChunk({ text: '', done: true, provider });
+
+    /* Stream terminé sans [DONE] explicite (ex: providers OpenAI-compat) */
+    return { assistantText, toolUses: completedToolUses, stopReason };
   }
 }
 

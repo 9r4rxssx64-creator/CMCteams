@@ -230,6 +230,27 @@ export const AX_LEGAL_FR = {
       texte: 'Monsieur le Procureur,\n\nJe sollicite l\'établissement d\'un jugement supplétif d\'acte de naissance pour [prénom] né(e) le [date] à [lieu].\n\nLa déclaration n\'a pas été faite dans les 5 jours pour les raisons suivantes : [motif].',
       ref_legales: 'Art 55 Code civil',
     },
+    /* boost v13 — 20 templates supplémentaires */
+    demande_attestation_employeur: { titre: 'Demande attestation employeur', destinataire: 'Employeur', texte: 'Madame, Monsieur,\n\nJe vous prie de me délivrer une attestation de [emploi/salaire/présence] précisant mon poste, mon ancienneté et mon salaire actuel.\n\nDocument nécessaire pour [motif].\n\nCordialement.', ref_legales: 'Art L3243-2 Code du travail' },
+    demande_lettre_recommandation: { titre: 'Demande lettre de recommandation', destinataire: 'Ancien employeur', texte: 'Madame, Monsieur,\n\nDans le cadre de ma recherche [d\'emploi / d\'études], je souhaiterais une lettre de recommandation de votre part qui mette en avant les compétences acquises pendant mon poste de [poste].\n\nMerci d\'avance.', ref_legales: '' },
+    relance_facture: { titre: 'Relance facture impayée', destinataire: 'Client', texte: 'Madame, Monsieur,\n\nNotre facture n°[numéro] du [date] d\'un montant de [montant] euros est échue depuis le [date].\n\nNous vous prions de bien vouloir procéder au règlement sous 8 jours.\n\nÀ défaut, nous serons contraints d\'engager une procédure de recouvrement (Art L441-10 Code commerce, intérêts moratoires + indemnité forfaitaire 40€).\n\nCordialement.', ref_legales: 'Art L441-10 Code de commerce' },
+    contestation_pension_alimentaire: { titre: 'Demande révision pension alimentaire', destinataire: 'JAF', texte: 'Monsieur le Juge aux Affaires Familiales,\n\nJe sollicite la révision de la pension alimentaire fixée par jugement du [date], en raison de : [changement situation : perte emploi / nouveau enfant / etc].\n\nMes ressources actuelles : [détails].\n\nMerci de bien vouloir convoquer les parties.', ref_legales: 'Art 373-2-13 Code civil' },
+    demande_aide_juridictionnelle: { titre: 'Demande aide juridictionnelle', destinataire: 'BAJ Bureau Aide Juridictionnelle', texte: 'Madame, Monsieur,\n\nJe sollicite le bénéfice de l\'aide juridictionnelle [totale / partielle] pour la procédure suivante : [type].\n\nMes revenus mensuels : [montant] euros (joint avis imposition).\n\nMerci de bien vouloir traiter ma demande.', ref_legales: 'Loi 91-647 du 10/07/1991' },
+    contestation_tarif_artisan: { titre: 'Contestation devis travaux', destinataire: 'Artisan', texte: 'Madame, Monsieur,\n\nSuite à votre devis n°[numéro] du [date], je conteste le montant facturé pour : [motifs].\n\nConformément aux articles L111-1 et s. du Code de la consommation, je demande [reduction / annulation / regularisation].\n\nÀ défaut de réponse sous 15 jours, je saisirai le médiateur de la consommation.', ref_legales: 'Art L111-1 Code de la consommation' },
+    declaration_main_levee_hypotheque: { titre: 'Demande mainlevée hypothèque', destinataire: 'Notaire', texte: 'Maître,\n\nJe sollicite la mainlevée de l\'hypothèque inscrite sur mon bien sis [adresse], suite au remboursement intégral de mon prêt n°[numéro] le [date].\n\nMerci de procéder aux démarches de radiation auprès du Service de Publicité Foncière.', ref_legales: 'Art 2440 Code civil' },
+    demande_certificat_hospitalier: { titre: 'Demande certificat médical hospitalier', destinataire: 'Médecin chef de service', texte: 'Docteur,\n\nJe sollicite la délivrance d\'un certificat médical détaillé concernant mon hospitalisation du [date début] au [date fin] dans votre service.\n\nDocument nécessaire pour : [motif].\n\nCordialement.', ref_legales: 'Art L1111-7 Code santé publique' },
+    contestation_pv_stationnement: { titre: 'Contestation PV stationnement (FPS)', destinataire: 'CCSP / Commission contentieux', texte: 'Madame, Monsieur,\n\nJe conteste le forfait de post-stationnement n°[numéro] du [date] à [lieu] pour les raisons suivantes : [motifs : stationnement payé / panneau invisible / véhicule revendu / etc].\n\nJe joins toutes les pièces justificatives.\n\nMerci de bien vouloir annuler ce FPS.', ref_legales: 'Art L2333-87 CGCT' },
+    declaration_grossesse_employeur: { titre: 'Déclaration grossesse à employeur', destinataire: 'Employeur', texte: 'Madame, Monsieur,\n\nJe vous informe de mon état de grossesse, attesté par certificat médical en pièce jointe.\n\nDate présumée d\'accouchement : [date].\n\nJe bénéficie des protections prévues aux articles L1225-1 et suivants du Code du travail (interdiction licenciement, aménagements horaires, congé maternité 16 semaines).', ref_legales: 'Art L1225-1 et s. Code du travail' },
+    demande_dossier_medical: { titre: 'Demande accès dossier médical', destinataire: 'Hôpital / Médecin', texte: 'Madame, Monsieur,\n\nConformément à l\'article L1111-7 du Code de la santé publique, je sollicite la communication d\'une copie de mon dossier médical complet.\n\nDélai légal : 8 jours (1 mois si dossier ancien > 5 ans).\n\nJe joins copie ma pièce d\'identité.', ref_legales: 'Art L1111-7 Code santé publique' },
+    declaration_changement_nom: { titre: 'Demande changement de nom', destinataire: 'Mairie de naissance', texte: 'Madame, Monsieur,\n\nConformément à la loi du 2 mars 2022, je sollicite mon changement de nom de famille de [nom actuel] à [nom souhaité]. Motif : [adoption nom parent / mariage / autre].\n\nMerci de procéder à la modification.', ref_legales: 'Loi 2022-301 Art 61-3-1 Code civil' },
+    rupture_pacs: { titre: 'Rupture PACS unilatérale', destinataire: 'Mairie / Notaire', texte: 'Madame, Monsieur,\n\nJe vous notifie ma volonté de rupture unilatérale du PACS n°[numéro] enregistré le [date].\n\nMerci d\'enregistrer la dissolution.\n\nJe vais notifier mon partenaire par huissier conformément à l\'article 515-7 du Code civil.', ref_legales: 'Art 515-7 Code civil' },
+    demande_succession_partage: { titre: 'Demande partage succession', destinataire: 'Notaire', texte: 'Maître,\n\nDans le cadre de la succession de [défunt] décédé(e) le [date], je sollicite l\'ouverture de la procédure de partage entre les héritiers.\n\nLes biens à partager sont : [liste].\n\nMerci de convoquer une réunion.', ref_legales: 'Art 815 Code civil' },
+    demande_residence_assignment: { titre: 'Demande titre de séjour', destinataire: 'Préfecture', texte: 'Monsieur le Préfet,\n\nJe sollicite la délivrance d\'un titre de séjour [type : salarié / étudiant / vie privée et familiale / etc].\n\nJe joins l\'ensemble des pièces justificatives.\n\nDate d\'entrée en France : [date].', ref_legales: 'Art L313-1 et s. CESEDA' },
+    contestation_cna: { titre: 'Recours CNDA (asile)', destinataire: 'CNDA', texte: 'Madame, Monsieur,\n\nJe forme recours contre la décision OFPRA du [date] m\'ayant refusé le statut de réfugié pour les raisons suivantes : [arguments].\n\nJe joins tous éléments nouveaux à l\'appui.', ref_legales: 'Art L731-1 CESEDA' },
+    demande_carte_grise: { titre: 'Demande certificat immatriculation', destinataire: 'ANTS', texte: 'Madame, Monsieur,\n\nJe sollicite l\'immatriculation du véhicule [marque/modèle/n° série] suite à [achat / héritage / changement].\n\nJe joins : carte grise vendeur, certificat cession, contrôle technique, attestation assurance.', ref_legales: 'Art R322-1 Code route' },
+    declaration_perte_documents: { titre: 'Déclaration perte papiers', destinataire: 'Mairie / Police', texte: 'Madame, Monsieur,\n\nJe déclare la perte du document suivant : [type : CNI / passeport / permis / carte vitale].\n\nDate présumée perte : [date].\n\nLieu : [lieu].\n\nMerci de me délivrer un récépissé de déclaration.', ref_legales: '' },
+    procuration_administrative: { titre: 'Procuration administrative', destinataire: 'Tiers', texte: 'Je soussigné(e) [nom prénom] né(e) le [date] à [lieu], domicilié(e) [adresse], donne procuration à [nom mandataire] pour [démarches précises].\n\nValidité : [durée].\n\nFait à [lieu], le [date]. Signature.', ref_legales: 'Art 1984 Code civil' },
+    demande_dette_publique: { titre: 'Demande remise gracieuse impôts', destinataire: 'Trésor Public', texte: 'Madame, Monsieur le Trésorier,\n\nJe sollicite une remise gracieuse [totale / partielle] de l\'impôt n°[numéro] d\'un montant de [montant] euros.\n\nMotifs : [perte emploi / maladie / surendettement / précarité financière].\n\nMes ressources actuelles : [montant].\n\nJoint avis imposition + justificatifs.', ref_legales: 'Art L247 LPF' },
   } as Record<string, TemplateLettre>,
 } as const;
  
@@ -313,8 +334,76 @@ export function calcInteretsMoratoires(
   jours_retard: number,
   taux_annuel: number = 0.0697
 ): number {
-   
+
   return Math.round((capital * taux_annuel * jours_retard) / 365);
+}
+
+/* boost v13 — Helpers legal experts supplementaires */
+
+/**
+ * Calcul congés payés acquis (Art L3141-3 Code travail).
+ * 2.5 jours ouvrables / mois travaillé (max 30 jours/an).
+ */
+export function calcConcesPaies(mois_travailes: number): { jours_ouvrables: number; semaines_equivalent: number } {
+  const jours = Math.min(30, mois_travailes * 2.5);
+  return {
+    jours_ouvrables: Math.round(jours * 10) / 10,
+    semaines_equivalent: Math.round((jours / 6) * 10) / 10,
+  };
+}
+
+/**
+ * Calcul prescription civile / pénale.
+ * Civil : 5 ans (Art 2224). Pénal : 1 an contraventions, 6 ans délits, 20 ans crimes.
+ */
+export function calcPrescription(date_fait: string, type: 'civil' | 'contravention' | 'delit' | 'crime'): { date_fait: string; date_prescription: string; jours_restants: number } {
+  const ans = { civil: 5, contravention: 1, delit: 6, crime: 20 };
+  const d = new Date(date_fait);
+  d.setFullYear(d.getFullYear() + (ans[type] || 5));
+  const dateP = d.toISOString().slice(0, 10);
+  const restants = Math.max(0, Math.floor((d.getTime() - Date.now()) / (86400000)));
+  return { date_fait, date_prescription: dateP, jours_restants: restants };
+}
+
+/**
+ * Calcul délai préavis légal CDI (Art L1234-1 Code travail).
+ */
+export function calcPreavisCdi(anciennete_mois: number): { duree_mois: number; description: string } {
+  if (anciennete_mois < 6) return { duree_mois: 0, description: 'Pas de préavis légal (< 6 mois)' };
+  if (anciennete_mois < 24) return { duree_mois: 1, description: '1 mois (entre 6 mois et 2 ans)' };
+  return { duree_mois: 2, description: '2 mois (≥ 2 ans)' };
+}
+
+/**
+ * Recherche template par mot-clé.
+ */
+export function searchTemplates(query: string): Array<{ key: string; titre: string; destinataire: string }> {
+  const q = query.toLowerCase().trim();
+  if (!q) return Object.keys(AX_LEGAL_FR.templates).map((k) => ({ key: k, titre: AX_LEGAL_FR.templates[k]?.titre ?? '', destinataire: AX_LEGAL_FR.templates[k]?.destinataire ?? '' }));
+  return Object.keys(AX_LEGAL_FR.templates)
+    .filter((k) => {
+      const t = AX_LEGAL_FR.templates[k];
+      if (!t) return false;
+      return k.includes(q) || t.titre.toLowerCase().includes(q) || (t.ref_legales ?? '').toLowerCase().includes(q);
+    })
+    .map((k) => ({ key: k, titre: AX_LEGAL_FR.templates[k]?.titre ?? '', destinataire: AX_LEGAL_FR.templates[k]?.destinataire ?? '' }));
+}
+
+/**
+ * Liste templates par destinataire.
+ */
+export function listTemplatesByDestinataire(destinataire: string): Array<{ key: string; titre: string }> {
+  const d = destinataire.toLowerCase();
+  return Object.keys(AX_LEGAL_FR.templates)
+    .filter((k) => (AX_LEGAL_FR.templates[k]?.destinataire ?? '').toLowerCase().includes(d))
+    .map((k) => ({ key: k, titre: AX_LEGAL_FR.templates[k]?.titre ?? '' }));
+}
+
+/**
+ * Compte tous les templates disponibles.
+ */
+export function countTemplates(): number {
+  return Object.keys(AX_LEGAL_FR.templates).length;
 }
 
 /**

@@ -225,12 +225,18 @@ function renderTabs(): string {
     ['bilan', '📊 Bilan'],
     ['consumption', '💰 Conso IA'],
   ];
-  /* v13.0.81 fix Kevin "icônes superposées texte" iPhone : flex-shrink:0 + nowrap + min-width 44px */
+  /* Premium tabs : pill design with gold gradient on active + smooth transition + 44px touch */
   return tabs
     .map(
-      ([id, label]) => `
-      <button class="ax-tab ${activeTab === id ? 'ax-tab-active' : ''}" data-tab="${id}" style="flex-shrink:0;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;border-radius:10px;cursor:pointer">${label}</button>
-    `,
+      ([id, label]) => {
+        const isActive = activeTab === id;
+        const baseStyle = 'flex-shrink:0;white-space:nowrap;min-height:44px;padding:10px 16px;font-size:13px;border-radius:24px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em';
+        const activeStyle = 'background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
+        const inactiveStyle = 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.08)';
+        return `
+        <button class="ax-tab ax-bounce-tap ${isActive ? 'ax-tab-active' : ''}" data-tab="${id}" style="${baseStyle};${isActive ? activeStyle : inactiveStyle}">${label}</button>
+      `;
+      },
     )
     .join('');
 }
@@ -692,12 +698,65 @@ export function render(rootEl: HTMLElement): void {
   }
 
   rootEl.innerHTML = `
-    <div class="ax-admin">
-      <header class="ax-admin-header">
-        <h1>Centre Admin</h1>
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat">← Chat</button>
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card { animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards; }
+      .ax-bounce-tap { transition: transform 120ms cubic-bezier(0.16,1,0.3,1); }
+      .ax-bounce-tap:active { transform: scale(0.96); }
+      .ax-admin-content .ax-admin-section {
+        background: linear-gradient(135deg, rgba(20,20,35,0.65), rgba(14,14,28,0.45));
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 60ms backwards;
+      }
+      .ax-admin-content h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.015em;
+      }
+      .ax-admin-content h3 {
+        margin: 14px 0 8px;
+        font-size: 13px;
+        color: #e8b830;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+      }
+      .ax-admin-content .ax-info-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+      }
+      .ax-admin-content .ax-muted {
+        color: rgba(255,255,255,0.55);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card, .ax-admin-section { animation: none !important; transition: none !important; }
+        .ax-bounce-tap { transition: none !important; }
+      }
+    </style>
+    <div class="ax-admin ax-modernized-card" style="padding:20px 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10;flex-wrap:wrap">
+        <div>
+          <h1 style="margin:0;font-size:clamp(24px,4vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">👑 Centre Admin</h1>
+          <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:12px">Kevin · accès illimité</p>
+        </div>
+        <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="padding:9px 18px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms">← Chat</button>
       </header>
-      <nav class="ax-tabs" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px;border-bottom:1px solid var(--ax-border);scrollbar-width:thin">${renderTabs()}</nav>
+      <nav class="ax-tabs" style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>
     </div>
   `;
