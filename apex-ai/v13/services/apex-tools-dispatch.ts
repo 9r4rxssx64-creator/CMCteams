@@ -1378,6 +1378,53 @@ class ApexToolsDispatcher {
         const r = await broadlinkBridge.sendIR(deviceId, irHex);
         return r;
       }
+      /* v13.3.52 — IoT multi-providers framework (Kevin 2026-05-07) */
+      case 'install_iot_provider': {
+        const { iotRegistry } = await import('./iot-providers-registry.js');
+        const providerId = typeof params['provider_id'] === 'string' ? params['provider_id'] : '';
+        const credsRaw = params['credentials'];
+        const credentials =
+          credsRaw && typeof credsRaw === 'object' && !Array.isArray(credsRaw)
+            ? (credsRaw as Record<string, string>)
+            : {};
+        const region = typeof params['region'] === 'string' ? params['region'] : undefined;
+        if (!providerId || Object.keys(credentials).length === 0) {
+          return { ok: false, error: 'provider_id + credentials requis' };
+        }
+        const installInput = region
+          ? { provider_id: providerId, credentials, region }
+          : { provider_id: providerId, credentials };
+        const r = await iotRegistry.configureProvider(installInput);
+        return r;
+      }
+      case 'iot_list_devices': {
+        const { iotRegistry } = await import('./iot-providers-registry.js');
+        const providerId = typeof params['provider_id'] === 'string' ? params['provider_id'] : '';
+        const devices = providerId
+          ? await iotRegistry.listDevicesFor(providerId)
+          : await iotRegistry.listAllDevices();
+        return { ok: true, count: devices.length, devices };
+      }
+      case 'iot_send_command': {
+        const { iotRegistry } = await import('./iot-providers-registry.js');
+        const providerId = typeof params['provider_id'] === 'string' ? params['provider_id'] : '';
+        const deviceId = typeof params['device_id'] === 'string' ? params['device_id'] : '';
+        const cmdRaw = params['command'];
+        const command =
+          cmdRaw && typeof cmdRaw === 'object' && !Array.isArray(cmdRaw)
+            ? (cmdRaw as Record<string, unknown>)
+            : {};
+        if (!providerId || !deviceId) return { ok: false, error: 'provider_id + device_id requis' };
+        const r = await iotRegistry.sendCommand(providerId, deviceId, command);
+        return r;
+      }
+      case 'iot_test_provider': {
+        const { iotRegistry } = await import('./iot-providers-registry.js');
+        const providerId = typeof params['provider_id'] === 'string' ? params['provider_id'] : '';
+        if (!providerId) return { ok: false, error: 'provider_id requis' };
+        const r = await iotRegistry.testConnection(providerId);
+        return r;
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

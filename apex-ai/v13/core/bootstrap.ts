@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.51';
+export const APP_VER = 'v13.3.52';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -277,6 +277,8 @@ async function bootstrap(): Promise<void> {
   router.register('voice-bio', { loader: () => import('@features/voice-bio/index.js'), requiresAuth: true });
   /* v13.3.51 Kevin 2026-05-07 — Broadlink Setup (vision device + IR control) */
   router.register('broadlink-setup', { loader: () => import('@features/broadlink-setup/index.js'), requiresAdmin: true });
+  /* v13.3.52 Kevin 2026-05-07 — IoT Providers framework (eWeLink/Tuya/Hue/Sonos/HA + custom) */
+  router.register('iot-providers', { loader: () => import('@features/iot-providers/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
