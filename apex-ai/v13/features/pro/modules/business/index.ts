@@ -274,6 +274,109 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
+/* boost v13 — Frameworks analyse strategique additionnels */
+
+export interface PorterForce {
+  name: string;
+  description: string;
+  factors: readonly string[];
+  weight: number;
+}
+
+/**
+ * Porter 5 Forces - analyse competitive.
+ */
+export const PORTER_FIVE_FORCES: readonly PorterForce[] = [
+  { name: 'Concurrence interne', description: 'Intensite de la rivalite entre concurrents existants', factors: ['Nombre concurrents', 'Croissance marche', 'Couts fixes', 'Differenciation', 'Barrieres sortie'], weight: 0.25 },
+  { name: 'Menace nouveaux entrants', description: 'Probabilite d\'arrivee de nouveaux concurrents', factors: ['Barrieres entree', 'Economies d\'echelle', 'Capital requis', 'Acces canaux', 'Brevets'], weight: 0.20 },
+  { name: 'Pouvoir fournisseurs', description: 'Capacite des fournisseurs a imposer leurs conditions', factors: ['Concentration', 'Cout switching', 'Differenciation input', 'Importance volume'], weight: 0.20 },
+  { name: 'Pouvoir clients', description: 'Capacite des clients a negocier', factors: ['Concentration', 'Volume achete', 'Standardisation', 'Cout switching', 'Information'], weight: 0.20 },
+  { name: 'Menace substituts', description: 'Produits/services alternatifs', factors: ['Performance relative', 'Cout switching', 'Propension a substituer'], weight: 0.15 },
+];
+
+/**
+ * PESTEL - analyse macro-environnement.
+ */
+export const PESTEL_FACTORS = {
+  political: ['Politique fiscale', 'Stabilite gouvernementale', 'Reglementations sectorielles', 'Politique commerce international', 'Subventions'],
+  economic: ['Taux interet', 'Inflation', 'Taux change', 'Croissance PIB', 'Pouvoir achat', 'Chomage'],
+  social: ['Demographie', 'Culture', 'Education', 'Tendances consommation', 'Sante', 'Inegalites'],
+  technological: ['R&D', 'Automation', 'Brevets', 'Internet/Mobile', 'IA/Big Data', 'Cybersecurite'],
+  environmental: ['Climat', 'Recyclage', 'Energie verte', 'Normes ESG', 'Biodiversite', 'Empreinte carbone'],
+  legal: ['Droit travail', 'Concurrence', 'Consommation', 'Sante securite', 'Discrimination', 'RGPD/CCPA'],
+} as const;
+
+/**
+ * 4P Marketing Mix.
+ */
+export const MARKETING_4P = {
+  product: { questions: ['Quels besoins satisfaits ?', 'Caracteristiques cles ?', 'Differenciation ?', 'Marque ?', 'SAV ?'] },
+  price: { questions: ['Strategie pricing ?', 'Positionnement ?', 'Remises ?', 'Conditions paiement ?', 'Elasticite ?'] },
+  place: { questions: ['Canaux distribution ?', 'Couverture geo ?', 'Inventaire ?', 'Logistique ?', 'Online/offline ?'] },
+  promotion: { questions: ['Pub ?', 'Promotions ?', 'PR ?', 'Marketing direct ?', 'Sales force ?', 'Digital ?'] },
+} as const;
+
+/**
+ * 7P Marketing Mix (extension services).
+ */
+export const MARKETING_7P_EXTENSION = {
+  people: { description: 'Personnes : equipe, employes, clients, formation, culture' },
+  process: { description: 'Process : workflow, qualite, standards, customer journey' },
+  physical_evidence: { description: 'Evidence : tangibles, locaux, packaging, witnesses' },
+} as const;
+
+/**
+ * BMC Business Model Canvas (9 blocs Osterwalder).
+ */
+export const BMC_BLOCKS = {
+  customer_segments: 'Pour qui ? Personas, archetypes, niches',
+  value_propositions: 'Quelle valeur unique ? Pourquoi nous ?',
+  channels: 'Comment atteindre ? Awareness/eval/achat/livraison/SAV',
+  customer_relationships: 'Quel type de relation ? Self/Personal/Community',
+  revenue_streams: 'Comment monetiser ? One-shot/recurring/usage',
+  key_resources: 'Ressources critiques : humaines, financieres, IP, physiques',
+  key_activities: 'Activites critiques : production, vente, plateformes',
+  key_partnerships: 'Partenaires : alliances, joint-venture, fournisseurs',
+  cost_structure: 'Couts principaux : fixes, variables, economies echelle',
+} as const;
+
+/**
+ * OKR template avec format exemplaire.
+ */
+export const OKR_TEMPLATE = {
+  exemple_o: 'Devenir leader marche francais e-commerce mode',
+  exemple_kr: [
+    'Atteindre 100k DAU (vs 30k actuels) - mesurable',
+    'CA mensuel >500k EUR (vs 200k) - mesurable',
+    'NPS >50 (vs 35 actuel) - mesurable',
+  ],
+  best_practices: [
+    'Objectif inspirant et qualitatif',
+    '3-5 KR maximum par O',
+    'KR mesurable, datable, ambitieux (60-70% atteint = succes)',
+    'Cadence trimestrielle',
+    'Public et transparent',
+  ],
+};
+
+/**
+ * Templates pitch deck investisseurs (12 slides Y Combinator format).
+ */
+export const PITCH_DECK_SLIDES = [
+  { num: 1, title: 'Mission/Tagline', content: '1 phrase qui resume mission' },
+  { num: 2, title: 'Probleme', content: 'Pain point concret + impact financier' },
+  { num: 3, title: 'Solution', content: 'Comment on resout + USP' },
+  { num: 4, title: 'Marche', content: 'TAM/SAM/SOM avec sources' },
+  { num: 5, title: 'Business Model', content: 'Comment on gagne argent + unit economics' },
+  { num: 6, title: 'Traction', content: 'Metrics croissance: users, revenue, retention' },
+  { num: 7, title: 'Concurrence', content: 'Comparison matrix + differentiateur' },
+  { num: 8, title: 'Roadmap', content: 'Etapes 12-24 mois' },
+  { num: 9, title: 'Equipe', content: 'Photos + experience + complementarite' },
+  { num: 10, title: 'Financiers', content: 'P&L 3 ans + projections' },
+  { num: 11, title: 'Tour table', content: 'Montant + valuation + use of funds' },
+  { num: 12, title: 'Contact', content: 'Email + phone + site' },
+] as const;
+
 /* ---------- UI render ---------- */
 
 export function render(root: HTMLElement): void {

@@ -89,10 +89,62 @@ export interface ClipProject {
   updatedAt: number;
 }
 
-export const MAX_SEGMENTS = 10;
-export const MAX_DURATION_SEC = 60;
-export const MAX_FILE_SIZE_MB = 100;
+export const MAX_SEGMENTS = 16; /* boost v13 : 10 → 16 segments */
+export const MAX_DURATION_SEC = 180; /* boost v13 : 60 → 180s (TikTok 3min, Reel 90s, Shorts 60s) */
+export const MAX_FILE_SIZE_MB = 200; /* boost v13 : 100 → 200 Mo */
 export const STORAGE_PREFIX = 'ax_clip_';
+
+/* boost v13 — Templates clip viral pour reseaux sociaux */
+export const VIRAL_CLIP_TEMPLATES = {
+  hook_3sec: { duration: 30, label: 'Hook 3sec + CTA', description: 'Phrase choc 3s puis story 25s + CTA 2s' },
+  before_after: { duration: 30, label: 'Avant/Après', description: 'Slip à mi-clip, transformation visuelle' },
+  reaction_facecam: { duration: 60, label: 'Réaction face cam', description: 'Picture-in-picture face + contenu' },
+  storytelling: { duration: 90, label: 'Storytelling', description: 'Setup → conflit → résolution' },
+  list_5_things: { duration: 60, label: 'Top 5 choses', description: '5 conseils rapides avec compteur' },
+  meme_format: { duration: 15, label: 'Meme format', description: 'Image + caption big word' },
+  music_beat_drop: { duration: 30, label: 'Beat drop sync', description: 'Cuts sur drops musique' },
+  asmr: { duration: 60, label: 'ASMR satisfying', description: 'Plans rapprochés sons amplifiés' },
+  tutorial_step: { duration: 60, label: 'Tutorial étapes', description: '5 étapes avec captions numérotés' },
+  dance_challenge: { duration: 30, label: 'Dance challenge', description: 'Choreo + transitions tempo' },
+  challenge_30j: { duration: 60, label: 'Challenge 30 jours', description: 'Compilation timelapse résultat' },
+  product_showcase: { duration: 30, label: 'Product showcase', description: 'Plans produit + bénéfices visuels' },
+};
+
+/* boost v13 — Sons viraux populaires (mock - en prod via TikTok/Reel API) */
+export const TRENDING_SOUNDS = {
+  trending_tiktok_2026: ['Original Sound 1', 'Original Sound 2', 'Pop Hit 2026'],
+  upbeat_motivational: ['Imagine Dragons - Believer', 'Avicii - Levels'],
+  emotional_sad: ['Yiruma - River Flows in You', 'Ludovico Einaudi - Nuvole Bianche'],
+  funny_meme: ['Sad Violin', 'Curb Your Enthusiasm Theme'],
+  asmr_tap: ['White Noise', 'Tap Sounds', 'Rain Soft'],
+};
+
+/* boost v13 — Auto-detect best aspect ratio par plateforme */
+export function suggestAspectRatio(platform: 'tiktok' | 'instagram_reel' | 'instagram_post' | 'youtube_shorts' | 'youtube_horizontal' | 'twitter' | 'facebook'): AspectRatio {
+  const map: Record<string, AspectRatio> = {
+    tiktok: '9:16',
+    instagram_reel: '9:16',
+    instagram_post: '4:5',
+    youtube_shorts: '9:16',
+    youtube_horizontal: '16:9',
+    twitter: '16:9',
+    facebook: '16:9',
+  };
+  return map[platform] ?? '9:16';
+}
+
+/* boost v13 — Estimation engagement basé durée + format */
+export function estimateEngagement(durationSec: number, hasHook: boolean, hasCaption: boolean, hasMusic: boolean, hasCta: boolean): { score: number; level: 'low' | 'medium' | 'high'; tips: string[] } {
+  let score = 0;
+  const tips: string[] = [];
+  if (durationSec <= 15) score += 30; else if (durationSec <= 30) score += 25; else if (durationSec <= 60) score += 15; else { score += 5; tips.push('Plus court = plus d\'engagement (cible 15-30s)'); }
+  if (hasHook) score += 25; else tips.push('Ajouter un hook les 3 premières secondes');
+  if (hasCaption) score += 20; else tips.push('Ajouter sous-titres (85% TikTok regardé sans son)');
+  if (hasMusic) score += 15; else tips.push('Utiliser un son tendance');
+  if (hasCta) score += 10; else tips.push('Ajouter call-to-action en fin (like/follow/comment)');
+  const level: 'low' | 'medium' | 'high' = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+  return { score, level, tips };
+}
 
 export const ACCEPTED_VIDEO_FORMATS: readonly string[] = [
   'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska', 'video/avi',

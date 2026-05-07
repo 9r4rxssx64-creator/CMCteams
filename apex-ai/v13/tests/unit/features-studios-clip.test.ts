@@ -134,8 +134,8 @@ describe('features/studios/clip — isWithinDurationLimit', () => {
   it('valide projet vide', () => {
     expect(isWithinDurationLimit(createProject('x'))).toBe(true);
   });
-  it('test MAX_DURATION_SEC', () => {
-    expect(MAX_DURATION_SEC).toBe(60);
+  it('test MAX_DURATION_SEC (boost v13 : 60 → 180)', () => {
+    expect(MAX_DURATION_SEC).toBe(180);
   });
 });
 

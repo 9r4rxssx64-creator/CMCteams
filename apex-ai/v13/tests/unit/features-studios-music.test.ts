@@ -46,8 +46,8 @@ describe('features/studios/music — createTrack', () => {
 });
 
 describe('features/studios/music — constants', () => {
-  it('MAX_TRACKS = 12, MIN_TRACKS = 2', () => {
-    expect(MAX_TRACKS).toBe(12);
+  it('MAX_TRACKS = 16, MIN_TRACKS = 2 (boost v13)', () => {
+    expect(MAX_TRACKS).toBe(16);
     expect(MIN_TRACKS).toBe(2);
   });
 
