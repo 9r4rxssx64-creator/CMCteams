@@ -1,6 +1,41 @@
-# Mémo de reprise — Apex v13.0.77 (2026-05-04 16h40) MEGA SPRINT FINI
+# Mémo de reprise — Apex v13.3.27 / CMC v9.600 (2026-05-07 19h45)
 
-## 🎯 ÉTAT ACTUEL v13.0.77 — Parité v12 ~85%, 4463+ tests verts
+## 🎯 ÉTAT ACTUEL v13.3.27 — Mémoire long-terme + relecture profonde docs
+
+### Session 2026-05-07 (17 commits + subagents A-O)
+
+**Livraisons clés cette session** :
+- **CMCteams** v9.598 (MERGE imports incrémentaux), v9.599 (parser cadres fuzzy), v9.600 (cadres unifiés + auto-detect type + manual_overrides)
+- **Apex** v13.3.18 (sentinelles +10), v13.3.19 (bridge planning Apex→CMC), v13.3.20 (perd codes — fix triple persistence + verify post-write), v13.3.22 (UX sticky + decrypt graceful), v13.3.25 (wake word + cross-platform iOS+Android+Desktop), b745570 (fix Finance Pro auto-embed chat), **v13.3.27 (mémoire long-terme + relecture profonde docs — subagent O)**
+- **Subagents finis** : A,B,E,F,G,UX,H,K,L,M,N,O (pipeline N en parallèle, O = ce subagent)
+
+### Fichiers nouveaux/touchés v13.3.27
+- `core/memory.ts` (+ ~340 lignes) : `syncDocsAtBoot`, `getDocsContext`, `extractFactsFromMessage`, `recordSessionLearning`, `buildAdminCrossUserKnowledge`, `buildSystemPromptDeep`
+- `services/sentinels.ts` (+ ~95 lignes) : sentinelle `memory-watch` (1×/jour, audit + autoFix compress)
+- `features/knowledge/index.ts` (NEW, 320 lignes) : vue admin `?view=knowledge` cross-user
+- `tests/unit/memory-deep.test.ts` (NEW, 22 tests) : NLP extract, sync docs, system prompt deep
+- `core/bootstrap.ts` : route `knowledge` + auto-sync docs au boot (non-bloquant)
+- `sw.js` : CACHE_VERSION → v13.3.27
+- 4 docs racine update (CLAUDE.md +règle, KEVIN_INVENTORY, MEMO_RESUME, KEVIN_ACTIONS_TODO)
+
+### Stats v13.3.27
+- TS strict : 0 errors
+- Tests : 44 verts (memory + memory-deep + sentinels) — total ~4500+ verts session
+- Build : 4.20s
+- Bundle main : 55.26 KB / gzip 20.32 KB
+- Dist sync canary : OK (apex-ai-v13/ rebuild)
+
+### Branche dev
+`claude/test-699LQ` — push attendu après commit
+
+### Sentinelles actives
+14 active + 1 disabled wake-watch (ajout `memory-watch` v13.3.27)
+
+---
+
+## 🎯 ÉTAT PRÉCÉDENT v13.0.77 (2026-05-04 16h40)
+
+### v13.0.77 — Parité v12 ~85%, 4463+ tests verts
 
 ### Session 2026-05-04 PM (5 commits v13.0.73 → v13.0.77 + 17 subagents finis)
 

@@ -1,5 +1,54 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🧠 v13.3.27 — Mémoire long-terme + relecture profonde tous docs (Kevin 2026-05-07 19h45, subagent O)
+
+**Demande Kevin** : "Apex doit reprendre tous ses documents, savoir exactement
+toute l'histoire pour chaque personne. Mémoire à long terme. Apex admin a le
+savoir de tous. Lessons d'un user servent aux autres."
+
+**Livré v13.3.27** :
+- ✅ `core/memory.ts` étendu (+340 lignes) — 6 nouvelles méthodes :
+  - `syncDocsAtBoot()` : fetch 8 docs GitHub raw, cache 6h IDB
+  - `getDocsContext()` : lecture cache pour buildSystemPromptDeep
+  - `extractFactsFromMessage()` : NLP regex per-user (anniv, allergies, projets…)
+  - `recordSessionLearning()` : push lessons cross-app shared
+  - `buildAdminCrossUserKnowledge()` : Kevin admin voit facts de TOUS users
+  - `buildSystemPromptDeep()` : assemble 8 sources pour system prompt IA enrichi
+- ✅ Sentinelle `memory-watch` (1×/jour, audit + autoFix compress >1000 facts)
+- ✅ Vue admin `?view=knowledge` (320 lignes) — facts, cross-user, lessons, docs sync, audit
+- ✅ Boot bootstrap.ts : sync docs auto au boot (non-bloquant, cache 6h)
+- ✅ 22 tests verts (`tests/unit/memory-deep.test.ts`)
+- ✅ TS strict 0 errors + Vite build 4.20s + canary v13.3.27 deployed
+
+### ✅ DÉJÀ FAIT par Kevin cette session
+- ✅ Anthropic recollée (auto-detect chat → vault chiffré AES-GCM-256)
+- ✅ Telegram bot configured (token + chat_id `5458942048`)
+
+### ⏳ Clés optionnelles (failover Apex IA, recommandées)
+- [ ] **OpenAI** : Coffre `ax_openai_key` → failover si Anthropic 429
+  - Lien : https://platform.openai.com/account/api-keys
+- [ ] **Gemini** : Coffre `ax_gemini_key` → failover N°2 (free 15 req/min)
+  - Lien : https://aistudio.google.com/apikey
+
+### ⏳ Si commercialisation imminente
+- [ ] **Stripe** : `ax_stripe_key` (pk + sk) — paiements pro
+- [ ] **Twilio** : `ax_twilio_token` — SMS clients OTP
+
+### 🆕 Bug fix b745570 — Finance Pro auto-embed chat
+Modules (Finance Pro / Studios) n'apparaissent plus seuls/en boucle dans le chat.
+Dedup + dismiss + toggle global (default OFF si user dismiss 3+ fois).
+
+**Action Kevin** : Réglages → "Auto-embed modules dans chat" ON/OFF selon préférence.
+
+### Tester la mémoire long-terme
+- Ouvrir `?view=knowledge` (admin only)
+- Bouton "🧪 Tester extraction" + tape "j'habite Monaco, j'ai 35 ans, allergique fruits de mer"
+- → 3 facts ajoutés à ton profil persistant
+- Bouton "🔄 Force re-sync docs" → refetch CLAUDE.md depuis GitHub
+- Bouton "💾 Export JSON" → télécharge ta mémoire complète
+
+---
+
 ## 🆕 v13.3.26 / v9.601 — Pipeline temps-réel Apex↔Claude Code (Kevin 2026-05-07 19h)
 
 **Demande Kevin** : "Fait le pipeline, comme ça tu pourras avoir les erreurs directement
