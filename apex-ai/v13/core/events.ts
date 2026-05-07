@@ -20,6 +20,11 @@ export interface EventMap {
   'push:resubscribed': { endpoint: string | undefined };
   'push:status': { environment: string; subscribed: boolean; needs_install_guide: boolean };
   'notification:clicked': { url: string | undefined };
+  /* Pipeline temps-réel Apex↔Claude Code (Kevin 2026-05-07) :
+     firebase emet ces events quand SSE applique un remote change → services écoutent. */
+  'firebase:remote_change': { key: string; data: unknown };
+  'claude_bridge:todo_resolved': { todo_id: string; commit_sha?: string; fix_summary?: string };
+  'claude_bridge:handoff_received': { entry_id: string; todo_id: string; by: string };
   [k: `custom:${string}`]: unknown;
 }
 

@@ -3751,7 +3751,10 @@ var FB_FIX=["cmc_ov","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cm
 // v9.530 - Sync FB obligatoire (audit securite expert) : ax_pin_fails attaquable si seulement local
 "cmc_pin_fails","cmc_security_log",
 // v9.542 - Passation digitale entre tournees (Kevin 2026-04-25)
-"cmc_passations"];
+"cmc_passations",
+// v9.601 - Bridge Apex -> CMCteams autonome (Kevin 2026-05-07) :
+// ax_cmc_planning_pending : Apex push planning detecte dans son chat -> toast 1-clic Kevin
+"ax_cmc_planning_pending"];
 // Préfixes pour clés dynamiques (mois/année)
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
@@ -4059,6 +4062,21 @@ function fbApplyData(k,v){
   else if(k==="cmc_features"){if(typeof vc==="object"&&vc){try{_features=vc;}catch(_){}}}
   else if(k==="cmc_exchanges"){if(Array.isArray(vc)){try{A.exchanges=vc;}catch(_){}}}
   else if(k==="cmc_exchanges_enabled"){try{_exchEnabled=vc!==false;}catch(_){}}
+  // v9.601 — Bridge Apex -> CMCteams (Kevin 2026-05-07) : Apex pousse planning detecte dans son chat
+  else if(k==="ax_cmc_planning_pending"){
+    try{
+      if(vc&&typeof vc==="object"&&A.user&&A.user.id===AID){
+        Object.keys(vc).forEach(function(id){
+          var item=vc[id];
+          if(!item||item.processed)return;
+          var fromApex=(item.from_apex===true||item.from_apex==="true"||item.from_apex==="apex");
+          if(fromApex){
+            try{_cmcShowApexPlanningToast(id,item);}catch(_){}
+          }
+        });
+      }
+    }catch(_){}
+  }
   // Pour les clés dynamiques (cmc_ref_*, etc.) : juste localStorage suffit
   // Détecter changement de planning / chat → notification (PAS pendant le chargement initial Firebase)
   if(!_fbInitialLoad){
@@ -5273,6 +5291,97 @@ function _checkNewUploadRequest(reqs){
     try{toast("\ud83d\udce4 "+newCount+" nouvelle"+(newCount>1?"s":"")+" demande"+(newCount>1?"s":"")+" d'upload","info");}catch(e){}
   }
   _lastUploadReqCount=pending;
+}
+
+// v9.601 — Bridge Apex -> CMCteams (Kevin 2026-05-07) : toast 1-clic pour importer planning recu d'Apex
+var _cmcApexToastShownIds={};
+function _cmcShowApexPlanningToast(id,item){
+  if(!A.user||A.user.id!==AID)return;
+  if(_cmcApexToastShownIds[id])return; // anti-spam
+  _cmcApexToastShownIds[id]=Date.now();
+  var rawText=String(item.raw_text||item.text||"").slice(0,50000);
+  var charCount=rawText.length;
+  if(!charCount)return;
+  // Modal doré au lieu de simple toast (action 1-clic)
+  var existing=document.getElementById("apexPlanningToast_"+id);
+  if(existing)existing.remove();
+  var modal=document.createElement("div");
+  modal.id="apexPlanningToast_"+id;
+  modal.style.cssText="position:fixed;top:14px;right:14px;left:14px;max-width:520px;margin:auto;z-index:9998;background:linear-gradient(180deg,rgba(20,30,16,.98),rgba(8,16,8,.99));border:2px solid #c9a227;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.5);padding:16px 18px;color:#e8f0d8;font-size:14px;animation:slideIn .3s ease-out";
+  var preview=esc(rawText.slice(0,180))+(rawText.length>180?"…":"");
+  var ts=item.ts?new Date(item.ts).toLocaleString("fr-FR"):"";
+  modal.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:24px">📥</div>'
+    +'<div style="flex:1"><div style="font-weight:800;color:#ffdc40;font-size:15px">Planning reçu d\'Apex</div>'
+    +'<div style="font-size:11px;color:#a0cca0">'+esc(ts)+' • '+charCount+' caractères</div></div></div>'
+    +'<div style="font-family:monospace;font-size:11px;color:#b8c8a8;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;max-height:80px;overflow:hidden;margin-bottom:10px;line-height:1.4">'+preview+'</div>'
+    +'<div style="display:flex;gap:8px"><button onclick="_cmcImportApexPlanning(\''+id+'\')" style="flex:1;background:linear-gradient(135deg,#c9a227,#9a7810);border:none;color:#040c04;border-radius:8px;padding:10px;font-weight:800;cursor:pointer;font-size:13px">✅ Importer</button>'
+    +'<button onclick="_cmcDismissApexPlanning(\''+id+'\')" style="flex:0 0 auto;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);color:#a0cca0;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px">❌ Ignorer</button></div>';
+  document.body.appendChild(modal);
+  // Stocker raw_text local pour _cmcImportApexPlanning
+  try{localStorage.setItem("_apex_pending_"+id,rawText);}catch(_){}
+  // Auto-dismiss apres 60s si pas d'action
+  setTimeout(function(){
+    var el=document.getElementById("apexPlanningToast_"+id);
+    if(el)el.remove();
+  },60000);
+  try{if(typeof sendNotif==="function")sendNotif("📥 Planning Apex reçu","Cliquer pour importer ("+charCount+" car.)",{tag:"apex_planning_"+id});}catch(_){}
+}
+
+function _cmcImportApexPlanning(id){
+  if(!A.user||A.user.id!==AID)return;
+  try{
+    var rawText=localStorage.getItem("_apex_pending_"+id)||"";
+    if(rawText){
+      // Naviguer vers vImport et injecter le texte
+      sv("import");
+      setTimeout(function(){
+        var ta=document.getElementById("importPdfText")||document.querySelector("textarea[name='importText'],#importTextarea");
+        if(ta){
+          ta.value=rawText;
+          ta.dispatchEvent(new Event("input",{bubbles:true}));
+          try{ta.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}
+          if(typeof toast==="function")toast("✅ Planning Apex injecte ("+rawText.length+" car.) — vérifier puis importer","ok");
+        }else{
+          if(typeof toast==="function")toast("⚠ Coller manuellement le planning dans Import (texte sauve dans presse-papier)","info");
+          try{navigator.clipboard.writeText(rawText);}catch(_){}
+        }
+      },300);
+    }
+    // Marquer processed Firebase + nettoyage local
+    _cmcMarkApexPlanningProcessed(id,"imported");
+  }catch(e){if(typeof toast==="function")toast("Erreur import Apex : "+e.message,"err");}
+  try{localStorage.removeItem("_apex_pending_"+id);}catch(_){}
+  var el=document.getElementById("apexPlanningToast_"+id);
+  if(el)el.remove();
+}
+
+function _cmcDismissApexPlanning(id){
+  if(!A.user||A.user.id!==AID)return;
+  _cmcMarkApexPlanningProcessed(id,"dismissed");
+  try{localStorage.removeItem("_apex_pending_"+id);}catch(_){}
+  var el=document.getElementById("apexPlanningToast_"+id);
+  if(el)el.remove();
+}
+
+function _cmcMarkApexPlanningProcessed(id,result){
+  // Marquer dans /apex/ax_cmc_planning_pending/<id> processed:true
+  try{
+    var pending=lg("ax_cmc_planning_pending",{});
+    if(pending&&pending[id]){
+      pending[id].processed=true;
+      pending[id].processed_ts=Date.now();
+      pending[id].processed_by="cmcteams_admin";
+      pending[id].result=result||"unknown";
+      ls("ax_cmc_planning_pending",pending);
+    }
+    // Notification distante via FB direct (path Apex)
+    var fbUrl=lg("cmc_fb_url","")||"https://kdmc-clients-default-rtdb.firebaseio.com";
+    fetch(fbUrl+"/apex/ax_cmc_planning_pending/"+encodeURIComponent(id)+".json",{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({processed:true,processed_ts:Date.now(),processed_by:"cmcteams_admin",result:result||"unknown"})
+    }).catch(function(){});
+  }catch(_){}
 }
 
 function uploadDoc(cat,shared){
