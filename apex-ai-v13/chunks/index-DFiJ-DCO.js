@@ -29,4 +29,3 @@ import{l as r}from"./monitoring-WiO5ZBU9.js";function e(t){t.innerHTML=`
       <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
     </div>
   `,r.info("feature-domotique","rendered")}export{e as render};
-//# sourceMappingURL=index-DFiJ-DCO.js.map

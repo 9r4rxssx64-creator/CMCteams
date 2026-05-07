@@ -8,4 +8,3 @@ import{l as y}from"./monitoring-WiO5ZBU9.js";const c=[{id:"math",label:"Mathéma
       </div>
     </div>
   `}export{S as CONJUGATIONS_DE,A as CONJUGATIONS_EN,C as CONJUGATIONS_ES,j as CONJUGATIONS_FR,P as CONJUGATIONS_IT,d as QUESTIONS_BANK,c as SUBJECTS,F as circleArea,B as circleCircumference,N as createFlashcard,z as cubeVolume,V as cylinderVolume,E as dueCards,q as escapeHtml,J as findSubject,M as matrixDeterminant2x2,T as matrixMultiply,D as numericIntegrate,Q as pythagore,G as questionsByDifficulty,f as questionsBySubject,U as randomQuiz,_ as rectangleArea,$ as render,I as reviewFlashcard,H as spheresVolume,x as statMean,O as statMedian,L as statStdDev,R as symbolicDerivative,k as triangleArea};
-//# sourceMappingURL=index-BFri9Q98.js.map
