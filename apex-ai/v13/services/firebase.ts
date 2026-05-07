@@ -96,6 +96,8 @@ export const FB_FIX: readonly string[] = [
   'ax_zapier_key',
   'ax_make_key',
   'ax_posthog_key',
+  /* Sprint 9 v13.1.x : multi-key vault (failover key-level Kevin règle 2026-05-07) */
+  'apex_v13_multi_keys',
 ];
 
 export const FB_LOCAL: readonly string[] = [

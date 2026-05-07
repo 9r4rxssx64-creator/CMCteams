@@ -60,6 +60,21 @@ export interface DashboardShortcut {
   color: string;
 }
 
+/**
+ * Sprint 9 Kevin règle 2026-05-07 : statut multi-clés API par service.
+ * Couleur lumière : green = au moins 1 clé active < 24h, yellow = partial (1+ failing
+ * mais autre OK), red = service entièrement down, gray = pas de clé.
+ */
+export interface ServiceHealthLight {
+  service: string;
+  light: 'green' | 'yellow' | 'red' | 'gray';
+  totalKeys: number;
+  activeKeys: number;
+  failingKeys: number;
+  invalidKeys: number;
+  lastSuccess: number;
+}
+
 const SHORTCUTS: ReadonlyArray<DashboardShortcut> = [
   { id: 'chat', icon: '💬', label: 'Chat', description: 'Conversation IA', route: 'chat', color: '#5aa8ff' },
   { id: 'vault', icon: '🔐', label: 'Coffre', description: 'Clés API & secrets', route: 'vault', color: '#c9a227' },
@@ -169,6 +184,34 @@ export async function loadAlerts(): Promise<DashboardAlert[]> {
   } catch { /* skip */ }
 
   return alerts;
+}
+
+/**
+ * Sprint 9 (Kevin règle 2026-05-07) : charge le statut multi-clés API.
+ * Pour chaque service connu (avec ≥ 1 clé), retourne lumière + stats.
+ */
+export async function loadServiceHealth(): Promise<ServiceHealthLight[]> {
+  try {
+    const { multiKeyVault } = await import('../../services/multi-key-vault.js');
+    const services = multiKeyVault.getKnownServices();
+    const out: ServiceHealthLight[] = [];
+    for (const service of services) {
+      const stats = multiKeyVault.getStats(service);
+      const light = multiKeyVault.getServiceLight(service);
+      out.push({
+        service,
+        light,
+        totalKeys: stats.total,
+        activeKeys: stats.active,
+        failingKeys: stats.failing,
+        invalidKeys: stats.invalid,
+        lastSuccess: stats.lastSuccess,
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -282,11 +325,58 @@ function renderTodos(todos: ReadonlyArray<DashboardTodo>): string {
     .join('');
 }
 
+/**
+ * Sprint 9 Kevin règle 2026-05-07 : rend la card "🚥 Statut services IA"
+ * avec lumières par service + lien click → modal détail clés.
+ */
+export function renderServiceHealthCard(items: ReadonlyArray<ServiceHealthLight>): string {
+  if (items.length === 0) {
+    return `
+      <div class="ax-modernized-card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
+        <div style="font-size:13px;color:rgba(255,255,255,0.55)">Aucune clé API encore configurée. Va dans le <strong style="color:#c9a227">Coffre</strong> pour ajouter tes premières clés.</div>
+      </div>`;
+  }
+  const lightColor: Record<ServiceHealthLight['light'], string> = {
+    green: '#22cc77',
+    yellow: '#ffaa00',
+    red: '#ff5b5b',
+    gray: '#666b80',
+  };
+  const lightLabel: Record<ServiceHealthLight['light'], string> = {
+    green: 'OK',
+    yellow: 'Partiel',
+    red: 'Panne',
+    gray: 'Non testé',
+  };
+  return items
+    .map((s, idx) => {
+      const color = lightColor[s.light];
+      const label = lightLabel[s.light];
+      const stats = `${s.activeKeys}/${s.totalKeys} active${s.failingKeys > 0 ? ` · ${s.failingKeys} failing` : ''}${s.invalidKeys > 0 ? ` · ${s.invalidKeys} invalid` : ''}`;
+      return `
+        <button class="ax-service-health-row ax-modernized-card ax-bounce-tap" data-route="vault" data-service="${escapeHtml(s.service)}"
+          style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;width:100%;cursor:pointer;text-align:left;transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards;-webkit-tap-highlight-color:transparent">
+          <span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;box-shadow:0 0 12px ${color};flex-shrink:0"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#fff;text-transform:capitalize">${escapeHtml(s.service)}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${escapeHtml(stats)}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.06em">${escapeHtml(label)}</span>
+          <span style="color:${color};font-size:18px;opacity:0.7">→</span>
+        </button>`;
+    })
+    .join('');
+}
+
 export async function render(rootEl: HTMLElement): Promise<void> {
   const user = store.get('user') as { name?: string; id?: string } | null;
   const greeting = user?.name ? `Bonjour ${user.name}` : 'Bonjour';
 
-  const [kpis, alerts] = await Promise.all([computeKpis(), loadAlerts()]);
+  const [kpis, alerts, serviceHealth] = await Promise.all([
+    computeKpis(),
+    loadAlerts(),
+    loadServiceHealth(),
+  ]);
   const todos = loadTodos();
 
   rootEl.innerHTML = `
@@ -327,6 +417,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <span style="font-size:14px;-webkit-text-fill-color:initial">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:#ff5b5b;border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
         </h2>
         ${renderAlerts(alerts)}
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
+        </h2>
+        ${renderServiceHealthCard(serviceHealth)}
       </section>
 
       <section style="margin-bottom:32px">

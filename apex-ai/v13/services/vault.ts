@@ -502,6 +502,11 @@ class Vault {
       logger.warn('vault', `Forbidden credential detected: ${detected.name} — REFUSED`);
       return { ok: false, forbidden: true, pattern: detected, reason: detected.name + ' — JAMAIS stocké' };
     }
+    /* Sprint 9 v13.1.x (Kevin règle 2026-05-07 multi-key) :
+       Détecte si une clé existe déjà pour ce service → ajoute en parallèle dans
+       multi-key-vault au lieu d'écraser. Single-key reste pour back-compat
+       (legacy reads via getApiKey/readKey). */
+    void this.maybeAddToMultiKeyVault(detected, trimmed);
     /* P0 SÉCU CRITIQUE : chiffrement systématique au repos (audit v13.0.10).
        Avant : localStorage en plaintext = clés visibles DevTools.
        Après : AES-GCM 256 + PBKDF2 200k via encryptAuto (passphrase user OU device-bound). */
@@ -536,6 +541,62 @@ class Vault {
      * Persiste cross-session, sync Firebase, injecté system prompt. */
     void this.rememberCredentialConfigured(detected, valid);
     return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  /**
+   * Sprint 9 v13.1.x (Kevin règle multi-key 2026-05-07) :
+   * Si Kevin colle 2ème clé pour le même service → ajoute dans multi-key-vault
+   * pour failover key-level (au lieu d'écraser silencieusement la précédente).
+   *
+   * Service name dérivé depuis storageKey (ex: ax_anthropic_key → "anthropic").
+   * Best-effort non bloquant — toute erreur ignorée silencieusement.
+   */
+  private async maybeAddToMultiKeyVault(pattern: CredentialPattern, plaintext: string): Promise<void> {
+    try {
+      /* Service name = catégorie principale du service (Anthropic/OpenAI/Gemini/Groq...) */
+      const serviceName = this.deriveServiceName(pattern);
+      if (!serviceName) return;
+      const { multiKeyVault } = await import('./multi-key-vault.js');
+      /* Toast informatif si 2ème+ clé pour ce service (visible UI feedback) */
+      const existingCount = multiKeyVault.listKeys(serviceName).length;
+      await multiKeyVault.addKey(serviceName, plaintext, {
+        alias: existingCount > 0 ? `${pattern.name} #${existingCount + 1}` : pattern.name,
+      });
+      if (existingCount > 0) {
+        logger.info(
+          'vault',
+          `🔑 ${pattern.name} : ${existingCount + 1}ème clé ajoutée — failover automatique activé`,
+        );
+      }
+    } catch (err: unknown) {
+      logger.debug('vault', 'maybeAddToMultiKeyVault skipped', { err });
+    }
+  }
+
+  /**
+   * Dérive le service name normalisé pour multi-key-vault depuis le pattern.
+   * - ax_anthropic_key → 'anthropic'
+   * - ax_openai_key → 'openai'
+   * - ax_groq_key → 'groq'
+   * - ax_google_key, ax_gemini_key → 'google'
+   * - ax_openrouter_key → 'openrouter'
+   * Retourne null si non-AI (pas pertinent pour multi-key failover).
+   */
+  private deriveServiceName(pattern: CredentialPattern): string | null {
+    if (pattern.category !== 'ai') return null;
+    const k = pattern.storageKey;
+    if (k === 'ax_anthropic_key') return 'anthropic';
+    if (k === 'ax_openai_key') return 'openai';
+    if (k === 'ax_groq_key') return 'groq';
+    if (k === 'ax_google_key' || k === 'ax_gemini_key') return 'google';
+    if (k === 'ax_openrouter_key') return 'openrouter';
+    if (k === 'ax_perplexity_key') return 'perplexity';
+    if (k === 'ax_mistral_key') return 'mistral';
+    if (k === 'ax_cohere_key') return 'cohere';
+    if (k === 'ax_deepseek_key') return 'deepseek';
+    /* Pattern générique : supprime préfixe ax_ et suffixe _key */
+    const m = /^ax_([a-z0-9]+)_key$/.exec(k);
+    return m && m[1] ? m[1] : null;
   }
 
   /**

@@ -691,6 +691,48 @@ class SentinelsRegistry {
       },
     });
 
+    /* 20. multi-key-health (30 min) — re-test toutes clés failing/unknown
+     * Sprint 9 Kevin règle 2026-05-07 : "si une clé fail, swap auto sur autre clé"
+     * + lumière rouge si tout un service est en panne. */
+    sentinelsManager.register({
+      id: 'multi-key-health',
+      name: 'Multi-clé API health 30min',
+      desc: 'Re-test toutes clés API failing/unknown toutes 30 min, swap auto si meilleure trouvée',
+      intervalMs: 30 * 60 * 1000,
+      check: async () => {
+        try {
+          const { multiKeyVault } = await import('./multi-key-vault.js');
+          const result = await multiKeyVault.healthCheckAll();
+          const down = multiKeyVault.getServicesDown();
+          const status = multiKeyVault.getHealthStatus();
+          if (down.length > 0) {
+            return {
+              ok: false,
+              msg: `🔴 Services en panne : ${down.join(', ')} (recovered ${result.recovered})`,
+              details: { down, ...result, health: status },
+            };
+          }
+          if (status === 'yellow') {
+            return {
+              ok: true,
+              msg: `🟡 Health partial — ${result.tested} clés testées, ${result.recovered} recovered`,
+              details: { ...result, health: status },
+            };
+          }
+          return {
+            ok: true,
+            msg: `🟢 Health green — ${result.tested} clés OK (${result.recovered} recovered)`,
+            details: { ...result, health: status },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: true,
+            msg: 'multi-key-health skipped: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
     /* 17. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',

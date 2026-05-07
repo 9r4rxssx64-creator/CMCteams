@@ -1,0 +1,148 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./kdmc-projects-registry-Bc-QS4so.js","./monitoring-B17vNBOa.js","./sentinels-Bi-ZQc39.js","./apex-tools-dispatch-BIDkouHS.js","./apex-tools-registry-eSveblul.js","./multi-key-vault-BmaP6BpT.js","./apex-kb-BgRDLlM6.js","./credential-patterns-BybElwOv.js"])))=>i.map(i=>d[i]);
+import{_ as p}from"./apex-tools-dispatch-BIDkouHS.js";import{l as d}from"./monitoring-B17vNBOa.js";import{s as g}from"../core/main-BCe22RfY.js";import{h as f}from"./haptic-BUEqXK0N.js";import"./apex-tools-registry-eSveblul.js";function a(e){return e.replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[t]??t)}const x=[{id:"chat",icon:"💬",label:"Chat",description:"Conversation IA",route:"chat",color:"#5aa8ff"},{id:"vault",icon:"🔐",label:"Coffre",description:"Clés API & secrets",route:"vault",color:"#c9a227"},{id:"browser",icon:"🌐",label:"Browser",description:"Naviguer & embed",route:"browser",color:"#22cc77"},{id:"studios",icon:"🎨",label:"Studios",description:"Créatif (musique/vidéo)",route:"studios",color:"#a878ff"},{id:"pro",icon:"🎓",label:"Pro",description:"Modules expert",route:"pro",color:"#ff6b9d"},{id:"self-diag",icon:"🩺",label:"Audit",description:"Auto-diagnostic",route:"self-diag",color:"#38d8c8"},{id:"settings",icon:"⚙️",label:"Réglages",description:"Configurer Apex",route:"settings",color:"#a0a4c0"},{id:"rgpd",icon:"🛡",label:"RGPD",description:"Mes données",route:"rgpd",color:"#e8b830"}];async function u(){let e=0,t=0,n=0,r=0,i=0,s=0;try{const l=localStorage.getItem("apex_v13_messages_24h")??"0",o=parseInt(l,10);Number.isNaN(o)||(e=o)}catch{}try{const l=localStorage.getItem("apex_v13_tokens_24h")??"0",o=parseInt(l,10);Number.isNaN(o)||(t=o)}catch{}try{const{kdmcProjectsRegistry:l}=await p(async()=>{const{kdmcProjectsRegistry:o}=await import("./kdmc-projects-registry-Bc-QS4so.js");return{kdmcProjectsRegistry:o}},__vite__mapDeps([0,1]),import.meta.url);n=l.countActive()}catch{}try{const{sentinels:l}=await p(async()=>{const{sentinels:c}=await import("./sentinels-Bi-ZQc39.js");return{sentinels:c}},__vite__mapDeps([2,3,1,4]),import.meta.url),o=l.list();i=o.length,r=o.filter(c=>c.lastResult?.ok).length}catch{}try{const l=localStorage.getItem("ax_claude_todo")??"[]",o=JSON.parse(l);Array.isArray(o)&&(s=o.filter(c=>c.status==="pending").length)}catch{}return[{id:"messages",icon:"💬",label:"Messages 24h",value:e,color:"#5aa8ff",route:"chat"},{id:"tokens",icon:"🔢",label:"Tokens 24h",value:t.toLocaleString("fr-FR"),color:"#c9a227",route:"self-diag"},{id:"projects",icon:"📦",label:"Projets actifs",value:n,color:"#22cc77",route:"admin"},{id:"sentinels",icon:"🛡",label:"Sentinelles OK",value:`${r}/${i}`,color:r===i?"#22cc77":"#ffaa00",route:"sentinels"},{id:"todos",icon:"📋",label:"Todos en attente",value:s,color:s>0?"#ff5858":"#22cc77",route:"self-diag"}]}async function b(){const e=[];try{const{sentinels:t}=await p(async()=>{const{sentinels:i}=await import("./sentinels-Bi-ZQc39.js");return{sentinels:i}},__vite__mapDeps([2,3,1,4]),import.meta.url),r=t.list().filter(i=>i.lastResult&&!i.lastResult.ok);for(const i of r.slice(0,3))e.push({id:`sentinel_${i.id}`,level:"warn",title:`Sentinelle ${i.name}`,description:i.lastResult?.msg??"KO",ts:i.lastResult?.ts??Date.now(),action_route:"sentinels"})}catch{}try{const t=JSON.parse(localStorage.getItem("apex_v13_credentials_expiring")??"[]");if(Array.isArray(t))for(const n of t.slice(0,3))n.days_left<30&&e.push({id:`cred_${n.service}`,level:n.days_left<7?"error":"warn",title:`Credential ${n.service}`,description:`Expire dans ${n.days_left} jours`,ts:Date.now(),action_route:"vault"})}catch{}return e}async function m(){try{const{multiKeyVault:e}=await p(async()=>{const{multiKeyVault:r}=await import("./multi-key-vault-BmaP6BpT.js");return{multiKeyVault:r}},__vite__mapDeps([5,3,1,4,6,7]),import.meta.url),t=e.getKnownServices(),n=[];for(const r of t){const i=e.getStats(r),s=e.getServiceLight(r);n.push({service:r,light:s,totalKeys:i.total,activeKeys:i.active,failingKeys:i.failing,invalidKeys:i.invalid,lastSuccess:i.lastSuccess})}return n}catch{return[]}}function y(){const e=[];try{const t=localStorage.getItem("ax_claude_todo")??"[]",n=JSON.parse(t);if(Array.isArray(n))for(const r of n.filter(i=>i.status==="pending").slice(0,5))e.push({id:r.id??`todo_${Date.now()}`,source:"apex_todo",title:r.reason??"Todo sans description",severity:r.severity??"medium",ts_created:r.ts??Date.now()})}catch{}return e}function h(e,t=0){return`
+    <button class="ax-kpi-card ax-modernized-card ax-bounce-tap" data-route="${a(e.route)}"
+      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.75));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 280ms cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) ${50+t*40}ms backwards;-webkit-tap-highlight-color:transparent">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${a(e.color)},transparent);border-radius:16px 16px 0 0;opacity:0.85"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at top right,${a(e.color)}11,transparent 60%);pointer-events:none"></div>
+      <div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 8px ${a(e.color)}40)">${a(e.icon)}</div>
+      <div style="font-size:26px;font-weight:800;color:${a(e.color)};line-height:1;letter-spacing:-0.02em;font-feature-settings:'tnum'">${a(String(e.value))}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.06em;font-weight:600">${a(e.label)}</div>
+    </button>`}function v(e,t=0){return`
+    <button class="ax-shortcut-card ax-modernized-card ax-bounce-tap" data-route="${a(e.route)}"
+      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${80+t*35}ms backwards;-webkit-tap-highlight-color:transparent">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,${a(e.color)},${a(e.color)}88);border-radius:14px 0 0 14px"></div>
+      <span style="font-size:30px;flex-shrink:0;filter:drop-shadow(0 4px 12px ${a(e.color)}40);transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1)" class="ax-shortcut-icon">${a(e.icon)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;line-height:1.3">${a(e.label)}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.4;margin-top:2px">${a(e.description)}</div>
+      </div>
+      <span style="color:${a(e.color)};font-size:20px;flex-shrink:0;transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1)" class="ax-shortcut-arrow">→</span>
+    </button>`}function w(e){return e.length===0?`
+      <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,rgba(34,204,119,0.08),rgba(34,204,119,0.03));border:1px solid rgba(34,204,119,0.15);border-radius:12px">
+        <span style="font-size:20px;filter:drop-shadow(0 2px 6px rgba(34,204,119,0.4))">✅</span>
+        <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Aucune alerte. Tout fonctionne.</span>
+      </div>`:e.map((t,n)=>{const r=t.level==="error"?"#ff5b5b":t.level==="warn"?"#ffaa00":"#6a8aff",i=t.level==="error"?"255,91,91":t.level==="warn"?"255,170,0":"106,138,255",s=t.level==="error"?"🚨":t.level==="warn"?"⚠️":"ℹ️";return`
+        <div class="ax-alert-row ax-modernized-card ax-bounce-tap" ${t.action_route?`data-route="${a(t.action_route)}"`:""}
+          style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(${i},.10),rgba(${i},.04));border:1px solid rgba(${i},.18);border-left:3px solid ${r};border-radius:12px;margin-bottom:8px;cursor:${t.action_route?"pointer":"default"};transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60+n*50}ms backwards">
+          <span style="font-size:20px;flex-shrink:0;filter:drop-shadow(0 2px 6px ${r}55)">${s}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:${r};letter-spacing:-0.01em">${a(t.title)}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">${a(t.description)}</div>
+          </div>
+          ${t.action_route?`<span style="color:${r};font-size:18px;opacity:0.7">→</span>`:""}
+        </div>`}).join("")}function $(e){return e.length===0?`
+      <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,rgba(34,204,119,0.08),rgba(34,204,119,0.03));border:1px solid rgba(34,204,119,0.15);border-radius:12px">
+        <span style="font-size:20px;filter:drop-shadow(0 2px 6px rgba(34,204,119,0.4))">🎉</span>
+        <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Aucun todo en attente.</span>
+      </div>`:e.map((t,n)=>{const r=t.severity==="critical"?"#ff5b5b":t.severity==="high"?"#ffaa00":"#6a8aff",i=new Date(t.ts_created).toLocaleString("fr-FR");return`
+        <div class="ax-modernized-card" style="padding:12px 14px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${r};border-radius:10px;margin-bottom:8px;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60+n*50}ms backwards">
+          <div style="font-size:13px;font-weight:600;color:#fff;line-height:1.4">${a(t.title)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:4px;display:flex;gap:8px;align-items:center">
+            <span style="display:inline-block;padding:2px 8px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em">${a(t.source)}</span>
+            <span>${a(i)}</span>
+          </div>
+        </div>`}).join("")}function k(e){if(e.length===0)return`
+      <div class="ax-modernized-card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
+        <div style="font-size:13px;color:rgba(255,255,255,0.55)">Aucune clé API encore configurée. Va dans le <strong style="color:#c9a227">Coffre</strong> pour ajouter tes premières clés.</div>
+      </div>`;const t={green:"#22cc77",yellow:"#ffaa00",red:"#ff5b5b",gray:"#666b80"},n={green:"OK",yellow:"Partiel",red:"Panne",gray:"Non testé"};return e.map((r,i)=>{const s=t[r.light],l=n[r.light],o=`${r.activeKeys}/${r.totalKeys} active${r.failingKeys>0?` · ${r.failingKeys} failing`:""}${r.invalidKeys>0?` · ${r.invalidKeys} invalid`:""}`;return`
+        <button class="ax-service-health-row ax-modernized-card ax-bounce-tap" data-route="vault" data-service="${a(r.service)}"
+          style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${s};border-radius:10px;margin-bottom:8px;width:100%;cursor:pointer;text-align:left;transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60+i*50}ms backwards;-webkit-tap-highlight-color:transparent">
+          <span style="display:inline-block;width:12px;height:12px;background:${s};border-radius:50%;box-shadow:0 0 12px ${s};flex-shrink:0"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#fff;text-transform:capitalize">${a(r.service)}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${a(o)}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${s};text-transform:uppercase;letter-spacing:0.06em">${a(l)}</span>
+          <span style="color:${s};font-size:18px;opacity:0.7">→</span>
+        </button>`}).join("")}async function P(e){const t=g.get("user"),n=t?.name?`Bonjour ${t.name}`:"Bonjour",[r,i,s]=await Promise.all([u(),b(),m()]),l=y();e.innerHTML=`
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(232, 184, 48, 0.25) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(232,184,48,0.08);
+      }
+      .ax-shortcut-card:hover .ax-shortcut-icon { transform: scale(1.1) rotate(-3deg); }
+      .ax-shortcut-card:hover .ax-shortcut-arrow { transform: translateX(4px); }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card { animation: none !important; transition: none !important; }
+        .ax-modernized-card:hover { transform: none !important; }
+      }
+    </style>
+    <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header style="margin-bottom:32px;animation:ax-fade-up 400ms cubic-bezier(0.16,1,0.3,1) backwards">
+        <h1 style="margin:0 0 6px;font-size:clamp(28px,5vw,36px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.1">${a(n)}</h1>
+        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:15px;font-weight:400;letter-spacing:-0.005em">Voici ton dashboard Apex.</p>
+      </header>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">📊</span> Indicateurs clés
+        </h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+          ${r.map((o,c)=>h(o,c)).join("")}
+        </div>
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🔔</span> Alertes ${i.length>0?`<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:#ff5b5b;border-radius:24px;font-size:11px;font-weight:700">${i.length}</span>`:""}
+        </h2>
+        ${w(i)}
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${s.length>0?`<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;border-radius:24px;font-size:11px;font-weight:700">${s.length}</span>`:""}
+        </h2>
+        ${k(s)}
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">📋</span> Todos ${l.length>0?`<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:#ffaa00;border-radius:24px;font-size:11px;font-weight:700">${l.length}</span>`:""}
+        </h2>
+        ${$(l)}
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🚀</span> Raccourcis
+        </h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          ${x.map((o,c)=>v(o,c)).join("")}
+        </div>
+      </section>
+
+      <section style="margin-bottom:32px">
+        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;-webkit-text-fill-color:initial">📈</span> Stats live
+        </h2>
+        <div class="ax-modernized-card" style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) 200ms backwards">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Provider santé</div>
+              <div style="font-size:18px;font-weight:700;color:#22cc77;display:flex;align-items:center;gap:8px;letter-spacing:-0.01em">
+                <span style="display:inline-block;width:8px;height:8px;background:#22cc77;border-radius:50%;box-shadow:0 0 12px #22cc77"></span>
+                Anthropic OK
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Latence dernière req</div>
+              <div style="font-size:18px;font-weight:700;color:#6a8aff;letter-spacing:-0.01em;font-feature-settings:'tnum'">~ 1.2s</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Tokens 7j (estimé)</div>
+              <div style="font-size:18px;font-weight:700;color:#e8b830;letter-spacing:-0.01em;font-feature-settings:'tnum'">${a((r.find(o=>o.id==="tokens")?.value??0).toString())}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:0.05em;margin-top:24px">APEX v13 · Dashboard</p>
+    </div>
+  `,e.querySelectorAll("[data-route]").forEach(o=>{o.addEventListener("click",()=>{f.tap();const c=o.dataset.route;c&&(window.location.hash="#"+c)})}),d.info("feature-dashboard",`rendered (${r.length} kpis, ${i.length} alerts, ${l.length} todos)`)}export{u as computeKpis,a as escapeHtml,b as loadAlerts,m as loadServiceHealth,y as loadTodos,P as render,k as renderServiceHealthCard};
+//# sourceMappingURL=index-CHWoSszQ.js.map

@@ -354,8 +354,23 @@ class AIRouter {
 
   /**
    * Lecture async avec déchiffrement auto si AXENC1: prefix.
+   *
+   * Sprint 9 (Kevin règle 2026-05-07 multi-key) : prefer multi-key-vault si dispo.
+   * Si Kevin a 2+ clés pour ce service, on utilise getCurrentKey() qui retourne
+   * la meilleure (active > unknown > rate-limited). Fallback legacy single-key
+   * si rien dans multi-key-vault.
    */
   async getApiKeyDecrypted(provider: Provider): Promise<string> {
+    /* 1. Prefer multi-key-vault (Kevin "2 clés Anthropic, fallback auto") */
+    try {
+      const { multiKeyVault } = await import('./multi-key-vault.js');
+      const serviceName = this.providerToService(provider);
+      const result = await multiKeyVault.getCurrentKey(serviceName);
+      if (result?.plaintext) return result.plaintext;
+    } catch {
+      /* skip — fallback legacy ci-dessous */
+    }
+    /* 2. Legacy single-key fallback (back-compat v13.0.x) */
     const raw = this.getApiKey(provider);
     if (!raw) return '';
     if (raw.startsWith('AXENC1:')) {
@@ -364,6 +379,29 @@ class AIRouter {
       return decrypted ?? '';
     }
     return raw;
+  }
+
+  /**
+   * Sprint 9 v13.1.x : récupère keyId + plaintext pour failover key-level.
+   * Retourne null si pas de multi-key dispo (fallback legacy single-key).
+   */
+  async getApiKeyWithId(provider: Provider): Promise<{ keyId: string; plaintext: string } | null> {
+    try {
+      const { multiKeyVault } = await import('./multi-key-vault.js');
+      const serviceName = this.providerToService(provider);
+      return await multiKeyVault.getCurrentKey(serviceName);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Map Provider router → service name multi-key-vault.
+   * Ex: 'gemini' → 'google' (même clé Google AI Studio).
+   */
+  private providerToService(provider: Provider): string {
+    if (provider === 'gemini') return 'google';
+    return provider;
   }
 
   hasAnyKey(): boolean {
@@ -568,9 +606,85 @@ class AIRouter {
   > {
     let lastErr: Error | null = null;
     for (const provider of chain) {
-      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos) */
+      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos)
+         Sprint 9 (Kevin règle 2026-05-07) : si multi-key dispo pour ce provider,
+         essaie chaque clé (jusqu'à 5) avant de passer au provider suivant.
+         Si aucune clé multi → fallback legacy single-key (back-compat). */
+      const result = await this.streamWithKeyFailover(provider, messages, system, onChunk, signal);
+      if (result.status === 'aborted') return { status: 'aborted' };
+      if (result.status === 'ok') return result;
+      lastErr = result.error;
+      logger.warn('ai-router', `${provider} all keys failed, trying next provider`, {
+        err: lastErr.message,
+      });
+    }
+    return { status: 'error', error: lastErr ?? new Error('Tous les providers IA indisponibles') };
+  }
+
+  /**
+   * Sprint 9 (Kevin règle multi-key) : essaie toutes les clés d'un provider.
+   * Si 1ère clé fail → mark via multiKeyVault.tryFailoverKey + retry avec 2ème clé.
+   * Maximum 5 tentatives par provider (anti-boucle).
+   */
+  private async streamWithKeyFailover(
+    provider: Provider,
+    messages: ChatMessage[],
+    system: string,
+    onChunk: (chunk: StreamChunk) => void,
+    signal: AbortSignal,
+  ): Promise<
+    | { status: 'aborted' }
+    | { status: 'error'; error: Error }
+    | { status: 'ok'; streamResult: ProviderStreamResult; provider: Provider }
+  > {
+    const MAX_KEY_ATTEMPTS = 5;
+    let lastErr: Error | null = null;
+    /* Tente d'abord via multi-key-vault */
+    const multiResult = await this.getApiKeyWithId(provider);
+    if (multiResult) {
+      let currentKeyId: string | null = multiResult.keyId;
+      let currentKey = multiResult.plaintext;
+      for (let attempt = 0; attempt < MAX_KEY_ATTEMPTS; attempt += 1) {
+        if (!currentKey || !currentKeyId) break;
+        try {
+          const streamResult = await this.streamFromProvider(
+            provider,
+            currentKey,
+            messages,
+            system,
+            onChunk,
+            signal,
+          );
+          /* Succès : mark la clé comme "active" via testKey-like update.
+             On laisse multi-key-vault le faire au prochain healthCheck pour éviter overhead. */
+          return { status: 'ok', streamResult, provider };
+        } catch (err: unknown) {
+          const e = err instanceof Error ? err : new Error(String(err));
+          if (e.name === 'AbortError') return { status: 'aborted' };
+          lastErr = e;
+          /* Failover key-level via multi-key-vault */
+          try {
+            const { multiKeyVault } = await import('./multi-key-vault.js');
+            const serviceName = this.providerToService(provider);
+            const next = await multiKeyVault.tryFailoverKey(serviceName, currentKeyId, e.message);
+            if (!next) {
+              logger.info('ai-router', `${provider} no more keys to try (after ${attempt + 1})`);
+              break;
+            }
+            currentKeyId = next.keyId;
+            currentKey = next.plaintext;
+            logger.info('ai-router', `${provider} key failover → next key (attempt ${attempt + 2}/${MAX_KEY_ATTEMPTS})`);
+          } catch {
+            break;
+          }
+        }
+      }
+    } else {
+      /* Pas de multi-key dispo : fallback legacy single-key */
       const key = await this.getApiKeyDecrypted(provider);
-      if (!key && provider !== 'gemini') continue;
+      if (!key && provider !== 'gemini') {
+        return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
+      }
       try {
         const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
         return { status: 'ok', streamResult, provider };
@@ -578,10 +692,9 @@ class AIRouter {
         const e = err instanceof Error ? err : new Error(String(err));
         if (e.name === 'AbortError') return { status: 'aborted' };
         lastErr = e;
-        logger.warn('ai-router', `${provider} failed, trying next`, { err: e.message });
       }
     }
-    return { status: 'error', error: lastErr ?? new Error('Tous les providers IA indisponibles') };
+    return { status: 'error', error: lastErr ?? new Error(`${provider} all keys failed`) };
   }
 
   /**
