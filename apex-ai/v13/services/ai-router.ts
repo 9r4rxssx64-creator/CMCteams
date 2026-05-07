@@ -35,7 +35,7 @@ import { chatFallback } from './chat-fallback.js';
 import { redactMessageContent, redactPII } from './pii-redaction.js';
 import { tokensDashboard } from './tokens-dashboard.js';
 
-export type Provider = 'anthropic' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
+export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -246,6 +246,33 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
       'content-type': 'application/json',
     }),
   },
+  /* P1 audit fix v13.3.10 (Kevin "OpenAI key dort") :
+   * Provider OpenAI natif. Avant : ax_openai_key collée → ai-router mappait
+   * vers openrouter (qui n'a pas forcément la clé) → clé inutilisée.
+   * Maintenant : OpenAI = provider 1ère classe avec endpoint /v1/chat/completions. */
+  openai: {
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    keyName: 'ax_openai_key',
+    model: 'gpt-4o-mini',
+    buildBody: (messages, system) => ({
+      model: 'gpt-4o-mini',
+      stream: true,
+      messages: [{ role: 'system', content: system }, ...messages],
+    }),
+    parseSSE: (data) => {
+      try {
+        const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
+      } catch {
+        return null;
+      }
+    },
+    headers: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    }),
+  },
   openrouter: {
     endpoint: 'https://openrouter.ai/api/v1/chat/completions',
     keyName: 'ax_openrouter_key',
@@ -351,7 +378,7 @@ const MAX_TOOL_USE_ITERATIONS = 10;
  */
 const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropic']);
 
-const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openrouter', 'groq', 'gemini', 'openclaw'];
+const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
 
 class AIRouter {
   private currentAbort: AbortController | null = null;
@@ -788,7 +815,7 @@ class AIRouter {
         },
       });
       /* Map policy ProviderId → router Provider (filtre supportés) */
-      const supported: readonly Provider[] = ['anthropic', 'openrouter', 'groq', 'gemini', 'openclaw'];
+      const supported: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
       const mapToRouter = (p: string): Provider | null => {
         if ((supported as readonly string[]).includes(p)) return p as Provider;
         /* Providers policy non implémentés ai-router : openai, deepseek, cohere, mistral, perplexity

@@ -83,8 +83,9 @@ export const FB_FIX: readonly string[] = [
   'ax_brevo_key',
   'ax_resend_key',
   'ax_telegram_token',
+  'ax_telegram_chat_id', /* P2 audit fix : backup Firebase pour reinstall PWA */
   'ax_whatsapp_token',
-  'ax_discord_webhook',
+  'ax_discord_webhook_url', /* P1 audit fix : align kevin-alerts.ts naming (was ax_discord_webhook) */
   'ax_slack_token',
   /* Productivity / SaaS */
   'ax_notion_key',

@@ -16,6 +16,15 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activePluginsScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activePluginsScope?.cleanup();
+  activePluginsScope = null;
+}
 import {
   APEX_EXTENDED_CATALOG,
   searchCatalog as searchExtended,
@@ -141,6 +150,9 @@ const EXTENDED_VALUE_BADGE: Record<AutoImprovementValue, string> = {
 };
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activePluginsScope?.cleanup();
+  activePluginsScope = createCleanupScope('plugins');
   if (uiState.view === 'extended') {
     await renderExtended(rootEl);
     return;
@@ -239,15 +251,15 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Wiring filtres */
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-plg-search');
   if (searchEl) {
-    searchEl.addEventListener('input', () => {
+    activePluginsScope!.bind(searchEl, 'input', () => {
       uiState.search = searchEl.value;
     });
-    searchEl.addEventListener('change', () => {
+    activePluginsScope!.bind(searchEl, 'change', () => {
       void render(rootEl);
     });
     /* Debounce keyup */
     let timer: ReturnType<typeof setTimeout> | null = null;
-    searchEl.addEventListener('keyup', () => {
+    activePluginsScope!.bind(searchEl, 'keyup', () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         void render(rootEl);
@@ -271,7 +283,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* Wiring install / uninstall buttons */
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-plg-install').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activePluginsScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['id'];
         if (!id) return;
@@ -294,7 +306,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-plg-uninstall').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activePluginsScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['id'];
         if (!id) return;
@@ -314,7 +326,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   });
 
   rootEl.querySelectorAll<HTMLAnchorElement>('.ax-plg-link').forEach((a) => {
-    a.addEventListener('click', (ev) => {
+    activePluginsScope!.bind(a, 'click', (ev) => {
       ev.preventDefault();
       const url = a.dataset['url'];
       if (!url) return;
@@ -465,10 +477,10 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-ext-search');
   if (searchEl) {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    searchEl.addEventListener('input', () => {
+    activePluginsScope!.bind(searchEl, 'input', () => {
       uiState.search = searchEl.value;
     });
-    searchEl.addEventListener('keyup', () => {
+    activePluginsScope!.bind(searchEl, 'keyup', () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         void render(rootEl);
@@ -502,7 +514,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
 
   /* Install buttons (auto-improvement.autoInstallSafe) */
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-ext-install').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activePluginsScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['id'];
         if (!id) return;
@@ -521,7 +533,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
   });
 
   rootEl.querySelectorAll<HTMLAnchorElement>('.ax-ext-link').forEach((a) => {
-    a.addEventListener('click', (ev) => {
+    activePluginsScope!.bind(a, 'click', (ev) => {
       ev.preventDefault();
       const url = a.dataset['url'];
       if (!url) return;

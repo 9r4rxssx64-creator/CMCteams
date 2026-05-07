@@ -28,7 +28,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeArchiveScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeArchiveScope?.cleanup();
+  activeArchiveScope = null;
+}
 
 export type ArchiveCategory =
   | 'projects'
@@ -499,6 +508,9 @@ const CATEGORY_LINKS: Partial<Record<ArchiveCategory, string>> = {
 };
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeArchiveScope?.cleanup();
+  activeArchiveScope = createCleanupScope('archive');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   const stats = archiveHub.stats(uid);
@@ -582,7 +594,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
 
   /* Click sur card catégorie → liste détaillée */
   rootEl.querySelectorAll<HTMLElement>('[data-archive-cat]').forEach((card) => {
-    card.addEventListener('click', () => {
+    activeArchiveScope!.bind(card, 'click', () => {
       const cat = card.dataset['archiveCat'];
       if (!cat || !isValidCategory(cat) || !listEl) return;
       const items = archiveHub.listByCategory(uid, cat);
@@ -597,7 +609,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   /* Search global */
   if (searchEl && listEl) {
     let lastQ = '';
-    searchEl.addEventListener('input', () => {
+    activeArchiveScope!.bind(searchEl, 'input', () => {
       const q = searchEl.value.trim();
       if (q === lastQ) return;
       lastQ = q;
@@ -615,17 +627,20 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   }
 
   /* Export JSON */
-  rootEl.querySelector<HTMLButtonElement>('#ax-archive-export-json')?.addEventListener('click', () => {
+  const expJsonBtn = rootEl.querySelector<HTMLButtonElement>('#ax-archive-export-json');
+  if (expJsonBtn && activeArchiveScope) activeArchiveScope.bind(expJsonBtn, 'click', () => {
     triggerDownload(`apex-archive-${Date.now()}.json`, archiveHub.exportArchive(uid, 'json'), 'application/json');
   });
 
   /* Export CSV */
-  rootEl.querySelector<HTMLButtonElement>('#ax-archive-export-csv')?.addEventListener('click', () => {
+  const expCsvBtn = rootEl.querySelector<HTMLButtonElement>('#ax-archive-export-csv');
+  if (expCsvBtn && activeArchiveScope) activeArchiveScope.bind(expCsvBtn, 'click', () => {
     triggerDownload(`apex-archive-${Date.now()}.csv`, archiveHub.exportArchive(uid, 'csv'), 'text/csv');
   });
 
   /* Purge */
-  rootEl.querySelector<HTMLButtonElement>('#ax-archive-purge')?.addEventListener('click', () => {
+  const purgeBtn = rootEl.querySelector<HTMLButtonElement>('#ax-archive-purge');
+  if (purgeBtn && activeArchiveScope) activeArchiveScope.bind(purgeBtn, 'click', () => {
     const ok = typeof window !== 'undefined' && typeof window.confirm === 'function'
       ? window.confirm('Supprimer les éléments archivés > 90 jours ?')
       : true;
@@ -638,7 +653,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
 
 function attachItemHandlers(rootEl: HTMLElement, uid: string): void {
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="restore"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    activeArchiveScope!.bind(btn, 'click', (e) => {
       e.stopPropagation();
       const id = btn.dataset['archiveId'];
       const type = btn.dataset['archiveType'];

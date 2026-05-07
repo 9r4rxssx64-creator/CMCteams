@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.3.9">
+<html lang="fr" data-theme="dark" data-app-ver="v13.3.10">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,12 +15,12 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-6d512640a60bc8a1a29578ddf4fe66f9' 'strict-dynamic' https:;
-             style-src 'self' 'nonce-6d512640a60bc8a1a29578ddf4fe66f9' 'unsafe-inline';
+             script-src 'self' 'nonce-8140339742e24e009bf958871061041e' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-8140339742e24e009bf958871061041e' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
-             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io https://api.github.com https://api.cloudflare.com https://api.stripe.com https://api.brevo.com https://api.resend.com https://api.replicate.com;
+             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io https://api.github.com https://api.cloudflare.com https://api.stripe.com https://api.brevo.com https://api.resend.com https://api.replicate.com https://api.telegram.org https://discord.com https://discordapp.com https://api.notion.com;
              worker-src 'self' blob:;
              frame-src 'self' https:;
              object-src 'none';
@@ -38,12 +38,12 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="6d512640a60bc8a1a29578ddf4fe66f9" type="module" crossorigin src="./core/main-CXG1yTr8.js"></script>
+  <script nonce="8140339742e24e009bf958871061041e" type="module" crossorigin src="./core/main-Dniy8WsY.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-B17vNBOa.js">
   <link rel="modulepreload" crossorigin href="./chunks/apex-tools-registry-DloDnFZi.js">
-  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-BybElwOv.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BXdN88WA.js">
-  <link nonce="6d512640a60bc8a1a29578ddf4fe66f9" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-DqicUg9o.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-DpAYoBxw.js">
+  <link nonce="8140339742e24e009bf958871061041e" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -73,6 +73,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="6d512640a60bc8a1a29578ddf4fe66f9" src="./assets/js/rescue.js"></script>
+  <script nonce="8140339742e24e009bf958871061041e" src="./assets/js/rescue.js"></script>
 </body>
 </html>
