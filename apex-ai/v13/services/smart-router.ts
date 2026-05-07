@@ -360,6 +360,10 @@ class SmartRouter {
   /**
    * Best provider courant. Si taskType précisé, filtre sur affinité.
    * Override admin (Kevin force un provider) pris en compte en priorité.
+   *
+   * AUTO-MASK (Kevin règle "Autonomie totale toujours") :
+   * Exclut providers avec fail_count_24h ≥ 10 OU score ≤ 10 (KO persistent).
+   * Si tous masqués → fallback ranked[0] de toute façon (pas bloquer user).
    */
   async getBest(taskType?: TaskType): Promise<SmartProvider> {
     const override = this.getOverride();
@@ -367,12 +371,30 @@ class SmartRouter {
       return override as SmartProvider;
     }
     const ranked = await this.rankProviders();
+    /* Auto-mask providers KO persistent (fail_count > 10 ou score critique) */
+    const healthy = ranked.filter((r) => r.score.total > 10);
+    const pool = healthy.length > 0 ? healthy : ranked; /* Fallback si tous masqués */
     if (taskType) {
       const affinity = TASK_AFFINITY[taskType];
-      const matched = ranked.find((r) => affinity.includes(r.provider));
+      const matched = pool.find((r) => affinity.includes(r.provider));
       if (matched) return matched.provider;
     }
-    return ranked[0]?.provider ?? 'anthropic';
+    return pool[0]?.provider ?? 'anthropic';
+  }
+
+  /**
+   * Liste providers actuellement masqués (auto-exclus du failover).
+   * Pour UI admin debugging + alerte Kevin si trop de masqués.
+   */
+  async getMaskedProviders(): Promise<{ provider: SmartProvider; score: number; reason: string }[]> {
+    const ranked = await this.rankProviders();
+    return ranked
+      .filter((r) => r.score.total <= 10)
+      .map((r) => ({
+        provider: r.provider,
+        score: r.score.total,
+        reason: r.score.reasoning ?? 'Score critique (≤10)',
+      }));
   }
 
   /**

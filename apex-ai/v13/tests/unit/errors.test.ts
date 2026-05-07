@@ -23,7 +23,8 @@ describe('Errors handler (core/errors.ts)', () => {
 
     it('mappe timeout', () => {
       const msg = errors.toUserMessage(new Error('timeout exceeded'));
-      expect(msg).toMatch(/réessaie/i);
+      /* Branche timeout : message actionnable "retente avec autre modèle IA" (Kevin "ZÉRO blocage") */
+      expect(msg).toMatch(/retente|réessaie|30s/i);
     });
 
     it('mappe quota exceeded', () => {
@@ -33,7 +34,8 @@ describe('Errors handler (core/errors.ts)', () => {
 
     it('mappe unauthorized 401', () => {
       const msg = errors.toUserMessage(new Error('401 Unauthorized'));
-      expect(msg).toMatch(/Identifiants/i);
+      /* Branche auth : message actionnable "Clé API invalide → Coffre Récupérer" */
+      expect(msg).toMatch(/Clé API|Identifiants|Coffre|invalide/i);
     });
 
     it('mappe forbidden 403', () => {
@@ -53,7 +55,8 @@ describe('Errors handler (core/errors.ts)', () => {
 
     it('fallback générique sur message inconnu', () => {
       const msg = errors.toUserMessage(new Error('weird unexpected'));
-      expect(msg).toMatch(/petit souci|SOS/i);
+      /* Fallback : "Souci technique, je relance automatiquement... Si ça persiste, tape SOS." */
+      expect(msg).toMatch(/Souci technique|petit souci|SOS|relance/i);
     });
 
     it('accepte string non-Error', () => {

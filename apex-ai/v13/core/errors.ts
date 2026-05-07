@@ -82,8 +82,11 @@ class Errors {
   /* Convertit erreur technique en message user-friendly + ACTIONNABLE (règle CLAUDE.md "ZÉRO blocage user") */
   toUserMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
-    /* Réseau / connexion */
-    if (/network|fetch failed|net::|ENOTFOUND|ECONNREFUSED/i.test(msg)) return '🌐 Réseau coupé. Vérifie Wi-Fi/4G — je relance dès que c\'est revenu.';
+    /* Stockage saturé (QuotaExceededError DOM) — DOIT être testé AVANT /quota/ générique
+     * Cause : "QuotaExceededError" matche /quota/i mais c'est un erreur localStorage, pas Anthropic billing. */
+    if (/QuotaExceededError|storage.full|exceeded.*quota|quotaexceeded/i.test(msg)) return '💾 Stockage saturé, nettoyage auto lancé.';
+    /* Réseau / connexion (inclut "Failed to fetch" — message standard fetch API) */
+    if (/network|fetch.failed|failed.to.fetch|net::|ENOTFOUND|ECONNREFUSED/i.test(msg)) return '🌐 Réseau coupé. Vérifie Wi-Fi/4G — je relance dès que c\'est revenu.';
     if (/cors|cross.origin/i.test(msg)) return '🛡 Bloqué par sécurité navigateur (CORS). Je passe par le proxy Cloudflare.';
     /* Timeout / abort */
     if (/timeout|timed out/i.test(msg)) return '⏱ Pas de réponse en 30s. Je retente avec un autre modèle IA…';
@@ -91,10 +94,11 @@ class Errors {
     /* Quota / billing */
     if (/quota|insufficient.balance|insufficient_quota|payment.required|402/i.test(msg)) return '💳 Quota Anthropic épuisé. Recharge ici : https://console.anthropic.com/settings/billing — ou je bascule sur OpenRouter/Groq.';
     if (/rate.?limit|429/i.test(msg)) return '🚦 Trop de requêtes. J\'attends 30s puis je retente automatiquement.';
-    if (/exceeded|storage.full/i.test(msg)) return '💾 Stockage saturé, nettoyage auto lancé.';
     /* Auth */
     if (/unauthorized|invalid.api.key|401/i.test(msg)) return '🔑 Clé API invalide ou expirée. Vérifie le Coffre → bouton 🔓 Récupérer.';
     if (/forbidden|403/i.test(msg)) return '🚫 Action non autorisée pour ce compte.';
+    /* Not found 404 — ressource introuvable (avant catch 5xx pour éviter conflit) */
+    if (/404|not.found/i.test(msg)) return '🔍 Ressource introuvable. Vérifie l\'URL ou réessaie.';
     /* Server errors */
     if (/5\d{2}|internal.server|bad.gateway|service.unavailable/i.test(msg)) return '🛠 Serveur Anthropic en panne, je bascule failover OpenRouter/Groq…';
     /* Tool errors */
@@ -111,7 +115,7 @@ class Errors {
       } catch { return false; }
     })();
     if (isAdmin && msg && msg.length < 200) return `⚠ ${msg.slice(0, 180)} (admin debug)`;
-    return '🔄 Souci technique, je relance automatiquement dans un instant…';
+    return '🔄 Souci technique, je relance automatiquement dans un instant… Si ça persiste, tape SOS.';
   }
 }
 

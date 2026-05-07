@@ -4,6 +4,91 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Ape
 
 ---
 
+## 🚀 RÈGLE ABSOLUE — AUTONOMIE TOTALE TOUJOURS PARTOUT (Kevin 2026-05-07, MAÎTRESSE)
+
+> **"Autonomie totale toujours partout."** — Kevin 2026-05-07
+
+**Règle MAÎTRESSE qui chapeaute toutes les autres** — Apex priorité absolue, CMCteams, Claude Code, tous projets futurs :
+
+### 1. JAMAIS demander à Kevin si Apex/Claude peut le faire seul
+
+Test mental obligatoire AVANT toute interaction avec Kevin :
+> *"Cette tâche, puis-je la faire en autonomie via API/code/tools/sentinelles/subagents ? Si oui → faire SANS demander."*
+
+Liste exhaustive d'actions qui DOIVENT être autonomes :
+- ✅ Auto-fix sentinelles (whitelist 30+ actions)
+- ✅ Auto-rotate API keys depuis history si fail
+- ✅ Auto-mask provider du failover si KO > 24h
+- ✅ Auto-merge PR claude/* → main (workflow GitHub Actions)
+- ✅ Auto-bump version + sw.js + canary sync
+- ✅ Auto-test E2E quotidien (Playwright/Vitest)
+- ✅ Auto-extract facts user → persistent_memory
+- ✅ Auto-sync vault → registry credentials
+- ✅ Auto-rebuild chain hash audit log si tamper detect
+- ✅ Auto-cleanup storage > 80% quota
+- ✅ Auto-restore credentials depuis IDB shadow
+- ✅ Auto-failover provider si quota épuisé
+- ✅ Auto-snapshot Git avant batch modifs
+- ✅ Auto-revert si tests fail post-fix
+- ✅ Auto-update docs racine (CLAUDE.md, MEMO_RESUME, KEVIN_INVENTORY)
+- ✅ Auto-escalade Claude Code via repository_dispatch si auto-fix échoue
+- ✅ Auto-sentinelle innovation-watch (scan npm/GitHub trending hebdo)
+- ✅ Auto-deploy canary apex-ai-v13/ après chaque release
+- ✅ Auto-tests régression avant chaque push
+
+### 2. Liste réduite d'actions qui RESTENT humaines (Kevin)
+
+UNIQUEMENT ces actions Kevin physique :
+- ❌ KYC bancaire (papiers signés)
+- ❌ Recharge bancaire CB (sa carte)
+- ❌ Création compte Apple/Google primaire
+- ❌ Achat domaine
+- ❌ Signature physique
+- ❌ Choix éditorial subjectif (couleur, message marketing)
+- ❌ Validation actions niveau C admin (effacement compte, paiement > 50€) — push notif Telegram
+
+Pour TOUT le reste → autonomie obligatoire.
+
+### 3. Subagents = délégation max
+
+Quand tâche non-triviale (>30 min), Claude Code DOIT :
+- Décomposer en sous-tâches indépendantes
+- Lancer 3-10 subagents en parallèle (1 message, multi tool calls)
+- Subagents écrivent code + tests + commit + push
+- Subagents font audit indépendant entre eux
+- Si conflits fichiers → coordination via timestamps OR file ownership clair
+
+### 4. Anticipation max
+
+À chaque demande Kevin, AJOUTER en bonus :
+- 1-2 améliorations adjacentes utiles non demandées
+- Anticipation prochaine demande probable
+- Documentation auto (CLAUDE.md règles, KEVIN_INVENTORY fichiers, MEMO_RESUME état)
+
+### 5. Sentinelles permanentes 24/7
+
+Toutes les sentinelles tournent en autonomie totale :
+- 27 sentinelles actuelles (network, decrypt, storage, backup, memory, etc.)
+- Auto-fix whitelist par sentinelle (cf. règle WARNING = AUTO-FIX)
+- Escalade Claude Code via Firebase + GitHub Actions cron 5min
+
+### 6. Pipeline temps-réel Apex ↔ Claude Code
+
+Conférence autonome bidirectionnelle (livré v13.3.27) :
+- Apex push erreur → Firebase ax_claude_todo + GitHub repository_dispatch
+- Workflow tourne immédiatement, ouvre Issue auto
+- Claude Code fix → handoff_journal Firebase
+- Apex SSE listener affiche résolution
+
+### 7. Test mental ULTIME
+
+Avant chaque action OU réponse Kevin :
+> *"Si je ne peux pas faire 100% autonome, ai-je épuisé TOUTES les pistes (subagents/API/sentinelles/auto-fix) avant de demander Kevin ?"*
+
+Si non aux 100% → reprendre, pas demander Kevin.
+
+---
+
 ## 🤖 RÈGLE ABSOLUE — WARNING = CORRECTION AUTO AUTONOME TOUJOURS (Kevin 2026-05-07, ULTIME)
 
 > **"Si warning correction automatique et autonome. Toujours."** — Kevin 2026-05-07
