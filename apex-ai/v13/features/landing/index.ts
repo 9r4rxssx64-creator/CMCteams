@@ -15,10 +15,19 @@
  */
 
 import { APP_VER } from '../../core/bootstrap.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { router } from '../../core/router.js';
 import { auth } from '../../services/auth.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeLandingScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeLandingScope?.cleanup();
+  activeLandingScope = null;
+}
 
 function escapeHtml(s: string): string {
   return s.replace(
@@ -73,6 +82,9 @@ async function tryAutoLogin(): Promise<boolean> {
 }
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeLandingScope?.cleanup();
+  activeLandingScope = createCleanupScope('landing');
   /* Auto-login background si device connu (non bloquant) */
   void tryAutoLogin().then((logged) => {
     if (logged) toast.success('🔐 Reconnu automatiquement (device trusted)');
@@ -115,7 +127,7 @@ export function render(rootEl: HTMLElement): void {
   `;
 
   const form = rootEl.querySelector<HTMLFormElement>('#login-form');
-  form?.addEventListener('submit', (e) => {
+  if (form && activeLandingScope) activeLandingScope.bind(form, 'submit', (e) => {
     e.preventDefault();
     haptic.tap();
     void handleLogin(rootEl);
@@ -123,7 +135,7 @@ export function render(rootEl: HTMLElement): void {
 
   /* Reset PIN handler : efface PIN admin/user pour permettre re-init au prochain login */
   const resetBtn = rootEl.querySelector<HTMLButtonElement>('#login-reset-pin');
-  resetBtn?.addEventListener('click', () => {
+  if (resetBtn && activeLandingScope) activeLandingScope.bind(resetBtn, 'click', () => {
     haptic.medium();
     const nameInput = rootEl.querySelector<HTMLInputElement>('#login-name');
     const enteredName = nameInput?.value.trim() ?? '';
