@@ -140,11 +140,17 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
          Header `anthropic-beta: prompt-caching-2024-07-31` non requis depuis 2024-09 (GA).
       */
       const filteredMessages = messages.filter((m) => m.role !== 'system');
-      /* On cache les messages "anciens" (jusqu'à length-2) seulement s'ils sont stables.
-         Les 2 derniers messages restent en clair (le current user msg + dernière assistant). */
+      /* v13.3.60 fix CRITIQUE Kevin "anthropic HTTP 400 cache_control max 4 found 6" :
+       * Anthropic limite cache_control à MAX 4 blocs par requête.
+       * Avec system bloc cached + N messages anciens → si N > 3 → erreur 400.
+       * Solution : cache UNIQUEMENT 3 derniers messages anciens (laisse 1 slot pour system).
+       * Limite stricte 3 messages cachés = 4 cache_control au total (3 msg + 1 system). */
+      const ANTHROPIC_MAX_CACHE_BLOCKS = 3; /* 3 messages + 1 system = 4 max */
       const cacheBoundary = Math.max(0, filteredMessages.length - 2);
+      const cacheStartIdx = Math.max(0, cacheBoundary - ANTHROPIC_MAX_CACHE_BLOCKS);
       const cachedMessages = filteredMessages.map((m, i) => {
-        if (i < cacheBoundary && typeof m.content === 'string' && m.content.length > 0) {
+        /* Cache uniquement les 3 derniers messages anciens (entre cacheStartIdx et cacheBoundary) */
+        if (i >= cacheStartIdx && i < cacheBoundary && typeof m.content === 'string' && m.content.length > 0) {
           return {
             role: m.role,
             content: [
