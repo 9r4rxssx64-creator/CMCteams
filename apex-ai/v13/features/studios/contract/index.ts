@@ -26,7 +26,16 @@
  */
 
 import { logger } from '../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeContractScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeContractScope?.cleanup();
+  activeContractScope = null;
+}
 
 export type ContractTemplateId =
   | 'nda' | 'cdi' | 'cdd' | 'freelance'
@@ -843,6 +852,9 @@ class ContractStudioStore {
 export const contractStudioStore = new ContractStudioStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeContractScope?.cleanup();
+  activeContractScope = createCleanupScope('studios-contract');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   const contracts = contractStudioStore.load(uid);
@@ -909,7 +921,7 @@ export function render(rootEl: HTMLElement): void {
 
 function attachHandlers(rootEl: HTMLElement, uid: string): void {
   rootEl.querySelectorAll<HTMLElement>('[data-create]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeContractScope!.bind(btn, 'click', () => {
       const tpl = btn.dataset['create'] as ContractTemplateId;
       const c = contractStudioStore.create(uid, tpl);
       if (c) {
@@ -920,7 +932,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="remove"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeContractScope!.bind(btn, 'click', () => {
       const id = btn.dataset['contractId'];
       if (!id) return;
       if (contractStudioStore.remove(uid, id)) render(rootEl);
@@ -928,7 +940,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="export-pdf"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeContractScope!.bind(btn, 'click', () => {
       const id = btn.dataset['contractId'];
       if (!id) return;
       logger.info('studio-contract', 'export PDF requested', { id });
@@ -936,7 +948,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="preview-text"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeContractScope!.bind(btn, 'click', () => {
       const id = btn.dataset['contractId'];
       if (!id) return;
       const all = contractStudioStore.load(uid);
