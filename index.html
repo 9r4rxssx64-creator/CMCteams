@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.598";
+var APP_VER="v9.599";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -31855,16 +31855,25 @@ function doImport(){
       }
     }
     if(!_fe){
-      // v9.141 — Fallback 9 : Levenshtein abaiss\u00e9 \u00e0 0.65 pour cadres (noms courts)
+      // v9.599 — Fallback 9 : Levenshtein 0.55 + match inverse + alpha-only pour cadres
       if(importFamily==="cadres"){
         var _nU2=function(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z ]/g,"").replace(/\s+/g," ").trim();};
         var _lev2=function(a,b){if(a===b)return 0;var m=a.length,n=b.length;if(!m)return n;if(!n)return m;var r=[];for(var i=0;i<=m;i++)r[i]=[i];for(var j=0;j<=n;j++)r[0][j]=j;for(i=1;i<=m;i++)for(j=1;j<=n;j++)r[i][j]=a[i-1]===b[j-1]?r[i-1][j-1]:1+Math.min(r[i-1][j-1],r[i-1][j],r[i][j-1]);return r[m][n];};
-        var _bestC=null,_bestCS=0;
+        var _inv=function(s){var t=_nU2(s).split(" ");return t.length===2?t[1]+" "+t[0]:_nU2(s);};
+        var _alpha=function(s){return _nU2(s).replace(/\s+/g,"");};
+        var _bestC=null,_bestCS=0,_matchType="";
+        var _eN=_nU2(eName),_eI=_inv(eName),_eA=_alpha(eName);
         A.employees.filter(function(x){return x.family==="cadres"&&isEmpActive(x,iy,im);}).forEach(function(x){
-          var sc=1-_lev2(_nU2(eName),_nU2(x.name))/Math.max(_nU2(eName).length,_nU2(x.name).length);
-          if(sc>_bestCS){_bestCS=sc;_bestC=x;}
+          var xN=_nU2(x.name),xI=_inv(x.name),xA=_alpha(x.name);
+          var sc1=1-_lev2(_eN,xN)/Math.max(_eN.length,xN.length||1);
+          var sc2=1-_lev2(_eN,xI)/Math.max(_eN.length,xI.length||1);
+          var sc3=1-_lev2(_eI,xN)/Math.max(_eI.length,xN.length||1);
+          var sc4=_eA===xA?1:(1-_lev2(_eA,xA)/Math.max(_eA.length,xA.length||1));
+          var sc=Math.max(sc1,sc2,sc3,sc4);
+          if(sc>_bestCS){_bestCS=sc;_bestC=x;_matchType=sc===sc1?"direct":sc===sc4?"alpha":"inverse";}
         });
-        if(_bestCS>=0.65&&_bestC){_fe=_bestC;console.info("[import cadre-fuzzy] "+eName+" \u2192 "+_bestC.name+" ("+_bestCS.toFixed(2)+")");}
+        if(_bestCS>=0.55&&_bestC){_fe=_bestC;console.info("[import cadre-fuzzy] "+eName+" \u2192 "+_bestC.name+" ("+_bestCS.toFixed(2)+" "+_matchType+")");}
+        else {try{var _ul=lg("cmc_cadre_unmatched_log",[]);_ul.push({name:eName,month:iy+"-"+(im+1),bestScore:_bestCS,bestCandidate:_bestC?_bestC.name:null,ts:Date.now()});if(_ul.length>200)_ul=_ul.slice(-200);ls("cmc_cadre_unmatched_log",_ul);}catch(_){}}
       }
     }
     if(!_fe){
