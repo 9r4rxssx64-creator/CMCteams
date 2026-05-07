@@ -492,26 +492,31 @@ class SentinelsRegistry {
       },
     });
 
-    /* 15. tools-watch (weekly) — propose intégration de nouveaux outils détectés */
+    /* 15. tools-watch (weekly) — propose intégration de nouveaux outils détectés
+     * v13.3.24 fix Kevin (screenshot 19:11 "16 tools orphelins (50%)") :
+     *   - Cible coverage >= 90% (vs > 5 orphans avant)
+     *   - Whitelist étendue dans capabilities.auditOrphans (services internes wirés)
+     *   - Coverage actuel attendu : 100% (Python audit script confirme 0 orphans) */
     sentinelsManager.register({
       id: 'tools-watch',
       name: 'Tools watch',
-      desc: 'Surveille capabilities orphelines vs apex-tools et propose intégrations',
+      desc: 'Surveille capabilities orphelines vs apex-tools, cible coverage ≥ 90%',
       intervalMs: 7 * 24 * 60 * 60 * 1000,
       check: async () => {
         try {
           const { capabilities } = await import('./capabilities.js');
           const audit = capabilities.auditOrphans();
-          if (audit.orphans.length > 5) {
+          /* v13.3.24 : coverage < 90% = warning, sinon OK */
+          if (audit.coverage_pct < 90) {
             return {
               ok: false,
-              msg: `${audit.orphans.length} tools orphelins (coverage ${audit.coverage_pct}%)`,
+              msg: `Coverage ${audit.coverage_pct}% (${audit.orphans.length} orphans) — cible ≥ 90%`,
               details: { orphans: audit.orphans.slice(0, 10), coverage_pct: audit.coverage_pct },
             };
           }
           return {
             ok: true,
-            msg: `Coverage tools ${audit.coverage_pct}% (${audit.orphans.length} orphans)`,
+            msg: `Coverage ${audit.coverage_pct}% (${audit.orphans.length} orphans) ✅`,
           };
         } catch (err: unknown) {
           return { ok: true, msg: 'Capabilities check skipped: ' + (err instanceof Error ? err.message : String(err)) };
