@@ -20,6 +20,7 @@
  * - Cards arrondies soft shadows
  */
 
+import { store } from '../../core/store.js';
 import { auditLog } from '../../services/audit-log.js';
 import { permissions } from '../../services/permissions.js';
 
@@ -62,7 +63,11 @@ function renderSuggestionChip(emoji: string, label: string, action: string): str
 export function render(root: HTMLElement): void {
   const greeting = getGreetingByHour();
   const wallpaper = getRandomWallpaper();
-  const userName = 'Laurence'; /* TODO Jet 9 : récup depuis store si configuré */
+  /* P1-10 fix (audit v13.2.5) : récup userName depuis store ou fallback localStorage. */
+  const storedUser = store.get('user') as { name?: string } | null;
+  const userName = storedUser?.name?.split(/\s+/)[0]
+    ?? localStorage.getItem('apex_v13_laurence_name')
+    ?? 'Laurence';
 
   /* Audit log : ouverture vue Laurence (remonte Kevin) */
   void auditLog.record('laurence.view_opened', {
@@ -148,7 +153,12 @@ export function render(root: HTMLElement): void {
       void auditLog.record('laurence.action_pending_kevin_validation', {
         details: { action },
       });
-      /* TODO Jet 9 : modal "En attente validation Kevin" */
+      /* P1-10 fix (audit v13.2.5) : modal blocking en attente validation Kevin. */
+      void import('../../ui/toast.js').then(({ toast }) => {
+        toast.warn(
+          `⏳ Demande envoyée à Kevin pour validation (${action}). Tu seras notifiée dès qu'il aura répondu.`,
+        );
+      });
       return;
     }
     if (perm === 'notify') {

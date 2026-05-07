@@ -1161,7 +1161,19 @@ function handleAction(action: string, ctx: ActionContext): void {
       break;
     }
     case 'overlay-screenshot': {
-      logger.info('feature-browser', 'screenshot requested (TODO Web Capture API)');
+      /* P1-10 fix (audit v13.2.5) : implémentation honnête au lieu de TODO silencieux.
+       * iframe cross-origin = pas de canvas.drawImage possible (tainted canvas).
+       * Solution : demande à l'utilisateur d'utiliser screenshot natif iOS/macOS
+       * (Cmd+Shift+4 / longpress home+power) avec toast informatif. */
+      void import('../../ui/toast.js').then(({ toast }) => {
+        const isApple = /Mac|iPhone|iPad/.test(navigator.userAgent);
+        toast.info(
+          isApple
+            ? '📸 Utilise Cmd+Shift+4 (Mac) ou longpress home+power (iPhone) pour capturer'
+            : '📸 Utilise Win+Shift+S (Windows) ou outil Capture Android pour capturer',
+        );
+      });
+      logger.info('feature-browser', 'screenshot fallback : OS native (cross-origin iframe limit)');
       break;
     }
     case 'overlay-fullscreen': {
