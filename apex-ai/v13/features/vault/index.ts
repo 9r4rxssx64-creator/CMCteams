@@ -894,13 +894,17 @@ async function onDiscoverLinks(rootEl: HTMLElement, service: string, btn: HTMLBu
 function onDeleteKey(rootEl: HTMLElement, credId: string): void {
   if (!credId) return;
   haptic.tap();
-  if (!window.confirm('Supprimer cette clé ? Action irréversible (la clé sera marquée invalide dans l\'historique).')) {
+  /* v13.3.54 fix Kevin "je ne peux pas effacer les doublons api anthropic" :
+   * AVANT : appel markInvalid → clé restait dans la liste (juste status invalide).
+   * APRÈS : removeKey direct → clé VRAIMENT supprimée + whitelist deleted (POUBELLE-FIX
+   * v13.3.51) empêche restoration depuis IDB shadow / Firebase. */
+  if (!window.confirm('Supprimer cette clé définitivement ? Elle sera retirée du Coffre + ne sera plus restaurée auto.')) {
     return;
   }
   try {
-    multiKeyVault.markInvalid(credId, 'admin manual delete');
+    multiKeyVault.removeKey(credId);
     haptic.success();
-    toast.success('Clé supprimée (archivée invalide)');
+    toast.success('Clé supprimée définitivement ✓');
     render(rootEl);
   } catch (err: unknown) {
     logger.warn('feature-vault', 'delete failed', { err });

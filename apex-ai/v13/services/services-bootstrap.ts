@@ -423,6 +423,18 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       /* v13.3.20 FIX KEVIN "Apex oublie ses codes sans cesse" :
        * Démarre credentials-watch (storage event + poll 30s + boot pre-flight). */
       vault.startCredentialsWatch();
+      /* v13.3.55 FIX KEVIN "je ne peux pas effacer les doublons api anthropic" :
+       * Auto-dedup au boot (silencieux). Supprime exact duplicates + invalides
+       * quand actif du même service présent. Whitelist deleted via removeKey. */
+      try {
+        const { multiKeyVault } = await import('./multi-key-vault.js');
+        const result = multiKeyVault.dedupAuto();
+        if (result.dedupedCount > 0) {
+          logger.info('vault-lifecycle', `🧹 dedupAuto removed ${result.dedupedCount} duplicates at boot`);
+        }
+      } catch (err: unknown) {
+        logger.warn('vault-lifecycle', 'dedupAuto failed (non-blocking)', { err });
+      }
     }),
 
     /* P0 : claude-bridge init stats (lecture pending todos) */

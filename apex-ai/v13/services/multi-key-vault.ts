@@ -308,6 +308,72 @@ class MultiKeyVault {
   }
 
   /**
+   * v13.3.54 — Dédoublication automatique (Kevin "je ne peux pas effacer les doublons api anthropic").
+   *
+   * Détecte clés multiples du même service avec :
+   * - Même encryptedValue (vraies copies — supprime toutes sauf 1)
+   * - Status invalid + une autre du même service active → supprime invalide
+   * - Plusieurs actives même service → garde la plus récemment testée/ajoutée
+   *
+   * Returns : { dedupedCount, kept }
+   */
+  dedupAuto(opts?: { dryRun?: boolean }): { dedupedCount: number; kept: { service: string; id: string }[] } {
+    const all = this.load();
+    const dryRun = opts?.dryRun ?? false;
+    const byServiceValue = new Map<string, KeyEntry[]>(); /* group by service + encryptedValue (true duplicates) */
+    const byService = new Map<string, KeyEntry[]>(); /* group by service (decide best) */
+
+    for (const entry of all) {
+      const groupKey = `${entry.service}::${entry.encrypted}`;
+      const arr = byServiceValue.get(groupKey) ?? [];
+      arr.push(entry);
+      byServiceValue.set(groupKey, arr);
+
+      const svcArr = byService.get(entry.service) ?? [];
+      svcArr.push(entry);
+      byService.set(entry.service, svcArr);
+    }
+
+    const toRemove = new Set<string>();
+    const kept: { service: string; id: string }[] = [];
+
+    /* Phase 1 : exact duplicates (same encryptedValue) → keep most recent */
+    for (const [, group] of byServiceValue) {
+      if (group.length <= 1) continue;
+      group.sort((a, b) => (b.lastTestedAt ?? b.addedAt) - (a.lastTestedAt ?? a.addedAt));
+      kept.push({ service: group[0]!.service, id: group[0]!.id });
+      for (let i = 1; i < group.length; i++) toRemove.add(group[i]!.id);
+    }
+
+    /* Phase 2 : same service, multiple active + invalid → remove invalids */
+    for (const [, group] of byService) {
+      if (group.length <= 1) continue;
+      const actives = group.filter((g) => g.status !== 'invalid');
+      const invalids = group.filter((g) => g.status === 'invalid');
+      if (actives.length >= 1 && invalids.length > 0) {
+        for (const inv of invalids) toRemove.add(inv.id);
+      }
+    }
+
+    if (dryRun) {
+      return { dedupedCount: toRemove.size, kept };
+    }
+
+    if (toRemove.size > 0) {
+      for (const id of toRemove) {
+        try {
+          this.removeKey(id);
+        } catch (err: unknown) {
+          logger.warn('multi-key-vault', 'dedupAuto removeKey failed', { id, err });
+        }
+      }
+      logger.info('multi-key-vault', `🧹 dedupAuto removed ${toRemove.size} duplicate keys`);
+    }
+
+    return { dedupedCount: toRemove.size, kept };
+  }
+
+  /**
    * Récupère LA clé courante (la meilleure dispo) pour un service.
    * Retourne {keyId, plaintext} ou null si aucune clé utilisable.
    */
