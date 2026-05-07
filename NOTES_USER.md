@@ -1058,3 +1058,44 @@ Applicable dans :
 A verifier a chaque audit (axRunAudit, subagent audit).
 
 ---
+
+## 🤖 PRÉFÉRENCES IA PROVIDERS (Kevin 2026-05-07, décision)
+
+**Décision Kevin** : "On garde les 2" (Claude + Grok)
+
+### Smart-router Apex v13.3.33+ route automatiquement
+
+| Tâche détectée | Provider auto |
+|---|---|
+| Code / programmation | Claude Sonnet 4.6 / Opus 4.7 (#1 fiabilité) |
+| Reasoning structuré / analyse longue | Claude Opus 4.7 |
+| Recherche actualité X (Twitter) live | xAI Grok 3/4 (UNIQUE) |
+| Vision / image / audio / vidéo | OpenAI GPT-4o (multimodal natif) |
+| Latence ultra-rapide / résumé | Groq (Llama 3.3 70B) |
+| Free tier économe | Gemini |
+| Failover si quota Anthropic épuisé | OpenRouter → Groq → Gemini → Grok |
+
+### 10 clés API actuellement dans Coffre Kevin (vu screenshot 20:56)
+
+✅ Anthropic Claude (principal)
+✅ GitHub
+✅ Groq (KO actuellement → recharge https://console.groq.com/keys)
+✅ DeepSeek
+✅ Mistral
+✅ Cohere
+✅ xAI Grok
+✅ Perplexity
+✅ YouTube
+✅ Railway
+
+### Auto-mask v13.3.36+
+
+Smart-router masque AUTOMATIQUEMENT les providers avec score ≤ 10 (KO persistent fail_count > 10 ou décrypt failed). Kevin n'a aucune action à faire — Apex bascule auto.
+
+### Cas spécifiques Kevin
+
+- **Casino Monaco veille X** : utilise Grok → "Cherche tweets actualité Casino Monaco"
+- **Code Apex/CMCteams** : Claude reste référence (ce travail = preuve)
+- **Photos / scan** : GPT-4o vision auto-routé
+- **Email rapide** : Groq pour latence < 500ms
+
