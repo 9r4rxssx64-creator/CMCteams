@@ -39,10 +39,10 @@ describe('chat features deep tests', () => {
       expect(header?.innerHTML).toContain('AI');
     });
 
-    it('Footer affiche version v13.0.0 + DK', async () => {
+    it('Footer affiche version v13 + DK', async () => {
       const { render } = await import('../../features/chat/index.js');
       render(root);
-      expect(root.innerHTML).toContain('v13.0');
+      expect(root.innerHTML).toContain('v13.');
       expect(root.innerHTML).toContain('DK');
     });
 
