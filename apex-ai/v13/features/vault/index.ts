@@ -399,6 +399,9 @@ export function renderCredentialCard(c: CredentialDisplay): string {
           style="flex:1;min-width:80px;padding:6px 10px;background:rgba(34,204,119,0.1);color:#22cc77;border:1px solid rgba(34,204,119,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔄 Test</button>
         <button data-action="recharge" data-service="${escapeHtml(c.service)}" data-recharge-url="${escapeHtml(recharge)}" ${recharge ? '' : 'disabled'}
           style="flex:1;min-width:80px;padding:6px 10px;background:rgba(201,162,39,0.1);color:#c9a227;border:1px solid rgba(201,162,39,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px;${recharge ? '' : 'opacity:0.4;cursor:not-allowed'}">💰 Recharger</button>
+        <button data-action="discover-links" data-service="${escapeHtml(c.service)}"
+          title="Cherche login/dashboard/billing/api_keys/usage en autonomie"
+          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(74,158,255,0.1);color:#4a9eff;border:1px solid rgba(74,158,255,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔍 Chercher liens</button>
         <button data-action="edit" data-cred-id="${escapeHtml(c.id)}"
           style="padding:6px 10px;background:rgba(255,255,255,0.05);color:#aaa;border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">✏️</button>
         <button data-action="delete" data-cred-id="${escapeHtml(c.id)}"
@@ -658,6 +661,13 @@ function attachCardHandlers(rootEl: HTMLElement): void {
       onRecharge(url, service);
     });
   });
+  rootEl.querySelectorAll<HTMLButtonElement>('[data-action="discover-links"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const service = btn.dataset['service'] ?? '';
+      void onDiscoverLinks(rootEl, service, btn);
+    });
+  });
   rootEl.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -719,6 +729,49 @@ function onRecharge(url: string, service: string): void {
   } catch (err: unknown) {
     logger.warn('feature-vault', 'recharge open failed', { err });
     toast.error('Impossible d\'ouvrir le lien');
+  }
+}
+
+/**
+ * Cherche en autonomie tous les liens (login/dashboard/billing/api_keys/usage/...)
+ * pour un service. Cascade : pre_configured → web_search → pattern_discovery.
+ *
+ * UI feedback : spinner sur bouton, toast avec count + sources trouvées.
+ */
+async function onDiscoverLinks(rootEl: HTMLElement, service: string, btn: HTMLButtonElement): Promise<void> {
+  if (!service) return;
+  haptic.tap();
+  const original = btn.textContent;
+  btn.textContent = '⏳ Recherche…';
+  btn.setAttribute('disabled', 'true');
+  try {
+    const result = await autoDiscoverLinks.discover(service, { force: true });
+    const found: string[] = [];
+    if (result.login) found.push('login');
+    if (result.dashboard) found.push('dashboard');
+    if (result.billing) found.push('billing');
+    if (result.api_keys) found.push('api_keys');
+    if (result.usage) found.push('usage');
+    if (result.docs) found.push('docs');
+    if (result.password_reset) found.push('reset_pw');
+    if (result.account_settings) found.push('settings');
+    if (result.support) found.push('support');
+    if (result.status_page) found.push('status');
+    if (result.alive && found.length > 0) {
+      haptic.success();
+      toast.success(`🔗 ${found.length} liens trouvés (${result.source}) : ${found.join(', ')}`);
+    } else {
+      haptic.error();
+      toast.warn(`Aucun lien validé pour ${service} — réessaie plus tard`);
+    }
+    render(rootEl);
+  } catch (err: unknown) {
+    logger.warn('feature-vault', 'discoverLinks failed', { err });
+    haptic.error();
+    toast.error('Erreur pendant la recherche de liens');
+  } finally {
+    btn.textContent = original;
+    btn.removeAttribute('disabled');
   }
 }
 

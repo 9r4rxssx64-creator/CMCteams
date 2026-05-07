@@ -733,7 +733,53 @@ class SentinelsRegistry {
       },
     });
 
-    /* 17. sentinel-meta (5 min) — surveille les autres sentinelles */
+    /* 18. links-rediscover (weekly) — re-verify alive tous discovered links + rebuild si broken */
+    sentinelsManager.register({
+      id: 'links-rediscover',
+      name: 'Links rediscover',
+      desc: 'Re-verify alive tous discovered links (login/dashboard/billing/api_keys/usage) + rebuild si broken',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+          const result = await autoDiscoverLinks.reVerifyAll();
+          if (result.broken > result.alive && result.tested > 5) {
+            return {
+              ok: false,
+              msg: `🔴 ${result.broken}/${result.tested} liens cassés — rediscover requis`,
+              details: { ...result },
+            };
+          }
+          return {
+            ok: true,
+            msg: `🔗 ${result.alive}/${result.tested} liens alive (${result.broken} cassés)`,
+            details: { ...result },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: true,
+            msg: 'links-rediscover skipped: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Auto-fix : relance discoverAllStored pour reconstruire le cache */
+        try {
+          const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+          const r = await autoDiscoverLinks.discoverAllStored();
+          logger.info('sentinels-registry', `links-rediscover auto-fix : ${r.new} new, ${r.verified}/${r.total} verified`);
+          return {
+            ok: r.verified > 0,
+            msg: `${r.new} nouveaux services, ${r.verified}/${r.total} verified`,
+          };
+        } catch (err: unknown) {
+          logger.warn('sentinels-registry', 'links-rediscover auto-fix failed', { err });
+          return { ok: false, msg: err instanceof Error ? err.message : 'autoFix failed' };
+        }
+      },
+    });
+
+    /* 19. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',
       name: 'Sentinel meta',

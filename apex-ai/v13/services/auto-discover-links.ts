@@ -770,7 +770,7 @@ class AutoDiscoverLinks {
     for (const f of fields) {
       const val = primary[f] ?? secondary[f];
       if (val !== undefined) {
-        (merged as Record<string, unknown>)[f] = val;
+        (merged as unknown as Record<string, unknown>)[f] = val;
       }
     }
     return merged;

@@ -359,6 +359,19 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'B',
   },
+  {
+    name: 'find_my_login_url',
+    description: 'Cherche en autonomie l\'URL de connexion + dashboard + billing + api_keys + usage pour un service Kevin (ex: "ouvre ma boîte Gmail" → URL accounts.google.com).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        service: { type: 'string', description: 'Nom du service (ex: anthropic, gmail, github, revolut) ou identifiant (email, IBAN)' },
+      },
+      required: ['service'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
   /* === Tools meta-projets Kevin (multi-polyvalence) === */
   {
     name: 'project_status',
