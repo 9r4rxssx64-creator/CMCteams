@@ -901,7 +901,7 @@ export function registerCoreSentinels(): void {
     intervalMs: 24 * 60 * 60 * 1000, /* 1× par jour */
     check: async () => {
       try {
-        const { persistentMemoryStore } = await import('./persistent-memory-store.js');
+        const { persistentMemory: persistentMemoryStore } = await import('./persistent-memory-store.js');
         const all = await persistentMemoryStore.list();
         const byUser = new Map<string, number>();
         for (const e of all) byUser.set(e.scope, (byUser.get(e.scope) ?? 0) + 1);
@@ -955,7 +955,7 @@ export function registerCoreSentinels(): void {
     },
     autoFix: async () => {
       try {
-        const { persistentMemoryStore } = await import('./persistent-memory-store.js');
+        const { persistentMemory: persistentMemoryStore } = await import('./persistent-memory-store.js');
         const all = await persistentMemoryStore.list();
         const byUser = new Map<string, typeof all>();
         for (const e of all) {
