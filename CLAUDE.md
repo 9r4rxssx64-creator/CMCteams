@@ -1,6 +1,102 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.16 / CMC v9.597).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.27 / CMC v9.600).
+
+---
+
+## 🧠 RÈGLE PERMANENTE — MÉMOIRE LONG TERME + RELECTURE PROFONDE TOUS DOCS (Kevin 2026-05-07, ABSOLUE)
+
+> **"Apex dans son script doit reprendre tous ses documents, savoir exactement toute l'histoire pour chaque personne — pour moi l'admin, pour Laurence, pour les clients, pour les amis, pour les familles, dans chaque compte. Il doit avoir une mémoire à long terme. Et son savoir doit s'améliorer au fur et à mesure. Ne doit pas se contenter de relire vite fait. Il doit rentrer dans tous les détails, tout savoir, se rappeler de tout, toutes ces leçons, toutes ces méthodes de travail, tout son savoir par rapport à l'utilisateur. Apex admin a le savoir de tous. Comme pour les autres, ce qui travaille chez eux et les leçons tirées de l'un servent à l'autre."** — Kevin 2026-05-07
+
+**Règle absolue, prioritaire** — Apex priorité 1 :
+
+### 1. À CHAQUE boot Apex : relecture PROFONDE de TOUS les docs
+
+Pas seulement "vite fait" — `memory.syncDocsAtBoot()` (`core/memory.ts`) fetch via GitHub raw API les 8 docs racine :
+- `CLAUDE.md` (règles permanentes — 50+ règles)
+- `NOTES_USER.md` (infos métier Kevin, employés, équipes)
+- `MEMO_RESUME.md` (état session courante)
+- `KEVIN_INVENTORY.md` (fichiers créés + liens GitHub)
+- `KEVIN_ACTIONS_TODO.md` (actions Kevin en attente)
+- `MEMORY_PERSISTENT.md` (facts cross-session)
+- `APEX_HANDOFF.md` (communication bidirectionnelle Apex↔Claude Code)
+- `CLAUDE_FEED.md` (notifications cross-app)
+
+Cache 6h dans IndexedDB pour éviter rate limit GitHub. `memory.getDocsContext()` expose le cache à `buildSystemPromptDeep()`.
+
+### 2. Mémoire long-terme PER-USER (admin Kevin, Laurence, clients, amis, familles)
+
+`ax_persistent_memory_<uid>` (via `services/persistent-memory-store.ts`) — facts illimités, classés par catégories :
+- `profile` (âge, lieu, métier, allergies)
+- `preferences` (aime/déteste)
+- `relationships` (ma femme, mon fils, mon collègue X)
+- `projects` (projets actifs, archives)
+- `lessons` (leçons apprises spécifiques user)
+- `facts` (autre)
+- `goals` (objectifs)
+- `history` (historique 7-30j actions)
+
+Importance 0-100 (priorité retention si overflow). Cap 5000 entries / user.
+
+### 3. Apex admin (Kevin) = savoir de TOUS les users
+
+`buildAdminCrossUserKnowledge()` agrège facts/lessons de tous les users vers Kevin admin (kdmc_admin). Vue `?view=knowledge` admin only affiche cross-user knowledge avec details per-user (nb facts, top 3 importance).
+
+### 4. Lessons d'un user servent aux autres
+
+Via `ax_lessons_learned_struct` (cross-app shared FB_FIX) :
+- Apex apprend → push lesson → CMCteams hérite next session
+- CMCteams apprend → push lesson → Apex hérite next session
+- Cap 200 + dédupe par similarité title 85%
+
+`memory.recordSessionLearning(category, title, text, severity)` ajoute à local + shared simultanément.
+
+### 5. À chaque message user : extract facts critiques
+
+`memory.extractFactsFromMessage(text, userId)` — NLP regex per-user détecte :
+- Anniversaires : "mon anniv le 12 mai", "j'ai 35 ans"
+- Préférences : "j'aime X", "je préfère Y", "je déteste Z"
+- Allergies : "je suis allergique à X" (importance 95)
+- Projets : "je travaille sur X", "mon projet Y"
+- Relations : "ma femme/fils/collègue X"
+- Adresse, ville, métier
+
+INTERDIT (forbidden patterns) : CB complète, tokens API, seed phrases (cf. règle SECU).
+
+Push automatique dans `persistent_memory_<uid>` avec timestamp + source 'chat'.
+
+### 6. À chaque erreur runtime : record + apply patterns next session
+
+Via `memory.recordSessionLearning()` → push `ax_lessons_learned_struct`. Au boot suivant, `buildSystemPromptDeep()` injecte top 10 critical non résolues → Apex IA évite de refaire les mêmes erreurs.
+
+### 7. Sentinelle `memory-watch` (1×/jour)
+
+`services/sentinels.ts` audit memory size par user :
+- Si > 1000 facts/user → trigger compression (garde top 100 par importance)
+- Si lessons > 200 → cleanup duplicates (similarity > 85%)
+- Push report dans `ax_memory_audit_log` (cap 30)
+- `runOne('memory-watch')` exposé via vue `?view=knowledge` bouton "🗜️ Compress memory"
+
+### 8. Vue admin `?view=knowledge`
+
+`features/knowledge/index.ts` — sections :
+- **Mes facts persistants** (per-user) : table category/text/importance/âge
+- **Cross-user knowledge** (admin only) : per-user accordion + top 3 facts importance
+- **Lessons cross-app** : timeline 30 dernières + filtre severity/resolved
+- **Docs sync status** : tableau CLAUDE.md/NOTES_USER/etc. + last fetch + size
+- **Memory audit log** : derniers reports sentinel memory-watch
+
+Boutons :
+- 🔄 Force re-sync docs (override cache 6h)
+- 🗜️ Compress memory (run sentinel manuellement)
+- 💾 Export JSON (téléchargement complet)
+- 🧪 Tester extraction (modal prompt phrase exemple)
+
+### 9. Test mental obligatoire avant chaque release Apex
+
+> *"Si Kevin demande 'rappelle-toi de mon anniv 12 mai' au tour 1, puis 'quelle date j'ai dit pour mon anniv ?' au tour 50 (après reload, autre device, autre session) — Apex retrouve-t-il l'info via persistent_memory_<kdmc_admin> ? Si non → enrichir extractFactsFromMessage."*
+
+Si non → fix avant push.
 
 ---
 
@@ -6268,6 +6364,8 @@ Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiateme
 51. **Confettis post-import causaient sautillement iPhone Safari PWA** (v9.589 fix, 2026-05-02) — `confetti(120)` injectait 120 éléments DOM avec animations CSS → reflows continus sur main thread → "scintille/sautille" visible Kevin. **OBLIGATION** : confettis OFF par défaut via `lg("cmc_confetti_enabled",false)` early return. Re-activable manuel via console si Kevin veut les revoir. Cap réduit 120→60 si réactivés. iPhone Safari PWA très sensible aux animations DOM massives. ❌→✅
 
 52. **Force-update auto-deploy SW updatefound unreliable iOS Safari PWA** (v9.591 + v12.774 fix, 2026-05-02) — `reg.update()` + `controllerchange` listeners ne firent pas toujours sur iOS Safari PWA backgroundée → Kevin voit "rien n'a changé" malgré nouveau push. **OBLIGATION** : ajouter setTimeout boot 4-5s qui fetch index.html depuis serveur + compare APP_VER local vs remote → si différent : clear caches + unregister SW + reload forcé avec query param `?_forceupd=`. **1 setTimeout unique, AUCUN listener supplémentaire** (respect règle Kevin v12.770 anti-loops). Fonctionne où SW updatefound échoue. ✅→✅
+
+53. **Auto-embed modules dans chat sans dismiss = chaos visuel** (Apex b745570, 2026-05-07) — quand Apex chat détecte intent "finance" / "music" / "video" / "legal" via `axDetectIntentEmbed`, il injectait un module embed dans le chat à CHAQUE message matching (Kevin "Finance Pro apparaît seul" + tous studios). Pas de dedup → apparaissent 5-10x. Pas de bouton dismiss → impossible à fermer. Pas de toggle ON/OFF → user subit. **OBLIGATION** : (a) **Dedup** : ne pas embed si même module déjà visible dans les 5 derniers messages, (b) **Bouton dismiss** : chaque embed a un ✕ visible top-right + close handler, (c) **Toggle global** : Réglages → "Auto-embed modules dans chat" ON/OFF (default OFF si user a fermé 3+ fois), (d) **Confidence threshold** : 0.85 minimum pour auto-embed (vs 0.5 ancien) — sinon bouton "🎬 Ouvrir Studio Vidéo ?" en chip cliquable au lieu d'embed. Fix b745570 v13.3.25. ❌→✅
 
 ---
 

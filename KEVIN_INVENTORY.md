@@ -1,7 +1,57 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-04 16h40** (Apex v13.0.77 — 4463+ tests verts, parité v12 ~85%)
+> Dernière mise à jour : **2026-05-07 19h45** (Apex v13.3.27 / CMC v9.600 — mémoire long-terme + 17 livraisons session)
+
+## 🆕 SESSION 2026-05-07 — APEX v13.3.18 → v13.3.27 + CMC v9.598 → v9.600
+
+### Livraisons (17 commits + subagents A-O)
+
+**CMCteams** :
+- v9.598 — MERGE imports PDF incrémentaux (cadres préservés quand on importe BJ Éq.X) → règle Kevin §1
+- v9.599 — Parser cadres fuzzy + détection multi-strategy
+- v9.600 — Cadres unifiés section unique + auto-detect type d'import + `cmc_manual_overrides_<key>`
+
+**Apex** :
+- v13.3.18 — Sentinelles +10 (probes CSP-friendly, cred scan élargi, perf-watch Safari skip)
+- v13.3.19 — Bridge planning Apex→CMCteams (`services/cmc-planning-bridge.ts` + tests 20)
+- v13.3.20 — Fix "Apex oublie ses codes" : triple persistence vault + verify post-write + storage event listener (28 tests vault verts)
+- v13.3.21 — Fix decrypt failed : retry multi-passphrase + recover key + sentinelle decrypt-watch
+- v13.3.22 — UX sticky + decrypt graceful (Coffre admin)
+- v13.3.25 — Wake word "Dis Apex" iOS Safari fix + sentinelles cosmétiques + cross-platform device-capabilities dashboard
+- b745570 — Fix auto-embed modules chat (Finance Pro / Studios n'apparaissent plus seuls — dedup + dismiss + toggle)
+- **v13.3.27 — Mémoire long-terme + relecture profonde tous docs (CE COMMIT)**
+
+### Fichiers nouveaux v13.3.27 (subagent O — mémoire)
+- `apex-ai/v13/core/memory.ts` (étendu +340 lignes) : 6 nouvelles méthodes mémoire long-terme
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/core/memory.ts
+- `apex-ai/v13/services/sentinels.ts` (étendu +95 lignes) : sentinelle `memory-watch`
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/sentinels.ts
+- `apex-ai/v13/features/knowledge/index.ts` (NEW, 320 lignes) : vue `?view=knowledge`
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/features/knowledge/index.ts
+- `apex-ai/v13/tests/unit/memory-deep.test.ts` (NEW, 22 tests) : NLP extract + sync docs + system prompt deep
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/tests/unit/memory-deep.test.ts
+
+### Règle permanente CLAUDE.md ajoutée v13.3.27
+**🧠 MÉMOIRE LONG TERME + RELECTURE PROFONDE TOUS DOCS** (Kevin 2026-05-07, ABSOLUE)
+- À chaque boot Apex : sync 8 docs racine (CLAUDE.md, NOTES_USER, MEMO_RESUME, KEVIN_INVENTORY, KEVIN_ACTIONS_TODO, MEMORY_PERSISTENT, APEX_HANDOFF, CLAUDE_FEED) via GitHub raw API + cache 6h IDB
+- Mémoire long-terme PER-USER (`ax_persistent_memory_<uid>`) : facts illimités, 8 catégories, importance 0-100
+- Apex admin Kevin = savoir de TOUS les users (cross-user knowledge)
+- Lessons d'un user servent aux autres via `ax_lessons_learned_struct` cross-app shared
+- Extract facts auto à chaque message (NLP regex per-user)
+- Sentinelle `memory-watch` 1×/jour : compress si > 1000 facts/user, dédupe lessons > 200
+- Vue admin `?view=knowledge` (route v13.3.27)
+
+### Stats finales v13.3.27
+- TS strict : 0 errors
+- Tests : 44 verts (memory + memory-deep + sentinels) — total ~4500+ session
+- Build : 4.20s, bundle main 55.26 KB / gzip 20.32 KB
+- Canary sync : OK (apex-ai-v13/ → v13.3.27)
+
+### Erreur ajoutée CLAUDE.md
+**#53** Auto-embed modules dans chat sans dismiss = chaos visuel (fix b745570)
+
+---
 
 ## 🎯 SESSION 2026-05-04 PM — APEX v13.0.73 → v13.0.77 (5 commits + 17 subagents)
 
