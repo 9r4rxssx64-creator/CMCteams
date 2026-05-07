@@ -831,6 +831,14 @@ body.has-login-bg .login-bg{
 }
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* v9.602 — slideIn (modal Apex pending), shimmer (skeleton screens) */
+@keyframes slideIn{from{transform:translateY(-12px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.cmc-skeleton{display:inline-block;background:linear-gradient(90deg,rgba(201,162,39,.06) 0%,rgba(201,162,39,.18) 50%,rgba(201,162,39,.06) 100%);background-size:200% 100%;animation:shimmer 1.6s ease-in-out infinite;border-radius:6px;height:14px;min-width:60px}
+.cmc-fade-in{animation:fadeIn .35s ease-out both}
+@media (prefers-reduced-motion:reduce){
+  .cmc-skeleton,.cmc-fade-in,.fete-float{animation:none !important}
+}
 /* fadeIn retiré des cards — causait un clignotement opaque→transparent à chaque dc() */
 .online-dot{width:8px;height:8px;border-radius:50%;background:#3a8a50;display:inline-block;animation:pulse 2s infinite;margin-right:4px}
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -4836,7 +4844,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.601";
+var APP_VER="v9.602";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5739,7 +5747,7 @@ function _renderUploadReqCard(r,withActions){
   if(r.description)h+='<div style="font-size:13px;color:#a8c8a0;font-style:italic;margin-bottom:6px;padding:6px 8px;background:rgba(0,0,0,.15);border-radius:6px">\u201c'+esc(r.description)+'\u201d</div>';
   // Aperçu image
   if(r.dataUrl&&r.type==="image"){
-    h+='<div style="margin:8px 0"><img src="'+_safeUrl(r.dataUrl)+'" alt="Aper\u00e7u" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid rgba(201,162,39,.3)"></div>';
+    h+='<div style="margin:8px 0"><img src="'+_safeUrl(r.dataUrl)+'" alt="Aper\u00e7u" loading="lazy" decoding="async" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid rgba(201,162,39,.3)"></div>';
   }
   // Raison refus
   if(r.rejectReason)h+='<div style="font-size:12px;color:#c04646;margin-top:6px;padding:6px 8px;background:rgba(192,70,70,.08);border-radius:6px">\u274c Raison du refus : '+esc(r.rejectReason)+'</div>';
@@ -17047,7 +17055,7 @@ function vPit(){
         var isChefHere=t.chefId===uid;
         // v9.352 — Photo emp si dispo (mini avatar devant le nom)
         var _photo=getEmpPhoto(uid);
-        var _photoHtml=_photo?'<img src="'+esc(_photo)+'" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid '+tcc+'">':'';
+        var _photoHtml=_photo?'<img src="'+esc(_photo)+'" alt="" loading="lazy" decoding="async" style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid '+tcc+'">':'';
         // v9.333 — Badges arrivée + prioritaire
         var _shH=empShiftStartHour(e);
         var _shBadge=_shH<99?'<span style="font-size:10px;color:#8aa088" title="Arriv\u00e9e '+_shH+'h">'+_shH+'h</span>':'';
@@ -18368,7 +18376,7 @@ function vLiveRoom(){
       var physAssigned=tblAssigned&&tblAssigned.physTableId?getTablesCoords()[tblAssigned.physTableId]:null;
       h+='<div class="card" style="padding:12px;margin-top:10px;border-left:4px solid '+tccSel+'">'
         +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-        +(photoSel?'<img src="'+esc(photoSel)+'" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid '+tccSel+'">':'<div style="width:48px;height:48px;border-radius:50%;background:'+tccSel+';display:flex;align-items:center;justify-content:center;color:#0a1408;font-weight:900;font-size:20px;border:2px solid #0a1408">'+esc((empSel.name||"?").charAt(0))+'</div>')
+        +(photoSel?'<img src="'+esc(photoSel)+'" alt="" loading="lazy" decoding="async" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid '+tccSel+'">':'<div style="width:48px;height:48px;border-radius:50%;background:'+tccSel+';display:flex;align-items:center;justify-content:center;color:#0a1408;font-weight:900;font-size:20px;border:2px solid #0a1408">'+esc((empSel.name||"?").charAt(0))+'</div>')
         +'<div style="flex:1;min-width:180px"><div style="font-size:15px;font-weight:800;color:#e8f0e0">'+esc(empSel.name)+(empSel.chef?' \u265a':'')+(isSenior(empSel)?' \u2605':'')+'</div>'
         +'<div style="font-size:11px;color:#8aa088">\u00e9q. '+esc(tmSel||"?")+' \u00b7 arriv\u00e9e '+(shiftH<99?shiftH+'h':'?')+' \u00b7 statut '+esc(stSel)+'</div>'
         +'<div style="font-size:12px;color:'+tccSel+';margin-top:3px">'+(physAssigned?'\ud83c\udfb2 '+esc(physAssigned.name)+' ('+esc(tblAssigned.jeu)+')':'<span style="color:#8aa088">Non assign\u00e9</span>')+'</div></div>'
@@ -18391,7 +18399,7 @@ function vLiveRoom(){
       var tccP=tc(ep.team);
       var phP=getEmpPhoto(ep.id);
       h+='<button onclick="(function(){var tids=Object.keys((A.live||{}).tables||{}).filter(function(t){return !A.live.tables[t].closedAt;});if(!tids.length){toast(\'Aucune table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){var tt=A.live.tables[tid];var ph=tt.physTableId?getTablesCoords()[tt.physTableId]:null;return (i+1)+\'. \'+(ph?ph.name:tid)+\' (\'+tt.jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+JSON.stringify(ep.name)+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+JSON.stringify(ep.id)+',tids[i-1]);})()" class="sim-shift-cell" style="display:flex;align-items:center;gap:3px;padding:2px 7px;background:'+tccP+'18;border:1px solid '+tccP+'55;border-radius:12px;color:'+tccP+';font-size:11px;cursor:pointer;font-weight:700">'
-        +(phP?'<img src="'+esc(phP)+'" alt="" style="width:14px;height:14px;border-radius:50%;object-fit:cover">':'')
+        +(phP?'<img src="'+esc(phP)+'" alt="" loading="lazy" decoding="async" style="width:14px;height:14px;border-radius:50%;object-fit:cover">':'')
         +esc(ep.name.split(" ")[0])+(ep.chef?' \u265a':'')+'</button>';
     });
     if(poolLR.length>24)h+='<span style="padding:2px 7px;color:#8aa088;font-size:11px">+'+(poolLR.length-24)+'</span>';
@@ -20074,7 +20082,7 @@ function genQRSVG(text,size){
   var safe=encodeURIComponent(text||"");
   var url="https://api.qrserver.com/v1/create-qr-code/?size="+size+"x"+size+"&data="+safe;
   return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:8px;padding:14px;background:white;border-radius:12px">'
-    +'<img src="'+url+'" width="'+size+'" height="'+size+'" alt="QR Code" style="display:block;max-width:100%;height:auto" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">'
+    +'<img src="'+url+'" width="'+size+'" height="'+size+'" alt="QR Code" loading="lazy" decoding="async" style="display:block;max-width:100%;height:auto" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">'
     +'<div style="display:none;padding:20px;color:#666;font-size:13px;text-align:center">QR g\u00e9n\u00e9ration indisponible.<br>Contenu : '+esc(text||"")+'</div>'
     +'<div style="font-size:11px;color:#666;max-width:200px;text-align:center;word-break:break-all">'+esc((text||"").slice(0,80))+'</div>'
     +'</div>';
