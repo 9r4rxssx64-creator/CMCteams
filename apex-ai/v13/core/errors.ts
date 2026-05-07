@@ -79,17 +79,39 @@ class Errors {
     }
   }
 
-  /* Convertit erreur technique en message user-friendly (règle CLAUDE.md) */
+  /* Convertit erreur technique en message user-friendly + ACTIONNABLE (règle CLAUDE.md "ZÉRO blocage user") */
   toUserMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
-    if (/network|fetch|cors/i.test(msg)) return 'Réseau indisponible. Vérifie ta connexion.';
-    if (/timeout/i.test(msg)) return 'Pas de réponse, réessaie dans un instant.';
-    if (/quota|exceeded/i.test(msg)) return 'Stockage saturé, nettoyage automatique lancé.';
-    if (/unauthorized|401/i.test(msg)) return 'Identifiants invalides ou expirés.';
-    if (/forbidden|403/i.test(msg)) return 'Action non autorisée.';
-    if (/not found|404/i.test(msg)) return 'Élément introuvable.';
-    if (/5\d{2}/i.test(msg)) return 'Serveur indisponible, réessaie dans 1 min.';
-    return 'Un petit souci, réessaie ou tape SOS.';
+    /* Réseau / connexion */
+    if (/network|fetch failed|net::|ENOTFOUND|ECONNREFUSED/i.test(msg)) return '🌐 Réseau coupé. Vérifie Wi-Fi/4G — je relance dès que c\'est revenu.';
+    if (/cors|cross.origin/i.test(msg)) return '🛡 Bloqué par sécurité navigateur (CORS). Je passe par le proxy Cloudflare.';
+    /* Timeout / abort */
+    if (/timeout|timed out/i.test(msg)) return '⏱ Pas de réponse en 30s. Je retente avec un autre modèle IA…';
+    if (/abort|cancel/i.test(msg)) return '⏸ Action interrompue. Tape ta question à nouveau si besoin.';
+    /* Quota / billing */
+    if (/quota|insufficient.balance|insufficient_quota|payment.required|402/i.test(msg)) return '💳 Quota Anthropic épuisé. Recharge ici : https://console.anthropic.com/settings/billing — ou je bascule sur OpenRouter/Groq.';
+    if (/rate.?limit|429/i.test(msg)) return '🚦 Trop de requêtes. J\'attends 30s puis je retente automatiquement.';
+    if (/exceeded|storage.full/i.test(msg)) return '💾 Stockage saturé, nettoyage auto lancé.';
+    /* Auth */
+    if (/unauthorized|invalid.api.key|401/i.test(msg)) return '🔑 Clé API invalide ou expirée. Vérifie le Coffre → bouton 🔓 Récupérer.';
+    if (/forbidden|403/i.test(msg)) return '🚫 Action non autorisée pour ce compte.';
+    /* Server errors */
+    if (/5\d{2}|internal.server|bad.gateway|service.unavailable/i.test(msg)) return '🛠 Serveur Anthropic en panne, je bascule failover OpenRouter/Groq…';
+    /* Tool errors */
+    if (/tool.not.found|unknown.tool/i.test(msg)) return '🔧 Outil indisponible. Reformule ou tape la fonction direct.';
+    if (/parse|json|syntax/i.test(msg)) return '📝 Format réponse cassé. Je réessaie immédiatement…';
+    if (/aborted/i.test(msg)) return '⏸ Lifecycle iOS Safari (normal). Reprise auto.';
+    /* Memory / IDB */
+    if (/indexeddb|idb|database/i.test(msg)) return '💾 Cache local inaccessible, fallback Firebase.';
+    /* Catch-all : afficher le vrai message technique 1 fois (mode admin debug uniquement) */
+    const isAdmin = (() => {
+      try {
+        const user = JSON.parse(localStorage.getItem('apex_v13_user') ?? 'null') as { role?: string; id?: string } | null;
+        return user?.role === 'admin' || user?.id === 'kdmc_admin';
+      } catch { return false; }
+    })();
+    if (isAdmin && msg && msg.length < 200) return `⚠ ${msg.slice(0, 180)} (admin debug)`;
+    return '🔄 Souci technique, je relance automatiquement dans un instant…';
   }
 }
 

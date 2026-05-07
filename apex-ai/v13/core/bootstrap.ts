@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.29';
+export const APP_VER = 'v13.3.31';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -461,6 +461,22 @@ async function bootstrap(): Promise<void> {
   const bootMs = Math.round(performance.now() - ctx.startedAt);
   logger.info('boot', `APEX ${APP_VER} ready in ${bootMs}ms`);
   events.emit('boot:complete', { ctx, bootMs });
+
+  /* v13.3.30 (Kevin règle absolue "tout autonomie autocorrigé") :
+   * - SOS rescue button toujours visible (1-clic auto-fix, long-press diagnostic)
+   * - HUD debug live admin Kevin only (overlay top-right état app temps réel)
+   * - Auto-test runner schedule daily (smoke tests services critiques)
+   * Non-bloquant : tous mounted en background. */
+  setTimeout(() => {
+    void Promise.allSettled([
+      import('../ui/sos-rescue.js').then((m) => m.sosRescue.mount()),
+      import('../ui/hud-debug.js').then((m) => m.hudDebug.mount()),
+      import('../services/auto-test-runner.js').then((m) => m.autoTestRunner.scheduleAutoRun()),
+    ]).then((results) => {
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      logger.info('boot', `v13.3.30 autonomy modules : ${ok}/${results.length} mounted`);
+    });
+  }, 1500);
 }
 
 /* Entry — guard SSR/test environments où document est undefined (Vitest happy-dom).
