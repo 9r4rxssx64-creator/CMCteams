@@ -362,11 +362,17 @@ class Memory {
         `- Si Kevin demande "préviens-moi sur Telegram" → service: 'telegram', task: 'send_message', params: { chat_id, text }\n` +
         `- Si Kevin demande "post sur Slack" → service: 'slack', task: 'send_message', params: { channel, text }\n` +
         `- Si Kevin demande "Discord notif" → service: 'discord', task: 'webhook_send', params: { content, webhook_url }\n\n` +
-        `**Code / Repo :**\n` +
+        `**Code / Repo (Parité Claude Code v13.3.1 — Kevin screenshots 2026-05-07) :**\n` +
         `- Si Kevin signale "bug X dans CMCteams" → service: 'github', task: 'create_issue', params: { repo, title, body, labels }\n` +
         `- Si Kevin demande "commente issue Y" → service: 'github', task: 'add_comment', params: { issue_number, body }\n` +
         `- Si Kevin valide "merge PR Z" → service: 'github', task: 'merge_pr', params: { pr_number, confirm: true }\n` +
-        `- Si Kevin demande "trigger workflow build" → service: 'github', task: 'dispatch_workflow', params: { workflow, ref }\n\n` +
+        `- Si Kevin demande "trigger workflow build" → service: 'github', task: 'dispatch_workflow', params: { workflow, ref }\n` +
+        `- **CRÉE un nouveau fichier** → tool dédié \`create_or_update_file\` { path, content, message, branch?, repo? } — exécute RÉELLEMENT (push commit GitHub Contents API, encode base64 auto). Plus de "code affiché dans le chat" — écrit pour de vrai.\n` +
+        `- **MODIFIE un fichier existant** → même tool \`create_or_update_file\` (détecte SHA auto, update au lieu de créer)\n` +
+        `- **SUPPRIME un fichier** → \`delete_repo_file\` { path, confirm: true } (action destructive, exige confirm)\n` +
+        `- **LIT un fichier** → \`read_repo_file\` { path, repo? } (déjà dispo, GitHub raw API)\n` +
+        `- **LISTE fichiers** → \`list_repo_files\` { directory, repo? }\n` +
+        `Règle : si Kevin demande "crée ce fichier" ou "ajoute ce module", appelle \`create_or_update_file\` IMMÉDIATEMENT (ne te contente plus d'afficher le code dans le chat). \`ax_github_token\` doit être configuré dans Coffre.\n\n` +
         `**Paiement / Finance :**\n` +
         `- Si Kevin demande "facture client 50€" → service: 'stripe', task: 'create_payment_intent', params: { amount: 5000, currency: 'eur', description }\n` +
         `- Si Kevin valide "rembourse X" → service: 'stripe', task: 'refund', params: { payment_intent, confirm: true }\n` +

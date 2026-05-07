@@ -11,6 +11,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.js';
 import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
@@ -423,7 +424,7 @@ function renderKnowledgeTab(): string {
 function attachHandlers(rootEl: HTMLElement): void {
   /* Nav route delegation (CSP strict — replaces inline onclick) */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-nav-route]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const route = btn.dataset['navRoute'] ?? 'chat';
       window.location.hash = '#' + route;
@@ -432,13 +433,13 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Select-all delegation for input click (CSP strict) */
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="select-all"]').forEach((input) => {
-    input.addEventListener('click', () => {
+    activeAdminScope!.bind(input, 'click', () => {
       input.select();
     });
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.selection();
       activeTab = btn.dataset['tab'] as Tab;
       void render(rootEl);
@@ -447,7 +448,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const toggle = rootEl.querySelector<HTMLInputElement>('#commerce-toggle');
   if (toggle) {
-    toggle.addEventListener('change', () => {
+    activeAdminScope!.bind(toggle, 'change', () => {
       haptic.medium();
       commerce.setEnabled(toggle.checked);
       toast.success(`Commercialisation ${toggle.checked ? 'activée' : 'désactivée'}`);
@@ -457,14 +458,14 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const form = rootEl.querySelector<HTMLFormElement>('#create-user-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(form, 'submit', (e) => {
       e.preventDefault();
       void handleCreateUser(rootEl);
     });
   }
 
   rootEl.querySelectorAll<HTMLSelectElement>('[data-user-plan]').forEach((select) => {
-    select.addEventListener('change', () => {
+    activeAdminScope!.bind(select, 'change', () => {
       const uid = select.dataset['userPlan'] ?? '';
       if (!uid) return;
       commerce.setUserPlan(uid, select.value as Plan);
@@ -473,7 +474,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-project-save]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['projectSave'] ?? '';
       if (!id) return;
@@ -499,7 +500,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-confirm-otp]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const otp = btn.dataset['confirmOtp'] ?? '';
       if (!otp) return;
@@ -518,7 +519,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Apex execute : cancel + poll handlers */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-cancel]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['execCancel'] ?? '';
       if (!id) return;
@@ -535,7 +536,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-poll]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['execPoll'] ?? '';
       if (!id) return;
@@ -553,7 +554,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   /* ========== Knowledge Base handlers ========== */
   const addRepoForm = rootEl.querySelector<HTMLFormElement>('#add-repo-form');
   if (addRepoForm) {
-    addRepoForm.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(addRepoForm, 'submit', (e) => {
       e.preventDefault();
       haptic.tap();
       const input = rootEl.querySelector<HTMLInputElement>('#kb-add-repo');
@@ -575,7 +576,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   }
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-remove-repo]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const repo = btn.dataset['removeRepo'] ?? '';
       if (!repo) return;
@@ -587,7 +588,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const searchForm = rootEl.querySelector<HTMLFormElement>('#kb-search-form');
   if (searchForm) {
-    searchForm.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(searchForm, 'submit', (e) => {
       e.preventDefault();
       haptic.tap();
       const queryInput = rootEl.querySelector<HTMLInputElement>('#kb-search-query');
@@ -620,7 +621,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const clearCacheBtn = rootEl.querySelector<HTMLButtonElement>('#kb-clear-cache');
   if (clearCacheBtn) {
-    clearCacheBtn.addEventListener('click', () => {
+    activeAdminScope!.bind(clearCacheBtn, 'click', () => {
       haptic.tap();
       const r = apexKnowledgeBase.clearCache();
       toast.success(`Cache vidé : ${r.cleared} entrées`);
@@ -687,7 +688,18 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   void render(rootEl);
 }
 
+/* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA navigation. */
+let activeAdminScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeAdminScope?.cleanup();
+  activeAdminScope = null;
+}
+
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeAdminScope?.cleanup();
+  activeAdminScope = createCleanupScope('admin');
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `

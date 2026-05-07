@@ -1399,18 +1399,55 @@ const APEX_TOOLS: readonly ApexTool[] = [
   },
   {
     name: 'execute_task_on_service',
-    description: 'Exécute tâche concrète sur service externe Kevin (clé API vault). Services supportés : github, stripe, resend, telegram, brevo, openai, anthropic, vercel, cloudflare, paypal, discord, slack, notion, airtable, shopify. Autonomie totale Kevin 2026-05-04.',
+    description: 'Exécute tâche concrète sur service externe Kevin (clé API vault). Services supportés : github, stripe, resend, telegram, brevo, openai, anthropic, vercel, cloudflare, paypal, discord, slack, notion, airtable, shopify. GitHub tasks: create_issue, add_comment, merge_pr (confirm:true), dispatch_workflow, create_or_update_file, delete_file (confirm:true). Autonomie totale Kevin 2026-05-04.',
     inputSchema: {
       type: 'object',
       properties: {
         service: { type: 'string', description: 'Nom service (github | stripe | resend | telegram | brevo | openai | anthropic | vercel | cloudflare | paypal | discord | slack | notion | airtable | shopify)' },
-        task: { type: 'string', description: 'Tâche : send_email, create_issue, send_message, etc. Voir docs handler.' },
-        params: { type: 'object', description: 'Paramètres tâche (to, subject, amount, repo, channel, etc.). Actions destructives exigent confirm:true.' },
+        task: { type: 'string', description: 'Tâche : send_email, create_issue, create_or_update_file, delete_file, send_message, etc. Voir docs handler.' },
+        params: { type: 'object', description: 'Paramètres tâche (to, subject, amount, repo, channel, path, content, message, branch, etc.). Actions destructives (delete_file, merge_pr) exigent confirm:true.' },
       },
       required: ['service', 'task'],
     },
     minTier: 'admin',
     impactLevel: 'B',
+  },
+  /* P0 PARITÉ CLAUDE CODE (Kevin screenshots 2026-05-07) : tools dédiés write fichiers
+   * pour qu'Apex IA n'aie pas besoin de passer par execute_task_on_service.
+   * Réponse au screenshot "Tools GitHub | Non exécutés — affichage seulement". */
+  {
+    name: 'create_or_update_file',
+    description: 'CRÉE ou MET À JOUR un fichier dans le repo GitHub Kevin. Apex IA peut désormais écrire du code réellement (pas juste afficher). Si le fichier existe → update via SHA, sinon création. Encode auto base64. Branch default: main.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Chemin relatif depuis racine repo (ex: src/modules/clients/types.ts)' },
+        content: { type: 'string', description: 'Contenu UTF-8 complet du fichier (sera encodé base64 auto)' },
+        message: { type: 'string', description: 'Message commit (default: "Apex IA: update {path}")' },
+        branch: { type: 'string', description: 'Branche cible (default: main)' },
+        repo: { type: 'string', description: 'Repo cible owner/repo (default: 9r4rxssx64-creator/CMCteams)' },
+      },
+      required: ['path', 'content'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
+    name: 'delete_repo_file',
+    description: 'SUPPRIME un fichier du repo GitHub. Action destructive — exige confirm:true. Crée commit avec message explicite.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Chemin relatif fichier à supprimer' },
+        message: { type: 'string', description: 'Message commit (default: "Apex IA: delete {path}")' },
+        branch: { type: 'string', description: 'Branche cible (default: main)' },
+        repo: { type: 'string', description: 'Repo cible (default: 9r4rxssx64-creator/CMCteams)' },
+        confirm: { type: 'boolean', description: 'DOIT être true pour valider la suppression' },
+      },
+      required: ['path', 'confirm'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
   },
   {
     name: 'list_task_on_service_handlers',

@@ -882,6 +882,16 @@ class ApexToolsDispatcher {
           params['task'] as string,
           (params['params'] as Record<string, unknown> | undefined) ?? {},
         );
+      /* P0 PARITÉ CLAUDE CODE (Kevin screenshots 2026-05-07) :
+       * Tools dédiés write fichier — short-circuits vers handleGithubTask. */
+      case 'create_or_update_file':
+      case 'create_file':
+      case 'write_file': {
+        return this.executeTaskOnService('github', 'create_or_update_file', params);
+      }
+      case 'delete_repo_file': {
+        return this.executeTaskOnService('github', 'delete_file', params);
+      }
       case 'list_task_on_service_handlers':
         return { handlers: this.listExecuteTaskHandlers() };
       /* === Personal Assistant (Kevin 2026-05-07) === */
@@ -2924,6 +2934,83 @@ class ApexToolsDispatcher {
       if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
       return { ok: true, dispatched: workflowId };
     }
+
+    /* P0 PARITÉ CLAUDE CODE (Kevin screenshots 2026-05-07) :
+     * Apex IA ne pouvait QUE lire/commenter, jamais créer/modifier des fichiers.
+     * Ajout create_or_update_file via GitHub Contents API (PUT base64 encoded).
+     * Règle CLAUDE.md "APEX = MÊME ACCÈS QUE CLAUDE CODE" enfin appliquée. */
+    if (task === 'create_or_update_file' || task === 'write_file' || task === 'create_file') {
+      const path = String(params['path'] ?? '').trim();
+      if (!path) throw new Error('path required (ex: src/modules/clients/types.ts)');
+      const content = String(params['content'] ?? '');
+      const message = String(params['message'] ?? `Apex IA: update ${path}`).slice(0, 256);
+      const branch = String(params['branch'] ?? 'main');
+      /* Anti-empty-write : refuse contenu vide pour éviter écraser fichiers par accident */
+      if (content === '') throw new Error('content vide refusé (utilise delete_file pour supprimer)');
+      /* 1. Récup SHA si fichier existe (pour update) — sinon création */
+      let sha: string | undefined;
+      try {
+        const checkRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${branch}`, {
+          headers, signal: AbortSignal.timeout(10000),
+        });
+        if (checkRes.ok) {
+          const existing = (await checkRes.json()) as { sha?: string };
+          sha = existing.sha;
+        }
+      } catch { /* fichier n'existe pas, création OK */ }
+      /* 2. Encode content en base64 (browser-safe via TextEncoder + btoa) */
+      const encoded = (() => {
+        const bytes = new TextEncoder().encode(content);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+        return btoa(bin);
+      })();
+      /* 3. PUT vers GitHub Contents API */
+      const body: Record<string, unknown> = { message, content: encoded, branch };
+      if (sha) body['sha'] = sha;
+      const res = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`, {
+        method: 'PUT', headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        throw new Error(`GitHub HTTP ${res.status} : ${err.slice(0, 200)}`);
+      }
+      const result = (await res.json()) as { commit?: { sha?: string; html_url?: string }; content?: { html_url?: string } };
+      return {
+        ok: true,
+        action: sha ? 'updated' : 'created',
+        path,
+        repo,
+        branch,
+        commit_sha: result.commit?.sha,
+        commit_url: result.commit?.html_url,
+        file_url: result.content?.html_url,
+      };
+    }
+
+    /* P0 PARITÉ : delete_file pour suppression contrôlée (avec confirm:true). */
+    if (task === 'delete_file') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour delete_file');
+      const path = String(params['path'] ?? '').trim();
+      if (!path) throw new Error('path required');
+      const message = String(params['message'] ?? `Apex IA: delete ${path}`).slice(0, 256);
+      const branch = String(params['branch'] ?? 'main');
+      const checkRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${branch}`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!checkRes.ok) throw new Error(`Fichier introuvable : ${path}`);
+      const existing = (await checkRes.json()) as { sha: string };
+      const res = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`, {
+        method: 'DELETE', headers,
+        body: JSON.stringify({ message, sha: existing.sha, branch }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return { ok: true, action: 'deleted', path, repo, branch };
+    }
+
     throw new Error(`Task GitHub inconnue : ${task}`);
   }
 
