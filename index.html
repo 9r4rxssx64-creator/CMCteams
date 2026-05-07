@@ -8071,6 +8071,19 @@ function _trackedSetOverride(year,month,empId,day,newVal,labelAction){
   var oldVal=A.overrides[k][empId][day]||"";
   A.overrides[k][empId][day]=newVal;
   ls("cmc_ov",A.overrides);
+  // v9.600 \u2014 Marquer \u00e9dit MANUEL (pr\u00e9serv\u00e9 au prochain import, r\u00e8gle Kevin 2026-05-07 \u00a74)
+  try{
+    var _moKey="cmc_manual_overrides_"+k;
+    var _mo=lg(_moKey,{});
+    if(!_mo[empId])_mo[empId]={};
+    if(newVal===""||newVal==null){
+      delete _mo[empId][day];
+      if(Object.keys(_mo[empId]).length===0)delete _mo[empId];
+    }else{
+      _mo[empId][day]={code:newVal,ts:Date.now(),by:(A.user&&A.user.id)||"admin"};
+    }
+    ls(_moKey,_mo);
+  }catch(_moErr){console.warn("[v9.600 _trackedSetOverride manual]",_moErr);}
   var label=labelAction||("Planning "+day+"/"+(month+1)+" "+empId+" : "+oldVal+"\u2192"+newVal);
   _pushUndo(label,
     function(){A.overrides[k][empId][day]=oldVal;ls("cmc_ov",A.overrides);},
