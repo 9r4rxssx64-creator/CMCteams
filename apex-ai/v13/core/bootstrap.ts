@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.16';
+export const APP_VER = 'v13.3.18';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -96,9 +96,21 @@ async function bootstrap(): Promise<void> {
     await auditLog.record('boot.start', { details: { ver: APP_VER } });
   });
   await safeInit('auto-backup', async () => {
-    /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto */
+    /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto.
+     * v13.3.18 (Kevin v13.3.16 rapport "Last backup compteur jamais reset") :
+     * Si AUCUN backup existe → snapshot manual immédiat pour seed le compteur. */
     const { autoBackup } = await import('@services/auto-backup.js');
     await autoBackup.init();
+    try {
+      const stats = autoBackup.getStats();
+      if (stats.total_backups === 0) {
+        const backup = await autoBackup.snapshot('manual');
+        try { localStorage.setItem('ax_last_backup_ts', String(Date.now())); } catch { /* quota */ }
+        logger.info('boot', `Initial backup created: ${backup.id} (${(backup.size_bytes / 1024).toFixed(1)} KB)`);
+      }
+    } catch (err: unknown) {
+      logger.warn('boot', 'Initial backup snapshot failed (continuing)', { err });
+    }
   });
   await safeInit('observability', async () => {
     const { observability } = await import('@services/observability.js');
