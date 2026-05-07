@@ -256,6 +256,18 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
       </section>
 
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:250ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🧰</span> Suggestions outils</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+          Quand Apex détecte un outil pertinent dans tes messages (Studio Music, Finance Pro, etc.), il l'affiche directement dans le chat en plus du toast.
+        </p>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border-radius:10px;cursor:pointer">
+          <span style="color:rgba(255,255,255,0.85);font-size:14px">Cards outils dans le chat</span>
+          <input type="checkbox" id="ax-settings-tools-auto-embed" style="width:20px;height:20px;cursor:pointer">
+        </label>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.4);font-size:12px;line-height:1.4">Décoche pour n'avoir que le toast (5s) sans card permanente. Le bouton ✕ sur chaque card permet aussi de la fermer.</p>
+      </section>
+
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:260ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔄</span> Mise à jour</h2>
         <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
@@ -350,6 +362,22 @@ export function render(rootEl: HTMLElement): void {
       location.hash = '#login';
     })();
   });
+
+  /* Toggle "tools auto embed in chat" — Kevin bug "modules apparaissent tout seuls" 2026-05-07 */
+  const toolsAutoEmbedToggle = rootEl.querySelector<HTMLInputElement>('#ax-settings-tools-auto-embed');
+  if (toolsAutoEmbedToggle && activeSettingsScope) {
+    try {
+      const settings = JSON.parse(localStorage.getItem('ax_settings') ?? '{}') as Record<string, unknown>;
+      toolsAutoEmbedToggle.checked = settings['tools_auto_embed'] !== false; /* default true */
+    } catch { toolsAutoEmbedToggle.checked = true; }
+    activeSettingsScope.bind(toolsAutoEmbedToggle, 'change', () => {
+      try {
+        const settings = JSON.parse(localStorage.getItem('ax_settings') ?? '{}') as Record<string, unknown>;
+        settings['tools_auto_embed'] = toolsAutoEmbedToggle.checked;
+        localStorage.setItem('ax_settings', JSON.stringify(settings));
+      } catch { /* silent */ }
+    });
+  }
 
   /* Force update PWA — fix bug Safari iOS cache tenace (Kevin 2026-05-07) */
   const forceUpdateBtn = rootEl.querySelector<HTMLButtonElement>('#ax-force-update-btn');

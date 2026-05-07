@@ -28,7 +28,7 @@ import { toast } from '../../ui/toast.js';
 
 interface DisplayMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'tool_card';
   text: string;
   ts: number;
   streaming?: boolean;
@@ -399,37 +399,65 @@ async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<
     const tool = smartToolsSuggester.suggestForIntent(intent);
     if (!tool) return;
 
-    /* Toast non-intrusif "🎯 Outil détecté : Studio Mix" */
+    /* Kevin 2026-05-07 : "modules apparaissent tout seuls" → toggle opt-out + dedup
+     * Toggle Réglages : ax_settings.tools_auto_embed (default true).
+     * Si false → toast seulement, pas de card dans chat. */
+    let autoEmbed = true;
+    try {
+      const settings = JSON.parse(localStorage.getItem('ax_settings') ?? '{}') as Record<string, unknown>;
+      if (settings['tools_auto_embed'] === false) autoEmbed = false;
+    } catch { /* default true */ }
+
+    /* Dedup : ne pas re-pousser le même tool déjà visible dans les 10 derniers msgs. */
+    const recentToolIds = conversation.slice(-10).filter(m => m.role === 'tool_card').map(m => (m as DisplayMessage & { toolId?: string }).toolId);
+    if (recentToolIds.includes(tool.id)) return;
+
+    /* Toast non-intrusif "🎯 Outil détecté : Studio Mix" — TOUJOURS affiché */
     const { toast } = await import('../../ui/toast.js');
     toast.info(`${tool.emoji} ${tool.name} disponible — tape pour ouvrir`, { duration: 5000 });
 
     /* Track usage potentiel */
     const user = store.get('user');
     if (user?.id) smartToolsSuggester.recordUsage(tool.id, user.id);
-    /* Render bubble suggested tool dans chat */
-    pushSuggestedTool(rootEl, tool);
+
+    /* Card dans chat : seulement si toggle ON (default true) */
+    if (autoEmbed) pushSuggestedTool(rootEl, tool);
   } catch (err: unknown) {
     /* Silent fail — non-bloquant pour chat */
     logger.warn('chat', 'detectAndSuggestTool failed', { err });
   }
 }
 
-function pushSuggestedTool(rootEl: HTMLElement, tool: { emoji: string; name: string; description: string; cta_label: string; cta_target: string }): void {
+function pushSuggestedTool(rootEl: HTMLElement, tool: { id: string; emoji: string; name: string; description: string; cta_label: string; cta_target: string }): void {
   const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
   if (!scroll) return;
+  const cardId = `tool_${tool.id}_${Date.now()}`;
   const card = document.createElement('div');
   card.className = 'ax-msg ax-msg-tool ax-slide-up-fade';
+  card.id = cardId;
   card.innerHTML = `
-    <div class="ax-tool-card">
+    <div class="ax-tool-card" style="position:relative;padding-right:36px">
+      <button class="ax-tool-dismiss" aria-label="Fermer" title="Ne plus suggérer dans cette conversation" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;background:rgba(255,255,255,0.08);color:var(--ax-text-dim);border-radius:50%;cursor:pointer;font-size:16px;line-height:1">✕</button>
       <div class="ax-tool-icon">${tool.emoji}</div>
       <div class="ax-tool-info">
         <strong>${escapeHtml(tool.name)}</strong>
         <p style="margin:4px 0 0;color:var(--ax-text-dim);font-size:13px">${escapeHtml(tool.description)}</p>
       </div>
-      <button class="ax-btn ax-btn-primary ax-btn-sm" onclick="location.hash='${escapeHtml(tool.cta_target)}'">${escapeHtml(tool.cta_label)}</button>
+      <button class="ax-btn ax-btn-primary ax-btn-sm" data-tool-cta="${escapeHtml(tool.cta_target)}">${escapeHtml(tool.cta_label)}</button>
     </div>
   `;
   scroll.appendChild(card);
+  /* Track dans conversation pour dedup (role 'tool_card' → exclu API IA) */
+  conversation.push({ id: cardId, role: 'tool_card', text: tool.name, ts: Date.now(), toolId: tool.id } as DisplayMessage & { toolId: string });
+  /* Wire dismiss + CTA */
+  card.querySelector<HTMLButtonElement>('.ax-tool-dismiss')?.addEventListener('click', () => {
+    card.classList.add('ax-fade-out');
+    setTimeout(() => card.remove(), 180);
+  });
+  card.querySelector<HTMLButtonElement>('[data-tool-cta]')?.addEventListener('click', (e) => {
+    const target = (e.currentTarget as HTMLElement).getAttribute('data-tool-cta');
+    if (target) location.hash = target;
+  });
   scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
 }
 
@@ -475,9 +503,10 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
 
   const messages: ChatMessage[] = conversation
     .filter((m) => !m.streaming || m === assistantMsg)
+    .filter((m) => m.role === 'user' || m.role === 'assistant') /* Exclude tool_card from API */
     .slice(-30)
     .filter((m) => m !== assistantMsg)
-    .map((m) => ({ role: m.role, content: m.text }));
+    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.text }));
 
   await aiRouter.stream(
     messages,
