@@ -57,7 +57,22 @@ export interface VoiceMatchResult {
   print_confidence?: number;
   /* v13.3.43 : flag spécial Kevin admin reconnu (pour mode admin temp) */
   isKevinAdmin?: boolean;
+  /* v13.3.44 : phase courante d'apprentissage (open|learning|refining|exclusive) */
+  phase?: VoicePhase;
+  /* v13.3.44 : threshold dynamique appliqué pour ce match */
+  threshold_used?: number;
+  /* v13.3.44 : true si le match est "identified" (compte tenu de la phase open qui accepte tout) */
+  identified?: boolean;
 }
+
+/* v13.3.44 (Kevin 2026-05-07 "il écoute tout le monde puis affine pour finir exclusif utilisateur") :
+ * 4 phases de threshold dynamique selon le nombre de samples accumulés.
+ * - open       : accepte tout (apprentissage initial, < 4 samples)
+ * - learning   : threshold relâché 0.50 (4-9 samples)
+ * - refining   : threshold intermédiaire 0.65 (10-19 samples)
+ * - exclusive  : threshold strict 0.85 (≥ 20 samples)
+ */
+export type VoicePhase = 'open' | 'learning' | 'refining' | 'exclusive';
 
 const SIMILARITY_THRESHOLD_DEFAULT = 0.75;
 /* v13.3.43 : nombre de samples pour atteindre confidence 1.0 (linéaire) */
@@ -71,6 +86,61 @@ const UNKNOWN_ATTEMPTS_MAX = 100;
 const EXCLUSIVE_MODE_KEY = 'ax_voice_exclusive_mode';
 const CALIBRATION_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; /* 30 jours */
 const CALIBRATION_LOW_CONFIDENCE = 0.85;
+
+/* v13.3.44 : seuils par phase (Kevin 2026-05-07). */
+const PHASE_THRESHOLDS: Record<VoicePhase, number> = {
+  open: 0.0,        /* accepte tout */
+  learning: 0.5,
+  refining: 0.65,
+  exclusive: 0.85,
+};
+/* v13.3.44 : bornes samples_count pour chaque phase. */
+const PHASE_BOUNDS: Record<VoicePhase, { min: number; max: number }> = {
+  open: { min: 0, max: 3 },
+  learning: { min: 4, max: 9 },
+  refining: { min: 10, max: 19 },
+  exclusive: { min: 20, max: Number.MAX_SAFE_INTEGER },
+};
+/* v13.3.44 : samples_count minimum pour activer le mode exclusif anticipé. */
+const EXCLUSIVE_ANTICIPATED_MIN_SAMPLES = 10;
+/* v13.3.44 : clé localStorage du toggle "Mode exclusif anticipé". */
+const EXCLUSIVE_ANTICIPATED_KEY = 'ax_voice_exclusive_anticipated';
+
+/**
+ * v13.3.44 — Threshold dynamique selon nombre de samples accumulés (Kevin 2026-05-07).
+ * Au début Apex écoute tout le monde, puis affine progressivement, jusqu'à devenir exclusif user.
+ *
+ * @param samples_count nombre de samples enrôlés/appris pour ce voiceprint
+ * @returns threshold cosine similarity à appliquer
+ */
+export function getThresholdForUser(samples_count: number): number {
+  if (samples_count < PHASE_BOUNDS.learning.min) return PHASE_THRESHOLDS.open;
+  if (samples_count < PHASE_BOUNDS.refining.min) return PHASE_THRESHOLDS.learning;
+  if (samples_count < PHASE_BOUNDS.exclusive.min) return PHASE_THRESHOLDS.refining;
+  return PHASE_THRESHOLDS.exclusive;
+}
+
+/**
+ * v13.3.44 — Phase courante du voiceprint (open|learning|refining|exclusive).
+ */
+function phaseFromSamples(samples_count: number): VoicePhase {
+  if (samples_count < PHASE_BOUNDS.learning.min) return 'open';
+  if (samples_count < PHASE_BOUNDS.refining.min) return 'learning';
+  if (samples_count < PHASE_BOUNDS.exclusive.min) return 'refining';
+  return 'exclusive';
+}
+
+/**
+ * v13.3.44 — Lit le toggle "Mode exclusif anticipé" (force phase exclusif dès 10 samples).
+ */
+function isExclusiveAnticipated(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem(EXCLUSIVE_ANTICIPATED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 /* Variantes phonétiques étendues — Web Speech API FR confond souvent "dis"/"dit"/"dix",
  * "apex"/"apexs"/"appex"/"hapex"/"dispex" (concat) selon micro/débit. */
@@ -280,31 +350,67 @@ class VoicePrint {
 
   /**
    * Enrôle voix user (3 samples audio recommandés).
+   *
+   * v13.3.43 : si voiceprint existe déjà → merge incrémental (apprentissage continu)
+   * au lieu d'écraser. Garde l'historique de confidence.
    */
-  async enroll(uid: string, audioSamples: AudioBuffer[]): Promise<{ ok: boolean; reason?: string }> {
+  async enroll(uid: string, audioSamples: AudioBuffer[]): Promise<{ ok: boolean; reason?: string; samples_count?: number; confidence_score?: number }> {
     if (audioSamples.length < 1) return { ok: false, reason: 'Aucun sample audio' };
     /* Calcule fingerprints enrichis + moyenne (5 features) */
     const fps = audioSamples.map((s) => this.computeFingerprint(s));
-    const avg = {
+    const newAvg = {
       pitch_avg: fps.reduce((s, f) => s + f.pitch, 0) / fps.length,
       zcr_avg: fps.reduce((s, f) => s + f.zcr, 0) / fps.length,
       energy_avg: fps.reduce((s, f) => s + f.energy, 0) / fps.length,
       spectral_centroid_avg: fps.reduce((s, f) => s + f.spectral_centroid, 0) / fps.length,
       spectral_rolloff_avg: fps.reduce((s, f) => s + f.spectral_rolloff, 0) / fps.length,
     };
-    const print: VoiceFingerprint = {
-      uid,
-      ...avg,
-      samples_count: audioSamples.length,
-      enrolled_at: Date.now(),
-      last_match: 0,
-      match_score_avg: 0,
-    };
+
+    let print: VoiceFingerprint;
     try {
-      /* FB_LOCAL strict — jamais sync Firebase */
+      /* v13.3.43 : merge si voiceprint existant (apprentissage continu) */
+      const existing = localStorage.getItem(`ax_voice_print_${uid}`);
+      if (existing) {
+        const old = JSON.parse(existing) as VoiceFingerprint;
+        /* Moyenne pondérée : ancien * (n/(n+m)) + nouveau * (m/(n+m)) */
+        const n = old.samples_count;
+        const m = audioSamples.length;
+        const total = n + m;
+        print = {
+          ...old,
+          pitch_avg: (old.pitch_avg * n + newAvg.pitch_avg * m) / total,
+          zcr_avg: (old.zcr_avg * n + newAvg.zcr_avg * m) / total,
+          energy_avg: (old.energy_avg * n + newAvg.energy_avg * m) / total,
+          spectral_centroid_avg: ((old.spectral_centroid_avg ?? 0) * n + newAvg.spectral_centroid_avg * m) / total,
+          spectral_rolloff_avg: ((old.spectral_rolloff_avg ?? 0) * n + newAvg.spectral_rolloff_avg * m) / total,
+          samples_count: total,
+          confidence_score: this.computeConfidenceScore(total),
+          last_calibration: Date.now(),
+        };
+      } else {
+        print = {
+          uid,
+          ...newAvg,
+          samples_count: audioSamples.length,
+          enrolled_at: Date.now(),
+          last_match: 0,
+          match_score_avg: 0,
+          confidence_score: this.computeConfidenceScore(audioSamples.length),
+          false_positive_count: 0,
+          false_negative_count: 0,
+          last_calibration: Date.now(),
+        };
+      }
+      /* FB_LOCAL strict — jamais sync Firebase (biométrique) */
       localStorage.setItem(`ax_voice_print_${uid}`, JSON.stringify(print));
-      void auditLog.record('voice.enrolled', { details: { uid, samples: audioSamples.length } });
-      return { ok: true };
+      void auditLog.record('voice.enrolled', {
+        details: { uid, samples: audioSamples.length, total_samples: print.samples_count, confidence: print.confidence_score },
+      });
+      return {
+        ok: true,
+        samples_count: print.samples_count,
+        confidence_score: print.confidence_score ?? this.computeConfidenceScore(print.samples_count),
+      };
     } catch (err: unknown) {
       logger.warn('voice-print', 'enroll persist failed', { err });
       return { ok: false, reason: 'Storage saturated' };
@@ -312,14 +418,93 @@ class VoicePrint {
   }
 
   /**
+   * v13.3.43 : Apprentissage incrémental d'UN sample (auto-enrôlement progressif).
+   * Appelé à chaque message vocal user authentifié pour améliorer le voiceprint.
+   *
+   * Moyenne pondérée 0.9 ancien + 0.1 nouveau (apprentissage doux).
+   */
+  learnFromAudio(uid: string, audioBuffer: AudioBuffer): { updated: boolean; confidence_score: number; samples_count: number } {
+    if (!uid) return { updated: false, confidence_score: 0, samples_count: 0 };
+    try {
+      const fp = this.computeFingerprint(audioBuffer);
+      const raw = localStorage.getItem(`ax_voice_print_${uid}`);
+      if (!raw) {
+        /* Premier sample → baseline */
+        const print: VoiceFingerprint = {
+          uid,
+          pitch_avg: fp.pitch,
+          zcr_avg: fp.zcr,
+          energy_avg: fp.energy,
+          spectral_centroid_avg: fp.spectral_centroid,
+          spectral_rolloff_avg: fp.spectral_rolloff,
+          samples_count: 1,
+          enrolled_at: Date.now(),
+          last_match: 0,
+          match_score_avg: 0,
+          confidence_score: this.computeConfidenceScore(1),
+          false_positive_count: 0,
+          false_negative_count: 0,
+          last_calibration: Date.now(),
+        };
+        localStorage.setItem(`ax_voice_print_${uid}`, JSON.stringify(print));
+        return { updated: true, confidence_score: print.confidence_score ?? 0, samples_count: 1 };
+      }
+      const print = JSON.parse(raw) as VoiceFingerprint;
+      /* Moyenne pondérée 0.9 ancien + 0.1 nouveau */
+      const w = 0.1;
+      print.pitch_avg = print.pitch_avg * (1 - w) + fp.pitch * w;
+      print.zcr_avg = print.zcr_avg * (1 - w) + fp.zcr * w;
+      print.energy_avg = print.energy_avg * (1 - w) + fp.energy * w;
+      print.spectral_centroid_avg = (print.spectral_centroid_avg ?? 0) * (1 - w) + fp.spectral_centroid * w;
+      print.spectral_rolloff_avg = (print.spectral_rolloff_avg ?? 0) * (1 - w) + fp.spectral_rolloff * w;
+      print.samples_count++;
+      print.confidence_score = this.computeConfidenceScore(print.samples_count);
+      localStorage.setItem(`ax_voice_print_${uid}`, JSON.stringify(print));
+      return { updated: true, confidence_score: print.confidence_score ?? 0, samples_count: print.samples_count };
+    } catch (err: unknown) {
+      logger.warn('voice-print', 'learnFromAudio failed', { err });
+      return { updated: false, confidence_score: 0, samples_count: 0 };
+    }
+  }
+
+  /**
+   * v13.3.43 : confidence basé sur samples_count.
+   * Linéaire : 0/20 = 0.0, 20+/20 = 1.0.
+   */
+  private computeConfidenceScore(samplesCount: number): number {
+    if (samplesCount <= 0) return 0;
+    return Math.min(1.0, samplesCount / CONFIDENCE_FULL_AT_SAMPLES);
+  }
+
+  /**
    * Identifie speaker depuis sample audio.
+   *
+   * v13.3.43 : enrichi avec print_confidence + isKevinAdmin + log unknown attempts.
+   * v13.3.44 (Kevin 2026-05-07 "tout le monde puis exclusif user") :
+   *   threshold dynamique par voiceprint selon phase (open|learning|refining|exclusive).
+   *   Phase open (samples<4) → identified=true même score=0 (apprentissage initial).
+   *   Toggle exclusif anticipé → force threshold exclusif dès 10 samples.
    */
   identify(audioSample: AudioBuffer): VoiceMatchResult {
     const fp = this.computeFingerprint(audioSample);
     const allPrints = this.listPrints();
-    if (allPrints.length === 0) return { uid: null, score: 0, confident: false };
+    if (allPrints.length === 0) {
+      return { uid: null, score: 0, confident: false, phase: 'open', threshold_used: 0, identified: false };
+    }
 
-    let best: VoiceMatchResult = { uid: null, score: 0, confident: false };
+    const anticipated = isExclusiveAnticipated();
+    /* v13.3.44 : seed best avec threshold_used = phase max trouvée parmi tous les prints
+     * pour que les callers voient quelle exigence a été appliquée même si aucun match.
+     * On utilise threshold le plus permissif (=plus bas seuil) car il s'applique à tous. */
+    let best: VoiceMatchResult = {
+      uid: null,
+      score: 0,
+      confident: false,
+      phase: 'open',
+      threshold_used: 0,
+      identified: false,
+    };
+    let bestPrint: VoiceFingerprint | null = null;
     for (const print of allPrints) {
       /* Cosine similarity sur 5 dimensions (vs 3 avant) — plus précis Jet 8.1 */
       const printVec = [
@@ -331,21 +516,438 @@ class VoicePrint {
       ];
       const sampleVec = [fp.pitch, fp.zcr, fp.energy, fp.spectral_centroid, fp.spectral_rolloff];
       const score = this.cosineSimilarity(sampleVec, printVec);
-      if (score > best.score) {
+
+      /* v13.3.44 : threshold dynamique selon samples_count du voiceprint candidat. */
+      const phase = this.getPhaseForPrint(print, anticipated);
+      const dynamicThreshold = this.getEffectiveThreshold(print, anticipated);
+      /* Phase open : identifie = true (Apex apprend en écoutant tout le monde) */
+      const isOpen = phase === 'open';
+      const matches = isOpen || score >= dynamicThreshold;
+
+      if (matches && score >= best.score) {
         best = {
           uid: print.uid,
           score,
-          confident: score >= this.threshold,
+          confident: matches,
+          print_confidence: print.confidence_score ?? this.computeConfidenceScore(print.samples_count),
+          isKevinAdmin: print.uid === ADMIN_UID,
+          phase,
+          threshold_used: dynamicThreshold,
+          identified: matches,
         };
+        bestPrint = print;
+      } else if (!best.uid) {
+        /* Pas de match confident encore — on garde la trace du print "le plus proche"
+         * (max score parmi non-matches) pour que le caller sache quel threshold a été appliqué. */
+        if (score >= best.score || bestPrint === null) {
+          best = {
+            uid: null,
+            score,
+            confident: false,
+            print_confidence: print.confidence_score ?? this.computeConfidenceScore(print.samples_count),
+            isKevinAdmin: false,
+            phase,
+            threshold_used: dynamicThreshold,
+            identified: false,
+          };
+          bestPrint = print;
+        }
       }
     }
 
     /* Update voiceprint si match confiant (auto-apprentissage) */
     if (best.confident && best.uid) {
       this.updatePrintWithSample(best.uid, fp, best.score);
+    } else if (!best.confident && bestPrint) {
+      /* v13.3.43 : log tentative non reconnue (anti-confusion entourage) */
+      this.logUnknownAttempt(best.score, fp);
     }
 
     return best;
+  }
+
+  /**
+   * v13.3.44 — Phase courante du voiceprint, en tenant compte du toggle "exclusif anticipé".
+   */
+  getPhaseForPrint(print: VoiceFingerprint, anticipated = isExclusiveAnticipated()): VoicePhase {
+    const natural = phaseFromSamples(print.samples_count);
+    if (anticipated && print.samples_count >= EXCLUSIVE_ANTICIPATED_MIN_SAMPLES) {
+      return 'exclusive';
+    }
+    return natural;
+  }
+
+  /**
+   * v13.3.44 — Threshold effectif (dynamique + override anticipé éventuel).
+   */
+  getEffectiveThreshold(print: VoiceFingerprint, anticipated = isExclusiveAnticipated()): number {
+    if (anticipated && print.samples_count >= EXCLUSIVE_ANTICIPATED_MIN_SAMPLES) {
+      return PHASE_THRESHOLDS.exclusive;
+    }
+    return getThresholdForUser(print.samples_count);
+  }
+
+  /**
+   * v13.3.44 — Phase courante pour un user (Kevin 2026-05-07).
+   * Si pas de voiceprint pour cet uid → phase 'open' (apprentissage initial).
+   */
+  getCurrentPhase(uid: string): VoicePhase {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(`ax_voice_print_${uid}`) : null;
+      if (!raw) return 'open';
+      const print = JSON.parse(raw) as VoiceFingerprint;
+      return this.getPhaseForPrint(print);
+    } catch {
+      return 'open';
+    }
+  }
+
+  /**
+   * v13.3.44 — Détails complets de la phase pour UI Voice Bio (Kevin 2026-05-07).
+   * Retourne : phase courante, samples_count, samples_to_next, threshold appliqué,
+   * progress (0-1), label FR.
+   */
+  getPhaseDetails(uid: string): {
+    phase: VoicePhase;
+    samples_count: number;
+    samples_to_next: number;
+    threshold: number;
+    progress: number;
+    label: string;
+    anticipated_active: boolean;
+  } {
+    let samples_count = 0;
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(`ax_voice_print_${uid}`) : null;
+      if (raw) {
+        const print = JSON.parse(raw) as VoiceFingerprint;
+        samples_count = print.samples_count ?? 0;
+      }
+    } catch {
+      /* ignore */
+    }
+    const anticipated = isExclusiveAnticipated();
+    const phase: VoicePhase =
+      anticipated && samples_count >= EXCLUSIVE_ANTICIPATED_MIN_SAMPLES
+        ? 'exclusive'
+        : phaseFromSamples(samples_count);
+    const threshold =
+      anticipated && samples_count >= EXCLUSIVE_ANTICIPATED_MIN_SAMPLES
+        ? PHASE_THRESHOLDS.exclusive
+        : getThresholdForUser(samples_count);
+
+    let samples_to_next = 0;
+    if (phase === 'open') samples_to_next = PHASE_BOUNDS.learning.min - samples_count;
+    else if (phase === 'learning') samples_to_next = PHASE_BOUNDS.refining.min - samples_count;
+    else if (phase === 'refining') samples_to_next = PHASE_BOUNDS.exclusive.min - samples_count;
+    else samples_to_next = 0;
+    if (samples_to_next < 0) samples_to_next = 0;
+
+    /* Progress global : 0-1 sur les 20 samples nécessaires pour atteindre exclusif. */
+    const progress = Math.min(1, samples_count / CONFIDENCE_FULL_AT_SAMPLES);
+
+    const label =
+      phase === 'open'
+        ? '🔓 Ouvert (apprentissage initial)'
+        : phase === 'learning'
+          ? '🟡 Apprentissage'
+          : phase === 'refining'
+            ? '🟠 Affinage (en cours)'
+            : '🟢 Exclusif utilisateur';
+
+    return {
+      phase,
+      samples_count,
+      samples_to_next,
+      threshold,
+      progress,
+      label,
+      anticipated_active: anticipated,
+    };
+  }
+
+  /**
+   * v13.3.44 — Toggle "Mode exclusif anticipé" (Kevin 2026-05-07).
+   * Si ON, un voiceprint avec ≥10 samples passe en phase exclusive immédiatement
+   * (au lieu d'attendre 20).
+   */
+  isExclusiveAnticipated(): boolean {
+    return isExclusiveAnticipated();
+  }
+
+  setExclusiveAnticipated(enabled: boolean): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(EXCLUSIVE_ANTICIPATED_KEY, enabled ? '1' : '0');
+      }
+      void auditLog.record('voice.exclusive_anticipated_changed', { details: { enabled } });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * v13.3.43 : Identification EXCLUSIVE pour wake word.
+   * v13.3.44 (Kevin 2026-05-07 "tout le monde puis affine pour exclusif user") :
+   *   - phase open (samples<4) → identifie=true ET apprend la voix entendue
+   *   - phase learning/refining → threshold dynamique (0.50 / 0.65)
+   *   - phase exclusive → strict 0.85, ignore voix divergentes
+   *   - Kevin admin reconnu prime dans vue Laurence (cross-user override)
+   *   - Toggle "exclusif anticipé" force phase exclusive dès 10 samples
+   *
+   * Returns :
+   * - identified=true → voix = user enrôlé (uid + score) OU phase open (apprentissage)
+   * - identified=false + uid=null → voix non reconnue (entourage / bruit)
+   * - identified=true + isKevin=true → mode admin temp si dans vue Laurence
+   * - phase → indique l'état d'apprentissage actuel
+   */
+  identifySpeaker(audioBuffer: AudioBuffer, opts: { currentUserId?: string } = {}): {
+    identified: boolean;
+    uid: string | null;
+    confidence: number;
+    score: number;
+    isKevin: boolean;
+    print_confidence: number;
+    phase: VoicePhase;
+    threshold_used: number;
+    reason?: string;
+    learned?: boolean;
+  } {
+    const allPrints = this.listPrints();
+    const currentUid = opts.currentUserId;
+
+    /* v13.3.44 : phase open = il n'y a aucun voiceprint OU le user courant a moins de 4 samples.
+     * Dans ce cas, on apprend la voix entendue (apprentissage initial) et on identifie=true. */
+    if (allPrints.length === 0) {
+      /* Aucun voiceprint enrôlé. Si on a un currentUserId → apprend la voix. */
+      if (currentUid) {
+        const learn = this.learnFromAudio(currentUid, audioBuffer);
+        return {
+          identified: true,
+          uid: currentUid,
+          confidence: 0,
+          score: 0,
+          isKevin: currentUid === ADMIN_UID,
+          print_confidence: learn.confidence_score,
+          phase: 'open',
+          threshold_used: PHASE_THRESHOLDS.open,
+          reason: 'phase_open_initial_learning',
+          learned: learn.updated,
+        };
+      }
+      return {
+        identified: false,
+        uid: null,
+        confidence: 0,
+        score: 0,
+        isKevin: false,
+        print_confidence: 0,
+        phase: 'open',
+        threshold_used: PHASE_THRESHOLDS.open,
+        reason: 'no_voiceprint_enrolled',
+      };
+    }
+
+    /* v13.3.44 : capturer la phase du user courant AVANT que identify() ne mute samples_count
+     * (auto-apprentissage update). Sinon un user à 3 samples passe à 4 et bascule en learning. */
+    const currentPhaseBefore: VoicePhase | null = currentUid ? this.getCurrentPhase(currentUid) : null;
+
+    const match = this.identify(audioBuffer);
+    const exclusive = this.isExclusiveMode();
+    const matchPhase: VoicePhase = match.phase ?? 'open';
+    const thresholdUsed = match.threshold_used ?? PHASE_THRESHOLDS.open;
+
+    /* v13.3.44 : phase open du user courant → toujours identified=true + apprentissage */
+    if (currentUid && currentPhaseBefore === 'open') {
+      const learn = this.learnFromAudio(currentUid, audioBuffer);
+      return {
+        identified: true,
+        uid: currentUid,
+        confidence: match.score,
+        score: match.score,
+        isKevin: currentUid === ADMIN_UID,
+        print_confidence: learn.confidence_score,
+        phase: 'open',
+        threshold_used: PHASE_THRESHOLDS.open,
+        reason: 'phase_open_initial_learning',
+        learned: learn.updated,
+      };
+    }
+
+    /* Aucun match confiant → ignoré silencieusement (anti-confusion entourage) */
+    if (!match.confident || !match.uid) {
+      return {
+        identified: false,
+        uid: null,
+        confidence: 0,
+        score: match.score,
+        isKevin: false,
+        print_confidence: match.print_confidence ?? 0,
+        phase: matchPhase,
+        threshold_used: thresholdUsed,
+        reason: 'similarity_below_threshold',
+      };
+    }
+
+    /* v13.3.44 : Kevin admin reconnu dans vue d'un autre user → override (mode admin temp).
+     * Implémenté ici de manière prioritaire avant le check exclusif user. */
+    if (match.uid === ADMIN_UID && currentUid && currentUid !== ADMIN_UID) {
+      return {
+        identified: true,
+        uid: ADMIN_UID,
+        confidence: match.score,
+        score: match.score,
+        isKevin: true,
+        print_confidence: match.print_confidence ?? 0,
+        phase: matchPhase,
+        threshold_used: thresholdUsed,
+        reason: 'kevin_admin_override',
+      };
+    }
+
+    /* Mode exclusif : si user courant défini, exiger match avec celui-ci (sauf Kevin admin déjà géré) */
+    if (exclusive && currentUid && match.uid !== currentUid && match.uid !== ADMIN_UID) {
+      return {
+        identified: false,
+        uid: null,
+        confidence: match.score,
+        score: match.score,
+        isKevin: false,
+        print_confidence: match.print_confidence ?? 0,
+        phase: matchPhase,
+        threshold_used: thresholdUsed,
+        reason: 'exclusive_mode_other_user',
+      };
+    }
+
+    return {
+      identified: true,
+      uid: match.uid,
+      confidence: match.score,
+      score: match.score,
+      isKevin: match.uid === ADMIN_UID,
+      print_confidence: match.print_confidence ?? 0,
+      phase: matchPhase,
+      threshold_used: thresholdUsed,
+    };
+  }
+
+  /**
+   * v13.3.43 : Log tentative wake word non reconnue (entourage, bruit ambient).
+   * FIFO 100 entries max. Stats utiles pour calibration.
+   */
+  private logUnknownAttempt(score: number, fp: { pitch: number; zcr: number; energy: number; spectral_centroid: number; spectral_rolloff: number }): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem(UNKNOWN_ATTEMPTS_KEY);
+      const arr: Array<{ ts: number; score: number; pitch: number; energy: number }> = raw
+        ? (JSON.parse(raw) as Array<{ ts: number; score: number; pitch: number; energy: number }>)
+        : [];
+      arr.push({ ts: Date.now(), score: Math.round(score * 100) / 100, pitch: Math.round(fp.pitch), energy: Math.round(fp.energy * 100) / 100 });
+      while (arr.length > UNKNOWN_ATTEMPTS_MAX) arr.shift();
+      localStorage.setItem(UNKNOWN_ATTEMPTS_KEY, JSON.stringify(arr));
+    } catch {
+      /* ignore quota / parse */
+    }
+  }
+
+  /**
+   * v13.3.43 : Liste tentatives non reconnues (admin diagnostic).
+   */
+  getUnknownAttempts(): Array<{ ts: number; score: number; pitch: number; energy: number }> {
+    try {
+      if (typeof localStorage === 'undefined') return [];
+      const raw = localStorage.getItem(UNKNOWN_ATTEMPTS_KEY);
+      return raw ? (JSON.parse(raw) as Array<{ ts: number; score: number; pitch: number; energy: number }>) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  clearUnknownAttempts(): void {
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(UNKNOWN_ATTEMPTS_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * v13.3.43 : Mode exclusif (default ON — sécurité).
+   */
+  isExclusiveMode(): boolean {
+    try {
+      if (typeof localStorage === 'undefined') return true;
+      const raw = localStorage.getItem(EXCLUSIVE_MODE_KEY);
+      if (raw === null) return true; /* default ON */
+      return raw === 'true' || raw === '1';
+    } catch {
+      return true;
+    }
+  }
+
+  setExclusiveMode(enabled: boolean): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(EXCLUSIVE_MODE_KEY, enabled ? 'true' : 'false');
+      }
+      void auditLog.record('voice.exclusive_mode_changed', { details: { enabled } });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * v13.3.43 : Vérifie si user a besoin d'une calibration (voix change avec temps,
+   * sentinelle voice-quality-watch propose ré-enrôlement).
+   */
+  needsCalibration(uid: string): { needs: boolean; reason: string; confidence: number } {
+    try {
+      const raw = localStorage.getItem(`ax_voice_print_${uid}`);
+      if (!raw) return { needs: false, reason: 'not_enrolled', confidence: 0 };
+      const print = JSON.parse(raw) as VoiceFingerprint;
+      const conf = print.confidence_score ?? this.computeConfidenceScore(print.samples_count);
+      const lastCalib = print.last_calibration ?? print.enrolled_at;
+      const ageMs = Date.now() - lastCalib;
+
+      if (conf < CALIBRATION_LOW_CONFIDENCE) {
+        return { needs: true, reason: 'low_confidence', confidence: conf };
+      }
+      if (ageMs > CALIBRATION_INTERVAL_MS) {
+        return { needs: true, reason: 'stale_calibration', confidence: conf };
+      }
+      return { needs: false, reason: 'ok', confidence: conf };
+    } catch {
+      return { needs: false, reason: 'parse_error', confidence: 0 };
+    }
+  }
+
+  /**
+   * v13.3.43 : Marque calibration faite (reset timer).
+   */
+  markCalibrated(uid: string): void {
+    try {
+      const raw = localStorage.getItem(`ax_voice_print_${uid}`);
+      if (!raw) return;
+      const print = JSON.parse(raw) as VoiceFingerprint;
+      print.last_calibration = Date.now();
+      localStorage.setItem(`ax_voice_print_${uid}`, JSON.stringify(print));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * v13.3.43 : Get voiceprint for a user (or null).
+   */
+  getPrintFor(uid: string): VoiceFingerprint | null {
+    try {
+      const raw = localStorage.getItem(`ax_voice_print_${uid}`);
+      if (!raw) return null;
+      return JSON.parse(raw) as VoiceFingerprint;
+    } catch {
+      return null;
+    }
   }
 
   /**
