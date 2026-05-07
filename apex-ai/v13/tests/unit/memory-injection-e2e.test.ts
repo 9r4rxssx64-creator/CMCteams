@@ -103,10 +103,14 @@ describe('E2E Memory Injection chain (mémoire persistante → system prompt →
 
     expect(anthropicBodyParsed).not.toBeNull();
     /* Vérifier que body.system contient le system prompt complet
-     * (preuve E2E : chat → aiRouter → fetch Anthropic transmet bien le system param) */
-    expect(anthropicBodyParsed?.system).toContain('CONTEXTE SYSTEM TEST');
-    expect(anthropicBodyParsed?.system).toContain('MÉMOIRE PERSISTANTE');
-    expect(anthropicBodyParsed?.system).toContain('Kevin DESARZENS');
+     * (preuve E2E : chat → aiRouter → fetch Anthropic transmet bien le system param)
+     * Anthropic prompt caching : system est un array [{type:'text', text:'...', cache_control:{type:'ephemeral'}}] */
+    const systemText = Array.isArray(anthropicBodyParsed?.system)
+      ? (anthropicBodyParsed.system as Array<{ text?: string }>).map((b) => b.text ?? '').join('\n')
+      : String(anthropicBodyParsed?.system ?? '');
+    expect(systemText).toContain('CONTEXTE SYSTEM TEST');
+    expect(systemText).toContain('MÉMOIRE PERSISTANTE');
+    expect(systemText).toContain('Kevin DESARZENS');
   });
 
   it('chain complète : persistent-memory → buildSystemPromptContext → aiRouter → Anthropic body', async () => {
@@ -153,6 +157,9 @@ describe('E2E Memory Injection chain (mémoire persistante → system prompt →
     }
     expect(bodyParsed).not.toBeNull();
     /* Persistent memory entry doit traverser TOUTE la chain jusqu'au body fetch Anthropic */
-    expect(bodyParsed?.system).toContain('Kevin admin Casino Monaco');
+    const systemText2 = Array.isArray(bodyParsed?.system)
+      ? (bodyParsed.system as Array<{ text?: string }>).map((b) => b.text ?? '').join('\n')
+      : String(bodyParsed?.system ?? '');
+    expect(systemText2).toContain('Kevin admin Casino Monaco');
   });
 });

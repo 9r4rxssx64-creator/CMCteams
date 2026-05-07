@@ -151,9 +151,9 @@ describe('i18n — available()', () => {
     i18n.reset();
   });
 
-  it('available() retourne 5 langues', () => {
+  it('available() retourne 6 langues (incl. monégasque)', () => {
     const langs = i18n.available();
-    expect(langs.length).toBe(5);
+    expect(langs.length).toBe(6);
   });
 
   it('available() inclut fr/en/it/es/de avec drapeaux', () => {

@@ -779,6 +779,68 @@ class SentinelsRegistry {
       },
     });
 
+    /* 20. auto-improvement-watch (hebdo) — scan nouveaux MCP/skills/tools + auto-install safe + self-correct + self-manage.
+     * Kevin règle 2026-05-07 : "auto amélioration et auto correction et auto Gestion". */
+    sentinelsManager.register({
+      id: 'auto-improvement-watch',
+      name: 'Auto-Improvement 24/7',
+      desc: 'Scan hebdo nouveaux MCP/skills/tools, auto-install safe (gain ≥30%), self-correct + self-manage',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { autoImprovement } = await import('./auto-improvement.js');
+          /* 1. Scan new tools */
+          const scan = await autoImprovement.scanNew();
+          /* 2. Auto-install les recommandés (max 3 par run pour éviter spam) */
+          let installed = 0;
+          let skipped = 0;
+          const recommendedIds = scan.newIds.slice(0, 3);
+          for (const id of recommendedIds) {
+            const result = await autoImprovement.autoInstallSafe(id);
+            if (result.ok) installed += 1;
+            else skipped += 1;
+          }
+          /* 3. Self-correct patterns récurrents */
+          const correct = await autoImprovement.selfCorrect();
+          /* 4. Self-manage cleanup logs / state */
+          const manage = await autoImprovement.selfManage();
+          return {
+            ok: true,
+            msg: `Scan ${scan.new} new (${scan.recommended} recommended), installed ${installed}, skipped ${skipped}, fixes ${correct.fixes_applied}, actions ${manage.actions.length}`,
+            details: {
+              scan,
+              installed,
+              skipped,
+              fixes_applied: correct.fixes_applied,
+              actions: manage.actions,
+              bytes_freed: manage.bytes_freed,
+            },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-improvement-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Si fail : tente juste self-manage (read-only / cleanup) */
+        try {
+          const { autoImprovement } = await import('./auto-improvement.js');
+          const manage = await autoImprovement.selfManage();
+          return {
+            ok: true,
+            msg: `Self-manage fallback: ${manage.actions.length} actions`,
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-fix failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
     /* 19. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',

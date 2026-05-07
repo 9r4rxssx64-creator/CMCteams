@@ -605,17 +605,21 @@ class AIRouter {
     | { status: 'ok'; streamResult: ProviderStreamResult; provider: Provider }
   > {
     let lastErr: Error | null = null;
+    /* Préférer erreurs informatives (HTTP/quota/rate-limit) sur "no key" génériques :
+       quand un provider primaire échoue avec 429/quota et que les fallbacks n'ont pas
+       de clé, on veut garder l'erreur 429 pour que chat-fallback propose la recharge. */
+    const isInformativeErr = (e: Error): boolean =>
+      /HTTP\s*\d|quota|rate.?limit|insufficient|429|402|401|403/i.test(e.message);
     for (const provider of chain) {
-      /* P0 SÉCU : déchiffrement à l'usage (vault tokens chiffrés au repos)
-         Sprint 9 (Kevin règle 2026-05-07) : si multi-key dispo pour ce provider,
-         essaie chaque clé (jusqu'à 5) avant de passer au provider suivant.
-         Si aucune clé multi → fallback legacy single-key (back-compat). */
       const result = await this.streamWithKeyFailover(provider, messages, system, onChunk, signal);
       if (result.status === 'aborted') return { status: 'aborted' };
       if (result.status === 'ok') return result;
-      lastErr = result.error;
+      const currentErr = result.error;
+      if (!lastErr || (isInformativeErr(currentErr) && !isInformativeErr(lastErr))) {
+        lastErr = currentErr;
+      }
       logger.warn('ai-router', `${provider} all keys failed, trying next provider`, {
-        err: lastErr.message,
+        err: currentErr.message,
       });
     }
     return { status: 'error', error: lastErr ?? new Error('Tous les providers IA indisponibles') };

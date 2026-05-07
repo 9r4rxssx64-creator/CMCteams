@@ -1213,6 +1213,95 @@ class ApexToolsDispatcher {
           })),
         };
       }
+      /* === Méta-Marketplace (Kevin 2026-05-07 — hub 30+ marketplaces) === */
+      case 'meta_search': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const query = String(params['query'] ?? '');
+        const limit = typeof params['limit'] === 'number' ? (params['limit'] as number) : 50;
+        const includeNonPwa = params['include_non_pwa'] === true;
+        const categoriesRaw = params['categories'];
+        const opts: {
+          categories?: import('./apex-meta-marketplace.js').MarketplaceCategory[];
+          limit?: number;
+          include_non_pwa?: boolean;
+        } = { limit };
+        if (includeNonPwa) opts.include_non_pwa = true;
+        if (typeof categoriesRaw === 'string' && categoriesRaw.trim()) {
+          opts.categories = categoriesRaw
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean) as import('./apex-meta-marketplace.js').MarketplaceCategory[];
+        }
+        const items = await apexMetaMarketplace.searchAll(query, opts);
+        return {
+          query,
+          count: items.length,
+          items: items.map((it) => ({
+            id: it.id,
+            marketplace: it.marketplace,
+            name: it.name,
+            description: it.description,
+            url: it.url,
+            ...(it.category && { category: it.category }),
+            ...(typeof it.stars === 'number' && { stars: it.stars }),
+            ...(typeof it.downloads === 'number' && { downloads: it.downloads }),
+            ...(it.install_method && { install_method: it.install_method }),
+          })),
+        };
+      }
+      case 'meta_install': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const providerId = String(params['providerId'] ?? '');
+        const itemId = String(params['itemId'] ?? '');
+        if (!providerId || !itemId) throw new Error('providerId et itemId requis');
+        const result = await apexMetaMarketplace.install(providerId, itemId);
+        return result;
+      }
+      case 'meta_trending': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const providerId = String(params['providerId'] ?? '');
+        if (!providerId) throw new Error('providerId requis');
+        const limit = typeof params['limit'] === 'number' ? (params['limit'] as number) : 10;
+        const items = await apexMetaMarketplace.getTrending(providerId, limit);
+        return { providerId, count: items.length, items };
+      }
+      case 'meta_recommend': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const recos = await apexMetaMarketplace.recommendForApex();
+        return {
+          count: recos.length,
+          recommendations: recos,
+        };
+      }
+      case 'meta_list_providers': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const filter: {
+          category?: import('./apex-meta-marketplace.js').MarketplaceCategory;
+          pwa_compatible?: boolean;
+          api_key_required?: boolean;
+        } = {};
+        if (typeof params['category'] === 'string') {
+          filter.category = params['category'] as import('./apex-meta-marketplace.js').MarketplaceCategory;
+        }
+        if (typeof params['pwa_compatible'] === 'boolean') filter.pwa_compatible = params['pwa_compatible'];
+        if (typeof params['api_key_required'] === 'boolean') filter.api_key_required = params['api_key_required'];
+        const providers = apexMetaMarketplace.listProviders(filter);
+        return {
+          count: providers.length,
+          providers: providers.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            url: p.url,
+            pwa_compatible: p.pwa_compatible,
+            api_key_required: p.api_key_required,
+            api_key_service: p.api_key_service ?? null,
+            free_tier_available: p.free_tier_available,
+            description: p.description,
+          })),
+          stats: apexMetaMarketplace.getStats(),
+        };
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }
