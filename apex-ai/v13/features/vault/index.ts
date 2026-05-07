@@ -24,6 +24,7 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
 import { linksRegistry } from '../../services/links-registry.js';
 import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/multi-key-vault.js';

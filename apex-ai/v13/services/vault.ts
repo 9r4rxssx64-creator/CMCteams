@@ -682,6 +682,11 @@ class Vault {
   /**
    * Wire links-registry pour auto-création + auto-vérification HEAD
    * (extraction service name depuis pattern.name).
+   *
+   * v13.1.x (Kevin règle 2026-05-07 auto-discover) :
+   * Après autoCreate, déclenche autoDiscoverLinks.discover() pour enrichir
+   * avec login/dashboard/billing/api_keys/usage/docs/etc. en autonomie totale
+   * (cascade pre_configured → pattern_discovery → web_search).
    */
   private async autoCreateLink(pattern: CredentialPattern): Promise<void> {
     try {
@@ -690,6 +695,27 @@ class Vault {
       if (!serviceName) return;
       const { linksRegistry } = await import('./links-registry.js');
       await linksRegistry.autoCreate(serviceName);
+      /* AUTO-DISCOVER : trouve login/dashboard/billing/api_keys/usage/etc.
+         non-bloquant — best-effort, ne casse pas autoStore si offline. */
+      try {
+        const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+        const discovered = await autoDiscoverLinks.discover(serviceName);
+        if (discovered.alive) {
+          const found: string[] = [];
+          if (discovered.login) found.push('login');
+          if (discovered.dashboard) found.push('dashboard');
+          if (discovered.billing) found.push('billing');
+          if (discovered.api_keys) found.push('api_keys');
+          if (discovered.usage) found.push('usage');
+          if (discovered.docs) found.push('docs');
+          logger.info(
+            'vault',
+            `🔗 ${found.length} liens trouvés pour ${pattern.name} : ${found.join(', ')}`,
+          );
+        }
+      } catch (err: unknown) {
+        logger.debug('vault', 'autoDiscoverLinks skipped', { err });
+      }
     } catch (err: unknown) {
       logger.warn('vault', 'autoCreateLink failed', { err });
     }

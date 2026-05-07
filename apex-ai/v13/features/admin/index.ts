@@ -214,23 +214,25 @@ function renderProjectsTab(): string {
 }
 
 function renderTabs(): string {
+  /* v13.2.1 fix Kevin "tabs superposés iPhone" — labels courts + scroll fluide */
   const tabs: Array<[Tab, string]> = [
     ['commerce', '💳 Commerce'],
     ['users', '👥 Comptes'],
-    ['pending', '📨 En attente'],
+    ['pending', '📨 Attente'],
     ['health', '🩺 Santé'],
-    ['projects', '📦 Projets KDMC'],
-    ['executions', '⚙ Exécutions'],
-    ['knowledge', '📚 Base connaissances'],
+    ['projects', '📦 Projets'],
+    ['executions', '⚙️ Exec'],
+    ['knowledge', '📚 KB'],
     ['bilan', '📊 Bilan'],
-    ['consumption', '💰 Conso IA'],
+    ['consumption', '💰 Conso'],
   ];
   /* Premium tabs : pill design with gold gradient on active + smooth transition + 44px touch */
   return tabs
     .map(
       ([id, label]) => {
         const isActive = activeTab === id;
-        const baseStyle = 'flex-shrink:0;white-space:nowrap;min-height:44px;padding:10px 16px;font-size:13px;border-radius:24px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em';
+        /* CRITIQUE iPhone : flex:0 0 auto force pas de shrink, white-space:nowrap garde label */
+        const baseStyle = 'flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;line-height:1.2;border-radius:22px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em;display:inline-flex;align-items:center;gap:4px;scroll-snap-align:start';
         const activeStyle = 'background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
         const inactiveStyle = 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.08)';
         return `
@@ -748,15 +750,15 @@ export function render(rootEl: HTMLElement): void {
         .ax-bounce-tap { transition: none !important; }
       }
     </style>
-    <div class="ax-admin ax-modernized-card" style="padding:20px 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10;flex-wrap:wrap">
-        <div>
-          <h1 style="margin:0;font-size:clamp(24px,4vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">👑 Centre Admin</h1>
-          <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:12px">Kevin · accès illimité</p>
+    <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
+        <div style="min-width:0;flex:1">
+          <h1 style="margin:0;font-size:clamp(20px,5vw,28px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
+          <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Kevin · accès illimité</p>
         </div>
-        <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="padding:9px 18px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms">← Chat</button>
+        <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms;white-space:nowrap">← Chat</button>
       </header>
-      <nav class="ax-tabs" style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin">${renderTabs()}</nav>
+      <nav class="ax-tabs" style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin:0 -16px 14px;padding-left:16px;padding-right:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scroll-snap-type:x mandatory;scroll-padding-left:16px">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>
     </div>
   `;

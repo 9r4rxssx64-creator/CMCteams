@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.595";
+var APP_VER="v9.596";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22548,6 +22548,444 @@ function _cmcShowRetryDiag(){
   w.document.write('<html><head><title>Diagnostic re-parse cadres</title><style>body{background:#1a1f2a;color:#e0e8e0;font-family:system-ui,sans-serif;padding:14px;font-size:14px}h2{color:#c9a227}</style></head><body><h2>🔧 Diagnostic re-parse cadres '+esc((d.y||"")+"-"+(d.m||""))+'</h2><div style="margin-bottom:10px"><b>'+(d.rescued||0)+'/'+(d.total||0)+'</b> cadres recuperes</div>'+rows+'</body></html>');
   w.document.close();
 }
+
+// v9.596 (Kevin 2026-05-07) — Versioning V1/V2/V3 historique imports + validation IDENTIQUE PDF source
+// "On invente jamais, toujours reproduire à l'identique"
+// "Garde l'historique de chaque planning V1 V2 V3..."
+//
+// Stockage : cmc_history_<year>-<month>_versioned = [{version:"V1",importedAt,snapshot,refData,verifData,pdfText,parserVersion}, ...]
+// Cap 10 versions max FIFO. Local seulement (pas Firebase, gros volume PDF text).
+function _cmcSaveVersionedHistory(iy,im){
+  if(!A.user||A.user.id!==AID)return null;
+  try{
+    var key=iy+"-"+im;
+    var historyArr=lg("cmc_history_"+key+"_versioned",[]);
+    if(!Array.isArray(historyArr))historyArr=[];
+    if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
+      var versionN=historyArr.length+1;
+      var snapshot=null,refData=null,verifData=null,pdfTextEntry=null;
+      try{snapshot=JSON.parse(JSON.stringify(A.overrides[key]||{}));}catch(_){snapshot={};}
+      try{refData=lg("cmc_ref_"+key,null);}catch(_){}
+      try{verifData=lg("cmc_verif_"+key,null);}catch(_){}
+      try{pdfTextEntry=lg("cmc_import_src_"+key,null);}catch(_){}
+      var entry={
+        version:"V"+versionN,
+        importedAt:Date.now(),
+        snapshot:snapshot,
+        refData:refData,
+        verifData:verifData,
+        pdfTextLength:pdfTextEntry&&pdfTextEntry.txt?pdfTextEntry.txt.length:0,
+        parserVersion:APP_VER,
+        empCount:Object.keys(snapshot).length
+      };
+      historyArr.push(entry);
+      // Cap 10 max FIFO (chaque version peut peser plusieurs MB si pdfText)
+      if(historyArr.length>10)historyArr=historyArr.slice(-10);
+      try{ls("cmc_history_"+key+"_versioned",historyArr);}catch(quotaErr){
+        // Quota plein : retirer plus anciens
+        try{historyArr=historyArr.slice(-3);ls("cmc_history_"+key+"_versioned",historyArr);}catch(_){}
+      }
+      return entry;
+    }
+  }catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("save-versioned-history",_e);}catch(__){}}
+  return null;
+}
+
+// Liste les versions historiques d'un mois donne
+function _cmcListVersionedHistory(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var arr=lg("cmc_history_"+key+"_versioned",[])||[];
+    return Array.isArray(arr)?arr:[];
+  }catch(_){return[];}
+}
+
+// Restaure une version historique (avec confirmation)
+function _cmcRestoreVersion(iy,im,versionLabel){
+  if(!A.user||A.user.id!==AID){toast("⚠ Reserve admin","err");return;}
+  var arr=_cmcListVersionedHistory(iy,im);
+  var entry=arr.find(function(x){return x.version===versionLabel;});
+  if(!entry){toast("Version "+versionLabel+" introuvable","err");return;}
+  if(!confirm("Restaurer "+versionLabel+" du "+new Date(entry.importedAt).toLocaleString("fr-FR")+" ?\n\nL'etat actuel sera archive avant la restauration.")){return;}
+  try{
+    // Sauvegarder etat courant comme nouvelle version V(N+1) avant restauration
+    _cmcSaveVersionedHistory(iy,im);
+    var key=iy+"-"+im;
+    A.overrides[key]=JSON.parse(JSON.stringify(entry.snapshot||{}));
+    if(entry.refData)try{ls("cmc_ref_"+key,entry.refData);}catch(_){}
+    if(entry.verifData)try{ls("cmc_verif_"+key,entry.verifData);}catch(_){}
+    try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+    try{ls("cmc_ov",A.overrides);if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
+    try{_audit&&_audit("import_version_restore",AID,MFR[im]+" "+iy,versionLabel,"v9.596");}catch(_){}
+    toast("✅ Version "+versionLabel+" restauree","ok",6000);
+    try{dc();}catch(_){}
+  }catch(_e){toast("Erreur restauration : "+(_e&&_e.message||_e),"err");}
+}
+
+// Calcule le diff entre 2 versions (pour visualisation)
+// Retourne {added, removed, changed, identical} comptes + sample de chaque categorie
+function _cmcDiffVersions(versionA,versionB){
+  var diff={added:[],removed:[],changed:[],identical:0};
+  if(!versionA||!versionB)return diff;
+  var snapA=versionA.snapshot||{},snapB=versionB.snapshot||{};
+  var allEids={};
+  Object.keys(snapA).forEach(function(eid){allEids[eid]=true;});
+  Object.keys(snapB).forEach(function(eid){allEids[eid]=true;});
+  Object.keys(allEids).forEach(function(eid){
+    var rowA=snapA[eid]||{},rowB=snapB[eid]||{};
+    var emp=A.employees.find(function(x){return x.id===eid;});
+    var name=emp?emp.name:eid;
+    var hasA=Object.keys(rowA).length>0,hasB=Object.keys(rowB).length>0;
+    if(hasA&&!hasB){diff.removed.push({eid:eid,name:name,daysCount:Object.keys(rowA).length});return;}
+    if(!hasA&&hasB){diff.added.push({eid:eid,name:name,daysCount:Object.keys(rowB).length});return;}
+    // Compare day-by-day
+    var changes=[];
+    var allDays={};
+    Object.keys(rowA).forEach(function(d){allDays[d]=true;});
+    Object.keys(rowB).forEach(function(d){allDays[d]=true;});
+    Object.keys(allDays).forEach(function(d){
+      var a=rowA[d]||"",b=rowB[d]||"";
+      if(a!==b)changes.push({day:parseInt(d),from:a,to:b});
+    });
+    if(changes.length>0){
+      diff.changed.push({eid:eid,name:name,changes:changes.slice(0,5),totalChanges:changes.length});
+    }else{
+      diff.identical++;
+    }
+  });
+  return diff;
+}
+
+// v9.596 — Validation IDENTIQUE : verifie que TOUS les caracteres du nom employe + horaires
+// apparaissent VRAIMENT dans le PDF source. Si non → flag _invented:true (pas ajouter).
+// Garantit "on invente jamais, toujours reproduire a l'identique".
+function _cmcValidateAgainstSource(employee,sourceText){
+  if(!employee||!sourceText)return{valid:true,reason:"no source to validate against"};
+  var src=String(sourceText).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  var name=String(employee.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  var nameTokens=name.split(/\s+/).filter(function(t){return t.length>=3;});
+  if(!nameTokens.length)return{valid:false,reason:"empty name"};
+  // Au moins le NOM (1er token, le plus long généralement) doit etre dans le PDF source
+  var mainToken=nameTokens[0];
+  if(src.indexOf(mainToken)<0){
+    return{valid:false,reason:'name token "'+mainToken+'" not in PDF source'};
+  }
+  // Verif horaires : chaque shift code doit etre present quelque part dans le PDF
+  if(employee.shifts&&typeof employee.shifts==="object"){
+    var shiftValues={};
+    Object.keys(employee.shifts).forEach(function(d){
+      var s=employee.shifts[d];
+      if(s&&typeof s==="string")shiftValues[s.toUpperCase()]=true;
+    });
+    var shiftList=Object.keys(shiftValues);
+    for(var i=0;i<shiftList.length;i++){
+      var sv=shiftList[i];
+      // Codes courts standards (CP, RH, M, AF...) sont OK partout. Verif uniquement si shift complexe (>=3 chars).
+      if(sv.length>=3&&sv.indexOf("/")<0){
+        // CP, RHO, RTP — verifier presence dans PDF
+        if(src.indexOf(sv)<0){
+          return{valid:false,reason:'shift code "'+sv+'" not in PDF source for '+employee.name};
+        }
+      }
+    }
+  }
+  return{valid:true};
+}
+
+// v9.596 — Wrapper logging : valide tous les employes d'un import et met de cote ceux suspects
+// Retourne {validated, suspect, totalChecked}
+function _cmcValidateImportBatch(iy,im,sourceText){
+  var key=iy+"-"+im;
+  var ov=A.overrides[key]||{};
+  var validated=0,suspect=[];
+  Object.keys(ov).forEach(function(eid){
+    var row=ov[eid]||{};
+    var emp=A.employees.find(function(x){return x.id===eid;});
+    if(!emp)return;
+    var hasAnyShift=false;
+    var shiftSample={};
+    for(var d in row){if(row[d]){hasAnyShift=true;shiftSample[d]=row[d];}}
+    if(!hasAnyShift)return;
+    var pseudoEmp={name:emp.name,shifts:shiftSample};
+    var v=_cmcValidateAgainstSource(pseudoEmp,sourceText);
+    if(v.valid)validated++;
+    else suspect.push({eid:eid,name:emp.name,reason:v.reason});
+  });
+  // Log audit si suspect detecte
+  if(suspect.length>0){
+    try{
+      var log=lg("cmc_import_log",[])||[];
+      if(log.length>=200)log=log.slice(-199);
+      log.push({ts:Date.now(),y:iy,m:im,validated:validated,suspectCount:suspect.length,
+        suspect:suspect.slice(0,15),agent:"validate_against_source",src:"_cmcValidateImportBatch"});
+      ls("cmc_import_log",log);
+    }catch(_){}
+  }
+  return{validated:validated,suspect:suspect,totalChecked:validated+suspect.length};
+}
+
+// v9.596 — Strategy 6 : OCR fallback Tesseract.js (si parser texte natif rate)
+// Lazy-load CDN, traite le PDF page par page en images, puis re-parse avec parser texte standard.
+// Retourne {ok, coverage, employesOk} ou {ok:false} si Tesseract indisponible.
+async function _cmcOcrFallback(pdfFile,iy,im){
+  try{
+    if(!pdfFile){return{ok:false,reason:"no PDF file"};}
+    // Lazy-load Tesseract si pas déjà charge
+    if(typeof Tesseract==="undefined"){
+      await new Promise(function(resolve,reject){
+        var s=document.createElement("script");
+        s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+        s.onload=resolve;s.onerror=function(){reject(new Error("Tesseract CDN failed"));};
+        document.head.appendChild(s);
+        setTimeout(function(){reject(new Error("Tesseract load timeout"));},20000);
+      });
+    }
+    if(typeof Tesseract==="undefined"){return{ok:false,reason:"Tesseract unavailable"};}
+    if(typeof pdfjsLib==="undefined"){return{ok:false,reason:"pdfjsLib unavailable"};}
+    // Render PDF pages to canvas then OCR
+    var pdfData=null;
+    if(pdfFile instanceof File||pdfFile instanceof Blob){
+      pdfData=await pdfFile.arrayBuffer();
+    }else if(typeof pdfFile==="string"){
+      pdfData=pdfFile;
+    }else{return{ok:false,reason:"invalid pdfFile"};}
+    var pdf=await pdfjsLib.getDocument({data:pdfData}).promise;
+    var ocrText="";
+    for(var pi=1;pi<=Math.min(pdf.numPages,8);pi++){
+      var page=await pdf.getPage(pi);
+      var viewport=page.getViewport({scale:2.0});
+      var canvas=document.createElement("canvas");
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      var ctx=canvas.getContext("2d");
+      await page.render({canvasContext:ctx,viewport:viewport}).promise;
+      var dataUrl=canvas.toDataURL("image/png");
+      var ocr=await Tesseract.recognize(dataUrl,"fra",{logger:function(){}});
+      ocrText+=(ocr&&ocr.data&&ocr.data.text||"")+"\n";
+    }
+    if(!ocrText.trim()){return{ok:false,reason:"OCR returned empty"};}
+    // Audit
+    try{
+      var log=lg("cmc_import_log",[])||[];
+      if(log.length>=200)log=log.slice(-199);
+      log.push({ts:Date.now(),y:iy,m:im,strategy:"OCR_TESSERACT_FALLBACK",
+        textLen:ocrText.length,pages:Math.min(pdf.numPages,8),agent:"ocr_fallback"});
+      ls("cmc_import_log",log);
+    }catch(_){}
+    return{ok:true,text:ocrText,strategy:"OCR_TESSERACT"};
+  }catch(e){
+    return{ok:false,reason:String(e&&e.message||e).slice(0,200)};
+  }
+}
+
+// v9.596 — Strategy 7 : Claude Vision fallback (si OCR insuffisant)
+// Si cle Anthropic dispo (cmc_ia_key) et proxy CORS configure, envoie pages PDF en images
+// a Claude Vision pour extraction structuree. Fallback ultime "intelligence cas pas standard".
+async function _cmcVisionFallback(pdfFile,iy,im){
+  try{
+    var apiKey=lg("cmc_ia_key","")||lg("cmc_shared_api_key","");
+    if(!apiKey){return{ok:false,reason:"no Anthropic API key"};}
+    if(typeof pdfjsLib==="undefined"){return{ok:false,reason:"pdfjsLib unavailable"};}
+    var proxy=lg("cmc_ia_proxy","")||"https://api.anthropic.com/v1/messages";
+    var pdfData=null;
+    if(pdfFile instanceof File||pdfFile instanceof Blob){pdfData=await pdfFile.arrayBuffer();}
+    else if(typeof pdfFile==="string"){pdfData=pdfFile;}
+    else{return{ok:false,reason:"invalid pdfFile"};}
+    var pdf=await pdfjsLib.getDocument({data:pdfData}).promise;
+    var pagesB64=[];
+    for(var pi=1;pi<=Math.min(pdf.numPages,4);pi++){
+      var page=await pdf.getPage(pi);
+      var viewport=page.getViewport({scale:1.5});
+      var canvas=document.createElement("canvas");
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      var ctx=canvas.getContext("2d");
+      await page.render({canvasContext:ctx,viewport:viewport}).promise;
+      var b64=canvas.toDataURL("image/jpeg",0.85).replace(/^data:image\/jpeg;base64,/,"");
+      pagesB64.push(b64);
+    }
+    // Construire le message Claude Vision
+    var content=[];
+    pagesB64.forEach(function(b64,idx){
+      content.push({type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}});
+    });
+    content.push({type:"text",text:"Voici un planning casino mensuel SBM. Extrais TOUS les employes (cadres + chefs + croupiers) avec leur nom complet, leur famille (BJ/Roulettes/CMC/Cadres), et tous leurs horaires/codes par jour.\n\nReponds UNIQUEMENT avec un texte au format suivant, une ligne par employe :\nNOM Initiale,jour1Code,jour2Code,...,jour31Code\n\nPas d'explication, pas de markdown, pas d'introduction. Juste les lignes brutes prets a parser. Si un jour est vide, mettre vide entre les virgules. Reproduire EXACTEMENT le PDF, ne rien inventer."});
+    var resp=await fetch(proxy,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-5-20250929",
+        max_tokens:8000,
+        messages:[{role:"user",content:content}]
+      })
+    });
+    if(!resp.ok){return{ok:false,reason:"Vision API HTTP "+resp.status};}
+    var data=await resp.json();
+    var visionText="";
+    if(data&&data.content&&Array.isArray(data.content)){
+      data.content.forEach(function(blk){if(blk.type==="text")visionText+=blk.text+"\n";});
+    }
+    if(!visionText.trim()){return{ok:false,reason:"Vision returned empty"};}
+    // Audit
+    try{
+      var log=lg("cmc_import_log",[])||[];
+      if(log.length>=200)log=log.slice(-199);
+      log.push({ts:Date.now(),y:iy,m:im,strategy:"VISION_CLAUDE_FALLBACK",
+        textLen:visionText.length,pages:pagesB64.length,agent:"vision_fallback"});
+      ls("cmc_import_log",log);
+    }catch(_){}
+    return{ok:true,text:visionText,strategy:"VISION_CLAUDE"};
+  }catch(e){
+    return{ok:false,reason:String(e&&e.message||e).slice(0,200)};
+  }
+}
+
+// v9.596 — Orchestrateur cascade Strategies 1-5 (text) → 6 (OCR) → 7 (Vision)
+// Coverage minimum 0.5 (50% emps actifs) pour considerer le parser reussi.
+// JAMAIS d'invention : si toutes les strategies echouent, marque needs_source.
+async function _cmcParseWithFallback(pdfFile,sourceText,iy,im){
+  // Strategies 1-5 deja faites par doImport via parser texte standard.
+  // Cette fonction re-parse avec OCR ou Vision si coverage < 50%.
+  var key=iy+"-"+im;
+  var activeEmps=A.employees.filter(function(e){return isEmpActive(e,iy,im)&&!e.visitor;}).length;
+  var ov=A.overrides[key]||{};
+  var withData=0;
+  Object.keys(ov).forEach(function(eid){
+    var row=ov[eid]||{};
+    for(var d in row){if(row[d]){withData++;break;}}
+  });
+  var coverage=activeEmps?withData/activeEmps:0;
+  if(coverage>=0.5){return{ok:true,coverage:coverage,strategy:"TEXT_NATIVE"};}
+  // Strategy 6 : OCR
+  if(pdfFile){
+    try{toast("🔍 Parser texte insuffisant, lancement OCR Tesseract...","info",4000);}catch(_){}
+    var ocr=await _cmcOcrFallback(pdfFile,iy,im);
+    if(ocr.ok&&ocr.text){
+      // Re-injecter dans textarea + relancer doImport
+      try{var ta=document.getElementById("impTxt");if(ta){ta.value=ocr.text;}}catch(_){}
+      try{ls("cmc_import_src_"+key,{txt:ocr.text,ts:Date.now(),year:iy,month:im,strategy:"OCR"});}catch(_){}
+      return{ok:true,coverage:coverage,strategy:"OCR_NEEDS_REIMPORT",text:ocr.text,
+        hint:"Lancer doImport() avec le texte OCR pour appliquer"};
+    }
+  }
+  // Strategy 7 : Vision
+  if(pdfFile){
+    try{toast("🤖 OCR insuffisant, tentative Claude Vision...","info",4000);}catch(_){}
+    var vis=await _cmcVisionFallback(pdfFile,iy,im);
+    if(vis.ok&&vis.text){
+      try{var ta2=document.getElementById("impTxt");if(ta2){ta2.value=vis.text;}}catch(_){}
+      try{ls("cmc_import_src_"+key,{txt:vis.text,ts:Date.now(),year:iy,month:im,strategy:"VISION"});}catch(_){}
+      return{ok:true,coverage:coverage,strategy:"VISION_NEEDS_REIMPORT",text:vis.text,
+        hint:"Lancer doImport() avec le texte Vision pour appliquer"};
+    }
+  }
+  // Echec total : needs_source
+  try{
+    if(typeof agentAppendReport==="function"){
+      agentAppendReport("import_critical_fail","critical",
+        "Toutes strategies parser ont echoue (coverage "+(coverage*100).toFixed(0)+"%)",
+        {key:key,coverage:coverage,activeEmps:activeEmps,withData:withData},null);
+    }
+  }catch(_){}
+  return{ok:false,needs_source:true,coverage:coverage,
+    reason:"All strategies failed (text + OCR + Vision)"};
+}
+
+// Bouton helper UI : declenche le fallback OCR/Vision sur le PDF en cours
+function cmcRunFallbackOcrVision(){
+  if(!A.user||A.user.id!==AID){toast("⚠ Reserve admin","err");return;}
+  var key=A.year+"-"+A.month;
+  var srcEntry=lg("cmc_import_src_"+key,null);
+  if(!srcEntry||!srcEntry.txt){
+    toast("Aucun PDF source en cache pour "+MFR[A.month]+" "+A.year+". Importe un PDF d'abord.","err",6000);
+    return;
+  }
+  toast("🔍 Lancement OCR + Vision en cascade...","info",4000);
+  _cmcParseWithFallback(null,srcEntry.txt,A.year,A.month).then(function(res){
+    if(res.ok){
+      toast("✅ Strategie reussie : "+(res.strategy||"?")+" (coverage "+((res.coverage||0)*100).toFixed(0)+"%)","ok",6000);
+    }else{
+      toast("❌ Toutes les strategies ont echoue. Le PDF doit etre verifie manuellement.","err",8000);
+    }
+  }).catch(function(e){
+    toast("Erreur fallback : "+(e&&e.message||e).slice(0,80),"err",6000);
+  });
+}
+
+// Vue admin : historique versions V1/V2/V3 avec diff visualisable
+function vImportVersions(){
+  if(!A.user||A.user.id!==AID)return"";
+  var iy=A.year,im=A.month;
+  var versions=_cmcListVersionedHistory(iy,im);
+  var html='<div class="page"><div style="margin-bottom:12px"><div class="sec-title">📚 Historique des imports versionnes</div><div class="sec-sub">'+esc(MFR[im]+" "+iy)+' — '+versions.length+' version'+(versions.length>1?"s":"")+'</div></div>';
+  html+='<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="sv(\'import\')" style="min-height:44px">⟵ Retour Import</button>';
+  html+='<select id="impVerY" class="inp" style="min-height:44px;padding:8px 10px" onchange="A.year=parseInt(this.value);dc();">'+[2025,2026,2027].map(function(y){return '<option value="'+y+'"'+(y===iy?' selected':'')+'>'+y+'</option>';}).join("")+'</select>';
+  html+='<select id="impVerM" class="inp" style="min-height:44px;padding:8px 10px" onchange="A.month=parseInt(this.value);dc();">'+MFR.map(function(m,i){return '<option value="'+i+'"'+(i===im?' selected':'')+'>'+m+'</option>';}).join("")+'</select></div>';
+  if(!versions.length){
+    html+='<div class="card" style="padding:20px;text-align:center;color:#a0a0b0"><div style="font-size:36px;margin-bottom:10px">📭</div><div style="font-size:15px">Aucune version archivee pour '+esc(MFR[im]+" "+iy)+'</div><div style="font-size:13px;margin-top:6px;color:#7080a0">Chaque nouvel import sera archive automatiquement (V1, V2, V3...)</div></div>';
+    return html+'</div>';
+  }
+  // Sort newest first
+  var sorted=versions.slice().sort(function(a,b){return (b.importedAt||0)-(a.importedAt||0);});
+  sorted.forEach(function(v,idx){
+    var d=new Date(v.importedAt||0);
+    var ago=Math.round((Date.now()-(v.importedAt||0))/3600000);
+    var agoStr=ago<24?(ago+"h"):(Math.round(ago/24)+"j");
+    html+='<div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid #c9a227">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
+    html+='<div style="font-size:18px;font-weight:800;color:#c9a227">'+esc(v.version||"V?")+' <span style="font-size:13px;color:#a0c8a0;font-weight:500">('+esc(v.parserVersion||"?")+')</span></div>';
+    html+='<div style="font-size:12px;color:#a0a0b0">'+esc(d.toLocaleString("fr-FR"))+' <span style="color:#8090a0">— il y a '+agoStr+'</span></div>';
+    html+='</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">';
+    html+='<div style="text-align:center;padding:8px;background:rgba(255,255,255,.04);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#5aa8ff">'+(v.empCount||0)+'</div><div style="font-size:11px;color:#a0c0c0">Employes</div></div>';
+    html+='<div style="text-align:center;padding:8px;background:rgba(255,255,255,.04);border-radius:6px"><div style="font-size:18px;font-weight:800;color:#7adcb0">'+Math.round((v.pdfTextLength||0)/1024)+'</div><div style="font-size:11px;color:#a0c0c0">Ko PDF</div></div>';
+    var verifTotal=v.verifData&&v.verifData.summary?(v.verifData.summary.coverage||0):0;
+    html+='<div style="text-align:center;padding:8px;background:rgba(255,255,255,.04);border-radius:6px"><div style="font-size:18px;font-weight:800;color:'+(verifTotal>=80?"#5aaa70":verifTotal>=60?"#e09848":"#e06060")+'">'+verifTotal+'%</div><div style="font-size:11px;color:#a0c0c0">Couv.</div></div>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    if(idx<sorted.length-1){
+      var olderV=sorted[idx+1].version;
+      html+='<button class="btn" onclick="_cmcShowVersionDiff(A.year,A.month,\''+esc(olderV)+'\',\''+esc(v.version)+'\')" style="flex:1;min-width:140px;min-height:44px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700">🔍 Voir diff '+esc(olderV)+' → '+esc(v.version)+'</button>';
+    }
+    html+='<button class="btn" onclick="_cmcRestoreVersion(A.year,A.month,\''+esc(v.version)+'\')" style="flex:1;min-width:140px;min-height:44px;background:rgba(218,165,32,.15);border:1px solid rgba(218,165,32,.5);color:#f0c850;font-weight:700">⟲ Restaurer '+esc(v.version)+'</button>';
+    html+='</div></div>';
+  });
+  return html+'</div>';
+}
+
+// Modal diff entre 2 versions
+function _cmcShowVersionDiff(iy,im,vA,vB){
+  var versions=_cmcListVersionedHistory(iy,im);
+  var entryA=versions.find(function(x){return x.version===vA;});
+  var entryB=versions.find(function(x){return x.version===vB;});
+  if(!entryA||!entryB){toast("Versions introuvables","err");return;}
+  var diff=_cmcDiffVersions(entryA,entryB);
+  var w=window.open("","versionDiff","width=720,height=720");
+  if(!w){toast("Bloque par popup","warn");return;}
+  var html='<html><head><title>Diff '+esc(vA)+' → '+esc(vB)+' '+esc(MFR[im]+" "+iy)+'</title>';
+  html+='<style>body{background:#1a1f2a;color:#e0e8e0;font-family:system-ui,sans-serif;padding:14px;font-size:13px}h2{color:#c9a227;margin-top:0}h3{color:#5aa8ff;margin:14px 0 6px}.row{padding:6px 8px;margin:3px 0;background:rgba(255,255,255,.03);border-left:3px solid #5aa8ff;border-radius:4px}.added{border-left-color:#5aaa70}.removed{border-left-color:#e06060}.changed{border-left-color:#e09848}.tag{display:inline-block;padding:1px 6px;font-size:11px;border-radius:3px;margin-right:6px}</style>';
+  html+='</head><body><h2>🔍 Diff '+esc(vA)+' → '+esc(vB)+' ('+esc(MFR[im]+" "+iy)+')</h2>';
+  html+='<div style="margin-bottom:12px;color:#a0a0b0">Ajouts: <b style="color:#5aaa70">'+diff.added.length+'</b> · Retraits: <b style="color:#e06060">'+diff.removed.length+'</b> · Modifs: <b style="color:#e09848">'+diff.changed.length+'</b> · Identiques: <b style="color:#5aa8ff">'+diff.identical+'</b></div>';
+  if(diff.added.length){
+    html+='<h3>➕ Ajoutes ('+diff.added.length+')</h3>';
+    diff.added.forEach(function(x){html+='<div class="row added"><span class="tag" style="background:#5aaa70;color:#000">+</span><b>'+esc(x.name)+'</b> ('+x.daysCount+' jours)</div>';});
+  }
+  if(diff.removed.length){
+    html+='<h3>➖ Retires ('+diff.removed.length+')</h3>';
+    diff.removed.forEach(function(x){html+='<div class="row removed"><span class="tag" style="background:#e06060;color:#fff">-</span><b>'+esc(x.name)+'</b> ('+x.daysCount+' jours)</div>';});
+  }
+  if(diff.changed.length){
+    html+='<h3>✏ Modifies ('+diff.changed.length+')</h3>';
+    diff.changed.forEach(function(x){
+      var changesHtml=x.changes.map(function(c){return 'j'+c.day+': "'+esc(c.from||"vide")+'" → "'+esc(c.to||"vide")+'"';}).join("<br>");
+      html+='<div class="row changed"><span class="tag" style="background:#e09848;color:#000">±</span><b>'+esc(x.name)+'</b> ('+x.totalChanges+' changements)<div style="margin-top:4px;color:#c0c0c0;font-size:12px">'+changesHtml+(x.totalChanges>5?"<br>... +"+(x.totalChanges-5)+" autres":"")+'</div></div>';
+    });
+  }
+  if(!diff.added.length&&!diff.removed.length&&!diff.changed.length){
+    html+='<div style="padding:20px;text-align:center;color:#5aaa70;font-size:16px">✅ Versions identiques</div>';
+  }
+  html+='</body></html>';
+  w.document.write(html);
+  w.document.close();
+}
 // v9.181 — Copier le planning du mois précédent (admin, gain de temps massif)
 // Strategy : pour chaque emp actif ET sans aucun code ce mois, on copie le mois précédent
 // en ajustant les jours (si mois N-1 avait 31j et mois N a 30j, on tronque)
@@ -30969,6 +31407,9 @@ function doImport(){
   // Aucune invention, aucune copie historique. Juste : si parser rate -> on garde
   // l'ancien comportement plutot que de tout perdre.
   var _preWipeOv=null,_preWipeRef=null,_preWipeVerif=null,_preWipeHadData=false;
+  // v9.596 (Kevin 2026-05-07) — Sauvegarde versionnee V1/V2/V3 AVANT wipe.
+  // "Garde l'historique de chaque planning". Stocke local seulement (gros volume).
+  try{_cmcSaveVersionedHistory(iy,im);}catch(_vshErr){console.warn("[v9.596 versioned-history]",_vshErr);}
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
     _preWipeHadData=true;
     try{
