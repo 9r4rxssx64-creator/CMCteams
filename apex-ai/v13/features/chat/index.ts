@@ -56,7 +56,45 @@ interface DisplayMessage {
   toolBatchCount?: number;
 }
 
-const conversation: DisplayMessage[] = [];
+/* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
+ * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
+ * APRÈS : load depuis localStorage au mount + save debounce après chaque push.
+ * Cap 200 messages (drop oldest), exclus tool_card et streaming partial. */
+const CONV_STORAGE_KEY = 'apex_v13_conversation_active';
+const CONV_MAX_PERSIST = 200;
+
+function loadPersistedConversation(): DisplayMessage[] {
+  try {
+    const raw = localStorage.getItem(CONV_STORAGE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as DisplayMessage[];
+    if (!Array.isArray(arr)) return [];
+    /* Strip streaming flag (au cas où sauvé pendant streaming) */
+    return arr.map((m) => ({ ...m, streaming: false })).filter((m) => m.text || m.role === 'tool_card');
+  } catch { return []; }
+}
+
+let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
+function persistConversation(): void {
+  if (_saveTimeout) clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(() => {
+    try {
+      /* Exclus messages en streaming partial pour éviter snapshot incomplet */
+      const toSave = conversation
+        .filter((m) => !m.streaming)
+        .slice(-CONV_MAX_PERSIST);
+      localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(toSave));
+    } catch (err: unknown) {
+      /* Quota exceeded → trim plus agressif */
+      try {
+        const half = conversation.filter((m) => !m.streaming).slice(-(CONV_MAX_PERSIST / 2));
+        localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(half));
+      } catch { /* skip */ }
+    }
+  }, 500);
+}
+
+const conversation: DisplayMessage[] = loadPersistedConversation();
 const queue: string[] = [];
 let isProcessing = false;
 
@@ -800,6 +838,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     ts: Date.now(),
   };
   conversation.push(userMsg);
+  persistConversation();
 
   const assistantMsg: DisplayMessage = {
     id: `a_${Date.now()}`,
@@ -851,6 +890,8 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
         delete assistantMsg.streaming;
         store.set('isStreaming', false);
         renderMessages(rootEl);
+        /* v13.3.53 : persist conversation après streaming complet (Kevin "perds chat à chaque MAJ") */
+        persistConversation();
         /* Auto-read si setting activé (Kevin demande "il puisse me lire les choses") */
         void maybeAutoReadAssistant(assistantMsg);
       }
