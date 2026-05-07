@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.5';
+export const APP_VER = 'v13.3.6';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -196,6 +196,48 @@ async function bootstrap(): Promise<void> {
   router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
+
+  /* 8.5. Force version check au boot (Kevin 2026-05-07 — PWA iOS Safari bloqué v13.3.x).
+   * Fetch HEAD index.html avec cache-bust + check si version différente.
+   * Si stale + pas déjà fait dans cette session → unregister SW + clear caches + reload.
+   * Anti-loop : query param ?_fv=<APP_VER> coupe le cycle (already-checked). */
+  void (async () => {
+    try {
+      const url = window.location.pathname.replace(/[^/]+$/, '') + 'index.html?_v=' + Date.now();
+      const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (!res.ok) return;
+      const html = await res.text();
+      const remoteMatch = html.match(/data-app-ver="(v[\d.]+)"/);
+      const remoteVer = remoteMatch?.[1];
+      if (!remoteVer || remoteVer === APP_VER) return;
+      /* Anti-loop : si déjà check fait, abandonner */
+      const loopKey = 'apex_v13_force_reload_' + remoteVer;
+      if (sessionStorage.getItem(loopKey)) {
+        logger.warn('boot', `version mismatch ${APP_VER} vs ${remoteVer} mais reload déjà tenté → abandonne (loop guard)`);
+        return;
+      }
+      sessionStorage.setItem(loopKey, String(Date.now()));
+      logger.warn('boot', `🔄 Version stale détectée : local ${APP_VER}, remote ${remoteVer} → force reload`);
+      /* Unregister SW + clear caches + reload */
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (err: unknown) {
+        logger.warn('boot', 'force reload cleanup failed', { err });
+      }
+      /* Reload avec query param pour bypass cache HTTP Safari */
+      window.location.href = window.location.pathname + '?_forceupd=' + remoteVer + '&t=' + Date.now();
+    } catch (err: unknown) {
+      /* Offline ou pas dispo : silencieux */
+      logger.debug('boot', 'force version check skipped', { err });
+    }
+  })();
 
   /* 9. Service Worker register (deferred to not block render) */
   if ('serviceWorker' in navigator) {
