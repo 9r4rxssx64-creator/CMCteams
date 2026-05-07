@@ -29,9 +29,10 @@
  * └─────────┴──────────┴──────────┴──────────┴──────────────┘
  */
 
+import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 
-import { logger } from '../core/logger.js';
 
 export type TenantPlan = 'free' | 'basic' | 'pro' | 'business' | 'admin';
 export type TenantStatus = 'trial' | 'active' | 'past_due' | 'cancelled';

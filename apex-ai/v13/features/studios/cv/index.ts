@@ -158,7 +158,62 @@ export const INTERVIEW_QUESTIONS_FR: readonly { q: string; tip: string }[] = [
   { q: 'Vos points faibles ?', tip: 'Un défaut réel + comment vous le travaillez. Sincérité > perfection.' },
   { q: 'Pourquoi nous quittez-vous ?', tip: 'Tournez vers ce qui vous attire dans le nouveau poste, pas critiquer l\'ancien.' },
   { q: 'Où vous voyez-vous dans 5 ans ?', tip: 'Évolution réaliste alignée avec le poste actuel + envie d\'apprendre.' },
+  /* boost v13 — 20 questions supplementaires entretien expert */
+  { q: 'Pourquoi notre entreprise ?', tip: 'Mentionnez 2-3 valeurs / projets concrets de l\'entreprise. Montrez recherche.' },
+  { q: 'Décrivez un projet difficile.', tip: 'Méthode STAR : Situation, Tâche, Action, Résultat (chiffré).' },
+  { q: 'Comment gérez-vous le stress ?', tip: 'Technique concrète + exemple. Évitez "je gère bien" générique.' },
+  { q: 'Comment gérez-vous un conflit ?', tip: 'Exemple concret, écoute, médiation, recherche solution gagnant-gagnant.' },
+  { q: 'Quel est votre style de management ?', tip: 'Adaptable selon situation : directif, participatif, délégatif.' },
+  { q: 'Pourquoi un trou dans votre CV ?', tip: 'Sincérité + activités productives durant cette période (formation, projet).' },
+  { q: 'Quelle est votre prétention salariale ?', tip: 'Fourchette basée recherche marché + flexibilité selon package.' },
+  { q: 'Quel salaire actuel ?', tip: 'Salaire actuel + evolutions souhaitées. Possible refus poli.' },
+  { q: 'Êtes-vous mobile géographiquement ?', tip: 'Soyez clair. Ne mentez pas pour décrocher entretien.' },
+  { q: 'Pourquoi devrions-nous vous embaucher ?', tip: 'Synthèse 3 compétences clés + alignement parfait avec poste.' },
+  { q: 'Qu\'attendez-vous de votre futur manager ?', tip: 'Communication claire + retours réguliers + autonomie + soutien.' },
+  { q: 'Comment décririez-vous votre dernière équipe ?', tip: 'Positif sans embellir. Focus sur ce qui marchait + apprentissages.' },
+  { q: 'Avez-vous des questions ?', tip: 'TOUJOURS oui. 3-5 questions sur poste, équipe, croissance, défis.' },
+  { q: 'Donnez un exemple de leadership.', tip: 'Situation où vous avez initié, motivé, livré sans titre formel.' },
+  { q: 'Comment apprenez-vous de nouvelles compétences ?', tip: 'Méthode personnelle + exemple récent (formation, projet).' },
+  { q: 'Que pensez-vous de notre concurrent X ?', tip: 'Analyse objective + ce qui différencie l\'entreprise actuelle.' },
+  { q: 'Comment réagissez-vous à la critique ?', tip: 'Acceptation constructive + exemple où feedback a aidé.' },
+  { q: 'Décrivez votre journée idéale.', tip: 'Productivité + équilibre vie privée + impact concret.' },
+  { q: 'Avez-vous d\'autres entretiens en cours ?', tip: 'Sincérité + intérêt principal pour cette entreprise.' },
+  { q: 'Quand pouvez-vous commencer ?', tip: 'Préavis légal honnête + flexibilité.' },
 ] as const;
+
+/* boost v13 — Templates de cover letter (lettre de motivation) */
+export const COVER_LETTER_TEMPLATES = {
+  classique: 'Madame, Monsieur,\n\nDiplômé(e) de [formation] et fort(e) de [X années] d\'expérience en [domaine], je vous adresse ma candidature au poste de [poste] proposé au sein de [entreprise].\n\nMa formation et mes expériences m\'ont permis de développer [3 compétences clés alignées avec le poste]. Au cours de [expérience récente], j\'ai notamment [résultat chiffré].\n\nVotre entreprise [entreprise], reconnue pour [élément différenciant], correspond pleinement à mes aspirations. Je suis particulièrement intéressé(e) par [projet/valeur spécifique].\n\nJe me tiens à votre disposition pour un entretien.\n\nVeuillez agréer mes salutations distinguées.',
+  startup: 'Hi,\n\nJe vous écris parce que [entreprise] est exactement ce que je cherche : [valeur unique]. En [X années] dans [domaine], j\'ai aidé [chiffre] entreprises à [bénéfice mesurable].\n\nCe qui me motive : [3 points concrets]. Concrètement, je peux apporter à [entreprise] : [3 contributions chiffrées].\n\nDispo pour un café/visio quand ça vous arrange ?\n\n[Prénom]',
+  reconversion: 'Madame, Monsieur,\n\nAprès [X années] dans [ancien domaine], je me reconvertis vers [nouveau domaine] pour [motivation profonde]. Cette transition n\'est pas un choix par défaut, mais une vraie passion construite par [actions concrètes : formation, projet personnel, etc].\n\nMes compétences acquises dans [ancien métier] sont transférables : [3 compétences transférables avec exemples].\n\nMa formation en [nouveau diplôme] m\'a apporté [compétences techniques nouvelles]. Mon projet [projet portfolio] illustre mes capacités.\n\nDisponible pour échanger.\n\nCordialement.',
+  international_en: 'Dear Hiring Manager,\n\nWith [X years] of experience in [field], I am excited to apply for the [position] role at [company]. My background in [specific area] aligns perfectly with what your team needs.\n\nIn my current role at [current company], I [specific achievement with metric]. I am drawn to [company] because of [specific reason: mission, project, value].\n\nI would welcome the opportunity to discuss how I can contribute to your team.\n\nBest regards,\n[Name]',
+  spontanee: 'Madame, Monsieur,\n\nVotre entreprise [entreprise] m\'inspire par [raison spécifique]. Bien que vous n\'ayez pas d\'offre publiée correspondant à mon profil, je souhaite vous proposer ma candidature spontanée.\n\nMon profil : [pitch 2 phrases].\n\nJe peux apporter à [entreprise] : [3 valeurs concrètes].\n\nSi mon profil retient votre attention, je serais ravi(e) d\'échanger.\n\nCordialement.',
+};
+
+/* boost v13 — Niveau langues CECRL avec descriptions */
+export const NIVEAUX_CECRL = {
+  A1: 'Débutant - phrases simples, vocabulaire basique',
+  A2: 'Élémentaire - conversations simples',
+  B1: 'Intermédiaire - voyages, sujets familiers',
+  B2: 'Intermédiaire avancé - autonome, idées complexes',
+  C1: 'Avancé - usage souple, sujets variés',
+  C2: 'Maîtrise - quasi-natif, nuances subtiles',
+  natif: 'Langue maternelle',
+} as const;
+
+/* boost v13 — Compétences techniques par domaine (suggestions auto) */
+export const COMPETENCES_PAR_DOMAINE = {
+  tech: ['JavaScript', 'TypeScript', 'Python', 'React', 'Node.js', 'Docker', 'Kubernetes', 'AWS', 'PostgreSQL', 'Git', 'CI/CD', 'GraphQL', 'Microservices'],
+  data: ['Python', 'SQL', 'Pandas', 'NumPy', 'Scikit-learn', 'TensorFlow', 'PyTorch', 'Tableau', 'Power BI', 'Hadoop', 'Spark', 'Statistics', 'Machine Learning'],
+  marketing: ['SEO', 'SEM', 'Google Analytics', 'Google Ads', 'Facebook Ads', 'Hubspot', 'Mailchimp', 'Content marketing', 'Copywriting', 'A/B testing', 'CRM', 'Marketing automation'],
+  finance: ['Excel avancé', 'SAP', 'Sage', 'Bloomberg', 'CFA', 'Modélisation financière', 'IFRS', 'Consolidation', 'Analyse risque', 'M&A', 'Trading'],
+  sales: ['Salesforce', 'Pipedrive', 'Cold calling', 'Négociation', 'Account management', 'Pipeline management', 'CRM', 'B2B', 'B2C', 'SaaS sales'],
+  rh: ['Recrutement', 'Paie', 'Droit social', 'Gestion conflits', 'Formation', 'GPEC', 'Workday', 'SIRH', 'Onboarding', 'Politique RH'],
+  design: ['Figma', 'Sketch', 'Adobe XD', 'Photoshop', 'Illustrator', 'InDesign', 'Prototyping', 'Wireframing', 'UI/UX', 'Design system', 'Motion design'],
+  produit: ['Agile', 'Scrum', 'Kanban', 'JIRA', 'User stories', 'Roadmap', 'OKR', 'Discovery', 'A/B testing', 'Analytics', 'Product Management'],
+  comm: ['Communication interne', 'Communication externe', 'RP', 'Réseaux sociaux', 'Community management', 'Storytelling', 'Brand', 'Crisis management'],
+  juridique: ['Droit civil', 'Droit commercial', 'Droit social', 'Droit fiscal', 'Contrats', 'Compliance', 'RGPD', 'M&A', 'Contentieux', 'Property'],
+} as const;
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);

@@ -2,6 +2,7 @@
  * Tests bundle-budget-check — audit Kevin v13.1.0.
  * Vérifie la fonction runBudgetCheck sans builds réels.
  */
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -32,7 +33,7 @@ describe('bundle-budget-check', () => {
   });
 
   it('passes when bundle small enough', () => {
-    /* Crée fichier entry minimal — quelques bytes ⇒ gzip très petit ⇒ ok */
+    /* Crée fichier entry minimal dans /core/ — quelques bytes ⇒ gzip très petit ⇒ ok */
     mkdirSync(join(tmpDir, 'core'), { recursive: true });
     writeFileSync(join(tmpDir, 'core', 'bootstrap-abc.js'), 'export default 1;');
     const r = runBudgetCheck(tmpDir);
@@ -41,13 +42,17 @@ describe('bundle-budget-check', () => {
     expect(r.reports[0]?.category).toBe('entry');
   });
 
+  it('treats /chunks/index-*.js as lazy chunk (not entry)', () => {
+    mkdirSync(join(tmpDir, 'chunks'), { recursive: true });
+    writeFileSync(join(tmpDir, 'chunks', 'index-abc.js'), 'export default 1;');
+    const r = runBudgetCheck(tmpDir);
+    expect(r.reports[0]?.category).toBe('chunk');
+  });
+
   it('flags chunk over 80 KB gzip budget', () => {
     mkdirSync(join(tmpDir, 'chunks'), { recursive: true });
-    /* Crée 250 KB de contenu non-compressible (random pattern) */
-    let content = '';
-    for (let i = 0; i < 250_000; i++) {
-      content += String.fromCharCode(33 + (i * 7919) % 90);
-    }
+    /* Crée ~600 KB de bytes non compressibles (randomBytes), gzip ≈ 600 KB > 80 KB */
+    const content = randomBytes(600_000);
     writeFileSync(join(tmpDir, 'chunks', 'huge-chunk.js'), content);
     const r = runBudgetCheck(tmpDir);
     expect(r.ok).toBe(false);

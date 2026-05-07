@@ -33,12 +33,13 @@
  * └─────────┴────────┴──────────────────┘
  */
 
+import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 import type { TenantPlan, TenantQuotas } from './tenant.js';
 import { tenantManager } from './tenant.js';
 import { vault } from './vault.js';
 
-import { logger } from '../core/logger.js';
 
 export type SubscriptionPlanId = 'free' | 'basic' | 'pro' | 'business';
 export type StripeEventType =

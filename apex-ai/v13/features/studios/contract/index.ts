@@ -577,6 +577,130 @@ export function checkRGPDCompliance(c: ContractData): { compliant: boolean; miss
 /**
  * Récupère une clause optionnelle par ID.
  */
+/* boost v13 — Helpers contrat experts supplementaires */
+
+/**
+ * Templates supplementaires de clauses pretes a inserer dans contracts.
+ */
+export const CLAUSES_BIBLIOTHEQUE = {
+  confidentialite_strict: 'Les Parties s\'engagent à conserver strictement confidentielles toutes les informations échangées dans le cadre du présent contrat, pour une durée de 5 ans après son terme. Toute violation entraînera des dommages-intérêts d\'un montant minimum de 10 000 €.',
+  non_concurrence_geo: 'Le Cocontractant s\'interdit, pendant la durée du contrat et 24 mois après son terme, d\'exercer une activité similaire sur le territoire suivant : [zone géographique]. En contrepartie, une indemnité mensuelle de [montant] euros sera versée pendant la période d\'application.',
+  non_sollicitation_clients: 'Le Cocontractant s\'engage à ne pas solliciter, débaucher ou recruter, directement ou indirectement, les clients du Mandant pour une durée de 24 mois après la fin du contrat.',
+  non_sollicitation_personnel: 'Le Cocontractant s\'engage à ne pas embaucher ou tenter d\'embaucher tout salarié du Mandant durant le contrat et 12 mois après sa cessation, sous peine d\'une indemnité forfaitaire d\'un an de salaire.',
+  exclusivite: 'Le Prestataire s\'engage à fournir ses services exclusivement au Client durant la durée du contrat. Toute prestation pour un concurrent direct nécessite accord écrit préalable.',
+  propriete_intellectuelle: 'L\'ensemble des droits de propriété intellectuelle (brevets, marques, dessins, droits d\'auteur, savoir-faire) afférents aux livrables sont cédés exclusivement au Client dès paiement intégral.',
+  garantie_eviction: 'Le Prestataire garantit le Client contre toute revendication de tiers concernant les droits de propriété intellectuelle des livrables et indemnisera intégralement en cas de procès.',
+  force_majeure: 'Sont considérés comme cas de force majeure tous évènements imprévisibles et irrésistibles : catastrophe naturelle, guerre, grève générale, pandémie, blocage frontalier, cyber-attaque massive. Suspension automatique des obligations.',
+  resiliation_anticipee: 'Chaque Partie pourra résilier le présent contrat en cas de manquement grave de l\'autre Partie, après mise en demeure restée infructueuse 30 jours.',
+  resolution_amiable: 'En cas de litige, les Parties s\'engagent à rechercher une solution amiable préalable. À défaut d\'accord sous 30 jours, le différend sera soumis à médiation [organisme] avant toute action judiciaire.',
+  arbitrage: 'Tout litige né du présent contrat sera tranché définitivement suivant le règlement d\'arbitrage de la CCI de Paris par 1 ou 3 arbitre(s) selon enjeu, en application du droit français.',
+  juridiction: 'Tout litige relatif à l\'exécution ou l\'interprétation du présent contrat sera de la compétence exclusive du Tribunal de Commerce de [ville].',
+  audit_droit: 'Le Client se réserve le droit d\'auditer les livrables et processus du Prestataire, sur simple notification 15 jours à l\'avance, durant les heures ouvrables, dans un objectif de contrôle qualité et conformité.',
+  retention_titre: 'La propriété des biens livrés ne sera transférée au Client qu\'après paiement intégral du prix.',
+  responsabilite_plafonnee: 'La responsabilité totale cumulée du Prestataire est plafonnée au montant total des sommes versées au cours des 12 derniers mois précédant le fait générateur.',
+  garantie_legale: 'Conformément à l\'article 1641 du Code civil, le Vendeur garantit le bien contre les vices cachés rendant impropre à l\'usage attendu.',
+  rgpd_traitement: 'Le Prestataire agit en tant que sous-traitant au sens de l\'article 28 du RGPD. Il s\'engage à : (i) traiter les données uniquement sur instruction écrite, (ii) garantir la confidentialité, (iii) mettre en place mesures techniques et organisationnelles, (iv) notifier toute violation sous 24h, (v) supprimer ou restituer les données en fin de contrat.',
+  penalite_retard: 'Tout retard d\'exécution entraînera l\'application de pénalités équivalentes à 0,5% du montant total du contrat par jour de retard, plafonnées à 10% du montant total.',
+  livraison_phasee: 'Les livrables seront fournis selon le phasing suivant : Phase 1 (M1) : [livrable], Phase 2 (M3) : [livrable], Phase finale (M6) : recette définitive. Chaque phase fait l\'objet d\'un PV de réception.',
+  recette_provisoire: 'À la livraison, le Client dispose de 30 jours pour effectuer la recette. Sans réserves notifiées par écrit dans ce délai, la recette est réputée acquise.',
+} as const;
+
+/**
+ * Liste les types de contrats par categorie metier.
+ */
+export const CONTRATS_PAR_CATEGORIE: Record<string, ContractTemplateId[]> = {
+  travail: ['cdi', 'cdd', 'freelance'],
+  immobilier: ['bail-commercial', 'bail-habitation', 'vente'],
+  commercial: ['vente', 'distribution', 'partenariat', 'prestation', 'mandat'],
+  financier: ['pret', 'cession-parts', 'donation'],
+  protection: ['nda'],
+  vehicule: ['location-vehicule'],
+};
+
+/**
+ * Compte les clauses optionnelles activees vs disponibles.
+ */
+export function calcContractCompleteness(c: ContractData): { score: number; total: number; pct: number } {
+  const totalAvailable = OPTIONAL_CLAUSES.length;
+  const activated = c.optionalClauses.length;
+  return {
+    score: activated,
+    total: totalAvailable,
+    pct: Math.round((activated / totalAvailable) * 100),
+  };
+}
+
+/**
+ * Suggere clauses recommandees selon type de contrat.
+ */
+export function suggestClauses(template: ContractTemplateId): OptionalClauseId[] {
+  const suggestions: Record<ContractTemplateId, OptionalClauseId[]> = {
+    nda: ['confidentialite', 'non-sollicitation', 'penalites-retard'],
+    cdi: ['non-concurrence', 'confidentialite', 'propriete-intellectuelle'],
+    cdd: ['confidentialite', 'rgpd-conformite'],
+    freelance: ['propriete-intellectuelle', 'confidentialite', 'penalites-retard'],
+    'bail-commercial': ['penalites-retard', 'force-majeure'],
+    'bail-habitation': ['force-majeure'],
+    vente: ['force-majeure', 'penalites-retard'],
+    pret: ['penalites-retard'],
+    mandat: ['exclusivite', 'confidentialite', 'non-sollicitation'],
+    distribution: ['exclusivite', 'non-concurrence', 'rgpd-conformite'],
+    partenariat: ['confidentialite', 'propriete-intellectuelle', 'arbitrage'],
+    prestation: ['rgpd-conformite', 'confidentialite', 'audit-droit', 'penalites-retard'],
+    'location-vehicule': ['penalites-retard'],
+    'cession-parts': ['confidentialite'],
+    donation: [],
+  };
+  return suggestions[template] ?? [];
+}
+
+/**
+ * Calcule la duree avant expiration en jours.
+ */
+export function calcJoursAvantExpiration(c: ContractData): number {
+  if (!c.dateFin) return Infinity;
+  const fin = new Date(c.dateFin).getTime();
+  if (isNaN(fin)) return 0;
+  const diff = fin - Date.now();
+  return Math.max(0, Math.floor(diff / 86400000));
+}
+
+/**
+ * Genere un hash SHA-256 simple (mock pour signature electronique).
+ * En prod, utiliser SubtleCrypto.digest pour vrai SHA-256.
+ */
+export function generateSignatureHash(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const chr = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return `mock-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+/**
+ * Extracts toutes les references legales d un texte de contrat.
+ */
+export function extractLegalRefs(text: string): string[] {
+  const matches = text.match(/Art[.]?\s*(?:L|R|D|A)?\d+(?:[-.\d]+)*\s*(?:du\s+)?(?:Code\s+\w+(?:\s+\w+)*)?/gi);
+  return matches ? Array.from(new Set(matches.map((m) => m.trim()))) : [];
+}
+
+/**
+ * Liste les juridictions competentes selon la nature du contrat.
+ */
+export const JURIDICTIONS_COMPETENTES: Record<string, string> = {
+  travail: 'Conseil de prud\'hommes',
+  commercial: 'Tribunal de commerce',
+  bail: 'Tribunal judiciaire (procédure commerciale ou civile)',
+  consommation: 'Tribunal judiciaire',
+  succession: 'Tribunal judiciaire (matière successorale)',
+  divorce: 'Juge aux affaires familiales',
+  pénal: 'Tribunal correctionnel ou de police selon gravité',
+  administratif: 'Tribunal administratif',
+};
+
 export function getOptionalClause(id: OptionalClauseId): OptionalClause | undefined {
   return OPTIONAL_CLAUSES.find((c) => c.id === id);
 }
