@@ -16,6 +16,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { escapeHtml } from '../../core/html-safe.js';
 
 interface RemoteDeviceCard {
   id: string;
@@ -317,18 +318,20 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       const out = rootEl.querySelector<HTMLDivElement>('#ax-remote-lan-results');
       if (!out) return;
       if (!result.ok) {
-        out.innerHTML = `<p style="color:#ffaa00;font-size:13px">⚠️ ${result.reason ?? 'Scan échoué'}</p>`;
+        /* P1 SECU XSS (audit v13.2.7) : escape result.reason (source externe scan API) */
+        out.innerHTML = `<p style="color:#ffaa00;font-size:13px">⚠️ ${escapeHtml(result.reason ?? 'Scan échoué')}</p>`;
         return;
       }
+      /* P1 SECU XSS : escape TOUTES les valeurs venant de network scan (IPs, vendor, service) */
       out.innerHTML = `
-        <p style="font-size:12px;color:#22cc77;margin:0 0 8px">📍 IP locale : ${result.local_ip} · Subnet : ${result.subnet} · ${result.devices.length} devices</p>
+        <p style="font-size:12px;color:#22cc77;margin:0 0 8px">📍 IP locale : ${escapeHtml(result.local_ip)} · Subnet : ${escapeHtml(result.subnet)} · ${result.devices.length} devices</p>
         ${result.devices.map((d) => `
           <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <strong style="color:#c9a227">${d.service}</strong>
-              <div style="font-size:11px;color:var(--ax-text-dim)">${d.ip}:${d.port} ${d.vendor ? '· ' + d.vendor : ''}</div>
+              <strong style="color:#c9a227">${escapeHtml(d.service)}</strong>
+              <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(d.ip)}:${escapeHtml(d.port)} ${d.vendor ? '· ' + escapeHtml(d.vendor) : ''}</div>
             </div>
-            <button class="ax-btn ax-btn-sm" data-lan-ip="${d.ip}" data-lan-port="${d.port}" style="padding:4px 8px;font-size:11px">Ouvrir →</button>
+            <button class="ax-btn ax-btn-sm" data-lan-ip="${escapeHtml(d.ip)}" data-lan-port="${escapeHtml(d.port)}" style="padding:4px 8px;font-size:11px">Ouvrir →</button>
           </div>
         `).join('')}
       `;

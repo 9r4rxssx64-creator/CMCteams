@@ -18,9 +18,18 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { type AuditAxis, type AuditReport, type Finding, type Severity } from '../../services/apex-self-audit.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
+
+/* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA. */
+let activeDiagScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeDiagScope?.cleanup();
+  activeDiagScope = null;
+}
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -217,6 +226,9 @@ function renderLessons(lessons: ReadonlyArray<LessonLearned>): string {
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeDiagScope?.cleanup();
+  activeDiagScope = createCleanupScope('self-diag');
   /* Try to load last report from service */
   if (!activeReport) {
     try {
@@ -319,39 +331,52 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 }
 
 function attachDiagHandlers(rootEl: HTMLElement): void {
-  rootEl.querySelector<HTMLButtonElement>('#ax-diag-run')?.addEventListener('click', () => {
-    void runAudit(rootEl, false);
-  });
-  rootEl.querySelector<HTMLButtonElement>('#ax-diag-brutal')?.addEventListener('click', () => {
-    void runAudit(rootEl, true);
-  });
+  /* P1-6 : tous les listeners scopés (cleanup au prochain render ou dispose) */
+  const scope = activeDiagScope ?? createCleanupScope('self-diag');
+  if (!activeDiagScope) activeDiagScope = scope;
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-diag-export')?.addEventListener('click', () => {
-    void (async () => {
-      haptic.tap();
-      if (!activeReport) return;
-      try {
-        const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
-        const md = apexSelfAudit.formatReportMarkdown(activeReport);
-        const blob = new Blob([md], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `apex-audit-${new Date().toISOString().slice(0, 10)}.md`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success('Rapport exporté');
-      } catch (err: unknown) {
-        logger.warn('feature-self-diag', 'export failed', { err });
-        toast.error('Export échoué');
-      }
-    })();
-  });
+  const runBtn = rootEl.querySelector<HTMLButtonElement>('#ax-diag-run');
+  if (runBtn) {
+    scope.bind(runBtn, 'click', () => {
+      void runAudit(rootEl, false);
+    });
+  }
+  const brutalBtn = rootEl.querySelector<HTMLButtonElement>('#ax-diag-brutal');
+  if (brutalBtn) {
+    scope.bind(brutalBtn, 'click', () => {
+      void runAudit(rootEl, true);
+    });
+  }
+
+  const exportBtn = rootEl.querySelector<HTMLButtonElement>('#ax-diag-export');
+  if (exportBtn) {
+    scope.bind(exportBtn, 'click', () => {
+      void (async () => {
+        haptic.tap();
+        if (!activeReport) return;
+        try {
+          const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+          const md = apexSelfAudit.formatReportMarkdown(activeReport);
+          const blob = new Blob([md], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `apex-audit-${new Date().toISOString().slice(0, 10)}.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success('Rapport exporté');
+        } catch (err: unknown) {
+          logger.warn('feature-self-diag', 'export failed', { err });
+          toast.error('Export échoué');
+        }
+      })();
+    });
+  }
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-diag-sev]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    scope.bind(btn, 'click', () => {
       haptic.selection();
       activeSeverityFilter = btn.dataset['diagSev'] as Severity;
       void render(rootEl);

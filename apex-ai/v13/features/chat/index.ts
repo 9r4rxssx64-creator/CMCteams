@@ -1286,7 +1286,20 @@ export function render(rootEl: HTMLElement): void {
             if (scroll) {
               const card = document.createElement('div');
               card.className = 'ax-msg ax-msg-user ax-slide-up-fade';
-              card.innerHTML = `<img src="${dataUrl}" alt="Capture caméra" style="max-width:100%;border-radius:8px">`;
+              /* P1 SECU XSS (audit v13.2.7) : dataUrl peut être malveillant
+               * (ex: javascript: scheme via Web Capture exotique). Construire
+               * via createElement + .src pour bloquer les schemes dangereux. */
+              const img = document.createElement('img');
+              img.alt = 'Capture caméra';
+              img.style.maxWidth = '100%';
+              img.style.borderRadius = '8px';
+              /* Validation explicite scheme data:image/ uniquement */
+              if (typeof dataUrl === 'string' && /^data:image\/[a-z+]+;base64,/i.test(dataUrl)) {
+                img.src = dataUrl;
+              } else if (typeof dataUrl === 'string' && /^https?:/.test(dataUrl)) {
+                img.src = dataUrl;
+              }
+              card.appendChild(img);
               scroll.appendChild(card);
               scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
             }
