@@ -624,7 +624,9 @@ class AIRouter {
     /* Stream le fallback en chunks pour cohérence UI typing animation */
     onChunk({ text: fallback.text, done: false, provider: 'anthropic' });
     onChunk({ text: '', done: true, provider: 'anthropic' });
-    onError?.(new Error(errors.toUserMessage(finalErr)));
+    /* v13.3.47 : passe l'erreur ORIGINALE — le caller (chat handler) appellera
+     * toUserMessage() une seule fois. Évite le doublage "(admin debug) (admin debug)". */
+    onError?.(finalErr instanceof Error ? finalErr : new Error(String(finalErr)));
   }
 
   /**
