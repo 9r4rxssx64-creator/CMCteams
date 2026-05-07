@@ -596,6 +596,18 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     category: 'comms',
     dashboard: 'https://discord.com/developers/applications',
   },
+  {
+    /* P1 audit fix v13.3.10 (Kevin "alerts Discord muettes") :
+     * pattern auto-detect webhook Discord URL pour qu'il soit stocké dans
+     * ax_discord_webhook_url (lu par services/kevin-alerts.ts:130).
+     * Format officiel : https://discord.com/api/webhooks/{id}/{token} */
+    name: 'Discord Webhook URL',
+    regex: /^https:\/\/(?:discord|discordapp)\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/,
+    storageKey: 'ax_discord_webhook_url',
+    category: 'comms',
+    dashboard: 'https://discord.com/developers/docs/resources/webhook',
+    docs: 'https://discord.com/developers/docs/resources/webhook#execute-webhook',
+  },
 
   /* === Storage / Productivity === */
   {

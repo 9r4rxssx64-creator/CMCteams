@@ -12,7 +12,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { rgpd } from '../../services/rgpd.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeLegalScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeLegalScope?.cleanup();
+  activeLegalScope = null;
+}
 
 const TABS: Array<{ id: string; label: string; file: string; emoji: string }> = [
   { id: 'cgu', label: 'CGU', file: 'cgu', emoji: '📜' },
@@ -184,7 +193,8 @@ function wireRgpdActions(rootEl: HTMLElement): void {
     `).join('');
   }
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-export')?.addEventListener('click', () => {
+  const exportBtn = rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-export');
+  if (exportBtn && activeLegalScope) activeLegalScope.bind(exportBtn, 'click', () => {
     void (async () => {
       try {
         const uid = getCurrentUid();
@@ -201,7 +211,8 @@ function wireRgpdActions(rootEl: HTMLElement): void {
     })();
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-delete')?.addEventListener('click', () => {
+  const deleteBtn = rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-delete');
+  if (deleteBtn && activeLegalScope) activeLegalScope.bind(deleteBtn, 'click', () => {
     void (async () => {
       const uid = getCurrentUid();
       if (!uid) {
@@ -227,14 +238,16 @@ function wireRgpdActions(rootEl: HTMLElement): void {
     })();
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-cookies-customize')?.addEventListener('click', () => {
+  const cookiesBtn = rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-cookies-customize');
+  if (cookiesBtn && activeLegalScope) activeLegalScope.bind(cookiesBtn, 'click', () => {
     const analytics = confirm('Cookies analytics (anonymisés) — accepter ?');
     const marketing = confirm('Cookies marketing — accepter ? (non utilisés actuellement)');
     rgpd.setConsent({ analytics, marketing, preferences: true });
     alert('Préférences cookies enregistrées. Recharge la page pour voir l\'effet.');
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-optout-training')?.addEventListener('click', () => {
+  const optoutTrainBtn = rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-optout-training');
+  if (optoutTrainBtn && activeLegalScope) activeLegalScope.bind(optoutTrainBtn, 'click', () => {
     const uid = getCurrentUid();
     if (!uid) {
       alert('Tu dois être connecté.');
@@ -244,7 +257,8 @@ function wireRgpdActions(rootEl: HTMLElement): void {
     alert('Opt-out IA training enregistré.');
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-optout-automation')?.addEventListener('click', () => {
+  const optoutAutoBtn = rootEl.querySelector<HTMLButtonElement>('#ax-rgpd-optout-automation');
+  if (optoutAutoBtn && activeLegalScope) activeLegalScope.bind(optoutAutoBtn, 'click', () => {
     const uid = getCurrentUid();
     if (!uid) {
       alert('Tu dois être connecté.');
@@ -275,6 +289,9 @@ async function renderTabContent(rootEl: HTMLElement, tabId: string): Promise<voi
 }
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeLegalScope?.cleanup();
+  activeLegalScope = createCleanupScope('legal');
   /* Lit l'ancre URL (#legal/cgu, #legal/privacy, etc.) */
   const subRoute = location.hash.replace(/^#legal\/?/, '').split('/')[0] || 'cgu';
   const initialTab = TABS.find((t) => t.id === subRoute) ? subRoute : 'cgu';
@@ -336,7 +353,7 @@ export function render(rootEl: HTMLElement): void {
   void renderTabContent(rootEl, initialTab);
 
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-legal-tab').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeLegalScope!.bind(btn, 'click', () => {
       const id = btn.getAttribute('data-tab');
       if (!id) {
         return;
@@ -346,7 +363,7 @@ export function render(rootEl: HTMLElement): void {
       if (tabsEl) {
         tabsEl.innerHTML = renderTabs(id);
         rootEl.querySelectorAll<HTMLButtonElement>('.ax-legal-tab').forEach((b) => {
-          b.addEventListener('click', () => {
+          activeLegalScope!.bind(b, 'click', () => {
             const newId = b.getAttribute('data-tab');
             if (newId) {
               location.hash = `#legal/${newId}`;
