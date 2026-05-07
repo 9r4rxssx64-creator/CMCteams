@@ -63,7 +63,30 @@ const MAX_NO_SPEECH_RETRIES = 20;
 const STATUS_KEY = 'apex_v13_wake_word_status';
 
 /* Variantes phonétiques tolérées (mauvaise reconnaissance Web Speech FR) */
-const KEYWORD_VARIANTS_BASE = ['dis apex', 'dit apex', 'di apex', 'hey apex', 'ok apex'];
+const KEYWORD_VARIANTS_BASE = ['dis apex', 'dit apex', 'di apex', 'hey apex', 'ok apex', 'dispex', 'hapex'];
+
+const VOICE_LOG_KEY = 'ax_voice_log';
+const VOICE_LOG_MAX = 100;
+
+interface VoiceLogEntry {
+  ts: number;
+  evt: string;
+  src: string;
+  detail?: string;
+}
+
+function pushVoiceLog(entry: VoiceLogEntry): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const raw = localStorage.getItem(VOICE_LOG_KEY);
+    const arr: VoiceLogEntry[] = raw ? (JSON.parse(raw) as VoiceLogEntry[]) : [];
+    arr.push(entry);
+    while (arr.length > VOICE_LOG_MAX) arr.shift();
+    localStorage.setItem(VOICE_LOG_KEY, JSON.stringify(arr));
+  } catch {
+    /* ignore */
+  }
+}
 
 /* Type minimal SpeechRecognition (pas dans lib.dom std) */
 interface MinimalSpeechRecognition {
@@ -83,7 +106,10 @@ interface MinimalSpeechRecognition {
 
 function isiOS(): boolean {
   if (typeof navigator === 'undefined') return false;
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/i.test(ua)) return true;
+  /* iPad iOS 13+ déguisé en MacIntel — détecter via maxTouchPoints */
+  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1;
 }
 
 function getSpeechRecognitionCtor(): (new () => MinimalSpeechRecognition) | null {
@@ -157,6 +183,12 @@ class WakeWord {
         const results = event.results;
         for (let i = 0; i < results.length; i++) {
           const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: 'interim',
+            src: 'wake-word-svc',
+            detail: transcript.slice(0, 80),
+          });
           if (this.keywordRegex.test(transcript)) {
             this.handleWakeDetected(transcript);
           }
@@ -167,31 +199,41 @@ class WakeWord {
 
       rec.onerror = (event) => {
         const err = event.error ?? 'unknown';
+        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
         if (err === 'no-speech') {
           this.noSpeechRetries++;
           if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
             logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
+            pushVoiceLog({
+              ts: Date.now(),
+              evt: 'suspend',
+              src: 'wake-word-svc',
+              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+            });
             this.stop();
           }
           return;
         }
         if (err === 'not-allowed' || err === 'service-not-allowed') {
           logger.warn('wake-word', 'Permission micro refusée');
+          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
           this.stop();
           return;
         }
-        /* aborted, network, audio-capture : restart via onend */
+        /* aborted, network, audio-capture : recovery via onend (silencieux) */
       };
 
       rec.onend = () => {
+        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
         if (!this.listening) return;
         /* Restart sur iOS (continuous=false) ou recovery erreur */
         setTimeout(() => {
           if (!this.listening) return;
           try {
             rec.start();
+            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
           } catch {
-            /* ignore double-start race */
+            /* ignore double-start race InvalidStateError */
           }
         }, RESTART_DELAY_MS);
       };
@@ -201,6 +243,12 @@ class WakeWord {
       this.config.enabled = true;
       this.noSpeechRetries = 0;
       rec.start();
+      pushVoiceLog({
+        ts: Date.now(),
+        evt: 'start',
+        src: 'wake-word-svc',
+        detail: isiOS() ? 'iOS' : 'desktop',
+      });
 
       void auditLog.record('wake.start', { details: { keyword: this.config.keyword, ios: isiOS() } });
       return { started: true };

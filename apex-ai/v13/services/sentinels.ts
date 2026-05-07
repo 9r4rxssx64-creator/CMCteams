@@ -52,15 +52,30 @@ class SentinelsManager {
   init(): void {
     /* Restaure dernières exécutions depuis localStorage */
     try {
+      /* v13.3.24 fix Kevin (screenshot 19:11) : invalide lastResults stales pour
+       * les 3 sentinelles cosmétiques fixes cette release (backup-watch, security-watch,
+       * tools-watch). Force re-run au prochain cycle, évite Kevin de voir l'ancien
+       * message "493 936h" / "16 tools orphelins" / "Audit log tamper". */
+      const STALE_INVALIDATE_KEY = 'apex_v13_sentinels_stale_v13_3_24';
+      const alreadyInvalidated = localStorage.getItem(STALE_INVALIDATE_KEY) === '1';
       const raw = localStorage.getItem(SENTINEL_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Record<string, { lastRun: number; lastResult?: Sentinel['lastResult'] }>;
+        const STALE_IDS = new Set(['backup-watch', 'security-watch', 'tools-watch']);
         for (const [id, s] of this.sentinels) {
           const entry = saved[id];
           if (entry) {
-            s.lastRun = entry.lastRun;
-            if (entry.lastResult) s.lastResult = entry.lastResult;
+            /* Skip restore lastResult pour sentinelles cosmétiques fix v13.3.24 */
+            if (!alreadyInvalidated && STALE_IDS.has(id)) {
+              s.lastRun = 0; /* force re-run au prochain cycle */
+            } else {
+              s.lastRun = entry.lastRun;
+              if (entry.lastResult) s.lastResult = entry.lastResult;
+            }
           }
+        }
+        if (!alreadyInvalidated) {
+          try { localStorage.setItem(STALE_INVALIDATE_KEY, '1'); } catch { /* quota */ }
         }
       }
     } catch {
@@ -248,7 +263,21 @@ export function registerCoreSentinels(): void {
 
   /* 3. backup-watch : vérifie backup quotidien (24h)
    * Sprint 13.3.17 fix : fallback sur autoBackup.getStats() si tag ts absent
-   * (cas premier boot avant tout snapshot). */
+   *   (cas premier boot avant tout snapshot).
+   * v13.3.24 fix Kevin (screenshot 19:11 "493 936h à relancer") :
+   *   - Validation stricte ts (rejette ts<MIN_VALID = 2020-01-01) → format "Aucun backup"
+   *   - Format humain: <168h → "Il y a Xh", <30j → "Il y a Xj", >30j → "Plus de 30j"
+   *   - Snapshot immédiat au boot si jamais (clear le 0 stale dans ax_last_backup_ts)
+   *   - Persiste fix après chaque snapshot OK (sécurité contre stale lastResult). */
+  const MIN_VALID_BACKUP_TS = 1577836800000; /* 2020-01-01 → tout ce qui est avant = stale/invalide */
+  const formatBackupAge = (ageMs: number): string => {
+    const ageHours = ageMs / (60 * 60 * 1000);
+    if (ageHours < 1) return `Il y a ${Math.floor(ageMs / 60000)}min`;
+    if (ageHours < 168) return `Il y a ${Math.floor(ageHours)}h`;
+    const ageDays = ageHours / 24;
+    if (ageDays < 30) return `Il y a ${Math.floor(ageDays)}j`;
+    return 'Plus de 30 jours';
+  };
   sentinels.register({
     id: 'backup-watch',
     name: 'Backup quotidien',
@@ -256,12 +285,16 @@ export function registerCoreSentinels(): void {
     intervalMs: 24 * 60 * 60 * 1000,
     check: async () => {
       let lastBackup = parseInt(localStorage.getItem('ax_last_backup_ts') ?? '0', 10);
-      /* Fallback : si tag manque, essaye via autoBackup */
+      /* v13.3.24 : si valeur invalide (NaN, négatif, < 2020-01-01) → considère absent */
+      if (!Number.isFinite(lastBackup) || lastBackup < MIN_VALID_BACKUP_TS) {
+        lastBackup = 0;
+      }
+      /* Fallback : si tag manque ou stale, essaye via autoBackup */
       if (lastBackup === 0) {
         try {
           const { autoBackup } = await import('./auto-backup.js');
           const stats = autoBackup.getStats();
-          if (stats.last_backup_ts > 0) {
+          if (stats.last_backup_ts >= MIN_VALID_BACKUP_TS) {
             lastBackup = stats.last_backup_ts;
             try { localStorage.setItem('ax_last_backup_ts', String(lastBackup)); } catch { /* ignore */ }
           }
@@ -269,19 +302,23 @@ export function registerCoreSentinels(): void {
           /* auto-backup module indispo */
         }
       }
-      /* État initial : aucun backup encore créé → état info, pas erreur */
+      /* État initial / stale ts : aucun backup valide → état info, pas erreur */
       if (lastBackup === 0) {
-        return { ok: true, msg: 'Aucun backup encore (en attente premier snapshot)' };
+        return { ok: true, msg: 'Aucun backup depuis init (en attente premier snapshot)' };
       }
-      const ageHours = (Date.now() - lastBackup) / (60 * 60 * 1000);
-      if (ageHours > 26) return { ok: false, msg: `Last backup ${Math.floor(ageHours)}h ago (>26h)` };
-      return { ok: true, msg: `Last backup ${Math.floor(ageHours)}h ago` };
+      const ageMs = Date.now() - lastBackup;
+      const formatted = formatBackupAge(ageMs);
+      const ageHours = ageMs / (60 * 60 * 1000);
+      if (ageHours > 26) return { ok: false, msg: `${formatted} — relance auto programmée` };
+      return { ok: true, msg: formatted };
     },
     autoFix: async () => {
-      /* Si âge > 26h, déclenche un snapshot manual immédiat */
+      /* Si âge > 26h ou stale ts, déclenche un snapshot manual immédiat */
       try {
         const { autoBackup } = await import('./auto-backup.js');
         const backup = await autoBackup.snapshot('manual');
+        /* v13.3.24 : seed ax_last_backup_ts pour invalider lastResult stale */
+        try { localStorage.setItem('ax_last_backup_ts', String(Date.now())); } catch { /* quota */ }
         return { ok: true, msg: `Snapshot manual créé : ${backup.id}` };
       } catch (err: unknown) {
         return { ok: false, msg: 'Snapshot fail: ' + (err instanceof Error ? err.message : String(err)) };
@@ -526,7 +563,12 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* 9. security-watch : check session age + re-auth requise */
+  /* 9. security-watch : check session age + re-auth requise
+   * v13.3.24 fix Kevin (screenshot 19:11 "Audit log tamper détecté" faux positif) :
+   *   - Audit log vide → status OK (pas tamper, juste non-initialisé)
+   *   - Reload depuis localStorage avant verify (anti chain stale en mémoire)
+   *   - Si tamper détecté → log dans ax_security_log + détails pour audit Kevin
+   *   - Action bouton "Réinitialiser audit chain" géré côté UI sentinels (admin only) */
   sentinels.register({
     id: 'security-watch',
     name: 'Sécurité session',
@@ -534,14 +576,45 @@ export function registerCoreSentinels(): void {
     intervalMs: 30 * 60 * 1000,
     check: async () => {
       const lastact = parseInt(localStorage.getItem('apex_v13_lastact') ?? '0', 10);
-      const ageHours = (Date.now() - lastact) / (60 * 60 * 1000);
-      if (ageHours > 8) return { ok: false, msg: `Session > 8h, force logout requise` };
+      /* lastact==0 = pas de session → skip la check session */
+      if (lastact > 0) {
+        const ageHours = (Date.now() - lastact) / (60 * 60 * 1000);
+        if (ageHours > 8) return { ok: false, msg: `Session > 8h, force logout requise` };
+      }
+      /* Audit log integrity (avec reload anti-stale + tolérance vide) */
       try {
         const { auditLog } = await import('./audit-log.js');
+        /* v13.3.24 : reload depuis localStorage AVANT verify (anti memory chain stale) */
+        auditLog.reload();
+        const entries = auditLog.getEntries();
+        /* Audit log vide = OK (pas de tamper, juste pas encore d'écritures) */
+        if (entries.length === 0) {
+          return { ok: true, msg: 'Audit log vide (en attente première écriture)' };
+        }
         const verify = await auditLog.verify();
-        if (!verify.valid) return { ok: false, msg: 'Audit log tampering detected', details: verify };
+        if (!verify.valid) {
+          /* v13.3.24 : log les détails dans ax_security_log pour audit Kevin */
+          try {
+            const log = JSON.parse(localStorage.getItem('ax_security_log') ?? '[]') as unknown[];
+            log.push({
+              ts: Date.now(),
+              kind: 'audit_log_tamper',
+              brokenAt: verify.brokenAt,
+              chainLen: entries.length,
+              firstEntryTs: entries[0]?.ts,
+              lastEntryTs: entries[entries.length - 1]?.ts,
+            });
+            localStorage.setItem('ax_security_log', JSON.stringify(log.slice(-200)));
+          } catch { /* quota */ }
+          return {
+            ok: false,
+            msg: `Hash audit log invalide à entry #${verify.brokenAt} (${entries.length} entries) — possible corruption`,
+            details: { brokenAt: verify.brokenAt, totalEntries: entries.length },
+          };
+        }
       } catch {
-        /* ignore */
+        /* audit-log indispo → considère OK plutôt que faux positif */
+        return { ok: true, msg: 'Session OK (audit log indispo)' };
       }
       return { ok: true, msg: 'Session + audit log OK' };
     },

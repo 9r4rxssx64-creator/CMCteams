@@ -49,13 +49,100 @@ export interface VoiceMatchResult {
 }
 
 const SIMILARITY_THRESHOLD_DEFAULT = 0.75;
-const WAKE_WORDS = ['dis apex', 'dis apex', 'dit apex', 'di apex', 'hey apex', 'apex'];
+
+/* Variantes phonétiques étendues — Web Speech API FR confond souvent "dis"/"dit"/"dix",
+ * "apex"/"apexs"/"appex"/"hapex"/"dispex" (concat) selon micro/débit. */
+const WAKE_PATTERNS: RegExp[] = [
+  /\b(?:dis|dit|di|dix|d['e])\s*ap[ep]x[s]?\b/i,
+  /\bhey\s*ap[ep]x[s]?\b/i,
+  /\bok\s*ap[ep]x[s]?\b/i,
+  /\bdispex[s]?\b/i, /* concat phonétique */
+  /\bhapex[s]?\b/i,  /* h aspirée mal détectée */
+  /\bap[ep]x[s]?\b/i, /* "apex" seul (dernier recours) */
+];
+
+const MAX_NO_SPEECH_RETRIES = 20;
+const NO_SPEECH_SUSPEND_MS = 30_000; /* 30s pause après burst no-speech */
+const RESTART_DELAY_MS = 500;
+const VOICE_LOG_KEY = 'ax_voice_log';
+const VOICE_LOG_MAX = 100;
+const PERMISSION_DENIED_KEY = 'ax_voice_permission_denied_ts';
+
+interface VoiceLogEntry {
+  ts: number;
+  evt: 'start' | 'result' | 'interim' | 'wake' | 'error' | 'end' | 'restart' | 'suspend' | 'permission';
+  src: 'wake-word' | 'dictation';
+  detail?: string;
+}
+
+function isiOSSafari(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua)) return true;
+  /* iPad iOS 13+ déguisé en MacIntel — détecter via maxTouchPoints */
+  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1;
+}
+
+function isWakeMatch(transcript: string): boolean {
+  if (!transcript) return false;
+  const norm = transcript.toLowerCase().trim();
+  return WAKE_PATTERNS.some((p) => p.test(norm));
+}
+
+/* Logger structuré (max 100 entries, FIFO) — exposé pour panel admin diagnostic */
+function pushVoiceLog(entry: VoiceLogEntry): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const raw = localStorage.getItem(VOICE_LOG_KEY);
+    const arr: VoiceLogEntry[] = raw ? (JSON.parse(raw) as VoiceLogEntry[]) : [];
+    arr.push(entry);
+    while (arr.length > VOICE_LOG_MAX) arr.shift();
+    localStorage.setItem(VOICE_LOG_KEY, JSON.stringify(arr));
+  } catch {
+    /* ignore quota / parse */
+  }
+}
+
+export function getVoiceLog(): VoiceLogEntry[] {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const raw = localStorage.getItem(VOICE_LOG_KEY);
+    return raw ? (JSON.parse(raw) as VoiceLogEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearVoiceLog(): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(VOICE_LOG_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Check permission micro avant démarrage STT.
+ * Retourne 'granted' | 'denied' | 'prompt' | 'unknown'.
+ */
+export async function checkMicrophonePermission(): Promise<'granted' | 'denied' | 'prompt' | 'unknown'> {
+  if (typeof navigator === 'undefined' || !navigator.permissions) return 'unknown';
+  try {
+    const status = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    return status.state as 'granted' | 'denied' | 'prompt';
+  } catch {
+    return 'unknown';
+  }
+}
 
 class VoicePrint {
   private wakeRecognition: unknown = null; /* SpeechRecognition instance */
   private wakeListening = false;
   private threshold = SIMILARITY_THRESHOLD_DEFAULT;
   private wakeCallbacks: Array<(transcript: string) => void> = [];
+  private wakeNoSpeechRetries = 0;
+  private wakeSuspendTimer: ReturnType<typeof setTimeout> | null = null;
+  private wakeInterimCallback: ((transcript: string, isFinal: boolean) => void) | null = null;
 
   /**
    * Vérifie si Web Speech + Audio APIs disponibles.
@@ -331,7 +418,22 @@ class VoicePrint {
   }
 
   /**
+   * Enregistre callback pour les transcriptions partielles (debug live UI).
+   * Utile pour afficher "Transcription : ..." pendant que user parle.
+   */
+  onWakeInterim(cb: ((transcript: string, isFinal: boolean) => void) | null): void {
+    this.wakeInterimCallback = cb;
+  }
+
+  /**
    * Wake word "Dis Apex" listener (continuous Web Speech API).
+   *
+   * iOS Safari quirks (CLAUDE.md erreur #43, fix v13.3.23) :
+   * - `continuous = false` obligatoire (auto-stop après 15-30s silence)
+   * - onerror 'aborted' = lifecycle normal → restart auto, NE PAS afficher en erreur
+   * - onerror 'no-speech' burst → suspend 30s après 20 tentatives
+   * - onerror 'not-allowed' → modal permissions iOS Settings
+   * - `interimResults = true` : permet de voir transcription live
    */
   startWakeWord(callback: (transcript: string) => void): { ok: boolean; reason?: string } {
     if (!this.isSupported()) return { ok: false, reason: 'Web Speech API non supportée' };
@@ -345,13 +447,15 @@ class VoicePrint {
         (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
       if (!SpeechRec) return { ok: false, reason: 'SpeechRecognition undefined' };
 
-      const isiOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      const isiOS = isiOSSafari();
       const rec = new SpeechRec() as {
         continuous: boolean;
         interimResults: boolean;
         lang: string;
-        onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> & { length: number } }) => void;
-        onerror: (event: unknown) => void;
+        onresult: (event: {
+          results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }> & { length: number };
+        }) => void;
+        onerror: (event: { error?: string }) => void;
         onend: () => void;
         start: () => void;
         stop: () => void;
@@ -359,44 +463,138 @@ class VoicePrint {
       rec.continuous = !isiOS; /* iOS Safari : continuous unstable, restart via onend */
       rec.interimResults = true;
       rec.lang = 'fr-FR';
+      this.wakeNoSpeechRetries = 0;
 
       rec.onresult = (event) => {
         const results = event.results;
         for (let i = 0; i < results.length; i++) {
           const transcript = results[i]?.[0]?.transcript?.toLowerCase() ?? '';
-          if (WAKE_WORDS.some((w) => transcript.includes(w))) {
-            void auditLog.record('voice.wake_detected', { details: { transcript: transcript.slice(0, 50) } });
-            this.wakeCallbacks.forEach((cb) => cb(transcript));
+          const isFinal = results[i]?.isFinal ?? false;
+          /* Reset compteur no-speech dès qu'on capte du son */
+          this.wakeNoSpeechRetries = 0;
+          /* Live interim feedback (UI panel diagnostic ou toast progress) */
+          if (this.wakeInterimCallback) {
+            try {
+              this.wakeInterimCallback(transcript, isFinal);
+            } catch {
+              /* ignore callback errors */
+            }
+          }
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: isFinal ? 'result' : 'interim',
+            src: 'wake-word',
+            detail: transcript.slice(0, 80),
+          });
+          if (isWakeMatch(transcript)) {
+            pushVoiceLog({ ts: Date.now(), evt: 'wake', src: 'wake-word', detail: transcript.slice(0, 80) });
+            void auditLog.record('voice.wake_detected', {
+              details: { transcript: transcript.slice(0, 50) },
+            });
+            /* Iter copie pour éviter mutation pendant exec */
+            const cbs = [...this.wakeCallbacks];
+            for (const cb of cbs) {
+              try {
+                cb(transcript);
+              } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                logger.warn('voice-print', 'wake callback threw', { err: msg });
+              }
+            }
           }
         }
       };
 
-      rec.onerror = (_event) => {
-        /* iOS no-speech : restart silencieusement */
+      rec.onerror = (event) => {
+        const err = event?.error ?? 'unknown';
+        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word', detail: err });
+
+        if (err === 'no-speech') {
+          this.wakeNoSpeechRetries++;
+          if (this.wakeNoSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
+            logger.warn('voice-print', `${MAX_NO_SPEECH_RETRIES}× no-speech consécutifs → suspend 30s`);
+            pushVoiceLog({
+              ts: Date.now(),
+              evt: 'suspend',
+              src: 'wake-word',
+              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+            });
+            /* Suspend temporaire : stop puis restart auto après 30s */
+            this.suspendWakeAndResumeLater();
+          }
+          return;
+        }
+
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          logger.warn('voice-print', 'permission micro refusée');
+          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word', detail: 'denied' });
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem(PERMISSION_DENIED_KEY, String(Date.now()));
+            }
+          } catch {
+            /* ignore */
+          }
+          this.stopWakeWord();
+          return;
+        }
+
+        /* 'aborted', 'network', 'audio-capture' : recovery via onend (silencieux) */
       };
 
       rec.onend = () => {
-        if (this.wakeListening) {
-          /* Restart sur iOS où continuous fail */
-          setTimeout(() => {
-            try {
-              rec.start();
-            } catch {
-              /* ignore double-start */
-            }
-          }, 500);
-        }
+        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word' });
+        if (!this.wakeListening) return;
+        /* Restart sur iOS (continuous=false) ou recovery erreur */
+        setTimeout(() => {
+          if (!this.wakeListening || this.wakeSuspendTimer !== null) return;
+          try {
+            rec.start();
+            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word' });
+          } catch {
+            /* ignore double-start race InvalidStateError — restart au prochain onend */
+          }
+        }, RESTART_DELAY_MS);
       };
 
       this.wakeRecognition = rec;
       this.wakeCallbacks = [callback];
       this.wakeListening = true;
       rec.start();
+      pushVoiceLog({ ts: Date.now(), evt: 'start', src: 'wake-word', detail: isiOS ? 'iOS' : 'desktop' });
       return { ok: true };
     } catch (err: unknown) {
       const reason = err instanceof Error ? err.message : String(err);
+      pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word', detail: `start: ${reason}` });
       return { ok: false, reason };
     }
+  }
+
+  /**
+   * Suspend wake word 30s après burst no-speech (anti drain batterie),
+   * puis tente reprise automatique si toujours en mode listening.
+   */
+  private suspendWakeAndResumeLater(): void {
+    if (this.wakeSuspendTimer) return; /* déjà programmé */
+    /* Stop micro mais garde flag listening pour reprise auto */
+    if (this.wakeRecognition) {
+      try {
+        (this.wakeRecognition as { stop: () => void }).stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    this.wakeSuspendTimer = setTimeout(() => {
+      this.wakeSuspendTimer = null;
+      this.wakeNoSpeechRetries = 0;
+      if (!this.wakeListening || !this.wakeRecognition) return;
+      try {
+        (this.wakeRecognition as { start: () => void }).start();
+        pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word', detail: 'after-suspend' });
+      } catch {
+        /* ignore */
+      }
+    }, NO_SPEECH_SUSPEND_MS);
   }
 
   /**
@@ -406,6 +604,11 @@ class VoicePrint {
     if (!this.wakeListening) return;
     this.wakeListening = false;
     this.wakeCallbacks = [];
+    this.wakeNoSpeechRetries = 0;
+    if (this.wakeSuspendTimer) {
+      clearTimeout(this.wakeSuspendTimer);
+      this.wakeSuspendTimer = null;
+    }
     if (this.wakeRecognition) {
       try {
         (this.wakeRecognition as { stop: () => void }).stop();
