@@ -899,6 +899,52 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* 13b. voice-quality-watch (Kevin v13.3.43, 2026-05-07) :
+   * Audit qualité voiceprints (confidence < 0.85, last_calibration > 30j).
+   * Si user a besoin de calibration → status warn + propose ré-enrôlement next visit. */
+  sentinels.register({
+    id: 'voice-quality-watch',
+    name: 'Qualité empreintes vocales',
+    desc: 'Audit hebdo confidence voiceprints + propose ré-enrôlement si stale ou < 0.85',
+    intervalMs: 7 * 24 * 60 * 60 * 1000, /* 1× par semaine */
+    enabled: true,
+    check: async () => {
+      try {
+        const { voicePrint } = await import('./voice-print.js');
+        const prints = voicePrint.listPrints();
+        if (prints.length === 0) {
+          return { ok: true, msg: 'Aucun voiceprint enrôlé', details: { count: 0 } };
+        }
+        const needsCalibration: Array<{ uid: string; reason: string; confidence: number }> = [];
+        for (const p of prints) {
+          const r = voicePrint.needsCalibration(p.uid);
+          if (r.needs) {
+            needsCalibration.push({ uid: p.uid, reason: r.reason, confidence: r.confidence });
+          }
+        }
+        const stats = voicePrint.getStats();
+        if (needsCalibration.length > 0) {
+          return {
+            ok: false,
+            msg: `${needsCalibration.length}/${prints.length} voiceprints ont besoin de calibration`,
+            details: { needs_calibration: needsCalibration, stats },
+          };
+        }
+        return {
+          ok: true,
+          msg: `${prints.length} voiceprints OK (confiance moyenne ${Math.round(stats.avg_match_score * 100)}%)`,
+          details: { stats },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: true,
+          msg: 'voice-print indisponible (skip)',
+          details: { skipped: true, err: String(err).slice(0, 200) },
+        };
+      }
+    },
+  });
+
   /* 17. memory-watch (Kevin 2026-05-07 v13.3.27) :
    * Audit mémoire long-terme par user, compress si > 1000 facts/user, dédupe lessons. */
   sentinels.register({
