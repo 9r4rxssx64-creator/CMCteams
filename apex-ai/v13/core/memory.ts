@@ -823,72 +823,89 @@ class Memory {
   /**
    * Build system prompt DEEP — version enrichie avec docs sync + cross-knowledge.
    *
-   * Sources injectées (capées pour rester sous limite tokens) :
-   * 1. buildSystemPromptContext() existant (architecture, identité, tools)
-   * 2. CLAUDE.md (top 5000 chars règles permanentes)
-   * 3. NOTES_USER.md (top 3000 chars infos métier Kevin)
-   * 4. MEMORY_PERSISTENT.md (top 2000 chars facts cross-session)
-   * 5. APEX_HANDOFF.md (top 2000 chars communication bidirectionnelle)
-   * 6. KEVIN_ACTIONS_TODO.md (top 1500 chars actions en attente)
-   * 7. Top 50 facts user courant (persistent_memory_<uid>)
-   * 8. Top 30 facts shared cross-app (persistent_memory scope=global)
-   * 9. Top 10 lessons learned critiques (ax_lessons_learned_struct)
-   * 10. Si admin Kevin : ajout résumés cross-user knowledge
+   * v13.3.49 — Cap absolu 8000 tokens (~32K chars) pour éviter HTTP 400 Anthropic.
+   *
+   * Sources injectées par ORDRE DE PRIORITÉ (drop si dépasse cap) :
+   * 1. baseContext (toujours, identité + tools — non droppable)
+   * 2. CLAUDE.md règles permanentes (priorité haute)
+   * 3. NOTES_USER.md infos métier
+   * 4. Top 50 facts user courant
+   * 5. Top 10 lessons critiques
+   * 6. MEMORY_PERSISTENT.md
+   * 7. APEX_HANDOFF.md
+   * 8. KEVIN_ACTIONS_TODO.md
+   * 9. Top 30 facts shared cross-app
+   * 10. Cross-user knowledge si admin
    */
   async buildSystemPromptDeep(currentUser: { id: string; name: string } | null): Promise<string> {
+    /* v13.3.49 cap budget tokens (Kevin urgent fix HTTP 400 Anthropic).
+     * Heuristique simple : 1 token ≈ 4 chars FR/EN.
+     * 8000 tokens = ~32000 chars max pour le system prompt.
+     * Anthropic Sonnet 4.6 : 200K context, mais on garde marge pour conversation + tools + max_tokens output. */
+    const MAX_PROMPT_TOKENS = 8000;
+    const MAX_PROMPT_CHARS = MAX_PROMPT_TOKENS * 4; /* 32000 chars */
+
     const baseContext = this.buildSystemPromptContext(currentUser);
-    const sections: string[] = [baseContext];
+
+    /* baseContext = toujours injecté (identité user, tools, architecture).
+     * Si lui seul dépasse déjà cap → tronque (cas extrême, ne devrait pas arriver). */
+    let total = baseContext.length > MAX_PROMPT_CHARS
+      ? baseContext.slice(0, MAX_PROMPT_CHARS - 100) + '\n[…tronqué]'
+      : baseContext;
+
+    const cap = (s: string, max: number) =>
+      s.length > max ? s.slice(0, max) + '\n[…tronqué pour limite tokens]' : s;
+
+    /* Helper : ajoute section seulement si reste de la place. */
+    const addIfRoom = (section: string): boolean => {
+      if (total.length + section.length + 4 /* "\n\n" */ < MAX_PROMPT_CHARS) {
+        total += '\n\n' + section;
+        return true;
+      }
+      return false;
+    };
 
     /* Charge cache docs (synchronisés en arrière-plan, pas de fetch ici pour perf) */
     const docs = this.getDocsContext();
 
-    const cap = (s: string, max: number) => (s.length > max ? s.slice(0, max) + '\n[…tronqué pour limite tokens]' : s);
-
+    /* PRIORITÉ 1 : CLAUDE.md règles permanentes (5000 chars max) */
     if (docs['CLAUDE.md']?.content) {
-      sections.push(`## 📜 CLAUDE.md — Règles permanentes (top 5000 chars)\n${cap(docs['CLAUDE.md'].content, 5000)}`);
-    }
-    if (docs['NOTES_USER.md']?.content) {
-      sections.push(`## 📝 NOTES_USER.md — Infos métier Kevin\n${cap(docs['NOTES_USER.md'].content, 3000)}`);
-    }
-    if (docs['MEMORY_PERSISTENT.md']?.content) {
-      sections.push(`## 🧠 MEMORY_PERSISTENT.md — Facts cross-session\n${cap(docs['MEMORY_PERSISTENT.md'].content, 2000)}`);
-    }
-    if (docs['APEX_HANDOFF.md']?.content) {
-      sections.push(`## 🤝 APEX_HANDOFF.md — Communication Apex↔Claude Code\n${cap(docs['APEX_HANDOFF.md'].content, 2000)}`);
-    }
-    if (docs['KEVIN_ACTIONS_TODO.md']?.content) {
-      sections.push(`## ✅ KEVIN_ACTIONS_TODO.md — Actions Kevin en attente\n${cap(docs['KEVIN_ACTIONS_TODO.md'].content, 1500)}`);
+      addIfRoom(`## 📜 CLAUDE.md — Règles permanentes\n${cap(docs['CLAUDE.md'].content, 5000)}`);
     }
 
-    /* Top 50 facts user courant + Top 30 shared */
+    /* PRIORITÉ 2 : NOTES_USER.md (3000 chars max) */
+    if (docs['NOTES_USER.md']?.content) {
+      addIfRoom(`## 📝 NOTES_USER.md — Infos métier Kevin\n${cap(docs['NOTES_USER.md'].content, 3000)}`);
+    }
+
+    /* Charge facts une seule fois pour réutilisation. */
+    let userFacts: Array<{ category: string; importance: number; text: string }> = [];
+    let sharedFacts: Array<{ category: string; importance: number; text: string }> = [];
     try {
       const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
       const all = await persistentMemoryStore.list();
       if (currentUser) {
-        const userFacts = all
+        userFacts = all
           .filter((e) => e.scope === currentUser.id)
           .sort((a, b) => b.importance - a.importance)
           .slice(0, 50);
-        if (userFacts.length > 0) {
-          sections.push(
-            `## 🧠 Mémoire long-terme user courant (${currentUser.name}, ${userFacts.length} facts)\n${userFacts.map((f) => `- [${f.category}/${f.importance}] ${f.text}`).join('\n')}`,
-          );
-        }
       }
-      const sharedFacts = all
+      sharedFacts = all
         .filter((e) => e.scope === 'global')
         .sort((a, b) => b.importance - a.importance)
         .slice(0, 30);
-      if (sharedFacts.length > 0) {
-        sections.push(
-          `## 🌐 Facts cross-app shared (top ${sharedFacts.length})\n${sharedFacts.map((f) => `- [${f.category}] ${f.text}`).join('\n')}`,
-        );
-      }
     } catch {
       /* persistent store indispo */
     }
 
-    /* Top 10 lessons cross-app */
+    /* PRIORITÉ 3 : Top 50 facts user courant */
+    if (userFacts.length > 0 && currentUser) {
+      addIfRoom(
+        `## 🧠 Mémoire long-terme user courant (${currentUser.name}, ${userFacts.length} facts)\n${userFacts.map((f) => `- [${f.category}/${f.importance}] ${f.text}`).join('\n')}`,
+      );
+    }
+
+    /* PRIORITÉ 4 : Top 10 lessons critiques */
     try {
       const lessonsRaw = localStorage.getItem('ax_lessons_learned_struct');
       if (lessonsRaw) {
@@ -898,7 +915,7 @@ class Memory {
           .slice(-10)
           .reverse();
         if (critical.length > 0) {
-          sections.push(
+          addIfRoom(
             `## ⚠️ Lessons cross-app non résolues (top ${critical.length})\n${critical.map((l) => `- [${l.category}/${l.severity}] ${l.title}`).join('\n')}`,
           );
         }
@@ -907,13 +924,35 @@ class Memory {
       /* skip */
     }
 
-    /* Admin Kevin = cross-user knowledge */
-    if (currentUser && currentUser.id === 'kdmc_admin') {
-      const adminKnowledge = await this.buildAdminCrossUserKnowledge();
-      if (adminKnowledge) sections.push(adminKnowledge);
+    /* PRIORITÉ 5 : MEMORY_PERSISTENT.md */
+    if (docs['MEMORY_PERSISTENT.md']?.content) {
+      addIfRoom(`## 🧠 MEMORY_PERSISTENT.md — Facts cross-session\n${cap(docs['MEMORY_PERSISTENT.md'].content, 2000)}`);
     }
 
-    return sections.join('\n\n');
+    /* PRIORITÉ 6 : APEX_HANDOFF.md */
+    if (docs['APEX_HANDOFF.md']?.content) {
+      addIfRoom(`## 🤝 APEX_HANDOFF.md — Communication Apex↔Claude Code\n${cap(docs['APEX_HANDOFF.md'].content, 2000)}`);
+    }
+
+    /* PRIORITÉ 7 : KEVIN_ACTIONS_TODO.md */
+    if (docs['KEVIN_ACTIONS_TODO.md']?.content) {
+      addIfRoom(`## ✅ KEVIN_ACTIONS_TODO.md — Actions Kevin en attente\n${cap(docs['KEVIN_ACTIONS_TODO.md'].content, 1500)}`);
+    }
+
+    /* PRIORITÉ 8 : Top 30 facts shared cross-app */
+    if (sharedFacts.length > 0) {
+      addIfRoom(
+        `## 🌐 Facts cross-app shared (top ${sharedFacts.length})\n${sharedFacts.map((f) => `- [${f.category}] ${f.text}`).join('\n')}`,
+      );
+    }
+
+    /* PRIORITÉ 9 : Admin Kevin = cross-user knowledge */
+    if (currentUser && currentUser.id === 'kdmc_admin') {
+      const adminKnowledge = await this.buildAdminCrossUserKnowledge();
+      if (adminKnowledge) addIfRoom(adminKnowledge);
+    }
+
+    return total;
   }
 }
 
