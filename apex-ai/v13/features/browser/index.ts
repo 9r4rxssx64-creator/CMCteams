@@ -768,7 +768,7 @@ export function render(rootEl: HTMLElement): void {
             return `
           <div class="ax-browser-tab ax-bounce-tap${isActive ? ' active' : ''}" data-tab-id="${escapeHtml(t.id)}" draggable="true"
             style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:${isActive ? 'linear-gradient(135deg,rgba(232,184,48,0.18),rgba(201,162,39,0.1))' : 'rgba(255,255,255,0.04)'};border:1px solid ${isActive ? 'rgba(232,184,48,0.35)' : 'rgba(255,255,255,0.08)'};border-bottom:${isActive ? '2px solid #e8b830' : 'none'};border-radius:10px 10px 0 0;cursor:pointer;max-width:200px;min-height:36px;font-size:12px;color:${isActive ? '#fff' : 'rgba(255,255,255,0.7)'};font-weight:${isActive ? '600' : '500'};-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)" title="${escapeHtml(t.title)}">
-            <img src="${escapeHtml(getFaviconUrl(t.url))}" alt="" style="width:14px;height:14px;flex-shrink:0;border-radius:3px" onerror="this.style.display='none'">
+            <img src="${escapeHtml(getFaviconUrl(t.url))}" alt="" loading="lazy" decoding="async" style="width:14px;height:14px;flex-shrink:0;border-radius:3px" onerror="this.style.display='none'">
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">${escapeHtml(t.title)}</span>
             <span data-tab-close="${escapeHtml(t.id)}" style="opacity:0.5;cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;transition:all 160ms" title="Fermer">✕</span>
           </div>`;
@@ -1320,7 +1320,7 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
           .map(
             (b) => `
             <div data-nav-url="${escapeHtml(b.url)}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(201,162,39,0.1)">
-              <img src="${escapeHtml(b.favicon)}" alt="" style="width:16px;height:16px" onerror="this.style.display='none'">
+              <img src="${escapeHtml(b.favicon)}" alt="" loading="lazy" decoding="async" style="width:16px;height:16px" onerror="this.style.display='none'">
               <span style="flex:1;color:#fff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.title)}</span>
               <span data-bookmark-remove="${escapeHtml(b.id)}" style="opacity:0.5;cursor:pointer;color:#ff6666;font-size:11px">✕</span>
             </div>`,
