@@ -25,6 +25,23 @@ import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { APP_VER } from '../../core/bootstrap.js';
 import { toast } from '../../ui/toast.js';
+import {
+  parseSlashCommand,
+  filterCommands,
+  helpText,
+  SLASH_COMMANDS,
+  type SlashCommand,
+} from '../../services/slash-commands.js';
+import {
+  generateFollowUps,
+  isFollowUpsEnabled,
+  type FollowUpSuggestion,
+} from '../../services/suggestions.js';
+import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';
+
+/* v13.3.48 — Cap context conversation pour HTTP 400 et perf
+ * Garde max 30 derniers messages user/assistant. Drop les plus anciens. */
+const MAX_CONTEXT_MESSAGES = 30;
 
 interface DisplayMessage {
   id: string;
@@ -348,13 +365,17 @@ export function renderMessageActions(msg: DisplayMessage): string {
     `style="${btnStyle}" title="Lire la réponse à voix haute" aria-label="Lire la réponse">🔊</button>` +
     `<button class="ax-msg-action" data-action="copy" data-msg-id="${escapeHtml(msg.id)}" ` +
     `style="${btnStyle}" title="Copier dans presse-papiers" aria-label="Copier le texte">📋</button>` +
+    `<button class="ax-msg-action" data-action="regen" data-msg-id="${escapeHtml(msg.id)}" ` +
+    `style="${btnStyle}" title="Régénérer une autre réponse" aria-label="Régénérer">🔄</button>` +
     `<button class="ax-msg-action" data-action="export-pdf" data-msg-id="${escapeHtml(msg.id)}" ` +
     `style="${btnStyle}" title="Exporter en PDF" aria-label="Exporter PDF">📄</button>` +
     `</div>`
   );
 }
 
-/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
+/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent)
+ * v13.3.48 — Pendant streaming : version "light" (rapide, paragraphes simples)
+ * Hors streaming : delegate vers renderMarkdownEnriched (tables, code+copy, headings) */
 export function renderMarkdownLight(text: string): string {
   /* Markdown ultra-léger pour streaming progressif (gras, italique, code inline, code block) */
   let html = escapeHtml(text);
@@ -364,6 +385,64 @@ export function renderMarkdownLight(text: string): string {
   html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
   html = html.replace(/\n/g, '<br>');
   return html;
+}
+
+/**
+ * Render follow-up chips (3 suggestions cliquables après chaque réponse Apex).
+ * v13.3.48 — Demande Kevin "chat niveau Claude.ai/ChatGPT".
+ * Exposé pour tests.
+ */
+export function renderFollowUps(suggestions: FollowUpSuggestion[]): string {
+  if (!suggestions || suggestions.length === 0) return '';
+  const chipStyle =
+    'display:inline-flex;align-items:center;gap:6px;padding:8px 12px;' +
+    'background:rgba(232,184,48,0.08);border:1px solid rgba(232,184,48,0.25);' +
+    'border-radius:18px;font-size:12.5px;color:rgba(255,255,255,0.85);' +
+    'cursor:pointer;transition:all 160ms cubic-bezier(0.16,1,0.3,1);' +
+    '-webkit-tap-highlight-color:transparent;min-height:36px;line-height:1.2;';
+  const chips = suggestions
+    .map(
+      (s) =>
+        `<button class="ax-followup-chip" data-followup-prompt="${escapeHtml(s.prompt)}" ` +
+        `style="${chipStyle}" aria-label="Suggestion : ${escapeHtml(s.label)}">` +
+        `<span aria-hidden="true">${escapeHtml(s.emoji)}</span>` +
+        `<span>${escapeHtml(s.label)}</span></button>`,
+    )
+    .join('');
+  return (
+    `<div class="ax-followups" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;` +
+    `padding-top:8px;border-top:1px dashed rgba(232,184,48,0.15)">` +
+    `<span style="font-size:11px;color:rgba(255,255,255,0.45);width:100%;margin-bottom:2px">` +
+    `💡 Pour aller plus loin :</span>${chips}</div>`
+  );
+}
+
+/**
+ * Render le panneau d'autocomplete pour slash commands.
+ * Exposé pour tests.
+ */
+export function renderSlashAutocomplete(prefix: string): string {
+  const cmds = filterCommands(prefix);
+  if (cmds.length === 0) return '';
+  const items = cmds
+    .map(
+      (c: SlashCommand) =>
+        `<button class="ax-slash-item" data-slash-name="${escapeHtml(c.name)}" ` +
+        `style="display:flex;width:100%;text-align:left;padding:8px 12px;background:transparent;` +
+        `border:none;color:#fff;cursor:pointer;align-items:center;gap:10px;` +
+        `font-size:13px;border-radius:6px;-webkit-tap-highlight-color:transparent">` +
+        `<span style="width:22px;text-align:center" aria-hidden="true">${escapeHtml(c.emoji)}</span>` +
+        `<span style="font-weight:600;color:#e8b830">/${escapeHtml(c.name)}</span>` +
+        `<span style="color:rgba(255,255,255,0.5);font-size:11.5px;flex:1">${escapeHtml(c.description)}</span>` +
+        `</button>`,
+    )
+    .join('');
+  return (
+    `<div class="ax-slash-autocomplete" style="position:absolute;bottom:100%;left:0;right:0;` +
+    `background:rgba(20,20,35,0.97);backdrop-filter:blur(16px);border:1px solid rgba(232,184,48,0.2);` +
+    `border-radius:10px;padding:6px;margin-bottom:6px;max-height:240px;overflow-y:auto;` +
+    `box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100">${items}</div>`
+  );
 }
 
 function buildSystemPrompt(): string {
@@ -574,7 +653,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   const messages: ChatMessage[] = conversation
     .filter((m) => !m.streaming || m === assistantMsg)
     .filter((m) => m.role === 'user' || m.role === 'assistant') /* Exclude tool_card from API */
-    .slice(-30)
+    .slice(-MAX_CONTEXT_MESSAGES) /* v13.3.48 cap context (HTTP 400 + perf) */
     .filter((m) => m !== assistantMsg)
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.text }));
 
@@ -651,6 +730,231 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
 function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
   conversation.push({ id: `a_${Date.now()}`, role: 'assistant', text, ts: Date.now() });
   renderMessages(rootEl);
+}
+
+/**
+ * v13.3.48 — Handler slash commands (Kevin "chat niveau Claude.ai/ChatGPT").
+ * Retourne true si le message a été traité comme commande, false sinon.
+ */
+export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
+  const parsed = parseSlashCommand(text);
+  if (!parsed.isSlash) return false;
+  haptic.tap();
+  if (parsed.unknown) {
+    /* Inconnue : montre help auto */
+    pushAssistantMessage(rootEl, helpText());
+    return true;
+  }
+  const cmd = parsed.command;
+  if (!cmd) return false;
+  const args = parsed.args ?? '';
+  switch (cmd.name) {
+    case 'help':
+      pushAssistantMessage(rootEl, helpText());
+      return true;
+    case 'clear':
+      conversation.length = 0;
+      renderMessages(rootEl);
+      toast.success('🧹 Conversation effacée');
+      return true;
+    case 'voice': {
+      const wasEnabled = isAutoReadEnabled();
+      setAutoReadEnabled(!wasEnabled);
+      toast.info(wasEnabled ? '🔇 Lecture vocale désactivée' : '🔊 Lecture vocale activée');
+      return true;
+    }
+    case 'export':
+      void exportConversationMarkdown();
+      return true;
+    case 'settings':
+      try {
+        store.set('view', 'settings');
+      } catch {
+        /* fallback : toast */
+        toast.info('Va dans Réglages depuis le menu');
+      }
+      return true;
+    case 'regen':
+      void regenerateLastAssistant(rootEl);
+      return true;
+    case 'search':
+      if (!args) {
+        pushAssistantMessage(rootEl, 'Usage : `/search <mot-clé>`');
+        return true;
+      }
+      void searchInConversation(rootEl, args);
+      return true;
+    case 'copy': {
+      const last = [...conversation].reverse().find((m) => m.role === 'assistant' && !m.streaming);
+      if (last) {
+        void navigator.clipboard?.writeText(last.text);
+        toast.success('📋 Dernière réponse copiée');
+      } else {
+        toast.warn('Aucune réponse Apex à copier');
+      }
+      return true;
+    }
+    case 'version':
+      pushAssistantMessage(rootEl, `**Apex AI** version \`${APP_VER}\` — Créé par DK`);
+      return true;
+    case 'fork':
+      forkConversation(rootEl);
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * v13.3.48 — Régénère la dernière réponse assistant en re-soumettant le dernier message user.
+ */
+async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
+  /* Trouve la dernière paire user → assistant */
+  let lastUserText = '';
+  for (let i = conversation.length - 1; i >= 0; i--) {
+    if (conversation[i].role === 'user') {
+      lastUserText = conversation[i].text;
+      break;
+    }
+  }
+  if (!lastUserText) {
+    toast.warn('Aucune question précédente à régénérer');
+    return;
+  }
+  /* Remove la dernière réponse assistant */
+  for (let i = conversation.length - 1; i >= 0; i--) {
+    if (conversation[i].role === 'assistant') {
+      conversation.splice(i, 1);
+      break;
+    }
+  }
+  renderMessages(rootEl);
+  /* Re-queue le user message — flag _isRegen pour pas re-push user dans conversation */
+  queue.push(lastUserText);
+  /* Note: processQueue va re-push user — on remove le user juste avant */
+  for (let i = conversation.length - 1; i >= 0; i--) {
+    if (conversation[i].role === 'user' && conversation[i].text === lastUserText) {
+      conversation.splice(i, 1);
+      break;
+    }
+  }
+  void processQueue(rootEl);
+  toast.info('🔄 Régénération en cours…');
+}
+
+/**
+ * v13.3.48 — Cherche un mot-clé dans la conversation et affiche les résultats.
+ */
+async function searchInConversation(rootEl: HTMLElement, keyword: string): Promise<void> {
+  const k = keyword.toLowerCase();
+  const matches = conversation
+    .filter((m) => m.text.toLowerCase().includes(k))
+    .map((m, idx) => {
+      const role = m.role === 'user' ? '👤 Toi' : '🤖 Apex';
+      const snippet = m.text.length > 200 ? m.text.slice(0, 200) + '…' : m.text;
+      return `**${idx + 1}. ${role}** : ${snippet}`;
+    });
+  if (matches.length === 0) {
+    pushAssistantMessage(rootEl, `🔎 Aucun résultat pour "${keyword}"`);
+  } else {
+    pushAssistantMessage(rootEl, `🔎 **${matches.length} résultat(s) pour "${keyword}"** :\n\n${matches.join('\n\n')}`);
+  }
+}
+
+/**
+ * v13.3.48 — Export conversation au format Markdown.
+ */
+async function exportConversationMarkdown(): Promise<void> {
+  if (conversation.length === 0) {
+    toast.warn('Aucune conversation à exporter');
+    return;
+  }
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const header = `# Conversation Apex — ${new Date().toLocaleString('fr-FR')}\n\nVersion : ${APP_VER}\n\n---\n\n`;
+  const body = conversation
+    .filter((m) => m.role !== 'tool_card')
+    .map((m) => {
+      const role = m.role === 'user' ? '## 👤 Toi' : '## 🤖 Apex';
+      return `${role}\n\n${m.text}`;
+    })
+    .join('\n\n---\n\n');
+  const md = header + body;
+  try {
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `apex-conversation-${ts}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success('📄 Conversation exportée en Markdown');
+  } catch {
+    /* Fallback clipboard */
+    void navigator.clipboard?.writeText(md);
+    toast.info('📋 Conversation copiée dans le presse-papiers');
+  }
+}
+
+/**
+ * v13.3.48 — Affiche le panneau autocomplete au-dessus de la barre de saisie.
+ */
+function showSlashAutocomplete(rootEl: HTMLElement, prefix: string): void {
+  const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+  if (!form) return;
+  let panel = rootEl.querySelector<HTMLElement>('.ax-slash-autocomplete-wrap');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.className = 'ax-slash-autocomplete-wrap';
+    panel.style.cssText = 'position:relative';
+    form.parentNode?.insertBefore(panel, form);
+  }
+  panel.innerHTML = renderSlashAutocomplete(prefix);
+  /* Wire clicks */
+  panel.querySelectorAll<HTMLElement>('.ax-slash-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.slashName;
+      if (!name) return;
+      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+      if (ta) {
+        ta.value = `/${name}`;
+        ta.focus();
+        /* Si command sans args attendus, soumettre direct */
+        const cmd = SLASH_COMMANDS.find((c) => c.name === name);
+        if (cmd && !cmd.requiresArgs) {
+          rootEl.querySelector<HTMLFormElement>('#ax-chat-form')?.requestSubmit();
+        }
+      }
+      hideSlashAutocomplete(rootEl);
+    });
+  });
+}
+
+function hideSlashAutocomplete(rootEl: HTMLElement): void {
+  const panel = rootEl.querySelector('.ax-slash-autocomplete-wrap');
+  if (panel) panel.remove();
+}
+
+/**
+ * v13.3.48 — Fork conversation (démarre une nouvelle session, garde la précédente en historique).
+ */
+function forkConversation(rootEl: HTMLElement): void {
+  /* Save copy à l'historique sessions (best effort, localStorage) */
+  try {
+    const KEY = 'apex_v13_chat_sessions';
+    const raw = localStorage.getItem(KEY);
+    const sessions: { ts: number; messages: DisplayMessage[] }[] = raw
+      ? (JSON.parse(raw) as { ts: number; messages: DisplayMessage[] }[])
+      : [];
+    sessions.push({ ts: Date.now(), messages: [...conversation] });
+    /* Cap 10 sessions max */
+    while (sessions.length > 10) sessions.shift();
+    localStorage.setItem(KEY, JSON.stringify(sessions));
+  } catch {
+    /* ignore */
+  }
+  conversation.length = 0;
+  renderMessages(rootEl);
+  toast.success('🌿 Nouvelle conversation démarrée');
 }
 
 /* Storage keys pour préférences voice chat (Kevin règle : auto-read toggle) */
@@ -850,24 +1154,47 @@ export function renderToolPills(msg: DisplayMessage): string {
 function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage): void {
   const bubble = rootEl.querySelector(`[data-msg-id="${msg.id}"] .ax-msg-body`);
   if (bubble) {
+    /* Pendant streaming → markdown light pour vitesse / hors → enrichi */
+    const md = msg.streaming ? renderMarkdownLight(msg.text) : renderMarkdownEnriched(msg.text);
     bubble.innerHTML =
       renderToolPills(msg) +
-      renderMarkdownLight(msg.text) +
+      md +
       (msg.streaming ? '<span class="ax-cursor">▌</span>' : '') +
       renderMessageActions(msg);
-    /* Auto-scroll smooth */
-    const scroll = rootEl.querySelector('.ax-chat-scroll');
-    if (scroll) scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+    /* Smart scroll : ne force PAS si user a scrollé manuellement vers le haut */
+    smartAutoScroll(rootEl);
   } else {
     renderMessages(rootEl);
+  }
+}
+
+/**
+ * Smart auto-scroll v13.3.48 — ne force pas si user a scrollé volontairement haut.
+ * Considère "user scrollé" si distance bottom > 200px.
+ */
+function smartAutoScroll(rootEl: HTMLElement): void {
+  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+  if (!scroll) return;
+  const distFromBottom = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
+  if (distFromBottom < 200) {
+    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
   }
 }
 
 function renderMessages(rootEl: HTMLElement): void {
   const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
   if (!scroll) return;
+  /* v13.3.48 — Identifier le DERNIER assistant message non-streaming pour follow-ups */
+  let lastAssistantNonStreamingIdx = -1;
+  for (let i = conversation.length - 1; i >= 0; i--) {
+    const m = conversation[i];
+    if (m.role === 'assistant' && !m.streaming && m.text.trim().length > 0) {
+      lastAssistantNonStreamingIdx = i;
+      break;
+    }
+  }
   const html = conversation
-    .map((m) => {
+    .map((m, idx) => {
       /* Streaming indicator amélioré : typing dots animés si pas encore de texte, sinon cursor blink */
       let trail = '';
       if (m.streaming) {
@@ -885,15 +1212,26 @@ function renderMessages(rootEl: HTMLElement): void {
       }
       const pills = renderToolPills(m);
       const actions = renderMessageActions(m);
+      /* v13.3.48 — Follow-up chips uniquement sur DERNIER message assistant terminé */
+      let followUps = '';
+      if (idx === lastAssistantNonStreamingIdx && isFollowUpsEnabled()) {
+        const lastUser = [...conversation].reverse().find((mm) => mm.role === 'user')?.text;
+        followUps = renderFollowUps(generateFollowUps(m.text, lastUser));
+      }
+      /* Pendant streaming : markdown light, hors : enrichi */
+      const md = m.streaming ? renderMarkdownLight(m.text) : renderMarkdownEnriched(m.text);
       return `
         <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${pills}${renderMarkdownLight(m.text)}${trail}${actions}</div>
+          <div class="ax-msg-body">${pills}${md}${trail}${actions}${followUps}</div>
         </div>
       `;
     })
     .join('');
   scroll.innerHTML = html;
-  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+  /* Smart scroll : ne force pas si user a scrollé volontairement haut */
+  smartAutoScroll(rootEl);
+  /* Wire markdown actions (copy code blocks) — idempotent */
+  wireMarkdownActions(scroll);
 }
 
 export function render(rootEl: HTMLElement): void {
@@ -1061,6 +1399,13 @@ export function render(rootEl: HTMLElement): void {
       e.preventDefault();
       const value = textarea.value.trim();
       if (!value) return;
+      /* v13.3.48 — Slash commands d'abord (gratuit, instantané, pas d'appel IA) */
+      if (handleSlashCommand(rootEl, value)) {
+        textarea.value = '';
+        textarea.style.height = 'auto';
+        hideSlashAutocomplete(rootEl);
+        return;
+      }
       /* P0 SÉCU v13.0.78 Kevin "il s'affole pas reconnu" :
        * Bulk detect → store toutes clés trouvées (multi-line, .env, JSON OK) */
       void (async () => {
@@ -1106,6 +1451,13 @@ export function render(rootEl: HTMLElement): void {
     textarea.addEventListener('input', () => {
       textarea.style.height = 'auto';
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      /* v13.3.48 — Slash autocomplete */
+      const v = textarea.value;
+      if (v.startsWith('/') && !v.includes('\n')) {
+        showSlashAutocomplete(rootEl, v.slice(1));
+      } else {
+        hideSlashAutocomplete(rootEl);
+      }
     });
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -1922,13 +2274,29 @@ export function render(rootEl: HTMLElement): void {
      "bouton haut-parleur pour écouter au lieu de lire, choisir les voix". */
   rootEl.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+
+    /* v13.3.48 — Follow-up chip click → re-soumet le prompt */
+    const followBtn = target.closest<HTMLElement>('.ax-followup-chip');
+    if (followBtn) {
+      const prompt = followBtn.getAttribute('data-followup-prompt');
+      if (prompt) {
+        haptic.tap();
+        const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+        if (ta) {
+          ta.value = prompt;
+          rootEl.querySelector<HTMLFormElement>('#ax-chat-form')?.requestSubmit();
+        }
+      }
+      return;
+    }
+
     const btn = target.closest('[data-action]') as HTMLButtonElement | null;
     if (!btn) return;
     const action = btn.getAttribute('data-action');
     const msgId = btn.getAttribute('data-msg-id');
     if (!action || !msgId) return;
     /* Filtre uniquement nos actions chat (évite collision avec autres data-action) */
-    if (action !== 'speak' && action !== 'copy' && action !== 'export-pdf') return;
+    if (action !== 'speak' && action !== 'copy' && action !== 'export-pdf' && action !== 'regen') return;
     const msg = conversation.find((m) => m.id === msgId);
     if (!msg) return;
 
@@ -1942,6 +2310,11 @@ export function render(rootEl: HTMLElement): void {
     }
     if (action === 'export-pdf') {
       void handleExportPdfAction(msg);
+      return;
+    }
+    if (action === 'regen') {
+      haptic.tap();
+      void regenerateLastAssistant(rootEl);
       return;
     }
   });
