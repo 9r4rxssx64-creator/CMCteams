@@ -23,6 +23,7 @@ import { commerce } from '../../services/commerce.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
+import { APP_VER } from '../../core/bootstrap.js';
 import { toast } from '../../ui/toast.js';
 
 interface DisplayMessage {
@@ -925,7 +926,7 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px;color:#ff6666">🚪 Déconnexion</button>
       </nav>
       <footer style="text-align:center;padding:6px;font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg)">
-        APEX AI v13.0 — Créé par <strong style="color:var(--ax-gold)">DK</strong>
+        APEX AI ${APP_VER} — Créé par <strong style="color:var(--ax-gold)">DK</strong>
       </footer>
     </div>
   `;
