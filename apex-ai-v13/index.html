@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.1.1">
+<html lang="fr" data-theme="dark" data-app-ver="v13.1.2">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,8 +15,8 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-efa0e2daf4778ae309ba4529e3a0015b' 'strict-dynamic' https:;
-             style-src 'self' 'nonce-efa0e2daf4778ae309ba4529e3a0015b' 'unsafe-inline';
+             script-src 'self' 'nonce-29cc77831224332dc6f25326b262bdba' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-29cc77831224332dc6f25326b262bdba' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -38,11 +38,11 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="efa0e2daf4778ae309ba4529e3a0015b" type="module" crossorigin src="./core/main-CDhRWD2L.js"></script>
-  <link rel="modulepreload" crossorigin href="./chunks/monitoring-675b-Ybt.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-registry-BbvN32iJ.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-dispatch-BQ_g7Mtu.js">
-  <link nonce="efa0e2daf4778ae309ba4529e3a0015b" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
+  <script nonce="29cc77831224332dc6f25326b262bdba" type="module" crossorigin src="./core/main-CcYrGU7Q.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-B17vNBOa.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-registry-eSveblul.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-tools-dispatch-Dr5skY9s.js">
+  <link nonce="29cc77831224332dc6f25326b262bdba" rel="stylesheet" crossorigin href="./assets/css/main-rhfGvOFL.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -72,6 +72,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="efa0e2daf4778ae309ba4529e3a0015b" src="./assets/js/rescue.js"></script>
+  <script nonce="29cc77831224332dc6f25326b262bdba" src="./assets/js/rescue.js"></script>
 </body>
 </html>

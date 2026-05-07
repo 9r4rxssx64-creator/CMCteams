@@ -13,7 +13,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import type { TechUpdate, InnovationCategory } from '../../services/innovation-watch.js';
 
 const CATEGORY_LABELS: Record<InnovationCategory, string> = {

@@ -235,7 +235,7 @@ export async function handleLightboxAction(
         return;
       }
       if (statusEl) {
-        const cost = result.cost_eur != null ? ` (${result.cost_eur.toFixed(3)}€)` : '';
+        const cost = result.cost_eur !== undefined && result.cost_eur !== null ? ` (${result.cost_eur.toFixed(3)}€)` : '';
         statusEl.textContent = `✅ Transformé${cost}`;
       }
       pushTransformResult(rootEl, result.outputUrl, action, img.filename);
