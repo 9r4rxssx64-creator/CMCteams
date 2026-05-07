@@ -90,9 +90,32 @@ export interface Presentation {
   author: string;
 }
 
-export const MAX_SLIDES = 100;
-export const MAX_ELEMENTS_PER_SLIDE = 50;
+export const MAX_SLIDES = 200; /* boost v13 : 100 → 200 */
+export const MAX_ELEMENTS_PER_SLIDE = 80; /* boost v13 : 50 → 80 */
 export const STORAGE_PREFIX = 'ax_pres_';
+
+/* boost v13 — Templates de presentation par cas d usage business */
+export const PRESENTATION_TEMPLATES = {
+  pitch_deck_seed: { slides: ['title', 'agenda', 'features', 'matrix', 'kpi', 'team', 'pricing', 'roadmap', 'thank_you'], duration_min: 10, label: 'Pitch Deck Seed (Y Combinator format)' },
+  pitch_deck_serie_a: { slides: ['title', 'agenda', 'about', 'features', 'matrix', 'kpi', 'statistics', 'team', 'pricing', 'roadmap', 'thank_you'], duration_min: 20, label: 'Pitch Deck Series A' },
+  business_review_quarterly: { slides: ['title', 'agenda', 'kpi', 'statistics', 'comparison', 'roadmap', 'thank_you'], duration_min: 30, label: 'QBR (Quarterly Business Review)' },
+  product_launch: { slides: ['title', 'about', 'features', 'image_full', 'pricing', 'testimonial', 'thank_you'], duration_min: 15, label: 'Product Launch' },
+  training_workshop: { slides: ['title', 'agenda', 'content', 'image_left', 'two_columns', 'process', 'faq', 'thank_you'], duration_min: 60, label: 'Training Workshop' },
+  conference_keynote: { slides: ['title', 'image_full', 'quote', 'statistics', 'image_full', 'thank_you'], duration_min: 45, label: 'Conference Keynote' },
+  investor_update: { slides: ['title', 'kpi', 'statistics', 'roadmap', 'comparison', 'team', 'thank_you'], duration_min: 15, label: 'Investor Monthly Update' },
+  board_meeting: { slides: ['title', 'agenda', 'kpi', 'statistics', 'comparison', 'matrix', 'roadmap', 'thank_you'], duration_min: 90, label: 'Board Meeting' },
+  customer_pitch: { slides: ['title', 'about', 'features', 'matrix', 'pricing', 'testimonial', 'contact'], duration_min: 30, label: 'Customer Pitch' },
+  team_all_hands: { slides: ['title', 'agenda', 'kpi', 'team', 'roadmap', 'thank_you'], duration_min: 45, label: 'Team All-Hands' },
+} as const;
+
+/* boost v13 — Slide layouts de transition / sections */
+export const SECTION_DIVIDER_LAYOUTS = {
+  chapter_intro: { label: 'Intro chapitre', description: 'Plein écran avec numéro chapitre + titre' },
+  break_5min: { label: 'Pause 5 min', description: 'Compteur visible + image relaxante' },
+  qna: { label: 'Q&A', description: 'Plein écran avec QR code questions' },
+  poll: { label: 'Sondage live', description: 'Question + 4 réponses + QR Mentimeter' },
+  exercise: { label: 'Exercice', description: 'Instructions + timer + résultats attendus' },
+};
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
