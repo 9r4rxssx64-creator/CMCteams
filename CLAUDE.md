@@ -1,6 +1,82 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-04 (Apex v13.0.73 / CMC v9.593).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.16 / CMC v9.597).
+
+---
+
+## 📂 RÈGLE PERMANENTE — IMPORTS PDF INCRÉMENTAUX MERGE (Kevin 2026-05-07, ABSOLUE)
+
+> **"Si je un planning, par exemple mes équipes 1-2, et ensuite je recolle un autre planning où il y aura inspecteur et superviseur, il NE FAUT PAS qu'il m'enlève les chefs et employés. Il garde les employés importés du mois de mai et quand je rajoute un import, il vérifie si c'est à compléter, si c'est à remplacer suivant la version. Il n'efface pas, il met à jour, il rajoute, c'est d'autres sections, donc il rajoute. Il fait attention aux versions 1, 2, etc. Il l'affiche, je peux vérifier qu'il a le bon planning. Il garde en mémoire les anciens."** — Kevin 2026-05-07
+
+**Règle absolue, prioritaire** — CMCteams import PDF :
+
+### 1. MERGE par défaut, JAMAIS replace global
+
+À chaque import PDF supplémentaire pour le même mois :
+- ❌ INTERDIT : effacer A.overrides[YYYY-M] + remplacer par nouvelles données
+- ✅ OBLIGATOIRE : merge cellule par cellule
+  - Si cell existe déjà ET nouveau import a une cell pour cette personne/jour → choisir selon priorité (cf. règle 4)
+  - Si cell n'existe pas dans nouveau → conserver ancienne
+  - Si cell nouvelle pas dans ancien → ajouter
+
+### 2. Détection automatique du type d'import
+
+Au moment de doImport, parser détecte ce que contient le PDF :
+- **Type "employés+chefs"** : présence de `BJ Éq.X`, `RA Éq.X`, `CMC Éq.X`
+- **Type "cadres"** : présence de `PIT BOSS`, `SUPERVISEUR`, `INSPECTEUR` headers
+- **Type "complet"** : les 2
+
+Selon type :
+- "employés+chefs" alors que A.overrides[YYYY-M] a déjà des cadres → MERGE (ne pas effacer cadres)
+- "cadres" alors que A.overrides[YYYY-M] a déjà employés → MERGE (ne pas effacer employés)
+- "complet" → version 2 du même mois → demande Kevin "Remplacer ou Fusionner ?"
+
+### 3. Versioning avec UI affichage
+
+Système v9.596 `_cmcListVersionedHistory` + `_cmcDiffVersions` doit être :
+- **Wired** dans doImport (snapshot avant chaque merge)
+- **Visible** dans vImport admin : "Version actuelle V3 du 7 mai 2026 18:13" + bouton "Voir versions précédentes"
+- **Restorable** : 1-clic restore vers V2 ou V1
+- **Diff** : "Cet import ajoute 16 cadres, modifie 0 employé, supprime 0"
+- **Garde 5 dernières versions** par défaut (config `cmc_version_keep`)
+
+### 4. Priorité conflits cellules
+
+Quand 2 imports ont une cellule pour même personne/jour :
+- Plus récent gagne (timestamp ts_imported)
+- Sauf si Kevin a manuellement modifié la cell après le 1er import (cf. `cmc_manual_overrides_<key>`)
+  - Dans ce cas : Kevin manuel > nouveau import (préservation édition humaine)
+
+### 5. UI bandeau merge transparent
+
+Après chaque doImport, afficher banner doré :
+- "✅ Import merge V3 : +16 cadres ajoutés (Pit Boss/Superviseur/Inspecteur)"
+- "🔄 0 employés modifiés, 0 supprimés"
+- Bouton "↩ Annuler ce merge" (revert vers version précédente)
+- Bouton "Voir détails" → modal diff cellule par cellule
+
+### 6. Cadres unifiés (cohérent règle existante)
+
+Pit Boss / Superviseur / Inspecteur = mêmes contraintes :
+- Pas d'équipe assignée (`emp.team = null` ou `'cadres'`)
+- Mélangés dans une seule section "CADRES" dans vEmps + vPlan
+- Distinction visuelle par badge (🎯 pit / 🔍 sup / 👁 insp) — pas par section
+- Quand parser détecte un de ces 3 → store `emp.role = 'cadre'` + `emp.cadre_type` = pit|sup|insp
+
+### 7. Test mental obligatoire avant chaque release CMCteams
+
+> *"Si Kevin importe planning #1 (employés+chefs BJ) puis planning #2 (cadres seulement), est-ce que les employés du #1 RESTENT ? Le bandeau confirme-t-il '+X cadres ajoutés, 0 supprimé' ? La version est-elle visible (V1 → V2) ? Kevin peut-il revert au #1 en 1 clic ?"*
+
+Si une réponse non → bloquant, fix avant push.
+
+### 8. Bridge Apex → CMCteams (autonomie cross-app)
+
+Kevin peut coller un planning dans Apex chat textarea :
+- Apex IA détecte format planning SBM (regex `MAI 2026|JUIN 2026|BJ Éq\.|PIT BOSS`)
+- Apex push vers Firebase `ax_cmc_planning_pending` avec timestamp + texte brut
+- CMCteams écoute Firebase SSE sur `ax_cmc_planning_pending`
+- Si admin Kevin connecté → toast "📥 Apex a envoyé un planning, importer ?" avec bouton 1-clic
+- Sinon → reste en pending, intégré au prochain login
 
 ---
 

@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.597";
+var APP_VER="v9.598";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -31492,6 +31492,17 @@ function doImport(){
   // v9.596 (Kevin 2026-05-07) — Sauvegarde versionnee V1/V2/V3 AVANT wipe.
   // "Garde l'historique de chaque planning". Stocke local seulement (gros volume).
   try{_cmcSaveVersionedHistory(iy,im);}catch(_vshErr){console.warn("[v9.596 versioned-history]",_vshErr);}
+  // v9.598 (Kevin règle ABSOLUE 2026-05-07 "IMPORTS PDF INCRÉMENTAUX MERGE") :
+  //
+  // AVANT v9.598 : wipe TOTAL avant parser → si Kevin importait planning cadres
+  // après planning employés, les employés étaient EFFACÉS. Récidive bug v9.585.
+  //
+  // APRÈS v9.598 : MERGE par défaut. Le parser ajoute/écrase cellules par cellules.
+  // Les employés/cadres absents du nouvel import sont CONSERVÉS.
+  //
+  // Toggle "Replace mode" disponible (cmc_import_mode='replace') pour cas extrêmes.
+  // Snapshot toujours fait pour rollback + archive versionnée.
+  var _importMode=lg("cmc_import_mode","merge"); // 'merge' (défaut) | 'replace'
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
     _preWipeHadData=true;
     try{
@@ -31499,7 +31510,7 @@ function doImport(){
       _preWipeRef=lg("cmc_ref_"+key,null);
       _preWipeVerif=lg("cmc_verif_"+key,null);
     }catch(_pwErr){_preWipeOv=null;}
-    // Archive silencieuse (max 6 par mois, FIFO)
+    // Archive silencieuse (max 6 par mois, FIFO) — toujours fait pour versioning
     try{
       var _archKey="cmc_history_"+key+"_"+Date.now();
       ls(_archKey,{
@@ -31507,19 +31518,24 @@ function doImport(){
         ov:_preWipeOv,
         ref:_preWipeRef,
         verif:_preWipeVerif,
-        replacedBy:"import_"+(_importVersion||"?")
+        replacedBy:"import_"+(_importVersion||"?"),
+        mode:_importMode
       });
       var _allArch=[];
       for(var _ki in localStorage){if(_ki.indexOf("cmc_history_"+key+"_")===0)_allArch.push(_ki);}
       _allArch.sort();
       while(_allArch.length>6){try{localStorage.removeItem(_allArch.shift());}catch(_){}}
     }catch(_archErr){}
-    // Wipe TOTAL : overrides + verif + ref + cache (memoire seulement, pas Firebase
-    // tant que parser n'a pas reussi -> si auto-restore plus bas, Firebase pas touche)
-    A.overrides[key]={};
-    try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
-    try{localStorage.removeItem("cmc_ref_"+key);}catch(_){}
-    try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+    if(_importMode==="replace"){
+      // Mode replace explicite : wipe comme avant (Kevin a choisi exprès)
+      A.overrides[key]={};
+      try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
+      try{localStorage.removeItem("cmc_ref_"+key);}catch(_){}
+      try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+    }
+    // Mode merge (défaut) : on NE TOUCHE PAS A.overrides[key]. Le parser va
+    // ajouter/écraser cellules par cellules. Employés/cadres absents du nouvel
+    // import → CONSERVÉS. Versioning + rollback via _preWipeOv intact.
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
@@ -32805,7 +32821,45 @@ function doImport(){
   var _impMsg=verif.errors.length?'\u26a0\ufe0f '+verif.errors.length+' erreur(s)':'\u2705 Import'+_vLabel+' OK \u2014 '+ok+' cellules \u2014 '+MFR[im]+' '+iy;
   if(_importSkipped)_impMsg+=' \u2014 '+_importSkipped+' code(s) ignor\u00e9(s)';
   if(_missing.length)_impMsg+=' \u2014 '+_missing.length+' employ\u00e9(s) sans horaire';
-  toast(_impMsg);
+  // v9.598 (Kevin r\u00e8gle ABSOLUE 2026-05-07 "MERGE INCR\u00c9MENTAL") : compute diff
+  // entre _preWipeOv (ancien) et A.overrides[key] (nouveau merge) pour Kevin.
+  if(_importMode==="merge"&&_preWipeOv){
+    try{
+      var _added=0,_changed=0,_kept=0,_keptEids={};
+      var _nowOv=A.overrides[key]||{};
+      Object.keys(_preWipeOv).forEach(function(eid){
+        var prevDays=_preWipeOv[eid]||{};
+        var nowDays=_nowOv[eid]||{};
+        var allDays={};
+        Object.keys(prevDays).forEach(function(d){allDays[d]=true;});
+        Object.keys(nowDays).forEach(function(d){allDays[d]=true;});
+        var _empKept=false;
+        Object.keys(allDays).forEach(function(d){
+          if(prevDays[d]&&!nowDays[d]){
+            // Cell ancienne pr\u00e9serv\u00e9e (pas dans nouveau import) \u2014 restaure
+            if(!_nowOv[eid])_nowOv[eid]={};
+            _nowOv[eid][d]=prevDays[d];
+            _kept++;_empKept=true;
+          }else if(prevDays[d]&&nowDays[d]&&prevDays[d]!==nowDays[d]){
+            _changed++;
+          }
+        });
+        if(_empKept)_keptEids[eid]=true;
+      });
+      // Re-count cellules ajout\u00e9es (nouveau import only)
+      Object.keys(_nowOv).forEach(function(eid){
+        var prevDays=_preWipeOv[eid]||{};
+        var nowDays=_nowOv[eid]||{};
+        Object.keys(nowDays).forEach(function(d){
+          if(!prevDays[d])_added++;
+        });
+      });
+      if(_added>0||_changed>0||_kept>0){
+        _impMsg+=' \u2014 \ud83d\udd04 Merge V'+_importVersion+' : +'+_added+' ajout\u00e9s, '+_changed+' modifi\u00e9s, '+_kept+' pr\u00e9serv\u00e9s ('+Object.keys(_keptEids).length+' employ\u00e9s)';
+      }
+    }catch(_diffErr){console.warn("[v9.598 merge-diff]",_diffErr);}
+  }
+  toast(_impMsg,null,8000);
   // Affichage du bloc "Import incomplet — à compléter"
   if(_incomplete){
     var r2=document.getElementById("impRes");
