@@ -420,6 +420,9 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const { vault } = await import('./vault.js');
       /* Force lecture/init passphrase device-bound → trigger backupPassphraseToIdb */
       await vault.encryptAuto('boot_check_' + Date.now());
+      /* v13.3.20 FIX KEVIN "Apex oublie ses codes sans cesse" :
+       * Démarre credentials-watch (storage event + poll 30s + boot pre-flight). */
+      vault.startCredentialsWatch();
     }),
 
     /* P0 : claude-bridge init stats (lecture pending todos) */
