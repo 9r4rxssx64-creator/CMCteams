@@ -100,3 +100,58 @@ export function sanitizeUrl(url: string | null | undefined): string {
   }
   return String(url);
 }
+
+/**
+ * Set HTML safely on an element with synchronous DOMPurify-style stripping fallback.
+ * Use when content may contain user-generated HTML and async sanitizeHtml() is not feasible.
+ *
+ * Strips :
+ *  - <script>...</script>
+ *  - <iframe>...</iframe>  (sauf si caller veut iframe whitelisted ailleurs)
+ *  - on*= attributes (onclick, onload, onerror, ...)
+ *  - javascript:, vbscript:, data:text/html in href/src
+ *
+ * For 100% safety on user input, prefer escapeHtml() in template literals OR
+ * await sanitizeHtml() (uses DOMPurify properly).
+ *
+ * @example
+ * safeSetHTML(el, untrustedHtml);  // strips XSS vectors synchronously
+ */
+export function safeSetHTML(el: HTMLElement | null | undefined, html: string | null | undefined): void {
+  if (!el) return;
+  if (html === null || html === undefined) {
+    el.innerHTML = '';
+    return;
+  }
+  const cleaned = stripDangerousHtml(String(html));
+  el.innerHTML = cleaned;
+}
+
+/**
+ * Strip the most dangerous XSS vectors from an HTML string (synchronous).
+ * Not a complete sanitizer — for that use sanitizeHtml() (async, DOMPurify).
+ */
+export function stripDangerousHtml(html: string): string {
+  if (!html) return '';
+  let s = String(html);
+  /* Remove <script>...</script> blocks (case-insensitive, multi-line) */
+  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+  s = s.replace(/<script\b[^>]*\/?>/gi, '');
+  /* Remove <iframe>...</iframe> blocks */
+  s = s.replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe\s*>/gi, '');
+  s = s.replace(/<iframe\b[^>]*\/?>/gi, '');
+  /* Remove <object>, <embed>, <link rel="import"> */
+  s = s.replace(/<(object|embed)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  s = s.replace(/<(object|embed)\b[^>]*\/?>/gi, '');
+  /* Strip on* event handlers (onclick=, onload=, onerror=, ...) */
+  s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
+  s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
+  s = s.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+  /* Strip javascript:/vbscript: URLs in href/src */
+  s = s.replace(/(href|src)\s*=\s*"\s*(javascript|vbscript):[^"]*"/gi, '$1="#"');
+  s = s.replace(/(href|src)\s*=\s*'\s*(javascript|vbscript):[^']*'/gi, "$1='#'");
+  /* Strip data:text/html URLs */
+  s = s.replace(/(href|src)\s*=\s*"\s*data:text\/html[^"]*"/gi, '$1="#"');
+  s = s.replace(/(href|src)\s*=\s*'\s*data:text\/html[^']*'/gi, "$1='#'");
+  return s;
+}
