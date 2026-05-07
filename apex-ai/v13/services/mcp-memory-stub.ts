@@ -156,13 +156,16 @@ class MCPMemoryStub {
    * Status pour UI (?view=credentials / sentinelles).
    */
   getStatus(): MCPStatus {
-    return {
+    const base: MCPStatus = {
       provider: this.provider,
       count: 0, /* count exact = await idbCount() — getStatus est sync */
       ready: this.initialized,
       apiKeyPresent: this.apiKey.length > 10,
-      indexName: this.provider === 'pinecone' ? this.indexName : undefined,
     };
+    if (this.provider === 'pinecone') {
+      base.indexName = this.indexName;
+    }
+    return base;
   }
 
   /**
@@ -196,12 +199,16 @@ class MCPMemoryStub {
     });
     if (!resp.ok) throw new Error(`Pinecone HTTP ${resp.status}`);
     const data = await resp.json() as { matches?: { id: string; score: number; metadata?: Record<string, unknown> }[] };
-    return (data.matches ?? []).map((m) => ({
-      id: m.id,
-      text: typeof m.metadata?.text === 'string' ? m.metadata.text : '',
-      score: m.score,
-      metadata: m.metadata ?? {},
-    }));
+    return (data.matches ?? []).map((m) => {
+      const meta = m.metadata ?? {};
+      const txt = typeof meta['text'] === 'string' ? meta['text'] : '';
+      return {
+        id: m.id,
+        text: txt,
+        score: m.score,
+        metadata: meta,
+      };
+    });
   }
 
   private async upsertPinecone(id: string, text: string, metadata: Record<string, unknown>): Promise<void> {
@@ -325,7 +332,7 @@ class MCPMemoryStub {
    */
   private computePseudoEmbedding(text: string): number[] {
     const dim = EMBEDDING_DIM;
-    const out = new Array(dim).fill(0) as number[];
+    const out: number[] = new Array<number>(dim).fill(0);
     const tokens = text.toLowerCase().split(/\s+/).filter(Boolean);
     if (tokens.length === 0) return out;
     for (const tok of tokens) {
@@ -334,7 +341,7 @@ class MCPMemoryStub {
         h = ((h << 5) - h + tok.charCodeAt(i)) | 0;
       }
       const idx = Math.abs(h) % dim;
-      out[idx] += 1 / tokens.length;
+      out[idx] = (out[idx] ?? 0) + (1 / tokens.length);
     }
     /* L2 normalize */
     let norm = 0;
@@ -350,9 +357,11 @@ function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
   let dot = 0, na = 0, nb = 0;
   for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
+    const ai = a[i] ?? 0;
+    const bi = b[i] ?? 0;
+    dot += ai * bi;
+    na += ai * ai;
+    nb += bi * bi;
   }
   const denom = Math.sqrt(na) * Math.sqrt(nb);
   return denom > 0 ? dot / denom : 0;
