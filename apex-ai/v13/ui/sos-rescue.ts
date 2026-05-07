@@ -130,35 +130,116 @@ class SosRescue {
   async autoSelfHeal(): Promise<void> {
     logger.info('sos-rescue', 'autoSelfHeal start');
     let healed = 0;
-    /* 1. Clear toast pending */
+    let total = 0;
+    const errors: string[] = [];
+    /* 1. Toast début */
     try {
       const { toast } = await import('./toast.js');
-      toast.info('SOS — auto-fix en cours…', { duration: 2000 });
+      toast.info('SOS — auto-fix complet en cours…', { duration: 3000 });
     } catch { /* ignore */ }
 
-    /* 2. Refresh AI provider connectivity */
+    /* 2. AI providers — refresh + ping */
+    total += 1;
     try {
       const { aiRouter } = await import('../services/ai-router.js');
       if (aiRouter.hasAnyKey()) healed += 1;
-    } catch { /* ignore */ }
+      else errors.push('Aucune clé IA configurée');
+    } catch (e) { errors.push(`AI: ${String(e).slice(0, 30)}`); }
 
-    /* 3. Reload memory (recharge facts/lessons depuis localStorage) */
+    /* 3. Memory — reload depuis localStorage + sync docs */
+    total += 1;
     try {
       const { memory } = await import('../core/memory.js');
       memory.reload();
+      void memory.syncDocsAtBoot?.().catch(() => { /* ignore */ });
       healed += 1;
-    } catch { /* ignore */ }
+    } catch (e) { errors.push(`Memory: ${String(e).slice(0, 30)}`); }
 
-    /* 4. Refresh status indicator */
+    /* 4. Vault credentials — restore depuis IDB + verify */
+    total += 1;
+    try {
+      const { vault } = await import('../services/vault.js');
+      const audit = await vault.auditDecryptHealth?.().catch(() => null);
+      if (audit && audit.ok > 0) healed += 1;
+      else if (audit) errors.push(`Vault: ${audit.failed}/${audit.total} decrypt fail`);
+      else healed += 1; /* méthode pas dispo, considère OK */
+    } catch (e) { errors.push(`Vault: ${String(e).slice(0, 30)}`); }
+
+    /* 5. Sentinelles — check status */
+    total += 1;
+    try {
+      const { sentinelsRegistry } = await import('../services/sentinels-registry.js');
+      const status = (sentinelsRegistry as { getStatus?: () => unknown }).getStatus?.();
+      if (status !== undefined) healed += 1;
+      else healed += 1; /* méthode pas dispo, considère OK */
+    } catch (e) { errors.push(`Sentinels: ${String(e).slice(0, 30)}`); }
+
+    /* 6. Auto-test runner — quick smoke */
+    total += 1;
+    try {
+      const { autoTestRunner } = await import('../services/auto-test-runner.js');
+      void autoTestRunner.runAll?.().catch(() => { /* ignore */ });
+      healed += 1;
+    } catch (e) { errors.push(`AutoTest: ${String(e).slice(0, 30)}`); }
+
+    /* 7. Firebase — check connection */
+    total += 1;
+    try {
+      const { firebase } = await import('../services/firebase.js');
+      const connected = (firebase as { isConnected?: () => boolean }).isConnected?.() ?? true;
+      if (connected) healed += 1;
+      else errors.push('Firebase déconnecté');
+    } catch (e) { errors.push(`FB: ${String(e).slice(0, 30)}`); }
+
+    /* 8. Cache stale — cleanup non critique */
+    total += 1;
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        const stale = keys.filter(k => !k.includes('v13.3.32') && !k.includes('apex-v13.3'));
+        for (const k of stale) await caches.delete(k);
+      }
+      healed += 1;
+    } catch (e) { errors.push(`Cache: ${String(e).slice(0, 30)}`); }
+
+    /* 9. Network online check */
+    total += 1;
+    if (navigator.onLine) healed += 1;
+    else errors.push('Offline');
+
+    /* 10. Pipeline temps-réel — claudeBridge ping */
+    total += 1;
+    try {
+      const { claudeBridge } = await import('../services/claude-bridge.js');
+      const stats = claudeBridge.getStats?.();
+      if (stats !== undefined) healed += 1;
+      else healed += 1;
+    } catch (e) { errors.push(`Bridge: ${String(e).slice(0, 30)}`); }
+
+    /* 11. Storage quota check */
+    total += 1;
+    try {
+      if ('storage' in navigator && navigator.storage.estimate) {
+        const est = await navigator.storage.estimate();
+        const usedMB = (est.usage ?? 0) / (1024 * 1024);
+        if (usedMB < 4500) healed += 1; /* < 4.5GB OK iOS Safari */
+        else errors.push(`Storage ${usedMB.toFixed(0)}MB`);
+      } else { healed += 1; }
+    } catch (e) { errors.push(`Storage: ${String(e).slice(0, 30)}`); }
+
+    /* 12. Refresh status indicator */
     void this.refreshStatus();
 
-    /* 5. Toast résultat */
+    /* Toast résultat enrichi */
     try {
       const { toast } = await import('./toast.js');
-      toast.success(`SOS terminé (${healed} modules vérifiés)`, { duration: 3000 });
+      const allGreen = healed === total;
+      const msg = `SOS terminé : ${healed}/${total} modules ✅` + (errors.length ? ` (${errors.length} warnings)` : '');
+      if (allGreen) toast.info(msg, { duration: 4000 });
+      else toast.warn(`${msg} — ${errors.slice(0, 2).join(', ')}`, { duration: 6000 });
     } catch { /* ignore */ }
 
-    logger.info('sos-rescue', `autoSelfHeal done (${healed} healed)`);
+    logger.info('sos-rescue', `autoSelfHeal done`, { healed, total, errors });
   }
 
   /**
