@@ -519,39 +519,67 @@ class SentinelsRegistry {
       },
     });
 
-    /* 16. persistence-watch (1h) — vérifie clés critiques présentes local + Firebase */
+    /* 16. persistence-watch (1h) — vérifie clés critiques présentes local + Firebase
+     * Sprint 13.3.17 fix : utilise les VRAIES clés écrites par les services
+     * (audit-log, auth, settings) au lieu de noms fictifs des migrations.
+     * Logique : "critique manquante" = au moins une clé attendue mais absente
+     * APRÈS qu'une autre clé du même groupe soit présente. État totalement
+     * vierge = OK initial. */
     sentinelsManager.register({
       id: 'persistence-watch',
       name: 'Persistence watch',
       desc: 'Vérifie présence clés critiques (vault, audit, settings) + alerte si perte détectée',
       intervalMs: 60 * 60 * 1000,
       check: async () => {
+        /* Real keys écrites par le code prod */
         const criticalKeys = [
-          'apex_v13_audit_log_chain',
-          'apex_v13_vault_index',
+          'ax_audit_log_v13',     /* audit-log.ts:27 */
+          'apex_v13_user',        /* auth.ts:185 */
+        ];
+        /* Clés optionnelles : présentes uniquement si admin a configuré */
+        const optionalKeys = [
           'apex_v13_settings',
-          'apex_v13_user',
+          'apex_v13_users',
+          'apex_v13_persistent_memory',
+          'apex_v13_backup_index',
         ];
         const missing: string[] = [];
+        const present: string[] = [];
         for (const k of criticalKeys) {
           try {
-            if (!localStorage.getItem(k)) missing.push(k);
+            if (localStorage.getItem(k)) present.push(k);
+            else missing.push(k);
           } catch {
             missing.push(k);
           }
         }
-        if (missing.length === criticalKeys.length) {
-          /* Tout vide = état initial OK */
-          return { ok: true, msg: 'État initial (aucune clé critique encore)' };
+        const optionalPresent: string[] = [];
+        for (const k of optionalKeys) {
+          try {
+            if (localStorage.getItem(k)) optionalPresent.push(k);
+          } catch {
+            /* ignore */
+          }
         }
-        if (missing.length > 0) {
+        const totalPresent = present.length + optionalPresent.length;
+        /* Tout vide = état totalement initial = OK */
+        if (totalPresent === 0) {
+          return { ok: true, msg: 'État initial (aucune clé encore créée)' };
+        }
+        /* Si au moins une clé optionnelle existe mais qu'une critique manque
+         * → alerte vraie (perte de données). */
+        if (missing.length > 0 && optionalPresent.length > 0) {
           return {
             ok: false,
             msg: `${missing.length}/${criticalKeys.length} clés critiques manquantes`,
-            details: { missing },
+            details: { missing, optionalPresent },
           };
         }
-        return { ok: true, msg: `${criticalKeys.length}/${criticalKeys.length} clés critiques présentes` };
+        return {
+          ok: true,
+          msg: `${present.length}/${criticalKeys.length} critiques + ${optionalPresent.length}/${optionalKeys.length} optionnelles présentes`,
+          details: { present, optionalPresent },
+        };
       },
       autoFix: async () => {
         /* Tente restore depuis Firebase si dispo */

@@ -63,10 +63,28 @@ async function bootstrap(): Promise<void> {
 
   /* Sentry monitoring runtime (audit Kevin v13.1.0 production-grade).
    * Init AVANT bodyguard pour capturer toute erreur boot.
-   * Lazy-load SDK seulement si DSN configuré dans vault (0 KB overhead sinon). */
+   * Lazy-load SDK seulement si DSN configuré dans vault (0 KB overhead sinon).
+   * v13.3.18 : envoi test event ping après init (1× par jour) si DSN configurée. */
   await safeInit('sentry', async () => {
     const { sentryBridge } = await import('@services/sentry-bridge.js');
     await sentryBridge.init();
+    /* Test event ping 1×/jour si DSN configurée (vérifie que le sink répond) */
+    try {
+      const lastTestKey = 'apex_v13_sentry_last_test_ts';
+      const last = parseInt(localStorage.getItem(lastTestKey) ?? '0', 10);
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (Date.now() - last > oneDay && sentryBridge.isInitialized()) {
+        const result = await sentryBridge.sendTestEvent();
+        if (result.ok) {
+          localStorage.setItem(lastTestKey, String(Date.now()));
+          logger.info('boot', `Sentry test event sent (sink=${result.sink})`);
+        } else {
+          logger.warn('boot', `Sentry test event skipped: ${result.reason ?? 'unknown'}`);
+        }
+      }
+    } catch {
+      /* Test event optionnel — fail silently */
+    }
   });
   await safeInit('bodyguard', async () => {
     const { bodyguard } = await import('@services/bodyguard.js');

@@ -72,7 +72,16 @@ class AuditLog {
 
   async verify(): Promise<{ valid: boolean; brokenAt?: number }> {
     if (!this.initialized) this.init();
-    let prevHash = '0';
+    if (this.chain.length === 0) return { valid: true };
+    /* Sprint 13.3.17 fix : après trim FIFO (slice(-MAX_ENTRIES)) le premier
+     * entry du chain peut référencer un prevHash d'une entry supprimée.
+     * On accepte donc le prevHash courant comme ancre pour les entrées
+     * trimmées : on commence la vérification au prevHash de la première
+     * entrée préservée. Détection tampering reste valide (modifier un
+     * .hash ou .prevHash interne casse toujours la chain). */
+    const first = this.chain[0];
+    if (!first) return { valid: true };
+    let prevHash = first.prevHash;
     for (let i = 0; i < this.chain.length; i++) {
       const entry = this.chain[i];
       if (!entry) continue;

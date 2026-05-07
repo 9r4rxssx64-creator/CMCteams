@@ -1,5 +1,26 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🆕 SESSION 2026-05-07 v13.3.18 — 2 credentials supplémentaires + OAuth optionnels
+
+Suite au rapport Apex IA "20 manques systémiques" (v13.3.16), **2 clés** restent à coller via Coffre :
+
+| # | Clé Apex | Quoi | Où l'obtenir |
+|---|----------|------|--------------|
+| 7 | `ax_stripe_key` | Stripe secret key (paiements abonnements + Checkout) | https://dashboard.stripe.com/apikeys (mode test : `sk_test_...`, prod : `sk_live_...`) |
+| 8 | `ax_twilio_token` + `ax_twilio_account_sid` | Twilio (SMS notifications + WhatsApp Business) | https://console.twilio.com → Account → API keys & tokens |
+
+**Optionnel (recommandé pour score MAX)** :
+
+| # | Clé Apex | Quoi | Où l'obtenir |
+|---|----------|------|--------------|
+| 9 | `ax_pinecone_key` + `ax_pinecone_index` | Pinecone vector DB (RAG mémoire sémantique vs IDB fallback) | https://app.pinecone.io → API Keys (free tier 1GB) |
+
+`services/mcp-memory-stub.ts` détecte automatiquement la clé et bascule en mode Pinecone — sinon fallback IndexedDB local sans perte fonctionnelle.
+
+**OAuth providers (13 services)** : pour activer connexions Gmail/Outlook/YouTube/Instagram/Facebook/TikTok/LinkedIn/Twitter/Telegram/Slack/Notion/Google Photos/Spotify, configurer via vue `?view=credentials` (chaque provider = `console_url` + `client_id`/`client_secret` à coller). Voir `services/oauth-providers-registry.ts` pour liste complète.
+
+---
+
 ## 🚨 SESSION 2026-05-07 — Audit autonomie Apex IA → 6 items à fournir Kevin
 
 Apex IA a fait son auto-audit brutal honnête : score réel **28/100** (pas
