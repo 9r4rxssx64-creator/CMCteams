@@ -62,19 +62,34 @@ describe('sentinels backup-watch cosmetic v13.3.24', () => {
   it('ts > 26h → warn avec format humain (pas "493936h")', async () => {
     const stale = Date.now() - (30 * 60 * 60 * 1000); /* 30h */
     localStorage.setItem('ax_last_backup_ts', String(stale));
-    const result = await sentinels.runOne('backup-watch');
-    expect(result?.ok).toBe(false);
-    expect(result?.msg).toMatch(/Il y a \d+h/);
-    expect(result?.msg).toMatch(/relance/i);
-    expect(result?.msg).not.toMatch(/\d{5,}h/); /* pas plus de 4 chiffres dans le compteur h */
+    /* Désactive temporairement autoFix pour valider le check seul */
+    const sent = sentinels.list().find((s) => s.id === 'backup-watch');
+    const origAutoFix = sent?.autoFix;
+    if (sent) sent.autoFix = undefined;
+    try {
+      const result = await sentinels.runOne('backup-watch');
+      expect(result?.ok).toBe(false);
+      expect(result?.msg).toMatch(/Il y a \d+h/);
+      expect(result?.msg).toMatch(/relance/i);
+      expect(result?.msg).not.toMatch(/\d{5,}h/); /* pas plus de 4 chiffres */
+    } finally {
+      if (sent && origAutoFix) sent.autoFix = origAutoFix;
+    }
   });
 
   it('ts > 30 jours → "Plus de 30 jours" (pas compteur infini)', async () => {
     const veryOld = Date.now() - (45 * 24 * 60 * 60 * 1000); /* 45j */
     localStorage.setItem('ax_last_backup_ts', String(veryOld));
-    const result = await sentinels.runOne('backup-watch');
-    expect(result?.ok).toBe(false);
-    expect(result?.msg).toMatch(/Plus de 30 jours|Il y a 45j/i);
+    const sent = sentinels.list().find((s) => s.id === 'backup-watch');
+    const origAutoFix = sent?.autoFix;
+    if (sent) sent.autoFix = undefined;
+    try {
+      const result = await sentinels.runOne('backup-watch');
+      expect(result?.ok).toBe(false);
+      expect(result?.msg).toMatch(/Plus de 30 jours|Il y a 45j/i);
+    } finally {
+      if (sent && origAutoFix) sent.autoFix = origAutoFix;
+    }
   });
 
   it('format humain : <168h → "Il y a Xh"', async () => {
@@ -88,8 +103,15 @@ describe('sentinels backup-watch cosmetic v13.3.24', () => {
   it('format humain : 168h-30j → "Il y a Xj"', async () => {
     const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
     localStorage.setItem('ax_last_backup_ts', String(tenDaysAgo));
-    const result = await sentinels.runOne('backup-watch');
-    expect(result?.msg).toMatch(/Il y a 10j/);
+    const sent = sentinels.list().find((s) => s.id === 'backup-watch');
+    const origAutoFix = sent?.autoFix;
+    if (sent) sent.autoFix = undefined;
+    try {
+      const result = await sentinels.runOne('backup-watch');
+      expect(result?.msg).toMatch(/Il y a 10j/);
+    } finally {
+      if (sent && origAutoFix) sent.autoFix = origAutoFix;
+    }
   });
 
   it('jamais "493936h" affiché peu importe le timestamp', async () => {

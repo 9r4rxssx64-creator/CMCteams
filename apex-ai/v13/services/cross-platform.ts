@@ -90,7 +90,7 @@ class CrossPlatform {
       return { ok: false, reason: 'wakelock_unavailable' };
     }
     try {
-      this.wakeLockSentinel = await (navigator as { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } })
+      this.wakeLockSentinel = await (navigator as unknown as { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } })
         .wakeLock.request('screen');
       return { ok: true };
     } catch (err: unknown) {
@@ -117,7 +117,7 @@ class CrossPlatform {
       return { ok: false, reason: 'battery_unavailable' };
     }
     try {
-      const battery = await (navigator as { getBattery: () => Promise<{ level: number; charging: boolean }> }).getBattery();
+      const battery = await (navigator as unknown as { getBattery: () => Promise<{ level: number; charging: boolean }> }).getBattery();
       return {
         ok: true,
         data: {
@@ -150,7 +150,7 @@ class CrossPlatform {
       return { ok: false, reason: 'bluetooth_unsupported', fallback: 'manual_pairing' };
     }
     try {
-      const device = await (navigator as { bluetooth: { requestDevice: (opts: object) => Promise<BluetoothDevice> } })
+      const device = await (navigator as unknown as { bluetooth: { requestDevice: (opts: object) => Promise<BluetoothDevice> } })
         .bluetooth.requestDevice({
           filters: filters ?? [{ services: ['battery_service'] }],
           optionalServices: ['battery_service', 'device_information'],
@@ -232,7 +232,7 @@ class CrossPlatform {
       return { ok: false, reason: 'contacts_unsupported', fallback: 'manual_input' };
     }
     try {
-      const contacts = await (navigator as { contacts: { select: (props: string[], opts?: object) => Promise<{ name: string[]; tel: string[]; email: string[] }[]> } })
+      const contacts = await (navigator as unknown as { contacts: { select: (props: string[], opts?: object) => Promise<{ name: string[]; tel: string[]; email: string[] }[]> } })
         .contacts.select(['name', 'tel', 'email'], { multiple: true });
       return { ok: true, data: contacts };
     } catch (err: unknown) {
