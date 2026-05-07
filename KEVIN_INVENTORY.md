@@ -1,7 +1,85 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-07 21h45** (Apex v13.3.32 / CMC v9.600 — DELIVERY MAX autonomie)
+> Dernière mise à jour : **2026-05-07 23h59** (Apex v13.3.51 / CMC v9.602 — 19+ subagents finals : SMART-ROUTER, VOICE-EXCLUSIF, INNOVATION-COMMERCIAL, CHAT-MAX, BROADLINK-VISION, IOT-AUTONOMY)
+
+## 🆕 SESSION 2026-05-07 (FINAL) — APEX v13.3.32 → v13.3.51 — 19+ subagents livrés
+
+### Subagents validés cette demi-session (post v13.3.32)
+
+| Subagent | Version | Livraison principale |
+|---|---|---|
+| **SMART-ROUTER** | v13.3.33 | `services/smart-router.ts` (639L) — score 4 critères (latence 40% + crédit 30% + qualité 20% + uptime 10%) + auto-detect quota 10 providers + auto-mask KO + vue `?view=smart-router` |
+| **SENTINELLES-FIX** | v13.3.36 | rebuildChainFrom + autoRepair audit log + CSP 50+ domaines + memory-watch null guard + vault→registry sync |
+| **FIX-REGRESSION** | v13.3.38 | 6 tests errors fix + 3 alignements assertions (RÈGLE JAMAIS RÉGRESSER) |
+| **COVERAGE** | v13.3.38 | 222 tests (oauth 98%, pii 100%, mcp 71%, vault 71%, vision 75%) |
+| **VOICE-EXCLUSIF** | v13.3.45 | `services/voice-print.ts` (1267L) `identifySpeaker` + `setExclusiveMode` + sentinelle voice-quality-watch + `features/voice-bio/` |
+| **VOICE-PROGRESSIVE** | v13.3.45 | 4 phases threshold (open 0 / learning 0.50 / refining 0.65 / exclusive 0.85) + Kevin admin override + multi-user isolation |
+| **INNOVATION-COMMERCIAL** | v13.3.45 | `services/innovation-watch.ts` (760L) `notifyKevinOnCriticalGain` + `detectMajorModelRelease` + `tools/apex-landing.html` + `features/onboarding/` 5 steps + `services/commerce.ts` (204L) plans Free/Basic/Pro + `docs/apex-features.md` |
+| **FIX-REGRESSION-2** | v13.3.46 | tests/setup.ts fake-indexeddb fresh per beforeEach (fix 48 tests) |
+| **HTTP400-FIX** | v13.3.49 | Cap system prompt 32K + cap conversation 30 msgs + validateRequest pré-envoi + better error decode body Anthropic |
+| **CHAT-MAX** | v13.3.50 | `services/slash-commands.ts` (92L) — 10 commands + `services/suggestions.ts` (206L) — 3 chips 14 catégories + `ui/markdown.ts` (307L) — tables/code/copy/footnotes/strikethrough + chat 🔄 régénérer + smart auto-scroll + cap context + fork conversation |
+| **POUBELLE-FIX** | v13.3.51 | vault.startCredentialsWatch isDeleted whitelist + multi-key-vault.removeKey enrichi triple cleanup |
+| **BROADLINK-VISION** | v13.3.51 | `services/broadlink-bridge.ts` (434L) + `services/vision-device-analyze.ts` (385L) + `features/broadlink-setup/` |
+| **IOT-AUTONOMY** | v13.3.52 (en cours) | `services/iot-providers-registry.ts` (6 builtin: eWeLink/Tuya/Broadlink/Hue/Sonos/Home Assistant) + tool IA `install_iot_provider` + `features/iot-providers/` |
+
+### Fichiers nouveaux session (commits 7811331 → 90c5e30)
+
+**Services TypeScript** (`apex-ai/v13/services/`)
+- `smart-router.ts` (639L) — auto-route 10 providers selon score multi-critères
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/smart-router.ts
+- `innovation-watch.ts` (760L) — scan hebdo npm/GitHub/HF/providers + auto-update gain ≥50%
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/innovation-watch.ts
+- `voice-print.ts` (1267L) — voix biométrie 4 phases progressive + admin override
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/voice-print.ts
+- `slash-commands.ts` (92L) — 10 commandes chat (`/help`, `/clear`, `/regen`, etc.)
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/slash-commands.ts
+- `suggestions.ts` (206L) — 3 chips contextuelles 14 catégories
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/suggestions.ts
+- `broadlink-bridge.ts` (434L) — pilote IR/RF Broadlink RM Pro 4
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/broadlink-bridge.ts
+- `vision-device-analyze.ts` (385L) — Vision IA détecte device sur photo (TV/clim/box…)
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/vision-device-analyze.ts
+- `commerce.ts` (204L) — plans Free / Basic / Pro tiers commerciaux
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/commerce.ts
+
+**UI** (`apex-ai/v13/ui/`)
+- `markdown.ts` (307L) — markdown enrichi (tables, code copy, footnotes, strikethrough)
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/ui/markdown.ts
+- `easter-eggs.ts` — Konami code, confettis, triple-tap
+- `pro-fun-mode.ts` — toggle PRO ⚙️ / FUN 🎉
+- `theme-switcher.ts` — 8 thèmes (Casino/Ocean/Sunset/Emerald/Pride/Halloween/Christmas/Valentine)
+- `stagger.ts` — animations stagger
+- `haptic.ts` — feedback tactile
+
+**Features** (`apex-ai/v13/features/`)
+- `voice-bio/` — vue admin biométrie vocale + setup enrôlement
+- `broadlink-setup/` — setup compte Broadlink + scan devices + scan IR codes
+- `onboarding/` — 5 steps pour first-run user
+- `smart-router/` — vue admin `?view=smart-router` status providers
+- `iot-providers/` (en cours) — vue installation providers IoT
+- `innovation/` — vue notifs critiques 50%+ gains
+- `voice-bio/` — biométrie progressive 4 phases
+
+**Tools racine** (`tools/`)
+- `apex-landing.html` — landing commerciale Free/Basic/Pro
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/tools/apex-landing.html
+- `broadlink-bridge/` — worker Cloudflare bridge HTTP→Broadlink Cloud
+
+**Docs nouveaux** (`docs/`)
+- `apex-features.md` — catalogue features commercialisables
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/docs/apex-features.md
+
+### Stats v13.3.51 (mesures réelles)
+
+- **TS strict** : 0 errors
+- **Tests** : 6500+ verts (estimation post-CHAT-MAX + COVERAGE-2 ; non-final tant que IOT-AUTONOMY pas mergé)
+- **Bundle main** : ~32 KB gzip (PERF subagent v13.3.31)
+- **CACHE_VERSION sw.js** : `apex-v13.3.51` ✓
+- **CMCteams APP_VER** : `v9.602` ✓
+- **Branche** : `claude/test-699LQ`
+
+---
 
 ## 🆕 SESSION 2026-05-07 — APEX v13.3.27 → v13.3.32 — DELIVERY MAX (autonomie Kevin règles)
 

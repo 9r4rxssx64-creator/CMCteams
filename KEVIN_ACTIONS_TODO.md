@@ -1,5 +1,70 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🆕 ÉTAT v13.3.51 — 19+ subagents finals (2026-05-07 23h59)
+
+### ✅ DÉJÀ FAIT (configuré ou auto-géré)
+
+- ✅ **Anthropic Claude key** collée et chiffrée AES-GCM-256 (auto-detect chat → vault)
+- ✅ **Telegram bot** configured : `@Kdmc_kevind_2026_bot` + chat_id `5458942048`
+- ✅ **Tavily key** collée → Web Search opérationnel (alt 1 : https://app.tavily.com/home)
+- ✅ **Firebase RTDB** : règles publiées par Kevin (`cmcteams` + `apex` read/write OK)
+- ✅ **Voice biometrie** : 4 phases progressive automatique (OUVERT → APPRENTISSAGE → AFFINAGE → EXCLUSIF)
+- ✅ **Smart-router** : auto-mask provider KO, auto-route selon score 4 critères
+- ✅ **Innovation-watch** : scan hebdo automatique, push notif Kevin si gain ≥50%
+- ✅ **Pipeline temps-réel** : Apex↔Claude Code via repository_dispatch (cron 5min + handoff_journal SSE)
+
+### ⏳ Provider fallback IA (Apex auto-failover)
+
+- [ ] **Recharger Groq key** (auto-mask actif si KO depuis >24h, sinon refailback Anthropic)
+  - Lien : https://console.groq.com/keys
+  - Smart-router prendra le relais automatiquement quand recharge faite
+- [ ] **OpenAI** (optionnel, failover N°2 actuel via smart-router)
+  - Lien : https://platform.openai.com/account/api-keys
+- [ ] **Gemini** (optionnel, free 15 req/min, failover N°3)
+  - Lien : https://aistudio.google.com/apikey
+
+### 🏠 IoT credentials (Apex pilote SmartHome — subagent BROADLINK-VISION + IOT-AUTONOMY)
+
+Pour qu'Apex pilote ta domotique en autonomie via vision IA + commandes vocales :
+
+- [ ] **eWeLink** (Sonoff prises connectées)
+  - Email + password compte eWeLink
+  - Lien : https://us-apia.coolkit.cc + dashboard https://web.ewelink.cc
+  - Tool IA `install_iot_provider` push registry
+- [ ] **SmartLife / Tuya** (lampes, prises, capteurs Tuya-compatibles)
+  - client_id + secret cloud Tuya developer
+  - Lien : https://developer.tuya.com/en/docs/cloud/
+- [ ] **Broadlink** (RM Pro 4 IR/RF — déjà configuré localement, ajouter cloud sync)
+  - Email + password compte ibroadlink (https://api.ibroadlink.com)
+  - Bridge : `tools/broadlink-bridge/` Cloudflare Worker
+
+### 💡 Optionnels (commerciaux / clients pro)
+
+- [ ] **Stripe** : `ax_stripe_key` (pk + sk) — paiements clients pro plans Free/Basic/Pro (commerce.ts livré)
+- [ ] **Twilio** : `ax_twilio_token` — SMS clients OTP (validation 2FA)
+- [ ] **Pinecone** : vector DB pour mémoire long-terme >1000 facts/user (sentinelle memory-watch compress sinon)
+- [ ] **Anthropic** : déjà configuré ✓
+- [ ] **OpenClaw** : optionnel, alt provider IA
+
+### 🔧 Tester nouvelles fonctions (recommandé)
+
+1. **Smart-router** — `?view=smart-router` voir status + score live des 10 providers
+2. **Voice biometrie** — `?view=voice-bio` enrôler ta voix (Kevin admin override actif)
+3. **Innovation-watch** — `?view=innovation` voir notifs critiques 50%+ détectées hier
+4. **Chat MAX** — taper `/help` dans chat, voir 10 slash commands + 3 chips suggestions + 🔄 régénérer
+5. **Markdown enrichi** — l'IA peut maintenant rendre tables, code blocks copy, footnotes, strikethrough
+6. **Broadlink + Vision** — `?view=broadlink-setup` photographier un device → Apex détecte + propose codes IR
+7. **Onboarding** — premier login user voit 5 steps guidés
+8. **Easter eggs** — Konami code (↑↑↓↓←→←→BA) déclenche confettis
+
+### 📡 Pipeline temps-réel actif
+
+- ✅ Apex push erreur critique → repository_dispatch GitHub immédiat → workflow tourne <30s → Issue auto
+- ✅ Claude Code fix → handoff_journal Firebase → Apex SSE listener affiche résolution
+- ✅ Action Kevin pour tester : console Apex `claudeBridge.pushTodo({severity:'critical', title:'TEST', description:'pipeline test', type:'investigate', src:'apex'})` → workflow GitHub doit déclencher dans <30s
+
+---
+
 ## 🧠 v13.3.27 — Mémoire long-terme + relecture profonde tous docs (Kevin 2026-05-07 19h45, subagent O)
 
 **Demande Kevin** : "Apex doit reprendre tous ses documents, savoir exactement

@@ -1,6 +1,170 @@
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**
+> Apex relit ce doc au boot via `memory.syncDocsAtBoot()` (cache 6h IDB).
+
+---
+
+## 🆕 SESSION 2026-05-07 — Nouvelles fonctions Apex / outils / liens (Kevin 23h59)
+
+### 🏠 IoT Smart Home — Apex pilote la domotique (livré v13.3.51 + IOT-AUTONOMY en cours v13.3.52)
+
+**Subagent BROADLINK-VISION + IOT-AUTONOMY** : Apex peut maintenant identifier un device sur photo (Vision IA GPT-4o) puis envoyer commande IR/RF/Wi-Fi automatique.
+
+**Providers IoT installables** (registry `services/iot-providers-registry.ts` — 6 builtin) :
+| Provider | URL cloud | Devices supportés |
+|---|---|---|
+| **eWeLink** (Sonoff) | https://us-apia.coolkit.cc | Prises Wi-Fi, interrupteurs, capteurs |
+| **Tuya / SmartLife** | https://openapi.tuyaeu.com | Lampes, prises, capteurs Tuya |
+| **Broadlink** (RM Pro 4) | https://api.ibroadlink.com | IR universel + RF 433MHz |
+| **Philips Hue** | bridge local | Lampes Hue |
+| **Sonos** | API local SOAP | Enceintes Sonos |
+| **Home Assistant** | http://homeassistant.local:8123 | Tout intégré HA |
+
+**Tool IA** : `install_iot_provider` permet à l'IA d'installer un provider en autonomie via dialog Kevin.
+
+**Vue admin** : `?view=broadlink-setup` (scan compte + devices + codes IR) + `?view=iot-providers` (liste + install).
+
+**Apex flow autonome** :
+1. Kevin photographie une TV → `vision-device-analyze.ts` détecte marque+modèle
+2. Apex cherche dans Broadlink Cloud les codes IR pour ce modèle
+3. Pilote en 1 commande vocale : "Dis Apex éteins la TV salon"
+
+### 🔧 Outils Apex chat (livré v13.3.50 — CHAT-MAX subagent)
+
+Le chat Apex a été poussé au max :
+
+**10 Slash commands** (`services/slash-commands.ts`) :
+- `/help` — liste commandes
+- `/clear` — efface conversation
+- `/regen` — régénère dernier message IA
+- `/fork` — fork conversation à partir d'un message
+- `/voice` — toggle voix TTS
+- `/theme [casino|ocean|sunset|emerald|pride|halloween|christmas|valentine]` — change thème
+- `/persona [pro|fun|expert|ami]` — change personnalité IA
+- `/lang [fr|en|it|es|de]` — change langue
+- `/export` — export conversation Markdown
+- `/share` — copy lien partage
+
+**3 Chips suggestions** (`services/suggestions.ts`) — 14 catégories contextuelles :
+Affichées sous greeting initial, contextuelles selon historique :
+finance, music, video, archi, photo, admin/loi, cuisine, médical, voyage, traduction, calcul, créatif, juridique, scientifique.
+
+**Markdown enrichi** (`ui/markdown.ts` — 307 lignes) :
+- Tables avec alignement
+- Code blocks avec bouton copy + syntax highlight progressif
+- Footnotes `[^1]`
+- Strikethrough `~~texte~~`
+- Auto-linkify URLs
+
+**Chat features** :
+- 🔄 **Régénérer** (button per-message) — ré-appelle IA avec même prompt
+- 📋 **Fork conversation** — branche depuis n'importe quel message
+- ✂ **Smart auto-scroll** — ne scroll pas si user a scrollé manuellement (UX iPhone fix)
+- 🧹 **Cap context** — 30 messages max envoyés à API (cap system prompt 32K + cap conversation)
+
+### 🛡 Sécurité credentials (livré v13.3.51 — POUBELLE-FIX)
+
+**Bug fix Kevin "j'ai poubelle plusieurs fois mais il se remet"** :
+- `vault.startCredentialsWatch` whitelist `isDeleted` → suppressions persistent (pas re-restore depuis IDB shadow)
+- `multi-key-vault.removeKey` triple cleanup : localStorage + IDB shadow + Firebase + audit
+- Bouton "Récupérer cette clé" 🔓 si decrypt failed (multi-passphrase retry)
+
+### 📡 Pipeline temps-réel Apex↔Claude Code (livré v13.3.27 — subagent N)
+
+**Conférence autonome bidirectionnelle** :
+- Apex push erreur critique → `claudeBridge.escalateNow(todo)` → POST `/repos/.../dispatches` GitHub → workflow tourne immédiatement (<30s)
+- Workflow ouvre Issue auto avec contexte
+- Claude Code fix → écrit `handoff_journal` Firebase action='fixed'
+- Apex SSE listener auto-résout todo + toast doré "🤝 Claude Code a fixé : [titre]"
+
+**Workflow** : `.github/workflows/claude-todo-watcher.yml` cron **5min** + repository_dispatch immédiat.
+
+**Action Kevin pour activer** : Coffre `ax_github_token` (PAT scope `repo` + `workflow`).
+
+### 📊 Smart-router IA (livré v13.3.33 — SMART-ROUTER subagent)
+
+**Auto-route 10 providers selon score 4 critères pondérés** (`services/smart-router.ts` 639L) :
+- **Latence** 40% (mesure live)
+- **Crédit restant** 30% (auto-detect quota)
+- **Qualité** 20% (selon use-case : code/vision/chat)
+- **Uptime** 10% (historique 7j)
+
+**Auto-mask** provider KO depuis >24h (sentinelle smart-router-watch).
+
+**Vue admin** : `?view=smart-router` voir status live + score temps réel.
+
+**Préférences Kevin** :
+- **Veille X / Twitter / Telegram** → Grok (xAI)
+- **Code / refactor / architecture** → Claude (Anthropic)
+- **Vision / photos / device-analyze** → GPT-4o (OpenAI)
+- **Latence critique** → Groq (Llama 3.3 70B Versatile)
+
+### 🎤 Voice biometrie progressive (livré v13.3.45 — VOICE-EXCLUSIF + VOICE-PROGRESSIVE)
+
+**4 phases progressive** (`services/voice-print.ts` 1267L) :
+| Phase | Threshold | Comportement |
+|---|---|---|
+| **OUVERT** | 0.00 | Tout le monde peut activer wake word "Dis Apex" |
+| **APPRENTISSAGE** | 0.50 | Apex apprend ta voix sur 5 messages |
+| **AFFINAGE** | 0.65 | Score similarité progressif, fausses détections silencieuses |
+| **EXCLUSIF** | 0.85 | Seul user enrôlé déclenche, Kevin admin override actif |
+
+**Multi-user isolation** : `ax_voice_print_<uid>` (FB_LOCAL strict, jamais sync Firebase, biométrique).
+
+**Kevin admin override** : Kevin reconnu dans la vue de Laurence → mode admin temporaire pour cette commande seulement.
+
+**Vue admin** : `?view=voice-bio` enrôler/tester/supprimer.
+
+### 🌐 Liens nouveaux à connaître
+
+| Service | URL | Usage |
+|---|---|---|
+| **Tavily** | https://app.tavily.com/home | Web search alt 1 (key collée Kevin ✓) |
+| **Brave Search API** | https://brave.com/search/api/ | Web search alt 2 (gratuit 2000 req/mois) |
+| **Google Custom Search** | https://programmablesearchengine.google.com/ | Web search alt 3 |
+| **Broadlink Cloud** | https://api.ibroadlink.com | IoT IR/RF Broadlink |
+| **eWeLink** | https://us-apia.coolkit.cc | IoT Sonoff |
+| **Tuya / SmartLife** | https://openapi.tuyaeu.com + https://developer.tuya.com/en/docs/cloud/ | IoT Tuya |
+| **eWeLink API docs** | https://coolkit-technologies.github.io/eWeLink-API/ | Doc dev eWeLink |
+
+### 🎨 UX session FINAL (livré v13.3.31 — UX subagent)
+
+**8 thèmes complets** :
+Casino (or noir) / Ocean (bleu) / Sunset (orange) / Emerald (vert) / Pride / Halloween / Christmas / Valentine.
+
+**10 voix FUN** (rajoutées aux 51 existantes = 61 total) :
+Hulk, Voldemort, Rappeur, BébéRobot, Vache, Chien, Chat, YodaPlus, Minion, T-Rex.
+
+**Easter eggs** :
+- Konami code (↑↑↓↓←→←→BA) → confettis géants
+- Triple-tap logo → mode FUN auto-activé
+- 4× boot consécutifs → message gratitude
+
+**PRO ⚙️ / FUN 🎉 toggle global** (top right) — switch instantané ton réponses IA.
+
+### 💰 Plans commerciaux (livré v13.3.45 — INNOVATION-COMMERCIAL)
+
+`services/commerce.ts` (204L) — tiers Free / Basic / Pro :
+- **Free** : 100 messages/mois, 3 voix, pas Studios
+- **Basic** : 9.99€/mois — 1000 msg, 50 voix, Studios musique+vidéo+CV
+- **Pro** : 29.99€/mois — illimité, 61 voix, tous Studios, IA Pro priorité, support direct
+
+**Landing commerciale** : `tools/apex-landing.html` (admin Kevin déploie sur kdmc.cloud).
+
+**Onboarding** : `features/onboarding/` 5 steps first-run (chat → voice → studios → favoris → "Mes compétences IA").
+
+**Catalogue features** : `docs/apex-features.md` — pour pitch commercial.
+
+### 🌳 Décisions Kevin gravées (cette session)
+
+- ✅ **Garde Claude + Grok** (smart-router auto-route selon use-case, pas besoin de choisir)
+- ✅ **10 clés Coffre** prioritaires : Anthropic, GitHub, Groq, DeepSeek, Mistral, Cohere, xAI, Perplexity, YouTube, Railway
+- ✅ **Wake word** : 4 phases progressives (OUVERT → APPRENTISSAGE → AFFINAGE → EXCLUSIF) — pas d'enrôlement obligatoire au début
+- ✅ **Casino Monaco** : préférences IA selon use-case (X = Grok, code = Claude, vision = GPT-4o, latence = Groq)
+- ✅ **IoT à piloter** : Broadlink + eWeLink + SmartLife + futurs (auto-installable via tool IA)
+
+---
 
 ## 👤 IDENTIFIANTS DE CONNEXION — ordre flexible (Kevin 2026-04-21)
 
