@@ -280,12 +280,12 @@ class ThemeSwitcher {
 
   /** Reset au défaut Casino Gold + clear persist */
   reset(): void {
+    this.apply('casino-gold', { persist: false });
     try {
       if (typeof localStorage !== 'undefined') localStorage.removeItem(this.storageKey);
     } catch {
       /* ignore */
     }
-    this.apply('casino-gold');
   }
 }
 

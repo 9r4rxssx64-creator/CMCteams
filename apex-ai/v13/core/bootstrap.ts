@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.27';
+export const APP_VER = 'v13.3.29';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -116,6 +116,18 @@ async function bootstrap(): Promise<void> {
     const { observability } = await import('@services/observability.js');
     observability.init();
   });
+
+  /* v13.3.29 — UX Premium : init theme + dual mode + easter eggs au boot.
+   * Apply CSS vars sur <html> (data-theme, data-mode) + détection saisonnier auto.
+   * Konami code listener installé sur window. Idempotent. */
+  await safeInit('ux-theme-mode', async () => {
+    const { themeSwitcher } = await import('../ui/theme-switcher.js');
+    const { proFunMode } = await import('../ui/pro-fun-mode.js');
+    const { easterEggs } = await import('../ui/easter-eggs.js');
+    themeSwitcher.init();
+    proFunMode.init();
+    easterEggs.install();
+  });
   await safeInit('firebase-queue', async () => {
     const { firebaseQueue } = await import('@services/firebase-queue.js');
     firebaseQueue.init();
@@ -154,6 +166,12 @@ async function bootstrap(): Promise<void> {
    * Non-bloquant : permet à buildSystemPromptDeep() d'avoir docs frais à dispo. */
   void memory.syncDocsAtBoot().catch((err: unknown) => {
     logger.warn('boot', 'Docs sync at boot failed (continuing)', { err });
+  });
+
+  /* v13.3.30 (Kevin 2026-05-07) : auto-bootstrap Identité Kevin admin.
+   * Idempotent (marqueur ax_kevin_init_done) — pousse dès que admin login détecté. */
+  void memory.initBootDefaults().catch((err: unknown) => {
+    logger.warn('boot', 'Kevin initBootDefaults failed (continuing)', { err });
   });
 
   /* 5. Services lazy-load (services/ chargés à la demande par router) */
@@ -445,9 +463,11 @@ async function bootstrap(): Promise<void> {
   events.emit('boot:complete', { ctx, bootMs });
 }
 
-/* Entry */
+/* Entry — guard SSR/test environments où document est undefined (Vitest happy-dom).
+ * v13.3.28 perf 100/100 : évite ReferenceError unhandled dans test runners. */
 bootstrap().catch((err: unknown) => {
   console.error('[APEX boot crash]', err);
+  if (typeof document === 'undefined') return;
   /* Show user-friendly fallback (anti-pattern : pas d'erreur technique brute) */
   const root = document.getElementById('apex-root');
   if (root) {
