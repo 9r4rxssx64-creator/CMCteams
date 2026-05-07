@@ -45,9 +45,90 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; k
 
 class Vault {
   private passphrase: string | null = null;
+  private watchStarted = false;
 
   setPassphrase(passphrase: string): void {
     this.passphrase = passphrase;
+  }
+
+  /**
+   * v13.3.20 FIX KEVIN "Apex oublie ses codes sans cesse" (2026-05-07) :
+   * Sentinelle credentials-watch :
+   * 1. Storage event listener — détecte effacement externe (autre tab, devtools).
+   * 2. Polling 30s — auto-restore depuis IDB shadow si localStorage vidée.
+   * 3. Alerte Kevin si effacement détecté (kevin-alerts).
+   *
+   * Idempotent : multi-call OK (watchStarted guard).
+   */
+  startCredentialsWatch(): void {
+    if (this.watchStarted) return;
+    if (typeof window === 'undefined') return;
+    this.watchStarted = true;
+    /* 1. Storage event listener (cross-tab + devtools manual remove) */
+    window.addEventListener('storage', (e) => {
+      const key = e.key;
+      if (!key) return;
+      if (!(key.endsWith('_key') || key.endsWith('_token'))) return;
+      if (e.newValue !== null && e.newValue !== '') return; /* Pas un effacement */
+      if (!e.oldValue) return; /* Pas de valeur perdue */
+      logger.error('vault-watch', `🚨 KEY ERASED via storage event : ${key}`, {
+        oldLen: e.oldValue.length,
+      });
+      /* Auto-restore depuis IDB shadow si possible */
+      void this.readKeyFromIdb(key).then((idbValue) => {
+        if (idbValue) {
+          try {
+            localStorage.setItem(key, idbValue);
+            logger.info('vault-watch', `✅ ${key} auto-restored from IDB shadow after external erase`);
+          } catch (err: unknown) {
+            logger.error('vault-watch', `Auto-restore failed for ${key}`, { err });
+          }
+        }
+      }).catch(() => { /* IDB miss — alerte Kevin ci-dessous */ });
+      /* Alerte Kevin (best-effort) */
+      void import('./kevin-alerts.js').then(({ kevinAlerts }) => {
+        kevinAlerts.send(`🚨 Code ${key.replace('ax_', '').replace('_key', '').replace('_token', '')} effacé (autre onglet ou devtools). Auto-restore tenté depuis IDB.`).catch(() => { /* ignore */ });
+      }).catch(() => { /* ignore */ });
+    });
+    /* 2. Polling 30s — vérifie credentials critiques toujours présentes */
+    const VAULT_KEYS_CRITICAL = [
+      'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key',
+      'ax_openrouter_key', 'ax_telegram_token', 'ax_github_token', 'ax_stripe_sk',
+    ];
+    setInterval(() => {
+      void (async () => {
+        for (const key of VAULT_KEYS_CRITICAL) {
+          try {
+            const local = localStorage.getItem(key);
+            if (local) continue; /* OK */
+            const idb = await this.readKeyFromIdb(key);
+            if (idb) {
+              try {
+                localStorage.setItem(key, idb);
+                logger.info('vault-watch', `🔄 ${key} restored from IDB shadow (poll 30s)`);
+              } catch { /* quota */ }
+            }
+          } catch { /* skip */ }
+        }
+      })();
+    }, 30_000);
+    /* 3. Pre-flight au boot : restore depuis IDB shadow si manquantes en localStorage
+     * (triple persistence règle Kevin v9.519). */
+    void (async () => {
+      for (const key of VAULT_KEYS_CRITICAL) {
+        try {
+          if (localStorage.getItem(key)) continue;
+          const idb = await this.readKeyFromIdb(key);
+          if (idb) {
+            try {
+              localStorage.setItem(key, idb);
+              logger.info('vault-watch', `🔄 boot pre-flight : ${key} restored from IDB shadow`);
+            } catch { /* quota */ }
+          }
+        } catch { /* skip */ }
+      }
+    })();
+    logger.info('vault-watch', '✅ Credentials watch started (storage event + poll 30s + boot restore)');
   }
 
   async deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -512,24 +593,59 @@ class Vault {
        multi-key-vault au lieu d'écraser. Single-key reste pour back-compat
        (legacy reads via getApiKey/readKey). */
     void this.maybeAddToMultiKeyVault(detected, trimmed);
-    /* P0 SÉCU CRITIQUE : chiffrement systématique au repos (audit v13.0.10).
-       Avant : localStorage en plaintext = clés visibles DevTools.
-       Après : AES-GCM 256 + PBKDF2 200k via encryptAuto (passphrase user OU device-bound). */
-    try {
-      const encrypted = await this.encryptAuto(trimmed);
-      localStorage.setItem(detected.storageKey, encrypted);
-      /* Sprint 8 v13.0.61 P0 BUG FIX : push Firebase backup chiffré pour SURVIVRE clear cache iPhone
-         (Kevin règle "ne plus jamais perdre clé API"). FB_FIX whitelist déjà inclut storageKey. */
-      void import('./firebase.js').then(async ({ firebase, FB_FIX }) => {
-        if (FB_FIX.includes(detected.storageKey)) {
-          await firebase.write(detected.storageKey, encrypted).catch(() => { /* offline OK, queue flush */ });
-          logger.info('vault', `🔐 ${detected.storageKey} backup Firebase OK (survit clear cache)`);
-        }
-      }).catch(() => { /* offline OK */ });
-    } catch (err: unknown) {
-      logger.error('vault', 'autoStore encrypt+persist failed', { err });
-      return { ok: false, reason: 'Chiffrement ou stockage échoué' };
+    /* v13.3.20 FIX KEVIN "Apex oublie ses codes sans cesse" (2026-05-07) :
+     * AVANT : autoStore faisait localStorage.setItem direct + Firebase write,
+     *         SANS IDB shadow + SANS verify post-write + SANS retry.
+     *         Si quota exceeded ou Safari iOS edge case → clé perdue silencieusement.
+     * APRÈS : délègue à setKey() qui fait :
+     *   1. encryptAuto (avec fallback device-bound)
+     *   2. localStorage.setItem (immédiat)
+     *   3. IDB shadow (writeKeyToIdb — résiste clear cache Safari)
+     *   4. Firebase backup (cross-device + survive réinstall PWA)
+     * + VERIFY post-write avec retry x3 (Kevin règle triple persistence v9.519). */
+    const setResult = await this.setKey(detected.storageKey, trimmed);
+    if (!setResult.ok) {
+      logger.error('vault', 'autoStore setKey returned ok:false', { storageKey: detected.storageKey, persisted: setResult.persisted });
+      return { ok: false, reason: 'Chiffrement ou stockage échoué (triple persistence failed)' };
     }
+    /* VERIFY : lecture immédiate doit retourner le plaintext original.
+     * Si fail (corruption, race, quota silent), retry 3x avec backoff. */
+    let verified = false;
+    for (let attempt = 0; attempt < 3 && !verified; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 100 * attempt));
+      try {
+        const readback = await this.readKey(detected.storageKey);
+        if (readback === trimmed) {
+          verified = true;
+          break;
+        }
+        logger.warn('vault', `autoStore VERIFY mismatch attempt ${attempt + 1}/3`, {
+          storageKey: detected.storageKey,
+          readbackLen: readback.length,
+          expectedLen: trimmed.length,
+        });
+        /* Re-essai setKey */
+        await this.setKey(detected.storageKey, trimmed);
+      } catch (err: unknown) {
+        logger.warn('vault', `autoStore VERIFY error attempt ${attempt + 1}/3`, { err });
+      }
+    }
+    if (!verified) {
+      logger.error('vault', `🚨 autoStore VERIFY FAILED after 3 retries — credential possibly lost`, {
+        storageKey: detected.storageKey,
+        persisted: setResult.persisted,
+      });
+      /* Alerte Kevin si possible (best-effort) */
+      void import('./kevin-alerts.js').then(({ kevinAlerts }) => {
+        void kevinAlerts.alertKevin({
+          severity: 'critical',
+          title: `🚨 Code ${detected.name} non persisté`,
+          body: 'Verify post-write échoué. Recolle la clé.',
+        }).catch(() => { /* ignore */ });
+      }).catch(() => { /* ignore */ });
+      return { ok: false, reason: 'Verify post-write échoué — recolle la clé' };
+    }
+    logger.info('vault', `✅ autoStore VERIFIED ${detected.storageKey}`, setResult.persisted);
     /* Auto-link legacy : enrichit ax_links_registry old format */
     this.autoLink(detected);
     /* WIRE links-registry : autoCreate avec HEAD verification + sentinelle re-test

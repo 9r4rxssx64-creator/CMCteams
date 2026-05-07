@@ -155,10 +155,20 @@ class Firebase {
   /**
    * Sprint 8 : Restore clés API chiffrées depuis Firebase vers localStorage si manquantes.
    * Survit "Effacer historique Safari" complet iPhone.
+   *
+   * v13.3.20 FIX KEVIN "Apex oublie ses codes sans cesse" (2026-05-07) :
+   * - Délègue à vault.restoreFromFirebase qui VALIDE la décryption avant overwrite.
+   * - Hydrate aussi IDB shadow (triple persistence règle Kevin v9.519).
+   * - Skip valeurs corrompues (decrypt fail) au lieu de les écrire en localStorage.
    */
   private async restoreVaultKeysFromFirebase(): Promise<void> {
     const VAULT_KEYS = FB_FIX.filter((k) => k.endsWith('_key') || k.endsWith('_token'));
     let restored = 0;
+    let skipped = 0;
+    let vaultMod: typeof import('./vault.js') | null = null;
+    try {
+      vaultMod = await import('./vault.js');
+    } catch { /* offline OK, fallback raw write below */ }
     for (const key of VAULT_KEYS) {
       try {
         if (localStorage.getItem(key)) continue; /* Déjà présent local */
@@ -166,14 +176,20 @@ class Firebase {
         const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!r.ok) continue;
         const value = await r.json() as unknown;
-        if (typeof value === 'string' && value.length > 0) {
+        if (typeof value !== 'string' || value.length === 0) continue;
+        /* Délégation vault si dispo (validate decrypt + hydrate IDB) */
+        if (vaultMod) {
+          const ok = await vaultMod.vault.restoreFromFirebase(key, value);
+          if (ok) restored++;
+          else skipped++;
+        } else {
           localStorage.setItem(key, value);
           restored++;
         }
       } catch { /* skip */ }
     }
     if (restored > 0) {
-      logger.info('firebase', `🔄 ${restored} clés API restorées depuis Firebase backup`);
+      logger.info('firebase', `🔄 ${restored} clés API restorées depuis Firebase backup (skipped: ${skipped})`);
     }
   }
 
@@ -377,6 +393,11 @@ class Firebase {
   /**
    * Anti-pattern v12 corrigé : si Firebase retourne null mais valeur locale existe,
    * NE PAS écraser. Source de vérité = local non-null > Firebase null.
+   *
+   * v13.3.20 FIX KEVIN "Apex oublie ses codes" (2026-05-07) :
+   * - Si valeur Firebase = AXENC1: chiffré ET vault key (ax_*_key/_token), valider
+   *   décryption AVANT d'écraser local. Si decrypt fail → garder local (plain wins).
+   * - "plain wins over encrypted-corrupt" guard renforcé (Kevin règle triple persistence).
    */
   private applyRemoteChange(path: string, data: unknown): void {
     const key = path.replace(/^\//, '').split('/')[0];
@@ -386,6 +407,22 @@ class Firebase {
       const existing = localStorage.getItem(key);
       if (existing) {
         logger.debug('firebase', `Skip null overwrite for ${key} (plain wins)`);
+        return;
+      }
+    }
+    /* v13.3.20 : si vault key reçue chiffrée, valider decrypt avant overwrite local.
+     * Évite que SSE écrase une clé locale valide par une corruption Firebase. */
+    const isVaultKey = key.endsWith('_key') || key.endsWith('_token');
+    if (isVaultKey && typeof data === 'string' && data.startsWith('AXENC1:')) {
+      const existing = localStorage.getItem(key);
+      if (existing && existing !== data) {
+        /* On a déjà une valeur locale différente — on délègue à vault.restoreFromFirebase
+         * qui valide le décrypt avant écrasement (anti-corruption Firebase). */
+        void import('./vault.js').then(({ vault }) => {
+          void vault.restoreFromFirebase(key, data).catch(() => {
+            logger.debug('firebase', `Vault key ${key} restore from FB skipped (decrypt fail or invalid)`);
+          });
+        }).catch(() => { /* offline OK */ });
         return;
       }
     }
