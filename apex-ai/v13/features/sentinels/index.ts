@@ -77,7 +77,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                   ${ageMin !== null ? `<div style="font-size:10px;color:#888">il y a ${ageMin}min</div>` : ''}
                 </td>
                 <td style="padding:10px;text-align:right">
-                  <button class="ax-btn ax-btn-sm ax-sent-run" data-sent-id="${s.id}" style="padding:4px 10px;font-size:11px" aria-label="Exécuter ${escapeHtml(s.name)}">▶️</button>
+                  <button class="ax-btn ax-btn-sm ax-sent-run" data-sent-id="${s.id}" style="padding:4px 10px;font-size:11px" aria-label="Exécuter sentinelle">▶️</button>
                 </td>
               </tr>
             `;
