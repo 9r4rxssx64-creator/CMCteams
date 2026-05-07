@@ -22,8 +22,8 @@
  * - Bouton suppression demande confirmation (RGPD)
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { voicePrint } from '../../services/voice-print.js';
 import { haptic } from '../../ui/haptic.js';
