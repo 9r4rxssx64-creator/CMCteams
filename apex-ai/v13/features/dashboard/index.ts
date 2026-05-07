@@ -328,8 +328,15 @@ function renderTodos(todos: ReadonlyArray<DashboardTodo>): string {
 /**
  * Sprint 9 Kevin règle 2026-05-07 : rend la card "🚥 Statut services IA"
  * avec lumières par service + lien click → modal détail clés.
+ *
+ * v13.0.20+ Kevin règle 2026-05-07 : ajout boutons recharge/usage directs
+ * pour qu'un clic atterrisse sur la bonne page billing du provider (pas dashboard
+ * racine). Les URLs viennent de linksRegistry.getRechargeLink() / getUsageLink().
  */
-export function renderServiceHealthCard(items: ReadonlyArray<ServiceHealthLight>): string {
+export function renderServiceHealthCard(
+  items: ReadonlyArray<ServiceHealthLight>,
+  rechargeLinks: Readonly<Record<string, { recharge: string | null; usage: string | null; apiKeys: string | null }>> = {},
+): string {
   if (items.length === 0) {
     return `
       <div class="ax-modernized-card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
@@ -353,19 +360,61 @@ export function renderServiceHealthCard(items: ReadonlyArray<ServiceHealthLight>
       const color = lightColor[s.light];
       const label = lightLabel[s.light];
       const stats = `${s.activeKeys}/${s.totalKeys} active${s.failingKeys > 0 ? ` · ${s.failingKeys} failing` : ''}${s.invalidKeys > 0 ? ` · ${s.invalidKeys} invalid` : ''}`;
+      const links = rechargeLinks[s.service] ?? { recharge: null, usage: null, apiKeys: null };
+      /* Bouton "Recharge directe" visible si yellow/red OU si recharge URL connue. */
+      const showRecharge = links.recharge && (s.light === 'yellow' || s.light === 'red' || s.light === 'gray');
+      const rechargeBtn = showRecharge && links.recharge
+        ? `<a class="ax-recharge-btn" href="${escapeHtml(links.recharge)}" target="_blank" rel="noopener noreferrer"
+            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent"
+>💳 Recharge</a>`
+        : '';
+      const usageBtn = links.usage
+        ? `<a class="ax-usage-btn" href="${escapeHtml(links.usage)}" target="_blank" rel="noopener noreferrer"
+            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;font-weight:600;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent;border:1px solid rgba(106,138,255,0.3)"
+>📊 Usage</a>`
+        : '';
       return `
-        <button class="ax-service-health-row ax-modernized-card ax-bounce-tap" data-route="vault" data-service="${escapeHtml(s.service)}"
-          style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;width:100%;cursor:pointer;text-align:left;transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards;-webkit-tap-highlight-color:transparent">
-          <span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;box-shadow:0 0 12px ${color};flex-shrink:0"></span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:600;color:#fff;text-transform:capitalize">${escapeHtml(s.service)}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${escapeHtml(stats)}</div>
-          </div>
-          <span style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.06em">${escapeHtml(label)}</span>
-          <span style="color:${color};font-size:18px;opacity:0.7">→</span>
-        </button>`;
+        <div class="ax-service-health-row ax-modernized-card"
+          style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;width:100%;text-align:left;transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards;flex-wrap:wrap">
+          <button class="ax-service-health-main ax-bounce-tap" data-route="vault" data-service="${escapeHtml(s.service)}"
+            style="display:flex;align-items:center;gap:12px;background:transparent;border:0;color:inherit;flex:1;min-width:200px;cursor:pointer;text-align:left;padding:0;-webkit-tap-highlight-color:transparent">
+            <span aria-hidden="true" style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;box-shadow:0 0 12px ${color};flex-shrink:0"></span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#fff;text-transform:capitalize">${escapeHtml(s.service)}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${escapeHtml(stats)}</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">${escapeHtml(label)}</span>
+          </button>
+          ${rechargeBtn}
+          ${usageBtn}
+        </div>`;
     })
     .join('');
+}
+
+/**
+ * Charge les URLs directes (recharge/usage/api_keys) pour chaque service connu.
+ * Utilisé par renderServiceHealthCard pour afficher boutons "Recharge"/"Usage"
+ * qui pointent SUR LA BONNE PAGE billing — pas dashboard racine (Kevin v13.0.20+).
+ */
+export async function loadRechargeLinks(
+  services: ReadonlyArray<string>,
+): Promise<Record<string, { recharge: string | null; usage: string | null; apiKeys: string | null }>> {
+  const out: Record<string, { recharge: string | null; usage: string | null; apiKeys: string | null }> = {};
+  if (services.length === 0) return out;
+  try {
+    const { linksRegistry } = await import('../../services/links-registry.js');
+    for (const service of services) {
+      out[service] = {
+        recharge: linksRegistry.getRechargeLink(service),
+        usage: linksRegistry.getUsageLink(service),
+        apiKeys: linksRegistry.getApiKeysLink(service),
+      };
+    }
+  } catch {
+    /* fallback: keep empty record */
+  }
+  return out;
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
@@ -377,6 +426,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     loadAlerts(),
     loadServiceHealth(),
   ]);
+  /* v13.0.20+ Kevin : charge les liens recharge directs pour chaque service détecté
+     (pas page racine — bouton "Recharge" atterrit sur billing exact du provider). */
+  const rechargeLinks = await loadRechargeLinks(serviceHealth.map((s) => s.service));
   const todos = loadTodos();
 
   rootEl.innerHTML = `
@@ -423,7 +475,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
         </h2>
-        ${renderServiceHealthCard(serviceHealth)}
+        ${renderServiceHealthCard(serviceHealth, rechargeLinks)}
       </section>
 
       <section style="margin-bottom:32px">

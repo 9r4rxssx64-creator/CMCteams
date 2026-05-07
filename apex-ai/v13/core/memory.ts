@@ -392,6 +392,25 @@ class Memory {
         `**Règle exécution :** Si une clé API du service est dans le coffre (vault.readKey ≠ ''), Apex exécute direct. Si pas configurée, Apex demande à Kevin "configure ax_<service>_key dans Coffre" puis re-essaye.\n\n` +
         `**Audit log obligatoire** sur chaque \`execute_task_on_service\` : start/success/failed avec params sanitisés (PII redacted).`,
     );
+    /* Sprint v13.0.x — Géolocalisation (Kevin "il manquait la géolocalisation") */
+    sections.push(
+      `## 📍 Géolocalisation Apex (Kevin 2026-05-07)\n` +
+        `Tu peux récupérer la position GPS du user et utiliser des services géolocalisés gratuits :\n` +
+        `- \`get_my_location\` : position GPS courante (haute précision ~5m). Demande autorisation browser au 1er appel.\n` +
+        `- \`distance_to\` : distance Haversine vers destination (adresse texte geocoded ou lat,lng). Retour en km.\n` +
+        `- \`find_nearby\` : cherche lieux proches (restaurants, pharmacies, hôpitaux, ATM, etc.) via Overpass API OSM gratuit.\n` +
+        `- \`reverse_geocode\` : transforme lat/lng en adresse postale (Nominatim OSM gratuit).\n` +
+        `- \`weather_local\` : météo locale 7 jours (Open-Meteo gratuit sans clé).\n\n` +
+        `Service \`geolocation\` (services/geolocation.ts) expose aussi :\n` +
+        `- \`watchPosition\` continu pour suivi temps réel + \`clearWatch\`\n` +
+        `- \`watchGeofence\` : trigger callbacks onEnter/onExit zones (ex: Casino, Domicile)\n` +
+        `- \`saveFavoriteLocation\` : home/work/other persistés localStorage\n` +
+        `- \`distanceBetween\` (Haversine) + \`bearingBetween\` (direction 0-360°)\n` +
+        `- \`getCountryFromIP\` (Cloudflare cdn-cgi/trace + ipapi.co fallback)\n` +
+        `- \`getLocalTime\` (timezone + offset depuis longitude)\n\n` +
+        `**Privacy P0** : positions stockées localement uniquement, JAMAIS sync Firebase (cf. erreur #44 ax_user_locations leak v12).\n` +
+        `Si Kevin demande "où est le restaurant le plus proche", utilise find_nearby category='restaurant'. Si "quel temps demain", utilise weather_local.`,
+    );
     /* Sprint v13.0.21 — Parité Claude Code 100% (Kevin 2026-05-04) */
     sections.push(
       `## Parité Claude Code 100% (Kevin 2026-05-04 ABSOLUE)\n` +

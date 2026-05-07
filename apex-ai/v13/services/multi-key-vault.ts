@@ -651,6 +651,15 @@ class MultiKeyVault {
   }
 
   /**
+   * Force re-load depuis localStorage (utile pour tests + sync cross-tab).
+   * Ignore le cache mémoire. À utiliser après injection externe de localStorage.
+   */
+  reloadFromStorage(): void {
+    this.cache = null;
+    this.load();
+  }
+
+  /**
    * Liste tous les services connus (clés présentes au moins 1).
    */
   getKnownServices(): string[] {

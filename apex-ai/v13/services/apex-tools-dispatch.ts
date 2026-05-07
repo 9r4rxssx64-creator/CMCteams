@@ -884,6 +884,240 @@ class ApexToolsDispatcher {
         );
       case 'list_task_on_service_handlers':
         return { handlers: this.listExecuteTaskHandlers() };
+      /* === Personal Assistant (Kevin 2026-05-07) === */
+      case 'whatsapp_send_message': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis (carnet vide ?)' };
+        return personalAssistant.whatsappSendMessage({
+          phone,
+          message: (params['message'] as string) ?? '',
+        });
+      }
+      case 'whatsapp_call': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis' };
+        return personalAssistant.whatsappCall({ phone });
+      }
+      case 'whatsapp_video_call': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis' };
+        return personalAssistant.whatsappCall({ phone, video: true });
+      }
+      case 'gmail_compose': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailCompose({
+          to: (params['to'] as string) ?? '',
+          subject: (params['subject'] as string) ?? '',
+          body: (params['body'] as string) ?? '',
+        });
+      }
+      case 'gmail_list_unread': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailListUnread((params['max'] as number | undefined) ?? 20);
+      }
+      case 'gmail_archive': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailMoveLabel(
+          (params['email_id'] as string) ?? '',
+          (params['label'] as string) ?? 'archive',
+          'INBOX',
+        );
+      }
+      case 'outlook_compose': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.outlookCompose({
+          to: (params['to'] as string) ?? '',
+          subject: (params['subject'] as string) ?? '',
+          body: (params['body'] as string) ?? '',
+        });
+      }
+      case 'outlook_list_unread': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.outlookListUnread((params['max'] as number | undefined) ?? 20);
+      }
+      case 'facebook_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const fbOpts: { message?: string; mediaUrl?: string; pageId?: string } = {};
+        if (typeof params['message'] === 'string') fbOpts.message = params['message'];
+        if (typeof params['media_url'] === 'string') fbOpts.mediaUrl = params['media_url'];
+        if (typeof params['page_id'] === 'string') fbOpts.pageId = params['page_id'];
+        return personalAssistant.facebookPost(fbOpts);
+      }
+      case 'instagram_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const igType = (params['type'] as string) ?? 'image';
+        const igOpts: { mediaUrl: string; caption?: string; type: 'image' | 'video' | 'reel' } = {
+          mediaUrl: (params['media_url'] as string) ?? '',
+          type: igType === 'video' ? 'video' : igType === 'reel' ? 'reel' : 'image',
+        };
+        if (typeof params['caption'] === 'string') igOpts.caption = params['caption'];
+        return personalAssistant.instagramPost(igOpts);
+      }
+      case 'tiktok_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.tiktokPost({
+          videoUrl: (params['video_url'] as string) ?? '',
+          caption: (params['caption'] as string) ?? '',
+        });
+      }
+      case 'youtube_upload': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const ytOpts: {
+          videoBlob?: Blob;
+          title: string;
+          description: string;
+          tags?: string[];
+          privacy?: 'public' | 'unlisted' | 'private';
+        } = {
+          title: (params['title'] as string) ?? '',
+          description: (params['description'] as string) ?? '',
+        };
+        if (Array.isArray(params['tags'])) ytOpts.tags = params['tags'] as string[];
+        const priv = params['privacy'] as string | undefined;
+        if (priv === 'public' || priv === 'unlisted' || priv === 'private') ytOpts.privacy = priv;
+        if (params['video_blob'] instanceof Blob) ytOpts.videoBlob = params['video_blob'];
+        return personalAssistant.youtubeUpload(ytOpts);
+      }
+      case 'linkedin_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const liOpts: { text: string; mediaUrl?: string } = {
+          text: (params['text'] as string) ?? '',
+        };
+        if (typeof params['media_url'] === 'string') liOpts.mediaUrl = params['media_url'];
+        return personalAssistant.linkedinPost(liOpts);
+      }
+      case 'twitter_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.twitterPost({ text: (params['text'] as string) ?? '' });
+      }
+      case 'telegram_send': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.telegramSendMessage({
+          chatId: (params['chat_id'] as string) ?? '',
+          text: (params['text'] as string) ?? '',
+        });
+      }
+      case 'discord_webhook': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.discordWebhook({
+          url: (params['url'] as string) ?? '',
+          content: (params['content'] as string) ?? '',
+        });
+      }
+      case 'slack_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const slackOpts: { channel: string; text: string; webhookUrl?: string } = {
+          channel: (params['channel'] as string) ?? '',
+          text: (params['text'] as string) ?? '',
+        };
+        if (typeof params['webhook_url'] === 'string') slackOpts.webhookUrl = params['webhook_url'];
+        return personalAssistant.slackPost(slackOpts);
+      }
+      case 'notion_create_page': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.notionCreatePage({
+          databaseId: (params['database_id'] as string) ?? '',
+          title: (params['title'] as string) ?? '',
+          content: (params['content'] as string) ?? '',
+        });
+      }
+      case 'google_photos_list': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const albumId = params['album_id'] as string | undefined;
+        const max = (params['max'] as number | undefined) ?? 50;
+        return albumId
+          ? personalAssistant.googlePhotosList(albumId, max)
+          : personalAssistant.googlePhotosList(undefined, max);
+      }
+      case 'google_photos_organize': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const orgOpts: { albumName: string; photoIds?: string[] } = {
+          albumName: (params['album_name'] as string) ?? '',
+        };
+        if (Array.isArray(params['photo_ids'])) orgOpts.photoIds = params['photo_ids'] as string[];
+        return personalAssistant.googlePhotosOrganize(orgOpts);
+      }
+      case 'spotify_play': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const spOpts: { trackId?: string; contextUri?: string; deviceId?: string } = {};
+        if (typeof params['track_id'] === 'string') spOpts.trackId = params['track_id'];
+        if (typeof params['context_uri'] === 'string') spOpts.contextUri = params['context_uri'];
+        if (typeof params['device_id'] === 'string') spOpts.deviceId = params['device_id'];
+        return personalAssistant.spotifyPlay(spOpts);
+      }
+      case 'spotify_create_playlist': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const spOpts: { name: string; trackIds?: string[]; isPublic?: boolean } = {
+          name: (params['name'] as string) ?? '',
+        };
+        if (Array.isArray(params['track_ids'])) spOpts.trackIds = params['track_ids'] as string[];
+        if (params['is_public'] !== undefined) {
+          spOpts.isPublic = params['is_public'] === true || params['is_public'] === 'true';
+        }
+        return personalAssistant.spotifyCreatePlaylist(spOpts);
+      }
+      case 'icloud_photos_list': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.icloudPhotosList();
+      }
+      case 'integrations_capabilities': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const filterService = params['service'] as string | undefined;
+        return filterService
+          ? { capabilities: personalAssistant.getCapabilitiesForService(filterService) }
+          : { capabilities: personalAssistant.getCapabilities() };
+      }
+      case 'integrations_oauth_health': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return { services: await personalAssistant.checkAllOAuth() };
+      }
+      /* === Contacts === */
+      case 'contact_add': {
+        const { contacts } = await import('./contacts.js');
+        const cInput: {
+          name: string;
+          phone?: string;
+          email?: string;
+          whatsapp?: string;
+          aliases?: string[];
+          notes?: string;
+        } = { name: (params['name'] as string) ?? '' };
+        if (typeof params['phone'] === 'string') cInput.phone = params['phone'];
+        if (typeof params['email'] === 'string') cInput.email = params['email'];
+        if (typeof params['whatsapp'] === 'string') cInput.whatsapp = params['whatsapp'];
+        if (Array.isArray(params['aliases'])) cInput.aliases = params['aliases'] as string[];
+        if (typeof params['notes'] === 'string') cInput.notes = params['notes'];
+        return { ok: true, contact: contacts.add(cInput) };
+      }
+      case 'contact_search': {
+        const { contacts } = await import('./contacts.js');
+        const opts: { maxResults?: number } = {};
+        if (typeof params['max'] === 'number') opts.maxResults = params['max'];
+        return {
+          ok: true,
+          results: contacts.search((params['query'] as string) ?? '', opts),
+        };
+      }
+      case 'contact_list': {
+        const { contacts } = await import('./contacts.js');
+        return { ok: true, contacts: contacts.list() };
+      }
+      case 'contact_remove': {
+        const { contacts } = await import('./contacts.js');
+        return { ok: contacts.remove((params['id'] as string) ?? '') };
+      }
       /* === Image Transform — Kevin "polyvalent créatif" 2026-05-07 === */
       case 'transform_image':
       case 'cartoonify':
@@ -930,6 +1164,27 @@ class ApexToolsDispatcher {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const content = await res.text();
     return { content, size: content.length };
+  }
+
+  /**
+   * Résout un numéro de téléphone : si phone fourni, l'utiliser direct.
+   * Sinon cherche le contact dans le carnet (fuzzy) et retourne phone/whatsapp.
+   * Pour Kevin "appelle Yannou" → trouve "Yann Roux" → retourne son numéro.
+   */
+  private async resolvePhone(phoneArg?: string, contactName?: string): Promise<string> {
+    if (phoneArg && phoneArg.trim().length > 0) return phoneArg;
+    if (!contactName) return '';
+    const { contacts } = await import('./contacts.js');
+    const direct = contacts.getByName(contactName);
+    if (direct) {
+      return direct.whatsapp ?? direct.phone ?? '';
+    }
+    const found = contacts.search(contactName, { maxResults: 1 });
+    if (found.length > 0) {
+      const first = found[0];
+      if (first) return first.whatsapp ?? first.phone ?? '';
+    }
+    return '';
   }
 
   /**

@@ -151,7 +151,8 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
   openrouter: {
     service: 'openrouter',
     name: 'OpenRouter',
-    dashboard: 'https://openrouter.ai/keys',
+    dashboard: 'https://openrouter.ai',
+    /* Direct credits page (recharge 1-clic) — Kevin v13.0.20+ */
     billing: 'https://openrouter.ai/credits',
     api_keys_page: 'https://openrouter.ai/keys',
     docs: 'https://openrouter.ai/docs',
@@ -174,12 +175,13 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'mistral',
     name: 'Mistral AI',
     dashboard: 'https://console.mistral.ai',
-    billing: 'https://console.mistral.ai/billing',
+    /* Direct billing/payment — Kevin v13.0.20+ */
+    billing: 'https://admin.mistral.ai/plateforme/billing',
     api_keys_page: 'https://console.mistral.ai/api-keys',
     docs: 'https://docs.mistral.ai',
     pricing: 'https://mistral.ai/technology/#pricing',
-    plans_url: 'https://console.mistral.ai/billing',
-    usage: 'https://console.mistral.ai/usage',
+    plans_url: 'https://admin.mistral.ai/plateforme/billing',
+    usage: 'https://admin.mistral.ai/plateforme/usage',
   },
   cohere: {
     service: 'cohere',
@@ -245,6 +247,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://huggingface.co/docs',
     pricing: 'https://huggingface.co/pricing',
     plans_url: 'https://huggingface.co/pricing',
+    usage: 'https://huggingface.co/settings/billing',
   },
   replicate: {
     service: 'replicate',
@@ -255,6 +258,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://replicate.com/docs',
     pricing: 'https://replicate.com/pricing',
     plans_url: 'https://replicate.com/account/billing',
+    usage: 'https://replicate.com/account/billing#usage',
   },
   elevenlabs: {
     service: 'elevenlabs',
@@ -277,6 +281,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.pinecone.io',
     pricing: 'https://www.pinecone.io/pricing/',
     plans_url: 'https://www.pinecone.io/pricing/',
+    usage: 'https://app.pinecone.io/organizations/-/billing',
   },
   weaviate: {
     service: 'weaviate',
@@ -450,6 +455,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.sendgrid.com',
     pricing: 'https://sendgrid.com/pricing',
     plans_url: 'https://app.sendgrid.com/account/billing',
+    usage: 'https://app.sendgrid.com/statistics',
   },
   mailchimp: {
     service: 'mailchimp',
