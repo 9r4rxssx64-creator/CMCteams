@@ -4,8 +4,8 @@
  * Boost MAX (2026-05-04) : utilise sentinels-registry typé + métriques perf affichées.
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 
 /* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA navigation. */
 let activeSentinelsScope: CleanupScope | null = null;

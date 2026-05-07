@@ -99,13 +99,10 @@ export default defineConfig({
           if (id.includes('auto-improvement')) return 'auto-improvement';
           if (id.includes('innovation-watch')) return 'innovation-watch';
           if (id.includes('apex-plugins-marketplace')) return 'apex-plugins-marketplace';
-          /* Split features chat en sous-chunks logiques pour réduire chunk principal chat */
-          if (id.includes('features/chat/') && id.endsWith('index.ts')) return 'feature-chat-main';
-          if (id.includes('features/admin/')) return 'feature-admin';
-          if (id.includes('features/credentials/')) return 'feature-credentials';
-          if (id.includes('features/dashboard/')) return 'feature-dashboard';
-          if (id.includes('features/knowledge/')) return 'feature-knowledge';
-          if (id.includes('features/marketplace/')) return 'feature-marketplace';
+          /* OCR offline lazy chunk (tesseract.js fallback) */
+          if (id.includes('services/ocr-offline')) return 'ocr-offline';
+          /* Multi-source-analyze isole : code dense (vision + OCR + extraction patterns) */
+          if (id.includes('multi-source-analyze')) return 'multi-source-analyze';
           if (id.includes('node_modules')) {
             if (id.includes('dompurify')) return 'vendor-dompurify';
             if (id.includes('fuse.js')) return 'vendor-fuse';

@@ -28,6 +28,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 import { CREDENTIAL_PATTERNS, detectAllCredentials, type CredentialPattern } from './credential-patterns.js';
 import { firebase } from './firebase.js';

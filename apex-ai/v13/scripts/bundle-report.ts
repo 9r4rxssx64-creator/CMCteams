@@ -14,7 +14,7 @@
  *   1 = regression > +10% sur un chunk ou total
  */
 import { readdirSync, readFileSync, statSync, writeFileSync, existsSync, renameSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 interface ChunkInfo {
