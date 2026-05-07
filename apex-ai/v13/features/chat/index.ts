@@ -977,29 +977,32 @@ export function render(rootEl: HTMLElement): void {
         form.requestSubmit();
       }
     });
-    /* Auto-detect paste v13.0.78 : multi-clés bulk store (.env, JSON, multi-line) */
+    /* Auto-detect paste v13.3.9 fix Kevin "rien ne colle" :
+     * v13.0.78 utilisait e.preventDefault() dans async IIFE = trop tard,
+     * cassait le paste normal. Maintenant : laisse le paste happen,
+     * détecte en background, si credential trouvé → clear async + store. */
     textarea.addEventListener('paste', (e) => {
       const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
       if (!pasted) return;
+      /* PAS de preventDefault — le paste passe normalement (texte normal OK). */
       void (async () => {
         const { detectAllCredentials } = await import('../../services/credential-patterns.js');
         const detected = detectAllCredentials(pasted);
-        if (detected.length > 0) {
-          e.preventDefault();
-          textarea.value = '';
-          const { vault } = await import('../../services/vault.js');
-          const result = await vault.autoStoreBulk(pasted);
-          if (result.stored.length > 0) {
-            const names = result.stored.map((s) => s.pattern.name).join(', ');
-            toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) auto AES-GCM-256 : ${names}`, { duration: 6000 });
-          }
-          if (result.forbidden.length > 0) {
-            const names = result.forbidden.map((f) => f.pattern.name).join(', ');
-            toast.error(`🚫 ${names} JAMAIS stocké (règle sécu)`, { duration: 8000 });
-          }
-          if (result.failed > 0 && result.stored.length === 0) {
-            toast.warn(`Format inconnu — ouvre 🔐 Coffre pour coller manuellement`, { duration: 6000 });
-          }
+        if (detected.length === 0) return; /* Texte normal, on laisse */
+        /* Credential détecté : clear textarea (efface valeur visible) + chiffre */
+        textarea.value = '';
+        const { vault } = await import('../../services/vault.js');
+        const result = await vault.autoStoreBulk(pasted);
+        if (result.stored.length > 0) {
+          const names = result.stored.map((s) => s.pattern.name).join(', ');
+          toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) auto AES-GCM-256 : ${names}`, { duration: 6000 });
+        }
+        if (result.forbidden.length > 0) {
+          const names = result.forbidden.map((f) => f.pattern.name).join(', ');
+          toast.error(`🚫 ${names} JAMAIS stocké (règle sécu)`, { duration: 8000 });
+        }
+        if (result.failed > 0 && result.stored.length === 0) {
+          toast.warn(`Format inconnu — ouvre 🔐 Coffre pour coller manuellement`, { duration: 6000 });
         }
       })();
     });
