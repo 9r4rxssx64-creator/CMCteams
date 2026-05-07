@@ -281,6 +281,12 @@ async function bootstrap(): Promise<void> {
   router.register('iot-providers', { loader: () => import('@features/iot-providers/index.js'), requiresAdmin: true });
   /* v13.3.53 (Kevin 2026-05-07 23h55) : Multi-Source Extract History — admin only */
   router.register('multi-source-history', { loader: () => import('@features/multi-source-history/index.js'), requiresAdmin: true });
+  /* v13.3.67 (Kevin 2026-05-08 02h) : Self-signup clients + WhatsApp validation */
+  router.register('signup', { loader: () => import('@features/signup/index.js') });
+  router.register('waiting-approval', { loader: () => import('@features/waiting-approval/index.js') });
+  router.register('signup-approval', { loader: () => import('@features/signup-approval/index.js'), requiresAdmin: true });
+  /* v13.3.67 : Vue Legal (déjà créée mais pas registered) */
+  router.register('legal', { loader: () => import('@features/legal/index.js') });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

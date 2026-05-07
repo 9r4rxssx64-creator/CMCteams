@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.3.53">
+<html lang="fr" data-theme="dark" data-app-ver="v13.3.56">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -15,8 +15,8 @@
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-3cb9b5e95ba066e1bf5e0dcb1c84faa6' 'strict-dynamic' https:;
-             style-src 'self' 'nonce-3cb9b5e95ba066e1bf5e0dcb1c84faa6' 'unsafe-inline';
+             script-src 'self' 'nonce-bc6167cb159e23f9820db435b9761758' 'strict-dynamic' https:;
+             style-src 'self' 'nonce-bc6167cb159e23f9820db435b9761758' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -30,7 +30,7 @@
 
   <title>APEX AI v13</title>
 
-  <link rel="manifest" href="./assets/json/manifest-D67x4Xk2.json">
+  <link rel="manifest" href="./assets/json/manifest-Dnqu29nu.json">
   <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
   <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
 
@@ -38,8 +38,9 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="3cb9b5e95ba066e1bf5e0dcb1c84faa6" type="module" crossorigin src="./core/main-DTyRp2Or.js"></script>
-  <link nonce="3cb9b5e95ba066e1bf5e0dcb1c84faa6" rel="stylesheet" crossorigin href="./assets/css/main-CYtYG7GU.css">
+  <script nonce="bc6167cb159e23f9820db435b9761758" type="module" crossorigin src="./core/main-CfzzJEKO.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-DAvdcAQw.js">
+  <link nonce="bc6167cb159e23f9820db435b9761758" rel="stylesheet" crossorigin href="./assets/css/main-CYtYG7GU.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -69,6 +70,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="3cb9b5e95ba066e1bf5e0dcb1c84faa6" src="./assets/js/rescue.js"></script>
+  <script nonce="bc6167cb159e23f9820db435b9761758" src="./assets/js/rescue.js"></script>
 </body>
 </html>
