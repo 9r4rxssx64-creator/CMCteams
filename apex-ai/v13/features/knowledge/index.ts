@@ -128,7 +128,7 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
     return;
   }
   try {
-    const { persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
     const all = await persistentMemoryStore.list();
     const mine = all.filter((e) => e.scope === user.id).sort((a, b) => b.importance - a.importance);
     if (mine.length === 0) {
@@ -159,7 +159,7 @@ async function loadCrossUser(rootEl: HTMLElement): Promise<void> {
   const container = rootEl.querySelector<HTMLDivElement>('#cross-user-content');
   if (!container) return;
   try {
-    const { persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
     const all = await persistentMemoryStore.list();
     const byUser = new Map<string, typeof all>();
     for (const e of all) {
@@ -324,7 +324,7 @@ function attachHandlers(rootEl: HTMLElement, user: UserCtx | null, isAdmin: bool
   const btnExport = rootEl.querySelector<HTMLButtonElement>('#btn-export-json');
   btnExport?.addEventListener('click', async () => {
     try {
-      const { persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+      const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
       const all = await persistentMemoryStore.list();
       const exportData = {
         ts: Date.now(),

@@ -659,7 +659,7 @@ class Memory {
     /* Push dans persistentMemoryStore (per-user scope) */
     if (facts.length > 0) {
       try {
-        const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+        const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
         for (const f of facts) {
           await persistentMemoryStore.add({
             category: f.category as 'profile' | 'preferences' | 'projects' | 'relationships' | 'facts',
@@ -708,7 +708,7 @@ class Memory {
       const dedup: Array<Record<string, unknown>> = [];
       const seen = new Set<string>();
       for (const l of arr.slice(-200).reverse()) {
-        const key = `${String(l.category)}::${String(l.title).slice(0, 50).toLowerCase()}`;
+        const key = `${String(l['category'])}::${String(l['title']).slice(0, 50).toLowerCase()}`;
         if (!seen.has(key)) {
           seen.add(key);
           dedup.unshift(l);
@@ -727,7 +727,7 @@ class Memory {
    */
   async buildAdminCrossUserKnowledge(): Promise<string> {
     try {
-      const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
       const all = await persistentMemoryStore.list();
       /* Group par scope (user) */
       const byUser = new Map<string, typeof all>();
@@ -797,7 +797,7 @@ class Memory {
 
     /* Top 50 facts user courant + Top 30 shared */
     try {
-      const { persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
       const all = await persistentMemoryStore.list();
       if (currentUser) {
         const userFacts = all
