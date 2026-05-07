@@ -723,16 +723,16 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   setText('ax-cv-tel', 'telephone');
   setText('ax-cv-linkedin', 'linkedin');
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-add-exp')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-add-exp'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     cvStudioStore.addExperience(uid);
     render(rootEl);
   });
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-add-form')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-add-form'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     cvStudioStore.addFormation(uid);
     render(rootEl);
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-clear')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-clear'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     cvStudioStore.clear(uid);
     render(rootEl);
   });
@@ -752,15 +752,15 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
     });
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-cover-letter')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-cover-letter'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     logger.info('studio-cv', 'cover letter requested');
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-match-offer')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-match-offer'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     logger.info('studio-cv', 'match offer requested');
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-cv-interview')?.addEventListener('click', () => {
+  (() => { const __b = rootEl.querySelector<HTMLButtonElement>('#ax-cv-interview'); if (__b && activeCvScope) activeCvScope.bind(__b, 'click', () => { })();
     logger.info('studio-cv', 'interview simulator requested');
   });
 }
