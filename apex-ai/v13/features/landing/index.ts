@@ -14,6 +14,7 @@
  * Token d'invitation depuis URL hash (#invite=...) → pré-remplit nom.
  */
 
+import { APP_VER } from '../../core/bootstrap.js';
 import { router } from '../../core/router.js';
 import { auth } from '../../services/auth.js';
 import { haptic } from '../../ui/haptic.js';
@@ -82,7 +83,7 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-landing-card ax-slide-up-fade">
         <div class="ax-landing-logo-wrap">
           <h1 class="ax-landing-logo">APEX</h1>
-          <span class="ax-landing-version">v13.0</span>
+          <span class="ax-landing-version">${APP_VER}</span>
         </div>
         <p class="ax-landing-tagline">Ton assistant intelligent personnel</p>
         ${invite ? '<div class="ax-info" role="status">📨 Invitation détectée — connecte-toi avec ton nom complet</div>' : ''}

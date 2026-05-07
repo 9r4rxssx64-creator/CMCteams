@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.7';
+export const APP_VER = 'v13.3.8';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -218,7 +218,14 @@ async function bootstrap(): Promise<void> {
       }
       sessionStorage.setItem(loopKey, String(Date.now()));
       logger.warn('boot', `🔄 Version stale détectée : local ${APP_VER}, remote ${remoteVer} → force reload`);
-      /* Unregister SW + clear caches + reload */
+      /* Banner visible immédiatement avant reload (Kevin sait que ça part) */
+      try {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font:600 14px/1.4 system-ui;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.4)';
+        banner.textContent = `🔄 Mise à jour automatique en cours (${APP_VER} → ${remoteVer})…`;
+        document.body?.appendChild(banner);
+      } catch { /* DOM pas prêt */ }
+      /* Unregister SW + clear caches + clear localStorage non-critique */
       try {
         if ('serviceWorker' in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
@@ -231,7 +238,7 @@ async function bootstrap(): Promise<void> {
       } catch (err: unknown) {
         logger.warn('boot', 'force reload cleanup failed', { err });
       }
-      /* Reload avec query param pour bypass cache HTTP Safari */
+      /* Reload avec query param pour bypass cache HTTP Safari + cache-bust SW */
       window.location.href = window.location.pathname + '?_forceupd=' + remoteVer + '&t=' + Date.now();
     } catch (err: unknown) {
       /* Offline ou pas dispo : silencieux */
