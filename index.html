@@ -2894,10 +2894,88 @@ function empLabelHtml(emp,isMe){
   if(gf){
     n+=' <span title="Groupe ferm\u00e9 \u2014 noyau historique SBM (pr\u00e9-1993)" style="display:inline-block;font-size:11px;color:#d09060;background:rgba(160,104,64,.18);border:1px solid rgba(160,104,64,.45);border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;font-weight:700;letter-spacing:.3px">F</span>';
   }
+  // v9.600 \u2014 Badge cadre unifi\u00e9 (pit 0 / sup 5 / insp ?) si helper dispo
+  try{
+    if(typeof cmcCadreBadgeHtml==="function" && cmcIsCadreUnified(emp)){
+      n+=cmcCadreBadgeHtml(emp);
+    }
+  }catch(_cbErr){}
   return n;
 }
 // L'employé est-il senior (55+) ?
 function isSenior(emp){return !!(emp&&(emp.senior||(emp.family==="roulettes"&&emp.chef)));}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * v9.600 (Kevin règle 2026-04-26 + 2026-05-07) — CADRES UNIFIÉS + BADGES
+ * "Mets tous les cadres ensemble et mets un visuel sur les pits seulement
+ *  pour différencier les compétences."
+ *
+ * Helpers réutilisables (utilisés par vEmps, vPlan, vDeparts, parser PDF) :
+ *  - cmcIsCadreUnified(emp) : pit boss / sup / inspecteur tous "cadres"
+ *  - cmcIsPitBoss(emp)      : sous-ensemble pit boss spécifiquement
+ *  - cmcCadreBadge(emp)     : émoji distinctif PIT 🎯 / SUP 🔍 / INS 👁
+ *  - cmcCadreBadgeHtml(emp) : version <span> avec tooltip + style
+ *
+ * NON-DESTRUCTIF : ne touche pas DEF_EMP, ne change ni team ni family.
+ *   - team:"pit15" / team:"sup" CONSERVÉS dans data
+ *   - family:"cadres" inchangé
+ *   - Toggle `cmc_cadres_unified` (false par défaut) prépare migration future
+ *
+ * Le parser PDF / vues utilisent ces helpers pour rendu unifié visuel sans
+ * casser la logique existante (rôles, équipes, miroirs).
+ * ─────────────────────────────────────────────────────────────────────── */
+function cmcIsCadreUnified(emp){
+  if(!emp)return false;
+  return (emp.family||"")==="cadres" || emp.team==="pit15" || emp.team==="sup"
+    || emp.role==="pit" || emp.role==="sup" || emp.role==="ins" || emp.role==="cadre";
+}
+function cmcIsPitBoss(emp){
+  if(!emp)return false;
+  if(emp.role==="pit")return true;
+  if(emp.team==="pit15")return true;
+  // Liste blanche admin éditable (cmc_pit_boss_list) — règle Kevin 2026-04-26 §3
+  try{
+    var wl=lg("cmc_pit_boss_list",null);
+    if(wl&&Array.isArray(wl)){
+      var nm=(emp.name||"").toUpperCase().trim();
+      var id=String(emp.id||"");
+      for(var i=0;i<wl.length;i++){
+        var w=String(wl[i]||"").toUpperCase().trim();
+        if(w && (w===nm||w===id))return true;
+      }
+    }
+  }catch(_e){}
+  return false;
+}
+function cmcIsSuperviseur(emp){
+  if(!emp)return false;
+  return emp.role==="sup" || (emp.team==="sup" && !cmcIsPitBoss(emp));
+}
+function cmcIsInspecteur(emp){
+  if(!emp)return false;
+  return emp.role==="ins";
+}
+function cmcCadreBadge(emp){
+  // Renvoie l'émoji distinctif pur (pour title/exports). Pas de HTML.
+  if(!emp)return "";
+  if(cmcIsPitBoss(emp))return "🎯"; // 🎯
+  if(cmcIsInspecteur(emp))return "👁"; // 👁
+  if(cmcIsSuperviseur(emp))return "🔍"; // 🔍
+  return "";
+}
+function cmcCadreBadgeHtml(emp){
+  // Renvoie un <span> stylisé avec tooltip (compétence). Vide si pas cadre.
+  if(!emp || !cmcIsCadreUnified(emp))return "";
+  var icon=cmcCadreBadge(emp);
+  if(!icon)return "";
+  var label=cmcIsPitBoss(emp)?"Pit Boss":cmcIsInspecteur(emp)?"Inspecteur":cmcIsSuperviseur(emp)?"Superviseur":"Cadre";
+  return ' <span class="cmc-cadre-badge" title="'+esc(label)+'" '
+    +'style="display:inline-block;font-size:11px;margin-left:3px;vertical-align:middle;'
+    +'color:#ffce3a;text-shadow:0 0 3px rgba(255,206,58,.45);font-weight:700">'
+    +icon+'</span>';
+}
+// v9.600 — Toggle migration cadres unifiés (off par défaut, admin Kevin opt-in)
+function cmcIsCadresUnifiedMode(){return lg("cmc_cadres_unified",false)===true;}
 
 var DEF_TEAMS=[
   // BJ Chefs Cartes
@@ -4711,7 +4789,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.599";
+var APP_VER="v9.600";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7542,6 +7620,21 @@ function saveOv(eid,day,code){
   ls("cmc_audit",auditLog);
   if(code==="")delete A.overrides[key][eid][day]; else A.overrides[key][eid][day]=code;
   ls("cmc_ov",A.overrides);
+  // v9.600 (Kevin règle ABSOLUE 2026-05-07 §4) — Marquer comme édit MANUEL Kevin.
+  // Au prochain import qui voudrait merger cette cellule → préservée (priorité humaine).
+  try{
+    var _moKey="cmc_manual_overrides_"+key;
+    var _mo=lg(_moKey,{});
+    if(!_mo[eid])_mo[eid]={};
+    if(code===""){
+      // Reset cell : on retire aussi le flag manuel (cohérent)
+      delete _mo[eid][day];
+      if(Object.keys(_mo[eid]).length===0)delete _mo[eid];
+    }else{
+      _mo[eid][day]={code:code,ts:Date.now(),by:A.user.id};
+    }
+    ls(_moKey,_mo);
+  }catch(_moErr){console.warn("[v9.600 manual_overrides]",_moErr);}
   // v9.421 — Invalide cache gpl() pour ce mois (force recalcul au prochain appel)
   try{if(typeof gplInvalidate==="function")gplInvalidate(A.year,A.month);}catch(_){}
   // v9.419 — Event bus : déclenche agents abonnés à post_save_ov
@@ -7978,6 +8071,19 @@ function _trackedSetOverride(year,month,empId,day,newVal,labelAction){
   var oldVal=A.overrides[k][empId][day]||"";
   A.overrides[k][empId][day]=newVal;
   ls("cmc_ov",A.overrides);
+  // v9.600 \u2014 Marquer \u00e9dit MANUEL (pr\u00e9serv\u00e9 au prochain import, r\u00e8gle Kevin 2026-05-07 \u00a74)
+  try{
+    var _moKey="cmc_manual_overrides_"+k;
+    var _mo=lg(_moKey,{});
+    if(!_mo[empId])_mo[empId]={};
+    if(newVal===""||newVal==null){
+      delete _mo[empId][day];
+      if(Object.keys(_mo[empId]).length===0)delete _mo[empId];
+    }else{
+      _mo[empId][day]={code:newVal,ts:Date.now(),by:(A.user&&A.user.id)||"admin"};
+    }
+    ls(_moKey,_mo);
+  }catch(_moErr){console.warn("[v9.600 _trackedSetOverride manual]",_moErr);}
   var label=labelAction||("Planning "+day+"/"+(month+1)+" "+empId+" : "+oldVal+"\u2192"+newVal);
   _pushUndo(label,
     function(){A.overrides[k][empId][day]=oldVal;ls("cmc_ov",A.overrides);},
