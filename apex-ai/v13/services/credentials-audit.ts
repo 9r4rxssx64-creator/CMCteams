@@ -23,7 +23,7 @@
 
 import { logger } from '../core/logger.js';
 
-export type CredentialStatus = 'ok' | 'missing' | 'corrupted' | 'expired' | 'unknown';
+export type CredentialStatus = 'ok' | 'missing' | 'corrupted' | 'expired' | 'unknown' | 'decrypt_failed';
 
 export interface CredentialAuditEntry {
   /** Nom du service (ex: "Anthropic API", "Stripe Connect"). */
@@ -100,6 +100,12 @@ class CredentialsAudit {
     }
 
     const recommendations: string[] = [];
+    /* v13.3.21 : surface decrypt_failed en P0 — Apex IA HS si clé Anthropic illisible */
+    const decryptFailed = entries.filter((e) => e.status === 'decrypt_failed');
+    if (decryptFailed.length > 0) {
+      const services = decryptFailed.map((e) => e.service_name).slice(0, 5).join(', ');
+      recommendations.push(`🚨 ${decryptFailed.length} clé(s) ILLISIBLE(S) (decrypt failed) : ${services}. Clique "🔓 Récupérer" sur la fiche pour recoller.`);
+    }
     /* Recommandations actionables Kevin */
     const aiConfigured = configured.filter((e) => e.category === 'ai');
     if (aiConfigured.length === 0) {
@@ -150,10 +156,17 @@ class CredentialsAudit {
     })();
     /* Lecture déchiffrée via vault (pour preview masquée) */
     let decrypted = '';
+    let decryptFailed = false;
     try {
       decrypted = await vault.readKey(pattern.storageKey);
+      /* v13.3.21 : si AXENC1: présent en localStorage MAIS readKey retourne ''
+       * → decrypt fail silencieux (passphrase rotation). Flag pour status. */
+      if (!decrypted && rawLocal && rawLocal.startsWith('AXENC1:')) {
+        decryptFailed = true;
+      }
     } catch {
       /* corrompu */
+      if (rawLocal && rawLocal.startsWith('AXENC1:')) decryptFailed = true;
     }
 
     const configured = decrypted.length > 0;
@@ -184,7 +197,12 @@ class CredentialsAudit {
     /* Détermine status */
     let status: CredentialStatus = 'unknown';
     let statusDetail: string | undefined;
-    if (!configured) {
+    if (decryptFailed) {
+      /* v13.3.21 : decrypt_failed prioritaire sur missing — clé EXISTE en local mais illisible.
+       * UI peut proposer "Récupérer cette clé" (recolle plaintext, re-chiffre passphrase courante). */
+      status = 'decrypt_failed';
+      statusDetail = 'Clé chiffrée présente mais illisible (passphrase rotation ?). Recolle pour récupérer.';
+    } else if (!configured) {
       status = 'missing';
     } else if (rawLocal && !encrypted && rawLocal.length > 4) {
       /* Configuré mais NON chiffré = corrompu (ancienne migration v12) */

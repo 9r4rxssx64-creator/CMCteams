@@ -350,12 +350,25 @@ class MultiKeyVault {
       await this.persist();
       return { ok: false, latencyMs: 0, reason: 'no test endpoint configured' };
     }
-    const plain = await vault.decryptAuto(entry.encrypted).catch(() => null);
-    if (plain === null) {
-      this.markEntryStatus(entry, 'invalid', 'decrypt failed');
+    /* v13.3.21 (Kevin "decrypt failed" 2026-05-07) :
+     * Use decryptDetailed pour distinguer decrypt_failed (recoverable) de bad_format (corruption).
+     * Si decrypt_failed → status 'failing' (pas 'invalid' définitif) pour permettre retry après recover. */
+    const detailed = await vault.decryptDetailed(entry.encrypted);
+    if (!detailed.ok) {
+      const reason = detailed.reason ?? 'decrypt_failed';
+      if (reason === 'decrypt_failed') {
+        /* RECOVERABLE : Kevin peut recoller la clé via UI "Récupérer".
+         * Status = 'failing' (pas 'invalid') pour ne pas archiver définitivement. */
+        this.markEntryStatus(entry, 'failing', 'decrypt_failed (passphrase rotation?) — recolle pour récupérer');
+        await this.persist();
+        return { ok: false, latencyMs: 0, reason: 'decrypt_failed' };
+      }
+      /* bad_format ou no_passphrase → invalid (corruption ou edge case rare) */
+      this.markEntryStatus(entry, 'invalid', reason);
       await this.persist();
-      return { ok: false, latencyMs: 0, reason: 'decrypt failed' };
+      return { ok: false, latencyMs: 0, reason };
     }
+    const plain = detailed.plaintext as string;
     const start = Date.now();
     try {
       const init: RequestInit = {
@@ -657,6 +670,46 @@ class MultiKeyVault {
   reloadFromStorage(): void {
     this.cache = null;
     this.load();
+  }
+
+  /**
+   * v13.3.21 (Kevin fix "decrypt failed") :
+   * Liste les clés dont le decrypt a échoué (failing avec invalidReason "decrypt_failed").
+   * Utilisé par UI "Récupérer cette clé" + sentinelle decrypt-watch.
+   */
+  listDecryptFailed(): KeyEntry[] {
+    return this.load().filter((k) => {
+      if (k.status !== 'failing') return false;
+      const reason = k.invalidReason ?? '';
+      return /decrypt_failed|decrypt failed|passphrase rotation/i.test(reason);
+    });
+  }
+
+  /**
+   * v13.3.21 (Kevin fix "decrypt failed") :
+   * Récupération clé : Kevin recolle plaintext, on re-chiffre avec passphrase courante,
+   * on remplace l'ancien encrypted, on remet status à 'unknown' pour re-test.
+   */
+  async recoverKey(keyId: string, plaintextValue: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!plaintextValue || !plaintextValue.trim()) {
+      return { ok: false, reason: 'Valeur vide' };
+    }
+    const list = this.load();
+    const entry = list.find((k) => k.id === keyId);
+    if (!entry) return { ok: false, reason: 'Clé non trouvée' };
+    try {
+      entry.encrypted = await vault.encryptAuto(plaintextValue.trim());
+      entry.status = 'unknown';
+      entry.failCount = 0;
+      delete entry.invalidReason;
+      delete entry.invalidAt;
+      await this.persist();
+      logger.info('multi-key-vault', `✅ recoverKey ${entry.service}#${entry.id.slice(0, 8)} (re-chiffré + reset status)`);
+      return { ok: true };
+    } catch (err: unknown) {
+      logger.error('multi-key-vault', 'recoverKey failed', { err, keyId });
+      return { ok: false, reason: String(err).slice(0, 200) };
+    }
   }
 
   /**
