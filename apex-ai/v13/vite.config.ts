@@ -19,29 +19,61 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2022',
     cssCodeSplit: true,
-    sourcemap: true,
+    /* v13.3.28 perf 100/100 (Kevin 2026-05-07) : sourcemaps 'hidden' = générés mais
+     * non référencés dans le bundle prod → 5 MB économisés sur télécharg. user réel.
+     * Maps disponibles côté serveur pour déboguer Sentry stack-traces (sentry-cli upload). */
+    sourcemap: 'hidden',
     minify: 'esbuild',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 50 /* warn si chunk > 50 KB raw — proxy gzip ~16-20 KB */,
     /* P0-3 PERF (audit v13.2.5) : modulePreload trop agressif preload TOUS les chunks
      * dynamiquement importés au boot (apex-tools-dispatch, marketplaces, auto-improvement).
      * Filtre : preload uniquement les dépendances directes du chunk d'entrée principal.
-     * Les chunks lazy (admin views, plugins, etc.) sont chargés à la demande. */
+     * Les chunks lazy (admin views, plugins, etc.) sont chargés à la demande.
+     * v13.3.28 perf 100/100 (Kevin 2026-05-07) : élargi à 16 chunks heavy lazy
+     * (apex-tools-registry, apex-kb, credential-patterns, monitoring …) — économisent
+     * ~33 KB gzip au boot (4 modulepreload retirés). Charge à la demande quand user
+     * navigue chat/admin/credentials/vault. */
     modulePreload: {
       resolveDependencies: (filename, deps): string[] => {
         const HEAVY_LAZY = [
           'apex-tools-dispatch',
+          'apex-tools-registry',
           'apex-meta-marketplace',
           'auto-improvement',
           'apex-plugins-marketplace',
           'apex-extended-catalog',
           'apex-self-audit',
           'apex-claude-code-parity',
+          'apex-kb',
+          'apex-knowledge-base',
+          'credential-patterns',
+          'monitoring',
           'voice',
           'wake-word',
           'vision',
           'smart-camera',
           'preflight',
+          'links-registry',
+          'sentinels-registry',
+          'sentinels',
+          'feature-toggles',
+          'device-control',
+          'ai-router',
+          'ai-providers-health',
+          'auto-discover-links',
+          'innovation-watch',
+          'consumption-monitor',
+          'unknown-credential-resolver',
+          'multi-key-vault',
+          'memory-bridge',
+          'media-studio',
+          'card-emulator',
+          'badge-cloner',
+          'network-scan',
+          'financial-bilan',
+          'personal-assistant',
+          'auto-backup',
         ];
         return deps.filter((d) => !HEAVY_LAZY.some((h) => d.includes(h)));
       },

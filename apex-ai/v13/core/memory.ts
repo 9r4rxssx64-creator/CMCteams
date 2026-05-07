@@ -467,6 +467,71 @@ class Memory {
     return KEVIN_PROJECTS;
   }
 
+  /**
+   * v13.3.30 (Kevin règle "Identité Kevin auto-rempli au boot")
+   *
+   * Si user est admin Kevin (kdmc_admin) ET persistent memory n'a pas encore
+   * d'entries profile, auto-remplit les faits métier connus :
+   * - Identité (nom, email, lieu, métier, projets)
+   * - Préférences (modèle IA, langue, fuseau, monnaie)
+   * - Marqueurs admin (rôle, projets gérés, contacts officiels)
+   *
+   * Idempotent : une seule fois (marqueur ax_kevin_init_done).
+   */
+  async initBootDefaults(): Promise<void> {
+    try {
+      const marker = localStorage.getItem('ax_kevin_init_done');
+      if (marker === '1') return;
+
+      const userRaw = localStorage.getItem('ax_user');
+      if (!userRaw) return;
+      let user: { id?: string; role?: string } = {};
+      try { user = JSON.parse(userRaw) as { id?: string; role?: string }; } catch { /* ignore */ }
+      const isAdminKevin = user.id === 'kdmc_admin' || user.role === 'admin';
+      if (!isAdminKevin) return;
+
+      const { persistentMemory } = await import('../services/persistent-memory-store.js');
+      const existing = await persistentMemory.list();
+      const existingKevin = existing.filter((e) => e.scope === 'kdmc_admin' && e.category === 'profile');
+      if (existingKevin.length >= 5) {
+        /* Déjà rempli, juste marquer */
+        localStorage.setItem('ax_kevin_init_done', '1');
+        return;
+      }
+
+      const KEVIN_BOOTSTRAP: Array<{ category: 'profile' | 'preferences' | 'projects' | 'relationships'; text: string; importance: number }> = [
+        { category: 'profile', text: 'Nom : Kevin DESARZENS', importance: 95 },
+        { category: 'profile', text: 'Email principal : kevin.desarzens@gmail.com', importance: 90 },
+        { category: 'profile', text: 'Lieu : Monaco (Casino de Monte-Carlo)', importance: 85 },
+        { category: 'profile', text: 'Métier : Admin Kevin (Casino Monaco) — projets perso multiples', importance: 85 },
+        { category: 'profile', text: 'Rôle Apex : ADMIN absolu (kdmc_admin) — bypass règles externes (cf. CLAUDE.md "Kevin + Laurence + amis + famille = aucune règle externe")', importance: 90 },
+        { category: 'preferences', text: 'Langue : français', importance: 70 },
+        { category: 'preferences', text: 'Fuseau : Europe/Monaco', importance: 65 },
+        { category: 'preferences', text: 'Monnaie : EUR', importance: 60 },
+        { category: 'preferences', text: 'Theme par défaut : Casino Gold (or sobre fond sombre)', importance: 55 },
+        { category: 'preferences', text: 'IA modèle préféré : Claude Sonnet 4.6 / Opus 4.7 (fallback Groq Llama 3.3)', importance: 70 },
+        { category: 'projects', text: 'Projets actifs : Apex (priorité 1), CMCteams v9.600, Apex Chat, Social Video Pipeline, Télécommande, CrackPass, e-APEX', importance: 80 },
+        { category: 'relationships', text: 'Laurence SAINT-POLIT — utilisatrice Apex (tier laurence) avec accès limité', importance: 75 },
+      ];
+
+      let added = 0;
+      for (const f of KEVIN_BOOTSTRAP) {
+        await persistentMemory.add({
+          category: f.category,
+          text: f.text,
+          scope: 'kdmc_admin',
+          importance: f.importance,
+          source: 'manual',
+        });
+        added++;
+      }
+      localStorage.setItem('ax_kevin_init_done', '1');
+      logger.info('memory.initBootDefaults', `Kevin admin bootstrapped (${added} facts)`);
+    } catch (err: unknown) {
+      logger.warn('memory.initBootDefaults', 'failed', { err });
+    }
+  }
+
   private persist(): void {
     try {
       localStorage.setItem('apex_v13_facts', JSON.stringify(this.facts));

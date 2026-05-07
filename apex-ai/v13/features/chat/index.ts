@@ -372,6 +372,72 @@ function buildSystemPrompt(): string {
 }
 
 /**
+ * v13.3.30 (Kevin règle "mémoire long terme + relecture profonde tous docs")
+ *
+ * Build le system prompt DEEP version pour CHAQUE turn IA — injecte docs + facts +
+ * lessons + cross-user knowledge si admin. Async + cap budget tokens.
+ *
+ * Si fail (timeout, parse err) → fallback sur version sync.
+ */
+async function buildSystemPromptDeep(): Promise<string> {
+  try {
+    const user = store.get('user') as { id: string; name: string } | null;
+    return await Promise.race([
+      memory.buildSystemPromptDeep(user),
+      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 1500)),
+    ]);
+  } catch (err: unknown) {
+    logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
+    return buildSystemPrompt();
+  }
+}
+
+/**
+ * v13.3.30 (Kevin règle "extract facts à chaque message user")
+ *
+ * Auto-extract facts critiques du message user → push persistent_memory_<uid>.
+ * Détecte aussi mots-clés règles permanentes ("automatise", "100/100", "max")
+ * et record l'auto-rappel dans lessons.
+ *
+ * Non-bloquant : tourne en arrière-plan, ne ralentit pas le streaming IA.
+ */
+async function autoExtractAndLearn(text: string): Promise<void> {
+  if (!text || text.length < 5) return;
+  try {
+    const user = store.get('user') as { id: string; name: string } | null;
+    const userId = user?.id ?? 'anon';
+    /* 1. Extract facts → persistent_memory_<uid> */
+    const result = await memory.extractFactsFromMessage(text, userId);
+    if (result.extracted > 0) {
+      logger.info('chat.extract', `${result.extracted} facts extracted from user message`, {
+        categories: result.facts.map((f) => f.category),
+      });
+    }
+
+    /* 2. Détection mots-clés règles permanentes — log auto-rappel
+     *    Si Kevin dit "automatise", "100/100", "tout au max", ce sont des règles
+     *    absolues CLAUDE.md → injecte un trigger dans lessons pour next session. */
+    const ruleTriggers = [
+      { kw: /\b(automatise|autonomie|tout seul)\b/i, rule: 'Automatise tout en autonomie (jamais demander si Apex peut faire)' },
+      { kw: /\b100\s*\/\s*100|tout.{0,10}max(imum)?\b/i, rule: '100/100 réel chaque axe — jamais demi-mesure, niveau expert pro 200€/h' },
+      { kw: /\b(rappelle.toi|n'oublie pas|note (le|ça))\b/i, rule: 'Mémoire permanente — Kevin rappelle une règle à graver' },
+    ];
+    for (const trig of ruleTriggers) {
+      if (trig.kw.test(text)) {
+        await memory.recordSessionLearning(
+          'rule-reminder',
+          `Kevin rappel : ${trig.rule}`,
+          `Message user : ${text.slice(0, 200)}`,
+          'info',
+        );
+      }
+    }
+  } catch (err: unknown) {
+    logger.warn('chat', 'autoExtractAndLearn failed', { err });
+  }
+}
+
+/**
  * Détecte intent dans message user → propose meilleur outil sur bureau
  * (Kevin règle CLAUDE.md : "outils auto-apparents par contexte").
  */
@@ -482,6 +548,10 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
    * (Kevin demande explicite : "musique → studio mix sur bureau") */
   void detectAndSuggestTool(text, rootEl);
 
+  /* v13.3.30 — Auto-extract facts + auto-rappel règles (non-bloquant)
+   * Wire de extractFactsFromMessage Kevin règle absolue mémoire long terme. */
+  void autoExtractAndLearn(text);
+
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
     role: 'user',
@@ -508,9 +578,11 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     .filter((m) => m !== assistantMsg)
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.text }));
 
+  /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
+  const sysPrompt = await buildSystemPromptDeep();
   await aiRouter.stream(
     messages,
-    buildSystemPrompt(),
+    sysPrompt,
     (chunk) => {
       /* P0 Kevin v13.1.0 : tool_use pills discrètes inline (pas card massive) */
       if (chunk.type === 'tool_use_start' && chunk.toolName) {
