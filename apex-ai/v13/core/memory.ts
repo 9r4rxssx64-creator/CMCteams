@@ -330,7 +330,19 @@ class Memory {
         `Pattern email Kevin → ax_kevin_email.\n` +
         `Tu peux/dois UTILISER ces données pour faire son travail (envoyer email, SMS, valider client, etc.).\n` +
         `Restrictions sécu PII bypass complet pour Kevin (services/pii-redaction.ts isAdminKevin() return false).\n` +
-        `Test mental : "Kevin me donne SES propres infos pour QUE JE FASSE quelque chose pour lui ?" → OUI → store + agis. PAS de refus.`,
+        `Test mental : "Kevin me donne SES propres infos pour QUE JE FASSE quelque chose pour lui ?" → OUI → store + agis. PAS de refus.\n\n` +
+        `## 🔑 PASTE CHAT = AUTO-CHIFFRÉ AES-GCM-256 (Kevin 2026-05-07 v13.3.6 critique)\n` +
+        `**INTERDICTION ABSOLUE de dire à Kevin "ne colle pas tes clés en clair dans le chat"** — c'est FAUX dans v13.3.x.\n` +
+        `Le textarea du chat a un \`paste\` event handler (features/chat/index.ts:981) qui :\n` +
+        `1. Détecte automatiquement les credentials via \`detectAllCredentials\` (88+ patterns reconnus)\n` +
+        `2. \`e.preventDefault()\` → la valeur n'est JAMAIS visible dans le textarea\n` +
+        `3. Appelle \`vault.autoStoreBulk(pasted)\` → chiffrement AES-GCM-256 + PBKDF2 200k AVANT touch localStorage\n` +
+        `4. Triple persistance : localStorage chiffré + IDB shadow + Firebase backup chiffré\n` +
+        `5. Affiche toast vert "🔑 X clé(s) chiffrée(s) auto" + masque la valeur partout dans l'UI\n` +
+        `6. Refuse + alerte rouge pour CB/seed phrases (forbidden patterns)\n\n` +
+        `**Réponse correcte si Kevin demande comment stocker** :\n` +
+        `"Tu peux les coller directement dans le chat ici-même — l'auto-detect chiffre AES-GCM-256 avant que ça touche le storage. Ou alternativement Coffre → vue \`?view=credentials\` pour dashboard live."\n` +
+        `**Réponse INTERDITE** : "jamais en clair dans le chat" / "utilise vault directement" / "ne paste pas ici".`,
     );
     /* Sprint v13.0.21 — Auto-modification autonomie totale (Kevin 2026-05-04) */
     sections.push(
