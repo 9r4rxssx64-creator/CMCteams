@@ -26,8 +26,17 @@
  */
 
 import { logger } from '../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeVideoScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeVideoScope?.cleanup();
+  activeVideoScope = null;
+}
 
 export type TransitionKind = 'none' | 'fade' | 'cut' | 'slide' | 'dissolve' | 'wipe' | 'zoom' | 'glitch' | 'morph' | 'flash' | 'spin' | 'shutter' | 'iris' | 'whip_pan' | 'crossfade' | 'film_burn' | 'glitch_rgb' | 'cube_3d' | 'reveal_circle' | 'split_horizontal' | 'split_vertical';
 export type AspectRatio = 'original' | '16:9' | '9:16' | '1:1' | '4:3' | '21:9' | '2.39:1' | '5:4' | '3:2';
@@ -751,6 +760,9 @@ class VideoStudioStore {
 export const videoStudioStore = new VideoStudioStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeVideoScope?.cleanup();
+  activeVideoScope = createCleanupScope('studios-video');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
@@ -858,7 +870,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-aspect]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeVideoScope!.bind(btn, 'click', () => {
       const a = btn.dataset['aspect'] as AspectRatio;
       videoStudioStore.setAspectRatio(a);
       render(rootEl);
@@ -871,7 +883,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="remove-clip"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeVideoScope!.bind(btn, 'click', () => {
       const id = btn.dataset['clipId'];
       if (!id) return;
       if (videoStudioStore.remove(id)) render(rootEl);
@@ -879,7 +891,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="caption"]').forEach((input) => {
-    input.addEventListener('input', () => {
+    activeVideoScope!.bind(input, 'input', () => {
       const id = input.dataset['clipId'];
       if (!id) return;
       videoStudioStore.update(id, { caption: input.value });
@@ -887,7 +899,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLSelectElement>('[data-action="transition"]').forEach((sel) => {
-    sel.addEventListener('change', () => {
+    activeVideoScope!.bind(sel, 'change', () => {
       const id = sel.dataset['clipId'];
       if (!id) return;
       videoStudioStore.update(id, { transition: sel.value as TransitionKind });
@@ -895,7 +907,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLSelectElement>('[data-action="lut"]').forEach((sel) => {
-    sel.addEventListener('change', () => {
+    activeVideoScope!.bind(sel, 'change', () => {
       const id = sel.dataset['clipId'];
       if (!id) return;
       videoStudioStore.updateColorGrading(id, { lutPreset: sel.value as LutPreset });
@@ -903,7 +915,7 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="speed"]').forEach((slider) => {
-    slider.addEventListener('input', () => {
+    activeVideoScope!.bind(slider, 'input', () => {
       const id = slider.dataset['clipId'];
       if (!id) return;
       videoStudioStore.update(id, { speed: parseInt(slider.value, 10) / 100 });

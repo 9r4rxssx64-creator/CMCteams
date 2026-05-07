@@ -26,7 +26,16 @@
  */
 
 import { logger } from '../../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeCvScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeCvScope?.cleanup();
+  activeCvScope = null;
+}
 
 export type CVTemplateId =
   | 'moderne' | 'classique' | 'creatif' | 'tech' | 'executive'
@@ -611,6 +620,9 @@ class CVStudioStore {
 export const cvStudioStore = new CVStudioStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeCvScope?.cleanup();
+  activeCvScope = createCleanupScope('studios-cv');
   const user = store.get('user') as { id?: string; name?: string; firstName?: string; lastName?: string } | null;
   const uid = user?.id ?? 'anon';
   let cv = cvStudioStore.load(uid);
@@ -689,7 +701,7 @@ export function render(rootEl: HTMLElement): void {
 
 function attachHandlers(rootEl: HTMLElement, uid: string): void {
   rootEl.querySelectorAll<HTMLElement>('.ax-cv-template').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeCvScope!.bind(btn, 'click', () => {
       const tpl = btn.dataset['template'] as CVTemplateId;
       if (tpl) {
         cvStudioStore.setTemplate(uid, tpl);
@@ -700,7 +712,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
 
   const setText = (id: string, field: keyof CVData['identite']): void => {
     const el = rootEl.querySelector<HTMLInputElement>(`#${id}`);
-    el?.addEventListener('change', () => {
+    if (el) activeCvScope!.bind(el, 'change', () => {
       cvStudioStore.setIdentite(uid, { [field]: el.value });
     });
   };
@@ -726,7 +738,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-export]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeCvScope!.bind(btn, 'click', () => {
       const format = btn.dataset['export'] as CVExportFormat;
       logger.info('studio-cv', 'export requested', { format });
       void (async () => {
