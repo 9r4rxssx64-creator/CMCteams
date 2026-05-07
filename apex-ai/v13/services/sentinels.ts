@@ -332,6 +332,64 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* 4-bis. decrypt-watch (5min) : audit decrypt health TOUTES les clés AXENC1:
+   * Fix v13.3.21 (Kevin 2026-05-07 "decrypt failed") :
+   * - Si N+ clés ne se déchiffrent plus → alerte critical Kevin via kevinAlerts
+   * - Liste les services impactés (Anthropic / OpenAI / Cohere / etc.) pour action concrète
+   * - Action proposée : ouvrir Coffre admin → bouton "Récupérer cette clé"
+   * Cause racine : passphrase rotation (PIN admin changé, clear cache iOS, autre tab).
+   */
+  sentinels.register({
+    id: 'decrypt-watch',
+    name: 'Decrypt health',
+    desc: 'Audit decrypt des clés API stockées AXENC1: (alerte Kevin si N+ illisibles)',
+    intervalMs: 5 * 60 * 1000,
+    check: async () => {
+      try {
+        const { vault } = await import('./vault.js');
+        const audit = await vault.auditDecryptHealth();
+        if (audit.failed === 0) {
+          return {
+            ok: true,
+            msg: `Decrypt OK : ${audit.ok}/${audit.total}`,
+            details: { total: audit.total, ok: audit.ok },
+          };
+        }
+        /* Si fail count > 0 → alerte Kevin (best-effort, déjà rate-limité côté kevin-alerts) */
+        const ALERT_THRESHOLD = 1; /* dès 1 clé illisible, alerter (clé IA = bloque app) */
+        if (audit.failed >= ALERT_THRESHOLD) {
+          try {
+            const { kevinAlerts } = await import('./kevin-alerts.js');
+            const services = audit.failedKeys
+              .map((k) => k.replace(/^ax_/, '').replace(/_(?:key|token|secret)$/, ''))
+              .slice(0, 5)
+              .join(', ');
+            void kevinAlerts.alertKevin({
+              severity: 'critical',
+              title: `🚨 ${audit.failed} clé(s) API illisible(s)`,
+              body: `Services impactés : ${services}. Ouvre le Coffre admin et clique "Récupérer cette clé" pour recoller.`,
+            }).catch(() => { /* offline OK */ });
+          } catch { /* alerts unavailable */ }
+        }
+        return {
+          ok: false,
+          msg: `🔴 ${audit.failed} clé(s) decrypt failed sur ${audit.total} (${audit.ok} OK)`,
+          details: {
+            total: audit.total,
+            ok: audit.ok,
+            failed: audit.failed,
+            failedKeys: audit.failedKeys,
+          },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: `decrypt-watch failed: ${err instanceof Error ? err.message : String(err)}`,
+        };
+      }
+    },
+  });
+
   /* 5. link-validation-watch : test alive ax_links_registry (24h) */
   sentinels.register({
     id: 'link-validation-watch',

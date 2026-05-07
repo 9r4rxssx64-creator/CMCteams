@@ -24,6 +24,36 @@ interface EncryptedPayload {
 
 const PREFIX = 'AXENC1:';
 
+/**
+ * v13.3.21 (Kevin 2026-05-07 fix "decrypt failed") :
+ * Résultat détaillé du decrypt. Permet aux call sites de distinguer
+ *   - succès : { ok: true, plaintext, attemptedPassphrases }
+ *   - decrypt fail : { ok: false, reason: 'decrypt_failed', encryptedValue, attemptedPassphrases }
+ *   - format invalide : { ok: false, reason: 'bad_format' }
+ *   - missing passphrase : { ok: false, reason: 'no_passphrase' }
+ *
+ * Avant : `decryptAuto` retournait null silencieusement → UI affichait toast rouge "decrypt failed"
+ * sans action concrète → Kevin bloqué.
+ *
+ * Après : UI peut proposer "Recolle ta clé Anthropic UNE FOIS, je la re-chiffre" via vault.recover().
+ */
+export interface DecryptResult {
+  ok: boolean;
+  plaintext?: string;
+  reason?: 'decrypt_failed' | 'bad_format' | 'no_passphrase';
+  encryptedValue?: string;
+  attemptedPassphrases?: number;
+  triedDeviceBound?: boolean;
+  triedHistory?: boolean;
+}
+
+/* v13.3.21 (Kevin) — Historique des passphrases device-bound récentes.
+ * Permet retry si Kevin a changé de PIN ou si la device-bound a drift entre devices.
+ * Cap : 3 dernières.  Stocké en localStorage (clair OK : sans crypto matériel utilisable
+ * sans la passphrase principale, c'est juste une liste de strings dérivées). */
+const PASSPHRASE_HISTORY_KEY = 'apex_v13_passphrase_history';
+const PASSPHRASE_HISTORY_MAX = 3;
+
 /* Backward-compat alias pour tests + features existantes (15 patterns minimum) */
 export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; key: string }> = [
   { name: 'Anthropic', regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/, key: 'ax_anthropic_key' },
@@ -48,6 +78,13 @@ class Vault {
   private watchStarted = false;
 
   setPassphrase(passphrase: string): void {
+    /* v13.3.21 : si une passphrase user était déjà set ET différente,
+     * push l'ancienne dans history pour permettre decrypt retry des clés
+     * chiffrées avec l'ancienne (sinon Kevin perd toutes ses clés au changement). */
+    if (this.passphrase && this.passphrase !== passphrase) {
+      this.savePassphraseToHistory(this.passphrase);
+      logger.info('vault', '📜 user passphrase rotated → ancienne sauvegardée en history');
+    }
     this.passphrase = passphrase;
   }
 
@@ -178,6 +215,13 @@ class Vault {
           baseKey, 256,
         );
         const derivedB64 = btoa(String.fromCharCode(...new Uint8Array(derived)));
+        /* v13.3.21 : si l'ancienne valeur cache était différente, push en history
+         * pour permettre decrypt retry des anciennes clés chiffrées avec ancien PIN */
+        const previousCached = localStorage.getItem(KEY);
+        if (previousCached && previousCached !== derivedB64) {
+          this.savePassphraseToHistory(previousCached);
+          logger.info('vault', '📜 PIN-derived passphrase rotated → ancienne sauvegardée en history');
+        }
         /* Persist localStorage + IDB pour cache (re-derive sur boot suivant) */
         try { localStorage.setItem(KEY, derivedB64); } catch { /* quota */ }
         void this.backupPassphraseToIdb(derivedB64);
@@ -203,6 +247,14 @@ class Vault {
     /* Génère + persiste device-bound (256 bits aléatoires base64) — fallback si pas PIN */
     const random = crypto.getRandomValues(new Uint8Array(32));
     const pass = btoa(String.fromCharCode(...random));
+    /* v13.3.21 : si une passphrase cached existait (mais a disparu de localStorage avant
+     * d'arriver ici), push en history pour retry decrypt (cas Safari clear cache). */
+    try {
+      const previousIdb = await this.restorePassphraseFromIdb();
+      if (previousIdb && previousIdb !== pass) {
+        this.savePassphraseToHistory(previousIdb);
+      }
+    } catch { /* ignore */ }
     try {
       localStorage.setItem(KEY, pass);
     } catch {
@@ -277,14 +329,186 @@ class Vault {
 
   /**
    * Decrypt avec fallback device-bound (essaie passphrase user puis device-bound).
+   *
+   * v13.3.21 (Kevin "decrypt failed" 2026-05-07) :
+   * BACKWARD-COMPAT signature `string | null` préservée pour tous les call sites existants
+   * (ai-router, badge-cloner, auto-backup, multi-key-vault) qui font `if (plain === null)`.
+   *
+   * NOUVEAU : appelle `decryptDetailed()` interne qui retry passphrase historique +
+   * device-bound. Si TOUTES tentatives échouent → log warn + retourne null.
+   * Pour récupérer le détail (pour UI "Récupérer cette clé") → utiliser decryptDetailed().
    */
   async decryptAuto(encrypted: string): Promise<string | null> {
-    if (this.passphrase) {
-      const r = await this.decrypt(encrypted, this.passphrase);
-      if (r !== null) return r;
+    const r = await this.decryptDetailed(encrypted);
+    return r.ok && r.plaintext !== undefined ? r.plaintext : null;
+  }
+
+  /**
+   * v13.3.21 (Kevin 2026-05-07 fix "decrypt failed") :
+   * Decrypt détaillé avec retry multi-passphrase :
+   *   1. Passphrase courante (`getPassphrase()`)
+   *   2. Device-bound passphrase (PIN-derivée si admin PIN dispo, sinon random cached)
+   *   3. Historique des 3 dernières passphrases device-bound (cas : PIN admin a changé,
+   *      ou random device-bound régénérée après clear cache)
+   *
+   * Retourne objet riche permettant aux call sites de :
+   *   - Distinguer "decrypt failed" (recoverable via UI Recolle) vs "bad format" (corruption)
+   *   - Afficher action concrète à Kevin au lieu de toast rouge silencieux
+   *   - Logger nombre de tentatives pour debug
+   */
+  async decryptDetailed(encrypted: string): Promise<DecryptResult> {
+    /* Format invalide → reason explicite (pas decrypt_failed) */
+    if (!encrypted || typeof encrypted !== 'string') {
+      return { ok: false, reason: 'bad_format' };
     }
-    const devicePass = await this.getDeviceBoundPassphrase();
-    return this.decrypt(encrypted, devicePass);
+    if (!encrypted.startsWith(PREFIX)) {
+      return { ok: false, reason: 'bad_format', encryptedValue: encrypted };
+    }
+    let attempts = 0;
+    let triedDeviceBound = false;
+    let triedHistory = false;
+    /* 1. Passphrase user explicite (set via Vault modal) */
+    if (this.passphrase) {
+      attempts += 1;
+      const r = await this.decrypt(encrypted, this.passphrase);
+      if (r !== null) {
+        return { ok: true, plaintext: r, attemptedPassphrases: attempts };
+      }
+    }
+    /* 2. Device-bound (PIN-derived ou random cached) */
+    try {
+      const devicePass = await this.getDeviceBoundPassphrase();
+      attempts += 1;
+      triedDeviceBound = true;
+      const r = await this.decrypt(encrypted, devicePass);
+      if (r !== null) {
+        return { ok: true, plaintext: r, attemptedPassphrases: attempts, triedDeviceBound: true };
+      }
+    } catch { /* device-bound derivation failed → continue history */ }
+    /* 3. Historique passphrases device-bound (retry après changement PIN admin / clear cache) */
+    try {
+      const history = this.loadPassphraseHistory();
+      for (const oldPass of history) {
+        if (!oldPass) continue;
+        attempts += 1;
+        triedHistory = true;
+        const r = await this.decrypt(encrypted, oldPass);
+        if (r !== null) {
+          /* RECOVERED via historique : la clé est récupérable mais avec ancienne passphrase.
+           * Log info pour audit + return OK. Pas de re-chiffrement auto (Kevin doit recoller
+           * via UI pour confirmer + lock à la nouvelle passphrase). */
+          logger.info('vault', '🔓 decrypt RECOVERED via passphrase history', { attempts });
+          return { ok: true, plaintext: r, attemptedPassphrases: attempts, triedDeviceBound, triedHistory: true };
+        }
+      }
+    } catch { /* history corrupted → ignore */ }
+    /* Toutes tentatives échouées → reason explicite + encryptedValue préservé pour UI recovery */
+    logger.warn('vault', 'decryptDetailed FAILED after all retries', {
+      attempts,
+      triedDeviceBound,
+      triedHistory,
+    });
+    return {
+      ok: false,
+      reason: attempts === 0 ? 'no_passphrase' : 'decrypt_failed',
+      encryptedValue: encrypted,
+      attemptedPassphrases: attempts,
+      triedDeviceBound,
+      triedHistory,
+    };
+  }
+
+  /**
+   * v13.3.21 (Kevin) — Historique passphrase device-bound.
+   * Appelé à chaque rotation de la device-bound (PIN change, clear cache, etc.)
+   * pour permettre retry decrypt sur les anciennes valeurs chiffrées.
+   */
+  private loadPassphraseHistory(): string[] {
+    try {
+      const raw = localStorage.getItem(PASSPHRASE_HISTORY_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((x): x is string => typeof x === 'string').slice(0, PASSPHRASE_HISTORY_MAX);
+    } catch {
+      return [];
+    }
+  }
+
+  private savePassphraseToHistory(pass: string): void {
+    if (!pass) return;
+    try {
+      const history = this.loadPassphraseHistory();
+      /* Dédupe + push en tête + cap */
+      const filtered = history.filter((p) => p !== pass);
+      filtered.unshift(pass);
+      const capped = filtered.slice(0, PASSPHRASE_HISTORY_MAX);
+      localStorage.setItem(PASSPHRASE_HISTORY_KEY, JSON.stringify(capped));
+    } catch { /* quota → ignore */ }
+  }
+
+  /**
+   * v13.3.21 (Kevin "Récupérer cette clé" UI) :
+   * Re-chiffre une clé avec la passphrase courante après que Kevin l'ait recollée.
+   * Appelé depuis UI credentials-registry bouton "🔓 Récupérer".
+   *
+   * Side-effects :
+   *   - setKey (triple persistence : localStorage + IDB + Firebase)
+   *   - audit log RGPD trail
+   *   - alerte Kevin succès
+   */
+  async recover(storageKey: string, plaintext: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!plaintext || !plaintext.trim()) {
+      return { ok: false, reason: 'Valeur vide' };
+    }
+    try {
+      const setResult = await this.setKey(storageKey, plaintext.trim());
+      if (!setResult.ok) {
+        return { ok: false, reason: 'setKey échoué' };
+      }
+      this.audit('recover', { target: storageKey, details: { persisted: setResult.persisted } });
+      logger.info('vault', `✅ recover OK ${storageKey}`, setResult.persisted);
+      return { ok: true };
+    } catch (err: unknown) {
+      logger.error('vault', 'recover failed', { err, storageKey });
+      return { ok: false, reason: String(err).slice(0, 200) };
+    }
+  }
+
+  /**
+   * v13.3.21 (Kevin) — Audit decrypt status pour TOUS les credentials AXENC1:.
+   * Utilisé par sentinelle decrypt-watch + UI credentials-registry.
+   * Retourne : { total, ok, failed, failedKeys[] }
+   */
+  async auditDecryptHealth(): Promise<{
+    total: number;
+    ok: number;
+    failed: number;
+    failedKeys: string[];
+  }> {
+    const failedKeys: string[] = [];
+    let total = 0;
+    let ok = 0;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (!(k.startsWith('ax_') || k.startsWith('apex_v13_'))) continue;
+        if (!(k.endsWith('_key') || k.endsWith('_token') || k.endsWith('_secret'))) continue;
+        const raw = localStorage.getItem(k);
+        if (!raw || !raw.startsWith(PREFIX)) continue;
+        total += 1;
+        const r = await this.decryptDetailed(raw);
+        if (r.ok) {
+          ok += 1;
+        } else {
+          failedKeys.push(k);
+        }
+      }
+    } catch (err: unknown) {
+      logger.warn('vault', 'auditDecryptHealth iteration failed', { err });
+    }
+    return { total, ok, failed: failedKeys.length, failedKeys };
   }
 
   /**
