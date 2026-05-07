@@ -4,6 +4,65 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Ape
 
 ---
 
+## 🤖 RÈGLE ABSOLUE — WARNING = CORRECTION AUTO AUTONOME TOUJOURS (Kevin 2026-05-07, ULTIME)
+
+> **"Si warning correction automatique et autonome. Toujours."** — Kevin 2026-05-07
+
+**Règle absolue** — Apex priorité 1, CMCteams priorité 2 :
+
+### 1. Tout warning sentinelle = auto-fix immédiat (sans attendre Kevin)
+
+À CHAQUE alerte sentinelle (severity warn/err/critical), Apex DOIT :
+1. **Try auto-fix whitelist** : flushSyncQueue, fbReconnect, resetStreaming, clearImportSnapshot, retryFailedRequest, axRescueClicks, _axAutoHealApiKey, _axAutoLocateApiKeys, rebuildChainHash, syncFromVault, restoreFromIDB, etc.
+2. **Si auto-fix réussit** : log dans `ax_audit` + lesson dans `ax_lessons_learned_struct` + status passe ✅
+3. **Si échec** : escalate Claude Code via `ax_claude_todo` Firebase + cron 5min trigger
+4. **Si critical** : push notif Telegram Kevin (sans bloquer auto-fix)
+
+### 2. Whitelist auto-fix par sentinelle
+
+| Sentinelle | Auto-fix |
+|---|---|
+| token-watch | rotate API key from history + ping providers |
+| backup-watch | snapshotNow + seed ax_last_backup_ts |
+| security-watch (hash audit invalide) | rebuildChainFrom(brokenIndex) |
+| memory-watch (crash null) | guard `?? []` + reload memoryStore |
+| credentials-watch (registry incomplet) | syncFromVault → registry |
+| csp-violation-watch (>5/h) | enrichir whitelist + log violations URI |
+| network-watch | ping 1.1.1.1 + reconnect Firebase |
+| storage-watch (>80%) | aggressiveCleanup + trim arrays |
+| presence-watch (lastact stale) | heartbeat |
+| smart-router-watch (provider KO) | mask provider du failover |
+| ai-providers-health | failover next provider |
+| import-watch (cov < 80%) | retry parser strategies |
+| chat-watch (stuck > 60s) | cancel + reprocess queue |
+| voice-quality-watch | reset wakeRecognition |
+| innovation-watch (gain ≥ 50%) | propose update Kevin (push notif) |
+| persistence-watch (key manquante) | restore depuis IDB shadow |
+| conflict-watch | force fb pull + merge |
+| RGPD compliance-watch | re-fix consent |
+| anti-régression-watch | revert dernier commit fautif (admin only) |
+
+### 3. UI
+
+- Toast info "🔧 Auto-fix [X] en cours…" pendant 1s
+- Toast success "✅ [X] résolu en autonomie" après
+- Si fail : toast warn "⚠️ [X] non résolu, escalade Claude Code"
+- HUD admin Kevin (subagent DELIVERY MAX livré) affiche dernière auto-fix
+
+### 4. Sentinelle `auto-fix-watch`
+
+Méta-sentinelle : tourne 5 min, audit `ax_audit_log` derniers 100 entries.
+- Si pattern récurrent (même fix appliqué 5+ fois en 1h) → root cause analysis + escalade
+- Si auto-fix rate > 30% → alerte structurelle (problème persistant non guéri par fix surface)
+
+### 5. Test mental obligatoire avant chaque commit Apex
+
+> *"Cette nouvelle sentinelle/feature a-t-elle son auto-fix associé ? Si non → ajouter avant push."*
+
+S'applique : Apex priorité absolue, CMCteams.
+
+---
+
 ## 🛡️ RÈGLE ABSOLUE — JAMAIS RÉGRESSER (Kevin 2026-05-07, ULTIME)
 
 > **"Tu ne dois jamais régresser !"** — Kevin 2026-05-07
