@@ -24,8 +24,17 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeKbScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeKbScope?.cleanup();
+  activeKbScope = null;
+}
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -258,6 +267,9 @@ function renderEntry(e: KbEntry): string {
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeKbScope?.cleanup();
+  activeKbScope = createCleanupScope('knowledge-bank');
   const stats = getKbStats();
   const fallback = KB_CATEGORIES[0];
   if (!fallback) {
@@ -325,7 +337,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
 function attachKbHandlers(rootEl: HTMLElement): void {
   rootEl.querySelectorAll<HTMLButtonElement>('[data-kb-cat]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeKbScope!.bind(btn, 'click', () => {
       haptic.selection();
       const cat = btn.dataset['kbCat'] as KbCategoryId | undefined;
       if (cat) activeCategory = cat;
@@ -336,7 +348,7 @@ function attachKbHandlers(rootEl: HTMLElement): void {
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-kb-search');
   if (searchEl) {
     let debounce: ReturnType<typeof setTimeout> | null = null;
-    searchEl.addEventListener('input', () => {
+    activeKbScope!.bind(searchEl, 'input', () => {
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         searchQuery = searchEl.value;
@@ -346,7 +358,7 @@ function attachKbHandlers(rootEl: HTMLElement): void {
   }
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-kb-copy]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeKbScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['kbCopy'];
       const cat = KB_CATEGORIES.find((c) => c.id === activeCategory);
@@ -363,7 +375,8 @@ function attachKbHandlers(rootEl: HTMLElement): void {
     });
   });
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-kb-export')?.addEventListener('click', () => {
+  const exportBtn = rootEl.querySelector<HTMLButtonElement>('#ax-kb-export');
+  if (exportBtn && activeKbScope) activeKbScope.bind(exportBtn, 'click', () => {
     haptic.tap();
     toast.info('Export PDF à implémenter (jsPDF lazy-load Jet 5)');
   });

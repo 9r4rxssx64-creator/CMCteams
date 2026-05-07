@@ -17,8 +17,17 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import type { ApexTool } from '../../services/apex-tools.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeToolboxScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeToolboxScope?.cleanup();
+  activeToolboxScope = null;
+}
 import { capabilities, type Capability } from '../../services/capabilities.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
@@ -128,6 +137,9 @@ function renderCapabilityRow(c: Capability): string {
 }
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeToolboxScope?.cleanup();
+  activeToolboxScope = createCleanupScope('apex-toolbox');
   const user = store.get('user') as { tier?: ApexTool['minTier'] } | null;
   const userTier = user?.tier ?? 'admin';
 
@@ -222,7 +234,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
 function attachToolboxHandlers(rootEl: HTMLElement): void {
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tb-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeToolboxScope!.bind(btn, 'click', () => {
       haptic.selection();
       activeTab = (btn.dataset['tbTab'] ?? 'tools') as 'tools' | 'capabilities';
       void render(rootEl);
@@ -232,7 +244,7 @@ function attachToolboxHandlers(rootEl: HTMLElement): void {
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-tb-search');
   if (searchEl) {
     let debounce: ReturnType<typeof setTimeout> | null = null;
-    searchEl.addEventListener('input', () => {
+    activeToolboxScope!.bind(searchEl, 'input', () => {
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         activeFilter = { ...activeFilter, query: searchEl.value };
@@ -241,14 +253,16 @@ function attachToolboxHandlers(rootEl: HTMLElement): void {
     });
   }
 
-  rootEl.querySelector<HTMLSelectElement>('#ax-tb-tier')?.addEventListener('change', (e) => {
+  const tierSel = rootEl.querySelector<HTMLSelectElement>('#ax-tb-tier');
+  if (tierSel && activeToolboxScope) activeToolboxScope.bind(tierSel, 'change', (e) => {
     const target = e.target as HTMLSelectElement;
     const tier = target.value as Exclude<ToolboxFilter['tier'], undefined>;
     activeFilter = { ...activeFilter, tier };
     void render(rootEl);
   });
 
-  rootEl.querySelector<HTMLSelectElement>('#ax-tb-impact')?.addEventListener('change', (e) => {
+  const impactSel = rootEl.querySelector<HTMLSelectElement>('#ax-tb-impact');
+  if (impactSel && activeToolboxScope) activeToolboxScope.bind(impactSel, 'change', (e) => {
     const target = e.target as HTMLSelectElement;
     const impactLevel = target.value as Exclude<ToolboxFilter['impactLevel'], undefined>;
     activeFilter = { ...activeFilter, impactLevel };
@@ -256,7 +270,7 @@ function attachToolboxHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tool-test]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeToolboxScope!.bind(btn, 'click', () => {
       haptic.tap();
       const name = btn.dataset['toolTest'] ?? '';
       toast.info(`Tester ${name} : modal à implémenter (Jet 5)`);
