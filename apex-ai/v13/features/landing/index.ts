@@ -119,6 +119,10 @@ export function render(rootEl: HTMLElement): void {
         <button type="button" id="login-reset-pin" class="ax-btn ax-btn-ghost ax-btn-block" style="margin-top:12px;font-size:13px">
           🔑 J'ai oublié mon code PIN
         </button>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);text-align:center">
+          <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0 0 6px">Pas encore de compte ?</p>
+          <button type="button" id="login-go-signup" class="ax-btn ax-btn-secondary ax-btn-block" style="font-size:13px">📝 Créer mon compte</button>
+        </div>
         <p class="ax-landing-footer ax-muted">
           🔒 Local-first · End-to-end · Zero tracking
         </p>
@@ -168,6 +172,13 @@ export function render(rootEl: HTMLElement): void {
       pinInput.value = '';
       pinInput.focus();
     }
+  });
+
+  /* Bouton self-signup (Kevin v13.3.67 — clients publics) */
+  const signupBtn = rootEl.querySelector<HTMLButtonElement>('#login-go-signup');
+  if (signupBtn && activeLandingScope) activeLandingScope.bind(signupBtn, 'click', () => {
+    haptic.tap();
+    router.navigate('signup');
   });
 
   /* Auto-focus nom (mobile-friendly : pas keyboard pop sur iPhone si pas user gesture, mais OK desktop) */

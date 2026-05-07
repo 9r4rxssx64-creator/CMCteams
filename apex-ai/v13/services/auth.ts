@@ -147,7 +147,7 @@ class Auth {
     if (tokens.length < 1) return { ok: false, reason: 'Nom invalide' };
 
     const isKevin = this.isKevinAdmin(name);
-    const user = isKevin
+    let user: PreconfiguredUser | undefined = isKevin
       ? PRECONFIGURED.find((u) => u.id === ADMIN_ID)
       : PRECONFIGURED.find((u) => {
           /* v13.3.65 fix Kevin "trop risqué — seulement prénom+nom et inversement, pas juste prénom".
@@ -155,14 +155,6 @@ class Auth {
            * SÉCURITÉ : matching STRICT avec 2 conditions cumulatives :
            * 1. MIN 2 tokens input (prénom+nom obligatoire, pas juste prénom seul)
            * 2. ALL user tokens must be in input (full name match, ordre indifférent)
-           *
-           * Test mental :
-           * - "Laurence Saint-Polit" → MATCH ✓ (tous user tokens présents)
-           * - "Saint-Polit Laurence" → MATCH ✓ (ordre indifférent)
-           * - "Laurence Saint Polit, Mme" → MATCH ✓ (tous user tokens dans input + extras)
-           * - "Laurence" seul → REJET ✓ (sécurité — length < 2)
-           * - "Laurence Saint" → REJET ✓ (manque 'polit')
-           * - "Marc Saint-Polit" → REJET ✓ (manque 'laurence')
            */
           if (tokens.length < 2) return false; /* Sécurité Kevin : prénom seul refusé */
           const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
@@ -171,6 +163,27 @@ class Auth {
           /* TOUS les tokens du nom user doivent être présents dans l'input (ordre indifférent) */
           return userTokens.every((ut) => inputSet.has(ut));
         });
+
+    /* v13.3.67 (Kevin 2026-05-08) : check signup-approved users (apex_v13_users)
+     * Si pas trouvé dans PRECONFIGURED, chercher parmi clients approuvés.
+     * Sécurité : MIN 2 tokens conservé (règle stricte v13.3.65). */
+    if (!user && !isKevin && tokens.length >= 2) {
+      try {
+        const dynUsers = JSON.parse(localStorage.getItem('apex_v13_users') ?? '[]') as Array<{
+          id: string; name: string; email: string; activated?: boolean;
+        }>;
+        const inputSet = new Set(tokens);
+        const found = dynUsers.find((u) => {
+          if (!u.activated) return false;
+          const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
+          if (userTokens.length < 2) return false;
+          return userTokens.every((ut) => inputSet.has(ut));
+        });
+        if (found) {
+          user = { id: found.id, name: found.name, email: found.email, isAdmin: false };
+        }
+      } catch { /* ignore */ }
+    }
 
     if (!user) {
       /* P1 fix anti user enumeration : faire PBKDF2 de toute façon (constant-time response) */
