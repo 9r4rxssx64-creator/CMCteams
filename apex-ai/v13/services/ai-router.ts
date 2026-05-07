@@ -373,6 +373,86 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
 const MAX_TOOL_USE_ITERATIONS = 10;
 
 /**
+ * v13.3.49 — Cap conversation history pour éviter HTTP 400 Anthropic.
+ * Si conversation > 30 messages → garde 1er message + 25 derniers.
+ * Insère un marker "[…X messages skipped pour limite tokens…]" entre.
+ */
+const MAX_CONVERSATION_MESSAGES = 30;
+const KEEP_FIRST_MESSAGES = 1;
+const KEEP_LAST_MESSAGES = 25;
+
+/**
+ * v13.3.49 — Caps de validation pré-envoi.
+ * Anthropic context = 200K tokens (~800K chars). On reste très en-dessous
+ * pour laisser room aux tools (105 tools APEX) + max_tokens output (4096).
+ */
+const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000 tokens */
+const MAX_TOTAL_BODY_CHARS = 400000; /* ~100K tokens conservateur */
+const MAX_TOKENS_OUTPUT_HARD_CAP = 8192;
+const MAX_TOKENS_OUTPUT_HARD_MIN = 1;
+
+function truncateConversation(messages: ChatMessage[]): ChatMessage[] {
+  if (messages.length <= MAX_CONVERSATION_MESSAGES) return messages;
+  const first = messages.slice(0, KEEP_FIRST_MESSAGES);
+  const last = messages.slice(-KEEP_LAST_MESSAGES);
+  const skipped = messages.length - first.length - last.length;
+  if (skipped <= 0) return messages;
+  /* Marker = message system-like sous role 'user' (Anthropic n'accepte que user/assistant)
+   * Claude comprendra le marker et continue depuis le contexte récent. */
+  const marker: ChatMessage = {
+    role: 'user',
+    content: `[…${skipped} messages précédents tronqués pour limite tokens — contexte préservé via system prompt mémoire long-terme…]`,
+  };
+  return [...first, marker, ...last];
+}
+
+/**
+ * v13.3.49 — Validation pré-envoi ChatMessage[] + system + max_tokens.
+ * Retourne { ok: false, reason } si invalid (caller doit fallback).
+ */
+function validateRequest(
+  messages: ChatMessage[],
+  system: string,
+  maxTokens?: number,
+): { ok: true } | { ok: false; reason: string } {
+  if (typeof system !== 'string') return { ok: false, reason: 'system must be string' };
+  if (system.length === 0) return { ok: false, reason: 'system empty' };
+  if (system.length > MAX_SYSTEM_PROMPT_CHARS) {
+    return { ok: false, reason: `system too long (${system.length} > ${MAX_SYSTEM_PROMPT_CHARS})` };
+  }
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return { ok: false, reason: 'messages must be non-empty array' };
+  }
+  for (let i = 0; i < messages.length; i += 1) {
+    const m = messages[i];
+    if (!m) return { ok: false, reason: `messages[${i}] null/undefined` };
+    if (m.role !== 'user' && m.role !== 'assistant' && m.role !== 'system') {
+      return { ok: false, reason: `messages[${i}].role invalid: ${String(m.role)}` };
+    }
+    if (m.content === null || m.content === undefined) {
+      return { ok: false, reason: `messages[${i}].content null/undefined` };
+    }
+    if (typeof m.content !== 'string' && !Array.isArray(m.content)) {
+      return { ok: false, reason: `messages[${i}].content must be string or array` };
+    }
+    if (typeof m.content === 'string' && m.content.length === 0) {
+      return { ok: false, reason: `messages[${i}].content empty string` };
+    }
+  }
+  if (typeof maxTokens === 'number') {
+    if (!Number.isFinite(maxTokens) || maxTokens < MAX_TOKENS_OUTPUT_HARD_MIN || maxTokens > MAX_TOKENS_OUTPUT_HARD_CAP) {
+      return { ok: false, reason: `max_tokens out of range [${MAX_TOKENS_OUTPUT_HARD_MIN}-${MAX_TOKENS_OUTPUT_HARD_CAP}]: ${maxTokens}` };
+    }
+  }
+  /* Total body size guard (anti-pathologique : si user colle 500K chars dans 1 msg) */
+  const totalChars = system.length + messages.reduce((sum, m) => sum + (typeof m.content === 'string' ? m.content.length : JSON.stringify(m.content).length), 0);
+  if (totalChars > MAX_TOTAL_BODY_CHARS) {
+    return { ok: false, reason: `total body too large (${totalChars} > ${MAX_TOTAL_BODY_CHARS})` };
+  }
+  return { ok: true };
+}
+
+/**
  * Providers qui supportent l'injection de tools côté API.
  * Pour les autres, on stream du texte sans tools (compat fallback chain).
  */
@@ -482,17 +562,35 @@ class AIRouter {
       logger.info('ai-router', `PII redacted outbound: ${totalPiiFound} occurrences`);
     }
 
+    /* v13.3.49 — Cap conversation history (Kevin urgent fix HTTP 400).
+     * Si > 30 messages, garde 1er + 25 derniers + marker. Évite blow context. */
+    const truncatedMessages = truncateConversation(redactedMessages);
+    if (truncatedMessages.length !== redactedMessages.length) {
+      logger.info('ai-router', `conversation truncated ${redactedMessages.length} → ${truncatedMessages.length} (cap ${MAX_CONVERSATION_MESSAGES})`);
+    }
+
+    /* v13.3.49 — Validation pré-envoi : system + messages + max_tokens.
+     * Si invalid → onError immédiat (évite HTTP 400 silencieux Anthropic). */
+    const validation = validateRequest(truncatedMessages, system, 4096);
+    if (!validation.ok) {
+      const err = new Error(`Apex pré-envoi invalide : ${validation.reason}`);
+      logger.error('ai-router', 'request validation failed', { reason: validation.reason });
+      void auditLog.record('ai.validation_failed', { details: { reason: validation.reason } });
+      onError?.(err);
+      return;
+    }
+
     if (this.currentAbort) this.currentAbort.abort();
     const ctrl = new AbortController();
     this.currentAbort = ctrl;
 
     /* Wire ai-routing-policy : policy.decide() respecte mode (auto/economy/premium/forced)
      * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
-    const chain = await this.buildPolicyAwareChain(messages);
+    const chain = await this.buildPolicyAwareChain(truncatedMessages);
 
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
     const inputTokensEstimate = Math.ceil(
-      JSON.stringify(redactedMessages).length / 4 + system.length / 4,
+      JSON.stringify(truncatedMessages).length / 4 + system.length / 4,
     );
     let outputTokensEstimate = 0;
 
@@ -508,7 +606,7 @@ class AIRouter {
        1. Stream le provider (avec tools si Anthropic)
        2. Si tool_uses détectés → exécute via apexToolsDispatch + ajoute aux messages
        3. Si pas de tool_use → end_turn, sortie boucle */
-    const currentMessages: ChatMessage[] = [...redactedMessages];
+    const currentMessages: ChatMessage[] = [...truncatedMessages];
     let lastErr: Error | null = null;
     let lastProvider: Provider = 'anthropic';
 
@@ -615,7 +713,7 @@ class AIRouter {
 
     /* WIRE chat-fallback : génère réponse actionnable au lieu de message vide
      * (règle CLAUDE.md absolue : JAMAIS message vide) */
-    const userLastMsg = redactedMessages[redactedMessages.length - 1];
+    const userLastMsg = truncatedMessages[truncatedMessages.length - 1];
     const userText =
       typeof userLastMsg?.content === 'string'
         ? userLastMsg.content
@@ -917,7 +1015,28 @@ class AIRouter {
       body: JSON.stringify(cfg.buildBody(messages, system, { withTools })),
       signal,
     });
-    if (!res.ok) throw new Error(`${provider} HTTP ${res.status}`);
+    if (!res.ok) {
+      /* v13.3.49 — Decode body Anthropic pour error détaillée (Kevin urgent fix HTTP 400).
+       * Avant : "anthropic HTTP 400" sans contexte → Kevin voyait juste "(admin debug)".
+       * Maintenant : on parse {error: {type, message}} et propage le vrai message. */
+      let detail = '';
+      try {
+        const text = await res.text();
+        try {
+          const parsed = JSON.parse(text) as { error?: { type?: string; message?: string }; message?: string };
+          detail = parsed.error?.message ?? parsed.message ?? text.slice(0, 200);
+        } catch {
+          detail = text.slice(0, 200);
+        }
+      } catch {
+        detail = res.statusText || '';
+      }
+      logger.error('ai-router', `${provider} HTTP ${res.status}`, { detail, status: res.status });
+      void auditLog.record('ai.http_error', {
+        details: { provider, status: res.status, detail: detail.slice(0, 500) },
+      });
+      throw new Error(`${provider} HTTP ${res.status}: ${detail || 'no detail'}`);
+    }
     if (!res.body) throw new Error(`${provider} no stream body`);
 
     const reader = res.body.getReader();
