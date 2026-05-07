@@ -139,6 +139,7 @@ class MultiSourceAnalyzer {
   async analyzeImage(imageBase64: string): Promise<MultiSourceResult> {
     const result = emptyResult('image', previewSource(imageBase64, 'image'));
     /* Claude Vision : extraction structurée via prompt JSON */
+    let visionOk = false;
     try {
       const ocrText = await this.callVisionExtract(imageBase64);
       if (ocrText) {
@@ -146,6 +147,7 @@ class MultiSourceAnalyzer {
         const textResult = await this.analyzeText(ocrText);
         result.items.push(...textResult.items);
         result.errors.push(...textResult.errors);
+        visionOk = true;
       } else {
         result.errors.push('vision_unavailable: pas de clé Anthropic configurée');
       }
@@ -154,6 +156,34 @@ class MultiSourceAnalyzer {
       result.errors.push(`vision_error: ${msg}`);
       logger.warn('multi-source', 'vision extract failed', { err });
     }
+
+    /* v13.3.57 PUSH-100 : Si Vision IA failed → fallback OCR offline tesseract.js
+     * Permet extraction texte sans clé API (pas autonome 100% sans IA). */
+    if (!visionOk) {
+      try {
+        const { ocrOffline } = await import('./ocr-offline.js');
+        if (ocrOffline.isAvailable()) {
+          const ocrResult = await ocrOffline.recognizeText(imageBase64);
+          if (ocrResult.ok && ocrResult.text.trim().length > 0) {
+            const textResult = await this.analyzeText(ocrResult.text);
+            result.items.push(...textResult.items);
+            result.errors.push(`ocr_offline_used: ${ocrResult.confidence.toFixed(2)} confidence, ${ocrResult.latency_ms}ms`);
+            logger.info('multi-source', 'OCR offline fallback used', {
+              confidence: ocrResult.confidence,
+              latency: ocrResult.latency_ms,
+              chars: ocrResult.text.length,
+            });
+          } else if (ocrResult.error) {
+            result.errors.push(`ocr_offline_error: ${ocrResult.error}`);
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        result.errors.push(`ocr_offline_load_failed: ${msg}`);
+        logger.warn('multi-source', 'OCR offline load failed', { err: msg });
+      }
+    }
+
     result.items = dedupeItems(result.items);
     result.extracted_count = result.items.length;
     return result;

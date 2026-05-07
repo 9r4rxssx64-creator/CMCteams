@@ -88,12 +88,24 @@ export default defineConfig({
         assetFileNames: 'assets/[ext]/[name]-[hash][extname]',
         manualChunks: (id: string): string | undefined => {
           /* Audit Kevin v13.1.0 : split par domaine pour cap chaque chunk < 30 KB gzip */
+          /* v13.3.57 PUSH-100 : fine-grain split + isolation chunks lazy */
           if (id.includes('apex-tools-dispatch')) return 'apex-tools-dispatch';
           if (id.includes('apex-tools') && !id.includes('apex-tools-dispatch')) return 'apex-tools-registry';
           if (id.includes('credential-patterns')) return 'credential-patterns';
           if (id.includes('voices-registry') || id.includes('services/voice')) return 'voice';
           if (id.includes('apex-knowledge-base')) return 'apex-kb';
           if (id.includes('sentry-bridge') || id.includes('observability')) return 'monitoring';
+          /* v13.3.57 PUSH-100 : split auto-improvement en bloc lazy à la demande */
+          if (id.includes('auto-improvement')) return 'auto-improvement';
+          if (id.includes('innovation-watch')) return 'innovation-watch';
+          if (id.includes('apex-plugins-marketplace')) return 'apex-plugins-marketplace';
+          /* Split features chat en sous-chunks logiques pour réduire chunk principal chat */
+          if (id.includes('features/chat/') && id.endsWith('index.ts')) return 'feature-chat-main';
+          if (id.includes('features/admin/')) return 'feature-admin';
+          if (id.includes('features/credentials/')) return 'feature-credentials';
+          if (id.includes('features/dashboard/')) return 'feature-dashboard';
+          if (id.includes('features/knowledge/')) return 'feature-knowledge';
+          if (id.includes('features/marketplace/')) return 'feature-marketplace';
           if (id.includes('node_modules')) {
             if (id.includes('dompurify')) return 'vendor-dompurify';
             if (id.includes('fuse.js')) return 'vendor-fuse';
