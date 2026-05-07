@@ -11,6 +11,61 @@ import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
 
+const CSP_VIOLATIONS_KEY = 'ax_csp_violations_log';
+const CSP_VIOLATIONS_CAP = 100;
+
+export interface CSPViolationEntry {
+  ts: number;
+  directive: string;
+  blockedURI: string;
+  sourceFile: string;
+  lineNumber: number;
+  columnNumber: number;
+}
+
+/** Enregistre une violation CSP dans `ax_csp_violations_log` (cap 100, FIFO). */
+export function recordCSPViolation(e: SecurityPolicyViolationEvent): CSPViolationEntry {
+  const entry: CSPViolationEntry = {
+    ts: Date.now(),
+    directive: String(e.violatedDirective || '').slice(0, 100),
+    blockedURI: String(e.blockedURI || '').slice(0, 200),
+    sourceFile: String(e.sourceFile || '').slice(0, 200),
+    lineNumber: e.lineNumber || 0,
+    columnNumber: e.columnNumber || 0,
+  };
+  try {
+    const raw = localStorage.getItem(CSP_VIOLATIONS_KEY);
+    const log: CSPViolationEntry[] = raw ? (JSON.parse(raw) as CSPViolationEntry[]) : [];
+    log.push(entry);
+    /* FIFO cap 100 */
+    const trimmed = log.length > CSP_VIOLATIONS_CAP ? log.slice(-CSP_VIOLATIONS_CAP) : log;
+    localStorage.setItem(CSP_VIOLATIONS_KEY, JSON.stringify(trimmed));
+  } catch {
+    /* quota / parse error : silencieux (CSP listener doit jamais throw) */
+  }
+  return entry;
+}
+
+/** Liste les violations CSP enregistrées (max 100, ordre chrono). */
+export function getCSPViolations(): CSPViolationEntry[] {
+  try {
+    const raw = localStorage.getItem(CSP_VIOLATIONS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as CSPViolationEntry[];
+  } catch {
+    return [];
+  }
+}
+
+/** Vide l'historique violations CSP (admin only — appelé après review). */
+export function clearCSPViolations(): void {
+  try {
+    localStorage.removeItem(CSP_VIOLATIONS_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
 class Bodyguard {
   private installed = false;
 
@@ -25,6 +80,8 @@ class Bodyguard {
         sourceFile: e.sourceFile,
         lineNumber: e.lineNumber,
       });
+      /* Stocker dans ax_csp_violations_log (cap 100) pour vue admin + sentinelle */
+      recordCSPViolation(e);
       void auditLog.record('security.csp_violation', {
         details: {
           directive: e.violatedDirective,

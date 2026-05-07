@@ -282,7 +282,8 @@ class AutoTestRunner {
       const raw = localStorage.getItem(LOG_KEY);
       if (!raw) return null;
       const arr = JSON.parse(raw) as TestRunSummary[];
-      return arr.length > 0 ? arr[arr.length - 1] : null;
+      if (arr.length === 0) return null;
+      return arr[arr.length - 1] ?? null;
     } catch {
       return null;
     }

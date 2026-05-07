@@ -999,5 +999,54 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (14 active + 1 disabled wake-watch)`);
+  /* 21. csp-violation-watch : audit hourly violations CSP capturées par bodyguard
+   *     → si > 5 violations en 1h ou patterns suspects (script-src + blockedURI externe non-trusted)
+   *       → escalade audit log + lesson learned. Auto-fix : aucun (intervention manuelle requise). */
+  sentinels.register({
+    id: 'csp-violation-watch',
+    name: 'CSP violations',
+    desc: 'Audit horaire des violations CSP (ax_csp_violations_log)',
+    intervalMs: 60 * 60 * 1000 /* 1h */,
+    check: async () => {
+      try {
+        const raw = localStorage.getItem('ax_csp_violations_log');
+        if (!raw) return { ok: true, msg: 'Aucune violation CSP enregistrée' };
+        const log = JSON.parse(raw) as Array<{ ts: number; directive: string; blockedURI: string }>;
+        if (log.length === 0) return { ok: true, msg: 'Log CSP vide' };
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+        const recent = log.filter((v) => v.ts > oneHourAgo);
+        const totalCount = log.length;
+        if (recent.length === 0) {
+          return { ok: true, msg: `0 violation dernière heure (${totalCount} historiques)` };
+        }
+        /* Patterns suspects : script-src violations avec URI externe non-trusted */
+        const trusted = ['self', 'data:', 'blob:'];
+        const suspicious = recent.filter((v) =>
+          v.directive.startsWith('script-src') &&
+          v.blockedURI &&
+          !trusted.some((t) => v.blockedURI.startsWith(t)) &&
+          !/\.firebaseio\.com|\.firebasedatabase\.app|api\.anthropic\.com|api\.openai\.com/.test(v.blockedURI),
+        );
+        if (suspicious.length > 0) {
+          return {
+            ok: false,
+            msg: `🚨 ${suspicious.length} violation(s) script-src suspectes (1h) sur ${recent.length} totales`,
+            details: { suspiciousCount: suspicious.length, recentCount: recent.length, totalCount, samples: suspicious.slice(0, 3) },
+          };
+        }
+        if (recent.length > 5) {
+          return {
+            ok: false,
+            msg: `⚠ ${recent.length} violations CSP en 1h (seuil 5 dépassé)`,
+            details: { recentCount: recent.length, totalCount, directives: [...new Set(recent.map((v) => v.directive))] },
+          };
+        }
+        return { ok: true, msg: `${recent.length}/5 violations dernière heure (sous seuil)` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'CSP watch fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (15 active + 1 disabled wake-watch)`);
 }
