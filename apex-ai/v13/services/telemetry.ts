@@ -93,7 +93,14 @@ class Telemetry {
     } catch {
       return;
     }
-    const pending = buf.filter((e) => !e.processed);
+    /* P1 v13.3.13 audit fix : valide entries non-null + champs requis (anti-crash null) */
+    const pending = buf.filter((e) =>
+      e !== null && typeof e === 'object'
+      && typeof e.id === 'string'
+      && typeof e.kind === 'string'
+      && typeof e.msg === 'string'
+      && !e.processed,
+    );
     for (const entry of pending) {
       const result = await this.tryAutoFix(entry);
       entry.processed = true;
