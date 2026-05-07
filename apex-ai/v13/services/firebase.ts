@@ -26,6 +26,11 @@ export const FB_FIX: readonly string[] = [
   'apex_v13_lessons',
   'ax_telemetry_in',
   'ax_claude_todo',
+  /* Pipeline temps-réel Apex↔Claude Code (Kevin 2026-05-07 v13.3.26) */
+  'ax_handoff_journal',
+  'ax_claude_alerts',
+  /* Bridge Apex → CMCteams planning autonome (Kevin 2026-05-07 v9.601) */
+  'ax_cmc_planning_pending',
   'ax_lessons_learned_struct',
   'ax_persistent_memory',
   'ax_links_registry',
@@ -431,6 +436,11 @@ class Firebase {
     } catch (err: unknown) {
       logger.warn('firebase', `applyRemoteChange persist failed for ${key}`, { err });
     }
+    /* Pipeline temps-réel Kevin 2026-05-07 : émet event pour que les services
+     * (claude-bridge, cmc-planning-bridge) puissent réagir aux changements distants. */
+    try {
+      events.emit('firebase:remote_change', { key, data });
+    } catch { /* ignore listener errors */ }
   }
 
   private flushQueue(): void {
