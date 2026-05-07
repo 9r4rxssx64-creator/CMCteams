@@ -22,8 +22,17 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeBrowserScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeBrowserScope?.cleanup();
+  activeBrowserScope = null;
+}
 
 /* ============================================================
    Types
@@ -727,6 +736,9 @@ export function getSuggestions(input: string, limit = 8): Suggestion[] {
    ============================================================ */
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeBrowserScope?.cleanup();
+  activeBrowserScope = createCleanupScope('browser');
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout) */
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id;
@@ -888,7 +900,7 @@ function attachHandlers(rootEl: HTMLElement): void {
     blockedOverlayEl = overlay;
     iframeContainer.appendChild(overlay);
     /* Click delegation pour les boutons fallback */
-    overlay.addEventListener('click', (e) => {
+    activeBrowserScope!.bind(overlay, 'click', (e) => {
       const target = e.target as HTMLElement;
       const btn = target.closest<HTMLElement>('[data-fallback]');
       if (!btn) return;
@@ -930,13 +942,13 @@ function attachHandlers(rootEl: HTMLElement): void {
   };
 
   if (iframe) {
-    iframe.addEventListener('load', () => {
+    activeBrowserScope!.bind(iframe, 'load', () => {
       removeBlockedOverlay();
       if (blockedTimer) clearTimeout(blockedTimer);
       /* Attendre 2s post-load pour laisser le content render */
       blockedTimer = setTimeout(checkBlocked, 2000);
     });
-    iframe.addEventListener('error', () => {
+    activeBrowserScope!.bind(iframe, 'error', () => {
       logger.warn('feature-browser', 'iframe error event');
       showBlockedOverlay(iframe.src);
     });
@@ -973,10 +985,10 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* URL bar : Enter + suggestions live */
   if (urlInput) {
-    urlInput.addEventListener('keydown', (e) => {
+    activeBrowserScope!.bind(urlInput, 'keydown', (e) => {
       if (e.key === 'Enter' && urlInput.value.trim()) navigate(urlInput.value);
     });
-    urlInput.addEventListener('input', () => {
+    activeBrowserScope!.bind(urlInput, 'input', () => {
       const sugs = getSuggestions(urlInput.value, 6);
       if (suggestionsBox) {
         if (sugs.length === 0) {
@@ -994,7 +1006,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
       }
     });
-    urlInput.addEventListener('blur', () => {
+    activeBrowserScope!.bind(urlInput, 'blur', () => {
       setTimeout(() => {
         if (suggestionsBox) suggestionsBox.style.display = 'none';
       }, 200);
@@ -1002,7 +1014,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   }
 
   /* Suggestion click */
-  suggestionsBox?.addEventListener('click', (e) => {
+  if (suggestionsBox) activeBrowserScope!.bind(suggestionsBox, 'click', (e) => {
     const target = e.target as HTMLElement;
     const sugEl = target.closest<HTMLElement>('[data-suggestion-url], [data-suggestion-query]');
     if (!sugEl) return;
