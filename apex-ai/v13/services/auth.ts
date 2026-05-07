@@ -137,8 +137,14 @@ class Auth {
     const user = isKevin
       ? PRECONFIGURED.find((u) => u.id === ADMIN_ID)
       : PRECONFIGURED.find((u) => {
+          /* v13.3.61 fix CRITIQUE Kevin "Laurence Utilisateur inconnu" :
+           * AVANT : exigeait MIN 2 tokens (prénom seul rejeté → "Utilisateur inconnu").
+           * APRÈS : 1 token suffit si match exact prénom OU nom (pour Laurence "Laurence" OK).
+           * 2 tokens reste accepté (variations "saint polit laurence", etc.). */
           const userTokens = normalize(u.name).split(/\s+/).filter((t) => t.length >= 3);
-          return tokens.length >= 2 && tokens.every((t) => userTokens.includes(t));
+          if (tokens.length === 0 || userTokens.length === 0) return false;
+          /* Match si tous les tokens input sont dans userTokens (1+ tokens OK) */
+          return tokens.every((t) => userTokens.includes(t));
         });
 
     if (!user) {
