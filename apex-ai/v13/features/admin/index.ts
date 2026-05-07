@@ -11,6 +11,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.js';
 import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
@@ -214,22 +215,31 @@ function renderProjectsTab(): string {
 }
 
 function renderTabs(): string {
+  /* v13.2.1 fix Kevin "tabs superposés iPhone" — labels courts + scroll fluide */
   const tabs: Array<[Tab, string]> = [
     ['commerce', '💳 Commerce'],
     ['users', '👥 Comptes'],
-    ['pending', '📨 En attente'],
+    ['pending', '📨 Attente'],
     ['health', '🩺 Santé'],
-    ['projects', '📦 Projets KDMC'],
-    ['executions', '⚙ Exécutions'],
-    ['knowledge', '📚 Base connaissances'],
+    ['projects', '📦 Projets'],
+    ['executions', '⚙️ Exec'],
+    ['knowledge', '📚 KB'],
     ['bilan', '📊 Bilan'],
-    ['consumption', '💰 Conso IA'],
+    ['consumption', '💰 Conso'],
   ];
+  /* Premium tabs : pill design with gold gradient on active + smooth transition + 44px touch */
   return tabs
     .map(
-      ([id, label]) => `
-      <button class="ax-tab ${activeTab === id ? 'ax-tab-active' : ''}" data-tab="${id}">${label}</button>
-    `,
+      ([id, label]) => {
+        const isActive = activeTab === id;
+        /* CRITIQUE iPhone : flex:0 0 auto force pas de shrink, white-space:nowrap garde label */
+        const baseStyle = 'flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;line-height:1.2;border-radius:22px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em;display:inline-flex;align-items:center;gap:4px;scroll-snap-align:start';
+        const activeStyle = 'background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
+        const inactiveStyle = 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.08)';
+        return `
+        <button class="ax-tab ax-bounce-tap ${isActive ? 'ax-tab-active' : ''}" data-tab="${id}" style="${baseStyle};${isActive ? activeStyle : inactiveStyle}">${label}</button>
+      `;
+      },
     )
     .join('');
 }
@@ -414,7 +424,7 @@ function renderKnowledgeTab(): string {
 function attachHandlers(rootEl: HTMLElement): void {
   /* Nav route delegation (CSP strict — replaces inline onclick) */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-nav-route]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const route = btn.dataset['navRoute'] ?? 'chat';
       window.location.hash = '#' + route;
@@ -423,13 +433,13 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Select-all delegation for input click (CSP strict) */
   rootEl.querySelectorAll<HTMLInputElement>('[data-action="select-all"]').forEach((input) => {
-    input.addEventListener('click', () => {
+    activeAdminScope!.bind(input, 'click', () => {
       input.select();
     });
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.selection();
       activeTab = btn.dataset['tab'] as Tab;
       void render(rootEl);
@@ -438,7 +448,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const toggle = rootEl.querySelector<HTMLInputElement>('#commerce-toggle');
   if (toggle) {
-    toggle.addEventListener('change', () => {
+    activeAdminScope!.bind(toggle, 'change', () => {
       haptic.medium();
       commerce.setEnabled(toggle.checked);
       toast.success(`Commercialisation ${toggle.checked ? 'activée' : 'désactivée'}`);
@@ -448,14 +458,14 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const form = rootEl.querySelector<HTMLFormElement>('#create-user-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(form, 'submit', (e) => {
       e.preventDefault();
       void handleCreateUser(rootEl);
     });
   }
 
   rootEl.querySelectorAll<HTMLSelectElement>('[data-user-plan]').forEach((select) => {
-    select.addEventListener('change', () => {
+    activeAdminScope!.bind(select, 'change', () => {
       const uid = select.dataset['userPlan'] ?? '';
       if (!uid) return;
       commerce.setUserPlan(uid, select.value as Plan);
@@ -464,7 +474,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-project-save]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['projectSave'] ?? '';
       if (!id) return;
@@ -490,7 +500,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-confirm-otp]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const otp = btn.dataset['confirmOtp'] ?? '';
       if (!otp) return;
@@ -509,7 +519,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* Apex execute : cancel + poll handlers */
   rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-cancel]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['execCancel'] ?? '';
       if (!id) return;
@@ -526,7 +536,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   });
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-exec-poll]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const id = btn.dataset['execPoll'] ?? '';
       if (!id) return;
@@ -544,7 +554,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   /* ========== Knowledge Base handlers ========== */
   const addRepoForm = rootEl.querySelector<HTMLFormElement>('#add-repo-form');
   if (addRepoForm) {
-    addRepoForm.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(addRepoForm, 'submit', (e) => {
       e.preventDefault();
       haptic.tap();
       const input = rootEl.querySelector<HTMLInputElement>('#kb-add-repo');
@@ -566,7 +576,7 @@ function attachHandlers(rootEl: HTMLElement): void {
   }
 
   rootEl.querySelectorAll<HTMLButtonElement>('[data-remove-repo]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeAdminScope!.bind(btn, 'click', () => {
       haptic.tap();
       const repo = btn.dataset['removeRepo'] ?? '';
       if (!repo) return;
@@ -578,7 +588,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const searchForm = rootEl.querySelector<HTMLFormElement>('#kb-search-form');
   if (searchForm) {
-    searchForm.addEventListener('submit', (e) => {
+    activeAdminScope!.bind(searchForm, 'submit', (e) => {
       e.preventDefault();
       haptic.tap();
       const queryInput = rootEl.querySelector<HTMLInputElement>('#kb-search-query');
@@ -611,7 +621,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   const clearCacheBtn = rootEl.querySelector<HTMLButtonElement>('#kb-clear-cache');
   if (clearCacheBtn) {
-    clearCacheBtn.addEventListener('click', () => {
+    activeAdminScope!.bind(clearCacheBtn, 'click', () => {
       haptic.tap();
       const r = apexKnowledgeBase.clearCache();
       toast.success(`Cache vidé : ${r.cleared} entrées`);
@@ -678,7 +688,18 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   void render(rootEl);
 }
 
+/* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA navigation. */
+let activeAdminScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeAdminScope?.cleanup();
+  activeAdminScope = null;
+}
+
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeAdminScope?.cleanup();
+  activeAdminScope = createCleanupScope('admin');
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
@@ -691,12 +712,65 @@ export function render(rootEl: HTMLElement): void {
   }
 
   rootEl.innerHTML = `
-    <div class="ax-admin">
-      <header class="ax-admin-header">
-        <h1>Centre Admin</h1>
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat">← Chat</button>
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card { animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards; }
+      .ax-bounce-tap { transition: transform 120ms cubic-bezier(0.16,1,0.3,1); }
+      .ax-bounce-tap:active { transform: scale(0.96); }
+      .ax-admin-content .ax-admin-section {
+        background: linear-gradient(135deg, rgba(20,20,35,0.65), rgba(14,14,28,0.45));
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 60ms backwards;
+      }
+      .ax-admin-content h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.015em;
+      }
+      .ax-admin-content h3 {
+        margin: 14px 0 8px;
+        font-size: 13px;
+        color: #e8b830;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+      }
+      .ax-admin-content .ax-info-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+      }
+      .ax-admin-content .ax-muted {
+        color: rgba(255,255,255,0.55);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card, .ax-admin-section { animation: none !important; transition: none !important; }
+        .ax-bounce-tap { transition: none !important; }
+      }
+    </style>
+    <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
+        <div style="min-width:0;flex:1">
+          <h1 style="margin:0;font-size:clamp(20px,5vw,28px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
+          <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Kevin · accès illimité</p>
+        </div>
+        <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms;white-space:nowrap">← Chat</button>
       </header>
-      <nav class="ax-tabs">${renderTabs()}</nav>
+      <nav class="ax-tabs" style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin:0 -16px 14px;padding-left:16px;padding-right:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scroll-snap-type:x mandatory;scroll-padding-left:16px">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>
     </div>
   `;

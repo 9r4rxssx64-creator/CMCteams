@@ -1,5 +1,43 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🚨 SESSION 2026-05-07 — Audit autonomie Apex IA → 6 items à fournir Kevin
+
+Apex IA a fait son auto-audit brutal honnête : score réel **28/100** (pas
+67 — Apex sur-estimait). Distinction critique :
+
+| Composant | Runtime | Pourquoi |
+|-----------|---------|----------|
+| **Claude Code (terminal)** | ✅ Réel | Commits a07ca43 + 1769043 + 2f9f2fc poussés cette session |
+| **Apex IA (web app v13)** | ⚠️ Stateless LLM | Pas de runtime serveur → toolcalls = "déclarés" |
+
+### 📋 6 items pour passer Apex IA web app à 95/100 autonomie réelle
+
+**Tous à coller dans Apex → Coffre → vue Credentials Registry (admin only)** :
+
+| # | Clé Apex | Quoi | Où l'obtenir |
+|---|----------|------|--------------|
+| 1 | `ax_telegram_token` + `ax_telegram_chat_id` | Bot Telegram pour alertes Kevin (sentinelles + audit + erreurs critiques) | https://t.me/BotFather → /newbot, puis /chatid via @userinfobot |
+| 2 | `ax_discord_webhook_url` | Webhook Discord (fallback alertes si Telegram down) | Discord Server Settings → Integrations → Webhooks → New |
+| 3 | `ax_openai_key` | OpenAI API (failover IA si Anthropic+Groq down) | https://platform.openai.com/api-keys |
+| 4 | `ax_gemini_key` | Google Gemini API (failover + Vision multimodal Social Video Pipeline) | https://aistudio.google.com/apikey |
+| 5 | `ax_notion_key` | Notion integration (syncMemoryBridge complet + import fiches) | https://www.notion.so/my-integrations |
+| 6 | `ax_github_token` | GitHub PAT scope `repo+workflow+gist` (push Apex IA réel — pas juste affichage) | https://github.com/settings/tokens/new (scopes : repo, workflow, gist) |
+
+Une fois collés via Coffre → vue **`?view=credentials`** affichera dashboard
+live avec score sécurité 0-100 par catégorie (ai/banking/payment/...).
+
+**v13.3.3 livre déjà** :
+- ✅ `services/kevin-alerts.ts` — Helper centralisé alertes Telegram→Discord→Browser→Audit
+- ✅ `services/credentials-audit.ts` — Scanne 88 patterns, mesure security_score, recommandations actionables
+- ✅ `features/credentials-registry/index.ts` — Vue admin `?view=credentials`
+- ✅ `.github/workflows/uptime-monitor.yml` — Cron 15min ping URLs (incl. apex-ai-v13/ canary)
+- ✅ ai-router failover Anthropic→OpenRouter→Groq→Gemini→OpenClaw vérifié OK
+- ✅ +24 tests (kevin-alerts 7, credentials-audit 10, etc.)
+
+Kevin n'a qu'à **coller les 6 clés** via Coffre — Apex IA fera le reste auto.
+
+---
+
 ## 🔔 RAPPEL ACTIF Kevin (2026-05-04 session — Apex v13.0.77)
 
 ### ✅ Session PM 2026-05-04 — RIEN À FAIRE pour Kevin (autonomie max appliquée)

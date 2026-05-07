@@ -26,6 +26,260 @@ export interface CredentialPattern {
 }
 
 export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
+  /* === Téléphone Kevin WhatsApp (v13.0.81 fix Kevin "Apex refuse mon numéro") ===
+   * PRIORITÉ #1 : Apex IA refusait de stocker le numéro WhatsApp Kevin (admin)
+   * Maintenant: pattern détecté + auto-store ax_kevin_whatsapp_phone */
+  {
+    name: 'Téléphone Kevin WhatsApp',
+    /* Formats : +33XXXXXXXXX, 0033XXXXXXXXX, 06XXXXXXXX, 07XXXXXXXX, +33 6 XX XX XX XX, etc. */
+    regex: /^(?:\+|00)?(?:33\s?[67]|0[67])(?:[\s.-]?\d{2}){4}$/,
+    storageKey: 'ax_kevin_whatsapp_phone',
+    category: 'identity', /* identity = Kevin admin OK store, autres users non */
+    dashboard: 'https://web.whatsapp.com',
+    docs: 'https://developers.facebook.com/docs/whatsapp',
+  },
+  /* === Banking / Fintech (Kevin règle 2026-05-04 — banques courantes auto-detect) ===
+     Placés en TÊTE car patterns spécifiques avec prefix nettement reconnaissable.
+     Si placés en queue, les regex génériques (Cohere, Apex Push, Mistral) les capturent. */
+  {
+    name: 'Société Générale Client ID',
+    regex: /^SG\d{12}$/,
+    storageKey: 'ax_socgen_client_id',
+    category: 'finance',
+    dashboard: 'https://particuliers.sg.fr/icd-web/syd-front/index-page-connexion.html',
+    docs: 'https://developer.societegenerale.com/',
+  },
+  {
+    name: 'BNP Paribas ID',
+    regex: /^bnp_\d{8,12}$/i,
+    storageKey: 'ax_bnp_id',
+    category: 'finance',
+    dashboard: 'https://mabanque.bnpparibas/',
+  },
+  {
+    name: 'Crédit Agricole ID',
+    regex: /^ca_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_credit_agricole_id',
+    category: 'finance',
+    dashboard: 'https://www.credit-agricole.fr/',
+  },
+  {
+    name: 'Crédit Mutuel ID',
+    regex: /^cm_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_credit_mutuel_id',
+    category: 'finance',
+    dashboard: 'https://www.creditmutuel.fr/',
+  },
+  {
+    name: 'BPCE/Caisse Épargne ID',
+    regex: /^bpce_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_bpce_id',
+    category: 'finance',
+    dashboard: 'https://www.caisse-epargne.fr/',
+  },
+  {
+    name: 'La Banque Postale ID',
+    regex: /^lbp_\d{8,12}$/i,
+    storageKey: 'ax_lbp_id',
+    category: 'finance',
+    dashboard: 'https://www.labanquepostale.fr/particulier.html',
+  },
+  {
+    name: 'ING France ID',
+    regex: /^ing_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_ing_id',
+    category: 'finance',
+    dashboard: 'https://www.ing.fr/',
+  },
+  {
+    name: 'Boursorama Client',
+    regex: /^bourso_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_boursorama_id',
+    category: 'finance',
+    dashboard: 'https://clients.boursorama.com/connexion',
+  },
+  {
+    name: 'Fortuneo Client',
+    regex: /^fortuneo_[a-z0-9]{8,16}$/i,
+    storageKey: 'ax_fortuneo_id',
+    category: 'finance',
+    dashboard: 'https://mabanque.fortuneo.fr/',
+  },
+  {
+    name: 'N26 User ID',
+    regex: /^n26_[a-z0-9-]{16,}$/i,
+    storageKey: 'ax_n26_id',
+    category: 'finance',
+    dashboard: 'https://app.n26.com/',
+  },
+  {
+    name: 'Revolut Tag',
+    regex: /^@?revolut_[a-z0-9]{4,32}$/i,
+    storageKey: 'ax_revolut_tag',
+    category: 'finance',
+    dashboard: 'https://app.revolut.com/',
+  },
+  {
+    name: 'Wise (TransferWise) Profile',
+    regex: /^wise_\d{6,12}$/i,
+    storageKey: 'ax_wise_profile_id',
+    category: 'finance',
+    dashboard: 'https://wise.com/user/account',
+    docs: 'https://api-docs.wise.com/',
+  },
+  {
+    name: 'Lydia Tag',
+    regex: /^@?lydia_[a-z0-9._-]{2,32}$/i,
+    storageKey: 'ax_lydia_tag',
+    category: 'finance',
+    dashboard: 'https://lydia-app.com/',
+  },
+  {
+    name: 'PayPal Email Tag',
+    regex: /^paypal:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i,
+    storageKey: 'ax_paypal_email',
+    category: 'finance',
+    dashboard: 'https://www.paypal.com/',
+  },
+
+  /* === Crypto exchanges === */
+  {
+    name: 'Coinbase API Key',
+    regex: /^coinbase_[A-Za-z0-9]{20,}$/,
+    storageKey: 'ax_coinbase_key',
+    category: 'finance',
+    dashboard: 'https://www.coinbase.com/settings/api',
+    docs: 'https://docs.cloud.coinbase.com/',
+  },
+  {
+    name: 'Binance API Key',
+    regex: /^binance_[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_binance_key',
+    category: 'finance',
+    dashboard: 'https://www.binance.com/en/my/settings/api-management',
+    docs: 'https://binance-docs.github.io/apidocs/',
+  },
+  {
+    name: 'Crypto.com API Key',
+    regex: /^crypto_[A-Za-z0-9]{20,}$/,
+    storageKey: 'ax_crypto_com_key',
+    category: 'finance',
+    dashboard: 'https://crypto.com/exchange/user/profile/api',
+  },
+  {
+    name: 'Kraken API Key',
+    regex: /^kraken_[A-Za-z0-9/+=]{40,}$/,
+    storageKey: 'ax_kraken_key',
+    category: 'finance',
+    dashboard: 'https://www.kraken.com/u/security/api',
+    docs: 'https://docs.kraken.com/rest/',
+  },
+
+  /* === Réseaux sociaux / Marketing === */
+  {
+    name: 'Facebook OAuth Token',
+    regex: /^EAA[A-Za-z0-9]{50,}$/,
+    storageKey: 'ax_facebook_oauth',
+    category: 'comms',
+    dashboard: 'https://developers.facebook.com/apps/',
+    docs: 'https://developers.facebook.com/docs/graph-api/',
+  },
+  {
+    name: 'Instagram Access Token',
+    regex: /^IGQVJ[A-Za-z0-9_-]{50,}$/,
+    storageKey: 'ax_instagram_token',
+    category: 'comms',
+    dashboard: 'https://developers.facebook.com/apps/',
+    docs: 'https://developers.facebook.com/docs/instagram-api/',
+  },
+  {
+    name: 'TikTok Creator Token',
+    regex: /^tiktok_[A-Za-z0-9._-]{20,}$/i,
+    storageKey: 'ax_tiktok_token',
+    category: 'comms',
+    dashboard: 'https://developers.tiktok.com/',
+    docs: 'https://developers.tiktok.com/doc/',
+  },
+  {
+    name: 'YouTube API Key',
+    regex: /^AIzaSy[A-Za-z0-9_-]{33}$/,
+    storageKey: 'ax_youtube_key',
+    category: 'comms',
+    dashboard: 'https://console.cloud.google.com/apis/credentials',
+    docs: 'https://developers.google.com/youtube/v3',
+  },
+  {
+    name: 'Twitter/X Bearer Token',
+    regex: /^AAAAAAAAAAAAAAAAAA[A-Za-z0-9%]{50,}$/,
+    storageKey: 'ax_twitter_bearer',
+    category: 'comms',
+    dashboard: 'https://developer.twitter.com/en/portal/dashboard',
+    docs: 'https://developer.twitter.com/en/docs/twitter-api',
+  },
+  {
+    name: 'LinkedIn Access Token',
+    regex: /^AQ[A-Za-z0-9_-]{100,}$/,
+    storageKey: 'ax_linkedin_token',
+    category: 'comms',
+    dashboard: 'https://www.linkedin.com/developers/apps',
+    docs: 'https://learn.microsoft.com/en-us/linkedin/',
+  },
+
+  /* === Productivité / Identité (NON stocké, juste détecté pour reconnaissance) === */
+  {
+    name: 'Google Account Email',
+    regex: /^[a-z0-9._%+-]+@gmail\.com$/i,
+    storageKey: 'ax_google_email',
+    category: 'identity',
+    dashboard: 'https://myaccount.google.com/',
+  },
+  {
+    name: 'Microsoft 365 Email',
+    regex: /^[a-z0-9._%+-]+@(?:outlook|hotmail|live|microsoft|office365)\.[a-z.]{2,}$/i,
+    storageKey: 'ax_microsoft_email',
+    category: 'identity',
+    dashboard: 'https://account.microsoft.com/',
+  },
+  {
+    name: 'Apple ID Email',
+    regex: /^[a-z0-9._%+-]+@(?:icloud|me|mac)\.com$/i,
+    storageKey: 'ax_apple_email',
+    category: 'identity',
+    dashboard: 'https://appleid.apple.com/',
+  },
+
+  /* === E-commerce / Délivrables === */
+  {
+    name: 'Stripe Connect Account',
+    regex: /^acct_[A-Za-z0-9]{16,}$/,
+    storageKey: 'ax_stripe_connect_acct',
+    category: 'finance',
+    dashboard: 'https://dashboard.stripe.com/connect/accounts',
+    docs: 'https://stripe.com/docs/connect',
+  },
+  {
+    name: 'PayPal Business Email',
+    regex: /^paypal_biz:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i,
+    storageKey: 'ax_paypal_business_email',
+    category: 'finance',
+    dashboard: 'https://www.paypal.com/businessmanage/',
+  },
+  {
+    name: 'Shopify Admin Token',
+    regex: /^shpat_[a-f0-9]{32}$/,
+    storageKey: 'ax_shopify_token',
+    category: 'finance',
+    dashboard: 'https://admin.shopify.com/',
+    docs: 'https://shopify.dev/docs/api/admin-rest',
+  },
+  {
+    name: 'Shopify Storefront Token',
+    regex: /^shpss_[a-f0-9]{32}$/,
+    storageKey: 'ax_shopify_storefront',
+    category: 'finance',
+    dashboard: 'https://admin.shopify.com/',
+  },
+
   /* === AI providers === */
   {
     name: 'Anthropic',
@@ -462,18 +716,65 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     storageKey: '__FORBIDDEN_SEED__',
     category: 'forbidden',
   },
+  {
+    name: '⚠️ Mot de passe bancaire (refusé)',
+    regex: /^(?:bank_password|bank_pass|mdp_banque):/i,
+    storageKey: '__FORBIDDEN_BANK_PASS__',
+    category: 'forbidden',
+  },
 ];
 
 /* Détecte le pattern correspondant à une valeur, null si inconnu. */
 export function detectCredential(value: string): CredentialPattern | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  /* Test forbidden patterns en priorité absolue */
+  /* Test forbidden patterns en priorité absolue (full match) */
   for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category === 'forbidden')) {
     if (p.regex.test(trimmed)) return p;
   }
+  /* Full match d'abord (clé seule) */
   for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
     if (p.regex.test(trimmed)) return p;
   }
+  /* Fallback : si Kevin colle multi-line / JSON / contexte, scan le premier match trouvé
+   * (permissif, fix Kevin v13.0.78 "il s'affole pas reconnu") */
+  const lines = trimmed.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+  for (const line of lines) {
+    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
+      if (p.regex.test(line)) return p;
+    }
+  }
   return null;
+}
+
+/**
+ * Détecte TOUTES les clés API dans un texte multi-credentials (scanne chaque ligne/segment).
+ * Utile quand Kevin colle plusieurs clés d'un coup ou un fichier .env complet.
+ * Returns: Array de {pattern, value} pour chaque match unique trouvé.
+ */
+export function detectAllCredentials(text: string): Array<{ pattern: CredentialPattern; value: string }> {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const results: Array<{ pattern: CredentialPattern; value: string }> = [];
+  const seen = new Set<string>();
+  /* Split sur whitespace, virgules, point-virgules, retours ligne, =, : (formats .env / JSON) */
+  const tokens = trimmed.split(/[\s,;=:"'`]+/).map((s) => s.trim()).filter(Boolean);
+  /* Aussi tester le texte entier (full match) en premier */
+  const fullMatch = detectCredential(trimmed);
+  if (fullMatch) {
+    results.push({ pattern: fullMatch, value: trimmed });
+    seen.add(fullMatch.storageKey);
+  }
+  /* Puis chaque token */
+  for (const token of tokens) {
+    if (token.length < 10) continue; /* skip très courts (pas un vrai token) — réduit 16→10 pour téléphones */
+    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
+      if (p.regex.test(token) && !seen.has(p.storageKey)) {
+        results.push({ pattern: p, value: token });
+        seen.add(p.storageKey);
+        break;
+      }
+    }
+  }
+  return results;
 }

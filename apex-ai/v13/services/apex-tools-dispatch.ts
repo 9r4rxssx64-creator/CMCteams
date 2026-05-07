@@ -27,6 +27,91 @@ export interface ToolExecResult {
 }
 
 class ApexToolsDispatcher {
+  /* P0 fix audit Cure53/NCC : event delegation singleton.
+     Au lieu d'attacher un listener par bouton modal (memory leak car les modals
+     sont fréquemment ouverts/fermés), on a UN SEUL listener `click` sur document.body
+     qui dispatch via data-attribute `data-tool-action`.
+     - Pas de cleanup individuel à gérer.
+     - 1 listener total, peu importe le nombre de modals ouverts. */
+  private delegationInstalled = false;
+  private delegationAbort: AbortController | null = null;
+  /* Référence vers le listener pour double-cleanup (AbortController + removeEventListener
+     explicite — certains environnements browser/test ne respectent pas signal). */
+  private delegationListener: EventListener | null = null;
+  /* Map d'actions actives → handler. Key = `data-tool-action` value. */
+  private toolActionHandlers = new Map<string, (el: Element, ev: Event) => void>();
+
+  /**
+   * Installe le listener de délégation unique (idempotent).
+   * Appelé lazily à la 1re utilisation d'openUrlModal ou de tout consumer event-delegation.
+   */
+  private installDelegation(): void {
+    if (this.delegationInstalled) return;
+    if (typeof document === 'undefined') return;
+    this.delegationAbort = new AbortController();
+    const listener: EventListener = (ev) => {
+      const target = ev.target as Element | null;
+      if (!target) return;
+      const actionEl = target.closest<HTMLElement>('[data-tool-action]');
+      if (!actionEl) return;
+      const action = actionEl.dataset['toolAction'];
+      if (!action) return;
+      const handler = this.toolActionHandlers.get(action);
+      if (handler) handler(actionEl, ev);
+    };
+    this.delegationListener = listener;
+    document.body.addEventListener('click', listener, { signal: this.delegationAbort.signal });
+    this.delegationInstalled = true;
+  }
+
+  /**
+   * Enregistre un handler pour un `data-tool-action` donné.
+   * Si un handler existait déjà, il est remplacé (no leak).
+   * Retourne fonction unregister pour cleanup explicite si voulu.
+   */
+  private registerToolAction(action: string, handler: (el: Element, ev: Event) => void): () => void {
+    this.installDelegation();
+    this.toolActionHandlers.set(action, handler);
+    return () => {
+      const current = this.toolActionHandlers.get(action);
+      if (current === handler) this.toolActionHandlers.delete(action);
+    };
+  }
+
+  /**
+   * Cleanup public — appelable au logout/shutdown.
+   * Désinstalle le listener de délégation + clear handlers.
+   * Double-cleanup : AbortController.abort() + removeEventListener explicite
+   * (certains tests/runtimes ne respectent pas le signal automatiquement).
+   */
+  destroy(): void {
+    if (this.delegationAbort) {
+      try { this.delegationAbort.abort(); } catch { /* ignore */ }
+      this.delegationAbort = null;
+    }
+    if (this.delegationListener && typeof document !== 'undefined') {
+      try { document.body.removeEventListener('click', this.delegationListener); } catch { /* ignore */ }
+    }
+    this.delegationListener = null;
+    this.delegationInstalled = false;
+    this.toolActionHandlers.clear();
+  }
+
+  /**
+   * Audit helper : compte d'actions de délégation enregistrées.
+   * Exposé pour tests (vérifier qu'on n'accumule pas de handlers fantômes).
+   */
+  getActiveDelegationActionCount(): number {
+    return this.toolActionHandlers.size;
+  }
+
+  /**
+   * True si la délégation document est installée (1 seul listener total).
+   */
+  isDelegationInstalled(): boolean {
+    return this.delegationInstalled;
+  }
+
   /**
    * Exécute un tool avec validation tier + audit log + retry.
    * Si tool requires_validation=true, retourne validation_token au lieu d'exécuter.
@@ -786,6 +871,447 @@ class ApexToolsDispatcher {
           (params['quality'] as number | undefined) ?? 0.8,
           (params['max_width'] as number | undefined) ?? 1920,
         );
+      /* === Autonomie totale Kevin 2026-05-04 ===
+         Apex IA exécute tâches sur services externes (envoie email, crée issue,
+         transfer paiement, post message) via clés API Kevin déjà configurées. */
+      case 'execute_task_on_service':
+      case 'execute_task_service':
+      case 'autonomie_execute_service':
+        return this.executeTaskOnService(
+          params['service'] as string,
+          params['task'] as string,
+          (params['params'] as Record<string, unknown> | undefined) ?? {},
+        );
+      /* P0 PARITÉ CLAUDE CODE (Kevin screenshots 2026-05-07) :
+       * Tools dédiés write fichier — short-circuits vers handleGithubTask. */
+      case 'create_or_update_file':
+      case 'create_file':
+      case 'write_file': {
+        return this.executeTaskOnService('github', 'create_or_update_file', params);
+      }
+      case 'delete_repo_file': {
+        return this.executeTaskOnService('github', 'delete_file', params);
+      }
+      case 'list_task_on_service_handlers':
+        return { handlers: this.listExecuteTaskHandlers() };
+      /* === Personal Assistant (Kevin 2026-05-07) === */
+      case 'whatsapp_send_message': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis (carnet vide ?)' };
+        return personalAssistant.whatsappSendMessage({
+          phone,
+          message: (params['message'] as string) ?? '',
+        });
+      }
+      case 'whatsapp_call': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis' };
+        return personalAssistant.whatsappCall({ phone });
+      }
+      case 'whatsapp_video_call': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const phone = await this.resolvePhone(
+          params['phone'] as string | undefined,
+          params['contact_name'] as string | undefined,
+        );
+        if (!phone) return { ok: false, reason: 'Numéro ou contact_name requis' };
+        return personalAssistant.whatsappCall({ phone, video: true });
+      }
+      case 'gmail_compose': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailCompose({
+          to: (params['to'] as string) ?? '',
+          subject: (params['subject'] as string) ?? '',
+          body: (params['body'] as string) ?? '',
+        });
+      }
+      case 'gmail_list_unread': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailListUnread((params['max'] as number | undefined) ?? 20);
+      }
+      case 'gmail_archive': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.gmailMoveLabel(
+          (params['email_id'] as string) ?? '',
+          (params['label'] as string) ?? 'archive',
+          'INBOX',
+        );
+      }
+      case 'outlook_compose': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.outlookCompose({
+          to: (params['to'] as string) ?? '',
+          subject: (params['subject'] as string) ?? '',
+          body: (params['body'] as string) ?? '',
+        });
+      }
+      case 'outlook_list_unread': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.outlookListUnread((params['max'] as number | undefined) ?? 20);
+      }
+      case 'facebook_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const fbOpts: { message?: string; mediaUrl?: string; pageId?: string } = {};
+        if (typeof params['message'] === 'string') fbOpts.message = params['message'];
+        if (typeof params['media_url'] === 'string') fbOpts.mediaUrl = params['media_url'];
+        if (typeof params['page_id'] === 'string') fbOpts.pageId = params['page_id'];
+        return personalAssistant.facebookPost(fbOpts);
+      }
+      case 'instagram_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const igType = (params['type'] as string) ?? 'image';
+        const igOpts: { mediaUrl: string; caption?: string; type: 'image' | 'video' | 'reel' } = {
+          mediaUrl: (params['media_url'] as string) ?? '',
+          type: igType === 'video' ? 'video' : igType === 'reel' ? 'reel' : 'image',
+        };
+        if (typeof params['caption'] === 'string') igOpts.caption = params['caption'];
+        return personalAssistant.instagramPost(igOpts);
+      }
+      case 'tiktok_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.tiktokPost({
+          videoUrl: (params['video_url'] as string) ?? '',
+          caption: (params['caption'] as string) ?? '',
+        });
+      }
+      case 'youtube_upload': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const ytOpts: {
+          videoBlob?: Blob;
+          title: string;
+          description: string;
+          tags?: string[];
+          privacy?: 'public' | 'unlisted' | 'private';
+        } = {
+          title: (params['title'] as string) ?? '',
+          description: (params['description'] as string) ?? '',
+        };
+        if (Array.isArray(params['tags'])) ytOpts.tags = params['tags'] as string[];
+        const priv = params['privacy'] as string | undefined;
+        if (priv === 'public' || priv === 'unlisted' || priv === 'private') ytOpts.privacy = priv;
+        if (params['video_blob'] instanceof Blob) ytOpts.videoBlob = params['video_blob'];
+        return personalAssistant.youtubeUpload(ytOpts);
+      }
+      case 'linkedin_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const liOpts: { text: string; mediaUrl?: string } = {
+          text: (params['text'] as string) ?? '',
+        };
+        if (typeof params['media_url'] === 'string') liOpts.mediaUrl = params['media_url'];
+        return personalAssistant.linkedinPost(liOpts);
+      }
+      case 'twitter_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.twitterPost({ text: (params['text'] as string) ?? '' });
+      }
+      case 'telegram_send': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.telegramSendMessage({
+          chatId: (params['chat_id'] as string) ?? '',
+          text: (params['text'] as string) ?? '',
+        });
+      }
+      case 'discord_webhook': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.discordWebhook({
+          url: (params['url'] as string) ?? '',
+          content: (params['content'] as string) ?? '',
+        });
+      }
+      case 'slack_post': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const slackOpts: { channel: string; text: string; webhookUrl?: string } = {
+          channel: (params['channel'] as string) ?? '',
+          text: (params['text'] as string) ?? '',
+        };
+        if (typeof params['webhook_url'] === 'string') slackOpts.webhookUrl = params['webhook_url'];
+        return personalAssistant.slackPost(slackOpts);
+      }
+      case 'notion_create_page': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.notionCreatePage({
+          databaseId: (params['database_id'] as string) ?? '',
+          title: (params['title'] as string) ?? '',
+          content: (params['content'] as string) ?? '',
+        });
+      }
+      case 'google_photos_list': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const albumId = params['album_id'] as string | undefined;
+        const max = (params['max'] as number | undefined) ?? 50;
+        return albumId
+          ? personalAssistant.googlePhotosList(albumId, max)
+          : personalAssistant.googlePhotosList(undefined, max);
+      }
+      case 'google_photos_organize': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const orgOpts: { albumName: string; photoIds?: string[] } = {
+          albumName: (params['album_name'] as string) ?? '',
+        };
+        if (Array.isArray(params['photo_ids'])) orgOpts.photoIds = params['photo_ids'] as string[];
+        return personalAssistant.googlePhotosOrganize(orgOpts);
+      }
+      case 'spotify_play': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const spOpts: { trackId?: string; contextUri?: string; deviceId?: string } = {};
+        if (typeof params['track_id'] === 'string') spOpts.trackId = params['track_id'];
+        if (typeof params['context_uri'] === 'string') spOpts.contextUri = params['context_uri'];
+        if (typeof params['device_id'] === 'string') spOpts.deviceId = params['device_id'];
+        return personalAssistant.spotifyPlay(spOpts);
+      }
+      case 'spotify_create_playlist': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const spOpts: { name: string; trackIds?: string[]; isPublic?: boolean } = {
+          name: (params['name'] as string) ?? '',
+        };
+        if (Array.isArray(params['track_ids'])) spOpts.trackIds = params['track_ids'] as string[];
+        if (params['is_public'] !== undefined) {
+          spOpts.isPublic = params['is_public'] === true || params['is_public'] === 'true';
+        }
+        return personalAssistant.spotifyCreatePlaylist(spOpts);
+      }
+      case 'icloud_photos_list': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return personalAssistant.icloudPhotosList();
+      }
+      case 'integrations_capabilities': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        const filterService = params['service'] as string | undefined;
+        return filterService
+          ? { capabilities: personalAssistant.getCapabilitiesForService(filterService) }
+          : { capabilities: personalAssistant.getCapabilities() };
+      }
+      case 'integrations_oauth_health': {
+        const { personalAssistant } = await import('./personal-assistant.js');
+        return { services: await personalAssistant.checkAllOAuth() };
+      }
+      /* === Contacts === */
+      case 'contact_add': {
+        const { contacts } = await import('./contacts.js');
+        const cInput: {
+          name: string;
+          phone?: string;
+          email?: string;
+          whatsapp?: string;
+          aliases?: string[];
+          notes?: string;
+        } = { name: (params['name'] as string) ?? '' };
+        if (typeof params['phone'] === 'string') cInput.phone = params['phone'];
+        if (typeof params['email'] === 'string') cInput.email = params['email'];
+        if (typeof params['whatsapp'] === 'string') cInput.whatsapp = params['whatsapp'];
+        if (Array.isArray(params['aliases'])) cInput.aliases = params['aliases'] as string[];
+        if (typeof params['notes'] === 'string') cInput.notes = params['notes'];
+        return { ok: true, contact: contacts.add(cInput) };
+      }
+      case 'contact_search': {
+        const { contacts } = await import('./contacts.js');
+        const opts: { maxResults?: number } = {};
+        if (typeof params['max'] === 'number') opts.maxResults = params['max'];
+        return {
+          ok: true,
+          results: contacts.search((params['query'] as string) ?? '', opts),
+        };
+      }
+      case 'contact_list': {
+        const { contacts } = await import('./contacts.js');
+        return { ok: true, contacts: contacts.list() };
+      }
+      case 'contact_remove': {
+        const { contacts } = await import('./contacts.js');
+        return { ok: contacts.remove((params['id'] as string) ?? '') };
+      }
+      /* === Image Transform — Kevin "polyvalent créatif" 2026-05-07 === */
+      case 'transform_image':
+      case 'cartoonify':
+      case 'animate_image':
+      case 'image_to_video':
+      case 'remove_background':
+      case 'stylize_image': {
+        const { imageTransform } = await import('./image-transform.js');
+        const url = (params['url'] as string) ?? '';
+        if (!url || !imageTransform.isValidImageUrl(url)) {
+          throw new Error('url invalide (https/data:/blob: requis)');
+        }
+        /* Aliases shorthand → type */
+        let type = (params['type'] as string) ?? '';
+        if (toolName === 'cartoonify') type = 'cartoon';
+        else if (toolName === 'animate_image' || toolName === 'image_to_video') type = 'video';
+        else if (toolName === 'remove_background') type = 'remove-bg';
+        else if (toolName === 'stylize_image') type = 'stylize';
+        if (!imageTransform.isValidTransformType(type)) {
+          throw new Error(`type invalide (cartoon | anime | video | remove-bg | stylize). Reçu: ${type}`);
+        }
+        const prompt = params['prompt'] as string | undefined;
+        let result;
+        if (type === 'cartoon') result = await imageTransform.cartoonify(url);
+        else if (type === 'anime') result = await imageTransform.animeStyle(url);
+        else if (type === 'video') result = await imageTransform.animateToVideo(url);
+        else if (type === 'remove-bg') result = await imageTransform.removeBg(url);
+        else result = await imageTransform.stylize(url, prompt ?? '');
+        return result;
+      }
+      /* === Marketplace Plugins (Kevin 2026-05-04 — Apex peut s'auto-étendre) === */
+      case 'marketplace_list_installed': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const installed = apexPluginsMarketplace.list({ status: 'installed' });
+        return {
+          count: installed.length,
+          plugins: installed.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            tools: p.apex_tools ?? [],
+          })),
+          stats: apexPluginsMarketplace.getStats(),
+        };
+      }
+      case 'marketplace_search': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const query = String(params['query'] ?? '');
+        const max = typeof params['max'] === 'number' ? (params['max'] as number) : 30;
+        const results = apexPluginsMarketplace.search(query, max);
+        return {
+          query,
+          count: results.length,
+          plugins: results.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            source: p.source,
+            status: apexPluginsMarketplace.getStatusOf(p.id),
+            pwa_compatible: p.pwa_compatible,
+            value: p.estimated_value,
+            url: p.url,
+          })),
+        };
+      }
+      case 'marketplace_install': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const pluginId = String(params['plugin_id'] ?? '');
+        if (!pluginId) throw new Error('plugin_id requis');
+        const result = await apexPluginsMarketplace.install(pluginId);
+        return result;
+      }
+      case 'marketplace_recommend': {
+        const { apexPluginsMarketplace } = await import('./apex-plugins-marketplace.js');
+        const category = params['category'] as string | undefined;
+        const max = typeof params['max'] === 'number' ? (params['max'] as number) : 20;
+        const minValue = (params['min_value'] as 'critical' | 'high' | 'medium' | 'low' | undefined) ?? 'medium';
+        const recos = apexPluginsMarketplace.recommendForUser({
+          ...(category && { category: category as never }),
+          max,
+          minValue,
+        });
+        return {
+          count: recos.length,
+          recommendations: recos.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            value: p.estimated_value,
+            requires_api_key: p.api_key_service ?? null,
+          })),
+        };
+      }
+      /* === Méta-Marketplace (Kevin 2026-05-07 — hub 30+ marketplaces) === */
+      case 'meta_search': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const query = String(params['query'] ?? '');
+        const limit = typeof params['limit'] === 'number' ? (params['limit'] as number) : 50;
+        const includeNonPwa = params['include_non_pwa'] === true;
+        const categoriesRaw = params['categories'];
+        const opts: {
+          categories?: import('./apex-meta-marketplace.js').MarketplaceCategory[];
+          limit?: number;
+          include_non_pwa?: boolean;
+        } = { limit };
+        if (includeNonPwa) opts.include_non_pwa = true;
+        if (typeof categoriesRaw === 'string' && categoriesRaw.trim()) {
+          opts.categories = categoriesRaw
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean) as import('./apex-meta-marketplace.js').MarketplaceCategory[];
+        }
+        const items = await apexMetaMarketplace.searchAll(query, opts);
+        return {
+          query,
+          count: items.length,
+          items: items.map((it) => ({
+            id: it.id,
+            marketplace: it.marketplace,
+            name: it.name,
+            description: it.description,
+            url: it.url,
+            ...(it.category && { category: it.category }),
+            ...(typeof it.stars === 'number' && { stars: it.stars }),
+            ...(typeof it.downloads === 'number' && { downloads: it.downloads }),
+            ...(it.install_method && { install_method: it.install_method }),
+          })),
+        };
+      }
+      case 'meta_install': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const providerId = String(params['providerId'] ?? '');
+        const itemId = String(params['itemId'] ?? '');
+        if (!providerId || !itemId) throw new Error('providerId et itemId requis');
+        const result = await apexMetaMarketplace.install(providerId, itemId);
+        return result;
+      }
+      case 'meta_trending': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const providerId = String(params['providerId'] ?? '');
+        if (!providerId) throw new Error('providerId requis');
+        const limit = typeof params['limit'] === 'number' ? (params['limit'] as number) : 10;
+        const items = await apexMetaMarketplace.getTrending(providerId, limit);
+        return { providerId, count: items.length, items };
+      }
+      case 'meta_recommend': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const recos = await apexMetaMarketplace.recommendForApex();
+        return {
+          count: recos.length,
+          recommendations: recos,
+        };
+      }
+      case 'meta_list_providers': {
+        const { apexMetaMarketplace } = await import('./apex-meta-marketplace.js');
+        const filter: {
+          category?: import('./apex-meta-marketplace.js').MarketplaceCategory;
+          pwa_compatible?: boolean;
+          api_key_required?: boolean;
+        } = {};
+        if (typeof params['category'] === 'string') {
+          filter.category = params['category'] as import('./apex-meta-marketplace.js').MarketplaceCategory;
+        }
+        if (typeof params['pwa_compatible'] === 'boolean') filter.pwa_compatible = params['pwa_compatible'];
+        if (typeof params['api_key_required'] === 'boolean') filter.api_key_required = params['api_key_required'];
+        const providers = apexMetaMarketplace.listProviders(filter);
+        return {
+          count: providers.length,
+          providers: providers.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            url: p.url,
+            pwa_compatible: p.pwa_compatible,
+            api_key_required: p.api_key_required,
+            api_key_service: p.api_key_service ?? null,
+            free_tier_available: p.free_tier_available,
+            description: p.description,
+          })),
+          stats: apexMetaMarketplace.getStats(),
+        };
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }
@@ -802,6 +1328,27 @@ class ApexToolsDispatcher {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const content = await res.text();
     return { content, size: content.length };
+  }
+
+  /**
+   * Résout un numéro de téléphone : si phone fourni, l'utiliser direct.
+   * Sinon cherche le contact dans le carnet (fuzzy) et retourne phone/whatsapp.
+   * Pour Kevin "appelle Yannou" → trouve "Yann Roux" → retourne son numéro.
+   */
+  private async resolvePhone(phoneArg?: string, contactName?: string): Promise<string> {
+    if (phoneArg && phoneArg.trim().length > 0) return phoneArg;
+    if (!contactName) return '';
+    const { contacts } = await import('./contacts.js');
+    const direct = contacts.getByName(contactName);
+    if (direct) {
+      return direct.whatsapp ?? direct.phone ?? '';
+    }
+    const found = contacts.search(contactName, { maxResults: 1 });
+    if (found.length > 0) {
+      const first = found[0];
+      if (first) return first.whatsapp ?? first.phone ?? '';
+    }
+    return '';
   }
 
   /**
@@ -833,8 +1380,8 @@ class ApexToolsDispatcher {
               ${fullUrl.replace(/[<>"']/g, '')}
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
-              <button class="ax-btn ax-btn-secondary" id="ax-openurl-internal">📱 Ouvrir dans Apex</button>
-              <button class="ax-btn ax-btn-primary" id="ax-openurl-external">🌐 Ouvrir Safari</button>
+              <button class="ax-btn ax-btn-secondary" data-tool-action="openurl-internal">📱 Ouvrir dans Apex</button>
+              <button class="ax-btn ax-btn-primary" data-tool-action="openurl-external">🌐 Ouvrir Safari</button>
             </div>
           </div>
         `,
@@ -846,23 +1393,23 @@ class ApexToolsDispatcher {
           },
         ],
       });
-      /* Wire boutons après ouverture (modal-sheet inject content) */
-      setTimeout(() => {
-        const internalBtn = document.getElementById('ax-openurl-internal');
-        const externalBtn = document.getElementById('ax-openurl-external');
-        internalBtn?.addEventListener('click', () => {
-          sheet.close();
-          /* Stocke URL pour browser embed + navigate */
-          try {
-            localStorage.setItem('apex_v13_browser_last_url', fullUrl);
-          } catch { /* skip */ }
-          location.hash = '#browser';
-        });
-        externalBtn?.addEventListener('click', () => {
-          sheet.close();
-          window.open(fullUrl, '_blank', 'noopener,noreferrer');
-        });
-      }, 100);
+      /* P0 fix audit Cure53/NCC : event delegation au lieu d'addEventListener par bouton.
+         1 listener global sur document.body via installDelegation() — pas de leak par modal. */
+      const unregInternal = this.registerToolAction('openurl-internal', () => {
+        sheet.close();
+        try {
+          localStorage.setItem('apex_v13_browser_last_url', fullUrl);
+        } catch { /* skip */ }
+        if (typeof location !== 'undefined') location.hash = '#browser';
+        unregInternal();
+        unregExternal();
+      });
+      const unregExternal = this.registerToolAction('openurl-external', () => {
+        sheet.close();
+        if (typeof window !== 'undefined') window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        unregInternal();
+        unregExternal();
+      });
       return { ok: true, url: fullUrl, opened: true };
     } catch (err: unknown) {
       logger.warn('apex-tools', 'openUrlModal failed', { err });
@@ -2201,6 +2748,658 @@ class ApexToolsDispatcher {
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
+  }
+
+  /* ============================================================================
+   * EXECUTE TASK ON SERVICE — Autonomie totale Kevin 2026-05-04
+   *
+   * Apex IA exécute des tâches concrètes sur services Kevin (clé API configurée).
+   * Ex : send_email Resend, create_issue GitHub, transfer Stripe, post Telegram.
+   *
+   * Sécurité :
+   * - Whitelist stricte de services + actions
+   * - Toute action audit-loggée
+   * - Pas d'exécution si clé non configurée (vault.readKey vide)
+   * - Pas de delete/destruction sans confirmation explicite (params.confirm=true)
+   * ============================================================================ */
+
+  /**
+   * Liste des handlers disponibles (pour list_task_on_service_handlers tool).
+   */
+  listExecuteTaskHandlers(): string[] {
+    return [
+      'github', 'stripe', 'resend', 'telegram', 'brevo',
+      'openai', 'anthropic', 'vercel', 'cloudflare', 'paypal',
+      'discord', 'slack', 'notion', 'airtable', 'shopify',
+    ];
+  }
+
+  /**
+   * Dispatcher service → handler. Retourne {ok, result?, error?}.
+   */
+  async executeTaskOnService(
+    service: string,
+    task: string,
+    params: Record<string, unknown>,
+  ): Promise<{ ok: boolean; service: string; task: string; result?: unknown; error?: string; duration_ms?: number }> {
+    const start = Date.now();
+    if (!service) return { ok: false, service: '', task, error: 'service required' };
+    if (!task) return { ok: false, service, task: '', error: 'task required' };
+    const normSvc = service.toLowerCase().trim();
+    const normTask = task.toLowerCase().trim();
+
+    /* Audit log avant exécution */
+    void auditLog.record('execute_task_on_service.start', {
+      details: { service: normSvc, task: normTask, params: this.sanitizeForAudit(params) },
+    });
+
+    try {
+      let result: unknown;
+      switch (normSvc) {
+        case 'github':
+          result = await this.handleGithubTask(normTask, params);
+          break;
+        case 'stripe':
+          result = await this.handleStripeTask(normTask, params);
+          break;
+        case 'resend':
+          result = await this.handleResendTask(normTask, params);
+          break;
+        case 'telegram':
+          result = await this.handleTelegramTask(normTask, params);
+          break;
+        case 'brevo':
+        case 'sendinblue':
+          result = await this.handleBrevoTask(normTask, params);
+          break;
+        case 'openai':
+          result = await this.handleOpenaiTask(normTask, params);
+          break;
+        case 'anthropic':
+          result = await this.handleAnthropicTask(normTask, params);
+          break;
+        case 'vercel':
+          result = await this.handleVercelTask(normTask, params);
+          break;
+        case 'cloudflare':
+          result = await this.handleCloudflareTask(normTask, params);
+          break;
+        case 'paypal':
+          result = await this.handlePaypalTask(normTask, params);
+          break;
+        case 'discord':
+          result = await this.handleDiscordTask(normTask, params);
+          break;
+        case 'slack':
+          result = await this.handleSlackTask(normTask, params);
+          break;
+        case 'notion':
+          result = await this.handleNotionTask(normTask, params);
+          break;
+        case 'airtable':
+          result = await this.handleAirtableTask(normTask, params);
+          break;
+        case 'shopify':
+          result = await this.handleShopifyTask(normTask, params);
+          break;
+        default:
+          throw new Error(`Service non supporté : ${normSvc}. Services dispo : ${this.listExecuteTaskHandlers().join(', ')}`);
+      }
+      const duration = Date.now() - start;
+      void auditLog.record('execute_task_on_service.success', {
+        details: { service: normSvc, task: normTask, duration_ms: duration },
+      });
+      return { ok: true, service: normSvc, task: normTask, result, duration_ms: duration };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      void auditLog.record('execute_task_on_service.failed', {
+        details: { service: normSvc, task: normTask, error: msg },
+      });
+      return { ok: false, service: normSvc, task: normTask, error: msg, duration_ms: Date.now() - start };
+    }
+  }
+
+  /**
+   * Sanitise params pour audit log (retire fields sensibles).
+   */
+  private sanitizeForAudit(params: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    const sensitiveKeys = new Set(['password', 'secret', 'token', 'api_key', 'apikey', 'card', 'cvv', 'pin']);
+    for (const [k, v] of Object.entries(params)) {
+      if (sensitiveKeys.has(k.toLowerCase())) {
+        out[k] = '[REDACTED]';
+      } else if (typeof v === 'string' && v.length > 200) {
+        out[k] = v.slice(0, 200) + '...';
+      } else {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+
+  /* === Handler GitHub (issues, comments, PRs, repo_dispatch) === */
+  private async handleGithubTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_github_token');
+    if (!token) throw new Error('ax_github_token non configuré (Coffre)');
+    const repo = (params['repo'] as string | undefined) ?? '9r4rxssx64-creator/CMCteams';
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    if (task === 'create_issue' || task === 'issue_create') {
+      const body = JSON.stringify({
+        title: String(params['title'] ?? '').slice(0, 256),
+        body: String(params['body'] ?? '').slice(0, 65536),
+        labels: Array.isArray(params['labels']) ? params['labels'] : [],
+      });
+      const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'add_comment' || task === 'comment_issue') {
+      const issueNum = Number(params['issue_number']);
+      if (!issueNum) throw new Error('issue_number required');
+      const res = await fetch(`https://api.github.com/repos/${repo}/issues/${issueNum}/comments`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ body: String(params['body'] ?? '') }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'merge_pr' || task === 'merge_pull_request') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour merge_pr');
+      const prNum = Number(params['pr_number']);
+      const res = await fetch(`https://api.github.com/repos/${repo}/pulls/${prNum}/merge`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ merge_method: params['merge_method'] ?? 'squash' }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'dispatch_workflow' || task === 'trigger_action') {
+      const workflowId = String(params['workflow'] ?? '');
+      const ref = String(params['ref'] ?? 'main');
+      const inputs = (params['inputs'] as Record<string, unknown>) ?? {};
+      const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflowId}/dispatches`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ ref, inputs }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return { ok: true, dispatched: workflowId };
+    }
+
+    /* P0 PARITÉ CLAUDE CODE (Kevin screenshots 2026-05-07) :
+     * Apex IA ne pouvait QUE lire/commenter, jamais créer/modifier des fichiers.
+     * Ajout create_or_update_file via GitHub Contents API (PUT base64 encoded).
+     * Règle CLAUDE.md "APEX = MÊME ACCÈS QUE CLAUDE CODE" enfin appliquée. */
+    if (task === 'create_or_update_file' || task === 'write_file' || task === 'create_file') {
+      const path = String(params['path'] ?? '').trim();
+      if (!path) throw new Error('path required (ex: src/modules/clients/types.ts)');
+      const content = String(params['content'] ?? '');
+      const message = String(params['message'] ?? `Apex IA: update ${path}`).slice(0, 256);
+      const branch = String(params['branch'] ?? 'main');
+      /* Anti-empty-write : refuse contenu vide pour éviter écraser fichiers par accident */
+      if (content === '') throw new Error('content vide refusé (utilise delete_file pour supprimer)');
+      /* 1. Récup SHA si fichier existe (pour update) — sinon création */
+      let sha: string | undefined;
+      try {
+        const checkRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${branch}`, {
+          headers, signal: AbortSignal.timeout(10000),
+        });
+        if (checkRes.ok) {
+          const existing = (await checkRes.json()) as { sha?: string };
+          sha = existing.sha;
+        }
+      } catch { /* fichier n'existe pas, création OK */ }
+      /* 2. Encode content en base64 (browser-safe via TextEncoder + btoa) */
+      const encoded = (() => {
+        const bytes = new TextEncoder().encode(content);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+        return btoa(bin);
+      })();
+      /* 3. PUT vers GitHub Contents API */
+      const body: Record<string, unknown> = { message, content: encoded, branch };
+      if (sha) body['sha'] = sha;
+      const res = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`, {
+        method: 'PUT', headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        throw new Error(`GitHub HTTP ${res.status} : ${err.slice(0, 200)}`);
+      }
+      const result = (await res.json()) as { commit?: { sha?: string; html_url?: string }; content?: { html_url?: string } };
+      return {
+        ok: true,
+        action: sha ? 'updated' : 'created',
+        path,
+        repo,
+        branch,
+        commit_sha: result.commit?.sha,
+        commit_url: result.commit?.html_url,
+        file_url: result.content?.html_url,
+      };
+    }
+
+    /* P0 PARITÉ : delete_file pour suppression contrôlée (avec confirm:true). */
+    if (task === 'delete_file') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour delete_file');
+      const path = String(params['path'] ?? '').trim();
+      if (!path) throw new Error('path required');
+      const message = String(params['message'] ?? `Apex IA: delete ${path}`).slice(0, 256);
+      const branch = String(params['branch'] ?? 'main');
+      const checkRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${branch}`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!checkRes.ok) throw new Error(`Fichier introuvable : ${path}`);
+      const existing = (await checkRes.json()) as { sha: string };
+      const res = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`, {
+        method: 'DELETE', headers,
+        body: JSON.stringify({ message, sha: existing.sha, branch }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`GitHub HTTP ${res.status}`);
+      return { ok: true, action: 'deleted', path, repo, branch };
+    }
+
+    throw new Error(`Task GitHub inconnue : ${task}`);
+  }
+
+  /* === Handler Stripe (charges, refunds, transfers) === */
+  private async handleStripeTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const sk = await vault.readKey('ax_stripe_sk');
+    if (!sk) throw new Error('ax_stripe_sk non configuré');
+    const headers = {
+      Authorization: `Bearer ${sk}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (task === 'create_payment_intent' || task === 'create_payment') {
+      const body = new URLSearchParams({
+        amount: String(params['amount'] ?? 0),
+        currency: String(params['currency'] ?? 'eur'),
+        description: String(params['description'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/payment_intents', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'refund' || task === 'create_refund') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour refund');
+      const body = new URLSearchParams({
+        payment_intent: String(params['payment_intent'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/refunds', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'transfer' || task === 'create_transfer') {
+      if (params['confirm'] !== true) throw new Error('confirm:true requis pour transfer');
+      const body = new URLSearchParams({
+        amount: String(params['amount'] ?? 0),
+        currency: String(params['currency'] ?? 'eur'),
+        destination: String(params['destination'] ?? ''),
+      }).toString();
+      const res = await fetch('https://api.stripe.com/v1/transfers', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Stripe HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Stripe inconnue : ${task}`);
+  }
+
+  /* === Handler Resend (email) === */
+  private async handleResendTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_resend_key');
+    if (!key) throw new Error('ax_resend_key non configuré');
+    if (task === 'send_email' || task === 'send') {
+      const body = JSON.stringify({
+        from: String(params['from'] ?? 'apex@kdmc.local'),
+        to: Array.isArray(params['to']) ? params['to'] : [String(params['to'] ?? '')],
+        subject: String(params['subject'] ?? '').slice(0, 200),
+        html: params['html'] ? String(params['html']) : undefined,
+        text: params['text'] ? String(params['text']) : undefined,
+      });
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Resend HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Resend inconnue : ${task}`);
+  }
+
+  /* === Handler Telegram (envoi message bot) === */
+  private async handleTelegramTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_telegram_token');
+    if (!token) throw new Error('ax_telegram_token non configuré');
+    if (task === 'send_message' || task === 'send') {
+      const chatId = String(params['chat_id'] ?? params['chatId'] ?? '');
+      if (!chatId) throw new Error('chat_id required');
+      const body = JSON.stringify({
+        chat_id: chatId,
+        text: String(params['text'] ?? '').slice(0, 4096),
+        parse_mode: params['parse_mode'] ?? 'Markdown',
+      });
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Telegram HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'get_me' || task === 'verify') {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) throw new Error(`Telegram HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Telegram inconnue : ${task}`);
+  }
+
+  /* === Handler Brevo (transactional email) === */
+  private async handleBrevoTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_brevo_key');
+    if (!key) throw new Error('ax_brevo_key non configuré');
+    if (task === 'send_email' || task === 'send_transactional') {
+      const body = JSON.stringify({
+        sender: { email: String(params['from'] ?? 'apex@kdmc.local'), name: 'Apex' },
+        to: Array.isArray(params['to']) ? params['to'] : [{ email: String(params['to'] ?? '') }],
+        subject: String(params['subject'] ?? '').slice(0, 200),
+        htmlContent: params['html'] ? String(params['html']) : undefined,
+        textContent: params['text'] ? String(params['text']) : undefined,
+      });
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': key, 'Content-Type': 'application/json', accept: 'application/json' },
+        body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Brevo HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Brevo inconnue : ${task}`);
+  }
+
+  /* === Handler OpenAI === */
+  private async handleOpenaiTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_openai_key');
+    if (!key) throw new Error('ax_openai_key non configuré');
+    if (task === 'chat' || task === 'completion' || task === 'ask') {
+      const body = JSON.stringify({
+        model: params['model'] ?? 'gpt-4o-mini',
+        messages: Array.isArray(params['messages'])
+          ? params['messages']
+          : [{ role: 'user', content: String(params['prompt'] ?? '') }],
+        max_tokens: params['max_tokens'] ?? 1024,
+      });
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task OpenAI inconnue : ${task}`);
+  }
+
+  /* === Handler Anthropic === */
+  private async handleAnthropicTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_anthropic_key');
+    if (!key) throw new Error('ax_anthropic_key non configuré');
+    if (task === 'message' || task === 'chat' || task === 'ask') {
+      const body = JSON.stringify({
+        model: params['model'] ?? 'claude-sonnet-4-5',
+        max_tokens: params['max_tokens'] ?? 1024,
+        messages: Array.isArray(params['messages'])
+          ? params['messages']
+          : [{ role: 'user', content: String(params['prompt'] ?? '') }],
+      });
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body, signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`Anthropic HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Anthropic inconnue : ${task}`);
+  }
+
+  /* === Handler Vercel (deploy, env vars) === */
+  private async handleVercelTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_vercel_token');
+    if (!token) throw new Error('ax_vercel_token non configuré');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    if (task === 'list_projects' || task === 'projects') {
+      const res = await fetch('https://api.vercel.com/v9/projects', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Vercel HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_deployments') {
+      const projectId = String(params['project_id'] ?? '');
+      const url = projectId ? `https://api.vercel.com/v6/deployments?projectId=${projectId}` : 'https://api.vercel.com/v6/deployments';
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`Vercel HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Vercel inconnue : ${task}`);
+  }
+
+  /* === Handler Cloudflare (DNS, Workers) === */
+  private async handleCloudflareTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_cloudflare_token');
+    if (!token) throw new Error('ax_cloudflare_token non configuré');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    if (task === 'verify_token' || task === 'verify') {
+      const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_zones') {
+      const res = await fetch('https://api.cloudflare.com/client/v4/zones', {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'purge_cache') {
+      const zoneId = String(params['zone_id'] ?? '');
+      if (!zoneId) throw new Error('zone_id required');
+      const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ purge_everything: true }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Cloudflare inconnue : ${task}`);
+  }
+
+  /* === Handler PayPal (orders, payouts) === */
+  private async handlePaypalTask(task: string, _params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const clientId = await vault.readKey('ax_paypal_client');
+    const clientSecret = await vault.readKey('ax_paypal_secret');
+    if (!clientId || !clientSecret) throw new Error('ax_paypal_client + ax_paypal_secret non configurés');
+    /* OAuth token */
+    const auth = btoa(`${clientId}:${clientSecret}`);
+    if (task === 'get_token' || task === 'oauth') {
+      const res = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'grant_type=client_credentials',
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`PayPal HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task PayPal inconnue : ${task}`);
+  }
+
+  /* === Handler Discord (webhooks) === */
+  private async handleDiscordTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    if (task === 'webhook_send' || task === 'send') {
+      const webhookUrl = (params['webhook_url'] as string) ?? await vault.readKey('ax_discord_webhook');
+      if (!webhookUrl) throw new Error('webhook_url ou ax_discord_webhook required');
+      const body = JSON.stringify({
+        content: String(params['content'] ?? '').slice(0, 2000),
+        username: params['username'] ?? 'Apex',
+      });
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok && res.status !== 204) throw new Error(`Discord HTTP ${res.status}`);
+      return { ok: true, status: res.status };
+    }
+    throw new Error(`Task Discord inconnue : ${task}`);
+  }
+
+  /* === Handler Slack === */
+  private async handleSlackTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    if (task === 'send_message' || task === 'send') {
+      const token = await vault.readKey('ax_slack_bot');
+      if (!token) throw new Error('ax_slack_bot non configuré');
+      const body = JSON.stringify({
+        channel: String(params['channel'] ?? ''),
+        text: String(params['text'] ?? '').slice(0, 4000),
+      });
+      const res = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8' },
+        body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Slack HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Slack inconnue : ${task}`);
+  }
+
+  /* === Handler Notion === */
+  private async handleNotionTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const key = await vault.readKey('ax_notion_key');
+    if (!key) throw new Error('ax_notion_key non configuré');
+    const headers = {
+      Authorization: `Bearer ${key}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    };
+    if (task === 'create_page' || task === 'add_page') {
+      const body = JSON.stringify({
+        parent: { database_id: String(params['database_id'] ?? '') },
+        properties: (params['properties'] as Record<string, unknown>) ?? {},
+      });
+      const res = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Notion HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'search') {
+      const body = JSON.stringify({ query: String(params['query'] ?? '') });
+      const res = await fetch('https://api.notion.com/v1/search', {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Notion HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Notion inconnue : ${task}`);
+  }
+
+  /* === Handler Airtable === */
+  private async handleAirtableTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const pat = await vault.readKey('ax_airtable_pat');
+    if (!pat) throw new Error('ax_airtable_pat non configuré');
+    const baseId = String(params['base_id'] ?? '');
+    const tableName = String(params['table'] ?? '');
+    if (!baseId || !tableName) throw new Error('base_id + table required');
+    const headers = { Authorization: `Bearer ${pat}`, 'Content-Type': 'application/json' };
+    if (task === 'list_records' || task === 'list') {
+      const res = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`, {
+        headers, signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Airtable HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'create_record' || task === 'create') {
+      const body = JSON.stringify({
+        records: [{ fields: (params['fields'] as Record<string, unknown>) ?? {} }],
+      });
+      const res = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`, {
+        method: 'POST', headers, body, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Airtable HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Airtable inconnue : ${task}`);
+  }
+
+  /* === Handler Shopify === */
+  private async handleShopifyTask(task: string, params: Record<string, unknown>): Promise<unknown> {
+    const { vault } = await import('./vault.js');
+    const token = await vault.readKey('ax_shopify_token');
+    if (!token) throw new Error('ax_shopify_token non configuré');
+    const shop = String(params['shop'] ?? '');
+    if (!shop) throw new Error('shop (myshopify domain) required');
+    const headers = { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' };
+    if (task === 'list_products' || task === 'products') {
+      const res = await fetch(`https://${shop}/admin/api/2024-01/products.json?limit=20`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Shopify HTTP ${res.status}`);
+      return await res.json();
+    }
+    if (task === 'list_orders' || task === 'orders') {
+      const res = await fetch(`https://${shop}/admin/api/2024-01/orders.json?limit=20`, {
+        headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) throw new Error(`Shopify HTTP ${res.status}`);
+      return await res.json();
+    }
+    throw new Error(`Task Shopify inconnue : ${task}`);
   }
 }
 

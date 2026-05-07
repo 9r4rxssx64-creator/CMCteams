@@ -52,9 +52,13 @@ class ModalSheet {
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     if (opts.title) overlay.setAttribute('aria-label', opts.title);
+    /* P0 fix Kevin v13.0.78 — inline styles fallback si CSS bundle pas chargé (cache iPhone old) */
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,8,15,0.85);z-index:99999;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity 200ms ease';
 
     const sheet = document.createElement('div');
     sheet.className = 'ax-sheet';
+    /* Inline styles fallback — garantit affichage même si CSS bundle stale */
+    sheet.style.cssText = 'width:min(640px,100%);max-height:90vh;background:#14141f;color:#fff;border-radius:18px 18px 0 0;border-top:1px solid rgba(201,162,39,0.3);box-shadow:0 -10px 40px rgba(0,0,0,0.6);padding:14px 22px calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateY(100%);transition:transform 250ms cubic-bezier(0.34,1.56,0.64,1);display:flex;flex-direction:column;overflow:hidden;font-family:system-ui,-apple-system,sans-serif';
     const titleHTML = opts.title
       ? `<div class="ax-sheet-header">
           <h2 class="ax-sheet-title">${this.escapeHtml(opts.title)}</h2>
@@ -86,6 +90,9 @@ class ModalSheet {
     requestAnimationFrame(() => {
       overlay.classList.add('ax-sheet-visible');
       sheet.classList.add('ax-sheet-up');
+      /* Inline fallback : force opacity + transform (au cas où classes CSS pas chargées) */
+      overlay.style.opacity = '1';
+      sheet.style.transform = 'translateY(0)';
       /* P0 audit UX iOS : auto-focus input/textarea + scrollIntoView pour keyboard ne masque pas */
       const firstInput = sheet.querySelector<HTMLElement>(
         'input:not([type="hidden"]), textarea, select',

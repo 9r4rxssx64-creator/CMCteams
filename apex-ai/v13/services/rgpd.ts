@@ -355,8 +355,120 @@ class RGPD {
     }
   }
 
-  hasConsent(uid: string): boolean {
-    return localStorage.getItem(`apex_v13_rgpd_consent_${uid}`) !== null;
+  /**
+   * Vérifie si un consentement existe.
+   * - hasConsent(uid) → boolean (legacy : un consentement quelconque existe pour cet uid)
+   * - hasConsent('analytics') | hasConsent('marketing') | hasConsent('preferences') → bool global
+   *   (Mission v13.1 : consent granulaire par catégorie cookies)
+   */
+  hasConsent(uidOrCategory: string): boolean {
+    /* Si c'est une catégorie reconnue, vérifie le consent cookie global */
+    if (uidOrCategory === 'analytics' || uidOrCategory === 'marketing' || uidOrCategory === 'preferences' || uidOrCategory === 'essential') {
+      try {
+        const raw = localStorage.getItem('apex_v13_cookies_accepted');
+        if (!raw) {
+          return uidOrCategory === 'essential'; /* essential toujours implicite */
+        }
+        const parsed = JSON.parse(raw) as { analytics?: boolean; marketing?: boolean; preferences?: boolean; ts?: number };
+        if (uidOrCategory === 'essential') {
+          return true;
+        }
+        return parsed[uidOrCategory] === true;
+      } catch {
+        return uidOrCategory === 'essential';
+      }
+    }
+    /* Sinon comportement legacy : check par uid */
+    return localStorage.getItem(`apex_v13_rgpd_consent_${uidOrCategory}`) !== null;
+  }
+
+  /**
+   * Mission v13.1 — Bandeau de consentement cookies.
+   * Marque le banner comme à afficher si pas encore consenti.
+   * Le DOM rendering est délégué à features/legal/index.ts ou bootstrap.
+   */
+  showCookieBanner(): { shouldShow: boolean; reason: string } {
+    try {
+      const stored = localStorage.getItem('apex_v13_cookies_accepted');
+      if (!stored) {
+        return { shouldShow: true, reason: 'first_visit' };
+      }
+      const parsed = JSON.parse(stored) as { ts?: number };
+      const ageMs = Date.now() - (parsed.ts ?? 0);
+      const THIRTEEN_MONTHS = 13 * 30 * 24 * 60 * 60 * 1000;
+      if (ageMs > THIRTEEN_MONTHS) {
+        return { shouldShow: true, reason: 'consent_expired_13_months' };
+      }
+      return { shouldShow: false, reason: 'consent_valid' };
+    } catch {
+      return { shouldShow: true, reason: 'parse_error' };
+    }
+  }
+
+  /**
+   * Mission v13.1 — Enregistre consent granulaire cookies.
+   * Catégories : analytics, marketing (+ preferences implicite, essential toujours actif).
+   */
+  setConsent(consents: { analytics?: boolean; marketing?: boolean; preferences?: boolean }): void {
+    try {
+      const payload = {
+        analytics: consents.analytics === true,
+        marketing: consents.marketing === true,
+        preferences: consents.preferences === true,
+        essential: true, /* toujours actif (exemption Art. 82 LIL) */
+        ts: Date.now(),
+        version: 'v13.0.82',
+      };
+      localStorage.setItem('apex_v13_cookies_accepted', JSON.stringify(payload));
+      void auditLog.record('rgpd.cookies.consent', { details: payload });
+      logger.info('rgpd', 'Cookie consent recorded', payload);
+    } catch (err: unknown) {
+      logger.warn('rgpd', 'setConsent persist failed', { err });
+    }
+  }
+
+  /**
+   * Mission v13.1 — Art. 20 portabilité (export format machine-readable JSON).
+   * Retourne un Blob pour download.
+   */
+  async portableExport(uid: string): Promise<Blob> {
+    const data = await this.exportUserData(uid, { format: 'json' });
+    /* Format JSON-LD interopérable (peut être consommé par autre prestataire) */
+    const jsonld = {
+      '@context': 'https://schema.org',
+      '@type': 'PersonalDataExport',
+      generator: 'Apex AI v13',
+      ...data,
+      exportedAt: new Date(data.exportedAt).toISOString(),
+      uid,
+    };
+    const json = JSON.stringify(jsonld, null, 2);
+    await auditLog.record('rgpd.portable_export', { actor: uid, details: { size: json.length } });
+    return new Blob([json], { type: 'application/json' });
+  }
+
+  /**
+   * Mission v13.1 — Art. 22 opposition profilage automatisé.
+   * Différent de optOutAITraining (Art. 21) : ici on s'oppose à toute décision automatisée.
+   */
+  optOutAutomation(uid: string, optOut = true): void {
+    try {
+      if (optOut) {
+        localStorage.setItem(`apex_v13_optout_automation_${uid}`, '1');
+      } else {
+        localStorage.removeItem(`apex_v13_optout_automation_${uid}`);
+      }
+      void auditLog.record(optOut ? 'rgpd.automation.optout' : 'rgpd.automation.optin', { actor: uid });
+    } catch (err: unknown) {
+      logger.warn('rgpd', 'optOutAutomation persist failed', { err });
+    }
+  }
+
+  /**
+   * Lecture statut opposition profilage Art. 22.
+   */
+  isAutomationOptedOut(uid: string): boolean {
+    return localStorage.getItem(`apex_v13_optout_automation_${uid}`) === '1';
   }
 }
 

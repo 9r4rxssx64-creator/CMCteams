@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.0.77';
+export const APP_VER = 'v13.3.7';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -61,6 +61,13 @@ async function bootstrap(): Promise<void> {
     }
   };
 
+  /* Sentry monitoring runtime (audit Kevin v13.1.0 production-grade).
+   * Init AVANT bodyguard pour capturer toute erreur boot.
+   * Lazy-load SDK seulement si DSN configuré dans vault (0 KB overhead sinon). */
+  await safeInit('sentry', async () => {
+    const { sentryBridge } = await import('@services/sentry-bridge.js');
+    await sentryBridge.init();
+  });
   await safeInit('bodyguard', async () => {
     const { bodyguard } = await import('@services/bodyguard.js');
     bodyguard.install();
@@ -69,6 +76,11 @@ async function bootstrap(): Promise<void> {
     const { auditLog } = await import('@services/audit-log.js');
     auditLog.init();
     await auditLog.record('boot.start', { details: { ver: APP_VER } });
+  });
+  await safeInit('auto-backup', async () => {
+    /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto */
+    const { autoBackup } = await import('@services/auto-backup.js');
+    await autoBackup.init();
   });
   await safeInit('observability', async () => {
     const { observability } = await import('@services/observability.js');
@@ -139,6 +151,7 @@ async function bootstrap(): Promise<void> {
   router.register('login', { loader: () => import('@features/landing/index.js') });
   router.register('chat', { loader: () => import('@features/chat/index.js'), requiresAuth: true });
   router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
+  router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
   router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true });
   router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true });
   router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true });
@@ -179,8 +192,52 @@ async function bootstrap(): Promise<void> {
   router.register('knowledge-bank', { loader: () => import('@features/knowledge-bank/index.js'), requiresAuth: true });
   router.register('apex-toolbox', { loader: () => import('@features/apex-toolbox/index.js'), requiresAuth: true });
   router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
+  /* Sprint 9 Kevin v13.0.77+ — Auto-Backup admin (règle "ne jamais rien perdre") */
+  router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
+
+  /* 8.5. Force version check au boot (Kevin 2026-05-07 — PWA iOS Safari bloqué v13.3.x).
+   * Fetch HEAD index.html avec cache-bust + check si version différente.
+   * Si stale + pas déjà fait dans cette session → unregister SW + clear caches + reload.
+   * Anti-loop : query param ?_fv=<APP_VER> coupe le cycle (already-checked). */
+  void (async () => {
+    try {
+      const url = window.location.pathname.replace(/[^/]+$/, '') + 'index.html?_v=' + Date.now();
+      const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (!res.ok) return;
+      const html = await res.text();
+      const remoteMatch = html.match(/data-app-ver="(v[\d.]+)"/);
+      const remoteVer = remoteMatch?.[1];
+      if (!remoteVer || remoteVer === APP_VER) return;
+      /* Anti-loop : si déjà check fait, abandonner */
+      const loopKey = 'apex_v13_force_reload_' + remoteVer;
+      if (sessionStorage.getItem(loopKey)) {
+        logger.warn('boot', `version mismatch ${APP_VER} vs ${remoteVer} mais reload déjà tenté → abandonne (loop guard)`);
+        return;
+      }
+      sessionStorage.setItem(loopKey, String(Date.now()));
+      logger.warn('boot', `🔄 Version stale détectée : local ${APP_VER}, remote ${remoteVer} → force reload`);
+      /* Unregister SW + clear caches + reload */
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (err: unknown) {
+        logger.warn('boot', 'force reload cleanup failed', { err });
+      }
+      /* Reload avec query param pour bypass cache HTTP Safari */
+      window.location.href = window.location.pathname + '?_forceupd=' + remoteVer + '&t=' + Date.now();
+    } catch (err: unknown) {
+      /* Offline ou pas dispo : silencieux */
+      logger.debug('boot', 'force version check skipped', { err });
+    }
+  })();
 
   /* 9. Service Worker register (deferred to not block render) */
   if ('serviceWorker' in navigator) {

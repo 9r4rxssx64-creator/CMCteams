@@ -15,7 +15,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA navigation. */
+let activeNotesScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeNotesScope?.cleanup();
+  activeNotesScope = null;
+}
 
 export interface Note {
   id: string;
@@ -147,6 +156,9 @@ class NotesStore {
 export const notesStore = new NotesStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeNotesScope?.cleanup();
+  activeNotesScope = createCleanupScope('notes');
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
   const notes = notesStore.load(uid);
@@ -196,7 +208,7 @@ export function render(rootEl: HTMLElement): void {
 function attachHandlers(rootEl: HTMLElement, uid: string): void {
   const form = rootEl.querySelector<HTMLFormElement>('#ax-notes-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    activeNotesScope!.bind(form, 'submit', (e) => {
       e.preventDefault();
       const titleEl = rootEl.querySelector<HTMLInputElement>('#ax-notes-title');
       const contentEl = rootEl.querySelector<HTMLTextAreaElement>('#ax-notes-content');
@@ -218,7 +230,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
 
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-notes-search');
   if (searchEl) {
-    searchEl.addEventListener('input', () => {
+    activeNotesScope!.bind(searchEl, 'input', () => {
       const q = searchEl.value.trim();
       const notes = q ? notesStore.search(uid, q) : notesStore.load(uid);
       const listEl = rootEl.querySelector<HTMLElement>('#ax-notes-list');
@@ -235,7 +247,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   }
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="delete"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeNotesScope!.bind(btn, 'click', () => {
       const id = btn.dataset['noteId'];
       if (!id) return;
       if (notesStore.remove(uid, id)) render(rootEl);
@@ -243,7 +255,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   });
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="favorite"]').forEach((el) => {
-    el.addEventListener('click', () => {
+    activeNotesScope!.bind(el, 'click', () => {
       const id = el.dataset['noteId'];
       if (!id) return;
       if (notesStore.toggleFavorite(uid, id)) render(rootEl);

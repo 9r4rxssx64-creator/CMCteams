@@ -321,6 +321,122 @@ export function buildCssFilter(project: PhotoProject): string {
 
 /* ---------- Validation ---------- */
 
+/* boost v13 — Helpers photo experts supplementaires */
+
+/**
+ * Presets dimensions sociaux courants.
+ */
+export const SOCIAL_PRESETS = {
+  instagram_square: { width: 1080, height: 1080, label: 'Instagram Carré' },
+  instagram_story: { width: 1080, height: 1920, label: 'Instagram Story' },
+  instagram_portrait: { width: 1080, height: 1350, label: 'Instagram Portrait' },
+  instagram_landscape: { width: 1080, height: 566, label: 'Instagram Paysage' },
+  facebook_post: { width: 1200, height: 630, label: 'Facebook Post' },
+  facebook_cover: { width: 820, height: 312, label: 'Facebook Cover' },
+  twitter_post: { width: 1200, height: 675, label: 'Twitter Post' },
+  twitter_header: { width: 1500, height: 500, label: 'Twitter Header' },
+  linkedin_post: { width: 1200, height: 1200, label: 'LinkedIn Post' },
+  linkedin_banner: { width: 1584, height: 396, label: 'LinkedIn Banner' },
+  pinterest: { width: 1000, height: 1500, label: 'Pinterest' },
+  youtube_thumbnail: { width: 1280, height: 720, label: 'YouTube Thumbnail' },
+  youtube_banner: { width: 2560, height: 1440, label: 'YouTube Banner' },
+  tiktok: { width: 1080, height: 1920, label: 'TikTok' },
+  print_a4: { width: 2480, height: 3508, label: 'Print A4 300dpi' },
+  print_a3: { width: 3508, height: 4961, label: 'Print A3 300dpi' },
+  print_business_card: { width: 1062, height: 638, label: 'Carte visite 90x54mm' },
+  passport_photo: { width: 413, height: 531, label: 'Photo passeport 35x45mm' },
+  email_header: { width: 600, height: 200, label: 'Email header' },
+} as const;
+
+/**
+ * Calcule taille fichier estimee pour qualite/format donne.
+ */
+export function estimateFileSize(width: number, height: number, format: ExportFormat, quality: number = 0.85): number {
+  const pixels = width * height;
+  let bytesPerPixel = 0;
+  if (format === 'png') bytesPerPixel = 4;
+  else if (format === 'jpeg') bytesPerPixel = 3 * (0.1 + quality * 0.4);
+  else if (format === 'webp') bytesPerPixel = 3 * (0.05 + quality * 0.3);
+  return Math.round(pixels * bytesPerPixel);
+}
+
+/**
+ * Detecte si l'image necessite optimisation (taille > 5 Mo).
+ */
+export function shouldOptimize(sizeBytes: number): { needs: boolean; reason: string; suggestion: string } {
+  const mb = sizeBytes / (1024 * 1024);
+  if (mb > 10) return { needs: true, reason: 'Image > 10 Mo', suggestion: 'Compresser en WebP qualité 75% ou réduire dimensions' };
+  if (mb > 5) return { needs: true, reason: 'Image > 5 Mo', suggestion: 'JPEG qualité 85% recommandé' };
+  if (mb > 2) return { needs: false, reason: 'OK pour web mais peut être réduit', suggestion: 'Optionnel : compression WebP' };
+  return { needs: false, reason: 'Taille OK', suggestion: '' };
+}
+
+/**
+ * Calcule rule of thirds positions (4 intersections).
+ */
+export function calcRuleOfThirds(width: number, height: number): { x: number; y: number; label: string }[] {
+  const x1 = width / 3, x2 = (width / 3) * 2;
+  const y1 = height / 3, y2 = (height / 3) * 2;
+  return [
+    { x: x1, y: y1, label: 'Top-Left' },
+    { x: x2, y: y1, label: 'Top-Right' },
+    { x: x1, y: y2, label: 'Bottom-Left' },
+    { x: x2, y: y2, label: 'Bottom-Right' },
+  ];
+}
+
+/**
+ * Detecte balance des blancs ideale selon kelvin temperature.
+ */
+export const WHITE_BALANCE_PRESETS: Record<string, { kelvin: number; tint: number; label: string }> = {
+  daylight: { kelvin: 5500, tint: 0, label: 'Lumière du jour' },
+  cloudy: { kelvin: 6500, tint: 0, label: 'Nuageux' },
+  shade: { kelvin: 7500, tint: 0, label: 'Ombre' },
+  tungsten: { kelvin: 3200, tint: 5, label: 'Tungstène' },
+  fluorescent: { kelvin: 4000, tint: 10, label: 'Fluorescent' },
+  flash: { kelvin: 5500, tint: 0, label: 'Flash' },
+  candlelight: { kelvin: 1900, tint: 5, label: 'Bougie' },
+  golden_hour: { kelvin: 3500, tint: -5, label: 'Heure dorée' },
+  blue_hour: { kelvin: 9000, tint: 5, label: 'Heure bleue' },
+  underwater: { kelvin: 12000, tint: -10, label: 'Sous-marin' },
+};
+
+/**
+ * Color analysis : extrait les 5 couleurs dominantes (mock approximatif).
+ * En prod : utilise canvas + algo k-means.
+ */
+export function extractDominantColors(): Array<{ hex: string; ratio: number }> {
+  /* Mock implementation - retourne palette synthétique par défaut */
+  return [
+    { hex: '#3a4a5a', ratio: 0.35 },
+    { hex: '#a0b0c0', ratio: 0.25 },
+    { hex: '#d0c0a0', ratio: 0.20 },
+    { hex: '#704030', ratio: 0.10 },
+    { hex: '#ffffff', ratio: 0.10 },
+  ];
+}
+
+/**
+ * EXIF data extraction (placeholder pour piexifjs lazy).
+ */
+export interface ExifData {
+  make?: string;
+  model?: string;
+  iso?: number;
+  fNumber?: number;
+  exposureTime?: string;
+  focalLength?: number;
+  dateTime?: string;
+  gpsLat?: number;
+  gpsLon?: number;
+  orientation?: number;
+}
+
+export function parseExif(_buffer: ArrayBuffer): ExifData {
+  /* En prod : lazy load piexifjs et parser. Mock pour signature. */
+  return {};
+}
+
 export function validateImageFile(file: { type: string; size: number }): { ok: boolean; error?: string } {
   if (!ACCEPTED_FORMATS.includes(file.type)) {
     return { ok: false, error: `Format non supporté: ${file.type}` };

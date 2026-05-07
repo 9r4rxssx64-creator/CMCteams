@@ -21,7 +21,17 @@
 
 import { logger } from '../core/logger.js';
 
-import { apexToolsDispatch } from './apex-tools-dispatch.js';
+/* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch lazy (orchestration agent rare) */
+type ApexToolsDispatchInstance = {
+  execute: (name: string, input: unknown, tier: string) => Promise<{ ok: boolean; result?: unknown; error?: string }>;
+};
+let _apexToolsDispatchAgent: ApexToolsDispatchInstance | null = null;
+async function getApexToolsDispatch(): Promise<ApexToolsDispatchInstance> {
+  if (_apexToolsDispatchAgent) return _apexToolsDispatchAgent;
+  const mod = await import('./apex-tools-dispatch.js');
+  _apexToolsDispatchAgent = mod.apexToolsDispatch as ApexToolsDispatchInstance;
+  return _apexToolsDispatchAgent;
+}
 import { auditLog } from './audit-log.js';
 
 export type AgentType = 'audit' | 'plan' | 'research' | 'monitor';
@@ -135,6 +145,7 @@ class AgentSystem {
     task: AgentTask,
     userTier: 'admin' | 'family' | 'client_pro' | 'client_free' | 'laurence',
   ): Promise<unknown> {
+    const apexToolsDispatch = await getApexToolsDispatch();
     const audit = await apexToolsDispatch.execute('audit_self', { scope: 'all' }, userTier);
     const logs = await apexToolsDispatch.execute('read_logs', { scope: 'all', limit: 20 }, userTier);
     return {
@@ -193,6 +204,7 @@ class AgentSystem {
     task: AgentTask,
     userTier: 'admin' | 'family' | 'client_pro' | 'client_free' | 'laurence',
   ): Promise<unknown> {
+    const apexToolsDispatch = await getApexToolsDispatch();
     const search = await apexToolsDispatch.execute(
       'web_search',
       { query: task.prompt, max_results: 5 },
@@ -214,6 +226,7 @@ class AgentSystem {
     task: AgentTask,
     userTier: 'admin' | 'family' | 'client_pro' | 'client_free' | 'laurence',
   ): Promise<unknown> {
+    const apexToolsDispatch = await getApexToolsDispatch();
     const audit = await apexToolsDispatch.execute('audit_self', { scope: 'all' }, userTier);
     const result = audit.result as { metrics?: Record<string, unknown> } | undefined;
     const errors = (result?.metrics?.['errors_count'] as number | undefined) ?? 0;

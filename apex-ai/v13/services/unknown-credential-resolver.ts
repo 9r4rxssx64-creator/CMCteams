@@ -10,7 +10,8 @@
  * - Heuristiques sur la valeur (prefix, length, charset, format)
  * - Identification du service probable via patterns étendus
  * - Auto-fetch dashboard URL via heuristiques URL standards
- * - Web search fallback (via DuckDuckGo HTML scrape ou Brave si configuré)
+ * - Web search VRAIE via Brave/Tavily (vault) + DuckDuckGo HTML fallback
+ * - Validation HEAD candidate URLs (dashboard, billing, api_keys, docs, support)
  * - Auto-store dans `ax_<service>_key` deviné
  * - Auto-link dans links-registry
  * - Apprentissage : ajoute le nouveau pattern à `apex_v13_learned_patterns`
@@ -26,9 +27,13 @@ export interface ResolvedCredential {
   storage_key: string;
   dashboard_url: string;
   billing_url?: string;
+  api_keys_url?: string;
+  docs_url?: string;
+  support_url?: string;
   confidence: 'high' | 'medium' | 'low';
   reason: string;
   pattern_learned?: string; /* Nouveau pattern regex appris */
+  alive_count?: number; /* Combien des URLs candidates répondent (HEAD test) */
 }
 
 /* Heuristiques étendues pour identifier service via prefix */
@@ -56,6 +61,7 @@ const PREFIX_HEURISTICS: ReadonlyArray<{
   { prefix_match: /^pk_(live|test)_/, service: 'stripe_publishable', dashboard: 'https://dashboard.stripe.com/apikeys', confidence: 'high' },
   { prefix_match: /^rk_(live|test)_/, service: 'stripe_restricted', dashboard: 'https://dashboard.stripe.com/apikeys', confidence: 'high' },
   { prefix_match: /^whsec_/, service: 'stripe_webhook', dashboard: 'https://dashboard.stripe.com/webhooks', confidence: 'high' },
+  { prefix_match: /^acct_/, service: 'stripe_connect', dashboard: 'https://dashboard.stripe.com/connect/accounts', confidence: 'high' },
 
   /* Email */
   { prefix_match: /^xkeysib-/, service: 'brevo', dashboard: 'https://app.brevo.com/', billing: 'https://app.brevo.com/billing/plan', confidence: 'high' },
@@ -70,6 +76,7 @@ const PREFIX_HEURISTICS: ReadonlyArray<{
   { prefix_match: /^pat[A-Za-z0-9.]+$/, service: 'airtable', dashboard: 'https://airtable.com/create/tokens', confidence: 'high' },
   { prefix_match: /^secret_/, service: 'notion', dashboard: 'https://www.notion.so/my-integrations', confidence: 'high' },
   { prefix_match: /^xox[bp]-/, service: 'slack', dashboard: 'https://api.slack.com/apps', confidence: 'high' },
+  { prefix_match: /^shpat_/, service: 'shopify_admin', dashboard: 'https://admin.shopify.com/', confidence: 'high' },
 
   /* Cloud */
   { prefix_match: /^AKIA/, service: 'aws_access_key', dashboard: 'https://console.aws.amazon.com/iam/home', confidence: 'high' },
@@ -78,6 +85,26 @@ const PREFIX_HEURISTICS: ReadonlyArray<{
   /* Misc */
   { prefix_match: /^xoxb-/, service: 'slack_bot', dashboard: 'https://api.slack.com/apps', confidence: 'high' },
   { prefix_match: /^\d+:[A-Za-z0-9_-]+$/, service: 'telegram_bot', dashboard: 'https://t.me/BotFather', confidence: 'high' },
+];
+
+/* Path candidates pour découverte URL d'un service à partir d'un domaine. */
+const URL_PATH_CANDIDATES = {
+  dashboard: ['', '/dashboard', '/account', '/console', '/app', '/admin'],
+  billing: ['/billing', '/pricing', '/upgrade', '/account/billing', '/settings/billing', '/account/plan'],
+  api_keys: ['/api-keys', '/keys', '/api/keys', '/settings/api-keys', '/settings/api', '/account/tokens', '/account/api-tokens', '/developers'],
+  docs: ['/docs', '/documentation', '/api/docs', '/developers/docs', '/api'],
+  support: ['/help', '/support', '/contact', '/help-center'],
+} as const;
+
+/* Domaines candidats pour un nom de service (sans TLD) — testés via HEAD. */
+const DOMAIN_CANDIDATE_TEMPLATES = [
+  'console.{name}.com',
+  'app.{name}.com',
+  'dashboard.{name}.com',
+  '{name}.com',
+  '{name}.io',
+  '{name}.dev',
+  '{name}.ai',
 ];
 
 class UnknownCredentialResolver {
@@ -106,10 +133,35 @@ class UnknownCredentialResolver {
       }
     }
 
-    /* 2. Format générique (length + charset) → propose service générique */
+    /* 2. Format générique (length + charset) → propose service générique
+       MAIS tente d'abord web search avec prefix pour identifier vrai service */
     const charset = this.detectCharset(trimmed);
     if (trimmed.length >= 32 && trimmed.length <= 256 && (charset === 'base64url' || charset === 'hex' || charset === 'alphanum')) {
-      /* Token générique potentiel — auto-store comme "unknown_token_<hash>" */
+      /* 2a. Web search VRAIE (Brave/Tavily si dispo, sinon DuckDuckGo) */
+      try {
+        const searched = await this.webSearchService(trimmed);
+        if (searched) {
+          /* Améliore : tente HEAD validation pour les URLs candidates */
+          const validated = await this.discoverServiceUrls(searched.service, searched.dashboard_url);
+          const enriched: ResolvedCredential = {
+            ...searched,
+            ...validated,
+            /* Confidence : 0.95 = web search match name + URLs répondent → high
+               0.7  = juste URLs répondent → medium
+               0.3  = rien validé → low */
+            confidence: validated.alive_count && validated.alive_count >= 2 ? 'high'
+              : validated.alive_count && validated.alive_count >= 1 ? 'medium' : 'low',
+          };
+          void auditLog.record('credential.resolved_websearch', {
+            details: { service: enriched.service, alive_count: enriched.alive_count, confidence: enriched.confidence },
+          });
+          return enriched;
+        }
+      } catch (err: unknown) {
+        logger.warn('credential-resolver', 'web search failed', { err });
+      }
+
+      /* 2b. Token générique potentiel — auto-store comme "unknown_token_<hash>" */
       const shortHash = await this.shortHash(trimmed);
       const service = `unknown_${shortHash}`;
       void auditLog.record('credential.resolved_generic', {
@@ -125,7 +177,7 @@ class UnknownCredentialResolver {
       };
     }
 
-    /* 3. Web search fallback (si DDG endpoint dispo) */
+    /* 3. Web search fallback final pour valeurs non standard */
     try {
       const searched = await this.webSearchService(trimmed);
       if (searched) {
@@ -142,35 +194,200 @@ class UnknownCredentialResolver {
   }
 
   /**
-   * Web search via DuckDuckGo HTML pour identifier service inconnu.
+   * Web search via Brave/Tavily (vault) + DuckDuckGo HTML fallback.
    */
   private async webSearchService(value: string): Promise<ResolvedCredential | null> {
     const prefix = value.slice(0, 8);
-    const query = `API key format prefix ${prefix} dashboard URL`;
-    try {
-      /* DuckDuckGo HTML scrape (sans CORS si configurer proxy) */
-      const url = `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-      const res = await fetch(url, {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!res.ok) return null;
-      const html = await res.text();
-      /* Extract premier domaine pertinent dans les résultats */
-      const m = html.match(/href="https?:\/\/([a-z0-9-]+\.[a-z]{2,})/i);
-      const domain = m?.[1];
-      if (!domain) return null;
-      const service = domain.split('.')[0] ?? 'unknown';
+    const query = `"${prefix}" api dashboard login site format`;
+    const candidates = await this.fetchSearchResults(query);
+    if (candidates.length === 0) return null;
+
+    /* Extract premier nom de service significatif depuis les résultats */
+    for (const candidate of candidates) {
+      const domain = this.extractDomain(candidate.url);
+      if (!domain) continue;
+      const service = this.serviceNameFromDomain(domain);
+      if (!service) continue;
       return {
         service,
         storage_key: `ax_${service}_key`,
         dashboard_url: `https://${domain}`,
         confidence: 'low',
-        reason: `Web search match domain : ${domain}`,
+        reason: `Web search match domain : ${domain} (title: ${candidate.title.slice(0, 40)})`,
       };
-    } catch {
-      return null;
     }
+    return null;
+  }
+
+  /**
+   * Tente Brave Search API → Tavily → DuckDuckGo HTML scrape.
+   */
+  private async fetchSearchResults(query: string): Promise<Array<{ url: string; title: string }>> {
+    /* Brave (depuis vault) */
+    try {
+      const { vault } = await import('./vault.js');
+      const braveKey = await vault.readKey('ax_brave_key');
+      if (braveKey) {
+        const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8`;
+        const res = await fetch(url, {
+          headers: { 'X-Subscription-Token': braveKey, Accept: 'application/json' },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { web?: { results?: Array<{ url?: string; title?: string }> } };
+          const results = (data.web?.results ?? [])
+            .map((r) => ({ url: r.url ?? '', title: r.title ?? '' }))
+            .filter((r) => r.url);
+          if (results.length > 0) return results;
+        }
+      }
+    } catch (err: unknown) {
+      logger.warn('credential-resolver', 'Brave search failed', { err });
+    }
+
+    /* Tavily (depuis vault) */
+    try {
+      const { vault } = await import('./vault.js');
+      const tavilyKey = await vault.readKey('ax_tavily_key');
+      if (tavilyKey) {
+        const res = await fetch('https://api.tavily.com/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: tavilyKey, query, max_results: 8 }),
+          signal: AbortSignal.timeout(6000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { results?: Array<{ url?: string; title?: string }> };
+          const results = (data.results ?? [])
+            .map((r) => ({ url: r.url ?? '', title: r.title ?? '' }))
+            .filter((r) => r.url);
+          if (results.length > 0) return results;
+        }
+      }
+    } catch (err: unknown) {
+      logger.warn('credential-resolver', 'Tavily search failed', { err });
+    }
+
+    /* DuckDuckGo HTML scrape (fallback gratuit) */
+    try {
+      const url = `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) return [];
+      const html = await res.text();
+      const results: Array<{ url: string; title: string }> = [];
+      const linkRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
+      let m: RegExpExecArray | null;
+      while ((m = linkRegex.exec(html)) !== null && results.length < 8) {
+        results.push({ url: m[1] ?? '', title: m[2] ?? '' });
+      }
+      /* Fallback regex plus simple si DDG change format */
+      if (results.length === 0) {
+        const simpleRegex = /href="https?:\/\/([a-z0-9-]+\.[a-z]{2,}[^"]*)"/gi;
+        while ((m = simpleRegex.exec(html)) !== null && results.length < 5) {
+          results.push({ url: `https://${m[1]}`, title: '' });
+        }
+      }
+      return results;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Découvre URLs (dashboard/billing/api_keys/docs/support) pour un service via HEAD test.
+   * Confidence améliorée si plusieurs URLs répondent.
+   */
+  private async discoverServiceUrls(service: string, baseDashboard: string): Promise<{
+    dashboard_url: string;
+    billing_url?: string;
+    api_keys_url?: string;
+    docs_url?: string;
+    support_url?: string;
+    alive_count: number;
+  }> {
+    const baseDomain = this.extractDomain(baseDashboard) ?? `${service}.com`;
+    const result: {
+      dashboard_url: string;
+      billing_url?: string;
+      api_keys_url?: string;
+      docs_url?: string;
+      support_url?: string;
+      alive_count: number;
+    } = {
+      dashboard_url: baseDashboard,
+      alive_count: 0,
+    };
+
+    /* Test HEAD parallèle pour chaque catégorie (max 1 path par catégorie) */
+    const categories: Array<keyof typeof URL_PATH_CANDIDATES> = ['dashboard', 'billing', 'api_keys', 'docs', 'support'];
+    for (const cat of categories) {
+      const paths = URL_PATH_CANDIDATES[cat];
+      for (const path of paths) {
+        const candidateUrl = `https://${baseDomain}${path}`;
+        const alive = await this.testUrlAlive(candidateUrl);
+        if (alive) {
+          if (cat === 'dashboard') result.dashboard_url = candidateUrl;
+          else if (cat === 'billing') result.billing_url = candidateUrl;
+          else if (cat === 'api_keys') result.api_keys_url = candidateUrl;
+          else if (cat === 'docs') result.docs_url = candidateUrl;
+          else if (cat === 'support') result.support_url = candidateUrl;
+          result.alive_count += 1;
+          break; /* premier alive suffit pour cette catégorie */
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Test HEAD/GET silencieux pour vérifier qu'une URL répond.
+   * Considère "alive" si status 200, 301, 302, 401, 403 (page existe mais auth requise).
+   * 404 = dead. Erreur réseau / opaque = considéré pas alive.
+   */
+  private async testUrlAlive(url: string): Promise<boolean> {
+    try {
+      const res = await fetch(url, {
+        method: 'HEAD',
+        mode: 'no-cors', /* navigator-friendly */
+        signal: AbortSignal.timeout(3000),
+        redirect: 'follow',
+      });
+      /* mode: 'no-cors' → opaque response, status toujours 0 */
+      if (res.type === 'opaque') return true; /* probablement alive (CORS bloque mais serveur a répondu) */
+      if (res.status >= 200 && res.status < 400) return true;
+      if (res.status === 401 || res.status === 403) return true; /* page existe, auth requise */
+      return false;
+    } catch {
+      /* Network error / timeout / DNS fail */
+      return false;
+    }
+  }
+
+  /**
+   * Extrait domaine principal depuis URL.
+   */
+  private extractDomain(url: string): string | null {
+    if (!url) return null;
+    const m = url.match(/^https?:\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?:\/|$|:|\?)/i);
+    return m?.[1] ?? null;
+  }
+
+  /**
+   * Extrait nom service simple depuis domaine ("console.anthropic.com" → "anthropic").
+   */
+  private serviceNameFromDomain(domain: string): string {
+    /* Priorité au sous-domaine si pas générique (api/www/app/dashboard/console) */
+    const parts = domain.split('.');
+    const generic = new Set(['api', 'www', 'app', 'dashboard', 'console', 'developer', 'docs']);
+    for (const p of parts) {
+      if (!generic.has(p) && p.length >= 3 && !/^\d+$/.test(p)) {
+        return p.toLowerCase();
+      }
+    }
+    return parts[0] ?? 'unknown';
   }
 
   /**
@@ -224,6 +441,32 @@ class UnknownCredentialResolver {
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Validation HEAD test pour une URL — exposé pour tests + UI admin.
+   */
+  async testUrl(url: string): Promise<boolean> {
+    return this.testUrlAlive(url);
+  }
+
+  /**
+   * Découvre URLs candidates pour un nom de service donné (utile UI admin
+   * pour vérifier qu'un service est bien intégré).
+   */
+  async discoverUrlsForService(serviceName: string): Promise<{
+    candidates: string[];
+    alive: string[];
+  }> {
+    const candidates: string[] = [];
+    for (const tmpl of DOMAIN_CANDIDATE_TEMPLATES) {
+      candidates.push(`https://${tmpl.replace('{name}', serviceName)}`);
+    }
+    const alive: string[] = [];
+    for (const url of candidates) {
+      if (await this.testUrlAlive(url)) alive.push(url);
+    }
+    return { candidates, alive };
   }
 
   /* === Helpers === */

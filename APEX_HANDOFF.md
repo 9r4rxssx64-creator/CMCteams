@@ -2,7 +2,56 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.453 / Apex v12.12 déployés en production
+> **État projet** : CMCteams v9.593 / Apex v13.0.77 (canary) déployés
+> **Dernière update** : 2026-05-04 16h40
+
+---
+
+## 🔥 MISE À JOUR 2026-05-04 — Apex v13.0.77 (Parité Claude Code 100%)
+
+### Apex peut maintenant agir comme Claude Code
+
+**services/apex-claude-code-parity.ts** (29 méthodes, 97 tests) :
+- `Read(path)` / `Edit(path, oldStr, newStr)` / `Write(path, content)`
+- `Bash(cmd, opts)` (whitelist commands)
+- `Grep(pattern, opts)` / `Glob(pattern)`
+- `WebFetch(url)` / `WebSearch(query)`
+- `SpawnSubagent(task, prompt)`
+- `MCPCall(tool, params)` (GitHub MCP : create_pr, comment_pr, merge_pr, etc.)
+- `SelfAudit()` / `SelfFix()` / `SelfRelease()`
+
+### Apex peut auto-modifier son code (autonomie totale)
+
+**services/apex-execute.ts** (23 tasks whitelist, 12 forbidden, 138 tests) :
+- Whitelist : modify_file, create_file, delete_file_safe, read_file, list_files, grep_code, glob_pattern, bash_safe, web_fetch, web_search, spawn_subagent, create_skill, modify_skill, create_hook, modify_hook, modify_workflow, register_sentinel, modify_script, append_to_memory, append_to_top_rules, create_pr, comment_on_pr, merge_pr_safe
+- Forbidden : delete_file (sans confirm), force_push, modify_credentials_external, modify_admin_kevin, disable_sentinel_security, modify_csp_meta, execute_shell_arbitrary, modify_top_rules_replace
+
+### Preflight check (Apex vérifie avant présenter)
+
+**services/preflight.ts** (94.51% coverage) :
+- `preflightCheck(toolName)` retourne `{ok, ready, missingDeps?, error?, autoFixAvailable?}`
+- Cache 5min par tool
+- UI feedback : 🟢 prêt / 🟡 partiel / 🔴 indispo + auto-fix 1-clic
+
+### ON/OFF toggles (kill switch)
+
+**services/feature-toggles.ts** (98.23% coverage) :
+- 109 features wired
+- `isFeatureEnabled(featureId, userId?)` resolution priority : per-user > global > default(true)
+- Vue admin `vAdminToggles` : liste + search + désactiver tout / activer tout
+
+### Liens recharge MAX
+
+**services/links-registry.ts** (51 services) :
+- 7+ champs/service : dashboard, billing, docs, support, status, api_keys, usage
+- Auto-create au paste credential
+- Sentinelle `link-validation-watch` HEAD daily
+
+### Stats v13.0.77
+- 4463+ tests verts (0 fail)
+- TS strict 0 errors / ESLint 0 warnings
+- 15 skills experts dans `.claude/skills/` (4712 lignes)
+- Parité v12 ~85%
 
 ---
 

@@ -316,6 +316,66 @@ export const AX_MEDICAL_FR = {
       usage: 'Plaies, desinfection',
       contre_indications: ['Allergie iode', 'Thyroide'],
     },
+    /* boost v13 — 40+ médocs supplémentaires */
+    voltarene: { dci: 'Diclofenac', classe: 'AINS', posologie: '50mg x 3/j', contre_indications: ['Ulcere', 'Asthme', 'Grossesse 3T'], grossesse: 'CI T3' },
+    ketoprofene: { dci: 'Ketoprofene', classe: 'AINS', posologie: '50mg x 3/j max 200mg/j' },
+    naproxene: { dci: 'Naproxene', classe: 'AINS', posologie: '550mg x 2/j' },
+    paracetamol_codeine: { dci: 'Paracetamol + Codeine', classe: 'Antalgique opioide', posologie: '500/30mg x 3-4/j', contre_indications: ['<12ans', 'Allaitement'] },
+    tramadol: { dci: 'Tramadol', classe: 'Antalgique opioide niv 2 ORDONNANCE', posologie: '50-100mg x 4/j max 400mg' },
+    motilium: { dci: 'Domperidone', classe: 'Antiemetique', posologie: '10mg x 3/j max 7j' },
+    primperan: { dci: 'Metoclopramide', classe: 'Antiemetique', posologie: '10mg x 3/j' },
+    eupatol: { dci: 'Plantes drainantes', classe: 'Drainage hepatique', usage: 'Digestion difficile' },
+    derinox: { dci: 'Naphazoline + prednisolone', classe: 'Decongestionnant local', contre_indications: ['<15ans', 'HTA'] },
+    nasalcrom: { dci: 'Cromoglycate sodium', classe: 'Antiallergique', posologie: '1 pulv x 4/j chaque narine' },
+    rhinathiol_promethazine: { dci: 'Carbocisteine + promethazine', classe: 'Antitussif sedatif', contre_indications: ['<2ans'] },
+    toplexil: { dci: 'Oxomemazine', classe: 'Antitussif', posologie: 'sirop 5-10ml soir', contre_indications: ['<2ans', 'Glaucome'] },
+    helicidine: { dci: 'Mucines escargot', classe: 'Antitussif', posologie: '15ml x 3/j' },
+    prontalgine: { dci: 'Paracetamol + cafeine + codeine', classe: 'Antalgique', posologie: '1cp x 3/j' },
+    ginkor: { dci: 'Ginkgo biloba + heptaminol', classe: 'Veinotonique', usage: 'Jambes lourdes, hemorroides' },
+    cicaplaste: { dci: 'Madecassoside', classe: 'Cicatrisant', usage: 'Plaies, irritations' },
+    osmosol: { dci: 'Sels rehydration orale', classe: 'SRO', posologie: '1 sachet apres chaque selle', usage: 'Diarrhees aigues' },
+    sterimar: { dci: 'Eau mer isotonique', classe: 'Lavage nasal', usage: 'Hygiene narines, post-rhume' },
+    rhinedrine: { dci: 'Sodium chlorure', classe: 'Soluté physiologique', usage: 'Lavage oeil, narines bebes' },
+    eluvas: { dci: 'Eosine aqueuse 2%', classe: 'Antiseptique cutane', usage: 'Erytheme fessier, abcès débutant' },
+    vasocedine: { dci: 'Pseudoephedrine + chlorphenamine', classe: 'Antirhume', contre_indications: ['HTA', 'Arythmie', 'Glaucome'] },
+    fervex: { dci: 'Paracetamol + chlorphenamine + acide ascorbique', classe: 'Antirhume sachet', posologie: '1 sachet x 3/j' },
+    coricidin: { dci: 'Paracetamol + dextromethorphane', classe: 'Antirhume + antitussif', contre_indications: ['IMAO'] },
+    pyralgine: { dci: 'Acide tiaprofénique', classe: 'AINS', posologie: '200mg x 3/j' },
+    surgam: { dci: 'Acide tiaprofenique', classe: 'AINS', posologie: '200mg x 3/j' },
+    valium: { dci: 'Diazepam', classe: 'Benzodiazepine - ORDONNANCE', posologie: '5-10mg (medecin)' },
+    xanax: { dci: 'Alprazolam', classe: 'Benzodiazepine - ORDONNANCE', posologie: '0.25-0.5mg x 3/j (medecin)' },
+    zolpidem: { dci: 'Zolpidem', classe: 'Hypnotique - ORDONNANCE', posologie: '5-10mg coucher' },
+    seroplex: { dci: 'Escitalopram', classe: 'Antidepresseur ISRS - ORDONNANCE', posologie: '10mg/j (medecin)' },
+    deroxat: { dci: 'Paroxetine', classe: 'Antidepresseur ISRS - ORDONNANCE', posologie: '20mg/j' },
+    prozac: { dci: 'Fluoxetine', classe: 'Antidepresseur ISRS - ORDONNANCE', posologie: '20mg/j' },
+    diamox: { dci: 'Acetazolamide', classe: 'Diuretique mal aigu montagne', posologie: '125mg x 2/j' },
+    glucophage: { dci: 'Metformine', classe: 'Antidiabetique - ORDONNANCE', posologie: '500-1000mg x 2-3/j' },
+    eliquis: { dci: 'Apixaban', classe: 'Anticoagulant DOAC - ORDONNANCE', posologie: '5mg x 2/j' },
+    pradaxa: { dci: 'Dabigatran', classe: 'Anticoagulant DOAC - ORDONNANCE', posologie: '150mg x 2/j' },
+    plavix: { dci: 'Clopidogrel', classe: 'Antiagregant - ORDONNANCE', posologie: '75mg/j' },
+    tahor: { dci: 'Atorvastatine', classe: 'Statine - ORDONNANCE', posologie: '10-80mg/j' },
+    lipitor: { dci: 'Atorvastatine', classe: 'Statine - ORDONNANCE', posologie: '10-80mg/j' },
+    coversyl: { dci: 'Perindopril', classe: 'IEC HTA - ORDONNANCE', posologie: '5-10mg/j' },
+    amlor: { dci: 'Amlodipine', classe: 'Inhibiteur calcique - ORDONNANCE', posologie: '5-10mg/j' },
+    cardensiel: { dci: 'Bisoprolol', classe: 'Beta-bloquant - ORDONNANCE', posologie: '2.5-10mg/j' },
+    augmentin_supp: { dci: 'Amoxicilline + acide clavulanique', classe: 'Antibiotique - ORDONNANCE', posologie: '1g x 2-3/j' },
+    pyostacine: { dci: 'Pristinamycine', classe: 'Antibiotique - ORDONNANCE', posologie: '1g x 2-3/j' },
+    monuril: { dci: 'Fosfomycine', classe: 'Antibiotique cystite - ORDONNANCE', posologie: '1 sachet 3g dose unique' },
+    flagyl: { dci: 'Metronidazole', classe: 'Antibiotique anaerobies - ORDONNANCE', posologie: '500mg x 3/j' },
+    diflucan: { dci: 'Fluconazole', classe: 'Antifongique - ORDONNANCE', posologie: '150mg dose unique' },
+    zovirax: { dci: 'Aciclovir', classe: 'Antiviral - ORDONNANCE', posologie: 'Comprimes 200mg x 5/j ou creme' },
+    ciclamir: { dci: 'Domperidone + simeticone', classe: 'Antinausees + ballonnements', posologie: '1cp x 3/j' },
+    helicobacter_kit: { dci: 'Amoxicilline + clarithromycine + IPP', classe: 'Eradication H. pylori 14j - ORDONNANCE', posologie: 'Schema fixe medecin' },
+    /* Pediatrique spécifique */
+    doliprane_enfant: { dci: 'Paracetamol pediatrique', classe: 'Antalgique enfant', pediatric: '15mg/kg/prise toutes 6h max 60mg/kg/j' },
+    rhinedrine_bebe: { dci: 'Soluté physiologique', usage: 'Lavage nez bebe', classe: 'Soin nasal' },
+    bebe_gaz: { dci: 'Simeticone', usage: 'Coliques nourrisson', classe: 'Anti-flatulent' },
+    eludril: { dci: 'Chlorhexidine + chlorobutanol', classe: 'Antiseptique buccal', usage: 'Aphtes, gingivite' },
+    /* Compléments / Vitamines */
+    vitamine_d3: { dci: 'Cholecalciferol', classe: 'Vitamine D', posologie: '1000UI/j adulte (HAS 2022)' },
+    fer_tardyferon: { dci: 'Sulfate de fer', classe: 'Anti-anemie', posologie: '1cp x 2/j a jeun' },
+    magnesium_b6: { dci: 'Magnesium + vit B6', classe: 'Complement', usage: 'Stress, fatigue, crampes' },
+    omega3: { dci: 'EPA + DHA', classe: 'Acides gras essentiels', posologie: '1-2g/j' },
   } as Record<string, OtcMedicament>,
   /** 15+ urgences */
   urgences: {
@@ -345,6 +405,19 @@ export const AX_MEDICAL_FR = {
     accouchement_imminent: { action: '15 SAMU', details: 'Position semi-assise, soutien tete bebe' },
     pendaison_strangulation: { action: '15 SAMU + RCP', risque: 'Asphyxie' },
     noyade: { action: '15 SAMU + RCP eventuelle', risque: 'Asphyxie' },
+    /* boost v13 — 8 urgences supplémentaires expert */
+    morsure_serpent: { action: '15 SAMU URGENT + immobiliser membre + retirer bijoux', risque: 'Envenimation', details: 'Ne pas inciser, ne pas sucer, ne pas garrot. Identifier serpent si possible.' },
+    piqure_meduse: { action: 'Eau de mer (PAS douce) + retirer tentacules pince', risque: 'Brulure dermique', details: 'Cas anaphylaxie : Anapen + 15 SAMU' },
+    crise_panique: { action: 'Respirer dans sac papier, calmer voix, sortir lieu confine', risque: 'Hyperventilation', details: 'Si premiere fois ou douleur thoracique → 15 SAMU' },
+    malaise_vagal: { action: 'Allonger jambes surelevees + verifier respiration', risque: 'Perte conscience breve', details: 'Si perte > 1 min → 15 SAMU. Hydratation + sucre' },
+    coup_chaleur: { action: 'Ombre + eau froide + vetements humides + 15 SAMU si conscience alteree', risque: 'Hyperthermie >40C', details: 'Ne pas donner aspirine/paracetamol qui sont inefficaces' },
+    hypothermie: { action: 'Couvrir, secher, boissons chaudes (PAS alcool) + 15 SAMU si <32C', risque: 'Arret cardiaque', details: 'Eviter mouvements brusques (fibrillation)' },
+    intoxication_co: { action: 'Ouvrir fenetres + sortir + 18 pompiers', risque: 'Asphyxie monoxyde carbone', details: 'Symptomes : cephalees, vertiges, nausees collectives' },
+    blessure_oeil_chimique: { action: 'Rincer 20 min eau abondante + 15 SAMU + ophtalmo urgence', risque: 'Brulure cornee', details: 'Ne pas frotter. Tete inclinee oeil atteint vers le bas' },
+    fracture_ouverte: { action: 'Immobilisation + compression saignement + 15 SAMU', risque: 'Hemorragie + infection', details: 'Ne pas remettre os en place. Couvrir avec compresse stérile' },
+    plaie_profonde: { action: 'Compression + 15 SAMU si non controlable', risque: 'Hemorragie + tetanos', details: 'Verifier vaccination tetanos < 10 ans. Eau savon puis betadine' },
+    crise_epilepsie: { action: 'Eloigner objets dangereux, NE RIEN mettre dans bouche, PLS apres crise', risque: 'Trauma cranien chute', details: 'Si > 5 min → 15 SAMU (état mal épileptique)' },
+    diarrhee_severe: { action: 'Hydratation SRO + 15 SAMU si signes deshydratation', risque: 'Deshydratation grave bebe/PA', details: 'Pli cutane, langue seche, oligurie = signes' },
   } as Record<string, UrgenceMedicale>,
   /** Vaccins adulte */
   vaccins_adulte: {
@@ -363,7 +436,29 @@ export const AX_MEDICAL_FR = {
     Rage: 'Pre-exposition voyageurs zone risque',
     Pneumocoque: '>65 ans ou comorbidite cardiaque/respiratoire',
     Zona: '>65 ans (Shingrix)',
+    /* boost v13 — Vaccins supplementaires */
+    'Encephalite a tiques (TBE)': 'Voyageurs zones forestieres EU centrale',
+    'Cholera (Dukoral)': 'Voyageurs zones risque + diarrhee voyageur',
+    'BCG (Tuberculose)': 'Soignants exposes / voyage zone endemique',
+    'Variole du singe (MPOX)': 'Pre-exposition risques specifiques',
+    'Papillomavirus (HPV)': 'Filles + garcons 11-14 ans (Gardasil 9)',
+    Rotavirus: 'Nourrissons 6 sem - 6 mois (RotaTeq, Rotarix)',
+    Varicelle: 'Adulte non immunise expose, enfants risque',
+    'Influenza grossesse': 'T2-T3 protege nouveau-ne',
   } as Record<string, string>,
+  /* boost v13 — Scores médicaux experts (10 scores cliniques) */
+  scores_medicaux: {
+    asa: { label: 'ASA (Anesthesie)', classes: ['I: sain', 'II: maladie legere', 'III: severe non incapacitante', 'IV: severe menacant vie', 'V: moribond <24h', 'VI: mort cerebrale'] },
+    glasgow: { label: 'Glasgow Coma Scale 3-15', classes: ['Yeux: 4spont/3voix/2dlr/1jamais', 'Verbal: 5orient/4confus/3inapp/2sons/1aucun', 'Moteur: 6obeit/5localise/4evite/3flex/2ext/1aucun'] },
+    chads_vasc: { label: 'CHA2DS2-VASc (AVC FA)', classes: ['0=tres bas', '1=bas', '2-3=modere', '≥4=eleve, anticoag ≥2 H, ≥3 F'] },
+    has_bled: { label: 'HAS-BLED (Risque hemorragique)', classes: ['<3 acceptable', '≥3 risque eleve, surveillance'] },
+    apgar: { label: 'APGAR Nouveau-ne (M1/M5/M10)', classes: ['7-10 sain', '4-6 depression moderee', '0-3 depression severe'] },
+    norton: { label: 'Norton (Escarres)', classes: ['<14 tres haut risque', '14-18 modere', '>18 faible'] },
+    tinetti: { label: 'Tinetti (Risque chute /28)', classes: ['<19 eleve', '19-23 modere', '>24 faible'] },
+    mmse: { label: 'MMSE Folstein /30', classes: ['28-30 normal', '24-27 leger', '20-23 modere', '<20 severe'] },
+    epworth: { label: 'Epworth (Somnolence /24)', classes: ['<8 normal', '8-15 excessive', '>15 pathologique'] },
+    nyha: { label: 'NYHA Insuf cardiaque', classes: ['I pas sympt', 'II effort important', 'III effort modere', 'IV repos'] },
+  } as Record<string, { label: string; classes: readonly string[] }>,
   bmi_categories: [
     { min: 0, max: 18.5, label: 'Maigreur' },
     { min: 18.5, max: 25, label: 'Normal' },
@@ -487,6 +582,99 @@ export const AX_MEDICAL_FR = {
         '6. Surveiller respiration',
       ],
       attention: 'Ne pas mettre PLS si traumatisme rachis suspecte',
+    },
+    /* boost v13 — 8 premiers secours supplementaires expert */
+    anaphylaxie_grave: {
+      titre: 'Choc anaphylactique',
+      etapes: [
+        '1. Reconnaitre signes : urticaire + dyspnee + chute TA + edema visage',
+        '2. Anapen (epinephrine 0.3mg adulte, 0.15mg enfant) face anterolaterale cuisse',
+        '3. Allonger jambes surelevees',
+        '4. 15 SAMU IMMEDIAT',
+        '5. Repeter Anapen 5-15 min si pas amelioration',
+        '6. Ventoline si bronchospasme associe',
+      ],
+      attention: 'Garder 2 stylos sur soi si allergie connue',
+    },
+    fast_avc: {
+      titre: 'AVC suspect (FAST)',
+      etapes: [
+        '1. F = Face : sourire asymetrique ?',
+        '2. A = Arm : un bras tombe quand 2 tendus ?',
+        '3. S = Speech : bafouille, mots difficiles ?',
+        '4. T = Time : noter HEURE EXACTE debut',
+        '5. 15 SAMU URGENT (thrombolyse fenetre 4h30)',
+        '6. Ne RIEN donner par bouche',
+        '7. Allonger tete legerement surelevee',
+      ],
+      attention: 'Chaque minute = 2 millions de neurones perdus',
+    },
+    crise_drogues: {
+      titre: 'Overdose / intoxication drogues',
+      etapes: [
+        '1. Verifier respiration + conscience',
+        '2. PLS si inconscient mais respire',
+        '3. 15 SAMU + signaler substance presumee',
+        '4. Si overdose opioides et naloxone dispo : 1 amp IM',
+        '5. Ne pas faire vomir',
+        '6. Surveiller jusqu arrivee secours',
+      ],
+    },
+    accouchement_imminent: {
+      titre: 'Accouchement imminent',
+      etapes: [
+        '1. Allonger maman dos cale, jambes pliees ouvertes',
+        '2. 15 SAMU + faire reperer adresse precise',
+        '3. Laver mains, preparer linges propres',
+        '4. NE PAS tirer sur bebe ni cordon',
+        '5. Soutenir tete a la sortie',
+        '6. Posez bebe sur ventre maman peau-a-peau, couvrir',
+        '7. NE PAS couper cordon (laisser SAMU)',
+      ],
+    },
+    accident_voiture: {
+      titre: 'Accident de la route',
+      etapes: [
+        '1. PROTEGER : feux warning + triangle 30m+ + gilet',
+        '2. ALERTER : 18/112 (pompiers), donner localisation precise',
+        '3. SECOURIR : ne pas deplacer victime sauf danger immediat',
+        '4. Si conscient : parler, rassurer, couvrir',
+        '5. Si inconscient mais respire : PLS',
+        '6. Si arret cardiaque : RCP + DAE si dispo',
+      ],
+      attention: 'Ne JAMAIS retirer casque moto sauf arret respiratoire',
+    },
+    electrisation: {
+      titre: 'Electrisation / Electrocution',
+      etapes: [
+        '1. COUPER courant (disjoncteur, arracher cable avec objet sec)',
+        '2. NE JAMAIS toucher victime avant coupure',
+        '3. 15 SAMU systematiquement (atteinte cardiaque possible)',
+        '4. Si arret cardiaque : RCP + DAE',
+        '5. Refroidir brulures avec eau froide 15 min',
+      ],
+    },
+    suicide_tentative: {
+      titre: 'Tentative de suicide',
+      etapes: [
+        '1. 15 SAMU IMMEDIAT',
+        '2. Si conscient : ecouter sans juger, ne pas laisser seul',
+        '3. Eloigner objets dangereux',
+        '4. Si pris medicaments : numero centre antipoison',
+        '5. Numero 3114 SOS Suicide (24/7 gratuit FR)',
+        '6. Apres : suivi psychiatrique obligatoire',
+      ],
+      attention: 'Crise possible meme apres tentative ratee. NE PAS LAISSER SEUL',
+    },
+    avale_objet_etranger: {
+      titre: 'Ingestion objet etranger',
+      etapes: [
+        '1. Si toux normale : laisser tousser',
+        '2. Si etouffe : claques dorsales (5) + Heimlich (5)',
+        '3. Aliment bloque oesophage : 15 SAMU + endoscopie',
+        '4. Pile bouton ou aimant : URGENCE HOPITAL',
+        '5. NE PAS faire vomir corps tranchants',
+      ],
     },
   } as Record<string, PremierSecours>,
 } as const;
@@ -764,6 +952,127 @@ export function getConstantesVitales(age: number): ConstantesVitales | null {
    
   if (age < 75) return AX_MEDICAL_FR.constantes_vitales['adulte'] ?? null;
   return AX_MEDICAL_FR.constantes_vitales['age_75_plus'] ?? null;
+}
+
+/* boost v13 — Helpers medical experts supplementaires */
+
+/**
+ * Score CHA2DS2-VASc pour risque AVC sur fibrillation auriculaire.
+ * Score >= 2 = anticoagulant indique.
+ */
+export function calcChaDsVasc(params: {
+  insuf_cardiaque: boolean;
+  hta: boolean;
+  age_75_plus: boolean;
+  diabete: boolean;
+  avc_ait_anterieur: boolean;
+  vasculaire: boolean;
+  age_65_74: boolean;
+  sexe: 'homme' | 'femme';
+}): { score: number; risque_pct_an: number; recommandation: string } {
+  let score = 0;
+  if (params.insuf_cardiaque) score += 1;
+  if (params.hta) score += 1;
+  if (params.age_75_plus) score += 2;
+  if (params.diabete) score += 1;
+  if (params.avc_ait_anterieur) score += 2;
+  if (params.vasculaire) score += 1;
+  if (params.age_65_74 && !params.age_75_plus) score += 1;
+  if (params.sexe === 'femme') score += 1;
+  /* Risque AVC annuel approximatif */
+  const riskMap: Record<number, number> = { 0: 0, 1: 1.3, 2: 2.2, 3: 3.2, 4: 4.0, 5: 6.7, 6: 9.8, 7: 9.6, 8: 6.7, 9: 15.2 };
+  const risque = riskMap[Math.min(9, score)] ?? 0;
+  let reco = 'Surveiller';
+  if (score >= 2 && params.sexe === 'homme') reco = 'Anticoagulant indique';
+  else if (score >= 3 && params.sexe === 'femme') reco = 'Anticoagulant indique';
+  else if (score === 1 && params.sexe === 'homme') reco = 'Anticoagulant a discuter';
+  return { score, risque_pct_an: risque, recommandation: reco };
+}
+
+/**
+ * Score Glasgow (E + V + M) avec interpretation.
+ */
+export function calcGlasgow(eyes: 1 | 2 | 3 | 4, verbal: 1 | 2 | 3 | 4 | 5, motor: 1 | 2 | 3 | 4 | 5 | 6): { score: number; gravite: 'leger' | 'modere' | 'severe'; recommandation: string } {
+  const score = eyes + verbal + motor;
+  let gravite: 'leger' | 'modere' | 'severe';
+  let reco: string;
+  if (score >= 13) { gravite = 'leger'; reco = 'Surveillance hopital min 6h'; }
+  else if (score >= 9) { gravite = 'modere'; reco = 'Hospitalisation, scanner'; }
+  else { gravite = 'severe'; reco = 'Reanimation, intubation, scanner urgent'; }
+  return { score, gravite, recommandation: reco };
+}
+
+/**
+ * Calcul score APGAR nouveau-ne (5 criteres x 0-2).
+ */
+export function calcApgar(params: {
+  rythme_cardiaque: 0 | 1 | 2;
+  respiration: 0 | 1 | 2;
+  tonus: 0 | 1 | 2;
+  reactivite: 0 | 1 | 2;
+  coloration: 0 | 1 | 2;
+}): { score: number; etat: string } {
+  const score = params.rythme_cardiaque + params.respiration + params.tonus + params.reactivite + params.coloration;
+  let etat = '';
+  if (score >= 7) etat = 'Bonne sante - surveillance routine';
+  else if (score >= 4) etat = 'Depression moderee - aspiration + O2 + stimulation';
+  else etat = 'Depression severe - REANIMATION IMMEDIATE';
+  return { score, etat };
+}
+
+/**
+ * Surface corporelle adulte (formule Mosteller).
+ */
+export function calcSurfaceCorporelle(poids_kg: number, taille_cm: number): number {
+  if (poids_kg <= 0 || taille_cm <= 0) return 0;
+  const sc = Math.sqrt((poids_kg * taille_cm) / 3600);
+  return Math.round(sc * 100) / 100;
+}
+
+/**
+ * Tour de taille recommande / risque CV abdominal.
+ */
+export function evaluerTourTaille(tour_cm: number, sexe: 'homme' | 'femme'): { categorie: string; risque: 'normal' | 'eleve' | 'tres_eleve' } {
+  if (sexe === 'homme') {
+    if (tour_cm < 94) return { categorie: 'Normal', risque: 'normal' };
+    if (tour_cm < 102) return { categorie: 'Risque eleve', risque: 'eleve' };
+    return { categorie: 'Risque tres eleve', risque: 'tres_eleve' };
+  }
+  if (tour_cm < 80) return { categorie: 'Normal', risque: 'normal' };
+  if (tour_cm < 88) return { categorie: 'Risque eleve', risque: 'eleve' };
+  return { categorie: 'Risque tres eleve', risque: 'tres_eleve' };
+}
+
+/**
+ * Check interaction medicamenteuse simple (recherche dans interactions du medoc).
+ */
+export function checkInteraction(medocA: string, medocB: string): { interaction: boolean; details: string[] } {
+  const a = AX_MEDICAL_FR.otc[medocA.toLowerCase()];
+  const b = AX_MEDICAL_FR.otc[medocB.toLowerCase()];
+  const details: string[] = [];
+  if (a?.interactions?.some((i) => i.toLowerCase().includes(b?.dci.toLowerCase() ?? medocB.toLowerCase()))) {
+    details.push(`${medocA} signale interaction avec ${medocB}`);
+  }
+  if (b?.interactions?.some((i) => i.toLowerCase().includes(a?.dci.toLowerCase() ?? medocA.toLowerCase()))) {
+    details.push(`${medocB} signale interaction avec ${medocA}`);
+  }
+  return { interaction: details.length > 0, details };
+}
+
+/**
+ * Recherche urgence par mot-cle multiple.
+ */
+export function searchUrgences(query: string): Array<{ symptome: string; action: string; risque?: string }> {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  const results: Array<{ symptome: string; action: string; risque?: string }> = [];
+  for (const key of Object.keys(AX_MEDICAL_FR.urgences)) {
+    if (key.toLowerCase().includes(q)) {
+      const u = AX_MEDICAL_FR.urgences[key];
+      if (u) results.push({ symptome: key, action: u.action, ...(u.risque !== undefined ? { risque: u.risque } : {}) });
+    }
+  }
+  return results;
 }
 
 /**

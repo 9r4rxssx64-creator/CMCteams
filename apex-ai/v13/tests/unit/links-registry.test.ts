@@ -167,10 +167,11 @@ describe('Links Registry (auto-create + verification)', () => {
   });
 
   describe('getRechargeLink (1-clic recharge — fix Kevin #1)', () => {
-    it('anthropic → billing direct (pas dashboard racine)', () => {
+    it('anthropic → credit-purchases direct (pas dashboard racine, pas /settings/billing seul)', () => {
       const url = linksRegistry.getRechargeLink('anthropic');
-      expect(url).toContain('billing');
+      expect(url).toContain('credit-purchases');
       expect(url).not.toBe('https://console.anthropic.com');
+      expect(url).not.toBe('https://console.anthropic.com/settings/billing');
     });
 
     it('openai → billing/overview direct', () => {
@@ -178,14 +179,49 @@ describe('Links Registry (auto-create + verification)', () => {
       expect(url).toContain('billing');
     });
 
-    it('stripe → dashboard billing', () => {
+    it('stripe → dashboard balance (recharge directe)', () => {
       const url = linksRegistry.getRechargeLink('stripe');
-      expect(url).toContain('billing');
+      expect(url).toContain('balance');
+    });
+
+    it('github → settings/billing/plans direct', () => {
+      const url = linksRegistry.getRechargeLink('github');
+      expect(url).toContain('billing/plans');
+    });
+
+    it('vercel → dashboard/usage direct (pas account/billing)', () => {
+      const url = linksRegistry.getRechargeLink('vercel');
+      expect(url).toContain('dashboard/usage');
+    });
+
+    it('resend → settings/credits direct', () => {
+      const url = linksRegistry.getRechargeLink('resend');
+      expect(url).toContain('credits');
+    });
+
+    it('twilio → deep billing-overview path', () => {
+      const url = linksRegistry.getRechargeLink('twilio');
+      expect(url).toContain('billing-overview');
+    });
+
+    it('brevo → /billing top-level', () => {
+      const url = linksRegistry.getRechargeLink('brevo');
+      expect(url).toBe('https://app.brevo.com/billing');
     });
 
     it('elevenlabs → subscription page', () => {
       const url = linksRegistry.getRechargeLink('elevenlabs');
       expect(url).toContain('subscription');
+    });
+
+    it('openrouter → /credits direct', () => {
+      const url = linksRegistry.getRechargeLink('openrouter');
+      expect(url).toContain('credits');
+    });
+
+    it('cohere → /billing direct', () => {
+      const url = linksRegistry.getRechargeLink('cohere');
+      expect(url).toContain('billing');
     });
 
     it('service inconnu → null (pas de fallback racine trompeur)', () => {

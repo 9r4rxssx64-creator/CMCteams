@@ -24,8 +24,8 @@ describe('features/studios/video — escapeHtml', () => {
 });
 
 describe('features/studios/video — constants', () => {
-  it('MAX_CLIPS = 12, MAX_FILE_SIZE_MB = 200 (boost v13)', () => {
-    expect(MAX_CLIPS).toBe(12);
+  it('MAX_CLIPS = 16, MAX_FILE_SIZE_MB = 200 (boost v13)', () => {
+    expect(MAX_CLIPS).toBe(16);
     expect(MAX_FILE_SIZE_MB).toBe(200);
   });
 

@@ -144,12 +144,14 @@ class Auth {
     if (!user) {
       /* P1 fix anti user enumeration : faire PBKDF2 de toute façon (constant-time response) */
       await this.hashPin(pin, 'fake-salt-anti-enumeration');
+      this.audit('login_unknown_user', { details: { name_hash: this.shortHash(name) } });
       return { ok: false, reason: 'Utilisateur inconnu' };
     }
 
     /* Rate-limit check (P0 sécu critique parité v12.785) */
     const rateCheck = this.checkRateLimit(user.id);
     if (!rateCheck.allowed) {
+      this.audit('login_rate_limited', { actor: user.id, details: { wait_min: rateCheck.waitMin } });
       return { ok: false, reason: `Trop de tentatives. Réessaie dans ${rateCheck.waitMin} min.` };
     }
 
@@ -171,6 +173,7 @@ class Auth {
       if (!this.timingSafeEqual(hash, storedHash)) {
         /* Rate-limit progressif (parité v12.785 anti brute-force) */
         this.recordFail(user.id);
+        this.audit('login_pin_failure', { actor: user.id });
         return { ok: false, reason: 'Code incorrect' };
       }
       this.clearFails(user.id);
@@ -192,6 +195,7 @@ class Auth {
 
     events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
     logger.info('auth', `Login ${user.name} (admin=${user.isAdmin})`);
+    this.audit('login_success', { actor: user.id, details: { admin: user.isAdmin, method: 'pin' } });
     return { ok: true };
   }
 
@@ -220,9 +224,11 @@ class Auth {
       } catch { /* ignore */ }
       events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
       logger.info('auth', `loginTrusted ${name || user.name} (admin=${user.isAdmin})`);
+      this.audit('login_success', { actor: user.id, details: { admin: user.isAdmin, method: 'trusted_device' } });
       return { ok: true };
     } catch (err: unknown) {
       logger.warn('auth', 'loginTrusted failed', { err });
+      this.audit('login_trusted_failed', { actor: uid, details: { err: String(err).slice(0, 200) } });
       return { ok: false, reason: 'Auto-login failed' };
     }
   }
@@ -247,6 +253,11 @@ class Auth {
   }
 
   logout(): void {
+    /* Audit AVANT clear (sinon actor = null) */
+    const currentUser = store.get('user') as { id?: string } | null;
+    if (currentUser?.id) {
+      this.audit('logout', { actor: currentUser.id });
+    }
     /* Liste BLANCHE stricte des keys effacées (anti-pattern v12.297→330) */
     const SESSION_KEYS = [
       'apex_v13_user',
@@ -265,6 +276,25 @@ class Auth {
     store.set('isAdmin', false);
     events.emit('auth:logout', {});
     logger.info('auth', 'Logout');
+  }
+
+  /**
+   * Wire RGPD Art. 32 — auditLog forensic trail (login, fail, lock, logout).
+   * Lazy import pour éviter circular dep + pas bloquer le login si audit-log KO.
+   */
+  private audit(action: string, opts: { actor?: string; details?: Record<string, unknown> } = {}): void {
+    void import('./audit-log.js')
+      .then(({ auditLog }) => auditLog.record(`auth.${action}`, opts))
+      .catch(() => { /* non-blocking */ });
+  }
+
+  /**
+   * Hash court (8 hex) anti-leak quand on audit un nom inconnu (pas de PII).
+   */
+  private shortHash(s: string): string {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(16).padStart(8, '0');
   }
 
   /**

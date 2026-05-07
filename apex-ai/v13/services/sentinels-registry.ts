@@ -565,7 +565,283 @@ class SentinelsRegistry {
       },
     });
 
-    /* 17. sentinel-meta (5 min) — surveille les autres sentinelles */
+    /* 18. auto-backup-watch (1h) — snapshot quotidien 3h UTC + hebdo dimanche 4h UTC + cleanup > 30j
+     * (Kevin règle "ne jamais rien perdre" 2026-05-04, niveau enterprise SOC2). */
+    sentinelsManager.register({
+      id: 'auto-backup-watch',
+      name: 'Backup Auto 24/7',
+      desc: 'Snapshot quotidien 3h UTC + hebdo dimanche 4h UTC + cleanup > 30 jours',
+      intervalMs: 60 * 60 * 1000, /* check 1h, mais snapshot uniquement à 3h UTC */
+      check: async () => {
+        try {
+          const { autoBackup } = await import('./auto-backup.js');
+          const now = new Date();
+          const hour = now.getUTCHours();
+          const day = now.getUTCDay(); /* 0=dimanche */
+          /* Hebdo dimanche 4h UTC : full state + Firebase remote */
+          if (day === 0 && hour === 4) {
+            const backup = await autoBackup.snapshot('weekly');
+            return {
+              ok: true,
+              msg: `Backup hebdo ${backup.id} OK (${(backup.size_bytes / 1024).toFixed(1)} KB)`,
+              details: { id: backup.id, type: 'weekly', size: backup.size_bytes },
+            };
+          }
+          /* Quotidien 3h UTC */
+          if (hour === 3) {
+            const backup = await autoBackup.snapshot('daily');
+            return {
+              ok: true,
+              msg: `Backup quotidien ${backup.id} OK (${(backup.size_bytes / 1024).toFixed(1)} KB)`,
+              details: { id: backup.id, type: 'daily', size: backup.size_bytes },
+            };
+          }
+          /* Heartbeat heures non-trigger : cleanup + stats */
+          const cleaned = await autoBackup.cleanup();
+          const stats = autoBackup.getStats();
+          if (stats.last_backup_age_h > 26 && stats.total_backups === 0) {
+            return {
+              ok: false,
+              msg: 'Aucun backup disponible (run manual urgent)',
+              details: { stats },
+            };
+          }
+          if (stats.last_backup_age_h > 48) {
+            return {
+              ok: false,
+              msg: `Dernière backup ${stats.last_backup_age_h}h (>48h critical)`,
+              details: { stats },
+            };
+          }
+          return {
+            ok: true,
+            msg: `${stats.total_backups} backups (cleaned ${cleaned.deleted})`,
+            details: { stats, cleaned: cleaned.deleted },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-backup-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Si quota localStorage saturé → cleanup agressif */
+        try {
+          const { autoBackup } = await import('./auto-backup.js');
+          const cleaned = await autoBackup.cleanup();
+          return {
+            ok: cleaned.deleted > 0,
+            msg: `Cleanup auto-fix : ${cleaned.deleted} backups supprimés`,
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-fix failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
+    /* 19. innovation-watch (hebdo) — veille technologique 24/7 (npm/AI/HF/GitHub).
+     * Kevin règle 2026-05-04 : "agents amélioration dédiés cherchent en autonomie totale". */
+    sentinelsManager.register({
+      id: 'innovation-watch',
+      name: 'Veille Technologique 24/7',
+      desc: 'Scan hebdo npm/GitHub/HuggingFace/IA providers — détecte upgrades + auto-apply si confidence ≥0.95',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { innovationWatch } = await import('./innovation-watch.js');
+          const result = await innovationWatch.runScan();
+          if (result.updates.length === 0) {
+            return { ok: true, msg: 'Aucune update détectée (état OK)' };
+          }
+          /* Auto-apply safe ones */
+          let applied = 0;
+          for (const upd of result.updates.filter((u) => u.recommendation === 'upgrade-asap')) {
+            const r = await innovationWatch.autoUpdateIfSafe(upd);
+            if (r.applied) applied += 1;
+          }
+          /* Notif Kevin si gros gain détecté (perf ou cost ≥50%) */
+          const bigGain = result.updates.find(
+            (u) =>
+              (u.estimatedGain?.perf ?? 0) >= 50 ||
+              (u.estimatedGain?.cost ?? 0) >= 50 ||
+              (u.estimatedGain?.capabilities ?? 0) >= 50,
+          );
+          if (bigGain) {
+            logger.info(
+              'innovation-watch.notif',
+              `Big gain detected: ${bigGain.name} (${bigGain.recommendation})`,
+              { id: bigGain.id, gain: bigGain.estimatedGain },
+            );
+          }
+          return {
+            ok: true,
+            msg: `${result.updates.length} updates, ${applied} auto-applied`,
+            details: { detected: result.updates.length, applied, summary: result.summary },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'innovation-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
+    /* 20. multi-key-health (30 min) — re-test toutes clés failing/unknown
+     * Sprint 9 Kevin règle 2026-05-07 : "si une clé fail, swap auto sur autre clé"
+     * + lumière rouge si tout un service est en panne. */
+    sentinelsManager.register({
+      id: 'multi-key-health',
+      name: 'Multi-clé API health 30min',
+      desc: 'Re-test toutes clés API failing/unknown toutes 30 min, swap auto si meilleure trouvée',
+      intervalMs: 30 * 60 * 1000,
+      check: async () => {
+        try {
+          const { multiKeyVault } = await import('./multi-key-vault.js');
+          const result = await multiKeyVault.healthCheckAll();
+          const down = multiKeyVault.getServicesDown();
+          const status = multiKeyVault.getHealthStatus();
+          if (down.length > 0) {
+            return {
+              ok: false,
+              msg: `🔴 Services en panne : ${down.join(', ')} (recovered ${result.recovered})`,
+              details: { down, ...result, health: status },
+            };
+          }
+          if (status === 'yellow') {
+            return {
+              ok: true,
+              msg: `🟡 Health partial — ${result.tested} clés testées, ${result.recovered} recovered`,
+              details: { ...result, health: status },
+            };
+          }
+          return {
+            ok: true,
+            msg: `🟢 Health green — ${result.tested} clés OK (${result.recovered} recovered)`,
+            details: { ...result, health: status },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: true,
+            msg: 'multi-key-health skipped: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
+    /* 18. links-rediscover (weekly) — re-verify alive tous discovered links + rebuild si broken */
+    sentinelsManager.register({
+      id: 'links-rediscover',
+      name: 'Links rediscover',
+      desc: 'Re-verify alive tous discovered links (login/dashboard/billing/api_keys/usage) + rebuild si broken',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+          const result = await autoDiscoverLinks.reVerifyAll();
+          if (result.broken > result.alive && result.tested > 5) {
+            return {
+              ok: false,
+              msg: `🔴 ${result.broken}/${result.tested} liens cassés — rediscover requis`,
+              details: { ...result },
+            };
+          }
+          return {
+            ok: true,
+            msg: `🔗 ${result.alive}/${result.tested} liens alive (${result.broken} cassés)`,
+            details: { ...result },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: true,
+            msg: 'links-rediscover skipped: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Auto-fix : relance discoverAllStored pour reconstruire le cache */
+        try {
+          const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+          const r = await autoDiscoverLinks.discoverAllStored();
+          logger.info('sentinels-registry', `links-rediscover auto-fix : ${r.new} new, ${r.verified}/${r.total} verified`);
+          return {
+            ok: r.verified > 0,
+            msg: `${r.new} nouveaux services, ${r.verified}/${r.total} verified`,
+          };
+        } catch (err: unknown) {
+          logger.warn('sentinels-registry', 'links-rediscover auto-fix failed', { err });
+          return { ok: false, msg: err instanceof Error ? err.message : 'autoFix failed' };
+        }
+      },
+    });
+
+    /* 20. auto-improvement-watch (hebdo) — scan nouveaux MCP/skills/tools + auto-install safe + self-correct + self-manage.
+     * Kevin règle 2026-05-07 : "auto amélioration et auto correction et auto Gestion". */
+    sentinelsManager.register({
+      id: 'auto-improvement-watch',
+      name: 'Auto-Improvement 24/7',
+      desc: 'Scan hebdo nouveaux MCP/skills/tools, auto-install safe (gain ≥30%), self-correct + self-manage',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { autoImprovement } = await import('./auto-improvement.js');
+          /* 1. Scan new tools */
+          const scan = await autoImprovement.scanNew();
+          /* 2. Auto-install les recommandés (max 3 par run pour éviter spam) */
+          let installed = 0;
+          let skipped = 0;
+          const recommendedIds = scan.newIds.slice(0, 3);
+          for (const id of recommendedIds) {
+            const result = await autoImprovement.autoInstallSafe(id);
+            if (result.ok) installed += 1;
+            else skipped += 1;
+          }
+          /* 3. Self-correct patterns récurrents */
+          const correct = await autoImprovement.selfCorrect();
+          /* 4. Self-manage cleanup logs / state */
+          const manage = await autoImprovement.selfManage();
+          return {
+            ok: true,
+            msg: `Scan ${scan.new} new (${scan.recommended} recommended), installed ${installed}, skipped ${skipped}, fixes ${correct.fixes_applied}, actions ${manage.actions.length}`,
+            details: {
+              scan,
+              installed,
+              skipped,
+              fixes_applied: correct.fixes_applied,
+              actions: manage.actions,
+              bytes_freed: manage.bytes_freed,
+            },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-improvement-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+      autoFix: async () => {
+        /* Si fail : tente juste self-manage (read-only / cleanup) */
+        try {
+          const { autoImprovement } = await import('./auto-improvement.js');
+          const manage = await autoImprovement.selfManage();
+          return {
+            ok: true,
+            msg: `Self-manage fallback: ${manage.actions.length} actions`,
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'auto-fix failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
+    /* 19. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',
       name: 'Sentinel meta',

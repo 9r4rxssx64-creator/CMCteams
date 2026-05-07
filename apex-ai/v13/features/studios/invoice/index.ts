@@ -390,6 +390,105 @@ export function exportFacturX(invoice: Invoice): { format: 'CII-EN16931'; data: 
   };
 }
 
+/* boost v13 — Helpers facturation experts supplementaires */
+
+/**
+ * Calcule le total dû avec acomptes/avoirs déduits.
+ */
+export function calcSoldeAVerser(invoice: Invoice, acomptes_deja_verses: number = 0, avoirs: number = 0): number {
+  const totals = calcTotals(invoice.lines);
+  return Math.max(0, Math.round((totals.ttc - acomptes_deja_verses - avoirs) * 100) / 100);
+}
+
+/**
+ * Calcule le délai moyen de paiement à partir d'historique factures.
+ */
+export function calcDelaiMoyenPaiement(invoices: readonly Invoice[]): { jours_moyen: number; nb_factures: number; nb_retard: number } {
+  let totalDays = 0;
+  let count = 0;
+  let nbRetard = 0;
+  for (const inv of invoices) {
+    if (inv.status !== 'paid') continue;
+    const issued = new Date(inv.date).getTime();
+    const due = new Date(inv.dueDate).getTime();
+    if (isNaN(issued) || isNaN(due)) continue;
+    /* Approximation : si payée, jours = écart entre date émission et date échéance */
+    const days = Math.floor((due - issued) / 86400000);
+    totalDays += days;
+    count++;
+    if (Date.now() > due) nbRetard++;
+  }
+  return {
+    jours_moyen: count > 0 ? Math.round(totalDays / count) : 0,
+    nb_factures: count,
+    nb_retard: nbRetard,
+  };
+}
+
+/**
+ * Calcule pénalités de retard (Loi LME 2008 : 3x taux légal).
+ */
+export function calcPenalitesRetard(montantTTC: number, jours_retard: number, tauxAnnuel: number = 0.105): number {
+  if (jours_retard <= 0) return 0;
+  const penalites = (montantTTC * tauxAnnuel * jours_retard) / 365;
+  /* Indemnité forfaitaire 40€ pour frais recouvrement (Décret 2012-1115) */
+  return Math.round((penalites + 40) * 100) / 100;
+}
+
+/**
+ * TVA intra-communautaire (auto-liquidation B2B EU).
+ */
+export function checkAutoliquidationTva(emetteurPays: CountryCode, clientPays: CountryCode, clientTva: string): { autoLiq: boolean; mention: string } {
+  const eu_pays: CountryCode[] = ['FR', 'BE', 'DE', 'ES', 'IT', 'LU'];
+  const isEmetteurEu = eu_pays.includes(emetteurPays);
+  const isClientEu = eu_pays.includes(clientPays);
+  const differentPays = emetteurPays !== clientPays;
+  if (isEmetteurEu && isClientEu && differentPays && isValidEUVAT(clientTva)) {
+    return {
+      autoLiq: true,
+      mention: 'Autoliquidation TVA - Article 196 directive 2006/112/CE - TVA due par le preneur',
+    };
+  }
+  return { autoLiq: false, mention: '' };
+}
+
+/**
+ * Calcule prix HT à partir prix TTC + taux TVA.
+ */
+export function ttcToHt(prixTTC: number, tauxTVA: number): number {
+  return Math.round((prixTTC / (1 + tauxTVA)) * 100) / 100;
+}
+
+/**
+ * Suggère taux de change approximatif selon devise (fallback offline).
+ */
+export const TAUX_CHANGE_FALLBACK: Record<string, number> = {
+  EUR_USD: 1.08, EUR_GBP: 0.84, EUR_CHF: 0.95, EUR_MAD: 10.85,
+  USD_EUR: 0.93, GBP_EUR: 1.19, CHF_EUR: 1.05,
+};
+
+/**
+ * Génère relance email courte selon J+15 / J+30 / J+45.
+ */
+export function generateReminderEmail(invoice: Invoice, jours_retard: number): { sujet: string; corps: string } {
+  if (jours_retard < 15) {
+    return {
+      sujet: `Rappel : Facture n°${invoice.number}`,
+      corps: `Bonjour,\n\nNotre facture n°${invoice.number} d'un montant de ${calcTotals(invoice.lines).ttc.toFixed(2)} ${invoice.currency} émise le ${invoice.date} arrive à échéance.\n\nMerci de procéder au règlement.\n\nCordialement.`,
+    };
+  }
+  if (jours_retard < 30) {
+    return {
+      sujet: `1ère relance : Facture n°${invoice.number} (échue depuis ${jours_retard}j)`,
+      corps: `Madame, Monsieur,\n\nNotre facture n°${invoice.number} d'un montant de ${calcTotals(invoice.lines).ttc.toFixed(2)} ${invoice.currency} est échue depuis ${jours_retard} jours.\n\nMerci de régulariser sous 8 jours pour éviter pénalités.\n\nCordialement.`,
+    };
+  }
+  return {
+    sujet: `MISE EN DEMEURE : Facture n°${invoice.number} (${jours_retard}j de retard)`,
+    corps: `Madame, Monsieur,\n\nMalgré nos précédentes relances, votre facture n°${invoice.number} d'un montant de ${calcTotals(invoice.lines).ttc.toFixed(2)} ${invoice.currency} demeure impayée depuis ${jours_retard} jours.\n\nNous vous mettons en demeure de procéder au règlement sous 8 jours, intérêts légaux et indemnité forfaitaire 40€ inclus (Art L441-10 Code commerce).\n\nÀ défaut, recouvrement contentieux sera engagé.\n\nCordialement.`,
+  };
+}
+
 export function createLine(industryTemplate: IndustryTemplate = 'standard'): InvoiceLine {
   const defaults = INDUSTRY_DEFAULTS[industryTemplate];
   return {

@@ -164,6 +164,24 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `subscription-tiers : ${tiers.length} tiers publics`);
     }),
 
+    /* Tenant manager : multi-tenant SaaS commercialisable (Kevin v13.0.74)
+       Expose globalThis.tenantManager pour anti-circular dep core/memory.ts */
+    safeInit('tenant', async () => {
+      const { tenantManager } = await import('./tenant.js');
+      tenantManager.init();
+      (globalThis as unknown as { tenantManager: typeof tenantManager }).tenantManager = tenantManager;
+      const all = uid ? tenantManager.listAll(uid) : [];
+      logger.info('services-bootstrap', `tenant : ${all.length} tenants connus`);
+    }),
+
+    /* Stripe Billing : Checkout + Portal + webhooks (Kevin v13.0.74)
+       4 plans (free/basic/pro/business) + usage tracking */
+    safeInit('stripe-billing', async () => {
+      const { stripeBilling } = await import('./stripe-billing.js');
+      const plans = stripeBilling.listPlans();
+      logger.info('services-bootstrap', `stripe-billing : ${plans.length} plans configurés`);
+    }),
+
     /* Voices registry : pre-warm browser voices async */
     safeInit('voices-registry', async () => {
       const { voicesRegistry } = await import('./voices-registry.js');
@@ -574,6 +592,39 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       } catch (err: unknown) {
         logger.warn('services-bootstrap', 'baseline init failed', { err });
       }
+    }),
+
+    /* P0-4 ARCHI (audit v13.2.5) : services orphelins wirés via lazy probe.
+     * On vérifie juste que le module se charge correctement (preflight check sans
+     * exécuter d'init coûteux). Les méthodes sont appelées par features (chat,
+     * scan-studio, voice-commands, settings) à la demande. Anti-pattern Kevin
+     * "Declaration ≠ Deployment" résolu : services connus du registry. */
+    safeInit('voice-catalog', async () => {
+      const mod = await import('./voice.js');
+      const audit = mod.auditCatalog();
+      logger.info('services-bootstrap', `voice catalog : ${audit.total} voices (healthy=${audit.healthy})`);
+    }),
+    safeInit('wake-word', async () => {
+      const { wakeWord } = await import('./wake-word.js');
+      const status = wakeWord.getStatus();
+      logger.info('services-bootstrap', `wake-word ready : listening=${status.listening}`);
+    }),
+    safeInit('vision', async () => {
+      const { vision } = await import('./vision.js');
+      logger.info('services-bootstrap', `vision ready : ${typeof vision === 'object' ? 'OK' : 'missing'}`);
+    }),
+    safeInit('smart-camera', async () => {
+      const { smartCamera } = await import('./smart-camera.js');
+      logger.info('services-bootstrap', `smart-camera ready : ${typeof smartCamera === 'object' ? 'OK' : 'missing'}`);
+    }),
+    safeInit('preflight', async () => {
+      const mod = await import('./preflight.js');
+      const count = Object.keys(mod.preflightRegistry).length;
+      logger.info('services-bootstrap', `preflight ready : ${count} checks registered`);
+    }),
+    safeInit('apex-claude-code-parity', async () => {
+      const mod = await import('./apex-claude-code-parity.js');
+      logger.info('services-bootstrap', `apex-claude-code-parity ready : ${typeof mod === 'object' ? 'OK' : 'missing'}`);
     }),
   ];
 

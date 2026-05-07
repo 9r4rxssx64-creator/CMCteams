@@ -169,6 +169,27 @@ export const PRESET_PALETTES: readonly { id: string; label: string; colors: read
   { id: 'corporate', label: 'Corporate', colors: ['#003366', '#00509e', '#247ba0', '#73a580', '#bfd1d3', '#f5f5f5'] },
   { id: 'medical', label: 'Médical', colors: ['#fff', '#e3f2fd', '#90caf9', '#42a5f5', '#1976d2', '#0d47a1'] },
   { id: 'legal', label: 'Justice', colors: ['#0c1429', '#1d2d50', '#7d6608', '#bf9f3a', '#e6c200', '#fff'] },
+  /* boost v13 — 20 palettes supplementaires pro */
+  { id: 'cyberpunk', label: 'Cyberpunk', colors: ['#0a0a23', '#1a0033', '#ff0080', '#00ffff', '#ffff00', '#fff'] },
+  { id: 'vintage', label: 'Vintage', colors: ['#3e2c1f', '#7a5037', '#c08552', '#e6cfa6', '#f5e8d3', '#fff'] },
+  { id: 'neon', label: 'Neon', colors: ['#0a0a0a', '#ff00ff', '#00ff00', '#ffff00', '#00ffff', '#ffffff'] },
+  { id: 'minimal', label: 'Minimal', colors: ['#000', '#fff', '#f5f5f5', '#e0e0e0', '#bdbdbd', '#212121'] },
+  { id: 'gold_marble', label: 'Or Marbre', colors: ['#0c0c0c', '#1a1a1a', '#3a3a3a', '#bf9f3a', '#d4af37', '#f4f4f4'] },
+  { id: 'tropical', label: 'Tropical', colors: ['#003d3d', '#0a6e6e', '#ff8c42', '#ffd166', '#06d6a0', '#f0f5f5'] },
+  { id: 'desert', label: 'Désert', colors: ['#3a2c1f', '#8b4513', '#cd853f', '#daa06d', '#f5e6d3', '#fff8e7'] },
+  { id: 'space', label: 'Espace', colors: ['#000016', '#0d0d2b', '#252569', '#5a5a99', '#9d4edd', '#f5e1ff'] },
+  { id: 'racing', label: 'Racing', colors: ['#000', '#7f0000', '#cc0000', '#fff', '#cccccc', '#ffaa00'] },
+  { id: 'wedding', label: 'Mariage', colors: ['#fdfdfd', '#f5e6d3', '#e8d5b7', '#c9a87c', '#a67c52', '#5e4737'] },
+  { id: 'kids', label: 'Enfants', colors: ['#ff6b9d', '#fcb900', '#7bdcb5', '#00d084', '#0693e3', '#ee82ee'] },
+  { id: 'autumn', label: 'Automne', colors: ['#3d1c00', '#8b3a00', '#cc6600', '#e89400', '#f5d5a0', '#fff'] },
+  { id: 'winter', label: 'Hiver', colors: ['#1d1d3d', '#3a3a6e', '#7a7aaa', '#b3b3d9', '#e6e6f5', '#fff'] },
+  { id: 'spring', label: 'Printemps', colors: ['#7cba7c', '#a3d9a3', '#c8e6c9', '#fff9c4', '#f8bbd0', '#fce4ec'] },
+  { id: 'summer', label: 'Été', colors: ['#FF6B6B', '#FFD93D', '#FF8E72', '#6BCB77', '#4D96FF', '#FFF'] },
+  { id: 'metal', label: 'Métal', colors: ['#0a0a0a', '#2a2a2a', '#5a5a5a', '#9a9a9a', '#bdbdbd', '#fff'] },
+  { id: 'cosmic', label: 'Cosmique', colors: ['#0d0d23', '#1a1a3e', '#3d2c8d', '#7a4ddc', '#c084fc', '#f5e6ff'] },
+  { id: 'organic', label: 'Bio Organique', colors: ['#1c4d1c', '#3d7a3d', '#7cba7c', '#c8e6c9', '#f0f5e8', '#fffbf0'] },
+  { id: 'sport_rouge', label: 'Sport rouge', colors: ['#000', '#1a1a1a', '#bf0000', '#ff0000', '#ff6666', '#fff'] },
+  { id: 'startup', label: 'Startup', colors: ['#0d1421', '#1a2b40', '#3a5fcd', '#67c1ff', '#a6e1ff', '#fff'] },
 ] as const;
 
 /* ---------- 100 Google fonts par catégorie ---------- */
@@ -420,6 +441,19 @@ export const MOCKUPS: readonly MockupKind[] = [
   { id: 'social_story', label: 'Story 9:16', emoji: '📲', width: 1080, height: 1920 },
   { id: 'banner', label: 'Bannière', emoji: '🖼️', width: 1500, height: 500 },
   { id: 'favicon', label: 'Favicon', emoji: '⭐', width: 256, height: 256 },
+  /* boost v13 — 12 mockups supplementaires */
+  { id: 'letterhead', label: 'En-tête lettre', emoji: '📄', width: 2480, height: 3508 }, /* A4 300dpi */
+  { id: 'envelope', label: 'Enveloppe', emoji: '✉️', width: 1100, height: 700 },
+  { id: 'email_signature', label: 'Signature email', emoji: '📧', width: 600, height: 200 },
+  { id: 'youtube_channel', label: 'YouTube banner', emoji: '▶️', width: 2560, height: 1440 },
+  { id: 'youtube_thumbnail', label: 'YouTube thumbnail', emoji: '🎬', width: 1280, height: 720 },
+  { id: 'twitter_header', label: 'Twitter header', emoji: '🐦', width: 1500, height: 500 },
+  { id: 'linkedin_banner', label: 'LinkedIn banner', emoji: '💼', width: 1584, height: 396 },
+  { id: 'facebook_cover', label: 'Facebook cover', emoji: '📘', width: 820, height: 312 },
+  { id: 'app_icon_ios', label: 'iOS App Icon', emoji: '🍎', width: 1024, height: 1024 },
+  { id: 'app_icon_android', label: 'Android App Icon', emoji: '🤖', width: 512, height: 512 },
+  { id: 'phone_case', label: 'Coque téléphone', emoji: '📱', width: 1500, height: 3000 },
+  { id: 'cap', label: 'Casquette', emoji: '🧢', width: 1200, height: 800 },
 ] as const;
 
 /* ---------- Pure logic helpers ---------- */

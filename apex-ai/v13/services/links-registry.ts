@@ -84,7 +84,8 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'anthropic',
     name: 'Anthropic Claude',
     dashboard: 'https://console.anthropic.com',
-    billing: 'https://console.anthropic.com/settings/billing',
+    /* Direct credit purchase page (Kevin demande recharge 1-clic) */
+    billing: 'https://console.anthropic.com/settings/billing/credit-purchases',
     api_keys_page: 'https://console.anthropic.com/settings/keys',
     docs: 'https://docs.anthropic.com',
     support: 'https://support.anthropic.com',
@@ -93,7 +94,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     plans_url: 'https://www.anthropic.com/api',
     usage: 'https://console.anthropic.com/settings/usage',
     plans: [
-      { name: 'Build', price: '$5 prepaid', limit: '50 RPM', url: 'https://console.anthropic.com/settings/billing' },
+      { name: 'Build', price: '$5 prepaid', limit: '50 RPM', url: 'https://console.anthropic.com/settings/billing/credit-purchases' },
       { name: 'Scale', price: 'pay-as-you-go', limit: '4000 RPM', url: 'https://www.anthropic.com/api' },
     ],
   },
@@ -111,7 +112,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     usage: 'https://platform.openai.com/usage',
     plans: [
       { name: 'Free trial', price: '$0', limit: '$5 credit one-time' },
-      { name: 'Pay-as-you-go', price: 'usage', limit: 'no monthly fee', url: 'https://platform.openai.com/account/billing' },
+      { name: 'Pay-as-you-go', price: 'usage', limit: 'no monthly fee', url: 'https://platform.openai.com/account/billing/overview' },
     ],
   },
   groq: {
@@ -150,7 +151,8 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
   openrouter: {
     service: 'openrouter',
     name: 'OpenRouter',
-    dashboard: 'https://openrouter.ai/keys',
+    dashboard: 'https://openrouter.ai',
+    /* Direct credits page (recharge 1-clic) — Kevin v13.0.20+ */
     billing: 'https://openrouter.ai/credits',
     api_keys_page: 'https://openrouter.ai/keys',
     docs: 'https://openrouter.ai/docs',
@@ -167,17 +169,19 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.perplexity.ai',
     pricing: 'https://www.perplexity.ai/pricing',
     plans_url: 'https://www.perplexity.ai/pro',
+    usage: 'https://www.perplexity.ai/settings/api',
   },
   mistral: {
     service: 'mistral',
     name: 'Mistral AI',
     dashboard: 'https://console.mistral.ai',
-    billing: 'https://console.mistral.ai/billing',
+    /* Direct billing/payment — Kevin v13.0.20+ */
+    billing: 'https://admin.mistral.ai/plateforme/billing',
     api_keys_page: 'https://console.mistral.ai/api-keys',
     docs: 'https://docs.mistral.ai',
     pricing: 'https://mistral.ai/technology/#pricing',
-    plans_url: 'https://console.mistral.ai/billing',
-    usage: 'https://console.mistral.ai/usage',
+    plans_url: 'https://admin.mistral.ai/plateforme/billing',
+    usage: 'https://admin.mistral.ai/plateforme/usage',
   },
   cohere: {
     service: 'cohere',
@@ -188,6 +192,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.cohere.com',
     pricing: 'https://cohere.com/pricing',
     plans_url: 'https://dashboard.cohere.com/billing',
+    usage: 'https://dashboard.cohere.com/billing',
   },
   deepseek: {
     service: 'deepseek',
@@ -203,12 +208,13 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
   xai: {
     service: 'xai',
     name: 'xAI Grok',
-    dashboard: 'https://x.ai',
+    dashboard: 'https://console.x.ai',
     billing: 'https://console.x.ai/team/default/billing',
-    api_keys_page: 'https://console.x.ai',
+    api_keys_page: 'https://console.x.ai/team/default/api-keys',
     docs: 'https://docs.x.ai',
     pricing: 'https://x.ai/api',
-    plans_url: 'https://console.x.ai',
+    plans_url: 'https://console.x.ai/team/default/billing',
+    usage: 'https://console.x.ai/team/default/usage',
   },
   togetherai: {
     service: 'togetherai',
@@ -219,6 +225,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.together.ai',
     pricing: 'https://www.together.ai/pricing',
     plans_url: 'https://api.together.xyz/settings/billing',
+    usage: 'https://api.together.xyz/settings/usage',
   },
   fireworks: {
     service: 'fireworks',
@@ -229,6 +236,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.fireworks.ai',
     pricing: 'https://fireworks.ai/pricing',
     plans_url: 'https://fireworks.ai/account/billing',
+    usage: 'https://fireworks.ai/account/usage',
   },
   huggingface: {
     service: 'huggingface',
@@ -239,6 +247,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://huggingface.co/docs',
     pricing: 'https://huggingface.co/pricing',
     plans_url: 'https://huggingface.co/pricing',
+    usage: 'https://huggingface.co/settings/billing',
   },
   replicate: {
     service: 'replicate',
@@ -249,6 +258,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://replicate.com/docs',
     pricing: 'https://replicate.com/pricing',
     plans_url: 'https://replicate.com/account/billing',
+    usage: 'https://replicate.com/account/billing#usage',
   },
   elevenlabs: {
     service: 'elevenlabs',
@@ -271,6 +281,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.pinecone.io',
     pricing: 'https://www.pinecone.io/pricing/',
     plans_url: 'https://www.pinecone.io/pricing/',
+    usage: 'https://app.pinecone.io/organizations/-/billing',
   },
   weaviate: {
     service: 'weaviate',
@@ -308,13 +319,15 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'stripe',
     name: 'Stripe',
     dashboard: 'https://dashboard.stripe.com',
-    billing: 'https://dashboard.stripe.com/billing',
+    /* Balance directe (recharge/topup) — Kevin v13.0.20+ */
+    billing: 'https://dashboard.stripe.com/balance',
     api_keys_page: 'https://dashboard.stripe.com/apikeys',
     docs: 'https://stripe.com/docs',
     support: 'https://support.stripe.com',
     status_page: 'https://status.stripe.com',
     pricing: 'https://stripe.com/pricing',
     plans_url: 'https://stripe.com/pricing',
+    usage: 'https://dashboard.stripe.com/balance',
   },
   paypal: {
     service: 'paypal',
@@ -357,12 +370,13 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'github',
     name: 'GitHub',
     dashboard: 'https://github.com/settings/profile',
-    billing: 'https://github.com/settings/billing',
+    /* Direct plans/upgrade — Kevin v13.0.20+ */
+    billing: 'https://github.com/settings/billing/plans',
     api_keys_page: 'https://github.com/settings/tokens',
     docs: 'https://docs.github.com',
     status_page: 'https://www.githubstatus.com',
     pricing: 'https://github.com/pricing',
-    plans_url: 'https://github.com/pricing',
+    plans_url: 'https://github.com/settings/billing/plans',
     usage: 'https://github.com/settings/billing/summary',
   },
   github_actions: {
@@ -389,13 +403,14 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'vercel',
     name: 'Vercel',
     dashboard: 'https://vercel.com/dashboard',
-    billing: 'https://vercel.com/account/billing',
+    /* Direct billing page (overview) — Kevin v13.0.20+ */
+    billing: 'https://vercel.com/dashboard/usage',
     api_keys_page: 'https://vercel.com/account/tokens',
     docs: 'https://vercel.com/docs',
     status_page: 'https://www.vercel-status.com',
     pricing: 'https://vercel.com/pricing',
     plans_url: 'https://vercel.com/account/billing',
-    usage: 'https://vercel.com/account/usage',
+    usage: 'https://vercel.com/dashboard/usage',
   },
   netlify: {
     service: 'netlify',
@@ -422,13 +437,14 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'twilio',
     name: 'Twilio',
     dashboard: 'https://console.twilio.com',
-    billing: 'https://console.twilio.com/billing',
-    api_keys_page: 'https://console.twilio.com/console/runtime/api-keys',
+    /* Deep billing overview path — Kevin v13.0.20+ */
+    billing: 'https://console.twilio.com/us1/billing/manage-billing/billing-overview',
+    api_keys_page: 'https://console.twilio.com/us1/account/keys-credentials/api-keys',
     docs: 'https://www.twilio.com/docs',
     status_page: 'https://status.twilio.com',
     pricing: 'https://www.twilio.com/pricing',
-    plans_url: 'https://console.twilio.com/billing',
-    usage: 'https://console.twilio.com/usage',
+    plans_url: 'https://console.twilio.com/us1/billing/manage-billing/billing-overview',
+    usage: 'https://console.twilio.com/us1/monitor/usage',
   },
   sendgrid: {
     service: 'sendgrid',
@@ -439,6 +455,7 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://docs.sendgrid.com',
     pricing: 'https://sendgrid.com/pricing',
     plans_url: 'https://app.sendgrid.com/account/billing',
+    usage: 'https://app.sendgrid.com/statistics',
   },
   mailchimp: {
     service: 'mailchimp',
@@ -454,22 +471,26 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     service: 'brevo',
     name: 'Brevo',
     dashboard: 'https://app.brevo.com',
-    billing: 'https://app.brevo.com/billing/account/customer',
+    /* Direct billing landing — Kevin v13.0.20+ */
+    billing: 'https://app.brevo.com/billing',
     api_keys_page: 'https://app.brevo.com/settings/keys/api',
     docs: 'https://developers.brevo.com',
     status_page: 'https://status.brevo.com',
     pricing: 'https://www.brevo.com/pricing/',
     plans_url: 'https://app.brevo.com/billing/account/customer',
+    usage: 'https://app.brevo.com/billing',
   },
   resend: {
     service: 'resend',
     name: 'Resend',
     dashboard: 'https://resend.com/dashboard',
-    billing: 'https://resend.com/settings/billing',
+    /* Page recharge crédits direct — Kevin v13.0.20+ */
+    billing: 'https://resend.com/settings/credits',
     api_keys_page: 'https://resend.com/api-keys',
     docs: 'https://resend.com/docs',
     pricing: 'https://resend.com/pricing',
     plans_url: 'https://resend.com/settings/billing',
+    usage: 'https://resend.com/settings/credits',
   },
   telegram: {
     service: 'telegram',

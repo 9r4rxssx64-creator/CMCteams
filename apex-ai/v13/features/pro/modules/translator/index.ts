@@ -24,6 +24,8 @@
 import { logger } from '../../../../core/logger.js';
 
 export const AX_LANGS: Readonly<Record<string, string>> = {
+  /* Langue locale Kevin (Casino Monaco) — TOUJOURS en tête */
+  mc: '🇲🇨 Munegascu',
   /* Européennes principales */
   fr: '🇫🇷 Français',
   en: '🇬🇧 English',
@@ -88,6 +90,47 @@ export const AX_LANGS: Readonly<Record<string, string>> = {
   gl: '🇪🇸 Galego',
   cy: '🇬🇧 Cymraeg',
   ga: '🇮🇪 Gaeilge',
+  /* boost v13 — 30+ langues supplémentaires (84 total) */
+  af: '🇿🇦 Afrikaans',
+  sq: '🇦🇱 Shqip',
+  hy: '🇦🇲 Հայերեն',
+  az: '🇦🇿 Azərbaycan',
+  be: '🇧🇾 Беларуская',
+  bs: '🇧🇦 Bosanski',
+  ka: '🇬🇪 ქართული',
+  ht: '🇭🇹 Kreyòl Ayisyen',
+  ig: '🇳🇬 Igbo',
+  yo: '🇳🇬 Yorùbá',
+  zu: '🇿🇦 isiZulu',
+  xh: '🇿🇦 isiXhosa',
+  st: '🇱🇸 Sesotho',
+  rw: '🇷🇼 Kinyarwanda',
+  mg: '🇲🇬 Malagasy',
+  ny: '🇲🇼 Nyanja',
+  sn: '🇿🇼 chiShona',
+  uz: '🇺🇿 O\'zbek',
+  kk: '🇰🇿 Қазақ',
+  ky: '🇰🇬 Кыргыз',
+  tg: '🇹🇯 Тоҷикӣ',
+  tk: '🇹🇲 Türkmen',
+  ps: '🇦🇫 پښتو',
+  sd: '🇵🇰 سنڌي',
+  pa: '🇮🇳 ਪੰਜਾਬੀ',
+  gu: '🇮🇳 ગુજરાતી',
+  mr: '🇮🇳 मराठी',
+  kn: '🇮🇳 ಕನ್ನಡ',
+  ml: '🇮🇳 മലയാളം',
+  si: '🇱🇰 සිංහල',
+  jv: '🇮🇩 Basa Jawa',
+  su: '🇮🇩 Basa Sunda',
+  haw: '🇺🇸 ʻŌlelo Hawaiʻi',
+  mi: '🇳🇿 Te Reo Māori',
+  sm: '🇼🇸 Gagana Sāmoa',
+  /* Codes ISO mais aussi pseudo-langues fun */
+  pirate: '🏴‍☠️ Pirate Speak',
+  yoda: '🌟 Yoda Speak',
+  shakespeare: '🎭 Shakespeare',
+  emoji: '😀 Emoji',
 };
 
 /* escapeHtml exporté pour usage tests + futures modules */
@@ -98,8 +141,8 @@ export function escapeHtml(s: string): string {
 const TRANSLATION_CACHE_KEY = 'ax_translator_cache';
 const TRANSLATION_PREFS_KEY = 'ax_translator_prefs';
 const TRANSLATION_HISTORY_KEY = 'ax_translator_history';
-const CACHE_MAX = 1000;
-const HISTORY_MAX = 200;
+const CACHE_MAX = 5000; /* boost v13 : 1000 → 5000 traductions */
+const HISTORY_MAX = 500; /* boost v13 : 200 → 500 historique */
 
 interface CacheEntry {
   text: string;
@@ -160,7 +203,155 @@ export const GLOSSAIRES: Readonly<Record<string, Record<string, string>>> = {
     'portee': 'reach',
     'attribution': 'attribution model',
   },
+  /* boost v13 — 4 glossaires supplementaires (8 total) */
+  finance: {
+    'capitaux propres': 'equity',
+    'fonds de roulement': 'working capital',
+    'compte resultat': 'profit and loss statement (P&L)',
+    'bilan': 'balance sheet',
+    'flux de tresorerie': 'cash flow',
+    'amortissement': 'depreciation / amortization',
+    'rentabilite': 'profitability',
+    'levee de fonds': 'fundraising',
+    'introduction en bourse': 'initial public offering (IPO)',
+    'taux d interet': 'interest rate',
+    'dividende': 'dividend',
+    'capitalisation boursiere': 'market capitalization',
+  },
+  it: {
+    'serveur': 'server',
+    'pare feu': 'firewall',
+    'cle api': 'API key',
+    'frontend': 'frontend',
+    'backend': 'backend',
+    'devops': 'DevOps',
+    'infrastructure': 'infrastructure',
+    'deploiement': 'deployment',
+    'integration continue': 'continuous integration (CI)',
+    'livraison continue': 'continuous delivery (CD)',
+    'kubernetes': 'Kubernetes',
+    'conteneurisation': 'containerization',
+    'orchestration': 'orchestration',
+    'apprentissage automatique': 'machine learning',
+  },
+  cuisine: {
+    'four': 'oven',
+    'plaque': 'stove',
+    'casserole': 'pot',
+    'poele': 'pan',
+    'cuillere a soupe': 'tablespoon',
+    'cuillere a cafe': 'teaspoon',
+    'pincee': 'pinch',
+    'farine': 'flour',
+    'beurre': 'butter',
+    'sucre': 'sugar',
+    'oeuf': 'egg',
+    'lait': 'milk',
+    'creme fraiche': 'sour cream / crème fraîche',
+    'a feu doux': 'on low heat',
+    'feu vif': 'high heat',
+    'mijoter': 'simmer',
+    'bouillir': 'boil',
+    'rissoler': 'brown / sear',
+  },
+  voyage: {
+    'aeroport': 'airport',
+    'gare': 'train station',
+    'bus': 'bus',
+    'vol': 'flight',
+    'reservation': 'booking',
+    'hotel': 'hotel',
+    'auberge': 'hostel',
+    'monnaie': 'currency / change',
+    'passeport': 'passport',
+    'visa': 'visa',
+    'douane': 'customs',
+    'pourboire': 'tip',
+    'tarif': 'fare / rate',
+    'horaire': 'schedule / timetable',
+    'itineraire': 'itinerary',
+  },
 };
+
+/* boost v13 — Verbes irreguliers EN 50+ (forme base / preterite / participe) */
+export const VERBES_IRREGULIERS_EN: ReadonlyArray<{ base: string; preterit: string; participe: string; fr: string }> = [
+  { base: 'be', preterit: 'was/were', participe: 'been', fr: 'être' },
+  { base: 'have', preterit: 'had', participe: 'had', fr: 'avoir' },
+  { base: 'do', preterit: 'did', participe: 'done', fr: 'faire' },
+  { base: 'go', preterit: 'went', participe: 'gone', fr: 'aller' },
+  { base: 'see', preterit: 'saw', participe: 'seen', fr: 'voir' },
+  { base: 'come', preterit: 'came', participe: 'come', fr: 'venir' },
+  { base: 'take', preterit: 'took', participe: 'taken', fr: 'prendre' },
+  { base: 'give', preterit: 'gave', participe: 'given', fr: 'donner' },
+  { base: 'know', preterit: 'knew', participe: 'known', fr: 'savoir/connaître' },
+  { base: 'think', preterit: 'thought', participe: 'thought', fr: 'penser' },
+  { base: 'say', preterit: 'said', participe: 'said', fr: 'dire' },
+  { base: 'tell', preterit: 'told', participe: 'told', fr: 'dire/raconter' },
+  { base: 'make', preterit: 'made', participe: 'made', fr: 'faire/fabriquer' },
+  { base: 'find', preterit: 'found', participe: 'found', fr: 'trouver' },
+  { base: 'get', preterit: 'got', participe: 'got/gotten', fr: 'obtenir' },
+  { base: 'put', preterit: 'put', participe: 'put', fr: 'mettre' },
+  { base: 'keep', preterit: 'kept', participe: 'kept', fr: 'garder' },
+  { base: 'leave', preterit: 'left', participe: 'left', fr: 'quitter/partir' },
+  { base: 'feel', preterit: 'felt', participe: 'felt', fr: 'sentir' },
+  { base: 'become', preterit: 'became', participe: 'become', fr: 'devenir' },
+  { base: 'bring', preterit: 'brought', participe: 'brought', fr: 'apporter' },
+  { base: 'buy', preterit: 'bought', participe: 'bought', fr: 'acheter' },
+  { base: 'catch', preterit: 'caught', participe: 'caught', fr: 'attraper' },
+  { base: 'choose', preterit: 'chose', participe: 'chosen', fr: 'choisir' },
+  { base: 'drink', preterit: 'drank', participe: 'drunk', fr: 'boire' },
+  { base: 'drive', preterit: 'drove', participe: 'driven', fr: 'conduire' },
+  { base: 'eat', preterit: 'ate', participe: 'eaten', fr: 'manger' },
+  { base: 'fall', preterit: 'fell', participe: 'fallen', fr: 'tomber' },
+  { base: 'fly', preterit: 'flew', participe: 'flown', fr: 'voler' },
+  { base: 'forget', preterit: 'forgot', participe: 'forgotten', fr: 'oublier' },
+  { base: 'forgive', preterit: 'forgave', participe: 'forgiven', fr: 'pardonner' },
+  { base: 'grow', preterit: 'grew', participe: 'grown', fr: 'grandir' },
+  { base: 'hear', preterit: 'heard', participe: 'heard', fr: 'entendre' },
+  { base: 'hide', preterit: 'hid', participe: 'hidden', fr: 'cacher' },
+  { base: 'hold', preterit: 'held', participe: 'held', fr: 'tenir' },
+  { base: 'lay', preterit: 'laid', participe: 'laid', fr: 'poser' },
+  { base: 'lie', preterit: 'lay', participe: 'lain', fr: 'être allongé' },
+  { base: 'lose', preterit: 'lost', participe: 'lost', fr: 'perdre' },
+  { base: 'meet', preterit: 'met', participe: 'met', fr: 'rencontrer' },
+  { base: 'pay', preterit: 'paid', participe: 'paid', fr: 'payer' },
+  { base: 'read', preterit: 'read', participe: 'read', fr: 'lire' },
+  { base: 'ride', preterit: 'rode', participe: 'ridden', fr: 'monter' },
+  { base: 'ring', preterit: 'rang', participe: 'rung', fr: 'sonner' },
+  { base: 'run', preterit: 'ran', participe: 'run', fr: 'courir' },
+  { base: 'sell', preterit: 'sold', participe: 'sold', fr: 'vendre' },
+  { base: 'send', preterit: 'sent', participe: 'sent', fr: 'envoyer' },
+  { base: 'set', preterit: 'set', participe: 'set', fr: 'placer' },
+  { base: 'sing', preterit: 'sang', participe: 'sung', fr: 'chanter' },
+  { base: 'sit', preterit: 'sat', participe: 'sat', fr: 'asseoir' },
+  { base: 'sleep', preterit: 'slept', participe: 'slept', fr: 'dormir' },
+  { base: 'speak', preterit: 'spoke', participe: 'spoken', fr: 'parler' },
+  { base: 'stand', preterit: 'stood', participe: 'stood', fr: 'rester debout' },
+  { base: 'swim', preterit: 'swam', participe: 'swum', fr: 'nager' },
+  { base: 'teach', preterit: 'taught', participe: 'taught', fr: 'enseigner' },
+  { base: 'understand', preterit: 'understood', participe: 'understood', fr: 'comprendre' },
+  { base: 'win', preterit: 'won', participe: 'won', fr: 'gagner' },
+  { base: 'write', preterit: 'wrote', participe: 'written', fr: 'écrire' },
+];
+
+/* boost v13 — Phrases utiles voyage (50 phrases x 8 langues principales) */
+export const PHRASES_VOYAGE: ReadonlyArray<{ fr: string; en: string; es: string; it: string; de: string; pt: string; ja: string; zh: string }> = [
+  { fr: 'Bonjour', en: 'Hello', es: 'Hola', it: 'Ciao', de: 'Hallo', pt: 'Olá', ja: 'こんにちは', zh: '你好' },
+  { fr: 'Merci', en: 'Thank you', es: 'Gracias', it: 'Grazie', de: 'Danke', pt: 'Obrigado', ja: 'ありがとう', zh: '谢谢' },
+  { fr: 'S\'il vous plaît', en: 'Please', es: 'Por favor', it: 'Per favore', de: 'Bitte', pt: 'Por favor', ja: 'お願いします', zh: '请' },
+  { fr: 'Excusez-moi', en: 'Excuse me', es: 'Disculpe', it: 'Mi scusi', de: 'Entschuldigung', pt: 'Com licença', ja: 'すみません', zh: '不好意思' },
+  { fr: 'Oui / Non', en: 'Yes / No', es: 'Sí / No', it: 'Sì / No', de: 'Ja / Nein', pt: 'Sim / Não', ja: 'はい/いいえ', zh: '是/不是' },
+  { fr: 'Je ne comprends pas', en: 'I don\'t understand', es: 'No entiendo', it: 'Non capisco', de: 'Ich verstehe nicht', pt: 'Não entendo', ja: 'わかりません', zh: '我不明白' },
+  { fr: 'Parlez-vous anglais ?', en: 'Do you speak English?', es: '¿Habla inglés?', it: 'Parla inglese?', de: 'Sprechen Sie Englisch?', pt: 'Fala inglês?', ja: '英語を話せますか', zh: '你会说英语吗' },
+  { fr: 'Combien ça coûte ?', en: 'How much is it?', es: '¿Cuánto cuesta?', it: 'Quanto costa?', de: 'Wie viel kostet das?', pt: 'Quanto custa?', ja: 'いくらですか', zh: '多少钱' },
+  { fr: 'Où sont les toilettes ?', en: 'Where is the bathroom?', es: '¿Dónde está el baño?', it: 'Dov\'è il bagno?', de: 'Wo ist die Toilette?', pt: 'Onde fica o banheiro?', ja: 'トイレはどこですか', zh: '洗手间在哪里' },
+  { fr: 'Je voudrais...', en: 'I would like...', es: 'Quisiera...', it: 'Vorrei...', de: 'Ich möchte...', pt: 'Eu gostaria...', ja: '〜が欲しいです', zh: '我想要...' },
+  { fr: 'L\'addition svp', en: 'The check please', es: 'La cuenta por favor', it: 'Il conto per favore', de: 'Die Rechnung bitte', pt: 'A conta por favor', ja: 'お会計お願いします', zh: '买单' },
+  { fr: 'Au secours !', en: 'Help!', es: '¡Ayuda!', it: 'Aiuto!', de: 'Hilfe!', pt: 'Socorro!', ja: '助けて！', zh: '救命' },
+  { fr: 'Police', en: 'Police', es: 'Policía', it: 'Polizia', de: 'Polizei', pt: 'Polícia', ja: '警察', zh: '警察' },
+  { fr: 'Ambulance', en: 'Ambulance', es: 'Ambulancia', it: 'Ambulanza', de: 'Krankenwagen', pt: 'Ambulância', ja: '救急車', zh: '救护车' },
+  { fr: 'Je suis perdu(e)', en: 'I am lost', es: 'Estoy perdido', it: 'Sono perso', de: 'Ich habe mich verirrt', pt: 'Estou perdido', ja: '道に迷いました', zh: '我迷路了' },
+];
 
 function cacheGet(text: string, tgt: string): string | null {
   try {
@@ -333,6 +524,112 @@ export function getHistory(): HistoryEntry[] {
   } catch {
     return [];
   }
+}
+
+/* boost v13 — Pseudo-traductions FUN deterministes (Pirate / Yoda / Shakespeare / Emoji) */
+
+/**
+ * Traduction "Pirate Speak" — remplace mots courants par equivalents pirates.
+ */
+export function translatePirate(text: string): string {
+  const dict: Record<string, string> = {
+    hello: 'Ahoy', hi: 'Ahoy', friend: 'matey', friends: 'mateys', yes: 'aye', no: 'nay',
+    bonjour: 'Ahoy', salut: 'Ahoy', oui: 'aye', non: 'nay', ami: 'matey',
+    you: 'ye', your: 'yer', is: 'be', are: 'be', am: 'be', the: "th'",
+    boat: 'ship', boats: 'ships', drink: 'grog', drinks: 'grog', money: 'doubloons',
+    treasure: 'booty', leave: 'set sail', go: 'set sail', soon: 'afore the morrow',
+  };
+  return text.split(/\b/).map((w) => {
+    const lower = w.toLowerCase();
+    return dict[lower] ?? w;
+  }).join('') + ' Arrr!';
+}
+
+/**
+ * Traduction "Yoda Speak" — inverse l'ordre sujet/objet/verbe.
+ */
+export function translateYoda(text: string): string {
+  const sentences = text.split(/([.!?]\s*)/);
+  return sentences.map((s) => {
+    if (/^[.!?]/.test(s)) return s;
+    const words = s.trim().split(/\s+/);
+    if (words.length < 3) return s;
+    /* Take last 1/3 then first 2/3 */
+    const split = Math.ceil(words.length / 3);
+    const end = words.slice(-split).join(' ');
+    const begin = words.slice(0, -split).join(' ');
+    return `${end}, ${begin} hmm`;
+  }).join('');
+}
+
+/**
+ * Traduction "Shakespeare" — remplace pronoms et verbes modernes par formes archaïques EN.
+ */
+export function translateShakespeare(text: string): string {
+  const dict: Record<string, string> = {
+    you: 'thou', your: 'thy', yours: 'thine', are: 'art', is: 'is',
+    have: 'hast', has: 'hath', will: 'shall', do: 'dost', does: 'doth',
+    yes: 'yea', no: 'nay', friend: 'good sir', hello: 'hark', goodbye: 'fare thee well',
+  };
+  return text.split(/\b/).map((w) => {
+    const lower = w.toLowerCase();
+    return dict[lower] ?? w;
+  }).join('');
+}
+
+/**
+ * Traduction "Emoji" — encode les mots-clés en emojis.
+ */
+export function translateEmoji(text: string): string {
+  const dict: Record<string, string> = {
+    love: '❤️', heart: '❤️', amour: '❤️', coeur: '❤️',
+    happy: '😊', sad: '😢', angry: '😡', laugh: '😂',
+    food: '🍽️', pizza: '🍕', burger: '🍔', coffee: '☕',
+    house: '🏠', maison: '🏠', car: '🚗', voiture: '🚗',
+    sun: '☀️', soleil: '☀️', moon: '🌙', lune: '🌙',
+    fire: '🔥', water: '💧', earth: '🌍', air: '💨',
+    cat: '🐱', chat: '🐱', dog: '🐶', chien: '🐶',
+    money: '💰', argent: '💰', work: '💼', travail: '💼',
+    music: '🎵', musique: '🎵', book: '📚', livre: '📚',
+    hello: '👋', bonjour: '👋', goodbye: '👋', au_revoir: '👋',
+  };
+  return text.split(/(\W+)/).map((w) => dict[w.toLowerCase()] ?? w).join('');
+}
+
+/**
+ * Cherche un verbe irrégulier EN à partir de sa forme française ou anglaise.
+ */
+export function lookupVerbeIrregulier(query: string): { base: string; preterit: string; participe: string; fr: string } | null {
+  const q = query.toLowerCase().trim();
+  return VERBES_IRREGULIERS_EN.find((v) =>
+    v.base === q || v.preterit === q || v.participe === q || v.fr === q
+  ) ?? null;
+}
+
+/**
+ * Translittération basique cyrillique → latin (alphabet ISO 9).
+ */
+export function translitterer(text: string, from: 'cyrillic'): string {
+  if (from !== 'cyrillic') return text;
+  const map: Record<string, string> = {
+    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh',
+    'З': 'Z', 'И': 'I', 'Й': 'J', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O',
+    'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts',
+    'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch', 'Ъ': '"', 'Ы': 'Y', 'Ь': "'", 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya',
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'j', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '"', 'ы': 'y', 'ь': "'", 'э': 'e', 'ю': 'yu', 'я': 'ya',
+  };
+  return text.split('').map((c) => map[c] ?? c).join('');
+}
+
+/**
+ * Cherche phrase voyage par mot-cle FR.
+ */
+export function lookupPhraseVoyage(queryFr: string): typeof PHRASES_VOYAGE[number] | null {
+  const q = queryFr.toLowerCase().trim();
+  return PHRASES_VOYAGE.find((p) => p.fr.toLowerCase().includes(q)) ?? null;
 }
 
 /**

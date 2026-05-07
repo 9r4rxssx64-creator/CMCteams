@@ -5,7 +5,57 @@
 > Bidirectionnel : Apex push dans `ax_telemetry_in` + `ax_claude_todo`, Claude Code
 > push ici. Boucle d'apprentissage fermée.
 
-**Dernière MAJ** : 2026-04-24 PM — v12.83 + v9.465 (+5 PRs après-midi, erreurs incluses)
+**Dernière MAJ** : 2026-05-04 16h40 — Apex v13.0.77 (MEGA SPRINT 17 subagents)
+
+---
+
+## 🚀 SESSION 2026-05-04 PM — Apex v13.0.73 → v13.0.77
+
+### 17 subagents finis avec succès
+1. Browser fix blank + boost (95 tests)
+2. 61 voix (53 tests)
+3. 105 tools IA (71 tests)
+4. 22 sentinelles auto-fix (80 tests)
+5. 5 vues P0 Dashboard/Vault/KB/Toolbox/SelfDiag (107 tests)
+6. 5 studios manquants Logo/Présentation/Préfecture/Clip/Photo (137 tests)
+7. 5 modules pro EXPERT boost cuisine/medical/finance/legal/translator (86 tests)
+8. 5 studios boost MAX music/video/cv/invoice/contract (198 tests)
+9. 3 modules pro stubs Business/Education/Certifications (89 tests)
+10. Apex parité Claude Code 100% — 29 méthodes (97 tests)
+11. Apex auto-modification 23 tasks whitelist (138 tests)
+12. Preflight check (94.51% cov, 101 tests)
+13. ON/OFF toggles 109 features (98.23% cov, 80 tests)
+14. Liens recharge MAX 51 services (53 tests)
+15. Vault triple persistance (23 tests)
+16. 15 skills experts (4712 lignes doc)
+17. Audit parité v12 vs v13
+
+### Stats finales
+- 4463+ tests verts (0 fail)
+- TS strict 0 errors, ESLint 0 warnings (--max-warnings=0)
+- Build 2.23s
+- Parité v12 : 50% → ~85%
+
+### 5 règles permanentes ajoutées CLAUDE.md
+1. TOUT AU MAX TOUJOURS
+2. APEX = MÊME ACCÈS QUE CLAUDE CODE (parité)
+3. APEX VÉRIFIE FONCTIONNEMENT AVANT PRÉSENTER (preflight)
+4. BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL
+5. 100/100 RÉEL CHAQUE AXE
+
+### Apex peut maintenant
+- Lire/écrire/modifier n'importe quel fichier (Read/Edit/Write parité Claude Code)
+- Exécuter shell sécurisé (Bash whitelist npm/git/node/tsc/vitest)
+- Web fetch + recherche (WebFetch/WebSearch)
+- Spawn subagents en autonomie
+- MCP GitHub (PR/issues/comments)
+- Self-audit + self-fix (confidence ≥0.95)
+- Auto-modification 23 tasks whitelist + 12 forbidden (sécurité)
+- Preflight check avant présenter outil/module à user
+- Toggle ON/OFF global + per-user pour 109 features
+- 51 liens services avec recharge 1-clic + sentinelle alive
+
+---
 
 ---
 

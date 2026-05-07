@@ -59,10 +59,41 @@ const PII_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; replace: string
 ];
 
 /**
+ * v13.1.2 Kevin "chat privé, je colle ce que je veux" :
+ * Si admin Kevin connecté → BYPASS PII redaction.
+ * Toutes ses données sont déjà chiffrées AES-GCM-256 dans vault, et il a tous les droits.
+ */
+function isAdminKevin(): boolean {
+  try {
+    const userRaw = localStorage.getItem('apex_v13_user');
+    if (!userRaw) return false;
+    const user = JSON.parse(userRaw) as { id?: string };
+    return user.id === 'kdmc_admin';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * v13.1.2 Privacy mode strict : si user actif → bypass aussi (n'affole pas).
+ * PII redaction reste actif uniquement pour clients non-admin (B2B/B2C tiers).
+ */
+function shouldRedact(): boolean {
+  if (isAdminKevin()) return false;
+  /* Privacy mode user — opt-in via Settings */
+  if (localStorage.getItem('apex_v13_privacy_no_redact') === '1') return false;
+  return true;
+}
+
+/**
  * Redacte les PII d'un texte.
  * Si le texte contient des PII, retourne version filtrée + warning.
+ * v13.1.2 : Kevin admin BYPASS — il colle ce qu'il veut (chiffré vault de toute façon).
  */
 export function redactPII(text: string): { redacted: string; foundCount: number } {
+  if (!shouldRedact()) {
+    return { redacted: text, foundCount: 0 };
+  }
   let redacted = text;
   let foundCount = 0;
   for (const p of PII_PATTERNS) {

@@ -15,7 +15,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeCalendarScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeCalendarScope?.cleanup();
+  activeCalendarScope = null;
+}
 
 export interface CalEvent {
   id: string;
@@ -132,6 +141,9 @@ class CalendarStore {
 export const calendarStore = new CalendarStore();
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeCalendarScope?.cleanup();
+  activeCalendarScope = createCleanupScope('calendar');
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
   const upcoming = calendarStore.upcoming(uid, 30);
@@ -182,7 +194,7 @@ export function render(rootEl: HTMLElement): void {
 function attachHandlers(rootEl: HTMLElement, uid: string): void {
   const form = rootEl.querySelector<HTMLFormElement>('#ax-cal-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    activeCalendarScope!.bind(form, 'submit', (e) => {
       e.preventDefault();
       const title = rootEl.querySelector<HTMLInputElement>('#ax-cal-title')?.value ?? '';
       const date = rootEl.querySelector<HTMLInputElement>('#ax-cal-date')?.value ?? '';
@@ -204,7 +216,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
   }
 
   rootEl.querySelectorAll<HTMLElement>('[data-action="delete-event"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeCalendarScope!.bind(btn, 'click', () => {
       const id = btn.dataset['eventId'];
       if (!id) return;
       if (calendarStore.remove(uid, id)) render(rootEl);

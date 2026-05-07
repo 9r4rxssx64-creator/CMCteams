@@ -3,7 +3,15 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { computeKpis, escapeHtml, loadAlerts, loadTodos } from '../../features/dashboard/index.js';
+import {
+  computeKpis,
+  escapeHtml,
+  loadAlerts,
+  loadRechargeLinks,
+  loadTodos,
+  renderServiceHealthCard,
+  type ServiceHealthLight,
+} from '../../features/dashboard/index.js';
 
 describe('features/dashboard — escapeHtml', () => {
   it('échappe < > & " \'', () => {
@@ -165,5 +173,103 @@ describe('features/dashboard — loadTodos', () => {
     expect(todos).toHaveLength(1);
     expect(todos[0]?.title).toBe('Todo sans description');
     expect(todos[0]?.severity).toBe('medium');
+  });
+});
+
+describe('features/dashboard — loadRechargeLinks (Kevin v13.0.20+)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('retourne {} si aucun service', async () => {
+    expect(await loadRechargeLinks([])).toEqual({});
+  });
+
+  it('charge les URLs recharge directes pour anthropic + openai', async () => {
+    const links = await loadRechargeLinks(['anthropic', 'openai']);
+    expect(links['anthropic']?.recharge).toContain('credit-purchases');
+    expect(links['openai']?.recharge).toContain('billing');
+    expect(links['anthropic']?.usage).toContain('usage');
+  });
+
+  it('retourne null pour service inconnu', async () => {
+    const links = await loadRechargeLinks(['xx_unknown_service_zzz']);
+    expect(links['xx_unknown_service_zzz']?.recharge).toBeNull();
+    expect(links['xx_unknown_service_zzz']?.usage).toBeNull();
+  });
+});
+
+describe('features/dashboard — renderServiceHealthCard (Kevin lumière)', () => {
+  it('rend message vide si aucun service', () => {
+    const html = renderServiceHealthCard([]);
+    expect(html).toContain('Aucune clé API');
+  });
+
+  it('rend bouton recharge si yellow/red avec URL connue', () => {
+    const items: ServiceHealthLight[] = [
+      {
+        service: 'anthropic',
+        light: 'yellow',
+        totalKeys: 1,
+        activeKeys: 1,
+        failingKeys: 1,
+        invalidKeys: 0,
+        lastSuccess: 0,
+      },
+    ];
+    const links = {
+      anthropic: {
+        recharge: 'https://console.anthropic.com/settings/billing/credit-purchases',
+        usage: 'https://console.anthropic.com/settings/usage',
+        apiKeys: 'https://console.anthropic.com/settings/keys',
+      },
+    };
+    const html = renderServiceHealthCard(items, links);
+    expect(html).toContain('💳 Recharge');
+    expect(html).toContain('credit-purchases');
+    expect(html).toContain('📊 Usage');
+  });
+
+  it('rend lumière verte sans bouton recharge insistant si green', () => {
+    const items: ServiceHealthLight[] = [
+      {
+        service: 'openai',
+        light: 'green',
+        totalKeys: 1,
+        activeKeys: 1,
+        failingKeys: 0,
+        invalidKeys: 0,
+        lastSuccess: Date.now(),
+      },
+    ];
+    const links = {
+      openai: {
+        recharge: 'https://platform.openai.com/account/billing/overview',
+        usage: 'https://platform.openai.com/usage',
+        apiKeys: 'https://platform.openai.com/api-keys',
+      },
+    };
+    const html = renderServiceHealthCard(items, links);
+    /* Bouton recharge n'apparaît PAS si green (Kevin règle : recharge visible quand action requise) */
+    expect(html).not.toContain('💳 Recharge');
+    /* Mais usage reste visible pour audit */
+    expect(html).toContain('📊 Usage');
+  });
+
+  it('échappe HTML dans service name', () => {
+    const items: ServiceHealthLight[] = [
+      {
+        service: '<script>alert(1)</script>',
+        light: 'red',
+        totalKeys: 0,
+        activeKeys: 0,
+        failingKeys: 0,
+        invalidKeys: 0,
+        lastSuccess: 0,
+      },
+    ];
+    const html = renderServiceHealthCard(items, {});
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
   });
 });

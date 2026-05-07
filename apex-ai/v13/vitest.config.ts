@@ -67,6 +67,8 @@ export default defineConfig({
         'features/pro/modules/certifications/index.ts',
         /* Sprint 9 Kevin v13.0.21 — admin-toggles UI HTML, logique testée via service */
         'features/admin-toggles/index.ts',
+        /* Sprint 9 Kevin v13.0.77+ — admin-backup UI HTML, logique testée via service auto-backup */
+        'features/admin-backup/index.ts',
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).

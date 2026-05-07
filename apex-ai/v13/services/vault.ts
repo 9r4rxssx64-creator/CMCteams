@@ -13,7 +13,7 @@
 
 import { logger } from '../core/logger.js';
 
-import { detectCredential, type CredentialPattern } from './credential-patterns.js';
+import { detectCredential, detectAllCredentials, type CredentialPattern } from './credential-patterns.js';
 
 interface EncryptedPayload {
   v: 1;
@@ -223,10 +223,13 @@ class Vault {
       if (!raw) return '';
       if (raw.startsWith(PREFIX)) {
         const decrypted = await this.decryptAuto(raw);
+        this.audit('read', { target: storageKey, details: { encrypted: true, ok: decrypted !== null } });
         return decrypted ?? '';
       }
+      this.audit('read', { target: storageKey, details: { encrypted: false } });
       return raw;
-    } catch {
+    } catch (err: unknown) {
+      this.audit('read_error', { target: storageKey, details: { err: String(err).slice(0, 200) } });
       return '';
     }
   }
@@ -243,6 +246,7 @@ class Vault {
         localStorage.removeItem(storageKey);
         persisted.local = true;
       } catch { /* ignore */ }
+      this.audit('delete', { target: storageKey });
       return { ok: true, persisted };
     }
     let encrypted: string;
@@ -279,6 +283,7 @@ class Vault {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
+    this.audit('set', { target: storageKey, details: persisted });
     return { ok: persisted.local || persisted.idb, persisted };
   }
 
@@ -502,6 +507,11 @@ class Vault {
       logger.warn('vault', `Forbidden credential detected: ${detected.name} — REFUSED`);
       return { ok: false, forbidden: true, pattern: detected, reason: detected.name + ' — JAMAIS stocké' };
     }
+    /* Sprint 9 v13.1.x (Kevin règle 2026-05-07 multi-key) :
+       Détecte si une clé existe déjà pour ce service → ajoute en parallèle dans
+       multi-key-vault au lieu d'écraser. Single-key reste pour back-compat
+       (legacy reads via getApiKey/readKey). */
+    void this.maybeAddToMultiKeyVault(detected, trimmed);
     /* P0 SÉCU CRITIQUE : chiffrement systématique au repos (audit v13.0.10).
        Avant : localStorage en plaintext = clés visibles DevTools.
        Après : AES-GCM 256 + PBKDF2 200k via encryptAuto (passphrase user OU device-bound). */
@@ -531,12 +541,157 @@ class Vault {
       valid = await this.autoTest(detected, trimmed).catch(() => undefined);
     }
     logger.info('vault', `Stored ${detected.name} → ${detected.storageKey}`, { valid });
+    /* v13.0.79 (Kevin "qu'il les garde en mémoire aussi") : ajoute à ax_persistent_memory
+     * pour que Apex IA SACHE quelles clés Kevin a configurées (sans exposer valeur).
+     * Persiste cross-session, sync Firebase, injecté system prompt. */
+    void this.rememberCredentialConfigured(detected, valid);
     return { ok: true, pattern: detected, ...(valid !== undefined && { valid }) };
+  }
+
+  /**
+   * Sprint 9 v13.1.x (Kevin règle multi-key 2026-05-07) :
+   * Si Kevin colle 2ème clé pour le même service → ajoute dans multi-key-vault
+   * pour failover key-level (au lieu d'écraser silencieusement la précédente).
+   *
+   * Service name dérivé depuis storageKey (ex: ax_anthropic_key → "anthropic").
+   * Best-effort non bloquant — toute erreur ignorée silencieusement.
+   */
+  private async maybeAddToMultiKeyVault(pattern: CredentialPattern, plaintext: string): Promise<void> {
+    try {
+      /* Service name = catégorie principale du service (Anthropic/OpenAI/Gemini/Groq...) */
+      const serviceName = this.deriveServiceName(pattern);
+      if (!serviceName) return;
+      const { multiKeyVault } = await import('./multi-key-vault.js');
+      /* Toast informatif si 2ème+ clé pour ce service (visible UI feedback) */
+      const existingCount = multiKeyVault.listKeys(serviceName).length;
+      await multiKeyVault.addKey(serviceName, plaintext, {
+        alias: existingCount > 0 ? `${pattern.name} #${existingCount + 1}` : pattern.name,
+      });
+      if (existingCount > 0) {
+        logger.info(
+          'vault',
+          `🔑 ${pattern.name} : ${existingCount + 1}ème clé ajoutée — failover automatique activé`,
+        );
+      }
+    } catch (err: unknown) {
+      logger.debug('vault', 'maybeAddToMultiKeyVault skipped', { err });
+    }
+  }
+
+  /**
+   * Dérive le service name normalisé pour multi-key-vault depuis le pattern.
+   * - ax_anthropic_key → 'anthropic'
+   * - ax_openai_key → 'openai'
+   * - ax_groq_key → 'groq'
+   * - ax_google_key, ax_gemini_key → 'google'
+   * - ax_openrouter_key → 'openrouter'
+   * Retourne null si non-AI (pas pertinent pour multi-key failover).
+   */
+  private deriveServiceName(pattern: CredentialPattern): string | null {
+    if (pattern.category !== 'ai') return null;
+    const k = pattern.storageKey;
+    if (k === 'ax_anthropic_key') return 'anthropic';
+    if (k === 'ax_openai_key') return 'openai';
+    if (k === 'ax_groq_key') return 'groq';
+    if (k === 'ax_google_key' || k === 'ax_gemini_key') return 'google';
+    if (k === 'ax_openrouter_key') return 'openrouter';
+    if (k === 'ax_perplexity_key') return 'perplexity';
+    if (k === 'ax_mistral_key') return 'mistral';
+    if (k === 'ax_cohere_key') return 'cohere';
+    if (k === 'ax_deepseek_key') return 'deepseek';
+    /* Pattern générique : supprime préfixe ax_ et suffixe _key */
+    const m = /^ax_([a-z0-9]+)_key$/.exec(k);
+    return m && m[1] ? m[1] : null;
+  }
+
+  /**
+   * Persiste fact "Kevin a configuré [Service]" dans ax_persistent_memory.
+   * Apex IA système prompt lit ces facts → sait ses outils dispo.
+   */
+  private async rememberCredentialConfigured(pattern: CredentialPattern, valid: boolean | undefined): Promise<void> {
+    try {
+      const validTag = valid === true ? '✅ validée' : valid === false ? '⚠️ ping échec' : '❓ non testée';
+      const fact = {
+        category: 'credentials',
+        text: `Kevin a configuré ${pattern.name} (clé chiffrée AES-GCM-256, ${validTag}). Dashboard: ${pattern.dashboard ?? 'n/a'}. Storage: ${pattern.storageKey}.`,
+        importance: 90,
+        ts: Date.now(),
+      };
+      const KEY = 'apex_v13_persistent_memory';
+      const raw = localStorage.getItem(KEY);
+      const entries = raw ? (JSON.parse(raw) as Array<{ category: string; text: string; importance: number; ts: number }>) : [];
+      /* Dédupe par storageKey : retire ancienne entrée pour ce service avant d'ajouter nouvelle */
+      const filtered = entries.filter((e) => !e.text.includes(pattern.storageKey));
+      filtered.push(fact);
+      /* Cap 5000 entrées (FIFO) */
+      const capped = filtered.length > 5000 ? filtered.slice(-5000) : filtered;
+      localStorage.setItem(KEY, JSON.stringify(capped));
+      /* Sync Firebase si dispo (best-effort) */
+      void import('./firebase.js').then(async ({ firebase }) => {
+        await firebase.write('apex_v13_persistent_memory', capped).catch(() => { /* offline OK */ });
+      }).catch(() => { /* skip */ });
+    } catch (err: unknown) {
+      logger.warn('vault', 'rememberCredentialConfigured failed', { err });
+    }
+  }
+
+  /**
+   * BULK auto-store : Kevin colle multiple clés (.env, JSON, multi-line texte).
+   * v13.0.78 fix : "il s'affole pas reconnu" — scan tous les tokens, store chacun.
+   */
+  async autoStoreBulk(value: string): Promise<{
+    stored: Array<{ pattern: CredentialPattern; valid?: boolean }>;
+    forbidden: Array<{ pattern: CredentialPattern }>;
+    failed: number;
+    total: number;
+  }> {
+    const detected = detectAllCredentials(value);
+    if (detected.length === 0) {
+      /* Fallback : essaie autoStore simple sur le texte trimmed (rétrocompat) */
+      const single = await this.autoStore(value);
+      if (single.ok && single.pattern) {
+        return {
+          stored: [{ pattern: single.pattern, ...(single.valid !== undefined && { valid: single.valid }) }],
+          forbidden: [],
+          failed: 0,
+          total: 1,
+        };
+      }
+      if (single.forbidden && single.pattern) {
+        return { stored: [], forbidden: [{ pattern: single.pattern }], failed: 0, total: 1 };
+      }
+      return { stored: [], forbidden: [], failed: 1, total: 1 };
+    }
+    const stored: Array<{ pattern: CredentialPattern; valid?: boolean }> = [];
+    const forbidden: Array<{ pattern: CredentialPattern }> = [];
+    let failed = 0;
+    for (const { pattern, value: rawValue } of detected) {
+      const result = await this.autoStore(rawValue);
+      if (result.ok && result.pattern) {
+        stored.push({ pattern: result.pattern, ...(result.valid !== undefined && { valid: result.valid }) });
+      } else if (result.forbidden && result.pattern) {
+        forbidden.push({ pattern: result.pattern });
+      } else {
+        failed++;
+        logger.warn('vault', `autoStoreBulk : pattern ${pattern.name} échec`, { reason: result.reason });
+      }
+    }
+    logger.info('vault', `autoStoreBulk : ${stored.length}/${detected.length} clés stockées`, {
+      stored: stored.map((s) => s.pattern.name),
+      forbidden: forbidden.map((f) => f.pattern.name),
+      failed,
+    });
+    return { stored, forbidden, failed, total: detected.length };
   }
 
   /**
    * Wire links-registry pour auto-création + auto-vérification HEAD
    * (extraction service name depuis pattern.name).
+   *
+   * v13.1.x (Kevin règle 2026-05-07 auto-discover) :
+   * Après autoCreate, déclenche autoDiscoverLinks.discover() pour enrichir
+   * avec login/dashboard/billing/api_keys/usage/docs/etc. en autonomie totale
+   * (cascade pre_configured → pattern_discovery → web_search).
    */
   private async autoCreateLink(pattern: CredentialPattern): Promise<void> {
     try {
@@ -545,6 +700,27 @@ class Vault {
       if (!serviceName) return;
       const { linksRegistry } = await import('./links-registry.js');
       await linksRegistry.autoCreate(serviceName);
+      /* AUTO-DISCOVER : trouve login/dashboard/billing/api_keys/usage/etc.
+         non-bloquant — best-effort, ne casse pas autoStore si offline. */
+      try {
+        const { autoDiscoverLinks } = await import('./auto-discover-links.js');
+        const discovered = await autoDiscoverLinks.discover(serviceName);
+        if (discovered.alive) {
+          const found: string[] = [];
+          if (discovered.login) found.push('login');
+          if (discovered.dashboard) found.push('dashboard');
+          if (discovered.billing) found.push('billing');
+          if (discovered.api_keys) found.push('api_keys');
+          if (discovered.usage) found.push('usage');
+          if (discovered.docs) found.push('docs');
+          logger.info(
+            'vault',
+            `🔗 ${found.length} liens trouvés pour ${pattern.name} : ${found.join(', ')}`,
+          );
+        }
+      } catch (err: unknown) {
+        logger.debug('vault', 'autoDiscoverLinks skipped', { err });
+      }
     } catch (err: unknown) {
       logger.warn('vault', 'autoCreateLink failed', { err });
     }
@@ -633,6 +809,16 @@ class Vault {
     const out = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
+  }
+
+  /**
+   * Wire RGPD Art. 32 — auditLog forensic trail des opérations vault sensibles.
+   * Lazy import (évite circular dep) + non-blocking (audit-log KO ne casse rien).
+   */
+  private audit(action: string, opts: { target?: string; details?: Record<string, unknown> } = {}): void {
+    void import('./audit-log.js')
+      .then(({ auditLog }) => auditLog.record(`vault.${action}`, opts))
+      .catch(() => { /* non-blocking */ });
   }
 }
 

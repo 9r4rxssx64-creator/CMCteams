@@ -5,8 +5,20 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+
+/* P1-6 (audit v13.2.7) : scope listener pour anti-leak SPA navigation. */
+let activeSentinelsScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeSentinelsScope?.cleanup();
+  activeSentinelsScope = null;
+}
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* P1-6 : cleanup ancien scope avant re-render (anti listener leak) */
+  activeSentinelsScope?.cleanup();
+  activeSentinelsScope = createCleanupScope('sentinels');
   const { sentinels } = await import('../../services/sentinels.js');
   const { sentinelsRegistry, bootstrapSentinelsRegistry } = await import('../../services/sentinels-registry.js');
   /* Idempotent — booste vers 18+ sentinelles si pas déjà fait */
@@ -77,25 +89,31 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     </div>
   `;
 
-  /* Wire run all */
-  rootEl.querySelector<HTMLButtonElement>('#ax-sent-run-all')?.addEventListener('click', () => {
-    void (async () => {
-      const { toast } = await import('../../ui/toast.js');
-      toast.info(`Exécution de ${list.length} sentinelles...`);
-      await Promise.all(list.map((s) => sentinels.runOne(s.id)));
-      toast.success('✅ Tous les sentinelles re-exécutés');
-      await render(rootEl); /* Refresh */
-    })();
-  });
+  /* Wire run all (scope listener cleanup) */
+  const runAllBtn = rootEl.querySelector<HTMLButtonElement>('#ax-sent-run-all');
+  if (runAllBtn) {
+    activeSentinelsScope.bind(runAllBtn, 'click', () => {
+      void (async () => {
+        const { toast } = await import('../../ui/toast.js');
+        toast.info(`Exécution de ${list.length} sentinelles...`);
+        await Promise.all(list.map((s) => sentinels.runOne(s.id)));
+        toast.success('✅ Tous les sentinelles re-exécutés');
+        await render(rootEl); /* Refresh */
+      })();
+    });
+  }
 
   /* Wire refresh */
-  rootEl.querySelector<HTMLButtonElement>('#ax-sent-refresh')?.addEventListener('click', () => {
-    void render(rootEl);
-  });
+  const refreshBtn = rootEl.querySelector<HTMLButtonElement>('#ax-sent-refresh');
+  if (refreshBtn) {
+    activeSentinelsScope.bind(refreshBtn, 'click', () => {
+      void render(rootEl);
+    });
+  }
 
   /* Wire run individual */
   rootEl.querySelectorAll<HTMLButtonElement>('.ax-sent-run').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    activeSentinelsScope!.bind(btn, 'click', () => {
       void (async () => {
         const id = btn.dataset['sentId'];
         if (!id) return;

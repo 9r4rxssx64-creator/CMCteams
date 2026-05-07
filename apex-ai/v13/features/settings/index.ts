@@ -6,54 +6,250 @@
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 
+function escapeHtmlSafe(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+}
+
+const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
+
+function isAutoReadEnabled(): boolean {
+  try {
+    return localStorage.getItem(AUTO_READ_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setAutoReadEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(AUTO_READ_KEY, enabled ? '1' : '0');
+  } catch {
+    /* ignore quota */
+  }
+}
+
+interface VoiceListItem {
+  readonly id: string;
+  readonly name: string;
+  readonly emoji?: string;
+  readonly category: 'pro' | 'fun' | 'thematic';
+  readonly description?: string;
+}
+
+/**
+ * Wire la section Voice : auto-read toggle, liste 60+ voix avec
+ * Test ▶ + Définir comme défaut. Lazy-load voice service.
+ *
+ * Exposé pour tests.
+ */
+export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
+  try {
+    const voiceMod = await import('../../services/voice.js');
+    const { listVoices, getActiveVoice, setActiveVoice, speak, stopAll } = voiceMod;
+
+    const autoReadInput = rootEl.querySelector<HTMLInputElement>('#ax-settings-auto-read');
+    const currentEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-current');
+    const listEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-list');
+    const catBtns = rootEl.querySelectorAll<HTMLButtonElement>('.ax-voice-cat-btn');
+    if (!listEl) return;
+
+    /* Init auto-read toggle */
+    if (autoReadInput) {
+      autoReadInput.checked = isAutoReadEnabled();
+      autoReadInput.addEventListener('change', () => {
+        setAutoReadEnabled(autoReadInput.checked);
+        void (async () => {
+          const { toast } = await import('../../ui/toast.js');
+          toast.success(autoReadInput.checked ? 'Lecture auto activée' : 'Lecture auto désactivée');
+        })();
+      });
+    }
+
+    /* Affiche voix active */
+    const refreshCurrent = (): void => {
+      if (!currentEl) return;
+      const id = getActiveVoice();
+      const list = listVoices() as readonly VoiceListItem[];
+      const v = list.find((x) => x.id === id);
+      currentEl.textContent = v ? `Voix active : ${v.emoji ?? '🔊'} ${v.name} (${v.category})` : `Voix active : ${id}`;
+    };
+    refreshCurrent();
+
+    /* Render liste filtrée */
+    const renderList = (filter: 'all' | 'pro' | 'fun' | 'thematic'): void => {
+      const list = listVoices() as readonly VoiceListItem[];
+      const filtered = filter === 'all' ? list : list.filter((v) => v.category === filter);
+      const activeId = getActiveVoice();
+      listEl.innerHTML = filtered
+        .map((v) => {
+          const isActive = v.id === activeId;
+          const emoji = v.emoji ?? (v.category === 'pro' ? '🎙️' : v.category === 'fun' ? '🎉' : '🎨');
+          const desc = v.description ? escapeHtmlSafe(v.description) : '';
+          const activeBg = isActive
+            ? 'background:rgba(232,184,48,0.15);border-color:rgba(232,184,48,0.45)'
+            : 'background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.06)';
+          return `
+            <div class="ax-voice-item" data-voice-id="${escapeHtmlSafe(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
+              <span style="font-size:18px">${emoji}</span>
+              <div style="flex:1;min-width:0">
+                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
+                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.category)}${desc ? ' · ' + desc : ''}</div>
+              </div>
+              <button class="ax-voice-test-btn" data-test-voice="${escapeHtmlSafe(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtmlSafe(v.name)}" style="min-width:36px;height:36px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
+              <button class="ax-voice-set-btn" data-set-voice="${escapeHtmlSafe(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtmlSafe(v.name)} par défaut" style="min-width:36px;height:36px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+            </div>
+          `;
+        })
+        .join('');
+    };
+    renderList('all');
+
+    /* Wire boutons catégorie */
+    catBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat') as 'all' | 'pro' | 'fun' | 'thematic' | null;
+        if (cat) renderList(cat);
+      });
+    });
+
+    /* Event delegation pour boutons test ▶ + définir comme défaut */
+    listEl.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const testBtn = target.closest('[data-test-voice]') as HTMLButtonElement | null;
+      const setBtn = target.closest('[data-set-voice]') as HTMLButtonElement | null;
+
+      if (testBtn) {
+        const id = testBtn.getAttribute('data-test-voice');
+        if (!id) return;
+        void (async () => {
+          stopAll();
+          const r = await speak('Bonjour Kevin, je suis ta voix.', id);
+          if (!r.ok) {
+            const { toast } = await import('../../ui/toast.js');
+            toast.warn(`Test échoué : ${r.reason ?? 'erreur'}`);
+          }
+        })();
+        return;
+      }
+
+      if (setBtn) {
+        const id = setBtn.getAttribute('data-set-voice');
+        if (!id) return;
+        void (async () => {
+          await setActiveVoice(id);
+          refreshCurrent();
+          /* Re-render avec nouvelle active */
+          const activeFilter = (rootEl.querySelector<HTMLButtonElement>('.ax-voice-cat-btn[data-cat]:focus')?.getAttribute('data-cat') ?? 'all') as 'all' | 'pro' | 'fun' | 'thematic';
+          renderList(activeFilter);
+          const { toast } = await import('../../ui/toast.js');
+          const list = listVoices() as readonly VoiceListItem[];
+          const v = list.find((x) => x.id === id);
+          toast.success(v ? `Voix par défaut : ${v.name}` : 'Voix mise à jour');
+        })();
+      }
+    });
+  } catch (err: unknown) {
+    logger.warn('feature-settings', 'wireVoiceSection failed', { err });
+  }
+}
+
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user');
   const isAdmin = (store.get('isAdmin') as boolean | undefined) ?? false;
+  /* Premium settings sections with glass + lift hover + section icon */
+  const sectionStyle = 'background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-top:14px;transition:all 240ms cubic-bezier(0.16,1,0.3,1)';
+  const sectionHeaderStyle = 'margin:0 0 12px;font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px';
+  const iconBadgeStyle = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:linear-gradient(135deg,rgba(232,184,48,0.2),rgba(201,162,39,0.08));border:1px solid rgba(232,184,48,0.25);border-radius:10px;font-size:16px';
+  const btnFullWidthStyle = 'width:100%;min-height:44px;padding:12px 16px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)';
+
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:600px;margin:0 auto">
-      <h1 style="margin:0 0 16px;color:#c9a227">⚙️ Réglages</h1>
-      <p style="color:var(--ax-text-dim)">Utilisateur : <strong>${user?.name ?? 'inconnu'}</strong> ${isAdmin ? '👑' : ''}</p>
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card { animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards; }
+      .ax-modernized-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(232,184,48,0.25) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card { animation: none !important; transition: none !important; }
+        .ax-modernized-card:hover { transform: none !important; }
+      }
+    </style>
+    <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
+        <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
+        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtmlSafe(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
+      </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:16px">
-        <h2 style="margin:0 0 12px;font-size:16px">🔑 Clés API</h2>
-        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:14px">Gère tes clés API (Anthropic, OpenAI, Stripe, etc.)</p>
-        <button class="ax-btn ax-btn-primary" onclick="location.hash='#chat'" style="width:100%">Ouvrir le Coffre (depuis chat)</button>
-      </div>
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:60ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔑</span> Clés API</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Gère tes clés API (Anthropic, OpenAI, Stripe, etc.) dans le Coffre sécurisé.</p>
+        <button class="ax-btn ax-btn-primary" data-nav-route="vault" style="${btnFullWidthStyle};background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none">🔐 Ouvrir le Coffre</button>
+      </section>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
-        <h2 style="margin:0 0 12px;font-size:16px">🎨 Apparence</h2>
-        <p style="margin:0;color:var(--ax-text-dim);font-size:14px">Thème : <strong>Dark</strong> (clair bientôt)</p>
-      </div>
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:100ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🎨</span> Apparence</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px">
+          <span style="color:rgba(255,255,255,0.7);font-size:14px">Thème actuel</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(232,184,48,0.12);color:#e8b830;border-radius:24px;font-size:12px;font-weight:700;letter-spacing:0.04em">
+            <span style="width:8px;height:8px;background:#e8b830;border-radius:50%;box-shadow:0 0 10px #e8b830"></span> DARK
+          </span>
+        </div>
+      </section>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
-        <h2 style="margin:0 0 12px;font-size:16px">🔔 Notifications</h2>
-        <button class="ax-btn ax-btn-secondary" id="ax-settings-notif-test" style="width:100%">Tester notification push</button>
-      </div>
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:140ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔔</span> Notifications</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Active les notifications push pour rester informé en temps réel.</p>
+        <button class="ax-btn ax-btn-secondary" id="ax-settings-notif-test" style="${btnFullWidthStyle};background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3)">🔔 Tester notification push</button>
+      </section>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
-        <h2 style="margin:0 0 12px;font-size:16px">🧠 Mémoire externe</h2>
-        <p style="margin:0 0 8px;color:var(--ax-text-dim);font-size:13px">
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:180ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🧠</span> Mémoire externe</h2>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
           Backup mémoire vers Notion / GitHub Gist / Firebase. Tokens lus depuis le Coffre.
         </p>
-        <div id="ax-memory-bridge-status" style="margin:8px 0;font-size:13px;color:var(--ax-text-dim)"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="width:100%">Sync maintenant</button>
-      </div>
+        <div id="ax-memory-bridge-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>
+      </section>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
-        <h2 style="margin:0 0 12px;font-size:16px">📊 Conso API temps réel + détection anomalies</h2>
-        <p style="margin:0 0 8px;color:var(--ax-text-dim);font-size:13px">
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:220ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">📊</span> Conso API temps réel</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
           Apex surveille ta conso et détecte si une clé est utilisée anormalement (potentielle compromission).
         </p>
-        <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="width:100%;margin-bottom:8px">🔍 Scanner toutes mes API maintenant</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
-      </div>
+      </section>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
-        <h2 style="margin:0 0 12px;font-size:16px">🔐 Compte</h2>
-        <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="width:100%">Se déconnecter</button>
-      </div>
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔊</span> Voix &amp; Lecture</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+          Apex peut lire ses réponses à voix haute. Choisis ta voix préférée parmi 60+ (PRO, FUN, Thématique).
+        </p>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:10px;cursor:pointer">
+          <span style="color:rgba(255,255,255,0.7);font-size:14px">Lire automatiquement les réponses</span>
+          <input type="checkbox" id="ax-settings-auto-read" style="width:20px;height:20px;cursor:pointer">
+        </label>
+        <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
+        <div id="ax-voice-categories" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="all" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer">Tous</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="pro" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);cursor:pointer">PRO</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="fun" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(255,170,0,0.15);color:#ffaa00;border:1px solid rgba(255,170,0,0.3);cursor:pointer">FUN</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="thematic" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3);cursor:pointer">Thématique</button>
+        </div>
+        <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
+      </section>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:280ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔐</span> Compte</h2>
+        <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:#ff5b5b;border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
+      </section>
+
+      <p style="margin-top:32px;text-align:center"><a href="#chat" style="color:#e8b830;text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
     </div>
   `;
   /* Wire memory-bridge section : status read-only + sync button */
@@ -117,6 +313,13 @@ export function render(rootEl: HTMLElement): void {
       }
     })();
   });
+  /* Wire new data-nav-route buttons (CSP strict, no inline onclick) */
+  rootEl.querySelectorAll<HTMLElement>('[data-nav-route]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const route = el.getAttribute('data-nav-route');
+      if (route) location.hash = '#' + route;
+    });
+  });
   rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout')?.addEventListener('click', () => {
     void (async () => {
       const { auth } = await import('../../services/auth.js');
@@ -124,6 +327,10 @@ export function render(rootEl: HTMLElement): void {
       location.hash = '#login';
     })();
   });
+  /* Wire voice section : auto-read toggle + voice list (61 voix) + test ▶ + définir comme défaut.
+     Demande Kevin : "qu'il puisse me lire les choses, me raconter etc, que je choisisse les voix". */
+  void wireVoiceSection(rootEl);
+
   rootEl.querySelector<HTMLButtonElement>('#ax-settings-notif-test')?.addEventListener('click', () => {
     void (async () => {
       try {

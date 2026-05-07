@@ -334,6 +334,7 @@ interface NavigatorExtended {
   vibrate?: (pattern: number | readonly number[]) => boolean;
   wakeLock?: { request: (type: 'screen') => Promise<{ release(): Promise<void> }> };
   storage?: { persist?: () => Promise<boolean>; estimate?: () => Promise<{ quota?: number; usage?: number }> };
+  geolocation?: { clearWatch?: (id: number) => void; watchPosition?: (...args: unknown[]) => number; getCurrentPosition?: (...args: unknown[]) => void };
   bluetooth?: BluetoothLike;
   usb?: USBLike;
   serial?: SerialLike;
@@ -401,6 +402,104 @@ class DeviceControl {
   private wakeLockSentinel: { release(): Promise<void> } | null = null;
   private geoWatchId: number | null = null;
   private currentRecognition: SpeechRecognitionLike | null = null;
+
+  /* ============================================================
+   * Listener tracking — P0 audit Cure53/NCC : no orphan listeners.
+   *
+   * Pattern :
+   *   - sensorAbortController : cumule tous les `addEventListener` éphémères
+   *     (devicemotion, deviceorientation, AmbientLight reading, Proximity reading,
+   *     NDEFReader reading/readingerror).
+   *   - activeSensors : références fortes vers les sensors (AmbientLight/Proximity)
+   *     pour pouvoir appeler stop() au destroy().
+   *   - destroy() : abort() + stop() + reset state. Idempotent.
+   * ============================================================ */
+  private sensorAbortController: AbortController | null = null;
+  private activeSensors: Array<{ stop(): void }> = [];
+  private activeListenerCount = 0;
+  /* Tracker des (target, type, listener) pour cleanup explicite via removeEventListener
+     (certains runtimes/tests ne respectent pas le signal AbortController). */
+  private trackedHandles: Array<{ target: EventTarget; type: string; listener: EventListener }> = [];
+
+  private ensureSensorController(): AbortController {
+    if (!this.sensorAbortController) {
+      this.sensorAbortController = new AbortController();
+    }
+    return this.sensorAbortController;
+  }
+
+  /**
+   * Helper interne pour attacher un listener trackable via AbortController.
+   * Auto-incrémente le compteur actif et le décrémente sur abort.
+   */
+  private trackedListen<T extends EventTarget>(
+    target: T,
+    type: string,
+    listener: EventListener,
+    signal: AbortSignal,
+  ): void {
+    target.addEventListener(type, listener, { signal });
+    this.activeListenerCount++;
+    this.trackedHandles.push({ target, type, listener });
+    /* Décrémente quand abort fires */
+    signal.addEventListener('abort', () => {
+      this.activeListenerCount = Math.max(0, this.activeListenerCount - 1);
+    }, { once: true });
+  }
+
+  /**
+   * Compte les listeners device actuellement attachés via trackedListen().
+   * Audit helper exposé pour tests + debug.
+   */
+  getActiveListenerCount(): number {
+    return this.activeListenerCount;
+  }
+
+  /**
+   * Cleanup complet — appelable au logout / destruction service / page unload.
+   * Idempotent : peut être appelé plusieurs fois sans erreur.
+   */
+  destroy(): void {
+    /* 1. Abort tous les listeners DOM (devicemotion, deviceorientation, sensor reading, NFC reading) */
+    if (this.sensorAbortController) {
+      try {
+        this.sensorAbortController.abort();
+      } catch { /* ignore */ }
+      this.sensorAbortController = null;
+    }
+    /* 1bis. Double-cleanup : removeEventListener explicite pour chaque handle tracké
+       (au cas où le runtime ne respecte pas le signal AbortController). */
+    for (const h of this.trackedHandles) {
+      try { h.target.removeEventListener(h.type, h.listener); } catch { /* ignore */ }
+    }
+    this.trackedHandles = [];
+    /* 2. Stop sensors actifs (AmbientLightSensor.stop / ProximitySensor.stop) */
+    for (const sensor of this.activeSensors) {
+      try { sensor.stop(); } catch { /* sensor déjà stoppé */ }
+    }
+    this.activeSensors = [];
+    /* 3. Geo watch cleanup */
+    if (this.geoWatchId !== null) {
+      try {
+        const n = nav();
+        n?.geolocation?.clearWatch?.(this.geoWatchId);
+      } catch { /* ignore */ }
+      this.geoWatchId = null;
+    }
+    /* 4. Speech recognition cleanup */
+    if (this.currentRecognition) {
+      try { this.currentRecognition.abort(); } catch { /* ignore */ }
+      this.currentRecognition = null;
+    }
+    /* 5. Wake lock release */
+    if (this.wakeLockSentinel) {
+      try { void this.wakeLockSentinel.release(); } catch { /* ignore */ }
+      this.wakeLockSentinel = null;
+    }
+    /* Reset compteur */
+    this.activeListenerCount = 0;
+    void auditLog.record('device-control.destroy');
+  }
 
   /* ============================================================
    * GROUPE H — Détection device + capabilities
@@ -978,7 +1077,9 @@ class DeviceControl {
       }
     }
     if (typeof window === 'undefined') return fail('window indisponible');
-    window.addEventListener('devicemotion', callback);
+    /* P0 fix audit Cure53 : AbortController pour cleanup au destroy() */
+    const ctl = this.ensureSensorController();
+    this.trackedListen(window, 'devicemotion', callback as EventListener, ctl.signal);
     void auditLog.record('device-control.sensor.motion.start');
     return ok();
   }
@@ -996,7 +1097,9 @@ class DeviceControl {
       }
     }
     if (typeof window === 'undefined') return fail('window indisponible');
-    window.addEventListener('deviceorientation', callback);
+    /* P0 fix audit Cure53 : AbortController pour cleanup au destroy() */
+    const ctl = this.ensureSensorController();
+    this.trackedListen(window, 'deviceorientation', callback as EventListener, ctl.signal);
     void auditLog.record('device-control.sensor.orientation.start');
     return ok();
   }
@@ -1006,8 +1109,11 @@ class DeviceControl {
     if (!w?.AmbientLightSensor) return fail('AmbientLightSensor non supporté');
     try {
       const sensor = new w.AmbientLightSensor({ frequency: 2 });
-      sensor.addEventListener('reading', () => callback(sensor.illuminance));
+      /* P0 fix audit Cure53 : AbortController + tracking sensor stop() au destroy() */
+      const ctl = this.ensureSensorController();
+      this.trackedListen(sensor, 'reading', (() => callback(sensor.illuminance)) as EventListener, ctl.signal);
       sensor.start();
+      this.activeSensors.push(sensor);
       void auditLog.record('device-control.sensor.ambient_light.start');
       return ok();
     } catch (err: unknown) {
@@ -1021,8 +1127,11 @@ class DeviceControl {
     if (!w?.ProximitySensor) return fail('ProximitySensor non supporté (deprecated)');
     try {
       const sensor = new w.ProximitySensor({ frequency: 5 });
-      sensor.addEventListener('reading', () => callback(sensor.distance));
+      /* P0 fix audit Cure53 : AbortController + tracking sensor stop() au destroy() */
+      const ctl = this.ensureSensorController();
+      this.trackedListen(sensor, 'reading', (() => callback(sensor.distance)) as EventListener, ctl.signal);
       sensor.start();
+      this.activeSensors.push(sensor);
       void auditLog.record('device-control.sensor.proximity.start');
       return ok();
     } catch (err: unknown) {
@@ -1068,10 +1177,17 @@ class DeviceControl {
     if (!w?.NDEFReader) return fail('Web NFC non supporté (Chrome Android only)');
     try {
       const reader = new w.NDEFReader();
-      reader.addEventListener('reading', (ev: NDEFReadingEvent) => {
-        onRecord(ev.message.records, ev.serialNumber);
-      });
-      reader.addEventListener('readingerror', () => logger.warn('device-control', 'NFC reading error'));
+      /* P0 fix audit Cure53 : AbortController interne + signal externe optionnel cumulés.
+         Si signal externe fourni → utilisé pour reader.scan().
+         AbortController interne tracké pour cleanup global au destroy(). */
+      const ctl = this.ensureSensorController();
+      const readingHandler = (ev: Event): void => {
+        const ndef = ev as NDEFReadingEvent;
+        onRecord(ndef.message.records, ndef.serialNumber);
+      };
+      const errorHandler = (): void => logger.warn('device-control', 'NFC reading error');
+      this.trackedListen(reader as EventTarget, 'reading', readingHandler, ctl.signal);
+      this.trackedListen(reader as EventTarget, 'readingerror', errorHandler, ctl.signal);
       const opts = signal ? { signal } : undefined;
       await reader.scan(opts);
       void auditLog.record('device-control.nfc.scan.start');

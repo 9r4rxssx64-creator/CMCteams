@@ -198,6 +198,61 @@ S'applique : Apex priorité absolue (parité Claude Code), CMCteams si pertinent
 
 > **"À chaque outils, modules etc toujours pousser au max. Boot tjs tout au max"** — Kevin 2026-05-04
 > **"Pousse au max son script, skill, hook etc toujours"** — Kevin 2026-05-04 (extension)
+> **"Tu ne te contentes jamais des premières choses que tu trouves. Tu vas faire tes recherches poussées ou tu donnes tes recherches à quelqu'un tu délègues ton travail pour aller chercher toujours les meilleurs modules, les derniers modules les plus performants, les plus polyvalents. Pareil pour chaque fonction, chaque domaine, chaque axe, chaque option toujours les meilleurs et les derniers et les plus performants les derniers novateurs créatifs toujours. Régulièrement des agents d'amélioration dédiés à chercher. Vérifient qu'il n'y ait pas de nouvelles mises à jour qui soient sorties, mieux améliorer plus performant. Se mettent à jour récupèrent les nouveaux à chaque fois suivant le travail donné suivant l'utilisation, ils s'adaptent, améliorent, vont chercher en autonomie totale automatisé."** — Kevin 2026-05-04 (extension veille tech)
+
+**RENFORCEMENT — INTERDICTION absolue de se contenter de la première solution trouvée** :
+
+### A. Recherche poussée OBLIGATOIRE avant chaque livraison
+
+Pour chaque module/feature/option/lib/API que je code :
+1. **Inventaire 5+ alternatives** : ne JAMAIS prendre la 1ère lib qui passe — chercher 5+ candidates, comparer (perf, taille bundle, nb stars, dernière maj, communauté, polyvalence, prix)
+2. **Délégation subagent dédié** : subagent `Explore` "Cherche les 10 meilleurs X de 2026, classe par perf/popularité/polyvalence"
+3. **Critères qualité absolus** :
+   - Dernière maj < 6 mois (pas de lib morte)
+   - GitHub stars cohérent avec l'écosystème
+   - Pas de CVE actives (npm audit)
+   - Polyvalence (couvre 80% des cas, pas niche)
+   - Innovation (techno récente, pas legacy)
+4. **Choix justifié** dans commit message : "Choisi X parmi {A, B, C, D, E} car {raison}"
+
+### B. Sentinelle "innovation-watch" 24/7 dans Apex
+
+Apex doit avoir une sentinelle dédiée qui :
+- Scan **hebdo** : npm registry, GitHub trending, Hugging Face new models, OpenAI/Anthropic new models, releases nouvelles libs/APIs
+- Détecte mises à jour majeures pour chaque dépendance / API / modèle Apex utilise
+- Mesure si update apporte gain (perf, capacités, prix, polyvalence)
+- Si gain ≥ 20% → ouvre `ax_claude_todo` Firebase avec proposition + bench compare
+- Si gain ≥ 50% → notif push admin Kevin "💡 [LIB X] v3.0 : 60% plus rapide, je recommande migration"
+- Auto-update si confidence ≥ 0.95 (libs mineures, breaking-change-free)
+
+### C. Exemples concrets domaines à veiller
+
+- **IA providers** : Claude Opus 4.7 → Opus 5.0 ? OpenAI O5 ? Gemini 3.0 ? Mistral Large 3 ?
+- **TTS/STT** : ElevenLabs new model ? OpenAI TTS-3 ? Whisper v4 ? CoquiTTS ?
+- **Vision** : Claude Vision 4 ? Gemini Vision 3 ? GPT-4-vision-2 ?
+- **Image gen** : SDXL Turbo ? Flux Pro ? DALL-E 4 ? Replicate new ?
+- **Vidéo gen** : Hailuo 2 ? Kling 2.0 ? Veo 2 ? Sora ? Stable Video Diffusion 2 ?
+- **Browser autom** : Playwright vs Puppeteer vs Selenium → recommandation 2026 ?
+- **Vector DB** : Pinecone vs Qdrant vs Weaviate vs Cloudflare Vectorize ?
+- **Auth** : Clerk vs Auth0 vs Better-Auth vs Supabase Auth ?
+- **Mobile** : Capacitor 7 vs Tauri 2 vs Expo 52 ?
+- **Bundling** : Vite 7 vs Bun build vs Turbopack ?
+- **AI agents** : LangGraph vs AutoGen vs CrewAI vs OpenAI Agents SDK ?
+
+### D. Application immédiate
+
+Avant chaque commit Apex contenant nouvelle lib/API/module :
+- ☑ Subagent dédié a comparé 5+ alternatives ?
+- ☑ Justification commit message ?
+- ☑ Sentinelle innovation-watch enregistrée pour cette dépendance ?
+
+S'applique : Apex priorité absolue, CMCteams, e-KDMC, IA-KDMC, tous projets futurs.
+
+---
+
+## 🚀 RÈGLE PERMANENTE — TOUT AU MAX TOUJOURS (origine, ne pas dupliquer ci-dessus)
+
+> Kept marker for historical context — see consolidated rule above.
 
 **Règle absolue, non-négociable, prioritaire** — Apex, CMCteams, tous projets futurs Kevin :
 

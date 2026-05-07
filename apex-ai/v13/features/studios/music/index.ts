@@ -61,7 +61,7 @@ export interface TrackEffects {
 export type ExportFormat = 'wav16' | 'wav24' | 'mp3-320' | 'flac' | 'ogg';
 export type StemKind = 'vocals' | 'drums' | 'bass' | 'other';
 
-export const MAX_TRACKS = 12;
+export const MAX_TRACKS = 16; /* boost v13 : 12 → 16 tracks pro DAW */
 export const MIN_TRACKS = 2;
 export const MAX_FILE_SIZE_MB = 50;
 export const ACCEPTED_FORMATS: readonly string[] = [
@@ -82,6 +82,63 @@ export const FREQ_BANDS = {
   highMid: { min: 2000, max: 4000 },
   presence: { min: 4000, max: 6000 },
   brilliance: { min: 6000, max: 20000 },
+} as const;
+
+/* boost v13 — Genre presets EQ + dynamics typiques pros */
+export const GENRE_EQ_PRESETS = {
+  flat: { low: 0, lowMid: 0, mid: 0, highMid: 0, high: 0 },
+  rock: { low: 3, lowMid: -1, mid: 1, highMid: 3, high: 4 },
+  pop: { low: 2, lowMid: -1, mid: 0, highMid: 4, high: 5 },
+  hiphop: { low: 6, lowMid: 2, mid: -2, highMid: 1, high: 3 },
+  edm: { low: 5, lowMid: 1, mid: -1, highMid: 4, high: 6 },
+  jazz: { low: 1, lowMid: 2, mid: 1, highMid: 2, high: 1 },
+  classical: { low: 0, lowMid: 1, mid: 2, highMid: 1, high: 0 },
+  vocal_warm: { low: -2, lowMid: 1, mid: 3, highMid: 2, high: 1 },
+  vocal_bright: { low: -3, lowMid: -1, mid: 2, highMid: 4, high: 5 },
+  podcast: { low: -4, lowMid: -2, mid: 4, highMid: 3, high: 2 },
+  bass_boost: { low: 8, lowMid: 4, mid: 0, highMid: 0, high: 0 },
+  treble_boost: { low: 0, lowMid: 0, mid: 0, highMid: 4, high: 8 },
+} as const;
+
+/* boost v13 — Reverb impulse responses presets */
+export const REVERB_PRESETS = {
+  none: { decay: 0, predelay: 0, wet: 0, label: 'Aucune' },
+  room_small: { decay: 0.6, predelay: 10, wet: 0.2, label: 'Pièce - Petite' },
+  room_medium: { decay: 1.2, predelay: 18, wet: 0.25, label: 'Pièce - Moyenne' },
+  room_large: { decay: 2.0, predelay: 28, wet: 0.3, label: 'Pièce - Grande' },
+  hall_concert: { decay: 3.5, predelay: 45, wet: 0.35, label: 'Hall Concert' },
+  hall_cathedral: { decay: 6.0, predelay: 80, wet: 0.45, label: 'Cathédrale' },
+  plate_studio: { decay: 1.8, predelay: 5, wet: 0.3, label: 'Plate Studio' },
+  spring_guitar: { decay: 0.9, predelay: 8, wet: 0.4, label: 'Spring (guitare)' },
+  ambient_pad: { decay: 8.0, predelay: 100, wet: 0.5, label: 'Ambient Pad' },
+  vocal_warm: { decay: 1.5, predelay: 12, wet: 0.18, label: 'Vocal Warm' },
+} as const;
+
+/* boost v13 — Compresseur multi-bande presets (pro mastering chains) */
+export const COMP_PRESETS = {
+  vocal_lead: { threshold: -18, ratio: 3, attack: 5, release: 80, gain: 3, label: 'Vocal Lead' },
+  vocal_backup: { threshold: -22, ratio: 2.5, attack: 10, release: 120, gain: 2, label: 'Vocal Backup' },
+  drums_punch: { threshold: -12, ratio: 4, attack: 0.5, release: 50, gain: 4, label: 'Drums Punch' },
+  drums_glue: { threshold: -16, ratio: 2, attack: 30, release: 250, gain: 1.5, label: 'Drums Glue' },
+  bass_smooth: { threshold: -16, ratio: 3.5, attack: 8, release: 100, gain: 2, label: 'Bass Smooth' },
+  master_glue: { threshold: -10, ratio: 1.5, attack: 30, release: 300, gain: 0.8, label: 'Master Glue' },
+  master_limiter: { threshold: -1, ratio: 100, attack: 0.1, release: 50, gain: 0, label: 'Master Limiter' },
+  parallel_punch: { threshold: -30, ratio: 10, attack: 1, release: 70, gain: 6, label: 'Parallel Punch (NY)' },
+} as const;
+
+/* boost v13 — Notes chromatiques + fréquences A4=440Hz (pour pitch helpers) */
+export const NOTES_HZ: Record<string, number> = {
+  'C0': 16.35, 'C#0': 17.32, 'D0': 18.35, 'D#0': 19.45, 'E0': 20.60,
+  'F0': 21.83, 'F#0': 23.12, 'G0': 24.50, 'G#0': 25.96, 'A0': 27.50, 'A#0': 29.14, 'B0': 30.87,
+  'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+  'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77,
+};
+
+/* boost v13 — Standards LUFS streaming par plateforme (cibles mastering 2026) */
+export const STREAMING_LUFS_TARGETS = {
+  spotify: -14, apple_music: -16, youtube: -14, tidal: -14, soundcloud: -14,
+  amazon_music: -14, deezer: -15, podcast: -16, broadcast_eu: -23, broadcast_us: -24,
+  cinema: -27, club: -9, audiobook: -18, twitch: -16,
 } as const;
 
 export function escapeHtml(s: string): string {
@@ -348,6 +405,209 @@ export function isValidAudioFormat(mimeType: string): boolean {
  */
 export function isValidExportFormat(format: string): format is ExportFormat {
   return ['wav16', 'wav24', 'mp3-320', 'flac', 'ogg'].includes(format);
+}
+
+/* boost v13 — Helpers expert mastering / production */
+
+/**
+ * Conversion fréquence → note musicale + cents d'écart.
+ * Utilise A4=440Hz comme référence (12-TET).
+ */
+export function freqToNote(freqHz: number): { note: string; octave: number; cents: number } | null {
+  if (!Number.isFinite(freqHz) || freqHz <= 0) return null;
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const semitonesFromA4 = 12 * Math.log2(freqHz / 440);
+  const nearestSemi = Math.round(semitonesFromA4);
+  const cents = Math.round((semitonesFromA4 - nearestSemi) * 100);
+  /* A4 = octave 4, semitone 9 (A) */
+  const totalSemi = nearestSemi + 9 + 4 * 12;
+  const octave = Math.floor(totalSemi / 12);
+  const noteIndex = ((totalSemi % 12) + 12) % 12;
+  const note = noteNames[noteIndex] ?? 'C';
+  return { note, octave, cents };
+}
+
+/**
+ * Conversion BPM → période en ms (utile pour delay tempo-synced).
+ * Ex: BPM=120, division=quarter (1) → 500ms.
+ */
+export function bpmToDelayMs(bpm: number, division: 'whole' | 'half' | 'quarter' | 'eighth' | 'sixteenth' | 'dotted_quarter' | 'triplet_quarter'): number {
+  if (!bpm || bpm <= 0) return 0;
+  const quarterMs = 60000 / bpm;
+  const map = {
+    whole: 4, half: 2, quarter: 1, eighth: 0.5, sixteenth: 0.25,
+    dotted_quarter: 1.5, triplet_quarter: 2 / 3,
+  } as const;
+  return Math.round(quarterMs * map[division]);
+}
+
+/**
+ * Détection de la tonalité (key) majeure/mineure approximative depuis profil chromatique.
+ * Utilise distribution Krumhansl-Schmuckler simplifiée.
+ */
+export function detectKey(buffer: AudioBuffer): { key: string; mode: 'major' | 'minor'; confidence: number } | null {
+  if (!buffer || buffer.length === 0) return null;
+  const data = buffer.getChannelData(0);
+  /* Profil Krumhansl-Kessler (12 valeurs par mode) */
+  const majorProfile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+  const minorProfile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+  /* Chromagramme rapide via tranches énergie */
+  const chroma = new Array(12).fill(0) as number[];
+  const slice = Math.max(1, Math.floor(data.length / 4096));
+  for (let i = 0; i < data.length; i += slice) {
+    const v = data[i] ?? 0;
+    const idx = Math.floor(((Math.abs(v) * 12) % 12 + 12) % 12);
+    chroma[idx] = (chroma[idx] ?? 0) + v * v;
+  }
+  const sum = chroma.reduce((a, b) => a + b, 0) || 1;
+  const norm = chroma.map((c) => c / sum);
+  /* Corrélation avec chaque tonalité (12 majeures + 12 mineures) */
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  let bestKey = 'C'; let bestMode: 'major' | 'minor' = 'major'; let bestScore = -Infinity;
+  for (let shift = 0; shift < 12; shift++) {
+    let scoreMaj = 0; let scoreMin = 0;
+    for (let i = 0; i < 12; i++) {
+      const c = norm[(i + shift) % 12] ?? 0;
+      scoreMaj += c * (majorProfile[i] ?? 0);
+      scoreMin += c * (minorProfile[i] ?? 0);
+    }
+    if (scoreMaj > bestScore) { bestScore = scoreMaj; bestKey = noteNames[shift] ?? 'C'; bestMode = 'major'; }
+    if (scoreMin > bestScore) { bestScore = scoreMin; bestKey = noteNames[shift] ?? 'C'; bestMode = 'minor'; }
+  }
+  return { key: bestKey, mode: bestMode, confidence: Math.min(1, bestScore / 100) };
+}
+
+/**
+ * Application reverb impulse response simplifiée (convolution lazy).
+ * Utilisé en preview — vrai rendu via OfflineAudioContext + ConvolverNode.
+ */
+export function applyReverbPreset(sample: number, preset: keyof typeof REVERB_PRESETS, prevTail: number): number {
+  const p = REVERB_PRESETS[preset];
+  if (!p || p.wet === 0) return sample;
+  /* Mix dry/wet : tail décroissant exponentiel */
+  const decayFactor = Math.pow(0.001, 1 / Math.max(0.1, p.decay * 44100));
+  const newTail = prevTail * decayFactor + sample * p.wet;
+  return sample * (1 - p.wet) + newTail;
+}
+
+/**
+ * Calcul du True Peak (dBTP) — valeur max après upsampling 4x.
+ * Approximation : prend max abs sample puis convertit en dBTP.
+ */
+export function calcTruePeak(buffer: AudioBuffer): number {
+  if (!buffer || buffer.length === 0) return -Infinity;
+  let maxPeak = 0;
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) {
+      const abs = Math.abs(data[i] ?? 0);
+      if (abs > maxPeak) maxPeak = abs;
+    }
+  }
+  if (maxPeak === 0) return -Infinity;
+  return 20 * Math.log10(maxPeak);
+}
+
+/**
+ * Calcul du Dynamic Range (DR14 simplifié).
+ * Mesure la différence entre RMS top 20% et top 80% des samples.
+ */
+export function calcDynamicRange(buffer: AudioBuffer): number {
+  if (!buffer || buffer.length < 1000) return 0;
+  const data = buffer.getChannelData(0);
+  /* Découpe en blocs de 100ms */
+  const blockSize = Math.floor(buffer.sampleRate * 0.1);
+  const rmsBlocks: number[] = [];
+  for (let i = 0; i < data.length; i += blockSize) {
+    let sumSq = 0;
+    const end = Math.min(i + blockSize, data.length);
+    for (let j = i; j < end; j++) {
+      const v = data[j] ?? 0;
+      sumSq += v * v;
+    }
+    const rms = Math.sqrt(sumSq / blockSize);
+    if (rms > 0.0001) rmsBlocks.push(rms);
+  }
+  if (rmsBlocks.length === 0) return 0;
+  rmsBlocks.sort((a, b) => b - a);
+  const top20 = rmsBlocks.slice(0, Math.max(1, Math.floor(rmsBlocks.length * 0.2)));
+  const top80 = rmsBlocks.slice(Math.floor(rmsBlocks.length * 0.2));
+  const avgTop20 = top20.reduce((a, b) => a + b, 0) / top20.length;
+  const avgTop80 = top80.length > 0 ? top80.reduce((a, b) => a + b, 0) / top80.length : avgTop20;
+  if (avgTop80 === 0) return 0;
+  return Math.round(20 * Math.log10(avgTop20 / avgTop80) * 10) / 10;
+}
+
+/**
+ * Détection silence (gate) sur intervalle.
+ * Retourne offsets [start, end] des plages non-silentes (en samples).
+ */
+export function detectNonSilent(buffer: AudioBuffer, thresholdDb = -50, minDurationMs = 500): Array<{ start: number; end: number }> {
+  if (!buffer || buffer.length === 0) return [];
+  const data = buffer.getChannelData(0);
+  const sr = buffer.sampleRate;
+  const minSamples = Math.floor((minDurationMs / 1000) * sr);
+  const threshold = Math.pow(10, thresholdDb / 20);
+  const segments: Array<{ start: number; end: number }> = [];
+  let inSegment = false;
+  let segStart = 0;
+  for (let i = 0; i < data.length; i++) {
+    const abs = Math.abs(data[i] ?? 0);
+    if (!inSegment && abs >= threshold) {
+      inSegment = true;
+      segStart = i;
+    } else if (inSegment && abs < threshold) {
+      inSegment = false;
+      if (i - segStart >= minSamples) segments.push({ start: segStart, end: i });
+    }
+  }
+  if (inSegment && data.length - segStart >= minSamples) {
+    segments.push({ start: segStart, end: data.length });
+  }
+  return segments;
+}
+
+/**
+ * MIDI note number (0-127) → fréquence Hz (A4=69=440Hz).
+ */
+export function midiToFreq(midiNote: number): number {
+  if (midiNote < 0 || midiNote > 127) return 0;
+  return 440 * Math.pow(2, (midiNote - 69) / 12);
+}
+
+/**
+ * Fréquence Hz → MIDI note number arrondi.
+ */
+export function freqToMidi(freqHz: number): number {
+  if (freqHz <= 0) return 0;
+  return Math.round(69 + 12 * Math.log2(freqHz / 440));
+}
+
+/**
+ * Mapping CC MIDI controller → paramètre studio (compatible MIDI Web API).
+ */
+export const MIDI_CC_MAPPING: Record<number, { param: string; range: [number, number] }> = {
+  1: { param: 'modulation', range: [0, 1] },
+  7: { param: 'volume', range: [0, 1] },
+  10: { param: 'pan', range: [-1, 1] },
+  11: { param: 'expression', range: [0, 1] },
+  64: { param: 'sustain', range: [0, 1] },
+  71: { param: 'resonance', range: [0, 1] },
+  74: { param: 'cutoff', range: [0, 1] },
+  91: { param: 'reverb', range: [0, 1] },
+  93: { param: 'chorus', range: [0, 1] },
+  94: { param: 'detune', range: [0, 1] },
+};
+
+/**
+ * Convertit MIDI CC value (0-127) vers la plage param mappée.
+ */
+export function midiCcToParam(cc: number, value: number): { param: string; value: number } | null {
+  const m = MIDI_CC_MAPPING[cc];
+  if (!m) return null;
+  const norm = Math.max(0, Math.min(127, value)) / 127;
+  const v = m.range[0] + norm * (m.range[1] - m.range[0]);
+  return { param: m.param, value: v };
 }
 
 class MusicStudioStore {
