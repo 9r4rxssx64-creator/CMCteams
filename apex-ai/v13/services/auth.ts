@@ -188,8 +188,13 @@ class Auth {
     if (!user) {
       /* P1 fix anti user enumeration : faire PBKDF2 de toute façon (constant-time response) */
       await this.hashPin(pin, 'fake-salt-anti-enumeration');
-      this.audit('login_unknown_user', { details: { name_hash: this.shortHash(name) } });
-      return { ok: false, reason: 'Utilisateur inconnu' };
+      this.audit('login_unknown_user', { details: { name_hash: this.shortHash(name), tokens: tokens.length } });
+      /* v13.3.68 (Kevin "Laurence tjs bloqué — Utilisateur inconnu") :
+       * Message d'erreur ACTIONNABLE selon le cas pour éviter blocage user. */
+      if (tokens.length < 2) {
+        return { ok: false, reason: 'Tape ton prénom ET ton nom (ex: "Laurence Saint-Polit")' };
+      }
+      return { ok: false, reason: 'Nom non reconnu. Vérifie l\'orthographe (prénom + nom complet).' };
     }
 
     /* Rate-limit check (P0 sécu critique parité v12.785) */
