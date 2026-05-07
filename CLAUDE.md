@@ -1,6 +1,69 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.27 / CMC v9.600).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.27 / CMC v9.601).
+
+---
+
+## 🛡️ RÈGLE ABSOLUE — JAMAIS RÉGRESSER (Kevin 2026-05-07, ULTIME)
+
+> **"Tu ne dois jamais régresser !"** — Kevin 2026-05-07
+
+**Règle absolue, non-négociable, prioritaire sur TOUT** — Apex, CMCteams, tous projets futurs :
+
+### 1. Tout fix livré = test de non-régression OBLIGATOIRE
+
+À CHAQUE livraison, AVANT push :
+- Test mental : "Cette modif casse-t-elle un fix précédent ?"
+- Grep des helpers critiques : `vault.startCredentialsWatch`, `axHardLogoutSession`, `_loadState user_id_mismatch`, etc.
+- Run TOUS les tests (vitest + e2e) — si 1 fail → STOP push
+- Auto-merge bot vérifie aussi mais c'est un filet de sécurité, pas une excuse
+
+### 2. Fix critiques PROTÉGÉS (jamais retirer/modifier sans replacement clean)
+
+Liste minimum à vérifier intact à chaque release Apex :
+
+- ✅ `vault.autoStore` verify post-write retry 3× (v13.3.20)
+- ✅ `vault.startCredentialsWatch` storage event + poll 30s + IDB restore (v13.3.20)
+- ✅ `vault.decryptDetailed` retry multi-passphrase + recover button (v13.3.22)
+- ✅ `axHardLogoutSession` SESSION_KEYS whitelist stricte (v12.331 — pas effacer XP/streak/profil)
+- ✅ `ax_user` dans FB_LOCAL strict (jamais sync Firebase — v12.272)
+- ✅ Firebase SSE n'écrase pas localStorage avec null si local valide (v12.269)
+- ✅ Wake word iOS Safari 'aborted' silencieux + 6 variantes (v13.3.25)
+- ✅ Bridge planning Apex→CMC + CMC listener `ax_cmc_planning_pending` (v13.3.27)
+- ✅ Pipeline temps-réel cron 5min + escalateNow + handoff_journal (v13.3.27)
+- ✅ Mémoire long terme `buildSystemPromptDeep` + per-user + cross-user admin (v13.3.27)
+- ✅ Cadres unifiés CMC + MERGE imports + manual_overrides (v9.600)
+
+### 3. Sentinelle anti-régression `regression-watch`
+
+Sentinelle Apex tourne 1×/jour qui :
+- Run un subset critical des tests vitest sur prod
+- Si 1+ fail → alerte Kevin via Telegram + push `ax_claude_todo` critical
+- Crée snapshot avant chaque batch de modifs (rollback possible)
+
+### 4. Anti-pattern régression connus
+
+- ❌ Refactor "propre" qui retire une protection en pensant l'avoir remplacée → CASSE
+- ❌ Subagent qui ne lit pas CLAUDE.md règles avant de fix → CASSE
+- ❌ "Migration data" sans dual-run + backup → PERTE
+- ❌ Bump version sans test mental scenarios Kevin (login, codes API, Wake word, etc.) → CASSE
+- ❌ Désactiver un test "qui passe pas" sans investiguer pourquoi → cache un bug
+
+### 5. Test mental obligatoire AVANT chaque push
+
+> *"Si Kevin force-reset son Apex maintenant, est-ce que (1) il garde ses codes API, (2) il garde son XP/streak/profil, (3) il peut toujours utiliser Dis Apex, (4) le pipeline fonctionne, (5) la mémoire long terme charge, (6) toutes les sentinelles sont vertes ?"*
+
+Si une réponse "je crois que oui" sans vérif → **vérifier d'abord**.
+
+### 6. Si régression détectée
+
+1. **STOP** tout autre travail
+2. **Identifier** le commit fautif via `git bisect` ou diff
+3. **Revert** ou **fix forward** selon impact
+4. **Documenter** dans CLAUDE.md "Erreurs connues à NE PAS reproduire"
+5. **Test régression** ajouté pour ne PLUS jamais reproduire
+
+S'applique : Apex (priorité absolue), CMCteams, tous projets futurs.
 
 ---
 
