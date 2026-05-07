@@ -643,6 +643,54 @@ class SentinelsRegistry {
       },
     });
 
+    /* 19. innovation-watch (hebdo) — veille technologique 24/7 (npm/AI/HF/GitHub).
+     * Kevin règle 2026-05-04 : "agents amélioration dédiés cherchent en autonomie totale". */
+    sentinelsManager.register({
+      id: 'innovation-watch',
+      name: 'Veille Technologique 24/7',
+      desc: 'Scan hebdo npm/GitHub/HuggingFace/IA providers — détecte upgrades + auto-apply si confidence ≥0.95',
+      intervalMs: 7 * 24 * 60 * 60 * 1000,
+      check: async () => {
+        try {
+          const { innovationWatch } = await import('./innovation-watch.js');
+          const result = await innovationWatch.runScan();
+          if (result.updates.length === 0) {
+            return { ok: true, msg: 'Aucune update détectée (état OK)' };
+          }
+          /* Auto-apply safe ones */
+          let applied = 0;
+          for (const upd of result.updates.filter((u) => u.recommendation === 'upgrade-asap')) {
+            const r = await innovationWatch.autoUpdateIfSafe(upd);
+            if (r.applied) applied += 1;
+          }
+          /* Notif Kevin si gros gain détecté (perf ou cost ≥50%) */
+          const bigGain = result.updates.find(
+            (u) =>
+              (u.estimatedGain?.perf ?? 0) >= 50 ||
+              (u.estimatedGain?.cost ?? 0) >= 50 ||
+              (u.estimatedGain?.capabilities ?? 0) >= 50,
+          );
+          if (bigGain) {
+            logger.info(
+              'innovation-watch.notif',
+              `Big gain detected: ${bigGain.name} (${bigGain.recommendation})`,
+              { id: bigGain.id, gain: bigGain.estimatedGain },
+            );
+          }
+          return {
+            ok: true,
+            msg: `${result.updates.length} updates, ${applied} auto-applied`,
+            details: { detected: result.updates.length, applied, summary: result.summary },
+          };
+        } catch (err: unknown) {
+          return {
+            ok: false,
+            msg: 'innovation-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+          };
+        }
+      },
+    });
+
     /* 17. sentinel-meta (5 min) — surveille les autres sentinelles */
     sentinelsManager.register({
       id: 'sentinel-meta',

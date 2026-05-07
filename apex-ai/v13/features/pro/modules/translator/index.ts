@@ -24,6 +24,8 @@
 import { logger } from '../../../../core/logger.js';
 
 export const AX_LANGS: Readonly<Record<string, string>> = {
+  /* Langue locale Kevin (Casino Monaco) — TOUJOURS en tête */
+  mc: '🇲🇨 Munegascu',
   /* Européennes principales */
   fr: '🇫🇷 Français',
   en: '🇬🇧 English',

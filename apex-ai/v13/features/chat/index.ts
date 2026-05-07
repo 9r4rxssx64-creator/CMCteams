@@ -47,6 +47,312 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
+/**
+ * Album image rendu : grille 2-3 cols mobile, 4 desktop, thumbnails visuels.
+ * Kevin règle 2026-05-07 : "je veux avoir le visuel pas une liste d'écriture, album entier".
+ * Exposé pour tests.
+ */
+export interface AlbumImage {
+  url: string;
+  filename: string;
+}
+
+export function renderImageAlbum(images: AlbumImage[]): string {
+  if (!Array.isArray(images) || images.length === 0) return '';
+  const cols = images.length === 1 ? 1 : images.length <= 4 ? 2 : 3;
+  const items = images
+    .map((img, i) => {
+      const safeUrl = escapeHtml(img.url);
+      const safeName = escapeHtml(img.filename);
+      return (
+        `<div class="ax-album-item" data-img-idx="${i}" ` +
+        `style="aspect-ratio:1;background:#1a1a2e;border-radius:8px;overflow:hidden;` +
+        `position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent">` +
+        `<img src="${safeUrl}" alt="${safeName}" loading="lazy" ` +
+        `style="width:100%;height:100%;object-fit:cover;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">` +
+        `<div class="ax-album-overlay" ` +
+        `style="position:absolute;bottom:0;left:0;right:0;padding:8px;` +
+        `background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);` +
+        `color:#fff;font-size:11px;line-height:1.3;text-overflow:ellipsis;` +
+        `overflow:hidden;white-space:nowrap">${safeName}</div>` +
+        `</div>`
+      );
+    })
+    .join('');
+  return (
+    `<div class="ax-image-album" ` +
+    `style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;` +
+    `margin:12px 0;border-radius:12px">${items}</div>`
+  );
+}
+
+/**
+ * Modal lightbox plein écran avec actions transformation (cartoon/anime/video/remove-bg/stylize).
+ * Kevin demande 2026-05-07 : "transforme cette photo en cartoon ou en vidéo anime".
+ * Exposé pour tests.
+ */
+export function openImageLightbox(rootEl: HTMLElement, img: AlbumImage): HTMLElement {
+  const safeUrl = escapeHtml(img.url);
+  const safeName = escapeHtml(img.filename);
+  const modal = document.createElement('div');
+  modal.className = 'ax-lightbox';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Visualisation image');
+  modal.style.cssText =
+    'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.95);' +
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+    'padding:env(safe-area-inset-top,20px) 16px env(safe-area-inset-bottom,20px) 16px';
+
+  const btnStyle =
+    'min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);' +
+    'background:rgba(20,20,35,0.7);color:#fff;font-size:13px;cursor:pointer;' +
+    '-webkit-tap-highlight-color:transparent;font-weight:600;';
+
+  modal.innerHTML =
+    `<button class="ax-lb-close" aria-label="Fermer" ` +
+    `style="position:absolute;top:env(safe-area-inset-top,20px);right:16px;width:44px;height:44px;` +
+    `border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:20px;cursor:pointer;` +
+    `-webkit-tap-highlight-color:transparent;z-index:1">✕</button>` +
+    `<img src="${safeUrl}" alt="${safeName}" ` +
+    `style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:12px;` +
+    `box-shadow:0 10px 40px rgba(0,0,0,0.5)">` +
+    `<div class="ax-lb-filename" style="color:rgba(255,255,255,0.7);font-size:13px;margin-top:12px;text-align:center">${safeName}</div>` +
+    `<div class="ax-lb-actions" ` +
+    `style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;justify-content:center;max-width:680px">` +
+    `<button data-action="cartoon" style="${btnStyle}" title="Transformer en cartoon">🎨 Cartoon</button>` +
+    `<button data-action="anime" style="${btnStyle}" title="Style anime">🤖 Anime</button>` +
+    `<button data-action="video" style="${btnStyle}" title="Animer en vidéo">🎬 Animer vidéo</button>` +
+    `<button data-action="remove-bg" style="${btnStyle}" title="Retirer le fond">✂️ Retirer fond</button>` +
+    `<button data-action="stylize" style="${btnStyle}" title="Variation stylisée">🎭 Variations</button>` +
+    `<button data-action="share" style="${btnStyle}" title="Partager">📤 Partager</button>` +
+    `<button data-action="download" style="${btnStyle}" title="Télécharger">💾 Télécharger</button>` +
+    `</div>` +
+    `<div class="ax-lb-status" data-status ` +
+    `style="margin-top:14px;color:#c9a227;font-size:12px;min-height:18px;text-align:center"></div>`;
+
+  document.body.appendChild(modal);
+
+  const close = (): void => {
+    if (modal.parentNode) modal.parentNode.removeChild(modal);
+  };
+
+  const closeBtn = modal.querySelector<HTMLButtonElement>('.ax-lb-close');
+  closeBtn?.addEventListener('click', close);
+
+  const keyHandler = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      close();
+      document.removeEventListener('keydown', keyHandler);
+    }
+  };
+  document.addEventListener('keydown', keyHandler);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  const statusEl = modal.querySelector<HTMLDivElement>('[data-status]');
+  modal.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset['action'] ?? '';
+      void handleLightboxAction(rootEl, img, action, statusEl, close);
+    });
+  });
+
+  return modal;
+}
+
+/**
+ * Handler central des actions lightbox.
+ * Exposé pour tests (mockable).
+ */
+export async function handleLightboxAction(
+  rootEl: HTMLElement,
+  img: AlbumImage,
+  action: string,
+  statusEl: HTMLDivElement | null,
+  closeFn: () => void,
+): Promise<void> {
+  if (action === 'share') {
+    const nav = navigator as Navigator & { share?: (data: { url?: string; title?: string }) => Promise<void> };
+    if (nav.share) {
+      try {
+        await nav.share({ url: img.url, title: img.filename });
+        return;
+      } catch { /* user cancelled — fallback copy */ }
+    }
+    try {
+      await navigator.clipboard.writeText(img.url);
+      toast.success('Lien copié dans le presse-papiers');
+    } catch {
+      toast.warn('Partage non supporté par ce navigateur');
+    }
+    return;
+  }
+
+  if (action === 'download') {
+    try {
+      const a = document.createElement('a');
+      a.href = img.url;
+      a.download = img.filename || 'image';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Téléchargement échoué');
+    }
+    return;
+  }
+
+  const transformActions = ['cartoon', 'anime', 'video', 'remove-bg', 'stylize'];
+  if (transformActions.includes(action)) {
+    if (statusEl) statusEl.textContent = `⏳ ${action} en cours… (Replicate)`;
+    let prompt: string | undefined;
+    if (action === 'stylize') {
+      const p = window.prompt('Style souhaité (ex: "huile sur toile renaissance") :');
+      if (!p) {
+        if (statusEl) statusEl.textContent = '';
+        return;
+      }
+      prompt = p;
+    }
+    try {
+      const { apexToolsDispatch } = await import('../../services/apex-tools-dispatch.js');
+      const params: Record<string, unknown> = { url: img.url, type: action };
+      if (prompt) params['prompt'] = prompt;
+      const res = await apexToolsDispatch.execute('transform_image', params, 'admin');
+      if (!res.ok) {
+        const errMsg = res.error ?? 'transformation échouée';
+        if (statusEl) statusEl.textContent = `❌ ${errMsg}`;
+        toast.error(errMsg);
+        return;
+      }
+      const result = res.result as { success?: boolean; outputUrl?: string; error?: string; cost_eur?: number };
+      if (!result.success || !result.outputUrl) {
+        const errMsg = result.error ?? 'aucun outputUrl';
+        if (statusEl) statusEl.textContent = `❌ ${errMsg}`;
+        return;
+      }
+      if (statusEl) {
+        const cost = result.cost_eur != null ? ` (${result.cost_eur.toFixed(3)}€)` : '';
+        statusEl.textContent = `✅ Transformé${cost}`;
+      }
+      pushTransformResult(rootEl, result.outputUrl, action, img.filename);
+      setTimeout(closeFn, 1500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'erreur';
+      if (statusEl) statusEl.textContent = `❌ ${msg}`;
+    }
+    return;
+  }
+}
+
+/**
+ * Push résultat transformation comme bulle Apex avec image générée.
+ * Exposé pour tests.
+ */
+export function pushTransformResult(
+  rootEl: HTMLElement,
+  outputUrl: string,
+  transformType: string,
+  sourceFilename: string,
+): void {
+  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+  if (!scroll) return;
+  const safeUrl = escapeHtml(outputUrl);
+  const safeName = escapeHtml(sourceFilename);
+  const safeType = escapeHtml(transformType);
+  const isVideo = transformType === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(outputUrl);
+  const media = isVideo
+    ? `<video src="${safeUrl}" controls autoplay loop playsinline ` +
+      `style="max-width:100%;max-height:70vh;border-radius:12px;display:block">` +
+      `Ton navigateur ne supporte pas la vidéo HTML5.</video>`
+    : `<img src="${safeUrl}" alt="${safeName} ${safeType}" ` +
+      `style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;display:block">`;
+
+  const card = document.createElement('div');
+  card.className = 'ax-msg ax-msg-assistant ax-slide-up-fade ax-transform-result';
+  card.dataset['transformType'] = transformType;
+  card.innerHTML =
+    `<div class="ax-msg-body">` +
+    `<p style="margin:0 0 8px;color:#c9a227;font-size:12px;font-weight:600">` +
+    `${getTransformEmoji(transformType)} ${safeType} appliqué sur ${safeName}</p>` +
+    media +
+    `<div class="ax-transform-actions" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">` +
+    `<button data-tr-action="download" data-tr-url="${safeUrl}" ` +
+    `style="min-height:36px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);` +
+    `background:rgba(20,20,35,0.7);color:#fff;font-size:12px;cursor:pointer">💾 Télécharger</button>` +
+    `<button data-tr-action="share" data-tr-url="${safeUrl}" ` +
+    `style="min-height:36px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);` +
+    `background:rgba(20,20,35,0.7);color:#fff;font-size:12px;cursor:pointer">📤 Partager</button>` +
+    `</div>` +
+    `</div>`;
+  scroll.appendChild(card);
+  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+
+  card.querySelectorAll<HTMLButtonElement>('[data-tr-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const trAction = btn.dataset['trAction'] ?? '';
+      const trUrl = btn.dataset['trUrl'] ?? '';
+      if (trAction === 'download') {
+        const a = document.createElement('a');
+        a.href = trUrl;
+        a.download = `apex-${transformType}-${Date.now()}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else if (trAction === 'share') {
+        const nav = navigator as Navigator & { share?: (d: { url?: string }) => Promise<void> };
+        if (nav.share) {
+          void nav.share({ url: trUrl }).catch(() => { /* cancelled */ });
+        } else {
+          void navigator.clipboard?.writeText(trUrl);
+        }
+      }
+    });
+  });
+}
+
+function getTransformEmoji(type: string): string {
+  const map: Record<string, string> = {
+    cartoon: '🎨',
+    anime: '🤖',
+    video: '🎬',
+    'remove-bg': '✂️',
+    stylize: '🎭',
+  };
+  return map[type] ?? '🖼️';
+}
+
+/**
+ * Génère le HTML des boutons d'action sur un message assistant non-streaming.
+ * - 🔊 Speak (lecture vocale via voice service)
+ * - 📋 Copy (clipboard)
+ * - 📄 Export PDF (lazy-load jsPDF)
+ *
+ * Exposé pour tests.
+ */
+export function renderMessageActions(msg: DisplayMessage): string {
+  if (msg.role !== 'assistant' || msg.streaming) return '';
+  if (!msg.text || msg.text.length === 0) return '';
+  const btnStyle =
+    'width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,0.1);' +
+    'border:1px solid rgba(201,162,39,0.3);cursor:pointer;display:inline-flex;' +
+    'align-items:center;justify-content:center;font-size:14px;color:var(--ax-gold);' +
+    'transition:all 200ms;opacity:0.7;-webkit-tap-highlight-color:transparent;padding:0;';
+  return (
+    `<div class="ax-msg-actions" style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap">` +
+    `<button class="ax-msg-action" data-action="speak" data-msg-id="${escapeHtml(msg.id)}" ` +
+    `style="${btnStyle}" title="Lire la réponse à voix haute" aria-label="Lire la réponse">🔊</button>` +
+    `<button class="ax-msg-action" data-action="copy" data-msg-id="${escapeHtml(msg.id)}" ` +
+    `style="${btnStyle}" title="Copier dans presse-papiers" aria-label="Copier le texte">📋</button>` +
+    `<button class="ax-msg-action" data-action="export-pdf" data-msg-id="${escapeHtml(msg.id)}" ` +
+    `style="${btnStyle}" title="Exporter en PDF" aria-label="Exporter PDF">📄</button>` +
+    `</div>`
+  );
+}
+
 /* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
 export function renderMarkdownLight(text: string): string {
   /* Markdown ultra-léger pour streaming progressif (gras, italique, code inline, code block) */
@@ -202,6 +508,8 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
         delete assistantMsg.streaming;
         store.set('isStreaming', false);
         renderMessages(rootEl);
+        /* Auto-read si setting activé (Kevin demande "il puisse me lire les choses") */
+        void maybeAutoReadAssistant(assistantMsg);
       }
     },
     (err) => {
@@ -219,6 +527,167 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
 function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
   conversation.push({ id: `a_${Date.now()}`, role: 'assistant', text, ts: Date.now() });
   renderMessages(rootEl);
+}
+
+/* Storage keys pour préférences voice chat (Kevin règle : auto-read toggle) */
+const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
+
+/**
+ * Lit la préférence "auto-read" (lecture automatique des réponses assistant).
+ * Exposé pour tests.
+ */
+export function isAutoReadEnabled(): boolean {
+  try {
+    return localStorage.getItem(AUTO_READ_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Active/désactive auto-read.
+ */
+export function setAutoReadEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(AUTO_READ_KEY, enabled ? '1' : '0');
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+/**
+ * Handler pour bouton 🔊 — lecture vocale d'un message assistant.
+ * Toggle play/pause si déjà en cours.
+ * Lazy-load voice service.
+ */
+async function handleSpeakAction(btn: HTMLButtonElement, msg: DisplayMessage): Promise<void> {
+  haptic.tap();
+  /* Toggle stop si déjà playing */
+  if (btn.classList.contains('ax-playing')) {
+    try {
+      const { stopAll } = await import('../../services/voice.js');
+      stopAll();
+    } catch {
+      /* ignore — reset UI quoi qu'il arrive */
+    }
+    btn.classList.remove('ax-playing');
+    btn.textContent = '🔊';
+    return;
+  }
+  /* Stop tout autre playback en cours (un seul à la fois) */
+  try {
+    const { stopAll, speak, getActiveVoice } = await import('../../services/voice.js');
+    stopAll();
+    /* Reset autres boutons playing */
+    document.querySelectorAll<HTMLButtonElement>('.ax-msg-action.ax-playing').forEach((b) => {
+      b.classList.remove('ax-playing');
+      b.textContent = '🔊';
+    });
+    btn.classList.add('ax-playing');
+    btn.textContent = '⏸';
+    const voiceId = getActiveVoice();
+    const result = await speak(msg.text, voiceId);
+    if (!result.ok) {
+      toast.warn(`Lecture impossible : ${result.reason ?? 'erreur'}`);
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'erreur';
+    toast.warn(`Lecture vocale échouée : ${message}`);
+  } finally {
+    /* Reset UI après speak (sync ou fail) */
+    btn.classList.remove('ax-playing');
+    btn.textContent = '🔊';
+  }
+}
+
+/**
+ * Handler pour bouton 📋 — copie texte dans presse-papiers.
+ */
+async function handleCopyAction(msg: DisplayMessage): Promise<void> {
+  haptic.tap();
+  try {
+    if (!navigator.clipboard?.writeText) {
+      toast.warn('Presse-papiers non supporté par ton navigateur');
+      return;
+    }
+    await navigator.clipboard.writeText(msg.text);
+    haptic.success();
+    toast.success('Copié dans presse-papiers');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'erreur';
+    toast.warn(`Copie échouée : ${message}`);
+  }
+}
+
+/**
+ * Handler pour bouton 📄 — export PDF (lazy-load jsPDF).
+ */
+async function handleExportPdfAction(msg: DisplayMessage): Promise<void> {
+  haptic.tap();
+  try {
+    /* Lazy-load jsPDF via CDN. Dynamic import URL → bypass type-checking via variable. */
+    const cdnUrl: string = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/+esm';
+    const mod = (await import(/* @vite-ignore */ cdnUrl)) as {
+      jsPDF?: new () => unknown;
+      default?: { jsPDF?: new () => unknown } | (new () => unknown);
+    };
+    const defaultExport = mod.default;
+    const JsPDFCtor: unknown =
+      mod.jsPDF ??
+      (typeof defaultExport === 'function'
+        ? defaultExport
+        : (defaultExport as { jsPDF?: new () => unknown } | undefined)?.jsPDF);
+    if (typeof JsPDFCtor !== 'function') {
+      toast.warn('Export PDF indisponible');
+      return;
+    }
+    const Ctor = JsPDFCtor as new () => {
+      splitTextToSize: (t: string, w: number) => string[];
+      text: (lines: string | string[], x: number, y: number) => void;
+      addPage: () => void;
+      save: (name: string) => void;
+      internal: { pageSize: { getHeight: () => number; getWidth: () => number } };
+    };
+    const doc = new Ctor();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const lines = doc.splitTextToSize(msg.text, 180);
+    let cursorY = 20;
+    const lineHeight = 7;
+    for (const line of lines) {
+      if (cursorY > pageHeight - 20) {
+        doc.addPage();
+        cursorY = 20;
+      }
+      doc.text(line, 15, cursorY);
+      cursorY += lineHeight;
+    }
+    doc.save(`apex-${Date.now()}.pdf`);
+    haptic.success();
+    toast.success('PDF téléchargé');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'erreur';
+    toast.warn(`Export PDF échoué : ${message}`);
+  }
+}
+
+/**
+ * Auto-read : si setting activé, lit le dernier message assistant
+ * dès la fin du streaming. Lazy-load voice service.
+ * Exposé pour tests.
+ */
+export async function maybeAutoReadAssistant(msg: DisplayMessage): Promise<void> {
+  if (msg.role !== 'assistant' || msg.streaming) return;
+  if (!msg.text || msg.text.length === 0) return;
+  if (!isAutoReadEnabled()) return;
+  try {
+    const { speak, getActiveVoice, stopAll } = await import('../../services/voice.js');
+    stopAll();
+    const voiceId = getActiveVoice();
+    await speak(msg.text, voiceId);
+  } catch (err: unknown) {
+    /* Silent fail — auto-read est best-effort */
+    logger.warn('chat', 'auto-read failed', { err });
+  }
 }
 
 /**
@@ -260,7 +729,8 @@ function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage): void {
     bubble.innerHTML =
       renderToolPills(msg) +
       renderMarkdownLight(msg.text) +
-      (msg.streaming ? '<span class="ax-cursor">▌</span>' : '');
+      (msg.streaming ? '<span class="ax-cursor">▌</span>' : '') +
+      renderMessageActions(msg);
     /* Auto-scroll smooth */
     const scroll = rootEl.querySelector('.ax-chat-scroll');
     if (scroll) scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
@@ -290,9 +760,10 @@ function renderMessages(rootEl: HTMLElement): void {
         }
       }
       const pills = renderToolPills(m);
+      const actions = renderMessageActions(m);
       return `
         <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${pills}${renderMarkdownLight(m.text)}${trail}</div>
+          <div class="ax-msg-body">${pills}${renderMarkdownLight(m.text)}${trail}${actions}</div>
         </div>
       `;
     })
@@ -682,12 +1153,43 @@ export function render(rootEl: HTMLElement): void {
     attachmentsDiv.appendChild(div);
   };
 
+  /**
+   * Album rendu visuel : push grille d'images dans chat scroll + click → lightbox.
+   * Kevin règle 2026-05-07 : "je veux le visuel pas une liste d'écriture".
+   */
+  const pushAlbumToChat = (images: AlbumImage[]): void => {
+    const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+    if (!scroll || images.length === 0) return;
+    const card = document.createElement('div');
+    card.className = 'ax-msg ax-msg-user ax-slide-up-fade';
+    card.innerHTML = `<div class="ax-msg-body">${renderImageAlbum(images)}</div>`;
+    scroll.appendChild(card);
+    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+    /* Wire click sur chaque thumbnail → lightbox */
+    card.querySelectorAll<HTMLElement>('.ax-album-item').forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const idxStr = thumb.dataset['imgIdx'] ?? '0';
+        const idx = parseInt(idxStr, 10);
+        const img = images[idx];
+        if (img) openImageLightbox(rootEl, img);
+      });
+    });
+  };
+
   fileInput?.addEventListener('change', () => {
     const files = Array.from(fileInput.files ?? []);
     if (files.length === 0) return;
     haptic.success();
+    /* Collecte images pour rendre album visuel (Kevin "visuel pas liste") */
+    const albumImages: AlbumImage[] = [];
     for (const file of files) {
       renderAttachment(file);
+      if (file.type.startsWith('image/')) {
+        try {
+          const url = URL.createObjectURL(file);
+          albumImages.push({ url, filename: file.name });
+        } catch { /* ignore createObjectURL fail */ }
+      }
       void (async () => {
         try {
           const { fileConverter } = await import('../../services/file-converter.js');
@@ -700,6 +1202,7 @@ export function render(rootEl: HTMLElement): void {
         }
       })();
     }
+    if (albumImages.length > 0) pushAlbumToChat(albumImages);
     fileInput.value = '';
   });
 
@@ -1121,6 +1624,35 @@ export function render(rootEl: HTMLElement): void {
         haptic.tap();
         location.hash = '#' + route;
       }
+    }
+  });
+
+  /* Kevin v13 : event delegation pour boutons d'action sur messages assistant
+     (🔊 Lecture vocale, 📋 Copy, 📄 Export PDF). Demande explicite Kevin :
+     "bouton haut-parleur pour écouter au lieu de lire, choisir les voix". */
+  rootEl.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('[data-action]') as HTMLButtonElement | null;
+    if (!btn) return;
+    const action = btn.getAttribute('data-action');
+    const msgId = btn.getAttribute('data-msg-id');
+    if (!action || !msgId) return;
+    /* Filtre uniquement nos actions chat (évite collision avec autres data-action) */
+    if (action !== 'speak' && action !== 'copy' && action !== 'export-pdf') return;
+    const msg = conversation.find((m) => m.id === msgId);
+    if (!msg) return;
+
+    if (action === 'speak') {
+      void handleSpeakAction(btn, msg);
+      return;
+    }
+    if (action === 'copy') {
+      void handleCopyAction(msg);
+      return;
+    }
+    if (action === 'export-pdf') {
+      void handleExportPdfAction(msg);
+      return;
     }
   });
 

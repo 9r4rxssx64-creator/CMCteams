@@ -4711,7 +4711,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.593";
+var APP_VER="v9.594";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30908,18 +30908,39 @@ function doImport(){
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
   // des employés non présents dans ce nouvel import (permet de compléter un import incomplet)
   A.year=iy;A.month=im; // necessaire pour isEmpActive
-  // v9.586 (Kevin "toujours mauvais import, ancienne equipe apres nouvel import")
-  // AUTOMATIQUE : ancien planning efface entierement (overrides + ref + verif) + cache gpl invalide.
-  // Pas de reset emp.team (risque perte donnees pour emp absents du nouveau PDF).
+  // v9.594 (Kevin 2026-05-07 URGENT : "import plus rien ne fonctionne dans CMCteams,
+  // que ce soit Chef employes ou cadre, equipes pas reconnues, cases vides plus d'horaire")
+  //
+  // ROOT CAUSE de la regression v9.586+ : wipe TOTAL fait AVANT parser. Si parser
+  // rate (regex header trop strict, format PDF nouveau, etc.) -> apres wipe il ne
+  // reste RIEN. v9.587 _empNameInPdf protegeait verification, pas le wipe.
+  //
+  // FIX v9.594 : SAFE-WIPE PATTERN
+  // 1. On conserve _preWipeOv = clone deep AVANT le wipe
+  // 2. On wipe (comme v9.586 pour repondre au "toujours mauvais")
+  // 3. On parse normalement
+  // 4. SANITY CHECK final : si parser a recupere < 30% des employes actifs -> AUTO-RESTORE
+  //    avec banner "Parser a echoue, donnees precedentes restaurees".
+  //    Kevin pourra re-tenter avec un PDF different sans perdre son existant.
+  //
+  // Aucune invention, aucune copie historique. Juste : si parser rate -> on garde
+  // l'ancien comportement plutot que de tout perdre.
+  var _preWipeOv=null,_preWipeRef=null,_preWipeVerif=null,_preWipeHadData=false;
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
-    // Archive silencieuse
+    _preWipeHadData=true;
+    try{
+      _preWipeOv=JSON.parse(JSON.stringify(A.overrides[key]));
+      _preWipeRef=lg("cmc_ref_"+key,null);
+      _preWipeVerif=lg("cmc_verif_"+key,null);
+    }catch(_pwErr){_preWipeOv=null;}
+    // Archive silencieuse (max 6 par mois, FIFO)
     try{
       var _archKey="cmc_history_"+key+"_"+Date.now();
       ls(_archKey,{
         ts:Date.now(),year:iy,month:im,
-        ov:JSON.parse(JSON.stringify(A.overrides[key])),
-        ref:lg("cmc_ref_"+key,null),
-        verif:lg("cmc_verif_"+key,null),
+        ov:_preWipeOv,
+        ref:_preWipeRef,
+        verif:_preWipeVerif,
         replacedBy:"import_"+(_importVersion||"?")
       });
       var _allArch=[];
@@ -30927,7 +30948,8 @@ function doImport(){
       _allArch.sort();
       while(_allArch.length>6){try{localStorage.removeItem(_allArch.shift());}catch(_){}}
     }catch(_archErr){}
-    // Wipe TOTAL : overrides + verif + ref + cache
+    // Wipe TOTAL : overrides + verif + ref + cache (memoire seulement, pas Firebase
+    // tant que parser n'a pas reussi -> si auto-restore plus bas, Firebase pas touche)
     A.overrides[key]={};
     try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
     try{localStorage.removeItem("cmc_ref_"+key);}catch(_){}
@@ -32564,6 +32586,56 @@ function doImport(){
       if(_autoAppliedCnt>0&&typeof _audit==="function")_audit("auto_apply_absence_cadres",AID,MFR[im]+" "+iy,_autoAppliedCnt+"/"+_cadreAbs.length,"auto v9.411");
     }
   }catch(e){console.warn("cadre auto-detect",e);}
+  // v9.594 (Kevin 2026-05-07 URGENT "import plus rien ne fonctionne") — SANITY CHECK + AUTO-RESTORE
+  // Si parser a echoue catastrophiquement (< seuil employes reconnus), restaurer les donnees
+  // pre-wipe pour eviter perte totale du planning. Banner explicatif pour Kevin admin.
+  try{
+    var _imp594=A.overrides[key]||{};
+    var _empsWithData594=0;
+    Object.keys(_imp594).forEach(function(eid){
+      var row=_imp594[eid]||{};
+      for(var d in row){if(row[d]){_empsWithData594++;break;}}
+    });
+    var _activeEmps594=A.employees.filter(function(e){return isEmpActive(e,iy,im)&&!e.visitor;}).length;
+    var _expected594=Math.max(20,Math.floor(_activeEmps594*0.30)); // au moins 30% des actifs OU 20 employes minimum
+    var _parserCatastrophic=(_activeEmps594>50&&_empsWithData594<_expected594);
+    if(_parserCatastrophic && _preWipeHadData && _preWipeOv){
+      // RESTORE pre-wipe state. Aucune copie historique, juste rollback du wipe v9.586.
+      A.overrides[key]=_preWipeOv;
+      try{if(_preWipeRef)ls("cmc_ref_"+key,_preWipeRef);}catch(_){}
+      try{if(_preWipeVerif)ls("cmc_verif_"+key,_preWipeVerif);}catch(_){}
+      try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+      try{if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
+      // Audit trail
+      try{_audit("import_auto_rollback_v594",AID,MFR[im]+" "+iy,_empsWithData594+"/"+_activeEmps594,"parser failure restored pre-wipe");}catch(_){}
+      // Banner explicatif urgent
+      var _r594=document.getElementById("impRes");
+      if(_r594){
+        _r594.innerHTML+='<div style="margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(224,96,64,.18),rgba(192,64,32,.10));border:2px solid #e08040;border-radius:12px">'
+          +'<div style="font-size:16px;font-weight:800;color:#ffa060;margin-bottom:8px">⚠ Parser PDF a echoue — donnees precedentes restaurees</div>'
+          +'<div style="font-size:13px;color:#f0c0a0;margin-bottom:8px">Le parser n\'a reconnu que <b>'+_empsWithData594+'</b> employes sur <b>'+_activeEmps594+'</b> actifs (seuil minimum : '+_expected594+'). Pour eviter de perdre l\'ancien planning, il a ete <b>automatiquement restaure</b>.</div>'
+          +'<div style="font-size:12px;color:#e0d0a0;margin-bottom:10px">→ Verifie le format du PDF (sections BLACKJACK / ROULETTES / CADRES presentes ?)<br>→ Re-essaie avec un autre PDF<br>→ Ou utilise le bouton "Annuler ce dernier import" si tu veux annuler manuellement</div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +'<button onclick="cmcImportTests()" style="flex:1;min-width:140px;min-height:44px;padding:10px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;border-radius:8px;cursor:pointer;font-weight:700">🧪 Tester parser</button>'
+          +'<button onclick="sv(\'auditlog\')" style="flex:1;min-width:140px;min-height:44px;padding:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;border-radius:8px;cursor:pointer;font-weight:700">📋 Voir Audit</button>'
+          +'</div></div>';
+      }
+      try{toast("⚠ Parser PDF a echoue ("+_empsWithData594+"/"+_activeEmps594+") - ancien planning restaure","warn",10000);}catch(_){}
+      // Log dans cmc_import_log
+      try{
+        var _ilg594=lg("cmc_import_log",[])||[];
+        if(_ilg594.length>=200)_ilg594=_ilg594.slice(-199);
+        _ilg594.push({ts:Date.now(),y:iy,m:im,ok:_empsWithData594,active:_activeEmps594,
+          status:"AUTO_ROLLBACK_v594",src:"doImport_safety_check"});
+        ls("cmc_import_log",_ilg594);
+      }catch(_){}
+      _importInProgress=false;
+      _flushImportPending();
+      _dcPending=false;
+      setTimeout(function(){try{dc();}catch(_){}},0);
+      return; // STOP : ne pas continuer le post-processing (autoFill, encadres, etc.)
+    }
+  }catch(_safe594Err){console.warn("[v9.594 safety check]",_safe594Err);}
   // v9.67 — Validation automatique post-import : détecter anomalies
   _conflictCacheKey="";_conflictCache=null;
   // v9.407 — Déclenche agent import-guardian immédiatement après import

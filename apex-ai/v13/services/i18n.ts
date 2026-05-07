@@ -20,7 +20,7 @@
 
 import { logger } from '../core/logger.js';
 
-export type Locale = 'fr' | 'en' | 'it' | 'es' | 'de';
+export type Locale = 'fr' | 'en' | 'it' | 'es' | 'de' | 'mc';
 
 interface LocaleMeta {
   name: string;
@@ -36,7 +36,7 @@ interface LocaleData {
 
 const STORAGE_KEY = 'apex_v13_locale';
 const DEFAULT_LOCALE: Locale = 'fr';
-const SUPPORTED_LOCALES: readonly Locale[] = ['fr', 'en', 'it', 'es', 'de'] as const;
+const SUPPORTED_LOCALES: readonly Locale[] = ['fr', 'en', 'it', 'es', 'de', 'mc'] as const;
 
 /**
  * Métadonnées des langues disponibles. Permet d'éviter de charger les fichiers
@@ -48,6 +48,7 @@ const LOCALE_META: Record<Locale, { name: string; flag: string }> = {
   it: { name: 'Italiano', flag: '🇮🇹' },
   es: { name: 'Español', flag: '🇪🇸' },
   de: { name: 'Deutsch', flag: '🇩🇪' },
+  mc: { name: 'Munegascu', flag: '🇲🇨' },
 };
 
 class I18n {

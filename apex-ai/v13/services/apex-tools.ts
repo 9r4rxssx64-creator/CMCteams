@@ -1353,6 +1353,37 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'client_free',
     impactLevel: 'A',
   },
+  /* === Image Transform (Replicate API) — Kevin demande "polyvalent créatif" 2026-05-07 === */
+  {
+    name: 'transform_image',
+    description:
+      'Transforme une image (URL https/data:/blob:) en cartoon, anime, vidéo animée, fond retiré, ou variation stylisée. ' +
+      'Réponse : {success, outputUrl, cost_eur, estimatedSeconds}. ' +
+      'Utilise Replicate API (clé Vault `ax_replicate_key`). ' +
+      'Modes : cartoon (catacolabs/cartoonify) · anime (animeganv2) · video (stable-video-diffusion 4s) · ' +
+      'remove-bg (lucataco/remove-bg) · stylize (sdxl img2img avec prompt).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'URL image source (https://, data:image/, ou blob:). Pas http:// ni file://.',
+        },
+        type: {
+          type: 'string',
+          enum: ['cartoon', 'anime', 'video', 'remove-bg', 'stylize'],
+          description: 'Type de transformation à appliquer.',
+        },
+        prompt: {
+          type: 'string',
+          description: 'Pour `type=stylize` uniquement : prompt SDXL img2img (ex: "huile sur toile renaissance").',
+        },
+      },
+      required: ['url', 'type'],
+    },
+    minTier: 'family',
+    impactLevel: 'B',
+  },
   {
     name: 'execute_task_on_service',
     description: 'Exécute tâche concrète sur service externe Kevin (clé API vault). Services supportés : github, stripe, resend, telegram, brevo, openai, anthropic, vercel, cloudflare, paypal, discord, slack, notion, airtable, shopify. Autonomie totale Kevin 2026-05-04.',

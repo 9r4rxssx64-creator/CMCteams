@@ -884,6 +884,36 @@ class ApexToolsDispatcher {
         );
       case 'list_task_on_service_handlers':
         return { handlers: this.listExecuteTaskHandlers() };
+      /* === Image Transform — Kevin "polyvalent créatif" 2026-05-07 === */
+      case 'transform_image':
+      case 'cartoonify':
+      case 'animate_image':
+      case 'image_to_video':
+      case 'remove_background':
+      case 'stylize_image': {
+        const { imageTransform } = await import('./image-transform.js');
+        const url = (params['url'] as string) ?? '';
+        if (!url || !imageTransform.isValidImageUrl(url)) {
+          throw new Error('url invalide (https/data:/blob: requis)');
+        }
+        /* Aliases shorthand → type */
+        let type = (params['type'] as string) ?? '';
+        if (toolName === 'cartoonify') type = 'cartoon';
+        else if (toolName === 'animate_image' || toolName === 'image_to_video') type = 'video';
+        else if (toolName === 'remove_background') type = 'remove-bg';
+        else if (toolName === 'stylize_image') type = 'stylize';
+        if (!imageTransform.isValidTransformType(type)) {
+          throw new Error(`type invalide (cartoon | anime | video | remove-bg | stylize). Reçu: ${type}`);
+        }
+        const prompt = params['prompt'] as string | undefined;
+        let result;
+        if (type === 'cartoon') result = await imageTransform.cartoonify(url);
+        else if (type === 'anime') result = await imageTransform.animeStyle(url);
+        else if (type === 'video') result = await imageTransform.animateToVideo(url);
+        else if (type === 'remove-bg') result = await imageTransform.removeBg(url);
+        else result = await imageTransform.stylize(url, prompt ?? '');
+        return result;
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

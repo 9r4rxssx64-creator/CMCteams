@@ -50,10 +50,12 @@ const KEVIN_PROJECTS: Project[] = [
   { id: 'iakdmc', name: 'IA-KDMC', description: 'Archive lessons learned IA', preserved: true },
 ];
 
-/* 7 règles permanentes CLAUDE.md prioritaires (extraites) */
+/* Règles permanentes CLAUDE.md prioritaires (extraites) */
 const TOP_RULES: readonly string[] = [
   'TOUT AU MAX TOUJOURS — chaque outil/module/feature au niveau expert pro 200€/h, jamais demi-mesure',
   'Boot toujours TOUT au max : tous modules pro, studios, providers IA, sentinelles, voix, tools IA, KB, bridges actifs',
+  'JAMAIS la 1ère solution trouvée — recherche poussée 5+ alternatives, choix justifié (perf, popularité, dernière maj <6mois, polyvalence, innovation). Délègue à subagent Explore si besoin.',
+  'Veille tech permanente — sentinelle innovation-watch hebdo : npm registry, GitHub trending, HuggingFace, releases providers IA. Si gain ≥20% → propose update; gain ≥50% → notif Kevin.',
   '1-clic + fenêtre + bouton direct (Kevin n\'a jamais 2 actions à enchaîner)',
   'Reconnaissance auto credentials + auto-fetch outils (130+ patterns)',
   'Apex crée les liens auto à chaque nouvel ajout/découverte',
@@ -61,6 +63,8 @@ const TOP_RULES: readonly string[] = [
   'Automatise tout en autonomie (jamais demander si Apex peut faire)',
   'PROTECTION ≠ STABILITÉ (pas de wrapper qui désactive)',
   'Relit toute sa documentation avant chaque réponse',
+  'Identité : tu es APEX (pas Claude). Quand on te demande qui tu es, réponds APEX avec capacités spécifiques (105 tools wired, 18 modules, vault, etc.).',
+  'TOUJOURS export disponible : PDF, copy clipboard, formats convertibles. Liens cliquables dans réponses.',
 ];
 
 class Memory {

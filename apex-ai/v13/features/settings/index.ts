@@ -10,6 +10,149 @@ function escapeHtmlSafe(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
+const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
+
+function isAutoReadEnabled(): boolean {
+  try {
+    return localStorage.getItem(AUTO_READ_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setAutoReadEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(AUTO_READ_KEY, enabled ? '1' : '0');
+  } catch {
+    /* ignore quota */
+  }
+}
+
+interface VoiceListItem {
+  readonly id: string;
+  readonly name: string;
+  readonly emoji?: string;
+  readonly category: 'pro' | 'fun' | 'thematic';
+  readonly description?: string;
+}
+
+/**
+ * Wire la section Voice : auto-read toggle, liste 60+ voix avec
+ * Test ▶ + Définir comme défaut. Lazy-load voice service.
+ *
+ * Exposé pour tests.
+ */
+export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
+  try {
+    const voiceMod = await import('../../services/voice.js');
+    const { listVoices, getActiveVoice, setActiveVoice, speak, stopAll } = voiceMod;
+
+    const autoReadInput = rootEl.querySelector<HTMLInputElement>('#ax-settings-auto-read');
+    const currentEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-current');
+    const listEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-list');
+    const catBtns = rootEl.querySelectorAll<HTMLButtonElement>('.ax-voice-cat-btn');
+    if (!listEl) return;
+
+    /* Init auto-read toggle */
+    if (autoReadInput) {
+      autoReadInput.checked = isAutoReadEnabled();
+      autoReadInput.addEventListener('change', () => {
+        setAutoReadEnabled(autoReadInput.checked);
+        void (async () => {
+          const { toast } = await import('../../ui/toast.js');
+          toast.success(autoReadInput.checked ? 'Lecture auto activée' : 'Lecture auto désactivée');
+        })();
+      });
+    }
+
+    /* Affiche voix active */
+    const refreshCurrent = (): void => {
+      if (!currentEl) return;
+      const id = getActiveVoice();
+      const list = listVoices() as readonly VoiceListItem[];
+      const v = list.find((x) => x.id === id);
+      currentEl.textContent = v ? `Voix active : ${v.emoji ?? '🔊'} ${v.name} (${v.category})` : `Voix active : ${id}`;
+    };
+    refreshCurrent();
+
+    /* Render liste filtrée */
+    const renderList = (filter: 'all' | 'pro' | 'fun' | 'thematic'): void => {
+      const list = listVoices() as readonly VoiceListItem[];
+      const filtered = filter === 'all' ? list : list.filter((v) => v.category === filter);
+      const activeId = getActiveVoice();
+      listEl.innerHTML = filtered
+        .map((v) => {
+          const isActive = v.id === activeId;
+          const emoji = v.emoji ?? (v.category === 'pro' ? '🎙️' : v.category === 'fun' ? '🎉' : '🎨');
+          const desc = v.description ? escapeHtmlSafe(v.description) : '';
+          const activeBg = isActive
+            ? 'background:rgba(232,184,48,0.15);border-color:rgba(232,184,48,0.45)'
+            : 'background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.06)';
+          return `
+            <div class="ax-voice-item" data-voice-id="${escapeHtmlSafe(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
+              <span style="font-size:18px">${emoji}</span>
+              <div style="flex:1;min-width:0">
+                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
+                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.category)}${desc ? ' · ' + desc : ''}</div>
+              </div>
+              <button class="ax-voice-test-btn" data-test-voice="${escapeHtmlSafe(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtmlSafe(v.name)}" style="min-width:36px;height:36px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
+              <button class="ax-voice-set-btn" data-set-voice="${escapeHtmlSafe(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtmlSafe(v.name)} par défaut" style="min-width:36px;height:36px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+            </div>
+          `;
+        })
+        .join('');
+    };
+    renderList('all');
+
+    /* Wire boutons catégorie */
+    catBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat') as 'all' | 'pro' | 'fun' | 'thematic' | null;
+        if (cat) renderList(cat);
+      });
+    });
+
+    /* Event delegation pour boutons test ▶ + définir comme défaut */
+    listEl.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const testBtn = target.closest('[data-test-voice]') as HTMLButtonElement | null;
+      const setBtn = target.closest('[data-set-voice]') as HTMLButtonElement | null;
+
+      if (testBtn) {
+        const id = testBtn.getAttribute('data-test-voice');
+        if (!id) return;
+        void (async () => {
+          stopAll();
+          const r = await speak('Bonjour Kevin, je suis ta voix.', id);
+          if (!r.ok) {
+            const { toast } = await import('../../ui/toast.js');
+            toast.warn(`Test échoué : ${r.reason ?? 'erreur'}`);
+          }
+        })();
+        return;
+      }
+
+      if (setBtn) {
+        const id = setBtn.getAttribute('data-set-voice');
+        if (!id) return;
+        void (async () => {
+          await setActiveVoice(id);
+          refreshCurrent();
+          /* Re-render avec nouvelle active */
+          const activeFilter = (rootEl.querySelector<HTMLButtonElement>('.ax-voice-cat-btn[data-cat]:focus')?.getAttribute('data-cat') ?? 'all') as 'all' | 'pro' | 'fun' | 'thematic';
+          renderList(activeFilter);
+          const { toast } = await import('../../ui/toast.js');
+          const list = listVoices() as readonly VoiceListItem[];
+          const v = list.find((x) => x.id === id);
+          toast.success(v ? `Voix par défaut : ${v.name}` : 'Voix mise à jour');
+        })();
+      }
+    });
+  } catch (err: unknown) {
+    logger.warn('feature-settings', 'wireVoiceSection failed', { err });
+  }
+}
+
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user');
   const isAdmin = (store.get('isAdmin') as boolean | undefined) ?? false;
@@ -82,7 +225,26 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
       </section>
 
-      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:260ms">
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
+        <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔊</span> Voix &amp; Lecture</h2>
+        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+          Apex peut lire ses réponses à voix haute. Choisis ta voix préférée parmi 60+ (PRO, FUN, Thématique).
+        </p>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:10px;cursor:pointer">
+          <span style="color:rgba(255,255,255,0.7);font-size:14px">Lire automatiquement les réponses</span>
+          <input type="checkbox" id="ax-settings-auto-read" style="width:20px;height:20px;cursor:pointer">
+        </label>
+        <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
+        <div id="ax-voice-categories" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="all" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer">Tous</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="pro" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);cursor:pointer">PRO</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="fun" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(255,170,0,0.15);color:#ffaa00;border:1px solid rgba(255,170,0,0.3);cursor:pointer">FUN</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="thematic" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3);cursor:pointer">Thématique</button>
+        </div>
+        <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
+      </section>
+
+      <section class="ax-modernized-card" style="${sectionStyle};animation-delay:280ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔐</span> Compte</h2>
         <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:#ff5b5b;border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
       </section>
@@ -165,6 +327,10 @@ export function render(rootEl: HTMLElement): void {
       location.hash = '#login';
     })();
   });
+  /* Wire voice section : auto-read toggle + voice list (61 voix) + test ▶ + définir comme défaut.
+     Demande Kevin : "qu'il puisse me lire les choses, me raconter etc, que je choisisse les voix". */
+  void wireVoiceSection(rootEl);
+
   rootEl.querySelector<HTMLButtonElement>('#ax-settings-notif-test')?.addEventListener('click', () => {
     void (async () => {
       try {
