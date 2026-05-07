@@ -239,9 +239,11 @@ class MultiSourceAnalyzer {
     /* 6. Device IDs (eWeLink / Broadlink / Hue / Tuya) — `device_id: xxxx` */
     let m: RegExpExecArray | null;
     while ((m = DEVICE_ID_REGEX.exec(text)) !== null) {
+      const captured = m[1];
+      if (!captured) continue;
       result.items.push({
         type: 'device_id',
-        value: m[1],
+        value: captured,
         confidence: 0.85,
         raw_match: m[0],
       });
@@ -273,10 +275,11 @@ class MultiSourceAnalyzer {
     const result = emptyResult('url', previewSource(url, 'url'));
     try {
       const u = new URL(url);
+      const svc = u.hostname.replace(/^www\./, '').split('.')[0] ?? u.hostname;
       /* L'URL elle-même est un site */
       result.items.push({
         type: 'site',
-        service: u.hostname.replace(/^www\./, '').split('.')[0],
+        service: svc,
         value: url,
         confidence: 1.0,
         raw_match: url,
@@ -447,7 +450,8 @@ class MultiSourceAnalyzer {
 
     /* Strip data URL prefix si présent */
     const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
-    const mediaType = imageBase64.match(/^data:(image\/[a-z]+);/)?.[1] ?? 'image/jpeg';
+    const mtMatch = imageBase64.match(/^data:(image\/[a-z]+);/);
+    const mediaType: string = mtMatch && mtMatch[1] ? mtMatch[1] : 'image/jpeg';
 
     try {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -508,7 +512,9 @@ class MultiSourceAnalyzer {
         headers: { authorization: `Bearer ${value}` },
       });
       const latency = Math.round(performance.now() - t0);
-      return { ok: resp.ok, latency_ms: latency, error: resp.ok ? undefined : `HTTP ${resp.status}` };
+      const out: { ok: boolean; latency_ms: number; error?: string } = { ok: resp.ok, latency_ms: latency };
+      if (!resp.ok) out.error = `HTTP ${resp.status}`;
+      return out;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { ok: false, error: msg };
@@ -524,7 +530,9 @@ class MultiSourceAnalyzer {
       const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
       const latency = Math.round(performance.now() - t0);
       /* mode no-cors → resp.ok toujours false mais pas d'erreur réseau = vivant */
-      return { ok: true, latency_ms: latency, error: resp.ok ? undefined : 'opaque_response' };
+      const out: { ok: boolean; latency_ms: number; error?: string } = { ok: true, latency_ms: latency };
+      if (!resp.ok) out.error = 'opaque_response';
+      return out;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { ok: false, error: msg };
