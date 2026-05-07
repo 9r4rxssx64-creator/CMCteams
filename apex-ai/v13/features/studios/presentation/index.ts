@@ -294,7 +294,7 @@ export function exportHtml(pres: Presentation): string {
       <h1 style="font-family:'${escapeHtml(theme.fontHeading)}',serif;color:${escapeHtml(theme.primary)};font-size:48px;margin:0 0 24px">${escapeHtml(s.title)}</h1>
       ${s.elements.map((e) => {
         if (e.kind === 'text') return `<p style="font-size:${e.fontSize ?? 24}px;color:${escapeHtml(e.color ?? theme.text)}">${escapeHtml(e.content)}</p>`;
-        if (e.kind === 'image') return `<img src="${escapeHtml(e.content)}" alt="" style="max-width:100%;max-height:60vh;object-fit:contain"/>`;
+        if (e.kind === 'image') return `<img src="${escapeHtml(e.content)}" alt="" loading="lazy" decoding="async" style="max-width:100%;max-height:60vh;object-fit:contain"/>`;
         return '';
       }).join('')}
     </section>

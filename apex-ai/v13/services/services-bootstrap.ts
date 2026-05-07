@@ -437,11 +437,40 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
-    /* P0 : claude-bridge init stats (lecture pending todos) */
+    /* P0 : claude-bridge init stats (lecture pending todos) +
+       v13.3.60 FINAL-100 : start SSE listener pour pipeline temps-réel
+       (Apex IA reçoit handoff Claude Code → toast doré UI). */
     safeInit('claude-bridge', async () => {
       const { claudeBridge } = await import('./claude-bridge.js');
       const stats = claudeBridge.getStats();
       logger.info('services-bootstrap', `claude-bridge : ${stats.todos_pending} pending (${stats.todos_critical_pending} critical)`);
+      /* Start SSE listener (idempotent — réutilise listener unique). */
+      try {
+        claudeBridge.startListening();
+      } catch (err: unknown) {
+        logger.warn('services-bootstrap', 'claudeBridge.startListening failed', { err });
+      }
+      /* Wire toast UI sur claude_bridge:handoff_received → "✅ Claude Code a fixé X". */
+      try {
+        const { events } = await import('../core/events.js');
+        const { toast } = await import('../ui/toast.js');
+        events.on('claude_bridge:handoff_received', (payload) => {
+          try {
+            const by = payload.by || 'claude-code';
+            const todoLabel = payload.todo_id ? ` (todo ${String(payload.todo_id).slice(0, 8)})` : '';
+            toast.success(`✅ ${by} a fixé un problème${todoLabel}`, { duration: 6000 });
+          } catch { /* toast non bloquant */ }
+        });
+        events.on('claude_bridge:todo_resolved', (payload) => {
+          try {
+            const sha = payload.commit_sha ? ` · ${String(payload.commit_sha).slice(0, 7)}` : '';
+            const summary = payload.fix_summary ? ` — ${String(payload.fix_summary).slice(0, 60)}` : '';
+            toast.success(`🛰 Todo résolu${sha}${summary}`, { duration: 8000 });
+          } catch { /* non bloquant */ }
+        });
+      } catch (err: unknown) {
+        logger.warn('services-bootstrap', 'handoff toast wiring failed', { err });
+      }
     }),
 
     /* P0 : session-logger start session si user logged */

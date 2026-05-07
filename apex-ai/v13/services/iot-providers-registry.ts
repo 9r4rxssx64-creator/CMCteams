@@ -341,6 +341,71 @@ export const BUILTIN_PROVIDERS: readonly IoTProvider[] = [
     credential_keys: ['ax_ha_url', 'ax_ha_token'],
     test_endpoint: '/api/',
   },
+  /* G. Shelly Cloud (Allterco) — devices Shelly via cloud Allterco. v13.3.60 FINAL-100. */
+  {
+    id: 'shelly',
+    name: 'Shelly Cloud',
+    category: 'shelly',
+    console_url: 'https://control.shelly.cloud',
+    icon: '⚡',
+    description: 'Shelly Cloud (Allterco) : relais, capteurs, plugs, lumières. Auth Auth Key + server URL fournis par compte cloud.',
+    api: {
+      base_url: '', /* dynamique via ax_shelly_server (ex: https://shelly-12-eu.shelly.cloud) */
+      auth_header: 'Authorization',
+      auth_format: 'bearer',
+    },
+    endpoints: {
+      list_devices: { method: 'POST', path: '/interface/device/list' },
+      send_command: { method: 'POST', path: '/device/relay/control', body_template: { id: '{device_id}', channel: 0, turn: '{action}' } },
+      get_state: { method: 'POST', path: '/device/status', body_template: { id: '{device_id}' } },
+    },
+    credential_keys: ['ax_shelly_server', 'ax_shelly_auth_key'],
+    test_endpoint: '/interface/device/list',
+    free_tier_limit: { requests_per_hour: 1000 },
+  },
+  /* H. Tasmota (HTTP local LAN) — firmware open-source flashable sur ESP8266/ESP32. v13.3.60 FINAL-100. */
+  {
+    id: 'tasmota',
+    name: 'Tasmota (LAN HTTP)',
+    category: 'tasmota',
+    console_url: 'https://tasmota.github.io',
+    icon: '🔧',
+    description: 'Tasmota (firmware open-source) : pilotage HTTP direct LAN device-by-device. Pas de cloud — IP locale + commandes URL.',
+    api: {
+      base_url: '', /* dynamique via ax_tasmota_base_url (ex: http://192.168.1.50) */
+      auth_header: 'Authorization',
+      auth_format: 'basic',
+    },
+    endpoints: {
+      list_devices: { method: 'GET', path: '/cm?cmnd=Status%200' },
+      send_command: { method: 'GET', path: '/cm?cmnd={command}' },
+      get_state: { method: 'GET', path: '/cm?cmnd=State' },
+    },
+    credential_keys: ['ax_tasmota_base_url', 'ax_tasmota_user', 'ax_tasmota_password'],
+    test_endpoint: '/cm?cmnd=Status',
+  },
+  /* I. Zigbee2MQTT — bridge MQTT pour devices Zigbee (Aqara, Ikea, Sonoff Zigbee, etc.).
+     v13.3.60 FINAL-100. Auth via REST companion (zigbee2mqtt-frontend) ou MQTT direct. */
+  {
+    id: 'zigbee2mqtt',
+    name: 'Zigbee2MQTT',
+    category: 'home-assistant', /* zigbee2mqtt souvent utilisé via HA — catégorie générique */
+    console_url: 'https://www.zigbee2mqtt.io',
+    icon: '🐝',
+    description: 'Zigbee2MQTT : bridge open-source MQTT pour tous devices Zigbee (Aqara, IKEA Tradfri, Sonoff Zigbee, Philips Hue Zigbee). Auth Bearer token frontend.',
+    api: {
+      base_url: '', /* dynamique via ax_z2m_url (ex: http://192.168.1.10:8080) */
+      auth_header: 'Authorization',
+      auth_format: 'bearer',
+    },
+    endpoints: {
+      list_devices: { method: 'GET', path: '/api/devices' },
+      send_command: { method: 'POST', path: '/api/{device_id}/set', body_template: { state: '{state}' } },
+      get_state: { method: 'GET', path: '/api/{device_id}' },
+    },
+    credential_keys: ['ax_z2m_url', 'ax_z2m_token'],
+    test_endpoint: '/api/info',
+  },
 ];
 
 /* ============================================================================

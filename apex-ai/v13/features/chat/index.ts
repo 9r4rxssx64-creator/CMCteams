@@ -170,7 +170,7 @@ export function openImageLightbox(rootEl: HTMLElement, img: AlbumImage): HTMLEle
     `style="position:absolute;top:env(safe-area-inset-top,20px);right:16px;width:44px;height:44px;` +
     `border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:20px;cursor:pointer;` +
     `-webkit-tap-highlight-color:transparent;z-index:1">✕</button>` +
-    `<img src="${safeUrl}" alt="${safeName}" ` +
+    `<img src="${safeUrl}" alt="${safeName}" loading="lazy" decoding="async" ` +
     `style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:12px;` +
     `box-shadow:0 10px 40px rgba(0,0,0,0.5)">` +
     `<div class="ax-lb-filename" style="color:rgba(255,255,255,0.7);font-size:13px;margin-top:12px;text-align:center">${safeName}</div>` +
@@ -324,7 +324,7 @@ export function pushTransformResult(
     ? `<video src="${safeUrl}" controls autoplay loop playsinline ` +
       `style="max-width:100%;max-height:70vh;border-radius:12px;display:block">` +
       `Ton navigateur ne supporte pas la vidéo HTML5.</video>`
-    : `<img src="${safeUrl}" alt="${safeName} ${safeType}" ` +
+    : `<img src="${safeUrl}" alt="${safeName} ${safeType}" loading="lazy" decoding="async" ` +
       `style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;display:block">`;
 
   const card = document.createElement('div');
