@@ -223,6 +223,9 @@
   height: 100dvh;
   max-width: 800px;
   margin: 0 auto;
+  /* v13.3.22 iOS PWA Kevin "on voit plus le bas" : scroll restreint au .ax-chat-scroll
+   * pour que header/input/nav/footer ne disparaissent jamais (safe-areas respectées). */
+  overflow: hidden;
 }
 
 .ax-chat-header {
@@ -233,6 +236,9 @@
   border-bottom: 1px solid var(--ax-border);
   background: var(--ax-bg-glass);
   backdrop-filter: var(--ax-blur);
+  flex-shrink: 0;
+  /* iOS notch/dynamic-island */
+  padding-top: max(var(--ax-s-4), env(safe-area-inset-top, 0px));
 }
 
 .ax-chat-header h1 {
@@ -376,6 +382,7 @@
   background: var(--ax-bg-glass);
   backdrop-filter: var(--ax-blur);
   align-items: flex-end;
+  flex-shrink: 0;
 }
 
 .ax-chat-input textarea {
