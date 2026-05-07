@@ -135,8 +135,8 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
       container.innerHTML = '<em>Aucun fact mémorisé pour ton compte. Les facts seront extraits automatiquement de tes messages chat.</em>';
       return;
     }
-    const rows = mine.slice(0, 100).map((f) => `
-      <tr>
+    const rows = mine.slice(0, 100).map((f, idx) => `
+      <tr data-fact-idx="${idx}" style="cursor:pointer">
         <td><span class="ax-tag">${escapeHtml(f.category)}</span></td>
         <td>${escapeHtml(f.text)}</td>
         <td><span class="ax-importance" style="color:${f.importance >= 80 ? '#ff6b6b' : f.importance >= 60 ? '#ffa94d' : '#888'};">${f.importance}</span></td>
@@ -144,12 +144,47 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
       </tr>
     `).join('');
     container.innerHTML = `
-      <p>${mine.length} fact(s) mémorisé(s) (top 100 affichés)</p>
+      <p>${mine.length} fact(s) mémorisé(s) (top 100 affichés) — clic ligne pour drilldown</p>
       <table class="ax-table" style="width:100%;font-size:0.9em;">
         <thead><tr><th>Catégorie</th><th>Fact</th><th>Importance</th><th>Âge</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
+    /* v13.3.57 PUSH-100 : drilldown fact details */
+    container.querySelectorAll<HTMLTableRowElement>('tr[data-fact-idx]').forEach((row) => {
+      row.addEventListener('click', () => {
+        const idx = Number(row.dataset['factIdx'] ?? '-1');
+        const f = mine[idx];
+        if (!f) return;
+        void (async () => {
+          const { drillDown } = await import('../../ui/drilldown.js');
+          const mountId = 'ax-drilldown-mount-knowledge';
+          let mount = document.getElementById(mountId);
+          if (!mount) {
+            mount = document.createElement('div');
+            mount.id = mountId;
+            document.body.appendChild(mount);
+          }
+          drillDown.open({
+            id: `fact-${idx}`,
+            title: `🧠 Fact ${escapeHtml(f.category)}`,
+            content: () => `
+              <div style="padding:8px">
+                <table style="width:100%;font-size:13px">
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Catégorie</td><td>${escapeHtml(f.category)}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Texte</td><td>${escapeHtml(f.text)}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Importance</td><td>${f.importance}/100</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Scope (user)</td><td><code>${escapeHtml(f.scope ?? 'global')}</code></td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Source</td><td>${escapeHtml(f.source ?? '—')}</td></tr>
+                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Créé</td><td>${fmtDate(f.ts)} (${fmtAge(f.ts)})</td></tr>
+                </table>
+              </div>
+            `,
+            data: { factIdx: idx },
+          }, mount);
+        })();
+      });
+    });
   } catch (err: unknown) {
     container.innerHTML = `<em style="color:#c00;">Erreur chargement : ${escapeHtml(String(err))}</em>`;
   }

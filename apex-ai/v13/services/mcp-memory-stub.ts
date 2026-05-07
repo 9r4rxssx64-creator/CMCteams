@@ -349,6 +349,78 @@ class MCPMemoryStub {
     norm = Math.sqrt(norm) || 1;
     return out.map((v) => v / norm);
   }
+
+  /**
+   * v13.3.57 PUSH-100 — Real semantic embedding via OpenAI text-embedding-3-small.
+   *
+   * Si clé OpenAI configurée → embedding sémantique réel (1536 dim → projeté en EMBEDDING_DIM).
+   * Sinon → fallback computePseudoEmbedding (hash-based).
+   *
+   * Cache local (1 jour) pour éviter hits API répétés sur même texte.
+   */
+  async computeEmbeddingSmart(text: string): Promise<number[]> {
+    /* Cache lookup (clé = hash texte, TTL 24h) */
+    const cacheKey = `apex_v13_embedding_cache_${this.simpleHash(text)}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached) as { v: number[]; ts: number };
+        if (Date.now() - parsed.ts < 86_400_000 && Array.isArray(parsed.v)) {
+          return parsed.v;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    /* Tente OpenAI text-embedding-3-small */
+    try {
+      const { vault } = await import('./vault.js');
+      const openaiKey = await vault.readKey('ax_openai_key');
+      if (openaiKey && openaiKey.length > 20) {
+        const resp = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-small',
+            input: text,
+            dimensions: EMBEDDING_DIM, /* OpenAI supporte le truncation natif */
+          }),
+        });
+        if (resp.ok) {
+          const data = await resp.json() as { data?: Array<{ embedding: number[] }> };
+          const emb = data.data?.[0]?.embedding;
+          if (emb && Array.isArray(emb) && emb.length === EMBEDDING_DIM) {
+            /* Cache pour 24h */
+            try {
+              localStorage.setItem(cacheKey, JSON.stringify({ v: emb, ts: Date.now() }));
+            } catch {
+              /* quota — ignore */
+            }
+            return emb;
+          }
+        }
+      }
+    } catch (err) {
+      logger.debug('mcp-memory', 'OpenAI embedding failed, fallback pseudo', {
+        err: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    /* Fallback hash pseudo-embedding */
+    return this.computePseudoEmbedding(text);
+  }
+
+  private simpleHash(text: string): string {
+    let h = 0;
+    for (let i = 0; i < text.length; i++) {
+      h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+    }
+    return Math.abs(h).toString(36);
+  }
 }
 
 /* ========================================================================== */

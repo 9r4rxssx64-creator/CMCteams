@@ -146,7 +146,7 @@ class LANScanIOS {
           used.push('webrtc');
         }
       } catch (e) {
-        logger.warn('[lan-scan-ios] webrtc failed', { err: e });
+        logger.warn('lan-scan-ios', 'webrtc failed', { err: String(e) });
       }
     }
 
@@ -159,7 +159,7 @@ class LANScanIOS {
           used.push('shortcut');
         }
       } catch (e) {
-        logger.warn('[lan-scan-ios] shortcut failed', { err: e });
+        logger.warn('lan-scan-ios', 'shortcut failed', { err: String(e) });
       }
     }
 
@@ -172,7 +172,7 @@ class LANScanIOS {
           used.push('worker');
         }
       } catch (e) {
-        logger.warn('[lan-scan-ios] worker failed', { err: e });
+        logger.warn('lan-scan-ios', 'worker failed', { err: String(e) });
       }
     }
 
@@ -189,7 +189,7 @@ class LANScanIOS {
           used.push('heuristic');
         }
       } catch (e) {
-        logger.warn('[lan-scan-ios] heuristic failed', { err: e });
+        logger.warn('lan-scan-ios', 'heuristic failed', { err: String(e) });
       }
     }
 
@@ -302,19 +302,20 @@ class LANScanIOS {
     } catch { /* not JSON */ }
     /* Fallback CSV parsing */
     const lines = r.result.split(/\r?\n/).filter(Boolean);
-    return lines
-      .map((line) => {
-        const [ip, hostname] = line.split(',').map((s) => s.trim());
-        if (!ip) return null;
-        return {
-          ip,
-          ...(hostname && { hostname }),
-          confidence: 75,
-          source: 'shortcut' as const,
-          detectedAt: Date.now(),
-        };
-      })
-      .filter((x): x is LANDevice => x !== null);
+    const out: LANDevice[] = [];
+    for (const line of lines) {
+      const [ip, hostname] = line.split(',').map((s) => s.trim());
+      if (!ip) continue;
+      const dev: LANDevice = {
+        ip,
+        confidence: 75,
+        source: 'shortcut',
+        detectedAt: Date.now(),
+      };
+      if (hostname) dev.hostname = hostname;
+      out.push(dev);
+    }
+    return out;
   }
 
   /**
@@ -344,7 +345,7 @@ class LANScanIOS {
         }),
       );
     } catch (e) {
-      logger.debug('[lan-scan-ios] worker unreachable', { err: e });
+      logger.debug('lan-scan-ios', 'worker unreachable', { err: String(e) });
       return [];
     }
   }

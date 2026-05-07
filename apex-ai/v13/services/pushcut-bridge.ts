@@ -225,7 +225,7 @@ class PushcutBridge {
       }
       return { ok: true, delivered: true, statusCode };
     } catch (e) {
-      logger.warn('[pushcut] trigger failed', { err: e });
+      logger.warn('pushcut', 'trigger failed', { err: String(e) });
       return { ok: false, delivered: false, reason: 'network', error: String(e) };
     }
   }
@@ -305,6 +305,7 @@ class PushcutBridge {
 
   /**
    * Reset config Pushcut (logout).
+   * Clear localStorage + IDB shadow vault (anti-rehydration).
    */
   async reset(): Promise<void> {
     try {
@@ -313,7 +314,39 @@ class PushcutBridge {
       localStorage.removeItem(STORAGE_LAST_TRIGGER);
       localStorage.removeItem(STORAGE_TRIGGER_LOG);
     } catch { /* ignore */ }
+    /* Vault triple persistence : clear IDB shadow */
+    await this.clearIdbShadow(STORAGE_WEBHOOK);
+    await this.clearIdbShadow(STORAGE_API_TOKEN);
     void auditLog.record('pushcut.reset', {});
+  }
+
+  private async clearIdbShadow(storageKey: string): Promise<void> {
+    if (!('indexedDB' in globalThis)) return;
+    await new Promise<void>((resolve) => {
+      try {
+        const req = indexedDB.open('apex_v13_vault_shadow', 1);
+        req.onupgradeneeded = (): void => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+        };
+        req.onsuccess = (): void => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('keys', 'readwrite');
+            const store = tx.objectStore('keys');
+            store.delete(storageKey);
+            tx.oncomplete = (): void => { db.close(); resolve(); };
+            tx.onerror = (): void => { db.close(); resolve(); };
+          } catch {
+            db.close();
+            resolve();
+          }
+        };
+        req.onerror = (): void => resolve();
+      } catch {
+        resolve();
+      }
+    });
   }
 
   /* ----- Private ----- */
