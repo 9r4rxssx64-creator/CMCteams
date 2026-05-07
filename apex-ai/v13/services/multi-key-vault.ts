@@ -588,11 +588,40 @@ class MultiKeyVault {
 
   /**
    * Supprime définitivement une clé (admin). Préfère markInvalid (garde history).
+   *
+   * v13.3.51 fix Kevin "j'ai déjà fait poubelle plusieurs fois mais il se remet" :
+   * Marque la storage_key dans `ax_credentials_deleted` whitelist pour empêcher
+   * vault.startCredentialsWatch() poll 30s de restaurer depuis IDB shadow.
+   * Aussi : removeItem localStorage + delete IDB shadow + Firebase null pour
+   * propagation triple persistence.
    */
   removeKey(keyId: string): void {
-    const list = this.load().filter((k) => k.id !== keyId);
-    this.cache = list;
+    const list = this.load();
+    const entry = list.find((k) => k.id === keyId);
+    const keep = list.filter((k) => k.id !== keyId);
+    this.cache = keep;
     void this.persist();
+
+    if (!entry) return;
+
+    /* Marque la storage_key comme volontairement supprimée */
+    try {
+      const storageKey = `ax_${entry.service ?? 'unknown'}_key`;
+      const deleted = JSON.parse(localStorage.getItem('ax_credentials_deleted') ?? '[]') as string[];
+      if (Array.isArray(deleted) && !deleted.includes(storageKey)) {
+        deleted.push(storageKey);
+        if (deleted.length > 200) deleted.shift(); /* cap FIFO */
+        localStorage.setItem('ax_credentials_deleted', JSON.stringify(deleted));
+      }
+      /* Triple cleanup : localStorage + IDB shadow + Firebase null */
+      localStorage.removeItem(storageKey);
+      void import('./vault.js').then(({ vault }) => {
+        try { void (vault as { _deleteFromIdb?: (k: string) => Promise<void> })._deleteFromIdb?.(storageKey); } catch { /* ignore */ }
+      }).catch(() => { /* ignore */ });
+      void import('./firebase.js').then(({ firebase }) => {
+        try { void firebase.write(storageKey, null); } catch { /* ignore */ }
+      }).catch(() => { /* ignore */ });
+    } catch { /* ignore */ }
   }
 
   /**

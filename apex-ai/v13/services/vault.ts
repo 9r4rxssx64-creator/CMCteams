@@ -137,10 +137,20 @@ class Vault {
       'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key',
       'ax_openrouter_key', 'ax_telegram_token', 'ax_github_token', 'ax_stripe_sk',
     ];
+    /* v13.3.51 fix Kevin "j'ai déjà fait poubelle plusieurs fois mais il se remet" :
+     * Whitelist deleted volontairement → ne pas restaurer depuis IDB shadow.
+     * Stocké dans `ax_credentials_deleted` (array de keys volontairement supprimées). */
+    const isDeleted = (key: string): boolean => {
+      try {
+        const deleted = JSON.parse(localStorage.getItem('ax_credentials_deleted') ?? '[]') as string[];
+        return Array.isArray(deleted) && deleted.includes(key);
+      } catch { return false; }
+    };
     setInterval(() => {
       void (async () => {
         for (const key of VAULT_KEYS_CRITICAL) {
           try {
+            if (isDeleted(key)) continue; /* Kevin l'a supprimée volontairement — respect choix */
             const local = localStorage.getItem(key);
             if (local) continue; /* OK */
             const idb = await this.readKeyFromIdb(key);
@@ -159,6 +169,7 @@ class Vault {
     void (async () => {
       for (const key of VAULT_KEYS_CRITICAL) {
         try {
+          if (isDeleted(key)) continue; /* Kevin l'a supprimée volontairement */
           if (localStorage.getItem(key)) continue;
           const idb = await this.readKeyFromIdb(key);
           if (idb) {
