@@ -1,5 +1,39 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🆕 v13.3.21 fix decrypt failed (Kevin 2026-05-07 19:03 — bug commercial critique)
+
+**Symptôme Kevin** : Coffre admin → 22 codes stockés, 7 invalides (rouge), bouton
+"Tester tout" → toast rouge `decrypt failed`. Anthropic Claude #1+#2+Cohere
+TOUS rouges → Apex IA HS côté intelligence.
+
+**Cause racine identifiée** : `vault.decryptAuto()` retournait `null` silencieusement
+sur fail. `multi-key-vault.testKey()` (ligne 353-358) marquait alors `invalid` avec
+reason `'decrypt failed'` → toast rouge sans action concrète. La passphrase device-bound
+avait drift entre stockage et test (PIN admin changé OU clear cache iOS Safari).
+
+**Fix livré v13.3.21** :
+- ✅ `vault.decryptDetailed()` retourne `{ok:false, reason:'decrypt_failed'|'bad_format', encryptedValue}` au lieu de null silencieux
+- ✅ Retry multi-passphrase : user → device-bound → 3 dernières history (rotation auto sur PIN change ou clear cache)
+- ✅ `vault.recover(storageKey, plaintext)` : Kevin recolle UNE clé, on re-chiffre passphrase courante
+- ✅ `vault.auditDecryptHealth()` : compte total/ok/failed clés AXENC1: en localStorage
+- ✅ `multi-key-vault.testKey()` : decrypt_failed → status `failing` (pas `invalid` définitif → recoverable)
+- ✅ `multi-key-vault.recoverKey(id, plaintext)` : re-chiffre + reset status à unknown
+- ✅ UI `credentials-registry` : bouton 🔓 "Récupérer cette clé" + modal recolle
+- ✅ Sentinelle `decrypt-watch` (5min) : alerte Kevin Telegram/Discord si N+ clés illisibles
+- ✅ 20 nouveaux tests verts + 166 vault tests régression OK = 186 verts
+- ✅ tsc strict 0 erreurs + vite build OK
+- ✅ Bump APP_VER + sw.js CACHE_VERSION → v13.3.22 (auto-bump linter)
+
+**Action Kevin** : ouvrir `/admin/credentials` → cliquer bouton 🔓 "Récupérer cette clé"
+sur Anthropic Claude #1, recoller la clé, valider. Idem #2, Cohere, et 4 autres.
+Une fois récupérées :
+- Decrypt fonctionne (status passe rouge → vert sous 5 min via decrypt-watch)
+- Apex IA peut appeler Claude (clé Anthropic dispo)
+- Sentinelle decrypt-watch alerte Telegram/Discord si nouvelle perte
+- History passphrase évite la prochaine récidive (PIN rotation transparente)
+
+---
+
 ## 🚨 SESSION 2026-05-07 v13.3.20 — BUG FIX "Apex oublie ses codes sans cesse"
 
 **Symptôme Kevin** : "apex oubli tous mes codes sans cesse" — clés API collées,
