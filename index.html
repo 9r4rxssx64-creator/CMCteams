@@ -31569,6 +31569,65 @@ function doImport(){
   var sep=hasTabs?"\t":",";
   var key=""+iy+"-"+im;
   var days=getDays(iy,im);
+  // ────────────────────────────────────────────────────────────────────────
+  // v9.600 (Kevin règle ABSOLUE 2026-05-07 §2) — DÉTECTION AUTO TYPE IMPORT
+  //
+  // "Au moment de doImport, parser détecte ce que contient le PDF :
+  //  - Type 'employés+chefs' : présence de BJ Éq.X, RA Éq.X, CMC Éq.X
+  //  - Type 'cadres' : présence de PIT BOSS, SUPERVISEUR, INSPECTEUR headers
+  //  - Type 'complet' : les 2"
+  //
+  // Stocké dans cmc_last_import_type_<key> + affiché dans banner final.
+  // Cette détection NE MODIFIE PAS le parser — purement informationnelle.
+  // ────────────────────────────────────────────────────────────────────────
+  var _importType="unknown";
+  var _importTypeDetails={hasEmployees:false,hasCadres:false,hasPit:false,hasSup:false,hasIns:false};
+  try{
+    var _scanTxt=(txt||"").slice(0,30000); // 30 KB suffisent pour headers
+    var _scanUp=_scanTxt.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    // Patterns équipes joueurs (BJ/Roul./CMC)
+    var _hasEmps=/(BJ\s*[ÉE]Q\.?|BJ\s*EQ\.?|ROUL\.?\s*[ÉE]Q\.?|ROUL\.?\s*EQ\.?|CMC\s*[ÉE]Q\.?|CMC\s*EQ\.?|RA\s*[ÉE]Q\.?|RA\s*EQ\.?)/i.test(_scanTxt)
+                || /\b(BJ|RA|CMC|ROUL)\s*[ÉE]?Q\.?\s*\d/i.test(_scanUp);
+    // Patterns cadres
+    var _hasPit=/PIT[\s\-\.]*BOSS/i.test(_scanUp);
+    var _hasSup=/SUPERVI(?:SEUR|SOR)/i.test(_scanUp);
+    var _hasIns=/INSPEC?TEUR|INSPECTOR/i.test(_scanUp);
+    var _hasCadres=_hasPit||_hasSup||_hasIns;
+    _importTypeDetails={hasEmployees:_hasEmps,hasCadres:_hasCadres,hasPit:_hasPit,hasSup:_hasSup,hasIns:_hasIns};
+    if(_hasEmps && _hasCadres){_importType="complete";}
+    else if(_hasCadres){_importType="cadres";}
+    else if(_hasEmps){_importType="employees";}
+    else{_importType="unknown";}
+    // Persist + audit
+    try{ls("cmc_last_import_type_"+key,{type:_importType,details:_importTypeDetails,ts:Date.now(),v:APP_VER});}catch(_){}
+    try{if(typeof _audit==="function")_audit("import_type_detected",AID,key,"",_importType+" "+JSON.stringify(_importTypeDetails));}catch(_){}
+    console.log("[v9.600 doImport] type detected:",_importType,_importTypeDetails);
+  }catch(_dterr){console.warn("[v9.600 import-type-detect]",_dterr);}
+  // ────────────────────────────────────────────────────────────────────────
+  // v9.600 (Kevin règle ABSOLUE 2026-05-07 §4) — SNAPSHOT MANUAL OVERRIDES
+  //
+  // "Quand 2 imports ont une cellule pour même personne/jour :
+  //   - Plus récent gagne (timestamp ts_imported)
+  //   - Sauf si Kevin a manuellement modifié la cell après le 1er import
+  //     (cf. cmc_manual_overrides_<key>)
+  //   Dans ce cas : Kevin manuel > nouveau import (préservation édition humaine)"
+  //
+  // On charge ici le snapshot des édits manuels Kevin pour ce mois.
+  // À la fin de doImport (juste avant flush), on RÉAPPLIQUE chaque édit manuel
+  // par-dessus ce que le parser a écrit. Garantit priorité humaine.
+  // ────────────────────────────────────────────────────────────────────────
+  var _manualOv=null;
+  var _manualOvCount=0;
+  try{
+    _manualOv=lg("cmc_manual_overrides_"+key,null);
+    if(_manualOv && typeof _manualOv==="object"){
+      Object.keys(_manualOv).forEach(function(eid){
+        var cells=_manualOv[eid]||{};
+        Object.keys(cells).forEach(function(d){_manualOvCount++;});
+      });
+    }
+    console.log("[v9.600 doImport] manual overrides snapshot:",_manualOvCount,"cellules pour",key);
+  }catch(_moErr){console.warn("[v9.600 manual-overrides snapshot]",_moErr);_manualOv=null;}
   // Versioning : récupérer la version précédente si elle existe
   var _prevRef=lg("cmc_ref_"+key,null);
   var _importVersion=(_prevRef&&_prevRef.version?_prevRef.version:0)+1;
@@ -33070,6 +33129,39 @@ function doImport(){
       }
     }
   }
+  // ────────────────────────────────────────────────────────────────────────
+  // v9.600 (Kevin règle ABSOLUE 2026-05-07 §4) — RESTORE MANUAL OVERRIDES
+  // Avant flush : ré-applique chaque édit manuel Kevin par-dessus ce que le
+  // parser a écrit. Garantit "Kevin manuel > nouveau import" (priorité humaine).
+  // ────────────────────────────────────────────────────────────────────────
+  var _manualRestoredCount=0;
+  var _manualOverwrittenSamples=[];
+  try{
+    if(_manualOv && _manualOvCount>0 && A.overrides[key]){
+      Object.keys(_manualOv).forEach(function(eid){
+        var cells=_manualOv[eid]||{};
+        Object.keys(cells).forEach(function(d){
+          var manual=cells[d];
+          if(!manual || !manual.code)return;
+          if(!A.overrides[key][eid])A.overrides[key][eid]={};
+          var parserVal=A.overrides[key][eid][d]||"";
+          if(parserVal!==manual.code){
+            // Note : on garde l'édit manuel Kevin (priorité humaine)
+            if(_manualOverwrittenSamples.length<5){
+              _manualOverwrittenSamples.push({eid:eid,d:d,parser:parserVal,manual:manual.code});
+            }
+          }
+          A.overrides[key][eid][d]=manual.code;
+          _manualRestoredCount++;
+        });
+      });
+      if(_manualRestoredCount>0){
+        try{ls("cmc_ov",A.overrides);}catch(_){}
+        try{if(typeof _audit==="function")_audit("manual_overrides_preserved",AID,key,String(_manualOvCount),_manualRestoredCount+" cellules manuelles préservées sur import");}catch(_){}
+        console.log("[v9.600 doImport] manual overrides restored:",_manualRestoredCount);
+      }
+    }
+  }catch(_morErr){console.warn("[v9.600 manual-overrides restore]",_morErr);}
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
   _flushImportPending();
@@ -33509,6 +33601,30 @@ function doImport(){
         _h8+='<div style="font-size:12px;color:#a0c8a0">Tous les employes actifs ont au moins 1 horaire ce mois.</div>';
       }
       _h8+='</div>';
+      // v9.600 — Banner détection type import + édits manuels Kevin préservés
+      try{
+        var _typeIcons={employees:"👥",cadres:"🎯",complete:"✨",unknown:"❓"};
+        var _typeLabels={employees:"EMPLOYÉS+CHEFS",cadres:"CADRES (Pit/Sup/Insp)",complete:"COMPLET (employés + cadres)",unknown:"NON DÉTECTÉ"};
+        var _typeIc=_typeIcons[_importType]||"📄";
+        var _typeLb=_typeLabels[_importType]||_importType;
+        var _typeBg=_importType==="unknown"?"linear-gradient(135deg,rgba(160,160,160,.12),rgba(96,96,96,.05))":"linear-gradient(135deg,rgba(74,160,255,.12),rgba(40,96,200,.05))";
+        var _typeBr=_importType==="unknown"?"#909090":"#4aa0ff";
+        var _typeBanner='<div style="margin-top:10px;padding:12px;background:'+_typeBg+';border:1.5px solid '+_typeBr+';border-radius:10px">'
+          +'<div style="font-size:14px;font-weight:800;color:'+_typeBr+';margin-bottom:6px">'+_typeIc+' Type détecté : '+esc(_typeLb)+'</div>'
+          +'<div style="font-size:12px;color:#b0c8d8;line-height:1.5">'
+          +(_importTypeDetails.hasEmployees?'<span style="display:inline-block;padding:2px 6px;background:rgba(90,170,112,.15);border:1px solid rgba(90,170,112,.4);border-radius:4px;margin:2px;color:#5aaa70">✓ Équipes BJ/Roul/CMC</span>':'')
+          +(_importTypeDetails.hasPit?'<span style="display:inline-block;padding:2px 6px;background:rgba(255,206,58,.15);border:1px solid rgba(255,206,58,.4);border-radius:4px;margin:2px;color:#ffce3a">🎯 Pit Boss</span>':'')
+          +(_importTypeDetails.hasSup?'<span style="display:inline-block;padding:2px 6px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.4);border-radius:4px;margin:2px;color:#4aa0ff">🔍 Superviseur</span>':'')
+          +(_importTypeDetails.hasIns?'<span style="display:inline-block;padding:2px 6px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.4);border-radius:4px;margin:2px;color:#c080ff">👁 Inspecteur</span>':'')
+          +'</div>';
+        if(_manualRestoredCount>0){
+          _typeBanner+='<div style="margin-top:8px;padding:8px;background:rgba(255,206,58,.12);border-left:3px solid #ffce3a;border-radius:6px;font-size:12px;color:#ffce3a">'
+            +'✋ <b>'+_manualRestoredCount+' cellule'+(_manualRestoredCount>1?'s':'')+' préservée'+(_manualRestoredCount>1?'s':'')+'</b> (édit'+(_manualRestoredCount>1?'s':'')+' manuel'+(_manualRestoredCount>1?'s':'')+' Kevin antérieur'+(_manualRestoredCount>1?'s':'')+' &gt; nouveau PDF — règle priorité humaine)'
+            +'</div>';
+        }
+        _typeBanner+='</div>';
+        _r8.innerHTML+=_typeBanner;
+      }catch(_tbErr){console.warn("[v9.600 type-banner]",_tbErr);}
       _r8.innerHTML+=_h8;
     }
     try{if(typeof _agentImportWatch==="function")_agentImportWatch();}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_has-any509",_e);}catch(__){}}
