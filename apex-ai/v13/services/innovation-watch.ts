@@ -619,7 +619,7 @@ class InnovationWatch {
    * Auto-update si gain >= 50% ET pas breaking-changes ET confidence >= 0.95.
    * Aujourd'hui : marque applied (les vrais bumps deps sont via PR).
    */
-  async autoUpdateIfSafe(update: TechUpdate): Promise<{ applied: boolean; reason?: string }> {
+  async autoUpdateIfSafe(update: TechUpdate): Promise<{ applied: boolean; reason?: string; pr_proposed?: boolean }> {
     if (update.recommendation === 'breaking-changes') {
       return { applied: false, reason: 'breaking-changes detected, manual review required' };
     }
@@ -650,7 +650,104 @@ class InnovationWatch {
       /* optional */
     }
     logger.info('innovation-watch', `Auto-applied update ${update.name} (gain ${maxGain}%)`);
-    return { applied: true };
+
+    /* v13.3.57 PUSH-100 : tente de proposer PR auto si gain ≥ 50% */
+    let pr_proposed = false;
+    try {
+      const result = await this.proposePR(update);
+      pr_proposed = result.proposed;
+    } catch (err) {
+      logger.warn('innovation-watch', 'PR auto-propose failed', { err });
+    }
+
+    return { applied: true, pr_proposed };
+  }
+
+  /**
+   * v13.3.57 PUSH-100 : propose une PR auto pour un update non-breaking.
+   *
+   * Mécanisme : pousse un payload dans `ax_claude_todo` Firebase + IDB local.
+   * GitHub Action `claude-todo-watcher.yml` poll cette queue + crée la PR via
+   * Claude Code session (Read package.json → bump dep → tests → push branch → create PR).
+   *
+   * Pourquoi pas direct API GitHub : Apex tourne dans browser, pas de PAT GitHub
+   * sécurisable côté client. Délégation à Claude Code (cron 2h) = secure.
+   */
+  async proposePR(update: TechUpdate): Promise<{ proposed: boolean; reason?: string; todo_id?: string }> {
+    /* Filtre : seuls les updates lib-npm avec version connue */
+    if (update.category !== 'lib-npm' || !update.latestVersion) {
+      return { proposed: false, reason: 'category or version missing' };
+    }
+    if (update.recommendation === 'breaking-changes') {
+      return { proposed: false, reason: 'breaking-changes blocked' };
+    }
+    const maxGain = Math.max(
+      update.estimatedGain?.perf ?? 0,
+      update.estimatedGain?.cost ?? 0,
+      update.estimatedGain?.capabilities ?? 0,
+    );
+    if (maxGain < AUTO_UPDATE_GAIN_THRESHOLD) {
+      return { proposed: false, reason: `gain ${maxGain}% < ${AUTO_UPDATE_GAIN_THRESHOLD}%` };
+    }
+
+    const todoId = `innov_pr_${update.id}_${Date.now()}`;
+    const payload = {
+      id: todoId,
+      type: 'innovation_pr',
+      lib: update.name,
+      from: update.currentVersion ?? 'unknown',
+      to: update.latestVersion,
+      gain: maxGain,
+      details: update.details ?? '',
+      branch: `claude/innovation-${update.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-update`,
+      pr_title: `chore(deps): auto-update ${update.name} → ${update.latestVersion} (innovation-watch +${maxGain}%)`,
+      pr_body: [
+        `## Auto-update by innovation-watch`,
+        ``,
+        `**Library:** \`${update.name}\``,
+        `**From:** ${update.currentVersion ?? 'unknown'}`,
+        `**To:** ${update.latestVersion}`,
+        `**Estimated gain:** +${maxGain}%`,
+        ``,
+        `### Details`,
+        update.details ?? '(aucun détail)',
+        ``,
+        `### Validation requise`,
+        `- [ ] Tests passent (vitest + tsc + build)`,
+        `- [ ] Aucune breaking-change détectée`,
+        `- [ ] Bundle size n'augmente pas > 10%`,
+        ``,
+        `🤖 Généré automatiquement par \`innovation-watch\` Apex v13.3.57`,
+      ].join('\n'),
+      created_at: Date.now(),
+      severity: 'info',
+      status: 'pending',
+    };
+
+    /* Push dans Firebase ax_claude_todo + IDB shadow */
+    try {
+      /* Firebase queue (best-effort, non-bloquant) */
+      const { firebase } = await import('./firebase.js');
+      try {
+        await firebase.write(`ax_claude_todo/${todoId}`, payload);
+      } catch {
+        /* offline / no firebase → IDB shadow only */
+      }
+      /* localStorage shadow pour audit local */
+      try {
+        const key = 'apex_v13_innovation_pr_queue';
+        const queue = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown[];
+        queue.push(payload);
+        localStorage.setItem(key, JSON.stringify(queue.slice(-50)));
+      } catch {
+        /* quota — ignore */
+      }
+      logger.info('innovation-watch', `PR proposed: ${update.name} → ${update.latestVersion}`, { todoId });
+      return { proposed: true, todo_id: todoId };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { proposed: false, reason: `firebase_write_failed: ${msg}` };
+    }
   }
 
   /**

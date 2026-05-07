@@ -58,5 +58,45 @@
   ],
   "screenshots": [],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/CMCteams/apex-ai-v13/#share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+            "image/*",
+            "audio/*",
+            "video/*",
+            "application/pdf",
+            "text/plain",
+            "text/vcard",
+            "text/x-vcard"
+          ]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+apex",
+      "url": "/CMCteams/apex-ai-v13/#protocol?q=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/CMCteams/apex-ai-v13/#file-handler",
+      "accept": {
+        "image/*": [".png", ".jpg", ".jpeg", ".webp"],
+        "application/pdf": [".pdf"],
+        "text/plain": [".txt", ".md"]
+      }
+    }
+  ]
 }

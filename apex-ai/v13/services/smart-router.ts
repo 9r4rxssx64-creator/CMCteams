@@ -279,10 +279,80 @@ function percentile(arr: number[], p: number): number {
   return sorted[idx] ?? -1;
 }
 
+/**
+ * v13.3.57 PUSH-100 — ML adaptive weights per-user.
+ * Au lieu de pondérations fixes (40/30/20/10), apprentissage gradient simple :
+ * - Si Kevin override le provider choisi → ajuste poids vers les facteurs
+ *   où Kevin's choix scorait mieux que notre #1.
+ * - Stocké localStorage `apex_v13_smart_router_weights_<uid>`.
+ * - Cap normalisation : tous poids ≥ 0.05, somme = 1.
+ */
+const DEFAULT_WEIGHTS = { latency: 0.4, quota: 0.3, quality: 0.2, uptime: 0.1 } as const;
+const LEARNING_RATE = 0.05;
+const WEIGHTS_KEY_PREFIX = 'apex_v13_smart_router_weights_';
+
+interface RouterWeights {
+  latency: number;
+  quota: number;
+  quality: number;
+  uptime: number;
+}
+
+function getCurrentUserId(): string {
+  try {
+    const raw = localStorage.getItem('apex_v13_user');
+    if (!raw) return 'default';
+    const u = JSON.parse(raw) as { id?: string };
+    return u.id ?? 'default';
+  } catch {
+    return 'default';
+  }
+}
+
+function loadWeights(uid: string): RouterWeights {
+  try {
+    const raw = localStorage.getItem(`${WEIGHTS_KEY_PREFIX}${uid}`);
+    if (!raw) return { ...DEFAULT_WEIGHTS };
+    const parsed = JSON.parse(raw) as Partial<RouterWeights>;
+    return {
+      latency: parsed.latency ?? DEFAULT_WEIGHTS.latency,
+      quota: parsed.quota ?? DEFAULT_WEIGHTS.quota,
+      quality: parsed.quality ?? DEFAULT_WEIGHTS.quality,
+      uptime: parsed.uptime ?? DEFAULT_WEIGHTS.uptime,
+    };
+  } catch {
+    return { ...DEFAULT_WEIGHTS };
+  }
+}
+
+function saveWeights(uid: string, w: RouterWeights): void {
+  try {
+    /* Normalize : sum = 1, min = 0.05 */
+    const min = 0.05;
+    const adj: RouterWeights = {
+      latency: Math.max(min, w.latency),
+      quota: Math.max(min, w.quota),
+      quality: Math.max(min, w.quality),
+      uptime: Math.max(min, w.uptime),
+    };
+    const sum = adj.latency + adj.quota + adj.quality + adj.uptime;
+    const norm: RouterWeights = {
+      latency: adj.latency / sum,
+      quota: adj.quota / sum,
+      quality: adj.quality / sum,
+      uptime: adj.uptime / sum,
+    };
+    localStorage.setItem(`${WEIGHTS_KEY_PREFIX}${uid}`, JSON.stringify(norm));
+  } catch {
+    /* quota — ignore */
+  }
+}
+
 class SmartRouter {
   /**
    * Score 0-100 d'un provider. Pondération :
-   * latence 40% | quota 30% | qualité 20% | uptime 10%.
+   * latence 40% | quota 30% | qualité 20% | uptime 10% (par défaut).
+   * v13.3.57 : poids adaptatifs per-user via learnFromHistory().
    *
    * Latence : 0ms→100pts, 1000ms→100pts, 3000ms→40pts, 10000ms→0pts.
    * Quota : 100%→100pts ; -1 (inconnu) → 60pts neutres.
@@ -318,18 +388,20 @@ class SmartRouter {
     /* Uptime : uptime_24h * 100 */
     const uptimePts = Math.max(0, Math.min(100, stats.uptime_24h * 100));
 
-    /* Pondération */
+    /* v13.3.57 PUSH-100 : poids adaptatifs per-user (ML gradient simple) */
+    const uid = getCurrentUserId();
+    const w = loadWeights(uid);
     const total =
-      latencyPts * 0.4 +
-      quotaPts * 0.3 +
-      qualityPts * 0.2 +
-      uptimePts * 0.1;
+      latencyPts * w.latency +
+      quotaPts * w.quota +
+      qualityPts * w.quality +
+      uptimePts * w.uptime;
 
     const reasoning = [
-      `Latence ${stats.latency_avg_ms < 0 ? 'inconnue' : `${Math.round(stats.latency_avg_ms)}ms`} → ${Math.round(latencyPts)}pts (40%)`,
-      `Quota ${stats.quota_remaining_pct < 0 ? 'inconnu' : `${Math.round(stats.quota_remaining_pct)}%`} → ${Math.round(quotaPts)}pts (30%)`,
-      `Qualité ${Math.round(qualityPts)}% → ${Math.round(qualityPts)}pts (20%)`,
-      `Uptime ${Math.round(uptimePts)}% → ${Math.round(uptimePts)}pts (10%)`,
+      `Latence ${stats.latency_avg_ms < 0 ? 'inconnue' : `${Math.round(stats.latency_avg_ms)}ms`} → ${Math.round(latencyPts)}pts (${Math.round(w.latency * 100)}%)`,
+      `Quota ${stats.quota_remaining_pct < 0 ? 'inconnu' : `${Math.round(stats.quota_remaining_pct)}%`} → ${Math.round(quotaPts)}pts (${Math.round(w.quota * 100)}%)`,
+      `Qualité ${Math.round(qualityPts)}% → ${Math.round(qualityPts)}pts (${Math.round(w.quality * 100)}%)`,
+      `Uptime ${Math.round(uptimePts)}% → ${Math.round(uptimePts)}pts (${Math.round(w.uptime * 100)}%)`,
     ].join(' | ');
 
     return {
@@ -380,6 +452,93 @@ class SmartRouter {
       if (matched) return matched.provider;
     }
     return pool[0]?.provider ?? 'anthropic';
+  }
+
+  /**
+   * v13.3.57 PUSH-100 — Learn from override history.
+   *
+   * Quand Kevin force un provider (override) au lieu du #1 ranked, on observe
+   * les facteurs où le choix Kevin a un score plus haut. On ajuste les poids
+   * vers ces facteurs (gradient simple).
+   *
+   * Exemple : si Kevin pick souvent un provider avec moins de quota mais
+   * meilleure qualité → augmente poids quality, diminue poids quota.
+   *
+   * @param chosenProvider Provider effectivement utilisé (Kevin override)
+   * @param expectedProvider Provider que getBest() aurait choisi (top ranked)
+   */
+  async learnFromHistory(
+    chosenProvider: SmartProvider,
+    expectedProvider: SmartProvider,
+  ): Promise<{ updated: boolean; new_weights?: RouterWeights }> {
+    if (chosenProvider === expectedProvider) {
+      return { updated: false };
+    }
+    const uid = getCurrentUserId();
+    const weights = loadWeights(uid);
+
+    /* Compute breakdown for chosen vs expected */
+    const chosenScore = await this.scoreProvider(chosenProvider);
+    const expectedScore = await this.scoreProvider(expectedProvider);
+
+    /* Pour chaque facteur : si chosen scorait mieux qu'expected SUR CE FACTEUR
+     * → bump le poids de ce facteur. */
+    const factors: Array<keyof RouterWeights> = ['latency', 'quota', 'quality', 'uptime'];
+    const factorPts: Record<keyof RouterWeights, [number, number]> = {
+      latency: [chosenScore.latency_pts, expectedScore.latency_pts],
+      quota: [chosenScore.quota_pts, expectedScore.quota_pts],
+      quality: [chosenScore.quality_pts, expectedScore.quality_pts],
+      uptime: [chosenScore.uptime_pts, expectedScore.uptime_pts],
+    };
+
+    const newWeights: RouterWeights = { ...weights };
+    let updated = false;
+    for (const f of factors) {
+      const [chosen, expected] = factorPts[f];
+      const delta = chosen - expected;
+      /* Si chosen ≥ +10pts vs expected sur ce facteur → bump */
+      if (delta >= 10) {
+        newWeights[f] = Math.min(0.7, newWeights[f] + LEARNING_RATE);
+        updated = true;
+      } else if (delta <= -10) {
+        newWeights[f] = Math.max(0.05, newWeights[f] - LEARNING_RATE * 0.5);
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      saveWeights(uid, newWeights);
+      const final = loadWeights(uid); /* Re-load post-normalization */
+      logger.info('smart-router', `Weights updated for ${uid}`, { from: weights, to: final });
+      try {
+        await auditLog.record('smart-router.learn', {
+          details: { uid, chosen: chosenProvider, expected: expectedProvider, weights: final },
+        });
+      } catch {
+        /* optional */
+      }
+      return { updated: true, new_weights: final };
+    }
+    return { updated: false };
+  }
+
+  /**
+   * v13.3.57 — Lecture poids courants (UI admin).
+   */
+  getCurrentWeights(): RouterWeights {
+    return loadWeights(getCurrentUserId());
+  }
+
+  /**
+   * v13.3.57 — Reset weights to default.
+   */
+  resetWeights(): void {
+    const uid = getCurrentUserId();
+    try {
+      localStorage.removeItem(`${WEIGHTS_KEY_PREFIX}${uid}`);
+    } catch {
+      /* ignore */
+    }
   }
 
   /**

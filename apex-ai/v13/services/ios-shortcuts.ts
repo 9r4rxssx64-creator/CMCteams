@@ -280,14 +280,12 @@ class IOSShortcutsService {
 
     /* Tentative ouverture URL scheme. Pas de Promise navigator.app sur Safari iOS,
      * on utilise window.location.assign qui déclenche le scheme. */
-    let launched = false;
     try {
       if (typeof window !== 'undefined' && window.location) {
         window.location.assign(url);
-        launched = true;
       }
     } catch (e) {
-      logger.warn('[ios-shortcuts] launch failed', { name, err: e });
+      logger.warn('ios-shortcuts', `launch failed for ${name}`, { err: String(e) });
       return { ok: false, launched: false, reason: 'launch_failed', error: String(e) };
     }
 
