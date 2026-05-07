@@ -4,7 +4,16 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activeSettingsScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activeSettingsScope?.cleanup();
+  activeSettingsScope = null;
+}
 
 function escapeHtmlSafe(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -56,7 +65,7 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
     /* Init auto-read toggle */
     if (autoReadInput) {
       autoReadInput.checked = isAutoReadEnabled();
-      autoReadInput.addEventListener('change', () => {
+      activeSettingsScope!.bind(autoReadInput, 'change', () => {
         setAutoReadEnabled(autoReadInput.checked);
         void (async () => {
           const { toast } = await import('../../ui/toast.js');
@@ -106,14 +115,14 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
 
     /* Wire boutons catégorie */
     catBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
+      activeSettingsScope!.bind(btn, 'click', () => {
         const cat = btn.getAttribute('data-cat') as 'all' | 'pro' | 'fun' | 'thematic' | null;
         if (cat) renderList(cat);
       });
     });
 
     /* Event delegation pour boutons test ▶ + définir comme défaut */
-    listEl.addEventListener('click', (e) => {
+    activeSettingsScope!.bind(listEl, 'click', (e) => {
       const target = e.target as HTMLElement;
       const testBtn = target.closest('[data-test-voice]') as HTMLButtonElement | null;
       const setBtn = target.closest('[data-set-voice]') as HTMLButtonElement | null;
@@ -154,6 +163,9 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
 }
 
 export function render(rootEl: HTMLElement): void {
+  /* P1-6 : cleanup ancien scope avant re-render */
+  activeSettingsScope?.cleanup();
+  activeSettingsScope = createCleanupScope('settings');
   const user = store.get('user');
   const isAdmin = (store.get('isAdmin') as boolean | undefined) ?? false;
   /* Premium settings sections with glass + lift hover + section icon */
@@ -267,7 +279,7 @@ export function render(rootEl: HTMLElement): void {
           `${health.backends_configured} backends configurés · ${lastOk}/${allStatus.length} dernier sync OK`;
       };
       refreshStatus();
-      syncBtn?.addEventListener('click', () => {
+      if (syncBtn && activeSettingsScope) activeSettingsScope.bind(syncBtn, 'click', () => {
         void (async () => {
           if (syncBtn) syncBtn.disabled = true;
           const results = await memoryBridge.runAutoSync();
@@ -285,7 +297,8 @@ export function render(rootEl: HTMLElement): void {
     }
   })();
   /* Sprint 8 v13.0.71 : Wire consumption-anomaly-detector (Kevin demande conso temps réel) */
-  rootEl.querySelector<HTMLButtonElement>('#ax-conso-scan')?.addEventListener('click', () => {
+  const consoBtn = rootEl.querySelector<HTMLButtonElement>('#ax-conso-scan');
+  if (consoBtn && activeSettingsScope) activeSettingsScope.bind(consoBtn, 'click', () => {
     void (async () => {
       try {
         const { consumptionAnomalyDetector } = await import('../../services/consumption-anomaly-detector.js');
@@ -315,12 +328,13 @@ export function render(rootEl: HTMLElement): void {
   });
   /* Wire new data-nav-route buttons (CSP strict, no inline onclick) */
   rootEl.querySelectorAll<HTMLElement>('[data-nav-route]').forEach((el) => {
-    el.addEventListener('click', () => {
+    activeSettingsScope!.bind(el, 'click', () => {
       const route = el.getAttribute('data-nav-route');
       if (route) location.hash = '#' + route;
     });
   });
-  rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout')?.addEventListener('click', () => {
+  const logoutBtn = rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout');
+  if (logoutBtn && activeSettingsScope) activeSettingsScope.bind(logoutBtn, 'click', () => {
     void (async () => {
       const { auth } = await import('../../services/auth.js');
       auth.logout();
@@ -331,7 +345,8 @@ export function render(rootEl: HTMLElement): void {
      Demande Kevin : "qu'il puisse me lire les choses, me raconter etc, que je choisisse les voix". */
   void wireVoiceSection(rootEl);
 
-  rootEl.querySelector<HTMLButtonElement>('#ax-settings-notif-test')?.addEventListener('click', () => {
+  const notifBtn = rootEl.querySelector<HTMLButtonElement>('#ax-settings-notif-test');
+  if (notifBtn && activeSettingsScope) activeSettingsScope.bind(notifBtn, 'click', () => {
     void (async () => {
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
