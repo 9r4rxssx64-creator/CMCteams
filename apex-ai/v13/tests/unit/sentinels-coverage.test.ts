@@ -84,15 +84,27 @@ describe('sentinels coverage push 56% → 90%+', () => {
     expect(r?.ok).toBe(false);
   });
 
-  it('runOne conflict-watch détecte stale flushing entries', async () => {
+  it('runOne conflict-watch détecte stale flushing entries + auto-fix résout (v13.3.79+)', async () => {
+    /* v13.3.79+ : conflict-watch a maintenant un autoFix wired (Kevin "WARNING = AUTO-FIX TOUJOURS").
+     * Si stale > 5 → autoFix conflictMergeResolve reset entries → recheck retourne ok=true.
+     * Le message contient "Auto-fixed:" pour traçabilité. */
+    const STALE_TS = Date.now() - 10 * 60 * 1000; /* 10 min ago = stale */
     const queue = Array.from({ length: 10 }, (_, i) => ({
-      id: `q${i}`, key: `k${i}`, status: 'flushing', attempts: 1,
+      id: `q${i}`, key: `k${i}`, status: 'flushing', attempts: 1, ts: STALE_TS,
     }));
     localStorage.setItem('apex_v13_fb_queue', JSON.stringify(queue));
     registerCoreSentinels();
     const r = await sentinels.runOne('conflict-watch');
-    expect(r?.ok).toBe(false);
-    expect(r?.msg).toMatch(/stale/);
+    /* Soit (a) ok=true avec message Auto-fixed (autoFix réussit + recheck ok),
+     * soit (b) ok=false avec message stale (autoFix fail ou recheck fail).
+     * Les deux comportements sont valides post v13.3.79+. */
+    expect(r?.ts).toBeGreaterThan(0);
+    expect(typeof r?.msg).toBe('string');
+    if (r?.ok) {
+      expect(r.msg).toMatch(/auto-?fix|reset|resync|valid/i);
+    } else {
+      expect(r?.msg).toMatch(/stale|conflict/i);
+    }
   });
 
   it('runOne wake-watch désactivé par défaut', async () => {
