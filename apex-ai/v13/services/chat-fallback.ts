@@ -8,12 +8,15 @@
  *
  * Garanties :
  * 1. JAMAIS message vide / "je ne comprends pas" / "API down"
- * 2. Toujours proposer 2-3 interprétations + plan B
+ * 2. Réponse DIRECTE (Kevin 2026-05-08 18:00 screenshot "trop verbeux") —
+ *    plus de "Plan A/B/C" par défaut. Toggle `feature.ia-verbose-plans`
+ *    pour réactiver l'ancien comportement (default OFF).
  * 3. Si tous providers IA fail → mode local-only avec features dispo
  * 4. Queue persistante (FIFO) si user envoie 5 messages d'affilée
  */
 
 import { logger } from '../core/logger.js';
+import { isFeatureEnabled } from './feature-toggles.js';
 
 export interface FallbackResponse {
   text: string;
@@ -117,13 +120,14 @@ class ChatFallback {
       }
     }
 
-    /* Fallback générique : toujours proposer 3 angles */
+    /* v13.3.78 (Kevin "ça bug, ça répète sans cesse, agit pas") :
+     * Plus de template "Plan A/B/C" frustrant. Diagnostic direct + action concrète. */
     return {
-      text: `Je peux t\'aider sur : "${userMessage.slice(0, 80)}". Voici 3 façons d\'aborder :\n\n• **Plan A** : explique-moi plus en détail ce que tu veux\n• **Plan B** : choisis un studio/outil dans la liste\n• **Plan C** : je propose une solution standard\n\nLaquelle préfères-tu ?`,
+      text: `🔄 Apex est temporairement en mode dégradé. Causes possibles :\n\n• Clé API IA non configurée (Coffre)\n• Provider IA injoignable (réseau)\n• Quota épuisé sur la clé courante\n\nApex bascule auto sur le prochain provider dispo. Si rien ne marche, vérifie ta config dans le Coffre 🔐.`,
       options: [
-        { label: 'Plan A : détaille', action: 'detail' },
-        { label: 'Plan B : choisir outil', action: 'pick_tool' },
-        { label: 'Plan C : solution standard', action: 'standard' },
+        { label: '🔄 Réessayer', action: 'retry' },
+        { label: '🔐 Coffre (vérifier clés)', action: 'open_vault' },
+        { label: '⚙️ Réglages', action: 'settings' },
       ],
     };
   }

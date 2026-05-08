@@ -212,6 +212,9 @@ const REGISTRY: readonly FeatureToggle[] = [
   /* === Memory & Backup (Kevin 2026-05-08 — Pinecone optionnel + realtime backup) === */
   { id: 'feature.pinecone-rag', category: 'tool', description: 'RAG mémoire long-terme via Pinecone (vector search)', defaultEnabled: true },
   { id: 'feature.realtime-backup', category: 'sentinel', description: 'Backup temps-réel persistent_memory (5min) + chat (2min)', defaultEnabled: true },
+
+  /* === Verbosity (Kevin 2026-05-08 — "trop verbeux Plan A/B/C") === */
+  { id: 'feature.ia-verbose-plans', category: 'module', description: 'IA verbose : énumère Plan A/B/C quand ambigu (default OFF — Kevin trouve trop verbeux). ON = ancien comportement debug.', defaultEnabled: false },
 ];
 
 /* Index pour lookup O(1) */

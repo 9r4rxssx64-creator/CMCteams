@@ -977,6 +977,56 @@ function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
 }
 
 /**
+ * v13.3.79 (Kevin 2026-05-08 18:00) — Détecte commandes wake-word texte
+ * ("dis apex", "ok apex", "hey apex" tapées en texte) et active le wake word
+ * voice mode. PAS de roundtrip IA, PAS de "Plan A/B/C".
+ *
+ * Patterns acceptés (case-insensitive, trim) :
+ *   - "dis apex", "dit apex", "di apex"
+ *   - "ok apex", "okay apex"
+ *   - "hey apex", "hello apex"
+ *
+ * Variants doivent matcher EXACTEMENT (pas substring) pour éviter de
+ * trigger sur "dis apex où est mon dossier" qui est une vraie question.
+ *
+ * Retourne true si traité, false sinon.
+ */
+export function handleWakeWordTextTrigger(rootEl: HTMLElement, text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return false;
+  const WAKE_PATTERNS = [
+    'dis apex',
+    'dit apex',
+    'di apex',
+    'ok apex',
+    'okay apex',
+    'hey apex',
+    'hello apex',
+  ];
+  if (!WAKE_PATTERNS.includes(normalized)) return false;
+
+  haptic.tap();
+  /* Activate wake word voice mode (lazy import — services/wake-word charge SpeechRecognition iOS) */
+  void (async () => {
+    try {
+      const { wakeWord } = await import('../../services/wake-word.js');
+      const r = await wakeWord.start();
+      if (r.started) {
+        toast.success('🎙 Wake word activé — parle, je t\'écoute', { duration: 4000 });
+      } else {
+        const reason = r.reason ?? 'wake-word indisponible';
+        toast.warn(`🎙 ${reason}`, { duration: 5000 });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn('chat', 'wake-word text trigger failed', { err: msg });
+      toast.warn('🎙 Wake word indisponible sur ce navigateur', { duration: 4000 });
+    }
+  })();
+  return true;
+}
+
+/**
  * v13.3.48 — Handler slash commands (Kevin "chat niveau Claude.ai/ChatGPT").
  * Retourne true si le message a été traité comme commande, false sinon.
  */

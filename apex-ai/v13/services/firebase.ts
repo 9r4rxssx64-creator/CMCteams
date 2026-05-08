@@ -21,6 +21,28 @@ import { logger } from '../core/logger.js';
 
 const FB_DEFAULT = 'https://kdmc-clients-default-rtdb.firebaseio.com';
 
+/**
+ * v13.3.x Kevin 2026-05-08 — Auto-reconnect robuste Firebase.
+ *
+ * États possibles de la connexion :
+ * - CONNECTED    : SSE actif + dernier ping OK
+ * - RECONNECTING : tentative en cours (auto-reconnect avec backoff)
+ * - DISCONNECTED : déconnecté, prochaine tentative programmée
+ * - OFFLINE      : navigator.onLine = false (pas de tentative tant que online event)
+ *
+ * SOS rescue distingue RECONNECTING (transient → pas de warning) vs DISCONNECTED.
+ */
+export type FirebaseConnectionState = 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED' | 'OFFLINE';
+
+/* Backoff exponential : 2s/4s/8s/16s/30s (cap) — anti spam reconnect aggressif */
+const RECONNECT_BACKOFF_MS = [2000, 4000, 8000, 16000, 30000] as const;
+/* Watchdog ping period : 60s. Détecte SSE silencieusement coupé (iOS Safari background). */
+const WATCHDOG_INTERVAL_MS = 60_000;
+/* Stale threshold : si dernier event SSE > 30s, considéré stale (déclenche ping de vérif). */
+const STALE_EVENT_THRESHOLD_MS = 30_000;
+/* Toast rate-limit par état : max 1 toast / 60s / état (anti spam). */
+const TOAST_RATE_LIMIT_MS = 60_000;
+
 export const FB_FIX: readonly string[] = [
   'apex_v13_facts',
   'apex_v13_lessons',
@@ -129,12 +151,40 @@ class Firebase {
      redémarre l'EventSource via startSSE() (memory leak documenté Mozilla). */
   private sseListeners: Array<{ type: string; listener: EventListener }> = [];
 
+  /* v13.3.x Kevin 2026-05-08 — État connection détaillé pour SOS + auto-reconnect.
+   * Distingue RECONNECTING (transient, pas de warning SOS) de DISCONNECTED (definitive). */
+  private connState: FirebaseConnectionState = 'DISCONNECTED';
+  /* Compteur de tentatives consecutives échouées (reset à 0 après succès). */
+  private reconnectAttempts = 0;
+  /* Timer en cours pour la prochaine tentative de reconnect (id setTimeout). */
+  private reconnectTimer: number | null = null;
+  /* Watchdog ping interval (id setInterval) — détecte SSE silencieusement coupé. */
+  private watchdogInterval: number | null = null;
+  /* Timestamp dernier event SSE reçu (put / open) — utilisé par watchdog pour détecter staleness. */
+  private lastEventTs = 0;
+  /* Listeners DOM dépendants — trackés pour cleanup propre au disconnect/test. */
+  private domListeners: Array<{ target: EventTarget; type: string; listener: EventListener }> = [];
+  /* Anti-spam toast : timestamp dernier toast par état. */
+  private lastToastTs = new Map<FirebaseConnectionState, number>();
+  /* Garde anti-init multiple : si init() rappelé, on resync l'état au lieu de doubler les listeners. */
+  private domListenersInstalled = false;
+
   async init(): Promise<void> {
     try {
       const stored = localStorage.getItem('apex_v13_fb_url');
       if (stored) this.url = stored;
     } catch {
       /* ignore */
+    }
+
+    /* Install DOM listeners une seule fois (online/offline/visibilitychange). */
+    this.installDomListeners();
+
+    /* Si navigator.onLine est false → on part en OFFLINE direct, on attend l'event 'online'. */
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.setState('OFFLINE');
+      this.connected = false;
+      return;
     }
 
     /* Test ping */
@@ -150,7 +200,17 @@ class Firebase {
       this.connected = false;
     }
 
-    if (this.connected) this.startSSE();
+    if (this.connected) {
+      this.setState('CONNECTED');
+      this.reconnectAttempts = 0;
+      this.lastEventTs = Date.now();
+      this.startSSE();
+      this.startWatchdog();
+    } else {
+      /* Premier ping fail : on entre en RECONNECTING + on planifie la 1ère retry. */
+      this.setState('RECONNECTING');
+      this.scheduleReconnect();
+    }
     this.flushQueue();
     /* Sprint 8 : restore vault keys depuis Firebase si localStorage vide
        (Kevin règle "ne plus perdre clé API après clear cache iPhone") */
@@ -170,6 +230,244 @@ class Firebase {
 
   isConnected(): boolean {
     return this.connected;
+  }
+
+  /**
+   * v13.3.x — État connection détaillé.
+   * - CONNECTED    → SSE actif + watchdog OK
+   * - RECONNECTING → tentative en cours, ne PAS générer de warning SOS
+   * - DISCONNECTED → échecs cumulés (>5 backoffs), warning SOS justifié
+   * - OFFLINE      → navigator.onLine = false, pas de tentative
+   */
+  getConnectionState(): FirebaseConnectionState {
+    return this.connState;
+  }
+
+  /**
+   * SOS auto-fix + appel direct user : déclenche un reconnect immédiat (clear backoff).
+   * - Si déjà CONNECTED → no-op (return true)
+   * - Si OFFLINE → ne fait rien (attend event online)
+   * - Sinon → annule timer + tente reconnect now
+   * Renvoie true si la tentative a abouti (CONNECTED), false sinon.
+   */
+  async triggerReconnect(): Promise<boolean> {
+    if (this.connState === 'CONNECTED') return true;
+    if (this.connState === 'OFFLINE') {
+      logger.debug('firebase', 'triggerReconnect skipped: navigator offline');
+      return false;
+    }
+    /* Annule backoff en cours, on tente immédiatement. */
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.setState('RECONNECTING');
+    this.showToast('RECONNECTING', '🔄 Reconnexion Firebase...');
+    return this.attemptReconnect();
+  }
+
+  /**
+   * Tente effectivement le ping + restart SSE. Met à jour state + schedule next backoff si fail.
+   * Public/internal — exposé pour faciliter tests + SOS.
+   */
+  private async attemptReconnect(): Promise<boolean> {
+    try {
+      const ping = await fetch(`${this.url}/.json?shallow=true`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (ping.ok) {
+        this.connected = true;
+        this.reconnectAttempts = 0;
+        this.lastEventTs = Date.now();
+        this.setState('CONNECTED');
+        this.showToast('CONNECTED', '✅ Firebase reconnecté');
+        this.startSSE();
+        this.startWatchdog();
+        this.flushQueue();
+        return true;
+      }
+      throw new Error(`HTTP ${ping.status}`);
+    } catch (err: unknown) {
+      logger.debug('firebase', 'Reconnect attempt failed', { err, attempts: this.reconnectAttempts });
+      this.connected = false;
+      this.reconnectAttempts++;
+      /* Après MAX backoff steps consécutifs → DISCONNECTED (déclenche warning SOS).
+       * Sinon RECONNECTING (transient, masque warning SOS). */
+      if (this.reconnectAttempts >= RECONNECT_BACKOFF_MS.length) {
+        this.setState('DISCONNECTED');
+      } else {
+        this.setState('RECONNECTING');
+      }
+      this.scheduleReconnect();
+      return false;
+    }
+  }
+
+  /**
+   * Programme la prochaine tentative de reconnect avec backoff exponential.
+   * Idempotent : annule le timer précédent si présent.
+   */
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    /* Si OFFLINE — pas de timer, on attendra l'event 'online'. */
+    if (this.connState === 'OFFLINE') return;
+    const idx = Math.min(this.reconnectAttempts, RECONNECT_BACKOFF_MS.length - 1);
+    const delay = RECONNECT_BACKOFF_MS[idx] ?? 30000;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.attemptReconnect();
+    }, delay) as unknown as number;
+  }
+
+  private setState(next: FirebaseConnectionState): void {
+    if (this.connState === next) return;
+    const prev = this.connState;
+    this.connState = next;
+    logger.debug('firebase', `state: ${prev} → ${next}`);
+    /* Émet events pour que UI / sentinelles puissent réagir. */
+    try {
+      if (next === 'CONNECTED') events.emit('network:online', {});
+      else if (next === 'DISCONNECTED' || next === 'OFFLINE') events.emit('network:offline', {});
+    } catch { /* ignore listener errors */ }
+  }
+
+  /**
+   * Toast user-friendly avec rate-limit anti-spam (1 par 60s par état).
+   * Best-effort : si toast indispo (test env), no-op.
+   */
+  private showToast(state: FirebaseConnectionState, message: string): void {
+    const last = this.lastToastTs.get(state) ?? 0;
+    if (Date.now() - last < TOAST_RATE_LIMIT_MS) return;
+    this.lastToastTs.set(state, Date.now());
+    /* Lazy import — pas chargé en SSR / tests. */
+    void import('../ui/toast.js')
+      .then(({ toast }) => {
+        if (state === 'CONNECTED') toast.success(message, { duration: 3000 });
+        else if (state === 'RECONNECTING') toast.info(message, { duration: 2500 });
+        else if (state === 'DISCONNECTED') toast.warn(message, { duration: 4000 });
+        else toast.info(message, { duration: 2500 });
+      })
+      .catch(() => { /* test env or SSR — no toast */ });
+  }
+
+  /**
+   * Install les listeners DOM (online / offline / visibilitychange) une seule fois.
+   * - online       → reconnect immédiat (annule backoff)
+   * - offline      → set OFFLINE, annule timer
+   * - visibility   → si visible + state ≠ CONNECTED → check + reconnect (iOS Safari background)
+   */
+  private installDomListeners(): void {
+    if (this.domListenersInstalled) return;
+    if (typeof window === 'undefined') return;
+    this.domListenersInstalled = true;
+
+    const onOnline: EventListener = () => {
+      logger.debug('firebase', 'event: online → trigger reconnect');
+      /* Si on était OFFLINE, on bascule en RECONNECTING + tentative immédiate (reset backoff). */
+      if (this.connState === 'OFFLINE') {
+        this.reconnectAttempts = 0;
+        this.setState('RECONNECTING');
+        void this.attemptReconnect();
+      } else if (this.connState !== 'CONNECTED') {
+        /* Force tentative immédiate (clear backoff). */
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer !== null) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        void this.attemptReconnect();
+      }
+    };
+    const onOffline: EventListener = () => {
+      logger.debug('firebase', 'event: offline → pause reconnect');
+      this.connected = false;
+      if (this.reconnectTimer !== null) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      /* Ferme SSE — il sera redémarré au prochain online. */
+      this.cleanupSSE();
+      this.stopWatchdog();
+      this.setState('OFFLINE');
+    };
+    const onVisibility: EventListener = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState !== 'visible') return;
+      logger.debug('firebase', 'event: visible → check connection');
+      /* Si déjà CONNECTED, vérifie staleness via watchdog (SSE iOS Safari souvent coupé en background). */
+      if (this.connState === 'CONNECTED') {
+        const stale = Date.now() - this.lastEventTs > STALE_EVENT_THRESHOLD_MS;
+        if (stale) {
+          logger.debug('firebase', 'visibility check: stale SSE detected, reconnecting');
+          this.reconnectAttempts = 0;
+          this.cleanupSSE();
+          void this.attemptReconnect();
+        }
+      } else if (this.connState !== 'OFFLINE') {
+        /* On était DISCONNECTED/RECONNECTING — reset backoff + tentative immédiate. */
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer !== null) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        void this.attemptReconnect();
+      }
+    };
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility);
+      this.domListeners.push({ target: document, type: 'visibilitychange', listener: onVisibility });
+    }
+    this.domListeners.push({ target: window, type: 'online', listener: onOnline });
+    this.domListeners.push({ target: window, type: 'offline', listener: onOffline });
+  }
+
+  /**
+   * Watchdog ping (60s) : détecte SSE silencieusement coupé (cas iOS Safari background).
+   * Si lastEventTs > STALE_THRESHOLD ET connected=true → trigger reconnect.
+   */
+  private startWatchdog(): void {
+    if (this.watchdogInterval !== null) return;
+    if (typeof window === 'undefined') return;
+    this.watchdogInterval = setInterval(() => {
+      if (this.connState !== 'CONNECTED') return;
+      const stale = Date.now() - this.lastEventTs > STALE_EVENT_THRESHOLD_MS;
+      if (!stale) return;
+      /* Stale event → ping de vérification. Si fail, reconnect. */
+      void fetch(`${this.url}/.json?shallow=true`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      })
+        .then((r) => {
+          if (r.ok) {
+            this.lastEventTs = Date.now();
+          } else {
+            throw new Error(`HTTP ${r.status}`);
+          }
+        })
+        .catch(() => {
+          logger.debug('firebase', 'watchdog: ping failed, triggering reconnect');
+          this.connected = false;
+          this.reconnectAttempts = 0;
+          this.cleanupSSE();
+          this.setState('RECONNECTING');
+          this.showToast('RECONNECTING', '🔄 Reconnexion Firebase...');
+          void this.attemptReconnect();
+        });
+    }, WATCHDOG_INTERVAL_MS) as unknown as number;
+  }
+
+  private stopWatchdog(): void {
+    if (this.watchdogInterval !== null) {
+      clearInterval(this.watchdogInterval);
+      this.watchdogInterval = null;
+    }
   }
 
   /**
@@ -350,6 +648,8 @@ class Firebase {
     try {
       this.sse = new EventSource(`${this.url}/apex.json`);
       const putListener: EventListener = (event) => {
+        /* Mark sign of life pour watchdog. */
+        this.lastEventTs = Date.now();
         try {
           const data = JSON.parse((event as MessageEvent).data) as { path: string; data: unknown };
           this.applyRemoteChange(data.path, data.data);
@@ -361,14 +661,22 @@ class Firebase {
       /* Track le listener pour pouvoir l'enlever proprement au disconnect/restart. */
       this.sseListeners.push({ type: 'put', listener: putListener });
 
+      /* v13.3.x : SSE error → state RECONNECTING + scheduleReconnect (backoff exponential).
+       * Plus de setTimeout(5000) hardcoded — backoff geré par scheduleReconnect. */
       this.sse.onerror = () => {
         this.connected = false;
-        events.emit('network:offline', {});
-        setTimeout(() => this.startSSE(), 5000);
+        /* Si on est OFFLINE (navigator), ne rien faire — listener online prend le relais. */
+        if (this.connState === 'OFFLINE') return;
+        this.cleanupSSE();
+        this.stopWatchdog();
+        this.setState('RECONNECTING');
+        this.scheduleReconnect();
       };
       this.sse.onopen = () => {
         this.connected = true;
-        events.emit('network:online', {});
+        this.lastEventTs = Date.now();
+        this.reconnectAttempts = 0;
+        this.setState('CONNECTED');
         this.flushQueue();
       };
     } catch (err: unknown) {
@@ -394,12 +702,32 @@ class Firebase {
   }
 
   /**
-   * Disconnect public — appelable au logout / shutdown / page unload.
-   * Idempotent. Garantit qu'aucun listener SSE n'est laissé orphelin.
+   * Disconnect public — appelable au logout / shutdown / page unload / tests.
+   * Idempotent. Garantit qu'aucun listener SSE/DOM/timer n'est laissé orphelin.
+   *
+   * v13.3.x : enrichi pour cleanup auto-reconnect resources :
+   *   - reconnectTimer (setTimeout backoff)
+   *   - watchdogInterval (setInterval ping)
+   *   - domListeners (online/offline/visibilitychange)
    */
   disconnect(): void {
     this.cleanupSSE();
+    this.stopWatchdog();
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    /* Remove DOM listeners trackés (autorise tests + hot reload propre). */
+    for (const { target, type, listener } of this.domListeners) {
+      try { target.removeEventListener(type, listener); } catch { /* ignore */ }
+    }
+    this.domListeners = [];
+    this.domListenersInstalled = false;
     this.connected = false;
+    this.connState = 'DISCONNECTED';
+    this.reconnectAttempts = 0;
+    this.lastEventTs = 0;
+    this.lastToastTs.clear();
   }
 
   /**
