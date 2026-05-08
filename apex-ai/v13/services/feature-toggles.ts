@@ -141,6 +141,7 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'sentinel.dedup-watch', category: 'sentinel', description: 'Dédup UI sources', defaultEnabled: true },
   { id: 'sentinel.malware-blocklist', category: 'sentinel', description: 'Blocklist URL malware/phishing', defaultEnabled: true },
   { id: 'sentinel.csp-violation', category: 'sentinel', description: 'CSP violations watch', defaultEnabled: true },
+  { id: 'sentinel.auto-ultra-reset', category: 'sentinel', description: 'Auto Ultra Reset autonome (cache stale + bugs persistants)', defaultEnabled: true },
 
   /* === Tools IA (32) === */
   { id: 'tool.web_search', category: 'tool', description: 'Web Search (Brave/Tavily/DDG)', defaultEnabled: true },
