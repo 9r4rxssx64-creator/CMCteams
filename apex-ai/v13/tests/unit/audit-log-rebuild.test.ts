@@ -120,4 +120,92 @@ describe('audit-log rebuildChainFrom + autoRepair (Kevin v13.3.36 P0)', () => {
     expect(traces.length).toBeGreaterThan(0);
     expect(traces[0]?.actor).toBe('system');
   });
+
+  /* === v13.3.71 (Kevin audit 2026-05-08) — verifyChainIntegrity + snapshots === */
+
+  it('verifyChainIntegrity sur chain vide → valid + brokenAt=-1 + totalEntries=0', async () => {
+    const r = await auditLog.verifyChainIntegrity();
+    expect(r.valid).toBe(true);
+    expect(r.brokenAt).toBe(-1);
+    expect(r.totalEntries).toBe(0);
+  });
+
+  it('verifyChainIntegrity sur chain valide → valid + brokenAt=-1 + totalEntries>0', async () => {
+    for (let i = 0; i < 7; i++) await auditLog.record(`k.${i}`);
+    const r = await auditLog.verifyChainIntegrity();
+    expect(r.valid).toBe(true);
+    expect(r.brokenAt).toBe(-1);
+    expect(r.totalEntries).toBe(7);
+  });
+
+  it('verifyChainIntegrity sur chain cassée → valid=false + brokenAt=index + totalEntries fidèle', async () => {
+    for (let i = 0; i < 6; i++) await auditLog.record(`v.${i}`);
+    const raw = JSON.parse(localStorage.getItem('ax_audit_log_v13') ?? '[]');
+    raw[3].action = 'TAMPERED_DEEP';
+    localStorage.setItem('ax_audit_log_v13', JSON.stringify(raw));
+    auditLog.reload();
+    const r = await auditLog.verifyChainIntegrity();
+    expect(r.valid).toBe(false);
+    expect(r.brokenAt).toBe(3);
+    expect(r.totalEntries).toBe(6);
+  });
+
+  it('rebuildChainFrom crée un snapshot avant rebuild (forensique)', async () => {
+    for (let i = 0; i < 4; i++) await auditLog.record(`s.${i}`);
+    /* Tamper #2 */
+    const raw = JSON.parse(localStorage.getItem('ax_audit_log_v13') ?? '[]');
+    raw[2].action = 'CORRUPTED';
+    localStorage.setItem('ax_audit_log_v13', JSON.stringify(raw));
+    auditLog.reload();
+    const r = await auditLog.rebuildChainFrom(2);
+    expect(r.ok).toBe(true);
+    expect(r.snapshotKey).toBeTruthy();
+    expect(r.snapshotKey?.startsWith('ax_audit_log_rebuild_')).toBe(true);
+    /* Le snapshot doit exister dans localStorage */
+    const snapRaw = localStorage.getItem(r.snapshotKey ?? '');
+    expect(snapRaw).toBeTruthy();
+    const parsed = JSON.parse(snapRaw ?? '{}') as { brokenAtIndex: number; chainSnapshot: unknown[] };
+    expect(parsed.brokenAtIndex).toBe(2);
+    /* Le snapshot doit contenir l'entry corrompue (preuve préservée) */
+    expect(Array.isArray(parsed.chainSnapshot)).toBe(true);
+    expect((parsed.chainSnapshot[2] as { action: string }).action).toBe('CORRUPTED');
+  });
+
+  it('listRebuildSnapshots liste les snapshots récents triés par ts desc', async () => {
+    for (let i = 0; i < 3; i++) await auditLog.record(`l.${i}`);
+    /* Force 2 rebuilds successifs avec petites pauses pour timestamps distincts */
+    await auditLog.rebuildChainFrom(0);
+    /* Petite pause pour timestamp différent (Date.now ms granularité) */
+    await new Promise((r) => setTimeout(r, 5));
+    await auditLog.rebuildChainFrom(0);
+    const snapshots = auditLog.listRebuildSnapshots();
+    expect(snapshots.length).toBeGreaterThanOrEqual(2);
+    /* Tri ts desc */
+    if (snapshots.length >= 2) {
+      expect(snapshots[0]!.ts).toBeGreaterThanOrEqual(snapshots[1]!.ts);
+    }
+    /* Chaque snapshot a la structure attendue */
+    for (const s of snapshots) {
+      expect(s.key.startsWith('ax_audit_log_rebuild_')).toBe(true);
+      expect(typeof s.brokenAtIndex).toBe('number');
+      expect(typeof s.entriesCount).toBe('number');
+    }
+  });
+
+  it('rebuildChainFrom émet event window audit-log:rebuild', async () => {
+    for (let i = 0; i < 3; i++) await auditLog.record(`e.${i}`);
+    let captured: { fromIndex?: number; rebuilt?: number; snapshotKey?: string | null } | null = null;
+    const handler = ((e: Event) => {
+      captured = (e as CustomEvent).detail as typeof captured;
+    }) as EventListener;
+    window.addEventListener('audit-log:rebuild', handler);
+    try {
+      await auditLog.rebuildChainFrom(0);
+    } finally {
+      window.removeEventListener('audit-log:rebuild', handler);
+    }
+    expect(captured).not.toBeNull();
+    expect(captured!.fromIndex).toBe(0);
+    expect(captured!.rebuilt).toBeGreaterThan(0);
+  });
 });

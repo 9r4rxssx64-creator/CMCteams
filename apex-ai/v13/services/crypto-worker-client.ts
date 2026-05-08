@@ -23,11 +23,6 @@ import type {
   CryptoWorkerResponse,
 } from '../workers/crypto.worker.js';
 
-/* DistributiveOmit : applique Omit sur chaque membre de l'union (vs Omit standard
- * qui aplatit l'union et perd le discriminant).
- * NOTE: T doit être un type generic param pour que la distribution s'applique. */
-type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
-
 interface PendingCall {
   resolve: (v: string) => void;
   reject: (err: Error) => void;
@@ -147,15 +142,21 @@ class CryptoWorkerClient {
    * @throws si worker indispo — caller doit fallback main-thread.
    */
   async hashPin(pin: string, salt: string, iterations = 200_000): Promise<string> {
-    return this.call({ type: 'hashPin', pin, salt, iterations });
+    return this.call<import('../workers/crypto.worker.js').CryptoWorkerHashPinReq>(
+      { type: 'hashPin', pin, salt, iterations },
+    );
   }
 
   async encrypt(plaintext: string, passphrase: string): Promise<string> {
-    return this.call({ type: 'encrypt', plaintext, passphrase });
+    return this.call<import('../workers/crypto.worker.js').CryptoWorkerEncryptReq>(
+      { type: 'encrypt', plaintext, passphrase },
+    );
   }
 
   async decrypt(payload: string, passphrase: string): Promise<string> {
-    return this.call({ type: 'decrypt', payload, passphrase });
+    return this.call<import('../workers/crypto.worker.js').CryptoWorkerDecryptReq>(
+      { type: 'decrypt', payload, passphrase },
+    );
   }
 
   cleanup(): void {
