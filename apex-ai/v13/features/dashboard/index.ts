@@ -537,7 +537,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:0.05em;margin-top:24px">APEX v13 · Dashboard</p>
     </div>
-  `;
+  `);
 
   /* Wire navigation buttons (CSP strict) */
   rootEl.querySelectorAll<HTMLElement>('[data-route]').forEach((el) => {

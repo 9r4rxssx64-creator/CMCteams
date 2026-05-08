@@ -20,6 +20,7 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import {
   iotRegistry,
   type IoTProvider,
@@ -69,7 +70,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   try {
     const statuses = await iotRegistry.statusAll();
     const allDevices = await iotRegistry.listAllDevices().catch(() => [] as IoTDevice[]);
-    rootEl.innerHTML = renderUI(statuses, allDevices);
+    rootEl.innerHTML = cspStyleHelper.withNonce(renderUI(statuses, allDevices));
     wireEvents(rootEl);
   } catch (err) {
     logger.warn('iot-providers-view', 'render fail', { err: String(err) });
