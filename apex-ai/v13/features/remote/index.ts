@@ -17,6 +17,8 @@
 
 import { logger } from '../../core/logger.js';
 import { escapeHtml } from '../../core/html-safe.js';
+import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 interface RemoteDeviceCard {
   id: string;
@@ -136,6 +138,9 @@ const DEVICE_CARDS: RemoteDeviceCard[] = [
 ];
 
 export async function render(rootEl: HTMLElement): Promise<void> {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('module.remote', rootEl, uid)) return;
   const { deviceControl } = await import('../../services/device-control.js');
   const env = deviceControl.detectDevice();
   const supported = deviceControl.listAllSupported();
