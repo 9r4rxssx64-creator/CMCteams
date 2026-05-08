@@ -18,7 +18,7 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
              script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-APEX_BOOT_NONCE' 'unsafe-inline';
+             style-src 'self' 'nonce-APEX_BOOT_NONCE';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -179,7 +179,7 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
   <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
 
-  <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
+  <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
   <script nonce="APEX_BOOT_NONCE" src="./assets/js/rescue.js"></script>
 </body>
 </html>
