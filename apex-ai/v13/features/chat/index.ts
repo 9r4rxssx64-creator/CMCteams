@@ -2683,18 +2683,13 @@ export function render(rootEl: HTMLElement): void {
 
   if (conversation.length) {
     renderMessages(rootEl);
-  } else {
-    /* H3 audit fix v13.3.74 — skeleton placeholder while initial render lazy-loads */
-    const scrollEl = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-    if (scrollEl && !scrollEl.querySelector('.ax-chat-greeting')?.nextElementSibling) {
-      /* Only render skeleton if no real content yet (greeting + nothing else) */
-      const skelHost = document.createElement('div');
-      skelHost.id = 'ax-chat-skeleton-host';
-      scrollEl.appendChild(skelHost);
-      const dispose = skeleton(skelHost, 'chat-message');
-      /* Auto-dispose après 800ms (typical lazy-load resolves before that) */
-      setTimeout(() => dispose(), 800);
-    }
+  }
+  /* H3 audit fix v13.3.74 — skeleton helper exposé pour features lazy.
+   * Wire opt-in via `data-ax-skeleton-host` element (modules lazy-loaded l'utilisent
+   * pour placeholder pendant fetch). Idempotent : pas exécuté si pas de host. */
+  const skelHost = rootEl.querySelector<HTMLElement>('[data-ax-skeleton-host="chat"]');
+  if (skelHost) {
+    skeleton(skelHost, 'chat-message');
   }
   logger.info('chat', 'Chat view rendered');
 }

@@ -415,19 +415,33 @@ async function bootstrap(): Promise<void> {
     });
   }
 
-  /* 9ter. Services bootstrap : wire tous les services orphelins (anti-pattern Declaration ≠ Deployment) */
-  void import('@services/services-bootstrap.js')
-    .then(({ bootstrapServices }) => {
-      const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? null;
-      return bootstrapServices(uid);
-    })
-    .then((results) => {
-      const ok = results.filter((r) => r.ok).length;
-      logger.info('boot', `services-bootstrap : ${ok}/${results.length} OK`);
-    })
-    .catch((err: unknown) => {
-      logger.warn('boot', 'services-bootstrap failed (non-blocking)', { err });
-    });
+  /* 9ter. Services bootstrap : wire tous les services orphelins (anti-pattern Declaration ≠ Deployment).
+   *
+   * v13.3.74 H4 (audit Apex v13.3.73 issue #240) — TTI optim :
+   * Encore 1 niveau de defer via requestIdleCallback. services-bootstrap charge 27 sentinelles
+   * + ai-key-rotation + memory-bridge + study-service... = ~35 services.
+   * Timeout 3s : force exec après 3s si idle pas dispo (TTI cible <3s).
+   */
+  const runServicesBootstrap = (): void => {
+    void import('@services/services-bootstrap.js')
+      .then(({ bootstrapServices }) => {
+        const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? null;
+        return bootstrapServices(uid);
+      })
+      .then((results) => {
+        const ok = results.filter((r) => r.ok).length;
+        logger.info('boot', `services-bootstrap : ${ok}/${results.length} OK`);
+      })
+      .catch((err: unknown) => {
+        logger.warn('boot', 'services-bootstrap failed (non-blocking)', { err });
+      });
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(runServicesBootstrap, { timeout: 3000 });
+  } else {
+    setTimeout(runServicesBootstrap, 100);
+  }
 
   /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android) */
   void import('@services/push-auto-init.js')
@@ -533,16 +547,30 @@ async function bootstrap(): Promise<void> {
 
   /* v13.3.71 PERF (LCP optim) : tous services NON-critiques pour render initial
    * lancés en parallèle APRÈS router.dispatch() — n'impactent pas LCP/FCP.
-   * Promise.allSettled : si 1 fail → autres continuent. Lancé avec setTimeout 0
-   * pour laisser le browser peindre le 1er frame avant de cogner CPU. */
-  setTimeout(() => {
+   * Promise.allSettled : si 1 fail → autres continuent.
+   *
+   * v13.3.74 H4 (audit Apex v13.3.73 issue #240) — TTI 4.4s → <3s :
+   * Reporter via requestIdleCallback (timeout 2s) pour laisser le main thread
+   * gérer LCP + 1er paint avant d'initialiser les services post-render.
+   * Fallback setTimeout 0 si requestIdleCallback absent (Safari iOS old).
+   */
+  const runDeferredInits = (): void => {
     void Promise.allSettled(
       deferredInits.map((init) => Promise.resolve().then(() => safeInit(init.label, init.fn))),
     ).then(() => {
       const deferredMs = Math.round(performance.now() - ctx.startedAt);
       logger.info('boot', `Deferred services initialized at +${deferredMs}ms`);
     });
-  }, 0);
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    /* requestIdleCallback timeout 2s : si idle pas dispo après 2s, force exec.
+     * Évite blocage si user interaction immédiate. */
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(runDeferredInits, { timeout: 2000 });
+  } else {
+    /* Fallback Safari iOS old : setTimeout 0 pour laisser le 1er paint */
+    setTimeout(runDeferredInits, 0);
+  }
 
   const bootMs = Math.round(performance.now() - ctx.startedAt);
   logger.info('boot', `APEX ${APP_VER} ready in ${bootMs}ms (deferred services post-render)`);
