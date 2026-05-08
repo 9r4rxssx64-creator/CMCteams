@@ -348,7 +348,9 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* 2. error-watch : poll observability pending criticals (5min) */
+  /* 2. error-watch : poll observability pending criticals (5min)
+   * v13.3.79+ autoFix Kevin 2026-05-08 : tente flush buffer pending → backend
+   * (si flush succès → pending devient sent, sentinelle redevient ok). */
   sentinels.register({
     id: 'error-watch',
     name: 'Erreurs critiques',
@@ -359,6 +361,19 @@ export function registerCoreSentinels(): void {
       const criticals = buf.filter((e) => e.level === 'critical' && e.status === 'pending');
       if (criticals.length === 0) return { ok: true, msg: 'No critical pending' };
       return { ok: false, msg: `${criticals.length} critical events pending`, details: { count: criticals.length } };
+    },
+    autoFix: async () => {
+      try {
+        /* observability.flush() force l'envoi des criticals pending */
+        const obs = observability as unknown as { flush?: () => Promise<{ flushed: number }> | { flushed: number } };
+        if (typeof obs.flush === 'function') {
+          const r = await Promise.resolve(obs.flush());
+          return { ok: r.flushed > 0, msg: `Flushed ${r.flushed} critical events` };
+        }
+        return { ok: false, msg: 'observability.flush non dispo' };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'error-watch autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
     },
   });
 
@@ -475,6 +490,20 @@ export function registerCoreSentinels(): void {
         };
       }
     },
+    /* v13.3.79+ autoFix Kevin 2026-05-08 : tente auto-restore depuis IDB/Firebase
+     * (Si vault localStorage vide mais IDB shadow ou Firebase backup contient → restaure). */
+    autoFix: async () => {
+      try {
+        const { autoRestoreCredentials } = await import('./auto-restore-credentials.js');
+        const r = await autoRestoreCredentials.restoreAutomatically();
+        if (r.restored > 0) {
+          return { ok: true, msg: `Auto-restore: ${r.restored} credentials récupérés (failed=${r.failed})` };
+        }
+        return { ok: false, msg: `Aucune clé restorable (failed=${r.failed})` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'credentials autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
   /* 4-bis. decrypt-watch (5min) : audit decrypt health TOUTES les clés AXENC1:
@@ -531,6 +560,20 @@ export function registerCoreSentinels(): void {
           ok: false,
           msg: `decrypt-watch failed: ${err instanceof Error ? err.message : String(err)}`,
         };
+      }
+    },
+    /* v13.3.79+ autoFix Kevin 2026-05-08 : tente restoration vault depuis Firebase backup
+     * (cause = passphrase rotation, restore depuis source de vérité ailleurs). */
+    autoFix: async () => {
+      try {
+        const { vaultFirebaseBackup } = await import('./vault-firebase-backup.js');
+        const r = await vaultFirebaseBackup.restoreAllFromFirebaseBackup();
+        if (r.restored > 0) {
+          return { ok: true, msg: `Firebase restore: ${r.restored} clé(s) restaurées (failed=${r.failed})` };
+        }
+        return { ok: false, msg: `Aucune sauvegarde Firebase pour restore (failed=${r.failed})` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'decrypt autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
