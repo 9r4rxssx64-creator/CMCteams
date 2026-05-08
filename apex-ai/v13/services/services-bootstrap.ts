@@ -757,6 +757,16 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       messageFactExtractor.start();
       logger.info('services-bootstrap', 'message-fact-extractor : listening chat:message:user');
     }),
+    /* v13.3.74 PERF (audit Apex Opus issue #240) — wire searchService.
+     * Inclus le module dans le build graph → Vite émet le search-index.worker dans dist.
+     * Worker NON démarré ici (lazy au 1er search) — juste import ESM pour bundling.
+     * Avant ce wiring : services/search.ts orphelin → worker absent du dist → TS de
+     * recherche freeze main thread sur 5000+ messages. */
+    safeInit('search-service', async () => {
+      const { search } = await import('./search.js');
+      logger.info('services-bootstrap', `search-service module loaded (worker lazy on first query)`);
+      void search; /* keep ref pour empêcher tree-shake */
+    }),
     /* v13.3.74 M4 (audit Apex v13.3.73 issue #240) — Knowledge update auto-fetch.
      * Si knowledge entries < 5 au boot admin → auto-étudie top 5 providers Kevin
      * (anthropic, github, firebase, cloudflare, stripe). TTL 7j (skip si fresh).

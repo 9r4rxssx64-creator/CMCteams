@@ -30,9 +30,12 @@
 }
 
 .ax-drill-back, .ax-drill-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
+  /* v13.3.74 a11y fix : touch target 44px (Apple HIG) */
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
+  min-width: var(--ax-touch-min);
+  min-height: var(--ax-touch-min);
+  border-radius: 22px;
   background: rgba(201, 162, 39, 0.1);
   border: 1px solid rgba(201, 162, 39, 0.3);
   color: #c9a227;
@@ -40,6 +43,9 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .ax-drill-back:hover, .ax-drill-close:hover {
   background: rgba(201, 162, 39, 0.25);
