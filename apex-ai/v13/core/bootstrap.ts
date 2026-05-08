@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.85';
+export const APP_VER = 'v13.3.86';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -415,13 +415,13 @@ async function bootstrap(): Promise<void> {
       logger.debug('boot', 'force version check skipped', { err });
     }
   };
-  /* v13.3.74 PERF — déclenche version check via requestIdleCallback (timeout 6s) */
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
-      .requestIdleCallback(() => void versionCheckBoot(), { timeout: 6000 });
-  } else {
-    setTimeout(() => void versionCheckBoot(), 100);
-  }
+  /* v13.3.86 P1.9 audit externe : versionCheckBoot DÉSACTIVÉ.
+   * Avant : 2 systèmes redondants (versionCheckBoot ici + forceUpdateBanner.install
+   * + forceUpdateCheck plus bas) qui faisaient tous fetch index.html + reload.
+   * Après : seul forceUpdateBanner.install() reste (banner UI visible + bouton 1-clic
+   * Kevin = meilleure UX que reload silent + race conditions éliminées).
+   * versionCheckBoot reste défini mais non appelé pour rétro-compat tests. */
+  void versionCheckBoot;
 
   /* 9. Service Worker register (deferred to not block render) */
   if ('serviceWorker' in navigator) {
@@ -638,16 +638,15 @@ async function bootstrap(): Promise<void> {
       setTimeout(cb, timeout);
     }
   };
-  /* Premier check post-render quand main thread libre (5s max) — au lieu de 500ms blocking */
-  idleCallback(() => void forceUpdateCheck(), 5000);
-  /* Trigger visibilitychange (Kevin revient sur Safari après screen off) — réactif user */
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) idleCallback(() => void forceUpdateCheck(), 3000);
-  });
-  /* Trigger focus (Kevin tap sur l'onglet Safari) — réactif user */
-  window.addEventListener('focus', () => idleCallback(() => void forceUpdateCheck(), 3000));
-  /* Cron 5 min en background */
-  setInterval(() => void forceUpdateCheck(), 5 * 60 * 1000);
+  /* v13.3.86 P1.9 audit externe : forceUpdateCheck triggers DÉSACTIVÉS (race condition).
+   * forceUpdateBanner.install() (v13.3.83) gère désormais tout :
+   *   - Boot check 3s + cron 10min interne
+   *   - Banner UI rouge non-dismissible avec bouton 1-clic Kevin
+   *   - clear caches + unregister SW + reload fresh
+   * Avantage UX : Kevin VOIT que la maj est dispo et choisit quand reload (au
+   * lieu d'un auto-reload silent qui peut le surprendre en plein chat). */
+  void idleCallback; void forceUpdateCheck;
+  /* setInterval forceUpdateCheck désactivé (forceUpdateBanner remplace) */
 
   /* 11. Online/offline listeners */
   window.addEventListener('online', () => {
