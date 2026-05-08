@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.78';
+export const APP_VER = 'v13.3.80';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -516,6 +516,17 @@ async function bootstrap(): Promise<void> {
   } else {
     setTimeout(runServicesBootstrap, 100);
   }
+
+  /* v13.3.80 Kevin 2026-05-08 19:55 — global-back-button (← Chat partout, fix
+   * "on peut plus revenir en arrière sur ces vues"). Mount au boot, hide auto
+   * sur view chat. Idempotent. */
+  void import('@services/global-back-button.js')
+    .then(({ globalBackButton }) => {
+      globalBackButton.install();
+    })
+    .catch((err: unknown) => {
+      logger.warn('boot', 'global-back-button install failed (non-blocking)', { err });
+    });
 
   /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android).
    *

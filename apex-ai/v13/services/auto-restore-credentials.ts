@@ -377,13 +377,11 @@ class AutoRestoreCredentials {
       } catch { /* boot précoce, toast indispo */ }
     }
 
-    /* Notif push Kevin RESTRUCTURÉE par criticité (Kevin règle 2026-05-08).
-     * 71 services optional non configurés ne sont PAS un problème — Kevin n'a pas
-     * besoin de tout. Seules les clés essentielles (au moins 1 IA provider) ou
-     * recommandées (≥5 manquantes) déclenchent une notif.
-     *
-     * Throttle 24h par type pour éviter le spam. */
-    await this.maybeNotifyKevin(audit);
+    /* v13.3.80 Kevin 19:55 SUPPRIMÉ : notif "71 credentials manquants" qui revenait
+     * en boucle malgré throttle (méthode maybeNotifyKevin manquante + ancien chunk
+     * deployé contournait throttle). Kevin peut consulter status via vAdmin →
+     * 🔑 Credentials Status. Pas de spam push iOS, pas de toast au boot. */
+    void canNotify; void markNotified; void ESSENTIAL_KEYS; void RECOMMENDED_KEYS; void getCriticality;
 
     /* Sync registry credentials-audit après restore (impacte security_score) */
     if (restored > 0) {
