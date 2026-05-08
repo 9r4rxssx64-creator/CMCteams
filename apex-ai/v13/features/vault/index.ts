@@ -812,12 +812,23 @@ function attachHandlers(rootEl: HTMLElement): void {
         const items = buildCredentialDisplays();
         const invalid = items.filter((it) => it.status === 'invalid');
         let deleted = 0;
+        /* v13.3.91 fix Kevin "j'ai effacé mais il me dit encore 1 illisible" :
+         * utiliser multiKeyVault.removeKey() qui fait le triple cleanup
+         * (localStorage + IDB + Firebase null + ax_credentials_deleted whitelist).
+         * L'ancien cleanup local.removeItem ne touchait pas le multi-key-vault store. */
         for (const item of invalid) {
           try {
-            /* item.id contient soit storageKey legacy soit multi-key id */
-            const storageKey = item.id.startsWith('ax_') || item.id.startsWith('apex_v13_') ? item.id : `ax_${item.service}_key`;
+            /* Si ID mkv_* (multi-key-vault), utiliser removeKey API */
+            if (item.id.startsWith('mkv_') || item.id.includes('_')) {
+              multiKeyVault.removeKey(item.id);
+              deleted++;
+              continue;
+            }
+            /* Legacy : direct localStorage cleanup */
+            const storageKey = item.id.startsWith('ax_') || item.id.startsWith('apex_v13_')
+              ? item.id
+              : `ax_${item.service}_key`;
             localStorage.removeItem(storageKey);
-            /* IDB shadow cleanup best-effort */
             const req = indexedDB.open('apex_v13_vault_shadow', 1);
             req.onsuccess = (): void => {
               try {
