@@ -9613,7 +9613,7 @@ var _dcTimer=null;
 var _dcLastRun=0;
 var _dcCallCount=0;
 var _dcCallWindow=Date.now();
-var _dcMinIntervalMs=250; // coalesce les rafales SSE/agents (avant: 16ms = 1 frame)
+var _dcMinIntervalMs=350; // v9.603 anti-scintillement Kevin : 350ms pour mieux coalescer bursts SSE iPhone
 function dcDebounced(){
   if(_dcPending)return;
   _dcPending=true;

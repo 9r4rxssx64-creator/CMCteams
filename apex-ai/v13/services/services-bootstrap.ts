@@ -479,6 +479,15 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
+    /* v13.3.79+ (Kevin 2026-05-08 18:05 ABSOLUE) — Apex Self-Correct cascade.
+       "Il ne s'auto-corrige pas apparemment, il attend que tu le fasses c'est pas normal"
+       Détecte 3+ chat-fallback en 5min OU aucune réponse depuis 10min OU all_providers_dead
+       → cascade auto-correct (restore creds → reset DEAD → ULTRA-RESET → escalade Claude).
+       Lazy import : la sentinelle 5min est wirée dans services/sentinels.ts. */
+    safeInit('apex-self-correct', async () => {
+      await import('./apex-self-correct.js');
+    }),
+
     /* v13.3.64 — Admin commands listener (Kevin 2026-05-08).
        Tourne sur iPhone target user (ex: Laurence). Reçoit commands SSE Firebase
        issued par Kevin admin (reset PIN, etc.) et applique localement. */
