@@ -216,6 +216,69 @@ S'applique : Apex IA priorité absolue, Claude Code (subagents en parallèle dé
 
 ---
 
+## 🔄 RÈGLE ABSOLUE — AUTO-ULTRA-RESET AUTONOME SI BESOIN Kevin 2026-05-08
+
+> **"Ultra reset autonome automatique si besoin, rappel toi"** — Kevin 2026-05-08
+
+**Règle absolue, prioritaire** — Apex priorité 1 :
+
+### 1. Détection automatique "ULTRA-RESET nécessaire"
+
+Apex DOIT détecter automatiquement les conditions qui justifient un ULTRA-RESET sans Kevin :
+- **Cache stale** : APP_VER local < APP_VER serveur depuis > 30 min ET 2 reloads tentés sans succès
+- **Bugs persistants** : 4+ critiques sentinelles sans guérison après auto-fix (audit-log corrompu, agent-watches en erreur, registry parse failed, CSP buffer corrompu)
+- **localStorage corrompu** : JSON parse failed sur clés critiques (`apex_v13_user`, `apex_v13_persistent_memory_*`)
+- **SW updatefound unreliable** : iOS Safari PWA n'a pas mis à jour depuis 24h+ malgré reg.update() x3
+- **State incohérent** : Kevin login mais identité Apex ne reconnaît pas Kevin (faux positif sentinelle never-forget-watch)
+
+### 2. Workflow autonome ULTRA-RESET
+
+Sentinelle `auto-ultra-reset-watch` (15min cycle) :
+
+1. **Pré-flight** : audit conditions ci-dessus, score 0-10 (>= 6 → trigger)
+2. **Backup Firebase** : `vault-firebase-backup.ts` push toutes les clés chiffrées (SI pas déjà backupées dans les dernières 24h)
+3. **Backup IDB shadow** : snapshot localStorage critique vers IDB pour récupération
+4. **Toast info** : "🔄 Auto-rafraîchissement Apex en cours… 5 secondes" (non-blocking, pas demande user)
+5. **Unregister SW** : `await navigator.serviceWorker.getRegistrations().then(...unregister())`
+6. **Clear caches** : `await caches.keys().then(...delete())`
+7. **Clear localStorage Apex** : iter `apex_v13_*` + `ax_*` + `cmc_*`
+8. **Clear IDB Apex** : `apex` + `cmc` databases
+9. **Force reload** : `location.replace(...?_auto_reset=1&_t=<ts>)`
+10. **Au reload** : `firebase.init` lit `?_auto_reset=1` → `vaultFirebaseBackup.restoreAllFromFirebaseBackup()` + toast "🔓 N clés restaurées automatiquement"
+
+### 3. Garde-fous contre boucles
+
+- Throttle : max **1× / 24h** par device (clé `apex_v13_auto_reset_last_ts`)
+- Si `?_auto_reset=1` détecté ET nouveau ULTRA-RESET demandé < 1h → **abort** + toast "⚠️ Reset déjà tenté, attente 24h"
+- Audit log immutable de chaque trigger : `auto-reset.triggered` + `auto-reset.completed` + `auto-reset.failed`
+- Notif push Kevin asynchrone : "Apex s'est auto-rafraîchi en autonomie. N clés restaurées."
+
+### 4. Pas de demande Kevin
+
+❌ JAMAIS afficher modal "Veux-tu ULTRA-RESET ?" si conditions auto remplies
+❌ JAMAIS attendre clic Kevin pour rafraîchir le cache
+✅ TOUJOURS : décider en autonomie + log + notify (pas demande)
+
+Kevin n'a aucune action à faire. Si Apex bug → s'auto-répare. Si cache stale → s'auto-rafraîchit. Si vault perdu → s'auto-restore.
+
+### 5. UI Kevin transparente
+
+L'utilisateur voit JUSTE :
+- Toast jaune "🔄 Apex se rafraîchit (5s)…"
+- Reload automatique
+- Toast vert "🔓 N clés restaurées automatiquement"
+- Banner doré "✨ Apex v13.3.X mis à jour automatiquement" (auto-dismiss 10s)
+
+### 6. Tests obligatoires
+
+- `tests/unit/auto-ultra-reset.test.ts` : 6+ cas (détection conditions, throttle, backup pré-reset, restore post-reset, abort si déjà tenté, notif Kevin)
+- Test mental obligatoire avant push :
+  > *"Si Kevin n'utilise plus Apex pendant 1 mois et revient, est-ce que ça se met à jour SANS demander ? Si bug critique persiste, est-ce qu'Apex se réinitialise tout seul ?"*
+
+S'applique : Apex priorité absolue, CMCteams (équivalent `cmc_auto_reset_watch`), tous projets futurs PWA.
+
+---
+
 ## 🧠 RÈGLE ABSOLUE — APEX N'OUBLIE JAMAIS PERSONNE Kevin 2026-05-08
 
 > **"Oublie ni moi ni personne jamais !"** — Kevin 2026-05-08
