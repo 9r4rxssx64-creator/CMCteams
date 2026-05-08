@@ -21,6 +21,53 @@
 import { logger } from '../core/logger.js';
 
 import { observability } from './observability.js';
+import { isFeatureEnabled } from './feature-toggles.js';
+
+/**
+ * Mapping sentinel id → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).
+ * Lorsque le toggle est OFF, la sentinelle court-circuite son `check()` (skip silencieux).
+ * Mapping conservé centralisé pour éviter de pourrir chaque `check()` avec une importation.
+ */
+const SENTINEL_TOGGLE_MAP: Record<string, string> = {
+  'token-balance-watch': 'sentinel.token-watch',
+  'backup-watch': 'sentinel.backup-watch',
+  'security-watch': 'sentinel.security-watch',
+  'performance-watch': 'sentinel.performance-watch',
+  'error-watch': 'sentinel.error-watch',
+  'storage-watch': 'sentinel.persistence-watch',
+  'network-watch': 'sentinel.connectivity-watch',
+  'presence-watch': 'sentinel.presence-watch',
+  'compliance-watch': 'sentinel.compliance-watch',
+  'conflict-watch': 'sentinel.conflict-watch',
+  'credentials-watch': 'sentinel.credentials-watch',
+  'credentials-rotation-watch': 'sentinel.credentials-watch',
+  'decrypt-watch': 'sentinel.credentials-watch',
+  'link-validation-watch': 'sentinel.link-validation',
+  'csp-violation-watch': 'sentinel.csp-violation',
+  'memory-watch': 'sentinel.persistence-watch',
+  'memory-leak-watch': 'sentinel.persistence-watch',
+  'memory-bridge-watch': 'sentinel.persistence-watch',
+  'smart-router-watch': 'sentinel.ai-health-watch',
+  'service-knowledge-watch': 'sentinel.feature-watch',
+  'ai-unblock-watch': 'sentinel.ai-health-watch',
+  'realtime-backup-watch': 'feature.realtime-backup',
+  'reconsult-kevin-watch': 'sentinel.feature-watch',
+  'voice-quality-watch': 'voice.tts',
+  'wake-watch': 'voice.wake_word',
+  'self-test': 'sentinel.feature-watch',
+  'anti-regression-watch': 'sentinel.feature-watch',
+  'agent-watches-runner': 'sentinel.sentinel-meta',
+};
+
+/**
+ * Helper : true si la sentinelle est admin-désactivée (skip exécution).
+ * Si pas de mapping, renvoie false (pas de gate → run).
+ */
+function sentinelDisabledByAdmin(sentinelId: string): boolean {
+  const toggleId = SENTINEL_TOGGLE_MAP[sentinelId];
+  if (!toggleId) return false;
+  return !isFeatureEnabled(toggleId);
+}
 
 export interface Sentinel {
   id: string;
@@ -101,6 +148,14 @@ class SentinelsManager {
   }
 
   private async executeSentinel(s: Sentinel): Promise<Sentinel['lastResult']> {
+    /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout).
+       Si la sentinelle est désactivée par admin → skip exécution silencieusement. */
+    if (sentinelDisabledByAdmin(s.id)) {
+      s.lastRun = Date.now();
+      s.lastResult = { ok: true, msg: 'Désactivée par admin', ts: Date.now() };
+      this.persist();
+      return s.lastResult;
+    }
     try {
       const result = await s.check();
       s.lastRun = Date.now();

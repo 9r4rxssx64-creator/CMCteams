@@ -783,8 +783,8 @@ function pushSuggestedTool(rootEl: HTMLElement, tool: { id: string; emoji: strin
   card.className = 'ax-msg ax-msg-tool ax-slide-up-fade';
   card.id = cardId;
   card.innerHTML = `
-    <div class="ax-tool-card" style="position:relative;padding-right:36px">
-      <button class="ax-tool-dismiss" aria-label="Fermer" title="Ne plus suggérer dans cette conversation" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;background:rgba(255,255,255,0.08);color:var(--ax-text-dim);border-radius:50%;cursor:pointer;font-size:16px;line-height:1">✕</button>
+    <div class="ax-tool-card" style="position:relative;padding-right:52px">
+      <button class="ax-tool-dismiss" aria-label="Fermer" title="Ne plus suggérer dans cette conversation" style="position:absolute;top:6px;right:6px;width:44px;height:44px;min-width:44px;min-height:44px;border:0;background:rgba(255,255,255,0.08);color:var(--ax-text-dim);border-radius:50%;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center">✕</button>
       <div class="ax-tool-icon">${tool.emoji}</div>
       <div class="ax-tool-info">
         <strong>${escapeHtml(tool.name)}</strong>

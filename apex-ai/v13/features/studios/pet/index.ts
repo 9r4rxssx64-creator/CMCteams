@@ -16,6 +16,8 @@
 import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { haptic } from '../../../ui/haptic.js';
+import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 let activeScope: CleanupScope | null = null;
 
@@ -156,6 +158,9 @@ export function animalToHumanAge(species: PetSpecies, age_years: number): number
 export function render(rootEl: HTMLElement): void {
   activeScope?.cleanup();
   activeScope = createCleanupScope('studios-pet');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('studio.pet', rootEl, uid)) return;
 
   const speciesOpts = PET_SPECIES.map((s) => `<option value="${s.id}">${s.emoji} ${escapeHtml(s.name)}</option>`).join('');
   const speciesCardsHtml = PET_SPECIES.map((s) => `

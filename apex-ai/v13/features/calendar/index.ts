@@ -172,14 +172,19 @@ export function render(rootEl: HTMLElement): void {
       </header>
 
       <form id="ax-cal-form" class="ax-form" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
-        <input type="text" id="ax-cal-title" placeholder="Titre événement…" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <label for="ax-cal-title" class="sr-only">Titre de l'événement</label>
+        <input type="text" id="ax-cal-title" placeholder="Titre événement…" aria-label="Titre de l'événement" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
         <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input type="date" id="ax-cal-date" required style="flex:1;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
-          <input type="time" id="ax-cal-time" style="width:120px;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+          <label for="ax-cal-date" class="sr-only">Date de l'événement</label>
+          <input type="date" id="ax-cal-date" aria-label="Date de l'événement" required style="flex:1;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+          <label for="ax-cal-time" class="sr-only">Heure de l'événement</label>
+          <input type="time" id="ax-cal-time" aria-label="Heure de l'événement" style="width:120px;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
         </div>
-        <input type="text" id="ax-cal-location" placeholder="Lieu (optionnel)…" maxlength="200" autocomplete="off" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
-        <textarea id="ax-cal-notes" placeholder="Notes (optionnel)…" rows="2" maxlength="5000" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
-        <button type="submit" class="ax-btn ax-btn-primary" style="width:100%;min-height:40px">Ajouter événement</button>
+        <label for="ax-cal-location" class="sr-only">Lieu de l'événement</label>
+        <input type="text" id="ax-cal-location" placeholder="Lieu (optionnel)…" aria-label="Lieu de l'événement (optionnel)" maxlength="200" autocomplete="off" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <label for="ax-cal-notes" class="sr-only">Notes additionnelles</label>
+        <textarea id="ax-cal-notes" placeholder="Notes (optionnel)…" aria-label="Notes additionnelles (optionnel)" rows="2" maxlength="5000" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
+        <button type="submit" class="ax-btn ax-btn-primary" style="width:100%;min-height:44px">Ajouter événement</button>
       </form>
 
       <h2 style="color:#c9a227;font-size:16px;margin:16px 0 8px">⏰ 30 prochains jours</h2>

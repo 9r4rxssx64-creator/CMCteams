@@ -23,6 +23,8 @@
 
 import { logger } from '../../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeTranslatorScope: CleanupScope | null = null;
@@ -670,6 +672,9 @@ export function render(root: HTMLElement): void {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeTranslatorScope?.cleanup();
   activeTranslatorScope = createCleanupScope('translator');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.translator', root, uid)) return;
   const prefTgt = getPreferredTarget();
   const optionsHtml = Object.keys(AX_LANGS)
     .map((k) => `<option value="${k}"${prefTgt === k ? ' selected' : ''}>${AX_LANGS[k]}</option>`)

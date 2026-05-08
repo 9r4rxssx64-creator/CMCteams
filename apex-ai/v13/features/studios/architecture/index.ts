@@ -19,6 +19,8 @@
 import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { haptic } from '../../../ui/haptic.js';
+import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 let activeScope: CleanupScope | null = null;
 
@@ -201,6 +203,9 @@ export function checkBlondel(hauteur_marche_cm: number, giron_cm: number): { ok:
 export function render(rootEl: HTMLElement): void {
   activeScope?.cleanup();
   activeScope = createCleanupScope('studios-architecture');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('studio.architecture', rootEl, uid)) return;
 
   const dosagesHtml = BETON_DOSAGES.map((d) => `<option value="${escapeHtml(d.type)}">${escapeHtml(d.type)} — ${escapeHtml(d.usage)}</option>`).join('');
   const zonesHtml = RE2020_ZONES.map((z) => `<option value="${escapeHtml(z.zone)}">${escapeHtml(z.zone)} — ${escapeHtml(z.description)}</option>`).join('');

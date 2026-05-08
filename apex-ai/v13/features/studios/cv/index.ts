@@ -28,6 +28,7 @@
 import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeCvScope: CleanupScope | null = null;
@@ -625,6 +626,8 @@ export function render(rootEl: HTMLElement): void {
   activeCvScope = createCleanupScope('studios-cv');
   const user = store.get('user') as { id?: string; name?: string; firstName?: string; lastName?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.cv', rootEl, uid)) return;
   let cv = cvStudioStore.load(uid);
   if (!cv) {
     const initOpts: { prenom?: string; nom?: string } = {};

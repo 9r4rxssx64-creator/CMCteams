@@ -544,7 +544,8 @@ export function render(rootEl: HTMLElement): void {
         Historique de tout ce qui est archivé : projets, factures, notes, événements passés, backups, audits, handoff, lessons learned.
       </p>
 
-      <input type="search" id="ax-archive-search" placeholder="🔍 Rechercher dans l'archive…" autocomplete="off" maxlength="100"
+      <label for="ax-archive-search" class="sr-only">Rechercher dans l'archive</label>
+      <input type="search" id="ax-archive-search" placeholder="🔍 Rechercher dans l'archive…" aria-label="Rechercher dans l'archive" autocomplete="off" maxlength="100"
         style="width:100%;padding:10px;margin-bottom:16px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
 
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">

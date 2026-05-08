@@ -17,6 +17,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 export type TransitionId =
   | 'cut' | 'fade' | 'dissolve' | 'wipe_left' | 'wipe_right'
@@ -427,6 +428,8 @@ export const clipStudioStore = new ClipStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.clip', rootEl, uid)) return;
   const list = clipStudioStore.list(uid);
 
   rootEl.innerHTML = `

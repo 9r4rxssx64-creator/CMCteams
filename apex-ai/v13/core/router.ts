@@ -11,6 +11,7 @@ import { errors } from './errors.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
 import { store } from './store.js';
+import { skeleton, type SkeletonType } from '../ui/skeleton.js';
 
 type RouteLoader = () => Promise<{ render: (root: HTMLElement) => void | Promise<void> }>;
 
@@ -18,6 +19,11 @@ interface RouteDef {
   loader: RouteLoader;
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
+  /**
+   * v13.3.74 a11y/UX fix : skeleton à afficher pendant le lazy import.
+   * Améliore le perçu de chargement avant que `render()` injecte le contenu réel.
+   */
+  skeleton?: SkeletonType;
 }
 
 class Router {
@@ -76,12 +82,20 @@ class Router {
     events.emit('route:change', { from: previous, to: target });
     store.set('view', target);
 
+    /* v13.3.74 UX fix — skeleton pendant lazy import (feature-list par défaut) */
+    let disposeSkeleton: (() => void) | null = null;
     try {
+      if (route.skeleton) {
+        disposeSkeleton = skeleton(this.rootEl, route.skeleton);
+      }
       const mod = await route.loader();
+      /* render() est responsable de remplacer le skeleton via innerHTML */
       await mod.render(this.rootEl);
     } catch (err: unknown) {
       errors.capture(err, { source: 'manual' });
       this.renderError(errors.toUserMessage(err));
+    } finally {
+      disposeSkeleton?.();
     }
   }
 

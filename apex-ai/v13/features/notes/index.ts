@@ -187,15 +187,19 @@ export function render(rootEl: HTMLElement): void {
       </header>
 
       <form id="ax-notes-form" class="ax-form" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
-        <input type="text" id="ax-notes-title" placeholder="Titre…" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
-        <textarea id="ax-notes-content" placeholder="Contenu…" rows="3" maxlength="50000" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
+        <label for="ax-notes-title" class="sr-only">Titre de la note</label>
+        <input type="text" id="ax-notes-title" placeholder="Titre…" aria-label="Titre de la note" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <label for="ax-notes-content" class="sr-only">Contenu de la note</label>
+        <textarea id="ax-notes-content" placeholder="Contenu…" aria-label="Contenu de la note" rows="3" maxlength="50000" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-          <input type="text" id="ax-notes-tags" placeholder="tags séparés par des virgules" autocomplete="off" maxlength="100" style="flex:1;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-right:8px">
-          <button type="submit" class="ax-btn ax-btn-primary" style="min-height:40px">Ajouter</button>
+          <label for="ax-notes-tags" class="sr-only">Tags (séparés par des virgules)</label>
+          <input type="text" id="ax-notes-tags" placeholder="tags séparés par des virgules" aria-label="Tags de la note séparés par des virgules" autocomplete="off" maxlength="100" style="flex:1;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-right:8px">
+          <button type="submit" class="ax-btn ax-btn-primary" style="min-height:44px">Ajouter</button>
         </div>
       </form>
 
-      <input type="text" id="ax-notes-search" placeholder="🔍 Rechercher…" autocomplete="off" maxlength="100" style="width:100%;padding:10px;margin-bottom:16px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+      <label for="ax-notes-search" class="sr-only">Rechercher une note</label>
+      <input type="text" id="ax-notes-search" placeholder="🔍 Rechercher…" aria-label="Rechercher dans les notes" autocomplete="off" maxlength="100" style="width:100%;padding:10px;margin-bottom:16px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
 
       <div id="ax-notes-list">${cards}</div>
 

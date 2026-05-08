@@ -25,6 +25,7 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
+import { isFeatureEnabled } from './feature-toggles.js';
 
 /* ============================================================================
  * Types publics
@@ -169,6 +170,10 @@ class WakeWord {
    */
   async start(): Promise<WakeStartResult> {
     if (this.listening) return { started: true };
+    /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+    if (!isFeatureEnabled('voice.wake_word')) {
+      return { started: false, reason: 'wake-word désactivé par admin' };
+    }
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) {
       return { started: false, reason: 'Web Speech API non supportée sur ce navigateur' };

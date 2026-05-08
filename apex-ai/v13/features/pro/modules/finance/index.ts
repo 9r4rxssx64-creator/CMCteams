@@ -21,6 +21,8 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 export interface IrTranche {
   min: number;
@@ -728,6 +730,9 @@ export function convertirDevise(montant: number, from: string, to: string): numb
  * Render UI premium Finance Pro avec disclaimer.
  */
 export function render(root: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.finance', root, uid)) return;
   const monacoHtml = `
     <div>• <strong>Résidents non-français</strong> : 0% IR (Convention 1963)</div>
     <div>• <strong>Succession directe</strong> : 0%</div>

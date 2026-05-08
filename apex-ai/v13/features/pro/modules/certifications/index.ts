@@ -15,6 +15,8 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 export type CertCategory = 'language' | 'tech' | 'business' | 'finance' | 'project' | 'medical' | 'design' | 'security';
 
@@ -481,6 +483,9 @@ export function escapeHtml(s: string): string {
 
 export function render(root: HTMLElement): void {
   logger.info('pro-certifications', 'render');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.certifications', root, uid)) return;
   root.innerHTML = `
     <div class="ax-card" style="padding:16px">
       <h2 style="margin:0 0 8px;color:#c9a227">🏆 Certifications Pro</h2>

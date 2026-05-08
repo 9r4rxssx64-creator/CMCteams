@@ -761,11 +761,20 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
      * Inclus le module dans le build graph → Vite émet le search-index.worker dans dist.
      * Worker NON démarré ici (lazy au 1er search) — juste import ESM pour bundling.
      * Avant ce wiring : services/search.ts orphelin → worker absent du dist → TS de
-     * recherche freeze main thread sur 5000+ messages. */
+     * recherche freeze main thread sur 5000+ messages.
+     *
+     * v13.3.74 FIX (perf 20/20) — `void search` était tree-shaké par esbuild minifier
+     * → search-index.worker absent du dist. Fix : appel d'une méthode side-effect
+     * (isWorkerActive — synchrone, pas d'init worker) + assignement à globalThis pour
+     * empêcher Rollup de prune le module entier. */
     safeInit('search-service', async () => {
       const { search } = await import('./search.js');
-      logger.info('services-bootstrap', `search-service module loaded (worker lazy on first query)`);
-      void search; /* keep ref pour empêcher tree-shake */
+      /* Side-effect call : force Rollup à conserver le module + chunk worker URL.
+       * isWorkerActive() est sync, pas d'init worker, juste lecture state booléen. */
+      const ready = search.isWorkerActive();
+      /* Expose globalThis pour features chat/notes/contacts qui consommeront. */
+      (globalThis as unknown as { apexSearch: typeof search }).apexSearch = search;
+      logger.info('services-bootstrap', `search-service module loaded (worker_active=${ready}, lazy on first query)`);
     }),
     /* v13.3.74 M4 (audit Apex v13.3.73 issue #240) — Knowledge update auto-fetch.
      * Si knowledge entries < 5 au boot admin → auto-étudie top 5 providers Kevin

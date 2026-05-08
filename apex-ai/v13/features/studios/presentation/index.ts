@@ -19,6 +19,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 export type SlideLayoutId =
   | 'title' | 'content' | 'two_columns' | 'comparison' | 'image_full'
@@ -361,6 +362,8 @@ export const presentationStudioStore = new PresentationStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string; name?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.presentation', rootEl, uid)) return;
   const list = presentationStudioStore.list(uid);
 
   rootEl.innerHTML = `

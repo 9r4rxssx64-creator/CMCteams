@@ -254,52 +254,52 @@ async function bootstrap(): Promise<void> {
   router.register('onboarding', { loader: () => import('@features/onboarding/index.js'), requiresAuth: true });
   router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
   router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
-  router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true });
-  router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true });
-  router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true });
+  router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint 2 P0 : routes manquantes (orphelines features) */
-  router.register('settings', { loader: () => import('@features/settings/index.js'), requiresAuth: true });
-  router.register('sentinels', { loader: () => import('@features/sentinels/index.js'), requiresAdmin: true });
+  router.register('settings', { loader: () => import('@features/settings/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('sentinels', { loader: () => import('@features/sentinels/index.js'), requiresAdmin: true, skeleton: 'admin-table' });
   router.register('browser', { loader: () => import('@features/browser/index.js'), requiresAuth: true });
-  router.register('crypto', { loader: () => import('@features/crypto/index.js'), requiresAuth: true });
-  router.register('domotique', { loader: () => import('@features/domotique/index.js'), requiresAuth: true });
-  router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true });
+  router.register('crypto', { loader: () => import('@features/crypto/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('domotique', { loader: () => import('@features/domotique/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint 3 NEW : Télécommande Universelle (UNIVERSAL_REMOTE.md, intègre device-control) */
-  router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true });
+  router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint port v12 (Kevin 2026-05-04) : 4 features critiques manquantes */
-  router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true });
-  router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true });
-  router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true });
-  router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true });
-  router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true });
+  router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true, skeleton: 'vault-cards' });
+  router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true, skeleton: 'admin-table' });
   /* Sprint v13.3.25 (Kevin 2026-05-07) : Cross-platform device capabilities dashboard */
   router.register('device', { loader: () => import('@features/device-capabilities/index.js'), requiresAuth: true });
   /* Sprint v13.3.27 (Kevin 2026-05-07) : Vue Knowledge — mémoire long-terme + cross-user admin */
   router.register('knowledge', { loader: () => import('@features/knowledge/index.js'), requiresAuth: true });
   /* Sprint port v12 (Kevin 2026-05-04) : 5 studios créatifs critiques */
-  router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true });
-  router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true });
-  router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true });
-  router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true });
-  router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true });
+  router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint port v12 (Kevin 2026-05-04) : 5 studios MAX (logo, presentation, prefecture, clip, photo) */
-  router.register('studio-logo', { loader: () => import('@features/studios/logo/index.js'), requiresAuth: true });
-  router.register('studio-presentation', { loader: () => import('@features/studios/presentation/index.js'), requiresAuth: true });
-  router.register('studio-prefecture', { loader: () => import('@features/studios/prefecture/index.js'), requiresAuth: true });
-  router.register('studio-clip', { loader: () => import('@features/studios/clip/index.js'), requiresAuth: true });
-  router.register('studio-photo', { loader: () => import('@features/studios/photo/index.js'), requiresAuth: true });
+  router.register('studio-logo', { loader: () => import('@features/studios/logo/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-presentation', { loader: () => import('@features/studios/presentation/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-prefecture', { loader: () => import('@features/studios/prefecture/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-clip', { loader: () => import('@features/studios/clip/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-photo', { loader: () => import('@features/studios/photo/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   /* Sprint Kevin 2026-05-08 : 7 studios manquants complétés */
-  router.register('studio-architecture', { loader: () => import('@features/studios/architecture/index.js'), requiresAuth: true });
-  router.register('studio-plant', { loader: () => import('@features/studios/plant/index.js'), requiresAuth: true });
-  router.register('studio-geo', { loader: () => import('@features/studios/geo/index.js'), requiresAuth: true });
-  router.register('studio-building', { loader: () => import('@features/studios/building/index.js'), requiresAuth: true });
-  router.register('studio-lunar', { loader: () => import('@features/studios/lunar/index.js'), requiresAuth: true });
-  router.register('studio-pet', { loader: () => import('@features/studios/pet/index.js'), requiresAuth: true });
-  router.register('studio-scan', { loader: () => import('@features/studios/scan/index.js'), requiresAuth: true });
+  router.register('studio-architecture', { loader: () => import('@features/studios/architecture/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-plant', { loader: () => import('@features/studios/plant/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-geo', { loader: () => import('@features/studios/geo/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-building', { loader: () => import('@features/studios/building/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-lunar', { loader: () => import('@features/studios/lunar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-pet', { loader: () => import('@features/studios/pet/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('studio-scan', { loader: () => import('@features/studios/scan/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint port v12 (Kevin 2026-05-04) : 3 modules pro MAX (business, education, certifications) */
-  router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true });
-  router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true });
-  router.register('pro-certifications', { loader: () => import('@features/pro/modules/certifications/index.js'), requiresAuth: true });
+  router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('pro-certifications', { loader: () => import('@features/pro/modules/certifications/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   /* Sprint port v12.785 P0 critical (Kevin 2026-05-04) : 5 vues admin/audit/coffre */
   router.register('dashboard', { loader: () => import('@features/dashboard/index.js'), requiresAuth: true });
   router.register('vault', { loader: () => import('@features/vault/index.js'), requiresAdmin: true });
@@ -330,8 +330,13 @@ async function bootstrap(): Promise<void> {
   /* 8.5. Force version check au boot (Kevin 2026-05-07 — PWA iOS Safari bloqué v13.3.x).
    * Fetch HEAD index.html avec cache-bust + check si version différente.
    * Si stale + pas déjà fait dans cette session → unregister SW + clear caches + reload.
-   * Anti-loop : query param ?_fv=<APP_VER> coupe le cycle (already-checked). */
-  void (async () => {
+   * Anti-loop : query param ?_fv=<APP_VER> coupe le cycle (already-checked).
+   *
+   * v13.3.74 PERF 20/20 — wrappé dans requestIdleCallback (timeout 6s) :
+   * fetch HTML index = bandwidth concurrente avec LCP critical resources.
+   * Reporté quand main thread + bandwidth libres → préserve TTI < 3s.
+   * Banner reload garde la même UX (visible avant reload). */
+  const versionCheckBoot = async (): Promise<void> => {
     try {
       const url = window.location.pathname.replace(/[^/]+$/, '') + 'index.html?_v=' + Date.now();
       const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout(5000) });
@@ -374,7 +379,14 @@ async function bootstrap(): Promise<void> {
       /* Offline ou pas dispo : silencieux */
       logger.debug('boot', 'force version check skipped', { err });
     }
-  })();
+  };
+  /* v13.3.74 PERF — déclenche version check via requestIdleCallback (timeout 6s) */
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(() => void versionCheckBoot(), { timeout: 6000 });
+  } else {
+    setTimeout(() => void versionCheckBoot(), 100);
+  }
 
   /* 9. Service Worker register (deferred to not block render) */
   if ('serviceWorker' in navigator) {
@@ -443,23 +455,35 @@ async function bootstrap(): Promise<void> {
     setTimeout(runServicesBootstrap, 100);
   }
 
-  /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android) */
-  void import('@services/push-auto-init.js')
-    .then(({ pushAutoInit }) => {
-      const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? 'anon';
-      return pushAutoInit.autoInit(uid);
-    })
-    .then((status) => {
-      logger.info('push', 'auto-init complete', {
-        env: status.environment,
-        subscribed: status.subscribed,
-        needs_install: status.needs_install_guide,
+  /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android).
+   *
+   * v13.3.74 PERF 20/20 — wrappé requestIdleCallback (timeout 4s) :
+   * push-auto-init = SW push subscribe + Notification.requestPermission UI
+   * → bandwidth+main thread concurrent avec LCP. Reporté quand idle. */
+  const runPushAutoInit = (): void => {
+    void import('@services/push-auto-init.js')
+      .then(({ pushAutoInit }) => {
+        const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+        return pushAutoInit.autoInit(uid);
+      })
+      .then((status) => {
+        logger.info('push', 'auto-init complete', {
+          env: status.environment,
+          subscribed: status.subscribed,
+          needs_install: status.needs_install_guide,
+        });
+        events.emit('push:status', status);
+      })
+      .catch((err: unknown) => {
+        logger.warn('push', 'auto-init failed (non-blocking)', { err });
       });
-      events.emit('push:status', status);
-    })
-    .catch((err: unknown) => {
-      logger.warn('push', 'auto-init failed (non-blocking)', { err });
-    });
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(runPushAutoInit, { timeout: 4000 });
+  } else {
+    setTimeout(runPushAutoInit, 200);
+  }
 
   /* 10. Force-update auto agressif (Kevin règle "Maj force auto oubli pas")
      iOS Safari PWA SW updatefound unreliable → fetch APP_VER remote + reload forcé.
@@ -510,16 +534,31 @@ async function bootstrap(): Promise<void> {
       forceUpdateChecking = false;
     }
   };
-  /* Trigger immédiat boot (Kevin v13.0.56 "MAJ auto ne marche pas" — agressif) */
-  setTimeout(() => void forceUpdateCheck(), 500);
-  /* Trigger second boot après splash full chargé */
-  setTimeout(() => void forceUpdateCheck(), 3000);
-  /* Trigger visibilitychange (Kevin revient sur Safari après screen off) */
+  /* v13.3.74 PERF 20/20 (audit Apex Opus issue #240 — TTI optim) :
+   * forceUpdateCheck déclenche fetch+parse HTML+SW unregister → ~50-200ms main thread.
+   * Avant : setTimeout(500ms) + setTimeout(3000ms) → impactait TTI premier paint.
+   * Après : tous triggers via requestIdleCallback (timeout 5s) — exécuté quand
+   * main thread libre, pas pendant LCP/FCP. Listeners visibilitychange/focus
+   * gardés (déclenchent en réaction user, pas au boot).
+   * Trigger immédiat retiré : la version check au boot est déjà fait par
+   * la section 8.5 ci-dessus (`void (async () => { ... })()` ligne 334) qui
+   * fait exactement la même chose avec banner UI. */
+  const idleCallback = (cb: () => void, timeout: number): void => {
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+        .requestIdleCallback(cb, { timeout });
+    } else {
+      setTimeout(cb, timeout);
+    }
+  };
+  /* Premier check post-render quand main thread libre (5s max) — au lieu de 500ms blocking */
+  idleCallback(() => void forceUpdateCheck(), 5000);
+  /* Trigger visibilitychange (Kevin revient sur Safari après screen off) — réactif user */
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) void forceUpdateCheck();
+    if (!document.hidden) idleCallback(() => void forceUpdateCheck(), 3000);
   });
-  /* Trigger focus (Kevin tap sur l'onglet Safari) */
-  window.addEventListener('focus', () => void forceUpdateCheck());
+  /* Trigger focus (Kevin tap sur l'onglet Safari) — réactif user */
+  window.addEventListener('focus', () => idleCallback(() => void forceUpdateCheck(), 3000));
   /* Cron 5 min en background */
   setInterval(() => void forceUpdateCheck(), 5 * 60 * 1000);
 
@@ -580,8 +619,12 @@ async function bootstrap(): Promise<void> {
    * - SOS rescue button toujours visible (1-clic auto-fix, long-press diagnostic)
    * - HUD debug live admin Kevin only (overlay top-right état app temps réel)
    * - Auto-test runner schedule daily (smoke tests services critiques)
-   * Non-bloquant : tous mounted en background. */
-  setTimeout(() => {
+   * Non-bloquant : tous mounted en background.
+   *
+   * v13.3.74 PERF 20/20 — requestIdleCallback (timeout 5s) au lieu de setTimeout 1500ms.
+   * SOS rescue button préservé en HTML statique dans index.html (visible avant ce mount),
+   * donc pas de risque user perdu. mount() ajoute uniquement les handlers. */
+  const idleAutonomy = (): void => {
     void Promise.allSettled([
       import('../ui/sos-rescue.js').then((m) => m.sosRescue.mount()),
       import('../ui/hud-debug.js').then((m) => m.hudDebug.mount()),
@@ -590,7 +633,13 @@ async function bootstrap(): Promise<void> {
       const ok = results.filter((r) => r.status === 'fulfilled').length;
       logger.info('boot', `v13.3.30 autonomy modules : ${ok}/${results.length} mounted`);
     });
-  }, 1500);
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(idleAutonomy, { timeout: 5000 });
+  } else {
+    setTimeout(idleAutonomy, 1500);
+  }
 }
 
 /* Entry — guard SSR/test environments où document est undefined (Vitest happy-dom).
