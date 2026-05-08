@@ -246,7 +246,7 @@ function openRecoverModal(rootEl: HTMLElement, storageKey: string, serviceName: 
       <p style="color:var(--ax-text-dim);font-size:13px;margin:0 0 16px">
         Clé chiffrée présente mais illisible (passphrase a changé). Recolle ta clé pour qu'Apex la re-chiffre avec la passphrase courante.
       </p>
-      <input type="password" id="ax-recover-input" autocomplete="off" placeholder="Recolle ta clé ${escapeHtml(serviceName)}…"
+      <input type="password" id="ax-recover-input" aria-label="Coller la clé ${escapeHtml(serviceName)} à récupérer" autocomplete="off" placeholder="Recolle ta clé ${escapeHtml(serviceName)}…"
         style="width:100%;padding:12px;background:rgba(0,0,0,0.4);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:8px;font-family:monospace;font-size:13px;box-sizing:border-box">
       <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
         <button id="ax-recover-cancel" style="padding:8px 16px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;font-size:13px">Annuler</button>

@@ -769,7 +769,7 @@ export function render(root: HTMLElement): void {
         <input id="finPVente" type="number" placeholder="Prix vente (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix vente">
         <input id="finPAchat" type="number" placeholder="Prix achat (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix achat">
         <input id="finDuree2" type="number" placeholder="Années de détention" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Années de détention">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;cursor:pointer"><input type="checkbox" id="finRP" style="width:18px;height:18px"> Résidence principale (exonérée)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;cursor:pointer"><input type="checkbox" id="finRP" aria-label="Cocher si résidence principale exonérée" style="width:18px;height:18px"> Résidence principale (exonérée)</label>
         <button id="finCalcPVBtn" type="button" style="width:100%;margin-top:6px;padding:12px;background:rgba(76,208,128,0.2);color:#4cd080;border:1px solid #4cd080;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer PV</button>
         <div id="finPVResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
       </div>

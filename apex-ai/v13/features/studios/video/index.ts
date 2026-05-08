@@ -820,7 +820,7 @@ export function render(rootEl: HTMLElement): void {
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Timeline ${MAX_CLIPS} clips, ${formatDuration(MAX_TOTAL_DURATION_S)} total. Cuts, transitions, captions ${SUPPORTED_LANGS.length} langues, LUTs cinéma, color grading 3-way, chroma key, stabilization, vertical TikTok auto.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="file" id="ax-video-upload" accept="video/*" multiple style="display:none">
+          <input type="file" id="ax-video-upload" aria-label="Importer fichiers vidéo" accept="video/*" multiple style="display:none">
           <button class="ax-btn ax-btn-primary" id="ax-video-upload-btn" style="min-height:44px">📂 Importer vidéos</button>
           <button class="ax-btn" data-aspect="9:16" style="min-height:44px">📱 TikTok 9:16</button>
           <button class="ax-btn" data-aspect="16:9" style="min-height:44px">▶ YouTube 16:9</button>

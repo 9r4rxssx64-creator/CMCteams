@@ -139,7 +139,7 @@ function renderStep(step: number): string {
         </p>
         <label style="display:block;margin-bottom:16px">
           <span style="display:block;color:#c9a227;font-size:13px;margin-bottom:6px">Comment dois-je t'appeler ?</span>
-          <input type="text" id="ax-onboarding-name" value="${escapeHtml(state.name)}" placeholder="Ton prénom" style="width:100%;padding:12px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:10px;color:#fff;font-size:15px">
+          <input type="text" id="ax-onboarding-name" aria-label="Ton prénom" value="${escapeHtml(state.name)}" placeholder="Ton prénom" style="width:100%;padding:12px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:10px;color:#fff;font-size:15px">
         </label>
         <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0">
           🔒 Tes données restent sur ton appareil. Apex est local-first.

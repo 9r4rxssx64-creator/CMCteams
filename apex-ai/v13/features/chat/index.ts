@@ -1947,16 +1947,21 @@ export function render(rootEl: HTMLElement): void {
   const DICTATION_MAX_NO_SPEECH = 20;
   micBtn?.addEventListener('click', () => {
     haptic.tap();
+    /* v13.3.81 Kevin 20:10 "le micro et dis apex ne fonctionnent plus" :
+     * feedback IMMÉDIAT pour confirmer que le click est reçu (avant même les
+     * checks async). Sans ce toast, Kevin ne sait pas si le bouton réagit. */
+    toast.info('🎙 Activation dictée…', { duration: 1500 });
     const SR = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition
             ?? (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
     if (!SR) {
-      toast.warn('Dictée vocale non supportée par ton navigateur');
+      toast.warn('Dictée vocale non supportée par ce navigateur (Safari iOS PWA limité). Utilise Chrome ou Safari classique.', { duration: 7000 });
       return;
     }
     if (recognitionActive && recognition) {
       recognition.stop();
       recognitionActive = false;
       micBtn.style.background = '';
+      toast.info('Dictée arrêtée');
       return;
     }
 
@@ -1966,14 +1971,19 @@ export function render(rootEl: HTMLElement): void {
         const { checkMicrophonePermission } = await import('../../services/voice-print.js');
         const perm = await checkMicrophonePermission();
         if (perm === 'denied') {
-          toast.warn('🚫 Micro refusé — autorise dans Réglages iOS > Apex > Microphone', {
-            duration: 7000,
+          toast.warn('🚫 Micro refusé après mise à jour. Réglages iOS > Safari (ou Apex) > Microphone → Autoriser, puis recharge.', {
+            duration: 9000,
           });
           return;
         }
+        if (perm === 'prompt') {
+          toast.info('🎙 iOS va te demander la permission micro…', { duration: 3000 });
+        }
         startDictation();
-      } catch {
-        /* fallback : tente quand même */
+      } catch (err: unknown) {
+        /* fallback : tente quand même + log raison */
+        const reason = err instanceof Error ? err.message : 'unknown';
+        toast.info(`🎙 Tentative directe (perm check : ${reason.slice(0, 30)})`);
         startDictation();
       }
     })();

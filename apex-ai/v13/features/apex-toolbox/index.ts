@@ -191,7 +191,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </section>
 
         <section style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input id="ax-tb-search" type="text" placeholder="🔍 Rechercher tool..." value="${escapeHtml(activeFilter.query ?? '')}"
+          <input id="ax-tb-search" type="text" aria-label="Rechercher un outil" placeholder="🔍 Rechercher tool..." value="${escapeHtml(activeFilter.query ?? '')}"
             style="flex:1;min-width:200px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:13px">
           <select id="ax-tb-tier" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;font-size:12px">
             <option value="all" ${activeFilter.tier === 'all' ? 'selected' : ''}>Tous tiers</option>

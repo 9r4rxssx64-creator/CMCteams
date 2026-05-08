@@ -62,7 +62,7 @@ function renderCommerceTab(): string {
       </p>
       <div class="ax-toggle-row">
         <label class="ax-toggle">
-          <input type="checkbox" id="commerce-toggle" ${enabled ? 'checked' : ''}>
+          <input type="checkbox" id="commerce-toggle" aria-label="Activer la commercialisation des plans payants" ${enabled ? 'checked' : ''}>
           <span class="ax-toggle-slider"></span>
           <span class="ax-toggle-label">Commercialisation ${enabled ? '<strong>ACTIVÉE</strong>' : '<strong>désactivée</strong>'}</span>
         </label>
@@ -112,7 +112,7 @@ function renderUsersTab(): string {
       <form id="create-user-form" class="ax-form">
         <label>
           Nom complet
-          <input type="text" id="cu-name" required minlength="2" autocomplete="off">
+          <input type="text" id="cu-name" aria-label="Nom complet du nouveau compte" required minlength="2" autocomplete="off">
         </label>
         <label>
           Type de compte
@@ -124,15 +124,15 @@ function renderUsersTab(): string {
         </label>
         <label>
           Email (optionnel)
-          <input type="email" id="cu-email" autocomplete="off">
+          <input type="email" id="cu-email" aria-label="Email du nouveau compte" autocomplete="off">
         </label>
         <label>
           Téléphone WhatsApp (avec indicatif, ex: +33612345678)
-          <input type="tel" id="cu-whatsapp" autocomplete="off" placeholder="+33...">
+          <input type="tel" id="cu-whatsapp" aria-label="Numéro WhatsApp avec indicatif" autocomplete="off" placeholder="+33...">
         </label>
         <label>
           Code PIN initial (optionnel — sinon le client le crée à sa 1ère connexion)
-          <input type="password" id="cu-pin" minlength="4" autocomplete="new-password">
+          <input type="password" id="cu-pin" aria-label="PIN initial 4 chiffres minimum" minlength="4" autocomplete="new-password">
         </label>
         <button type="submit" class="ax-btn ax-btn-primary">Créer le compte</button>
       </form>
@@ -211,6 +211,7 @@ function renderProjectsTab(): string {
           </p>
           <div class="ax-project-edit">
             <input type="text" data-project-version="${escapeHtml(p.id)}"
+                   aria-label="Version du projet ${escapeHtml(p.id)}"
                    value="${escapeHtml(p.version)}" placeholder="vX.Y" maxlength="20"
                    class="ax-input-sm" autocomplete="off">
             <select data-project-status="${escapeHtml(p.id)}" class="ax-select-sm">
@@ -464,7 +465,7 @@ function renderKnowledgeTab(): string {
       <form id="add-repo-form" class="ax-form">
         <label>
           <span>Ajouter un repo (format : owner/repo)</span>
-          <input type="text" id="kb-add-repo" placeholder="kevin/MyProject"
+          <input type="text" id="kb-add-repo" aria-label="Repo GitHub à ajouter (owner/repo)" placeholder="kevin/MyProject"
                  maxlength="100" autocomplete="off" class="ax-input">
         </label>
         <button type="submit" class="ax-btn ax-btn-primary">Ajouter</button>
@@ -745,7 +746,7 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   resultEl.innerHTML = `
     <div class="ax-success">
       Compte créé : <strong>${escapeHtml(name)}</strong> (${tier})
-      <p>Lien d'invitation : <input type="text" readonly value="${result.inviteLink ?? ''}" data-action="select-all" style="width:100%"></p>
+      <p>Lien d'invitation : <input type="text" aria-label="Lien d'invitation à copier" readonly value="${result.inviteLink ?? ''}" data-action="select-all" style="width:100%"></p>
       ${waLink}
     </div>
   `;
