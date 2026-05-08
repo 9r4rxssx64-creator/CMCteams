@@ -70,6 +70,8 @@ export interface Voice {
   effects?: VoiceEffect[];
   language?: string;
   premium?: boolean;
+  /** v13.3.73 : gender propagé depuis voices-registry pour pickBrowserVoice */
+  gender?: 'male' | 'female' | 'neutral';
 }
 
 export interface SpeakResult {
