@@ -702,10 +702,40 @@ export function registerCoreSentinels(): void {
       }
       return { ok: true, msg: 'Session + audit log OK' };
     },
-    /* v13.3.70 (Kevin "WARNING = AUTO-FIX") : rebuildChainHash exposé via
-     * sentinelAutoRepair.securityRebuildChain() pour wire UI bouton admin.
-     * Pas en autoFix Sentinel direct car la chain audit doit rester un signal
-     * tamper visible avant repair (vs auto-masking). */
+    /* v13.3.71 (Kevin audit 2026-05-08 — "WARNING = AUTO-FIX TOUJOURS") :
+     * autoFix direct via auditLog.autoRepair() qui :
+     *  1. Snapshot la chain courante (forensique préservé) → ax_audit_log_rebuild_<ts>
+     *  2. Recalcule prevHash + hash depuis broken index
+     *  3. Trace 'audit.chain_rebuilt' dans la chain réparée
+     *  4. Émet event 'audit-log:rebuild' pour notif admin
+     * Le tamper reste visible via le snapshot + la trace audit + ax_security_log. */
+    autoFix: async () => {
+      try {
+        const { auditLog } = await import('./audit-log.js');
+        auditLog.reload();
+        const r = await auditLog.autoRepair();
+        if (r.ok && r.rebuilt > 0) {
+          /* Log dans ax_security_log pour traçabilité auto-fix */
+          try {
+            const log = JSON.parse(localStorage.getItem('ax_security_log') ?? '[]') as unknown[];
+            log.push({
+              ts: Date.now(),
+              kind: 'audit_log_auto_repaired',
+              brokenAt: r.brokenAt,
+              rebuilt: r.rebuilt,
+            });
+            localStorage.setItem('ax_security_log', JSON.stringify(log.slice(-200)));
+          } catch { /* quota */ }
+          return { ok: true, msg: `Audit chain réparée à #${r.brokenAt} (${r.rebuilt} entries recalculées)` };
+        }
+        if (r.ok && r.rebuilt === 0) {
+          return { ok: true, msg: 'Audit chain déjà valide' };
+        }
+        return { ok: false, msg: 'Audit chain rebuild fail (rien rebuilt)' };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'Audit autoRepair fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
   /* 10. presence-watch : update timestamp activité user + broadcast online/offline */
@@ -860,16 +890,19 @@ export function registerCoreSentinels(): void {
       if (!queueRaw) return { ok: true, msg: 'No pending writes' };
       try {
         const queue = JSON.parse(queueRaw) as Array<{ status: string; ts?: number; key?: string }>;
-        const STALE_TTL = 5 * 60 * 1000;
-        const now = Date.now();
-        const staleEntries = queue.filter(
-          (e) => e.status === 'flushing' && (typeof e.ts !== 'number' || now - e.ts > STALE_TTL),
-        );
-        if (staleEntries.length > 5) {
+        /* Sémantique historique : > 5 entries flushing = potential conflict (regardless TTL).
+         * v13.3.70 ajoute aussi un breakdown stale (TTL > 5 min) dans details pour UI. */
+        const stale = queue.filter((e) => e.status === 'flushing').length;
+        if (stale > 5) {
+          const STALE_TTL = 5 * 60 * 1000;
+          const now = Date.now();
+          const oldEntries = queue.filter(
+            (e) => e.status === 'flushing' && typeof e.ts === 'number' && now - e.ts > STALE_TTL,
+          );
           return {
             ok: false,
-            msg: `${staleEntries.length} writes stale (potential conflict)`,
-            details: { stale: staleEntries.length, total: queue.length, sample: staleEntries.slice(0, 3).map((e) => e.key) },
+            msg: `${stale} writes stale (potential conflict)`,
+            details: { stale, total: queue.length, oldEntries: oldEntries.length, sample: queue.slice(0, 3).map((e) => e.key) },
           };
         }
         return { ok: true, msg: `${queue.length} pending, no conflict` };
@@ -1495,5 +1528,69 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (19 active + 1 disabled wake-watch)`);
+  /* 25. realtime-backup-watch (Kevin 2026-05-08 — "Rien perdre + sauvegarde temps réel")
+   *  Vérifie que les snapshots persistent_memory + chat sont récents (< seuil).
+   *  Auto-fix : déclenche snapshot immédiat si stale.
+   */
+  sentinels.register({
+    id: 'realtime-backup-watch',
+    name: 'Backup temps-réel mémoire+chat',
+    desc: 'Vérifie snapshots IDB persistent_memory (5min) + chat (2min) pas stales',
+    intervalMs: 5 * 60 * 1000,
+    check: async () => {
+      try {
+        const { realtimeBackup, REALTIME_BACKUP_THRESHOLDS } = await import('./realtime-backup.js');
+        const stats = await realtimeBackup.getStats();
+        if (!stats.idb_available) {
+          return {
+            ok: true,
+            msg: 'IDB indispo (boot précoce ou Safari iOS) — skip',
+            details: { skipped: true, reason: 'no_idb' } as Record<string, unknown>,
+          };
+        }
+        const now = Date.now();
+        const memAge = stats.last_memory_ts > 0 ? now - stats.last_memory_ts : Infinity;
+        const chatAge = stats.last_chat_ts > 0 ? now - stats.last_chat_ts : Infinity;
+        const memStale = memAge > REALTIME_BACKUP_THRESHOLDS.memoryStaleMs;
+        const chatStale = chatAge > REALTIME_BACKUP_THRESHOLDS.chatStaleMs;
+        if (stats.total_snapshots === 0) {
+          return {
+            ok: true,
+            msg: 'Aucun snapshot encore (boot récent)',
+            details: { warmup: true } as Record<string, unknown>,
+          };
+        }
+        if (memStale && chatStale) {
+          return {
+            ok: false,
+            msg: `Snapshots stales — memory ${Math.round(memAge / 60000)}min, chat ${Math.round(chatAge / 60000)}min`,
+            details: { memAge, chatAge, stats } as unknown as Record<string, unknown>,
+          };
+        }
+        return {
+          ok: true,
+          msg: `${stats.total_snapshots} snapshots (${stats.memory_snapshots} mem + ${stats.chat_snapshots} chat)`,
+          details: stats as unknown as Record<string, unknown>,
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'realtime-backup-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { realtimeBackup } = await import('./realtime-backup.js');
+        const memSnap = await realtimeBackup.snapshotNow('memory');
+        const chatSnap = await realtimeBackup.snapshotNow('chat');
+        const ok = Boolean(memSnap || chatSnap);
+        return { ok, msg: `Force snapshots: mem=${memSnap ? 'OK' : 'skip'} chat=${chatSnap ? 'OK' : 'skip'}` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'autofix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (20 active + 1 disabled wake-watch)`);
 }

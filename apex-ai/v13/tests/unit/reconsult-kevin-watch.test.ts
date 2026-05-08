@@ -18,6 +18,15 @@ function mockTextResponse(text: string, status = 200): Response {
   return new Response(text, { status });
 }
 
+/**
+ * Mock fetch retournant un nouveau Response à chaque appel (Response body
+ * consumable une seule fois → mockResolvedValue qui retourne la même instance
+ * casse au 2e read). Cette factory crée une instance fraîche par invocation.
+ */
+function mockFetchAlways(text: string, status = 200): () => Promise<Response> {
+  return async () => mockTextResponse(text, status);
+}
+
 describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -46,7 +55,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
 
   describe('runOnce — initial fetch', () => {
     it('1er run = tous docs marqués "new", cache populé', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('# CLAUDE.md\nrègle test'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('# CLAUDE.md\nrègle test'));
       const result = await reconsultKevinWatch.runOnce();
       expect(result.updated_count).toBeGreaterThan(0);
       expect(result.changes.every((c) => c.status === 'new' || c.status === 'fetch_failed')).toBe(true);
@@ -55,7 +64,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
     });
 
     it('1er run écrit cache localStorage (apex_v13_docs_cache)', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('contenu test'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('contenu test'));
       await reconsultKevinWatch.runOnce();
       const raw = localStorage.getItem('apex_v13_docs_cache');
       expect(raw).not.toBeNull();
@@ -68,7 +77,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
 
   describe('runOnce — diff detection', () => {
     it('2 runs identiques → 2e marque tous "unchanged"', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('contenu identique'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('contenu identique'));
       await reconsultKevinWatch.runOnce();
       const result2 = await reconsultKevinWatch.runOnce();
       const unchanged = result2.changes.filter((c) => c.status === 'unchanged').length;
@@ -77,13 +86,11 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
     });
 
     it('Contenu changé entre 2 runs → status "updated" + excerpt + lesson appended', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch');
-      fetchSpy.mockResolvedValueOnce(mockTextResponse('# CLAUDE.md\nv1'));
-      fetchSpy.mockResolvedValue(mockTextResponse('# CLAUDE.md\nv1'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('# CLAUDE.md\nv1'));
       await reconsultKevinWatch.runOnce();
       vi.restoreAllMocks();
 
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('# CLAUDE.md\nv2 nouvelle règle'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('# CLAUDE.md\nv2 nouvelle règle'));
       const result = await reconsultKevinWatch.runOnce();
       const updated = result.changes.filter((c) => c.status === 'updated');
       expect(updated.length).toBeGreaterThan(0);
@@ -105,7 +112,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
 
   describe('log persistence', () => {
     it('Chaque runOnce ajoute entry dans ax_reconsult_log', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('test'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('test'));
       await reconsultKevinWatch.runOnce();
       await reconsultKevinWatch.runOnce();
       const log = reconsultKevinWatch.getLog();
@@ -113,7 +120,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
     });
 
     it('getLastRun retourne snapshot dernier run', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('test'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('test'));
       await reconsultKevinWatch.runOnce();
       const last = reconsultKevinWatch.getLastRun();
       expect(last).not.toBeNull();
@@ -123,7 +130,7 @@ describe('reconsult-kevin-watch — refetch CLAUDE.md & co', () => {
 
   describe('reset', () => {
     it('reset clear lastRun + log', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockTextResponse('test'));
+      vi.spyOn(globalThis, 'fetch').mockImplementation(mockFetchAlways('test'));
       await reconsultKevinWatch.runOnce();
       reconsultKevinWatch.reset();
       expect(reconsultKevinWatch.getLastRun()).toBeNull();

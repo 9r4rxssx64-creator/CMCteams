@@ -34,13 +34,12 @@ async function loadApexToolsDispatch(): Promise<ApexToolsDispatchInstance> {
  * Après : lazy load uniquement quand opts.withTools=true (Anthropic provider). */
 type ApexToolsInstance = {
   toAnthropicFormat: (tier: string) => unknown[];
-  list: () => Array<{ name: string }>;
 };
 let _apexTools: ApexToolsInstance | null = null;
 async function loadApexTools(): Promise<ApexToolsInstance> {
   if (_apexTools) return _apexTools;
   const mod = await import('./apex-tools.js');
-  _apexTools = mod.apexTools as ApexToolsInstance;
+  _apexTools = mod.apexTools as unknown as ApexToolsInstance;
   return _apexTools;
 }
 import { auditLog } from './audit-log.js';
@@ -791,6 +790,12 @@ class AIRouter {
    * Sprint 9 (Kevin règle multi-key) : essaie toutes les clés d'un provider.
    * Si 1ère clé fail → mark via multiKeyVault.tryFailoverKey + retry avec 2ème clé.
    * Maximum 5 tentatives par provider (anti-boucle).
+   *
+   * v13.3.x (Kevin 2026-05-08 audit "anthropic+cohere+groq simultaneous fail") :
+   * - Skip provider entièrement si marqué DEAD par ai-key-rotation (TTL 1h)
+   * - Retry exponential backoff (2s/4s/8s) sur erreurs network/server avant rotate clé
+   * - Wire ai-key-rotation.handleFailure pour classification + DEAD logic
+   * - recordSuccess pour stats latency tracking
    */
   private async streamWithKeyFailover(
     provider: Provider,
@@ -804,7 +809,23 @@ class AIRouter {
     | { status: 'ok'; streamResult: ProviderStreamResult; provider: Provider }
   > {
     const MAX_KEY_ATTEMPTS = 5;
+    /* Backoff: 2s, 4s, 8s sur erreurs network/server. Pas de backoff si auth/quota
+     * (ces erreurs ne se résolvent pas en attendant — passer directement à la clé suivante). */
+    const BACKOFF_MS = [2000, 4000, 8000] as const;
     let lastErr: Error | null = null;
+
+    /* DEAD provider check — si marqué DEAD < 1h, skip direct vers fallback */
+    try {
+      const { aiKeyRotation } = await import('./ai-key-rotation.js');
+      const serviceName = this.providerToService(provider);
+      if (aiKeyRotation.isProviderDead(serviceName)) {
+        logger.info('ai-router', `${provider} skipped (DEAD until ${new Date(aiKeyRotation.getDeadUntil(serviceName)).toISOString()})`);
+        return { status: 'error', error: new Error(`${provider} DEAD (provider marked unhealthy)`) };
+      }
+    } catch {
+      /* ai-key-rotation absent → continue normalement */
+    }
+
     /* Tente d'abord via multi-key-vault */
     const multiResult = await this.getApiKeyWithId(provider);
     if (multiResult) {
@@ -812,6 +833,7 @@ class AIRouter {
       let currentKey = multiResult.plaintext;
       for (let attempt = 0; attempt < MAX_KEY_ATTEMPTS; attempt += 1) {
         if (!currentKey || !currentKeyId) break;
+        const tStart = Date.now();
         try {
           const streamResult = await this.streamFromProvider(
             provider,
@@ -821,20 +843,57 @@ class AIRouter {
             onChunk,
             signal,
           );
-          /* Succès : mark la clé comme "active" via testKey-like update.
-             On laisse multi-key-vault le faire au prochain healthCheck pour éviter overhead. */
+          /* Wire stats : record latency + success */
+          try {
+            const { aiKeyRotation } = await import('./ai-key-rotation.js');
+            aiKeyRotation.recordSuccess(provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini', Date.now() - tStart);
+          } catch {
+            /* ignore */
+          }
           return { status: 'ok', streamResult, provider };
         } catch (err: unknown) {
           const e = err instanceof Error ? err : new Error(String(err));
           if (e.name === 'AbortError') return { status: 'aborted' };
           lastErr = e;
-          /* Failover key-level via multi-key-vault */
+
+          /* Classifie pour décider rotate vs backoff */
+          let shouldBackoff = false;
+          try {
+            const { classifyError } = await import('./ai-key-rotation.js');
+            const status = this.parseHttpStatus(e.message);
+            const cls = classifyError({ status, message: e.message });
+            shouldBackoff = cls === 'server_error' || cls === 'network';
+          } catch {
+            shouldBackoff = /HTTP\s*5\d\d|timeout|network|fetch failed/i.test(e.message);
+          }
+
+          /* Backoff sur erreurs transitoires AVANT de bruler la clé suivante */
+          if (shouldBackoff && attempt < BACKOFF_MS.length) {
+            const delay = BACKOFF_MS[attempt]!;
+            logger.info('ai-router', `${provider} transient error, backoff ${delay}ms`, { attempt: attempt + 1, err: e.message });
+            await this.sleep(delay, signal);
+            if (signal.aborted) return { status: 'aborted' };
+            continue; /* retry MÊME clé après backoff */
+          }
+
+          /* Erreur permanente (auth/quota/rate-limit) → rotate next key */
           try {
             const { multiKeyVault } = await import('./multi-key-vault.js');
             const serviceName = this.providerToService(provider);
             const next = await multiKeyVault.tryFailoverKey(serviceName, currentKeyId, e.message);
             if (!next) {
               logger.info('ai-router', `${provider} no more keys to try (after ${attempt + 1})`);
+              /* Marque provider DEAD via ai-key-rotation pour informer prochain appel */
+              try {
+                const { aiKeyRotation } = await import('./ai-key-rotation.js');
+                await aiKeyRotation.handleFailure(
+                  provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini',
+                  currentKeyId ?? undefined,
+                  { status: this.parseHttpStatus(e.message), message: e.message },
+                );
+              } catch {
+                /* ignore */
+              }
               break;
             }
             currentKeyId = next.keyId;
@@ -846,21 +905,80 @@ class AIRouter {
         }
       }
     } else {
-      /* Pas de multi-key dispo : fallback legacy single-key */
+      /* Pas de multi-key dispo : fallback legacy single-key avec retry network/server */
       const key = await this.getApiKeyDecrypted(provider);
       if (!key && provider !== 'gemini') {
         return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
       }
-      try {
-        const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
-        return { status: 'ok', streamResult, provider };
-      } catch (err: unknown) {
-        const e = err instanceof Error ? err : new Error(String(err));
-        if (e.name === 'AbortError') return { status: 'aborted' };
-        lastErr = e;
+      for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt += 1) {
+        const tStart = Date.now();
+        try {
+          const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
+          try {
+            const { aiKeyRotation } = await import('./ai-key-rotation.js');
+            aiKeyRotation.recordSuccess(provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini', Date.now() - tStart);
+          } catch {
+            /* ignore */
+          }
+          return { status: 'ok', streamResult, provider };
+        } catch (err: unknown) {
+          const e = err instanceof Error ? err : new Error(String(err));
+          if (e.name === 'AbortError') return { status: 'aborted' };
+          lastErr = e;
+          let shouldBackoff = false;
+          try {
+            const { classifyError } = await import('./ai-key-rotation.js');
+            const status = this.parseHttpStatus(e.message);
+            const cls = classifyError({ status, message: e.message });
+            shouldBackoff = cls === 'server_error' || cls === 'network';
+          } catch {
+            shouldBackoff = /HTTP\s*5\d\d|timeout|network|fetch failed/i.test(e.message);
+          }
+          if (shouldBackoff && attempt < BACKOFF_MS.length) {
+            const delay = BACKOFF_MS[attempt]!;
+            logger.info('ai-router', `${provider} legacy retry backoff ${delay}ms`, { attempt: attempt + 1 });
+            await this.sleep(delay, signal);
+            if (signal.aborted) return { status: 'aborted' };
+            continue;
+          }
+          try {
+            const { aiKeyRotation } = await import('./ai-key-rotation.js');
+            await aiKeyRotation.handleFailure(
+              provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini',
+              undefined,
+              { status: this.parseHttpStatus(e.message), message: e.message },
+            );
+          } catch {
+            /* ignore */
+          }
+          break;
+        }
       }
     }
     return { status: 'error', error: lastErr ?? new Error(`${provider} all keys failed`) };
+  }
+
+  /** Parse "anthropic HTTP 429: ..." → 429. Renvoie undefined si non trouvé. */
+  private parseHttpStatus(msg: string): number | undefined {
+    const m = /HTTP\s+(\d{3})/i.exec(msg);
+    return m ? Number.parseInt(m[1]!, 10) : undefined;
+  }
+
+  /**
+   * Sleep abortable pour exponential backoff. Si AbortSignal abort() pendant attente,
+   * resolve immédiatement (caller détecte via signal.aborted).
+   */
+  private async sleep(ms: number, signal: AbortSignal): Promise<void> {
+    if (signal.aborted) return;
+    return new Promise((resolve) => {
+      const timer = setTimeout(resolve, ms);
+      const onAbort = (): void => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', onAbort);
+        resolve();
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
   }
 
   /**

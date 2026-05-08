@@ -203,6 +203,10 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'module.remote', category: 'module', description: 'Télécommande universelle', defaultEnabled: true },
   { id: 'module.workflow', category: 'module', description: 'Workflow automation', defaultEnabled: true },
   { id: 'module.laurence', category: 'module', description: 'Vue dédiée Laurence', defaultEnabled: true },
+
+  /* === Memory & Backup (Kevin 2026-05-08 — Pinecone optionnel + realtime backup) === */
+  { id: 'feature.pinecone-rag', category: 'tool', description: 'RAG mémoire long-terme via Pinecone (vector search)', defaultEnabled: true },
+  { id: 'feature.realtime-backup', category: 'sentinel', description: 'Backup temps-réel persistent_memory (5min) + chat (2min)', defaultEnabled: true },
 ];
 
 /* Index pour lookup O(1) */

@@ -217,7 +217,7 @@ class RealtimeBackup {
       this.chatGetter = async (): Promise<unknown> => {
         try {
           const { store } = await import('../core/store.js');
-          const k = (store.get() as { messages?: unknown }).messages;
+          const k = store.get('messages');
           return Array.isArray(k) ? k : [];
         } catch {
           return [];

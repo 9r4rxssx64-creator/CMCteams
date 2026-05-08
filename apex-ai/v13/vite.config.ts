@@ -45,6 +45,7 @@ export default defineConfig({
         const HEAVY_LAZY = [
           'apex-tools-dispatch',
           'apex-tools-registry',
+          'apex-tools-' /* v13.3.71 : registry tools 76KB lazy au lieu de preload boot */,
           'apex-meta-marketplace',
           'auto-improvement',
           'apex-plugins-marketplace',
@@ -80,6 +81,18 @@ export default defineConfig({
           'financial-bilan',
           'personal-assistant',
           'auto-backup',
+          /* v13.3.71 PERF LCP — chunks chargés on-demand uniquement */
+          'multi-source-analyze',
+          'study-service',
+          'secret-scanner',
+          'sentry-bridge',
+          'pii-redaction',
+          'iot-providers-registry',
+          'apex-execute',
+          'business-intelligence',
+          'commerce',
+          'tokens-dashboard',
+          'chat-fallback',
         ];
         return deps.filter((d) => !HEAVY_LAZY.some((h) => d.includes(h)));
       },

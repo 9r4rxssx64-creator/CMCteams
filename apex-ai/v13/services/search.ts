@@ -28,9 +28,6 @@ import type {
   SearchWorkerResponse,
 } from '../workers/search-index.worker.js';
 
-/* DistributiveOmit : applique Omit sur chaque membre de l'union (vs Omit standard
- * qui aplatit l'union et perd le discriminant). */
-type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 
 export type { SearchDoc, SearchHit } from '../workers/search-index.worker.js';
 
@@ -136,7 +133,7 @@ class SearchService {
     this.pending.clear();
   };
 
-  private call<T>(req: DistributiveOmit<SearchWorkerRequest, 'id'>): Promise<T> {
+  private call<T, R extends SearchWorkerRequest>(req: Omit<R, 'id'>): Promise<T> {
     if (!this.worker) {
       return Promise.reject(new Error('worker_not_ready'));
     }
@@ -146,7 +143,7 @@ class SearchService {
         resolve: resolve as (v: unknown) => void,
         reject,
       });
-      const fullReq = { ...req, id } as SearchWorkerRequest;
+      const fullReq = { ...req, id } as unknown as SearchWorkerRequest;
       this.worker?.postMessage(fullReq);
       /* Timeout safety : 10s max par call */
       setTimeout(() => {
@@ -172,7 +169,10 @@ class SearchService {
     const ok = await this.ensureWorker();
     if (ok) {
       try {
-        return await this.call<{ count: number }>({
+        return await this.call<
+          { count: number },
+          import('../workers/search-index.worker.js').SearchWorkerBulkIndexReq
+        >({
           type: 'bulkIndex',
           collection,
           docs,
@@ -190,7 +190,10 @@ class SearchService {
     const ok = await this.ensureWorker();
     if (ok) {
       try {
-        return await this.call<{ count: number }>({
+        return await this.call<
+          { count: number },
+          import('../workers/search-index.worker.js').SearchWorkerAddReq
+        >({
           type: 'add',
           collection,
           doc,
@@ -210,7 +213,10 @@ class SearchService {
     const ok = await this.ensureWorker();
     if (ok) {
       try {
-        return await this.call<{ count: number; removed: boolean }>({
+        return await this.call<
+          { count: number; removed: boolean },
+          import('../workers/search-index.worker.js').SearchWorkerRemoveReq
+        >({
           type: 'remove',
           collection,
           docId,
@@ -231,7 +237,10 @@ class SearchService {
     const ok = await this.ensureWorker();
     if (ok) {
       try {
-        return await this.call<SearchHit[]>({
+        return await this.call<
+          SearchHit[],
+          import('../workers/search-index.worker.js').SearchWorkerSearchReq
+        >({
           type: 'search',
           collection,
           query,
@@ -248,7 +257,10 @@ class SearchService {
   async clear(collection: string): Promise<{ cleared: boolean }> {
     if (this.workerReady && this.worker) {
       try {
-        return await this.call<{ cleared: boolean }>({ type: 'clear', collection });
+        return await this.call<
+          { cleared: boolean },
+          import('../workers/search-index.worker.js').SearchWorkerClearReq
+        >({ type: 'clear', collection });
       } catch (err) {
         logger.warn('search', 'Worker clear failed → fallback', { err });
       }
