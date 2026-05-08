@@ -27,6 +27,11 @@ import { observability } from './observability.js';
  * Mapping sentinel id → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).
  * Lorsque le toggle est OFF, la sentinelle court-circuite son `check()` (skip silencieux).
  * Mapping conservé centralisé pour éviter de pourrir chaque `check()` avec une importation.
+ *
+ * Coverage Map (Kevin audit ARCHI-101) — chaque toggle declaré pointe vers au moins
+ * une sentinelle pour activer/désactiver. Les sentinelles physiquement absentes mais
+ * réservées (import-watch, api-quota-watch, etc.) seront wirées dès leur ajout —
+ * l'entry SENTINEL_TOGGLE_MAP existe déjà pour qu'elles respectent leur toggle dès création.
  */
 const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'token-balance-watch': 'sentinel.token-watch',
@@ -57,7 +62,23 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'self-test': 'sentinel.feature-watch',
   'anti-regression-watch': 'sentinel.feature-watch',
   'agent-watches-runner': 'sentinel.sentinel-meta',
+  /* Sentinelles réservées Jet 9+ (toggle déclaré, implémentation à venir) :
+     dès qu'elles seront register()'d, le toggle sera respecté automatiquement. */
+  'import-watch': 'sentinel.import-watch',
+  'api-quota-watch': 'sentinel.api-quota-watch',
+  'dedup-watch': 'sentinel.dedup-watch',
+  'malware-blocklist-watch': 'sentinel.malware-blocklist',
+  'data-integrity-watch': 'sentinel.data-integrity',
+  'ux-watch': 'sentinel.ux-watch',
 };
+
+/**
+ * Liste de toutes les feature toggle ids "sentinel" qui sont reconnues par
+ * SENTINEL_TOGGLE_MAP, exposée pour les tests de wirage et l'audit admin.
+ */
+export const SENTINEL_TOGGLE_IDS_COVERED: readonly string[] = Object.values(
+  SENTINEL_TOGGLE_MAP,
+);
 
 /**
  * Helper : true si la sentinelle est admin-désactivée (skip exécution).

@@ -27,6 +27,7 @@ import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
 import { auth } from './auth.js';
+import { isFeatureEnabled } from './feature-toggles.js';
 import { webauthn } from './webauthn.js';
 
 export type SensitiveAction =
@@ -54,8 +55,14 @@ class AdminActionGate {
    * @param pin Optional PIN fallback si WebAuthn indispo/refused
    */
   async verify(action: SensitiveAction, uid: string, pin?: string): Promise<GateResult> {
-    /* 1. WebAuthn obligatoire si enrollé */
-    if (webauthn.hasEnrollment(uid)) {
+    /* Feature toggles Kevin règle ON/OFF (2026-05-04) :
+       - 'auth.biometric' : kill-switch global biométrie générique (WebAuthn inclus)
+       - 'auth.webauthn' : kill-switch spécifique WebAuthn (FaceID/TouchID)
+       Si tous deux OFF, on bypass biométrie et passe direct à PIN. */
+    const biometricEnabled = isFeatureEnabled('auth.biometric')
+      && isFeatureEnabled('auth.webauthn');
+    /* 1. WebAuthn obligatoire si enrollé ET feature toggle activé */
+    if (biometricEnabled && webauthn.hasEnrollment(uid)) {
       try {
         const r = await webauthn.verify(uid);
         if (r.ok) {

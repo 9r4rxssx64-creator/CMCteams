@@ -21,6 +21,7 @@ import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
@@ -1494,6 +1495,12 @@ function renderMessages(rootEl: HTMLElement): void {
 
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user');
+  /* Feature toggle module.chat (Kevin règle ON/OFF général + per-user, 2026-05-04).
+     Si désactivée pour ce user, afficher notice. Admin Kevin bypass via per-user override. */
+  if (!isFeatureEnabled('module.chat', user?.id)) {
+    rootEl.innerHTML = renderDisabledNotice('module.chat');
+    return;
+  }
   const greeting = user ? `Bonjour ${user.name}, qu'est-ce que je peux faire pour toi ?` : 'Bienvenue dans Apex.';
 
   const isAdmin = store.get('isAdmin');

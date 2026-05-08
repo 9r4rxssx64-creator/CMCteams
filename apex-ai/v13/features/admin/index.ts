@@ -17,15 +17,35 @@ import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.
 import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
 import { auth } from '../../services/auth.js';
 import { commerce, type Plan } from '../../services/commerce.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/kdmc-projects-registry.js';
 import { whatsapp } from '../../services/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge' | 'bilan' | 'consumption';
+type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge' | 'bilan' | 'consumption' | 'audit-log';
 
 let activeTab: Tab = 'commerce';
+
+/**
+ * Mapping admin tab → feature toggle id (Kevin règle 2026-05-04 : ON/OFF tout).
+ * Si le toggle est OFF, l'onglet n'est pas rendu (affichage notice désactivée).
+ * Note: 'admin.toggles' (vue gestion ON/OFF) reste TOUJOURS accessible via
+ * features/admin-toggles → kill-switch sécurité, jamais soft-locked.
+ */
+const ADMIN_TAB_TOGGLE_MAP: Record<Tab, string | null> = {
+  commerce: 'admin.commerce',
+  users: 'admin.users',
+  pending: 'admin.users', /* Validation OTP rattachée à users */
+  health: null, /* admin.dashboard sub-section, pas de toggle dédié */
+  projects: null, /* admin.dashboard sub-section */
+  executions: 'admin.executions',
+  knowledge: 'admin.kb',
+  bilan: 'admin.bilan',
+  consumption: 'admin.consumption',
+  'audit-log': 'admin.audit-log',
+};
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -217,7 +237,7 @@ function renderProjectsTab(): string {
 
 function renderTabs(): string {
   /* v13.2.1 fix Kevin "tabs superposés iPhone" — labels courts + scroll fluide */
-  const tabs: Array<[Tab, string]> = [
+  const allTabs: Array<[Tab, string]> = [
     ['commerce', '💳 Commerce'],
     ['users', '👥 Comptes'],
     ['pending', '📨 Attente'],
@@ -227,7 +247,14 @@ function renderTabs(): string {
     ['knowledge', '📚 KB'],
     ['bilan', '📊 Bilan'],
     ['consumption', '💰 Conso'],
+    ['audit-log', '🔒 Audit'],
   ];
+  /* Filter tabs by feature toggle (Kevin règle ON/OFF). Tabs sans toggle (health/projects)
+     restent toujours affichés. */
+  const tabs = allTabs.filter(([id]) => {
+    const toggleId = ADMIN_TAB_TOGGLE_MAP[id];
+    return !toggleId || isFeatureEnabled(toggleId);
+  });
   /* Premium tabs : pill design with gold gradient on active + smooth transition + 44px touch */
   return tabs
     .map(
@@ -319,6 +346,13 @@ function renderExecutionsTab(): string {
 }
 
 function renderContent(): string {
+  /* Feature toggle gate per tab (Kevin règle ON/OFF général + per-user, 2026-05-04).
+     Si l'onglet est désactivé via admin-toggles → afficher notice + bouton retour. */
+  const toggleId = ADMIN_TAB_TOGGLE_MAP[activeTab];
+  if (toggleId && !isFeatureEnabled(toggleId)) {
+    return `<div class="ax-admin-section">${renderDisabledNotice(toggleId)}</div>`;
+  }
+
   switch (activeTab) {
     case 'commerce':
       return renderCommerceTab();
@@ -338,6 +372,8 @@ function renderContent(): string {
       return '<div id="ax-admin-mount-bilan" class="ax-admin-section"><p class="ax-muted">Chargement du bilan financier…</p></div>';
     case 'consumption':
       return '<div id="ax-admin-mount-consumption" class="ax-admin-section"><p class="ax-muted">Chargement consommation IA…</p></div>';
+    case 'audit-log':
+      return '<div id="ax-admin-mount-audit-log" class="ax-admin-section"><p class="ax-muted">Chargement audit log immuable…</p></div>';
   }
 }
 
@@ -364,6 +400,32 @@ async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
     } catch (err) {
       logger.warn('admin', 'consumption-dashboard render failed', { err });
       mountConsumption.innerHTML = '<p class="ax-muted">Consommation indisponible (module ko)</p>';
+    }
+  }
+  const mountAudit = rootEl.querySelector<HTMLElement>('#ax-admin-mount-audit-log');
+  if (mountAudit) {
+    /* Toggle déjà gardé dans renderContent — ici on render juste la liste si feature active */
+    if (!isFeatureEnabled('admin.audit-log')) {
+      mountAudit.innerHTML = renderDisabledNotice('admin.audit-log');
+      return;
+    }
+    try {
+      const { auditLog } = await import('../../services/audit-log.js');
+      auditLog.init();
+      const entries = auditLog.getEntries().slice(-100).reverse();
+      const rows = entries
+        .map(
+          (e) => `<li><code>${escapeHtml(new Date(e.ts).toLocaleString())}</code> · <strong>${escapeHtml(e.action)}</strong> · ${escapeHtml(e.actor || 'system')}</li>`,
+        )
+        .join('');
+      mountAudit.innerHTML = `
+        <h2>🔒 Audit log immuable</h2>
+        <p class="ax-muted">${entries.length} évènements récents (chain hash vérifié).</p>
+        <ul class="ax-audit-list">${rows || '<li class="ax-muted">Aucun événement</li>'}</ul>
+      `;
+    } catch (err) {
+      logger.warn('admin', 'audit-log render failed', { err });
+      mountAudit.innerHTML = '<p class="ax-muted">Audit log indisponible (module ko)</p>';
     }
   }
 }

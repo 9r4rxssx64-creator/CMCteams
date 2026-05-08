@@ -357,9 +357,16 @@ class VoicePrint {
    */
   async enroll(uid: string, audioSamples: AudioBuffer[]): Promise<{ ok: boolean; reason?: string; samples_count?: number; confidence_score?: number }> {
     if (audioSamples.length < 1) return { ok: false, reason: 'Aucun sample audio' };
-    /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+    /* Wire admin feature toggles (Kevin règle 2026-05-04 — ON/OFF tout).
+       Trois toggles convergent sur l'enrôlement vocal :
+       - voice.biometric : feature voix biométrique (général)
+       - auth.voice_print : auth via voiceprint spécifiquement
+       Si l'un OU l'autre est OFF, on bloque l'enrôlement. */
     if (!isFeatureEnabled('voice.biometric', uid)) {
       return { ok: false, reason: 'voice.biometric désactivé par admin' };
+    }
+    if (!isFeatureEnabled('auth.voice_print', uid)) {
+      return { ok: false, reason: 'auth.voice_print désactivé par admin' };
     }
     /* Calcule fingerprints enrichis + moyenne (5 features) */
     const fps = audioSamples.map((s) => this.computeFingerprint(s));
@@ -718,6 +725,21 @@ class VoicePrint {
     reason?: string;
     learned?: boolean;
   } {
+    /* Feature toggle auth.voice_print (Kevin règle ON/OFF, 2026-05-04).
+       Si désactivée, retourne immédiatement un résultat "not identified" propre. */
+    if (!isFeatureEnabled('auth.voice_print', opts.currentUserId)) {
+      return {
+        identified: false,
+        uid: null,
+        confidence: 0,
+        score: 0,
+        isKevin: false,
+        print_confidence: 0,
+        phase: 'open',
+        threshold_used: 0,
+        reason: 'auth.voice_print désactivé par admin',
+      };
+    }
     const allPrints = this.listPrints();
     const currentUid = opts.currentUserId;
 

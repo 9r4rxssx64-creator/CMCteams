@@ -544,7 +544,12 @@ export function auditProviderChain(): {
    * Élargir audit à TOUS les providers IA possibles (pas seulement DEFAULT_CHAIN
    * de 6) — inclus mistral, cohere, deepseek, perplexity, xai_grok pour matcher
    * les clés réellement stockées dans le vault. Aussi : check vault chiffré
-   * (AXENC1:) en plus du localStorage brut. */
+   * (AXENC1:) en plus du localStorage brut.
+   *
+   * v13.3.75b (test H2 fix) : ajout openclaw + huggingface dans liste unique
+   * canonical des providers. Comptage unhealthy élargi à TOUS les providers
+   * sans clé (pas seulement ceux du DEFAULT_CHAIN) — sinon test
+   * `unhealthy.length >= total - 1` cassé. */
   const ALL_AI_KEYS: readonly { name: string; storageKey: string }[] = [
     { name: 'anthropic', storageKey: 'ax_shared_api_key' },
     { name: 'anthropic_alt', storageKey: 'ax_anthropic_key' },
@@ -558,10 +563,16 @@ export function auditProviderChain(): {
     { name: 'perplexity', storageKey: 'ax_perplexity_key' },
     { name: 'xai_grok', storageKey: 'ax_xai_key' },
     { name: 'huggingface', storageKey: 'ax_hf_token' },
+    { name: 'openclaw', storageKey: 'ax_openclaw_key' },
   ];
   const healthy: string[] = [];
   const unhealthy: string[] = [];
   const seenProviders = new Set<string>();
+  /* Pré-calcule la liste unique des providers logiques (anthropic_alt → anthropic). */
+  const allLogicalProviders = new Set<string>();
+  for (const { name } of ALL_AI_KEYS) {
+    allLogicalProviders.add(name.replace(/_alt$/, ''));
+  }
   if (typeof localStorage !== 'undefined') {
     for (const { name, storageKey } of ALL_AI_KEYS) {
       const raw = localStorage.getItem(storageKey);
@@ -572,14 +583,20 @@ export function auditProviderChain(): {
           seenProviders.add(baseProvider);
           healthy.push(baseProvider);
         }
-      } else if (DEFAULT_CHAIN.includes(name as Provider) && name !== 'gemini') {
-        unhealthy.push(name);
+      }
+    }
+    /* Unhealthy = tous les providers logiques NON présents dans healthy.
+     * Ainsi `unhealthy.length >= total - healthy.length` (1 provider min healthy → reste unhealthy). */
+    for (const provider of allLogicalProviders) {
+      if (!seenProviders.has(provider)) {
+        unhealthy.push(provider);
       }
     }
   }
-  /* gemini optionnel : si autre provider dispo, on tolère */
+  /* total = nombre de providers logiques uniques (pas le nombre de clés possibles). */
+  const total = allLogicalProviders.size;
   return {
-    total: ALL_AI_KEYS.length, /* 12 providers possibles vs 6 avant */
+    total,
     healthy: healthy.length,
     unhealthy,
     configured: healthy,
