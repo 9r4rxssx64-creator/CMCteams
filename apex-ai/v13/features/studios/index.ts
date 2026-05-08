@@ -159,6 +159,16 @@ export function render(root: HTMLElement): void {
     cv: 'studio-cv',
     facture: 'studio-invoice',
     contrat: 'studio-contract',
+    presentation: 'studio-presentation',
+    clip: 'studio-clip',
+    logo: 'studio-logo',
+    architecture: 'studio-architecture',
+    plant: 'studio-plant',
+    geo: 'studio-geo',
+    building: 'studio-building',
+    lunar: 'studio-lunar',
+    pet: 'studio-pet',
+    scan: 'studio-scan',
   };
   /* Wire click sur cards → route si dispo, sinon placeholder */
   root.querySelectorAll<HTMLDivElement>('.ax-studio-card').forEach((card) => {

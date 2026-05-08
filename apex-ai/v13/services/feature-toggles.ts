@@ -91,6 +91,10 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'studio.architecture', category: 'studio', description: 'Studio Architecture (RE2020, surfaces)', defaultEnabled: true },
   { id: 'studio.plant', category: 'studio', description: 'Studio Plantes (calendrier biodynamique)', defaultEnabled: true },
   { id: 'studio.geo', category: 'studio', description: 'Studio Géolocalisation', defaultEnabled: true },
+  { id: 'studio.building', category: 'studio', description: 'Studio Bâtiment (DTU, dimensions, métré)', defaultEnabled: true },
+  { id: 'studio.lunar', category: 'studio', description: 'Studio Jardin Lunaire (biodynamie)', defaultEnabled: true },
+  { id: 'studio.pet', category: 'studio', description: 'Studio Animaux (santé, ration, vaccins)', defaultEnabled: true },
+  { id: 'feature.smart-studios-anticipator', category: 'module', description: 'Smart Studios Anticipator (auto-suggest selon chat)', defaultEnabled: true },
 
   /* === Modules pro (8) === */
   { id: 'pro.cuisine', category: 'pro', description: 'Cuisine Pro (10 recettes, 22 cuissons, INCO)', defaultEnabled: true },

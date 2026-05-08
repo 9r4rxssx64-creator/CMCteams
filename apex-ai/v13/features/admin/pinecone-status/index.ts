@@ -117,7 +117,7 @@ function renderInfoCard(): string {
 
 export async function render(rootEl: HTMLElement): Promise<void> {
   activeScope?.cleanup();
-  activeScope = createCleanupScope();
+  activeScope = createCleanupScope('pinecone-status');
 
   const status = await pineconeStore.getStatus();
 
@@ -154,7 +154,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       }
     };
     btnTest.addEventListener('click', handler);
-    activeScope.add(() => btnTest.removeEventListener('click', handler));
+    activeScope.onCleanup(() => btnTest.removeEventListener('click', handler));
   }
 
   const btnReload = rootEl.querySelector<HTMLButtonElement>('#btn-reload');
@@ -176,7 +176,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       }
     };
     btnReload.addEventListener('click', handler);
-    activeScope.add(() => btnReload.removeEventListener('click', handler));
+    activeScope.onCleanup(() => btnReload.removeEventListener('click', handler));
   }
 
   const btnResync = rootEl.querySelector<HTMLButtonElement>('#btn-resync');
@@ -200,6 +200,6 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       }
     };
     btnResync.addEventListener('click', handler);
-    activeScope.add(() => btnResync.removeEventListener('click', handler));
+    activeScope.onCleanup(() => btnResync.removeEventListener('click', handler));
   }
 }

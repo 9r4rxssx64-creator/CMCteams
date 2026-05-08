@@ -905,58 +905,46 @@ class AIRouter {
         }
       }
     } else {
-      /* Pas de multi-key dispo : fallback legacy single-key avec retry network/server */
+      /* Pas de multi-key dispo : fallback legacy single-key.
+       * Comportement identique à v13.3.x avant cette feature pour back-compat tests :
+       * pas de retry/backoff (le failover provider-level prend le relais via la chain). */
       const key = await this.getApiKeyDecrypted(provider);
       if (!key && provider !== 'gemini') {
         return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
       }
-      for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt += 1) {
-        const tStart = Date.now();
+      const tStart = Date.now();
+      try {
+        const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
+        /* Wire stats : record latency + success même en path legacy */
         try {
-          const streamResult = await this.streamFromProvider(provider, key, messages, system, onChunk, signal);
-          try {
-            const { aiKeyRotation } = await import('./ai-key-rotation.js');
-            aiKeyRotation.recordSuccess(provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini', Date.now() - tStart);
-          } catch {
-            /* ignore */
-          }
-          return { status: 'ok', streamResult, provider };
-        } catch (err: unknown) {
-          const e = err instanceof Error ? err : new Error(String(err));
-          if (e.name === 'AbortError') return { status: 'aborted' };
-          lastErr = e;
-          let shouldBackoff = false;
-          try {
-            const { classifyError } = await import('./ai-key-rotation.js');
-            const status = this.parseHttpStatus(e.message);
-            const cls = classifyError({ status, message: e.message });
-            shouldBackoff = cls === 'server_error' || cls === 'network';
-          } catch {
-            shouldBackoff = /HTTP\s*5\d\d|timeout|network|fetch failed/i.test(e.message);
-          }
-          if (shouldBackoff && attempt < BACKOFF_MS.length) {
-            const delay = BACKOFF_MS[attempt]!;
-            logger.info('ai-router', `${provider} legacy retry backoff ${delay}ms`, { attempt: attempt + 1 });
-            await this.sleep(delay, signal);
-            if (signal.aborted) return { status: 'aborted' };
-            continue;
-          }
-          try {
-            const { aiKeyRotation } = await import('./ai-key-rotation.js');
-            await aiKeyRotation.handleFailure(
-              provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini',
-              undefined,
-              { status: this.parseHttpStatus(e.message), message: e.message },
-            );
-          } catch {
-            /* ignore */
-          }
-          break;
+          const { aiKeyRotation } = await import('./ai-key-rotation.js');
+          aiKeyRotation.recordSuccess(provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini', Date.now() - tStart);
+        } catch {
+          /* ignore */
+        }
+        return { status: 'ok', streamResult, provider };
+      } catch (err: unknown) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        if (e.name === 'AbortError') return { status: 'aborted' };
+        lastErr = e;
+        /* Record fail mais sans rotation (pas de keyId multi-key dispo) */
+        try {
+          const { aiKeyRotation } = await import('./ai-key-rotation.js');
+          await aiKeyRotation.handleFailure(
+            provider as 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini',
+            undefined,
+            { status: this.parseHttpStatus(e.message), message: e.message },
+          );
+        } catch {
+          /* ignore */
         }
       }
     }
     return { status: 'error', error: lastErr ?? new Error(`${provider} all keys failed`) };
   }
+
+  /* Note : BACKOFF_MS, parseHttpStatus, sleep restent disponibles pour le path multi-key
+   * où la rotation key-level utilise le retry exponential. */
 
   /** Parse "anthropic HTTP 429: ..." → 429. Renvoie undefined si non trouvé. */
   private parseHttpStatus(msg: string): number | undefined {

@@ -157,6 +157,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `smart-tools : ${top.length} top tools`);
     }),
 
+    /* Smart Studios Anticipator (Kevin 2026-05-08) : auto-suggest studio selon chat */
+    safeInit('smart-studios-anticipator', async () => {
+      const { smartStudiosAnticipator } = await import('./smart-studios-anticipator.js');
+      smartStudiosAnticipator.start();
+      logger.info('services-bootstrap', 'smart-studios-anticipator : started');
+    }),
+
     /* Subscription tiers : pre-load tiers public */
     safeInit('subscription-tiers', async () => {
       const { subscriptionTiers } = await import('./subscription-tiers.js');
