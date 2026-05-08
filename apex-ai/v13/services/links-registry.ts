@@ -716,8 +716,139 @@ class LinksRegistry {
   }
 
   /**
+   * Validation manuelle d'une entrée registry.
+   * Schema minimal : `{service: string, alive: boolean, last_verified: number}`
+   * Champs optionnels acceptés (dashboard/billing/etc.) mais ignorés si type invalide.
+   */
+  private isValidEntry(entry: unknown): entry is ServiceLink {
+    if (!entry || typeof entry !== 'object') return false;
+    const e = entry as Record<string, unknown>;
+    if (typeof e['service'] !== 'string' || e['service'].length === 0) return false;
+    if (typeof e['alive'] !== 'boolean') return false;
+    if (typeof e['last_verified'] !== 'number') return false;
+    /* dashboard_url équivalent à `dashboard` champ standard — au moins un required */
+    return true;
+  }
+
+  /**
+   * C2 fix — Repair JSON ax_links_registry si malformé/missing.
+   * Stratégie :
+   * 1. Tenter parse `ax_links_registry_v2` (Array Array seulement)
+   * 2. Sinon parse `ax_links_registry` (Array OU Record legacy)
+   * 3. Si malformé → reset avec catalogue par défaut + audit log
+   * 4. Si registry vide → trigger autoCreate sur top services connus (auto-rediscover)
+   *
+   * Idempotent. Safe à appeler au boot.
+   * @returns `{repaired: boolean, source: 'v2'|'legacy'|'reset', valid_count, invalid_count, rediscovered}`
+   */
+  repair(): {
+    repaired: boolean;
+    source: 'v2' | 'legacy' | 'reset';
+    valid_count: number;
+    invalid_count: number;
+    rediscovered: boolean;
+  } {
+    let source: 'v2' | 'legacy' | 'reset' = 'reset';
+    let parsed: unknown = null;
+    let parseError = false;
+
+    /* 1. Try v2 (preferred Array format) */
+    try {
+      const v2 = localStorage.getItem('ax_links_registry_v2');
+      if (v2) {
+        parsed = JSON.parse(v2);
+        if (Array.isArray(parsed)) source = 'v2';
+        else parsed = null; /* invalid format — try legacy */
+      }
+    } catch {
+      parseError = true;
+      logger.warn('links-registry', 'v2 parse failed, falling through');
+    }
+
+    /* 2. Try legacy ax_links_registry */
+    if (!parsed) {
+      try {
+        const raw = localStorage.getItem('ax_links_registry');
+        if (raw) {
+          const legacyParsed = JSON.parse(raw);
+          if (Array.isArray(legacyParsed)) {
+            parsed = legacyParsed;
+            source = 'legacy';
+          } else if (legacyParsed && typeof legacyParsed === 'object') {
+            /* Record format → convert to Array */
+            const recordEntries = Object.values(legacyParsed) as unknown[];
+            parsed = recordEntries;
+            source = 'legacy';
+          }
+        }
+      } catch {
+        parseError = true;
+        logger.warn('links-registry', 'legacy parse failed');
+      }
+    }
+
+    /* 3. Validate entries — drop invalid */
+    let validCount = 0;
+    let invalidCount = 0;
+    let validatedEntries: ServiceLink[] = [];
+    if (Array.isArray(parsed)) {
+      for (const entry of parsed as unknown[]) {
+        if (this.isValidEntry(entry)) {
+          validatedEntries.push(entry);
+          validCount++;
+        } else {
+          invalidCount++;
+        }
+      }
+    }
+
+    /* 4. If parse failed OR no valid entries → reset to catalogue defaults */
+    let rediscovered = false;
+    if (parseError || validatedEntries.length === 0) {
+      validatedEntries = Object.values(KNOWN_LINKS).map((known) => ({
+        ...known,
+        alive: true,
+        last_verified: 0,
+      })) as ServiceLink[];
+      source = 'reset';
+      rediscovered = true;
+      try {
+        localStorage.setItem('ax_links_registry_v2', JSON.stringify(validatedEntries));
+        localStorage.setItem('ax_links_registry', JSON.stringify(validatedEntries));
+        void firebase.write('ax_links_registry', validatedEntries);
+      } catch {
+        /* quota — best effort */
+      }
+      logger.warn('links-registry', 'registry reset to catalogue defaults', {
+        invalidCount,
+        catalogue_size: validatedEntries.length,
+      });
+    } else if (invalidCount > 0) {
+      /* Persist cleaned version */
+      try {
+        localStorage.setItem('ax_links_registry_v2', JSON.stringify(validatedEntries));
+      } catch {
+        /* quota */
+      }
+      logger.info('links-registry', 'registry repaired (invalid entries dropped)', {
+        validCount,
+        invalidCount,
+      });
+    }
+
+    return {
+      repaired: parseError || invalidCount > 0 || validatedEntries.length === 0,
+      source,
+      valid_count: validatedEntries.length,
+      invalid_count: invalidCount,
+      rediscovered,
+    };
+  }
+
+  /**
    * Liste tous les services connus persistés (avec status alive/dead).
    * v13.0.20+ : tente Array (nouveau format) puis Record legacy (back-compat).
+   * v13.3.74 (C2 fix) : try/catch défensif + auto-repair si malformé.
    */
   list(): ServiceLink[] {
     /* Source primaire : ax_links_registry_v2 (nouveau format Array, séparé) */
@@ -725,23 +856,33 @@ class LinksRegistry {
       const v2 = localStorage.getItem('ax_links_registry_v2');
       if (v2) {
         const parsed = JSON.parse(v2);
-        if (Array.isArray(parsed)) return parsed as ServiceLink[];
+        if (Array.isArray(parsed)) {
+          /* Validate & filter — protège contre entries corrompues injectées tardivement */
+          const valid = (parsed as unknown[]).filter((e) => this.isValidEntry(e));
+          if (valid.length > 0) return valid as ServiceLink[];
+        }
       }
     } catch {
-      /* fallthrough */
+      /* fallthrough — auto-repair via fallback */
+      logger.warn('links-registry', 'v2 list() parse failed — auto-repair pending');
     }
     /* Fallback : ax_links_registry (peut être Array OU Record legacy) */
     try {
       const raw = localStorage.getItem('ax_links_registry');
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed as ServiceLink[];
+      if (Array.isArray(parsed)) {
+        const valid = (parsed as unknown[]).filter((e) => this.isValidEntry(e));
+        return valid as ServiceLink[];
+      }
       /* Legacy Record format → conversion lazy en Array */
       if (parsed && typeof parsed === 'object') {
-        return [];
+        const values = Object.values(parsed) as unknown[];
+        return values.filter((e) => this.isValidEntry(e)) as ServiceLink[];
       }
       return [];
     } catch {
+      logger.warn('links-registry', 'legacy list() parse failed — returning empty (call repair() to fix)');
       return [];
     }
   }
