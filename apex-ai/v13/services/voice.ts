@@ -1133,19 +1133,30 @@ function speakViaWebSpeech(text: string, voice: Voice, options: SpeakOptions): S
     const utterance = new SpeechSynthesisUtterance(text);
     const lang = options.lang ?? (voice.language && voice.language !== 'multi' ? voice.language : 'fr-FR');
     utterance.lang = lang;
-    /* Effets : pitch (semi-tons → ratio Web Speech 0..2) + rate */
+    /* v13.3.73 (Kevin "les voix sont toutes les mêmes") :
+     * Avant : pitch/rate appliqués UNIQUEMENT si voice.effects présent → 80% des voix
+     * tombaient sur defaults 1/1 → toutes identiques.
+     * Après : derive pitch/rate des keywords de voice.id en fallback. */
+    const derived = deriveDefaultsFromId(voice.id);
+    let pitchSet = false;
+    let rateSet = false;
     if (voice.effects) {
       for (const eff of voice.effects) {
         if (eff.type === 'pitch') {
           utterance.pitch = Math.max(0, Math.min(2, 1 + eff.value / 12));
+          pitchSet = true;
         } else if (eff.type === 'rate') {
           utterance.rate = Math.max(0.1, Math.min(10, eff.value));
+          rateSet = true;
         }
       }
     }
-    /* Match voix browser si dispo */
+    if (!pitchSet) utterance.pitch = derived.pitch;
+    if (!rateSet) utterance.rate = derived.rate;
+    /* v13.3.73 : sélection voix browser déterministe par voice.id (vs always first match).
+     * Préfère gender match si dispo, sinon hash(voice.id) % candidates. */
     const browserVoices = window.speechSynthesis.getVoices();
-    const match = browserVoices.find((v) => v.lang.startsWith(lang.slice(0, 2)));
+    const match = pickBrowserVoice(browserVoices, lang, voice);
     if (match) utterance.voice = match;
     window.speechSynthesis.speak(utterance);
     void auditLog.record('voice.speak', {
@@ -1156,6 +1167,71 @@ function speakViaWebSpeech(text: string, voice: Voice, options: SpeakOptions): S
     const reason = err instanceof Error ? err.message : String(err);
     return { ok: false, reason };
   }
+}
+
+/* v13.3.73 helpers — différenciation voix Web Speech (sans casser API existante). */
+function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
+  const lower = id.toLowerCase();
+  /* Pitch base par keyword caractère (semi-tons → ratio Web Speech 0..2) */
+  const presets: Array<{ k: RegExp; pitch: number; rate: number }> = [
+    { k: /baby|kid|child|chipmunk|cartoon|minion/, pitch: 1.7, rate: 1.2 },
+    { k: /helium|squeaky/, pitch: 1.9, rate: 1.15 },
+    { k: /female|bella|rachel|kate|alice|marie|sophie|julie/, pitch: 1.25, rate: 1.0 },
+    { k: /yoda|sage|wizard|sorcier/, pitch: 0.7, rate: 0.75 },
+    { k: /vador|deep|oldman|vieux|narrator|news_anchor|audiobook/, pitch: 0.6, rate: 0.95 },
+    { k: /pirate|drunk|villain|joker/, pitch: 0.85, rate: 0.85 },
+    { k: /robot|cyborg|alien|ghost|fantome/, pitch: 0.55, rate: 0.95 },
+    { k: /slow|sleepy|endormi/, pitch: 0.95, rate: 0.6 },
+    { k: /fast|presentateur|sport|hyper/, pitch: 1.1, rate: 1.4 },
+    { k: /sad|triste|melancolic/, pitch: 0.85, rate: 0.8 },
+    { k: /angry|colere|hulk/, pitch: 0.7, rate: 1.15 },
+    { k: /happy|joyeux|content/, pitch: 1.25, rate: 1.1 },
+    { k: /whisper|murmure/, pitch: 0.95, rate: 0.85 },
+    { k: /male|adam|antoni|thomas|bernard|jean/, pitch: 0.85, rate: 1.0 },
+  ];
+  for (const p of presets) {
+    if (p.k.test(lower)) return { pitch: p.pitch, rate: p.rate };
+  }
+  /* Fallback : hash id pour micro-variation (±0.15 pitch, ±0.1 rate) déterministe. */
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  const pitchVar = ((h & 0xff) / 255 - 0.5) * 0.3; /* -0.15 .. +0.15 */
+  const rateVar = (((h >> 8) & 0xff) / 255 - 0.5) * 0.2; /* -0.1 .. +0.1 */
+  return { pitch: 1 + pitchVar, rate: 1 + rateVar };
+}
+
+function pickBrowserVoice(
+  browserVoices: readonly SpeechSynthesisVoice[],
+  lang: string,
+  voice: Voice,
+): SpeechSynthesisVoice | undefined {
+  if (browserVoices.length === 0) return undefined;
+  const langPrefix = lang.slice(0, 2);
+  const candidates = browserVoices.filter((v) => v.lang.startsWith(langPrefix));
+  if (candidates.length === 0) return browserVoices[0];
+  if (candidates.length === 1) return candidates[0];
+
+  /* Préfère gender match dans le nom de la voix browser */
+  const gender = voice.gender;
+  const idLower = voice.id.toLowerCase();
+  /* iOS noms typiques : Thomas/Daniel/Aaron (male), Marie/Amelie/Audrey (female) */
+  const maleHints = /(thomas|daniel|aaron|paul|jean|bernard|alex|fred|maged|male)/i;
+  const femaleHints = /(marie|amelie|audrey|virginie|alice|samantha|tessa|kate|female)/i;
+
+  let pool = candidates;
+  if (gender === 'male' || maleHints.test(idLower)) {
+    const males = candidates.filter((v) => maleHints.test(v.name));
+    if (males.length > 0) pool = males;
+  } else if (gender === 'female' || femaleHints.test(idLower)) {
+    const females = candidates.filter((v) => femaleHints.test(v.name));
+    if (females.length > 0) pool = females;
+  }
+
+  /* Hash voice.id → index pool pour distribution déterministe stable */
+  let h = 0;
+  for (let i = 0; i < voice.id.length; i++) h = ((h << 5) - h + voice.id.charCodeAt(i)) | 0;
+  const idx = Math.abs(h) % pool.length;
+  return pool[idx];
 }
 
 /**
