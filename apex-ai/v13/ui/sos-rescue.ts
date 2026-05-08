@@ -41,12 +41,12 @@ class SosRescue {
     btn.type = 'button';
     btn.setAttribute('aria-label', 'SOS Rescue — Débloquer Apex');
     btn.title = 'SOS — Tap court : auto-fix. Long press : diagnostic complet.';
-    /* v13.3.55 fix Kevin "Corrige la vue" — SOS overlap nav bottom Déconnexion.
-     * Bottom remonté à 124px (au-dessus nav 60px + safe-area + 60px buffer).
-     * Right 14px → 12px. Taille 50→44px (moins agressif). Opacity 0.7→0.55 (discret quand idle). */
+    /* v13.3.85 fix Kevin "tu trouves ton affichage réussi ?" — SOS overlap input
+     * bar mic/ear/paperclip/camera. Remonté à 168px (clearing input 50px + nav
+     * 36px + safe-area + 80px buffer). */
     btn.style.cssText = [
       'position:fixed',
-      'bottom:calc(124px + env(safe-area-inset-bottom, 0px))',
+      'bottom:calc(168px + env(safe-area-inset-bottom, 0px))',
       'right:12px',
       'width:44px',
       'height:44px',

@@ -385,50 +385,30 @@
 
 .ax-chat-input {
   display: flex;
-  gap: 4px;
-  padding: 6px 8px;
+  gap: var(--ax-s-2);
+  padding: var(--ax-s-2) var(--ax-s-3);
   border-top: 1px solid var(--ax-border);
   background: var(--ax-bg-glass);
   backdrop-filter: var(--ax-blur);
-  align-items: center;
+  align-items: flex-end;
   flex-shrink: 0;
-  /* v13.3.83 Kevin "corrige l'affichage ça va toujours pas" — input area compact */
+  /* v13.3.85 Kevin "tu trouves ton affichage réussi ?" → revert v13.3.84
+   * align-items:center qui cassait le flex layout iOS Safari PWA. */
 }
 
 .ax-chat-input textarea {
   flex: 1;
   resize: none;
-  padding: 8px 12px;
+  padding: var(--ax-s-3) var(--ax-s-4);
   background: var(--ax-bg-input);
   border: 1px solid var(--ax-border);
-  border-radius: 18px;
+  border-radius: var(--ax-r-md);
   color: var(--ax-text);
-  font-size: 16px; /* iOS: éviter zoom auto */
+  font-size: max(16px, var(--ax-text-base));
   font-family: var(--ax-font);
-  max-height: 140px;
-  min-height: 38px;
-  line-height: 1.3;
-}
-
-/* v13.3.83 — boutons input compacts et alignés */
-.ax-chat-input .ax-btn-icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  font-size: 16px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.ax-chat-input .ax-btn-primary {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  font-size: 18px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  max-height: 200px;
+  min-height: 44px;
+  line-height: var(--ax-lh-normal);
 }
 
 /* ───────── Admin ───────── */
