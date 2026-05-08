@@ -452,6 +452,33 @@ class Memory {
         `5. createPR ou pushFiles direct\n` +
         `6. mergePR si tests CI green\n` +
         `Tout en autonomie, sans demander Kevin (sauf actions destructrices : delete_*, force_push).`,
+      `## 🔌 CONNECTEURS DIRECTS (Kevin 2026-05-08 ABSOLUE — autonomie 100% sans Claude Code)\n` +
+        `"Je veux qu'il n'ait plus besoin de Claude Code, qu'il soit autonome pour toutes ces fonctionnalités." — Kevin\n\n` +
+        `Tu peux appeler 50+ services en DIRECT (fetch + clés vault Kevin), JAMAIS via Claude Code/Anthropic.\n` +
+        `Source : \`services/direct-connectors-registry.ts\` → import { directConnectors } from './services/direct-connectors-registry.js'\n\n` +
+        `**Catégories** :\n` +
+        `- ai_provider (12) : anthropic, openai, openrouter, groq, gemini, mistral, cohere, deepseek, perplexity, huggingface, replicate\n` +
+        `- web_search (6) : brave_search, tavily, duckduckgo, google_cse, jina_reader\n` +
+        `- git_repo (2) : github_api, gitlab_api → JAMAIS escalade Claude Code, fetch direct\n` +
+        `- communication (6) : telegram_bot, resend, brevo, emailjs, twilio, discord_webhook\n` +
+        `- storage (4) : firebase_rtdb, cloudflare_kv, jsonbin, pinata_ipfs\n` +
+        `- finance (3) : stripe, finnhub, exchangerate\n` +
+        `- crypto (3) : coingecko, coinmarketcap, etherscan\n` +
+        `- weather_geo (5) : open_meteo, openweathermap, opencage_geocode, nominatim, ipapi\n` +
+        `- translation (2) : deepl, libretranslate\n` +
+        `- news_media (2) : newsapi, rss2json\n` +
+        `- images_video (4) : unsplash, pixabay, pexels, qrcode_api\n` +
+        `- tts_stt (2) : elevenlabs, web_speech_api (offline)\n` +
+        `- maps (2) : mapbox, osrm\n` +
+        `- identity (1) : webauthn (offline)\n` +
+        `- analytics (2) : plausible, sentry\n` +
+        `- infrastructure (3) : cloudflare_workers, vercel_api, netlify_api\n` +
+        `- iot_domotique (3) : home_assistant, broadlink_local (offline), tuya_smartlife\n\n` +
+        `**Usage** : \`await directConnectors.invoke({ id: 'github_api', op: 'repos/9r4rxssx64-creator/cmcteams/issues', method: 'POST', body: {...} })\`\n` +
+        `**Failover automatique** : si anthropic 429 → openrouter → groq → gemini → cohere (chaîne configurable).\n` +
+        `**Auto-detect manquants** : \`directConnectors.listMissing()\` retourne les services pas encore configurés (clé vault absente).\n` +
+        `**Triggers FR/EN** : chaque connecteur a des mots-clés (météo→open_meteo, traduire→deepl, qr→qrcode_api…). Apex peut auto-router via \`detectIntent(text)\`.\n\n` +
+        `**RÈGLE ABSOLUE** : pour TOUTE action utilisateur (envoi email, créer issue GitHub, payer Stripe, traduire, météo, géocoder), tu utilises directConnectors.invoke() — JAMAIS escalade Claude Code (qui n'est qu'un fallback optionnel obsolète).`,
     );
     return sections.join('\n\n');
   }

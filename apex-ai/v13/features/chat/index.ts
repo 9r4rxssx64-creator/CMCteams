@@ -1570,13 +1570,13 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
-      /* v13.3.78 Kevin: bandeau MIN — max visibilité chat */
+      /* v13.3.80 Kevin 2026-05-08 19:55: bandeau ULTRA-MIN — max visibilité chat */
       .ax-chat-header {
         background: linear-gradient(180deg,rgba(20,20,35,0.95),rgba(14,14,28,0.85));
         backdrop-filter: blur(20px) saturate(140%);
         -webkit-backdrop-filter: blur(20px) saturate(140%);
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 4px 10px;
+        padding: 2px 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1584,30 +1584,30 @@ export function render(rootEl: HTMLElement): void {
         position: sticky;
         top: 0;
         z-index: 50;
-        padding-top: max(4px, env(safe-area-inset-top, 0px));
-        min-height: 32px;
+        padding-top: max(2px, env(safe-area-inset-top, 0px));
+        min-height: 26px;
       }
       .ax-chat-header h1 {
         margin: 0;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
         background: linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-family: Georgia, serif;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         line-height: 1;
       }
       .ax-chat-header .ax-btn-icon {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.08);
         color: rgba(255,255,255,0.85);
-        width: 28px;
-        height: 28px;
-        min-width: 28px;
-        border-radius: 8px;
-        font-size: 13px;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        border-radius: 7px;
+        font-size: 11px;
         cursor: pointer;
         transition: background 160ms;
         -webkit-tap-highlight-color: transparent;
@@ -1621,21 +1621,21 @@ export function render(rootEl: HTMLElement): void {
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 10px 14px 6px;
-        font-size: 13.5px;
+        padding: 6px 14px 4px;
+        font-size: 12px;
         font-weight: 500;
         color: rgba(255,255,255,0.78);
         font-family: Georgia, serif;
-        line-height: 1.3;
+        line-height: 1.25;
         animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-chat-greeting::after {
         content: '';
         display: block;
-        width: 30px;
+        width: 24px;
         height: 1px;
         background: linear-gradient(90deg,transparent,#e8b830,transparent);
-        margin: 6px auto 0;
+        margin: 4px auto 0;
         opacity: 0.5;
       }
       .ax-info-card {
