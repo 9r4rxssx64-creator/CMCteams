@@ -932,9 +932,22 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
         }, 3000);
         return;
       }
-      /* Erreur non récupérable OU réponse partielle déjà reçue → message clair */
-      const suffix = assistantMsg.text ? ' (réponse partielle préservée)' : '';
-      assistantMsg.text = userMsg + suffix;
+      /* Erreur non récupérable OU réponse partielle déjà reçue → message clair.
+       *
+       * v13.3.75 (Kevin urgent "réponse partielle préservée" alors que tools réussissent) :
+       * Si tools ont été appelés (toolBatchCount > 0) mais pas de texte final →
+       * proposer relance plutôt que message générique frustrant. */
+      const hadTools = (assistantMsg.toolBatchCount ?? 0) > 0;
+      const hasText = !!assistantMsg.text && assistantMsg.text.trim().length > 30;
+      let finalMsg: string;
+      if (hadTools && !hasText) {
+        finalMsg = `🛠 ${assistantMsg.toolBatchCount} outil(s) exécuté(s) ✅ mais la réponse texte n'a pas terminé. Tape "continue" ou relance ta question pour la suite.`;
+      } else if (hasText) {
+        finalMsg = `${assistantMsg.text}\n\n---\n⚠ ${userMsg} (réponse partielle préservée)`;
+      } else {
+        finalMsg = userMsg;
+      }
+      assistantMsg.text = finalMsg;
       delete assistantMsg.streaming;
       store.set('isStreaming', false);
       renderMessages(rootEl);

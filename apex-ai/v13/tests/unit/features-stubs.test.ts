@@ -110,6 +110,10 @@ describe('features stubs render coverage', () => {
 
   describe('feature-domotique', () => {
     it('render → DOM contient grid 4 catégories', async () => {
+      /* module.domotique est defaultEnabled:false dans le registry — il faut
+         l'activer pour que le render() ne court-circuite pas (guardFeatureEnabled). */
+      const { featureToggles } = await import('../../services/feature-toggles.js');
+      featureToggles.setGlobal('module.domotique', true);
       const mod = await import('../../features/domotique/index.js');
       mod.render(root);
       expect(root.innerHTML).toContain('Lumières');

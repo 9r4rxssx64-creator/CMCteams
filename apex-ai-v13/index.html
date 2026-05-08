@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.3.74">
+<html lang="fr" data-theme="dark" data-app-ver="v13.3.75">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-6dda5735c64612728b9feae46db6494a' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-6dda5735c64612728b9feae46db6494a' 'unsafe-inline';
+             script-src 'self' 'nonce-909130cca3594017d70f4feaa54730e7' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-909130cca3594017d70f4feaa54730e7' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -133,8 +133,12 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="6dda5735c64612728b9feae46db6494a" type="module" crossorigin src="./core/main-BQ6JhBsC.js"></script>
-  <link nonce="6dda5735c64612728b9feae46db6494a" rel="stylesheet" crossorigin href="./assets/css/main-DLXksLe1.css">
+  <script nonce="909130cca3594017d70f4feaa54730e7" type="module" crossorigin src="./core/main-C9h0PGqO.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-BAiQJoxJ.js">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-Dy6Wjk7e.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BrxoW6ip.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-BefgB4O2.js">
+  <link nonce="909130cca3594017d70f4feaa54730e7" rel="stylesheet" crossorigin href="./assets/css/main-BV2cw0DV.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -144,8 +148,13 @@
     <div class="apex-splash-bar"><div class="apex-splash-bar-fill"></div></div>
   </div>
 
+  <!-- Skip-link a11y (visible focus, hidden otherwise) — v13.3.74 a11y fix.
+       Note : on évite href="#apex-root" qui collisionne avec hash router.
+       Le skip-link met le focus programmatique sur #apex-root via JS rescue handler. -->
+  <a href="#main-content" class="ax-skip-link" data-ax-skip-target="apex-root">Aller au contenu principal</a>
+
   <!-- Root mount point -->
-  <div id="apex-root" role="main" aria-label="APEX AI"></div>
+  <div id="apex-root" role="main" aria-label="APEX AI" tabindex="-1"></div>
 
   <!-- Fallback statique si bundle JS crash (ne JAMAIS reproduire l'erreur "écran blanc") -->
   <noscript>
@@ -164,6 +173,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="6dda5735c64612728b9feae46db6494a" src="./assets/js/rescue.js"></script>
+  <script nonce="909130cca3594017d70f4feaa54730e7" src="./assets/js/rescue.js"></script>
 </body>
 </html>

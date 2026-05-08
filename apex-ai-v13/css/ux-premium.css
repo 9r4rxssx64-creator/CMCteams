@@ -30,9 +30,12 @@
 }
 
 .ax-drill-back, .ax-drill-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
+  /* v13.3.74 a11y fix : touch target 44px (Apple HIG) */
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
+  min-width: var(--ax-touch-min);
+  min-height: var(--ax-touch-min);
+  border-radius: 22px;
   background: rgba(201, 162, 39, 0.1);
   border: 1px solid rgba(201, 162, 39, 0.3);
   color: #c9a227;
@@ -40,6 +43,9 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .ax-drill-back:hover, .ax-drill-close:hover {
   background: rgba(201, 162, 39, 0.25);
@@ -290,18 +296,21 @@
 }
 .ax-chat-input .ax-btn-primary:active { transform: scale(0.94); }
 
-/* Mobile compact : icon 36px sur petit écran */
+/* Mobile compact petit écran : icon 40px (compromis touch HIG vs espace) */
+/* v13.3.74 a11y fix : 36px → 40px+ (Apple HIG min target absolu) */
 @media (max-width: 380px) {
   .ax-chat-input .ax-btn-icon {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    font-size: 16px;
-  }
-  .ax-chat-input .ax-btn-primary {
     width: 40px;
     height: 40px;
     min-width: 40px;
+    min-height: 40px;
+    font-size: 16px;
+  }
+  .ax-chat-input .ax-btn-primary {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

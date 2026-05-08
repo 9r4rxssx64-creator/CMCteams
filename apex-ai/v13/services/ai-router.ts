@@ -540,18 +540,46 @@ export function auditProviderChain(): {
   configured: readonly string[];
   meetsMinimum: boolean;
 } {
+  /* v13.3.75 (Kevin urgent "14 clés mais 2/6 providers") :
+   * Élargir audit à TOUS les providers IA possibles (pas seulement DEFAULT_CHAIN
+   * de 6) — inclus mistral, cohere, deepseek, perplexity, xai_grok pour matcher
+   * les clés réellement stockées dans le vault. Aussi : check vault chiffré
+   * (AXENC1:) en plus du localStorage brut. */
+  const ALL_AI_KEYS: readonly { name: string; storageKey: string }[] = [
+    { name: 'anthropic', storageKey: 'ax_shared_api_key' },
+    { name: 'anthropic_alt', storageKey: 'ax_anthropic_key' },
+    { name: 'openai', storageKey: 'ax_openai_key' },
+    { name: 'openrouter', storageKey: 'ax_openrouter_key' },
+    { name: 'groq', storageKey: 'ax_groq_key' },
+    { name: 'gemini', storageKey: 'ax_gemini_key' },
+    { name: 'mistral', storageKey: 'ax_mistral_key' },
+    { name: 'cohere', storageKey: 'ax_cohere_key' },
+    { name: 'deepseek', storageKey: 'ax_deepseek_key' },
+    { name: 'perplexity', storageKey: 'ax_perplexity_key' },
+    { name: 'xai_grok', storageKey: 'ax_xai_key' },
+    { name: 'huggingface', storageKey: 'ax_hf_token' },
+  ];
   const healthy: string[] = [];
   const unhealthy: string[] = [];
-  for (const p of DEFAULT_CHAIN) {
-    const cfg = PROVIDERS[p];
-    if (!cfg) continue;
-    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(cfg.keyName) : null;
-    /* gemini = optionnel (peut marcher sans key via proxy) → toujours healthy si endpoint dispo */
-    if (raw && raw.length > 0) healthy.push(p);
-    else if (p !== 'gemini') unhealthy.push(p);
+  const seenProviders = new Set<string>();
+  if (typeof localStorage !== 'undefined') {
+    for (const { name, storageKey } of ALL_AI_KEYS) {
+      const raw = localStorage.getItem(storageKey);
+      /* Compte clé valide si non-vide (chiffré AXENC1: ou clair) */
+      if (raw && raw.length > 0) {
+        const baseProvider = name.replace(/_alt$/, '');
+        if (!seenProviders.has(baseProvider)) {
+          seenProviders.add(baseProvider);
+          healthy.push(baseProvider);
+        }
+      } else if (DEFAULT_CHAIN.includes(name as Provider) && name !== 'gemini') {
+        unhealthy.push(name);
+      }
+    }
   }
+  /* gemini optionnel : si autre provider dispo, on tolère */
   return {
-    total: DEFAULT_CHAIN.length,
+    total: ALL_AI_KEYS.length, /* 12 providers possibles vs 6 avant */
     healthy: healthy.length,
     unhealthy,
     configured: healthy,
