@@ -147,16 +147,18 @@ class NeverForgetWatch {
     /* === Check 4 : Extended contient cadres CMC critiques === */
     const cadresCritiques = ['ETTORI M', 'FOUQUE V', 'BOUVIER JF'];
     const cadresFound = cadresCritiques.filter((c) => extendedSection.includes(c));
-    checks.push({
+    const cadresCheck: AuditCheck = {
       id: 'cadres_cmc_present',
       description: 'Extended section contient ETTORI M + FOUQUE V + BOUVIER JF',
       passed: cadresFound.length === cadresCritiques.length,
       severity: 'warn',
-      details:
-        cadresFound.length === cadresCritiques.length
-          ? undefined
-          : `Manquants: ${cadresCritiques.filter((c) => !cadresFound.includes(c)).join(', ')}`,
-    });
+    };
+    if (cadresFound.length !== cadresCritiques.length) {
+      cadresCheck.details = `Manquants: ${cadresCritiques
+        .filter((c) => !cadresFound.includes(c))
+        .join(', ')}`;
+    }
+    checks.push(cadresCheck);
 
     /* === Check 5 : listAllKnownUsers() >= 25 === */
     checks.push({

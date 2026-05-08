@@ -63,6 +63,7 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'self-test': 'sentinel.feature-watch',
   'anti-regression-watch': 'sentinel.feature-watch',
   'agent-watches-runner': 'sentinel.sentinel-meta',
+  'never-forget-watch': 'sentinel.feature-watch',
   /* Sentinelles réservées Jet 9+ (toggle déclaré, implémentation à venir) :
      dès qu'elles seront register()'d, le toggle sera respecté automatiquement. */
   'import-watch': 'sentinel.import-watch',
@@ -2005,5 +2006,53 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (22 active + 1 disabled wake-watch)`);
+  /* never-forget-watch : audit identité Apex 1×/h
+   * (Kevin 2026-05-08 23h45 ABSOLUE : "Oublie ni moi ni personne jamais !")
+   * Vérifie que Apex se souvient toujours de Kevin/Laurence/famille/amis/clients/cadres CMC.
+   * 9 checks d'intégrité, escalade Claude Code via ax_claude_todo si critical.
+   */
+  sentinels.register({
+    id: 'never-forget-watch',
+    name: 'Never Forget (identité Apex)',
+    desc: 'Audit horaire : Apex connaît Kevin + Laurence + famille + clients + cadres CMC',
+    intervalMs: 60 * 60 * 1000, /* 1h */
+    check: async () => {
+      try {
+        const { neverForgetWatch } = await import('./never-forget-watch.js');
+        const result = neverForgetWatch.runOnce();
+        if (result.critical_count > 0) {
+          return {
+            ok: false,
+            msg: `${result.critical_count} check(s) CRITIQUES — Apex risque d'oublier identité`,
+            details: {
+              critical: result.critical_count,
+              failed: result.failed_count,
+              total_users: result.total_known_users,
+            },
+          };
+        }
+        if (result.failed_count > 0) {
+          return {
+            ok: false,
+            msg: `${result.failed_count} check(s) WARN — identité dégradée`,
+            details: {
+              failed: result.failed_count,
+              total_users: result.total_known_users,
+            },
+          };
+        }
+        return {
+          ok: true,
+          msg: `Identité Apex OK (${result.total_known_users} users connus, ${result.passed_count}/9 checks)`,
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'never-forget audit fail: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (23 active + 1 disabled wake-watch)`);
 }
