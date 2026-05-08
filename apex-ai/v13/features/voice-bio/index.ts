@@ -210,11 +210,11 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
         les autres voix (entourage, bruit ambient) — anti-confusion.
       </p>
       <label style="display:flex;align-items:center;gap:10px;margin-top:10px;cursor:pointer">
-        <input type="checkbox" id="ax-vbio-exclusive" ${exclusive ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
+        <input type="checkbox" id="ax-vbio-exclusive" aria-label="Activer mode reconnaissance vocale exclusive" ${exclusive ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
         <span style="color:#fff;font-weight:600">Mode exclusif activé (recommandé)</span>
       </label>
       <label style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;padding:10px 12px;background:rgba(34,197,94,0.06);border:1px dashed rgba(34,197,94,0.25);border-radius:8px">
-        <input type="checkbox" id="ax-vbio-exclusive-anticipated" ${anticipated ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
+        <input type="checkbox" id="ax-vbio-exclusive-anticipated" aria-label="Mode exclusif anticipé après 10 samples" ${anticipated ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
         <span style="color:#fff;font-weight:600">⚡ Mode exclusif anticipé</span>
       </label>
       <p style="color:#888;font-size:12px;line-height:1.4;margin:6px 0 0 32px">

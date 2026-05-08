@@ -236,7 +236,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </select>
 
         <label style="font-size:12px;color:var(--ax-text-dim);display:flex;align-items:center;gap:4px;cursor:pointer">
-          <input id="ax-plg-pwa-only" type="checkbox" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
+          <input id="ax-plg-pwa-only" type="checkbox" aria-label="Filtrer plugins PWA uniquement" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
         </label>
       </div>
 
@@ -462,7 +462,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
         </select>
 
         <label style="font-size:12px;color:var(--ax-text-dim);display:flex;align-items:center;gap:4px;cursor:pointer">
-          <input id="ax-ext-pwa-only" type="checkbox" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
+          <input id="ax-ext-pwa-only" type="checkbox" aria-label="Filtrer outils PWA uniquement" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
         </label>
       </div>
 

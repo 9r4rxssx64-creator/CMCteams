@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.81';
+export const APP_VER = 'v13.3.82';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -348,6 +348,8 @@ async function bootstrap(): Promise<void> {
   router.register('legal', { loader: () => import('@features/legal/index.js') });
   /* Kevin 2026-05-08 : Vue admin-credentials-status (cible click notif "credentials manquants") */
   router.register('admin-credentials-status', { loader: () => import('@features/admin/credentials-status/index.js'), requiresAdmin: true });
+  /* Kevin 2026-05-08 v13.3.82 : Vue admin-rgpd (UI explicite pour rgpd.liftRestriction) */
+  router.register('admin-rgpd', { loader: () => import('@features/admin/rgpd-admin/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

@@ -118,12 +118,12 @@ export function render(rootEl: HTMLElement): void {
         <form id="login-form" class="ax-form" novalidate>
           <label>
             <span class="ax-form-label">Nom et prénom</span>
-            <input type="text" id="login-name" required minlength="3" autocomplete="name"
+            <input type="text" id="login-name" aria-label="Nom et prénom" required minlength="3" autocomplete="name"
               placeholder="Ton prénom et nom" autocapitalize="words" spellcheck="false">
           </label>
           <label>
             <span class="ax-form-label">Code PIN</span>
-            <input type="password" id="login-pin" required minlength="4" autocomplete="current-password"
+            <input type="password" id="login-pin" aria-label="Code PIN de connexion" required minlength="4" autocomplete="current-password"
               inputmode="numeric" placeholder="••••••" maxlength="12">
           </label>
           <button type="submit" id="login-submit" class="ax-btn ax-btn-primary ax-btn-block">

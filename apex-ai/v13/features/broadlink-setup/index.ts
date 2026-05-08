@@ -94,12 +94,12 @@ function renderUI(
           <br/>📷 <strong>Astuce</strong> : tu peux aussi coller un screenshot du compte dans le chat — Apex extrait token + devices via Vision.
         </p>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <input type="email" id="ax-bl-email" placeholder="email@example.com"
+          <input type="email" id="ax-bl-email" aria-label="Email du compte Broadlink" placeholder="email@example.com"
             value="${escapeHtml(status.email ?? '')}"
             style="padding:12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:14px;min-height:44px"
             autocomplete="email" autocapitalize="off" autocorrect="off"
           />
-          <input type="password" id="ax-bl-password" placeholder="Mot de passe Broadlink"
+          <input type="password" id="ax-bl-password" aria-label="Mot de passe du compte Broadlink" placeholder="Mot de passe Broadlink"
             style="padding:12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:14px;min-height:44px"
             autocomplete="current-password"
           />
@@ -118,7 +118,7 @@ function renderUI(
         <h3 style="margin-top:0;color:#c9a227;font-size:16px">⚙️ Avancé</h3>
         <p style="font-size:13px;color:#aaa">Si CORS bloque l'API Broadlink directe (Safari iOS PWA), configure un proxy Cloudflare Worker :</p>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="url" id="ax-bl-proxy-url" placeholder="https://apex-broadlink-proxy.workers.dev"
+          <input type="url" id="ax-bl-proxy-url" aria-label="URL du proxy Cloudflare Worker Broadlink" placeholder="https://apex-broadlink-proxy.workers.dev"
             value="${escapeHtml(status.proxyUrl ?? '')}"
             style="flex:1;min-width:220px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.4);color:#fff;font-size:13px"
           />

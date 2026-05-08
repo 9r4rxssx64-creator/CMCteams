@@ -68,7 +68,7 @@ async function renderRows(): Promise<string> {
           <td>${statusBadge(cap.status)}</td>
           <td>
             <label class="ax-toggle">
-              <input type="checkbox" data-toggle-api="${cap.id}" ${toggle ? 'checked' : ''}>
+              <input type="checkbox" data-toggle-api="${cap.id}" aria-label="Activer ou désactiver ${escapeHtml(cap.id)}" ${toggle ? 'checked' : ''}>
               <span class="ax-toggle-slider"></span>
             </label>
           </td>

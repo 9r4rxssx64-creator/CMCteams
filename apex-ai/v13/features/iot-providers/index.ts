@@ -258,7 +258,7 @@ async function handleInstall(providerId: string, rootEl: HTMLElement): Promise<v
         <form id="iot-install-form" autocomplete="off">
           ${fields.map((f) => `
             <label>${escapeHtml(f.label)}${f.required ? ' *' : ''}</label>
-            <input name="${escapeHtml(f.name)}" type="${escapeHtml(f.type)}" placeholder="${escapeHtml(f.placeholder ?? '')}" ${f.required ? 'required' : ''} autocomplete="off" />
+            <input name="${escapeHtml(f.name)}" aria-label="${escapeHtml(f.label)}" type="${escapeHtml(f.type)}" placeholder="${escapeHtml(f.placeholder ?? '')}" ${f.required ? 'required' : ''} autocomplete="off" />
           `).join('')}
           <div class="iot-modal-actions">
             <button type="button" class="iot-btn secondary" data-modal-close="1">Annuler</button>

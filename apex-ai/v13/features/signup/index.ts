@@ -58,26 +58,26 @@ export function render(rootEl: HTMLElement): void {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label>
               <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Prénom *</span>
-              <input type="text" id="signup-prenom" required minlength="2" autocomplete="given-name"
+              <input type="text" id="signup-prenom" aria-label="Prénom" required minlength="2" autocomplete="given-name"
                 style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
                 placeholder="Marc">
             </label>
             <label>
               <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Nom *</span>
-              <input type="text" id="signup-nom" required minlength="2" autocomplete="family-name"
+              <input type="text" id="signup-nom" aria-label="Nom de famille" required minlength="2" autocomplete="family-name"
                 style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
                 placeholder="Dupont">
             </label>
           </div>
           <label>
             <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Email *</span>
-            <input type="email" id="signup-email" required autocomplete="email" inputmode="email"
+            <input type="email" id="signup-email" aria-label="Adresse email" required autocomplete="email" inputmode="email"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
               placeholder="marc@example.com">
           </label>
           <label>
             <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Téléphone WhatsApp * (format +33xxx)</span>
-            <input type="tel" id="signup-whatsapp" required autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
+            <input type="tel" id="signup-whatsapp" aria-label="Numéro WhatsApp avec indicatif pays" required autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
               placeholder="+33612345678">
           </label>
@@ -87,7 +87,7 @@ export function render(rootEl: HTMLElement): void {
             <div id="signup-plans" style="display:grid;gap:8px">
               ${PLANS.map((p, i) => `
                 <label style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer">
-                  <input type="radio" name="signup-plan" value="${p.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#c9a227">
+                  <input type="radio" name="signup-plan" aria-label="Plan ${escapeHtml(p.label)}" value="${p.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#c9a227">
                   <div style="flex:1">
                     <div style="display:flex;justify-content:space-between;align-items:center">
                       <strong style="color:#fff;font-size:14px">${escapeHtml(p.label)}</strong>
@@ -102,11 +102,11 @@ export function render(rootEl: HTMLElement): void {
 
           <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;display:grid;gap:8px">
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
-              <input type="checkbox" id="signup-cgu" required style="margin-top:2px;accent-color:#c9a227">
+              <input type="checkbox" id="signup-cgu" aria-label="Accepter CGU et politique de confidentialité" required style="margin-top:2px;accent-color:#c9a227">
               <span>J'accepte les <a href="#" id="signup-link-cgu" style="color:#c9a227;text-decoration:underline">CGU</a> et la <a href="#" id="signup-link-privacy" style="color:#c9a227;text-decoration:underline">Politique de confidentialité</a></span>
             </label>
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
-              <input type="checkbox" id="signup-rgpd" required style="margin-top:2px;accent-color:#c9a227">
+              <input type="checkbox" id="signup-rgpd" aria-label="Autoriser le traitement des données RGPD" required style="margin-top:2px;accent-color:#c9a227">
               <span>J'autorise le traitement de mes données pour la création + gestion de mon compte Apex (RGPD Art. 6.1.b contrat)</span>
             </label>
           </div>
