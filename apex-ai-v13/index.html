@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.3.73">
+<html lang="fr" data-theme="dark" data-app-ver="v13.3.74">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-2aefd5b0199b4c0e0d2983803518dd18' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-2aefd5b0199b4c0e0d2983803518dd18' 'unsafe-inline';
+             script-src 'self' 'nonce-6dda5735c64612728b9feae46db6494a' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-6dda5735c64612728b9feae46db6494a' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -133,8 +133,8 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="2aefd5b0199b4c0e0d2983803518dd18" type="module" crossorigin src="./core/main-BqtLFpxm.js"></script>
-  <link nonce="2aefd5b0199b4c0e0d2983803518dd18" rel="stylesheet" crossorigin href="./assets/css/main-DLXksLe1.css">
+  <script nonce="6dda5735c64612728b9feae46db6494a" type="module" crossorigin src="./core/main-BQ6JhBsC.js"></script>
+  <link nonce="6dda5735c64612728b9feae46db6494a" rel="stylesheet" crossorigin href="./assets/css/main-DLXksLe1.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -164,6 +164,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict zéro unsafe-inline) -->
-  <script nonce="2aefd5b0199b4c0e0d2983803518dd18" src="./assets/js/rescue.js"></script>
+  <script nonce="6dda5735c64612728b9feae46db6494a" src="./assets/js/rescue.js"></script>
 </body>
 </html>
