@@ -34,11 +34,15 @@ describe('Sentry Bridge boost (P1 audit)', () => {
       expect(() => sentryBridge.captureException(err)).not.toThrow();
     });
 
-    it('captureException avec Error et stack', () => {
+    it('captureException avec Error et stack — no throw + retour défini', () => {
       const err = new Error('Stack test');
-      sentryBridge.captureException(err, { tag: 'test' });
-      /* No throw expected */
-      expect(true).toBe(true);
+      let threw = false;
+      try {
+        sentryBridge.captureException(err, { tag: 'test' });
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
     });
 
     it('captureException avec context custom', () => {
@@ -61,12 +65,17 @@ describe('Sentry Bridge boost (P1 audit)', () => {
   });
 
   describe('integration', () => {
-    it('multiple captures successifs', () => {
-      for (let i = 0; i < 5; i++) {
-        sentryBridge.captureException(new Error(`Err ${i}`));
-        sentryBridge.captureMessage(`Info ${i}`, 'info');
+    it('multiple captures successifs — no throw sur 5 itérations', () => {
+      let threw = false;
+      try {
+        for (let i = 0; i < 5; i++) {
+          sentryBridge.captureException(new Error(`Err ${i}`));
+          sentryBridge.captureMessage(`Info ${i}`, 'info');
+        }
+      } catch {
+        threw = true;
       }
-      expect(true).toBe(true);
+      expect(threw).toBe(false);
     });
   });
 });

@@ -61,22 +61,37 @@ describe('firebase coverage boost', () => {
   });
 
   describe('write (queue offline)', () => {
-    it('write FB_LOCAL key → no-op (skip)', async () => {
-      await firebase.write('apex_v13_user', { id: 'kevin' });
-      /* Pas de throw, pas de queue */
-      expect(true).toBe(true);
+    it('write FB_LOCAL key → no-op silencieux (pas throw, pas connect)', async () => {
+      let threw = false;
+      try {
+        await firebase.write('apex_v13_user', { id: 'kevin' });
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      /* FB_LOCAL ne doit pas connecter Firebase */
+      expect(firebase.isConnected()).toBe(false);
     });
 
-    it('write non-whitelisted key → no-op', async () => {
-      await firebase.write('random_xyz', 'value');
-      expect(true).toBe(true);
+    it('write non-whitelisted key → no-op silencieux', async () => {
+      let threw = false;
+      try {
+        await firebase.write('random_xyz', 'value');
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      expect(firebase.shouldSync('random_xyz')).toBe(false);
     });
 
-    it('write hors connexion → push dans queue', async () => {
-      /* firebase pas connected (init pas appelé) */
-      await firebase.write('ax_anthropic_key', 'sk-test');
-      /* La queue interne aura cette entrée — pas observable directement, mais pas de throw */
-      expect(true).toBe(true);
+    it('write hors connexion → no-op silencieux (pas throw)', async () => {
+      let threw = false;
+      try {
+        await firebase.write('ax_anthropic_key', 'sk-test');
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
     });
   });
 
@@ -136,11 +151,17 @@ describe('firebase coverage boost', () => {
   });
 
   describe('writes idempotency hash deterministe', () => {
-    it('même entrée 2× silently skipped', async () => {
-      /* Sans connexion, write skip de toute façon — vérifie pas de throw */
-      await firebase.write('ax_telegram_token', 'value-X');
-      await firebase.write('ax_telegram_token', 'value-X');
-      expect(true).toBe(true);
+    it('même entrée 2× sans throw + état stable', async () => {
+      let threw = false;
+      try {
+        await firebase.write('ax_telegram_token', 'value-X');
+        await firebase.write('ax_telegram_token', 'value-X');
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      /* Sans connexion, isConnected reste false */
+      expect(firebase.isConnected()).toBe(false);
     });
   });
 

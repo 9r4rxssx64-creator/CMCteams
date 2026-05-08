@@ -513,9 +513,10 @@ describe('services/sentinels-registry — Boost MAX 18+', () => {
   /* === Description par sentinelle === */
 
   describe('descriptions enrichies', () => {
-    it('capabilities-watch a description niveau MAX', () => {
+    it('capabilities-watch description platform-aware (v13.3.89 P1.10)', () => {
       const s = sentinelsRegistry.get('capabilities-watch');
-      expect(s?.description).toMatch(/NDEFReader|BarcodeDetector|FileSystemAccess|WebUSB/i);
+      /* v13.3.89 P1.10 : description simplifiée vers platform-aware (iOS/Android/Desktop). */
+      expect(s?.description).toMatch(/APIs|platform/i);
     });
 
     it('tools-watch a description niveau MAX', () => {

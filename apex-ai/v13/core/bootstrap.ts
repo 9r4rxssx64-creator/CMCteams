@@ -20,10 +20,12 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.88';
+export const APP_VER = 'v13.3.89';
 export const ADMIN_ID = 'kdmc_admin';
 
-import { di } from './di.js';
+/* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
+ * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
+import { di } from './service-locator.js';
 import { errors } from './errors.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
@@ -232,10 +234,14 @@ async function bootstrap(): Promise<void> {
     logger.error('boot', 'Memory init failed (degraded)', { err });
   });
   /* v13.3.27 (Kevin 2026-05-07) : sync docs racine repo en arrière-plan (cache 6h).
-   * Non-bloquant : permet à buildSystemPromptDeep() d'avoir docs frais à dispo. */
-  void memory.syncDocsAtBoot().catch((err: unknown) => {
-    logger.warn('boot', 'Docs sync at boot failed (continuing)', { err });
-  });
+   * Non-bloquant : permet à buildSystemPromptDeep() d'avoir docs frais à dispo.
+   * v13.3.89 P2.16 : enchaîne syncLessonsAtBoot une fois CLAUDE.md fetched. */
+  void memory
+    .syncDocsAtBoot()
+    .then(() => memory.syncLessonsAtBoot())
+    .catch((err: unknown) => {
+      logger.warn('boot', 'Docs/lessons sync at boot failed (continuing)', { err });
+    });
 
   /* v13.3.30 (Kevin 2026-05-07) : auto-bootstrap Identité Kevin admin.
    * Idempotent (marqueur ax_kevin_init_done) — pousse dès que admin login détecté. */

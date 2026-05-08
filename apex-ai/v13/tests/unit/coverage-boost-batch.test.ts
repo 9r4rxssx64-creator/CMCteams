@@ -110,9 +110,14 @@ describe('Coverage boost batch (services < 80%)', () => {
       expect(Array.isArray(c)).toBe(true);
     });
 
-    it('revokeConsent feature inconnue ne crash pas', () => {
-      deviceContext.revokeConsent('inexistant');
-      expect(true).toBe(true);
+    it('revokeConsent feature inconnue ne crash pas + retourne sans throw', () => {
+      let threw = false;
+      try {
+        deviceContext.revokeConsent('inexistant');
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
     });
 
     it('hasConsent feature jamais demandé → false', () => {
@@ -176,9 +181,16 @@ describe('Coverage boost batch (services < 80%)', () => {
       expect(Array.isArray(all)).toBe(true);
     });
 
-    it('enable id inconnu ne crash pas', () => {
-      sentinels.enable('inexistant', false);
-      expect(true).toBe(true);
+    it('enable id inconnu ne crash pas + sentinel reste introuvable', () => {
+      let threw = false;
+      try {
+        sentinels.enable('inexistant', false);
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      const found = sentinels.list().find((s) => s.id === 'inexistant');
+      expect(found).toBeUndefined();
     });
   });
 
@@ -198,9 +210,18 @@ describe('Coverage boost batch (services < 80%)', () => {
       expect(r).toBe(false);
     });
 
-    it('setTyping persiste', () => {
-      chatRealtime.setTyping('conv1', 'u1');
-      expect(true).toBe(true);
+    it('setTyping persiste sans throw + isTyping reflète état', () => {
+      let threw = false;
+      try {
+        chatRealtime.setTyping('conv1', 'u1');
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(false);
+      /* isTyping doit retourner true dans la fenêtre 5s */
+      expect(chatRealtime.isTyping('conv1', 'u1')).toBe(true);
+      /* User non typant doit retourner false */
+      expect(chatRealtime.isTyping('conv1', 'autre_uid')).toBe(false);
     });
   });
 });

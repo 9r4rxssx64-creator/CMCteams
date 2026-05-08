@@ -465,14 +465,30 @@ class SentinelsRegistry {
   }
 
   private registerExtras(): void {
-    /* 14. capabilities-watch (weekly) — détecte nouvelles APIs Web disponibles */
+    /* 14. capabilities-watch (weekly) — détecte APIs Web disponibles
+     * v13.3.89 P1.10 : iOS-aware platform detection (Kevin règle "platform expected limitations").
+     * iOS Safari PWA n'expose pas la plupart des APIs (pas de NDEFReader/BarcodeDetector/WebUSB/etc.).
+     * Reporting honnête : sur iOS, on attend uniquement les APIs réellement disponibles.
+     * Sinon on signalait "1/9 APIs" alors que c'est platform expected (faux warning). */
     sentinelsManager.register({
       id: 'capabilities-watch',
       name: 'Capabilities watch',
-      desc: 'Détecte nouvelles APIs Web (NDEFReader, BarcodeDetector, FileSystemAccess, WebUSB...)',
+      desc: 'Détecte APIs Web disponibles (platform-aware iOS/Android/Desktop)',
       intervalMs: 7 * 24 * 60 * 60 * 1000,
       check: async () => {
-        const apis: { name: string; available: boolean }[] = [
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        const isIOSSafari = isIOS && /Safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
+        /* APIs universelles attendues (toutes plateformes modernes) */
+        const universalApis: { name: string; available: boolean }[] = [
+          { name: 'Geolocation', available: typeof navigator !== 'undefined' && 'geolocation' in navigator },
+          { name: 'Notification', available: typeof window !== 'undefined' && 'Notification' in window },
+          { name: 'MediaDevices', available: typeof navigator !== 'undefined' && 'mediaDevices' in navigator },
+          { name: 'ServiceWorker', available: typeof navigator !== 'undefined' && 'serviceWorker' in navigator },
+          { name: 'Clipboard', available: typeof navigator !== 'undefined' && 'clipboard' in navigator },
+        ];
+        /* APIs avancées (non disponibles iOS Safari, normales Android/Desktop) */
+        const advancedApis: { name: string; available: boolean }[] = [
           { name: 'NDEFReader', available: typeof (globalThis as Record<string, unknown>)['NDEFReader'] !== 'undefined' },
           { name: 'BarcodeDetector', available: typeof (globalThis as Record<string, unknown>)['BarcodeDetector'] !== 'undefined' },
           { name: 'WebUSB', available: typeof navigator !== 'undefined' && 'usb' in navigator },
@@ -483,11 +499,25 @@ class SentinelsRegistry {
           { name: 'WakeLock', available: typeof navigator !== 'undefined' && 'wakeLock' in navigator },
           { name: 'Contacts', available: typeof navigator !== 'undefined' && 'contacts' in navigator },
         ];
-        const available = apis.filter((a) => a.available).map((a) => a.name);
+        /* Sur iOS Safari : on n'attend QUE les universelles (advanced = expected unavailable) */
+        const expectedApis = isIOSSafari ? universalApis : [...universalApis, ...advancedApis];
+        const allApis = [...universalApis, ...advancedApis];
+        const universalAvailable = universalApis.filter((a) => a.available).map((a) => a.name);
+        const advancedAvailable = advancedApis.filter((a) => a.available).map((a) => a.name);
+        const available = [...universalAvailable, ...advancedAvailable];
+        const expectedAvailable = expectedApis.filter((a) => a.available).map((a) => a.name);
+        const platform = isIOSSafari ? 'iOS Safari' : (isIOS ? 'iOS' : 'Desktop/Android');
         return {
           ok: true,
-          msg: `${available.length}/${apis.length} APIs disponibles`,
-          details: { available, all: apis },
+          msg: isIOSSafari
+            ? `${expectedAvailable.length}/${expectedApis.length} APIs core (iOS Safari attendu) · ${advancedAvailable.length}/${advancedApis.length} avancées (platform N/A)`
+            : `${available.length}/${allApis.length} APIs disponibles`,
+          details: {
+            platform,
+            universal: { available: universalAvailable, total: universalApis.length },
+            advanced: { available: advancedAvailable, total: advancedApis.length, expected: !isIOSSafari },
+            isIOSSafari,
+          },
         };
       },
     });
