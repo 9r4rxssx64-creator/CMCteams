@@ -1715,10 +1715,12 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
         ${!hasKey ? `
-          <div class="ax-info-card ax-modernized-card" style="margin:10px 12px;">
-            <h3>🔑 Aucune clé API configurée</h3>
-            <p>Pour discuter avec Apex, colle une clé API IA. Apex détecte automatiquement Anthropic, OpenAI, Groq ou Gemini.</p>
-            <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:10px 18px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13.5px;width:100%;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)">📋 Coller une clé API</button>
+          <div class="ax-info-card ax-modernized-card" style="margin:4px 8px;padding:8px 10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:12px;color:#e8b830;font-weight:600">🔑 Pas de clé API</span>
+              <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;min-height:32px;-webkit-tap-highlight-color:transparent">📋 Coller</button>
+              <span style="font-size:11px;color:rgba(255,255,255,0.5)">Anthropic / OpenAI / Groq / Gemini</span>
+            </div>
           </div>
         ` : ''}
       </div>
@@ -1742,15 +1744,15 @@ export function render(rootEl: HTMLElement): void {
           style="display:none">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
-      <nav class="ax-chat-nav" style="display:flex;gap:6px;padding:5px 6px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">💬 Chat</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">🔧 Réglages</button>
-        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">🔑 Clé API</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px;color:#ff6666">🚪 Déco</button>
+      <nav class="ax-chat-nav" style="display:flex;gap:3px;padding:3px 4px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Réglages</button>
+        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
       </nav>
-      <footer style="text-align:center;padding:3px 6px calc(env(safe-area-inset-bottom,0px) + 3px);font-size:10px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.3px">
+      <footer style="text-align:center;padding:1px 6px calc(env(safe-area-inset-bottom,0px) + 1px);font-size:9px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.3px;opacity:0.6">
         ${APP_VER} · DK
       </footer>
     </div>
