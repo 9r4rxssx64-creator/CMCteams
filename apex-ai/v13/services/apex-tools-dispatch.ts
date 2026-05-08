@@ -507,6 +507,11 @@ class ApexToolsDispatcher {
       }
       case 'device_camera':
       case 'camera': {
+        /* Feature toggle studio.camera (Kevin règle ON/OFF, 2026-05-04). */
+        const { isFeatureEnabled } = await import('./feature-toggles.js');
+        if (!isFeatureEnabled('studio.camera')) {
+          return { ok: false, error: 'studio.camera désactivé par admin' };
+        }
         const { deviceControl } = await import('./device-control.js');
         return deviceControl.requestCamera({
           video: true,

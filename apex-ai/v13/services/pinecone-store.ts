@@ -26,6 +26,7 @@
 
 import { logger } from '../core/logger.js';
 
+import { isFeatureEnabled } from './feature-toggles.js';
 import { vault } from './vault.js';
 
 /* ============================================================
@@ -132,6 +133,14 @@ class PineconeStore {
   }
 
   private async doInit(): Promise<boolean> {
+    /* Feature toggle Kevin règle ON/OFF : si admin a désactivé Pinecone RAG,
+       fallback localStorage immédiat (pas de tentative réseau ni vault). */
+    if (!isFeatureEnabled('feature.pinecone-rag')) {
+      this.fallbackActive = true;
+      this.initialized = false;
+      logger.info('pinecone-store', 'feature.pinecone-rag OFF → fallback localStorage');
+      return false;
+    }
     try {
       this.apiKey = (await vault.readKey(STORAGE_KEY_KEY)).trim();
       if (!this.apiKey) {

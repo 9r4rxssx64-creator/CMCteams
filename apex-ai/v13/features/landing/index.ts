@@ -18,6 +18,7 @@ import { APP_VER } from '../../core/bootstrap.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { router } from '../../core/router.js';
 import { auth } from '../../services/auth.js';
+import { isFeatureEnabled } from '../../services/feature-toggles.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -85,6 +86,21 @@ export function render(rootEl: HTMLElement): void {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeLandingScope?.cleanup();
   activeLandingScope = createCleanupScope('landing');
+  /* Feature toggle module.landing — sécurité : si désactivée globalement,
+     afficher message "App fermée" mais ne JAMAIS soft-locker l'admin.
+     L'admin reste toujours capable de se connecter (voir auth.ts loginAdmin). */
+  if (!isFeatureEnabled('module.landing')) {
+    rootEl.innerHTML = `
+      <div class="ax-landing">
+        <div class="ax-landing-card">
+          <h1 class="ax-landing-logo">APEX</h1>
+          <p class="ax-muted" style="margin-top:14px">Service temporairement fermé par l'administrateur.</p>
+          <p class="ax-muted" style="font-size:12px;margin-top:8px">Si tu es admin Kevin, rafraîchis pour bypass.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
   /* Auto-login background si device connu (non bloquant) */
   void tryAutoLogin().then((logged) => {
     if (logged) toast.success('🔐 Reconnu automatiquement (device trusted)');
