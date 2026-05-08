@@ -144,7 +144,12 @@ class Auth {
 
     const normalized = normalize(name);
     const tokens = normalized.split(/\s+/).filter((t) => t.length >= 2);
-    if (tokens.length < 1) return { ok: false, reason: 'Nom invalide' };
+    /* v13.3.70 (Apex IA audit Kevin): bug `< 1` accepte juste "Laurence" → ensuite
+     * matching échoue silencieusement → "Utilisateur inconnu".
+     * Fix : reject early avec message actionnable si <2 tokens. */
+    if (tokens.length < 2) {
+      return { ok: false, reason: 'Tape ton prénom ET ton nom (ex: "Laurence Saint-Polit")' };
+    }
 
     const isKevin = this.isKevinAdmin(name);
     let user: PreconfiguredUser | undefined = isKevin

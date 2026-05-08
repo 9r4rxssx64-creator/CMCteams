@@ -35,12 +35,15 @@ const RESET_PIN_TARGETS_WHITELIST: readonly string[] = ['laurence_sp'];
 
 export interface AdminCommand {
   id: string;
-  command: 'reset_pin';
+  command: 'reset_pin' | 'setup_account';
   target_uid: string;
   issued_by: string;
   ts: number;
   reason?: string;
   processed?: boolean;
+  /* setup_account : hash PIN PBKDF2 (PAS le PIN clair) + nom user à pré-remplir */
+  pin_hash?: string;
+  display_name?: string;
 }
 
 export interface AdminCommandResult {
@@ -132,6 +135,82 @@ class AdminCommandsService {
       ok: true,
       command_id: cmd.id,
       message: `Command envoyée. iPhone de ${cleanUid} appliquera le reset au prochain heartbeat SSE.`,
+    };
+  }
+
+  /**
+   * v13.3.69 (Kevin "Apex connaît son code, crée son compte avec son code et débloque").
+   * Setup complet compte user : applique PIN hashé + clear lockout + activate.
+   *
+   * Le caller (Apex IA) hash le PIN clair via auth.hashPin(pin, uid) AVANT d'appeler
+   * cette méthode. Le PIN clair n'est JAMAIS stocké dans Firebase.
+   *
+   * Use case : Kevin dit "Apex configure le compte de Laurence avec son code".
+   * Apex IA récupère le code dans sa persistent_memory, hash, puis appelle ce tool.
+   */
+  async setupAccount(opts: {
+    targetUid: string;
+    pinHash: string;
+    displayName?: string;
+    reason?: string;
+  }): Promise<AdminCommandResult> {
+    const user = store.get('user') as { id?: string } | null;
+    if (!user || user.id !== ADMIN_ID) {
+      logger.warn('admin-commands', 'setupAccount refused (not admin)', { issuer: user?.id });
+      return { ok: false, error: 'Admin tier requis' };
+    }
+
+    const cleanUid = String(opts.targetUid || '').trim();
+    if (!cleanUid) return { ok: false, error: 'target_uid requis' };
+    if (cleanUid === ADMIN_ID) return { ok: false, error: 'Setup admin Kevin interdit via ce tool' };
+    if (!RESET_PIN_TARGETS_WHITELIST.includes(cleanUid)) {
+      return { ok: false, error: `target_uid inconnu : ${cleanUid}` };
+    }
+    if (!opts.pinHash || opts.pinHash.length < 32) {
+      return { ok: false, error: 'pin_hash invalide (PBKDF2 SHA-256 64 hex chars attendu)' };
+    }
+
+    const cmd: AdminCommand = {
+      id: `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      command: 'setup_account',
+      target_uid: cleanUid,
+      issued_by: ADMIN_ID,
+      ts: Date.now(),
+      reason: opts.reason ? String(opts.reason).slice(0, 200) : 'Setup compte par admin Kevin',
+      pin_hash: opts.pinHash,
+      processed: false,
+    };
+    if (opts.displayName) cmd.display_name = opts.displayName.slice(0, 100);
+
+    let pending: AdminCommand[] = [];
+    try {
+      const raw = localStorage.getItem(FB_KEY);
+      if (raw) pending = JSON.parse(raw) as AdminCommand[];
+      if (!Array.isArray(pending)) pending = [];
+    } catch { pending = []; }
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    pending = pending.filter((c) => !(c.processed && c.ts < cutoff));
+    pending.push(cmd);
+    if (pending.length > MAX_PENDING) pending = pending.slice(-MAX_PENDING);
+
+    try { localStorage.setItem(FB_KEY, JSON.stringify(pending)); } catch (err: unknown) {
+      logger.warn('admin-commands', 'localStorage quota error', { err });
+    }
+    try { await firebase.write(FB_KEY, pending); } catch (err: unknown) {
+      logger.warn('admin-commands', 'firebase.write failed', { err });
+    }
+
+    await auditLog.record('admin.command.issued', {
+      actor: ADMIN_ID,
+      target: cleanUid,
+      details: { command: 'setup_account', command_id: cmd.id },
+    });
+
+    logger.info('admin-commands', `📨 setup_account command issued for ${cleanUid} (id=${cmd.id})`);
+    return {
+      ok: true,
+      command_id: cmd.id,
+      message: `Compte ${cleanUid} sera configuré dès reception SSE sur son iPhone.`,
     };
   }
 

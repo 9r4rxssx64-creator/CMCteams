@@ -2201,6 +2201,36 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'C',
   },
+  /* v13.3.69 — Setup compte user complet (Kevin 2026-05-08 "Apex connaît son code, crée son compte"). */
+  {
+    name: 'setup_user_account',
+    description:
+      'Configure complètement un compte user (PIN + clear lockout + activation) en autonomie. Apex IA récupère le code dans sa persistent_memory + hash + appelle ce tool. Le PIN clair n\'est JAMAIS envoyé à Firebase. Use case : Kevin "Apex configure le compte de Laurence avec son code".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target_uid: {
+          type: 'string',
+          description: 'User ID cible (ex: laurence_sp). Whitelist non-admin uniquement.',
+        },
+        pin_clear: {
+          type: 'string',
+          description: 'PIN en clair (4-12 chiffres). Sera hashé PBKDF2 200k avant stockage. Récupéré depuis ax_persistent_memory ou fourni par Kevin.',
+        },
+        display_name: {
+          type: 'string',
+          description: 'Nom affiché user (ex: Laurence Saint-Polit) — pré-rempli champ login.',
+        },
+        reason: {
+          type: 'string',
+          description: 'Raison du setup (audit log).',
+        },
+      },
+      required: ['target_uid', 'pin_clear'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
+  },
 ];
 
 class ApexToolsRegistry {
