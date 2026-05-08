@@ -6,13 +6,14 @@ describe('logger', () => {
     logger.clearBuffer();
     logger.info('test', 'Ma clé sk-ant-api03-' + 'A'.repeat(40));
     const buf = logger.getBuffer();
-    expect(buf[buf.length - 1]?.msg).toContain('[REDACTED]');
+    /* v13.3.75 fix sécu : labels typés [REDACTED:anthropic_key] (cf log-redaction-wrapper). */
+    expect(buf[buf.length - 1]?.msg).toMatch(/\[REDACTED(:anthropic_key)?\]/);
   });
   it('redacte AIza Google AI keys', () => {
     logger.clearBuffer();
     logger.info('test', 'AIza' + 'B'.repeat(33));
     const last = logger.getBuffer().pop();
-    expect(last?.msg).toContain('[REDACTED]');
+    expect(last?.msg).toMatch(/\[REDACTED(:google_api_key)?\]/);
   });
   it('buffer rotation max 500', () => {
     logger.clearBuffer();
