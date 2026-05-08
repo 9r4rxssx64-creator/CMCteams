@@ -25,6 +25,10 @@ export interface EventMap {
   'firebase:remote_change': { key: string; data: unknown };
   'claude_bridge:todo_resolved': { todo_id: string; commit_sha?: string; fix_summary?: string };
   'claude_bridge:handoff_received': { entry_id: string; todo_id: string; by: string };
+  /* Chat events (Sprint 13.3.71 Kevin règle "extraction continue facts depuis chaque message") :
+     emitted by features/chat lors d'un envoi user → écouté par message-fact-extractor. */
+  'chat:message:user': { uid: string; text: string; ts: number };
+  'chat:message:assistant': { uid: string; text: string; ts: number };
   [k: `custom:${string}`]: unknown;
 }
 

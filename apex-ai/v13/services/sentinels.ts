@@ -540,33 +540,110 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* 8. performance-watch : monitor FPS + memory leak detection
+  /* 8. performance-watch : monitor heap + Web Vitals (LCP / INP / CLS)
    * Fix v13.3.18 (Kevin v13.3.16 rapport "performance.memory non disponible") :
    * - Détecte Safari iOS où performance.memory n'existe PAS (bug latent normal, pas un problème).
    * - Skip explicite avec message rassurant : "Safari iPhone (API non exposée par WebKit)".
    * - Sur Chromium : warning > 150MB, error > 250MB.
+   * v13.3.70 (Kevin "performance-watch stub → réel") :
+   * - Intègre perfMetrics (LCP/INP/CLS via PerformanceObserver côté boot).
+   * - Compare snapshot courant vs baseline persisté (apex_v13_perf_baseline) → alerte si dégradation > 30%.
+   * - Auto-fix : reset baseline si trop ancienne (> 7j).
    */
   sentinels.register({
     id: 'performance-watch',
     name: 'Performance runtime',
-    desc: 'Monitor performance.memory si dispo + alert si heap > 150 MB (Chromium uniquement)',
+    desc: 'Monitor heap (Chromium) + Web Vitals (LCP/INP/CLS) — alerte dégradation > 30% vs baseline',
     intervalMs: 15 * 60 * 1000,
     check: async () => {
       const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
       const isiOS = /iPhone|iPad|iPod/i.test(ua);
       const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS/i.test(ua);
       const perf = performance as unknown as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } };
-      if (!perf.memory) {
-        if (isiOS || isSafari) {
-          return { ok: true, msg: 'Safari/iOS — performance.memory non exposée (normal)' };
+
+      /* Collect Web Vitals snapshot */
+      let webVitalsMsg = '';
+      const regressions: string[] = [];
+      try {
+        const { perfMetrics } = await import('./perf-metrics.js');
+        const snap = perfMetrics.getSnapshot();
+        const score = perfMetrics.getScore();
+        webVitalsMsg = ` · score ${score.score}/100`;
+        const baselineRaw = localStorage.getItem('apex_v13_perf_baseline');
+        if (baselineRaw) {
+          try {
+            const baseline = JSON.parse(baselineRaw) as { LCP?: number; INP?: number; CLS?: number; ts: number };
+            for (const k of ['LCP', 'INP', 'CLS'] as const) {
+              const cur = snap[k]?.value;
+              const base = baseline[k];
+              if (typeof cur === 'number' && typeof base === 'number' && base > 0) {
+                const delta = (cur - base) / base;
+                if (delta > 0.30) regressions.push(`${k} +${(delta * 100).toFixed(0)}%`);
+              }
+            }
+          } catch { /* parse fail */ }
+        } else {
+          /* Première run : seed baseline */
+          try {
+            const seed = {
+              LCP: snap.LCP?.value ?? 0,
+              INP: snap.INP?.value ?? 0,
+              CLS: snap.CLS?.value ?? 0,
+              ts: Date.now(),
+            };
+            localStorage.setItem('apex_v13_perf_baseline', JSON.stringify(seed));
+          } catch { /* quota */ }
         }
-        return { ok: true, msg: 'performance.memory non disponible (browser non-Chromium)' };
+      } catch {
+        /* perf-metrics indispo (early boot) → skip Web Vitals */
+      }
+
+      if (!perf.memory) {
+        const baseMsg = (isiOS || isSafari)
+          ? 'Safari/iOS — performance.memory non exposée (normal)'
+          : 'performance.memory non disponible (browser non-Chromium)';
+        if (regressions.length > 0) {
+          return { ok: false, msg: `${baseMsg} · régressions: ${regressions.join(', ')}`, details: { regressions } };
+        }
+        return { ok: true, msg: baseMsg + webVitalsMsg };
       }
       const usedMB = perf.memory.usedJSHeapSize / (1024 * 1024);
       const limitMB = perf.memory.jsHeapSizeLimit / (1024 * 1024);
-      if (usedMB > 250) return { ok: false, msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB (>250MB critical)`, details: { usedMB, limitMB } };
-      if (usedMB > 150) return { ok: true, msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB (warning > 150MB)`, details: { usedMB } };
-      return { ok: true, msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB OK` };
+      if (usedMB > 250) {
+        return {
+          ok: false,
+          msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB (>250MB critical)${webVitalsMsg}`,
+          details: { usedMB, limitMB, regressions },
+        };
+      }
+      if (regressions.length > 0) {
+        return {
+          ok: false,
+          msg: `Heap ${usedMB.toFixed(0)}MB OK · régressions Web Vitals: ${regressions.join(', ')}`,
+          details: { usedMB, regressions },
+        };
+      }
+      if (usedMB > 150) {
+        return { ok: true, msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB (warning > 150MB)${webVitalsMsg}`, details: { usedMB } };
+      }
+      return { ok: true, msg: `Heap ${usedMB.toFixed(0)}MB / ${limitMB.toFixed(0)}MB OK${webVitalsMsg}` };
+    },
+    autoFix: async () => {
+      /* Si baseline > 7j → reset (acceptable car le code a évolué) */
+      try {
+        const raw = localStorage.getItem('apex_v13_perf_baseline');
+        if (raw) {
+          const baseline = JSON.parse(raw) as { ts: number };
+          const ageDays = (Date.now() - baseline.ts) / (24 * 60 * 60 * 1000);
+          if (ageDays > 7) {
+            localStorage.removeItem('apex_v13_perf_baseline');
+            return { ok: true, msg: `Baseline reset (âge ${ageDays.toFixed(0)}j > 7j)` };
+          }
+        }
+        return { ok: false, msg: 'Baseline récente, reset manuel requis pour régression réelle' };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'autofix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
     },
   });
 
@@ -625,23 +702,76 @@ export function registerCoreSentinels(): void {
       }
       return { ok: true, msg: 'Session + audit log OK' };
     },
+    autoFix: async () => {
+      /* v13.3.70 (Kevin "WARNING = AUTO-FIX") : rebuild chain hash si tamper détecté.
+       * Fix root : audit-log.autoRepair() trouve l'index broken et rebuild from there.
+       * Si chain valide → no-op + ok:true (idempotent). */
+      try {
+        const { auditLog } = await import('./audit-log.js');
+        auditLog.reload();
+        const r = await auditLog.autoRepair();
+        if (r.rebuilt === 0) {
+          return { ok: true, msg: 'Chain audit déjà valide (no-op)' };
+        }
+        return {
+          ok: r.ok,
+          msg: `Chain rebuild from #${r.brokenAt ?? '?'} → ${r.rebuilt} entries`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'rebuildChainHash fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
-  /* 10. presence-watch : update timestamp activité user */
+  /* 10. presence-watch : update timestamp activité user + broadcast online/offline */
   sentinels.register({
     id: 'presence-watch',
     name: 'Présence user',
-    desc: 'Update lastact pour heartbeat session (renew TTL 8h)',
+    desc: 'Heartbeat 2 min + broadcast online/offline + cleanup stale users (>10 min)',
     intervalMs: 2 * 60 * 1000,
     check: async () => {
       const lastact = parseInt(localStorage.getItem('apex_v13_lastact') ?? '0', 10);
       const ageMin = (Date.now() - lastact) / (60 * 1000);
-      return { ok: true, msg: `Last activity ${ageMin.toFixed(0)}min ago` };
+      const userRaw = localStorage.getItem('apex_v13_user');
+
+      /* v13.3.70 : broadcast online/offline state + cleanup stale registry */
+      const PRESENCE_KEY = 'apex_v13_presence';
+      const STALE_TTL_MS = 10 * 60 * 1000; /* 10 min sans heartbeat = offline */
+      try {
+        const raw = localStorage.getItem(PRESENCE_KEY) ?? '{}';
+        const presence = JSON.parse(raw) as Record<string, { ts: number; online: boolean; uid?: string }>;
+        const now = Date.now();
+        let staleCount = 0;
+        for (const [k, v] of Object.entries(presence)) {
+          if (v && typeof v.ts === 'number' && now - v.ts > STALE_TTL_MS && v.online) {
+            presence[k] = { ...v, online: false };
+            staleCount++;
+          }
+        }
+        /* Update self entry si user logged-in */
+        if (userRaw) {
+          try {
+            const u = JSON.parse(userRaw) as { id?: string };
+            if (u.id) {
+              presence[u.id] = { ts: now, online: true, uid: u.id };
+            }
+          } catch { /* parse fail */ }
+        }
+        localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
+        const onlineCount = Object.values(presence).filter((p) => p.online).length;
+        const baseMsg = `Last activity ${ageMin.toFixed(0)}min ago`;
+        if (staleCount > 0) {
+          return { ok: true, msg: `${baseMsg} · ${onlineCount} online (${staleCount} marqués offline)` };
+        }
+        return { ok: true, msg: `${baseMsg} · ${onlineCount} online` };
+      } catch {
+        return { ok: true, msg: `Last activity ${ageMin.toFixed(0)}min ago` };
+      }
     },
     autoFix: async () => {
       try {
         localStorage.setItem('apex_v13_lastact', String(Date.now()));
-        return { ok: true, msg: 'lastact refreshed' };
+        return { ok: true, msg: 'heartbeat refreshed' };
       } catch {
         return { ok: false, msg: 'persist failed' };
       }
@@ -673,10 +803,37 @@ export function registerCoreSentinels(): void {
       } catch {
         /* parse fail → ignore */
       }
-      if (consentRgpd || consentCookies || consentByUid) {
-        return { ok: true, msg: 'RGPD consent OK' };
+      if (!(consentRgpd || consentCookies || consentByUid)) {
+        return { ok: false, msg: 'Consent RGPD non enregistré (banner cookies non cliqué)' };
       }
-      return { ok: false, msg: 'Consent RGPD non enregistré (banner cookies non cliqué)' };
+
+      /* v13.3.70 : check permissions revoked depuis dernier consent
+       * Si user avait accordé micro/cam/geo et permission révoquée OS-level → log + alerte */
+      const revoked: string[] = [];
+      if (typeof navigator !== 'undefined' && navigator.permissions) {
+        const perms: PermissionName[] = ['microphone', 'camera', 'geolocation'] as PermissionName[];
+        for (const p of perms) {
+          try {
+            const grantedKey = `apex_v13_perm_granted_${p}`;
+            const wasGranted = localStorage.getItem(grantedKey) === '1';
+            const status = await navigator.permissions.query({ name: p });
+            if (wasGranted && status.state === 'denied') {
+              revoked.push(String(p));
+            }
+            if (status.state === 'granted') {
+              try { localStorage.setItem(grantedKey, '1'); } catch { /* quota */ }
+            }
+          } catch { /* permission name unsupported on browser */ }
+        }
+      }
+      if (revoked.length > 0) {
+        return {
+          ok: false,
+          msg: `Permissions révoquées détectées : ${revoked.join(', ')}`,
+          details: { revoked },
+        };
+      }
+      return { ok: true, msg: 'RGPD consent OK · permissions stables' };
     },
     autoFix: async () => {
       /* Auto-fix : si user logged-in mais pas de banner cookies, propose un consent
@@ -702,22 +859,65 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* 12. conflict-watch : detect Firebase SSE write conflicts */
+  /* 12. conflict-watch : detect Firebase SSE write conflicts + merge resolution.
+   * v13.3.70 (Kevin "WARNING = AUTO-FIX") :
+   * - Détecte queue writes stale > 5 (status flushing > 5 min) = conflict potentiel
+   * - autoFix : reset status flushing → pending pour replay au prochain flush
+   *   (force fb pull + merge via firebase.init() qui resync state)
+   */
   sentinels.register({
     id: 'conflict-watch',
     name: 'Conflits SSE',
-    desc: 'Detect write conflicts entre clients (sync simultanée)',
+    desc: 'Detect write conflicts entre clients (sync simultanée) + force merge si stale',
     intervalMs: 10 * 60 * 1000,
     check: async () => {
       const queueRaw = localStorage.getItem('apex_v13_fb_queue');
       if (!queueRaw) return { ok: true, msg: 'No pending writes' };
       try {
-        const queue = JSON.parse(queueRaw) as Array<{ status: string }>;
-        const stale = queue.filter((e) => e.status === 'flushing').length;
-        if (stale > 5) return { ok: false, msg: `${stale} writes stale (potential conflict)`, details: { stale } };
+        const queue = JSON.parse(queueRaw) as Array<{ status: string; ts?: number; key?: string }>;
+        const STALE_TTL = 5 * 60 * 1000;
+        const now = Date.now();
+        const staleEntries = queue.filter(
+          (e) => e.status === 'flushing' && (typeof e.ts !== 'number' || now - e.ts > STALE_TTL),
+        );
+        if (staleEntries.length > 5) {
+          return {
+            ok: false,
+            msg: `${staleEntries.length} writes stale (potential conflict)`,
+            details: { stale: staleEntries.length, total: queue.length, sample: staleEntries.slice(0, 3).map((e) => e.key) },
+          };
+        }
         return { ok: true, msg: `${queue.length} pending, no conflict` };
       } catch {
         return { ok: false, msg: 'Queue parse failed' };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const queueRaw = localStorage.getItem('apex_v13_fb_queue');
+        if (!queueRaw) return { ok: true, msg: 'No queue to resolve' };
+        const queue = JSON.parse(queueRaw) as Array<{ status: string; ts?: number; key?: string }>;
+        const STALE_TTL = 5 * 60 * 1000;
+        const now = Date.now();
+        let reset = 0;
+        for (const e of queue) {
+          if (e.status === 'flushing' && (typeof e.ts !== 'number' || now - e.ts > STALE_TTL)) {
+            e.status = 'pending';
+            reset++;
+          }
+        }
+        if (reset === 0) return { ok: true, msg: 'No stale writes to reset' };
+        try {
+          localStorage.setItem('apex_v13_fb_queue', JSON.stringify(queue));
+        } catch { /* quota */ }
+        /* Force fb pull via init() qui re-establish SSE listener */
+        try {
+          const { firebase } = await import('./firebase.js');
+          await firebase.init();
+        } catch { /* ignore reconnect fail */ }
+        return { ok: true, msg: `Reset ${reset} stale writes → pending + fb resync` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'merge fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
@@ -879,22 +1079,68 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* 13. wake-watch : detect wake word permission state */
+  /* 13. wake-watch : detect wake word permission + crashed state restart.
+   * v13.3.70 (Kevin "WARNING = AUTO-FIX") :
+   * - Si user opt-in wake word + recognition crashed (iOS Safari instable) → restart auto
+   * - Vérifie aussi permission micro
+   */
   sentinels.register({
     id: 'wake-watch',
     name: 'Wake word "Dis Apex"',
-    desc: 'Vérifie permission micro + état recognition (Jet 6 voice complet)',
+    desc: 'Vérifie permission micro + état recognition + restart auto si crashed iOS Safari',
     intervalMs: 60 * 60 * 1000,
     enabled: false, /* OFF par défaut, activé Jet 6 voice */
     check: async () => {
       if (typeof navigator === 'undefined' || !navigator.permissions) {
         return { ok: true, msg: 'Permissions API not available' };
       }
+      let permState: string = 'unsupported';
       try {
         const status = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        return { ok: status.state !== 'denied', msg: `Mic permission: ${status.state}` };
+        permState = status.state;
+        if (status.state === 'denied') {
+          return { ok: false, msg: `Mic permission denied — user opt-in requis` };
+        }
       } catch {
-        return { ok: true, msg: 'Mic permission query unsupported' };
+        /* unsupported → fallback below */
+      }
+      /* Si user a opt-in (apex_v13_wake_enabled=1), vérifier que recognition tourne */
+      const wakeEnabled = localStorage.getItem('apex_v13_wake_enabled') === '1';
+      if (!wakeEnabled) {
+        return { ok: true, msg: `Mic permission: ${permState} · wake word désactivé` };
+      }
+      try {
+        const { wakeWord } = await import('./wake-word.js');
+        const status = wakeWord.getStatus();
+        if (!status.listening) {
+          return {
+            ok: false,
+            msg: `Wake word activé mais recognition crashed (mic: ${permState})`,
+            details: { listening: false, lastDetected: status.lastDetected, totalDetections: status.totalDetections },
+          };
+        }
+        return { ok: true, msg: `Wake word listening (${status.totalDetections} détections cumulées)` };
+      } catch {
+        return { ok: true, msg: `Mic permission: ${permState} (wake-word module indispo)` };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const wakeEnabled = localStorage.getItem('apex_v13_wake_enabled') === '1';
+        if (!wakeEnabled) return { ok: true, msg: 'Wake word désactivé → no-op' };
+        const { wakeWord } = await import('./wake-word.js');
+        if (wakeWord.isListening()) {
+          return { ok: true, msg: 'Already listening → no-op' };
+        }
+        /* Restart : stop nettoie l'état ancien, start re-init recognition */
+        wakeWord.stop();
+        const r = await wakeWord.start();
+        if (!r.started) {
+          return { ok: false, msg: `Restart fail: ${r.reason ?? 'unknown'}` };
+        }
+        return { ok: true, msg: 'Wake recognition restarted' };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'resetWakeRecognition fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });

@@ -5,6 +5,11 @@
  * quota épuisé, network down), fallback OCR offline via tesseract.js
  * lazy-loadé depuis CDN.
  *
+ * v13.3.71 (perf) : tente d'abord le Web Worker dédié (`workers/ocr.worker.ts`)
+ * pour ne pas bloquer le main thread (~1-3s par scan). Si Worker indispo
+ * (legacy browser, CSP, ready timeout) → fallback main-thread (comportement
+ * historique inchangé).
+ *
  * Anti-pattern Kevin :
  * - Lazy load uniquement à la demande (~3 MB tesseract WASM)
  * - Cache mémoire pour évites re-init worker à chaque appel
@@ -13,6 +18,11 @@
  */
 
 import { logger } from '../core/logger.js';
+
+import type {
+  OcrWorkerRequest,
+  OcrWorkerResponse,
+} from '../workers/ocr.worker.js';
 
 const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js';
 const DEFAULT_LANG = 'fra+eng'; /* Français + Anglais par défaut Kevin */
@@ -44,10 +54,22 @@ export interface OcrResult {
   source: 'tesseract-offline';
 }
 
+interface OcrWorkerPending {
+  resolve: (v: { text: string; confidence: number; latency_ms: number; lang: string }) => void;
+  reject: (err: Error) => void;
+}
+
 class OcrOfflineService {
   private worker: TesseractWorker | null = null;
   private workerLang: string | null = null;
   private loadPromise: Promise<void> | null = null;
+  /* Web Worker dédié (off-main-thread) — lazy init au 1er scan */
+  private dedicatedWorker: Worker | null = null;
+  private dedicatedReady = false;
+  private dedicatedInitPromise: Promise<boolean> | null = null;
+  private dedicatedPermFail = false;
+  private dedicatedPending = new Map<number, OcrWorkerPending>();
+  private dedicatedNextId = 1;
 
   /**
    * Charge tesseract.js depuis CDN (lazy, idempotent).

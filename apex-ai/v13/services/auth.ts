@@ -114,9 +114,37 @@ class Auth {
   }
 
   /**
-   * Hash PIN via PBKDF2 200k (Web Crypto natif, pas de lib externe).
+   * Hash PIN via PBKDF2 200k.
+   *
+   * Stratégie (v13.3.71 perf — off-main-thread) :
+   * 1. Tente le crypto Worker (lazy-init au 1er appel) → ~0ms main-thread blocking.
+   * 2. Si Worker indispo (legacy browser, CSP, ready timeout) → fallback main-thread
+   *    Web Crypto natif (~80-150ms blocking, comportement v13.3.70).
+   *
+   * Backward-compat 100% : signature inchangée, output identique (hex 64 chars).
+   * Tests: tests/unit/auth.test.ts continuent de passer (fallback main-thread).
    */
   async hashPin(pin: string, salt: string): Promise<string> {
+    /* Try worker first (fire-and-forget si pas init). Lazy import pour éviter
+     * de charger crypto-worker-client si jamais utilisé. */
+    try {
+      const { cryptoWorker } = await import('./crypto-worker-client.js');
+      const ok = await cryptoWorker.ensure();
+      if (ok) {
+        return await cryptoWorker.hashPin(pin, salt, 200_000);
+      }
+    } catch (err: unknown) {
+      logger.warn('auth', 'crypto worker hashPin failed → fallback main-thread', { err });
+    }
+    /* Fallback main-thread : Web Crypto natif (comportement historique inchangé). */
+    return this.hashPinMainThread(pin, salt);
+  }
+
+  /**
+   * Hash PIN PBKDF2 main-thread (fallback). Conservé pour backward-compat.
+   * Bloque ~80-150ms — utilisé seulement si Worker indispo.
+   */
+  private async hashPinMainThread(pin: string, salt: string): Promise<string> {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
       'raw',

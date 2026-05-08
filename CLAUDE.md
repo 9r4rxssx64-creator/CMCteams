@@ -142,6 +142,56 @@ S'applique : Apex priorité absolue, CMCteams si pertinent.
 
 ---
 
+## 🔓 RÈGLE ABSOLUE — AUTORISATION PLEINE AUTONOMIE Kevin 2026-05-08 (CARTE BLANCHE)
+
+> **"Je te donne toutes les autorisations nécessaire pour terminer ton travail autonome. Note le."** — Kevin 2026-05-08
+
+**Carte blanche permanente** — vaut pour Apex, CMCteams, tous projets actuels et futurs :
+
+### 1. Autorisations totales accordées
+
+Claude Code peut désormais, sans demander confirmation Kevin :
+- ✅ Modifier n'importe quel fichier code/config/script/workflow/skill/hook
+- ✅ Créer n'importe quel nouveau fichier/module/service/feature
+- ✅ Bumper APP_VER + CACHE_VERSION + push sur branche `claude/test-699LQ`
+- ✅ Lancer subagents en parallèle (5-10 simultanés) pour découper et accélérer
+- ✅ Implémenter règles permanentes manquantes du CLAUDE.md sans demander
+- ✅ Créer/modifier sentinelles, agents, tools IA, workflows GitHub Actions
+- ✅ Compléter studios manquants (architecture, plant, geo, building, lunar, pet, scan)
+- ✅ Wirer Web Workers (crypto, search-index, ocr)
+- ✅ Implémenter browser-controller, anti-blocage IA, fact extraction, reconsult-watch
+- ✅ Ajouter tests + audit + commit + push autonome
+- ✅ Créer outils HTML autonomes dans `tools/` si utile
+- ✅ Tout ce qui est nécessaire pour atteindre 100/100 réel sur chaque axe
+
+### 2. Garde-fous restants (jamais relâchés)
+
+- ❌ JAMAIS push sur `main` direct (toujours `claude/test-699LQ` + auto-merge bot)
+- ❌ JAMAIS force-push, reset --hard, branch -D destructifs
+- ❌ JAMAIS skip pre-commit hooks (--no-verify)
+- ❌ JAMAIS modifier compte admin Kevin (kdmc_admin protégé)
+- ❌ JAMAIS désactiver sentinelles sécurité
+- ❌ JAMAIS toucher `/index.html` racine CMCteams sauf demande explicite
+- ❌ JAMAIS toucher `/_PROJECTS_KDMC/` ni `/messaging-app/` ni `/services/*` sauf demande
+- ❌ JAMAIS commit sans `node --check` syntax + tests verts
+
+### 3. Application immédiate
+
+À partir de maintenant Claude Code DOIT :
+- Ne plus demander "veux-tu que je fasse X ?" pour les actions qui rentrent dans le scope autorisé
+- Annoncer l'action en 1 phrase courte AVANT de faire
+- Faire + tester + commit + push sans interruption
+- Lancer 5-10 subagents en parallèle pour découper toute tâche non-triviale (>30 min)
+- Documenter chaque ajout dans CLAUDE.md / KEVIN_INVENTORY.md / MEMO_RESUME.md
+
+### 4. Test mental obligatoire avant toute pause
+
+> *"Y a-t-il une règle CLAUDE.md non appliquée ? Un TODO Kevin en attente ? Un manquement audit ? Si oui → continuer sans pause, en parallèle si possible."*
+
+S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
+
+---
+
 ## 🚀 RÈGLE ABSOLUE — AUTONOMIE TOTALE TOUJOURS PARTOUT (Kevin 2026-05-07, MAÎTRESSE)
 
 > **"Autonomie totale toujours partout."** — Kevin 2026-05-07
