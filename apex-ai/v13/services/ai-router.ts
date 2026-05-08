@@ -523,6 +523,42 @@ export const ALL_PROVIDERS_LOGICAL: readonly string[] = [
  */
 export const MIN_HEALTHY_PROVIDERS = 5;
 
+/**
+ * v13.3.74 H2 (audit Apex v13.3.73 issue #240) — Audit chain providers au boot.
+ *
+ * Compte combien de providers ont une clé configurée (signal de healthy presumé).
+ * Retourne info pour log boot + toast admin si <MIN_HEALTHY_PROVIDERS.
+ *
+ * Note : "healthy" ici = clé configurée. Les pings réels sont faits par
+ * multi-key-health.ts toutes les 5 min. Cette fonction est un audit boot
+ * rapide pour signaler "trop peu de providers actifs".
+ */
+export function auditProviderChain(): {
+  total: number;
+  healthy: number;
+  unhealthy: readonly string[];
+  configured: readonly string[];
+  meetsMinimum: boolean;
+} {
+  const healthy: string[] = [];
+  const unhealthy: string[] = [];
+  for (const p of DEFAULT_CHAIN) {
+    const cfg = PROVIDERS[p];
+    if (!cfg) continue;
+    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(cfg.keyName) : null;
+    /* gemini = optionnel (peut marcher sans key via proxy) → toujours healthy si endpoint dispo */
+    if (raw && raw.length > 0) healthy.push(p);
+    else if (p !== 'gemini') unhealthy.push(p);
+  }
+  return {
+    total: DEFAULT_CHAIN.length,
+    healthy: healthy.length,
+    unhealthy,
+    configured: healthy,
+    meetsMinimum: healthy.length >= MIN_HEALTHY_PROVIDERS,
+  };
+}
+
 class AIRouter {
   private currentAbort: AbortController | null = null;
 

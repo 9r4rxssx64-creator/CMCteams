@@ -26,8 +26,6 @@
  * - Pas de capture/scan automatique sans request() explicite
  */
 
-import { logger } from '../core/logger.js';
-
 import { auditLog } from './audit-log.js';
 
 export type PwaApiId =

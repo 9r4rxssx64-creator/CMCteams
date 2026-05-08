@@ -201,11 +201,34 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       if (uid) externalIntegrations.listEmailAccounts(uid);
     }),
 
-    /* AI router : init failover chain providers */
+    /* AI router : init failover chain providers.
+     * v13.3.74 H2 (audit Apex v13.3.73 issue #240) : audit chain au boot.
+     * Log "X/Y providers healthy" + toast admin si < MIN_HEALTHY_PROVIDERS. */
     safeInit('ai-router', async () => {
-      const { aiRouter } = await import('./ai-router.js');
+      const { aiRouter, auditProviderChain, MIN_HEALTHY_PROVIDERS } = await import('./ai-router.js');
       const hasKey = aiRouter.hasAnyKey();
-      logger.info('services-bootstrap', `ai-router : ${hasKey ? 'clé(s) configurée(s)' : 'aucune clé'}`);
+      const audit = auditProviderChain();
+      logger.info(
+        'services-bootstrap',
+        `ai-router : ${audit.healthy}/${audit.total} providers healthy (${audit.configured.join(', ') || 'aucun'})`,
+      );
+      if (!hasKey) {
+        logger.warn('services-bootstrap', 'ai-router : aucune clé configurée — coffre requis');
+      } else if (!audit.meetsMinimum) {
+        logger.warn(
+          'services-bootstrap',
+          `ai-router : SEULEMENT ${audit.healthy}/${audit.total} providers configurés (< minimum ${MIN_HEALTHY_PROVIDERS}). Recommandation : ajouter clés ${audit.unhealthy.join(', ')} pour résilience max.`,
+        );
+        /* Toast admin (best-effort, ne bloque pas si toast indispo) */
+        try {
+          const { toast } = await import('../ui/toast.js');
+          toast.show(
+            `⚠️ ${audit.healthy}/${audit.total} providers IA configurés (recommandé: ${MIN_HEALTHY_PROVIDERS}+)`,
+            'warn',
+            { duration: 8000 },
+          );
+        } catch { /* skip — toast pas chargé */ }
+      }
     }),
 
     /* Self healing : install error catchers + emergency trim */

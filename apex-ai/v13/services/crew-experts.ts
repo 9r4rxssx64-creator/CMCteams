@@ -170,19 +170,20 @@ class CrewExpertsService {
     const enrichedPrompt = this.buildMemberPrompt(systemPrompt, expertise, mode, member.systemPromptOverride);
 
     let collectedText = '';
+    let lastError: Error | undefined;
     try {
+      /* aiRouter.stream signature : (messages, system, onChunk, onError?)
+       * On capture text via onChunk + erreur via onError pour cohérence multi-provider. */
       await aiRouter.stream(
         [{ role: 'user', content: task }],
-        {
-          systemPrompt: enrichedPrompt,
-          providersOverride: [member.provider],
-          signal: ctrl.signal,
-          onChunk: (chunk) => {
-            if (chunk.text) collectedText += chunk.text;
-          },
+        enrichedPrompt,
+        (chunk: { text?: string; done?: boolean }) => {
+          if (chunk.text) collectedText += chunk.text;
         },
+        (err: Error) => { lastError = err; },
       );
       clearTimeout(timeout);
+      if (lastError) throw lastError;
       return {
         provider: member.provider,
         expertise,
