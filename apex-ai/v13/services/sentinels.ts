@@ -47,6 +47,7 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'credentials-watch': 'sentinel.credentials-watch',
   'credentials-rotation-watch': 'sentinel.credentials-watch',
   'decrypt-watch': 'sentinel.credentials-watch',
+  'auto-restore-watch': 'sentinel.credentials-watch',
   'link-validation-watch': 'sentinel.link-validation',
   'csp-violation-watch': 'sentinel.csp-violation',
   'memory-watch': 'sentinel.persistence-watch',
@@ -551,6 +552,61 @@ export function registerCoreSentinels(): void {
         };
       }
       return { ok: true, msg: `${r.scanned} clés OK (pas de rotation requise)` };
+    },
+  });
+
+  /* v13.3.79 (Kevin 2026-05-08 ABSOLUE) : auto-restore-watch (30min)
+   * "Quand il me dit qu'il lui manque des choses bah pourquoi il est pas allé
+   *  les chercher automatiquement"
+   * Sentinelle qui audit les clés manquantes et restaure depuis sources
+   * disponibles (alias localStorage, IDB shadow, Firebase backup, pattern
+   * detection) AVANT de demander à Kevin. */
+  sentinels.register({
+    id: 'auto-restore-watch',
+    name: 'Auto-restore credentials',
+    desc: 'Restaure automatiquement les clés manquantes depuis IDB / Firebase / alias avant de demander à Kevin',
+    intervalMs: 30 * 60 * 1000, /* 30 min */
+    check: async () => {
+      const { autoRestoreCredentials } = await import('./auto-restore-credentials.js');
+      try {
+        const stats = await autoRestoreCredentials.getStats();
+        if (stats.recoverable_count > 0) {
+          return {
+            ok: false,
+            msg: `${stats.recoverable_count} clé(s) restorables (auto-fix prêt)`,
+            details: { ...stats },
+          };
+        }
+        if (stats.truly_absent_count > 5) {
+          return {
+            ok: true,
+            msg: `${stats.present_count}/${stats.total_patterns} clés présentes (${stats.truly_absent_count} à coller manuellement)`,
+            details: { ...stats },
+          };
+        }
+        return {
+          ok: true,
+          msg: `${stats.present_count}/${stats.total_patterns} clés présentes`,
+          details: { ...stats },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: `auto-restore-watch failed: ${err instanceof Error ? err.message : String(err)}`,
+        };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { autoRestoreCredentials } = await import('./auto-restore-credentials.js');
+        const r = await autoRestoreCredentials.restoreAutomatically();
+        if (r.restored > 0) {
+          return { ok: true, msg: `${r.restored} clé(s) restaurée(s) automatiquement (échec: ${r.failed})` };
+        }
+        return { ok: false, msg: `Aucune clé restaurable (failed=${r.failed})` };
+      } catch (err: unknown) {
+        return { ok: false, msg: `auto-restore-watch autoFix failed: ${err instanceof Error ? err.message : String(err)}` };
+      }
     },
   });
 
@@ -1702,5 +1758,252 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (20 active + 1 disabled wake-watch)`);
+  /**
+   * v13.3.74+ Kevin 2026-05-08 ABSOLUE — `vault-resilience-watch` (5 min).
+   *
+   * Mission Kevin : "j'ai collé mes codes plusieurs fois ils les ont en mémoire
+   * quelque part. Il doit plus avoir de problème"
+   *
+   * Audit cohérence des 3 sources de vérité credentials :
+   *   - localStorage (rapide)
+   *   - IndexedDB shadow (résiste cache clear)
+   *   - Firebase backup dédié `/apex/vault_backup/<uid>/*` (cross-device)
+   *
+   * Si drift détecté (clé localement mais pas Firebase, ou inverse) → autoFix
+   * via `vaultFirebaseBackup.syncDrift()` qui push manquants Firebase ET restore
+   * manquants localement.
+   */
+  sentinels.register({
+    id: 'vault-resilience-watch',
+    name: 'Résilience Vault (3 sources)',
+    desc: 'Audite cohérence localStorage / IDB / Firebase backup. Auto-fix drift.',
+    intervalMs: 5 * 60 * 1000,
+    check: async () => {
+      try {
+        const { vaultFirebaseBackup } = await import('./vault-firebase-backup.js');
+        const audit = await vaultFirebaseBackup.auditCoherence();
+        if (!audit.drift_detected) {
+          return {
+            ok: true,
+            msg: `${audit.local_count} local / ${audit.fb_count} Firebase — coherent`,
+            details: { local: audit.local_count, fb: audit.fb_count },
+          };
+        }
+        return {
+          ok: false,
+          msg:
+            `Drift détecté : ${audit.in_local_not_fb.length} local sans backup, ` +
+            `${audit.in_fb_not_local.length} Firebase sans local`,
+          details: {
+            in_local_not_fb: audit.in_local_not_fb,
+            in_fb_not_local: audit.in_fb_not_local,
+          },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'audit failed: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { vaultFirebaseBackup } = await import('./vault-firebase-backup.js');
+        const r = await vaultFirebaseBackup.syncDrift();
+        const ok = r.pushed > 0 || r.restored > 0;
+        return {
+          ok,
+          msg: `syncDrift : pushed ${r.pushed} → Firebase, restored ${r.restored} ← Firebase`,
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'autofix fail: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+  });
+
+  /* Mission Kevin 2026-05-08 23h30 — Mémoire augmentée par cœur :
+   * Sentinelle horaire qui audite la santé de la mémoire injectée dans CHAQUE
+   * appel IA. Vérifie : facts user, lessons cross-session, fraîcheur docs racine.
+   * Si déficit détecté → auto-fix (re-fetch docs, demande extraction facts via
+   * apex IA depuis derniers messages, refetch lessons Firebase shared).
+   *
+   * Différent du `memory-watch` quotidien (qui audite TAILLE / cleanup).
+   * Ici on audite la PRÉSENCE / FRAÎCHEUR pour parité Apex-Kevin.
+   */
+  sentinels.register({
+    id: 'memory-augmented-watch',
+    name: 'Mémoire augmentée — fraîcheur identité',
+    desc: 'Audit horaire facts/lessons/docs injectés system prompt — auto-refetch si stale',
+    intervalMs: 60 * 60 * 1000 /* 1h */,
+    check: async () => {
+      try {
+        /* Lecture user courant via store (peut être null si pas loggé) */
+        let currentUid: string | null = null;
+        try {
+          const userRaw = localStorage.getItem('ax_user');
+          if (userRaw) {
+            const u = JSON.parse(userRaw) as { id?: string };
+            if (u.id) currentUid = u.id;
+          }
+        } catch { /* skip */ }
+
+        /* 1. Facts user — minimum 5 si user loggé */
+        let factsCount = 0;
+        try {
+          const mod = await import('./persistent-memory-store.js');
+          const persistentMemoryStore = mod?.persistentMemory;
+          if (persistentMemoryStore && typeof persistentMemoryStore.list === 'function') {
+            const all = await persistentMemoryStore.list();
+            if (Array.isArray(all) && currentUid) {
+              factsCount = all.filter((e) => e.scope === currentUid).length;
+            } else if (Array.isArray(all)) {
+              factsCount = all.length;
+            }
+          }
+        } catch { /* skip */ }
+
+        /* 2. Lessons cross-session — minimum 1 */
+        let lessonsCount = 0;
+        try {
+          const raw = localStorage.getItem('ax_lessons_learned_struct');
+          if (raw) {
+            const arr = JSON.parse(raw) as unknown;
+            if (Array.isArray(arr)) lessonsCount = arr.length;
+          }
+        } catch { /* skip */ }
+
+        /* 3. Docs racine — fraîcheur < 6h */
+        const REQUIRED_DOCS = [
+          'CLAUDE.md',
+          'NOTES_USER.md',
+          'MEMO_RESUME.md',
+          'KEVIN_INVENTORY.md',
+          'KEVIN_ACTIONS_TODO.md',
+          'MEMORY_PERSISTENT.md',
+          'APEX_HANDOFF.md',
+          'CLAUDE_FEED.md',
+        ];
+        const STALE_MS = 6 * 60 * 60 * 1000; /* 6h */
+        const now = Date.now();
+        let docsFresh = 0;
+        let docsStale = 0;
+        const missingDocs: string[] = [];
+        try {
+          const raw = localStorage.getItem('apex_v13_docs_cache');
+          const cache = raw
+            ? (JSON.parse(raw) as Record<string, { ts: number }>)
+            : {};
+          for (const name of REQUIRED_DOCS) {
+            const entry = cache[name];
+            if (!entry) {
+              missingDocs.push(name);
+            } else if (now - entry.ts < STALE_MS) {
+              docsFresh++;
+            } else {
+              docsStale++;
+            }
+          }
+        } catch {
+          missingDocs.push(...REQUIRED_DOCS);
+        }
+
+        const issues: string[] = [];
+        if (currentUid && factsCount < 5) {
+          issues.push(`facts < 5 pour ${currentUid} (${factsCount})`);
+        }
+        if (lessonsCount < 1) {
+          issues.push(`lessons cross-session vides`);
+        }
+        if (docsStale > 0 || missingDocs.length > 0) {
+          issues.push(`docs stale=${docsStale} missing=${missingDocs.length}`);
+        }
+
+        const report = {
+          ts: now,
+          uid: currentUid,
+          facts: factsCount,
+          lessons: lessonsCount,
+          docs_fresh: docsFresh,
+          docs_stale: docsStale,
+          docs_missing: missingDocs,
+        };
+        try {
+          const raw = localStorage.getItem('ax_memory_augmented_log') ?? '[]';
+          const parsed = JSON.parse(raw) as unknown;
+          const log = Array.isArray(parsed) ? parsed : [];
+          log.push(report);
+          localStorage.setItem('ax_memory_augmented_log', JSON.stringify(log.slice(-30)));
+        } catch { /* quota */ }
+
+        if (issues.length === 0) {
+          return {
+            ok: true,
+            msg: `Mémoire OK : ${factsCount} facts, ${lessonsCount} lessons, ${docsFresh}/${REQUIRED_DOCS.length} docs frais`,
+            details: report as unknown as Record<string, unknown>,
+          };
+        }
+        return {
+          ok: false,
+          msg: `Déficit mémoire : ${issues.join(' · ')}`,
+          details: report as unknown as Record<string, unknown>,
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'memory-augmented-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const fixes: string[] = [];
+
+        /* Auto-fix 1 : refetch docs si stale/missing */
+        try {
+          const { memory: memMod } = await import('../core/memory.js');
+          const r = await memMod.syncDocsAtBoot({ forceRefresh: true });
+          fixes.push(`docs synced=${r.synced} skipped=${r.skipped} failed=${r.failed}`);
+        } catch (err: unknown) {
+          fixes.push('docs refetch failed: ' + String(err).slice(0, 100));
+        }
+
+        /* Auto-fix 2 : si user admin Kevin et < 5 facts → bootstrap defaults */
+        try {
+          const userRaw = localStorage.getItem('ax_user');
+          if (userRaw) {
+            const u = JSON.parse(userRaw) as { id?: string };
+            if (u.id === 'kdmc_admin') {
+              /* Force re-init (clear marker) si déficit */
+              const mod = await import('./persistent-memory-store.js');
+              const all = await mod.persistentMemory.list();
+              const kevinFacts = all.filter((e) => e.scope === 'kdmc_admin');
+              if (kevinFacts.length < 5) {
+                localStorage.removeItem('ax_kevin_init_done');
+                const { memory: memMod } = await import('../core/memory.js');
+                await memMod.initBootDefaults();
+                fixes.push('kevin defaults re-bootstrapped');
+              }
+            }
+          }
+        } catch (err: unknown) {
+          fixes.push('kevin defaults fix failed: ' + String(err).slice(0, 80));
+        }
+
+        return {
+          ok: fixes.length > 0,
+          msg: `Auto-fix mémoire augmentée : ${fixes.join(' · ')}`,
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'autofix fail: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (22 active + 1 disabled wake-watch)`);
 }

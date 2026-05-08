@@ -603,6 +603,22 @@ class Vault {
     } catch (err: unknown) {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
+    /* 4. v13.3.74+ (Kevin 2026-05-08 ABSOLUE) — Vault Firebase backup dédié.
+     * Path séparé `/apex/vault_backup/<uid>/<keyId>` qui :
+     * - Survit même si FB_FIX whitelist change (path indépendant)
+     * - Throttle 5min par clé (anti-spam Firebase quota)
+     * - Wrapper enveloppe avec ts + hash SHA-256 pour intégrité audit
+     * - Auto-restore au boot via vaultFirebaseBackup.restoreAllFromFirebaseBackup()
+     *
+     * FIRE-AND-FORGET (non-blocking) : on lance le push async sans await pour ne
+     * pas ralentir setKey() perçu user. Le push réussit en arrière-plan ou retry
+     * via sentinelle vault-resilience-watch (5min) si fail.
+     * persisted.firebase reflète déjà la couche 3 (firebase.write FB_FIX) → suffit. */
+    void import('./vault-firebase-backup.js')
+      .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.push(storageKey, encrypted))
+      .catch((err: unknown) => {
+        logger.debug('vault', 'setKey vault-fb-backup async skipped (offline OK)', { err, storageKey });
+      });
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
     this.audit('set', { target: storageKey, details: persisted });
     /* v13.3.36 (Kevin 2026-05-07 alerte sentinelle "1/16 credentials enregistrés") :

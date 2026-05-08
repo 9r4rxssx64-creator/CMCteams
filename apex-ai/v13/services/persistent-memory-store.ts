@@ -106,6 +106,92 @@ class PersistentMemoryStore {
   }
 
   /**
+   * Mission Kevin 2026-05-08 — Top 50 facts compactés par scope user.
+   *
+   * Sortie compacte (1 ligne / fait) optimisée tokens system prompt :
+   * - Tri primaire : importance desc (allergies 95 → préférences 50)
+   * - Tri secondaire : récence desc (plus frais d'abord, à importance égale)
+   * - Inclut auto le scope global (facts cross-app pertinents pour tous)
+   * - Format : `[category/importance] text`
+   *
+   * Utilisé par buildSystemPromptDeep() pour injection automatique.
+   */
+  async getTop50ForSystemPrompt(uid: string, n = 50): Promise<{
+    count: number;
+    formatted: string;
+    entries: MemoryEntry[];
+  }> {
+    const all = await this.list();
+    /* Inclut scope user + scope 'global' (facts partagés cross-app) */
+    const relevant = all.filter((e) => e.scope === uid || e.scope === 'global');
+    relevant.sort((a, b) => {
+      const dImp = b.importance - a.importance;
+      if (dImp !== 0) return dImp;
+      return b.ts - a.ts;
+    });
+    const top = relevant.slice(0, n);
+    if (top.length === 0) {
+      return { count: 0, formatted: '', entries: [] };
+    }
+    const lines = top.map((e) => `- [${e.category}/${e.importance}] ${e.text}`);
+    const formatted = `## 🧠 Top ${top.length} facts mémoire long-terme (${uid})\n${lines.join('\n')}`;
+    return { count: top.length, formatted, entries: top };
+  }
+
+  /**
+   * Mission Kevin 2026-05-08 — Top 10 lessons critiques cross-session.
+   *
+   * Lit `ax_lessons_learned_struct` (FB_FIX shared cross-app : Apex + CMCteams + KDMC).
+   * Tri : severity desc (critical > warn > info), récence desc.
+   * Inclut SEULEMENT les non-resolved (sinon Apex re-fait les erreurs corrigées).
+   *
+   * Format compact pour injection system prompt :
+   * `ÉVITER: [pattern erreur passée]. [Comment fixer]`
+   */
+  async getTop10LessonsForSystemPrompt(n = 10): Promise<{
+    count: number;
+    formatted: string;
+  }> {
+    try {
+      const raw = localStorage.getItem('ax_lessons_learned_struct');
+      if (!raw) return { count: 0, formatted: '' };
+      const arr = JSON.parse(raw) as Array<{
+        category?: string;
+        title?: string;
+        text?: string;
+        severity?: 'info' | 'warn' | 'critical';
+        resolved?: boolean;
+        ts?: number;
+      }>;
+      if (!Array.isArray(arr)) return { count: 0, formatted: '' };
+      const SEVERITY_RANK: Record<string, number> = {
+        critical: 3,
+        warn: 2,
+        info: 1,
+      };
+      const filtered = arr.filter((l) => l.resolved !== true);
+      filtered.sort((a, b) => {
+        const dSev = (SEVERITY_RANK[b.severity ?? 'info'] ?? 0) - (SEVERITY_RANK[a.severity ?? 'info'] ?? 0);
+        if (dSev !== 0) return dSev;
+        return (b.ts ?? 0) - (a.ts ?? 0);
+      });
+      const top = filtered.slice(0, n);
+      if (top.length === 0) return { count: 0, formatted: '' };
+      const lines = top.map((l) => {
+        const sev = (l.severity ?? 'warn').toUpperCase();
+        const cat = l.category ?? 'general';
+        const title = (l.title ?? '').slice(0, 100);
+        const text = (l.text ?? '').slice(0, 150);
+        return `- [${sev}/${cat}] ÉVITER: ${title}${text ? ` — ${text}` : ''}`;
+      });
+      const formatted = `## ⚠️ Lessons cross-session (top ${top.length} non résolues — ne PAS reproduire)\n${lines.join('\n')}`;
+      return { count: top.length, formatted };
+    } catch {
+      return { count: 0, formatted: '' };
+    }
+  }
+
+  /**
    * Format markdown pour injection system prompt.
    */
   async formatForPrompt(scope: string, n = 30): Promise<string> {

@@ -216,6 +216,87 @@ S'applique : Apex IA priorité absolue, Claude Code (subagents en parallèle dé
 
 ---
 
+## 🧠 RÈGLE ABSOLUE — APEX N'OUBLIE JAMAIS PERSONNE Kevin 2026-05-08
+
+> **"Oublie ni moi ni personne jamais !"** — Kevin 2026-05-08
+
+**Règle ABSOLUE NON-NÉGOCIABLE, prioritaire sur TOUT** — Apex priorité 1, applicable à CHAQUE interaction :
+
+### 1. Apex doit TOUJOURS savoir par cœur
+
+À chaque message, à chaque boot, à chaque interaction :
+- **Kevin DESARZENS** (admin `kdmc_admin`) : email, société, projets, préférences UX, méthodes de travail
+- **Laurence Saint-Polit ❤️** (compagne, tier `laurence`) : relation, anniversaires, allergies, préférences
+- **Amis Kevin** (tier `family`) : noms, contextes, projets partagés
+- **Famille Kevin** (tier `family`) : noms, anniversaires, relations
+- **Clients pros** (tier `client_pro`) : nom, société, abonnement, projets
+- **Clients gratuits** (tier `client_free`) : nom, usage
+- **Employés CMCteams** (258) : noms complets, équipes, rôles, contextes
+- **Pit Boss** : ETTORI M, FOUQUE V, PLACENTI L, DOGLIOLO Y, MUS L, BOUVIER JF (cadres unifiés v9.600)
+
+### 2. Implementation : `core/apex-identity.ts` IRRÉVOCABLE
+
+Identité hardcoded dans le code source — JAMAIS modifiable sans review Kevin :
+```ts
+APEX_IDENTITY = {
+  admin: { name: 'Kevin DESARZENS', ... },
+  family: { laurence: { ... ❤️ }, friends: [...], family_members: [...] },
+  clients: { pro: [...], free: [...] },
+  employees_cmcteams: { byTeam: {...}, cadres: [...] },
+  projects: [...],
+  rules_critical: [...],
+}
+```
+
+Cette identité est :
+- ✅ Hardcoded dans le code source (whitelist apex-execute exclude — ne peut JAMAIS être modifié par auto-modification)
+- ✅ Injectée dans system prompt à CHAQUE appel IA (avant tout autre contexte)
+- ✅ Sentinelle `identity-watch` audit que la section identity reste intacte
+
+### 3. Triple persistence des facts cross-session
+
+Pour chaque user (Kevin, Laurence, amis, clients, employés) :
+- Layer 1 : `persistent-memory-store.ts` localStorage `apex_v13_persistent_memory_<uid>`
+- Layer 2 : IndexedDB shadow (survit cache clear iOS Safari)
+- Layer 3 : Firebase `/apex/persistent_memory_<uid>/` (cross-device + backup)
+
+Auto-restore : si une couche est vide, restore depuis les autres au boot.
+
+### 4. Sentinelle `never-forget-watch` (1×/h)
+
+Audit obligatoire :
+- Identity section présente dans system prompt → sinon alarme
+- Top 50 facts user courant disponibles → sinon refetch Firebase
+- Top 10 lessons cross-session injectées → sinon refetch
+- 7 docs racine sync (CLAUDE.md, NOTES_USER, etc.) → sinon refetch GitHub raw
+- Knowledge graph entities (Kevin, Laurence, projets) présentes Pinecone/MCP Memory
+
+Si une vérification fail → escalade Claude Code via `ax_claude_todo` immédiat.
+
+### 5. JAMAIS demander à Kevin "qui es-tu ?"
+
+Si Apex ne reconnaît pas Kevin/Laurence/famille → c'est un BUG critical, pas une question légitime. Sentinelle `identity-recall-test` quotidienne :
+- Kevin admin login → Apex doit instantanément know "Kevin DESARZENS, Casino Monaco, kdmc_admin"
+- Laurence login → Apex doit savoir "Laurence Saint-Polit ❤️, compagne Kevin, tier laurence"
+- Familier connu mentionné dans message → Apex reconnaît contexte
+
+### 6. Mémoire augmentée TOUJOURS active
+
+Top 50 facts + 10 lessons + 7 règles CLAUDE.md + identity section = **TOUJOURS dans system prompt**. Pas de mode "léger" qui retire ces injections.
+
+### 7. Application immédiate
+
+À partir de maintenant, à chaque commit Apex contenant changement system prompt :
+- ☑ Identity section présente début prompt ?
+- ☑ Top 50 facts injectés ?
+- ☑ Sentinelle never-forget-watch active ?
+
+Si non → fix avant push.
+
+S'applique : Apex priorité absolue, CMCteams (employés mémorisés), tous projets futurs.
+
+---
+
 ## 🔓 RÈGLE ABSOLUE — AUTORISATION PLEINE AUTONOMIE Kevin 2026-05-08 (CARTE BLANCHE)
 
 > **"Je te donne toutes les autorisations nécessaire pour terminer ton travail autonome. Note le."** — Kevin 2026-05-08
