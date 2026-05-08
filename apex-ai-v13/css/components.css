@@ -232,19 +232,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--ax-s-4) var(--ax-s-5);
+  padding: var(--ax-s-2) var(--ax-s-4);
   border-bottom: 1px solid var(--ax-border);
   background: var(--ax-bg-glass);
   backdrop-filter: var(--ax-blur);
   flex-shrink: 0;
   /* iOS notch/dynamic-island */
-  padding-top: max(var(--ax-s-4), env(safe-area-inset-top, 0px));
+  padding-top: max(var(--ax-s-2), env(safe-area-inset-top, 0px));
 }
 
 .ax-chat-header h1 {
   font-family: var(--ax-font-serif);
-  font-size: var(--ax-text-2xl);
-  letter-spacing: 4px;
+  font-size: var(--ax-text-lg);
+  letter-spacing: 2px;
   color: var(--ax-gold);
   margin: 0;
 }
@@ -252,31 +252,33 @@
 .ax-chat-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: var(--ax-s-6);
+  padding: var(--ax-s-3) var(--ax-s-4);
   display: flex;
   flex-direction: column;
-  gap: var(--ax-s-5);
-  font-size: 16px; /* Kevin v13.0.69 : texte plus grand comme Claude.ai (était 14px) */
-  line-height: 1.6; /* Aération comme Claude Code */
+  gap: var(--ax-s-3);
+  font-size: 14.5px;
+  line-height: 1.55;
+  scroll-behavior: smooth;
+  /* v13.3.72 Kevin: max espace visible chat */
 }
 
 .ax-chat-greeting {
   text-align: center;
   color: var(--ax-text-dim);
-  font-size: 22px; /* Plus grand */
-  padding: var(--ax-s-12) var(--ax-s-4);
+  font-size: 16px;
+  padding: var(--ax-s-5) var(--ax-s-3) var(--ax-s-3);
   font-family: var(--ax-font-serif);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .ax-msg {
-  max-width: 92%; /* Plus large (était 85%) */
-  padding: var(--ax-s-4) var(--ax-s-5); /* Plus de padding */
+  max-width: 94%;
+  padding: var(--ax-s-3) var(--ax-s-4);
   border-radius: var(--ax-r-md);
   word-wrap: break-word;
-  line-height: 1.65; /* Aération max */
-  font-size: 16px; /* Texte chat plus grand iOS friendly */
-  animation: ax-msg-in var(--ax-d-normal) var(--ax-ease-out);
+  line-height: 1.55;
+  font-size: 14.5px;
+  animation: ax-msg-in var(--ax-d-fast) var(--ax-ease-out);
 }
 
 @keyframes ax-msg-in {

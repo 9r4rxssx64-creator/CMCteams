@@ -1398,6 +1398,31 @@ function smartAutoScroll(rootEl: HTMLElement): void {
   if (distFromBottom < 200) {
     scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
   }
+  /* v13.3.72 Kevin (style Claude Code): show/hide scroll-to-bottom FAB */
+  const fab = rootEl.querySelector<HTMLElement>('#ax-scroll-bottom');
+  if (fab) {
+    if (distFromBottom > 240) fab.classList.add('visible');
+    else fab.classList.remove('visible');
+  }
+}
+
+/**
+ * v13.3.72 Kevin: wire scroll-to-bottom FAB (apparaît si user scrollé > 240px depuis bottom).
+ */
+function wireScrollToBottomFab(rootEl: HTMLElement): void {
+  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+  const fab = rootEl.querySelector<HTMLElement>('#ax-scroll-bottom');
+  if (!scroll || !fab) return;
+  const updateFabVisibility = (): void => {
+    const dist = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
+    if (dist > 240) fab.classList.add('visible');
+    else fab.classList.remove('visible');
+  };
+  scroll.addEventListener('scroll', updateFabVisibility, { passive: true });
+  fab.addEventListener('click', () => {
+    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+    fab.classList.remove('visible');
+  });
 }
 
 function renderMessages(rootEl: HTMLElement): void {
@@ -1462,40 +1487,42 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <style>
+      /* v13.3.72 Kevin: header compact + max espace chat (style Claude Code) */
       .ax-chat-header {
         background: linear-gradient(180deg,rgba(20,20,35,0.95),rgba(14,14,28,0.85));
         backdrop-filter: blur(20px) saturate(140%);
         -webkit-backdrop-filter: blur(20px) saturate(140%);
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 14px 16px;
+        padding: 8px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 6px;
         position: sticky;
         top: 0;
         z-index: 50;
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
       }
       .ax-chat-header h1 {
         margin: 0;
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 700;
         background: linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-family: Georgia, serif;
-        letter-spacing: -0.015em;
+        letter-spacing: 0.5px;
       }
       .ax-chat-header .ax-btn-icon {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.08);
         color: rgba(255,255,255,0.85);
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 12px;
-        font-size: 18px;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 10px;
+        font-size: 15px;
         cursor: pointer;
         transition: all 160ms cubic-bezier(0.16,1,0.3,1);
         -webkit-tap-highlight-color: transparent;
@@ -1506,50 +1533,79 @@ export function render(rootEl: HTMLElement): void {
       .ax-chat-header .ax-btn-icon:hover {
         background: rgba(232,184,48,0.12);
         border-color: rgba(232,184,48,0.3);
-        transform: translateY(-1px);
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 32px 20px 20px;
-        font-size: clamp(20px,4vw,26px);
-        font-weight: 600;
-        color: rgba(255,255,255,0.9);
+        padding: 14px 16px 8px;
+        font-size: 15px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.78);
         font-family: Georgia, serif;
-        letter-spacing: -0.015em;
-        line-height: 1.4;
-        animation: ax-fade-up 480ms cubic-bezier(0.16,1,0.3,1) backwards;
+        line-height: 1.35;
+        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-chat-greeting::after {
         content: '';
         display: block;
-        width: 60px;
-        height: 2px;
+        width: 36px;
+        height: 1px;
         background: linear-gradient(90deg,transparent,#e8b830,transparent);
-        margin: 16px auto 0;
-        opacity: 0.6;
+        margin: 8px auto 0;
+        opacity: 0.5;
       }
       .ax-info-card {
         background: linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(232,184,48,0.18);
-        border-radius: 16px;
-        padding: 20px;
-        animation: ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards;
+        border-radius: 12px;
+        padding: 12px 14px;
+        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-info-card h3 {
-        margin: 0 0 8px;
-        font-size: 15px;
+        margin: 0 0 6px;
+        font-size: 14px;
         font-weight: 700;
         color: #e8b830;
         letter-spacing: -0.01em;
       }
       .ax-info-card p {
-        margin: 0 0 14px;
+        margin: 0 0 10px;
         color: rgba(255,255,255,0.65);
-        font-size: 13px;
-        line-height: 1.5;
+        font-size: 12.5px;
+        line-height: 1.45;
       }
+      /* Bouton scroll-to-bottom flottant style Claude Code (v13.3.72) */
+      .ax-scroll-bottom-fab {
+        position: absolute;
+        right: 14px;
+        bottom: 96px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(20,20,35,0.85);
+        border: 1px solid rgba(232,184,48,0.35);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #e8b830;
+        font-size: 16px;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(8px) scale(0.92);
+        pointer-events: none;
+        transition: all 180ms cubic-bezier(0.16,1,0.3,1);
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      }
+      .ax-scroll-bottom-fab.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+      .ax-scroll-bottom-fab:hover { background: rgba(232,184,48,0.15); }
       @keyframes ax-fade-up {
         0% { opacity: 0; transform: translateY(10px); }
         100% { opacity: 1; transform: translateY(0); }
@@ -1563,21 +1619,24 @@ export function render(rootEl: HTMLElement): void {
     </style>
     <div class="ax-chat ax-modernized-card">
       <header class="ax-chat-header">
-        <h1>APEX <span style="font-size:0.55em;letter-spacing:0.15em;color:rgba(255,255,255,0.4);font-weight:400">AI</span></h1>
-        <div style="display:flex;gap:8px;align-items:center">
+        <h1>APEX</h1>
+        <div style="display:flex;gap:6px;align-items:center">
           <button class="ax-btn ax-btn-icon" id="ax-chat-settings" aria-label="Paramètres" title="Paramètres">⚙️</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
         </div>
       </header>
+      <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
         ${!hasKey ? `
-          <div class="ax-info-card ax-modernized-card" style="margin:16px;">
+          <div class="ax-info-card ax-modernized-card" style="margin:10px 12px;">
             <h3>🔑 Aucune clé API configurée</h3>
             <p>Pour discuter avec Apex, colle une clé API IA. Apex détecte automatiquement Anthropic, OpenAI, Groq ou Gemini.</p>
-            <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:12px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;width:100%;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)">📋 Coller une clé API</button>
+            <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:10px 18px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13.5px;width:100%;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)">📋 Coller une clé API</button>
           </div>
         ` : ''}
+      </div>
+      <button type="button" class="ax-scroll-bottom-fab" id="ax-scroll-bottom" aria-label="Aller en bas" title="Aller en bas">↓</button>
       </div>
       <form class="ax-chat-input" id="ax-chat-form">
         <textarea
@@ -1597,19 +1656,22 @@ export function render(rootEl: HTMLElement): void {
           style="display:none">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
-      <nav class="ax-chat-nav" style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:44px;padding:8px 14px">💬 Chat</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:44px;padding:8px 14px">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:44px;padding:8px 14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:44px;padding:8px 14px">🔧 Réglages</button>
-        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px">🔑 Clé API</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:44px;padding:8px 14px;color:#ff6666">🚪 Déconnexion</button>
+      <nav class="ax-chat-nav" style="display:flex;gap:6px;padding:5px 6px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">💬 Chat</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">🔧 Réglages</button>
+        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px">🔑 Clé API</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:36px;padding:6px 11px;font-size:12.5px;color:#ff6666">🚪 Déco</button>
       </nav>
-      <footer style="text-align:center;padding:6px 6px calc(env(safe-area-inset-bottom,0px) + 6px);font-size:11px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0">
-        APEX AI ${APP_VER} — Créé par <strong style="color:var(--ax-gold)">DK</strong>
+      <footer style="text-align:center;padding:3px 6px calc(env(safe-area-inset-bottom,0px) + 3px);font-size:10px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.3px">
+        ${APP_VER} · DK
       </footer>
     </div>
   `;
+
+  /* v13.3.72 Kevin: wire scroll-to-bottom FAB style Claude Code */
+  wireScrollToBottomFab(rootEl);
 
   const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
   const textarea = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');

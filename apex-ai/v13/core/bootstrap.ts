@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.71';
+export const APP_VER = 'v13.3.72';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
