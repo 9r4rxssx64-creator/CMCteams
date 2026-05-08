@@ -31,8 +31,70 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
+import {
+  computeStats,
+  getCriticality,
+  ESSENTIAL_KEYS,
+  RECOMMENDED_KEYS,
+  type CategoryStats,
+  type CredentialCriticality,
+} from './credential-categories.js';
 import { detectCredential, CREDENTIAL_PATTERNS } from './credential-patterns.js';
 import { FB_FIX } from './firebase.js';
+
+/* ============================================================
+   Notification throttling (Kevin règle 2026-05-08 : pas de spam)
+   ============================================================ */
+
+/** Clé localStorage pour throttler les notifs (max 1× / 24h par type). */
+const NOTIFY_THROTTLE_KEY = 'apex_v13_credentials_notify_last_ts';
+const NOTIFY_THROTTLE_MS = 24 * 60 * 60 * 1000; /* 24h */
+
+interface NotifyState {
+  /** Last timestamp d'une notif WARN (essential manquant). */
+  warn_ts?: number;
+  /** Last timestamp d'une notif INFO (recommended manquant). */
+  info_ts?: number;
+}
+
+function readNotifyState(): NotifyState {
+  try {
+    const raw = localStorage.getItem(NOTIFY_THROTTLE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed === 'object' && parsed !== null) return parsed as NotifyState;
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+function writeNotifyState(state: NotifyState): void {
+  try {
+    localStorage.setItem(NOTIFY_THROTTLE_KEY, JSON.stringify(state));
+  } catch { /* quota — silent */ }
+}
+
+/**
+ * Vérifie si une notif d'un type donné peut être envoyée (throttle 24h).
+ * Retourne true si OK pour notifier, false si dans la fenêtre de cooldown.
+ */
+function canNotify(type: 'warn' | 'info', now: number = Date.now()): boolean {
+  const state = readNotifyState();
+  const lastTs = type === 'warn' ? state.warn_ts : state.info_ts;
+  if (typeof lastTs !== 'number') return true;
+  return now - lastTs >= NOTIFY_THROTTLE_MS;
+}
+
+/**
+ * Marque qu'une notif d'un type donné vient d'être envoyée (start cooldown 24h).
+ */
+function markNotified(type: 'warn' | 'info', now: number = Date.now()): void {
+  const state = readNotifyState();
+  if (type === 'warn') state.warn_ts = now;
+  else state.info_ts = now;
+  writeNotifyState(state);
+}
 
 /* ============================================================
    Types publics
@@ -44,6 +106,8 @@ export interface MissingEntry {
   storage_key: string;
   service_name: string;
   category: string;
+  /** Criticité Kevin (essential/recommended/optional) — voir credential-categories.ts. */
+  criticality: CredentialCriticality;
   /** Source potentielle d'où la clé peut être restaurée (si recoverable). */
   recoverable_from?: RestoreSource;
   /** Storage key alternative qui contient la valeur (si alias détecté). */
@@ -60,6 +124,8 @@ export interface AuditMissingResult {
   recoverable: MissingEntry[];
   /** Clés vraiment absentes partout (Kevin doit coller). */
   truly_absent: MissingEntry[];
+  /** Stats par catégorie (essential/recommended/optional) calculées sur les clés présentes. */
+  stats: CategoryStats;
   /** Timestamp audit. */
   ts: number;
 }
@@ -154,12 +220,19 @@ class AutoRestoreCredentials {
     const missing: string[] = [];
     const recoverable: MissingEntry[] = [];
     const truly_absent: MissingEntry[] = [];
+    const presentKeys: string[] = [];
+    const allKnownKeys: string[] = [];
 
     for (const pattern of CREDENTIAL_PATTERNS) {
       if (pattern.category === 'forbidden') continue;
       const storageKey = pattern.storageKey;
+      allKnownKeys.push(storageKey);
+      const criticality = getCriticality(storageKey);
       const presentLocally = this.hasLocal(storageKey);
-      if (presentLocally) continue;
+      if (presentLocally) {
+        presentKeys.push(storageKey);
+        continue;
+      }
 
       missing.push(storageKey);
 
@@ -170,6 +243,7 @@ class AutoRestoreCredentials {
           storage_key: storageKey,
           service_name: pattern.name,
           category: pattern.category,
+          criticality,
           recoverable_from: 'alias',
           alias_source: aliasHit,
           ...(pattern.dashboard ? { dashboard_url: pattern.dashboard } : {}),
@@ -185,6 +259,7 @@ class AutoRestoreCredentials {
           storage_key: storageKey,
           service_name: pattern.name,
           category: pattern.category,
+          criticality,
           recoverable_from: 'idb_shadow',
           ...(pattern.dashboard ? { dashboard_url: pattern.dashboard } : {}),
           ...(pattern.billing ? { billing_url: pattern.billing } : {}),
@@ -200,6 +275,7 @@ class AutoRestoreCredentials {
             storage_key: storageKey,
             service_name: pattern.name,
             category: pattern.category,
+            criticality,
             recoverable_from: 'firebase_backup',
             ...(pattern.dashboard ? { dashboard_url: pattern.dashboard } : {}),
             ...(pattern.billing ? { billing_url: pattern.billing } : {}),
@@ -217,6 +293,7 @@ class AutoRestoreCredentials {
           storage_key: storageKey,
           service_name: pattern.name,
           category: pattern.category,
+          criticality,
           recoverable_from: 'pattern_match',
           alias_source: patternHit,
           ...(pattern.dashboard ? { dashboard_url: pattern.dashboard } : {}),
@@ -230,16 +307,21 @@ class AutoRestoreCredentials {
         storage_key: storageKey,
         service_name: pattern.name,
         category: pattern.category,
+        criticality,
         ...(pattern.dashboard ? { dashboard_url: pattern.dashboard } : {}),
         ...(pattern.billing ? { billing_url: pattern.billing } : {}),
       });
     }
 
+    /* Calcul stats par criticité (essential/recommended/optional).
+     * Source de vérité unique pour la logique de notification + UI admin. */
+    const stats = computeStats(presentKeys, allKnownKeys);
+
     logger.info(
       'auto-restore',
-      `audit : missing=${missing.length} recoverable=${recoverable.length} truly_absent=${truly_absent.length}`,
+      `audit : missing=${missing.length} recoverable=${recoverable.length} truly_absent=${truly_absent.length} | essential=${stats.essential.present}/${stats.essential.total} recommended=${stats.recommended.present}/${stats.recommended.total} optional=${stats.optional.present}/${stats.optional.total_known}`,
     );
-    return { missing, recoverable, truly_absent, ts };
+    return { missing, recoverable, truly_absent, stats, ts };
   }
 
   /**
@@ -295,18 +377,13 @@ class AutoRestoreCredentials {
       } catch { /* boot précoce, toast indispo */ }
     }
 
-    /* Notif push admin si truly_absent > 5 (avec liste services concernés) */
-    if (audit.truly_absent.length > 5) {
-      try {
-        const { kevinAlerts } = await import('./kevin-alerts.js');
-        const services = audit.truly_absent.slice(0, 6).map((e) => e.service_name).join(', ');
-        await kevinAlerts.alertKevin({
-          severity: 'warn',
-          title: `🔑 ${audit.truly_absent.length} credentials manquants`,
-          body: `Apex a vérifié toutes les sources (alias, IDB, Firebase) sans succès. À recoller : ${services}${audit.truly_absent.length > 6 ? '…' : ''}`,
-        });
-      } catch { /* offline OK */ }
-    }
+    /* Notif push Kevin RESTRUCTURÉE par criticité (Kevin règle 2026-05-08).
+     * 71 services optional non configurés ne sont PAS un problème — Kevin n'a pas
+     * besoin de tout. Seules les clés essentielles (au moins 1 IA provider) ou
+     * recommandées (≥5 manquantes) déclenchent une notif.
+     *
+     * Throttle 24h par type pour éviter le spam. */
+    await this.maybeNotifyKevin(audit);
 
     /* Sync registry credentials-audit après restore (impacte security_score) */
     if (restored > 0) {

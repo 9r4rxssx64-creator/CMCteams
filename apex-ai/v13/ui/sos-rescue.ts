@@ -196,13 +196,47 @@ class SosRescue {
       healed += 1;
     } catch (e) { errors.push(`AutoTest: ${String(e).slice(0, 30)}`); }
 
-    /* 7. Firebase — check connection */
+    /* 7. Firebase — check connection (v13.3.x : RECONNECTING traité comme transient).
+     *
+     * Logique :
+     *  - CONNECTED → healed++, pas de warning
+     *  - RECONNECTING → trigger reconnect + attendre 5s + recheck. Si OK → healed, sinon
+     *    on considère encore en cours (pas de warning définitif — auto-reconnect prend le relais).
+     *  - DISCONNECTED → trigger reconnect + attendre 5s + recheck. Si OK → healed, sinon warning.
+     *  - OFFLINE → warning explicite (pas de fix possible tant que online event).
+     *
+     * Ce comportement évite le warning fantôme "Firebase déconnecté" que Kevin voyait à
+     * chaque SOS run alors qu'un auto-reconnect était déjà en cours. */
     total += 1;
     try {
       const { firebase } = await import('../services/firebase.js');
-      const connected = (firebase as { isConnected?: () => boolean }).isConnected?.() ?? true;
-      if (connected) healed += 1;
-      else errors.push('Firebase déconnecté');
+      const fb = firebase as {
+        isConnected?: () => boolean;
+        getConnectionState?: () => 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED' | 'OFFLINE';
+        triggerReconnect?: () => Promise<boolean>;
+      };
+      const state = fb.getConnectionState?.() ?? (fb.isConnected?.() ? 'CONNECTED' : 'DISCONNECTED');
+
+      if (state === 'CONNECTED') {
+        healed += 1;
+      } else if (state === 'OFFLINE') {
+        errors.push('Hors ligne (réseau coupé)');
+      } else {
+        /* RECONNECTING ou DISCONNECTED : on tente reconnect actif puis on attend 5s. */
+        let ok = false;
+        try {
+          ok = (await fb.triggerReconnect?.()) ?? false;
+        } catch { /* ignore */ }
+        if (!ok) {
+          /* Wait 5s puis recheck — laisse le temps au backoff de tenter. */
+          await new Promise<void>((resolve) => setTimeout(resolve, 5000));
+          const finalState = fb.getConnectionState?.() ?? (fb.isConnected?.() ? 'CONNECTED' : 'DISCONNECTED');
+          ok = finalState === 'CONNECTED' || finalState === 'RECONNECTING';
+          /* RECONNECTING = transient → on considère SOS clean (auto-reconnect en cours). */
+        }
+        if (ok) healed += 1;
+        else errors.push('Firebase déconnecté');
+      }
     } catch (e) { errors.push(`FB: ${String(e).slice(0, 30)}`); }
 
     /* 8. Cache stale — cleanup non critique */
