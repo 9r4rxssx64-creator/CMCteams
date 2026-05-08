@@ -65,6 +65,10 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'agent-watches-runner': 'sentinel.sentinel-meta',
   'never-forget-watch': 'sentinel.feature-watch',
   'auto-ultra-reset-watch': 'sentinel.auto-ultra-reset',
+  /* v13.3.79+ Kevin 2026-05-08 : apex-self-correct cascade
+     Toggle dédié pour pouvoir kill switch (Réglages admin) si auto-correct
+     est trop agressif sur certains devices (ex: tests). Default ON. */
+  'apex-self-correct-watch': 'sentinel.apex-self-correct',
   /* Sentinelles réservées Jet 9+ (toggle déclaré, implémentation à venir) :
      dès qu'elles seront register()'d, le toggle sera respecté automatiquement. */
   'import-watch': 'sentinel.import-watch',
@@ -2262,19 +2266,23 @@ export function registerCoreSentinels(): void {
   });
 
   /* v13.3.79+ Kevin 2026-05-08 — global-health-watch (5 min)
-   * Méta-sentinelle : run TOUTES les autres sentinelles, déclenche leur autoFix
-   * en cascade, escalade Claude Code si > 30% des sentinelles fail après auto-fix.
+   * Méta-sentinelle : agrège l'état des autres sentinelles via leur `lastResult`
+   * (pas de re-run cascade pour éviter N×N en parallèle), déclenche leur autoFix
+   * EXPLICITEMENT pour celles qui ont fail récemment, escalade Claude Code si
+   * > 30% restent fail après auto-fix.
+   *
    * Mission Kevin : "Apex doit s'auto-corriger TOUT seul, ne JAMAIS attendre".
    *
    * Stats persistées dans ax_global_health_log (cap 100) pour vue admin health-dashboard.
    *
-   * NOTE : Ne s'auto-récursive PAS (skip son propre id) pour éviter boucles infinies.
+   * NOTE : Lit lastResult au lieu de runOne() pour éviter cascade qui exploserait
+   * en runAll() (le scheduler court chaque sentinelle individuellement à intervalle propre).
    */
   sentinels.register({
     id: 'global-health-watch',
     name: 'Global Health Watch (méta auto-fix)',
-    desc: 'Run all sentinels, déclenche autoFix cascade, escalade si > 30% fail post-fix',
-    intervalMs: 5 * 60 * 1000, /* 1 min côté plan, 5 min en production pour limiter charge */
+    desc: 'Agrège lastResults des sentinelles, déclenche autoFix cascade, escalade si > 30% fail post-fix',
+    intervalMs: 5 * 60 * 1000, /* 5 min */
     check: async () => {
       const others = sentinels.list().filter((s) => s.id !== 'global-health-watch' && s.enabled);
       const total = others.length;
@@ -2285,36 +2293,57 @@ export function registerCoreSentinels(): void {
       let autoFixFailedCount = 0;
       const failed: string[] = [];
 
+      /* Pass 1 : lit lastResult (rapide, pas de cascade) */
       for (const s of others) {
-        try {
-          const r = await sentinels.runOne(s.id);
-          if (r?.ok) {
-            okCount++;
-          } else {
-            failCount++;
-            failed.push(s.id);
-            /* Si autoFix dispo, executeSentinel l'a déjà tenté. On regarde si lastResult
-             * mentionne "Auto-fixed" pour distinguer fix réussi de fail persistant. */
-            const fixed = r?.msg.startsWith('Auto-fixed:') ?? false;
-            if (fixed) autoFixedCount++;
-            else if (s.autoFix) autoFixFailedCount++;
-          }
-        } catch {
+        if (!s.lastResult) {
+          /* Jamais run encore = pending, comptes comme ok pour pas alerter au boot */
+          okCount++;
+          continue;
+        }
+        if (s.lastResult.ok) {
+          /* Distingue Auto-fixed vs natif ok */
+          if (s.lastResult.msg.startsWith('Auto-fixed:')) autoFixedCount++;
+          okCount++;
+        } else {
           failCount++;
           failed.push(s.id);
         }
       }
 
-      const ok = failCount - autoFixedCount;
-      const failPct = total > 0 ? Math.round(((failCount - autoFixedCount) / total) * 100) : 0;
+      /* Pass 2 : déclenche autoFix EXPLICITE pour les failed avec autoFix dispo
+       * (cascade contrôlée — boucle séquentielle pas parallèle pour stabilité). */
+      const failedWithAutoFix = others.filter((s) => failed.includes(s.id) && s.autoFix);
+      let triggered = 0;
+      for (const s of failedWithAutoFix.slice(0, 5)) { /* cap 5 par run pour éviter spam */
+        try {
+          const r = await s.autoFix?.();
+          if (r?.ok) {
+            triggered++;
+            autoFixedCount++;
+            /* Décrémente failed (car ce qui était failed vient d'être réparé) */
+            const idx = failed.indexOf(s.id);
+            if (idx >= 0) {
+              failed.splice(idx, 1);
+              failCount--;
+            }
+          } else {
+            autoFixFailedCount++;
+          }
+        } catch {
+          autoFixFailedCount++;
+        }
+      }
+
+      const failPct = total > 0 ? Math.round((failCount / total) * 100) : 0;
       const summary = {
         ts: Date.now(),
         total,
-        ok: okCount + autoFixedCount,
-        failed: failCount - autoFixedCount,
+        ok: okCount,
+        failed: failCount,
         warn: warnCount,
         autoFixed: autoFixedCount,
         autoFixFailed: autoFixFailedCount,
+        autoFixTriggered: triggered,
         failedIds: failed,
         failPct,
       };
@@ -2332,14 +2361,14 @@ export function registerCoreSentinels(): void {
       if (failPct > 30) {
         return {
           ok: false,
-          msg: `🚨 Global health critical : ${failPct}% sentinels fail (${ok}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          msg: `🚨 Global health critical : ${failPct}% sentinels fail (${okCount}/${total} OK + ${autoFixedCount} auto-fixed)`,
           details: summary as unknown as Record<string, unknown>,
         };
       }
       if (failPct > 10) {
         return {
           ok: false,
-          msg: `⚠ Global health degraded : ${failPct}% fail (${ok}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          msg: `⚠ Global health degraded : ${failPct}% fail (${okCount}/${total} OK + ${autoFixedCount} auto-fixed)`,
           details: summary as unknown as Record<string, unknown>,
         };
       }

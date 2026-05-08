@@ -68,11 +68,13 @@ describe('APEX_IDENTITY — Source de vérité hardcodée', () => {
     }
   });
 
-  it('contient exactement les 7 règles critiques immuables', () => {
-    expect(APEX_IDENTITY.rules_critical).toHaveLength(7);
+  it('contient exactement les 8 règles critiques immuables (Kevin 2026-05-08 +anti-verbeux)', () => {
+    /* v13.3.79 (Kevin 2026-05-08 18:00) — ajout règle "RÉPONDS DIRECTEMENT" :
+     * pas de plans multiples Plan A/B/C pour questions simples. */
+    expect(APEX_IDENTITY.rules_critical).toHaveLength(8);
   });
 
-  it('règles critiques contiennent les piliers Kevin (régression / autonomie / auto-fix)', () => {
+  it('règles critiques contiennent les piliers Kevin (régression / autonomie / auto-fix / anti-verbeux)', () => {
     const all = APEX_IDENTITY.rules_critical.join(' | ');
     expect(all).toMatch(/JAMAIS RÉGRESSER/i);
     expect(all).toMatch(/AUTONOMIE TOTALE/i);
@@ -81,6 +83,8 @@ describe('APEX_IDENTITY — Source de vérité hardcodée', () => {
     expect(all).toMatch(/Multi-IA parallèle/i);
     expect(all).toMatch(/Sécurité/i);
     expect(all).toMatch(/100\/100/);
+    /* v13.3.79 — règle anti-verbeux Plan A/B/C */
+    expect(all).toMatch(/RÉPONDS DIRECTEMENT|plans multiples/i);
   });
 
   it('self.name = Apex AI + version v13.x', () => {
