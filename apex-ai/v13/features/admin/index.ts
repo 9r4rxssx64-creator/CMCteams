@@ -20,6 +20,7 @@ import { commerce, type Plan } from '../../services/commerce.js';
 import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/kdmc-projects-registry.js';
 import { whatsapp } from '../../services/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
+import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
 type Tab = 'commerce' | 'users' | 'pending' | 'health' | 'projects' | 'executions' | 'knowledge' | 'bilan' | 'consumption';
@@ -777,6 +778,15 @@ export function render(rootEl: HTMLElement): void {
   attachHandlers(rootEl);
   /* Mount lazy admin views (bilan, consumption) — fire and forget, errors logged */
   if (activeTab === 'bilan' || activeTab === 'consumption') {
-    void mountLazyAdminView(rootEl);
+    /* H3 audit fix v13.3.74 — skeleton placeholder while lazy view loads */
+    const contentEl = rootEl.querySelector<HTMLElement>('.ax-admin-content');
+    if (contentEl) {
+      const dispose = skeleton(contentEl, 'admin-table');
+      void mountLazyAdminView(rootEl).finally(() => {
+        dispose();
+      });
+    } else {
+      void mountLazyAdminView(rootEl);
+    }
   }
 }

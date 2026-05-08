@@ -451,6 +451,33 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* H5 audit fix v13.3.74 : credentials-rotation-watch (24h) */
+  sentinels.register({
+    id: 'credentials-rotation-watch',
+    name: 'Rotation tokens 90j',
+    desc: 'Alerte si credentials > 80j (warn) / > 90j (escalade)',
+    intervalMs: 24 * 60 * 60 * 1000,
+    check: async () => {
+      const { credentialsRotationWatch } = await import('./credentials-rotation-watch.js');
+      const r = await credentialsRotationWatch.run();
+      if (r.err_count > 0) {
+        return {
+          ok: false,
+          msg: `${r.err_count} clé(s) > 90j (escalade) + ${r.warn_count} > 80j`,
+          details: { ...r },
+        };
+      }
+      if (r.warn_count > 0) {
+        return {
+          ok: true, /* warn non bloquant — sentinelle reste verte */
+          msg: `${r.warn_count} clé(s) > 80j (rotation conseillée)`,
+          details: { ...r },
+        };
+      }
+      return { ok: true, msg: `${r.scanned} clés OK (pas de rotation requise)` };
+    },
+  });
+
   /* Jet 5 : 8 sentinelles RÉELLES avec auto-repair (vs stubs morts Jet 4) */
 
   /* 6. storage-watch : alerte si localStorage > 4 MB + GC auto */
@@ -1076,13 +1103,20 @@ export function registerCoreSentinels(): void {
    * v13.3.70 (Kevin "WARNING = AUTO-FIX") :
    * - Si user opt-in wake word + recognition crashed (iOS Safari instable) → restart auto
    * - Vérifie aussi permission micro
+   *
+   * v13.3.74 M1 (audit Apex v13.3.73 issue #240) :
+   * - enabled: false par défaut au registre (back-compat tests).
+   * - Activation runtime via services-bootstrap.ts au boot admin si toggle
+   *   ax_wake_word_active === '1' (ou pas explicite OFF).
+   * - sentinels.enable('wake-watch') au boot suffit pour activer la sentinelle
+   *   sans casser le contract enabled: false par défaut.
    */
   sentinels.register({
     id: 'wake-watch',
     name: 'Wake word "Dis Apex"',
     desc: 'Vérifie permission micro + état recognition + restart auto si crashed iOS Safari',
     intervalMs: 60 * 60 * 1000,
-    enabled: false, /* OFF par défaut, activé Jet 6 voice */
+    enabled: false, /* v13.3.74 M1 : default OFF (re-activé au boot via services-bootstrap si user admin opt-in) */
     check: async () => {
       if (typeof navigator === 'undefined' || !navigator.permissions) {
         return { ok: true, msg: 'Permissions API not available' };

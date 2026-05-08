@@ -107,6 +107,12 @@ class Errors {
     if (/aborted/i.test(msg)) return '⏸ Lifecycle iOS Safari (normal). Reprise auto.';
     /* Memory / IDB */
     if (/indexeddb|idb|database/i.test(msg)) return '💾 Cache local inaccessible, fallback Firebase.';
+    /* v13.3.74 (Kevin screenshot bug): "openai no key" / "groq no key" / "gemini no key"
+     * = provider du failover sans clé configurée. Pas une vraie erreur user — failover
+     * silencieux. Affiche message neutre sans technical details. */
+    if (/^\w+\s+no\s+key$|provider.*not.configured/i.test(msg)) {
+      return '🔄 Je bascule sur un autre modèle IA…';
+    }
     /* Catch-all : afficher le vrai message technique 1 fois (mode admin debug uniquement) */
     const isAdmin = (() => {
       try {
@@ -114,7 +120,12 @@ class Errors {
         return user?.role === 'admin' || user?.id === 'kdmc_admin';
       } catch { return false; }
     })();
-    if (isAdmin && msg && msg.length < 200) return `⚠ ${msg.slice(0, 180)} (admin debug)`;
+    /* v13.3.74 (Kevin "openai no key admin debug" screenshot) :
+     * Filtrer les messages "no key" / "not configured" même en mode admin debug —
+     * c'est du bruit failover, pas une erreur user à afficher. */
+    if (isAdmin && msg && msg.length < 200 && !/no\s+key|not.configured/i.test(msg)) {
+      return `⚠ ${msg.slice(0, 180)} (admin debug)`;
+    }
     return '🔄 Souci technique, je relance automatiquement dans un instant… Si ça persiste, tape SOS.';
   }
 }

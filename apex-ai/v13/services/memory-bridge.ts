@@ -397,6 +397,86 @@ class MemoryBridge {
   }
 
   /**
+   * v13.3.74 M3 (audit Apex v13.3.73 issue #240) — Liste backends actifs (= configurés).
+   *
+   * Backends supportés :
+   * - 'firebase' : actif si uid disponible (apex_v13_uid)
+   * - 'notion' : actif si notion_database_id + notion_token_key configurés
+   * - 'github_gist' : actif si github_token_key configuré
+   * - 'n8n_webhook' : actif si n8n_webhook_url configuré
+   *
+   * Retour : liste backends actifs trié par préférence (firebase, notion, github_gist, n8n_webhook).
+   */
+  getActiveBackends(): readonly MemoryBackend[] {
+    const cfg = this.getConfig();
+    const active: MemoryBackend[] = [];
+    /* Firebase = primary (toujours implicite si uid) */
+    if (this.getCurrentUid()) active.push('firebase');
+    /* Notion = optionnel */
+    if (cfg.notion_database_id && cfg.notion_token_key) active.push('notion');
+    /* GitHub Gist = optionnel */
+    if (cfg.github_token_key) active.push('github_gist');
+    /* n8n webhook = trigger only (pas de stockage memories) */
+    if (cfg.n8n_webhook_url) active.push('n8n_webhook');
+    return active;
+  }
+
+  /**
+   * v13.3.74 M3 (audit Apex v13.3.73 issue #240) — Push parallèle vers 1 backend précis.
+   *
+   * Wrapper unifié au-dessus des syncTo* méthodes existantes. Permet à services
+   * externes (sentinelles, admin commands) de pusher data sans connaître les
+   * détails de chaque backend.
+   *
+   * Timeout 5s par backend (déjà géré par les syncTo* internes via AbortSignal).
+   * Si backend KO → retourne { ok: false, reason } sans throw (back-compat).
+   *
+   * @param backendId - 'firebase' | 'notion' | 'github_gist' | 'n8n_webhook'
+   * @param data - Optionnel : si fourni, considère comme escalade (n8n_webhook).
+   *               Sinon, sync les memories actuelles (persistent-memory).
+   */
+  async syncTo(backendId: MemoryBackend, data?: EscalatePayload): Promise<SyncResult> {
+    const start = Date.now();
+    try {
+      if (backendId === 'firebase') {
+        const uid = this.getCurrentUid();
+        if (!uid) return this.recordSync('firebase', false, 0, 'No uid', start);
+        return await this.syncToFirebase(uid);
+      }
+      if (backendId === 'notion') {
+        const cfg = this.getConfig();
+        if (!cfg.notion_database_id || !cfg.notion_token_key) {
+          return this.recordSync('notion', false, 0, 'Notion not configured', start);
+        }
+        const { vault } = await import('./vault.js');
+        const token = await vault.readKey(cfg.notion_token_key);
+        if (!token) return this.recordSync('notion', false, 0, 'Notion token empty', start);
+        return await this.syncToNotion(cfg.notion_database_id, token);
+      }
+      if (backendId === 'github_gist') {
+        const cfg = this.getConfig();
+        if (!cfg.github_token_key) {
+          return this.recordSync('github_gist', false, 0, 'GitHub token not configured', start);
+        }
+        const { vault } = await import('./vault.js');
+        const token = await vault.readKey(cfg.github_token_key);
+        if (!token) return this.recordSync('github_gist', false, 0, 'GitHub token empty', start);
+        return await this.syncToGitHubGist(token, cfg.github_gist_id);
+      }
+      if (backendId === 'n8n_webhook') {
+        if (!data) return this.recordSync('n8n_webhook', false, 0, 'No data payload (n8n requires escalation)', start);
+        const r = await this.autoEscalate(data);
+        return this.recordSync('n8n_webhook', r.webhook_ok, r.webhook_ok ? 1 : 0, r.reason, start);
+      }
+      /* github_issues : pas implémenté (placeholder back-compat enum) */
+      return this.recordSync(backendId, false, 0, `Backend ${backendId} not implemented`, start);
+    } catch (err: unknown) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return this.recordSync(backendId, false, 0, reason, start);
+    }
+  }
+
+  /**
    * Reset interne — usage tests uniquement (réinitialise cache mémoire singleton).
    */
   _resetForTests(): void {

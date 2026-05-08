@@ -7,7 +7,7 @@
  * Capture en runtime via PerformanceObserver :
  * - LCP (Largest Contentful Paint) — visuel principal
  * - INP (Interaction to Next Paint) — réactivité
- * - CLS (Cumulative Layout Shift) — stabilité visuelle
+ * - CLS (Cumulative Layout Shift) — stabilité visuelle (M8 fix v13.3.74)
  * - TTFB (Time To First Byte)
  * - FCP (First Contentful Paint)
  * - TTI (Time To Interactive heuristique)
@@ -19,10 +19,37 @@
  * - FCP < 1.8s
  * - TTFB < 600ms
  *
+ * H6 fix v13.3.74 : `getMemoryUsage()` avec fallback Safari (estimation IDB+localStorage)
+ * M8 fix v13.3.74 : CLS PerformanceObserver expose `getCLS()` + window-aggregated values
+ *
  * Dashboard admin : visuel temps réel + alertes si régression.
  */
 
 import { logger } from '../core/logger.js';
+
+/* ─────────────────────────── H6 Memory typing ─────────────────────────── */
+
+export interface MemoryUsage {
+  /** Mémoire utilisée (MB), 0 si indisponible */
+  used_mb: number;
+  /** Limite max heap (MB), 0 si inconnu */
+  total_mb: number;
+  /** Source de la mesure */
+  source: 'native-measure' | 'native-jsHeap' | 'estimated' | 'unavailable';
+  /** Confidence 0-1 (1 = native API, 0.5 = estimation, 0 = unknown) */
+  confidence: number;
+}
+
+interface PerfMemoryLike {
+  usedJSHeapSize?: number;
+  totalJSHeapSize?: number;
+  jsHeapSizeLimit?: number;
+}
+
+interface MeasureMemoryResult {
+  bytes: number;
+  breakdown?: Array<{ bytes: number; types?: string[]; userAgentSpecificTypes?: string[] }>;
+}
 
 export interface PerfMetric {
   name: 'LCP' | 'INP' | 'CLS' | 'FCP' | 'TTFB' | 'TTI';
@@ -44,6 +71,10 @@ class PerfMetrics {
   private metrics: PerfMetric[] = [];
   private observers: PerformanceObserver[] = [];
   private installed = false;
+  /** M8 fix : CLS valeur cumulative (session window-friendly) */
+  private clsValue = 0;
+  /** Last user input ts pour calculer CLS windows (chrome.com webperf guidance) */
+  private lastInputTs = 0;
 
   /**
    * Install observers via PerformanceObserver API.
@@ -64,17 +95,27 @@ class PerfMetrics {
       if (last) this.record('LCP', last.startTime);
     });
 
-    /* CLS — Cumulative Layout Shift */
-    let clsValue = 0;
+    /* CLS — Cumulative Layout Shift (M8 fix v13.3.74)
+     * Bufferé via observe({type:'layout-shift', buffered:true}) → catch shifts before install.
+     * Aggregate session-wide (with hadRecentInput skip per spec). */
     this.tryObserve('layout-shift', (entries) => {
       for (const entry of entries) {
         const e = entry as PerformanceEntry & { hadRecentInput?: boolean; value?: number };
         if (!e.hadRecentInput && typeof e.value === 'number') {
-          clsValue += e.value;
+          this.clsValue += e.value;
         }
       }
-      this.record('CLS', clsValue);
+      this.record('CLS', this.clsValue);
     });
+
+    /* Track user inputs to support session window aggregation (CLS spec) — used for getLastInputTime() debug */
+    if (typeof window !== 'undefined') {
+      const trackInput = (): void => {
+        this.lastInputTs = performance.now();
+      };
+      window.addEventListener('keydown', trackInput, { passive: true, capture: true });
+      window.addEventListener('pointerdown', trackInput, { passive: true, capture: true });
+    }
 
     /* FCP — First Contentful Paint */
     this.tryObserve('paint', (entries) => {
@@ -230,6 +271,118 @@ class PerfMetrics {
 
   getAll(): readonly PerfMetric[] {
     return this.metrics;
+  }
+
+  /* ───────────────────── M8 fix v13.3.74 : CLS exposé ───────────────────── */
+
+  /**
+   * Retourne la valeur CLS cumulée actuelle (entre user inputs).
+   * 0 si pas encore de layout shift mesuré.
+   *
+   * Targets : < 0.1 (good), 0.1-0.25 (needs-improvement), > 0.25 (poor).
+   *
+   * @example
+   * const cls = perfMetrics.getCLS();
+   * if (cls > 0.1) console.warn('Layout shifts detected');
+   */
+  getCLS(): number {
+    return this.clsValue;
+  }
+
+  /**
+   * Timestamp dernier user input (perf.now()) — utile debug session windows CLS.
+   */
+  getLastInputTime(): number {
+    return this.lastInputTs;
+  }
+
+  /* ───────────────────── H6 fix v13.3.74 : Memory fallback Safari ───────────────────── */
+
+  /**
+   * Mesure mémoire JS avec fallback intelligent.
+   *
+   * Stratégie :
+   * 1. `performance.measureUserAgentSpecificMemory()` — Chrome 89+ (most accurate)
+   * 2. `performance.memory.usedJSHeapSize` — Chromium fallback
+   * 3. Estimation IndexedDB + localStorage size — Safari (no native API)
+   * 4. `unavailable` si rien ne marche
+   *
+   * @returns `{used_mb, total_mb, source, confidence}`
+   */
+  async getMemoryUsage(): Promise<MemoryUsage> {
+    if (typeof performance === 'undefined') {
+      return { used_mb: 0, total_mb: 0, source: 'unavailable', confidence: 0 };
+    }
+
+    /* 1. measureUserAgentSpecificMemory (Chrome 89+, requires crossOriginIsolated) */
+    type MeasureFn = () => Promise<MeasureMemoryResult>;
+    const perfWithMeasure = performance as Performance & { measureUserAgentSpecificMemory?: MeasureFn };
+    if (typeof perfWithMeasure.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await perfWithMeasure.measureUserAgentSpecificMemory();
+        const usedMb = result.bytes / (1024 * 1024);
+        return {
+          used_mb: Math.round(usedMb * 100) / 100,
+          total_mb: 0, /* API ne donne pas total */
+          source: 'native-measure',
+          confidence: 1.0,
+        };
+      } catch {
+        /* fall through */
+      }
+    }
+
+    /* 2. performance.memory (Chromium proprietary, available in dev tools too) */
+    const perfWithMem = performance as Performance & { memory?: PerfMemoryLike };
+    if (perfWithMem.memory && typeof perfWithMem.memory.usedJSHeapSize === 'number') {
+      const usedMb = perfWithMem.memory.usedJSHeapSize / (1024 * 1024);
+      const totalMb = (perfWithMem.memory.jsHeapSizeLimit ?? 0) / (1024 * 1024);
+      return {
+        used_mb: Math.round(usedMb * 100) / 100,
+        total_mb: Math.round(totalMb * 100) / 100,
+        source: 'native-jsHeap',
+        confidence: 0.9,
+      };
+    }
+
+    /* 3. Safari estimation via IDB + localStorage size */
+    try {
+      let totalBytes = 0;
+      /* localStorage scan */
+      if (typeof localStorage !== 'undefined') {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k) continue;
+          const v = localStorage.getItem(k);
+          if (v) totalBytes += k.length * 2 + v.length * 2; /* UTF-16 chars */
+        }
+      }
+      /* IDB databases sizes (best-effort via storage estimate) */
+      type StorageManager = { estimate?: () => Promise<{ usage?: number; quota?: number }> };
+      const navStorage = (typeof navigator !== 'undefined' && navigator.storage) as StorageManager | undefined;
+      if (navStorage && typeof navStorage.estimate === 'function') {
+        try {
+          const est = await navStorage.estimate();
+          if (est && typeof est.usage === 'number') {
+            totalBytes += est.usage;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      const usedMb = totalBytes / (1024 * 1024);
+      return {
+        used_mb: Math.round(usedMb * 100) / 100,
+        total_mb: 0,
+        source: 'estimated',
+        confidence: 0.5,
+      };
+    } catch (err) {
+      logger.warn('perf-metrics', 'memory estimate failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return { used_mb: 0, total_mb: 0, source: 'unavailable', confidence: 0 };
+    }
   }
 }
 

@@ -142,6 +142,80 @@ S'applique : Apex priorité absolue, CMCteams si pertinent.
 
 ---
 
+## 👥 RÈGLE ABSOLUE — APEX MULTI-IA PARALLÈLE GROS TRAVAIL Kevin 2026-05-08
+
+> **"Lorsque je demande du gros travail à Apex, qu'il fasse marcher plusieurs IA ensemble pour aller plus vite toujours en suivant ses méthodes de travail et ses documents."** — Kevin 2026-05-08
+
+**Règle absolue, prioritaire** — Apex priorité 1, applicable à TOUTE tâche complexe :
+
+### 1. Détection automatique "gros travail"
+
+Apex IA DOIT détecter automatiquement les tâches qui nécessitent multi-LLM parallèle :
+- Audit complet (sécu/perf/UX)
+- Génération longue (>2000 tokens output attendu)
+- Recherche multi-angle (3+ perspectives)
+- Refactor cross-file (>5 fichiers)
+- Crew d'experts (avocat + technique + UX + sécu sur même question)
+- Décision critique avec impact (validation, suppression, paiement)
+
+Critères trigger : keywords "audit", "complet", "expert", "approfondi", "concert", "consulte", "tout", "exhaustif", OU complexité estimée >7/10.
+
+### 2. Service `crew-experts.ts` (parallélisation native)
+
+Apex DOIT exposer `crewExperts.run({ task, providers, mode })` :
+- `providers` : array de 3-5 providers (anthropic, openai, gemini, groq, mistral)
+- `mode` : `'consensus'` (synthèse moyenne) | `'debate'` (chacun défend angle) | `'specialized'` (experts spécialisés)
+- Lance `Promise.allSettled()` sur tous providers en // (sans bloquer si 1 fail)
+- Timeout 30s global
+- Retourne `{ responses: [{provider, text, latency}], synthesis: string, conflicts: string[] }`
+
+### 3. Méthodes de travail PRÉSERVÉES (suivre CLAUDE.md)
+
+Chaque IA du crew DOIT recevoir le SAME system prompt enrichi :
+- Identité user courant
+- Top 50 facts persistent_memory
+- Top 10 lessons learned
+- Top 7 règles permanentes CLAUDE.md
+- Tools disponibles
+- Context conversation (last 30 messages)
+
+INTERDIT : utiliser une IA "stripped" sans contexte → elle pourrait violer une règle Kevin.
+
+### 4. Synthèse intelligente
+
+`crewExperts.synthesize(responses)` :
+- Détecte consensus (≥2/3 IA d'accord) → confiance haute
+- Détecte conflits → présente divergences à user pour tranche
+- Cite chaque IA par nom dans la synthèse ("Claude propose X, GPT-5 préfère Y, Gemini suggère Z")
+- Identifie l'expertise dominante (Claude = reasoning, GPT-5 = code, Gemini = vision, Groq = speed)
+
+### 5. Tool IA Apex
+
+Apex IA peut appeler `crew_experts(task, mode?)` depuis le chat user :
+- Kevin tape "fais auditer ce code par 3 experts"
+- Apex appelle `crew_experts({task: "auditer code X", mode: 'specialized'})`
+- 3 IA tournent en parallèle (Anthropic security, OpenAI code-quality, Gemini perf)
+- Synthèse présentée à Kevin avec divergences cliquables
+
+### 6. Vue admin `vCrewMonitor`
+
+Liste runs récents :
+- Par task / mode / providers / latency / cost estimé
+- Replay possible (re-run avec autre crew)
+- Stats : success rate par provider, divergence rate, time saved vs séquentiel
+
+### 7. Test mental obligatoire avant chaque tâche complexe
+
+> *"Cette tâche fait-elle plus de 5 minutes single-IA ? Si oui, peut-elle être splitée en parallèle 3-5 IA pour gagner 60-70% de temps ?"*
+
+Si oui → activer crew-experts AUTOMATIQUEMENT (pas demander à Kevin).
+
+### 8. Application
+
+S'applique : Apex IA priorité absolue, Claude Code (subagents en parallèle déjà appliqué), tous projets futurs avec multi-LLM.
+
+---
+
 ## 🔓 RÈGLE ABSOLUE — AUTORISATION PLEINE AUTONOMIE Kevin 2026-05-08 (CARTE BLANCHE)
 
 > **"Je te donne toutes les autorisations nécessaire pour terminer ton travail autonome. Note le."** — Kevin 2026-05-08

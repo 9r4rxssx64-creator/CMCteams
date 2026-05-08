@@ -1474,6 +1474,90 @@ class ApexToolsDispatcher {
         if (reason) setupOpts.reason = reason;
         return adminCommands.setupAccount(setupOpts);
       }
+      /* === v13 — MCP Memory Server (knowledge graph local — issue #240 innovation gratuite) === */
+      case 'memory_add_entity': {
+        const { mcpMemoryServer } = await import('./mcp-memory-server.js');
+        const name = String(params['name'] ?? '');
+        const type = String(params['type'] ?? '');
+        if (!name || !type) throw new Error('name and type required');
+        const obs = Array.isArray(params['observations'])
+          ? (params['observations'] as unknown[]).filter((o): o is string => typeof o === 'string')
+          : [];
+        return await mcpMemoryServer.addEntity(name, type, obs);
+      }
+      case 'memory_add_relation': {
+        const { mcpMemoryServer } = await import('./mcp-memory-server.js');
+        const fromId = String(params['from_id'] ?? '');
+        const toId = String(params['to_id'] ?? '');
+        const type = String(params['type'] ?? '');
+        if (!fromId || !toId || !type) throw new Error('from_id, to_id and type required');
+        return await mcpMemoryServer.addRelation(fromId, toId, type);
+      }
+      case 'memory_search': {
+        const { mcpMemoryServer } = await import('./mcp-memory-server.js');
+        const query = String(params['query'] ?? '');
+        if (!query) throw new Error('query required');
+        const opts: { limit?: number; type?: string } = {};
+        if (typeof params['limit'] === 'number') opts.limit = params['limit'];
+        if (typeof params['type'] === 'string' && params['type']) opts.type = params['type'];
+        const hits = await mcpMemoryServer.search(query, opts);
+        return { hits, count: hits.length };
+      }
+      case 'memory_get_related': {
+        const { mcpMemoryServer } = await import('./mcp-memory-server.js');
+        const entityId = String(params['entity_id'] ?? '');
+        if (!entityId) throw new Error('entity_id required');
+        const depth = typeof params['depth'] === 'number' ? params['depth'] : 1;
+        const related = await mcpMemoryServer.getRelated(entityId, depth);
+        return { related, count: related.length };
+      }
+      /* === v13 — Sequential Thinking MCP (raisonnement multi-étapes — issue #240) === */
+      case 'thinking_start': {
+        const { sequentialThinking } = await import('./sequential-thinking.js');
+        const problem = String(params['problem'] ?? '');
+        if (!problem) throw new Error('problem required');
+        const estimated = typeof params['estimated_steps'] === 'number' ? params['estimated_steps'] : undefined;
+        return await sequentialThinking.startThought(problem, estimated);
+      }
+      case 'thinking_add_step': {
+        const { sequentialThinking } = await import('./sequential-thinking.js');
+        const thoughtId = String(params['thought_id'] ?? '');
+        const content = String(params['content'] ?? '');
+        if (!thoughtId || !content) throw new Error('thought_id and content required');
+        const opts: { reflections?: string; can_revise?: boolean } = {};
+        if (typeof params['reflections'] === 'string' && params['reflections']) {
+          opts.reflections = params['reflections'];
+        }
+        if (typeof params['can_revise'] === 'boolean') opts.can_revise = params['can_revise'];
+        return await sequentialThinking.addStep(thoughtId, content, opts);
+      }
+      case 'thinking_revise': {
+        const { sequentialThinking } = await import('./sequential-thinking.js');
+        const thoughtId = String(params['thought_id'] ?? '');
+        const stepIndex = typeof params['step_index'] === 'number' ? params['step_index'] : -1;
+        const newContent = String(params['new_content'] ?? '');
+        if (!thoughtId || stepIndex < 0 || !newContent) {
+          throw new Error('thought_id, step_index, and new_content required');
+        }
+        return await sequentialThinking.revise(thoughtId, stepIndex, newContent);
+      }
+      case 'thinking_branch': {
+        const { sequentialThinking } = await import('./sequential-thinking.js');
+        const thoughtId = String(params['thought_id'] ?? '');
+        const fromStep = typeof params['from_step'] === 'number' ? params['from_step'] : -1;
+        const alternative = String(params['alternative'] ?? '');
+        if (!thoughtId || fromStep < 0 || !alternative) {
+          throw new Error('thought_id, from_step, and alternative required');
+        }
+        return await sequentialThinking.branch(thoughtId, fromStep, alternative);
+      }
+      case 'thinking_complete': {
+        const { sequentialThinking } = await import('./sequential-thinking.js');
+        const thoughtId = String(params['thought_id'] ?? '');
+        const conclusion = String(params['conclusion'] ?? '');
+        if (!thoughtId || !conclusion) throw new Error('thought_id and conclusion required');
+        return await sequentialThinking.complete(thoughtId, conclusion);
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

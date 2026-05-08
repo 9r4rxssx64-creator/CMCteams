@@ -31,6 +31,7 @@ import { linksRegistry } from '../../services/links-registry.js';
 import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/multi-key-vault.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
+import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
@@ -637,6 +638,19 @@ function attachScrollUx(rootEl: HTMLElement): void {
 function renderCategories(rootEl: HTMLElement): void {
   const container = rootEl.querySelector<HTMLDivElement>('#ax-vault-categories');
   if (!container) return;
+  /* H3 audit fix v13.3.74 — skeleton si pas encore décrypté (computeStats peut être 0 au boot) */
+  const stats = computeStats();
+  if (stats.total === 0 && !container.dataset['axInitialized']) {
+    container.dataset['axInitialized'] = '1';
+    const dispose = skeleton(container, 'vault-cards');
+    /* Auto-clear après 250ms (decrypt sync localStorage en général < 100ms) */
+    setTimeout(() => {
+      dispose();
+      /* Re-render once decrypt done */
+      renderCategories(rootEl);
+    }, 250);
+    return;
+  }
   container.innerHTML = CATEGORIES.map((cat) => {
     const credsInCat = getCredentialsForCategory(cat, activeQuery);
     /* Hide empty cats sauf identity (Kevin veut toujours voir cette section) */

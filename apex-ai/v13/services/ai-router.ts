@@ -478,7 +478,50 @@ function validateRequest(
  */
 const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropic']);
 
+/**
+ * v13.3.74 H2 (audit Apex v13.3.73) — Failover chain MAX 6 providers actifs.
+ *
+ * Audit issue #240 : "Anti-blocage IA: 2/4 providers seulement".
+ * Cible : >= 5 providers actifs en chain pour assurer continuité même si
+ * 2-3 providers down simultanément (cohere/groq/anthropic incident 2026-05-08).
+ *
+ * Providers natifs (1ère classe, model dédié) :
+ * - anthropic (Claude Sonnet 4.6)
+ * - openai (GPT-4o-mini)
+ * - openrouter (proxy multi-model — fallback universel)
+ * - groq (Llama 3.3 70B — gratuit 14k req/jour)
+ * - gemini (Gemini 2.5 Pro — free tier généreux)
+ * - openclaw (placeholder Kevin custom)
+ *
+ * Providers proxiés via openrouter (mappés dans buildPolicyAwareChain):
+ * - mistral, cohere, deepseek, perplexity → openrouter
+ *
+ * Total effectif : 6 endpoints distincts → si 2 KO, reste 4 actifs minimum.
+ */
 const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
+
+/**
+ * v13.3.74 H2 — Liste extensive des providers logiques supportés (incluant proxiés).
+ * Utilisé pour log "X/Y providers healthy" au boot + diagnostic admin.
+ */
+export const ALL_PROVIDERS_LOGICAL: readonly string[] = [
+  'anthropic',
+  'openai',
+  'openrouter',
+  'groq',
+  'gemini',
+  'mistral',
+  'cohere',
+  'deepseek',
+  'perplexity',
+  'openclaw',
+];
+
+/**
+ * v13.3.74 H2 — Minimum providers actifs requis pour considérer chain "healthy".
+ * Si < MIN_HEALTHY_PROVIDERS → toast warning admin + escalade Claude Code.
+ */
+export const MIN_HEALTHY_PROVIDERS = 5;
 
 class AIRouter {
   private currentAbort: AbortController | null = null;
