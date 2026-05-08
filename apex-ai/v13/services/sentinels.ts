@@ -709,7 +709,7 @@ export function registerCoreSentinels(): void {
      *  3. Trace 'audit.chain_rebuilt' dans la chain réparée
      *  4. Émet event 'audit-log:rebuild' pour notif admin
      * Le tamper reste visible via le snapshot + la trace audit + ax_security_log. */
-    autoFix: async (): Promise<boolean> => {
+    autoFix: async () => {
       try {
         const { auditLog } = await import('./audit-log.js');
         auditLog.reload();
@@ -726,12 +726,14 @@ export function registerCoreSentinels(): void {
             });
             localStorage.setItem('ax_security_log', JSON.stringify(log.slice(-200)));
           } catch { /* quota */ }
-          return true;
+          return { ok: true, msg: `Audit chain réparée à #${r.brokenAt} (${r.rebuilt} entries recalculées)` };
         }
-        /* Si chain déjà valide → considéré succès no-op */
-        return r.ok && r.rebuilt === 0;
-      } catch {
-        return false;
+        if (r.ok && r.rebuilt === 0) {
+          return { ok: true, msg: 'Audit chain déjà valide' };
+        }
+        return { ok: false, msg: 'Audit chain rebuild fail (rien rebuilt)' };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'Audit autoRepair fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
