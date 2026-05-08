@@ -20,8 +20,8 @@
 
 import { logger } from '../core/logger.js';
 
-import { observability } from './observability.js';
 import { isFeatureEnabled } from './feature-toggles.js';
+import { observability } from './observability.js';
 
 /**
  * Mapping sentinel id → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).

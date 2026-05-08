@@ -25,6 +25,8 @@
 
 import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -270,6 +272,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeKbScope?.cleanup();
   activeKbScope = createCleanupScope('knowledge-bank');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('admin.kb', rootEl, uid)) return;
   const stats = getKbStats();
   const fallback = KB_CATEGORIES[0];
   if (!fallback) {
