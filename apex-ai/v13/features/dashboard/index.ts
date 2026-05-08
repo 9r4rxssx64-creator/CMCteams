@@ -21,6 +21,7 @@ import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { haptic } from '../../ui/haptic.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeDashboardScope: CleanupScope | null = null;
@@ -431,6 +432,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   activeDashboardScope?.cleanup();
   activeDashboardScope = createCleanupScope('dashboard');
   const user = store.get('user') as { name?: string; id?: string } | null;
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('admin.dashboard', rootEl, user?.id)) return;
   const greeting = user?.name ? `Bonjour ${user.name}` : 'Bonjour';
 
   const [kpis, alerts, serviceHealth] = await Promise.all([

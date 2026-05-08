@@ -266,6 +266,9 @@ export function render(rootEl: HTMLElement): void {
     `;
     return;
   }
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout).
+     NOTE: admin.toggles est un kill-switch — si OFF, plus moyen de rallumer via UI.
+     Volontairement non-gardé ici (anti-soft-lock). Audit-only via toggle history. */
 
   const filtered = filterFeatures(currentSearchQuery);
   const groups = groupByCategory(filtered);

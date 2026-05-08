@@ -19,6 +19,7 @@ import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { autoBackup, type Backup, type BackupStats } from '../../services/auto-backup.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -282,6 +283,9 @@ export function render(rootEl: HTMLElement): void {
     `;
     return;
   }
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('sentinel.backup-watch', rootEl, uid)) return;
 
   /* Init service (idempotent) */
   void autoBackup.init();

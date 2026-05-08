@@ -15,6 +15,7 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 export interface BillingService {
   id: string;
@@ -238,6 +239,9 @@ export const billingHub = new BillingHub();
 
 export function render(rootEl: HTMLElement): void {
   const isAdmin = (store.get('isAdmin') as boolean | undefined) ?? false;
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('module.billing', rootEl, uid)) return;
   const groups = billingHub.groupByCategory();
   const stats = billingHub.getStats();
 
