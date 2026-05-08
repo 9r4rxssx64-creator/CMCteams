@@ -1,6 +1,14 @@
 /**
  * APEX v13 — Apex Execute (pont autonome IA → Claude Code via GitHub Actions).
  *
+ * @experimental v13.3.87 (Kevin audit externe brutal 2026-05-08) :
+ * Service WIRÉ (apex-tools-dispatch.ts, services-bootstrap.ts, features/admin/index.ts,
+ * apex-claude-code-parity.ts) MAIS jamais déclenché end-to-end en production
+ * (stats Firebase: total=0, pending=0). Le system prompt (memory.ts) annonce ce
+ * service comme "expérimental" tant que ≥5 round-trips réels n'ont pas été validés
+ * (workflow apex-execute-bridge.yml doit recevoir → traiter → renvoyer résultat).
+ * @see core/memory.ts section "Auto-modification autonomie totale ⚠️ EXPÉRIMENTAL"
+ *
  * Demande Kevin 2026-05-04 :
  * "Apex doit pouvoir tout faire en autonomie totale. Mais Apex IA elle-même
  * reconnaît qu'elle ne peut pas exécuter code (juste générer plan).

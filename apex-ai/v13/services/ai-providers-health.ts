@@ -56,7 +56,10 @@ const PING_ENDPOINTS: Record<ProviderId, string> = {
   openrouter: 'https://openrouter.ai/api/v1/models',
   groq: 'https://api.groq.com/openai/v1/models',
   gemini: 'https://generativelanguage.googleapis.com/v1beta/models',
-  openclaw: 'https://api.openclaw.io/v1/models' /* placeholder */,
+  /* v13.3.87 P1.11 (Kevin audit externe brutal 2026-05-08) : openclaw était placeholder
+   * fake → toujours DOWN dans health → faux positif "2/4 providers KO sans alerte".
+   * Conservé dans types pour compat tests, EXCLU du health check live. */
+  openclaw: 'https://api.openclaw.io/v1/models' /* placeholder — exclu PROBE_PROVIDERS */,
 };
 
 const ALL_PROVIDERS: readonly ProviderId[] = [
@@ -65,6 +68,15 @@ const ALL_PROVIDERS: readonly ProviderId[] = [
   'groq',
   'gemini',
   'openclaw',
+];
+
+/* v13.3.87 P1.11 : providers réellement testables (pas de placeholder fake).
+ * openclaw exclu car endpoint placeholder → générait faux positif "DOWN" sans valeur. */
+const PROBE_PROVIDERS: readonly ProviderId[] = [
+  'anthropic',
+  'openrouter',
+  'groq',
+  'gemini',
 ];
 
 /* HTTP status considérés comme "service vivant" (réponse réseau + serveur traite la requête).
@@ -165,9 +177,26 @@ class AIProvidersHealth {
 
   /**
    * Force un ping immédiat de tous les providers (utile bouton "Re-tester" UI admin).
+   *
+   * v13.3.87 P1.11 : utilise PROBE_PROVIDERS (4 providers réels) au lieu d'ALL_PROVIDERS.
+   * openclaw est un placeholder fake qui causait faux positifs "DOWN sans alerte".
+   * Reset de son state à 'unknown' pour être honnête en UI (pas tester ≠ pas down).
    */
   async pingAll(): Promise<void> {
-    await Promise.all(ALL_PROVIDERS.map((p) => this.pingOne(p)));
+    await Promise.all(PROBE_PROVIDERS.map((p) => this.pingOne(p)));
+    /* openclaw : statut explicite "unknown" car non testé (vs faux "down") */
+    for (const p of ALL_PROVIDERS) {
+      if (!PROBE_PROVIDERS.includes(p)) {
+        this.state.set(p, {
+          provider: p,
+          status: 'unknown',
+          latency_ms: -1,
+          last_ping_ts: Date.now(),
+          consecutive_failures: 0,
+          last_error: 'placeholder endpoint, not probed',
+        });
+      }
+    }
     this.saveToStorage();
   }
 

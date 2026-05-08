@@ -676,6 +676,13 @@ class Vault {
       const { credentialsAudit } = await import('./credentials-audit.js');
       void credentialsAudit.syncFromVault();
     } catch { /* silent — registry sync best-effort */ }
+    /* v13.3.87 P0.2 (Kevin audit externe brutal 2026-05-08) :
+     * Refresh memory vault audit cache pour que system prompt IA sync immédiatement
+     * (évite contradiction "X clés configurées" vs "0 present"). Best-effort. */
+    try {
+      const { memory } = await import('../core/memory.js');
+      void memory.refreshVaultAudit();
+    } catch { /* silent — memory cache sync best-effort */ }
     return { ok: persisted.local || persisted.idb, persisted };
   }
 

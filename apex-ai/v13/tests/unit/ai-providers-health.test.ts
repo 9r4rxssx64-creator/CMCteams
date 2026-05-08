@@ -163,17 +163,19 @@ describe('ai-providers-health — service de monitoring providers IA', () => {
   });
 
   describe('pingAll', () => {
-    it('pingAll teste tous les 5 providers', async () => {
+    it('pingAll teste les 4 providers réels (openclaw exclu placeholder v13.3.87 P1.11)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse(200));
       await aiProvidersHealth.pingAll();
-      /* 5 providers = 5 fetch calls */
-      expect(fetchSpy).toHaveBeenCalledTimes(5);
+      /* v13.3.87 P1.11 : openclaw était placeholder fake → exclu du PROBE_PROVIDERS,
+       * statut explicite 'unknown' au lieu de faux positif 'down'. */
+      expect(fetchSpy).toHaveBeenCalledTimes(4);
       const status = aiProvidersHealth.getStatus();
       expect(status.anthropic).toBe('ok');
       expect(status.openrouter).toBe('ok');
       expect(status.groq).toBe('ok');
       expect(status.gemini).toBe('ok');
-      expect(status.openclaw).toBe('ok');
+      /* openclaw : not probed → 'unknown' (pas 'ok' car non testé, pas 'down' car non fail) */
+      expect(status.openclaw).toBe('unknown');
     });
 
     it('pingAll mix succès/échec → status mixte', async () => {
