@@ -161,6 +161,20 @@ const BANNED_PATH_ROOTS: readonly string[] = [
   'package-lock.json',
 ];
 
+/**
+ * Fichiers PROTÉGÉS — irrévocables par self-modify (Kevin 2026-05-08).
+ * Aucune task `modify_file`/`create_file`/`delete_file_safe` ne peut les toucher.
+ * Si Apex tente de modifier ces fichiers via parité Claude Code → refusé + audit.
+ *
+ * Justification : ces fichiers définissent l'identité IRRÉVOCABLE d'Apex,
+ * de Kevin, de Laurence ❤️, et les règles immuables. Une modification runtime
+ * autonome casserait la source de vérité hardcodée.
+ */
+const PROTECTED_FILES: readonly string[] = [
+  'apex-ai/v13/core/apex-identity.ts',
+  'core/apex-identity.ts', /* path relatif depuis apex-ai/v13/ */
+];
+
 export type ExecutionStatus = 'pending' | 'dispatched' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
 
 export interface ExecutionParams {
@@ -868,7 +882,7 @@ class ApexExecuteService {
   }
 
   /**
-   * Validation universelle de path (anti path traversal + zones bannies).
+   * Validation universelle de path (anti path traversal + zones bannies + protégées).
    */
   private validateUniversalPath(path: string): string | null {
     if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
@@ -882,6 +896,13 @@ class ApexExecuteService {
     /* Path absolu Windows (C:\) */
     if (/^[A-Z]:\\/.test(path)) {
       return 'path absolu Windows interdit';
+    }
+    /* Fichiers PROTÉGÉS — identité irrévocable Apex/Kevin/Laurence (Kevin 2026-05-08). */
+    const norm = path.replace(/\\/g, '/');
+    for (const protectedFile of PROTECTED_FILES) {
+      if (norm === protectedFile || norm.endsWith('/' + protectedFile)) {
+        return `path protégé (identité irrévocable) : ${path}`;
+      }
     }
     return null;
   }

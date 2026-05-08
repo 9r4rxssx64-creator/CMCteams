@@ -155,6 +155,17 @@ class Firebase {
     /* Sprint 8 : restore vault keys depuis Firebase si localStorage vide
        (Kevin règle "ne plus perdre clé API après clear cache iPhone") */
     if (this.connected) void this.restoreVaultKeysFromFirebase();
+    /* v13.3.74+ Kevin 2026-05-08 ABSOLUE — Auto-restore depuis Firebase backup dédié.
+     * Path /apex/vault_backup/<uid>/* survit même si FB_FIX whitelist change.
+     * Couche 4 de la triple-persistence béton (cf. vault-firebase-backup.ts).
+     * Best-effort : si offline ou pas de backup → no-op. */
+    if (this.connected) {
+      void import('./vault-firebase-backup.js')
+        .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.restoreAllFromFirebaseBackup())
+        .catch((err: unknown) => {
+          logger.debug('firebase', 'vault-fb-backup auto-restore skipped', { err });
+        });
+    }
   }
 
   isConnected(): boolean {

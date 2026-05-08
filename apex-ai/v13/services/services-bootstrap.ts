@@ -467,6 +467,18 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* v13.3.79 (Kevin 2026-05-08 ABSOLUE) — Auto-restore credentials.
+       "Quand il me dit qu'il lui manque des choses bah pourquoi il est pas allé
+        les chercher automatiquement"
+       Tourne en background (non-blocking) après le vault-lifecycle. Audit toutes
+       les clés manquantes et restaure depuis IDB / Firebase / alias avant que
+       Kevin ne soit notifié. */
+    safeInit('auto-restore', async () => {
+      const { autoRestoreCredentials } = await import('./auto-restore-credentials.js');
+      /* Background : ne bloque pas le boot si Firebase lent. */
+      void autoRestoreCredentials.boot();
+    }),
+
     /* v13.3.64 — Admin commands listener (Kevin 2026-05-08).
        Tourne sur iPhone target user (ex: Laurence). Reçoit commands SSE Firebase
        issued par Kevin admin (reset PIN, etc.) et applique localement. */

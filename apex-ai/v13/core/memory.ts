@@ -511,8 +511,16 @@ class Memory {
         { category: 'preferences', text: 'Monnaie : EUR', importance: 60 },
         { category: 'preferences', text: 'Theme par défaut : Casino Gold (or sobre fond sombre)', importance: 55 },
         { category: 'preferences', text: 'IA modèle préféré : Claude Sonnet 4.6 / Opus 4.7 (fallback Groq Llama 3.3)', importance: 70 },
-        { category: 'projects', text: 'Projets actifs : Apex (priorité 1), CMCteams v9.600, Apex Chat, Social Video Pipeline, Télécommande, CrackPass, e-APEX', importance: 80 },
-        { category: 'relationships', text: 'Laurence SAINT-POLIT — utilisatrice Apex (tier laurence) avec accès limité', importance: 75 },
+        /* Mission Kevin 2026-05-08 — Mémoire augmentée : projets & relations détaillés */
+        { category: 'projects', text: 'Projet Apex AI v13 — assistant IA personnel (toi-même), priorité absolue 1', importance: 90 },
+        { category: 'projects', text: 'Projet CMCteams (v9.602) — planning Casino Monaco, 258 employés', importance: 85 },
+        { category: 'projects', text: 'Projet e-KDMC — marketplace e-commerce KDMC', importance: 80 },
+        { category: 'projects', text: 'Projet Apex Chat — chat dédié multi-IA', importance: 75 },
+        { category: 'projects', text: 'Projet Social Video Pipeline — production vidéo IA automatisée', importance: 75 },
+        { category: 'projects', text: 'Projet Télécommande KDMC — domotique IR/BLE/Wifi', importance: 70 },
+        { category: 'projects', text: 'Projet CrackPass — password manager KDMC', importance: 70 },
+        /* Laurence ❤️ — femme de Kevin, tier privilégié */
+        { category: 'relationships', text: 'Laurence Saint-Polit ❤️ — femme/compagne de Kevin (tier laurence privilégié, UX simplifiée, validation Kevin pour actions niveau C)', importance: 95 },
       ];
 
       let added = 0;
@@ -884,18 +892,24 @@ class Memory {
       addIfRoom(`## 📝 NOTES_USER.md — Infos métier Kevin\n${cap(docs['NOTES_USER.md'].content, 3000)}`);
     }
 
-    /* Charge facts une seule fois pour réutilisation. */
-    let userFacts: Array<{ category: string; importance: number; text: string }> = [];
+    /* Charge facts une seule fois pour réutilisation.
+     * Mission Kevin 2026-05-08 — utilise les helpers getTop50ForSystemPrompt
+     * + getTop10LessonsForSystemPrompt (pré-formatés, tri par importance×récence). */
+    let userFactsFormatted = '';
+    let userFactsCount = 0;
+    let lessonsFormatted = '';
     let sharedFacts: Array<{ category: string; importance: number; text: string }> = [];
     try {
       const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
-      const all = await persistentMemoryStore.list();
       if (currentUser) {
-        userFacts = all
-          .filter((e) => e.scope === currentUser.id)
-          .sort((a, b) => b.importance - a.importance)
-          .slice(0, 50);
+        const top = await persistentMemoryStore.getTop50ForSystemPrompt(currentUser.id, 50);
+        userFactsCount = top.count;
+        userFactsFormatted = top.formatted;
       }
+      const lessons = await persistentMemoryStore.getTop10LessonsForSystemPrompt(10);
+      lessonsFormatted = lessons.formatted;
+      /* sharedFacts : facts scope global pour priorité 8 */
+      const all = await persistentMemoryStore.list();
       sharedFacts = all
         .filter((e) => e.scope === 'global')
         .sort((a, b) => b.importance - a.importance)
@@ -904,30 +918,14 @@ class Memory {
       /* persistent store indispo */
     }
 
-    /* PRIORITÉ 3 : Top 50 facts user courant */
-    if (userFacts.length > 0 && currentUser) {
-      addIfRoom(
-        `## 🧠 Mémoire long-terme user courant (${currentUser.name}, ${userFacts.length} facts)\n${userFacts.map((f) => `- [${f.category}/${f.importance}] ${f.text}`).join('\n')}`,
-      );
+    /* PRIORITÉ 3 : Top 50 facts user courant (helper compact) */
+    if (userFactsCount > 0 && userFactsFormatted) {
+      addIfRoom(userFactsFormatted);
     }
 
-    /* PRIORITÉ 4 : Top 10 lessons critiques */
-    try {
-      const lessonsRaw = localStorage.getItem('ax_lessons_learned_struct');
-      if (lessonsRaw) {
-        const arr = JSON.parse(lessonsRaw) as Array<{ category: string; title: string; severity: string; resolved: boolean }>;
-        const critical = arr
-          .filter((l) => (l.severity === 'critical' || l.severity === 'warn') && !l.resolved)
-          .slice(-10)
-          .reverse();
-        if (critical.length > 0) {
-          addIfRoom(
-            `## ⚠️ Lessons cross-app non résolues (top ${critical.length})\n${critical.map((l) => `- [${l.category}/${l.severity}] ${l.title}`).join('\n')}`,
-          );
-        }
-      }
-    } catch {
-      /* skip */
+    /* PRIORITÉ 4 : Top 10 lessons cross-session non résolues (helper compact) */
+    if (lessonsFormatted) {
+      addIfRoom(lessonsFormatted);
     }
 
     /* PRIORITÉ 5 : MEMORY_PERSISTENT.md */

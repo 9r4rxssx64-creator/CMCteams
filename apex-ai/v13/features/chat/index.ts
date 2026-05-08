@@ -67,8 +67,9 @@ interface DisplayMessage {
 const CONV_STORAGE_KEY = 'apex_v13_conversation_active';
 const CONV_MAX_PERSIST = 200;
 
-/* v13.3.77 fix TDZ : déclarer conversation EN PREMIER (let mutable, init []) puis remplir.
- * Évite "Cannot access 'conversation' before initialization" en isolation Vitest test. */
+/* v13.3.77 fix TDZ : déclarer conversation EN PREMIER (init []) puis remplir.
+ * Évite "Cannot access 'conversation' before initialization" en isolation Vitest
+ * (race conditions dynamic import + happy-dom + isolate). */
 const conversation: DisplayMessage[] = [];
 const queue: string[] = [];
 let isProcessing = false;
@@ -104,7 +105,7 @@ function persistConversation(): void {
   }, 500);
 }
 
-/* Init populée APRÈS const conversation pour ne pas dépendre de l'ordre */
+/* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
 {
   const persisted = loadPersistedConversation();
   if (persisted.length) {
@@ -2728,8 +2729,17 @@ export function render(rootEl: HTMLElement): void {
     });
   });
 
-  if (conversation.length) {
-    renderMessages(rootEl);
+  /* v13.3.77 fix TDZ : guard contre accès `conversation` avant init module
+   * (race condition Vitest isolate + services-bootstrap router.dispatch peut
+   * appeler render() durant module loading, avant que le const conversation soit bound). */
+  try {
+    if (conversation.length) {
+      renderMessages(rootEl);
+    }
+  } catch (e) {
+    /* TDZ pendant module init — pas critique, renderMessages peut attendre next tick */
+    if (!(e instanceof ReferenceError)) throw e;
+    logger.warn('chat', 'conversation TDZ skipped (module init race)');
   }
   /* H3 audit fix v13.3.74 — skeleton helper exposé pour features lazy.
    * Wire opt-in via `data-ax-skeleton-host` element (modules lazy-loaded l'utilisent

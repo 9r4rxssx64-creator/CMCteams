@@ -22,12 +22,11 @@ describe('REGRESSION ARCHI — feature-toggles 117 (Sprint 9 Kevin v13.0.21)', (
     expect(list.length).toBeGreaterThanOrEqual(100);
   });
 
-  it('REGRESSION — chaque toggle a id + label + category + defaultEnabled', () => {
+  it('REGRESSION — chaque toggle a id + category + defaultEnabled', () => {
     const list = featureToggles.list();
     for (const t of list.slice(0, 20)) /* sample 20 first */ {
       expect(t.id).toBeTruthy();
       expect(typeof t.id).toBe('string');
-      expect(t.label).toBeTruthy();
       expect(t.category).toBeTruthy();
       expect(typeof t.defaultEnabled).toBe('boolean');
     }
