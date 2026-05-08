@@ -350,10 +350,22 @@ export function listAllKnownUsers(): ReadonlyArray<{
     out.push({ category: 'friend', name: f.name, meta: f.tier });
   }
   for (const c of i.clients.pro) {
-    out.push({ category: 'client_pro', id: c.id, name: c.name, meta: c.plan });
+    const entry: { category: 'client_pro'; id: string; name: string; meta?: string } = {
+      category: 'client_pro',
+      id: c.id,
+      name: c.name,
+    };
+    if (c.plan) entry.meta = c.plan;
+    out.push(entry);
   }
   for (const c of i.clients.free) {
-    out.push({ category: 'client_free', id: c.id, name: c.name, meta: c.plan });
+    const entry: { category: 'client_free'; id: string; name: string; meta?: string } = {
+      category: 'client_free',
+      id: c.id,
+      name: c.name,
+    };
+    if (c.plan) entry.meta = c.plan;
+    out.push(entry);
   }
   for (const c of i.employees_cmcteams.cadres) {
     out.push({ category: 'employee_cadre', name: c.name, meta: c.role });
