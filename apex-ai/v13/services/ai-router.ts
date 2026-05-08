@@ -687,6 +687,28 @@ class AIRouter {
       return;
     }
 
+    /* P1.3 v13.3.81 (audit cascade — RGPD Art. 18) :
+     * Si user a restriction 'ai_query' → mode dégradé local au lieu d'envoyer aux providers. */
+    try {
+      const uid = localStorage.getItem('apex_v13_uid');
+      if (uid) {
+        const { rgpd } = await import('./rgpd.js');
+        if (rgpd.isRestricted(uid, 'ai_query') || rgpd.isRestricted(uid, '*')) {
+          logger.warn('ai-router', 'AI query blocked (RGPD Art. 18 restriction)');
+          onChunk({
+            text: 'Mode limitation RGPD actif (Art. 18). Les requêtes IA sont temporairement suspendues. Contacte l\'admin pour lever la restriction.',
+            done: true,
+            provider: 'anthropic',
+            type: 'text',
+          });
+          void auditLog.record('rgpd.ai_query.blocked', { actor: uid });
+          return;
+        }
+      }
+    } catch {
+      /* rgpd indispo → continue (fail-open) */
+    }
+
     /* P1 fix : PII redaction outbound — filtre email/CB/IBAN/SS/passport/etc.
      * AVANT envoi providers IA pour anti-leak data sensible.
      * Jet 13.0.40 : audit log si PII détecté (SOC2 trail). */
@@ -895,15 +917,26 @@ class AIRouter {
        de clé, on veut garder l'erreur 429 pour que chat-fallback propose la recharge. */
     const isInformativeErr = (e: Error): boolean =>
       /HTTP\s*\d|quota|rate.?limit|insufficient|429|402|401|403/i.test(e.message);
-    for (const provider of chain) {
+    /* P1.4 v13.3.81 (audit cascade) : log explicite ordre chain + chaque rotation
+     * pour traçabilité opérationnelle. Permet vAdminAIChain de reconstituer flux. */
+    logger.info('ai-router', 'failover chain start', { chain: chain.join('→') });
+    for (let i = 0; i < chain.length; i += 1) {
+      const provider = chain[i]!;
       const result = await this.streamWithKeyFailover(provider, messages, system, onChunk, signal);
       if (result.status === 'aborted') return { status: 'aborted' };
-      if (result.status === 'ok') return result;
+      if (result.status === 'ok') {
+        if (i > 0) {
+          logger.info('ai-router', `failover succeeded on ${provider} (position ${i + 1}/${chain.length})`);
+        }
+        return result;
+      }
       const currentErr = result.error;
       if (!lastErr || (isInformativeErr(currentErr) && !isInformativeErr(lastErr))) {
         lastErr = currentErr;
       }
-      logger.warn('ai-router', `${provider} all keys failed, trying next provider`, {
+      const next = chain[i + 1];
+      const httpStatus = (currentErr.message.match(/HTTP\s*(\d{3})/) ?? [])[1] ?? 'unknown';
+      logger.warn('ai-router', `failover ${provider}→${next ?? 'END'} (status=${httpStatus})`, {
         err: currentErr.message,
       });
     }

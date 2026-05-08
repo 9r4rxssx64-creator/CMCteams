@@ -191,7 +191,7 @@ function renderHeader(): string {
     <header style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:rgba(20,20,35,0.95);border-bottom:1px solid rgba(201,162,39,0.3);position:sticky;top:0;z-index:10">
       <h1 style="margin:0;color:#c9a227;font-size:18px;flex:1;min-width:160px">🔘 Toggles ON/OFF</h1>
       <span style="color:#888;font-size:12px">${stats.enabledGlobal}/${stats.total} actifs · ${stats.users} users</span>
-      <input type="search" id="ax-toggles-search" placeholder="Rechercher feature..." value="${escapeHtml(currentSearchQuery)}"
+      <input type="search" id="ax-toggles-search" aria-label="Rechercher une feature dans les toggles" placeholder="Rechercher feature..." value="${escapeHtml(currentSearchQuery)}"
         style="padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(201,162,39,0.3);color:#fff;border-radius:6px;font-size:13px;min-width:160px">
       ${renderUserPicker()}
       <button class="ax-btn" data-action="enable-all" style="padding:6px 12px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px">Tout activer</button>

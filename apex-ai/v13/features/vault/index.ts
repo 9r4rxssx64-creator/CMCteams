@@ -557,7 +557,7 @@ export function render(rootEl: HTMLElement): void {
         </header>
 
         <div class="ax-vault-search-row" style="padding-bottom:12px;transition:padding 200ms ease">
-          <input type="text" id="ax-vault-search" value="${escapeHtml(activeQuery)}" placeholder="🔍 Chercher un service..."
+          <input type="text" id="ax-vault-search" aria-label="Chercher un service dans le coffre" value="${escapeHtml(activeQuery)}" placeholder="🔍 Chercher un service..."
             style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#fff;font-size:15px;box-sizing:border-box;-webkit-appearance:none;min-height:44px">
         </div>
       </div>

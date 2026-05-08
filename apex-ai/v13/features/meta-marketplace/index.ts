@@ -179,7 +179,7 @@ function renderShell(): string {
       </div>
       ${renderStatsHeader()}
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input id="meta-mkt-search" type="search" placeholder="Cherche dans 30+ marketplaces (ex: stable diffusion, react, postgres)..." value="${escapeHtml(state.query)}" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a2a;color:#fff;font-size:1em">
+        <input id="meta-mkt-search" type="search" aria-label="Recherche dans les marketplaces" placeholder="Cherche dans 30+ marketplaces (ex: stable diffusion, react, postgres)..." value="${escapeHtml(state.query)}" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a2a;color:#fff;font-size:1em">
         <button id="meta-mkt-search-btn" style="padding:10px 16px;border-radius:8px;border:1px solid #6cf;background:rgba(102,204,255,.1);color:#6cf;cursor:pointer">Search</button>
       </div>
       ${renderCategoryChips(state.category)}

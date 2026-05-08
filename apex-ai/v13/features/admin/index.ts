@@ -472,7 +472,7 @@ function renderKnowledgeTab(): string {
 
       <h3>Recherche dans le code</h3>
       <form id="kb-search-form" class="ax-form">
-        <input type="text" id="kb-search-query" placeholder="Cherche dans tes repos..."
+        <input type="text" id="kb-search-query" aria-label="Rechercher dans le code des repos" placeholder="Cherche dans tes repos..."
                maxlength="200" autocomplete="off" class="ax-input">
         <button type="submit" class="ax-btn ax-btn-primary">Chercher</button>
       </form>

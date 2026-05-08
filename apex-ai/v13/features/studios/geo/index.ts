@@ -172,7 +172,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Adresse → coordonnées</h2>
-        <input type="text" id="ax-geo-addr" placeholder="ex : Place du Casino, Monaco" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="text" id="ax-geo-addr" aria-label="Adresse à géocoder" placeholder="ex : Place du Casino, Monaco" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-geo-go" style="margin-top:8px;min-height:44px">Géocoder</button>
         <div id="ax-geo-out" style="margin-top:12px;color:#c9a227;font-size:13px"></div>
       </div>

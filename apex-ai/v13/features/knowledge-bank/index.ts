@@ -295,7 +295,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </header>
 
       <section style="margin-bottom:16px">
-        <input id="ax-kb-search" type="text" placeholder="🔍 Rechercher dans toutes les catégories (3+ chars pour global)" value="${escapeHtml(searchQuery)}"
+        <input id="ax-kb-search" type="text" aria-label="Rechercher dans la banque de connaissances" placeholder="🔍 Rechercher dans toutes les catégories (3+ chars pour global)" value="${escapeHtml(searchQuery)}"
           style="width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px">
       </section>
 

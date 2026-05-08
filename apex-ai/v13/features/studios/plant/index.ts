@@ -132,7 +132,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Recherche plante</h2>
-        <input type="text" id="ax-plant-search" placeholder="Nom commun, latin ou alias…" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="text" id="ax-plant-search" aria-label="Rechercher une plante par nom commun ou latin" placeholder="Nom commun, latin ou alias…" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <div id="ax-plant-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
       </div>
 

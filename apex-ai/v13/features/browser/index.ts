@@ -801,6 +801,7 @@ export function render(rootEl: HTMLElement): void {
 
         <div style="flex:1;position:relative;min-width:200px">
           <input type="url" id="ax-browser-url" autocomplete="off"
+            aria-label="URL ou recherche pour le navigateur Apex"
             value="${escapeHtml(currentUrl)}"
             placeholder="URL ou ?question pour Apex IA…"
             style="width:100%;padding:10px 14px;border-radius:10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;min-height:40px;-webkit-appearance:none;transition:all 160ms cubic-bezier(0.16,1,0.3,1);box-sizing:border-box">

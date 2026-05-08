@@ -32,18 +32,25 @@ interface SafetyResult {
 /* === Patterns détection prompt injection === */
 const INJECTION_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp }> = [
   { name: 'ignore_instructions', regex: /\b(ignore|forget|disregard)\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)/i },
+  /* P2.2 v13.3.81 (audit cascade) : "ignore all restrictions" sans le mot "previous" */
+  { name: 'ignore_all_rules', regex: /\bignore\s+all\s+(?:restrictions|rules|prior\s+instructions|safety\s+rules|guidelines)\b/i },
   { name: 'system_prompt_extract', regex: /\b(reveal|show|print|tell\s+me)\s+(your|the)\s+(system\s+prompt|instructions|rules)\b/i },
   { name: 'role_override', regex: /\b(you\s+are\s+now|act\s+as|pretend\s+to\s+be|from\s+now\s+on)\s+(?:a\s+)?(DAN|Sydney|jailbroken|unrestricted|developer\s+mode)/i },
   { name: 'data_exfil', regex: /\b(send|upload|transmit)\s+(my\s+)?(api\s+keys?|credentials|tokens?|passwords?)\s+to\b/i },
   { name: 'shell_exec', regex: /\b(execute|run|eval)\s+(shell|bash|cmd|powershell)\b/i },
 ];
 
-/* === Patterns jailbreak === */
+/* === Patterns jailbreak ===
+ * P2.2 v13.3.81 (audit cascade) : ajout patterns ChatGPT mode, unrestricted,
+ * DAN jailbreak, developer mode + déjà existant complété. */
 const JAILBREAK_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp }> = [
-  { name: 'dan_v', regex: /\b(do\s+anything\s+now|DAN\s+(mode|version)|jailbreak\s+mode)/i },
+  { name: 'dan_v', regex: /\b(do\s+anything\s+now|DAN\s+(mode|version|jailbreak)|jailbreak\s+mode)/i },
   { name: 'sydney', regex: /\b(Sydney|Bing\s+chat|original\s+Microsoft\s+chat)/i },
   { name: 'developer_mode', regex: /\b(developer\s+mode|dev\s+mode|debug\s+mode|admin\s+override)/i },
   { name: 'roleplay_villain', regex: /\b(pretend\s+(you|to\s+be)\s+(an?\s+)?(evil|malicious|criminal|hacker))/i },
+  { name: 'chatgpt_mode', regex: /\bchat[\s-]?gpt[\s-]?(mode|jailbreak|free|unfiltered)/i },
+  { name: 'unrestricted', regex: /\b(unrestricted|uncensored|unfiltered|no\s+restrictions?)\s+(mode|version|ai)\b/i },
+  { name: 'opposite_day', regex: /\b(opposite\s+day|reverse\s+psychology|do\s+the\s+opposite)\b/i },
 ];
 
 /* === Content safety patterns (light, anti faux positifs) === */

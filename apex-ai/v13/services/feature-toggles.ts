@@ -178,6 +178,7 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'tool.markdown', category: 'tool', description: 'Rendu Markdown', defaultEnabled: true },
   { id: 'tool.timer', category: 'tool', description: 'Timers / chronos', defaultEnabled: true },
   { id: 'tool.unit_convert', category: 'tool', description: 'Conversion unités universelles', defaultEnabled: true },
+  { id: 'feature.cross-check-ia', category: 'tool', description: 'Cross-check IA dual-provider (anti-hallucination)', defaultEnabled: false },
 
   /* === Auth (4) === */
   { id: 'auth.pin', category: 'auth', description: 'Authentification PIN', defaultEnabled: true },
