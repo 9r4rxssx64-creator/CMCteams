@@ -26,6 +26,13 @@ export interface AlertPayload {
   source?: string;
   /** Détails additionnels (sanitizés audit). */
   details?: Record<string, unknown>;
+  /**
+   * URL/route à ouvrir au clic notification (Kevin 2026-05-08 : "ne se passe rien au clic").
+   * - URL absolue (https://...) → openWindow nouveau tab via SW
+   * - Hash route (#admin-credentials-status, ou 'admin-credentials-status') → router.navigate
+   * - Si absent : fallback automatique depuis `source` via notification-actions mapping.
+   */
+  cta_url?: string;
 }
 
 interface AlertResult {
@@ -154,16 +161,80 @@ class KevinAlerts {
     if (typeof Notification === 'undefined') return false;
     if (Notification.permission !== 'granted') return false;
     try {
-      new Notification(payload.title, {
+      /* Kevin 2026-05-08 : notif click DOIT déclencher action.
+       * Si cta_url absent, dérive depuis `source` via mapping. */
+      const ctaUrl = payload.cta_url ?? this.deriveCtaUrl(payload.source);
+      const tag = payload.source ?? 'apex-alert';
+
+      /* Préférence : showNotification via SW pour récupérer le notificationclick
+       * (la notif `new Notification()` brut n'envoie PAS au SW sur tous browsers). */
+      const reg = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+        ? await navigator.serviceWorker.getRegistration()
+        : null;
+      const opts: NotificationOptions & { data?: Record<string, unknown> } = {
         body: payload.body.slice(0, 200),
         icon: '/apex-ai-v13/assets/icons/apex-logo-192.png',
-        tag: payload.source ?? 'apex-alert',
+        tag,
         requireInteraction: payload.severity === 'critical',
-      });
+        data: {
+          cta_url: ctaUrl,
+          source: payload.source,
+          tag,
+          severity: payload.severity,
+        },
+      };
+
+      if (reg) {
+        await reg.showNotification(payload.title, opts);
+      } else {
+        /* Fallback `new Notification()` + onclick handler direct (browser only) */
+        const n = new Notification(payload.title, opts);
+        n.onclick = (): void => {
+          n.close();
+          void import('./notification-actions.js')
+            .then(({ notificationActions }) => {
+              notificationActions.handleClick({ url: ctaUrl, tag, source: payload.source });
+            })
+            .catch(() => {
+              /* fallback minimum : focus window + go to chat */
+              if (typeof window !== 'undefined') {
+                window.focus?.();
+                location.hash = ctaUrl ? (ctaUrl.startsWith('#') ? ctaUrl : '#' + ctaUrl) : '#chat';
+              }
+            });
+        };
+      }
       return true;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Mapping `source` (sentinel id, feature) → route hash.
+   * Lazy fallback si cta_url absent.
+   */
+  private deriveCtaUrl(source: string | undefined): string | undefined {
+    if (!source) return undefined;
+    const map: Record<string, string> = {
+      'token-watch': '#admin-credentials-status',
+      'auto-restore-watch': '#admin-credentials-status',
+      'apex-credentials': '#admin-credentials-status',
+      'credentials-missing': '#admin-credentials-status',
+      'auto-ultra-reset': '#self-diag',
+      'uptime-monitor': '#self-diag',
+      'memory-watch': '#knowledge',
+      'storage-watch': '#self-diag',
+      'backup-watch': '#admin-backup',
+      'vault-firebase-backup': '#vault',
+      'vault-watch': '#vault',
+      'ai-providers-health': '#smart-router',
+      'smart-router-watch': '#smart-router',
+      'claude-todo': '#admin',
+      'iot-providers': '#iot-providers',
+      broadlink: '#broadlink-setup',
+    };
+    return map[source];
   }
 
   private async logAuditAlert(payload: AlertPayload): Promise<void> {

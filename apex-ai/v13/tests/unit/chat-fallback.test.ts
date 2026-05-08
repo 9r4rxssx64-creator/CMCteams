@@ -67,12 +67,36 @@ describe('Chat Fallback (anti-message-vide)', () => {
       expect(r.options?.some((o) => o.action === 'escalate_human')).toBe(true);
     });
 
-    it('demande générique → 3 plans (A/B/C) toujours actionable', () => {
+    it('demande générique → réponse DIRECTE actionable (Kevin 2026-05-08 anti-verbeux)', () => {
+      /* feature.ia-verbose-plans default OFF → réponse directe, PAS de Plan A/B/C */
       const r = chatFallback.generateFallback('quelque chose de très spécifique');
-      expect(r.text).toContain('Plan A');
-      expect(r.text).toContain('Plan B');
-      expect(r.text).toContain('Plan C');
-      expect(r.options?.length).toBe(3);
+      expect(r.text).not.toContain('Plan A');
+      expect(r.text).not.toContain('Plan B');
+      expect(r.text).not.toContain('Plan C');
+      expect(r.text).not.toContain("3 façons d'aborder");
+      expect(r.text).not.toContain('Laquelle préfères-tu');
+      /* Réponse directe avec retry/diagnostic (selon contexte erreur) */
+      expect(r.options?.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('toggle feature.ia-verbose-plans ON → Plan A/B/C disponible (debug)', () => {
+      /* Active le toggle global pour vérifier l'ancien comportement opt-in */
+      const globalKey = 'ax_feature_toggles_global';
+      const prev = localStorage.getItem(globalKey);
+      localStorage.setItem(
+        globalKey,
+        JSON.stringify({ 'feature.ia-verbose-plans': true }),
+      );
+      try {
+        const r = chatFallback.generateFallback('quelque chose de très spécifique');
+        expect(r.text).toContain('Plan A');
+        expect(r.text).toContain('Plan B');
+        expect(r.text).toContain('Plan C');
+        expect(r.options?.length).toBe(3);
+      } finally {
+        if (prev === null) localStorage.removeItem(globalKey);
+        else localStorage.setItem(globalKey, prev);
+      }
     });
   });
 

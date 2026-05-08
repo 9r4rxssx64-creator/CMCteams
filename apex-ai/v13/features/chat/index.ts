@@ -1766,6 +1766,15 @@ export function render(rootEl: HTMLElement): void {
       e.preventDefault();
       const value = textarea.value.trim();
       if (!value) return;
+      /* v13.3.79 (Kevin 2026-05-08) — Wake word texte trigger AVANT slash :
+       * "dis apex" / "ok apex" / "hey apex" tapés → activate voice mode,
+       * PAS d'appel IA et PAS de "Plan A/B/C". */
+      if (handleWakeWordTextTrigger(rootEl, value)) {
+        textarea.value = '';
+        textarea.style.height = 'auto';
+        hideSlashAutocomplete(rootEl);
+        return;
+      }
       /* v13.3.48 — Slash commands d'abord (gratuit, instantané, pas d'appel IA) */
       if (handleSlashCommand(rootEl, value)) {
         textarea.value = '';
