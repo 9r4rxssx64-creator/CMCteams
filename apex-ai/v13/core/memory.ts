@@ -872,6 +872,102 @@ class Memory {
   }
 
   /**
+   * v13.3.89 P2.16 — Lessons cross-session client persistence (Kevin règle CLAUDE.md).
+   *
+   * Parse la section "Erreurs connues à NE PAS reproduire" de CLAUDE.md (1-55+ erreurs)
+   * et persiste sur le client dans `apex_v13_lessons_cross_session` (cache 6h IDB).
+   *
+   * Permet d'injecter ces leçons dans le system prompt IA → Apex évite de refaire
+   * les erreurs documentées (ex: erreur #54 gap source/build, #45 PR pas mergée).
+   *
+   * Lecture depuis cache CLAUDE.md déjà synced par syncDocsAtBoot.
+   */
+  async syncLessonsAtBoot(): Promise<{ count: number; persisted: boolean }> {
+    try {
+      const docs = this.getDocsContext();
+      const claudeMd = docs['CLAUDE.md']?.content;
+      if (!claudeMd) {
+        logger.warn('memory.syncLessons', 'CLAUDE.md cache vide — appeler syncDocsAtBoot d\'abord');
+        return { count: 0, persisted: false };
+      }
+      /* Parse section "Erreurs connues à NE PAS reproduire" */
+      const sectionMatch = claudeMd.match(/##\s+Erreurs connues[\s\S]+?(?=\n##\s|$)/);
+      if (!sectionMatch) {
+        return { count: 0, persisted: false };
+      }
+      const section = sectionMatch[0];
+      /* Pattern : "1. **TITLE** : DESC" ou "12. TITLE : DESC ❌"
+       * On extrait : numéro, titre courte (avant ":"), description (après ":") */
+      const lessons: Array<{
+        n: number;
+        title: string;
+        text: string;
+        severity: 'info' | 'warn' | 'critical';
+        resolved: boolean;
+      }> = [];
+      const lineRe = /^(\d+)\.\s+(?:\*\*)?(.+?)(?:\*\*)?\s*[—:]\s*([\s\S]+?)(?=\n\d+\.\s|$)/gm;
+      let m: RegExpExecArray | null;
+      while ((m = lineRe.exec(section)) !== null) {
+        const n = parseInt(m[1] ?? '0', 10);
+        const title = (m[2] ?? '').trim().slice(0, 200);
+        const text = (m[3] ?? '').trim().slice(0, 500);
+        const isResolved = /✅|→✅|fix.*v\d/.test(text);
+        const isCritical = /CRITIQUE|CRITICAL|XSS|SECU|sécu/i.test(title + text);
+        lessons.push({
+          n,
+          title,
+          text,
+          severity: isCritical ? 'critical' : 'warn',
+          resolved: isResolved,
+        });
+      }
+      /* Persiste localement (apex_v13_lessons_cross_session) */
+      const payload = {
+        lessons,
+        ts: Date.now(),
+        source: 'CLAUDE.md',
+      };
+      try {
+        localStorage.setItem('apex_v13_lessons_cross_session', JSON.stringify(payload));
+      } catch {
+        /* quota */
+      }
+      logger.info('memory.syncLessons', `Persisted ${lessons.length} lessons from CLAUDE.md`);
+      return { count: lessons.length, persisted: true };
+    } catch (err: unknown) {
+      logger.warn('memory.syncLessons', 'failed', { err });
+      return { count: 0, persisted: false };
+    }
+  }
+
+  /**
+   * Lit les leçons cross-session persistées (utilisé par buildSystemPromptDeep).
+   */
+  getLessonsCrossSession(): Array<{
+    n: number;
+    title: string;
+    text: string;
+    severity: 'info' | 'warn' | 'critical';
+    resolved: boolean;
+  }> {
+    try {
+      const raw = localStorage.getItem('apex_v13_lessons_cross_session');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as { lessons?: unknown };
+      if (!Array.isArray(parsed.lessons)) return [];
+      return parsed.lessons as Array<{
+        n: number;
+        title: string;
+        text: string;
+        severity: 'info' | 'warn' | 'critical';
+        resolved: boolean;
+      }>;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Record session learning (append à ax_lessons_learned_struct shared cross-app).
    * Permet à Apex + CMCteams + KDMC de partager les leçons via Firebase FB_FIX.
    */

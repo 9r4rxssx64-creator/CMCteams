@@ -25,9 +25,23 @@ export interface AppState {
 
 type Listener<T> = (value: T, prev: T) => void;
 
+/* v13.3.89 P2.14 — Middleware support : intercept set() pour logging/audit/transform.
+ * Middleware retourne true pour proceed, false pour abort, ou objet { value } pour transform. */
+export type StoreMiddleware = (
+  key: string,
+  value: unknown,
+  prev: unknown,
+) => boolean | { value: unknown };
+
+/* v13.3.89 P2.14 — Computed properties : valeurs dérivées recalculées sur changement de deps.
+ * Pas full reactive system (pas de Vue.computed/MobX), juste lazy compute on access. */
+type ComputedFn<T> = () => T;
+
 class Store {
   private state: AppState = {} as AppState;
   private listeners = new Map<string, Set<Listener<unknown>>>();
+  private middlewares: StoreMiddleware[] = [];
+  private computed = new Map<string, ComputedFn<unknown>>();
   private initialized = false;
 
   init(initial: Partial<AppState>): void {
@@ -60,10 +74,64 @@ class Store {
   set(key: string, value: unknown): void {
     const prev = this.state[key];
     if (prev === value) return;
-    this.state[key] = value;
-    this.persistKey(key, value);
-    events.emit('store:change', { key, value });
-    this.notify(key, value, prev);
+    /* v13.3.89 P2.14 — middleware chain : peut transform ou abort */
+    let finalValue = value;
+    for (const mw of this.middlewares) {
+      try {
+        const r = mw(key, finalValue, prev);
+        if (r === false) return; /* abort */
+        if (r && typeof r === 'object' && 'value' in r) {
+          finalValue = (r as { value: unknown }).value;
+        }
+      } catch {
+        /* middleware errors swallowed, continue chain */
+      }
+    }
+    this.state[key] = finalValue;
+    this.persistKey(key, finalValue);
+    events.emit('store:change', { key, value: finalValue });
+    this.notify(key, finalValue, prev);
+  }
+
+  /**
+   * v13.3.89 P2.14 — Register middleware (audit/logging/transform).
+   * Exemple : `store.use((key, value) => { logger.debug('store.set', { key, value }); return true; })`
+   */
+  use(middleware: StoreMiddleware): () => void {
+    this.middlewares.push(middleware);
+    return () => {
+      const idx = this.middlewares.indexOf(middleware);
+      if (idx >= 0) this.middlewares.splice(idx, 1);
+    };
+  }
+
+  /**
+   * v13.3.89 P2.14 — Computed property : valeur dérivée lazy-computed à l'access.
+   * Exemple : `store.defineComputed('isAuthAdmin', () => store.get('isAdmin') && store.get('user') !== null)`
+   * Lecture : `store.computed('isAuthAdmin')` ou `store.get('isAuthAdmin')`.
+   */
+  defineComputed<T>(key: string, fn: ComputedFn<T>): void {
+    this.computed.set(key, fn as ComputedFn<unknown>);
+  }
+
+  /**
+   * Lit une computed property (recalcule à chaque appel).
+   */
+  getComputed<T>(key: string): T | undefined {
+    const fn = this.computed.get(key);
+    if (!fn) return undefined;
+    try {
+      return fn() as T;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Liste les computed registered (debug).
+   */
+  listComputed(): string[] {
+    return [...this.computed.keys()];
   }
 
   subscribe<K extends keyof AppState>(key: K, fn: Listener<AppState[K]>): () => void;
