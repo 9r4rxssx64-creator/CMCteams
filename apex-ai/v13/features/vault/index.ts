@@ -564,6 +564,18 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="height:14px"></div>
 
+      ${stats.total === 0 ? `
+      <section id="ax-vault-empty-rescue" style="background:linear-gradient(135deg,rgba(255,91,91,0.12),rgba(232,184,48,0.08));border:1px solid rgba(255,91,91,0.4);border-radius:14px;padding:14px;margin-bottom:14px">
+        <h3 style="margin:0 0 6px;font-size:14px;color:#ff5b5b;font-weight:700">🆘 Coffre vide — Restauration possible</h3>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.78);font-size:12.5px;line-height:1.45">Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="ax-vault-rescue-fb" style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">🔓 Restaurer depuis Firebase</button>
+          <button id="ax-vault-rescue-all" style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Scanner toutes sources</button>
+        </div>
+        <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.7)"></div>
+      </section>
+      ` : ''}
+
       <section style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));border:1px solid rgba(232,184,48,0.18);border-radius:14px;padding:14px;margin-bottom:14px">
         <h3 style="margin:0 0 8px;font-size:13px;color:#e8b830;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">🔍 Auto-détection rapide</h3>
         <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 10px">Colle ici n'importe quelle clé API, Apex la reconnaît + la range automatiquement.</p>
@@ -722,6 +734,63 @@ function attachHandlers(rootEl: HTMLElement): void {
       } catch (err: unknown) {
         logger.warn('feature-vault', 'testAll failed', { err });
         toast.error('Erreur pendant le test global');
+      }
+    })();
+  });
+
+  /* v13.3.80 Kevin 19:55 — boutons rescue coffre vide */
+  const rescueFb = rootEl.querySelector<HTMLButtonElement>('#ax-vault-rescue-fb');
+  if (rescueFb && activeVaultScope) activeVaultScope.bind(rescueFb, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-rescue-result');
+      if (result) result.innerHTML = '⏳ Lecture Firebase backup chiffré…';
+      try {
+        const { vaultFirebaseBackup } = await import('../../services/vault-firebase-backup.js');
+        const r = await vaultFirebaseBackup.restoreAllFromFirebaseBackup();
+        if (result) {
+          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🔓 ${r.restored} clés restaurées · ${r.failed} échouées · ${r.skipped} ignorées</div>`;
+        }
+        if (r.restored > 0) {
+          toast.success(`🔓 ${r.restored} clés restaurées depuis Firebase backup`);
+          haptic.success();
+          setTimeout(() => render(rootEl), 600);
+        } else {
+          toast.info('Aucune clé trouvée dans Firebase backup');
+        }
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'rescueFb failed', { err });
+        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:#ff5858;border-radius:8px">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        toast.error('Erreur lecture Firebase backup');
+        haptic.error();
+      }
+    })();
+  });
+
+  const rescueAll = rootEl.querySelector<HTMLButtonElement>('#ax-vault-rescue-all');
+  if (rescueAll && activeVaultScope) activeVaultScope.bind(rescueAll, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-rescue-result');
+      if (result) result.innerHTML = '⏳ Scan 4 sources : alias, IDB, Firebase, pattern…';
+      try {
+        const { autoRestoreCredentials } = await import('../../services/auto-restore-credentials.js');
+        const r = await autoRestoreCredentials.restoreAutomatically();
+        if (result) {
+          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🔓 ${r.restored} restaurées · ${r.failed} échouées</div>`;
+        }
+        if (r.restored > 0) {
+          toast.success(`🔓 ${r.restored} clés restaurées (4 sources)`);
+          haptic.success();
+          setTimeout(() => render(rootEl), 600);
+        } else {
+          toast.info('Aucune clé trouvable dans les 4 sources. Colle une clé manuellement ci-dessous.');
+        }
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'rescueAll failed', { err });
+        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:#ff5858;border-radius:8px">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        toast.error('Erreur scan multi-sources');
+        haptic.error();
       }
     })();
   });
