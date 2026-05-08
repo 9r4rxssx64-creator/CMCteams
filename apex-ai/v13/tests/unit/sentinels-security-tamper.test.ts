@@ -64,7 +64,8 @@ describe('sentinels security-watch tamper v13.3.24', () => {
     expect(tamperEntries.length).toBeGreaterThan(0);
   });
 
-  it('v13.3.70 : runOne corrupted → autoFix rebuildChainHash répare automatiquement', async () => {
+  it('v13.3.70 : sentinelAutoRepair.securityRebuildChain répare manuellement (UI button)', async () => {
+    const { sentinelAutoRepair } = await import('../../services/sentinel-auto-repair.js');
     auditLog.init();
     await auditLog.record('test.a');
     await auditLog.record('test.b');
@@ -75,10 +76,14 @@ describe('sentinels security-watch tamper v13.3.24', () => {
       localStorage.setItem('ax_audit_log_v13', JSON.stringify(chain));
     }
     auditLog.reload();
-    const result = await sentinels.runOne('security-watch');
-    /* runOne déclenche autoFix → ok:true après rebuild */
-    expect(result?.ok).toBe(true);
-    expect(result?.msg).toMatch(/Auto-fixed|rebuild/i);
+    /* Repair via API dédiée (UI bouton "Réparer chain audit") — pas autoFix direct
+     * pour préserver le signal tamper visible avant action manuelle */
+    const fix = await sentinelAutoRepair.securityRebuildChain();
+    expect(fix.ok).toBe(true);
+    expect(fix.msg).toMatch(/rebuild/i);
+    /* Après repair, runOne doit retourner OK */
+    const after = await sentinels.runOne('security-watch');
+    expect(after?.ok).toBe(true);
   });
 
   it('lastact = 0 (pas de session) → skip session check, pas faux positif', async () => {

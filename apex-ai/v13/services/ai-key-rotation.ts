@@ -138,8 +138,12 @@ function providerToVaultService(provider: RotationProvider): string {
 
 /**
  * Classifie une erreur HTTP / network en catégorie actionnable.
+ *
+ * `exactOptionalPropertyTypes: true` (tsconfig) demande qu'on accepte explicitement
+ * `undefined` sur les champs optionnels — sinon les call sites qui passent
+ * `{ status: number | undefined }` cassent.
  */
-export function classifyError(input: { status?: number; message?: string }): FailClassification {
+export function classifyError(input: { status?: number | undefined; message?: string | undefined }): FailClassification {
   const { status, message } = input;
   const msg = (message ?? '').toLowerCase();
   if (status === 401 || status === 403 || /invalid.api.key|unauthor|forbidden/i.test(msg)) {
@@ -205,7 +209,7 @@ class AIKeyRotation {
   async handleFailure(
     provider: RotationProvider,
     failedKeyId: string | undefined,
-    error: { status?: number; message?: string },
+    error: { status?: number | undefined; message?: string | undefined },
   ): Promise<RotateResult> {
     const service = providerToVaultService(provider);
     const classification = classifyError(error);
