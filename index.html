@@ -22832,7 +22832,8 @@ function autoFillMissingCadres(year,month,opts){
     // automatique depuis mois precedent (cree donnees fictives non reelles).
     strategy="needs_source";
     nSet=0;
-    if(nSet>0||strategy==="needs_source")applied.push({empId:emp.id,name:emp.name,strategy:strategy,nSet:nSet});
+    // v9.604 fix Kevin "toast trompeur" : push avec flag filled pour distinction
+    applied.push({empId:emp.id,name:emp.name,strategy:strategy,nSet:nSet,filled:nSet>0});
   });
   if(applied.length>0){
     if(auditLog.length>500)auditLog=auditLog.slice(-500);
@@ -22840,18 +22841,23 @@ function autoFillMissingCadres(year,month,opts){
     ls("cmc_ov",A.overrides);
     if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);
     if(!opts.silent){
-      var copied=applied.filter(function(a){return a.strategy==="copy_prev_month";}).length;
-      var defaulted=applied.filter(function(a){return a.strategy==="default_rh_pattern";}).length;
-      var msg="\u2728 "+applied.length+" cadre"+(applied.length>1?"s":"")+" auto-compl\u00e9t\u00e9"+(applied.length>1?"s":"");
+      // v9.604 Kevin "Cadres auto-completes" trompeur fix (regle v9.592 strict)
+      var actuallyFilled=applied.filter(function(a){return a.nSet>0;}).length;
       var needsSource=applied.filter(function(a){return a.strategy==="needs_source";});
-      if(copied)msg+=" ("+copied+" depuis mois prec.)";
-      if(needsSource.length){msg+="\n\u26A0 "+needsSource.length+" cadre"+(needsSource.length>1?"s":"")+" sans source — verifiez le PDF";toast("\u26A0 "+needsSource.map(function(ns){return ns.name;}).join(", ")+" : pas de donnees source, verifiez le PDF","warn");}
-      toast(msg);
-      try{confetti(30);}catch(_){}
+      if(actuallyFilled>0){
+        var msg="\u2728 "+actuallyFilled+" cadre"+(actuallyFilled>1?"s":"")+" auto-compl\u00e9t\u00e9"+(actuallyFilled>1?"s":"");
+        var copied=applied.filter(function(a){return a.strategy==="copy_prev_month"&&a.nSet>0;}).length;
+        if(copied)msg+=" ("+copied+" depuis mois prec.)";
+        if(needsSource.length)msg+="\n\u26A0 "+needsSource.length+" cadre"+(needsSource.length>1?"s":"")+" sans source - verifiez le PDF";
+        toast(msg);
+        try{confetti(30);}catch(_){}
+      }else if(needsSource.length>0){
+        toast("\u26A0 "+needsSource.length+" cadre"+(needsSource.length>1?"s":"")+" sans source - verifiez le PDF (regle Kevin v9.592)","warn",6000);
+      }
     }
     dc();
   }
-  return{filled:applied.length,applied:applied};
+  return{filled:applied.filter(function(a){return a.nSet>0;}).length,applied:applied};
 }
 // v9.556 (Kevin 2026-04-26 URGENT 4 cadres rates) — Re-tenter parser cadres
 // Utilise cmc_import_src_<key> pour relancer le fallback v9.462 (5 strategies)
@@ -31972,7 +31978,24 @@ function doImport(){
   //
   // Toggle "Replace mode" disponible (cmc_import_mode='replace') pour cas extrêmes.
   // Snapshot toujours fait pour rollback + archive versionnée.
-  var _importMode=lg("cmc_import_mode","merge"); // 'merge' (défaut) | 'replace'
+  //
+  // v9.604 fix Kevin URGENT 2026-05-08 "import V2 anciennes équipes restent visibles" :
+  // Si V1 existe déjà ET pas de choix explicite → DEMANDER à Kevin (replace recommandé).
+  // Évite que V2 garde silencieusement les anciennes données V1 (récidive erreur #50/#48).
+  var _userExplicitMode=lg("cmc_import_mode_explicit",null); // explicit user choice
+  var _importMode;
+  if(_userExplicitMode==="merge"||_userExplicitMode==="replace"){
+    _importMode=_userExplicitMode; // Kevin a choisi exprès via UI
+  }else if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
+    // V2+ même mois sans choix explicite : demander
+    var _confirmReplace=false;
+    try{
+      _confirmReplace=confirm("Une version existe déjà pour "+(typeof MFR!=="undefined"&&MFR[im]?MFR[im]:im+1)+" "+iy+".\n\n✓ OK = REMPLACER (V2 efface V1, recommandé)\n✗ Annuler = FUSIONNER (garde V1 + ajoute V2)");
+    }catch(_){_confirmReplace=true;} // Si confirm non dispo (test) → replace par défaut sécu
+    _importMode=_confirmReplace?"replace":"merge";
+  }else{
+    _importMode="replace"; // 1er import : peu importe (rien à fusionner)
+  }
   if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
     _preWipeHadData=true;
     try{
@@ -33521,8 +33544,15 @@ function doImport(){
     }
     window._pdfCdpCells=[];
   }
-  // v9.207 — Auto-fill cadres manquants AVANT validation (superviseurs tronqués du PDF)
+  // v9.604 (Kevin URGENT 2026-05-08) : DESACTIVE appel auto autoFillMissingCadres
+  // Régression fix erreur #48 : "tout se base sur le PDF, JAMAIS chercher
+  // similitudes avec les anciens" → l'appel auto au sein de doImport était
+  // une re-régression. La fonction reste dispo via bouton manuel admin
+  // ("✨ Auto-remplir cadres manquants" dans accueil) si Kevin choisit explicit.
+  // Voir vImport bouton manuel + autoFillMissingCadres ligne 22803.
+  /* AUTO-CALL DESACTIVE v9.604 :
   try{var _autoFilled=autoFillMissingCadres(iy,im,{silent:false});}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ctx-unknown",_e);}catch(__){}}
+  */
   // v9.462 — FALLBACK CADRES ULTRA-ROBUSTE (5 strategies) : scan PDF brut avec
   // pre-traitement multi-lignes + surname-only + ordre inverse + normalisation codes.
   // Root cause : PDF.js fragmente "ETTORI" et "M." sur 2 lignes visuelles -> regex
@@ -33836,7 +33866,7 @@ function doImport(){
   }
   // v12.2 — Auto-remplir cadres sans horaire IMMEDIATEMENT apres chaque import
   try{
-    var _cadreResult=autoFillMissingCadres(iy,im,{silent:false});
+    var _cadreResult=null; /* v9.604 DESACTIVE auto-call: regle Kevin v9.592 stricte */
     if(_cadreResult&&_cadreResult.filled>0){
       var _r7=document.getElementById("impRes");
       if(_r7){
