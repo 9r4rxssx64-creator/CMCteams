@@ -142,6 +142,8 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'sentinel.malware-blocklist', category: 'sentinel', description: 'Blocklist URL malware/phishing', defaultEnabled: true },
   { id: 'sentinel.csp-violation', category: 'sentinel', description: 'CSP violations watch', defaultEnabled: true },
   { id: 'sentinel.auto-ultra-reset', category: 'sentinel', description: 'Auto Ultra Reset autonome (cache stale + bugs persistants)', defaultEnabled: true },
+  { id: 'sentinel.apex-self-correct', category: 'sentinel', description: 'Apex Self-Correct cascade (Kevin "ne JAMAIS attendre")', defaultEnabled: true },
+  { id: 'sentinel.global-health', category: 'sentinel', description: 'Global Health méta auto-fix cascade (escalade Claude Code si > 30% fail)', defaultEnabled: true },
 
   /* === Tools IA (32) === */
   { id: 'tool.web_search', category: 'tool', description: 'Web Search (Brave/Tavily/DDG)', defaultEnabled: true },
