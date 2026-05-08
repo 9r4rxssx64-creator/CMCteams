@@ -4,7 +4,7 @@
  * DO NOT edit by hand — see apex-tools.ts to add/modify tools then re-split.
  */
 
-import type { ApexTool } from '../apex-tools.js';
+import type { ApexTool } from '../apex-tools-types.js';
 
 export const MARKETPLACE_TOOLS: readonly ApexTool[] = [
   {

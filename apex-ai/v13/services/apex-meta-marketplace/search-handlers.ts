@@ -9,7 +9,7 @@
 
 import { logger } from '../../core/logger.js';
 
-import type { MarketplaceItem, MarketplaceProvider } from '../apex-meta-marketplace.js';
+import type { MarketplaceItem, MarketplaceProvider } from '../apex-meta-marketplace-types.js';
 
 export interface SearchHelpers {
   fetchJson: <T>(url: string, init?: RequestInit) => Promise<T | null>;

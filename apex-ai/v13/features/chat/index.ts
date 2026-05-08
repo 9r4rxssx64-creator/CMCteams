@@ -21,6 +21,7 @@ import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
@@ -66,6 +67,12 @@ interface DisplayMessage {
 const CONV_STORAGE_KEY = 'apex_v13_conversation_active';
 const CONV_MAX_PERSIST = 200;
 
+/* v13.3.77 fix TDZ : déclarer conversation EN PREMIER (let mutable, init []) puis remplir.
+ * Évite "Cannot access 'conversation' before initialization" en isolation Vitest test. */
+const conversation: DisplayMessage[] = [];
+const queue: string[] = [];
+let isProcessing = false;
+
 function loadPersistedConversation(): DisplayMessage[] {
   try {
     const raw = localStorage.getItem(CONV_STORAGE_KEY);
@@ -97,9 +104,13 @@ function persistConversation(): void {
   }, 500);
 }
 
-const conversation: DisplayMessage[] = loadPersistedConversation();
-const queue: string[] = [];
-let isProcessing = false;
+/* Init populée APRÈS const conversation pour ne pas dépendre de l'ordre */
+{
+  const persisted = loadPersistedConversation();
+  if (persisted.length) {
+    conversation.push(...persisted);
+  }
+}
 
 /* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
 export function escapeHtml(s: string): string {
@@ -1506,7 +1517,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   const hasKey = aiRouter.hasAnyKey();
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       /* v13.3.72 Kevin: header compact + max espace chat (style Claude Code) */
       .ax-chat-header {
@@ -1689,7 +1700,7 @@ export function render(rootEl: HTMLElement): void {
         ${APP_VER} · DK
       </footer>
     </div>
-  `;
+  `);
 
   /* v13.3.72 Kevin: wire scroll-to-bottom FAB style Claude Code */
   wireScrollToBottomFab(rootEl);

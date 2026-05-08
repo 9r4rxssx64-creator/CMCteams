@@ -31,23 +31,8 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
-
-export interface ApexTool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: 'object';
-    properties: Record<string, { type: string; description?: string; enum?: readonly string[] }>;
-    required?: readonly string[];
-  };
-  /* Tier requis pour exécuter ce tool */
-  minTier: 'admin' | 'laurence' | 'family' | 'client_pro' | 'client_free';
-  /* Action niveau impact :
-   * A = auto (pas de validation)
-   * B = notify (Kevin reçoit info en push)
-   * C = validate (Kevin doit valider avant) */
-  impactLevel: 'A' | 'B' | 'C';
-}
+import type { ApexTool } from './apex-tools-types.js';
+export type { ApexTool } from './apex-tools-types.js';
 
 import { CODE_TOOLS } from './apex-tools-registry/code-tools.js';
 import { WEB_TOOLS } from './apex-tools-registry/web-tools.js';

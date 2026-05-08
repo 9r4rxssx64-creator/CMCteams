@@ -6,6 +6,7 @@
 import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeSettingsScope: CleanupScope | null = null;
@@ -174,7 +175,7 @@ export function render(rootEl: HTMLElement): void {
   const iconBadgeStyle = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:linear-gradient(135deg,rgba(232,184,48,0.2),rgba(201,162,39,0.08));border:1px solid rgba(232,184,48,0.25);border-radius:10px;font-size:16px';
   const btnFullWidthStyle = 'width:100%;min-height:44px;padding:12px 16px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)';
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       @keyframes ax-fade-up {
         0% { opacity: 0; transform: translateY(12px); }
@@ -284,7 +285,7 @@ export function render(rootEl: HTMLElement): void {
 
       <p style="margin-top:32px;text-align:center"><a href="#chat" style="color:#e8b830;text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
     </div>
-  `;
+  `);
   /* Wire memory-bridge section : status read-only + sync button */
   void (async () => {
     try {

@@ -24,6 +24,7 @@
 import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
@@ -776,7 +777,7 @@ export function render(rootEl: HTMLElement): void {
         )
         .join('');
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       .ax-bounce-tap { transition: transform 120ms cubic-bezier(0.16,1,0.3,1); }
       .ax-bounce-tap:active { transform: scale(0.95); }
@@ -861,7 +862,7 @@ export function render(rootEl: HTMLElement): void {
         <button data-action="share-bottom" class="ax-bounce-tap" title="Partager" style="${bottomBtn}">📤 Partager</button>
       </div>
     </div>
-  `;
+  `);
   attachHandlers(rootEl);
   logger.info('feature-browser', 'rendered', { tabs: tabs.length, bookmarks: bookmarksStore.count(), history: historyStore.count() });
 }
