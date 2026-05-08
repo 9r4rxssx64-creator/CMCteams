@@ -64,6 +64,7 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
   'anti-regression-watch': 'sentinel.feature-watch',
   'agent-watches-runner': 'sentinel.sentinel-meta',
   'never-forget-watch': 'sentinel.feature-watch',
+  'auto-ultra-reset-watch': 'sentinel.auto-ultra-reset',
   /* Sentinelles réservées Jet 9+ (toggle déclaré, implémentation à venir) :
      dès qu'elles seront register()'d, le toggle sera respecté automatiquement. */
   'import-watch': 'sentinel.import-watch',
@@ -2054,5 +2055,62 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (23 active + 1 disabled wake-watch)`);
+  /* auto-ultra-reset-watch : sentinelle autonomie totale Kevin 2026-05-08
+   * "Ultra reset autonome automatique si besoin, rappel toi"
+   *
+   * Détecte cache stale + bugs persistants + corruption + SW unreliable + identité incohérente.
+   * Score >= 6 → triggerAutoReset() :
+   *   1. backup Firebase vault (pas de perte credentials)
+   *   2. unregister SW + clear caches + clear Apex localStorage + clear Apex IDB
+   *   3. location.replace(...?_auto_reset=1)
+   *   4. au reload : restoreAfterReset() depuis Firebase backup + toast Kevin
+   *
+   * Garde-fous : throttle 24h ABSOLU + skip si offline.
+   * Toggle off-able via 'sentinel.auto-ultra-reset' (default ON).
+   */
+  sentinels.register({
+    id: 'auto-ultra-reset-watch',
+    name: 'Auto Ultra Reset (autonomie)',
+    desc: 'Détecte état dégradé et auto-rafraîchit Apex sans demander Kevin',
+    intervalMs: 15 * 60 * 1000, /* 15 min */
+    check: async () => {
+      const { autoUltraReset } = await import('./auto-ultra-reset.js');
+      const assessment = await autoUltraReset.assessConditions();
+      if (!assessment.shouldTrigger) {
+        return {
+          ok: true,
+          msg: `Score ${assessment.score}/10 (seuil 6) — état stable`,
+          details: {
+            score: assessment.score,
+            reasons: assessment.reasons,
+          },
+        };
+      }
+      return {
+        ok: false,
+        msg: `Score ${assessment.score}/10 — auto-reset déclenché : ${assessment.reasons.join(' · ')}`,
+        details: {
+          score: assessment.score,
+          reasons: assessment.reasons,
+          conditions: assessment.conditions,
+        },
+      };
+    },
+    autoFix: async () => {
+      const { autoUltraReset } = await import('./auto-ultra-reset.js');
+      const result = await autoUltraReset.triggerAutoReset();
+      if (result.throttled) {
+        return { ok: false, msg: `throttled : ${result.reason ?? '24h guard'}` };
+      }
+      if (!result.ok) {
+        return { ok: false, msg: result.reason ?? 'trigger failed' };
+      }
+      return {
+        ok: true,
+        msg: `Auto-reset lancé (pre-backup ${result.preBackupOk ? 'OK' : 'partial'}), reload imminent`,
+      };
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (24 active + 1 disabled wake-watch)`);
 }

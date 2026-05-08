@@ -55,6 +55,28 @@ async function bootstrap(): Promise<void> {
     isAdmin: false,
   };
 
+  /* Kevin 2026-05-08 ABSOLUE : "Ultra reset autonome automatique si besoin".
+   * Si la page a été chargée suite à un auto-reset (URL contient ?_auto_reset=1),
+   * on tente la restore Firebase AVANT toute autre init pour récupérer les credentials.
+   * Best-effort : si offline ou backup absent → no-op et on continue le boot. */
+  try {
+    const { autoUltraReset } = await import('@services/auto-ultra-reset.js');
+    if (autoUltraReset.isPostResetReload()) {
+      logger.info('boot', 'Post auto-reset reload detected — attempting Firebase restore first');
+      /* Firebase init AVANT pour avoir la connexion */
+      try {
+        const { firebase } = await import('@services/firebase.js');
+        await firebase.init();
+      } catch (err: unknown) {
+        logger.warn('boot', 'firebase init pre-restore failed', { err });
+      }
+      const restoreResult = await autoUltraReset.restoreAfterReset();
+      logger.info('boot', `auto-reset restore : ${restoreResult.restored} restored, ${restoreResult.failed} failed (${restoreResult.durationMs}ms)`);
+    }
+  } catch (err: unknown) {
+    logger.warn('boot', 'auto-ultra-reset restore stage skipped (continuing)', { err });
+  }
+
   /* Jet 6 fix audit subagent : init SÉQUENTIEL avec error guard par-service.
    * Avant : 6 services chargés parallèle sans guard → si 1 service crash au boot,
    * tout l'app crash (E2E boot.spec.ts FAILED). */
