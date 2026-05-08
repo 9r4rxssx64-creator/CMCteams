@@ -346,8 +346,19 @@ async function bootstrap(): Promise<void> {
   router.register('signup-approval', { loader: () => import('@features/signup-approval/index.js'), requiresAdmin: true });
   /* v13.3.67 : Vue Legal (déjà créée mais pas registered) */
   router.register('legal', { loader: () => import('@features/legal/index.js') });
+  /* Kevin 2026-05-08 : Vue admin-credentials-status (cible click notif "credentials manquants") */
+  router.register('admin-credentials-status', { loader: () => import('@features/admin/credentials-status/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
+
+  /* Kevin 2026-05-08 : Click Fallback Guard — aucun bouton ne reste silencieux.
+   * Si un click n'a pas de handler wired, toast "bientôt disponible" + log audit
+   * (jamais "rien" comme avant). Idempotent. */
+  void import('../services/click-fallback-guard.js')
+    .then(({ clickFallbackGuard }) => clickFallbackGuard.install())
+    .catch((err: unknown) => {
+      logger.warn('boot', 'click-fallback-guard install failed', { err });
+    });
 
   /* 8.5. Force version check au boot (Kevin 2026-05-07 — PWA iOS Safari bloqué v13.3.x).
    * Fetch HEAD index.html avec cache-bust + check si version différente.
@@ -438,14 +449,43 @@ async function bootstrap(): Promise<void> {
 
     /* SW message handler (push_resubscribed, notification_clicked) */
     navigator.serviceWorker.addEventListener('message', (e) => {
-      const data = e.data as { type?: string; endpoint?: string; url?: string } | null;
+      const data = e.data as { type?: string; endpoint?: string; url?: string; tag?: string; source?: string } | null;
       if (!data?.type) return;
       if (data.type === 'push_resubscribed') {
         logger.info('push', 'SW auto-resubscribed', { endpoint: data.endpoint?.slice(0, 60) });
         events.emit('push:resubscribed', { endpoint: data.endpoint });
       } else if (data.type === 'notification_clicked') {
+        /* Stocke tag/source côté window pour que le listener event:on les lise.
+         * Pattern : on n'a pas étendu EventMap pour rester back-compat. */
+        (window as Window & { __ax_last_notif?: { tag?: string; source?: string } }).__ax_last_notif = {
+          ...(data.tag && { tag: data.tag }),
+          ...(data.source && { source: data.source }),
+        };
         events.emit('notification:clicked', { url: data.url });
       }
+    });
+
+    /* Kevin 2026-05-08 : notif click DOIT router vers la bonne vue (jamais "rien").
+     * Délégué à notification-actions service (mapping centralisé).
+     * Lit aussi tag + source depuis SW message (forward via custom event). */
+    events.on('notification:clicked', (payload) => {
+      const swExtras = (window as Window & { __ax_last_notif?: { tag?: string; source?: string } })
+        .__ax_last_notif;
+      void import('../services/notification-actions.js')
+        .then(({ notificationActions }) => {
+          notificationActions.handleClick({
+            url: payload.url ?? null,
+            tag: swExtras?.tag ?? null,
+            source: swExtras?.source ?? null,
+          });
+        })
+        .catch((err: unknown) => {
+          logger.warn('boot', 'notification-actions import failed, fallback hash', { err });
+          if (payload.url) {
+            const target = payload.url.startsWith('#') ? payload.url : '#' + payload.url;
+            location.hash = target;
+          }
+        });
     });
   }
 

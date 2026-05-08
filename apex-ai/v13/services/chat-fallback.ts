@@ -120,8 +120,21 @@ class ChatFallback {
       }
     }
 
-    /* v13.3.78 (Kevin "ça bug, ça répète sans cesse, agit pas") :
-     * Plus de template "Plan A/B/C" frustrant. Diagnostic direct + action concrète. */
+    /* v13.3.78 + v13.3.79 (Kevin 2026-05-08 18:00 "trop verbeux Plan A/B/C") :
+     * - Mode VERBOSE OFF (défaut) → diagnostic direct + 1 action concrète,
+     *   pas d'énumération frustrante.
+     * - Mode VERBOSE ON (toggle `feature.ia-verbose-plans` opt-in admin) →
+     *   ancien template Plan A/B/C conservé pour debug ou cas vraiment ambigus. */
+    if (isFeatureEnabled('feature.ia-verbose-plans')) {
+      return {
+        text: `Je peux t\'aider sur : "${userMessage.slice(0, 80)}". Voici 3 façons d\'aborder :\n\n• **Plan A** : explique-moi plus en détail ce que tu veux\n• **Plan B** : choisis un studio/outil dans la liste\n• **Plan C** : je propose une solution standard\n\nLaquelle préfères-tu ?`,
+        options: [
+          { label: 'Plan A : détaille', action: 'detail' },
+          { label: 'Plan B : choisir outil', action: 'pick_tool' },
+          { label: 'Plan C : solution standard', action: 'standard' },
+        ],
+      };
+    }
     return {
       text: `🔄 Apex est temporairement en mode dégradé. Causes possibles :\n\n• Clé API IA non configurée (Coffre)\n• Provider IA injoignable (réseau)\n• Quota épuisé sur la clé courante\n\nApex bascule auto sur le prochain provider dispo. Si rien ne marche, vérifie ta config dans le Coffre 🔐.`,
       options: [

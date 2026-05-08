@@ -284,17 +284,21 @@ describe('firebase massive coverage Jet 8', () => {
       fetchSpy.mockRestore();
     });
 
-    it('SSE onerror → connected=false + auto-reconnect setTimeout', async () => {
+    it('SSE onerror → connected=false + auto-reconnect via backoff (v13.3.x state machine)', async () => {
+      /* v13.3.x Kevin 2026-05-08 : reconnect path passe par scheduleReconnect() avec
+       * backoff exponential 2s/4s/8s/16s/30s (cf. RECONNECT_BACKOFF_MS). Premier retry à 2s.
+       * Avec ping mock OK, attemptReconnect crée un nouvel EventSource. */
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
       vi.useFakeTimers();
       await firebase.init();
       const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      const beforeCount = MockEventSource.instances.length;
       sse._fireError();
       expect(firebase.isConnected()).toBe(false);
-      /* setTimeout 5s pour reconnect — advance timers */
-      vi.advanceTimersByTime(5001);
-      /* Nouvelle instance EventSource créée */
-      expect(MockEventSource.instances.length).toBeGreaterThanOrEqual(2);
+      /* Advance 2s+ pour déclencher 1er backoff retry */
+      await vi.advanceTimersByTimeAsync(2100);
+      /* Nouvelle instance EventSource créée (>= 1 de plus qu'avant erreur) */
+      expect(MockEventSource.instances.length).toBeGreaterThan(beforeCount);
       vi.useRealTimers();
       fetchSpy.mockRestore();
     });

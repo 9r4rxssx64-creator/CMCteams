@@ -452,8 +452,11 @@ body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outlin
 .skip-link:focus{top:8px}
 @keyframes chipSpin{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
 @keyframes chipBounce{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-/* Animation d'entrée sur chaque page */
-#content .page{animation:pageIn .38s cubic-bezier(.4,0,.2,1) both}
+/* Animation d'entrée sur chaque page : SEULEMENT à changement de view (Kevin v9.603 anti-scintillement)
+   - data-view-changed=1 sur #app après changement de A.view → joue pageIn une fois
+   - sinon (re-render même view via SSE/agent) → pas d'animation = pas de saut */
+#app[data-view-changed="1"] #content .page{animation:pageIn .38s cubic-bezier(.4,0,.2,1) both}
+#app:not([data-view-changed="1"]) #content .page{animation:none}
 /* Cards : hover lift subtle */
 .card{transition:transform .22s cubic-bezier(.4,0,.2,1),box-shadow .22s cubic-bezier(.4,0,.2,1),border-color .22s}
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
@@ -478,6 +481,11 @@ body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outlin
   background-size:cover;background-position:center;background-repeat:no-repeat;
   transition:opacity 1.2s ease-in-out;
   opacity:0;
+  /* v9.603 anti-scintillement Kevin : GPU-accelerate pour eviter saccades iOS Safari PWA */
+  will-change:opacity;
+  transform:translateZ(0);
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
 }
 /* Classes vues (transparentes par d\u00e9faut, le body::before g\u00e8re le fond) */
 .bg-casino{position:relative}
@@ -9575,14 +9583,39 @@ function dc(){
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
 // rafales SSE Firebase (imports massifs : N clés reçues en cascade → 1 seul dc()).
+// v9.603 (Kevin 2026-05-08 "l'app saute, scintille seule") — debounce TEMPOREL 250ms minimum
+// + coalescing strict + telemetry compteur dc/seconde (alerte si > 5/s = boucle suspecte).
 var _dcPending=false;
+var _dcTimer=null;
+var _dcLastRun=0;
+var _dcCallCount=0;
+var _dcCallWindow=Date.now();
+var _dcMinIntervalMs=250; // coalesce les rafales SSE/agents (avant: 16ms = 1 frame)
 function dcDebounced(){
   if(_dcPending)return;
   _dcPending=true;
-  (window.requestAnimationFrame||function(f){setTimeout(f,16);})(function(){
-    _dcPending=false;
-    dc();
-  });
+  var now=Date.now();
+  var sinceLast=now-_dcLastRun;
+  // Si appelé < 250ms après le dernier dc(), on coalesce avec un setTimeout
+  // Sinon on lance immédiatement via rAF (réactivité user click)
+  if(sinceLast<_dcMinIntervalMs){
+    if(_dcTimer)clearTimeout(_dcTimer);
+    _dcTimer=setTimeout(function(){
+      _dcTimer=null;_dcPending=false;_dcLastRun=Date.now();
+      try{dc();}catch(_){}
+    },_dcMinIntervalMs-sinceLast);
+  }else{
+    (window.requestAnimationFrame||function(f){setTimeout(f,16);})(function(){
+      _dcPending=false;_dcLastRun=Date.now();
+      try{dc();}catch(_){}
+    });
+  }
+  // Telemetry : compter les appels par seconde (détection boucles)
+  if(now-_dcCallWindow>=1000){
+    if(_dcCallCount>5){try{console.warn("[CMC] dc() boucle suspecte:",_dcCallCount,"appels/s");}catch(_){}}
+    _dcCallCount=0;_dcCallWindow=now;
+  }
+  _dcCallCount++;
 }
 // ── Modale Accès admin (v9.58) ─────────────────────────────────────────────
 var _accessModalUid=null;

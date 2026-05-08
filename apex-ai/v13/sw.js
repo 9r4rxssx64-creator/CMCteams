@@ -248,19 +248,30 @@ self.addEventListener('push', function(e){
 
 self.addEventListener('notificationclick', function(e){
   e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || (e.notification.data && e.notification.data.cta_url) || './';
-  /* Focus existing client si déjà ouvert sinon openWindow */
+  var data = e.notification.data || {};
+  var url = data.url || data.cta_url || '';
+  var tag = e.notification.tag || data.tag || data.source;
+  var source = data.source;
+  /* Si url externe (https://) et pas dans scope → openWindow nouveau contexte.
+   * Sinon focus existing client + postMessage pour router côté app. */
+  var isExternalUrl = url && /^https?:\/\//i.test(url);
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clients){
       for (var i = 0; i < clients.length; i++){
         var c = clients[i];
         if (c.url.indexOf(self.registration.scope) >= 0){
           c.focus();
-          c.postMessage({ type: 'notification_clicked', url: url });
+          c.postMessage({
+            type: 'notification_clicked',
+            url: url || tag || '',
+            tag: tag,
+            source: source
+          });
           return;
         }
       }
-      return self.clients.openWindow(url);
+      /* Aucun client ouvert : openWindow vers URL résolue (ou scope par défaut) */
+      return self.clients.openWindow(isExternalUrl ? url : (self.registration.scope + (url ? (url.charAt(0) === '#' ? url : '#' + url) : '')));
     })
   );
 });

@@ -299,7 +299,10 @@ export function registerAgentWatchesSentinel(): void {
 export function registerCoreSentinels(): void {
   /* Wire les 8 agent-watches en premier (anti-théâtre P0 audit) */
   registerAgentWatchesSentinel();
-  /* 1. token-balance-watch : monitor solde providers (1h) */
+  /* 1. token-balance-watch : monitor solde providers (1h)
+   * v13.3.79+ autoFix Kevin 2026-05-08 "WARNING = AUTO-FIX TOUJOURS" :
+   * Si Anthropic key 401/402/429 → tente swap automatique vers une autre clé multi-key-vault
+   * (failover key-level), sinon escalade auto-restore-credentials. */
   sentinels.register({
     id: 'token-balance-watch',
     name: 'Solde providers IA',
@@ -322,6 +325,25 @@ export function registerCoreSentinels(): void {
         return { ok: true, msg: 'Anthropic API reachable' };
       } catch (err: unknown) {
         return { ok: false, msg: 'Anthropic ping failed: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+    autoFix: async () => {
+      try {
+        /* 1. Tente swap multi-key (key-level failover) si dispo */
+        const { multiKeyVault } = await import('./multi-key-vault.js');
+        const r = await multiKeyVault.healthCheckAll();
+        if (r.recovered > 0) {
+          return { ok: true, msg: `Multi-key recovery: ${r.recovered} clé(s) recovered (${r.stillDown} still down)` };
+        }
+        /* 2. Sinon tente auto-restore-credentials depuis IDB/Firebase */
+        const { autoRestoreCredentials } = await import('./auto-restore-credentials.js');
+        const restore = await autoRestoreCredentials.restoreAutomatically();
+        if (restore.restored > 0) {
+          return { ok: true, msg: `Auto-restore: ${restore.restored} clé(s) restaurée(s)` };
+        }
+        return { ok: false, msg: `Aucune clé alt disponible (multi-key ${r.tested}, restore ${restore.failed} fail)` };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'token-balance autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
