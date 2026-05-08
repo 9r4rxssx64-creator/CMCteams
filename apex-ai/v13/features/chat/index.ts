@@ -1699,7 +1699,16 @@ export function render(rootEl: HTMLElement): void {
           const { vault } = await import('../../services/vault.js');
           const result = await vault.autoStoreBulk(value);
           if (result.stored.length > 0) {
-            const names = result.stored.map((s) => s.pattern.name).join(', ');
+            /* v13.3.75 (Kevin screenshot): dedup les noms si Kevin colle plusieurs clés
+             * du même provider (ex: 2× Anthropic) → "Anthropic ×2" au lieu de
+             * "Anthropic, Anthropic". */
+            const counts = new Map<string, number>();
+            for (const s of result.stored) {
+              counts.set(s.pattern.name, (counts.get(s.pattern.name) ?? 0) + 1);
+            }
+            const names = [...counts.entries()]
+              .map(([name, count]) => count > 1 ? `${name} ×${count}` : name)
+              .join(', ');
             toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) AES-GCM-256 : ${names}`, { duration: 6000 });
           }
           if (result.forbidden.length > 0) {
@@ -1791,7 +1800,14 @@ export function render(rootEl: HTMLElement): void {
         const { vault } = await import('../../services/vault.js');
         const result = await vault.autoStoreBulk(pasted);
         if (result.stored.length > 0) {
-          const names = result.stored.map((s) => s.pattern.name).join(', ');
+          /* v13.3.75 dedup names (cf. fix toast 1703) */
+          const counts = new Map<string, number>();
+          for (const s of result.stored) {
+            counts.set(s.pattern.name, (counts.get(s.pattern.name) ?? 0) + 1);
+          }
+          const names = [...counts.entries()]
+            .map(([name, count]) => count > 1 ? `${name} ×${count}` : name)
+            .join(', ');
           toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) auto AES-GCM-256 : ${names}`, { duration: 6000 });
         }
         if (result.forbidden.length > 0) {

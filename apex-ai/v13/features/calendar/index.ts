@@ -17,6 +17,7 @@
 import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeCalendarScope: CleanupScope | null = null;
@@ -146,6 +147,8 @@ export function render(rootEl: HTMLElement): void {
   activeCalendarScope = createCleanupScope('calendar');
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('module.calendar', rootEl, uid)) return;
   const upcoming = calendarStore.upcoming(uid, 30);
 
   const eventsHtml = upcoming.length > 0

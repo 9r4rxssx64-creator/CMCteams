@@ -129,14 +129,25 @@ class SosRescue {
 
   /**
    * Auto-heal léger : clear caches non critiques + ping providers + toast.
+   *
+   * v13.3.75 (Kevin screenshot doublon) : guard anti double-trigger + dedup toast.
+   * Sans guard, double-tap user OU click + handleClick listener qui re-fire =
+   * 2 toasts "SOS terminé" identiques affichés simultanément.
    */
+  private _sosRunning = false;
   async autoSelfHeal(): Promise<void> {
+    if (this._sosRunning) {
+      logger.warn('sos-rescue', 'autoSelfHeal already running — ignoring duplicate trigger');
+      return;
+    }
+    this._sosRunning = true;
     logger.info('sos-rescue', 'autoSelfHeal start');
     let healed = 0;
     let total = 0;
     const errors: string[] = [];
-    /* 1. Toast début */
     try {
+      /* 1. Toast début */
+      try {
       const { toast } = await import('./toast.js');
       toast.info('SOS — auto-fix complet en cours…', { duration: 3000 });
     } catch { /* ignore */ }
@@ -233,16 +244,20 @@ class SosRescue {
     /* 12. Refresh status indicator */
     void this.refreshStatus();
 
-    /* Toast résultat enrichi */
-    try {
-      const { toast } = await import('./toast.js');
-      const allGreen = healed === total;
-      const msg = `SOS terminé : ${healed}/${total} modules ✅` + (errors.length ? ` (${errors.length} warnings)` : '');
-      if (allGreen) toast.info(msg, { duration: 4000 });
-      else toast.warn(`${msg} — ${errors.slice(0, 2).join(', ')}`, { duration: 6000 });
-    } catch { /* ignore */ }
+      /* Toast résultat enrichi */
+      try {
+        const { toast } = await import('./toast.js');
+        const allGreen = healed === total;
+        const msg = `SOS terminé : ${healed}/${total} modules ✅` + (errors.length ? ` (${errors.length} warnings)` : '');
+        if (allGreen) toast.info(msg, { duration: 4000 });
+        else toast.warn(`${msg} — ${errors.slice(0, 2).join(', ')}`, { duration: 6000 });
+      } catch { /* ignore */ }
 
-    logger.info('sos-rescue', `autoSelfHeal done`, { healed, total, errors });
+      logger.info('sos-rescue', `autoSelfHeal done`, { healed, total, errors });
+    } finally {
+      /* v13.3.75 : reset après 3s pour permettre nouveau SOS si user veut relancer */
+      setTimeout(() => { this._sosRunning = false; }, 3000);
+    }
   }
 
   /**

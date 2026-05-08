@@ -16,6 +16,8 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -226,6 +228,9 @@ export const CALCULATORS: readonly CalculatorDef[] = [
 ] as const;
 
 export function render(rootEl: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('module.calculators', rootEl, uid)) return;
   const cards = CALCULATORS.map((c) => `
     <div class="ax-calc-card" data-calc-id="${escapeHtml(c.id)}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;text-align:center">
       <div style="font-size:32px">${c.emoji}</div>

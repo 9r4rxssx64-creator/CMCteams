@@ -27,6 +27,7 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { linksRegistry } from '../../services/links-registry.js';
 import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/multi-key-vault.js';
 import { vault } from '../../services/vault.js';
@@ -467,6 +468,9 @@ export function render(rootEl: HTMLElement): void {
     rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 style="color:#c9a227">🔒 Coffre admin</h2><p style="color:#a0a4c0">Cette section est réservée à l'admin Kevin.</p></div>`;
     return;
   }
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('admin.vault', rootEl, uid)) return;
 
   const stats = computeStats();
 
