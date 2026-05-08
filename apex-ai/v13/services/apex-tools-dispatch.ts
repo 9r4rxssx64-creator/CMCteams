@@ -15,9 +15,9 @@ import { logger } from '../core/logger.js';
 
 import { apexTools, type ApexTool } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
+import { guardToolEnabled } from './feature-guard.js';
 import { firebase } from './firebase.js';
 import { orchestrator } from './orchestrator.js';
-import { guardToolEnabled } from './feature-guard.js';
 
 /**
  * Mapping tool name → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).

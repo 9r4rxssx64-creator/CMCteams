@@ -24,8 +24,8 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
-import { voicePrint } from './voice-print.js';
 import { isFeatureEnabled } from './feature-toggles.js';
+import { voicePrint } from './voice-print.js';
 
 /* === Types publics === */
 

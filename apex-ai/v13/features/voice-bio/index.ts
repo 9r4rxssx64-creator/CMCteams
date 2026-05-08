@@ -25,6 +25,7 @@
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { voicePrint } from '../../services/voice-print.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
@@ -463,6 +464,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   activeScope?.cleanup();
   activeScope = createCleanupScope('voice-bio');
   const scope = activeScope;
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('voice.biometric', rootEl, uid)) return;
 
   const user = getCurrentUser();
   if (!user) {

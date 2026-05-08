@@ -40,8 +40,9 @@
  * ```
  */
 
-import { isFeatureEnabled, renderDisabledNotice } from './feature-toggles.js';
 import { logger } from '../core/logger.js';
+
+import { isFeatureEnabled, renderDisabledNotice } from './feature-toggles.js';
 
 /**
  * Garde une vue (`render(rootEl)`) selon le toggle d'une feature.

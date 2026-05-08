@@ -17,7 +17,6 @@
 
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
-import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { toast } from '../../ui/toast.js';
 
@@ -64,6 +63,8 @@ export function render(rootEl: HTMLElement): void {
   const user = getCurrentUser();
   const isAdmin = user?.id === ADMIN_ID;
   const userName = user?.name ?? 'Anonyme';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('admin.kb', rootEl, user?.id)) return;
 
   rootEl.innerHTML = `
     <div class="ax-page ax-knowledge">

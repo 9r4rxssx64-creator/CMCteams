@@ -22,8 +22,8 @@
  *  - Touch targets ≥ 32px (mobile-first iPhone 375px)
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
