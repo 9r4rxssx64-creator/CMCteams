@@ -30,6 +30,15 @@ import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
 import { store } from './store.js';
+/* v13.3.74 P0 sécu (audit OWASP ASVS L2 V7.1.1) — log redaction GLOBAL.
+ * Importé dès le module load (avant tout autre service) pour patcher console
+ * AVANT que la moindre lib ou service n'ait l'occasion d'écrire un secret.
+ * installGlobal() est idempotent. */
+import { logRedaction } from '../services/log-redaction-wrapper.js';
+
+/* Boot-time install (avant function bootstrap()) : tout console.log au boot
+ * est déjà redacté. Évite leak via libs vendor / Vite HMR / SDK tiers. */
+logRedaction.installGlobal();
 
 interface BootContext {
   startedAt: number;
