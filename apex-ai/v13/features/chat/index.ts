@@ -25,6 +25,7 @@ import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { APP_VER } from '../../core/bootstrap.js';
+import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 import {
   parseSlashCommand,
@@ -2680,6 +2681,20 @@ export function render(rootEl: HTMLElement): void {
     });
   });
 
-  if (conversation.length) renderMessages(rootEl);
+  if (conversation.length) {
+    renderMessages(rootEl);
+  } else {
+    /* H3 audit fix v13.3.74 — skeleton placeholder while initial render lazy-loads */
+    const scrollEl = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+    if (scrollEl && !scrollEl.querySelector('.ax-chat-greeting')?.nextElementSibling) {
+      /* Only render skeleton if no real content yet (greeting + nothing else) */
+      const skelHost = document.createElement('div');
+      skelHost.id = 'ax-chat-skeleton-host';
+      scrollEl.appendChild(skelHost);
+      const dispose = skeleton(skelHost, 'chat-message');
+      /* Auto-dispose après 800ms (typical lazy-load resolves before that) */
+      setTimeout(() => dispose(), 800);
+    }
+  }
   logger.info('chat', 'Chat view rendered');
 }

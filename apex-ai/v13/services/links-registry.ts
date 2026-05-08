@@ -804,6 +804,7 @@ class LinksRegistry {
 
     /* 4. If parse failed OR no valid entries → reset to catalogue defaults */
     let rediscovered = false;
+    let didReset = false;
     if (parseError || validatedEntries.length === 0) {
       validatedEntries = Object.values(KNOWN_LINKS).map((known) => ({
         ...known,
@@ -812,6 +813,7 @@ class LinksRegistry {
       })) as ServiceLink[];
       source = 'reset';
       rediscovered = true;
+      didReset = true;
       try {
         localStorage.setItem('ax_links_registry_v2', JSON.stringify(validatedEntries));
         localStorage.setItem('ax_links_registry', JSON.stringify(validatedEntries));
@@ -837,7 +839,7 @@ class LinksRegistry {
     }
 
     return {
-      repaired: parseError || invalidCount > 0 || validatedEntries.length === 0,
+      repaired: didReset || invalidCount > 0,
       source,
       valid_count: validatedEntries.length,
       invalid_count: invalidCount,

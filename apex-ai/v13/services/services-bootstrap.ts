@@ -676,7 +676,11 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       /* Fix v13.3.18 (Kevin v13.3.16 rapport "wake-word disabled") :
        * Auto-start pour admin Kevin si feature toggle ax_wake_word_active!=false.
        * Permission micro implicite via Web Speech API (consent au premier prompt browser).
-       * Skip si déjà listening, ou si user pas admin, ou si toggle explicit OFF. */
+       * Skip si déjà listening, ou si user pas admin, ou si toggle explicit OFF.
+       *
+       * v13.3.74 M1 (audit Apex v13.3.73 issue #240) : Réactiver aussi wake-watch
+       * sentinelle (default OFF par contract back-compat tests) si user admin et
+       * pas explicit OFF — permet auto-recovery iOS Safari instable. */
       try {
         const flag = localStorage.getItem('ax_wake_word_active');
         const explicitOff = flag === 'false' || flag === '0' || flag === 'off';
@@ -690,6 +694,16 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
             } else {
               logger.warn('services-bootstrap', `wake-word auto-start skipped: ${result.reason ?? 'unknown'}`);
             }
+            /* M1 : Réactive aussi la sentinelle wake-watch pour auto-recovery */
+            try {
+              const { sentinels } = await import('./sentinels.js');
+              const list = sentinels.list();
+              const ww = list.find((s) => s.id === 'wake-watch');
+              if (ww && !ww.enabled) {
+                sentinels.enable('wake-watch', true);
+                logger.info('services-bootstrap', 'wake-watch sentinel re-enabled (admin opt-in)');
+              }
+            } catch { /* skip — sentinels indispo */ }
           }
         }
       } catch (err: unknown) {
@@ -719,6 +733,25 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       const { messageFactExtractor } = await import('./message-fact-extractor.js');
       messageFactExtractor.start();
       logger.info('services-bootstrap', 'message-fact-extractor : listening chat:message:user');
+    }),
+    /* v13.3.74 M4 (audit Apex v13.3.73 issue #240) — Knowledge update auto-fetch.
+     * Si knowledge entries < 5 au boot admin → auto-étudie top 5 providers Kevin
+     * (anthropic, github, firebase, cloudflare, stripe). TTL 7j (skip si fresh).
+     * Permet à l'IA d'avoir contexte riche dès 1er message. */
+    safeInit('study-service-bootstrap', async () => {
+      const { studyService } = await import('./study-service.js');
+      const known = studyService.listKnown();
+      logger.info('services-bootstrap', `study-service : ${known.length} services connus`);
+      if (uid === 'kdmc_admin' || known.length < 5) {
+        try {
+          const result = await studyService.autoFetchTopProviders(5);
+          if (result.fetched > 0) {
+            logger.info('services-bootstrap', `study-service auto-fetched ${result.fetched} providers (total=${result.total})`);
+          }
+        } catch (err: unknown) {
+          logger.warn('services-bootstrap', 'study-service autoFetch failed (continuing)', { err });
+        }
+      }
     }),
   ];
 

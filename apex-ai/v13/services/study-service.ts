@@ -271,6 +271,56 @@ class StudyService {
   }
 
   /**
+   * v13.3.74 M4 (audit Apex v13.3.73 issue #240) — Auto-fetch top providers au boot.
+   *
+   * Quand admin Kevin login pour la 1ère fois (ou si knowledge entries < 5),
+   * on auto-étudie les top 5 providers couramment utilisés. Permet à l'IA
+   * d'avoir un contexte riche dès le 1er message utilisateur.
+   *
+   * Ne re-fetch pas si déjà étudié dans la dernière semaine (TTL 7j).
+   * Idempotent : 2× boot = no-op (cache hit).
+   *
+   * @param threshold Si listKnown().length < threshold → auto-fetch.
+   * @returns { fetched: nombre étudiés, total: total cache après }
+   */
+  async autoFetchTopProviders(threshold = 5): Promise<{ fetched: number; total: number; errors: string[] }> {
+    const TOP_PROVIDERS = ['anthropic', 'github', 'firebase', 'cloudflare', 'stripe'];
+    const known = this.listKnown();
+    /* Skip si déjà ≥ threshold connus ET fresh (< 7j) */
+    if (known.length >= threshold) {
+      const allFresh = known.every((k) => Date.now() - k.studied_at < STUDY_TTL_MS);
+      if (allFresh) {
+        return { fetched: 0, total: known.length, errors: [] };
+      }
+    }
+    let fetched = 0;
+    const errors: string[] = [];
+    for (const service of TOP_PROVIDERS) {
+      try {
+        const cached = this.getKnown(service);
+        if (cached && Date.now() - cached.studied_at < STUDY_TTL_MS) continue; /* fresh, skip */
+        await this.studyByName(service);
+        fetched++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`${service}: ${msg}`);
+      }
+    }
+    logger.info('study-service', `autoFetchTopProviders : ${fetched}/${TOP_PROVIDERS.length} fetched (total cache=${this.listKnown().length})`, { errors });
+    return { fetched, total: this.listKnown().length, errors };
+  }
+
+  /**
+   * v13.3.74 M4 (audit) — Sentinelle service-knowledge-watch helper.
+   * Run hebdo par sentinelles registry (1 sem). Re-fetch tous services connus
+   * pour détecter changements pricing/capabilities.
+   * Délègue à refreshAll() existant.
+   */
+  async runWeeklyKnowledgeWatch(): Promise<{ refreshed: number; errors: string[] }> {
+    return this.refreshAll();
+  }
+
+  /**
    * Force re-fetch (triggered par sentinelle hebdo).
    */
   async refreshAll(): Promise<{ refreshed: number; errors: string[] }> {
