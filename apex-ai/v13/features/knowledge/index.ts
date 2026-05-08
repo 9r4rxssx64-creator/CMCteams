@@ -17,6 +17,8 @@
 
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
+import { store } from '../../core/store.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { toast } from '../../ui/toast.js';
 
 const ADMIN_ID = 'kdmc_admin';
