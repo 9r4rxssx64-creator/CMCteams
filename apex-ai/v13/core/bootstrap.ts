@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.82';
+export const APP_VER = 'v13.3.83';
 export const ADMIN_ID = 'kdmc_admin';
 
 import { di } from './di.js';
@@ -528,6 +528,18 @@ async function bootstrap(): Promise<void> {
     })
     .catch((err: unknown) => {
       logger.warn('boot', 'global-back-button install failed (non-blocking)', { err });
+    });
+
+  /* v13.3.83 Kevin 2026-05-08 21h00 — force-update-banner (fix "Apex ne veut
+   * pas se mettre à jour comme tu avais prévu"). Détecte version distante vs
+   * locale, affiche banner rouge non-dismissible si stale, bouton 1-clic
+   * unregister SW + clear caches + reload fresh. Solution iOS Safari PWA. */
+  void import('@services/force-update-banner.js')
+    .then(({ forceUpdateBanner }) => {
+      forceUpdateBanner.install();
+    })
+    .catch((err: unknown) => {
+      logger.warn('boot', 'force-update-banner install failed (non-blocking)', { err });
     });
 
   /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android).
