@@ -228,7 +228,8 @@
 .ax-chat-input textarea {
   flex: 1 1 200px;
   min-width: 180px;
-  min-height: 40px;
+  /* P2.3 v13.3.81 (audit cascade) : Apple HIG 44px touch target */
+  min-height: 44px;
   max-height: 120px;
   padding: 10px 12px;
   border-radius: 20px;
@@ -252,9 +253,11 @@
 
 .ax-chat-input .ax-btn-icon {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  /* P2.3 v13.3.81 (audit cascade) : Apple HIG 44px (was 40px) */
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -297,13 +300,13 @@
 .ax-chat-input .ax-btn-primary:active { transform: scale(0.94); }
 
 /* Mobile compact petit écran : icon 40px (compromis touch HIG vs espace) */
-/* v13.3.74 a11y fix : 36px → 40px+ (Apple HIG min target absolu) */
+/* P2.3 v13.3.81 (audit cascade) : 40px → 44px (Apple HIG strict, même mobile <380px) */
 @media (max-width: 380px) {
   .ax-chat-input .ax-btn-icon {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     font-size: 16px;
   }
   .ax-chat-input .ax-btn-primary {
