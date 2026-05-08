@@ -2261,5 +2261,200 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (24 active + 1 disabled wake-watch)`);
+  /* v13.3.79+ Kevin 2026-05-08 — global-health-watch (5 min)
+   * Méta-sentinelle : run TOUTES les autres sentinelles, déclenche leur autoFix
+   * en cascade, escalade Claude Code si > 30% des sentinelles fail après auto-fix.
+   * Mission Kevin : "Apex doit s'auto-corriger TOUT seul, ne JAMAIS attendre".
+   *
+   * Stats persistées dans ax_global_health_log (cap 100) pour vue admin health-dashboard.
+   *
+   * NOTE : Ne s'auto-récursive PAS (skip son propre id) pour éviter boucles infinies.
+   */
+  sentinels.register({
+    id: 'global-health-watch',
+    name: 'Global Health Watch (méta auto-fix)',
+    desc: 'Run all sentinels, déclenche autoFix cascade, escalade si > 30% fail post-fix',
+    intervalMs: 5 * 60 * 1000, /* 1 min côté plan, 5 min en production pour limiter charge */
+    check: async () => {
+      const others = sentinels.list().filter((s) => s.id !== 'global-health-watch' && s.enabled);
+      const total = others.length;
+      let okCount = 0;
+      let warnCount = 0;
+      let failCount = 0;
+      let autoFixedCount = 0;
+      let autoFixFailedCount = 0;
+      const failed: string[] = [];
+
+      for (const s of others) {
+        try {
+          const r = await sentinels.runOne(s.id);
+          if (r?.ok) {
+            okCount++;
+          } else {
+            failCount++;
+            failed.push(s.id);
+            /* Si autoFix dispo, executeSentinel l'a déjà tenté. On regarde si lastResult
+             * mentionne "Auto-fixed" pour distinguer fix réussi de fail persistant. */
+            const fixed = r?.msg.startsWith('Auto-fixed:') ?? false;
+            if (fixed) autoFixedCount++;
+            else if (s.autoFix) autoFixFailedCount++;
+          }
+        } catch {
+          failCount++;
+          failed.push(s.id);
+        }
+      }
+
+      const ok = failCount - autoFixedCount;
+      const failPct = total > 0 ? Math.round(((failCount - autoFixedCount) / total) * 100) : 0;
+      const summary = {
+        ts: Date.now(),
+        total,
+        ok: okCount + autoFixedCount,
+        failed: failCount - autoFixedCount,
+        warn: warnCount,
+        autoFixed: autoFixedCount,
+        autoFixFailed: autoFixFailedCount,
+        failedIds: failed,
+        failPct,
+      };
+
+      /* Persist log cap 100 */
+      try {
+        const raw = localStorage.getItem('ax_global_health_log') ?? '[]';
+        const parsed = JSON.parse(raw) as unknown;
+        const log = Array.isArray(parsed) ? parsed : [];
+        log.push(summary);
+        localStorage.setItem('ax_global_health_log', JSON.stringify(log.slice(-100)));
+      } catch { /* quota */ }
+
+      /* Escalade si > 30% des sentinelles fail après auto-fix */
+      if (failPct > 30) {
+        return {
+          ok: false,
+          msg: `🚨 Global health critical : ${failPct}% sentinels fail (${ok}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          details: summary as unknown as Record<string, unknown>,
+        };
+      }
+      if (failPct > 10) {
+        return {
+          ok: false,
+          msg: `⚠ Global health degraded : ${failPct}% fail (${ok}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          details: summary as unknown as Record<string, unknown>,
+        };
+      }
+      return {
+        ok: true,
+        msg: `🟢 Global health OK : ${okCount}/${total} green, ${autoFixedCount} auto-fixed`,
+        details: summary as unknown as Record<string, unknown>,
+      };
+    },
+    /* Auto-fix : si > 30% fail persistant, escalade Claude Code via ax_claude_todo
+     * (cas où Claude Code intervention nécessaire — Apex a tout tenté). */
+    autoFix: async () => {
+      try {
+        const raw = localStorage.getItem('ax_global_health_log');
+        if (!raw) return { ok: false, msg: 'No history yet' };
+        const parsed = JSON.parse(raw) as unknown;
+        const log = Array.isArray(parsed) ? parsed : [];
+        const last = log[log.length - 1] as { failed: number; total: number; failedIds?: string[] } | undefined;
+        if (!last || last.total === 0) return { ok: false, msg: 'No data' };
+        if (last.failed === 0) return { ok: true, msg: 'No fail to escalate' };
+
+        /* Escalade vers ax_claude_todo */
+        const todo = {
+          id: `todo_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          sentinel_id: 'global-health-watch',
+          severity: 'critical' as const,
+          message: `Global health critical: ${last.failed}/${last.total} sentinelles fail après auto-fix`,
+          details: {
+            failedIds: last.failedIds ?? [],
+            total: last.total,
+            failed: last.failed,
+          },
+          src: 'global-health-watch',
+          ts: Date.now(),
+          status: 'pending' as const,
+        };
+        try {
+          const todoRaw = localStorage.getItem('ax_claude_todo') ?? '[]';
+          const todoParsed = JSON.parse(todoRaw) as unknown;
+          const list = Array.isArray(todoParsed) ? todoParsed : [];
+          list.push(todo);
+          localStorage.setItem('ax_claude_todo', JSON.stringify(list.slice(-50)));
+        } catch { /* quota */ }
+
+        return {
+          ok: true,
+          msg: `Escalated to Claude Code (${last.failed} sentinels persistent fail)`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'global-health autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  /**
+   * v13.3.79+ Kevin 2026-05-08 18:05 — apex-self-correct-watch (5 min)
+   *
+   * "Il ne s'auto-corrige pas apparemment, il attend que tu le fasses c'est pas normal"
+   *
+   * Cycle complet de la cascade auto-correct toutes les 5 minutes :
+   *   - Détecte 3+ chat-fallback en 5min OU aucune réponse OK depuis 10min
+   *     OU all_providers_dead audit récent
+   *   - Cascade : restore credentials → reset DEAD timers → ULTRA-RESET → escalade Claude
+   *   - Throttle interne 30 min anti-boucle (cf apex-self-correct.ts)
+   *
+   * Toast user "🔧 Apex s'est auto-réparé" si résolu sans intervention humaine.
+   */
+  sentinels.register({
+    id: 'apex-self-correct-watch',
+    name: 'Apex Self-Correct cascade',
+    desc: 'Détecte panne récurrente IA et déclenche cascade auto-correct sans Kevin',
+    intervalMs: 5 * 60 * 1000, /* 5 min */
+    check: async () => {
+      const { apexSelfCorrect } = await import('./apex-self-correct.js');
+      const result = await apexSelfCorrect.runCycle();
+      if (!result.triggered) {
+        const baseDetails = result.detection
+          ? {
+              fallback_ratio: result.detection.fallback_ratio,
+              recent_fallbacks: result.detection.recent_fallbacks,
+              ms_since_last_success: result.detection.ms_since_last_success,
+            }
+          : undefined;
+        return {
+          ok: true,
+          msg: result.skipped_reason === 'throttled'
+            ? 'Cooldown 30min anti-boucle'
+            : 'Aucune panne détectée',
+          ...(baseDetails ? { details: baseDetails } : {}),
+        };
+      }
+      if (result.resolved) {
+        return {
+          ok: true,
+          msg: `🔧 Auto-correct résolu (${result.steps.length} étapes)`,
+          details: {
+            reasons: result.detection?.reasons ?? [],
+            steps: result.steps.map((s) => `${s.step}=${s.ok ? 'ok' : 'fail'}`),
+          },
+        };
+      }
+      /* Triggered but not resolved → escalated */
+      return {
+        ok: false,
+        msg: result.escalated
+          ? '🚨 Cascade auto-correct épuisée → escaladée Claude Code'
+          : 'Cascade en cours…',
+        details: {
+          reasons: result.detection?.reasons ?? [],
+          steps: result.steps.map((s) => `${s.step}=${s.ok ? 'ok' : 'fail'}`),
+          escalated: result.escalated,
+        },
+      };
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (26 active + apex-self-correct + global-health méta)`);
 }
