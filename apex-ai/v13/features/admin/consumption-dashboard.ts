@@ -12,7 +12,9 @@
  * - Recommandation auto si usage > 80% sur 7 jours
  */
 
+import { store } from '../../core/store.js';
 import { consumptionMonitor } from '../../services/consumption-monitor.js';
+import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 /**
  * Génère HTML carte service consumption (live counter).
@@ -79,6 +81,9 @@ function renderUpgradePlansModal(service: string): string {
  * Render main vue consumption dashboard.
  */
 export function render(root: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('admin.consumption', root, uid)) return;
   const ui = consumptionMonitor.formatForUI();
   const cards = ui.services.map(renderServiceCard).join('');
   const headerAlert = ui.total_alerts > 0

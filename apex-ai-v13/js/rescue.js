@@ -44,9 +44,31 @@
     }, 400);
   }
 
+  /* v13.3.74 a11y fix : skip-link bypass router hash (focus programmatique).
+   * On évite href="#apex-root" qui collisionnerait avec router.dispatch (route inconnue).
+   */
+  function initSkipLink() {
+    var skipLinks = document.querySelectorAll('a.ax-skip-link, a.skip-link');
+    for (var i = 0; i < skipLinks.length; i++) {
+      skipLinks[i].addEventListener('click', function (e) {
+        var target = this.getAttribute('data-ax-skip-target') || 'apex-root';
+        var el = document.getElementById(target);
+        if (el) {
+          e.preventDefault();
+          /* tabindex=-1 permet focus programmatique sans entrer dans tab order */
+          if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+          el.focus({ preventScroll: false });
+          /* scroll smooth vers le main */
+          try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+        }
+      });
+    }
+  }
+
   function init() {
     var btn = document.getElementById('apex-rescue-btn');
     if (btn) btn.addEventListener('click', rescueReset);
+    initSkipLink();
   }
 
   /* Fail-safe : si bundle ne charge pas dans 6s, montre rescue button */

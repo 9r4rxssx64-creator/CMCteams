@@ -70,7 +70,9 @@
 .ax-btn-sm {
   padding: var(--ax-s-2) var(--ax-s-3);
   font-size: var(--ax-text-xs);
-  min-height: 36px;
+  /* v13.3.74 a11y fix : Apple HIG min 44px touch target */
+  min-height: var(--ax-touch-min);
+  min-width: var(--ax-touch-min);
 }
 
 .ax-btn-icon {
