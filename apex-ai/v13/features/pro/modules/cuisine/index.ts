@@ -17,6 +17,8 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 export interface CuissonInfo {
   temps: string;
@@ -1295,6 +1297,9 @@ export function suggerVin(nomPlat: string): string | null {
  * Render UI premium Cuisine Pro.
  */
 export function render(root: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.cuisine', root, uid)) return;
   const cuissonsHtml = Object.keys(AX_CUISINE.cuissons)
     .map((k) => {
       const c = AX_CUISINE.cuissons[k];

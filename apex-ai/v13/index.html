@@ -154,8 +154,13 @@
     <div class="apex-splash-bar"><div class="apex-splash-bar-fill"></div></div>
   </div>
 
+  <!-- Skip-link a11y (visible focus, hidden otherwise) — v13.3.74 a11y fix.
+       Note : on évite href="#apex-root" qui collisionne avec hash router.
+       Le skip-link met le focus programmatique sur #apex-root via JS rescue handler. -->
+  <a href="#main-content" class="ax-skip-link" data-ax-skip-target="apex-root">Aller au contenu principal</a>
+
   <!-- Root mount point -->
-  <div id="apex-root" role="main" aria-label="APEX AI"></div>
+  <div id="apex-root" role="main" aria-label="APEX AI" tabindex="-1"></div>
 
   <!-- Fallback statique si bundle JS crash (ne JAMAIS reproduire l'erreur "écran blanc") -->
   <noscript>

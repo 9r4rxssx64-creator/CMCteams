@@ -16,6 +16,8 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 export interface TemplateLettre {
   titre: string;
@@ -468,6 +470,9 @@ export function listTemplates(): Array<{ key: string; titre: string }> {
  * Render UI premium Legal Pro avec disclaimer.
  */
 export function render(root: HTMLElement): void {
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.legal', root, uid)) return;
   const codesHtml = Object.keys(AX_LEGAL_FR.codes)
     .map((k) => {
       const url = AX_LEGAL_FR.codes[k] ?? '';

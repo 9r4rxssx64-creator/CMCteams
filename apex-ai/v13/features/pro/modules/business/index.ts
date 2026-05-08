@@ -17,6 +17,8 @@
  */
 
 import { logger } from '../../../../core/logger.js';
+import { store } from '../../../../core/store.js';
+import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
 export interface KpiDef {
   id: string;
@@ -381,6 +383,9 @@ export const PITCH_DECK_SLIDES = [
 
 export function render(root: HTMLElement): void {
   logger.info('pro-business', 'render');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('pro.business', root, uid)) return;
   const html = `
     <div class="ax-card" style="padding:16px">
       <h2 style="margin:0 0 8px;color:#c9a227">💼 Business Pro</h2>

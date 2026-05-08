@@ -216,15 +216,18 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         : ''}
 
       <div style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap;align-items:center">
-        <input id="ax-plg-search" placeholder="🔍 Rechercher (nom, tag, description)" value="${escapeHtml(uiState.search)}"
+        <label for="ax-plg-search" class="sr-only">Rechercher un plugin par nom, tag ou description</label>
+        <input id="ax-plg-search" placeholder="🔍 Rechercher (nom, tag, description)" aria-label="Rechercher un plugin par nom, tag ou description" value="${escapeHtml(uiState.search)}"
           style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
 
-        <select id="ax-plg-cat" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <label for="ax-plg-cat" class="sr-only">Filtrer par catégorie</label>
+        <select id="ax-plg-cat" aria-label="Filtrer les plugins par catégorie" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
           <option value="all">Toutes catégories</option>
           ${categories.map((c) => `<option value="${escapeHtml(c)}" ${uiState.categoryFilter === c ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('')}
         </select>
 
-        <select id="ax-plg-status" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <label for="ax-plg-status" class="sr-only">Filtrer par statut</label>
+        <select id="ax-plg-status" aria-label="Filtrer les plugins par statut" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
           <option value="all" ${uiState.statusFilter === 'all' ? 'selected' : ''}>Tous statuts</option>
           <option value="installed" ${uiState.statusFilter === 'installed' ? 'selected' : ''}>🟢 Installés</option>
           <option value="available" ${uiState.statusFilter === 'available' ? 'selected' : ''}>⚪ Disponibles</option>
@@ -430,10 +433,12 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <div style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap;align-items:center">
-        <input id="ax-ext-search" placeholder="🔍 Rechercher (nom, description, catégorie)" value="${escapeHtml(uiState.search)}"
+        <label for="ax-ext-search" class="sr-only">Rechercher un outil étendu par nom, description ou catégorie</label>
+        <input id="ax-ext-search" placeholder="🔍 Rechercher (nom, description, catégorie)" aria-label="Rechercher un outil étendu par nom, description ou catégorie" value="${escapeHtml(uiState.search)}"
           style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
 
-        <select id="ax-ext-type" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <label for="ax-ext-type" class="sr-only">Filtrer par type d'outil</label>
+        <select id="ax-ext-type" aria-label="Filtrer par type d'outil" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
           <option value="all" ${uiState.extendedTypeFilter === 'all' ? 'selected' : ''}>Tous types</option>
           ${(Object.keys(EXTENDED_TYPE_LABELS) as ApexExtendedToolType[]).map((t) => `<option value="${t}" ${uiState.extendedTypeFilter === t ? 'selected' : ''}>${EXTENDED_TYPE_LABELS[t]}</option>`).join('')}
         </select>

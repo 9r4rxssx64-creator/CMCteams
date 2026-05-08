@@ -17,6 +17,73 @@ import { apexTools, type ApexTool } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
 import { firebase } from './firebase.js';
 import { orchestrator } from './orchestrator.js';
+import { guardToolEnabled } from './feature-guard.js';
+
+/**
+ * Mapping tool name → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).
+ * Lorsque le toggle est OFF, le dispatcher refuse l'exécution avec un tool_result d'erreur.
+ * Centralisé ici plutôt qu'attacher une métadonnée par tool — les noms restent strings opaques.
+ */
+const TOOL_TOGGLE_MAP: Record<string, string> = {
+  /* Web & search */
+  web_search: 'tool.web_search',
+  search_web: 'tool.web_search',
+  /* Image / vision */
+  image_analyze: 'tool.image_analyze',
+  analyze_image: 'tool.image_analyze',
+  image_generate: 'tool.image_generate',
+  generate_image: 'tool.image_generate',
+  /* Code / sandbox */
+  code_execute: 'tool.code_execute',
+  execute_code: 'tool.code_execute',
+  /* Météo / calc / unit */
+  get_weather: 'tool.weather',
+  weather: 'tool.weather',
+  calculator: 'tool.calculator',
+  calculate: 'tool.calculator',
+  unit_convert: 'tool.unit_convert',
+  /* Translate */
+  translate: 'tool.translate',
+  /* QR & barcode */
+  qr_generate: 'tool.qr_generate',
+  generate_qr: 'tool.qr_generate',
+  qr_scan: 'tool.qr_scan',
+  scan_qr: 'tool.qr_scan',
+  barcode_scan: 'tool.barcode_scan',
+  /* OCR / geocode */
+  ocr: 'tool.ocr',
+  geocode: 'tool.geocode',
+  /* Communication */
+  send_email: 'tool.send_email',
+  send_sms: 'tool.send_sms',
+  send_whatsapp: 'tool.send_whatsapp',
+  /* Calendrier / contacts / location */
+  calendar_create: 'tool.calendar_create',
+  create_calendar_event: 'tool.calendar_create',
+  calendar_read: 'tool.calendar_read',
+  read_calendar: 'tool.calendar_read',
+  contacts_read: 'tool.contacts_read',
+  read_contacts: 'tool.contacts_read',
+  get_location: 'tool.location',
+  location: 'tool.location',
+  /* Notif / share */
+  notif_send: 'tool.notif_send',
+  send_notification: 'tool.notif_send',
+  share_target: 'tool.share_target',
+  /* Hardware Web APIs */
+  bluetooth: 'tool.bluetooth',
+  nfc_read: 'tool.nfc_read',
+  nfc_write: 'tool.nfc_write',
+  usb: 'tool.usb',
+  midi: 'tool.midi',
+  serial: 'tool.serial',
+  /* Print / export */
+  print: 'tool.print',
+  pdf_export: 'tool.pdf_export',
+  export_pdf: 'tool.pdf_export',
+  markdown: 'tool.markdown',
+  timer: 'tool.timer',
+};
 
 export interface ToolExecResult {
   ok: boolean;
@@ -123,6 +190,16 @@ class ApexToolsDispatcher {
     userTier: ApexTool['minTier'] = 'client_free',
     options: { skipValidation?: boolean } = {},
   ): Promise<ToolExecResult> {
+    /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout).
+       Si le tool est mappé sur un toggle et que toggle = OFF → refuse. */
+    const toggleId = TOOL_TOGGLE_MAP[toolName];
+    if (toggleId) {
+      const guard = guardToolEnabled(toggleId);
+      if (guard) {
+        await apexTools.logExecution(toolName, userTier, params, false);
+        return { ok: false, error: guard.error };
+      }
+    }
     /* Vérification permissions */
     const check = apexTools.canExecute(toolName, userTier);
     if (!check.allowed) {

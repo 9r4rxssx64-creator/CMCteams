@@ -19,6 +19,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 export type DemarcheCountry = 'fr' | 'mc';
 export type DemarcheCategory = 'identite' | 'etranger' | 'famille' | 'pro' | 'logement' | 'sante' | 'fiscal' | 'permis';
@@ -522,6 +523,8 @@ export const prefectureStudioStore = new PrefectureStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.prefecture', rootEl, uid)) return;
   const dossiers = prefectureStudioStore.list(uid);
 
   rootEl.innerHTML = `

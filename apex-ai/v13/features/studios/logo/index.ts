@@ -18,6 +18,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 export interface ColorRGB { r: number; g: number; b: number }
 export interface ColorHSL { h: number; s: number; l: number }
@@ -599,6 +600,8 @@ export const logoStudioStore = new LogoStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.logo', rootEl, uid)) return;
   const logos = logoStudioStore.list(uid);
 
   rootEl.innerHTML = `

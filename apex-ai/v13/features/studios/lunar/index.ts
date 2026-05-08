@@ -16,6 +16,8 @@
 import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { haptic } from '../../../ui/haptic.js';
+import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 let activeScope: CleanupScope | null = null;
 
@@ -158,6 +160,9 @@ export function nextSevenDays(from: Date): readonly { date: Date; info: LunarInf
 export function render(rootEl: HTMLElement): void {
   activeScope?.cleanup();
   activeScope = createCleanupScope('studios-lunar');
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+  if (!guardFeatureEnabled('studio.lunar', rootEl, uid)) return;
   const today = new Date();
   const info = getLunarInfo(today);
   const advice = getBiodynamicAdvice(info);

@@ -22,6 +22,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
+import { guardFeatureEnabled } from '../../../services/feature-guard.js';
 
 export type FilterPreset =
   | 'none' | 'bw' | 'sepia' | 'vintage' | 'cinema' | 'anime'
@@ -539,6 +540,8 @@ export const photoStudioStore = new PhotoStudioStore();
 export function render(rootEl: HTMLElement): void {
   const user = store.get('user') as { id?: string } | null;
   const uid = user?.id ?? 'anon';
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!guardFeatureEnabled('studio.photo', rootEl, uid)) return;
   const list = photoStudioStore.list(uid);
 
   rootEl.innerHTML = `

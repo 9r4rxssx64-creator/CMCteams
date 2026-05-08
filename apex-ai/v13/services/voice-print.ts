@@ -28,6 +28,7 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
+import { isFeatureEnabled } from './feature-toggles.js';
 
 export interface VoiceFingerprint {
   uid: string;
@@ -356,6 +357,10 @@ class VoicePrint {
    */
   async enroll(uid: string, audioSamples: AudioBuffer[]): Promise<{ ok: boolean; reason?: string; samples_count?: number; confidence_score?: number }> {
     if (audioSamples.length < 1) return { ok: false, reason: 'Aucun sample audio' };
+    /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+    if (!isFeatureEnabled('voice.biometric', uid)) {
+      return { ok: false, reason: 'voice.biometric désactivé par admin' };
+    }
     /* Calcule fingerprints enrichis + moyenne (5 features) */
     const fps = audioSamples.map((s) => this.computeFingerprint(s));
     const newAvg = {

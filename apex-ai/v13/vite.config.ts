@@ -32,69 +32,38 @@ export default defineConfig({
     minify: 'esbuild',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 50 /* warn si chunk > 50 KB raw — proxy gzip ~16-20 KB */,
-    /* P0-3 PERF (audit v13.2.5) : modulePreload trop agressif preload TOUS les chunks
-     * dynamiquement importés au boot (apex-tools-dispatch, marketplaces, auto-improvement).
-     * Filtre : preload uniquement les dépendances directes du chunk d'entrée principal.
-     * Les chunks lazy (admin views, plugins, etc.) sont chargés à la demande.
-     * v13.3.28 perf 100/100 (Kevin 2026-05-07) : élargi à 16 chunks heavy lazy
-     * (apex-tools-registry, apex-kb, credential-patterns, monitoring …) — économisent
-     * ~33 KB gzip au boot (4 modulepreload retirés). Charge à la demande quand user
-     * navigue chat/admin/credentials/vault. */
+    /* v13.3.74 PERF 20/20 (audit Apex Opus issue #240 — finalisation TTI <3s) :
+     * modulePreload AVANT était purement filtreur (HEAVY_LAZY noir liste, retournait
+     * deps - lazy = vide → 0 preload links générés dans dist/index.html).
+     *
+     * Résultat dist/index.html v13.3.73 : aucun <link rel="modulepreload"> →
+     * navigateur découvre les imports JS au runtime → cascade waterfall coûteuse →
+     * TTI ~4.4s (Lighthouse 99 mais TTI hors budget).
+     *
+     * Stratégie 20/20 : whitelist EXPLICITE des chunks chemin critique :
+     * 1. STATIC imports du main entry (apex-kb, monitoring, multi-source-analyze,
+     *    credential-patterns) → preload <link> = fetch parallèle dès HTML parsé
+     *    (browser ne découvre pas via JS execution, gain ~100-200ms TTI).
+     * 2. Premiers chunks dynamiques boot (auth, firebase) → fetch anticipé.
+     * 3. Render initial (landing) → user voit page sans waterfall.
+     *
+     * Tout le reste (sentinelles, voice, vision, marketplaces, studios admin…)
+     * = on-demand naturel via dynamic import quand user navigue. */
     modulePreload: {
       resolveDependencies: (filename, deps): string[] => {
-        const HEAVY_LAZY = [
-          'apex-tools-dispatch',
-          'apex-tools-registry',
-          'apex-tools-' /* v13.3.71 : registry tools 76KB lazy au lieu de preload boot */,
-          'apex-meta-marketplace',
-          'auto-improvement',
-          'apex-plugins-marketplace',
-          'apex-extended-catalog',
-          'apex-self-audit',
-          'apex-claude-code-parity',
-          'apex-kb',
-          'apex-knowledge-base',
-          'credential-patterns',
-          'monitoring',
-          'voice',
-          'wake-word',
-          'vision',
-          'smart-camera',
-          'preflight',
-          'links-registry',
-          'sentinels-registry',
-          'sentinels',
-          'feature-toggles',
-          'device-control',
-          'ai-router',
-          'ai-providers-health',
-          'auto-discover-links',
-          'innovation-watch',
-          'consumption-monitor',
-          'unknown-credential-resolver',
-          'multi-key-vault',
-          'memory-bridge',
-          'media-studio',
-          'card-emulator',
-          'badge-cloner',
-          'network-scan',
-          'financial-bilan',
-          'personal-assistant',
-          'auto-backup',
-          /* v13.3.71 PERF LCP — chunks chargés on-demand uniquement */
-          'multi-source-analyze',
-          'study-service',
-          'secret-scanner',
-          'sentry-bridge',
-          'pii-redaction',
-          'iot-providers-registry',
-          'apex-execute',
-          'business-intelligence',
-          'commerce',
-          'tokens-dashboard',
-          'chat-fallback',
+        const CRITICAL_PRELOAD = [
+          /* Static imports du main entry (concat immédiat dans entry — preload
+           * <link> = fetch parallèle dès HTML, sans attendre exec main.js) */
+          'apex-kb-',
+          'monitoring-',
+          'multi-source-analyze-',
+          'credential-patterns-',
+          /* Boot order critique : auth check → firebase init → landing render */
+          'auth-',          /* services/auth.js — vérifie isAdmin pré-render */
+          'firebase-',      /* services/firebase.js — init connexion DB temps réel */
+          'landing-',       /* features/landing/index.js — 1ère vue user */
         ];
-        return deps.filter((d) => !HEAVY_LAZY.some((h) => d.includes(h)));
+        return deps.filter((d) => CRITICAL_PRELOAD.some((c) => d.includes(c)));
       },
     },
     rollupOptions: {

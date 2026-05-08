@@ -25,6 +25,7 @@ import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
 import { voicePrint } from './voice-print.js';
+import { isFeatureEnabled } from './feature-toggles.js';
 
 /* === Types publics === */
 
@@ -1065,6 +1066,8 @@ export async function speak(
   options: SpeakOptions = {},
 ): Promise<SpeakResult> {
   if (!text) return { ok: false, reason: 'text required' };
+  /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
+  if (!isFeatureEnabled('voice.tts')) return { ok: false, reason: 'voice.tts disabled by admin' };
   const voice = getVoice(voiceId);
   if (!voice) return { ok: false, reason: `voice not found: ${voiceId}` };
 
