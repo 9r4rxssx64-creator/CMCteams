@@ -317,18 +317,95 @@ class RGPD {
 
   /**
    * Art. 18 : Limitation traitement (freeze user data en lecture seule).
+   *
+   * v13.3.81 (audit cascade P1.3) : extension scopes granulaires.
+   *  - scopes vides ou ['*'] → restriction globale (legacy compat)
+   *  - scopes spécifiques : ['firebase_write', 'ai_query', 'vault_decrypt', 'audit_export']
+   *    → seul le scope listé bloqué.
+   *
+   * Wired :
+   *  - services/firebase.ts write : if isRestricted(uid, 'firebase_write') → no-op + warn
+   *  - services/ai-router.ts stream : if isRestricted(uid, 'ai_query') → return offline-only
+   *  - vRGPDAdmin (admin only) : section "Restrictions actives" + lift bouton
    */
-  restrictProcessing(uid: string, restricted: boolean): void {
+  restrictProcessing(uid: string, scopesOrFlag: string[] | boolean): void {
     try {
-      if (restricted) {
-        localStorage.setItem(`apex_v13_restricted_${uid}`, '1');
-      } else {
-        localStorage.removeItem(`apex_v13_restricted_${uid}`);
+      const scopes = typeof scopesOrFlag === 'boolean'
+        ? (scopesOrFlag ? ['*'] : [])
+        : scopesOrFlag;
+      if (scopes.length === 0) {
+        localStorage.removeItem(`apex_v13_rgpd_restricted_${uid}`);
+        localStorage.removeItem(`apex_v13_restricted_${uid}`); /* legacy */
+        void auditLog.record('rgpd.restrict.lifted', { actor: uid });
+        logger.info('rgpd', 'restriction lifted', { uid });
+        return;
       }
-      void auditLog.record(restricted ? 'rgpd.restrict.on' : 'rgpd.restrict.off', { actor: uid });
+      const entry = JSON.stringify({ scopes, ts: Date.now() });
+      localStorage.setItem(`apex_v13_rgpd_restricted_${uid}`, entry);
+      localStorage.setItem(`apex_v13_restricted_${uid}`, '1'); /* legacy alias */
+      void auditLog.record('rgpd.restrict.applied', { actor: uid, details: { scopes } });
+      logger.info('rgpd', 'restriction applied', { uid, scopes });
+    } catch (err: unknown) {
+      logger.warn('rgpd', 'restrictProcessing failed', { err });
+    }
+  }
+
+  /**
+   * Vérifie si un user a une restriction active sur un scope donné.
+   * Si scope omis → vérifie restriction globale ('*' ou tout scope).
+   */
+  isRestricted(uid: string, scope?: string): boolean {
+    try {
+      const raw = localStorage.getItem(`apex_v13_rgpd_restricted_${uid}`);
+      if (!raw) {
+        /* Fallback legacy flag binaire */
+        return localStorage.getItem(`apex_v13_restricted_${uid}`) === '1';
+      }
+      const parsed = JSON.parse(raw) as { scopes?: string[]; ts?: number };
+      const scopes = Array.isArray(parsed.scopes) ? parsed.scopes : [];
+      if (scopes.includes('*')) return true;
+      if (!scope) return scopes.length > 0;
+      return scopes.includes(scope);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Lève la restriction (admin Kevin only — gate côté UI).
+   */
+  liftRestriction(uid: string): void {
+    this.restrictProcessing(uid, []);
+  }
+
+  /**
+   * Liste tous users avec restriction active (pour vRGPDAdmin).
+   */
+  listRestrictedUsers(): Array<{ uid: string; scopes: string[]; ts: number }> {
+    const out: Array<{ uid: string; scopes: string[]; ts: number }> = [];
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('apex_v13_rgpd_restricted_')) continue;
+        const uid = k.slice('apex_v13_rgpd_restricted_'.length);
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw) as { scopes?: string[]; ts?: number };
+          out.push({
+            uid,
+            scopes: Array.isArray(parsed.scopes) ? parsed.scopes : [],
+            ts: typeof parsed.ts === 'number' ? parsed.ts : 0,
+          });
+        } catch {
+          /* legacy entry sans JSON → treat as global */
+          out.push({ uid, scopes: ['*'], ts: 0 });
+        }
+      }
     } catch {
       /* ignore */
     }
+    return out;
   }
 
   /* Art. 30 : Registre des traitements */

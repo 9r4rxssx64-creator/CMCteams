@@ -522,6 +522,21 @@ class Firebase {
   async write(key: string, value: unknown, opts?: { idempotencyKey?: string }): Promise<void> {
     if (this.isLocalOnly(key)) return;
     if (!this.shouldSync(key)) return;
+    /* P1.3 v13.3.81 (audit cascade — RGPD Art. 18) :
+     * Si user actif a une restriction 'firebase_write' → no-op + log warn.
+     * Lazy import rgpd pour éviter circular deps au boot. */
+    try {
+      const uid = localStorage.getItem('apex_v13_uid');
+      if (uid) {
+        const { rgpd } = await import('./rgpd.js');
+        if (rgpd.isRestricted(uid, 'firebase_write') || rgpd.isRestricted(uid, '*')) {
+          logger.warn('firebase', `write blocked (RGPD Art. 18 restriction) for ${key}`);
+          return;
+        }
+      }
+    } catch {
+      /* rgpd indispo → continue (fail-open) */
+    }
     if (!this.connected) {
       this.queue.push({ key, value, ts: Date.now() });
       return;
