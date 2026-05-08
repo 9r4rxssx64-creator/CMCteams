@@ -991,7 +991,7 @@ function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
  *
  * Retourne true si traité, false sinon.
  */
-export function handleWakeWordTextTrigger(rootEl: HTMLElement, text: string): boolean {
+export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): boolean {
   const normalized = text.trim().toLowerCase();
   if (!normalized) return false;
   const WAKE_PATTERNS = [

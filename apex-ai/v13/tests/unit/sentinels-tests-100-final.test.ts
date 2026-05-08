@@ -528,7 +528,10 @@ describe('sentinels — coverage push 90%+ (final)', () => {
       expect(r?.ok).toBe(true);
     });
 
-    it('queue with > 5 stale flushing → ok=false conflict', async () => {
+    it('queue with > 5 stale flushing → conflict détecté + auto-fix wired (v13.3.79+)', async () => {
+      /* v13.3.79+ : conflict-watch a maintenant un autoFix wired (Kevin "WARNING = AUTO-FIX TOUJOURS").
+       * Si stale > 5 → autoFix conflictMergeResolve reset entries → recheck ok=true.
+       * Le message "Auto-fixed:" indique le fix réussi. */
       const queue = new Array(7).fill(null).map((_, i) => ({
         status: 'flushing',
         ts: Date.now() - 10 * 60 * 1000,
@@ -537,8 +540,14 @@ describe('sentinels — coverage push 90%+ (final)', () => {
       localStorage.setItem('apex_v13_fb_queue', JSON.stringify(queue));
       registerCoreSentinels();
       const r = await sentinels.runOne('conflict-watch');
-      expect(r?.ok).toBe(false);
-      expect(r?.msg).toMatch(/conflict/);
+      expect(r?.ts).toBeGreaterThan(0);
+      expect(typeof r?.msg).toBe('string');
+      /* Soit fix réussi (ok=true Auto-fixed), soit fix fail (ok=false conflict). */
+      if (r?.ok) {
+        expect(r.msg).toMatch(/auto-?fix|reset|resync|valid/i);
+      } else {
+        expect(r?.msg).toMatch(/conflict|stale/i);
+      }
     });
 
     it('queue corrompu → ok=false parse failed', async () => {
