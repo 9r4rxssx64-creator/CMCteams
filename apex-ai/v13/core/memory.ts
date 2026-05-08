@@ -14,6 +14,7 @@
  * 10. State app (APP_VER, modules, compteurs)
  */
 
+import { buildIdentitySection } from './apex-identity.js';
 import { logger } from './logger.js';
 
 export interface Fact {
@@ -845,13 +846,18 @@ class Memory {
     const MAX_PROMPT_TOKENS = 8000;
     const MAX_PROMPT_CHARS = MAX_PROMPT_TOKENS * 4; /* 32000 chars */
 
+    /* IDENTITÉ IRRÉVOCABLE Kevin 2026-05-08 — TOUJOURS prepend en tête.
+     * Apex ne peut jamais oublier qui il est, qui Kevin est, qui Laurence est,
+     * ses projets, ses règles critiques. ~500-600 tokens, non droppable. */
+    const identitySection = buildIdentitySection();
     const baseContext = this.buildSystemPromptContext(currentUser);
 
-    /* baseContext = toujours injecté (identité user, tools, architecture).
-     * Si lui seul dépasse déjà cap → tronque (cas extrême, ne devrait pas arriver). */
-    let total = baseContext.length > MAX_PROMPT_CHARS
-      ? baseContext.slice(0, MAX_PROMPT_CHARS - 100) + '\n[…tronqué]'
-      : baseContext;
+    /* identity + baseContext = toujours injecté (identité Apex/Kevin/Laurence + tools + architecture).
+     * Si l'ensemble dépasse déjà cap → tronque baseContext (cas extrême), JAMAIS l'identité. */
+    const headerCombined = identitySection + '\n\n' + baseContext;
+    let total = headerCombined.length > MAX_PROMPT_CHARS
+      ? headerCombined.slice(0, MAX_PROMPT_CHARS - 100) + '\n[…tronqué]'
+      : headerCombined;
 
     const cap = (s: string, max: number) =>
       s.length > max ? s.slice(0, max) + '\n[…tronqué pour limite tokens]' : s;
