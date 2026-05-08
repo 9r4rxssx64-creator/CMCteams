@@ -840,10 +840,16 @@ export function render(rootEl: HTMLElement): void {
   attachHandlers(rootEl);
   /* Mount lazy admin views (bilan, consumption) — fire and forget, errors logged */
   if (activeTab === 'bilan' || activeTab === 'consumption') {
-    /* H3 audit fix v13.3.74 — skeleton placeholder while lazy view loads */
-    const contentEl = rootEl.querySelector<HTMLElement>('.ax-admin-content');
-    if (contentEl) {
-      const dispose = skeleton(contentEl, 'admin-table');
+    /* H3 audit fix v13.3.74 — skeleton placeholder while lazy view loads.
+       Fix v13.3.77 : appliquer le skeleton sur le placeholder INTERNE (loading text)
+       du mount point, PAS sur le mount point lui-même (sinon écrase l'id que
+       mountLazyAdminView cherche).
+       Mount point ID reste accessible pour mountLazyAdminView. */
+    const mountId = activeTab === 'bilan' ? 'ax-admin-mount-bilan' : 'ax-admin-mount-consumption';
+    const mountEl = rootEl.querySelector<HTMLElement>(`#${mountId}`);
+    if (mountEl) {
+      const placeholder = mountEl.querySelector<HTMLElement>('p.ax-muted');
+      const dispose = placeholder ? skeleton(placeholder, 'admin-table') : () => { /* no-op */ };
       void mountLazyAdminView(rootEl).finally(() => {
         dispose();
       });
