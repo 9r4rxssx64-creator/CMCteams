@@ -564,13 +564,14 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="height:14px"></div>
 
-      ${stats.total === 0 ? `
+      ${(stats.total === 0 || stats.invalid > 0) ? `
       <section id="ax-vault-empty-rescue" style="background:linear-gradient(135deg,rgba(255,91,91,0.12),rgba(232,184,48,0.08));border:1px solid rgba(255,91,91,0.4);border-radius:14px;padding:14px;margin-bottom:14px">
-        <h3 style="margin:0 0 6px;font-size:14px;color:#ff5b5b;font-weight:700">🆘 Coffre vide — Restauration possible</h3>
-        <p style="margin:0 0 10px;color:rgba(255,255,255,0.78);font-size:12.5px;line-height:1.45">Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection.</p>
+        <h3 style="margin:0 0 6px;font-size:14px;color:#ff5b5b;font-weight:700">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.78);font-size:12.5px;line-height:1.45">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="ax-vault-rescue-fb" style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">🔓 Restaurer depuis Firebase</button>
-          <button id="ax-vault-rescue-all" style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Scanner toutes sources</button>
+          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">🔓 Restaurer depuis Firebase</button>
+          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Scanner toutes sources</button>
+          ${stats.invalid > 0 ? `<button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" style="padding:10px 16px;background:rgba(255,91,91,0.15);color:#ff5b5b;border:1px solid rgba(255,91,91,0.4);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🗑 Supprimer ${stats.invalid} illisibles</button>` : ''}
         </div>
         <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.7)"></div>
       </section>
@@ -790,6 +791,52 @@ function attachHandlers(rootEl: HTMLElement): void {
         logger.warn('feature-vault', 'rescueAll failed', { err });
         if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:#ff5858;border-radius:8px">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
         toast.error('Erreur scan multi-sources');
+        haptic.error();
+      }
+    })();
+  });
+
+  /* v13.3.90 Kevin "10 clés API illisibles youtube/perplexity/pinecone/xai/mistral" :
+   * cleanup auto des entrées invalid (decrypt fail). Permet de supprimer les
+   * orphelines chiffrées avec passphrase perdue v13.3.86 XOR-obf. */
+  const cleanupBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-cleanup-invalid');
+  if (cleanupBtn && activeVaultScope) activeVaultScope.bind(cleanupBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-rescue-result');
+      if (!confirm('Supprimer définitivement toutes les clés illisibles (decrypt fail) ?\n\nCes clés sont chiffrées avec une passphrase perdue. Tu devras les recoller pour les retrouver.')) {
+        return;
+      }
+      if (result) result.innerHTML = '⏳ Suppression des entrées illisibles…';
+      try {
+        const items = buildCredentialDisplays();
+        const invalid = items.filter((it) => it.status === 'invalid');
+        let deleted = 0;
+        for (const item of invalid) {
+          try {
+            /* item.id contient soit storageKey legacy soit multi-key id */
+            const storageKey = item.id.startsWith('ax_') || item.id.startsWith('apex_v13_') ? item.id : `ax_${item.service}_key`;
+            localStorage.removeItem(storageKey);
+            /* IDB shadow cleanup best-effort */
+            const req = indexedDB.open('apex_v13_vault_shadow', 1);
+            req.onsuccess = (): void => {
+              try {
+                req.result.transaction('keys', 'readwrite').objectStore('keys').delete(storageKey);
+                req.result.close();
+              } catch { /* skip */ }
+            };
+            deleted++;
+          } catch { /* skip */ }
+        }
+        if (result) {
+          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🗑 ${deleted} clé(s) illisibles supprimées. Recolle tes clés via "Détecter & stocker" ci-dessous.</div>`;
+        }
+        toast.success(`🗑 ${deleted} clés illisibles supprimées`);
+        haptic.success();
+        setTimeout(() => render(rootEl), 800);
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'cleanupInvalid failed', { err });
+        toast.error('Erreur suppression');
         haptic.error();
       }
     })();

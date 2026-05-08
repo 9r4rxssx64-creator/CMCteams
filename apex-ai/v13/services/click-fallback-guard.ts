@@ -112,12 +112,19 @@ export function installClickFallbackGuard(): void {
       /* Si déjà wired probablement, laisse passer */
       if (isLikelyWired(clickable)) return;
 
-      /* Tick suivant : si la page a navigué (hashchange) ou defaultPrevented,
-       * c'est que ça a bien fait quelque chose. Sinon → toast bientôt dispo. */
+      /* v13.3.90 Kevin 00:41 audit "boutons rescue affichent 'bientôt disponible'
+       * alors qu'ils déclenchent vraiment l'action".
+       * Fix : si bouton a un `id` Apex (ax-* / apex-*) ou un toast récent a été
+       * affiché par le handler, considère-le wiré. Réduit faux-positifs.
+       * Timeout 1500ms (au lieu 0) pour laisser le temps async handlers de fire. */
+      if (clickable.id && /^(ax-|apex-)/.test(clickable.id)) return;
       const tBefore = Date.now();
       setTimeout(() => {
         if (e.defaultPrevented) return;
         if (pageNavigatedAt > tBefore) return;
+        /* Détection toast affiché par le vrai handler (fenêtre 1.5s) */
+        const recentToast = document.querySelector('.ax-toast, [class*="toast"]');
+        if (recentToast) return;
         /* Lazy-load toast + haptic pour ne pas bloquer */
         void Promise.all([import('../ui/toast.js'), import('../ui/haptic.js').catch(() => null)])
           .then(([{ toast }, hapticMod]) => {
