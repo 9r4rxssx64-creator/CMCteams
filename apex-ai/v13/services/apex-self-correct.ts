@@ -349,18 +349,20 @@ class ApexSelfCorrect {
       });
     }
 
-    /* === ÉTAPE 4 : ULTRA-RESET si rien n'a marché === */
+    /* === ÉTAPE 4 : ULTRA-RESET si rien n'a marché ===
+       Note : autoUltraReset.triggerAutoReset hérite d'un throttle 24h propre.
+       Si throttled → skipped, on continue vers escalade Claude Code. */
     if (!resolved) {
       try {
         const ultra = await autoUltraReset.triggerAutoReset();
         steps.push({
           step: 'ultra_reset',
-          ok: ultra.triggered,
-          details: ultra.triggered
-            ? `ULTRA-RESET déclenché (score=${ultra.assessment?.score ?? 'n/a'})`
+          ok: ultra.ok,
+          details: ultra.ok
+            ? 'ULTRA-RESET déclenché (reload imminent)'
             : `ULTRA-RESET skippé : ${ultra.reason ?? 'unknown'}`,
         });
-        if (ultra.triggered) {
+        if (ultra.ok) {
           resolved = true;
         }
       } catch (err: unknown) {
@@ -500,24 +502,23 @@ class ApexSelfCorrect {
   ): Promise<void> {
     try {
       const { claudeBridge } = await import('./claude-bridge.js');
-      const cb = claudeBridge as unknown as {
-        pushTodo?: (todo: { kind: string; severity: string; payload: Record<string, unknown> }) => Promise<void> | void;
-      };
-      if (typeof cb.pushTodo === 'function') {
-        await cb.pushTodo({
-          kind: 'apex_self_correct_failed',
-          severity: 'critical',
-          payload: {
-            reasons: detection.reasons,
-            recent_fallbacks: detection.recent_fallbacks,
-            ms_since_last_success: detection.ms_since_last_success,
-            all_providers_dead: detection.all_providers_dead,
-            steps: steps.map((s) => ({ step: s.step, ok: s.ok, details: s.details })),
-            ts: Date.now(),
-          },
-        });
-        return;
-      }
+      await claudeBridge.pushTodo({
+        type: 'fix_bug',
+        src: 'apex',
+        title: 'Apex self-correct cascade failed — IA non auto-réparable',
+        description: `Apex a détecté une panne récurrente (${detection.reasons.join('; ')}). La cascade auto-correct (restore credentials → reset DEAD → ULTRA-RESET) a échoué. Investiguer et fixer manuellement.`,
+        severity: 'critical',
+        context: {
+          reasons: detection.reasons,
+          recent_fallbacks: detection.recent_fallbacks,
+          recent_attempts: detection.recent_attempts,
+          fallback_ratio: detection.fallback_ratio,
+          ms_since_last_success: detection.ms_since_last_success,
+          all_providers_dead: detection.all_providers_dead,
+          steps: steps.map((s) => ({ step: s.step, ok: s.ok, details: s.details ?? '' })),
+        },
+      });
+      return;
     } catch (err: unknown) {
       logger.warn('apex-self-correct', 'claude-bridge unavailable', { err });
     }

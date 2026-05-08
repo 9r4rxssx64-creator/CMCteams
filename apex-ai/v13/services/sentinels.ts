@@ -1136,9 +1136,18 @@ export function registerCoreSentinels(): void {
         return { ok: false, msg: 'Queue parse failed' };
       }
     },
-    /* v13.3.70 : merge resolution exposée via sentinelAutoRepair.conflictMergeResolve()
-     * pour wire UI bouton admin. Pas en autoFix Sentinel direct (signal conflict doit
-     * rester visible avant action manuelle pour traçabilité multi-device). */
+    /* v13.3.79+ autoFix Kevin 2026-05-08 "WARNING = AUTO-FIX TOUJOURS" :
+     * Wire l'auto-repair conflictMergeResolve directement (Kevin : "ne jamais attendre Kevin").
+     * Le snapshot des stales reste visible dans details + audit log avant repair. */
+    autoFix: async () => {
+      try {
+        const { sentinelAutoRepair } = await import('./sentinel-auto-repair.js');
+        const r = await sentinelAutoRepair.conflictMergeResolve();
+        return { ok: r.ok, msg: r.msg };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'conflict autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
   /* 13b. anti-regression-watch : alerte si tests/coverage baissent vs baseline (Kevin règle "ne plus régresser") */
@@ -1649,6 +1658,22 @@ export function registerCoreSentinels(): void {
         return { ok: false, msg: 'smart-router fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
+    /* v13.3.79+ autoFix Kevin 2026-05-08 : tente re-ping all + multi-key recovery
+     * pour relancer providers qui auraient temporairement échoué. */
+    autoFix: async () => {
+      try {
+        const { smartRouter } = await import('./smart-router.js');
+        await smartRouter.pingAllProviders();
+        const { multiKeyVault } = await import('./multi-key-vault.js');
+        const r = await multiKeyVault.healthCheckAll();
+        return {
+          ok: true,
+          msg: `Re-ping providers + multi-key recovery: ${r.recovered}/${r.tested}`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'smart-router autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
   /* v13.3.53 service-knowledge-watch (Kevin "étudier sites/liens/codes") :
@@ -1684,7 +1709,9 @@ export function registerCoreSentinels(): void {
    * Kevin règles "ANTI-BLOCAGE IA TOTAL" (2026-04-26) +
    * "RECONSULTATION PÉRIODIQUE AUTONOMIE TOTALE" (2026-05-03). */
 
-  /* 23. ai-unblock-watch (5 min) — détecte providers IA en panne + auto-failover */
+  /* 23. ai-unblock-watch (5 min) — détecte providers IA en panne + auto-failover
+   * v13.3.79+ autoFix Kevin 2026-05-08 : re-run runOnce() pour replay failover
+   * + tente recovery multi-key (rotate clés blacklisted en history). */
   sentinels.register({
     id: 'ai-unblock-watch',
     name: 'Anti-blocage IA',
@@ -1717,9 +1744,27 @@ export function registerCoreSentinels(): void {
         };
       }
     },
+    autoFix: async () => {
+      try {
+        /* 1. Re-run unblock (re-tente failover, rotation history) */
+        const { aiUnblockWatch } = await import('./ai-unblock-watch.js');
+        const result = await aiUnblockWatch.runOnce();
+        /* 2. Multi-key recovery */
+        const { multiKeyVault } = await import('./multi-key-vault.js');
+        const recovered = await multiKeyVault.healthCheckAll();
+        const ok = result.healthyProviders.length > 0 || recovered.recovered > 0;
+        return {
+          ok,
+          msg: `Failover re-run: ${result.failoverTriggered.length} switched, ${result.rotatedKeys.length} keys rotated, ${recovered.recovered} multi-keys recovered`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'ai-unblock autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
   });
 
-  /* 24. reconsult-kevin-watch (30 min) — refetch docs Kevin depuis GitHub raw, diff vs cache. */
+  /* 24. reconsult-kevin-watch (30 min) — refetch docs Kevin depuis GitHub raw, diff vs cache.
+   * v13.3.79+ autoFix Kevin 2026-05-08 : tente force re-sync via memory.syncDocsAtBoot. */
   sentinels.register({
     id: 'reconsult-kevin-watch',
     name: 'Reconsultation docs Kevin',
@@ -1757,6 +1802,18 @@ export function registerCoreSentinels(): void {
           ok: false,
           msg: 'reconsult-kevin-watch failed: ' + (err instanceof Error ? err.message : String(err)),
         };
+      }
+    },
+    autoFix: async () => {
+      try {
+        const { memory: memMod } = await import('../core/memory.js');
+        const r = await memMod.syncDocsAtBoot({ forceRefresh: true });
+        return {
+          ok: r.synced > 0,
+          msg: `Force sync docs: ${r.synced} synced, ${r.skipped} skipped, ${r.failed} failed`,
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'reconsult autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
@@ -2116,6 +2173,33 @@ export function registerCoreSentinels(): void {
           ok: false,
           msg: 'never-forget audit fail: ' + (err instanceof Error ? err.message : String(err)),
         };
+      }
+    },
+    /* v13.3.79+ autoFix Kevin 2026-05-08 "Oublie ni moi ni personne jamais !" :
+     * Bootstrap defaults Kevin/Laurence + force re-sync docs racine. */
+    autoFix: async () => {
+      try {
+        const fixes: string[] = [];
+        try {
+          const { memory: memMod } = await import('../core/memory.js');
+          await memMod.initBootDefaults();
+          fixes.push('memory boot defaults restaured');
+        } catch (err: unknown) {
+          fixes.push('initBootDefaults fail: ' + String(err).slice(0, 80));
+        }
+        try {
+          const { memory: memMod } = await import('../core/memory.js');
+          const r = await memMod.syncDocsAtBoot({ forceRefresh: true });
+          fixes.push(`docs synced=${r.synced}`);
+        } catch (err: unknown) {
+          fixes.push('docs refresh fail: ' + String(err).slice(0, 80));
+        }
+        return {
+          ok: fixes.length > 0,
+          msg: 'never-forget restore: ' + fixes.join(' · '),
+        };
+      } catch (err: unknown) {
+        return { ok: false, msg: 'never-forget autoFix fail: ' + (err instanceof Error ? err.message : String(err)) };
       }
     },
   });
