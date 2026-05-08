@@ -240,7 +240,7 @@ class MultiKeyVault {
     /* Dédupe : si plaintext identique déjà présent → retourne entry existante */
     for (const existing of list) {
       if (existing.service !== service) continue;
-      const existingPlain = await vault.decryptAuto(existing.encrypted).catch(() => null);
+      const existingPlain = await (await getVault()).decryptAuto(existing.encrypted).catch(() => null);
       if (existingPlain === plaintextValue) {
         /* Re-active si invalide (Kevin a re-collé une clé qu'on avait marquée morte) */
         if (existing.status === 'invalid' || existing.status === 'failing') {
@@ -253,7 +253,7 @@ class MultiKeyVault {
         return { ...existing };
       }
     }
-    const encrypted = await vault.encryptAuto(plaintextValue);
+    const encrypted = await (await getVault()).encryptAuto(plaintextValue);
     const entry: KeyEntry = {
       id: uuid(),
       service,
@@ -399,13 +399,13 @@ class MultiKeyVault {
       if (fallback.length === 0) return null;
       const first = fallback[0];
       if (!first) return null;
-      const plain = await vault.decryptAuto(first.encrypted);
+      const plain = await (await getVault()).decryptAuto(first.encrypted);
       if (plain === null) return null;
       return { keyId: first.id, plaintext: plain };
     }
     const best = candidates[0];
     if (!best) return null;
-    const plain = await vault.decryptAuto(best.encrypted);
+    const plain = await (await getVault()).decryptAuto(best.encrypted);
     if (plain === null) {
       logger.warn('multi-key-vault', 'getCurrentKey decrypt failed', { keyId: best.id });
       return null;
@@ -431,7 +431,7 @@ class MultiKeyVault {
     /* v13.3.21 (Kevin "decrypt failed" 2026-05-07) :
      * Use decryptDetailed pour distinguer decrypt_failed (recoverable) de bad_format (corruption).
      * Si decrypt_failed → status 'failing' (pas 'invalid' définitif) pour permettre retry après recover. */
-    const detailed = await vault.decryptDetailed(entry.encrypted);
+    const detailed = await (await getVault()).decryptDetailed(entry.encrypted);
     if (!detailed.ok) {
       const reason = detailed.reason ?? 'decrypt_failed';
       if (reason === 'decrypt_failed') {
@@ -523,14 +523,14 @@ class MultiKeyVault {
       if (fb.length === 0) return null;
       const first = fb[0];
       if (!first) return null;
-      const plain = await vault.decryptAuto(first.encrypted);
+      const plain = await (await getVault()).decryptAuto(first.encrypted);
       if (plain === null) return null;
       logger.info('multi-key-vault', `failover ${service} → failing fallback ${first.id.slice(0, 8)}`);
       return { keyId: first.id, plaintext: plain };
     }
     const next = candidates[0];
     if (!next) return null;
-    const plain = await vault.decryptAuto(next.encrypted);
+    const plain = await (await getVault()).decryptAuto(next.encrypted);
     if (plain === null) return null;
     logger.info('multi-key-vault', `failover ${service} → switched to ${next.id.slice(0, 8)}`);
     return { keyId: next.id, plaintext: plain };
@@ -805,7 +805,7 @@ class MultiKeyVault {
     const entry = list.find((k) => k.id === keyId);
     if (!entry) return { ok: false, reason: 'Clé non trouvée' };
     try {
-      entry.encrypted = await vault.encryptAuto(plaintextValue.trim());
+      entry.encrypted = await (await getVault()).encryptAuto(plaintextValue.trim());
       entry.status = 'unknown';
       entry.failCount = 0;
       delete entry.invalidReason;
