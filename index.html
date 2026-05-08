@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.604";
+var APP_VER="v9.605";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11677,6 +11677,47 @@ function cmcShowCadresDiagPopup(){
 function _agentCadresWatch(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var missing=[];A.employees.forEach(function(e){if((e.family||"")!=="cadres")return;if(!isEmpActive(e,y,m))return;var row=pl[e.id]||{};var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;if(filled===0)missing.push(e.name);});if(missing.length){agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));var diag=lg("cmc_cadres_fallback_diag",null);if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");}else{agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);}}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
 /* v9.530 — Sentinelle admin-pin-watch : valide format hash cmc_admin_pin (>=20 chars + $ separators) */
 function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);if(!lenOk||!hasSep){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
+/* v9.605 (Kevin REGLE PERMANENTE 2026-05-07 ANTI-REGRESSION) : Sentinelle regression-watch
+ * Tourne 1x/jour (24h interval), audit subset critical des fix proteges (CLAUDE.md liste).
+ * Si regression detectee → push telemetry Apex + escalade Claude Code via ax_claude_todo.
+ * Critical fixes proteges (NE JAMAIS RETIRER) :
+ *  - cmc_uid dans FB_LOCAL strict (pas sync Firebase)
+ *  - hashPwStrong + verifyPw existent
+ *  - Cap cmc_chat 500 enforce
+ *  - cmc_audit cap 500 enforce
+ *  - _parseEncadresStatuts existe (parser cadres unifies)
+ *  - _cmcListVersionedHistory + _cmcDiffVersions (V2 import merge)
+ *  - cmcSafeToast + cmcUserFriendlyError (nouveau v9.605)
+ *  - cmcFeatureEnabledForUser (nouveau v9.605)
+ */
+function _agentRegressionWatch(){
+  try{
+    var checks=[
+      {id:"cmc_uid_local",test:function(){return Array.isArray(FB_LOCAL)&&FB_LOCAL.indexOf("cmc_uid")>=0;},desc:"cmc_uid doit etre dans FB_LOCAL (jamais sync Firebase)"},
+      {id:"cmc_uid_not_fb",test:function(){return Array.isArray(FB_FIX)&&FB_FIX.indexOf("cmc_uid")<0;},desc:"cmc_uid ne doit JAMAIS etre dans FB_FIX (impersonation cross-device)"},
+      {id:"hashPwStrong",test:function(){return typeof hashPwStrong==="function"&&typeof verifyPw==="function";},desc:"hashPwStrong + verifyPw doivent exister"},
+      {id:"chat_cap",test:function(){return Array.isArray(A.chatMsgs)?A.chatMsgs.length<=600:true;},desc:"A.chatMsgs cap 500 (max 600 tolerance)"},
+      {id:"audit_cap",test:function(){var l=lg("cmc_audit",[]);return Array.isArray(l)?l.length<=600:true;},desc:"cmc_audit cap 500"},
+      {id:"parser_cadres",test:function(){return typeof _parseEncadresStatuts==="function";},desc:"_parseEncadresStatuts (parser cadres unifies)"},
+      {id:"v2_merge",test:function(){return typeof _cmcListVersionedHistory==="function"&&typeof _cmcDiffVersions==="function";},desc:"V2 import merge incremental"},
+      {id:"safe_toast",test:function(){return typeof cmcSafeToast==="function"&&typeof cmcUserFriendlyError==="function";},desc:"cmcSafeToast + cmcUserFriendlyError (v9.605)"},
+      {id:"feat_user",test:function(){return typeof cmcFeatureEnabledForUser==="function";},desc:"cmcFeatureEnabledForUser (per-user toggles v9.605)"},
+      {id:"esc_helper",test:function(){return typeof esc==="function"&&esc("<")==="&lt;";},desc:"esc() helper anti-XSS"},
+      {id:"bulletin_codes",test:function(){return typeof BULLETIN_CODES==="object"&&Object.keys(BULLETIN_CODES).length>10;},desc:"BULLETIN_CODES Convention SBM intacts"}
+    ];
+    var fails=[];
+    checks.forEach(function(c){
+      try{if(!c.test())fails.push(c.id+": "+c.desc);}catch(e){fails.push(c.id+": exception "+(e.message||""));}
+    });
+    if(fails.length===0){
+      agentAppendReport("regression-watch","ok",checks.length+" fix critiques OK");
+    }else{
+      agentAppendReport("regression-watch","err",fails.length+"/"+checks.length+" REGRESSIONS: "+fails.join(" | ").slice(0,300));
+      try{cmcSecurityLog("regression_detected","count="+fails.length+" details="+fails.slice(0,3).join(";"));}catch(_){}
+      try{_cmcEscalate({fails:fails,total:checks.length,version:APP_VER},"REGRESSION CMCteams detectee — fix(s) critique(s) casse(s)");}catch(_){}
+    }
+  }catch(e){agentAppendReport("regression-watch","err",(e.message||"").slice(0,100));}
+}
 /* v9.530 — Helper log securite cmc — synced FB_FIX cmc_security_log */
 function cmcSecurityLog(action,detail,uid){try{var log=lg("cmc_security_log",[]);log.push({ts:Date.now(),action:String(action||"").slice(0,60),uid:String(uid||(A.user&&A.user.id)||"anon").slice(0,30),detail:String(detail||"").slice(0,200)});if(log.length>100)log=log.slice(-100);ls("cmc_security_log",log);}catch(_){}}
 function _agentParserQuality(){try{var y=A.year,m=A.month;var active=A.employees.filter(function(e){return isEmpActive(e,y,m);});var pl=gpl(y,m)||{};var days=getDays(y,m);var tot=active.length*days,filled=0,unk=0;active.forEach(function(e){var row=pl[e.id]||{};for(var d=1;d<=days;d++){var c=row[d];if(c){filled++;if(!CODES[c])unk++;}}});var cov=tot?Math.round(filled/tot*100):0;if(cov<50){agentAppendReport("parser-quality","warn","Couverture "+cov+"% — import incomplet ?");_cmcEscalate({cov:cov,filled:filled,tot:tot,unk:unk,month:MFR[m]+" "+y},"Parser qualite basse");}else if(unk>5){agentAppendReport("parser-quality","warn",unk+" codes inconnus");}else{agentAppendReport("parser-quality","ok","Couverture "+cov+"% · "+unk+" codes inconnus");}}catch(e){agentAppendReport("parser-quality","err",(e.message||"").slice(0,100));}}
@@ -12933,7 +12974,9 @@ var APP_AGENTS=[
   // v9.509 (Kevin 2026-04-25 \u2014 ZERO ERREUR CADRES)
   {id:"import-watch",label:"\ud83d\udcc4 Import-Watch",icon:"\ud83d\udcc4",interval:5*60*1000,run:_agentImportWatch,desc:"Sentinelle dediee : detecte cadres/chefs sans horaire post-import, 5 strategies cascade"},
   // v9.530 (Kevin 2026-04-25 \u2014 SECU ADMIN PIN HASH FORMAT)
-  {id:"cmc-admin-pin-watch",label:"\ud83d\udd10 Admin-Pin-Watch",icon:"\ud83d\udd10",interval:30*60*1000,run:_agentAdminPinWatch,desc:"Verifie format hash cmc_admin_pin >=20 chars + $ separators, alerte si format invalide"}
+  {id:"cmc-admin-pin-watch",label:"\ud83d\udd10 Admin-Pin-Watch",icon:"\ud83d\udd10",interval:30*60*1000,run:_agentAdminPinWatch,desc:"Verifie format hash cmc_admin_pin >=20 chars + $ separators, alerte si format invalide"},
+  // v9.605 (Kevin REGLE PERMANENTE ANTI-REGRESSION 2026-05-07) \u2014 audit fix critiques 1\u00d7/jour
+  {id:"regression-watch",label:"\ud83d\udee1 Regression-Watch",icon:"\ud83d\udee1",interval:24*60*60*1000,run:_agentRegressionWatch,desc:"Audit 11 fix critiques proteges (cmc_uid local, cap chat, parser cadres, V2 merge, safe-toast, per-user toggles\u2026), escalade si regression"}
 ];
 // v9.419 — Event bus pour déclencher agents sur événements (pas juste interval)
 // Permet : post_import, post_save_ov, post_login, post_planning_change
@@ -18056,6 +18099,110 @@ function cmcSetFeature(key,on){
   toast(lab+(on?" activée":" désactivée"));
   dc();
 }
+// v9.605 (Kevin REGLE PERMANENTE 2026-05-04 BOUTONS ON/OFF GENERAL + INDIVIDUEL) :
+// Per-user feature toggle override. Resolution priority : per-user > global > default(true).
+// Stocke par user dans cmc_feature_toggle_user_<uid>. Reservoir admin pour activer/desactiver
+// une feature pour UN seul employe (ex: studio musique pour Laurence uniquement) sans toucher au global.
+function cmcFeatureEnabledForUser(key,userId){
+  try{
+    if(userId){
+      var u=lg("cmc_feature_toggle_user_"+userId,null);
+      if(u&&typeof u==="object"&&key in u)return !!u[key];
+    }
+    return isFeatureEnabled(key);
+  }catch(_){return true;}
+}
+function cmcSetFeatureForUser(userId,key,on){
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
+  if(!userId){toast("⚠ userId requis","err");return;}
+  var u=lg("cmc_feature_toggle_user_"+userId,{})||{};
+  u[key]=!!on;
+  ls("cmc_feature_toggle_user_"+userId,u);
+  try{_audit("featureToggleUser",AID,userId+"/"+key,"",on?"ON":"OFF");}catch(_){}
+  toast("Feature "+key+(on?" activée":" désactivée")+" pour "+userId);
+}
+function cmcResetFeatureForUser(userId,key){
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return;}
+  if(!userId){return;}
+  var u=lg("cmc_feature_toggle_user_"+userId,{})||{};
+  if(key&&key in u){delete u[key];}
+  else if(!key){u={};}
+  ls("cmc_feature_toggle_user_"+userId,u);
+  try{_audit("featureResetUser",AID,userId+"/"+(key||"all"),"","fallback global");}catch(_){}
+  toast("Reset "+key+" pour "+userId+" (utilise global)");
+}
+// v9.605 — Helper user-friendly error : remplace messages techniques (HTTP, fetch, undefined, null,
+// CORS, timeout, TypeError, ReferenceError) par textes clairs et actionnables. Conformite
+// REGLE UX ERREURS Kevin (CLAUDE.md fin de fichier).
+function cmcUserFriendlyError(err){
+  try{
+    var s=String(err&&err.message||err||"").toLowerCase();
+    if(!s)return "Une erreur est survenue, réessaie";
+    if(/quota|exceeded|storage/i.test(s))return "Stockage plein, un nettoyage automatique a été lancé";
+    if(/network|failed to fetch|fetch error|net::/i.test(s))return "Connexion réseau indisponible, vérifie ton Wi-Fi/4G";
+    if(/cors|host not allowed/i.test(s))return "Service temporairement bloqué, contacte l'admin";
+    if(/timeout|aborted/i.test(s))return "Pas de réponse, réessaie dans quelques secondes";
+    if(/http (5[0-9]{2}|429)|server error/i.test(s))return "Serveur surchargé, réessaie dans 1 min";
+    if(/http 401|http 403|unauthorized|forbidden/i.test(s))return "Accès refusé, demande à l'admin";
+    if(/http 404|not found/i.test(s))return "Ressource introuvable";
+    if(/undefined is not|cannot read prop|null reference|null is not/i.test(s))return "Données manquantes, recharge la page";
+    if(/syntax|json|parse/i.test(s))return "Format de données invalide";
+    if(/typeerror|referenceerror/i.test(s))return "Erreur interne, recharge la page";
+    if(/permission denied|denied/i.test(s))return "Permission refusée, autorise l'accès";
+    return "Une erreur est survenue, réessaie";
+  }catch(_){return "Une erreur est survenue";}
+}
+// v9.605 — toast sécurisé qui remplace tout texte technique par message user-friendly.
+// Usage : cmcSafeToast(err, "warn") au lieu de toast(err.message, "warn").
+function cmcSafeToast(err,type){
+  try{
+    var msg=cmcUserFriendlyError(err);
+    if(typeof toast==="function")toast(msg,type||"warn");
+    // Trace technique gardee dans cmc_err_log pour admin
+    try{var l=lg("cmc_err_log",[]);l.push({ts:Date.now(),type:type||"warn",technical:String(err&&err.message||err||"").slice(0,300),userMsg:msg,view:A&&A.view||""});if(l.length>100)l=l.slice(-100);ls("cmc_err_log",l);}catch(_){}
+  }catch(_){}
+}
+// v9.605 (Kevin REGLE PERMANENTE 2026-05-07 AUTO-DEBLOCAGE) — diagnostic admin 1-clic.
+// Lance toutes les sentinelles immediatement + retourne resume sante app.
+// Accessible via cmcDiagAuto() en console OU bouton dans vAdmin.
+function cmcDiagAuto(){
+  if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return null;}
+  var report={ts:Date.now(),version:APP_VER,checks:[],warnings:0,errors:0};
+  // Check 1 : Firebase
+  try{report.checks.push({id:"firebase",ok:typeof FB_URL==="string"&&FB_URL.length>10,detail:FB_URL?"URL configuree":"Pas configuree"});}catch(e){report.errors++;}
+  // Check 2 : Storage
+  try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("cmc_")===0;}).length;report.checks.push({id:"storage",ok:keys>0,detail:keys+" cles cmc_*"});}catch(e){report.errors++;}
+  // Check 3 : Employees loaded
+  try{report.checks.push({id:"employees",ok:Array.isArray(A.employees)&&A.employees.length>10,detail:(A.employees||[]).length+" emp."});}catch(e){report.errors++;}
+  // Check 4 : Convention SBM
+  try{report.checks.push({id:"convention",ok:typeof BULLETIN_CODES==="object"&&Object.keys(BULLETIN_CODES).length>10,detail:Object.keys(BULLETIN_CODES||{}).length+" codes"});}catch(e){report.errors++;}
+  // Check 5 : Parser
+  try{report.checks.push({id:"parser",ok:typeof _parseEncadresStatuts==="function",detail:"_parseEncadresStatuts"});}catch(e){report.errors++;}
+  // Check 6 : V2 import merge
+  try{report.checks.push({id:"v2_merge",ok:typeof _cmcListVersionedHistory==="function"&&typeof _cmcDiffVersions==="function",detail:"V2 merge"});}catch(e){report.errors++;}
+  // Check 7 : Safe error helpers
+  try{report.checks.push({id:"safe_helpers",ok:typeof cmcSafeToast==="function"&&typeof cmcUserFriendlyError==="function",detail:"v9.605"});}catch(e){report.errors++;}
+  // Check 8 : Per-user toggles
+  try{report.checks.push({id:"per_user_toggles",ok:typeof cmcFeatureEnabledForUser==="function",detail:"v9.605"});}catch(e){report.errors++;}
+  // Check 9 : esc XSS protection
+  try{report.checks.push({id:"esc",ok:typeof esc==="function"&&esc("<")==="&lt;",detail:"OK"});}catch(e){report.errors++;}
+  // Check 10 : Cross-app pipeline
+  try{report.checks.push({id:"cross_app",ok:typeof _pushTelemetryToApex==="function",detail:"_pushTelemetryToApex"});}catch(e){report.errors++;}
+  // Compter warnings (checks failed but non-critical)
+  report.checks.forEach(function(c){if(!c.ok)report.warnings++;});
+  // Lance regression-watch immediatement
+  try{if(typeof _agentRegressionWatch==="function")_agentRegressionWatch();}catch(_){}
+  // Sauvegarde dans audit
+  try{var diagLog=lg("cmc_diag_auto",[]);diagLog.push(report);if(diagLog.length>30)diagLog=diagLog.slice(-30);ls("cmc_diag_auto",diagLog);}catch(_){}
+  // Toast resume
+  var ok=report.checks.filter(function(c){return c.ok;}).length;
+  var msg="✅ Diag CMC : "+ok+"/"+report.checks.length+" OK";
+  if(report.warnings>0)msg="⚠ Diag CMC : "+ok+"/"+report.checks.length+" OK ("+report.warnings+" warnings)";
+  if(typeof toast==="function")toast(msg,report.warnings>0?"warn":"ok");
+  return report;
+}
+// v9.605 — Expose globalement pour bouton UI + console
+if(typeof window!=="undefined")window.cmcDiagAuto=cmcDiagAuto;
 // v9.557 (Kevin 2026-04-26 ANTI-FLICKER) — Detection iPhone + mode econome
 // Active automatiquement la classe cmc-no-flicker sur iPhone pour eviter scintillements.
 // Override possible via cmc_animations_force=true dans Reglages admin.
