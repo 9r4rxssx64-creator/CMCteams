@@ -186,14 +186,17 @@ export function generateFollowUps(assistantText: string, userText?: string): Fol
 
 /**
  * Vérifie si les follow-ups sont activés (toggle user dans Réglages).
- * Default ON.
+ * Default OFF v13.3.89 (Kevin 2026-05-08 22:50 frustré chips "Plus de détails /
+ * Exemple concret / Aller plus loin" auto-injectées sans son consentement).
+ * Activable via Réglages → Chat → "Suggestions automatiques après chaque
+ * réponse" si Kevin veut les revoir.
  */
 export function isFollowUpsEnabled(): boolean {
   try {
     const v = localStorage.getItem('apex_v13_followups_enabled');
-    return v === null || v === '1';
+    return v === '1'; /* v13.3.89 : default OFF (avant : default ON) */
   } catch {
-    return true;
+    return false;
   }
 }
 
