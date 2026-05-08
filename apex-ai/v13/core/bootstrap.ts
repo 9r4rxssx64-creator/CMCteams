@@ -61,83 +61,114 @@ async function bootstrap(): Promise<void> {
     }
   };
 
-  /* Sentry monitoring runtime (audit Kevin v13.1.0 production-grade).
-   * Init AVANT bodyguard pour capturer toute erreur boot.
-   * Lazy-load SDK seulement si DSN configuré dans vault (0 KB overhead sinon).
-   * v13.3.18 : envoi test event ping après init (1× par jour) si DSN configurée. */
-  await safeInit('sentry', async () => {
-    const { sentryBridge } = await import('@services/sentry-bridge.js');
-    await sentryBridge.init();
-    /* Test event ping 1×/jour si DSN configurée (vérifie que le sink répond) */
-    try {
-      const lastTestKey = 'apex_v13_sentry_last_test_ts';
-      const last = parseInt(localStorage.getItem(lastTestKey) ?? '0', 10);
-      const oneDay = 24 * 60 * 60 * 1000;
-      if (Date.now() - last > oneDay && sentryBridge.isInitialized()) {
-        const result = await sentryBridge.sendTestEvent();
-        if (result.ok) {
-          localStorage.setItem(lastTestKey, String(Date.now()));
-          logger.info('boot', `Sentry test event sent (sink=${result.sink})`);
-        } else {
-          logger.warn('boot', `Sentry test event skipped: ${result.reason ?? 'unknown'}`);
+  /* v13.3.71 PERF (LCP optim) : sentry + bodyguard MIS EN POST-RENDER.
+   * Avant : 2 await sequentiels au boot = +200ms LCP.
+   * Après : install() reportés au tick après router.dispatch() ; tous nos errors
+   * caught par errors.installGlobalHandlers() qui les buffer en attendant sentry. */
+  const deferredInits: Array<{ label: string; fn: () => Promise<void> | void }> = [
+    {
+      label: 'sentry',
+      fn: async () => {
+        const { sentryBridge } = await import('@services/sentry-bridge.js');
+        await sentryBridge.init();
+        try {
+          const lastTestKey = 'apex_v13_sentry_last_test_ts';
+          const last = parseInt(localStorage.getItem(lastTestKey) ?? '0', 10);
+          const oneDay = 24 * 60 * 60 * 1000;
+          if (Date.now() - last > oneDay && sentryBridge.isInitialized()) {
+            const result = await sentryBridge.sendTestEvent();
+            if (result.ok) {
+              localStorage.setItem(lastTestKey, String(Date.now()));
+              logger.info('boot', `Sentry test event sent (sink=${result.sink})`);
+            } else {
+              logger.warn('boot', `Sentry test event skipped: ${result.reason ?? 'unknown'}`);
+            }
+          }
+        } catch { /* silent */ }
+      },
+    },
+    {
+      label: 'bodyguard',
+      fn: async () => {
+        const { bodyguard } = await import('@services/bodyguard.js');
+        bodyguard.install();
+      },
+    },
+  ];
+  /* v13.3.71 PERF (LCP optim) : 7 services lourds (audit-log, credentials-registry-sync,
+   * auto-backup, observability, ux-theme-mode, firebase-queue, sentinels) DÉFÉRÉS post-render.
+   * Avant : 7 await séquentiels = +700-1500ms blocking LCP.
+   * Après : push dans deferredInits[], lancés via Promise.allSettled() après router.dispatch(). */
+  deferredInits.push(
+    {
+      label: 'audit-log',
+      fn: async () => {
+        const { auditLog } = await import('@services/audit-log.js');
+        auditLog.init();
+        try {
+          const repair = await auditLog.autoRepair();
+          if (repair.brokenAt !== undefined && repair.rebuilt > 0) {
+            logger.warn('audit-log', `Auto-repair chain depuis index ${repair.brokenAt}: ${repair.rebuilt} entries reconstruites`);
+          }
+        } catch { /* silent */ }
+        await auditLog.record('boot.start', { details: { ver: APP_VER } });
+      },
+    },
+    {
+      label: 'credentials-registry-sync',
+      fn: async () => {
+        const { credentialsAudit } = await import('@services/credentials-audit.js');
+        const r = await credentialsAudit.syncFromVault();
+        if (r.ok) {
+          logger.info('boot', `Credentials registry sync : ${r.configured}/${r.total} configurés`);
         }
-      }
-    } catch {
-      /* Test event optionnel — fail silently */
-    }
-  });
-  await safeInit('bodyguard', async () => {
-    const { bodyguard } = await import('@services/bodyguard.js');
-    bodyguard.install();
-  });
-  await safeInit('audit-log', async () => {
-    const { auditLog } = await import('@services/audit-log.js');
-    auditLog.init();
-    /* v13.3.36 (Kevin 2026-05-07 — security-watch P0) : auto-repair chain au boot
-     * si tampering détecté. Évite de laisser une chain corrompue rotter sans action. */
-    try {
-      const repair = await auditLog.autoRepair();
-      if (repair.brokenAt !== undefined && repair.rebuilt > 0) {
-        logger.warn('audit-log', `Auto-repair chain depuis index ${repair.brokenAt}: ${repair.rebuilt} entries reconstruites`);
-      }
-    } catch { /* silent */ }
-    await auditLog.record('boot.start', { details: { ver: APP_VER } });
-  });
-  /* v13.3.36 (Kevin 2026-05-07 — credentials-watch P1 alerte sync incomplet) :
-   * Sync registry vault → ax_credentials_registry au boot (post-vault init).
-   * Garantit que credentials-watch reflète l'état réel du vault. */
-  await safeInit('credentials-registry-sync', async () => {
-    const { credentialsAudit } = await import('@services/credentials-audit.js');
-    const r = await credentialsAudit.syncFromVault();
-    if (r.ok) {
-      logger.info('boot', `Credentials registry sync : ${r.configured}/${r.total} configurés`);
-    }
-  });
-  await safeInit('auto-backup', async () => {
-    /* Kevin règle "ne jamais rien perdre" — init au boot pour check intégrité + restore auto.
-     * v13.3.18 (Kevin v13.3.16 rapport "Last backup compteur jamais reset") :
-     * Si AUCUN backup existe → snapshot manual immédiat pour seed le compteur. */
-    const { autoBackup } = await import('@services/auto-backup.js');
-    await autoBackup.init();
-    try {
-      const stats = autoBackup.getStats();
-      if (stats.total_backups === 0) {
-        const backup = await autoBackup.snapshot('manual');
-        try { localStorage.setItem('ax_last_backup_ts', String(Date.now())); } catch { /* quota */ }
-        logger.info('boot', `Initial backup created: ${backup.id} (${(backup.size_bytes / 1024).toFixed(1)} KB)`);
-      }
-    } catch (err: unknown) {
-      logger.warn('boot', 'Initial backup snapshot failed (continuing)', { err });
-    }
-  });
-  await safeInit('observability', async () => {
-    const { observability } = await import('@services/observability.js');
-    observability.init();
-  });
+      },
+    },
+    {
+      label: 'auto-backup',
+      fn: async () => {
+        const { autoBackup } = await import('@services/auto-backup.js');
+        await autoBackup.init();
+        try {
+          const stats = autoBackup.getStats();
+          if (stats.total_backups === 0) {
+            const backup = await autoBackup.snapshot('manual');
+            try { localStorage.setItem('ax_last_backup_ts', String(Date.now())); } catch { /* quota */ }
+            logger.info('boot', `Initial backup created: ${backup.id} (${(backup.size_bytes / 1024).toFixed(1)} KB)`);
+          }
+        } catch (err: unknown) {
+          logger.warn('boot', 'Initial backup snapshot failed (continuing)', { err });
+        }
+      },
+    },
+    {
+      label: 'observability',
+      fn: async () => {
+        const { observability } = await import('@services/observability.js');
+        observability.init();
+      },
+    },
+    {
+      label: 'firebase-queue',
+      fn: async () => {
+        const { firebaseQueue } = await import('@services/firebase-queue.js');
+        firebaseQueue.init();
+      },
+    },
+    {
+      label: 'sentinels',
+      fn: async () => {
+        const { sentinels } = await import('@services/sentinels.js');
+        const { bootstrapSentinelsRegistry } = await import('@services/sentinels-registry.js');
+        bootstrapSentinelsRegistry();
+        sentinels.init();
+      },
+    },
+  );
 
-  /* v13.3.29 — UX Premium : init theme + dual mode + easter eggs au boot.
-   * Apply CSS vars sur <html> (data-theme, data-mode) + détection saisonnier auto.
-   * Konami code listener installé sur window. Idempotent. */
+  /* v13.3.29 — UX Premium : theme + dual mode + easter eggs.
+   * Garde au boot pour appliquer CSS vars sur <html> AVANT premier paint
+   * (sinon flash visuel theme par défaut → user theme). */
   await safeInit('ux-theme-mode', async () => {
     const { themeSwitcher } = await import('../ui/theme-switcher.js');
     const { proFunMode } = await import('../ui/pro-fun-mode.js');
@@ -145,17 +176,6 @@ async function bootstrap(): Promise<void> {
     themeSwitcher.init();
     proFunMode.init();
     easterEggs.install();
-  });
-  await safeInit('firebase-queue', async () => {
-    const { firebaseQueue } = await import('@services/firebase-queue.js');
-    firebaseQueue.init();
-  });
-  await safeInit('sentinels', async () => {
-    const { sentinels } = await import('@services/sentinels.js');
-    const { bootstrapSentinelsRegistry } = await import('@services/sentinels-registry.js');
-    /* Boost MAX : enregistre 13 core + 4 extras (capabilities/tools/persistence/sentinel-meta) = 17+ */
-    bootstrapSentinelsRegistry();
-    sentinels.init();
   });
 
   /* 2. Feature detection */
@@ -494,8 +514,21 @@ async function bootstrap(): Promise<void> {
     }
   }, 100);
 
+  /* v13.3.71 PERF (LCP optim) : tous services NON-critiques pour render initial
+   * lancés en parallèle APRÈS router.dispatch() — n'impactent pas LCP/FCP.
+   * Promise.allSettled : si 1 fail → autres continuent. Lancé avec setTimeout 0
+   * pour laisser le browser peindre le 1er frame avant de cogner CPU. */
+  setTimeout(() => {
+    void Promise.allSettled(
+      deferredInits.map((init) => Promise.resolve().then(() => safeInit(init.label, init.fn))),
+    ).then(() => {
+      const deferredMs = Math.round(performance.now() - ctx.startedAt);
+      logger.info('boot', `Deferred services initialized at +${deferredMs}ms`);
+    });
+  }, 0);
+
   const bootMs = Math.round(performance.now() - ctx.startedAt);
-  logger.info('boot', `APEX ${APP_VER} ready in ${bootMs}ms`);
+  logger.info('boot', `APEX ${APP_VER} ready in ${bootMs}ms (deferred services post-render)`);
   events.emit('boot:complete', { ctx, bootMs });
 
   /* v13.3.30 (Kevin règle absolue "tout autonomie autocorrigé") :
