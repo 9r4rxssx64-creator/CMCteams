@@ -434,13 +434,61 @@ class Vault {
    * Appelé à chaque rotation de la device-bound (PIN change, clear cache, etc.)
    * pour permettre retry decrypt sur les anciennes valeurs chiffrées.
    */
+  /**
+   * v13.3.86 P0.4 audit externe — passphrase history XOR-obfuscated.
+   * Avant : JSON brut localStorage (clés decryption en clair = XSS exfiltration).
+   * Après : XOR avec device-fingerprint persistant (UA + screen + tz hash).
+   * Pas un chiffrement fort (XOR), mais empêche scrape trivial console/extension
+   * et grep DevTools. Vrai chiffrement strong impossible (passphrase IS la clé).
+   */
+  private deviceObfKey(): string {
+    let key = localStorage.getItem('apex_v13_device_obf');
+    if (!key) {
+      const seed = `${navigator.userAgent}|${screen.width}x${screen.height}|${Intl.DateTimeFormat().resolvedOptions().timeZone}|${Date.now()}`;
+      key = btoa(seed).slice(0, 64);
+      try { localStorage.setItem('apex_v13_device_obf', key); } catch { /* quota */ }
+    }
+    return key;
+  }
+  private xorObf(s: string): string {
+    const k = this.deviceObfKey();
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      out += String.fromCharCode(s.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+    }
+    return btoa(out);
+  }
+  private xorDeobf(s: string): string {
+    try {
+      const k = this.deviceObfKey();
+      const decoded = atob(s);
+      let out = '';
+      for (let i = 0; i < decoded.length; i++) {
+        out += String.fromCharCode(decoded.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+      }
+      return out;
+    } catch { return ''; }
+  }
+
   private loadPassphraseHistory(): string[] {
     try {
       const raw = localStorage.getItem(PASSPHRASE_HISTORY_KEY);
       if (!raw) return [];
-      const parsed = JSON.parse(raw) as unknown;
+      /* v13.3.86 : try deobf format first, fallback legacy plaintext (migration) */
+      let payload: string = raw;
+      if (raw.startsWith('OBF1:')) {
+        payload = this.xorDeobf(raw.slice(5));
+      }
+      const parsed = JSON.parse(payload) as unknown;
       if (!Array.isArray(parsed)) return [];
-      return parsed.filter((x): x is string => typeof x === 'string').slice(0, PASSPHRASE_HISTORY_MAX);
+      const list = parsed.filter((x): x is string => typeof x === 'string').slice(0, PASSPHRASE_HISTORY_MAX);
+      /* Migration : si format legacy plaintext détecté, re-save en OBF1 */
+      if (!raw.startsWith('OBF1:') && list.length > 0) {
+        try {
+          localStorage.setItem(PASSPHRASE_HISTORY_KEY, 'OBF1:' + this.xorObf(JSON.stringify(list)));
+        } catch { /* quota */ }
+      }
+      return list;
     } catch {
       return [];
     }
@@ -450,11 +498,11 @@ class Vault {
     if (!pass) return;
     try {
       const history = this.loadPassphraseHistory();
-      /* Dédupe + push en tête + cap */
       const filtered = history.filter((p) => p !== pass);
       filtered.unshift(pass);
       const capped = filtered.slice(0, PASSPHRASE_HISTORY_MAX);
-      localStorage.setItem(PASSPHRASE_HISTORY_KEY, JSON.stringify(capped));
+      /* v13.3.86 P0.4 : XOR-obfuscation device-bound (anti-scrape XSS/DevTools) */
+      localStorage.setItem(PASSPHRASE_HISTORY_KEY, 'OBF1:' + this.xorObf(JSON.stringify(capped)));
     } catch { /* quota → ignore */ }
   }
 

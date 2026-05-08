@@ -2296,7 +2296,11 @@ export function registerCoreSentinels(): void {
       let autoFixFailedCount = 0;
       const failed: string[] = [];
 
-      /* Pass 1 : lit lastResult (rapide, pas de cascade) */
+      /* Pass 1 : lit lastResult (rapide, pas de cascade)
+       * v13.3.86 P0.3 audit externe fix : détection warning même si ok:true
+       * (avant : "Drift détecté", "1 agents en erreur", "lessons vides" comptaient OK
+       * → global-health reportait 43/43 green alors que 3 warnings réels). */
+      const WARN_PATTERNS = /\b(drift|warning|warn|deficit|déficit|erreur|error|missing|absent|fail|stale|orphan|leak|stuck|degraded|dégradé)\b/i;
       for (const s of others) {
         if (!s.lastResult) {
           /* Jamais run encore = pending, comptes comme ok pour pas alerter au boot */
@@ -2304,9 +2308,14 @@ export function registerCoreSentinels(): void {
           continue;
         }
         if (s.lastResult.ok) {
-          /* Distingue Auto-fixed vs natif ok */
           if (s.lastResult.msg.startsWith('Auto-fixed:')) autoFixedCount++;
-          okCount++;
+          /* P0.3 fix : un ok:true mais msg avec pattern warn = warning, pas full ok */
+          if (WARN_PATTERNS.test(s.lastResult.msg)) {
+            warnCount++;
+            failed.push(s.id); /* déclenche autoFix Pass 2 sur les warnings aussi */
+          } else {
+            okCount++;
+          }
         } else {
           failCount++;
           failed.push(s.id);

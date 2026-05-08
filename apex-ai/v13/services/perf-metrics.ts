@@ -95,9 +95,11 @@ class PerfMetrics {
       if (last) this.record('LCP', last.startTime);
     });
 
-    /* CLS — Cumulative Layout Shift (M8 fix v13.3.74)
-     * Bufferé via observe({type:'layout-shift', buffered:true}) → catch shifts before install.
-     * Aggregate session-wide (with hadRecentInput skip per spec). */
+    /* CLS — Cumulative Layout Shift (M8 fix v13.3.74 + v13.3.86 audit P0.5 bugfix)
+     * Bug audit externe : CLS=0 (parfait) → 0 pts au lieu de 100 pts car la
+     * métrique n'était JAMAIS record si aucun shift ne survenait.
+     * Fix : record initial CLS=0 immédiat (rating 'good') puis update à chaque shift. */
+    this.record('CLS', 0); /* baseline parfait */
     this.tryObserve('layout-shift', (entries) => {
       for (const entry of entries) {
         const e = entry as PerformanceEntry & { hadRecentInput?: boolean; value?: number };
