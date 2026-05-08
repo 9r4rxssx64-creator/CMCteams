@@ -4099,8 +4099,11 @@ function fbApplyData(k,v){
     if(k==="cmc_ov"&&A.user)_checkPlanningChanged(vc);
     if(k==="cmc_chat"&&A.user)_checkNewChat(vc);
   }
-  // v9.58 — debouncé via rAF pour batcher les rafales SSE (fix scintillement import)
-  if(A.user)dcDebounced();
+  // v9.603 anti-scintillement Kevin "l'app saute, scintille seule" :
+  // - Pendant snapshot initial Firebase (N cles), NE PAS dcDebounced a chaque cle.
+  //   Le caller (fbStartListening path==="/" ligne 4362) appelle dcDebounced une seule fois apres la boucle.
+  // - Hors initial : dcDebounced normal (debounce 350ms gere le batching SSE).
+  if(A.user&&!_fbInitialLoad)dcDebounced();
 }
 
 // ── Notifications navigateur ──────────────────────────────────────────────────
@@ -9529,6 +9532,8 @@ function render(){
   }
 }
 var _dcRunning=false;
+// v9.603 anti-scintillement Kevin : tracker view/year/month precedents pour ne jouer pageIn qu'au vrai changement
+var _dcLastView=null,_dcLastYM=null;
 // v9.452 — IA FAB flottant accessible depuis toutes vues. Clic=chat, appui long=voix.
 function vIaFab(){
   if(!A.user||A.view==="ia"||A.view==="login")return"";
@@ -9561,6 +9566,24 @@ function dc(){
     }catch(_){}
   }
   var c=document.getElementById("content");if(!c){_dcRunning=false;return;}
+  // v9.603 anti-scintillement Kevin "l'app saute, scintille seule" : marque #app pour activer
+  // pageIn animation SEULEMENT quand A.view ou year/month changent. Sur re-render meme vue
+  // (SSE/agents/sentinelles) = pas d'animation = plus de saut visuel a chaque dc().
+  try{
+    var _curYM=A.year+"-"+A.month;
+    var _viewChanged=(A.view!==_dcLastView)||(_curYM!==_dcLastYM);
+    var _appEl=document.getElementById("app");
+    if(_appEl){
+      if(_viewChanged){
+        _appEl.setAttribute("data-view-changed","1");
+        clearTimeout(window._dcViewChangedT);
+        window._dcViewChangedT=setTimeout(function(){
+          var a=document.getElementById("app");if(a)a.removeAttribute("data-view-changed");
+        },420);
+      }
+    }
+    _dcLastView=A.view;_dcLastYM=_curYM;
+  }catch(_){}
   c.innerHTML=_cmcBreadcrumb()+vMain();
   // v9.171 — FAB visibilité (login/logout)
   try{_updateFabVisibility();}catch(_){}
