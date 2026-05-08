@@ -1737,7 +1737,7 @@ export function render(rootEl: HTMLElement): void {
         <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
         <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary" aria-label="Envoyer">→</button>
-        <input type="file" id="ax-chat-file-input" multiple
+        <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
           style="display:none">
       </form>

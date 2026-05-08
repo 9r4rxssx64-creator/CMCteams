@@ -1041,12 +1041,12 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
         </label>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
           Service (ex: anthropic, openai, stripe)
-          <input type="text" id="ax-vault-add-service" placeholder="anthropic"
+          <input type="text" id="ax-vault-add-service" aria-label="Nom du service" placeholder="anthropic"
             style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
         </label>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
           Alias (optionnel)
-          <input type="text" id="ax-vault-add-alias" placeholder="perso, client X..."
+          <input type="text" id="ax-vault-add-alias" aria-label="Alias optionnel pour ce service" placeholder="perso, client X..."
             style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
         </label>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
@@ -1146,7 +1146,7 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
         </label>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
           Alias (optionnel)
-          <input type="text" id="ax-vault-edit-alias" value="${escapeHtml(entry.alias ?? '')}"
+          <input type="text" id="ax-vault-edit-alias" aria-label="Alias optionnel" value="${escapeHtml(entry.alias ?? '')}"
             style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
         </label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">

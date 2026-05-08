@@ -245,7 +245,7 @@ export function render(rootEl: HTMLElement): void {
         </p>
         <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:10px;cursor:pointer">
           <span style="color:rgba(255,255,255,0.7);font-size:14px">Lire automatiquement les réponses</span>
-          <input type="checkbox" id="ax-settings-auto-read" style="width:20px;height:20px;cursor:pointer">
+          <input type="checkbox" id="ax-settings-auto-read" aria-label="Lire automatiquement les réponses à voix haute" style="width:20px;height:20px;cursor:pointer">
         </label>
         <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
         <div id="ax-voice-categories" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -264,7 +264,7 @@ export function render(rootEl: HTMLElement): void {
         </p>
         <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border-radius:10px;cursor:pointer">
           <span style="color:rgba(255,255,255,0.85);font-size:14px">Cards outils dans le chat</span>
-          <input type="checkbox" id="ax-settings-tools-auto-embed" style="width:20px;height:20px;cursor:pointer">
+          <input type="checkbox" id="ax-settings-tools-auto-embed" aria-label="Afficher cards outils dans le chat" style="width:20px;height:20px;cursor:pointer">
         </label>
         <p style="margin:8px 0 0;color:rgba(255,255,255,0.4);font-size:12px;line-height:1.4">Décoche pour n'avoir que le toast (5s) sans card permanente. Le bouton ✕ sur chaque card permet aussi de la fermer.</p>
       </section>
