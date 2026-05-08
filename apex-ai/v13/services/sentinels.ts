@@ -69,6 +69,9 @@ const SENTINEL_TOGGLE_MAP: Record<string, string> = {
      Toggle dédié pour pouvoir kill switch (Réglages admin) si auto-correct
      est trop agressif sur certains devices (ex: tests). Default ON. */
   'apex-self-correct-watch': 'sentinel.apex-self-correct',
+  /* v13.3.79+ Kevin 2026-05-08 : global-health-watch méta auto-fix.
+     Toggle dédié pour kill switch admin si méta-cascade trop agressive. */
+  'global-health-watch': 'sentinel.global-health',
   /* Sentinelles réservées Jet 9+ (toggle déclaré, implémentation à venir) :
      dès qu'elles seront register()'d, le toggle sera respecté automatiquement. */
   'import-watch': 'sentinel.import-watch',
