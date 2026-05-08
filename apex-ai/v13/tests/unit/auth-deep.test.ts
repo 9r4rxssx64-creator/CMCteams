@@ -56,7 +56,8 @@ describe('auth service deep tests (Jet 7)', () => {
       const r = await auth.login('Inconnu Total', '123456');
       const elapsed = performance.now() - start;
       expect(r.ok).toBe(false);
-      expect(r.reason).toContain('inconnu');
+      /* v13.3.68 message changé "Utilisateur inconnu" → "Nom non reconnu" (Kevin Laurence bloquée fix) */
+      expect(r.reason).toMatch(/non reconnu|inconnu/i);
       /* PBKDF2 200k iterations en > 50ms (constant time guard) */
       expect(elapsed).toBeGreaterThan(20);
     });

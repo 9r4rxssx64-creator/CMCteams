@@ -32,11 +32,12 @@ describe('chat features deep tests', () => {
       expect(root.innerHTML).toContain('Laurence');
     });
 
-    it('Header AI badge', async () => {
+    it('Header APEX badge', async () => {
+      /* v13.3.72 Kevin "header compact style Claude Code" : badge "AI" retiré, garde "APEX" */
       const { render } = await import('../../features/chat/index.js');
       render(root);
       const header = root.querySelector('.ax-chat-header');
-      expect(header?.innerHTML).toContain('AI');
+      expect(header?.innerHTML).toContain('APEX');
     });
 
     it('Footer affiche version v13 + DK', async () => {

@@ -22,7 +22,6 @@
 
 import { logger } from '../core/logger.js';
 
-import { aiRouter } from './ai-router.js';
 import { consumptionMonitor } from './consumption-monitor.js';
 
 export type ProviderId = 'anthropic' | 'openai' | 'groq' | 'gemini' | 'openrouter' | 'deepseek' | 'cohere' | 'mistral' | 'perplexity';
@@ -311,6 +310,3 @@ class AIRoutingPolicy {
 }
 
 export const aiRoutingPolicy = new AIRoutingPolicy();
-
-/* Réutilise aiRouter pour compat features existantes */
-export { aiRouter };

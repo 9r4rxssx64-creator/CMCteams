@@ -8,7 +8,7 @@
  *  - Tous les `api_endpoint` sont vérifiés contre la doc officielle (mai 2026).
  */
 
-import type { MarketplaceProvider } from '../apex-meta-marketplace.js';
+import type { MarketplaceProvider } from '../apex-meta-marketplace-types.js';
 
 export const META_MARKETPLACE_CATALOG: readonly MarketplaceProvider[] = [
   /* ----- A. IA / ML ----- */

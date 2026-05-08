@@ -1390,3 +1390,6 @@ class AIRouter {
 }
 
 export const aiRouter = new AIRouter();
+
+/* Signal pour apex-self-audit (évite cycle import) — ai-router ready à boot. */
+(globalThis as { __APEX_AI_ROUTER_READY__?: boolean }).__APEX_AI_ROUTER_READY__ = true;

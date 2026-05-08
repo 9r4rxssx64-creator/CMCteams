@@ -13,6 +13,7 @@
 
 import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { rgpd } from '../../services/rgpd.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
@@ -296,7 +297,7 @@ export function render(rootEl: HTMLElement): void {
   const subRoute = location.hash.replace(/^#legal\/?/, '').split('/')[0] || 'cgu';
   const initialTab = TABS.find((t) => t.id === subRoute) ? subRoute : 'cgu';
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       .ax-legal-content {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -348,7 +349,7 @@ export function render(rootEl: HTMLElement): void {
         <a href="#chat" style="color:#e8b830;text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2)">← Retour</a>
       </p>
     </div>
-  `;
+  `);
 
   void renderTabContent(rootEl, initialTab);
 

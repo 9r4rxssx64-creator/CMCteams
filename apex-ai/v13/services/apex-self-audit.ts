@@ -499,10 +499,14 @@ class ApexSelfAudit {
     } catch { /* skip */ }
     /* MODE BRUTAL : checks AI Safety supplémentaires */
     if (brutal) {
-      /* Brut 1 : PII redaction wired ai-router ? */
+      /* Brut 1 : PII redaction wired ai-router ?
+       * NOTE: refactor 2026-05-08 → on ne dynamic-importe plus ai-router pour
+       *  briser le cycle dépendance circulaire ai-router → apex-tools-dispatch
+       *  → apex-self-audit → ai-router. À la place on lit la flag exposée par
+       *  ai-router au boot (globalThis.__APEX_AI_ROUTER_READY__). */
       try {
-        const { aiRouter } = await import('./ai-router.js');
-        if (typeof aiRouter !== 'object' || aiRouter === null) {
+        const ready = (globalThis as { __APEX_AI_ROUTER_READY__?: boolean }).__APEX_AI_ROUTER_READY__;
+        if (ready !== true) {
           findings.push(this.makeFinding('ai_safety', 'p0_critical',
             'AI router not initialized',
             'Service ai-router non chargé → IA inaccessible',

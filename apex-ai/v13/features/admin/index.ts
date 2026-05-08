@@ -17,6 +17,7 @@ import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.
 import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
 import { auth } from '../../services/auth.js';
 import { commerce, type Plan } from '../../services/commerce.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/kdmc-projects-registry.js';
 import { whatsapp } from '../../services/whatsapp.js';
@@ -774,7 +775,7 @@ export function render(rootEl: HTMLElement): void {
     return;
   }
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       @keyframes ax-fade-up {
         0% { opacity: 0; transform: translateY(12px); }
@@ -836,7 +837,7 @@ export function render(rootEl: HTMLElement): void {
       <nav class="ax-tabs" style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin:0 -16px 14px;padding-left:16px;padding-right:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scroll-snap-type:x mandatory;scroll-padding-left:16px">${renderTabs()}</nav>
       <div class="ax-admin-content">${renderContent()}</div>
     </div>
-  `;
+  `);
   attachHandlers(rootEl);
   /* Mount lazy admin views (bilan, consumption) — fire and forget, errors logged */
   if (activeTab === 'bilan' || activeTab === 'consumption') {

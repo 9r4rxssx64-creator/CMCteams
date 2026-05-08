@@ -3,7 +3,7 @@
  * Auto-split from services/apex-meta-marketplace.ts (refactor 2026-05-08).
  */
 
-import type { MarketplaceProvider } from '../apex-meta-marketplace.js';
+import type { MarketplaceProvider } from '../apex-meta-marketplace-types.js';
 
 /**
  * Vérifie qu'une clé API est présente dans le vault (localStorage simple ici,

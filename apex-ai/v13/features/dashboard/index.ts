@@ -21,6 +21,7 @@ import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { store } from '../../core/store.js';
 import { haptic } from '../../ui/haptic.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
@@ -446,7 +447,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const rechargeLinks = await loadRechargeLinks(serviceHealth.map((s) => s.service));
   const todos = loadTodos();
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       @keyframes ax-fade-up {
         0% { opacity: 0; transform: translateY(12px); }

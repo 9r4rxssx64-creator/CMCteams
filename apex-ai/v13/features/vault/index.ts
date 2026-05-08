@@ -26,6 +26,7 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { linksRegistry } from '../../services/links-registry.js';
@@ -474,7 +475,7 @@ export function render(rootEl: HTMLElement): void {
 
   const stats = computeStats();
 
-  rootEl.innerHTML = `
+  rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
       /* v13.3.22 UX iPhone PWA fix Kevin "j'ai dû descendre la page on voit plus le haut" :
        * Header + search bar STICKY robustes (top:0 sans interférence padding parent).
@@ -591,7 +592,7 @@ export function render(rootEl: HTMLElement): void {
       <button id="ax-vault-fab" class="ax-vault-fab" type="button" aria-label="Tester toutes les clés" title="Tester toutes les clés">🔄</button>
       <div id="ax-vault-modal-root"></div>
     </div>
-  `;
+  `);
 
   renderCategories(rootEl);
   attachHandlers(rootEl);
