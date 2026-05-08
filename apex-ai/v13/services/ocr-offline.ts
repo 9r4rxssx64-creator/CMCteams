@@ -133,9 +133,117 @@ class OcrOfflineService {
   }
 
   /**
+   * Lazy-init du Web Worker dédié (workers/ocr.worker.ts).
+   * Retourne true si worker prêt, false si indispo → fallback main-thread.
+   */
+  private ensureDedicatedWorker(): Promise<boolean> {
+    if (this.dedicatedReady) return Promise.resolve(true);
+    if (this.dedicatedPermFail) return Promise.resolve(false);
+    if (this.dedicatedInitPromise) return this.dedicatedInitPromise;
+
+    this.dedicatedInitPromise = new Promise<boolean>((resolve) => {
+      try {
+        if (typeof Worker === 'undefined') {
+          this.dedicatedPermFail = true;
+          resolve(false);
+          return;
+        }
+        const w = new Worker(
+          new URL('../workers/ocr.worker.ts', import.meta.url),
+          { type: 'module' },
+        );
+        let readyTimer: ReturnType<typeof setTimeout> | null = null;
+        const onReady = (event: MessageEvent<unknown>): void => {
+          const data = event.data as { type?: string };
+          if (data?.type === 'ready') {
+            this.dedicatedReady = true;
+            if (readyTimer) clearTimeout(readyTimer);
+            w.removeEventListener('message', onReady);
+            w.addEventListener('message', this.onDedicatedMessage);
+            w.addEventListener('error', this.onDedicatedError);
+            this.dedicatedWorker = w;
+            resolve(true);
+          }
+        };
+        w.addEventListener('message', onReady);
+        readyTimer = setTimeout(() => {
+          w.removeEventListener('message', onReady);
+          this.dedicatedPermFail = true;
+          try { w.terminate(); } catch { /* ignore */ }
+          logger.warn('ocr-offline', 'worker ready timeout → fallback main-thread');
+          resolve(false);
+        }, 3000);
+      } catch (err) {
+        this.dedicatedPermFail = true;
+        logger.warn('ocr-offline', 'worker creation failed → fallback main-thread', { err });
+        resolve(false);
+      }
+    });
+    return this.dedicatedInitPromise;
+  }
+
+  private onDedicatedMessage = (event: MessageEvent<unknown>): void => {
+    const data = event.data as OcrWorkerResponse | { type?: string };
+    if (!data || typeof (data as { id?: unknown }).id !== 'number') return;
+    const resp = data as OcrWorkerResponse;
+    const pending = this.dedicatedPending.get(resp.id);
+    if (!pending) return;
+    this.dedicatedPending.delete(resp.id);
+    if (resp.type === 'ok') {
+      const r = resp.result as { text?: string; confidence?: number; latency_ms?: number; lang?: string };
+      if (typeof r.text === 'string') {
+        pending.resolve({
+          text: r.text,
+          confidence: r.confidence ?? 0,
+          latency_ms: r.latency_ms ?? 0,
+          lang: r.lang ?? DEFAULT_LANG,
+        });
+      } else {
+        /* cleanup ack — pas attendu en pending recognize */
+        pending.reject(new Error('unexpected_cleanup_ack'));
+      }
+    } else {
+      pending.reject(new Error(resp.error));
+    }
+  };
+
+  private onDedicatedError = (event: ErrorEvent): void => {
+    logger.warn('ocr-offline', 'worker error', { msg: event.message });
+    for (const [, p] of this.dedicatedPending) {
+      p.reject(new Error(`worker_error: ${event.message}`));
+    }
+    this.dedicatedPending.clear();
+  };
+
+  private callDedicated(
+    imageBase64: string,
+    lang: string,
+    timeoutMs: number,
+  ): Promise<{ text: string; confidence: number; latency_ms: number; lang: string }> {
+    if (!this.dedicatedWorker) return Promise.reject(new Error('worker_not_ready'));
+    const id = this.dedicatedNextId++;
+    return new Promise((resolve, reject) => {
+      this.dedicatedPending.set(id, { resolve, reject });
+      const req: OcrWorkerRequest = { type: 'recognize', id, imageBase64, lang, timeoutMs };
+      this.dedicatedWorker?.postMessage(req);
+      /* Safety timeout 5s au-dessus du timeout interne */
+      setTimeout(() => {
+        if (this.dedicatedPending.has(id)) {
+          this.dedicatedPending.delete(id);
+          reject(new Error('worker_call_timeout'));
+        }
+      }, timeoutMs + 5_000);
+    });
+  }
+
+  /**
    * Reconnaît du texte dans une image.
    * @param imageBase64 - Image encodée base64 ('data:image/png;base64,...' ou raw base64)
    * @param options - { lang, timeoutMs }
+   *
+   * Stratégie v13.3.71 :
+   * 1. Tente le Web Worker dédié (off-main-thread, ne bloque pas l'UI).
+   * 2. Si Worker indispo → fallback main-thread (comportement historique).
    */
   async recognizeText(
     imageBase64: string,
@@ -157,6 +265,24 @@ class OcrOfflineService {
       return result;
     }
 
+    /* 1. Try off-main-thread worker first (perf) */
+    try {
+      const ok = await this.ensureDedicatedWorker();
+      if (ok) {
+        const r = await this.callDedicated(imageBase64, lang, timeoutMs);
+        result.ok = true;
+        result.text = r.text;
+        result.confidence = r.confidence;
+        result.latency_ms = r.latency_ms || (Date.now() - start);
+        return result;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn('ocr-offline', 'worker recognize failed → fallback main-thread', { err: msg });
+      /* fallthrough to main-thread */
+    }
+
+    /* 2. Fallback main-thread (comportement historique). */
     try {
       const worker = await this.ensureWorker(lang);
       /* Normalize : si pas de prefix data:, ajoute */
@@ -188,7 +314,8 @@ class OcrOfflineService {
   }
 
   /**
-   * Cleanup : termine le worker et libère mémoire.
+   * Cleanup : termine les workers et libère mémoire.
+   * v13.3.71 : termine aussi le Web Worker dédié.
    */
   async cleanup(): Promise<void> {
     if (this.worker) {
@@ -199,6 +326,22 @@ class OcrOfflineService {
       }
       this.worker = null;
       this.workerLang = null;
+    }
+    if (this.dedicatedWorker) {
+      try {
+        this.dedicatedWorker.terminate();
+      } catch {
+        /* ignore */
+      }
+      this.dedicatedWorker = null;
+      this.dedicatedReady = false;
+      this.dedicatedInitPromise = null;
+      this.dedicatedPermFail = false;
+      /* Reject all pending */
+      for (const [, p] of this.dedicatedPending) {
+        try { p.reject(new Error('cleanup')); } catch { /* ignore */ }
+      }
+      this.dedicatedPending.clear();
     }
   }
 }

@@ -517,6 +517,12 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       bodyguard.install();
     }),
 
+    /* P0 v13.3.71 : csp-monitor aggregation + escalade auto (Kevin audit 2026-05-08) */
+    safeInit('csp-monitor', async () => {
+      const { cspMonitor } = await import('./csp-monitor.js');
+      cspMonitor.install();
+    }),
+
     /* P0 : sentinels 24/7 watchers init (ai-health-watch, token-balance-watch, etc.) */
     safeInit('sentinels', async () => {
       const { sentinels } = await import('./sentinels.js');
@@ -699,6 +705,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
     safeInit('apex-claude-code-parity', async () => {
       const mod = await import('./apex-claude-code-parity.js');
       logger.info('services-bootstrap', `apex-claude-code-parity ready : ${typeof mod === 'object' ? 'OK' : 'missing'}`);
+    }),
+    /* Sprint 13.3.71 — Hook message-fact-extractor au bus events
+     * Kevin règle "extraction continue à chaque message user" */
+    safeInit('message-fact-extractor', async () => {
+      const { messageFactExtractor } = await import('./message-fact-extractor.js');
+      messageFactExtractor.start();
+      logger.info('services-bootstrap', 'message-fact-extractor : listening chat:message:user');
     }),
   ];
 

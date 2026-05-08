@@ -29,7 +29,20 @@ async function loadApexToolsDispatch(): Promise<ApexToolsDispatchInstance> {
   _apexToolsDispatch = mod.apexToolsDispatch as ApexToolsDispatchInstance;
   return _apexToolsDispatch;
 }
-import { apexTools } from './apex-tools.js';
+/* v13.3.71 PERF (LCP optim) : apex-tools registry lazy au boot.
+ * Avant : import statique faisait entrer apex-tools (76KB raw) dans le bundle initial.
+ * Après : lazy load uniquement quand opts.withTools=true (Anthropic provider). */
+type ApexToolsInstance = {
+  toAnthropicFormat: (tier: string) => unknown[];
+  list: () => Array<{ name: string }>;
+};
+let _apexTools: ApexToolsInstance | null = null;
+async function loadApexTools(): Promise<ApexToolsInstance> {
+  if (_apexTools) return _apexTools;
+  const mod = await import('./apex-tools.js');
+  _apexTools = mod.apexTools as ApexToolsInstance;
+  return _apexTools;
+}
 import { auditLog } from './audit-log.js';
 import { chatFallback } from './chat-fallback.js';
 import { redactMessageContent, redactPII } from './pii-redaction.js';
@@ -178,9 +191,11 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
         ],
         messages: cachedMessages,
       };
-      if (opts?.withTools) {
+      if (opts?.withTools && _apexTools) {
+        /* v13.3.71 PERF : _apexTools pré-chargé par streamFromProvider (lazy).
+         * Si pas encore chargé (jamais arriver normalement), skip silencieusement. */
         const tier = resolveUserTier();
-        const tools = apexTools.toAnthropicFormat(tier);
+        const tools = _apexTools.toAnthropicFormat(tier);
         if (tools.length > 0) body['tools'] = tools;
       }
       return body;
@@ -1015,6 +1030,12 @@ class AIRouter {
     /* P0-2 fix : Gemini key DANS le header (déjà ci-dessus), URL ne contient QUE alt=sse */
     const url = provider === 'gemini' ? `${cfg.endpoint}?alt=sse` : cfg.endpoint;
     const withTools = PROVIDERS_WITH_TOOLS.has(provider);
+    /* v13.3.71 PERF : pré-load apex-tools si requis (sinon import statique alourdit boot).
+     * Le buildBody synchrone consulte _apexTools déjà résolu ; aucune await dans la chaîne
+     * critique de chunk streaming. */
+    if (withTools && !_apexTools) {
+      await loadApexTools();
+    }
     const res = await fetch(url, {
       method: 'POST',
       headers: cfg.headers(apiKey),

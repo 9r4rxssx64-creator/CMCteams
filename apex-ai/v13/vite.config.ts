@@ -14,6 +14,12 @@ export default defineConfig({
   base: './',
   root: '.',
   publicDir: 'assets',
+  /* v13.3.71 : Web Workers off-main-thread (crypto.worker, search-index.worker, ocr.worker).
+   * format 'es' = ESM workers (supporté Chrome 80+, Firefox 114+, Safari 16.4+).
+   * Tous nos targets (es2022) couvrent ce périmètre. */
+  worker: {
+    format: 'es',
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

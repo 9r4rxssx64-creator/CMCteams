@@ -37,7 +37,7 @@ describe('sentinels security-watch tamper v13.3.24', () => {
     expect(result?.msg).toMatch(/audit log OK/i);
   });
 
-  it('audit log corrompu (manuel) → status critical + log security', async () => {
+  it('audit log corrompu (manuel) → check() détecte tamper + log security', async () => {
     auditLog.init();
     await auditLog.record('test.action.1');
     await auditLog.record('test.action.2');
@@ -49,14 +49,36 @@ describe('sentinels security-watch tamper v13.3.24', () => {
       localStorage.setItem('ax_audit_log_v13', JSON.stringify(chain));
     }
     auditLog.reload();
-    const result = await sentinels.runOne('security-watch');
-    expect(result?.ok).toBe(false);
-    expect(result?.msg).toMatch(/Hash audit log invalide/i);
-    expect(result?.msg).toMatch(/corruption/i);
+    /* v13.3.70 : runOne déclenche autoFix (rebuildChainHash) qui répare la chain.
+     * Pour tester la DÉTECTION pure, on appelle check() directement.
+     * runOne() retournera ok:true ("Auto-fixed: rebuilt N entries"). */
+    const s = sentinels.list().find((x) => x.id === 'security-watch');
+    expect(s).toBeDefined();
+    const direct = await s!.check();
+    expect(direct.ok).toBe(false);
+    expect(direct.msg).toMatch(/Hash audit log invalide/i);
+    expect(direct.msg).toMatch(/corruption/i);
     /* Vérifie ax_security_log enrichi */
     const securityLog = JSON.parse(localStorage.getItem('ax_security_log') ?? '[]') as Array<{ kind: string }>;
     const tamperEntries = securityLog.filter((e) => e.kind === 'audit_log_tamper');
     expect(tamperEntries.length).toBeGreaterThan(0);
+  });
+
+  it('v13.3.70 : runOne corrupted → autoFix rebuildChainHash répare automatiquement', async () => {
+    auditLog.init();
+    await auditLog.record('test.a');
+    await auditLog.record('test.b');
+    const raw = localStorage.getItem('ax_audit_log_v13');
+    if (raw) {
+      const chain = JSON.parse(raw) as { hash: string }[];
+      if (chain[1]) chain[1].hash = 'tampered';
+      localStorage.setItem('ax_audit_log_v13', JSON.stringify(chain));
+    }
+    auditLog.reload();
+    const result = await sentinels.runOne('security-watch');
+    /* runOne déclenche autoFix → ok:true après rebuild */
+    expect(result?.ok).toBe(true);
+    expect(result?.msg).toMatch(/Auto-fixed|rebuild/i);
   });
 
   it('lastact = 0 (pas de session) → skip session check, pas faux positif', async () => {
@@ -98,8 +120,12 @@ describe('sentinels security-watch tamper v13.3.24', () => {
       localStorage.setItem('ax_audit_log_v13', JSON.stringify(chain));
     }
     auditLog.reload();
-    const result = await sentinels.runOne('security-watch');
-    expect(result?.ok).toBe(false);
-    expect(result?.msg).toMatch(/entries|3/);
+    /* v13.3.70 : test la détection via check() direct (autoFix repair via runOne couvert
+     * par le test "v13.3.70 runOne autoFix"). */
+    const s = sentinels.list().find((x) => x.id === 'security-watch');
+    expect(s).toBeDefined();
+    const direct = await s!.check();
+    expect(direct.ok).toBe(false);
+    expect(direct.msg).toMatch(/entries|3/);
   });
 });

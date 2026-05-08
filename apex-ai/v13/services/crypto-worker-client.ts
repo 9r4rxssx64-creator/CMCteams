@@ -23,6 +23,11 @@ import type {
   CryptoWorkerResponse,
 } from '../workers/crypto.worker.js';
 
+/* DistributiveOmit : applique Omit sur chaque membre de l'union (vs Omit standard
+ * qui aplatit l'union et perd le discriminant).
+ * NOTE: T doit être un type generic param pour que la distribution s'applique. */
+type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+
 interface PendingCall {
   resolve: (v: string) => void;
   reject: (err: Error) => void;
@@ -112,14 +117,17 @@ class CryptoWorkerClient {
     this.pending.clear();
   };
 
-  private call(req: Omit<CryptoWorkerRequest, 'id'>, timeoutMs = 15_000): Promise<string> {
+  private call<R extends CryptoWorkerRequest>(
+    req: Omit<R, 'id'>,
+    timeoutMs = 15_000,
+  ): Promise<string> {
     if (!this.worker) {
       return Promise.reject(new Error('worker_not_ready'));
     }
     const id = this.nextId++;
     return new Promise<string>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
-      const fullReq = { ...req, id } as CryptoWorkerRequest;
+      const fullReq = { ...req, id } as unknown as CryptoWorkerRequest;
       this.worker?.postMessage(fullReq);
       setTimeout(() => {
         if (this.pending.has(id)) {

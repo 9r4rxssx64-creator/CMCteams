@@ -2201,6 +2201,53 @@ const APEX_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'C',
   },
+  /* === v13 — Browser controller + IA navigue + remplit (CLAUDE.md règles 2026-04-25/26) === */
+  {
+    name: 'navigate_to',
+    description:
+      'Navigue Apex vers une vue interne et highlight un champ optionnel. Aliases: "coffre.gemini", "coffre.openai", "settings.theme", "monitoring", "browser", "chat" — voir registry. Use case Kevin "où je colle ma clé Gemini ?" → navigate_to("coffre.gemini") → ouvre vault + scroll + highlight champ ax_gemini_key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target: { type: 'string', description: 'Alias cible (ex: "coffre.gemini", "settings.theme", "monitoring")' },
+        field: { type: 'string', description: 'Champ override optionnel (default: champ associé à l\'alias)' },
+      },
+      required: ['target'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
+    name: 'autofill_field',
+    description:
+      'Remplit un champ Coffre/Settings/Profil après confirmation user (modal). Si admin Kevin avec confirm=false → écriture directe. Whitelist stricte des clés. Refuse forbidden patterns (CB, seed phrase). Use case "remplis ax_gemini_key avec AIzaSyXXX".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Clé Coffre/Settings (ex: "ax_gemini_key", "ax_paypal_me")' },
+        value: { type: 'string', description: 'Valeur à écrire (sera chiffrée AES-GCM si Coffre)' },
+        confirm: { type: 'boolean', description: 'Demande confirmation modal (true par défaut). Admin Kevin peut passer false.' },
+        reason: { type: 'string', description: 'Raison du remplissage (audit log)' },
+      },
+      required: ['key', 'value'],
+    },
+    minTier: 'admin',
+    impactLevel: 'C',
+  },
+  {
+    name: 'unblock_url',
+    description:
+      'Tente de contourner X-Frame-Options/CSP frame-ancestors via cascade : direct → web.archive.org → r.jina.ai (reader) → CORS proxy custom. Si toutes échouent → fallback Safari (window.open). Retourne {ok, method, url, attempts}.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL à essayer de débloquer (https://...)' },
+      },
+      required: ['url'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
   /* v13.3.69 — Setup compte user complet (Kevin 2026-05-08 "Apex connaît son code, crée son compte"). */
   {
     name: 'setup_user_account',

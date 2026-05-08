@@ -15,7 +15,8 @@
  * Sentinelle scan apex-tools.ts + features/* + services/* mensuel pour détecter orphans.
  */
 
-import { apexTools } from './apex-tools.js';
+/* v13.3.71 PERF : apex-tools registry retiré du bundle initial (76KB raw / 16KB gzip).
+ * Lazy import dans `auditOrphans()` uniquement (méthode admin debug, jamais appelée au boot). */
 
 export interface Capability {
   id: string;
@@ -382,7 +383,10 @@ class CapabilitiesRegistry {
    *     déclarés dans bootstrap mais pas dans apex-tools registry)
    *   - Skip tools désactivés (cap.enabled=false) → pas comptés dans coverage
    *   - Cible >= 90% coverage (vs 50% screenshot) */
-  auditOrphans(): { orphans: string[]; coverage_pct: number } {
+  async auditOrphans(): Promise<{ orphans: string[]; coverage_pct: number }> {
+    /* v13.3.71 PERF : lazy load apex-tools (76KB raw) — appelé uniquement
+     * depuis vue admin debug, jamais au boot. */
+    const { apexTools } = await import('./apex-tools.js');
     const apexToolNames = new Set(apexTools.list().map((t) => t.name));
     const KNOWN_INTERNAL_SERVICES = new Set<string>([
       /* IA / orchestration */

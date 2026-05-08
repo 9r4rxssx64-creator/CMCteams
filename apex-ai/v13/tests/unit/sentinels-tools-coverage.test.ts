@@ -20,13 +20,13 @@ describe('tools-watch coverage v13.3.24', () => {
     bootstrapSentinelsRegistry();
   });
 
-  it('capabilities.auditOrphans() retourne coverage >= 90%', () => {
-    const audit = capabilities.auditOrphans();
+  it('capabilities.auditOrphans() retourne coverage >= 90%', async () => {
+    const audit = await capabilities.auditOrphans();
     expect(audit.coverage_pct).toBeGreaterThanOrEqual(90);
   });
 
-  it('coverage attendu = 100% (tous tools_used connus)', () => {
-    const audit = capabilities.auditOrphans();
+  it('coverage attendu = 100% (tous tools_used connus)', async () => {
+    const audit = await capabilities.auditOrphans();
     expect(audit.coverage_pct).toBe(100);
     expect(audit.orphans).toHaveLength(0);
   });
@@ -43,10 +43,10 @@ describe('tools-watch coverage v13.3.24', () => {
     expect(result?.msg).not.toMatch(/coverage 50%/i);
   });
 
-  it('whitelist étendue inclut services internes wirés', () => {
+  it('whitelist étendue inclut services internes wirés', async () => {
     /* auto-backup, audit-log, observability sont wirés via bootstrap mais non exposés
      * comme apex-tools. Ne devraient PAS apparaître comme orphans. */
-    const audit = capabilities.auditOrphans();
+    const audit = await capabilities.auditOrphans();
     expect(audit.orphans).not.toContain('auto-backup');
     expect(audit.orphans).not.toContain('audit-log');
     expect(audit.orphans).not.toContain('observability');
@@ -54,8 +54,8 @@ describe('tools-watch coverage v13.3.24', () => {
     expect(audit.orphans).not.toContain('memory-bridge');
   });
 
-  it('whitelist inclut subagents internes', () => {
-    const audit = capabilities.auditOrphans();
+  it('whitelist inclut subagents internes', async () => {
+    const audit = await capabilities.auditOrphans();
     /* Vérifie que types subagents (audit/plan/research/monitor) ne sont pas marqués orphans
      * s'ils apparaissent dans tools_used (ils n'apparaissent pas dans capabilities mais
      * la whitelist les couvre par sécurité). */
@@ -65,9 +65,9 @@ describe('tools-watch coverage v13.3.24', () => {
     expect(audit.orphans).not.toContain('monitor');
   });
 
-  it('coverage augmente avec whitelist v13.3.24 (vs v13.3.23)', () => {
+  it('coverage augmente avec whitelist v13.3.24 (vs v13.3.23)', async () => {
     /* Audit après v13.3.24 doit retourner exactement 100% car aucun orphan */
-    const audit = capabilities.auditOrphans();
+    const audit = await capabilities.auditOrphans();
     expect(audit.coverage_pct).toBe(100);
     expect(audit.orphans.length).toBe(0);
   });
@@ -84,15 +84,15 @@ describe('tools-watch coverage v13.3.24', () => {
     expect(result?.msg).toMatch(/100%|✅/);
   });
 
-  it('orphans returned par audit ≤ 10 (slice limite UI)', () => {
-    const audit = capabilities.auditOrphans();
+  it('orphans returned par audit ≤ 10 (slice limite UI)', async () => {
+    const audit = await capabilities.auditOrphans();
     /* Test sur le contrat audit, l'UI fait .slice(0,10) côté sentinel */
     expect(Array.isArray(audit.orphans)).toBe(true);
     expect(audit.orphans.length).toBeLessThanOrEqual(50);
   });
 
-  it('coverage_pct est un entier (pas de decimal)', () => {
-    const audit = capabilities.auditOrphans();
+  it('coverage_pct est un entier (pas de decimal)', async () => {
+    const audit = await capabilities.auditOrphans();
     expect(Number.isInteger(audit.coverage_pct)).toBe(true);
   });
 });

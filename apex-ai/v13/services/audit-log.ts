@@ -25,6 +25,8 @@ export interface AuditEntry {
 }
 
 const STORAGE_KEY = 'ax_audit_log_v13';
+const REBUILD_SNAPSHOT_PREFIX = 'ax_audit_log_rebuild_';
+const REBUILD_SNAPSHOT_MAX = 5; /* Garde les 5 derniers snapshots, FIFO */
 const MAX_ENTRIES = 1000;
 
 class AuditLog {
@@ -70,6 +72,39 @@ class AuditLog {
     }
   }
 
+  /**
+   * v13.3.71 (Kevin audit 2026-05-08) — verify enrichi.
+   * Recalcule la hash chain depuis genesis et retourne diagnostic complet.
+   *
+   * Différences vs verify() :
+   *  - Retourne `totalEntries` (pour stats UI)
+   *  - Retourne `brokenAt` même si chain valide (= -1)
+   *  - Tolère trim FIFO (premier prevHash = ancrage si entry[0].prevHash existe)
+   *
+   * Use case : sentinelle security-watch + bouton "🔍 Vérifier intégrité" admin.
+   */
+  async verifyChainIntegrity(): Promise<{ valid: boolean; brokenAt: number; totalEntries: number }> {
+    if (!this.initialized) this.init();
+    const totalEntries = this.chain.length;
+    if (totalEntries === 0) return { valid: true, brokenAt: -1, totalEntries: 0 };
+    const first = this.chain[0];
+    if (!first) return { valid: true, brokenAt: -1, totalEntries: 0 };
+    let prevHash = first.prevHash;
+    for (let i = 0; i < this.chain.length; i++) {
+      const entry = this.chain[i];
+      if (!entry) continue;
+      if (entry.prevHash !== prevHash) {
+        return { valid: false, brokenAt: i, totalEntries };
+      }
+      const expected = await this.computeHash({ ...entry, hash: '' });
+      if (entry.hash !== expected) {
+        return { valid: false, brokenAt: i, totalEntries };
+      }
+      prevHash = entry.hash;
+    }
+    return { valid: true, brokenAt: -1, totalEntries };
+  }
+
   async verify(): Promise<{ valid: boolean; brokenAt?: number }> {
     if (!this.initialized) this.init();
     if (this.chain.length === 0) return { valid: true };
@@ -109,11 +144,17 @@ class AuditLog {
    * @param entryIndex Index de la première entry à recalculer (>= 0)
    * @returns { ok, rebuilt, brokenBefore? } — rebuilt = nb d'entries recalculées
    */
-  async rebuildChainFrom(entryIndex: number): Promise<{ ok: boolean; rebuilt: number; brokenBefore?: number }> {
+  async rebuildChainFrom(entryIndex: number): Promise<{ ok: boolean; rebuilt: number; brokenBefore?: number; snapshotKey?: string }> {
     if (!this.initialized) this.init();
     if (entryIndex < 0 || entryIndex >= this.chain.length) {
       return { ok: false, rebuilt: 0 };
     }
+    /* v13.3.71 (Kevin audit 2026-05-08) — Snapshot AVANT rebuild OBLIGATOIRE.
+     * Préserve la chain corrompue pour analyse forensique ultérieure
+     * (pourquoi tampering ? bug local ? attaque ?). Cap 5 snapshots FIFO.
+     * Stocké séparément (clé `ax_audit_log_rebuild_<ts>`) — pas perdu si chain.length>MAX. */
+    const snapshotKey = this.takeSnapshotBeforeRebuild(entryIndex);
+
     /* prevHash de départ : si entryIndex===0 → ancrage '0', sinon hash de l'entry précédente */
     let prevHash: string;
     if (entryIndex === 0) {
@@ -156,8 +197,80 @@ class AuditLog {
     } catch (err: unknown) {
       logger.warn('audit-log', 'rebuildChainFrom trace failed', { err });
     }
-    logger.info('audit-log', `rebuildChainFrom ${entryIndex} → ${rebuilt} entries`);
-    return { ok: true, rebuilt };
+    logger.info('audit-log', `rebuildChainFrom ${entryIndex} → ${rebuilt} entries (snapshot=${snapshotKey ?? 'none'})`);
+    /* v13.3.71 — Émission event 'audit-log:rebuild' pour notif admin / vue UI.
+     * Toute UI peut s'abonner via window.addEventListener('audit-log:rebuild', ...). */
+    try {
+      window.dispatchEvent(new CustomEvent('audit-log:rebuild', {
+        detail: { fromIndex: entryIndex, rebuilt, snapshotKey, totalEntries: this.chain.length },
+      }));
+    } catch {
+      /* noop SSR / no window */
+    }
+    return { ok: true, rebuilt, ...(snapshotKey && { snapshotKey }) };
+  }
+
+  /**
+   * v13.3.71 — Snapshot la chain courante AVANT un rebuild.
+   * Stocke dans `ax_audit_log_rebuild_<ts>` + tient le compteur cap 5 FIFO.
+   * Use case : forensique post-tampering (analyse offline du diff).
+   * Retourne la clé créée (ou null si quota plein).
+   */
+  private takeSnapshotBeforeRebuild(brokenAtIndex: number): string | null {
+    try {
+      const snapshotKey = `${REBUILD_SNAPSHOT_PREFIX}${Date.now()}`;
+      const payload = {
+        ts: Date.now(),
+        brokenAtIndex,
+        chainSnapshot: this.chain.slice(),
+      };
+      localStorage.setItem(snapshotKey, JSON.stringify(payload));
+      /* Trim FIFO : garde les 5 plus récents */
+      const all: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(REBUILD_SNAPSHOT_PREFIX)) all.push(k);
+      }
+      if (all.length > REBUILD_SNAPSHOT_MAX) {
+        all.sort(); /* Tri lexico = tri ts car prefix commun */
+        const toRemove = all.slice(0, all.length - REBUILD_SNAPSHOT_MAX);
+        for (const k of toRemove) {
+          try { localStorage.removeItem(k); } catch { /* noop */ }
+        }
+      }
+      return snapshotKey;
+    } catch (err: unknown) {
+      logger.warn('audit-log', 'takeSnapshotBeforeRebuild failed', { err });
+      return null;
+    }
+  }
+
+  /** v13.3.71 — Liste les snapshots de rebuild disponibles (admin only). */
+  listRebuildSnapshots(): Array<{ key: string; ts: number; brokenAtIndex: number; entriesCount: number }> {
+    const out: Array<{ key: string; ts: number; brokenAtIndex: number; entriesCount: number }> = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith(REBUILD_SNAPSHOT_PREFIX)) continue;
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw) as { ts: number; brokenAtIndex: number; chainSnapshot: AuditEntry[] };
+          out.push({
+            key: k,
+            ts: parsed.ts,
+            brokenAtIndex: parsed.brokenAtIndex,
+            entriesCount: Array.isArray(parsed.chainSnapshot) ? parsed.chainSnapshot.length : 0,
+          });
+        } catch {
+          /* parse error sur 1 snapshot, skip */
+        }
+      }
+    } catch {
+      /* noop */
+    }
+    out.sort((a, b) => b.ts - a.ts);
+    return out;
   }
 
   /**

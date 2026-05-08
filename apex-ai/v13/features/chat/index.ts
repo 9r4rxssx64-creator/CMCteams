@@ -15,6 +15,7 @@
  */
 
 import { errors } from '../../core/errors.js';
+import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
@@ -830,6 +831,19 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   /* v13.3.30 — Auto-extract facts + auto-rappel règles (non-bloquant)
    * Wire de extractFactsFromMessage Kevin règle absolue mémoire long terme. */
   void autoExtractAndLearn(text);
+
+  /* Sprint 13.3.71 — emit chat:message:user pour message-fact-extractor + autres listeners.
+   * Kevin règle absolue "extraction continue à chaque message user". */
+  try {
+    const u = store.get('user') as { id: string } | null;
+    events.emit('chat:message:user', {
+      uid: u?.id ?? 'anon',
+      text,
+      ts: Date.now(),
+    });
+  } catch (err: unknown) {
+    logger.warn('chat', 'chat:message:user emit failed', { err });
+  }
 
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
