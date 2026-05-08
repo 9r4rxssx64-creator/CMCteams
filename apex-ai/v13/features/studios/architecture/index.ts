@@ -219,14 +219,14 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Surface habitable (loi Boutin)</h2>
-        <input type="number" id="ax-archi-surface" placeholder="Surface brute (m²)" min="1" step="0.01" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="number" id="ax-archi-surface" aria-label="Surface brute en mètres carrés" placeholder="Surface brute (m²)" min="1" step="0.01" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-archi-surface-btn" style="margin-top:8px;min-height:44px">Calculer</button>
         <div id="ax-archi-surface-out" style="margin-top:8px;color:#c9a227"></div>
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Béton (proportions)</h2>
-        <input type="number" id="ax-archi-vol" placeholder="Volume (m³)" min="0.01" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="number" id="ax-archi-vol" aria-label="Volume de béton en mètres cubes" placeholder="Volume (m³)" min="0.01" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <select id="ax-archi-dosage" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">${dosagesHtml}</select>
         <button class="ax-btn ax-btn-primary" id="ax-archi-beton-btn" style="min-height:44px">Calculer béton</button>
         <pre id="ax-archi-beton-out" style="margin-top:8px;color:#c9a227;white-space:pre-wrap;font-size:13px"></pre>
@@ -234,9 +234,9 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Peinture (litres pour pièce)</h2>
-        <input type="number" id="ax-archi-l" placeholder="Longueur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="number" id="ax-archi-w" placeholder="Largeur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="number" id="ax-archi-h" placeholder="Hauteur (m)" min="2" max="10" step="0.1" value="2.5" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="number" id="ax-archi-l" aria-label="Longueur de la pièce en mètres" placeholder="Longueur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="number" id="ax-archi-w" aria-label="Largeur de la pièce en mètres" placeholder="Largeur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <input type="number" id="ax-archi-h" aria-label="Hauteur sous plafond en mètres" placeholder="Hauteur (m)" min="2" max="10" step="0.1" value="2.5" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-archi-paint-btn" style="min-height:44px">Calculer peinture</button>
         <pre id="ax-archi-paint-out" style="margin-top:8px;color:#c9a227;white-space:pre-wrap;font-size:13px"></pre>
       </div>

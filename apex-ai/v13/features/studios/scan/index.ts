@@ -183,7 +183,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Scanner une image</h2>
-        <input type="file" id="ax-scan-file" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="ax-scan-file" aria-label="Sélectionner ou prendre une photo à scanner" accept="image/*" capture="environment" style="display:none">
         <button class="ax-btn ax-btn-primary" id="ax-scan-pick" style="width:100%;min-height:44px">📷 Choisir / prendre photo</button>
         <div id="ax-scan-preview" style="margin-top:12px"></div>
         <div id="ax-scan-status" style="margin-top:8px;color:var(--ax-text-dim);font-size:13px"></div>
