@@ -443,9 +443,23 @@ class AIKeyRotation {
     return until > Date.now();
   }
 
+  /**
+   * Lit le DEAD timer pour un service.
+   *
+   * Note : on lit DIRECTEMENT localStorage à chaque appel (pas de cache mémoire qui
+   * pourrait être stale entre tests via setup.ts beforeEach). Le coût est négligeable
+   * (1 getItem + 1 JSON.parse de quelques bytes) et garantit la cohérence test/prod.
+   */
   getDeadUntil(service: string): number {
-    this.loadDead();
-    return this.deadCache?.get(service) ?? 0;
+    try {
+      const raw = localStorage.getItem(STORAGE_DEAD);
+      if (!raw) return 0;
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const v = parsed[service];
+      return typeof v === 'number' && v > Date.now() ? v : 0;
+    } catch {
+      return 0;
+    }
   }
 
   /* === Internals === */

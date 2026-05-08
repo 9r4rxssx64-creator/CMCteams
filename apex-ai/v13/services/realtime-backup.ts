@@ -170,8 +170,6 @@ function idbDelete(db: IDBDatabase, id: string): Promise<void> {
 class RealtimeBackup {
   private memoryTimer: ReturnType<typeof setTimeout> | null = null;
   private chatTimer: ReturnType<typeof setTimeout> | null = null;
-  private memoryLastTs = 0;
-  private chatLastTs = 0;
   private started = false;
   private memoryGetter: (() => Promise<unknown> | unknown) | null = null;
   private chatGetter: (() => Promise<unknown> | unknown) | null = null;
@@ -363,9 +361,7 @@ class RealtimeBackup {
       });
       return null;
     }
-    if (kind === 'memory') this.memoryLastTs = ts;
-    else this.chatLastTs = ts;
-    /* Auto-cleanup async */
+    /* Auto-cleanup async (rotation FIFO) */
     void this.cleanup();
     return snap;
   }

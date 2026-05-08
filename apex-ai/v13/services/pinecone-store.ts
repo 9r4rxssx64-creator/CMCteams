@@ -73,8 +73,7 @@ const STORAGE_LAST_SYNC = 'ax_pinecone_last_sync';
 const STORAGE_VECTOR_COUNT = 'ax_pinecone_vector_count';
 const DEFAULT_INDEX_NAME = 'apex-memory';
 const CACHE_TTL_MS = 5 * 60 * 1000; /* 5 min */
-const DEFAULT_DIMENSION = 1024; /* llama-text-embed-v2 */
-const DEFAULT_EMBED_MODEL = 'llama-text-embed-v2';
+const DEFAULT_EMBED_MODEL = 'llama-text-embed-v2'; /* 1024 dim */
 const FETCH_TIMEOUT_MS = 15_000;
 
 /* ============================================================
@@ -434,7 +433,7 @@ class PineconeStore {
         const batch = vectors.slice(i, i + 100);
         const r = await this.upsertVectors(batch);
         if (r.ok) synced += r.upserted;
-        else return { ok: false, synced, error: r.error };
+        else return { ok: false, synced, error: r.error ?? 'upsert_failed' };
       }
       return { ok: true, synced };
     } catch (err: unknown) {

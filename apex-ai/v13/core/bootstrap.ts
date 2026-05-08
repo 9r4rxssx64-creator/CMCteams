@@ -279,6 +279,14 @@ async function bootstrap(): Promise<void> {
   router.register('studio-prefecture', { loader: () => import('@features/studios/prefecture/index.js'), requiresAuth: true });
   router.register('studio-clip', { loader: () => import('@features/studios/clip/index.js'), requiresAuth: true });
   router.register('studio-photo', { loader: () => import('@features/studios/photo/index.js'), requiresAuth: true });
+  /* Sprint Kevin 2026-05-08 : 7 studios manquants complétés */
+  router.register('studio-architecture', { loader: () => import('@features/studios/architecture/index.js'), requiresAuth: true });
+  router.register('studio-plant', { loader: () => import('@features/studios/plant/index.js'), requiresAuth: true });
+  router.register('studio-geo', { loader: () => import('@features/studios/geo/index.js'), requiresAuth: true });
+  router.register('studio-building', { loader: () => import('@features/studios/building/index.js'), requiresAuth: true });
+  router.register('studio-lunar', { loader: () => import('@features/studios/lunar/index.js'), requiresAuth: true });
+  router.register('studio-pet', { loader: () => import('@features/studios/pet/index.js'), requiresAuth: true });
+  router.register('studio-scan', { loader: () => import('@features/studios/scan/index.js'), requiresAuth: true });
   /* Sprint port v12 (Kevin 2026-05-04) : 3 modules pro MAX (business, education, certifications) */
   router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true });
   router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true });
