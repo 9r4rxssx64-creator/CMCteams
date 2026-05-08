@@ -1520,44 +1520,46 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = cspStyleHelper.withNonce(`
     <style>
-      /* v13.3.72 Kevin: header compact + max espace chat (style Claude Code) */
+      /* v13.3.78 Kevin: bandeau MIN — max visibilité chat */
       .ax-chat-header {
         background: linear-gradient(180deg,rgba(20,20,35,0.95),rgba(14,14,28,0.85));
         backdrop-filter: blur(20px) saturate(140%);
         -webkit-backdrop-filter: blur(20px) saturate(140%);
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 8px 12px;
+        padding: 4px 10px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 6px;
+        gap: 4px;
         position: sticky;
         top: 0;
         z-index: 50;
-        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        padding-top: max(4px, env(safe-area-inset-top, 0px));
+        min-height: 32px;
       }
       .ax-chat-header h1 {
         margin: 0;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         background: linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-family: Georgia, serif;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+        line-height: 1;
       }
       .ax-chat-header .ax-btn-icon {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.08);
         color: rgba(255,255,255,0.85);
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        border-radius: 10px;
-        font-size: 15px;
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 8px;
+        font-size: 13px;
         cursor: pointer;
-        transition: all 160ms cubic-bezier(0.16,1,0.3,1);
+        transition: background 160ms;
         -webkit-tap-highlight-color: transparent;
         display: inline-flex;
         align-items: center;
@@ -1569,21 +1571,21 @@ export function render(rootEl: HTMLElement): void {
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 14px 16px 8px;
-        font-size: 15px;
+        padding: 10px 14px 6px;
+        font-size: 13.5px;
         font-weight: 500;
         color: rgba(255,255,255,0.78);
         font-family: Georgia, serif;
-        line-height: 1.35;
+        line-height: 1.3;
         animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-chat-greeting::after {
         content: '';
         display: block;
-        width: 36px;
+        width: 30px;
         height: 1px;
         background: linear-gradient(90deg,transparent,#e8b830,transparent);
-        margin: 8px auto 0;
+        margin: 6px auto 0;
         opacity: 0.5;
       }
       .ax-info-card {
@@ -1653,7 +1655,8 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-chat ax-modernized-card">
       <header class="ax-chat-header">
         <h1>APEX</h1>
-        <div style="display:flex;gap:6px;align-items:center">
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="ax-btn ax-btn-icon" id="ax-chat-clear" aria-label="Effacer chat" title="Effacer le chat (conversation courante)">🗑</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-settings" aria-label="Paramètres" title="Paramètres">⚙️</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
         </div>
@@ -2411,6 +2414,25 @@ export function render(rootEl: HTMLElement): void {
         });
       });
     }, 50);
+  });
+
+  /* v13.3.78 Kevin: bouton 🗑 effacer chat (conversation courante) */
+  const clearBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-clear');
+  clearBtn?.addEventListener('click', () => {
+    haptic.tap();
+    if (!confirm('🗑 Effacer le chat actuel ?\n\nLes messages sont supprimés localement. La conversation persistante (Firebase) reste intacte.')) return;
+    /* Clear conversation in-memory + UI */
+    conversation.length = 0;
+    /* Clear persisted local */
+    try {
+      const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
+      localStorage.removeItem(`apex_v13_chat_messages_${uid}`);
+      localStorage.removeItem(`apex_v13_chat_pending_${uid}`);
+    } catch { /* ignore quota */ }
+    renderMessages(rootEl);
+    void import('../../ui/toast.js').then(({ toast }) => {
+      toast.success('🗑 Chat effacé', { duration: 2500 });
+    });
   });
 
   /* Bouton Paramètres ⚙️ : ouvre modal settings (clés API + mode routing + reco)
