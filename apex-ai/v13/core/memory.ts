@@ -73,10 +73,66 @@ class Memory {
   private lessons: Lesson[] = [];
   private initialized = false;
 
+  /* v13.3.87 P0.2 (Kevin audit externe brutal 2026-05-08) :
+   * Cache des clés vault réellement déchiffrables, alimenté par refreshVaultAudit() au boot
+   * + après chaque vault.setKey(). Évite la contradiction prompt "X clés" vs audit "0 present". */
+  _lastVaultAuditPresent: string[] = [];
+  private _lastVaultAuditTs = 0;
+
   async init(): Promise<void> {
     if (this.initialized) return;
     this.initialized = true;
     this.reload();
+    /* Best-effort : audit asynchrone immédiat des clés vault (n'attend pas pour ne pas
+     * bloquer le boot — la 1re injection prompt aura un cache vide et dira "Aucune clé"
+     * jusqu'à ce que cet await termine). */
+    void this.refreshVaultAudit();
+  }
+
+  /**
+   * v13.3.87 P0.2 — Audit asynchrone des clés vault réellement déchiffrables.
+   * Appelé au boot + manuellement après vault.setKey() pour synchroniser le system prompt
+   * avec l'état RÉEL du vault (pas la simple présence localStorage qui peut être chiffrée KO).
+   *
+   * Performance : ~50-200ms total pour 16 clés (PBKDF2 200k iterations).
+   * Throttle : pas plus d'1× / 30s pour éviter saturation lors de bulk paste.
+   */
+  async refreshVaultAudit(): Promise<{ present: string[]; total: number }> {
+    /* Throttle : skip si exécuté il y a moins de 30s */
+    if (Date.now() - this._lastVaultAuditTs < 30_000 && this._lastVaultAuditPresent.length > 0) {
+      return { present: this._lastVaultAuditPresent, total: this._lastVaultAuditPresent.length };
+    }
+    const candidateKeys: string[] = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && /^ax_[a-z0-9_]+_(key|token|pat|sk|pk|secret)$/.test(k)) {
+          candidateKeys.push(k);
+        }
+      }
+    } catch { /* localStorage unavailable */ }
+    const present: string[] = [];
+    if (candidateKeys.length > 0) {
+      try {
+        const { vault } = await import('../services/vault.js');
+        for (const k of candidateKeys) {
+          try {
+            const v = await vault.readKey(k);
+            if (v && v.length > 5) present.push(k);
+          } catch { /* skip key, continue scan */ }
+        }
+      } catch {
+        /* vault unavailable → fallback honnête : ne compte que les clés en clair */
+        for (const k of candidateKeys) {
+          const raw = localStorage.getItem(k);
+          if (raw && raw.length > 5 && !raw.startsWith('AXENC1:')) present.push(k);
+        }
+      }
+    }
+    this._lastVaultAuditPresent = present;
+    this._lastVaultAuditTs = Date.now();
+    logger.info('memory', `vault audit refreshed: ${present.length}/${candidateKeys.length} keys decryptable`);
+    return { present, total: candidateKeys.length };
   }
 
   /* Force re-load depuis localStorage (utile post-migration + tests) */
@@ -198,22 +254,46 @@ class Memory {
     }
     /* v13.0.79 Kevin "qu'il les garde en mémoire aussi" :
      * Scan TOUTES les clés ax_*_key / ax_*_token / ax_*_pat dans localStorage (51+ services dispo).
-     * Apex IA sait ainsi exhaustivement quels outils Kevin a configurés. */
+     * Apex IA sait ainsi exhaustivement quels outils Kevin a configurés.
+     *
+     * v13.3.87 P0.2 (audit externe brutal Kevin 2026-05-08) : SOURCE DE VÉRITÉ = audit asynchrone
+     * pré-calculé via memory.refreshVaultAudit() (appelé au boot et après chaque vault.setKey).
+     * AVANT : localStorage.getItem(k) brut → comptait clés chiffrées AXENC1: même si déchiffrement KO
+     *         → contradiction prompt "11 clés configurées" vs credentials-watch "0/16 present"
+     *         → IA mentait à Kevin sur ses capacités réelles.
+     * APRÈS : on lit `_lastVaultAuditPresent` (cache rempli par credentials-watch + boot)
+     *         → pas de mensonge même si déchiffrement KO. */
     try {
-      const allKeys: string[] = [];
+      const candidateKeys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && /^ax_[a-z0-9_]+_(key|token|pat|sk|pk|secret)$/.test(k) && localStorage.getItem(k)) {
-          allKeys.push(k);
+        if (k && /^ax_[a-z0-9_]+_(key|token|pat|sk|pk|secret)$/.test(k)) {
+          candidateKeys.push(k);
         }
       }
-      if (allKeys.length > 0) {
-        const services = allKeys.map((k) =>
+      const present = this._lastVaultAuditPresent;
+      if (present.length > 0) {
+        const services = present.map((k) =>
           k.replace(/^ax_/, '').replace(/_(?:key|token|pat|sk|pk|secret)$/, '').replace(/_/g, ' '),
         );
         sections.push(
-          `## 🔐 Clés API Kevin configurées (${allKeys.length} services disponibles)\n${services.map((s) => `- ${s}`).join('\n')}\n\n` +
+          `## 🔐 Clés API Kevin configurées (${present.length} services déchiffrables)\n${services.map((s) => `- ${s}`).join('\n')}\n\n` +
             `Apex peut utiliser ces services en autonomie. Si Kevin demande d'utiliser un de ces services, exécute directement (pas demander confirmation).`,
+        );
+      } else if (candidateKeys.length > 0) {
+        /* Cas : clés présentes en localStorage mais aucune déchiffrable → vault corrompu / passphrase erronée.
+         * Honnête au lieu de mentir "X clés configurées". */
+        sections.push(
+          `## ⚠️ Clés API présentes mais non déchiffrables (${candidateKeys.length})\n` +
+            `Détecté : ${candidateKeys.length} entrées localStorage chiffrées AXENC1: mais audit déchiffrement KO ` +
+            `(passphrase manquante/erronée OU vault corrompu OU audit pas encore exécuté). ` +
+            `Si Kevin demande "configure X" → demander la clé fraîche, ne pas prétendre l'avoir.`,
+        );
+      } else {
+        sections.push(
+          `## 🔐 Aucune clé API configurée\n` +
+            `Aucune clé Kevin trouvée dans le vault. Si Kevin demande un service externe (Anthropic, GitHub, etc.), ` +
+            `lui demander de coller sa clé d'abord (vault.autoStore la chiffrera AES-GCM-256).`,
         );
       }
     } catch { /* skip */ }
@@ -345,10 +425,23 @@ class Memory {
         `"Tu peux les coller directement dans le chat ici-même — l'auto-detect chiffre AES-GCM-256 avant que ça touche le storage. Ou alternativement Coffre → vue \`?view=credentials\` pour dashboard live."\n` +
         `**Réponse INTERDITE** : "jamais en clair dans le chat" / "utilise vault directement" / "ne paste pas ici".`,
     );
-    /* Sprint v13.0.21 — Auto-modification autonomie totale (Kevin 2026-05-04) */
+    /* Sprint v13.0.21 — Auto-modification autonomie totale (Kevin 2026-05-04)
+     *
+     * v13.3.87 P0.1 (audit externe brutal Kevin 2026-05-08) : @experimental — service apex-execute
+     * a 0 exécution réelle en prod (stats total:0, pending:0). Le pipeline existe, est wiré dans
+     * apex-tools-dispatch + admin UI + apex-claude-code-parity, MAIS aucun task n'a été déclenché
+     * en réel. JAMAIS prétendre à Kevin qu'on peut "modifier ton code maintenant" tant que le
+     * premier round-trip GitHub Actions n'a pas réussi en prod (workflow apex-execute-bridge.yml
+     * doit recevoir, traiter et renvoyer un résultat). En attendant : annoncer comme expérimental
+     * et router les demandes utilisateur vers GitHub Issues / handoff Claude Code à la place. */
     sections.push(
-      `## Auto-modification autonomie totale (Kevin 2026-05-04)\n` +
-        `Tu peux modifier en toute autonomie via apex-execute service :\n` +
+      `## Auto-modification autonomie totale (Kevin 2026-05-04) — ⚠️ EXPÉRIMENTAL\n` +
+        `**Statut v13.3.87 (Kevin honnêteté audit externe)** : pipeline wiré (services/apex-execute.ts + GitHub Action ` +
+        `apex-execute-bridge.yml + admin UI ?view=execute) MAIS pas encore éprouvé en production. ` +
+        `Si Kevin te demande de modifier ton code, créer un fichier, bumper version, etc., **annonce honnêtement** : ` +
+        `"Pipeline apex-execute en cours de validation, je préfère router via Claude Code (handoff GitHub) pour ce round". ` +
+        `Quand 5+ exécutions auront réussi end-to-end, retire cette mention "expérimental".\n\n` +
+        `Tasks théoriquement supportés (via apex-execute, à valider) :\n` +
         `- Ton propre code TS (modify_file/create_file)\n` +
         `- Tes scripts (modify_script/create_script dans tools/ ou scripts/)\n` +
         `- Tes skills (create_skill/modify_skill dans .claude/skills/)\n` +
