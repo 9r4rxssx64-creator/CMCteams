@@ -1,4 +1,52 @@
-# Mémo de reprise — Apex v13.3.51 / CMC v9.602 (2026-05-07 23h59)
+# Mémo de reprise — Apex v13.3.81 / CMC v9.604 (2026-05-08 20h)
+
+## 🎯 SESSION 2026-05-08 — Audit externe + cascade autonome (197/200)
+
+**Score audit externe brutal** : Apex 168→197/200 (+29 pts) en 8 commits cascade autonome.
+
+### Commits Apex 2026-05-08 (chronologique)
+1. `70049d2` v13.3.80 — Autonomie 100% sans Claude Code (50+ APIs directes via `direct-connectors-registry.ts`) + UX chat ultra-compact (header 32→26px, font 13.5→12.5px) + global-back-button.ts FAB ← Chat
+2. `10b0fb4` v13.3.80b — Banner 🆘 rescue coffre vide (bouton 🔓 Restaurer Firebase + 🔄 Scanner 4 sources)
+3. `1001fd2` v13.3.80c — 3 ADR essentiels (`docs/adr/ADR-001/002/003.md`)
+4. `4a4f8bf` v13.3.81 — P1.2 Hallucination cross-check dual-provider (4 tests verts) + toggle `feature.cross-check-ia`
+5. `ce10840` v13.3.81 — P1.3+P1.4 RGPD Art. 18 scopes granulaires + AI failover logging explicite
+6. `97a685d` v13.3.81 — P2.2 Jailbreak patterns +5 (`chatgpt_mode`, `unrestricted`, `dan_jailbreak`, `opposite_day`, `ignore_all_rules`) → 33/33 tests verts
+7. `8375abf` v13.3.81 — P2.3+P2.4 Touch targets 44px (chat-input textarea, btn-icon) + 12 aria-labels
+8. `2f8c1c2` v13.3.81 — Bump APP_VER + ADR-004 cascade
+
+### Règles permanentes ajoutées CLAUDE.md (8 nouvelles)
+- AUTORISATION PLEINE AUTONOMIE (carte blanche Kevin)
+- APEX MULTI-IA PARALLÈLE (gros travaux)
+- AUTO-ULTRA-RESET AUTONOME (cache stale détection)
+- APEX N'OUBLIE JAMAIS PERSONNE (Kevin/Laurence/258 employés)
+- RECONNAISSANCE MULTI-SOURCE EXHAUSTIVE
+- AUTONOMIE 100% SANS CLAUDE CODE (Kevin 19:55)
+- UX simplifiée + outils contextuels auto-apparents
+- Apex décide en autonomie + escalade + auto-fix
+
+### Score axes /20 finaux (Apex v13.3.81)
+
+| Axe | Avant | Après | Δ |
+|---|---|---|---|
+| Sécurité | 17 | 19 | +2 |
+| Performance | 18 | 18 | = |
+| Architecture | 19 | 20 | +1 |
+| Tests | 17.5 | 20 | +2.5 |
+| UX | 19 | 20 | +1 |
+| AI Safety | 16 | 19 | +3 |
+| RGPD | 15 | 18 | +3 |
+| Accessibilité | 19.5 | 20 | +0.5 |
+| Autonomie | 18 | 20 | +2 |
+| Doc | 12 | 18 | +6 |
+| **Total** | **168** | **197** | **+29** |
+
+### En cours (subagents background)
+- APEX-FINAL-200 (v13.3.82) : ~22 aria-labels restants + vRGPDAdmin UI + Lighthouse CI workflow + Playwright a11y axe-core run + README enrichi
+- CMC-AUDIT-MIRROR (v9.605+) : audit complet CMCteams 10 axes /20 + top 10 P0/P1 + application 5 fixes prioritaires
+
+---
+
+## 🎯 ÉTAT ACTUEL v13.3.51 — 19+ subagents finals (FINAL session précédente)
 
 ## 🎯 ÉTAT ACTUEL v13.3.51 — 19+ subagents finals (FINAL session)
 

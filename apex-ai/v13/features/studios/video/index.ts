@@ -781,7 +781,7 @@ export function render(rootEl: HTMLElement): void {
             <strong style="color:#c9a227">#${i + 1} · ${escapeHtml(c.name)}</strong>
             <span style="font-size:12px;color:var(--ax-text-dim)">${formatDuration((c.end - c.start) / Math.max(0.25, c.speed))}</span>
           </div>
-          <input type="text" placeholder="Caption (sous-titre)…" maxlength="200" value="${escapeHtml(c.caption)}" data-action="caption" data-clip-id="${escapeHtml(c.id)}" style="width:100%;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-bottom:6px;min-height:36px">
+          <input type="text" aria-label="Sous-titre du clip" placeholder="Caption (sous-titre)…" maxlength="200" value="${escapeHtml(c.caption)}" data-action="caption" data-clip-id="${escapeHtml(c.id)}" style="width:100%;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-bottom:6px;min-height:36px">
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
             <select data-action="transition" data-clip-id="${escapeHtml(c.id)}" style="flex:1;padding:6px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:36px">
               <option value="cut" ${c.transition === 'cut' ? 'selected' : ''}>Coupe</option>
@@ -804,7 +804,7 @@ export function render(rootEl: HTMLElement): void {
               <option value="noir" ${c.colorGrading.lutPreset === 'noir' ? 'selected' : ''}>Noir contrasté</option>
             </select>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Vitesse ×${c.speed.toFixed(2)} <input type="range" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Vitesse ×${c.speed.toFixed(2)} <input type="range" aria-label="Vitesse de lecture du clip" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" style="width:100%;min-height:32px"></label>
           <button class="ax-btn ax-btn-sm" data-action="remove-clip" data-clip-id="${escapeHtml(c.id)}" style="margin-top:8px;font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
         </div>
       `).join('')

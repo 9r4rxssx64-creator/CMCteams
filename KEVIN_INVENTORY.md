@@ -1,7 +1,56 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-07 23h59** (Apex v13.3.51 / CMC v9.602 — 19+ subagents finals : SMART-ROUTER, VOICE-EXCLUSIF, INNOVATION-COMMERCIAL, CHAT-MAX, BROADLINK-VISION, IOT-AUTONOMY)
+> Dernière mise à jour : **2026-05-08 20h** (Apex v13.3.81 / CMC v9.604 — Audit externe 197/200 + cascade autonome)
+
+## 🆕 SESSION 2026-05-08 — Audit + cascade corrections autonome
+
+### Nouveaux fichiers Apex v13.3.80→81
+
+| Fichier | Lignes | Description |
+|---|---|---|
+| `apex-ai/v13/services/direct-connectors-registry.ts` | ~1100 | 50+ APIs DIRECTES (autonomie 100% sans Claude Code) — 17 catégories, fetch + auth headers automatiques, failover chain |
+| `apex-ai/v13/services/claude-code-mcp-bridge.ts` | ~280 | FALLBACK OPTIONNEL (Claude Code MCP) marqué legacy, lazy-loaded si abonnement actif |
+| `apex-ai/v13/services/global-back-button.ts` | ~135 | FAB ← Chat z-index 999999 partout sauf vue chat (touch 44px, safe-area iOS) |
+| `apex-ai/v13/services/hallucination-cross-check.ts` | ~215 | Dual-provider compare (openai+groq) Jaccard tokens + length delta, cache LRU 50, toggle admin opt-in |
+| `apex-ai/v13/docs/adr/ADR-001-csp-nonce-build-time.md` | ~80 | Décision CSP nonce build-time via vite-csp-nonce-plugin |
+| `apex-ai/v13/docs/adr/ADR-002-multi-key-failover-chain.md` | ~120 | Décision 12 providers IA + multi-key-vault rotation |
+| `apex-ai/v13/docs/adr/ADR-003-autonomie-100-sans-claude-code.md` | ~140 | Décision direct-connectors-registry 50+ APIs autonomes |
+| `apex-ai/v13/docs/adr/ADR-004-cascade-corrections-v13.3.81.md` | ~50 | Cascade audit P0-P2 v13.3.81 |
+
+### Modifications principales Apex v13.3.80→81
+
+- `apex-ai/v13/core/bootstrap.ts` : APP_VER v13.3.80→81, wire globalBackButton.install()
+- `apex-ai/v13/sw.js` : CACHE_VERSION apex-v13.3.80→81
+- `apex-ai/v13/index.html` : data-app-ver
+- `apex-ai/v13/core/memory.ts` : section system prompt "🔌 CONNECTEURS DIRECTS" (50+ services + règle absolue)
+- `apex-ai/v13/features/chat/index.ts` : header ultra-compact (32→26px, h1 14→12px, icons 28→24px), greeting 13.5→12px
+- `apex-ai/v13/assets/css/components.css` : chat-scroll font 13.5→12.5px line-height 1.45→1.35, msg padding 6×10
+- `apex-ai/v13/features/vault/index.ts` : banner 🆘 rescue conditionnel + 2 boutons restaurer (Firebase / 4 sources)
+- `apex-ai/v13/services/auto-restore-credentials.ts` : suppression call maybeNotifyKevin (spam fix)
+- `apex-ai/v13/services/ai-safety.ts` : +5 jailbreak patterns (chatgpt_mode, unrestricted, dan_jailbreak, opposite_day, ignore_all_rules)
+- `apex-ai/v13/services/rgpd.ts` : restrictProcessing scopes granulaires (firebase_write, ai_query, *)
+- `apex-ai/v13/services/ai-router.ts` : logging explicite failover X→Y status=NNN
+
+### Score audit /200
+
+**168/200 → 197/200 = +29 points** en cascade autonome 8 commits.
+Détails par axe : voir MEMO_RESUME.md.
+
+### Liens GitHub directs (claude/test-699LQ branch, mergé sur main auto)
+
+- Commit cascade Apex : https://github.com/9r4rxssx64-creator/cmcteams/commit/2f8c1c2
+- Commit ADR : https://github.com/9r4rxssx64-creator/cmcteams/commit/1001fd2
+- ADR-001 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-001-csp-nonce-build-time.md
+- ADR-002 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-002-multi-key-failover-chain.md
+- ADR-003 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-003-autonomie-100-sans-claude-code.md
+- direct-connectors-registry.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/direct-connectors-registry.ts
+
+---
+
+## 🆕 SESSION 2026-05-07 (FINAL) — APEX v13.3.32 → v13.3.51 — 19+ subagents livrés
+
+### Subagents validés cette demi-session (post v13.3.32)
 
 ## 🆕 SESSION 2026-05-07 (FINAL) — APEX v13.3.32 → v13.3.51 — 19+ subagents livrés
 

@@ -771,10 +771,10 @@ export function render(rootEl: HTMLElement): void {
             <strong style="color:#c9a227">${escapeHtml(t.name)}</strong>
             <button class="ax-btn ax-btn-sm" data-action="remove-track" data-track-id="${escapeHtml(t.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666;min-height:32px">Supprimer</button>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Pitch (demi-tons) <input type="range" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Reverb <input type="range" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" aria-label="Volume de la piste" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" aria-label="Panoramique gauche-droite" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Pitch (demi-tons) <input type="range" aria-label="Pitch en demi-tons" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Reverb <input type="range" aria-label="Niveau de reverb" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
           <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
             <button class="ax-btn ax-btn-sm" data-action="mute" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.muted ? 'background:#ff6666;color:#fff' : ''}">${t.muted ? '🔇 Muet' : '🔊 Audible'}</button>
             <button class="ax-btn ax-btn-sm" data-action="solo" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.solo ? 'background:#c9a227;color:#000' : ''}">${t.solo ? '⭐ Solo' : 'Solo'}</button>
@@ -794,7 +794,7 @@ export function render(rootEl: HTMLElement): void {
         <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Mixe 2 à ${MAX_TRACKS} pistes audio. EQ 5 bandes, reverb, delay, chorus, flanger, phaser, distortion, pitch shift, time stretch, sidechain, auto-tune. Export WAV/MP3/FLAC/OGG.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="ax-btn ax-btn-primary" id="ax-mix-add-track" style="min-height:44px">➕ Ajouter une piste</button>
-          <input type="file" id="ax-mix-upload" accept="audio/*" multiple style="display:none">
+          <input type="file" id="ax-mix-upload" aria-label="Importer fichiers audio" accept="audio/*" multiple style="display:none">
           <button class="ax-btn" id="ax-mix-upload-btn" style="min-height:44px">📂 Importer fichiers</button>
           <button class="ax-btn" id="ax-mix-tempo-sync" style="min-height:44px">🎵 Sync BPM auto</button>
           <button class="ax-btn" id="ax-mix-export-wav" style="min-height:44px">💾 Export WAV</button>
