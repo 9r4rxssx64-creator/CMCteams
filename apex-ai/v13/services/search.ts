@@ -28,6 +28,10 @@ import type {
   SearchWorkerResponse,
 } from '../workers/search-index.worker.js';
 
+/* DistributiveOmit : applique Omit sur chaque membre de l'union (vs Omit standard
+ * qui aplatit l'union et perd le discriminant). */
+type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+
 export type { SearchDoc, SearchHit } from '../workers/search-index.worker.js';
 
 interface PendingCall {
@@ -132,7 +136,7 @@ class SearchService {
     this.pending.clear();
   };
 
-  private call<T>(req: Omit<SearchWorkerRequest, 'id'>): Promise<T> {
+  private call<T>(req: DistributiveOmit<SearchWorkerRequest, 'id'>): Promise<T> {
     if (!this.worker) {
       return Promise.reject(new Error('worker_not_ready'));
     }

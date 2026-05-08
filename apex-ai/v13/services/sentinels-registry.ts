@@ -505,7 +505,7 @@ class SentinelsRegistry {
       check: async () => {
         try {
           const { capabilities } = await import('./capabilities.js');
-          const audit = capabilities.auditOrphans();
+          const audit = await capabilities.auditOrphans();
           /* v13.3.24 : coverage < 90% = warning, sinon OK */
           if (audit.coverage_pct < 90) {
             return {

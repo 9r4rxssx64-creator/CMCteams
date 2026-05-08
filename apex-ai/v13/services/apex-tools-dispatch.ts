@@ -1434,6 +1434,30 @@ class ApexToolsDispatcher {
         const { adminCommands } = await import('./admin-commands.js');
         return adminCommands.resetUserPin(targetUid, reason);
       }
+      /* === v13 — Browser controller (anti-blocage X-Frame-Options) === */
+      case 'unblock_url': {
+        const { axTryUnblockUrl } = await import('./browser-controller.js');
+        const url = String(params['url'] ?? '');
+        if (!url) return { ok: false, error: 'url required' };
+        return await axTryUnblockUrl(url);
+      }
+      case 'navigate_to': {
+        const { axNavigateTo } = await import('./browser-controller.js');
+        const target = String(params['target'] ?? '');
+        const field = typeof params['field'] === 'string' ? params['field'] : undefined;
+        if (!target) return { ok: false, error: 'target required' };
+        return await axNavigateTo(target, field);
+      }
+      case 'autofill_field': {
+        const { axAutofillField } = await import('./form-auto-fill.js');
+        const key = String(params['key'] ?? '');
+        const value = String(params['value'] ?? '');
+        if (!key || !value) return { ok: false, error: 'key and value required' };
+        const opts: { confirm?: boolean; reason?: string } = {};
+        if (typeof params['confirm'] === 'boolean') opts.confirm = params['confirm'];
+        if (typeof params['reason'] === 'string') opts.reason = params['reason'];
+        return await axAutofillField(key, value, opts);
+      }
       /* v13.3.69 — Setup compte user complet (PIN + activation) en autonomie totale */
       case 'setup_user_account': {
         const targetUid = typeof params['target_uid'] === 'string' ? params['target_uid'] : '';

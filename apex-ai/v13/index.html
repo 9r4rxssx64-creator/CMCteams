@@ -13,16 +13,111 @@
 
   <!-- CSP Jet 2 : nonce dynamique (regen à chaque build via vite-csp-nonce-plugin) -->
   <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
+  <!-- v13.3.71 (audit Apex 2026-05-08) : whitelist exhaustive endpoints legit pour
+       réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https:;
+             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
              style-src 'self' 'nonce-APEX_BOOT_NONCE' 'unsafe-inline';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
-             connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://api.anthropic.com https://api.openai.com https://api.groq.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.cohere.com https://api.mistral.ai https://api.deepseek.com https://api.perplexity.ai https://api.x.ai https://*.workers.dev https://api.elevenlabs.io https://*.ingest.sentry.io https://api.github.com https://api.cloudflare.com https://api.stripe.com https://api.brevo.com https://api.resend.com https://api.replicate.com https://api.telegram.org https://discord.com https://discordapp.com https://api.notion.com https://api.airtable.com https://hooks.slack.com https://slack.com https://api.openai.azure.com https://*.openai.azure.com https://api.together.xyz https://api.fireworks.ai https://api.deepl.com https://api-free.deepl.com https://www.googleapis.com https://api.scaleway.ai https://api.huggingface.co https://api-inference.huggingface.co https://api.runpod.io https://api.cloudflare.com/client/v4 https://*.r2.cloudflarestorage.com https://api.cohere.ai https://web.archive.org https://r.jina.ai https://api.duckduckgo.com https://api.brave.com https://api.search.brave.com https://api.tavily.com https://api.pinecone.io https://api.qdrant.io https://api.weaviate.io;
+             connect-src 'self'
+                          https://*.firebaseio.com
+                          https://*.firebasedatabase.app
+                          https://api.anthropic.com
+                          https://api.openai.com
+                          https://api.groq.com
+                          https://generativelanguage.googleapis.com
+                          https://openrouter.ai
+                          https://api.cohere.com
+                          https://api.cohere.ai
+                          https://api.mistral.ai
+                          https://api.deepseek.com
+                          https://api.perplexity.ai
+                          https://api.x.ai
+                          https://api.together.xyz
+                          https://api.fireworks.ai
+                          https://api.huggingface.co
+                          https://api-inference.huggingface.co
+                          https://api.scaleway.ai
+                          https://api.runpod.io
+                          https://api.openai.azure.com
+                          https://*.openai.azure.com
+                          https://*.workers.dev
+                          https://api.elevenlabs.io
+                          https://api.replicate.com
+                          https://api.bfl.ai
+                          https://api.ideogram.ai
+                          https://api.runwayml.com
+                          https://api.lumalabs.ai
+                          https://api.klingai.com
+                          https://api.pika.art
+                          https://api.suno.ai
+                          https://api.udio.com
+                          https://api.heygen.com
+                          https://api.d-id.com
+                          https://api.topazlabs.com
+                          https://api.midjourney.com
+                          https://*.ingest.sentry.io
+                          https://browser.sentry-cdn.com
+                          https://api.github.com
+                          https://raw.githubusercontent.com
+                          https://api.cloudflare.com
+                          https://*.r2.cloudflarestorage.com
+                          https://api.stripe.com
+                          https://api.brevo.com
+                          https://api.resend.com
+                          https://api.telegram.org
+                          https://discord.com
+                          https://discordapp.com
+                          https://api.notion.com
+                          https://api.airtable.com
+                          https://hooks.slack.com
+                          https://slack.com
+                          https://api.slack.com
+                          https://api.deepl.com
+                          https://api-free.deepl.com
+                          https://www.googleapis.com
+                          https://accounts.google.com
+                          https://oauth2.googleapis.com
+                          https://api.dropboxapi.com
+                          https://content.dropboxapi.com
+                          https://web.archive.org
+                          https://r.jina.ai
+                          https://api.duckduckgo.com
+                          https://api.search.brave.com
+                          https://api.tavily.com
+                          https://api.pinecone.io
+                          https://*.pinecone.io
+                          https://api.qdrant.io
+                          https://*.qdrant.io
+                          https://api.weaviate.io
+                          https://*.weaviate.io
+                          https://api.open-meteo.com
+                          https://api.exchangerate.host
+                          https://api.coingecko.com
+                          https://api.qrserver.com
+                          https://api.stackexchange.com
+                          https://api.spotify.com
+                          https://accounts.spotify.com
+                          https://api.meethue.com
+                          https://api.sonos.com
+                          https://api.ws.sonos.com
+                          https://api.ibroadlink.com
+                          https://api.pushcut.io
+                          https://as-apia.coolkit.cc
+                          https://cn-apia.coolkit.cc
+                          https://cdn.jsdelivr.net
+                          https://1.1.1.1
+                          https://www.cloudflare.com
+                          https://api.openclaw.io
+                          https://api.linkedin.com
+                          https://api.twitter.com
+                          https://api.instagram.com;
              worker-src 'self' blob:;
-             frame-src 'self' https:;
+             frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
+             media-src 'self' blob: data: https:;
              object-src 'none';
              base-uri 'self';
              form-action 'self';

@@ -116,8 +116,10 @@ async function deriveAesKey(passphrase: string, salt: Uint8Array): Promise<Crypt
     false,
     ['deriveKey'],
   );
+  /* TS strict + ArrayBufferLike (possibly SAB) → cast en BufferSource via slice() */
+  const saltBuf = salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer;
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_DEFAULT_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBuf, iterations: PBKDF2_DEFAULT_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: AES_NAME, length: AES_KEY_BITS },
     false,
@@ -145,9 +147,10 @@ async function encryptString(plaintext: string, passphrase: string): Promise<str
 async function decryptString(payload: string, passphrase: string): Promise<string> {
   const buf = base64ToBytes(payload);
   if (buf.length < SALT_BYTES + IV_BYTES + 1) throw new Error('payload_too_short');
-  const salt = buf.subarray(0, SALT_BYTES);
-  const iv = buf.subarray(SALT_BYTES, SALT_BYTES + IV_BYTES);
-  const ct = buf.subarray(SALT_BYTES + IV_BYTES);
+  /* slice() copie en nouveau ArrayBuffer (vs subarray qui partage) → TS strict OK */
+  const salt = buf.slice(0, SALT_BYTES);
+  const iv = buf.slice(SALT_BYTES, SALT_BYTES + IV_BYTES);
+  const ct = buf.slice(SALT_BYTES + IV_BYTES);
   const key = await deriveAesKey(passphrase, salt);
   const pt = await crypto.subtle.decrypt({ name: AES_NAME, iv }, key, ct);
   return dec.decode(pt);

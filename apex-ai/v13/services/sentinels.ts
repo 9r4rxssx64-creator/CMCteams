@@ -702,25 +702,10 @@ export function registerCoreSentinels(): void {
       }
       return { ok: true, msg: 'Session + audit log OK' };
     },
-    autoFix: async () => {
-      /* v13.3.70 (Kevin "WARNING = AUTO-FIX") : rebuild chain hash si tamper détecté.
-       * Fix root : audit-log.autoRepair() trouve l'index broken et rebuild from there.
-       * Si chain valide → no-op + ok:true (idempotent). */
-      try {
-        const { auditLog } = await import('./audit-log.js');
-        auditLog.reload();
-        const r = await auditLog.autoRepair();
-        if (r.rebuilt === 0) {
-          return { ok: true, msg: 'Chain audit déjà valide (no-op)' };
-        }
-        return {
-          ok: r.ok,
-          msg: `Chain rebuild from #${r.brokenAt ?? '?'} → ${r.rebuilt} entries`,
-        };
-      } catch (err: unknown) {
-        return { ok: false, msg: 'rebuildChainHash fail: ' + (err instanceof Error ? err.message : String(err)) };
-      }
-    },
+    /* v13.3.70 (Kevin "WARNING = AUTO-FIX") : rebuildChainHash exposé via
+     * sentinelAutoRepair.securityRebuildChain() pour wire UI bouton admin.
+     * Pas en autoFix Sentinel direct car la chain audit doit rester un signal
+     * tamper visible avant repair (vs auto-masking). */
   });
 
   /* 10. presence-watch : update timestamp activité user + broadcast online/offline */
@@ -892,34 +877,9 @@ export function registerCoreSentinels(): void {
         return { ok: false, msg: 'Queue parse failed' };
       }
     },
-    autoFix: async () => {
-      try {
-        const queueRaw = localStorage.getItem('apex_v13_fb_queue');
-        if (!queueRaw) return { ok: true, msg: 'No queue to resolve' };
-        const queue = JSON.parse(queueRaw) as Array<{ status: string; ts?: number; key?: string }>;
-        const STALE_TTL = 5 * 60 * 1000;
-        const now = Date.now();
-        let reset = 0;
-        for (const e of queue) {
-          if (e.status === 'flushing' && (typeof e.ts !== 'number' || now - e.ts > STALE_TTL)) {
-            e.status = 'pending';
-            reset++;
-          }
-        }
-        if (reset === 0) return { ok: true, msg: 'No stale writes to reset' };
-        try {
-          localStorage.setItem('apex_v13_fb_queue', JSON.stringify(queue));
-        } catch { /* quota */ }
-        /* Force fb pull via init() qui re-establish SSE listener */
-        try {
-          const { firebase } = await import('./firebase.js');
-          await firebase.init();
-        } catch { /* ignore reconnect fail */ }
-        return { ok: true, msg: `Reset ${reset} stale writes → pending + fb resync` };
-      } catch (err: unknown) {
-        return { ok: false, msg: 'merge fail: ' + (err instanceof Error ? err.message : String(err)) };
-      }
-    },
+    /* v13.3.70 : merge resolution exposée via sentinelAutoRepair.conflictMergeResolve()
+     * pour wire UI bouton admin. Pas en autoFix Sentinel direct (signal conflict doit
+     * rester visible avant action manuelle pour traçabilité multi-device). */
   });
 
   /* 13b. anti-regression-watch : alerte si tests/coverage baissent vs baseline (Kevin règle "ne plus régresser") */
@@ -1454,5 +1414,86 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (17 active + 1 disabled wake-watch)`);
+  /* === Sprint 13.3.71 — Anti-blocage IA + Reconsult Kevin docs ===
+   * Kevin règles "ANTI-BLOCAGE IA TOTAL" (2026-04-26) +
+   * "RECONSULTATION PÉRIODIQUE AUTONOMIE TOTALE" (2026-05-03). */
+
+  /* 23. ai-unblock-watch (5 min) — détecte providers IA en panne + auto-failover */
+  sentinels.register({
+    id: 'ai-unblock-watch',
+    name: 'Anti-blocage IA',
+    desc: 'Ping providers IA, auto-failover si 2 fails consécutifs, auto-rotate clé depuis history',
+    intervalMs: 5 * 60 * 1000,
+    check: async () => {
+      try {
+        const { aiUnblockWatch } = await import('./ai-unblock-watch.js');
+        const result = await aiUnblockWatch.runOnce();
+        if (result.failoverTriggered.length > 0) {
+          return {
+            ok: false,
+            msg: `⚠️ ${result.failoverTriggered.length} provider(s) en failover (${result.failoverTriggered.join(', ')})${result.rotatedKeys.length > 0 ? `, ${result.rotatedKeys.length} clé(s) rotated` : ''}`,
+            details: {
+              failover: result.failoverTriggered,
+              rotated: result.rotatedKeys,
+              healthy: result.healthyProviders,
+            },
+          };
+        }
+        return {
+          ok: true,
+          msg: `🟢 ${result.healthyProviders.length}/${result.probes.length} providers OK`,
+          details: { healthy: result.healthyProviders },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'ai-unblock-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+  });
+
+  /* 24. reconsult-kevin-watch (30 min) — refetch docs Kevin depuis GitHub raw, diff vs cache. */
+  sentinels.register({
+    id: 'reconsult-kevin-watch',
+    name: 'Reconsultation docs Kevin',
+    desc: 'Refetch CLAUDE.md/NOTES_USER/KEVIN_ACTIONS_TODO toutes 30 min, diff vs cache, alerte si nouvelles règles',
+    intervalMs: 30 * 60 * 1000,
+    check: async () => {
+      try {
+        const { reconsultKevinWatch } = await import('./reconsult-kevin-watch.js');
+        const result = await reconsultKevinWatch.runOnce();
+        if (result.failed_count > result.changes.length / 2) {
+          return {
+            ok: false,
+            msg: `${result.failed_count} doc(s) fetch failed (réseau / GitHub raw rate-limit ?)`,
+            details: { failed: result.failed_count, updated: result.updated_count },
+          };
+        }
+        if (result.updated_count > 0) {
+          return {
+            ok: true,
+            msg: `📜 ${result.updated_count} doc(s) Kevin mis à jour`,
+            details: {
+              updated: result.changes.filter((c) => c.status === 'updated' || c.status === 'new').map((c) => c.doc),
+              unchanged: result.unchanged_count,
+              failed: result.failed_count,
+            },
+          };
+        }
+        return {
+          ok: true,
+          msg: `Docs Kevin sync OK (${result.unchanged_count} inchangés)`,
+          details: { unchanged: result.unchanged_count },
+        };
+      } catch (err: unknown) {
+        return {
+          ok: false,
+          msg: 'reconsult-kevin-watch failed: ' + (err instanceof Error ? err.message : String(err)),
+        };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (19 active + 1 disabled wake-watch)`);
 }

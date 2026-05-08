@@ -82,8 +82,8 @@ describe('Capabilities Registry (au-delà 100/100 polyvalence)', () => {
   });
 
   describe('auditOrphans', () => {
-    it('audit orphans détecte tools manquants apex-tools registry', () => {
-      const audit = capabilities.auditOrphans();
+    it('audit orphans détecte tools manquants apex-tools registry', async () => {
+      const audit = await capabilities.auditOrphans();
       expect(audit.coverage_pct).toBeGreaterThanOrEqual(0);
       expect(audit.coverage_pct).toBeLessThanOrEqual(100);
       expect(Array.isArray(audit.orphans)).toBe(true);

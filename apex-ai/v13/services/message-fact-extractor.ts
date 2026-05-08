@@ -199,7 +199,7 @@ class MessageFactExtractor {
     }
 
     /* Relations */
-    const relRe = /(?:ma\s+(?:femme|épouse|fille|sœur|mère|maman|cousine)|mon\s+(?:mari|époux|fils|frère|père|papa|cousin|collègue|ami|copain))\s+([A-ZÀ-Ÿ][a-zà-ÿ]+)/g;
+    const relRe = /(?:ma\s+(?:femme|épouse|fille|sœur|mère|maman|cousine)|mon\s+(?:mari|époux|fils|frère|père|papa|cousin|collègue|ami|copain))\s+([A-ZÀ-Ÿ][a-zà-ÿ]+)/gi;
     const relMatches = text.matchAll(relRe);
     for (const m of relMatches) {
       if (m[0] && m[1]) {
