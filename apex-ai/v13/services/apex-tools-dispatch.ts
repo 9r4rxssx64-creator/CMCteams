@@ -1434,6 +1434,22 @@ class ApexToolsDispatcher {
         const { adminCommands } = await import('./admin-commands.js');
         return adminCommands.resetUserPin(targetUid, reason);
       }
+      /* v13.3.69 — Setup compte user complet (PIN + activation) en autonomie totale */
+      case 'setup_user_account': {
+        const targetUid = typeof params['target_uid'] === 'string' ? params['target_uid'] : '';
+        const pinClear = typeof params['pin_clear'] === 'string' ? params['pin_clear'] : '';
+        const displayName = typeof params['display_name'] === 'string' ? params['display_name'] : undefined;
+        const reason = typeof params['reason'] === 'string' ? params['reason'] : '';
+        if (!targetUid || !pinClear) return { ok: false, error: 'target_uid et pin_clear requis' };
+        if (!/^\d{4,12}$/.test(pinClear)) return { ok: false, error: 'PIN doit être 4-12 chiffres' };
+        const { auth } = await import('./auth.js');
+        const { adminCommands } = await import('./admin-commands.js');
+        const pinHash = await auth.hashPin(pinClear, targetUid);
+        const setupOpts: { targetUid: string; pinHash: string; displayName?: string; reason?: string } = { targetUid, pinHash };
+        if (displayName) setupOpts.displayName = displayName;
+        if (reason) setupOpts.reason = reason;
+        return adminCommands.setupAccount(setupOpts);
+      }
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

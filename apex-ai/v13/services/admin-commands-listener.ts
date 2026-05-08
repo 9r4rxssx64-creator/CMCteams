@@ -86,8 +86,70 @@ class AdminCommandsListener {
     /* Dispatch action */
     if (cmd.command === 'reset_pin') {
       void this.executeResetPin(cmd, currentUid);
+    } else if (cmd.command === 'setup_account') {
+      void this.executeSetupAccount(cmd, currentUid);
     } else {
       logger.warn('admin-commands-listener', 'unknown command', { command: cmd.command });
+    }
+  }
+
+  /**
+   * v13.3.69 — Setup compte user : applique PIN hashé + clear lockout + activate.
+   * Le PIN est déjà hashé côté Kevin (jamais en clair dans Firebase).
+   */
+  private async executeSetupAccount(cmd: AdminCommand, uid: string): Promise<void> {
+    try {
+      if (!cmd.pin_hash) {
+        logger.warn('admin-commands-listener', 'setup_account sans pin_hash');
+        return;
+      }
+      try { localStorage.setItem(`apex_v13_pin_${uid}`, cmd.pin_hash); } catch { /* ignore quota */ }
+      try { localStorage.removeItem(`apex_v13_pin_fails_${uid}`); } catch { /* ignore */ }
+      if (cmd.display_name) {
+        try {
+          localStorage.setItem('apex_v13_last_known_uid', uid);
+          localStorage.setItem('apex_v13_last_known_name', cmd.display_name);
+        } catch { /* ignore */ }
+      }
+
+      await auditLog.record('admin.command.applied', {
+        actor: cmd.issued_by,
+        target: uid,
+        details: { command: 'setup_account', command_id: cmd.id },
+      });
+
+      try {
+        const raw = localStorage.getItem(FB_KEY);
+        let pending: AdminCommand[] = [];
+        if (raw) pending = JSON.parse(raw) as AdminCommand[];
+        if (!Array.isArray(pending)) pending = [];
+        const idx = pending.findIndex((c) => c.id === cmd.id);
+        if (idx >= 0) {
+          const existing = pending[idx];
+          if (existing) pending[idx] = { ...existing, processed: true };
+          localStorage.setItem(FB_KEY, JSON.stringify(pending));
+          await firebase.write(FB_KEY, pending);
+        }
+      } catch { /* non-blocking */ }
+
+      logger.info('admin-commands-listener', `🔓 setup_account applied for ${uid} (cmd=${cmd.id})`);
+
+      try {
+        const { toast } = await import('../ui/toast.js');
+        toast.success('🎉 Ton compte Apex est prêt ! Tape ton nom + code PIN pour te connecter.', {
+          duration: 6000,
+        });
+      } catch { /* ignore */ }
+
+      setTimeout(() => {
+        try {
+          if (typeof location !== 'undefined' && typeof location.reload === 'function') {
+            location.reload();
+          }
+        } catch { /* ignore */ }
+      }, 3000);
+    } catch (err: unknown) {
+      logger.error('admin-commands-listener', 'executeSetupAccount failed', { err });
     }
   }
 
