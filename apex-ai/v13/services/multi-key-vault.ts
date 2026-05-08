@@ -25,7 +25,19 @@
 
 import { logger } from '../core/logger.js';
 
-import { vault } from './vault.js';
+/* Lazy vault accessor — break circular dep multi-key-vault ↔ vault.
+   vault.ts dynamic-imports multi-key-vault.ts (line ~927) ; if we keep
+   the static import here, madge reports a cycle. Lazy resolution avoids
+   that without changing runtime semantics (vault est singleton instancié
+   au boot via core/bootstrap → vault.init()). */
+type VaultModule = typeof import('./vault.js');
+let _vaultRef: VaultModule['vault'] | null = null;
+async function getVault(): Promise<VaultModule['vault']> {
+  if (_vaultRef) return _vaultRef;
+  const mod = await import('./vault.js');
+  _vaultRef = mod.vault;
+  return _vaultRef;
+}
 
 export type KeyStatus = 'active' | 'failing' | 'rate-limited' | 'invalid' | 'unknown';
 
