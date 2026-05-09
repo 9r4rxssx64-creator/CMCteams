@@ -1094,8 +1094,101 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'fork':
       forkConversation(rootEl);
       return true;
+    /* v13.4.3 — IA IRL TikTok */
+    case 'loop':
+      void handleLoopCommand(rootEl, args);
+      return true;
+    case 'plan':
+      if (!args) {
+        pushAssistantMessage(rootEl, 'Usage : `/plan <objectif>` — génère un plan structuré.');
+        return true;
+      }
+      void handlePlanCommand(rootEl, args);
+      return true;
+    case 'rules':
+      void handleRulesCommand(rootEl, args);
+      return true;
     default:
       return false;
+  }
+}
+
+/* v13.4.3 — Slash command /loop */
+async function handleLoopCommand(rootEl: HTMLElement, args: string): Promise<void> {
+  try {
+    const { autonomousLoop } = await import('../../services/autonomous-loop.js');
+    autonomousLoop.start();
+    const sub = (args || '').trim().toLowerCase();
+    if (sub === '' || sub === 'list') {
+      const snap = autonomousLoop.list();
+      const lines = snap.tasks.map((t, i) =>
+        `- **${i + 1}.** [${t.status}] ${t.task.slice(0, 80)}${t.retries > 0 ? ` _(retries: ${t.retries})_` : ''}`,
+      );
+      const body = lines.length === 0 ? '_Queue vide._' : lines.join('\n');
+      const status = snap.paused ? '⏸ Pausé' : (snap.intervalActive ? '▶ Actif' : '⏹ Arrêté');
+      pushAssistantMessage(rootEl, `### Loop autonome (${status}, ${snap.tasks.length}/50)\n\n${body}`);
+      return;
+    }
+    if (sub === 'pause' || sub === 'resume') {
+      if (sub === 'pause') autonomousLoop.pause();
+      else autonomousLoop.resume();
+      pushAssistantMessage(rootEl, `🔁 Loop ${sub === 'pause' ? 'pausé' : 'repris'}.`);
+      return;
+    }
+    if (sub === 'clear') {
+      autonomousLoop.clear();
+      pushAssistantMessage(rootEl, '🧹 Queue loop effacée.');
+      return;
+    }
+    /* sinon = nouvelle task */
+    const entry = autonomousLoop.add(args);
+    pushAssistantMessage(rootEl, `🔁 Tâche ajoutée à la queue : **${entry.task}**\n\nID : \`${entry.id}\`. Tape \`/loop list\` pour voir la queue.`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur loop : ${msg}`);
+  }
+}
+
+/* v13.4.3 — Slash command /plan */
+async function handlePlanCommand(rootEl: HTMLElement, objective: string): Promise<void> {
+  pushAssistantMessage(rootEl, '🗺 Génération du plan en cours…');
+  try {
+    const { planMode } = await import('../../services/plan-mode.js');
+    const plan = await planMode.generate(objective);
+    const stepsTxt = plan.steps
+      .map((s, i) => `${i + 1}. **[${s.risk}]** ${s.title}${s.files.length ? ` — _${s.files.join(', ')}_` : ''}`)
+      .join('\n');
+    const md = `### 🗺 Plan généré (${plan.steps.length} steps, ${plan.durationMs}ms)\n\n**Objectif :** ${plan.objective}\n\n**Résumé :** ${plan.summary || '_(non précisé)_'}\n\n${stepsTxt}\n\n_Pour exécuter, tape ton message suivant — le plan sera passé en context. Pour annuler : \`planMode.revoke()\` console._`;
+    pushAssistantMessage(rootEl, md);
+    /* v13.4.3 affichage modal preview avec bouton Exécuter */
+    try {
+      const { modalSheet: ms } = await import('../../ui/modal-sheet.js');
+      ms.open({
+        title: '🗺 Plan validé ?',
+        content: `<div style="font-family:system-ui;padding:12px"><p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">${escapeHtml(plan.summary || plan.objective)}</p><pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow-y:auto">${escapeHtml(stepsTxt)}</pre></div>`,
+        actions: [
+          { label: 'Annuler', variant: 'ghost', onClick: () => { planMode.revoke(); ms.closeAll(); } },
+          { label: '✅ Plan validé', variant: 'primary', onClick: () => ms.closeAll() },
+        ],
+      });
+    } catch { /* modal optional */ }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur plan : ${msg}`);
+  }
+}
+
+/* v13.4.3 — Slash command /rules */
+async function handleRulesCommand(rootEl: HTMLElement, args: string): Promise<void> {
+  try {
+    const { rulesEngine } = await import('../../services/rules-engine.js');
+    const k = (args || '').trim();
+    const rules = k ? rulesEngine.filter(k) : rulesEngine.top(10);
+    const md = rulesEngine.renderMarkdown(rules);
+    pushAssistantMessage(rootEl, md);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur rules : ${msg}`);
   }
 }
 

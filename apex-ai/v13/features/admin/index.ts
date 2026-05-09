@@ -197,6 +197,10 @@ function renderHealthTab(): string {
                 style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
           🚀 Plugins Yury
         </button>
+        <button class="ax-btn" data-nav-route="admin-shubham-skills"
+                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🎬 Shubham Skills
+        </button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
     </div>
