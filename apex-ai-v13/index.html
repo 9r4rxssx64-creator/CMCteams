@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-f4bce43fc10123ad4db2431829566915' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-f4bce43fc10123ad4db2431829566915';
+             script-src 'self' 'nonce-30eccf5514e5d39be2596370da0bb801' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-30eccf5514e5d39be2596370da0bb801';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -133,12 +133,12 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="f4bce43fc10123ad4db2431829566915" type="module" crossorigin src="./core/main-CUeElrox.js"></script>
+  <script nonce="30eccf5514e5d39be2596370da0bb801" type="module" crossorigin src="./core/main-CUeElrox.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-z3lBBSNT.js">
   <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CaHQJ4Rs.js">
   <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-Cakw0eHL.js">
-  <link nonce="f4bce43fc10123ad4db2431829566915" rel="stylesheet" crossorigin href="./assets/css/main-CYVYL7bN.css">
+  <link nonce="30eccf5514e5d39be2596370da0bb801" rel="stylesheet" crossorigin href="./assets/css/main-CYVYL7bN.css">
   <link rel="modulepreload" crossorigin href="./chunks/index-KNTXkyDR.js">
   <link rel="modulepreload" crossorigin href="./chunks/auth-BDVJxf47.js">
 </head>
@@ -175,6 +175,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="f4bce43fc10123ad4db2431829566915" src="./assets/js/rescue.js"></script>
+  <script nonce="30eccf5514e5d39be2596370da0bb801" src="./assets/js/rescue.js"></script>
 </body>
 </html>
