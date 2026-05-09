@@ -389,6 +389,33 @@ class ConsumptionMonitor {
     total_alerts: number;
   } {
     const all = this.getAllStatuses();
+    /* v13.3.97 P0 fix Kevin "il met toutes les bulles vertes alors qu'elles ne
+     * sont pas opérationnelles". Avant : 🟢 si pct_used < 70% MÊME si jamais testé.
+     * Après : check vault config + last test status pour honnêteté.
+     *   - Pas de clé en vault → ⚪ "Non configuré"
+     *   - Clé jamais testée → 🟡 "À tester"
+     *   - Clé testée KO → 🔴 "Échec"
+     *   - Clé OK + budget OK → 🟢, warn 70-90% → 🟡, critical >=90% → 🔴 */
+    const honestEmoji = (service: string, severity: ConsumptionSeverity): string => {
+      try {
+        const raw = localStorage.getItem('apex_v13_multikey_vault');
+        if (raw) {
+          const list = JSON.parse(raw) as Array<{ service: string; status?: string }>;
+          const matching = list.filter((k) => k.service === service);
+          if (matching.length === 0) return '⚪'; /* Non configuré */
+          const anyActive = matching.some((k) => k.status === 'active');
+          const anyInvalid = matching.some((k) => k.status === 'invalid');
+          if (anyInvalid && !anyActive) return '🔴';
+          if (!anyActive) return '🟡'; /* unknown / pending test */
+        } else {
+          /* fallback legacy ax_<service>_key */
+          const legacyKey = localStorage.getItem(`ax_${service}_key`);
+          if (!legacyKey) return '⚪';
+        }
+      } catch { /* defensive — fallback severity-based */ }
+      /* Configuré + actif → emoji basé sur consommation */
+      return severity === 'critical' ? '🔴' : severity === 'warn' ? '🟡' : '🟢';
+    };
     return {
       services: all.map((s) => ({
         service: s.service,
@@ -396,7 +423,7 @@ class ConsumptionMonitor {
         used: s.used_eur_current_period.toFixed(2) + '€',
         budget: s.budget_eur_month.toFixed(0) + '€',
         severity: s.severity,
-        emoji: s.severity === 'critical' ? '🔴' : s.severity === 'warn' ? '🟡' : '🟢',
+        emoji: honestEmoji(s.service, s.severity),
         billing_url: s.billing_url,
       })),
       total_alerts: all.filter((s) => s.severity !== 'ok').length,

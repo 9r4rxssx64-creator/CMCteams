@@ -50,15 +50,39 @@ body {
   /* Safe areas appliquées AU CONTENU, pas au body fixé */
 }
 
-/* v13.3.95 : scroll uniquement à l'intérieur des conteneurs prévus */
+/* v13.3.96 P0 fix Kevin "réglages je n'arrive plus à descendre" :
+ * whitelist scroll étendue à TOUTES les pages qui ont contenu vertical.
+ * Le `.ax-page` est utilisé par settings/, le `.ax-admin` par admin/,
+ * etc. Sans cette whitelist + scroll-y auto, tout est figé. */
 .ax-chat-scroll,
 .ax-vault-page,
 .ax-admin,
 .ax-settings,
-[data-scrollable="true"] {
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+.ax-page,
+.ax-consumption-dashboard,
+.ax-financial-bilan,
+.ax-modernized-card,
+.ax-credentials-status,
+.ax-rgpd-admin,
+[data-scrollable="true"],
+[role="main"],
+main {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
   overscroll-behavior: contain;
+}
+
+/* v13.3.96 : conteneurs principaux des routes doivent être scrollables */
+#apex-root > * {
+  max-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+/* Sauf chat qui a son propre layout flex avec scroll interne */
+#apex-root > .ax-chat {
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 img,
