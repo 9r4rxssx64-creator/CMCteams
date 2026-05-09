@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.3.95">
+<html lang="fr" data-theme="dark" data-app-ver="v13.3.96">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-6485128bf7277a7da90c028edd7026c7' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-6485128bf7277a7da90c028edd7026c7';
+             script-src 'self' 'nonce-6173ee3e0fd95a17a0cf46fb97f791b4' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-6173ee3e0fd95a17a0cf46fb97f791b4';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -133,14 +133,14 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="6485128bf7277a7da90c028edd7026c7" type="module" crossorigin src="./core/main-OxZeppzC.js"></script>
+  <script nonce="6173ee3e0fd95a17a0cf46fb97f791b4" type="module" crossorigin src="./core/main-DuJqmAxb.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-xogPPKNY.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BnhygcNh.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-CaRx0igv.js">
-  <link nonce="6485128bf7277a7da90c028edd7026c7" rel="stylesheet" crossorigin href="./assets/css/main-0--QXdhW.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-nR7nm1GD.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-D8FWD90S.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-lY4X002l.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-r7ChpWwW.js">
+  <link nonce="6173ee3e0fd95a17a0cf46fb97f791b4" rel="stylesheet" crossorigin href="./assets/css/main-0--QXdhW.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-CbQu7jUC.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-DsPzm1EF.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -175,6 +175,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="6485128bf7277a7da90c028edd7026c7" src="./assets/js/rescue.js"></script>
+  <script nonce="6173ee3e0fd95a17a0cf46fb97f791b4" src="./assets/js/rescue.js"></script>
 </body>
 </html>
