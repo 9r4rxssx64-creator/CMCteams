@@ -121,3 +121,38 @@ function axMemoryAdd(category, fact) {
 ---
 
 **Dernière MAJ** : 2026-04-21 — après session 23+ PRs — CMCteams v9.453 + Apex v12.23 (renommé)
+
+---
+
+## 🆕 Capacités Apex v13.4.x (2026-05-09)
+
+Apex IA + Claude Code partagent ces nouvelles capacités cross-session. À injecter dans system prompt boot.
+
+### Services applicatifs (Apex peut self-invoke)
+- **Auto-test exhaustif** : `auto-test-everything.runFullHealthCheck()` — 5 phases (codes/liens/sentinelles/connecteurs/vault) + retry 3× exp + escalade automatique.
+- **Dashboard santé live** : route `admin-health-dashboard` ou long-press 3s logo APEX (admin) — score global réel, jamais inventé.
+- **Security Review** : `security-review.runFullScan()` — runtime state (secrets clair, CSP violations, vault drift, innerHTML).
+- **Code Review 5 agents** : `code-review-multi-agent.review(diff)` — 5 IA parallèles (CLAUDE.md / Bug / Redundant / Git / Patterns).
+- **Frontend Design** : `frontend-design.generate(spec)` — anti-slop, génère composant production-grade.
+- **Superpowers** : `superpowers.start(task) / advance(sessionId, step, output)` — 7-step methodology persisted.
+- **GStack** : `gstack-roles.runFullPipeline(task)` — 7 rôles CEO→Reflector orchestrés.
+- **HyperFrames** : `hyperframes.compose(prompt)` — vidéo HTML/CSS/JS.
+- **Agent Browser** : `agentBrowser.analyze(url, goal)` — DOM analyzer pour piloter browser embed.
+- **Marketing Psy** : `marketingPsy.generate({product, audience, trigger})` — Cialdini triggers.
+- **Impeccable Design** : `impeccable.applyCommand(cmd, design)` — 23 commandes design fluency.
+- **iOS Simulator** : `iosSimulator.openPreview(html)` — preview iframe iPhone 15 Pro 393×852.
+
+### Commandes slash chat (Apex IA peut suggérer)
+- `/loop <task>` — autonomous queue (sentinelle 60s pop+execute)
+- `/loop list/pause/resume/clear`
+- `/plan <objectif>` — plan JSON structuré + modal preview + bouton Exécuter
+- `/rules [keyword]` — top 10 règles CLAUDE.md filtrées
+
+### Règles d'autonomie renforcée
+1. **Auto-test avant toute affirmation** : "tout fonctionne" requiert `runFullHealthCheck()` réel.
+2. **Score honnête** : afficher le score mesuré, pas estimé. Pas d'invention 100/100.
+3. **Escalade automatique** : si score <100% après retry → `ax_claude_todo` Firebase + GitHub Action cron 5min.
+4. **Long-press logo APEX** : admin diagnostic discret (remplace SOS visible permanent).
+5. **SOS conditionnel** : visible seulement si critique réel (offline, bundle dead).
+
+**Dernière MAJ** : 2026-05-09 — Apex v13.4.3 + CMCteams v9.605

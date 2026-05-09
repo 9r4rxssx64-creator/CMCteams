@@ -1846,3 +1846,21 @@ git status && git log --oneline -10
 3. Audit 5 niveaux obligatoire (syntaxe/securite/flux/fonctionnel/UX)
 
 *Derniere mise a jour : 2026-04-20 — KDMC v12.2 + CMC v9.303*
+
+---
+
+### Session 2026-05-09 — Apex v13.4.0 → v13.4.3 (extension capacités majeures)
+
+| Version | Contenu |
+|---------|---------|
+| v13.4.0 | **Dashboard santé live exhaustif** + service `auto-test-everything.ts` (414 lignes, 5 phases : codes/liens/sentinelles/connecteurs/vault deep-recovery, retry 3× exp backoff, escalade `ax_claude_todo`) + vue admin `health-dashboard/` (354 lignes, 5 cards stats + filter chips + bouton 🔄 par item + progress live). 10 tests verts. |
+| v13.4.1 | **SOS conditionnel** : `ui/sos-rescue.ts` `display:none` par défaut, auto-show seulement si critique (refreshStatus offline). Méthodes `show()/hide()/isVisible()/openDiagnosticDirect()` publiques. **Long-press 3s sur logo APEX header** → `router.navigate('admin-health-dashboard')` (admin only, silencieux non-admin). Suppression du SOS rouge visible permanent (Kevin "pas pertinent permanent"). |
+| v13.4.2 | **5 plugins Yury.ai équivalents applicatifs** (commit `f0124c7`) : `services/security-review.ts` (319 lignes — runtime state scan, vault drift, CSP violations, secrets clair) ; `services/code-review-multi-agent.ts` (322 lignes — réutilise `crew-experts.ts`, 5 IA en parallèle CLAUDE.md/Bug/Redundant/Git/Patterns) ; `services/frontend-design.ts` (217 lignes — anti-slop, bannit Inter/Roboto) ; `services/superpowers-methodology.ts` (213 lignes — 7-step state machine brainstorm→plan→dev→test→review→ship→reflect, sessions persistées) ; `services/gstack-roles.ts` (205 lignes — 7 rôles CEO/Designer/Engineer/QA/Release/Reviewer/Reflector). Vue admin `features/admin/yury-plugins/` (321 lignes). 39 tests verts. |
+| v13.4.3 | **8 features groupées** (en cours par subagent) : 5 skills Shubham Sharma (HyperFrames vidéo from HTML/CSS/JS, Agent Browser DOM analyzer, Marketing Psy Cialdini triggers, Impeccable 23 commandes design, iOS Simulator iframe wrapper) + 3 IA IRL commandes slash (`/loop` autonomous queue, `/plan` plan mode JSON structuré, `/rules` CLAUDE.md compliance live) + UX final (chat input compact `ax-icon-compact` 38px, greeting conditionnel 0 messages, suggestion chips 4 prompts à l'état vide, footer green-dot discret 4px). |
+
+**LECONS CRITIQUES v13.4.x (à ne JAMAIS reproduire) :**
+1. **GAP source vs build** (Erreur #54) — verif `data-app-ver` source ET `apex-ai-v13/` build identique avant tout claim "déployé"
+2. **Subagent parallèle conflit version files** : éviter 2 subagents qui bumpent même version simultanément ; séquentiel ou stash WIP UX avant de leur passer la main
+3. **SOS visible permanent = aveu d'échec** : si auto-correction marche, SOS devient invisible (conditional reveal sur critique)
+
+*Dernière mise à jour : 2026-05-09 — Apex v13.4.3 + CMCteams v9.605*
