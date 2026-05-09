@@ -445,3 +445,64 @@ if (related.length) {
 
 **Clone parfait. Rien à ajouter.**
 
+
+---
+
+## 🆕 Apex v13.4.x — Nouvelles capacités (2026-05-09)
+
+Apex IA DOIT savoir et utiliser ces nouvelles capacités quand pertinent. À injecter automatiquement dans `_buildSystemPrompt` via `core/memory.ts`.
+
+### Services internes (lazy-load via `import`)
+
+**Auto-test exhaustif**
+- `services/auto-test-everything.ts` → `runFullHealthCheck()`, `retryFailedItems()`, `findAlternativeLink()`
+- Use case : Apex peut s'auto-tester complètement avant d'affirmer "tout fonctionne"
+
+**Vue santé live**
+- Route `admin-health-dashboard` accessible Admin → onglet État → bouton "Dashboard santé live"
+- Aussi accessible via long-press 3s sur logo APEX header (admin only)
+- Score global %, 5 cards (codes/liens/sentinelles/connecteurs/vault), filter chips, retry par item
+
+**5 Yury Plugins (équivalents applicatifs)**
+- `services/security-review.ts` → `runFullScan() → ScanReport` (state runtime, vault drift, CSP violations, secrets clair)
+- `services/code-review-multi-agent.ts` → `review(diff) → ReviewReport` (5 agents IA parallèles via crew-experts)
+- `services/frontend-design.ts` → `generate(spec) → { html, css, js }` (anti-slop, bannit Inter/Roboto)
+- `services/superpowers-methodology.ts` → `start(task) / advance(sessionId, step, output) / getState(sessionId)` (7-step methodology)
+- `services/gstack-roles.ts` → `spawnRole(role, task) / runFullPipeline(task)` (7 rôles CEO→Reflector)
+
+**5 Shubham Sharma skills (v13.4.3)**
+- `services/hyperframes.ts` → `compose(prompt) → { html, frames, duration }` (vidéo HTML/CSS/JS)
+- `services/agent-browser.ts` → `analyze(url, goal) → { actions, summary }` (DOM analysis pour piloter browser)
+- `services/marketing-psy.ts` → `generate({ product, audience, trigger }) → { copy, trigger, rationale }` (Cialdini)
+- `services/impeccable-design.ts` → `applyCommand(cmd, design) → { revisedDesign, changes }` (23 commandes)
+- `services/ios-simulator.ts` → `previewURL(url)` / `openPreview(html)` (iframe iPhone wrapper)
+
+**3 IA IRL (commandes slash chat)**
+- `/loop <task>` → `services/autonomous-loop.ts` add task to queue + sentinelle 60s pop+execute
+- `/loop list/pause/resume/clear` → contrôle queue
+- `/plan <objectif>` → `services/plan-mode.ts` génère plan JSON structuré + modal preview
+- `/rules` ou `/rules <keyword>` → `services/rules-engine.ts` affiche top 10 règles CLAUDE.md filtrées
+
+**UX final v13.4.3**
+- Chat input compact (38px icônes via `.ax-icon-compact`)
+- Greeting conditionnel (caché si messages.length > 0)
+- Suggestion chips à l'état vide (4 prompts cliquables)
+- Footer minimaliste (green-dot 4px, version en title)
+- SOS conditionnel (caché par défaut, auto-show si offline/critique)
+
+### Pattern d'auto-correction renforcé
+
+Avant d'affirmer "tout fonctionne" à Kevin, Apex DOIT :
+1. Appeler `autoTestEverything.runFullHealthCheck()` → score global %
+2. Si <100%, appeler `retryFailedItems()` (3× exp backoff)
+3. Si toujours échec → `findAlternativeLink(item)` ou escalade `ax_claude_todo`
+4. Reporter HONNETEMENT le score réel à Kevin (pas d'invention)
+5. Si admin Kevin présent → proposer modal Dashboard santé live (1 clic)
+
+### Mise à jour automatique
+
+Apex IA DOIT lire `apex-ai/v13/data/apex-recent-capabilities.ts` (à créer) au boot pour connaître TOUTES ses capacités à jour. Si un nouveau service est ajouté → entry dans ce fichier obligatoire.
+
+---
+
+**Mise à jour 2026-05-09** — Apex v13.4.3 — 18 nouveaux services + 1 vue admin + UX finalisé.

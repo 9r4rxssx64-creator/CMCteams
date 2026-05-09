@@ -788,3 +788,37 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 - 14 routes router (vs 7 avant)
 - 62 tools IA registry (vs 45 avant)
 - TS strict 0 errors, ESLint 0 warnings
+
+---
+
+## 📋 Apex v13.4.x — Capacités majeures ajoutées (session 2026-05-09)
+
+### v13.4.0 — Dashboard santé live exhaustif
+- `apex-ai/v13/services/auto-test-everything.ts` (414 lignes) — orchestrateur 5 phases : codes vault / liens registry / sentinelles / connecteurs directs / vault deep-recovery. Retry backoff exp 3×, `findAlternativeLink()`, escalade `ax_claude_todo`.
+- `apex-ai/v13/features/admin/health-dashboard/index.ts` (354 lignes) — vue admin avec score global %, 5 cards stats, filter chips, bouton 🔄 par item, progress live 5 phases.
+- `apex-ai/v13/tests/unit/auto-test-everything.test.ts` — 10 tests verts.
+
+### v13.4.1 — SOS conditionnel + long-press logo APEX
+- `apex-ai/v13/ui/sos-rescue.ts` modifié — display:none par défaut, auto-show si critique, méthodes show/hide/isVisible publiques + openDiagnosticDirect(), flag _userForcedShow.
+- `apex-ai/v13/features/chat/index.ts` — `<h1 id="ax-chat-logo">` + handler long-press 3s mousedown/touchstart → `router.navigate('admin-health-dashboard')` (admin only).
+- Préserve `apex-rescue-btn` HTML pur (rescue.js failSafe) comme filet ultime si bundle JS dead 8s.
+
+### v13.4.2 — 5 plugins Yury.ai équivalents applicatifs (commit `f0124c7`)
+- `apex-ai/v13/services/security-review.ts` (319 lignes) — runtime state scan : secrets clair localStorage, CSP violations récentes, vault drift via multi-key-vault healthCheck, innerHTML heuristique.
+- `apex-ai/v13/services/code-review-multi-agent.ts` (322 lignes) — 5 IA parallèles via `crew-experts.ts` (réutilisé) : CLAUDE.md compliance / Bug detection / Redundant rule check / Git history context / Code patterns. Confidence threshold 80.
+- `apex-ai/v13/services/frontend-design.ts` (217 lignes) — anti-slop guidelines (bannit Inter/Roboto), génère composant UI production-grade depuis prompt user.
+- `apex-ai/v13/services/superpowers-methodology.ts` (213 lignes) — 7-step state machine : brainstorm → plan → dev → test → review → ship → reflect. Sessions persistées dans `apex_v13_superpowers_sessions` (cap 20).
+- `apex-ai/v13/services/gstack-roles.ts` (205 lignes) — 7 rôles spécialisés : CEO / Designer / Engineer / QA / Release Manager / Reviewer / Reflector. `runFullPipeline(task)`.
+- `apex-ai/v13/features/admin/yury-plugins/index.ts` (321 lignes) — vue admin 5 cards.
+- `apex-ai/v13/data/apex-plugins-catalog.ts` — 5 entrées Yury (status: 'available', install_method: 'app-native').
+- `apex-ai/v13/features/admin/index.ts` — 4ème bouton "🚀 Plugins Yury" dans renderHealthTab.
+- 5 fichiers tests `tests/unit/*.test.ts` — 39 tests verts.
+
+### v13.4.3 (en cours) — 5 Shubham Sharma + 3 IA IRL + UX final
+- 5 skills Shubham Sharma : `services/hyperframes.ts` (vidéo HTML/CSS/JS) + `services/agent-browser.ts` (DOM analyzer) + `services/marketing-psy.ts` (Cialdini triggers) + `services/impeccable-design.ts` (23 commandes) + `services/ios-simulator.ts` (iframe iPhone wrapper).
+- 3 IA IRL commandes slash : `services/autonomous-loop.ts` (queue tasks `apex_v13_loop_queue`) + `services/plan-mode.ts` (plan JSON `{steps, files, risk}`) + `services/rules-engine.ts` (parse CLAUDE.md "RÈGLE PERMANENTE").
+- UX final : `assets/css/components.css` `.ax-icon-compact` (38px) + `.ax-chat-send` (gold round) + greeting conditionnel + suggestion chips 4 prompts + footer green-dot 4px.
+- Vue admin `features/admin/shubham-skills/index.ts`.
+
+### Lien deployed
+- https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ — branche claude/test-699LQ → main via auto-merge bot

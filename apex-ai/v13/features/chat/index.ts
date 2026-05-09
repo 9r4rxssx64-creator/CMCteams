@@ -1712,7 +1712,7 @@ export function render(rootEl: HTMLElement): void {
       </header>
       <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
-        <div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
+        ${conversation.length === 0 ? `<div class="ax-chat-greeting">${escapeHtml(greeting)}</div>` : ''}
         ${!hasKey ? `
           <div class="ax-info-card ax-modernized-card" style="margin:4px 8px;padding:8px 10px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1722,6 +1722,14 @@ export function render(rootEl: HTMLElement): void {
             </div>
           </div>
         ` : ''}
+        ${conversation.length === 0 && hasKey ? `
+          <div class="ax-chat-chips" role="group" aria-label="Suggestions rapides">
+            <button type="button" class="ax-chat-chip" data-chip-text="Aide-moi à mixer une musique">🎚 Mixe une musique</button>
+            <button type="button" class="ax-chat-chip" data-chip-text="Plan ma semaine">📅 Plan ma semaine</button>
+            <button type="button" class="ax-chat-chip" data-chip-text="/web ">🔍 Cherche sur le web</button>
+            <button type="button" class="ax-chat-chip" data-chip-text="Lance un audit complet">💼 Audit pro</button>
+          </div>
+        ` : ''}
       </div>
       <button type="button" class="ax-scroll-bottom-fab" id="ax-scroll-bottom" aria-label="Aller en bas" title="Aller en bas">↓</button>
       </div>
@@ -1729,15 +1737,15 @@ export function render(rootEl: HTMLElement): void {
         <textarea
           id="ax-chat-text"
           rows="1"
-          placeholder="Écris, dicte ou scanne — colle aussi photos/vidéos/docs"
+          placeholder="Demande, dicte ou colle…"
           aria-label="Message"
           autocomplete="off"
         ></textarea>
-        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
-        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
-        <button type="button" class="ax-btn ax-btn-icon" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)">📷</button>
-        <button type="submit" class="ax-btn ax-btn-primary" aria-label="Envoyer">→</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="display:none">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none">📷</button>
+        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
           style="display:none">
@@ -1751,14 +1759,33 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
       </nav>
-      <footer style="text-align:center;padding:1px 6px calc(env(safe-area-inset-bottom,0px) + 1px);font-size:9px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.3px;opacity:0.6">
-        ${APP_VER} · DK
+      <footer style="text-align:center;padding:0 6px calc(env(safe-area-inset-bottom,0px));font-size:8px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.2px;opacity:0.25;line-height:1;height:auto" title="${APP_VER} · DK">
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#22c55e;vertical-align:middle"></span>
       </footer>
     </div>
   `);
 
   /* v13.3.72 Kevin: wire scroll-to-bottom FAB style Claude Code */
   wireScrollToBottomFab(rootEl);
+
+  /* v13.4.3 Kevin 2026-05-09 — Suggestion chips (état vide) :
+   * 4 chips cliquables qui injectent un texte préformé dans la textarea + focus.
+   * Pas de submit auto — Kevin garde la main pour éditer/envoyer. */
+  rootEl.querySelectorAll<HTMLButtonElement>('.ax-chat-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+      if (!ta) return;
+      const text = chip.dataset['chipText'] ?? '';
+      ta.value = text;
+      ta.focus();
+      ta.style.height = 'auto';
+      ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
+      /* Place caret à la fin pour les chips type "/web " (espace final). */
+      const len = text.length;
+      try { ta.setSelectionRange(len, len); } catch { /* best-effort */ }
+      haptic.tap();
+    });
+  });
 
   const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
   const textarea = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
