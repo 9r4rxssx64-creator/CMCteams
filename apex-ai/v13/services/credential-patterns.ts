@@ -352,7 +352,14 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   },
   {
     name: 'Cohere',
-    regex: /^(?:co_|[A-Za-z0-9]{40})[A-Za-z0-9]{0,40}$/,
+    /* v13.3.95 P0 FIX Kevin "il a reconnu une API en Cohere alors que c'est pas Cohere" :
+     * Avant : /^(?:co_|[A-Za-z0-9]{40})[A-Za-z0-9]{0,40}$/ matchait TOUTE string 40-80 chars
+     * → XAI/Anthropic/OpenAI/GitHub étaient capturés comme Cohere si leur pattern spécifique
+     * échouait avant. C'est ce qui causait les "10 illisibles" mal classées.
+     * Après : pattern STRICT préfixe co_ uniquement (le format légitime Cohere).
+     * Trial keys Cohere historiques (40 chars sans préfixe) → laisser détection manuelle
+     * via le bouton "+ Ajouter" du Coffre. */
+    regex: /^co_[A-Za-z0-9]{40,}$/,
     storageKey: 'ax_cohere_key',
     category: 'ai',
     dashboard: 'https://dashboard.cohere.com/',

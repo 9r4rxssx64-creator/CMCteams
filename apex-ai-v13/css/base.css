@@ -11,6 +11,20 @@
   padding: 0;
 }
 
+/* v13.3.95 P0 Kevin "fixe la fenêtre qu'on ne puisse pas descendre" :
+ * iOS Safari PWA — bloquer scroll BODY entier, scroll uniquement zone chat.
+ * touch-action: none + overflow hidden + position fixed = viewport bloqué.
+ * Seul .ax-chat-scroll garde overflow-y: auto + touch-action: pan-y. */
+html, body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
 html {
   font-family: var(--ax-font);
   font-size: var(--ax-text-base);
@@ -32,13 +46,19 @@ body {
   color: var(--ax-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-x: hidden;
   padding: 0;
-  /* Safe areas */
-  padding-top: var(--ax-safe-t);
-  padding-bottom: var(--ax-safe-b);
+  /* Safe areas appliquées AU CONTENU, pas au body fixé */
+}
+
+/* v13.3.95 : scroll uniquement à l'intérieur des conteneurs prévus */
+.ax-chat-scroll,
+.ax-vault-page,
+.ax-admin,
+.ax-settings,
+[data-scrollable="true"] {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 img,

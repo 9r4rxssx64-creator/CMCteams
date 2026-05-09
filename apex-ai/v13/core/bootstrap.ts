@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.94';
+export const APP_VER = 'v13.3.95';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -256,7 +256,7 @@ async function bootstrap(): Promise<void> {
     logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
   });
 
-  /* v13.3.94 P0.2 — force snapshot vault → Firebase si drift au boot.
+  /* v13.3.95 P0.2 — force snapshot vault → Firebase si drift au boot.
    * Audit externe : "13 local sans backup" → autoFix sentinelle ne s'exécutait
    * qu'au prochain tick (5min). On déclenche un snapshot initial non-bloquant
    * dès firebase.init pour avoir Firebase aligné dès la 1ère seconde.
