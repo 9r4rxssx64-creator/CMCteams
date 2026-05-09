@@ -479,6 +479,27 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
+    /* v13.3.96 (Kevin 2026-05-09 P0 — règle "RIEN PERDRE TEMPS RÉEL") —
+       Vault Deep Recovery : scan exhaustif tous storages + reclassement clés
+       mal classées + auto-wire WhatsApp depuis profil Kevin.
+       Kevin a recollé 10-20 fois les MÊMES clés → bug pipeline.
+       Tourne après auto-restore (qui fait alias/IDB/Firebase) pour finir le
+       travail : detection valeurs mal classées (Cohere ↔ xAI etc) + numéro WA. */
+    safeInit('vault-deep-recovery', async () => {
+      const { vaultDeepRecovery } = await import('./vault-deep-recovery.js');
+      /* Background non-blocking : déjà throttlé 5min en interne (anti boot loop). */
+      void vaultDeepRecovery.scanAndRestoreAll().then((r) => {
+        if (r.restored > 0 || r.reclassified > 0 || r.whatsappWired) {
+          logger.info(
+            'vault-deep-recovery',
+            `boot run : restored=${r.restored} reclassified=${r.reclassified} whatsapp=${r.whatsappWired}`,
+          );
+        }
+      }).catch((err: unknown) => {
+        logger.warn('vault-deep-recovery', 'boot run failed (non-blocking)', { err });
+      });
+    }),
+
     /* v13.3.79+ (Kevin 2026-05-08 18:05 ABSOLUE) — Apex Self-Correct cascade.
        "Il ne s'auto-corrige pas apparemment, il attend que tu le fasses c'est pas normal"
        Détecte 3+ chat-fallback en 5min OU aucune réponse depuis 10min OU all_providers_dead
