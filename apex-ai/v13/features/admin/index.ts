@@ -179,7 +179,21 @@ function renderHealthTab(): string {
   return `
     <div class="ax-admin-section" data-scrollable="true">
       <h2>État de santé</h2>
-      <p class="ax-muted">Sentinelles 24/7 + providers IA + vault drift + audit log immutable. Voir détail dans Centre Admin → Capacités.</p>
+      <p class="ax-muted">Codes vault · Liens dashboards · Sentinelles 24/7 · Connecteurs MCP · Vault drift. Tout testé en autonomie.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+        <button class="ax-btn ax-btn-primary" data-nav-route="admin-health-dashboard"
+                style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          📊 Voir dashboard santé live
+        </button>
+        <button class="ax-btn" data-nav-route="admin-credentials-status"
+                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🔑 Credentials
+        </button>
+        <button class="ax-btn" data-nav-route="admin-all-secrets"
+                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🔐 Mes Secrets
+        </button>
+      </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
     </div>
   `;
