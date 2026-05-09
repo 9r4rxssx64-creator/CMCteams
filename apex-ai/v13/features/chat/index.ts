@@ -1704,7 +1704,7 @@ export function render(rootEl: HTMLElement): void {
     </style>
     <div class="ax-chat ax-modernized-card">
       <header class="ax-chat-header">
-        <h1>APEX</h1>
+        <h1 id="ax-chat-logo" title="Long-press 3s pour Diagnostic admin" style="cursor:pointer;-webkit-tap-highlight-color:transparent">APEX</h1>
         <div style="display:flex;gap:4px;align-items:center">
           <button class="ax-btn ax-btn-icon" id="ax-chat-clear" aria-label="Effacer chat" title="Effacer le chat (conversation courante)">🗑</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
@@ -2420,6 +2420,44 @@ export function render(rootEl: HTMLElement): void {
       }
     })();
   });
+
+  /* v13.4.1 Kevin "SOS pas pertinent permanent" : long-press 3s logo APEX → Diagnostic admin.
+   * Remplace le SOS visible permanent. Admin only ; sinon ne fait rien. */
+  const logoEl = rootEl.querySelector<HTMLHeadingElement>('#ax-chat-logo');
+  if (logoEl) {
+    let pressTimer: number | null = null;
+    const startPress = (): void => {
+      if (pressTimer !== null) return;
+      pressTimer = window.setTimeout(async () => {
+        pressTimer = null;
+        const isAdminUser = store.get('isAdmin');
+        if (!isAdminUser) return; /* discret : long-press silencieux pour non-admin */
+        haptic.tap();
+        try {
+          const { router } = await import('../../core/router.js');
+          router.navigate('admin-health-dashboard');
+        } catch {
+          /* fallback : ouvrir diagnostic SOS direct si dashboard non chargeable */
+          try {
+            const { sosRescue } = await import('../../ui/sos-rescue.js');
+            sosRescue.openDiagnosticDirect();
+          } catch { /* ignore */ }
+        }
+      }, 3000);
+    };
+    const cancelPress = (): void => {
+      if (pressTimer !== null) {
+        window.clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+    logoEl.addEventListener('mousedown', startPress);
+    logoEl.addEventListener('mouseup', cancelPress);
+    logoEl.addEventListener('mouseleave', cancelPress);
+    logoEl.addEventListener('touchstart', startPress, { passive: true });
+    logoEl.addEventListener('touchend', cancelPress);
+    logoEl.addEventListener('touchcancel', cancelPress);
+  }
 
   /* Menu hamburger ☰ : drawer modal avec navigation rapide
    * Fix Kevin v13.0.40 "le bouton paramètres et les trois traits ne fonctionnent pas" */

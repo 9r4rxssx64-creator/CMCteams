@@ -41,9 +41,11 @@ class SosRescue {
     btn.type = 'button';
     btn.setAttribute('aria-label', 'SOS Rescue — Débloquer Apex');
     btn.title = 'SOS — Tap court : auto-fix. Long press : diagnostic complet.';
-    /* v13.3.99 fix Kevin "SOS mal placé" — repositionné juste au-dessus
-     * de l'input area (input ~38px + nav 30px + footer 12px = 80px) + 20px
-     * marge confortable = 100px. Plus de overlap input ni clipping. */
+    /* v13.4.1 Kevin "SOS pas pertinent à voir si tout est auto-géré" :
+     * - display:none par défaut
+     * - show() automatique uniquement si conditions critiques détectées
+     *   (boucle d'erreurs, vault drift non guéri, sentinelles plantées)
+     * - sinon invisible. Accès admin discret via long-press 3s sur logo APEX. */
     btn.style.cssText = [
       'position:fixed',
       'bottom:calc(100px + env(safe-area-inset-bottom, 0px))',
@@ -58,7 +60,7 @@ class SosRescue {
       'cursor:pointer',
       'z-index:99999',
       'box-shadow:0 4px 16px rgba(220,38,38,0.4)',
-      'display:flex',
+      'display:none',
       'align-items:center',
       'justify-content:center',
       '-webkit-tap-highlight-color:transparent',
@@ -353,9 +355,11 @@ class SosRescue {
   async refreshStatus(): Promise<void> {
     if (!this.statusDot) return;
     let color = '#22c55e'; /* green default */
+    let critical = false;
     try {
       if (!navigator.onLine) {
         color = '#dc2626'; /* red */
+        critical = true;
       } else {
         const { aiRouter } = await import('../services/ai-router.js');
         if (!aiRouter.hasAnyKey()) {
@@ -366,6 +370,32 @@ class SosRescue {
       color = '#eab308';
     }
     this.statusDot.style.background = color;
+
+    /* v13.4.1 Kevin "SOS pas pertinent permanent" : auto-show seulement si critique */
+    if (critical && !this._userForcedShow) this.show();
+    else if (!critical && !this._userForcedShow) this.hide();
+  }
+
+  /* v13.4.1 — show/hide publiques + flag user-forced (long-press logo APEX). */
+  private _userForcedShow = false;
+
+  show(forced = false): void {
+    if (forced) this._userForcedShow = true;
+    if (this.btnEl) this.btnEl.style.display = 'flex';
+  }
+
+  hide(): void {
+    this._userForcedShow = false;
+    if (this.btnEl) this.btnEl.style.display = 'none';
+  }
+
+  isVisible(): boolean {
+    return !!(this.btnEl && this.btnEl.style.display !== 'none');
+  }
+
+  /* Ouvre directement le diagnostic (utilisé par long-press logo APEX header). */
+  openDiagnosticDirect(): void {
+    this.openDiagnostic();
   }
 
   /**
