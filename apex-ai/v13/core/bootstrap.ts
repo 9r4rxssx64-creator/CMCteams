@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.3';
+export const APP_VER = 'v13.4.4';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -195,6 +195,13 @@ async function bootstrap(): Promise<void> {
         const { bootstrapSentinelsRegistry } = await import('@services/sentinels-registry.js');
         bootstrapSentinelsRegistry();
         sentinels.init();
+        /* v13.4.4 — Enregistre rules-injection-watch via lazy import (sentinelle 1×/h) */
+        try {
+          const { rulesInjectionWatch } = await import('@services/rules-injection-watch.js');
+          rulesInjectionWatch.registerSentinel();
+        } catch (err: unknown) {
+          logger.warn('boot', 'rules-injection-watch register failed', { err });
+        }
       },
     },
   );
@@ -242,6 +249,13 @@ async function bootstrap(): Promise<void> {
     .catch((err: unknown) => {
       logger.warn('boot', 'Docs/lessons sync at boot failed (continuing)', { err });
     });
+
+  /* v13.4.4 (Kevin "charger TOUS les documents + skills + hooks + commands") :
+   * Sync .claude/{skills,hooks,commands,rules}/ en arrière-plan, cache 6h.
+   * Non-bloquant. Lit le cache via memory.getMetaContext() / getSkillsContext() etc. */
+  void memory.syncMetaFilesAtBoot().catch((err: unknown) => {
+    logger.warn('boot', '.claude meta sync failed (continuing)', { err });
+  });
 
   /* v13.3.30 (Kevin 2026-05-07) : auto-bootstrap Identité Kevin admin.
    * Idempotent (marqueur ax_kevin_init_done) — pousse dès que admin login détecté. */

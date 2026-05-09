@@ -766,6 +766,183 @@ class Memory {
   }
 
   /**
+   * v13.4.4 — Sync `.claude/{skills,hooks,commands,rules}/` du repo (Kevin "Apex doit tout charger").
+   *
+   * Cache 6h IndexedDB-safe via localStorage `apex_v13_meta_cache`.
+   *
+   * Stratégie :
+   *  1. Liste contenu folder via API GitHub `repos/.../contents/.claude/<folder>`
+   *  2. Pour chaque fichier .md/.sh/.ts, fetch raw GitHub
+   *  3. Cache résultat keyed par (folder, name)
+   *
+   * Tolère failure : sans token GitHub, l'API contents publique répond OK pour repo public.
+   * Si réseau down → fallback cache stale (>6h accepté en mode dégradé).
+   */
+  async syncMetaFilesAtBoot(opts?: { forceRefresh?: boolean }): Promise<{
+    skills: Record<string, string>;
+    hooks: Record<string, string>;
+    commands: Record<string, string>;
+    rules: Record<string, string>;
+    fetchedAt: number;
+  }> {
+    const REPO_API = 'https://api.github.com/repos/9r4rxssx64-creator/CMCteams/contents/.claude/';
+    const REPO_RAW_BASE = 'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/.claude/';
+    const FOLDERS = ['skills', 'hooks', 'commands', 'rules'] as const;
+    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; /* 6h */
+    const cacheKey = 'apex_v13_meta_cache';
+    const force = opts?.forceRefresh === true;
+
+    type MetaCache = {
+      skills: Record<string, string>;
+      hooks: Record<string, string>;
+      commands: Record<string, string>;
+      rules: Record<string, string>;
+      fetchedAt: number;
+    };
+    const empty: MetaCache = { skills: {}, hooks: {}, commands: {}, rules: {}, fetchedAt: 0 };
+
+    let cache: MetaCache = empty;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) cache = { ...empty, ...(JSON.parse(raw) as MetaCache) };
+    } catch {
+      cache = empty;
+    }
+
+    const now = Date.now();
+    if (!force && cache.fetchedAt > 0 && now - cache.fetchedAt < CACHE_TTL_MS) {
+      return cache;
+    }
+
+    /* Helper fetch listing folder */
+    const listFolder = async (folder: string): Promise<Array<{ name: string; type: string }>> => {
+      try {
+        const res = await fetch(REPO_API + folder, {
+          method: 'GET',
+          headers: { Accept: 'application/vnd.github.v3+json' },
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) return [];
+        const arr = (await res.json()) as Array<{ name: string; type: string }>;
+        return Array.isArray(arr) ? arr.filter((e) => e && e.type === 'file') : [];
+      } catch (err: unknown) {
+        logger.warn('memory.syncMeta', `list ${folder} failed`, { err });
+        return [];
+      }
+    };
+
+    /* Helper fetch un fichier raw */
+    const fetchRaw = async (path: string): Promise<string | null> => {
+      try {
+        const res = await fetch(REPO_RAW_BASE + path, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return null;
+        return await res.text();
+      } catch {
+        return null;
+      }
+    };
+
+    const fresh: MetaCache = { skills: {}, hooks: {}, commands: {}, rules: {}, fetchedAt: now };
+
+    for (const folder of FOLDERS) {
+      const entries = await listFolder(folder);
+      const allowedExt = folder === 'hooks' ? /\.(?:sh|ts|js)$/i : /\.md$/i;
+      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, 30); /* cap 30 par folder */
+      for (const ent of filtered) {
+        if (!ent.name || ent.name.startsWith('_')) continue; /* skip _template */
+        const content = await fetchRaw(`${folder}/${ent.name}`);
+        if (content && content.length < 200_000) {
+          /* Cap individuel 200KB pour éviter overflow localStorage */
+          fresh[folder][ent.name] = content;
+        }
+      }
+    }
+
+    /* Si tout vide (réseau down) → garde le cache stale */
+    const totalFresh =
+      Object.keys(fresh.skills).length +
+      Object.keys(fresh.hooks).length +
+      Object.keys(fresh.commands).length +
+      Object.keys(fresh.rules).length;
+    if (totalFresh === 0 && cache.fetchedAt > 0) {
+      logger.warn('memory.syncMeta', 'all folders empty, keeping stale cache');
+      return cache;
+    }
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(fresh));
+    } catch {
+      /* quota — best-effort */
+    }
+    logger.info(
+      'memory.syncMeta',
+      `Synced .claude/ : ${Object.keys(fresh.skills).length} skills, ${Object.keys(fresh.hooks).length} hooks, ${Object.keys(fresh.commands).length} commands, ${Object.keys(fresh.rules).length} rules`,
+    );
+    return fresh;
+  }
+
+  /**
+   * v13.4.4 — Lecture cache `.claude/{folder}/` synchronisé.
+   * Pas de fetch ici. Utilisé par buildSystemPromptDeep() et rules-engine.
+   */
+  getMetaContext(): {
+    skills: Record<string, string>;
+    hooks: Record<string, string>;
+    commands: Record<string, string>;
+    rules: Record<string, string>;
+    fetchedAt: number;
+  } {
+    const empty = { skills: {}, hooks: {}, commands: {}, rules: {}, fetchedAt: 0 };
+    try {
+      const raw = localStorage.getItem('apex_v13_meta_cache');
+      if (!raw) return empty;
+      return { ...empty, ...(JSON.parse(raw) as typeof empty) };
+    } catch {
+      return empty;
+    }
+  }
+
+  /**
+   * v13.4.4 — Render concat pour injection system prompt (cap par chars).
+   * Sélection : top N skills/hooks/commands/rules par taille croissante (les plus concis d'abord).
+   */
+  getSkillsContext(maxChars = 4000): string {
+    return this.renderMetaSection('skills', maxChars, '🛠️ Skills disponibles');
+  }
+  getHooksContext(maxChars = 2000): string {
+    return this.renderMetaSection('hooks', maxChars, '🪝 Hooks');
+  }
+  getCommandsContext(maxChars = 2000): string {
+    return this.renderMetaSection('commands', maxChars, '⌨️ Commands');
+  }
+  getRulesContext(maxChars = 4000): string {
+    return this.renderMetaSection('rules', maxChars, '📐 Règles techniques');
+  }
+
+  private renderMetaSection(
+    folder: 'skills' | 'hooks' | 'commands' | 'rules',
+    maxChars: number,
+    header: string,
+  ): string {
+    const meta = this.getMetaContext();
+    const dict = meta[folder];
+    const names = Object.keys(dict);
+    if (names.length === 0) return '';
+    const sorted = names.sort((a, b) => (dict[a]?.length ?? 0) - (dict[b]?.length ?? 0));
+    const lines: string[] = [`## ${header} (${names.length})`];
+    let used = lines[0]!.length + 2;
+    for (const name of sorted) {
+      const c = dict[name] ?? '';
+      const excerpt = c.length > 600 ? c.slice(0, 600) + '\n[…]' : c;
+      const block = `### ${name}\n${excerpt}`;
+      if (used + block.length + 2 > maxChars) break;
+      lines.push(block);
+      used += block.length + 2;
+    }
+    return lines.join('\n\n');
+  }
+
+  /**
    * Extract facts critiques d'un message user via NLP simple regex.
    * Pousse dans persistentMemoryStore (per-user) avec timestamp + source.
    *
@@ -1203,6 +1380,33 @@ class Memory {
     if (currentUser && currentUser.id === 'kdmc_admin') {
       const adminKnowledge = await this.buildAdminCrossUserKnowledge();
       if (adminKnowledge) addIfRoom(adminKnowledge);
+    }
+
+    /* v13.4.4 — PRIORITÉ 10 : Top règles + erreurs depuis rules-engine
+     * (lazy import pour ne pas créer cycle de modules au boot). */
+    try {
+      const { rulesEngine } = await import('../services/rules-engine.js');
+      const injection = rulesEngine.buildSystemPromptInjection();
+      if (injection) addIfRoom(injection);
+    } catch (err: unknown) {
+      logger.warn('memory.deepPrompt', 'rules-engine injection skipped', { err });
+    }
+
+    /* v13.4.4 — PRIORITÉ 11 : Skills .claude/skills/ (top concis) */
+    const skillsCtx = this.getSkillsContext(2500);
+    if (skillsCtx) addIfRoom(skillsCtx);
+
+    /* v13.4.4 — PRIORITÉ 12 : Rules .claude/rules/ (frontend/security/methodology) */
+    const rulesCtx = this.getRulesContext(2000);
+    if (rulesCtx) addIfRoom(rulesCtx);
+
+    /* v13.4.4 — PRIORITÉ 13 : Capacités récentes Apex (registry) */
+    try {
+      const { renderRecentCapabilitiesForPrompt } = await import('../data/apex-recent-capabilities.js');
+      const cap = renderRecentCapabilitiesForPrompt();
+      if (cap) addIfRoom(cap);
+    } catch (err: unknown) {
+      logger.warn('memory.deepPrompt', 'recent capabilities skipped', { err });
     }
 
     return total;
