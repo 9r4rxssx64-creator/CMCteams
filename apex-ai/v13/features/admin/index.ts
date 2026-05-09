@@ -177,9 +177,10 @@ function renderPendingTab(): string {
 
 function renderHealthTab(): string {
   return `
-    <div class="ax-admin-section">
+    <div class="ax-admin-section" data-scrollable="true">
       <h2>État de santé</h2>
-      <p class="ax-muted">Sentinelles + providers IA — Jet 2 enrichira avec dashboard live.</p>
+      <p class="ax-muted">Sentinelles 24/7 + providers IA + vault drift + audit log immutable. Voir détail dans Centre Admin → Capacités.</p>
+      <div id="ax-admin-health-mount" style="margin-top:14px"></div>
     </div>
   `;
 }

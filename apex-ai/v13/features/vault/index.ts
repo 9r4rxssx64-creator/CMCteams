@@ -29,6 +29,7 @@ import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { genericSecrets } from '../../services/generic-secrets.js';
 import { linksRegistry } from '../../services/links-registry.js';
 import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/multi-key-vault.js';
 import { vault } from '../../services/vault.js';
@@ -319,22 +320,43 @@ function capitalize(s: string): string {
  */
 export async function autoDetectAndStore(
   input: string,
-): Promise<{ ok: true; pattern_name: string; storage_key: string } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; pattern_name: string; storage_key: string }
+  | { ok: true; generic: true; pattern_name: 'Secret générique'; storage_key: string; generic_id: string }
+  | { ok: false; reason: string }
+> {
   const trimmed = input.trim();
   if (!trimmed) return { ok: false, reason: 'Entrée vide' };
   const detected = detectCredential(trimmed);
-  if (!detected) return { ok: false, reason: 'Aucun pattern reconnu' };
-  if (detected.category === 'forbidden') {
+  if (detected && detected.category === 'forbidden') {
     return { ok: false, reason: '🚨 Type interdit (cartes/seed phrases jamais stockées)' };
   }
-  try {
-    const encrypted = await vault.encryptAuto(trimmed);
-    localStorage.setItem(detected.storageKey, encrypted);
-    return { ok: true, pattern_name: detected.name, storage_key: detected.storageKey };
-  } catch (err: unknown) {
-    logger.warn('vault-feature', 'autoDetectAndStore failed', { err });
-    return { ok: false, reason: 'Erreur chiffrement' };
+  if (detected) {
+    try {
+      const encrypted = await vault.encryptAuto(trimmed);
+      localStorage.setItem(detected.storageKey, encrypted);
+      return { ok: true, pattern_name: detected.name, storage_key: detected.storageKey };
+    } catch (err: unknown) {
+      logger.warn('vault-feature', 'autoDetectAndStore failed', { err });
+      return { ok: false, reason: 'Erreur chiffrement' };
+    }
   }
+  /* P0.3 catch-all (Kevin v13.3.98) : si > 20 chars et aucun pattern reconnu,
+   * proposer stockage en secret générique avec label auto. Kevin renomme ensuite. */
+  if (trimmed.length >= 20) {
+    const r = await genericSecrets.add(trimmed, undefined, 'Auto-détecté (pattern inconnu)');
+    if (r.ok) {
+      return {
+        ok: true,
+        generic: true,
+        pattern_name: 'Secret générique',
+        storage_key: 'apex_v13_generic_secrets',
+        generic_id: r.id,
+      };
+    }
+    return { ok: false, reason: r.reason };
+  }
+  return { ok: false, reason: 'Aucun pattern reconnu (trop court pour secret générique)' };
 }
 
 /**

@@ -201,8 +201,15 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     docs: 'https://developers.tiktok.com/doc/',
   },
   {
-    name: 'YouTube API Key',
-    regex: /^AIzaSy[A-Za-z0-9_-]{33}$/,
+    /* v13.3.98 FIX FAUX POSITIF Kevin "il a reconnu YouTube alors que c'est Google AI Gemini" :
+     * Avant : /^AIzaSy[A-Za-z0-9_-]{33}$/ matchait TOUTE clé Google API standard
+     * (Gemini AI, YouTube, Maps, Cloud Vision, etc.) car toutes commencent par AIzaSy.
+     * Le faux positif YouTube prenait précédence sur Google AI dans l'ordre.
+     * Après : pattern STRICT préfixe explicite `youtube:` (Kevin doit taper
+     * `youtube:AIzaSy...` pour le classifier YouTube). Sinon par défaut → Google AI.
+     * Règle Kevin : un AIza{33} = Google AI (Gemini) par défaut. */
+    name: 'YouTube API Key (préfixe explicite)',
+    regex: /^youtube:AIza[A-Za-z0-9_-]{33}$/i,
     storageKey: 'ax_youtube_key',
     category: 'comms',
     dashboard: 'https://console.cloud.google.com/apis/credentials',
@@ -726,6 +733,110 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     category: 'identity',
   },
 
+  /* === Connection strings DB / Cache (Kevin v13.3.98 — Railway/Postgres/Redis collés ~20 fois sans détection) ===
+     * Ces patterns capturent les URLs complètes user:pass@host/db.
+     * Stockage dédié par moteur pour permettre routing automatique. */
+  {
+    name: 'PostgreSQL Connection',
+    regex: /^postgres(?:ql)?:\/\/[^:\s]+:[^@\s]+@[a-zA-Z0-9.-]+(?::\d+)?\/[A-Za-z0-9_-]+(?:\?[^\s]*)?$/,
+    storageKey: 'ax_postgres_url',
+    category: 'devops',
+    dashboard: 'https://www.postgresql.org/',
+    docs: 'https://www.postgresql.org/docs/',
+  },
+  {
+    name: 'MySQL Connection',
+    regex: /^mysql:\/\/[^:\s]+:[^@\s]+@[a-zA-Z0-9.-]+(?::\d+)?\/[A-Za-z0-9_-]+(?:\?[^\s]*)?$/,
+    storageKey: 'ax_mysql_url',
+    category: 'devops',
+    dashboard: 'https://www.mysql.com/',
+    docs: 'https://dev.mysql.com/doc/',
+  },
+  {
+    name: 'MongoDB Connection',
+    regex: /^mongodb(?:\+srv)?:\/\/(?:[^:\s]+:[^@\s]+@)?[a-zA-Z0-9.,_-]+(?::\d+)?(?:\/[A-Za-z0-9_-]+)?(?:\?[^\s]*)?$/,
+    storageKey: 'ax_mongodb_url',
+    category: 'devops',
+    dashboard: 'https://cloud.mongodb.com/',
+    docs: 'https://www.mongodb.com/docs/',
+  },
+  {
+    name: 'Redis Connection',
+    regex: /^rediss?:\/\/(?:[^:\s]*:[^@\s]+@)?[a-zA-Z0-9.-]+(?::\d+)?(?:\/\d+)?(?:\?[^\s]*)?$/,
+    storageKey: 'ax_redis_url',
+    category: 'devops',
+    dashboard: 'https://redis.io/',
+    docs: 'https://redis.io/docs/',
+  },
+  {
+    name: 'WebSocket URL (avec token)',
+    regex: /^wss?:\/\/[a-zA-Z0-9.-]+(?::\d+)?(?:\/[^\s?]*)?(?:\?[^\s]*token[^\s]*)?$/,
+    storageKey: 'ax_websocket_url',
+    category: 'devops',
+  },
+
+  /* === Webhooks tiers (alerts, ops) === */
+  {
+    /* Slack incoming webhook : https://hooks.slack.com/services/T(team)/B(bot)/(token) */
+    name: 'Slack Webhook URL',
+    regex: /^https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]{20,}$/,
+    storageKey: 'ax_slack_webhook_url',
+    category: 'comms',
+    dashboard: 'https://api.slack.com/messaging/webhooks',
+    docs: 'https://api.slack.com/messaging/webhooks',
+  },
+  {
+    /* GitHub webhook URL générique (incoming events Apex) */
+    name: 'GitHub Webhook URL',
+    regex: /^https:\/\/api\.github\.com\/repos\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/hooks(?:\/\d+)?$/,
+    storageKey: 'ax_github_webhook_url',
+    category: 'devops',
+    dashboard: 'https://github.com/settings/hooks',
+    docs: 'https://docs.github.com/en/webhooks',
+  },
+
+  /* === Plateformes hébergement / Workers === */
+  {
+    /* Railway service URL (forme : https://*.railway.app ou https://*.up.railway.app)
+     * Kevin a Railway hosting → Postgres + Redis + Apps. Détection URL pour routing. */
+    name: 'Railway Service URL',
+    regex: /^https:\/\/[a-z0-9-]+(?:\.up)?\.railway\.app(?:\/[^\s]*)?$/i,
+    storageKey: 'ax_railway_url',
+    category: 'devops',
+    dashboard: 'https://railway.app/dashboard',
+    docs: 'https://docs.railway.app/',
+  },
+  {
+    /* Cloudflare Worker URL générique (autre que apex_v13_push_worker_url qui est typed strict) */
+    name: 'Cloudflare Worker URL',
+    regex: /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev(?:\/[^\s]*)?$/i,
+    storageKey: 'ax_cloudflare_worker_url',
+    category: 'devops',
+    dashboard: 'https://dash.cloudflare.com/?to=/:account/workers',
+    docs: 'https://developers.cloudflare.com/workers/',
+  },
+
+  /* === Tokens auth génériques (OAuth refresh / JWT) ===
+     * Placés ici APRÈS les patterns spécifiques pour ne pas écraser GitHub/Google etc. */
+  {
+    /* Google OAuth refresh token — format `1//xxx{50+}` */
+    name: 'Google OAuth Refresh Token',
+    regex: /^1\/\/[A-Za-z0-9_-]{50,}$/,
+    storageKey: 'ax_google_oauth_refresh',
+    category: 'identity',
+    dashboard: 'https://console.cloud.google.com/apis/credentials',
+    docs: 'https://developers.google.com/identity/protocols/oauth2',
+  },
+  {
+    /* JWT générique (header.payload.signature en base64url) — détection minimale.
+     * On ne stocke pas par défaut un JWT inconnu (faux positifs possibles), mais on
+     * propose à Kevin de classifier. */
+    name: 'JWT Token (générique)',
+    regex: /^eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/,
+    storageKey: 'ax_jwt_token',
+    category: 'identity',
+  },
+
   /* === FORBIDDEN — détection pour avertir Kevin, JAMAIS stocker === */
   {
     name: '⚠️ Carte bancaire',
@@ -749,6 +860,13 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     name: '⚠️ Mot de passe bancaire (refusé)',
     regex: /^(?:bank_password|bank_pass|mdp_banque):/i,
     storageKey: '__FORBIDDEN_BANK_PASS__',
+    category: 'forbidden',
+  },
+  {
+    /* SSH private key — refus stockage (doit rester sur device hardware/keychain) */
+    name: '⚠️ SSH Private Key (refusée)',
+    regex: /^-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/m,
+    storageKey: '__FORBIDDEN_SSH_KEY__',
     category: 'forbidden',
   },
 ];
