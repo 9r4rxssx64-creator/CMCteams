@@ -50,6 +50,21 @@ body {
   /* Safe areas appliquées AU CONTENU, pas au body fixé */
 }
 
+/* v13.3.98 P0 fix Kevin "barre du bas trop haute, redescendre" :
+ * iOS Safari PWA — body fixed mais respect safe-area-inset-bottom pour
+ * que la nav du bas ne soit pas bouffée par le home indicator iPhone. */
+#apex-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Safe-area iOS appliquée AU CONTAINER pas au body (sinon nav du bas mangée) */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  box-sizing: border-box;
+}
+
 /* v13.3.96 P0 fix Kevin "réglages je n'arrive plus à descendre" :
  * whitelist scroll étendue à TOUTES les pages qui ont contenu vertical.
  * Le `.ax-page` est utilisé par settings/, le `.ax-admin` par admin/,

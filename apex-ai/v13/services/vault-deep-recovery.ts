@@ -40,6 +40,8 @@ import { logger } from '../core/logger.js';
 
 import { autoRestoreCredentials } from './auto-restore-credentials.js';
 import { detectCredential, CREDENTIAL_PATTERNS } from './credential-patterns.js';
+import { genericSecrets } from './generic-secrets.js';
+import { vault } from './vault.js';
 
 /* ============================================================
    Types publics
@@ -54,11 +56,16 @@ export interface DeepRecoveryReport {
   reclassified: number;
   /** True si on a wiré ax_kevin_whatsapp_phone depuis profil. */
   whatsappWired: boolean;
+  /** v13.3.98 P0.5 : combien de secrets non classifiés ont été migrés vers
+   * leur vraie storageKey (ex: connection string Postgres collée dans une
+   * clé localStorage générique) ou vers `apex_v13_generic_secrets`. */
+  unclassifiedRescued: number;
   /** Détails par étape (pour logs / tests). */
   details: {
     autoRestore: { restored: number; failed: number };
     reclassification: Array<{ from: string; to: string; ok: boolean; reason?: string }>;
     whatsapp?: { source: string; phone_redacted: string };
+    unclassifiedScan?: { scanned: number; migrated: number; flaggedGeneric: number };
     errors: string[];
   };
 }
@@ -129,6 +136,7 @@ class VaultDeepRecovery {
       restored: 0,
       reclassified: 0,
       whatsappWired: false,
+      unclassifiedRescued: 0,
       details: {
         autoRestore: { restored: 0, failed: 0 },
         reclassification: [],
@@ -178,8 +186,17 @@ class VaultDeepRecovery {
       report.details.errors.push(`whatsapp: ${err instanceof Error ? err.message : String(err)}`);
     }
 
+    /* 4. v13.3.98 P0.5 : scan localStorage pour secrets non classifiés */
+    try {
+      const scan = await this.scanLocalStorageForUnclassifiedSecrets();
+      report.unclassifiedRescued = scan.migrated + scan.flaggedGeneric;
+      report.details.unclassifiedScan = scan;
+    } catch (err: unknown) {
+      report.details.errors.push(`unclassified scan: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
     /* Audit log si action prise */
-    if (report.restored > 0 || report.reclassified > 0 || report.whatsappWired) {
+    if (report.restored > 0 || report.reclassified > 0 || report.whatsappWired || report.unclassifiedRescued > 0) {
       try {
         const { auditLog } = await import('./audit-log.js');
         await auditLog.record('vault.deep_recovery', {
@@ -187,6 +204,7 @@ class VaultDeepRecovery {
             restored: report.restored,
             reclassified: report.reclassified,
             whatsapp_wired: report.whatsappWired,
+            unclassified_rescued: report.unclassifiedRescued,
             ts,
           },
         });
@@ -196,14 +214,185 @@ class VaultDeepRecovery {
     /* Auto-cleanup vieux backups (best-effort) */
     void this.purgeOldBackups();
 
-    if (report.restored > 0 || report.reclassified > 0 || report.whatsappWired) {
+    if (report.restored > 0 || report.reclassified > 0 || report.whatsappWired || report.unclassifiedRescued > 0) {
       logger.info(
         'vault-deep-recovery',
-        `restored=${report.restored} reclassified=${report.reclassified} whatsapp=${report.whatsappWired}`,
+        `restored=${report.restored} reclassified=${report.reclassified} whatsapp=${report.whatsappWired} unclassified=${report.unclassifiedRescued}`,
       );
     }
 
     return report;
+  }
+
+  /**
+   * P0.5 (Kevin v13.3.98) — Scan exhaustif localStorage pour récupérer des
+   * secrets que Kevin a collés mais qui n'ont jamais été classifiés.
+   *
+   * Itère TOUTES les valeurs de localStorage (sauf préfixes système) :
+   *   1. Si valeur > 20 chars
+   *   2. Si la storage_key n'est PAS dans CREDENTIAL_PATTERNS (pas une vault key valide)
+   *   3. Si la valeur n'est PAS un JSON object connu (ax_user, ax_settings, etc.)
+   *   4. Test detectCredential(value) sur la valeur (et sur ses tokens si multi-line)
+   *      → si match : migrer vers la bonne storageKey via vault.setKey + backup
+   *      → si pas match mais value > 20 chars + ressemble à un secret
+   *        (entropy heuristique) : flag dans `apex_v13_unclassified_secrets`
+   *        (Kevin pourra étiqueter ensuite via vue admin all-secrets)
+   *
+   * Whitelist préfixes IGNORÉS (pas du tout des secrets) :
+   *   - apex_v13_settings, apex_v13_user, apex_v13_kb_, apex_v13_audit_
+   *   - cmc_, ax_user, ax_uid, ax_lastact (CMCteams + Apex état UI)
+   *   - apex_v13_recovery_backup_ (déjà des backups)
+   *   - apex_v13_generic_secrets (déjà classifié)
+   *   - apex_v13_multi_keys (déjà classifié)
+   */
+  async scanLocalStorageForUnclassifiedSecrets(): Promise<{
+    scanned: number;
+    migrated: number;
+    flaggedGeneric: number;
+  }> {
+    const ignorePrefixes = [
+      'apex_v13_settings',
+      'apex_v13_user',
+      'apex_v13_kb_',
+      'apex_v13_audit_',
+      'apex_v13_persistent_memory',
+      'apex_v13_lessons',
+      'apex_v13_recovery_backup_',
+      'apex_v13_generic_secrets',
+      'apex_v13_multi_keys',
+      'apex_v13_xp',
+      'apex_v13_streak',
+      'apex_v13_pin',
+      'apex_v13_session',
+      'apex_v13_theme',
+      'apex_v13_perms',
+      'apex_v13_device_obf',
+      'apex_v13_deep_recovery_last_ts',
+      'cmc_',
+      'ax_user',
+      'ax_uid',
+      'ax_lastact',
+      'ax_settings',
+      'ax_pin',
+      'ax_credentials_deleted',
+    ];
+    const validVaultKeys = new Set(CREDENTIAL_PATTERNS.map((p) => p.storageKey));
+    let scanned = 0;
+    let migrated = 0;
+    let flaggedGeneric = 0;
+
+    const candidates: Array<{ key: string; value: string }> = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (validVaultKeys.has(k)) continue; /* déjà géré par reclassifyMisplacedKeys */
+        if (ignorePrefixes.some((p) => k === p || k.startsWith(p))) continue;
+        let raw: string | null = null;
+        try { raw = localStorage.getItem(k); } catch { continue; }
+        if (!raw) continue;
+        if (raw.length < 20) continue;
+        /* Skip JSON objects (settings, profil, etc.) */
+        if (raw.startsWith('{') || raw.startsWith('[')) continue;
+        /* Skip notre propre format chiffré sans contexte (pas de pattern matchable) */
+        candidates.push({ key: k, value: raw });
+        scanned++;
+      }
+    } catch (err: unknown) {
+      logger.warn('vault-deep-recovery', 'localStorage iter failed', { err });
+      return { scanned, migrated, flaggedGeneric };
+    }
+
+    /* Liste pour tracking flag generic */
+    const flagged: Array<{ key: string; preview: string; ts: number }> = [];
+
+    for (const { key, value } of candidates) {
+      /* Si la valeur est chiffrée (AXENC1: prefix), tente decrypt */
+      let plaintext = value;
+      if (value.startsWith('AXENC1:')) {
+        try {
+          const decrypted = await vault.decryptAuto(value);
+          if (!decrypted) continue;
+          plaintext = decrypted;
+        } catch { continue; }
+      }
+
+      /* Test pattern */
+      const detected = detectCredential(plaintext);
+      if (detected && detected.category !== 'forbidden') {
+        /* Migrate vers la bonne storageKey */
+        try {
+          const setRes = await vault.setKey(detected.storageKey, plaintext);
+          if (setRes.ok) {
+            /* Backup ancien + retire */
+            try {
+              const backupKey = `${RECOVERY_BACKUP_PREFIX}${key}_${Date.now()}`;
+              localStorage.setItem(backupKey, value);
+              localStorage.removeItem(key);
+            } catch { /* quota — non bloquant */ }
+            migrated++;
+            logger.info(
+              'vault-deep-recovery',
+              `Unclassified rescue: ${key} → ${detected.storageKey} (${detected.name})`,
+            );
+            continue;
+          }
+        } catch (err: unknown) {
+          logger.warn('vault-deep-recovery', 'setKey failed', { err, key });
+        }
+      }
+
+      /* Pas de pattern → si la valeur ressemble à un secret (entropy/longueur) :
+       * flag pour étiquetage manuel via vue admin all-secrets. On stocke en
+       * generic-secrets directement avec hint = clé localStorage d'origine. */
+      if (this.looksLikeSecret(plaintext)) {
+        try {
+          const r = await genericSecrets.add(
+            plaintext,
+            `Récupéré : ${key.slice(0, 40)}`,
+            `Auto-récupéré depuis localStorage["${key}"] (pattern inconnu, à étiqueter)`,
+          );
+          if (r.ok) {
+            flagged.push({ key, preview: plaintext.slice(0, 4) + '***' + plaintext.slice(-4), ts: Date.now() });
+            flaggedGeneric++;
+            /* On ne retire PAS la clé d'origine ici (au cas où c'est utilisé
+             * ailleurs) — backup + flag suffit. Kevin nettoiera depuis l'UI. */
+          }
+        } catch (err: unknown) {
+          logger.warn('vault-deep-recovery', 'flag generic failed', { err, key });
+        }
+      }
+    }
+
+    /* Persist flagged list pour audit/vue admin */
+    if (flagged.length > 0) {
+      try {
+        const existing = JSON.parse(localStorage.getItem('apex_v13_unclassified_secrets') ?? '[]') as Array<{ key: string; preview: string; ts: number }>;
+        existing.push(...flagged);
+        /* Cap 50 entries */
+        const capped = existing.slice(-50);
+        localStorage.setItem('apex_v13_unclassified_secrets', JSON.stringify(capped));
+      } catch { /* quota */ }
+    }
+
+    return { scanned, migrated, flaggedGeneric };
+  }
+
+  /**
+   * Heuristique simple : la valeur ressemble-t-elle à un secret ?
+   * - Longueur 20-500
+   * - Pas d'espace ou max 1 (tokens)
+   * - Au moins 60% de chars alphanumériques + ponctuation tokens
+   * - Contient à la fois lettres et chiffres
+   */
+  private looksLikeSecret(s: string): boolean {
+    if (s.length < 20 || s.length > 500) return false;
+    const spaces = (s.match(/\s/g) ?? []).length;
+    if (spaces > 1) return false;
+    if (!/[a-zA-Z]/.test(s)) return false;
+    if (!/\d/.test(s)) return false;
+    const tokenChars = (s.match(/[A-Za-z0-9._\-/=:+@]/g) ?? []).length;
+    return tokenChars / s.length >= 0.85;
   }
 
   /**
@@ -239,9 +428,6 @@ class VaultDeepRecovery {
       moved.push({ from: '*', to: '*', ok: false, reason: `localStorage iter failed: ${String(err).slice(0, 80)}` });
       return { moved: 0, skipped: 0, details: moved };
     }
-
-    /* Lazy import vault pour éviter cycle */
-    const { vault } = await import('./vault.js');
 
     for (const currentKey of candidates) {
       let plaintext = '';
@@ -326,7 +512,6 @@ class VaultDeepRecovery {
         let plain = existing;
         if (existing.startsWith('AXENC1:')) {
           try {
-            const { vault } = await import('./vault.js');
             plain = await vault.readKey('ax_kevin_whatsapp_phone');
           } catch {
             plain = '';
@@ -366,7 +551,6 @@ class VaultDeepRecovery {
 
       /* Trouvé valid → wire via vault.setKey (chiffré + triple persisté) */
       try {
-        const { vault } = await import('./vault.js');
         const r = await vault.setKey('ax_kevin_whatsapp_phone', normalized);
         if (r.ok) {
           logger.info(
