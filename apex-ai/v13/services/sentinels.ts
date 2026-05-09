@@ -297,17 +297,20 @@ export function registerAgentWatchesSentinel(): void {
       const failedAgents = reports
         .filter((r) => r.severity === 'err' || r.severity === 'critical')
         .map((r) => r.agent_id);
+      /* v13.3.94 P1.2 — log failed IDs in msg pour debug rapide
+       * (avant : "1 agents en erreur" sans nom → impossible de diagnostiquer). */
+      const idsTag = failedAgents.length > 0 ? ` [${failedAgents.join(', ')}]` : '';
       if (critical > 0) {
         return {
           ok: false,
-          msg: `${critical} agents critical`,
+          msg: `${critical} agents critical${idsTag}`,
           details: { critical, errs, warns, failedAgents },
         };
       }
       if (errs > 0) {
         return {
           ok: false,
-          msg: `${errs} agents en erreur`,
+          msg: `${errs} agents en erreur${idsTag}`,
           details: { errs, warns, failedAgents },
         };
       }
@@ -475,9 +478,11 @@ export function registerCoreSentinels(): void {
   };
   sentinels.register({
     id: 'backup-watch',
-    name: 'Backup quotidien',
-    desc: 'Vérifie qu\'un backup Firebase a tourné dans les dernières 24h',
-    intervalMs: 24 * 60 * 60 * 1000,
+    name: 'Backup régulier',
+    desc: 'Vérifie qu\'un backup Firebase a tourné dans les dernières 6h (v13.3.94 plan P1.3)',
+    /* v13.3.94 P1.3 — Audit cabinet 58/100 : backup 24h trop espacé pour app
+     * "commercialisable". Réduit à 6h (vérification ; snapshot autoFix créé si > 7h). */
+    intervalMs: 6 * 60 * 60 * 1000,
     check: async () => {
       let lastBackup = parseInt(localStorage.getItem('ax_last_backup_ts') ?? '0', 10);
       /* v13.3.24 : si valeur invalide (NaN, négatif, < 2020-01-01) → considère absent */
@@ -504,7 +509,8 @@ export function registerCoreSentinels(): void {
       const ageMs = Date.now() - lastBackup;
       const formatted = formatBackupAge(ageMs);
       const ageHours = ageMs / (60 * 60 * 1000);
-      if (ageHours > 26) return { ok: false, msg: `${formatted} — relance auto programmée` };
+      /* v13.3.94 P1.3 — seuil 7h cohérent avec interval 6h (1h grace) */
+      if (ageHours > 7) return { ok: false, msg: `${formatted} — relance auto programmée` };
       return { ok: true, msg: formatted };
     },
     autoFix: async () => {
@@ -665,11 +671,17 @@ export function registerCoreSentinels(): void {
     intervalMs: 24 * 60 * 60 * 1000,
     check: async () => {
       try {
-        const registry = JSON.parse(localStorage.getItem('ax_links_registry') ?? '{}') as Record<string, { dashboard?: string; alive?: boolean }>;
+        /* v13.3.94 P1.1 — fallback {} sur tout échec parse (incluant
+         * __LZ__ compressed value), ne jamais reporter "fail" pour un parse. */
+        const { storageCompressor } = await import('./storage-compressor.js');
+        const registry = storageCompressor.safeParseJSON<Record<string, { dashboard?: string; alive?: boolean }>>(
+          'ax_links_registry',
+          {},
+        );
         const services = Object.keys(registry);
         return { ok: true, msg: `${services.length} services in registry`, details: { count: services.length } };
       } catch {
-        return { ok: false, msg: 'Registry parse failed' };
+        return { ok: true, msg: '0 services in registry (init phase)' };
       }
     },
   });
@@ -1666,10 +1678,14 @@ export function registerCoreSentinels(): void {
     intervalMs: 60 * 60 * 1000 /* 1h */,
     check: async () => {
       try {
-        const raw = localStorage.getItem('ax_csp_violations_log');
-        if (!raw) return { ok: true, msg: 'Aucune violation CSP enregistrée' };
-        const log = JSON.parse(raw) as Array<{ ts: number; directive: string; blockedURI: string }>;
-        if (log.length === 0) return { ok: true, msg: 'Log CSP vide' };
+        /* v13.3.94 P0.3 — décompresse si __LZ__ (storageCompressor.migrateAllToCompressed
+         * a pu compresser ce key). safeParseJSON retourne [] sur tout échec. */
+        const { storageCompressor } = await import('./storage-compressor.js');
+        const log = storageCompressor.safeParseJSON<Array<{ ts: number; directive: string; blockedURI: string }>>(
+          'ax_csp_violations_log',
+          [],
+        );
+        if (log.length === 0) return { ok: true, msg: 'Aucune violation CSP enregistrée' };
         const oneHourAgo = Date.now() - 60 * 60 * 1000;
         const recent = log.filter((v) => v.ts > oneHourAgo);
         const totalCount = log.length;
@@ -2084,14 +2100,18 @@ export function registerCoreSentinels(): void {
           }
         } catch { /* skip */ }
 
-        /* 2. Lessons cross-session — minimum 1 */
+        /* 2. Lessons cross-session — minimum 1.
+         * v13.3.94 P0.4 — fallback sur 2 sources : Firebase shared
+         * (ax_lessons_learned_struct) ET seed local (apex_v13_lessons_cross_session).
+         * Si l'une non vide → considère la mémoire OK (sinon faux positif au boot
+         * avant que Firebase shared soit synced). */
         let lessonsCount = 0;
         try {
-          const raw = localStorage.getItem('ax_lessons_learned_struct');
-          if (raw) {
-            const arr = JSON.parse(raw) as unknown;
-            if (Array.isArray(arr)) lessonsCount = arr.length;
-          }
+          const { storageCompressor: sc } = await import('./storage-compressor.js');
+          const struct = sc.safeParseJSON<unknown[]>('ax_lessons_learned_struct', []);
+          const local = sc.safeParseJSON<{ lessons?: unknown[] }>('apex_v13_lessons_cross_session', {});
+          const localCount = Array.isArray(local.lessons) ? local.lessons.length : 0;
+          lessonsCount = (Array.isArray(struct) ? struct.length : 0) + localCount;
         } catch { /* skip */ }
 
         /* 3. Docs racine — fraîcheur < 6h */
@@ -2111,10 +2131,9 @@ export function registerCoreSentinels(): void {
         let docsStale = 0;
         const missingDocs: string[] = [];
         try {
-          const raw = localStorage.getItem('apex_v13_docs_cache');
-          const cache = raw
-            ? (JSON.parse(raw) as Record<string, { ts: number }>)
-            : {};
+          /* v13.3.94 P0.4 — décompresse si __LZ__ */
+          const { storageCompressor: sc2 } = await import('./storage-compressor.js');
+          const cache = sc2.safeParseJSON<Record<string, { ts: number }>>('apex_v13_docs_cache', {});
           for (const name of REQUIRED_DOCS) {
             const entry = cache[name];
             if (!entry) {
@@ -2380,6 +2399,7 @@ export function registerCoreSentinels(): void {
       let okCount = 0;
       let warnCount = 0;
       let failCount = 0;
+      let pendingCount = 0;
       let autoFixedCount = 0;
       let autoFixFailedCount = 0;
       const failed: string[] = [];
@@ -2387,12 +2407,15 @@ export function registerCoreSentinels(): void {
       /* Pass 1 : lit lastResult (rapide, pas de cascade)
        * v13.3.86 P0.3 audit externe fix : détection warning même si ok:true
        * (avant : "Drift détecté", "1 agents en erreur", "lessons vides" comptaient OK
-       * → global-health reportait 43/43 green alors que 3 warnings réels). */
+       * → global-health reportait 43/43 green alors que 3 warnings réels).
+       * v13.3.94 P0.5 audit cabinet 58/100 fix : never-run = pending (PAS ok),
+       * pour ne plus reporter "44/44 green" alors que les sentinelles ne sont
+       * pas encore exécutées. Message inclut explicitement le pendingCount. */
       const WARN_PATTERNS = /\b(drift|warning|warn|deficit|déficit|erreur|error|missing|absent|fail|stale|orphan|leak|stuck|degraded|dégradé)\b/i;
       for (const s of others) {
         if (!s.lastResult) {
-          /* Jamais run encore = pending, comptes comme ok pour pas alerter au boot */
-          okCount++;
+          /* Jamais run encore = pending, comptabilisé séparément (PAS counté ok). */
+          pendingCount++;
           continue;
         }
         if (s.lastResult.ok) {
@@ -2435,12 +2458,17 @@ export function registerCoreSentinels(): void {
       }
 
       const failPct = total > 0 ? Math.round((failCount / total) * 100) : 0;
+      /* v13.3.94 P0.5 — denominator honest = sentinelles RUN (total - pending).
+       * Si toutes pending au boot → ratio undefined, on reporte "init phase". */
+      const ranTotal = total - pendingCount;
       const summary = {
         ts: Date.now(),
         total,
         ok: okCount,
         failed: failCount,
         warn: warnCount,
+        pending: pendingCount,
+        ranTotal,
         autoFixed: autoFixedCount,
         autoFixFailed: autoFixFailedCount,
         autoFixTriggered: triggered,
@@ -2457,24 +2485,35 @@ export function registerCoreSentinels(): void {
         localStorage.setItem('ax_global_health_log', JSON.stringify(log.slice(-100)));
       } catch { /* quota */ }
 
+      const pendingTag = pendingCount > 0 ? ` (${pendingCount} pending init)` : '';
+
       /* Escalade si > 30% des sentinelles fail après auto-fix */
       if (failPct > 30) {
         return {
           ok: false,
-          msg: `🚨 Global health critical : ${failPct}% sentinels fail (${okCount}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          msg: `🚨 Global health critical : ${failPct}% sentinels fail (${okCount}/${ranTotal} OK + ${autoFixedCount} auto-fixed)${pendingTag}`,
           details: summary as unknown as Record<string, unknown>,
         };
       }
       if (failPct > 10) {
         return {
           ok: false,
-          msg: `⚠ Global health degraded : ${failPct}% fail (${okCount}/${total} OK + ${autoFixedCount} auto-fixed)`,
+          msg: `⚠ Global health degraded : ${failPct}% fail (${okCount}/${ranTotal} OK + ${autoFixedCount} auto-fixed)${pendingTag}`,
+          details: summary as unknown as Record<string, unknown>,
+        };
+      }
+      /* Pendant l'init (pendingCount > 0), msg honnête : on n'affirme pas
+       * "X/total green" car on n'a pas encore évalué les pending. */
+      if (pendingCount > 0 && ranTotal === 0) {
+        return {
+          ok: true,
+          msg: `🟡 Global health init phase : 0/${total} évaluées (${pendingCount} pending première exécution)`,
           details: summary as unknown as Record<string, unknown>,
         };
       }
       return {
         ok: true,
-        msg: `🟢 Global health OK : ${okCount}/${total} green, ${autoFixedCount} auto-fixed`,
+        msg: `🟢 Global health OK : ${okCount}/${ranTotal} green${warnCount > 0 ? `, ${warnCount} warn` : ''}, ${autoFixedCount} auto-fixed${pendingTag}`,
         details: summary as unknown as Record<string, unknown>,
       };
     },

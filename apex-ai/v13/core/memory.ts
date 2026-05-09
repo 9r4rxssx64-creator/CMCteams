@@ -932,6 +932,39 @@ class Memory {
       } catch {
         /* quota */
       }
+      /* v13.3.94 P0.4 — Seed `ax_lessons_learned_struct` (Firebase shared) si vide.
+       * memory-augmented-watch lit cette clé pour évaluer la santé mémoire.
+       * Si elle reste vide, la sentinelle reporte "Déficit mémoire" en boucle.
+       * Seed depuis CLAUDE.md = source autoritaire des leçons. Idempotent :
+       * ne pas écraser si déjà non-vide (Firebase a peut-être déjà synced). */
+      try {
+        const existingRaw = localStorage.getItem('ax_lessons_learned_struct');
+        let existing: unknown[] = [];
+        if (existingRaw) {
+          try {
+            const parsed = JSON.parse(existingRaw) as unknown;
+            if (Array.isArray(parsed)) existing = parsed;
+          } catch {
+            /* corrompu ou __LZ__ → on overwrite avec seed propre */
+          }
+        }
+        if (existing.length === 0 && lessons.length > 0) {
+          const struct = lessons.map((l) => ({
+            id: `claude_md_n${l.n}`,
+            category: 'claude_md',
+            title: l.title,
+            text: l.text,
+            severity: l.severity,
+            resolved: l.resolved,
+            ts: payload.ts,
+            source: 'CLAUDE.md',
+          }));
+          localStorage.setItem('ax_lessons_learned_struct', JSON.stringify(struct.slice(0, 200)));
+          logger.info('memory.syncLessons', `Seeded ax_lessons_learned_struct with ${struct.length} lessons`);
+        }
+      } catch (err: unknown) {
+        logger.warn('memory.syncLessons', 'seed struct failed', { err });
+      }
       logger.info('memory.syncLessons', `Persisted ${lessons.length} lessons from CLAUDE.md`);
       return { count: lessons.length, persisted: true };
     } catch (err: unknown) {

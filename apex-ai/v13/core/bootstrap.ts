@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.93';
+export const APP_VER = 'v13.3.94';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -255,6 +255,25 @@ async function bootstrap(): Promise<void> {
   await firebase.init().catch((err: unknown) => {
     logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
   });
+
+  /* v13.3.94 P0.2 — force snapshot vault → Firebase si drift au boot.
+   * Audit externe : "13 local sans backup" → autoFix sentinelle ne s'exécutait
+   * qu'au prochain tick (5min). On déclenche un snapshot initial non-bloquant
+   * dès firebase.init pour avoir Firebase aligné dès la 1ère seconde.
+   * Idempotent : pushAllLocal a un throttle 5min/clé, donc OK si appelé 2× au boot. */
+  void import('@services/vault-firebase-backup.js')
+    .then(async ({ vaultFirebaseBackup }) => {
+      try {
+        const audit = await vaultFirebaseBackup.auditCoherence();
+        if (audit.drift_detected && audit.in_local_not_fb.length > 0) {
+          const r = await vaultFirebaseBackup.syncDrift();
+          logger.info('boot', 'Initial vault drift sync', { pushed: r.pushed, restored: r.restored, drifted: audit.in_local_not_fb.length });
+        }
+      } catch (err: unknown) {
+        logger.warn('boot', 'Initial vault sync failed (non-blocking)', { err });
+      }
+    })
+    .catch((err: unknown) => logger.warn('boot', 'vault-firebase-backup load failed', { err }));
 
   /* 6. Migration v12.785 → v13 (one-shot, idempotent) */
   const migrated = localStorage.getItem('apex_v13_migrated');
