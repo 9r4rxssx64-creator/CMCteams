@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.3.99';
+export const APP_VER = 'v13.4.0';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -377,6 +377,8 @@ async function bootstrap(): Promise<void> {
   router.register('admin-rgpd', { loader: () => import('@features/admin/rgpd-admin/index.js'), requiresAdmin: true });
   /* Kevin 2026-05-09 v13.3.99 P0.4 : Vue admin "Mes Secrets" — dossier tous secrets en 1 endroit */
   router.register('admin-all-secrets', { loader: () => import('@features/admin/all-secrets/index.js'), requiresAdmin: true });
+  /* Kevin 2026-05-09 v13.4.0 P0 : Vue admin "Dashboard santé live" — auto-test exhaustif (codes/liens/sentinelles/MCP/vault) */
+  router.register('admin-health-dashboard', { loader: () => import('@features/admin/health-dashboard/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
