@@ -56,6 +56,25 @@ class StorageCompressor {
   }
 
   /**
+   * v13.3.94 P0.3 — Sync init du cache LZ (le compressor local est pur sync).
+   * Permet d'utiliser `decodeIfCompressed` / `safeParseJSON` sans `await`
+   * partout dans la base de code (sentinelles, bodyguard, etc.).
+   * Idempotent.
+   */
+  private loadLzStringSync(): LzStringLib | null {
+    if (this.lzCache) return this.lzCache;
+    if (this.lzLoadFailed) return null;
+    try {
+      const local = this.makeLocalCompressor();
+      this.lzCache = local;
+      return local;
+    } catch {
+      this.lzLoadFailed = true;
+      return null;
+    }
+  }
+
+  /**
    * Mini compresseur LZ-string-compatible UTF16.
    * Implémentation locale (pas de dépendance CDN qui peut être bloquée iOS PWA).
    *
@@ -259,6 +278,60 @@ class StorageCompressor {
       pct,
       severity,
     };
+  }
+
+  /**
+   * v13.3.94 P0.3 — Décode synchronement une valeur localStorage si elle est
+   * compressée (`__LZ__<utf16>`). Retourne la valeur brute (string décompressée
+   * OU la valeur d'origine si pas de préfixe).
+   *
+   * Usage prévu : remplacer `localStorage.getItem(k)` directement par
+   * `storageCompressor.decodeIfCompressed(localStorage.getItem(k))` dans
+   * les call-sites où on s'attend à du JSON brut (bodyguard, sentinels,
+   * audit-log, etc.).
+   *
+   * Si raw === null → retourne null. Si décompression échoue → retourne null
+   * (laisse appelant utiliser fallback). Pas async pour rester drop-in.
+   */
+  decodeIfCompressed(raw: string | null): string | null {
+    if (raw === null || raw === undefined) return null;
+    if (!raw.startsWith(COMPRESS_PREFIX)) return raw;
+    const lz = this.loadLzStringSync();
+    if (!lz) return null;
+    try {
+      const compressed = raw.slice(COMPRESS_PREFIX.length);
+      return lz.decompressFromUTF16(compressed);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * v13.3.94 P0.3 — Parse JSON safe avec décompression auto + fallback.
+   * Combine `localStorage.getItem(k)` + decode + JSON.parse en une étape
+   * robuste. Retourne defaultValue sur tout échec (raw absent, parse fail,
+   * décompression KO).
+   *
+   * Sync, drop-in pour remplacer le pattern :
+   *   `JSON.parse(localStorage.getItem(k) ?? '[]')`
+   * qui crashe sur les valeurs `__LZ__<utf16>`.
+   */
+  safeParseJSON<T = unknown>(key: string, defaultValue: T): T {
+    if (typeof localStorage === 'undefined') return defaultValue;
+    let raw: string | null;
+    try {
+      raw = localStorage.getItem(key);
+    } catch {
+      return defaultValue;
+    }
+    if (raw === null) return defaultValue;
+    const decoded = this.decodeIfCompressed(raw);
+    if (decoded === null) return defaultValue;
+    try {
+      return JSON.parse(decoded) as T;
+    } catch {
+      return defaultValue;
+    }
   }
 
   /**

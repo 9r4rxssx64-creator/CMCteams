@@ -10,6 +10,7 @@
 import { logger } from '../core/logger.js';
 
 import { auditLog } from './audit-log.js';
+import { storageCompressor } from './storage-compressor.js';
 
 const CSP_VIOLATIONS_KEY = 'ax_csp_violations_log';
 const CSP_VIOLATIONS_CAP = 100;
@@ -34,8 +35,12 @@ export function recordCSPViolation(e: SecurityPolicyViolationEvent): CSPViolatio
     columnNumber: e.columnNumber || 0,
   };
   try {
-    const raw = localStorage.getItem(CSP_VIOLATIONS_KEY);
-    const log: CSPViolationEntry[] = raw ? (JSON.parse(raw) as CSPViolationEntry[]) : [];
+    /* v13.3.94 P0.3 — décompresse si __LZ__ avant JSON.parse (storageCompressor
+     * peut compresser ce key au-dessus du seuil 1KB lors de migrateAllToCompressed). */
+    const log: CSPViolationEntry[] = storageCompressor.safeParseJSON<CSPViolationEntry[]>(
+      CSP_VIOLATIONS_KEY,
+      [],
+    );
     log.push(entry);
     /* FIFO cap 100 */
     const trimmed = log.length > CSP_VIOLATIONS_CAP ? log.slice(-CSP_VIOLATIONS_CAP) : log;
@@ -48,13 +53,8 @@ export function recordCSPViolation(e: SecurityPolicyViolationEvent): CSPViolatio
 
 /** Liste les violations CSP enregistrées (max 100, ordre chrono). */
 export function getCSPViolations(): CSPViolationEntry[] {
-  try {
-    const raw = localStorage.getItem(CSP_VIOLATIONS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as CSPViolationEntry[];
-  } catch {
-    return [];
-  }
+  /* v13.3.94 P0.3 — décompresse si __LZ__ avant JSON.parse */
+  return storageCompressor.safeParseJSON<CSPViolationEntry[]>(CSP_VIOLATIONS_KEY, []);
 }
 
 /** Vide l'historique violations CSP (admin only — appelé après review). */
