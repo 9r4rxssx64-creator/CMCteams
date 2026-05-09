@@ -28,6 +28,9 @@ import {
 import { linksRegistry } from '../../../services/links-registry.js';
 import { multiKeyVault } from '../../../services/multi-key-vault.js';
 import { sentinelsRegistry } from '../../../services/sentinels-registry.js';
+import { rulesEngine, type ApexRule } from '../../../services/rules-engine.js';
+import { rulesInjectionWatch } from '../../../services/rules-injection-watch.js';
+import { noRegressionWatch } from '../../../services/no-regression-watch.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 
@@ -317,15 +320,53 @@ function rerender(rootEl: HTMLElement): void {
   attachHandlers(rootEl);
 }
 
+function renderConformityCard(): string {
+  const counts = rulesEngine.getInjectedCount();
+  const injStats = rulesInjectionWatch.getStats();
+  const regStats = noRegressionWatch.getStats();
+  const passPct = Math.round(injStats.passRate * 100);
+  const passColor = passPct >= 90 ? '#22cc77' : passPct >= 60 ? '#e8b830' : '#ff5566';
+  return `
+    <div style="background:linear-gradient(135deg,rgba(201,162,39,0.08),rgba(201,162,39,0.02));border:1px solid rgba(201,162,39,0.2);border-radius:14px;padding:14px;margin-bottom:12px">
+      <h3 style="margin:0 0 10px;color:#e8b830;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">📚 Conformité CLAUDE.md</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px">
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Règles injectées</div>
+          <div style="font-size:18px;color:#fff;font-weight:700;margin-top:2px">${counts.rules}/50</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Erreurs appliquées</div>
+          <div style="font-size:18px;color:#fff;font-weight:700;margin-top:2px">${counts.errorsApplied}/${counts.errorsTotal}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Audits 24h</div>
+          <div style="font-size:18px;color:${passColor};font-weight:700;margin-top:2px">${passPct}% OK</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Régressions 24h</div>
+          <div style="font-size:18px;color:${regStats.failuresLast24h === 0 ? '#22cc77' : '#ff5566'};font-weight:700;margin-top:2px">${regStats.failuresLast24h}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button id="btn-test-noregression" style="padding:8px 12px;background:rgba(34,204,119,0.12);color:#22cc77;border:1px solid rgba(34,204,119,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">🧪 Re-tester non-régression</button>
+        <button id="btn-show-rules" style="padding:8px 12px;background:rgba(201,162,39,0.12);color:#e8b830;border:1px solid rgba(201,162,39,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">📚 Voir toutes règles</button>
+        <button id="btn-audit-injection" style="padding:8px 12px;background:rgba(77,158,255,0.12);color:#4d9eff;border:1px solid rgba(77,158,255,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">🔍 Auditer injection</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderInner(report: FullHealthReport | null): string {
   if (!report) {
     return `
       ${renderGlobalHeader(null)}
+      ${renderConformityCard()}
       <div id="ax-health-progress-mount"></div>
     `;
   }
   return `
     ${renderGlobalHeader(report)}
+    ${renderConformityCard()}
     <div id="ax-health-progress-mount"></div>
     ${renderCategoryStats(report)}
     ${renderAlternatives(report)}
@@ -334,6 +375,98 @@ function renderInner(report: FullHealthReport | null): string {
       ${renderItemsList(report)}
     </div>
   `;
+}
+
+async function runNoRegressionTest(rootEl: HTMLElement): Promise<void> {
+  haptic.medium();
+  toast.success('Tests non-régression…');
+  try {
+    const r = await noRegressionWatch.checkAll();
+    if (r.ok) {
+      toast.success(`✅ Non-régression OK (${r.passed}/${r.totalChecks})`);
+    } else {
+      toast.warn(`⚠️ ${r.failed} régression(s) détectée(s)`);
+    }
+    rerender(rootEl);
+  } catch (err) {
+    logger.warn('health-dashboard', 'runNoRegressionTest failed', { err });
+    toast.error('Test échoué');
+  }
+}
+
+async function runInjectionAudit(rootEl: HTMLElement): Promise<void> {
+  haptic.tap();
+  toast.success('Audit injection…');
+  try {
+    const r = await rulesInjectionWatch.audit();
+    if (r.ok) {
+      toast.success(`✅ Injection OK (${r.promptSize} chars)`);
+    } else {
+      toast.warn(`⚠️ Sections manquantes : ${r.missing.join(', ')}`);
+    }
+    rerender(rootEl);
+  } catch (err) {
+    logger.warn('health-dashboard', 'runInjectionAudit failed', { err });
+    toast.error('Audit échoué');
+  }
+}
+
+function showAllRulesModal(rootEl: HTMLElement): void {
+  haptic.tap();
+  const rules: ApexRule[] = rulesEngine.getTopRules(50);
+  const errors = rulesEngine.getTopErrors(55);
+  /* Modal léger custom (z-index élevé) */
+  const existing = rootEl.querySelector('#ax-rules-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'ax-rules-modal';
+  modal.style.cssText =
+    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 12px max(20px,env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch';
+  modal.innerHTML = `
+    <div style="background:#11131e;border-radius:16px;border:1px solid rgba(255,255,255,0.08);max-width:720px;width:100%;padding:18px;color:#fff">
+      <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h2 style="margin:0;color:#e8b830;font-size:18px">📚 Règles + erreurs CLAUDE.md</h2>
+        <button id="ax-rules-close" style="background:rgba(255,255,255,0.06);color:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
+      </header>
+      <input id="ax-rules-search" type="text" placeholder="Recherche…" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-size:14px;margin-bottom:12px" />
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:8px 0">Règles (${rules.length})</div>
+      <ul id="ax-rules-list" style="list-style:none;padding:0;margin:0 0 16px">
+        ${rules
+          .map((r, i) => {
+            const sev = r.severity === 'critical' ? '🔴' : r.severity === 'high' ? '🟡' : '🟢';
+            const safeTitle = r.title.replace(/[<>]/g, '');
+            const safeQuote = (r.quote || '').replace(/[<>]/g, '').slice(0, 160);
+            return `<li class="ax-rule-row" data-keyword="${safeTitle.toLowerCase()} ${safeQuote.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px">${sev} <strong>${i + 1}. ${safeTitle.slice(0, 100)}</strong>${safeQuote ? `<div style="color:rgba(255,255,255,0.55);font-size:11px;margin-top:2px">« ${safeQuote} »</div>` : ''}</li>`;
+          })
+          .join('')}
+      </ul>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:8px 0">Erreurs documentées (${errors.length})</div>
+      <ul id="ax-errors-list" style="list-style:none;padding:0;margin:0">
+        ${errors
+          .map((e) => {
+            const tag = e.applied ? '✅' : '⚠️';
+            const safeTitle = e.title.replace(/[<>]/g, '').slice(0, 100);
+            const safeLesson = (e.lesson || '').replace(/[<>]/g, '').slice(0, 200);
+            return `<li class="ax-err-row" data-keyword="${safeTitle.toLowerCase()} ${safeLesson.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px">${tag} <strong>#${e.num} ${safeTitle}</strong>${safeLesson ? `<div style="color:rgba(255,255,255,0.55);font-size:11px;margin-top:2px">${safeLesson}</div>` : ''}</li>`;
+          })
+          .join('')}
+      </ul>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const close = (): void => modal.remove();
+  modal.querySelector('#ax-rules-close')?.addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+  const search = modal.querySelector<HTMLInputElement>('#ax-rules-search');
+  search?.addEventListener('input', () => {
+    const k = (search.value || '').toLowerCase().trim();
+    modal.querySelectorAll<HTMLElement>('.ax-rule-row, .ax-err-row').forEach((row) => {
+      const m = (row.dataset['keyword'] || '').includes(k);
+      row.style.display = !k || m ? '' : 'none';
+    });
+  });
 }
 
 function attachHandlers(rootEl: HTMLElement): void {
@@ -364,6 +497,25 @@ function attachHandlers(rootEl: HTMLElement): void {
       if (id) void refreshTestSingleItem(id, rootEl);
     });
   });
+  /* v13.4.4 — Conformity card buttons */
+  const btnNoReg = rootEl.querySelector<HTMLButtonElement>('#btn-test-noregression');
+  if (btnNoReg) {
+    scope.bind(btnNoReg, 'click', () => {
+      void runNoRegressionTest(rootEl);
+    });
+  }
+  const btnRules = rootEl.querySelector<HTMLButtonElement>('#btn-show-rules');
+  if (btnRules) {
+    scope.bind(btnRules, 'click', () => {
+      showAllRulesModal(rootEl);
+    });
+  }
+  const btnInj = rootEl.querySelector<HTMLButtonElement>('#btn-audit-injection');
+  if (btnInj) {
+    scope.bind(btnInj, 'click', () => {
+      void runInjectionAudit(rootEl);
+    });
+  }
   /* Back to admin */
   const btnBack = rootEl.querySelector<HTMLButtonElement>('#btn-back-admin');
   if (btnBack) {
