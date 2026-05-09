@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.2';
+export const APP_VER = 'v13.4.3';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -381,6 +381,8 @@ async function bootstrap(): Promise<void> {
   router.register('admin-health-dashboard', { loader: () => import('@features/admin/health-dashboard/index.js'), requiresAdmin: true });
   /* Kevin 2026-05-09 v13.4.2 : Vue admin "Yury Plugins" — 5 services applicatifs (security-review, code-review, frontend-design, superpowers, gstack-roles) */
   router.register('admin-yury-plugins', { loader: () => import('@features/admin/yury-plugins/index.js'), requiresAdmin: true });
+  /* Kevin 2026-05-09 v13.4.3 : Vue admin "Shubham Skills" — 5 services TikTok (hyperframes, agent-browser, marketing-psy, impeccable-design, ios-simulator) */
+  router.register('admin-shubham-skills', { loader: () => import('@features/admin/shubham-skills/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

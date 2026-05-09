@@ -35,6 +35,10 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'copy', emoji: '📋', description: 'Copie la dernière réponse Apex', argsHint: '' },
   { name: 'version', emoji: '🏷️', description: 'Affiche la version Apex', argsHint: '' },
   { name: 'fork', emoji: '🌿', description: 'Démarre une nouvelle conversation depuis ce point', argsHint: '' },
+  /* v13.4.3 — IA IRL TikTok */
+  { name: 'loop', emoji: '🔁', description: 'Queue tâche autonome (list/pause/resume/clear ou texte)', argsHint: '<task|list|pause|resume|clear>' },
+  { name: 'plan', emoji: '🗺', description: 'Génère un plan structuré avant exécution', argsHint: '<objectif>', requiresArgs: true },
+  { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
 ];
 
 export interface SlashParseResult {
