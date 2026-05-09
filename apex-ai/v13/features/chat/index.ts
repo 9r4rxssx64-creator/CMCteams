@@ -1707,7 +1707,6 @@ export function render(rootEl: HTMLElement): void {
         <h1>APEX</h1>
         <div style="display:flex;gap:4px;align-items:center">
           <button class="ax-btn ax-btn-icon" id="ax-chat-clear" aria-label="Effacer chat" title="Effacer le chat (conversation courante)">🗑</button>
-          <button class="ax-btn ax-btn-icon" id="ax-chat-settings" aria-label="Paramètres" title="Paramètres">⚙️</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
         </div>
       </header>

@@ -269,13 +269,14 @@
 }
 
 .ax-chat-greeting {
+  /* v13.3.99 Kevin "greeting prend trop de place" — ultra-discret */
   text-align: center;
   color: var(--ax-text-dim);
-  font-size: 11px;
-  padding: 4px 8px 2px;
+  font-size: 10px;
+  padding: 2px 8px 1px;
   font-family: var(--ax-font);
-  line-height: 1.2;
-  opacity: 0.6;
+  line-height: 1.15;
+  opacity: 0.45;
 }
 
 .ax-msg {

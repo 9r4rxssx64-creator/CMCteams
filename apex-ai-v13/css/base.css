@@ -50,9 +50,10 @@ body {
   /* Safe areas appliquées AU CONTENU, pas au body fixé */
 }
 
-/* v13.3.98 P0 fix Kevin "barre du bas trop haute, redescendre" :
- * iOS Safari PWA — body fixed mais respect safe-area-inset-bottom pour
- * que la nav du bas ne soit pas bouffée par le home indicator iPhone. */
+/* v13.3.99 P0 fix Kevin "barre du bas trop haute, colles tout au maximum
+ * jusqu'à la version" — retirer padding-bottom #apex-root (créait gros gap
+ * sous nav). Footer + nav désormais COLLÉS au bord bas, safe-area-inset
+ * appliquée DIRECTEMENT au footer interne du chat. */
 #apex-root {
   position: fixed;
   inset: 0;
@@ -60,9 +61,8 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  /* Safe-area iOS appliquée AU CONTAINER pas au body (sinon nav du bas mangée) */
-  padding-bottom: env(safe-area-inset-bottom, 0);
   box-sizing: border-box;
+  /* PAS de padding-bottom : footer chat gère safe-area-inset-bottom à 1px près */
 }
 
 /* v13.3.96 P0 fix Kevin "réglages je n'arrive plus à descendre" :

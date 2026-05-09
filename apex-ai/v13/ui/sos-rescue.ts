@@ -41,12 +41,12 @@ class SosRescue {
     btn.type = 'button';
     btn.setAttribute('aria-label', 'SOS Rescue — Débloquer Apex');
     btn.title = 'SOS — Tap court : auto-fix. Long press : diagnostic complet.';
-    /* v13.3.85 fix Kevin "tu trouves ton affichage réussi ?" — SOS overlap input
-     * bar mic/ear/paperclip/camera. Remonté à 168px (clearing input 50px + nav
-     * 36px + safe-area + 80px buffer). */
+    /* v13.3.99 fix Kevin "SOS mal placé" — repositionné juste au-dessus
+     * de l'input area (input ~38px + nav 30px + footer 12px = 80px) + 20px
+     * marge confortable = 100px. Plus de overlap input ni clipping. */
     btn.style.cssText = [
       'position:fixed',
-      'bottom:calc(168px + env(safe-area-inset-bottom, 0px))',
+      'bottom:calc(100px + env(safe-area-inset-bottom, 0px))',
       'right:12px',
       'width:44px',
       'height:44px',
