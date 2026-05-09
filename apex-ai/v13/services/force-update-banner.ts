@@ -232,20 +232,24 @@ class ForceUpdateBanner {
     }
     /* Étape 3 : clear localStorage clés CACHE uniquement (pas vault/user) */
     try {
-      /* v13.3.92 P0 fix Kevin '02:36 vault entièrement vide après reload v13.3.91' :
-       * PRESERVE_PREFIXES étendu pour protéger TOUS les stores vault critiques.
-       * Avant : les `ax_*_key` legacy + `apex_v13_multikey_vault` + passphrase_history
-       * pouvaient être wipés par mon clear localStorage si le pattern matchait
-       * 'cache' / 'sw_' / 'app_ver' (ils ne matchent pas mais par sécurité explicite). */
+      /* v13.3.93 P0 CRITIQUE Kevin "j'ai collé toutes les clés une après l'autre
+       * et rien ne fonctionne" — TROUVÉ : le PRESERVE_PREFIXES v13.3.92 utilisait
+       * `apex_v13_pin_` (avec underscore final) MAIS la vraie clé du PIN hash est
+       * `apex_v13_pin` (SANS underscore). Donc startsWith ne matchait pas →
+       * PIN hash effacé → getDeviceBoundPassphrase() régénérait random différent
+       * → ANCIENNE clé chiffrée avec ancien PIN devenait indéchiffrable.
+       * Fix : enlever les underscores de fin pour matcher BOTH 'apex_v13_pin'
+       * ET 'apex_v13_pin_xxx'. */
       const PRESERVE_PREFIXES = [
-        'apex_v13_vault_',
+        'apex_v13_vault',
         'apex_v13_user',
-        'apex_v13_pin_',
+        'apex_v13_pin',
         'apex_v13_multikey_vault',
         'apex_v13_passphrase_history',
         'apex_v13_persistent_memory',
         'apex_v13_credentials',
         'apex_v13_device_obf',
+        'apex_v13_device_passphrase',
         'apex_v13_lessons',
         'apex_v13_kb',
         'apex_v13_audit',
