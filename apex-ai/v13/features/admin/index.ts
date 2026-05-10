@@ -201,6 +201,10 @@ function renderHealthTab(): string {
                 style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
           🎬 Shubham Skills
         </button>
+        <button class="ax-btn" data-nav-route="admin-autonomous"
+                style="background:linear-gradient(135deg,rgba(60,200,80,0.18),rgba(232,184,48,0.12));color:#3c8;border:1px solid rgba(60,200,80,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🤖 Mode Autonome
+        </button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
     </div>

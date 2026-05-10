@@ -1,4 +1,65 @@
-# Mémo de reprise — Apex v13.3.81 / CMC v9.604 (2026-05-08 20h)
+# Mémo de reprise — Apex v13.4.5 / CMC v9.604 (2026-05-10)
+
+## 🎯 SESSION 2026-05-10 — Mode Autonome Apex (Kevin 2026-05-10)
+
+**Demande Kevin** : Mode Autonome où Apex prend le relais après commande chat et bosse SEUL jusqu'à épuisement forfait Anthropic ou stop manuel.
+
+### Livré v13.4.5 — 7 features
+
+| # | Fichier | Lignes | Description |
+|---|---|---|---|
+| 1 | `apex-ai/v13/services/apex-autonomous-mode.ts` | 582 | Core service. Session-driven (objectif unique, auto-décomposition sous-tâches). Quota check via consumption-monitor. Triple persistence localStorage + firebase-queue. Garde-fous maxIterations 50, quotaLimit tokens 50000, timeout 5min/task. Auto-restore au boot, archive orphelins >30min. |
+| 2 | `apex-ai/v13/services/autonomous-watch.ts` | 82 | Sentinelle dédiée 30s (vs sentinels standard 60s) → tick apex-autonomous-mode. Wired bootstrap.ts. |
+| 3 | `apex-ai/v13/services/telegram-notifier.ts` | 221 | Bridge notif Kevin cascade : browser push → Telegram worker → API direct → log local. Dedup 6h. |
+| 4 | `apex-ai/v13/features/admin/autonomous/index.ts` | 311 | Vue admin Mode Autonome avec progress bars, logs live, queue+faites, history. Auto-refresh 5s. Kill switch/pause/resume/force-tick. |
+| 5 | `apex-ai/v13/features/chat/index.ts` (modif) | +85 | Slash command `/autonomous <objectif>` + aliases `/auto` `/autonome`. Sub-commands : status, stop, pause, resume. |
+| 6 | `apex-ai/v13/services/slash-commands.ts` (modif) | +2 | Registry slash `autonomous` 🤖. |
+| 7 | `.github/workflows/apex-autonomous-watcher.yml` | 124 | Cron 5min poll Firebase `apex/autonomous_sessions` REST. Issue + repository_dispatch si stale >30min. |
+| 8 | `apex-ai/v13/tests/unit/apex-autonomous-mode.test.ts` | 215 | 12 tests verts (start/stop/pause/resume/tick/quota_exhausted/maxIter/persistence/orphaned/subtasks/watch). |
+
+### Bumps v13.4.4 → v13.4.5
+
+- `core/bootstrap.ts` : `APP_VER = 'v13.4.5'`
+- `index.html` : `data-app-ver="v13.4.5"`
+- `sw.js` : `CACHE_VERSION = 'apex-v13.4.5'`
+- `package.json` : `"version": "13.4.5"`
+- `data/apex-recent-capabilities.ts` : +5 entries v13.4.5 (mode-autonome, sentinelle, telegram, slash, vue admin)
+
+### Triple cohérence vérifiée (Erreur #54 anti)
+
+```
+apex-ai/v13/index.html       data-app-ver="v13.4.5"
+apex-ai/v13/sw.js            CACHE_VERSION = 'apex-v13.4.5'
+apex-ai-v13/index.html       data-app-ver="v13.4.5"
+apex-ai-v13/sw.js            CACHE_VERSION = 'apex-v13.4.5'
+```
+
+### Tests v13.4.5
+
+- Tests neufs : **12/12 verts** (apex-autonomous-mode + autonomous-watch)
+- Total suite : 7980 pass / 10 fail PRE-EXISTANTS (déjà rouge sur main, **0 régression introduite**)
+- TypeScript strict : **exit 0**
+- Build Vite : **6.23s OK**
+
+### Comment l'utiliser (Kevin)
+
+1. Dans chat : `/autonomous Refactor module X en suivant règle Kevin`
+   → Apex démarre session, prend le relais.
+2. Suivi : `/autonomous status` ou vue admin `🤖 Mode Autonome`
+3. Stop : `/autonomous stop` ou bouton 🛑 dans vue admin
+4. Quand quota Anthropic ≥95% → notif Telegram auto avec lien recharge
+
+### Garde-fous (anti-runaway)
+
+- maxIterations 50 (hard cap 200)
+- quotaLimit 50000 tokens cumulés par session
+- Timeout 5min/task → marquée failed
+- 3 fails consécutifs → session failed
+- Cooldown 3s entre ticks (anti-spam)
+- Stop manuel = AbortController abort fetch en cours
+- App fermée >5min → GitHub Action détecte mais NE fait PAS l'appel IA (sécu + coût)
+
+---
 
 ## 🎯 SESSION 2026-05-08 — Audit externe + cascade autonome (197/200)
 

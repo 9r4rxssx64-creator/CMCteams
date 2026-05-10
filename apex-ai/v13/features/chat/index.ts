@@ -1031,7 +1031,20 @@ export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): b
  * Retourne true si le message a été traité comme commande, false sinon.
  */
 export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
-  const parsed = parseSlashCommand(text);
+  /* v13.4.5 — Alias `/auto` et `/autonome` redirigés vers `/autonomous` (Kevin "mode autonome"). */
+  const aliasMap: Record<string, string> = { auto: 'autonomous', autonome: 'autonomous' };
+  const normalizedText = (() => {
+    if (!text || !text.trim().startsWith('/')) return text;
+    const body = text.trim().slice(1);
+    const sp = body.indexOf(' ');
+    const cmdName = (sp === -1 ? body : body.slice(0, sp)).toLowerCase();
+    if (aliasMap[cmdName]) {
+      const rest = sp === -1 ? '' : body.slice(sp);
+      return '/' + aliasMap[cmdName] + rest;
+    }
+    return text;
+  })();
+  const parsed = parseSlashCommand(normalizedText);
   if (!parsed.isSlash) return false;
   haptic.tap();
   if (parsed.unknown) {
@@ -1107,6 +1120,10 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       return true;
     case 'rules':
       void handleRulesCommand(rootEl, args);
+      return true;
+    /* v13.4.5 — Mode autonome Apex */
+    case 'autonomous':
+      void handleAutonomousCommand(rootEl, args);
       return true;
     default:
       return false;
@@ -1189,6 +1206,85 @@ async function handleRulesCommand(rootEl: HTMLElement, args: string): Promise<vo
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     pushAssistantMessage(rootEl, `⚠️ Erreur rules : ${msg}`);
+  }
+}
+
+/* v13.4.5 — Slash command /autonomous (mode autonome session-driven) */
+async function handleAutonomousCommand(rootEl: HTMLElement, args: string): Promise<void> {
+  try {
+    const { apexAutonomousMode } = await import('../../services/apex-autonomous-mode.js');
+    const { autonomousWatch } = await import('../../services/autonomous-watch.js');
+    autonomousWatch.start();
+    const sub = (args || '').trim();
+    const subLower = sub.toLowerCase();
+
+    if (subLower === 'status' || subLower === 'list' || subLower === '') {
+      const s = apexAutonomousMode.getActiveSession();
+      if (!s) {
+        const history = apexAutonomousMode.getHistory(3);
+        const histLines = history.length
+          ? history
+              .map(
+                (h, i) =>
+                  `${i + 1}. **${h.status}** — ${h.initialObjective.slice(0, 80)} (${h.iterations} iter, ${h.tokensConsumed} tokens)`,
+              )
+              .join('\n')
+          : '_Aucune session passée._';
+        pushAssistantMessage(
+          rootEl,
+          `### 🤖 Mode Autonome\n\n**État :** Inactif.\n\nLance avec \`/autonomous <objectif>\`.\n\n#### Dernières sessions\n${histLines}`,
+        );
+        return;
+      }
+      const queue = s.taskQueue.length;
+      const done = s.tasksCompleted.filter((t) => t.status === 'done').length;
+      const fail = s.tasksCompleted.filter((t) => t.status === 'failed').length;
+      const ageMin = Math.round((Date.now() - s.startedAt) / 60000);
+      const recentLogs = s.logs.slice(-5).map((l) => `- ${l.level === 'error' ? '❌' : l.level === 'warn' ? '⚠️' : '✅'} ${l.msg.slice(0, 100)}`).join('\n');
+      pushAssistantMessage(
+        rootEl,
+        `### 🤖 Mode Autonome — ${s.status.toUpperCase()}\n\n` +
+          `**Objectif :** ${s.initialObjective.slice(0, 200)}\n\n` +
+          `- ⏱ Démarré il y a ${ageMin} min\n` +
+          `- 🔁 Itérations : ${s.iterations}\n` +
+          `- ✅ Tâches faites : ${done} (${fail} fails)\n` +
+          `- 📋 Queue : ${queue}\n` +
+          `- 📊 Tokens : ${s.tokensConsumed}\n\n` +
+          `#### Logs récents\n${recentLogs || '_(aucun)_'}\n\n` +
+          `_Stop : \`/autonomous stop\`_`,
+      );
+      return;
+    }
+
+    if (subLower === 'stop' || subLower === 'kill') {
+      apexAutonomousMode.stop(undefined, 'slash-stop');
+      pushAssistantMessage(rootEl, '🛑 Mode autonome arrêté.');
+      return;
+    }
+    if (subLower === 'pause') {
+      apexAutonomousMode.pause();
+      pushAssistantMessage(rootEl, '⏸ Mode autonome pausé. Reprends avec `/autonomous resume`.');
+      return;
+    }
+    if (subLower === 'resume') {
+      apexAutonomousMode.resume();
+      pushAssistantMessage(rootEl, '▶️ Mode autonome repris.');
+      return;
+    }
+
+    /* Nouvelle session */
+    const session = await apexAutonomousMode.start(sub);
+    pushAssistantMessage(
+      rootEl,
+      `🤖 **Mode autonome activé.**\n\n` +
+        `**Objectif :** ${session.initialObjective.slice(0, 300)}\n\n` +
+        `Je prends le relais — tu peux fermer l'app, je continue jusqu'à fin ou épuisement forfait Anthropic. ` +
+        `Tu seras notifié sur Telegram quand quota épuisé.\n\n` +
+        `Suivi : \`/autonomous status\`. Arrêt : \`/autonomous stop\`.`,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur mode autonome : ${msg}`);
   }
 }
 

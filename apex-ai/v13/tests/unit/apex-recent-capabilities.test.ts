@@ -23,6 +23,7 @@ describe('apex-recent-capabilities v13.4.4', () => {
     expect(versions.has('v13.4.2')).toBe(true);
     expect(versions.has('v13.4.3')).toBe(true);
     expect(versions.has('v13.4.4')).toBe(true);
+    expect(versions.has('v13.4.5')).toBe(true);
   });
 
   it('renderRecentCapabilitiesForPrompt renvoie string concise', () => {
