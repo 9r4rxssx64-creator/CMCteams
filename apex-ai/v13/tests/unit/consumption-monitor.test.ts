@@ -143,10 +143,12 @@ describe('Consumption Monitor (live + alertes 1 clic recharge)', () => {
       expect(typeof ui.total_alerts).toBe('number');
     });
 
-    it('chaque service a emoji + billing_url', () => {
+    it('chaque service a emoji honnête + billing_url', () => {
+      /* v13.3.85 honestEmoji : ⚪ ajouté pour "non configuré"
+       * (avant : 🟢 trompeur même quand clé absente). */
       const ui = consumptionMonitor.formatForUI();
       for (const s of ui.services) {
-        expect(['🟢', '🟡', '🔴']).toContain(s.emoji);
+        expect(['🟢', '🟡', '🔴', '⚪']).toContain(s.emoji);
         expect(s.billing_url.length).toBeGreaterThan(0);
       }
     });

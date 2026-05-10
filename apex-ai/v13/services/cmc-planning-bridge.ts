@@ -15,8 +15,9 @@
  *  - Cap raw_text à 50 KB (sécurité Firebase + perf)
  *  - Pas de logs PII (raw_text non loggé)
  */
-import { firebase } from './firebase.js';
 import { logger } from '../core/logger.js';
+
+import { firebase } from './firebase.js';
 
 /**
  * Patterns SBM (mois en MAJUSCULES + sections classiques planning casino).

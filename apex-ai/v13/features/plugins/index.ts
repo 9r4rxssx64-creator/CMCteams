@@ -15,16 +15,9 @@
  *  - Pour chaque card : badge status (🟢 installé / ⚪ dispo / 🔴 non-PWA).
  */
 
-import { logger } from '../../core/logger.js';
+/* eslint-disable import/order -- mix value + type imports détectés à tort comme groupes différents */
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
-
-/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
-let activePluginsScope: CleanupScope | null = null;
-
-export function dispose(): void {
-  activePluginsScope?.cleanup();
-  activePluginsScope = null;
-}
+import { logger } from '../../core/logger.js';
 import {
   APEX_EXTENDED_CATALOG,
   searchCatalog as searchExtended,
@@ -34,6 +27,15 @@ import {
   type AutoImprovementValue,
 } from '../../data/apex-extended-catalog.js';
 import type { ApexPluginManifest, PluginCategory } from '../../data/apex-plugins-catalog.js';
+/* eslint-enable import/order */
+
+/* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
+let activePluginsScope: CleanupScope | null = null;
+
+export function dispose(): void {
+  activePluginsScope?.cleanup();
+  activePluginsScope = null;
+}
 
 const VALUE_BADGE: Record<ApexPluginManifest['estimated_value'], string> = {
   critical: '<span style="color:#ff5b5b">🔥 CRITICAL</span>',

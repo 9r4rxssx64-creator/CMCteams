@@ -20,7 +20,6 @@
 import Fuse, { type IFuseOptions } from 'fuse.js';
 
 import { logger } from '../core/logger.js';
-
 import type {
   SearchDoc,
   SearchHit,

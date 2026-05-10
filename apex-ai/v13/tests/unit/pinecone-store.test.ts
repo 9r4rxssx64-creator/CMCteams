@@ -34,9 +34,9 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __pineconeKey: string | undefined;
-  // eslint-disable-next-line no-var
+   
   var __pmemList: unknown[] | undefined;
 }
 

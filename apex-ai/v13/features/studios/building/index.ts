@@ -14,11 +14,11 @@
  * Anti-patterns évités : escapeHtml, validations strictes, no inline event listeners.
  */
 
-import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
-import { haptic } from '../../../ui/haptic.js';
+import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
+import { haptic } from '../../../ui/haptic.js';
 
 let activeScope: CleanupScope | null = null;
 

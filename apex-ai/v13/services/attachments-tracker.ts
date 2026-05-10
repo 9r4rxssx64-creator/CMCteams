@@ -58,7 +58,11 @@ class AttachmentsTracker {
       const parsed = JSON.parse(raw) as AttachmentEntry[];
       if (Array.isArray(parsed)) {
         // Strip objectUrl (blob: URLs invalides après reload)
-        this.entries = parsed.map(e => ({ ...e, objectUrl: undefined }));
+        this.entries = parsed.map(e => {
+          const copy: AttachmentEntry = { ...e };
+          delete copy.objectUrl;
+          return copy;
+        });
       }
     } catch {
       this.entries = [];
@@ -70,7 +74,8 @@ class AttachmentsTracker {
       const toSave = this.entries
         .slice(-MAX_ENTRIES)
         .map(e => {
-          const copy = { ...e, objectUrl: undefined };
+          const copy: AttachmentEntry = { ...e };
+          delete copy.objectUrl;
           // Ne pas persister dataUrl si trop grand (économise localStorage)
           if (copy.dataUrl && copy.dataUrl.length > MAX_DATA_URL_SIZE) {
             delete copy.dataUrl;
@@ -82,7 +87,12 @@ class AttachmentsTracker {
       // Quota exceeded → trim agressif
       try {
         const half = this.entries.slice(-Math.floor(MAX_ENTRIES / 2))
-          .map(e => ({ ...e, objectUrl: undefined, dataUrl: undefined }));
+          .map(e => {
+            const copy: AttachmentEntry = { ...e };
+            delete copy.objectUrl;
+            delete copy.dataUrl;
+            return copy;
+          });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(half));
       } catch { /* skip */ }
     }
@@ -161,7 +171,9 @@ class AttachmentsTracker {
 
   /** Marque une pièce jointe comme analysée */
   markAnalyzed(id: string, analysis: AttachmentEntry['analysis']): void {
-    this.updateEntry(id, { status: 'ready', analysis });
+    const patch: Partial<AttachmentEntry> = { status: 'ready' };
+    if (analysis !== undefined) patch.analysis = analysis;
+    this.updateEntry(id, patch);
   }
 
   /** Ajoute une transformation (cartoon, anime, etc.) */

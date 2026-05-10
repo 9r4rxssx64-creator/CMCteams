@@ -8,7 +8,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import type { MarketplaceItem, MarketplaceProvider } from '../apex-meta-marketplace-types.js';
 
 export interface SearchHelpers {

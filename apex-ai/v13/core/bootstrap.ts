@@ -20,23 +20,25 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.5';
+export const APP_VER = 'v13.4.6';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
  * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
-import { di } from './service-locator.js';
+import { logRedaction } from '../services/log-redaction-wrapper.js';
+
 import { errors } from './errors.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
+import { di } from './service-locator.js';
 import { store } from './store.js';
+
 /* v13.3.74 P0 sécu (audit OWASP ASVS L2 V7.1.1) — log redaction GLOBAL.
  * Importé dès le module load (avant tout autre service) pour patcher console
  * AVANT que la moindre lib ou service n'ait l'occasion d'écrire un secret.
  * installGlobal() est idempotent. */
-import { logRedaction } from '../services/log-redaction-wrapper.js';
 
 /* Boot-time install (avant function bootstrap()) : tout console.log au boot
  * est déjà redacté. Évite leak via libs vendor / Vite HMR / SDK tiers. */
@@ -715,6 +717,38 @@ async function bootstrap(): Promise<void> {
     events.emit('network:offline', {});
     logger.info('network', 'Offline');
   });
+
+  /* 11b. v13.4.6 P0 Kevin "l'écran zoom seul et reste bloqué en zoom" :
+   * iOS Safari ignore parfois user-scalable=no. On bloque pinch-zoom + double-tap
+   * + intercepte gesturestart pour empêcher le zoom de rester bloqué. */
+  try {
+    /* Bloque pinch-zoom gesture iOS */
+    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+    /* Bloque double-tap zoom (touchend rapide successif) */
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd < 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+    /* Si visualViewport zoom est resté > 1 (bug iOS) → reset via scrollTo 0,0 */
+    if ('visualViewport' in window && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const vv = window.visualViewport;
+        if (vv && vv.scale > 1.01) {
+          /* Force reflow pour reset zoom */
+          try { window.scrollTo(0, 0); } catch { /* ignore */ }
+        }
+      });
+    }
+    logger.info('viewport', 'anti-zoom guards installés (gesture/touchend/visualViewport)');
+  } catch (err: unknown) {
+    logger.warn('viewport', 'anti-zoom install failed', { err });
+  }
 
   /* 12. Hide splash + render initial view */
   router.dispatch();

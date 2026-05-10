@@ -77,16 +77,25 @@ describe('services/suggestions', () => {
   });
 
   describe('isFollowUpsEnabled / setFollowUpsEnabled', () => {
-    it('default ON', () => {
+    it('default OFF (v13.3.89 — Kevin "auto-embed pénible")', () => {
+      /* v13.3.89 : default OFF pour ne pas afficher 3 chips à chaque réponse
+       * (règle Kevin commit b745570 : trop verbeux dans le chat). */
+      expect(isFollowUpsEnabled()).toBe(false);
+    });
+
+    it('peut être activé explicitement', () => {
+      setFollowUpsEnabled(true);
       expect(isFollowUpsEnabled()).toBe(true);
     });
 
     it('peut être désactivé', () => {
+      setFollowUpsEnabled(true);
       setFollowUpsEnabled(false);
       expect(isFollowUpsEnabled()).toBe(false);
     });
 
-    it('peut être réactivé', () => {
+    it('toggle ON puis OFF puis ON', () => {
+      setFollowUpsEnabled(true);
       setFollowUpsEnabled(false);
       setFollowUpsEnabled(true);
       expect(isFollowUpsEnabled()).toBe(true);

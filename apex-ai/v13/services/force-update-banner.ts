@@ -210,6 +210,16 @@ class ForceUpdateBanner {
    */
   async forceUpdate(): Promise<void> {
     logger.info('force-update', 'NUCLEAR force-update triggered by Kevin');
+    /* v13.4.6 — Pré-snapshot OBLIGATOIRE avant toute purge (Kevin "ne jamais
+     * rien perdre"). Si PRESERVE_PREFIXES rate qqc, on peut tout restaurer
+     * via autoBackup.restoreLatest() au prochain boot. */
+    try {
+      const { autoBackup } = await import('./auto-backup.js');
+      const backup = await autoBackup.snapshot('pre-rollback');
+      logger.info('force-update', `pre-update snapshot OK : ${backup.id} (${backup.size_bytes}b)`);
+    } catch (err: unknown) {
+      logger.warn('force-update', 'pre-update snapshot failed (non bloquant)', { err });
+    }
     /* Étape 1 : unregister tous les Service Workers */
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {

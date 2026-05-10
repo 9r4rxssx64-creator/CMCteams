@@ -7,11 +7,12 @@
  * Anti-pattern évité : pas de switch K.view géant 90+ cases (v12.785 monolithe).
  */
 
+import { skeleton, type SkeletonType } from '../ui/skeleton.js';
+
 import { errors } from './errors.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
 import { store } from './store.js';
-import { skeleton, type SkeletonType } from '../ui/skeleton.js';
 
 type RouteLoader = () => Promise<{ render: (root: HTMLElement) => void | Promise<void> }>;
 

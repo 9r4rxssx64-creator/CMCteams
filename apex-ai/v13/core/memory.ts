@@ -1409,6 +1409,63 @@ class Memory {
       logger.warn('memory.deepPrompt', 'recent capabilities skipped', { err });
     }
 
+    /* v13.4.6 — PRIORITÉ 14 : Credentials disponibles dans le vault (Kevin "Apex doit
+     * savoir tout ce qu'il a"). Apex doit pouvoir répondre "j'ai accès à Anthropic,
+     * OpenAI, GitHub..." sans confusion ni hallucination. Liste les SERVICES configurés
+     * (pas les valeurs, jamais de leak). */
+    try {
+      const vaultKeys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('ax_') && k.endsWith('_key')) vaultKeys.push(k);
+        if (k.startsWith('ax_') && (k.endsWith('_token') || k.endsWith('_secret'))) vaultKeys.push(k);
+      }
+      if (vaultKeys.length > 0) {
+        const services = vaultKeys
+          .map((k) => k.replace(/^ax_/, '').replace(/_(?:key|token|secret)$/, ''))
+          .filter((s, i, arr) => arr.indexOf(s) === i) /* unique */
+          .sort();
+        addIfRoom(
+          `## 🔐 Coffre — Credentials disponibles (${services.length} services configurés)\n` +
+          services.map((s) => `- ✅ ${s}`).join('\n') +
+          `\n\n_Si user demande accès à un service NON présent ci-dessus → réponse claire "clé absente, à ajouter dans le Coffre"._`,
+        );
+      }
+    } catch (err: unknown) {
+      logger.warn('memory.deepPrompt', 'vault awareness skipped', { err });
+    }
+
+    /* v13.4.6 — PRIORITÉ 15 : Pièces jointes session courante (Kevin "quand je dépose
+     * un dossier/photo/document, il ne sait pas où ils sont"). Apex doit voir ses
+     * attachments en cours pour pouvoir y répondre ("tu m'as envoyé la photo X il y a 5 min"). */
+    try {
+      const raw = localStorage.getItem('ax_v13_attachments');
+      if (raw) {
+        const entries = JSON.parse(raw) as Array<{
+          ts: number; name: string; type: string; size: number;
+          status: string; analysis?: { type?: string; description?: string };
+        }>;
+        if (Array.isArray(entries) && entries.length > 0) {
+          const recent = entries.slice(-15).reverse();
+          const lines = recent.map((e) => {
+            const age = Math.floor((Date.now() - e.ts) / 60000);
+            const ageStr = age < 1 ? "à l'instant" : age < 60 ? `il y a ${age}min` : `il y a ${Math.floor(age / 60)}h`;
+            const sizeKb = Math.round(e.size / 1024);
+            const ana = e.analysis?.description ? ` — ${e.analysis.description}` : '';
+            return `- 📎 ${e.name} (${e.type}, ${sizeKb}KB, ${ageStr}, ${e.status})${ana}`;
+          });
+          addIfRoom(
+            `## 📎 Pièces jointes session (${recent.length} récentes, total ${entries.length})\n` +
+            lines.join('\n') +
+            `\n\n_Si user demande "où est mon fichier X" → vérifier cette liste avant de dire "je ne sais pas"._`,
+          );
+        }
+      }
+    } catch (err: unknown) {
+      logger.warn('memory.deepPrompt', 'attachments awareness skipped', { err });
+    }
+
     return total;
   }
 }

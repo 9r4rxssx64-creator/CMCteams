@@ -16,10 +16,12 @@
  * - Lazy-load apex-tools service (gros)
  */
 
-import { logger } from '../../core/logger.js';
+/* eslint-disable import/order -- type imports mixed with value imports détectés à tort comme groupes différents */
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import type { ApexTool } from '../../services/apex-tools.js';
+/* eslint-enable import/order */
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeToolboxScope: CleanupScope | null = null;

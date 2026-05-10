@@ -11,8 +11,8 @@
  * - Boutons RGPD widget : Export, Delete, Consent, OptOut
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { rgpd } from '../../services/rgpd.js';
 

@@ -27,10 +27,10 @@ import {
 } from '../../../services/auto-test-everything.js';
 import { linksRegistry } from '../../../services/links-registry.js';
 import { multiKeyVault } from '../../../services/multi-key-vault.js';
-import { sentinelsRegistry } from '../../../services/sentinels-registry.js';
+import { noRegressionWatch } from '../../../services/no-regression-watch.js';
 import { rulesEngine, type ApexRule } from '../../../services/rules-engine.js';
 import { rulesInjectionWatch } from '../../../services/rules-injection-watch.js';
-import { noRegressionWatch } from '../../../services/no-regression-watch.js';
+import { sentinelsRegistry } from '../../../services/sentinels-registry.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

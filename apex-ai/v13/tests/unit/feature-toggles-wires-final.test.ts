@@ -86,7 +86,7 @@ describe('feature toggles — wiring final (ARCHI-101)', () => {
       }
     }
     if (unwired.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.error('Unwired feature toggles:', unwired);
     }
     expect(unwired).toEqual([]);

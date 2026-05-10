@@ -26,8 +26,8 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
+import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { genericSecrets } from '../../services/generic-secrets.js';
 import { linksRegistry } from '../../services/links-registry.js';
@@ -678,20 +678,27 @@ function attachScrollUx(rootEl: HTMLElement): void {
 function renderCategories(rootEl: HTMLElement): void {
   const container = rootEl.querySelector<HTMLDivElement>('#ax-vault-categories');
   if (!container) return;
-  /* H3 audit fix v13.3.74 — skeleton si pas encore décrypté (computeStats peut être 0 au boot) */
+  /* H3 audit fix v13.3.74 — skeleton si pas encore décrypté (computeStats peut être 0 au boot)
+   * v13.4.6 fix tests : on rend TOUJOURS les catégories en parallèle du skeleton pour
+   * que la règle Kevin "Identité toujours visible" tienne dès le 1er render. */
   const stats = computeStats();
   if (stats.total === 0 && !container.dataset['axInitialized']) {
     container.dataset['axInitialized'] = '1';
-    const dispose = skeleton(container, 'vault-cards');
+    /* Skeleton dans un wrapper séparé pour ne pas écraser la section Identité rendue ensuite. */
+    const skel = document.createElement('div');
+    skel.className = 'ax-skel-vault-wrapper';
+    container.appendChild(skel);
+    const dispose = skeleton(skel, 'vault-cards');
     /* Auto-clear après 250ms (decrypt sync localStorage en général < 100ms) */
     setTimeout(() => {
       dispose();
+      skel.remove();
       /* Re-render once decrypt done */
       renderCategories(rootEl);
     }, 250);
-    return;
+    /* Fallthrough : on continue le rendu des catégories visibles (Identité) */
   }
-  container.innerHTML = CATEGORIES.map((cat) => {
+  const catsHtml = CATEGORIES.map((cat) => {
     const credsInCat = getCredentialsForCategory(cat, activeQuery);
     /* Hide empty cats sauf identity (Kevin veut toujours voir cette section) */
     if (credsInCat.length === 0 && cat.id !== 'identity') return '';
@@ -718,6 +725,15 @@ function renderCategories(rootEl: HTMLElement): void {
       </details>
     `;
   }).join('');
+  /* v13.4.6 : préserve skeleton (1er rendu) tout en injectant les catégories visibles.
+   * Wrapper séparé pour ne pas casser le skeleton wrapper précédemment ajouté. */
+  let catsWrapper = container.querySelector<HTMLDivElement>('.ax-vault-cats-wrapper');
+  if (!catsWrapper) {
+    catsWrapper = document.createElement('div');
+    catsWrapper.className = 'ax-vault-cats-wrapper';
+    container.appendChild(catsWrapper);
+  }
+  catsWrapper.innerHTML = catsHtml;
 }
 
 /* ──────────────────────────── Handlers ──────────────────────────── */

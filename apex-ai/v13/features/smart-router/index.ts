@@ -12,8 +12,8 @@
  * crédit etc va plus loin. AUTOMATIQUE AUTONOME TOUJOURS."
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import type { SmartProvider, ProviderStats } from '../../services/smart-router.js';
 
 let activeScope: CleanupScope | null = null;

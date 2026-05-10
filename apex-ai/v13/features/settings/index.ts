@@ -3,8 +3,8 @@
  * Stub Sprint 2 P0 — sera enrichi avec parité v12.785 vSettings.
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 

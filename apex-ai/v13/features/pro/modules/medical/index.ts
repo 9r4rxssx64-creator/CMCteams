@@ -18,8 +18,8 @@
  * Sources autoritaires : Vidal, ANSM, Has-sante, Ameli, ESC Guidelines
  */
 
-import { logger } from '../../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
+import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 

@@ -137,9 +137,17 @@ describe('sentinels — coverage push 90%+ (final)', () => {
     it('backup 12h ago → format heures', async () => {
       localStorage.setItem('ax_last_backup_ts', String(Date.now() - 12 * 60 * 60 * 1000));
       registerCoreSentinels();
-      const r = await sentinels.runOne('backup-watch');
-      expect(r?.ok).toBe(true);
-      expect(r?.msg).toMatch(/Il y a 12h/);
+      /* v13.3.94+ : seuil stale 7h → 12h déclenche autoFix qui remet ts à now,
+       * donc on désactive autoFix pour valider le format humain pur. */
+      const sent = sentinels.list().find((s) => s.id === 'backup-watch');
+      const origAutoFix = sent?.autoFix;
+      if (sent) sent.autoFix = undefined;
+      try {
+        const r = await sentinels.runOne('backup-watch');
+        expect(r?.msg).toMatch(/Il y a 12h/);
+      } finally {
+        if (sent && origAutoFix) sent.autoFix = origAutoFix;
+      }
     });
 
     it('backup 8 days ago → format jours', async () => {
@@ -804,11 +812,14 @@ describe('sentinels — coverage push 90%+ (final)', () => {
       expect(r?.ts).toBeGreaterThan(0);
     });
 
-    it('JSON corrompu → ok=false fail', async () => {
+    it('JSON corrompu → ok=true (safeParseJSON gracefully ignore, retour [] vide)', async () => {
+      /* v13.3.94 P0.3 : storageCompressor.safeParseJSON retourne []
+       * sur parse fail au lieu de throw. Comportement attendu = tolérant. */
       localStorage.setItem('ax_csp_violations_log', '{not json');
       registerCoreSentinels();
       const r = await sentinels.runOne('csp-violation-watch');
-      expect(r?.ok).toBe(false);
+      expect(r?.ok).toBe(true);
+      expect(r?.msg).toMatch(/aucune violation|0 violation/i);
     });
   });
 

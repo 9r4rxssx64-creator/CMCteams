@@ -16,8 +16,8 @@
  * Anti-pattern : ne JAMAIS afficher pour user non-admin (perf + privacy).
  */
 
-import { logger } from '../core/logger.js';
 import { APP_VER } from '../core/bootstrap.js';
+import { logger } from '../core/logger.js';
 
 class HudDebug {
   private hudEl: HTMLDivElement | null = null;

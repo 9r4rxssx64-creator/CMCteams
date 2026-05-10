@@ -21,8 +21,8 @@
  * Sources : DeepL, Google Translate, ISO 639-1
  */
 
-import { logger } from '../../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
+import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
 
