@@ -1,5 +1,5 @@
 /**
- * APEX v13.4.4 — Registry des capacités récentes (v13.4.0 → v13.4.4).
+ * APEX v13.4.5 — Registry des capacités récentes (v13.4.0 → v13.4.5).
  *
  * Source de vérité unique pour :
  *  - System prompt IA (Apex sait ce qu'il vient d'acquérir)
@@ -188,6 +188,48 @@ export const APEX_RECENT_CAPABILITIES: readonly Capability[] = [
     method: 'APEX_RECENT_CAPABILITIES/renderRecentCapabilitiesForPrompt',
     desc: 'Registry single source of truth des capacités v13.4.0+. Lu par memory.ts pour injection prompt + UI.',
     category: 'memory',
+  },
+
+  /* ───────────── v13.4.5 (Mode Autonome Apex — Kevin 2026-05-10) ───────────── */
+  {
+    version: 'v13.4.5',
+    name: 'Mode Autonome Apex',
+    service: 'apex-autonomous-mode',
+    method: 'start/stop/pause/tick',
+    desc: 'Apex prend le relais après /autonomous <objectif> et bosse seul jusqu\'à fin ou épuisement forfait. Sessions persistées (localStorage + Firebase). Auto-décomposition sous-tâches. Garde-fous : maxIterations 50, quotaLimit tokens, timeout 5min/task.',
+    category: 'orchestration',
+  },
+  {
+    version: 'v13.4.5',
+    name: 'Sentinelle autonomous-watch',
+    service: 'autonomous-watch',
+    method: 'start/tick/forceTick',
+    desc: 'Sentinelle 30s dédiée mode autonome (en plus des sentinels standard 60s). Délègue à apex-autonomous-mode.tick(). Stats tickCount + lastTickAt.',
+    category: 'audit',
+  },
+  {
+    version: 'v13.4.5',
+    name: 'Telegram notifier',
+    service: 'telegram-notifier',
+    method: 'notify/testConfig/getRecent',
+    desc: 'Bridge notifications critiques (cascade : browser push → Telegram worker → Telegram direct → log local). Dedup 6h, priorité critical bypass. Utilisé par mode autonome pour notif quota épuisé.',
+    category: 'tooling',
+  },
+  {
+    version: 'v13.4.5',
+    name: 'Slash command /autonomous',
+    service: 'chat-slash',
+    method: 'handleAutonomousCommand',
+    desc: 'Slash dans chat : /autonomous <objectif> démarre, /autonomous status affiche état live, /autonomous stop kill. Alias /auto et /autonome supportés.',
+    category: 'ux',
+  },
+  {
+    version: 'v13.4.5',
+    name: 'Vue admin Mode Autonome',
+    service: 'admin-autonomous',
+    method: 'render',
+    desc: 'Dashboard live mode autonome : session active avec progress bars (itérations/tokens), logs récents, queue + faites, history 10 dernières. Auto-refresh 5s. Kill switch + pause/resume + force-tick.',
+    category: 'ux',
   },
 ];
 

@@ -2,8 +2,70 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.593 / Apex v13.0.77 (canary) déployés
-> **Dernière update** : 2026-05-04 16h40
+> **État projet** : CMCteams v9.604 / Apex v13.4.5 déployés
+> **Dernière update** : 2026-05-10
+
+---
+
+## 🔥 MISE À JOUR 2026-05-10 — Apex v13.4.5 (Mode Autonome session-driven)
+
+### Nouvelles capacités
+
+**Mode Autonome** (`services/apex-autonomous-mode.ts`) :
+- `start(objective, opts?)` → crée session running, lance tick auto via sentinelle 30s
+- `stop()` / `pause()` / `resume()` — kill switch + pause/reprise
+- `getActiveSession()` / `getHistory()` — introspection
+- `tick()` — appelée par sentinelle, gère 1 itération (next task → IA → parse réponse → done|subtasks|terminé)
+
+**Sentinelle autonomous-watch** (`services/autonomous-watch.ts`) :
+- setInterval 30s dédié (séparé des 60s des sentinelles standard)
+- `start()` idempotent, `forceTick()` debug, `getStats()` (tickCount, lastTickAt)
+
+**Telegram notifier** (`services/telegram-notifier.ts`) :
+- `notify({title, body, ctaUrl, priority})` — cascade : browser push → Telegram worker → Telegram direct → log local
+- Dedup 6h hash(title), priority='critical' bypass
+- `testConfig()` admin UI
+
+**Slash command `/autonomous`** (features/chat/index.ts) :
+- `/autonomous <objectif>` → start
+- `/autonomous status|list` → état live
+- `/autonomous stop|kill` → kill switch
+- `/autonomous pause|resume` → suspendre/reprendre
+- Aliases : `/auto`, `/autonome`
+
+**Vue admin `admin-autonomous`** (features/admin/autonomous/) :
+- Progress bars itérations/tokens vs limits
+- Logs live (15 dernières lignes)
+- Queue + faites collapsable
+- Auto-refresh 5s tant que session active
+
+**Workflow GitHub Action** (`.github/workflows/apex-autonomous-watcher.yml`) :
+- Cron 5min, poll Firebase REST `apex/autonomous_sessions`
+- Détecte sessions running stale >5min (>30min ouvre issue)
+- Read-only : ne fait pas d'appel IA distant (sécu+coût). L'app reprend quand revient online.
+
+### Garde-fous
+
+- maxIterations 50 (cap dur 200)
+- quotaLimit 50000 tokens cumulés par session
+- Timeout 5min/task (puis failed)
+- 3 fails consécutifs → session failed
+- Cooldown 3s entre ticks
+- Stop manuel = AbortController abort fetch en cours
+- Orphaned (lastActivityAt >30min au boot) → archive automatique avec endReason='orphaned-on-boot'
+
+### Triple persistence
+
+1. localStorage `apex_v13_autonomous_active` (session courante) + `apex_v13_autonomous_history` (cap 20)
+2. firebase-queue → Firebase `apex/autonomous_sessions/<uid>/<sessionId>` cross-device
+3. Auto-restore au boot si status='running' et lastActivityAt <30min
+
+### Anti-patterns évités
+
+- ❌ Erreur #28 Declaration ≠ Deployment : sentinelle wired effectivement (bootstrap.ts safeInit + autonomousWatch.start())
+- ❌ Erreur #50 régression : 0 modif des services existants critiques (sentinels.ts, ai-router.ts, store.ts)
+- ❌ Erreur #54 GAP source/build : triple cohérence v13.4.5 vérifiée (source + sw.js + apex-ai-v13/)
+- ❌ Erreur #55 crypto exotique : pas de XOR-obf, persistence simple JSON
 
 ---
 

@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.4';
+export const APP_VER = 'v13.4.5';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -201,6 +201,13 @@ async function bootstrap(): Promise<void> {
           rulesInjectionWatch.registerSentinel();
         } catch (err: unknown) {
           logger.warn('boot', 'rules-injection-watch register failed', { err });
+        }
+        /* v13.4.5 — Démarre autonomous-watch (sentinelle 30s dédiée mode autonome Apex) */
+        try {
+          const { autonomousWatch } = await import('@services/autonomous-watch.js');
+          autonomousWatch.start();
+        } catch (err: unknown) {
+          logger.warn('boot', 'autonomous-watch start failed', { err });
         }
       },
     },
@@ -397,6 +404,8 @@ async function bootstrap(): Promise<void> {
   router.register('admin-yury-plugins', { loader: () => import('@features/admin/yury-plugins/index.js'), requiresAdmin: true });
   /* Kevin 2026-05-09 v13.4.3 : Vue admin "Shubham Skills" — 5 services TikTok (hyperframes, agent-browser, marketing-psy, impeccable-design, ios-simulator) */
   router.register('admin-shubham-skills', { loader: () => import('@features/admin/shubham-skills/index.js'), requiresAdmin: true });
+  /* Kevin 2026-05-10 v13.4.5 : Vue admin "Mode Autonome" — session-driven (Apex bosse seul jusqu'à fin/quota) */
+  router.register('admin-autonomous', { loader: () => import('@features/admin/autonomous/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

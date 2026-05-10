@@ -39,6 +39,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'loop', emoji: '🔁', description: 'Queue tâche autonome (list/pause/resume/clear ou texte)', argsHint: '<task|list|pause|resume|clear>' },
   { name: 'plan', emoji: '🗺', description: 'Génère un plan structuré avant exécution', argsHint: '<objectif>', requiresArgs: true },
   { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
+  /* v13.4.5 — Mode autonome Apex (Kevin 2026-05-10) */
+  { name: 'autonomous', emoji: '🤖', description: 'Mode autonome : Apex bosse seul jusqu\'à fin/quota (status/stop)', argsHint: '<objectif|status|stop>' },
 ];
 
 export interface SlashParseResult {

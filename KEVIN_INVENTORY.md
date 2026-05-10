@@ -1,7 +1,38 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-08 20h** (Apex v13.3.81 / CMC v9.604 — Audit externe 197/200 + cascade autonome)
+> Dernière mise à jour : **2026-05-10** (Apex v13.4.5 — Mode Autonome Apex)
+
+## 🆕 SESSION 2026-05-10 — Mode Autonome Apex (v13.4.5)
+
+### Nouveaux fichiers Apex v13.4.5
+
+| Fichier | Lignes | Description | Lien GitHub |
+|---|---|---|---|
+| `apex-ai/v13/services/apex-autonomous-mode.ts` | 582 | Core mode autonome (session, auto-décomp, quota, persistence triple, garde-fous) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/apex-autonomous-mode.ts) |
+| `apex-ai/v13/services/autonomous-watch.ts` | 82 | Sentinelle 30s dédiée tick mode autonome | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/autonomous-watch.ts) |
+| `apex-ai/v13/services/telegram-notifier.ts` | 221 | Bridge notif Kevin (browser push → Telegram worker → API direct → log local) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/telegram-notifier.ts) |
+| `apex-ai/v13/features/admin/autonomous/index.ts` | 311 | Vue admin Mode Autonome (progress live, kill switch, history) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/admin/autonomous/index.ts) |
+| `apex-ai/v13/tests/unit/apex-autonomous-mode.test.ts` | 215 | 12 tests verts (start/stop/quota/persist/orphaned/subtasks) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/apex-autonomous-mode.test.ts) |
+| `.github/workflows/apex-autonomous-watcher.yml` | 124 | Cron 5min poll Firebase autonomous_sessions stales | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/apex-autonomous-watcher.yml) |
+
+### Fichiers modifiés v13.4.5
+
+- `apex-ai/v13/core/bootstrap.ts` : APP_VER bump + wiring autonomousWatch.start() + route admin-autonomous
+- `apex-ai/v13/features/chat/index.ts` : slash command handler + alias remap
+- `apex-ai/v13/features/admin/index.ts` : bouton 🤖 Mode Autonome
+- `apex-ai/v13/services/slash-commands.ts` : registry slash `autonomous`
+- `apex-ai/v13/data/apex-recent-capabilities.ts` : +5 entries v13.4.5
+- `apex-ai/v13/index.html` `sw.js` `package.json` : bump version
+- `apex-ai-v13/*` : rebuild + sync complet
+
+### Utilisation
+
+- Chat : `/autonomous <objectif>` (alias `/auto`, `/autonome`)
+- Sub-commands : `/autonomous status`, `/autonomous stop`, `/autonomous pause`, `/autonomous resume`
+- Admin UI : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#admin-autonomous`
+
+---
 
 ## 🆕 SESSION 2026-05-08 — Audit + cascade corrections autonome
 
