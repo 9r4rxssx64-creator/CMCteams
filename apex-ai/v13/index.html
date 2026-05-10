@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.4">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.5">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -114,7 +114,8 @@
                           https://api.openclaw.io
                           https://api.linkedin.com
                           https://api.twitter.com
-                          https://api.instagram.com;
+                          https://api.instagram.com
+                          https://kdmc-agent-monaco.vercel.app;
              worker-src 'self' blob:;
              frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
              media-src 'self' blob: data: https:;
@@ -141,10 +142,14 @@
   <link rel="stylesheet" href="./assets/css/financial-bilan.css">
   <link rel="stylesheet" href="./assets/css/laurence.css">
   <link rel="stylesheet" href="./assets/css/ux-premium.css">
+  <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
+  <link rel="stylesheet" href="./assets/css/ux-overrides.css">
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+  <!-- v13.4.5 KDMC Agent Vercel -->
+  <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
