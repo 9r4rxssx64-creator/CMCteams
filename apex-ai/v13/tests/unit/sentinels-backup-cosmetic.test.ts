@@ -93,11 +93,20 @@ describe('sentinels backup-watch cosmetic v13.3.24', () => {
   });
 
   it('format humain : <168h → "Il y a Xh"', async () => {
-    /* Test format function directement via état du sentinel */
+    /* Test format function directement via état du sentinel
+     * v13.3.94+ : seuil stale 7h → 8h déclenche autoFix qui remet ts à now,
+     * donc on désactive autoFix pour valider le check pur. */
     const eightHoursAgo = Date.now() - (8 * 60 * 60 * 1000);
     localStorage.setItem('ax_last_backup_ts', String(eightHoursAgo));
-    const result = await sentinels.runOne('backup-watch');
-    expect(result?.msg).toMatch(/Il y a [7-8]h/);
+    const sent = sentinels.list().find((s) => s.id === 'backup-watch');
+    const origAutoFix = sent?.autoFix;
+    if (sent) sent.autoFix = undefined;
+    try {
+      const result = await sentinels.runOne('backup-watch');
+      expect(result?.msg).toMatch(/Il y a [7-8]h/);
+    } finally {
+      if (sent && origAutoFix) sent.autoFix = origAutoFix;
+    }
   });
 
   it('format humain : 168h-30j → "Il y a Xj"', async () => {

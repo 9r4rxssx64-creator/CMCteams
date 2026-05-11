@@ -30,19 +30,19 @@
 
 import { logger } from '../core/logger.js';
 
-import { auditLog } from './audit-log.js';
-import type { ApexTool } from './apex-tools-types.js';
-export type { ApexTool } from './apex-tools-types.js';
-
+import { ADMIN_TOOLS } from './apex-tools-registry/admin-tools.js';
 import { CODE_TOOLS } from './apex-tools-registry/code-tools.js';
-import { WEB_TOOLS } from './apex-tools-registry/web-tools.js';
-import { MEMORY_TOOLS } from './apex-tools-registry/memory-tools.js';
-import { DEVICE_TOOLS } from './apex-tools-registry/device-tools.js';
 import { COMM_TOOLS } from './apex-tools-registry/comm-tools.js';
+import { DEVICE_TOOLS } from './apex-tools-registry/device-tools.js';
 import { IOT_TOOLS } from './apex-tools-registry/iot-tools.js';
 import { MARKETPLACE_TOOLS } from './apex-tools-registry/marketplace-tools.js';
-import { ADMIN_TOOLS } from './apex-tools-registry/admin-tools.js';
 import { MEDIA_TOOLS } from './apex-tools-registry/media-tools.js';
+import { MEMORY_TOOLS } from './apex-tools-registry/memory-tools.js';
+import { WEB_TOOLS } from './apex-tools-registry/web-tools.js';
+import type { ApexTool } from './apex-tools-types.js';
+import { auditLog } from './audit-log.js';
+
+export type { ApexTool } from './apex-tools-types.js';
 
 const APEX_TOOLS: readonly ApexTool[] = [
   ...CODE_TOOLS,

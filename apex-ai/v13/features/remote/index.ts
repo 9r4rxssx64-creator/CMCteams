@@ -15,8 +15,8 @@
  * Cross-app : partage avec features/domotique/ + apps Télécommande KDMC.
  */
 
-import { logger } from '../../core/logger.js';
 import { escapeHtml } from '../../core/html-safe.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 

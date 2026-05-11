@@ -132,9 +132,9 @@ test.describe('Apex v13 — A11y baseline (axe-core WCAG 2.1 AA)', () => {
       routes: allReports,
     };
     writeFileSync(REPORT_PATH, JSON.stringify(summary, null, 2));
-    /* eslint-disable no-console */
+     
     console.log(`[a11y] Rapport écrit dans ${REPORT_PATH}`);
     console.log(`[a11y] Total violations:`, summary.total_violations);
-    /* eslint-enable no-console */
+     
   });
 });

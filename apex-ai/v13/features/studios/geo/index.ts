@@ -14,12 +14,12 @@
  * Anti-patterns évités : escapeHtml, fetch timeout 8s, fallback offline si réseau KO.
  */
 
-import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
-import { haptic } from '../../../ui/haptic.js';
-import { toast } from '../../../ui/toast.js';
+import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
+import { haptic } from '../../../ui/haptic.js';
+import { toast } from '../../../ui/toast.js';
 
 let activeScope: CleanupScope | null = null;
 

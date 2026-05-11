@@ -16,7 +16,7 @@ describe('vault.detectPattern', () => {
   it('détecte GitHub PAT', () => {
     const r = vault.detectPattern('ghp_' + 'C'.repeat(36));
     expect(r?.name).toMatch(/GitHub PAT/);
-    expect(r?.key).toBe('ax_github_token');
+    expect(r?.key).toBe('ax_github_pat_classic');
   });
 
   it('retourne null sur valeur inconnue', () => {

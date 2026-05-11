@@ -20,6 +20,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { directConnectors } from './direct-connectors-registry.js';
 import { linksRegistry } from './links-registry.js';
 import { multiKeyVault } from './multi-key-vault.js';

@@ -10,8 +10,8 @@
  * - Conso    : consommation IA temps réel (Sprint port v12)
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.js';
 import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';

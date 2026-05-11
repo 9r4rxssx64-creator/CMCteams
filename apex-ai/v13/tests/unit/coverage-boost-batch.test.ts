@@ -31,12 +31,13 @@ describe('Coverage boost batch (services < 80%)', () => {
   describe('telemetry edge cases', () => {
     it('AUTOFIX_WHITELIST functions individually accessibles via autofix', async () => {
       /* Force quotaCleanup branch.
-       * v13.3.87 fix bogus assertion → on vérifie que processIncoming a vidé la queue. */
+       * v13.3.87 fix bogus assertion → on vérifie que processIncoming a vidé la queue.
+       * v13.4.6 fix : utilise la vraie clé 'ax_telemetry_in' (telemetry.ts ligne 79). */
       telemetry.pushIncoming({ kind: 'err', msg: 'quota exceeded', details: {}, src: 'apex', v: 'v13', user: 'u1' });
-      const beforeRaw = JSON.parse(localStorage.getItem('apex_v13_telemetry_in') ?? '[]') as unknown[];
+      const beforeRaw = JSON.parse(localStorage.getItem('ax_telemetry_in') ?? '[]') as unknown[];
       expect(beforeRaw.length).toBeGreaterThan(0);
       await telemetry.processIncoming();
-      const afterRaw = JSON.parse(localStorage.getItem('apex_v13_telemetry_in') ?? '[]') as unknown[];
+      const afterRaw = JSON.parse(localStorage.getItem('ax_telemetry_in') ?? '[]') as unknown[];
       /* La queue doit avoir été processée (entrée marquée processed:true ou retirée) */
       expect(afterRaw.length).toBeLessThanOrEqual(beforeRaw.length);
     });

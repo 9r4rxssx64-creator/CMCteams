@@ -129,12 +129,12 @@ async function freshClient(): Promise<typeof import('../../services/crypto-worke
 
 describe('crypto-worker-client', () => {
   beforeEach(() => {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+     
     (globalThis as any).Worker = MockCryptoWorker as any;
   });
 
   afterEach(() => {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+     
     (globalThis as any).Worker = originalWorker as any;
   });
 
@@ -147,7 +147,7 @@ describe('crypto-worker-client', () => {
   });
 
   it('ensure() retourne false quand Worker indispo', async () => {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+     
     (globalThis as any).Worker = undefined;
     const { cryptoWorker } = await freshClient();
     const ok = await cryptoWorker.ensure();
@@ -217,7 +217,7 @@ describe('crypto-worker-client', () => {
       postMessage(): void { /* noop */ }
       terminate(): void { /* noop */ }
     }
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+     
     (globalThis as any).Worker = SlowWorker as any;
     const { cryptoWorker } = await freshClient();
     /* On veut juste vérifier que la promise se résout false sans crash.

@@ -15,9 +15,9 @@
  * UI HTML statique testée E2E (Playwright) — la logique est dans le service.
  */
 
+import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import {
   featureToggles,
   type FeatureCategory,

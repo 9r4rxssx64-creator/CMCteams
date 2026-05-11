@@ -210,6 +210,16 @@ class ForceUpdateBanner {
    */
   async forceUpdate(): Promise<void> {
     logger.info('force-update', 'NUCLEAR force-update triggered by Kevin');
+    /* v13.4.6 — Pré-snapshot OBLIGATOIRE avant toute purge (Kevin "ne jamais
+     * rien perdre"). Si PRESERVE_PREFIXES rate qqc, on peut tout restaurer
+     * via autoBackup.restoreLatest() au prochain boot. */
+    try {
+      const { autoBackup } = await import('./auto-backup.js');
+      const backup = await autoBackup.snapshot('pre-rollback');
+      logger.info('force-update', `pre-update snapshot OK : ${backup.id} (${backup.size_bytes}b)`);
+    } catch (err: unknown) {
+      logger.warn('force-update', 'pre-update snapshot failed (non bloquant)', { err });
+    }
     /* Étape 1 : unregister tous les Service Workers */
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
@@ -243,19 +253,30 @@ class ForceUpdateBanner {
       const PRESERVE_PREFIXES = [
         'apex_v13_vault',
         'apex_v13_user',
+        'apex_v13_users',
+        'apex_v13_uid',
         'apex_v13_pin',
-        'apex_v13_multikey_vault',
+        'apex_v13_multi_keys',          /* v13.4.6 FIX CRITIQUE — VRAIE clé du coffre (était 'multikey_vault' faux) */
+        'apex_v13_multikey_vault',       /* legacy fallback (v13.3.x avant rename) */
         'apex_v13_passphrase_history',
         'apex_v13_persistent_memory',
         'apex_v13_credentials',
         'apex_v13_device_obf',
         'apex_v13_device_passphrase',
+        'apex_v13_device_trusted',
+        'apex_v13_backup_index',         /* v13.4.6 FIX — index des snapshots */
+        'apex_v13_backup_',              /* v13.4.6 FIX — chaque snapshot ax_backup_xxx */
+        'apex_v13_last_known_name',      /* v13.4.6 FIX — reconnaissance Kevin */
+        'apex_v13_last_known_uid',
+        'apex_v13_lastact',
         'apex_v13_lessons',
         'apex_v13_kb',
         'apex_v13_audit',
-        'apex_v13_users',
         'apex_v13_xp',
         'apex_v13_streak',
+        'apex_v13_attachments',          /* v13.4.6 FIX — pièces jointes session */
+        'ax_v13_attachments',
+        'apex_v13_paste_recovery_',      /* v13.4.6 — anti-perte clés collées par Kevin */
         'ax_pin',
         'ax_user',
         'ax_uid',

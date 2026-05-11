@@ -20,10 +20,10 @@ import { sequentialThinking } from '../../services/sequential-thinking.js';
 describe('Sequential Thinking MCP', () => {
   beforeEach(async () => {
     /* Reset singleton state pour isolation */
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     (sequentialThinking as unknown as { initialized: boolean }).initialized = false;
     (sequentialThinking as unknown as { memThoughts: Map<string, unknown> }).memThoughts = new Map();
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
     await sequentialThinking.init();
   });
 

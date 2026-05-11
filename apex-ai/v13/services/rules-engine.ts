@@ -10,8 +10,8 @@
  * Source : memory.getDocsContext()['CLAUDE.md'].content (déjà loadé au boot par syncDocsAtBoot).
  */
 
-import { memory } from '../core/memory.js';
 import { logger } from '../core/logger.js';
+import { memory } from '../core/memory.js';
 
 export interface ApexRule {
   id: string;

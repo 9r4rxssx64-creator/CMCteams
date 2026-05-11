@@ -201,12 +201,13 @@ describe('credential-patterns extended (Kevin 2026-05-04 banking/crypto/social)'
 });
 
 describe('v13.3.98 P0.1 — FIX faux positif YouTube vs Google AI (Kevin 2026-05-09)', () => {
-  it('AIzaSy + 31 chars (clé Gemini standard) → Google AI (PAS YouTube par défaut)', () => {
-    /* Clés Google API : `AIza` + 33 chars (37 total). Format Gemini commun : AIzaSy + 31. */
+  it('AIzaSy + 31 chars (clé Gemini standard) → Google AI Gemini (PAS YouTube par défaut)', () => {
+    /* v13.4.6 fix Kevin "il confond Gemini" — renommé Google AI → Google AI Gemini
+     * + storageKey ax_google_key → ax_gemini_key cohérent. */
     const key = 'AIzaSy' + 'A'.repeat(31); /* 37 chars total */
     const p = detectCredential(key);
-    expect(p?.name).toBe('Google AI');
-    expect(p?.storageKey).toBe('ax_google_key');
+    expect(p?.name).toBe('Google AI Gemini');
+    expect(p?.storageKey).toBe('ax_gemini_key');
   });
   it('youtube:AIza... (préfixe explicite) → YouTube', () => {
     const key = 'youtube:AIza' + 'A'.repeat(33);

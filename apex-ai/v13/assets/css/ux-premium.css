@@ -327,3 +327,174 @@
     transition: none !important;
   }
 }
+
+/* ============================================================================
+ * v13.4.6 UX PREMIUM EXPERT ENTREPRISE (Kevin 2026-05-10 audit massif)
+ * ========================================================================= */
+
+/* Focus visible pro (a11y + premium feel) — anneau or doux */
+:root {
+  --ax-focus-ring: 0 0 0 2px rgba(232, 184, 48, 0.55);
+}
+button:focus-visible,
+a:focus-visible,
+.ax-btn:focus-visible,
+.ax-btn-icon:focus-visible,
+.ax-btn-primary:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  box-shadow: var(--ax-focus-ring);
+  border-radius: 8px;
+}
+
+/* Card hover subtil — niveau entreprise (pas trop flashy) */
+.ax-card,
+.ax-feature-card,
+.ax-modernized-card,
+.ax-cat,
+details {
+  transition: transform 120ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out;
+}
+@media (hover: hover) {
+  .ax-card:hover,
+  .ax-feature-card:hover,
+  .ax-modernized-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* Loading skeleton premium — shimmer or doux */
+.ax-skel,
+.ax-skel-vault-cards,
+[data-loading="true"] {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: ax-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes ax-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Toasts premium — fade + slide bottom */
+.ax-toast,
+.ax-toast-success,
+.ax-toast-warn,
+.ax-toast-error,
+.ax-toast-info {
+  animation: ax-toast-in 220ms ease-out;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+@keyframes ax-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar premium discrète */
+.ax-chat-scroll::-webkit-scrollbar,
+.ax-vault-page::-webkit-scrollbar,
+.ax-admin::-webkit-scrollbar,
+.ax-settings::-webkit-scrollbar,
+.ax-page::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ax-chat-scroll::-webkit-scrollbar-thumb,
+.ax-vault-page::-webkit-scrollbar-thumb,
+.ax-admin::-webkit-scrollbar-thumb,
+.ax-settings::-webkit-scrollbar-thumb,
+.ax-page::-webkit-scrollbar-thumb {
+  background: rgba(232, 184, 48, 0.25);
+  border-radius: 3px;
+}
+.ax-chat-scroll::-webkit-scrollbar-thumb:hover,
+.ax-vault-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 184, 48, 0.45);
+}
+
+/* Sélection texte premium or */
+::selection {
+  background: rgba(232, 184, 48, 0.32);
+  color: #fff;
+}
+
+/* Empty state premium (rien à afficher = espace généreux + icône) */
+.ax-empty-state {
+  text-align: center;
+  padding: 36px 20px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+}
+.ax-empty-state-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+/* Status indicators colorés cohérents */
+.ax-status-ok { color: #22cc77; }
+.ax-status-warn { color: #f0c020; }
+.ax-status-error { color: #ff5b5b; }
+.ax-status-idle { color: rgba(255, 255, 255, 0.4); }
+
+/* Badges admin premium (rectangle arrondi avec gradient subtil) */
+.ax-badge,
+.ax-badge-admin,
+.ax-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(232, 184, 48, 0.18), rgba(232, 184, 48, 0.08));
+  color: #e8b830;
+  border: 1px solid rgba(232, 184, 48, 0.28);
+}
+
+/* Disabled state cohérent (gris + opacity + curseur) */
+button:disabled,
+.ax-btn:disabled,
+input:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Long text wrap pour ne JAMAIS overflow horizontalement (anti-cassure layout) */
+.ax-card, .ax-message, .ax-msg-body, .ax-result, .ax-detail {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Header sticky avec backdrop-filter (premium feeling) */
+.ax-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(8, 8, 15, 0.78);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Modal-sheet bottom premium iOS-like */
+.ax-sheet {
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  max-height: 88dvh;
+  overflow-y: auto;
+}

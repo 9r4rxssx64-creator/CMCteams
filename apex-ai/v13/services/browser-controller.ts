@@ -76,6 +76,7 @@ export function isBlockedDomain(url: string): { blocked: boolean; domain: string
       return { blocked: true, domain: host, reason: 'static_blocklist' };
     }
     /* Schemes interdits */
+    // eslint-disable-next-line no-script-url -- intentional check pour bloquer ce schéma
     if (u.protocol === 'javascript:' || u.protocol === 'data:' || u.protocol === 'file:') {
       return { blocked: true, domain: host, reason: 'scheme_forbidden' };
     }

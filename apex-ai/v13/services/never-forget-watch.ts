@@ -31,13 +31,13 @@
  * Si un test échoue → severity 'critical' + escalade Claude Code via ax_claude_todo.
  */
 
-import { logger } from '../core/logger.js';
 import {
   APEX_IDENTITY,
   buildIdentitySection,
   buildExtendedIdentitySection,
   listAllKnownUsers,
 } from '../core/apex-identity.js';
+import { logger } from '../core/logger.js';
 
 const AUDIT_LOG_KEY = 'ax_never_forget_audit_log';
 const AUDIT_LOG_CAP = 100;
