@@ -128,23 +128,34 @@ const PRESERVE_KEY_PREFIXES = [
   /* Identité + session */
   'apex_v13_uid',
   'apex_v13_user',
+  'apex_v13_users',
   'apex_v13_pin',
   'apex_v13_admin',
-  /* Vault + crypto critique */
+  'apex_v13_lastact',
+  'apex_v13_last_known_name',
+  'apex_v13_last_known_uid',
+  'apex_v13_device_trusted',
+  /* Vault + crypto critique (v13.4.6 FIX — vraie clé `multi_keys` ajoutée) */
   'apex_v13_vault',
+  'apex_v13_multi_keys',
   'apex_v13_multikey_vault',
   'apex_v13_passphrase_history',
   'apex_v13_device_passphrase',
   'apex_v13_device_obf',
   'apex_v13_credentials',
+  /* Backups locaux (snapshots auto-backup) */
+  'apex_v13_backup_index',
+  'apex_v13_backup_',
   /* Mémoire long-terme */
   'apex_v13_persistent_memory',
   'apex_v13_kb',
   'apex_v13_lessons',
   'apex_v13_audit',
-  'apex_v13_users',
   'apex_v13_xp',
   'apex_v13_streak',
+  /* Pièces jointes session */
+  'apex_v13_attachments',
+  'ax_v13_attachments',
   /* Legacy ax_ — identité + tokens API (perte = re-saisie obligatoire pour Kevin) */
   'ax_pin',
   'ax_user',

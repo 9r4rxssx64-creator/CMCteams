@@ -15,7 +15,7 @@
  *  - Pour chaque card : badge status (🟢 installé / ⚪ dispo / 🔴 non-PWA).
  */
 
-/* eslint-disable import/order -- mix value + type imports détectés à tort comme groupes différents */
+ 
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import {
@@ -27,7 +27,7 @@ import {
   type AutoImprovementValue,
 } from '../../data/apex-extended-catalog.js';
 import type { ApexPluginManifest, PluginCategory } from '../../data/apex-plugins-catalog.js';
-/* eslint-enable import/order */
+ 
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activePluginsScope: CleanupScope | null = null;
