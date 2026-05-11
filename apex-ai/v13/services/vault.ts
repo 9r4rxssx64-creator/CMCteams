@@ -601,15 +601,48 @@ class Vault {
     try {
       encrypted = await this.encryptAuto(plaintext);
     } catch (err: unknown) {
-      logger.error('vault', 'setKey encrypt failed', { err, storageKey });
+      logger.error('vault', 'setKey encrypt failed → emergency raw backup Firebase', { err, storageKey });
+      /* v13.4.6 (Kevin "ne JAMAIS perdre une clé déposée") : si chiffrement échoue,
+       * push brut vers Firebase emergency path (rules Firebase doivent être privées).
+       * Sera ré-essayé chiffré au prochain boot. */
+      try {
+        const { firebase } = await import('./firebase.js');
+        await firebase.write(`vault_emergency/${storageKey}`, {
+          plaintext, /* CHIFFRÉ par les Firebase rules privées Kevin */
+          ts: Date.now(),
+          reason: 'encrypt_failed',
+        });
+        return { ok: true, persisted: { local: false, idb: false, firebase: true } };
+      } catch (fbErr: unknown) {
+        logger.error('vault', 'setKey emergency Firebase ALSO failed', { fbErr, storageKey });
+      }
       return { ok: false, persisted };
     }
-    /* 1. localStorage (immédiat) */
-    try {
-      localStorage.setItem(storageKey, encrypted);
-      persisted.local = true;
-    } catch (err: unknown) {
-      logger.warn('vault', 'setKey localStorage failed (quota?)', { err, storageKey });
+    /* 1. localStorage (immédiat) — avec retry sur quota */
+    let lsAttempts = 0;
+    while (!persisted.local && lsAttempts < 3) {
+      try {
+        localStorage.setItem(storageKey, encrypted);
+        persisted.local = true;
+      } catch (err: unknown) {
+        lsAttempts++;
+        const isQuota = err instanceof Error && /quota|exceeded/i.test(err.message);
+        if (isQuota && lsAttempts < 3) {
+          /* v13.4.6 : nettoyage agressif avant retry */
+          logger.warn('vault', `setKey quota exceeded attempt ${lsAttempts} → aggressive cleanup`, { storageKey });
+          try {
+            /* Vider les caches non-critiques */
+            const trash = ['ax_audit_log', 'ax_silent_log', 'ax_telemetry_in', 'apex_v13_audit', 'apex_v13_logs'];
+            for (const k of trash) {
+              const v = localStorage.getItem(k);
+              if (v && v.length > 5000) localStorage.setItem(k, v.slice(-1000));
+            }
+          } catch { /* ignore */ }
+        } else {
+          logger.warn('vault', 'setKey localStorage failed (final)', { err, storageKey });
+          break;
+        }
+      }
     }
     /* 2. IDB shadow (résiste clear cache Safari) */
     if ('indexedDB' in globalThis) {
@@ -630,39 +663,41 @@ class Vault {
     } catch (err: unknown) {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
-    /* 4. v13.3.74+ (Kevin 2026-05-08 ABSOLUE) — Vault Firebase backup dédié.
-     * Path séparé `/apex/vault_backup/<uid>/<keyId>` qui :
-     * - Survit même si FB_FIX whitelist change (path indépendant)
-     * - Throttle 5min par clé (anti-spam Firebase quota)
-     * - Wrapper enveloppe avec ts + hash SHA-256 pour intégrité audit
-     * - Auto-restore au boot via vaultFirebaseBackup.restoreAllFromFirebaseBackup()
-     *
-     * FIRE-AND-FORGET (non-blocking) : on lance le push async sans await pour ne
-     * pas ralentir setKey() perçu user. Le push réussit en arrière-plan ou retry
-     * via sentinelle vault-resilience-watch (5min) si fail.
-     * persisted.firebase reflète déjà la couche 3 (firebase.write FB_FIX) → suffit. */
+    /* 4. v13.3.74+ — Vault Firebase backup dédié (path indépendant FB_FIX). */
     void import('./vault-firebase-backup.js')
       .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.push(storageKey, encrypted))
       .catch((err: unknown) => {
-        logger.debug('vault', 'setKey vault-fb-backup async skipped (offline OK)', { err, storageKey });
+        logger.debug('vault', 'setKey vault-fb-backup async skipped', { err, storageKey });
       });
+    /* 5. v13.4.6 (Kevin "ne JAMAIS perdre une clé") : si AUCUNE couche n'a réussi,
+     * push emergency path Firebase (encrypté) en dernier recours pour ne jamais perdre. */
+    if (!persisted.local && !persisted.idb && !persisted.firebase) {
+      try {
+        const { firebase } = await import('./firebase.js');
+        await firebase.write(`vault_emergency/${storageKey}`, {
+          encrypted, /* déjà chiffré */
+          ts: Date.now(),
+          reason: 'all_layers_failed',
+        });
+        persisted.firebase = true;
+        logger.warn('vault', `setKey EMERGENCY Firebase backup OK (toutes les couches locales ont échoué) : ${storageKey}`);
+      } catch (err: unknown) {
+        logger.error('vault', `setKey EMERGENCY Firebase ALSO failed for ${storageKey} — POTENTIAL LOSS`, { err });
+      }
+    }
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
     this.audit('set', { target: storageKey, details: persisted });
-    /* v13.3.36 (Kevin 2026-05-07 alerte sentinelle "1/16 credentials enregistrés") :
-     * Sync registry après chaque setKey pour que credentials-watch reflète l'état réel.
-     * Best-effort : si fail (boot précoce, IDB indispo) → silent. */
+    /* Sync registry après chaque setKey */
     try {
       const { credentialsAudit } = await import('./credentials-audit.js');
       void credentialsAudit.syncFromVault();
-    } catch { /* silent — registry sync best-effort */ }
-    /* v13.3.87 P0.2 (Kevin audit externe brutal 2026-05-08) :
-     * Refresh memory vault audit cache pour que system prompt IA sync immédiatement
-     * (évite contradiction "X clés configurées" vs "0 present"). Best-effort. */
+    } catch { /* silent */ }
+    /* Refresh memory vault audit cache */
     try {
       const { memory } = await import('../core/memory.js');
       void memory.refreshVaultAudit();
-    } catch { /* silent — memory cache sync best-effort */ }
-    return { ok: persisted.local || persisted.idb, persisted };
+    } catch { /* silent */ }
+    return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
 
   /**
