@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.5">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.6">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-b9a0871bc182b8e532d92679e73024ba' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-b9a0871bc182b8e532d92679e73024ba';
+             script-src 'self' 'nonce-e72cd949d51eb4f962d7736845ccf160' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-e72cd949d51eb4f962d7736845ccf160';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -114,7 +114,8 @@
                           https://api.openclaw.io
                           https://api.linkedin.com
                           https://api.twitter.com
-                          https://api.instagram.com;
+                          https://api.instagram.com
+                          https://kdmc-agent-monaco.vercel.app;
              worker-src 'self' blob:;
              frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
              media-src 'self' blob: data: https:;
@@ -129,18 +130,21 @@
   <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
   <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
 
+  <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="b9a0871bc182b8e532d92679e73024ba" type="module" crossorigin src="./core/main-B81OMBNP.js"></script>
+  <!-- v13.4.5 KDMC Agent Vercel -->
+  <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
+  <script nonce="e72cd949d51eb4f962d7736845ccf160" type="module" crossorigin src="./core/main-CSQ0n1Vx.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
-  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-z3lBBSNT.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CTF0Ti0W.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-CDoC_lMn.js">
-  <link nonce="b9a0871bc182b8e532d92679e73024ba" rel="stylesheet" crossorigin href="./assets/css/main-fW-M94Lx.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-Bm_QfTQS.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-C2LwQpZy.js">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BNk1cX4A.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-CGK5HgrY.js">
+  <link nonce="e72cd949d51eb4f962d7736845ccf160" rel="stylesheet" crossorigin href="./assets/css/main-CST9I-e_.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-D85Az6hr.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-CA8VKmqt.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -175,6 +179,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="b9a0871bc182b8e532d92679e73024ba" src="./assets/js/rescue.js"></script>
+  <script nonce="e72cd949d51eb4f962d7736845ccf160" src="./assets/js/rescue.js"></script>
 </body>
 </html>
