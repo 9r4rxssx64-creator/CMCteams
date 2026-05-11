@@ -45,10 +45,14 @@ button:active, [role="button"]:active, .ax-btn:active {
   user-select: none;
   -webkit-touch-callout: none;
 }
-/* Mais textarea/input/résultats : sélection libre */
+/* Mais textarea/input/résultats : sélection libre + paste menu iOS autorisé */
 textarea, input, .ax-message, .ax-msg-body, .ax-result, [contenteditable] {
   -webkit-user-select: text;
   user-select: text;
+  /* v13.4.6 fix Kevin "je n'arrive pas à coller dans le coffre" :
+   * iOS Safari PWA — long-press menu "Coller" disparaît si callout: none.
+   * Force default sur textarea/input pour réactiver le menu paste. */
+  -webkit-touch-callout: default;
 }
 
 /* v13.4.6 UX : reduced-motion respect global (a11y WCAG) */

@@ -602,10 +602,14 @@ export function render(rootEl: HTMLElement): void {
       <section style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));border:1px solid rgba(232,184,48,0.18);border-radius:14px;padding:14px;margin-bottom:14px">
         <h3 style="margin:0 0 8px;font-size:13px;color:#e8b830;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">🔍 Auto-détection rapide</h3>
         <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 10px">Colle ici n'importe quelle clé API, Apex la reconnaît + la range automatiquement.</p>
-        <textarea id="ax-vault-paste" placeholder="Colle ta clé ici (sk-ant-..., AIzaSy..., re_...)"
-          style="width:100%;background:rgba(0,0,0,0.35);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-family:'SF Mono',Menlo,monospace;font-size:12px;min-height:60px;resize:vertical;box-sizing:border-box;-webkit-appearance:none"></textarea>
-        <button id="ax-vault-paste-btn"
-          style="margin-top:10px;padding:10px 20px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px">🔍 Détecter & stocker</button>
+        <textarea id="ax-vault-paste" placeholder="Colle ta clé ici (sk-ant-..., AIzaSy..., re_...)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          style="width:100%;background:rgba(0,0,0,0.35);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-family:'SF Mono',Menlo,monospace;font-size:16px;min-height:60px;resize:vertical;box-sizing:border-box;-webkit-appearance:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button id="ax-vault-paste-clipboard-btn" type="button"
+            style="padding:10px 16px;background:rgba(106,138,255,0.18);color:#6a8aff;border:1px solid rgba(106,138,255,0.35);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📋 Coller du presse-papier</button>
+          <button id="ax-vault-paste-btn" type="button"
+            style="padding:10px 20px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔍 Détecter & stocker</button>
+        </div>
         <div id="ax-vault-paste-result" style="margin-top:8px;font-size:12px"></div>
       </section>
 
@@ -891,6 +895,38 @@ function attachHandlers(rootEl: HTMLElement): void {
     })();
   });
 
+  /* v13.4.6 Kevin "je n'arrive pas à coller" — bouton "📋 Coller du presse-papier" iOS PWA safe */
+  const pasteClipboardBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-paste-clipboard-btn');
+  if (pasteClipboardBtn && activeVaultScope) activeVaultScope.bind(pasteClipboardBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-vault-paste');
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-paste-result');
+      if (!ta) return;
+      try {
+        /* Permission auto-request iOS Safari */
+        if (!navigator.clipboard?.readText) {
+          throw new Error('Clipboard API non supportée');
+        }
+        const text = await navigator.clipboard.readText();
+        if (!text) {
+          if (result) result.innerHTML = `<div style="padding:8px;background:rgba(240,192,32,.1);color:#f0c020;border-radius:8px">⚠ Presse-papier vide</div>`;
+          return;
+        }
+        ta.value = text;
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        haptic.success();
+        toast.success(`📋 ${text.length} caractères collés — clique "Détecter & stocker"`);
+        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(106,138,255,.1);color:#6a8aff;border-radius:8px">📋 Collé — clique "Détecter & stocker" pour analyser</div>`;
+        ta.focus();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'unknown';
+        toast.error(`Clipboard refusé : ${msg}. Utilise long-press → Coller manuellement.`);
+        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:#ff5858;border-radius:8px">⚠ Permission refusée. Long-press dans le champ → Coller.</div>`;
+      }
+    })();
+  });
+
   /* Auto-detect paste */
   const pasteBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-paste-btn');
   if (pasteBtn && activeVaultScope) activeVaultScope.bind(pasteBtn, 'click', () => {
@@ -899,22 +935,28 @@ function attachHandlers(rootEl: HTMLElement): void {
       const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-vault-paste');
       const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-paste-result');
       if (!ta || !result) return;
-      const r = await autoDetectAndStore(ta.value);
+      /* v13.4.6 fix bug : on capture ta.value AVANT de le vider */
+      const valueToProcess = ta.value.trim();
+      if (!valueToProcess) {
+        result.innerHTML = `<div style="padding:8px;background:rgba(240,192,32,.1);color:#f0c020;border-radius:8px">⚠ Colle quelque chose d'abord</div>`;
+        return;
+      }
+      const r = await autoDetectAndStore(valueToProcess);
       if (r.ok) {
         haptic.success();
         toast.success(`✅ ${r.pattern_name} stocké`);
         result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">✅ ${escapeHtml(r.pattern_name)} → ${escapeHtml(r.storage_key)}</div>`;
-        ta.value = '';
         /* Tente aussi addition multi-key (si service connu via storageKey) */
-        const detected = detectCredential(ta.value.trim());
+        const detected = detectCredential(valueToProcess);
         if (detected) {
           const serviceFromKey = detected.storageKey.replace(/^(ax_|apex_v13_)/, '').replace(/_(?:key|token|pat|sk|pk|id|secret)$/, '');
           try {
-            await multiKeyVault.addKey(serviceFromKey, ta.value.trim());
+            await multiKeyVault.addKey(serviceFromKey, valueToProcess);
           } catch {
             /* legacy mode only — not blocking */
           }
         }
+        ta.value = '';
         render(rootEl);
       } else {
         haptic.error();
