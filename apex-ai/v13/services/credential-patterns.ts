@@ -321,13 +321,18 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     docs: 'https://platform.openai.com/docs',
   },
   {
-    name: 'Google AI',
+    /* v13.4.6 fix Kevin "il confond Gemini" — renommé explicitement Google AI Gemini
+     * + storageKey gardé `ax_google_key` mais alias `ax_gemini_key` ajouté côté install.
+     * testEndpoint pour validation live (visuel vert quand OK). */
+    name: 'Google AI Gemini',
     regex: /^AIza[A-Za-z0-9_-]{33}$/,
-    storageKey: 'ax_google_key',
+    storageKey: 'ax_gemini_key',
     category: 'ai',
     dashboard: 'https://aistudio.google.com/',
     billing: 'https://console.cloud.google.com/billing',
     docs: 'https://ai.google.dev/docs',
+    testEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
+    testMethod: 'GET',
   },
   {
     name: 'Groq',
@@ -427,9 +432,12 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
 
   /* === Devops / Code === */
   {
+    /* v13.4.6 fix Kevin "il confond github PAT classic et github normal" :
+     * storageKey distincte par variant (avant les 2 partageaient ax_github_token
+     * → 2ème écrasait le 1er). Kevin peut désormais avoir les 2 simultanément. */
     name: 'GitHub PAT classic',
     regex: /^ghp_[A-Za-z0-9]{36}$/,
-    storageKey: 'ax_github_token',
+    storageKey: 'ax_github_pat_classic',
     category: 'devops',
     dashboard: 'https://github.com/settings/tokens',
     docs: 'https://docs.github.com/en/rest',
@@ -439,7 +447,7 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   {
     name: 'GitHub Fine-grained',
     regex: /^github_pat_[A-Za-z0-9_]{82,}$/,
-    storageKey: 'ax_github_token',
+    storageKey: 'ax_github_pat_finegrained',
     category: 'devops',
     dashboard: 'https://github.com/settings/personal-access-tokens',
     testEndpoint: 'https://api.github.com/user',
@@ -450,6 +458,8 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     regex: /^gho_[A-Za-z0-9]{36}$/,
     storageKey: 'ax_github_oauth',
     category: 'devops',
+    testEndpoint: 'https://api.github.com/user',
+    testMethod: 'GET',
   },
   {
     name: 'GitLab PAT',

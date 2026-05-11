@@ -276,6 +276,7 @@ class ForceUpdateBanner {
         'apex_v13_streak',
         'apex_v13_attachments',          /* v13.4.6 FIX — pièces jointes session */
         'ax_v13_attachments',
+        'apex_v13_paste_recovery_',      /* v13.4.6 — anti-perte clés collées par Kevin */
         'ax_pin',
         'ax_user',
         'ax_uid',

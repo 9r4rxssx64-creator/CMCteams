@@ -156,6 +156,8 @@ const PRESERVE_KEY_PREFIXES = [
   /* Pièces jointes session */
   'apex_v13_attachments',
   'ax_v13_attachments',
+  /* v13.4.6 — Recovery brut des pastes Kevin (anti-perte clés collées) */
+  'apex_v13_paste_recovery_',
   /* Legacy ax_ — identité + tokens API (perte = re-saisie obligatoire pour Kevin) */
   'ax_pin',
   'ax_user',
