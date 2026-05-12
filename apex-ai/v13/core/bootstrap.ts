@@ -696,15 +696,30 @@ async function bootstrap(): Promise<void> {
       setTimeout(cb, timeout);
     }
   };
-  /* v13.3.86 P1.9 audit externe : forceUpdateCheck triggers DÉSACTIVÉS (race condition).
-   * forceUpdateBanner.install() (v13.3.83) gère désormais tout :
-   *   - Boot check 3s + cron 10min interne
-   *   - Banner UI rouge non-dismissible avec bouton 1-clic Kevin
-   *   - clear caches + unregister SW + reload fresh
-   * Avantage UX : Kevin VOIT que la maj est dispo et choisit quand reload (au
-   * lieu d'un auto-reload silent qui peut le surprendre en plein chat). */
-  void idleCallback; void forceUpdateCheck;
-  /* setInterval forceUpdateCheck désactivé (forceUpdateBanner remplace) */
+  /* v13.4.6 (Kevin "Force MAJ auto toujours") :
+   * RÉACTIVATION forceUpdateCheck() au boot + visibilitychange (anti-banner-stale).
+   * Conditions safe (anti race condition) :
+   *   - Boot : seul trigger initial 5s après render (laisse Apex démarrer normalement)
+   *   - visibilitychange : si user revient sur l'app après 1h+ d'inactivité
+   *   - Pas de cron interval (forceUpdateBanner s'en charge)
+   *
+   * Mode silencieux si idle + safe (cf. force-update-banner.ts checkAndMaybeShow). */
+  setTimeout(() => {
+    void forceUpdateCheck().catch(() => { /* silent */ });
+  }, 5000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
+      /* Throttle 30min entre check sur visibility */
+      if (Date.now() - lastCheck > 30 * 60 * 1000) {
+        try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* ignore */ }
+        void forceUpdateCheck().catch(() => { /* silent */ });
+      }
+    }
+  });
+
+  void idleCallback;
 
   /* 11. Online/offline listeners */
   window.addEventListener('online', () => {
