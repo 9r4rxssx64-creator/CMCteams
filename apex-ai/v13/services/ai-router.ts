@@ -735,9 +735,33 @@ class AIRouter {
       logger.info('ai-router', `conversation truncated ${redactedMessages.length} → ${truncatedMessages.length} (cap ${MAX_CONVERSATION_MESSAGES})`);
     }
 
-    /* v13.3.49 — Validation pré-envoi : system + messages + max_tokens.
-     * Si invalid → onError immédiat (évite HTTP 400 silencieux Anthropic). */
-    const validation = validateRequest(truncatedMessages, system, 4096);
+    /* v13.4.6 (Kevin "pré-envoi invalide messages[1].content empty") :
+     * AUTO-FILTER messages vides AVANT validation (Apex tolérant).
+     * Un message vide arrive souvent quand Kevin envoie SEULEMENT une pièce jointe
+     * (image/PDF/audio) sans texte → content est string vide. On le filtre.
+     * Si tous les messages sont vides → message clair "Tape ta question". */
+    const filteredMessages = truncatedMessages.filter((m) => {
+      if (!m) return false;
+      if (typeof m.content === 'string') return m.content.trim().length > 0;
+      if (Array.isArray(m.content)) {
+        /* Garde le message si au moins UN block a du contenu (texte non-vide OU image/document) */
+        return m.content.some((part: { type?: string; text?: string }) => {
+          if (part.type === 'text') return (part.text ?? '').trim().length > 0;
+          return part.type === 'image' || part.type === 'document' || part.type === 'tool_use' || part.type === 'tool_result';
+        });
+      }
+      return false;
+    });
+
+    if (filteredMessages.length === 0) {
+      const err = new Error('Aucun message à envoyer — tape ta question ou ajoute du texte avec ta pièce jointe.');
+      logger.warn('ai-router', 'all messages empty after filter');
+      onError?.(err);
+      return;
+    }
+
+    /* v13.3.49 — Validation pré-envoi : system + messages + max_tokens. */
+    const validation = validateRequest(filteredMessages, system, 4096);
     if (!validation.ok) {
       const err = new Error(`Apex pré-envoi invalide : ${validation.reason}`);
       logger.error('ai-router', 'request validation failed', { reason: validation.reason });
@@ -752,11 +776,11 @@ class AIRouter {
 
     /* Wire ai-routing-policy : policy.decide() respecte mode (auto/economy/premium/forced)
      * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
-    const chain = await this.buildPolicyAwareChain(truncatedMessages);
+    const chain = await this.buildPolicyAwareChain(filteredMessages);
 
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
     const inputTokensEstimate = Math.ceil(
-      JSON.stringify(truncatedMessages).length / 4 + system.length / 4,
+      JSON.stringify(filteredMessages).length / 4 + system.length / 4,
     );
     let outputTokensEstimate = 0;
 
