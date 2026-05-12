@@ -791,6 +791,15 @@ async function bootstrap(): Promise<void> {
     }
   }, 100);
 
+  /* v13.4.6 (Kevin "plus de visuel de version") :
+   * Badge version permanent en bas à droite + toast boot 1×/heure. */
+  setTimeout(() => {
+    void import('../ui/version-badge.js').then(({ installVersionBadge, showBootToast }) => {
+      installVersionBadge();
+      showBootToast();
+    }).catch(() => { /* silent */ });
+  }, 200);
+
   /* v13.3.71 PERF (LCP optim) : tous services NON-critiques pour render initial
    * lancés en parallèle APRÈS router.dispatch() — n'impactent pas LCP/FCP.
    * Promise.allSettled : si 1 fail → autres continuent.
