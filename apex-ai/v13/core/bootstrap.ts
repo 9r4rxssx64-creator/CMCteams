@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.6';
+export const APP_VER = 'v13.4.7';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -696,6 +696,42 @@ async function bootstrap(): Promise<void> {
       setTimeout(cb, timeout);
     }
   };
+  /* v13.4.6 (Kevin "rien n'a changé") :
+   * ULTRA-FORCE update au boot — bypass tout cache, nuke SW + caches + reload immédiat
+   * dès la 1ère seconde du boot si version mismatch. Aucun throttle.
+   * C'est le seul moyen de garantir que l'iPhone reçoit la nouvelle version. */
+  setTimeout(async () => {
+    try {
+      const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?__ulra_t=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2);
+      const r = await fetch(url, {
+        cache: 'reload',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+      });
+      const html = await r.text();
+      const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
+      const remoteVer = m?.[1] ?? null;
+      if (remoteVer && remoteVer !== APP_VER) {
+        logger.warn('boot', `⚡ ULTRA-FORCE: local=${APP_VER} → remote=${remoteVer} NUKE`);
+        /* Unregister TOUS les SW */
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((reg) => reg.unregister()));
+          }
+        } catch { /* ignore */ }
+        /* Clear TOUS les caches (CacheStorage) */
+        try {
+          if ('caches' in window) {
+            const ks = await caches.keys();
+            await Promise.all(ks.map((k) => caches.delete(k)));
+          }
+        } catch { /* ignore */ }
+        /* Reload fresh avec multiple cache-busters */
+        location.replace(location.pathname + '?_ulra=' + Date.now() + '&_v=' + remoteVer + '#_fresh');
+      }
+    } catch { /* offline OK */ }
+  }, 1000);
+
   /* v13.4.6 (Kevin "Force MAJ auto toujours") :
    * RÉACTIVATION forceUpdateCheck() au boot + visibilitychange (anti-banner-stale).
    * Conditions safe (anti race condition) :
