@@ -750,6 +750,22 @@ async function bootstrap(): Promise<void> {
     logger.warn('viewport', 'anti-zoom install failed', { err });
   }
 
+  /* 11c. v13.4.6 (Kevin "Force MAJ auto toujours") — Track last interaction
+   * pour que force-update-banner détecte les moments idle (>30s sans action)
+   * et déclenche la MAJ silencieuse sans interrompre Kevin. */
+  try {
+    const updateInteraction = (): void => {
+      try { localStorage.setItem('apex_v13_last_interaction', String(Date.now())); } catch { /* ignore */ }
+    };
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach((evt) => {
+      document.addEventListener(evt, updateInteraction, { passive: true });
+    });
+    updateInteraction(); /* initial */
+    logger.info('interaction', 'user-interaction tracker installé pour MAJ auto idle');
+  } catch (err: unknown) {
+    logger.warn('interaction', 'tracker install failed', { err });
+  }
+
   /* 12. Hide splash + render initial view */
   router.dispatch();
   setTimeout(() => {

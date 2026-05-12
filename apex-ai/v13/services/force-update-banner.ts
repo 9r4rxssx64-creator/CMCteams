@@ -89,9 +89,62 @@ class ForceUpdateBanner {
   private async checkAndMaybeShow(): Promise<void> {
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
-      this.showBanner(r.remote_ver);
+      /* v13.4.6 (Kevin "Force MAJ auto toujours") :
+       * MAJ silencieuse automatique sans bouton ni banner.
+       * Conditions de sécurité :
+       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant réponse)
+       *   2. Pas de modal/input/textarea actif (Kevin tape)
+       *   3. Throttle 1×/heure (`apex_v13_auto_maj_last`)
+       *   4. Visibilité document = caché OU page idle 30s
+       * Sinon → banner classique avec bouton pour qu'il décide. */
+      const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
+      const throttleOK = Date.now() - lastAuto > 60 * 60 * 1000; /* 1h */
+      const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
+      const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
+      if (throttleOK && isIdle && isSafe) {
+        logger.info('force-update', `AUTO-MAJ silencieuse (${r.local_ver} → ${r.remote_ver})`);
+        localStorage.setItem('apex_v13_auto_maj_last', String(Date.now()));
+        /* Toast info bref */
+        try {
+          const { toast } = await import('../ui/toast.js');
+          toast.info(`🔄 Mise à jour ${r.remote_ver} en cours…`);
+        } catch { /* ignore */ }
+        await this.forceUpdate();
+      } else {
+        this.showBanner(r.remote_ver);
+      }
     } else {
       this.removeBanner();
+    }
+  }
+
+  /** v13.4.6 — Détecte si user tape activement (textarea/input focus) */
+  private hasUserTyping(): boolean {
+    const active = document.activeElement;
+    if (!active) return false;
+    const tag = active.tagName?.toLowerCase();
+    return tag === 'textarea' || tag === 'input' || active.getAttribute('contenteditable') === 'true';
+  }
+
+  /** v13.4.6 — Détecte si une requête fetch IA est en cours (anti-coupure pendant streaming) */
+  private hasActiveFetch(): boolean {
+    try {
+      /* Heuristique : window flag set par les services chat/anthropic */
+      const w = window as unknown as { __apexActiveStream?: boolean };
+      return w.__apexActiveStream === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s) */
+  private isUserIdle(): boolean {
+    try {
+      const lastInteraction = parseInt(localStorage.getItem('apex_v13_last_interaction') ?? '0', 10);
+      if (!lastInteraction) return true;
+      return Date.now() - lastInteraction > 30_000;
+    } catch {
+      return true;
     }
   }
 
