@@ -181,6 +181,10 @@
   <button id="apex-rescue-btn" type="button"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
 
+  <!-- v13.4.7 (Kevin "pas de badge") : badge version STATIQUE HTML pur, garanti visible
+       même si JS crash. Style minimal inline-safe (pas CSS nonce requis). -->
+  <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.7">v13.4.7</div>
+
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
   <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
 
