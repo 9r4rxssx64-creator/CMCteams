@@ -141,6 +141,62 @@
   <!-- v13.4.5 KDMC Agent Vercel -->
   <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
 
+  <!-- v13.4.7-fix3 Kevin "affichage zoomé / je ne vois pas toutes les fonctions" :
+       overrides compacts pour faire tenir la landing sur iPhone SE 375×667 sans scroll,
+       et garder toutes les fonctions visibles. Touch targets >= 44px (Apple HIG) préservés. -->
+  <style id="apex-compact-overrides">
+    /* Landing card : -40% padding pour rentrer dans 667px */
+    .ax-landing { padding: 12px !important; min-height: 100dvh !important; }
+    .ax-landing-card {
+      padding: 20px 18px !important;
+      max-width: 380px !important;
+      border-radius: 16px !important;
+    }
+    .ax-landing-logo {
+      font-size: clamp(28px, 8vw, 40px) !important;
+      letter-spacing: 6px !important;
+      margin: 0 !important;
+    }
+    .ax-landing-version {
+      font-size: 11px !important;
+      margin-top: 2px !important;
+    }
+    .ax-landing-tagline {
+      margin-bottom: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.35 !important;
+    }
+    .ax-landing-footer {
+      margin-top: 12px !important;
+      font-size: 10px !important;
+    }
+    .ax-landing-logo-wrap { margin-bottom: 4px !important; gap: 2px !important; }
+    /* Form : gaps réduits */
+    .ax-landing-card .ax-form { gap: 10px !important; }
+    .ax-landing-card .ax-form label { gap: 4px !important; font-size: 12px !important; }
+    .ax-landing-card .ax-form input,
+    .ax-landing-card .ax-form select,
+    .ax-landing-card .ax-form textarea {
+      padding: 10px 12px !important;
+      min-height: 44px !important;  /* Apple HIG touch target préservé */
+    }
+    .ax-form-label { margin-bottom: 4px !important; font-size: 12px !important; }
+    /* Buttons block compacts mais 44px min */
+    .ax-landing-card .ax-btn,
+    .ax-landing-card .ax-btn-block {
+      padding: 10px 14px !important;
+      min-height: 44px !important;
+      font-size: 14px !important;
+    }
+    /* Chat / app principale : padding réduit pour voir plus de fonctions */
+    .ax-chat-header { padding: 6px 10px !important; }
+    .ax-chat-scroll { padding: 4px 8px !important; }
+    /* Empêcher overflow horizontal sur iPhone */
+    html, body { max-width: 100vw !important; overflow-x: hidden !important; }
+    /* Anti-zoom iOS Safari : text-size-adjust strict */
+    html { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
+  </style>
+
   <!-- Vite-built bundle (entry JS + CSS contiennent tokens, base, components, animations, rescue, financial-bilan,
        laurence, ux-premium, ux-overrides inline-compilés). Nonce CSP fixe pour HTML statique. -->
   <script nonce="e1d9559bd022bcddd691f27315e69054" type="module" crossorigin src="./core/main-DFnpHCqE.js"></script>
@@ -188,5 +244,35 @@
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
   <script nonce="e1d9559bd022bcddd691f27315e69054" src="./js/rescue.js"></script>
+
+  <!-- v13.4.7-fix3 anti-zoom reset iOS Safari : toggle viewport meta sur visibilitychange
+       pour forcer reset de zoom résiduel après pinch (sinon Kevin voit "écran zoomé"). -->
+  <script nonce="e1d9559bd022bcddd691f27315e69054">
+    (function(){
+      try {
+        var vp = document.querySelector('meta[name="viewport"]');
+        if (!vp) return;
+        var initial = vp.getAttribute('content');
+        function resetZoom(){
+          try {
+            if (!window.visualViewport) return;
+            if (window.visualViewport.scale > 1.005) {
+              vp.setAttribute('content', initial + ',maximum-scale=1.0');
+              setTimeout(function(){ vp.setAttribute('content', initial); }, 60);
+            }
+          } catch(_) {}
+        }
+        document.addEventListener('visibilitychange', function(){
+          if (!document.hidden) setTimeout(resetZoom, 100);
+        });
+        window.addEventListener('pageshow', function(){ setTimeout(resetZoom, 100); });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', resetZoom);
+        }
+        /* Reset au boot après 1s (laisse le bundle initialiser ses propres handlers) */
+        setTimeout(resetZoom, 1000);
+      } catch(_) {}
+    })();
+  </script>
 </body>
 </html>
