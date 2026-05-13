@@ -168,4 +168,30 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
     minTier: 'admin',
     impactLevel: 'C',
   },
+  {
+    name: 'llm_council',
+    description:
+      'Délibération multi-LLM en 3 rounds (brainstorm parallèle → critique croisée → synthèse juge) pour décisions critiques niveau expert mondial. 5 IA experts par défaut (Claude/GPT-4o/Gemini/Llama/Mistral). Use case Kevin : audit production, choix architecture, validation refactor majeur, comparaison techno. Coût ~0.05$/run.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Question/décision à délibérer (préciser contexte et alternatives).',
+        },
+        max_rounds: {
+          type: 'number',
+          description: 'Nombre de rounds : 1 (brainstorm only) | 2 (+ critique) | 3 (+ synthèse juge, défaut).',
+        },
+        members_preset: {
+          type: 'string',
+          enum: ['default', 'security', 'ux', 'performance', 'business'],
+          description: 'Council preset selon expertise prioritaire (default = mix all-star).',
+        },
+      },
+      required: ['task'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
 ];
