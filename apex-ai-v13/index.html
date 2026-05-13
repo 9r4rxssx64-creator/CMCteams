@@ -1,10 +1,13 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.8">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.9">
 <head>
   <meta charset="utf-8">
-  <!-- v13.4.8 fix C4 (Ultra Review) — viewport a11y-friendly : zoom autorisé jusqu'à 5x
-       conformément WCAG 2.1 SC 1.4.4 (Resize Text). user-scalable=yes obligatoire. -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,minimum-scale=1,viewport-fit=cover,user-scalable=yes">
+  <!-- v13.4.9 fix Kevin "écran zoom seul reste bloqué en zoom" :
+       Anti-zoom auto iOS Safari (focus input fait zoom involontaire).
+       Kevin n'a pas besoin de zoom (font-size 16px input garantit lisibilité).
+       Trade-off WCAG SC 1.4.4 documenté : font-size 16px+ partout compense.
+       Si user a vraiment besoin zoom, iOS Settings → Display Zoom + reader mode. -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,8 +22,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-a89b4a82479a64b5df5eaae4bc74e0c5' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-a89b4a82479a64b5df5eaae4bc74e0c5';
+             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-APEX_BOOT_NONCE';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -128,25 +131,30 @@
 
   <title>APEX AI v13</title>
 
-  <link rel="manifest" href="./assets/json/manifest-Dnqu29nu.json">
-  <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
-  <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/apex-logo-192.png">
 
+  <link rel="preload" href="./assets/css/tokens.css" as="style">
+  <link rel="preload" href="./assets/css/base.css" as="style">
+  <link rel="preload" href="./assets/css/components.css" as="style">
+  <link rel="preload" href="./assets/css/animations.css" as="style">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/base.css">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/animations.css">
+  <link rel="stylesheet" href="./assets/css/rescue.css">
+  <link rel="stylesheet" href="./assets/css/financial-bilan.css">
+  <link rel="stylesheet" href="./assets/css/laurence.css">
+  <link rel="stylesheet" href="./assets/css/ux-premium.css">
   <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
+  <link rel="stylesheet" href="./assets/css/ux-overrides.css">
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
   <!-- v13.4.5 KDMC Agent Vercel -->
   <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
-  <script nonce="a89b4a82479a64b5df5eaae4bc74e0c5" type="module" crossorigin src="./core/main-CwWc03Mr.js"></script>
-  <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
-  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-DCe1YONW.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-JthyoBAi.js">
-  <link nonce="a89b4a82479a64b5df5eaae4bc74e0c5" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-DhdSoo35.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-N2zefBLH.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -184,8 +192,9 @@
   <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.8">v13.4.8</div>
 
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
+  <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="a89b4a82479a64b5df5eaae4bc74e0c5" src="./assets/js/rescue.js"></script>
+  <script nonce="APEX_BOOT_NONCE" src="./assets/js/rescue.js"></script>
 </body>
 </html>

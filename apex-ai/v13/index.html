@@ -1,10 +1,13 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.8">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.9">
 <head>
   <meta charset="utf-8">
-  <!-- v13.4.8 fix C4 (Ultra Review) — viewport a11y-friendly : zoom autorisé jusqu'à 5x
-       conformément WCAG 2.1 SC 1.4.4 (Resize Text). user-scalable=yes obligatoire. -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,minimum-scale=1,viewport-fit=cover,user-scalable=yes">
+  <!-- v13.4.9 fix Kevin "écran zoom seul reste bloqué en zoom" :
+       Anti-zoom auto iOS Safari (focus input fait zoom involontaire).
+       Kevin n'a pas besoin de zoom (font-size 16px input garantit lisibilité).
+       Trade-off WCAG SC 1.4.4 documenté : font-size 16px+ partout compense.
+       Si user a vraiment besoin zoom, iOS Settings → Display Zoom + reader mode. -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
