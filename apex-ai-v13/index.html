@@ -22,8 +22,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-APEX_BOOT_NONCE';
+             script-src 'self' 'nonce-e1d9559bd022bcddd691f27315e69054' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-e1d9559bd022bcddd691f27315e69054';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -132,29 +132,24 @@
   <title>APEX AI v13</title>
 
   <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
-  <link rel="apple-touch-icon" href="./assets/icons/apex-logo-192.png">
-
-  <link rel="preload" href="./assets/css/tokens.css" as="style">
-  <link rel="preload" href="./assets/css/base.css" as="style">
-  <link rel="preload" href="./assets/css/components.css" as="style">
-  <link rel="preload" href="./assets/css/animations.css" as="style">
-  <link rel="stylesheet" href="./assets/css/tokens.css">
-  <link rel="stylesheet" href="./assets/css/base.css">
-  <link rel="stylesheet" href="./assets/css/components.css">
-  <link rel="stylesheet" href="./assets/css/animations.css">
-  <link rel="stylesheet" href="./assets/css/rescue.css">
-  <link rel="stylesheet" href="./assets/css/financial-bilan.css">
-  <link rel="stylesheet" href="./assets/css/laurence.css">
-  <link rel="stylesheet" href="./assets/css/ux-premium.css">
-  <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
-  <link rel="stylesheet" href="./assets/css/ux-overrides.css">
+  <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
+  <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
   <!-- v13.4.5 KDMC Agent Vercel -->
   <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
+
+  <!-- Vite-built bundle (entry JS + CSS contiennent tokens, base, components, animations, rescue, financial-bilan,
+       laurence, ux-premium, ux-overrides inline-compilés). Nonce CSP fixe pour HTML statique. -->
+  <script nonce="e1d9559bd022bcddd691f27315e69054" type="module" crossorigin src="./core/main-DFnpHCqE.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CmLg4l85.js">
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-DzV9YvuY.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-CO7mSElo.js">
+  <link nonce="e1d9559bd022bcddd691f27315e69054" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -191,10 +186,7 @@
        JS enrichit avec click handler "détails" via version-badge.ts. -->
   <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.8">v13.4.8</div>
 
-  <!-- Boot loader minimal — charge le bundle ES module Vite -->
-  <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
-
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="APEX_BOOT_NONCE" src="./assets/js/rescue.js"></script>
+  <script nonce="e1d9559bd022bcddd691f27315e69054" src="./js/rescue.js"></script>
 </body>
 </html>
