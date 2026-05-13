@@ -1,8 +1,10 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.7">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.8">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
+  <!-- v13.4.8 fix C4 (Ultra Review) — viewport a11y-friendly : zoom autorisé jusqu'à 5x
+       conformément WCAG 2.1 SC 1.4.4 (Resize Text). user-scalable=yes obligatoire. -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,minimum-scale=1,viewport-fit=cover,user-scalable=yes">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,8 +19,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-APEX_BOOT_NONCE';
+             script-src 'self' 'nonce-30d12e80f7ab89b255c97ff6ee023ef4' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-30d12e80f7ab89b255c97ff6ee023ef4';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -126,30 +128,25 @@
 
   <title>APEX AI v13</title>
 
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
-  <link rel="apple-touch-icon" href="./assets/icons/apex-logo-192.png">
+  <link rel="manifest" href="./assets/json/manifest-Dnqu29nu.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
+  <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
 
-  <link rel="preload" href="./assets/css/tokens.css" as="style">
-  <link rel="preload" href="./assets/css/base.css" as="style">
-  <link rel="preload" href="./assets/css/components.css" as="style">
-  <link rel="preload" href="./assets/css/animations.css" as="style">
-  <link rel="stylesheet" href="./assets/css/tokens.css">
-  <link rel="stylesheet" href="./assets/css/base.css">
-  <link rel="stylesheet" href="./assets/css/components.css">
-  <link rel="stylesheet" href="./assets/css/animations.css">
-  <link rel="stylesheet" href="./assets/css/rescue.css">
-  <link rel="stylesheet" href="./assets/css/financial-bilan.css">
-  <link rel="stylesheet" href="./assets/css/laurence.css">
-  <link rel="stylesheet" href="./assets/css/ux-premium.css">
   <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
-  <link rel="stylesheet" href="./assets/css/ux-overrides.css">
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
   <!-- v13.4.5 KDMC Agent Vercel -->
   <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
+  <script nonce="30d12e80f7ab89b255c97ff6ee023ef4" type="module" crossorigin src="./core/main-DHaZ58Fn.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-DSM71ALp.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-Cggvb-cB.js">
+  <link nonce="30d12e80f7ab89b255c97ff6ee023ef4" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-AP8mHSGc.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-CQLOZz4y.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -181,14 +178,14 @@
   <button id="apex-rescue-btn" type="button"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
 
-  <!-- v13.4.7 (Kevin "pas de badge") : badge version STATIQUE HTML pur, garanti visible
-       même si JS crash. Style minimal inline-safe (pas CSS nonce requis). -->
-  <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.7">v13.4.7</div>
+  <!-- v13.4.8 (Kevin "pas de badge") : badge version STATIQUE HTML pur, garanti visible
+       même si JS crash. Style via rescue.css (chargé en <link>) — pas inline.
+       JS enrichit avec click handler "détails" via version-badge.ts. -->
+  <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.8">v13.4.8</div>
 
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
-  <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="APEX_BOOT_NONCE" src="./assets/js/rescue.js"></script>
+  <script nonce="30d12e80f7ab89b255c97ff6ee023ef4" src="./assets/js/rescue.js"></script>
 </body>
 </html>

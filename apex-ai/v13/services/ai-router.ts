@@ -405,11 +405,34 @@ const KEEP_LAST_MESSAGES = 25;
  * v13.3.49 — Caps de validation pré-envoi.
  * Anthropic context = 200K tokens (~800K chars). On reste très en-dessous
  * pour laisser room aux tools (105 tools APEX) + max_tokens output (4096).
+ *
+ * v13.4.8 fix M5 (Ultra Review) — estimation tokens plus précise :
+ *  - FR : ~3 chars/token (vs 4 en anglais)
+ *  - Code/JSON : ~2.8 chars/token (très dense)
+ *  - Token cap concret : 150K tokens (sur les 200K Anthropic, laisse 50K
+ *    pour system + tools + output) — plus restrictif que 400K chars.
  */
-const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000 tokens */
-const MAX_TOTAL_BODY_CHARS = 400000; /* ~100K tokens conservateur */
+const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000-10000 tokens FR */
+const MAX_TOTAL_BODY_TOKENS = 150_000; /* Anthropic Sonnet 4.6 = 200K context */
 const MAX_TOKENS_OUTPUT_HARD_CAP = 8192;
 const MAX_TOKENS_OUTPUT_HARD_MIN = 1;
+
+/**
+ * v13.4.8 fix M5 — estimateur tokens heuristique multi-langue.
+ *  - Détecte présence code/JSON (denser : 2.8 chars/token)
+ *  - Sinon défaut FR-tolérant (3.2 chars/token)
+ * Pas aussi précis qu'un vrai tokenizer mais évite la sous-estimation
+ * massive de l'ancien `/4` qui causait HTTP 400 prompt-too-long fréquents.
+ */
+export function estimateTokens(text: string): number {
+  if (!text) return 0;
+  /* Heuristique simple : si > 30% du texte est code (triple-backtick block ou
+   * JSON ouvrant `{` à >10% des chars) on prend 2.8 chars/token. */
+  const hasFences = /```/.test(text);
+  const jsonRatio = (text.match(/[{}[\]:,"]/g)?.length ?? 0) / Math.max(text.length, 1);
+  const charsPerToken = hasFences || jsonRatio > 0.1 ? 2.8 : 3.2;
+  return Math.ceil(text.length / charsPerToken);
+}
 
 function truncateConversation(messages: ChatMessage[]): ChatMessage[] {
   if (messages.length <= MAX_CONVERSATION_MESSAGES) return messages;
@@ -464,10 +487,15 @@ function validateRequest(
       return { ok: false, reason: `max_tokens out of range [${MAX_TOKENS_OUTPUT_HARD_MIN}-${MAX_TOKENS_OUTPUT_HARD_CAP}]: ${maxTokens}` };
     }
   }
-  /* Total body size guard (anti-pathologique : si user colle 500K chars dans 1 msg) */
-  const totalChars = system.length + messages.reduce((sum, m) => sum + (typeof m.content === 'string' ? m.content.length : JSON.stringify(m.content).length), 0);
-  if (totalChars > MAX_TOTAL_BODY_CHARS) {
-    return { ok: false, reason: `total body too large (${totalChars} > ${MAX_TOTAL_BODY_CHARS})` };
+  /* v13.4.8 fix M5 — body size en TOKENS estimés (pas chars).
+   * Anthropic 4.6 = 200K context window. On limite à 150K pour laisser room
+   * tools (~10K) + system (~10K) + output (~4K). */
+  const totalText = system + messages.map((m) => (
+    typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+  )).join('\n');
+  const totalTokens = estimateTokens(totalText);
+  if (totalTokens > MAX_TOTAL_BODY_TOKENS) {
+    return { ok: false, reason: `total body too large (~${totalTokens} tokens > ${MAX_TOTAL_BODY_TOKENS})` };
   }
   return { ok: true };
 }
@@ -852,18 +880,29 @@ class AIRouter {
 
       /* P0-3 PERF : lazy-load au 1er tool_use uniquement (évite 27KB gzip boot) */
       const apexToolsDispatch = await loadApexToolsDispatch();
+      /* v13.4.8 fix C8 (Ultra Review) — PII redaction sur tool_result avant
+       * envoi au model. Avant : tool_result content (file content, web fetch,
+       * etc.) bypassait redactPII appliquée uniquement sur user messages.
+       * Tools sensibles : read_file, web_fetch, list_files. */
+      let totalToolPii = 0;
       const toolResults = await Promise.all(
         result.streamResult.toolUses.map(async (tu) => {
           const tier = resolveUserTier();
           try {
             const exec = await apexToolsDispatch.execute(tu.name, tu.input, tier);
-            const content = exec.ok
+            const rawContent = exec.ok
               ? JSON.stringify(exec.result ?? null)
               : `Error: ${exec.error ?? 'Tool execution failed'}`;
+            /* Redact PII sur le content avant retour au LLM.
+             * Limite : si un tool a légitimement besoin de PII (ex: send_email_to(addr)),
+             * l'input du tool a déjà été validé côté apex-tools-dispatch.
+             * Le RESULT par contre est unknown content → redaction systématique. */
+            const r = redactPII(rawContent);
+            totalToolPii += r.foundCount;
             return {
               type: 'tool_result' as const,
               tool_use_id: tu.id,
-              content,
+              content: r.redacted,
               is_error: !exec.ok,
             };
           } catch (err: unknown) {
@@ -877,6 +916,12 @@ class AIRouter {
           }
         }),
       );
+      if (totalToolPii > 0) {
+        void auditLog.record('ai.pii_redacted_tool_result', {
+          details: { count: totalToolPii, tools_count: result.streamResult.toolUses.length },
+        });
+        logger.info('ai-router', `PII redacted in tool_results: ${totalToolPii} occurrences`);
+      }
       currentMessages.push({ role: 'user', content: toolResults });
 
       /* Notify UI que le batch de tools est terminé */
@@ -1048,10 +1093,14 @@ class AIRouter {
             shouldBackoff = /HTTP\s*5\d\d|timeout|network|fetch failed/i.test(e.message);
           }
 
-          /* Backoff sur erreurs transitoires AVANT de bruler la clé suivante */
+          /* Backoff sur erreurs transitoires AVANT de bruler la clé suivante.
+           * v13.4.8 fix M6 (Ultra Review) — jitter ±30% pour éviter thundering
+           * herd quand plusieurs onglets/devices retry au même tick. */
           if (shouldBackoff && attempt < BACKOFF_MS.length) {
-            const delay = BACKOFF_MS[attempt]!;
-            logger.info('ai-router', `${provider} transient error, backoff ${delay}ms`, { attempt: attempt + 1, err: e.message });
+            const baseDelay = BACKOFF_MS[attempt]!;
+            const jitter = Math.random() * baseDelay * 0.3;
+            const delay = Math.round(baseDelay + jitter);
+            logger.info('ai-router', `${provider} transient error, backoff ${delay}ms (base ${baseDelay} +jitter)`, { attempt: attempt + 1, err: e.message });
             await this.sleep(delay, signal);
             if (signal.aborted) return { status: 'aborted' };
             continue; /* retry MÊME clé après backoff */

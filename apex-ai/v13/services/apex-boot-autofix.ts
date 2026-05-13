@@ -142,7 +142,7 @@ class ApexBootAutofix {
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
       // Identifie les origines légitimes (API connues d'Apex)
-      const APEX_TRUSTED = [
+      const APEX_TRUSTED: ReadonlyArray<string> = [
         'api.anthropic.com', 'api.openai.com', 'api.groq.com',
         'generativelanguage.googleapis.com', 'api.mistral.ai',
         'firebaseio.com', 'firebasedatabase.app', 'googleapis.com',
@@ -154,15 +154,27 @@ class ApexBootAutofix {
       let autoWhitelisted = 0;
       let suspicious = 0;
 
-      for (const { entry, recentCount } of topOrigins) {
+      /* v13.4.8 fix M3 (Ultra Review) — URL parsing strict pour éviter
+       * domain confusion (`evil.api.anthropic.com.attacker.tld` aurait été
+       * accepté avec includes()). On exige match exact OU suffix `.<trusted>`. */
+      const isApexTrustedOrigin = (origin: string): boolean => {
+        let hostname: string;
+        try {
+          hostname = new URL(origin).hostname.toLowerCase();
+        } catch {
+          return false; /* origin invalide = pas confiance */
+        }
+        return APEX_TRUSTED.some((t) => {
+          const td = t.toLowerCase();
+          return hostname === td || hostname.endsWith('.' + td);
+        });
+      };
+
+      for (const { entry } of topOrigins) {
         const recentViolations = entry.recentTs.filter((t) => t > oneHourAgo).length;
         if (recentViolations === 0) continue;
 
-        const isApexTrusted = APEX_TRUSTED.some((t) =>
-          entry.origin.includes(t)
-        );
-
-        if (isApexTrusted) {
+        if (isApexTrustedOrigin(entry.origin)) {
           // Origine connue d'Apex → suggérer whitelist immédiate
           autoWhitelisted++;
         } else if (entry.directive.startsWith('script-src')) {
