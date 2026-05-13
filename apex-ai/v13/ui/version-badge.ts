@@ -1,12 +1,12 @@
 /**
- * APEX v13.4.8 — Indicateur version (Kevin "plus de visuel de version").
+ * APEX v13.4.9 — Indicateur version (Kevin "plus de visuel de version").
  *
  * Affiche un badge discret en bas à droite avec la version courante.
  * Kevin peut vérifier d'un coup d'œil quelle version d'Apex il utilise.
  *
  * Clic = toast détaillé (version, dernière vérification MAJ, statut SW).
  *
- * v13.4.8 fix Ultra Review C1/C2 :
+ * v13.4.9 fix Ultra Review C1/C2 :
  *  - CSS via styleInjector (CSP-safe, nonce auto)
  *  - Guard contre doublon si #apex-version-badge-static déjà présent dans le HTML
  *    (statique HTML rendu par index.html en cas de crash JS = source de vérité visuelle)
@@ -61,7 +61,7 @@ export function installVersionBadge(): void {
   if (typeof document === 'undefined') return;
   if (document.getElementById(BADGE_ID)) return;
 
-  /* v13.4.8 fix C2 (Ultra Review) : si le badge statique HTML est déjà présent
+  /* v13.4.9 fix C2 (Ultra Review) : si le badge statique HTML est déjà présent
    * (rendu inline dans index.html pour fallback "JS crashed"), on ne double pas
    * l'affichage avec une version JS-injectée. On enrichit juste le statique
    * avec le click handler "détails" qui n'est pas câblé en pur HTML. */
@@ -70,7 +70,7 @@ export function installVersionBadge(): void {
     if (!staticBadge.dataset['axHandlerAttached']) {
       staticBadge.dataset['axHandlerAttached'] = '1';
       staticBadge.addEventListener('click', () => void showVersionDetails());
-      /* v13.4.8 fix I-10 (Ultra Review² a11y) : div agissant comme button
+      /* v13.4.9 fix I-10 (Ultra Review² a11y) : div agissant comme button
        * doit aussi répondre à Enter/Space (keyboard-only users). */
       staticBadge.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -123,7 +123,7 @@ async function showVersionDetails(): Promise<void> {
 /** Affiche un toast boot "Apex vX.Y.Z chargé" pour confirmer à Kevin la version active. */
 export function showBootToast(): void {
   if (typeof document === 'undefined') return;
-  /* v13.4.8 : passe sessionStorage (pas localStorage) — 1 toast par session, pas par heure.
+  /* v13.4.9 : passe sessionStorage (pas localStorage) — 1 toast par session, pas par heure.
    * Permet vérifier la nouvelle version après chaque force-update. */
   try {
     if (sessionStorage.getItem('apex_v13_boot_toast_shown')) return;
