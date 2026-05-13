@@ -806,15 +806,38 @@ class AIRouter {
      * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
     const chain = await this.buildPolicyAwareChain(filteredMessages);
 
+    /* v13.4.9 (Kevin "ne s'arrête plus en plein travail") :
+     * Démarre stream-partial-saver : sauvegarde le partial text à chaque chunk
+     * pour permettre RESUME si déconnexion / abort / iPhone background kill. */
+    try {
+      const { streamPartialSaver } = await import('./stream-partial-saver.js');
+      streamPartialSaver.start({
+        provider: chain[0] ?? 'unknown',
+        messages: filteredMessages as Array<{ role: string; content: string | unknown[] }>,
+        system,
+      });
+    } catch { /* ignore */ }
+
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
     const inputTokensEstimate = Math.ceil(
       JSON.stringify(filteredMessages).length / 4 + system.length / 4,
     );
     let outputTokensEstimate = 0;
 
-    /* Wrap onChunk pour count output tokens (visuel conso Kevin) */
+    /* Wrap onChunk pour count output tokens + persist partial (v13.4.9 resume) */
     const wrappedOnChunk = (chunk: StreamChunk): void => {
-      if (chunk.text) outputTokensEstimate += Math.ceil(chunk.text.length / 4);
+      if (chunk.text) {
+        outputTokensEstimate += Math.ceil(chunk.text.length / 4);
+        /* v13.4.9 : alimente le partial saver — sync best-effort */
+        void import('./stream-partial-saver.js').then(({ streamPartialSaver }) => {
+          if (chunk.text) streamPartialSaver.appendChunk(chunk.text);
+        }).catch(() => { /* ignore */ });
+      }
+      if (chunk.done) {
+        void import('./stream-partial-saver.js').then(({ streamPartialSaver }) => {
+          streamPartialSaver.complete();
+        }).catch(() => { /* ignore */ });
+      }
       onChunk(chunk);
     };
 
