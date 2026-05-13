@@ -36,8 +36,12 @@ class INPOptimizer {
     this.installLongTaskDetector();
     this.installINPMeasure();
     this.installInputYield();
-    this.optimizeExistingListeners();
-
+    /* v13.4.8 fix C3 (Ultra Review) — optimizeExistingListeners RETIRÉ :
+     * il monkey-patchait EventTarget.prototype.addEventListener globalement,
+     * cassant silencieusement toute lib tierce qui a besoin de passive:false
+     * pour preventDefault() (drag-to-reorder, scroll-lock modal, pinch-canvas).
+     * À la place : convention projet "toujours passer { passive: true }" pour
+     * scroll/touch listeners + ESLint rule check (à ajouter). */
     logger.info('inp-optimizer', 'INP Optimizer installé (LongTask + InputYield + EventTiming)');
   }
 
@@ -98,7 +102,7 @@ class INPOptimizer {
           }
         }
       });
-      this.inpObs.observe({ type: 'event', durationThreshold: 16, buffered: true });
+      this.inpObs.observe({ type: 'event', durationThreshold: 16, buffered: true } as PerformanceObserverInit & { durationThreshold: number });
     } catch {
       /* non supporté */
     }
@@ -131,38 +135,11 @@ class INPOptimizer {
   }
 
   /**
-   * 4. Ré-enregistre les listeners existants avec passive:true quand possible
-   * (touchstart/touchmove sans preventDefault → passive = gros gain scroll INP)
-   */
-  private optimizeExistingListeners(): void {
-    if (typeof EventTarget === 'undefined') return;
-
-    const original = EventTarget.prototype.addEventListener;
-    const PASSIVE_EVENTS = new Set(['touchstart', 'touchmove', 'touchend', 'scroll', 'wheel', 'mousewheel']);
-
-    EventTarget.prototype.addEventListener = function (
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: boolean | AddEventListenerOptions,
-    ) {
-      // Force passive:true pour events scroll/touch si non déjà spécifié
-      if (PASSIVE_EVENTS.has(type)) {
-        if (options === undefined || options === false || options === true) {
-          options = { passive: true, capture: typeof options === 'boolean' ? options : false };
-        } else if (typeof options === 'object' && options.passive === undefined) {
-          options = { ...options, passive: true };
-        }
-      }
-      return original.call(this, type, listener, options);
-    };
-  }
-
-  /**
    * yield — permet au navigateur de render entre 2 tâches JS.
    * Utilise scheduler.postTask si dispo (Chrome 94+) sinon setTimeout(0).
    */
   async scheduleYield(): Promise<void> {
-    const sched = (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).scheduler) as SchedulerLike | undefined;
+    const sched = (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>)['scheduler']) as SchedulerLike | undefined;
     if (sched && typeof sched.postTask === 'function') {
       await sched.postTask(() => { /* yield */ }, { priority: 'user-visible' });
     } else {

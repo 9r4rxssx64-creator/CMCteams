@@ -26,11 +26,17 @@
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
 
+import { styleInjector } from './style-injector.js';
+
 const BANNER_ID = 'apex-force-update-banner';
-const STYLE_ID = 'apex-force-update-style';
+const STYLE_INJECTOR_ID = 'apex-force-update-banner';
 const REMOTE_URL = './index.html';
 const CHECK_INTERVAL_MS = 10 * 60 * 1000; /* 10 min */
 const RECENT_CHECK_KEY = 'apex_v13_last_version_check_ts';
+/* v13.4.8 fix C5 (Ultra Review) — single source of truth pour anti-race
+ * (cf. bootstrap.ts qui n'a plus que forceUpdateBanner.install()). */
+const FORCE_UPDATE_IN_PROGRESS_KEY = 'apex_v13_force_update_in_progress';
+const FORCE_UPDATE_PROGRESS_TTL_MS = 30_000;
 
 interface VersionCheckResult {
   remote_ver: string | null;
@@ -50,7 +56,39 @@ class ForceUpdateBanner {
     setTimeout(() => void this.checkAndMaybeShow(), 3000);
     /* Check récurrent */
     this.intervalHandle = setInterval(() => void this.checkAndMaybeShow(), CHECK_INTERVAL_MS);
-    logger.info('force-update', 'banner installed');
+    /* v13.4.8 fix C5 (Ultra Review) : visibilitychange listener — autrefois dans
+     * bootstrap.ts, déplacé ici pour single ownership. Throttle 30min. */
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
+        if (Date.now() - lastCheck < 30 * 60 * 1000) return;
+        try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* quota */ }
+        void this.checkAndMaybeShow();
+      });
+    }
+    logger.info('force-update', 'banner installed (sole owner force-update flow)');
+  }
+
+  /**
+   * v13.4.8 fix C5 (Ultra Review) — guard anti-race "déjà en cours de force-update".
+   * Empêche les checks concurrents (cron, visibility, banner-click) de tous nuke en parallèle.
+   */
+  private isUpdateInProgress(): boolean {
+    try {
+      const ts = parseInt(sessionStorage.getItem(FORCE_UPDATE_IN_PROGRESS_KEY) ?? '0', 10);
+      if (!ts) return false;
+      if (Date.now() - ts > FORCE_UPDATE_PROGRESS_TTL_MS) {
+        sessionStorage.removeItem(FORCE_UPDATE_IN_PROGRESS_KEY);
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  private markUpdateInProgress(): void {
+    try { sessionStorage.setItem(FORCE_UPDATE_IN_PROGRESS_KEY, String(Date.now())); } catch { /* ignore */ }
   }
 
   /** Stop listener (cleanup). */
@@ -87,6 +125,11 @@ class ForceUpdateBanner {
   }
 
   private async checkAndMaybeShow(): Promise<void> {
+    /* v13.4.8 fix C5 — abort si force-update déjà en cours (anti-race) */
+    if (this.isUpdateInProgress()) {
+      logger.debug('force-update', 'check skipped — update already in progress');
+      return;
+    }
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
       /* v13.4.6 (Kevin "Force MAJ auto toujours") :
@@ -151,6 +194,9 @@ class ForceUpdateBanner {
   private showBanner(remoteVer: string): void {
     if (document.getElementById(BANNER_ID)) return;
     this.injectStyle();
+    /* v13.4.8 fix C2 (Ultra Review) — pousse le badge statique vers la gauche
+     * pour libérer la place quand le banner s'affiche (banner = top, pas conflit
+     * réel, mais on s'assure que les 3 elements bottom-right ne se chevauchent jamais). */
     const banner = document.createElement('div');
     banner.id = BANNER_ID;
     banner.setAttribute('role', 'alert');
@@ -181,7 +227,10 @@ class ForceUpdateBanner {
   }
 
   private injectStyle(): void {
-    if (document.getElementById(STYLE_ID)) return;
+    /* v13.4.8 fix C1 (Ultra Review) — utilise styleInjector (CSP-safe, nonce auto)
+     * au lieu de createElement('style') brut qui était bloqué par CSP strict
+     * style-src 'self' 'nonce-XXX' (le banner apparaissait sans style en prod). */
+    if (styleInjector.has(STYLE_INJECTOR_ID)) return;
     const css = `
       #${BANNER_ID} {
         position: fixed;
@@ -250,10 +299,7 @@ class ForceUpdateBanner {
         .apex-fu-btn:active { transform: none !important; }
       }
     `;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = css;
-    document.head.appendChild(style);
+    styleInjector.inject(STYLE_INJECTOR_ID, css);
   }
 
   /**
@@ -262,6 +308,13 @@ class ForceUpdateBanner {
    * localStorage, reload avec query param fresh.
    */
   async forceUpdate(): Promise<void> {
+    /* v13.4.8 fix C5 (Ultra Review) — race-guard d'abord pour éviter double-nuke
+     * si user clique le bouton + cron + visibilitychange tirent quasi simultanément. */
+    if (this.isUpdateInProgress()) {
+      logger.warn('force-update', 'force-update already in progress, skipped');
+      return;
+    }
+    this.markUpdateInProgress();
     logger.info('force-update', 'NUCLEAR force-update triggered by Kevin');
     /* v13.4.6 — Pré-snapshot OBLIGATOIRE avant toute purge (Kevin "ne jamais
      * rien perdre"). Si PRESERVE_PREFIXES rate qqc, on peut tout restaurer
@@ -385,11 +438,23 @@ class ForceUpdateBanner {
         'ax_api_key',
       ];
       const toDelete: string[] = [];
+      /* v13.4.8 fix M1 (Ultra Review) — patterns anchored explicites au lieu de
+       * key.includes('cache') qui matchait n'importe quel substring (ex:
+       * apex_v13_recovery_cache_chat aurait été nuke par mégarde). */
+      const CACHE_KEY_PATTERNS: ReadonlyArray<RegExp> = [
+        /^apex_v13_sw_cache_/,
+        /^apex_v13_static_cache_/,
+        /^apex_v13_runtime_cache_/,
+        /^apex_v13_app_ver$/,
+        /^apex_v13_cache_index$/,
+        /^apex_v13_route_cache_/,
+      ];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
         const isPreserved = PRESERVE_PREFIXES.some((p) => key.startsWith(p));
-        if (!isPreserved && (key.includes('cache') || key.includes('sw_') || key.includes('app_ver'))) {
+        if (isPreserved) continue;
+        if (CACHE_KEY_PATTERNS.some((re) => re.test(key))) {
           toDelete.push(key);
         }
       }

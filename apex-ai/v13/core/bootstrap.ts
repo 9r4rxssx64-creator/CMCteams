@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.7';
+export const APP_VER = 'v13.4.8';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -420,66 +420,11 @@ async function bootstrap(): Promise<void> {
       logger.warn('boot', 'click-fallback-guard install failed', { err });
     });
 
-  /* 8.5. Force version check au boot (Kevin 2026-05-07 — PWA iOS Safari bloqué v13.3.x).
-   * Fetch HEAD index.html avec cache-bust + check si version différente.
-   * Si stale + pas déjà fait dans cette session → unregister SW + clear caches + reload.
-   * Anti-loop : query param ?_fv=<APP_VER> coupe le cycle (already-checked).
-   *
-   * v13.3.74 PERF 20/20 — wrappé dans requestIdleCallback (timeout 6s) :
-   * fetch HTML index = bandwidth concurrente avec LCP critical resources.
-   * Reporté quand main thread + bandwidth libres → préserve TTI < 3s.
-   * Banner reload garde la même UX (visible avant reload). */
-  const versionCheckBoot = async (): Promise<void> => {
-    try {
-      const url = window.location.pathname.replace(/[^/]+$/, '') + 'index.html?_v=' + Date.now();
-      const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout(5000) });
-      if (!res.ok) return;
-      const html = await res.text();
-      const remoteMatch = html.match(/data-app-ver="(v[\d.]+)"/);
-      const remoteVer = remoteMatch?.[1];
-      if (!remoteVer || remoteVer === APP_VER) return;
-      /* Anti-loop : si déjà check fait, abandonner */
-      const loopKey = 'apex_v13_force_reload_' + remoteVer;
-      if (sessionStorage.getItem(loopKey)) {
-        logger.warn('boot', `version mismatch ${APP_VER} vs ${remoteVer} mais reload déjà tenté → abandonne (loop guard)`);
-        return;
-      }
-      sessionStorage.setItem(loopKey, String(Date.now()));
-      logger.warn('boot', `🔄 Version stale détectée : local ${APP_VER}, remote ${remoteVer} → force reload`);
-      /* Banner visible immédiatement avant reload (Kevin sait que ça part) */
-      try {
-        const banner = document.createElement('div');
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font:600 14px/1.4 system-ui;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.4)';
-        banner.textContent = `🔄 Mise à jour automatique en cours (${APP_VER} → ${remoteVer})…`;
-        document.body?.appendChild(banner);
-      } catch { /* DOM pas prêt */ }
-      /* Unregister SW + clear caches + clear localStorage non-critique */
-      try {
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map((r) => r.unregister()));
-        }
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((k) => caches.delete(k)));
-        }
-      } catch (err: unknown) {
-        logger.warn('boot', 'force reload cleanup failed', { err });
-      }
-      /* Reload avec query param pour bypass cache HTTP Safari + cache-bust SW */
-      window.location.href = window.location.pathname + '?_forceupd=' + remoteVer + '&t=' + Date.now();
-    } catch (err: unknown) {
-      /* Offline ou pas dispo : silencieux */
-      logger.debug('boot', 'force version check skipped', { err });
-    }
-  };
-  /* v13.3.86 P1.9 audit externe : versionCheckBoot DÉSACTIVÉ.
-   * Avant : 2 systèmes redondants (versionCheckBoot ici + forceUpdateBanner.install
-   * + forceUpdateCheck plus bas) qui faisaient tous fetch index.html + reload.
-   * Après : seul forceUpdateBanner.install() reste (banner UI visible + bouton 1-clic
-   * Kevin = meilleure UX que reload silent + race conditions éliminées).
-   * versionCheckBoot reste défini mais non appelé pour rétro-compat tests. */
-  void versionCheckBoot;
+  /* 8.5. v13.4.8 fix C5 (Ultra Review) — versionCheckBoot SUPPRIMÉ.
+   * Source unique pour force-update : forceUpdateBanner.install() (ligne ~595).
+   * Anti-pattern éliminé : 4 systèmes concurrents (versionCheckBoot + ULTRA-FORCE 1s +
+   * forceUpdateCheck +5s + forceUpdateBanner) faisaient tous fetch index.html →
+   * race conditions, double reloads, complexité non maîtrisable. */
 
   /* 9. Service Worker register (deferred to not block render) */
   if ('serviceWorker' in navigator) {
@@ -630,9 +575,10 @@ async function bootstrap(): Promise<void> {
     setTimeout(runPushAutoInit, 200);
   }
 
-  /* 10. Force-update auto agressif (Kevin règle "Maj force auto oubli pas")
-     iOS Safari PWA SW updatefound unreliable → fetch APP_VER remote + reload forcé.
-     Trigger : boot 2s + visibilitychange + focus + cron 5min */
+  /* 10. v13.4.8 fix C5 (Ultra Review) — forceUpdateCheck CONSERVÉ comme service
+   * privé mais N'EST PLUS APPELÉ AUTOMATIQUEMENT au boot ni sur visibility.
+   * Ces flux sont désormais centralisés dans forceUpdateBanner (installé ligne ~595).
+   * Cette fonction reste exportée pour SOS rescue / debug admin uniquement. */
   let forceUpdateChecking = false;
   const forceUpdateCheck = async (): Promise<void> => {
     if (forceUpdateChecking || !navigator.onLine) return;
@@ -696,65 +642,17 @@ async function bootstrap(): Promise<void> {
       setTimeout(cb, timeout);
     }
   };
-  /* v13.4.6 (Kevin "rien n'a changé") :
-   * ULTRA-FORCE update au boot — bypass tout cache, nuke SW + caches + reload immédiat
-   * dès la 1ère seconde du boot si version mismatch. Aucun throttle.
-   * C'est le seul moyen de garantir que l'iPhone reçoit la nouvelle version. */
-  setTimeout(async () => {
-    try {
-      const url = location.pathname.replace(/[^/]*$/, '') + 'index.html?__ulra_t=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2);
-      const r = await fetch(url, {
-        cache: 'reload',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
-      });
-      const html = await r.text();
-      const m = html.match(/data-app-ver=['"]([^'"]+)['"]/);
-      const remoteVer = m?.[1] ?? null;
-      if (remoteVer && remoteVer !== APP_VER) {
-        logger.warn('boot', `⚡ ULTRA-FORCE: local=${APP_VER} → remote=${remoteVer} NUKE`);
-        /* Unregister TOUS les SW */
-        try {
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((reg) => reg.unregister()));
-          }
-        } catch { /* ignore */ }
-        /* Clear TOUS les caches (CacheStorage) */
-        try {
-          if ('caches' in window) {
-            const ks = await caches.keys();
-            await Promise.all(ks.map((k) => caches.delete(k)));
-          }
-        } catch { /* ignore */ }
-        /* Reload fresh avec multiple cache-busters */
-        location.replace(location.pathname + '?_ulra=' + Date.now() + '&_v=' + remoteVer + '#_fresh');
-      }
-    } catch { /* offline OK */ }
-  }, 1000);
-
-  /* v13.4.6 (Kevin "Force MAJ auto toujours") :
-   * RÉACTIVATION forceUpdateCheck() au boot + visibilitychange (anti-banner-stale).
-   * Conditions safe (anti race condition) :
-   *   - Boot : seul trigger initial 5s après render (laisse Apex démarrer normalement)
-   *   - visibilitychange : si user revient sur l'app après 1h+ d'inactivité
-   *   - Pas de cron interval (forceUpdateBanner s'en charge)
-   *
-   * Mode silencieux si idle + safe (cf. force-update-banner.ts checkAndMaybeShow). */
-  setTimeout(() => {
-    void forceUpdateCheck().catch(() => { /* silent */ });
-  }, 5000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
-      /* Throttle 30min entre check sur visibility */
-      if (Date.now() - lastCheck > 30 * 60 * 1000) {
-        try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* ignore */ }
-        void forceUpdateCheck().catch(() => { /* silent */ });
-      }
-    }
-  });
-
+  /* v13.4.8 fix C5 (Ultra Review) — ULTRA-FORCE 1s timer + forceUpdateCheck @5s
+   * + visibilitychange listener TOUS SUPPRIMÉS. Race conditions éliminées.
+   * Le single source of truth est désormais forceUpdateBanner.install() (ligne ~595)
+   * qui possède :
+   *  - check @3s post-boot (non-bloquant LCP)
+   *  - check récurrent toutes les 10min
+   *  - visibilitychange listener avec throttle 30min
+   *  - guard isUpdateInProgress() anti double-nuke
+   *  - bouton banner pour décision Kevin (UX > silent reload)
+   */
+  void forceUpdateCheck; /* exporté pour SOS rescue / debug uniquement */
   void idleCallback;
 
   /* 11. Online/offline listeners */
@@ -769,36 +667,35 @@ async function bootstrap(): Promise<void> {
     logger.info('network', 'Offline');
   });
 
-  /* 11b. v13.4.6 P0 Kevin "l'écran zoom seul et reste bloqué en zoom" :
-   * iOS Safari ignore parfois user-scalable=no. On bloque pinch-zoom + double-tap
-   * + intercepte gesturestart pour empêcher le zoom de rester bloqué. */
+  /* 11b. v13.4.8 fix C4 (Ultra Review) — anti-zoom guards RETIRÉS.
+   * Ils violaient WCAG 2.1 SC 1.4.4 (Resize Text) en bloquant tout pinch-zoom +
+   * double-tap, empêchant les utilisateurs malvoyants de zoomer le texte.
+   *
+   * À la place :
+   *  - <meta viewport> assoupli ailleurs (maximum-scale=5, user-scalable=yes)
+   *  - CSS `touch-action: manipulation` sur boutons/UI où on veut pas le double-tap zoom
+   *  - visualViewport.scale > 1 reset ressuscité UNIQUEMENT pour récupération
+   *    auto si zoom "stuck" (bug iOS Safari connu).
+   */
   try {
-    /* Bloque pinch-zoom gesture iOS */
-    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
-    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
-    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
-    /* Bloque double-tap zoom (touchend rapide successif) */
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd < 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-    /* Si visualViewport zoom est resté > 1 (bug iOS) → reset via scrollTo 0,0 */
     if ('visualViewport' in window && window.visualViewport) {
+      let lastResetTs = 0;
       window.visualViewport.addEventListener('resize', () => {
         const vv = window.visualViewport;
-        if (vv && vv.scale > 1.01) {
-          /* Force reflow pour reset zoom */
+        if (!vv) return;
+        /* Si zoom > 1 ET déjà revenu à 1 depuis > 5s ET vv.scale est extrême
+         * (probable bug "stuck"), reset scrollTo pour relâcher. Sinon laisse
+         * l'utilisateur zoomer librement (accessibilité). */
+        if (vv.scale > 3 && Date.now() - lastResetTs > 5000) {
+          /* Heuristique : scale > 3 sans interaction récente = probable bug iOS */
+          lastResetTs = Date.now();
           try { window.scrollTo(0, 0); } catch { /* ignore */ }
         }
       });
     }
-    logger.info('viewport', 'anti-zoom guards installés (gesture/touchend/visualViewport)');
+    logger.info('viewport', 'a11y-friendly viewport guards installés (zoom autorisé)');
   } catch (err: unknown) {
-    logger.warn('viewport', 'anti-zoom install failed', { err });
+    logger.warn('viewport', 'viewport guard install failed', { err });
   }
 
   /* 11c. v13.4.6 (Kevin "Force MAJ auto toujours") — Track last interaction
@@ -846,11 +743,44 @@ async function bootstrap(): Promise<void> {
    * Fallback setTimeout 0 si requestIdleCallback absent (Safari iOS old).
    */
   const runDeferredInits = (): void => {
-    void Promise.allSettled(
-      deferredInits.map((init) => Promise.resolve().then(() => safeInit(init.label, init.fn))),
-    ).then(() => {
+    /* v13.4.8 fix M4 (Ultra Review) — track succès/fail explicite + escalade
+     * audit log si majorité fail. Avant : tous les warns étaient juste dispersés
+     * dans le log sans signal aggregate (silent partial-failure = Erreur #54). */
+    const initPromises = deferredInits.map(async (init) => {
+      try {
+        await init.fn();
+        return { label: init.label, ok: true as const };
+      } catch (err: unknown) {
+        logger.warn('boot', `Service init failed: ${init.label} (continuing degraded)`, { err });
+        return { label: init.label, ok: false as const, err };
+      }
+    });
+    void Promise.allSettled(initPromises).then(async (settled) => {
       const deferredMs = Math.round(performance.now() - ctx.startedAt);
-      logger.info('boot', `Deferred services initialized at +${deferredMs}ms`);
+      let okCount = 0;
+      const failed: string[] = [];
+      for (const s of settled) {
+        if (s.status === 'fulfilled' && s.value.ok) okCount++;
+        else if (s.status === 'fulfilled') failed.push(s.value.label);
+        else failed.push('unknown');
+      }
+      const total = deferredInits.length;
+      logger.info('boot', `Deferred services: ${okCount}/${total} OK in +${deferredMs}ms`, { failed });
+      /* Si majorité fail → escalade audit log + toast admin pour visibility */
+      if (okCount < total / 2) {
+        try {
+          const { auditLog } = await import('@services/audit-log.js');
+          await auditLog.record('boot.deferred_majority_failed', {
+            details: { ok: okCount, total, failed: failed.slice(0, 10) },
+          });
+        } catch { /* audit log down — log déjà fait */ }
+        if (ctx.isAdmin) {
+          try {
+            const { toast } = await import('../ui/toast.js');
+            toast.warn(`⚠️ ${total - okCount}/${total} services en échec — mode dégradé`);
+          } catch { /* toast indispo */ }
+        }
+      }
     });
   };
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {

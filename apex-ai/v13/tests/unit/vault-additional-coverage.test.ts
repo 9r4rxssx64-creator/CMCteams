@@ -252,8 +252,13 @@ describe('vault additional coverage', () => {
       expect(stored?.startsWith('AXENC1:')).toBe(true);
     });
 
-    it('setKey avec encrypt fail → ok=false', async () => {
+    it('setKey avec encrypt fail + firebase emergency fail → ok=false', async () => {
+      /* v13.4.6 introduced emergency Firebase backup if encrypt fails.
+       * Test : si AUSSI Firebase fail (offline réaliste), retour ok=false. */
       vi.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(new Error('encrypt failed'));
+      /* Mock firebase.write pour reject — simule offline */
+      const fbMod = await import('../../services/firebase.js');
+      vi.spyOn(fbMod.firebase, 'write').mockRejectedValue(new Error('offline'));
       const r = await vault.setKey('ax_fail_key', 'value');
       expect(r.ok).toBe(false);
     });

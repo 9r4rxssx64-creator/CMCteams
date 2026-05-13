@@ -1,64 +1,88 @@
 /**
- * APEX v13.4.6 — Indicateur version permanent (Kevin "plus de visuel de version").
+ * APEX v13.4.8 — Indicateur version (Kevin "plus de visuel de version").
  *
  * Affiche un badge discret en bas à droite avec la version courante.
  * Kevin peut vérifier d'un coup d'œil quelle version d'Apex il utilise.
  *
  * Clic = toast détaillé (version, dernière vérification MAJ, statut SW).
+ *
+ * v13.4.8 fix Ultra Review C1/C2 :
+ *  - CSS via styleInjector (CSP-safe, nonce auto)
+ *  - Guard contre doublon si #apex-version-badge-static déjà présent dans le HTML
+ *    (statique HTML rendu par index.html en cas de crash JS = source de vérité visuelle)
  */
+
 
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
+import { styleInjector } from '../services/style-injector.js';
 
 const BADGE_ID = 'apex-version-badge';
-const STYLE_ID = 'apex-version-badge-style';
+const STATIC_BADGE_ID = 'apex-version-badge-static';
+const STYLE_INJECTOR_ID = 'apex-version-badge';
+
+const BADGE_CSS = `
+  #${BADGE_ID} {
+    position: fixed;
+    bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    right: 8px;
+    z-index: 9998;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, rgba(232, 184, 48, 0.15), rgba(232, 184, 48, 0.08));
+    border: 1px solid rgba(232, 184, 48, 0.35);
+    color: rgba(232, 184, 48, 0.85);
+    font-size: 10px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-weight: 600;
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    opacity: 0.6;
+    transition: opacity 200ms ease;
+    pointer-events: auto;
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  #${BADGE_ID}:hover, #${BADGE_ID}:active {
+    opacity: 1;
+  }
+  @media (max-width: 480px) {
+    #${BADGE_ID} {
+      font-size: 9px;
+      padding: 3px 6px;
+    }
+  }
+`;
 
 export function installVersionBadge(): void {
   if (typeof document === 'undefined') return;
   if (document.getElementById(BADGE_ID)) return;
 
-  /* Style premium discret */
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      #${BADGE_ID} {
-        position: fixed;
-        bottom: max(8px, env(safe-area-inset-bottom, 8px));
-        right: 8px;
-        z-index: 9998;
-        padding: 4px 8px;
-        background: linear-gradient(135deg, rgba(232, 184, 48, 0.15), rgba(232, 184, 48, 0.08));
-        border: 1px solid rgba(232, 184, 48, 0.35);
-        color: rgba(232, 184, 48, 0.85);
-        font-size: 10px;
-        font-family: 'SF Mono', Menlo, monospace;
-        font-weight: 600;
-        border-radius: 10px;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        cursor: pointer;
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        opacity: 0.6;
-        transition: opacity 200ms ease;
-        pointer-events: auto;
-        line-height: 1;
-        letter-spacing: 0.02em;
-      }
-      #${BADGE_ID}:hover, #${BADGE_ID}:active {
-        opacity: 1;
-      }
-      @media (max-width: 480px) {
-        #${BADGE_ID} {
-          font-size: 9px;
-          padding: 3px 6px;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+  /* v13.4.8 fix C2 (Ultra Review) : si le badge statique HTML est déjà présent
+   * (rendu inline dans index.html pour fallback "JS crashed"), on ne double pas
+   * l'affichage avec une version JS-injectée. On enrichit juste le statique
+   * avec le click handler "détails" qui n'est pas câblé en pur HTML. */
+  const staticBadge = document.getElementById(STATIC_BADGE_ID);
+  if (staticBadge) {
+    if (!staticBadge.dataset['axHandlerAttached']) {
+      staticBadge.dataset['axHandlerAttached'] = '1';
+      staticBadge.addEventListener('click', () => void showVersionDetails());
+      staticBadge.setAttribute('role', 'button');
+      staticBadge.setAttribute('tabindex', '0');
+      staticBadge.setAttribute('aria-label', `Version Apex ${APP_VER} · clic pour détails`);
+      staticBadge.title = `Apex AI ${APP_VER} · clic pour détails`;
+    }
+    logger.info('version-badge', `static badge enriched: ${APP_VER}`);
+    return;
   }
+
+  /* CSS via styleInjector (CSP-safe, nonce attaché auto si style-src nonce-only).
+   * Fallback automatique vers Constructible Stylesheets ou <style nonce>. */
+  styleInjector.inject(STYLE_INJECTOR_ID, BADGE_CSS);
 
   const badge = document.createElement('button');
   badge.id = BADGE_ID;
@@ -92,11 +116,11 @@ async function showVersionDetails(): Promise<void> {
 /** Affiche un toast boot "Apex vX.Y.Z chargé" pour confirmer à Kevin la version active. */
 export function showBootToast(): void {
   if (typeof document === 'undefined') return;
-  /* Throttle 1×/heure (anti-spam à chaque reload) */
+  /* v13.4.8 : passe sessionStorage (pas localStorage) — 1 toast par session, pas par heure.
+   * Permet vérifier la nouvelle version après chaque force-update. */
   try {
-    const lastBoot = parseInt(localStorage.getItem('apex_v13_boot_toast_last') ?? '0', 10);
-    if (Date.now() - lastBoot < 60 * 60 * 1000) return;
-    localStorage.setItem('apex_v13_boot_toast_last', String(Date.now()));
+    if (sessionStorage.getItem('apex_v13_boot_toast_shown')) return;
+    sessionStorage.setItem('apex_v13_boot_toast_shown', '1');
   } catch { /* ignore */ }
 
   void import('./toast.js').then(({ toast }) => {
