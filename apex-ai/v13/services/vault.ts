@@ -134,10 +134,19 @@ class Vault {
         }).catch(() => { /* ignore */ });
       }).catch(() => { /* ignore */ });
     });
-    /* 2. Polling 30s — vérifie credentials critiques toujours présentes */
+    /* 2. Polling 30s — vérifie credentials critiques toujours présentes
+     * v13.4.9 : mise à jour avec les nouvelles storageKeys (rename ax_google_key → ax_gemini_key,
+     * ax_github_token → ax_github_pat_classic + apex_v13_multi_keys coffre principal). */
     const VAULT_KEYS_CRITICAL = [
-      'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key',
-      'ax_openrouter_key', 'ax_telegram_token', 'ax_github_token', 'ax_stripe_sk',
+      'apex_v13_multi_keys', /* LE COFFRE central — surveillé en priorité */
+      'apex_v13_pin', /* PIN admin Kevin */
+      'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_gemini_key',
+      'ax_openrouter_key', 'ax_telegram_token',
+      'ax_github_pat_classic', 'ax_github_pat_finegrained', 'ax_github_oauth',
+      'ax_stripe_sk', 'ax_resend_key', 'ax_brevo_key', 'ax_perplexity_key',
+      'ax_xai_key', 'ax_mistral_key', 'ax_cohere_key', 'ax_deepseek_key',
+      'ax_pinecone_key', 'ax_replicate_key', 'ax_elevenlabs_key',
+      'ax_cloudflare_token', 'ax_openlegi_mcp_token',
     ];
     /* v13.3.51 fix Kevin "j'ai déjà fait poubelle plusieurs fois mais il se remet" :
      * Whitelist deleted volontairement → ne pas restaurer depuis IDB shadow.
