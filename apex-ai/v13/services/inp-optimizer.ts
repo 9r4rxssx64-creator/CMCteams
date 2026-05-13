@@ -60,7 +60,7 @@ class INPOptimizer {
             });
             // Si > 200ms → split via scheduler
             if (duration > 200) {
-              this.scheduleYield();
+              void this.scheduleYield();
             }
           }
         }
@@ -129,7 +129,7 @@ class INPOptimizer {
     // Keyboard: yield sur tab (navigation) et enter (activation)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Tab' || e.key === 'Enter') {
-        this.scheduleYield();
+        void this.scheduleYield();
       }
     }, { passive: true, capture: false });
   }

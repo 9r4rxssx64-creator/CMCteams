@@ -47,6 +47,9 @@ interface VersionCheckResult {
 class ForceUpdateBanner {
   private installed = false;
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
+  /* v13.4.8 fix I-5 (Ultra Review² — auto-audit) : named listener pour
+   * permettre proper uninstall + éviter double-register si install() rappelé. */
+  private visibilityListener: (() => void) | null = null;
 
   /** Install au boot. Idempotent. */
   install(): void {
@@ -59,13 +62,14 @@ class ForceUpdateBanner {
     /* v13.4.8 fix C5 (Ultra Review) : visibilitychange listener — autrefois dans
      * bootstrap.ts, déplacé ici pour single ownership. Throttle 30min. */
     if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-      document.addEventListener('visibilitychange', () => {
+      this.visibilityListener = (): void => {
         if (document.visibilityState !== 'visible') return;
         const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
         if (Date.now() - lastCheck < 30 * 60 * 1000) return;
         try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* quota */ }
         void this.checkAndMaybeShow();
-      });
+      };
+      document.addEventListener('visibilitychange', this.visibilityListener);
     }
     logger.info('force-update', 'banner installed (sole owner force-update flow)');
   }
@@ -91,10 +95,14 @@ class ForceUpdateBanner {
     try { sessionStorage.setItem(FORCE_UPDATE_IN_PROGRESS_KEY, String(Date.now())); } catch { /* ignore */ }
   }
 
-  /** Stop listener (cleanup). */
+  /** Stop listener (cleanup). v13.4.8 — removes visibilitychange + clears interval. */
   uninstall(): void {
     if (this.intervalHandle) clearInterval(this.intervalHandle);
     this.intervalHandle = null;
+    if (this.visibilityListener && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+    }
+    this.visibilityListener = null;
     this.removeBanner();
     this.installed = false;
   }

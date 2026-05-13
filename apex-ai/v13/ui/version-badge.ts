@@ -12,7 +12,6 @@
  *    (statique HTML rendu par index.html en cas de crash JS = source de vérité visuelle)
  */
 
-
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
 import { styleInjector } from '../services/style-injector.js';
@@ -71,6 +70,14 @@ export function installVersionBadge(): void {
     if (!staticBadge.dataset['axHandlerAttached']) {
       staticBadge.dataset['axHandlerAttached'] = '1';
       staticBadge.addEventListener('click', () => void showVersionDetails());
+      /* v13.4.8 fix I-10 (Ultra Review² a11y) : div agissant comme button
+       * doit aussi répondre à Enter/Space (keyboard-only users). */
+      staticBadge.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          void showVersionDetails();
+        }
+      });
       staticBadge.setAttribute('role', 'button');
       staticBadge.setAttribute('tabindex', '0');
       staticBadge.setAttribute('aria-label', `Version Apex ${APP_VER} · clic pour détails`);

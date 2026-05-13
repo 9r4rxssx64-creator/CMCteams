@@ -700,16 +700,25 @@ async function bootstrap(): Promise<void> {
 
   /* 11c. v13.4.6 (Kevin "Force MAJ auto toujours") — Track last interaction
    * pour que force-update-banner détecte les moments idle (>30s sans action)
-   * et déclenche la MAJ silencieuse sans interrompre Kevin. */
+   * et déclenche la MAJ silencieuse sans interrompre Kevin.
+   *
+   * v13.4.8 fix I-7 (Ultra Review²) : throttle 1×/seconde minimum entre 2 writes
+   * localStorage. Avant : chaque pointerdown/keydown écrivait → ~60 writes/min en
+   * usage normal. Maintenant : memoire RAM + flush async max 1 fois/sec. */
   try {
+    let lastWrittenTs = 0;
+    const THROTTLE_MS = 1000;
     const updateInteraction = (): void => {
-      try { localStorage.setItem('apex_v13_last_interaction', String(Date.now())); } catch { /* ignore */ }
+      const now = Date.now();
+      if (now - lastWrittenTs < THROTTLE_MS) return;
+      lastWrittenTs = now;
+      try { localStorage.setItem('apex_v13_last_interaction', String(now)); } catch { /* ignore */ }
     };
     ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach((evt) => {
       document.addEventListener(evt, updateInteraction, { passive: true });
     });
     updateInteraction(); /* initial */
-    logger.info('interaction', 'user-interaction tracker installé pour MAJ auto idle');
+    logger.info('interaction', 'user-interaction tracker installé (throttle 1s)');
   } catch (err: unknown) {
     logger.warn('interaction', 'tracker install failed', { err });
   }
