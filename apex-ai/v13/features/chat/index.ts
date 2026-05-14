@@ -58,7 +58,15 @@ interface DisplayMessage {
      puis `✅ N opérations` quand done. */
   toolPills?: { name: string; status: 'running' | 'done' }[];
   toolBatchCount?: number;
+  /* v13.4.11 fix Kevin "Apex n'a pas accès aux pièces jointes" — base64 + mime
+   * pour reconstruire content array Anthropic au moment d'appel IA. */
+  attachments?: Array<{ mime: string; base64: string; name: string }>;
 }
+
+/* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé). */
+let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
+/* v13.4.12 — Promises FileReader en cours, pour await au submit (anti race condition). */
+let pendingAttachmentPromises: Array<Promise<void>> = [];
 
 /* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
  * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
@@ -86,6 +94,7 @@ function loadPersistedConversation(): DisplayMessage[] {
 }
 
 let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
+let _firebaseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
 function persistConversation(): void {
   if (_saveTimeout) clearTimeout(_saveTimeout);
   _saveTimeout = setTimeout(() => {
@@ -103,6 +112,46 @@ function persistConversation(): void {
       } catch { /* skip */ }
     }
   }, 500);
+
+  /* v13.4.10 fix Kevin "continue recommence à zéro" : sync Firebase debounce 30s
+   * pour survivre clear cache PWA iOS + restore au reload depuis cloud.
+   * Cap derniers 30 messages text-only (pas photos base64 = trop gros Firebase).
+   * Path : apex_v13_conversation_cloud (séparé de _active local pour éviter écrasement). */
+  if (_firebaseSyncTimeout) clearTimeout(_firebaseSyncTimeout);
+  _firebaseSyncTimeout = setTimeout(() => {
+    void (async () => {
+      try {
+        const cloudPayload = conversation
+          .filter((m) => !m.streaming && m.text && m.text.length < 8000)
+          .slice(-30)
+          .map((m) => ({ role: m.role, text: m.text, ts: m.ts }));
+        const { firebase } = await import('../../services/firebase.js');
+        await firebase.write('apex_v13_conversation_cloud', cloudPayload);
+      } catch (err: unknown) {
+        logger.warn('chat', 'Firebase sync conversation skipped', { err });
+      }
+    })();
+  }, 30000);
+}
+
+/* v13.4.10 — Restore Firebase au boot SI localStorage vide (cache PWA clear iOS).
+ * Async, non-bloquant : conversation locale s'affiche d'abord, restore patché après. */
+async function tryFirebaseRestoreConversation(): Promise<void> {
+  if (conversation.length > 0) return; /* déjà chargé local */
+  try {
+    const { firebase } = await import('../../services/firebase.js');
+    const cloudRaw = await firebase.read('apex_v13_conversation_cloud');
+    if (!Array.isArray(cloudRaw) || cloudRaw.length === 0) return;
+    const restored = (cloudRaw as Array<{ role: 'user' | 'assistant'; text: string; ts: number }>)
+      .filter((m) => m && typeof m.text === 'string' && m.text.length > 0)
+      .map((m) => ({ ...m, streaming: false } as DisplayMessage));
+    if (restored.length > 0) {
+      conversation.push(...restored);
+      logger.info('chat', `Conversation restored from Firebase (${restored.length} messages)`);
+    }
+  } catch (err: unknown) {
+    logger.warn('chat', 'Firebase restore conversation skipped', { err });
+  }
 }
 
 /* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
@@ -317,6 +366,243 @@ export async function handleLightboxAction(
     }
     return;
   }
+}
+
+/**
+ * v13.4.14 — Détection type de paste (Kevin "visuel intelligent de tout ce que je colle").
+ *
+ * Routing :
+ * - 'credential' : pattern AX_CREDENTIAL_PATTERNS → vault auto (déjà géré)
+ * - 'code'       : bloc backtick OU 3+ lignes code (function/const/import/etc.) → coffre dossier
+ * - 'url'        : URL valide → preview card
+ * - 'planning'   : format SBM CMCteams → bridge (déjà géré)
+ * - 'text'       : fallback normal
+ */
+export type PasteKind = 'credential' | 'code' | 'url' | 'planning' | 'text';
+
+export function detectPasteKind(pasted: string): PasteKind {
+  const trimmed = pasted.trim();
+  if (!trimmed) return 'text';
+  /* 1. Backtick block multi-line (```lang ... ```) */
+  if (/```[\s\S]+?```/.test(trimmed)) return 'code';
+  /* 2. Patterns code (3+ lignes ou 1 ligne avec mot-clé fort) */
+  const lines = trimmed.split('\n');
+  if (lines.length >= 3) {
+    const codeKeywords = /\b(function|const|let|var|import|export|class|def|return|async|await|public|private|interface|type)\b/;
+    const hits = lines.filter((l) => codeKeywords.test(l)).length;
+    if (hits >= 2) return 'code';
+    /* Syntaxe JSON/YAML/HTML structuré multi-line */
+    if (/^\s*[{\[]/.test(lines[0] ?? '') && /[}\]]\s*$/.test(lines[lines.length - 1] ?? '')) return 'code';
+    if (/^<(\?php|!DOCTYPE|html|script|style)/i.test(lines[0] ?? '')) return 'code';
+  }
+  /* 3. URL pure (1 seule URL sans autre texte) */
+  if (/^https?:\/\/\S+$/i.test(trimmed)) return 'url';
+  /* 4. fallback */
+  return 'text';
+}
+
+/**
+ * v13.4.14 — Push visual card dans le chat scroll pour Kevin "visuel pas toast".
+ *
+ * Card format : icône type + preview tronqué + actions buttons (sauver coffre / annuler).
+ * XSS-safe : utilise textContent partout (jamais innerHTML sur user input).
+ */
+export function pushPasteCard(
+  rootEl: HTMLElement,
+  type: PasteKind,
+  preview: string,
+  actions: Array<{ label: string; onClick: () => void; primary?: boolean }> = [],
+): HTMLElement | null {
+  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
+  if (!scroll) return null;
+  const icon = type === 'credential' ? '🔑'
+    : type === 'code' ? '💻'
+    : type === 'url' ? '🔗'
+    : type === 'planning' ? '📋'
+    : '📄';
+  const typeLabel = type === 'credential' ? 'Identifiant détecté'
+    : type === 'code' ? 'Code détecté'
+    : type === 'url' ? 'Lien détecté'
+    : type === 'planning' ? 'Planning détecté'
+    : 'Texte';
+  const card = document.createElement('div');
+  card.className = 'ax-msg ax-msg-user ax-paste-card ax-slide-up-fade';
+  card.style.cssText = 'background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:12px;margin:8px 0';
+
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;color:#c9a227;font-weight:600;margin-bottom:8px';
+  head.textContent = `${icon} ${typeLabel}`;
+  card.appendChild(head);
+
+  const previewDiv = document.createElement('pre');
+  previewDiv.style.cssText = 'background:rgba(0,0,0,0.3);color:#e0e0e0;padding:8px;border-radius:6px;font-family:Consolas,Monaco,monospace;font-size:12px;max-height:120px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:0 0 8px';
+  /* XSS-safe : textContent uniquement */
+  previewDiv.textContent = preview.length > 500 ? `${preview.slice(0, 500)}…` : preview;
+  card.appendChild(previewDiv);
+
+  if (actions.length > 0) {
+    const actionsDiv = document.createElement('div');
+    actionsDiv.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    for (const action of actions) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = action.primary ? 'ax-btn ax-btn-primary' : 'ax-btn ax-btn-outline';
+      btn.textContent = action.label;
+      btn.style.cssText = 'padding:6px 14px;font-size:13px;border-radius:6px;cursor:pointer';
+      btn.addEventListener('click', () => {
+        try { action.onClick(); }
+        catch (err: unknown) { logger.warn('chat', 'paste-card action failed', { err }); }
+        /* Disable buttons après clic action (évite double-trigger) */
+        actionsDiv.querySelectorAll('button').forEach((b) => { (b as HTMLButtonElement).disabled = true; });
+      });
+      actionsDiv.appendChild(btn);
+    }
+    card.appendChild(actionsDiv);
+  }
+
+  scroll.appendChild(card);
+  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+  return card;
+}
+
+/**
+ * v13.4.14 — Sauve un snippet code dans le coffre dossier "Codes & snippets".
+ *
+ * Clé localStorage : apex_v13_code_<timestamp>_<id>
+ * Permet listing via UI vault future (préfix apex_v13_code_*).
+ * Pour l'instant : stocké en clair (Kevin règle "codes = pas crypto" mais classés).
+ */
+export async function saveCodeSnippet(code: string, lang?: string): Promise<{ ok: boolean; key?: string }> {
+  try {
+    const ts = Date.now();
+    const id = Math.random().toString(36).slice(2, 8);
+    const key = `apex_v13_code_${ts}_${id}`;
+    const entry = {
+      code,
+      lang: lang ?? 'unknown',
+      created: ts,
+      lines: code.split('\n').length,
+      size: code.length,
+    };
+    /* Stocke en JSON */
+    localStorage.setItem(key, JSON.stringify(entry));
+    /* Index pour listing rapide */
+    const indexKey = 'apex_v13_code_snippets_index';
+    let idx: string[] = [];
+    try {
+      const raw = localStorage.getItem(indexKey);
+      if (raw) idx = JSON.parse(raw) as string[];
+    } catch { idx = []; }
+    idx.unshift(key);
+    if (idx.length > 100) idx = idx.slice(0, 100); /* Cap 100 snippets */
+    localStorage.setItem(indexKey, JSON.stringify(idx));
+    return { ok: true, key };
+  } catch (err: unknown) {
+    logger.warn('chat', 'saveCodeSnippet failed', { err });
+    return { ok: false };
+  }
+}
+
+/**
+ * v13.4.16 — Liste les snippets code sauvés dans le coffre (paste intelligent).
+ *
+ * Retourne les entries triées par date desc, max 100 (cap saveCodeSnippet).
+ * XSS-safe : valeurs JSON parsées, jamais innerHTML.
+ */
+export function listCodeSnippets(): Array<{
+  key: string;
+  code: string;
+  lang: string;
+  created: number;
+  lines: number;
+  size: number;
+}> {
+  try {
+    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
+    if (!idxRaw) return [];
+    const idx = JSON.parse(idxRaw) as string[];
+    const result: Array<{ key: string; code: string; lang: string; created: number; lines: number; size: number }> = [];
+    for (const key of idx) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue; /* Entry orpheline (cleanup quota) */
+      try {
+        const entry = JSON.parse(raw) as { code: string; lang: string; created: number; lines: number; size: number };
+        result.push({ key, ...entry });
+      } catch { /* Entry corrompue, skip */ }
+    }
+    return result;
+  } catch (err: unknown) {
+    logger.warn('chat', 'listCodeSnippets failed', { err });
+    return [];
+  }
+}
+
+/**
+ * v13.4.16 — Supprime un snippet du coffre (Kevin clique 🗑 dans la liste).
+ */
+export function deleteCodeSnippet(key: string): boolean {
+  try {
+    if (!key.startsWith('apex_v13_code_')) return false; /* Sécurité : pas d'arbitrary delete */
+    localStorage.removeItem(key);
+    /* Update index */
+    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
+    if (idxRaw) {
+      const idx = (JSON.parse(idxRaw) as string[]).filter((k) => k !== key);
+      localStorage.setItem('apex_v13_code_snippets_index', JSON.stringify(idx));
+    }
+    return true;
+  } catch (err: unknown) {
+    logger.warn('chat', 'deleteCodeSnippet failed', { err, key });
+    return false;
+  }
+}
+
+/**
+ * v13.4.13 — Helper exporté : transforme conversation DisplayMessage → ChatMessage
+ * format Anthropic API.
+ *
+ * Extraite de processQueue() ligne ~932 pour testabilité réelle (les tests
+ * vitest appellent maintenant CETTE fonction, pas une réplique mentale).
+ *
+ * Règles :
+ * - Filtre tool_card (pas envoyés à l'API)
+ * - Cap MAX_CONTEXT_MESSAGES (v13.3.48 — perf + HTTP 400)
+ * - Si message user a attachments image → content array Anthropic vision format
+ * - PDF/non-image attachments ignorés silencieusement (Anthropic vision = image/* only)
+ * - Messages assistant : toujours content string (les attachments leaked sont ignorés)
+ */
+export function buildMessagesForApi(
+  conversation: Array<{
+    role: 'user' | 'assistant' | 'tool_card';
+    text: string;
+    streaming?: boolean;
+    attachments?: Array<{ mime: string; base64: string; name: string }>;
+  }>,
+  excludeMsg?: { role: string },
+  maxContext = 30,
+): Array<{ role: 'user' | 'assistant' | 'system'; content: string | Array<{ type: string; [k: string]: unknown }> }> {
+  return conversation
+    .filter((m) => !m.streaming || m === excludeMsg)
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-maxContext)
+    .filter((m) => m !== excludeMsg)
+    .map((m) => {
+      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
+        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
+        for (const att of m.attachments) {
+          if (att.mime.startsWith('image/')) {
+            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
+            contentArr.push({
+              type: 'image',
+              source: { type: 'base64', media_type: att.mime, data: dataOnly },
+            });
+          }
+        }
+        if (m.text) contentArr.push({ type: 'text', text: m.text });
+        return { role: m.role as 'user' | 'assistant', content: contentArr };
+      }
+      return { role: m.role as 'user' | 'assistant', content: m.text };
+    });
 }
 
 /**
@@ -676,9 +962,13 @@ function buildSystemPrompt(): string {
 async function buildSystemPromptDeep(): Promise<string> {
   try {
     const user = store.get('user') as { id: string; name: string } | null;
+    /* v13.4.7 fix Kevin "Apex redemande action admin" : timeout 1500ms → 3000ms.
+     * Avec timeout 1500ms, sur iPhone Safari PWA réseau lent, deep prompt timeout
+     * trop souvent → fallback minimal sans contexte profond → IA hallucine
+     * "es-tu admin ?". 3000ms = budget plus safe. */
     return await Promise.race([
       memory.buildSystemPromptDeep(user),
-      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 1500)),
+      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 3000)),
     ]);
   } catch (err: unknown) {
     logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
@@ -859,11 +1149,32 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     logger.warn('chat', 'chat:message:user emit failed', { err });
   }
 
+  /* v13.4.11/12 fix Kevin "Apex aveugle aux pièces jointes" :
+   * Attendre que tous les FileReader en cours soient terminés (anti race),
+   * puis prend snapshot pendingAttachments + vide queue. Le message porte
+   * ses attachments, la queue est vide pour le prochain message. */
+  if (pendingAttachmentPromises.length > 0) {
+    try { await Promise.all(pendingAttachmentPromises); }
+    catch (err: unknown) { logger.warn('chat', 'await pending attachments fail', { err }); }
+  }
+  const takenAttachments = pendingAttachments.length > 0 ? [...pendingAttachments] : undefined;
+  pendingAttachments = [];
+  /* v13.4.12 — Reset UI : masquer la div attachments et la vider visuellement
+   * (chips encore visibles sinon = confusion utilisateur). */
+  const attDivClear = rootEl.querySelector<HTMLDivElement>('#ax-chat-attachments');
+  if (attDivClear) {
+    attDivClear.innerHTML = '';
+    attDivClear.style.display = 'none';
+  }
+  const fileInputClear = rootEl.querySelector<HTMLInputElement>('#ax-chat-file-input');
+  if (fileInputClear) fileInputClear.value = '';
+
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
     role: 'user',
     text,
     ts: Date.now(),
+    ...(takenAttachments ? { attachments: takenAttachments } : {}),
   };
   conversation.push(userMsg);
   persistConversation();
@@ -879,12 +1190,12 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   store.set('isStreaming', true);
   renderMessages(rootEl);
 
-  const messages: ChatMessage[] = conversation
-    .filter((m) => !m.streaming || m === assistantMsg)
-    .filter((m) => m.role === 'user' || m.role === 'assistant') /* Exclude tool_card from API */
-    .slice(-MAX_CONTEXT_MESSAGES) /* v13.3.48 cap context (HTTP 400 + perf) */
-    .filter((m) => m !== assistantMsg)
-    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.text }));
+  /* v13.4.13 — utilise buildMessagesForApi helper exporté (testable réel). */
+  const messages = buildMessagesForApi(
+    conversation,
+    assistantMsg,
+    MAX_CONTEXT_MESSAGES,
+  ) as ChatMessage[];
 
   /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
   const sysPrompt = await buildSystemPromptDeep();
@@ -1073,6 +1384,28 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'export':
       void exportConversationMarkdown();
       return true;
+    case 'snippets': {
+      /* v13.4.16 — Liste snippets sauvés via paste intelligent v13.4.14 */
+      const snippets = listCodeSnippets();
+      if (snippets.length === 0) {
+        pushAssistantMessage(rootEl, "💻 Aucun snippet sauvé.\n\nQuand tu colles du code dans le chat, Apex propose 💾 Sauver dans Coffre. Les snippets apparaîtront ici avec `/snippets`.");
+        return true;
+      }
+      /* Format markdown listing : titre + chaque snippet (head + nombre lignes + lang) */
+      const lines: string[] = [`💻 **${snippets.length} snippet${snippets.length > 1 ? 's' : ''} sauvé${snippets.length > 1 ? 's' : ''}** :\n`];
+      for (let i = 0; i < snippets.length; i++) {
+        const s = snippets[i];
+        if (!s) continue;
+        const date = new Date(s.created).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const preview = s.code.slice(0, 80).replace(/\n/g, ' ');
+        lines.push(`${i + 1}. **${s.lang}** · ${s.lines} ligne${s.lines > 1 ? 's' : ''} · ${date}`);
+        lines.push(`   \`${preview}${s.code.length > 80 ? '…' : ''}\``);
+        lines.push('');
+      }
+      lines.push('_Note : pour voir un snippet complet, ouvre 🔐 Coffre (UI listing à venir v13.4.17+)._');
+      pushAssistantMessage(rootEl, lines.join('\n'));
+      return true;
+    }
     case 'settings':
       try {
         store.set('view', 'settings');
@@ -1745,12 +2078,31 @@ function renderMessages(rootEl: HTMLElement): void {
 }
 
 export function render(rootEl: HTMLElement): void {
+  /* v13.4.13 fix memory leak Kevin : si Kevin upload photo puis quitte chat
+   * sans submit, base64 reste en mémoire. Reset queues au remount = clean state.
+   * Trade-off documenté : Kevin perd ses attachments en attente s'il navigue
+   * ailleurs puis revient — acceptable car action explicite de navigation. */
+  pendingAttachments = [];
+  pendingAttachmentPromises = [];
+
   const user = store.get('user');
   /* Feature toggle module.chat (Kevin règle ON/OFF général + per-user, 2026-05-04).
      Si désactivée pour ce user, afficher notice. Admin Kevin bypass via per-user override. */
   if (!isFeatureEnabled('module.chat', user?.id)) {
     rootEl.innerHTML = renderDisabledNotice('module.chat');
     return;
+  }
+
+  /* v13.4.10 fix Kevin "continue recommence à zéro" : restore Firebase conversation
+   * si localStorage vide (cache PWA clear iOS). Async non-bloquant, re-render après. */
+  if (conversation.length === 0) {
+    void tryFirebaseRestoreConversation().then(() => {
+      if (conversation.length > 0) {
+        try {
+          renderMessages(rootEl);
+        } catch { /* skip */ }
+      }
+    });
   }
   const greeting = user ? `Bonjour ${user.name}, qu'est-ce que je peux faire pour toi ?` : 'Bienvenue dans Apex.';
 
@@ -1931,7 +2283,7 @@ export function render(rootEl: HTMLElement): void {
           autocomplete="off"
         ></textarea>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="display:none">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer">↑</button>
@@ -2075,9 +2427,48 @@ export function render(rootEl: HTMLElement): void {
       const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
       if (!pasted) return;
       /* PAS de preventDefault — le paste passe normalement (texte normal OK). */
-      /* v13.3.19 — Bridge Apex → CMCteams sur paste (règle Kevin 2026-05-07 §8) :
-       * détecte planning SBM collé directement, push Firebase, toast info.
-       * Indépendant du flow credential : tourne en parallèle. */
+
+      /* v13.4.14 — Détection type de paste (Kevin "visuel intelligent").
+       * Code/URL → carte visuelle dans le chat avec actions buttons. */
+      const kind = detectPasteKind(pasted);
+      if (kind === 'code') {
+        /* Extract language hint from ```lang ... ``` si présent */
+        const m = pasted.match(/^```(\w+)?\n([\s\S]+?)\n```$/);
+        const codeContent = m ? (m[2] ?? pasted) : pasted;
+        const lang = m && m[1] ? m[1] : undefined;
+        pushPasteCard(rootEl, 'code', codeContent, [
+          {
+            label: '💾 Sauver dans Coffre (Codes)',
+            primary: true,
+            onClick: () => {
+              void (async () => {
+                const r = await saveCodeSnippet(codeContent, lang);
+                if (r.ok) {
+                  /* Efface du textarea (déjà collé) ET supprime card */
+                  textarea.value = '';
+                  toast.success(`💾 Code sauvé dans Coffre (${codeContent.split('\n').length} lignes)`, { duration: 4000 });
+                } else {
+                  toast.error('Sauvegarde échouée', { duration: 3000 });
+                }
+              })();
+            },
+          },
+          {
+            label: '💬 Garder dans le chat',
+            onClick: () => { /* no-op : laisse dans textarea pour envoi normal */ },
+          },
+        ]);
+      } else if (kind === 'url') {
+        pushPasteCard(rootEl, 'url', pasted, [
+          {
+            label: '🌐 Envoyer à l\'IA',
+            primary: true,
+            onClick: () => { /* laisse dans textarea, Kevin soumet normalement */ },
+          },
+        ]);
+      }
+
+      /* v13.3.19 — Bridge Apex → CMCteams sur paste (règle Kevin 2026-05-07 §8) */
       void (async () => {
         try {
           const { detectAndPushIfPlanning } = await import('../../services/cmc-planning-bridge.js');
@@ -2420,8 +2811,28 @@ export function render(rootEl: HTMLElement): void {
       : '📎';
     const div = document.createElement('div');
     div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:#c9a227';
-    /* P0 SECU XSS : escape file.name (vient de file picker = source externe) */
-    div.textContent = `${icon} ${file.name.slice(0, 30)}${file.name.length > 30 ? '...' : ''} (${sizeMB} MB)`;
+    /* P0 SECU XSS : escape file.name (vient de file picker = source externe) — textContent OK */
+    const truncName = file.name.length > 30 ? `${file.name.slice(0, 30)}...` : file.name;
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = `${icon} ${truncName} (${sizeMB} MB)`;
+    div.appendChild(labelSpan);
+    /* v13.4.12 — Bouton ✕ remove : retire de pendingAttachments + supprime chip.
+     * Si Kevin attache par erreur, peut annuler avant submit. */
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.setAttribute('aria-label', `Retirer ${truncName}`);
+    removeBtn.style.cssText = 'background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:14px;padding:0 2px;line-height:1';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      /* Retire de pendingAttachments par match name+mime (cas réaliste : noms uniques) */
+      pendingAttachments = pendingAttachments.filter((a) => !(a.name === file.name && a.mime === file.type));
+      div.remove();
+      /* Si plus aucune chip → masquer la div */
+      if (attachmentsDiv.children.length === 0) attachmentsDiv.style.display = 'none';
+      haptic.tap();
+    });
+    div.appendChild(removeBtn);
     attachmentsDiv.appendChild(div);
   };
 
@@ -2461,6 +2872,34 @@ export function render(rootEl: HTMLElement): void {
           const url = URL.createObjectURL(file);
           albumImages.push({ url, filename: file.name });
         } catch { /* ignore createObjectURL fail */ }
+        /* v13.4.11/12 fix Kevin "Apex aveugle aux pièces jointes" :
+         * Lire base64 et push dans pendingAttachments — l'IA recevra l'image
+         * dans son context array Anthropic au prochain submit.
+         * v13.4.12 : trackée dans pendingAttachmentPromises pour await submit
+         * (anti race condition si Kevin submit avant que FileReader termine). */
+        const readPromise = (async () => {
+          try {
+            const b64 = await new Promise<string>((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.onerror = () => reject(new Error('FileReader error'));
+              r.readAsDataURL(file);
+            });
+            /* Cap 5MB par image (limite Anthropic + perf) */
+            if (file.size > 5 * 1024 * 1024) {
+              toast.warn(`📷 ${file.name} > 5MB, IA ne le verra pas (display only)`, { duration: 5000 });
+            } else {
+              pendingAttachments.push({ mime: file.type, base64: b64, name: file.name });
+            }
+          } catch (err: unknown) {
+            logger.warn('chat', 'pendingAttachments push failed', { err, file: file.name });
+          }
+        })();
+        pendingAttachmentPromises.push(readPromise);
+        /* Auto-cleanup quand terminée : retire du tableau pour éviter accumulation */
+        void readPromise.finally(() => {
+          pendingAttachmentPromises = pendingAttachmentPromises.filter((p) => p !== readPromise);
+        });
         /* v13.3.51 — Auto-vision device sur upload image */
         void autoAnalyzeDeviceImage(file, rootEl);
         /* v13.3.53 — Multi-Source EXHAUSTIVE extraction (Kevin règle 2026-05-07 23h55) :

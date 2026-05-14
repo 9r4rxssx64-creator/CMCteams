@@ -30,6 +30,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'voice', emoji: '🔊', description: 'Active/désactive lecture vocale auto', argsHint: '' },
   { name: 'export', emoji: '📄', description: 'Exporte la conversation en Markdown', argsHint: '' },
   { name: 'settings', emoji: '⚙️', description: 'Ouvre les réglages', argsHint: '' },
+  { name: 'snippets', emoji: '💻', description: 'Liste les codes/snippets sauvés dans le Coffre', argsHint: '' },
   { name: 'regen', emoji: '🔄', description: 'Régénère la dernière réponse Apex', argsHint: '' },
   { name: 'search', emoji: '🔎', description: 'Cherche dans la conversation', argsHint: '<keyword>', requiresArgs: true },
   { name: 'copy', emoji: '📋', description: 'Copie la dernière réponse Apex', argsHint: '' },

@@ -73,10 +73,14 @@ export const FB_FIX: readonly string[] = [
   /* AI providers */
   'ax_anthropic_key',
   'ax_openai_key',
+  'ax_openai_key_proj' /* v13.4.6 Kevin "confusion OpenAI legacy vs proj" — storageKey distinct */,
   'ax_groq_key',
   'ax_google_key',
   'ax_gemini_key',
   'ax_openrouter_key',
+  'ax_github_token' /* legacy compat v13.0+ */,
+  'ax_github_token_classic' /* v13.4.6 Kevin "GitHub confusion" — ghp_* distinct */,
+  'ax_github_token_fine' /* v13.4.6 Kevin "GitHub fine reconnu mauvais" — github_pat_* distinct */,
   'ax_perplexity_key',
   'ax_mistral_key',
   'ax_cohere_key',
@@ -138,6 +142,11 @@ export const FB_LOCAL: readonly string[] = [
   'apex_v13_lastact',
   'ax_voice_print_',
   'apex_v13_pin',
+  /* v13.4.8/15 — PIN Laurence isolé localement (anti-régression Erreur #37 CLAUDE.md
+   * + règle sécu biométrique). FB_LOCAL = PAS de sync Firebase. PIN reste local au device.
+   * Trade-off honnête : Kevin perd Laurence PIN si cache PWA clear. C'est volontaire :
+   * un PIN biométrique synchronisé = vecteur d'exfiltration (cf. ax_user JAMAIS dans FB_FIX). */
+  'apex_v13_pin_laurence_sp',
   'apex_v13_session',
 ];
 
