@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.608";
+var APP_VER="v9.609";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13185,13 +13185,114 @@ function cmcImportDiag(){
     });
   }
   h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
-    +'<button onclick="cmcImportDiag()" style="flex:1;min-width:140px;padding:10px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700;border-radius:8px;cursor:pointer">🔄 Re-audit</button>';
+    +'<button onclick="cmcImportDiag()" style="flex:1;min-width:140px;padding:10px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700;border-radius:8px;cursor:pointer">🔄 Re-audit</button>'
+    +'<button onclick="cmcShowVersionTimeline(\''+key+'\')" style="flex:1;min-width:140px;padding:10px;background:rgba(255,206,58,.20);border:1px solid rgba(255,206,58,.5);color:#ffce3a;font-weight:700;border-radius:8px;cursor:pointer">📜 Versions V1/V2/V3</button>';
   if(snap&&snap.overrides){
     h+='<button onclick="cmcRollbackImport(\''+key+'\')" style="flex:1;min-width:140px;padding:10px;background:rgba(224,96,96,.20);border:1px solid rgba(224,96,96,.5);color:#e06060;font-weight:700;border-radius:8px;cursor:pointer">↩ Rollback snapshot</button>';
   }
   h+='<button onclick="document.getElementById(\'cmcImportDiagModal\').remove()" style="flex:1;min-width:140px;padding:10px;background:#c9a227;border:none;color:#040c04;font-weight:800;border-radius:8px;cursor:pointer">Fermer</button>'
     +'</div></div></div>';
   var ex=document.getElementById("cmcImportDiagModal");if(ex)ex.remove();
+  document.body.insertAdjacentHTML("beforeend",h);
+}
+// v9.609 (Kevin 2026-05-14 23:00 "plannings multiples + V1/V2/V3 + conflits") :
+// Timeline visuelle des imports successifs avec metadata pdfType, diff par version,
+// boutons Restaurer / Comparer. Aide Kevin à voir clairement l'historique du mois.
+function cmcShowVersionTimeline(key){
+  if(!A.user||A.user.id!==AID){if(typeof toast==="function")toast("Admin only","err");return;}
+  if(!key)key=A.year+"-"+A.month;
+  var parts=String(key).split("-");
+  var y=parseInt(parts[0]||A.year),m=parseInt(parts[1]||A.month);
+  var versions=_cmcListVersionedHistory(y,m);
+  if(!versions.length){if(typeof toast==="function")toast("Aucune version pour "+MFR[m]+" "+y,"info");return;}
+  var typeColors={employees:"#6aaa70",cadres:"#c9a227",complete:"#4aa0ff",unknown:"#888"};
+  var typeIcons={employees:"👥",cadres:"👔",complete:"🎯",unknown:"❓"};
+  var h='<div id="cmcVersionTimelineModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+    +'<div style="background:#0f1a14;border:2px solid #4aa0ff;border-radius:14px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;padding:16px">'
+    +'<div style="background:linear-gradient(135deg,#4aa0ff,#2a60aa);margin:-16px -16px 12px;padding:14px 16px;border-radius:12px 12px 0 0">'
+    +'<div style="font-size:18px;font-weight:800;color:#fff">📜 Historique imports — '+MFR[m]+' '+y+'</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">'+versions.length+' version'+(versions.length>1?'s':'')+' enregistrée'+(versions.length>1?'s':'')+'</div>'
+    +'</div>';
+  // Ordre du plus récent au plus ancien
+  var sorted=versions.slice().reverse();
+  sorted.forEach(function(v,idx){
+    var col=typeColors[v.pdfType||"unknown"]||"#888";
+    var icon=typeIcons[v.pdfType||"unknown"]||"❓";
+    var label={employees:"PDF Employés",cadres:"PDF Cadres",complete:"PDF Complet",unknown:"PDF type inconnu"}[v.pdfType||"unknown"]||"PDF type inconnu";
+    var isLatest=idx===0;
+    h+='<div style="padding:12px;margin-bottom:10px;background:rgba(255,255,255,.04);border-left:4px solid '+col+';border-radius:8px"'
+      +(isLatest?' data-latest="1"':'')+'>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+      +'<div style="font-weight:700;color:'+col+';font-size:15px">'+icon+' '+esc(v.version||"V?")+' — '+esc(label)+(isLatest?' <span style="font-size:11px;background:#5aaa70;color:#000;padding:2px 6px;border-radius:4px;margin-left:6px">ACTUEL</span>':'')+'</div>'
+      +'<div style="font-size:12px;color:#a0a0a0">'+new Date(v.importedAt||0).toLocaleString("fr-FR")+'</div>'
+      +'</div>'
+      +'<div style="margin-top:6px;font-size:12px;color:#c0c8c0">'
+      +'• <b>'+(v.empCount||0)+'</b> employés affectés · <b>'+(v.cellsCount||0)+'</b> cellules · parser '+esc(v.parserVersion||"?")
+      +(v.pdfTextLength?' · source '+Math.round(v.pdfTextLength/1024)+' KB':'')
+      +'</div>';
+    if(v.pdfDetails&&(v.pdfDetails.hasEmployees||v.pdfDetails.hasCadres)){
+      h+='<div style="margin-top:6px;font-size:11px;color:#8a9080">';
+      if(v.pdfDetails.hasEmployees)h+='<span style="display:inline-block;padding:1px 6px;background:rgba(106,170,112,.15);border:1px solid rgba(106,170,112,.4);border-radius:4px;margin:2px;color:#6aaa70">👥 Équipes</span>';
+      if(v.pdfDetails.hasPit)h+='<span style="display:inline-block;padding:1px 6px;background:rgba(255,206,58,.15);border:1px solid rgba(255,206,58,.4);border-radius:4px;margin:2px;color:#ffce3a">🎩 Pit Boss</span>';
+      if(v.pdfDetails.hasSup)h+='<span style="display:inline-block;padding:1px 6px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.4);border-radius:4px;margin:2px;color:#4aa0ff">🔍 Superviseur</span>';
+      if(v.pdfDetails.hasIns)h+='<span style="display:inline-block;padding:1px 6px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.4);border-radius:4px;margin:2px;color:#c080ff">👁 Inspecteur</span>';
+      h+='</div>';
+    }
+    h+='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+      +(isLatest?'':'<button onclick="if(confirm(\'Restaurer '+esc(v.version)+' ? État actuel sera archivé en V(N+1)\')){_cmcRestoreVersion('+y+','+m+',\''+esc(v.version)+'\');document.getElementById(\'cmcVersionTimelineModal\').remove();}" style="padding:6px 10px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer">↩ Restaurer</button>')
+      +(idx<sorted.length-1?'<button onclick="cmcShowDiffModal('+y+','+m+',\''+esc(v.version)+'\',\''+esc(sorted[idx+1].version)+'\')" style="padding:6px 10px;background:rgba(255,206,58,.20);border:1px solid rgba(255,206,58,.5);color:#ffce3a;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer">🔀 Diff avec '+esc(sorted[idx+1].version)+'</button>':'')
+      +'</div></div>';
+  });
+  h+='<button onclick="document.getElementById(\'cmcVersionTimelineModal\').remove()" style="margin-top:8px;width:100%;padding:12px;background:#c9a227;border:none;color:#040c04;font-weight:800;border-radius:10px;cursor:pointer;font-size:15px">Fermer</button>'
+    +'</div></div>';
+  var ex=document.getElementById("cmcVersionTimelineModal");if(ex)ex.remove();
+  document.body.insertAdjacentHTML("beforeend",h);
+}
+// v9.609 — Modal diff entre 2 versions historiques (cellules modifiées)
+function cmcShowDiffModal(iy,im,vA,vB){
+  if(!A.user||A.user.id!==AID){if(typeof toast==="function")toast("Admin only","err");return;}
+  var arr=_cmcListVersionedHistory(iy,im);
+  var entryA=arr.find(function(x){return x.version===vA;});
+  var entryB=arr.find(function(x){return x.version===vB;});
+  if(!entryA||!entryB){if(typeof toast==="function")toast("Version introuvable","err");return;}
+  var diff=_cmcDiffVersions(entryB,entryA); // B = ancien, A = nouveau ; on regarde "depuis B vers A"
+  var h='<div id="cmcDiffModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+    +'<div style="background:#0f1a14;border:2px solid #ffce3a;border-radius:14px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:16px">'
+    +'<div style="background:linear-gradient(135deg,#ffce3a,#c9a227);margin:-16px -16px 12px;padding:14px 16px;border-radius:12px 12px 0 0">'
+    +'<div style="font-size:17px;font-weight:800;color:#1a1408">🔀 Diff '+esc(vB)+' → '+esc(vA)+' · '+MFR[im]+' '+iy+'</div>'
+    +'<div style="font-size:12px;color:rgba(26,20,8,.85);margin-top:4px">'
+    +'<b style="color:#0a5a30">+'+(diff.added||[]).length+' nouveaux</b> · '
+    +'<b style="color:#aa3030">-'+(diff.removed||[]).length+' retirés</b> · '
+    +'<b style="color:#aa6030">~'+(diff.changed||[]).length+' modifiés</b> · '
+    +(diff.identical||0)+' identiques'
+    +'</div>'
+    +'</div>';
+  function sect(label,arr,col,ic){
+    if(!arr||!arr.length)return "";
+    var s='<div style="margin-bottom:12px"><div style="font-weight:700;color:'+col+';margin-bottom:6px">'+ic+' '+label+' ('+arr.length+')</div>';
+    arr.slice(0,15).forEach(function(item){
+      var emp=A.employees.find(function(x){return x.id===item.eid;});
+      var name=emp?emp.name:item.eid;
+      s+='<div style="padding:5px 8px;margin-bottom:3px;background:rgba(255,255,255,.04);border-left:3px solid '+col+';border-radius:4px;font-size:12px;color:#e8d8c0">'
+        +'<b>'+esc(name)+'</b>'
+        +(item.day?' j'+esc(""+item.day):'')
+        +(item.from?' : '+esc(item.from)+' → '+esc(item.to||""):'')
+        +(item.code?' : '+esc(item.code):'')
+        +'</div>';
+    });
+    if(arr.length>15)s+='<div style="font-size:11px;color:#888;padding-left:8px">... et '+(arr.length-15)+' autres</div>';
+    s+='</div>';
+    return s;
+  }
+  h+=sect("Cellules ajoutées",diff.added,"#5aaa70","➕");
+  h+=sect("Cellules retirées",diff.removed,"#e06060","➖");
+  h+=sect("Cellules modifiées",diff.changed,"#e09848","🔀");
+  if(!diff.added.length&&!diff.removed.length&&!diff.changed.length){
+    h+='<div style="text-align:center;padding:20px;color:#a0a0a0">Aucune différence détectée entre '+esc(vA)+' et '+esc(vB)+'.</div>';
+  }
+  h+='<button onclick="document.getElementById(\'cmcDiffModal\').remove()" style="margin-top:8px;width:100%;padding:12px;background:#c9a227;border:none;color:#040c04;font-weight:800;border-radius:10px;cursor:pointer">Fermer</button>'
+    +'</div></div>';
+  var ex=document.getElementById("cmcDiffModal");if(ex)ex.remove();
   document.body.insertAdjacentHTML("beforeend",h);
 }
 // v9.606 — Rollback import au snapshot pré-import (restore overrides[key] uniquement)
@@ -23487,6 +23588,9 @@ function _cmcSaveVersionedHistory(iy,im){
       try{refData=lg("cmc_ref_"+key,null);}catch(_){}
       try{verifData=lg("cmc_verif_"+key,null);}catch(_){}
       try{pdfTextEntry=lg("cmc_import_src_"+key,null);}catch(_){}
+      // v9.609 — Enrich layer metadata pour timeline + diff
+      var importTypeRec=null;
+      try{importTypeRec=lg("cmc_last_import_type_"+key,null);}catch(_){}
       var entry={
         version:"V"+versionN,
         importedAt:Date.now(),
@@ -23495,7 +23599,11 @@ function _cmcSaveVersionedHistory(iy,im){
         verifData:verifData,
         pdfTextLength:pdfTextEntry&&pdfTextEntry.txt?pdfTextEntry.txt.length:0,
         parserVersion:APP_VER,
-        empCount:Object.keys(snapshot).length
+        empCount:Object.keys(snapshot).length,
+        // v9.609 — Layer metadata pour timeline visuelle Kevin
+        pdfType:(importTypeRec&&importTypeRec.type)||"unknown",
+        pdfDetails:(importTypeRec&&importTypeRec.details)||{},
+        cellsCount:(function(){var cnt=0;Object.keys(snapshot).forEach(function(eid){cnt+=Object.keys(snapshot[eid]||{}).length;});return cnt;})()
       };
       historyArr.push(entry);
       // Cap 10 max FIFO (chaque version peut peser plusieurs MB si pdfText)
