@@ -613,6 +613,80 @@ S'applique : Apex priorité absolue, CMCteams.
 
 ---
 
+## 💯 RÈGLE ABSOLUE — IMPORT LOSSLESS + REPRODUCTION IDENTIQUE + INTELLIGENT PAR TIER (Kevin 2026-05-14 23:25, ABSOLUE)
+
+> **"Tout dans les import doit être prit en compte sans faute jamais. Reproduction à l'identique. Soit intelligent, pour tout ce qui est que pour l'admin et ce qu'il y a pour tous"** — Kevin 2026-05-14
+
+**Règle absolue, prioritaire** — CMCteams import + Apex bridge, tous projets futurs avec parsing externe :
+
+### 1. Import lossless 100% — chaque cellule du PDF DOIT être capturée
+
+À CHAQUE `doImport()` CMCteams :
+- Compter les cellules présentes dans le **texte source brut** (regex sur codes BRTP/RH/CP/horaires)
+- Compter les cellules effectivement écrites dans `A.overrides[key]`
+- **Si écart > 5% → ERREUR P0, ne pas valider l'import**
+- Banner rouge : "X cells PDF non capturées — VOIR DÉTAILS / REJETER IMPORT"
+- Snapshot pré-import garanti pour rollback
+- Audit log immutable `_audit("import_lossless_check", AID, key, srcCount, capturedCount)`
+
+### 2. Reproduction à l'identique — JAMAIS d'invention
+
+INTERDICTION ABSOLUE :
+- ❌ Inventer un code qui n'est pas dans le PDF source
+- ❌ Compléter via "auto-fill mois précédent" sans flag explicite "auto_fill: true" et confirmation Kevin
+- ❌ Fuzzy match aveugle (déjà documenté Erreur #24, #50)
+- ❌ Substituer un code via CDP_MAP sans le code original observé dans source
+
+OBLIGATIONS :
+- ✅ Chaque cell dans `A.overrides[key]` DOIT correspondre à un code observé dans le texte source
+- ✅ Si pas dans source → `cell = null` ou `cell.status = "needs_source"` (pas inventé)
+- ✅ `_cmcValidateAgainstSource(emp, src)` doit retourner `valid: true` pour chaque cell appliquée (déjà v9.596)
+- ✅ Sentinelle `import-fidelity` audit chaque cell post-import (v9.607)
+
+### 3. Intelligence par tier — admin vs tous
+
+À CHAQUE feature/data sensible, distinguer :
+
+**Admin Kevin (`kdmc_admin`) uniquement** :
+- Import PDF planning
+- Audit fidelity, rollback, timeline V1/V2/V3
+- Sentinelles, agents, escalade Claude Code
+- Modifier autres users (Laurence/clients)
+- Coffre cross-user
+- Statistiques globales
+- Bridge Apex→CMC push
+
+**Tous (y compris Laurence/family/clients)** :
+- Voir LEUR propre planning (lecture seule pour client_free / chat-only)
+- Voir LEUR profil
+- Chat IA avec leurs propres données
+- Détection patterns (analyse texte) : OK pour tous
+- Pas d'accès admin/coffre/audit
+
+**Implémentation guard partout** :
+```ts
+if (!auth.isAdminSync()) return { ok: false, error: 'admin_only' };
+```
+
+Pour CHAQUE handler sensible.
+
+### 4. Test mental obligatoire avant chaque release import
+
+> *"Si je colle ce PDF SBM 50 fois consécutivement, est-ce que CHAQUE fois j'obtiens EXACTEMENT le même résultat ? Aucun fuzzy aléatoire, aucune invention, aucune perte. Si oui → reproductible. Si non → bug."*
+
+> *"Si Laurence essaie d'importer un PDF, est-elle bloquée à la première ligne ? Si oui → guard OK. Si non → fuite d'admin."*
+
+### 5. Documentation systématique
+
+Pour CHAQUE feature ajoutée :
+- Tag `[ADMIN]` ou `[ALL]` ou `[ADMIN+CLIENT_PRO]` dans le commit
+- Test régression pour CHAQUE tier (admin + non-admin)
+- Si missing tier test → CI bloque le merge
+
+S'applique : CMCteams (priorité absolue parser), Apex bridge, tous projets futurs.
+
+---
+
 ## 🎓 RÈGLE ABSOLUE — EXPERT TOUJOURS PARTOUT (Kevin 2026-05-14 22:30, ABSOLUE)
 
 > **"Tu peux travailler en expert car c'est plus possible toutes tes erreurs ! Note que je veux que toi et apex travail toujours en expert. Expert pour tout"** — Kevin 2026-05-14

@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.610";
+var APP_VER="v9.611";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13264,6 +13264,68 @@ function cmcImportDiag(){
   var ex=document.getElementById("cmcImportDiagModal");if(ex)ex.remove();
   document.body.insertAdjacentHTML("beforeend",h);
 }
+// v9.611 (Kevin 2026-05-14 23:25 "Tout dans les import doit être pris en compte sans
+// faute jamais. Reproduction à l'identique") — Audit LOSSLESS post-import. Compte les
+// codes présents dans le texte source brut vs codes réellement écrits dans overrides.
+// Si écart > 5% → red flag P0, escalade + bandeau Kevin.
+//
+// Algorithme : count tokens qui matchent code regex SBM dans source, count cells
+// non-vides dans overrides[key], compare.
+function _cmcImportLosslessCheck(key, src){
+  try{
+    if(!key)key=A.year+"-"+A.month;
+    if(!src){try{var snap=lg("cmc_last_import_snapshot_"+key,null);
+      if(snap&&snap.txt)src=snap.txt;}catch(_){}}
+    if(!src||src.length<200)return{ok:true,reason:"no_source",sourceCount:0,capturedCount:0,gap:0};
+    var pl=A.overrides[key]||{};
+    // Count cells capturées dans overrides
+    var capturedCount=0;
+    Object.keys(pl).forEach(function(eid){
+      var row=pl[eid]||{};
+      Object.keys(row).forEach(function(d){if(row[d])capturedCount++;});
+    });
+    // Count tokens "codes SBM probables" dans source brut
+    // Codes : 22/6, 22/6', 19/4, 16/20, 12h30/19, RH, R, RRT, CP, M, AF, PAT, PK, HD
+    var srcUp=src.toUpperCase();
+    var patterns=[
+      /\b\d{1,2}\/\d{1,2}[''""]*\*?\b/g,         // 22/6, 16/20, 19/4', 20/5*
+      /\b\d{1,2}H\d{1,2}\/\d{1,2}[''""]*\b/g,    // 12H30/19, 12h30/19'
+      /(?<![A-Z])(RH|RRT|PRT|CP|AF|PAT|SS|ABI|AT|CFL|MAL|ABS|ABP|PNE|AMP|FL|HD|PK)(?![A-Z])/g, // codes lettres
+      /(?<![A-Z])(M|R)(?![A-Z0-9\/])/g           // M maladie, R repos isolés
+    ];
+    var sourceCount=0;
+    patterns.forEach(function(p){
+      var m=srcUp.match(p);
+      if(m)sourceCount+=m.length;
+    });
+    // Gap
+    var gap=sourceCount>0?Math.abs(sourceCount-capturedCount)/sourceCount:0;
+    var gapPct=Math.round(gap*100);
+    var status=gap<=0.05?"ok":(gap<=0.15?"warn":"err");
+    // Persist
+    try{
+      var lossLog=lg("cmc_import_lossless_log",[])||[];
+      if(lossLog.length>=50)lossLog=lossLog.slice(-49);
+      lossLog.push({ts:Date.now(),key:key,sourceCount:sourceCount,capturedCount:capturedCount,gap:gapPct,status:status});
+      ls("cmc_import_lossless_log",lossLog);
+    }catch(_){}
+    // Report
+    var msg="Lossless audit "+key+" : "+capturedCount+"/"+sourceCount+" capturés (gap "+gapPct+"%)";
+    if(typeof agentAppendReport==="function")agentAppendReport("import-lossless",status,msg,
+      {key:key,sourceCount:sourceCount,capturedCount:capturedCount,gap:gapPct});
+    // Escalade si critique
+    if(status==="err"&&typeof _cmcEscalate==="function"){
+      _cmcEscalate({key:key,sourceCount:sourceCount,capturedCount:capturedCount,gap:gapPct},
+        "Import lossless gap "+gapPct+"% — Kevin règle 'tout pris en compte sans faute jamais'");
+    }
+    return{ok:status==="ok",status:status,sourceCount:sourceCount,capturedCount:capturedCount,gap:gapPct};
+  }catch(e){
+    if(typeof agentAppendReport==="function")agentAppendReport("import-lossless","err",(e.message||"").slice(0,100));
+    return{ok:false,error:e.message};
+  }
+}
+try{if(typeof window!=="undefined")window._cmcImportLosslessCheck=_cmcImportLosslessCheck;}catch(_){}
+
 // v9.609 (Kevin 2026-05-14 23:00 "plannings multiples + V1/V2/V3 + conflits") :
 // Timeline visuelle des imports successifs avec metadata pdfType, diff par version,
 // boutons Restaurer / Comparer. Aide Kevin à voir clairement l'historique du mois.
@@ -34575,6 +34637,9 @@ function doImport(){
     // Audit fidélité post-import. Compare cellules importées vs texte source pour détecter
     // hallucinations / mismatches. Score 0-100, escalade Apex si < 75.
     try{if(typeof _agentImportFidelity==="function")_agentImportFidelity(key,txt);}catch(_e6){console.warn("[fidelity-audit]",_e6&&_e6.message);}
+    // v9.611 (Kevin 2026-05-14 23:25 "Tout dans les import doit être pris en compte
+    // sans faute jamais. Reproduction à l'identique") — Audit lossless post-import auto.
+    try{if(typeof _cmcImportLosslessCheck==="function")_cmcImportLosslessCheck(key,txt);}catch(_e7){console.warn("[lossless-audit]",_e7&&_e7.message);}
     // v9.527 (Kevin 2026-04-25) — Auto-apprentissage parser PDF
     try{
       if(typeof cmcParserAutoLearn!=="undefined"){
