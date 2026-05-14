@@ -117,7 +117,7 @@ class EconomyMode {
   }
 
   /** Vérifie si tâche nécessite confirmation user (expensive + mode actif). */
-  needsConfirmation(taskType: ExpensiveTaskType): boolean {
+  needsConfirmation(_taskType: ExpensiveTaskType): boolean {
     return this.isActive(); /* En économie actif → toute task expensive demande confirm */
   }
 

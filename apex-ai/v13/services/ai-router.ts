@@ -44,6 +44,7 @@ async function loadApexTools(): Promise<ApexToolsInstance> {
 }
 import { auditLog } from './audit-log.js';
 import { chatFallback } from './chat-fallback.js';
+import { economyMode } from './economy-mode.js';
 import { redactMessageContent, redactPII } from './pii-redaction.js';
 import { tokensDashboard } from './tokens-dashboard.js';
 
@@ -178,8 +179,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
       });
       /* v13.4.37 Kevin "mode économie" : si économie actif → modèle haiku +
        * max_tokens divisé. Bypassé temporairement si Kevin a confirmé tâche
-       * expensive (via economyMode.bypassFor). */
-      const { economyMode } = await import('./economy-mode.js');
+       * expensive (via economyMode.bypassFor).
+       * v13.4.38 fix : import statique en haut (await dans buildBody sync = SyntaxError). */
       const defaultModel = 'claude-sonnet-4-6';
       const defaultMaxTokens = 4096;
       const body: Record<string, unknown> = {
