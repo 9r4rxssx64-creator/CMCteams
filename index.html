@@ -13048,6 +13048,88 @@ function _agentImportFidelity(key, src){
     return {score:-1,error:e.message};
   }
 }
+// v9.606 — Modal admin dédiée diagnostic import (audit fidélité + rollback snapshot)
+function cmcImportDiag(){
+  if(!A.user||A.user.id!==AID){if(typeof toast==="function")toast("Admin only","err");return;}
+  var key=A.year+"-"+A.month;
+  // Force re-audit pour avoir score frais
+  var r=null;
+  try{r=_agentImportFidelity(key);}catch(_){r={score:-1,error:"audit failed"};}
+  var flog=lg("cmc_import_fidelity_log",[])||[];
+  var lastEntries=flog.slice(-10).reverse();
+  var snap=lg("cmc_last_import_snapshot_"+key,null);
+  var scoreColor=r.score>=90?"#5aaa70":r.score>=75?"#c9a227":"#e06060";
+  var h='<div id="cmcImportDiagModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+    +'<div style="background:#0f1a14;border:2px solid '+scoreColor+';border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:16px">'
+    +'<div style="background:linear-gradient(135deg,'+scoreColor+',rgba(0,0,0,.4));margin:-16px -16px 12px;padding:14px 16px;border-radius:12px 12px 0 0">'
+    +'<div style="font-size:18px;font-weight:800;color:#fff">📊 Diagnostic import — '+MFR[A.month]+' '+A.year+'</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">Score fidélité : <b>'+(r.score>=0?r.score+"%":"N/A")+'</b></div>'
+    +'</div>';
+  if(r.score>=0){
+    h+='<div style="padding:8px 10px;background:rgba(255,255,255,.04);border-radius:6px;margin-bottom:10px;font-size:13px;color:#e8d8c0">'
+      +'<div>• Cellules vérifiées : <b>'+(r.cellScore||0)+'%</b> '+(r.mismatches?'('+r.mismatches.length+' mismatches)':'')+'</div>'
+      +'<div>• Équipes orphelines : <b>'+((r.orphans||[]).length)+'</b>'+((r.orphans||[]).length?' ['+r.orphans.slice(0,5).join(", ")+']':'')+'</div>'
+      +'<div>• Codes inconnus appliqués : <b>'+((r.unknownCodes||[]).length)+'</b>'+((r.unknownCodes||[]).length?' ['+r.unknownCodes.slice(0,5).join(", ")+']':'')+'</div>'
+      +'</div>';
+    if(r.mismatches&&r.mismatches.length){
+      h+='<div style="font-weight:700;color:#e09040;margin:10px 0 6px">⚠ Mismatches (top 10) — code attribué non trouvé dans le PDF :</div>';
+      r.mismatches.forEach(function(mm){
+        h+='<div style="padding:5px 8px;margin-bottom:3px;background:rgba(224,144,64,.08);border-left:3px solid #e09040;border-radius:4px;font-size:12px;color:#e8d8c0">'
+          +'<b>'+esc(mm.emp)+'</b> j'+esc(""+mm.day)+' → "'+esc(mm.code)+'" <span style="color:#a09080">('+esc(mm.fam||"?")+')</span>'
+          +'</div>';
+      });
+    }
+  }
+  if(snap){
+    h+='<div style="margin-top:12px;padding:8px 10px;background:rgba(74,160,255,.10);border-left:3px solid #4aa0ff;border-radius:6px;font-size:12px;color:#4aa0ff">'
+      +'💾 Snapshot pré-import disponible (du '+new Date(snap.ts||0).toLocaleString("fr-FR")+')'
+      +'</div>';
+  }
+  if(lastEntries.length){
+    h+='<div style="font-weight:700;color:#8090c0;margin:12px 0 6px">📜 Historique fidélité (10 derniers) :</div>';
+    lastEntries.forEach(function(e){
+      var c=e.score>=90?"#5aaa70":e.score>=75?"#c9a227":"#e06060";
+      h+='<div style="padding:4px 8px;font-size:12px;color:#a0a0a0;border-bottom:1px solid rgba(255,255,255,.05)">'
+        +new Date(e.ts).toLocaleString("fr-FR")+' · <span style="color:'+c+'">'+e.score+'%</span>'
+        +' (cells '+e.cellScore+'%, '+e.orphans+' orph, '+e.unknownCount+' inconnus)'
+        +'</div>';
+    });
+  }
+  h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
+    +'<button onclick="cmcImportDiag()" style="flex:1;min-width:140px;padding:10px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700;border-radius:8px;cursor:pointer">🔄 Re-audit</button>';
+  if(snap&&snap.overrides){
+    h+='<button onclick="cmcRollbackImport(\''+key+'\')" style="flex:1;min-width:140px;padding:10px;background:rgba(224,96,96,.20);border:1px solid rgba(224,96,96,.5);color:#e06060;font-weight:700;border-radius:8px;cursor:pointer">↩ Rollback snapshot</button>';
+  }
+  h+='<button onclick="document.getElementById(\'cmcImportDiagModal\').remove()" style="flex:1;min-width:140px;padding:10px;background:#c9a227;border:none;color:#040c04;font-weight:800;border-radius:8px;cursor:pointer">Fermer</button>'
+    +'</div></div></div>';
+  var ex=document.getElementById("cmcImportDiagModal");if(ex)ex.remove();
+  document.body.insertAdjacentHTML("beforeend",h);
+}
+// v9.606 — Rollback import au snapshot pré-import (restore overrides[key] uniquement)
+function cmcRollbackImport(key){
+  if(!A.user||A.user.id!==AID){if(typeof toast==="function")toast("Admin only","err");return;}
+  if(!key){if(typeof toast==="function")toast("Clé manquante","err");return;}
+  var snap=lg("cmc_last_import_snapshot_"+key,null);
+  if(!snap||!snap.overrides){if(typeof toast==="function")toast("Aucun snapshot pré-import","err");return;}
+  if(!confirm("↩ Rollback de l'import "+key+" au snapshot pré-import ?\n\n"
+    +"Date snapshot : "+new Date(snap.ts||0).toLocaleString("fr-FR")+"\n"
+    +"Toutes les modifs faites depuis seront perdues."))return;
+  // Snapshot avant rollback pour undo
+  try{if(typeof createSnapshot==="function")createSnapshot("avant_rollback_import_"+key);}catch(_){}
+  // Restore overrides[key] uniquement (pas tout A.overrides, pour ne pas casser autres mois)
+  if(!A.overrides)A.overrides={};
+  if(snap.overrides[key]){
+    A.overrides[key]=JSON.parse(JSON.stringify(snap.overrides[key]));
+  }else{
+    delete A.overrides[key];
+  }
+  ls("cmc_ov",A.overrides);
+  if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);
+  if(typeof _audit==="function")_audit("rollback_import",AID,"",key,"snapshot "+(snap.ts||0));
+  if(typeof toast==="function")toast("↩ Import "+key+" rollback OK","ok");
+  var m=document.getElementById("cmcImportDiagModal");if(m)m.remove();
+  if(typeof dc==="function")dc();
+}
 // ─── Registry ────────────────────────────────────────────────────────
 var APP_AGENTS=[
   {id:"conflict",label:"Détecteur de conflits",icon:"\u26a0",interval:10*60*1000,run:_agentConflictDetector,desc:"Lance detectRepoConflicts sur le mois courant toutes les 10 min"},
