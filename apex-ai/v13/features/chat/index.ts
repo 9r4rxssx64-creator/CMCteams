@@ -2320,6 +2320,7 @@ export function render(rootEl: HTMLElement): void {
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
       <nav class="ax-chat-nav" style="display:flex;gap:3px;padding:3px 4px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
         <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dashboard</button>
         ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
         <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
         <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Réglages</button>

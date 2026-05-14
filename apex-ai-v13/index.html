@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.80">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.81">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -17,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-3a50e74f13a1b0b07a9d1a743e8bb6b7' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-3a50e74f13a1b0b07a9d1a743e8bb6b7';
+             script-src 'self' 'nonce-19e11542ee3196acb8bc38e198b09251' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-19e11542ee3196acb8bc38e198b09251';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -133,14 +133,14 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="3a50e74f13a1b0b07a9d1a743e8bb6b7" type="module" crossorigin src="./core/main-BPtM9Wx4.js"></script>
+  <script nonce="19e11542ee3196acb8bc38e198b09251" type="module" crossorigin src="./core/main-Ca8zGj5A.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-guxfirLX.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-B51KP9Uk.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-BBs2AXz_.js">
-  <link nonce="3a50e74f13a1b0b07a9d1a743e8bb6b7" rel="stylesheet" crossorigin href="./assets/css/main-DkJDY-ZY.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-BGioTCVf.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-svrDypJa.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BkTd83kq.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-C-Nt_nW_.js">
+  <link nonce="19e11542ee3196acb8bc38e198b09251" rel="stylesheet" crossorigin href="./assets/css/main-DkJDY-ZY.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-DtWioDYj.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-BeGNOClK.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -178,6 +178,7 @@
        Indépendant React/Vue/Apex bundle — addEventListener depuis rescue.js. -->
   <div id="apex-rescue-toolbar" aria-label="Accès rapide Apex">
     <button id="apex-rescue-coffre" type="button" title="Ouvrir le Coffre" aria-label="Coffre">🔐</button>
+    <button id="apex-rescue-dashboard" type="button" title="Dashboard personnel" aria-label="Dashboard">📊</button>
     <button id="apex-rescue-admin" type="button" title="Ouvrir Admin (login si besoin)" aria-label="Admin">⚙️</button>
     <button id="apex-rescue-chat" type="button" title="Retour Chat" aria-label="Chat">💬</button>
     <button id="apex-rescue-login" type="button" title="Login admin / utilisateur" aria-label="Login">🔑</button>
@@ -186,6 +187,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="3a50e74f13a1b0b07a9d1a743e8bb6b7" src="./assets/js/rescue.js"></script>
+  <script nonce="19e11542ee3196acb8bc38e198b09251" src="./assets/js/rescue.js"></script>
 </body>
 </html>
