@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.77';
+export const APP_VER = 'v13.4.78';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -335,8 +335,14 @@ async function bootstrap(): Promise<void> {
     }
   }
 
-  /* 7. Auth check */
+  /* 7. Auth check
+   * v13.4.78 — Kevin "Apex bloqué Accès réservé" : restoreSession() OBLIGATOIRE
+   * AVANT isAdmin(). Sans ça : store.user=null au boot → isAdmin=false → toutes les
+   * vues admin affichent "Accès réservé" même si Kevin était bien loggué session
+   * précédente. Bug présent depuis v13.0 jamais détecté car aucun test ne simulait
+   * un cold-boot avec apex_v13_user/uid déjà en localStorage. */
   const { auth } = await import('@services/auth.js');
+  auth.restoreSession();
   ctx.isAdmin = await auth.isAdmin().catch(() => false);
   store.set('isAdmin', ctx.isAdmin);
 
