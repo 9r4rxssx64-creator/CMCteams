@@ -46,13 +46,18 @@ describe('Skill Futuristic Modules', () => {
     expect(stats).toHaveProperty('generative-pro');
   });
 
-  it('invoque module replicate (FLUX 2 Pro) → renvoie note réelle', async () => {
+  it('invoque module replicate (FLUX 2 Pro) → retourne fallback structuré sans token', async () => {
+    /* v13.4.43 : sans token Vault ax_replicate_key → success=false avec error claire */
     const { futuristicModules } = await import('../../services/skills/futuristic-modules.js');
     const result = await futuristicModules.invoke('apex-image-gen-flux2-pro', { prompt: 'test' });
-    expect(result.success).toBe(true);
     expect(result.module_id).toBe('apex-image-gen-flux2-pro');
     expect(result.category).toBe('generative-pro');
-    expect(result.result).toBeDefined();
+    /* Sans token : success=false + error informatif. Avec token : tentera vrai call Replicate. */
+    if (!result.success) {
+      expect(result.error).toContain('Token Replicate');
+    } else {
+      expect(result.result).toBeDefined();
+    }
   });
 
   it('invoque module native (Vision Claude 4)', async () => {

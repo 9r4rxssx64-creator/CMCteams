@@ -314,6 +314,7 @@ export const futuristicModules = {
 
   /**
    * Invoque un module — délégation selon route configurée.
+   * v13.4.43 : invocation Replicate REELLE si delegate=replicate + token Vault dispo.
    */
   async invoke(moduleId: string, params: Record<string, unknown>): Promise<FuturisticInvokeOutput> {
     const route = MODULE_ROUTES[moduleId];
@@ -328,21 +329,35 @@ export const futuristicModules = {
 
     logger.info('skill.futuristic.invoke', moduleId, { category: route.category, delegate: route.delegate });
 
-    /* Routing delegated to existing services where possible */
     try {
       switch (route.delegate) {
         case 'replicate': {
-          /* Delegue à tool transform_image / Replicate handler existant */
+          /* INVOCATION REELLE Replicate API si token Vault disponible */
+          const token = this.getReplicateToken();
+          if (!token) {
+            return {
+              success: false,
+              module_id: moduleId,
+              category: route.category,
+              error: 'Token Replicate manquant. Coller ax_replicate_key dans Vault Apex (?view=vault).',
+              fallback: `Module ${moduleId} prêt mais inactif. Replicate model: ${route.replicateModel ?? 'TBD'}`,
+            };
+          }
+          /* Real Replicate fetch (création prediction) */
+          if (!route.replicateModel) {
+            return {
+              success: false,
+              module_id: moduleId,
+              category: route.category,
+              error: 'replicateModel non configuré pour ce module',
+            };
+          }
+          const result = await this.callReplicate(route.replicateModel, params, token);
           return {
-            success: true,
+            success: result.ok,
             module_id: moduleId,
             category: route.category,
-            result: {
-              note: `Module ${moduleId} prêt — clé Vault requise (ax_replicate_key)`,
-              replicate_model: route.replicateModel ?? 'TBD',
-              params_received: params,
-              next_action: `Appeler transform_image avec url + type approprié, ou Replicate REST direct via apex-tools-handlers/comm.ts`,
-            },
+            ...(result.ok ? { result: result.data } : { error: result.error }),
           };
         }
         case 'native': {
@@ -363,10 +378,13 @@ export const futuristicModules = {
             module_id: moduleId,
             category: route.category,
             result: {
-              note: `Module ${moduleId} : lib CDN disponible, à charger lazy`,
+              note: `Module ${moduleId} : lib CDN prête à charger`,
               cdn_url: route.cdnUrl ?? 'TBD',
               params_received: params,
               description: route.description,
+              instructions: route.cdnUrl
+                ? `Charger via <script src="${route.cdnUrl}"></script> ou import('${route.cdnUrl}')`
+                : 'CDN URL à configurer',
             },
           };
         }
@@ -408,5 +426,55 @@ export const futuristicModules = {
       stats[route.category] = (stats[route.category] ?? 0) + 1;
     }
     return stats;
+  },
+
+  /* ============ Replicate real call ============ */
+
+  /** Récupère token Replicate depuis Vault Apex (localStorage). */
+  getReplicateToken(): string | null {
+    try {
+      const raw = localStorage.getItem('apex_v13_vault_ax_replicate_key');
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw) as { value?: string };
+        return parsed.value ?? raw;
+      } catch {
+        return raw;
+      }
+    } catch {
+      return null;
+    }
+  },
+
+  /** Appel Replicate REEL (création prediction async). */
+  async callReplicate(
+    model: string,
+    input: Record<string, unknown>,
+    token: string,
+  ): Promise<{ ok: true; data: unknown } | { ok: false; error: string }> {
+    try {
+      const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+          Prefer: 'wait=30', /* Wait 30s pour réponse sync si possible */
+        },
+        body: JSON.stringify({
+          version: model,
+          input,
+        }),
+        signal: AbortSignal.timeout(35000),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        return { ok: false, error: `Replicate HTTP ${response.status}: ${text.slice(0, 200)}` };
+      }
+      const data = (await response.json()) as unknown;
+      return { ok: true, data };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
   },
 };
