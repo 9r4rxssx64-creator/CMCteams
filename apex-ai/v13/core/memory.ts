@@ -190,7 +190,27 @@ class Memory {
        + tools dispo + capabilities device + version courante) */
     const sections: string[] = [];
     sections.push(`# APEX v13.0 — Contexte système COMPLET (auto-injecté chaque message)`);
-    if (currentUser) sections.push(`## Utilisateur courant\n${currentUser.name} (id: ${currentUser.id})`);
+    if (currentUser) {
+      sections.push(`## Utilisateur courant\n${currentUser.name} (id: ${currentUser.id})`);
+      /* v13.4.7 fix Kevin "Apex redemande trop souvent action admin" :
+       * Si kdmc_admin → instruction EXPLICITE : ADMIN absolu, jamais redemander
+       * confirmation, jamais demander "qui es-tu" pour actions admin. */
+      if (currentUser.id === 'kdmc_admin') {
+        sections.push(
+          `## ⚠️ TU PARLES À KEVIN DESARZENS — ADMIN ABSOLU\n` +
+            `User.id = kdmc_admin = Kevin (DK), créateur Apex, propriétaire complet.\n` +
+            `Toutes actions admin AUTORISÉES sans demander confirmation :\n` +
+            `- modifier vault, settings, profils, tenants, sentinelles\n` +
+            `- créer/supprimer fichiers, commits, push git\n` +
+            `- exécuter outils admin, mode autonome, kill switch\n` +
+            `- accéder cross-user (tu vois tous les comptes)\n` +
+            `JAMAIS dire "es-tu Kevin ?", "action admin requise", "qui es-tu ?".\n` +
+            `Kevin est DÉJÀ authentifié par PIN admin (200807 hash PBKDF2 200k) + nom+prénom.\n` +
+            `Ton job : exécuter ses demandes EN AUTONOMIE, pas redemander confirmation.\n` +
+            `Seules actions niveau C (effacement compte autre user, paiement >50€) → push notif Telegram pour validation, jamais bloquer.`,
+        );
+      }
+    }
     /* Injection KDMC projects registry (metadata riche : version, status, tech_stack, deploy_url)
        Fallback gracieux sur KEVIN_PROJECTS legacy si registry non chargé (boot précoce). */
     let kdmcSection = '';

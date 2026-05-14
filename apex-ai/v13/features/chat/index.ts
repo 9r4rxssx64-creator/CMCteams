@@ -676,9 +676,13 @@ function buildSystemPrompt(): string {
 async function buildSystemPromptDeep(): Promise<string> {
   try {
     const user = store.get('user') as { id: string; name: string } | null;
+    /* v13.4.7 fix Kevin "Apex redemande action admin" : timeout 1500ms → 3000ms.
+     * Avec timeout 1500ms, sur iPhone Safari PWA réseau lent, deep prompt timeout
+     * trop souvent → fallback minimal sans contexte profond → IA hallucine
+     * "es-tu admin ?". 3000ms = budget plus safe. */
     return await Promise.race([
       memory.buildSystemPromptDeep(user),
-      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 1500)),
+      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 3000)),
     ]);
   } catch (err: unknown) {
     logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
@@ -1931,7 +1935,7 @@ export function render(rootEl: HTMLElement): void {
           autocomplete="off"
         ></textarea>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="display:none">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer">↑</button>
