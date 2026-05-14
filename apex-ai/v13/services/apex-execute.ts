@@ -84,7 +84,26 @@ export type AllowedTask =
   | 'self_audit_and_fix'
   | 'rotate_credentials'
   | 'sync_memory_bridge'
-  | 'release_version';
+  | 'release_version'
+  /* v13.4.40 PARITÉ CLAUDE CODE Kevin 2026-05-14 "Parité apex total général optimal".
+   * Tools de LECTURE + RECHERCHE + COMMUNICATION que Claude Code a et qu'Apex
+   * doit avoir aussi (règle CLAUDE.md ABSOLUE 2026-05-04 "Apex = même accès"). */
+  | 'read_file' /* Read tool — lire fichier */
+  | 'list_files' /* ls — list directory */
+  | 'grep_code' /* Grep tool — search pattern */
+  | 'glob_pattern' /* Glob tool — find by name */
+  | 'bash_safe' /* Bash whitelist commands */
+  | 'web_fetch' /* WebFetch URL content */
+  | 'web_search' /* WebSearch query */
+  | 'spawn_subagent' /* Agent tool — délégation */
+  | 'create_pr' /* GitHub MCP — create PR */
+  | 'comment_on_pr' /* GitHub MCP — PR comment */
+  | 'merge_pr_safe' /* GitHub MCP — merge (avec guards) */
+  | 'create_issue' /* GitHub MCP — issue create */
+  | 'close_issue_safe' /* GitHub MCP — close issue safe */
+  | 'list_branches' /* GitHub MCP — branches list */
+  | 'get_file_contents' /* GitHub MCP — fetch file remote */
+  | 'search_code'; /* GitHub MCP — search code repo */
 
 /** Tâches INTERDITES (règle Kevin "sécurité avant autonomie totale"). */
 export type ForbiddenTask =
@@ -219,6 +238,10 @@ export interface ExecutionParams {
   new_version?: string;
   /** Confirmation Kevin requise pour task sensible (release_version, modify_workflow) */
   confirmed_by_kevin?: boolean;
+  /** v13.4.38 Kevin "Donne accès apex à ta branche" :
+   * Branche cible pour le commit (default: 'claude/test-699LQ').
+   * Override possible si Apex veut une branche dédiée par task. */
+  target_branch?: string;
   /** Champs custom additionnels */
   [k: string]: unknown;
 }

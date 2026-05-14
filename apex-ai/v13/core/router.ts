@@ -117,11 +117,21 @@ class Router {
 
   private renderForbidden(): void {
     if (!this.rootEl) return;
+    /* v13.4.38 Kevin screenshot bug : "Accès réservé" sans action utile.
+     * Kevin admin doit pouvoir se logger directement depuis cette page. */
+    const isAuthed = store.get('user') !== null;
+    const loginButton = isAuthed
+      ? '' /* Déjà loggué = pas admin réel, juste afficher Retour */
+      : '<button class="ax-btn ax-btn-primary" onclick="location.hash=\'#login\'" style="margin-right:8px">Se connecter admin</button>';
     this.rootEl.innerHTML = `
-      <div class="ax-empty">
+      <div class="ax-empty" style="padding:24px;text-align:center">
         <h2>Accès réservé</h2>
         <p>Cette section est réservée à l'admin.</p>
-        <button class="ax-btn" onclick="location.hash='#chat'">Retour</button>
+        <p style="font-size:14px;color:var(--ax-muted);margin-top:8px">${isAuthed ? 'Tu es connecté mais sans droits admin.' : 'Connecte-toi avec ton compte admin pour accéder à cette section.'}</p>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          ${loginButton}
+          <button class="ax-btn" onclick="location.hash='#chat'">Retour au chat</button>
+        </div>
       </div>
     `;
   }

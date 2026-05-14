@@ -63,26 +63,31 @@ jobs:
             EXEC_ID="${{ github.event.client_payload.exec_id }}"
             SRC="${{ github.event.client_payload.src }}"
             SRC_VERSION="${{ github.event.client_payload.src_version }}"
+            # v13.4.38 Kevin "Donne accès apex à ta branche" — extraire target_branch
+            TARGET_BRANCH="${{ github.event.client_payload.params.target_branch }}"
             echo "params_json=$(echo '${{ toJSON(github.event.client_payload.params) }}' | jq -c .)" >> $GITHUB_OUTPUT
           else
             TASK="${{ github.event.inputs.task }}"
             EXEC_ID="${{ github.event.inputs.exec_id }}"
             SRC="manual"
             SRC_VERSION=""
+            TARGET_BRANCH=""
             echo "params_json=${{ github.event.inputs.params_json }}" >> $GITHUB_OUTPUT
           fi
           echo "task=$TASK" >> $GITHUB_OUTPUT
           echo "exec_id=$EXEC_ID" >> $GITHUB_OUTPUT
           echo "src=$SRC" >> $GITHUB_OUTPUT
           echo "src_version=$SRC_VERSION" >> $GITHUB_OUTPUT
-          echo "Task: $TASK | Exec: $EXEC_ID | Src: $SRC"
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "Task: $TASK | Exec: $EXEC_ID | Src: $SRC | Target: $TARGET_BRANCH"
 
       - name: Security gate (whitelist + forbidden check)
         id: gate
         run: |
           TASK="${{ steps.parse.outputs.task }}"
-          ALLOWED="modify_file create_file run_test run_lint audit_repo deploy_canary backup_user_data restore_from_backup"
-          FORBIDDEN="delete_file force_push modify_user_credentials_external send_external_email_without_consent"
+          # v13.4.40 PARITÉ APEX Kevin 2026-05-14 — extensions tools Claude Code
+          ALLOWED="modify_file create_file run_test run_lint audit_repo deploy_canary backup_user_data restore_from_backup create_skill modify_skill create_hook modify_hook modify_workflow register_sentinel unregister_sentinel modify_script create_script append_to_memory append_to_top_rules self_audit_and_fix rotate_credentials sync_memory_bridge release_version read_file list_files grep_code glob_pattern bash_safe web_fetch web_search spawn_subagent create_pr comment_on_pr merge_pr_safe create_issue close_issue_safe list_branches get_file_contents search_code"
+          FORBIDDEN="delete_file force_push modify_user_credentials_external send_external_email_without_consent delete_skill delete_workflow modify_admin_kevin modify_top_rules_replace execute_shell_arbitrary disable_sentinel_security modify_csp_meta"
 
           # Forbidden check first (paranoia)
           for f in $FORBIDDEN; do
@@ -168,16 +173,24 @@ jobs:
             echo "Pas de modifications à commit"
             echo "committed=false" >> $GITHUB_OUTPUT
           else
-            BRANCH="apex-execute/${{ steps.parse.outputs.exec_id }}"
-            git checkout -b "$BRANCH" || git checkout "$BRANCH"
+            # v13.4.38 Kevin "Donne accès à apex à ta branche claude/test-699LQ" :
+            # par défaut Apex push directement sur claude/test-699LQ (auto-merge bot
+            # va merger dans main). Override possible via target_branch param.
+            TARGET_BRANCH="${{ steps.parse.outputs.target_branch }}"
+            if [ -z "$TARGET_BRANCH" ]; then
+              TARGET_BRANCH="claude/test-699LQ"
+            fi
+            git fetch origin "$TARGET_BRANCH" || true
+            git checkout "$TARGET_BRANCH" 2>/dev/null || git checkout -b "$TARGET_BRANCH"
             git add -A
             git commit -m "apex-execute: ${{ steps.parse.outputs.task }} (exec_id=${{ steps.parse.outputs.exec_id }})
 
 Source: ${{ steps.parse.outputs.src }} ${{ steps.parse.outputs.src_version }}
+Target: $TARGET_BRANCH (v13.4.38 Kevin demande accès Apex branche)
 Auto-generated via Claude Code Action."
-            git push origin "$BRANCH" || echo "Push failed (non fatal)"
+            git push origin "$TARGET_BRANCH" || echo "Push failed (non fatal)"
             echo "committed=true" >> $GITHUB_OUTPUT
-            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+            echo "branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
           fi
 
       - name: Comment Issue tracker (callback Apex)

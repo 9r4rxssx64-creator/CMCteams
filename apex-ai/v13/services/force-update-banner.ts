@@ -55,23 +55,27 @@ class ForceUpdateBanner {
   install(): void {
     if (this.installed || typeof document === 'undefined') return;
     this.installed = true;
-    /* Check immédiat (3s après boot pour ne pas bloquer LCP) */
-    setTimeout(() => void this.checkAndMaybeShow(), 3000);
+    /* v13.4.39 Kevin "force-updates iPhone ne marchent pas" :
+     * Check IMMÉDIAT 1s après boot (au lieu de 3s) → première vérif rapide. */
+    setTimeout(() => void this.checkAndMaybeShow(), 1000);
     /* Check récurrent */
     this.intervalHandle = setInterval(() => void this.checkAndMaybeShow(), CHECK_INTERVAL_MS);
-    /* v13.4.8 fix C5 (Ultra Review) : visibilitychange listener — autrefois dans
-     * bootstrap.ts, déplacé ici pour single ownership. Throttle 30min. */
+    /* v13.4.8 fix C5 (Ultra Review) : visibilitychange listener — single ownership.
+     * v13.4.39 fix Kevin : throttle 30min → 60s (Kevin revient souvent iPhone PWA,
+     * 30 min trop long → manque les MAJ). */
     if (typeof document !== 'undefined' && typeof window !== 'undefined') {
       this.visibilityListener = (): void => {
         if (document.visibilityState !== 'visible') return;
         const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
-        if (Date.now() - lastCheck < 30 * 60 * 1000) return;
+        if (Date.now() - lastCheck < 60 * 1000) return; /* 1 min throttle (était 30 min) */
         try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* quota */ }
         void this.checkAndMaybeShow();
       };
       document.addEventListener('visibilitychange', this.visibilityListener);
+      /* v13.4.39 — Aussi focus window event (plus fiable iOS Safari PWA) */
+      window.addEventListener('focus', this.visibilityListener);
     }
-    logger.info('force-update', 'banner installed (sole owner force-update flow)');
+    logger.info('force-update', 'banner installed (sole owner force-update flow v13.4.39)');
   }
 
   /**
@@ -95,12 +99,18 @@ class ForceUpdateBanner {
     try { sessionStorage.setItem(FORCE_UPDATE_IN_PROGRESS_KEY, String(Date.now())); } catch { /* ignore */ }
   }
 
-  /** Stop listener (cleanup). v13.4.8 — removes visibilitychange + clears interval. */
+  /** Stop listener (cleanup). v13.4.8 — removes visibilitychange + clears interval.
+   * v13.4.39 — Aussi retire focus window listener. */
   uninstall(): void {
     if (this.intervalHandle) clearInterval(this.intervalHandle);
     this.intervalHandle = null;
-    if (this.visibilityListener && typeof document !== 'undefined') {
-      document.removeEventListener('visibilitychange', this.visibilityListener);
+    if (this.visibilityListener) {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', this.visibilityListener);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', this.visibilityListener);
+      }
     }
     this.visibilityListener = null;
     this.removeBanner();
@@ -149,7 +159,10 @@ class ForceUpdateBanner {
        *   4. Visibilité document = caché OU page idle 30s
        * Sinon → banner classique avec bouton pour qu'il décide. */
       const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
-      const throttleOK = Date.now() - lastAuto > 60 * 60 * 1000; /* 1h */
+      /* v13.4.39 Kevin "MAJ ne marchent pas" : throttle 1h → 5 min (plus réactif).
+       * Si Kevin force restart app après push v13.4.X, AUTO-MAJ doit se déclencher
+       * dans la fenêtre Idle suivante, pas attendre 1h. */
+      const throttleOK = Date.now() - lastAuto > 5 * 60 * 1000; /* 5 min (était 1h) */
       const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
       const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
       if (throttleOK && isIdle && isSafe) {
