@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.46';
+export const APP_VER = 'v13.4.47';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -348,6 +348,8 @@ async function bootstrap(): Promise<void> {
   router.register('onboarding', { loader: () => import('@features/onboarding/index.js'), requiresAuth: true });
   router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
   router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
+  /* v13.4.47 Kevin "Le visuel ? Optimise tout" — dashboard centralisé tout-en-un. */
+  router.register('dashboard', { loader: () => import('@features/dashboard-personnel/index.js'), requiresAuth: true });
   router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true, skeleton: 'feature-list' });
