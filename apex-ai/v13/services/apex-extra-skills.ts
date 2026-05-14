@@ -59,7 +59,7 @@ export interface MemPalaceRoom {
 class SkillCreator {
   private skills: SkillManifest[] = [];
 
-  create(opts: { name: string; description: string; category: SkillManifest['category']; model?: string; tools?: string[] }): { ok: boolean; manifest?: SkillManifest; error?: string } {
+  create(opts: { name: string; description: string; category: SkillManifest['category']; model?: string; tools?: string[] }): { ok: boolean; manifest?: SkillManifest; skill_md?: string; error?: string } {
     if (!auth.isAdminSync()) return { ok: false, error: 'admin_only_skill_create' };
     if (!opts.name || !opts.description) return { ok: false, error: 'invalid_args' };
     const manifest: SkillManifest = {
@@ -71,12 +71,34 @@ class SkillCreator {
       ...(opts.tools && { tools: opts.tools }),
     };
     this.skills.push(manifest);
+    /* v13.4.92 — Promotion stub → fonctionnel : génère vraiment le SKILL.md
+     * dans localStorage prêt à être copié dans .claude/skills/<name>/SKILL.md */
+    const skillMd = this.generateSkillMd(manifest);
     try {
       const stored = JSON.stringify(this.skills);
       localStorage.setItem('apex_v13_extra_skills', stored);
+      localStorage.setItem(`apex_v13_skill_md_${opts.name}`, skillMd);
     } catch { /* quota */ }
-    logger.info('skill-creator', `Created skill ${opts.name} (${opts.category})`);
-    return { ok: true, manifest };
+    logger.info('skill-creator', `Created skill ${opts.name} (${opts.category}) + SKILL.md generated (${skillMd.length} bytes)`);
+    return { ok: true, manifest, skill_md: skillMd };
+  }
+
+  /**
+   * v13.4.92 — Génère un SKILL.md valide pour le manifest donné.
+   * Format compatible avec .claude/skills/<name>/SKILL.md (Anthropic L'usine).
+   */
+  private generateSkillMd(m: SkillManifest): string {
+    const frontmatter = [
+      '---',
+      `name: ${m.name}`,
+      `description: ${m.description}`,
+      m.model ? `model: ${m.model}` : '',
+      m.tools && m.tools.length > 0 ? `tools: [${m.tools.map((t) => `"${t}"`).join(', ')}]` : '',
+      `category: ${m.category}`,
+      '---',
+    ].filter(Boolean).join('\n');
+    const body = `\n# ${m.name}\n\n${m.description}\n\n## Catégorie\n\n\`${m.category}\`\n\n## Quand utiliser\n\nÀ déterminer par l'utilisateur — généré automatiquement par SkillCreator v13.4.92.\n\n## Tools requis\n\n${m.tools?.map((t) => `- \`${t}\``).join('\n') ?? '_(aucun)_'}\n`;
+    return `${frontmatter}\n${body}`;
   }
 
   list(): ReadonlyArray<SkillManifest> {
