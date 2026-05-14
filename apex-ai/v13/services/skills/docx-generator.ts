@@ -1,24 +1,20 @@
 /**
- * APEX v13 — Skill : Docx Generator
+ * APEX v13.4.43 — Skill : Docx Generator (vrai .docx valide Word/LibreOffice).
  *
- * Génère des fichiers .docx téléchargeables 100% client-side via
- * docxtemplater + pizzip (lazy-loaded CDN).
- *
- * Templates intégrés : letter-formal, contract-cdi, contract-nda,
- * cv-modern, meeting-minutes, report-monthly, custom.
- *
- * Anti-patterns CLAUDE.md respectés :
- * - Aucune donnée PII envoyée serveur (RGPD)
- * - esc() sur tous champs user avant injection template
- * - Pas de macros VBA (sécurité)
- * - Génération asynchrone via Web Worker offscreen si possible
+ * Construit un fichier .docx COMPLET (ZIP Office Open XML) via JSZip CDN.
+ * Avant v13.4.43 : produisait du XML brut → Word refusait d'ouvrir.
+ * Maintenant : structure ZIP minimale valide :
+ *   - [Content_Types].xml
+ *   - _rels/.rels
+ *   - word/document.xml
+ *   - word/_rels/document.xml.rels
+ *   - word/styles.xml
  */
 
 import { logger } from '../../core/logger.js';
 import { auditLog } from '../audit-log.js';
 
-const DOCXTEMPLATER_CDN = 'https://cdn.jsdelivr.net/npm/docxtemplater@3.50.0/build/docxtemplater.js';
-const PIZZIP_CDN = 'https://cdn.jsdelivr.net/npm/pizzip@3.1.6/dist/pizzip.js';
+const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
 type DocxTemplate =
   | 'letter-formal'
@@ -42,73 +38,30 @@ export interface DocxGenerateOutput {
   blobUrl: string;
   sizeBytes: number;
   templateUsed: DocxTemplate;
-  error?: string;
+  error?: string | undefined;
 }
 
-let libsLoaded = false;
+let jsZipLoaded = false;
 
-async function loadLibs(): Promise<{ Docxtemplater: unknown; PizZip: unknown } | null> {
+async function loadJSZip(): Promise<unknown> {
   const g = globalThis as Record<string, unknown>;
-  if (libsLoaded) {
-    return {
-      Docxtemplater: g['docxtemplater'] ?? null,
-      PizZip: g['PizZip'] ?? null,
-    };
-  }
-  try {
-    await loadScript(PIZZIP_CDN);
-    await loadScript(DOCXTEMPLATER_CDN);
-    libsLoaded = true;
-    return {
-      Docxtemplater: g['docxtemplater'] ?? null,
-      PizZip: g['PizZip'] ?? null,
-    };
-  } catch (err) {
-    logger.warn('skill.docx', 'CDN load failed', { err });
-    return null;
-  }
-}
-
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
+  if (jsZipLoaded && g['JSZip']) return g['JSZip'];
+  return new Promise((resolve) => {
+    if (document.querySelector(`script[src="${JSZIP_CDN}"]`)) {
+      jsZipLoaded = true;
+      resolve(g['JSZip']);
       return;
     }
     const script = document.createElement('script');
-    script.src = src;
+    script.src = JSZIP_CDN;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    script.onload = () => {
+      jsZipLoaded = true;
+      resolve(g['JSZip']);
+    };
+    script.onerror = () => resolve(null);
     document.head.appendChild(script);
   });
-}
-
-/**
- * Génère un .docx minimal sans dépendance lib (fallback safe).
- * Utilise XML Office Open valide minimal.
- */
-function generateMinimalDocx(content: string, _data: Record<string, unknown>): Blob {
-  /* Structure minimale Office Open XML */
-  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body>
-    ${content
-      .split('\n')
-      .map(
-        (line) =>
-          `<w:p><w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>`,
-      )
-      .join('\n')}
-  </w:body>
-</w:document>`;
-
-  /* Wrap dans un ZIP minimal pour .docx valide */
-  /* Pour fallback minimal : utiliser TextEncoder + Blob direct */
-  const blob = new Blob([documentXml], {
-    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  });
-  return blob;
 }
 
 function escapeXml(s: string): string {
@@ -120,125 +73,82 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/* Helper : récupère une valeur string d'un Record<string, unknown> (TS4111 safe). */
 function s(d: Record<string, unknown>, key: string, fallback = ''): string {
   const v = d[key];
-  return typeof v === 'string' ? v : fallback;
+  return typeof v === 'string' || typeof v === 'number' ? String(v) : fallback;
 }
 
-/**
- * Templates intégrés (texte simple — la lib docxtemplater
- * peut consommer un vrai .docx template avec placeholders {nom}).
- */
 const TEMPLATES: Record<DocxTemplate, (data: Record<string, unknown>) => string> = {
-  'letter-formal': (d) => `${s(d, 'sender_name')}
-${s(d, 'sender_address')}
-
-${s(d, 'recipient_name')}
-${s(d, 'recipient_address')}
-
-${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}
-
-Objet : ${s(d, 'subject')}
-
-${s(d, 'body')}
-
-Veuillez agréer, ${s(d, 'recipient_title', 'Madame, Monsieur')}, l'expression de mes salutations distinguées.
-
-${s(d, 'sender_name')}`,
-  'contract-cdi': (d) =>
-    `CONTRAT DE TRAVAIL À DURÉE INDÉTERMINÉE
-
-Entre :
-${s(d, 'employer_name')}
-${s(d, 'employer_address')}
-
-Et :
-${s(d, 'employee_name')}
-${s(d, 'employee_address')}
-
-ARTICLE 1 — ENGAGEMENT
-${s(d, 'employee_name')} est engagé(e) en qualité de ${s(d, 'job_title')} à compter du ${s(d, 'start_date')}.
-
-ARTICLE 2 — RÉMUNÉRATION
-Rémunération mensuelle brute : ${s(d, 'salary')} €
-
-ARTICLE 3 — DURÉE DU TRAVAIL
-${s(d, 'hours_per_week', '35')} heures hebdomadaires.
-
-Fait à ${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}
-
-L'employeur                                              Le salarié`,
-  'contract-nda': (d) => `ACCORD DE CONFIDENTIALITÉ (NDA)
-
-Entre : ${s(d, 'party_a')}
-Et : ${s(d, 'party_b')}
-
-${s(d, 'scope', 'Le présent accord couvre toutes les informations confidentielles échangées.')}
-
-Durée : ${s(d, 'duration_years', '3')} ans à compter de la signature.
-
-Fait à ${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}`,
-  'cv-modern': (d) => `${s(d, 'full_name')}
-${s(d, 'title')}
-
-Email : ${s(d, 'email')}
-Tel : ${s(d, 'phone')}
-${s(d, 'address')}
-
-PROFIL
-${s(d, 'summary')}
-
-EXPÉRIENCE
-${s(d, 'experience')}
-
-FORMATION
-${s(d, 'education')}
-
-COMPÉTENCES
-${s(d, 'skills')}
-
-LANGUES
-${s(d, 'languages')}`,
-  'meeting-minutes': (d) => `COMPTE RENDU DE RÉUNION
-
-Date : ${s(d, 'date', new Date().toLocaleDateString('fr-FR'))}
-Heure : ${s(d, 'time')}
-Lieu : ${s(d, 'location')}
-
-Participants : ${s(d, 'participants')}
-Absents : ${s(d, 'absent', '—')}
-
-ORDRE DU JOUR
-${s(d, 'agenda')}
-
-DÉCISIONS
-${s(d, 'decisions')}
-
-ACTIONS
-${s(d, 'actions')}
-
-PROCHAINE RÉUNION : ${s(d, 'next_meeting', 'À définir')}`,
-  'report-monthly': (d) => `RAPPORT MENSUEL — ${s(d, 'period')}
-
-${s(d, 'author')}
-
-1. POINTS CLÉS
-${s(d, 'highlights')}
-
-2. INDICATEURS
-${s(d, 'kpis')}
-
-3. CHALLENGES
-${s(d, 'challenges')}
-
-4. ROADMAP À VENIR
-${s(d, 'roadmap')}
-
-5. RECOMMANDATIONS
-${s(d, 'recommendations')}`,
+  'letter-formal': (d) => `${s(d, 'sender_name')}\n${s(d, 'sender_address')}\n\n${s(d, 'recipient_name')}\n${s(d, 'recipient_address')}\n\n${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}\n\nObjet : ${s(d, 'subject')}\n\n${s(d, 'body')}\n\nVeuillez agréer, ${s(d, 'recipient_title', 'Madame, Monsieur')}, l'expression de mes salutations distinguées.\n\n${s(d, 'sender_name')}`,
+  'contract-cdi': (d) => `CONTRAT DE TRAVAIL À DURÉE INDÉTERMINÉE\n\nEntre :\n${s(d, 'employer_name')}\n${s(d, 'employer_address')}\n\nEt :\n${s(d, 'employee_name')}\n${s(d, 'employee_address')}\n\nARTICLE 1 — ENGAGEMENT\n${s(d, 'employee_name')} est engagé(e) en qualité de ${s(d, 'job_title')} à compter du ${s(d, 'start_date')}.\n\nARTICLE 2 — RÉMUNÉRATION\nRémunération mensuelle brute : ${s(d, 'salary')} €\n\nARTICLE 3 — DURÉE DU TRAVAIL\n${s(d, 'hours_per_week', '35')} heures hebdomadaires.\n\nFait à ${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}\n\nL'employeur       Le salarié`,
+  'contract-nda': (d) => `ACCORD DE CONFIDENTIALITÉ (NDA)\n\nEntre : ${s(d, 'party_a')}\nEt : ${s(d, 'party_b')}\n\n${s(d, 'scope', 'Le présent accord couvre toutes les informations confidentielles échangées.')}\n\nDurée : ${s(d, 'duration_years', '3')} ans à compter de la signature.\n\nFait à ${s(d, 'city', 'Monaco')}, le ${new Date().toLocaleDateString('fr-FR')}`,
+  'cv-modern': (d) => `${s(d, 'full_name')}\n${s(d, 'title')}\n\nEmail : ${s(d, 'email')}\nTel : ${s(d, 'phone')}\n${s(d, 'address')}\n\nPROFIL\n${s(d, 'summary')}\n\nEXPÉRIENCE\n${s(d, 'experience')}\n\nFORMATION\n${s(d, 'education')}\n\nCOMPÉTENCES\n${s(d, 'skills')}\n\nLANGUES\n${s(d, 'languages')}`,
+  'meeting-minutes': (d) => `COMPTE RENDU DE RÉUNION\n\nDate : ${s(d, 'date', new Date().toLocaleDateString('fr-FR'))}\nHeure : ${s(d, 'time')}\nLieu : ${s(d, 'location')}\n\nParticipants : ${s(d, 'participants')}\nAbsents : ${s(d, 'absent', '—')}\n\nORDRE DU JOUR\n${s(d, 'agenda')}\n\nDÉCISIONS\n${s(d, 'decisions')}\n\nACTIONS\n${s(d, 'actions')}\n\nPROCHAINE RÉUNION : ${s(d, 'next_meeting', 'À définir')}`,
+  'report-monthly': (d) => `RAPPORT MENSUEL — ${s(d, 'period')}\n\n${s(d, 'author')}\n\n1. POINTS CLÉS\n${s(d, 'highlights')}\n\n2. INDICATEURS\n${s(d, 'kpis')}\n\n3. CHALLENGES\n${s(d, 'challenges')}\n\n4. ROADMAP À VENIR\n${s(d, 'roadmap')}\n\n5. RECOMMANDATIONS\n${s(d, 'recommendations')}`,
   custom: (d) => s(d, 'custom_text'),
 };
+
+/* Office Open XML — squelettes fichiers ZIP du .docx */
+const CONTENT_TYPES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+const RELS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+const DOCUMENT_RELS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults>
+    <w:rPrDefault>
+      <w:rPr>
+        <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>
+        <w:sz w:val="22"/>
+        <w:szCs w:val="22"/>
+        <w:lang w:val="fr-FR"/>
+      </w:rPr>
+    </w:rPrDefault>
+  </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:qFormat/>
+  </w:style>
+</w:styles>`;
+
+function buildDocumentXml(content: string): string {
+  /* Découpe le contenu en paragraphes (1 par ligne). Lignes vides → <w:p/> vide pour conserver layout. */
+  const lines = content.split('\n');
+  const paragraphs = lines
+    .map((line) => {
+      if (line.trim().length === 0) return '<w:p/>';
+      /* Run : si ligne commence par un titre type "OBJET" / "ARTICLE" → bold */
+      const isTitle = /^[A-ZÉÈÀÂÊÎÔÛ\d][A-ZÉÈÀÂÊÎÔÛ\s\d.()—-]{4,}$/.test(line.trim()) && line.length < 80;
+      const runProps = isTitle ? '<w:rPr><w:b/></w:rPr>' : '';
+      return `<w:p><w:r>${runProps}<w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>`;
+    })
+    .join('');
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    ${paragraphs}
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+}
 
 export const docxGenerator = {
   async generate(input: DocxGenerateInput): Promise<DocxGenerateOutput> {
@@ -260,13 +170,40 @@ export const docxGenerator = {
           ? input.customHtml
           : (templateFn?.(input.data) ?? '');
 
-      /* Essai docxtemplater (lib avancée) puis fallback minimal */
-      await loadLibs();
+      const JSZipCtor = (await loadJSZip()) as (new () => Record<string, unknown>) | null;
+      if (!JSZipCtor) {
+        return {
+          success: false,
+          filename: '',
+          blobUrl: '',
+          sizeBytes: 0,
+          templateUsed: input.template,
+          error: 'JSZip CDN load failed',
+        };
+      }
 
-      /* Pour cette première version, on utilise le fallback minimal (XML brut).
-       * La lib docxtemplater peut être branchée plus tard sur un vrai template
-       * .docx avec placeholders {nom}, {date}, etc. */
-      const blob = generateMinimalDocx(content, input.data);
+      const zip = new JSZipCtor() as Record<string, unknown>;
+      const file = zip['file'] as (path: string, data: string) => void;
+      const folder = zip['folder'] as (name: string) => Record<string, unknown>;
+
+      file('[Content_Types].xml', CONTENT_TYPES_XML);
+      const relsFolder = folder('_rels');
+      (relsFolder['file'] as (path: string, data: string) => void)('.rels', RELS_XML);
+
+      const wordFolder = folder('word');
+      const wordFile = wordFolder['file'] as (path: string, data: string) => void;
+      wordFile('document.xml', buildDocumentXml(content));
+      wordFile('styles.xml', STYLES_XML);
+      const wordRels = wordFolder['folder'] as (name: string) => Record<string, unknown>;
+      const wordRelsFolder = wordRels('_rels');
+      (wordRelsFolder['file'] as (path: string, data: string) => void)('document.xml.rels', DOCUMENT_RELS_XML);
+
+      const generateAsync = zip['generateAsync'] as (opts: Record<string, unknown>) => Promise<Blob>;
+      const blob = await generateAsync({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        compression: 'DEFLATE',
+      });
       const blobUrl = URL.createObjectURL(blob);
 
       const filename =
@@ -277,7 +214,7 @@ export const docxGenerator = {
         details: { template: input.template, size: blob.size, filename },
       });
 
-      logger.info('skill.docx', `Generated ${filename} (${blob.size} bytes)`);
+      logger.info('skill.docx', `Generated ${filename} (${blob.size} bytes, valid .docx ZIP)`);
 
       return {
         success: true,
