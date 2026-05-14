@@ -613,6 +613,72 @@ S'applique : Apex priorité absolue, CMCteams.
 
 ---
 
+## 🎓 RÈGLE ABSOLUE — EXPERT TOUJOURS PARTOUT (Kevin 2026-05-14 22:30, ABSOLUE)
+
+> **"Tu peux travailler en expert car c'est plus possible toutes tes erreurs ! Note que je veux que toi et apex travail toujours en expert. Expert pour tout"** — Kevin 2026-05-14
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire sur TOUT** — Claude Code, Apex IA, tous projets :
+
+### 1. Mode expert ON par défaut, JAMAIS désactivable
+
+À CHAQUE interaction (sans exception, sans pause, sans relâchement) :
+- Niveau **expert pro freelance senior 200€/h** minimum
+- JAMAIS de "version basique on enrichira après"
+- JAMAIS de fix ciblé qui laisse un pattern similaire cassé ailleurs
+- JAMAIS de prétention "c'est livré" sans audit cross-référence complet
+- JAMAIS de tests qui ne testent que l'API surface sans tester le runtime réel
+
+### 2. Cross-reference systématique AVANT chaque push
+
+Pour CHAQUE PR / commit / push :
+- **Routes** : grep `router.register('X')` vs grep `data-route="X"` vs grep `navigate('X')` → ZÉRO orphelin
+- **Fonctions** : grep `function fnX()` vs grep `fnX(` → ZÉRO fonction définie sans 1+ call site
+- **Imports** : grep `from 'X'` vs `export from X` → ZÉRO import vers fichier inexistant
+- **Boutons UI** : grep `id="btn-X"` vs `addEventListener('click', btn-X)` → ZÉRO bouton sans handler
+- **Guards admin** : pour CHAQUE feature sensible, vérifier `isAdmin` lu de la BONNE source (store.get vs auth.isAdminSync)
+
+### 3. Tests E2E "Kevin path" obligatoires
+
+Avant chaque release majeure, simuler les VRAIS parcours Kevin iPhone :
+- Cold boot → restoreSession → admin reconnu → nav chat affiche tous boutons
+- Tap chaque bouton nav → vue render correctement (pas "Accès réservé")
+- Force-update SW → nouveau bundle chargé → modules pas cassés
+- Logout → re-login PIN → données restaurées (XP, streak, profil intact)
+
+### 4. Audit POST-FIX OBLIGATOIRE après chaque batch
+
+> Erreur #28 CLAUDE.md : "audit POST-FIX v3 a révélé 12/16 helpers ajoutés étaient orphelins. +5pts au lieu +40 estimés."
+
+Après chaque batch de patches :
+- Lance subagent indépendant qui vérifie chaque fix
+- Si écart estimé vs réel > 5 points → STOP nouvelles features, INTÉGRATION uniquement
+- Documenter écart dans `ax_lessons_learned_struct` cross-session
+
+### 5. Apex IA aussi expert TOUJOURS
+
+Le system prompt Apex DOIT inclure :
+> "Tu es Apex AI niveau expert pro 200€/h. Tu ne livres JAMAIS du travail basique. Avant chaque réponse, vérifies-tu que ta solution couvre tous les cas adjacents ? Tu lances 3-5 subagents en parallèle pour cross-référencer ? Tu testes runtime réel pas juste API surface ?"
+
+Apex doit aussi appliquer la cross-référence routes/fonctions/boutons à chaque release auto-execute via apex-execute.yml.
+
+### 6. Reconnaissance honnête sans complaisance
+
+❌ JAMAIS prétendre "tout marche" sans avoir testé end-to-end.
+❌ JAMAIS dire "score 100/100" sur estimation interne — toujours audit externe subagent.
+❌ JAMAIS livrer 5 versions consécutives avec le même pattern d'erreur (#28 reproduit 3 fois en 4 versions = inacceptable).
+
+✅ TOUJOURS dire honnêtement où ça peut casser, ce qui reste fragile, ce qu'on n'a pas testé.
+
+### 7. Test mental obligatoire avant CHAQUE message à Kevin
+
+> *"Est-ce que ce que je m'apprête à dire / livrer / pusher est de qualité expert pro 200€/h ? Si Kevin teste cette feature dans 30 secondes sur son iPhone, est-ce qu'elle marche ?"*
+
+Si réponse "je crois que oui" sans vérification → **VÉRIFIER D'ABORD**, livrer ensuite.
+
+S'applique : Claude Code priorité absolue, Apex IA, tous projets futurs.
+
+---
+
 ## 🌿 RÈGLE ABSOLUE — COMPACT BRANCHES AUTONOME PERMANENT (Kevin 2026-05-14, ABSOLUE)
 
 > **"Compact toutes tes branches à chaque fois autonome. Note le"** — Kevin 2026-05-14

@@ -251,10 +251,10 @@ export function render(rootEl: HTMLElement): void {
         <div style="margin-top:20px;padding:14px;background:#0f172a;border:1px solid #c9a22733;border-radius:12px">
           <h2 style="font-size:14px;margin:0 0 8px;color:#c9a227">⚙️ Admin actions rapides</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button data-route="all-secrets" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">🔐 All Secrets</button>
+            <button data-route="admin-all-secrets" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">🔐 All Secrets</button>
             <button data-route="credentials" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">📦 Credentials</button>
-            <button data-route="device-capabilities" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">📱 Devices</button>
-            <button data-route="health-dashboard" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">💊 Health</button>
+            <button data-route="device" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">📱 Devices</button>
+            <button data-route="admin-health-dashboard" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">💊 Health</button>
           </div>
         </div>
       ` : ''}
