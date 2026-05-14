@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.606";
+var APP_VER="v9.607";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12942,49 +12942,99 @@ function _agentImportWatch(){try{
 // texte source à proximité du nom employé. Détecte aussi anomalies équipes
 // (sub-population suspect, team orpheline). Score 0-100 + escalade Apex si < 75.
 function _agentImportFidelity(key, src){
+  // v9.607 REFONTE EXPERT (Kevin 2026-05-14 "11% fidélité faux négatif") :
+  // — Détecte cmc_last_import_type_<key> pour exclure de l'audit ce qui n'est
+  //   PAS censé être dans ce PDF (PDF 'employees' n'a pas cadres = normal).
+  // — Multi-occurrence du nom (cherche TOUTES, prend la meilleure fenêtre).
+  // — Fenêtre adaptive 250 chars (assez 30 codes courts, sans chevauchement).
+  // — Regex match tolérant : strip apostrophes/quotes/étoiles + variantes slash.
+  // — Pénalité orphans réduite si PDF partiel (1pt vs 3pts).
   try{
     if(!key)key=A.year+"-"+A.month;
     var parts=String(key).split("-");
     var y=parseInt(parts[0]||A.year),m=parseInt(parts[1]||A.month);
     if(!src){
-      // Récupère depuis snapshot stocké au début de doImport
       try{var snap=lg("cmc_last_import_snapshot_"+key,null);
         if(snap&&snap.txt)src=snap.txt;}catch(_){}
     }
+    // Détection type PDF importé (v9.600 logic, lu dans cmc_last_import_type_<key>)
+    var importTypeRec=null;
+    try{importTypeRec=lg("cmc_last_import_type_"+key,null);}catch(_){}
+    var pdfType=(importTypeRec&&importTypeRec.type)||"unknown"; // employees / cadres / complete / unknown
+    var pdfDetails=(importTypeRec&&importTypeRec.details)||{};
     var pl=A.overrides[key]||{};
     var days=getDays(y,m);
     var srcUp=String(src||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
     var fidelityChecks=0, fidelityHits=0, mismatches=[];
-    // === 1. Audit échantillon cellules ===
+    var ignoredCadres=0, ignoredNonCadres=0; // info pour banner
+    // === 1. Audit échantillon cellules avec multi-occurrence + scope PDF type ===
     if(srcUp.length>200){
-      var empIds=Object.keys(pl).slice(0,40); // cap 40 emps audités
+      var empIds=Object.keys(pl).slice(0,60); // cap 60 emps audités (vs 40 avant)
       empIds.forEach(function(eid){
         var emp=A.employees.find(function(e){return e.id===eid;});
         if(!emp||!emp.name)return;
+        // PDF type-aware skip : ne pas pénaliser ce qui n'est pas censé être dans ce PDF
+        if(pdfType==="employees"&&emp.family==="cadres"){ignoredCadres++;return;}
+        if(pdfType==="cadres"&&emp.family!=="cadres"){ignoredNonCadres++;return;}
         var nameUp=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-        // Cherche position du nom dans le texte source
-        var idx=srcUp.indexOf(nameUp);
-        if(idx<0){
-          // Fallback : nom de famille seul
-          var surn=nameUp.split(/\s+/)[0];
-          if(surn&&surn.length>=4)idx=srcUp.indexOf(surn);
+        // Trouver TOUTES les occurrences du nom dans le source (multi-occurrence)
+        var positions=[];
+        var searchFrom=0;
+        while(true){
+          var pos=srcUp.indexOf(nameUp,searchFrom);
+          if(pos<0)break;
+          positions.push(pos);
+          searchFrom=pos+nameUp.length;
+          if(positions.length>=5)break; // cap 5 occurrences max
         }
-        if(idx<0)return; // nom pas dans source = skip (peut être un import partiel)
+        if(positions.length===0){
+          // Fallback : nom de famille seul (longueur >=4)
+          var surn=nameUp.split(/\s+/)[0];
+          if(surn&&surn.length>=4){
+            searchFrom=0;
+            while(true){
+              var posF=srcUp.indexOf(surn,searchFrom);
+              if(posF<0)break;
+              positions.push(posF);
+              searchFrom=posF+surn.length;
+              if(positions.length>=5)break;
+            }
+          }
+        }
+        if(positions.length===0)return; // vrai absent du PDF = skip (pas pénalisé)
         var row=pl[eid]||{};
-        var sampleDays=Object.keys(row).slice(0,3); // 3 jours échantillon par emp
+        var sampleDays=Object.keys(row).slice(0,5); // 5 jours échantillon par emp (vs 3)
         sampleDays.forEach(function(d){
           var c=row[d];if(!c)return;
           fidelityChecks++;
-          // Cherche le code dans une fenêtre de 400 chars après le nom
-          var window=srcUp.slice(idx, Math.min(srcUp.length, idx+400));
-          // Strip apostrophes/quotes pour matching robuste
-          var cClean=c.replace(/["'“”‘’]+$/,"").replace(/[\*]+$/,"");
-          var cEsc=cClean.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-          // Match : code apparaît dans la fenêtre (avec word boundary OU délimité)
-          var re=new RegExp("(?:^|[^A-Z0-9])"+cEsc+"(?:[^A-Z0-9]|$)");
-          if(re.test(window))fidelityHits++;
-          else if(mismatches.length<10){
-            mismatches.push({emp:emp.name,day:d,code:c,fam:emp.family});
+          // Normaliser le code attendu : strip apostrophes/quotes/étoiles + variants slash
+          var cClean=c.replace(/["'“”‘’]+/g,"").replace(/[\*]+$/,"").replace(/[∕⁄／]/g,"/");
+          // Aussi tester la variante CDP_MAP inverse (ex: "20/5*" stored mais "20/5" dans PDF)
+          var cVariants=[cClean];
+          if(/^\d/.test(cClean)){
+            // Slash → tiret variant (PDF parfois "16-3" au lieu "16/3")
+            cVariants.push(cClean.replace(/\//g,"-"));
+            cVariants.push(cClean.replace(/\//g,"H")); // "22h6" iOS variant
+          }
+          // Vérifier dans chaque fenêtre de 250 chars autour de chaque occurrence du nom
+          var matched=false;
+          for(var pi=0;pi<positions.length&&!matched;pi++){
+            var idx=positions[pi];
+            var win=srcUp.slice(idx, Math.min(srcUp.length, idx+250));
+            // Strip aussi quotes/apostrophes dans la fenêtre pour matching robuste
+            var winClean=win.replace(/["'“”‘’]/g,"").replace(/[∕⁄／]/g,"/");
+            for(var vi=0;vi<cVariants.length&&!matched;vi++){
+              var cVar=cVariants[vi];
+              if(!cVar)continue;
+              var cEsc=cVar.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+              // Match : code délimité par non-alphanumeric (ou bord chaine)
+              var re=new RegExp("(?:^|[^A-Z0-9])"+cEsc+"(?:[^A-Z0-9]|$)");
+              if(re.test(winClean))matched=true;
+            }
+          }
+          if(matched)fidelityHits++;
+          else if(mismatches.length<15){
+            mismatches.push({emp:emp.name,day:d,code:c,fam:emp.family,nbOcc:positions.length});
           }
         });
       });
@@ -12993,7 +13043,7 @@ function _agentImportFidelity(key, src){
     var teamCounts={};
     A.employees.forEach(function(e){
       if(!isEmpActive(e,y,m))return;
-      if(e.family==="cadres")return; // cadres pas d'équipe numérique
+      if(e.family==="cadres")return;
       var t=e.team||"?";
       teamCounts[t]=(teamCounts[t]||0)+1;
     });
@@ -13007,42 +13057,51 @@ function _agentImportFidelity(key, src){
         var c=row[d];if(c&&!CODES[c])unknownCodes.add(c);
       });
     });
-    // === 4. Score 0-100 ===
+    // === 4. Score 0-100 contextuel (PDF partiel = pénalités réduites) ===
     var cellScore=fidelityChecks>0?Math.round(fidelityHits/fidelityChecks*100):100;
-    var penaltyOrphans=Math.min(15,teamAnomaly*3);
+    var isPartialPdf=(pdfType==="employees"||pdfType==="cadres");
+    var penaltyOrphansPerUnit=isPartialPdf?1:3;
+    var penaltyOrphans=Math.min(isPartialPdf?6:15,teamAnomaly*penaltyOrphansPerUnit);
     var penaltyUnknown=Math.min(10,unknownCodes.size);
     var score=Math.max(0,cellScore-penaltyOrphans-penaltyUnknown);
     // === 5. Severity + escalade ===
-    var sev="ok", msg="Fidélité "+score+"% (cells "+cellScore+"%, teams orph "+teamAnomaly+", codes inconnus "+unknownCodes.size+")";
+    var pdfLabel=pdfType==="employees"?"PDF employés":pdfType==="cadres"?"PDF cadres":pdfType==="complete"?"PDF complet":"PDF type inconnu";
+    var sev="ok", msg="Fidélité "+score+"% — "+pdfLabel+" (cells "+cellScore+"% sur "+fidelityChecks+" tests, teams orph "+teamAnomaly+", codes inconnus "+unknownCodes.size+(ignoredCadres>0?", "+ignoredCadres+" cadres exclus (PDF emp seul)":"")+(ignoredNonCadres>0?", "+ignoredNonCadres+" non-cadres exclus (PDF cadres seul)":"")+")";
     if(score<60){sev="err";}
     else if(score<80){sev="warn";}
     agentAppendReport("import-fidelity",sev,msg,
       {score:score,cellScore:cellScore,checks:fidelityChecks,hits:fidelityHits,
-       orphans:orphans,unknownCodes:Array.from(unknownCodes),mismatches:mismatches});
+       orphans:orphans,unknownCodes:Array.from(unknownCodes),mismatches:mismatches,
+       pdfType:pdfType,ignoredCadres:ignoredCadres,ignoredNonCadres:ignoredNonCadres});
     // === 6. Persist + escalade Apex si critique ===
     try{
       var flog=lg("cmc_import_fidelity_log",[])||[];
       if(flog.length>=100)flog=flog.slice(-99);
       flog.push({ts:Date.now(),key:key,score:score,cellScore:cellScore,
         checks:fidelityChecks,hits:fidelityHits,orphans:orphans.length,
-        unknownCount:unknownCodes.size,mismatchCount:mismatches.length});
+        unknownCount:unknownCodes.size,mismatchCount:mismatches.length,
+        pdfType:pdfType,ignoredCadres:ignoredCadres,ignoredNonCadres:ignoredNonCadres});
       ls("cmc_import_fidelity_log",flog);
     }catch(_){}
     if(score<75&&typeof _cmcEscalate==="function"){
       _cmcEscalate({key:key,score:score,mismatches:mismatches.slice(0,5),
-        orphans:orphans.slice(0,5),unknownCodes:Array.from(unknownCodes).slice(0,10)},
-        "Import fidélité basse v9.606 : "+score+"% (Kevin règle scrupuleusement identique)");
+        orphans:orphans.slice(0,5),unknownCodes:Array.from(unknownCodes).slice(0,10),
+        pdfType:pdfType},
+        "Import fidélité basse v9.607 : "+score+"% ("+pdfLabel+") — Kevin règle scrupuleusement identique");
     }
     // === 7. Toast Kevin si admin connecté ===
     try{
       if(A.user&&A.user.id===AID&&typeof toast==="function"){
-        if(score>=90)toast("📊 Fidélité import : "+score+"% ✓","ok");
-        else if(score>=75)toast("⚠ Fidélité import : "+score+"% (anomalies détectées)","warn");
-        else toast("❌ Fidélité import : "+score+"% — voir audit","err");
+        var ctxNote=ignoredCadres>0?" — "+ignoredCadres+" cadres en attente import séparé":(ignoredNonCadres>0?" — "+ignoredNonCadres+" non-cadres en attente":"");
+        if(score>=90)toast("📊 Fidélité "+score+"% ✓"+ctxNote,"ok");
+        else if(score>=75)toast("⚠ Fidélité "+score+"% "+pdfLabel+ctxNote,"warn");
+        else toast("❌ Fidélité "+score+"% — voir audit"+ctxNote,"err");
       }
     }catch(_){}
     return {score:score,cellScore:cellScore,mismatches:mismatches,
-      orphans:orphans,unknownCodes:Array.from(unknownCodes)};
+      orphans:orphans,unknownCodes:Array.from(unknownCodes),
+      pdfType:pdfType,ignoredCadres:ignoredCadres,ignoredNonCadres:ignoredNonCadres,
+      checks:fidelityChecks,hits:fidelityHits};
   }catch(e){
     agentAppendReport("import-fidelity","err",(e.message||"").slice(0,100));
     return {score:-1,error:e.message};
