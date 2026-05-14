@@ -219,6 +219,10 @@ export interface ExecutionParams {
   new_version?: string;
   /** Confirmation Kevin requise pour task sensible (release_version, modify_workflow) */
   confirmed_by_kevin?: boolean;
+  /** v13.4.38 Kevin "Donne accès apex à ta branche" :
+   * Branche cible pour le commit (default: 'claude/test-699LQ').
+   * Override possible si Apex veut une branche dédiée par task. */
+  target_branch?: string;
   /** Champs custom additionnels */
   [k: string]: unknown;
 }
