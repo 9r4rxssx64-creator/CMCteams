@@ -1,13 +1,8 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.7">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.16">
 <head>
   <meta charset="utf-8">
-  <!-- v13.4.9 fix Kevin "écran zoom seul reste bloqué en zoom" :
-       Anti-zoom auto iOS Safari (focus input fait zoom involontaire).
-       Kevin n'a pas besoin de zoom (font-size 16px input garantit lisibilité).
-       Trade-off WCAG SC 1.4.4 documenté : font-size 16px+ partout compense.
-       Si user a vraiment besoin zoom, iOS Settings → Display Zoom + reader mode. -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,8 +17,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-e1d9559bd022bcddd691f27315e69054' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'unsafe-inline';
+             script-src 'self' 'nonce-f8880dc8a9aad706cfc9075afe4f2c56' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-f8880dc8a9aad706cfc9075afe4f2c56';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -119,8 +114,7 @@
                           https://api.openclaw.io
                           https://api.linkedin.com
                           https://api.twitter.com
-                          https://api.instagram.com
-                          https://kdmc-agent-monaco.vercel.app;
+                          https://api.instagram.com;
              worker-src 'self' blob:;
              frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
              media-src 'self' blob: data: https:;
@@ -131,81 +125,22 @@
 
   <title>APEX AI v13</title>
 
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="./assets/json/manifest-Dnqu29nu.json">
   <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
   <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
+
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <!-- v13.4.5 KDMC Agent Vercel -->
-  <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
-
-  <!-- v13.4.7-fix3 Kevin "affichage zoomé / je ne vois pas toutes les fonctions" :
-       overrides compacts pour faire tenir la landing sur iPhone SE 375×667 sans scroll,
-       et garder toutes les fonctions visibles. Touch targets >= 44px (Apple HIG) préservés. -->
-  <style id="apex-compact-overrides">
-    /* Landing card : -40% padding pour rentrer dans 667px */
-    .ax-landing { padding: 12px !important; min-height: 100dvh !important; }
-    .ax-landing-card {
-      padding: 20px 18px !important;
-      max-width: 380px !important;
-      border-radius: 16px !important;
-    }
-    .ax-landing-logo {
-      font-size: clamp(28px, 8vw, 40px) !important;
-      letter-spacing: 6px !important;
-      margin: 0 !important;
-    }
-    .ax-landing-version {
-      font-size: 11px !important;
-      margin-top: 2px !important;
-    }
-    .ax-landing-tagline {
-      margin-bottom: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.35 !important;
-    }
-    .ax-landing-footer {
-      margin-top: 12px !important;
-      font-size: 10px !important;
-    }
-    .ax-landing-logo-wrap { margin-bottom: 4px !important; gap: 2px !important; }
-    /* Form : gaps réduits */
-    .ax-landing-card .ax-form { gap: 10px !important; }
-    .ax-landing-card .ax-form label { gap: 4px !important; font-size: 12px !important; }
-    .ax-landing-card .ax-form input,
-    .ax-landing-card .ax-form select,
-    .ax-landing-card .ax-form textarea {
-      padding: 10px 12px !important;
-      min-height: 44px !important;  /* Apple HIG touch target préservé */
-    }
-    .ax-form-label { margin-bottom: 4px !important; font-size: 12px !important; }
-    /* Buttons block compacts mais 44px min */
-    .ax-landing-card .ax-btn,
-    .ax-landing-card .ax-btn-block {
-      padding: 10px 14px !important;
-      min-height: 44px !important;
-      font-size: 14px !important;
-    }
-    /* Chat / app principale : padding réduit pour voir plus de fonctions */
-    .ax-chat-header { padding: 6px 10px !important; }
-    .ax-chat-scroll { padding: 4px 8px !important; }
-    /* Empêcher overflow horizontal sur iPhone */
-    html, body { max-width: 100vw !important; overflow-x: hidden !important; }
-    /* Anti-zoom iOS Safari : text-size-adjust strict */
-    html { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
-  </style>
-
-  <!-- Vite-built bundle (entry JS + CSS contiennent tokens, base, components, animations, rescue, financial-bilan,
-       laurence, ux-premium, ux-overrides inline-compilés). Nonce CSP fixe pour HTML statique. -->
-  <script nonce="e1d9559bd022bcddd691f27315e69054" type="module" crossorigin src="./core/main-DFnpHCqE.js"></script>
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CmLg4l85.js">
+  <script nonce="f8880dc8a9aad706cfc9075afe4f2c56" type="module" crossorigin src="./core/main-Ca6-2itX.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
-  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-DzV9YvuY.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-CO7mSElo.js">
-  <link nonce="e1d9559bd022bcddd691f27315e69054" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
+  <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-qcw7Brjr.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BmCfPhxw.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-DBI0NIWp.js">
+  <link nonce="f8880dc8a9aad706cfc9075afe4f2c56" rel="stylesheet" crossorigin href="./assets/css/main-B3Y_KmFt.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-DyfR_YdU.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-DiSaw1AJ.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -237,42 +172,9 @@
   <button id="apex-rescue-btn" type="button"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
 
-  <!-- v13.4.8 (Kevin "pas de badge") : badge version STATIQUE HTML pur, garanti visible
-       même si JS crash. Style via rescue.css (chargé en <link>) — pas inline.
-       JS enrichit avec click handler "détails" via version-badge.ts. -->
-  <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.7">v13.4.7</div>
+  <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="e1d9559bd022bcddd691f27315e69054" src="./js/rescue.js"></script>
-
-  <!-- v13.4.7-fix3 anti-zoom reset iOS Safari : toggle viewport meta sur visibilitychange
-       pour forcer reset de zoom résiduel après pinch (sinon Kevin voit "écran zoomé"). -->
-  <script nonce="e1d9559bd022bcddd691f27315e69054">
-    (function(){
-      try {
-        var vp = document.querySelector('meta[name="viewport"]');
-        if (!vp) return;
-        var initial = vp.getAttribute('content');
-        function resetZoom(){
-          try {
-            if (!window.visualViewport) return;
-            if (window.visualViewport.scale > 1.005) {
-              vp.setAttribute('content', initial + ',maximum-scale=1.0');
-              setTimeout(function(){ vp.setAttribute('content', initial); }, 60);
-            }
-          } catch(_) {}
-        }
-        document.addEventListener('visibilitychange', function(){
-          if (!document.hidden) setTimeout(resetZoom, 100);
-        });
-        window.addEventListener('pageshow', function(){ setTimeout(resetZoom, 100); });
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener('resize', resetZoom);
-        }
-        /* Reset au boot après 1s (laisse le bundle initialiser ses propres handlers) */
-        setTimeout(resetZoom, 1000);
-      } catch(_) {}
-    })();
-  </script>
+  <script nonce="f8880dc8a9aad706cfc9075afe4f2c56" src="./assets/js/rescue.js"></script>
 </body>
 </html>

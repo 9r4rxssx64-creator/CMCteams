@@ -10,23 +10,19 @@
  * APP_VER dans bootstrap.js. Workflow `sw-cache-sync.yml` synchronise auto.
  */
 
-const CACHE_VERSION  = 'apex-v13.4.9-fix1';
+const CACHE_VERSION  = 'apex-v13.4.16';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
 
-/* Assets pre-caches au install (chemins relatifs au scope /apex-ai-v13/).
-   Doivent matcher EXACTEMENT les chemins référencés par index.html — sinon
-   précache 404 silencieux + app HS au prochain offline. */
+/* Assets pre-caches au install (chemins relatifs au scope /apex-ai/v13/) */
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './js/rescue.js',
-  './core/main-DFnpHCqE.js',
-  './assets/css/main-CxDxF84S.css',
-  './assets/svg/apex-logo-DhUswEqw.svg',
-  './assets/png/apex-logo-192-CGkarJye.png'
+  './assets/css/tokens.css',
+  './assets/css/base.css',
+  './core/bootstrap.js'
 ];
 
 /* Domaines API : toujours network-first, jamais de cache long */
@@ -241,8 +237,8 @@ self.addEventListener('push', function(e){
   var title = data.title || 'APEX';
   var options = {
     body: data.body || '',
-    icon: data.icon || './assets/png/apex-logo-192-CGkarJye.png',
-    badge: data.badge || './assets/png/apex-logo-192-CGkarJye.png',
+    icon: data.icon || './assets/icons/apex-logo-192.png',
+    badge: data.badge || './assets/icons/apex-badge.png',
     data: data.data || {},
     tag: data.tag,
     requireInteraction: data.requireInteraction || false

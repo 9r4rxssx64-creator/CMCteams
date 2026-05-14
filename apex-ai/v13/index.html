@@ -1,13 +1,8 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.9">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.16">
 <head>
   <meta charset="utf-8">
-  <!-- v13.4.9 fix Kevin "écran zoom seul reste bloqué en zoom" :
-       Anti-zoom auto iOS Safari (focus input fait zoom involontaire).
-       Kevin n'a pas besoin de zoom (font-size 16px input garantit lisibilité).
-       Trade-off WCAG SC 1.4.4 documenté : font-size 16px+ partout compense.
-       Si user a vraiment besoin zoom, iOS Settings → Display Zoom + reader mode. -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#08080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -119,8 +114,7 @@
                           https://api.openclaw.io
                           https://api.linkedin.com
                           https://api.twitter.com
-                          https://api.instagram.com
-                          https://kdmc-agent-monaco.vercel.app;
+                          https://api.instagram.com;
              worker-src 'self' blob:;
              frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
              media-src 'self' blob: data: https:;
@@ -147,14 +141,10 @@
   <link rel="stylesheet" href="./assets/css/financial-bilan.css">
   <link rel="stylesheet" href="./assets/css/laurence.css">
   <link rel="stylesheet" href="./assets/css/ux-premium.css">
-  <!-- v13.4.5 Kevin 2026-05-09 — UX corrections globales (lisibilité, touch targets, chat) -->
-  <link rel="stylesheet" href="./assets/css/ux-overrides.css">
 
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <!-- v13.4.5 KDMC Agent Vercel -->
-  <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -185,11 +175,6 @@
   <!-- v13.0.13 : onclick + style externalisés vers rescue.js + rescue.css (CSP strict) -->
   <button id="apex-rescue-btn" type="button"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
-
-  <!-- v13.4.8 (Kevin "pas de badge") : badge version STATIQUE HTML pur, garanti visible
-       même si JS crash. Style via rescue.css (chargé en <link>) — pas inline.
-       JS enrichit avec click handler "détails" via version-badge.ts. -->
-  <div id="apex-version-badge-static" role="status" aria-label="Version Apex v13.4.8">v13.4.8</div>
 
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
   <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>

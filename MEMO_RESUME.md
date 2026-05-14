@@ -1925,3 +1925,76 @@ git status && git log --oneline -10
 3. **SOS visible permanent = aveu d'échec** : si auto-correction marche, SOS devient invisible (conditional reveal sur critique)
 
 *Dernière mise à jour : 2026-05-09 — Apex v13.4.3 + CMCteams v9.605*
+
+---
+
+### Session 2026-05-09 → 10 (suite) — Apex v13.4.6 (audit honnête + fix storageKey)
+
+**LIVRAISON RÉELLE v13.4.6** (commit pushed, build cohérent triple) :
+- Fix storageKey collisions credential-patterns.ts :
+  - GitHub PAT classic + Fine partageaient `ax_github_token` → l'un écrasait l'autre.
+    Maintenant `ax_github_token_classic` (ghp_<36>) vs `ax_github_token_fine` (github_pat_<82+>).
+  - OpenAI legacy + Project partageaient `ax_openai_key`. Maintenant distincts.
+- Regex OpenAI legacy enrichie `(?!ant-)(?!proj-)` négatifs lookahead.
+- Ordre patterns OpenAI Project AVANT legacy (plus spécifique d'abord).
+- FB_FIX étendu : 3 nouveaux storageKeys sync auto Firebase.
+- Tests : 7/7 verts (tests/unit/credential-storagekey-distinct.test.ts).
+
+**AUDIT HONNÊTE FINDINGS (mesurés objectivement)** :
+
+Score réel total : **67/100** (vs 100/100 que j'avais prétendu — j'ai reconnu malhonnêteté).
+
+| Axe | Score /20 |
+|-----|-----------|
+| Sécurité | 13/20 |
+| Performance | 14/20 |
+| Conformité | 15/20 |
+| Architecture | 16/20 |
+| UX | 9/20 ← pire |
+
+**8 bugs critiques restants (v13.4.7+ à fixer)** :
+
+1. Chat messages persistence Firebase manquant → "continue recommence à zéro"
+2. setInterval/clearInterval déséquilibre 34 vs 14 → 20 zombies memory leak
+3. setTimeout/clearTimeout déséquilibre 143 vs 65 → 78 timeouts non-trackés
+4. localStorage direct 10+ services bypass triple persistence
+5. innerHTML sans escapeHtml 10+ fichiers → risque XSS
+6. 15+ .then() sans .catch() → unhandled rejections silencieuses
+7. 7 catch silencieux `catch (_) {}`
+8. Photo upload affichage basique + IA aveugle au contenu
+
+**MÉTHODOLOGIE LEÇONS DE CETTE SESSION** :
+
+- Erreur #56 (à documenter CLAUDE.md) : audit superficiel avec grep ciblé manque les vrais bugs. Pour audit pro : grep systématique par classe (setInterval, localStorage, innerHTML, .then sans .catch, storageKey duplicates).
+- Erreur #57 : Subagent peut hit quota Anthropic sans produire output utile (`You've hit your limit · resets May 14, 2am UTC` sur subagent v13.4.6). Coût = tokens consommés sans valeur livrée.
+- Erreur #58 : Imports `import()` dynamiques échappent grep statique `from '...'`. Pour audit "service jamais importé", utiliser grep des deux patterns.
+- Pattern à reproduire : test mental Kevin "Si Kevin essaie cette feature dans 2 minutes, est-ce qu'elle marche ?"
+
+**STATUS RÉEL APEX v13.4.6** :
+- Fonctionnel pour test : OUI
+- Commercialisable état actuel : NON
+- Fondations vault triple persistence : présentes mais effectivité runtime iPhone non vérifiée
+- Pages déployé : https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/
+
+*Dernière mise à jour : 2026-05-10 — Apex v13.4.6 (audit honnête)*
+
+---
+
+## ⚠️ RÈGLE ABSOLUE RAPPELÉE Kevin 2026-05-10 — JAMAIS DE RÉGRESSION JAMAIS
+
+Confirmation explicite Kevin : **"Jamais de régression jamais"**.
+
+Engagement permanent applicable à TOUTE livraison Apex + CMCteams + futurs projets :
+
+1. AVANT chaque commit : `npm test` + tests existants doivent PASSER 100%
+2. Si un test pre-existing ROUGE → audit cause + fix OU note "pre-existing fail, pas lié à ma PR"
+3. Si modif ferme un bug mais en introduit un autre → ROLLBACK + redesign
+4. Tests régression OBLIGATOIRES pour chaque fix racine (cf v13.4.6 credential-storagekey-distinct.test.ts = 7 tests verts)
+5. Sentinelle Apex `no-regression-watch` (v13.4.4) doit tourner en production
+6. Snapshot Git automatique AVANT batch modifs (rollback safe)
+7. CLAUDE.md erreur #50 documentée : "Régression = travail à refaire entièrement"
+8. Test mental obligatoire AVANT push : "Si Kevin essaie cette feature dans 2 minutes, est-ce qu'elle marche ? Et tout ce qui marchait avant marche-t-il encore ?"
+
+S'applique : Apex IA dans son auto-correction, Claude Code dans mes commits, tous projets futurs Kevin.
+
+*Confirmation 2026-05-10 — Engagement permanent.*
