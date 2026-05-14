@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.11">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.12">
 <head>
   <meta charset="utf-8">
   <!-- v13.4.9 fix Kevin "écran zoom seul reste bloqué en zoom" :
@@ -22,8 +22,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-3ec6755da6f7d638e0c38cf19048e927' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-3ec6755da6f7d638e0c38cf19048e927';
+             script-src 'self' 'nonce-7d379586aba4fcf5d78d70b51ad8d9d1' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-7d379586aba4fcf5d78d70b51ad8d9d1';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -142,14 +142,14 @@
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
   <!-- v13.4.5 KDMC Agent Vercel -->
   <link rel="preconnect" href="https://kdmc-agent-monaco.vercel.app" crossorigin>
-  <script nonce="3ec6755da6f7d638e0c38cf19048e927" type="module" crossorigin src="./core/main-BjaowFSq.js"></script>
+  <script nonce="7d379586aba4fcf5d78d70b51ad8d9d1" type="module" crossorigin src="./core/main-BcN9m0TY.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-D-srKehy.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CMfx-GyD.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-pNmlRgki.js">
-  <link nonce="3ec6755da6f7d638e0c38cf19048e927" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-D_kG1owu.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-BCUrvJN6.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-BxjulAve.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-BtQpZh59.js">
+  <link nonce="7d379586aba4fcf5d78d70b51ad8d9d1" rel="stylesheet" crossorigin href="./assets/css/main-CxDxF84S.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-DyaXngdP.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-3ZNGo8pt.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -189,6 +189,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="3ec6755da6f7d638e0c38cf19048e927" src="./assets/js/rescue.js"></script>
+  <script nonce="7d379586aba4fcf5d78d70b51ad8d9d1" src="./assets/js/rescue.js"></script>
 </body>
 </html>

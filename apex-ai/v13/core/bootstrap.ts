@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.11';
+export const APP_VER = 'v13.4.12';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -427,6 +427,11 @@ async function bootstrap(): Promise<void> {
   /* Kevin 2026-05-14 v13.4.10 : Vues admin Skills 2026 + MCP servers (intégration skills/MCP) */
   router.register('mcp-servers', { loader: () => import('@features/admin/mcp-servers/index.js'), requiresAdmin: true });
   router.register('skills-2026', { loader: () => import('@features/admin/skills-2026/index.js'), requiresAdmin: true });
+  /* v13.4.12 — 4 Studios UI dédiés (Docx/Pptx/Xlsx/Pdf) — utilisables sans chat IA */
+  router.register('studio-docx', { loader: () => import('@features/studios/docx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-pptx', { loader: () => import('@features/studios/pptx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-xlsx', { loader: () => import('@features/studios/xlsx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
+  router.register('studio-pdf', { loader: () => import('@features/studios/pdf/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

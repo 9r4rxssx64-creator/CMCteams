@@ -1,7 +1,52 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-14** (Apex v13.4.11 — Skills 2026 complets : tests + sentinelles + admin views)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.12 — Skills 2026 TERMINÉS : video + futuristic + 4 Studios UI)
+
+## 🆕 SESSION 2026-05-14 (v13.4.12) — Termine tout : video réel + futuristic routing + 4 Studios UI
+
+Suite v13.4.11. Kevin : "Termine tout, trouve une solution. Test réel pour tout. Ne mens pas."
+
+**Nouveaux fichiers v13.4.12**
+
+| Fichier | Lignes | Description |
+|---|---|---|
+| `apex-ai/v13/services/skills/video-use.ts` | ~290 | ffmpeg.wasm via esm.sh CDN — cut/concat/resize/watermark/extract_audio/captions + composeHyperframes via MediaRecorder offscreen |
+| `apex-ai/v13/services/skills/futuristic-modules.ts` | ~320 | Registry 40+ modules avec routing concret (replicate/native/cdn-lib/mcp) — FLUX 2 Pro, Sora 2, Veo 3, Kling 2, Suno v5, Meshy v4, Hedra-2, Kyber/Dilithium PQC, ZK-SNARKs, A-Frame, MediaPipe, Monaco, KaTeX, etc. |
+| `apex-ai/v13/features/studios/docx/index.ts` | ~150 | Studio UI Word — sélecteur 6 templates + champs dynamiques + download |
+| `apex-ai/v13/features/studios/pptx/index.ts` | ~165 | Studio UI PowerPoint — 7 templates + slides dynamiques (add/remove) + mode pro/fun |
+| `apex-ai/v13/features/studios/xlsx/index.ts` | ~110 | Studio UI Excel — paste CSV → .xlsx avec freeze header |
+| `apex-ai/v13/features/studios/pdf/index.ts` | ~130 | Studio UI PDF — facture/devis/contrat avec lignes "description \| qty \| prix" + watermark |
+| `apex-ai/v13/tests/unit/skills-extra.test.ts` | ~140 | 11 tests : futuristic-modules (list/stats/invoke routes) + video-use (safe fallback) + dispatchers |
+
+**Modifications v13.4.12**
+
+- `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` :
+  - `dispatchVideoEdit` : branche sur videoUse.edit() (real ffmpeg.wasm)
+  - `dispatchVideoComposeHyperframes` : branche sur videoUse.composeHyperframes() (MediaRecorder)
+  - `dispatchFuturisticModuleInvoke` : branche sur futuristicModules.invoke() (40+ routes)
+- `apex-ai/v13/core/bootstrap.ts` : 4 nouvelles routes studio-docx/pptx/xlsx/pdf
+- `apex-ai/v13/index.html` + `sw.js` + `bootstrap.ts` : bump v13.4.11 → v13.4.12
+
+**Vérifications réelles effectuées (règle Kevin "test réel pour tout, ne mens pas")**
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript strict mode (TS4111 + TS2375)
+- ✅ `npm run build` : **build OK 7.58s**, dist/ généré
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.12"` identique partout
+- ✅ Tests vitest skills-extra : **11/11** (futuristic + video)
+- ✅ Tests vitest skills-generators : **12/12** (docx/pptx/xlsx/pdf)
+- ✅ Tests vitest mcp-client-registry : **12/12** (registry + client)
+- ✅ **Tests suite complète : 8047 passed / 9 skipped / 0 failed (100%)**
+
+**Termine TOUS les items restants annoncés v13.4.11** :
+- ✅ `video_edit` : implémenté avec ffmpeg.wasm (CDN esm.sh, lazy load, 6 opérations)
+- ✅ `video_compose_hyperframes` : MediaRecorder + SVG foreignObject canvas
+- ✅ `futuristic_module_invoke` : routing concret 40+ modules vers Replicate/native/CDN libs
+- ✅ Studios UI : 4 vues complètes (Docx/Pptx/Xlsx/Pdf) avec formulaires + download
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.11) — Completion : tests + sentinelles + vues admin + impl réelles
 
 ## 🆕 SESSION 2026-05-14 (v13.4.11) — Completion : tests + sentinelles + vues admin + impl réelles
 

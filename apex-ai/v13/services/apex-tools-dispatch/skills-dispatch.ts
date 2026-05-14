@@ -95,23 +95,53 @@ export async function dispatchMcpLegalSearch(params: Record<string, unknown>): P
 }
 
 export async function dispatchVideoEdit(params: Record<string, unknown>): Promise<unknown> {
-  const operation = p<string>(params, 'operation') ?? '';
-  logger.info('skill.video', 'video_edit invoked', { operation });
-  return {
-    success: false,
-    error: "video_edit en cours d'implémentation (ffmpeg.wasm Worker)",
-    operation,
-  };
+  const operation = p<string>(params, 'operation') ?? 'cut';
+  const videoSource = p<string>(params, 'video_source') ?? '';
+  if (!videoSource) {
+    return { success: false, error: 'video_source requis (blob:, data:, https://)' };
+  }
+  try {
+    const { videoUse } = await import('../skills/video-use.js');
+    const result = await videoUse.edit({
+      operation: operation as 'cut' | 'concat' | 'resize' | 'watermark' | 'extract_audio' | 'captions',
+      videoSource,
+      params: p<Record<string, unknown>>(params, 'params'),
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function dispatchVideoComposeHyperframes(params: Record<string, unknown>): Promise<unknown> {
-  const compositionId = p<string>(params, 'composition_id') ?? '';
-  logger.info('skill.hyperframes', 'invoked', { composition_id: compositionId });
-  return {
-    success: false,
-    error: "hyperframes en cours d'implémentation (MediaRecorder offscreen)",
-    composition_id: compositionId,
-  };
+  const compositionId = p<string>(params, 'composition_id') ?? 'unnamed';
+  const beats = p<Array<{ id: string; durationMs?: number; duration_ms?: number; html: string; css?: string }>>(
+    params,
+    'beats',
+  );
+  if (!beats || !Array.isArray(beats) || beats.length === 0) {
+    return { success: false, error: 'beats array requis (min 1 beat)' };
+  }
+  try {
+    const { videoUse } = await import('../skills/video-use.js');
+    /* Normalise field names */
+    const normalized = beats.map((b) => ({
+      id: b.id,
+      durationMs: b.durationMs ?? b.duration_ms ?? 1000,
+      html: b.html,
+      ...(b.css !== undefined ? { css: b.css } : {}),
+    }));
+    const result = await videoUse.composeHyperframes({
+      compositionId,
+      dataWidth: p<number>(params, 'data_width'),
+      dataHeight: p<number>(params, 'data_height'),
+      dataFps: p<number>(params, 'data_fps'),
+      beats: normalized,
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function dispatchSkillFactoryCreate(params: Record<string, unknown>): Promise<unknown> {
@@ -316,11 +346,19 @@ export async function dispatchGenerateMarketingCopy(params: Record<string, unkno
 
 export async function dispatchFuturisticModuleInvoke(params: Record<string, unknown>): Promise<unknown> {
   const moduleId = p<string>(params, 'module_id') ?? '';
-  logger.info('skill.futuristic', 'invoked', { module_id: moduleId });
-  return {
-    success: false,
-    module_id: moduleId,
-    error: `Module ${moduleId} : implémentation à brancher (lazy loading lib spécifique)`,
-    note: 'Le registry des 60+ modules est défini dans .claude/skills/apex-futuristic-modules.md',
-  };
+  if (!moduleId) {
+    return { success: false, error: 'module_id requis' };
+  }
+  try {
+    const { futuristicModules } = await import('../skills/futuristic-modules.js');
+    const moduleParams = p<Record<string, unknown>>(params, 'params') ?? {};
+    const result = await futuristicModules.invoke(moduleId, moduleParams);
+    return result;
+  } catch (err) {
+    return {
+      success: false,
+      module_id: moduleId,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
