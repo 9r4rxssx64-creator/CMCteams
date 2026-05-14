@@ -14,6 +14,7 @@
  * - Queue messages : Kevin peut envoyer 5 messages d'affilée, tous traités
  */
 
+import { APP_VER } from '../../core/bootstrap.js';
 import { errors } from '../../core/errors.js';
 import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
@@ -23,12 +24,6 @@ import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
 import { commerce } from '../../services/commerce.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
-import { vault } from '../../services/vault.js';
-import { haptic } from '../../ui/haptic.js';
-import { modalSheet } from '../../ui/modal-sheet.js';
-import { APP_VER } from '../../core/bootstrap.js';
-import { skeleton } from '../../ui/skeleton.js';
-import { toast } from '../../ui/toast.js';
 import {
   parseSlashCommand,
   filterCommands,
@@ -41,7 +36,12 @@ import {
   isFollowUpsEnabled,
   type FollowUpSuggestion,
 } from '../../services/suggestions.js';
+import { vault } from '../../services/vault.js';
+import { haptic } from '../../ui/haptic.js';
 import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';
+import { modalSheet } from '../../ui/modal-sheet.js';
+import { skeleton } from '../../ui/skeleton.js';
+import { toast } from '../../ui/toast.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
  * Garde max 30 derniers messages user/assistant. Drop les plus anciens. */
@@ -104,7 +104,7 @@ function persistConversation(): void {
         .filter((m) => !m.streaming)
         .slice(-CONV_MAX_PERSIST);
       localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(toSave));
-    } catch (err: unknown) {
+    } catch {
       /* Quota exceeded → trim plus agressif */
       try {
         const half = conversation.filter((m) => !m.streaming).slice(-(CONV_MAX_PERSIST / 2));

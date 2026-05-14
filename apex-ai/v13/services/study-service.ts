@@ -21,6 +21,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { CREDENTIAL_PATTERNS, detectCredential } from './credential-patterns.js';
 import { firebase } from './firebase.js';
 

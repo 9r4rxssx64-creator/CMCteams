@@ -22,8 +22,8 @@
 
 import { store } from '../../core/store.js';
 import { auditLog } from '../../services/audit-log.js';
-import { permissions } from '../../services/permissions.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { permissions } from '../../services/permissions.js';
 
 const LAURENCE_WALLPAPERS = [
   'linear-gradient(135deg, #ffd6e8 0%, #c9a4ff 50%, #a4c8ff 100%)', /* Rose-violet-bleu */

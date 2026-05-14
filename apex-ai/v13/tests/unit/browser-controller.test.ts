@@ -1,3 +1,4 @@
+/* eslint-disable no-script-url -- tests vérifient explicitement le blocage de ce schéma */
 /**
  * Tests browser-controller.ts (v13).
  *

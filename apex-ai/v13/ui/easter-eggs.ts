@@ -14,6 +14,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { haptic } from './haptic.js';
 
 const KONAMI_SEQUENCE = [

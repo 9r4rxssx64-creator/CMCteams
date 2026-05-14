@@ -36,11 +36,14 @@ describe('sentinels coverage push 56% → 90%+', () => {
     expect(r?.msg).toMatch(/services in registry/i);
   });
 
-  it('runOne link-validation-watch corrupt registry gracefull', async () => {
+  it('runOne link-validation-watch corrupt registry gracefull (ok=true, fallback vide)', async () => {
+    /* v13.3.94 P1.1 : safeParseJSON retourne {} sur parse fail
+     * → sentinel reste "ok:true" avec 0 services (init phase tolérante). */
     localStorage.setItem('ax_links_registry', 'INVALID');
     registerCoreSentinels();
     const r = await sentinels.runOne('link-validation-watch');
-    expect(r?.ok).toBe(false);
+    expect(r?.ok).toBe(true);
+    expect(r?.msg).toMatch(/0 services|services in registry/i);
   });
 
   it('runOne presence-watch lit lastact', async () => {

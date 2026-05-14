@@ -10,6 +10,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { haptic } from './haptic.js';
 
 export type DualMode = 'pro' | 'fun';

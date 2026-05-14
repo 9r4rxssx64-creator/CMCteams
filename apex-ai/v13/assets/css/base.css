@@ -11,6 +11,60 @@
   padding: 0;
 }
 
+/* v13.4.6 P0 Kevin "l'écran zoom seul et reste bloqué en zoom" — iOS Safari fix radical :
+ * 1. font-size:16px minimum sur TOUS inputs (sinon iOS auto-zoom au focus)
+ * 2. touch-action: manipulation sur tous boutons/liens (anti-double-tap-zoom + no-300ms-delay)
+ * 3. touch-action: pan-y sur scroll zones (pas de pinch-zoom même bloqué) */
+input, textarea, select {
+  font-size: max(16px, 1rem) !important;
+}
+button, a, [role="button"], .ax-btn, .ax-btn-icon, .ax-btn-primary, .ax-btn-sm {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /* v13.4.6 UX : retire le délai 300ms iOS, transitions plus snappy */
+  transition: transform 80ms ease-out, opacity 120ms ease-out, background-color 120ms ease-out;
+}
+button:active, [role="button"]:active, .ax-btn:active {
+  /* Feedback tactile immédiat (Kevin règle UX expert) */
+  transform: scale(0.97);
+}
+.ax-chat-scroll,
+.ax-vault-page,
+.ax-admin,
+.ax-settings,
+.ax-page {
+  touch-action: pan-y;
+  /* Momentum smooth iOS Safari */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* v13.4.6 UX : empêche la sélection accidentelle sur les zones tactiles */
+.ax-btn, .ax-btn-icon, .ax-nav-item, .ax-nav-link, .ax-header, .ax-footer {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Mais textarea/input/résultats : sélection libre + paste menu iOS autorisé */
+textarea, input, .ax-message, .ax-msg-body, .ax-result, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+  /* v13.4.6 fix Kevin "je n'arrive pas à coller dans le coffre" :
+   * iOS Safari PWA — long-press menu "Coller" disparaît si callout: none.
+   * Force default sur textarea/input pour réactiver le menu paste. */
+  -webkit-touch-callout: default;
+}
+
+/* v13.4.6 UX : reduced-motion respect global (a11y WCAG) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* v13.3.95 P0 Kevin "fixe la fenêtre qu'on ne puisse pas descendre" :
  * iOS Safari PWA — bloquer scroll BODY entier, scroll uniquement zone chat.
  * touch-action: none + overflow hidden + position fixed = viewport bloqué.

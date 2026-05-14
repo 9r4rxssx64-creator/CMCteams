@@ -21,8 +21,8 @@
  *  - Validation URL stricte avant navigation (SSRF/javascript: scheme bloqué)
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';

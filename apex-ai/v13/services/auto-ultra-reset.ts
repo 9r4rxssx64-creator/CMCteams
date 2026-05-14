@@ -114,11 +114,108 @@ const CRITICAL_JSON_KEYS = [
 /** Clés à effacer durant le reset (Apex-scoped) */
 const APEX_KEY_PREFIXES = ['apex_v13_', 'ax_'];
 
-/** Clés à PRÉSERVER même durant le reset (auth/identité critique) */
-const PRESERVE_KEYS = new Set<string>([
-  /* L'identité Kevin reste pour reconnaissance auto post-reset */
+/**
+ * Clés/préfixes à PRÉSERVER même durant le reset (auth/identité/secrets critiques).
+ *
+ * v13.4.6 CORRECTION CRITIQUE (Kevin 2026-05-10 "Apex perd son coffre à chaque fois")
+ * ROOT CAUSE : ancienne liste = 3 clés seulement → auto-reset effaçait PIN, vault,
+ * passphrase history, clés API. Cohérent avec force-update-banner.ts PRESERVE_PREFIXES
+ * (single source of truth maintenant).
+ *
+ * Les préfixes ci-dessous matchent via `key.startsWith(p)` (au lieu de exact match).
+ */
+const PRESERVE_KEY_PREFIXES = [
+  /* Identité + session */
   'apex_v13_uid',
-  /* Compteur anti-loop : doit survivre au reset pour throttle prochain */
+  'apex_v13_user',
+  'apex_v13_users',
+  'apex_v13_pin',
+  'apex_v13_admin',
+  'apex_v13_lastact',
+  'apex_v13_last_known_name',
+  'apex_v13_last_known_uid',
+  'apex_v13_device_trusted',
+  /* Vault + crypto critique (v13.4.6 FIX — vraie clé `multi_keys` ajoutée) */
+  'apex_v13_vault',
+  'apex_v13_multi_keys',
+  'apex_v13_multikey_vault',
+  'apex_v13_passphrase_history',
+  'apex_v13_device_passphrase',
+  'apex_v13_device_obf',
+  'apex_v13_credentials',
+  /* Backups locaux (snapshots auto-backup) */
+  'apex_v13_backup_index',
+  'apex_v13_backup_',
+  /* Mémoire long-terme */
+  'apex_v13_persistent_memory',
+  'apex_v13_kb',
+  'apex_v13_lessons',
+  'apex_v13_audit',
+  'apex_v13_xp',
+  'apex_v13_streak',
+  /* Pièces jointes session */
+  'apex_v13_attachments',
+  'ax_v13_attachments',
+  /* v13.4.6 — Recovery brut des pastes Kevin (anti-perte clés collées) */
+  'apex_v13_paste_recovery_',
+  /* Legacy ax_ — identité + tokens API (perte = re-saisie obligatoire pour Kevin) */
+  'ax_pin',
+  'ax_user',
+  'ax_uid',
+  'ax_persistent_memory',
+  'ax_anthropic',
+  'ax_openai',
+  'ax_groq',
+  'ax_gemini',
+  'ax_google',
+  'ax_openrouter',
+  'ax_mistral',
+  'ax_cohere',
+  'ax_deepseek',
+  'ax_perplexity',
+  'ax_xai',
+  'ax_huggingface',
+  'ax_hf_',
+  'ax_replicate',
+  'ax_stripe',
+  'ax_brevo',
+  'ax_resend',
+  'ax_telegram',
+  'ax_discord',
+  'ax_github',
+  'ax_gitlab',
+  'ax_cloudflare',
+  'ax_notion',
+  'ax_airtable',
+  'ax_dropbox',
+  'ax_spotify',
+  'ax_pinata',
+  'ax_pinecone',
+  'ax_qdrant',
+  'ax_weaviate',
+  'ax_brave',
+  'ax_tavily',
+  'ax_deepl',
+  'ax_finnhub',
+  'ax_coingecko',
+  'ax_coinmarketcap',
+  'ax_etherscan',
+  'ax_openweathermap',
+  'ax_owm',
+  'ax_opencage',
+  'ax_mapbox',
+  'ax_unsplash',
+  'ax_pixabay',
+  'ax_pexels',
+  'ax_elevenlabs',
+  'ax_newsapi',
+  'ax_credentials_deleted',
+  'ax_shared_api_key',
+  'ax_api_key',
+];
+
+/** Clés exactes (anti-loop counters — doivent survivre au reset). */
+const PRESERVE_KEYS = new Set<string>([
   LAST_TRIGGER_KEY,
   RELOAD_ATTEMPTS_KEY,
 ]);
@@ -196,6 +293,16 @@ class AutoUltraReset {
       logger.info('auto-ultra-reset', `pre-backup vault → Firebase`, r);
     } catch (err: unknown) {
       logger.warn('auto-ultra-reset', 'pre-backup failed (continuing)', { err });
+    }
+
+    /* === 2b. v13.4.6 — Pré-snapshot complet local (vault + settings + memory + audit)
+     *        DOUBLE protection contre toute perte (Kevin "ne rien perdre JAMAIS"). */
+    try {
+      const { autoBackup } = await import('./auto-backup.js');
+      const snap = await autoBackup.snapshot('pre-rollback');
+      logger.info('auto-ultra-reset', `pre-snapshot local OK : ${snap.id}`);
+    } catch (err: unknown) {
+      logger.warn('auto-ultra-reset', 'pre-snapshot local failed (continuing)', { err });
     }
 
     /* === 3. Toast Kevin "🔄 Auto-rafraîchissement Apex en cours… 5s" === */
@@ -543,13 +650,17 @@ class AutoUltraReset {
       logger.warn('auto-ultra-reset', 'caches.delete failed', { err });
     }
 
-    /* 3. localStorage clear (Apex-scoped, preserve identity + throttle counters) */
+    /* 3. localStorage clear (Apex-scoped, preserve identity + vault + tokens API
+     *    + throttle counters)
+     * v13.4.6 fix critique : utilise PRESERVE_KEY_PREFIXES exhaustif au lieu de 3 clés
+     * pour ne JAMAIS effacer vault/PIN/clés API (cf. issue Kevin 2026-05-10). */
     try {
       const toRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
         if (PRESERVE_KEYS.has(key)) continue;
+        if (PRESERVE_KEY_PREFIXES.some((p) => key.startsWith(p))) continue;
         if (APEX_KEY_PREFIXES.some((p) => key.startsWith(p))) toRemove.push(key);
       }
       for (const k of toRemove) {
@@ -559,16 +670,21 @@ class AutoUltraReset {
           /* ignore */
         }
       }
+      logger.info('auto-ultra-reset', `${toRemove.length} clés effacées (vault/PIN/tokens préservés)`);
     } catch (err: unknown) {
       logger.warn('auto-ultra-reset', 'localStorage clear failed', { err });
     }
 
-    /* 4. IndexedDB Apex clear (best-effort) */
+    /* 4. IndexedDB Apex clear (best-effort) — v13.4.6 fix : préserve apex_v13_secure
+     *    (passphrase IDB shadow) et apex_v13_vault_shadow pour survivre au reset. */
+    const IDB_PRESERVE = new Set(['apex_v13_secure', 'apex_v13_vault_shadow', 'apex_v13_persistent']);
     try {
       if (typeof indexedDB !== 'undefined') {
         const dbs = (await indexedDB.databases?.()) ?? [];
         for (const db of dbs) {
-          if (typeof db.name === 'string' && db.name.startsWith('apex_')) {
+          if (typeof db.name !== 'string') continue;
+          if (IDB_PRESERVE.has(db.name)) continue;
+          if (db.name.startsWith('apex_')) {
             try {
               indexedDB.deleteDatabase(db.name);
             } catch {

@@ -64,13 +64,15 @@ describe('A11y touch targets — Apple HIG / WCAG 2.5.5 (UX 19.5→20)', () => {
   });
 
   it('3. Mobile <380px : .ax-chat-input .ax-btn-icon ≥ 40px (CSS source)', () => {
+    /* v13.3.81 P2.3 strict Apple HIG : tous boutons mobile ≥ 44px (avant 40px).
+     * Test relâché : on accepte 40 ou 44 (régression UX OK si ≥ HIG minimum). */
     const css = document.head.querySelector('style')?.textContent ?? '';
     /* On extrait la media-query mobile compact */
     const mq = css.match(/@media\s*\(max-width:\s*380px\)\s*\{[\s\S]*?\n\s*\}\s*\n\s*\}/);
     expect(mq, 'media query <380px existe').toBeTruthy();
     /* Doit déclarer width ET min-height ≥ 40px pour btn-icon, ≥ 44px pour primary */
-    expect(mq?.[0]).toMatch(/\.ax-btn-icon\s*\{[\s\S]*?width:\s*40px/);
-    expect(mq?.[0]).toMatch(/\.ax-btn-icon\s*\{[\s\S]*?min-height:\s*40px/);
+    expect(mq?.[0]).toMatch(/\.ax-btn-icon\s*\{[\s\S]*?width:\s*(40|44)px/);
+    expect(mq?.[0]).toMatch(/\.ax-btn-icon\s*\{[\s\S]*?min-height:\s*(40|44)px/);
     expect(mq?.[0]).toMatch(/\.ax-btn-primary\s*\{[\s\S]*?width:\s*44px/);
   });
 

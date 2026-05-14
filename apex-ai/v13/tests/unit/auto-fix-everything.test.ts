@@ -205,7 +205,7 @@ describe('auto-fix everywhere (Kevin v13.3.79+)', () => {
     const noAutoFixFound = list.filter((s) => !s.autoFix && !noAutoFixOk.has(s.id));
     /* Aucune sentinelle critique ne devrait être sans autoFix maintenant */
     if (noAutoFixFound.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn('Sentinelles sans autoFix détectées :', noAutoFixFound.map((s) => s.id));
     }
     expect(noAutoFixFound.length).toBeLessThanOrEqual(0);

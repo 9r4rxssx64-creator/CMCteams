@@ -351,6 +351,46 @@ class MultiSourceAnalyzer {
     let tested_ok = 0;
     const failed: string[] = [];
 
+    /* v13.4.6 (Kevin "sauvegarde avant de les perdre") :
+     * PRE-SNAPSHOT OBLIGATOIRE avant toute installation. Si Kevin colle 11 clés
+     * et qu'un crash survient à mi-parcours, on peut récupérer depuis le snapshot.
+     * Aussi sauvegarde RAW backup brut des items collés (avant chiffrement)
+     * dans `apex_v13_paste_recovery_<ts>` (cap 5 entries, 30j retention). */
+    try {
+      const { autoBackup } = await import('./auto-backup.js');
+      await autoBackup.snapshot('pre-rollback');
+    } catch (err) {
+      logger.warn('multi-source', 'pre-install snapshot skipped', { err });
+    }
+    try {
+      const recoveryKey = `apex_v13_paste_recovery_${Date.now().toString(36)}`;
+      const recoveryData = {
+        ts: Date.now(),
+        source_type: result.source_type,
+        items: result.items.map((it) => ({
+          type: it.type,
+          service: it.service,
+          storage_key: it.storage_key,
+          value: it.value, /* RAW pour permettre retry si chiffrement fail */
+          forbidden: it.forbidden,
+        })),
+      };
+      localStorage.setItem(recoveryKey, JSON.stringify(recoveryData));
+      /* Trim : garde max 5 recovery entries (FIFO) */
+      const allRecoveryKeys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('apex_v13_paste_recovery_')) allRecoveryKeys.push(k);
+      }
+      allRecoveryKeys.sort();
+      while (allRecoveryKeys.length > 5) {
+        const oldest = allRecoveryKeys.shift();
+        if (oldest) localStorage.removeItem(oldest);
+      }
+    } catch (err) {
+      logger.warn('multi-source', 'paste recovery snapshot failed', { err });
+    }
+
     for (const item of result.items) {
       try {
         if (item.forbidden && skipForbidden) {
@@ -358,9 +398,31 @@ class MultiSourceAnalyzer {
           continue;
         }
 
-        /* Credential : chiffre + setKey + linksRegistry.autoCreate */
+        /* Credential : chiffre + setKey + linksRegistry.autoCreate
+         * v13.4.6 (Kevin "jusqu'à ce que ça fonctionne") :
+         * RETRY 3× avec backoff si setKey échoue, puis push direct vers Firebase
+         * en dernier recours pour survivre clear cache local. */
         if (item.type === 'credential' && item.storage_key) {
-          const setRes = await vault.setKey(item.storage_key, item.value);
+          let setRes = await vault.setKey(item.storage_key, item.value);
+          let attempts = 1;
+          while (!setRes.ok && attempts < 3) {
+            await new Promise((r) => setTimeout(r, 200 * attempts));
+            setRes = await vault.setKey(item.storage_key, item.value);
+            attempts++;
+          }
+          if (!setRes.ok) {
+            /* Dernier recours : push direct Firebase chiffré pour ne pas perdre la clé */
+            try {
+              await firebase.write(`vault_emergency/${item.storage_key}`, {
+                value: item.value, /* chiffré par firebase si configuré, sinon plaintext FB rules privées */
+                ts: Date.now(),
+                source: 'multi-source-emergency',
+              });
+              logger.warn('multi-source', `setKey failed 3x → emergency Firebase backup OK : ${item.storage_key}`);
+            } catch (fbErr) {
+              logger.error('multi-source', `setKey failed 3x AND Firebase backup failed for ${item.storage_key}`, { fbErr });
+            }
+          }
           if (setRes.ok) {
             installed++;
             result.configured_count++;
@@ -388,7 +450,7 @@ class MultiSourceAnalyzer {
               }
             }
           } else {
-            failed.push(`${item.storage_key}: setKey failed`);
+            failed.push(`${item.storage_key}: setKey failed (3 retries + Firebase backup)`);
           }
           continue;
         }

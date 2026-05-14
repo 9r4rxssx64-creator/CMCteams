@@ -16,8 +16,8 @@
  *  - Section "Recommandé pour Apex" en tête (recommendForApex).
  */
 
-import { logger } from '../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
+import { logger } from '../../core/logger.js';
 import {
   apexMetaMarketplace,
   type MarketplaceCategory,

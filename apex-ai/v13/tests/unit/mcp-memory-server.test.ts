@@ -21,11 +21,11 @@ describe('MCP Memory Server (knowledge graph)', () => {
   beforeEach(async () => {
     /* setup.ts wipe IDB chaque beforeEach via fresh IDBFactory.
        On ré-init le singleton après wipe pour isolation stricte. */
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     (mcpMemoryServer as unknown as { initialized: boolean }).initialized = false;
     (mcpMemoryServer as unknown as { memEntities: Map<string, unknown> }).memEntities = new Map();
     (mcpMemoryServer as unknown as { memRelations: Map<string, unknown> }).memRelations = new Map();
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
     await mcpMemoryServer.init();
   });
 
@@ -215,7 +215,7 @@ describe('MCP Memory Server (knowledge graph)', () => {
 
     it('rejette format invalide', async () => {
       await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         mcpMemoryServer.importJSON({ version: 999 } as any),
       ).rejects.toThrow(/version mismatch/);
     });

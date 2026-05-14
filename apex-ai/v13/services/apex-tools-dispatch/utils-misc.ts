@@ -4,9 +4,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { firebase } from '../firebase.js';
 import { auditLog } from '../audit-log.js';
+import { firebase } from '../firebase.js';
 import { orchestrator } from '../orchestrator.js';
 
 export async function readFile(path: string, branch = 'main'): Promise<{ content: string; size: number }> {

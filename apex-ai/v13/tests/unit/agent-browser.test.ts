@@ -1,3 +1,4 @@
+/* eslint-disable no-script-url -- tests vérifient explicitement le blocage de ce schéma */
 /**
  * Tests agent-browser.ts (Kevin v13.4.3 — Shubham Skill #2).
  */

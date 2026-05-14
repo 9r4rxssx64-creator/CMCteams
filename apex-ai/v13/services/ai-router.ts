@@ -405,11 +405,34 @@ const KEEP_LAST_MESSAGES = 25;
  * v13.3.49 — Caps de validation pré-envoi.
  * Anthropic context = 200K tokens (~800K chars). On reste très en-dessous
  * pour laisser room aux tools (105 tools APEX) + max_tokens output (4096).
+ *
+ * v13.4.8 fix M5 (Ultra Review) — estimation tokens plus précise :
+ *  - FR : ~3 chars/token (vs 4 en anglais)
+ *  - Code/JSON : ~2.8 chars/token (très dense)
+ *  - Token cap concret : 150K tokens (sur les 200K Anthropic, laisse 50K
+ *    pour system + tools + output) — plus restrictif que 400K chars.
  */
-const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000 tokens */
-const MAX_TOTAL_BODY_CHARS = 400000; /* ~100K tokens conservateur */
+const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000-10000 tokens FR */
+const MAX_TOTAL_BODY_TOKENS = 150_000; /* Anthropic Sonnet 4.6 = 200K context */
 const MAX_TOKENS_OUTPUT_HARD_CAP = 8192;
 const MAX_TOKENS_OUTPUT_HARD_MIN = 1;
+
+/**
+ * v13.4.8 fix M5 — estimateur tokens heuristique multi-langue.
+ *  - Détecte présence code/JSON (denser : 2.8 chars/token)
+ *  - Sinon défaut FR-tolérant (3.2 chars/token)
+ * Pas aussi précis qu'un vrai tokenizer mais évite la sous-estimation
+ * massive de l'ancien `/4` qui causait HTTP 400 prompt-too-long fréquents.
+ */
+export function estimateTokens(text: string): number {
+  if (!text) return 0;
+  /* Heuristique simple : si > 30% du texte est code (triple-backtick block ou
+   * JSON ouvrant `{` à >10% des chars) on prend 2.8 chars/token. */
+  const hasFences = /```/.test(text);
+  const jsonRatio = (text.match(/[{}[\]:,"]/g)?.length ?? 0) / Math.max(text.length, 1);
+  const charsPerToken = hasFences || jsonRatio > 0.1 ? 2.8 : 3.2;
+  return Math.ceil(text.length / charsPerToken);
+}
 
 function truncateConversation(messages: ChatMessage[]): ChatMessage[] {
   if (messages.length <= MAX_CONVERSATION_MESSAGES) return messages;
@@ -464,10 +487,15 @@ function validateRequest(
       return { ok: false, reason: `max_tokens out of range [${MAX_TOKENS_OUTPUT_HARD_MIN}-${MAX_TOKENS_OUTPUT_HARD_CAP}]: ${maxTokens}` };
     }
   }
-  /* Total body size guard (anti-pathologique : si user colle 500K chars dans 1 msg) */
-  const totalChars = system.length + messages.reduce((sum, m) => sum + (typeof m.content === 'string' ? m.content.length : JSON.stringify(m.content).length), 0);
-  if (totalChars > MAX_TOTAL_BODY_CHARS) {
-    return { ok: false, reason: `total body too large (${totalChars} > ${MAX_TOTAL_BODY_CHARS})` };
+  /* v13.4.8 fix M5 — body size en TOKENS estimés (pas chars).
+   * Anthropic 4.6 = 200K context window. On limite à 150K pour laisser room
+   * tools (~10K) + system (~10K) + output (~4K). */
+  const totalText = system + messages.map((m) => (
+    typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+  )).join('\n');
+  const totalTokens = estimateTokens(totalText);
+  if (totalTokens > MAX_TOTAL_BODY_TOKENS) {
+    return { ok: false, reason: `total body too large (~${totalTokens} tokens > ${MAX_TOTAL_BODY_TOKENS})` };
   }
   return { ok: true };
 }
@@ -735,9 +763,33 @@ class AIRouter {
       logger.info('ai-router', `conversation truncated ${redactedMessages.length} → ${truncatedMessages.length} (cap ${MAX_CONVERSATION_MESSAGES})`);
     }
 
-    /* v13.3.49 — Validation pré-envoi : system + messages + max_tokens.
-     * Si invalid → onError immédiat (évite HTTP 400 silencieux Anthropic). */
-    const validation = validateRequest(truncatedMessages, system, 4096);
+    /* v13.4.6 (Kevin "pré-envoi invalide messages[1].content empty") :
+     * AUTO-FILTER messages vides AVANT validation (Apex tolérant).
+     * Un message vide arrive souvent quand Kevin envoie SEULEMENT une pièce jointe
+     * (image/PDF/audio) sans texte → content est string vide. On le filtre.
+     * Si tous les messages sont vides → message clair "Tape ta question". */
+    const filteredMessages = truncatedMessages.filter((m) => {
+      if (!m) return false;
+      if (typeof m.content === 'string') return m.content.trim().length > 0;
+      if (Array.isArray(m.content)) {
+        /* Garde le message si au moins UN block a du contenu (texte non-vide OU image/document) */
+        return m.content.some((part: { type?: string; text?: string }) => {
+          if (part.type === 'text') return (part.text ?? '').trim().length > 0;
+          return part.type === 'image' || part.type === 'document' || part.type === 'tool_use' || part.type === 'tool_result';
+        });
+      }
+      return false;
+    });
+
+    if (filteredMessages.length === 0) {
+      const err = new Error('Aucun message à envoyer — tape ta question ou ajoute du texte avec ta pièce jointe.');
+      logger.warn('ai-router', 'all messages empty after filter');
+      onError?.(err);
+      return;
+    }
+
+    /* v13.3.49 — Validation pré-envoi : system + messages + max_tokens. */
+    const validation = validateRequest(filteredMessages, system, 4096);
     if (!validation.ok) {
       const err = new Error(`Apex pré-envoi invalide : ${validation.reason}`);
       logger.error('ai-router', 'request validation failed', { reason: validation.reason });
@@ -752,17 +804,40 @@ class AIRouter {
 
     /* Wire ai-routing-policy : policy.decide() respecte mode (auto/economy/premium/forced)
      * + Anthropic priority + budget aware. Fallback en cas d'erreur 4xx/5xx via chain. */
-    const chain = await this.buildPolicyAwareChain(truncatedMessages);
+    const chain = await this.buildPolicyAwareChain(filteredMessages);
+
+    /* v13.4.9 (Kevin "ne s'arrête plus en plein travail") :
+     * Démarre stream-partial-saver : sauvegarde le partial text à chaque chunk
+     * pour permettre RESUME si déconnexion / abort / iPhone background kill. */
+    try {
+      const { streamPartialSaver } = await import('./stream-partial-saver.js');
+      streamPartialSaver.start({
+        provider: chain[0] ?? 'unknown',
+        messages: filteredMessages as Array<{ role: string; content: string | unknown[] }>,
+        system,
+      });
+    } catch { /* ignore */ }
 
     /* Estimation tokens input pour dashboard (heuristique : 1 token ≈ 4 chars FR/EN) */
     const inputTokensEstimate = Math.ceil(
-      JSON.stringify(truncatedMessages).length / 4 + system.length / 4,
+      JSON.stringify(filteredMessages).length / 4 + system.length / 4,
     );
     let outputTokensEstimate = 0;
 
-    /* Wrap onChunk pour count output tokens (visuel conso Kevin) */
+    /* Wrap onChunk pour count output tokens + persist partial (v13.4.9 resume) */
     const wrappedOnChunk = (chunk: StreamChunk): void => {
-      if (chunk.text) outputTokensEstimate += Math.ceil(chunk.text.length / 4);
+      if (chunk.text) {
+        outputTokensEstimate += Math.ceil(chunk.text.length / 4);
+        /* v13.4.9 : alimente le partial saver — sync best-effort */
+        void import('./stream-partial-saver.js').then(({ streamPartialSaver }) => {
+          if (chunk.text) streamPartialSaver.appendChunk(chunk.text);
+        }).catch(() => { /* ignore */ });
+      }
+      if (chunk.done) {
+        void import('./stream-partial-saver.js').then(({ streamPartialSaver }) => {
+          streamPartialSaver.complete();
+        }).catch(() => { /* ignore */ });
+      }
       onChunk(chunk);
     };
 
@@ -828,18 +903,29 @@ class AIRouter {
 
       /* P0-3 PERF : lazy-load au 1er tool_use uniquement (évite 27KB gzip boot) */
       const apexToolsDispatch = await loadApexToolsDispatch();
+      /* v13.4.8 fix C8 (Ultra Review) — PII redaction sur tool_result avant
+       * envoi au model. Avant : tool_result content (file content, web fetch,
+       * etc.) bypassait redactPII appliquée uniquement sur user messages.
+       * Tools sensibles : read_file, web_fetch, list_files. */
+      let totalToolPii = 0;
       const toolResults = await Promise.all(
         result.streamResult.toolUses.map(async (tu) => {
           const tier = resolveUserTier();
           try {
             const exec = await apexToolsDispatch.execute(tu.name, tu.input, tier);
-            const content = exec.ok
+            const rawContent = exec.ok
               ? JSON.stringify(exec.result ?? null)
               : `Error: ${exec.error ?? 'Tool execution failed'}`;
+            /* Redact PII sur le content avant retour au LLM.
+             * Limite : si un tool a légitimement besoin de PII (ex: send_email_to(addr)),
+             * l'input du tool a déjà été validé côté apex-tools-dispatch.
+             * Le RESULT par contre est unknown content → redaction systématique. */
+            const r = redactPII(rawContent);
+            totalToolPii += r.foundCount;
             return {
               type: 'tool_result' as const,
               tool_use_id: tu.id,
-              content,
+              content: r.redacted,
               is_error: !exec.ok,
             };
           } catch (err: unknown) {
@@ -853,6 +939,12 @@ class AIRouter {
           }
         }),
       );
+      if (totalToolPii > 0) {
+        void auditLog.record('ai.pii_redacted_tool_result', {
+          details: { count: totalToolPii, tools_count: result.streamResult.toolUses.length },
+        });
+        logger.info('ai-router', `PII redacted in tool_results: ${totalToolPii} occurrences`);
+      }
       currentMessages.push({ role: 'user', content: toolResults });
 
       /* Notify UI que le batch de tools est terminé */
@@ -1024,10 +1116,14 @@ class AIRouter {
             shouldBackoff = /HTTP\s*5\d\d|timeout|network|fetch failed/i.test(e.message);
           }
 
-          /* Backoff sur erreurs transitoires AVANT de bruler la clé suivante */
+          /* Backoff sur erreurs transitoires AVANT de bruler la clé suivante.
+           * v13.4.8 fix M6 (Ultra Review) — jitter ±30% pour éviter thundering
+           * herd quand plusieurs onglets/devices retry au même tick. */
           if (shouldBackoff && attempt < BACKOFF_MS.length) {
-            const delay = BACKOFF_MS[attempt]!;
-            logger.info('ai-router', `${provider} transient error, backoff ${delay}ms`, { attempt: attempt + 1, err: e.message });
+            const baseDelay = BACKOFF_MS[attempt]!;
+            const jitter = Math.random() * baseDelay * 0.3;
+            const delay = Math.round(baseDelay + jitter);
+            logger.info('ai-router', `${provider} transient error, backoff ${delay}ms (base ${baseDelay} +jitter)`, { attempt: attempt + 1, err: e.message });
             await this.sleep(delay, signal);
             if (signal.aborted) return { status: 'aborted' };
             continue; /* retry MÊME clé après backoff */

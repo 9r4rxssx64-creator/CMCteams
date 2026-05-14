@@ -42,14 +42,6 @@ import {
   stripHtmlShared,
   type SearchHelpers,
 } from './apex-meta-marketplace/search-handlers.js';
-import { auditLog } from './audit-log.js';
-
-const STORAGE_KEY = 'apex_v13_meta_marketplace_state';
-
-/* ============================================================================
- * Types publics
- * ========================================================================= */
-
 import type {
   MarketplaceCategory,
   MarketplaceProvider,
@@ -58,6 +50,13 @@ import type {
   InstallResult,
   MetaMarketplaceStats,
 } from './apex-meta-marketplace-types.js';
+import { auditLog } from './audit-log.js';
+
+const STORAGE_KEY = 'apex_v13_meta_marketplace_state';
+
+/* ============================================================================
+ * Types publics
+ * ========================================================================= */
 
 export type {
   MarketplaceCategory,

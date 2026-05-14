@@ -18,7 +18,6 @@
  */
 
 import { logger } from '../core/logger.js';
-
 import type {
   OcrWorkerRequest,
   OcrWorkerResponse,

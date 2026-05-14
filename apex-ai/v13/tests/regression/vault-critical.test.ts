@@ -44,19 +44,19 @@ describe('REGRESSION vault — 14+ patterns détection critique', () => {
 
   it('REGRESSION — Pattern Google AIza détecté', () => {
     const r = vault.detectPattern('AIza' + 'C'.repeat(33));
-    expect(r?.name).toBe('Google AI');
-    expect(r?.key).toBe('ax_google_key');
+    expect(r?.name).toBe('Google AI Gemini'); /* v13.4.6 rename */
+    expect(r?.key).toBe('ax_gemini_key'); /* v13.4.6 storageKey cohérente avec autres services */
   });
 
   it('REGRESSION — Pattern GitHub PAT classique détecté', () => {
     const r = vault.detectPattern('ghp_' + 'D'.repeat(36));
     expect(r?.name).toMatch(/GitHub PAT/);
-    expect(r?.key).toBe('ax_github_token');
+    expect(r?.key).toMatch(/ax_github_(token|pat_classic|pat_finegrained|oauth)/); /* v13.4.6 storageKeys distinctes */
   });
 
   it('REGRESSION — Pattern GitHub PAT fine-grained détecté', () => {
     const r = vault.detectPattern('github_pat_' + 'X'.repeat(85));
-    expect(r?.key).toBe('ax_github_token');
+    expect(r?.key).toMatch(/ax_github_(token|pat_classic|pat_finegrained|oauth)/); /* v13.4.6 storageKeys distinctes */
   });
 
   it('REGRESSION — Pattern Stripe SK live/test détecté', () => {

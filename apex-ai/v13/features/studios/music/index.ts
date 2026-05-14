@@ -26,8 +26,8 @@
  * - 0 secrets, 0 magic numbers (tout en const exportées)
  */
 
-import { logger } from '../../../core/logger.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
+import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
 

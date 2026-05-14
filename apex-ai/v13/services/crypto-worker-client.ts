@@ -17,7 +17,6 @@
  */
 
 import { logger } from '../core/logger.js';
-
 import type {
   CryptoWorkerRequest,
   CryptoWorkerResponse,

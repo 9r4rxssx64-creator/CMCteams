@@ -87,7 +87,7 @@ describe('wake-word edge coverage', () => {
       onerror: unknown = null;
       onend: unknown = null;
       start(): void {
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        // eslint-disable-next-line no-throw-literal -- test du chemin "throw non-Error"
         throw 'string error';
       }
       stop(): void {}
@@ -295,7 +295,7 @@ describe('wake-word edge coverage', () => {
   it('callback throw avec non-Error string', async () => {
     (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition = FakeSpeechRecognition;
     wakeWord.onWake(() => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      // eslint-disable-next-line no-throw-literal -- test du chemin "throw non-Error"
       throw 'string error in cb';
     });
     await wakeWord.start();

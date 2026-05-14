@@ -1,3 +1,4 @@
+/* eslint-disable no-script-url -- tests vérifient explicitement le blocage de ce schéma */
 /**
  * P1 SECU (audit v13.2.7) : tests core/html-safe.ts (escapeHtml + sanitizeHtml + sanitizeUrl).
  */

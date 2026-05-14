@@ -188,12 +188,12 @@ class Logger {
     const prefix = `[${level.toUpperCase()}] ${safeScope}`;
     const args =
       safeData !== undefined ? [prefix, safeMsg, safeData] : [prefix, safeMsg];
-    /* eslint-disable no-console */
+     
     if (level === 'error') console.error(...args);
     else if (level === 'warn') console.warn(...args);
     else if (level === 'info') console.info(...args);
     else console.debug(...args);
-    /* eslint-enable no-console */
+     
 
     /* Sentry bridge async (errors only, lazy) */
     if (level === 'error') void this.forwardToSentry(entry);

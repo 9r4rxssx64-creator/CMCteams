@@ -13,11 +13,6 @@
 
 import { logger } from '../core/logger.js';
 
-import { apexTools, type ApexTool } from './apex-tools.js';
-import { auditLog } from './audit-log.js';
-import { guardToolEnabled } from './feature-guard.js';
-import { orchestrator } from './orchestrator.js';
-
 import {
   base64EncodeDecode,
   createTask,
@@ -77,6 +72,11 @@ import {
   wikipediaLookup,
   youtubeSearch,
 } from './apex-tools-dispatch/utils-misc.js';
+import { apexTools, type ApexTool } from './apex-tools.js';
+import { auditLog } from './audit-log.js';
+import { guardToolEnabled } from './feature-guard.js';
+import { orchestrator } from './orchestrator.js';
+
 /**
  * Mapping tool name → feature toggle id (Kevin règle 2026-05-04 — ON/OFF tout).
  * Lorsque le toggle est OFF, le dispatcher refuse l'exécution avec un tool_result d'erreur.

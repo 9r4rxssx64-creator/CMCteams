@@ -26,11 +26,17 @@
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
 
+import { styleInjector } from './style-injector.js';
+
 const BANNER_ID = 'apex-force-update-banner';
-const STYLE_ID = 'apex-force-update-style';
+const STYLE_INJECTOR_ID = 'apex-force-update-banner';
 const REMOTE_URL = './index.html';
 const CHECK_INTERVAL_MS = 10 * 60 * 1000; /* 10 min */
 const RECENT_CHECK_KEY = 'apex_v13_last_version_check_ts';
+/* v13.4.8 fix C5 (Ultra Review) — single source of truth pour anti-race
+ * (cf. bootstrap.ts qui n'a plus que forceUpdateBanner.install()). */
+const FORCE_UPDATE_IN_PROGRESS_KEY = 'apex_v13_force_update_in_progress';
+const FORCE_UPDATE_PROGRESS_TTL_MS = 30_000;
 
 interface VersionCheckResult {
   remote_ver: string | null;
@@ -41,6 +47,9 @@ interface VersionCheckResult {
 class ForceUpdateBanner {
   private installed = false;
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
+  /* v13.4.8 fix I-5 (Ultra Review² — auto-audit) : named listener pour
+   * permettre proper uninstall + éviter double-register si install() rappelé. */
+  private visibilityListener: (() => void) | null = null;
 
   /** Install au boot. Idempotent. */
   install(): void {
@@ -50,13 +59,50 @@ class ForceUpdateBanner {
     setTimeout(() => void this.checkAndMaybeShow(), 3000);
     /* Check récurrent */
     this.intervalHandle = setInterval(() => void this.checkAndMaybeShow(), CHECK_INTERVAL_MS);
-    logger.info('force-update', 'banner installed');
+    /* v13.4.8 fix C5 (Ultra Review) : visibilitychange listener — autrefois dans
+     * bootstrap.ts, déplacé ici pour single ownership. Throttle 30min. */
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+      this.visibilityListener = (): void => {
+        if (document.visibilityState !== 'visible') return;
+        const lastCheck = parseInt(localStorage.getItem('apex_v13_last_visibility_update_check') ?? '0', 10);
+        if (Date.now() - lastCheck < 30 * 60 * 1000) return;
+        try { localStorage.setItem('apex_v13_last_visibility_update_check', String(Date.now())); } catch { /* quota */ }
+        void this.checkAndMaybeShow();
+      };
+      document.addEventListener('visibilitychange', this.visibilityListener);
+    }
+    logger.info('force-update', 'banner installed (sole owner force-update flow)');
   }
 
-  /** Stop listener (cleanup). */
+  /**
+   * v13.4.8 fix C5 (Ultra Review) — guard anti-race "déjà en cours de force-update".
+   * Empêche les checks concurrents (cron, visibility, banner-click) de tous nuke en parallèle.
+   */
+  private isUpdateInProgress(): boolean {
+    try {
+      const ts = parseInt(sessionStorage.getItem(FORCE_UPDATE_IN_PROGRESS_KEY) ?? '0', 10);
+      if (!ts) return false;
+      if (Date.now() - ts > FORCE_UPDATE_PROGRESS_TTL_MS) {
+        sessionStorage.removeItem(FORCE_UPDATE_IN_PROGRESS_KEY);
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  private markUpdateInProgress(): void {
+    try { sessionStorage.setItem(FORCE_UPDATE_IN_PROGRESS_KEY, String(Date.now())); } catch { /* ignore */ }
+  }
+
+  /** Stop listener (cleanup). v13.4.8 — removes visibilitychange + clears interval. */
   uninstall(): void {
     if (this.intervalHandle) clearInterval(this.intervalHandle);
     this.intervalHandle = null;
+    if (this.visibilityListener && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+    }
+    this.visibilityListener = null;
     this.removeBanner();
     this.installed = false;
   }
@@ -87,17 +133,78 @@ class ForceUpdateBanner {
   }
 
   private async checkAndMaybeShow(): Promise<void> {
+    /* v13.4.8 fix C5 — abort si force-update déjà en cours (anti-race) */
+    if (this.isUpdateInProgress()) {
+      logger.debug('force-update', 'check skipped — update already in progress');
+      return;
+    }
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
-      this.showBanner(r.remote_ver);
+      /* v13.4.6 (Kevin "Force MAJ auto toujours") :
+       * MAJ silencieuse automatique sans bouton ni banner.
+       * Conditions de sécurité :
+       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant réponse)
+       *   2. Pas de modal/input/textarea actif (Kevin tape)
+       *   3. Throttle 1×/heure (`apex_v13_auto_maj_last`)
+       *   4. Visibilité document = caché OU page idle 30s
+       * Sinon → banner classique avec bouton pour qu'il décide. */
+      const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
+      const throttleOK = Date.now() - lastAuto > 60 * 60 * 1000; /* 1h */
+      const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
+      const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
+      if (throttleOK && isIdle && isSafe) {
+        logger.info('force-update', `AUTO-MAJ silencieuse (${r.local_ver} → ${r.remote_ver})`);
+        localStorage.setItem('apex_v13_auto_maj_last', String(Date.now()));
+        /* Toast info bref */
+        try {
+          const { toast } = await import('../ui/toast.js');
+          toast.info(`🔄 Mise à jour ${r.remote_ver} en cours…`);
+        } catch { /* ignore */ }
+        await this.forceUpdate();
+      } else {
+        this.showBanner(r.remote_ver);
+      }
     } else {
       this.removeBanner();
+    }
+  }
+
+  /** v13.4.6 — Détecte si user tape activement (textarea/input focus) */
+  private hasUserTyping(): boolean {
+    const active = document.activeElement;
+    if (!active) return false;
+    const tag = active.tagName?.toLowerCase();
+    return tag === 'textarea' || tag === 'input' || active.getAttribute('contenteditable') === 'true';
+  }
+
+  /** v13.4.6 — Détecte si une requête fetch IA est en cours (anti-coupure pendant streaming) */
+  private hasActiveFetch(): boolean {
+    try {
+      /* Heuristique : window flag set par les services chat/anthropic */
+      const w = window as unknown as { __apexActiveStream?: boolean };
+      return w.__apexActiveStream === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s) */
+  private isUserIdle(): boolean {
+    try {
+      const lastInteraction = parseInt(localStorage.getItem('apex_v13_last_interaction') ?? '0', 10);
+      if (!lastInteraction) return true;
+      return Date.now() - lastInteraction > 30_000;
+    } catch {
+      return true;
     }
   }
 
   private showBanner(remoteVer: string): void {
     if (document.getElementById(BANNER_ID)) return;
     this.injectStyle();
+    /* v13.4.8 fix C2 (Ultra Review) — pousse le badge statique vers la gauche
+     * pour libérer la place quand le banner s'affiche (banner = top, pas conflit
+     * réel, mais on s'assure que les 3 elements bottom-right ne se chevauchent jamais). */
     const banner = document.createElement('div');
     banner.id = BANNER_ID;
     banner.setAttribute('role', 'alert');
@@ -128,7 +235,10 @@ class ForceUpdateBanner {
   }
 
   private injectStyle(): void {
-    if (document.getElementById(STYLE_ID)) return;
+    /* v13.4.8 fix C1 (Ultra Review) — utilise styleInjector (CSP-safe, nonce auto)
+     * au lieu de createElement('style') brut qui était bloqué par CSP strict
+     * style-src 'self' 'nonce-XXX' (le banner apparaissait sans style en prod). */
+    if (styleInjector.has(STYLE_INJECTOR_ID)) return;
     const css = `
       #${BANNER_ID} {
         position: fixed;
@@ -197,10 +307,7 @@ class ForceUpdateBanner {
         .apex-fu-btn:active { transform: none !important; }
       }
     `;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = css;
-    document.head.appendChild(style);
+    styleInjector.inject(STYLE_INJECTOR_ID, css);
   }
 
   /**
@@ -209,7 +316,24 @@ class ForceUpdateBanner {
    * localStorage, reload avec query param fresh.
    */
   async forceUpdate(): Promise<void> {
+    /* v13.4.8 fix C5 (Ultra Review) — race-guard d'abord pour éviter double-nuke
+     * si user clique le bouton + cron + visibilitychange tirent quasi simultanément. */
+    if (this.isUpdateInProgress()) {
+      logger.warn('force-update', 'force-update already in progress, skipped');
+      return;
+    }
+    this.markUpdateInProgress();
     logger.info('force-update', 'NUCLEAR force-update triggered by Kevin');
+    /* v13.4.6 — Pré-snapshot OBLIGATOIRE avant toute purge (Kevin "ne jamais
+     * rien perdre"). Si PRESERVE_PREFIXES rate qqc, on peut tout restaurer
+     * via autoBackup.restoreLatest() au prochain boot. */
+    try {
+      const { autoBackup } = await import('./auto-backup.js');
+      const backup = await autoBackup.snapshot('pre-rollback');
+      logger.info('force-update', `pre-update snapshot OK : ${backup.id} (${backup.size_bytes}b)`);
+    } catch (err: unknown) {
+      logger.warn('force-update', 'pre-update snapshot failed (non bloquant)', { err });
+    }
     /* Étape 1 : unregister tous les Service Workers */
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
@@ -243,19 +367,30 @@ class ForceUpdateBanner {
       const PRESERVE_PREFIXES = [
         'apex_v13_vault',
         'apex_v13_user',
+        'apex_v13_users',
+        'apex_v13_uid',
         'apex_v13_pin',
-        'apex_v13_multikey_vault',
+        'apex_v13_multi_keys',          /* v13.4.6 FIX CRITIQUE — VRAIE clé du coffre (était 'multikey_vault' faux) */
+        'apex_v13_multikey_vault',       /* legacy fallback (v13.3.x avant rename) */
         'apex_v13_passphrase_history',
         'apex_v13_persistent_memory',
         'apex_v13_credentials',
         'apex_v13_device_obf',
         'apex_v13_device_passphrase',
+        'apex_v13_device_trusted',
+        'apex_v13_backup_index',         /* v13.4.6 FIX — index des snapshots */
+        'apex_v13_backup_',              /* v13.4.6 FIX — chaque snapshot ax_backup_xxx */
+        'apex_v13_last_known_name',      /* v13.4.6 FIX — reconnaissance Kevin */
+        'apex_v13_last_known_uid',
+        'apex_v13_lastact',
         'apex_v13_lessons',
         'apex_v13_kb',
         'apex_v13_audit',
-        'apex_v13_users',
         'apex_v13_xp',
         'apex_v13_streak',
+        'apex_v13_attachments',          /* v13.4.6 FIX — pièces jointes session */
+        'ax_v13_attachments',
+        'apex_v13_paste_recovery_',      /* v13.4.6 — anti-perte clés collées par Kevin */
         'ax_pin',
         'ax_user',
         'ax_uid',
@@ -311,11 +446,23 @@ class ForceUpdateBanner {
         'ax_api_key',
       ];
       const toDelete: string[] = [];
+      /* v13.4.8 fix M1 (Ultra Review) — patterns anchored explicites au lieu de
+       * key.includes('cache') qui matchait n'importe quel substring (ex:
+       * apex_v13_recovery_cache_chat aurait été nuke par mégarde). */
+      const CACHE_KEY_PATTERNS: ReadonlyArray<RegExp> = [
+        /^apex_v13_sw_cache_/,
+        /^apex_v13_static_cache_/,
+        /^apex_v13_runtime_cache_/,
+        /^apex_v13_app_ver$/,
+        /^apex_v13_cache_index$/,
+        /^apex_v13_route_cache_/,
+      ];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
         const isPreserved = PRESERVE_PREFIXES.some((p) => key.startsWith(p));
-        if (!isPreserved && (key.includes('cache') || key.includes('sw_') || key.includes('app_ver'))) {
+        if (isPreserved) continue;
+        if (CACHE_KEY_PATTERNS.some((re) => re.test(key))) {
           toDelete.push(key);
         }
       }

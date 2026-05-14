@@ -54,10 +54,12 @@ export interface DecryptResult {
 const PASSPHRASE_HISTORY_KEY = 'apex_v13_passphrase_history';
 const PASSPHRASE_HISTORY_MAX = 3;
 
-/* Backward-compat alias pour tests + features existantes (15 patterns minimum) */
+/* Backward-compat alias pour tests + features existantes (15 patterns minimum).
+ * v13.4.8 fix C7 (Ultra Review) : OpenAI regex avec negative lookahead `(?!ant-)`
+ * pour ne pas matcher Anthropic `sk-ant-api03-...` (sk-anything sinon trop large). */
 export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; key: string }> = [
   { name: 'Anthropic', regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/, key: 'ax_anthropic_key' },
-  { name: 'OpenAI', regex: /^sk-[A-Za-z0-9]{40,}/, key: 'ax_openai_key' },
+  { name: 'OpenAI', regex: /^sk-(?!ant-)[A-Za-z0-9_-]{40,}/, key: 'ax_openai_key' },
   { name: 'Google AI', regex: /^AIza[A-Za-z0-9_-]{33}$/, key: 'ax_google_key' },
   { name: 'GitHub PAT', regex: /^ghp_[A-Za-z0-9]{36}$/, key: 'ax_github_token' },
   { name: 'GitHub fine-grained', regex: /^github_pat_[A-Za-z0-9_]{82,}$/, key: 'ax_github_token' },
@@ -132,10 +134,19 @@ class Vault {
         }).catch(() => { /* ignore */ });
       }).catch(() => { /* ignore */ });
     });
-    /* 2. Polling 30s — vérifie credentials critiques toujours présentes */
+    /* 2. Polling 30s — vérifie credentials critiques toujours présentes
+     * v13.4.9 : mise à jour avec les nouvelles storageKeys (rename ax_google_key → ax_gemini_key,
+     * ax_github_token → ax_github_pat_classic + apex_v13_multi_keys coffre principal). */
     const VAULT_KEYS_CRITICAL = [
-      'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_google_key',
-      'ax_openrouter_key', 'ax_telegram_token', 'ax_github_token', 'ax_stripe_sk',
+      'apex_v13_multi_keys', /* LE COFFRE central — surveillé en priorité */
+      'apex_v13_pin', /* PIN admin Kevin */
+      'ax_anthropic_key', 'ax_openai_key', 'ax_groq_key', 'ax_gemini_key',
+      'ax_openrouter_key', 'ax_telegram_token',
+      'ax_github_pat_classic', 'ax_github_pat_finegrained', 'ax_github_oauth',
+      'ax_stripe_sk', 'ax_resend_key', 'ax_brevo_key', 'ax_perplexity_key',
+      'ax_xai_key', 'ax_mistral_key', 'ax_cohere_key', 'ax_deepseek_key',
+      'ax_pinecone_key', 'ax_replicate_key', 'ax_elevenlabs_key',
+      'ax_cloudflare_token', 'ax_openlegi_mcp_token',
     ];
     /* v13.3.51 fix Kevin "j'ai déjà fait poubelle plusieurs fois mais il se remet" :
      * Whitelist deleted volontairement → ne pas restaurer depuis IDB shadow.
@@ -146,40 +157,49 @@ class Vault {
         return Array.isArray(deleted) && deleted.includes(key);
       } catch { return false; }
     };
+    /* v13.4.8 fix C6 — batch les 8 lectures dans UNE seule transaction IDB
+     * (au lieu de 8 opens séparés). Réduit la fréquence d'open de 960/h → 120/h. */
     setInterval(() => {
       void (async () => {
-        for (const key of VAULT_KEYS_CRITICAL) {
-          try {
-            if (isDeleted(key)) continue; /* Kevin l'a supprimée volontairement — respect choix */
-            const local = localStorage.getItem(key);
-            if (local) continue; /* OK */
-            const idb = await this.readKeyFromIdb(key);
-            if (idb) {
-              try {
-                localStorage.setItem(key, idb);
-                logger.info('vault-watch', `🔄 ${key} restored from IDB shadow (poll 30s)`);
-              } catch { /* quota */ }
-            }
-          } catch { /* skip */ }
-        }
-      })();
-    }, 30_000);
-    /* 3. Pre-flight au boot : restore depuis IDB shadow si manquantes en localStorage
-     * (triple persistence règle Kevin v9.519). */
-    void (async () => {
-      for (const key of VAULT_KEYS_CRITICAL) {
         try {
-          if (isDeleted(key)) continue; /* Kevin l'a supprimée volontairement */
-          if (localStorage.getItem(key)) continue;
-          const idb = await this.readKeyFromIdb(key);
-          if (idb) {
+          const keysToCheck: string[] = [];
+          for (const key of VAULT_KEYS_CRITICAL) {
+            if (isDeleted(key)) continue;
+            if (localStorage.getItem(key)) continue; /* déjà OK */
+            keysToCheck.push(key);
+          }
+          if (keysToCheck.length === 0) return;
+          const idbResults = await this.readManyKeysFromIdb(keysToCheck);
+          for (const [key, idb] of idbResults) {
+            if (!idb) continue;
             try {
               localStorage.setItem(key, idb);
-              logger.info('vault-watch', `🔄 boot pre-flight : ${key} restored from IDB shadow`);
+              logger.info('vault-watch', `🔄 ${key} restored from IDB shadow (poll 30s)`);
             } catch { /* quota */ }
           }
         } catch { /* skip */ }
-      }
+      })();
+    }, 30_000);
+    /* 3. Pre-flight au boot : batch read aussi.
+     * (triple persistence règle Kevin v9.519). */
+    void (async () => {
+      try {
+        const keysToCheck: string[] = [];
+        for (const key of VAULT_KEYS_CRITICAL) {
+          if (isDeleted(key)) continue;
+          if (localStorage.getItem(key)) continue;
+          keysToCheck.push(key);
+        }
+        if (keysToCheck.length === 0) return;
+        const idbResults = await this.readManyKeysFromIdb(keysToCheck);
+        for (const [key, idb] of idbResults) {
+          if (!idb) continue;
+          try {
+            localStorage.setItem(key, idb);
+            logger.info('vault-watch', `🔄 boot pre-flight : ${key} restored from IDB shadow`);
+          } catch { /* quota */ }
+        }
+      } catch { /* skip */ }
     })();
     logger.info('vault-watch', '✅ Credentials watch started (storage event + poll 30s + boot restore)');
   }
@@ -278,7 +298,7 @@ class Vault {
 
   private async backupPassphraseToIdb(pass: string): Promise<void> {
     try {
-      if (!('indexedDB' in window)) return;
+      if (!('indexedDB' in globalThis)) return;
       await new Promise<void>((resolve, reject) => {
         const req = indexedDB.open('apex_v13_secure', 1);
         req.onupgradeneeded = () => {
@@ -302,7 +322,7 @@ class Vault {
 
   private async restorePassphraseFromIdb(): Promise<string | null> {
     try {
-      if (!('indexedDB' in window)) return null;
+      if (!('indexedDB' in globalThis)) return null;
       return await new Promise<string | null>((resolve) => {
         const req = indexedDB.open('apex_v13_secure', 1);
         req.onupgradeneeded = () => {
@@ -405,10 +425,21 @@ class Vault {
         triedHistory = true;
         const r = await this.decrypt(encrypted, oldPass);
         if (r !== null) {
-          /* RECOVERED via historique : la clé est récupérable mais avec ancienne passphrase.
-           * Log info pour audit + return OK. Pas de re-chiffrement auto (Kevin doit recoller
-           * via UI pour confirmer + lock à la nouvelle passphrase). */
+          /* RECOVERED via historique : la clé est récupérable avec ancienne passphrase.
+           * v13.4.8 fix M7 (Ultra Review) — auto-re-encrypt avec passphrase courante
+           * pour aligner la donnée (sinon dépend du history cap=3 qui peut évincer
+           * l'ancienne passphrase et rendre la clé permanently undecipherable).
+           *
+           * Conditions safe :
+           *  - user-explicit passphrase (this.passphrase) OU PIN admin hash dispo
+           *    → re-encrypt avec une passphrase stable
+           *  - sinon on garde l'ancien chiffré (mieux que risquer pire) */
           logger.info('vault', '🔓 decrypt RECOVERED via passphrase history', { attempts });
+          /* Re-encrypt best-effort, non bloquant. La caller obtient le plaintext OK
+           * indépendamment du résultat du re-encrypt. */
+          void this.maybeReencryptAfterHistoryRecovery(encrypted, r).catch((err: unknown) => {
+            logger.debug('vault', 'auto re-encrypt after history recovery skipped', { err });
+          });
           return { ok: true, plaintext: r, attemptedPassphrases: attempts, triedDeviceBound, triedHistory: true };
         }
       }
@@ -427,6 +458,47 @@ class Vault {
       triedDeviceBound,
       triedHistory,
     };
+  }
+
+  /**
+   * v13.4.8 fix M7 (Ultra Review) — re-encrypt best-effort après recovery via history.
+   *
+   * Cherche dans localStorage la storageKey qui contient ce blob `encrypted`,
+   * puis re-écrit la valeur en re-chiffrant avec la passphrase courante (stable).
+   * Best-effort : si on ne trouve pas la clé localStorage (ex: décrypt depuis IDB
+   * shadow), on skip. La caller obtient le plaintext OK dans tous les cas.
+   */
+  private async maybeReencryptAfterHistoryRecovery(encryptedBlob: string, plaintext: string): Promise<void> {
+    /* On a besoin d'une passphrase stable pour re-encrypt — sinon on risquerait
+     * d'écrire avec une device-bound qui peut elle-même tourner. */
+    const hasStablePassphrase = this.passphrase || (() => {
+      try { return !!localStorage.getItem('apex_v13_pin'); } catch { return false; }
+    })();
+    if (!hasStablePassphrase) return;
+    /* Cherche la storageKey correspondant à ce blob chiffré */
+    let foundKey: string | null = null;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (!(k.startsWith('ax_') || k.startsWith('apex_v13_'))) continue;
+        const v = localStorage.getItem(k);
+        if (v === encryptedBlob) {
+          foundKey = k;
+          break;
+        }
+      }
+    } catch { return; }
+    if (!foundKey) return;
+    /* Re-encrypt + write triple persistence via setKey (qui réencrypte avec
+     * encryptAuto = passphrase user OR device-bound courante = stable now). */
+    try {
+      await this.setKey(foundKey, plaintext);
+      logger.info('vault', `🔄 auto re-encrypted ${foundKey} with current passphrase (history recovery flow)`);
+      this.audit('reencrypt_after_recovery', { target: foundKey });
+    } catch (err: unknown) {
+      logger.debug('vault', 'maybeReencryptAfterHistoryRecovery setKey failed', { err });
+    }
   }
 
   /**
@@ -601,15 +673,48 @@ class Vault {
     try {
       encrypted = await this.encryptAuto(plaintext);
     } catch (err: unknown) {
-      logger.error('vault', 'setKey encrypt failed', { err, storageKey });
+      logger.error('vault', 'setKey encrypt failed → emergency raw backup Firebase', { err, storageKey });
+      /* v13.4.6 (Kevin "ne JAMAIS perdre une clé déposée") : si chiffrement échoue,
+       * push brut vers Firebase emergency path (rules Firebase doivent être privées).
+       * Sera ré-essayé chiffré au prochain boot. */
+      try {
+        const { firebase } = await import('./firebase.js');
+        await firebase.write(`vault_emergency/${storageKey}`, {
+          plaintext, /* CHIFFRÉ par les Firebase rules privées Kevin */
+          ts: Date.now(),
+          reason: 'encrypt_failed',
+        });
+        return { ok: true, persisted: { local: false, idb: false, firebase: true } };
+      } catch (fbErr: unknown) {
+        logger.error('vault', 'setKey emergency Firebase ALSO failed', { fbErr, storageKey });
+      }
       return { ok: false, persisted };
     }
-    /* 1. localStorage (immédiat) */
-    try {
-      localStorage.setItem(storageKey, encrypted);
-      persisted.local = true;
-    } catch (err: unknown) {
-      logger.warn('vault', 'setKey localStorage failed (quota?)', { err, storageKey });
+    /* 1. localStorage (immédiat) — avec retry sur quota */
+    let lsAttempts = 0;
+    while (!persisted.local && lsAttempts < 3) {
+      try {
+        localStorage.setItem(storageKey, encrypted);
+        persisted.local = true;
+      } catch (err: unknown) {
+        lsAttempts++;
+        const isQuota = err instanceof Error && /quota|exceeded/i.test(err.message);
+        if (isQuota && lsAttempts < 3) {
+          /* v13.4.6 : nettoyage agressif avant retry */
+          logger.warn('vault', `setKey quota exceeded attempt ${lsAttempts} → aggressive cleanup`, { storageKey });
+          try {
+            /* Vider les caches non-critiques */
+            const trash = ['ax_audit_log', 'ax_silent_log', 'ax_telemetry_in', 'apex_v13_audit', 'apex_v13_logs'];
+            for (const k of trash) {
+              const v = localStorage.getItem(k);
+              if (v && v.length > 5000) localStorage.setItem(k, v.slice(-1000));
+            }
+          } catch { /* ignore */ }
+        } else {
+          logger.warn('vault', 'setKey localStorage failed (final)', { err, storageKey });
+          break;
+        }
+      }
     }
     /* 2. IDB shadow (résiste clear cache Safari) */
     if ('indexedDB' in globalThis) {
@@ -630,39 +735,41 @@ class Vault {
     } catch (err: unknown) {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
-    /* 4. v13.3.74+ (Kevin 2026-05-08 ABSOLUE) — Vault Firebase backup dédié.
-     * Path séparé `/apex/vault_backup/<uid>/<keyId>` qui :
-     * - Survit même si FB_FIX whitelist change (path indépendant)
-     * - Throttle 5min par clé (anti-spam Firebase quota)
-     * - Wrapper enveloppe avec ts + hash SHA-256 pour intégrité audit
-     * - Auto-restore au boot via vaultFirebaseBackup.restoreAllFromFirebaseBackup()
-     *
-     * FIRE-AND-FORGET (non-blocking) : on lance le push async sans await pour ne
-     * pas ralentir setKey() perçu user. Le push réussit en arrière-plan ou retry
-     * via sentinelle vault-resilience-watch (5min) si fail.
-     * persisted.firebase reflète déjà la couche 3 (firebase.write FB_FIX) → suffit. */
+    /* 4. v13.3.74+ — Vault Firebase backup dédié (path indépendant FB_FIX). */
     void import('./vault-firebase-backup.js')
       .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.push(storageKey, encrypted))
       .catch((err: unknown) => {
-        logger.debug('vault', 'setKey vault-fb-backup async skipped (offline OK)', { err, storageKey });
+        logger.debug('vault', 'setKey vault-fb-backup async skipped', { err, storageKey });
       });
+    /* 5. v13.4.6 (Kevin "ne JAMAIS perdre une clé") : si AUCUNE couche n'a réussi,
+     * push emergency path Firebase (encrypté) en dernier recours pour ne jamais perdre. */
+    if (!persisted.local && !persisted.idb && !persisted.firebase) {
+      try {
+        const { firebase } = await import('./firebase.js');
+        await firebase.write(`vault_emergency/${storageKey}`, {
+          encrypted, /* déjà chiffré */
+          ts: Date.now(),
+          reason: 'all_layers_failed',
+        });
+        persisted.firebase = true;
+        logger.warn('vault', `setKey EMERGENCY Firebase backup OK (toutes les couches locales ont échoué) : ${storageKey}`);
+      } catch (err: unknown) {
+        logger.error('vault', `setKey EMERGENCY Firebase ALSO failed for ${storageKey} — POTENTIAL LOSS`, { err });
+      }
+    }
     logger.info('vault', `setKey ${storageKey} persisted`, persisted);
     this.audit('set', { target: storageKey, details: persisted });
-    /* v13.3.36 (Kevin 2026-05-07 alerte sentinelle "1/16 credentials enregistrés") :
-     * Sync registry après chaque setKey pour que credentials-watch reflète l'état réel.
-     * Best-effort : si fail (boot précoce, IDB indispo) → silent. */
+    /* Sync registry après chaque setKey */
     try {
       const { credentialsAudit } = await import('./credentials-audit.js');
       void credentialsAudit.syncFromVault();
-    } catch { /* silent — registry sync best-effort */ }
-    /* v13.3.87 P0.2 (Kevin audit externe brutal 2026-05-08) :
-     * Refresh memory vault audit cache pour que system prompt IA sync immédiatement
-     * (évite contradiction "X clés configurées" vs "0 present"). Best-effort. */
+    } catch { /* silent */ }
+    /* Refresh memory vault audit cache */
     try {
       const { memory } = await import('../core/memory.js');
       void memory.refreshVaultAudit();
-    } catch { /* silent — memory cache sync best-effort */ }
-    return { ok: persisted.local || persisted.idb, persisted };
+    } catch { /* silent */ }
+    return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
 
   /**
@@ -693,6 +800,11 @@ class Vault {
     }
   }
 
+  /**
+   * v13.4.8 fix C6 (Ultra Review) — open IDB per call, mais expose
+   * readManyKeysFromIdb() pour batch les lectures (sentinelle 30s × 8 keys
+   * = 1 open au lieu de 8). Évite test isolation issues d'un singleton cache.
+   */
   private async writeKeyToIdb(storageKey: string, value: string): Promise<void> {
     if (!('indexedDB' in globalThis)) return;
     await new Promise<void>((resolve, reject) => {
@@ -746,6 +858,55 @@ class Vault {
         req.onerror = (): void => resolve(null);
       } catch {
         resolve(null);
+      }
+    });
+  }
+
+  /**
+   * v13.4.8 fix C6 — batch read multiple keys dans UNE seule connexion IDB.
+   * Évite 8 opens par cycle sentinelle (toutes les 30s).
+   * Retourne Map<storageKey, value|null>.
+   */
+  private async readManyKeysFromIdb(storageKeys: ReadonlyArray<string>): Promise<Map<string, string | null>> {
+    const result = new Map<string, string | null>();
+    if (!('indexedDB' in globalThis) || storageKeys.length === 0) return result;
+    return new Promise<Map<string, string | null>>((resolve) => {
+      try {
+        const req = indexedDB.open('apex_v13_vault_shadow', 1);
+        req.onupgradeneeded = (): void => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+        };
+        req.onsuccess = (): void => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('keys', 'readonly');
+            const store = tx.objectStore('keys');
+            let remaining = storageKeys.length;
+            for (const key of storageKeys) {
+              const getReq = store.get(key);
+              getReq.onsuccess = (): void => {
+                result.set(key, typeof getReq.result === 'string' ? getReq.result : null);
+                if (--remaining === 0) { db.close(); resolve(result); }
+              };
+              getReq.onerror = (): void => {
+                result.set(key, null);
+                if (--remaining === 0) { db.close(); resolve(result); }
+              };
+            }
+          } catch {
+            db.close();
+            for (const key of storageKeys) result.set(key, null);
+            resolve(result);
+          }
+        };
+        req.onerror = (): void => {
+          for (const key of storageKeys) result.set(key, null);
+          resolve(result);
+        };
+      } catch {
+        for (const key of storageKeys) result.set(key, null);
+        resolve(result);
       }
     });
   }

@@ -95,6 +95,7 @@ export async function sanitizeHtml(html: string, opts?: object): Promise<string>
 export function sanitizeUrl(url: string | null | undefined): string {
   if (!url) return '';
   const trimmed = String(url).trim().toLowerCase();
+  // eslint-disable-next-line no-script-url -- intentional check pour filtrer ces schémas malicieux
   if (trimmed.startsWith('javascript:') || trimmed.startsWith('vbscript:') || trimmed.startsWith('data:text/html')) {
     return ''; /* unsafe scheme — refuse */
   }

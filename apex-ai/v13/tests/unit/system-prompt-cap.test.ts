@@ -120,7 +120,9 @@ describe('v13.3.49 — aiRouter validation pré-envoi', () => {
       (e) => errs.push(e),
     );
     expect(errs.length).toBe(1);
-    expect(errs[0]?.message).toMatch(/non-empty array/i);
+    /* v13.4.6+ : auto-filter empty messages → si tous vides, message UX-friendly.
+     * v13.4.8 : test accepte les 2 chemins (non-empty array OR Aucun message à envoyer). */
+    expect(errs[0]?.message).toMatch(/non-empty array|Aucun message à envoyer/i);
   });
 
   it('rejette si content vide string', async () => {
@@ -132,7 +134,9 @@ describe('v13.3.49 — aiRouter validation pré-envoi', () => {
       (e) => errs.push(e),
     );
     expect(errs.length).toBe(1);
-    expect(errs[0]?.message).toContain('pré-envoi invalide');
+    /* v13.4.6+ : filter strips empty strings → "Aucun message à envoyer".
+     * Le user voit un message UX-friendly au lieu d'une erreur technique. */
+    expect(errs[0]?.message).toMatch(/pré-envoi invalide|Aucun message à envoyer/i);
   });
 
   it('rejette si content null', async () => {
@@ -144,7 +148,8 @@ describe('v13.3.49 — aiRouter validation pré-envoi', () => {
       (e) => errs.push(e),
     );
     expect(errs.length).toBe(1);
-    expect(errs[0]?.message).toMatch(/null|undefined/i);
+    /* v13.4.6+ filter retourne false sur content=null → "Aucun message à envoyer" */
+    expect(errs[0]?.message).toMatch(/null|undefined|Aucun message à envoyer/i);
   });
 
   it('rejette si role invalide', async () => {

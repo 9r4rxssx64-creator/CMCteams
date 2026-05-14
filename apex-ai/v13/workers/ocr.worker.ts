@@ -100,7 +100,7 @@ function loadTesseract(): Promise<void> {
   if (loadPromise) return loadPromise;
   loadPromise = new Promise<void>((resolve, reject) => {
     try {
-      /* eslint-disable-next-line no-restricted-globals, @typescript-eslint/no-explicit-any */
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
       (ctx as any).importScripts(TESSERACT_CDN);
       if (typeof Tesseract === 'undefined') {
         loadPromise = null;
