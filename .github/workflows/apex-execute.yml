@@ -63,19 +63,23 @@ jobs:
             EXEC_ID="${{ github.event.client_payload.exec_id }}"
             SRC="${{ github.event.client_payload.src }}"
             SRC_VERSION="${{ github.event.client_payload.src_version }}"
+            # v13.4.38 Kevin "Donne accès apex à ta branche" — extraire target_branch
+            TARGET_BRANCH="${{ github.event.client_payload.params.target_branch }}"
             echo "params_json=$(echo '${{ toJSON(github.event.client_payload.params) }}' | jq -c .)" >> $GITHUB_OUTPUT
           else
             TASK="${{ github.event.inputs.task }}"
             EXEC_ID="${{ github.event.inputs.exec_id }}"
             SRC="manual"
             SRC_VERSION=""
+            TARGET_BRANCH=""
             echo "params_json=${{ github.event.inputs.params_json }}" >> $GITHUB_OUTPUT
           fi
           echo "task=$TASK" >> $GITHUB_OUTPUT
           echo "exec_id=$EXEC_ID" >> $GITHUB_OUTPUT
           echo "src=$SRC" >> $GITHUB_OUTPUT
           echo "src_version=$SRC_VERSION" >> $GITHUB_OUTPUT
-          echo "Task: $TASK | Exec: $EXEC_ID | Src: $SRC"
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "Task: $TASK | Exec: $EXEC_ID | Src: $SRC | Target: $TARGET_BRANCH"
 
       - name: Security gate (whitelist + forbidden check)
         id: gate
@@ -168,16 +172,24 @@ jobs:
             echo "Pas de modifications à commit"
             echo "committed=false" >> $GITHUB_OUTPUT
           else
-            BRANCH="apex-execute/${{ steps.parse.outputs.exec_id }}"
-            git checkout -b "$BRANCH" || git checkout "$BRANCH"
+            # v13.4.38 Kevin "Donne accès à apex à ta branche claude/test-699LQ" :
+            # par défaut Apex push directement sur claude/test-699LQ (auto-merge bot
+            # va merger dans main). Override possible via target_branch param.
+            TARGET_BRANCH="${{ steps.parse.outputs.target_branch }}"
+            if [ -z "$TARGET_BRANCH" ]; then
+              TARGET_BRANCH="claude/test-699LQ"
+            fi
+            git fetch origin "$TARGET_BRANCH" || true
+            git checkout "$TARGET_BRANCH" 2>/dev/null || git checkout -b "$TARGET_BRANCH"
             git add -A
             git commit -m "apex-execute: ${{ steps.parse.outputs.task }} (exec_id=${{ steps.parse.outputs.exec_id }})
 
 Source: ${{ steps.parse.outputs.src }} ${{ steps.parse.outputs.src_version }}
+Target: $TARGET_BRANCH (v13.4.38 Kevin demande accès Apex branche)
 Auto-generated via Claude Code Action."
-            git push origin "$BRANCH" || echo "Push failed (non fatal)"
+            git push origin "$TARGET_BRANCH" || echo "Push failed (non fatal)"
             echo "committed=true" >> $GITHUB_OUTPUT
-            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+            echo "branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
           fi
 
       - name: Comment Issue tracker (callback Apex)
