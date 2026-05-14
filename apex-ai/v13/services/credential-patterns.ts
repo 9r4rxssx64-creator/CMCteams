@@ -323,13 +323,16 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     testMethod: 'GET',
   },
   {
-    name: 'Google AI',
+    /* v13.4.49 re-apply v13.4.42 rename (écrasé par autre agent v13.4.43) */
+    name: 'Google AI Gemini',
     regex: /^AIza[A-Za-z0-9_-]{33}$/,
-    storageKey: 'ax_google_key',
+    storageKey: 'ax_gemini_key',
     category: 'ai',
     dashboard: 'https://aistudio.google.com/',
     billing: 'https://console.cloud.google.com/billing',
     docs: 'https://ai.google.dev/docs',
+    testEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
+    testMethod: 'GET',
   },
   {
     name: 'Groq',
@@ -428,11 +431,12 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   },
 
   /* === Devops / Code === */
-  /* v13.4.6 Kevin "GitHub fine confondu" — storageKey distincts pour ne pas écraser */
+  /* v13.4.6 Kevin "GitHub fine confondu" — storageKey distincts pour ne pas écraser
+   * v13.4.49 re-apply v13.4.42 rename : ax_github_token_* → ax_github_pat_* */
   {
     name: 'GitHub Fine-grained',
     regex: /^github_pat_[A-Za-z0-9_]{82,}$/,
-    storageKey: 'ax_github_token_fine',
+    storageKey: 'ax_github_pat_finegrained',
     category: 'devops',
     dashboard: 'https://github.com/settings/personal-access-tokens',
     docs: 'https://docs.github.com/en/rest/overview/authenticating-to-the-rest-api',
@@ -442,7 +446,7 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   {
     name: 'GitHub PAT classic',
     regex: /^ghp_[A-Za-z0-9]{36}$/,
-    storageKey: 'ax_github_token_classic',
+    storageKey: 'ax_github_pat_classic',
     category: 'devops',
     dashboard: 'https://github.com/settings/tokens',
     docs: 'https://docs.github.com/en/rest',
