@@ -103,7 +103,11 @@ export type AllowedTask =
   | 'close_issue_safe' /* GitHub MCP — close issue safe */
   | 'list_branches' /* GitHub MCP — branches list */
   | 'get_file_contents' /* GitHub MCP — fetch file remote */
-  | 'search_code'; /* GitHub MCP — search code repo */
+  | 'search_code' /* GitHub MCP — search code repo */
+  /* v13.4.90 — iOS Simulator auto-trigger (Kevin "Apex utilise iOS simulator pour
+   * verif réel"). Apex IA peut déclencher Playwright WebKit iPhone 14 Pro via
+   * workflow apex-ios-simulator.yml (repository_dispatch). Permission admin only. */
+  | 'run_ios_e2e'; /* Déclenche tests E2E WebKit iPhone simulé */
 
 /** Tâches INTERDITES (règle Kevin "sécurité avant autonomie totale"). */
 export type ForbiddenTask =
@@ -145,6 +149,25 @@ const ALLOWED_TASKS: ReadonlySet<AllowedTask> = new Set<AllowedTask>([
   'rotate_credentials',
   'sync_memory_bridge',
   'release_version',
+  /* v13.4.40 PARITÉ CLAUDE CODE — Kevin "Parité apex total maximum optimal" */
+  'read_file',
+  'list_files',
+  'grep_code',
+  'glob_pattern',
+  'bash_safe',
+  'web_fetch',
+  'web_search',
+  'spawn_subagent',
+  'create_pr',
+  'comment_on_pr',
+  'merge_pr_safe',
+  'create_issue',
+  'close_issue_safe',
+  'list_branches',
+  'get_file_contents',
+  'search_code',
+  /* v13.4.90 — iOS Simulator (Playwright WebKit iPhone 14 Pro) */
+  'run_ios_e2e',
 ]);
 
 const FORBIDDEN_TASKS: ReadonlySet<string> = new Set<string>([
