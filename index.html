@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.607";
+var APP_VER="v9.608";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12892,37 +12892,67 @@ function _agentImportWatch(){try{
   var y=A.year,m=A.month;
   var pl=gpl(y,m)||{};
   var days=getDays(y,m);
+  // v9.608 (Kevin "PDF planning cadres séparé + congés longs OK") — pdfType-aware :
+  // skip cadres si dernier import = 'employees' (cas normal v9.600 MERGE), inversement aussi.
+  // + Reconnait les emps en CP/RH/M/AF plein mois comme état VALIDE (pas missing).
+  var typeRec=null;
+  try{typeRec=lg("cmc_last_import_type_"+y+"-"+m,null);}catch(_){}
+  var pdfType=(typeRec&&typeRec.type)||"unknown";
+  var longLeaveCodes={CP:1,RH:1,RRT:1,M:1,MAL:1,AF:1,PAT:1,SS:1,ABI:1,AT:1,CFL:1,ABS:1,ABP:1};
   // Audit cadres + chefs (les 2 categories critiques)
   var critFams=["cadres"];
   var missing=[];
+  var skipPartial=0;
+  var longLeaves=0;
   A.employees.forEach(function(e){
     if(!isEmpActive(e,y,m))return;
     if(critFams.indexOf(e.family||"")<0&&!e.chef)return;
+    // v9.608 PDF type-aware skip — ce qui n'est PAS dans ce PDF est attendu absent
+    if(pdfType==="employees"&&e.family==="cadres"){skipPartial++;return;}
+    if(pdfType==="cadres"&&e.family!=="cadres"){skipPartial++;return;}
     var row=pl[e.id]||{};
     var filled=0;
     for(var d=1;d<=days;d++)if(row[d])filled++;
-    if(filled===0)missing.push({id:e.id,name:e.name,family:e.family,role:e.role,team:e.team,chef:!!e.chef});
+    if(filled===0){missing.push({id:e.id,name:e.name,family:e.family,role:e.role,team:e.team,chef:!!e.chef});return;}
+    // v9.608 — Reconnait congé long plein mois (≥ 80% jours avec UN seul code long-leave)
+    if(filled>=Math.floor(days*0.8)){
+      var leaveCount={};
+      for(var d2=1;d2<=days;d2++){
+        var c=row[d2];if(!c)continue;
+        var base=c.replace(/[*'"`]+$/g,""); // strip trailing markers
+        if(longLeaveCodes[base]){leaveCount[base]=(leaveCount[base]||0)+1;}
+      }
+      var topLeave=Object.keys(leaveCount).reduce(function(a,b){return leaveCount[a]>=leaveCount[b]?a:b;}, "");
+      if(topLeave&&leaveCount[topLeave]>=Math.floor(days*0.8)){longLeaves++;}
+    }
   });
   var totCrit=A.employees.filter(function(e){
-    return isEmpActive(e,y,m)&&(critFams.indexOf(e.family||"")>=0||e.chef);
+    if(!isEmpActive(e,y,m))return false;
+    if(critFams.indexOf(e.family||"")<0&&!e.chef)return false;
+    if(pdfType==="employees"&&e.family==="cadres")return false;
+    if(pdfType==="cadres"&&e.family!=="cadres")return false;
+    return true;
   }).length;
   // Log dans cmc_import_log (max 200) pour vAuditLog filter import
   try{
     var ilog=lg("cmc_import_log",[])||[];
-    /* v9.530 PERF: cap AVANT push (atomique) */
     if(ilog.length>=200)ilog=ilog.slice(-199);
-    ilog.push({ts:Date.now(),y:y,m:m,totCrit:totCrit,missing:missing.length,names:missing.slice(0,8).map(function(x){return x.name;}),agent:"import-watch"});
+    ilog.push({ts:Date.now(),y:y,m:m,totCrit:totCrit,missing:missing.length,names:missing.slice(0,8).map(function(x){return x.name;}),
+      agent:"import-watch",pdfType:pdfType,skipPartial:skipPartial,longLeaves:longLeaves});
     ls("cmc_import_log",ilog);
   }catch(_){}
+  var pdfLabel=pdfType==="employees"?"PDF employés":pdfType==="cadres"?"PDF cadres":pdfType==="complete"?"PDF complet":"";
+  var partialNote=skipPartial>0?" ("+skipPartial+" "+(pdfType==="employees"?"cadres":"non-cadres")+" attendus dans PDF séparé)":"";
+  var leaveNote=longLeaves>0?" — "+longLeaves+" en congé long plein mois (CP/M/RH/AF valides)":"";
   if(missing.length===0){
-    agentAppendReport("import-watch","ok","Tous cadres/chefs OK "+MFR[m]+" "+y+" ("+totCrit+"/"+totCrit+")");
+    agentAppendReport("import-watch","ok","Tous cadres/chefs OK "+MFR[m]+" "+y+" ("+totCrit+"/"+totCrit+")"+(pdfLabel?" "+pdfLabel:"")+partialNote+leaveNote);
     return;
   }
   // Severite : >=2 cadres rates = err (P0 historique), 1 = warn
   var sev=missing.length>=2?"err":"warn";
   agentAppendReport("import-watch",sev,
-    missing.length+"/"+totCrit+" cadres/chefs sans horaire: "+missing.slice(0,3).map(function(x){return x.name;}).join(", "),
-    {missing:missing,totCrit:totCrit,year:y,month:m},
+    missing.length+"/"+totCrit+" cadres/chefs sans horaire"+(pdfLabel?" ("+pdfLabel+")":"")+": "+missing.slice(0,3).map(function(x){return x.name;}).join(", ")+partialNote+leaveNote,
+    {missing:missing,totCrit:totCrit,year:y,month:m,pdfType:pdfType,skipPartial:skipPartial,longLeaves:longLeaves},
     {label:"✍ Auto-fill cadres",fn:"agentActionAutoFillCadres()",auto:true,
      recordLesson:"Cadres sans horaire detectes par import-watch — auto-completion via mois precedent"}
   );
@@ -12930,8 +12960,8 @@ function _agentImportWatch(){try{
   var diag=lg("cmc_cadres_fallback_diag",null);
   if(diag&&diag.ts&&Date.now()-diag.ts<3600000&&missing.length>=2){
     if(typeof _cmcEscalate==="function")_cmcEscalate(
-      {missing:missing,diag:diag,totCrit:totCrit,month:MFR[m]+" "+y},
-      "import-watch v9.509 — "+missing.length+" cadres sans horaire apres fallback v9.462"
+      {missing:missing,diag:diag,totCrit:totCrit,month:MFR[m]+" "+y,pdfType:pdfType},
+      "import-watch v9.608 — "+missing.length+" cadres sans horaire ("+pdfLabel+") après fallback v9.462"
     );
   }
 }catch(e){agentAppendReport("import-watch","err",(e.message||"").slice(0,100));}}
