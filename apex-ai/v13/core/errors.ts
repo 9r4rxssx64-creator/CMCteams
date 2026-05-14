@@ -88,8 +88,12 @@ class Errors {
     /* Réseau / connexion (inclut "Failed to fetch" — message standard fetch API) */
     if (/network|fetch.failed|failed.to.fetch|net::|ENOTFOUND|ECONNREFUSED/i.test(msg)) return '🌐 Réseau coupé. Vérifie Wi-Fi/4G — je relance dès que c\'est revenu.';
     if (/cors|cross.origin/i.test(msg)) return '🛡 Bloqué par sécurité navigateur (CORS). Je passe par le proxy Cloudflare.';
-    /* Timeout / abort */
+    /* Timeout / iOS abort / cancel (ORDRE CRITIQUE v13.4.28 fix bugs documentés v13.4.18) :
+     * - /^aborted$/i en PREMIER (anchored exact match) → iOS Safari lifecycle silencieux
+     * - Puis /abort|cancel/ générique → action user interrompue
+     * Avant v13.4.28 : 'aborted' matchait /abort/ → pattern L107 mort code. */
     if (/timeout|timed out/i.test(msg)) return '⏱ Pas de réponse en 30s. Je retente avec un autre modèle IA…';
+    if (/^aborted$/i.test(msg.trim())) return '⏸ Lifecycle iOS Safari (normal). Reprise auto.';
     if (/abort|cancel/i.test(msg)) return '⏸ Action interrompue. Tape ta question à nouveau si besoin.';
     /* Quota / billing */
     if (/quota|insufficient.balance|insufficient_quota|payment.required|402/i.test(msg)) return '💳 Quota Anthropic épuisé. Recharge ici : https://console.anthropic.com/settings/billing — ou je bascule sur OpenRouter/Groq.';
@@ -97,14 +101,15 @@ class Errors {
     /* Auth */
     if (/unauthorized|invalid.api.key|401/i.test(msg)) return '🔑 Clé API invalide ou expirée. Vérifie le Coffre → bouton 🔓 Récupérer.';
     if (/forbidden|403/i.test(msg)) return '🚫 Action non autorisée pour ce compte.';
-    /* Not found 404 — ressource introuvable (avant catch 5xx pour éviter conflit) */
+    /* Tool errors AVANT 404 (v13.4.28 fix bug documenté v13.4.18) :
+     * 'Tool not found' contient 'not.found' qui matchait L101 → 'Ressource introuvable'.
+     * Maintenant tool.not.found testé d'abord → 'Outil indisponible' correct. */
+    if (/tool.not.found|unknown.tool/i.test(msg)) return '🔧 Outil indisponible. Reformule ou tape la fonction direct.';
+    /* Not found 404 — ressource introuvable (après tool.not.found pour priorité) */
     if (/404|not.found/i.test(msg)) return '🔍 Ressource introuvable. Vérifie l\'URL ou réessaie.';
     /* Server errors */
     if (/5\d{2}|internal.server|bad.gateway|service.unavailable/i.test(msg)) return '🛠 Serveur Anthropic en panne, je bascule failover OpenRouter/Groq…';
-    /* Tool errors */
-    if (/tool.not.found|unknown.tool/i.test(msg)) return '🔧 Outil indisponible. Reformule ou tape la fonction direct.';
     if (/parse|json|syntax/i.test(msg)) return '📝 Format réponse cassé. Je réessaie immédiatement…';
-    if (/aborted/i.test(msg)) return '⏸ Lifecycle iOS Safari (normal). Reprise auto.';
     /* Memory / IDB */
     if (/indexeddb|idb|database/i.test(msg)) return '💾 Cache local inaccessible, fallback Firebase.';
     /* v13.3.74 (Kevin screenshot bug): "openai no key" / "groq no key" / "gemini no key"
