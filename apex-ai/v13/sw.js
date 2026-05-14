@@ -10,19 +10,21 @@
  * APP_VER dans bootstrap.js. Workflow `sw-cache-sync.yml` synchronise auto.
  */
 
-const CACHE_VERSION  = 'apex-v13.4.78';
+const CACHE_VERSION  = 'apex-v13.4.79';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
 
-/* Assets pre-caches au install (chemins relatifs au scope /apex-ai/v13/) */
+/* Assets pre-caches au install (chemins relatifs au scope /apex-ai/v13/)
+ * v13.4.79 : on n'enumère pas les chunks Vite hashés ici (impossible sans build-step
+ * inject). Le pré-cache reste minimal. La parade contre "Importing a module script
+ * failed" est côté router.ts (auto-retry 800ms) + bouton hard-reset robuste. */
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './assets/css/tokens.css',
-  './assets/css/base.css',
-  './core/bootstrap.js'
+  './assets/css/base.css'
 ];
 
 /* Domaines API : toujours network-first, jamais de cache long */
