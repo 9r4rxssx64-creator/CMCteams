@@ -137,6 +137,53 @@ class Orchestrator {
     return firebase.read<unknown>('ekdmc');
   }
 
+  /**
+   * v13.4.86 — Parité Apex/CMC (Kevin 2026-05-14 23:30 "Parité apex total maximum
+   * optimal"). Lit l'historique fidélité + lossless import CMCteams via Firebase
+   * shared pour qu'Apex puisse alerter/analyser les imports SBM.
+   */
+  async cmcImportAuditLog(): Promise<{
+    fidelity: ReadonlyArray<unknown>;
+    lossless: ReadonlyArray<unknown>;
+  }> {
+    const [fidelity, lossless] = await Promise.all([
+      firebase.read<unknown>('cmcteams/cmc_import_fidelity_log').catch(() => null),
+      firebase.read<unknown>('cmcteams/cmc_import_lossless_log').catch(() => null),
+    ]);
+    return {
+      fidelity: Array.isArray(fidelity) ? (fidelity as unknown[]) : [],
+      lossless: Array.isArray(lossless) ? (lossless as unknown[]) : [],
+    };
+  }
+
+  /**
+   * v13.4.86 — Détecte si dernier import CMC a un problème (fidelity < 75 OU
+   * lossless gap > 5%). Permet à Apex IA de notif admin Kevin proactivement.
+   */
+  async cmcLastImportHealth(): Promise<{
+    ok: boolean;
+    issues: ReadonlyArray<string>;
+    fidelity_score?: number;
+    lossless_gap?: number;
+  }> {
+    const logs = await this.cmcImportAuditLog();
+    const issues: string[] = [];
+    const lastFidelity = logs.fidelity[logs.fidelity.length - 1] as { score?: number } | undefined;
+    const lastLossless = logs.lossless[logs.lossless.length - 1] as { gap?: number } | undefined;
+    if (lastFidelity && typeof lastFidelity.score === 'number' && lastFidelity.score < 75) {
+      issues.push(`Fidélité basse : ${lastFidelity.score}%`);
+    }
+    if (lastLossless && typeof lastLossless.gap === 'number' && lastLossless.gap > 5) {
+      issues.push(`Lossless gap : ${lastLossless.gap}% (cells PDF non capturées)`);
+    }
+    return {
+      ok: issues.length === 0,
+      issues,
+      ...(lastFidelity?.score !== undefined && { fidelity_score: lastFidelity.score }),
+      ...(lastLossless?.gap !== undefined && { lossless_gap: lastLossless.gap }),
+    };
+  }
+
   openTool(toolId: string): { ok: boolean; url?: string } {
     const tool = TOOLS_HTML.find((t) => t.id === toolId);
     if (!tool) return { ok: false };
