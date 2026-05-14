@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.605";
+var APP_VER="v9.606";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12935,6 +12935,119 @@ function _agentImportWatch(){try{
     );
   }
 }catch(e){agentAppendReport("import-watch","err",(e.message||"").slice(0,100));}}
+// v9.606 (Kevin 2026-05-14 ABSOLUE "reconnaissance équipes/lieux/horaires
+// scrupuleusement identique. Aucune erreur tolérée") :
+// _agentImportFidelity audit POST-IMPORT cellule par cellule. Échantillonne
+// jusqu'à 80 cellules importées + vérifie que le code apparaît bien dans le
+// texte source à proximité du nom employé. Détecte aussi anomalies équipes
+// (sub-population suspect, team orpheline). Score 0-100 + escalade Apex si < 75.
+function _agentImportFidelity(key, src){
+  try{
+    if(!key)key=A.year+"-"+A.month;
+    var parts=String(key).split("-");
+    var y=parseInt(parts[0]||A.year),m=parseInt(parts[1]||A.month);
+    if(!src){
+      // Récupère depuis snapshot stocké au début de doImport
+      try{var snap=lg("cmc_last_import_snapshot_"+key,null);
+        if(snap&&snap.txt)src=snap.txt;}catch(_){}
+    }
+    var pl=A.overrides[key]||{};
+    var days=getDays(y,m);
+    var srcUp=String(src||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    var fidelityChecks=0, fidelityHits=0, mismatches=[];
+    // === 1. Audit échantillon cellules ===
+    if(srcUp.length>200){
+      var empIds=Object.keys(pl).slice(0,40); // cap 40 emps audités
+      empIds.forEach(function(eid){
+        var emp=A.employees.find(function(e){return e.id===eid;});
+        if(!emp||!emp.name)return;
+        var nameUp=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+        // Cherche position du nom dans le texte source
+        var idx=srcUp.indexOf(nameUp);
+        if(idx<0){
+          // Fallback : nom de famille seul
+          var surn=nameUp.split(/\s+/)[0];
+          if(surn&&surn.length>=4)idx=srcUp.indexOf(surn);
+        }
+        if(idx<0)return; // nom pas dans source = skip (peut être un import partiel)
+        var row=pl[eid]||{};
+        var sampleDays=Object.keys(row).slice(0,3); // 3 jours échantillon par emp
+        sampleDays.forEach(function(d){
+          var c=row[d];if(!c)return;
+          fidelityChecks++;
+          // Cherche le code dans une fenêtre de 400 chars après le nom
+          var window=srcUp.slice(idx, Math.min(srcUp.length, idx+400));
+          // Strip apostrophes/quotes pour matching robuste
+          var cClean=c.replace(/["'“”‘’]+$/,"").replace(/[\*]+$/,"");
+          var cEsc=cClean.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+          // Match : code apparaît dans la fenêtre (avec word boundary OU délimité)
+          var re=new RegExp("(?:^|[^A-Z0-9])"+cEsc+"(?:[^A-Z0-9]|$)");
+          if(re.test(window))fidelityHits++;
+          else if(mismatches.length<10){
+            mismatches.push({emp:emp.name,day:d,code:c,fam:emp.family});
+          }
+        });
+      });
+    }
+    // === 2. Audit équipes (anomalies team) ===
+    var teamCounts={};
+    A.employees.forEach(function(e){
+      if(!isEmpActive(e,y,m))return;
+      if(e.family==="cadres")return; // cadres pas d'équipe numérique
+      var t=e.team||"?";
+      teamCounts[t]=(teamCounts[t]||0)+1;
+    });
+    var orphans=Object.keys(teamCounts).filter(function(t){return teamCounts[t]===1&&t!=="?";});
+    var teamAnomaly=orphans.length;
+    // === 3. Audit codes inconnus appliqués ===
+    var unknownCodes=new Set();
+    Object.keys(pl).forEach(function(eid){
+      var row=pl[eid]||{};
+      Object.keys(row).forEach(function(d){
+        var c=row[d];if(c&&!CODES[c])unknownCodes.add(c);
+      });
+    });
+    // === 4. Score 0-100 ===
+    var cellScore=fidelityChecks>0?Math.round(fidelityHits/fidelityChecks*100):100;
+    var penaltyOrphans=Math.min(15,teamAnomaly*3);
+    var penaltyUnknown=Math.min(10,unknownCodes.size);
+    var score=Math.max(0,cellScore-penaltyOrphans-penaltyUnknown);
+    // === 5. Severity + escalade ===
+    var sev="ok", msg="Fidélité "+score+"% (cells "+cellScore+"%, teams orph "+teamAnomaly+", codes inconnus "+unknownCodes.size+")";
+    if(score<60){sev="err";}
+    else if(score<80){sev="warn";}
+    agentAppendReport("import-fidelity",sev,msg,
+      {score:score,cellScore:cellScore,checks:fidelityChecks,hits:fidelityHits,
+       orphans:orphans,unknownCodes:Array.from(unknownCodes),mismatches:mismatches});
+    // === 6. Persist + escalade Apex si critique ===
+    try{
+      var flog=lg("cmc_import_fidelity_log",[])||[];
+      if(flog.length>=100)flog=flog.slice(-99);
+      flog.push({ts:Date.now(),key:key,score:score,cellScore:cellScore,
+        checks:fidelityChecks,hits:fidelityHits,orphans:orphans.length,
+        unknownCount:unknownCodes.size,mismatchCount:mismatches.length});
+      ls("cmc_import_fidelity_log",flog);
+    }catch(_){}
+    if(score<75&&typeof _cmcEscalate==="function"){
+      _cmcEscalate({key:key,score:score,mismatches:mismatches.slice(0,5),
+        orphans:orphans.slice(0,5),unknownCodes:Array.from(unknownCodes).slice(0,10)},
+        "Import fidélité basse v9.606 : "+score+"% (Kevin règle scrupuleusement identique)");
+    }
+    // === 7. Toast Kevin si admin connecté ===
+    try{
+      if(A.user&&A.user.id===AID&&typeof toast==="function"){
+        if(score>=90)toast("📊 Fidélité import : "+score+"% ✓","ok");
+        else if(score>=75)toast("⚠ Fidélité import : "+score+"% (anomalies détectées)","warn");
+        else toast("❌ Fidélité import : "+score+"% — voir audit","err");
+      }
+    }catch(_){}
+    return {score:score,cellScore:cellScore,mismatches:mismatches,
+      orphans:orphans,unknownCodes:Array.from(unknownCodes)};
+  }catch(e){
+    agentAppendReport("import-fidelity","err",(e.message||"").slice(0,100));
+    return {score:-1,error:e.message};
+  }
+}
 // ─── Registry ────────────────────────────────────────────────────────
 var APP_AGENTS=[
   {id:"conflict",label:"Détecteur de conflits",icon:"\u26a0",interval:10*60*1000,run:_agentConflictDetector,desc:"Lance detectRepoConflicts sur le mois courant toutes les 10 min"},
@@ -34110,6 +34223,10 @@ function doImport(){
       _r8.innerHTML+=_h8;
     }
     try{if(typeof _agentImportWatch==="function")_agentImportWatch();}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_has-any509",_e);}catch(__){}}
+    // v9.606 (Kevin 2026-05-14 ABSOLUE "reconnaissance équipes/lieux/horaires scrupuleusement identique. Aucune erreur tolérée") :
+    // Audit fidélité post-import. Compare cellules importées vs texte source pour détecter
+    // hallucinations / mismatches. Score 0-100, escalade Apex si < 75.
+    try{if(typeof _agentImportFidelity==="function")_agentImportFidelity(key,txt);}catch(_e6){console.warn("[fidelity-audit]",_e6&&_e6.message);}
     // v9.527 (Kevin 2026-04-25) — Auto-apprentissage parser PDF
     try{
       if(typeof cmcParserAutoLearn!=="undefined"){

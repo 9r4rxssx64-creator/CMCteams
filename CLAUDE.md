@@ -613,6 +613,53 @@ S'applique : Apex priorité absolue, CMCteams.
 
 ---
 
+## 🌿 RÈGLE ABSOLUE — COMPACT BRANCHES AUTONOME PERMANENT (Kevin 2026-05-14, ABSOLUE)
+
+> **"Compact toutes tes branches à chaque fois autonome. Note le"** — Kevin 2026-05-14
+
+**Règle absolue, prioritaire** — Claude Code, tous projets :
+
+### 1. À chaque session Claude Code
+
+Au début ET à la fin de toute session de travail, **automatiquement** (sans demander) :
+
+1. **Fetch origin** : `git fetch origin main --prune`
+2. **Compter** branches `claude/*` mergées dans main → supprimer locales + remotes
+3. **Compter** branches `claude/*` non-mergées > 30 jours sans activité → marquer pour suppression (push notif Kevin)
+4. **Si > 5 commits ahead** de origin/main sur la branche courante → trigger auto-merge bot via workflow_dispatch
+5. **Documenter** dans MEMO_RESUME.md combien de branches nettoyées
+
+### 2. Workflow GitHub Action `cleanup-stale-branches.yml`
+
+Tourne automatiquement :
+- **Cron quotidien 04:00 UTC** : scan branches `claude/*` mergées dans main → delete remote
+- **Cron hebdo dimanche 04:00 UTC** : scan branches `claude/*` > 30j sans activité → delete remote (avec audit log)
+- **Trigger manuel** : `gh workflow run cleanup-stale-branches.yml`
+
+### 3. Garde-fous
+
+- **JAMAIS** supprimer `main`, `master`, `develop`, `production`
+- **JAMAIS** supprimer la branche courante de travail Claude
+- **JAMAIS** supprimer une branche avec commits inédits jamais poussés (vérifier `git log origin/main..branch`)
+- **TOUJOURS** garder audit log dans `cmc_branch_cleanup_log` Firebase pour traçabilité
+
+### 4. Action immédiate à chaque release
+
+Après chaque push réussi sur `claude/test-699LQ` :
+- Vérifier auto-merge bot a bien mergé (poll origin/main 30s max)
+- Si pas mergé → escalade workflow_dispatch
+- Si > 1h non-mergé → notif push Kevin
+
+### 5. Test mental obligatoire avant chaque session
+
+> *"Y a-t-il > 10 branches `claude/*` mergées non supprimées ? Ai-je laissé > 5 commits non mergés sur ma branche courante ?"*
+
+Si oui → nettoyer AVANT toute nouvelle tâche.
+
+S'applique : Claude Code priorité absolue, tous projets futurs Kevin.
+
+---
+
 ## 🛡️ RÈGLE ABSOLUE — JAMAIS RÉGRESSER (Kevin 2026-05-07, ULTIME)
 
 > **"Tu ne dois jamais régresser !"** — Kevin 2026-05-07
