@@ -945,7 +945,26 @@ class Memory {
     header: string,
   ): string {
     const meta = this.getMetaContext();
-    const dict = meta[folder];
+    const dict: Record<string, string> = { ...meta[folder] };
+
+    /* v13.4.13 fix : pour 'skills', merger aussi `ax_apex_skills_registry`
+     * (skills créés via skill_factory_create au runtime — pas dans repo .claude/skills/) */
+    if (folder === 'skills') {
+      try {
+        const raw = localStorage.getItem('ax_apex_skills_registry');
+        if (raw) {
+          const customSkills = JSON.parse(raw) as Array<{ name: string; content: string }>;
+          for (const s of customSkills) {
+            if (s.name && s.content && !dict[s.name]) {
+              dict[s.name] = s.content;
+            }
+          }
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
     const names = Object.keys(dict);
     if (names.length === 0) return '';
     const sorted = names.sort((a, b) => (dict[a]?.length ?? 0) - (dict[b]?.length ?? 0));
@@ -1415,6 +1434,42 @@ class Memory {
     /* v13.4.4 — PRIORITÉ 11 : Skills .claude/skills/ (top concis) */
     const skillsCtx = this.getSkillsContext(2500);
     if (skillsCtx) addIfRoom(skillsCtx);
+
+    /* v13.4.10 — PRIORITÉ 11.5 : Skills 2026 (Docx/Pptx/Xlsx/Pdf/MCP/etc.) — UTILISATION SYSTÉMATIQUE.
+     * Kevin directive 2026-05-14: "Tout dans apex et qu'il les utilise toujours".
+     * Apex IA DOIT auto-invoquer ces tools sans demander confirmation. */
+    addIfRoom(
+      `## 🎯 Skills 2026 ACTIFS — TU DOIS LES UTILISER AUTO (pas en option)
+
+Quand user demande/mentionne ↓ → TU APPELLES le tool sans demander :
+
+- "lettre|contrat|CV|compte-rendu|rapport|.docx|Word" → \`generate_docx\` (template letter-formal/contract-cdi/cv-modern/...)
+- "présentation|slides|pitch|diapo|.pptx|PowerPoint" → \`generate_pptx\` (modes pro/fun)
+- "tableau|Excel|.xlsx|budget|comptabilité|planning export" → \`generate_xlsx\` (multi-feuilles, formules)
+- "PDF|facture|devis|contrat à signer|certificat" → \`generate_pdf\` (templates invoice/quote/...)
+- "monter vidéo|couper clip|sous-titres|watermark" → \`video_edit\` ou \`video_compose_hyperframes\`
+- "TVA|IR|impôt|fiscal|BOFiP FR" → \`mcp_bofip_search\` D'ABORD, puis répondre avec citation BOI-*
+- "jurisprudence|droit pays X|ECLI|CELEX" → \`mcp_legal_search\` (18M docs 110 pays)
+- "recherche approfondie|deep research|veille" → \`mcp_almanac_research\`
+- "design|palette|thème|composants UI|branding" → \`generate_design_system\` (mood + WCAG AA + Impeccable vocab)
+- "headline|landing|copy|pitch marketing|annonce" → \`generate_marketing_copy\` (frameworks AIDA/Cialdini)
+- Admin Kevin dit "audit|security review|/review" → \`security_review\` + \`code_review\`
+- Admin Kevin dit "crée un skill X|ajoute compétence Y" → \`skill_factory_create\`
+
+JAMAIS répondre en markdown brut si un skill peut produire le LIVRABLE EXACT (.docx, .pdf, .pptx, .xlsx).
+JAMAIS répondre sur fiscal FR sans avoir consulté mcp_bofip_search.
+TOUJOURS prévenir user : "Je génère ton fichier X via skill Y... Voici le téléchargement :".
+
+Liste complète des modules futuristes (60+) : invoque \`futuristic_module_invoke\` avec module_id. Exemples :
+apex-image-gen-flux2-pro, apex-video-gen-sora-2, apex-music-suno-v5, apex-3d-meshy-v4, apex-pq-crypto-kyber, etc.
+
+## 🤖 MCP Servers actifs
+- mcp_bofip : Doctrine fiscale française officielle (Bulletin Officiel Finances Publiques)
+- mcp_almanac : Deep Research multi-sources web+academic+news
+- mcp_legal_hunter : 18M+ documents juridiques 110+ pays (Cassation/CE/CJUE/SCOTUS/SCC...)
+
+Configuration : vue admin \`?view=mcp-servers\`. Tokens stockés chiffrés dans Vault Apex.`,
+    );
 
     /* v13.4.4 — PRIORITÉ 12 : Rules .claude/rules/ (frontend/security/methodology) */
     const rulesCtx = this.getRulesContext(2000);

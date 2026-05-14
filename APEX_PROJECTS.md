@@ -1,8 +1,49 @@
 # 📁 APEX PROJECTS — Registry central tous projets Kevin
 
-> Mis à jour 2026-05-04 (Apex v13.0.77 / CMCteams v9.593)
+> Mis à jour 2026-05-14 (Apex v13.4.13 / CMCteams v9.602)
 > Source de vérité unique pour tous les projets gérés par Apex AI.
 > Apex IA peut consulter ce fichier en autonomie via `cmcRead("APEX_PROJECTS.md")`.
+
+## 🎯 STATUS MAJ 2026-05-14 — Apex v13.4.13 (Skills 2026 + Runtime Tester)
+
+**Skills 2026 complètement intégrés + Apex teste TOUT en runtime browser réel** :
+
+### Skills (14 tools natifs auto-utilisés par Apex IA)
+- `generate_docx` / `pptx` / `xlsx` / `pdf` — document generators 100% client-side
+- `video_edit` (ffmpeg.wasm) + `video_compose_hyperframes` (MediaRecorder)
+- `generate_design_system` (Frontend Design + 23 termes Impeccable)
+- `generate_marketing_copy` (23 frameworks Cialdini/AIDA)
+- `skill_factory_create` — Apex crée nouveaux skills runtime (admin only)
+- `security_review` + `code_review` — branchés sur `apexSelfAudit`
+- `futuristic_module_invoke` — registry 40+ modules dernier cri 2026
+
+### MCP servers (3 enregistrés au boot)
+- **BOFiP** — Bulletin Officiel Finances Publiques (doctrine fiscale FR officielle)
+- **Almanac** — Deep Research Agent multi-sources
+- **Legal Data Hunter** — 18M+ documents juridiques 110+ pays
+
+### Vues admin nouvelles
+- `?view=skills-2026` — liste 14 skills + boutons "🧪 Tester live"
+- `?view=mcp-servers` — registry MCP + test/discover/add custom
+- `?view=runtime-tests` — orchestrateur "🧪 Lancer TOUS tests réels"
+- `?view=studio-docx` / `studio-pptx` / `studio-xlsx` / `studio-pdf` — UI formulaires
+
+### Sentinelles ajoutées
+- `skills-watch` (1h) — probe CDN libs alive (docxtemplater/pptxgenjs/xlsx/jspdf)
+- `mcp-health-watch` (30min) — ping MCP servers + détection 401 expirés
+
+### Runtime Tester (`apex-runtime-tester.ts`)
+Apex exécute lui-même en browser **les 17 tests réels** (CDN load → lib → blob) :
+4 generators + 3 MCP health + 5 futuristic routing + 2 sentinelles + security + hyperframes.
+Rapport persisté `ax_runtime_test_last` + historique 20 runs.
+
+### Métriques v13.4.13
+- 35 nouveaux tests vitest (tous ✅)
+- Suite complète : **8047 passed / 0 failed / 9 skipped**
+- TypeScript strict mode : 0 erreur
+- Build Vite : ~6-7s
+
+---
 
 ## 🆕 STATUS MAJ 2026-05-04 — Apex v13.0.77 livré
 

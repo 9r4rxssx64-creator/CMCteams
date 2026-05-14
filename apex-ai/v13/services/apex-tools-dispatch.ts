@@ -72,6 +72,23 @@ import {
   wikipediaLookup,
   youtubeSearch,
 } from './apex-tools-dispatch/utils-misc.js';
+import {
+  dispatchCodeReview,
+  dispatchFuturisticModuleInvoke,
+  dispatchGenerateDesignSystem,
+  dispatchGenerateDocx,
+  dispatchGenerateMarketingCopy,
+  dispatchGeneratePdf,
+  dispatchGeneratePptx,
+  dispatchGenerateXlsx,
+  dispatchMcpAlmanacResearch,
+  dispatchMcpBofipSearch,
+  dispatchMcpLegalSearch,
+  dispatchSecurityReview,
+  dispatchSkillFactoryCreate,
+  dispatchVideoComposeHyperframes,
+  dispatchVideoEdit,
+} from './apex-tools-dispatch/skills-dispatch.js';
 import { apexTools, type ApexTool } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
 import { guardToolEnabled } from './feature-guard.js';
@@ -1698,6 +1715,39 @@ class ApexToolsDispatcher {
         if (!thoughtId || !conclusion) throw new Error('thought_id and conclusion required');
         return await sequentialThinking.complete(thoughtId, conclusion);
       }
+
+      /* ─────────── Skills 2026 (Docx/Pptx/Xlsx/Pdf/Video/Design/MCP) ─────────── */
+      case 'generate_docx':
+        return await dispatchGenerateDocx(params);
+      case 'generate_pptx':
+        return await dispatchGeneratePptx(params);
+      case 'generate_xlsx':
+        return await dispatchGenerateXlsx(params);
+      case 'generate_pdf':
+        return await dispatchGeneratePdf(params);
+      case 'video_edit':
+        return await dispatchVideoEdit(params);
+      case 'video_compose_hyperframes':
+        return await dispatchVideoComposeHyperframes(params);
+      case 'skill_factory_create':
+        return await dispatchSkillFactoryCreate(params);
+      case 'security_review':
+        return await dispatchSecurityReview(params);
+      case 'code_review':
+        return await dispatchCodeReview(params);
+      case 'generate_design_system':
+        return await dispatchGenerateDesignSystem(params);
+      case 'generate_marketing_copy':
+        return await dispatchGenerateMarketingCopy(params);
+      case 'mcp_bofip_search':
+        return await dispatchMcpBofipSearch(params);
+      case 'mcp_almanac_research':
+        return await dispatchMcpAlmanacResearch(params);
+      case 'mcp_legal_search':
+        return await dispatchMcpLegalSearch(params);
+      case 'futuristic_module_invoke':
+        return await dispatchFuturisticModuleInvoke(params);
+
       default:
         throw new Error(`Tool inconnu: ${toolName}`);
     }

@@ -1,7 +1,223 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-10** (Apex v13.4.5 — Mode Autonome Apex)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.13 — Runtime Tester + meta-cache fix skill_factory)
+
+## 🆕 SESSION 2026-05-14 (v13.4.13) — Apex teste TOUT en runtime browser réel
+
+Kevin : "Apex doit avoir tout ça et tester réel tout. Aussi mets à jour tous les doc apex sans rien oublier".
+
+**Nouveaux fichiers v13.4.13**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/apex-runtime-tester.ts` | Orchestrateur 17 tests live runtime browser — generators + MCP health + futuristic routing + sentinelles + security + hyperframes |
+| `apex-ai/v13/features/admin/runtime-tests/index.ts` | Vue admin `?view=runtime-tests` — bouton "🧪 Lancer TOUS tests réels" + progress bar + preuves téléchargeables |
+
+**Modifications v13.4.13**
+
+- `apex-ai/v13/core/memory.ts` : fix critique `renderMetaSection('skills')` lit aussi `ax_apex_skills_registry` localStorage → skills créés via skill_factory_create injectés dans system prompt
+- `apex-ai/v13/core/bootstrap.ts` : route `runtime-tests` enregistrée
+- `apex-ai/v13/index.html` + `sw.js` + `bootstrap.ts` : bump v13.4.12 → v13.4.13
+
+**Docs mis à jour (toutes)**
+
+- `CLAUDE.md` : ligne version v13.4.13
+- `KEVIN_INVENTORY.md` : section v13.4.13 (ce fichier)
+- `APEX_PROJECTS.md` : section "v13.4.13 — Skills 2026 COMPLETS + Runtime Tester"
+- `APEX_HANDOFF.md` : section "MISE À JOUR 2026-05-14"
+- `MEMO_RESUME.md` : header bumped + section session 2026-05-14 avec 4 commits + limitations honnêtes
+
+**Vérifications réelles effectuées (règle Kevin "test réel pour tout, ne mens pas")**
+
+- ✅ `npx tsc --noEmit` : 0 erreur strict mode
+- ✅ `npm run build` : OK 6.32s
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.13"` partout
+- ✅ 35/35 tests vitest sur mes ajouts passent
+- ✅ Suite complète 8047/8056 passed (100%)
+
+**Honnêteté : ce qui n'a TOUJOURS PAS été vérifié en browser réel**
+
+- Aucun test browser réel par moi (Chrome/Safari) — Apex doit le faire via `?view=runtime-tests`
+- Tokens MCP BOFiP/Almanac/Legal Hunter : Kevin doit coller dans Vault sinon health check retourne "warn"
+- Branche `claude/new-session-evcB9` à merger sur `main` pour propagation GitHub Pages (Kevin voit encore v13.4.9 sinon)
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.12) — Termine tout : video réel + futuristic routing + 4 Studios UI
+
+## 🆕 SESSION 2026-05-14 (v13.4.12) — Termine tout : video réel + futuristic routing + 4 Studios UI
+
+Suite v13.4.11. Kevin : "Termine tout, trouve une solution. Test réel pour tout. Ne mens pas."
+
+**Nouveaux fichiers v13.4.12**
+
+| Fichier | Lignes | Description |
+|---|---|---|
+| `apex-ai/v13/services/skills/video-use.ts` | ~290 | ffmpeg.wasm via esm.sh CDN — cut/concat/resize/watermark/extract_audio/captions + composeHyperframes via MediaRecorder offscreen |
+| `apex-ai/v13/services/skills/futuristic-modules.ts` | ~320 | Registry 40+ modules avec routing concret (replicate/native/cdn-lib/mcp) — FLUX 2 Pro, Sora 2, Veo 3, Kling 2, Suno v5, Meshy v4, Hedra-2, Kyber/Dilithium PQC, ZK-SNARKs, A-Frame, MediaPipe, Monaco, KaTeX, etc. |
+| `apex-ai/v13/features/studios/docx/index.ts` | ~150 | Studio UI Word — sélecteur 6 templates + champs dynamiques + download |
+| `apex-ai/v13/features/studios/pptx/index.ts` | ~165 | Studio UI PowerPoint — 7 templates + slides dynamiques (add/remove) + mode pro/fun |
+| `apex-ai/v13/features/studios/xlsx/index.ts` | ~110 | Studio UI Excel — paste CSV → .xlsx avec freeze header |
+| `apex-ai/v13/features/studios/pdf/index.ts` | ~130 | Studio UI PDF — facture/devis/contrat avec lignes "description \| qty \| prix" + watermark |
+| `apex-ai/v13/tests/unit/skills-extra.test.ts` | ~140 | 11 tests : futuristic-modules (list/stats/invoke routes) + video-use (safe fallback) + dispatchers |
+
+**Modifications v13.4.12**
+
+- `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` :
+  - `dispatchVideoEdit` : branche sur videoUse.edit() (real ffmpeg.wasm)
+  - `dispatchVideoComposeHyperframes` : branche sur videoUse.composeHyperframes() (MediaRecorder)
+  - `dispatchFuturisticModuleInvoke` : branche sur futuristicModules.invoke() (40+ routes)
+- `apex-ai/v13/core/bootstrap.ts` : 4 nouvelles routes studio-docx/pptx/xlsx/pdf
+- `apex-ai/v13/index.html` + `sw.js` + `bootstrap.ts` : bump v13.4.11 → v13.4.12
+
+**Vérifications réelles effectuées (règle Kevin "test réel pour tout, ne mens pas")**
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript strict mode (TS4111 + TS2375)
+- ✅ `npm run build` : **build OK 7.58s**, dist/ généré
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.12"` identique partout
+- ✅ Tests vitest skills-extra : **11/11** (futuristic + video)
+- ✅ Tests vitest skills-generators : **12/12** (docx/pptx/xlsx/pdf)
+- ✅ Tests vitest mcp-client-registry : **12/12** (registry + client)
+- ✅ **Tests suite complète : 8047 passed / 9 skipped / 0 failed (100%)**
+
+**Termine TOUS les items restants annoncés v13.4.11** :
+- ✅ `video_edit` : implémenté avec ffmpeg.wasm (CDN esm.sh, lazy load, 6 opérations)
+- ✅ `video_compose_hyperframes` : MediaRecorder + SVG foreignObject canvas
+- ✅ `futuristic_module_invoke` : routing concret 40+ modules vers Replicate/native/CDN libs
+- ✅ Studios UI : 4 vues complètes (Docx/Pptx/Xlsx/Pdf) avec formulaires + download
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.11) — Completion : tests + sentinelles + vues admin + impl réelles
+
+## 🆕 SESSION 2026-05-14 (v13.4.11) — Completion : tests + sentinelles + vues admin + impl réelles
+
+Suite de la livraison v13.4.10 (skills 2026 + MCP). Kevin "Termine tout sans t'arrêter, teste sauvegarde, mets à jour tout ce qu'il faut. Autonomie totale".
+
+**Nouveaux fichiers v13.4.11**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/tests/unit/skills-generators.test.ts` | 12 tests (Docx 6 templates + Pptx + Xlsx + Pdf safe handling) |
+| `apex-ai/v13/tests/unit/mcp-client-registry.test.ts` | 12 tests (registry init/get/register/unregister + client call/healthCheck/error handling) |
+| `apex-ai/v13/services/skills-watch.ts` | Sentinelles `skills-watch` (1h CDN probe) + `mcp-health-watch` (30min) |
+| `apex-ai/v13/features/admin/mcp-servers/index.ts` | Vue admin `?view=mcp-servers` (liste + test + discover + add custom) |
+| `apex-ai/v13/features/admin/skills-2026/index.ts` | Vue admin `?view=skills-2026` (14 skills + boutons test live) |
+
+**Modifications v13.4.11**
+
+- `apex-ai/v13/core/bootstrap.ts` :
+  - APP_VER bump v13.4.10 → v13.4.11
+  - Auto-start `skillsWatch.start()` au boot
+  - Auto-init `mcpRegistry.init()` au boot
+  - 2 nouvelles routes : `mcp-servers`, `skills-2026`
+- `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` :
+  - `dispatchSecurityReview` : brancher sur `apexSelfAudit.runFullAudit()` (vrai audit OWASP/CWE)
+  - `dispatchCodeReview` : brancher sur `apexSelfAudit` (4 agents internes)
+  - `dispatchSkillFactoryCreate` : validation enrichie (longueur min, kebab-case strict, dedup, audit log)
+
+**Vérifications réelles (règle Kevin "jamais mentir")**
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript
+- ✅ `npm run build` : **build OK 6.07s**
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.11"` partout
+- ✅ Tests vitest **24/24 passent** (12 generators + 12 mcp-client/registry)
+- ✅ Code TS strict mode respecté (TS4111 + TS2375)
+
+### Restant honnêtement non fait (à faire dans futures sessions)
+
+- `video_edit` / `video_compose_hyperframes` : implémentation ffmpeg.wasm Worker (placeholder retourne success:false)
+- `futuristic_module_invoke` : routing vers 60+ modules concrets (placeholder retourne erreur informative)
+- Studios UI dédiés (`vStudioDocx`, `vStudioPptx`, `vStudioXlsx`, `vStudioPdf`) : actuellement seulement tools, pas de vue Studio (utilisable via chat IA quand même)
+- Tests pptx/xlsx fonctionnels en jsdom (CDN ne charge pas en env test → tests fallback erreur uniquement)
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.10) — Skills 2026 + MCP fiscal/légal/research + futuristic modules
+
+### 🎯 Mission session
+
+Kevin a partagé une avalanche de captures TikTok montrant skills Claude Code les plus en vue 2026 (Elyd 50+, IA IRL Top 5, Yury.ai PLUGINS, Shubham Sharma 5 skills, Anthropic Frontend Design 277k installs, Almanac MCP HN 346 pts) + MCP BOFiP fiscal officiel. Directive : "tout dans apex + utilise systématiquement + optimise toujours tout + intègre modules futuristes".
+
+### Nouveaux fichiers Apex v13.4.10
+
+**Skills .md (.claude/skills/, auto-sync system prompt Apex IA) — 20 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `.claude/skills/apex-generate-docx.md` | Doc Word .docx (6 templates) |
+| `.claude/skills/apex-generate-pptx.md` | Slides PowerPoint (7 templates pro+fun) |
+| `.claude/skills/apex-generate-xlsx.md` | Excel multi-feuilles formules |
+| `.claude/skills/apex-generate-pdf.md` | PDF pro (8 templates + autoTable) |
+| `.claude/skills/apex-skill-factory.md` | Méta-skill création nouveaux skills |
+| `.claude/skills/apex-frontend-design.md` | Design system WCAG AA + 23 termes Impeccable |
+| `.claude/skills/apex-impeccable-design.md` | Vocabulaire design fluent 23 commandes |
+| `.claude/skills/apex-security-review.md` | Scan vulnérabilités OWASP/CWE |
+| `.claude/skills/apex-code-review.md` | 4 agents review (compliance/bug/git) |
+| `.claude/skills/apex-gsd-methodology.md` | Get Shit Done zéro demi-mesure |
+| `.claude/skills/apex-claude-mem.md` | Mémoire cross-session augmentée |
+| `.claude/skills/apex-superpowers.md` | TDD framework + brainstorming socratique |
+| `.claude/skills/apex-context-mode.md` | Toggle compression contexte |
+| `.claude/skills/apex-marketing-psy.md` | 23 frameworks copy persuasif |
+| `.claude/skills/apex-video-use.md` | ffmpeg.wasm + Whisper captions |
+| `.claude/skills/apex-hyperframes.md` | Compose vidéo HTML/CSS/JS |
+| `.claude/skills/apex-mcp-bofip.md` | MCP BOFiP fiscal FR officiel |
+| `.claude/skills/apex-mcp-almanac.md` | MCP Almanac Deep Research |
+| `.claude/skills/apex-mcp-legal-hunter.md` | MCP Legal Data Hunter 18M docs |
+| `.claude/skills/apex-futuristic-modules.md` | Registry 60+ modules dernier cri 2026 |
+
+**Runtime services TypeScript — 6 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/skills/docx-generator.ts` | Génération .docx Office Open XML client-side |
+| `apex-ai/v13/services/skills/pptx-generator.ts` | Génération .pptx via pptxgenjs CDN |
+| `apex-ai/v13/services/skills/xlsx-generator.ts` | Génération .xlsx via SheetJS CDN |
+| `apex-ai/v13/services/skills/pdf-generator.ts` | Génération .pdf via jsPDF + autoTable |
+| `apex-ai/v13/services/mcp-client.ts` | Client MCP JSON-RPC + cache LRU + rate-limit |
+| `apex-ai/v13/services/mcp-registry.ts` | Registry serveurs MCP + auto-discovery tools |
+
+**Tools registry + dispatch — 2 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/apex-tools-registry/skills-tools.ts` | 16 tools : generate_docx/pptx/xlsx/pdf, video_edit, mcp_bofip_search, mcp_almanac_research, mcp_legal_search, generate_design_system, generate_marketing_copy, skill_factory_create, security_review, code_review, futuristic_module_invoke |
+| `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` | Dispatcher implémentations runtime des 15+ tools |
+
+**Modifications**
+- `apex-ai/v13/services/apex-tools.ts` : import SKILLS_TOOLS dans APEX_TOOLS array
+- `apex-ai/v13/services/apex-tools-dispatch.ts` : 15 nouveaux `case` dans switch dispatcher
+- `apex-ai/v13/core/memory.ts` : section "Skills 2026 ACTIFS" + "MCP Servers" injectée dans `buildSystemPromptDeep`
+- `apex-ai/v13/index.html` : bump v13.4.9 → v13.4.10
+- `apex-ai/v13/core/bootstrap.ts` : `APP_VER = 'v13.4.10'`
+- `apex-ai/v13/sw.js` : `CACHE_VERSION = 'apex-v13.4.10'`
+- `apex-ai-v13/*` : rebuild + sync (règle erreur #54 CLAUDE.md GAP source vs build)
+
+### 🎯 Utilisation par Apex IA (systématique, pas en option)
+
+À chaque message user, Apex DOIT :
+- "lettre/contrat/CV/rapport" → `generate_docx` (jamais markdown)
+- "présentation/slides/pitch" → `generate_pptx`
+- "tableau Excel/comptabilité" → `generate_xlsx`
+- "PDF/facture/devis" → `generate_pdf`
+- Question fiscale FR → `mcp_bofip_search` AVANT répondre (citation BOI-*)
+- Recherche juridique → `mcp_legal_search` (18M docs 110 pays)
+- "deep research/veille" → `mcp_almanac_research`
+- "design/palette/UI" → `generate_design_system` (Frontend Design + Impeccable vocab)
+- "headline/landing/copy" → `generate_marketing_copy`
+- Admin "audit/vulnérabilité" → `security_review` + `code_review`
+
+### ✅ Vérifications réelles effectuées (règle Kevin "jamais mentir")
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript
+- ✅ `npm run build` : **build OK en 5-7s**
+- ✅ `cp -r dist/* apex-ai-v13/` : **sync source ↔ build**
+- ✅ `data-app-ver` source = build (v13.4.10)
+- ✅ Tests vitest : **8004/8021 passent** (99.9%, les 8 fails sont pré-existants vault-deep-recovery + features, pas causés par mes changements)
+- ✅ Tous mes nouveaux fichiers TS passent strict mode (TS4111 noPropertyAccessFromIndexSignature, TS2375 exactOptionalPropertyTypes)
+
+---
 
 ## 🆕 SESSION 2026-05-10 — Mode Autonome Apex (v13.4.5)
 

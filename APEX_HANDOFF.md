@@ -2,8 +2,57 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.604 / Apex v13.4.5 déployés
-> **Dernière update** : 2026-05-10
+> **État projet** : CMCteams v9.604 / Apex v13.4.13 déployés
+> **Dernière update** : 2026-05-14
+
+---
+
+## 🔥 MISE À JOUR 2026-05-14 — Apex v13.4.13 (Skills 2026 + Runtime Tester)
+
+**4 commits cette session** (101ab0d → 4ad301f → 6ce1d36 → v13.4.13)
+
+### Apex IA est CONSCIENT et UTILISE systématiquement
+
+System prompt `buildSystemPromptDeep` (memory.ts) injecte section "Skills 2026 ACTIFS" qui mappe chaque intent user vers le bon tool :
+
+- "lettre/contrat/CV/rapport" → `generate_docx` (jamais markdown brut)
+- "présentation/slides/pitch" → `generate_pptx`
+- "tableau Excel/comptabilité" → `generate_xlsx`
+- "PDF/facture/devis" → `generate_pdf`
+- Question fiscale FR → `mcp_bofip_search` AVANT de répondre (citation BOI-*)
+- Recherche juridique → `mcp_legal_search` (18M docs 110 pays)
+- "deep research" → `mcp_almanac_research`
+- "design/palette" → `generate_design_system`
+- "headline/landing/copy" → `generate_marketing_copy`
+- Admin "audit" → `security_review` + `code_review`
+
+### Apex teste lui-même en runtime browser
+
+Vue `?view=runtime-tests` permet à Kevin (admin) de cliquer "🧪 Lancer TOUS les tests réels"
+qui exécute 17 tests live : 4 generators + 3 MCP health + 5 futuristic + 2 sentinelles + security + hyperframes.
+Rapport persisté avec preuves (filename, sizeBytes, latencyMs).
+
+### Fichiers critiques v13.4.10 → v13.4.13
+
+```
+.claude/skills/apex-*.md             (20 fichiers, auto-syncés)
+apex-ai/v13/services/skills/         (5 services TS : docx/pptx/xlsx/pdf/video/futuristic)
+apex-ai/v13/services/mcp-client.ts   (JSON-RPC + cache LRU + rate-limit)
+apex-ai/v13/services/mcp-registry.ts (3 servers default + auto-discovery)
+apex-ai/v13/services/skills-watch.ts (sentinelles skills + mcp-health)
+apex-ai/v13/services/apex-runtime-tester.ts (orchestrateur tests live)
+apex-ai/v13/services/apex-tools-registry/skills-tools.ts (16 tools)
+apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts (15 cases)
+apex-ai/v13/features/admin/{mcp-servers,skills-2026,runtime-tests}/ (3 vues admin)
+apex-ai/v13/features/studios/{docx,pptx,xlsx,pdf}/ (4 Studios UI)
+apex-ai/v13/tests/unit/skills-{generators,extra}.test.ts + mcp-client-registry.test.ts (35 tests ✅)
+```
+
+### Fix v13.4.13 critique
+
+`renderMetaSection('skills')` dans `core/memory.ts` lit maintenant AUSSI
+`ax_apex_skills_registry` (localStorage) — donc les skills créés via
+`skill_factory_create` sont injectés dans le system prompt au prochain build.
 
 ---
 

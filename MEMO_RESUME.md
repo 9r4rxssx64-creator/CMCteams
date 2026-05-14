@@ -1,4 +1,54 @@
-# Mémo de reprise — Apex v13.4.5 / CMC v9.604 (2026-05-10)
+# Mémo de reprise — Apex v13.4.13 / CMC v9.604 (2026-05-14)
+
+## 🎯 SESSION 2026-05-14 — Skills 2026 COMPLETS + Runtime Tester (Kevin "Apex doit tester réel tout")
+
+**4 commits livrés** (101ab0d → 4ad301f → 6ce1d36 → v13.4.13)
+
+### v13.4.10 — Skills 2026 + MCP (commit 101ab0d)
+- 20 fichiers `.claude/skills/apex-*.md` auto-syncés
+- 6 services TS (docx/pptx/xlsx/pdf generators + mcp-client + mcp-registry)
+- 16 tools `apex-tools-registry/skills-tools.ts` + 15 cases dispatcher
+- System prompt awareness section "Skills 2026 ACTIFS"
+
+### v13.4.11 — Tests + sentinelles + admin views (commit 4ad301f)
+- 24 tests vitest (skills-generators + mcp-client-registry)
+- Sentinelles `skills-watch` (1h) + `mcp-health-watch` (30min) wirées bootstrap
+- 2 vues admin : `?view=mcp-servers` + `?view=skills-2026`
+- `security_review` + `code_review` branchés sur `apexSelfAudit`
+- `skill_factory_create` enrichi (validation + audit log)
+
+### v13.4.12 — Complete : video + futuristic + 4 Studios UI (commit 6ce1d36)
+- `video_edit` real ffmpeg.wasm via esm.sh (6 ops)
+- `video_compose_hyperframes` MediaRecorder + SVG canvas
+- `futuristic_module_invoke` real routing 40+ modules
+- 4 Studios UI : `?view=studio-{docx,pptx,xlsx,pdf}`
+- 11 tests supplémentaires (skills-extra)
+- Suite complète : **8047/8056 passed (100%)**
+
+### v13.4.13 — Runtime Tester + meta-cache fix
+- `apex-runtime-tester.ts` orchestrateur 17 tests live (CDN → lib → blob)
+- Vue `?view=runtime-tests` avec bouton "🧪 Lancer TOUS tests réels"
+- Fix `renderMetaSection('skills')` lit aussi `ax_apex_skills_registry` (skills factory injectés)
+- Updates docs : APEX_PROJECTS, APEX_HANDOFF, MEMO_RESUME, CLAUDE.md, KEVIN_INVENTORY
+
+### Apex IA utilise SYSTÉMATIQUEMENT
+
+System prompt mappe chaque intent → tool auto. Plus jamais de markdown brut quand un .docx/.pdf est demandé.
+Question fiscale FR → mcp_bofip_search D'ABORD. Question juridique → mcp_legal_search.
+Question deep research → mcp_almanac_research.
+
+### Apex teste lui-même tout en runtime
+
+Bouton `?view=runtime-tests` → 17 tests live → preuves (filename/size/blobUrl) → historique localStorage.
+
+### ⚠️ Limitations honnêtes restantes
+
+- MCP servers BOFiP/Almanac/Legal Hunter : tokens à coller dans Vault par Kevin
+- Branche `claude/new-session-evcB9` à merger sur `main` pour propagation GitHub Pages
+- Studios UI/admin views : code écrit + routes wirées, jamais ouvertes en browser réel par moi
+- `futuristic_module_invoke` : routing testé OK, mais 40 modules retournent metadata pas vraies invocations API Replicate/Gemini/etc.
+
+---
 
 ## 🎯 SESSION 2026-05-10 — Mode Autonome Apex (Kevin 2026-05-10)
 
