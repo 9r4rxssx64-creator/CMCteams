@@ -1,9 +1,52 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-14** (Apex v13.4.10 — Skills 2026 + MCP + 60+ modules futuristes)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.11 — Skills 2026 complets : tests + sentinelles + admin views)
 
-## 🆕 SESSION 2026-05-14 — Skills 2026 + MCP fiscal/légal/research + futuristic modules (v13.4.10)
+## 🆕 SESSION 2026-05-14 (v13.4.11) — Completion : tests + sentinelles + vues admin + impl réelles
+
+Suite de la livraison v13.4.10 (skills 2026 + MCP). Kevin "Termine tout sans t'arrêter, teste sauvegarde, mets à jour tout ce qu'il faut. Autonomie totale".
+
+**Nouveaux fichiers v13.4.11**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/tests/unit/skills-generators.test.ts` | 12 tests (Docx 6 templates + Pptx + Xlsx + Pdf safe handling) |
+| `apex-ai/v13/tests/unit/mcp-client-registry.test.ts` | 12 tests (registry init/get/register/unregister + client call/healthCheck/error handling) |
+| `apex-ai/v13/services/skills-watch.ts` | Sentinelles `skills-watch` (1h CDN probe) + `mcp-health-watch` (30min) |
+| `apex-ai/v13/features/admin/mcp-servers/index.ts` | Vue admin `?view=mcp-servers` (liste + test + discover + add custom) |
+| `apex-ai/v13/features/admin/skills-2026/index.ts` | Vue admin `?view=skills-2026` (14 skills + boutons test live) |
+
+**Modifications v13.4.11**
+
+- `apex-ai/v13/core/bootstrap.ts` :
+  - APP_VER bump v13.4.10 → v13.4.11
+  - Auto-start `skillsWatch.start()` au boot
+  - Auto-init `mcpRegistry.init()` au boot
+  - 2 nouvelles routes : `mcp-servers`, `skills-2026`
+- `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` :
+  - `dispatchSecurityReview` : brancher sur `apexSelfAudit.runFullAudit()` (vrai audit OWASP/CWE)
+  - `dispatchCodeReview` : brancher sur `apexSelfAudit` (4 agents internes)
+  - `dispatchSkillFactoryCreate` : validation enrichie (longueur min, kebab-case strict, dedup, audit log)
+
+**Vérifications réelles (règle Kevin "jamais mentir")**
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript
+- ✅ `npm run build` : **build OK 6.07s**
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.11"` partout
+- ✅ Tests vitest **24/24 passent** (12 generators + 12 mcp-client/registry)
+- ✅ Code TS strict mode respecté (TS4111 + TS2375)
+
+### Restant honnêtement non fait (à faire dans futures sessions)
+
+- `video_edit` / `video_compose_hyperframes` : implémentation ffmpeg.wasm Worker (placeholder retourne success:false)
+- `futuristic_module_invoke` : routing vers 60+ modules concrets (placeholder retourne erreur informative)
+- Studios UI dédiés (`vStudioDocx`, `vStudioPptx`, `vStudioXlsx`, `vStudioPdf`) : actuellement seulement tools, pas de vue Studio (utilisable via chat IA quand même)
+- Tests pptx/xlsx fonctionnels en jsdom (CDN ne charge pas en env test → tests fallback erreur uniquement)
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.10) — Skills 2026 + MCP fiscal/légal/research + futuristic modules
 
 ### 🎯 Mission session
 

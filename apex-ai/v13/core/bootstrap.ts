@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.10';
+export const APP_VER = 'v13.4.11';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -210,6 +210,22 @@ async function bootstrap(): Promise<void> {
           autonomousWatch.start();
         } catch (err: unknown) {
           logger.warn('boot', 'autonomous-watch start failed', { err });
+        }
+
+        /* v13.4.10 — Skills + MCP sentinelles (1h skills-watch, 30min mcp-health-watch) */
+        try {
+          const { skillsWatch } = await import('@services/skills-watch.js');
+          skillsWatch.start();
+        } catch (err: unknown) {
+          logger.warn('boot', 'skills-watch start failed', { err });
+        }
+
+        /* v13.4.10 — Initialise MCP registry (default servers : bofip, almanac, legal-hunter) */
+        try {
+          const { mcpRegistry } = await import('@services/mcp-registry.js');
+          void mcpRegistry.init();
+        } catch (err: unknown) {
+          logger.warn('boot', 'mcp-registry init failed', { err });
         }
       },
     },
@@ -408,6 +424,9 @@ async function bootstrap(): Promise<void> {
   router.register('admin-shubham-skills', { loader: () => import('@features/admin/shubham-skills/index.js'), requiresAdmin: true });
   /* Kevin 2026-05-10 v13.4.5 : Vue admin "Mode Autonome" — session-driven (Apex bosse seul jusqu'à fin/quota) */
   router.register('admin-autonomous', { loader: () => import('@features/admin/autonomous/index.js'), requiresAdmin: true });
+  /* Kevin 2026-05-14 v13.4.10 : Vues admin Skills 2026 + MCP servers (intégration skills/MCP) */
+  router.register('mcp-servers', { loader: () => import('@features/admin/mcp-servers/index.js'), requiresAdmin: true });
+  router.register('skills-2026', { loader: () => import('@features/admin/skills-2026/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

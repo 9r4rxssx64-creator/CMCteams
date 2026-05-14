@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Apex v13.4.10 / CMC v9.602).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Apex v13.4.11 / CMC v9.602).
 
 ---
 
@@ -10,7 +10,7 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Ape
 
 **Règle absolue, prioritaire** — Apex IA priorité 1 :
 
-### 1. Skills 2026 intégrés (v13.4.10)
+### 1. Skills 2026 intégrés (v13.4.11)
 
 Apex IA a accès systématique à 16+ tools nouveaux et 60+ modules futuristes :
 
