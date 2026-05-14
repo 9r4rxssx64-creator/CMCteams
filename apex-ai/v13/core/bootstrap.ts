@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.45';
+export const APP_VER = 'v13.4.46';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -632,6 +632,17 @@ async function bootstrap(): Promise<void> {
     })
     .catch((err: unknown) => {
       logger.warn('boot', 'force-update-banner install failed (non-blocking)', { err });
+    });
+
+  /* v13.4.46 Kevin "Toujours en zoom" iPhone PWA — triple protection anti-zoom.
+   * Bloque gesturestart/change/end + multi-touch + double-tap + reset programmatique
+   * si visualViewport.scale > 1. Check périodique 1s + visibilitychange/focus. */
+  void import('@services/anti-zoom-ios.js')
+    .then(({ antiZoomIOS }) => {
+      antiZoomIOS.install();
+    })
+    .catch((err: unknown) => {
+      logger.warn('boot', 'anti-zoom-ios install failed (non-blocking)', { err });
     });
 
   /* 9bis. Push notifications auto-init (autonome, app fermée OK iOS+Android).
