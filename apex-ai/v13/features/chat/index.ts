@@ -58,7 +58,13 @@ interface DisplayMessage {
      puis `✅ N opérations` quand done. */
   toolPills?: { name: string; status: 'running' | 'done' }[];
   toolBatchCount?: number;
+  /* v13.4.11 fix Kevin "Apex n'a pas accès aux pièces jointes" — base64 + mime
+   * pour reconstruire content array Anthropic au moment d'appel IA. */
+  attachments?: Array<{ mime: string; base64: string; name: string }>;
 }
+
+/* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé). */
+let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
 
 /* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
  * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
@@ -904,11 +910,18 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     logger.warn('chat', 'chat:message:user emit failed', { err });
   }
 
+  /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" : prend snapshot
+   * pendingAttachments + vide la queue. Le message porte ses attachments,
+   * la queue est vide pour le prochain message. */
+  const takenAttachments = pendingAttachments.length > 0 ? [...pendingAttachments] : undefined;
+  pendingAttachments = [];
+
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
     role: 'user',
     text,
     ts: Date.now(),
+    ...(takenAttachments ? { attachments: takenAttachments } : {}),
   };
   conversation.push(userMsg);
   persistConversation();
@@ -929,7 +942,27 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     .filter((m) => m.role === 'user' || m.role === 'assistant') /* Exclude tool_card from API */
     .slice(-MAX_CONTEXT_MESSAGES) /* v13.3.48 cap context (HTTP 400 + perf) */
     .filter((m) => m !== assistantMsg)
-    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.text }));
+    .map((m) => {
+      /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" :
+       * Si message user a attachments → content array Anthropic format
+       * (type:image source:base64) ; sinon content string text simple. */
+      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
+        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
+        for (const att of m.attachments) {
+          if (att.mime.startsWith('image/')) {
+            /* Anthropic vision : source.type=base64, media_type, data (sans prefix data:) */
+            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
+            contentArr.push({
+              type: 'image',
+              source: { type: 'base64', media_type: att.mime, data: dataOnly },
+            });
+          }
+        }
+        if (m.text) contentArr.push({ type: 'text', text: m.text });
+        return { role: m.role as 'user' | 'assistant', content: contentArr };
+      }
+      return { role: m.role as 'user' | 'assistant', content: m.text };
+    });
 
   /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
   const sysPrompt = await buildSystemPromptDeep();
@@ -2518,6 +2551,27 @@ export function render(rootEl: HTMLElement): void {
           const url = URL.createObjectURL(file);
           albumImages.push({ url, filename: file.name });
         } catch { /* ignore createObjectURL fail */ }
+        /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" :
+         * Lire base64 et push dans pendingAttachments — l'IA recevra
+         * l'image dans son context array Anthropic au prochain submit. */
+        void (async () => {
+          try {
+            const b64 = await new Promise<string>((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.onerror = () => reject(new Error('FileReader error'));
+              r.readAsDataURL(file);
+            });
+            /* Cap 5MB par image (limite Anthropic + perf) */
+            if (file.size > 5 * 1024 * 1024) {
+              toast.warn(`📷 ${file.name} > 5MB, IA ne le verra pas (display only)`, { duration: 5000 });
+            } else {
+              pendingAttachments.push({ mime: file.type, base64: b64, name: file.name });
+            }
+          } catch (err: unknown) {
+            logger.warn('chat', 'pendingAttachments push failed', { err, file: file.name });
+          }
+        })();
         /* v13.3.51 — Auto-vision device sur upload image */
         void autoAnalyzeDeviceImage(file, rootEl);
         /* v13.3.53 — Multi-Source EXHAUSTIVE extraction (Kevin règle 2026-05-07 23h55) :
