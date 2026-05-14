@@ -1,6 +1,65 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-07 (Apex v13.3.51 / CMC v9.602).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Apex v13.4.10 / CMC v9.602).
+
+---
+
+## 🎯 RÈGLE ABSOLUE — SKILLS APEX 2026 + MCP + 60+ MODULES FUTURISTES (Kevin 2026-05-14, ABSOLUE)
+
+> **"Tu vas intégrer tout ça à apex en autonomie et qu'il soit au courant. Tout dans apex et qu'il les utilise toujours. Optimise toujours tout. Ensuite intègre lui beaucoup de modules outils intelligents, dernier cri, futuristes etc va plus loin"** — Kevin 2026-05-14
+
+**Règle absolue, prioritaire** — Apex IA priorité 1 :
+
+### 1. Skills 2026 intégrés (v13.4.10)
+
+Apex IA a accès systématique à 16+ tools nouveaux et 60+ modules futuristes :
+
+| Catégorie | Skills/Tools | Auto-trigger user mots-clés |
+|---|---|---|
+| Document generators | generate_docx, generate_pptx, generate_xlsx, generate_pdf | "lettre/contrat/CV/rapport/slides/pitch/tableau/Excel/PDF/facture/devis" |
+| Video | video_edit, video_compose_hyperframes | "monter vidéo/clip/sous-titres/watermark" |
+| MCP servers | mcp_bofip_search, mcp_almanac_research, mcp_legal_search | "TVA/IR/impôt FR" → BOFiP ; "deep research" → Almanac ; "jurisprudence multi-pays" → Legal Hunter |
+| Design | generate_design_system, generate_marketing_copy | "palette/branding/UI" et "headline/landing/copy" |
+| Méta admin | skill_factory_create, security_review, code_review | Admin Kevin only |
+| Futuristic | futuristic_module_invoke (60+ modules) | apex-image-gen-flux2-pro, apex-video-gen-sora-2, apex-music-suno-v5, apex-pq-crypto-kyber, etc. |
+
+### 2. UTILISATION SYSTÉMATIQUE (directive Kevin "qu'il les utilise toujours")
+
+Apex IA DOIT auto-invoquer le bon skill sans demander confirmation. Section dédiée injectée dans `buildSystemPromptDeep` (memory.ts) :
+- "lettre/contrat/CV/.docx/Word" → generate_docx (JAMAIS markdown brut)
+- "présentation/slides/.pptx" → generate_pptx
+- "tableau/Excel/.xlsx" → generate_xlsx
+- "PDF/facture/devis" → generate_pdf
+- Question fiscale FR → mcp_bofip_search D'ABORD (citation BOI-* obligatoire)
+- Recherche juridique multi-pays → mcp_legal_search (18M docs 110 pays)
+- "deep research/veille" → mcp_almanac_research
+- "design/palette" → generate_design_system
+- "marketing/copy/headline" → generate_marketing_copy
+
+### 3. Fichiers de référence
+
+- `.claude/skills/apex-*.md` (20 skills SKILL.md auto-syncés par Apex meta-cache)
+- `apex-ai/v13/services/skills/{docx,pptx,xlsx,pdf}-generator.ts` (runtime client-side)
+- `apex-ai/v13/services/mcp-client.ts` + `mcp-registry.ts` (3 serveurs MCP)
+- `apex-ai/v13/services/apex-tools-registry/skills-tools.ts` (16 tools)
+- `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` (dispatcher)
+
+### 4. Sécurité + RGPD
+
+- Toute génération **100% client-side** (RGPD : aucune PII envoyée serveur)
+- MCP tokens chiffrés AES-GCM-256 dans Vault Apex
+- `axRedactOutbound` masque tokens dans logs
+- Rate-limit MCP per-server (30/min) + cache LRU 50 entries TTL 1h
+
+### 5. Test mental obligatoire avant chaque release Apex
+
+> *"Si user dit 'fais-moi une lettre' → Apex appelle generate_docx, JAMAIS markdown brut. Si user dit 'TVA jeux casino' → Apex appelle mcp_bofip_search AVANT de répondre."*
+
+Si non → fix avant push.
+
+S'applique : Apex priorité absolue, CMCteams si pertinent, tous projets futurs.
+
+---
 
 ---
 

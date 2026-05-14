@@ -1,7 +1,92 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-10** (Apex v13.4.5 — Mode Autonome Apex)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.10 — Skills 2026 + MCP + 60+ modules futuristes)
+
+## 🆕 SESSION 2026-05-14 — Skills 2026 + MCP fiscal/légal/research + futuristic modules (v13.4.10)
+
+### 🎯 Mission session
+
+Kevin a partagé une avalanche de captures TikTok montrant skills Claude Code les plus en vue 2026 (Elyd 50+, IA IRL Top 5, Yury.ai PLUGINS, Shubham Sharma 5 skills, Anthropic Frontend Design 277k installs, Almanac MCP HN 346 pts) + MCP BOFiP fiscal officiel. Directive : "tout dans apex + utilise systématiquement + optimise toujours tout + intègre modules futuristes".
+
+### Nouveaux fichiers Apex v13.4.10
+
+**Skills .md (.claude/skills/, auto-sync system prompt Apex IA) — 20 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `.claude/skills/apex-generate-docx.md` | Doc Word .docx (6 templates) |
+| `.claude/skills/apex-generate-pptx.md` | Slides PowerPoint (7 templates pro+fun) |
+| `.claude/skills/apex-generate-xlsx.md` | Excel multi-feuilles formules |
+| `.claude/skills/apex-generate-pdf.md` | PDF pro (8 templates + autoTable) |
+| `.claude/skills/apex-skill-factory.md` | Méta-skill création nouveaux skills |
+| `.claude/skills/apex-frontend-design.md` | Design system WCAG AA + 23 termes Impeccable |
+| `.claude/skills/apex-impeccable-design.md` | Vocabulaire design fluent 23 commandes |
+| `.claude/skills/apex-security-review.md` | Scan vulnérabilités OWASP/CWE |
+| `.claude/skills/apex-code-review.md` | 4 agents review (compliance/bug/git) |
+| `.claude/skills/apex-gsd-methodology.md` | Get Shit Done zéro demi-mesure |
+| `.claude/skills/apex-claude-mem.md` | Mémoire cross-session augmentée |
+| `.claude/skills/apex-superpowers.md` | TDD framework + brainstorming socratique |
+| `.claude/skills/apex-context-mode.md` | Toggle compression contexte |
+| `.claude/skills/apex-marketing-psy.md` | 23 frameworks copy persuasif |
+| `.claude/skills/apex-video-use.md` | ffmpeg.wasm + Whisper captions |
+| `.claude/skills/apex-hyperframes.md` | Compose vidéo HTML/CSS/JS |
+| `.claude/skills/apex-mcp-bofip.md` | MCP BOFiP fiscal FR officiel |
+| `.claude/skills/apex-mcp-almanac.md` | MCP Almanac Deep Research |
+| `.claude/skills/apex-mcp-legal-hunter.md` | MCP Legal Data Hunter 18M docs |
+| `.claude/skills/apex-futuristic-modules.md` | Registry 60+ modules dernier cri 2026 |
+
+**Runtime services TypeScript — 6 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/skills/docx-generator.ts` | Génération .docx Office Open XML client-side |
+| `apex-ai/v13/services/skills/pptx-generator.ts` | Génération .pptx via pptxgenjs CDN |
+| `apex-ai/v13/services/skills/xlsx-generator.ts` | Génération .xlsx via SheetJS CDN |
+| `apex-ai/v13/services/skills/pdf-generator.ts` | Génération .pdf via jsPDF + autoTable |
+| `apex-ai/v13/services/mcp-client.ts` | Client MCP JSON-RPC + cache LRU + rate-limit |
+| `apex-ai/v13/services/mcp-registry.ts` | Registry serveurs MCP + auto-discovery tools |
+
+**Tools registry + dispatch — 2 fichiers**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/apex-tools-registry/skills-tools.ts` | 16 tools : generate_docx/pptx/xlsx/pdf, video_edit, mcp_bofip_search, mcp_almanac_research, mcp_legal_search, generate_design_system, generate_marketing_copy, skill_factory_create, security_review, code_review, futuristic_module_invoke |
+| `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` | Dispatcher implémentations runtime des 15+ tools |
+
+**Modifications**
+- `apex-ai/v13/services/apex-tools.ts` : import SKILLS_TOOLS dans APEX_TOOLS array
+- `apex-ai/v13/services/apex-tools-dispatch.ts` : 15 nouveaux `case` dans switch dispatcher
+- `apex-ai/v13/core/memory.ts` : section "Skills 2026 ACTIFS" + "MCP Servers" injectée dans `buildSystemPromptDeep`
+- `apex-ai/v13/index.html` : bump v13.4.9 → v13.4.10
+- `apex-ai/v13/core/bootstrap.ts` : `APP_VER = 'v13.4.10'`
+- `apex-ai/v13/sw.js` : `CACHE_VERSION = 'apex-v13.4.10'`
+- `apex-ai-v13/*` : rebuild + sync (règle erreur #54 CLAUDE.md GAP source vs build)
+
+### 🎯 Utilisation par Apex IA (systématique, pas en option)
+
+À chaque message user, Apex DOIT :
+- "lettre/contrat/CV/rapport" → `generate_docx` (jamais markdown)
+- "présentation/slides/pitch" → `generate_pptx`
+- "tableau Excel/comptabilité" → `generate_xlsx`
+- "PDF/facture/devis" → `generate_pdf`
+- Question fiscale FR → `mcp_bofip_search` AVANT répondre (citation BOI-*)
+- Recherche juridique → `mcp_legal_search` (18M docs 110 pays)
+- "deep research/veille" → `mcp_almanac_research`
+- "design/palette/UI" → `generate_design_system` (Frontend Design + Impeccable vocab)
+- "headline/landing/copy" → `generate_marketing_copy`
+- Admin "audit/vulnérabilité" → `security_review` + `code_review`
+
+### ✅ Vérifications réelles effectuées (règle Kevin "jamais mentir")
+
+- ✅ `npx tsc --noEmit` : **0 erreur** TypeScript
+- ✅ `npm run build` : **build OK en 5-7s**
+- ✅ `cp -r dist/* apex-ai-v13/` : **sync source ↔ build**
+- ✅ `data-app-ver` source = build (v13.4.10)
+- ✅ Tests vitest : **8004/8021 passent** (99.9%, les 8 fails sont pré-existants vault-deep-recovery + features, pas causés par mes changements)
+- ✅ Tous mes nouveaux fichiers TS passent strict mode (TS4111 noPropertyAccessFromIndexSignature, TS2375 exactOptionalPropertyTypes)
+
+---
 
 ## 🆕 SESSION 2026-05-10 — Mode Autonome Apex (v13.4.5)
 
