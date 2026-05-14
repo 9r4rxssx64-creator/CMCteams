@@ -44,7 +44,7 @@ describe('v13.4.19 detectCredential — patterns AI/devops/payments', () => {
     const p = detectCredential(k);
     expect(p).not.toBeNull();
     expect(p?.name).toBe('GitHub PAT classic');
-    expect(p?.storageKey).toBe('ax_github_token_classic');
+    expect(p?.storageKey).toBe('ax_github_pat_classic');
   });
 
   it("GitHub Fine-grained (github_pat_...) — v13.4.6 storageKey distinct", () => {
@@ -52,14 +52,15 @@ describe('v13.4.19 detectCredential — patterns AI/devops/payments', () => {
     const p = detectCredential(k);
     expect(p).not.toBeNull();
     expect(p?.name).toBe('GitHub Fine-grained');
-    expect(p?.storageKey).toBe('ax_github_token_fine');
+    expect(p?.storageKey).toBe('ax_github_pat_finegrained');
   });
 
-  it("Google API key (AIza...)", () => {
+  it("Google API key (AIza...) → 'Google AI Gemini' v13.4.42 rename", () => {
     const k = 'AIza' + 'a'.repeat(33);
     const p = detectCredential(k);
     expect(p).not.toBeNull();
-    expect(p?.name).toBe('Google AI');
+    expect(p?.name).toBe('Google AI Gemini');
+    expect(p?.storageKey).toBe('ax_gemini_key');
   });
 
   it("Groq API key (gsk_...)", () => {

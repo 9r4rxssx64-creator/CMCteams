@@ -11,8 +11,8 @@ describe('credential-patterns storageKey distinct (v13.4.6)', () => {
   it('GitHub Fine vs Classic distincts', () => {
     const c = CREDENTIAL_PATTERNS.find((p) => p.name === 'GitHub PAT classic');
     const f = CREDENTIAL_PATTERNS.find((p) => p.name === 'GitHub Fine-grained');
-    expect(c?.storageKey).toBe('ax_github_token_classic');
-    expect(f?.storageKey).toBe('ax_github_token_fine');
+    expect(c?.storageKey).toBe('ax_github_pat_classic');
+    expect(f?.storageKey).toBe('ax_github_pat_finegrained');
   });
   it('OpenAI legacy vs Project distincts', () => {
     const l = CREDENTIAL_PATTERNS.find((p) => p.name === 'OpenAI');
@@ -23,12 +23,12 @@ describe('credential-patterns storageKey distinct (v13.4.6)', () => {
   it('ghp_<36> → classic', () => {
     const d = detectAllCredentials('ghp_' + 'A'.repeat(36));
     const g = d.find((x) => x.pattern.name.startsWith('GitHub'));
-    expect(g?.pattern.storageKey).toBe('ax_github_token_classic');
+    expect(g?.pattern.storageKey).toBe('ax_github_pat_classic');
   });
   it('github_pat_<82> → fine', () => {
     const d = detectAllCredentials('github_pat_' + 'A'.repeat(82));
     const g = d.find((x) => x.pattern.name.startsWith('GitHub'));
-    expect(g?.pattern.storageKey).toBe('ax_github_token_fine');
+    expect(g?.pattern.storageKey).toBe('ax_github_pat_finegrained');
   });
   it('sk-proj-<40> → OpenAI Project', () => {
     const d = detectAllCredentials('sk-proj-' + 'A'.repeat(40));

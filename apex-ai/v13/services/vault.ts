@@ -60,9 +60,10 @@ const PASSPHRASE_HISTORY_MAX = 3;
 export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; key: string }> = [
   { name: 'Anthropic', regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/, key: 'ax_anthropic_key' },
   { name: 'OpenAI', regex: /^sk-(?!ant-)[A-Za-z0-9_-]{40,}/, key: 'ax_openai_key' },
-  { name: 'Google AI', regex: /^AIza[A-Za-z0-9_-]{33}$/, key: 'ax_google_key' },
-  { name: 'GitHub PAT', regex: /^ghp_[A-Za-z0-9]{36}$/, key: 'ax_github_token' },
-  { name: 'GitHub fine-grained', regex: /^github_pat_[A-Za-z0-9_]{82,}$/, key: 'ax_github_token' },
+  /* v13.4.49 align renames v13.4.42 : Google AI Gemini + ax_gemini_key + ax_github_pat_* distincts */
+  { name: 'Google AI Gemini', regex: /^AIza[A-Za-z0-9_-]{33}$/, key: 'ax_gemini_key' },
+  { name: 'GitHub PAT classic', regex: /^ghp_[A-Za-z0-9]{36}$/, key: 'ax_github_pat_classic' },
+  { name: 'GitHub Fine-grained', regex: /^github_pat_[A-Za-z0-9_]{82,}$/, key: 'ax_github_pat_finegrained' },
   { name: 'Stripe SK', regex: /^sk_(live|test)_[A-Za-z0-9]{24,}/, key: 'ax_stripe_sk' },
   { name: 'Stripe PK', regex: /^pk_(live|test)_[A-Za-z0-9]{24,}/, key: 'ax_stripe_pk' },
   { name: 'Brevo', regex: /^xkeysib-[a-f0-9]+-[A-Za-z0-9]+$/, key: 'ax_brevo_key' },
