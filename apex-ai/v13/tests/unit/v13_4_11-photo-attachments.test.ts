@@ -1,57 +1,25 @@
 /**
- * Test régression v13.4.11/12 — Photo attachments IA context.
+ * Test régression v13.4.11/12/13 — Photo attachments IA context.
  *
  * Bug Kevin fixé : "Apex n'a pas accès aux pièces jointes, il sait qu'on a
  * fait quelque chose mais ne sait pas où sont les photos".
  *
  * Avant v13.4.11 : ligne 932 `content: m.text` — seul TEXTE envoyé à l'IA.
  * Après v13.4.11 : si m.attachments présent → content array Anthropic vision.
- * v13.4.12 ajoute : await pendingAttachmentPromises (anti race), bouton ✕ remove,
- * reset UI après submit.
- *
- * Ce test isole la LOGIQUE de transformation messages → content array Anthropic
- * (extraite mentalement de features/chat/index.ts ligne 927+).
+ * v13.4.12 : await pendingAttachmentPromises (anti race), bouton ✕ remove,
+ *            reset UI après submit.
+ * v13.4.13 : helper exporté buildMessagesForApi → tests appellent le VRAI
+ *            code de production (pas une réplique mentale), 100/100 réel Kevin.
  */
 import { describe, it, expect } from 'vitest';
+import { buildMessagesForApi } from '../../features/chat/index.js';
 
-interface DisplayMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'tool_card';
-  text: string;
-  ts: number;
-  attachments?: Array<{ mime: string; base64: string; name: string }>;
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string | Array<{ type: string; [k: string]: unknown }>;
-}
-
-/**
- * Réplique exacte de la map ligne 932 features/chat/index.ts après v13.4.11.
- * Si cette logique régresse → tests fail → blocage commit.
- */
-function buildApiMessages(conversation: DisplayMessage[]): ChatMessage[] {
-  return conversation
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => {
-      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
-        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
-        for (const att of m.attachments) {
-          if (att.mime.startsWith('image/')) {
-            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
-            contentArr.push({
-              type: 'image',
-              source: { type: 'base64', media_type: att.mime, data: dataOnly },
-            });
-          }
-        }
-        if (m.text) contentArr.push({ type: 'text', text: m.text });
-        return { role: m.role as 'user' | 'assistant', content: contentArr };
-      }
-      return { role: m.role as 'user' | 'assistant', content: m.text };
-    });
-}
+/* Wrapper compatibilité tests existants : buildApiMessages = buildMessagesForApi
+ * sans excludeMsg ni cap (default 30). Tests v13.4.11 inchangés, mais c'est le
+ * VRAI helper exporté de features/chat/index.ts qui tourne maintenant. */
+const buildApiMessages = (
+  conv: Array<{ id?: string; role: 'user' | 'assistant' | 'tool_card'; text: string; ts?: number; attachments?: Array<{ mime: string; base64: string; name: string }> }>,
+) => buildMessagesForApi(conv);
 
 describe('v13.4.11 photo attachments → Anthropic vision API content array', () => {
   it("message TEXT pur → content reste string (back-compat 100%)", () => {

@@ -369,6 +369,54 @@ export async function handleLightboxAction(
 }
 
 /**
+ * v13.4.13 — Helper exporté : transforme conversation DisplayMessage → ChatMessage
+ * format Anthropic API.
+ *
+ * Extraite de processQueue() ligne ~932 pour testabilité réelle (les tests
+ * vitest appellent maintenant CETTE fonction, pas une réplique mentale).
+ *
+ * Règles :
+ * - Filtre tool_card (pas envoyés à l'API)
+ * - Cap MAX_CONTEXT_MESSAGES (v13.3.48 — perf + HTTP 400)
+ * - Si message user a attachments image → content array Anthropic vision format
+ * - PDF/non-image attachments ignorés silencieusement (Anthropic vision = image/* only)
+ * - Messages assistant : toujours content string (les attachments leaked sont ignorés)
+ */
+export function buildMessagesForApi(
+  conversation: Array<{
+    role: 'user' | 'assistant' | 'tool_card';
+    text: string;
+    streaming?: boolean;
+    attachments?: Array<{ mime: string; base64: string; name: string }>;
+  }>,
+  excludeMsg?: { role: string },
+  maxContext = 30,
+): Array<{ role: 'user' | 'assistant' | 'system'; content: string | Array<{ type: string; [k: string]: unknown }> }> {
+  return conversation
+    .filter((m) => !m.streaming || m === excludeMsg)
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-maxContext)
+    .filter((m) => m !== excludeMsg)
+    .map((m) => {
+      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
+        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
+        for (const att of m.attachments) {
+          if (att.mime.startsWith('image/')) {
+            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
+            contentArr.push({
+              type: 'image',
+              source: { type: 'base64', media_type: att.mime, data: dataOnly },
+            });
+          }
+        }
+        if (m.text) contentArr.push({ type: 'text', text: m.text });
+        return { role: m.role as 'user' | 'assistant', content: contentArr };
+      }
+      return { role: m.role as 'user' | 'assistant', content: m.text };
+    });
+}
+
+/**
  * Push résultat transformation comme bulle Apex avec image générée.
  * Exposé pour tests.
  */
@@ -953,32 +1001,12 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   store.set('isStreaming', true);
   renderMessages(rootEl);
 
-  const messages: ChatMessage[] = conversation
-    .filter((m) => !m.streaming || m === assistantMsg)
-    .filter((m) => m.role === 'user' || m.role === 'assistant') /* Exclude tool_card from API */
-    .slice(-MAX_CONTEXT_MESSAGES) /* v13.3.48 cap context (HTTP 400 + perf) */
-    .filter((m) => m !== assistantMsg)
-    .map((m) => {
-      /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" :
-       * Si message user a attachments → content array Anthropic format
-       * (type:image source:base64) ; sinon content string text simple. */
-      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
-        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
-        for (const att of m.attachments) {
-          if (att.mime.startsWith('image/')) {
-            /* Anthropic vision : source.type=base64, media_type, data (sans prefix data:) */
-            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
-            contentArr.push({
-              type: 'image',
-              source: { type: 'base64', media_type: att.mime, data: dataOnly },
-            });
-          }
-        }
-        if (m.text) contentArr.push({ type: 'text', text: m.text });
-        return { role: m.role as 'user' | 'assistant', content: contentArr };
-      }
-      return { role: m.role as 'user' | 'assistant', content: m.text };
-    });
+  /* v13.4.13 — utilise buildMessagesForApi helper exporté (testable réel). */
+  const messages = buildMessagesForApi(
+    conversation,
+    assistantMsg,
+    MAX_CONTEXT_MESSAGES,
+  ) as ChatMessage[];
 
   /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
   const sysPrompt = await buildSystemPromptDeep();
@@ -1839,6 +1867,13 @@ function renderMessages(rootEl: HTMLElement): void {
 }
 
 export function render(rootEl: HTMLElement): void {
+  /* v13.4.13 fix memory leak Kevin : si Kevin upload photo puis quitte chat
+   * sans submit, base64 reste en mémoire. Reset queues au remount = clean state.
+   * Trade-off documenté : Kevin perd ses attachments en attente s'il navigue
+   * ailleurs puis revient — acceptable car action explicite de navigation. */
+  pendingAttachments = [];
+  pendingAttachmentPromises = [];
+
   const user = store.get('user');
   /* Feature toggle module.chat (Kevin règle ON/OFF général + per-user, 2026-05-04).
      Si désactivée pour ce user, afficher notice. Admin Kevin bypass via per-user override. */
