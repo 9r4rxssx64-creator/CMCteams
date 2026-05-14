@@ -86,6 +86,7 @@
       if (el) el.addEventListener('click', fn);
     };
     bind('apex-rescue-coffre', navHash('#vault'));
+    bind('apex-rescue-dashboard', navHash('#dashboard'));
     bind('apex-rescue-admin', navHash('#admin'));
     bind('apex-rescue-chat', navHash('#chat'));
     bind('apex-rescue-login', navHash('#login'));
