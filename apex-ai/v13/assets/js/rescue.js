@@ -65,9 +65,36 @@
     }
   }
 
+  /* v13.4.80 — Toolbar permanente HTML pur (Kevin "pas de bouton / tjs pas de coffre"). */
+  function navHash(hash) {
+    return function () {
+      try {
+        location.hash = hash;
+        /* Force re-dispatch même si déjà sur la route (Apex router écoute hashchange) */
+        if (location.hash === hash) {
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+      } catch (_) {
+        location.replace(location.pathname + hash);
+      }
+    };
+  }
+
+  function initRescueToolbar() {
+    var bind = function (id, fn) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', fn);
+    };
+    bind('apex-rescue-coffre', navHash('#vault'));
+    bind('apex-rescue-admin', navHash('#admin'));
+    bind('apex-rescue-chat', navHash('#chat'));
+    bind('apex-rescue-login', navHash('#login'));
+  }
+
   function init() {
     var btn = document.getElementById('apex-rescue-btn');
     if (btn) btn.addEventListener('click', rescueReset);
+    initRescueToolbar();
     initSkipLink();
   }
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.79">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.80">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -175,6 +175,17 @@
   <!-- v13.0.13 : onclick + style externalisés vers rescue.js + rescue.css (CSP strict) -->
   <button id="apex-rescue-btn" type="button"
     title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
+
+  <!-- v13.4.80 (Kevin 2026-05-14 "pas de bouton etc / tjs pas de coffre") :
+       Toolbar rescue permanente HTML pur. Accès direct Coffre/Admin/Login/Chat
+       même si le framework Apex est cassé ou si la nav n'est pas rendue.
+       Indépendant React/Vue/Apex bundle — addEventListener depuis rescue.js. -->
+  <div id="apex-rescue-toolbar" aria-label="Accès rapide Apex">
+    <button id="apex-rescue-coffre" type="button" title="Ouvrir le Coffre" aria-label="Coffre">🔐</button>
+    <button id="apex-rescue-admin" type="button" title="Ouvrir Admin (login si besoin)" aria-label="Admin">⚙️</button>
+    <button id="apex-rescue-chat" type="button" title="Retour Chat" aria-label="Chat">💬</button>
+    <button id="apex-rescue-login" type="button" title="Login admin / utilisateur" aria-label="Login">🔑</button>
+  </div>
 
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
   <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
