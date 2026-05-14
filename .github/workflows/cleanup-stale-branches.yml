@@ -1,0 +1,146 @@
+name: Compact stale claude/* branches
+
+# Règle CLAUDE.md "COMPACT BRANCHES AUTONOME PERMANENT" (Kevin 2026-05-14).
+# Auto-cleanup branches claude/* mergées dans main + branches stale > 30j.
+#
+# Sécurité absolue : ne touche QUE les branches commençant par "claude/".
+# Jamais main, master, develop, production, ni branches avec commits inédits.
+
+on:
+  schedule:
+    # Quotidien 04:00 UTC = 06:00 Paris été / 05:00 hiver
+    - cron: '0 4 * * *'
+    # Hebdo dimanche 04:00 UTC pour scan stale > 30j
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (preview, pas de delete)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-branches
+  cancel-in-progress: false
+
+jobs:
+  cleanup-merged:
+    name: Delete merged claude/* branches
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch origin --prune
+
+      - name: Find merged claude/* branches
+        id: find
+        run: |
+          MERGED=$(git branch -r --merged origin/main | grep "origin/claude/" | sed 's|origin/||' | grep -v "claude/test-699LQ" || true)
+          echo "Merged claude/* branches found:"
+          echo "$MERGED"
+          COUNT=$(echo "$MERGED" | grep -c "claude/" || echo "0")
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          # Sauvegarde liste dans fichier pour étape suivante
+          echo "$MERGED" > /tmp/merged_branches.txt
+
+      - name: Delete merged branches (skip dry run)
+        if: steps.find.outputs.count != '0' && github.event.inputs.dry_run != 'true'
+        run: |
+          while IFS= read -r branch; do
+            branch=$(echo "$branch" | xargs)  # trim
+            if [ -z "$branch" ]; then continue; fi
+            # Garde-fous absolus : jamais main/master/develop/production/test-699LQ
+            case "$branch" in
+              main|master|develop|production|claude/test-699LQ)
+                echo "[SKIP PROTECTED] $branch"
+                continue
+                ;;
+            esac
+            echo "[DELETE] $branch"
+            git push origin --delete "$branch" || echo "[WARN] delete failed for $branch"
+          done < /tmp/merged_branches.txt
+
+      - name: Summary
+        run: |
+          echo "::notice::Cleanup terminé — ${{ steps.find.outputs.count }} branches mergées détectées."
+
+  cleanup-stale:
+    name: Delete stale claude/* branches > 30 days no activity
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 4 * * 0' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch origin --prune
+
+      - name: Find stale claude/* branches (> 30 days)
+        id: stale
+        run: |
+          THIRTY_DAYS_AGO=$(date -d '30 days ago' +%s 2>/dev/null || date -v -30d +%s)
+          STALE_BRANCHES=()
+          while IFS= read -r branch; do
+            branch=$(echo "$branch" | xargs | sed 's|origin/||')
+            if [ -z "$branch" ]; then continue; fi
+            # Skip protected
+            case "$branch" in
+              main|master|develop|production|claude/test-699LQ)
+                continue
+                ;;
+            esac
+            LAST_COMMIT=$(git log -1 --format=%ct "origin/$branch" 2>/dev/null || echo "0")
+            if [ "$LAST_COMMIT" -lt "$THIRTY_DAYS_AGO" ] && [ "$LAST_COMMIT" -gt "0" ]; then
+              STALE_BRANCHES+=("$branch")
+            fi
+          done < <(git branch -r | grep "origin/claude/")
+          printf "Stale > 30j : %d branches\n" "${#STALE_BRANCHES[@]}"
+          printf '%s\n' "${STALE_BRANCHES[@]}" > /tmp/stale_branches.txt
+          echo "count=${#STALE_BRANCHES[@]}" >> $GITHUB_OUTPUT
+
+      - name: Delete stale branches (skip dry run)
+        if: steps.stale.outputs.count != '0' && github.event.inputs.dry_run != 'true'
+        run: |
+          while IFS= read -r branch; do
+            branch=$(echo "$branch" | xargs)
+            if [ -z "$branch" ]; then continue; fi
+            # Triple garde-fou
+            case "$branch" in
+              main|master|develop|production|claude/test-699LQ)
+                echo "[SKIP PROTECTED] $branch"
+                continue
+                ;;
+            esac
+            echo "[DELETE STALE] $branch (last commit > 30 days)"
+            git push origin --delete "$branch" || echo "[WARN] delete failed for $branch"
+          done < /tmp/stale_branches.txt
+
+      - name: Summary
+        run: |
+          echo "::notice::Stale cleanup terminé — ${{ steps.stale.outputs.count }} branches > 30j détectées."
