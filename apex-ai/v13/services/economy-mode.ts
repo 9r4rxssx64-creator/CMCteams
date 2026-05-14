@@ -67,8 +67,12 @@ class EconomyMode {
     maxIterationsFactor: 1,
   };
 
-  /** Charge depuis localStorage au boot. */
+  /** Charge depuis localStorage au boot. Reset tempDisabled (bypass NON persisté). */
   init(): void {
+    /* v13.4.37 fix : reset tempDisabled au boot — bypass ne survit pas reload
+     * (sinon Kevin redémarre l'app avec bypass actif d'une ancienne session). */
+    this.state.tempDisabled = false;
+    this.state.restoreAt = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {

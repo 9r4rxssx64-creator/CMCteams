@@ -176,9 +176,15 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
         }
         return m;
       });
+      /* v13.4.37 Kevin "mode économie" : si économie actif → modèle haiku +
+       * max_tokens divisé. Bypassé temporairement si Kevin a confirmé tâche
+       * expensive (via economyMode.bypassFor). */
+      const { economyMode } = await import('./economy-mode.js');
+      const defaultModel = 'claude-sonnet-4-6';
+      const defaultMaxTokens = 4096;
       const body: Record<string, unknown> = {
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        model: economyMode.resolveModel(defaultModel),
+        max_tokens: economyMode.resolveMaxTokens(defaultMaxTokens),
         stream: true,
         /* system bloc structuré + cache_control ephemeral (gain massif sur prompt long stable) */
         system: [

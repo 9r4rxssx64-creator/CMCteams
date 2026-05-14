@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.36';
+export const APP_VER = 'v13.4.37';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -247,6 +247,16 @@ async function bootstrap(): Promise<void> {
   await memory.init().catch((err: unknown) => {
     logger.error('boot', 'Memory init failed (degraded)', { err });
   });
+
+  /* v13.4.37 — Economy Mode init (charge toggle persisté depuis localStorage).
+   * Non-bloquant : si fail, mode économie reste inactif (default safe). */
+  try {
+    const { economyMode } = await import('../services/economy-mode.js');
+    economyMode.init();
+    logger.info('boot', `Economy mode ${economyMode.isActive() ? 'ACTIVÉ' : 'inactif'}`);
+  } catch (err: unknown) {
+    logger.warn('boot', 'Economy mode init failed', { err });
+  }
   /* v13.3.27 (Kevin 2026-05-07) : sync docs racine repo en arrière-plan (cache 6h).
    * Non-bloquant : permet à buildSystemPromptDeep() d'avoir docs frais à dispo.
    * v13.3.89 P2.16 : enchaîne syncLessonsAtBoot une fois CLAUDE.md fetched. */
