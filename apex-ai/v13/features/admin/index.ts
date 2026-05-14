@@ -553,10 +553,25 @@ function attachHandlers(rootEl: HTMLElement): void {
   const toggle = rootEl.querySelector<HTMLInputElement>('#commerce-toggle');
   if (toggle) {
     activeAdminScope!.bind(toggle, 'change', () => {
+      const newState = toggle.checked;
       haptic.medium();
-      commerce.setEnabled(toggle.checked);
-      toast.success(`Commercialisation ${toggle.checked ? 'activée' : 'désactivée'}`);
-      void render(rootEl);
+      /* v13.4.93 FIX: feedback visuel INSTANTANÉ (sans attendre re-render lourd).
+         Avant: render(rootEl) full bloquait 700ms+ INP → Kevin pensait "ça reste sur ON".
+         Maintenant: label DOM update direct + persist + re-render différé via rAF. */
+      commerce.setEnabled(newState);
+      const labelEl = rootEl.querySelector<HTMLSpanElement>('.ax-toggle-label');
+      if (labelEl) {
+        labelEl.innerHTML = `Commercialisation ${newState ? '<strong>ACTIVÉE</strong>' : '<strong>désactivée</strong>'}`;
+      }
+      toast.success(`Commercialisation ${newState ? 'activée' : 'désactivée'}`);
+      /* Re-render différé pour ne pas bloquer le tap iOS */
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+          void render(rootEl);
+        });
+      } else {
+        setTimeout(() => void render(rootEl), 0);
+      }
     });
   }
 

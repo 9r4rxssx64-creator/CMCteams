@@ -264,7 +264,7 @@ class ContextMode {
     /* Tri par weight desc + dedupe par texte */
     const seen = new Set<string>();
     const sortedFacts = [...allFacts]
-      .sort((a, b) => b.weight - a.weight)
+      .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
       .filter((f) => {
         const key = f.text.toLowerCase().trim();
         if (seen.has(key)) return false;
