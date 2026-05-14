@@ -66,11 +66,10 @@ describe('v13.4.18 errors.toUserMessage (règle CLAUDE.md UX zéro message techn
     expect(errors.toUserMessage(new Error('503 service unavailable'))).toContain('failover');
   });
 
-  it("Tool error → outil indisponible (avec 'unknown tool' pour bypass match 404)", () => {
-    /* NOTE BUG documenté : 'Tool not found' matche /not.found/i ligne 101
-     * AVANT /tool.not.found/i ligne 105 → retourne 'Ressource introuvable'.
-     * Workaround code actuel : utiliser 'Unknown tool' qui matche L105 directement.
-     * Fix futur : déplacer L105 AVANT L101 dans errors.ts. */
+  it("Tool error → outil indisponible (v13.4.28 fix ordre regex)", () => {
+    /* v13.4.28 fix : tool.not.found testé AVANT /not.found/ générique (ligne 105 vs 102).
+     * Maintenant 'Tool not found' retourne 'Outil indisponible' correctement. */
+    expect(errors.toUserMessage(new Error('Tool not found'))).toContain('Outil indisponible');
     expect(errors.toUserMessage(new Error('Unknown tool: foo'))).toContain('Outil indisponible');
     expect(errors.toUserMessage(new Error('unknown_tool_xyz'))).toContain('Reformule');
   });
@@ -80,14 +79,13 @@ describe('v13.4.18 errors.toUserMessage (règle CLAUDE.md UX zéro message techn
     expect(errors.toUserMessage(new Error('syntax error'))).toContain('réessaie');
   });
 
-  it("iOS Safari aborted → 'Action interrompue' (bug ordre regex documenté)", () => {
-    /* NOTE BUG documenté : 'aborted' matche /abort|cancel/i ligne 93
-     * AVANT /aborted/i ligne 107 → retourne 'Action interrompue' au lieu de
-     * 'Lifecycle iOS Safari'. Le pattern L107 est mort code actuellement.
-     * Fix futur : utiliser /^aborted$/i (anchored) à L107 OU déplacer avant L93. */
-    expect(errors.toUserMessage(new Error('aborted'))).toContain('Action interrompue');
-    /* Le pattern L107 reste mort jusqu'à fix, mais autres messages aborts marchent : */
+  it("iOS Safari 'aborted' exact → 'Lifecycle iOS Safari' (v13.4.28 fix anchored regex)", () => {
+    /* v13.4.28 fix : /^aborted$/i anchored testé AVANT /abort|cancel/ générique.
+     * 'aborted' seul = iOS Safari lifecycle silencieux → Lifecycle iOS Safari.
+     * 'user aborted' (avec contexte) = action user → Action interrompue. */
+    expect(errors.toUserMessage(new Error('aborted'))).toContain('Lifecycle iOS Safari');
     expect(errors.toUserMessage(new Error('user aborted'))).toContain('Action interrompue');
+    expect(errors.toUserMessage(new Error('abort signal'))).toContain('Action interrompue');
   });
 
   it("IndexedDB inaccessible → cache + fallback Firebase", () => {
