@@ -853,3 +853,37 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 
 ### Lien deployed
 - https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ — branche claude/test-699LQ → main via auto-merge bot
+
+---
+
+## v13.4.6 — Fix storageKey collisions (Kevin "GitHub fine confondu")
+
+### Fichiers modifiés
+- `apex-ai/v13/services/credential-patterns.ts` : OpenAI Project AVANT legacy + regex `(?!ant-)(?!proj-)` + storageKey distincts
+- `apex-ai/v13/services/firebase.ts` : FB_FIX étendu 3 nouveaux storageKeys
+- `apex-ai/v13/core/bootstrap.ts` + `sw.js` + `index.html` + `package.json` : bump v13.4.6
+- `apex-ai-v13/` : resync complète build
+
+### Fichiers créés
+- `apex-ai/v13/tests/unit/credential-storagekey-distinct.test.ts` (7 tests, 7 verts)
+
+### Audit honnête findings docs
+- 67/100 score réel mesuré (vs 100/100 promesse antérieure menteuse)
+- 8 bugs critiques restants identifiés v13.4.7+ (voir MEMO_RESUME)
+
+### Pattern d'audit pro (à reproduire)
+```bash
+# 1. Promesses sans catch
+grep -rn "\.then(" services/ | grep -v "\.catch"
+# 2. setInterval/clearInterval balance
+grep -rn "setInterval" services/ | wc -l
+grep -rn "clearInterval" services/ | wc -l
+# 3. localStorage direct (bypass ls/firebase wrapper)
+grep -rln "localStorage\.setItem" services/
+# 4. innerHTML sans escapeHtml
+grep -rn "\.innerHTML\s*=\s*\`" services/ | grep -v "DOMPurify\|escapeHtml"
+# 5. storageKey duplicates patterns
+grep -n "storageKey:" services/credential-patterns.ts | awk -F"'" '{print $2}' | sort | uniq -c | sort -rn | awk '$1 > 1'
+# 6. Services imports statiques vs dynamiques
+grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
+```
