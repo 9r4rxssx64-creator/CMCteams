@@ -504,6 +504,60 @@ export async function saveCodeSnippet(code: string, lang?: string): Promise<{ ok
 }
 
 /**
+ * v13.4.16 — Liste les snippets code sauvés dans le coffre (paste intelligent).
+ *
+ * Retourne les entries triées par date desc, max 100 (cap saveCodeSnippet).
+ * XSS-safe : valeurs JSON parsées, jamais innerHTML.
+ */
+export function listCodeSnippets(): Array<{
+  key: string;
+  code: string;
+  lang: string;
+  created: number;
+  lines: number;
+  size: number;
+}> {
+  try {
+    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
+    if (!idxRaw) return [];
+    const idx = JSON.parse(idxRaw) as string[];
+    const result: Array<{ key: string; code: string; lang: string; created: number; lines: number; size: number }> = [];
+    for (const key of idx) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue; /* Entry orpheline (cleanup quota) */
+      try {
+        const entry = JSON.parse(raw) as { code: string; lang: string; created: number; lines: number; size: number };
+        result.push({ key, ...entry });
+      } catch { /* Entry corrompue, skip */ }
+    }
+    return result;
+  } catch (err: unknown) {
+    logger.warn('chat', 'listCodeSnippets failed', { err });
+    return [];
+  }
+}
+
+/**
+ * v13.4.16 — Supprime un snippet du coffre (Kevin clique 🗑 dans la liste).
+ */
+export function deleteCodeSnippet(key: string): boolean {
+  try {
+    if (!key.startsWith('apex_v13_code_')) return false; /* Sécurité : pas d'arbitrary delete */
+    localStorage.removeItem(key);
+    /* Update index */
+    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
+    if (idxRaw) {
+      const idx = (JSON.parse(idxRaw) as string[]).filter((k) => k !== key);
+      localStorage.setItem('apex_v13_code_snippets_index', JSON.stringify(idx));
+    }
+    return true;
+  } catch (err: unknown) {
+    logger.warn('chat', 'deleteCodeSnippet failed', { err, key });
+    return false;
+  }
+}
+
+/**
  * v13.4.13 — Helper exporté : transforme conversation DisplayMessage → ChatMessage
  * format Anthropic API.
  *
@@ -1330,6 +1384,28 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'export':
       void exportConversationMarkdown();
       return true;
+    case 'snippets': {
+      /* v13.4.16 — Liste snippets sauvés via paste intelligent v13.4.14 */
+      const snippets = listCodeSnippets();
+      if (snippets.length === 0) {
+        pushAssistantMessage(rootEl, "💻 Aucun snippet sauvé.\n\nQuand tu colles du code dans le chat, Apex propose 💾 Sauver dans Coffre. Les snippets apparaîtront ici avec `/snippets`.");
+        return true;
+      }
+      /* Format markdown listing : titre + chaque snippet (head + nombre lignes + lang) */
+      const lines: string[] = [`💻 **${snippets.length} snippet${snippets.length > 1 ? 's' : ''} sauvé${snippets.length > 1 ? 's' : ''}** :\n`];
+      for (let i = 0; i < snippets.length; i++) {
+        const s = snippets[i];
+        if (!s) continue;
+        const date = new Date(s.created).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const preview = s.code.slice(0, 80).replace(/\n/g, ' ');
+        lines.push(`${i + 1}. **${s.lang}** · ${s.lines} ligne${s.lines > 1 ? 's' : ''} · ${date}`);
+        lines.push(`   \`${preview}${s.code.length > 80 ? '…' : ''}\``);
+        lines.push('');
+      }
+      lines.push('_Note : pour voir un snippet complet, ouvre 🔐 Coffre (UI listing à venir v13.4.17+)._');
+      pushAssistantMessage(rootEl, lines.join('\n'));
+      return true;
+    }
     case 'settings':
       try {
         store.set('view', 'settings');
