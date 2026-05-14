@@ -543,20 +543,35 @@ class Memory {
         `**Privacy P0** : positions stockées localement uniquement, JAMAIS sync Firebase (cf. erreur #44 ax_user_locations leak v12).\n` +
         `Si Kevin demande "où est le restaurant le plus proche", utilise find_nearby category='restaurant'. Si "quel temps demain", utilise weather_local.`,
     );
-    /* Sprint v13.0.21 — Parité Claude Code 100% (Kevin 2026-05-04) */
+    /* Sprint v13.0.21 — Parité Claude Code 100% (Kevin 2026-05-04)
+     * v13.4.42 enrichi (audit ULTRA-REVIEW 2026-05-14) : mapping explicite
+     * AllowedTask snake_case ↔ méthode camelCase + exemples concrets. */
     sections.push(
-      `## Parité Claude Code 100% (Kevin 2026-05-04 ABSOLUE)\n` +
-        `"Il doit avoir accès à tout ce que tu as accès pour se modifier, se corriger, s'améliorer etc en toute autonomie" — Kevin\n\n` +
-        `Tu as accès à TOUS les outils Claude Code via le service \`apexClaudeCodeParity\` (services/apex-claude-code-parity.ts) :\n` +
-        `- File ops : read / edit / write / list (path validé, anti traversal, audit log)\n` +
-        `- Search : grep / glob (GitHub Code Search API + git tree)\n` +
-        `- Bash : whitelist stricte (npm, git, node, tsc, eslint, vitest, python3, npx — JAMAIS rm/dd/curl/sudo)\n` +
-        `- Web : webFetch / webSearch (DuckDuckGo + CORS proxy fallback)\n` +
-        `- Subagents : spawnSubagent (Explore/Plan parallélisation)\n` +
-        `- Todos persistant : todoWrite / todoRead\n` +
-        `- GitHub MCP : createPR, commentOnPR, mergePR, createIssue, closeIssue, searchCode, getFileContents, pushFiles\n` +
-        `- Auto-improvement : selfAudit, selfFix, proposeNewFeature, releaseVersion\n` +
-        `- Memory : appendToMemory (CLAUDE.md / NOTES_USER.md / MEMO_RESUME.md), syncMemoryBridge (3 backends)\n\n` +
+      `## Parité Claude Code 100% (Kevin 2026-05-04 ABSOLUE + v13.4.42 enrichi)\n` +
+        `"Parité apex total, général, optimal. Toujours." — Kevin 2026-05-14\n` +
+        `"Il doit avoir accès à tout ce que tu as accès pour se modifier, se corriger, s'améliorer etc en toute autonomie" — Kevin 2026-05-04\n\n` +
+        `Tu as accès à TOUS les outils Claude Code via DEUX voies :\n` +
+        `1. Service runtime \`apexClaudeCodeParity\` (services/apex-claude-code-parity.ts) → exécution directe in-app\n` +
+        `2. AllowedTask via \`apex-execute\` → GitHub Actions Claude Code Action (changes repo réels)\n\n` +
+        `**Mapping tools (méthode runtime ↔ AllowedTask GitHub Actions) :**\n` +
+        `- File read/write : \`read\` ↔ \`read_file\` · \`edit\` ↔ \`modify_file\` · \`write\` ↔ \`create_file\` · \`list\` ↔ \`list_files\`\n` +
+        `- Search : \`grep\` ↔ \`grep_code\` · \`glob\` ↔ \`glob_pattern\` · \`searchCode\` ↔ \`search_code\`\n` +
+        `- Bash : \`bash\` ↔ \`bash_safe\` (whitelist npm/git/node/tsc/eslint/vitest/python3/npx — JAMAIS rm/dd/curl/sudo)\n` +
+        `- Web : \`webFetch\` ↔ \`web_fetch\` · \`webSearch\` ↔ \`web_search\` (DuckDuckGo + CORS proxy fallback)\n` +
+        `- Subagents : \`spawnSubagent\` ↔ \`spawn_subagent\` (Explore/Plan/general-purpose parallélisation)\n` +
+        `- Todos persistant : \`todoWrite\` / \`todoRead\`\n` +
+        `- GitHub MCP : \`createPR\` ↔ \`create_pr\` · \`commentOnPR\` ↔ \`comment_on_pr\` · \`mergePR\` ↔ \`merge_pr_safe\` (guard JAMAIS push main direct) · \`createIssue\` ↔ \`create_issue\` · \`closeIssue\` ↔ \`close_issue_safe\` · \`getFileContents\` ↔ \`get_file_contents\` · \`pushFiles\` · \`listBranches\` ↔ \`list_branches\`\n` +
+        `- Auto-improvement : \`selfAudit\` · \`selfFix\` · \`proposeNewFeature\` · \`releaseVersion\` (toutes ↔ AllowedTask homonymes)\n` +
+        `- Memory : \`appendToMemory\` (CLAUDE.md / NOTES_USER.md / MEMO_RESUME.md) · \`syncMemoryBridge\` (3 backends)\n\n` +
+        `**v13.4.40 EXTENSION (Kevin 2026-05-14 "Tout ce que j'intègre = Apex aussi, EN PRIORITÉ") :**\n` +
+        `AllowedTask étendu de 23 → 39 tools. Workflow apex-execute.yml security gate ALLOWED whitelist mise à jour.\n` +
+        `Tu peux désormais EXÉCUTER ces 16 nouveaux tools via apex-execute, pas seulement les méthodes runtime.\n\n` +
+        `**Exemples concrets Kevin demande :**\n` +
+        `- Kevin "lis le fichier X" → \`apexClaudeCodeParity.read('apex-ai/v13/path/X')\` ou apex-execute task='read_file' params={path}\n` +
+        `- Kevin "cherche pattern Y dans le code" → \`grep('Y', { glob: '**/*.ts' })\` ou apex-execute task='grep_code'\n` +
+        `- Kevin "fetch cette URL pour analyser" → \`webFetch(url)\` ou apex-execute task='web_fetch'\n` +
+        `- Kevin "lance 3 audits en parallèle" → \`spawnSubagent({ type: 'Explore', prompt: ... })\` ×3 Promise.all\n` +
+        `- Kevin "merge cette PR (PR #42)" → confirmation user puis \`mergePR(42, { squash: true })\` — GUARD anti-main\n\n` +
         `Workflow type pour bug fix Kevin signale :\n` +
         `1. grep pattern → identifie fichier\n` +
         `2. read fichier → comprend contexte\n` +
