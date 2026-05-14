@@ -142,6 +142,7 @@ export const FB_LOCAL: readonly string[] = [
   'apex_v13_lastact',
   'ax_voice_print_',
   'apex_v13_pin',
+  'apex_v13_pin_laurence_sp' /* v13.4.8 Kevin "Laurence PIN ne fonctionne pas" — sync cross-device + survit clear cache PWA */,
   'apex_v13_session',
 ];
 
