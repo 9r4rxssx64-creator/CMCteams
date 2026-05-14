@@ -1,4 +1,32 @@
-# Mémo de reprise — Apex v13.4.13 / CMC v9.604 (2026-05-14)
+# Mémo de reprise — Apex v13.4.42 / CMC v9.604 (2026-05-14)
+
+## 🎯 SESSION 2026-05-14 (suite) — Skills 2026 DÉPLOYÉ sur main
+
+**Tous mes commits v13.4.10 → v13.4.41 mergés sur `main`** via auto-merge bot.
+Branche `claude/test-699LQ` a continué avec v13.4.42 (system prompt enrichi).
+
+### Déploiement effectif
+- URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
+- Cache SW version : `apex-v13.4.42`
+- Workflow déclenché : `auto-deploy-apex-v13-build.yml` sur push main paths `apex-ai/v13/**`
+
+### Apex IA a maintenant
+- 16 tools auto-utilisés (generate_docx/pptx/xlsx/pdf, video_edit, MCP, design, marketing, security, skill_factory, futuristic)
+- 20 skills .md auto-syncés dans system prompt
+- 3 boutons admin panel : 🎯 Skills 2026 / 🔌 MCP Servers / 🧪 Tester TOUT (live)
+- Runtime Tester : 17 tests live browser → preuves téléchargeables
+- Sentinelles skills-watch + mcp-health-watch wirées au boot
+
+### Test plan Kevin (à exécuter en runtime)
+1. Ouvrir URL prod sur iPhone
+2. Force-refresh / banner update PWA
+3. Admin → 3 boutons gradients visibles
+4. "🧪 Tester TOUT (live)" → 17 tests réels (~30s)
+5. Coller token BOFiP dans Vault si vérification fiscal FR
+
+---
+
+
 
 ## 🎯 SESSION 2026-05-14 — Skills 2026 COMPLETS + Runtime Tester (Kevin "Apex doit tester réel tout")
 

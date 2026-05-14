@@ -2,12 +2,38 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.604 / Apex v13.4.13 déployés
+> **État projet** : CMCteams v9.604 / Apex v13.4.42 déployés sur main
 > **Dernière update** : 2026-05-14
 
 ---
 
-## 🔥 MISE À JOUR 2026-05-14 — Apex v13.4.13 (Skills 2026 + Runtime Tester)
+## 🔥 MISE À JOUR 2026-05-14 — Apex v13.4.42 (Skills 2026 + Runtime Tester + Admin integration)
+
+**Déployé sur `main`** via auto-merge bot (workflow `auto-deploy-apex-v13-build.yml`).
+
+URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
+
+**Chaîne complète v13.4.10 → v13.4.42** :
+- Skills 2026 (16 tools auto-utilisés)
+- 20 fichiers `.claude/skills/apex-*.md` auto-syncés
+- 3 vues admin (`?view=skills-2026`, `?view=mcp-servers`, `?view=runtime-tests`)
+- 4 Studios UI (`?view=studio-docx/pptx/xlsx/pdf`)
+- 3 boutons admin panel principal (gradients bleu/violet/vert)
+- Infrastructure MCP (BOFiP, Almanac, Legal Hunter)
+- Sentinelles skills-watch (1h) + mcp-health-watch (30min)
+- Runtime Tester : Apex teste lui-même tout en runtime browser (17 tests live)
+- System prompt enrichi avec mapping tools auto (v13.4.42)
+
+### Apex IA conscient = utilise SYSTÉMATIQUEMENT
+
+System prompt (`buildSystemPromptDeep` dans `core/memory.ts`) injecte :
+- Section "Skills 2026 ACTIFS" mapping intent → tool
+- Liste tools registrés (renderRecentCapabilitiesForPrompt)
+- Skills .claude/skills/*.md auto-syncés
+
+Kevin teste en runtime via `?view=runtime-tests` ou boutons admin panel.
+
+
 
 **4 commits cette session** (101ab0d → 4ad301f → 6ce1d36 → v13.4.13)
 
