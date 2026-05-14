@@ -151,7 +151,7 @@
   }
 }
 
-/* FIX zoom + chevauchement (Kevin v13.4.93) :
+/* FIX zoom + chevauchement (Kevin v13.4.93 → v13.4.94 renforcé) :
    Body padding-right pour libérer espace toolbar rescue.
    Sans cela, le contenu est masqué à droite (cf. screenshots Kevin Centre Admin). */
 body {
@@ -164,8 +164,29 @@ body {
   }
 }
 
-/* FIX iOS Safari auto-zoom on input focus :
-   Force min font-size 16px sur tous inputs/selects/textarea (sinon iOS zoom le viewport). */
-input, select, textarea, button {
-  font-size: max(16px, 1em);
+/* v13.4.94 — FIX iOS Safari auto-zoom triple stack (Kevin "Zoom tjs UX") :
+   1. -webkit-text-size-adjust:100% sur html : empêche Safari iOS de zoomer le texte
+      automatiquement quand l'écran tourne ou quand un input prend le focus.
+   2. touch-action: manipulation : désactive double-tap-to-zoom Safari iOS.
+   3. font-size 16px FORCÉ sur tous inputs/selects/textarea (Safari iOS zoom dès <16px). */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+body {
+  touch-action: manipulation;
+}
+input, select, textarea {
+  font-size: 16px !important; /* iOS Safari zoom trigger < 16px */
+  -webkit-text-size-adjust: 100%;
+}
+button {
+  font-size: max(14px, 1em);
+  touch-action: manipulation;
+}
+/* Anti-zoom sur double-tap pour TOUS éléments interactifs */
+a, button, [role="button"], [data-route], [data-nav-route] {
+  touch-action: manipulation;
 }
