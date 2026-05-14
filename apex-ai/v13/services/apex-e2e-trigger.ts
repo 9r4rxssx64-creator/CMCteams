@@ -49,11 +49,14 @@ export async function triggerE2EWebkit(
     logger.warn('apex-e2e-trigger', 'refusé : non-admin');
     return { ok: false, error: 'admin_only_e2e_trigger', project, ts };
   }
-  /* Récupère GitHub PAT du coffre */
-  const tokenResult = await vault
-    .getKey('github')
-    .catch((err: unknown) => ({ ok: false as const, error: String(err) }));
-  if (!tokenResult.ok || !('value' in tokenResult) || !tokenResult.value) {
+  /* Récupère GitHub PAT du coffre (v13.4.93 fix: vault.readKey API correcte) */
+  let token = '';
+  try {
+    token = await vault.readKey('ax_github_token');
+  } catch {
+    token = '';
+  }
+  if (!token || token.length < 10) {
     return {
       ok: false,
       error: 'github_token_missing_in_vault',
@@ -61,6 +64,7 @@ export async function triggerE2EWebkit(
       ts,
     };
   }
+  const tokenResult = { ok: true as const, value: token };
   const traceId = `e2e_${ts}_${Math.random().toString(36).slice(2, 8)}`;
   try {
     const r = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {

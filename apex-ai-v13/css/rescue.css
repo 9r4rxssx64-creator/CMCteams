@@ -91,28 +91,37 @@
 }
 
 /* ============================================================
-   v13.4.80 — Toolbar rescue permanente (Kevin 2026-05-14)
-   "pas de bouton / tjs pas de coffre" → accès direct hash routes
+   v13.4.93 — Toolbar rescue permanente (Kevin 2026-05-14)
+   FIX: "boutons chevauchent contenu / zoom" iPhone Kevin
+   - Réduit taille 38→32px
+   - bottom positionné au-dessus barre nav iOS Safari
+   - body padding-right libère 44px à droite pour content
+   - Collapsible quand admin tap ailleurs (auto-fade 70% opacity)
    ============================================================ */
 #apex-rescue-toolbar {
   position: fixed;
-  bottom: max(48px, calc(env(safe-area-inset-bottom, 0px) + 48px));
-  right: 6px;
+  bottom: max(72px, calc(env(safe-area-inset-bottom, 0px) + 72px));
+  right: 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   z-index: 9998;
-  /* Toujours visible — pas de visibility:hidden */
+  opacity: 0.72;
+  transition: opacity 200ms ease;
+}
+#apex-rescue-toolbar:hover,
+#apex-rescue-toolbar:focus-within {
+  opacity: 1;
 }
 #apex-rescue-toolbar button {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border-radius: 50%;
-  background: rgba(20, 20, 35, 0.78);
+  background: rgba(20, 20, 35, 0.82);
   border: 1px solid rgba(201, 162, 39, 0.45);
   color: #c9a227;
-  font-size: 18px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -122,6 +131,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   transition: transform 120ms ease, background 120ms ease;
   -webkit-tap-highlight-color: transparent;
+  min-height: 32px; /* Confirmed touch target, atteint avec :active scale */
 }
 #apex-rescue-toolbar button:active {
   transform: scale(0.92);
@@ -135,8 +145,27 @@
 }
 @media (max-width: 380px) {
   #apex-rescue-toolbar button {
-    width: 34px;
-    height: 34px;
-    font-size: 16px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
+}
+
+/* FIX zoom + chevauchement (Kevin v13.4.93) :
+   Body padding-right pour libérer espace toolbar rescue.
+   Sans cela, le contenu est masqué à droite (cf. screenshots Kevin Centre Admin). */
+body {
+  padding-right: 42px;
+  box-sizing: border-box;
+}
+@media (max-width: 380px) {
+  body {
+    padding-right: 36px;
+  }
+}
+
+/* FIX iOS Safari auto-zoom on input focus :
+   Force min font-size 16px sur tous inputs/selects/textarea (sinon iOS zoom le viewport). */
+input, select, textarea, button {
+  font-size: max(16px, 1em);
 }

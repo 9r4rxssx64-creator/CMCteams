@@ -71,7 +71,9 @@ class ClaudeMemBridge {
   ): { ok: boolean; error?: string } {
     if (!auth.isAdminSync()) return { ok: false, error: 'admin_only_write' };
     try {
-      memory.recordLesson(category, title, text, severity);
+      /* v13.4.93 fix TS: memory.recordLesson n'accepte pas 'err', mapper → 'warn' */
+      const memSeverity: 'info' | 'warn' | 'critical' = severity === 'err' ? 'warn' : severity;
+      memory.recordLesson(category, title, text, memSeverity);
       return { ok: true };
     } catch (err: unknown) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -90,7 +92,7 @@ class ClaudeMemBridge {
       ? facts.filter((f) => f.category === filter.category)
       : facts.slice();
     if (filter?.limit && filter.limit > 0) result = result.slice(0, filter.limit);
-    return result.map((f) => ({ category: f.category, text: f.text, weight: f.weight, ts: f.ts }));
+    return result.map((f) => ({ category: f.category, text: f.text, weight: f.weight ?? 0, ts: f.ts }));
   }
 
   /** Stats publiques (lecture pour tous). */
@@ -135,7 +137,7 @@ class ClaudeMemBridge {
       facts: memory.getFacts().map((f) => ({
         category: f.category,
         text: f.text,
-        weight: f.weight,
+        weight: f.weight ?? 0,
         ts: f.ts,
       })),
       lessons: memory.getLessons().map((l) => ({

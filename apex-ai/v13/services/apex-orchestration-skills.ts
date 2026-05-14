@@ -242,6 +242,7 @@ class HiveMind {
         task: opts.task,
         mode: opts.mode ?? 'specialized',
         members,
+        systemPrompt: `Tu es membre d'un swarm "${swarm.id}" (topology ${swarm.topology}, ${swarm.agents_count} agents). Travaille sur cette tâche en suivant les méthodes CLAUDE.md.`,
       });
       logger.info('hive-mind', `Swarm ${opts.swarmId} executed task — ${members.length} agents replied`);
       return { ok: true, swarm_id: opts.swarmId, crew_result: crewResult };
