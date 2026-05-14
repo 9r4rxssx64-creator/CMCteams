@@ -65,6 +65,8 @@ interface DisplayMessage {
 
 /* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé). */
 let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
+/* v13.4.12 — Promises FileReader en cours, pour await au submit (anti race condition). */
+let pendingAttachmentPromises: Array<Promise<void>> = [];
 
 /* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
  * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
@@ -910,11 +912,25 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     logger.warn('chat', 'chat:message:user emit failed', { err });
   }
 
-  /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" : prend snapshot
-   * pendingAttachments + vide la queue. Le message porte ses attachments,
-   * la queue est vide pour le prochain message. */
+  /* v13.4.11/12 fix Kevin "Apex aveugle aux pièces jointes" :
+   * Attendre que tous les FileReader en cours soient terminés (anti race),
+   * puis prend snapshot pendingAttachments + vide queue. Le message porte
+   * ses attachments, la queue est vide pour le prochain message. */
+  if (pendingAttachmentPromises.length > 0) {
+    try { await Promise.all(pendingAttachmentPromises); }
+    catch (err: unknown) { logger.warn('chat', 'await pending attachments fail', { err }); }
+  }
   const takenAttachments = pendingAttachments.length > 0 ? [...pendingAttachments] : undefined;
   pendingAttachments = [];
+  /* v13.4.12 — Reset UI : masquer la div attachments et la vider visuellement
+   * (chips encore visibles sinon = confusion utilisateur). */
+  const attDivClear = rootEl.querySelector<HTMLDivElement>('#ax-chat-attachments');
+  if (attDivClear) {
+    attDivClear.innerHTML = '';
+    attDivClear.style.display = 'none';
+  }
+  const fileInputClear = rootEl.querySelector<HTMLInputElement>('#ax-chat-file-input');
+  if (fileInputClear) fileInputClear.value = '';
 
   const userMsg: DisplayMessage = {
     id: `u_${Date.now()}`,
@@ -2510,8 +2526,28 @@ export function render(rootEl: HTMLElement): void {
       : '📎';
     const div = document.createElement('div');
     div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:#c9a227';
-    /* P0 SECU XSS : escape file.name (vient de file picker = source externe) */
-    div.textContent = `${icon} ${file.name.slice(0, 30)}${file.name.length > 30 ? '...' : ''} (${sizeMB} MB)`;
+    /* P0 SECU XSS : escape file.name (vient de file picker = source externe) — textContent OK */
+    const truncName = file.name.length > 30 ? `${file.name.slice(0, 30)}...` : file.name;
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = `${icon} ${truncName} (${sizeMB} MB)`;
+    div.appendChild(labelSpan);
+    /* v13.4.12 — Bouton ✕ remove : retire de pendingAttachments + supprime chip.
+     * Si Kevin attache par erreur, peut annuler avant submit. */
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.setAttribute('aria-label', `Retirer ${truncName}`);
+    removeBtn.style.cssText = 'background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:14px;padding:0 2px;line-height:1';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      /* Retire de pendingAttachments par match name+mime (cas réaliste : noms uniques) */
+      pendingAttachments = pendingAttachments.filter((a) => !(a.name === file.name && a.mime === file.type));
+      div.remove();
+      /* Si plus aucune chip → masquer la div */
+      if (attachmentsDiv.children.length === 0) attachmentsDiv.style.display = 'none';
+      haptic.tap();
+    });
+    div.appendChild(removeBtn);
     attachmentsDiv.appendChild(div);
   };
 
@@ -2551,10 +2587,12 @@ export function render(rootEl: HTMLElement): void {
           const url = URL.createObjectURL(file);
           albumImages.push({ url, filename: file.name });
         } catch { /* ignore createObjectURL fail */ }
-        /* v13.4.11 fix Kevin "Apex aveugle aux pièces jointes" :
-         * Lire base64 et push dans pendingAttachments — l'IA recevra
-         * l'image dans son context array Anthropic au prochain submit. */
-        void (async () => {
+        /* v13.4.11/12 fix Kevin "Apex aveugle aux pièces jointes" :
+         * Lire base64 et push dans pendingAttachments — l'IA recevra l'image
+         * dans son context array Anthropic au prochain submit.
+         * v13.4.12 : trackée dans pendingAttachmentPromises pour await submit
+         * (anti race condition si Kevin submit avant que FileReader termine). */
+        const readPromise = (async () => {
           try {
             const b64 = await new Promise<string>((resolve, reject) => {
               const r = new FileReader();
@@ -2572,6 +2610,11 @@ export function render(rootEl: HTMLElement): void {
             logger.warn('chat', 'pendingAttachments push failed', { err, file: file.name });
           }
         })();
+        pendingAttachmentPromises.push(readPromise);
+        /* Auto-cleanup quand terminée : retire du tableau pour éviter accumulation */
+        void readPromise.finally(() => {
+          pendingAttachmentPromises = pendingAttachmentPromises.filter((p) => p !== readPromise);
+        });
         /* v13.3.51 — Auto-vision device sur upload image */
         void autoAnalyzeDeviceImage(file, rootEl);
         /* v13.3.53 — Multi-Source EXHAUSTIVE extraction (Kevin règle 2026-05-07 23h55) :
