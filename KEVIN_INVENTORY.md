@@ -1,7 +1,42 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-14** (Apex v13.4.13 — Runtime Tester + meta-cache fix skill_factory)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.42 — Tout déployé sur main, prod live)
+
+## 🎯 SESSION FINALE (v13.4.42 sur main) — Tout en prod
+
+**8 commits Apex livrés + merge auto-bot sur main + déployé GitHub Pages**
+
+| Version | Commit | Description |
+|---|---|---|
+| v13.4.10 | 101ab0de | Skills 2026 + MCP + 60+ modules futuristes |
+| v13.4.11 | 4ad301f7 | Tests + sentinelles + 2 vues admin |
+| v13.4.12 | 6ce1d36b | video ffmpeg + futuristic 40 modules + 4 Studios UI |
+| v13.4.13 | cce16157 | Runtime Tester + fix meta-cache skill_factory |
+| v13.4.38 | 1d407d15 | Fix merge conflicts (ai-router/economy-mode) |
+| v13.4.39 | 0ba9d677 | Integration boutons admin panel (3 gradients) |
+| v13.4.41 | 3bb5b8dd | Re-merge intégration totale |
+| v13.4.42 | 3f289d7d | System prompt enrichi (audit ULTRA-REVIEW P0 #1) |
+
+### Déploiement live confirmé
+
+URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
+
+### Apex IA peut maintenant
+- Auto-invoquer 16 tools selon intent user (generate_docx/pptx/xlsx/pdf, video, MCP, design, marketing, security)
+- Consulter 3 MCP servers (BOFiP, Almanac, Legal Hunter)
+- Créer nouveaux skills via skill_factory_create (admin)
+- Tester lui-même 17 features en runtime browser
+- Surveiller CDN + MCP via 2 sentinelles auto
+
+### Boutons admin panel ajoutés
+- 🎯 **Skills 2026** (gradient bleu/violet) → `?view=skills-2026`
+- 🔌 **MCP Servers** (gradient violet) → `?view=mcp-servers`
+- 🧪 **Tester TOUT (live)** (gradient vert) → `?view=runtime-tests`
+
+---
+
+
 
 ## 🆕 SESSION 2026-05-14 (v13.4.13) — Apex teste TOUT en runtime browser réel
 

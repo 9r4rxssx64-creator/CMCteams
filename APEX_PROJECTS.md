@@ -1,10 +1,22 @@
 # 📁 APEX PROJECTS — Registry central tous projets Kevin
 
-> Mis à jour 2026-05-14 (Apex v13.4.13 / CMCteams v9.602)
+> Mis à jour 2026-05-14 (Apex v13.4.42 / CMCteams v9.602)
 > Source de vérité unique pour tous les projets gérés par Apex AI.
 > Apex IA peut consulter ce fichier en autonomie via `cmcRead("APEX_PROJECTS.md")`.
 
-## 🎯 STATUS MAJ 2026-05-14 — Apex v13.4.13 (Skills 2026 + Runtime Tester)
+## 🎯 STATUS MAJ 2026-05-14 — Apex v13.4.42 (Skills 2026 + Runtime Tester + Admin integration + System prompt enrichi)
+
+**Déployé sur main** via auto-merge bot. URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
+
+**Versions livrées dans la chaîne** :
+- v13.4.10 → 13 : Skills 2026 + MCP + Runtime Tester + Studios UI
+- v13.4.38 : Fix ai-router import + renderForbidden UX
+- v13.4.39 : Fix force-updates iPhone + boutons admin panel (Skills 2026/MCP/Runtime Tester)
+- v13.4.40 : PARITÉ APEX TOTALE (extension AllowedTask + règle CLAUDE.md)
+- v13.4.41 : Re-merge intégration totale
+- v13.4.42 : Enrichi system prompt Apex IA mapping tools (audit ULTRA-REVIEW P0 #1)
+
+
 
 **Skills 2026 complètement intégrés + Apex teste TOUT en runtime browser réel** :
 
