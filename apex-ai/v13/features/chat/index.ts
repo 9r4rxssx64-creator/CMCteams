@@ -2104,6 +2104,32 @@ export function render(rootEl: HTMLElement): void {
       }
     });
   }
+
+  /* v13.4.45 fix Kevin "Apex doit toujours terminer son travail sans s'arrêter" :
+   * Wire stream-partial-saver getResumeCandidate au boot. Si Apex avait une réponse
+   * en cours interrompue (crash, background-kill iOS, network drop), proposer reprise. */
+  void (async () => {
+    try {
+      const { streamPartialSaver } = await import('../../services/stream-partial-saver.js');
+      const candidate = streamPartialSaver.getResumeCandidate();
+      if (candidate && candidate.partial_text) {
+        /* Push message partial dans conversation comme "assistant interrompu" */
+        const restoredMsg: DisplayMessage = {
+          id: `a_resume_${Date.now()}`,
+          role: 'assistant',
+          text: candidate.partial_text + '\n\n_[💡 Réponse interrompue. Tape "continue" pour reprendre.]_',
+          ts: candidate.ts_last_chunk,
+        };
+        conversation.push(restoredMsg);
+        renderMessages(rootEl);
+        logger.info('chat', `📡 Stream partial resume : ${candidate.partial_text.length} chars depuis ${candidate.provider}`);
+        /* Marque comme déjà restoré (évite double-restore au prochain mount) */
+        streamPartialSaver.discard();
+      }
+    } catch (err: unknown) {
+      logger.debug('chat', 'stream resume check failed (no resume candidate)', { err });
+    }
+  })();
   const greeting = user ? `Bonjour ${user.name}, qu'est-ce que je peux faire pour toi ?` : 'Bienvenue dans Apex.';
 
   const isAdmin = store.get('isAdmin');
