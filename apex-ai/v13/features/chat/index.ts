@@ -86,6 +86,7 @@ function loadPersistedConversation(): DisplayMessage[] {
 }
 
 let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
+let _firebaseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
 function persistConversation(): void {
   if (_saveTimeout) clearTimeout(_saveTimeout);
   _saveTimeout = setTimeout(() => {
@@ -103,6 +104,46 @@ function persistConversation(): void {
       } catch { /* skip */ }
     }
   }, 500);
+
+  /* v13.4.10 fix Kevin "continue recommence à zéro" : sync Firebase debounce 30s
+   * pour survivre clear cache PWA iOS + restore au reload depuis cloud.
+   * Cap derniers 30 messages text-only (pas photos base64 = trop gros Firebase).
+   * Path : apex_v13_conversation_cloud (séparé de _active local pour éviter écrasement). */
+  if (_firebaseSyncTimeout) clearTimeout(_firebaseSyncTimeout);
+  _firebaseSyncTimeout = setTimeout(() => {
+    void (async () => {
+      try {
+        const cloudPayload = conversation
+          .filter((m) => !m.streaming && m.text && m.text.length < 8000)
+          .slice(-30)
+          .map((m) => ({ role: m.role, text: m.text, ts: m.ts }));
+        const { firebase } = await import('../../services/firebase.js');
+        await firebase.write('apex_v13_conversation_cloud', cloudPayload);
+      } catch (err: unknown) {
+        logger.warn('chat', 'Firebase sync conversation skipped', { err });
+      }
+    })();
+  }, 30000);
+}
+
+/* v13.4.10 — Restore Firebase au boot SI localStorage vide (cache PWA clear iOS).
+ * Async, non-bloquant : conversation locale s'affiche d'abord, restore patché après. */
+async function tryFirebaseRestoreConversation(): Promise<void> {
+  if (conversation.length > 0) return; /* déjà chargé local */
+  try {
+    const { firebase } = await import('../../services/firebase.js');
+    const cloudRaw = await firebase.read('apex_v13_conversation_cloud');
+    if (!Array.isArray(cloudRaw) || cloudRaw.length === 0) return;
+    const restored = (cloudRaw as Array<{ role: 'user' | 'assistant'; text: string; ts: number }>)
+      .filter((m) => m && typeof m.text === 'string' && m.text.length > 0)
+      .map((m) => ({ ...m, streaming: false } as DisplayMessage));
+    if (restored.length > 0) {
+      conversation.push(...restored);
+      logger.info('chat', `Conversation restored from Firebase (${restored.length} messages)`);
+    }
+  } catch (err: unknown) {
+    logger.warn('chat', 'Firebase restore conversation skipped', { err });
+  }
 }
 
 /* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
@@ -1755,6 +1796,18 @@ export function render(rootEl: HTMLElement): void {
   if (!isFeatureEnabled('module.chat', user?.id)) {
     rootEl.innerHTML = renderDisabledNotice('module.chat');
     return;
+  }
+
+  /* v13.4.10 fix Kevin "continue recommence à zéro" : restore Firebase conversation
+   * si localStorage vide (cache PWA clear iOS). Async non-bloquant, re-render après. */
+  if (conversation.length === 0) {
+    void tryFirebaseRestoreConversation().then(() => {
+      if (conversation.length > 0) {
+        try {
+          renderMessages(rootEl);
+        } catch { /* skip */ }
+      }
+    });
   }
   const greeting = user ? `Bonjour ${user.name}, qu'est-ce que je peux faire pour toi ?` : 'Bienvenue dans Apex.';
 
