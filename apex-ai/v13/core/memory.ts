@@ -925,7 +925,26 @@ class Memory {
     header: string,
   ): string {
     const meta = this.getMetaContext();
-    const dict = meta[folder];
+    const dict: Record<string, string> = { ...meta[folder] };
+
+    /* v13.4.13 fix : pour 'skills', merger aussi `ax_apex_skills_registry`
+     * (skills créés via skill_factory_create au runtime — pas dans repo .claude/skills/) */
+    if (folder === 'skills') {
+      try {
+        const raw = localStorage.getItem('ax_apex_skills_registry');
+        if (raw) {
+          const customSkills = JSON.parse(raw) as Array<{ name: string; content: string }>;
+          for (const s of customSkills) {
+            if (s.name && s.content && !dict[s.name]) {
+              dict[s.name] = s.content;
+            }
+          }
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
     const names = Object.keys(dict);
     if (names.length === 0) return '';
     const sorted = names.sort((a, b) => (dict[a]?.length ?? 0) - (dict[b]?.length ?? 0));

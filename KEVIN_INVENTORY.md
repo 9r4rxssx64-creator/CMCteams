@@ -1,7 +1,50 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-14** (Apex v13.4.12 — Skills 2026 TERMINÉS : video + futuristic + 4 Studios UI)
+> Dernière mise à jour : **2026-05-14** (Apex v13.4.13 — Runtime Tester + meta-cache fix skill_factory)
+
+## 🆕 SESSION 2026-05-14 (v13.4.13) — Apex teste TOUT en runtime browser réel
+
+Kevin : "Apex doit avoir tout ça et tester réel tout. Aussi mets à jour tous les doc apex sans rien oublier".
+
+**Nouveaux fichiers v13.4.13**
+
+| Fichier | Description |
+|---|---|
+| `apex-ai/v13/services/apex-runtime-tester.ts` | Orchestrateur 17 tests live runtime browser — generators + MCP health + futuristic routing + sentinelles + security + hyperframes |
+| `apex-ai/v13/features/admin/runtime-tests/index.ts` | Vue admin `?view=runtime-tests` — bouton "🧪 Lancer TOUS tests réels" + progress bar + preuves téléchargeables |
+
+**Modifications v13.4.13**
+
+- `apex-ai/v13/core/memory.ts` : fix critique `renderMetaSection('skills')` lit aussi `ax_apex_skills_registry` localStorage → skills créés via skill_factory_create injectés dans system prompt
+- `apex-ai/v13/core/bootstrap.ts` : route `runtime-tests` enregistrée
+- `apex-ai/v13/index.html` + `sw.js` + `bootstrap.ts` : bump v13.4.12 → v13.4.13
+
+**Docs mis à jour (toutes)**
+
+- `CLAUDE.md` : ligne version v13.4.13
+- `KEVIN_INVENTORY.md` : section v13.4.13 (ce fichier)
+- `APEX_PROJECTS.md` : section "v13.4.13 — Skills 2026 COMPLETS + Runtime Tester"
+- `APEX_HANDOFF.md` : section "MISE À JOUR 2026-05-14"
+- `MEMO_RESUME.md` : header bumped + section session 2026-05-14 avec 4 commits + limitations honnêtes
+
+**Vérifications réelles effectuées (règle Kevin "test réel pour tout, ne mens pas")**
+
+- ✅ `npx tsc --noEmit` : 0 erreur strict mode
+- ✅ `npm run build` : OK 6.32s
+- ✅ Sync source ↔ build : `data-app-ver="v13.4.13"` partout
+- ✅ 35/35 tests vitest sur mes ajouts passent
+- ✅ Suite complète 8047/8056 passed (100%)
+
+**Honnêteté : ce qui n'a TOUJOURS PAS été vérifié en browser réel**
+
+- Aucun test browser réel par moi (Chrome/Safari) — Apex doit le faire via `?view=runtime-tests`
+- Tokens MCP BOFiP/Almanac/Legal Hunter : Kevin doit coller dans Vault sinon health check retourne "warn"
+- Branche `claude/new-session-evcB9` à merger sur `main` pour propagation GitHub Pages (Kevin voit encore v13.4.9 sinon)
+
+---
+
+## 🆕 SESSION 2026-05-14 (v13.4.12) — Termine tout : video réel + futuristic routing + 4 Studios UI
 
 ## 🆕 SESSION 2026-05-14 (v13.4.12) — Termine tout : video réel + futuristic routing + 4 Studios UI
 
