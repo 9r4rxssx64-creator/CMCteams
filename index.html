@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.611";
+var APP_VER="v9.612";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32838,8 +32838,30 @@ function doImport(){
       var _tagMatch=_rawCell.match(/\{\{(CDP|AF|CONV|CP|RH|R|RRT)\}\}/);
       if(_tagMatch){_pdfTag=_tagMatch[1];}
       // Retirer TOUS les fragments de tags (complets ou partiels) + guillemets + artefacts
-      _rawCell=_rawCell.replace(/\{\{[A-Z]*\}?\}?/g,"").replace(/[""\u201c\u201d\u2018\u2019'`]/g,"").trim();
-      var _ac=_rawCell.toUpperCase();
+      // v9.612 (Kevin "reproduction identique") \u2014 Pr\u00e9server apostrophes/quotes
+      // pour codes qui en d\u00e9pendent s\u00e9mantiquement (19/4' = Convention, vs 19/4 base).
+      // Strip uniquement tags PDF d'abord, lookup direct, fallback strip apr\u00e8s.
+      var _rawNoTag=_rawCell.replace(/\{\{[A-Z]*\}?\}?/g,"").trim();
+      var _acRaw=_rawNoTag.toUpperCase()
+        .replace(/[\u2215\u2044\uff0f]/g,"/")
+        .replace(/[\u201c\u201d]/g,'"')
+        .replace(/[\u2018\u2019\u02bc]/g,"'");
+      var _ac=null;
+      // Tentative 1 : lookup direct avec apostrophes/quotes pr\u00e9serv\u00e9s (CDP/CONV)
+      if(_acRaw&&CODES[_acRaw])_ac=_acRaw;
+      // Tentative 2 : strip suffixes :; et quotes finaux
+      if(!_ac){
+        var _acT2=_acRaw.replace(/[\"'`]+$/,"").replace(/[:;]+$/,"");
+        if(_acT2&&CODES[_acT2])_ac=_acT2;
+      }
+      // Tentative 3 : strip TOUS apostrophes/quotes (legacy comportement)
+      if(!_ac){
+        var _acT3=_acRaw.replace(/[\"'`]/g,"").trim();
+        if(_acT3&&CODES[_acT3])_ac=_acT3;
+      }
+      // Fallback : version stripp\u00e9e pour normalize+alias suite
+      if(!_ac)_ac=_acRaw.replace(/[\"'`]/g,"").trim();
+      _rawCell=_ac;
       if(!_ac||_ac==="0"||_ac==="-")continue;
       // Détection sous-période inline : deux entiers consécutifs = FROM TO
       if(/^\d{1,2}$/.test(_ac)){
