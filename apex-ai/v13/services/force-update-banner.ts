@@ -31,7 +31,10 @@ import { styleInjector } from './style-injector.js';
 const BANNER_ID = 'apex-force-update-banner';
 const STYLE_INJECTOR_ID = 'apex-force-update-banner';
 const REMOTE_URL = './index.html';
-const CHECK_INTERVAL_MS = 10 * 60 * 1000; /* 10 min */
+/* v13.4.44 Kevin "L'app devrait se mettre à jour autonome temps réel toujours" :
+ * 10 min → 60 sec. Temps réel = polling fréquent sans drainer batterie excessivement.
+ * 60s = bon compromis : Kevin voit MAJ <1 min après push, pas de battery drain notable. */
+const CHECK_INTERVAL_MS = 60 * 1000; /* 60 sec (était 10 min) */
 const RECENT_CHECK_KEY = 'apex_v13_last_version_check_ts';
 /* v13.4.8 fix C5 (Ultra Review) — single source of truth pour anti-race
  * (cf. bootstrap.ts qui n'a plus que forceUpdateBanner.install()). */
@@ -159,10 +162,9 @@ class ForceUpdateBanner {
        *   4. Visibilité document = caché OU page idle 30s
        * Sinon → banner classique avec bouton pour qu'il décide. */
       const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
-      /* v13.4.39 Kevin "MAJ ne marchent pas" : throttle 1h → 5 min (plus réactif).
-       * Si Kevin force restart app après push v13.4.X, AUTO-MAJ doit se déclencher
-       * dans la fenêtre Idle suivante, pas attendre 1h. */
-      const throttleOK = Date.now() - lastAuto > 5 * 60 * 1000; /* 5 min (était 1h) */
+      /* v13.4.44 Kevin "L'app devrait se mettre à jour autonome temps réel toujours" :
+       * throttle 5 min → 30 sec. Quasi temps réel après chaque push v13.4.X. */
+      const throttleOK = Date.now() - lastAuto > 30 * 1000; /* 30 sec (était 5 min) */
       const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
       const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
       if (throttleOK && isIdle && isSafe) {

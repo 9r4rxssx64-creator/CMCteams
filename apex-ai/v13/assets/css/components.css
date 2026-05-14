@@ -387,7 +387,9 @@
 .ax-chat-input {
   display: flex;
   gap: var(--ax-s-2);
-  padding: var(--ax-s-2) var(--ax-s-3);
+  /* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" iPhone PWA :
+   * safe-area-inset-bottom empêche le bouton d'être caché derrière home indicator iOS. */
+  padding: var(--ax-s-2) var(--ax-s-3) max(var(--ax-s-2), env(safe-area-inset-bottom, 0px)) var(--ax-s-3);
   border-top: 1px solid var(--ax-border);
   background: var(--ax-bg-glass);
   backdrop-filter: var(--ax-blur);
@@ -395,6 +397,15 @@
   flex-shrink: 0;
   /* v13.3.85 Kevin "tu trouves ton affichage réussi ?" → revert v13.3.84
    * align-items:center qui cassait le flex layout iOS Safari PWA. */
+}
+
+/* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" :
+ * Force touch target ≥ 44px (Apple HIG) + z-index assure click-through. */
+.ax-chat-send {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  position: relative;
+  z-index: 10;
 }
 
 .ax-chat-input textarea {
