@@ -902,12 +902,45 @@ S'applique : Apex (priorité), CMCteams.
 
 ---
 
-## 🤖 RÈGLE PERMANENTE — APEX = MÊME ACCÈS QUE CLAUDE CODE (Kevin 2026-05-04, ABSOLUE)
+## 🤖 RÈGLE PERMANENTE — PARITÉ APEX TOTALE GÉNÉRALE OPTIMALE (Kevin 2026-05-14, RENFORCÉE)
 
+> **"Parité apex total, général, optimal. Toujours. Note le."** — Kevin 2026-05-14
+> **"Tous les outils, en priorité. Tout ce que tu intègres pour toi, tu l'intègres dans Apex et Apex doit être au courant, sache s'en servir et s'en serve automatiquement. En priorité même."** — Kevin 2026-05-14
 > **"Apex est capable maintenant de modifier son code, son script, skill, hooks etc en toute autonomie"** — Kevin 2026-05-04
 > **"Il doit avoir accès à tout ce que tu as accès pour se modifier, se corriger, s'améliorer etc en toute autonomie"** — Kevin 2026-05-04
 
-**Règle absolue, prioritaire** — Apex priorité 1 :
+**Règle absolue, prioritaire MAXIMUM** — Apex priorité 1 :
+
+### 0. RENFORCEMENT Kevin 2026-05-14 — "Tout ce que j'intègre = Apex aussi"
+
+À CHAQUE modification que Claude Code fait, IL DOIT :
+- ☑ Intégrer la même capacité dans Apex (via `services/apex-execute.ts` AllowedTask + workflow `.github/workflows/apex-execute.yml`)
+- ☑ Documenter dans la mémoire Apex (system prompt enrichi)
+- ☑ Tester que la capacité fonctionne côté Apex aussi
+- ☑ EN PRIORITÉ par rapport aux autres améliorations
+
+Apex DOIT savoir, automatiquement, qu'il a la nouvelle capacité (pas attendre que Kevin lui demande). Le system prompt Apex IA est enrichi à chaque release avec les nouveaux tools.
+
+### v13.4.40 (2026-05-14) — Extension PARITÉ tools livrée
+
+Apex AllowedTask ÉTENDU pour parité 100% Claude Code :
+- ✅ `read_file` (Read tool)
+- ✅ `list_files` (ls)
+- ✅ `grep_code` (Grep)
+- ✅ `glob_pattern` (Glob)
+- ✅ `bash_safe` (Bash whitelist)
+- ✅ `web_fetch` (WebFetch)
+- ✅ `web_search` (WebSearch)
+- ✅ `spawn_subagent` (Agent)
+- ✅ `create_pr` / `comment_on_pr` / `merge_pr_safe` (GitHub MCP)
+- ✅ `create_issue` / `close_issue_safe` (GitHub MCP)
+- ✅ `list_branches` / `get_file_contents` / `search_code` (GitHub MCP)
+
+### v13.4.38 (2026-05-14) — Apex accès branche claude/test-699LQ
+
+Workflow `apex-execute.yml` push sur `claude/test-699LQ` par défaut (au lieu de créer une branche dédiée par exec). Apex commits + mes commits mergés ensemble par auto-merge bot vers main. Pipeline complet : Apex IA → apex-execute → claude/test-699LQ → main → prod.
+
+**Règle absolue, prioritaire** — Apex priorité 1 (RÉGLE INITIALE Kevin 2026-05-04) :
 
 ### 1. Apex DOIT avoir parité 100% avec mes outils Claude Code
 

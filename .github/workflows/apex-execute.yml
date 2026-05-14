@@ -85,8 +85,9 @@ jobs:
         id: gate
         run: |
           TASK="${{ steps.parse.outputs.task }}"
-          ALLOWED="modify_file create_file run_test run_lint audit_repo deploy_canary backup_user_data restore_from_backup"
-          FORBIDDEN="delete_file force_push modify_user_credentials_external send_external_email_without_consent"
+          # v13.4.40 PARITÉ APEX Kevin 2026-05-14 — extensions tools Claude Code
+          ALLOWED="modify_file create_file run_test run_lint audit_repo deploy_canary backup_user_data restore_from_backup create_skill modify_skill create_hook modify_hook modify_workflow register_sentinel unregister_sentinel modify_script create_script append_to_memory append_to_top_rules self_audit_and_fix rotate_credentials sync_memory_bridge release_version read_file list_files grep_code glob_pattern bash_safe web_fetch web_search spawn_subagent create_pr comment_on_pr merge_pr_safe create_issue close_issue_safe list_branches get_file_contents search_code"
+          FORBIDDEN="delete_file force_push modify_user_credentials_external send_external_email_without_consent delete_skill delete_workflow modify_admin_kevin modify_top_rules_replace execute_shell_arbitrary disable_sentinel_security modify_csp_meta"
 
           # Forbidden check first (paranoia)
           for f in $FORBIDDEN; do
