@@ -142,7 +142,11 @@ export const FB_LOCAL: readonly string[] = [
   'apex_v13_lastact',
   'ax_voice_print_',
   'apex_v13_pin',
-  'apex_v13_pin_laurence_sp' /* v13.4.8 Kevin "Laurence PIN ne fonctionne pas" — sync cross-device + survit clear cache PWA */,
+  /* v13.4.8/15 — PIN Laurence isolé localement (anti-régression Erreur #37 CLAUDE.md
+   * + règle sécu biométrique). FB_LOCAL = PAS de sync Firebase. PIN reste local au device.
+   * Trade-off honnête : Kevin perd Laurence PIN si cache PWA clear. C'est volontaire :
+   * un PIN biométrique synchronisé = vecteur d'exfiltration (cf. ax_user JAMAIS dans FB_FIX). */
+  'apex_v13_pin_laurence_sp',
   'apex_v13_session',
 ];
 
