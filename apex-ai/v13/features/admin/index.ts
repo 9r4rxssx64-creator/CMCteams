@@ -205,6 +205,18 @@ function renderHealthTab(): string {
                 style="background:linear-gradient(135deg,rgba(60,200,80,0.18),rgba(232,184,48,0.12));color:#3c8;border:1px solid rgba(60,200,80,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
           🤖 Mode Autonome
         </button>
+        <button class="ax-btn" data-nav-route="skills-2026"
+                style="background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(168,85,247,0.12));color:#8bb4ff;border:1px solid rgba(59,130,246,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🎯 Skills 2026
+        </button>
+        <button class="ax-btn" data-nav-route="mcp-servers"
+                style="background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(217,70,239,0.12));color:#c8a6ff;border:1px solid rgba(168,85,247,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🔌 MCP Servers
+        </button>
+        <button class="ax-btn" data-nav-route="runtime-tests"
+                style="background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(34,197,94,0.14));color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          🧪 Tester TOUT (live)
+        </button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
     </div>
