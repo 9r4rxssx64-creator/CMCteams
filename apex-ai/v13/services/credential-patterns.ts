@@ -561,15 +561,10 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     category: 'devops',
     dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
   },
-  {
-    name: 'EmailJS Private Key',
-    /* Format : alphanumerique + underscore + tirets ~15-30 chars */
-    regex: /^[A-Za-z0-9_-]{15,30}$/,
-    storageKey: 'ax_emailjs_private_key',
-    category: 'comms',
-    dashboard: 'https://dashboard.emailjs.com/admin/account',
-    docs: 'https://www.emailjs.com/docs/',
-  },
+  /* v13.4.110 REVERT — pattern EmailJS Private Key retire :
+   * Format trop generique [A-Za-z0-9_-]{15,30} matchait AWS (AKIA+16=20 chars)
+   * et autres tokens. EmailJS private key sera detectee par pattern learner
+   * v13.4.109 si Kevin la colle (apprentissage automatique). */
   {
     name: 'AWS Access Key',
     regex: /^AKIA[0-9A-Z]{16}$/,
