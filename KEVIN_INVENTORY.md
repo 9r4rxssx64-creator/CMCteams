@@ -1122,6 +1122,34 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 - 67/100 score réel mesuré (vs 100/100 promesse antérieure menteuse)
 - 8 bugs critiques restants identifiés v13.4.7+ (voir MEMO_RESUME)
 
+## v13.4.122 — Capacitor iOS native prep + 27 fails → 0 (Kevin 2026-05-15)
+
+### Fichiers créés
+- `apex-ai/v13/capacitor.config.ts` — config Capacitor wrapper iOS (appId com.kdmc.apex, App Group group.com.kdmc.apex.vault, scheme apex://)
+- `apex-ai/v13/services/apex-ios-native.ts` — bridge service détection natif vs PWA (Keychain, Filesystem iCloud, Share, Push APNs, Device info) avec fallback Web auto
+- `apex-ai/v13/IOS_NATIVE_PORT.md` — doc Mac+Xcode pour Kevin (npm cap add ios, signing, TestFlight, App Store)
+- `apex-ai/v13/tests/unit/vault-export-import-roundtrip.test.ts` — 8 tests régression Erreur #58 (snake_case ↔ camelCase format roundtrip)
+
+### Fichiers modifiés
+- `apex-ai/v13/package.json` — +14 deps Capacitor 8 (@capacitor/core, ios, preferences, share, push, camera, device, etc.)
+- `apex-ai/v13/core/bootstrap.ts` — APP_VER bump v13.4.121 → v13.4.122
+- `apex-ai/v13/index.html` + `sw.js` — version sync
+- `apex-ai/v13/features/chat/index.ts` — pendingAttachments en `var` (fix TDZ vitest)
+- 7 tests fixes (cmc-planning-bridge auth.isAdminSync mock, apex-execute-max count flexible, consumption-anomaly localStorage pre-pop, sim-paste-kevin OpenAI Project storageKey, vault-triple-persistence regex multi-uid, features.test.ts vi.resetModules)
+- `CLAUDE.md` — Erreur #58 documentée (pattern Erreur #28 reproduit chez moi)
+
+### Liens GitHub directs
+- capacitor.config.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/capacitor.config.ts
+- apex-ios-native.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/apex-ios-native.ts
+- IOS_NATIVE_PORT.md : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/IOS_NATIVE_PORT.md
+- vault-export-import-roundtrip.test.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/vault-export-import-roundtrip.test.ts
+
+### Résultats tests
+- Avant : 27 fail / 9166 pass (suite vitest)
+- Après : 0 fail / 9201 pass + 9 skipped / 9210 total
+- 440/440 test files green
+- TypeScript strict OK
+
 ### Pattern d'audit pro (à reproduire)
 ```bash
 # 1. Promesses sans catch
