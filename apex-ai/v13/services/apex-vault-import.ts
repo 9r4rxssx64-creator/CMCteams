@@ -24,17 +24,21 @@ import { logger } from '../core/logger.js';
 import { vault } from './vault.js';
 
 interface VaultExportEntry {
-  storageKey: string;
-  encrypted?: string;
+  /* v13.4.121 fix : exportVaultJson utilise snake_case storage_key + value_encrypted.
+   * Mon importer cherchait camelCase → BUG. Maintenant support des 2 formats. */
+  storage_key?: string;
+  storageKey?: string;
+  name?: string;
   service?: string;
-  ts?: number;
-  /** v13.4.115+ : multi-key vault entries */
+  value_encrypted?: string;
+  encrypted?: string;
   encryptedValue?: string;
+  ts?: number;
 }
 
 interface VaultExportPayload {
   version?: number;
-  exported_at?: number;
+  exported_at?: number | string;
   entries?: VaultExportEntry[];
   /** Legacy v13.x format */
   vault?: Record<string, string>;
@@ -80,25 +84,39 @@ async function importFromJson(jsonText: string): Promise<{
   let failed = 0;
   let decryptFailed = 0;
 
-  /* Format 1 : entries[] (v13.4.115+) */
+  /* Format 1 : entries[] (v13.4.115+ snake_case ET camelCase fallback) */
   const entries = parsed.entries ?? parsed.multiKeys ?? [];
   for (const entry of entries) {
-    const encrypted = entry.encrypted ?? entry.encryptedValue;
-    if (!encrypted || !entry.storageKey) {
+    /* v13.4.121 : support snake_case (exportVaultJson actuel) + camelCase legacy */
+    const encrypted = entry.value_encrypted ?? entry.encrypted ?? entry.encryptedValue;
+    const storageKey = entry.storage_key ?? entry.storageKey;
+    if (!encrypted || !storageKey) {
       failed++;
+      logger.debug('vault-import', `entry skip : encrypted=${!!encrypted} storageKey=${storageKey ?? '(none)'}`);
       continue;
     }
-    try {
-      const plaintext = await vault.decryptAuto(encrypted);
+    /* Si déjà chiffré AXENC1: → décrypte via vault. Sinon plain → setKey direct. */
+    let plaintext: string | null = null;
+    if (encrypted.startsWith('AXENC1:')) {
+      try {
+        plaintext = await vault.decryptAuto(encrypted);
+      } catch (err: unknown) {
+        logger.warn('vault-import', `decrypt failed for ${storageKey}`, { err });
+      }
       if (!plaintext) {
         decryptFailed++;
         continue;
       }
-      const r = await vault.setKey(entry.storageKey, plaintext);
+    } else {
+      /* Pas de prefix AXENC1: → considère plain (cas legacy ou val déjà en clair) */
+      plaintext = encrypted;
+    }
+    try {
+      const r = await vault.setKey(storageKey, plaintext);
       if (r.ok) restored++;
       else failed++;
     } catch (err: unknown) {
-      logger.warn('vault-import', `restore failed for ${entry.storageKey}`, { err });
+      logger.warn('vault-import', `setKey failed for ${storageKey}`, { err });
       failed++;
     }
   }
