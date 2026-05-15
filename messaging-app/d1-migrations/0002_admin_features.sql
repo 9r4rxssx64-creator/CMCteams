@@ -15,6 +15,7 @@ ALTER TABLE users ADD COLUMN last_lat REAL;
 ALTER TABLE users ADD COLUMN last_lng REAL;
 ALTER TABLE users ADD COLUMN last_geo_label TEXT;
 ALTER TABLE users ADD COLUMN last_device_label TEXT;
+ALTER TABLE users ADD COLUMN last_force_logout_at INTEGER;
 
 CREATE INDEX IF NOT EXISTS idx_users_admin_auth ON users(admin_authorized);
 
