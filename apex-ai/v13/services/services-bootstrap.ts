@@ -674,6 +674,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       sentinels.init();
     }),
 
+    /* v13.4.108 (Kevin context drop 2026-05-15) — sentinelles Kevin stack
+       dédiées : agent Vercel Monaco, bot 2026, Pinecone index health */
+    safeInit('kevin-stack-sentinels', async () => {
+      const { registerKevinStackSentinels } = await import('./apex-kevin-stack-sentinels.js');
+      registerKevinStackSentinels();
+    }),
+
     /* P0 : firebase-queue offline writes init */
     safeInit('firebase-queue', async () => {
       const { firebaseQueue } = await import('./firebase-queue.js');

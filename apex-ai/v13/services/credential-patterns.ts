@@ -497,6 +497,79 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     category: 'devops',
     dashboard: 'https://railway.app/account/tokens',
   },
+  /* v13.4.108 (Kevin context drop 2026-05-15) — patterns Kevin stack manquants */
+  {
+    name: 'Tavily',
+    /* Format : tvly-<key> ou tvly-dev-<key> (MCP + standalone) */
+    regex: /^tvly-(?:dev-)?[A-Za-z0-9_-]{20,}$/,
+    storageKey: 'ax_tavily_key',
+    category: 'ai',
+    dashboard: 'https://app.tavily.com/home',
+    docs: 'https://docs.tavily.com/',
+    testEndpoint: 'https://api.tavily.com/search',
+    testMethod: 'POST',
+  },
+  {
+    name: 'Together AI',
+    /* Format : key_<long-hex-or-alphanum> */
+    regex: /^key_[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_together_key',
+    category: 'ai',
+    dashboard: 'https://api.together.xyz/settings/api-keys',
+    docs: 'https://docs.together.ai/',
+    testEndpoint: 'https://api.together.xyz/v1/models',
+    testMethod: 'GET',
+  },
+  {
+    name: 'Finnhub',
+    /* Format : 20+ chars lowercase alphanumerique */
+    regex: /^[a-z0-9]{20,}$/,
+    storageKey: 'ax_finnhub_key',
+    category: 'finance',
+    dashboard: 'https://finnhub.io/dashboard',
+    docs: 'https://finnhub.io/docs/api',
+    testEndpoint: 'https://finnhub.io/api/v1/quote?symbol=AAPL',
+    testMethod: 'GET',
+  },
+  {
+    name: 'Légifrance / Openlegi.fr Token',
+    /* Format : 40+ chars hex */
+    regex: /^[a-f0-9]{40,}$/,
+    storageKey: 'ax_legifrance_token',
+    category: 'saas',
+    dashboard: 'https://mcp.openlegi.fr/',
+    docs: 'https://mcp.openlegi.fr/legifrance/mcp',
+  },
+  {
+    name: 'Cloudflare Global Key',
+    regex: /^cfk_[A-Za-z0-9]{20,}$/,
+    storageKey: 'ax_cloudflare_global_key',
+    category: 'devops',
+    dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
+  },
+  {
+    name: 'Cloudflare Auth Token',
+    regex: /^cfaut_[A-Za-z0-9]{15,}$/,
+    storageKey: 'ax_cloudflare_auth_token',
+    category: 'devops',
+    dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
+  },
+  {
+    name: 'Cloudflare Origin CA',
+    regex: /^v1\.0-[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_cloudflare_origin_ca',
+    category: 'devops',
+    dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
+  },
+  {
+    name: 'EmailJS Private Key',
+    /* Format : alphanumerique + underscore + tirets ~15-30 chars */
+    regex: /^[A-Za-z0-9_-]{15,30}$/,
+    storageKey: 'ax_emailjs_private_key',
+    category: 'comms',
+    dashboard: 'https://dashboard.emailjs.com/admin/account',
+    docs: 'https://www.emailjs.com/docs/',
+  },
   {
     name: 'AWS Access Key',
     regex: /^AKIA[0-9A-Z]{16}$/,
