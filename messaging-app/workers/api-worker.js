@@ -513,6 +513,52 @@ async function handleGetMe(request, env) {
   return json({ ok: true, user });
 }
 
+// Heartbeat user — last_seen + geoloc/device si consenti par toggle
+async function handleUserHeartbeat(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+
+  const body = await request.json().catch(() => ({}));
+  const ipHash = await sha256(request.headers.get('CF-Connecting-IP') || 'unknown');
+  const ua = (request.headers.get('user-agent') || '').slice(0, 240);
+  const cfCountry = request.headers.get('cf-ipcountry') || null;
+  const cfCity = request.headers.get('cf-ipcity') || null;
+  const cfRegion = request.headers.get('cf-region') || null;
+
+  // Device label simple
+  let deviceLabel = '';
+  if (/iPhone|iPad|iPod/i.test(ua)) deviceLabel = 'iOS';
+  else if (/Android/i.test(ua)) deviceLabel = 'Android';
+  else if (/Macintosh/i.test(ua)) deviceLabel = 'Mac';
+  else if (/Windows/i.test(ua)) deviceLabel = 'Windows';
+  else if (/Linux/i.test(ua)) deviceLabel = 'Linux';
+
+  // Geoloc client (si fournie) — sinon Cloudflare CF-IPCity headers
+  const lat = typeof body.lat === 'number' ? body.lat : null;
+  const lng = typeof body.lng === 'number' ? body.lng : null;
+  let geoLabel = null;
+  if (lat !== null && lng !== null) {
+    geoLabel = (cfCity ? cfCity + ', ' : '') + (cfCountry || '');
+  } else if (cfCity || cfCountry) {
+    geoLabel = (cfCity ? cfCity + ', ' : '') + (cfCountry || '');
+  }
+
+  await env.APEX_CHAT_DB.prepare(
+    `UPDATE users SET last_seen=?, last_ip_hash=?, last_user_agent=?, last_device_label=?,
+                       last_lat=COALESCE(?, last_lat), last_lng=COALESCE(?, last_lng),
+                       last_geo_label=COALESCE(?, last_geo_label), updated_at=?
+     WHERE id=?`
+  ).bind(Date.now(), ipHash, ua, deviceLabel, lat, lng, geoLabel, Date.now(), auth.sub).run().catch(() => {});
+
+  // Activity log (TTL 30j via cleanup futur)
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO user_activity (user_id, ts, ip_hash, user_agent, lat, lng, geo_label, action)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'heartbeat')`
+  ).bind(auth.sub, Date.now(), ipHash, ua, lat, lng, geoLabel).run().catch(() => {});
+
+  return json({ ok: true });
+}
+
 async function handleGetPublicUser(pseudo, env) {
   const user = await env.APEX_CHAT_DB.prepare(
     'SELECT id, pseudo, avatar_url, bio, last_seen FROM users WHERE pseudo=? COLLATE NOCASE AND status=?'
@@ -1962,6 +2008,7 @@ export default {
 
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
+      if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
