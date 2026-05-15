@@ -237,6 +237,8 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:#c9a227;border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:#f78322;border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
+        <div id="ax-cf-diagnostic-results" style="margin-top:8px;font-size:12px"></div>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
@@ -360,6 +362,50 @@ export function render(rootEl: HTMLElement): void {
           apexZoomInspector.hide();
         } else {
           apexZoomInspector.show();
+        }
+      })();
+    });
+  }
+
+  /* v13.4.120 (Kevin "verifie maintenant avant d'etre bloque") :
+   * Bouton manuel diagnostic Cloudflare API. Run on-demand + affiche
+   * resultat detaille des 6 checks dans la div ax-cf-diagnostic-results. */
+  const cfDiagBtn = rootEl.querySelector<HTMLButtonElement>('#ax-cf-diagnostic-btn');
+  if (cfDiagBtn && activeSettingsScope) {
+    activeSettingsScope.bind(cfDiagBtn, 'click', () => {
+      void (async () => {
+        const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-cf-diagnostic-results');
+        if (!resultsEl) return;
+        resultsEl.innerHTML = '<div style="color:#f78322">⏳ Test Cloudflare API en cours...</div>';
+        try {
+          const { apexCloudflareVaultDeploy } = await import('../../services/apex-cloudflare-vault-deploy.js');
+          const diag = await apexCloudflareVaultDeploy.runDiagnostic();
+          const row = (label: string, ok: boolean, detail?: string): string => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px">
+              <span style="color:${ok ? '#22cc77' : '#ff5b5b'};font-weight:700">${ok ? '✅' : '❌'}</span>
+              <span style="flex:1;color:rgba(255,255,255,0.85)">${label}</span>
+              ${detail ? `<span style="color:rgba(255,255,255,0.5);font-size:11px">${detail}</span>` : ''}
+            </div>`;
+          let html = '<div style="background:rgba(15,15,25,0.8);border:1px solid rgba(247,131,34,0.3);border-radius:10px;padding:12px;margin-top:10px">';
+          html += '<div style="color:#f78322;font-weight:700;margin-bottom:8px">☁️ Diagnostic Cloudflare</div>';
+          html += row('Token Cloudflare présent', diag.token_present);
+          html += row('Token valide (HTTP 200)', diag.token_valid, diag.http_status ? `HTTP ${diag.http_status}` : '');
+          html += row('Account ID accessible', !!diag.account_id, diag.account_name ?? diag.account_id ?? '');
+          html += row('Permission KV (Workers KV Storage:Edit)', diag.kv_permission, diag.namespace_id ? `ns ${diag.namespace_id.slice(0, 8)}…` : '');
+          html += row('Permission Workers (auto-deploy futur)', diag.workers_permission);
+          html += row('Namespace apex-vault-kevin existe', diag.namespace_exists);
+          if (diag.error_reason) {
+            html += `<div style="margin-top:10px;padding:8px;background:rgba(255,91,91,0.1);border-left:3px solid #ff5b5b;color:#ff5b5b;font-size:12px;border-radius:4px">${diag.error_reason}</div>`;
+          }
+          if (diag.fix_url) {
+            html += `<div style="margin-top:8px"><a href="${diag.fix_url}" target="_blank" rel="noopener" style="color:#6a8aff;font-size:12px">🔗 Fix : ${diag.fix_url}</a></div>`;
+          }
+          html += '</div>';
+          resultsEl.innerHTML = html;
+          logger.info('cf-diag-manual', `Diagnostic result : token=${diag.token_valid} kv=${diag.kv_permission} workers=${diag.workers_permission}`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur : ${msg.slice(0, 100)}</div>`;
         }
       })();
     });
